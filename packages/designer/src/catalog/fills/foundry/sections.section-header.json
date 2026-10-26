@@ -1,0 +1,64 @@
+{
+  "$extensions": {
+    "com.clossys.fill": {
+      "author": "foundry",
+      "builtOn": [],
+      "conforms": [],
+      "evidence": [],
+      "id": "foundry/sections.section-header",
+      "license": "MIT",
+      "mode": "implementation",
+      "originKinds": [
+        "adopted"
+      ],
+      "pin": {
+        "export": "./blocks#SectionHeader",
+        "package": "@clossys/designer",
+        "version": "0.12.0"
+      },
+      "relation": "subset",
+      "slot": "sections.section-header",
+      "source": "foundry",
+      "sourceAddress": "./blocks#SectionHeader",
+      "status": "draft",
+      "trust": "foundry",
+      "unmapped": [
+        "align.center",
+        "align.start",
+        "density.compact",
+        "density.display",
+        "density.standard"
+      ]
+    }
+  },
+  "sections": {
+    "section-header": {
+      "configs": {},
+      "impl": {
+        "export": "SectionHeader",
+        "kind": "package",
+        "module": "@clossys/designer/blocks"
+      },
+      "license": "MIT",
+      "notes": [
+        "Heading level is configurable via level; id is inherited HTML input. No align or density members and no enforced two-action maximum.",
+        "Descriptor only; source imports, token reads, shared anatomy, accessibility, contrast and consumer runtime conformance are unmeasured. Content bindings describe host adaptation points, not type-equivalent converters."
+      ],
+      "parts": [],
+      "pin": {
+        "export": "./blocks#SectionHeader",
+        "package": "@clossys/designer",
+        "version": "0.12.0"
+      },
+      "propMap": {},
+      "slot": "sections.section-header",
+      "slotMap": {
+        "actions": "./blocks#SectionHeader.actions",
+        "description": "./blocks#SectionHeader.description",
+        "eyebrow": "./blocks#SectionHeader.eyebrow",
+        "heading": "./blocks#SectionHeader.title"
+      },
+      "source": "foundry"
+    }
+  }
+}

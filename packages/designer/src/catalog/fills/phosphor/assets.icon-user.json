@@ -1,0 +1,51 @@
+{
+  "$extensions": {
+    "com.clossys.fill": {
+      "id": "phosphor/assets.icon-user",
+      "slot": "assets.icon-user",
+      "source": "phosphor",
+      "mode": "implementation",
+      "sourceAddress": "https://raw.githubusercontent.com/phosphor-icons/core/fe23e2534cdb7bec24bd8e6bd99b3676bcf0d54f/raw/regular/user.svg",
+      "relation": "same-contract",
+      "builtOn": [],
+      "conforms": [],
+      "evidence": [],
+      "author": "third-party",
+      "trust": "pinned-upstream",
+      "license": "MIT",
+      "pin": {
+        "url": "https://raw.githubusercontent.com/phosphor-icons/core/fe23e2534cdb7bec24bd8e6bd99b3676bcf0d54f/raw/regular/user.svg",
+        "commit": "fe23e2534cdb7bec24bd8e6bd99b3676bcf0d54f",
+        "sha256": "d066f27615080ec5a20fa497c12f737dd10637db03e1ab4a0a211af62069f383"
+      },
+      "status": "draft",
+      "reads": {
+        "tokens": [],
+        "assets": []
+      }
+    }
+  },
+  "assets": {
+    "icon-user": {
+      "default": {
+        "$type": "glyph",
+        "$value": [
+          [
+            "circle",
+            {
+              "cx": "12",
+              "cy": "9",
+              "r": "6"
+            }
+          ],
+          [
+            "path",
+            {
+              "d": "M 3 20.25 c 1.8159375 -3.1378125 5.1140625 -5.25 9 -5.25 s 7.1840625 2.1121875 9 5.25"
+            }
+          ]
+        ]
+      }
+    }
+  }
+}

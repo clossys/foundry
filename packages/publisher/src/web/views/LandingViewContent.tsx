@@ -1,5 +1,5 @@
 import { Children, isValidElement, type CSSProperties, type HTMLAttributes, type ReactNode } from "react";
-import { Icon, iconButtonLinkClassName, mergeUiClasses } from "@clossys/designer/atoms/server";
+import { Icon, iconButtonLinkClassName, mergeUiClasses } from "@clossys/designer/components/server";
 import {
   ContentSection,
   FeatureGrid,
@@ -228,7 +228,7 @@ function bandBlocks(afterSection: Readonly<Record<string, ReactNode>>, canonical
     ),
     ContentSection: ({ section, actions, publishedKind, resolveAssetId, prefersReducedMotion }) => {
       const Content = canonicalContentSection;
-      return <Content section={section} actions={actions} resolveAssetId={resolveAssetId} prefersReducedMotion={prefersReducedMotion} after={after(section.id)} className={publishedKind === undefined ? undefined : BAND_ANCHOR_CLASS} style={publishedKind === undefined ? { scrollMarginTop: 0 } : undefined} />;
+      return <Content section={section} actions={actions} resolveAssetId={resolveAssetId} prefersReducedMotion={prefersReducedMotion} after={after(section.id)} className={publishedKind === undefined ? "scroll-mt-0" : BAND_ANCHOR_CLASS} />;
     },
   };
 }
@@ -395,8 +395,8 @@ return function LandingView({
         data-landing-ground={heroSection.ground}
         ground={heroSection.ground}
         measure={measure}
-        className={mergeUiClasses("relative isolate", (compact ? HERO_PADDING_COMPACT : HERO_PADDING)[header], fitsFrame ? "flex-1" : undefined)}
-        style={fills && !fitsFrame ? { minHeight: peeks ? HERO_FILL.peek : HERO_FILL.full } : undefined}
+        className={mergeUiClasses("relative isolate", (compact ? HERO_PADDING_COMPACT : HERO_PADDING)[header], fitsFrame ? "flex-1" : undefined, fills && !fitsFrame && !peeks ? "min-h-dvh" : undefined)}
+        style={fills && !fitsFrame && peeks ? { minHeight: HERO_FILL.peek } : undefined}
       >
         {hasBackdrop ? (
           <div aria-hidden="true" data-landing-backdrop="" className="pointer-events-none absolute inset-0 -z-10 overflow-hidden">
@@ -414,7 +414,7 @@ return function LandingView({
         </div>
       ) : null}
       {bands.map(({ section, node }) => (
-        <SectionFrame key={section.id} data-landing-ground={section.ground} ground={section.ground} measure={measure} className={BAND_CLASS} style={section.kind === "content-section" || section.kind === "status-list" ? { paddingBlock: 0 } : undefined}>
+        <SectionFrame key={section.id} data-landing-ground={section.ground} ground={section.ground} measure={measure} className={section.kind === "content-section" || section.kind === "status-list" ? "py-0" : BAND_CLASS}>
           {ANATOMY_KINDS.has(section.kind) ? (
             node
           ) : (

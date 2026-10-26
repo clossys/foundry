@@ -1,0 +1,54 @@
+{
+  "$extensions": {
+    "com.clossys.fill": {
+      "author": "foundry",
+      "builtOn": [],
+      "conforms": [],
+      "evidence": [],
+      "id": "foundry/sections.people",
+      "license": "MIT",
+      "mode": "implementation",
+      "originKinds": [
+        "adopted"
+      ],
+      "pin": {
+        "export": "./blocks#PeopleGrid",
+        "package": "@clossys/designer",
+        "version": "0.12.0"
+      },
+      "relation": "same-contract",
+      "slot": "sections.people",
+      "source": "foundry",
+      "sourceAddress": "./blocks#PeopleGrid",
+      "status": "draft",
+      "trust": "foundry"
+    }
+  },
+  "sections": {
+    "people": {
+      "configs": {},
+      "impl": {
+        "export": "PeopleGrid",
+        "kind": "package",
+        "module": "@clossys/designer/blocks"
+      },
+      "license": "MIT",
+      "notes": [
+        "People have portrait, initials and one href, not an arbitrary links array. Root is ul; header and band are external.",
+        "Descriptor only; source imports, token reads, shared anatomy, accessibility, contrast and consumer runtime conformance are unmeasured. Content bindings describe host adaptation points, not type-equivalent converters."
+      ],
+      "parts": [],
+      "pin": {
+        "export": "./blocks#PeopleGrid",
+        "package": "@clossys/designer",
+        "version": "0.12.0"
+      },
+      "propMap": {},
+      "slot": "sections.people",
+      "slotMap": {
+        "people": "./blocks#PeopleGrid.people"
+      },
+      "source": "foundry"
+    }
+  }
+}

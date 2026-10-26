@@ -1,5 +1,5 @@
 import { useId, type CSSProperties } from "react";
-import { cx } from "../atoms/internal/cx.js";
+import { cx } from "../components/internal/cx.js";
 import { linearScale, formatTickValue } from "./internal/scale.js";
 import { assignCategoricalColor } from "./internal/chart-vars.js";
 

@@ -786,7 +786,7 @@ rendering described above, including when its optional fields are omitted.
   fragment, a one-origin path, an `http(s)` URL, or a `mailto:` link. It stays
   data: there is no node, class, or handler slot, and the view renders
   underlined `<a href>` elements into the Designer `Hero` block's existing
-  `actions` slot (not `Button` atoms — the wire model stays href-shaped).
+  `actions` slot (not `Button` components — the wire model stays href-shaped).
 - **`media` on the hero section.** An optional `{ assetId, alt }` pair:
   `alt` is a `CopyRef` (provenance-complete) and `assetId` resolves at render
   time through `SectionedView`'s `resolveAssetId`, the same seam
@@ -1168,7 +1168,7 @@ staged and is not part of these publisher shells.
 `HeroView`, exported from `@clossys/publisher/web`, is a single-screen
 landing page: a transparent banner, one hero centred both ways, and a
 locally dark legal footer, over an optional backdrop. It is server-safe (it
-imports only Designer's `/shell/server`, `/atoms/server` and `/blocks/server`
+imports only Designer's `/shell/server`, `/components/server` and `/blocks/server`
 barrels) and ships no wording of its own: every visible word comes from a prop.
 
 ```tsx
@@ -1225,7 +1225,7 @@ import { HeroView } from "@clossys/publisher/web";
 
 declare const brand: React.ReactNode; // the caller's brand mark, for example a Designer `Brandmark`
 declare const backdrop: React.ReactNode; // a dark visual, for example a scrimmed image
-declare const Link: React.FC<{ href: string; buttonVariant: "primary"; children: React.ReactNode }>; // Designer's `Link`, from its `/atoms` barrel
+declare const Link: React.FC<{ href: string; buttonVariant: "primary"; children: React.ReactNode }>; // Designer's `Link`, from its `/components` barrel
 
 export function DarkHomePage() {
   return (
@@ -1687,7 +1687,7 @@ path around validation:
 **Rich-node slots are the dangerous surface, so they are the narrow one.**
 A `"node"`-kind slot accepts a real `ReactNode` the caller's *own trusted
 code* already constructed — a composed `AuthView` form, a widget built from
-`@clossys/designer` atoms, a small caller-authored component. It never
+`@clossys/designer` components, a small caller-authored component. It never
 accepts and never interprets a raw HTML string, and there is no
 `dangerouslySetInnerHTML` anywhere on this path — React's own
 child-rendering already escapes text/attribute values by default, and a
@@ -4713,7 +4713,7 @@ console.log(findings.map((finding) => `${finding.rule} ${finding.path}`));
 Issue #1205: Publisher authors the in-tree `SectionedView`/`MarketingView`
 page document — which template, which sections, which copy ids and asset
 ids, all by reference — under `clossys/publisher/surfaces/`. Designer and
-Writer own everything a surface document references (tokens, atoms, blocks,
+Writer own everything a surface document references (tokens, components, blocks,
 copy) in their own folders; they propose changes and review renders, but
 they never edit a Publisher surface file directly. Every file under
 `clossys/` now has exactly one owner.
@@ -5572,7 +5572,7 @@ It does not provide:
 - Timing equalisation: a honeypot hit skips delivery and may answer faster.
 
 Known limits on input shape: the email check is conservative because the value
-becomes a `replyTo` address. It requires an ASCII dot-atom local part of at most
+becomes a `replyTo` address. It requires an ASCII dot-component local part of at most
 64 characters and a domain of two or more ASCII labels, so internationalised
 addresses and quoted local parts are refused as `malformed`. Phone accepts only
 ASCII digits, space and `+ - ( ) . / # * x X`, with at least one digit. Bidirectional
@@ -6404,7 +6404,7 @@ export const element = createElement(LandingView, {
 
 ## Block role descriptors
 
-The catalog has five tiers: Tokens, Atoms, Blocks, Instances and Packs. Frame and
+The catalog has five tiers: Tokens, Components, Blocks, Instances and Packs. Frame and
 View are Block roles. Existing `SiteFrame`, `LandingView`, `LegalView`, internal `PageLayout`
 and canvas `Frame` contracts and imports keep their existing meaning.
 
@@ -6550,7 +6550,7 @@ Publisher/core exports `validateRelations(input)`, `RelationsInput`,
 `RelationsResult` and `RelationsGraph`. `RelationNodeKind`, `RelationNode`,
 `RelationRouteBinding` and `RelationEndpoint` describe nodes, auxiliary route
 bindings and typed edge endpoints. Supply five node kinds (assembly,
-instance, block, atom, token), separate auxiliary `routeBindings`, forward
+instance, block, component, token), separate auxiliary `routeBindings`, forward
 `RelationEdge` records and known adapter declarations. `RelationIdentity` keeps
 an opaque complete configured reference, opaque source revision and closed
 consumer/brand/medium context; different configurations need distinct identities.
@@ -6578,12 +6578,56 @@ PackManifest and the publication map remain separate contracts.
 
 ## Application frame — `AppFrame`
 
-`AppFrame` is a client-only application assembly exported from
-`@clossys/publisher/web/client`, alongside `AppFrameSpecimen`, `AppFrameProps`,
+`AppFrame` is a client-only application assembly owned and exported from
+`@clossys/designer/frames`, alongside `AppFrameSpecimen`, `AppFrameProps`,
 `AppFrameBrand`, `AppFrameAccount`, `AppFrameRightPanel`, and immutable
 `APP_FRAME_CONTRACT` metadata and `APP_FRAME_CONFIG_SCHEMA`. Import it inside a client boundary. The ordinary
 web and server entries continue to serve their existing page compositions.
 The application frame's page bar is the Designer `PageBar` block.
+
+Supply a definite-height host. The frame reserves header, navigation, right-panel
+and bottom-dock space; its positioned, isolated stage uses the remaining width
+and height. Navigation and right panels push the stage. Narrow panels are mutually
+exclusive full-width Drawers. There is no page-width preference or immersive overlay mode.
+
+`header` accepts `{title, nav?, actions?}`. `title` is the plain page name, rendered
+as the sole h1; `nav` contains `{label, items: [{id, label, href}], activeId}`;
+`actions.render({compact})` supplies the same action in full or icon form. Navigation
+stays centered on the stage, independent of the outer slots. The frame measures
+header capacity and compacts actions before replacing navigation with a title menu.
+The two sidebar controls flank the header. The existing brand mark appears in the
+profile Avatar. Optional `onNavigate(href)` lets a host flush and navigate after an
+ordinary self-target link activation; modified/download links retain native behavior.
+A rejected callback keeps the current page.
+
+A page may lease the header through Designer's `PageHeaderModule` under AppFrame.
+Its `header` uses the same title/nav/actions contract as the host `header` prop.
+Frame owns the single heading, centered navigation and narrow menu; leased actions
+receive the measured `compact` boolean while retaining page providers and state.
+Only one page header owner may be active, and unmount restores the host header.
+Raw header slot content cannot bypass the responsive header contract.
+
+Pages register modules through Designer's `SlotModule` under the AppFrame provider:
+`dock-tab` for tabbed content and `dock-strip` for controls. The bottom dock occupies
+layout space and reduces stage height at every width, including narrow frames;
+it does not open a modal or cover the stage. Its existing horizontal ResizablePane
+uses `tokens.content-size` members `dock-min`, `dock-default`, and `dock-max`,
+emitted as `--ui-layout-dock-min-block` (160px),
+`--ui-layout-dock-default-block` (240px), and `--ui-layout-dock-max-block` (480px).
+The runtime subtracts the measured header, notices and collapsed strip from the
+actual frame height, then clamps both resize bounds and current height to that
+capacity. If capacity is below the normal minimum, the minimum contracts with it.
+Optional `dock: {label, handleLabel, min?, max?, defaultValue?, value?, onChange?}`
+overrides the height policy or controls its value; it cannot exceed frame capacity.
+Modules retain the providers in
+their original page tree. The frame owns placement; modules supply content only.
+
+`notices` contains oldest-first `{id, severity, text, action?, dismissible?}` records.
+The dock message band uses existing Banner components, selects at most three by
+severity and recency, and remembers dismissed IDs in sessionStorage. Errors remain
+while supplied; other messages dismiss unless explicitly disabled. Transient action
+messages use the existing `toasts` viewport and Designer `toast` service, including
+action callbacks and timer pause on hover/focus.
 
 The application frame composes Designer's `AppNavigation`, `AccountMenu`,
 `CommandMenu`, brand primitives, theme controls and optional
@@ -6596,7 +6640,7 @@ directly in a client route or a frame-capable catalog canvas:
 ```tsx
 "use client";
 
-import { AppFrameSpecimen } from "@clossys/publisher/web/client";
+import { AppFrameSpecimen } from "@clossys/designer/frames";
 
 export default function ExampleWorkspace() {
   return <AppFrameSpecimen />;
@@ -6617,30 +6661,27 @@ already owns a main landmark.
 
 ### Host-owned data and behavior
 
-AppFrame and its stateful specimen are explicit `web/client` islands; SiteFrame and the default/server entries retain their hook-free, server-import boundary, with AppFrame exceptions pinned per file and shared contract imports restricted to types.
+AppFrame and its stateful specimen are client-only exports of `@clossys/designer/frames`. Publisher's SiteFrame and default/server entries retain their hook-free server-import boundary; shared Frame header contracts are type-only imports.
 
 Supply `brand` with resolved `markSrc`, `wordmark` and accessible `label` strings.
-The label must contain the brand name. The floating bar starts with a small
-accent-mask home mark; the breadcrumb root supplies the brand name, without a
-second wordmark. Hosts that need multicolor source artwork choose
-`markInk: "image"`, which uses the existing small `Logomark`. An optional `href`
-makes the mark a host-owned destination.
+The label must contain the brand name. The existing mark appears in the
+profile Avatar in the navigation footer. The page-level header contains the
+short page title, centered navigation and actions supplied through `header`.
 
-Supply `page` for the frame-owned page header: `title`, `breadcrumb`, `status`,
-`description`, `updatedAt`, `meta`, `actions`, `scope` and `width`. Its title is
-the bar's single page `h1`; route content then supplies no page header. Ancestor
-breadcrumbs may have `siblings` destinations. The optional last crumb matching
-`title` supplies alternatives for the current page. On narrow screens the
-middle levels and their sibling destinations remain reachable in a menu.
-`workspaces` makes the brand root a workspace menu; without it the root is a
-plain link. Semantic breadcrumb containers compose the existing Link and Menu
-atoms; no second menu lifecycle is implemented.
+For document-style pages, `page` retains `title`, `breadcrumb`, `status`,
+`description`, `updatedAt`, `meta`, `actions` and `scope`. Its title supplies the
+single page `h1` when `header` is absent; route content then supplies no second
+page heading. Ancestor breadcrumbs may have `siblings` destinations. The
+optional last crumb matching `title` supplies alternatives for the current page.
+On narrow screens middle levels and sibling destinations remain reachable in
+a menu. `workspaces` makes the breadcrumb root a workspace menu; otherwise the
+root is a plain link. These menus compose the existing Link and Menu components.
 
 The optional information caret opens page status, description, update time,
-metadata and scope in a dismissible overlay, without moving the route body.
-Host actions remain on the right; only the first `primary` request receives
-primary presentation. Narrow layouts move secondary actions to a menu. The
-width toggle follows a divider at the right edge of the action group.
+metadata and scope in a dismissible overlay. Host document actions remain on
+the right; only the first `primary` request receives primary presentation.
+Narrow layouts move secondary document actions to a menu. Stage width follows
+the remaining frame space after its side regions.
 
 Supply `navigation.tree`, an `activeId` or `activeHref`, and a `navigationKey`
 that changes on route transitions. Navigation nodes support destinations and
@@ -6678,12 +6719,9 @@ shortcut remains active even when the navigation is closed.
 Logical corner controls open and close the navigation and optional work panel.
 Docked panel widths are reserved before centering the stage. If a panel would
 leave less than the existing 480px minimum stage, it opens as a sheet instead;
-below 900px both panels use sheets. The contained stage uses the existing
-72rem maximum; full width uses the remaining space. `page.width` defaults to
-`"contained"` until an in-memory user override. Controlled `width` and
-`onWidthChange` let the host own the choice; the frame adds no width storage.
-The stage scrolls beneath its sticky glass bar with scroll clearance. Unsupported
-blur, reduced transparency and forced colors use the opaque surface fallback.
+below the existing wide-layout threshold both panels use sheets. The stage always
+uses the remaining width. Unsupported blur, reduced transparency and forced colors
+use the opaque surface fallback.
 
 The frame assembles a Designer `ThemeProvider` and the existing `ThemeToggle`,
 whose single button cycles System → Light → Dark → System. The control updates
@@ -6882,7 +6920,7 @@ collection and the page title.
 
 Supply either an ordered `sections` list or `tabs` with a required `tab`,
 `onTabChange` and a nonempty accessible `tabsLabel`, independent of the page title.
-`DetailsViewTab` is `{ id, label, sections }`. Tabs uses Designer's Tabs atom for arrow-key focus and tab/panel
+`DetailsViewTab` is `{ id, label, sections }`. Tabs uses Designer's Tabs component for arrow-key focus and tab/panel
 relationships. Selection changes are reported; the selected content changes when
 the host supplies the new `tab`. The host reads the selected ID from its URL and
 updates that URL in `onTabChange`; the View reads no URL and owns no router. A
@@ -6992,3 +7030,83 @@ link and single main landmark; PageView supplies one h1 and no frame landmarks.
 Use StatusView for a cardless status page with a call to action. See
 [PageView slots and migration guidance](../../docs/design/page-view.md) for
 content, form and date examples. Existing views remain available unchanged.
+
+
+## Publisher channel workspace
+
+`PublisherPage` from `@clossys/publisher/web/client` mounts inside
+`AppFrame` from `@clossys/designer/frames`. It leases one `PageHeaderModule`;
+the Frame owns the page title, channel navigation, compact menu and actions.
+The page body has no separate page header or tab strip.
+
+Channels appear in this order when populated: Site, App, Admin, Content,
+Messages, Documents. Commerce is an item filter. Brand assets remain Designer
+inputs, shown as requirement checks on each item. Each channel contains an
+M1–M4 alignment strip, items grouped by milestone with output format and
+delivery state, and item details containing Configure and Evidence. Plan and
+Formats are not separate tabs; format inspection stays inside item details.
+
+The host controls `activeChannel: PublisherChannelId` when multiple channels
+are present. The default channel href is `#publisher-channel=ID`. In the Frame's
+existing `onNavigate`, pass the href to `publisherChannelFromHref`: update
+`activeChannel` for a recognized channel and delegate every other href to the
+host's existing navigation callback. The Frame retains native modified-click
+behavior. A custom `channelHref` requires the host's corresponding href parser.
+
+Supply `routeChannels: PublisherRouteChannels` to classify existing route ids
+as App or Admin. This changes presentation, never route identity, plan history,
+source bindings or their evidence. Supply the registry projection through `registeredRoutes` to compare an Admin
+item with its exact adopted Frame binding. Audience does not select another Frame. No route inventory is fabricated by the
+page. Planned media format and delivery choices are local UI choices; they do
+not establish a renderer, artifact, export, deployment or clearance.
+
+
+## Registered application routes
+
+`RouteRegistry` from `@clossys/publisher/core` is a finite versioned JSON overlay
+on existing plan items and `InstanceBinding` records. Each entry binds its real
+route id, path, plan-item id, generated entry, selected runtime hook and one
+header lease. `brand: { homeRouteId, label }` references exactly one row in the
+same registry; the home href is projected from that row's path. Row order never
+selects a default destination.
+
+`projectRouteRegistry` retains the plan's pack, milestone and causative answer
+identities. Its Admin projection contains every registered Admin row, with no
+built-in route count. `planned`, `built` and `reviewed` are derived from joined
+alignment, source, fresh runtime and exact review evidence. Authored status
+fields, retained JSON receipts and matching generated template bytes cannot
+promote a route. A trusted host must revalidate persisted source against its
+immutable tree, obtain fresh runtime evidence and validate review evidence.
+
+Use `emitRegisteredRoutePage` and `emitRegisteredRouteAdapter` from
+`@clossys/publisher/web/registered-route-check` to produce the checked entry
+shape. The public `RegisteredRoutePage` binder accepts a typed state/library
+hook and bounded compact header actions. It executes the selected Frame and
+Sections through exact registered flow Layout source/configuration; there is
+no host body callback. Flow Layouts consume a pure measured Stage plan and
+consumer-emitted container-query CSS. Missing selected implementations, CSS,
+measurements stay pending. The fixed `designer.layer-boards@1` adapter invokes
+Designer’s pure query on each current original-provider projection and
+materializes the same canonical binding. Ready bodies use the shared Canvas
+Stage; registered loading/error/empty bodies require their actual selected flow
+Layout and state Sections. Neither a host query callback nor a caller-authored
+result is accepted. Query/provider source, current library/selection, Edit state,
+body, labels and content participate in the joined receipt identity.
+
+Derived execution additionally requires same-context source revalidation and
+the mounted original provider hooks. Branded source receipts cannot be copied
+through JSON or transferred from server to browser. That browser revalidation
+boundary, actual consumer qualification and Canvas lifecycle promotion remain
+pending; package source fixtures do not establish them.
+
+`checkRegisteredRoutes` and `publisher-registered-route-check` discover entries
+under explicitly admitted route roots and compare them with the registry and
+exact generated source. The strict version-2 contract contains `sources`,
+`registry` and `routeRoots`; the original strict version-1 Designer source
+contract remains separate. Only closed document wrappers, literal redirects
+and explicit HTTP handlers receive infrastructure classifications. Implicit
+visual layout wrappers are refused. Every reachable implementation is scanned,
+including Publisher Layout source. The Node API's optional `styling` input
+joins the exact selected engine/manifest and actually reached CSS files;
+missing inputs and unresolved utilities remain findings or pending evidence.
+Source checks do not establish browser qualification or actual adoption.

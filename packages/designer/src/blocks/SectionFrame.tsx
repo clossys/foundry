@@ -1,5 +1,5 @@
 import type { CSSProperties, HTMLAttributes, ReactNode } from "react";
-import { cx } from "../atoms/internal/cx.js";
+import { cx } from "../components/internal/cx.js";
 import {
   SECTION_FRAME_DATA_ATTR,
   SECTION_MEASURE_MAX,

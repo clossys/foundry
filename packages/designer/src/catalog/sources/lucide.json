@@ -1,0 +1,12 @@
+{
+  "id": "lucide",
+  "kind": "external",
+  "author": "third-party",
+  "license": "ISC",
+  "pin": {
+    "package": "lucide-react",
+    "file": "lucide-pin.json",
+    "sha256": "a7b8abcfd784c21f2d409026413e8552bdc0c8c75cad344afcff515ce3429598"
+  },
+  "homepage": "https://lucide.dev"
+}

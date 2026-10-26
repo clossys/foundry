@@ -16,7 +16,7 @@ guards do run in Publisher's own test suite:
    versions, `next`, `react` and `react-dom` cover the versions the
    workspace lockfile resolves, and a range in an unrecognised form fails.
 2. Every `var(--name)` that the template, Publisher's web views and
-   Designer's atoms, blocks and shell reference is declared by the CSS the
+   Designer's components, blocks and shell reference is declared by the CSS the
    template loads (Designer's token layer through `theme.css`, or the
    template's own CSS), with a pinned exception list for existing
    references outside the template. The check follows the template's CSS

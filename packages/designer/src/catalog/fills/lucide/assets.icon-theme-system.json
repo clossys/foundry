@@ -1,0 +1,69 @@
+{
+  "$extensions": {
+    "com.clossys.fill": {
+      "id": "lucide/assets.icon-theme-system",
+      "slot": "assets.icon-theme-system",
+      "source": "lucide",
+      "mode": "implementation",
+      "sourceAddress": "lucide-react@1.23.0/dist/esm/icons/monitor.js",
+      "relation": "same-contract",
+      "builtOn": [],
+      "conforms": [],
+      "evidence": [],
+      "author": "third-party",
+      "trust": "pinned-upstream",
+      "license": "ISC",
+      "pin": {
+        "package": "lucide-react",
+        "version": "1.23.0",
+        "file": "src/icons/Monitor.ts",
+        "sha256": "1018ced79e3d8f50a4a74607ffc22ad99c7744c29c248824b8437fba65185148"
+      },
+      "status": "draft",
+      "reads": {
+        "tokens": [],
+        "assets": []
+      }
+    }
+  },
+  "assets": {
+    "icon-theme-system": {
+      "default": {
+        "$type": "glyph",
+        "$value": [
+          [
+            "rect",
+            {
+              "width": "20",
+              "height": "14",
+              "x": "2",
+              "y": "3",
+              "rx": "2",
+              "key": "48i651"
+            }
+          ],
+          [
+            "line",
+            {
+              "x1": "8",
+              "x2": "16",
+              "y1": "21",
+              "y2": "21",
+              "key": "1svkeh"
+            }
+          ],
+          [
+            "line",
+            {
+              "x1": "12",
+              "x2": "12",
+              "y1": "17",
+              "y2": "21",
+              "key": "vw1qmm"
+            }
+          ]
+        ]
+      }
+    }
+  }
+}

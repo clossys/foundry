@@ -1,0 +1,212 @@
+{
+  "coverage": [
+    {
+      "missing": [
+        "fallback.opaque",
+        "surface.glass"
+      ],
+      "missingRequiredSlots": [],
+      "missingSlots": [
+        "context"
+      ],
+      "missingStatePorts": [],
+      "notes": [
+        "Context and glass/opaque surface members remain unmapped in this descriptor.",
+        "Descriptor only; anatomy, source, accessibility, contrast, layout and rendered conformance are unmeasured."
+      ],
+      "slot": "frames.app-header",
+      "status": "subset",
+      "supported": [
+        "position.static",
+        "position.sticky"
+      ]
+    },
+    {
+      "missing": [
+        "layout.immersive",
+        "layout.standard",
+        "stage.contained",
+        "stage.full"
+      ],
+      "missingRequiredSlots": [],
+      "missingSlots": [
+        "progress"
+      ],
+      "missingStatePorts": [
+        "theme",
+        "width"
+      ],
+      "notes": [
+        "Canonical Designer Frames owns AppFrame. Removed width and layout modes remain unsupported contract members. Theme and command state are internally owned; no numeric width state port or progress slot is exposed.",
+        "Descriptor only; anatomy, source, accessibility, contrast, layout and rendered conformance are unmeasured."
+      ],
+      "slot": "frames.app-shell",
+      "status": "subset",
+      "supported": [
+        "theme.dark",
+        "theme.light",
+        "theme.system"
+      ]
+    },
+    {
+      "missing": [],
+      "missingRequiredSlots": [],
+      "missingSlots": [
+        "account",
+        "theme"
+      ],
+      "missingStatePorts": [
+        "theme"
+      ],
+      "notes": [
+        "account and theme can be composed by the host in footer; they are not dedicated slots. No theme state port. Tree uses disclosure navigation; no navigation-tree conformance is claimed.",
+        "Descriptor only; anatomy, source, accessibility, contrast, layout and rendered conformance are unmeasured."
+      ],
+      "slot": "frames.app-sidebar",
+      "status": "subset",
+      "supported": [
+        "presentation.collapsed",
+        "presentation.docked",
+        "presentation.overlay"
+      ]
+    },
+    {
+      "missing": [
+        "shortcut.off",
+        "shortcut.on"
+      ],
+      "missingRequiredSlots": [
+        "search"
+      ],
+      "missingSlots": [
+        "search"
+      ],
+      "missingStatePorts": [],
+      "notes": [
+        "CommandMenu has no shortcut configuration. useCommandMenuShortcut is separately exported but requires host composition; no shortcut member is mapped. Search is a labelled internal input, not a replaceable SearchField slot; no RAC conformance is claimed.",
+        "Descriptor only; anatomy, source, accessibility, contrast, layout and rendered conformance are unmeasured."
+      ],
+      "slot": "frames.command",
+      "status": "subset",
+      "supported": []
+    },
+    {
+      "missing": [
+        "presentation.collapsed",
+        "presentation.docked",
+        "presentation.overlay"
+      ],
+      "missingRequiredSlots": [
+        "content"
+      ],
+      "missingSlots": [
+        "content"
+      ],
+      "missingStatePorts": [
+        "collapsed",
+        "max",
+        "min",
+        "step",
+        "width"
+      ],
+      "notes": [
+        "No standalone inspector frame export exists. AppFrame rightPanel composes ResizablePane and Drawer; neither is a complete inspector frame contract.",
+        "Descriptor only; anatomy, source, accessibility, contrast, layout and rendered conformance are unmeasured."
+      ],
+      "slot": "frames.inspector",
+      "status": "unavailable",
+      "supported": []
+    },
+    {
+      "missing": [],
+      "missingRequiredSlots": [],
+      "missingSlots": [],
+      "missingStatePorts": [],
+      "notes": [
+        "Drawer is the edge sheet export. Its literal default breakpoint and rendered behavior are not qualified by this descriptor.",
+        "Descriptor only; anatomy, source, accessibility, contrast, layout and rendered conformance are unmeasured."
+      ],
+      "slot": "frames.sheet",
+      "status": "candidate",
+      "supported": [
+        "placement.bottom",
+        "placement.end",
+        "placement.start",
+        "wide.dismiss",
+        "wide.sheet"
+      ]
+    },
+    {
+      "missing": [
+        "overlay.off",
+        "overlay.on"
+      ],
+      "missingRequiredSlots": [],
+      "missingSlots": [
+        "legal",
+        "links",
+        "social"
+      ],
+      "missingStatePorts": [],
+      "notes": [
+        "links, legal and social can be composed in secondary; no dedicated slots or overlay configuration. rule=top applies only on transparent ground; no unconditional rule visibility is claimed.",
+        "Descriptor only; anatomy, source, accessibility, contrast, layout and rendered conformance are unmeasured."
+      ],
+      "slot": "frames.site-footer",
+      "status": "subset",
+      "supported": [
+        "ground.base",
+        "ground.inverse",
+        "rule.off",
+        "rule.on"
+      ]
+    },
+    {
+      "missing": [],
+      "missingRequiredSlots": [],
+      "missingSlots": [],
+      "missingStatePorts": [],
+      "notes": [
+        "NavDisclosure is a separate client island supplied through nav; the descriptor does not prove navigation limits or glass contrast.",
+        "Descriptor only; anatomy, source, accessibility, contrast, layout and rendered conformance are unmeasured."
+      ],
+      "slot": "frames.site-header",
+      "status": "candidate",
+      "supported": [
+        "nav-placement.centered",
+        "nav-placement.leading",
+        "position.static",
+        "position.sticky",
+        "surface.glass",
+        "surface.solid",
+        "surface.transparent",
+        "tone.base",
+        "tone.inverse"
+      ]
+    },
+    {
+      "missing": [
+        "chrome.full",
+        "chrome.minimal"
+      ],
+      "missingRequiredSlots": [],
+      "missingSlots": [
+        "consent",
+        "progress",
+        "toasts"
+      ],
+      "missingStatePorts": [],
+      "notes": [
+        "No chrome full/minimal configuration, consent or toasts slot is exposed.",
+        "Descriptor only; anatomy, source, accessibility, contrast, layout and rendered conformance are unmeasured."
+      ],
+      "slot": "frames.site-shell",
+      "status": "subset",
+      "supported": [
+        "footer-placement.flow",
+        "footer-placement.overlay"
+      ]
+    }
+  ],
+  "source": "foundry"
+}

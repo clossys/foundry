@@ -1,5 +1,5 @@
 import { useId, type ReactNode } from "react";
-import { buttonLinkClassName, mergeUiClasses } from "@clossys/designer/atoms/server";
+import { buttonLinkClassName, mergeUiClasses } from "@clossys/designer/components/server";
 import type { ResolvedSiteShell } from "./internal/resolveShell.js";
 import { NavLinks } from "./NavLinks.js";
 

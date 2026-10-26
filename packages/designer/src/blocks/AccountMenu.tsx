@@ -1,11 +1,11 @@
 "use client";
 
 import { Fragment } from "react";
-import { Avatar } from "../atoms/Avatar.js";
-import { Button } from "../atoms/Button.js";
-import { Icon } from "../atoms/Icon.js";
-import { Menu } from "../atoms/Menu.js";
-import { Tooltip } from "../atoms/Tooltip.js";
+import { Avatar } from "../components/Avatar.js";
+import { Button } from "../components/Button.js";
+import { Icon } from "../components/Icon.js";
+import { Menu } from "../components/Menu.js";
+import { Tooltip } from "../components/Tooltip.js";
 import { Check } from "../icons/Check.js";
 import { ChevronUp } from "../icons/ChevronUp.js";
 import type { AccountMenuProps, AccountMenuSection } from "./account-menu-types.js";

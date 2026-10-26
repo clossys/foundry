@@ -1,0 +1,54 @@
+{
+  "$extensions": {
+    "com.clossys.fill": {
+      "author": "foundry",
+      "builtOn": [],
+      "conforms": [],
+      "evidence": [],
+      "id": "foundry/sections.media",
+      "license": "MIT",
+      "mode": "implementation",
+      "originKinds": [
+        "adopted"
+      ],
+      "pin": {
+        "export": "./blocks#MediaFigure",
+        "package": "@clossys/designer",
+        "version": "0.12.0"
+      },
+      "relation": "same-contract",
+      "slot": "sections.media",
+      "source": "foundry",
+      "sourceAddress": "./blocks#MediaFigure",
+      "status": "draft",
+      "trust": "foundry"
+    }
+  },
+  "sections": {
+    "media": {
+      "configs": {},
+      "impl": {
+        "export": "MediaFigure",
+        "kind": "package",
+        "module": "@clossys/designer/blocks"
+      },
+      "license": "MIT",
+      "notes": [
+        "Host supplies the image node and its src/alt/ratio; caption is a separate prop. Does not validate a structured figure record or bind anatomy.",
+        "Descriptor only; source imports, token reads, shared anatomy, accessibility, contrast and consumer runtime conformance are unmeasured. Content bindings describe host adaptation points, not type-equivalent converters."
+      ],
+      "parts": [],
+      "pin": {
+        "export": "./blocks#MediaFigure",
+        "package": "@clossys/designer",
+        "version": "0.12.0"
+      },
+      "propMap": {},
+      "slot": "sections.media",
+      "slotMap": {
+        "figure": "./blocks#MediaFigure.children"
+      },
+      "source": "foundry"
+    }
+  }
+}

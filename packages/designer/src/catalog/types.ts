@@ -1,6 +1,6 @@
 /**
  * Internal catalog manifests: the typed information architecture for this
- * package's five catalogs (tokens, assets, icons, atoms, blocks).
+ * package's five catalogs (tokens, assets, icons, components, blocks).
  *
  * This directory is internal data. It is not a `package.json` export and is
  * not re-exported from `src/index.ts`; tooling that renders or checks the
@@ -24,7 +24,7 @@ import type { IconNode } from "../icons/types.js";
 // ---------------------------------------------------------------------------
 
 /** The five catalogs this package owns. */
-export type CatalogKind = "tokens" | "assets" | "icons" | "atoms" | "blocks";
+export type CatalogKind = "tokens" | "assets" | "icons" | "components" | "blocks";
 
 /**
  * Leaf lifecycle. `parked` keeps the code as it is: hidden from browse by
@@ -315,11 +315,11 @@ export type IconEntry = CatalogLeafBase &
   };
 
 // ---------------------------------------------------------------------------
-// Atoms
+// Components
 // ---------------------------------------------------------------------------
 
 /** 4 L1, 17 L2. */
-export type AtomGroupMap = {
+export type ComponentGroupMap = {
   interaction:
     | "actions"
     | "navigation"
@@ -334,11 +334,11 @@ export type AtomGroupMap = {
   feedback: "messages" | "progress-and-loading";
   containment: "structure" | "overlays";
 }
-export type AtomL1 = keyof AtomGroupMap;
-export type AtomPlacement = Placement<AtomGroupMap>;
+export type ComponentL1 = keyof ComponentGroupMap;
+export type ComponentPlacement = Placement<ComponentGroupMap>;
 
-/** Atom ids keep their existing `<verb>.<name>` shape, for example `act.button`. */
-export type AtomId = `${string}.${string}`;
+/** Component ids keep their existing `<verb>.<name>` shape, for example `act.button`. */
+export type ComponentId = `${string}.${string}`;
 
 /**
  * - `main`: on the default branch.
@@ -346,11 +346,11 @@ export type AtomId = `${string}.${string}`;
  * - `gap`: react-aria-components has it and nothing exists here.
  * - `parked`: no react-aria-components base; kept untouched.
  */
-export type AtomStatus = "main" | "in-flight" | "gap" | "parked";
+export type ComponentStatus = "main" | "in-flight" | "gap" | "parked";
 
 /**
  * The react-aria-components base. `rac` lists the exact components or hooks
- * the atom composes (or will compose, for a gap or in-flight leaf). `none`
+ * the component composes (or will compose, for a gap or in-flight leaf). `none`
  * says why there is no base; `mapsTo` names the base it should move onto.
  */
 export type RacBase =
@@ -362,7 +362,7 @@ export type RacBase =
     };
 
 /** What happens to the leaf next. */
-export type AtomDisposition =
+export type ComponentDisposition =
   | "keep"
   | "build-now"
   | "not-now"
@@ -374,8 +374,8 @@ export type AtomDisposition =
   | "decision-pending"
   | "park";
 
-/** A react-aria-components render-prop state the atom styles, forced in preview through `data-*`. */
-export type AtomState =
+/** A react-aria-components render-prop state the component styles, forced in preview through `data-*`. */
+export type ComponentState =
   | "isHovered"
   | "isPressed"
   | "isFocused"
@@ -390,7 +390,7 @@ export type AtomState =
   | "isExpanded";
 
 /** One public prop. A union prop (`values`) becomes a live control. */
-export interface AtomProp {
+export interface ComponentProp {
   readonly name: string;
   readonly values?: readonly (string | number | boolean)[];
   readonly default?: string | number | boolean;
@@ -410,11 +410,11 @@ export interface AuthoredConfig {
 }
 
 /** The authored component contract. Optional until a leaf has been reviewed. */
-export interface AtomContract {
-  readonly props: readonly AtomProp[];
+export interface ComponentContract {
+  readonly props: readonly ComponentProp[];
   readonly variants: readonly string[];
   readonly sizes: readonly ("sm" | "md" | "lg")[];
-  readonly states: readonly AtomState[];
+  readonly states: readonly ComponentState[];
   readonly grounds: readonly ("base" | "sunken" | "inverse")[];
   /** Named children, for example `icon-end`, `label`, `description`. */
   readonly slots: readonly string[];
@@ -425,20 +425,20 @@ export interface AtomContract {
   readonly configs: readonly AuthoredConfig[];
 }
 
-/** One atom leaf. */
-export type AtomEntry = CatalogLeafBase &
-  AtomPlacement & {
-    readonly id: AtomId;
+/** One component leaf. */
+export type ComponentEntry = CatalogLeafBase &
+  ComponentPlacement & {
+    readonly id: ComponentId;
     /** Export name, or null for a leaf with nothing built yet. */
     readonly export: string | null;
     /** Package-relative source files, empty when nothing exists. */
     readonly files: readonly string[];
     readonly racBase: RacBase;
-    readonly status: AtomStatus;
+    readonly status: ComponentStatus;
     /** Present while `status` is `in-flight`. */
     readonly inFlight?: WorkRef;
-    readonly disposition: AtomDisposition;
-    readonly contract?: AtomContract;
+    readonly disposition: ComponentDisposition;
+    readonly contract?: ComponentContract;
   };
 
 // ---------------------------------------------------------------------------
@@ -493,11 +493,13 @@ export interface BlockContract {
   readonly alsoUsedFor: readonly string[];
 }
 
-/** One block leaf. `atoms`, `tokens` and `composedBy` are computed, so they are not authored here. */
+/** One block leaf. `components`, `tokens` and `composedBy` are computed, so they are not authored here. */
 export type BlockEntry = Omit<CatalogLeafBase, "lifecycle"> &
   BlockPlacement &
   BlockLifecycleFields & {
     readonly id: BlockId;
+    /** Taxonomy home only; does not assert a section fill or equivalent runtime contract. */
+    readonly sectionLeaf?: `sections.${string}`;
     /** Export name, or null for a block not built yet or for a recipe. */
     readonly export: string | null;
     readonly built: BlockBuilt;

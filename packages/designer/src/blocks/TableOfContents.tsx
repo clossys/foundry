@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import type { CSSProperties, ReactNode } from "react";
-import { Disclosure } from "../atoms/Disclosure.js";
-import { cx } from "../atoms/internal/cx.js";
+import { Disclosure } from "../components/Disclosure.js";
+import { cx } from "../components/internal/cx.js";
 import {
   renderTableOfContentsInlineNav,
   renderTableOfContentsSidebar,

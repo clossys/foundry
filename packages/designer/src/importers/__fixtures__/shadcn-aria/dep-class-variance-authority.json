@@ -1,0 +1,9 @@
+{
+  "name": "class-variance-authority",
+  "version": "0.7.1",
+  "license": "Apache-2.0",
+  "dependencies": {
+    "clsx": "^2.1.1"
+  },
+  "source": "https://registry.npmjs.org/class-variance-authority/0.7.1"
+}

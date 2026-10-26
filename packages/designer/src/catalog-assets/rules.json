@@ -1,0 +1,34 @@
+[
+  {
+    "id": "identity-lockup@1",
+    "slot": "assets.lockup",
+    "inputs": [
+      "assets.mark.positive"
+    ],
+    "implementation": "identity.ts"
+  },
+  {
+    "id": "identity-mark@1",
+    "slot": "assets.mark",
+    "inputs": [
+      "assets.mark.positive"
+    ],
+    "implementation": "identity.ts"
+  },
+  {
+    "id": "identity-favicon@1",
+    "slot": "assets.favicon",
+    "inputs": [
+      "assets.mark.positive"
+    ],
+    "implementation": "identity.ts"
+  },
+  {
+    "id": "identity-app-icon@1",
+    "slot": "assets.app-icon",
+    "inputs": [
+      "assets.mark.positive"
+    ],
+    "implementation": "identity.ts"
+  }
+]

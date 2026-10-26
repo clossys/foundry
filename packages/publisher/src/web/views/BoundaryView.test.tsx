@@ -65,9 +65,10 @@ describe("BoundaryView", () => {
     const [headerBlock, card, notes] = blocks as [HTMLElement, HTMLElement, HTMLElement];
     expect(headerBlock.children[0]?.tagName).toBe("H1");
     expect(headerBlock.children[0]).toHaveTextContent("500");
-    expect(headerBlock.children[1]?.tagName).toBe("H2");
-    expect(headerBlock.children[1]).toHaveTextContent("Something went wrong");
-    expect(headerBlock.children[2]).toHaveTextContent("Please try again.");
+    const title = within(headerBlock).getByRole("heading", { level: 2, name: "Something went wrong" });
+    expect(title).toHaveClass("text-h2", "font-display", "text-ink-primary");
+    expect(title.nextElementSibling).toHaveTextContent("Please try again.");
+    expect(headerBlock.querySelectorAll("h1, h2")).toHaveLength(2);
     expect(card).toHaveClass("rounded-control");
     expect(card).toContainElement(screen.getByRole("button", { name: "Try again" }));
     expect(card.children).toHaveLength(1);
@@ -94,8 +95,8 @@ describe("BoundaryView", () => {
   it("shares AuthView's form-measure column with no raw-length fallback", () => {
     const { container } = renderBoundary();
     const main = container.querySelector("main") as HTMLElement;
-    expect(main.style.maxWidth).toBe("var(--ui-width-form-max, none)");
-    expect(main.style.maxWidth).not.toMatch(/rem|px/);
+    expect(main).toHaveClass("max-w-[var(--ui-width-form-max,none)]");
+    expect(main.style.maxWidth).toBe("");
   });
 
   it("the outer element owns min-h-dvh and takes a caller className, style and the rest props (break: they no longer reach an ErrorView root)", () => {

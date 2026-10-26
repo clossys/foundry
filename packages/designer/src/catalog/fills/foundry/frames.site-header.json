@@ -1,0 +1,62 @@
+{
+  "$extensions": {
+    "com.clossys.fill": {
+      "author": "foundry",
+      "builtOn": [],
+      "conforms": [],
+      "evidence": [],
+      "id": "foundry/frames.site-header",
+      "license": "MIT",
+      "mode": "implementation",
+      "pin": {
+        "export": "./shell/server#SiteHeader",
+        "package": "@clossys/designer",
+        "version": "0.12.0"
+      },
+      "relation": "same-contract",
+      "slot": "frames.site-header",
+      "source": "foundry",
+      "sourceAddress": "./shell/server#SiteHeader",
+      "status": "draft",
+      "trust": "foundry"
+    }
+  },
+  "frames": {
+    "site-header": {
+      "impl": {
+        "export": "SiteHeader",
+        "kind": "package",
+        "module": "@clossys/designer/shell/server"
+      },
+      "members": [
+        "nav-placement.centered",
+        "nav-placement.leading",
+        "position.static",
+        "position.sticky",
+        "surface.glass",
+        "surface.solid",
+        "surface.transparent",
+        "tone.base",
+        "tone.inverse"
+      ],
+      "propMap": {
+        "nav-placement.centered": "navPlacement=centered",
+        "nav-placement.leading": "navPlacement=leading",
+        "position.static": "position=static",
+        "position.sticky": "position=sticky",
+        "surface.glass": "surface=glass",
+        "surface.solid": "surface=solid",
+        "surface.transparent": "surface=transparent",
+        "tone.base": "tone=base",
+        "tone.inverse": "tone=inverse"
+      },
+      "slot": "frames.site-header",
+      "slots": {
+        "actions": "actions",
+        "brand": "brand",
+        "nav": "nav"
+      },
+      "statePorts": {}
+    }
+  }
+}

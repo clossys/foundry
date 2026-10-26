@@ -1,14 +1,14 @@
 /**
  * Raw CSS custom-property reads for the token-layer values the
  * shell layer needs that have no Tailwind utility namespace — the same
- * "case 2" tokens `../../atoms/internal/ui-vars.ts` documents (z-index,
+ * "case 2" tokens `../../components/internal/ui-vars.ts` documents (z-index,
  * layout widths: no `@theme` namespace exists for either, per that
  * package's README naming rule). Kept in a separate file from
- * `atoms/internal/ui-vars.ts` rather than added to it, even though the
+ * `components/internal/ui-vars.ts` rather than added to it, even though the
  * fallback-value convention is identical, because these names are specific
  * to laying out the persistent frame (sidebar/aside widths, shell/aside/
- * toast stacking) and have no reason to be reachable from `atoms/` — an
- * atom never renders a sidebar or a toast viewport.
+ * toast stacking) and have no reason to be reachable from `components/` — an
+ * component never renders a sidebar or a toast viewport.
  *
  * Every read below carries an explicit fallback (the token's own shipped
  * default from this package's `styles/tokens.css`), for the same
@@ -54,7 +54,7 @@ export const UI_Z_SHELL = "var(--ui-z-shell, 20)";
 /**
  * Stacking for `Shell.Rail` — one layer above the rest of shell chrome, per
  * the z-scale's own ordering (`--ui-z-shell` then `--ui-z-aside`). Mirrors
- * `atoms/internal/ui-vars.ts`' note on `UI_Z_POPOVER`: this package's
+ * `components/internal/ui-vars.ts`' note on `UI_Z_POPOVER`: this package's
  * z-index tokens are already listed in stacking order, so "the aside sits
  * above the rest of the frame" reads directly off `tokens.ts` rather than
  * being asserted here.

@@ -1,5 +1,6 @@
-import { cx } from "../atoms/internal/cx.js";
-import type { FaqHeadingLevel, FaqProps } from "./Faq.js";
+import { SectionHeader } from "./SectionHeader.js";
+import { cx } from "../components/internal/cx.js";
+import type { FaqProps } from "./Faq.js";
 import { SECTION_MEASURE_MAX } from "./internal/block-vars.js";
 import { nativeDisclosureRow } from "./internal/disclosure-row.server.js";
 import { SECTION_GROUND_CLASSES } from "./section-ground.js";
@@ -63,20 +64,13 @@ export function Faq({
   style,
   ...rest
 }: FaqProps) {
-  const HeadingTag = `h${headingLevel}` as `h${FaqHeadingLevel}`;
   const colors = SECTION_GROUND_CLASSES[ground];
   const hasHeadingRegion = eyebrow !== undefined || heading !== undefined || description !== undefined;
 
   return (
     <div {...rest} className={cx("flex flex-col gap-lg", colors.surface, className)} style={style}>
       {hasHeadingRegion ? (
-        <div className="flex flex-col gap-xs">
-          {eyebrow ? <p className={cx("text-caption uppercase tracking-label", colors.muted)}>{eyebrow}</p> : null}
-          {heading ? (
-            <HeadingTag className={cx("text-h2 font-display leading-heading", colors.primary)}>{heading}</HeadingTag>
-          ) : null}
-          {description ? <p className={cx("text-body", colors.secondary)}>{description}</p> : null}
-        </div>
+        <SectionHeader density="standard" level={headingLevel} ground={ground} eyebrow={eyebrow} description={description} {...(heading ? { title: heading } : {})} titleClassName="leading-heading" />
       ) : null}
       <div className={cx(FAQ_ROW_CLASSES.list, colors.border)}>
         {items.map(item => nativeDisclosureRow({ id: item.id, question: item.question, answer: item.answer, recipe: FAQ_ROW_CLASSES, colors, answerStyle: FAQ_ANSWER_STYLE }))}

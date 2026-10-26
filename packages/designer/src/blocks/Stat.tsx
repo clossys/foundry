@@ -1,5 +1,5 @@
 import type { CSSProperties, HTMLAttributes, ReactNode } from "react";
-import { cx } from "../atoms/internal/cx.js";
+import { cx } from "../components/internal/cx.js";
 import { TREND_TEXT_CLASSES } from "./internal/trend.js";
 
 export type StatTrend = "up" | "down" | "neutral";
@@ -58,7 +58,7 @@ export interface StatProps extends Omit<HTMLAttributes<HTMLDivElement>, "title">
  * routinely holds several `Stat`s in a row (a metrics dashboard, a summary
  * strip above a table), which is exactly why this is a block and not a
  * view — see this package's README, "Placement rules", test 3. It is NOT
- * an atom despite being small: `label` and `value` play different roles
+ * an component despite being small: `label` and `value` play different roles
  * (a metric's name vs. its measurement), not a homogeneous repeat of the
  * same kind of thing, which is what test 2 asks.
  */

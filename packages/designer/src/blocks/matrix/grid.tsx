@@ -1,7 +1,7 @@
-import { Badge } from "../../atoms/Badge.js";
-import { StatusMark } from "../../atoms/StatusMark.js";
-import { cx } from "../../atoms/internal/cx.js";
-import { UI_BORDER_HAIRLINE } from "../../atoms/internal/ui-vars.js";
+import { Badge } from "../../components/Badge.js";
+import { StatusMark } from "../../components/StatusMark.js";
+import { cx } from "../../components/internal/cx.js";
+import { UI_BORDER_HAIRLINE } from "../../components/internal/ui-vars.js";
 import type { MatrixProps } from "../Matrix.js";
 import { TREND_TEXT_CLASSES } from "../internal/trend.js";
 import { hasContent } from "../items/policies.js";

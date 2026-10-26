@@ -1,5 +1,5 @@
 import type { CSSProperties, HTMLAttributes, ReactNode } from "react";
-import { cx } from "../atoms/internal/cx.js";
+import { cx } from "../components/internal/cx.js";
 import { renderTestimonial } from "./Testimonial.server.js";
 import { SECTION_GROUND_CLASSES, type SectionGround } from "./section-ground.js";
 

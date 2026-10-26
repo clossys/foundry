@@ -1,14 +1,14 @@
 /**
  * Coverage for the catalog manifests: each catalog's leaf ids are frozen (the
  * live manifest must equal the literal list below), and every real token,
- * glyph, atom and block this package declares or exports has exactly one
+ * glyph, component and block this package declares or exports has exactly one
  * home. Changing a frozen list is a deliberate, reviewed edit.
  */
 import { existsSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
-import * as ATOM_EXPORTS from "../atoms/index.js";
+import * as COMPONENT_EXPORTS from "../components/index.js";
 import * as BLOCK_EXPORTS from "../blocks/index.js";
 import * as CHART_EXPORTS from "../charts/index.js";
 import * as ICON_EXPORTS from "../icons/index.js";
@@ -17,8 +17,8 @@ import { IDENTITY_VARIANT_ROLES } from "../tokens/identity-kit.js";
 import { TOKENS } from "../tokens/tokens.js";
 import {
   ASSET_ENTRIES,
-  ATOM_ENTRIES,
-  ATOM_EXPORT_EXCLUSIONS,
+  COMPONENT_ENTRIES,
+  COMPONENT_EXPORT_EXCLUSIONS,
   BLOCK_CATALOG,
   BLOCK_ENTRIES,
   BLOCK_EXPORT_EXCLUSIONS,
@@ -97,9 +97,9 @@ const FROZEN_ICON_IDS: readonly string[] = [
   "Box", "Layers", "Plug",
 ];
 
-/** Frozen atom leaf ids, 78. */
-const FROZEN_ATOM_IDS: readonly string[] = [
-  "act.button", "act.icon-button", "act.menu", "act.toolbar", "act.toggle-button",
+/** Frozen component leaf ids, 79. */
+const FROZEN_COMPONENT_IDS: readonly string[] = [
+  "act.button", "act.native-action", "act.icon-button", "act.menu", "act.toolbar", "act.toggle-button",
   "act.link", "act.breadcrumb", "reveal.tabs", "act.navigation-tree",
   "enter.text-field", "enter.textarea", "enter.search-field", "enter.token-field",
   "enter.checkbox", "enter.checkbox-group", "enter.switch", "enter.radio-group", "enter.segmented-control",
@@ -343,22 +343,22 @@ describe("asset catalog coverage", () => {
   });
 });
 
-describe("atom catalog coverage", () => {
-  const ids = ATOM_ENTRIES.map((entry) => entry.id);
-  const leafExports = ATOM_ENTRIES.flatMap((entry) => (entry.export === null ? [] : [entry.export]));
+describe("component catalog coverage", () => {
+  const ids = COMPONENT_ENTRIES.map((entry) => entry.id);
+  const leafExports = COMPONENT_ENTRIES.flatMap((entry) => (entry.export === null ? [] : [entry.export]));
   const packageRoot = join(dirname(fileURLToPath(import.meta.url)), "..", "..");
 
-  it("matches the frozen id list exactly, 78 leaves", () => {
+  it("matches the frozen id list exactly, 79 leaves", () => {
     expect(duplicates(ids)).toEqual([]);
-    expect(FROZEN_ATOM_IDS).toHaveLength(78);
-    expect(ids).toHaveLength(78);
-    expect([...ids].sort()).toEqual([...FROZEN_ATOM_IDS].sort());
+    expect(FROZEN_COMPONENT_IDS).toHaveLength(79);
+    expect(ids).toHaveLength(79);
+    expect([...ids].sort()).toEqual([...FROZEN_COMPONENT_IDS].sort());
   });
 
-  it("places every atom and chart export exactly once: as a leaf or an exclusion", () => {
-    const exported = [...Object.keys(ATOM_EXPORTS), ...Object.keys(CHART_EXPORTS)];
+  it("places every component and chart export exactly once: as a leaf or an exclusion", () => {
+    const exported = [...Object.keys(COMPONENT_EXPORTS), ...Object.keys(CHART_EXPORTS)];
     expect(duplicates(exported)).toEqual([]);
-    const accounted = [...leafExports.filter((name) => name !== "Toaster"), ...Object.keys(ATOM_EXPORT_EXCLUSIONS)];
+    const accounted = [...leafExports.filter((name) => name !== "Toaster"), ...Object.keys(COMPONENT_EXPORT_EXCLUSIONS)];
     expect(duplicates(accounted)).toEqual([]);
     expect([...exported].sort()).toEqual([...accounted].sort());
   });
@@ -368,13 +368,13 @@ describe("atom catalog coverage", () => {
     expect(leafExports.filter((name) => name === "Toaster")).toHaveLength(1);
   });
 
-  it("counts 47 leaves on the default branch (9 parked), 14 in flight and 17 gaps", () => {
-    const count = (status: string) => ATOM_ENTRIES.filter((entry) => entry.status === status).length;
-    expect([count("main"), count("parked"), count("in-flight"), count("gap")]).toEqual([38, 9, 14, 17]);
+  it("counts 48 leaves on the default branch (9 parked), 14 in flight and 17 gaps", () => {
+    const count = (status: string) => COMPONENT_ENTRIES.filter((entry) => entry.status === status).length;
+    expect([count("main"), count("parked"), count("in-flight"), count("gap")]).toEqual([39, 9, 14, 17]);
   });
 
   it("gives built leaves an export and real files, and unbuilt leaves neither", () => {
-    for (const entry of ATOM_ENTRIES) {
+    for (const entry of COMPONENT_ENTRIES) {
       const built = entry.status === "main" || entry.status === "parked";
       expect(entry.export !== null, entry.id).toBe(built);
       expect(entry.files.length > 0, entry.id).toBe(built);
@@ -383,7 +383,7 @@ describe("atom catalog coverage", () => {
   });
 
   it("parks exactly the charts", () => {
-    for (const entry of ATOM_ENTRIES) {
+    for (const entry of COMPONENT_ENTRIES) {
       expect(entry.status === "parked", entry.id).toBe(entry.l2 === "charts");
       expect(entry.disposition === "park", entry.id).toBe(entry.l2 === "charts");
     }

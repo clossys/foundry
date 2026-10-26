@@ -83,7 +83,7 @@ describe("assertPeerVersion", () => {
   // the range check — it is a value this guard cannot parse at all, so it
   // must be reported as indeterminate (warn once, proceed), never thrown
   // as a hard build-time crash. This package's own `react` guard sits at
-  // every component subpath's barrel — atoms, blocks, shell, charts, and
+  // every component subpath's barrel — components, blocks, shell, charts, and
   // theme — so a crash here took down every one of them.
   it("does not throw on a prerelease react version — reports indeterminate via a single console.warn instead (#389)", () => {
     const warn = vi.spyOn(console, "warn").mockImplementation(() => undefined);

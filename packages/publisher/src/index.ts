@@ -16,7 +16,7 @@
  * fusing the packaging never reads as fusing the two halves' surfaces into
  * one export list. A future composer channel subpath's own exports get
  * added here too, the same way `designer`'s own internal barrel grew one
- * `export ... from` block per layer as `atoms`/`blocks`/`views`/`shell`/
+ * `export ... from` block per layer as `components`/`blocks`/`views`/`shell`/
  * `charts`/`icons` shipped.
  */
 export {
@@ -55,3 +55,5 @@ export type {
 // Frame appearance inputs; the package keeps explicit subpath exports.
 export type { SiteLinkInput, SiteBrandInput, SiteShellInput, SiteFooterInput } from "./web/frame/index.js";
 export type { SectionedViewHeroSection } from "./core/sectioned-view.js";
+
+export * from "./layouts/index.js";

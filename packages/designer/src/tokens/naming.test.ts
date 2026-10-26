@@ -23,6 +23,7 @@ const TAILWIND_NAMESPACE_PREFIX: Record<string, string> = {
   ink: "--color-ink-",
   line: "--color-line-",
   accent: "--color-accent-",
+  action: "--color-action-",
   control: "--color-control-",
   status: "--color-status-",
   chart: "--color-chart-",

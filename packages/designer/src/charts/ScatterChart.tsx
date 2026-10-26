@@ -1,5 +1,5 @@
 import type { CSSProperties } from "react";
-import { cx } from "../atoms/internal/cx.js";
+import { cx } from "../components/internal/cx.js";
 import { ChartFrame, type ChartFrameProps } from "./ChartFrame.js";
 import { CHART_FONT_BODY, CHART_GRID, assignCategoricalColor } from "./internal/chart-vars.js";
 import { CHART_HAIRLINE, CHART_INLINE_AXIS_LABEL, CHART_LABEL_BACKDROP } from "./internal/marks.js";
@@ -93,7 +93,7 @@ export function ScatterChart({ points, x, y, size, series, labels, title, descri
     const name = index === undefined ? point.label : `${point.label} (${series![index]!.name})`;
     return [name, valueFormat(point.x), valueFormat(point.y), ...(size ? [valueFormat(point.size!)] : [])];
   });
-  const frame = <ChartFrame title={title} description={description} fit={fit} width={width} height={height}
+  const frame = <ChartFrame interactive title={title} description={description} fit={fit} width={width} height={height}
     margin={{ top: 32, bottom: 64 + (horizontalTitle.length - 1) * 14, left }} table={{ headers, rows }} tableFallbackLabel={labels.table} legend={legend} className={cx("wrap-anywhere", className)} style={style}>
     {plot => {
       const px = (value: number) => horizontal.position(value, plot.x, plot.x + plot.width);
@@ -126,13 +126,15 @@ export function ScatterChart({ points, x, y, size, series, labels, title, descri
           const centeredLabelX = Math.max(4 + textWidth / 2, Math.min(width - 4 - textWidth / 2, centerX));
           const labelX = side === "start" ? centerX - glyph.left - 6 : side === "end" ? centerX + glyph.right + 6 : centeredLabelX;
           const labelY = side === "above" ? centerY - glyph.top - 8 : side === "below" ? centerY + glyph.bottom + 9 : centerY;
-          return <g key={point.id} data-chart-point={point.id} aria-hidden="true">
+          return <ChartFrame.Tooltip key={point.id} plot={plot} x={centerX} y={centerY}
+            text={`${point.label}: ${x.label} ${valueFormat(point.x)}; ${y.label} ${valueFormat(point.y)}${size ? `; ${size.label} ${valueFormat(point.size!)}` : ""}${point.series ? `; ${series![index]!.name}` : ""}`}>
+            <g data-chart-point={point.id} aria-hidden="true">
             {mark === "circle" ? <circle data-chart-marker={mark} cx={centerX} cy={centerY} r={glyph.radius} fill={fill} />
               : <path data-chart-marker={mark} d={glyph.path} fill={fill} />}
             <text data-chart-part="point-label" x={labelX} y={labelY} textAnchor={side === "start" ? "end" : side === "end" ? "start" : "middle"}
               dominantBaseline="middle" fontSize={11} fontFamily={CHART_FONT_BODY} fill={CHART_INLINE_AXIS_LABEL}
               stroke={CHART_LABEL_BACKDROP} strokeWidth={CHART_HAIRLINE} style={{ paintOrder: "stroke" }}>{point.label}</text>
-          </g>;
+          </g></ChartFrame.Tooltip>;
         })}
       </>;
     }}

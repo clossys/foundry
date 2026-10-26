@@ -1,0 +1,57 @@
+{
+  "$extensions": {
+    "com.clossys.fill": {
+      "author": "foundry",
+      "builtOn": [],
+      "conforms": [],
+      "evidence": [],
+      "id": "foundry/frames.site-footer",
+      "license": "MIT",
+      "mode": "implementation",
+      "pin": {
+        "export": "./shell/server#SiteFooter",
+        "package": "@clossys/designer",
+        "version": "0.12.0"
+      },
+      "relation": "subset",
+      "slot": "frames.site-footer",
+      "source": "foundry",
+      "sourceAddress": "./shell/server#SiteFooter",
+      "status": "draft",
+      "trust": "foundry",
+      "unmapped": [
+        "overlay.off",
+        "overlay.on",
+        "slot.legal",
+        "slot.links",
+        "slot.social"
+      ]
+    }
+  },
+  "frames": {
+    "site-footer": {
+      "impl": {
+        "export": "SiteFooter",
+        "kind": "package",
+        "module": "@clossys/designer/shell/server"
+      },
+      "members": [
+        "ground.base",
+        "ground.inverse",
+        "rule.off",
+        "rule.on"
+      ],
+      "propMap": {
+        "ground.base": "ground=base",
+        "ground.inverse": "ground=inverse",
+        "rule.off": "rule=none",
+        "rule.on": "rule=top"
+      },
+      "slot": "frames.site-footer",
+      "slots": {
+        "columns": "columns"
+      },
+      "statePorts": {}
+    }
+  }
+}

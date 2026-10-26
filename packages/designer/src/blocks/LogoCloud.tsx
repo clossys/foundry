@@ -1,6 +1,6 @@
 import type { HTMLAttributes, ReactNode } from "react";
-import { cx } from "../atoms/internal/cx.js";
-import { UI_LAYOUT_TAP_TARGET } from "../atoms/internal/ui-vars.js";
+import { cx } from "../components/internal/cx.js";
+import { UI_LAYOUT_TAP_TARGET } from "../components/internal/ui-vars.js";
 import { SECTION_GROUND_CLASSES, type SectionGround } from "./section-ground.js";
 
 export interface LogoCloudItem {

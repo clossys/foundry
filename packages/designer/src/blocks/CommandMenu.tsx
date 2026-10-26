@@ -1,11 +1,11 @@
 import { useCallback, useEffect, useId, useRef, useState, type KeyboardEvent, type ReactNode } from "react";
 import { FieldInputContext } from "react-aria-components";
-import { Dialog } from "../atoms/Dialog.js";
-import { SearchField } from "../atoms/SearchField.js";
-import { Tooltip } from "../atoms/Tooltip.js";
-import { IconButton } from "../atoms/IconButton.js";
-import { Icon } from "../atoms/Icon.js";
-import { UI_ALPHA_DISABLED } from "../atoms/internal/ui-vars.js";
+import { Dialog } from "../components/Dialog.js";
+import { SearchField } from "../components/SearchField.js";
+import { Tooltip } from "../components/Tooltip.js";
+import { IconButton } from "../components/IconButton.js";
+import { Icon } from "../components/Icon.js";
+import { UI_ALPHA_DISABLED } from "../components/internal/ui-vars.js";
 import { X } from "../icons/X.js";
 import type { CommandMenuProps, CommandMenuShortcutOptions } from "./command-menu-types.js";
 

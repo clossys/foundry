@@ -1,5 +1,5 @@
 import type { CSSProperties, HTMLAttributes, ReactNode } from "react";
-import { cx } from "../atoms/internal/cx.js";
+import { cx } from "../components/internal/cx.js";
 export interface ArticleBodyProps extends HTMLAttributes<HTMLElement> {
   /**
    * Pre-structured content — headings, paragraphs, lists, a blockquote,

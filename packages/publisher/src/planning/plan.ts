@@ -1,0 +1,96 @@
+import type { InstanceRegistries } from "../core/instance-binding.js";
+import { getEffectiveLayoutContract, freeze } from "../layouts/resolve.js";
+import type { FormatId } from "../formats/contract.js";
+import { recommendPlanItem, validateItemRecommendation } from "./configuration.js";
+import type { PublisherConfiguration, PublisherRecommendation, PublisherConfigurationOverride } from "./configuration.js";
+import type { LayoutId } from "../layouts/ids.js";
+import { MILESTONE_IDS, PUBLISHER_MENU, PUBLISHER_MENU_VERSION, PUBLISHER_PACKS } from "./menu.js";
+import type { MilestoneId, PublisherPlanLane, PublisherPlanPackId } from "./menu.js";
+
+export interface PublisherPlanNeed { readonly slot: string; readonly question: string }
+export interface PublisherPlanItem {
+  readonly id: string;
+  readonly menuRef: string;
+  readonly lane: PublisherPlanLane;
+  readonly answerIds: readonly string[];
+  readonly openNeeds: readonly PublisherPlanNeed[];
+  readonly recommendation?: PublisherRecommendation;
+  readonly configuration?: PublisherConfiguration;
+  readonly overrides?: readonly PublisherConfigurationOverride[];
+  /** References existing host records; a plan never fabricates an implementation. */
+  readonly instanceId?: string;
+  readonly appRouteId?: string;
+  readonly assetId?: string;
+  readonly format?: FormatId;
+  readonly layout?: { readonly leaf: LayoutId; readonly config: string };
+  readonly frame?: { readonly leaf: `frames.${string}`; readonly config?: string };
+}
+export interface PublisherPlanPack { readonly id: PublisherPlanPackId; readonly items: readonly PublisherPlanItem[] }
+export interface PublisherPlanMilestone { readonly id: MilestoneId; readonly packs: readonly PublisherPlanPack[] }
+export interface PublisherPlanDraft {
+  readonly schemaVersion: 1;
+  readonly menuVersion: typeof PUBLISHER_MENU_VERSION;
+  readonly id: string;
+  readonly version: number;
+  readonly status: "draft";
+  readonly currentMilestone: MilestoneId;
+  readonly answerIds: readonly string[];
+  readonly milestones: readonly PublisherPlanMilestone[];
+}
+export interface PublisherPlanFinding { readonly path: string; readonly message: string }
+const text = (value: unknown): value is string => typeof value === "string" && value.trim().length > 0;
+const unique = (values: readonly unknown[]) => new Set(values).size === values.length;
+const fields = (value: object, allowed: readonly string[]) => Object.keys(value).every(key => allowed.includes(key));
+/** Validate a draft without evaluating checks or producing production items. */
+export function validatePublisherPlan(plan: PublisherPlanDraft, registries: InstanceRegistries): readonly PublisherPlanFinding[] {
+  const findings: PublisherPlanFinding[] = [];
+  const add = (path: string, message: string) => findings.push({ path, message });
+  try {
+    if (!fields(plan, ["schemaVersion", "menuVersion", "id", "version", "status", "currentMilestone", "answerIds", "milestones"]) || plan.schemaVersion !== 1 || plan.menuVersion !== PUBLISHER_MENU_VERSION || plan.status !== "draft" || !text(plan.id) || !Number.isSafeInteger(plan.version) || plan.version < 1) add("plan", "Unsupported plan identity, version or fields");
+    if (!unique(plan.answerIds) || !plan.answerIds.every(text)) add("answerIds", "Answer identities must be unique and nonempty");
+    if (!unique(plan.milestones.map(m => m.id)) || !plan.milestones.some(m => m.id === plan.currentMilestone)) add("milestones", "Current milestone must occur once in the plan");
+    const ids: string[] = [];
+    for (const milestone of plan.milestones) {
+      if (!fields(milestone, ["id", "packs"]) || !(MILESTONE_IDS as readonly string[]).includes(milestone.id) || !unique(milestone.packs.map(p => p.id))) add("milestones", "Unknown milestone or duplicate pack");
+      for (const pack of milestone.packs) {
+        if (!fields(pack, ["id", "items"]) || !PUBLISHER_PACKS.some(p => p.id === pack.id)) add("packs", "Unknown pack");
+        for (const item of pack.items) {
+          const path = `items.${item.id}`;
+          ids.push(item.id);
+          if (!text(item.id) || !fields(item, ["id", "menuRef", "lane", "answerIds", "openNeeds", "instanceId", "appRouteId", "assetId", "format", "layout", "frame", "recommendation", "configuration", "overrides"])) add(path, "Unknown item fields or identity");
+          const menu = PUBLISHER_MENU.find(entry => entry.id === item.menuRef);
+          if (!menu) { add(path, "Unknown menu reference"); continue; }
+          if (menu.pack !== pack.id || menu.milestone !== milestone.id && menu.id !== "app.ops") add(path, "Menu placement disagrees with milestone or pack");
+          if (!menu.lanes.includes(item.lane)) add(path, "Unknown or incompatible lane");
+          for (const message of validateItemRecommendation(item, registries)) add(path, message);
+          if (!item.answerIds.length || !unique(item.answerIds) || item.answerIds.some(id => !plan.answerIds.includes(id))) add(path, "Each item needs known causative answer identities");
+          if (!item.openNeeds.every(need => fields(need, ["slot", "question"]) && text(need.slot) && text(need.question))) add(path, "Open needs require a slot and blocking question");
+          if ([item.instanceId, item.appRouteId, item.assetId].filter(value => value !== undefined).length > 1 || [item.instanceId, item.appRouteId, item.assetId].some(value => value !== undefined && !text(value))) add(path, "Expected at most one nonempty host reference");
+          if (menu.status === "concept-only" && (item.instanceId || item.appRouteId || item.assetId)) add(path, "Concept-only items cannot reference production records");
+          if (item.instanceId && menu.kind !== "page" || item.appRouteId && menu.kind !== "app-route" || item.assetId && menu.kind !== "asset") add(path, "Host reference disagrees with menu kind");
+          if (item.layout) {
+            if (!fields(item.layout, ["leaf", "config"])) add(path, "Unknown layout fields");
+            try { getEffectiveLayoutContract(registries.layouts.find(leaf => leaf.id === item.layout!.leaf)!, item.layout.config); }
+            catch { add(path, "Unknown or unavailable layout/config"); }
+          }
+          const format = item.format !== undefined ? registries.formats.find(leaf => leaf.id === item.format) : undefined;
+          if (item.format !== undefined && !format) add(path, "Unknown format");
+          if (menu.status === "built" && format && format.status !== "built") add(path, "Built item cannot use a concept format");
+          if (format && item.layout && !format.allowedCompositions.includes(item.layout.leaf)) add(path, "Layout is not allowed by format");
+          if (item.frame) {
+            const frame = registries.frames.find(leaf => leaf.id === item.frame!.leaf);
+            if (!fields(item.frame, ["leaf", "config"]) || !frame || ["held", "deprecated"].includes(frame.status) || item.frame.config !== undefined && !frame.contract.configs.includes(item.frame.config)) add(path, "Unknown or unavailable frame/config");
+            if (format && !format.frames.includes(item.frame.leaf)) add(path, "Frame is not allowed by format");
+          }
+        }
+      }
+    }
+    if (!unique(ids)) add("items", "Item identities must be unique across milestones");
+  } catch { add("plan", "Malformed plan data"); }
+  return findings;
+}
+export function createPublisherPlanDraft(plan: PublisherPlanDraft, registries: InstanceRegistries): PublisherPlanDraft {
+  const prepared: PublisherPlanDraft = { ...plan, milestones: plan.milestones.map(milestone => ({ ...milestone, packs: milestone.packs.map(pack => ({ ...pack, items: pack.items.map(recommendPlanItem) })) })) };
+  if (validatePublisherPlan(prepared, registries).length) throw new Error("Publisher plan refused");
+  return freeze(structuredClone(prepared));
+}

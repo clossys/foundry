@@ -1,0 +1,156 @@
+{
+  "$extensions": {
+    "com.clossys.fill": {
+      "author": "foundry",
+      "builtOn": [],
+      "conforms": [
+        "dtcg#format",
+        "dtcg#alias",
+        "wcag-2.2#1.4.3"
+      ],
+      "evidence": [
+        {
+          "check": "C1",
+          "clause": "dtcg#format"
+        },
+        {
+          "check": "C2",
+          "clause": "dtcg#alias"
+        },
+        {
+          "check": "C9",
+          "clause": "wcag-2.2#1.4.3"
+        }
+      ],
+      "id": "foundry/tokens.control-color",
+      "license": "MIT",
+      "mode": "implementation",
+      "relation": "same-contract",
+      "slot": "tokens.control-color",
+      "source": "foundry",
+      "sourceAddress": "styles/tokens.css",
+      "status": "draft",
+      "trust": "foundry"
+    }
+  },
+  "tokens": {
+    "control-color": {
+      "quiet": {
+        "$type": "color",
+        "$value": "{tokens.text-color.primary}"
+      },
+      "tonal": {
+        "$extensions": {
+          "com.clossys.css": {
+            "raw": "oklch(0.2178 0 0 / 0.08)"
+          },
+          "com.clossys.modes": {
+            "dark": {
+              "alpha": 0.08,
+              "colorSpace": "oklch",
+              "components": [
+                0.97,
+                0,
+                0
+              ]
+            }
+          }
+        },
+        "$type": "color",
+        "$value": {
+          "alpha": 0.08,
+          "colorSpace": "oklch",
+          "components": [
+            0.2178,
+            0,
+            0
+          ]
+        }
+      },
+      "tonal-hover": {
+        "$extensions": {
+          "com.clossys.css": {
+            "raw": "oklch(0.2178 0 0 / 0.12)"
+          },
+          "com.clossys.modes": {
+            "dark": {
+              "alpha": 0.12,
+              "colorSpace": "oklch",
+              "components": [
+                0.97,
+                0,
+                0
+              ]
+            }
+          }
+        },
+        "$type": "color",
+        "$value": {
+          "alpha": 0.12,
+          "colorSpace": "oklch",
+          "components": [
+            0.2178,
+            0,
+            0
+          ]
+        }
+      },
+      "tonal-inverse": {
+        "$extensions": {
+          "com.clossys.css": {
+            "raw": "oklch(0.9702 0 0 / 0.12)"
+          },
+          "com.clossys.modes": {
+            "dark": {
+              "alpha": 0.12,
+              "colorSpace": "oklch",
+              "components": [
+                0.2178,
+                0,
+                0
+              ]
+            }
+          }
+        },
+        "$type": "color",
+        "$value": {
+          "alpha": 0.12,
+          "colorSpace": "oklch",
+          "components": [
+            0.9702,
+            0,
+            0
+          ]
+        }
+      },
+      "tonal-inverse-hover": {
+        "$extensions": {
+          "com.clossys.css": {
+            "raw": "oklch(0.9702 0 0 / 0.16)"
+          },
+          "com.clossys.modes": {
+            "dark": {
+              "alpha": 0.16,
+              "colorSpace": "oklch",
+              "components": [
+                0.2178,
+                0,
+                0
+              ]
+            }
+          }
+        },
+        "$type": "color",
+        "$value": {
+          "alpha": 0.16,
+          "colorSpace": "oklch",
+          "components": [
+            0.9702,
+            0,
+            0
+          ]
+        }
+      }
+    }
+  }
+}

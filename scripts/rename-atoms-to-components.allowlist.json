@@ -1,0 +1,42 @@
+{
+  "description": "Occurrences retained by the component-layer migration. Whole files are immutable to this codemod; generated files are regenerated separately.",
+  "files": [
+    { "pattern": "scripts/rename-atoms-to-components*", "reason": "Migration implementation, legacy-input tests and this explicit allowlist." },
+    { "pattern": "governance/release-qualifications/**", "reason": "Immutable qualification of already published bytes." },
+    { "pattern": "governance/public-npm-aggregate-canary*.json", "reason": "Published-version canary evidence." },
+    { "pattern": "governance/known-dangling-citations.json", "reason": "Frozen citations to retired source." },
+    { "pattern": "governance/release-qualification-fixtures/designer/current-direct/surface/violated/app/page.tsx", "reason": "Foreign package's retained legacy entrypoint in a negative qualification fixture." },
+    { "pattern": "docs/changelogs/**", "reason": "Historical release notes." },
+    { "pattern": "docs/DECISIONS.md", "reason": "Dated decision record." },
+    { "pattern": "docs/design/r2-foundations.md", "reason": "Dated foundations decision record." },
+    { "pattern": "docs/rfcs/**", "reason": "Dated proposals." },
+    { "pattern": "packages/designer/src/tokens/internal/cascade.ts", "reason": "Selector grammar atoms, unrelated to the component layer." },
+    { "pattern": "packages/designer/src/catalog-core/css.ts", "reason": "CSS parser atoms, unrelated to the component layer." },
+    { "pattern": "packages/designer/src/catalog-core/__fixtures__/foundry-original-fills.json", "reason": "Frozen 49-cell historical parity oracle." },
+    { "pattern": "**/src/importers/__fixtures__/**", "reason": "Pinned third-party source bytes and hashes." },
+    { "pattern": "**/src/catalog-assets/__fixtures__/**", "reason": "Pinned third-party source bytes and hashes." },
+    { "pattern": "**/vendor/**", "reason": "Upstream vendor bytes and provenance." },
+    { "pattern": "**/upstream/**", "reason": "Upstream source bytes and provenance." },
+    { "pattern": "**/THIRD-PARTY-NOTICES*", "reason": "Third-party notices remain verbatim." },
+    { "pattern": "packages/controller/src/release/singular-authority.ts", "reason": "pnpm peer-context grammar atoms." },
+    { "pattern": "packages/starter/src/pnpm.ts", "reason": "pnpm peer-context grammar atoms." },
+    { "pattern": "packages/controller/src/positions/**", "reason": "Opaque reference and credential grammar atoms." },
+    { "pattern": "packages/controller/README.md", "reason": "Opaque reference grammar explanation." },
+    { "pattern": "**/contracts/**", "reason": "Reference grammar contracts and retained contract history." },
+    { "pattern": "packages/publisher/src/web/contact/createContactHandler.ts", "reason": "Email local-part grammar atoms." },
+    { "pattern": "packages/writer/src/voice/internal/pattern-safety.ts", "reason": "Regular-expression grammar atoms." },
+    { "pattern": "packages/writer/src/scan.ts", "reason": "Frozen references to retired packages/ui source." },
+    { "pattern": "packages/writer/src/scan.test.ts", "reason": "Frozen references to retired packages/ui source." },
+    { "pattern": "scripts/check-public-safety.mjs", "reason": "Media-container metadata atoms." }
+  ],
+  "lines": [
+    { "contains": "packages/ui/", "reason": "Historical source citation, not a current import." },
+    { "contains": "// rename-negative:", "reason": "Explicit regression assertion that legacy public names are absent." }
+  ],
+  "generated": [
+    "packages/designer/skill/atoms-guide.md",
+    "packages/designer/skill/components-guide.md",
+    "packages/designer/styles/utilities.css",
+    "packages/designer/styles/compiled.css"
+  ]
+}

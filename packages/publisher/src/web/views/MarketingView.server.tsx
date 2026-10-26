@@ -1,5 +1,5 @@
 import { siteHeaderPresentation } from "../internal/viewChromeGround.js";
-import { mergeUiClasses } from "@clossys/designer/atoms/server";
+import { mergeUiClasses } from "@clossys/designer/components/server";
 import { Faq, FeatureGrid, Hero } from "@clossys/designer/blocks/server";
 import { SiteFooter, SiteHeader } from "@clossys/designer/shell/server";
 import type { MarketingViewProps } from "./MarketingView.js";

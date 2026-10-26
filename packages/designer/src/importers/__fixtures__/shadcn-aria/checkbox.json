@@ -1,0 +1,17 @@
+{
+  "name": "checkbox",
+  "type": "registry:ui",
+  "repository": "https://github.com/shadcn-ui/ui",
+  "commit": "daaf156ee00ed91cc7e6bdd937c1b4973152d141",
+  "sourceFormat": "pinned repository source; not generated live registry JSON",
+  "license": "MIT",
+  "notice": "LICENSE.md",
+  "files": [
+    {
+      "path": "apps/v4/registry/bases/aria/ui/checkbox.tsx",
+      "type": "registry:ui",
+      "content": "\"use client\"\n\nimport { cn } from \"cn\"\nimport {\n  Checkbox as CheckboxPrimitive,\n  composeRenderProps,\n  type CheckboxProps,\n} from \"react-aria-components\"\n\nimport { IconPlaceholder } from \"@/app/(create)/components/icon-placeholder\"\n\nfunction Checkbox({ className, children, ...props }: CheckboxProps) {\n  return (\n    <CheckboxPrimitive\n      data-slot=\"checkbox\"\n      className={cn(\n        \"cn-checkbox cn-checkbox-aria peer relative shrink-0 outline-none after:absolute after:-inset-x-3 after:-inset-y-2 data-[disabled]:cursor-not-allowed data-[disabled]:opacity-50\",\n        className\n      )}\n      {...props}\n    >\n      {composeRenderProps(\n        children,\n        (children, { isSelected, isIndeterminate }) => (\n          <>\n            <span\n              data-slot=\"checkbox-indicator\"\n              className=\"cn-checkbox-indicator grid place-content-center text-current transition-none\"\n            >\n              {(isSelected || isIndeterminate) && (\n                <IconPlaceholder\n                  lucide=\"CheckIcon\"\n                  tabler=\"IconCheck\"\n                  hugeicons=\"Tick02Icon\"\n                  phosphor=\"CheckIcon\"\n                  remixicon=\"RiCheckLine\"\n                />\n              )}\n            </span>\n            {children}\n          </>\n        )\n      )}\n    </CheckboxPrimitive>\n  )\n}\n\nexport { Checkbox }\n",
+      "sha256": "bd74264abb104368774e95baa3246982052e74bc9f7e174982105d715fdb7c14"
+    }
+  ]
+}

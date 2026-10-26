@@ -1,0 +1,178 @@
+{
+  "$extensions": {
+    "com.clossys.fill": {
+      "author": "third-party",
+      "builtOn": [],
+      "conforms": [],
+      "evidence": [],
+      "id": "shadcn@aria/components.toggle-button",
+      "license": "MIT",
+      "mode": "implementation",
+      "pin": {
+        "commit": "daaf156ee00ed91cc7e6bdd937c1b4973152d141",
+        "sha256": "0c17862bfbdc3f9c59ace9677226bc4316e71b289b49666536ac37409b2c6f30",
+        "url": "https://github.com/shadcn-ui/ui"
+      },
+      "relation": "subset",
+      "slot": "components.toggle-button",
+      "source": "shadcn@aria",
+      "sourceAddress": "https://github.com/shadcn-ui/ui/blob/daaf156ee00ed91cc7e6bdd937c1b4973152d141/apps/v4/registry/bases/aria/ui/toggle.tsx",
+      "status": "draft",
+      "trust": "pinned-upstream",
+      "unmapped": [
+        "variant.primary",
+        "variant.secondary",
+        "variant.danger",
+        "variant.tonal",
+        "variant.quiet",
+        "state.pressed",
+        "state.pending",
+        "shape.text",
+        "shape.icon-only",
+        "ground.base",
+        "ground.inverse"
+      ]
+    }
+  },
+  "components": {
+    "toggle-button": {
+      "blockers": [],
+      "composes": [],
+      "deps": [
+        {
+          "license": "MIT",
+          "name": "react",
+          "version": "19.2.3"
+        },
+        {
+          "license": "Apache-2.0",
+          "name": "react-aria-components",
+          "version": "1.20.0"
+        },
+        {
+          "license": "Apache-2.0",
+          "name": "class-variance-authority",
+          "version": "0.7.1"
+        },
+        {
+          "license": "MIT",
+          "name": "clsx",
+          "version": "2.1.1"
+        },
+        {
+          "license": "MIT",
+          "name": "tailwind-merge",
+          "version": "3.3.1"
+        }
+      ],
+      "impl": {
+        "entry": "components/toggle-button/toggle.tsx",
+        "export": "Toggle",
+        "kind": "source"
+      },
+      "item": "toggle",
+      "license": "MIT",
+      "members": [
+        "size.lg",
+        "size.md",
+        "size.sm",
+        "state.disabled",
+        "state.focus-visible",
+        "state.hover",
+        "state.selected",
+        "variant.ghost",
+        "variant.outline"
+      ],
+      "notice": "notices/THIRD-PARTY.md",
+      "outputSha256": [
+        {
+          "path": "components/_parts/utils/index.ts",
+          "sha256": "d3753f708b15cc1ec47bc3136827134b702e2069eebdb0ddefb1806b95d7c1d9"
+        },
+        {
+          "path": "components/toggle-button/index.ts",
+          "sha256": "04a05024a10cfa630d9dc843b465cfc37a80f6dcb7861418351cb4b28870c155"
+        },
+        {
+          "path": "components/toggle-button/toggle.tsx",
+          "sha256": "6ee3e9352cd1def54489b1a9d348153480a3229f66dd0a20e9641c7f642af669"
+        },
+        {
+          "path": "notices/THIRD-PARTY.md",
+          "sha256": "6148b3941d0eff3d024e4d3a0e630f009484163560272ae6ec79c649c67fc964"
+        }
+      ],
+      "parts": [
+        {
+          "item": "utils"
+        }
+      ],
+      "pin": {
+        "commit": "daaf156ee00ed91cc7e6bdd937c1b4973152d141",
+        "files": [
+          {
+            "path": "apps/v4/registry/bases/aria/ui/toggle.tsx",
+            "sha256": "0c17862bfbdc3f9c59ace9677226bc4316e71b289b49666536ac37409b2c6f30"
+          },
+          {
+            "path": "apps/v4/registry/styles/style-nova.css",
+            "sha256": "fd9803ec398290c306b377a46a769cad0c7ff024bf6a626993c113cacc20f16e"
+          },
+          {
+            "path": "LICENSE.md",
+            "sha256": "1564074e13439397221ffd522e2e504d56561994a23d371aa5e3ad43e4f5423f"
+          }
+        ],
+        "url": "https://github.com/shadcn-ui/ui"
+      },
+      "propMap": {
+        "size.lg": "Toggle.size=lg",
+        "size.md": "Toggle.size=default",
+        "size.sm": "Toggle.size=sm",
+        "state.disabled": "isDisabled",
+        "state.focus-visible": "data-focus-visible",
+        "state.hover": "data-hovered",
+        "state.selected": "ToggleButtonProps.isSelected; data-selected styles",
+        "variant.ghost": "Toggle.variant=default: transparent surface",
+        "variant.outline": "Toggle.variant=outline"
+      },
+      "props": [],
+      "reads": {
+        "assets": [],
+        "components": [],
+        "tokens": [
+          "tokens.action-color.default",
+          "tokens.border-color.strong",
+          "tokens.border-width.hairline",
+          "tokens.caption-size.default",
+          "tokens.control-radius.default",
+          "tokens.control-size.h-lg",
+          "tokens.control-size.h-md",
+          "tokens.control-size.h-sm",
+          "tokens.control-size.switch-thumb",
+          "tokens.duration.default",
+          "tokens.easing.default",
+          "tokens.focus-color.default",
+          "tokens.focus-outline.offset",
+          "tokens.focus-outline.width",
+          "tokens.font-size.sm",
+          "tokens.font-weight.medium",
+          "tokens.spacing.2xl",
+          "tokens.spacing.lg",
+          "tokens.spacing.md",
+          "tokens.spacing.sm",
+          "tokens.spacing.xs",
+          "tokens.state-opacity.disabled",
+          "tokens.status-color.danger",
+          "tokens.surface-color.sunken",
+          "tokens.text-color.on-action",
+          "tokens.text-color.primary"
+        ]
+      },
+      "root": "rac:ToggleButton",
+      "slot": "components.toggle-button",
+      "source": "shadcn@aria",
+      "transform": "shadcn-aria-rewrite@1"
+    }
+  }
+}

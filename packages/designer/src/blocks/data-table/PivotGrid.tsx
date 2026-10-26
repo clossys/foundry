@@ -1,7 +1,7 @@
 import { defaultPivotAxisMessage, defaultPivotColumnMessage, defaultPivotValueMessage, type DataTableMessages } from "./messages.js";
-import { Table } from "../../atoms/Table.js";
-import { EmptyState } from "../EmptyState.js";
-import { pivotRows } from "../table-model/index.js";
+import { Table } from "../../components/Table.js";
+import { SectionHeader } from "../SectionHeader.js";
+import { pivotRows, type TablePivotAxis } from "../table-model/index.js";
 import type { DataTableViewModel } from "./view-model.js";
 
 export function PivotGrid<Row>({
@@ -19,7 +19,7 @@ export function PivotGrid<Row>({
 }: DataTableMessages & { rows: readonly Row[]; model: DataTableViewModel; label: string }) {
   const pivot = model.table.pivot;
   const measures = model.table.measures ?? [];
-  if (!pivot || !measures.length) return <EmptyState title={pivotEmptyLabel} />;
+  if (!pivot || !measures.length) return <div className="p-2xl"><SectionHeader title={pivotEmptyLabel} level={2} /></div>;
   const result = pivotRows(rows as readonly (Row & object)[], model.table);
   const columns = result.columnAxis.flatMap(axis => measures.map(measure => ({ id: JSON.stringify([axis.key, measure.id]), axis, measure })));
   const cells = new Map(result.cells.map(cell => [JSON.stringify([cell.rowKey, cell.columnKey]), cell]));

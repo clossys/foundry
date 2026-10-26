@@ -1,5 +1,5 @@
 import type { CSSProperties } from "react";
-import { cx } from "../atoms/internal/cx.js";
+import { cx } from "../components/internal/cx.js";
 import { ChartFrame, type ChartFrameProps } from "./ChartFrame.js";
 import { CHART_DIVERGING_NEGATIVE, CHART_DIVERGING_NEUTRAL, CHART_DIVERGING_POSITIVE, CHART_FONT_BODY, CHART_GRID } from "./internal/chart-vars.js";
 import { CHART_HAIRLINE, CHART_INLINE_AXIS_LABEL, CHART_LABEL_BACKDROP, CHART_MARK_RADIUS } from "./internal/marks.js";
@@ -87,7 +87,7 @@ export function WaterfallChart({ start, steps, end, labels, title, description,
   const numbered = stages.some(stage => stage.label.length * 6 > slotWidth - 4);
   const legend = numbered ? stages.map((stage, index) => ({ label: `${index + 1} ${stage.label}`, color: color(stage) })) : undefined;
   return (
-    <ChartFrame title={title} description={description} fit={fit} width={width} height={height}
+    <ChartFrame interactive title={title} description={description} fit={fit} width={width} height={height}
       table={{ headers: [labels.category, labels.value], rows: stages.map(stage => [stage.label, display(stage.value)]) }}
       tableFallbackLabel={labels.table} legend={legend} className={cx("wrap-anywhere", className)} style={style}>
       {plot => {
@@ -105,12 +105,15 @@ export function WaterfallChart({ start, steps, end, labels, title, description,
             {ticks.map(tick => <text key={`y-${tick}`} x={plot.x - 8} y={y(tick)} textAnchor="end" dominantBaseline="middle">{display(tick, false)}</text>)}
             {marks.map(({ stage, x }, index) => <text key={stage.key} x={x + barWidth / 2} y={plot.y + plot.height + 16} textAnchor="middle">{numbered ? index + 1 : stage.label}</text>)}
           </g>
-          <g aria-hidden="true">
+          <g>
             {marks.slice(0, -1).map(({ stage, x }, index) => <line key={stage.key} x1={x + barWidth} x2={marks[index + 1]!.x}
               y1={y(stage.to)} y2={y(stage.to)} stroke={CHART_INLINE_AXIS_LABEL} strokeWidth={CHART_HAIRLINE} />)}
-            {marks.map(({ stage, x, top, height: barHeight }) => <rect key={stage.key} x={x} y={top} width={barWidth} height={barHeight}
+            {marks.map(({ stage, x, top, height: barHeight }) => <ChartFrame.Tooltip key={stage.key} plot={plot} x={x} y={top}
+              text={`${stage.label}: ${labels.value} ${display(stage.value)}`}>
+              <rect aria-hidden="true" x={x} y={top} width={barWidth} height={barHeight}
               fill={color(stage)} stroke={stage.total ? CHART_INLINE_AXIS_LABEL : undefined} strokeWidth={stage.total ? CHART_HAIRLINE : undefined}
-              vectorEffect={stage.total ? "non-scaling-stroke" : undefined} style={{ rx: CHART_MARK_RADIUS } as CSSProperties} />)}
+              vectorEffect={stage.total ? "non-scaling-stroke" : undefined} style={{ rx: CHART_MARK_RADIUS } as CSSProperties} />
+              </ChartFrame.Tooltip>)}
           </g>
           <g aria-hidden="true" fontSize={11} fontFamily={CHART_FONT_BODY} fill={CHART_INLINE_AXIS_LABEL}>
             {marks.map(({ stage, x, top }) => <text key={stage.key} x={x + barWidth / 2}

@@ -1,0 +1,43 @@
+{
+  "$extensions": {
+    "com.clossys.fill": {
+      "id": "phosphor/assets.icon-chevron-down",
+      "slot": "assets.icon-chevron-down",
+      "source": "phosphor",
+      "mode": "implementation",
+      "sourceAddress": "https://raw.githubusercontent.com/phosphor-icons/core/fe23e2534cdb7bec24bd8e6bd99b3676bcf0d54f/raw/regular/caret-down.svg",
+      "relation": "same-contract",
+      "builtOn": [],
+      "conforms": [],
+      "evidence": [],
+      "author": "third-party",
+      "trust": "pinned-upstream",
+      "license": "MIT",
+      "pin": {
+        "url": "https://raw.githubusercontent.com/phosphor-icons/core/fe23e2534cdb7bec24bd8e6bd99b3676bcf0d54f/raw/regular/caret-down.svg",
+        "commit": "fe23e2534cdb7bec24bd8e6bd99b3676bcf0d54f",
+        "sha256": "242f60e90452ba1472d3ceff5a0a7078b9366da372396391c7d47b05c6433e42"
+      },
+      "status": "draft",
+      "reads": {
+        "tokens": [],
+        "assets": []
+      }
+    }
+  },
+  "assets": {
+    "icon-chevron-down": {
+      "default": {
+        "$type": "glyph",
+        "$value": [
+          [
+            "polyline",
+            {
+              "points": "19.5 9 12 16.5 4.5 9"
+            }
+          ]
+        ]
+      }
+    }
+  }
+}

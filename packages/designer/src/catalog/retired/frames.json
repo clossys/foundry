@@ -1,0 +1,22 @@
+[
+  {
+    "id": "items.page-bar",
+    "retiredAt": "2026-10-23",
+    "replacedBy": "frames.app-header"
+  },
+  {
+    "id": "items.app-navigation",
+    "retiredAt": "2026-10-23",
+    "replacedBy": "frames.app-sidebar"
+  },
+  {
+    "id": "form.command-menu",
+    "retiredAt": "2026-10-23",
+    "replacedBy": "frames.command"
+  },
+  {
+    "id": "matrix.drawer",
+    "retiredAt": "2026-10-23",
+    "replacedBy": "frames.sheet"
+  }
+]

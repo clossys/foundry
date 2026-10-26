@@ -1,0 +1,61 @@
+{
+  "$extensions": {
+    "com.clossys.fill": {
+      "id": "lucide/assets.icon-danger",
+      "slot": "assets.icon-danger",
+      "source": "lucide",
+      "mode": "implementation",
+      "sourceAddress": "lucide-react@1.23.0/dist/esm/icons/circle-x.js",
+      "relation": "same-contract",
+      "builtOn": [],
+      "conforms": [],
+      "evidence": [],
+      "author": "third-party",
+      "trust": "pinned-upstream",
+      "license": "ISC",
+      "pin": {
+        "package": "lucide-react",
+        "version": "1.23.0",
+        "file": "src/icons/XCircle.ts",
+        "sha256": "3bd98a7d6021773683520cc577f0ee156d7d0bfd81527597cd77f7b1eb7ac263"
+      },
+      "status": "draft",
+      "reads": {
+        "tokens": [],
+        "assets": []
+      }
+    }
+  },
+  "assets": {
+    "icon-danger": {
+      "default": {
+        "$type": "glyph",
+        "$value": [
+          [
+            "circle",
+            {
+              "cx": "12",
+              "cy": "12",
+              "r": "10",
+              "key": "1mglay"
+            }
+          ],
+          [
+            "path",
+            {
+              "d": "m15 9-6 6",
+              "key": "1uzhvr"
+            }
+          ],
+          [
+            "path",
+            {
+              "d": "m9 9 6 6",
+              "key": "z0biqf"
+            }
+          ]
+        ]
+      }
+    }
+  }
+}

@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import { render, screen } from "@testing-library/react";
 import { UsageMeter } from "./UsageMeter.server.js";
 import type { UsageMeterProps } from "./UsageMeter.js";
-import { Meter } from "../atoms/Meter.server.js";
+import { Meter } from "../components/Meter.server.js";
 
 const sample: UsageMeterProps = {
   label: "API requests", used: 8420, limit: 10000,

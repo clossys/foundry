@@ -1,0 +1,215 @@
+{
+  "$extensions": {
+    "com.clossys.fill": {
+      "author": "third-party",
+      "builtOn": [],
+      "conforms": [
+        "dtcg#format",
+        "dtcg#alias",
+        "wcag-2.2#1.4.3"
+      ],
+      "derivation": {
+        "from": "dtcg#alias",
+        "rule": "blue.100..700 copied as typed role values for both modes"
+      },
+      "evidence": [
+        {
+          "check": "C1",
+          "clause": "dtcg#format"
+        },
+        {
+          "check": "C2",
+          "clause": "dtcg#alias"
+        },
+        {
+          "check": "C9",
+          "clause": "wcag-2.2#1.4.3"
+        }
+      ],
+      "id": "tailwind-default/tokens.sequential-color",
+      "license": "MIT",
+      "mode": "derived",
+      "pin": {
+        "file": "theme.css",
+        "package": "tailwindcss",
+        "sha256": "443d7af364200f8ec8352dc78e39485a118a1840d498c97967bf0ae402b39167",
+        "version": "4.3.3"
+      },
+      "relation": "derived",
+      "slot": "tokens.sequential-color",
+      "source": "tailwind-default",
+      "sourceAddress": "tailwindcss/theme.css",
+      "status": "draft",
+      "trust": "pinned-upstream",
+      "unmapped": [
+        "--animate-bounce",
+        "--animate-ping",
+        "--animate-pulse",
+        "--animate-spin",
+        "--aspect-video",
+        "--color-black",
+        "--color-white",
+        "--container-2xl",
+        "--container-2xs",
+        "--container-3xl",
+        "--container-3xs",
+        "--container-4xl",
+        "--container-5xl",
+        "--container-6xl",
+        "--container-7xl",
+        "--container-lg",
+        "--container-md",
+        "--container-sm",
+        "--container-xl",
+        "--container-xs",
+        "--default-font-family",
+        "--default-font-feature-settings",
+        "--default-font-variation-settings",
+        "--default-mono-font-family",
+        "--default-mono-font-feature-settings",
+        "--default-mono-font-variation-settings",
+        "--default-transition-duration",
+        "--default-transition-timing-function",
+        "--drop-shadow",
+        "--drop-shadow-2xl",
+        "--drop-shadow-lg",
+        "--drop-shadow-md",
+        "--drop-shadow-sm",
+        "--drop-shadow-xl",
+        "--drop-shadow-xs",
+        "--font-serif",
+        "--inset-shadow-2xs",
+        "--inset-shadow-sm",
+        "--inset-shadow-xs",
+        "--max-width-prose",
+        "--perspective-distant",
+        "--perspective-dramatic",
+        "--perspective-midrange",
+        "--perspective-near",
+        "--perspective-normal",
+        "--radius",
+        "--text-shadow-2xs",
+        "--text-shadow-lg",
+        "--text-shadow-md",
+        "--text-shadow-sm",
+        "--text-shadow-xs"
+      ]
+    }
+  },
+  "tokens": {
+    "sequential-color": {
+      "100": {
+        "$extensions": {
+          "com.clossys.css": {
+            "raw": "oklch(0.932 0.032 255.585)"
+          }
+        },
+        "$type": "color",
+        "$value": {
+          "colorSpace": "oklch",
+          "components": [
+            0.932,
+            0.032,
+            255.585
+          ]
+        }
+      },
+      "200": {
+        "$extensions": {
+          "com.clossys.css": {
+            "raw": "oklch(0.882 0.059 254.128)"
+          }
+        },
+        "$type": "color",
+        "$value": {
+          "colorSpace": "oklch",
+          "components": [
+            0.882,
+            0.059,
+            254.128
+          ]
+        }
+      },
+      "300": {
+        "$extensions": {
+          "com.clossys.css": {
+            "raw": "oklch(0.809 0.105 251.813)"
+          }
+        },
+        "$type": "color",
+        "$value": {
+          "colorSpace": "oklch",
+          "components": [
+            0.809,
+            0.105,
+            251.813
+          ]
+        }
+      },
+      "400": {
+        "$extensions": {
+          "com.clossys.css": {
+            "raw": "oklch(0.7070000000000001 0.165 254.624)"
+          }
+        },
+        "$type": "color",
+        "$value": {
+          "colorSpace": "oklch",
+          "components": [
+            0.7070000000000001,
+            0.165,
+            254.624
+          ]
+        }
+      },
+      "500": {
+        "$extensions": {
+          "com.clossys.css": {
+            "raw": "oklch(0.623 0.214 259.815)"
+          }
+        },
+        "$type": "color",
+        "$value": {
+          "colorSpace": "oklch",
+          "components": [
+            0.623,
+            0.214,
+            259.815
+          ]
+        }
+      },
+      "600": {
+        "$extensions": {
+          "com.clossys.css": {
+            "raw": "oklch(0.546 0.245 262.881)"
+          }
+        },
+        "$type": "color",
+        "$value": {
+          "colorSpace": "oklch",
+          "components": [
+            0.546,
+            0.245,
+            262.881
+          ]
+        }
+      },
+      "700": {
+        "$extensions": {
+          "com.clossys.css": {
+            "raw": "oklch(0.488 0.243 264.376)"
+          }
+        },
+        "$type": "color",
+        "$value": {
+          "colorSpace": "oklch",
+          "components": [
+            0.488,
+            0.243,
+            264.376
+          ]
+        }
+      }
+    }
+  }
+}

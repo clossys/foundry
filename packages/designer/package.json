@@ -7,7 +7,7 @@
   "sideEffects": [
     "./styles/*.css"
   ],
-  "description": "The designer role: is it well made? A complete visual system — design tokens, theme CSS, accessible React components, icons, charts, and visual quality gates.",
+  "description": "The designer role: is it well made? A complete visual system \u2014 design tokens, theme CSS, accessible React components, icons, charts, and visual quality gates.",
   "keywords": [
     "react",
     "components",
@@ -49,13 +49,13 @@
     "./utilities.css": "./styles/utilities.css",
     "./compiled.css": "./styles/compiled.css",
     "./brand-template.css": "./styles/brand-template.css",
-    "./atoms": {
-      "types": "./dist/atoms/index.d.ts",
-      "import": "./dist/atoms/index.js"
+    "./components": {
+      "types": "./dist/components/index.d.ts",
+      "import": "./dist/components/index.js"
     },
-    "./atoms/server": {
-      "types": "./dist/atoms/server.d.ts",
-      "import": "./dist/atoms/server.js"
+    "./components/server": {
+      "types": "./dist/components/server.d.ts",
+      "import": "./dist/components/server.js"
     },
     "./icons": {
       "types": "./dist/icons/index.d.ts",
@@ -97,12 +97,41 @@
       "types": "./dist/gate-index.d.ts",
       "import": "./dist/gate-index.js"
     },
+    "./catalog": {
+      "types": "./dist/catalog-core/index.d.ts",
+      "import": "./dist/catalog-core/index.js"
+    },
+    "./catalog/server": {
+      "types": "./dist/catalog-core/server.d.ts",
+      "import": "./dist/catalog-core/server.js"
+    },
+    "./studio": {
+      "types": "./dist/studio/index.d.ts",
+      "import": "./dist/studio/index.js"
+    },
+    "./studio/queries": {
+      "types": "./dist/studio/designer-layer-boards.d.ts",
+      "import": "./dist/studio/designer-layer-boards.js"
+    },
+    "./studio/state": {
+      "types": "./dist/studio/WholeStudioProvider.d.ts",
+      "import": "./dist/studio/WholeStudioProvider.js"
+    },
     "./render-environment": {
       "types": "./dist/render-environment.d.ts",
       "import": "./dist/render-environment.js"
+    },
+    "./catalog-bundles": {
+      "types": "./dist/catalog-bundles.d.ts",
+      "import": "./dist/catalog-bundles.js"
+    },
+    "./frames": {
+      "types": "./dist/frames/index.d.ts",
+      "import": "./dist/frames/index.js"
     }
   },
   "bin": {
+    "designer-library": "dist/library-cli/cli.js",
     "designer-token-check": "dist/cli.js",
     "designer-brand-check": "dist/tokens/cli.js",
     "designer-contrast-check": "dist/tokens/contrast-cli.js",
@@ -166,7 +195,7 @@
       {
         "id": "token-purity",
         "subQuestion": "Does every surface consume design values only through bound tokens, never a raw hard-coded value?",
-        "worldClass": "No shipped surface bypasses the token contract with a raw color, size, or spacing value — every design value traces to a token.",
+        "worldClass": "No shipped surface bypasses the token contract with a raw color, size, or spacing value \u2014 every design value traces to a token.",
         "inputs": [],
         "outputs": [
           "clossys/designer/.generated/token-purity-report.json"
@@ -179,7 +208,7 @@
       {
         "id": "components-and-blocks",
         "subQuestion": "Is every interface surface composed only from the shared, token-bound component and block library?",
-        "worldClass": "Every interface surface is composed from the shared component and block library — never a bespoke, ungoverned element built outside it. Today `designer-environment-check surface` proves one slice of this: `surface-ladder-clean` passes a route composed only from Designer atoms and blocks, and `surface-ladder-violated` fails a route that imports a second library's `atoms`, `tokens`, or `theme` entrypoint (`@scope/pkg/atoms|tokens|theme`) beside a Designer primitive (`surface:dual-primitive-stack`). It does not catch a second library imported any other way (a package root such as `@example/legacy-ui`, a `/components` path, or an unscoped path), a bespoke element hand-built from plain HTML, or a surface that uses no Designer component at all, and no bin checks that every surface uses the shared library. So this capability is `partial`. It shares the surface-ladder case group with `structure-and-fold-conformance`.",
+        "worldClass": "Every interface surface is composed from the shared component and block library \u2014 never a bespoke, ungoverned element built outside it. Today `designer-environment-check surface` proves one slice of this: `surface-ladder-clean` passes a route composed only from Designer components and blocks, and `surface-ladder-violated` fails a route that imports a second library's `components`, `tokens`, or `theme` entrypoint (`@scope/pkg/components|tokens|theme`) beside a Designer primitive (`surface:dual-primitive-stack`). It does not catch a second library imported any other way (a package root such as `@example/legacy-ui`, a `/controls` path, or an unscoped path), a bespoke element hand-built from plain HTML, or a surface that uses no Designer component at all, and no bin checks that every surface uses the shared library. So this capability is `partial`. It shares the surface-ladder case group with `structure-and-fold-conformance`.",
         "inputs": [],
         "outputs": [
           "clossys/designer/.generated/component-conformance-report.json"
@@ -192,7 +221,7 @@
       {
         "id": "contrast",
         "subQuestion": "Does every token pairing in use pass its declared contrast ratio?",
-        "worldClass": "Every foreground/background token pairing in use passes its declared WCAG contrast ratio — checked, never assumed.",
+        "worldClass": "Every foreground/background token pairing in use passes its declared WCAG contrast ratio \u2014 checked, never assumed.",
         "inputs": [],
         "outputs": [
           "clossys/designer/.generated/contrast-report.json"
@@ -205,7 +234,7 @@
       {
         "id": "accessibility",
         "subQuestion": "Beyond contrast, does every surface meet its keyboard, semantic, and screen-reader accessibility constraints?",
-        "worldClass": "Every surface is operable by keyboard, exposes correct semantics, and reads correctly to a screen reader — contrast is one axis of accessibility, not the whole of it.",
+        "worldClass": "Every surface is operable by keyboard, exposes correct semantics, and reads correctly to a screen reader \u2014 contrast is one axis of accessibility, not the whole of it.",
         "inputs": [],
         "outputs": [
           "clossys/designer/.generated/accessibility-report.json"
@@ -218,7 +247,7 @@
       {
         "id": "type-record",
         "subQuestion": "Is the type scale governed by one record every surface conforms to?",
-        "worldClass": "Every surface's type usage resolves to one governed type-record scale — never a one-off font-size picked per component; the brand kit and #1210's mark generation both read this record.",
+        "worldClass": "Every surface's type usage resolves to one governed type-record scale \u2014 never a one-off font-size picked per component; the brand kit and #1210's mark generation both read this record.",
         "inputs": [],
         "outputs": [
           "clossys/designer/type-record.json"
@@ -244,7 +273,7 @@
       {
         "id": "brand-kit-assembly",
         "subQuestion": "Is there one assembled, current brand kit a consumer or Publisher can read whole?",
-        "worldClass": "The brand kit (tokens, type, contrast, components, marks) is one assembled, current record — the web style guide IS the brand kit (#1204), never a second, divergent artifact. Not yet built: today each element (tokens, contrast, type, marks) is checked independently, with nothing that assembles them into one record Publisher can render as the guide page.",
+        "worldClass": "The brand kit (tokens, type, contrast, components, marks) is one assembled, current record \u2014 the web style guide IS the brand kit (#1204), never a second, divergent artifact. Not yet built: today each element (tokens, contrast, type, marks) is checked independently, with nothing that assembles them into one record Publisher can render as the guide page.",
         "inputs": [
           {
             "producerRole": "@clossys/strategist",
@@ -262,7 +291,7 @@
       {
         "id": "logo-and-identity-files",
         "subQuestion": "Does every product get a usable, checked logo and mark variant set without waiting on a hired designer?",
-        "worldClass": "Every product ships a checked mark set (primary, mark, mono, light/dark, favicon, app icons) generated deterministically from its own tokens, or adopted from a supplied mark — contrast, minimum size, clear space, and single-colour legibility all checked, per #1210. Today: `identity-kit.ts`'s `generateIdentityDirections` builds the full seven-role variant set from a brand name and resolved tokens, and `adoptSuppliedMark` derives the same set structurally from a client-supplied SVG instead; `identity-checks.ts`'s `judgeIdentityKit` checks contrast, minimum size, clear space, and single-colour legibility against each (closes #1210). `master-mark.ts` still only validates a separately supplied mark's shape (three SVG documents). Neither generation path is yet wired into this package's checked CLI (no `designer-identity-check` bin) to produce `clossys/designer/assets/marks.json` for a real product, so no qualification case can exercise this capability: it is `planned` with `proofCase: null` until that bin and its case exist (#1272).",
+        "worldClass": "Every product ships a checked mark set (primary, mark, mono, light/dark, favicon, app icons) generated deterministically from its own tokens, or adopted from a supplied mark \u2014 contrast, minimum size, clear space, and single-colour legibility all checked, per #1210. Today: `identity-kit.ts`'s `generateIdentityDirections` builds the full seven-role variant set from a brand name and resolved tokens, and `adoptSuppliedMark` derives the same set structurally from a client-supplied SVG instead; `identity-checks.ts`'s `judgeIdentityKit` checks contrast, minimum size, clear space, and single-colour legibility against each (closes #1210). `master-mark.ts` still only validates a separately supplied mark's shape (three SVG documents). Neither generation path is yet wired into this package's checked CLI (no `designer-identity-check` bin) to produce `clossys/designer/assets/marks.json` for a real product, so no qualification case can exercise this capability: it is `planned` with `proofCase: null` until that bin and its case exist (#1272).",
         "inputs": [
           {
             "producerRole": "@clossys/strategist",
@@ -286,7 +315,6 @@
   "files": [
     "dist",
     "src",
-    "examples",
     "!src/**/*.test.ts",
     "!src/**/*.test.tsx",
     "!src/**/*.test.json",
@@ -300,15 +328,14 @@
     "LICENSE",
     "skill",
     "THIRD-PARTY-NOTICES.md",
-    "fit-signal-declarations.json"
+    "fit-signal-declarations.json",
+    "!dist/catalog-core/__fixtures__/**"
   ],
   "scripts": {
-    "generate:reference": "node scripts/generate-reference.mjs",
-    "typecheck:examples": "node scripts/typecheck-examples.mjs",
-    "build": "npm run generate:reference && tsc -p tsconfig.json",
+    "build": "tsc -p tsconfig.json",
     "prepublishOnly": "node ../../scripts/check-name-collision.mjs . && npm run build",
-    "typecheck": "npm run generate:reference && tsc -p tsconfig.json --noEmit && npm run typecheck:examples",
-    "test": "npm run generate:reference && vitest run",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "test": "vitest run",
     "generate:icons": "node scripts/generate-icons.mjs",
     "generate:compiled-css": "npm run build && node dist/compiled-css/cli.js --write",
     "check:compiled-css": "npm run build && node dist/compiled-css/cli.js --check"
@@ -346,6 +373,7 @@
     "@testing-library/jest-dom": "^7.0.1",
     "@testing-library/react": "^16.3.3",
     "@testing-library/user-event": "^14.6.7",
+    "@types/css-tree": "3.2.0",
     "@types/node": "^26.6.3",
     "@types/react": "^19.3.0",
     "@types/react-dom": "^19.3.0",
@@ -354,6 +382,7 @@
     "react": "^19.3.0",
     "react-aria-components": "^1.21.1",
     "react-dom": "^19.3.0",
+    "sharp": "0.35.5",
     "tailwind-merge": "^3.7.0",
     "tailwindcss": "^4.3.3",
     "typescript": "~6.0.0",
@@ -362,5 +391,9 @@
   "publishConfig": {
     "registry": "https://registry.npmjs.org",
     "access": "public"
+  },
+  "dependencies": {
+    "class-variance-authority": "0.7.1",
+    "css-tree": "3.2.1"
   }
 }

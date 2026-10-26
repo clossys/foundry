@@ -1,0 +1,292 @@
+{
+  "$extensions": {
+    "com.clossys.fill": {
+      "author": "third-party",
+      "builtOn": [],
+      "conforms": [
+        "dtcg#format",
+        "dtcg#alias",
+        "wcag-2.2#1.4.3"
+      ],
+      "derivation": {
+        "from": "dtcg#alias",
+        "rule": "green/amber/red/blue: marker11, text12, tint3 in each actual mode; WCAG ratios measured on consumer grounds"
+      },
+      "evidence": [
+        {
+          "check": "C1",
+          "clause": "dtcg#format"
+        },
+        {
+          "check": "C2",
+          "clause": "dtcg#alias"
+        },
+        {
+          "check": "C9",
+          "clause": "wcag-2.2#1.4.3"
+        }
+      ],
+      "id": "radix-colors/tokens.status-color",
+      "license": "MIT",
+      "mode": "derived",
+      "pin": {
+        "commit": "dbdb85470547c7d34b9001f48fddb08ded335979",
+        "file": "src/light.ts + src/dark.ts",
+        "package": "@radix-ui/colors",
+        "sha256": "49f27121f8bd6bcba4b9ea9da2378950ac3096029bc9bb4cf402974a314654fa",
+        "url": "https://github.com/radix-ui/colors/tree/dbdb85470547c7d34b9001f48fddb08ded335979",
+        "version": "3.0.0"
+      },
+      "relation": "derived",
+      "slot": "tokens.status-color",
+      "source": "radix-colors",
+      "sourceAddress": "https://github.com/radix-ui/colors/tree/dbdb85470547c7d34b9001f48fddb08ded335979/src/{light,dark}.ts",
+      "status": "draft",
+      "trust": "pinned-upstream"
+    }
+  },
+  "tokens": {
+    "status-color": {
+      "danger": {
+        "$extensions": {
+          "com.clossys.css": {
+            "raw": "#ce2c31"
+          },
+          "com.clossys.modes": {
+            "dark": "#ff9592"
+          }
+        },
+        "$type": "color",
+        "$value": {
+          "colorSpace": "srgb",
+          "components": [
+            0.807843,
+            0.172549,
+            0.192157
+          ],
+          "hex": "#ce2c31"
+        }
+      },
+      "danger-text": {
+        "$extensions": {
+          "com.clossys.css": {
+            "raw": "#641723"
+          },
+          "com.clossys.modes": {
+            "dark": "#ffd1d9"
+          }
+        },
+        "$type": "color",
+        "$value": {
+          "colorSpace": "srgb",
+          "components": [
+            0.392157,
+            0.090196,
+            0.137255
+          ],
+          "hex": "#641723"
+        }
+      },
+      "danger-tint": {
+        "$extensions": {
+          "com.clossys.css": {
+            "raw": "#feebec"
+          },
+          "com.clossys.modes": {
+            "dark": "#3b1219"
+          }
+        },
+        "$type": "color",
+        "$value": {
+          "colorSpace": "srgb",
+          "components": [
+            0.996078,
+            0.921569,
+            0.92549
+          ],
+          "hex": "#feebec"
+        }
+      },
+      "info": {
+        "$extensions": {
+          "com.clossys.css": {
+            "raw": "#0d74ce"
+          },
+          "com.clossys.modes": {
+            "dark": "#70b8ff"
+          }
+        },
+        "$type": "color",
+        "$value": {
+          "colorSpace": "srgb",
+          "components": [
+            0.05098,
+            0.454902,
+            0.807843
+          ],
+          "hex": "#0d74ce"
+        }
+      },
+      "info-text": {
+        "$extensions": {
+          "com.clossys.css": {
+            "raw": "#113264"
+          },
+          "com.clossys.modes": {
+            "dark": "#c2e6ff"
+          }
+        },
+        "$type": "color",
+        "$value": {
+          "colorSpace": "srgb",
+          "components": [
+            0.066667,
+            0.196078,
+            0.392157
+          ],
+          "hex": "#113264"
+        }
+      },
+      "info-tint": {
+        "$extensions": {
+          "com.clossys.css": {
+            "raw": "#e6f4fe"
+          },
+          "com.clossys.modes": {
+            "dark": "#0d2847"
+          }
+        },
+        "$type": "color",
+        "$value": {
+          "colorSpace": "srgb",
+          "components": [
+            0.901961,
+            0.956863,
+            0.996078
+          ],
+          "hex": "#e6f4fe"
+        }
+      },
+      "success": {
+        "$extensions": {
+          "com.clossys.css": {
+            "raw": "#218358"
+          },
+          "com.clossys.modes": {
+            "dark": "#3dd68c"
+          }
+        },
+        "$type": "color",
+        "$value": {
+          "colorSpace": "srgb",
+          "components": [
+            0.129412,
+            0.513725,
+            0.345098
+          ],
+          "hex": "#218358"
+        }
+      },
+      "success-text": {
+        "$extensions": {
+          "com.clossys.css": {
+            "raw": "#193b2d"
+          },
+          "com.clossys.modes": {
+            "dark": "#b1f1cb"
+          }
+        },
+        "$type": "color",
+        "$value": {
+          "colorSpace": "srgb",
+          "components": [
+            0.098039,
+            0.231373,
+            0.176471
+          ],
+          "hex": "#193b2d"
+        }
+      },
+      "success-tint": {
+        "$extensions": {
+          "com.clossys.css": {
+            "raw": "#e6f6eb"
+          },
+          "com.clossys.modes": {
+            "dark": "#132d21"
+          }
+        },
+        "$type": "color",
+        "$value": {
+          "colorSpace": "srgb",
+          "components": [
+            0.901961,
+            0.964706,
+            0.921569
+          ],
+          "hex": "#e6f6eb"
+        }
+      },
+      "warning": {
+        "$extensions": {
+          "com.clossys.css": {
+            "raw": "#ab6400"
+          },
+          "com.clossys.modes": {
+            "dark": "#ffca16"
+          }
+        },
+        "$type": "color",
+        "$value": {
+          "colorSpace": "srgb",
+          "components": [
+            0.670588,
+            0.392157,
+            0
+          ],
+          "hex": "#ab6400"
+        }
+      },
+      "warning-text": {
+        "$extensions": {
+          "com.clossys.css": {
+            "raw": "#4f3422"
+          },
+          "com.clossys.modes": {
+            "dark": "#ffe7b3"
+          }
+        },
+        "$type": "color",
+        "$value": {
+          "colorSpace": "srgb",
+          "components": [
+            0.309804,
+            0.203922,
+            0.133333
+          ],
+          "hex": "#4f3422"
+        }
+      },
+      "warning-tint": {
+        "$extensions": {
+          "com.clossys.css": {
+            "raw": "#fff7c2"
+          },
+          "com.clossys.modes": {
+            "dark": "#302008"
+          }
+        },
+        "$type": "color",
+        "$value": {
+          "colorSpace": "srgb",
+          "components": [
+            1,
+            0.968627,
+            0.760784
+          ],
+          "hex": "#fff7c2"
+        }
+      }
+    }
+  }
+}

@@ -69,7 +69,7 @@ export const ICON_GROUPS: CatalogTree<IconGroupMap> = [
 
 /**
  * Glyph leaves: all 40 vendored glyphs, each placed once. `naming` is the
- * glyph's usual role; the Icon atom still decides per use. Licence trail:
+ * glyph's usual role; the Icon component still decides per use. Licence trail:
  * THIRD-PARTY-NOTICES.md.
  */
 export const ICON_ENTRIES: readonly IconEntry[] = [

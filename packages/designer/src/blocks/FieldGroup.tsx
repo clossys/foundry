@@ -1,5 +1,5 @@
 import { useId, type CSSProperties, type FieldsetHTMLAttributes, type ReactNode } from "react";
-import { cx } from "../atoms/internal/cx.js";
+import { cx } from "../components/internal/cx.js";
 
 export type FieldGroupLayout = "single" | "multi";
 
@@ -27,7 +27,7 @@ export interface FieldGroupProps
    * @default "single"
    */
   layout?: FieldGroupLayout;
-  /** The fields in this group — any mix of this package's own field atoms (`TextField`, `Select`, `Textarea`, `RadioGroup`, `Field`, ...). */
+  /** The fields in this group — any mix of this package's own field components (`TextField`, `Select`, `Textarea`, `RadioGroup`, `Field`, ...). */
   children: ReactNode;
   className?: string;
   style?: CSSProperties;

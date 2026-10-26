@@ -11,7 +11,7 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import { act, cleanup, fireEvent, render, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import type { CopyRef, CopyResolution, CopyResolver } from "@clossys/writer";
-import type { IconNode } from "@clossys/designer/atoms/server";
+import type { IconNode } from "@clossys/designer/components/server";
 import { CONTRAST_PAIRS, contrastRatio, parseBrandDeclarations } from "@clossys/designer/tokens";
 import { ThemeProvider, ThemeToggle } from "@clossys/designer/theme";
 import { AuthView } from "../views/AuthView.js";
@@ -661,7 +661,7 @@ function moduleSpecifiers(source: string): string[] {
 
 const FRAME_ALLOWED_IMPORT = /^(react|@clossys\/designer\/[a-z-]+\/server|@clossys\/writer|\.{1,2}\/[A-Za-z./-]+\.js)$/;
 const FRAME_CLIENT_MODULES = [
-  "AppFrame.specimen.tsx", "AppFrame.tsx", "NavDisclosure.boundary.client.tsx",
+  "NavDisclosure.boundary.client.tsx",
   "NavDisclosure.client.tsx", "SkipLink.client.tsx",
 ];
 // AppFrame is an explicit web/client composition; SiteFrame's server rules stay unchanged.
@@ -669,10 +669,6 @@ const FRAME_IMPORT_EXCEPTIONS: Readonly<Record<string, readonly string[]>> = {
   "NavDisclosure.client.tsx": ["@clossys/designer/shell"],
   "NavDisclosure.boundary.client.tsx": ["#publisher-frame-navigation"],
   "SiteFrame.tsx": ["#publisher-web-views"],
-  "AppFrame.tsx": ["react-aria-components", "@clossys/designer/atoms", "@clossys/designer/icons", "@clossys/designer/blocks", "@clossys/designer/theme"],
-  "AppFrame.specimen.tsx": ["@clossys/designer/atoms", "@clossys/designer/blocks"],
-  "app-frame-types.ts": ["@clossys/designer/blocks", "@clossys/designer/theme"],
-  "app-frame-layout.ts": ["@clossys/designer/tokens"],
 };
 
 function allowedFrameImport(name: string, specifier: string): boolean {
@@ -714,17 +710,17 @@ describe("module boundaries", () => {
 
   it("refuses AppFrame interactive imports in SiteFrame, unnamed modules and its pure helpers", () => {
     for (const name of ["SiteFrame.tsx", "UnlistedFrame.tsx", "AppFrame.other.tsx", "app-frame-contract.ts", "AppFrameBrand.tsx"]) {
-      for (const specifier of ["react-aria-components", "@clossys/designer/atoms", "@clossys/designer/blocks", "@clossys/designer/theme", "@clossys/designer/tokens"]) {
+      for (const specifier of ["react-aria-components", "@clossys/designer/components", "@clossys/designer/blocks", "@clossys/designer/theme", "@clossys/designer/tokens"]) {
         expect(allowedFrameImport(name, specifier), `${name}: ${specifier}`).toBe(false);
       }
     }
     expect(allowedFrameImport("AppFrame.specimen.tsx", "@clossys/designer/theme")).toBe(false);
-    expect(allowedFrameImport("app-frame-layout.ts", "@clossys/designer/atoms")).toBe(false);
+    expect(allowedFrameImport("app-frame-layout.ts", "@clossys/designer/components")).toBe(false);
     expect(allowedFrameImport("AppFrame.tsx", "unlisted-dependency")).toBe(false);
   });
 
   it("keeps AppFrame's shared contract imports type-only", () => {
-    const source = ts.createSourceFile("app-frame-types.ts", readFileSync(join(import.meta.dirname, "app-frame-types.ts"), "utf8"), ts.ScriptTarget.Latest, true);
+    const source = ts.createSourceFile("app-frame-types.ts", readFileSync(join(import.meta.dirname, "../../../../designer/src/frames/app-frame-types.ts"), "utf8"), ts.ScriptTarget.Latest, true);
     for (const statement of source.statements) {
       if (ts.isImportDeclaration(statement)) expect(statement.importClause?.isTypeOnly).toBe(true);
       if (ts.isExportDeclaration(statement) && statement.moduleSpecifier) expect(statement.isTypeOnly).toBe(true);

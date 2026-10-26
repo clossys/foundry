@@ -1,5 +1,5 @@
 import { Children, cloneElement, isValidElement, type HTMLAttributes, type ReactNode } from "react";
-import { cx } from "../atoms/internal/cx.js";
+import { cx } from "../components/internal/cx.js";
 import { SITE_CHROME_GROUND_CLASSES, siteChromeHasBorder, type SiteChromeGround } from "./internal/shell-ground.js";
 import { BADGE_INSET_SHARE, BADGE_RADIUS_SHARE } from "./badge-plate.js";
 import { UI_BORDER_HAIRLINE, UI_BRANDMARK_HEIGHT_SM, UI_LAYOUT_TAP_TARGET, UI_WIDTH_PAGE_PADDING_X, UI_Z_SHELL } from "./internal/shell-vars.js";
@@ -81,7 +81,7 @@ function SiteFooterRoot({ columns, secondary, ground = "base", rule = "none", cl
 export interface SiteFooterColumnProps {
   /** The column's own heading, rendered as a real `<h2>`. */
   heading: ReactNode;
-  /** The column's links — typically one or more `Link` atoms (`variant="muted"` reads well here). */
+  /** The column's links — typically one or more `Link` components (`variant="muted"` reads well here). */
   children: ReactNode;
   className?: string;
 }

@@ -1,0 +1,73 @@
+{
+  "$extensions": {
+    "com.clossys.fill": {
+      "id": "lucide/assets.icon-organization",
+      "slot": "assets.icon-organization",
+      "source": "lucide",
+      "mode": "implementation",
+      "sourceAddress": "lucide-react@1.23.0/dist/esm/icons/building-2.js",
+      "relation": "same-contract",
+      "builtOn": [],
+      "conforms": [],
+      "evidence": [],
+      "author": "third-party",
+      "trust": "pinned-upstream",
+      "license": "ISC",
+      "pin": {
+        "package": "lucide-react",
+        "version": "1.23.0",
+        "file": "src/icons/Building2.ts",
+        "sha256": "c774892a801f2765135e929313deb96d44b62ea6ad21d03178a261686ed655a0"
+      },
+      "status": "draft",
+      "reads": {
+        "tokens": [],
+        "assets": []
+      }
+    }
+  },
+  "assets": {
+    "icon-organization": {
+      "default": {
+        "$type": "glyph",
+        "$value": [
+          [
+            "path",
+            {
+              "d": "M10 12h4",
+              "key": "a56b0p"
+            }
+          ],
+          [
+            "path",
+            {
+              "d": "M10 8h4",
+              "key": "1sr2af"
+            }
+          ],
+          [
+            "path",
+            {
+              "d": "M14 21v-3a2 2 0 0 0-4 0v3",
+              "key": "1rgiei"
+            }
+          ],
+          [
+            "path",
+            {
+              "d": "M6 10H4a2 2 0 0 0-2 2v7a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-2",
+              "key": "secmi2"
+            }
+          ],
+          [
+            "path",
+            {
+              "d": "M6 21V5a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v16",
+              "key": "16ra0t"
+            }
+          ]
+        ]
+      }
+    }
+  }
+}

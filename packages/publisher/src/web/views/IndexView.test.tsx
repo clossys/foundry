@@ -10,7 +10,7 @@ import { cleanup, fireEvent, render, screen, within } from "@testing-library/rea
 import userEvent from "@testing-library/user-event";
 import { renderToStaticMarkup } from "react-dom/server";
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { Button } from "@clossys/designer/atoms";
+import { Button } from "@clossys/designer/components";
 import { groupRows, parseDataTableViewModel, type DataTableViewModel } from "@clossys/designer/blocks";
 import { IndexView, type IndexViewProps } from "./IndexView.js";
 import * as web from "../index.js";
@@ -185,7 +185,7 @@ describe("IndexView", () => {
     }
   });
 
-  it("authors arrangement only and delegates content markup to shipped Blocks and atoms", () => {
+  it("authors arrangement only and delegates content markup to shipped Blocks and components", () => {
     const source = readFileSync(join(import.meta.dirname, "IndexView.tsx"), "utf8");
     expect(source).not.toMatch(/<\s*(?:h[1-6]|p|table|thead|tbody|tr|td|th|button|nav|main|footer|header)\b/);
     expect(source).not.toMatch(/\b(?:AppFrame|SiteFrame|SiteHeader|SiteFooter)\s*[,}]/);

@@ -1,0 +1,840 @@
+{
+  "coverage": [
+    {
+      "missing": [],
+      "notes": [
+        "Descriptor only; source, accessibility, contrast and consumer runtime conformance are unmeasured."
+      ],
+      "slot": "components.avatar",
+      "status": "candidate",
+      "supported": [
+        "content.image",
+        "content.initials",
+        "size.lg",
+        "size.md",
+        "size.sm"
+      ]
+    },
+    {
+      "missing": [],
+      "notes": [
+        "Descriptor only; source, accessibility, contrast and consumer runtime conformance are unmeasured."
+      ],
+      "slot": "components.badge",
+      "status": "candidate",
+      "supported": [
+        "tone.danger",
+        "tone.info",
+        "tone.neutral",
+        "tone.success",
+        "tone.warning"
+      ]
+    },
+    {
+      "missing": [],
+      "notes": [
+        "Descriptor only; source, accessibility, contrast and consumer runtime conformance are unmeasured."
+      ],
+      "slot": "components.banner",
+      "status": "candidate",
+      "supported": [
+        "dismissible",
+        "tone.danger",
+        "tone.info",
+        "tone.success",
+        "tone.warning"
+      ]
+    },
+    {
+      "missing": [
+        "collapsed"
+      ],
+      "notes": [
+        "No collapsed trail API is exported.",
+        "Descriptor only; source, accessibility, contrast and consumer runtime conformance are unmeasured."
+      ],
+      "slot": "components.breadcrumbs",
+      "status": "subset",
+      "supported": [
+        "current"
+      ]
+    },
+    {
+      "missing": [],
+      "notes": [
+        "Descriptor only; source, accessibility, contrast and consumer runtime conformance are unmeasured."
+      ],
+      "slot": "components.button",
+      "status": "candidate",
+      "supported": [
+        "ground.base",
+        "ground.inverse",
+        "shape.icon-only",
+        "shape.text",
+        "size.lg",
+        "size.md",
+        "size.sm",
+        "state.disabled",
+        "state.focus-visible",
+        "state.hover",
+        "state.pending",
+        "state.pressed",
+        "variant.danger",
+        "variant.ghost",
+        "variant.outline",
+        "variant.primary",
+        "variant.quiet",
+        "variant.secondary",
+        "variant.tonal"
+      ]
+    },
+    {
+      "missing": [
+        "selection.range",
+        "selection.single"
+      ],
+      "notes": [
+        "No package implementation is available."
+      ],
+      "slot": "components.calendar",
+      "status": "unavailable",
+      "supported": []
+    },
+    {
+      "missing": [],
+      "notes": [
+        "Descriptor only; source, accessibility, contrast and consumer runtime conformance are unmeasured."
+      ],
+      "slot": "components.card",
+      "status": "candidate",
+      "supported": [
+        "variant.outline",
+        "variant.plate",
+        "variant.raised"
+      ]
+    },
+    {
+      "missing": [],
+      "notes": [
+        "Shared tooltip part is present; accessibility and browser behavior remain unmeasured. Static CSS inspection has no Escape dismissal; long labels in narrow plots may clip. The complete table remains available.",
+        "Descriptor only; source, accessibility, contrast and consumer runtime conformance are unmeasured."
+      ],
+      "slot": "components.chart-area",
+      "status": "candidate",
+      "supported": [
+        "axes",
+        "legend",
+        "series",
+        "tooltip"
+      ]
+    },
+    {
+      "missing": [],
+      "notes": [
+        "Descriptor only; source, accessibility, contrast and consumer runtime conformance are unmeasured."
+      ],
+      "slot": "components.chart-bar",
+      "status": "candidate",
+      "supported": [
+        "axes",
+        "legend",
+        "series",
+        "tooltip"
+      ]
+    },
+    {
+      "missing": [],
+      "notes": [
+        "Shared tooltip part is present; accessibility and browser behavior remain unmeasured. Static CSS inspection has no Escape dismissal; long labels in narrow plots may clip. The complete table remains available.",
+        "Descriptor only; source, accessibility, contrast and consumer runtime conformance are unmeasured."
+      ],
+      "slot": "components.chart-heatmap",
+      "status": "candidate",
+      "supported": [
+        "axes",
+        "legend",
+        "series",
+        "tooltip"
+      ]
+    },
+    {
+      "missing": [],
+      "notes": [
+        "Descriptor only; source, accessibility, contrast and consumer runtime conformance are unmeasured."
+      ],
+      "slot": "components.chart-line",
+      "status": "candidate",
+      "supported": [
+        "axes",
+        "legend",
+        "series",
+        "tooltip"
+      ]
+    },
+    {
+      "missing": [],
+      "notes": [
+        "Shared tooltip part is present; accessibility and browser behavior remain unmeasured. Static CSS inspection has no Escape dismissal; long labels in narrow plots may clip. The complete table remains available.",
+        "Descriptor only; source, accessibility, contrast and consumer runtime conformance are unmeasured."
+      ],
+      "slot": "components.chart-range",
+      "status": "candidate",
+      "supported": [
+        "axes",
+        "legend",
+        "series",
+        "tooltip"
+      ]
+    },
+    {
+      "missing": [],
+      "notes": [
+        "Shared tooltip part is present; accessibility and browser behavior remain unmeasured. Static CSS inspection has no Escape dismissal; long labels in narrow plots may clip. The complete table remains available.",
+        "Descriptor only; source, accessibility, contrast and consumer runtime conformance are unmeasured."
+      ],
+      "slot": "components.chart-scatter",
+      "status": "candidate",
+      "supported": [
+        "axes",
+        "legend",
+        "series",
+        "tooltip"
+      ]
+    },
+    {
+      "missing": [
+        "axes",
+        "legend",
+        "tooltip"
+      ],
+      "notes": [
+        "Sparkline has no axes, legend or tooltip API.",
+        "Descriptor only; source, accessibility, contrast and consumer runtime conformance are unmeasured."
+      ],
+      "slot": "components.chart-sparkline",
+      "status": "subset",
+      "supported": [
+        "series"
+      ]
+    },
+    {
+      "missing": [],
+      "notes": [
+        "Shared tooltip part is present; accessibility and browser behavior remain unmeasured. Static CSS inspection has no Escape dismissal; long labels in narrow plots may clip. The complete table remains available.",
+        "Descriptor only; source, accessibility, contrast and consumer runtime conformance are unmeasured."
+      ],
+      "slot": "components.chart-status-strip",
+      "status": "candidate",
+      "supported": [
+        "axes",
+        "legend",
+        "series",
+        "tooltip"
+      ]
+    },
+    {
+      "missing": [],
+      "notes": [
+        "Shared tooltip part is present; accessibility and browser behavior remain unmeasured. Static CSS inspection has no Escape dismissal; long labels in narrow plots may clip. The complete table remains available.",
+        "Descriptor only; source, accessibility, contrast and consumer runtime conformance are unmeasured."
+      ],
+      "slot": "components.chart-waterfall",
+      "status": "candidate",
+      "supported": [
+        "axes",
+        "legend",
+        "series",
+        "tooltip"
+      ]
+    },
+    {
+      "missing": [
+        "scope.group"
+      ],
+      "notes": [
+        "CheckboxGroup is not exported; group scope is unsupported.",
+        "Descriptor only; source, accessibility, contrast and consumer runtime conformance are unmeasured."
+      ],
+      "slot": "components.checkbox",
+      "status": "subset",
+      "supported": [
+        "scope.single",
+        "state.checked",
+        "state.indeterminate",
+        "state.invalid"
+      ]
+    },
+    {
+      "missing": [
+        "part.area",
+        "part.field",
+        "part.slider",
+        "part.swatch-picker",
+        "part.wheel"
+      ],
+      "notes": [
+        "No package implementation is available."
+      ],
+      "slot": "components.color-picker",
+      "status": "unavailable",
+      "supported": []
+    },
+    {
+      "missing": [],
+      "notes": [
+        "Descriptor only; source, accessibility, contrast and consumer runtime conformance are unmeasured."
+      ],
+      "slot": "components.combo-box",
+      "status": "candidate",
+      "supported": [
+        "allows-custom",
+        "state.invalid"
+      ]
+    },
+    {
+      "missing": [],
+      "notes": [
+        "Descriptor only; source, accessibility, contrast and consumer runtime conformance are unmeasured."
+      ],
+      "slot": "components.date-field",
+      "status": "candidate",
+      "supported": [
+        "granularity",
+        "state.invalid",
+        "value.date",
+        "value.time"
+      ]
+    },
+    {
+      "missing": [
+        "selection.range",
+        "selection.single"
+      ],
+      "notes": [
+        "No package implementation is available."
+      ],
+      "slot": "components.date-picker",
+      "status": "unavailable",
+      "supported": []
+    },
+    {
+      "missing": [
+        "role.alert"
+      ],
+      "notes": [
+        "Dialog does not expose an alert-dialog role.",
+        "Descriptor only; source, accessibility, contrast and consumer runtime conformance are unmeasured."
+      ],
+      "slot": "components.dialog",
+      "status": "subset",
+      "supported": [
+        "dismissable",
+        "role.modal"
+      ]
+    },
+    {
+      "missing": [
+        "scope.group"
+      ],
+      "notes": [
+        "DisclosureGroup is not exported.",
+        "Descriptor only; source, accessibility, contrast and consumer runtime conformance are unmeasured."
+      ],
+      "slot": "components.disclosure",
+      "status": "subset",
+      "supported": [
+        "scope.single"
+      ]
+    },
+    {
+      "missing": [],
+      "notes": [
+        "Client Field uses RAC Label/Text/FieldError; the server entry preserves its static arbitrary-control render bridge.",
+        "Descriptor only; source, accessibility, contrast and consumer runtime conformance are unmeasured."
+      ],
+      "slot": "components.field",
+      "status": "candidate",
+      "supported": [
+        "part.description",
+        "part.error",
+        "part.label",
+        "state.disabled",
+        "state.invalid",
+        "state.required"
+      ]
+    },
+    {
+      "missing": [],
+      "notes": [
+        "Descriptor only; source, accessibility, contrast and consumer runtime conformance are unmeasured."
+      ],
+      "slot": "components.file-trigger",
+      "status": "candidate",
+      "supported": [
+        "accept",
+        "directory",
+        "multiple"
+      ]
+    },
+    {
+      "missing": [],
+      "notes": [
+        "Descriptor only; source, accessibility, contrast and consumer runtime conformance are unmeasured."
+      ],
+      "slot": "components.form",
+      "status": "candidate",
+      "supported": [
+        "validation.aria",
+        "validation.native"
+      ]
+    },
+    {
+      "missing": [],
+      "notes": [
+        "Descriptor only; source, accessibility, contrast and consumer runtime conformance are unmeasured."
+      ],
+      "slot": "components.grid-list",
+      "status": "candidate",
+      "supported": [
+        "layout.grid",
+        "layout.list",
+        "selection"
+      ]
+    },
+    {
+      "missing": [],
+      "notes": [
+        "Descriptor only; source, accessibility, contrast and consumer runtime conformance are unmeasured."
+      ],
+      "slot": "components.icon",
+      "status": "candidate",
+      "supported": [
+        "size.lg",
+        "size.md",
+        "size.sm"
+      ]
+    },
+    {
+      "missing": [
+        "scope.chord",
+        "scope.single"
+      ],
+      "notes": [
+        "No package implementation is available."
+      ],
+      "slot": "components.keyboard",
+      "status": "unavailable",
+      "supported": []
+    },
+    {
+      "missing": [],
+      "notes": [
+        "Descriptor only; source, accessibility, contrast and consumer runtime conformance are unmeasured."
+      ],
+      "slot": "components.link",
+      "status": "candidate",
+      "supported": [
+        "appearance.button",
+        "appearance.inline"
+      ]
+    },
+    {
+      "missing": [],
+      "notes": [
+        "Mark uses Logomark; lockup dispatches to the shell Brandmark export.",
+        "Descriptor only; source, accessibility, contrast and consumer runtime conformance are unmeasured."
+      ],
+      "slot": "components.logo",
+      "status": "candidate",
+      "supported": [
+        "content.lockup",
+        "content.mark",
+        "ground.base",
+        "ground.inverse",
+        "size.lg",
+        "size.md",
+        "size.sm"
+      ]
+    },
+    {
+      "missing": [
+        "presentation.inline",
+        "selection.multiple",
+        "selection.none",
+        "selection.single"
+      ],
+      "notes": [
+        "The package Menu is a trigger-owned popup. It exports no inline Menu or root selection API; Section selection is not a root contract member.",
+        "Descriptor only; source, accessibility, contrast and consumer runtime conformance are unmeasured."
+      ],
+      "slot": "components.menu",
+      "status": "subset",
+      "supported": [
+        "presentation.popup"
+      ]
+    },
+    {
+      "missing": [],
+      "notes": [
+        "Descriptor only; source, accessibility, contrast and consumer runtime conformance are unmeasured."
+      ],
+      "slot": "components.meter",
+      "status": "candidate",
+      "supported": [
+        "emphasis",
+        "tone"
+      ]
+    },
+    {
+      "missing": [],
+      "notes": [
+        "Descriptor only; source, accessibility, contrast and consumer runtime conformance are unmeasured."
+      ],
+      "slot": "components.navigation-tree",
+      "status": "candidate",
+      "supported": [
+        "current",
+        "expand"
+      ]
+    },
+    {
+      "missing": [
+        "format",
+        "state.invalid",
+        "step"
+      ],
+      "notes": [
+        "No package implementation is available."
+      ],
+      "slot": "components.number-field",
+      "status": "unavailable",
+      "supported": []
+    },
+    {
+      "missing": [
+        "arrow"
+      ],
+      "notes": [
+        "No arrow part is exported.",
+        "Descriptor only; source, accessibility, contrast and consumer runtime conformance are unmeasured."
+      ],
+      "slot": "components.popover",
+      "status": "subset",
+      "supported": [
+        "placement"
+      ]
+    },
+    {
+      "missing": [],
+      "notes": [
+        "Descriptor only; source, accessibility, contrast and consumer runtime conformance are unmeasured."
+      ],
+      "slot": "components.progress-bar",
+      "status": "candidate",
+      "supported": [
+        "progress.determinate",
+        "progress.indeterminate"
+      ]
+    },
+    {
+      "missing": [],
+      "notes": [
+        "Descriptor only; source, accessibility, contrast and consumer runtime conformance are unmeasured."
+      ],
+      "slot": "components.radio-group",
+      "status": "candidate",
+      "supported": [
+        "orientation.horizontal",
+        "orientation.vertical",
+        "state.invalid"
+      ]
+    },
+    {
+      "missing": [],
+      "notes": [
+        "Descriptor only; source, accessibility, contrast and consumer runtime conformance are unmeasured."
+      ],
+      "slot": "components.resize-handle",
+      "status": "candidate",
+      "supported": [
+        "orientation.horizontal",
+        "orientation.vertical"
+      ]
+    },
+    {
+      "missing": [],
+      "notes": [
+        "Descriptor only; source, accessibility, contrast and consumer runtime conformance are unmeasured."
+      ],
+      "slot": "components.search-field",
+      "status": "candidate",
+      "supported": [
+        "part.clear",
+        "part.submit",
+        "state.empty",
+        "state.filled"
+      ]
+    },
+    {
+      "missing": [
+        "size.lg",
+        "size.md",
+        "size.sm"
+      ],
+      "notes": [
+        "No size prop; size.sm/md/lg are unsupported.",
+        "Descriptor only; source, accessibility, contrast and consumer runtime conformance are unmeasured."
+      ],
+      "slot": "components.select",
+      "status": "subset",
+      "supported": [
+        "selection.single",
+        "state.invalid"
+      ]
+    },
+    {
+      "missing": [],
+      "notes": [
+        "Descriptor only; source, accessibility, contrast and consumer runtime conformance are unmeasured."
+      ],
+      "slot": "components.separator",
+      "status": "candidate",
+      "supported": [
+        "orientation.horizontal",
+        "orientation.vertical"
+      ]
+    },
+    {
+      "missing": [],
+      "notes": [
+        "Descriptor only; source, accessibility, contrast and consumer runtime conformance are unmeasured."
+      ],
+      "slot": "components.skeleton",
+      "status": "candidate",
+      "supported": [
+        "shape.block",
+        "shape.circle",
+        "shape.text"
+      ]
+    },
+    {
+      "missing": [
+        "orientation.horizontal",
+        "orientation.vertical",
+        "selection.range",
+        "selection.single"
+      ],
+      "notes": [
+        "No package implementation is available."
+      ],
+      "slot": "components.slider",
+      "status": "unavailable",
+      "supported": []
+    },
+    {
+      "missing": [],
+      "notes": [
+        "Descriptor only; source, accessibility, contrast and consumer runtime conformance are unmeasured."
+      ],
+      "slot": "components.spinner",
+      "status": "candidate",
+      "supported": [
+        "size.lg",
+        "size.md",
+        "size.sm"
+      ]
+    },
+    {
+      "missing": [],
+      "notes": [
+        "Descriptor only; source, accessibility, contrast and consumer runtime conformance are unmeasured."
+      ],
+      "slot": "components.status-mark",
+      "status": "candidate",
+      "supported": [
+        "tone.danger",
+        "tone.info",
+        "tone.neutral",
+        "tone.success",
+        "tone.warning"
+      ]
+    },
+    {
+      "missing": [],
+      "notes": [
+        "Descriptor only; source, accessibility, contrast and consumer runtime conformance are unmeasured."
+      ],
+      "slot": "components.switch",
+      "status": "candidate",
+      "supported": [
+        "state.disabled",
+        "state.off",
+        "state.on"
+      ]
+    },
+    {
+      "missing": [
+        "resize-columns"
+      ],
+      "notes": [
+        "No ColumnResizer or resize-columns API is exported.",
+        "Descriptor only; source, accessibility, contrast and consumer runtime conformance are unmeasured."
+      ],
+      "slot": "components.table",
+      "status": "subset",
+      "supported": [
+        "selection",
+        "sort"
+      ]
+    },
+    {
+      "missing": [
+        "size.lg",
+        "size.md",
+        "size.sm"
+      ],
+      "notes": [
+        "No size prop; size.sm/md/lg are unsupported.",
+        "Descriptor only; source, accessibility, contrast and consumer runtime conformance are unmeasured."
+      ],
+      "slot": "components.tabs",
+      "status": "subset",
+      "supported": [
+        "orientation.horizontal",
+        "orientation.vertical"
+      ]
+    },
+    {
+      "missing": [
+        "removable",
+        "selection.multiple",
+        "selection.none",
+        "selection.single"
+      ],
+      "notes": [
+        "No package implementation is available."
+      ],
+      "slot": "components.tag-group",
+      "status": "unavailable",
+      "supported": []
+    },
+    {
+      "missing": [],
+      "notes": [
+        "Size applies to the single-line TextField; multiline dispatches independently to Textarea.",
+        "Descriptor only; source, accessibility, contrast and consumer runtime conformance are unmeasured."
+      ],
+      "slot": "components.text-field",
+      "status": "candidate",
+      "supported": [
+        "line.multiline",
+        "line.single-line",
+        "size.lg",
+        "size.md",
+        "size.sm",
+        "state.disabled",
+        "state.invalid",
+        "state.read-only"
+      ]
+    },
+    {
+      "missing": [],
+      "notes": [
+        "Toaster is the region; tone, timeout and authored action dispatch through shell toast.",
+        "Descriptor only; source, accessibility, contrast and consumer runtime conformance are unmeasured."
+      ],
+      "slot": "components.toast",
+      "status": "candidate",
+      "supported": [
+        "action",
+        "timeout",
+        "tone.danger",
+        "tone.info",
+        "tone.success",
+        "tone.warning"
+      ]
+    },
+    {
+      "missing": [
+        "ground.base",
+        "ground.inverse",
+        "shape.icon-only",
+        "shape.text",
+        "size.lg",
+        "size.md",
+        "size.sm",
+        "state.disabled",
+        "state.focus-visible",
+        "state.hover",
+        "state.pending",
+        "state.pressed",
+        "state.selected",
+        "variant.danger",
+        "variant.ghost",
+        "variant.outline",
+        "variant.primary",
+        "variant.quiet",
+        "variant.secondary",
+        "variant.tonal"
+      ],
+      "notes": [
+        "No package implementation is available."
+      ],
+      "slot": "components.toggle-button",
+      "status": "unavailable",
+      "supported": []
+    },
+    {
+      "missing": [
+        "orientation.horizontal",
+        "orientation.vertical",
+        "selection.multiple",
+        "selection.single"
+      ],
+      "notes": [
+        "No package implementation is available."
+      ],
+      "slot": "components.toggle-group",
+      "status": "unavailable",
+      "supported": []
+    },
+    {
+      "missing": [
+        "orientation.horizontal",
+        "orientation.vertical"
+      ],
+      "notes": [
+        "No package implementation is available."
+      ],
+      "slot": "components.toolbar",
+      "status": "unavailable",
+      "supported": []
+    },
+    {
+      "missing": [],
+      "notes": [
+        "Descriptor only; source, accessibility, contrast and consumer runtime conformance are unmeasured."
+      ],
+      "slot": "components.tooltip",
+      "status": "candidate",
+      "supported": [
+        "placement"
+      ]
+    },
+    {
+      "missing": [
+        "expand",
+        "selection"
+      ],
+      "notes": [
+        "No package implementation is available."
+      ],
+      "slot": "components.tree",
+      "status": "unavailable",
+      "supported": []
+    }
+  ],
+  "package": "@clossys/designer",
+  "source": "foundry",
+  "version": "0.12.0"
+}

@@ -1,0 +1,61 @@
+{
+  "$extensions": {
+    "com.clossys.fill": {
+      "author": "foundry",
+      "builtOn": [],
+      "conforms": [],
+      "evidence": [],
+      "id": "foundry/sections.pagination",
+      "license": "MIT",
+      "mode": "implementation",
+      "originKinds": [
+        "adopted"
+      ],
+      "pin": {
+        "export": "./blocks#Pagination",
+        "package": "@clossys/designer",
+        "version": "0.12.0"
+      },
+      "relation": "subset",
+      "slot": "sections.pagination",
+      "source": "foundry",
+      "sourceAddress": "./blocks#Pagination",
+      "status": "draft",
+      "trust": "foundry",
+      "unmapped": [
+        "mode.cursor",
+        "mode.load-more"
+      ]
+    }
+  },
+  "sections": {
+    "pagination": {
+      "configs": {},
+      "impl": {
+        "export": "Pagination",
+        "kind": "package",
+        "module": "@clossys/designer/blocks"
+      },
+      "license": "MIT",
+      "notes": [
+        "Host supplies pageCount and onPageChange. Only numbered pages exist; load-more and cursor modes are absent. Default visible messages remain in source.",
+        "Descriptor only; source imports, token reads, shared anatomy, accessibility, contrast and consumer runtime conformance are unmeasured. Content bindings describe host adaptation points, not type-equivalent converters."
+      ],
+      "parts": [],
+      "pin": {
+        "export": "./blocks#Pagination",
+        "package": "@clossys/designer",
+        "version": "0.12.0"
+      },
+      "propMap": {
+        "mode.pages": "./blocks#Pagination.page"
+      },
+      "slot": "sections.pagination",
+      "slotMap": {
+        "page": "./blocks#Pagination.page",
+        "total": "./blocks#Pagination.totalItems"
+      },
+      "source": "foundry"
+    }
+  }
+}

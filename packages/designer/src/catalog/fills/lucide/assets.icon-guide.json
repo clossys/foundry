@@ -1,0 +1,52 @@
+{
+  "$extensions": {
+    "com.clossys.fill": {
+      "id": "lucide/assets.icon-guide",
+      "slot": "assets.icon-guide",
+      "source": "lucide",
+      "mode": "implementation",
+      "sourceAddress": "lucide-react@1.23.0/dist/esm/icons/book-open.js",
+      "relation": "same-contract",
+      "builtOn": [],
+      "conforms": [],
+      "evidence": [],
+      "author": "third-party",
+      "trust": "pinned-upstream",
+      "license": "ISC",
+      "pin": {
+        "package": "lucide-react",
+        "version": "1.23.0",
+        "file": "src/icons/BookOpen.ts",
+        "sha256": "918684990e3fad045cf89db5d13598ca76f0675dc9a07f7132374c583fb01068"
+      },
+      "status": "draft",
+      "reads": {
+        "tokens": [],
+        "assets": []
+      }
+    }
+  },
+  "assets": {
+    "icon-guide": {
+      "default": {
+        "$type": "glyph",
+        "$value": [
+          [
+            "path",
+            {
+              "d": "M12 7v14",
+              "key": "1akyts"
+            }
+          ],
+          [
+            "path",
+            {
+              "d": "M3 18a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1h5a4 4 0 0 1 4 4 4 4 0 0 1 4-4h5a1 1 0 0 1 1 1v13a1 1 0 0 1-1 1h-6a3 3 0 0 0-3 3 3 3 0 0 0-3-3z",
+              "key": "ruj8y"
+            }
+          ]
+        ]
+      }
+    }
+  }
+}

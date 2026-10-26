@@ -1,15 +1,15 @@
 /**
  * @clossys/designer/blocks — the second rung of a three-layer component
- * reusable ladder (atoms → blocks). A block owns
+ * reusable ladder (components → blocks). A block owns
  * the internal layout of MULTIPLE NAMED REGIONS — `PageHeader` (title /
  * description / actions / breadcrumb), `EmptyState` (icon / title /
  * description / action). See this package's README, "Placement rules",
- * for the block/atom test this ladder is built on. Blocks may import from
- * `../atoms/`; the reverse is a layering violation, and `ladder.test.ts`
+ * for the block/component test this ladder is built on. Blocks may import from
+ * `../components/`; the reverse is a layering violation, and `ladder.test.ts`
  * enforces that structurally rather than by convention.
  *
  * A block never reaches outside this package for data or routing — it
- * takes what it needs through props and slots, same as an atom.
+ * takes what it needs through props and slots, same as an component.
  */
 
 import { version as reactVersion } from "react";
@@ -19,14 +19,14 @@ import { REACT_ARIA_COMPONENTS_DECLARED_RANGE, REACT_DECLARED_RANGE } from "../i
 
 /**
  * `react` and `react-aria-components` are two of this package's optional
- * peers — see `atoms/index.ts`'s own, longer version of this comment for
+ * peers — see `components/index.ts`'s own, longer version of this comment for
  * the full #182 rationale and why each is read the way it is (a pure
  * export for `react`, a static JSON import of `react-aria-components`'s
  * own `package.json` for the other, neither touching `node:fs`). This
- * barrel needs its own guard call, independent of `atoms/index.ts`'s:
+ * barrel needs its own guard call, independent of `components/index.ts`'s:
  * `Toolbar.tsx` and `DataTable.tsx` import `react-aria-components`
  * directly, and a consumer who imports only `@clossys/designer/blocks`
- * (never `@clossys/designer/atoms`) would otherwise get no signal at
+ * (never `@clossys/designer/components`) would otherwise get no signal at
  * all.
  */
 assertPeerVersion({ peer: "react", declaredRange: REACT_DECLARED_RANGE, foundVersion: reactVersion });
@@ -56,7 +56,7 @@ export { DataTable } from "./DataTable.js";
 export type { DataTableProps, DataTableColumn, DataTableSelectionMode } from "./DataTable.js";
 
 export { CanvasSurface } from "./canvas/CanvasSurface.js";
-export type { CanvasSurfaceProps } from "./canvas/CanvasSurface.js";
+export type { CanvasSurfaceProps, CanvasSurfaceActions, CanvasOverlayInsets, CanvasOverlay, CanvasEdge } from "./canvas/CanvasSurface.js";
 export { panBy, zoomAt, fitTo, clamp, toWorld, toScreen, selectSingle, toggleSelection, selectRange, selectMarquee, clearSelection, navigate, minimapModel } from "./canvas/models.js";
 export type { CanvasPoint, CanvasSize, CanvasRect, Viewport, Selection, CanvasItem, CanvasDirection, CanvasMinimapModel } from "./canvas/models.js";
 
@@ -235,7 +235,7 @@ export type { CommandMenuProps, CommandMenuItem, CommandMenuGroup, CommandMenuSh
 export { AppNavigation } from "./AppNavigation.js";
 export type { AppNavigationProps } from "./AppNavigation.js";
 export { PageBar } from "./PageBar.js";
-export type { PageBarProps, PageBarPage, PageBarCrumb, PageBarAction, PageBarDestination, PageBarLabels, PageBarWidth } from "./PageBar.js";
+export type { PageBarProps, PageBarPage, PageBarCrumb, PageBarAction, PageBarDestination, PageBarLabels, PageBarHeader, PageBarHeaderNav, PageBarHeaderActions } from "./PageBar.js";
 export { validateAppNavigationTree, getAppNavigationAncestry, getAppNavigationBreadcrumbs } from "./app-navigation-tree.js";
 export type { AppNavigationNode, AppNavigationLeaf, AppNavigationDestination, AppNavigationTarget, AppNavigationBreadcrumb } from "./app-navigation-tree.js";
 export { RelationGraph } from "./RelationGraph.js";
@@ -291,3 +291,12 @@ export { NewsletterBand } from "./NewsletterBand.js";
 export type { NewsletterBandProps, NewsletterStatus } from "./NewsletterBand.js";
 export { ResourceList } from "./ResourceList.js";
 export type { ResourceListProps, ResourceListItem, ResourceListAction } from "./ResourceList.js";
+export { frameLinkNavigation } from "./frame-navigation.js";
+export type { FrameNavigate } from "./frame-navigation.js";
+
+export { LibraryBoardSection } from "./library-board/LibraryBoardSection.js";
+export type { LibraryBoardSectionProps, LibraryBoardPreviewPort } from "./library-board/LibraryBoardSection.js";
+export { assertLibraryBoardRecords, assertLibraryBoardCommand } from "./library-board/model.js";
+export type { LibraryBoardRecords, LibraryBoardRow, LibraryBoardCandidate, LibraryBoardCommand, LibraryPreviewIdentity } from "./library-board/model.js";
+export type { LibraryBoardLabels } from "./library-board/types.js";
+export { LIBRARY_BOARD_CONFIG } from "./Matrix.js";

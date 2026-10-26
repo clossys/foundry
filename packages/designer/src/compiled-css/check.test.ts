@@ -7,9 +7,9 @@ import { checkCompiledCssFreshness } from "./check.js";
 const packageRoot = resolve(import.meta.dirname, "..", "..");
 
 describe("checkCompiledCssFreshness — real package (the actual CI gate)", () => {
-  it("reports the real, committed styles/compiled.css as in sync with atoms, blocks, and shell", async () => {
+  it("reports the real, committed styles/compiled.css as in sync with components, blocks, and shell", async () => {
     // THE gate: if this ever fails, styles/compiled.css was hand-edited or
-    // src/atoms/, src/blocks/, or src/shell/ changed without regenerating it. Run
+    // src/components/, src/blocks/, or src/shell/ changed without regenerating it. Run
     // `npm run generate:compiled-css` to fix.
     const result = await checkCompiledCssFreshness({ packageRoot });
     if (!result.inSync) {
@@ -26,9 +26,11 @@ describe("checkCompiledCssFreshness — drift detection (isolated fixture)", () 
   beforeEach(() => {
     dir = mkdtempSync(join(tmpdir(), "ui-compiled-css-check-"));
     cpSync(join(packageRoot, "styles"), join(dir, "styles"), { recursive: true });
-    cpSync(join(packageRoot, "src", "atoms"), join(dir, "src", "atoms"), { recursive: true });
+    cpSync(join(packageRoot, "src", "components"), join(dir, "src", "components"), { recursive: true });
     cpSync(join(packageRoot, "src", "blocks"), join(dir, "src", "blocks"), { recursive: true });
     cpSync(join(packageRoot, "src", "shell"), join(dir, "src", "shell"), { recursive: true });
+    cpSync(join(packageRoot, "src", "frames"), join(dir, "src", "frames"), { recursive: true });
+    cpSync(join(packageRoot, "src", "studio"), join(dir, "src", "studio"), { recursive: true });
   });
 
   afterEach(() => {
@@ -50,13 +52,13 @@ describe("checkCompiledCssFreshness — drift detection (isolated fixture)", () 
     expect(result.diffSummary).toContain("does not exist");
   });
 
-  it("reports drift when an atom gains a new real utility class without regenerating", async () => {
-    const buttonPath = join(dir, "src", "atoms", "Button.tsx");
+  it("reports drift when an component gains a new real utility class without regenerating", async () => {
+    const buttonPath = join(dir, "src", "components", "Button.tsx");
     const original = readFileSync(buttonPath, "utf8");
     // A real Tailwind utility not used anywhere else in this fixture's
-    // atoms/ — guaranteed to change the generated output, unlike editing
+    // components/ — guaranteed to change the generated output, unlike editing
     // an already-widely-used class (e.g. "bg-accent" appears in several
-    // atoms; removing one occurrence wouldn't change the compiled OUTPUT
+    // components; removing one occurrence wouldn't change the compiled OUTPUT
     // at all, since the candidate set — and so the generated CSS — would
     // stay identical).
     writeFileSync(buttonPath, original + `\nexport const __driftMarker = "opacity-37";\n`);

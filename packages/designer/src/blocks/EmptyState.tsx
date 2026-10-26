@@ -1,5 +1,6 @@
+import { SectionHeader } from "./SectionHeader.js";
 import type { HTMLAttributes, ReactNode } from "react";
-import { cx } from "../atoms/internal/cx.js";
+import { cx } from "../components/internal/cx.js";
 
 export interface EmptyStateProps extends Omit<HTMLAttributes<HTMLDivElement>, "title"> {
   /** Slot for an icon or illustration, rendered above the title. */
@@ -9,7 +10,7 @@ export interface EmptyStateProps extends Omit<HTMLAttributes<HTMLDivElement>, "t
   /** A line of supporting copy under the title. */
   description?: ReactNode;
   /**
-   * Slot for the recovery action — typically a `Button` atom ("Create your
+   * Slot for the recovery action — typically a `Button` component ("Create your
    * first prompt", "Clear filters"). Not every empty state has one (a
    * genuinely empty inbox has nothing to do about it), so it's optional.
    */
@@ -45,10 +46,7 @@ export function EmptyState({
       )}
     >
       {icon ? <div className="text-ink-muted">{icon}</div> : null}
-      <h2 className="text-h2 font-display text-ink-primary">{title}</h2>
-      {description ? (
-        <p className="text-body text-ink-secondary">{description}</p>
-      ) : null}
+      <SectionHeader density="standard" align="center" level={2} title={title} description={description} />
       {action ? <div className="mt-sm">{action}</div> : null}
     </div>
   );

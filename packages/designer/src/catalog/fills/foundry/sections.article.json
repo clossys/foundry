@@ -1,0 +1,57 @@
+{
+  "$extensions": {
+    "com.clossys.fill": {
+      "author": "foundry",
+      "builtOn": [],
+      "conforms": [],
+      "evidence": [],
+      "id": "foundry/sections.article",
+      "license": "MIT",
+      "mode": "implementation",
+      "originKinds": [
+        "adopted"
+      ],
+      "pin": {
+        "export": "./blocks#ArticleBody",
+        "package": "@clossys/designer",
+        "version": "0.12.0"
+      },
+      "relation": "subset",
+      "slot": "sections.article",
+      "source": "foundry",
+      "sourceAddress": "./blocks#ArticleBody",
+      "status": "draft",
+      "trust": "foundry",
+      "unmapped": [
+        "slot.toc"
+      ]
+    }
+  },
+  "sections": {
+    "article": {
+      "configs": {},
+      "impl": {
+        "export": "ArticleBody",
+        "kind": "package",
+        "module": "@clossys/designer/blocks"
+      },
+      "license": "MIT",
+      "notes": [
+        "Accepts pre-structured React children, not a rich-node parser; no dedicated table-of-contents slot. Requires an external SectionFrame.",
+        "Descriptor only; source imports, token reads, shared anatomy, accessibility, contrast and consumer runtime conformance are unmeasured. Content bindings describe host adaptation points, not type-equivalent converters."
+      ],
+      "parts": [],
+      "pin": {
+        "export": "./blocks#ArticleBody",
+        "package": "@clossys/designer",
+        "version": "0.12.0"
+      },
+      "propMap": {},
+      "slot": "sections.article",
+      "slotMap": {
+        "body": "./blocks#ArticleBody.children"
+      },
+      "source": "foundry"
+    }
+  }
+}

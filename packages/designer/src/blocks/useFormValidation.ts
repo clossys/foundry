@@ -60,10 +60,10 @@ export interface UseFormValidationOptions<V extends Record<string, unknown>> {
 }
 
 /**
- * Props for a designer field atom (`TextField`, `Textarea`, `SearchField`,
+ * Props for a designer field component (`TextField`, `Textarea`, `SearchField`,
  * `Select`, ... — anything built on a react-aria-components field with
  * `value`/`onChange`). Spread them on: react-aria-components then wires
- * `aria-invalid` and the `aria-describedby` link to the atom's own error
+ * `aria-invalid` and the `aria-describedby` link to the component's own error
  * element itself, so none of that is hand-rolled here.
  */
 export interface FormFieldProps<T> {
@@ -84,7 +84,7 @@ export interface FormFieldProps<T> {
 
 /**
  * Props for a plain native `<input>`/`<textarea>`/`<select>`. There is no
- * atom to render the error here, so the consumer renders it, with
+ * component to render the error here, so the consumer renders it, with
  * `id={errorId(name)}`, while `errors[name]` is set — `aria-describedby`
  * names that id only while the field shows an error, so it never points
  * at an element that isn't there.
@@ -207,7 +207,7 @@ function sortByDocumentOrder(
  *
  * **Pending, never disabled.** A valid submit sets `isSubmitting` until
  * `onSubmit` settles; `getSubmitButtonProps()` maps that onto the
- * `Button` atom's `isPending`, which keeps the button focusable (a
+ * `Button` component's `isPending`, which keeps the button focusable (a
  * `disabled` button drops keyboard focus to `<body>` mid-submit) and has
  * react-aria-components announce the state. A second submit while the
  * first is pending is dropped by a ref, not by `isSubmitting` state, so

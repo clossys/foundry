@@ -1,5 +1,6 @@
+import { SectionHeader } from "./SectionHeader.js";
 import type { CSSProperties, HTMLAttributes, ReactNode } from "react";
-import { cx } from "../atoms/internal/cx.js";
+import { cx } from "../components/internal/cx.js";
 import { SECTION_GROUND_CLASSES, type SectionGround, type SectionStatusTone } from "./section-ground.js";
 
 /** The closed readiness axis. A deliberate non-capability belongs in `StatusListDisposition`, not here. */
@@ -146,7 +147,6 @@ export function StatusList({
   style,
   ...rest
 }: StatusListProps) {
-  const HeadingTag = `h${headingLevel}` as `h${StatusListHeadingLevel}`;
   const colors = SECTION_GROUND_CLASSES[ground];
   const GroupHeadingTag = `h${Math.min(headingLevel + 1, 6)}` as `h${StatusListHeadingLevel}`;
   const hasHeadingRegion = eyebrow !== undefined || heading !== undefined || description !== undefined;
@@ -176,11 +176,7 @@ export function StatusList({
   return (
     <section {...rest} className={cx("flex flex-col gap-lg", colors.surface, className)} style={style}>
       {hasHeadingRegion ? (
-        <div className="flex flex-col gap-xs">
-          {eyebrow ? <p className={cx("text-caption uppercase tracking-label", colors.muted)}>{eyebrow}</p> : null}
-          {heading ? <HeadingTag className={cx("text-h2 font-display", colors.primary)}>{heading}</HeadingTag> : null}
-          {description ? <p className={cx("text-body", colors.secondary)}>{description}</p> : null}
-        </div>
+        <SectionHeader density="standard" level={headingLevel} ground={ground} eyebrow={eyebrow} description={description} {...(heading ? { title: heading } : {})} />
       ) : null}
       <div className="flex flex-col gap-xs">
         <p className={cx("text-caption font-body font-medium", colors.primary)}>{legendLabel}</p>

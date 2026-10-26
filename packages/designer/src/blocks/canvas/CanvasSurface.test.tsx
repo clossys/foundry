@@ -545,3 +545,97 @@ describe("canvas current range anchors", () => {
     expect(screen.getByRole("button", { name: "Beta" })).toHaveAttribute("aria-pressed", "false");
   });
 });
+
+it("interactive content mode never nests host controls inside item buttons and leaves their inputs owned", () => {
+  const pressed=vi.fn();
+  const {surface,props,container}=setup({itemInteraction:"content",renderItem:item=><><button onClick={pressed}>{item.label} action</button><input aria-label={`${item.label} edit`}/></>});
+  const button=screen.getByRole("button",{name:"Alpha action"});
+  expect(button.closest("[data-canvas-item]")?.tagName).toBe("SECTION");
+  expect(container.querySelector("button button")).toBeNull();
+  fireEvent.click(button);expect(pressed).toHaveBeenCalledOnce();
+  fireEvent.keyDown(button,{key:"ArrowRight"});
+  const input=screen.getByRole("textbox",{name:"Alpha edit"});
+  fireEvent.keyDown(input,{key:"ArrowDown"});pointer(button,"down",12,12);pointer(button,"move",30,30);pointer(button,"up",30,30);
+  expect(props.onSelectionChange).not.toHaveBeenCalled();expect(props.onViewportChange).not.toHaveBeenCalled();
+  pointer(surface,"down",400,350);pointer(surface,"move",420,370);pointer(surface,"up",420,370);
+  expect(props.onViewportChange).toHaveBeenCalled();
+  const previous=vi.mocked(props.onViewportChange).mock.calls.length;
+  fireEvent.keyDown(surface,{key:"+"});fireEvent.keyDown(surface,{key:"0"});
+  expect(vi.mocked(props.onViewportChange).mock.calls.length).toBeGreaterThan(previous);
+});
+
+it("flow world overlays stay pinned across camera moves, respect frame insets/narrow layout and dispose refs", () => {
+  const surfaces=vi.fn(), worlds=vi.fn(), actions={current:null} as {current: import("./CanvasSurface.js").CanvasSurfaceActions|null};
+  const result=setup({items:[],itemInteraction:"content",actionsRef:actions,onSurfaceElement:surfaces,onWorldElement:worlds,
+    overlayInsets:{blockStart:24,blockEnd:16,inlineStart:32,inlineEnd:40},overlays:[{placement:"explorer",label:"Explorer",openLabel:"Open explorer",closeLabel:"Close explorer",isOpen:true,onOpenChange:vi.fn(),content:<nav>Explorer</nav>},{placement:"inspector",label:"Inspector",openLabel:"Open inspector",closeLabel:"Close inspector",isOpen:true,onOpenChange:vi.fn(),content:<aside>Inspector</aside>}],children:<article tabIndex={-1}>Target</article>});
+  const explorer=result.container.querySelector<HTMLElement>('[data-canvas-panel="explorer"]')!, inspector=result.container.querySelector<HTMLElement>('[data-canvas-panel="inspector"]')!;
+  expect(explorer.style.insetBlockStart).toBe("24px");expect(explorer.style.insetInlineStart).toBe("32px");expect(inspector.style.insetInlineEnd).toBe("40px");
+  const pinned=explorer.getAttribute("style");
+  result.rerender(<CanvasSurface {...result.props} viewport={{x:150,y:-80,zoom:.7}}/>);
+  expect(explorer.getAttribute("style")).toBe(pinned);expect(inspector.style.inlineSize).toBe("var(--ui-layout-aside-w)");expect(inspector.style.insetInlineEnd).toBe("40px");
+  act(()=>actions.current!.pan(10,20));expect(result.props.onViewportChange).toHaveBeenLastCalledWith({x:160,y:-60,zoom:.7});
+  const target=screen.getByText("Target");vi.spyOn(target,"getBoundingClientRect").mockReturnValue({left:190,top:20,width:70,height:140} as DOMRect);
+  act(()=>actions.current!.flyTo(target,{focus:true,zoom:1}));expect(target).toHaveFocus();expect(result.props.onViewportChange).toHaveBeenLastCalledWith({x:350,y:100,zoom:1});
+  expect(()=>actions.current!.flyTo(document.body)).toThrow(/belong/);
+  result.unmount();expect(actions.current).toBeNull();expect(surfaces).toHaveBeenLastCalledWith(null);expect(worlds).toHaveBeenLastCalledWith(null);
+});
+it("flow content keeps editor keyboard/pointer/wheel while empty-world gestures pan and modified wheel zooms",()=>{
+  const result=setup({items:[],itemInteraction:"content",children:<><button>Nested action</button><input aria-label="Nested edit"/></>});
+  const button=screen.getByRole("button",{name:"Nested action"}),input=screen.getByRole("textbox",{name:"Nested edit"});
+  fireEvent.keyDown(input,{key:"ArrowDown"});fireEvent.keyDown(button,{key:"+"});pointer(button,"down",20,20);pointer(button,"move",40,40);fireEvent.wheel(input,{deltaY:20});
+  expect(result.props.onViewportChange).not.toHaveBeenCalled();
+  fireEvent.keyDown(result.surface,{key:"ArrowRight"});expect(result.props.onViewportChange).toHaveBeenLastCalledWith({x:-80,y:0,zoom:1});
+  fireEvent.wheel(result.surface,{deltaX:8,deltaY:12});expect(result.props.onViewportChange).toHaveBeenLastCalledWith({x:-8,y:-12,zoom:1});
+  fireEvent.wheel(result.surface,{deltaY:-30,ctrlKey:true});expect(vi.mocked(result.props.onViewportChange).mock.lastCall![0].zoom).toBeGreaterThan(1);
+});
+it("closed overlay placement and safe finite frame insets cannot become a caller style escape",()=>{
+  expect(()=>setup({overlayInsets:{blockStart:Infinity}})).toThrow(/inset/);
+  expect(()=>setup({overlayInsets:{blockStart:"0;display:none"}})).toThrow(/inset/);
+  expect(()=>setup({overlays:[{placement:"explorer",label:"Explorer",openLabel:"Open explorer",closeLabel:"Close explorer",isOpen:false,onOpenChange:vi.fn(),content:null},{placement:"explorer",label:"Other explorer",openLabel:"Open other explorer",closeLabel:"Close other explorer",isOpen:false,onOpenChange:vi.fn(),content:null}]})).toThrow(/unique closed/);
+});
+it("typed edges join only existing item geometry and retain registered connector paint",()=>{
+  const result=setup({edges:[{id:"a-b",from:"a",to:"b"}]});
+  const path=result.container.querySelector('[data-canvas-edge="a-b"]')!;
+  expect(path).toHaveAttribute("d","M 20 10 H 60 V 10 H 100");expect(path).toHaveAttribute("stroke","currentColor");
+  expect(()=>result.rerender(<CanvasSurface {...result.props} edges={[{id:"bad",from:"a",to:"unknown"}]}/>)).toThrow(/existing item endpoints/);
+});
+function StagePanels({layout = "wide", viewport = initial}: {layout?: "wide" | "compact" | "narrow"; viewport?: typeof initial}) {
+  const [explorer, setExplorer] = useState(true), [inspector, setInspector] = useState(true);
+  return <CanvasSurface aria-label="Stage panels" viewport={viewport} onViewportChange={vi.fn()} selection={[]} onSelectionChange={vi.fn()}
+    worldBounds={worldBounds} viewSize={viewSize} items={[]} itemInteraction="content" overlayLayout={layout} minimap zoomControls
+    overlays={[
+      {placement:"explorer",label:"Explorer",openLabel:"Open explorer",closeLabel:"Close explorer",isOpen:explorer,onOpenChange:setExplorer,content:<input aria-label="Explorer search"/>},
+      {placement:"inspector",label:"Inspector",openLabel:"Open inspector",closeLabel:"Close inspector",isOpen:inspector,onOpenChange:setInspector,content:<input aria-label="Inspector edit"/>},
+    ]}/>;
+}
+it("collapses both panels to named icon controls before hiding the map, keeps zoom and the stage-local sticky layer",()=>{
+  const result=render(<StagePanels/>);
+  result.rerender(<StagePanels layout="compact"/>);
+  const explorer=screen.getByRole("button",{name:"Open explorer"}), inspector=screen.getByRole("button",{name:"Open inspector"});
+  for(const trigger of [explorer,inspector]) {expect(trigger).toHaveAttribute("aria-expanded","false");expect(trigger.querySelector("svg")).not.toBeNull();}
+  expect(screen.queryByRole("textbox")).not.toBeInTheDocument();
+  expect(result.container.querySelector('[data-canvas-minimap]')).toBeVisible();
+  result.rerender(<StagePanels layout="narrow"/>);
+  expect(result.container.querySelector('[data-canvas-minimap]')).not.toBeVisible();
+  expect(screen.getByRole("group",{name:"Canvas zoom"})).toBeVisible();
+  expect(screen.getByRole("region",{name:"Stage panels"})).toHaveClass("isolate");
+  for(const overlay of result.container.querySelectorAll<HTMLElement>('[data-canvas-panel], [data-canvas-minimap], [data-canvas-controls]')) {
+    expect(overlay.style.zIndex).toBe("var(--ui-z-sticky)");expect(overlay.style.position).not.toBe("fixed");
+  }
+});
+it("opens only one compact panel, reserves the bottom controls, and returns Escape focus to its icon trigger",()=>{
+  const result=render(<StagePanels layout="narrow"/>);
+  const explorer=screen.getByRole("button",{name:"Open explorer"});
+  fireEvent.click(explorer);
+  expect(screen.getByRole("textbox",{name:"Explorer search"})).toBeVisible();
+  fireEvent.click(screen.getByRole("button",{name:"Open inspector"}));
+  expect(screen.queryByRole("textbox",{name:"Explorer search"})).not.toBeInTheDocument();
+  const input=screen.getByRole("textbox",{name:"Inspector edit"});input.focus();
+  const panel=input.closest<HTMLElement>('[data-canvas-panel]')!;
+  expect(panel.style.insetInlineStart).toBe("calc(var(--spacing-md) + var(--ui-control-h-md) + var(--spacing-md))");expect(panel.style.insetInlineEnd).toBe("var(--spacing-md)");
+  expect(panel.style.maxBlockSize).toContain("var(--ui-control-h-sm)");
+  fireEvent.keyDown(input,{key:"ArrowRight"});expect(input).toHaveFocus();
+  fireEvent.keyDown(input,{key:"Escape"});
+  expect(screen.getByRole("button",{name:"Open inspector"})).toHaveFocus();
+  expect(screen.queryByRole("textbox",{name:"Inspector edit"})).not.toBeInTheDocument();
+});

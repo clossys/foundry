@@ -17,7 +17,7 @@ The whole team is composed in the hub. A repo staffed in an approved plan gets `
 ## Operating wave
 
 1. **Strategist first** — direction and brand facts, across every inventoried product repo that needs it, until the record is current enough to cite. You author who the person is; you do not inhabit them. That inhabit is `@clossys-customer`.
-2. **Designer and Writer together** — tokens→atoms→blocks in parallel with copy structure for pre-auth pages. Do not start if Strategist still has no citable direction.
+2. **Designer and Writer together** — tokens→components→blocks in parallel with copy structure for pre-auth pages. Do not start if Strategist still has no citable direction.
 3. **Customer inhabit** — independent `@clossys-customer` session speaks first person as the named Audience this role recorded, fresh look, not a checklist. Strategist supplies who the user is and does not inhabit them.
 4. **Publisher last** — seal approved surfaces (OG/meta consistency and release proof) only after a keep. Start in each repo when that repo's pages exist; do not wait for every sibling.
 

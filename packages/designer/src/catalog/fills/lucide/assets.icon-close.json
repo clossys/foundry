@@ -1,0 +1,52 @@
+{
+  "$extensions": {
+    "com.clossys.fill": {
+      "id": "lucide/assets.icon-close",
+      "slot": "assets.icon-close",
+      "source": "lucide",
+      "mode": "implementation",
+      "sourceAddress": "lucide-react@1.23.0/dist/esm/icons/x.js",
+      "relation": "same-contract",
+      "builtOn": [],
+      "conforms": [],
+      "evidence": [],
+      "author": "third-party",
+      "trust": "pinned-upstream",
+      "license": "ISC",
+      "pin": {
+        "package": "lucide-react",
+        "version": "1.23.0",
+        "file": "src/icons/X.ts",
+        "sha256": "8f72143caaadd154476c699ee02546dd60ca49217afc4215220b8fbe9867f29e"
+      },
+      "status": "draft",
+      "reads": {
+        "tokens": [],
+        "assets": []
+      }
+    }
+  },
+  "assets": {
+    "icon-close": {
+      "default": {
+        "$type": "glyph",
+        "$value": [
+          [
+            "path",
+            {
+              "d": "M18 6 6 18",
+              "key": "1bl5f8"
+            }
+          ],
+          [
+            "path",
+            {
+              "d": "m6 6 12 12",
+              "key": "d8bk6v"
+            }
+          ]
+        ]
+      }
+    }
+  }
+}

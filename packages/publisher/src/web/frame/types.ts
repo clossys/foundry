@@ -1,7 +1,7 @@
 import type { SiteFramePresentationConfig } from "./site-frame-contract.js";
 import type { ReactNode } from "react";
 import type { CopyRef, CopyResolver } from "@clossys/writer";
-import type { IconNode } from "@clossys/designer/atoms/server";
+import type { IconNode } from "@clossys/designer/components/server";
 import type { AssetResolver } from "../types.js";
 import type { SiteChromeGround } from "../internal/viewChromeGround.js";
 
@@ -154,6 +154,8 @@ export interface SiteFrameInput {
 }
 
 export interface SiteFrameProps extends SiteFrameInput {
+  /** Host-owned toast viewport, mounted after the footer and outside main. */
+  readonly toasts?: ReactNode;
   /** Flat semantic presentation overrides; content remains in shell bindings. */
   readonly presentation?: SiteFramePresentationConfig;
   /** The page content: one chrome-free view, rendered inside the frame's `<main>`. */

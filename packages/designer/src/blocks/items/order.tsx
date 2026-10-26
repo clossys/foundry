@@ -1,7 +1,7 @@
 import type { CSSProperties } from "react";
-import { Icon } from "../../atoms/Icon.js";
-import { cx } from "../../atoms/internal/cx.js";
-import { UI_BORDER_HAIRLINE } from "../../atoms/internal/ui-vars.js";
+import { Icon } from "../../components/Icon.js";
+import { cx } from "../../components/internal/cx.js";
+import { UI_BORDER_HAIRLINE } from "../../components/internal/ui-vars.js";
 import { ArrowRight } from "../../icons/ArrowRight.js";
 import { SECTION_GROUND_CLASSES } from "../section-ground.js";
 import { hasContent } from "./policies.js";

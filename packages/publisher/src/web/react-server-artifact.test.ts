@@ -427,7 +427,7 @@ describe("packed Publisher web React-server boundary", () => {
 
   it("rejects a packed Designer 0.2.5 graph that the former lower bound accepted before SectionedView's missing blocks fail at import", () => {
     const adversarialRoot = join(fixtureRoot, "designer-0.2.5");
-    mkdirSync(join(adversarialRoot, "dist", "atoms"), { recursive: true });
+    mkdirSync(join(adversarialRoot, "dist", "components"), { recursive: true });
     mkdirSync(join(adversarialRoot, "dist", "blocks"), { recursive: true });
     mkdirSync(join(adversarialRoot, "dist", "shell"), { recursive: true });
     writeFileSync(
@@ -437,7 +437,7 @@ describe("packed Publisher web React-server boundary", () => {
         version: "0.2.5",
         type: "module",
         exports: {
-          "./atoms/server": "./dist/atoms/server.js",
+          "./components/server": "./dist/components/server.js",
           "./blocks/server": "./dist/blocks/server.js",
           "./shell/server": "./dist/shell/server.js",
           "./tokens": "./dist/tokens.js",
@@ -446,7 +446,7 @@ describe("packed Publisher web React-server boundary", () => {
       }),
     );
     writeFileSync(
-      join(adversarialRoot, "dist", "atoms", "server.js"),
+      join(adversarialRoot, "dist", "components", "server.js"),
       "export const Badge = ({ children }) => children; export const Card = ({ children }) => children; export const mergeUiClasses = (...names) => names.filter(Boolean).join(' ');\n",
     );
     writeFileSync(
@@ -552,7 +552,7 @@ describe("packed Publisher web React-server boundary", () => {
     // graph reaches, except `MarketingChapter`) without depending on the
     // live registry, so the test stays deterministic as the registry moves.
     const adversarialRoot = join(fixtureRoot, "designer-0.4.7-shaped");
-    mkdirSync(join(adversarialRoot, "dist", "atoms"), { recursive: true });
+    mkdirSync(join(adversarialRoot, "dist", "components"), { recursive: true });
     mkdirSync(join(adversarialRoot, "dist", "blocks"), { recursive: true });
     mkdirSync(join(adversarialRoot, "dist", "shell"), { recursive: true });
     writeFileSync(
@@ -562,7 +562,7 @@ describe("packed Publisher web React-server boundary", () => {
         version: "0.4.7",
         type: "module",
         exports: {
-          "./atoms/server": "./dist/atoms/server.js",
+          "./components/server": "./dist/components/server.js",
           "./blocks/server": "./dist/blocks/server.js",
           "./shell/server": "./dist/shell/server.js",
           "./tokens": "./dist/tokens.js",
@@ -571,7 +571,7 @@ describe("packed Publisher web React-server boundary", () => {
       }),
     );
     writeFileSync(
-      join(adversarialRoot, "dist", "atoms", "server.js"),
+      join(adversarialRoot, "dist", "components", "server.js"),
       "export const Badge = ({ children }) => children; export const Card = ({ children }) => children; export const mergeUiClasses = (...names) => names.filter(Boolean).join(' ');\n",
     );
     // Every block Publisher's web graph names, at the shape Designer 0.4.7

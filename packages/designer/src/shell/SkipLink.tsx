@@ -1,5 +1,5 @@
 import type { KeyboardEvent, MouseEvent, ReactNode } from "react";
-import { cx } from "../atoms/internal/cx.js";
+import { cx } from "../components/internal/cx.js";
 import { UI_Z_SKIP_LINK } from "./internal/shell-vars.js";
 
 export interface SkipLinkProps {

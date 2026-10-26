@@ -237,6 +237,15 @@
       }
     }
   }
+  .min-h-\[var\(--ui-layout-tap-target\)\] {
+    min-height: var(--ui-layout-tap-target);
+  }
+  .max-w-\[var\(--ui-width-form-max\,none\)\] {
+    max-width: var(--ui-width-form-max,none);
+  }
+  .max-w-\[var\(--ui-width-prose-max\,none\)\] {
+    max-width: var(--ui-width-prose-max,none);
+  }
 }
 @keyframes scroll-cue-out {
   to {
@@ -484,6 +493,9 @@
   }
   .\@container {
     container-type: inline-size;
+  }
+  .pointer-events-auto {
+    pointer-events: auto;
   }
   .pointer-events-none {
     pointer-events: none;
@@ -1023,6 +1035,9 @@
   .-z-10 {
     z-index: calc(10 * -1);
   }
+  .z-\[var\(--ui-z-sticky\)\] {
+    z-index: var(--ui-z-sticky);
+  }
   .z-\[var\(--ui-z-sticky\,10\)\] {
     z-index: var(--ui-z-sticky,10);
   }
@@ -1185,6 +1200,9 @@
   }
   .me-xs {
     margin-inline-end: var(--spacing-xs, 4px);
+  }
+  .\[margin-block-start\:auto\] {
+    margin-block-start: auto;
   }
   .items-order-body {
     margin-block-start: calc((1 - var(--items-wide, 0)) * var(--items-body-narrow, 0px) + var(--items-wide, 0) * (var(--spacing-2xl, 32px) + var(--spacing-lg, 16px) + var(--items-lane-wide, 0px)));
@@ -1516,6 +1534,12 @@
   .h-24 {
     height: calc(var(--spacing, 0.25rem) * 24);
   }
+  .h-\[var\(--spacing-xl\)\] {
+    height: var(--spacing-xl);
+  }
+  .h-\[var\(--ui-layout-aside-w\)\] {
+    height: var(--ui-layout-aside-w);
+  }
   .h-auto {
     height: auto;
   }
@@ -1641,6 +1665,9 @@
   }
   .min-w-\[12rem\] {
     min-width: 12rem;
+  }
+  .min-w-\[var\(--ui-layout-tap-target\)\] {
+    min-width: var(--ui-layout-tap-target);
   }
   .flex-1 {
     flex: 1;
@@ -1778,6 +1805,9 @@
   }
   .resize-y {
     resize: vertical;
+  }
+  .scroll-mt-0 {
+    scroll-margin-top: 0px;
   }
   .scroll-mt-4xl {
     scroll-margin-top: var(--spacing-4xl, 64px);
@@ -2558,6 +2588,9 @@
   .stroke-ink-muted {
     stroke: var(--color-ink-muted, oklch(0.5658 0 0));
   }
+  .object-contain {
+    object-fit: contain;
+  }
   .object-cover {
     object-fit: cover;
   }
@@ -2612,6 +2645,9 @@
   .scene-linear-status {
     padding-block: var(--spacing-md, 12px);
     border-block-start: var(--ui-border-hairline, 1px) solid var(--color-line-base, oklch(0.8761 0 0));
+  }
+  .py-0 {
+    padding-block: 0px;
   }
   .py-2xl {
     padding-block: var(--spacing-2xl, 32px);
@@ -2818,6 +2854,9 @@
   }
   .text-pretty {
     text-wrap: pretty;
+  }
+  .\[overflow-wrap\:anywhere\] {
+    overflow-wrap: anywhere;
   }
   .break-words {
     overflow-wrap: break-word;

@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import type { ReactElement } from "react";
 import type { CopyRef, CopyResolver } from "@clossys/writer";
-import { Button, Select, TextField, Textarea } from "@clossys/designer/atoms";
+import { Button, Select, TextField, Textarea } from "@clossys/designer/components";
 import { Form, useFormValidation } from "@clossys/designer/blocks";
 import { RenderError } from "../../internal/errors.js";
 import type { ContactResult } from "../contact/types.js";

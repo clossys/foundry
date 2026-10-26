@@ -111,6 +111,7 @@ describe("ResetForm :: steps", () => {
 
     expect(handlers.request).toHaveBeenCalledExactlyOnceWith(IDENTIFIER);
     expect(await screen.findByText(defaultText("code.description"))).toBeInTheDocument();
+    expect(screen.queryAllByRole("heading")).toHaveLength(0);
     expect(screen.getByRole("form", { name: defaultText("code.title") })).toBeInTheDocument();
     expect(codeField()).toHaveAttribute("autocomplete", "one-time-code");
     expect(passwordField()).toHaveAttribute("type", "password");

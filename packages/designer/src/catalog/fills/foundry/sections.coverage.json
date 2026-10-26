@@ -1,0 +1,931 @@
+{
+  "coverage": [
+    {
+      "missingMembers": [],
+      "missingRequiredSlots": [],
+      "missingSlots": [],
+      "notes": [
+        "Permissions are grouped; the host also supplies value, labels and optional onChange. The source owns a native table rather than a component table leaf.",
+        "Descriptor only; source imports, token reads, shared anatomy, accessibility, contrast and consumer runtime conformance are unmeasured. Content bindings describe host adaptation points, not type-equivalent converters."
+      ],
+      "slot": "sections.access-matrix",
+      "status": "candidate",
+      "supportedMembers": [],
+      "supportedSlots": [
+        "permissions",
+        "roles"
+      ],
+      "unresolvedMemberAxes": []
+    },
+    {
+      "missingMembers": [],
+      "missingRequiredSlots": [
+        "events"
+      ],
+      "missingSlots": [
+        "events",
+        "filters",
+        "grouping"
+      ],
+      "notes": [
+        "EventItem is one event, not an exported activity-feed section.",
+        "Descriptor only; source imports, token reads, shared anatomy, accessibility, contrast and consumer runtime conformance are unmeasured. Content bindings describe host adaptation points, not type-equivalent converters."
+      ],
+      "slot": "sections.activity-feed",
+      "status": "unavailable",
+      "supportedMembers": [],
+      "supportedSlots": [],
+      "unresolvedMemberAxes": []
+    },
+    {
+      "missingMembers": [],
+      "missingRequiredSlots": [],
+      "missingSlots": [
+        "toc"
+      ],
+      "notes": [
+        "Accepts pre-structured React children, not a rich-node parser; no dedicated table-of-contents slot. Requires an external SectionFrame.",
+        "Descriptor only; source imports, token reads, shared anatomy, accessibility, contrast and consumer runtime conformance are unmeasured. Content bindings describe host adaptation points, not type-equivalent converters."
+      ],
+      "slot": "sections.article",
+      "status": "subset",
+      "supportedMembers": [],
+      "supportedSlots": [
+        "body"
+      ],
+      "unresolvedMemberAxes": []
+    },
+    {
+      "missingMembers": [],
+      "missingRequiredSlots": [
+        "entries"
+      ],
+      "missingSlots": [
+        "entries",
+        "export",
+        "filter"
+      ],
+      "notes": [
+        "Registry row is a spec; no audit-log package export.",
+        "Descriptor only; source imports, token reads, shared anatomy, accessibility, contrast and consumer runtime conformance are unmeasured. Content bindings describe host adaptation points, not type-equivalent converters."
+      ],
+      "slot": "sections.audit-log",
+      "status": "unavailable",
+      "supportedMembers": [],
+      "supportedSlots": [],
+      "unresolvedMemberAxes": []
+    },
+    {
+      "missingMembers": [
+        "ground.transparent"
+      ],
+      "missingRequiredSlots": [],
+      "missingSlots": [],
+      "notes": [
+        "SectionGround excludes transparent. Rhythm is fixed in source, with no specified contract member values.",
+        "Descriptor only; source imports, token reads, shared anatomy, accessibility, contrast and consumer runtime conformance are unmeasured. Content bindings describe host adaptation points, not type-equivalent converters."
+      ],
+      "slot": "sections.band",
+      "status": "subset",
+      "supportedMembers": [
+        "ground.base",
+        "ground.inverse",
+        "ground.sunken",
+        "measure.content",
+        "measure.prose",
+        "measure.wide"
+      ],
+      "supportedSlots": [],
+      "unresolvedMemberAxes": [
+        "rhythm"
+      ]
+    },
+    {
+      "missingMembers": [],
+      "missingRequiredSlots": [
+        "actions",
+        "header"
+      ],
+      "missingSlots": [
+        "actions",
+        "header"
+      ],
+      "notes": [
+        "No Designer section export; a Publisher check fixture is not an implementation.",
+        "Descriptor only; source imports, token reads, shared anatomy, accessibility, contrast and consumer runtime conformance are unmeasured. Content bindings describe host adaptation points, not type-equivalent converters."
+      ],
+      "slot": "sections.call-to-action",
+      "status": "unavailable",
+      "supportedMembers": [],
+      "supportedSlots": [],
+      "unresolvedMemberAxes": []
+    },
+    {
+      "missingMembers": [
+        "layout.grid",
+        "layout.list"
+      ],
+      "missingRequiredSlots": [
+        "records"
+      ],
+      "missingSlots": [
+        "records"
+      ],
+      "notes": [
+        "Items is a generic engine; the recipe row supplies no independently evidenced configured section.",
+        "Descriptor only; source imports, token reads, shared anatomy, accessibility, contrast and consumer runtime conformance are unmeasured. Content bindings describe host adaptation points, not type-equivalent converters."
+      ],
+      "slot": "sections.cards",
+      "status": "unavailable",
+      "supportedMembers": [],
+      "supportedSlots": [],
+      "unresolvedMemberAxes": []
+    },
+    {
+      "missingMembers": [
+        "part.attachment",
+        "part.questionnaire",
+        "part.trace"
+      ],
+      "missingRequiredSlots": [
+        "composer"
+      ],
+      "missingSlots": [
+        "composer"
+      ],
+      "notes": [
+        "Messages cover only the message subset of the parts union. Composer is built in, not a host region slot. Host supplies status and onSend. English fallback labels and direct glyph imports remain; no attachment, trace or questionnaire API.",
+        "Descriptor only; source imports, token reads, shared anatomy, accessibility, contrast and consumer runtime conformance are unmeasured. Content bindings describe host adaptation points, not type-equivalent converters."
+      ],
+      "slot": "sections.chat",
+      "status": "subset",
+      "supportedMembers": [
+        "part.bubble",
+        "part.message",
+        "part.scroller"
+      ],
+      "supportedSlots": [
+        "parts"
+      ],
+      "unresolvedMemberAxes": []
+    },
+    {
+      "missingMembers": [],
+      "missingRequiredSlots": [],
+      "missingSlots": [],
+      "notes": [
+        "Host additionally supplies onMappingChange and labels; source uses Select and native fieldset layout.",
+        "Descriptor only; source imports, token reads, shared anatomy, accessibility, contrast and consumer runtime conformance are unmeasured. Content bindings describe host adaptation points, not type-equivalent converters."
+      ],
+      "slot": "sections.column-mapper",
+      "status": "candidate",
+      "supportedMembers": [],
+      "supportedSlots": [
+        "mapping",
+        "source-columns",
+        "target-fields"
+      ],
+      "unresolvedMemberAxes": []
+    },
+    {
+      "missingMembers": [],
+      "missingRequiredSlots": [],
+      "missingSlots": [],
+      "notes": [
+        "The exported Matrix supports arrangement=grid for authored comparison cells and arrangement=choices for content-sized native RadioGroup rows. Choices accepts one or more library columns and unbounded leaf rows without an internal scroll region.",
+        "The choices assembly consumes SectionHeader, RadioGroup, Card, Badge, Tooltip and token-backed table layout; Studio supplies checked token, asset or component previews.",
+        "Descriptor only; source imports, token reads, shared anatomy, accessibility, contrast and consumer runtime conformance are unmeasured. Content bindings describe host adaptation points, not type-equivalent converters."
+      ],
+      "slot": "sections.comparison",
+      "status": "candidate",
+      "supportedMembers": [],
+      "supportedSlots": [
+        "columns",
+        "highlight",
+        "rows"
+      ],
+      "unresolvedMemberAxes": []
+    },
+    {
+      "missingMembers": [],
+      "missingRequiredSlots": [
+        "actions",
+        "copy",
+        "policy"
+      ],
+      "missingSlots": [
+        "actions",
+        "copy",
+        "policy"
+      ],
+      "notes": [
+        "No package implementation is available.",
+        "Descriptor only; source imports, token reads, shared anatomy, accessibility, contrast and consumer runtime conformance are unmeasured. Content bindings describe host adaptation points, not type-equivalent converters."
+      ],
+      "slot": "sections.consent",
+      "status": "unavailable",
+      "supportedMembers": [],
+      "supportedSlots": [],
+      "unresolvedMemberAxes": []
+    },
+    {
+      "missingMembers": [],
+      "missingRequiredSlots": [],
+      "missingSlots": [
+        "header"
+      ],
+      "notes": [
+        "Header is spread across heading, eyebrow, description and actions; there is no section-header region prop. Source uses SectionIntro rather than the frozen section-header fill.",
+        "Descriptor only; source imports, token reads, shared anatomy, accessibility, contrast and consumer runtime conformance are unmeasured. Content bindings describe host adaptation points, not type-equivalent converters."
+      ],
+      "slot": "sections.content",
+      "status": "subset",
+      "supportedMembers": [
+        "layout.split-end",
+        "layout.split-start",
+        "layout.stacked"
+      ],
+      "supportedSlots": [
+        "body",
+        "footnote",
+        "media"
+      ],
+      "unresolvedMemberAxes": []
+    },
+    {
+      "missingMembers": [],
+      "missingRequiredSlots": [
+        "rows"
+      ],
+      "missingSlots": [
+        "cells",
+        "pinning",
+        "rows"
+      ],
+      "notes": [
+        "Registry row is a spec; internal PivotGrid is not a public data-grid section export.",
+        "Descriptor only; source imports, token reads, shared anatomy, accessibility, contrast and consumer runtime conformance are unmeasured. Content bindings describe host adaptation points, not type-equivalent converters."
+      ],
+      "slot": "sections.data-grid",
+      "status": "unavailable",
+      "supportedMembers": [],
+      "supportedSlots": [],
+      "unresolvedMemberAxes": []
+    },
+    {
+      "missingMembers": [],
+      "missingRequiredSlots": [],
+      "missingSlots": [],
+      "notes": [
+        "Host supplies rowKey. Grouping uses the typed model API; footer is an arbitrary region, not a pagination controller. FlatGrid and ModelTable own implementation dependencies, including direct RAC imports.",
+        "Descriptor only; source imports, token reads, shared anatomy, accessibility, contrast and consumer runtime conformance are unmeasured. Content bindings describe host adaptation points, not type-equivalent converters."
+      ],
+      "slot": "sections.data-table",
+      "status": "candidate",
+      "supportedMembers": [],
+      "supportedSlots": [
+        "columns",
+        "grouping",
+        "pagination",
+        "rows",
+        "selection",
+        "sort",
+        "toolbar"
+      ],
+      "unresolvedMemberAxes": []
+    },
+    {
+      "missingMembers": [
+        "kind.empty",
+        "kind.first-use",
+        "kind.no-results",
+        "scope.page",
+        "scope.region"
+      ],
+      "missingRequiredSlots": [],
+      "missingSlots": [],
+      "notes": [
+        "Host supplies required title. No kind or scope API; source hand-renders its h2 and padding.",
+        "Descriptor only; source imports, token reads, shared anatomy, accessibility, contrast and consumer runtime conformance are unmeasured. Content bindings describe host adaptation points, not type-equivalent converters."
+      ],
+      "slot": "sections.empty-state",
+      "status": "subset",
+      "supportedMembers": [],
+      "supportedSlots": [
+        "actions",
+        "illustration"
+      ],
+      "unresolvedMemberAxes": []
+    },
+    {
+      "missingMembers": [
+        "kind.failure",
+        "kind.forbidden",
+        "kind.not-found",
+        "kind.offline"
+      ],
+      "missingRequiredSlots": [],
+      "missingSlots": [
+        "code",
+        "report",
+        "retry"
+      ],
+      "notes": [
+        "Registry row is a spec; no error-state package export.",
+        "Descriptor only; source imports, token reads, shared anatomy, accessibility, contrast and consumer runtime conformance are unmeasured. Content bindings describe host adaptation points, not type-equivalent converters."
+      ],
+      "slot": "sections.error-state",
+      "status": "unavailable",
+      "supportedMembers": [],
+      "supportedSlots": [],
+      "unresolvedMemberAxes": []
+    },
+    {
+      "missingMembers": [],
+      "missingRequiredSlots": [
+        "list"
+      ],
+      "missingSlots": [
+        "list"
+      ],
+      "notes": [
+        "The tree prop is structured data, not a replaceable tree region. No list-pane region API; renderDetails is a selected-node detail callback. Host supplies label. Source implements tree keyboard handling locally.",
+        "Descriptor only; source imports, token reads, shared anatomy, accessibility, contrast and consumer runtime conformance are unmeasured. Content bindings describe host adaptation points, not type-equivalent converters."
+      ],
+      "slot": "sections.explorer",
+      "status": "subset",
+      "supportedMembers": [],
+      "supportedSlots": [
+        "selection",
+        "tree"
+      ],
+      "unresolvedMemberAxes": []
+    },
+    {
+      "missingMembers": [
+        "layout.two-column"
+      ],
+      "missingRequiredSlots": [],
+      "missingSlots": [],
+      "notes": [
+        "Source has a fixed vertical disclosure list and no two-column layout API; section headings are hand-rendered.",
+        "Descriptor only; source imports, token reads, shared anatomy, accessibility, contrast and consumer runtime conformance are unmeasured. Content bindings describe host adaptation points, not type-equivalent converters."
+      ],
+      "slot": "sections.faq",
+      "status": "subset",
+      "supportedMembers": [
+        "layout.list"
+      ],
+      "supportedSlots": [
+        "items"
+      ],
+      "unresolvedMemberAxes": []
+    },
+    {
+      "missingMembers": [
+        "layout.list",
+        "layout.split"
+      ],
+      "missingRequiredSlots": [],
+      "missingSlots": [],
+      "notes": [
+        "CompatFeatureGrid fixes the grid layout. Items have icon, heading and description but no per-item link prop; list and split layouts are absent.",
+        "Descriptor only; source imports, token reads, shared anatomy, accessibility, contrast and consumer runtime conformance are unmeasured. Content bindings describe host adaptation points, not type-equivalent converters."
+      ],
+      "slot": "sections.features",
+      "status": "subset",
+      "supportedMembers": [
+        "layout.grid"
+      ],
+      "supportedSlots": [
+        "items"
+      ],
+      "unresolvedMemberAxes": []
+    },
+    {
+      "missingMembers": [],
+      "missingRequiredSlots": [
+        "fields",
+        "groups",
+        "operators"
+      ],
+      "missingSlots": [
+        "fields",
+        "groups",
+        "operators"
+      ],
+      "notes": [
+        "A filter model is not an exported filter-builder section.",
+        "Descriptor only; source imports, token reads, shared anatomy, accessibility, contrast and consumer runtime conformance are unmeasured. Content bindings describe host adaptation points, not type-equivalent converters."
+      ],
+      "slot": "sections.filter-builder",
+      "status": "unavailable",
+      "supportedMembers": [],
+      "supportedSlots": [],
+      "unresolvedMemberAxes": []
+    },
+    {
+      "missingMembers": [],
+      "missingRequiredSlots": [],
+      "missingSlots": [],
+      "notes": [
+        "Submit binds to the actions region; the host supplies the submit button. Error-summary content uses the errors and errorSummaryMessage API. Form is a block, not the unavailable components.form leaf.",
+        "Descriptor only; source imports, token reads, shared anatomy, accessibility, contrast and consumer runtime conformance are unmeasured. Content bindings describe host adaptation points, not type-equivalent converters."
+      ],
+      "slot": "sections.form",
+      "status": "candidate",
+      "supportedMembers": [],
+      "supportedSlots": [
+        "error-summary",
+        "fields",
+        "submit"
+      ],
+      "unresolvedMemberAxes": []
+    },
+    {
+      "missingMembers": [
+        "lightbox.disabled",
+        "lightbox.enabled"
+      ],
+      "missingRequiredSlots": [
+        "images"
+      ],
+      "missingSlots": [
+        "images"
+      ],
+      "notes": [
+        "Registry row is a spec; no gallery package export.",
+        "Descriptor only; source imports, token reads, shared anatomy, accessibility, contrast and consumer runtime conformance are unmeasured. Content bindings describe host adaptation points, not type-equivalent converters."
+      ],
+      "slot": "sections.gallery",
+      "status": "unavailable",
+      "supportedMembers": [],
+      "supportedSlots": [],
+      "unresolvedMemberAxes": []
+    },
+    {
+      "missingMembers": [],
+      "missingRequiredSlots": [
+        "header"
+      ],
+      "missingSlots": [
+        "header"
+      ],
+      "notes": [
+        "Host supplies required heading. Header is distributed over heading and supporting props, not a section-header region. Source composes SectionIntro; headingLevel permits h1.",
+        "Descriptor only; source imports, token reads, shared anatomy, accessibility, contrast and consumer runtime conformance are unmeasured. Content bindings describe host adaptation points, not type-equivalent converters."
+      ],
+      "slot": "sections.hero",
+      "status": "subset",
+      "supportedMembers": [
+        "layout.editorial",
+        "layout.split",
+        "size.compact",
+        "size.default",
+        "size.display"
+      ],
+      "supportedSlots": [
+        "actions",
+        "media"
+      ],
+      "unresolvedMemberAxes": []
+    },
+    {
+      "missingMembers": [
+        "layout.grid",
+        "layout.list"
+      ],
+      "missingRequiredSlots": [],
+      "missingSlots": [],
+      "notes": [
+        "CompatNavGrid renders fixed linked/action cards; list and plain-grid modes are absent. No generic Items recipe configuration is invented.",
+        "Descriptor only; source imports, token reads, shared anatomy, accessibility, contrast and consumer runtime conformance are unmeasured. Content bindings describe host adaptation points, not type-equivalent converters."
+      ],
+      "slot": "sections.link-index",
+      "status": "subset",
+      "supportedMembers": [
+        "layout.cards"
+      ],
+      "supportedSlots": [
+        "links"
+      ],
+      "unresolvedMemberAxes": []
+    },
+    {
+      "missingMembers": [],
+      "missingRequiredSlots": [],
+      "missingSlots": [],
+      "notes": [
+        "Source checks allowed items.length values and tone; logos are host React nodes. The source root is ul, with no band/header wrapper.",
+        "Descriptor only; source imports, token reads, shared anatomy, accessibility, contrast and consumer runtime conformance are unmeasured. Content bindings describe host adaptation points, not type-equivalent converters."
+      ],
+      "slot": "sections.logo-cloud",
+      "status": "candidate",
+      "supportedMembers": [
+        "count.12",
+        "count.3",
+        "count.4",
+        "count.6",
+        "count.8",
+        "monochrome.false",
+        "monochrome.true"
+      ],
+      "supportedSlots": [
+        "logos"
+      ],
+      "unresolvedMemberAxes": []
+    },
+    {
+      "missingMembers": [],
+      "missingRequiredSlots": [],
+      "missingSlots": [],
+      "notes": [
+        "Host supplies the image node and its src/alt/ratio; caption is a separate prop. Does not validate a structured figure record or bind anatomy.",
+        "Descriptor only; source imports, token reads, shared anatomy, accessibility, contrast and consumer runtime conformance are unmeasured. Content bindings describe host adaptation points, not type-equivalent converters."
+      ],
+      "slot": "sections.media",
+      "status": "candidate",
+      "supportedMembers": [],
+      "supportedSlots": [
+        "figure"
+      ],
+      "unresolvedMemberAxes": []
+    },
+    {
+      "missingMembers": [],
+      "missingRequiredSlots": [
+        "email"
+      ],
+      "missingSlots": [
+        "email"
+      ],
+      "notes": [
+        "Email field is built in, not a host region; submitLabel is copy for the built-in action. Host supplies emailLabel, pendingLabel, sentMessage and failedMessage. Consent text does not prove confirmation behavior.",
+        "Descriptor only; source imports, token reads, shared anatomy, accessibility, contrast and consumer runtime conformance are unmeasured. Content bindings describe host adaptation points, not type-equivalent converters."
+      ],
+      "slot": "sections.newsletter",
+      "status": "subset",
+      "supportedMembers": [],
+      "supportedSlots": [
+        "consent",
+        "submit"
+      ],
+      "unresolvedMemberAxes": []
+    },
+    {
+      "missingMembers": [],
+      "missingRequiredSlots": [
+        "notices"
+      ],
+      "missingSlots": [
+        "notices"
+      ],
+      "notes": [
+        "Registry row is a spec; no notices package export.",
+        "Descriptor only; source imports, token reads, shared anatomy, accessibility, contrast and consumer runtime conformance are unmeasured. Content bindings describe host adaptation points, not type-equivalent converters."
+      ],
+      "slot": "sections.notices",
+      "status": "unavailable",
+      "supportedMembers": [],
+      "supportedSlots": [],
+      "unresolvedMemberAxes": []
+    },
+    {
+      "missingMembers": [
+        "config.record",
+        "config.standard"
+      ],
+      "missingRequiredSlots": [],
+      "missingSlots": [
+        "meta"
+      ],
+      "notes": [
+        "No record/standard config or meta API. Source renders its own h1 rather than shared section-header anatomy.",
+        "Descriptor only; source imports, token reads, shared anatomy, accessibility, contrast and consumer runtime conformance are unmeasured. Content bindings describe host adaptation points, not type-equivalent converters."
+      ],
+      "slot": "sections.page-header",
+      "status": "subset",
+      "supportedMembers": [],
+      "supportedSlots": [
+        "actions",
+        "breadcrumbs",
+        "description",
+        "title"
+      ],
+      "unresolvedMemberAxes": []
+    },
+    {
+      "missingMembers": [
+        "mode.cursor",
+        "mode.load-more"
+      ],
+      "missingRequiredSlots": [],
+      "missingSlots": [],
+      "notes": [
+        "Host supplies pageCount and onPageChange. Only numbered pages exist; load-more and cursor modes are absent. Default visible messages remain in source.",
+        "Descriptor only; source imports, token reads, shared anatomy, accessibility, contrast and consumer runtime conformance are unmeasured. Content bindings describe host adaptation points, not type-equivalent converters."
+      ],
+      "slot": "sections.pagination",
+      "status": "subset",
+      "supportedMembers": [
+        "mode.pages"
+      ],
+      "supportedSlots": [
+        "page",
+        "total"
+      ],
+      "unresolvedMemberAxes": []
+    },
+    {
+      "missingMembers": [],
+      "missingRequiredSlots": [],
+      "missingSlots": [],
+      "notes": [
+        "People have portrait, initials and one href, not an arbitrary links array. Root is ul; header and band are external.",
+        "Descriptor only; source imports, token reads, shared anatomy, accessibility, contrast and consumer runtime conformance are unmeasured. Content bindings describe host adaptation points, not type-equivalent converters."
+      ],
+      "slot": "sections.people",
+      "status": "candidate",
+      "supportedMembers": [],
+      "supportedSlots": [
+        "people"
+      ],
+      "unresolvedMemberAxes": []
+    },
+    {
+      "missingMembers": [],
+      "missingRequiredSlots": [],
+      "missingSlots": [],
+      "notes": [
+        "Host supplies authored tiers and CTA nodes. Interval is displayed copy; controls is an arbitrary region, not a built-in interval toggle or checkout. Source also composes Matrix for comparison.",
+        "Descriptor only; source imports, token reads, shared anatomy, accessibility, contrast and consumer runtime conformance are unmeasured. Content bindings describe host adaptation points, not type-equivalent converters."
+      ],
+      "slot": "sections.pricing",
+      "status": "candidate",
+      "supportedMembers": [],
+      "supportedSlots": [
+        "highlight",
+        "interval",
+        "plans"
+      ],
+      "unresolvedMemberAxes": []
+    },
+    {
+      "missingMembers": [],
+      "missingRequiredSlots": [],
+      "missingSlots": [
+        "groups",
+        "status"
+      ],
+      "notes": [
+        "No grouped ledger/status API. RecordLedger is an independent exported part, not an automatically configured DetailView composition.",
+        "Descriptor only; source imports, token reads, shared anatomy, accessibility, contrast and consumer runtime conformance are unmeasured. Content bindings describe host adaptation points, not type-equivalent converters."
+      ],
+      "slot": "sections.record-detail",
+      "status": "subset",
+      "supportedMembers": [],
+      "supportedSlots": [
+        "actions",
+        "fields"
+      ],
+      "unresolvedMemberAxes": []
+    },
+    {
+      "missingMembers": [],
+      "missingRequiredSlots": [],
+      "missingSlots": [],
+      "notes": [
+        "Footer is an arbitrary host region; emptyState is required. Source includes loading, empty and error APIs, but no runtime observations are supplied.",
+        "Descriptor only; source imports, token reads, shared anatomy, accessibility, contrast and consumer runtime conformance are unmeasured. Content bindings describe host adaptation points, not type-equivalent converters."
+      ],
+      "slot": "sections.resource-list",
+      "status": "candidate",
+      "supportedMembers": [],
+      "supportedSlots": [
+        "pagination",
+        "records",
+        "selection",
+        "toolbar"
+      ],
+      "unresolvedMemberAxes": []
+    },
+    {
+      "missingMembers": [
+        "align.center",
+        "align.start",
+        "density.compact",
+        "density.display",
+        "density.standard"
+      ],
+      "missingRequiredSlots": [],
+      "missingSlots": [],
+      "notes": [
+        "Heading level is configurable via level; id is inherited HTML input. No align or density members and no enforced two-action maximum.",
+        "Descriptor only; source imports, token reads, shared anatomy, accessibility, contrast and consumer runtime conformance are unmeasured. Content bindings describe host adaptation points, not type-equivalent converters."
+      ],
+      "slot": "sections.section-header",
+      "status": "subset",
+      "supportedMembers": [],
+      "supportedSlots": [
+        "actions",
+        "description",
+        "eyebrow",
+        "heading"
+      ],
+      "unresolvedMemberAxes": []
+    },
+    {
+      "missingMembers": [],
+      "missingRequiredSlots": [
+        "groups"
+      ],
+      "missingSlots": [
+        "dirty",
+        "groups",
+        "save-bar"
+      ],
+      "notes": [
+        "Registry row is a spec; no settings/save-bar section export.",
+        "Descriptor only; source imports, token reads, shared anatomy, accessibility, contrast and consumer runtime conformance are unmeasured. Content bindings describe host adaptation points, not type-equivalent converters."
+      ],
+      "slot": "sections.settings",
+      "status": "unavailable",
+      "supportedMembers": [],
+      "supportedSlots": [],
+      "unresolvedMemberAxes": []
+    },
+    {
+      "missingMembers": [
+        "layout.grid",
+        "layout.row"
+      ],
+      "missingRequiredSlots": [
+        "stats"
+      ],
+      "missingSlots": [
+        "stats"
+      ],
+      "notes": [
+        "Stat accepts one scalar measurement; no verified configured stats-array section.",
+        "Descriptor only; source imports, token reads, shared anatomy, accessibility, contrast and consumer runtime conformance are unmeasured. Content bindings describe host adaptation points, not type-equivalent converters."
+      ],
+      "slot": "sections.stats",
+      "status": "unavailable",
+      "supportedMembers": [],
+      "supportedSlots": [],
+      "unresolvedMemberAxes": []
+    },
+    {
+      "missingMembers": [],
+      "missingRequiredSlots": [],
+      "missingSlots": [],
+      "notes": [
+        "Host supplies labels including disposition labels and legendLabel. Not-offered is a separate disposition, never a fourth readiness state.",
+        "Descriptor only; source imports, token reads, shared anatomy, accessibility, contrast and consumer runtime conformance are unmeasured. Content bindings describe host adaptation points, not type-equivalent converters."
+      ],
+      "slot": "sections.status-list",
+      "status": "candidate",
+      "supportedMembers": [
+        "status.available",
+        "status.not-offered",
+        "status.partial",
+        "status.planned"
+      ],
+      "supportedSlots": [
+        "items",
+        "legend"
+      ],
+      "unresolvedMemberAxes": []
+    },
+    {
+      "missingMembers": [],
+      "missingRequiredSlots": [],
+      "missingSlots": [],
+      "notes": [
+        "Steps require authored ordinal and heading; no per-step status member. Source owns its heading and layout.",
+        "Descriptor only; source imports, token reads, shared anatomy, accessibility, contrast and consumer runtime conformance are unmeasured. Content bindings describe host adaptation points, not type-equivalent converters."
+      ],
+      "slot": "sections.steps",
+      "status": "candidate",
+      "supportedMembers": [],
+      "supportedSlots": [
+        "steps"
+      ],
+      "unresolvedMemberAxes": []
+    },
+    {
+      "missingMembers": [],
+      "missingRequiredSlots": [],
+      "missingSlots": [],
+      "notes": [
+        "Host supplies label. Items are heading ids/labels; optional scroll tracking is source behavior, not a conformance observation.",
+        "Descriptor only; source imports, token reads, shared anatomy, accessibility, contrast and consumer runtime conformance are unmeasured. Content bindings describe host adaptation points, not type-equivalent converters."
+      ],
+      "slot": "sections.table-of-contents",
+      "status": "candidate",
+      "supportedMembers": [],
+      "supportedSlots": [
+        "active-id",
+        "headings"
+      ],
+      "unresolvedMemberAxes": []
+    },
+    {
+      "missingMembers": [],
+      "missingRequiredSlots": [],
+      "missingSlots": [],
+      "notes": [
+        "Tasks have status, not a done checkbox, due or assignee API. Host supplies statusLabels, progressText and emptyState. No checkbox/avatar composition is claimed.",
+        "Descriptor only; source imports, token reads, shared anatomy, accessibility, contrast and consumer runtime conformance are unmeasured. Content bindings describe host adaptation points, not type-equivalent converters."
+      ],
+      "slot": "sections.task-list",
+      "status": "candidate",
+      "supportedMembers": [],
+      "supportedSlots": [
+        "tasks"
+      ],
+      "unresolvedMemberAxes": []
+    },
+    {
+      "missingMembers": [],
+      "missingRequiredSlots": [],
+      "missingSlots": [],
+      "notes": [
+        "Source selects single or grid geometry from enforced item counts; quote attribution uses attributorName/attributorRole/portrait. Root is ul with external anatomy.",
+        "Descriptor only; source imports, token reads, shared anatomy, accessibility, contrast and consumer runtime conformance are unmeasured. Content bindings describe host adaptation points, not type-equivalent converters."
+      ],
+      "slot": "sections.testimonials",
+      "status": "candidate",
+      "supportedMembers": [
+        "layout.grid",
+        "layout.single"
+      ],
+      "supportedSlots": [
+        "quotes"
+      ],
+      "unresolvedMemberAxes": []
+    },
+    {
+      "missingMembers": [],
+      "missingRequiredSlots": [
+        "events"
+      ],
+      "missingSlots": [
+        "events"
+      ],
+      "notes": [
+        "A timeline model or recipe is not an exported timeline section.",
+        "Descriptor only; source imports, token reads, shared anatomy, accessibility, contrast and consumer runtime conformance are unmeasured. Content bindings describe host adaptation points, not type-equivalent converters."
+      ],
+      "slot": "sections.timeline",
+      "status": "unavailable",
+      "supportedMembers": [],
+      "supportedSlots": [],
+      "unresolvedMemberAxes": []
+    },
+    {
+      "missingMembers": [],
+      "missingRequiredSlots": [
+        "meters"
+      ],
+      "missingSlots": [
+        "meters"
+      ],
+      "notes": [
+        "UsageMeter accepts one meter; no verified configured meters-array section.",
+        "Descriptor only; source imports, token reads, shared anatomy, accessibility, contrast and consumer runtime conformance are unmeasured. Content bindings describe host adaptation points, not type-equivalent converters."
+      ],
+      "slot": "sections.usage",
+      "status": "unavailable",
+      "supportedMembers": [],
+      "supportedSlots": [],
+      "unresolvedMemberAxes": []
+    },
+    {
+      "missingMembers": [],
+      "missingRequiredSlots": [
+        "next",
+        "steps"
+      ],
+      "missingSlots": [
+        "back",
+        "next",
+        "progress",
+        "review",
+        "steps"
+      ],
+      "notes": [
+        "Registry row is a spec; no wizard package export.",
+        "Descriptor only; source imports, token reads, shared anatomy, accessibility, contrast and consumer runtime conformance are unmeasured. Content bindings describe host adaptation points, not type-equivalent converters."
+      ],
+      "slot": "sections.wizard",
+      "status": "unavailable",
+      "supportedMembers": [],
+      "supportedSlots": [],
+      "unresolvedMemberAxes": []
+    }
+  ],
+  "package": "@clossys/designer",
+  "source": "foundry",
+  "version": "0.12.0"
+}

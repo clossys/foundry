@@ -7,7 +7,7 @@ import { LandingView } from "../web/views/LandingView.server.js";
 import { SectionedView } from "../web/views/SectionedView.server.js";
 import { previewSectionedDocument, previewCopyResolver } from "./fixture-documents.js";
 import { renderPreviewGalleryEntries } from "./render-preview-gallery.js";
-import { buttonLinkClassName } from "@clossys/designer/atoms/server";
+import { buttonLinkClassName } from "@clossys/designer/components/server";
 import { describe, expect, it } from "vitest";
 import { checkSectionVariety, resolveSectionedViewDocument, validateSectionedViewDocument } from "../core/sectioned-view.js";
 import type { ResolvedSectionedViewContentSection, ResolvedSectionedViewSpecimenPanel, ResolvedSectionedViewSpecimenPart, SectionedViewContentSection } from "../core/sectioned-view.js";

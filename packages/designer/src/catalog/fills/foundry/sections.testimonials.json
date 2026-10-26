@@ -1,0 +1,57 @@
+{
+  "$extensions": {
+    "com.clossys.fill": {
+      "author": "foundry",
+      "builtOn": [],
+      "conforms": [],
+      "evidence": [],
+      "id": "foundry/sections.testimonials",
+      "license": "MIT",
+      "mode": "implementation",
+      "originKinds": [
+        "adopted"
+      ],
+      "pin": {
+        "export": "./blocks#TestimonialSet",
+        "package": "@clossys/designer",
+        "version": "0.12.0"
+      },
+      "relation": "same-contract",
+      "slot": "sections.testimonials",
+      "source": "foundry",
+      "sourceAddress": "./blocks#TestimonialSet",
+      "status": "draft",
+      "trust": "foundry"
+    }
+  },
+  "sections": {
+    "testimonials": {
+      "configs": {},
+      "impl": {
+        "export": "TestimonialSet",
+        "kind": "package",
+        "module": "@clossys/designer/blocks"
+      },
+      "license": "MIT",
+      "notes": [
+        "Source selects single or grid geometry from enforced item counts; quote attribution uses attributorName/attributorRole/portrait. Root is ul with external anatomy.",
+        "Descriptor only; source imports, token reads, shared anatomy, accessibility, contrast and consumer runtime conformance are unmeasured. Content bindings describe host adaptation points, not type-equivalent converters."
+      ],
+      "parts": [],
+      "pin": {
+        "export": "./blocks#TestimonialSet",
+        "package": "@clossys/designer",
+        "version": "0.12.0"
+      },
+      "propMap": {
+        "layout.grid": "./blocks#TestimonialSet.items.length[2,3,4,6]",
+        "layout.single": "./blocks#TestimonialSet.items.length=1"
+      },
+      "slot": "sections.testimonials",
+      "slotMap": {
+        "quotes": "./blocks#TestimonialSet.items"
+      },
+      "source": "foundry"
+    }
+  }
+}

@@ -32,7 +32,7 @@ describe("AppNavigation public and hydration contract", () => {
     expect((blocks as any).AppNavigation).toBe(AppNavigation);
     const material = blocks.APP_FRAME_MATERIALS.find(entry => entry.id === "app-navigation" as any);
     expect(material?.component).toBe(AppNavigation);
-    for (const layer of ["atoms", "blocks", "shell"]) {
+    for (const layer of ["components", "blocks", "shell"]) {
       expect(readFileSync(resolve(import.meta.dirname, `../${layer}/server.ts`), "utf8")).not.toMatch(/AppNavigation|app-navigation-tree/);
     }
   });

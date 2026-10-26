@@ -1,0 +1,60 @@
+{
+  "$extensions": {
+    "com.clossys.fill": {
+      "author": "foundry",
+      "builtOn": [],
+      "conforms": [],
+      "evidence": [],
+      "id": "foundry/sections.features",
+      "license": "MIT",
+      "mode": "implementation",
+      "originKinds": [
+        "adopted"
+      ],
+      "pin": {
+        "export": "./blocks#FeatureGrid",
+        "package": "@clossys/designer",
+        "version": "0.12.0"
+      },
+      "relation": "subset",
+      "slot": "sections.features",
+      "source": "foundry",
+      "sourceAddress": "./blocks#FeatureGrid",
+      "status": "draft",
+      "trust": "foundry",
+      "unmapped": [
+        "layout.list",
+        "layout.split"
+      ]
+    }
+  },
+  "sections": {
+    "features": {
+      "configs": {},
+      "impl": {
+        "export": "FeatureGrid",
+        "kind": "package",
+        "module": "@clossys/designer/blocks"
+      },
+      "license": "MIT",
+      "notes": [
+        "CompatFeatureGrid fixes the grid layout. Items have icon, heading and description but no per-item link prop; list and split layouts are absent.",
+        "Descriptor only; source imports, token reads, shared anatomy, accessibility, contrast and consumer runtime conformance are unmeasured. Content bindings describe host adaptation points, not type-equivalent converters."
+      ],
+      "parts": [],
+      "pin": {
+        "export": "./blocks#FeatureGrid",
+        "package": "@clossys/designer",
+        "version": "0.12.0"
+      },
+      "propMap": {
+        "layout.grid": "./blocks#FeatureGrid.items[grid]"
+      },
+      "slot": "sections.features",
+      "slotMap": {
+        "items": "./blocks#FeatureGrid.items"
+      },
+      "source": "foundry"
+    }
+  }
+}

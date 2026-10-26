@@ -121,6 +121,11 @@
 
   /* ─── ACCENT (5 required) ────────────────────────────────────────
    * --color-accent-tint is usually your accent color at ~10% alpha. */
+  --color-action: ;
+  --color-action-hover: ;
+  --color-action-pressed: ;
+  --color-action-on-inverse: ;
+  --color-action-on-inverse-hover: ;
   --color-accent:                  ;
   --color-accent-text:             ;
   --color-accent-hover:            ;
@@ -198,7 +203,7 @@
   /* ─── LAYOUT (1 optional) ────────────────────────────────────────── */
   /* --ui-layout-sidebar-w: 256px; */
 
-  /* ─── ICON (1 optional — the Icon atom's stroke weight; the three
+  /* ─── ICON (1 optional — the Icon component's stroke weight; the three
        icon SIZE steps alias the spacing scale and are not brand slots,
        the same call the density tokens above already make) ─────────── */
   /* --ui-icon-stroke: 2; */
@@ -242,7 +247,12 @@
     --color-line-on-inverse:         ;
 
     /* ─── ACCENT (5 required) ──────────────────────────────────── */
-    --color-accent:                  ;
+    --color-action: ;
+    --color-action-hover: ;
+    --color-action-pressed: ;
+    --color-action-on-inverse: ;
+    --color-action-on-inverse-hover: ;
+  --color-accent:                  ;
     --color-accent-text:             ;
     --color-accent-hover:            ;
     --color-accent-tint:             ;
@@ -306,6 +316,11 @@
   --color-line-on-inverse:         ;
 
   /* ─── ACCENT (5 required) ────────────────────────────────────── */
+  --color-action: ;
+  --color-action-hover: ;
+  --color-action-pressed: ;
+  --color-action-on-inverse: ;
+  --color-action-on-inverse-hover: ;
   --color-accent:                  ;
   --color-accent-text:             ;
   --color-accent-hover:            ;

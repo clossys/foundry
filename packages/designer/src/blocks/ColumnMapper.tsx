@@ -1,6 +1,6 @@
 import type { ReactNode } from "react";
-import { Select } from "../atoms/Select.js";
-import { cx } from "../atoms/internal/cx.js";
+import { Select } from "../components/Select.js";
+import { cx } from "../components/internal/cx.js";
 import type { TableColumnKind } from "./table-model/types.js";
 import { useDebouncedSummary } from "./access-matrix/summary.js";
 import { assertColumnMapper, columnMapperIssues, mappedSource } from "./column-mapper/issues.js";

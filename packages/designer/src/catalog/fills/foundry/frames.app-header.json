@@ -1,0 +1,54 @@
+{
+  "$extensions": {
+    "com.clossys.fill": {
+      "author": "foundry",
+      "builtOn": [],
+      "conforms": [],
+      "evidence": [],
+      "id": "foundry/frames.app-header",
+      "license": "MIT",
+      "mode": "implementation",
+      "pin": {
+        "export": "./blocks#PageBar",
+        "package": "@clossys/designer",
+        "version": "0.12.0"
+      },
+      "relation": "subset",
+      "slot": "frames.app-header",
+      "source": "foundry",
+      "sourceAddress": "./blocks#PageBar",
+      "status": "draft",
+      "trust": "foundry",
+      "unmapped": [
+        "fallback.opaque",
+        "slot.context",
+        "surface.glass"
+      ]
+    }
+  },
+  "frames": {
+    "app-header": {
+      "impl": {
+        "export": "PageBar",
+        "kind": "package",
+        "module": "@clossys/designer/blocks"
+      },
+      "members": [
+        "position.static",
+        "position.sticky"
+      ],
+      "propMap": {
+        "position.static": "position=static",
+        "position.sticky": "position=sticky"
+      },
+      "slot": "frames.app-header",
+      "slots": {
+        "actions": "page.actions",
+        "brand": "brand",
+        "info": "page",
+        "trail": "page.breadcrumb"
+      },
+      "statePorts": {}
+    }
+  }
+}

@@ -1,0 +1,52 @@
+{
+  "$extensions": {
+    "com.clossys.fill": {
+      "id": "lucide/assets.icon-home",
+      "slot": "assets.icon-home",
+      "source": "lucide",
+      "mode": "implementation",
+      "sourceAddress": "lucide-react@1.23.0/dist/esm/icons/house.js",
+      "relation": "same-contract",
+      "builtOn": [],
+      "conforms": [],
+      "evidence": [],
+      "author": "third-party",
+      "trust": "pinned-upstream",
+      "license": "ISC",
+      "pin": {
+        "package": "lucide-react",
+        "version": "1.23.0",
+        "file": "src/icons/Home.ts",
+        "sha256": "aeb67ad2d4678f68249a344ebd5cefbb4a148a0039922413ac173092a57bfbd4"
+      },
+      "status": "draft",
+      "reads": {
+        "tokens": [],
+        "assets": []
+      }
+    }
+  },
+  "assets": {
+    "icon-home": {
+      "default": {
+        "$type": "glyph",
+        "$value": [
+          [
+            "path",
+            {
+              "d": "M15 21v-8a1 1 0 0 0-1-1h-4a1 1 0 0 0-1 1v8",
+              "key": "5wwlr5"
+            }
+          ],
+          [
+            "path",
+            {
+              "d": "M3 10a2 2 0 0 1 .709-1.528l7-6a2 2 0 0 1 2.582 0l7 6A2 2 0 0 1 21 10v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z",
+              "key": "r6nss1"
+            }
+          ]
+        ]
+      }
+    }
+  }
+}

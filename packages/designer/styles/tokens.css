@@ -199,6 +199,7 @@ html:not([data-brand-bound]):not([data-suppress-brand-banner])::before {
    * label on an accent fill and the label on the inverse plate are usually
    * the same ink, and this alias means overriding one brand slot in your
    * brand.css keeps both in sync automatically. */
+  --color-ink-on-action: var(--color-ink-on-inverse, oklch(0.9702 0 0));
   --color-ink-on-accent:           var(--color-ink-on-inverse, oklch(0.9702 0 0));
 
   /* ════════════════════════════════════════════════════════════════
@@ -214,6 +215,11 @@ html:not([data-brand-bound]):not([data-suppress-brand-banner])::before {
   /* ════════════════════════════════════════════════════════════════
    * COLOR · ACCENT (5 · the interactive brand color)
    * ════════════════════════════════════════════════════════════════ */
+  --color-action: #0A0A0A;
+  --color-action-hover: #262626;
+  --color-action-pressed: #404040;
+  --color-action-on-inverse: #FAFAFA;
+  --color-action-on-inverse-hover: #E5E5E5;
   --color-accent:                 oklch(0.4748 0 0);
   --color-accent-text:            oklch(0.36 0 0);
   --color-accent-hover:           oklch(0.36 0 0);
@@ -281,7 +287,7 @@ html:not([data-brand-bound]):not([data-suppress-brand-banner])::before {
 
   /* ════════════════════════════════════════════════════════════════
    * COLOR · OVERLAY (3 · Modal/Popover/Menu/Tooltip/Toast surface bundle)
-   * An overlay atom composes against its own --color-overlay-* role
+   * An overlay component composes against its own --color-overlay-* role
    * rather than reaching into --color-surface-raised directly, so the
    * overlay vocabulary stays legible and independently rebindable.
    * These are aliases: rebinding --color-surface-raised / --color-line-base
@@ -450,6 +456,9 @@ html:not([data-brand-bound]):not([data-suppress-brand-banner])::before {
   /* ════════════════════════════════════════════════════════════════
    * UI · LAYOUT (5 · chrome dimensions — no Tailwind namespace)
    * ════════════════════════════════════════════════════════════════ */
+  --ui-layout-dock-min-block: 160px;
+  --ui-layout-dock-default-block: 240px;
+  --ui-layout-dock-max-block: 480px;
   --ui-layout-sidebar-w:          256px;   /* expanded left nav */
   --ui-layout-sidebar-rail-w:     64px;    /* collapsed icon-only nav */
   --ui-layout-aside-w:            320px;   /* right-rail panel */
@@ -465,7 +474,7 @@ html:not([data-brand-bound]):not([data-suppress-brand-banner])::before {
 
   /* ════════════════════════════════════════════════════════════════
    * UI · ICON (4 · the render contract for @clossys/designer's Icon
-   * atom — no Tailwind namespace. sm/md/lg ALIAS the same three
+   * component — no Tailwind namespace. sm/md/lg ALIAS the same three
    * --spacing-* steps @clossys/designer's own glyph data already
    * rendered at (16/24/32px) before this family existed — coherent with
    * the padding scale by default, the same alias-with-fallback shape
@@ -552,7 +561,7 @@ html:not([data-brand-bound]):not([data-suppress-brand-banner])::before {
    * UI · RING (2 · focus + on-inverse rings — no Tailwind namespace)
    * ════════════════════════════════════════════════════════════════ */
   --ui-ring-focus:                0 0 0 2px var(--color-accent, oklch(0.4748 0 0));
-  --ui-ring-on-inverse:           0 0 0 1px rgba(245, 245, 245, 0.12);
+  --ui-ring-on-inverse:           0 0 0 2px var(--color-focus-ring-on-inverse, oklch(0.9702 0 0));
 
   /* ════════════════════════════════════════════════════════════════
    * UI · DURATION (6 · no Tailwind namespace)
@@ -683,6 +692,11 @@ html:not([data-brand-bound]):not([data-suppress-brand-banner])::before {
     --color-line-on-inverse:        oklch(0.2178 0 0 / 0.14); /* flips with --color-surface-inverse */
 
     /* ── COLOR · ACCENT ─────────────────────────────────────────── */
+    --color-action: #FAFAFA;
+    --color-action-hover: #E5E5E5;
+    --color-action-pressed: #D4D4D4;
+    --color-action-on-inverse: #0A0A0A;
+    --color-action-on-inverse-hover: #262626;
     --color-accent:                 oklch(0.62 0 0);
     --color-accent-text:            oklch(0.74 0 0);
     --color-accent-hover:           oklch(0.70 0 0);
@@ -788,6 +802,11 @@ html:not([data-brand-bound]):not([data-suppress-brand-banner])::before {
   --color-line-on-inverse:        oklch(0.2178 0 0 / 0.14);
 
   /* ── COLOR · ACCENT ───────────────────────────────────────────── */
+  --color-action: #FAFAFA;
+  --color-action-hover: #E5E5E5;
+  --color-action-pressed: #D4D4D4;
+  --color-action-on-inverse: #0A0A0A;
+  --color-action-on-inverse-hover: #262626;
   --color-accent:                 oklch(0.62 0 0);
   --color-accent-text:            oklch(0.74 0 0);
   --color-accent-hover:           oklch(0.70 0 0);

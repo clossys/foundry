@@ -4,7 +4,7 @@
  * `@ts-expect-error` below fails the build if the guarded rule stops holding.
  * It is never imported.
  */
-import type { AtomEntry, BlockEntry, IconPlacement, TokenEntry, TokenPlacement } from "./types.js";
+import type { ComponentEntry, BlockEntry, IconPlacement, TokenEntry, TokenPlacement } from "./types.js";
 
 const tokenBase = {
   id: "--color-line-panel",
@@ -58,5 +58,5 @@ export const deprecatedWithoutSuccessor: BlockEntry = { ...blockBase, lifecycle:
 // @ts-expect-error Block ids keep a known shape prefix.
 export const unknownBlockPrefix: BlockEntry = { ...blockBase, id: "card.chapter", lifecycle: "draft" };
 
-// @ts-expect-error Atom ids keep the `<verb>.<name>` shape.
-export const atomWithoutPrefix: AtomEntry["id"] = "button";
+// @ts-expect-error Component ids keep the `<verb>.<name>` shape.
+export const componentWithoutPrefix: ComponentEntry["id"] = "button";

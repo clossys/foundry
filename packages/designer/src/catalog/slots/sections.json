@@ -1,0 +1,2696 @@
+[
+  {
+    "id": "sections.access-matrix",
+    "layer": "sections",
+    "contract": {
+      "kind": "section",
+      "root": "section",
+      "anatomy": {
+        "band": "sections.band",
+        "header": "sections.section-header"
+      },
+      "slots": [
+        {
+          "name": "roles",
+          "type": "records",
+          "required": true
+        },
+        {
+          "name": "permissions",
+          "type": "records",
+          "required": true
+        }
+      ],
+      "members": {
+        "mode": "closed",
+        "names": []
+      },
+      "allowedComposes": [
+        "components.table",
+        "components.checkbox",
+        "components.tooltip",
+        "components.button",
+        "components.icon"
+      ],
+      "parts": [
+        "sections.band",
+        "sections.section-header"
+      ],
+      "allowedReads": {
+        "tokens": [
+          "tokens.spacing",
+          "tokens.gutter",
+          "tokens.content-size",
+          "tokens.region-width",
+          "tokens.breakpoint",
+          "tokens.surface-color"
+        ],
+        "assets": []
+      },
+      "data": "host-injected",
+      "surface": "app"
+    },
+    "requires": [],
+    "status": "draft"
+  },
+  {
+    "id": "sections.activity-feed",
+    "layer": "sections",
+    "contract": {
+      "kind": "section",
+      "root": "section",
+      "anatomy": {
+        "band": "sections.band",
+        "header": "sections.section-header"
+      },
+      "slots": [
+        {
+          "name": "events",
+          "type": "records",
+          "required": true
+        },
+        {
+          "name": "grouping",
+          "type": "records",
+          "required": false
+        },
+        {
+          "name": "filters",
+          "type": "region",
+          "required": false
+        }
+      ],
+      "members": {
+        "mode": "closed",
+        "names": []
+      },
+      "allowedComposes": [
+        "components.avatar",
+        "components.badge",
+        "components.link"
+      ],
+      "parts": [
+        "sections.band",
+        "sections.section-header"
+      ],
+      "allowedReads": {
+        "tokens": [
+          "tokens.spacing",
+          "tokens.gutter",
+          "tokens.content-size",
+          "tokens.region-width",
+          "tokens.breakpoint",
+          "tokens.surface-color"
+        ],
+        "assets": []
+      },
+      "data": "host-injected",
+      "surface": "app",
+      "states": [
+        "loading",
+        "empty",
+        "error"
+      ]
+    },
+    "requires": [],
+    "status": "draft"
+  },
+  {
+    "id": "sections.article",
+    "layer": "sections",
+    "contract": {
+      "kind": "section",
+      "root": "article",
+      "anatomy": {
+        "band": "sections.band",
+        "header": "sections.section-header"
+      },
+      "slots": [
+        {
+          "name": "body",
+          "type": "region",
+          "required": true
+        },
+        {
+          "name": "toc",
+          "type": "region",
+          "required": false
+        }
+      ],
+      "members": {
+        "mode": "closed",
+        "names": []
+      },
+      "allowedComposes": [
+        "components.link",
+        "components.separator"
+      ],
+      "parts": [
+        "sections.band",
+        "sections.section-header"
+      ],
+      "allowedReads": {
+        "tokens": [
+          "tokens.spacing",
+          "tokens.gutter",
+          "tokens.content-size",
+          "tokens.region-width",
+          "tokens.breakpoint",
+          "tokens.surface-color",
+          "tokens.body-size",
+          "tokens.line-height",
+          "tokens.code-size"
+        ],
+        "assets": []
+      },
+      "data": "host-injected",
+      "surface": "site"
+    },
+    "requires": [],
+    "status": "draft"
+  },
+  {
+    "id": "sections.audit-log",
+    "layer": "sections",
+    "contract": {
+      "kind": "section",
+      "root": "section",
+      "anatomy": {
+        "band": "sections.band",
+        "header": "sections.section-header"
+      },
+      "slots": [
+        {
+          "name": "entries",
+          "type": "records",
+          "required": true
+        },
+        {
+          "name": "filter",
+          "type": "region",
+          "required": false
+        },
+        {
+          "name": "export",
+          "type": "action",
+          "required": false
+        }
+      ],
+      "members": {
+        "mode": "closed",
+        "names": []
+      },
+      "allowedComposes": [
+        "components.table",
+        "components.search-field",
+        "components.date-picker"
+      ],
+      "parts": [
+        "sections.band",
+        "sections.section-header"
+      ],
+      "allowedReads": {
+        "tokens": [
+          "tokens.spacing",
+          "tokens.gutter",
+          "tokens.content-size",
+          "tokens.region-width",
+          "tokens.breakpoint",
+          "tokens.surface-color"
+        ],
+        "assets": []
+      },
+      "data": "host-injected",
+      "surface": "app",
+      "states": [
+        "loading",
+        "empty",
+        "error"
+      ]
+    },
+    "requires": [],
+    "status": "draft"
+  },
+  {
+    "id": "sections.band",
+    "layer": "sections",
+    "contract": {
+      "kind": "section",
+      "root": "section",
+      "anatomy": {
+        "band": null,
+        "header": null
+      },
+      "slots": [],
+      "members": {
+        "mode": "closed",
+        "names": [
+          "ground.base",
+          "ground.sunken",
+          "ground.inverse",
+          "ground.transparent",
+          "measure.prose",
+          "measure.content",
+          "measure.wide"
+        ]
+      },
+      "allowedComposes": [],
+      "parts": [],
+      "allowedReads": {
+        "tokens": [
+          "tokens.spacing",
+          "tokens.gutter",
+          "tokens.content-size",
+          "tokens.region-width",
+          "tokens.breakpoint",
+          "tokens.surface-color"
+        ],
+        "assets": []
+      },
+      "data": "host-injected",
+      "surface": "both",
+      "unresolvedMemberAxes": [
+        "rhythm"
+      ]
+    },
+    "requires": [],
+    "status": "draft"
+  },
+  {
+    "id": "sections.call-to-action",
+    "layer": "sections",
+    "contract": {
+      "kind": "section",
+      "root": "section",
+      "anatomy": {
+        "band": "sections.band",
+        "header": "sections.section-header"
+      },
+      "slots": [
+        {
+          "name": "header",
+          "type": "region",
+          "required": true
+        },
+        {
+          "name": "actions",
+          "type": "action",
+          "required": true,
+          "max": 2
+        }
+      ],
+      "members": {
+        "mode": "closed",
+        "names": []
+      },
+      "allowedComposes": [
+        "components.button",
+        "components.link"
+      ],
+      "parts": [
+        "sections.band",
+        "sections.section-header"
+      ],
+      "allowedReads": {
+        "tokens": [
+          "tokens.spacing",
+          "tokens.gutter",
+          "tokens.content-size",
+          "tokens.region-width",
+          "tokens.breakpoint",
+          "tokens.surface-color"
+        ],
+        "assets": []
+      },
+      "data": "host-injected",
+      "surface": "site"
+    },
+    "requires": [],
+    "status": "draft"
+  },
+  {
+    "id": "sections.cards",
+    "layer": "sections",
+    "contract": {
+      "kind": "section",
+      "root": "section",
+      "anatomy": {
+        "band": "sections.band",
+        "header": "sections.section-header"
+      },
+      "slots": [
+        {
+          "name": "records",
+          "type": "records",
+          "required": true
+        }
+      ],
+      "members": {
+        "mode": "closed",
+        "names": [
+          "layout.grid",
+          "layout.list"
+        ]
+      },
+      "allowedComposes": [
+        "components.card",
+        "components.link",
+        "components.badge"
+      ],
+      "parts": [
+        "sections.band",
+        "sections.section-header"
+      ],
+      "allowedReads": {
+        "tokens": [
+          "tokens.spacing",
+          "tokens.gutter",
+          "tokens.content-size",
+          "tokens.region-width",
+          "tokens.breakpoint",
+          "tokens.surface-color",
+          "tokens.surface-radius",
+          "tokens.elevation"
+        ],
+        "assets": []
+      },
+      "data": "host-injected",
+      "surface": "both",
+      "states": [
+        "loading",
+        "empty",
+        "error"
+      ]
+    },
+    "requires": [],
+    "status": "draft"
+  },
+  {
+    "id": "sections.chat",
+    "layer": "sections",
+    "contract": {
+      "kind": "section",
+      "root": "section",
+      "anatomy": {
+        "band": "sections.band",
+        "header": "sections.section-header"
+      },
+      "slots": [
+        {
+          "name": "parts",
+          "type": "records",
+          "required": true
+        },
+        {
+          "name": "composer",
+          "type": "region",
+          "required": true
+        }
+      ],
+      "members": {
+        "mode": "closed",
+        "names": [
+          "part.message",
+          "part.bubble",
+          "part.attachment",
+          "part.trace",
+          "part.questionnaire",
+          "part.scroller"
+        ]
+      },
+      "allowedComposes": [
+        "components.text-field",
+        "components.button",
+        "components.file-trigger",
+        "components.avatar",
+        "components.spinner",
+        "components.link",
+        "components.tooltip"
+      ],
+      "parts": [
+        "sections.band",
+        "sections.section-header"
+      ],
+      "allowedReads": {
+        "tokens": [
+          "tokens.spacing",
+          "tokens.gutter",
+          "tokens.content-size",
+          "tokens.region-width",
+          "tokens.breakpoint",
+          "tokens.surface-color"
+        ],
+        "assets": []
+      },
+      "data": "host-injected",
+      "surface": "app"
+    },
+    "requires": [],
+    "status": "draft"
+  },
+  {
+    "id": "sections.column-mapper",
+    "layer": "sections",
+    "contract": {
+      "kind": "section",
+      "root": "section",
+      "anatomy": {
+        "band": "sections.band",
+        "header": "sections.section-header"
+      },
+      "slots": [
+        {
+          "name": "source-columns",
+          "type": "records",
+          "required": true
+        },
+        {
+          "name": "target-fields",
+          "type": "records",
+          "required": true
+        },
+        {
+          "name": "mapping",
+          "type": "records",
+          "required": true
+        }
+      ],
+      "members": {
+        "mode": "closed",
+        "names": []
+      },
+      "allowedComposes": [
+        "components.select",
+        "components.table",
+        "components.badge"
+      ],
+      "parts": [
+        "sections.band",
+        "sections.section-header"
+      ],
+      "allowedReads": {
+        "tokens": [
+          "tokens.spacing",
+          "tokens.gutter",
+          "tokens.content-size",
+          "tokens.region-width",
+          "tokens.breakpoint",
+          "tokens.surface-color"
+        ],
+        "assets": []
+      },
+      "data": "host-injected",
+      "surface": "app"
+    },
+    "requires": [],
+    "status": "draft"
+  },
+  {
+    "id": "sections.comparison",
+    "layer": "sections",
+    "contract": {
+      "kind": "section",
+      "root": "section",
+      "anatomy": {
+        "band": "sections.band",
+        "header": "sections.section-header"
+      },
+      "slots": [
+        {
+          "name": "columns",
+          "type": "records",
+          "required": true
+        },
+        {
+          "name": "rows",
+          "type": "records",
+          "required": true
+        },
+        {
+          "name": "highlight",
+          "type": "records",
+          "required": false
+        },
+        {
+          "name": "controls",
+          "type": "records",
+          "required": false
+        }
+      ],
+      "members": {
+        "mode": "closed",
+        "names": [
+          "arrangement.library-board"
+        ]
+      },
+      "allowedComposes": [
+        "components.table",
+        "components.status-mark",
+        "components.badge",
+        "components.card",
+        "components.icon",
+        "components.radio-group",
+        "components.tooltip",
+        "components.button",
+        "components.dialog",
+        "components.menu",
+        "components.link"
+      ],
+      "parts": [
+        "sections.band",
+        "sections.section-header"
+      ],
+      "allowedReads": {
+        "tokens": [
+          "tokens.spacing",
+          "tokens.gutter",
+          "tokens.content-size",
+          "tokens.region-width",
+          "tokens.breakpoint",
+          "tokens.surface-color",
+          "tokens.status-color"
+        ],
+        "assets": []
+      },
+      "data": "host-injected",
+      "surface": "both",
+      "substrates": [
+        "flow",
+        "canvas"
+      ],
+      "substrateTests": [
+        {
+          "substrate": "flow",
+          "file": "packages/designer/src/blocks/library-board/LibraryBoardSection.test.tsx",
+          "name": "renders actual checked library board in flow"
+        },
+        {
+          "substrate": "canvas",
+          "file": "packages/designer/src/blocks/library-board/LibraryBoardSection.test.tsx",
+          "name": "renders actual checked library board in canvas and retains Edit through fallback"
+        }
+      ]
+    },
+    "requires": [],
+    "status": "draft"
+  },
+  {
+    "id": "sections.consent",
+    "layer": "sections",
+    "contract": {
+      "kind": "section",
+      "root": "section",
+      "anatomy": {
+        "band": "sections.band",
+        "header": "sections.section-header"
+      },
+      "slots": [
+        {
+          "name": "copy",
+          "type": "copy",
+          "required": true
+        },
+        {
+          "name": "actions",
+          "type": "action",
+          "required": true,
+          "max": 2
+        },
+        {
+          "name": "policy",
+          "type": "action",
+          "required": true,
+          "max": 1
+        }
+      ],
+      "members": {
+        "mode": "closed",
+        "names": []
+      },
+      "allowedComposes": [
+        "components.button",
+        "components.link",
+        "components.card"
+      ],
+      "parts": [
+        "sections.band",
+        "sections.section-header"
+      ],
+      "allowedReads": {
+        "tokens": [
+          "tokens.spacing",
+          "tokens.gutter",
+          "tokens.content-size",
+          "tokens.region-width",
+          "tokens.breakpoint",
+          "tokens.surface-color",
+          "tokens.status-color"
+        ],
+        "assets": []
+      },
+      "data": "host-injected",
+      "surface": "site"
+    },
+    "requires": [],
+    "status": "draft"
+  },
+  {
+    "id": "sections.content",
+    "layer": "sections",
+    "contract": {
+      "kind": "section",
+      "root": "section",
+      "anatomy": {
+        "band": "sections.band",
+        "header": "sections.section-header"
+      },
+      "slots": [
+        {
+          "name": "header",
+          "type": "region",
+          "required": false
+        },
+        {
+          "name": "body",
+          "type": "region",
+          "required": true
+        },
+        {
+          "name": "media",
+          "type": "media",
+          "required": false
+        },
+        {
+          "name": "footnote",
+          "type": "copy",
+          "required": false
+        }
+      ],
+      "members": {
+        "mode": "closed",
+        "names": [
+          "layout.stacked",
+          "layout.split-start",
+          "layout.split-end"
+        ]
+      },
+      "allowedComposes": [
+        "components.link"
+      ],
+      "parts": [
+        "sections.band",
+        "sections.section-header"
+      ],
+      "allowedReads": {
+        "tokens": [
+          "tokens.spacing",
+          "tokens.gutter",
+          "tokens.content-size",
+          "tokens.region-width",
+          "tokens.breakpoint",
+          "tokens.surface-color"
+        ],
+        "assets": []
+      },
+      "data": "host-injected",
+      "surface": "both"
+    },
+    "requires": [],
+    "status": "draft"
+  },
+  {
+    "id": "sections.data-grid",
+    "layer": "sections",
+    "contract": {
+      "kind": "section",
+      "root": "section",
+      "anatomy": {
+        "band": "sections.band",
+        "header": "sections.section-header"
+      },
+      "slots": [
+        {
+          "name": "rows",
+          "type": "records",
+          "required": true
+        },
+        {
+          "name": "cells",
+          "type": "records",
+          "required": false
+        },
+        {
+          "name": "pinning",
+          "type": "records",
+          "required": false
+        }
+      ],
+      "members": {
+        "mode": "closed",
+        "names": []
+      },
+      "allowedComposes": [
+        "components.table",
+        "components.text-field",
+        "components.select"
+      ],
+      "parts": [
+        "sections.band",
+        "sections.section-header"
+      ],
+      "allowedReads": {
+        "tokens": [
+          "tokens.spacing",
+          "tokens.gutter",
+          "tokens.content-size",
+          "tokens.region-width",
+          "tokens.breakpoint",
+          "tokens.surface-color",
+          "tokens.density"
+        ],
+        "assets": []
+      },
+      "data": "host-injected",
+      "surface": "app",
+      "states": [
+        "loading",
+        "empty",
+        "error"
+      ]
+    },
+    "requires": [],
+    "status": "draft"
+  },
+  {
+    "id": "sections.data-table",
+    "layer": "sections",
+    "contract": {
+      "kind": "section",
+      "root": "section",
+      "anatomy": {
+        "band": "sections.band",
+        "header": "sections.section-header"
+      },
+      "slots": [
+        {
+          "name": "columns",
+          "type": "records",
+          "required": true
+        },
+        {
+          "name": "rows",
+          "type": "records",
+          "required": true
+        },
+        {
+          "name": "sort",
+          "type": "records",
+          "required": false
+        },
+        {
+          "name": "selection",
+          "type": "records",
+          "required": false
+        },
+        {
+          "name": "grouping",
+          "type": "records",
+          "required": false
+        },
+        {
+          "name": "toolbar",
+          "type": "region",
+          "required": false
+        },
+        {
+          "name": "pagination",
+          "type": "region",
+          "required": false
+        }
+      ],
+      "members": {
+        "mode": "closed",
+        "names": []
+      },
+      "allowedComposes": [
+        "components.table",
+        "components.toolbar",
+        "components.checkbox",
+        "components.menu",
+        "components.button",
+        "components.dialog",
+        "components.icon",
+        "components.popover",
+        "components.select",
+        "components.text-field"
+      ],
+      "parts": [
+        "sections.band",
+        "sections.section-header",
+        "sections.pagination"
+      ],
+      "allowedReads": {
+        "tokens": [
+          "tokens.spacing",
+          "tokens.gutter",
+          "tokens.content-size",
+          "tokens.region-width",
+          "tokens.breakpoint",
+          "tokens.surface-color",
+          "tokens.density",
+          "tokens.control-size"
+        ],
+        "assets": []
+      },
+      "data": "host-injected",
+      "surface": "app",
+      "states": [
+        "loading",
+        "empty",
+        "error"
+      ],
+      "substrates": [
+        "flow"
+      ],
+      "substrateTests": [
+        {
+          "substrate": "flow",
+          "file": "packages/publisher/src/web/publisher/PublisherSection.test.tsx",
+          "name": "renders typed Publisher data-table in flow"
+        }
+      ]
+    },
+    "requires": [],
+    "status": "draft"
+  },
+  {
+    "id": "sections.empty-state",
+    "layer": "sections",
+    "contract": {
+      "kind": "section",
+      "root": "section",
+      "anatomy": {
+        "band": "sections.band",
+        "header": "sections.section-header"
+      },
+      "slots": [
+        {
+          "name": "illustration",
+          "type": "media",
+          "required": false
+        },
+        {
+          "name": "actions",
+          "type": "action",
+          "required": false,
+          "max": 2
+        }
+      ],
+      "members": {
+        "mode": "closed",
+        "names": [
+          "kind.empty",
+          "kind.no-results",
+          "kind.first-use",
+          "scope.region",
+          "scope.page"
+        ]
+      },
+      "allowedComposes": [
+        "components.button",
+        "components.link",
+        "components.icon"
+      ],
+      "parts": [
+        "sections.band",
+        "sections.section-header"
+      ],
+      "allowedReads": {
+        "tokens": [
+          "tokens.spacing",
+          "tokens.gutter",
+          "tokens.content-size",
+          "tokens.region-width",
+          "tokens.breakpoint",
+          "tokens.surface-color"
+        ],
+        "assets": []
+      },
+      "data": "host-injected",
+      "surface": "both",
+      "substrates": [
+        "flow"
+      ],
+      "substrateTests": [
+        {
+          "substrate": "flow",
+          "file": "packages/publisher/src/web/publisher/PublisherSection.test.tsx",
+          "name": "renders typed Publisher empty-state in flow"
+        }
+      ]
+    },
+    "requires": [],
+    "status": "draft"
+  },
+  {
+    "id": "sections.error-state",
+    "layer": "sections",
+    "contract": {
+      "kind": "section",
+      "root": "section",
+      "anatomy": {
+        "band": "sections.band",
+        "header": "sections.section-header"
+      },
+      "slots": [
+        {
+          "name": "code",
+          "type": "copy",
+          "required": false
+        },
+        {
+          "name": "retry",
+          "type": "action",
+          "required": false
+        },
+        {
+          "name": "report",
+          "type": "action",
+          "required": false
+        }
+      ],
+      "members": {
+        "mode": "closed",
+        "names": [
+          "kind.not-found",
+          "kind.failure",
+          "kind.forbidden",
+          "kind.offline"
+        ]
+      },
+      "allowedComposes": [
+        "components.button",
+        "components.link"
+      ],
+      "parts": [
+        "sections.band",
+        "sections.section-header"
+      ],
+      "allowedReads": {
+        "tokens": [
+          "tokens.spacing",
+          "tokens.gutter",
+          "tokens.content-size",
+          "tokens.region-width",
+          "tokens.breakpoint",
+          "tokens.surface-color"
+        ],
+        "assets": []
+      },
+      "data": "host-injected",
+      "surface": "both",
+      "substrates": [
+        "flow"
+      ],
+      "substrateTests": [
+        {
+          "substrate": "flow",
+          "file": "packages/publisher/src/web/publisher/PublisherSection.test.tsx",
+          "name": "renders typed Publisher error-state in flow"
+        }
+      ]
+    },
+    "requires": [],
+    "status": "draft"
+  },
+  {
+    "id": "sections.explorer",
+    "layer": "sections",
+    "contract": {
+      "kind": "section",
+      "root": "section",
+      "anatomy": {
+        "band": "sections.band",
+        "header": "sections.section-header"
+      },
+      "slots": [
+        {
+          "name": "tree",
+          "type": "region",
+          "required": true
+        },
+        {
+          "name": "list",
+          "type": "region",
+          "required": true
+        },
+        {
+          "name": "selection",
+          "type": "records",
+          "required": false
+        }
+      ],
+      "members": {
+        "mode": "closed",
+        "names": []
+      },
+      "allowedComposes": [
+        "components.tree",
+        "components.grid-list",
+        "components.breadcrumbs",
+        "components.resize-handle"
+      ],
+      "parts": [
+        "sections.band",
+        "sections.section-header"
+      ],
+      "allowedReads": {
+        "tokens": [
+          "tokens.spacing",
+          "tokens.gutter",
+          "tokens.content-size",
+          "tokens.region-width",
+          "tokens.breakpoint",
+          "tokens.surface-color"
+        ],
+        "assets": []
+      },
+      "data": "host-injected",
+      "surface": "app"
+    },
+    "requires": [],
+    "status": "draft"
+  },
+  {
+    "id": "sections.faq",
+    "layer": "sections",
+    "contract": {
+      "kind": "section",
+      "root": "section",
+      "anatomy": {
+        "band": "sections.band",
+        "header": "sections.section-header"
+      },
+      "slots": [
+        {
+          "name": "items",
+          "type": "records",
+          "required": true
+        }
+      ],
+      "members": {
+        "mode": "closed",
+        "names": [
+          "layout.list",
+          "layout.two-column"
+        ]
+      },
+      "allowedComposes": [
+        "components.disclosure"
+      ],
+      "parts": [
+        "sections.band",
+        "sections.section-header"
+      ],
+      "allowedReads": {
+        "tokens": [
+          "tokens.spacing",
+          "tokens.gutter",
+          "tokens.content-size",
+          "tokens.region-width",
+          "tokens.breakpoint",
+          "tokens.surface-color"
+        ],
+        "assets": []
+      },
+      "data": "host-injected",
+      "surface": "both"
+    },
+    "requires": [],
+    "status": "draft"
+  },
+  {
+    "id": "sections.features",
+    "layer": "sections",
+    "contract": {
+      "kind": "section",
+      "root": "section",
+      "anatomy": {
+        "band": "sections.band",
+        "header": "sections.section-header"
+      },
+      "slots": [
+        {
+          "name": "items",
+          "type": "records",
+          "required": true
+        }
+      ],
+      "members": {
+        "mode": "closed",
+        "names": [
+          "layout.grid",
+          "layout.list",
+          "layout.split"
+        ]
+      },
+      "allowedComposes": [
+        "components.card",
+        "components.icon",
+        "components.link"
+      ],
+      "parts": [
+        "sections.band",
+        "sections.section-header"
+      ],
+      "allowedReads": {
+        "tokens": [
+          "tokens.spacing",
+          "tokens.gutter",
+          "tokens.content-size",
+          "tokens.region-width",
+          "tokens.breakpoint",
+          "tokens.surface-color"
+        ],
+        "assets": [
+          "assets.icon-*"
+        ]
+      },
+      "data": "host-injected",
+      "surface": "site"
+    },
+    "requires": [],
+    "status": "draft"
+  },
+  {
+    "id": "sections.filter-builder",
+    "layer": "sections",
+    "contract": {
+      "kind": "section",
+      "root": "section",
+      "anatomy": {
+        "band": "sections.band",
+        "header": "sections.section-header"
+      },
+      "slots": [
+        {
+          "name": "fields",
+          "type": "records",
+          "required": true
+        },
+        {
+          "name": "operators",
+          "type": "records",
+          "required": true
+        },
+        {
+          "name": "groups",
+          "type": "records",
+          "required": true
+        }
+      ],
+      "members": {
+        "mode": "closed",
+        "names": []
+      },
+      "allowedComposes": [
+        "components.select",
+        "components.combo-box",
+        "components.date-picker",
+        "components.button",
+        "components.tag-group"
+      ],
+      "parts": [
+        "sections.band",
+        "sections.section-header"
+      ],
+      "allowedReads": {
+        "tokens": [
+          "tokens.spacing",
+          "tokens.gutter",
+          "tokens.content-size",
+          "tokens.region-width",
+          "tokens.breakpoint",
+          "tokens.surface-color"
+        ],
+        "assets": []
+      },
+      "data": "host-injected",
+      "surface": "app"
+    },
+    "requires": [],
+    "status": "draft"
+  },
+  {
+    "id": "sections.form",
+    "layer": "sections",
+    "contract": {
+      "kind": "section",
+      "root": "section",
+      "anatomy": {
+        "band": "sections.band",
+        "header": "sections.section-header"
+      },
+      "slots": [
+        {
+          "name": "fields",
+          "type": "region",
+          "required": true
+        },
+        {
+          "name": "submit",
+          "type": "action",
+          "required": true
+        },
+        {
+          "name": "error-summary",
+          "type": "region",
+          "required": false
+        }
+      ],
+      "members": {
+        "mode": "closed",
+        "names": []
+      },
+      "allowedComposes": [
+        "components.form",
+        "components.field",
+        "components.text-field",
+        "components.button",
+        "components.banner",
+        "components.checkbox",
+        "components.combo-box",
+        "components.select"
+      ],
+      "parts": [
+        "sections.band",
+        "sections.section-header"
+      ],
+      "allowedReads": {
+        "tokens": [
+          "tokens.spacing",
+          "tokens.gutter",
+          "tokens.content-size",
+          "tokens.region-width",
+          "tokens.breakpoint",
+          "tokens.surface-color"
+        ],
+        "assets": []
+      },
+      "data": "host-injected",
+      "surface": "both",
+      "substrates": [
+        "flow"
+      ],
+      "substrateTests": [
+        {
+          "substrate": "flow",
+          "file": "packages/publisher/src/web/publisher/PublisherSection.test.tsx",
+          "name": "renders typed Publisher form in flow"
+        }
+      ]
+    },
+    "requires": [],
+    "status": "draft"
+  },
+  {
+    "id": "sections.gallery",
+    "layer": "sections",
+    "contract": {
+      "kind": "section",
+      "root": "section",
+      "anatomy": {
+        "band": "sections.band",
+        "header": "sections.section-header"
+      },
+      "slots": [
+        {
+          "name": "images",
+          "type": "media",
+          "required": true
+        }
+      ],
+      "members": {
+        "mode": "closed",
+        "names": [
+          "lightbox.enabled",
+          "lightbox.disabled"
+        ]
+      },
+      "allowedComposes": [
+        "components.dialog",
+        "components.grid-list"
+      ],
+      "parts": [
+        "sections.band",
+        "sections.section-header"
+      ],
+      "allowedReads": {
+        "tokens": [
+          "tokens.spacing",
+          "tokens.gutter",
+          "tokens.content-size",
+          "tokens.region-width",
+          "tokens.breakpoint",
+          "tokens.surface-color"
+        ],
+        "assets": [
+          "assets.image-ratio"
+        ]
+      },
+      "data": "host-injected",
+      "surface": "site"
+    },
+    "requires": [],
+    "status": "draft"
+  },
+  {
+    "id": "sections.hero",
+    "layer": "sections",
+    "contract": {
+      "kind": "section",
+      "root": "section",
+      "anatomy": {
+        "band": "sections.band",
+        "header": "sections.section-header"
+      },
+      "slots": [
+        {
+          "name": "header",
+          "type": "region",
+          "required": true
+        },
+        {
+          "name": "media",
+          "type": "media",
+          "required": false
+        },
+        {
+          "name": "actions",
+          "type": "action",
+          "required": false,
+          "max": 2
+        }
+      ],
+      "members": {
+        "mode": "closed",
+        "names": [
+          "layout.editorial",
+          "layout.split",
+          "size.display",
+          "size.compact",
+          "size.default"
+        ]
+      },
+      "allowedComposes": [
+        "components.button",
+        "components.link"
+      ],
+      "parts": [
+        "sections.band",
+        "sections.section-header"
+      ],
+      "allowedReads": {
+        "tokens": [
+          "tokens.spacing",
+          "tokens.gutter",
+          "tokens.content-size",
+          "tokens.region-width",
+          "tokens.breakpoint",
+          "tokens.surface-color",
+          "tokens.display-size"
+        ],
+        "assets": [
+          "assets.image-ratio"
+        ]
+      },
+      "data": "host-injected",
+      "surface": "site"
+    },
+    "requires": [],
+    "status": "draft"
+  },
+  {
+    "id": "sections.link-index",
+    "layer": "sections",
+    "contract": {
+      "kind": "section",
+      "root": "section",
+      "anatomy": {
+        "band": "sections.band",
+        "header": "sections.section-header"
+      },
+      "slots": [
+        {
+          "name": "links",
+          "type": "records",
+          "required": true
+        }
+      ],
+      "members": {
+        "mode": "closed",
+        "names": [
+          "layout.list",
+          "layout.grid",
+          "layout.cards"
+        ]
+      },
+      "allowedComposes": [
+        "components.link",
+        "components.card",
+        "components.icon",
+        "components.badge",
+        "components.button",
+        "components.status-mark"
+      ],
+      "parts": [
+        "sections.band",
+        "sections.section-header"
+      ],
+      "allowedReads": {
+        "tokens": [
+          "tokens.spacing",
+          "tokens.gutter",
+          "tokens.content-size",
+          "tokens.region-width",
+          "tokens.breakpoint",
+          "tokens.surface-color"
+        ],
+        "assets": []
+      },
+      "data": "host-injected",
+      "surface": "both"
+    },
+    "requires": [],
+    "status": "draft"
+  },
+  {
+    "id": "sections.logo-cloud",
+    "layer": "sections",
+    "contract": {
+      "kind": "section",
+      "root": "section",
+      "anatomy": {
+        "band": "sections.band",
+        "header": "sections.section-header"
+      },
+      "slots": [
+        {
+          "name": "logos",
+          "type": "media",
+          "required": true
+        }
+      ],
+      "members": {
+        "mode": "closed",
+        "names": [
+          "count.3",
+          "count.4",
+          "count.6",
+          "count.8",
+          "count.12",
+          "monochrome.true",
+          "monochrome.false"
+        ]
+      },
+      "allowedComposes": [
+        "components.link"
+      ],
+      "parts": [
+        "sections.band",
+        "sections.section-header"
+      ],
+      "allowedReads": {
+        "tokens": [
+          "tokens.spacing",
+          "tokens.gutter",
+          "tokens.content-size",
+          "tokens.region-width",
+          "tokens.breakpoint",
+          "tokens.surface-color"
+        ],
+        "assets": [
+          "assets.image-ratio"
+        ]
+      },
+      "data": "host-injected",
+      "surface": "site"
+    },
+    "requires": [],
+    "status": "draft"
+  },
+  {
+    "id": "sections.media",
+    "layer": "sections",
+    "contract": {
+      "kind": "section",
+      "root": "figure",
+      "anatomy": {
+        "band": "sections.band",
+        "header": "sections.section-header"
+      },
+      "slots": [
+        {
+          "name": "figure",
+          "type": "media",
+          "required": true
+        }
+      ],
+      "members": {
+        "mode": "closed",
+        "names": []
+      },
+      "allowedComposes": [],
+      "parts": [
+        "sections.band",
+        "sections.section-header"
+      ],
+      "allowedReads": {
+        "tokens": [
+          "tokens.spacing",
+          "tokens.gutter",
+          "tokens.content-size",
+          "tokens.region-width",
+          "tokens.breakpoint",
+          "tokens.surface-color",
+          "tokens.surface-radius"
+        ],
+        "assets": [
+          "assets.image-ratio"
+        ]
+      },
+      "data": "host-injected",
+      "surface": "both"
+    },
+    "requires": [],
+    "status": "draft"
+  },
+  {
+    "id": "sections.newsletter",
+    "layer": "sections",
+    "contract": {
+      "kind": "section",
+      "root": "section",
+      "anatomy": {
+        "band": "sections.band",
+        "header": "sections.section-header"
+      },
+      "slots": [
+        {
+          "name": "email",
+          "type": "region",
+          "required": true
+        },
+        {
+          "name": "consent",
+          "type": "copy",
+          "required": true
+        },
+        {
+          "name": "submit",
+          "type": "action",
+          "required": true
+        }
+      ],
+      "members": {
+        "mode": "closed",
+        "names": []
+      },
+      "allowedComposes": [
+        "components.text-field",
+        "components.button",
+        "components.icon"
+      ],
+      "parts": [
+        "sections.band",
+        "sections.section-header"
+      ],
+      "allowedReads": {
+        "tokens": [
+          "tokens.spacing",
+          "tokens.gutter",
+          "tokens.content-size",
+          "tokens.region-width",
+          "tokens.breakpoint",
+          "tokens.surface-color"
+        ],
+        "assets": []
+      },
+      "data": "host-injected",
+      "surface": "site"
+    },
+    "requires": [],
+    "status": "draft"
+  },
+  {
+    "id": "sections.notices",
+    "layer": "sections",
+    "contract": {
+      "kind": "section",
+      "root": "section",
+      "anatomy": {
+        "band": "sections.band",
+        "header": "sections.section-header"
+      },
+      "slots": [
+        {
+          "name": "notices",
+          "type": "records",
+          "required": true
+        }
+      ],
+      "members": {
+        "mode": "closed",
+        "names": []
+      },
+      "allowedComposes": [
+        "components.banner"
+      ],
+      "parts": [
+        "sections.band",
+        "sections.section-header"
+      ],
+      "allowedReads": {
+        "tokens": [
+          "tokens.spacing",
+          "tokens.gutter",
+          "tokens.content-size",
+          "tokens.region-width",
+          "tokens.breakpoint",
+          "tokens.surface-color",
+          "tokens.status-color"
+        ],
+        "assets": []
+      },
+      "data": "host-injected",
+      "surface": "both",
+      "substrates": [
+        "flow"
+      ],
+      "substrateTests": [
+        {
+          "substrate": "flow",
+          "file": "packages/publisher/src/web/publisher/PublisherSection.test.tsx",
+          "name": "renders typed Publisher notices in flow"
+        }
+      ]
+    },
+    "requires": [],
+    "status": "draft"
+  },
+  {
+    "id": "sections.page-header",
+    "layer": "sections",
+    "contract": {
+      "kind": "section",
+      "root": "section",
+      "anatomy": {
+        "band": "sections.band",
+        "header": "sections.section-header"
+      },
+      "slots": [
+        {
+          "name": "title",
+          "type": "copy",
+          "required": true
+        },
+        {
+          "name": "description",
+          "type": "copy",
+          "required": false
+        },
+        {
+          "name": "breadcrumbs",
+          "type": "region",
+          "required": false
+        },
+        {
+          "name": "actions",
+          "type": "action",
+          "required": false,
+          "max": 2
+        },
+        {
+          "name": "meta",
+          "type": "region",
+          "required": false
+        }
+      ],
+      "members": {
+        "mode": "closed",
+        "names": [
+          "config.standard",
+          "config.record"
+        ]
+      },
+      "allowedComposes": [
+        "components.breadcrumbs",
+        "components.button",
+        "components.badge",
+        "components.tabs"
+      ],
+      "parts": [
+        "sections.band",
+        "sections.section-header"
+      ],
+      "allowedReads": {
+        "tokens": [
+          "tokens.spacing",
+          "tokens.gutter",
+          "tokens.content-size",
+          "tokens.region-width",
+          "tokens.breakpoint",
+          "tokens.surface-color",
+          "tokens.heading-size"
+        ],
+        "assets": []
+      },
+      "data": "host-injected",
+      "surface": "both"
+    },
+    "requires": [],
+    "status": "draft"
+  },
+  {
+    "id": "sections.pagination",
+    "layer": "sections",
+    "contract": {
+      "kind": "section",
+      "root": "nav",
+      "anatomy": {
+        "band": null,
+        "header": null
+      },
+      "slots": [
+        {
+          "name": "page",
+          "type": "records",
+          "required": true
+        },
+        {
+          "name": "total",
+          "type": "records",
+          "required": false
+        }
+      ],
+      "members": {
+        "mode": "closed",
+        "names": [
+          "mode.pages",
+          "mode.load-more",
+          "mode.cursor"
+        ]
+      },
+      "allowedComposes": [
+        "components.button",
+        "components.link",
+        "components.select"
+      ],
+      "parts": [],
+      "allowedReads": {
+        "tokens": [
+          "tokens.spacing",
+          "tokens.gutter",
+          "tokens.content-size",
+          "tokens.region-width",
+          "tokens.breakpoint",
+          "tokens.surface-color"
+        ],
+        "assets": [
+          "assets.icon-*"
+        ]
+      },
+      "data": "host-injected",
+      "surface": "both"
+    },
+    "requires": [],
+    "status": "draft"
+  },
+  {
+    "id": "sections.people",
+    "layer": "sections",
+    "contract": {
+      "kind": "section",
+      "root": "section",
+      "anatomy": {
+        "band": "sections.band",
+        "header": "sections.section-header"
+      },
+      "slots": [
+        {
+          "name": "people",
+          "type": "records",
+          "required": true
+        }
+      ],
+      "members": {
+        "mode": "closed",
+        "names": []
+      },
+      "allowedComposes": [
+        "components.avatar",
+        "components.card",
+        "components.link"
+      ],
+      "parts": [
+        "sections.band",
+        "sections.section-header"
+      ],
+      "allowedReads": {
+        "tokens": [
+          "tokens.spacing",
+          "tokens.gutter",
+          "tokens.content-size",
+          "tokens.region-width",
+          "tokens.breakpoint",
+          "tokens.surface-color"
+        ],
+        "assets": []
+      },
+      "data": "host-injected",
+      "surface": "site"
+    },
+    "requires": [],
+    "status": "draft"
+  },
+  {
+    "id": "sections.pricing",
+    "layer": "sections",
+    "contract": {
+      "kind": "section",
+      "root": "section",
+      "anatomy": {
+        "band": "sections.band",
+        "header": "sections.section-header"
+      },
+      "slots": [
+        {
+          "name": "plans",
+          "type": "records",
+          "required": true
+        },
+        {
+          "name": "interval",
+          "type": "copy",
+          "required": false
+        },
+        {
+          "name": "highlight",
+          "type": "records",
+          "required": false
+        }
+      ],
+      "members": {
+        "mode": "closed",
+        "names": []
+      },
+      "allowedComposes": [
+        "components.toggle-group",
+        "components.button",
+        "components.card",
+        "components.badge"
+      ],
+      "parts": [
+        "sections.band",
+        "sections.section-header"
+      ],
+      "allowedReads": {
+        "tokens": [
+          "tokens.spacing",
+          "tokens.gutter",
+          "tokens.content-size",
+          "tokens.region-width",
+          "tokens.breakpoint",
+          "tokens.surface-color"
+        ],
+        "assets": []
+      },
+      "data": "host-injected",
+      "surface": "site"
+    },
+    "requires": [],
+    "status": "draft"
+  },
+  {
+    "id": "sections.record-detail",
+    "layer": "sections",
+    "contract": {
+      "kind": "section",
+      "root": "section",
+      "anatomy": {
+        "band": "sections.band",
+        "header": "sections.section-header"
+      },
+      "slots": [
+        {
+          "name": "fields",
+          "type": "records",
+          "required": true
+        },
+        {
+          "name": "groups",
+          "type": "records",
+          "required": false
+        },
+        {
+          "name": "status",
+          "type": "copy",
+          "required": false
+        },
+        {
+          "name": "actions",
+          "type": "action",
+          "required": false,
+          "max": 2
+        }
+      ],
+      "members": {
+        "mode": "closed",
+        "names": []
+      },
+      "allowedComposes": [
+        "components.card",
+        "components.tabs",
+        "components.badge",
+        "components.skeleton",
+        "components.button",
+        "components.link",
+        "components.disclosure"
+      ],
+      "parts": [
+        "sections.band",
+        "sections.section-header"
+      ],
+      "allowedReads": {
+        "tokens": [
+          "tokens.spacing",
+          "tokens.gutter",
+          "tokens.content-size",
+          "tokens.region-width",
+          "tokens.breakpoint",
+          "tokens.surface-color"
+        ],
+        "assets": []
+      },
+      "data": "host-injected",
+      "surface": "app",
+      "states": [
+        "loading",
+        "empty",
+        "error"
+      ],
+      "substrates": [
+        "flow"
+      ],
+      "substrateTests": [
+        {
+          "substrate": "flow",
+          "file": "packages/publisher/src/web/publisher/PublisherSection.test.tsx",
+          "name": "renders typed Publisher record-detail in flow"
+        }
+      ]
+    },
+    "requires": [],
+    "status": "draft"
+  },
+  {
+    "id": "sections.resource-list",
+    "layer": "sections",
+    "contract": {
+      "kind": "section",
+      "root": "section",
+      "anatomy": {
+        "band": "sections.band",
+        "header": "sections.section-header"
+      },
+      "slots": [
+        {
+          "name": "records",
+          "type": "records",
+          "required": true
+        },
+        {
+          "name": "selection",
+          "type": "records",
+          "required": false
+        },
+        {
+          "name": "toolbar",
+          "type": "region",
+          "required": false
+        },
+        {
+          "name": "pagination",
+          "type": "region",
+          "required": false
+        }
+      ],
+      "members": {
+        "mode": "closed",
+        "names": []
+      },
+      "allowedComposes": [
+        "components.grid-list",
+        "components.toolbar",
+        "components.menu",
+        "components.checkbox"
+      ],
+      "parts": [
+        "sections.band",
+        "sections.section-header",
+        "sections.pagination"
+      ],
+      "allowedReads": {
+        "tokens": [
+          "tokens.spacing",
+          "tokens.gutter",
+          "tokens.content-size",
+          "tokens.region-width",
+          "tokens.breakpoint",
+          "tokens.surface-color",
+          "tokens.density"
+        ],
+        "assets": []
+      },
+      "data": "host-injected",
+      "surface": "app",
+      "states": [
+        "loading",
+        "empty",
+        "error"
+      ]
+    },
+    "requires": [],
+    "status": "draft"
+  },
+  {
+    "id": "sections.section-header",
+    "layer": "sections",
+    "contract": {
+      "kind": "section",
+      "root": "header",
+      "anatomy": {
+        "band": null,
+        "header": null
+      },
+      "slots": [
+        {
+          "name": "eyebrow",
+          "type": "copy",
+          "required": false
+        },
+        {
+          "name": "heading",
+          "type": "copy",
+          "required": true
+        },
+        {
+          "name": "description",
+          "type": "copy",
+          "required": false
+        },
+        {
+          "name": "actions",
+          "type": "action",
+          "required": false,
+          "max": 2
+        }
+      ],
+      "members": {
+        "mode": "closed",
+        "names": [
+          "align.start",
+          "align.center",
+          "density.display",
+          "density.standard",
+          "density.compact"
+        ]
+      },
+      "allowedComposes": [
+        "components.button",
+        "components.link"
+      ],
+      "parts": [],
+      "allowedReads": {
+        "tokens": [
+          "tokens.spacing",
+          "tokens.gutter",
+          "tokens.content-size",
+          "tokens.region-width",
+          "tokens.breakpoint",
+          "tokens.surface-color",
+          "tokens.heading-size",
+          "tokens.display-size",
+          "tokens.display-face",
+          "tokens.body-size",
+          "tokens.text-color",
+          "tokens.accent-color"
+        ],
+        "assets": []
+      },
+      "data": "host-injected",
+      "surface": "both"
+    },
+    "requires": [],
+    "status": "draft"
+  },
+  {
+    "id": "sections.settings",
+    "layer": "sections",
+    "contract": {
+      "kind": "section",
+      "root": "section",
+      "anatomy": {
+        "band": "sections.band",
+        "header": "sections.section-header"
+      },
+      "slots": [
+        {
+          "name": "groups",
+          "type": "records",
+          "required": true
+        },
+        {
+          "name": "dirty",
+          "type": "records",
+          "required": false
+        },
+        {
+          "name": "save-bar",
+          "type": "region",
+          "required": false
+        }
+      ],
+      "members": {
+        "mode": "closed",
+        "names": []
+      },
+      "allowedComposes": [
+        "components.form",
+        "components.switch",
+        "components.select",
+        "components.button",
+        "components.toast"
+      ],
+      "parts": [
+        "sections.band",
+        "sections.section-header"
+      ],
+      "allowedReads": {
+        "tokens": [
+          "tokens.spacing",
+          "tokens.gutter",
+          "tokens.content-size",
+          "tokens.region-width",
+          "tokens.breakpoint",
+          "tokens.surface-color"
+        ],
+        "assets": []
+      },
+      "data": "host-injected",
+      "surface": "app"
+    },
+    "requires": [],
+    "status": "draft"
+  },
+  {
+    "id": "sections.stats",
+    "layer": "sections",
+    "contract": {
+      "kind": "section",
+      "root": "section",
+      "anatomy": {
+        "band": "sections.band",
+        "header": "sections.section-header"
+      },
+      "slots": [
+        {
+          "name": "stats",
+          "type": "records",
+          "required": true
+        }
+      ],
+      "members": {
+        "mode": "closed",
+        "names": [
+          "layout.grid",
+          "layout.row"
+        ]
+      },
+      "allowedComposes": [
+        "components.chart-sparkline",
+        "components.meter"
+      ],
+      "parts": [
+        "sections.band",
+        "sections.section-header"
+      ],
+      "allowedReads": {
+        "tokens": [
+          "tokens.spacing",
+          "tokens.gutter",
+          "tokens.content-size",
+          "tokens.region-width",
+          "tokens.breakpoint",
+          "tokens.surface-color",
+          "tokens.status-color"
+        ],
+        "assets": []
+      },
+      "data": "host-injected",
+      "surface": "both",
+      "states": [
+        "loading",
+        "empty",
+        "error"
+      ]
+    },
+    "requires": [],
+    "status": "draft"
+  },
+  {
+    "id": "sections.status-list",
+    "layer": "sections",
+    "contract": {
+      "kind": "section",
+      "root": "section",
+      "anatomy": {
+        "band": "sections.band",
+        "header": "sections.section-header"
+      },
+      "slots": [
+        {
+          "name": "items",
+          "type": "records",
+          "required": true
+        },
+        {
+          "name": "legend",
+          "type": "copy",
+          "required": false
+        }
+      ],
+      "members": {
+        "mode": "closed",
+        "names": [
+          "status.available",
+          "status.partial",
+          "status.planned",
+          "status.not-offered"
+        ]
+      },
+      "allowedComposes": [
+        "components.status-mark"
+      ],
+      "parts": [
+        "sections.band",
+        "sections.section-header"
+      ],
+      "allowedReads": {
+        "tokens": [
+          "tokens.spacing",
+          "tokens.gutter",
+          "tokens.content-size",
+          "tokens.region-width",
+          "tokens.breakpoint",
+          "tokens.surface-color",
+          "tokens.status-color"
+        ],
+        "assets": [
+          "assets.icon-*"
+        ]
+      },
+      "data": "host-injected",
+      "surface": "site",
+      "states": [
+        "loading",
+        "empty",
+        "error"
+      ]
+    },
+    "requires": [],
+    "status": "draft"
+  },
+  {
+    "id": "sections.steps",
+    "layer": "sections",
+    "contract": {
+      "kind": "section",
+      "root": "section",
+      "anatomy": {
+        "band": "sections.band",
+        "header": "sections.section-header"
+      },
+      "slots": [
+        {
+          "name": "steps",
+          "type": "records",
+          "required": true
+        }
+      ],
+      "members": {
+        "mode": "closed",
+        "names": []
+      },
+      "allowedComposes": [
+        "components.status-mark"
+      ],
+      "parts": [
+        "sections.band",
+        "sections.section-header"
+      ],
+      "allowedReads": {
+        "tokens": [
+          "tokens.spacing",
+          "tokens.gutter",
+          "tokens.content-size",
+          "tokens.region-width",
+          "tokens.breakpoint",
+          "tokens.surface-color"
+        ],
+        "assets": []
+      },
+      "data": "host-injected",
+      "surface": "site"
+    },
+    "requires": [],
+    "status": "draft"
+  },
+  {
+    "id": "sections.table-of-contents",
+    "layer": "sections",
+    "contract": {
+      "kind": "section",
+      "root": "section",
+      "anatomy": {
+        "band": "sections.band",
+        "header": null
+      },
+      "slots": [
+        {
+          "name": "headings",
+          "type": "records",
+          "required": true
+        },
+        {
+          "name": "active-id",
+          "type": "copy",
+          "required": false
+        }
+      ],
+      "members": {
+        "mode": "closed",
+        "names": []
+      },
+      "allowedComposes": [
+        "components.link",
+        "components.disclosure"
+      ],
+      "parts": [
+        "sections.band"
+      ],
+      "allowedReads": {
+        "tokens": [
+          "tokens.spacing",
+          "tokens.gutter",
+          "tokens.content-size",
+          "tokens.region-width",
+          "tokens.breakpoint",
+          "tokens.surface-color"
+        ],
+        "assets": []
+      },
+      "data": "host-injected",
+      "surface": "site"
+    },
+    "requires": [],
+    "status": "draft"
+  },
+  {
+    "id": "sections.task-list",
+    "layer": "sections",
+    "contract": {
+      "kind": "section",
+      "root": "section",
+      "anatomy": {
+        "band": "sections.band",
+        "header": "sections.section-header"
+      },
+      "slots": [
+        {
+          "name": "tasks",
+          "type": "records",
+          "required": true
+        }
+      ],
+      "members": {
+        "mode": "closed",
+        "names": []
+      },
+      "allowedComposes": [
+        "components.checkbox",
+        "components.avatar",
+        "components.badge",
+        "components.icon",
+        "components.status-mark"
+      ],
+      "parts": [
+        "sections.band",
+        "sections.section-header"
+      ],
+      "allowedReads": {
+        "tokens": [
+          "tokens.spacing",
+          "tokens.gutter",
+          "tokens.content-size",
+          "tokens.region-width",
+          "tokens.breakpoint",
+          "tokens.surface-color"
+        ],
+        "assets": []
+      },
+      "data": "host-injected",
+      "surface": "app",
+      "states": [
+        "loading",
+        "empty",
+        "error"
+      ]
+    },
+    "requires": [],
+    "status": "draft"
+  },
+  {
+    "id": "sections.testimonials",
+    "layer": "sections",
+    "contract": {
+      "kind": "section",
+      "root": "section",
+      "anatomy": {
+        "band": "sections.band",
+        "header": "sections.section-header"
+      },
+      "slots": [
+        {
+          "name": "quotes",
+          "type": "records",
+          "required": true
+        }
+      ],
+      "members": {
+        "mode": "closed",
+        "names": [
+          "layout.single",
+          "layout.grid"
+        ]
+      },
+      "allowedComposes": [
+        "components.avatar",
+        "components.card"
+      ],
+      "parts": [
+        "sections.band",
+        "sections.section-header"
+      ],
+      "allowedReads": {
+        "tokens": [
+          "tokens.spacing",
+          "tokens.gutter",
+          "tokens.content-size",
+          "tokens.region-width",
+          "tokens.breakpoint",
+          "tokens.surface-color"
+        ],
+        "assets": []
+      },
+      "data": "host-injected",
+      "surface": "site"
+    },
+    "requires": [],
+    "status": "draft"
+  },
+  {
+    "id": "sections.timeline",
+    "layer": "sections",
+    "contract": {
+      "kind": "section",
+      "root": "section",
+      "anatomy": {
+        "band": "sections.band",
+        "header": "sections.section-header"
+      },
+      "slots": [
+        {
+          "name": "events",
+          "type": "records",
+          "required": true
+        }
+      ],
+      "members": {
+        "mode": "closed",
+        "names": []
+      },
+      "allowedComposes": [
+        "components.separator"
+      ],
+      "parts": [
+        "sections.band",
+        "sections.section-header"
+      ],
+      "allowedReads": {
+        "tokens": [
+          "tokens.spacing",
+          "tokens.gutter",
+          "tokens.content-size",
+          "tokens.region-width",
+          "tokens.breakpoint",
+          "tokens.surface-color"
+        ],
+        "assets": []
+      },
+      "data": "host-injected",
+      "surface": "site"
+    },
+    "requires": [],
+    "status": "draft"
+  },
+  {
+    "id": "sections.usage",
+    "layer": "sections",
+    "contract": {
+      "kind": "section",
+      "root": "section",
+      "anatomy": {
+        "band": "sections.band",
+        "header": "sections.section-header"
+      },
+      "slots": [
+        {
+          "name": "meters",
+          "type": "records",
+          "required": true
+        }
+      ],
+      "members": {
+        "mode": "closed",
+        "names": []
+      },
+      "allowedComposes": [
+        "components.meter",
+        "components.progress-bar"
+      ],
+      "parts": [
+        "sections.band",
+        "sections.section-header"
+      ],
+      "allowedReads": {
+        "tokens": [
+          "tokens.spacing",
+          "tokens.gutter",
+          "tokens.content-size",
+          "tokens.region-width",
+          "tokens.breakpoint",
+          "tokens.surface-color",
+          "tokens.status-color"
+        ],
+        "assets": []
+      },
+      "data": "host-injected",
+      "surface": "app",
+      "states": [
+        "loading",
+        "empty",
+        "error"
+      ]
+    },
+    "requires": [],
+    "status": "draft"
+  },
+  {
+    "id": "sections.wizard",
+    "layer": "sections",
+    "contract": {
+      "kind": "section",
+      "root": "section",
+      "anatomy": {
+        "band": "sections.band",
+        "header": "sections.section-header"
+      },
+      "slots": [
+        {
+          "name": "steps",
+          "type": "records",
+          "required": true
+        },
+        {
+          "name": "progress",
+          "type": "region",
+          "required": false
+        },
+        {
+          "name": "back",
+          "type": "action",
+          "required": false
+        },
+        {
+          "name": "next",
+          "type": "action",
+          "required": true
+        },
+        {
+          "name": "review",
+          "type": "region",
+          "required": false
+        }
+      ],
+      "members": {
+        "mode": "closed",
+        "names": []
+      },
+      "allowedComposes": [
+        "components.form",
+        "components.progress-bar",
+        "components.button"
+      ],
+      "parts": [
+        "sections.band",
+        "sections.section-header"
+      ],
+      "allowedReads": {
+        "tokens": [
+          "tokens.spacing",
+          "tokens.gutter",
+          "tokens.content-size",
+          "tokens.region-width",
+          "tokens.breakpoint",
+          "tokens.surface-color"
+        ],
+        "assets": []
+      },
+      "data": "host-injected",
+      "surface": "both"
+    },
+    "requires": [],
+    "status": "draft"
+  }
+]

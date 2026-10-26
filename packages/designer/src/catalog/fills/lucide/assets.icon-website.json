@@ -1,0 +1,61 @@
+{
+  "$extensions": {
+    "com.clossys.fill": {
+      "id": "lucide/assets.icon-website",
+      "slot": "assets.icon-website",
+      "source": "lucide",
+      "mode": "implementation",
+      "sourceAddress": "lucide-react@1.24.0/dist/esm/icons/globe.js",
+      "relation": "same-contract",
+      "builtOn": [],
+      "conforms": [],
+      "evidence": [],
+      "author": "third-party",
+      "trust": "pinned-upstream",
+      "license": "ISC",
+      "pin": {
+        "package": "lucide-react",
+        "version": "1.24.0",
+        "file": "src/icons/Globe.ts",
+        "sha256": "fe5d866c8220c13289d604f83fca685f0cfe8b4bf66c17dbf66dc21ff2dcd8e2"
+      },
+      "status": "draft",
+      "reads": {
+        "tokens": [],
+        "assets": []
+      }
+    }
+  },
+  "assets": {
+    "icon-website": {
+      "default": {
+        "$type": "glyph",
+        "$value": [
+          [
+            "circle",
+            {
+              "cx": "12",
+              "cy": "12",
+              "r": "10",
+              "key": "1mglay"
+            }
+          ],
+          [
+            "path",
+            {
+              "d": "M12 2a14.5 14.5 0 0 0 0 20 14.5 14.5 0 0 0 0-20",
+              "key": "13o1zl"
+            }
+          ],
+          [
+            "path",
+            {
+              "d": "M2 12h20",
+              "key": "9i4pu4"
+            }
+          ]
+        ]
+      }
+    }
+  }
+}

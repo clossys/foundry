@@ -10,7 +10,7 @@ let dir: string;
 beforeEach(() => {
   dir = mkdtempSync(join(tmpdir(), "ui-compiled-css-cli-"));
   cpSync(join(packageRoot, "styles"), join(dir, "styles"), { recursive: true });
-  cpSync(join(packageRoot, "src", "atoms"), join(dir, "src", "atoms"), { recursive: true });
+  cpSync(join(packageRoot, "src", "components"), join(dir, "src", "components"), { recursive: true });
   cpSync(join(packageRoot, "src", "blocks"), join(dir, "src", "blocks"), { recursive: true });
   cpSync(join(packageRoot, "src", "shell"), join(dir, "src", "shell"), { recursive: true });
   cpSync(join(packageRoot, "src", "charts"), join(dir, "src", "charts"), { recursive: true });
@@ -50,7 +50,7 @@ describe("main --write", () => {
   });
 
   it("returns 2 when every compiled-css source dir is empty", async () => {
-    for (const sub of ["atoms", "blocks", "shell"] as const) {
+    for (const sub of ["components", "blocks", "shell"] as const) {
       rmSync(join(dir, "src", sub), { recursive: true, force: true });
       mkdirSync(join(dir, "src", sub), { recursive: true });
       writeFileSync(join(dir, "src", sub, "data.json"), "{}");

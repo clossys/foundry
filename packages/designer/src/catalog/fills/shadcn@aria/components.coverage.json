@@ -1,0 +1,1672 @@
+{
+  "pin": {
+    "base": "aria",
+    "commit": "daaf156ee00ed91cc7e6bdd937c1b4973152d141",
+    "style": "nova",
+    "url": "https://github.com/shadcn-ui/ui"
+  },
+  "receipt": [
+    {
+      "issues": [],
+      "item": "button",
+      "notes": [
+        {
+          "file": "apps/v4/registry/bases/aria/ui/button.tsx",
+          "message": "Restyled source: Preserve one-hairline press displacement; use existing exact 1px member with explicit geometric read.",
+          "value": "active:not-aria-[haspopup]:translate-y-px"
+        },
+        {
+          "file": "apps/v4/registry/bases/aria/ui/button.tsx",
+          "message": "Removed suppression beside the same expanded literal's token-bound focus owner",
+          "value": "border-transparent"
+        },
+        {
+          "file": "apps/v4/registry/bases/aria/ui/button.tsx",
+          "message": "Restyled source: 6px to spacing.sm 8px",
+          "value": "gap-1.5"
+        },
+        {
+          "file": "apps/v4/registry/bases/aria/ui/button.tsx",
+          "message": "Restyled source: 6px to spacing.sm 8px",
+          "value": "has-data-[icon=inline-end]:pr-1.5"
+        },
+        {
+          "file": "apps/v4/registry/bases/aria/ui/button.tsx",
+          "message": "Restyled source: 6px to spacing.sm 8px",
+          "value": "has-data-[icon=inline-start]:pl-1.5"
+        },
+        {
+          "file": "apps/v4/registry/bases/aria/ui/button.tsx",
+          "message": "Removed suppression beside the same expanded literal's token-bound focus owner",
+          "value": "outline-none"
+        },
+        {
+          "file": "apps/v4/registry/bases/aria/ui/button.tsx",
+          "message": "Restyled source: 10px to spacing.md 12px",
+          "value": "px-2.5"
+        },
+        {
+          "file": "apps/v4/registry/bases/aria/ui/button.tsx",
+          "message": "Restyled source: Remove literal 10/12px cap and use the consumer control radius directly; preserves every size/state prefix.",
+          "value": "rounded-[min(var(--radius-md),10px)]"
+        },
+        {
+          "file": "apps/v4/registry/bases/aria/ui/button.tsx",
+          "message": "Restyled source: Remove literal 10/12px cap and use the consumer control radius directly; preserves every size/state prefix.",
+          "value": "rounded-[min(var(--radius-md),12px)]"
+        },
+        {
+          "file": "apps/v4/registry/bases/aria/ui/button.tsx",
+          "message": "Restyled source: Restyle 12.8px small control/calendar typography to existing caption 12px; no token value change.",
+          "value": "text-[0.8rem]"
+        }
+      ],
+      "reason": "Pinned root import verified; token, glyph, dependency and runtime checks remain required",
+      "runtime": "U-V",
+      "slot": "components.button",
+      "status": "candidate"
+    },
+    {
+      "issues": [],
+      "item": "toggle",
+      "notes": [
+        {
+          "file": "apps/v4/registry/bases/aria/ui/toggle.tsx",
+          "message": "Restyled source: 6px to spacing.sm 8px",
+          "value": "has-data-[icon=inline-end]:pr-1.5"
+        },
+        {
+          "file": "apps/v4/registry/bases/aria/ui/toggle.tsx",
+          "message": "Restyled source: 6px to spacing.sm 8px",
+          "value": "has-data-[icon=inline-start]:pl-1.5"
+        },
+        {
+          "file": "apps/v4/registry/bases/aria/ui/toggle.tsx",
+          "message": "Restyled source: Restyle 28.0px to 32px using the existing spacing scale; variants and branch ownership remain exact.",
+          "value": "min-w-7"
+        },
+        {
+          "file": "apps/v4/registry/bases/aria/ui/toggle.tsx",
+          "message": "Restyled source: Restyle 36.0px to 32px using the existing spacing scale; variants and branch ownership remain exact.",
+          "value": "min-w-9"
+        },
+        {
+          "file": "apps/v4/registry/bases/aria/ui/toggle.tsx",
+          "message": "Removed suppression beside the same expanded literal's token-bound focus owner",
+          "value": "outline-none"
+        },
+        {
+          "file": "apps/v4/registry/bases/aria/ui/toggle.tsx",
+          "message": "Restyled source: 10px to spacing.md 12px",
+          "value": "px-2.5"
+        },
+        {
+          "file": "apps/v4/registry/bases/aria/ui/toggle.tsx",
+          "message": "Restyled source: Remove literal 10/12px cap and use the consumer control radius directly; preserves every size/state prefix.",
+          "value": "rounded-[min(var(--radius-md),12px)]"
+        },
+        {
+          "file": "apps/v4/registry/bases/aria/ui/toggle.tsx",
+          "message": "Restyled source: Restyle 12.8px small control/calendar typography to existing caption 12px; no token value change.",
+          "value": "text-[0.8rem]"
+        }
+      ],
+      "reason": "Pinned root import verified; token, glyph, dependency and runtime checks remain required",
+      "runtime": "U-V",
+      "slot": "components.toggle-button",
+      "status": "candidate"
+    },
+    {
+      "issues": [],
+      "item": "dropdown-menu",
+      "notes": [
+        {
+          "file": "apps/v4/registry/bases/aria/ui/dropdown-menu.tsx",
+          "message": "Preserved the selected translucent surface's explicit animation cancellation",
+          "value": "animate-none"
+        },
+        {
+          "file": "apps/v4/registry/bases/aria/ui/dropdown-menu.tsx",
+          "message": "Removed marker-only class absent from the pinned stylesheet",
+          "value": "cn-menu-target"
+        },
+        {
+          "file": "apps/v4/registry/bases/aria/ui/dropdown-menu.tsx",
+          "message": "Removed marker-only class absent from the pinned stylesheet",
+          "value": "cn-rtl-flip"
+        },
+        {
+          "file": "apps/v4/registry/bases/aria/ui/dropdown-menu.tsx",
+          "message": "Restyled source: Restyle 28.0px to 32px using the existing spacing scale; variants and branch ownership remain exact.",
+          "value": "data-inset:pl-7"
+        },
+        {
+          "file": "apps/v4/registry/bases/aria/ui/dropdown-menu.tsx",
+          "message": "Restyled source: 6px to spacing.sm 8px",
+          "value": "gap-1.5"
+        },
+        {
+          "file": "apps/v4/registry/bases/aria/ui/dropdown-menu.tsx",
+          "message": "Restyled source: Exact separator rule thickness 1px; permission explicitly recorded.",
+          "value": "h-px"
+        },
+        {
+          "file": "apps/v4/registry/bases/aria/ui/dropdown-menu.tsx",
+          "message": "Restyled source: Restyle 288.0px to 256px using the existing spacing scale; variants and branch ownership remain exact.",
+          "value": "max-h-72"
+        },
+        {
+          "file": "apps/v4/registry/bases/aria/ui/dropdown-menu.tsx",
+          "message": "Restyled selected focusable surface: replace outline suppression with its own existing token-bound keyboard outline",
+          "value": "outline-hidden"
+        },
+        {
+          "file": "apps/v4/registry/bases/aria/ui/dropdown-menu.tsx",
+          "message": "Restyled selected focusable surface: replace outline suppression with its own existing token-bound keyboard outline",
+          "value": "outline-none"
+        },
+        {
+          "file": "apps/v4/registry/bases/aria/ui/dropdown-menu.tsx",
+          "message": "Restyled source: 6px to spacing.sm 8px",
+          "value": "pl-1.5"
+        },
+        {
+          "file": "apps/v4/registry/bases/aria/ui/dropdown-menu.tsx",
+          "message": "Restyled source: 6px to spacing.sm 8px",
+          "value": "px-1.5"
+        },
+        {
+          "file": "apps/v4/registry/bases/aria/ui/dropdown-menu.tsx",
+          "message": "Restyled source: Preserve decorative ring rendering, exact width and variants; never relabel as focus clearance.",
+          "value": "ring-1"
+        },
+        {
+          "file": "apps/v4/registry/bases/aria/ui/dropdown-menu.tsx",
+          "message": "Restyled source: Preserve adopted Tailwind widest 0.1em; expose existing member through explicit emit.",
+          "value": "tracking-widest"
+        }
+      ],
+      "reason": "Pinned root import verified; token, glyph, dependency and runtime checks remain required",
+      "runtime": "U-V",
+      "slot": "components.menu",
+      "status": "candidate"
+    },
+    {
+      "issues": [
+        {
+          "code": "K4",
+          "file": "apps/v4/registry/bases/aria/ui/context-menu.tsx",
+          "message": "No spacing member has the exact source length",
+          "value": "min-w-36"
+        },
+        {
+          "code": "K4",
+          "file": "apps/v4/registry/bases/aria/ui/context-menu.tsx",
+          "message": "Design utility needs a consumer binding",
+          "value": "outline-hidden"
+        },
+        {
+          "code": "K4",
+          "file": "apps/v4/registry/bases/aria/ui/context-menu.tsx",
+          "message": "Design utility needs a consumer binding",
+          "value": "outline-none"
+        }
+      ],
+      "item": "context-menu",
+      "notes": [
+        {
+          "file": "apps/v4/registry/bases/aria/ui/context-menu.tsx",
+          "message": "Preserved the selected translucent surface's explicit animation cancellation",
+          "value": "animate-none"
+        },
+        {
+          "file": "apps/v4/registry/bases/aria/ui/context-menu.tsx",
+          "message": "Removed marker-only class absent from the pinned stylesheet",
+          "value": "cn-menu-target"
+        },
+        {
+          "file": "apps/v4/registry/bases/aria/ui/context-menu.tsx",
+          "message": "Removed marker-only class absent from the pinned stylesheet",
+          "value": "cn-rtl-flip"
+        },
+        {
+          "file": "apps/v4/registry/bases/aria/ui/context-menu.tsx",
+          "message": "Restyled source: Restyle 28.0px to 32px using the existing spacing scale; variants and branch ownership remain exact.",
+          "value": "data-inset:pl-7"
+        },
+        {
+          "file": "apps/v4/registry/bases/aria/ui/context-menu.tsx",
+          "message": "Restyled source: 6px to spacing.sm 8px",
+          "value": "gap-1.5"
+        },
+        {
+          "file": "apps/v4/registry/bases/aria/ui/context-menu.tsx",
+          "message": "Restyled source: Exact separator rule thickness 1px; permission explicitly recorded.",
+          "value": "h-px"
+        },
+        {
+          "file": "apps/v4/registry/bases/aria/ui/context-menu.tsx",
+          "message": "Restyled source: 6px to spacing.sm 8px",
+          "value": "pl-1.5"
+        },
+        {
+          "file": "apps/v4/registry/bases/aria/ui/context-menu.tsx",
+          "message": "Restyled source: 6px to spacing.sm 8px",
+          "value": "px-1.5"
+        },
+        {
+          "file": "apps/v4/registry/bases/aria/ui/context-menu.tsx",
+          "message": "Restyled source: Preserve decorative ring rendering, exact width and variants; never relabel as focus clearance.",
+          "value": "ring-1"
+        },
+        {
+          "file": "apps/v4/registry/bases/aria/ui/context-menu.tsx",
+          "message": "Restyled source: Preserve adopted Tailwind widest 0.1em; expose existing member through explicit emit.",
+          "value": "tracking-widest"
+        }
+      ],
+      "reason": "Pinned root import verified; token, glyph, dependency and runtime checks remain required",
+      "runtime": "U-V",
+      "slot": "components.menu",
+      "status": "alternate"
+    },
+    {
+      "issues": [],
+      "item": "form",
+      "reason": "K2: item is absent at the pinned commit",
+      "runtime": "X",
+      "slot": "components.form",
+      "status": "rejected"
+    },
+    {
+      "issues": [],
+      "item": "input",
+      "reason": "K2: missing RAC root TextField",
+      "runtime": "X",
+      "slot": "components.text-field",
+      "status": "rejected"
+    },
+    {
+      "issues": [],
+      "item": "textarea",
+      "reason": "K2: missing RAC root TextField",
+      "runtime": "X",
+      "slot": "components.text-field",
+      "status": "rejected"
+    },
+    {
+      "issues": [],
+      "item": "checkbox",
+      "notes": [
+        {
+          "file": "apps/v4/registry/bases/aria/ui/checkbox.tsx",
+          "message": "Removed suppression beside the same expanded literal's token-bound focus owner",
+          "value": "group-has-[:focus-visible]/field-label:ring-0"
+        },
+        {
+          "file": "apps/v4/registry/bases/aria/ui/checkbox.tsx",
+          "message": "Removed suppression beside the same expanded literal's token-bound focus owner",
+          "value": "outline-none"
+        }
+      ],
+      "reason": "Pinned root import verified; token, glyph, dependency and runtime checks remain required",
+      "runtime": "U-V",
+      "slot": "components.checkbox",
+      "status": "candidate"
+    },
+    {
+      "issues": [],
+      "item": "radio-group",
+      "notes": [
+        {
+          "file": "apps/v4/registry/bases/aria/ui/radio-group.tsx",
+          "message": "Removed suppression beside the same expanded literal's token-bound focus owner",
+          "value": "group-has-[:focus-visible]/field-label:ring-0"
+        },
+        {
+          "file": "apps/v4/registry/bases/aria/ui/radio-group.tsx",
+          "message": "Removed suppression beside the same expanded literal's token-bound focus owner",
+          "value": "outline-none"
+        }
+      ],
+      "reason": "Pinned root import verified; token, glyph, dependency and runtime checks remain required",
+      "runtime": "U-V",
+      "slot": "components.radio-group",
+      "status": "candidate"
+    },
+    {
+      "issues": [],
+      "item": "switch",
+      "notes": [
+        {
+          "file": "apps/v4/registry/bases/aria/ui/switch.tsx",
+          "message": "Removed suppression beside the same expanded literal's token-bound focus owner",
+          "value": "border-transparent"
+        },
+        {
+          "file": "apps/v4/registry/bases/aria/ui/switch.tsx",
+          "message": "Restyled source: Use actual existing switch-thumb role 14px instead of source 18.4px.",
+          "value": "data-[size=default]:h-[18.4px]"
+        },
+        {
+          "file": "apps/v4/registry/bases/aria/ui/switch.tsx",
+          "message": "Restyled source: Retain percentage travel and exact 2px endpoint edge inset using the existing rule width; explicit edge-geometry read.",
+          "value": "group-data-[size=default]/switch:data-checked:translate-x-[calc(100%-2px)]"
+        },
+        {
+          "file": "apps/v4/registry/bases/aria/ui/switch.tsx",
+          "message": "Restyled source: Retain percentage travel and exact 2px endpoint edge inset using the existing rule width; explicit edge-geometry read.",
+          "value": "group-data-[size=default]/switch:data-selected:translate-x-[calc(100%-2px)]"
+        },
+        {
+          "file": "apps/v4/registry/bases/aria/ui/switch.tsx",
+          "message": "Restyled source: Retain percentage travel and exact 2px endpoint edge inset using the existing rule width; explicit edge-geometry read.",
+          "value": "group-data-[size=sm]/switch:data-checked:translate-x-[calc(100%-2px)]"
+        },
+        {
+          "file": "apps/v4/registry/bases/aria/ui/switch.tsx",
+          "message": "Restyled source: Retain percentage travel and exact 2px endpoint edge inset using the existing rule width; explicit edge-geometry read.",
+          "value": "group-data-[size=sm]/switch:data-selected:translate-x-[calc(100%-2px)]"
+        },
+        {
+          "file": "apps/v4/registry/bases/aria/ui/switch.tsx",
+          "message": "Removed suppression beside the same expanded literal's token-bound focus owner",
+          "value": "group-has-[:focus-visible]/field-label:border-transparent"
+        },
+        {
+          "file": "apps/v4/registry/bases/aria/ui/switch.tsx",
+          "message": "Removed suppression beside the same expanded literal's token-bound focus owner",
+          "value": "group-has-[:focus-visible]/field-label:ring-0"
+        },
+        {
+          "file": "apps/v4/registry/bases/aria/ui/switch.tsx",
+          "message": "Removed suppression beside the same expanded literal's token-bound focus owner",
+          "value": "outline-none"
+        },
+        {
+          "file": "apps/v4/registry/bases/aria/ui/switch.tsx",
+          "message": "Preserved authenticated decorative/control reset under its actual parent token-bound focus owner; not a focus conformance claim",
+          "value": "ring-0"
+        }
+      ],
+      "reason": "Pinned root import verified; token, glyph, dependency and runtime checks remain required",
+      "runtime": "U-V",
+      "slot": "components.switch",
+      "status": "candidate"
+    },
+    {
+      "issues": [],
+      "item": "select",
+      "notes": [
+        {
+          "file": "apps/v4/registry/bases/aria/ui/select.tsx",
+          "message": "Restyled source: 6px to spacing.sm 8px",
+          "value": "*:data-[slot=select-value]:gap-1.5"
+        },
+        {
+          "file": "apps/v4/registry/bases/aria/ui/select.tsx",
+          "message": "Preserved the selected translucent surface's explicit animation cancellation",
+          "value": "animate-none"
+        },
+        {
+          "file": "apps/v4/registry/bases/aria/ui/select.tsx",
+          "message": "Removed marker-only class absent from the pinned stylesheet",
+          "value": "cn-menu-target"
+        },
+        {
+          "file": "apps/v4/registry/bases/aria/ui/select.tsx",
+          "message": "Removed marker-only class absent from the pinned stylesheet",
+          "value": "cn-select-item-indicator-icon"
+        },
+        {
+          "file": "apps/v4/registry/bases/aria/ui/select.tsx",
+          "message": "Restyled source: Remove literal 10/12px cap and use the consumer control radius directly; preserves every size/state prefix.",
+          "value": "data-[size=sm]:rounded-[min(var(--radius-md),10px)]"
+        },
+        {
+          "file": "apps/v4/registry/bases/aria/ui/select.tsx",
+          "message": "Restyled source: 6px to spacing.sm 8px",
+          "value": "gap-1.5"
+        },
+        {
+          "file": "apps/v4/registry/bases/aria/ui/select.tsx",
+          "message": "Restyled source: Exact separator rule thickness 1px; permission explicitly recorded.",
+          "value": "h-px"
+        },
+        {
+          "file": "apps/v4/registry/bases/aria/ui/select.tsx",
+          "message": "Restyled source: Restyle 144.0px to 128px using the existing spacing scale; variants and branch ownership remain exact.",
+          "value": "min-w-36"
+        },
+        {
+          "file": "apps/v4/registry/bases/aria/ui/select.tsx",
+          "message": "Preserved authenticated listbox option outline under its same-element focused paint pair; runtime focus and contrast remain unmeasured",
+          "value": "outline-hidden"
+        },
+        {
+          "file": "apps/v4/registry/bases/aria/ui/select.tsx",
+          "message": "Restyled selected focusable surface: replace outline suppression with its own existing token-bound keyboard outline",
+          "value": "outline-hidden"
+        },
+        {
+          "file": "apps/v4/registry/bases/aria/ui/select.tsx",
+          "message": "Removed suppression beside the same expanded literal's token-bound focus owner",
+          "value": "outline-none"
+        },
+        {
+          "file": "apps/v4/registry/bases/aria/ui/select.tsx",
+          "message": "Restyled source: 6px to spacing.sm 8px",
+          "value": "pl-1.5"
+        },
+        {
+          "file": "apps/v4/registry/bases/aria/ui/select.tsx",
+          "message": "Restyled source: 10px to spacing.md 12px",
+          "value": "pl-2.5"
+        },
+        {
+          "file": "apps/v4/registry/bases/aria/ui/select.tsx",
+          "message": "Restyled source: 6px to spacing.sm 8px",
+          "value": "px-1.5"
+        },
+        {
+          "file": "apps/v4/registry/bases/aria/ui/select.tsx",
+          "message": "Restyled source: Preserve decorative ring rendering, exact width and variants; never relabel as focus clearance.",
+          "value": "ring-1"
+        },
+        {
+          "file": "components/_parts/input-group/input-group.tsx",
+          "message": "Restyled source: Use actual subtle 2px radius for nested keyboard corners, replacing private-radius-minus-5 geometry.",
+          "value": "[&>kbd]:rounded-[calc(var(--radius)-5px)]"
+        },
+        {
+          "file": "components/_parts/input-group/input-group.tsx",
+          "message": "Preserved authenticated decorative/control reset under its actual parent token-bound focus owner; not a focus conformance claim",
+          "value": "aria-invalid:ring-0"
+        },
+        {
+          "file": "components/_parts/input-group/input-group.tsx",
+          "message": "Preserved authenticated decorative/control reset under its actual parent token-bound focus owner; not a focus conformance claim",
+          "value": "border-0"
+        },
+        {
+          "file": "components/_parts/input-group/input-group.tsx",
+          "message": "Removed marker-only class absent from the pinned stylesheet",
+          "value": "cn-input-group-button-size-sm"
+        },
+        {
+          "file": "components/_parts/input-group/input-group.tsx",
+          "message": "Preserved authenticated decorative/control reset under its actual parent token-bound focus owner; not a focus conformance claim",
+          "value": "focus-visible:ring-0"
+        },
+        {
+          "file": "components/_parts/input-group/input-group.tsx",
+          "message": "Restyled source: 6px to spacing.sm 8px",
+          "value": "has-[>[data-align=inline-end]]:[&>input]:pr-1.5"
+        },
+        {
+          "file": "components/_parts/input-group/input-group.tsx",
+          "message": "Restyled source: 6px to spacing.sm 8px",
+          "value": "has-[>[data-align=inline-start]]:[&>input]:pl-1.5"
+        },
+        {
+          "file": "components/_parts/input-group/input-group.tsx",
+          "message": "Restyled source: Restyle -4.8/-2.4px nested control margins to one negative xs spacing unit -4px; preserve selectors.",
+          "value": "has-[>button]:ml-[-0.3rem]"
+        },
+        {
+          "file": "components/_parts/input-group/input-group.tsx",
+          "message": "Restyled source: Restyle -4.8/-2.4px nested control margins to one negative xs spacing unit -4px; preserve selectors.",
+          "value": "has-[>button]:mr-[-0.3rem]"
+        },
+        {
+          "file": "components/_parts/input-group/input-group.tsx",
+          "message": "Restyled source: Restyle -4.8/-2.4px nested control margins to one negative xs spacing unit -4px; preserve selectors.",
+          "value": "has-[>kbd]:ml-[-0.15rem]"
+        },
+        {
+          "file": "components/_parts/input-group/input-group.tsx",
+          "message": "Restyled source: Restyle -4.8/-2.4px nested control margins to one negative xs spacing unit -4px; preserve selectors.",
+          "value": "has-[>kbd]:mr-[-0.15rem]"
+        },
+        {
+          "file": "components/_parts/input-group/input-group.tsx",
+          "message": "Preserved authenticated decorative/control reset under its actual parent token-bound focus owner; not a focus conformance claim",
+          "value": "in-data-[slot=combobox-content]:focus-within:border-inherit"
+        },
+        {
+          "file": "components/_parts/input-group/input-group.tsx",
+          "message": "Preserved authenticated decorative/control reset under its actual parent token-bound focus owner; not a focus conformance claim",
+          "value": "in-data-[slot=combobox-content]:focus-within:ring-0"
+        },
+        {
+          "file": "components/_parts/input-group/input-group.tsx",
+          "message": "InputGroup retains its enclosing RAC context through the native input primitive",
+          "value": "input"
+        },
+        {
+          "file": "components/_parts/input-group/input-group.tsx",
+          "message": "Removed suppression beside the same expanded literal's token-bound focus owner",
+          "value": "outline-none"
+        },
+        {
+          "file": "components/_parts/input-group/input-group.tsx",
+          "message": "Restyled source: 6px to spacing.sm 8px",
+          "value": "px-1.5"
+        },
+        {
+          "file": "components/_parts/input-group/input-group.tsx",
+          "message": "Restyled source: 10px to spacing.md 12px",
+          "value": "px-2.5"
+        },
+        {
+          "file": "components/_parts/input-group/input-group.tsx",
+          "message": "Restyled source: 6px to spacing.sm 8px",
+          "value": "py-1.5"
+        },
+        {
+          "file": "components/_parts/input-group/input-group.tsx",
+          "message": "Preserved authenticated decorative/control reset under its actual parent token-bound focus owner; not a focus conformance claim",
+          "value": "ring-0"
+        },
+        {
+          "file": "components/_parts/input-group/input-group.tsx",
+          "message": "Restyled source: Use actual adopted default 4px radius for inset control rather than an offset from control radius.",
+          "value": "rounded-[calc(var(--radius)-3px)]"
+        },
+        {
+          "file": "components/_parts/input-group/input-group.tsx",
+          "message": "InputGroup retains its enclosing RAC context through the native input primitive",
+          "value": "textarea"
+        }
+      ],
+      "reason": "Pinned root import verified; token, glyph, dependency and runtime checks remain required",
+      "runtime": "U-V",
+      "slot": "components.select",
+      "status": "candidate"
+    },
+    {
+      "issues": [],
+      "item": "combobox",
+      "notes": [
+        {
+          "file": "apps/v4/registry/bases/aria/ui/combobox.tsx",
+          "message": "Preserved the selected translucent surface's explicit animation cancellation",
+          "value": "animate-none"
+        },
+        {
+          "file": "apps/v4/registry/bases/aria/ui/combobox.tsx",
+          "message": "Removed marker-only class absent from the pinned stylesheet",
+          "value": "cn-combobox-chip-indicator-icon"
+        },
+        {
+          "file": "apps/v4/registry/bases/aria/ui/combobox.tsx",
+          "message": "Removed marker-only class absent from the pinned stylesheet",
+          "value": "cn-combobox-chip-input"
+        },
+        {
+          "file": "apps/v4/registry/bases/aria/ui/combobox.tsx",
+          "message": "Removed marker-only class absent from the pinned stylesheet",
+          "value": "cn-combobox-clear-icon"
+        },
+        {
+          "file": "apps/v4/registry/bases/aria/ui/combobox.tsx",
+          "message": "Removed marker-only class absent from the pinned stylesheet",
+          "value": "cn-combobox-clear"
+        },
+        {
+          "file": "apps/v4/registry/bases/aria/ui/combobox.tsx",
+          "message": "Removed marker-only class absent from the pinned stylesheet",
+          "value": "cn-combobox-group"
+        },
+        {
+          "file": "apps/v4/registry/bases/aria/ui/combobox.tsx",
+          "message": "Removed marker-only class absent from the pinned stylesheet",
+          "value": "cn-combobox-input"
+        },
+        {
+          "file": "apps/v4/registry/bases/aria/ui/combobox.tsx",
+          "message": "Removed marker-only class absent from the pinned stylesheet",
+          "value": "cn-combobox-item-indicator-icon"
+        },
+        {
+          "file": "apps/v4/registry/bases/aria/ui/combobox.tsx",
+          "message": "Removed marker-only class absent from the pinned stylesheet",
+          "value": "cn-menu-target"
+        },
+        {
+          "file": "apps/v4/registry/bases/aria/ui/combobox.tsx",
+          "message": "Restyled source: Restyle 21px chip height to existing xl24px; remove unbound spacing macro.",
+          "value": "h-[calc(--spacing(5.25))]"
+        },
+        {
+          "file": "apps/v4/registry/bases/aria/ui/combobox.tsx",
+          "message": "Restyled source: Exact separator rule thickness 1px; permission explicitly recorded.",
+          "value": "h-px"
+        },
+        {
+          "file": "apps/v4/registry/bases/aria/ui/combobox.tsx",
+          "message": "Preserved paired state visibility; no intermediate alpha or paint is introduced",
+          "value": "hover:opacity-100"
+        },
+        {
+          "file": "apps/v4/registry/bases/aria/ui/combobox.tsx",
+          "message": "Restyled source: Retain RAC available-height clamp; restyle 288/36px constants to 256/32px existing scale.",
+          "value": "max-h-[min(calc(--spacing(72)---spacing(9)),calc(var(--available-height)---spacing(9)))]"
+        },
+        {
+          "file": "apps/v4/registry/bases/aria/ui/combobox.tsx",
+          "message": "Restyled source: Restyle 288.0px to 256px using the existing spacing scale; variants and branch ownership remain exact.",
+          "value": "max-h-72"
+        },
+        {
+          "file": "apps/v4/registry/bases/aria/ui/combobox.tsx",
+          "message": "Restyled source: Restyle 144.0px to 128px using the existing spacing scale; variants and branch ownership remain exact.",
+          "value": "min-w-36"
+        },
+        {
+          "file": "apps/v4/registry/bases/aria/ui/combobox.tsx",
+          "message": "Preserved authenticated listbox option outline under its same-element focused paint pair; runtime focus and contrast remain unmeasured",
+          "value": "outline-hidden"
+        },
+        {
+          "file": "apps/v4/registry/bases/aria/ui/combobox.tsx",
+          "message": "Restyled selected focusable surface: replace outline suppression with its own existing token-bound keyboard outline",
+          "value": "outline-none"
+        },
+        {
+          "file": "apps/v4/registry/bases/aria/ui/combobox.tsx",
+          "message": "Restyled source: 6px to spacing.sm 8px",
+          "value": "pl-1.5"
+        },
+        {
+          "file": "apps/v4/registry/bases/aria/ui/combobox.tsx",
+          "message": "Restyled source: 6px to spacing.sm 8px",
+          "value": "px-1.5"
+        },
+        {
+          "file": "apps/v4/registry/bases/aria/ui/combobox.tsx",
+          "message": "Restyled source: 10px to spacing.md 12px",
+          "value": "px-2.5"
+        },
+        {
+          "file": "apps/v4/registry/bases/aria/ui/combobox.tsx",
+          "message": "Restyled source: 6px to spacing.sm 8px",
+          "value": "py-1.5"
+        },
+        {
+          "file": "apps/v4/registry/bases/aria/ui/combobox.tsx",
+          "message": "Restyled source: Preserve decorative ring rendering, exact width and variants; never relabel as focus clearance.",
+          "value": "ring-1"
+        },
+        {
+          "file": "components/_parts/input-group/input-group.tsx",
+          "message": "Restyled source: Use actual subtle 2px radius for nested keyboard corners, replacing private-radius-minus-5 geometry.",
+          "value": "[&>kbd]:rounded-[calc(var(--radius)-5px)]"
+        },
+        {
+          "file": "components/_parts/input-group/input-group.tsx",
+          "message": "Preserved authenticated decorative/control reset under its actual parent token-bound focus owner; not a focus conformance claim",
+          "value": "aria-invalid:ring-0"
+        },
+        {
+          "file": "components/_parts/input-group/input-group.tsx",
+          "message": "Preserved authenticated decorative/control reset under its actual parent token-bound focus owner; not a focus conformance claim",
+          "value": "border-0"
+        },
+        {
+          "file": "components/_parts/input-group/input-group.tsx",
+          "message": "Removed marker-only class absent from the pinned stylesheet",
+          "value": "cn-input-group-button-size-sm"
+        },
+        {
+          "file": "components/_parts/input-group/input-group.tsx",
+          "message": "Preserved authenticated decorative/control reset under its actual parent token-bound focus owner; not a focus conformance claim",
+          "value": "focus-visible:ring-0"
+        },
+        {
+          "file": "components/_parts/input-group/input-group.tsx",
+          "message": "Restyled source: 6px to spacing.sm 8px",
+          "value": "has-[>[data-align=inline-end]]:[&>input]:pr-1.5"
+        },
+        {
+          "file": "components/_parts/input-group/input-group.tsx",
+          "message": "Restyled source: 6px to spacing.sm 8px",
+          "value": "has-[>[data-align=inline-start]]:[&>input]:pl-1.5"
+        },
+        {
+          "file": "components/_parts/input-group/input-group.tsx",
+          "message": "Restyled source: Restyle -4.8/-2.4px nested control margins to one negative xs spacing unit -4px; preserve selectors.",
+          "value": "has-[>button]:ml-[-0.3rem]"
+        },
+        {
+          "file": "components/_parts/input-group/input-group.tsx",
+          "message": "Restyled source: Restyle -4.8/-2.4px nested control margins to one negative xs spacing unit -4px; preserve selectors.",
+          "value": "has-[>button]:mr-[-0.3rem]"
+        },
+        {
+          "file": "components/_parts/input-group/input-group.tsx",
+          "message": "Restyled source: Restyle -4.8/-2.4px nested control margins to one negative xs spacing unit -4px; preserve selectors.",
+          "value": "has-[>kbd]:ml-[-0.15rem]"
+        },
+        {
+          "file": "components/_parts/input-group/input-group.tsx",
+          "message": "Restyled source: Restyle -4.8/-2.4px nested control margins to one negative xs spacing unit -4px; preserve selectors.",
+          "value": "has-[>kbd]:mr-[-0.15rem]"
+        },
+        {
+          "file": "components/_parts/input-group/input-group.tsx",
+          "message": "Preserved authenticated decorative/control reset under its actual parent token-bound focus owner; not a focus conformance claim",
+          "value": "in-data-[slot=combobox-content]:focus-within:border-inherit"
+        },
+        {
+          "file": "components/_parts/input-group/input-group.tsx",
+          "message": "Preserved authenticated decorative/control reset under its actual parent token-bound focus owner; not a focus conformance claim",
+          "value": "in-data-[slot=combobox-content]:focus-within:ring-0"
+        },
+        {
+          "file": "components/_parts/input-group/input-group.tsx",
+          "message": "InputGroup retains its enclosing RAC context through the native input primitive",
+          "value": "input"
+        },
+        {
+          "file": "components/_parts/input-group/input-group.tsx",
+          "message": "Removed suppression beside the same expanded literal's token-bound focus owner",
+          "value": "outline-none"
+        },
+        {
+          "file": "components/_parts/input-group/input-group.tsx",
+          "message": "Restyled source: 6px to spacing.sm 8px",
+          "value": "px-1.5"
+        },
+        {
+          "file": "components/_parts/input-group/input-group.tsx",
+          "message": "Restyled source: 10px to spacing.md 12px",
+          "value": "px-2.5"
+        },
+        {
+          "file": "components/_parts/input-group/input-group.tsx",
+          "message": "Restyled source: 6px to spacing.sm 8px",
+          "value": "py-1.5"
+        },
+        {
+          "file": "components/_parts/input-group/input-group.tsx",
+          "message": "Preserved authenticated decorative/control reset under its actual parent token-bound focus owner; not a focus conformance claim",
+          "value": "ring-0"
+        },
+        {
+          "file": "components/_parts/input-group/input-group.tsx",
+          "message": "Restyled source: Use actual adopted default 4px radius for inset control rather than an offset from control radius.",
+          "value": "rounded-[calc(var(--radius)-3px)]"
+        },
+        {
+          "file": "components/_parts/input-group/input-group.tsx",
+          "message": "InputGroup retains its enclosing RAC context through the native input primitive",
+          "value": "textarea"
+        }
+      ],
+      "reason": "Pinned root import verified; token, glyph, dependency and runtime checks remain required",
+      "runtime": "U-V",
+      "slot": "components.combo-box",
+      "status": "candidate"
+    },
+    {
+      "issues": [],
+      "item": "toggle-group",
+      "notes": [
+        {
+          "file": "apps/v4/registry/bases/aria/ui/toggle-group.tsx",
+          "message": "Restyled source: Remove literal 10/12px cap and use the consumer control radius directly; preserves every size/state prefix.",
+          "value": "data-[size=sm]:rounded-[min(var(--radius-md),10px)]"
+        },
+        {
+          "file": "apps/v4/registry/bases/aria/ui/toggle-group.tsx",
+          "message": "Restyled source: Exact existing layer value; new component read only where absent.",
+          "value": "focus-visible:z-10"
+        },
+        {
+          "file": "apps/v4/registry/bases/aria/ui/toggle-group.tsx",
+          "message": "Restyled source: Exact existing layer value; new component read only where absent.",
+          "value": "focus:z-10"
+        },
+        {
+          "file": "apps/v4/registry/bases/aria/ui/toggle-group.tsx",
+          "message": "Restyled source: 6px to spacing.sm 8px",
+          "value": "group-data-[spacing=0]/toggle-group:has-data-[icon=inline-end]:pr-1.5"
+        },
+        {
+          "file": "apps/v4/registry/bases/aria/ui/toggle-group.tsx",
+          "message": "Restyled source: 6px to spacing.sm 8px",
+          "value": "group-data-[spacing=0]/toggle-group:has-data-[icon=inline-start]:pl-1.5"
+        },
+        {
+          "file": "apps/v4/registry/bases/aria/ui/toggle-group.tsx",
+          "message": "Preserved structural zero border at the selected adjacent or separator edge; positive widths remain token bound",
+          "value": "group-data-horizontal/toggle-group:data-[spacing=0]:data-[variant=outline]:border-l-0"
+        },
+        {
+          "file": "apps/v4/registry/bases/aria/ui/toggle-group.tsx",
+          "message": "Preserved structural zero border at the selected adjacent or separator edge; positive widths remain token bound",
+          "value": "group-data-vertical/toggle-group:data-[spacing=0]:data-[variant=outline]:border-t-0"
+        },
+        {
+          "file": "apps/v4/registry/bases/aria/ui/toggle-group.tsx",
+          "message": "Restyled source: bind the public spacing multiplier to the existing spacing.xs unit; preserve caller value and default",
+          "value": "style --gap = calc(var(--spacing) * spacing)"
+        }
+      ],
+      "reason": "Pinned root import verified; token, glyph, dependency and runtime checks remain required",
+      "runtime": "U-V",
+      "slot": "components.toggle-group",
+      "status": "candidate"
+    },
+    {
+      "issues": [],
+      "item": "slider",
+      "notes": [
+        {
+          "file": "apps/v4/registry/bases/aria/ui/slider.tsx",
+          "message": "Restyled selected decorative thumb ring from 3px to existing 2px rule width; independent keyboard focus remains token bound",
+          "value": "active:ring-3"
+        },
+        {
+          "file": "apps/v4/registry/bases/aria/ui/slider.tsx",
+          "message": "Restyled source: Use selected raised thumb surface in both modes, replacing unconditional white.",
+          "value": "bg-white"
+        },
+        {
+          "file": "apps/v4/registry/bases/aria/ui/slider.tsx",
+          "message": "Restyled source: Restyle 160.0px to 128px using the existing spacing scale; variants and branch ownership remain exact.",
+          "value": "data-vertical:min-h-40"
+        },
+        {
+          "file": "apps/v4/registry/bases/aria/ui/slider.tsx",
+          "message": "Removed suppression beside the same expanded literal's token-bound focus owner",
+          "value": "focus-visible:outline-hidden"
+        },
+        {
+          "file": "apps/v4/registry/bases/aria/ui/slider.tsx",
+          "message": "Restyled selected decorative thumb ring from 3px to existing 2px rule width; independent keyboard focus remains token bound",
+          "value": "hover:ring-3"
+        }
+      ],
+      "reason": "Pinned root import verified; token, glyph, dependency and runtime checks remain required",
+      "runtime": "U-V",
+      "slot": "components.slider",
+      "status": "candidate"
+    },
+    {
+      "issues": [],
+      "item": "calendar",
+      "notes": [
+        {
+          "file": "apps/v4/registry/bases/aria/ui/calendar.tsx",
+          "message": "Restyled source: Restyle28px calendar cell to existing32px small control; local alias remains defined and all references bound.",
+          "value": "[--cell-size:--spacing(7)]"
+        },
+        {
+          "file": "apps/v4/registry/bases/aria/ui/calendar.tsx",
+          "message": "Preserved zero border beside the same element token-bound focus outline",
+          "value": "border-0"
+        },
+        {
+          "file": "apps/v4/registry/bases/aria/ui/calendar.tsx",
+          "message": "Removed marker-only class absent from the pinned stylesheet",
+          "value": "cn-calendar-caption"
+        },
+        {
+          "file": "apps/v4/registry/bases/aria/ui/calendar.tsx",
+          "message": "Removed marker-only class absent from the pinned stylesheet",
+          "value": "cn-calendar-day-button"
+        },
+        {
+          "file": "apps/v4/registry/bases/aria/ui/calendar.tsx",
+          "message": "Removed marker-only class absent from the pinned stylesheet",
+          "value": "cn-rtl-flip"
+        },
+        {
+          "file": "apps/v4/registry/bases/aria/ui/calendar.tsx",
+          "message": "Restyled source: Exact existing layer value; new component read only where absent.",
+          "value": "group-data-[focused=true]/day:z-10"
+        },
+        {
+          "file": "apps/v4/registry/bases/aria/ui/calendar.tsx",
+          "message": "Restyled source: Restyle unit line height to existing compact heading line height 1.15; do not alias a font-size-specific 5xl line-height member.",
+          "value": "leading-none"
+        },
+        {
+          "file": "apps/v4/registry/bases/aria/ui/calendar.tsx",
+          "message": "Restyled source: Restyle 12.8px small control/calendar typography to existing caption 12px; no token value change.",
+          "value": "text-[0.8rem]"
+        },
+        {
+          "file": "apps/v4/registry/bases/aria/ui/calendar.tsx",
+          "message": "Restyled source: Exact existing layer value; new component read only where absent.",
+          "value": "z-0"
+        },
+        {
+          "file": "apps/v4/registry/bases/aria/ui/calendar.tsx",
+          "message": "Restyled source: Exact existing layer value; new component read only where absent.",
+          "value": "z-10"
+        }
+      ],
+      "reason": "Pinned root import verified; token, glyph, dependency and runtime checks remain required",
+      "runtime": "U-V",
+      "slot": "components.calendar",
+      "status": "candidate"
+    },
+    {
+      "issues": [],
+      "item": "table",
+      "notes": [
+        {
+          "file": "apps/v4/registry/bases/aria/ui/table.tsx",
+          "message": "Preserved structural zero border at the selected adjacent or separator edge; positive widths remain token bound",
+          "value": "[&_tr:last-child]:border-0"
+        },
+        {
+          "file": "apps/v4/registry/bases/aria/ui/table.tsx",
+          "message": "Preserved structural zero border at the selected adjacent or separator edge; positive widths remain token bound",
+          "value": "[&>tr]:last:border-b-0"
+        },
+        {
+          "file": "apps/v4/registry/bases/aria/ui/table.tsx",
+          "message": "Restyled source: Restyle 40.0px to 48px using the existing spacing scale; variants and branch ownership remain exact.",
+          "value": "h-10"
+        }
+      ],
+      "reason": "Pinned root import verified; token, glyph, dependency and runtime checks remain required",
+      "runtime": "U-V",
+      "slot": "components.table",
+      "status": "candidate"
+    },
+    {
+      "issues": [],
+      "item": "badge",
+      "notes": [
+        {
+          "file": "apps/v4/registry/bases/aria/ui/badge.tsx",
+          "message": "Removed suppression beside the same expanded literal's token-bound focus owner",
+          "value": "border-transparent"
+        },
+        {
+          "file": "apps/v4/registry/bases/aria/ui/badge.tsx",
+          "message": "Restyled source: Restyle 20.0px to 24px using the existing spacing scale; variants and branch ownership remain exact.",
+          "value": "h-5"
+        },
+        {
+          "file": "apps/v4/registry/bases/aria/ui/badge.tsx",
+          "message": "Restyled source: 6px to spacing.sm 8px",
+          "value": "has-data-[icon=inline-end]:pr-1.5"
+        },
+        {
+          "file": "apps/v4/registry/bases/aria/ui/badge.tsx",
+          "message": "Restyled source: 6px to spacing.sm 8px",
+          "value": "has-data-[icon=inline-start]:pl-1.5"
+        },
+        {
+          "file": "apps/v4/registry/bases/aria/ui/badge.tsx",
+          "message": "Restyled source: Restyle 2.0px to 4px using the existing spacing scale; variants and branch ownership remain exact.",
+          "value": "py-0.5"
+        }
+      ],
+      "reason": "Pinned source has no foreign headless engine; token, glyph, dependency and runtime checks remain required",
+      "runtime": "U-V",
+      "slot": "components.badge",
+      "status": "candidate"
+    },
+    {
+      "issues": [],
+      "item": "kbd",
+      "notes": [
+        {
+          "file": "apps/v4/registry/bases/aria/ui/kbd.tsx",
+          "message": "Restyled source: Restyle 20.0px to 24px using the existing spacing scale; variants and branch ownership remain exact.",
+          "value": "h-5"
+        },
+        {
+          "file": "apps/v4/registry/bases/aria/ui/kbd.tsx",
+          "message": "Restyled source: Restyle 20.0px to 24px using the existing spacing scale; variants and branch ownership remain exact.",
+          "value": "min-w-5"
+        },
+        {
+          "file": "apps/v4/registry/bases/aria/ui/kbd.tsx",
+          "message": "Restyled source: keyboard 12px to existing code-size.block 13px",
+          "value": "text-xs"
+        }
+      ],
+      "reason": "Pinned root import verified; token, glyph, dependency and runtime checks remain required",
+      "runtime": "U-V",
+      "slot": "components.keyboard",
+      "status": "candidate"
+    },
+    {
+      "issues": [],
+      "item": "alert",
+      "notes": [
+        {
+          "file": "apps/v4/registry/bases/aria/ui/alert.tsx",
+          "message": "Restyled source: Restyle 2.0px to 4px using the existing spacing scale; variants and branch ownership remain exact.",
+          "value": "*:[svg]:translate-y-0.5"
+        },
+        {
+          "file": "apps/v4/registry/bases/aria/ui/alert.tsx",
+          "message": "Restyled source: Restyle 2.0px to 4px using the existing spacing scale; variants and branch ownership remain exact.",
+          "value": "gap-0.5"
+        },
+        {
+          "file": "apps/v4/registry/bases/aria/ui/alert.tsx",
+          "message": "Restyled source: Restyle 72.0px to 64px using the existing spacing scale; variants and branch ownership remain exact.",
+          "value": "has-data-[slot=alert-action]:pr-18"
+        },
+        {
+          "file": "apps/v4/registry/bases/aria/ui/alert.tsx",
+          "message": "Restyled source: 10px to spacing.md 12px",
+          "value": "px-2.5"
+        }
+      ],
+      "reason": "Pinned source has no foreign headless engine; token, glyph, dependency and runtime checks remain required",
+      "runtime": "U-V",
+      "slot": "components.banner",
+      "status": "candidate"
+    },
+    {
+      "issues": [],
+      "item": "progress",
+      "notes": [
+        {
+          "file": "apps/v4/registry/bases/aria/ui/progress.tsx",
+          "message": "Removed marker-only class absent from the pinned stylesheet",
+          "value": "cn-progress-root"
+        }
+      ],
+      "reason": "Pinned root import verified; token, glyph, dependency and runtime checks remain required",
+      "runtime": "U-V",
+      "slot": "components.progress-bar",
+      "status": "candidate"
+    },
+    {
+      "issues": [],
+      "item": "spinner",
+      "reason": "K2: missing RAC root ProgressBar",
+      "runtime": "X",
+      "slot": "components.spinner",
+      "status": "rejected"
+    },
+    {
+      "issues": [],
+      "item": "skeleton",
+      "notes": [
+        {
+          "file": "apps/v4/registry/bases/aria/ui/skeleton.tsx",
+          "message": "Restyled selected loading surface to its static shape and surface; no unbound pulse duration or opacity",
+          "value": "animate-pulse"
+        }
+      ],
+      "reason": "Pinned source has no foreign headless engine; token, glyph, dependency and runtime checks remain required",
+      "runtime": "U-V",
+      "slot": "components.skeleton",
+      "status": "candidate"
+    },
+    {
+      "issues": [],
+      "item": "breadcrumb",
+      "notes": [
+        {
+          "file": "apps/v4/registry/bases/aria/ui/breadcrumb.tsx",
+          "message": "Removed marker-only class absent from the pinned stylesheet",
+          "value": "cn-breadcrumb"
+        },
+        {
+          "file": "apps/v4/registry/bases/aria/ui/breadcrumb.tsx",
+          "message": "Removed marker-only class absent from the pinned stylesheet",
+          "value": "cn-rtl-flip"
+        },
+        {
+          "file": "apps/v4/registry/bases/aria/ui/breadcrumb.tsx",
+          "message": "Restyled source: 6px to spacing.sm 8px",
+          "value": "gap-1.5"
+        },
+        {
+          "file": "apps/v4/registry/bases/aria/ui/breadcrumb.tsx",
+          "message": "Restyled source: collapsed disclosure MoreHorizontalIcon to existing assets.icon-chevron-down",
+          "value": "MoreHorizontalIcon"
+        },
+        {
+          "file": "apps/v4/registry/bases/aria/ui/breadcrumb.tsx",
+          "message": "Restyled source: Restyle 20.0px to 24px using the existing spacing scale; variants and branch ownership remain exact.",
+          "value": "size-5"
+        }
+      ],
+      "reason": "Pinned root import verified; token, glyph, dependency and runtime checks remain required",
+      "runtime": "U-V",
+      "slot": "components.breadcrumbs",
+      "status": "candidate"
+    },
+    {
+      "issues": [],
+      "item": "separator",
+      "notes": [
+        {
+          "file": "apps/v4/registry/bases/aria/ui/separator.tsx",
+          "message": "Restyled source: Exact separator rule thickness 1px; permission explicitly recorded.",
+          "value": "[:is(hr)]:h-px"
+        },
+        {
+          "file": "apps/v4/registry/bases/aria/ui/separator.tsx",
+          "message": "Restyled source: Exact separator rule thickness 1px; permission explicitly recorded.",
+          "value": "aria-[orientation=horizontal]:h-px"
+        },
+        {
+          "file": "apps/v4/registry/bases/aria/ui/separator.tsx",
+          "message": "Restyled source: Exact separator rule thickness 1px; permission explicitly recorded.",
+          "value": "aria-[orientation=vertical]:w-px"
+        },
+        {
+          "file": "apps/v4/registry/bases/aria/ui/separator.tsx",
+          "message": "Preserved structural zero border at the selected adjacent or separator edge; positive widths remain token bound",
+          "value": "border-0"
+        }
+      ],
+      "reason": "Pinned root import verified; token, glyph, dependency and runtime checks remain required",
+      "runtime": "U-V",
+      "slot": "components.separator",
+      "status": "candidate"
+    },
+    {
+      "issues": [],
+      "item": "tabs",
+      "notes": [
+        {
+          "file": "apps/v4/registry/bases/aria/ui/tabs.tsx",
+          "message": "Preserved paired state visibility; no intermediate alpha or paint is introduced",
+          "value": "after:opacity-0"
+        },
+        {
+          "file": "apps/v4/registry/bases/aria/ui/tabs.tsx",
+          "message": "Removed suppression beside the same expanded literal's token-bound focus owner",
+          "value": "border-transparent"
+        },
+        {
+          "file": "apps/v4/registry/bases/aria/ui/tabs.tsx",
+          "message": "Removed marker-only class absent from the pinned stylesheet",
+          "value": "cn-tabs-list-variant-default"
+        },
+        {
+          "file": "apps/v4/registry/bases/aria/ui/tabs.tsx",
+          "message": "Removed marker-only class absent from the pinned stylesheet",
+          "value": "cn-tabs-list-variant-line"
+        },
+        {
+          "file": "apps/v4/registry/bases/aria/ui/tabs.tsx",
+          "message": "Preserved authenticated selected line-tab border transparency beside its same-element independent token focus outline and selected indicator",
+          "value": "dark:group-data-[variant=line]/tabs-list:data-selected:border-transparent"
+        },
+        {
+          "file": "apps/v4/registry/bases/aria/ui/tabs.tsx",
+          "message": "Removed competing literal focus width beside the same element token-bound focus outline",
+          "value": "focus-visible:outline-1"
+        },
+        {
+          "file": "apps/v4/registry/bases/aria/ui/tabs.tsx",
+          "message": "Restyled source: 6px to spacing.sm 8px",
+          "value": "gap-1.5"
+        },
+        {
+          "file": "apps/v4/registry/bases/aria/ui/tabs.tsx",
+          "message": "Preserved paired state visibility; no intermediate alpha or paint is introduced",
+          "value": "group-data-[variant=line]/tabs-list:data-selected:after:opacity-100"
+        },
+        {
+          "file": "apps/v4/registry/bases/aria/ui/tabs.tsx",
+          "message": "Restyled source: Restyle selected indicator offset -5 to -4px existing spacing.",
+          "value": "group-data-horizontal/tabs:after:bottom-[-5px]"
+        },
+        {
+          "file": "apps/v4/registry/bases/aria/ui/tabs.tsx",
+          "message": "Restyled source: Restyle 2.0px to 4px using the existing spacing scale; variants and branch ownership remain exact.",
+          "value": "group-data-horizontal/tabs:after:h-0.5"
+        },
+        {
+          "file": "apps/v4/registry/bases/aria/ui/tabs.tsx",
+          "message": "Restyled source: Restyle 2.0px to 4px using the existing spacing scale; variants and branch ownership remain exact.",
+          "value": "group-data-vertical/tabs:after:w-0.5"
+        },
+        {
+          "file": "apps/v4/registry/bases/aria/ui/tabs.tsx",
+          "message": "Restyled source: Preserve relative height minus exact hairline.",
+          "value": "h-[calc(100%-1px)]"
+        },
+        {
+          "file": "apps/v4/registry/bases/aria/ui/tabs.tsx",
+          "message": "Restyled selected focusable surface: replace outline suppression with its own existing token-bound keyboard outline",
+          "value": "outline-none"
+        },
+        {
+          "file": "apps/v4/registry/bases/aria/ui/tabs.tsx",
+          "message": "Restyled source: Restyle3px tabs padding to existing4px xs spacing.",
+          "value": "p-[3px]"
+        },
+        {
+          "file": "apps/v4/registry/bases/aria/ui/tabs.tsx",
+          "message": "Restyled source: 6px to spacing.sm 8px",
+          "value": "px-1.5"
+        },
+        {
+          "file": "apps/v4/registry/bases/aria/ui/tabs.tsx",
+          "message": "Restyled source: Restyle 2.0px to 4px using the existing spacing scale; variants and branch ownership remain exact.",
+          "value": "py-0.5"
+        }
+      ],
+      "reason": "Pinned root import verified; token, glyph, dependency and runtime checks remain required",
+      "runtime": "U-V",
+      "slot": "components.tabs",
+      "status": "candidate"
+    },
+    {
+      "issues": [],
+      "item": "avatar",
+      "notes": [
+        {
+          "file": "apps/v4/registry/bases/aria/ui/avatar.tsx",
+          "message": "Restyled source: Preserve decorative ring rendering, exact width and variants; never relabel as focus clearance.",
+          "value": "*:data-[slot=avatar]:ring-2"
+        },
+        {
+          "file": "apps/v4/registry/bases/aria/ui/avatar.tsx",
+          "message": "Removed marker-only class absent from the pinned stylesheet",
+          "value": "cn-avatar-group"
+        },
+        {
+          "file": "apps/v4/registry/bases/aria/ui/avatar.tsx",
+          "message": "Restyled source: Restyle 40.0px to 48px using the existing spacing scale; variants and branch ownership remain exact.",
+          "value": "data-[size=lg]:size-10"
+        },
+        {
+          "file": "apps/v4/registry/bases/aria/ui/avatar.tsx",
+          "message": "Restyled source: 10px to spacing.md 12px",
+          "value": "group-data-[size=default]/avatar:size-2.5"
+        },
+        {
+          "file": "apps/v4/registry/bases/aria/ui/avatar.tsx",
+          "message": "Restyled source: Restyle 20.0px to 24px using the existing spacing scale; variants and branch ownership remain exact.",
+          "value": "group-has-data-[size=lg]/avatar-group:[&>svg]:size-5"
+        },
+        {
+          "file": "apps/v4/registry/bases/aria/ui/avatar.tsx",
+          "message": "Restyled source: Restyle 40.0px to 48px using the existing spacing scale; variants and branch ownership remain exact.",
+          "value": "group-has-data-[size=lg]/avatar-group:size-10"
+        },
+        {
+          "file": "apps/v4/registry/bases/aria/ui/avatar.tsx",
+          "message": "Restyled source: Preserve decorative ring rendering, exact width and variants; never relabel as focus clearance.",
+          "value": "ring-2"
+        },
+        {
+          "file": "apps/v4/registry/bases/aria/ui/avatar.tsx",
+          "message": "Restyled source: Exact existing layer value; new component read only where absent.",
+          "value": "z-10"
+        }
+      ],
+      "reason": "Pinned source has no foreign headless engine; token, glyph, dependency and runtime checks remain required",
+      "runtime": "U-V",
+      "slot": "components.avatar",
+      "status": "candidate"
+    },
+    {
+      "issues": [],
+      "item": "card",
+      "notes": [
+        {
+          "file": "apps/v4/registry/bases/aria/ui/card.tsx",
+          "message": "Removed marker-only class absent from the pinned stylesheet",
+          "value": "cn-card-action"
+        },
+        {
+          "file": "apps/v4/registry/bases/aria/ui/card.tsx",
+          "message": "Removed marker-only class absent from the pinned stylesheet",
+          "value": "cn-font-heading"
+        },
+        {
+          "file": "apps/v4/registry/bases/aria/ui/card.tsx",
+          "message": "Restyled source: Preserve adopted Tailwind snug value 1.375; expose its existing member through an explicit emit mapping.",
+          "value": "leading-snug"
+        },
+        {
+          "file": "apps/v4/registry/bases/aria/ui/card.tsx",
+          "message": "Restyled source: Preserve decorative ring rendering, exact width and variants; never relabel as focus clearance.",
+          "value": "ring-1"
+        }
+      ],
+      "reason": "Pinned source has no foreign headless engine; token, glyph, dependency and runtime checks remain required",
+      "runtime": "U-V",
+      "slot": "components.card",
+      "status": "candidate"
+    },
+    {
+      "issues": [],
+      "item": "accordion",
+      "notes": [
+        {
+          "file": "apps/v4/registry/bases/aria/ui/accordion.tsx",
+          "message": "Removed suppression beside the same expanded literal's token-bound focus owner",
+          "value": "border-transparent"
+        },
+        {
+          "file": "apps/v4/registry/bases/aria/ui/accordion.tsx",
+          "message": "Removed marker-only class absent from the pinned stylesheet",
+          "value": "cn-accordion-trigger-icon"
+        },
+        {
+          "file": "apps/v4/registry/bases/aria/ui/accordion.tsx",
+          "message": "Removed marker-only class absent from the pinned stylesheet",
+          "value": "cn-accordion"
+        },
+        {
+          "file": "apps/v4/registry/bases/aria/ui/accordion.tsx",
+          "message": "Restyled selected disclosure height animation to the existing reduced-motion-aware fade; the peer retains open/close and intrinsic height ownership",
+          "value": "data-closed:animate-accordion-up"
+        },
+        {
+          "file": "apps/v4/registry/bases/aria/ui/accordion.tsx",
+          "message": "Restyled selected disclosure height animation to the existing reduced-motion-aware fade; the peer retains open/close and intrinsic height ownership",
+          "value": "data-open:animate-accordion-down"
+        },
+        {
+          "file": "apps/v4/registry/bases/aria/ui/accordion.tsx",
+          "message": "Removed suppression beside the same expanded literal's token-bound focus owner",
+          "value": "outline-none"
+        },
+        {
+          "file": "apps/v4/registry/bases/aria/ui/accordion.tsx",
+          "message": "Restyled source: 10px to spacing.md 12px",
+          "value": "pb-2.5"
+        },
+        {
+          "file": "apps/v4/registry/bases/aria/ui/accordion.tsx",
+          "message": "Restyled source: 10px to spacing.md 12px",
+          "value": "py-2.5"
+        }
+      ],
+      "reason": "Pinned root import verified; token, glyph, dependency and runtime checks remain required",
+      "runtime": "U-V",
+      "slot": "components.disclosure",
+      "status": "candidate"
+    },
+    {
+      "issues": [],
+      "item": "collapsible",
+      "reason": "Pinned root import verified; token, glyph, dependency and runtime checks remain required",
+      "runtime": "U-V",
+      "slot": "components.disclosure",
+      "status": "alternate"
+    },
+    {
+      "issues": [],
+      "item": "dialog",
+      "notes": [
+        {
+          "file": "apps/v4/registry/bases/aria/ui/dialog.tsx",
+          "message": "Restyled source: Use the consumer modal scrim role (existing default40% and mode binding), replacing literal black10%; contrast thresholds stay unchanged.",
+          "value": "bg-black/10"
+        },
+        {
+          "file": "apps/v4/registry/bases/aria/ui/dialog.tsx",
+          "message": "Removed marker-only class absent from the pinned stylesheet",
+          "value": "cn-font-heading"
+        },
+        {
+          "file": "apps/v4/registry/bases/aria/ui/dialog.tsx",
+          "message": "Restyled source: Restyle unit line height to existing compact heading line height 1.15; do not alias a font-size-specific 5xl line-height member.",
+          "value": "leading-none"
+        },
+        {
+          "file": "apps/v4/registry/bases/aria/ui/dialog.tsx",
+          "message": "Restyled selected focusable surface: replace outline suppression with its own existing token-bound keyboard outline",
+          "value": "outline-none"
+        },
+        {
+          "file": "apps/v4/registry/bases/aria/ui/dialog.tsx",
+          "message": "Restyled source: Preserve decorative ring rendering, exact width and variants; never relabel as focus clearance.",
+          "value": "ring-1"
+        }
+      ],
+      "reason": "Pinned root import verified; token, glyph, dependency and runtime checks remain required",
+      "runtime": "U-V",
+      "slot": "components.dialog",
+      "status": "candidate"
+    },
+    {
+      "issues": [
+        {
+          "code": "K4",
+          "file": "apps/v4/registry/bases/aria/ui/alert-dialog.tsx",
+          "message": "Design utility needs a consumer binding",
+          "value": "outline-none"
+        },
+        {
+          "code": "K4",
+          "file": "apps/v4/registry/bases/aria/ui/alert-dialog.tsx",
+          "message": "No spacing member has the exact source length",
+          "value": "size-10"
+        }
+      ],
+      "item": "alert-dialog",
+      "notes": [
+        {
+          "file": "apps/v4/registry/bases/aria/ui/alert-dialog.tsx",
+          "message": "Restyled source: Use the consumer modal scrim role (existing default40% and mode binding), replacing literal black10%; contrast thresholds stay unchanged.",
+          "value": "bg-black/10"
+        },
+        {
+          "file": "apps/v4/registry/bases/aria/ui/alert-dialog.tsx",
+          "message": "Removed marker-only class absent from the pinned stylesheet",
+          "value": "cn-alert-dialog-action"
+        },
+        {
+          "file": "apps/v4/registry/bases/aria/ui/alert-dialog.tsx",
+          "message": "Removed marker-only class absent from the pinned stylesheet",
+          "value": "cn-alert-dialog-cancel"
+        },
+        {
+          "file": "apps/v4/registry/bases/aria/ui/alert-dialog.tsx",
+          "message": "Removed marker-only class absent from the pinned stylesheet",
+          "value": "cn-font-heading"
+        },
+        {
+          "file": "apps/v4/registry/bases/aria/ui/alert-dialog.tsx",
+          "message": "Restyled source: 6px to spacing.sm 8px",
+          "value": "gap-1.5"
+        },
+        {
+          "file": "apps/v4/registry/bases/aria/ui/alert-dialog.tsx",
+          "message": "Restyled source: Preserve decorative ring rendering, exact width and variants; never relabel as focus clearance.",
+          "value": "ring-1"
+        }
+      ],
+      "reason": "Pinned root import verified; token, glyph, dependency and runtime checks remain required",
+      "runtime": "U-V",
+      "slot": "components.dialog",
+      "status": "alternate"
+    },
+    {
+      "issues": [],
+      "item": "popover",
+      "notes": [
+        {
+          "file": "apps/v4/registry/bases/aria/ui/popover.tsx",
+          "message": "Restyled source: Restyle 2.0px to 4px using the existing spacing scale; variants and branch ownership remain exact.",
+          "value": "gap-0.5"
+        },
+        {
+          "file": "apps/v4/registry/bases/aria/ui/popover.tsx",
+          "message": "Restyled source: 10px to spacing.md 12px",
+          "value": "gap-2.5"
+        },
+        {
+          "file": "apps/v4/registry/bases/aria/ui/popover.tsx",
+          "message": "Restyled selected focusable surface: replace outline suppression with its own existing token-bound keyboard outline",
+          "value": "outline-hidden"
+        },
+        {
+          "file": "apps/v4/registry/bases/aria/ui/popover.tsx",
+          "message": "Restyled source: 10px to spacing.md 12px",
+          "value": "p-2.5"
+        },
+        {
+          "file": "apps/v4/registry/bases/aria/ui/popover.tsx",
+          "message": "Restyled source: Preserve decorative ring rendering, exact width and variants; never relabel as focus clearance.",
+          "value": "ring-1"
+        },
+        {
+          "file": "apps/v4/registry/bases/aria/ui/popover.tsx",
+          "message": "Restyled source: Restyle 288.0px to 256px using the existing spacing scale; variants and branch ownership remain exact.",
+          "value": "w-72"
+        }
+      ],
+      "reason": "Pinned root import verified; token, glyph, dependency and runtime checks remain required",
+      "runtime": "U-V",
+      "slot": "components.popover",
+      "status": "candidate"
+    },
+    {
+      "issues": [
+        {
+          "code": "K4",
+          "file": "apps/v4/registry/bases/aria/ui/hover-card.tsx",
+          "message": "Design utility needs a consumer binding",
+          "value": "outline-hidden"
+        },
+        {
+          "code": "K4",
+          "file": "apps/v4/registry/bases/aria/ui/hover-card.tsx",
+          "message": "No spacing member has the exact source length",
+          "value": "w-64"
+        }
+      ],
+      "item": "hover-card",
+      "notes": [
+        {
+          "file": "apps/v4/registry/bases/aria/ui/hover-card.tsx",
+          "message": "Restyled source: 10px to spacing.md 12px",
+          "value": "p-2.5"
+        },
+        {
+          "file": "apps/v4/registry/bases/aria/ui/hover-card.tsx",
+          "message": "Restyled source: Preserve decorative ring rendering, exact width and variants; never relabel as focus clearance.",
+          "value": "ring-1"
+        }
+      ],
+      "reason": "Pinned root import verified; token, glyph, dependency and runtime checks remain required",
+      "runtime": "U-V",
+      "slot": "components.popover",
+      "status": "alternate"
+    },
+    {
+      "issues": [],
+      "item": "tooltip",
+      "notes": [
+        {
+          "file": "apps/v4/registry/bases/aria/ui/tooltip.tsx",
+          "message": "Restyled source: 6px to spacing.sm 8px",
+          "value": "gap-1.5"
+        },
+        {
+          "file": "apps/v4/registry/bases/aria/ui/tooltip.tsx",
+          "message": "Restyled source: 6px to spacing.sm 8px",
+          "value": "has-data-[slot=kbd]:pr-1.5"
+        },
+        {
+          "file": "apps/v4/registry/bases/aria/ui/tooltip.tsx",
+          "message": "Restyled source: 6px to spacing.sm 8px",
+          "value": "py-1.5"
+        },
+        {
+          "file": "apps/v4/registry/bases/aria/ui/tooltip.tsx",
+          "message": "Restyled source: Exact existing subtle radius 2px.",
+          "value": "rounded-[2px]"
+        },
+        {
+          "file": "apps/v4/registry/bases/aria/ui/tooltip.tsx",
+          "message": "Restyled source: 10px to spacing.md 12px",
+          "value": "size-2.5"
+        },
+        {
+          "file": "apps/v4/registry/bases/aria/ui/tooltip.tsx",
+          "message": "Restyled source: Preserve tooltip arrow centering and exact2px edge offset using existing rule width; explicit edge-geometry read.",
+          "value": "translate-y-[calc(-50%-2px)]"
+        }
+      ],
+      "reason": "Pinned root import verified; token, glyph, dependency and runtime checks remain required",
+      "runtime": "U-V",
+      "slot": "components.tooltip",
+      "status": "candidate"
+    },
+    {
+      "issues": [],
+      "item": "field",
+      "reason": "K2: missing RAC root Label+Text+FieldError",
+      "runtime": "X",
+      "slot": "components.field",
+      "status": "rejected"
+    },
+    {
+      "issues": [],
+      "item": "label",
+      "reason": "K2: missing RAC root Text+FieldError",
+      "runtime": "X",
+      "slot": "components.field",
+      "status": "rejected"
+    },
+    {
+      "issues": [],
+      "item": "sidebar",
+      "reason": "K2: missing RAC root NavigationTree",
+      "runtime": "X",
+      "slot": "components.navigation-tree",
+      "status": "rejected"
+    },
+    {
+      "issues": [],
+      "item": "sonner",
+      "reason": "K2: foreign headless or engine import",
+      "runtime": "X",
+      "slot": "components.toast",
+      "status": "rejected"
+    },
+    {
+      "issues": [],
+      "item": "resizable",
+      "reason": "K2: foreign headless or engine import",
+      "runtime": "X",
+      "slot": "components.resize-handle",
+      "status": "rejected"
+    },
+    {
+      "issues": [],
+      "item": "input-group",
+      "reason": "K2: Group is not TextField; retained only as a private registry part",
+      "runtime": "X",
+      "slot": "components.text-field",
+      "status": "rejected"
+    },
+    {
+      "issues": [],
+      "item": "button#LinkButton",
+      "reason": "Pinned button item imports Link; a derived link rule belongs to the component change engine",
+      "runtime": "U-V",
+      "slot": "components.link",
+      "status": "alternate"
+    }
+  ],
+  "source": "shadcn@aria",
+  "unmeasured": [
+    "ref and render-prop forwarding",
+    "consumer RAC singleton",
+    "axe",
+    "keyboard",
+    "forced colours",
+    "contrast",
+    "state/mode/ground matrix",
+    "consumer Tailwind v4 build"
+  ]
+}

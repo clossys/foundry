@@ -1,0 +1,54 @@
+{
+  "$extensions": {
+    "com.clossys.fill": {
+      "author": "foundry",
+      "builtOn": [],
+      "conforms": [],
+      "evidence": [],
+      "id": "foundry/sections.task-list",
+      "license": "MIT",
+      "mode": "implementation",
+      "originKinds": [
+        "adopted"
+      ],
+      "pin": {
+        "export": "./blocks#TaskList",
+        "package": "@clossys/designer",
+        "version": "0.12.0"
+      },
+      "relation": "same-contract",
+      "slot": "sections.task-list",
+      "source": "foundry",
+      "sourceAddress": "./blocks#TaskList",
+      "status": "draft",
+      "trust": "foundry"
+    }
+  },
+  "sections": {
+    "task-list": {
+      "configs": {},
+      "impl": {
+        "export": "TaskList",
+        "kind": "package",
+        "module": "@clossys/designer/blocks"
+      },
+      "license": "MIT",
+      "notes": [
+        "Tasks have status, not a done checkbox, due or assignee API. Host supplies statusLabels, progressText and emptyState. No checkbox/avatar composition is claimed.",
+        "Descriptor only; source imports, token reads, shared anatomy, accessibility, contrast and consumer runtime conformance are unmeasured. Content bindings describe host adaptation points, not type-equivalent converters."
+      ],
+      "parts": [],
+      "pin": {
+        "export": "./blocks#TaskList",
+        "package": "@clossys/designer",
+        "version": "0.12.0"
+      },
+      "propMap": {},
+      "slot": "sections.task-list",
+      "slotMap": {
+        "tasks": "./blocks#TaskList.items"
+      },
+      "source": "foundry"
+    }
+  }
+}

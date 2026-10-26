@@ -1,0 +1,94 @@
+{
+  "$extensions": {
+    "com.clossys.fill": {
+      "id": "phosphor/assets.icon-organization",
+      "slot": "assets.icon-organization",
+      "source": "phosphor",
+      "mode": "implementation",
+      "sourceAddress": "https://raw.githubusercontent.com/phosphor-icons/core/fe23e2534cdb7bec24bd8e6bd99b3676bcf0d54f/raw/regular/buildings.svg",
+      "relation": "same-contract",
+      "builtOn": [],
+      "conforms": [],
+      "evidence": [],
+      "author": "third-party",
+      "trust": "pinned-upstream",
+      "license": "MIT",
+      "pin": {
+        "url": "https://raw.githubusercontent.com/phosphor-icons/core/fe23e2534cdb7bec24bd8e6bd99b3676bcf0d54f/raw/regular/buildings.svg",
+        "commit": "fe23e2534cdb7bec24bd8e6bd99b3676bcf0d54f",
+        "sha256": "8f5b9bb14710d1ddd25787dac39954a7b35e8eb0f32cfe2df7a31433905fd3ac"
+      },
+      "status": "draft",
+      "reads": {
+        "tokens": [],
+        "assets": []
+      }
+    }
+  },
+  "assets": {
+    "icon-organization": {
+      "default": {
+        "$type": "glyph",
+        "$value": [
+          [
+            "path",
+            {
+              "d": "M 12.75 20.25 V 3 a 0.75 0.75 0 0 0 -1.16625 -0.6234375 l -7.5 4.9996875 A 0.75 0.75 0 0 0 3.75 8.0015625 V 20.25"
+            }
+          ],
+          [
+            "path",
+            {
+              "d": "M 12.75 8.25 h 6.75 a 0.75 0.75 0 0 1 0.75 0.75 V 20.25"
+            }
+          ],
+          [
+            "line",
+            {
+              "x1": "1.5",
+              "y1": "20.25",
+              "x2": "22.5",
+              "y2": "20.25"
+            }
+          ],
+          [
+            "line",
+            {
+              "x1": "9.75",
+              "y1": "10.5",
+              "x2": "9.75",
+              "y2": "12"
+            }
+          ],
+          [
+            "line",
+            {
+              "x1": "6.75",
+              "y1": "10.5",
+              "x2": "6.75",
+              "y2": "12"
+            }
+          ],
+          [
+            "line",
+            {
+              "x1": "6.75",
+              "y1": "15.75",
+              "x2": "6.75",
+              "y2": "17.25"
+            }
+          ],
+          [
+            "line",
+            {
+              "x1": "9.75",
+              "y1": "15.75",
+              "x2": "9.75",
+              "y2": "17.25"
+            }
+          ]
+        ]
+      }
+    }
+  }
+}

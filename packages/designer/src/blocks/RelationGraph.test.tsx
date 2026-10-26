@@ -143,13 +143,13 @@ describe("RelationGraph", () => {
     expect(controls(container)).toHaveLength(3);
     expect(container.querySelectorAll("path")).toHaveLength(0);
   });
-  it("uses direct atom dependencies without data access or external graph capabilities", () => {
+  it("uses direct component dependencies without data access or external graph capabilities", () => {
     for (const name of ["RelationGraph.tsx", "relation-graph-layout.ts"]) {
       const source = readFileSync(new URL(name, import.meta.url), "utf8");
       expect(source).not.toMatch(/\b(?:fetch|localStorage|sessionStorage|XMLHttpRequest)\b/);
       const imports = [...source.matchAll(/(?:\bfrom\s*|\bimport\s*(?:\(\s*)?|\brequire\s*\(\s*)["']([^"']+)["']/g)].map(match => match[1]);
       expect(source).not.toMatch(/\b(?:import|require)\s*\(\s*(?![\s"'])/);
-      expect(imports.every(name => name === "react" || name!.startsWith("../atoms/") || name!.startsWith("./relation-graph-"))).toBe(true);
+      expect(imports.every(name => name === "react" || name!.startsWith("../components/") || name!.startsWith("./relation-graph-"))).toBe(true);
     }
   });
 });

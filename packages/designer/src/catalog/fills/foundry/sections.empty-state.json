@@ -1,0 +1,62 @@
+{
+  "$extensions": {
+    "com.clossys.fill": {
+      "author": "foundry",
+      "builtOn": [],
+      "conforms": [],
+      "evidence": [],
+      "id": "foundry/sections.empty-state",
+      "license": "MIT",
+      "mode": "implementation",
+      "originKinds": [
+        "adopted"
+      ],
+      "pin": {
+        "export": "./blocks#EmptyState",
+        "package": "@clossys/designer",
+        "version": "0.12.0"
+      },
+      "relation": "subset",
+      "slot": "sections.empty-state",
+      "source": "foundry",
+      "sourceAddress": "./blocks#EmptyState",
+      "status": "draft",
+      "trust": "foundry",
+      "unmapped": [
+        "kind.empty",
+        "kind.first-use",
+        "kind.no-results",
+        "scope.page",
+        "scope.region"
+      ]
+    }
+  },
+  "sections": {
+    "empty-state": {
+      "configs": {},
+      "impl": {
+        "export": "EmptyState",
+        "kind": "package",
+        "module": "@clossys/designer/blocks"
+      },
+      "license": "MIT",
+      "notes": [
+        "Host supplies required title. No kind or scope API; source hand-renders its h2 and padding.",
+        "Descriptor only; source imports, token reads, shared anatomy, accessibility, contrast and consumer runtime conformance are unmeasured. Content bindings describe host adaptation points, not type-equivalent converters."
+      ],
+      "parts": [],
+      "pin": {
+        "export": "./blocks#EmptyState",
+        "package": "@clossys/designer",
+        "version": "0.12.0"
+      },
+      "propMap": {},
+      "slot": "sections.empty-state",
+      "slotMap": {
+        "actions": "./blocks#EmptyState.action",
+        "illustration": "./blocks#EmptyState.icon"
+      },
+      "source": "foundry"
+    }
+  }
+}

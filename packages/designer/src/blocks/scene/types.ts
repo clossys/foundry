@@ -1,4 +1,4 @@
-import type { StatusMarkTone } from "../../atoms/StatusMark.js";
+import type { StatusMarkTone } from "../../components/StatusMark.js";
 
 export type SceneDisorder = "none" | "low" | "medium";
 export type SceneFormat = "pdf" | "email" | "sheet" | "doc" | "note" | "scan" | "calendar";

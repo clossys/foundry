@@ -1,0 +1,43 @@
+{
+  "$extensions": {
+    "com.clossys.fill": {
+      "id": "phosphor/assets.icon-chevron-right",
+      "slot": "assets.icon-chevron-right",
+      "source": "phosphor",
+      "mode": "implementation",
+      "sourceAddress": "https://raw.githubusercontent.com/phosphor-icons/core/fe23e2534cdb7bec24bd8e6bd99b3676bcf0d54f/raw/regular/caret-right.svg",
+      "relation": "same-contract",
+      "builtOn": [],
+      "conforms": [],
+      "evidence": [],
+      "author": "third-party",
+      "trust": "pinned-upstream",
+      "license": "MIT",
+      "pin": {
+        "url": "https://raw.githubusercontent.com/phosphor-icons/core/fe23e2534cdb7bec24bd8e6bd99b3676bcf0d54f/raw/regular/caret-right.svg",
+        "commit": "fe23e2534cdb7bec24bd8e6bd99b3676bcf0d54f",
+        "sha256": "f4112153569ec97ef09281ddb6d2bf33c91f6eae0f9b4fab43cd46418b2f2459"
+      },
+      "status": "draft",
+      "reads": {
+        "tokens": [],
+        "assets": []
+      }
+    }
+  },
+  "assets": {
+    "icon-chevron-right": {
+      "default": {
+        "$type": "glyph",
+        "$value": [
+          [
+            "polyline",
+            {
+              "points": "9 4.5 16.5 12 9 19.5"
+            }
+          ]
+        ]
+      }
+    }
+  }
+}

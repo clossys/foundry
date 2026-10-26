@@ -1,6 +1,6 @@
 import { Children } from "react";
 import type { CSSProperties, ReactNode } from "react";
-import { Card } from "@clossys/designer/atoms/server";
+import { Card } from "@clossys/designer/components/server";
 
 /**
  * The classes of a page layout's column. A chrome-free view puts them on its

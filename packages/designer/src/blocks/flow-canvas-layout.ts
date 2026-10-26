@@ -1,4 +1,4 @@
-import type { StatusMarkTone } from "../atoms/StatusMark.js";
+import type { StatusMarkTone } from "../components/StatusMark.js";
 
 /** Which way layers run: left to right (`"horizontal"`) or top to bottom (`"vertical"`). */
 export type FlowCanvasOrientation = "horizontal" | "vertical";

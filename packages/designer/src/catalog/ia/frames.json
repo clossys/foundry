@@ -1,0 +1,80 @@
+{
+  "layer": "frames",
+  "nodes": [
+    {
+      "id": "page-shells",
+      "label": "Page shells",
+      "children": [
+        {
+          "id": "page-shells-documents",
+          "label": "Documents",
+          "leaves": [
+            "frames.site-shell"
+          ]
+        },
+        {
+          "id": "page-shells-workspaces",
+          "label": "Workspaces",
+          "leaves": [
+            "frames.app-shell"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "regions",
+      "label": "Regions",
+      "children": [
+        {
+          "id": "headers",
+          "label": "Headers",
+          "leaves": [
+            "frames.site-header",
+            "frames.app-header"
+          ]
+        },
+        {
+          "id": "navigation",
+          "label": "Navigation",
+          "leaves": [
+            "frames.app-sidebar"
+          ]
+        },
+        {
+          "id": "panels",
+          "label": "Panels",
+          "leaves": [
+            "frames.inspector"
+          ]
+        },
+        {
+          "id": "footers",
+          "label": "Footers",
+          "leaves": [
+            "frames.site-footer"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "overlay-shells",
+      "label": "Overlay shells",
+      "children": [
+        {
+          "id": "overlay-shells-panels",
+          "label": "Panels",
+          "leaves": [
+            "frames.sheet"
+          ]
+        },
+        {
+          "id": "overlay-shells-commands",
+          "label": "Commands",
+          "leaves": [
+            "frames.command"
+          ]
+        }
+      ]
+    }
+  ]
+}

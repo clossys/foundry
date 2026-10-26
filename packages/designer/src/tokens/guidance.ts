@@ -34,6 +34,73 @@ export interface TokenDisplayGroup {
 
 /** All existing properties have an explicit, independently reviewed semantic role. */
 export const TOKEN_GUIDANCE: Readonly<Record<string, TokenGuidance>> = {
+  "--color-action": {
+    "purpose": "The primary action fill distinguishes an action from navigation and current location.",
+    "use": "Fill a primary control with action and pair it with ink-on-action.",
+    "misuse": "Do not use action as the focus or selection accent; those roles remain separate.",
+    "application": {
+      "cssProperty": "background-color",
+      "valueType": "color",
+      "context": "The primary action fill distinguishes an action from navigation and current location."
+    },
+    "specimen": "control"
+  },
+  "--color-action-hover": {
+    "purpose": "The action hover fill gives a pointer target feedback without changing its semantic role.",
+    "use": "Apply action-hover to a hovered primary control while retaining the on-action label.",
+    "misuse": "Avoid using action-hover for pressed feedback; use the explicit action-pressed role.",
+    "application": {
+      "cssProperty": "background-color",
+      "valueType": "color",
+      "context": "The action hover fill gives a pointer target feedback without changing its semantic role."
+    },
+    "specimen": "control"
+  },
+  "--color-action-pressed": {
+    "purpose": "The action pressed fill marks activation while the primary control is held.",
+    "use": "Apply action-pressed during the native pressed state of a primary action.",
+    "misuse": "Do not replace disabled opacity with action-pressed; the states have different meanings.",
+    "application": {
+      "cssProperty": "background-color",
+      "valueType": "color",
+      "context": "The action pressed fill marks activation while the primary control is held."
+    },
+    "specimen": "control"
+  },
+  "--color-action-on-inverse": {
+    "purpose": "The inverse action fill makes a primary action readable on an opposite-polarity ground.",
+    "use": "Fill a primary control on an inverse ground with action-on-inverse and primary ink.",
+    "misuse": "Do not use ordinary on-action ink over action-on-inverse; choose the inverse action label pairing.",
+    "application": {
+      "cssProperty": "background-color",
+      "valueType": "color",
+      "context": "The inverse action fill makes a primary action readable on an opposite-polarity ground."
+    },
+    "specimen": "control"
+  },
+  "--color-action-on-inverse-hover": {
+    "purpose": "The inverse action hover fill retains feedback on opposite-polarity action surfaces.",
+    "use": "Use action-on-inverse-hover for a hovered primary control on its inverse ground.",
+    "misuse": "Avoid substituting ordinary action-hover on an inverse primary control; check the inverse ground.",
+    "application": {
+      "cssProperty": "background-color",
+      "valueType": "color",
+      "context": "The inverse action hover fill retains feedback on opposite-polarity action surfaces."
+    },
+    "specimen": "control"
+  },
+  "--color-ink-on-action": {
+    "purpose": "The action label alias names foreground ink on ordinary primary action fills.",
+    "use": "Set primary action labels to ink-on-action and verify every action state contrast.",
+    "misuse": "Do not use ink-on-action for inline links; link ink remains on the accent or link role.",
+    "application": {
+      "cssProperty": "color",
+      "valueType": "color",
+      "context": "The action label alias names foreground ink on ordinary primary action fills."
+    },
+    "specimen": "text"
+  },
+
   "--color-surface-base": {
     purpose: "The default ground establishes the page's normal reading plane.",
     use: "Paint the document or a normal section on the base ground with its paired ink.",
@@ -895,6 +962,27 @@ export const TOKEN_GUIDANCE: Readonly<Record<string, TokenGuidance>> = {
     application: {"cssProperty": "padding-inline", "valueType": "length", "context": "Fluid page-edge spacing; the width source-family name is compatibility provenance, not display placement."},
     specimen: "space",
   },
+  "--ui-layout-dock-min-block": {
+    purpose: "The dock minimum height keeps an expanded page module usable when frame capacity allows.",
+    use: "Use the dock min block size for the bottom page-module panel, clamped to measured frame capacity.",
+    misuse: "Do not use the dock min height as an aside width or let it place modules over the stage.",
+    application: { cssProperty: "block-size", valueType: "length", context: "In-flow bottom dock min height with runtime frame-capacity clamping." },
+    specimen: "size",
+  },
+  "--ui-layout-dock-default-block": {
+    purpose: "The dock initial height reserves the starting page-module workspace.",
+    use: "Use the dock default block size for the bottom page-module panel, clamped to measured frame capacity.",
+    misuse: "Do not use the dock default height as an aside width or let it place modules over the stage.",
+    application: { cssProperty: "block-size", valueType: "length", context: "In-flow bottom dock default height with runtime frame-capacity clamping." },
+    specimen: "size",
+  },
+  "--ui-layout-dock-max-block": {
+    purpose: "The dock maximum height limits expanded page modules within the frame.",
+    use: "Use the dock max block size for the bottom page-module panel, clamped to measured frame capacity.",
+    misuse: "Do not use the dock max height as an aside width or let it place modules over the stage.",
+    application: { cssProperty: "block-size", valueType: "length", context: "In-flow bottom dock max height with runtime frame-capacity clamping." },
+    specimen: "size",
+  },
   "--ui-layout-sidebar-w": {
     purpose: "The expanded sidebar width reserves the full application navigation region.",
     use: "Use it when the shell presents a complete sidebar rather than a compact rail.",
@@ -1675,8 +1763,9 @@ export const TOKEN_GUIDANCE: Readonly<Record<string, TokenGuidance>> = {
 export const TOKEN_DISPLAY_GROUPS: readonly TokenDisplayGroup[] = [
   { id: "color", label: "Color", families: [
     { id: "surface", label: "Surface", properties: ["--color-surface-base", "--color-surface-sunken", "--color-surface-raised", "--color-surface-inverse", "--color-surface-inverse-raised", "--color-surface-aside", "--color-surface-selected", "--color-surface-glass", "--color-surface-glass-inverse"] },
-    { id: "ink", label: "Ink", properties: ["--color-ink-primary", "--color-ink-secondary", "--color-ink-muted", "--color-ink-link", "--color-ink-on-inverse", "--color-ink-on-inverse-muted", "--color-ink-on-accent"] },
+    { id: "ink", label: "Ink", properties: ["--color-ink-on-action", "--color-ink-primary", "--color-ink-secondary", "--color-ink-muted", "--color-ink-link", "--color-ink-on-inverse", "--color-ink-on-inverse-muted", "--color-ink-on-accent"] },
     { id: "line", label: "Line", properties: ["--color-line-base", "--color-line-strong", "--color-line-on-inverse", "--color-line-panel"] },
+    { id: "action", label: "Action", properties: ["--color-action", "--color-action-hover", "--color-action-pressed", "--color-action-on-inverse", "--color-action-on-inverse-hover"] },
     { id: "accent", label: "Accent", properties: ["--color-accent", "--color-accent-text", "--color-accent-hover", "--color-accent-tint", "--color-accent-on-inverse"] },
     { id: "control", label: "Control", properties: ["--color-control-tonal", "--color-control-tonal-hover", "--color-control-tonal-inverse", "--color-control-tonal-inverse-hover", "--color-control-quiet"] },
     { id: "status", label: "Status", properties: ["--color-status-success", "--color-status-success-text", "--color-status-success-tint", "--color-status-warning", "--color-status-warning-text", "--color-status-warning-tint", "--color-status-danger", "--color-status-danger-text", "--color-status-danger-tint", "--color-status-info", "--color-status-info-text", "--color-status-info-tint"] },
@@ -1700,7 +1789,7 @@ export const TOKEN_DISPLAY_GROUPS: readonly TokenDisplayGroup[] = [
   ] },
   { id: "sizing", label: "Sizing", families: [
     { id: "content-widths", label: "Content widths", properties: ["--ui-width-content-max", "--ui-width-display-max", "--ui-width-hero-wide", "--ui-width-prose-max", "--ui-width-wide-max", "--ui-width-form-max", "--ui-width-notice-max"] },
-    { id: "app-regions", label: "App regions", properties: ["--ui-layout-sidebar-w", "--ui-layout-sidebar-rail-w", "--ui-layout-aside-w", "--ui-layout-drawer-w", "--ui-layout-toast-w", "--ui-table-max-block-default"] },
+    { id: "app-regions", label: "App regions", properties: ["--ui-layout-dock-min-block", "--ui-layout-dock-default-block", "--ui-layout-dock-max-block", "--ui-layout-sidebar-w", "--ui-layout-sidebar-rail-w", "--ui-layout-aside-w", "--ui-layout-drawer-w", "--ui-layout-toast-w", "--ui-table-max-block-default"] },
     { id: "interaction-target", label: "Interaction target", properties: ["--ui-layout-tap-target", "--ui-control-h-sm", "--ui-control-h-md", "--ui-control-h-lg", "--ui-control-row-h", "--ui-control-mark", "--ui-control-switch-w", "--ui-control-switch-h", "--ui-control-switch-thumb"] },
     { id: "row-height", label: "Row height", properties: ["--ui-density-row", "--ui-table-row-comfortable", "--ui-table-row-compact"] },
     { id: "icon-sizes", label: "Icon sizes", properties: ["--ui-icon-sm", "--ui-icon-md", "--ui-icon-lg"] },

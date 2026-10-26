@@ -1,0 +1,17 @@
+{
+  "name": "kbd",
+  "type": "registry:ui",
+  "repository": "https://github.com/shadcn-ui/ui",
+  "commit": "daaf156ee00ed91cc7e6bdd937c1b4973152d141",
+  "sourceFormat": "pinned repository source; not generated live registry JSON",
+  "license": "MIT",
+  "notice": "LICENSE.md",
+  "files": [
+    {
+      "path": "apps/v4/registry/bases/aria/ui/kbd.tsx",
+      "type": "registry:ui",
+      "content": "\"use client\"\n\nimport { cn } from \"cn\"\nimport { Keyboard as KbdPrimitive } from \"react-aria-components\"\n\nfunction Kbd({ className, ...props }: React.ComponentProps<\"kbd\">) {\n  return (\n    <KbdPrimitive\n      data-slot=\"kbd\"\n      className={cn(\n        \"cn-kbd pointer-events-none inline-flex items-center justify-center select-none\",\n        className\n      )}\n      {...props}\n    />\n  )\n}\n\nfunction KbdGroup({ className, ...props }: React.ComponentProps<\"div\">) {\n  return (\n    <KbdPrimitive\n      data-slot=\"kbd-group\"\n      className={cn(\"cn-kbd-group inline-flex items-center\", className)}\n      {...props}\n    />\n  )\n}\n\nexport { Kbd, KbdGroup }\n",
+      "sha256": "38452bf969618854c72821a8684100aa441653fc15cb2703a2f6e2299f829e27"
+    }
+  ]
+}

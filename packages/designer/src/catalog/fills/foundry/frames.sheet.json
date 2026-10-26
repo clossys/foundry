@@ -1,0 +1,56 @@
+{
+  "$extensions": {
+    "com.clossys.fill": {
+      "author": "foundry",
+      "builtOn": [],
+      "conforms": [],
+      "evidence": [],
+      "id": "foundry/frames.sheet",
+      "license": "MIT",
+      "mode": "implementation",
+      "pin": {
+        "export": "./blocks#Drawer",
+        "package": "@clossys/designer",
+        "version": "0.12.0"
+      },
+      "relation": "same-contract",
+      "slot": "frames.sheet",
+      "source": "foundry",
+      "sourceAddress": "./blocks#Drawer",
+      "status": "draft",
+      "trust": "foundry"
+    }
+  },
+  "frames": {
+    "sheet": {
+      "impl": {
+        "export": "Drawer",
+        "kind": "package",
+        "module": "@clossys/designer/blocks"
+      },
+      "members": [
+        "placement.bottom",
+        "placement.end",
+        "placement.start",
+        "wide.dismiss",
+        "wide.sheet"
+      ],
+      "propMap": {
+        "placement.bottom": "placement=bottom",
+        "placement.end": "placement=end",
+        "placement.start": "placement=start",
+        "wide.dismiss": "wide=dismiss",
+        "wide.sheet": "wide=sheet"
+      },
+      "slot": "frames.sheet",
+      "slots": {
+        "body": "children",
+        "footer": "footer",
+        "heading": "heading"
+      },
+      "statePorts": {
+        "open": "isOpen/onOpenChange"
+      }
+    }
+  }
+}

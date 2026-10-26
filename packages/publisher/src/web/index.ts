@@ -1,3 +1,5 @@
+export { PublisherInstancesView } from "./instances/PublisherInstancesView.js";
+export type { PublisherInstancesViewProps } from "./instances/PublisherInstancesView.js";
 /**
  * @clossys/publisher/web — the `web` channel renderer. Takes a
  * `ComposeDocument` with `channel: "web"` and emits the rendered
@@ -10,6 +12,8 @@
  */
 
 export { renderWebDocument } from "./renderWebDocument.js";
+export { PublisherCompositionsView } from "./compositions/PublisherCompositionsView.js";
+export type { CompositionsConsumerLibrary, PublisherCompositionsViewProps } from "./compositions/PublisherCompositionsView.js";
 export { buildWebHeadMetadata } from "./headMetadata.js";
 export { SiteMetadataError, buildSiteMetadata, formatPageTitle } from "./siteMetadata.js";
 export type {
@@ -170,3 +174,25 @@ export type { SiteFramePresentationConfig } from "./frame/site-frame-contract.js
 
 export { IndexView, DetailsView } from "./views/index.js";
 export type { IndexViewCollection, IndexViewProps, IndexViewRowRoute, IndexViewTable, DetailsViewBlock, DetailsViewLayout, DetailsViewProps, DetailsViewRegion, DetailsViewSection, DetailsViewSectionState, DetailsViewTab } from "./views/index.js";
+
+export { PublisherPage } from "./publisher/PublisherPage.js";
+export type { PublisherPageProps } from "./publisher/PublisherPage.js";
+export type { AssemblyOwner, AssemblyOwnerTarget, AssemblyOwnerHref } from "./publisher/assembly/assembly.js";
+export type { PublisherLane, PublisherPipelineItem, PublishStageEvidence, PublishStage, PublishStageStatus } from "./publisher/pipeline.js";
+
+export { PublisherFormatsView } from "./formats/PublisherFormatsView.js";
+export type { PublisherFormatsViewProps } from "./formats/PublisherFormatsView.js";
+export { AppPack } from "./publisher/app/AppPack.js";
+export { projectAppInventory } from "./publisher/app/inventory.js";
+export type { AppInventory, AppRoute, AppLane, AppMissingDecision, AppInventoryProjection, AppPageProjection, AppSubrowProjection, AppScopedStateDeclaration } from "./publisher/app/inventory.js";
+export type { AppPageBindingInput, AppSubrowBindingInput, AppPipelineInput, AppPipelineMessages } from "./publisher/app/pipeline.js";
+
+export type { ProductionSettings, ProductionSettingsByItem, PublisherProductionState, PublisherInputRequest, PublisherInputRequests } from "./publisher/production-settings.js";
+export type { AppPackProps } from "./publisher/app/AppPack.js";
+
+export { PublisherSection } from "./publisher/PublisherSection.js";
+export type { PublisherSectionProps } from "./publisher/PublisherSection.js";
+export { projectPublisherSections } from "./publisher/publisher-sections.js";
+export type { PublisherSectionCommand, PublisherSectionData, PublisherSectionsInput, PublisherCell, PublisherTableRow } from "./publisher/publisher-sections.js";
+export { ProductionSettingsFields, useProductionDraft } from "./publisher/ProductionSettingsForm.js";
+export type { ProductionSettingsFieldsProps } from "./publisher/ProductionSettingsForm.js";

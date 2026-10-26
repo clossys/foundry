@@ -2,8 +2,8 @@ import { act, useState } from "react";
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { Dialog } from "../atoms/Dialog.js";
-import { Button } from "../atoms/Button.js";
+import { Dialog } from "../components/Dialog.js";
+import { Button } from "../components/Button.js";
 import { X } from "../icons/X.js";
 import * as blocks from "./index.js";
 

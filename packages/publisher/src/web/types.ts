@@ -211,7 +211,7 @@ export interface WebHreflangAlternate {
  *     rendered as a real `<img>`.
  *   - `"node"` — a caller-owned `ReactNode` the caller's OWN trusted code
  *     already constructed (a composed `AuthView` form, a widget built from
- *     `@clossys/designer` atoms, a small caller-authored component) —
+ *     `@clossys/designer` components, a small caller-authored component) —
  *     never a raw HTML string, never audience-supplied or copy-registry
  *     content. This is the dangerous one: see `renderWebDocument.ts`'s own
  *     doc comment, "RICH-NODE SLOTS", for exactly what a `"node"`-kind slot

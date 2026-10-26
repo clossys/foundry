@@ -1,0 +1,116 @@
+{
+  "$extensions": {
+    "com.clossys.fill": {
+      "author": "third-party",
+      "builtOn": [],
+      "conforms": [],
+      "evidence": [],
+      "id": "shadcn@aria/components.skeleton",
+      "license": "MIT",
+      "mode": "implementation",
+      "pin": {
+        "commit": "daaf156ee00ed91cc7e6bdd937c1b4973152d141",
+        "sha256": "8fcbad84e494a75484a0975221fb40f54c4a7d68f79cfc305cb158d1feb1badf",
+        "url": "https://github.com/shadcn-ui/ui"
+      },
+      "relation": "subset",
+      "slot": "components.skeleton",
+      "source": "shadcn@aria",
+      "sourceAddress": "https://github.com/shadcn-ui/ui/blob/daaf156ee00ed91cc7e6bdd937c1b4973152d141/apps/v4/registry/bases/aria/ui/skeleton.tsx",
+      "status": "draft",
+      "trust": "pinned-upstream",
+      "unmapped": [
+        "shape.text",
+        "shape.block",
+        "shape.circle"
+      ]
+    }
+  },
+  "components": {
+    "skeleton": {
+      "blockers": [],
+      "composes": [],
+      "deps": [
+        {
+          "license": "MIT",
+          "name": "react",
+          "version": "19.2.3"
+        },
+        {
+          "license": "MIT",
+          "name": "clsx",
+          "version": "2.1.1"
+        },
+        {
+          "license": "MIT",
+          "name": "tailwind-merge",
+          "version": "3.3.1"
+        }
+      ],
+      "impl": {
+        "entry": "components/skeleton/skeleton.tsx",
+        "export": "Skeleton",
+        "kind": "source"
+      },
+      "item": "skeleton",
+      "license": "MIT",
+      "members": [],
+      "notice": "notices/THIRD-PARTY.md",
+      "outputSha256": [
+        {
+          "path": "components/_parts/utils/index.ts",
+          "sha256": "d3753f708b15cc1ec47bc3136827134b702e2069eebdb0ddefb1806b95d7c1d9"
+        },
+        {
+          "path": "components/skeleton/index.ts",
+          "sha256": "f4fc418cfde04c3a73779ae34fafdc629921379bbd43d7fb79386ade76506ad8"
+        },
+        {
+          "path": "components/skeleton/skeleton.tsx",
+          "sha256": "81256f63abeead7c449266b170fb1f70a20a2e9b261406e31430f72e135babc5"
+        },
+        {
+          "path": "notices/THIRD-PARTY.md",
+          "sha256": "6148b3941d0eff3d024e4d3a0e630f009484163560272ae6ec79c649c67fc964"
+        }
+      ],
+      "parts": [
+        {
+          "item": "utils"
+        }
+      ],
+      "pin": {
+        "commit": "daaf156ee00ed91cc7e6bdd937c1b4973152d141",
+        "files": [
+          {
+            "path": "apps/v4/registry/bases/aria/ui/skeleton.tsx",
+            "sha256": "8fcbad84e494a75484a0975221fb40f54c4a7d68f79cfc305cb158d1feb1badf"
+          },
+          {
+            "path": "apps/v4/registry/styles/style-nova.css",
+            "sha256": "fd9803ec398290c306b377a46a769cad0c7ff024bf6a626993c113cacc20f16e"
+          },
+          {
+            "path": "LICENSE.md",
+            "sha256": "1564074e13439397221ffd522e2e504d56561994a23d371aa5e3ad43e4f5423f"
+          }
+        ],
+        "url": "https://github.com/shadcn-ui/ui"
+      },
+      "propMap": {},
+      "props": [],
+      "reads": {
+        "assets": [],
+        "components": [],
+        "tokens": [
+          "tokens.control-radius.default",
+          "tokens.surface-color.sunken"
+        ]
+      },
+      "root": "presentational",
+      "slot": "components.skeleton",
+      "source": "shadcn@aria",
+      "transform": "shadcn-aria-rewrite@1"
+    }
+  }
+}

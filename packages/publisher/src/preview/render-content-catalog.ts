@@ -1,6 +1,6 @@
 import { buildFunctionalCatalogIndex } from "./catalog/reader-renderer.js";
 export { buildCatalogFunctionPages } from "./catalog/reader-renderer.js";
-import { buttonLinkClassName } from "@clossys/designer/atoms/server";
+import { buttonLinkClassName } from "@clossys/designer/components/server";
 import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { resolveSectionedViewDocument } from "../core/sectioned-view.js";

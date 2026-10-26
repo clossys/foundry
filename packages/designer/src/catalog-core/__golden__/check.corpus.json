@@ -1,0 +1,209 @@
+{
+  "alias-depth:16": [],
+  "alias-depth:17": [
+    "reads: tokens.sample.m0 alias chain exceeds 16 hops"
+  ],
+  "alias:{ a.b }": [
+    "id: member  a.b  is not a valid member id",
+    "reads: tokens.sample.default in foundry/tokens.sample reads  a.b , which does not resolve in profile foundry"
+  ],
+  "alias:{a.b": [
+    "contract: foundry/tokens.sample member tokens.sample.default has a malformed number value",
+    "contract: foundry/tokens.sample member tokens.sample.default has unsafe CSS text ({)"
+  ],
+  "alias:{a.b}}": [
+    "contract: foundry/tokens.sample member tokens.sample.default has a malformed number value",
+    "contract: foundry/tokens.sample member tokens.sample.default has unsafe CSS text ({)"
+  ],
+  "alias:{tokens.missing.default}": [
+    "reads: tokens.sample.default in foundry/tokens.sample reads tokens.missing.default, which does not resolve in profile foundry"
+  ],
+  "alias:{tokens.sample.default}": [
+    "reads: cycle tokens.sample.default -> tokens.sample.default",
+    "reads: tokens.sample.default in foundry/tokens.sample reads tokens.sample.default, which does not resolve in profile foundry"
+  ],
+  "alias:{tokens.sample}": [
+    "id: member tokens.sample is not a valid member id",
+    "reads: tokens.sample.default in foundry/tokens.sample reads tokens.sample, which does not resolve in profile foundry"
+  ],
+  "alias:｛tokens.sample.default｝": [
+    "contract: foundry/tokens.sample member tokens.sample.default has a malformed number value"
+  ],
+  "closed-member": [
+    "contract: foundry/tokens.sample provides unknown member tokens.sample.default (slot tokens.sample is closed)",
+    "coverage: tokens.sample.another has no value in profile foundry"
+  ],
+  "dark-forbidden": [
+    "contract: foundry/tokens.sample sets mode dark but slot tokens.sample allows only light",
+    "provenance: foundry/tokens.sample originKinds does not summarize its members",
+    "provenance: tokens.sample.default has invalid origin"
+  ],
+  "dimension:\"#fff\"": [
+    "contract: foundry/tokens.sample member tokens.sample.default has $type dimension, slot tokens.sample requires number",
+    "contract: foundry/tokens.sample member tokens.sample.default has a malformed dimension value"
+  ],
+  "dimension:null": [
+    "contract: foundry/tokens.sample member tokens.sample.default has $type dimension, slot tokens.sample requires number",
+    "contract: foundry/tokens.sample member tokens.sample.default has a malformed dimension value"
+  ],
+  "dimension:{\"value\":2,\"unit\":\"%\"}": [
+    "contract: foundry/tokens.sample member tokens.sample.default has $type dimension, slot tokens.sample requires number",
+    "contract: foundry/tokens.sample member tokens.sample.default has a malformed dimension value"
+  ],
+  "dimension:{\"value\":2,\"unit\":\"em\"}": [
+    "contract: foundry/tokens.sample member tokens.sample.default has $type dimension, slot tokens.sample requires number",
+    "contract: foundry/tokens.sample member tokens.sample.default has a malformed dimension value"
+  ],
+  "duplicate-fill": [
+    "uniqueness: source foundry has 2 fills for slot tokens.sample"
+  ],
+  "extra-root": [
+    "contract: foundry/tokens.sample is not a valid DTCG cell: extra root key extra"
+  ],
+  "group-type": [
+    "contract: foundry/tokens.sample is not a valid DTCG cell: group-level $type at tokens.sample is not supported"
+  ],
+  "license:GPL-3.0": [
+    "licence: tokens.sample.default origin licence GPL-3.0 is not on the allow list"
+  ],
+  "license:MIT ": [
+    "licence: tokens.sample.default origin licence MIT  is not on the allow list"
+  ],
+  "license:MIT OR Apache-2.0": [
+    "licence: tokens.sample.default origin licence MIT OR Apache-2.0 is not on the allow list"
+  ],
+  "license:mit": [
+    "licence: tokens.sample.default origin licence mit is not on the allow list"
+  ],
+  "license:undefined": [
+    "provenance: tokens.sample.default has invalid origin"
+  ],
+  "missing-evidence": [
+    "standards: foundry/tokens.sample claims example#rule with no evidence"
+  ],
+  "missing-root": [
+    "contract: foundry/tokens.sample is not a valid DTCG cell: missing tokens root",
+    "provenance: foundry/tokens.sample originKinds does not summarize its members"
+  ],
+  "missing-type": [
+    "contract: foundry/tokens.sample is not a valid DTCG cell: token tokens.sample.default has no $type"
+  ],
+  "missing-value": [
+    "contract: foundry/tokens.sample is not a valid DTCG cell: token tokens.sample.default has no $value",
+    "provenance: foundry/tokens.sample originKinds does not summarize its members"
+  ],
+  "outside-slot": [
+    "contract: foundry/tokens.sample is not a valid DTCG cell: token tokens.other.default lies outside slot tokens.sample"
+  ],
+  "pattern-neighbor": [
+    "contract: foundry/tokens.sample member tokens.sample.default does not match pattern ^[0-9]+$"
+  ],
+  "pin-absent": [
+    "selection: consumer fill upstream/tokens.sample names source upstream, expected foundry"
+  ],
+  "pin-mismatch": [
+    "selection: consumer fill upstream/tokens.sample names source upstream, expected foundry"
+  ],
+  "root-array": [
+    "contract: foundry/tokens.sample is not a valid DTCG cell: missing tokens root",
+    "provenance: foundry/tokens.sample originKinds does not summarize its members"
+  ],
+  "slot-id:tokens..sample": [
+    "id: slot tokens..sample is not a valid slot id",
+    "orphan: foundry/tokens.sample names slot tokens.sample, which is not registered",
+    "coverage: slot tokens..sample has no consumer fill"
+  ],
+  "slot-id:tokens.Sample": [
+    "id: slot tokens.Sample is not a valid slot id",
+    "orphan: foundry/tokens.sample names slot tokens.sample, which is not registered",
+    "coverage: slot tokens.Sample has no consumer fill"
+  ],
+  "slot-id:tokens.sample.": [
+    "id: slot tokens.sample. is not a valid slot id",
+    "orphan: foundry/tokens.sample names slot tokens.sample, which is not registered",
+    "coverage: slot tokens.sample. has no consumer fill"
+  ],
+  "slot-id:tokens.sаmple": [
+    "id: slot tokens.sаmple is not a valid slot id",
+    "orphan: foundry/tokens.sample names slot tokens.sample, which is not registered",
+    "coverage: slot tokens.sаmple has no consumer fill"
+  ],
+  "slot-id:tokens_sample": [
+    "id: slot tokens_sample is not a valid slot id",
+    "orphan: foundry/tokens.sample names slot tokens.sample, which is not registered",
+    "coverage: slot tokens_sample has no consumer fill"
+  ],
+  "source-id:Foundry": [
+    "id: source Foundry is not a valid source id",
+    "selection: consumer fill foundry/tokens.sample names source Foundry, expected foundry"
+  ],
+  "source-id:foundry/other": [
+    "id: source foundry/other is not a valid source id",
+    "selection: consumer fill foundry/tokens.sample names source foundry/other, expected foundry"
+  ],
+  "source-id:fоundry": [
+    "id: source fоundry is not a valid source id",
+    "selection: consumer fill foundry/tokens.sample names source fоundry, expected foundry"
+  ],
+  "status:undefined": [
+    "status: tokens.sample is stable without an owner sign-off"
+  ],
+  "status:{\"by\":\"owner\",\"date\":\"2026-10-23\",\"ref\":\"\"}": [
+    "status: tokens.sample is stable without an owner sign-off"
+  ],
+  "status:{\"by\":\"owner\",\"date\":\"today\",\"ref\":\"fixture\"}": [
+    "status: tokens.sample is stable without an owner sign-off"
+  ],
+  "status:{\"by\":\"planner\",\"date\":\"2026-10-23\",\"ref\":\"fixture\"}": [
+    "status: tokens.sample is stable without an owner sign-off"
+  ],
+  "unknown-clause": [
+    "standards: foundry/tokens.sample claims dtcg#types with no evidence",
+    "standards: unknown clause dtcg#types in foundry/tokens.sample"
+  ],
+  "unsafe:\"!important\"": [
+    "contract: foundry/tokens.sample member tokens.sample.default has unsafe CSS text (!important)",
+    "provenance: foundry/tokens.sample originKinds does not summarize its members",
+    "provenance: tokens.sample.default has invalid origin"
+  ],
+  "unsafe:\"/*x*/\"": [
+    "contract: foundry/tokens.sample member tokens.sample.default has unsafe CSS text (/*)",
+    "provenance: foundry/tokens.sample originKinds does not summarize its members",
+    "provenance: tokens.sample.default has invalid origin"
+  ],
+  "unsafe:\"</style>\"": [
+    "contract: foundry/tokens.sample member tokens.sample.default has unsafe CSS text (<)",
+    "provenance: foundry/tokens.sample originKinds does not summarize its members",
+    "provenance: tokens.sample.default has invalid origin"
+  ],
+  "unsafe:\"\\\\3c\"": [
+    "contract: foundry/tokens.sample member tokens.sample.default has unsafe CSS text (\\)",
+    "provenance: foundry/tokens.sample originKinds does not summarize its members",
+    "provenance: tokens.sample.default has invalid origin"
+  ],
+  "unsafe:\"\\u0000\"": [
+    "contract: foundry/tokens.sample member tokens.sample.default has unsafe CSS text (\u0000)",
+    "provenance: foundry/tokens.sample originKinds does not summarize its members",
+    "provenance: tokens.sample.default has invalid origin"
+  ],
+  "unsafe:\"expression(x)\"": [
+    "contract: foundry/tokens.sample member tokens.sample.default has unsafe CSS text (expression()",
+    "provenance: foundry/tokens.sample originKinds does not summarize its members",
+    "provenance: tokens.sample.default has invalid origin"
+  ],
+  "unsafe:\"red;}\"": [
+    "contract: foundry/tokens.sample member tokens.sample.default has unsafe CSS text (;)",
+    "provenance: foundry/tokens.sample originKinds does not summarize its members",
+    "provenance: tokens.sample.default has invalid origin"
+  ],
+  "unsafe:\"red}\"": [
+    "contract: foundry/tokens.sample member tokens.sample.default has unsafe CSS text (})",
+    "provenance: foundry/tokens.sample originKinds does not summarize its members",
+    "provenance: tokens.sample.default has invalid origin"
+  ],
+  "unsafe:\"url(x)\"": [
+    "contract: foundry/tokens.sample member tokens.sample.default has unsafe CSS text (url()",
+    "provenance: foundry/tokens.sample originKinds does not summarize its members",
+    "provenance: tokens.sample.default has invalid origin"
+  ]
+}

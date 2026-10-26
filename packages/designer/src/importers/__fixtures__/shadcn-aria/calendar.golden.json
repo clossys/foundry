@@ -1,0 +1,124 @@
+{
+  "transform": "shadcn-aria-rewrite@1",
+  "notes": [
+    {
+      "file": "apps/v4/registry/bases/aria/ui/calendar.tsx",
+      "value": "[--cell-size:--spacing(7)]",
+      "message": "Restyled source: Restyle28px calendar cell to existing32px small control; local alias remains defined and all references bound."
+    },
+    {
+      "file": "apps/v4/registry/bases/aria/ui/calendar.tsx",
+      "value": "border-0",
+      "message": "Preserved zero border beside the same element token-bound focus outline"
+    },
+    {
+      "file": "apps/v4/registry/bases/aria/ui/calendar.tsx",
+      "value": "cn-calendar-caption",
+      "message": "Removed marker-only class absent from the pinned stylesheet"
+    },
+    {
+      "file": "apps/v4/registry/bases/aria/ui/calendar.tsx",
+      "value": "cn-calendar-day-button",
+      "message": "Removed marker-only class absent from the pinned stylesheet"
+    },
+    {
+      "file": "apps/v4/registry/bases/aria/ui/calendar.tsx",
+      "value": "cn-rtl-flip",
+      "message": "Removed marker-only class absent from the pinned stylesheet"
+    },
+    {
+      "file": "apps/v4/registry/bases/aria/ui/calendar.tsx",
+      "value": "group-data-[focused=true]/day:z-10",
+      "message": "Restyled source: Exact existing layer value; new component read only where absent."
+    },
+    {
+      "file": "apps/v4/registry/bases/aria/ui/calendar.tsx",
+      "value": "leading-none",
+      "message": "Restyled source: Restyle unit line height to existing compact heading line height 1.15; do not alias a font-size-specific 5xl line-height member."
+    },
+    {
+      "file": "apps/v4/registry/bases/aria/ui/calendar.tsx",
+      "value": "text-[0.8rem]",
+      "message": "Restyled source: Restyle 12.8px small control/calendar typography to existing caption 12px; no token value change."
+    },
+    {
+      "file": "apps/v4/registry/bases/aria/ui/calendar.tsx",
+      "value": "z-0",
+      "message": "Restyled source: Exact existing layer value; new component read only where absent."
+    },
+    {
+      "file": "apps/v4/registry/bases/aria/ui/calendar.tsx",
+      "value": "z-10",
+      "message": "Restyled source: Exact existing layer value; new component read only where absent."
+    }
+  ],
+  "files": [
+    {
+      "path": "components/_parts/utils/index.ts",
+      "content": "import { clsx, type ClassValue } from \"clsx\"\nimport { twMerge } from \"tailwind-merge\"\nexport function cn(...inputs: ClassValue[]) { return twMerge(clsx(inputs)) }\n"
+    },
+    {
+      "path": "components/calendar/calendar.tsx",
+      "content": "\"use client\"\n\nimport { Icon as LibraryIcon } from \"../icon/index.js\"\nimport type { ComponentProps as ReactComponentProps, ReactElement as ReactElement, ReactNode as ReactNode, Ref as ReactRef, RefAttributes as ReactRefAttributes } from \"react\"\nimport { forwardRef as ReactForwardRef } from \"react\"\nimport { cva } from \"class-variance-authority\"\nimport { cn } from \"../_parts/utils/index.js\"\nimport {\n  Calendar as AriaCalendar,\n  CalendarGridHeader as AriaCalendarGridHeader,\n  RangeCalendar as AriaRangeCalendar,\n  CalendarCell,\n  CalendarGrid,\n  CalendarGridBody,\n  CalendarHeaderCell,\n  CalendarHeading,\n  CalendarMonthPicker,\n  CalendarYearPicker,\n  type CalendarCellRenderProps,\n  type CalendarProps,\n  type DateValue,\n  type RangeCalendarProps,\n} from \"react-aria-components\"\n\nimport { Button } from \"../button/index.js\"\nimport {\n  Select,\n  SelectContent,\n  SelectGroup,\n  SelectItem,\n  SelectTrigger,\n  SelectValue,\n} from \"../select/index.js\"\nconst cellVariants = cva(\n  \"group/day relative mt-(--spacing-sm) aspect-square h-full w-full cursor-default rounded-(--cell-radius) p-0 text-center select-none [&:is(:last-child>[data-selected=true])>div]:rounded-r-(--cell-radius)\",\n  {\n    variants: {\n      showWeekNumber: {\n        false:\n          \"[&:is(:first-child>[data-selected=true])>div]:rounded-l-(--cell-radius)\",\n        true: \"[&:is(:nth-child(2)>[data-selected=true])>div]:rounded-l-(--cell-radius)\",\n      },\n      isToday: {\n        true: \"rounded-(--cell-radius) bg-(--color-surface-sunken) text-(--color-ink-primary) data-[selected=true]:rounded-none\",\n      },\n      isSelectionStart: {\n        true: \"relative isolate z-(--ui-z-base) rounded-l-(--cell-radius) bg-(--color-surface-sunken) after:absolute after:inset-y-0 after:right-0 after:w-(--spacing-lg) after:bg-(--color-surface-sunken)\",\n      },\n      isSelectionEnd: {\n        true: \"relative isolate z-(--ui-z-base) rounded-r-(--cell-radius) bg-(--color-surface-sunken) after:absolute after:inset-y-0 after:left-0 after:w-(--spacing-lg) after:bg-(--color-surface-sunken)\",\n      },\n      isUnavailable: {\n        true: \"text-(--color-ink-muted) opacity-(--ui-alpha-disabled) [&>div]:line-through\",\n      },\n      isDisabled: {\n        true: \"text-(--color-ink-muted) opacity-(--ui-alpha-disabled)\",\n      },\n      isOutsideMonth: {\n        true: \"text-(--color-ink-muted) aria-selected:text-(--color-ink-muted)\",\n      },\n    },\n  }\n)\n\ntype ConsumerCalendarProps<T extends DateValue, M extends \"single\" | \"multiple\" = \"single\"> = Omit<CalendarProps<T, M>, \"visibleDuration\"> & {\n    buttonVariant?: ReactComponentProps<typeof Button>[\"variant\"]\n    captionLayout?: \"label\" | \"dropdown\"\n    numberOfMonths?: number\n    showWeekNumber?: boolean\n    headerFormat?: Intl.DateTimeFormatOptions\n    renderCell?: (\n      renderProps: CalendarCellRenderProps & {\n        defaultChildren: ReactNode\n      }\n    ) => ReactNode\n  };\nconst Calendar = ReactForwardRef(function Calendar<T extends DateValue, M extends \"single\" | \"multiple\" = \"single\">(\n  props: ConsumerCalendarProps<T, M>, ref: ReactRef<HTMLDivElement>,\n) {\n  return (\n    <AriaCalendar\n      ref={ref}\n      {...props}\n      data-slot=\"calendar\"\n      visibleDuration={{ months: props.numberOfMonths || 1 }}\n      className={state => cn(\n        \"p-(--spacing-sm) [--cell-radius:var(--radius-control)] [--cell-size:var(--ui-control-h-sm)] group/calendar w-fit bg-(--color-surface-base) in-data-[slot=card-content]:bg-transparent in-data-[slot=popover-content]:bg-transparent\",\n        typeof props.className === \"function\" ? props.className(state) : props.className\n      )}\n    >\n      {state => typeof props.children === \"function\" ? props.children({ ...state, defaultChildren: <CalendarInner {...props} /> }) : props.children ?? <CalendarInner {...props} />}\n    </AriaCalendar>\n  )\n\n}) as <T extends DateValue, M extends \"single\" | \"multiple\" = \"single\">(props: ConsumerCalendarProps<T, M> & ReactRefAttributes<HTMLDivElement>) => ReactElement;\ntype ConsumerRangeCalendarProps<T extends DateValue> = RangeCalendarProps<T> & {\n    buttonVariant?: ReactComponentProps<typeof Button>[\"variant\"]\n    captionLayout?: \"label\" | \"dropdown\"\n    headerFormat?: Intl.DateTimeFormatOptions\n    numberOfMonths?: number\n    showWeekNumber?: boolean\n    renderCell?: (\n      renderProps: CalendarCellRenderProps & {\n        defaultChildren: ReactNode\n      }\n    ) => ReactNode\n  };\nconst RangeCalendar = ReactForwardRef(function RangeCalendar<T extends DateValue>(\n  props: ConsumerRangeCalendarProps<T>, ref: ReactRef<HTMLDivElement>,\n) {\n  return (\n    <AriaRangeCalendar\n      ref={ref}\n      {...props}\n      data-slot=\"calendar\"\n      visibleDuration={{ months: props.numberOfMonths || 1 }}\n      className={state => cn(\n        \"p-(--spacing-sm) [--cell-radius:var(--radius-control)] [--cell-size:var(--ui-control-h-sm)] group/calendar w-fit bg-(--color-surface-base) in-data-[slot=card-content]:bg-transparent in-data-[slot=popover-content]:bg-transparent\",\n        typeof props.className === \"function\" ? props.className(state) : props.className\n      )}\n    >\n      {state => typeof props.children === \"function\" ? props.children({ ...state, defaultChildren: <CalendarInner {...props} isRange /> }) : props.children ?? <CalendarInner {...props} isRange />}\n    </AriaRangeCalendar>\n  )\n\n}) as <T extends DateValue>(props: ConsumerRangeCalendarProps<T> & ReactRefAttributes<HTMLDivElement>) => ReactElement;\nfunction CalendarInner({\n  captionLayout = \"label\",\n  buttonVariant = \"ghost\",\n  numberOfMonths = 1,\n  showWeekNumber = false,\n  headerFormat,\n  renderCell,\n  isRange,\n}: {\n  buttonVariant?: ReactComponentProps<typeof Button>[\"variant\"]\n  captionLayout?: \"label\" | \"dropdown\"\n  numberOfMonths?: number\n  showWeekNumber?: boolean\n  headerFormat?: Intl.DateTimeFormatOptions\n  renderCell?: (\n    renderProps: CalendarCellRenderProps & { defaultChildren: ReactNode }\n  ) => ReactNode\n  isRange?: boolean\n}) {\n  return (\n    <div className=\"relative flex flex-col gap-(--spacing-lg) md:flex-row\">\n      <header className=\"absolute inset-x-0 top-0 flex w-full items-center justify-between gap-(--spacing-xs)\">\n        <Button\n          variant={buttonVariant}\n          slot=\"previous\"\n          className=\"size-(--cell-size) p-0 select-none aria-disabled:opacity-(--ui-alpha-disabled)\"\n        >\n          <LibraryIcon asset=\"assets.icon-chevron-left\" className=\"size-(--spacing-lg)\" />\n        </Button>\n        <Button\n          variant={buttonVariant}\n          slot=\"next\"\n          className=\"size-(--cell-size) p-0 select-none aria-disabled:opacity-(--ui-alpha-disabled)\"\n        >\n          <LibraryIcon asset=\"assets.icon-chevron-right\" className=\"size-(--spacing-lg)\" />\n        </Button>\n      </header>\n      {Array.from({ length: numberOfMonths }, (_, i) => (\n        <div key={i} className=\"flex w-full flex-col gap-(--spacing-lg)\">\n          <div className=\"flex h-(--cell-size) w-full items-center justify-center gap-(--spacing-xs) px-(--cell-size)\">\n            {captionLayout === \"dropdown\" ? (\n              <>\n                <MonthDropdown format={headerFormat} />\n                <YearDropdown format={headerFormat} />\n              </>\n            ) : (\n              <CalendarHeading\n                offset={{ months: i }}\n                format={headerFormat}\n                className=\"text-(length:--text-sm) font-(weight:--font-weight-medium) select-none\"\n              />\n            )}\n          </div>\n          <CalendarGrid\n            className=\"w-full border-collapse\"\n            offset={{ months: i }}\n          >\n            <AriaCalendarGridHeader>\n              {(day) => (\n                <CalendarHeaderCell className=\"rounded-(--cell-radius) text-(length:--text-caption) font-(weight:--font-weight-normal) text-(--color-ink-muted) select-none\">\n                  {day}\n                </CalendarHeaderCell>\n              )}\n            </AriaCalendarGridHeader>\n            <CalendarGridBody>\n              {(date) => (\n                <CalendarCell\n                  date={date}\n                  className={(renderProps) =>\n                    cellVariants({ ...renderProps, showWeekNumber })\n                  }\n                >\n                  {(renderProps) => (\n                    <div\n                      data-selected-single={renderProps.isSelected && !isRange}\n                      data-range-start={renderProps.isSelectionStart && isRange}\n                      data-range-end={renderProps.isSelectionEnd && isRange}\n                      data-range-middle={\n                        renderProps.isSelected &&\n                        !renderProps.isSelectionStart &&\n                        !renderProps.isSelectionEnd &&\n                        isRange\n                      }\n                      className={cn(\n                        \"relative isolate z-(--ui-z-sticky) flex aspect-square h-full w-full min-w-(--cell-size) flex-col gap-(--spacing-xs) border-0 leading-(--leading-heading) font-(weight:--font-weight-normal) group-data-[focused=true]/day:relative group-data-[focused=true]/day:z-(--ui-z-sticky) group-data-[focused=true]/day:border-(--color-focus-ring) group-data-[focused=true]/day:outline-solid group-data-[focused=true]/day:outline-(length:--ui-border-focus) group-data-[focused=true]/day:outline-offset-(--ui-focus-offset) group-data-[focused=true]/day:outline-(--color-focus-ring) group-data-[focused=true]/day:outline-solid group-data-[focused=true]/day:outline-(length:--ui-border-focus) group-data-[focused=true]/day:outline-offset-(--ui-focus-offset) group-data-[focused=true]/day:outline-(--color-focus-ring) data-[range-end=true]:rounded-(--cell-radius) data-[range-end=true]:rounded-r-(--cell-radius) data-[range-end=true]:bg-(--color-action) data-[range-end=true]:text-(--color-ink-on-action) data-[range-middle=true]:rounded-none data-[range-middle=true]:bg-(--color-surface-sunken) data-[range-middle=true]:text-(--color-ink-primary) data-[range-start=true]:rounded-(--cell-radius) data-[range-start=true]:rounded-l-(--cell-radius) data-[range-start=true]:bg-(--color-action) data-[range-start=true]:text-(--color-ink-on-action) data-[selected-single=true]:bg-(--color-action) data-[selected-single=true]:text-(--color-ink-on-action) dark:hover:text-(--color-ink-primary) [&>span]:text-(length:--text-xs) [&>span]:opacity-(--ui-alpha-stale)\"\n                      )}\n                    >\n                      {renderCell\n                        ? renderCell(renderProps)\n                        : renderProps.defaultChildren}\n                    </div>\n                  )}\n                </CalendarCell>\n              )}\n            </CalendarGridBody>\n          </CalendarGrid>\n        </div>\n      ))}\n    </div>\n  )\n}\n\nfunction MonthDropdown({ format }: { format?: Intl.DateTimeFormatOptions }) {\n  return (\n    <CalendarMonthPicker format={format?.month}>\n      {(props) => (\n        <Select {...props} className=\"relative\">\n          <SelectTrigger>\n            <SelectValue />\n          </SelectTrigger>\n          <SelectContent className=\"min-w-0\">\n            <SelectGroup>\n              {props.items.map((item) => (\n                <SelectItem key={item.id} id={item.id}>\n                  {item.formatted}\n                </SelectItem>\n              ))}\n            </SelectGroup>\n          </SelectContent>\n        </Select>\n      )}\n    </CalendarMonthPicker>\n  )\n}\n\nfunction YearDropdown({ format }: { format?: Intl.DateTimeFormatOptions }) {\n  return (\n    <CalendarYearPicker format={format}>\n      {(props) => (\n        <Select {...props} className=\"relative\">\n          <SelectTrigger>\n            <SelectValue />\n          </SelectTrigger>\n          <SelectContent className=\"min-w-0\">\n            {props.items.map((item) => (\n              <SelectItem key={item.id} id={item.id}>\n                {item.formatted}\n              </SelectItem>\n            ))}\n          </SelectContent>\n        </Select>\n      )}\n    </CalendarYearPicker>\n  )\n}\n\nexport { Calendar, RangeCalendar }\n"
+    },
+    {
+      "path": "notices/THIRD-PARTY.md",
+      "content": "# Third-party notice\n\nSource: https://github.com/shadcn-ui/ui\nCommit: daaf156ee00ed91cc7e6bdd937c1b4973152d141\nTransform: shadcn-aria-rewrite@1\n\nMIT License\n\nCopyright (c) 2023 shadcn\n\nPermission is hereby granted, free of charge, to any person obtaining a copy\nof this software and associated documentation files (the \"Software\"), to deal\nin the Software without restriction, including without limitation the rights\nto use, copy, modify, merge, publish, distribute, sublicense, and/or sell\ncopies of the Software, and to permit persons to whom the Software is\nfurnished to do so, subject to the following conditions:\n\nThe above copyright notice and this permission notice shall be included in all\ncopies or substantial portions of the Software.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR\nIMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,\nFITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE\nAUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER\nLIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,\nOUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE\nSOFTWARE.\n"
+    }
+  ],
+  "outputSha256": [
+    {
+      "path": "components/_parts/utils/index.ts",
+      "sha256": "d3753f708b15cc1ec47bc3136827134b702e2069eebdb0ddefb1806b95d7c1d9"
+    },
+    {
+      "path": "components/calendar/calendar.tsx",
+      "sha256": "dc0afbbb8cb9a44602ee1e3777e5e532b48491444897f34046bb96e2b28b5a47"
+    },
+    {
+      "path": "notices/THIRD-PARTY.md",
+      "sha256": "6148b3941d0eff3d024e4d3a0e630f009484163560272ae6ec79c649c67fc964"
+    }
+  ],
+  "reads": {
+    "tokens": [
+      "tokens.action-color.default",
+      "tokens.caption-size.default",
+      "tokens.control-radius.default",
+      "tokens.control-size.h-sm",
+      "tokens.focus-color.default",
+      "tokens.focus-outline.offset",
+      "tokens.focus-outline.width",
+      "tokens.font-size.sm",
+      "tokens.font-size.xs",
+      "tokens.font-weight.medium",
+      "tokens.font-weight.normal",
+      "tokens.line-height.heading",
+      "tokens.spacing.lg",
+      "tokens.spacing.sm",
+      "tokens.spacing.xs",
+      "tokens.state-opacity.disabled",
+      "tokens.state-opacity.stale",
+      "tokens.surface-color.base",
+      "tokens.surface-color.sunken",
+      "tokens.text-color.muted",
+      "tokens.text-color.on-action",
+      "tokens.text-color.primary",
+      "tokens.z-index.base",
+      "tokens.z-index.sticky"
+    ],
+    "assets": [
+      "assets.icon-chevron-left",
+      "assets.icon-chevron-right"
+    ],
+    "components": [
+      "components.button",
+      "components.icon",
+      "components.select"
+    ]
+  },
+  "parts": [
+    "utils"
+  ],
+  "issues": []
+}

@@ -1,0 +1,61 @@
+{
+  "$extensions": {
+    "com.clossys.fill": {
+      "author": "foundry",
+      "builtOn": [],
+      "conforms": [],
+      "evidence": [],
+      "id": "foundry/sections.comparison",
+      "license": "MIT",
+      "mode": "implementation",
+      "originKinds": [
+        "adopted"
+      ],
+      "pin": {
+        "export": "./blocks#Matrix",
+        "package": "@clossys/designer",
+        "version": "0.12.0"
+      },
+      "relation": "same-contract",
+      "slot": "sections.comparison",
+      "source": "foundry",
+      "sourceAddress": "./blocks#Matrix",
+      "status": "draft",
+      "trust": "foundry"
+    }
+  },
+  "sections": {
+    "comparison": {
+      "configs": {
+        "arrangement": "grid"
+      },
+      "impl": {
+        "export": "Matrix",
+        "kind": "package",
+        "module": "@clossys/designer/blocks"
+      },
+      "license": "MIT",
+      "notes": [
+        "The exported Matrix preserves Matrix arrangement=grid for authored comparison cells and arrangement=choices for content-sized native RadioGroup rows. Choices accepts one or more library columns and unbounded leaf rows without an internal scroll region.",
+        "The explicit library-board configuration selects LibraryBoardSection typed columns, rows and controls records through LIBRARY_BOARD_CONFIG; its canonical member is arrangement.library-board. Grid remains the existing literal. Selected runtime qualification remains separate.",
+        "The choices assembly consumes SectionHeader, RadioGroup, Card, Badge, Tooltip and token-backed table layout; Studio supplies checked token, asset or component previews.",
+        "Descriptor only; source imports, token reads, shared anatomy, accessibility, contrast and consumer runtime conformance are unmeasured. Content bindings describe host adaptation points, not type-equivalent converters."
+      ],
+      "parts": [],
+      "pin": {
+        "export": "./blocks#Matrix",
+        "package": "@clossys/designer",
+        "version": "0.12.0"
+      },
+      "propMap": {},
+      "slot": "sections.comparison",
+      "slotMap": {
+        "columns": "./blocks#Matrix.columns",
+        "controls": "./blocks#Matrix.records.controls",
+        "highlight": "./blocks#Matrix.featured",
+        "rows": "./blocks#Matrix.rows"
+      },
+      "source": "foundry"
+    }
+  }
+}

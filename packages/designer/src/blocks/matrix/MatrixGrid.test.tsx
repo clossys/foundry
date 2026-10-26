@@ -217,3 +217,18 @@ describe("Matrix unchanged sides", () => {
     expect(createHash("sha256").update(JSON.stringify(records)).digest("hex")).toBe("8120b98c4b9fecf4c87bf90943ffa74e6aeddc406a48f72f71aa4d1a5e169a41");
   });
 });
+
+it("S4-6 preserves the grid table root, authored attributes and row heading outline", () => {
+  let clicks = 0;
+  const { container } = render(<Matrix {...grid()} id="grid" dir="rtl" data-host="yes" className="authored-grid" style={{ marginTop: 7 }} onClick={() => clicks++} />);
+  const root = container.firstElementChild as HTMLElement;
+  expect(root.tagName).toBe("TABLE");
+  expect(root).toHaveAttribute("id", "grid");
+  expect(root).toHaveAttribute("dir", "rtl");
+  expect(root).toHaveAttribute("data-host", "yes");
+  expect(root).toHaveClass("authored-grid");
+  expect(root.style.marginTop).toBe("7px");
+  expect(root.querySelectorAll("[data-designer-section-frame]")).toHaveLength(0);
+  expect(root.querySelectorAll("#grid")).toHaveLength(0);
+  root.click(); expect(clicks).toBe(1);
+});

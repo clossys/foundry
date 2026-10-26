@@ -1,12 +1,12 @@
 /**
  * @clossys/designer/charts — dependency-free SVG chart primitives. This
- * is a SIBLING layer to `atoms → blocks → views`, not another rung of that
+ * is a SIBLING layer to `components → blocks → views`, not another rung of that
  * composition ladder (the same way `shell` sits beside `views` rather than
  * above it — see this package's README, "Placement rules"): charts are a
  * distinct domain with their own primitives (marks, scales, a plot
  * coordinate space), not UI built by composing buttons and fields. `charts`
- * may import from `atoms` (its color-var and `cx` helpers); nothing in
- * `atoms`, `blocks`, `views`, or `shell` imports from `charts` — see
+ * may import from `components` (its color-var and `cx` helpers); nothing in
+ * `components`, `blocks`, `views`, or `shell` imports from `charts` — see
  * `src/ladder.test.ts`.
  *
  * No charting library is a dependency here — every mark is a hand-drawn
@@ -22,8 +22,8 @@
  *
  * The scale helpers and color-slot assignment (`internal/scale.ts`,
  * `internal/chart-vars.ts`) are deliberately NOT exported here, the same
- * way `atoms/internal/cx.ts` and `atoms/internal/ui-vars.ts` never appear
- * in `atoms/index.ts` — this layer ships ten components, not a general
+ * way `components/internal/cx.ts` and `components/internal/ui-vars.ts` never appear
+ * in `components/index.ts` — this layer ships ten components, not a general
  * numerical/color library.
  */
 
@@ -32,11 +32,11 @@ import { assertPeerVersion } from "../internal/peer-version.js";
 import { REACT_DECLARED_RANGE } from "../internal/declared-peer-ranges.js";
 
 /**
- * `react` is one of this package's optional peers — see `atoms/index.ts`'s
+ * `react` is one of this package's optional peers — see `components/index.ts`'s
  * own, longer version of this comment for the full #182 rationale. Charts
  * do not use `react-aria-components` at all (no charting library
  * dependency, per this file's own header above), so this barrel only
- * needs the `react` guard, independent of `atoms/index.ts`'s: a consumer
+ * needs the `react` guard, independent of `components/index.ts`'s: a consumer
  * who imports only `@clossys/designer/charts` would otherwise get no
  * signal at all.
  */

@@ -261,11 +261,13 @@ describe("R2 foundations exact shared-token contract", () => {
   it("adds exactly the prescribed 29 to the immutable 188, without renaming legacy identities", () => {
     expect(legacyProperties).toHaveLength(188);
     expect(Object.keys(expectedNew)).toHaveLength(29);
-    const expected = [...legacyProperties, ...Object.keys(expectedNew)].sort();
+    const actionProperties = ["--color-action", "--color-action-hover", "--color-action-pressed", "--color-action-on-inverse", "--color-action-on-inverse-hover", "--color-ink-on-action"];
+    const dockProperties = ["--ui-layout-dock-min-block", "--ui-layout-dock-default-block", "--ui-layout-dock-max-block"];
+    const expected = [...legacyProperties, ...Object.keys(expectedNew), ...actionProperties, ...dockProperties].sort();
     expect(Object.keys(TOKENS).sort()).toEqual(expected);
     expect([...root.keys()].sort()).toEqual(expected);
-    expect(expected).toHaveLength(217);
-    expect(TOKEN_FAMILIES).toHaveLength(31);
+    expect(expected).toHaveLength(226);
+    expect(TOKEN_FAMILIES).toHaveLength(32);
   });
 
   it.each(Object.entries(expectedNew))("declares %s with its assigned role and theme-invariant default", (property, [value, family]) => {

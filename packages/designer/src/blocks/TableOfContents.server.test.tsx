@@ -81,7 +81,7 @@ describe("server TableOfContents", () => {
   it("keeps the client file, hooks and react-aria-components out of the server module graph", () => {
     const source = readFileSync(resolve(import.meta.dirname, "TableOfContents.server.tsx"), "utf8");
     const runtimeImports = [...source.matchAll(/^import\s+(?!type\b)[^;]*from\s+"([^"]+)"/gm)].map(match => match[1]);
-    expect(runtimeImports.sort()).toEqual(["../atoms/internal/cx.js", "../atoms/internal/ui-vars.js", "../internal/brandmark.js"]);
+    expect(runtimeImports.sort()).toEqual(["../components/internal/cx.js", "../components/internal/ui-vars.js", "../internal/brandmark.js"]);
     expect(source).not.toMatch(/react-aria-components|IntersectionObserver|useEffect|useState|"use client"/);
   });
 });

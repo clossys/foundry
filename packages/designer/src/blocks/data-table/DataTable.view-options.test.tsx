@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { render, screen, within, waitFor } from "@testing-library/react";
+import { act, render, screen, within, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { DataTable, type DataTableColumn } from "../DataTable.js";
 import type { DataTableMessages } from "./messages.js";
@@ -39,7 +39,12 @@ function Harness({ initial = view(), changed = (_next: DataTableViewModel) => {}
     onModelChange={next => { changed(next); setModel(next); }} expandedGroupKeys={expanded} onExpandedGroupKeysChange={setExpanded} />{children}</>;
 }
 function media(wide: boolean) {
-  vi.stubGlobal("matchMedia", vi.fn((query: string) => ({ matches: wide, media: query, addEventListener: vi.fn(), removeEventListener: vi.fn(), addListener: vi.fn(), removeListener: vi.fn(), dispatchEvent: vi.fn() })));
+  const listeners = new Set<() => void>();
+  vi.stubGlobal("matchMedia", vi.fn((query: string) => ({ get matches() { return wide; }, media: query,
+    addEventListener: (_event: string, listener: () => void) => listeners.add(listener),
+    removeEventListener: (_event: string, listener: () => void) => listeners.delete(listener),
+    addListener: vi.fn(), removeListener: vi.fn(), dispatchEvent: vi.fn() })));
+  return (next: boolean) => { wide = next; for (const listener of [...listeners]) listener(); };
 }
 beforeEach(() => media(true));
 afterEach(() => { vi.unstubAllGlobals(); document.documentElement.removeAttribute("data-theme"); });
@@ -192,10 +197,46 @@ describe("DataTable View options", () => {
     screen.getByRole("button", { name: /Remove filter Tags/ }).focus(); await user.keyboard(" ");
     expect(changed.mock.lastCall![0].table.filters).toEqual([]); expect(screen.getByText("Beta")).toBeInTheDocument();
   });
-  it("uses the existing bottom sheet on small screens and restores focus on dismissal", async () => {
+  it("S2-3 uses a named bottom-aligned full-width modal with contained focus and both dismissal paths", async () => {
     media(false); const user = userEvent.setup(); render(<Harness />); const trigger = screen.getByRole("button", { name: "View options" });
-    const dialog = await open(user); expect(dialog.querySelector('[data-drawer-placement="bottom"][data-drawer-wide="sheet"]')).toBeInTheDocument();
-    await user.click(within(dialog).getByRole("button", { name: "Close view options" })); await waitFor(() => expect(trigger).toHaveFocus());
+    const dialog = await open(user);
+    expect(dialog.parentElement).toHaveClass("w-full", "max-w-none");
+    expect(dialog.parentElement!.parentElement).toHaveClass("items-end", "p-0");
+    expect(within(dialog).getByRole("heading", { name: "View options", level: 2 })).toBeInTheDocument();
+    expect(dialog).toHaveAccessibleName("View options");
+    for (let index = 0; index < 18; index++) {
+      await user.tab();
+      expect(dialog.contains(document.activeElement)).toBe(true);
+    }
+    const closeButton = within(dialog).getByRole("button", { name: "Close view options" });
+    within(dialog).getByRole("button", { name: "Move column Tags earlier" }).focus();
+    await user.tab();
+    expect(dialog.contains(document.activeElement)).toBe(true);
+    closeButton.focus();
+    await user.tab({ shift: true });
+    expect(dialog.contains(document.activeElement)).toBe(true);
+    await user.click(closeButton); await waitFor(() => expect(trigger).toHaveFocus());
+    expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "View options" })).toBe(trigger);
+    await open(user);
+    await user.keyboard("{Escape}");
+    await waitFor(() => expect(trigger).toHaveFocus());
+    expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+  });
+  it.each([true, false])("S2-3 keeps one usable named dialog across a responsive change from wide=%s", async wide => {
+    const resize = media(wide);
+    const user = userEvent.setup(); render(<Harness />);
+    await open(user);
+    act(() => resize(!wide));
+    const dialog = await screen.findByRole("dialog", { name: "View options" });
+    expect(screen.getAllByRole("dialog")).toHaveLength(1);
+    const control = within(dialog).getByRole("checkbox", { name: "Group by Team" });
+    await user.click(control);
+    expect(control).toBeChecked();
+    expect(control).toHaveFocus();
+    await user.keyboard("{Escape}");
+    expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "View options" })).toBeEnabled();
   });
   it.each(["light", "dark"])("uses the same controls and token surfaces in %s theme", async theme => {
     document.documentElement.dataset.theme = theme; const user = userEvent.setup(); render(<Harness />); const dialog = await open(user);
@@ -264,6 +305,10 @@ describe("DataTable view edge cases", () => {
     expect(screen.getByText("Nothing here")).toBeInTheDocument();
     rendered.rerender(<DataTable {...props} model={view({ table: filtered, mode: "pivot" })} isLoading loadingRowCount={2} />);
     expect(screen.getAllByRole("row")).toHaveLength(3);
+    expect(screen.queryByText("Alpha")).not.toBeInTheDocument();
+    expect(screen.queryByText("Nothing here")).not.toBeInTheDocument();
+    rendered.rerender(<DataTable {...props} model={view({ mode: "pivot" })} messages={{ pivotEmptyLabel: "Choose pivot fields" }} />);
+    expect(screen.getByRole("heading", { name: "Choose pivot fields", level: 2 })).toBeInTheDocument();
     rendered.rerender(<DataTable {...props} model={view({ mode: "pivot", table: { ...table, filters: [{ column: "tags", kind: "tags", op: "any", values: ["urgent"] }], pivot: { rows: [{ column: "region" }], columns: [{ column: "team" }] } } })} />);
     const total = screen.getAllByRole("row").find(row => within(row).queryByRole("rowheader", { name: "Total" }))!;
     expect(within(total).getByText("40")).toBeInTheDocument(); expect(within(total).queryByText("60")).not.toBeInTheDocument();

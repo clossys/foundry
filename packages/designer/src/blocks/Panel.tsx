@@ -1,6 +1,6 @@
 import type { ReactNode } from "react";
-import { Card, type CardProps } from "../atoms/Card.js";
-import { cx } from "../atoms/internal/cx.js";
+import { Card, type CardProps } from "../components/Card.js";
+import { cx } from "../components/internal/cx.js";
 
 export interface PanelProps extends Omit<CardProps, "header" | "children" | "variant"> {
   /** Optional leading controls or heading, inside the panel surface. */

@@ -3,10 +3,10 @@ import * as Icons from "./index.js";
 
 /**
  * Data-shape checks for the 40 shipped glyphs — this directory's own
- * concern is that the DATA is well-formed (see `atoms/Icon.test.tsx` for
+ * concern is that the DATA is well-formed (see `components/Icon.test.tsx` for
  * rendering/accessibility/colour-contract coverage, which now lives with
  * the render contract rather than here, per this package's ladder: `icons`
- * is pure data below `atoms`, and never renders anything itself).
+ * is pure data below `components`, and never renders anything itself).
  */
 const glyphEntries = Object.entries(Icons) as [string, unknown][];
 

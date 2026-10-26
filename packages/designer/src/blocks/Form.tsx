@@ -8,10 +8,10 @@ import {
   type ReactNode,
   type RefObject,
 } from "react";
-import { Link } from "../atoms/Link.js";
-import { cx } from "../atoms/internal/cx.js";
-import { actionRowClassName } from "../atoms/internal/action-row.js";
-import { UI_RING_FOCUS } from "../atoms/internal/ui-vars.js";
+import { Link } from "../components/Link.js";
+import { cx } from "../components/internal/cx.js";
+import { actionRowClassName } from "../components/internal/action-row.js";
+import { UI_RING_FOCUS } from "../components/internal/ui-vars.js";
 
 export interface FormError {
   /**
@@ -219,7 +219,7 @@ export function Form({
   // primitive, so it gets no `isFocusVisible` render prop of its own the
   // way `Button`'s ring does — this local state stands in for it, so the
   // ring still only shows a real `var(--ui-ring-focus)` token (with the
-  // same real fallback every other atom's own ring uses), never a bare
+  // same real fallback every other component's own ring uses), never a bare
   // `var()` with no fallback.
   const [summaryFocused, setSummaryFocused] = useState(false);
 

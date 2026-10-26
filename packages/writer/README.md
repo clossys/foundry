@@ -1193,12 +1193,12 @@ package's own CLI sources.
 
 `@example/copy` (now `writer`) has terms (a glossary) and entries
 (single addressable strings) and nothing between them. `@clossys/designer`
-has tokens, atoms, **and blocks**. In practice nobody reuses one string —
+has tokens, components, **and blocks**. In practice nobody reuses one string —
 they reuse a whole empty-state (title + body + action), a whole FAQ item
 (question + answer), a whole error (message + recovery). `Passage`
 (`passage.ts`) is that missing middle: it composes entry/term REFERENCES
-the way a block composes atoms, never a raw sentence of its own. Terms ≈
-tokens, entries ≈ atoms, passages ≈ blocks; documents (a later,
+the way a block composes components, never a raw sentence of its own. Terms ≈
+tokens, entries ≈ components, passages ≈ blocks; documents (a later,
 composition-layer concern, mirroring how a view composes blocks) are out
 of scope here — see [issue #373](https://github.com/clossys/foundry/issues/373).
 

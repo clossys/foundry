@@ -1,5 +1,5 @@
 import type { CSSProperties, ElementType, ReactNode } from "react";
-import { Card } from "../../atoms/Card.js";
+import { Card } from "../../components/Card.js";
 import { CardLinkTitle, type CardLinkFrame } from "../stretched-link.js";
 import type { SectionGround } from "../section-ground.js";
 

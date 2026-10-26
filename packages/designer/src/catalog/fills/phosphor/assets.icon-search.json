@@ -1,0 +1,54 @@
+{
+  "$extensions": {
+    "com.clossys.fill": {
+      "id": "phosphor/assets.icon-search",
+      "slot": "assets.icon-search",
+      "source": "phosphor",
+      "mode": "implementation",
+      "sourceAddress": "https://raw.githubusercontent.com/phosphor-icons/core/fe23e2534cdb7bec24bd8e6bd99b3676bcf0d54f/raw/regular/magnifying-glass.svg",
+      "relation": "same-contract",
+      "builtOn": [],
+      "conforms": [],
+      "evidence": [],
+      "author": "third-party",
+      "trust": "pinned-upstream",
+      "license": "MIT",
+      "pin": {
+        "url": "https://raw.githubusercontent.com/phosphor-icons/core/fe23e2534cdb7bec24bd8e6bd99b3676bcf0d54f/raw/regular/magnifying-glass.svg",
+        "commit": "fe23e2534cdb7bec24bd8e6bd99b3676bcf0d54f",
+        "sha256": "e452276c3688e173398bf25c798c5a65bdee08616fe119a0e4fae0e41c3b32f5"
+      },
+      "status": "draft",
+      "reads": {
+        "tokens": [],
+        "assets": []
+      }
+    }
+  },
+  "assets": {
+    "icon-search": {
+      "default": {
+        "$type": "glyph",
+        "$value": [
+          [
+            "circle",
+            {
+              "cx": "10.5",
+              "cy": "10.5",
+              "r": "7.5"
+            }
+          ],
+          [
+            "line",
+            {
+              "x1": "15.8034375",
+              "y1": "15.8034375",
+              "x2": "21",
+              "y2": "21"
+            }
+          ]
+        ]
+      }
+    }
+  }
+}

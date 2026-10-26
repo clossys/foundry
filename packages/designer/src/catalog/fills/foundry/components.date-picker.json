@@ -1,0 +1,128 @@
+{
+  "$extensions": {
+    "com.clossys.fill": {
+      "author": "foundry",
+      "builtOn": [
+        "components.calendar",
+        "components.date-field",
+        "components.popover"
+      ],
+      "conforms": [],
+      "evidence": [],
+      "id": "foundry/components.date-picker",
+      "license": "MIT",
+      "mode": "implementation",
+      "originKinds": [
+        "composed"
+      ],
+      "relation": "same-contract",
+      "slot": "components.date-picker",
+      "source": "foundry",
+      "sourceAddress": "rules/components.date-picker.json#compose:date-picker@1",
+      "status": "draft",
+      "trust": "foundry"
+    }
+  },
+  "components": {
+    "date-picker": {
+      "composes": [
+        "components.calendar",
+        "components.date-field",
+        "components.popover"
+      ],
+      "deps": [
+        {
+          "license": "MIT",
+          "name": "react",
+          "version": ">=18"
+        },
+        {
+          "license": "Apache-2.0",
+          "name": "react-aria-components",
+          "version": "^1.19.0"
+        }
+      ],
+      "impl": {
+        "entry": "components/date-picker/date-picker.tsx",
+        "export": "DatePicker",
+        "kind": "source"
+      },
+      "license": "MIT",
+      "members": [
+        "selection.single",
+        "selection.range"
+      ],
+      "notice": "notices/date-picker.md",
+      "outputSha256": [
+        {
+          "path": "components/date-picker/date-picker.tsx",
+          "sha256": "c3115d91c85513bc3c3f2f9caa1aa4ecbb980d6c1b8986280acf9348f0172e4a"
+        },
+        {
+          "path": "notices/date-picker.md",
+          "sha256": "423ef3c3d3464e72ffb4b06c77815b3353e84ef1feb56413a38e252c969d50ff"
+        }
+      ],
+      "propMap": {
+        "selection.range": "DateRangePicker",
+        "selection.single": "DatePicker"
+      },
+      "props": [
+        "label",
+        "triggerLabel",
+        "description",
+        "errorMessage",
+        "children",
+        "startLabel",
+        "endLabel",
+        "id",
+        "className",
+        "style",
+        "aria-label",
+        "aria-labelledby",
+        "aria-describedby",
+        "value",
+        "defaultValue",
+        "onChange",
+        "validate",
+        "validationBehavior",
+        "isInvalid",
+        "isDisabled",
+        "isReadOnly",
+        "isRequired",
+        "granularity",
+        "minValue",
+        "maxValue",
+        "placeholderValue",
+        "hideTimeZone",
+        "hourCycle",
+        "shouldForceLeadingZeros",
+        "isOpen",
+        "defaultOpen",
+        "onOpenChange",
+        "onFocus",
+        "onBlur",
+        "onFocusChange",
+        "onKeyDown",
+        "onKeyUp",
+        "autoFocus",
+        "name",
+        "form"
+      ],
+      "reads": {
+        "assets": [
+          "assets.icon-date"
+        ],
+        "components": [
+          "components.calendar",
+          "components.date-field",
+          "components.popover"
+        ],
+        "tokens": []
+      },
+      "root": "rac:DatePicker",
+      "slot": "components.date-picker",
+      "source": "foundry"
+    }
+  }
+}

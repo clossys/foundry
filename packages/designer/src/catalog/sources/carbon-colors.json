@@ -1,0 +1,15 @@
+{
+  "author": "third-party",
+  "homepage": "https://www.carbondesignsystem.com/building-blocks/data-visualization/color-palettes",
+  "id": "carbon-colors",
+  "kind": "external",
+  "license": "Apache-2.0",
+  "pin": {
+    "commit": "6568a3389c2a82348c693b167b511dea66b7b269",
+    "file": "packages/colors/src/colors.js",
+    "package": "@carbon/colors",
+    "sha256": "20b19b199cc0b77d6f49c626e2eb03fb48f02f2d2282a7291d93644242d644ef",
+    "url": "https://github.com/carbon-design-system/carbon/blob/6568a3389c2a82348c693b167b511dea66b7b269/packages/colors/src/colors.js",
+    "version": "11.37.0"
+  }
+}

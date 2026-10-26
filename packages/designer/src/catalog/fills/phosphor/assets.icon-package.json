@@ -1,0 +1,58 @@
+{
+  "$extensions": {
+    "com.clossys.fill": {
+      "id": "phosphor/assets.icon-package",
+      "slot": "assets.icon-package",
+      "source": "phosphor",
+      "mode": "implementation",
+      "sourceAddress": "https://raw.githubusercontent.com/phosphor-icons/core/fe23e2534cdb7bec24bd8e6bd99b3676bcf0d54f/raw/regular/cube.svg",
+      "relation": "same-contract",
+      "builtOn": [],
+      "conforms": [],
+      "evidence": [],
+      "author": "third-party",
+      "trust": "pinned-upstream",
+      "license": "MIT",
+      "pin": {
+        "url": "https://raw.githubusercontent.com/phosphor-icons/core/fe23e2534cdb7bec24bd8e6bd99b3676bcf0d54f/raw/regular/cube.svg",
+        "commit": "fe23e2534cdb7bec24bd8e6bd99b3676bcf0d54f",
+        "sha256": "6d1dd0b962deefa66c1b05951396f4a5346580941e5af395c83d9f7ad7edcc1b"
+      },
+      "status": "draft",
+      "reads": {
+        "tokens": [],
+        "assets": []
+      }
+    }
+  },
+  "assets": {
+    "icon-package": {
+      "default": {
+        "$type": "glyph",
+        "$value": [
+          [
+            "polyline",
+            {
+              "points": "3.065625 7.21125 12 12.10125 20.934375 7.21125"
+            }
+          ],
+          [
+            "path",
+            {
+              "d": "M 12.36 2.34375 l 8.25 4.516875 a 0.75 0.75 0 0 1 0.39 0.65625 v 8.96625 a 0.75 0.75 0 0 1 -0.39 0.65625 l -8.25 4.516875 a 0.75 0.75 0 0 1 -0.72 0 l -8.25 -4.516875 a 0.75 0.75 0 0 1 -0.39 -0.65625 V 7.516875 a 0.75 0.75 0 0 1 0.39 -0.65625 l 8.25 -4.516875 A 0.75 0.75 0 0 1 12.36 2.34375 Z"
+            }
+          ],
+          [
+            "line",
+            {
+              "x1": "12",
+              "y1": "12.1021875",
+              "x2": "12",
+              "y2": "21.75"
+            }
+          ]
+        ]
+      }
+    }
+  }
+}

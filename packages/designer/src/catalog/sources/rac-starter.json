@@ -1,0 +1,13 @@
+{
+  "id": "rac-starter",
+  "kind": "external",
+  "author": "third-party",
+  "license": "Apache-2.0",
+  "pin": {
+    "url": "https://github.com/adobe/react-spectrum",
+    "commit": "4dd44e0f400636a87a9ad4390903e78c5ae6113c",
+    "file": "starters/tailwind/package.json",
+    "sha256": "958aa1f722e1ccc670089376c82a8c730e0fbcc28ba7dc225c5fa4664d387923"
+  },
+  "homepage": "https://react-spectrum.adobe.com/react-aria/"
+}

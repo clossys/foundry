@@ -360,7 +360,12 @@ describe("LegalView dates", () => {
     const html = render(legalDoc("terms"));
     const start = mode === "self-chromed" ? html.indexOf("<main") : html.indexOf("<div", html.indexOf("<main"));
     const mainTag = html.slice(start, html.indexOf(">", start) + 1);
-    expect(mainTag).toContain("max-width:var(--ui-width-prose-max, none)");
+    if (mode === "self-chromed") {
+      expect(mainTag).toContain("max-w-[var(--ui-width-prose-max,none)]");
+      expect(mainTag).not.toContain("max-width:");
+    } else {
+      expect(mainTag).toContain("max-width:var(--ui-width-prose-max, none)");
+    }
   });
 
   const badLocales: Array<[string, unknown]> = [

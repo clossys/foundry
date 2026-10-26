@@ -1,0 +1,55 @@
+{
+  "$extensions": {
+    "com.clossys.fill": {
+      "id": "phosphor/assets.icon-layers",
+      "slot": "assets.icon-layers",
+      "source": "phosphor",
+      "mode": "implementation",
+      "sourceAddress": "https://raw.githubusercontent.com/phosphor-icons/core/fe23e2534cdb7bec24bd8e6bd99b3676bcf0d54f/raw/regular/stack.svg",
+      "relation": "same-contract",
+      "builtOn": [],
+      "conforms": [],
+      "evidence": [],
+      "author": "third-party",
+      "trust": "pinned-upstream",
+      "license": "MIT",
+      "pin": {
+        "url": "https://raw.githubusercontent.com/phosphor-icons/core/fe23e2534cdb7bec24bd8e6bd99b3676bcf0d54f/raw/regular/stack.svg",
+        "commit": "fe23e2534cdb7bec24bd8e6bd99b3676bcf0d54f",
+        "sha256": "75d6b03b3c2b3949766fc695725da35cb11e08776934adcb609c07721d23c0e2"
+      },
+      "status": "draft",
+      "reads": {
+        "tokens": [],
+        "assets": []
+      }
+    }
+  },
+  "assets": {
+    "icon-layers": {
+      "default": {
+        "$type": "glyph",
+        "$value": [
+          [
+            "polyline",
+            {
+              "points": "3 16.5 12 21.75 21 16.5"
+            }
+          ],
+          [
+            "polyline",
+            {
+              "points": "3 12 12 17.25 21 12"
+            }
+          ],
+          [
+            "polygon",
+            {
+              "points": "3 7.5 12 12.75 21 7.5 12 2.25 3 7.5"
+            }
+          ]
+        ]
+      }
+    }
+  }
+}

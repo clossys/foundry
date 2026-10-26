@@ -1,5 +1,5 @@
 import type { CSSProperties, HTMLAttributes, ReactNode } from "react";
-import { cx } from "../atoms/internal/cx.js";
+import { cx } from "../components/internal/cx.js";
 import { SectionIntro, type SectionIntroProps } from "./SectionIntro.js";
 import { SECTION_GROUND_CLASSES, type SectionGround } from "./section-ground.js";
 
@@ -26,7 +26,7 @@ export interface HeroProps extends HTMLAttributes<HTMLElement> {
   description?: ReactNode;
   /**
    * Slot for the hero's calls to action — typically one or more `Button`
-   * atoms. Rendered below the description.
+   * components. Rendered below the description.
    */
   actions?: ReactNode;
   /**

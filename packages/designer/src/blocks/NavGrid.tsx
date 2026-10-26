@@ -1,5 +1,5 @@
 import type { CSSProperties, ReactNode } from "react";
-import { Button } from "../atoms/Button.js";
+import { Button } from "../components/Button.js";
 import { CompatNavGrid } from "./items/compat-nav.js";
 
 interface NavGridItemBase {
@@ -21,7 +21,7 @@ export type NavGridItem =
     })
   | (NavGridItemBase & {
       href?: never;
-      /** Renders this card as a real `<button>` (this package's own `Button` atom), fired on activation. */
+      /** Renders this card as a real `<button>` (this package's own `Button` component), fired on activation. */
       onSelect: () => void;
     });
 

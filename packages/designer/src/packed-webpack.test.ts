@@ -12,7 +12,7 @@ const bundlers = ["webpack", "turbopack"] as const;
 
 function clientPage(nodeMutation = false): string {
   return `"use client";
-import { Button } from "@clossys/designer/atoms";
+import { Button } from "@clossys/designer/components";
 import { TokenPreview } from "@clossys/designer/tokens/preview";
 import { contrastRatio, parseBrandDeclarations${nodeMutation ? ", readNodeFile" : ""} } from "@clossys/designer/tokens";
 const parsed = parseBrandDeclarations(":root { --example: #000000; }");

@@ -1,4 +1,6 @@
 import { readFileSync } from "node:fs";
+import { resolve } from "node:path";
+import { I18nProvider } from "react-aria-components";
 import { act } from "react";
 import { fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
@@ -31,6 +33,21 @@ beforeEach(() => {
 afterEach(() => { document.documentElement.dir = ""; vi.unstubAllGlobals(); });
 
 describe("AppNavigation", () => {
+  it("routes real parent and nested links through the host once while preserving native destinations and active state", async () => {
+    const navigate = vi.fn().mockResolvedValue(undefined);
+    render(<AppNavigation tree={tree} activeId="blocks" onNavigate={navigate} />);
+    const nested = screen.getByRole("link", { name: "Blocks" });
+    expect(nested).toHaveAttribute("href", "#blocks");
+    expect(nested).toHaveAttribute("aria-current", "page");
+    await userEvent.click(nested);
+    await waitFor(() => expect(navigate).toHaveBeenCalledExactlyOnceWith("#blocks"));
+    navigate.mockClear();
+    const parent = screen.getByRole("link", { name: "Catalogs" });
+    expect(parent).toHaveAttribute("href", "#catalogs");
+    await userEvent.click(parent);
+    await waitFor(() => expect(navigate).toHaveBeenCalledExactlyOnceWith("#catalogs"));
+  });
+
   it.each([
     [{}, "Open navigation", "Close navigation"],
     [{ openLabel: "Show destinations", closeLabel: "Hide destinations" }, "Show destinations", "Hide destinations"],
@@ -124,12 +141,32 @@ describe("AppNavigation", () => {
     expect(link).toHaveAttribute("href", "#catalogs");
     expect(link).not.toHaveAttribute("aria-expanded");
     expect(link).not.toHaveAttribute("aria-current");
-    expect(link.closest("li")).toHaveAttribute("data-active-ancestor", "true");
+    expect(link.closest("[role=row]")).toHaveAttribute("data-active-ancestor", "true");
+    expect(link.closest("[role=row]")).toHaveAttribute("data-current-ancestor");
+    expect(screen.getByRole("treegrid", { name: "Navigation" })).toContainElement(link);
     expect(disclosure).toHaveAttribute("aria-expanded", "true");
     expect(screen.getByRole("link", { name: "Blocks" })).toHaveAttribute("aria-current", "page");
     await userEvent.click(disclosure);
     expect(screen.queryByRole("link", { name: "Blocks" })).not.toBeInTheDocument();
     expect(screen.getByRole("link", { name: "Catalogs" })).toHaveAttribute("href", "#catalogs");
+  });
+
+  it("uses the existing named 44px target contracts without caller inline sizing", () => {
+    render(<AppNavigation tree={tree} activeId="blocks" />);
+    for (const name of ["Home", "Catalogs", "Blocks"]) {
+      const control = screen.getByRole("link", { name });
+      expect(control).toHaveClass("control-h-md");
+      expect(control).not.toHaveAttribute("style");
+    }
+    const actionControl = screen.getByRole("button", { name: "Actions" });
+    expect(actionControl).toHaveClass("control-h-md");
+    expect(actionControl).not.toHaveAttribute("style");
+    const chevron = screen.getByRole("button", { name: "Collapse Catalogs" });
+    expect(chevron).toHaveClass("icon-control-md");
+    expect(chevron).not.toHaveAttribute("style");
+    const css = readFileSync(resolve(import.meta.dirname, "../../styles/compiled.css"), "utf8");
+    expect(css).toMatch(/\.control-h-md \{[\s\S]*?min-block-size: var\(--ui-control-h-md, var\(--ui-layout-tap-target, 44px\)\)/);
+    expect(css).toMatch(/\.icon-control-md \{\s*inline-size: var\(--ui-layout-tap-target, 44px\);\s*block-size: var\(--ui-layout-tap-target, 44px\)/);
   });
 
   it("expands a new active ancestor and rejects third-level unsafe trees", () => {
@@ -143,35 +180,121 @@ describe("AppNavigation", () => {
     expect(screen.queryByRole("link", { name: "C" })).not.toBeInTheDocument();
   });
 
-  it("supports arrows, Home, End, Enter and Space on visible controls", async () => {
+  it("programmatic parent restoration requirement probe: native parent key follows the focused anchor", async () => {
     render(<AppNavigation tree={tree} activeId="blocks" />);
     const home = screen.getByRole("link", { name: "Home" });
-    const activate = vi.spyOn(home, "click");
-    home.focus();
-    await userEvent.keyboard(" ");
+    const catalogs = screen.getByRole("link", { name: "Catalogs" });
+    const blocks = screen.getByRole("link", { name: "Blocks" });
+    const actionButton = screen.getByRole("button", { name: "Actions" });
+    const activate = vi.fn((event: Event) => event.preventDefault());
+    home.addEventListener("click", activate);
+    act(() => home.focus());
+    await userEvent.keyboard("{Enter}");
     expect(activate).toHaveBeenCalledOnce();
-    await userEvent.keyboard("{End}");
-    expect(screen.getByRole("button", { name: "Actions" })).toHaveFocus();
+    expect(home).toHaveAttribute("href", "#home");
+    await userEvent.keyboard("{ArrowDown}");
+    expect(catalogs).toHaveFocus();
+    await userEvent.keyboard("{ArrowDown}");
+    expect(blocks).toHaveFocus();
+    await userEvent.keyboard("{ArrowDown}");
+    expect(actionButton.closest("[role=row]")).toHaveFocus();
+    await userEvent.tab();
+    expect(actionButton).toHaveFocus();
     await userEvent.keyboard("{Enter} ");
     expect(action).toHaveBeenCalledTimes(2);
-    await userEvent.keyboard("{Home}{ArrowDown}");
-    expect(screen.getByRole("link", { name: "Catalogs" })).toHaveFocus();
-    await userEvent.keyboard("{ArrowDown}");
-    expect(screen.getByRole("button", { name: "Collapse Catalogs" })).toHaveFocus();
+    act(() => blocks.focus());
+    expect(blocks).toHaveFocus();
+    await userEvent.keyboard("{ArrowLeft}");
+    expect(catalogs).toHaveFocus();
+    screen.getByRole("button", { name: "Collapse Catalogs" }).focus();
     await userEvent.keyboard(" ");
     expect(screen.getByRole("button", { name: "Expand Catalogs" })).toHaveFocus();
     await userEvent.keyboard("{ArrowUp}");
-    expect(screen.getByRole("link", { name: "Catalogs" })).toHaveFocus();
+    expect(home).toHaveFocus();
   });
 
-  it.each(["ltr", "rtl"])("uses logical expansion keys in %s", async dir => {
+  it("follows the native Actions to Blocks to parent keyboard path with exact anchor focus", async () => {
+    render(<AppNavigation tree={tree} activeId="blocks" />);
+    const catalogs = screen.getByRole("link", { name: "Catalogs" });
+    const blocks = screen.getByRole("link", { name: "Blocks" });
+    const actionButton = screen.getByRole("button", { name: "Actions" });
+    const activate = vi.fn((event: Event) => event.preventDefault());
+    blocks.addEventListener("click", activate);
+    await userEvent.tab();
+    expect(screen.getByRole("button", { name: "Close navigation" })).toHaveFocus();
+    await userEvent.tab();
+    expect(blocks).toHaveFocus();
+    expect(blocks).toHaveAttribute("href", "#blocks");
+    await userEvent.keyboard("{Enter}");
+    expect(activate).toHaveBeenCalledOnce();
+    await userEvent.keyboard("{ArrowDown}");
+    expect(actionButton.closest("[role=row]")).toHaveFocus();
+    await userEvent.tab();
+    expect(actionButton).toHaveFocus();
+    await userEvent.keyboard("{Enter} ");
+    expect(action).toHaveBeenCalledTimes(2);
+    await userEvent.keyboard("{ArrowUp}");
+    expect(blocks).toHaveFocus();
+    await userEvent.keyboard("{ArrowLeft}");
+    expect(catalogs).toHaveFocus();
+    expect(catalogs).toHaveAttribute("href", "#catalogs");
+  });
+
+  it.each(["ltr", "rtl"])("expands and collapses from actual keyboard entry in %s", async dir => {
     document.documentElement.dir = dir;
-    render(<AppNavigation tree={tree} activeId="home" />);
-    screen.getByRole("button", { name: "Expand Catalogs" }).focus();
+    render(<I18nProvider locale={dir === "rtl" ? "ar" : "en-US"}><AppNavigation tree={tree} activeId="home" /></I18nProvider>);
+    const home = screen.getByRole("link", { name: "Home" });
+    const catalogs = screen.getByRole("link", { name: "Catalogs" });
+    const activate = vi.fn((event: Event) => event.preventDefault());
+    catalogs.addEventListener("click", activate);
+    await userEvent.tab();
+    expect(screen.getByRole("button", { name: "Close navigation" })).toHaveFocus();
+    await userEvent.tab();
+    expect(home).toHaveFocus();
+    await userEvent.keyboard("{ArrowDown}");
+    expect(catalogs).toHaveFocus();
     await userEvent.keyboard(dir === "rtl" ? "{ArrowLeft}" : "{ArrowRight}");
-    expect(screen.getByRole("link", { name: "Blocks" })).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "Blocks" })).toHaveAttribute("href", "#blocks");
+    expect(catalogs).toHaveFocus();
     await userEvent.keyboard(dir === "rtl" ? "{ArrowRight}" : "{ArrowLeft}");
     expect(screen.queryByRole("link", { name: "Blocks" })).not.toBeInTheDocument();
+    expect(catalogs).toHaveFocus();
+    expect(catalogs).toHaveAttribute("href", "#catalogs");
+    await userEvent.keyboard("{Enter}");
+    expect(activate).toHaveBeenCalledOnce();
+  });
+
+  it("Home and End requirement probe: real destination anchor focus reaches the first and last row", async () => {
+    render(<AppNavigation tree={tree} activeId="blocks" />);
+    const home = screen.getByRole("link", { name: "Home" });
+    const blocks = screen.getByRole("link", { name: "Blocks" });
+    act(() => blocks.focus());
+    expect(blocks).toHaveFocus();
+    await userEvent.keyboard("{Home}");
+    expect.soft(home).toHaveFocus();
+    act(() => home.focus());
+    expect(home).toHaveFocus();
+    await userEvent.keyboard("{End}");
+    expect.soft(screen.getByRole("button", { name: "Actions" }).closest("[role=row]")).toHaveFocus();
+  });
+
+  it.each(["ltr", "rtl"])("programmatic expansion requirement probe in %s", async dir => {
+    document.documentElement.dir = dir;
+    render(<I18nProvider locale={dir === "rtl" ? "ar" : "en-US"}><AppNavigation tree={tree} activeId="home" /></I18nProvider>);
+    const catalogs = screen.getByRole("link", { name: "Catalogs" });
+    const activate = vi.fn((event: Event) => event.preventDefault());
+    catalogs.addEventListener("click", activate);
+    act(() => catalogs.focus());
+    expect(catalogs).toHaveFocus();
+    await userEvent.keyboard(dir === "rtl" ? "{ArrowLeft}" : "{ArrowRight}");
+    expect(screen.getByRole("link", { name: "Blocks" })).toHaveAttribute("href", "#blocks");
+    expect(catalogs).toHaveFocus();
+    await userEvent.keyboard(dir === "rtl" ? "{ArrowRight}" : "{ArrowLeft}");
+    expect(screen.queryByRole("link", { name: "Blocks" })).not.toBeInTheDocument();
+    expect(catalogs).toHaveAttribute("href", "#catalogs");
+    expect(catalogs).toHaveFocus();
+    await userEvent.keyboard("{Enter}");
+    expect(activate).toHaveBeenCalledOnce();
   });
 
   it("keeps destinations named on reopening and hands collapsed focus to the corner control", async () => {

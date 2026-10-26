@@ -18,7 +18,7 @@ The whole team is composed in the hub. A repo staffed in an approved plan gets `
 
 1. **Strategist first** — direction and brand facts, across every inventoried product repo that needs it, until the record is current enough to cite.
 2. **Publisher plans** — declare the pack manifest's items and their `needs` (#1204), and draft the surface document each item resolves to: which template, which sections, which copy ids and asset ids, all by reference. A referenced id that does not resolve yet is exactly what pulls Designer and Writer's own work.
-3. **Designer and Writer together** — tokens→atoms→blocks in parallel with copy structure for the referenced ids, for pre-auth pages on `MarketingView`. They propose changes and review renders in their own folders; they do not edit Publisher's surface files. Do not start if Strategist still has no citable direction.
+3. **Designer and Writer together** — tokens→components→blocks in parallel with copy structure for the referenced ids, for pre-auth pages on `MarketingView`. They propose changes and review renders in their own folders; they do not edit Publisher's surface files. Do not start if Strategist still has no citable direction.
 4. **Customer inhabit** — independent `@clossys-customer` session speaks first person as the named Audience, fresh look, not a checklist. Publisher does not inhabit and does not treat render as the keep.
 5. **Publisher seals last** — seal approved surfaces (OG/meta consistency and release proof) only after a keep. Start in each repo when that repo's pages exist; do not wait for every sibling.
 

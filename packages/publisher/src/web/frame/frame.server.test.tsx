@@ -76,6 +76,17 @@ describe("SiteFrame on the server", () => {
     expect(html.lastIndexOf("<footer")).toBeGreaterThan(html.indexOf("</main>"));
     expect(html).toContain("https://example.com/privacy");
   });
+
+  it("renders a host toast viewport after the footer without requiring a browser", () => {
+    const html = renderToStaticMarkup(
+      <SiteFrame shell={siteShellFor(CONFIG, "front-door")} resolveCopy={resolveCopy} resolveAsset={resolveAsset}
+        toasts={<section aria-label="Host notifications"><p role="status">Saved</p></section>}>
+        <p>Route content</p>
+      </SiteFrame>,
+    );
+    expect(html).toMatch(/<\/footer><section aria-label="Host notifications"><p role="status">Saved<\/p><\/section><\/div>$/);
+    expect(html.match(/<main\b/g)).toHaveLength(1);
+  });
 });
 
 describe("frame exports", () => {
@@ -172,10 +183,10 @@ describe("SiteFrame footer placement", () => {
     expect(html).toMatch(/<header[^>]*data-placement="overlay"/);
     expect(html).toMatch(/data-landing-view="" class="[^"]*flex-1/);
     expect(html).toMatch(/data-landing-hero=""[^>]*class="[^"]*flex-1/);
-    expect(html).toMatch(/<div data-frame-root="" class="flex min-h-dvh flex-col" style="position:relative"/);
-    expect(html).toContain('<div data-frame-footer-overlay="" style="display:flex;flex-direction:column;flex-shrink:0;min-width:0;pointer-events:none;z-index:var(--ui-z-sticky, 10)"><footer');
+    expect(html).toMatch(/<div data-frame-root="" class="flex min-h-dvh flex-col relative"/);
+    expect(html).toContain('<div data-frame-footer-overlay="" class="flex flex-col shrink-0 min-w-0 pointer-events-none z-[var(--ui-z-sticky)]"><footer');
     expect(html).toMatch(/<footer[^>]*bg-surface-inverse[^>]*publisher-frame-footer-overlay/);
-    expect(html).toMatch(/<footer[^>]*style="[^"]*pointer-events:auto/);
+    expect(html).toMatch(/<footer[^>]*class="[^"]*pointer-events-auto/);
     expect(html).toMatch(/<header[^>]*z-index:var\(--ui-z-shell, 20\)/);
     expect(html).toContain('href="/privacy"');
     expect(html).not.toContain('tabindex="-1">Privacy');
@@ -186,8 +197,8 @@ describe("SiteFrame footer placement", () => {
   it("fills the overlay viewport width instead of shrink-wrapping legal links", () => {
     const footer = htmlFor("overlay").match(/<footer\b[^>]*>/)?.[0];
     expect(footer).toBeDefined();
-    expect(footer).toContain("width:100%");
-    expect(footer).toContain("pointer-events:auto");
+    expect(footer).toContain("w-full");
+    expect(footer).toContain("pointer-events-auto");
   });
 
   it("refuses multi-band overlay compositions rather than covering a peek or scroll cue", () => {
@@ -200,7 +211,7 @@ describe("SiteFrame footer placement", () => {
     const html = htmlFor("overlay");
     expect(html).not.toContain("safe flex-end");
     expect(html).not.toContain("height:100dvh");
-    expect(html).toMatch(/data-frame-footer-overlay=""[^>]*flex-direction:column/);
+    expect(html).toMatch(/data-frame-footer-overlay=""[^>]*class="[^"]*flex-col shrink-0/);
     expect(html).toMatch(/<footer[^>]*margin-block-start:auto/);
     expect(html).not.toContain("data-landing-cue");
   });

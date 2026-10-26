@@ -1,0 +1,70 @@
+{
+  "$extensions": {
+    "com.clossys.fill": {
+      "id": "lucide/assets.icon-date",
+      "slot": "assets.icon-date",
+      "source": "lucide",
+      "mode": "implementation",
+      "sourceAddress": "lucide-react@1.23.0/dist/esm/icons/calendar.js",
+      "relation": "same-contract",
+      "builtOn": [],
+      "conforms": [],
+      "evidence": [],
+      "author": "third-party",
+      "trust": "pinned-upstream",
+      "license": "ISC",
+      "pin": {
+        "package": "lucide-react",
+        "version": "1.23.0",
+        "file": "src/icons/Calendar.ts",
+        "sha256": "a1e5fc91fbad729410ac3637f2be8a37951ddb30f4a552c5ff9f0b7430fe569a"
+      },
+      "status": "draft",
+      "reads": {
+        "tokens": [],
+        "assets": []
+      }
+    }
+  },
+  "assets": {
+    "icon-date": {
+      "default": {
+        "$type": "glyph",
+        "$value": [
+          [
+            "path",
+            {
+              "d": "M8 2v4",
+              "key": "1cmpym"
+            }
+          ],
+          [
+            "path",
+            {
+              "d": "M16 2v4",
+              "key": "4m81vk"
+            }
+          ],
+          [
+            "rect",
+            {
+              "width": "18",
+              "height": "18",
+              "x": "3",
+              "y": "4",
+              "rx": "2",
+              "key": "1hopcy"
+            }
+          ],
+          [
+            "path",
+            {
+              "d": "M3 10h18",
+              "key": "8toen8"
+            }
+          ]
+        ]
+      }
+    }
+  }
+}

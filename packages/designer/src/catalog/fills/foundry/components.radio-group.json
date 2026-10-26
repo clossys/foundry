@@ -1,0 +1,101 @@
+{
+  "$extensions": {
+    "com.clossys.fill": {
+      "author": "foundry",
+      "builtOn": [],
+      "conforms": [],
+      "evidence": [],
+      "id": "foundry/components.radio-group",
+      "license": "MIT",
+      "mode": "implementation",
+      "pin": {
+        "export": "./components#RadioGroup",
+        "package": "@clossys/designer",
+        "version": "0.12.0"
+      },
+      "relation": "same-contract",
+      "slot": "components.radio-group",
+      "source": "foundry",
+      "sourceAddress": "./components#RadioGroup",
+      "status": "draft",
+      "trust": "foundry"
+    }
+  },
+  "components": {
+    "radio-group": {
+      "composes": [],
+      "deps": [
+        {
+          "license": "MIT",
+          "name": "react",
+          "version": ">=18"
+        },
+        {
+          "license": "MIT",
+          "name": "tailwind-merge",
+          "version": "^3.7.0"
+        },
+        {
+          "license": "Apache-2.0",
+          "name": "react-aria-components",
+          "version": "^1.19.0"
+        }
+      ],
+      "impl": {
+        "export": "RadioGroup",
+        "kind": "package",
+        "module": "@clossys/designer/components"
+      },
+      "license": "MIT",
+      "members": [
+        "orientation.horizontal",
+        "orientation.vertical",
+        "state.invalid"
+      ],
+      "pin": {
+        "export": "./components#RadioGroup",
+        "package": "@clossys/designer",
+        "version": "0.12.0"
+      },
+      "propMap": {
+        "orientation.horizontal": "./components#RadioGroup.orientation=horizontal",
+        "orientation.vertical": "./components#RadioGroup.orientation=vertical",
+        "state.invalid": "./components#RadioGroup.isInvalid"
+      },
+      "props": [
+        "children",
+        "className",
+        "description",
+        "errorMessage",
+        "isInvalid",
+        "label",
+        "orientation"
+      ],
+      "reads": {
+        "assets": [],
+        "components": [],
+        "tokens": [
+          "tokens.accent-color",
+          "tokens.action-color",
+          "tokens.body-size",
+          "tokens.border-color",
+          "tokens.border-width",
+          "tokens.caption-size",
+          "tokens.focus-color",
+          "tokens.focus-outline",
+          "tokens.focus-shadow",
+          "tokens.radius",
+          "tokens.spacing",
+          "tokens.state-opacity",
+          "tokens.status-color",
+          "tokens.surface-color",
+          "tokens.text-color",
+          "tokens.typeface"
+        ]
+      },
+      "root": "rac:RadioGroup",
+      "slot": "components.radio-group",
+      "source": "foundry"
+    }
+  }
+}

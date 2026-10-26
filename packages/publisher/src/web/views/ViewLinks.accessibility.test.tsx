@@ -16,10 +16,14 @@ describe("view link region heading references", () => {
     expect(regions).toHaveLength(2);
     const ids = regions.map(region => {
       const heading = within(region).getByRole("heading", { level: 2, name: "Next destinations" });
-      expect(heading.id).not.toBe("");
-      expect(region).toHaveAttribute("aria-labelledby", heading.id);
+      const targetId = region.getAttribute("aria-labelledby")!;
+      const target = region.ownerDocument.getElementById(targetId);
+      expect(targetId).not.toBe("");
+      expect(target).toContainElement(heading);
+      expect(target?.textContent).toBe("Next destinations");
+      expect(heading).toHaveClass("text-h3", "font-display", "text-ink-primary");
       expect(region).not.toHaveAttribute("aria-label");
-      return heading.id;
+      return targetId;
     });
     expect(new Set(ids).size).toBe(2);
   });
@@ -32,7 +36,7 @@ describe("view link region heading references", () => {
     const ids = regions.map(region => {
       const id = region.getAttribute("aria-labelledby");
       expect(id).toBeTruthy();
-      expect(region.querySelector("h2")?.id).toBe(id);
+      expect(doc.getElementById(id!)?.contains(region.querySelector("h2"))).toBe(true);
       expect(doc.getElementById(id!)?.textContent).toBe("Next destinations");
       expect(region.hasAttribute("aria-label")).toBe(false);
       return id;

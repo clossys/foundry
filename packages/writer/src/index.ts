@@ -244,7 +244,7 @@ export type {
 
 // The PASSAGE LAYER (issue #373) — the missing middle between a single
 // CopyEntry and a whole document: a Passage composes entry/term
-// REFERENCES the way a UI block composes atoms. See passage.ts's top doc
+// REFERENCES the way a UI block composes components. See passage.ts's top doc
 // comment for the full design, the ternary, and what this gate
 // deliberately does not attempt (referential integrity against a real
 // CopyRecord/glossary — a different, later gate).

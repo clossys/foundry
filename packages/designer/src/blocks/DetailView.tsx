@@ -1,5 +1,6 @@
+import { SectionHeader } from "./SectionHeader.js";
 import type { CSSProperties, HTMLAttributes, ReactNode } from "react";
-import { cx } from "../atoms/internal/cx.js";
+import { cx } from "../components/internal/cx.js";
 
 export interface DetailViewField {
   /** The field's name — rendered in a `<dt>`. */
@@ -57,16 +58,10 @@ export function DetailView({ title, fields, actions, className, style, ...rest }
   return (
     <section {...rest} className={cx("flex flex-col gap-md", className)} style={style}>
       {hasHeader ? (
-        <div className="flex flex-wrap items-start justify-between gap-md">
-          {title !== undefined ? (
-            <h2 className="text-h2 font-display text-ink-primary">{title}</h2>
-          ) : null}
-          {actions !== undefined ? (
-            <div className={cx("flex items-center gap-sm", title === undefined ? "ms-auto" : "")}>
-              {actions}
-            </div>
-          ) : null}
-        </div>
+        <SectionHeader density="standard" level={2}
+          {...(title !== undefined ? { title } : {})}
+          actions={actions !== undefined ? <>{actions}</> : undefined}
+        />
       ) : null}
       {/*
        * Responsive: a single full-width column below the `tablet`

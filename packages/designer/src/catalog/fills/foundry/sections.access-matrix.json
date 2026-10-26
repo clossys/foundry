@@ -1,0 +1,55 @@
+{
+  "$extensions": {
+    "com.clossys.fill": {
+      "author": "foundry",
+      "builtOn": [],
+      "conforms": [],
+      "evidence": [],
+      "id": "foundry/sections.access-matrix",
+      "license": "MIT",
+      "mode": "implementation",
+      "originKinds": [
+        "adopted"
+      ],
+      "pin": {
+        "export": "./blocks#AccessMatrix",
+        "package": "@clossys/designer",
+        "version": "0.12.0"
+      },
+      "relation": "same-contract",
+      "slot": "sections.access-matrix",
+      "source": "foundry",
+      "sourceAddress": "./blocks#AccessMatrix",
+      "status": "draft",
+      "trust": "foundry"
+    }
+  },
+  "sections": {
+    "access-matrix": {
+      "configs": {},
+      "impl": {
+        "export": "AccessMatrix",
+        "kind": "package",
+        "module": "@clossys/designer/blocks"
+      },
+      "license": "MIT",
+      "notes": [
+        "Permissions are grouped; the host also supplies value, labels and optional onChange. The source owns a native table rather than a component table leaf.",
+        "Descriptor only; source imports, token reads, shared anatomy, accessibility, contrast and consumer runtime conformance are unmeasured. Content bindings describe host adaptation points, not type-equivalent converters."
+      ],
+      "parts": [],
+      "pin": {
+        "export": "./blocks#AccessMatrix",
+        "package": "@clossys/designer",
+        "version": "0.12.0"
+      },
+      "propMap": {},
+      "slot": "sections.access-matrix",
+      "slotMap": {
+        "permissions": "./blocks#AccessMatrix.groups[].permissions",
+        "roles": "./blocks#AccessMatrix.roles"
+      },
+      "source": "foundry"
+    }
+  }
+}

@@ -31,7 +31,7 @@ const ALL_SOURCE_FILES = collectSourceFiles(packageSrcRoot);
 
 /**
  * Matches BOTH a static `import ... from "specifier"` and a dynamic
- * `import("specifier")` — #749's fix made `atoms/internal/cx.ts` resolve
+ * `import("specifier")` — #749's fix made `components/internal/cx.ts` resolve
  * `tailwind-merge` via a dynamic `import()` (inside a `try`/`catch`,
  * so an absent optional peer degrades instead of throwing; see that
  * file's own header) instead of the static import it used before. A
@@ -67,7 +67,7 @@ function fileCallsAssertPeerVersionFor(relativePath: string, peer: string): bool
 const packageRoot = join(packageSrcRoot, "..");
 const exportsMap = (JSON.parse(readFileSync(join(packageRoot, "package.json"), "utf8")) as { exports: Record<string, { import?: string }> }).exports;
 
-const COMPONENT_LAYER_DIRS = ["atoms", "blocks", "charts", "shell", "theme"] as const;
+const COMPONENT_LAYER_DIRS = ["components", "blocks", "charts", "shell", "theme"] as const;
 
 const COMPONENT_BARRELS = Object.keys(exportsMap)
   .filter((subpath) => COMPONENT_LAYER_DIRS.some((dir) => subpath === `./${dir}` || subpath === `./${dir}/server`))
@@ -125,7 +125,7 @@ describe("peer guard coverage (#182)", () => {
     // The three public barrels that must each independently guard
     // react-aria-components, because each is a separate `exports` subpath
     // a consumer can import without ever loading the others.
-    const guardedBarrels = ["atoms/index.ts", "blocks/index.ts", "shell/index.ts"];
+    const guardedBarrels = ["components/index.ts", "blocks/index.ts", "shell/index.ts"];
     for (const barrel of guardedBarrels) {
       expect(fileCallsAssertPeerVersionFor(barrel, "react-aria-components")).toBe(true);
     }
@@ -149,9 +149,9 @@ describe("peer guard coverage (#182)", () => {
     expect(fileCallsAssertPeerVersionFor("hero-css/compile-consumer-css.ts", "tailwindcss")).toBe(true);
   });
 
-  it("tailwind-merge is imported only from atoms/internal/cx.ts — the one file assertTailwindMergeVersion documents guarding", () => {
+  it("tailwind-merge is imported only from components/internal/cx.ts — the one file assertTailwindMergeVersion documents guarding", () => {
     const importers = filesImporting("tailwind-merge");
-    expect(importers).toEqual(["atoms/internal/cx.ts"]);
+    expect(importers).toEqual(["components/internal/cx.ts"]);
   });
 
   it("react-dom has no adapter import site anywhere in this package's own source — nothing to guard", () => {

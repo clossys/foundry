@@ -1,0 +1,49 @@
+{
+  "$extensions": {
+    "com.clossys.fill": {
+      "id": "phosphor/assets.icon-folder",
+      "slot": "assets.icon-folder",
+      "source": "phosphor",
+      "mode": "implementation",
+      "sourceAddress": "https://raw.githubusercontent.com/phosphor-icons/core/fe23e2534cdb7bec24bd8e6bd99b3676bcf0d54f/raw/regular/folder.svg",
+      "relation": "same-contract",
+      "builtOn": [],
+      "conforms": [],
+      "evidence": [],
+      "author": "third-party",
+      "trust": "pinned-upstream",
+      "license": "MIT",
+      "pin": {
+        "url": "https://raw.githubusercontent.com/phosphor-icons/core/fe23e2534cdb7bec24bd8e6bd99b3676bcf0d54f/raw/regular/folder.svg",
+        "commit": "fe23e2534cdb7bec24bd8e6bd99b3676bcf0d54f",
+        "sha256": "544bd5e88e8eedb2236c2d44a946f4d9488324522f23fb4c7caa3fb8d02103dc"
+      },
+      "status": "draft",
+      "reads": {
+        "tokens": [],
+        "assets": []
+      }
+    }
+  },
+  "assets": {
+    "icon-folder": {
+      "default": {
+        "$type": "glyph",
+        "$value": [
+          [
+            "path",
+            {
+              "d": "M 20.3334375 19.5 H 3.691875 A 0.69375 0.69375 0 0 1 3 18.808125 V 7.5 H 20.25 a 0.75 0.75 0 0 1 0.75 0.75 V 18.8334375 A 0.6665625 0.6665625 0 0 1 20.3334375 19.5 Z"
+            }
+          ],
+          [
+            "path",
+            {
+              "d": "M 3 7.5 V 5.25 a 0.75 0.75 0 0 1 0.75 -0.75 H 8.6896875 a 0.75 0.75 0 0 1 0.5296875 0.219375 L 12 7.5"
+            }
+          ]
+        ]
+      }
+    }
+  }
+}

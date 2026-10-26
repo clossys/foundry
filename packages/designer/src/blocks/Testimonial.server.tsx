@@ -1,6 +1,6 @@
 import type { ReactNode } from "react";
-import { Avatar } from "../atoms/Avatar.server.js";
-import { cx } from "../atoms/internal/cx.js";
+import { Avatar } from "../components/Avatar.server.js";
+import { cx } from "../components/internal/cx.js";
 import type { TestimonialBaseProps, TestimonialProps } from "./Testimonial.js";
 import { SECTION_GROUND_CLASSES, type SectionGround } from "./section-ground.js";
 

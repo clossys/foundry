@@ -163,7 +163,7 @@ interface ConformanceInputs {
 
 function realInputs(): ConformanceInputs {
   return {
-    sources: new Map([...blockSources(), ...blockSources(resolve(packageRoot, "src/atoms"))]),
+    sources: new Map([...blockSources(), ...blockSources(resolve(packageRoot, "src/components"))]),
     css: readFileSync(resolve(packageRoot, "styles/tokens.css"), "utf8"),
     themeKeys: readFileSync(resolve(packageRoot, "styles/theme-keys.css"), "utf8"),
     registrations: BLOCK_THEME_CONFORMANCE,
@@ -205,7 +205,7 @@ function valueExports(file: string, source: string) {
 function ownedDependency(file: string, module: string, sources: ReadonlyMap<string, string>): string | undefined {
   if (!module.startsWith(".")) return;
   const path = posix.normalize(posix.join(posix.dirname(file), module)).replace(/\.js$/, "");
-  if (!/^src\/(?:blocks|atoms)\//.test(path)) return;
+  if (!/^src\/(?:blocks|components)\//.test(path)) return;
   for (const suffix of [".ts", ".tsx"]) if (sources.has(path + suffix)) return path + suffix;
   throw new Error(`${file}: missing owned dependency ${module}`);
 }
@@ -297,7 +297,7 @@ function conformanceFindings(input: ConformanceInputs): string[] {
     const foreground = new Set<string>();
     for (const file of graph) {
       const data = evidence(file);
-      // Atoms retain their existing source rules; their real token roles are
+      // Components retain their existing source rules; their real token roles are
       // included only to prove a Block's delegated contrast registration.
       if (file.startsWith("src/blocks/")) findings.push(...data.findings);
       for (const property of data.tokens) used.add(property);
@@ -353,8 +353,8 @@ describe("Block theme conformance", () => {
     expect(exportedSource("Scene", "src/blocks/index.ts", input.sources)).toBe("src/blocks/scene/Scene.tsx");
     for (const [name, dependency] of [
       ["Items", "src/blocks/items/render.tsx"], ["Specimen", "src/blocks/specimen/parts.tsx"],
-      ["Tree", "src/blocks/tree/policies.ts"], ["ResizablePane", "src/atoms/ResizeHandle.tsx"],
-      ["Panel", "src/atoms/Card.tsx"],
+      ["Tree", "src/blocks/tree/policies.ts"], ["ResizablePane", "src/components/ResizeHandle.tsx"],
+      ["Panel", "src/components/Card.tsx"],
     ]) {
       const entry = input.registrations.find(item => item.exportName === name)!;
       expect(sourceGraph(entry.source, input.sources), name).toContain(dependency);

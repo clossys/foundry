@@ -1,0 +1,63 @@
+{
+  "$extensions": {
+    "com.clossys.fill": {
+      "author": "foundry",
+      "builtOn": [],
+      "conforms": [],
+      "evidence": [],
+      "id": "foundry/sections.band",
+      "license": "MIT",
+      "mode": "implementation",
+      "originKinds": [
+        "adopted"
+      ],
+      "pin": {
+        "export": "./blocks#SectionFrame",
+        "package": "@clossys/designer",
+        "version": "0.12.0"
+      },
+      "relation": "subset",
+      "slot": "sections.band",
+      "source": "foundry",
+      "sourceAddress": "./blocks#SectionFrame",
+      "status": "draft",
+      "trust": "foundry",
+      "unmapped": [
+        "ground.transparent",
+        "axis.rhythm"
+      ]
+    }
+  },
+  "sections": {
+    "band": {
+      "configs": {},
+      "impl": {
+        "export": "SectionFrame",
+        "kind": "package",
+        "module": "@clossys/designer/blocks"
+      },
+      "license": "MIT",
+      "notes": [
+        "SectionGround excludes transparent. Rhythm is fixed in source, with no specified contract member values.",
+        "Descriptor only; source imports, token reads, shared anatomy, accessibility, contrast and consumer runtime conformance are unmeasured. Content bindings describe host adaptation points, not type-equivalent converters."
+      ],
+      "parts": [],
+      "pin": {
+        "export": "./blocks#SectionFrame",
+        "package": "@clossys/designer",
+        "version": "0.12.0"
+      },
+      "propMap": {
+        "ground.base": "./blocks#SectionFrame.ground=base",
+        "ground.inverse": "./blocks#SectionFrame.ground=inverse",
+        "ground.sunken": "./blocks#SectionFrame.ground=sunken",
+        "measure.content": "./blocks#SectionFrame.measure=content",
+        "measure.prose": "./blocks#SectionFrame.measure=prose",
+        "measure.wide": "./blocks#SectionFrame.measure=wide"
+      },
+      "slot": "sections.band",
+      "slotMap": {},
+      "source": "foundry"
+    }
+  }
+}

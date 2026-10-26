@@ -1,6 +1,6 @@
 /**
  * @clossys/designer/theme/server — the server-safe subset of
- * `@clossys/designer/theme`. See `atoms/server.ts`'s own header for the
+ * `@clossys/designer/theme`. See `components/server.ts`'s own header for the
  * full #375 rationale this file shares: `theme/index.ts` re-exports every
  * member eagerly from one module, so `ThemeProvider` (a genuine client
  * context provider, `createContext` at module scope) and `ThemeToggle`
@@ -17,14 +17,14 @@
  * `theme/index.ts` still fails the identical probe.
  *
  * No `react` peer guard here, unlike this package's other server
- * subpaths (`atoms/server.ts`, `blocks/server.ts`, ...):
+ * subpaths (`components/server.ts`, `blocks/server.ts`, ...):
  * `getThemeInitScript` has no runtime dependency on `react` at
  * all (confirmed by grep against `initScript.ts`), so guarding it would
  * add a check this file has nothing to protect.
  *
  * ADDITIVE ONLY: `getThemeInitScript` already ships from
  * `theme/index.ts`. No wildcard subpath, no per-file deep export — see
- * `atoms/server.ts`'s header for why.
+ * `components/server.ts`'s header for why.
  */
 
 export { getThemeInitScript, type ThemeInitScriptOptions } from "./initScript.js";

@@ -1,0 +1,57 @@
+{
+  "$extensions": {
+    "com.clossys.fill": {
+      "author": "foundry",
+      "builtOn": [],
+      "conforms": [],
+      "evidence": [],
+      "id": "foundry/sections.resource-list",
+      "license": "MIT",
+      "mode": "implementation",
+      "originKinds": [
+        "adopted"
+      ],
+      "pin": {
+        "export": "./blocks#ResourceList",
+        "package": "@clossys/designer",
+        "version": "0.12.0"
+      },
+      "relation": "same-contract",
+      "slot": "sections.resource-list",
+      "source": "foundry",
+      "sourceAddress": "./blocks#ResourceList",
+      "status": "draft",
+      "trust": "foundry"
+    }
+  },
+  "sections": {
+    "resource-list": {
+      "configs": {},
+      "impl": {
+        "export": "ResourceList",
+        "kind": "package",
+        "module": "@clossys/designer/blocks"
+      },
+      "license": "MIT",
+      "notes": [
+        "Footer is an arbitrary host region; emptyState is required. Source includes loading, empty and error APIs, but no runtime observations are supplied.",
+        "Descriptor only; source imports, token reads, shared anatomy, accessibility, contrast and consumer runtime conformance are unmeasured. Content bindings describe host adaptation points, not type-equivalent converters."
+      ],
+      "parts": [],
+      "pin": {
+        "export": "./blocks#ResourceList",
+        "package": "@clossys/designer",
+        "version": "0.12.0"
+      },
+      "propMap": {},
+      "slot": "sections.resource-list",
+      "slotMap": {
+        "pagination": "./blocks#ResourceList.footer",
+        "records": "./blocks#ResourceList.items",
+        "selection": "./blocks#ResourceList.selectionMode",
+        "toolbar": "./blocks#ResourceList.toolbar"
+      },
+      "source": "foundry"
+    }
+  }
+}

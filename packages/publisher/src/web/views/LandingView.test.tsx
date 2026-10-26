@@ -136,7 +136,8 @@ describe("LandingView", () => {
 
     const alone = dom({ document: { ...PAGE, sections: [PAGE.sections[0]!] } });
     expect(alone.querySelector("[data-landing-cue]")).toBeNull();
-    expect((alone.querySelector("[data-landing-hero]") as HTMLElement).style.minHeight).toBe("100dvh");
+    expect((alone.querySelector("[data-landing-hero]") as HTMLElement).style.minHeight).toBe("");
+    expect(alone.querySelector("[data-landing-hero]")?.classList.contains("min-h-dvh")).toBe(true);
 
     expect(dom({ document: PAGE, peek: false }).querySelector("[data-landing-cue]")).toBeNull();
     const reserved = dom({ document: PAGE, header: "reserved" });
@@ -567,7 +568,8 @@ describe("LandingView frame fit", () => {
     expect(view.hasAttribute("fit")).toBe(false);
     expect(root.querySelector("[data-landing-cue]")).toBeNull();
     const viewport = dom({ document: heroAlone });
-    expect(viewport.querySelector<HTMLElement>("[data-landing-hero]")!.style.minHeight).toBe("100dvh");
+    expect(viewport.querySelector<HTMLElement>("[data-landing-hero]")!.style.minHeight).toBe("");
+    expect(viewport.querySelector("[data-landing-hero]")?.classList.contains("min-h-dvh")).toBe(true);
   });
 
   it.each([
@@ -596,4 +598,34 @@ describe("LandingView frame fit", () => {
       expect(hero.classList.contains("flex-1")).toBe(false);
     }
   });
+});
+
+
+it("keeps content-band padding and anchor offsets zero through generated utility rules", () => {
+  const band = { id: "body", kind: "content-section" as const, size: "standard" as const, layout: "stacked" as const, ground: "base" as const, heading: "BODY-SENTINEL" };
+  const root = dom({ document: { ...PAGE, sections: [PAGE.sections[0]!, band] } });
+  const content = root.querySelector<HTMLElement>('[data-content-section][id="body"]')!;
+  const frame = content.closest<HTMLElement>("[data-landing-ground]")!;
+  expect(content.classList.contains("scroll-mt-0")).toBe(true);
+  expect(content.style.scrollMarginTop).toBe("");
+  expect(frame.classList.contains("py-0")).toBe(true);
+  expect(frame.classList.contains("tablet-lg:py-5xl")).toBe(false);
+  expect(frame.style.paddingBlock).toBe("");
+  const css = readFileSync("styles/preview.css", "utf8");
+  expect(css).toMatch(/\.scroll-mt-0\s*\{\s*scroll-margin-top: 0px;/);
+  expect(css).toMatch(/\.py-0\s*\{\s*padding-block: 0px;/);
+});
+
+
+it("ships exact non-length measure fallbacks and full viewport geometry for the static view bindings", () => {
+  const css = readFileSync("styles/preview.css", "utf8");
+  for (const measure of ["form", "prose"]) {
+    const className = `max-w-[var(--ui-width-${measure}-max,none)]`;
+    const selector = "." + className.replace(/[^a-zA-Z0-9_-]/g, char => "\\" + char);
+    const at = css.indexOf(selector + " {");
+    expect(at, `missing utility ${className}`).toBeGreaterThanOrEqual(0);
+    const declarations = css.slice(at, css.indexOf("}", at));
+    expect(declarations.replace(/\s/g, "")).toContain(`max-width:var(--ui-width-${measure}-max,none);`);
+  }
+  expect(css).toMatch(/\.min-h-dvh\s*\{\s*min-height: 100dvh;/);
 });

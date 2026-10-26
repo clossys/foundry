@@ -4,7 +4,7 @@ import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import type { ReactElement } from "react";
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { Button } from "@clossys/designer/atoms";
+import { Button } from "@clossys/designer/components";
 import { renderToStaticMarkup } from "react-dom/server";
 import { AuthView } from "../web/views/AuthView.js";
 import { CaptureView } from "../web/views/CaptureView.js";

@@ -3,7 +3,7 @@ import { act, fireEvent, render, screen, waitFor, within } from "@testing-librar
 import userEvent from "@testing-library/user-event";
 import { I18nProvider } from "react-aria-components";
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { Menu } from "../atoms/Menu.js";
+import { Menu } from "../components/Menu.js";
 import { AccountMenu, type AccountMenuProps } from "./AccountMenu.js";
 
 const actor = { name: "Jordan Vale", secondaryText: "jordan@example.test" };

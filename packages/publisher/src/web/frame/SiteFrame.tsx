@@ -1,5 +1,5 @@
 import { isValidElement, type ReactElement, type ReactNode } from "react";
-import { Icon } from "@clossys/designer/atoms/server";
+import { Icon } from "@clossys/designer/components/server";
 import { Brandmark, SiteFooter, SiteHeader } from "@clossys/designer/shell/server";
 import { LandingView as RuntimeLandingView } from "#publisher-web-views";
 import { LandingView as ServerLandingView } from "../views/LandingView.server.js";
@@ -13,17 +13,13 @@ import { SITE_MAIN_ID } from "./types.js";
 import type { SiteFrameProps } from "./types.js";
 
 const LINK_CLASSES =
-  "inline-flex items-center px-xs text-inherit no-underline hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent";
-// Designer's tap-target token, the value SiteHeader.ActionLink and SiteFooter.Legal size their links with.
-const TAP_TARGET = "var(--ui-layout-tap-target, 44px)";
-const LINK_STYLE = { minHeight: TAP_TARGET } as const;
+  "inline-flex min-h-[var(--ui-layout-tap-target)] items-center px-xs text-inherit no-underline hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent";
 // An icon-only link has no text to widen it, so it takes the tap target in both axes, icon centred.
-const ICON_LINK_CLASSES = `${LINK_CLASSES} justify-center`;
-const ICON_LINK_STYLE = { minHeight: TAP_TARGET, minWidth: TAP_TARGET } as const;
+const ICON_LINK_CLASSES = `${LINK_CLASSES} min-w-[var(--ui-layout-tap-target)] justify-center`;
 
 function TextLink({ link }: { readonly link: ResolvedSiteLink }) {
   return (
-    <a href={link.href} className={LINK_CLASSES} style={LINK_STYLE}>
+    <a href={link.href} className={LINK_CLASSES}>
       {link.label}
     </a>
   );
@@ -31,7 +27,7 @@ function TextLink({ link }: { readonly link: ResolvedSiteLink }) {
 
 function IconLink({ link }: { readonly link: ResolvedSiteIconLink }) {
   return (
-    <a href={link.href} aria-label={link.label} className={ICON_LINK_CLASSES} style={ICON_LINK_STYLE}>
+    <a href={link.href} aria-label={link.label} className={ICON_LINK_CLASSES}>
       <Icon glyph={link.icon} decorative />
     </a>
   );
@@ -100,7 +96,7 @@ function LinkList({ links, className }: { readonly links: readonly ResolvedSiteL
  * Server-safe: no hooks. Skip-link focus, header-ground observation and
  * navigation disclosure use the existing client islands and resolved data.
  */
-export function SiteFrame({ shell, presentation, resolveCopy, resolveAsset, children }: SiteFrameProps): ReactElement {
+export function SiteFrame({ shell, presentation, resolveCopy, resolveAsset, children, toasts }: SiteFrameProps): ReactElement {
   const resolved = resolveShell(shell, resolveCopy, resolveAsset, presentation);
   const { brand, footer } = resolved;
   if (footer?.placement === "overlay") assertOverlayScene(children, resolved.header.surface);
@@ -125,10 +121,10 @@ export function SiteFrame({ shell, presentation, resolveCopy, resolveAsset, chil
     <SiteFooter
       ground={footer.ground}
       rule={footer.rule}
-      {...(footer.placement === "overlay" ? { className: "publisher-frame-footer-overlay", style: { pointerEvents: "auto" as const, width: "100%", marginBlockStart: "auto", minWidth: 0, overflowWrap: "anywhere" as const } } : {})}
+      className={footer.placement === "overlay" ? "publisher-frame-footer-overlay pointer-events-auto w-full [margin-block-start:auto] min-w-0 [overflow-wrap:anywhere]" : undefined}
       columns={footer.columns.length ? <>{footer.columns.map((column, columnIndex) => (
         <SiteFooter.Column key={columnIndex} heading={column.heading}>
-          {column.links.map((link, linkIndex) => <a key={linkIndex} href={link.href} rel={/^https?:\/\//i.test(link.href) ? "noopener noreferrer" : undefined} className={LINK_CLASSES} style={LINK_STYLE}>{link.label}</a>)}
+          {column.links.map((link, linkIndex) => <a key={linkIndex} href={link.href} rel={/^https?:\/\//i.test(link.href) ? "noopener noreferrer" : undefined} className={LINK_CLASSES}>{link.label}</a>)}
         </SiteFooter.Column>
       ))}</> : undefined}
       secondary={<SiteFooter.Legal
@@ -144,7 +140,7 @@ export function SiteFrame({ shell, presentation, resolveCopy, resolveAsset, chil
   ) : null;
 
   return (
-    <div data-frame-root="" className="flex min-h-dvh flex-col" {...(footer?.placement === "overlay" ? { style: { position: "relative" as const } } : {})}>
+    <div data-frame-root="" className={`flex min-h-dvh flex-col${footer?.placement === "overlay" ? " relative" : ""}`}>
       <SiteSkipLink targetId={SITE_MAIN_ID} label={resolved.skipLink} followHeaderGround={resolved.header.surface === "glass"} />
       <SiteHeader
         surface={resolved.header.surface}
@@ -163,18 +159,12 @@ export function SiteFrame({ shell, presentation, resolveCopy, resolveAsset, chil
         // No absolute viewport box can cover hero content when copy or links reflow.
         <div
           data-frame-footer-overlay=""
-          style={{
-            display: "flex",
-            flexDirection: "column",
-            flexShrink: 0,
-            minWidth: 0,
-            pointerEvents: "none",
-            zIndex: "var(--ui-z-sticky, 10)",
-          }}
+          className="flex flex-col shrink-0 min-w-0 pointer-events-none z-[var(--ui-z-sticky)]"
         >
           {footerContent}
         </div>
       ) : footerContent}
+      {toasts}
     </div>
   );
 }

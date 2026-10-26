@@ -1,0 +1,51 @@
+{
+  "$extensions": {
+    "com.clossys.fill": {
+      "id": "phosphor/assets.icon-settings",
+      "slot": "assets.icon-settings",
+      "source": "phosphor",
+      "mode": "implementation",
+      "sourceAddress": "https://raw.githubusercontent.com/phosphor-icons/core/fe23e2534cdb7bec24bd8e6bd99b3676bcf0d54f/raw/regular/gear.svg",
+      "relation": "same-contract",
+      "builtOn": [],
+      "conforms": [],
+      "evidence": [],
+      "author": "third-party",
+      "trust": "pinned-upstream",
+      "license": "MIT",
+      "pin": {
+        "url": "https://raw.githubusercontent.com/phosphor-icons/core/fe23e2534cdb7bec24bd8e6bd99b3676bcf0d54f/raw/regular/gear.svg",
+        "commit": "fe23e2534cdb7bec24bd8e6bd99b3676bcf0d54f",
+        "sha256": "bc98699698fbe64217c1d23b33af1bd368257a153e318d58dc321c2039c24c55"
+      },
+      "status": "draft",
+      "reads": {
+        "tokens": [],
+        "assets": []
+      }
+    }
+  },
+  "assets": {
+    "icon-settings": {
+      "default": {
+        "$type": "glyph",
+        "$value": [
+          [
+            "circle",
+            {
+              "cx": "12",
+              "cy": "12",
+              "r": "3.75"
+            }
+          ],
+          [
+            "path",
+            {
+              "d": "M 3.8840625 16.6959375 A 9.294375 9.294375 0 0 1 2.94 14.41875 l 1.573125 -1.96875 a 7.6490625 7.6490625 0 0 1 0 -0.90375 l -1.5721875 -1.96875 a 9.3215625 9.3215625 0 0 1 0.9421875 -2.278125 l 2.5040625 -0.28125 a 7.59375 7.59375 0 0 1 0.6384375 -0.6384375 l 0.28125 -2.503125 A 9.294375 9.294375 0 0 1 9.58125 2.94 l 1.96875 1.573125 a 7.6490625 7.6490625 0 0 1 0.90375 0 l 1.96875 -1.5721875 a 9.3215625 9.3215625 0 0 1 2.278125 0.9421875 l 0.28125 2.5040625 a 7.59375 7.59375 0 0 1 0.6384375 0.6384375 l 2.503125 0.28125 a 9.294375 9.294375 0 0 1 0.9440625 2.2771875 l -1.573125 1.96875 a 7.6490625 7.6490625 0 0 1 0 0.90375 l 1.5721875 1.96875 a 9.3215625 9.3215625 0 0 1 -0.9375 2.278125 l -2.5040625 0.28125 a 7.59375 7.59375 0 0 1 -0.6384375 0.6384375 l -0.28125 2.503125 a 9.294375 9.294375 0 0 1 -2.2771875 0.9440625 l -1.96875 -1.573125 a 7.6490625 7.6490625 0 0 1 -0.90375 0 l -1.96875 1.5721875 a 9.3215625 9.3215625 0 0 1 -2.278125 -0.9375 l -0.28125 -2.5040625 a 7.59375 7.59375 0 0 1 -0.6384375 -0.6384375 Z"
+            }
+          ]
+        ]
+      }
+    }
+  }
+}

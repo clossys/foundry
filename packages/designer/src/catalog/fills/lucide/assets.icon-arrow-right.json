@@ -1,0 +1,52 @@
+{
+  "$extensions": {
+    "com.clossys.fill": {
+      "id": "lucide/assets.icon-arrow-right",
+      "slot": "assets.icon-arrow-right",
+      "source": "lucide",
+      "mode": "implementation",
+      "sourceAddress": "lucide-react@1.24.0/dist/esm/icons/arrow-right.js",
+      "relation": "same-contract",
+      "builtOn": [],
+      "conforms": [],
+      "evidence": [],
+      "author": "third-party",
+      "trust": "pinned-upstream",
+      "license": "ISC",
+      "pin": {
+        "package": "lucide-react",
+        "version": "1.24.0",
+        "file": "src/icons/ArrowRight.ts",
+        "sha256": "bb43905ab80409bed61222fce503e06df8489bafe2c4c2dff98a0f625e4c6d31"
+      },
+      "status": "draft",
+      "reads": {
+        "tokens": [],
+        "assets": []
+      }
+    }
+  },
+  "assets": {
+    "icon-arrow-right": {
+      "default": {
+        "$type": "glyph",
+        "$value": [
+          [
+            "path",
+            {
+              "d": "M5 12h14",
+              "key": "1ays0h"
+            }
+          ],
+          [
+            "path",
+            {
+              "d": "m12 5 7 7-7 7",
+              "key": "xquz4c"
+            }
+          ]
+        ]
+      }
+    }
+  }
+}

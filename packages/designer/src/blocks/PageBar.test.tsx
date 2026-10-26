@@ -3,12 +3,13 @@ import { act, cleanup, render, screen, waitFor, within } from "@testing-library/
 import userEvent from "@testing-library/user-event";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import * as blocks from "./index.js";
-import type { PageBarProps, PageBarPage, PageBarWidth } from "./PageBar.js";
+import type { PageBarProps, PageBarPage } from "./PageBar.js";
 import { AppFrame } from "../../../publisher/src/web/frame/AppFrame.js";
+import { APP_FRAME_WIDE_QUERY } from "../../../publisher/src/web/frame/app-frame-layout.js";
 import type { AppFrameProps } from "../../../publisher/src/web/frame/app-frame-types.js";
 
 const PageBar = (blocks as typeof blocks & { PageBar: (props: PageBarProps) => React.ReactNode }).PageBar;
-const labels = { breadcrumb: "Report trail", collapsedBreadcrumb: "Earlier report levels", pageInfo: "Report information", fullWidth: "Expand report", containedWidth: "Contain report", pageActions: "Other report actions" };
+const labels = { breadcrumb: "Report trail", collapsedBreadcrumb: "Earlier report levels", pageInfo: "Report information", pageActions: "Other report actions" };
 const root = { label: "Workspace", href: "/" };
 const workspaces = [{ id: "operations", label: "Operations", href: "/operations" }, { id: "research", label: "Research", href: "/research" }];
 function page(): PageBarPage {
@@ -16,7 +17,7 @@ function page(): PageBarPage {
     { id: "projects", label: "Projects", href: "/projects" },
     { id: "reporting", label: "Reporting", href: "/projects/reporting", siblings: [{ id: "planning", label: "Planning", href: "/projects/planning" }] },
     { id: "quarterly", label: "Quarterly report", siblings: [{ id: "annual", label: "Annual report", href: "/projects/reporting/annual" }] },
-  ], status: "Draft", description: "Revenue and usage for the last three months.", updatedAt: "Updated 2 hours ago", meta: "Reporting period: July to September", scope: "All projects", width: "full",
+  ], status: "Draft", description: "Revenue and usage for the last three months.", updatedAt: "Updated 2 hours ago", meta: "Reporting period: July to September", scope: "All projects",
   actions: [{ id: "share", label: "Share", primary: true, onAction: vi.fn() }, { id: "export", label: "Export", primary: true, href: "/projects/reporting/quarterly/export" }, { id: "archive", label: "Archive", onAction: vi.fn() }] };
 }
 let forced: boolean, reduced: boolean, supports: boolean;
@@ -27,7 +28,7 @@ beforeEach(() => {
   mediaListeners = new Set(); resizeObservers = new Map();
   localStorage.clear();
   vi.stubGlobal("matchMedia", (media: string) => ({ media, get matches() {
-    return media === "(forced-colors: active)" ? forced : media === "(prefers-reduced-transparency: reduce)" ? reduced : media === "all" || media === "(min-width: 56.25rem)";
+    return media === "(forced-colors: active)" ? forced : media === "(prefers-reduced-transparency: reduce)" ? reduced : media === "all" || media === APP_FRAME_WIDE_QUERY;
   }, addEventListener: (_: string, callback: () => void) => mediaListeners.add(callback), removeEventListener: (_: string, callback: () => void) => mediaListeners.delete(callback) }));
   vi.stubGlobal("CSS", { supports: () => supports, escape: (value: string) => value });
   vi.stubGlobal("ResizeObserver", class {
@@ -40,7 +41,7 @@ beforeEach(() => {
 afterEach(() => { cleanup(); vi.restoreAllMocks(); vi.unstubAllGlobals(); document.documentElement.removeAttribute("data-theme"); document.documentElement.removeAttribute("dir"); });
 function standalone(props: Partial<PageBarProps> = {}) {
   expect(PageBar).toBeTypeOf("function");
-  return render(<PageBar root={root} width="contained" onWidthChange={vi.fn()} labels={labels} {...props} />);
+  return render(<PageBar root={root} labels={labels} {...props} />);
 }
 const bar = () => document.querySelector<HTMLElement>('[data-application-frame-region="bar"]')!;
 
@@ -55,18 +56,20 @@ describe("PageBar", () => {
     await userEvent.click(within(bar()).getByRole("button", { name: "Archive" }));
     expect(supplied.actions![2]!.onAction).toHaveBeenCalledOnce();
   });
-  it.each(["contained", "full"] as const)("M2: toggles %s to the other width and uses authored labels", async width => {
-    const onWidthChange = vi.fn(); standalone({ width, onWidthChange });
-    const control = within(bar()).getByRole("button", { name: width === "full" ? labels.containedWidth : labels.fullWidth });
-    expect(control).toHaveAttribute("aria-pressed", String(width === "full"));
-    await userEvent.click(control);
-    expect(onWidthChange).toHaveBeenCalledExactlyOnceWith(width === "full" ? "contained" : "full");
-  });
-  it("uses the explicit width rather than page.width and preserves optional brand placement", () => {
-    standalone({ page: page(), brand: <span>Workspace mark</span> });
-    expect(bar().firstElementChild).toHaveTextContent("Workspace mark");
-    expect(within(bar()).getByRole("button", { name: labels.fullWidth })).toHaveAttribute("aria-pressed", "false");
-    expect(within(bar()).getByRole("navigation")).toHaveAttribute("aria-label", labels.breadcrumb);
+  it("places accessible context after brand and before the brand-rooted trail without taking heading ownership", async () => {
+    const view = standalone({ brand: <a href="#brand">Workspace mark</a>, context: <button>Switch project</button>, page: { title: "Project report" } });
+    const brand = within(bar()).getByRole("link", { name: "Workspace mark" });
+    const context = within(bar()).getByRole("button", { name: "Switch project" });
+    const trail = within(bar()).getByRole("navigation", { name: labels.breadcrumb });
+    expect(brand.nextElementSibling).toContainElement(context);
+    expect(context.parentElement?.nextElementSibling).toBe(trail);
+    expect(within(bar()).getAllByRole("heading", { level: 1 })).toHaveLength(1);
+    brand.focus(); await userEvent.tab(); expect(context).toHaveFocus();
+    await userEvent.tab(); expect(within(trail).getByRole("link", { name: root.label })).toHaveFocus();
+    view.rerender(<PageBar root={root} labels={labels} context={<button>Switch project</button>} />);
+    expect(within(bar()).getByRole("button", { name: "Switch project" })).toBeInTheDocument();
+    expect(within(bar()).queryByRole("heading")).not.toBeInTheDocument();
+    expect(within(bar()).queryByRole("navigation")).not.toBeInTheDocument();
   });
   it("M4: follows forced colors and reduced transparency on initial render and media changes", () => {
     standalone();
@@ -89,7 +92,7 @@ describe("PageBar", () => {
     const view = standalone();
     expect(within(bar()).queryByRole("navigation")).not.toBeInTheDocument();
     expect(within(bar()).queryByRole("button", { name: labels.pageInfo })).not.toBeInTheDocument();
-    view.rerender(<PageBar root={root} width="contained" onWidthChange={vi.fn()} labels={labels} page={{ title: "Quarterly report" }} />);
+    view.rerender(<PageBar root={root} labels={labels} page={{ title: "Quarterly report" }} />);
     expect(within(bar()).queryByRole("button", { name: labels.pageInfo })).not.toBeInTheDocument();
   });
   it("M6: collapses ancestors and overflows every non-primary action in narrow layout", async () => {
@@ -148,7 +151,6 @@ const currentCrumbs: readonly [string, string, boolean][] = [
   ["Quarterly report", "Quarterly\u200d report", false], ["Quarterly report", "Qu\u0430rterly report", false],
   ["Quarterly report", "Ｑｕａｒｔｅｒｌｙ report", false], ["Q3 report", "Q3-report", false],
 ];
-const widths: readonly [unknown, boolean][] = [["full", true], ["contained", false], ["Full", false], ["wide", false], ["fluid", false], ["contained ", false], [1, false], [true, false], [null, false], [["full"], false], [{ width: "full" }, false]];
 const informationValues: readonly [string, React.ReactNode, boolean][] = [["undefined", undefined, false], ["null", null, false], ["false", false, false], ["zero", 0, true], ["empty string", "", true], ["empty fragment", <Fragment />, true]];
 function corpusRender(renderer: "PageBar" | "AppFrame", props: Partial<PageBarProps>) {
   if (renderer === "PageBar") return standalone({ ...props });
@@ -157,9 +159,9 @@ function corpusRender(renderer: "PageBar" | "AppFrame", props: Partial<PageBarPr
     navigation: { tree: [{ id: "projects", label: "Projects", href: "/projects" }], activeId: "projects" },
     account: { signedOutLabel: "Signed out", sections: [] },
     commands: { heading: "Commands", triggerLabel: "Find commands", searchLabel: "Search commands", closeLabel: "Close commands", emptyMessage: "No commands", groups: [] },
-    children: <p>Report content</p>, page: props.page, workspaces: props.workspaces, width: props.width,
+    children: <p>Report content</p>, page: props.page, workspaces: props.workspaces,
     breadcrumbLabel: labels.breadcrumb, collapsedBreadcrumbLabel: labels.collapsedBreadcrumb, pageInfoLabel: labels.pageInfo,
-    fullWidthLabel: labels.fullWidth, containedWidthLabel: labels.containedWidth, pageActionsLabel: labels.pageActions,
+    pageActionsLabel: labels.pageActions,
   };
   return render(<AppFrame {...supplied} />);
 }
@@ -173,10 +175,6 @@ for (const renderer of ["PageBar", "AppFrame"] as const) describe(`${renderer} h
     expect(within(currentItem).queryByRole("button", { name: label }) !== null).toBe(accepted);
     if (!accepted) expect(currentItem.previousElementSibling!.textContent).toBe(label);
   });
-  it.each(widths)("width %j pressed=%s", (width, pressed) => {
-    corpusRender(renderer, { page: { ...page(), width: undefined }, width: width as PageBarWidth });
-    expect(within(bar()).getByRole("button", { name: pressed ? labels.containedWidth : labels.fullWidth })).toHaveAttribute("aria-pressed", String(pressed));
-  });
   for (const field of ["status", "description", "updatedAt", "meta", "scope"] as const) it.each(informationValues)(`information ${field}=%s present=%s`, (_name, value, present) => {
     corpusRender(renderer, { page: { title: "Quarterly report", [field]: value } });
     expect(within(bar()).queryByRole("button", { name: labels.pageInfo }) !== null).toBe(present);
@@ -186,9 +184,4 @@ for (const renderer of ["PageBar", "AppFrame"] as const) describe(`${renderer} h
     expect(within(bar()).queryByRole("button", { name: root.label }) !== null).toBe(count > 0);
     if (count === 0) expect(within(within(bar()).getByRole("navigation")).getByRole("link", { name: root.label })).toHaveAttribute("href", root.href);
   });
-});
-
-it("preserves AppFrame's page-width fallback when supplied width is null", () => {
-  corpusRender("AppFrame", { page: page(), width: null as unknown as PageBarWidth });
-  expect(within(bar()).getByRole("button", { name: labels.containedWidth })).toHaveAttribute("aria-pressed", "true");
 });

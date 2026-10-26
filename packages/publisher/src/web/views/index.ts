@@ -1,6 +1,6 @@
 /**
  * Page-level web surfaces owned by `@clossys/publisher/web` and built
- * from reusable `@clossys/designer` atoms and blocks. Most product pages
+ * from reusable `@clossys/designer` components and blocks. Most product pages
  * remain consumer-owned compositions, so this catalog is deliberately short.
  */
 

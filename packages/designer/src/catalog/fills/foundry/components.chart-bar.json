@@ -1,0 +1,90 @@
+{
+  "$extensions": {
+    "com.clossys.fill": {
+      "author": "foundry",
+      "builtOn": [],
+      "conforms": [],
+      "evidence": [],
+      "id": "foundry/components.chart-bar",
+      "license": "MIT",
+      "mode": "implementation",
+      "pin": {
+        "export": "./charts#BarChart",
+        "package": "@clossys/designer",
+        "version": "0.12.0"
+      },
+      "relation": "same-contract",
+      "slot": "components.chart-bar",
+      "source": "foundry",
+      "sourceAddress": "./charts#BarChart",
+      "status": "draft",
+      "trust": "foundry"
+    }
+  },
+  "components": {
+    "chart-bar": {
+      "composes": [],
+      "deps": [
+        {
+          "license": "MIT",
+          "name": "react",
+          "version": ">=18"
+        },
+        {
+          "license": "MIT",
+          "name": "tailwind-merge",
+          "version": "^3.7.0"
+        }
+      ],
+      "impl": {
+        "export": "BarChart",
+        "kind": "package",
+        "module": "@clossys/designer/charts"
+      },
+      "license": "MIT",
+      "members": [
+        "axes",
+        "legend",
+        "series",
+        "tooltip"
+      ],
+      "pin": {
+        "export": "./charts#BarChart",
+        "package": "@clossys/designer",
+        "version": "0.12.0"
+      },
+      "propMap": {
+        "axes": "./charts#BarChart.categories",
+        "legend": "./charts#BarChart[ChartFrame.legend]",
+        "series": "./charts#BarChart.series",
+        "tooltip": "./charts#BarChart[native-svg-title]"
+      },
+      "props": [
+        "categories",
+        "className",
+        "series",
+        "title",
+        "valueFormat"
+      ],
+      "reads": {
+        "assets": [],
+        "components": [],
+        "tokens": [
+          "tokens.border-color",
+          "tokens.border-width",
+          "tokens.categorical-color",
+          "tokens.chart-color",
+          "tokens.diverging-color",
+          "tokens.radius",
+          "tokens.sequential-color",
+          "tokens.surface-color",
+          "tokens.text-color",
+          "tokens.typeface"
+        ]
+      },
+      "root": "engine:none",
+      "slot": "components.chart-bar",
+      "source": "foundry"
+    }
+  }
+}

@@ -1,5 +1,6 @@
 import type { ReactNode } from "react";
-import { Card, mergeUiClasses } from "@clossys/designer/atoms/server";
+import { Card, mergeUiClasses } from "@clossys/designer/components/server";
+import { SectionHeader } from "@clossys/designer/blocks/server";
 import { SiteFooter, SiteHeader } from "@clossys/designer/shell/server";
 import { PAGE_COLUMN_CLASSES, hasContent, pageColumnStyle } from "../internal/PageLayout.js";
 import { siteHeaderPresentation, type SiteChromeGround } from "../internal/viewChromeGround.js";
@@ -144,8 +145,7 @@ export function BoundaryView({
     <>
       <div className="flex flex-col gap-xs">
         <h1 className="text-display-l font-display text-ink-primary">{status}</h1>
-        <h2 className="text-h2 font-display text-ink-primary">{title}</h2>
-        {description ? <p className="text-body text-ink-secondary">{description}</p> : null}
+        <SectionHeader density="standard" level={2} title={title} description={description} />
       </div>
       {action ? <Card className="flex flex-col gap-lg">{action}</Card> : null}
       {hasContent(notes) ? <div className="flex flex-col gap-xs text-body-s text-ink-secondary">{notes}</div> : null}
@@ -170,7 +170,7 @@ export function BoundaryView({
       ) : (
         <SiteHeader {...siteHeaderPresentation(chromeGround)} brand={brand} nav={nav} actions={<>{secondaryAction}{headerAction}</>} />
       )}
-      <main id={mainId || undefined} tabIndex={mainId ? -1 : undefined} className={PAGE_COLUMN_CLASSES} style={pageColumnStyle("form")}>
+      <main id={mainId || undefined} tabIndex={mainId ? -1 : undefined} className={`${PAGE_COLUMN_CLASSES} max-w-[var(--ui-width-form-max,none)]`}>
         {content}
       </main>
       {footer !== undefined ? footer : <SiteFooter ground={chromeGround} secondary={footerSecondary} />}

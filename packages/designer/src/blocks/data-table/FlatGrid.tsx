@@ -1,9 +1,9 @@
 import { type DataTableMessages } from "./messages.js";
 import type { CSSProperties } from "react";
 import type { Key } from "react-aria-components";
-import { Table } from "../../atoms/Table.js";
-import { cx } from "../../atoms/internal/cx.js";
-import { EmptyState } from "../EmptyState.js";
+import { Table } from "../../components/Table.js";
+import { cx } from "../../components/internal/cx.js";
+import { SectionHeader } from "../SectionHeader.js";
 import type { DataTableProps } from "../DataTable.js";
 import type { DataTableDensity } from "./view-model.js";
 
@@ -83,11 +83,9 @@ export function FlatGrid<Row>({
           <Table.Body
             className=""
             renderEmptyState={() => (
-              <EmptyState
-                title={emptyStateTitle}
-                description={emptyStateDescription}
-                action={emptyStateAction}
-              />
+              <div className="p-2xl">
+                <SectionHeader title={emptyStateTitle} description={emptyStateDescription} actions={emptyStateAction} level={2} />
+              </div>
             )}
           >
             {isLoading

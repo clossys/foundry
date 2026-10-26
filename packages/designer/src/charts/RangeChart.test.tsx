@@ -10,7 +10,7 @@ import { RangeChart as ServerRangeChart } from "./server.js";
 import * as Charts from "./index.js";
 import * as ServerCharts from "./server.js";
 import { CHART_HAIRLINE, CHART_INLINE_AXIS_LABEL, CHART_MARK_RADIUS } from "./internal/marks.js";
-import type { StatusMarkTone } from "../atoms/StatusMark.js";
+import type { StatusMarkTone } from "../components/StatusMark.js";
 
 type RangeChartRow = RangeChartProps["rows"][number];
 
@@ -208,7 +208,7 @@ describe("RangeChart bounds and tick-boundary geometry", () => {
 
 describe("direct SVG status adaptation", () => {
   const shapes: Record<StatusMarkTone, string> = { success: "circle", warning: "triangle", danger: "diamond", info: "open-circle", neutral: "dash" };
-  // Independent SVG silhouettes; no production helper or atom DOM oracle.
+  // Independent SVG silhouettes; no production helper or component DOM oracle.
   const paths: Partial<Record<StatusMarkTone, string>> = {
     success: "M5 0.5a4.5 4.5 0 1 0 0 9a4.5 4.5 0 1 0 0-9Z",
     warning: "M5 0.5 9.75 9.25H0.25Z",
@@ -234,7 +234,7 @@ describe("direct SVG status adaptation", () => {
       expect(mark.children).toHaveLength(1);
       const glyph = mark.firstElementChild!;
       // The filled circle is an equivalent path contour. The dash keeps its
-      // 8x2 geometry but uses CSS token rx instead of the atom's literal rx=1.
+      // 8x2 geometry but uses CSS token rx instead of the component's literal rx=1.
       if (tone === "neutral") {
         expect(glyph.tagName.toLowerCase()).toBe("rect");
         expect(["x", "y", "width", "height"].map(name => glyph.getAttribute(name))).toEqual(["1", "4", "8", "2"]);
@@ -306,9 +306,9 @@ describe("complete native table and static accessibility", () => {
     expect(() => renderToStaticMarkup(<RangeChart {...props} labels={withoutStatus} />)).not.toThrow();
   });
 
-  it("provides title/description and a fluid360 static frame", () => {
+  it("provides title/description and a server-safe frame with focusable tooltips", () => {
     const { container } = render(<RangeChart {...props} />);
-    const svg = container.querySelector('svg[role="img"]')!;
+    const svg = container.querySelector('svg[role="group"]')!;
     expect(svg.getAttribute("viewBox")).toBe("0 0 360 120");
     expect(svg.getAttribute("width")).toBe("100%");
     expect((svg as SVGElement).style.maxWidth).toBe("540px");
@@ -317,7 +317,8 @@ describe("complete native table and static accessibility", () => {
     expect(svg.querySelector("title")!.textContent).toBe(props.title);
     expect(svg.querySelector("desc")!.id).toBe(svg.getAttribute("aria-describedby"));
     expect(svg.querySelector("desc")!.textContent).toBe(props.description);
-    expect(svg.querySelectorAll("[tabindex]")).toHaveLength(0);
+    expect(svg.querySelectorAll("[tabindex]")).toHaveLength(props.rows.length);
+    for (const target of svg.querySelectorAll("[tabindex]")) expect(target).toHaveAttribute("data-chart-tooltip-trigger");
     expect(svg.querySelectorAll('[data-chart-part="range"]')).toHaveLength(2);
     for (const bar of svg.querySelectorAll('[data-chart-part="range"]')) expect(bar.closest('[aria-hidden="true"]')).not.toBeNull();
     // Native details/summary is deliberately retained as the table control.
@@ -325,7 +326,7 @@ describe("complete native table and static accessibility", () => {
     expect(html).toContain("<details");
     expect(html).toContain(`<summary`);
     expect(html).toContain("<table");
-    expect(html).not.toMatch(/\son[A-Z]|\stabindex=/i);
+    expect(html).not.toMatch(/\son[A-Z]/i);
   });
 
   it("has zero React event handlers or tab targets on the geometry tree", () => {

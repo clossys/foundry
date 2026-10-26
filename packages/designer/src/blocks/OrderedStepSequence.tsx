@@ -1,5 +1,6 @@
+import { SectionHeader } from "./SectionHeader.js";
 import type { CSSProperties, HTMLAttributes, ReactNode } from "react";
-import { cx } from "../atoms/internal/cx.js";
+import { cx } from "../components/internal/cx.js";
 import { SECTION_GROUND_CLASSES, type SectionGround } from "./section-ground.js";
 
 export type OrderedStepSequenceHeadingLevel = 2 | 3 | 4 | 5 | 6;
@@ -51,7 +52,6 @@ const LAYOUT_CLASSES = {
 
 /** Authored editorial order with decorative connectors only between adjacent steps. */
 export function OrderedStepSequence({ eyebrow, heading, description, items, headingLevel = 2, ground = "base", className, style, ...rest }: OrderedStepSequenceProps) {
-  const HeadingTag = `h${headingLevel}` as `h${OrderedStepSequenceHeadingLevel}`;
   const ItemHeadingTag = `h${Math.min(headingLevel + 1, 6)}` as `h${OrderedStepSequenceHeadingLevel}`;
   const colors = SECTION_GROUND_CLASSES[ground];
   const lines = STEP_LINE_CLASSES[ground];
@@ -59,11 +59,7 @@ export function OrderedStepSequence({ eyebrow, heading, description, items, head
   return (
     <section {...rest} className={cx("flex flex-col gap-lg", colors.surface, className)} style={style}>
       {hasHeadingRegion ? (
-        <div className="flex flex-col gap-xs">
-          {eyebrow ? <p className={cx("text-caption uppercase tracking-label", colors.muted)}>{eyebrow}</p> : null}
-          {heading ? <HeadingTag className={cx("text-h2 font-display", colors.primary)}>{heading}</HeadingTag> : null}
-          {description ? <p className={cx("text-body", colors.secondary)}>{description}</p> : null}
-        </div>
+        <SectionHeader density="standard" level={headingLevel} ground={ground} eyebrow={eyebrow} description={description} {...(heading ? { title: heading } : {})} />
       ) : null}
       <ol data-step-layout="plain" className={LAYOUT_CLASSES.list}>
         {items.map((item, index) => {

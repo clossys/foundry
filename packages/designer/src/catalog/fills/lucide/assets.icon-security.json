@@ -1,0 +1,52 @@
+{
+  "$extensions": {
+    "com.clossys.fill": {
+      "id": "lucide/assets.icon-security",
+      "slot": "assets.icon-security",
+      "source": "lucide",
+      "mode": "implementation",
+      "sourceAddress": "lucide-react@1.24.0/dist/esm/icons/shield-check.js",
+      "relation": "same-contract",
+      "builtOn": [],
+      "conforms": [],
+      "evidence": [],
+      "author": "third-party",
+      "trust": "pinned-upstream",
+      "license": "ISC",
+      "pin": {
+        "package": "lucide-react",
+        "version": "1.24.0",
+        "file": "src/icons/ShieldCheck.ts",
+        "sha256": "17dd064d3a3c7cd9ab4d006dcea05d9127f5b248d13c164cf0dde2a7d24091a4"
+      },
+      "status": "draft",
+      "reads": {
+        "tokens": [],
+        "assets": []
+      }
+    }
+  },
+  "assets": {
+    "icon-security": {
+      "default": {
+        "$type": "glyph",
+        "$value": [
+          [
+            "path",
+            {
+              "d": "M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z",
+              "key": "oel41y"
+            }
+          ],
+          [
+            "path",
+            {
+              "d": "m9 12 2 2 4-4",
+              "key": "dzmm74"
+            }
+          ]
+        ]
+      }
+    }
+  }
+}

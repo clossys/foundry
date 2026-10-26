@@ -1,0 +1,122 @@
+{
+  "layer": "assets",
+  "nodes": [
+    {
+      "id": "logo",
+      "label": "Logo",
+      "children": [
+        {
+          "id": "logo-artwork",
+          "label": "Artwork",
+          "leaves": [
+            "assets.lockup",
+            "assets.mark"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "app-identity",
+      "label": "App identity",
+      "children": [
+        {
+          "id": "app-identity-browser",
+          "label": "Browser",
+          "leaves": [
+            "assets.favicon"
+          ]
+        },
+        {
+          "id": "app-identity-application",
+          "label": "Application",
+          "leaves": [
+            "assets.app-icon"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "icons",
+      "label": "Icons",
+      "children": [
+        {
+          "id": "icons-navigation",
+          "label": "Navigation",
+          "leaves": [
+            "assets.icon-chevron-down",
+            "assets.icon-chevron-up",
+            "assets.icon-chevron-left",
+            "assets.icon-chevron-right",
+            "assets.icon-arrow-right",
+            "assets.icon-external-link",
+            "assets.icon-home"
+          ]
+        },
+        {
+          "id": "icons-actions",
+          "label": "Actions",
+          "leaves": [
+            "assets.icon-search",
+            "assets.icon-close",
+            "assets.icon-check",
+            "assets.icon-settings",
+            "assets.icon-list-view",
+            "assets.icon-grid-view",
+            "assets.icon-theme-light",
+            "assets.icon-theme-dark",
+            "assets.icon-theme-system"
+          ]
+        },
+        {
+          "id": "icons-status",
+          "label": "Status",
+          "leaves": [
+            "assets.icon-success",
+            "assets.icon-warning",
+            "assets.icon-danger",
+            "assets.icon-info"
+          ]
+        },
+        {
+          "id": "icons-objects",
+          "label": "Objects",
+          "leaves": [
+            "assets.icon-user",
+            "assets.icon-team",
+            "assets.icon-organization",
+            "assets.icon-website",
+            "assets.icon-institution",
+            "assets.icon-guide",
+            "assets.icon-document",
+            "assets.icon-document-approved",
+            "assets.icon-folder",
+            "assets.icon-date",
+            "assets.icon-time",
+            "assets.icon-payment",
+            "assets.icon-receipt",
+            "assets.icon-business",
+            "assets.icon-security",
+            "assets.icon-locked",
+            "assets.icon-legal",
+            "assets.icon-package",
+            "assets.icon-layers",
+            "assets.icon-integration"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "imagery",
+      "label": "Media",
+      "children": [
+        {
+          "id": "imagery-framing",
+          "label": "Framing",
+          "leaves": [
+            "assets.image-ratio"
+          ]
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,59 @@
+{
+  "$extensions": {
+    "com.clossys.fill": {
+      "id": "lucide/assets.icon-package",
+      "slot": "assets.icon-package",
+      "source": "lucide",
+      "mode": "implementation",
+      "sourceAddress": "lucide-react@1.23.0/dist/esm/icons/box.js",
+      "relation": "same-contract",
+      "builtOn": [],
+      "conforms": [],
+      "evidence": [],
+      "author": "third-party",
+      "trust": "pinned-upstream",
+      "license": "ISC",
+      "pin": {
+        "package": "lucide-react",
+        "version": "1.23.0",
+        "file": "src/icons/Box.ts",
+        "sha256": "7b2e0c2bdbabaebc89ad2f3dddbd5f20b0645aa6d76af7ee9a1caec026cb535d"
+      },
+      "status": "draft",
+      "reads": {
+        "tokens": [],
+        "assets": []
+      }
+    }
+  },
+  "assets": {
+    "icon-package": {
+      "default": {
+        "$type": "glyph",
+        "$value": [
+          [
+            "path",
+            {
+              "d": "M21 8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16Z",
+              "key": "hh9hay"
+            }
+          ],
+          [
+            "path",
+            {
+              "d": "m3.3 7 8.7 5 8.7-5",
+              "key": "g66t2b"
+            }
+          ],
+          [
+            "path",
+            {
+              "d": "M12 22V12",
+              "key": "d0xqtd"
+            }
+          ]
+        ]
+      }
+    }
+  }
+}

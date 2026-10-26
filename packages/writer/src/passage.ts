@@ -2,10 +2,10 @@
  * The PASSAGE LAYER — issue #373. `@example/copy` (now `writer`,
  * per issue #373's own retargeting comment) has terms (a glossary) and
  * entries (single addressable strings) and nothing between them.
- * `@clossys/designer` has tokens, atoms, AND BLOCKS. This file is the
+ * `@clossys/designer` has tokens, components, AND BLOCKS. This file is the
  * missing middle: a `Passage` composes `CopyEntry`/glossary-term
- * REFERENCES the way a block composes atoms — never a raw sentence of its
- * own. Terms ≈ tokens, entries ≈ atoms, passages ≈ blocks, documents (a
+ * REFERENCES the way a block composes components — never a raw sentence of its
+ * own. Terms ≈ tokens, entries ≈ components, passages ≈ blocks, documents (a
  * later, composition-layer concern, out of scope here — see the issue)
  * ≈ views.
  *
@@ -52,7 +52,7 @@
  *       referencing an entry (the verbal equivalent of a hardcoded color
  *       instead of a token), OR a passage references another passage's
  *       OWN INTERNALS (`{ ref: "passage", id, field }`) rather than
- *       composing entries/terms the way a block composes atoms, never
+ *       composing entries/terms the way a block composes components, never
  *       reaching directly into a sibling block's own implementation.
  *   2 — INDETERMINATE: the registry could not be read/parsed/validated,
  *       zero passages were evaluated (an empty `passages: []`), or a

@@ -21,7 +21,7 @@ const packageRoot = join(here, "..", "..");
 const brandmarkSource = readFileSync(join(here, "Brandmark.tsx"), "utf8");
 const badgePlateSource = readFileSync(join(here, "badge-plate.ts"), "utf8");
 const shellVarsSource = readFileSync(join(here, "..", "internal", "brandmark.ts"), "utf8");
-const logomarkSource = readFileSync(join(here, "..", "atoms", "Logomark.tsx"), "utf8");
+const logomarkSource = readFileSync(join(here, "..", "components", "Logomark.tsx"), "utf8");
 const tokensCss = readFileSync(join(packageRoot, "styles", "tokens.css"), "utf8");
 
 const brandmarkConstantStatements = shellVarsSource.match(/export const (?:UI_)?BRANDMARK_\w+\s*=[^;]+;/g) ?? [];
@@ -690,7 +690,7 @@ describe("frozen legacy SSR without tailwind-merge", () => {
     vi.resetModules();
     vi.doMock("tailwind-merge", () => { throw Object.assign(new Error("absent optional peer"), { code: "ERR_MODULE_NOT_FOUND" }); });
     warning = vi.spyOn(console, "warn").mockImplementation(() => undefined);
-    const { cx } = await import("../atoms/internal/cx.js");
+    const { cx } = await import("../components/internal/cx.js");
     expect(cx("first", "second")).toBe("first second");
     expect(warning).toHaveBeenCalledTimes(1);
     absentBrandmark = (await import("./Brandmark.js")).Brandmark;

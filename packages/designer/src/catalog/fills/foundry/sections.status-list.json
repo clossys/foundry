@@ -1,0 +1,60 @@
+{
+  "$extensions": {
+    "com.clossys.fill": {
+      "author": "foundry",
+      "builtOn": [],
+      "conforms": [],
+      "evidence": [],
+      "id": "foundry/sections.status-list",
+      "license": "MIT",
+      "mode": "implementation",
+      "originKinds": [
+        "adopted"
+      ],
+      "pin": {
+        "export": "./blocks#StatusList",
+        "package": "@clossys/designer",
+        "version": "0.12.0"
+      },
+      "relation": "same-contract",
+      "slot": "sections.status-list",
+      "source": "foundry",
+      "sourceAddress": "./blocks#StatusList",
+      "status": "draft",
+      "trust": "foundry"
+    }
+  },
+  "sections": {
+    "status-list": {
+      "configs": {},
+      "impl": {
+        "export": "StatusList",
+        "kind": "package",
+        "module": "@clossys/designer/blocks"
+      },
+      "license": "MIT",
+      "notes": [
+        "Host supplies labels including disposition labels and legendLabel. Not-offered is a separate disposition, never a fourth readiness state.",
+        "Descriptor only; source imports, token reads, shared anatomy, accessibility, contrast and consumer runtime conformance are unmeasured. Content bindings describe host adaptation points, not type-equivalent converters."
+      ],
+      "parts": [],
+      "pin": {
+        "export": "./blocks#StatusList",
+        "package": "@clossys/designer",
+        "version": "0.12.0"
+      },
+      "propMap": {
+        "status.available": "./blocks#StatusList.items[].state=available",
+        "status.not-offered": "./blocks#StatusList.items[].disposition=not-offered",
+        "status.partial": "./blocks#StatusList.items[].state=partial",
+        "status.planned": "./blocks#StatusList.items[].state=planned"
+      },
+      "slot": "sections.status-list",
+      "slotMap": {
+        "items": "./blocks#StatusList.items",
+        "legend": "./blocks#StatusList.legendLabel"
+      },
+      "source": "foundry"
+    }
+  }
+}

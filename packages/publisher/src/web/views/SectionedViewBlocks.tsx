@@ -4,6 +4,7 @@ import {
   Items,
   OrderedStepSequence,
   PricingTable as DesignerPricingTable,
+  SectionHeader,
   SECTION_GROUND_CLASSES,
   Stat,
   StatusList,
@@ -16,10 +17,9 @@ type PricingTableProps = Parameters<SectionedViewBlockSet["PricingTable"]>[0];
 type TestimonialProps = Parameters<SectionedViewBlockSet["Testimonial"]>[0];
 
 function PricingTable({ id, eyebrow, heading, description, items, headingLevel, ground }: PricingTableProps) {
-  const colors = SECTION_GROUND_CLASSES[ground];
   return (
     <div id={id} className={SECTION_GROUND_CLASSES[ground].surface}>
-      {eyebrow ? <p className={`text-caption uppercase tracking-label ${colors.muted}`}>{eyebrow}</p> : null}
+      {eyebrow ? <SectionHeader density="standard" ground={ground} eyebrow={eyebrow} /> : null}
       <DesignerPricingTable
         heading={heading}
         description={description}

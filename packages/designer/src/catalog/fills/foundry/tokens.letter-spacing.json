@@ -1,0 +1,65 @@
+{
+  "$extensions": {
+    "com.clossys.fill": {
+      "author": "foundry",
+      "builtOn": [],
+      "conforms": [
+        "dtcg#format",
+        "dtcg#alias"
+      ],
+      "evidence": [
+        {
+          "check": "C1",
+          "clause": "dtcg#format"
+        },
+        {
+          "check": "C2",
+          "clause": "dtcg#alias"
+        }
+      ],
+      "id": "foundry/tokens.letter-spacing",
+      "license": "MIT",
+      "mode": "implementation",
+      "relation": "subset",
+      "slot": "tokens.letter-spacing",
+      "source": "foundry",
+      "sourceAddress": "styles/tokens.css",
+      "status": "draft",
+      "trust": "foundry"
+    }
+  },
+  "tokens": {
+    "letter-spacing": {
+      "label": {
+        "$extensions": {
+          "com.clossys.css": {
+            "raw": "0.18em"
+          },
+          "com.clossys.unit": "em"
+        },
+        "$type": "number",
+        "$value": 0.18
+      },
+      "meta": {
+        "$extensions": {
+          "com.clossys.css": {
+            "raw": "0.06em"
+          },
+          "com.clossys.unit": "em"
+        },
+        "$type": "number",
+        "$value": 0.06
+      },
+      "nav": {
+        "$extensions": {
+          "com.clossys.css": {
+            "raw": "0.12em"
+          },
+          "com.clossys.unit": "em"
+        },
+        "$type": "number",
+        "$value": 0.12
+      }
+    }
+  }
+}

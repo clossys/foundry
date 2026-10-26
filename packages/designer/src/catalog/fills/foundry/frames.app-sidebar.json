@@ -1,0 +1,56 @@
+{
+  "$extensions": {
+    "com.clossys.fill": {
+      "author": "foundry",
+      "builtOn": [],
+      "conforms": [],
+      "evidence": [],
+      "id": "foundry/frames.app-sidebar",
+      "license": "MIT",
+      "mode": "implementation",
+      "pin": {
+        "export": "./blocks#AppNavigation",
+        "package": "@clossys/designer",
+        "version": "0.12.0"
+      },
+      "relation": "subset",
+      "slot": "frames.app-sidebar",
+      "source": "foundry",
+      "sourceAddress": "./blocks#AppNavigation",
+      "status": "draft",
+      "trust": "foundry",
+      "unmapped": [
+        "slot.account",
+        "slot.theme",
+        "state.theme"
+      ]
+    }
+  },
+  "frames": {
+    "app-sidebar": {
+      "impl": {
+        "export": "AppNavigation",
+        "kind": "package",
+        "module": "@clossys/designer/blocks"
+      },
+      "members": [
+        "presentation.collapsed",
+        "presentation.docked",
+        "presentation.overlay"
+      ],
+      "propMap": {
+        "presentation.collapsed": "collapsed=true",
+        "presentation.docked": "collapsed=false",
+        "presentation.overlay": "drawerOpen=true"
+      },
+      "slot": "frames.app-sidebar",
+      "slots": {
+        "header": "header",
+        "tree": "tree"
+      },
+      "statePorts": {
+        "collapsed": "collapsed/onCollapsedChange"
+      }
+    }
+  }
+}

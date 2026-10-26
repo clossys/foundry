@@ -1,0 +1,56 @@
+{
+  "$extensions": {
+    "com.clossys.fill": {
+      "author": "foundry",
+      "builtOn": [],
+      "conforms": [],
+      "evidence": [],
+      "id": "foundry/sections.pricing",
+      "license": "MIT",
+      "mode": "implementation",
+      "originKinds": [
+        "adopted"
+      ],
+      "pin": {
+        "export": "./blocks#PricingTable",
+        "package": "@clossys/designer",
+        "version": "0.12.0"
+      },
+      "relation": "same-contract",
+      "slot": "sections.pricing",
+      "source": "foundry",
+      "sourceAddress": "./blocks#PricingTable",
+      "status": "draft",
+      "trust": "foundry"
+    }
+  },
+  "sections": {
+    "pricing": {
+      "configs": {},
+      "impl": {
+        "export": "PricingTable",
+        "kind": "package",
+        "module": "@clossys/designer/blocks"
+      },
+      "license": "MIT",
+      "notes": [
+        "Host supplies authored tiers and CTA nodes. Interval is displayed copy; controls is an arbitrary region, not a built-in interval toggle or checkout. Source also composes Matrix for comparison.",
+        "Descriptor only; source imports, token reads, shared anatomy, accessibility, contrast and consumer runtime conformance are unmeasured. Content bindings describe host adaptation points, not type-equivalent converters."
+      ],
+      "parts": [],
+      "pin": {
+        "export": "./blocks#PricingTable",
+        "package": "@clossys/designer",
+        "version": "0.12.0"
+      },
+      "propMap": {},
+      "slot": "sections.pricing",
+      "slotMap": {
+        "highlight": "./blocks#PricingTable.tiers[].isHighlighted",
+        "interval": "./blocks#PricingTable.interval",
+        "plans": "./blocks#PricingTable.tiers"
+      },
+      "source": "foundry"
+    }
+  }
+}

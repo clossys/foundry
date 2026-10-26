@@ -1,0 +1,59 @@
+{
+  "$extensions": {
+    "com.clossys.fill": {
+      "id": "lucide/assets.icon-payment",
+      "slot": "assets.icon-payment",
+      "source": "lucide",
+      "mode": "implementation",
+      "sourceAddress": "lucide-react@1.23.0/dist/esm/icons/credit-card.js",
+      "relation": "same-contract",
+      "builtOn": [],
+      "conforms": [],
+      "evidence": [],
+      "author": "third-party",
+      "trust": "pinned-upstream",
+      "license": "ISC",
+      "pin": {
+        "package": "lucide-react",
+        "version": "1.23.0",
+        "file": "src/icons/CreditCard.ts",
+        "sha256": "c749d18fccbfd6915ad160c3934671fd2bd1d838731028a127f635fc914c1356"
+      },
+      "status": "draft",
+      "reads": {
+        "tokens": [],
+        "assets": []
+      }
+    }
+  },
+  "assets": {
+    "icon-payment": {
+      "default": {
+        "$type": "glyph",
+        "$value": [
+          [
+            "rect",
+            {
+              "width": "20",
+              "height": "14",
+              "x": "2",
+              "y": "5",
+              "rx": "2",
+              "key": "ynyp8z"
+            }
+          ],
+          [
+            "line",
+            {
+              "x1": "2",
+              "x2": "22",
+              "y1": "10",
+              "y2": "10",
+              "key": "1b3vmo"
+            }
+          ]
+        ]
+      }
+    }
+  }
+}

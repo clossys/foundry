@@ -1,10 +1,10 @@
 import { useId, type HTMLAttributes, type ReactNode } from "react";
-import { cx } from "../../atoms/internal/cx.js";
+import { cx } from "../../components/internal/cx.js";
 import { SECTION_GROUND_CLASSES } from "../section-ground.js";
 import { assertItems, collectionProfile, loneTabletThirds } from "./policies.js";
 import { ItemRenderer, renderItemStatus } from "./render.js";
 import { ItemPlate } from "./anatomy.js";
-import { UI_BORDER_HAIRLINE, UI_LAYOUT_TAP_TARGET } from "../../atoms/internal/ui-vars.js";
+import { UI_BORDER_HAIRLINE, UI_LAYOUT_TAP_TARGET } from "../../components/internal/ui-vars.js";
 import { assertNoNestedInteractive, cardLinkContainerClassName } from "../stretched-link.js";
 import { renderConnectedTrack, renderOrdinal, renderTerminal, orderLayout, orderedItemStyle, multiLaneCellStyle, renderMultiLaneTrack, renderMultiLaneTerminal, MULTI_LANE_VARS } from "./order.js";
 import { hasContent } from "./policies.js";

@@ -1,0 +1,325 @@
+{
+  "base": "9d50477e479ea0398b6a567b09a59ac8dcd38cf3",
+  "cases": [
+    {
+      "leaf": "layouts.stack",
+      "config": "stack.landing",
+      "members": {},
+      "expectedSha256": "2a7ebf4c80b72b746cfb470506243b27aaf476701090081a285a871fc2b02fd8"
+    },
+    {
+      "leaf": "layouts.stack",
+      "config": "stack.landing",
+      "members": {
+        "measure": "full"
+      },
+      "expectedSha256": "e033193ab8c0d9a3afd85ba1401aeb87a3a546029e729c21188f1b9dbd5e6185"
+    },
+    {
+      "leaf": "layouts.stack",
+      "config": "stack.landing",
+      "members": {
+        "measure": "wide"
+      },
+      "expectedSha256": "4df7818f11241a32a2955415dcc33858f3656d0268bc1cc7fd2749c249432913"
+    },
+    {
+      "leaf": "layouts.stack",
+      "config": "stack.landing",
+      "members": {
+        "measure": "content"
+      },
+      "expectedSha256": "aabd177139f7f0bb07c1de451ff1eca817c2980058e360feffaa98d3bfe586df"
+    },
+    {
+      "leaf": "layouts.stack",
+      "config": "stack.landing",
+      "members": {
+        "measure": "prose"
+      },
+      "expectedSha256": "5042afba4825e79a63a7fd93b40a4f8308c99643430c999825b07582abbb54fb"
+    },
+    {
+      "leaf": "layouts.stack",
+      "config": "stack.landing",
+      "members": {
+        "measure": "form"
+      },
+      "expectedSha256": "c13f146d69a5c959415e790f1980fcf183eadd449cbaebd75bc931ad2ef85847"
+    },
+    {
+      "leaf": "layouts.stack",
+      "config": "stack.landing",
+      "members": {
+        "align": "start"
+      },
+      "expectedSha256": "33566a400711277950910859a95cce294f1619f53c7fcd598fc42df3e4da4521"
+    },
+    {
+      "leaf": "layouts.stack",
+      "config": "stack.landing",
+      "members": {
+        "align": "center"
+      },
+      "expectedSha256": "68e13a4946a47ab244a8e5b3e6597bd04b88235f67c1819937cd58b10c48359a"
+    },
+    {
+      "leaf": "layouts.stack",
+      "config": "stack.document",
+      "members": {},
+      "expectedSha256": "0f67177487fce07a06cdaac932e0ecd10f6c3a63147e14556eee660272f14314"
+    },
+    {
+      "leaf": "layouts.stack",
+      "config": "stack.document",
+      "members": {
+        "align": "start"
+      },
+      "expectedSha256": "5cda9e25456114d342b764c12dba896e11189be9d89099c6eecb1c36d7993214"
+    },
+    {
+      "leaf": "layouts.stack",
+      "config": "stack.document",
+      "members": {
+        "align": "center"
+      },
+      "expectedSha256": "8e1ee10ef3f667fc2f8ee0ac6f00ee056a105407060ebb58d4403b184c04bb84"
+    },
+    {
+      "leaf": "layouts.stack",
+      "config": "stack.document",
+      "members": {
+        "lead": "required"
+      },
+      "expectedSha256": "e40d37a9af8fc043978f1a00c33f1cbfdbbe6ab3011755c102569e028a87ce7a"
+    },
+    {
+      "leaf": "layouts.stack",
+      "config": "stack.document",
+      "members": {
+        "lead": "optional"
+      },
+      "expectedSha256": "98acd7b6c2118dd2daf3469835eca781ccddb64c6d41d8939f10b691b283f063"
+    },
+    {
+      "leaf": "layouts.stack",
+      "config": "stack.focus",
+      "members": {},
+      "expectedSha256": "01d43c2717fb8a850216d611d530f647efe01b0d5cfd9508492b3ee518d5ce0b"
+    },
+    {
+      "leaf": "layouts.stack",
+      "config": "stack.focus",
+      "members": {
+        "lead": "required"
+      },
+      "expectedSha256": "dea130943d9281a3b8bdccf9d46113405b18758edcce388093e1e9a9179f4873"
+    },
+    {
+      "leaf": "layouts.stack",
+      "config": "stack.focus",
+      "members": {
+        "lead": "optional"
+      },
+      "expectedSha256": "0ed61cb726de94e8c680d96593b5085f3f19be93667e59f3a98dde13ddcacf49"
+    },
+    {
+      "leaf": "layouts.stack",
+      "config": "stack.index",
+      "members": {},
+      "expectedSha256": "9cbde520f1507222538c75d0c3f5d2da6d50c09688ac587983967700d4714e17"
+    },
+    {
+      "leaf": "layouts.stack",
+      "config": "stack.index",
+      "members": {
+        "measure": "full"
+      },
+      "expectedSha256": "c5370b8acd4da72111f5713c70b6afb5d4316dd8f68aa21ffe7f8e053804041b"
+    },
+    {
+      "leaf": "layouts.stack",
+      "config": "stack.index",
+      "members": {
+        "measure": "wide"
+      },
+      "expectedSha256": "f74edabe8691868a2621c54e8f68113f7f061221d10e15c70cadca962fb4df69"
+    },
+    {
+      "leaf": "layouts.stack",
+      "config": "stack.index",
+      "members": {
+        "measure": "content"
+      },
+      "expectedSha256": "c98eb3b029cedc89a7e824940ad65b6218765b3e1fcf232614dcd0bb0aba2285"
+    },
+    {
+      "leaf": "layouts.stack",
+      "config": "stack.index",
+      "members": {
+        "measure": "prose"
+      },
+      "expectedSha256": "fa1c828d6bf01fe95284b7d8924e19f45e75888f6b86111f93a0488983e78cae"
+    },
+    {
+      "leaf": "layouts.stack",
+      "config": "stack.index",
+      "members": {
+        "measure": "form"
+      },
+      "expectedSha256": "7b235ab8c186a5239808eaf114b97f255b207593540891ccea427af3627aff40"
+    },
+    {
+      "leaf": "layouts.stack",
+      "config": "stack.index",
+      "members": {
+        "align": "start"
+      },
+      "expectedSha256": "d3d1f9f916ff25321a20d47a12d899da402d7e36f912ef0c904bf6b5e91ff3a2"
+    },
+    {
+      "leaf": "layouts.stack",
+      "config": "stack.index",
+      "members": {
+        "align": "center"
+      },
+      "expectedSha256": "53bee3e135714b48502371e3296200a99e7ce012bb7a479894513c3dc9fd470a"
+    },
+    {
+      "leaf": "layouts.stack",
+      "config": "stack.index",
+      "members": {
+        "lead": "required"
+      },
+      "expectedSha256": "0acac3eb9c51118e504cfa92eebf666f18a3eae901d951a75a1a94394e4dd6f3"
+    },
+    {
+      "leaf": "layouts.stack",
+      "config": "stack.index",
+      "members": {
+        "lead": "optional"
+      },
+      "expectedSha256": "79f67f361dcdc498615d28a049f9cb0b0f9a58a13dfd7a812038d40756eca1cb"
+    },
+    {
+      "leaf": "layouts.split",
+      "config": "split.default",
+      "members": {},
+      "expectedSha256": "988d466dab2d88ea33e3a585367cb554717161827b6ea27062c0966924b7499a"
+    },
+    {
+      "leaf": "layouts.split",
+      "config": "split.default",
+      "members": {
+        "ratio": "1:1"
+      },
+      "expectedSha256": "4530a92a0be81634901468e7c29fa246d8cfa878e26a061c3328071e53273969"
+    },
+    {
+      "leaf": "layouts.split",
+      "config": "split.default",
+      "members": {
+        "ratio": "3:2"
+      },
+      "expectedSha256": "2778fd0447ab8667088ed6e1a9097925d06cfba34cdce9a08a3c049f26eaef7f"
+    },
+    {
+      "leaf": "layouts.split",
+      "config": "split.default",
+      "members": {
+        "ratio": "2:3"
+      },
+      "expectedSha256": "194fc25947247fb7c8a879857eab583768ba5ba9076a24633f14ca956a8a13ab"
+    },
+    {
+      "leaf": "layouts.split",
+      "config": "split.default",
+      "members": {
+        "collapse": "start-first"
+      },
+      "expectedSha256": "28b1c1a0424f886ec7ea3668d7dffd76cef67f46c64b0233514cfa8f535e2043"
+    },
+    {
+      "leaf": "layouts.split",
+      "config": "split.default",
+      "members": {
+        "collapse": "end-first"
+      },
+      "expectedSha256": "c524d0f77ad9d238f8b449f9bf710ebfefef321dcfe4ff7c6a4fa747ad0b926b"
+    },
+    {
+      "leaf": "layouts.split",
+      "config": "split.default",
+      "members": {
+        "align": "top"
+      },
+      "expectedSha256": "38c184065517c56bd2c95a198fcec71fa96a19e407a3a62b1dcec3ac1073655b"
+    },
+    {
+      "leaf": "layouts.split",
+      "config": "split.default",
+      "members": {
+        "align": "center"
+      },
+      "expectedSha256": "41be4d2a44065ecc8039eadb6004d944d8adff410f8cdd34241978e3b79c6965"
+    },
+    {
+      "leaf": "layouts.sidebar-content",
+      "config": "sidebar-content.record",
+      "members": {},
+      "expectedSha256": "f39bd8eb11ffdb6a4e88f8ea40296390effd1e56e190fb01ce0b1f6e33f5073b"
+    },
+    {
+      "leaf": "layouts.sidebar-content",
+      "config": "sidebar-content.docs",
+      "members": {},
+      "expectedSha256": "816793e80df0eec9ed892c3afab86e13b6d885ec54988f8646ab8b1a50508a10"
+    },
+    {
+      "leaf": "layouts.bento",
+      "config": "bento.default",
+      "members": {},
+      "expectedSha256": "1d4c4e00d6933f164c279f68e5f09ef5fac82b2bf265a88aa8faa8ce91bcb844"
+    },
+    {
+      "leaf": "layouts.bento",
+      "config": "bento.default",
+      "members": {
+        "density": "airy"
+      },
+      "expectedSha256": "6d4f2b7193a4de12194200bb76db3abdbff2b7d32b7125732373231d813d037c"
+    },
+    {
+      "leaf": "layouts.bento",
+      "config": "bento.default",
+      "members": {
+        "density": "standard"
+      },
+      "expectedSha256": "c67a0f769bb04799e4edfcc3199e21c61cb631382bdd27abb0876c9e698f13cf"
+    },
+    {
+      "leaf": "layouts.bento",
+      "config": "bento.default",
+      "members": {
+        "density": "dense"
+      },
+      "expectedSha256": "074d634eed71292c066745c9f19af07c4f195ef413bb95a70cc8b11ac51e3fca"
+    },
+    {
+      "leaf": "layouts.bento",
+      "config": "bento.default",
+      "members": {
+        "rhythm": "uniform"
+      },
+      "expectedSha256": "1c30b7d6fc98651dafb145d565c7d1f4ea33c07522254f1377990bef96565ca9"
+    },
+    {
+      "leaf": "layouts.bento",
+      "config": "bento.default",
+      "members": {
+        "rhythm": "feature-first"
+      },
+      "expectedSha256": "345f8ad49fbf397027d5c275852ee9dcd305e385e11ad9e1303c4131f9a86fa7"
+    }
+  ]
+}

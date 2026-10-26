@@ -1,0 +1,132 @@
+{
+  "transform": "shadcn-aria-rewrite@1",
+  "notes": [
+    {
+      "file": "apps/v4/registry/bases/aria/ui/button.tsx",
+      "value": "active:not-aria-[haspopup]:translate-y-px",
+      "message": "Restyled source: Preserve one-hairline press displacement; use existing exact 1px member with explicit geometric read."
+    },
+    {
+      "file": "apps/v4/registry/bases/aria/ui/button.tsx",
+      "value": "border-transparent",
+      "message": "Removed suppression beside the same expanded literal's token-bound focus owner"
+    },
+    {
+      "file": "apps/v4/registry/bases/aria/ui/button.tsx",
+      "value": "gap-1.5",
+      "message": "Restyled source: 6px to spacing.sm 8px"
+    },
+    {
+      "file": "apps/v4/registry/bases/aria/ui/button.tsx",
+      "value": "has-data-[icon=inline-end]:pr-1.5",
+      "message": "Restyled source: 6px to spacing.sm 8px"
+    },
+    {
+      "file": "apps/v4/registry/bases/aria/ui/button.tsx",
+      "value": "has-data-[icon=inline-start]:pl-1.5",
+      "message": "Restyled source: 6px to spacing.sm 8px"
+    },
+    {
+      "file": "apps/v4/registry/bases/aria/ui/button.tsx",
+      "value": "outline-none",
+      "message": "Removed suppression beside the same expanded literal's token-bound focus owner"
+    },
+    {
+      "file": "apps/v4/registry/bases/aria/ui/button.tsx",
+      "value": "px-2.5",
+      "message": "Restyled source: 10px to spacing.md 12px"
+    },
+    {
+      "file": "apps/v4/registry/bases/aria/ui/button.tsx",
+      "value": "rounded-[min(var(--radius-md),10px)]",
+      "message": "Restyled source: Remove literal 10/12px cap and use the consumer control radius directly; preserves every size/state prefix."
+    },
+    {
+      "file": "apps/v4/registry/bases/aria/ui/button.tsx",
+      "value": "rounded-[min(var(--radius-md),12px)]",
+      "message": "Restyled source: Remove literal 10/12px cap and use the consumer control radius directly; preserves every size/state prefix."
+    },
+    {
+      "file": "apps/v4/registry/bases/aria/ui/button.tsx",
+      "value": "text-[0.8rem]",
+      "message": "Restyled source: Restyle 12.8px small control/calendar typography to existing caption 12px; no token value change."
+    }
+  ],
+  "files": [
+    {
+      "path": "components/_parts/utils/index.ts",
+      "content": "import { clsx, type ClassValue } from \"clsx\"\nimport { twMerge } from \"tailwind-merge\"\nexport function cn(...inputs: ClassValue[]) { return twMerge(clsx(inputs)) }\n"
+    },
+    {
+      "path": "components/button/button.tsx",
+      "content": "\"use client\"\n\nimport type * as React from \"react\"\nimport { cva, type VariantProps } from \"class-variance-authority\"\nimport { cn } from \"../_parts/utils/index.js\"\nimport {\n  Button as ButtonPrimitive,\n  Link as LinkPrimitive,\n  type ButtonProps as ButtonPrimitiveProps,\n  type LinkProps as LinkPrimitiveProps,\n} from \"react-aria-components\"\n\nconst buttonVariants = cva(\n  \"focus-visible:border-(--color-focus-ring) focus-visible:outline-solid focus-visible:outline-(length:--ui-border-focus) focus-visible:outline-offset-(--ui-focus-offset) focus-visible:outline-(--color-focus-ring) aria-invalid:outline-solid aria-invalid:outline-(length:--ui-border-focus) aria-invalid:outline-offset-(--ui-focus-offset) aria-invalid:outline-(--color-status-danger) dark:aria-invalid:ring-(--color-status-danger)/40 aria-invalid:border-(--color-status-danger) dark:aria-invalid:border-(--color-status-danger)/50 rounded-(--radius-control) border-(length:--ui-border-hairline)  bg-clip-padding text-(length:--text-sm) font-(weight:--font-weight-medium) focus-visible:outline-solid focus-visible:outline-(length:--ui-border-focus) focus-visible:outline-offset-(--ui-focus-offset) focus-visible:outline-(--color-focus-ring) aria-invalid:outline-solid aria-invalid:outline-(length:--ui-border-focus) aria-invalid:outline-offset-(--ui-focus-offset) aria-invalid:outline-(--color-status-danger) active:not-aria-[haspopup]:translate-y-(--ui-border-hairline) [&_svg:not([class*='size-'])]:size-(--spacing-lg) group/button inline-flex shrink-0 items-center justify-center whitespace-nowrap transition-all duration-(--ui-duration-default) ease-(--ease-default) select-none disabled:pointer-events-none disabled:opacity-(--ui-alpha-disabled) [&_svg]:pointer-events-none [&_svg]:shrink-0\",\n  {\n    variants: {\n      variant: {\n        default: \"bg-(--color-action) text-(--color-ink-on-action) hover:bg-(--color-action)/80\",\n        outline: \"border-(--color-line-base) bg-(--color-surface-base) hover:bg-(--color-surface-sunken) hover:text-(--color-ink-primary) dark:bg-(--color-line-strong)/30 dark:border-(--color-line-strong) dark:hover:bg-(--color-line-strong)/50 aria-expanded:bg-(--color-surface-sunken) aria-expanded:text-(--color-ink-primary)\",\n        secondary: \"bg-(--color-control-tonal) text-(--color-ink-primary) hover:bg-[color-mix(in_oklch,var(--color-control-tonal),var(--color-ink-primary)_5%)] aria-expanded:bg-(--color-control-tonal) aria-expanded:text-(--color-ink-primary)\",\n        ghost: \"hover:bg-(--color-surface-sunken) hover:text-(--color-ink-primary) dark:hover:bg-(--color-surface-sunken)/50 aria-expanded:bg-(--color-surface-sunken) aria-expanded:text-(--color-ink-primary)\",\n        destructive: \"bg-(--color-status-danger)/10 hover:bg-(--color-status-danger)/20 focus-visible:outline-solid focus-visible:outline-(length:--ui-border-focus) focus-visible:outline-offset-(--ui-focus-offset) focus-visible:outline-(--color-focus-ring) dark:focus-visible:outline-solid dark:focus-visible:outline-(length:--ui-border-focus) dark:focus-visible:outline-offset-(--ui-focus-offset) dark:focus-visible:outline-(--color-focus-ring) dark:bg-(--color-status-danger)/20 text-(--color-status-danger) focus-visible:border-(--color-status-danger)/40 dark:hover:bg-(--color-status-danger)/30\",\n        link: \"text-(--color-accent-text) underline-offset-(--spacing-lg) hover:underline\",\n      },\n      size: {\n        default: \"h-(--ui-control-h-md) gap-(--spacing-sm) px-(--spacing-md) has-data-[icon=inline-end]:pr-(--spacing-sm) has-data-[icon=inline-start]:pl-(--spacing-sm)\",\n        xs: \"h-(--spacing-xl) gap-(--spacing-xs) rounded-(--radius-control) px-(--spacing-sm) text-(length:--text-xs) in-data-[slot=button-group]:rounded-(--radius-control) has-data-[icon=inline-end]:pr-(--spacing-sm) has-data-[icon=inline-start]:pl-(--spacing-sm) [&_svg:not([class*='size-'])]:size-(--spacing-md)\",\n        sm: \"h-(--ui-control-h-sm) gap-(--spacing-xs) rounded-(--radius-control) px-(--spacing-md) text-(length:--text-caption) in-data-[slot=button-group]:rounded-(--radius-control) has-data-[icon=inline-end]:pr-(--spacing-sm) has-data-[icon=inline-start]:pl-(--spacing-sm) [&_svg:not([class*='size-'])]:size-(--ui-control-switch-thumb)\",\n        lg: \"h-(--ui-control-h-lg) gap-(--spacing-sm) px-(--spacing-md) has-data-[icon=inline-end]:pr-(--spacing-sm) has-data-[icon=inline-start]:pl-(--spacing-sm)\",\n        icon: \"size-(--ui-control-h-md)\",\n        \"icon-xs\": \"size-(--spacing-xl) rounded-(--radius-control) in-data-[slot=button-group]:rounded-(--radius-control) [&_svg:not([class*='size-'])]:size-(--spacing-md)\",\n        \"icon-sm\": \"size-(--ui-control-h-sm) rounded-(--radius-control) in-data-[slot=button-group]:rounded-(--radius-control)\",\n        \"icon-lg\": \"size-(--ui-control-h-lg)\",\n      },\n    },\n    defaultVariants: {\n      variant: \"default\",\n      size: \"default\",\n    },\n  }\n)\n\nfunction Button({\n  className,\n  variant = \"default\",\n  size = \"default\",\n  ...props\n}: Omit<ButtonPrimitiveProps, \"className\"> &\n  React.RefAttributes<HTMLButtonElement> &\n  VariantProps<typeof buttonVariants> & {\n    className?: string\n  }) {\n  return (\n    <ButtonPrimitive\n      data-slot=\"button\"\n      data-variant={variant}\n      data-size={size}\n      className={cn(buttonVariants({ variant, size, className }))}\n      {...props}\n    />\n  )\n}\n\nfunction LinkButton({\n  className,\n  variant = \"default\",\n  size = \"default\",\n  ...props\n}: Omit<LinkPrimitiveProps, \"className\"> &\n  VariantProps<typeof buttonVariants> & {\n    className?: string\n  }) {\n  return (\n    <LinkPrimitive\n      data-slot=\"button\"\n      data-variant={variant}\n      data-size={size}\n      className={cn(buttonVariants({ variant, size, className }))}\n      {...props}\n    />\n  )\n}\n\nexport { Button, LinkButton, buttonVariants }\n"
+    },
+    {
+      "path": "components/button/index.ts",
+      "content": "export * from \"./button.js\"\n"
+    },
+    {
+      "path": "notices/THIRD-PARTY.md",
+      "content": "# Third-party notice\n\nSource: https://github.com/shadcn-ui/ui\nCommit: daaf156ee00ed91cc7e6bdd937c1b4973152d141\nTransform: shadcn-aria-rewrite@1\n\nMIT License\n\nCopyright (c) 2023 shadcn\n\nPermission is hereby granted, free of charge, to any person obtaining a copy\nof this software and associated documentation files (the \"Software\"), to deal\nin the Software without restriction, including without limitation the rights\nto use, copy, modify, merge, publish, distribute, sublicense, and/or sell\ncopies of the Software, and to permit persons to whom the Software is\nfurnished to do so, subject to the following conditions:\n\nThe above copyright notice and this permission notice shall be included in all\ncopies or substantial portions of the Software.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR\nIMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,\nFITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE\nAUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER\nLIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,\nOUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE\nSOFTWARE.\n"
+    }
+  ],
+  "outputSha256": [
+    {
+      "path": "components/_parts/utils/index.ts",
+      "sha256": "d3753f708b15cc1ec47bc3136827134b702e2069eebdb0ddefb1806b95d7c1d9"
+    },
+    {
+      "path": "components/button/button.tsx",
+      "sha256": "98a76d9435a6893930055ad9ea7b4dd96c2c0291895bd2647080da1c4552748b"
+    },
+    {
+      "path": "components/button/index.ts",
+      "sha256": "1333f587593048935e743a2124f4753b80237fa34a2f92a387bc38df0777aa08"
+    },
+    {
+      "path": "notices/THIRD-PARTY.md",
+      "sha256": "6148b3941d0eff3d024e4d3a0e630f009484163560272ae6ec79c649c67fc964"
+    }
+  ],
+  "reads": {
+    "tokens": [
+      "tokens.accent-color.text",
+      "tokens.action-color.default",
+      "tokens.border-color.base",
+      "tokens.border-color.strong",
+      "tokens.border-width.hairline",
+      "tokens.caption-size.default",
+      "tokens.control-color.tonal",
+      "tokens.control-radius.default",
+      "tokens.control-size.h-lg",
+      "tokens.control-size.h-md",
+      "tokens.control-size.h-sm",
+      "tokens.control-size.switch-thumb",
+      "tokens.duration.default",
+      "tokens.easing.default",
+      "tokens.focus-color.default",
+      "tokens.focus-outline.offset",
+      "tokens.focus-outline.width",
+      "tokens.font-size.sm",
+      "tokens.font-size.xs",
+      "tokens.font-weight.medium",
+      "tokens.spacing.lg",
+      "tokens.spacing.md",
+      "tokens.spacing.sm",
+      "tokens.spacing.xl",
+      "tokens.spacing.xs",
+      "tokens.state-opacity.disabled",
+      "tokens.status-color.danger",
+      "tokens.surface-color.base",
+      "tokens.surface-color.sunken",
+      "tokens.text-color.on-action",
+      "tokens.text-color.primary"
+    ],
+    "assets": [],
+    "components": []
+  },
+  "parts": [
+    "utils"
+  ],
+  "issues": []
+}

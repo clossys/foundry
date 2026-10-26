@@ -1,18 +1,18 @@
 import { describe, expect, it } from "vitest";
 import { render, screen } from "@testing-library/react";
 import { ArticleBody } from "./ArticleBody.js";
-import { SearchField } from "../atoms/SearchField.js";
-import { Chip } from "../atoms/Chip.js";
+import { SearchField } from "../components/SearchField.js";
+import { Chip } from "../components/Chip.js";
 import { Toolbar } from "./Toolbar.js";
 import { ContentSection } from "./ContentSection.js";
 import { Matrix } from "./Matrix.js";
 import { Items } from "./items/Items.js";
 import { Specimen } from "./specimen/Specimen.js";
-import { UI_BORDER_HAIRLINE } from "../atoms/internal/ui-vars.js";
+import { UI_BORDER_HAIRLINE } from "../components/internal/ui-vars.js";
 
 const PHYSICAL = /(^|\s)([a-z-]+:)*(ml|mr|pl|pr|left|right|border-l|border-r|text-left|text-right|rounded-[tb]?[lr])(-|\s|$)/;
 
-describe("blocks and atoms RTL logical-direction utilities (#951)", () => {
+describe("blocks and components RTL logical-direction utilities (#951)", () => {
   it("places SearchField's clear control at inline-end under dir=rtl", () => {
     render(
       <div dir="rtl">

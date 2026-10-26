@@ -1,0 +1,896 @@
+{
+  "counts": {
+    "assetEdges": 4,
+    "assets": 45,
+    "members": 629,
+    "orphanEdges": 0,
+    "resolvedMembers": 628,
+    "tokenEdges": 25,
+    "tokens": 53,
+    "unusedAssets": 43,
+    "unusedTokens": 40
+  },
+  "leaves": [
+    {
+      "assets": [
+        "assets.mark"
+      ],
+      "consumedBy": [],
+      "id": "assets.app-icon",
+      "resolved": 2,
+      "tokens": [
+        "tokens.text-color"
+      ],
+      "total": 2
+    },
+    {
+      "assets": [
+        "assets.mark"
+      ],
+      "consumedBy": [],
+      "id": "assets.favicon",
+      "resolved": 1,
+      "tokens": [
+        "tokens.text-color"
+      ],
+      "total": 2
+    },
+    {
+      "assets": [],
+      "consumedBy": [],
+      "id": "assets.icon-arrow-right",
+      "resolved": 1,
+      "tokens": [],
+      "total": 1
+    },
+    {
+      "assets": [],
+      "consumedBy": [],
+      "id": "assets.icon-business",
+      "resolved": 1,
+      "tokens": [],
+      "total": 1
+    },
+    {
+      "assets": [],
+      "consumedBy": [],
+      "id": "assets.icon-check",
+      "resolved": 1,
+      "tokens": [],
+      "total": 1
+    },
+    {
+      "assets": [],
+      "consumedBy": [],
+      "id": "assets.icon-chevron-down",
+      "resolved": 1,
+      "tokens": [],
+      "total": 1
+    },
+    {
+      "assets": [],
+      "consumedBy": [],
+      "id": "assets.icon-chevron-left",
+      "resolved": 1,
+      "tokens": [],
+      "total": 1
+    },
+    {
+      "assets": [],
+      "consumedBy": [],
+      "id": "assets.icon-chevron-right",
+      "resolved": 1,
+      "tokens": [],
+      "total": 1
+    },
+    {
+      "assets": [],
+      "consumedBy": [],
+      "id": "assets.icon-chevron-up",
+      "resolved": 1,
+      "tokens": [],
+      "total": 1
+    },
+    {
+      "assets": [],
+      "consumedBy": [],
+      "id": "assets.icon-close",
+      "resolved": 1,
+      "tokens": [],
+      "total": 1
+    },
+    {
+      "assets": [],
+      "consumedBy": [],
+      "id": "assets.icon-danger",
+      "resolved": 1,
+      "tokens": [],
+      "total": 1
+    },
+    {
+      "assets": [],
+      "consumedBy": [],
+      "id": "assets.icon-date",
+      "resolved": 1,
+      "tokens": [],
+      "total": 1
+    },
+    {
+      "assets": [],
+      "consumedBy": [],
+      "id": "assets.icon-document",
+      "resolved": 1,
+      "tokens": [],
+      "total": 1
+    },
+    {
+      "assets": [],
+      "consumedBy": [],
+      "id": "assets.icon-document-approved",
+      "resolved": 1,
+      "tokens": [],
+      "total": 1
+    },
+    {
+      "assets": [],
+      "consumedBy": [],
+      "id": "assets.icon-external-link",
+      "resolved": 1,
+      "tokens": [],
+      "total": 1
+    },
+    {
+      "assets": [],
+      "consumedBy": [],
+      "id": "assets.icon-folder",
+      "resolved": 1,
+      "tokens": [],
+      "total": 1
+    },
+    {
+      "assets": [],
+      "consumedBy": [],
+      "id": "assets.icon-grid-view",
+      "resolved": 1,
+      "tokens": [],
+      "total": 1
+    },
+    {
+      "assets": [],
+      "consumedBy": [],
+      "id": "assets.icon-guide",
+      "resolved": 1,
+      "tokens": [],
+      "total": 1
+    },
+    {
+      "assets": [],
+      "consumedBy": [],
+      "id": "assets.icon-home",
+      "resolved": 1,
+      "tokens": [],
+      "total": 1
+    },
+    {
+      "assets": [],
+      "consumedBy": [],
+      "id": "assets.icon-info",
+      "resolved": 1,
+      "tokens": [],
+      "total": 1
+    },
+    {
+      "assets": [],
+      "consumedBy": [],
+      "id": "assets.icon-institution",
+      "resolved": 1,
+      "tokens": [],
+      "total": 1
+    },
+    {
+      "assets": [],
+      "consumedBy": [],
+      "id": "assets.icon-integration",
+      "resolved": 1,
+      "tokens": [],
+      "total": 1
+    },
+    {
+      "assets": [],
+      "consumedBy": [],
+      "id": "assets.icon-layers",
+      "resolved": 1,
+      "tokens": [],
+      "total": 1
+    },
+    {
+      "assets": [],
+      "consumedBy": [],
+      "id": "assets.icon-legal",
+      "resolved": 1,
+      "tokens": [],
+      "total": 1
+    },
+    {
+      "assets": [],
+      "consumedBy": [],
+      "id": "assets.icon-list-view",
+      "resolved": 1,
+      "tokens": [],
+      "total": 1
+    },
+    {
+      "assets": [],
+      "consumedBy": [],
+      "id": "assets.icon-locked",
+      "resolved": 1,
+      "tokens": [],
+      "total": 1
+    },
+    {
+      "assets": [],
+      "consumedBy": [],
+      "id": "assets.icon-organization",
+      "resolved": 1,
+      "tokens": [],
+      "total": 1
+    },
+    {
+      "assets": [],
+      "consumedBy": [],
+      "id": "assets.icon-package",
+      "resolved": 1,
+      "tokens": [],
+      "total": 1
+    },
+    {
+      "assets": [],
+      "consumedBy": [],
+      "id": "assets.icon-payment",
+      "resolved": 1,
+      "tokens": [],
+      "total": 1
+    },
+    {
+      "assets": [],
+      "consumedBy": [],
+      "id": "assets.icon-receipt",
+      "resolved": 1,
+      "tokens": [],
+      "total": 1
+    },
+    {
+      "assets": [],
+      "consumedBy": [],
+      "id": "assets.icon-search",
+      "resolved": 1,
+      "tokens": [],
+      "total": 1
+    },
+    {
+      "assets": [],
+      "consumedBy": [],
+      "id": "assets.icon-security",
+      "resolved": 1,
+      "tokens": [],
+      "total": 1
+    },
+    {
+      "assets": [],
+      "consumedBy": [],
+      "id": "assets.icon-settings",
+      "resolved": 1,
+      "tokens": [],
+      "total": 1
+    },
+    {
+      "assets": [],
+      "consumedBy": [],
+      "id": "assets.icon-success",
+      "resolved": 1,
+      "tokens": [],
+      "total": 1
+    },
+    {
+      "assets": [],
+      "consumedBy": [],
+      "id": "assets.icon-team",
+      "resolved": 1,
+      "tokens": [],
+      "total": 1
+    },
+    {
+      "assets": [],
+      "consumedBy": [],
+      "id": "assets.icon-theme-dark",
+      "resolved": 1,
+      "tokens": [],
+      "total": 1
+    },
+    {
+      "assets": [],
+      "consumedBy": [],
+      "id": "assets.icon-theme-light",
+      "resolved": 1,
+      "tokens": [],
+      "total": 1
+    },
+    {
+      "assets": [],
+      "consumedBy": [],
+      "id": "assets.icon-theme-system",
+      "resolved": 1,
+      "tokens": [],
+      "total": 1
+    },
+    {
+      "assets": [],
+      "consumedBy": [],
+      "id": "assets.icon-time",
+      "resolved": 1,
+      "tokens": [],
+      "total": 1
+    },
+    {
+      "assets": [],
+      "consumedBy": [],
+      "id": "assets.icon-user",
+      "resolved": 1,
+      "tokens": [],
+      "total": 1
+    },
+    {
+      "assets": [],
+      "consumedBy": [],
+      "id": "assets.icon-warning",
+      "resolved": 1,
+      "tokens": [],
+      "total": 1
+    },
+    {
+      "assets": [],
+      "consumedBy": [],
+      "id": "assets.icon-website",
+      "resolved": 1,
+      "tokens": [],
+      "total": 1
+    },
+    {
+      "assets": [],
+      "consumedBy": [],
+      "id": "assets.image-ratio",
+      "resolved": 1,
+      "tokens": [],
+      "total": 1
+    },
+    {
+      "assets": [
+        "assets.lockup"
+      ],
+      "consumedBy": [
+        "assets.lockup"
+      ],
+      "id": "assets.lockup",
+      "resolved": 2,
+      "tokens": [
+        "tokens.text-color"
+      ],
+      "total": 2
+    },
+    {
+      "assets": [
+        "assets.mark"
+      ],
+      "consumedBy": [
+        "assets.app-icon",
+        "assets.favicon",
+        "assets.mark"
+      ],
+      "id": "assets.mark",
+      "resolved": 3,
+      "tokens": [
+        "tokens.text-color"
+      ],
+      "total": 3
+    },
+    {
+      "assets": [],
+      "consumedBy": [
+        "tokens.focus-color",
+        "tokens.focus-shadow"
+      ],
+      "id": "tokens.accent-color",
+      "resolved": 5,
+      "tokens": [],
+      "total": 5
+    },
+    {
+      "assets": [],
+      "consumedBy": [],
+      "id": "tokens.action-color",
+      "resolved": 5,
+      "tokens": [],
+      "total": 5
+    },
+    {
+      "assets": [],
+      "consumedBy": [],
+      "id": "tokens.behavior-timing",
+      "resolved": 6,
+      "tokens": [],
+      "total": 6
+    },
+    {
+      "assets": [],
+      "consumedBy": [],
+      "id": "tokens.blur",
+      "resolved": 10,
+      "tokens": [],
+      "total": 10
+    },
+    {
+      "assets": [],
+      "consumedBy": [],
+      "id": "tokens.body-size",
+      "resolved": 4,
+      "tokens": [],
+      "total": 4
+    },
+    {
+      "assets": [],
+      "consumedBy": [
+        "tokens.border-color",
+        "tokens.chart-color",
+        "tokens.diverging-color",
+        "tokens.elevation"
+      ],
+      "id": "tokens.border-color",
+      "resolved": 5,
+      "tokens": [
+        "tokens.border-color"
+      ],
+      "total": 5
+    },
+    {
+      "assets": [],
+      "consumedBy": [
+        "tokens.border-width"
+      ],
+      "id": "tokens.border-width",
+      "resolved": 3,
+      "tokens": [
+        "tokens.border-width"
+      ],
+      "total": 3
+    },
+    {
+      "assets": [],
+      "consumedBy": [],
+      "id": "tokens.brandmark-size",
+      "resolved": 6,
+      "tokens": [],
+      "total": 6
+    },
+    {
+      "assets": [],
+      "consumedBy": [],
+      "id": "tokens.breakpoint",
+      "resolved": 11,
+      "tokens": [],
+      "total": 11
+    },
+    {
+      "assets": [],
+      "consumedBy": [],
+      "id": "tokens.caption-size",
+      "resolved": 1,
+      "tokens": [],
+      "total": 1
+    },
+    {
+      "assets": [],
+      "consumedBy": [],
+      "id": "tokens.categorical-color",
+      "resolved": 8,
+      "tokens": [],
+      "total": 8
+    },
+    {
+      "assets": [],
+      "consumedBy": [],
+      "id": "tokens.chart-color",
+      "resolved": 4,
+      "tokens": [
+        "tokens.border-color",
+        "tokens.surface-color",
+        "tokens.text-color"
+      ],
+      "total": 4
+    },
+    {
+      "assets": [],
+      "consumedBy": [],
+      "id": "tokens.code-size",
+      "resolved": 1,
+      "tokens": [],
+      "total": 1
+    },
+    {
+      "assets": [],
+      "consumedBy": [],
+      "id": "tokens.color-ramp",
+      "resolved": 286,
+      "tokens": [],
+      "total": 286
+    },
+    {
+      "assets": [],
+      "consumedBy": [
+        "tokens.content-size"
+      ],
+      "id": "tokens.content-size",
+      "resolved": 13,
+      "tokens": [
+        "tokens.content-size"
+      ],
+      "total": 13
+    },
+    {
+      "assets": [],
+      "consumedBy": [],
+      "id": "tokens.control-color",
+      "resolved": 5,
+      "tokens": [
+        "tokens.text-color"
+      ],
+      "total": 5
+    },
+    {
+      "assets": [],
+      "consumedBy": [
+        "tokens.surface-radius"
+      ],
+      "id": "tokens.control-radius",
+      "resolved": 1,
+      "tokens": [],
+      "total": 1
+    },
+    {
+      "assets": [],
+      "consumedBy": [],
+      "id": "tokens.control-size",
+      "resolved": 8,
+      "tokens": [
+        "tokens.touch-target"
+      ],
+      "total": 8
+    },
+    {
+      "assets": [],
+      "consumedBy": [],
+      "id": "tokens.density",
+      "resolved": 5,
+      "tokens": [],
+      "total": 5
+    },
+    {
+      "assets": [],
+      "consumedBy": [],
+      "id": "tokens.display-face",
+      "resolved": 4,
+      "tokens": [],
+      "total": 4
+    },
+    {
+      "assets": [],
+      "consumedBy": [],
+      "id": "tokens.display-size",
+      "resolved": 3,
+      "tokens": [],
+      "total": 3
+    },
+    {
+      "assets": [],
+      "consumedBy": [],
+      "id": "tokens.diverging-color",
+      "resolved": 3,
+      "tokens": [
+        "tokens.border-color"
+      ],
+      "total": 3
+    },
+    {
+      "assets": [],
+      "consumedBy": [
+        "tokens.transition-duration"
+      ],
+      "id": "tokens.duration",
+      "resolved": 5,
+      "tokens": [],
+      "total": 5
+    },
+    {
+      "assets": [],
+      "consumedBy": [],
+      "id": "tokens.easing",
+      "resolved": 7,
+      "tokens": [],
+      "total": 7
+    },
+    {
+      "assets": [],
+      "consumedBy": [
+        "tokens.elevation"
+      ],
+      "id": "tokens.elevation",
+      "resolved": 4,
+      "tokens": [
+        "tokens.border-color",
+        "tokens.elevation"
+      ],
+      "total": 4
+    },
+    {
+      "assets": [],
+      "consumedBy": [
+        "tokens.focus-shadow"
+      ],
+      "id": "tokens.focus-color",
+      "resolved": 2,
+      "tokens": [
+        "tokens.accent-color",
+        "tokens.text-color"
+      ],
+      "total": 2
+    },
+    {
+      "assets": [],
+      "consumedBy": [],
+      "id": "tokens.focus-outline",
+      "resolved": 2,
+      "tokens": [],
+      "total": 2
+    },
+    {
+      "assets": [],
+      "consumedBy": [],
+      "id": "tokens.focus-shadow",
+      "resolved": 2,
+      "tokens": [
+        "tokens.accent-color",
+        "tokens.focus-color"
+      ],
+      "total": 2
+    },
+    {
+      "assets": [],
+      "consumedBy": [],
+      "id": "tokens.font-size",
+      "resolved": 13,
+      "tokens": [],
+      "total": 13
+    },
+    {
+      "assets": [],
+      "consumedBy": [],
+      "id": "tokens.font-weight",
+      "resolved": 9,
+      "tokens": [],
+      "total": 9
+    },
+    {
+      "assets": [],
+      "consumedBy": [],
+      "id": "tokens.gutter",
+      "resolved": 1,
+      "tokens": [],
+      "total": 1
+    },
+    {
+      "assets": [],
+      "consumedBy": [],
+      "id": "tokens.heading-size",
+      "resolved": 4,
+      "tokens": [],
+      "total": 4
+    },
+    {
+      "assets": [],
+      "consumedBy": [],
+      "id": "tokens.icon-size",
+      "resolved": 3,
+      "tokens": [],
+      "total": 3
+    },
+    {
+      "assets": [],
+      "consumedBy": [],
+      "id": "tokens.icon-stroke",
+      "resolved": 1,
+      "tokens": [],
+      "total": 1
+    },
+    {
+      "assets": [],
+      "consumedBy": [],
+      "id": "tokens.letter-spacing",
+      "resolved": 9,
+      "tokens": [],
+      "total": 9
+    },
+    {
+      "assets": [],
+      "consumedBy": [],
+      "id": "tokens.line-height",
+      "resolved": 20,
+      "tokens": [],
+      "total": 20
+    },
+    {
+      "assets": [],
+      "consumedBy": [],
+      "id": "tokens.radius",
+      "resolved": 12,
+      "tokens": [],
+      "total": 12
+    },
+    {
+      "assets": [],
+      "consumedBy": [],
+      "id": "tokens.region-width",
+      "resolved": 4,
+      "tokens": [],
+      "total": 4
+    },
+    {
+      "assets": [],
+      "consumedBy": [],
+      "id": "tokens.scrim-color",
+      "resolved": 1,
+      "tokens": [],
+      "total": 1
+    },
+    {
+      "assets": [],
+      "consumedBy": [],
+      "id": "tokens.sequential-color",
+      "resolved": 7,
+      "tokens": [],
+      "total": 7
+    },
+    {
+      "assets": [],
+      "consumedBy": [],
+      "id": "tokens.shadow",
+      "resolved": 9,
+      "tokens": [],
+      "total": 9
+    },
+    {
+      "assets": [],
+      "consumedBy": [],
+      "id": "tokens.shift-distance",
+      "resolved": 1,
+      "tokens": [],
+      "total": 1
+    },
+    {
+      "assets": [],
+      "consumedBy": [],
+      "id": "tokens.spacing",
+      "resolved": 10,
+      "tokens": [],
+      "total": 10
+    },
+    {
+      "assets": [],
+      "consumedBy": [],
+      "id": "tokens.state-opacity",
+      "resolved": 4,
+      "tokens": [],
+      "total": 4
+    },
+    {
+      "assets": [],
+      "consumedBy": [],
+      "id": "tokens.status-color",
+      "resolved": 12,
+      "tokens": [],
+      "total": 12
+    },
+    {
+      "assets": [],
+      "consumedBy": [
+        "tokens.chart-color",
+        "tokens.surface-color"
+      ],
+      "id": "tokens.surface-color",
+      "resolved": 11,
+      "tokens": [
+        "tokens.surface-color"
+      ],
+      "total": 11
+    },
+    {
+      "assets": [],
+      "consumedBy": [
+        "tokens.surface-radius"
+      ],
+      "id": "tokens.surface-radius",
+      "resolved": 3,
+      "tokens": [
+        "tokens.control-radius",
+        "tokens.surface-radius"
+      ],
+      "total": 3
+    },
+    {
+      "assets": [],
+      "consumedBy": [
+        "assets.app-icon",
+        "assets.favicon",
+        "assets.lockup",
+        "assets.mark",
+        "tokens.chart-color",
+        "tokens.control-color",
+        "tokens.focus-color",
+        "tokens.text-color"
+      ],
+      "id": "tokens.text-color",
+      "resolved": 8,
+      "tokens": [
+        "tokens.text-color"
+      ],
+      "total": 8
+    },
+    {
+      "assets": [],
+      "consumedBy": [
+        "tokens.control-size"
+      ],
+      "id": "tokens.touch-target",
+      "resolved": 1,
+      "tokens": [],
+      "total": 1
+    },
+    {
+      "assets": [],
+      "consumedBy": [],
+      "id": "tokens.transition-duration",
+      "resolved": 1,
+      "tokens": [
+        "tokens.duration"
+      ],
+      "total": 1
+    },
+    {
+      "assets": [],
+      "consumedBy": [],
+      "id": "tokens.transition-easing",
+      "resolved": 2,
+      "tokens": [],
+      "total": 2
+    },
+    {
+      "assets": [],
+      "consumedBy": [
+        "tokens.typeface"
+      ],
+      "id": "tokens.typeface",
+      "resolved": 3,
+      "tokens": [
+        "tokens.typeface"
+      ],
+      "total": 3
+    },
+    {
+      "assets": [],
+      "consumedBy": [],
+      "id": "tokens.z-index",
+      "resolved": 11,
+      "tokens": [],
+      "total": 11
+    }
+  ],
+  "orphans": []
+}

@@ -1,5 +1,5 @@
 import { useId, useState, type ReactNode } from "react";
-import { ResizeHandle, type ResizeHandleProps } from "../atoms/ResizeHandle.js";
+import { ResizeHandle, type ResizeHandleProps } from "../components/ResizeHandle.js";
 import { Panel, type PanelProps } from "./Panel.js";
 
 export interface ResizablePaneProps extends Omit<PanelProps, "onChange" | "defaultValue" | "children" | "role" | "aria-label" | "aria-labelledby"> {

@@ -1,0 +1,64 @@
+{
+  "$extensions": {
+    "com.clossys.fill": {
+      "author": "foundry",
+      "builtOn": [],
+      "conforms": [],
+      "evidence": [],
+      "id": "foundry/sections.hero",
+      "license": "MIT",
+      "mode": "implementation",
+      "originKinds": [
+        "adopted"
+      ],
+      "pin": {
+        "export": "./blocks#Hero",
+        "package": "@clossys/designer",
+        "version": "0.12.0"
+      },
+      "relation": "subset",
+      "slot": "sections.hero",
+      "source": "foundry",
+      "sourceAddress": "./blocks#Hero",
+      "status": "draft",
+      "trust": "foundry",
+      "unmapped": [
+        "slot.header"
+      ]
+    }
+  },
+  "sections": {
+    "hero": {
+      "configs": {},
+      "impl": {
+        "export": "Hero",
+        "kind": "package",
+        "module": "@clossys/designer/blocks"
+      },
+      "license": "MIT",
+      "notes": [
+        "Host supplies required heading. Header is distributed over heading and supporting props, not a section-header region. Source composes SectionIntro; headingLevel permits h1.",
+        "Descriptor only; source imports, token reads, shared anatomy, accessibility, contrast and consumer runtime conformance are unmeasured. Content bindings describe host adaptation points, not type-equivalent converters."
+      ],
+      "parts": [],
+      "pin": {
+        "export": "./blocks#Hero",
+        "package": "@clossys/designer",
+        "version": "0.12.0"
+      },
+      "propMap": {
+        "layout.editorial": "./blocks#Hero.composition=editorial",
+        "layout.split": "./blocks#Hero.composition=split",
+        "size.compact": "./blocks#Hero.size=compact",
+        "size.default": "./blocks#Hero.size=default",
+        "size.display": "./blocks#Hero.size=display"
+      },
+      "slot": "sections.hero",
+      "slotMap": {
+        "actions": "./blocks#Hero.actions",
+        "media": "./blocks#Hero.media"
+      },
+      "source": "foundry"
+    }
+  }
+}

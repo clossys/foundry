@@ -39,7 +39,7 @@ describe("Explorer", () => {
     expect(folder).toHaveAttribute("aria-selected", "false"); expect(action).toHaveBeenCalledTimes(3);
     expect(folder).not.toHaveClass("bg-surface-raised");
   });
-  it("renders twelve levels, token branch guides, distinct Icon atoms and capped indentation", () => {
+  it("renders twelve levels, token branch guides, distinct Icon components and capped indentation", () => {
     const { container } = render(<Explorer tree={chain(12)} label="Files" defaultExpandedIds={Array.from({ length: 11 }, (_, i) => String(i + 1))} />);
     const rows = screen.getAllByRole("treeitem"); expect(rows).toHaveLength(12);
     rows.forEach((row, i) => {

@@ -1,6 +1,6 @@
 import type { CSSProperties, HTMLAttributes, ReactNode } from "react";
 import type { CopyRef, CopyResolver } from "@clossys/writer";
-import { mergeUiClasses } from "@clossys/designer/atoms/server";
+import { mergeUiClasses } from "@clossys/designer/components/server";
 import { ArticleBody } from "@clossys/designer/blocks/server";
 import { SiteFooter, SiteHeader } from "@clossys/designer/shell/server";
 import { RenderError } from "../../internal/errors.js";
@@ -101,7 +101,7 @@ export function DocumentView({ brand, document, resolveCopyId, summary, effectiv
   return (
     <div {...rest} className={mergeUiClasses("flex min-h-dvh flex-col", className)} style={style}>
       <SiteHeader brand={brand} />
-      <main className={PAGE_COLUMN_CLASSES} style={pageColumnStyle("prose")}>
+      <main className={`${PAGE_COLUMN_CLASSES} max-w-[var(--ui-width-prose-max,none)]`}>
         {content}
       </main>
       <SiteFooter secondary={footerSecondary} />

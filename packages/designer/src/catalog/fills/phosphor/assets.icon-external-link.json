@@ -1,0 +1,58 @@
+{
+  "$extensions": {
+    "com.clossys.fill": {
+      "id": "phosphor/assets.icon-external-link",
+      "slot": "assets.icon-external-link",
+      "source": "phosphor",
+      "mode": "implementation",
+      "sourceAddress": "https://raw.githubusercontent.com/phosphor-icons/core/fe23e2534cdb7bec24bd8e6bd99b3676bcf0d54f/raw/regular/arrow-square-out.svg",
+      "relation": "same-contract",
+      "builtOn": [],
+      "conforms": [],
+      "evidence": [],
+      "author": "third-party",
+      "trust": "pinned-upstream",
+      "license": "MIT",
+      "pin": {
+        "url": "https://raw.githubusercontent.com/phosphor-icons/core/fe23e2534cdb7bec24bd8e6bd99b3676bcf0d54f/raw/regular/arrow-square-out.svg",
+        "commit": "fe23e2534cdb7bec24bd8e6bd99b3676bcf0d54f",
+        "sha256": "5e35ebafb3b73d57516f8cc326de7e3d5bc6762cf5e8f0c3e76d17d76a732157"
+      },
+      "status": "draft",
+      "reads": {
+        "tokens": [],
+        "assets": []
+      }
+    }
+  },
+  "assets": {
+    "icon-external-link": {
+      "default": {
+        "$type": "glyph",
+        "$value": [
+          [
+            "polyline",
+            {
+              "points": "20.25 9.75 20.2490625 3.7509375 14.25 3.75"
+            }
+          ],
+          [
+            "line",
+            {
+              "x1": "12.75",
+              "y1": "11.25",
+              "x2": "20.25",
+              "y2": "3.75"
+            }
+          ],
+          [
+            "path",
+            {
+              "d": "M 17.25 12.75 v 6.75 a 0.75 0.75 0 0 1 -0.75 0.75 H 4.5 a 0.75 0.75 0 0 1 -0.75 -0.75 V 7.5 a 0.75 0.75 0 0 1 0.75 -0.75 h 6.75"
+            }
+          ]
+        ]
+      }
+    }
+  }
+}

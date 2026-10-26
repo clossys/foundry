@@ -1,0 +1,25 @@
+/** Public package surfaces only; mappings describe APIs, not rendered conformance. */
+export interface FoundryFrameMapping {
+  package: "@clossys/designer" | "@clossys/publisher";
+  version: string;
+  subpath: "shell/server" | "blocks" | "frames" | "web" | "web/client";
+  export: string;
+  members: Readonly<Record<string, string>>;
+  slots: Readonly<Record<string, string>>;
+  statePorts: Readonly<Record<string, string>>;
+  notes: readonly string[];
+}
+const designer = (name: string, members: FoundryFrameMapping["members"], slots: FoundryFrameMapping["slots"], statePorts: FoundryFrameMapping["statePorts"] = {}, notes: readonly string[] = []): FoundryFrameMapping => ({ package: "@clossys/designer", version: "0.12.0", subpath: "blocks", export: name, members, slots, statePorts, notes });
+export const FOUNDRY_FRAME_MAP: Readonly<Record<string, FoundryFrameMapping>> = {
+  "site-shell": { package: "@clossys/publisher", version: "0.13.0", subpath: "web", export: "SiteFrame", members: { "footer-placement.flow": "presentation.footerPlacement=flow", "footer-placement.overlay": "presentation.footerPlacement=overlay" }, slots: { "skip-link": "shell.skipLink", header: "shell", main: "children", footer: "shell.footer" }, statePorts: {}, notes: ["No chrome full/minimal configuration, consent or toasts slot is exposed."] },
+  "app-shell": { package: "@clossys/designer", version: "0.12.0", subpath: "frames", export: "AppFrame", members: { "theme.system": "theme.defaultPreference=system", "theme.light": "theme.defaultPreference=light", "theme.dark": "theme.defaultPreference=dark" }, slots: { "skip-link": "skipLabel", sidebar: "navigation", header: "header", main: "children", inspector: "rightPanel", command: "commands", toasts: "toasts" }, statePorts: { "sidebar-collapsed": "navigation.collapsed/navigation.onCollapsedChange", "inspector-collapsed": "rightPanel.collapsed/rightPanel.onCollapsedChange" }, notes: ["Canonical Designer Frames owns AppFrame. Removed width and layout modes remain unsupported contract members. Theme and command state are internally owned; no numeric width state port or progress slot is exposed."] },
+  "site-header": { ...designer("SiteHeader", { "position.sticky": "position=sticky", "position.static": "position=static", "surface.solid": "surface=solid", "surface.transparent": "surface=transparent", "surface.glass": "surface=glass", "tone.base": "tone=base", "tone.inverse": "tone=inverse", "nav-placement.leading": "navPlacement=leading", "nav-placement.centered": "navPlacement=centered" }, { brand: "brand", nav: "nav", actions: "actions" }), subpath: "shell/server", notes: ["NavDisclosure is a separate client island supplied through nav; the descriptor does not prove navigation limits or glass contrast."] },
+  "app-header": designer("PageBar", { "position.sticky": "position=sticky", "position.static": "position=static" }, { brand: "brand", trail: "page.breadcrumb", actions: "page.actions", info: "page" }, {}, ["Context and glass/opaque surface members remain unmapped in this descriptor."]),
+  "app-sidebar": designer("AppNavigation", { "presentation.docked": "collapsed=false", "presentation.collapsed": "collapsed=true", "presentation.overlay": "drawerOpen=true" }, { header: "header", tree: "tree" }, { collapsed: "collapsed/onCollapsedChange" }, ["account and theme can be composed by the host in footer; they are not dedicated slots. No theme state port. Tree uses disclosure navigation; no navigation-tree conformance is claimed."]),
+  "site-footer": { ...designer("SiteFooter", { "ground.base": "ground=base", "ground.inverse": "ground=inverse", "rule.on": "rule=top", "rule.off": "rule=none" }, { columns: "columns" }), subpath: "shell/server", notes: ["links, legal and social can be composed in secondary; no dedicated slots or overlay configuration. rule=top applies only on transparent ground; no unconditional rule visibility is claimed."] },
+  sheet: designer("Drawer", { "placement.start": "placement=start", "placement.end": "placement=end", "placement.bottom": "placement=bottom", "wide.dismiss": "wide=dismiss", "wide.sheet": "wide=sheet" }, { heading: "heading", body: "children", footer: "footer" }, { open: "isOpen/onOpenChange" }, ["Drawer is the edge sheet export. Its literal default breakpoint and rendered behavior are not qualified by this descriptor."]),
+  command: designer("CommandMenu", {}, { groups: "groups", empty: "emptyMessage" }, { open: "isOpen/onOpenChange", query: "query/onQueryChange" }, ["CommandMenu has no shortcut configuration. useCommandMenuShortcut is separately exported but requires host composition; no shortcut member is mapped. Search is a labelled internal input, not a replaceable SearchField slot; no RAC conformance is claimed."]),
+};
+export const FOUNDRY_FRAME_GAPS: Readonly<Record<string, string>> = {
+  inspector: "No standalone inspector frame export exists. AppFrame rightPanel composes ResizablePane and Drawer; neither is a complete inspector frame contract.",
+};

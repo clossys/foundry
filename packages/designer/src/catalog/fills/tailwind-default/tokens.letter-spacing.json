@@ -1,0 +1,154 @@
+{
+  "$extensions": {
+    "com.clossys.fill": {
+      "author": "third-party",
+      "builtOn": [],
+      "conforms": [
+        "dtcg#format",
+        "dtcg#alias"
+      ],
+      "evidence": [
+        {
+          "check": "C1",
+          "clause": "dtcg#format"
+        },
+        {
+          "check": "C2",
+          "clause": "dtcg#alias"
+        }
+      ],
+      "id": "tailwind-default/tokens.letter-spacing",
+      "license": "MIT",
+      "mode": "implementation",
+      "pin": {
+        "file": "theme.css",
+        "package": "tailwindcss",
+        "sha256": "443d7af364200f8ec8352dc78e39485a118a1840d498c97967bf0ae402b39167",
+        "version": "4.3.3"
+      },
+      "relation": "subset",
+      "slot": "tokens.letter-spacing",
+      "source": "tailwind-default",
+      "sourceAddress": "tailwindcss/theme.css",
+      "status": "draft",
+      "trust": "pinned-upstream",
+      "unmapped": [
+        "--animate-bounce",
+        "--animate-ping",
+        "--animate-pulse",
+        "--animate-spin",
+        "--aspect-video",
+        "--color-black",
+        "--color-white",
+        "--container-2xl",
+        "--container-2xs",
+        "--container-3xl",
+        "--container-3xs",
+        "--container-4xl",
+        "--container-5xl",
+        "--container-6xl",
+        "--container-7xl",
+        "--container-lg",
+        "--container-md",
+        "--container-sm",
+        "--container-xl",
+        "--container-xs",
+        "--default-font-family",
+        "--default-font-feature-settings",
+        "--default-font-variation-settings",
+        "--default-mono-font-family",
+        "--default-mono-font-feature-settings",
+        "--default-mono-font-variation-settings",
+        "--default-transition-duration",
+        "--default-transition-timing-function",
+        "--drop-shadow",
+        "--drop-shadow-2xl",
+        "--drop-shadow-lg",
+        "--drop-shadow-md",
+        "--drop-shadow-sm",
+        "--drop-shadow-xl",
+        "--drop-shadow-xs",
+        "--font-serif",
+        "--inset-shadow-2xs",
+        "--inset-shadow-sm",
+        "--inset-shadow-xs",
+        "--max-width-prose",
+        "--perspective-distant",
+        "--perspective-dramatic",
+        "--perspective-midrange",
+        "--perspective-near",
+        "--perspective-normal",
+        "--radius",
+        "--text-shadow-2xs",
+        "--text-shadow-lg",
+        "--text-shadow-md",
+        "--text-shadow-sm",
+        "--text-shadow-xs"
+      ]
+    }
+  },
+  "tokens": {
+    "letter-spacing": {
+      "normal": {
+        "$extensions": {
+          "com.clossys.css": {
+            "raw": "0em"
+          },
+          "com.clossys.unit": "em"
+        },
+        "$type": "number",
+        "$value": 0
+      },
+      "tight": {
+        "$extensions": {
+          "com.clossys.css": {
+            "raw": "-0.025em"
+          },
+          "com.clossys.unit": "em"
+        },
+        "$type": "number",
+        "$value": -0.025
+      },
+      "tighter": {
+        "$extensions": {
+          "com.clossys.css": {
+            "raw": "-0.05em"
+          },
+          "com.clossys.unit": "em"
+        },
+        "$type": "number",
+        "$value": -0.05
+      },
+      "wide": {
+        "$extensions": {
+          "com.clossys.css": {
+            "raw": "0.025em"
+          },
+          "com.clossys.unit": "em"
+        },
+        "$type": "number",
+        "$value": 0.025
+      },
+      "wider": {
+        "$extensions": {
+          "com.clossys.css": {
+            "raw": "0.05em"
+          },
+          "com.clossys.unit": "em"
+        },
+        "$type": "number",
+        "$value": 0.05
+      },
+      "widest": {
+        "$extensions": {
+          "com.clossys.css": {
+            "raw": "0.1em"
+          },
+          "com.clossys.unit": "em"
+        },
+        "$type": "number",
+        "$value": 0.1
+      }
+    }
+  }
+}

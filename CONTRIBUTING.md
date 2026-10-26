@@ -358,7 +358,7 @@ equivalent fix after.
   consumer needed it (#174) — then reopened once a real external consumer
   requirement existed, and shipped as a narrow, evidence-gated exception
   rather than the original open-ended sketch: `@clossys/designer/
-  compiled.css`, a generated stylesheet scoped to `atoms` only (see
+  compiled.css`, a generated stylesheet scoped to `components` only (see
   `packages/designer/README.md`'s "Framework-portable components, without
   Tailwind"). Declined, then reopened, then shipped narrowly — that arc, not
   the bare decline alone, is what this convention is actually asking for.
@@ -588,7 +588,7 @@ equivalent fix after.
   (whose own `include` globs are scoped to `*.test.ts(x)`, not `*.check.*`).
   It should never be imported by `index.ts` or any runtime code — its only
   job is to make `tsc` fail if the contract it encodes regresses. See
-  `packages/designer/src/atoms/internal/icon-contract.check.tsx` and
+  `packages/designer/src/components/internal/icon-contract.check.tsx` and
   `packages/designer/src/shell/internal/shell-contract.check.tsx` for the pattern,
   and `scripts/check-typechecked-assertions.mjs` (run as
   `check:typechecked-assertions`) for the gate that fails CI if a directive

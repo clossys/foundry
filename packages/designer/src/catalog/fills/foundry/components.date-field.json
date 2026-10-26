@@ -1,0 +1,100 @@
+{
+  "$extensions": {
+    "com.clossys.fill": {
+      "author": "foundry",
+      "builtOn": [],
+      "conforms": [],
+      "evidence": [],
+      "id": "foundry/components.date-field",
+      "license": "MIT",
+      "mode": "implementation",
+      "pin": {
+        "export": "./components#DateField",
+        "package": "@clossys/designer",
+        "version": "0.12.0"
+      },
+      "relation": "same-contract",
+      "slot": "components.date-field",
+      "source": "foundry",
+      "sourceAddress": "./components#DateField",
+      "status": "draft",
+      "trust": "foundry"
+    }
+  },
+  "components": {
+    "date-field": {
+      "composes": [],
+      "deps": [
+        {
+          "license": "MIT",
+          "name": "react",
+          "version": ">=18"
+        },
+        {
+          "license": "MIT",
+          "name": "tailwind-merge",
+          "version": "^3.7.0"
+        },
+        {
+          "license": "Apache-2.0",
+          "name": "react-aria-components",
+          "version": "^1.19.0"
+        }
+      ],
+      "impl": {
+        "export": "DateField",
+        "kind": "package",
+        "module": "@clossys/designer/components"
+      },
+      "license": "MIT",
+      "members": [
+        "granularity",
+        "state.invalid",
+        "value.date",
+        "value.time"
+      ],
+      "pin": {
+        "export": "./components#DateField",
+        "package": "@clossys/designer",
+        "version": "0.12.0"
+      },
+      "propMap": {
+        "granularity": "./components#DateField.granularity",
+        "state.invalid": "./components#DateField.isInvalid",
+        "value.date": "./components#DateField.value",
+        "value.time": "./components#DateField.value[granularity=hour|minute|second]"
+      },
+      "props": [
+        "className",
+        "description",
+        "errorMessage",
+        "granularity",
+        "isInvalid",
+        "label",
+        "value"
+      ],
+      "reads": {
+        "assets": [],
+        "components": [],
+        "tokens": [
+          "tokens.accent-color",
+          "tokens.body-size",
+          "tokens.border-color",
+          "tokens.caption-size",
+          "tokens.control-radius",
+          "tokens.focus-shadow",
+          "tokens.radius",
+          "tokens.spacing",
+          "tokens.state-opacity",
+          "tokens.status-color",
+          "tokens.surface-color",
+          "tokens.text-color",
+          "tokens.typeface"
+        ]
+      },
+      "root": "rac:DateField",
+      "slot": "components.date-field",
+      "source": "foundry"
+    }
+  }
+}

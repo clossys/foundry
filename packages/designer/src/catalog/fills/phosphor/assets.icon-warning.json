@@ -1,0 +1,62 @@
+{
+  "$extensions": {
+    "com.clossys.fill": {
+      "id": "phosphor/assets.icon-warning",
+      "slot": "assets.icon-warning",
+      "source": "phosphor",
+      "mode": "implementation",
+      "sourceAddress": "https://raw.githubusercontent.com/phosphor-icons/core/fe23e2534cdb7bec24bd8e6bd99b3676bcf0d54f/raw/regular/warning.svg",
+      "relation": "same-contract",
+      "builtOn": [],
+      "conforms": [],
+      "evidence": [],
+      "author": "third-party",
+      "trust": "pinned-upstream",
+      "license": "MIT",
+      "pin": {
+        "url": "https://raw.githubusercontent.com/phosphor-icons/core/fe23e2534cdb7bec24bd8e6bd99b3676bcf0d54f/raw/regular/warning.svg",
+        "commit": "fe23e2534cdb7bec24bd8e6bd99b3676bcf0d54f",
+        "sha256": "991951eaf0b5219a084034322b2c6cc4c89bd4579e38cc628979155a78abd728"
+      },
+      "status": "draft",
+      "reads": {
+        "tokens": [],
+        "assets": []
+      }
+    }
+  },
+  "assets": {
+    "icon-warning": {
+      "default": {
+        "$type": "glyph",
+        "$value": [
+          [
+            "path",
+            {
+              "d": "M 13.3509375 3.770625 l 8.199375 14.2378125 C 22.125 19.0115625 21.3825 20.25 20.199375 20.25 H 3.800625 C 2.6175 20.25 1.875 19.0115625 2.4496875 18.0084375 L 10.6490625 3.770625 C 11.2396875 2.743125 12.7603125 2.743125 13.3509375 3.770625 Z"
+            }
+          ],
+          [
+            "line",
+            {
+              "x1": "12",
+              "y1": "13.5",
+              "x2": "12",
+              "y2": "9.75"
+            }
+          ],
+          [
+            "circle",
+            {
+              "cx": "12",
+              "cy": "16.875",
+              "r": "1.125",
+              "fill": "currentColor",
+              "stroke": "none"
+            }
+          ]
+        ]
+      }
+    }
+  }
+}

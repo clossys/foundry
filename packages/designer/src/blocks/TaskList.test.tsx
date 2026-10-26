@@ -1,8 +1,8 @@
 import { describe, expect, it, vi } from "vitest";
-import { render, screen, within } from "@testing-library/react";
+import { fireEvent, render, screen, within } from "@testing-library/react";
 import { renderToString } from "react-dom/server";
 import { TaskList, type TaskListItem } from "./TaskList.js";
-import { UI_BORDER_HAIRLINE, UI_LAYOUT_TAP_TARGET } from "../atoms/internal/ui-vars.js";
+import { UI_BORDER_HAIRLINE, UI_LAYOUT_TAP_TARGET } from "../components/internal/ui-vars.js";
 
 const items: TaskListItem[] = [
   { id: "t1", title: "Invite your team", description: "Add at least two colleagues.", status: "done" },
@@ -39,13 +39,38 @@ describe("TaskList", () => {
     expect(container.querySelector('[data-part="fill"]')).toHaveStyle({ inlineSize: "25%" });
   });
 
-  it("T3: shows the supplied empty state with no meter or ordered list", () => {
-    const { container } = render(<TaskList {...props} items={[]} />);
-    expect(screen.getByRole("heading", { name: props.emptyState.title })).toBeInTheDocument();
+  it("S2-5 T3: preserves supplied empty content, root attributes and handlers with no meter or ordered list", () => {
+    const clicked = vi.fn();
+    const { container } = render(<TaskList {...props} items={[]} emptyState={{ ...props.emptyState,
+      id: "empty-tasks", role: "status", "aria-label": "Task availability", className: "host-empty",
+      "data-testid": "empty-tasks", onClick: clicked, icon: <span data-testid="host-icon">Host icon</span>,
+      action: <button>Find tasks</button>, children: <span>Ignored children</span>,
+    }} />);
+    const root = screen.getByRole("status", { name: "Task availability" });
+    expect(root).toHaveAttribute("id", "empty-tasks");
+    expect(root).toHaveAttribute("data-testid", "empty-tasks");
+    expect(root).toHaveClass("host-empty");
+    expect(container.querySelectorAll("#empty-tasks")).toHaveLength(1);
+    expect(within(root).getByRole("heading", { name: props.emptyState.title, level: 2 })).toBeInTheDocument();
     expect(screen.getByText(props.emptyState.description)).toBeVisible();
+    expect(within(root).getByTestId("host-icon")).toHaveTextContent("Host icon");
+    fireEvent.click(within(root).getByRole("button", { name: "Find tasks" }));
+    expect(clicked).toHaveBeenCalledTimes(1);
+    expect(screen.queryByText("Ignored children")).not.toBeInTheDocument();
     expect(screen.queryByRole("meter")).toBeNull();
     expect(container.querySelector("ol")).toBeNull();
     expect(container.querySelector('[data-part="fill"]')).toBeNull();
+  });
+
+  it.each([undefined, null, false, "", 0])("S2-5 omits optional empty content and wrappers for %s", optional => {
+    const { container } = render(<TaskList {...props} items={[]} emptyState={{ title: "Nothing pending", icon: optional, description: optional, action: optional, id: "empty-minimal" }} />);
+    const root = container.querySelector("#empty-minimal")!;
+    expect(within(root).getByRole("heading", { level: 2, name: "Nothing pending" })).toBeInTheDocument();
+    expect(root.children).toHaveLength(1);
+    expect(root.querySelector("p")).toBeNull();
+    expect(root.textContent).toBe("Nothing pending");
+    expect(screen.queryByRole("meter")).toBeNull();
+    expect(container.querySelector("ol")).toBeNull();
   });
 
   it("T4: gives linked rows one title-named stretched anchor and a token-sized target; unlinked rows stay unfocusable", () => {
@@ -77,6 +102,13 @@ describe("TaskList", () => {
     vi.stubGlobal("window", undefined);
     try {
       expect(renderToString(<TaskList {...props} />)).toContain("<ol");
+      const empty = renderToString(<TaskList {...props} items={[]} emptyState={{ ...props.emptyState, icon: <span>Server icon</span>, action: <a href="/tasks">Find tasks</a> }} />);
+      expect(empty).toContain("No tasks remain");
+      expect(empty).toContain("New tasks will appear here.");
+      expect(empty).toContain("Server icon");
+      expect(empty).toContain('href="/tasks"');
+      expect(empty).not.toContain("<ol");
+      expect(empty).not.toContain('role="meter"');
     } finally {
       vi.unstubAllGlobals();
     }

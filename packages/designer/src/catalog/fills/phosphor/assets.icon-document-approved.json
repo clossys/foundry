@@ -1,0 +1,49 @@
+{
+  "$extensions": {
+    "com.clossys.fill": {
+      "id": "phosphor/assets.icon-document-approved",
+      "slot": "assets.icon-document-approved",
+      "source": "phosphor",
+      "mode": "implementation",
+      "sourceAddress": "https://raw.githubusercontent.com/phosphor-icons/core/fe23e2534cdb7bec24bd8e6bd99b3676bcf0d54f/raw/regular/seal-check.svg",
+      "relation": "same-contract",
+      "builtOn": [],
+      "conforms": [],
+      "evidence": [],
+      "author": "third-party",
+      "trust": "pinned-upstream",
+      "license": "MIT",
+      "pin": {
+        "url": "https://raw.githubusercontent.com/phosphor-icons/core/fe23e2534cdb7bec24bd8e6bd99b3676bcf0d54f/raw/regular/seal-check.svg",
+        "commit": "fe23e2534cdb7bec24bd8e6bd99b3676bcf0d54f",
+        "sha256": "894057795e87f5c29e0d8ba8fe07a75344c461bb749e07306020ab3019dfca44"
+      },
+      "status": "draft",
+      "reads": {
+        "tokens": [],
+        "assets": []
+      }
+    }
+  },
+  "assets": {
+    "icon-document-approved": {
+      "default": {
+        "$type": "glyph",
+        "$value": [
+          [
+            "path",
+            {
+              "d": "M 5.105625 18.894375 c -0.8625 -0.8625 -0.290625 -2.6746875 -0.729375 -3.7359375 C 3.920625 14.0625 2.25 13.171875 2.25 12 s 1.670625 -2.0625 2.12625 -3.1584375 C 4.815 7.78125 4.243125 5.968125 5.105625 5.105625 S 7.78125 4.815 8.8415625 4.37625 C 9.9421875 3.920625 10.828125 2.25 12 2.25 S 14.0625 3.920625 15.1584375 4.37625 c 1.06125 0.43875 2.8734375 -0.133125 3.7359375 0.729375 s 0.290625 2.6746875 0.729375 3.7359375 C 20.079375 9.9421875 21.75 10.828125 21.75 12 S 20.079375 14.0625 19.62375 15.1584375 c -0.43875 1.06125 0.133125 2.8734375 -0.729375 3.7359375 s -2.6746875 0.290625 -3.7359375 0.729375 C 14.0625 20.079375 13.171875 21.75 12 21.75 s -2.0625 -1.670625 -3.1584375 -2.12625 C 7.78125 19.185 5.968125 19.756875 5.105625 18.894375 Z"
+            }
+          ],
+          [
+            "polyline",
+            {
+              "points": "8.25 12.75 10.5 15 15.75 9.75"
+            }
+          ]
+        ]
+      }
+    }
+  }
+}

@@ -46,13 +46,9 @@
  *     which of two identically-shaped exports is "the light one".
  *   - `dark` — `primary`, recoloured to the inverse-ink token, for dark
  *     surfaces.
- *   - `favicon` — `mark`, recoloured to `currentColor` (identical
- *     construction to `mono`): a favicon is rendered at sizes where a
- *     second ink colour buys nothing and single-colour legibility is
- *     exactly the property that matters.
- *   - `appIcon` — `mark` composed onto an accent-filled rounded-square
- *     badge, the shape app-icon surfaces (OS launchers, PWA manifests)
- *     expect.
+ *   - `favicon` — the same mark on an ink plate, inverted for dark tabs.
+ *   - `appIcon` — the same mark on an ink-filled rounded-square badge,
+ *     the shape app-icon surfaces (OS launchers, PWA manifests) expect.
  *
  * LIVE-TEXT LOCKUP SPEC (#1535). `composeLockup` takes a SUPPLIED mark
  * (it never draws a monogram), adopts it through `adoptSuppliedMark`, and
@@ -71,8 +67,6 @@
  * that check's own header for why a declared obligation is still a real,
  * auditable one.
  */
-
-import { MarkGeometryError, normalizeMark } from "./mark-normalize.js";
 
 const MARK_VIEW_BOX = "0 0 48 48";
 const WORDMARK_VIEW_BOX = "0 0 200 48";
@@ -125,9 +119,9 @@ export interface IdentityTokenInput {
   surfaceBase: string;
   /** The dark surface `dark` is checked for contrast against. */
   surfaceInverse: string;
-  /** The app-icon badge's background colour. */
+  /** Accent colour retained for callers; identity plates use ink. */
   accent: string;
-  /** The glyph colour composed onto the accent badge. */
+  /** On-accent colour retained for callers; identity glyphs use onInverse. */
   onAccent: string;
   /** CSS `font-family` value for wordmark/monogram text. */
   fontFamily: string;
@@ -364,7 +358,31 @@ function wrapBadge(innerContent: string, accent: string, onAccent: string, sourc
   const escapedAccent = escapeXml(accent);
   const escapedOnAccent = escapeXml(onAccent);
   const transform = badgeContentTransform(sourceViewBox);
-  return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="${MARK_VIEW_BOX}" aria-hidden="true" data-clear-space="${CLEAR_SPACE_RATIO}"><rect width="${BADGE_SIZE}" height="${BADGE_SIZE}" rx="10" fill="${escapedAccent}" /><g style="color:${escapedOnAccent}" transform="${transform}">${innerContent}</g></svg>`;
+  return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="${MARK_VIEW_BOX}" aria-hidden="true" data-clear-space="${CLEAR_SPACE_RATIO}"><rect width="${BADGE_SIZE}" height="${BADGE_SIZE}" rx="10" fill="${escapedAccent}" /><g fill="${escapedAccent}" style="color:${escapedOnAccent}" transform="${transform}">${innerContent}</g></svg>`;
+}
+
+/**
+ * The same artwork on an ink plate. Recognised two-tone art retains both
+ * geometry layers (including strokes and transparent corners); masks select
+ * coverage only. Other marks use their monochrome glyph on a full plate.
+ * Favicon mode adds exactly one dark-scheme rule with two validated paints.
+ */
+export function identityPlateSvg(svg: string, ink: string, onInverse: string, favicon = false): string {
+  for (const color of [ink, onInverse]) if (!isValidCssColor(color)) throw new IdentityKitValidationError(["invalid identity plate colour"]);
+  const plate = escapeXml(ink), glyph = escapeXml(onInverse);
+  const mark = recogniseFlatTwoTone(svg);
+  const box = mark?.box ?? parseViewBoxBox(sourceViewBoxOf(svg)) ?? parseViewBoxBox(MARK_VIEW_BOX)!;
+  const region = `x="${round4(box.minX)}" y="${round4(box.minY)}" width="${round4(box.width)}" height="${round4(box.height)}"`;
+  let body: string;
+  if (mark) {
+    const id = `plate-${fnv1a32Hex(svg)}`;
+    const mask = (suffix: string, tone: boolean): string => `<mask id="${id}-${suffix}" maskUnits="userSpaceOnUse" ${region}><rect ${region} fill="#000" />${renderFlatNodes(mark.nodes, shape => (shape.tone === mark.toneA) === tone ? "#fff" : undefined)}</mask>`;
+    body = `<defs>${mask("a", true)}${mask("b", false)}</defs><g mask="url(#${id}-a)"><rect ${region}/></g><g mask="url(#${id}-b)"><rect ${region} fill="currentColor"/></g>`;
+  } else {
+    body = `<rect ${region}/>${innerMarkupOf(recolorSvg(svg, "currentColor"))}`;
+  }
+  const style = favicon ? `<style>@media (prefers-color-scheme: dark){svg{color:${plate};fill:${glyph}}}</style>` : "";
+  return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="${box.minX} ${box.minY} ${box.width} ${box.height}" color="${glyph}" fill="${plate}" data-clear-space="${CLEAR_SPACE_RATIO}">${style}${body}</svg>`;
 }
 
 function buildVariantSet(input: {
@@ -380,8 +398,8 @@ function buildVariantSet(input: {
     mono: wrapGlyph(markGlyph, MARK_VIEW_BOX, "currentColor"),
     light: wrapGlyph(lockupGlyph, lockupViewBox, tokens.ink),
     dark: wrapGlyph(lockupGlyph, lockupViewBox, tokens.onInverse),
-    favicon: wrapGlyph(markGlyph, MARK_VIEW_BOX, "currentColor"),
-    appIcon: wrapBadge(markGlyph, tokens.accent, tokens.onAccent),
+    favicon: identityPlateSvg(wrapGlyph(markGlyph, MARK_VIEW_BOX, "currentColor"), tokens.ink, tokens.onInverse, true),
+    appIcon: wrapBadge(markGlyph, tokens.ink, tokens.onInverse),
   };
 }
 
@@ -569,9 +587,7 @@ interface FlatTag {
  * not accepted, so the recogniser rejects the whole document instead of
  * re-emitting it. Returns `null` on anything else, on a duplicate
  * attribute name, and on more than {@link FLAT_MAX_ATTRIBUTES_PER_TAG}
- * attributes. The private normalized path alone decodes canonical escaped
- * root metadata and discards descendant metadata by parsed attribute name;
- * the root allow-list still validates every retained root attribute.
+ * attributes.
  *
  * A single left-to-right pass with no backtracking: every character is
  * looked at a bounded number of times, so the cost is linear in the length
@@ -579,7 +595,7 @@ interface FlatTag {
  * {@link FLAT_MAX_ATTRIBUTES_PER_TAG} attributes). Duplicates are found with
  * a `Set`, not by comparing every pair.
  */
-function scanFlatTag(text: string, at: number, metadata?: "root" | "descendants"): FlatTag | null {
+function scanFlatTag(text: string, at: number): FlatTag | null {
   if (text.charCodeAt(at) !== CHAR_LT) return null;
   let i = at + 1;
   while (i < text.length && isLowerLetter(text.charCodeAt(i))) i++;
@@ -593,12 +609,10 @@ function scanFlatTag(text: string, at: number, metadata?: "root" | "descendants"
     if (code === CHAR_GT) return { name, attrs, selfClosing: false, end: afterSpace + 1 };
     if (code === CHAR_SLASH) return text.charCodeAt(afterSpace + 1) === CHAR_GT ? { name, attrs, selfClosing: true, end: afterSpace + 2 } : null;
     if (afterSpace === i || !isAsciiLetter(code)) return null; // an attribute needs leading whitespace and a letter to start its name
+    if (attrs.length === FLAT_MAX_ATTRIBUTES_PER_TAG) return null;
     let nameEnd = afterSpace + 1;
-    const dottedMetadata = metadata === "descendants" && (text.startsWith("data-", afterSpace) || text.startsWith("aria-", afterSpace));
-    while (nameEnd < text.length && (isFlatNameChar(text.charCodeAt(nameEnd)) || (dottedMetadata && text.charCodeAt(nameEnd) === 46))) nameEnd++;
+    while (nameEnd < text.length && isFlatNameChar(text.charCodeAt(nameEnd))) nameEnd++;
     const attrName = text.slice(afterSpace, nameEnd);
-    const omitted = metadata === "descendants" && (attrName === "id" || attrName === "role" || attrName.startsWith("aria-") || (attrName.startsWith("data-") && attrName !== "data-clear-space"));
-    if (!omitted && attrs.length === FLAT_MAX_ATTRIBUTES_PER_TAG) return null;
     if (seen.has(attrName)) return null;
     seen.add(attrName);
     const eq = skipFlatSpace(text, nameEnd);
@@ -606,31 +620,15 @@ function scanFlatTag(text: string, at: number, metadata?: "root" | "descendants"
     const quoteAt = skipFlatSpace(text, eq + 1);
     const quote = text.charCodeAt(quoteAt);
     if (quote !== CHAR_DQUOTE && quote !== CHAR_SQUOTE) return null;
-    // Only normalized metadata may contain the normalizer's escaped text.
-    // Descendant metadata is omitted by its parsed name, never by a text-wide strip.
-    const encodedMetadata = omitted || (metadata === "root" && (attrName === "aria-label" || attrName === "role"));
     let valueEnd = quoteAt + 1;
     for (;;) {
       if (valueEnd >= text.length) return null;
       const c = text.charCodeAt(valueEnd);
       if (c === quote) break;
-      if (c === CHAR_LT || (!encodedMetadata && (c === CHAR_DQUOTE || c === CHAR_SQUOTE || c === CHAR_GT || c === CHAR_AMP))) return null;
+      if (c === CHAR_DQUOTE || c === CHAR_SQUOTE || c === CHAR_LT || c === CHAR_GT || c === CHAR_AMP) return null;
       valueEnd++;
     }
-    let value = text.slice(quoteAt + 1, valueEnd);
-    if (encodedMetadata) {
-      let valid = true;
-      // Decode exactly once, only the three entities emitted by normalizeMark.
-      value = value.replace(/&amp;|&quot;|&lt;|&/g, entity => {
-        if (entity === "&amp;") return "&";
-        if (entity === "&quot;") return '"';
-        if (entity === "&lt;") return "<";
-        valid = false;
-        return entity;
-      });
-      if (!valid) return null;
-    }
-    if (!omitted) attrs.push([attrName, value]);
+    attrs.push([attrName, text.slice(quoteAt + 1, valueEnd)]);
     i = valueEnd + 1;
   }
 }
@@ -674,9 +672,8 @@ function flatShapeTone(tag: string, attrs: FlatAttrs): string | null {
  *    `fill-rule`, `clip-rule`;
  *  - every attribute value free of `"` `'` `<` `>` `&`; only whitespace
  *    between tags (no text, comment, `<!`, `<?`, CDATA);
- *  - every shape has a hex fill and an absent/none/matching stroke;
- *    only the private normalized-adoption opt-in also accepts its validated
- *    concrete paints as two layers: the generated plate, then the whole glyph;
+ *  - every shape has an explicit hex `fill` (`#rgb`/`#rrggbb`, alpha
+ *    rejected) and its `stroke` is `none` or the same hex: one tone each;
  *  - exactly two tones, every first-tone shape before every second-tone one;
  *  - within the caps: at most {@link FLAT_MAX_ATTRIBUTES_PER_TAG}
  *    attributes on a tag, {@link FLAT_MAX_ELEMENTS} elements in all and
@@ -687,11 +684,9 @@ function flatShapeTone(tag: string, attrs: FlatAttrs): string | null {
  * the whole recognition is linear in the input; its parse is iterative and
  * its render recursion is bounded by {@link FLAT_MAX_DEPTH}.
  */
-function recogniseFlatTwoTone(svg: string, normalized: boolean): { root: string; box: NonNullable<ReturnType<typeof parseViewBoxBox>>; nodes: FlatNode[]; toneA: string } | null {
-  // Input from normalizeMark has one generated plate followed by validated glyph paint.
-  // Only descendant metadata is omitted from duplicated layers; keep root accessibility.
+function recogniseFlatTwoTone(svg: string): { root: string; box: NonNullable<ReturnType<typeof parseViewBoxBox>>; nodes: FlatNode[]; toneA: string } | null {
   const text = svg.trim();
-  const rootTag = scanFlatTag(text, 0, normalized ? "root" : undefined);
+  const rootTag = scanFlatTag(text, 0);
   if (rootTag === null || rootTag.name !== "svg" || rootTag.selfClosing) return null;
   // Re-emit the root from constant names and escaped values; never slice it out of the input.
   const rootAttrs: FlatAttrs = [];
@@ -723,7 +718,7 @@ function recogniseFlatTwoTone(svg: string, normalized: boolean): { root: string;
       at = groupEnd;
       continue;
     }
-    const tag = scanFlatTag(text, at, normalized ? "descendants" : undefined);
+    const tag = scanFlatTag(text, at);
     if (tag === null) return null;
     at = tag.end;
     elements++;
@@ -737,9 +732,7 @@ function recogniseFlatTwoTone(svg: string, normalized: boolean): { root: string;
       continue;
     }
     if (!selfClosing || !FLAT_SHAPE_GEOMETRY.has(name)) return null;
-    if (normalized && attrs.some(([key, value]) => (key === 'fill' || key === 'stroke') &&
-      (value === 'transparent' || /^#(?:[\da-f]{4}|[\da-f]{8})$/.test(value) || value.includes('/') || value.split(',').length > 3))) return null;
-    const tone = normalized ? (elements === 1 ? 'plate' : 'glyph') : flatShapeTone(name, attrs);
+    const tone = flatShapeTone(name, attrs);
     if (tone === null) return null;
     if (!tones.includes(tone)) {
       if (tones.length === 2) return null;
@@ -770,73 +763,11 @@ function renderFlatNodes(nodes: readonly FlatNode[], paintOf: (shape: FlatShape)
     const paint = paintOf(node);
     if (paint === undefined) continue;
     const attrs = node.attrs
-      .map(([name, value]) => ` ${escapeXml(name)}="${(name === "fill" || name === "stroke") && value !== "none" ? paint : escapeXml(value)}"`)
+      .map(([name, value]) => ` ${escapeXml(name)}="${name === "fill" || (name === "stroke" && value !== "none") ? paint : escapeXml(value)}"`)
       .join("");
     out += `<${escapeXml(node.tag)}${attrs} />`;
   }
   return out;
-}
-
-/** Exact normalized-only knockout preflight; legacy recolouring keeps its original renderer. */
-function renderNormalizedKnockout(svg: string, color: string, mark: NonNullable<ReturnType<typeof recogniseFlatTwoTone>>): string {
-  const { root, box, nodes, toneA } = mark;
-  const id = `recolor-${fnv1a32Hex(`${svg}\u0000${color}`)}`;
-  const region = `x="${round4(box.minX)}" y="${round4(box.minY)}" width="${round4(box.width)}" height="${round4(box.height)}"`;
-  let size = 0, writing = false;
-  const chunks: string[] = [];
-  const reserve = (length: number): void => {
-    size += length;
-    if (size > 1000000) throw new MarkGeometryError('normalized output complexity');
-  };
-  const write = (text: string): void => { if (writing) chunks.push(text); else reserve(text.length); };
-  const value = (text: string): void => {
-    if (writing) { chunks.push(escapeXml(text)); return; }
-    reserve(text.length); // Count UTF-16 units and reject giant raw colors before escaping.
-    for (let i = 0; i < text.length; i++) {
-      const code = text.charCodeAt(i);
-      if (code === 38) reserve(4);
-      else if (code === 60 || code === 62) reserve(3);
-      else if (code === 34 || code === 39) reserve(5);
-    }
-  };
-  const hasPaint = (items: readonly FlatNode[], paintOf: (shape: FlatShape) => string | undefined): boolean =>
-    items.some(node => node.kind === 'group' ? hasPaint(node.children, paintOf) : paintOf(node) !== undefined);
-  const render = (items: readonly FlatNode[], paintOf: (shape: FlatShape) => string | undefined): void => {
-    for (const node of items) {
-      if (node.kind === 'group') {
-        if (!hasPaint(node.children, paintOf)) continue;
-        write('<g');
-        if (node.transform !== undefined) { write(' transform="'); value(node.transform); write('"'); }
-        write('>'); render(node.children, paintOf); write('</g>');
-      } else {
-        const paint = paintOf(node);
-        if (paint === undefined) continue;
-        write('<'); value(node.tag);
-        for (const [name, text] of node.attrs) {
-          write(' '); value(name); write('="');
-          value((name === 'fill' || name === 'stroke') && text !== 'none' ? paint : text);
-          write('"');
-        }
-        write(' />');
-      }
-    }
-  };
-  const isA = (shape: FlatShape): boolean => shape.tone === toneA;
-  const emit = (): void => {
-    write(`${root}<defs><mask id="${id}-a" maskUnits="userSpaceOnUse" ${region}><rect ${region} fill="#fff" />`);
-    render(nodes, shape => isA(shape) ? undefined : '#000');
-    write(`</mask><mask id="${id}-b" maskUnits="userSpaceOnUse" ${region}><rect ${region} fill="#fff" />`);
-    render(nodes, shape => isA(shape) ? '#000' : undefined);
-    write(`</mask></defs><g mask="url(#${id}-a)">`);
-    render(nodes, shape => isA(shape) ? color : undefined);
-    write(`</g><g mask="url(#${id}-b)">`);
-    render(nodes, shape => isA(shape) ? undefined : color);
-    write('</g></svg>');
-  };
-  emit();
-  writing = true;
-  emit();
-  return chunks.join('');
 }
 
 /**
@@ -864,7 +795,7 @@ function renderNormalizedKnockout(svg: string, color: string, mark: NonNullable<
  * root start tag (re-emitted from its parsed attributes), a `<defs>` of two `<mask>`s (white coverage
  * over the root `viewBox`, the other tone painted `#000`), and two masked
  * `<g>` layers; `color` stays the only visible paint, so a `currentColor`
- * recolour keeps `mono`/`favicon` single-colour (mask paint is coverage,
+ * recolour keeps `mono` single-colour (mask paint is coverage,
  * not rendered colour, and `identity-checks.ts` skips the masks generated
  * here). Mask ids are `recolor-` plus a hash of `svg` and `color`. The
  * root is re-emitted from its parsed attributes (constant names, escaped
@@ -894,19 +825,9 @@ function renderNormalizedKnockout(svg: string, color: string, mark: NonNullable<
  * knockout, so its tone boundary is lost as it always was.
  */
 export function recolorSvg(svg: string, color: string): string {
-  return recolorSvgInternal(svg, color, false);
-}
-function recolorSvgInternal(svg: string, color: string, normalized: boolean): string {
-  if (normalized) {
-    if (color.length > 1000000) throw new MarkGeometryError('normalized output complexity');
-    const mark = recogniseFlatTwoTone(svg, true);
-    if (mark === null) throw new MarkGeometryError('normalized knockout complexity');
-    return renderNormalizedKnockout(svg, color, mark);
-  }
   const escapedColor = escapeXml(color);
-  const mark = recogniseFlatTwoTone(svg, normalized);
+  const mark = recogniseFlatTwoTone(svg);
   if (mark === null) {
-    if (normalized) throw new MarkGeometryError('normalized knockout complexity');
     return svg.replace(PAINT_ATTR_RE, (match, attr: string, _quoted: string, doubleQuoted: string | undefined, singleQuoted: string | undefined) => {
       const value = doubleQuoted ?? singleQuoted ?? "";
       if (value === "none" || value === "transparent" || value === "") return match;
@@ -957,8 +878,6 @@ function sourceViewBoxOf(svg: string): string {
 }
 
 export interface AdoptSuppliedMarkInput {
-  /** Normalize supported supplied geometry; omitted or false preserves legacy bytes. */
-  normalize?: boolean;
   brand: IdentityBrandInput;
   /** A complete `<svg>...</svg>` document — the client's existing logo, or a human designer's/image model's output. */
   suppliedSvg: string;
@@ -968,7 +887,7 @@ export interface AdoptSuppliedMarkInput {
 /**
  * Adopts an already-drawn mark (`found` -> adopted, per #1210) instead of
  * generating one, and derives the same seven-role variant set from it via
- * {@link recolorSvg}. `primary`/`mark` preserve the supplied SVG unless normalization is requested;
+ * {@link recolorSvg}. `primary`/`mark` are the supplied SVG unchanged —
  * this function does not attempt to separate a wordmark from an icon
  * inside arbitrary supplied art. Throws {@link IdentityKitValidationError}
  * when `suppliedSvg` is not a complete `<svg>` document.
@@ -979,9 +898,8 @@ export function adoptSuppliedMark(input: AdoptSuppliedMarkInput): IdentityDirect
   if (!isSvgDocument(suppliedSvg)) {
     throw new IdentityKitValidationError(["supplied mark must be a complete <svg>...</svg> document"]);
   }
-  const trimmed = input.normalize === true ? normalizeMark({ glyphSvg: suppliedSvg, tokens }) : suppliedSvg.trim();
-  const recolor = (color: string) => recolorSvgInternal(trimmed, color, input.normalize === true);
-  const onAccentGlyph = innerMarkupOf(recolor(tokens.onAccent));
+  const trimmed = suppliedSvg.trim();
+  const plateGlyph = innerMarkupOf(identityPlateSvg(trimmed, tokens.ink, tokens.onInverse));
   const sourceViewBox = sourceViewBoxOf(trimmed);
 
   return {
@@ -991,11 +909,11 @@ export function adoptSuppliedMark(input: AdoptSuppliedMarkInput): IdentityDirect
     variants: {
       primary: trimmed,
       mark: trimmed,
-      mono: recolor("currentColor"),
-      light: recolor(tokens.ink),
-      dark: recolor(tokens.onInverse),
-      favicon: recolor("currentColor"),
-      appIcon: input.normalize === true ? trimmed : wrapBadge(onAccentGlyph, tokens.accent, tokens.onAccent, sourceViewBox),
+      mono: recolorSvg(trimmed, "currentColor"),
+      light: recolorSvg(trimmed, tokens.ink),
+      dark: recolorSvg(trimmed, tokens.onInverse),
+      favicon: identityPlateSvg(trimmed, tokens.ink, tokens.onInverse, true),
+      appIcon: wrapBadge(plateGlyph, tokens.ink, tokens.onInverse, sourceViewBox),
     },
   };
 }

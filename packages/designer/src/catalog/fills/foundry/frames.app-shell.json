@@ -1,0 +1,66 @@
+{
+  "$extensions": {
+    "com.clossys.fill": {
+      "author": "foundry",
+      "builtOn": [],
+      "conforms": [],
+      "evidence": [],
+      "id": "foundry/frames.app-shell",
+      "license": "MIT",
+      "mode": "implementation",
+      "pin": {
+        "export": "./frames#AppFrame",
+        "package": "@clossys/designer",
+        "version": "0.12.0"
+      },
+      "relation": "subset",
+      "slot": "frames.app-shell",
+      "source": "foundry",
+      "sourceAddress": "./frames#AppFrame",
+      "status": "draft",
+      "trust": "foundry",
+      "unmapped": [
+        "layout.immersive",
+        "layout.standard",
+        "slot.progress",
+        "stage.contained",
+        "stage.full",
+        "state.theme",
+        "state.width"
+      ]
+    }
+  },
+  "frames": {
+    "app-shell": {
+      "impl": {
+        "export": "AppFrame",
+        "kind": "package",
+        "module": "@clossys/designer/frames"
+      },
+      "members": [
+        "theme.dark",
+        "theme.light",
+        "theme.system"
+      ],
+      "propMap": {
+        "theme.dark": "theme.defaultPreference=dark",
+        "theme.light": "theme.defaultPreference=light",
+        "theme.system": "theme.defaultPreference=system"
+      },
+      "slot": "frames.app-shell",
+      "slots": {
+        "command": "commands",
+        "header": "header",
+        "inspector": "rightPanel",
+        "main": "children",
+        "sidebar": "navigation",
+        "skip-link": "skipLabel",
+        "toasts": "toasts"
+      },
+      "statePorts": {
+        "inspector-collapsed": "rightPanel.collapsed/rightPanel.onCollapsedChange",
+        "sidebar-collapsed": "navigation.collapsed/navigation.onCollapsedChange"
+      }
+    }
+  }
+}

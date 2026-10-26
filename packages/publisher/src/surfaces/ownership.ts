@@ -3,7 +3,7 @@
  * in-tree `SectionedView`/`MarketingView` page document — which template,
  * which sections, which copy ids and asset ids, all by reference — and owns
  * every file under `clossys/publisher/surfaces/`. Designer and Writer own
- * everything a surface document references (tokens, atoms, blocks, copy)
+ * everything a surface document references (tokens, components, blocks, copy)
  * in their own folders; they propose changes and review renders, but they
  * never edit a Publisher surface file directly. Every file under `clossys/`
  * now has exactly one owner.

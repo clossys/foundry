@@ -1,5 +1,5 @@
 import type { CopyRef, CopyResolver } from "@clossys/writer";
-import type { IconNode } from "@clossys/designer/atoms/server";
+import type { IconNode } from "@clossys/designer/components/server";
 import { isRenderImageAsset } from "../../../internal/assets.js";
 import type { AssetResolver } from "../../types.js";
 import type { SiteFramePresentationConfig } from "../site-frame-contract.js";

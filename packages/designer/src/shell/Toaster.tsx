@@ -6,9 +6,9 @@ import {
   Text,
   type QueuedToast,
 } from "react-aria-components";
-import { Button } from "../atoms/Button.js";
-import { cx } from "../atoms/internal/cx.js";
-import { UI_ELEVATION_FLOATING } from "../atoms/internal/ui-vars.js";
+import { Button } from "../components/Button.js";
+import { cx } from "../components/internal/cx.js";
+import { UI_ELEVATION_FLOATING } from "../components/internal/ui-vars.js";
 import { UI_Z_TOAST } from "./internal/shell-vars.js";
 import { toastQueue, type ToastRecord, type ToastVariant } from "./internal/toast-queue.js";
 
@@ -41,7 +41,7 @@ export interface ToasterProps {
 /**
  * The toast viewport — a runtime service, not a layout component (see this
  * package's README, "Placement rules": a portal, a queue, and an
- * imperative API put a toast stack outside the atoms/blocks/views/shell
+ * imperative API put a toast stack outside the components/blocks/views/shell
  * ladder entirely). Ships from this subpath anyway, standalone rather than
  * as `Shell.Toaster`, for two reasons:
  *
@@ -103,7 +103,7 @@ export function Toaster({ "aria-label": ariaLabel, className }: ToasterProps) {
 }
 
 function ToasterItem({ toast: queuedToast }: { toast: QueuedToast<ToastRecord> }) {
-  const { variant, title, description } = queuedToast.content;
+  const { variant, title, description, action } = queuedToast.content;
   return (
     <AriaToast
       toast={queuedToast}
@@ -122,6 +122,9 @@ function ToasterItem({ toast: queuedToast }: { toast: QueuedToast<ToastRecord> }
             {description}
           </Text>
         ) : null}
+        {action ? <Button data-toast-part="action" variant="secondary" size="sm" onPress={event => { action.onPress(event); toastQueue.close(queuedToast.key); }} isDisabled={action.isDisabled}>
+          {action.label}
+        </Button> : null}
       </ToasterContent>
       {/*
         Plain `variant="ghost"` — its default `text-ink-primary`, not this

@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { TOKENS } from "../tokens/tokens.js";
-import { cx } from "../atoms/internal/cx.js";
+import { cx } from "../components/internal/cx.js";
 import { Panel } from "./Panel.js";
 import { ResizablePane } from "./ResizablePane.js";
 import { Browse } from "./catalog-workspace/Browse.js";

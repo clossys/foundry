@@ -1,0 +1,45 @@
+{
+  "$extensions": {
+    "com.clossys.fill": {
+      "id": "lucide/assets.icon-chevron-right",
+      "slot": "assets.icon-chevron-right",
+      "source": "lucide",
+      "mode": "implementation",
+      "sourceAddress": "lucide-react@1.23.0/dist/esm/icons/chevron-right.js",
+      "relation": "same-contract",
+      "builtOn": [],
+      "conforms": [],
+      "evidence": [],
+      "author": "third-party",
+      "trust": "pinned-upstream",
+      "license": "ISC",
+      "pin": {
+        "package": "lucide-react",
+        "version": "1.23.0",
+        "file": "src/icons/ChevronRight.ts",
+        "sha256": "99e246ee2ef8a9b85999607d97a1152fbe6bf374f68c29c19ffa46ad7a502fb6"
+      },
+      "status": "draft",
+      "reads": {
+        "tokens": [],
+        "assets": []
+      }
+    }
+  },
+  "assets": {
+    "icon-chevron-right": {
+      "default": {
+        "$type": "glyph",
+        "$value": [
+          [
+            "path",
+            {
+              "d": "m9 18 6-6-6-6",
+              "key": "mthhwq"
+            }
+          ]
+        ]
+      }
+    }
+  }
+}

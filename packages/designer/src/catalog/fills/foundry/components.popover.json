@@ -1,0 +1,99 @@
+{
+  "$extensions": {
+    "com.clossys.fill": {
+      "author": "foundry",
+      "builtOn": [],
+      "conforms": [],
+      "evidence": [],
+      "id": "foundry/components.popover",
+      "license": "MIT",
+      "mode": "implementation",
+      "pin": {
+        "export": "./components#Popover",
+        "package": "@clossys/designer",
+        "version": "0.12.0"
+      },
+      "relation": "subset",
+      "slot": "components.popover",
+      "source": "foundry",
+      "sourceAddress": "./components#Popover",
+      "status": "draft",
+      "trust": "foundry",
+      "unmapped": [
+        "arrow"
+      ]
+    }
+  },
+  "components": {
+    "popover": {
+      "composes": [],
+      "deps": [
+        {
+          "license": "MIT",
+          "name": "react",
+          "version": ">=18"
+        },
+        {
+          "license": "MIT",
+          "name": "tailwind-merge",
+          "version": "^3.7.0"
+        },
+        {
+          "license": "Apache-2.0",
+          "name": "react-aria-components",
+          "version": "^1.19.0"
+        }
+      ],
+      "impl": {
+        "export": "Popover",
+        "kind": "package",
+        "module": "@clossys/designer/components"
+      },
+      "license": "MIT",
+      "members": [
+        "placement"
+      ],
+      "pin": {
+        "export": "./components#Popover",
+        "package": "@clossys/designer",
+        "version": "0.12.0"
+      },
+      "propMap": {
+        "placement": "./components#Popover.placement"
+      },
+      "props": [
+        "anchorRef",
+        "aria-label",
+        "children",
+        "className",
+        "offset",
+        "placement",
+        "trigger"
+      ],
+      "reads": {
+        "assets": [],
+        "components": [],
+        "tokens": [
+          "tokens.border-color",
+          "tokens.border-width",
+          "tokens.control-radius",
+          "tokens.duration",
+          "tokens.elevation",
+          "tokens.focus-color",
+          "tokens.focus-outline",
+          "tokens.font-size",
+          "tokens.font-weight",
+          "tokens.shift-distance",
+          "tokens.spacing",
+          "tokens.surface-color",
+          "tokens.text-color",
+          "tokens.transition-easing",
+          "tokens.z-index"
+        ]
+      },
+      "root": "rac:Popover",
+      "slot": "components.popover",
+      "source": "foundry"
+    }
+  }
+}

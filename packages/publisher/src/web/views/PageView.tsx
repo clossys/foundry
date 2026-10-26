@@ -1,6 +1,6 @@
 import type { HTMLAttributes, ReactNode } from "react";
 import type { CopyRef, CopyResolver } from "@clossys/writer";
-import { mergeUiClasses } from "@clossys/designer/atoms/server";
+import { mergeUiClasses } from "@clossys/designer/components/server";
 import { RenderError } from "../../internal/errors.js";
 import { PAGE_COLUMN_CLASSES, PageLayout, pageColumnStyle } from "../internal/PageLayout.js";
 import { assertViewContentRoot } from "../internal/viewContentRoot.js";

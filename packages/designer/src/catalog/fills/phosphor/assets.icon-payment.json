@@ -1,0 +1,74 @@
+{
+  "$extensions": {
+    "com.clossys.fill": {
+      "id": "phosphor/assets.icon-payment",
+      "slot": "assets.icon-payment",
+      "source": "phosphor",
+      "mode": "implementation",
+      "sourceAddress": "https://raw.githubusercontent.com/phosphor-icons/core/fe23e2534cdb7bec24bd8e6bd99b3676bcf0d54f/raw/regular/credit-card.svg",
+      "relation": "same-contract",
+      "builtOn": [],
+      "conforms": [],
+      "evidence": [],
+      "author": "third-party",
+      "trust": "pinned-upstream",
+      "license": "MIT",
+      "pin": {
+        "url": "https://raw.githubusercontent.com/phosphor-icons/core/fe23e2534cdb7bec24bd8e6bd99b3676bcf0d54f/raw/regular/credit-card.svg",
+        "commit": "fe23e2534cdb7bec24bd8e6bd99b3676bcf0d54f",
+        "sha256": "5f2220eb428b6e5982e5b5efd2e8f4c5c9d4fc4030cb441a528a35dd57d02f69"
+      },
+      "status": "draft",
+      "reads": {
+        "tokens": [],
+        "assets": []
+      }
+    }
+  },
+  "assets": {
+    "icon-payment": {
+      "default": {
+        "$type": "glyph",
+        "$value": [
+          [
+            "rect",
+            {
+              "x": "2.25",
+              "y": "5.25",
+              "width": "19.5",
+              "height": "13.5",
+              "rx": "0.75"
+            }
+          ],
+          [
+            "line",
+            {
+              "x1": "15.75",
+              "y1": "15.75",
+              "x2": "18.75",
+              "y2": "15.75"
+            }
+          ],
+          [
+            "line",
+            {
+              "x1": "11.25",
+              "y1": "15.75",
+              "x2": "12.75",
+              "y2": "15.75"
+            }
+          ],
+          [
+            "line",
+            {
+              "x1": "2.25",
+              "y1": "9",
+              "x2": "21.75",
+              "y2": "9"
+            }
+          ]
+        ]
+      }
+    }
+  }
+}

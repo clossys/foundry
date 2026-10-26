@@ -1,0 +1,147 @@
+{
+  "$extensions": {
+    "com.clossys.fill": {
+      "author": "foundry",
+      "builtOn": [
+        "components.icon"
+      ],
+      "conforms": [],
+      "evidence": [],
+      "id": "foundry/components.button",
+      "license": "MIT",
+      "mode": "implementation",
+      "pin": {
+        "export": "./components#Button",
+        "package": "@clossys/designer",
+        "version": "0.12.0"
+      },
+      "relation": "same-contract",
+      "slot": "components.button",
+      "source": "foundry",
+      "sourceAddress": "./components#Button",
+      "status": "draft",
+      "trust": "foundry"
+    }
+  },
+  "components": {
+    "button": {
+      "composes": [
+        "components.icon"
+      ],
+      "deps": [
+        {
+          "license": "MIT",
+          "name": "react",
+          "version": ">=18"
+        },
+        {
+          "license": "MIT",
+          "name": "tailwind-merge",
+          "version": "^3.7.0"
+        },
+        {
+          "license": "Apache-2.0",
+          "name": "react-aria-components",
+          "version": "^1.19.0"
+        }
+      ],
+      "impl": {
+        "export": "Button",
+        "kind": "package",
+        "module": "@clossys/designer/components"
+      },
+      "license": "MIT",
+      "members": [
+        "ground.base",
+        "ground.inverse",
+        "shape.icon-only",
+        "shape.text",
+        "size.lg",
+        "size.md",
+        "size.sm",
+        "state.disabled",
+        "state.focus-visible",
+        "state.hover",
+        "state.pending",
+        "state.pressed",
+        "variant.danger",
+        "variant.ghost",
+        "variant.outline",
+        "variant.primary",
+        "variant.quiet",
+        "variant.secondary",
+        "variant.tonal"
+      ],
+      "pin": {
+        "export": "./components#Button",
+        "package": "@clossys/designer",
+        "version": "0.12.0"
+      },
+      "propMap": {
+        "ground.base": "./components#Button.ground=base",
+        "ground.inverse": "./components#Button.ground=inverse",
+        "shape.icon-only": "./components#IconButton",
+        "shape.text": "./components#Button",
+        "size.lg": "./components#Button.size=lg",
+        "size.md": "./components#Button.size=md",
+        "size.sm": "./components#Button.size=sm",
+        "state.disabled": "./components#Button.isDisabled",
+        "state.focus-visible": "./components#Button[data-focus-visible]",
+        "state.hover": "./components#Button[data-hovered]",
+        "state.pending": "./components#Button.isPending",
+        "state.pressed": "./components#Button[data-pressed]",
+        "variant.danger": "./components#Button.variant=danger",
+        "variant.ghost": "./components#Button.variant=ghost",
+        "variant.outline": "./components#Button.variant=outline",
+        "variant.primary": "./components#Button.variant=primary",
+        "variant.quiet": "./components#Button.variant=quiet",
+        "variant.secondary": "./components#Button.variant=secondary",
+        "variant.tonal": "./components#Button.variant=tonal"
+      },
+      "props": [
+        "aria-label",
+        "children",
+        "className",
+        "ground",
+        "isDisabled",
+        "isPending",
+        "onPress",
+        "size",
+        "slot",
+        "variant"
+      ],
+      "reads": {
+        "assets": [
+          "assets.icon-chevron-right"
+        ],
+        "components": [
+          "components.icon"
+        ],
+        "tokens": [
+          "tokens.accent-color",
+          "tokens.action-color",
+          "tokens.body-size",
+          "tokens.border-color",
+          "tokens.border-width",
+          "tokens.caption-size",
+          "tokens.control-color",
+          "tokens.control-radius",
+          "tokens.easing",
+          "tokens.focus-color",
+          "tokens.focus-outline",
+          "tokens.focus-shadow",
+          "tokens.radius",
+          "tokens.spacing",
+          "tokens.state-opacity",
+          "tokens.status-color",
+          "tokens.surface-color",
+          "tokens.text-color",
+          "tokens.typeface"
+        ]
+      },
+      "root": "rac:Button",
+      "slot": "components.button",
+      "source": "foundry"
+    }
+  }
+}

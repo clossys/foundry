@@ -1,0 +1,59 @@
+{
+  "$extensions": {
+    "com.clossys.fill": {
+      "author": "foundry",
+      "builtOn": [],
+      "conforms": [],
+      "evidence": [],
+      "id": "foundry/sections.faq",
+      "license": "MIT",
+      "mode": "implementation",
+      "originKinds": [
+        "adopted"
+      ],
+      "pin": {
+        "export": "./blocks#Faq",
+        "package": "@clossys/designer",
+        "version": "0.12.0"
+      },
+      "relation": "subset",
+      "slot": "sections.faq",
+      "source": "foundry",
+      "sourceAddress": "./blocks#Faq",
+      "status": "draft",
+      "trust": "foundry",
+      "unmapped": [
+        "layout.two-column"
+      ]
+    }
+  },
+  "sections": {
+    "faq": {
+      "configs": {},
+      "impl": {
+        "export": "Faq",
+        "kind": "package",
+        "module": "@clossys/designer/blocks"
+      },
+      "license": "MIT",
+      "notes": [
+        "Source has a fixed vertical disclosure list and no two-column layout API; section headings are hand-rendered.",
+        "Descriptor only; source imports, token reads, shared anatomy, accessibility, contrast and consumer runtime conformance are unmeasured. Content bindings describe host adaptation points, not type-equivalent converters."
+      ],
+      "parts": [],
+      "pin": {
+        "export": "./blocks#Faq",
+        "package": "@clossys/designer",
+        "version": "0.12.0"
+      },
+      "propMap": {
+        "layout.list": "./blocks#Faq.items[list]"
+      },
+      "slot": "sections.faq",
+      "slotMap": {
+        "items": "./blocks#Faq.items"
+      },
+      "source": "foundry"
+    }
+  }
+}

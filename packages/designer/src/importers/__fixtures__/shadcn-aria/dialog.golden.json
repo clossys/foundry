@@ -1,0 +1,103 @@
+{
+  "transform": "shadcn-aria-rewrite@1",
+  "notes": [
+    {
+      "file": "apps/v4/registry/bases/aria/ui/dialog.tsx",
+      "value": "bg-black/10",
+      "message": "Restyled source: Use the consumer modal scrim role (existing default40% and mode binding), replacing literal black10%; contrast thresholds stay unchanged."
+    },
+    {
+      "file": "apps/v4/registry/bases/aria/ui/dialog.tsx",
+      "value": "cn-font-heading",
+      "message": "Removed marker-only class absent from the pinned stylesheet"
+    },
+    {
+      "file": "apps/v4/registry/bases/aria/ui/dialog.tsx",
+      "value": "leading-none",
+      "message": "Restyled source: Restyle unit line height to existing compact heading line height 1.15; do not alias a font-size-specific 5xl line-height member."
+    },
+    {
+      "file": "apps/v4/registry/bases/aria/ui/dialog.tsx",
+      "value": "outline-none",
+      "message": "Restyled selected focusable surface: replace outline suppression with its own existing token-bound keyboard outline"
+    },
+    {
+      "file": "apps/v4/registry/bases/aria/ui/dialog.tsx",
+      "value": "ring-1",
+      "message": "Restyled source: Preserve decorative ring rendering, exact width and variants; never relabel as focus clearance."
+    }
+  ],
+  "files": [
+    {
+      "path": "components/_parts/utils/index.ts",
+      "content": "import { clsx, type ClassValue } from \"clsx\"\nimport { twMerge } from \"tailwind-merge\"\nexport function cn(...inputs: ClassValue[]) { return twMerge(clsx(inputs)) }\n"
+    },
+    {
+      "path": "components/dialog/dialog.tsx",
+      "content": "\"use client\"\n\nimport { Icon as LibraryIcon } from \"../icon/index.js\"\nimport type { ComponentProps as ReactComponentProps, ReactNode as ReactNode } from \"react\"\nimport { cn } from \"../_parts/utils/index.js\"\nimport {\n  composeRenderProps,\n  Dialog as DialogPrimitive,\n  DialogTrigger as DialogTriggerPrimitive,\n  Heading,\n  ModalOverlay as ModalOverlayPrimitive,\n  Modal as ModalPrimitive,\n  type DialogProps as DialogPrimitiveProps,\n  type DialogTriggerProps as DialogTriggerPrimitiveProps,\n  type ModalOverlayProps as ModalOverlayPrimitiveProps,\n} from \"react-aria-components\"\n\nimport { Button } from \"../button/index.js\"\nfunction DialogTrigger({ ...props }: DialogTriggerPrimitiveProps) {\n  return <DialogTriggerPrimitive data-slot=\"dialog-trigger\" {...props} />\n}\n\nfunction DialogClose({\n  className,\n  variant = \"outline\",\n  size = \"default\",\n  ...props\n}: ReactComponentProps<typeof Button>) {\n  return (\n    <Button\n      slot=\"close\"\n      data-slot=\"dialog-close\"\n      variant={variant}\n      size={size}\n      className={cn(className)}\n      {...props}\n    />\n  )\n}\n\nfunction DialogOverlay({\n  className,\n  children,\n  ...props\n}: Omit<ModalOverlayPrimitiveProps, \"className\" | \"children\"> & {\n  className?: string\n  children: ReactNode\n}) {\n  return (\n    <ModalOverlayPrimitive\n      data-slot=\"dialog-overlay\"\n      className={cn(\n        \"data-entering:library-enter data-exiting:library-exit data-exiting:library-fade data-entering:library-fade bg-(--color-overlay-scrim) duration-(--ui-duration-fast) supports-backdrop-filter:backdrop-blur-xs fixed inset-0 isolate z-(--ui-z-modal)\",\n        className\n      )}\n      {...props}\n    >\n      {children}\n    </ModalOverlayPrimitive>\n  )\n}\n\nfunction Dialog({\n  className,\n  children,\n  showCloseButton = true,\n  isDismissable = true,\n  \"aria-label\": ariaLabel,\n  \"aria-labelledby\": ariaLabelledby,\n  \"aria-describedby\": ariaDescribedby,\n  ref,\n  ...props\n}: Omit<ModalOverlayPrimitiveProps, \"className\" | \"children\"> &\n  Pick<ReactComponentProps<typeof ModalPrimitive>, \"isDismissable\"> & {\n    className?: string\n    children: DialogPrimitiveProps[\"children\"]\n    \"aria-label\"?: DialogPrimitiveProps[\"aria-label\"]\n    \"aria-labelledby\"?: DialogPrimitiveProps[\"aria-labelledby\"]\n    \"aria-describedby\"?: DialogPrimitiveProps[\"aria-describedby\"]\n    ref?: ReactComponentProps<typeof DialogPrimitive>[\"ref\"]\n    showCloseButton?: boolean\n  }) {\n  return (\n    <DialogOverlay isDismissable={isDismissable} {...props}>\n      <ModalPrimitive\n        data-slot=\"dialog-content\"\n        className={cn(\n          \"bg-(--color-overlay-surface) text-(--color-ink-primary) data-entering:library-enter data-exiting:library-exit data-exiting:library-fade data-entering:library-fade data-exiting:library-zoom data-entering:library-zoom ring-(--color-ink-primary)/10 grid max-w-[calc(100%-var(--spacing-2xl))] gap-(--spacing-lg) rounded-(--radius-control) p-(--spacing-lg) text-(length:--text-sm) ring-(length:--ui-border-hairline) duration-(--ui-duration-fast) sm:max-w-sm fixed top-1/2 left-1/2 z-(--ui-z-modal) w-full -translate-x-1/2 -translate-y-1/2 focus-visible:outline-solid focus-visible:outline-(length:--ui-border-focus) focus-visible:outline-offset-(--ui-focus-offset) focus-visible:outline-(--color-focus-ring)\",\n          className\n        )}\n      >\n        <DialogPrimitive\n          data-slot=\"dialog\"\n          aria-label={ariaLabel}\n          aria-labelledby={ariaLabelledby}\n          aria-describedby={ariaDescribedby}\n          ref={ref}\n          className=\"[display:inherit] [gap:inherit] focus-visible:outline-solid focus-visible:outline-(length:--ui-border-focus) focus-visible:outline-offset-(--ui-focus-offset) focus-visible:outline-(--color-focus-ring)\"\n        >\n          {composeRenderProps(children, (children) => (\n            <>\n          {children}\n          {showCloseButton && (\n            <DialogClose\n              variant=\"ghost\"\n              className=\"absolute top-(--spacing-sm) right-(--spacing-sm)\"\n              size=\"icon-sm\"\n            >\n              <LibraryIcon asset=\"assets.icon-close\" />\n              <span className=\"sr-only\">Close</span>\n            </DialogClose>\n          )}\n            </>\n          ))}\n        </DialogPrimitive>\n      </ModalPrimitive>\n    </DialogOverlay>\n  )\n}\n\nfunction DialogHeader({ className, ...props }: ReactComponentProps<\"div\">) {\n  return (\n    <div\n      data-slot=\"dialog-header\"\n      className={cn(\"gap-(--spacing-sm) flex flex-col\", className)}\n      {...props}\n    />\n  )\n}\n\nfunction DialogFooter({\n  className,\n  showCloseButton = false,\n  children,\n  ...props\n}: ReactComponentProps<\"div\"> & {\n  showCloseButton?: boolean\n}) {\n  return (\n    <div\n      data-slot=\"dialog-footer\"\n      className={cn(\n        \"bg-(--color-surface-sunken)/50 -mx-(--spacing-lg) -mb-(--spacing-lg) rounded-b-(--radius-control) border-t-(length:--ui-border-hairline) p-(--spacing-lg) flex flex-col-reverse gap-(--spacing-sm) sm:flex-row sm:justify-end\",\n        className\n      )}\n      {...props}\n    >\n      {children}\n      {showCloseButton && <DialogClose variant=\"outline\">Close</DialogClose>}\n    </div>\n  )\n}\n\nfunction DialogTitle({\n  className,\n  ...props\n}: Omit<ReactComponentProps<typeof Heading>, \"slot\">) {\n  return (\n    <Heading\n      slot=\"title\"\n      data-slot=\"dialog-title\"\n      className={cn(\"text-(length:--text-base) leading-(--leading-heading) font-(weight:--font-weight-medium)\", className)}\n      {...props}\n    />\n  )\n}\n\nfunction DialogDescription({\n  className,\n  ...props\n}: Omit<ReactComponentProps<\"div\">, \"slot\">) {\n  return (\n    <div\n      data-slot=\"dialog-description\"\n      className={cn(\"text-(--color-ink-muted) *:[a]:hover:text-(--color-ink-primary) text-(length:--text-sm) *:[a]:underline *:[a]:underline-offset-(--spacing-md)\", className)}\n      {...props}\n    />\n  )\n}\n\nexport {\n  type DialogPrimitiveProps,\n  type DialogTriggerPrimitiveProps,\n  Dialog,\n  DialogClose,\n  DialogDescription,\n  DialogFooter,\n  DialogHeader,\n  DialogOverlay,\n  DialogTitle,\n  DialogTrigger,\n}\n"
+    },
+    {
+      "path": "components/dialog/index.ts",
+      "content": "export * from \"./dialog.js\"\n"
+    },
+    {
+      "path": "notices/THIRD-PARTY.md",
+      "content": "# Third-party notice\n\nSource: https://github.com/shadcn-ui/ui\nCommit: daaf156ee00ed91cc7e6bdd937c1b4973152d141\nTransform: shadcn-aria-rewrite@1\n\nMIT License\n\nCopyright (c) 2023 shadcn\n\nPermission is hereby granted, free of charge, to any person obtaining a copy\nof this software and associated documentation files (the \"Software\"), to deal\nin the Software without restriction, including without limitation the rights\nto use, copy, modify, merge, publish, distribute, sublicense, and/or sell\ncopies of the Software, and to permit persons to whom the Software is\nfurnished to do so, subject to the following conditions:\n\nThe above copyright notice and this permission notice shall be included in all\ncopies or substantial portions of the Software.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR\nIMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,\nFITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE\nAUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER\nLIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,\nOUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE\nSOFTWARE.\n"
+    }
+  ],
+  "outputSha256": [
+    {
+      "path": "components/_parts/utils/index.ts",
+      "sha256": "d3753f708b15cc1ec47bc3136827134b702e2069eebdb0ddefb1806b95d7c1d9"
+    },
+    {
+      "path": "components/dialog/dialog.tsx",
+      "sha256": "3285b5dfb0ac070adbbcec87a981269df810c2cf9095151658425ff7caef20d4"
+    },
+    {
+      "path": "components/dialog/index.ts",
+      "sha256": "b3def5e2119e9b5e3386e0fb1b2dc586229f919e3fcec51ca050fc86c6d5f291"
+    },
+    {
+      "path": "notices/THIRD-PARTY.md",
+      "sha256": "6148b3941d0eff3d024e4d3a0e630f009484163560272ae6ec79c649c67fc964"
+    }
+  ],
+  "reads": {
+    "tokens": [
+      "tokens.border-width.hairline",
+      "tokens.control-radius.default",
+      "tokens.duration.fast",
+      "tokens.focus-color.default",
+      "tokens.focus-outline.offset",
+      "tokens.focus-outline.width",
+      "tokens.font-size.base",
+      "tokens.font-size.sm",
+      "tokens.font-weight.medium",
+      "tokens.line-height.heading",
+      "tokens.scrim-color.default",
+      "tokens.spacing.2xl",
+      "tokens.spacing.lg",
+      "tokens.spacing.md",
+      "tokens.spacing.sm",
+      "tokens.surface-color.overlay",
+      "tokens.surface-color.sunken",
+      "tokens.text-color.muted",
+      "tokens.text-color.primary",
+      "tokens.transition-easing.enter",
+      "tokens.transition-easing.exit",
+      "tokens.z-index.modal"
+    ],
+    "assets": [
+      "assets.icon-close"
+    ],
+    "components": [
+      "components.button",
+      "components.icon"
+    ]
+  },
+  "parts": [
+    "utils"
+  ],
+  "issues": []
+}

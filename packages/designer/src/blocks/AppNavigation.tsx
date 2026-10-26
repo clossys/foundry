@@ -1,12 +1,15 @@
-import { useEffect, useId, useRef, useState, type KeyboardEvent, type ReactNode } from "react";
-import { Button } from "../atoms/Button.js";
-import { Icon } from "../atoms/Icon.js";
-import { Link } from "../atoms/Link.js";
-import { Tooltip } from "../atoms/Tooltip.js";
-import { cx } from "../atoms/internal/cx.js";
+import { useEffect, useId, useRef, useState, type ReactNode } from "react";
+import { createPortal } from "react-dom";
+import { Button } from "../components/Button.js";
+import { Icon } from "../components/Icon.js";
+import { Link } from "../components/Link.js";
+import { NavigationTree, NavigationTreeItem, NavigationTreeItemContent } from "../components/NavigationTree.js";
+import { Tooltip } from "../components/Tooltip.js";
+import { cx } from "../components/internal/cx.js";
 import { ChevronDown } from "../icons/ChevronDown.js";
 import { ChevronLeft } from "../icons/ChevronLeft.js";
 import { ChevronRight } from "../icons/ChevronRight.js";
+import { frameLinkNavigation, type FrameNavigate } from "./frame-navigation.js";
 import { Drawer } from "./Drawer.js";
 import { Panel } from "./Panel.js";
 import { getAppNavigationCloseStyle } from "./app-navigation-layout.js";
@@ -14,6 +17,11 @@ import { getAppNavigationAncestry, type AppNavigationNode } from "./app-navigati
 
 export interface AppNavigationProps {
   tree: readonly AppNavigationNode[];
+  onNavigate?: FrameNavigate;
+  /** Use the full modal viewport for narrow page navigation. */
+  fullViewport?: boolean;
+  /** Keep docked contents mounted while their frame region slides closed. */
+  retainMounted?: boolean;
   activeId?: string;
   activeHref?: string;
   /** @default "Navigation" */
@@ -23,6 +31,8 @@ export interface AppNavigationProps {
   footer?: ReactNode;
   /** Optional host-owned corner control; wire its press to the controlled panel state. */
   trigger?: ReactNode;
+  /** Optional DOM host for the complete measured control, retaining its dialog context and ref. */
+  triggerContainer?: Element | null;
   /** @default "No destinations available" */
   emptyMessage?: ReactNode;
   collapsed?: boolean;
@@ -81,8 +91,8 @@ function CornerTooltip({ trigger, label, requests }: { trigger: ReactNode; label
 }
 
 /** Host routes and identity arrive as data and slots; one Drawer owns the narrow modal lifecycle. */
-export function AppNavigation({
-  tree, activeId, activeHref, label = "Navigation", header, footer, trigger, emptyMessage = "No destinations available",
+export function AppNavigation({ onNavigate, fullViewport = false, retainMounted = false,
+  tree, activeId, activeHref, label = "Navigation", header, footer, trigger, triggerContainer, emptyMessage = "No destinations available",
   collapsed: suppliedCollapsed, defaultCollapsed = false, onCollapsedChange,
   drawerOpen, onDrawerOpenChange, navigationKey, dismissAt = "(min-width: 768px)",
   openLabel = "Open navigation", closeLabel = "Close navigation", expandLabel, collapseLabel,
@@ -115,7 +125,7 @@ export function AppNavigation({
     };
     measure(); window.addEventListener("resize", measure);
     return () => window.removeEventListener("resize", measure);
-  }, [narrow, requested, customTrigger, trigger]);
+  }, [narrow, requested, customTrigger, trigger, triggerContainer]);
   const focusedId = useRef<string | undefined>(undefined);
   const handoff = useRef(false);
   const tooltipRequests = useRef(0);
@@ -155,72 +165,51 @@ export function AppNavigation({
     return () => cancelAnimationFrame(frame);
   }, [collapsed, narrow, instance]);
 
-  const toggle = (id: string, next?: boolean) => setExpanded(previous => {
-    const result = new Set(previous);
-    if (next ?? !result.has(id)) result.add(id); else result.delete(id);
-    return result;
-  });
-  const keyboard = (event: KeyboardEvent<HTMLElement>) => {
-    const controls = [...event.currentTarget.querySelectorAll<HTMLElement>("[data-application-navigation-control]")];
-    const target = (event.target as HTMLElement).closest<HTMLElement>("[data-application-navigation-control]");
-    if (!target) return;
-    const index = controls.indexOf(target);
-    const movement = event.key === "Home" ? 0 : event.key === "End" ? controls.length - 1 :
-      event.key === "ArrowDown" ? Math.min(index + 1, controls.length - 1) : event.key === "ArrowUp" ? Math.max(index - 1, 0) : undefined;
-    if (movement !== undefined) { event.preventDefault(); controls[movement]?.focus(); return; }
-    const rtl = getComputedStyle(event.currentTarget).direction === "rtl" || event.currentTarget.closest("[dir=rtl]") !== null;
-    const forward = event.key === (rtl ? "ArrowLeft" : "ArrowRight");
-    const backward = event.key === (rtl ? "ArrowRight" : "ArrowLeft");
-    const parent = tree.find(node => node.id === (target.dataset.parentId ?? target.dataset.navigationNodeId));
-    if ((forward || backward) && parent?.children?.length && !collapsed) {
-      event.preventDefault();
-      if (backward) controls.find(element => element.dataset.navigationNodeId === parent.id)?.focus();
-      toggle(parent.id, forward);
-    }
-    if (event.key === " " && target.tagName === "A") { event.preventDefault(); target.click(); }
-  };
   const destination = (node: AppNavigationNode, parentId?: string) => {
     const current = node.id === active;
-    const className = cx(CONTROL, "flex-1", current &&
+    const className = cx(CONTROL, "control-h-md flex-1", current &&
       "bg-control-tonal font-semibold outline-solid outline-1 outline-line-strong forced-colors:outline-current");
     const content = <><span aria-hidden="true" className="flex shrink-0 items-center justify-center" style={{ inlineSize: "var(--ui-icon-md, 24px)" }}>{node.icon ?? node.label.slice(0, 1)}</span>
       <span className="min-w-0 truncate">{node.label}</span></>;
     const shared = { "data-application-navigation-control": "", "data-navigation-node-id": node.id, "data-parent-id": parentId,
-      "aria-current": current ? "page" as const : undefined, className, style: { minBlockSize: "var(--ui-layout-tap-target, 44px)" } };
-    const control = node.href !== undefined ? <Link {...shared} variant="muted" href={node.href}>{content}</Link> :
+      "aria-current": current ? "page" as const : undefined, className };
+    return node.href !== undefined ? <Link {...shared} variant="muted" href={node.href} onClick={event => frameLinkNavigation(event, onNavigate)}>{content}</Link> :
       <Button {...shared} variant="ghost" onPress={() => { node.onAction?.(); if (narrow) changeOpen(false); }}>{content}</Button>;
-    return control;
+  };
+  const item = (node: AppNavigationNode, parentId?: string): ReactNode => {
+    const children = node.children ?? [];
+    return <NavigationTreeItem key={node.id} id={node.id} textValue={node.label} href={node.href}
+      data-navigation-node-id={node.id}
+      data-active-ancestor={node.id === ancestor ? "true" : undefined}
+      className={cx("min-w-0 rounded-control data-focus-visible:outline-solid data-focus-visible:outline-2 data-focus-visible:outline-accent data-focus-visible:-outline-offset-2", parentId && "ms-md border-s border-line-base ps-sm")}>
+      <NavigationTreeItemContent>{({ isExpanded, isCurrentAncestor }) =>
+        <div className={cx("flex min-w-0 items-center gap-xs rounded-control", (isCurrentAncestor || node.id === ancestor) && "bg-control-tonal")}>
+          {(node.href !== undefined || node.onAction) && destination(node, parentId)}
+          {children.length > 0 && <Button slot="chevron" variant="ghost"
+            className={cx(CONTROL, "shrink-0", node.href || node.onAction ? "icon-control-md justify-center" : "control-h-md flex-1")}
+            data-application-navigation-control="" data-navigation-node-id={node.id}
+            aria-label={formatDisclosureLabel(node.label, isExpanded)} aria-labelledby="" aria-expanded={isExpanded}>
+            {!node.href && !node.onAction && <span className="min-w-0 flex-1 truncate">{node.label}</span>}
+            <Icon glyph={ChevronDown} decorative size="sm" className={isExpanded ? "rotate-180" : undefined} />
+          </Button>}
+        </div>
+      }</NavigationTreeItemContent>
+      {children.map(child => item(child, node.id))}
+    </NavigationTreeItem>;
   };
   const footerRegion = footer !== undefined && footer !== null && footer !== false ?
     <div data-application-navigation-region="footer" className="min-w-0 shrink-0 border-t border-line-base pt-sm">{footer}</div> : undefined;
-  const links = <nav ref={nav} aria-label={label} className="flex h-full min-h-0 flex-col" onKeyDown={keyboard}
+  const links = <nav ref={nav} aria-label={label} className="flex h-full min-h-0 flex-col" onClick={event => frameLinkNavigation(event, onNavigate)}
     onFocus={event => { focusedId.current = (event.target as HTMLElement).closest<HTMLElement>("[data-navigation-node-id]")?.dataset.navigationNodeId; }}
     onBlur={event => { if (!event.currentTarget.contains(event.relatedTarget as Node | null)) focusedId.current = undefined; }}>
     {header !== undefined && header !== null && header !== false && <div data-application-navigation-region="header" className="min-w-0 shrink-0 pb-sm">{header}</div>}
     <div data-application-navigation-region="links" className="min-h-0 flex-1 overflow-auto">
       {!tree.length ? <p className="p-sm text-body text-ink-muted">{emptyMessage}</p> :
-        <ul className="m-0 flex list-none flex-col gap-xs p-0">{tree.map(node => {
-          const children = node.children ?? [];
-          const isExpanded = expanded.has(node.id);
-          const panelId = instance + "-" + encodeURIComponent(node.id);
-          return <li key={node.id} data-active-ancestor={node.id === ancestor ? "true" : undefined}>
-            <div className={cx("flex min-w-0 items-center gap-xs rounded-control", node.id === ancestor && "bg-control-tonal")}>
-              {(node.href !== undefined || node.onAction) && destination(node)}
-              {children.length > 0 && <Button variant="ghost" className={cx(CONTROL, "shrink-0", node.href || node.onAction ? "justify-center" : "flex-1")}
-                style={{ minBlockSize: "var(--ui-layout-tap-target, 44px)", minInlineSize: "var(--ui-layout-tap-target, 44px)" }}
-                data-application-navigation-control="" data-navigation-node-id={node.id}
-                aria-label={formatDisclosureLabel(node.label, isExpanded)} aria-expanded={isExpanded} aria-controls={panelId}
-                onPress={() => toggle(node.id)}>
-                {!node.href && !node.onAction && <span className="min-w-0 flex-1 truncate">{node.label}</span>}
-                <Icon glyph={ChevronDown} decorative size="sm" className={isExpanded ? "rotate-180" : undefined} />
-              </Button>}
-            </div>
-            {children.length > 0 && <ul id={panelId} className={cx("m-0 flex list-none flex-col gap-xs p-0", "ms-md border-s border-line-base ps-sm", !isExpanded && "hidden")}
-              hidden={!isExpanded}>
-              {isExpanded && children.map(child => <li key={child.id}>{destination(child, node.id)}</li>)}
-            </ul>}
-          </li>;
-        })}</ul>}
+        <NavigationTree aria-label={label} selectedRoute={ancestry.length ? ancestry.at(-1)?.href : activeHref}
+          expandedKeys={expanded} onExpandedChange={keys => setExpanded(new Set([...keys].map(String)))}
+          className="flex min-w-0 flex-col gap-xs outline-none">
+          {tree.map(node => item(node))}
+        </NavigationTree>}
     </div>
     {footerRegion}
   </nav>;
@@ -236,7 +225,7 @@ export function AppNavigation({
           aria-expanded={true} aria-label={closeLabel} onPress={changeCollapsed}><Icon glyph={ChevronLeft} decorative size="sm" className="rtl:rotate-180" /></Button>
       : <Button variant="ghost" className="icon-control-md shrink-0 border-0 bg-transparent p-0 focus-visible:outline-solid focus-visible:outline-2 focus-visible:outline-accent"
           aria-expanded={true} aria-label={collapseLabel} onPress={changeCollapsed}><Icon glyph={ChevronLeft} decorative size="sm" className="rtl:rotate-180" /></Button>;
-  const control = <span ref={corner} id={instance + "-trigger"} className="contents">{trigger ?? (narrow
+  const measuredControl = <span ref={corner} id={instance + "-trigger"} className="contents">{trigger ?? (narrow
     ? <Button variant="ghost" className="icon-control-md shrink-0 border-0 bg-transparent p-0 focus-visible:outline-solid focus-visible:outline-2 focus-visible:outline-accent"
         aria-expanded={requested} aria-label={openLabel}><Icon glyph={ChevronRight} decorative size="sm" className="rtl:rotate-180" /></Button>
     : collapsed
@@ -246,9 +235,10 @@ export function AppNavigation({
       : collapseLabel === undefined
         ? <CornerTooltip trigger={wideControl} label={closeLabel} requests={tooltipRequests} />
         : <CornerTooltip trigger={wideControl} label={collapseLabel} requests={tooltipRequests} />)}</span>;
-  if (narrow) return <Drawer trigger={control}
+  const control = triggerContainer ? createPortal(measuredControl, triggerContainer) : measuredControl;
+  if (narrow) return <Drawer fullViewport={fullViewport} trigger={control}
     heading={<span className="sr-only">{label}</span>} closeLabel={closeLabel} closeButtonStyle={getAppNavigationCloseStyle(cornerMeasurement)} navigationKey={route} dismissAt={dismissAt}
     isOpen={requested} onOpenChange={changeOpen} className="gap-xs p-sm">{links}</Drawer>;
-  return <>{control}{!collapsed && <Panel className="h-full min-h-0 shrink-0 gap-xs rounded-none border-0 p-sm"
+  return <>{control}{(!collapsed || retainMounted) && <Panel className="h-full min-h-0 shrink-0 gap-xs rounded-none border-0 p-sm"
     style={{ inlineSize: "var(--ui-layout-sidebar-w, 256px)" }}>{links}</Panel>}</>;
 }

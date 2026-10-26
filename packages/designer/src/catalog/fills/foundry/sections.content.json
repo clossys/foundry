@@ -1,0 +1,63 @@
+{
+  "$extensions": {
+    "com.clossys.fill": {
+      "author": "foundry",
+      "builtOn": [],
+      "conforms": [],
+      "evidence": [],
+      "id": "foundry/sections.content",
+      "license": "MIT",
+      "mode": "implementation",
+      "originKinds": [
+        "adopted"
+      ],
+      "pin": {
+        "export": "./blocks#ContentSection",
+        "package": "@clossys/designer",
+        "version": "0.12.0"
+      },
+      "relation": "subset",
+      "slot": "sections.content",
+      "source": "foundry",
+      "sourceAddress": "./blocks#ContentSection",
+      "status": "draft",
+      "trust": "foundry",
+      "unmapped": [
+        "slot.header"
+      ]
+    }
+  },
+  "sections": {
+    "content": {
+      "configs": {},
+      "impl": {
+        "export": "ContentSection",
+        "kind": "package",
+        "module": "@clossys/designer/blocks"
+      },
+      "license": "MIT",
+      "notes": [
+        "Header is spread across heading, eyebrow, description and actions; there is no section-header region prop. Source uses SectionIntro rather than the frozen section-header fill.",
+        "Descriptor only; source imports, token reads, shared anatomy, accessibility, contrast and consumer runtime conformance are unmeasured. Content bindings describe host adaptation points, not type-equivalent converters."
+      ],
+      "parts": [],
+      "pin": {
+        "export": "./blocks#ContentSection",
+        "package": "@clossys/designer",
+        "version": "0.12.0"
+      },
+      "propMap": {
+        "layout.split-end": "./blocks#ContentSection.layout=split-end",
+        "layout.split-start": "./blocks#ContentSection.layout=split-start",
+        "layout.stacked": "./blocks#ContentSection.layout=stacked"
+      },
+      "slot": "sections.content",
+      "slotMap": {
+        "body": "./blocks#ContentSection.children",
+        "footnote": "./blocks#ContentSection.footnote",
+        "media": "./blocks#ContentSection.media"
+      },
+      "source": "foundry"
+    }
+  }
+}

@@ -1,0 +1,58 @@
+{
+  "$extensions": {
+    "com.clossys.fill": {
+      "author": "foundry",
+      "builtOn": [],
+      "conforms": [],
+      "evidence": [],
+      "id": "foundry/sections.explorer",
+      "license": "MIT",
+      "mode": "implementation",
+      "originKinds": [
+        "adopted"
+      ],
+      "pin": {
+        "export": "./blocks#Explorer",
+        "package": "@clossys/designer",
+        "version": "0.12.0"
+      },
+      "relation": "subset",
+      "slot": "sections.explorer",
+      "source": "foundry",
+      "sourceAddress": "./blocks#Explorer",
+      "status": "draft",
+      "trust": "foundry",
+      "unmapped": [
+        "slot.list"
+      ]
+    }
+  },
+  "sections": {
+    "explorer": {
+      "configs": {},
+      "impl": {
+        "export": "Explorer",
+        "kind": "package",
+        "module": "@clossys/designer/blocks"
+      },
+      "license": "MIT",
+      "notes": [
+        "The tree prop is structured data, not a replaceable tree region. No list-pane region API; renderDetails is a selected-node detail callback. Host supplies label. Source implements tree keyboard handling locally.",
+        "Descriptor only; source imports, token reads, shared anatomy, accessibility, contrast and consumer runtime conformance are unmeasured. Content bindings describe host adaptation points, not type-equivalent converters."
+      ],
+      "parts": [],
+      "pin": {
+        "export": "./blocks#Explorer",
+        "package": "@clossys/designer",
+        "version": "0.12.0"
+      },
+      "propMap": {},
+      "slot": "sections.explorer",
+      "slotMap": {
+        "selection": "./blocks#Explorer.selectedId",
+        "tree": "./blocks#Explorer.tree"
+      },
+      "source": "foundry"
+    }
+  }
+}

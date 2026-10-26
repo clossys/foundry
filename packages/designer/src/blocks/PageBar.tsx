@@ -1,23 +1,26 @@
 "use client";
 
-import { useEffect, useRef, useState, type ReactNode } from "react";
-import { Button } from "../atoms/Button.js";
-import { Icon } from "../atoms/Icon.js";
-import { Link } from "../atoms/Link.js";
-import { Menu } from "../atoms/Menu.js";
-import { Popover } from "../atoms/Popover.js";
-import { Box } from "../icons/Box.js";
+import { useEffect, useRef, useState, type ComponentPropsWithRef, type ReactNode } from "react";
+import { Button } from "../components/Button.js";
+import { Icon } from "../components/Icon.js";
+import { Link } from "../components/Link.js";
+import { Menu } from "../components/Menu.js";
+import { Popover } from "../components/Popover.js";
 import { ChevronDown } from "../icons/ChevronDown.js";
-import { ExternalLink } from "../icons/ExternalLink.js";
+import type { FramePageHeader, FramePageHeaderNav, FramePageHeaderActions, FramePageHeaderDestination } from "../frame-page-header.js";
+import { Check } from "../icons/Check.js";
+import { Tooltip } from "../components/Tooltip.js";
+import { frameLinkNavigation, type FrameNavigate } from "./frame-navigation.js";
+import { frameHeaderOverflow } from "./frame-header-layout.js";
 import { CONTROL, TAP, PAGE_BAR_LAYOUT, pageBarDirection } from "./page-bar-layout.js";
+import { resolveFrameHeaderOptions } from "../catalog-core/frame-header-options.js";
 
-export type PageBarWidth = "contained" | "full";
-export interface PageBarDestination { id: string; label: string; href: string }
+export type PageBarDestination = FramePageHeaderDestination;
 export interface PageBarCrumb {
   id: string;
   label: string;
   href?: string;
-  /** Alternatives at this level, rendered with the existing Menu atom. */
+  /** Alternatives at this level, rendered with the existing Menu component. */
   siblings?: readonly PageBarDestination[];
 }
 export type PageBarAction = { id: string; label: string; primary?: boolean; isDisabled?: boolean } & (
@@ -36,28 +39,33 @@ export interface PageBarPage {
   /** Only the first primary request receives primary styling. */
   actions?: readonly PageBarAction[];
   scope?: ReactNode;
-  /** Carried for AppFrame's page default; PageBar renders its explicit width prop. */
-  width?: PageBarWidth;
 }
 export interface PageBarLabels {
   breadcrumb: string;
   collapsedBreadcrumb: string;
   pageInfo: string;
-  fullWidth: string;
-  containedWidth: string;
   pageActions: string;
 }
+export type PageBarHeaderNav = FramePageHeaderNav;
+export type PageBarHeaderActions = FramePageHeaderActions;
+export type PageBarHeader = FramePageHeader;
 export interface PageBarProps {
+  /** Omission keeps the floating sticky bar. Explicit solid/transparent uses a full-width bar; solid adds a hairline. */
+  surface?: "solid" | "transparent" | "glass";
+  /** Static stays in document flow and reads no sticky layer. Glass is fixed and refuses static. */
+  position?: "sticky" | "static";
   /** Trail root: a link or, with workspaces, a menu labelled by root.label. */
   root: { label: string; href?: string };
-  width: PageBarWidth;
-  onWidthChange: (width: PageBarWidth) => void;
+  header?: PageBarHeader;
+  onNavigate?: FrameNavigate;
   labels: PageBarLabels;
-  /** Absent: brand slot and width control, without a trail. */
+  /** Absent: optional brand and context slots, without a trail. */
   page?: PageBarPage;
   workspaces?: readonly PageBarDestination[];
   /** Leading slot before the trail; AppFrame supplies its own brand renderer. */
   brand?: ReactNode;
+  /** Optional app-header content immediately after brand and before the page trail. */
+  context?: ReactNode;
   /** Collapse ancestors and overflow non-primary actions. @default false */
   narrow?: boolean;
   /** Reserve a tap target plus gap at the inline start. @default false */
@@ -112,11 +120,14 @@ function PageTrail({ root, title, breadcrumb = [], workspaces, narrow,
   </nav>;
 }
 
-/** Draft standalone page trail, metadata, actions and stage-width controls. */
-export function PageBar({ root, brand, page, workspaces, width, onWidthChange, labels, narrow = false, reserveStart = false, reserveEnd = false, onHeightChange, dir }: PageBarProps) {
-  const { pageInfo: pageInfoLabel, fullWidth: fullWidthLabel, containedWidth: containedWidthLabel, pageActions: pageActionsLabel } = labels;
+/** Page header and metadata composition. The frame owns stage sizing. */
+export function PageBar({ root, brand, context, page, workspaces, header, onNavigate, labels, narrow = false, reserveStart = false, reserveEnd = false, onHeightChange, dir, position, surface }: PageBarProps) {
+  const headerPosition = resolveFrameHeaderOptions("frames.app-header", { position, surface }).position;
+  const legacy = surface === undefined && position === undefined;
+  const { pageInfo: pageInfoLabel, pageActions: pageActionsLabel } = labels;
   const bar = useRef<HTMLElement>(null);
-  const [glass, setGlass] = useState(false);
+  const [glassSupported, setGlass] = useState(false);
+  const glass = (legacy || surface === "glass") && glassSupported;
   const [infoOpen, setInfoOpen] = useState(false);
   const [barWidth, setBarWidth] = useState<number>();
   const [direction, setDirection] = useState(dir);
@@ -140,15 +151,26 @@ export function PageBar({ root, brand, page, workspaces, width, onWidthChange, l
     if (bar.current) observer?.observe(bar.current);
     window.addEventListener("resize", measure);
     return () => { observer?.disconnect(); window.removeEventListener("resize", measure); };
-  }, [dir, onHeightChange, page, narrow, width, infoOpen]);
+  }, [dir, onHeightChange, page, context, narrow, infoOpen, header]);
   const primary = page?.actions?.find(action => action.primary);
   const information = page && [page.status, page.description, page.updatedAt, page.meta, page.scope].some(value => value !== undefined && value !== null && value !== false);
-  return <header ref={bar} data-application-frame-region="bar" className={"relative flex min-w-0 flex-wrap items-center gap-xs rounded-control border border-line-base p-sm text-ink-primary " + (glass ? "bg-surface-glass" : "bg-surface-raised")}
-    style={{ position: "sticky", insetBlockStart: PAGE_BAR_LAYOUT.gutter, marginBlockStart: PAGE_BAR_LAYOUT.gutter, marginInline: PAGE_BAR_LAYOUT.gutter,
+  return <header onClick={event => frameLinkNavigation(event, onNavigate)} ref={bar} data-application-frame-region="bar" className={legacy
+      ? "relative flex min-w-0 flex-wrap items-center gap-xs rounded-control border border-line-base p-sm text-ink-primary " + (glass ? "bg-surface-glass" : "bg-surface-raised")
+      : "relative flex min-w-0 flex-wrap items-center gap-xs p-sm text-ink-primary "
+        + (surface === "transparent" ? "" : "border-b border-line-base ")
+        + (surface === "transparent" ? "" : glass ? "bg-surface-glass" : "bg-surface-raised")}
+    style={{ position: headerPosition,
+      ...(headerPosition === "sticky" ? { insetBlockStart: legacy ? PAGE_BAR_LAYOUT.gutter : 0 }
+        : headerPosition === "fixed" ? { insetBlockStart: 0, insetInline: 0 } : {}),
+      ...(legacy ? { marginBlockStart: PAGE_BAR_LAYOUT.gutter, marginInline: PAGE_BAR_LAYOUT.gutter }
+        : surface === "transparent" ? {} : { borderBottomWidth: PAGE_BAR_LAYOUT.hairline }),
       paddingInlineStart: reserveStart ? `calc(${PAGE_BAR_LAYOUT.tap} + ${PAGE_BAR_LAYOUT.gap})` : PAGE_BAR_LAYOUT.gap,
       paddingInlineEnd: reserveEnd ? `calc(${PAGE_BAR_LAYOUT.tap} + ${PAGE_BAR_LAYOUT.gap})` : PAGE_BAR_LAYOUT.gap,
-      backdropFilter: glass ? PAGE_BAR_LAYOUT.blur : "none", WebkitBackdropFilter: glass ? PAGE_BAR_LAYOUT.blur : "none", zIndex: PAGE_BAR_LAYOUT.barLayer }}>
-    {brand}
+      backdropFilter: glass ? PAGE_BAR_LAYOUT.blur : "none", WebkitBackdropFilter: glass ? PAGE_BAR_LAYOUT.blur : "none",
+      ...(headerPosition === "sticky" ? { zIndex: PAGE_BAR_LAYOUT.barLayer }
+        : headerPosition === "fixed" ? { zIndex: "var(--ui-z-shell, 20)" } : {}) }}>
+    {header ? <HeaderSlots header={header} onNavigate={onNavigate} /> : <>
+    {context === undefined || context === null ? brand : <>{brand}<div data-application-frame-slot="context" className="min-w-0 max-w-full">{context}</div></>}
     {page && <PageTrail root={root} title={page.title} breadcrumb={page.breadcrumb} workspaces={workspaces} narrow={narrow} labels={labels} />}
     {information && <Popover anchorRef={bar} className="text-body text-ink-primary" aria-label={pageInfoLabel} placement="bottom start" offset={0} isOpen={infoOpen} onOpenChange={setInfoOpen}
       trigger={<Button variant="ghost" className={CONTROL} style={TAP} aria-label={pageInfoLabel} aria-expanded={infoOpen}><Icon glyph={ChevronDown} decorative className={infoOpen ? "rotate-180" : undefined} /></Button>}
@@ -162,10 +184,59 @@ export function PageBar({ root, brand, page, workspaces, width, onWidthChange, l
       {narrow && page?.actions?.some(action => action !== primary) && <Menu trigger={<Button variant="ghost" className={CONTROL} style={TAP} aria-label={pageActionsLabel}><Icon glyph={ChevronDown} decorative /></Button>}>
         {page.actions.filter(action => action !== primary).map(action => <Menu.Item key={action.id} id={action.id} href={action.href} isDisabled={action.isDisabled} onAction={action.onAction}>{action.label}</Menu.Item>)}
       </Menu>}
-      <div className="ms-xs shrink-0 border-s border-line-base ps-xs">
-        {width === "full" ? <Button variant="ghost" className={CONTROL} style={TAP} aria-label={containedWidthLabel} aria-pressed={true} onPress={() => onWidthChange("contained")}><Icon glyph={Box} decorative /></Button> :
-          <Button variant="ghost" className={CONTROL} style={TAP} aria-label={fullWidthLabel} aria-pressed={false} onPress={() => onWidthChange("full")}><Icon glyph={ExternalLink} decorative /></Button>}
-      </div>
     </div>
+    </>}
   </header>;
+}
+
+function HeaderSlots({ header, onNavigate }: { header: PageBarHeader; onNavigate?: FrameNavigate }) {
+  const root = useRef<HTMLDivElement>(null);
+  const nav = useRef<HTMLElement>(null);
+  const title = useRef<HTMLHeadingElement>(null);
+  const actions = useRef<HTMLDivElement>(null);
+  const intrinsic = useRef({ title: 0, nav: 0, actions: 0, compactActions: 0 });
+  const [overflow, setOverflow] = useState({ compactActions: false, compactNav: false });
+  useEffect(() => {
+    const measure = () => {
+      if (!root.current) return;
+      const size = intrinsic.current;
+      size.nav = nav.current?.scrollWidth ?? 0;
+      if (!overflow.compactNav) size.title = title.current?.scrollWidth ?? 0;
+      if (overflow.compactActions) size.compactActions = actions.current?.scrollWidth ?? 0;
+      else size.actions = actions.current?.scrollWidth ?? 0;
+      const available = root.current.clientWidth;
+      if (!available) return;
+      const gap = Number.parseFloat(getComputedStyle(root.current).columnGap) || 0;
+      const tap = Number.parseFloat(getComputedStyle(root.current).getPropertyValue("--ui-layout-tap-target")) || 0;
+      const next = frameHeaderOverflow(available, Math.min(size.title, tap), size.nav, size.actions, size.compactActions, gap);
+      setOverflow(previous => previous.compactActions === next.compactActions && previous.compactNav === next.compactNav ? previous : next);
+    };
+    measure(); const observer = typeof ResizeObserver === "function" ? new ResizeObserver(measure) : undefined;
+    if (root.current) observer?.observe(root.current);
+    if (nav.current) observer?.observe(nav.current);
+    if (actions.current) observer?.observe(actions.current);
+    window.addEventListener("resize", measure);
+    return () => { observer?.disconnect(); window.removeEventListener("resize", measure); };
+  }, [header, overflow.compactActions, overflow.compactNav]);
+  const active = header.nav?.items.find(item => item.id === header.nav?.activeId);
+  return <div ref={root} data-frame-header-overflow={overflow.compactNav ? "navigation" : overflow.compactActions ? "actions" : "none"}
+    className="frame-header-grid relative grid w-full min-w-0 items-center gap-xs">
+    <div className="w-full min-w-0 justify-self-start">
+      {overflow.compactNav && header.nav ? <Menu trigger={<Button variant="ghost" className="min-w-0 max-w-full gap-xs" style={TAP}><h1 className="m-0 truncate text-body font-semibold">{header.title}{active ? ` / ${active.label}` : ""}</h1><Icon glyph={ChevronDown} decorative /></Button>}>
+        {header.nav.items.map(item => <Menu.Item key={item.id} id={item.id} href={item.href} textValue={item.label}
+          render={props => {
+            // This item has href, so select the anchor branch of Menu.Item's div-or-link render contract.
+            const anchorProps = props as ComponentPropsWithRef<"a">;
+            return <a {...anchorProps} aria-current={item.id === header.nav?.activeId ? "page" : undefined} onClick={event => { frameLinkNavigation(event, onNavigate); anchorProps.onClick?.(event); }} />;
+          }}>
+          {item.id === header.nav?.activeId && <Icon glyph={Check} decorative />}{item.label}
+        </Menu.Item>)}
+      </Menu> : <Tooltip trigger={<h1 ref={title} tabIndex={0} className="m-0 max-w-full truncate text-body font-semibold">{header.title}</h1>}>{header.title}</Tooltip>}
+    </div>
+    <nav ref={nav} aria-label={header.nav?.label} aria-hidden={overflow.compactNav || undefined} inert={overflow.compactNav}
+      className={(overflow.compactNav ? "invisible pointer-events-none absolute " : "") + "flex w-max min-w-0 items-center justify-center gap-xs"}>
+      {header.nav?.items.map(item => <Link key={item.id} href={item.href} onClick={event => frameLinkNavigation(event, onNavigate)} aria-current={item.id === header.nav?.activeId ? "page" : undefined} buttonVariant="ghost" className="whitespace-nowrap" style={TAP}>{item.label}</Link>)}
+    </nav>
+    <div ref={actions} className="flex min-w-0 items-center justify-self-end" data-frame-header-actions="">{header.actions?.render({ compact: overflow.compactActions })}</div>
+  </div>;
 }

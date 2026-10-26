@@ -1,0 +1,4334 @@
+{
+  "exceptions": [],
+  "findings": [
+    {
+      "code": "DF1",
+      "elementId": "src/studio/Board.tsx#section@ca35f1cf5d59",
+      "evidence": "Raw <section> has visual classes; bind a library surface.",
+      "file": "src/studio/Board.tsx",
+      "line": 14,
+      "missing": "section visual capability",
+      "raisedBy": "src/studio/Board.tsx#surface",
+      "slotId": null,
+      "tag": "section"
+    },
+    {
+      "code": "DF2",
+      "elementId": "src/studio/Board.tsx#section@ca35f1cf5d59",
+      "evidence": "unresolved class utilities: min-w-0, gap-sm, rounded-surface, border, border-line-base, bg-surface-base, p-md",
+      "file": "src/studio/Board.tsx",
+      "line": 14,
+      "raisedBy": "src/studio/Board.tsx#surface",
+      "slotId": null,
+      "tag": "section"
+    },
+    {
+      "code": "DF2",
+      "elementId": "src/studio/Board.tsx#section@ca35f1cf5d59",
+      "evidence": "unresolved style: dynamic source cannot establish token-only styling.",
+      "file": "src/studio/Board.tsx",
+      "line": 14,
+      "raisedBy": "src/studio/Board.tsx#surface",
+      "slotId": null,
+      "tag": "section"
+    },
+    {
+      "code": "DF4",
+      "elementId": "src/studio/Board.tsx#section@ca35f1cf5d59",
+      "evidence": "missing-declared-reads: tokens.region-width",
+      "file": "src/studio/Board.tsx",
+      "line": 14,
+      "raisedBy": "src/studio/Board.tsx#surface",
+      "slotId": "src/studio/Board.tsx#surface",
+      "tag": "section"
+    },
+    {
+      "code": "DF1",
+      "elementId": "src/studio/Board.tsx#h3@2a93832b66e2",
+      "evidence": "Raw <h3> has visual classes; bind a library surface.",
+      "file": "src/studio/Board.tsx",
+      "line": 15,
+      "missing": "h3 visual capability",
+      "raisedBy": "src/studio/Board.tsx#surface",
+      "slotId": null,
+      "tag": "h3"
+    },
+    {
+      "code": "DF2",
+      "elementId": "src/studio/Board.tsx#h3@2a93832b66e2",
+      "evidence": "unresolved class utilities: gap-sm, text-body",
+      "file": "src/studio/Board.tsx",
+      "line": 15,
+      "raisedBy": "src/studio/Board.tsx#surface",
+      "slotId": null,
+      "tag": "h3"
+    },
+    {
+      "code": "DF3",
+      "elementId": "src/studio/Board.tsx#svg@6008217e7685",
+      "evidence": "Inline <svg> must use an assets component or icon id.",
+      "file": "src/studio/Board.tsx",
+      "line": 17,
+      "raisedBy": "src/studio/Board.tsx#surface",
+      "slotId": "components.icon",
+      "tag": "svg"
+    },
+    {
+      "code": "DF2",
+      "elementId": "src/studio/Board.tsx#svg@6008217e7685",
+      "evidence": "unresolved style: dynamic source cannot establish token-only styling.",
+      "file": "src/studio/Board.tsx",
+      "line": 17,
+      "raisedBy": "src/studio/Board.tsx#surface",
+      "slotId": null,
+      "tag": "svg"
+    },
+    {
+      "code": "DF4",
+      "elementId": "src/studio/Board.tsx#svg@6008217e7685",
+      "evidence": "missing-declared-reads: tokens.spacing",
+      "file": "src/studio/Board.tsx",
+      "line": 17,
+      "raisedBy": "src/studio/Board.tsx#surface",
+      "slotId": "src/studio/Board.tsx#surface",
+      "tag": "svg"
+    },
+    {
+      "code": "DF1",
+      "elementId": "src/studio/Board.tsx#circle@7f74eaca5d70",
+      "evidence": "Raw <circle> has no library component.",
+      "file": "src/studio/Board.tsx",
+      "line": 17,
+      "missing": "circle visual capability",
+      "raisedBy": "src/studio/Board.tsx#surface",
+      "slotId": null,
+      "tag": "circle"
+    },
+    {
+      "code": "DF1",
+      "elementId": "src/studio/Board.tsx#circle@93f09924a7f1",
+      "evidence": "Raw <circle> has no library component.",
+      "file": "src/studio/Board.tsx",
+      "line": 17,
+      "missing": "circle visual capability",
+      "raisedBy": "src/studio/Board.tsx#surface",
+      "slotId": null,
+      "tag": "circle"
+    },
+    {
+      "code": "DF1",
+      "elementId": "src/studio/Board.tsx#div@936f4d863046",
+      "evidence": "Raw <div> has visual classes; bind a library surface.",
+      "file": "src/studio/Board.tsx",
+      "line": 20,
+      "missing": "div visual capability",
+      "raisedBy": "src/studio/Board.tsx#surface",
+      "slotId": null,
+      "tag": "div"
+    },
+    {
+      "code": "DF2",
+      "elementId": "src/studio/Board.tsx#div@936f4d863046",
+      "evidence": "unresolved class utilities: min-h-0",
+      "file": "src/studio/Board.tsx",
+      "line": 20,
+      "raisedBy": "src/studio/Board.tsx#surface",
+      "slotId": null,
+      "tag": "div"
+    },
+    {
+      "code": "DF5",
+      "elementId": "src/studio/Board.tsx#Matrix@f06610ae2c6b",
+      "evidence": "Unknown visual import or local component <Matrix>; no registered slot resolves.",
+      "file": "src/studio/Board.tsx",
+      "line": 20,
+      "missing": "Matrix visual capability",
+      "raisedBy": "src/studio/Board.tsx#surface",
+      "slotId": null,
+      "tag": "Matrix"
+    },
+    {
+      "code": "DF2",
+      "elementId": "src/studio/Board.tsx#Matrix@f06610ae2c6b",
+      "evidence": "unresolved ...: dynamic source cannot establish token-only styling.",
+      "file": "src/studio/Board.tsx",
+      "line": 20,
+      "raisedBy": "src/studio/Board.tsx#surface",
+      "slotId": null,
+      "tag": "Matrix"
+    },
+    {
+      "code": "DF2",
+      "elementId": "src/studio/Board.tsx#div@a6d1d7d508f9",
+      "evidence": "unresolved class utilities: inset-md, gap-md",
+      "file": "src/studio/Board.tsx",
+      "line": 21,
+      "raisedBy": "src/studio/Board.tsx#surface",
+      "slotId": null,
+      "tag": "div"
+    },
+    {
+      "code": "DF2",
+      "elementId": "src/studio/Board.tsx#div@a6d1d7d508f9",
+      "evidence": "unresolved style: dynamic source cannot establish token-only styling.",
+      "file": "src/studio/Board.tsx",
+      "line": 21,
+      "raisedBy": "src/studio/Board.tsx#surface",
+      "slotId": null,
+      "tag": "div"
+    },
+    {
+      "code": "DF4",
+      "elementId": "src/studio/Board.tsx#div@a6d1d7d508f9",
+      "evidence": "missing-declared-reads: tokens.spacing",
+      "file": "src/studio/Board.tsx",
+      "line": 21,
+      "raisedBy": "src/studio/Board.tsx#surface",
+      "slotId": "src/studio/Board.tsx#surface",
+      "tag": "div"
+    },
+    {
+      "code": "DF1",
+      "elementId": "src/studio/Board.tsx#p@2c93cb04e8b9",
+      "evidence": "Raw <p> has visual classes; bind a library surface.",
+      "file": "src/studio/Board.tsx",
+      "line": 22,
+      "missing": "p visual capability",
+      "raisedBy": "src/studio/Board.tsx#surface",
+      "slotId": null,
+      "tag": "p"
+    },
+    {
+      "code": "DF2",
+      "elementId": "src/studio/Board.tsx#p@2c93cb04e8b9",
+      "evidence": "unresolved class utilities: text-body-s, text-ink-secondary",
+      "file": "src/studio/Board.tsx",
+      "line": 22,
+      "raisedBy": "src/studio/Board.tsx#surface",
+      "slotId": null,
+      "tag": "p"
+    },
+    {
+      "code": "DF2",
+      "elementId": "src/studio/Board.tsx#div@310ba71e3e7c",
+      "evidence": "unresolved class utilities: gap-xs",
+      "file": "src/studio/Board.tsx",
+      "line": 23,
+      "raisedBy": "src/studio/Board.tsx#surface",
+      "slotId": null,
+      "tag": "div"
+    },
+    {
+      "code": "DF1",
+      "elementId": "src/studio/Board.tsx#span@429b89dda790",
+      "evidence": "Raw <span> has visual classes; bind a library surface.",
+      "file": "src/studio/Board.tsx",
+      "line": 23,
+      "missing": "span visual capability",
+      "raisedBy": "src/studio/Board.tsx#surface",
+      "slotId": null,
+      "tag": "span"
+    },
+    {
+      "code": "DF2",
+      "elementId": "src/studio/Board.tsx#span@429b89dda790",
+      "evidence": "unresolved class utilities: rounded-control, bg-surface-raised, px-sm, py-xs, text-caption",
+      "file": "src/studio/Board.tsx",
+      "line": 23,
+      "raisedBy": "src/studio/Board.tsx#surface",
+      "slotId": null,
+      "tag": "span"
+    },
+    {
+      "code": "DF2",
+      "elementId": "src/studio/CandidateCard.tsx#Card@62aab8a5a1c3",
+      "evidence": "unresolved className: dynamic source cannot establish token-only styling.",
+      "file": "src/studio/CandidateCard.tsx",
+      "line": 19,
+      "raisedBy": "src/studio/CandidateCard.tsx#surface",
+      "slotId": null,
+      "tag": "Card"
+    },
+    {
+      "code": "DF2",
+      "elementId": "src/studio/CandidateCard.tsx#Card@62aab8a5a1c3",
+      "evidence": "Hard-coded tw-arbitrary: forced-colors:outline-[color:Highlight]",
+      "file": "src/studio/CandidateCard.tsx",
+      "line": 19,
+      "raisedBy": "src/studio/CandidateCard.tsx#surface",
+      "slotId": null,
+      "tag": "Card"
+    },
+    {
+      "code": "DF2",
+      "elementId": "src/studio/CandidateCard.tsx#Card@62aab8a5a1c3",
+      "evidence": "Hard-coded tw-arbitrary: forced-colors:border-[color:CanvasText]",
+      "file": "src/studio/CandidateCard.tsx",
+      "line": 19,
+      "raisedBy": "src/studio/CandidateCard.tsx#surface",
+      "slotId": null,
+      "tag": "Card"
+    },
+    {
+      "code": "DF1",
+      "elementId": "src/studio/CandidateCard.tsx#h3@5d1b9aa4b381",
+      "evidence": "Raw <h3> has visual classes; bind a library surface.",
+      "file": "src/studio/CandidateCard.tsx",
+      "line": 31,
+      "missing": "h3 visual capability",
+      "raisedBy": "src/studio/CandidateCard.tsx#surface",
+      "slotId": null,
+      "tag": "h3"
+    },
+    {
+      "code": "DF2",
+      "elementId": "src/studio/CandidateCard.tsx#h3@5d1b9aa4b381",
+      "evidence": "unresolved class utilities: text-body, text-ink-primary",
+      "file": "src/studio/CandidateCard.tsx",
+      "line": 31,
+      "raisedBy": "src/studio/CandidateCard.tsx#surface",
+      "slotId": null,
+      "tag": "h3"
+    },
+    {
+      "code": "DF2",
+      "elementId": "src/studio/CandidateCard.tsx#div@a16fd767e569",
+      "evidence": "unresolved class utilities: gap-sm",
+      "file": "src/studio/CandidateCard.tsx",
+      "line": 32,
+      "raisedBy": "src/studio/CandidateCard.tsx#surface",
+      "slotId": null,
+      "tag": "div"
+    },
+    {
+      "code": "DF1",
+      "elementId": "src/studio/CandidateCard.tsx#p@1ffc41dbb27c",
+      "evidence": "Raw <p> has visual classes; bind a library surface.",
+      "file": "src/studio/CandidateCard.tsx",
+      "line": 36,
+      "missing": "p visual capability",
+      "raisedBy": "src/studio/CandidateCard.tsx#surface",
+      "slotId": null,
+      "tag": "p"
+    },
+    {
+      "code": "DF2",
+      "elementId": "src/studio/CandidateCard.tsx#p@1ffc41dbb27c",
+      "evidence": "unresolved class utilities: text-caption, text-ink-muted",
+      "file": "src/studio/CandidateCard.tsx",
+      "line": 36,
+      "raisedBy": "src/studio/CandidateCard.tsx#surface",
+      "slotId": null,
+      "tag": "p"
+    },
+    {
+      "code": "DF5",
+      "elementId": "src/studio/CandidateCard.tsx#SlotPreview@95c6f664d33d",
+      "evidence": "Unknown visual import or local component <SlotPreview>; no registered slot resolves.",
+      "file": "src/studio/CandidateCard.tsx",
+      "line": 38,
+      "missing": "SlotPreview visual capability",
+      "raisedBy": "src/studio/CandidateCard.tsx#surface",
+      "slotId": null,
+      "tag": "SlotPreview"
+    },
+    {
+      "code": "DF5",
+      "elementId": "src/studio/CandidateStage.tsx#CandidateCard@da138a7d8910",
+      "evidence": "Unknown visual import or local component <CandidateCard>; no registered slot resolves.",
+      "file": "src/studio/CandidateStage.tsx",
+      "line": 23,
+      "missing": "CandidateCard visual capability",
+      "raisedBy": "src/studio/CandidateStage.tsx#surface",
+      "slotId": null,
+      "tag": "CandidateCard"
+    },
+    {
+      "code": "DF1",
+      "elementId": "src/studio/CandidateStage.tsx#section@cb4c96e3fd5e",
+      "evidence": "Raw <section> has visual classes; bind a library surface.",
+      "file": "src/studio/CandidateStage.tsx",
+      "line": 26,
+      "missing": "section visual capability",
+      "raisedBy": "src/studio/CandidateStage.tsx#surface",
+      "slotId": null,
+      "tag": "section"
+    },
+    {
+      "code": "DF2",
+      "elementId": "src/studio/CandidateStage.tsx#section@cb4c96e3fd5e",
+      "evidence": "unresolved class utilities: min-w-0, gap-md",
+      "file": "src/studio/CandidateStage.tsx",
+      "line": 26,
+      "raisedBy": "src/studio/CandidateStage.tsx#surface",
+      "slotId": null,
+      "tag": "section"
+    },
+    {
+      "code": "DF2",
+      "elementId": "src/studio/CandidateStage.tsx#div@10c866cafb0f",
+      "evidence": "unresolved class utilities: gap-md",
+      "file": "src/studio/CandidateStage.tsx",
+      "line": 27,
+      "raisedBy": "src/studio/CandidateStage.tsx#surface",
+      "slotId": null,
+      "tag": "div"
+    },
+    {
+      "code": "DF1",
+      "elementId": "src/studio/CandidateStage.tsx#p@606c06760ade",
+      "evidence": "Raw <p> has visual classes; bind a library surface.",
+      "file": "src/studio/CandidateStage.tsx",
+      "line": 40,
+      "missing": "p visual capability",
+      "raisedBy": "src/studio/CandidateStage.tsx#surface",
+      "slotId": null,
+      "tag": "p"
+    },
+    {
+      "code": "DF2",
+      "elementId": "src/studio/CandidateStage.tsx#p@606c06760ade",
+      "evidence": "unresolved class utilities: text-caption, text-ink-secondary",
+      "file": "src/studio/CandidateStage.tsx",
+      "line": 40,
+      "raisedBy": "src/studio/CandidateStage.tsx#surface",
+      "slotId": null,
+      "tag": "p"
+    },
+    {
+      "code": "DF1",
+      "elementId": "src/studio/CandidateStage.tsx#p@b50fe27e75b9",
+      "evidence": "Raw <p> has visual classes; bind a library surface.",
+      "file": "src/studio/CandidateStage.tsx",
+      "line": 41,
+      "missing": "p visual capability",
+      "raisedBy": "src/studio/CandidateStage.tsx#surface",
+      "slotId": null,
+      "tag": "p"
+    },
+    {
+      "code": "DF2",
+      "elementId": "src/studio/CandidateStage.tsx#p@b50fe27e75b9",
+      "evidence": "unresolved class utilities: text-body, text-ink-secondary",
+      "file": "src/studio/CandidateStage.tsx",
+      "line": 41,
+      "raisedBy": "src/studio/CandidateStage.tsx#surface",
+      "slotId": null,
+      "tag": "p"
+    },
+    {
+      "code": "DF2",
+      "elementId": "src/studio/CandidateStage.tsx#RadioGroup@23b68b699b88",
+      "evidence": "unresolved class utilities: min-w-0",
+      "file": "src/studio/CandidateStage.tsx",
+      "line": 42,
+      "raisedBy": "src/studio/CandidateStage.tsx#surface",
+      "slotId": null,
+      "tag": "RadioGroup"
+    },
+    {
+      "code": "DF1",
+      "elementId": "src/studio/CandidateStage.tsx#div@12d57c5b1569",
+      "evidence": "Raw <div> has visual classes; bind a library surface.",
+      "file": "src/studio/CandidateStage.tsx",
+      "line": 56,
+      "missing": "div visual capability",
+      "raisedBy": "src/studio/CandidateStage.tsx#surface",
+      "slotId": null,
+      "tag": "div"
+    },
+    {
+      "code": "DF2",
+      "elementId": "src/studio/CandidateStage.tsx#div@12d57c5b1569",
+      "evidence": "unresolved class utilities: min-w-0, gap-md",
+      "file": "src/studio/CandidateStage.tsx",
+      "line": 56,
+      "raisedBy": "src/studio/CandidateStage.tsx#surface",
+      "slotId": null,
+      "tag": "div"
+    },
+    {
+      "code": "DF2",
+      "elementId": "src/studio/CandidateStage.tsx#div@12d57c5b1569",
+      "evidence": "unresolved style: dynamic source cannot establish token-only styling.",
+      "file": "src/studio/CandidateStage.tsx",
+      "line": 56,
+      "raisedBy": "src/studio/CandidateStage.tsx#surface",
+      "slotId": null,
+      "tag": "div"
+    },
+    {
+      "code": "DF4",
+      "elementId": "src/studio/CandidateStage.tsx#div@12d57c5b1569",
+      "evidence": "missing-declared-reads: tokens.spacing",
+      "file": "src/studio/CandidateStage.tsx",
+      "line": 56,
+      "raisedBy": "src/studio/CandidateStage.tsx#surface",
+      "slotId": "src/studio/CandidateStage.tsx#surface",
+      "tag": "div"
+    },
+    {
+      "code": "DF1",
+      "elementId": "src/studio/Inspector.tsx#div@0f40f0239e3d",
+      "evidence": "Raw <div> has visual classes; bind a library surface.",
+      "file": "src/studio/Inspector.tsx",
+      "line": 23,
+      "missing": "div visual capability",
+      "raisedBy": "src/studio/Inspector.tsx#surface",
+      "slotId": null,
+      "tag": "div"
+    },
+    {
+      "code": "DF2",
+      "elementId": "src/studio/Inspector.tsx#div@0f40f0239e3d",
+      "evidence": "unresolved class utilities: min-w-0, gap-md",
+      "file": "src/studio/Inspector.tsx",
+      "line": 23,
+      "raisedBy": "src/studio/Inspector.tsx#surface",
+      "slotId": null,
+      "tag": "div"
+    },
+    {
+      "code": "DF1",
+      "elementId": "src/studio/Inspector.tsx#dl@c0e4edc4e764",
+      "evidence": "Raw <dl> has visual classes; bind a library surface.",
+      "file": "src/studio/Inspector.tsx",
+      "line": 24,
+      "missing": "dl visual capability",
+      "raisedBy": "src/studio/Inspector.tsx#surface",
+      "slotId": null,
+      "tag": "dl"
+    },
+    {
+      "code": "DF2",
+      "elementId": "src/studio/Inspector.tsx#dl@c0e4edc4e764",
+      "evidence": "unresolved class utilities: gap-xs, text-body",
+      "file": "src/studio/Inspector.tsx",
+      "line": 24,
+      "raisedBy": "src/studio/Inspector.tsx#surface",
+      "slotId": null,
+      "tag": "dl"
+    },
+    {
+      "code": "DF2",
+      "elementId": "src/studio/Inspector.tsx#div@b73e351e0937",
+      "evidence": "unresolved className: dynamic source cannot establish token-only styling.",
+      "file": "src/studio/Inspector.tsx",
+      "line": 25,
+      "raisedBy": "src/studio/Inspector.tsx#surface",
+      "slotId": null,
+      "tag": "div"
+    },
+    {
+      "code": "DF1",
+      "elementId": "src/studio/Inspector.tsx#dt@8ba63377065d",
+      "evidence": "Raw <dt> has visual classes; bind a library surface.",
+      "file": "src/studio/Inspector.tsx",
+      "line": 25,
+      "missing": "dt visual capability",
+      "raisedBy": "src/studio/Inspector.tsx#surface",
+      "slotId": null,
+      "tag": "dt"
+    },
+    {
+      "code": "DF2",
+      "elementId": "src/studio/Inspector.tsx#dt@8ba63377065d",
+      "evidence": "unresolved class utilities: text-ink-secondary",
+      "file": "src/studio/Inspector.tsx",
+      "line": 25,
+      "raisedBy": "src/studio/Inspector.tsx#surface",
+      "slotId": null,
+      "tag": "dt"
+    },
+    {
+      "code": "DF1",
+      "elementId": "src/studio/Inspector.tsx#dd@a5ae608e04c3",
+      "evidence": "Raw <dd> has visual classes; bind a library surface.",
+      "file": "src/studio/Inspector.tsx",
+      "line": 25,
+      "missing": "dd visual capability",
+      "raisedBy": "src/studio/Inspector.tsx#surface",
+      "slotId": null,
+      "tag": "dd"
+    },
+    {
+      "code": "DF2",
+      "elementId": "src/studio/Inspector.tsx#dd@a5ae608e04c3",
+      "evidence": "unresolved class utilities: min-w-0, text-ink-primary",
+      "file": "src/studio/Inspector.tsx",
+      "line": 25,
+      "raisedBy": "src/studio/Inspector.tsx#surface",
+      "slotId": null,
+      "tag": "dd"
+    },
+    {
+      "code": "DF2",
+      "elementId": "src/studio/Inspector.tsx#dl@49de63ecee60",
+      "evidence": "unresolved class utilities: gap-sm",
+      "file": "src/studio/Inspector.tsx",
+      "line": 26,
+      "raisedBy": "src/studio/Inspector.tsx#surface",
+      "slotId": null,
+      "tag": "dl"
+    },
+    {
+      "code": "DF2",
+      "elementId": "src/studio/Inspector.tsx#div@2fefd2bf07f1",
+      "evidence": "unresolved className: dynamic source cannot establish token-only styling.",
+      "file": "src/studio/Inspector.tsx",
+      "line": 30,
+      "raisedBy": "src/studio/Inspector.tsx#surface",
+      "slotId": null,
+      "tag": "div"
+    },
+    {
+      "code": "DF2",
+      "elementId": "src/studio/Inspector.tsx#div@a2e8e19c607f",
+      "evidence": "unresolved className: dynamic source cannot establish token-only styling.",
+      "file": "src/studio/Inspector.tsx",
+      "line": 31,
+      "raisedBy": "src/studio/Inspector.tsx#surface",
+      "slotId": null,
+      "tag": "div"
+    },
+    {
+      "code": "DF2",
+      "elementId": "src/studio/Inspector.tsx#div@1058d0b98f69",
+      "evidence": "unresolved className: dynamic source cannot establish token-only styling.",
+      "file": "src/studio/Inspector.tsx",
+      "line": 32,
+      "raisedBy": "src/studio/Inspector.tsx#surface",
+      "slotId": null,
+      "tag": "div"
+    },
+    {
+      "code": "DF2",
+      "elementId": "src/studio/Inspector.tsx#div@f091dcd27554",
+      "evidence": "unresolved className: dynamic source cannot establish token-only styling.",
+      "file": "src/studio/Inspector.tsx",
+      "line": 33,
+      "raisedBy": "src/studio/Inspector.tsx#surface",
+      "slotId": null,
+      "tag": "div"
+    },
+    {
+      "code": "DF2",
+      "elementId": "src/studio/Inspector.tsx#div@5b1b41718e24",
+      "evidence": "unresolved className: dynamic source cannot establish token-only styling.",
+      "file": "src/studio/Inspector.tsx",
+      "line": 34,
+      "raisedBy": "src/studio/Inspector.tsx#surface",
+      "slotId": null,
+      "tag": "div"
+    },
+    {
+      "code": "DF1",
+      "elementId": "src/studio/Matrix.tsx#div@90aa2e7dc41f",
+      "evidence": "Raw <div> has visual classes; bind a library surface.",
+      "file": "src/studio/Matrix.tsx",
+      "line": 40,
+      "missing": "div visual capability",
+      "raisedBy": "src/studio/Matrix.tsx#surface",
+      "slotId": null,
+      "tag": "div"
+    },
+    {
+      "code": "DF2",
+      "elementId": "src/studio/Matrix.tsx#div@90aa2e7dc41f",
+      "evidence": "unresolved class utilities: min-w-0",
+      "file": "src/studio/Matrix.tsx",
+      "line": 40,
+      "raisedBy": "src/studio/Matrix.tsx#surface",
+      "slotId": null,
+      "tag": "div"
+    },
+    {
+      "code": "DF2",
+      "elementId": "src/studio/Matrix.tsx#div@90aa2e7dc41f",
+      "evidence": "unresolved style: dynamic source cannot establish token-only styling.",
+      "file": "src/studio/Matrix.tsx",
+      "line": 40,
+      "raisedBy": "src/studio/Matrix.tsx#surface",
+      "slotId": null,
+      "tag": "div"
+    },
+    {
+      "code": "DF4",
+      "elementId": "src/studio/Matrix.tsx#div@90aa2e7dc41f",
+      "evidence": "missing-declared-reads: tokens.content-size",
+      "file": "src/studio/Matrix.tsx",
+      "line": 40,
+      "raisedBy": "src/studio/Matrix.tsx#surface",
+      "slotId": "src/studio/Matrix.tsx#surface",
+      "tag": "div"
+    },
+    {
+      "code": "DF1",
+      "elementId": "src/studio/Matrix.tsx#table@5307c59a39a7",
+      "evidence": "Raw <table> has no library component. Bind components.table.",
+      "file": "src/studio/Matrix.tsx",
+      "line": 41,
+      "raisedBy": "src/studio/Matrix.tsx#surface",
+      "slotId": "components.table",
+      "tag": "table"
+    },
+    {
+      "code": "DF2",
+      "elementId": "src/studio/Matrix.tsx#table@5307c59a39a7",
+      "evidence": "unresolved class utilities: table-fixed, min-w-0, text-start, text-body-s",
+      "file": "src/studio/Matrix.tsx",
+      "line": 41,
+      "raisedBy": "src/studio/Matrix.tsx#surface",
+      "slotId": null,
+      "tag": "table"
+    },
+    {
+      "code": "DF2",
+      "elementId": "src/studio/Matrix.tsx#table@5307c59a39a7",
+      "evidence": "unresolved style: dynamic source cannot establish token-only styling.",
+      "file": "src/studio/Matrix.tsx",
+      "line": 41,
+      "raisedBy": "src/studio/Matrix.tsx#surface",
+      "slotId": null,
+      "tag": "table"
+    },
+    {
+      "code": "DF1",
+      "elementId": "src/studio/Matrix.tsx#thead@3906dd05a3f2",
+      "evidence": "Raw <thead> has no library component. Bind components.table.",
+      "file": "src/studio/Matrix.tsx",
+      "line": 43,
+      "raisedBy": "src/studio/Matrix.tsx#surface",
+      "slotId": "components.table",
+      "tag": "thead"
+    },
+    {
+      "code": "DF2",
+      "elementId": "src/studio/Matrix.tsx#thead@3906dd05a3f2",
+      "evidence": "unresolved class utilities: top-0, bg-surface-base",
+      "file": "src/studio/Matrix.tsx",
+      "line": 43,
+      "raisedBy": "src/studio/Matrix.tsx#surface",
+      "slotId": null,
+      "tag": "thead"
+    },
+    {
+      "code": "DF2",
+      "elementId": "src/studio/Matrix.tsx#thead@3906dd05a3f2",
+      "evidence": "unresolved style: dynamic source cannot establish token-only styling.",
+      "file": "src/studio/Matrix.tsx",
+      "line": 43,
+      "raisedBy": "src/studio/Matrix.tsx#surface",
+      "slotId": null,
+      "tag": "thead"
+    },
+    {
+      "code": "DF4",
+      "elementId": "src/studio/Matrix.tsx#thead@3906dd05a3f2",
+      "evidence": "missing-declared-reads: tokens.z-index",
+      "file": "src/studio/Matrix.tsx",
+      "line": 43,
+      "raisedBy": "src/studio/Matrix.tsx#surface",
+      "slotId": "src/studio/Matrix.tsx#surface",
+      "tag": "thead"
+    },
+    {
+      "code": "DF1",
+      "elementId": "src/studio/Matrix.tsx#tr@9b569ef6902d",
+      "evidence": "Raw <tr> has no library component. Bind components.table.",
+      "file": "src/studio/Matrix.tsx",
+      "line": 43,
+      "raisedBy": "src/studio/Matrix.tsx#surface",
+      "slotId": "components.table",
+      "tag": "tr"
+    },
+    {
+      "code": "DF1",
+      "elementId": "src/studio/Matrix.tsx#th@dba7b868bc9a",
+      "evidence": "Raw <th> has no library component. Bind components.table.",
+      "file": "src/studio/Matrix.tsx",
+      "line": 44,
+      "raisedBy": "src/studio/Matrix.tsx#surface",
+      "slotId": "components.table",
+      "tag": "th"
+    },
+    {
+      "code": "DF2",
+      "elementId": "src/studio/Matrix.tsx#th@dba7b868bc9a",
+      "evidence": "unresolved class utilities: start-0, bg-surface-base, p-sm, text-start",
+      "file": "src/studio/Matrix.tsx",
+      "line": 44,
+      "raisedBy": "src/studio/Matrix.tsx#surface",
+      "slotId": null,
+      "tag": "th"
+    },
+    {
+      "code": "DF2",
+      "elementId": "src/studio/Matrix.tsx#th@dba7b868bc9a",
+      "evidence": "unresolved style: dynamic source cannot establish token-only styling.",
+      "file": "src/studio/Matrix.tsx",
+      "line": 44,
+      "raisedBy": "src/studio/Matrix.tsx#surface",
+      "slotId": null,
+      "tag": "th"
+    },
+    {
+      "code": "DF1",
+      "elementId": "src/studio/Matrix.tsx#th@ed1cc6c662a8",
+      "evidence": "Raw <th> has no library component. Bind components.table.",
+      "file": "src/studio/Matrix.tsx",
+      "line": 45,
+      "raisedBy": "src/studio/Matrix.tsx#surface",
+      "slotId": "components.table",
+      "tag": "th"
+    },
+    {
+      "code": "DF2",
+      "elementId": "src/studio/Matrix.tsx#th@ed1cc6c662a8",
+      "evidence": "unresolved class utilities: p-sm, text-start",
+      "file": "src/studio/Matrix.tsx",
+      "line": 45,
+      "raisedBy": "src/studio/Matrix.tsx#surface",
+      "slotId": null,
+      "tag": "th"
+    },
+    {
+      "code": "DF1",
+      "elementId": "src/studio/Matrix.tsx#tbody@dbb6e6bb66a4",
+      "evidence": "Raw <tbody> has no library component. Bind components.table.",
+      "file": "src/studio/Matrix.tsx",
+      "line": 47,
+      "raisedBy": "src/studio/Matrix.tsx#surface",
+      "slotId": "components.table",
+      "tag": "tbody"
+    },
+    {
+      "code": "DF1",
+      "elementId": "src/studio/Matrix.tsx#tr@d0af0bde33df",
+      "evidence": "Raw <tr> has no library component. Bind components.table.",
+      "file": "src/studio/Matrix.tsx",
+      "line": 53,
+      "raisedBy": "src/studio/Matrix.tsx#surface",
+      "slotId": "components.table",
+      "tag": "tr"
+    },
+    {
+      "code": "DF1",
+      "elementId": "src/studio/Matrix.tsx#th@ed2288a2ec86",
+      "evidence": "Raw <th> has no library component. Bind components.table.",
+      "file": "src/studio/Matrix.tsx",
+      "line": 55,
+      "raisedBy": "src/studio/Matrix.tsx#surface",
+      "slotId": "components.table",
+      "tag": "th"
+    },
+    {
+      "code": "DF2",
+      "elementId": "src/studio/Matrix.tsx#th@ed2288a2ec86",
+      "evidence": "unresolved className: dynamic source cannot establish token-only styling.",
+      "file": "src/studio/Matrix.tsx",
+      "line": 55,
+      "raisedBy": "src/studio/Matrix.tsx#surface",
+      "slotId": null,
+      "tag": "th"
+    },
+    {
+      "code": "DF2",
+      "elementId": "src/studio/Matrix.tsx#th@ed2288a2ec86",
+      "evidence": "unresolved style: dynamic source cannot establish token-only styling.",
+      "file": "src/studio/Matrix.tsx",
+      "line": 55,
+      "raisedBy": "src/studio/Matrix.tsx#surface",
+      "slotId": null,
+      "tag": "th"
+    },
+    {
+      "code": "DF4",
+      "elementId": "src/studio/Matrix.tsx#th@ed2288a2ec86",
+      "evidence": "missing-declared-reads: tokens.spacing, tokens.z-index",
+      "file": "src/studio/Matrix.tsx",
+      "line": 55,
+      "raisedBy": "src/studio/Matrix.tsx#surface",
+      "slotId": "src/studio/Matrix.tsx#surface",
+      "tag": "th"
+    },
+    {
+      "code": "DF1",
+      "elementId": "src/studio/Matrix.tsx#small@69fc9e831d69",
+      "evidence": "Raw <small> has no library component.",
+      "file": "src/studio/Matrix.tsx",
+      "line": 56,
+      "missing": "small visual capability",
+      "raisedBy": "src/studio/Matrix.tsx#surface",
+      "slotId": null,
+      "tag": "small"
+    },
+    {
+      "code": "DF2",
+      "elementId": "src/studio/Matrix.tsx#small@69fc9e831d69",
+      "evidence": "unresolved class utilities: text-ink-muted",
+      "file": "src/studio/Matrix.tsx",
+      "line": 56,
+      "raisedBy": "src/studio/Matrix.tsx#surface",
+      "slotId": null,
+      "tag": "small"
+    },
+    {
+      "code": "DF1",
+      "elementId": "src/studio/Matrix.tsx#td@794a567661f4",
+      "evidence": "Raw <td> has no library component. Bind components.table.",
+      "file": "src/studio/Matrix.tsx",
+      "line": 59,
+      "raisedBy": "src/studio/Matrix.tsx#surface",
+      "slotId": "components.table",
+      "tag": "td"
+    },
+    {
+      "code": "DF2",
+      "elementId": "src/studio/Matrix.tsx#td@794a567661f4",
+      "evidence": "unresolved class utilities: p-0, align-top",
+      "file": "src/studio/Matrix.tsx",
+      "line": 59,
+      "raisedBy": "src/studio/Matrix.tsx#surface",
+      "slotId": null,
+      "tag": "td"
+    },
+    {
+      "code": "DF2",
+      "elementId": "src/studio/Matrix.tsx#span@c540cd94a9d7",
+      "evidence": "unresolved class utilities: sr-only",
+      "file": "src/studio/Matrix.tsx",
+      "line": 61,
+      "raisedBy": "src/studio/Matrix.tsx#surface",
+      "slotId": null,
+      "tag": "span"
+    },
+    {
+      "code": "DF1",
+      "elementId": "src/studio/Matrix.tsx#table@9ee74668ca05",
+      "evidence": "Raw <table> has no library component. Bind components.table.",
+      "file": "src/studio/Matrix.tsx",
+      "line": 62,
+      "raisedBy": "src/studio/Matrix.tsx#surface",
+      "slotId": "components.table",
+      "tag": "table"
+    },
+    {
+      "code": "DF2",
+      "elementId": "src/studio/Matrix.tsx#table@9ee74668ca05",
+      "evidence": "unresolved class utilities: w-full, table-fixed, text-start",
+      "file": "src/studio/Matrix.tsx",
+      "line": 62,
+      "raisedBy": "src/studio/Matrix.tsx#surface",
+      "slotId": null,
+      "tag": "table"
+    },
+    {
+      "code": "DF1",
+      "elementId": "src/studio/Matrix.tsx#thead@4250af58fcc6",
+      "evidence": "Raw <thead> has no library component. Bind components.table.",
+      "file": "src/studio/Matrix.tsx",
+      "line": 63,
+      "raisedBy": "src/studio/Matrix.tsx#surface",
+      "slotId": "components.table",
+      "tag": "thead"
+    },
+    {
+      "code": "DF2",
+      "elementId": "src/studio/Matrix.tsx#thead@4250af58fcc6",
+      "evidence": "unresolved class utilities: sr-only",
+      "file": "src/studio/Matrix.tsx",
+      "line": 63,
+      "raisedBy": "src/studio/Matrix.tsx#surface",
+      "slotId": null,
+      "tag": "thead"
+    },
+    {
+      "code": "DF1",
+      "elementId": "src/studio/Matrix.tsx#tr@1c4749d023f8",
+      "evidence": "Raw <tr> has no library component. Bind components.table.",
+      "file": "src/studio/Matrix.tsx",
+      "line": 63,
+      "raisedBy": "src/studio/Matrix.tsx#surface",
+      "slotId": "components.table",
+      "tag": "tr"
+    },
+    {
+      "code": "DF1",
+      "elementId": "src/studio/Matrix.tsx#th@9930e0449fb5",
+      "evidence": "Raw <th> has no library component. Bind components.table.",
+      "file": "src/studio/Matrix.tsx",
+      "line": 63,
+      "raisedBy": "src/studio/Matrix.tsx#surface",
+      "slotId": "components.table",
+      "tag": "th"
+    },
+    {
+      "code": "DF1",
+      "elementId": "src/studio/Matrix.tsx#tbody@844e1328cbf4",
+      "evidence": "Raw <tbody> has no library component. Bind components.table.",
+      "file": "src/studio/Matrix.tsx",
+      "line": 64,
+      "raisedBy": "src/studio/Matrix.tsx#surface",
+      "slotId": "components.table",
+      "tag": "tbody"
+    },
+    {
+      "code": "DF1",
+      "elementId": "src/studio/Matrix.tsx#tr@560263a74f1f",
+      "evidence": "Raw <tr> has no library component. Bind components.table.",
+      "file": "src/studio/Matrix.tsx",
+      "line": 64,
+      "raisedBy": "src/studio/Matrix.tsx#surface",
+      "slotId": "components.table",
+      "tag": "tr"
+    },
+    {
+      "code": "DF1",
+      "elementId": "src/studio/Matrix.tsx#td@53d0a2b9ea0a",
+      "evidence": "Raw <td> has no library component. Bind components.table.",
+      "file": "src/studio/Matrix.tsx",
+      "line": 71,
+      "raisedBy": "src/studio/Matrix.tsx#surface",
+      "slotId": "components.table",
+      "tag": "td"
+    },
+    {
+      "code": "DF2",
+      "elementId": "src/studio/Matrix.tsx#td@53d0a2b9ea0a",
+      "evidence": "unresolved class utilities: p-sm, align-top",
+      "file": "src/studio/Matrix.tsx",
+      "line": 71,
+      "raisedBy": "src/studio/Matrix.tsx#surface",
+      "slotId": null,
+      "tag": "td"
+    },
+    {
+      "code": "DF1",
+      "elementId": "src/studio/Matrix.tsx#div@17628232c640",
+      "evidence": "Raw <div> has visual classes; bind a library surface.",
+      "file": "src/studio/Matrix.tsx",
+      "line": 73,
+      "missing": "div visual capability",
+      "raisedBy": "src/studio/Matrix.tsx#surface",
+      "slotId": null,
+      "tag": "div"
+    },
+    {
+      "code": "DF2",
+      "elementId": "src/studio/Matrix.tsx#div@17628232c640",
+      "evidence": "unresolved class utilities: min-w-0, gap-xs",
+      "file": "src/studio/Matrix.tsx",
+      "line": 73,
+      "raisedBy": "src/studio/Matrix.tsx#surface",
+      "slotId": null,
+      "tag": "div"
+    },
+    {
+      "code": "DF1",
+      "elementId": "src/studio/Matrix.tsx#span@14e1e35e1ae0",
+      "evidence": "Raw <span> has visual classes; bind a library surface.",
+      "file": "src/studio/Matrix.tsx",
+      "line": 74,
+      "missing": "span visual capability",
+      "raisedBy": "src/studio/Matrix.tsx#surface",
+      "slotId": null,
+      "tag": "span"
+    },
+    {
+      "code": "DF2",
+      "elementId": "src/studio/Matrix.tsx#span@14e1e35e1ae0",
+      "evidence": "unresolved class utilities: text-caption, text-ink-secondary",
+      "file": "src/studio/Matrix.tsx",
+      "line": 74,
+      "raisedBy": "src/studio/Matrix.tsx#surface",
+      "slotId": null,
+      "tag": "span"
+    },
+    {
+      "code": "DF1",
+      "elementId": "src/studio/Matrix.tsx#small@257993c42945",
+      "evidence": "Raw <small> has no library component.",
+      "file": "src/studio/Matrix.tsx",
+      "line": 76,
+      "missing": "small visual capability",
+      "raisedBy": "src/studio/Matrix.tsx#surface",
+      "slotId": null,
+      "tag": "small"
+    },
+    {
+      "code": "DF1",
+      "elementId": "src/studio/Matrix.tsx#p@1ffc41dbb27c",
+      "evidence": "Raw <p> has visual classes; bind a library surface.",
+      "file": "src/studio/Matrix.tsx",
+      "line": 77,
+      "missing": "p visual capability",
+      "raisedBy": "src/studio/Matrix.tsx#surface",
+      "slotId": null,
+      "tag": "p"
+    },
+    {
+      "code": "DF2",
+      "elementId": "src/studio/Matrix.tsx#p@1ffc41dbb27c",
+      "evidence": "unresolved class utilities: text-caption, text-ink-muted",
+      "file": "src/studio/Matrix.tsx",
+      "line": 77,
+      "raisedBy": "src/studio/Matrix.tsx#surface",
+      "slotId": null,
+      "tag": "p"
+    },
+    {
+      "code": "DF1",
+      "elementId": "src/studio/Matrix.tsx#p@d0755389e7a0",
+      "evidence": "Raw <p> has visual classes; bind a library surface.",
+      "file": "src/studio/Matrix.tsx",
+      "line": 78,
+      "missing": "p visual capability",
+      "raisedBy": "src/studio/Matrix.tsx#surface",
+      "slotId": null,
+      "tag": "p"
+    },
+    {
+      "code": "DF2",
+      "elementId": "src/studio/Matrix.tsx#p@d0755389e7a0",
+      "evidence": "unresolved class utilities: text-caption, text-ink-muted",
+      "file": "src/studio/Matrix.tsx",
+      "line": 78,
+      "raisedBy": "src/studio/Matrix.tsx#surface",
+      "slotId": null,
+      "tag": "p"
+    },
+    {
+      "code": "DF1",
+      "elementId": "src/studio/Matrix.tsx#p@f0a9cfe98136",
+      "evidence": "Raw <p> has visual classes; bind a library surface.",
+      "file": "src/studio/Matrix.tsx",
+      "line": 79,
+      "missing": "p visual capability",
+      "raisedBy": "src/studio/Matrix.tsx#surface",
+      "slotId": null,
+      "tag": "p"
+    },
+    {
+      "code": "DF2",
+      "elementId": "src/studio/Matrix.tsx#p@f0a9cfe98136",
+      "evidence": "unresolved class utilities: text-caption, text-ink-muted",
+      "file": "src/studio/Matrix.tsx",
+      "line": 79,
+      "raisedBy": "src/studio/Matrix.tsx#surface",
+      "slotId": null,
+      "tag": "p"
+    },
+    {
+      "code": "DF1",
+      "elementId": "src/studio/Matrix.tsx#small@9b8947e3e181",
+      "evidence": "Raw <small> has no library component.",
+      "file": "src/studio/Matrix.tsx",
+      "line": 81,
+      "missing": "small visual capability",
+      "raisedBy": "src/studio/Matrix.tsx#surface",
+      "slotId": null,
+      "tag": "small"
+    },
+    {
+      "code": "DF5",
+      "elementId": "src/studio/Matrix.tsx#CompactPreview@0ddf013e68f1",
+      "evidence": "Unknown visual import or local component <CompactPreview>; no registered slot resolves.",
+      "file": "src/studio/Matrix.tsx",
+      "line": 82,
+      "missing": "CompactPreview visual capability",
+      "raisedBy": "src/studio/Matrix.tsx#surface",
+      "slotId": null,
+      "tag": "CompactPreview"
+    },
+    {
+      "code": "DF1",
+      "elementId": "src/studio/Matrix.tsx#small@e6c4154bcc70",
+      "evidence": "Raw <small> has no library component.",
+      "file": "src/studio/Matrix.tsx",
+      "line": 82,
+      "missing": "small visual capability",
+      "raisedBy": "src/studio/Matrix.tsx#surface",
+      "slotId": null,
+      "tag": "small"
+    },
+    {
+      "code": "DF5",
+      "elementId": "src/studio/previews.tsx#TokenPreview@426bfd7f1198",
+      "evidence": "Unknown visual import or local component <TokenPreview>; no registered slot resolves.",
+      "file": "src/studio/previews.tsx",
+      "line": 36,
+      "missing": "TokenPreview visual capability",
+      "raisedBy": "src/studio/previews.tsx#surface",
+      "slotId": null,
+      "tag": "TokenPreview"
+    },
+    {
+      "code": "DF2",
+      "elementId": "src/studio/previews.tsx#span@88adf6ff3808",
+      "evidence": "Hard-coded raw-length: 8px",
+      "file": "src/studio/previews.tsx",
+      "line": 38,
+      "raisedBy": "src/studio/previews.tsx#surface",
+      "slotId": null,
+      "tag": "span"
+    },
+    {
+      "code": "DF4",
+      "elementId": "src/studio/previews.tsx#span@88adf6ff3808",
+      "evidence": "missing-declared-reads: tokens.spacing",
+      "file": "src/studio/previews.tsx",
+      "line": 38,
+      "raisedBy": "src/studio/previews.tsx#surface",
+      "slotId": "src/studio/previews.tsx#surface",
+      "tag": "span"
+    },
+    {
+      "code": "DF2",
+      "elementId": "src/studio/previews.tsx#span@c0209677c6f7",
+      "evidence": "unresolved style: dynamic source cannot establish token-only styling.",
+      "file": "src/studio/previews.tsx",
+      "line": 38,
+      "raisedBy": "src/studio/previews.tsx#surface",
+      "slotId": null,
+      "tag": "span"
+    },
+    {
+      "code": "DF2",
+      "elementId": "src/studio/previews.tsx#span@eca9e21cca24",
+      "evidence": "unresolved style: dynamic source cannot establish token-only styling.",
+      "file": "src/studio/previews.tsx",
+      "line": 40,
+      "raisedBy": "src/studio/previews.tsx#surface",
+      "slotId": null,
+      "tag": "span"
+    },
+    {
+      "code": "DF2",
+      "elementId": "src/studio/previews.tsx#span@ec771b757793",
+      "evidence": "Hard-coded raw-length: 4px",
+      "file": "src/studio/previews.tsx",
+      "line": 42,
+      "raisedBy": "src/studio/previews.tsx#surface",
+      "slotId": null,
+      "tag": "span"
+    },
+    {
+      "code": "DF4",
+      "elementId": "src/studio/previews.tsx#span@ec771b757793",
+      "evidence": "missing-declared-reads: tokens.spacing",
+      "file": "src/studio/previews.tsx",
+      "line": 42,
+      "raisedBy": "src/studio/previews.tsx#surface",
+      "slotId": "src/studio/previews.tsx#surface",
+      "tag": "span"
+    },
+    {
+      "code": "DF2",
+      "elementId": "src/studio/previews.tsx#span@55c821785a27",
+      "evidence": "unresolved style: dynamic source cannot establish token-only styling.",
+      "file": "src/studio/previews.tsx",
+      "line": 42,
+      "raisedBy": "src/studio/previews.tsx#surface",
+      "slotId": null,
+      "tag": "span"
+    },
+    {
+      "code": "DF2",
+      "elementId": "src/studio/previews.tsx#span@55c821785a27",
+      "evidence": "Hard-coded raw-length: 0px",
+      "file": "src/studio/previews.tsx",
+      "line": 42,
+      "raisedBy": "src/studio/previews.tsx#surface",
+      "slotId": null,
+      "tag": "span"
+    },
+    {
+      "code": "DF4",
+      "elementId": "src/studio/previews.tsx#span@55c821785a27",
+      "evidence": "missing-declared-reads: tokens.accent-color",
+      "file": "src/studio/previews.tsx",
+      "line": 42,
+      "raisedBy": "src/studio/previews.tsx#surface",
+      "slotId": "src/studio/previews.tsx#surface",
+      "tag": "span"
+    },
+    {
+      "code": "DF2",
+      "elementId": "src/studio/previews.tsx#ul@93797acfc7e4",
+      "evidence": "unresolved style: dynamic source cannot establish token-only styling.",
+      "file": "src/studio/previews.tsx",
+      "line": 57,
+      "raisedBy": "src/studio/previews.tsx#surface",
+      "slotId": null,
+      "tag": "ul"
+    },
+    {
+      "code": "DF2",
+      "elementId": "src/studio/previews.tsx#li@444f9e9ed410",
+      "evidence": "Hard-coded raw-length: 4px",
+      "file": "src/studio/previews.tsx",
+      "line": 61,
+      "raisedBy": "src/studio/previews.tsx#surface",
+      "slotId": null,
+      "tag": "li"
+    },
+    {
+      "code": "DF4",
+      "elementId": "src/studio/previews.tsx#li@444f9e9ed410",
+      "evidence": "missing-declared-reads: tokens.spacing",
+      "file": "src/studio/previews.tsx",
+      "line": 61,
+      "raisedBy": "src/studio/previews.tsx#surface",
+      "slotId": "src/studio/previews.tsx#surface",
+      "tag": "li"
+    },
+    {
+      "code": "DF5",
+      "elementId": "src/studio/previews.tsx#Specimen@3b352eefa123",
+      "evidence": "Unknown visual import or local component <Specimen>; no registered slot resolves.",
+      "file": "src/studio/previews.tsx",
+      "line": 63,
+      "missing": "Specimen visual capability",
+      "raisedBy": "src/studio/previews.tsx#surface",
+      "slotId": null,
+      "tag": "Specimen"
+    },
+    {
+      "code": "DF1",
+      "elementId": "src/studio/previews.tsx#small@eb8fe06e5f81",
+      "evidence": "Raw <small> has no library component.",
+      "file": "src/studio/previews.tsx",
+      "line": 64,
+      "missing": "small visual capability",
+      "raisedBy": "src/studio/previews.tsx#surface",
+      "slotId": null,
+      "tag": "small"
+    },
+    {
+      "code": "DF1",
+      "elementId": "src/studio/previews.tsx#span@678cd1c21274",
+      "evidence": "Raw <span> has visual classes; bind a library surface.",
+      "file": "src/studio/previews.tsx",
+      "line": 77,
+      "missing": "span visual capability",
+      "raisedBy": "src/studio/previews.tsx#surface",
+      "slotId": null,
+      "tag": "span"
+    },
+    {
+      "code": "DF2",
+      "elementId": "src/studio/previews.tsx#span@678cd1c21274",
+      "evidence": "unresolved class utilities: border, border-line-base",
+      "file": "src/studio/previews.tsx",
+      "line": 77,
+      "raisedBy": "src/studio/previews.tsx#surface",
+      "slotId": null,
+      "tag": "span"
+    },
+    {
+      "code": "DF2",
+      "elementId": "src/studio/previews.tsx#span@678cd1c21274",
+      "evidence": "unresolved style: dynamic source cannot establish token-only styling.",
+      "file": "src/studio/previews.tsx",
+      "line": 77,
+      "raisedBy": "src/studio/previews.tsx#surface",
+      "slotId": null,
+      "tag": "span"
+    },
+    {
+      "code": "DF4",
+      "elementId": "src/studio/previews.tsx#span@678cd1c21274",
+      "evidence": "missing-declared-reads: tokens.spacing",
+      "file": "src/studio/previews.tsx",
+      "line": 77,
+      "raisedBy": "src/studio/previews.tsx#surface",
+      "slotId": "src/studio/previews.tsx#surface",
+      "tag": "span"
+    },
+    {
+      "code": "DF2",
+      "elementId": "src/studio/previews.tsx#span@725987f721e8",
+      "evidence": "unresolved style: dynamic source cannot establish token-only styling.",
+      "file": "src/studio/previews.tsx",
+      "line": 78,
+      "raisedBy": "src/studio/previews.tsx#surface",
+      "slotId": null,
+      "tag": "span"
+    },
+    {
+      "code": "DF2",
+      "elementId": "src/studio/previews.tsx#span@24a8915978d0",
+      "evidence": "unresolved style: dynamic source cannot establish token-only styling.",
+      "file": "src/studio/previews.tsx",
+      "line": 79,
+      "raisedBy": "src/studio/previews.tsx#surface",
+      "slotId": null,
+      "tag": "span"
+    },
+    {
+      "code": "DF2",
+      "elementId": "src/studio/previews.tsx#div@aad53536d703",
+      "evidence": "unresolved class utilities: gap-xs",
+      "file": "src/studio/previews.tsx",
+      "line": 81,
+      "raisedBy": "src/studio/previews.tsx#surface",
+      "slotId": null,
+      "tag": "div"
+    },
+    {
+      "code": "DF1",
+      "elementId": "src/studio/previews.tsx#span@293e39731152",
+      "evidence": "Raw <span> has visual classes; bind a library surface.",
+      "file": "src/studio/previews.tsx",
+      "line": 82,
+      "missing": "span visual capability",
+      "raisedBy": "src/studio/previews.tsx#surface",
+      "slotId": null,
+      "tag": "span"
+    },
+    {
+      "code": "DF2",
+      "elementId": "src/studio/previews.tsx#span@293e39731152",
+      "evidence": "unresolved class utilities: bg-accent",
+      "file": "src/studio/previews.tsx",
+      "line": 82,
+      "raisedBy": "src/studio/previews.tsx#surface",
+      "slotId": null,
+      "tag": "span"
+    },
+    {
+      "code": "DF2",
+      "elementId": "src/studio/previews.tsx#span@293e39731152",
+      "evidence": "unresolved style: dynamic source cannot establish token-only styling.",
+      "file": "src/studio/previews.tsx",
+      "line": 82,
+      "raisedBy": "src/studio/previews.tsx#surface",
+      "slotId": null,
+      "tag": "span"
+    },
+    {
+      "code": "DF4",
+      "elementId": "src/studio/previews.tsx#span@293e39731152",
+      "evidence": "missing-declared-reads: tokens.spacing",
+      "file": "src/studio/previews.tsx",
+      "line": 82,
+      "raisedBy": "src/studio/previews.tsx#surface",
+      "slotId": "src/studio/previews.tsx#surface",
+      "tag": "span"
+    },
+    {
+      "code": "DF5",
+      "elementId": "src/studio/previews.tsx#SlotPreview@cacd03e22a53",
+      "evidence": "Unknown visual import or local component <SlotPreview>; no registered slot resolves.",
+      "file": "src/studio/previews.tsx",
+      "line": 85,
+      "missing": "SlotPreview visual capability",
+      "raisedBy": "src/studio/previews.tsx#surface",
+      "slotId": null,
+      "tag": "SlotPreview"
+    },
+    {
+      "code": "DF1",
+      "elementId": "src/studio/Scorecard.tsx#section@761eceba9691",
+      "evidence": "Raw <section> has visual classes; bind a library surface.",
+      "file": "src/studio/Scorecard.tsx",
+      "line": 11,
+      "missing": "section visual capability",
+      "raisedBy": "src/studio/Scorecard.tsx#surface",
+      "slotId": null,
+      "tag": "section"
+    },
+    {
+      "code": "DF2",
+      "elementId": "src/studio/Scorecard.tsx#section@761eceba9691",
+      "evidence": "unresolved class utilities: min-w-0, gap-md, rounded-surface, border, border-line-base, bg-surface-base, p-md",
+      "file": "src/studio/Scorecard.tsx",
+      "line": 11,
+      "raisedBy": "src/studio/Scorecard.tsx#surface",
+      "slotId": null,
+      "tag": "section"
+    },
+    {
+      "code": "DF2",
+      "elementId": "src/studio/Scorecard.tsx#div@a11988c9c7ea",
+      "evidence": "unresolved class utilities: gap-sm",
+      "file": "src/studio/Scorecard.tsx",
+      "line": 12,
+      "raisedBy": "src/studio/Scorecard.tsx#surface",
+      "slotId": null,
+      "tag": "div"
+    },
+    {
+      "code": "DF1",
+      "elementId": "src/studio/Scorecard.tsx#h2@d61d2368f617",
+      "evidence": "Raw <h2> has visual classes; bind a library surface.",
+      "file": "src/studio/Scorecard.tsx",
+      "line": 12,
+      "missing": "h2 visual capability",
+      "raisedBy": "src/studio/Scorecard.tsx#surface",
+      "slotId": null,
+      "tag": "h2"
+    },
+    {
+      "code": "DF2",
+      "elementId": "src/studio/Scorecard.tsx#h2@d61d2368f617",
+      "evidence": "unresolved class utilities: text-body",
+      "file": "src/studio/Scorecard.tsx",
+      "line": 12,
+      "raisedBy": "src/studio/Scorecard.tsx#surface",
+      "slotId": null,
+      "tag": "h2"
+    },
+    {
+      "code": "DF2",
+      "elementId": "src/studio/Scorecard.tsx#dl@1f712da619f1",
+      "evidence": "unresolved class utilities: gap-md",
+      "file": "src/studio/Scorecard.tsx",
+      "line": 13,
+      "raisedBy": "src/studio/Scorecard.tsx#surface",
+      "slotId": null,
+      "tag": "dl"
+    },
+    {
+      "code": "DF1",
+      "elementId": "src/studio/Scorecard.tsx#table@f0e14a2ff8ba",
+      "evidence": "Raw <table> has no library component. Bind components.table.",
+      "file": "src/studio/Scorecard.tsx",
+      "line": 18,
+      "raisedBy": "src/studio/Scorecard.tsx#surface",
+      "slotId": "components.table",
+      "tag": "table"
+    },
+    {
+      "code": "DF2",
+      "elementId": "src/studio/Scorecard.tsx#table@f0e14a2ff8ba",
+      "evidence": "unresolved class utilities: w-full, text-start, text-body-s",
+      "file": "src/studio/Scorecard.tsx",
+      "line": 18,
+      "raisedBy": "src/studio/Scorecard.tsx#surface",
+      "slotId": null,
+      "tag": "table"
+    },
+    {
+      "code": "DF1",
+      "elementId": "src/studio/Scorecard.tsx#tbody@f5310886d2f5",
+      "evidence": "Raw <tbody> has no library component. Bind components.table.",
+      "file": "src/studio/Scorecard.tsx",
+      "line": 18,
+      "raisedBy": "src/studio/Scorecard.tsx#surface",
+      "slotId": "components.table",
+      "tag": "tbody"
+    },
+    {
+      "code": "DF1",
+      "elementId": "src/studio/Scorecard.tsx#tr@0a2363e23d84",
+      "evidence": "Raw <tr> has no library component. Bind components.table.",
+      "file": "src/studio/Scorecard.tsx",
+      "line": 18,
+      "raisedBy": "src/studio/Scorecard.tsx#surface",
+      "slotId": "components.table",
+      "tag": "tr"
+    },
+    {
+      "code": "DF1",
+      "elementId": "src/studio/Scorecard.tsx#th@28d1538a3f9b",
+      "evidence": "Raw <th> has no library component. Bind components.table.",
+      "file": "src/studio/Scorecard.tsx",
+      "line": 19,
+      "raisedBy": "src/studio/Scorecard.tsx#surface",
+      "slotId": "components.table",
+      "tag": "th"
+    },
+    {
+      "code": "DF2",
+      "elementId": "src/studio/Scorecard.tsx#th@28d1538a3f9b",
+      "evidence": "unresolved class utilities: text-start",
+      "file": "src/studio/Scorecard.tsx",
+      "line": 19,
+      "raisedBy": "src/studio/Scorecard.tsx#surface",
+      "slotId": null,
+      "tag": "th"
+    },
+    {
+      "code": "DF1",
+      "elementId": "src/studio/Scorecard.tsx#td@856f0ddc9a31",
+      "evidence": "Raw <td> has no library component. Bind components.table.",
+      "file": "src/studio/Scorecard.tsx",
+      "line": 20,
+      "raisedBy": "src/studio/Scorecard.tsx#surface",
+      "slotId": "components.table",
+      "tag": "td"
+    },
+    {
+      "code": "DF1",
+      "elementId": "src/studio/Scorecard.tsx#small@a7557614c79a",
+      "evidence": "Raw <small> has no library component.",
+      "file": "src/studio/Scorecard.tsx",
+      "line": 20,
+      "missing": "small visual capability",
+      "raisedBy": "src/studio/Scorecard.tsx#surface",
+      "slotId": null,
+      "tag": "small"
+    },
+    {
+      "code": "DF1",
+      "elementId": "src/studio/Scorecard.tsx#h3@e0de3f1a1b6c",
+      "evidence": "Raw <h3> has visual classes; bind a library surface.",
+      "file": "src/studio/Scorecard.tsx",
+      "line": 22,
+      "missing": "h3 visual capability",
+      "raisedBy": "src/studio/Scorecard.tsx#surface",
+      "slotId": null,
+      "tag": "h3"
+    },
+    {
+      "code": "DF2",
+      "elementId": "src/studio/Scorecard.tsx#h3@e0de3f1a1b6c",
+      "evidence": "unresolved class utilities: text-body",
+      "file": "src/studio/Scorecard.tsx",
+      "line": 22,
+      "raisedBy": "src/studio/Scorecard.tsx#surface",
+      "slotId": null,
+      "tag": "h3"
+    },
+    {
+      "code": "DF5",
+      "elementId": "src/studio/SlotTree.tsx#TreeView@4db75a7fdf0a",
+      "evidence": "Unknown visual import or local component <TreeView>; no registered slot resolves.",
+      "file": "src/studio/SlotTree.tsx",
+      "line": 31,
+      "missing": "TreeView visual capability",
+      "raisedBy": "src/studio/SlotTree.tsx#surface",
+      "slotId": null,
+      "tag": "TreeView"
+    },
+    {
+      "code": "DF1",
+      "elementId": "src/studio/Studio.tsx#div@10804b9f069e",
+      "evidence": "Raw <div> has visual classes; bind a library surface.",
+      "file": "src/studio/Studio.tsx",
+      "line": 9,
+      "missing": "div visual capability",
+      "raisedBy": "src/studio/Studio.tsx#surface",
+      "slotId": null,
+      "tag": "div"
+    },
+    {
+      "code": "DF2",
+      "elementId": "src/studio/Studio.tsx#div@10804b9f069e",
+      "evidence": "unresolved class utilities: min-h-0, min-w-0",
+      "file": "src/studio/Studio.tsx",
+      "line": 9,
+      "raisedBy": "src/studio/Studio.tsx#surface",
+      "slotId": null,
+      "tag": "div"
+    },
+    {
+      "code": "DF2",
+      "elementId": "src/studio/Studio.tsx#div@10804b9f069e",
+      "evidence": "unresolved inline styling: no token read establishes these values.",
+      "file": "src/studio/Studio.tsx",
+      "line": 9,
+      "raisedBy": "src/studio/Studio.tsx#surface",
+      "slotId": null,
+      "tag": "div"
+    },
+    {
+      "code": "DF5",
+      "elementId": "src/studio/Studio.tsx#StudioHeader@a37820bff406",
+      "evidence": "Unknown visual import or local component <StudioHeader>; no registered slot resolves.",
+      "file": "src/studio/Studio.tsx",
+      "line": 10,
+      "missing": "StudioHeader visual capability",
+      "raisedBy": "src/studio/Studio.tsx#surface",
+      "slotId": null,
+      "tag": "StudioHeader"
+    },
+    {
+      "code": "DF5",
+      "elementId": "src/studio/Studio.tsx#StudioCanvas@b6021c0d639a",
+      "evidence": "Unknown visual import or local component <StudioCanvas>; no registered slot resolves.",
+      "file": "src/studio/Studio.tsx",
+      "line": 11,
+      "missing": "StudioCanvas visual capability",
+      "raisedBy": "src/studio/Studio.tsx#surface",
+      "slotId": null,
+      "tag": "StudioCanvas"
+    },
+    {
+      "code": "DF2",
+      "elementId": "src/studio/Studio.tsx#StudioCanvas@b6021c0d639a",
+      "evidence": "unresolved ...: dynamic source cannot establish token-only styling.",
+      "file": "src/studio/Studio.tsx",
+      "line": 11,
+      "raisedBy": "src/studio/Studio.tsx#surface",
+      "slotId": null,
+      "tag": "StudioCanvas"
+    },
+    {
+      "code": "DF5",
+      "elementId": "src/studio/Studio.tsx#StudioSurface@5618ab5696f8",
+      "evidence": "Unknown visual import or local component <StudioSurface>; no registered slot resolves.",
+      "file": "src/studio/Studio.tsx",
+      "line": 20,
+      "missing": "StudioSurface visual capability",
+      "raisedBy": "src/studio/Studio.tsx#surface",
+      "slotId": null,
+      "tag": "StudioSurface"
+    },
+    {
+      "code": "DF2",
+      "elementId": "src/studio/Studio.tsx#StudioSurface@5618ab5696f8",
+      "evidence": "unresolved ...: dynamic source cannot establish token-only styling.",
+      "file": "src/studio/Studio.tsx",
+      "line": 20,
+      "raisedBy": "src/studio/Studio.tsx#surface",
+      "slotId": null,
+      "tag": "StudioSurface"
+    },
+    {
+      "code": "DF5",
+      "elementId": "src/studio/Studio.tsx#StudioProvider@8b255133a882",
+      "evidence": "Unknown visual import or local component <StudioProvider>; no registered slot resolves.",
+      "file": "src/studio/Studio.tsx",
+      "line": 22,
+      "missing": "StudioProvider visual capability",
+      "raisedBy": "src/studio/Studio.tsx#surface",
+      "slotId": null,
+      "tag": "StudioProvider"
+    },
+    {
+      "code": "DF2",
+      "elementId": "src/studio/Studio.tsx#StudioProvider@8b255133a882",
+      "evidence": "unresolved ...: dynamic source cannot establish token-only styling.",
+      "file": "src/studio/Studio.tsx",
+      "line": 22,
+      "raisedBy": "src/studio/Studio.tsx#surface",
+      "slotId": null,
+      "tag": "StudioProvider"
+    },
+    {
+      "code": "DF5",
+      "elementId": "src/studio/Studio.tsx#StudioSurface@5618ab5696f8.2",
+      "evidence": "Unknown visual import or local component <StudioSurface>; no registered slot resolves.",
+      "file": "src/studio/Studio.tsx",
+      "line": 22,
+      "missing": "StudioSurface visual capability",
+      "raisedBy": "src/studio/Studio.tsx#surface",
+      "slotId": null,
+      "tag": "StudioSurface"
+    },
+    {
+      "code": "DF2",
+      "elementId": "src/studio/Studio.tsx#StudioSurface@5618ab5696f8.2",
+      "evidence": "unresolved ...: dynamic source cannot establish token-only styling.",
+      "file": "src/studio/Studio.tsx",
+      "line": 22,
+      "raisedBy": "src/studio/Studio.tsx#surface",
+      "slotId": null,
+      "tag": "StudioSurface"
+    },
+    {
+      "code": "DF1",
+      "elementId": "src/studio/StudioCanvas.tsx#div@3a9c5d99edc8",
+      "evidence": "Raw <div> has visual classes; bind a library surface.",
+      "file": "src/studio/StudioCanvas.tsx",
+      "line": 110,
+      "missing": "div visual capability",
+      "raisedBy": "src/studio/StudioCanvas.tsx#surface",
+      "slotId": null,
+      "tag": "div"
+    },
+    {
+      "code": "DF2",
+      "elementId": "src/studio/StudioCanvas.tsx#div@3a9c5d99edc8",
+      "evidence": "unresolved className: dynamic source cannot establish token-only styling.",
+      "file": "src/studio/StudioCanvas.tsx",
+      "line": 110,
+      "raisedBy": "src/studio/StudioCanvas.tsx#surface",
+      "slotId": null,
+      "tag": "div"
+    },
+    {
+      "code": "DF2",
+      "elementId": "src/studio/StudioCanvas.tsx#div@3a9c5d99edc8",
+      "evidence": "unresolved inline styling: no token read establishes these values.",
+      "file": "src/studio/StudioCanvas.tsx",
+      "line": 110,
+      "raisedBy": "src/studio/StudioCanvas.tsx#surface",
+      "slotId": null,
+      "tag": "div"
+    },
+    {
+      "code": "DF1",
+      "elementId": "src/studio/StudioCanvas.tsx#style@f30cfb299abd",
+      "evidence": "Raw <style> has no library component.",
+      "file": "src/studio/StudioCanvas.tsx",
+      "line": 111,
+      "missing": "style visual capability",
+      "raisedBy": "src/studio/StudioCanvas.tsx#surface",
+      "slotId": null,
+      "tag": "style"
+    },
+    {
+      "code": "DF1",
+      "elementId": "src/studio/StudioCanvas.tsx#style@f18fa164add9",
+      "evidence": "Raw <style> has no library component.",
+      "file": "src/studio/StudioCanvas.tsx",
+      "line": 112,
+      "missing": "style visual capability",
+      "raisedBy": "src/studio/StudioCanvas.tsx#surface",
+      "slotId": null,
+      "tag": "style"
+    },
+    {
+      "code": "DF1",
+      "elementId": "src/studio/StudioCanvas.tsx#div@bed23457b3be",
+      "evidence": "Raw <div> has visual classes; bind a library surface.",
+      "file": "src/studio/StudioCanvas.tsx",
+      "line": 116,
+      "missing": "div visual capability",
+      "raisedBy": "src/studio/StudioCanvas.tsx#surface",
+      "slotId": null,
+      "tag": "div"
+    },
+    {
+      "code": "DF2",
+      "elementId": "src/studio/StudioCanvas.tsx#div@bed23457b3be",
+      "evidence": "unresolved className: dynamic source cannot establish token-only styling.",
+      "file": "src/studio/StudioCanvas.tsx",
+      "line": 116,
+      "raisedBy": "src/studio/StudioCanvas.tsx#surface",
+      "slotId": null,
+      "tag": "div"
+    },
+    {
+      "code": "DF2",
+      "elementId": "src/studio/StudioCanvas.tsx#div@bed23457b3be",
+      "evidence": "unresolved style: dynamic source cannot establish token-only styling.",
+      "file": "src/studio/StudioCanvas.tsx",
+      "line": 116,
+      "raisedBy": "src/studio/StudioCanvas.tsx#surface",
+      "slotId": null,
+      "tag": "div"
+    },
+    {
+      "code": "DF4",
+      "elementId": "src/studio/StudioCanvas.tsx#div@bed23457b3be",
+      "evidence": "missing-declared-reads: tokens.region-width",
+      "file": "src/studio/StudioCanvas.tsx",
+      "line": 116,
+      "raisedBy": "src/studio/StudioCanvas.tsx#surface",
+      "slotId": "src/studio/StudioCanvas.tsx#surface",
+      "tag": "div"
+    },
+    {
+      "code": "DF1",
+      "elementId": "src/studio/StudioCanvas.tsx#div@a5f7aa94c1fb",
+      "evidence": "Raw <div> has visual classes; bind a library surface.",
+      "file": "src/studio/StudioCanvas.tsx",
+      "line": 117,
+      "missing": "div visual capability",
+      "raisedBy": "src/studio/StudioCanvas.tsx#surface",
+      "slotId": null,
+      "tag": "div"
+    },
+    {
+      "code": "DF2",
+      "elementId": "src/studio/StudioCanvas.tsx#div@a5f7aa94c1fb",
+      "evidence": "unresolved className: dynamic source cannot establish token-only styling.",
+      "file": "src/studio/StudioCanvas.tsx",
+      "line": 117,
+      "raisedBy": "src/studio/StudioCanvas.tsx#surface",
+      "slotId": null,
+      "tag": "div"
+    },
+    {
+      "code": "DF1",
+      "elementId": "src/studio/StudioCanvas.tsx#h2@78b59a64c1df",
+      "evidence": "Raw <h2> has visual classes; bind a library surface.",
+      "file": "src/studio/StudioCanvas.tsx",
+      "line": 118,
+      "missing": "h2 visual capability",
+      "raisedBy": "src/studio/StudioCanvas.tsx#surface",
+      "slotId": null,
+      "tag": "h2"
+    },
+    {
+      "code": "DF2",
+      "elementId": "src/studio/StudioCanvas.tsx#h2@78b59a64c1df",
+      "evidence": "unresolved class utilities: text-body-s, font-semibold",
+      "file": "src/studio/StudioCanvas.tsx",
+      "line": 118,
+      "raisedBy": "src/studio/StudioCanvas.tsx#surface",
+      "slotId": null,
+      "tag": "h2"
+    },
+    {
+      "code": "DF2",
+      "elementId": "src/studio/StudioCanvas.tsx#Button@d8908fa90185",
+      "evidence": "unresolved className: dynamic source cannot establish token-only styling.",
+      "file": "src/studio/StudioCanvas.tsx",
+      "line": 119,
+      "raisedBy": "src/studio/StudioCanvas.tsx#surface",
+      "slotId": null,
+      "tag": "Button"
+    },
+    {
+      "code": "DF1",
+      "elementId": "src/studio/StudioCanvas.tsx#div@5cbdb4e553c5",
+      "evidence": "Raw <div> has visual classes; bind a library surface.",
+      "file": "src/studio/StudioCanvas.tsx",
+      "line": 121,
+      "missing": "div visual capability",
+      "raisedBy": "src/studio/StudioCanvas.tsx#surface",
+      "slotId": null,
+      "tag": "div"
+    },
+    {
+      "code": "DF2",
+      "elementId": "src/studio/StudioCanvas.tsx#div@5cbdb4e553c5",
+      "evidence": "unresolved class utilities: min-h-0",
+      "file": "src/studio/StudioCanvas.tsx",
+      "line": 121,
+      "raisedBy": "src/studio/StudioCanvas.tsx#surface",
+      "slotId": null,
+      "tag": "div"
+    },
+    {
+      "code": "DF2",
+      "elementId": "src/studio/StudioCanvas.tsx#div@ee4bc2565b23",
+      "evidence": "unresolved class utilities: shrink-0, gap-sm, p-md",
+      "file": "src/studio/StudioCanvas.tsx",
+      "line": 122,
+      "raisedBy": "src/studio/StudioCanvas.tsx#surface",
+      "slotId": null,
+      "tag": "div"
+    },
+    {
+      "code": "DF2",
+      "elementId": "src/studio/StudioCanvas.tsx#span@eb0bb190df92",
+      "evidence": "unresolved class utilities: sr-only",
+      "file": "src/studio/StudioCanvas.tsx",
+      "line": 123,
+      "raisedBy": "src/studio/StudioCanvas.tsx#surface",
+      "slotId": null,
+      "tag": "span"
+    },
+    {
+      "code": "DF2",
+      "elementId": "src/studio/StudioCanvas.tsx#div@33941e444137",
+      "evidence": "unresolved class utilities: gap-xs",
+      "file": "src/studio/StudioCanvas.tsx",
+      "line": 124,
+      "raisedBy": "src/studio/StudioCanvas.tsx#surface",
+      "slotId": null,
+      "tag": "div"
+    },
+    {
+      "code": "DF2",
+      "elementId": "src/studio/StudioCanvas.tsx#Button@b6e0e5390d70",
+      "evidence": "unresolved class utilities: rounded-pill, px-sm, py-xs, text-caption",
+      "file": "src/studio/StudioCanvas.tsx",
+      "line": 124,
+      "raisedBy": "src/studio/StudioCanvas.tsx#surface",
+      "slotId": null,
+      "tag": "Button"
+    },
+    {
+      "code": "DF1",
+      "elementId": "src/studio/StudioCanvas.tsx#div@64340dc0c761",
+      "evidence": "Raw <div> has visual classes; bind a library surface.",
+      "file": "src/studio/StudioCanvas.tsx",
+      "line": 126,
+      "missing": "div visual capability",
+      "raisedBy": "src/studio/StudioCanvas.tsx#surface",
+      "slotId": null,
+      "tag": "div"
+    },
+    {
+      "code": "DF2",
+      "elementId": "src/studio/StudioCanvas.tsx#div@64340dc0c761",
+      "evidence": "unresolved class utilities: min-h-0, border-t, border-line-base, p-sm",
+      "file": "src/studio/StudioCanvas.tsx",
+      "line": 126,
+      "raisedBy": "src/studio/StudioCanvas.tsx#surface",
+      "slotId": null,
+      "tag": "div"
+    },
+    {
+      "code": "DF5",
+      "elementId": "src/studio/StudioCanvas.tsx#SlotTree@2f01f67e7746",
+      "evidence": "Unknown visual import or local component <SlotTree>; no registered slot resolves.",
+      "file": "src/studio/StudioCanvas.tsx",
+      "line": 126,
+      "missing": "SlotTree visual capability",
+      "raisedBy": "src/studio/StudioCanvas.tsx#surface",
+      "slotId": null,
+      "tag": "SlotTree"
+    },
+    {
+      "code": "DF1",
+      "elementId": "src/studio/StudioCanvas.tsx#div@3ac6663daa63",
+      "evidence": "Raw <div> has visual classes; bind a library surface.",
+      "file": "src/studio/StudioCanvas.tsx",
+      "line": 129,
+      "missing": "div visual capability",
+      "raisedBy": "src/studio/StudioCanvas.tsx#surface",
+      "slotId": null,
+      "tag": "div"
+    },
+    {
+      "code": "DF2",
+      "elementId": "src/studio/StudioCanvas.tsx#div@3ac6663daa63",
+      "evidence": "unresolved class utilities: inset-0, outline-none, focus-visible:outline-solid, focus-visible:outline-2, focus-visible:outline-accent",
+      "file": "src/studio/StudioCanvas.tsx",
+      "line": 129,
+      "raisedBy": "src/studio/StudioCanvas.tsx#surface",
+      "slotId": null,
+      "tag": "div"
+    },
+    {
+      "code": "DF2",
+      "elementId": "src/studio/StudioCanvas.tsx#p@775a79c5e0b9",
+      "evidence": "unresolved class utilities: sr-only",
+      "file": "src/studio/StudioCanvas.tsx",
+      "line": 130,
+      "raisedBy": "src/studio/StudioCanvas.tsx#surface",
+      "slotId": null,
+      "tag": "p"
+    },
+    {
+      "code": "DF1",
+      "elementId": "src/studio/StudioCanvas.tsx#div@a752c106cd92",
+      "evidence": "Raw <div> has visual classes; bind a library surface.",
+      "file": "src/studio/StudioCanvas.tsx",
+      "line": 131,
+      "missing": "div visual capability",
+      "raisedBy": "src/studio/StudioCanvas.tsx#surface",
+      "slotId": null,
+      "tag": "div"
+    },
+    {
+      "code": "DF2",
+      "elementId": "src/studio/StudioCanvas.tsx#div@a752c106cd92",
+      "evidence": "unresolved class utilities: w-max, gap-3xl, p-3xl",
+      "file": "src/studio/StudioCanvas.tsx",
+      "line": 131,
+      "raisedBy": "src/studio/StudioCanvas.tsx#surface",
+      "slotId": null,
+      "tag": "div"
+    },
+    {
+      "code": "DF2",
+      "elementId": "src/studio/StudioCanvas.tsx#section@368359031b35",
+      "evidence": "unresolved class utilities: gap-2xl",
+      "file": "src/studio/StudioCanvas.tsx",
+      "line": 132,
+      "raisedBy": "src/studio/StudioCanvas.tsx#surface",
+      "slotId": null,
+      "tag": "section"
+    },
+    {
+      "code": "DF1",
+      "elementId": "src/studio/StudioCanvas.tsx#h2@2dc21499bb43",
+      "evidence": "Raw <h2> has visual classes; bind a library surface.",
+      "file": "src/studio/StudioCanvas.tsx",
+      "line": 133,
+      "missing": "h2 visual capability",
+      "raisedBy": "src/studio/StudioCanvas.tsx#surface",
+      "slotId": null,
+      "tag": "h2"
+    },
+    {
+      "code": "DF2",
+      "elementId": "src/studio/StudioCanvas.tsx#h2@2dc21499bb43",
+      "evidence": "unresolved class utilities: text-body, text-ink-secondary",
+      "file": "src/studio/StudioCanvas.tsx",
+      "line": 133,
+      "raisedBy": "src/studio/StudioCanvas.tsx#surface",
+      "slotId": null,
+      "tag": "h2"
+    },
+    {
+      "code": "DF2",
+      "elementId": "src/studio/StudioCanvas.tsx#h2@2dc21499bb43",
+      "evidence": "unresolved style: dynamic source cannot establish token-only styling.",
+      "file": "src/studio/StudioCanvas.tsx",
+      "line": 133,
+      "raisedBy": "src/studio/StudioCanvas.tsx#surface",
+      "slotId": null,
+      "tag": "h2"
+    },
+    {
+      "code": "DF4",
+      "elementId": "src/studio/StudioCanvas.tsx#h2@2dc21499bb43",
+      "evidence": "missing-declared-reads: tokens.region-width",
+      "file": "src/studio/StudioCanvas.tsx",
+      "line": 133,
+      "raisedBy": "src/studio/StudioCanvas.tsx#surface",
+      "slotId": "src/studio/StudioCanvas.tsx#surface",
+      "tag": "h2"
+    },
+    {
+      "code": "DF2",
+      "elementId": "src/studio/StudioCanvas.tsx#div@fdc489e8047f",
+      "evidence": "unresolved style: dynamic source cannot establish token-only styling.",
+      "file": "src/studio/StudioCanvas.tsx",
+      "line": 138,
+      "raisedBy": "src/studio/StudioCanvas.tsx#surface",
+      "slotId": null,
+      "tag": "div"
+    },
+    {
+      "code": "DF5",
+      "elementId": "src/studio/StudioCanvas.tsx#Board@f62de7736481",
+      "evidence": "Unknown visual import or local component <Board>; no registered slot resolves.",
+      "file": "src/studio/StudioCanvas.tsx",
+      "line": 139,
+      "missing": "Board visual capability",
+      "raisedBy": "src/studio/StudioCanvas.tsx#surface",
+      "slotId": null,
+      "tag": "Board"
+    },
+    {
+      "code": "DF1",
+      "elementId": "src/studio/StudioCanvas.tsx#aside@7042822e5846",
+      "evidence": "Raw <aside> has no library component.",
+      "file": "src/studio/StudioCanvas.tsx",
+      "line": 145,
+      "missing": "aside visual capability",
+      "raisedBy": "src/studio/StudioCanvas.tsx#surface",
+      "slotId": null,
+      "tag": "aside"
+    },
+    {
+      "code": "DF2",
+      "elementId": "src/studio/StudioCanvas.tsx#aside@7042822e5846",
+      "evidence": "unresolved className: dynamic source cannot establish token-only styling.",
+      "file": "src/studio/StudioCanvas.tsx",
+      "line": 145,
+      "raisedBy": "src/studio/StudioCanvas.tsx#surface",
+      "slotId": null,
+      "tag": "aside"
+    },
+    {
+      "code": "DF2",
+      "elementId": "src/studio/StudioCanvas.tsx#aside@7042822e5846",
+      "evidence": "unresolved style: dynamic source cannot establish token-only styling.",
+      "file": "src/studio/StudioCanvas.tsx",
+      "line": 145,
+      "raisedBy": "src/studio/StudioCanvas.tsx#surface",
+      "slotId": null,
+      "tag": "aside"
+    },
+    {
+      "code": "DF4",
+      "elementId": "src/studio/StudioCanvas.tsx#aside@7042822e5846",
+      "evidence": "missing-declared-reads: tokens.region-width",
+      "file": "src/studio/StudioCanvas.tsx",
+      "line": 145,
+      "raisedBy": "src/studio/StudioCanvas.tsx#surface",
+      "slotId": "src/studio/StudioCanvas.tsx#surface",
+      "tag": "aside"
+    },
+    {
+      "code": "DF5",
+      "elementId": "src/studio/StudioCanvas.tsx#Inspector@f93703718973",
+      "evidence": "Unknown visual import or local component <Inspector>; no registered slot resolves.",
+      "file": "src/studio/StudioCanvas.tsx",
+      "line": 147,
+      "missing": "Inspector visual capability",
+      "raisedBy": "src/studio/StudioCanvas.tsx#surface",
+      "slotId": null,
+      "tag": "Inspector"
+    },
+    {
+      "code": "DF2",
+      "elementId": "src/studio/StudioCanvas.tsx#Inspector@f93703718973",
+      "evidence": "unresolved ...: dynamic source cannot establish token-only styling.",
+      "file": "src/studio/StudioCanvas.tsx",
+      "line": 147,
+      "raisedBy": "src/studio/StudioCanvas.tsx#surface",
+      "slotId": null,
+      "tag": "Inspector"
+    },
+    {
+      "code": "DF2",
+      "elementId": "src/studio/StudioCanvas.tsx#nav@2fda4a47fb11",
+      "evidence": "unresolved className: dynamic source cannot establish token-only styling.",
+      "file": "src/studio/StudioCanvas.tsx",
+      "line": 150,
+      "raisedBy": "src/studio/StudioCanvas.tsx#surface",
+      "slotId": null,
+      "tag": "nav"
+    },
+    {
+      "code": "DF2",
+      "elementId": "src/studio/StudioCanvas.tsx#nav@2fda4a47fb11",
+      "evidence": "unresolved style: dynamic source cannot establish token-only styling.",
+      "file": "src/studio/StudioCanvas.tsx",
+      "line": 150,
+      "raisedBy": "src/studio/StudioCanvas.tsx#surface",
+      "slotId": null,
+      "tag": "nav"
+    },
+    {
+      "code": "DF4",
+      "elementId": "src/studio/StudioCanvas.tsx#nav@2fda4a47fb11",
+      "evidence": "missing-declared-reads: tokens.region-width",
+      "file": "src/studio/StudioCanvas.tsx",
+      "line": 150,
+      "raisedBy": "src/studio/StudioCanvas.tsx#surface",
+      "slotId": "src/studio/StudioCanvas.tsx#surface",
+      "tag": "nav"
+    },
+    {
+      "code": "DF3",
+      "elementId": "src/studio/StudioCanvas.tsx#svg@b8259c7af738",
+      "evidence": "Inline <svg> must use an assets component or icon id.",
+      "file": "src/studio/StudioCanvas.tsx",
+      "line": 151,
+      "raisedBy": "src/studio/StudioCanvas.tsx#surface",
+      "slotId": "components.icon",
+      "tag": "svg"
+    },
+    {
+      "code": "DF2",
+      "elementId": "src/studio/StudioCanvas.tsx#svg@b8259c7af738",
+      "evidence": "unresolved class utilities: w-full",
+      "file": "src/studio/StudioCanvas.tsx",
+      "line": 151,
+      "raisedBy": "src/studio/StudioCanvas.tsx#surface",
+      "slotId": null,
+      "tag": "svg"
+    },
+    {
+      "code": "DF2",
+      "elementId": "src/studio/StudioCanvas.tsx#svg@b8259c7af738",
+      "evidence": "unresolved inline styling: no token read establishes these values.",
+      "file": "src/studio/StudioCanvas.tsx",
+      "line": 151,
+      "raisedBy": "src/studio/StudioCanvas.tsx#surface",
+      "slotId": null,
+      "tag": "svg"
+    },
+    {
+      "code": "DF1",
+      "elementId": "src/studio/StudioCanvas.tsx#rect@ece97df701f4",
+      "evidence": "Raw <rect> has no library component.",
+      "file": "src/studio/StudioCanvas.tsx",
+      "line": 152,
+      "missing": "rect visual capability",
+      "raisedBy": "src/studio/StudioCanvas.tsx#surface",
+      "slotId": null,
+      "tag": "rect"
+    },
+    {
+      "code": "DF2",
+      "elementId": "src/studio/StudioCanvas.tsx#rect@ece97df701f4",
+      "evidence": "unresolved class utilities: text-ink-secondary",
+      "file": "src/studio/StudioCanvas.tsx",
+      "line": 152,
+      "raisedBy": "src/studio/StudioCanvas.tsx#surface",
+      "slotId": null,
+      "tag": "rect"
+    },
+    {
+      "code": "DF2",
+      "elementId": "src/studio/StudioCanvas.tsx#rect@ece97df701f4",
+      "evidence": "unresolved style: dynamic source cannot establish token-only styling.",
+      "file": "src/studio/StudioCanvas.tsx",
+      "line": 152,
+      "raisedBy": "src/studio/StudioCanvas.tsx#surface",
+      "slotId": null,
+      "tag": "rect"
+    },
+    {
+      "code": "DF1",
+      "elementId": "src/studio/StudioCanvas.tsx#title@b9f5b501c57a",
+      "evidence": "Raw <title> has no library component.",
+      "file": "src/studio/StudioCanvas.tsx",
+      "line": 152,
+      "missing": "title visual capability",
+      "raisedBy": "src/studio/StudioCanvas.tsx#surface",
+      "slotId": null,
+      "tag": "title"
+    },
+    {
+      "code": "DF1",
+      "elementId": "src/studio/StudioCanvas.tsx#rect@4eb5c67708b0",
+      "evidence": "Raw <rect> has no library component.",
+      "file": "src/studio/StudioCanvas.tsx",
+      "line": 153,
+      "missing": "rect visual capability",
+      "raisedBy": "src/studio/StudioCanvas.tsx#surface",
+      "slotId": null,
+      "tag": "rect"
+    },
+    {
+      "code": "DF2",
+      "elementId": "src/studio/StudioCanvas.tsx#rect@4eb5c67708b0",
+      "evidence": "unresolved class utilities: text-accent",
+      "file": "src/studio/StudioCanvas.tsx",
+      "line": 153,
+      "raisedBy": "src/studio/StudioCanvas.tsx#surface",
+      "slotId": null,
+      "tag": "rect"
+    },
+    {
+      "code": "DF2",
+      "elementId": "src/studio/StudioCanvas.tsx#div@18ab6396116e",
+      "evidence": "unresolved className: dynamic source cannot establish token-only styling.",
+      "file": "src/studio/StudioCanvas.tsx",
+      "line": 156,
+      "raisedBy": "src/studio/StudioCanvas.tsx#surface",
+      "slotId": null,
+      "tag": "div"
+    },
+    {
+      "code": "DF2",
+      "elementId": "src/studio/StudioCanvas.tsx#div@18ab6396116e",
+      "evidence": "unresolved style: dynamic source cannot establish token-only styling.",
+      "file": "src/studio/StudioCanvas.tsx",
+      "line": 156,
+      "raisedBy": "src/studio/StudioCanvas.tsx#surface",
+      "slotId": null,
+      "tag": "div"
+    },
+    {
+      "code": "DF1",
+      "elementId": "src/studio/StudioCanvas.tsx#output@cd7facaed4d6",
+      "evidence": "Raw <output> has no library component.",
+      "file": "src/studio/StudioCanvas.tsx",
+      "line": 157,
+      "missing": "output visual capability",
+      "raisedBy": "src/studio/StudioCanvas.tsx#surface",
+      "slotId": null,
+      "tag": "output"
+    },
+    {
+      "code": "DF5",
+      "elementId": "src/studio/StudioCanvas.tsx#WholeStudioCanvas@368b3cd908d1",
+      "evidence": "Unknown visual import or local component <WholeStudioCanvas>; no registered slot resolves.",
+      "file": "src/studio/StudioCanvas.tsx",
+      "line": 164,
+      "missing": "WholeStudioCanvas visual capability",
+      "raisedBy": "src/studio/StudioCanvas.tsx#surface",
+      "slotId": null,
+      "tag": "WholeStudioCanvas"
+    },
+    {
+      "code": "DF2",
+      "elementId": "src/studio/StudioCanvas.tsx#WholeStudioCanvas@368b3cd908d1",
+      "evidence": "unresolved ...: dynamic source cannot establish token-only styling.",
+      "file": "src/studio/StudioCanvas.tsx",
+      "line": 164,
+      "raisedBy": "src/studio/StudioCanvas.tsx#surface",
+      "slotId": null,
+      "tag": "WholeStudioCanvas"
+    },
+    {
+      "code": "DF5",
+      "elementId": "src/studio/StudioCanvas.tsx#LegacyStudioCanvas@b75a807aeba1",
+      "evidence": "Unknown visual import or local component <LegacyStudioCanvas>; no registered slot resolves.",
+      "file": "src/studio/StudioCanvas.tsx",
+      "line": 164,
+      "missing": "LegacyStudioCanvas visual capability",
+      "raisedBy": "src/studio/StudioCanvas.tsx#surface",
+      "slotId": null,
+      "tag": "LegacyStudioCanvas"
+    },
+    {
+      "code": "DF2",
+      "elementId": "src/studio/StudioCanvas.tsx#LegacyStudioCanvas@b75a807aeba1",
+      "evidence": "unresolved ...: dynamic source cannot establish token-only styling.",
+      "file": "src/studio/StudioCanvas.tsx",
+      "line": 164,
+      "raisedBy": "src/studio/StudioCanvas.tsx#surface",
+      "slotId": null,
+      "tag": "LegacyStudioCanvas"
+    },
+    {
+      "code": "DF2",
+      "elementId": "src/studio/StudioHeader.tsx#div@18283949bfa2",
+      "evidence": "unresolved className: dynamic source cannot establish token-only styling.",
+      "file": "src/studio/StudioHeader.tsx",
+      "line": 15,
+      "raisedBy": "src/studio/StudioHeader.tsx#surface",
+      "slotId": null,
+      "tag": "div"
+    },
+    {
+      "code": "DF2",
+      "elementId": "src/studio/StudioHeader.tsx#div@18283949bfa2",
+      "evidence": "unresolved inline styling: no token read establishes these values.",
+      "file": "src/studio/StudioHeader.tsx",
+      "line": 15,
+      "raisedBy": "src/studio/StudioHeader.tsx#surface",
+      "slotId": null,
+      "tag": "div"
+    },
+    {
+      "code": "DF5",
+      "elementId": "src/studio/StudioHeader.tsx#StudioTopBar@e66f50a5b937",
+      "evidence": "Unknown visual import or local component <StudioTopBar>; no registered slot resolves.",
+      "file": "src/studio/StudioHeader.tsx",
+      "line": 16,
+      "missing": "StudioTopBar visual capability",
+      "raisedBy": "src/studio/StudioHeader.tsx#surface",
+      "slotId": null,
+      "tag": "StudioTopBar"
+    },
+    {
+      "code": "DF2",
+      "elementId": "src/studio/StudioHeader.tsx#div@c201999df770",
+      "evidence": "unresolved style: dynamic source cannot establish token-only styling.",
+      "file": "src/studio/StudioHeader.tsx",
+      "line": 18,
+      "raisedBy": "src/studio/StudioHeader.tsx#surface",
+      "slotId": null,
+      "tag": "div"
+    },
+    {
+      "code": "DF4",
+      "elementId": "src/studio/StudioHeader.tsx#div@c201999df770",
+      "evidence": "missing-declared-reads: tokens.region-width",
+      "file": "src/studio/StudioHeader.tsx",
+      "line": 18,
+      "raisedBy": "src/studio/StudioHeader.tsx#surface",
+      "slotId": "src/studio/StudioHeader.tsx#surface",
+      "tag": "div"
+    },
+    {
+      "code": "DF5",
+      "elementId": "src/studio/StudioHeader.tsx#Scorecard@b253de6b738c",
+      "evidence": "Unknown visual import or local component <Scorecard>; no registered slot resolves.",
+      "file": "src/studio/StudioHeader.tsx",
+      "line": 19,
+      "missing": "Scorecard visual capability",
+      "raisedBy": "src/studio/StudioHeader.tsx#surface",
+      "slotId": null,
+      "tag": "Scorecard"
+    },
+    {
+      "code": "DF5",
+      "elementId": "src/studio/StudioHeader.tsx#WholeStudioHeader@840ecd66097f",
+      "evidence": "Unknown visual import or local component <WholeStudioHeader>; no registered slot resolves.",
+      "file": "src/studio/StudioHeader.tsx",
+      "line": 25,
+      "missing": "WholeStudioHeader visual capability",
+      "raisedBy": "src/studio/StudioHeader.tsx#surface",
+      "slotId": null,
+      "tag": "WholeStudioHeader"
+    },
+    {
+      "code": "DF2",
+      "elementId": "src/studio/StudioHeader.tsx#WholeStudioHeader@840ecd66097f",
+      "evidence": "unresolved ...: dynamic source cannot establish token-only styling.",
+      "file": "src/studio/StudioHeader.tsx",
+      "line": 25,
+      "raisedBy": "src/studio/StudioHeader.tsx#surface",
+      "slotId": null,
+      "tag": "WholeStudioHeader"
+    },
+    {
+      "code": "DF5",
+      "elementId": "src/studio/StudioHeader.tsx#LegacyStudioHeader@b9faab72035e",
+      "evidence": "Unknown visual import or local component <LegacyStudioHeader>; no registered slot resolves.",
+      "file": "src/studio/StudioHeader.tsx",
+      "line": 25,
+      "missing": "LegacyStudioHeader visual capability",
+      "raisedBy": "src/studio/StudioHeader.tsx#surface",
+      "slotId": null,
+      "tag": "LegacyStudioHeader"
+    },
+    {
+      "code": "DF2",
+      "elementId": "src/studio/StudioHeader.tsx#LegacyStudioHeader@b9faab72035e",
+      "evidence": "unresolved ...: dynamic source cannot establish token-only styling.",
+      "file": "src/studio/StudioHeader.tsx",
+      "line": 25,
+      "raisedBy": "src/studio/StudioHeader.tsx#surface",
+      "slotId": null,
+      "tag": "LegacyStudioHeader"
+    },
+    {
+      "code": "DF5",
+      "elementId": "src/studio/StudioProvider.tsx#StudioContext.Provider@b5c965a03b66",
+      "evidence": "Unknown visual import or local component <StudioContext.Provider>; no registered slot resolves.",
+      "file": "src/studio/StudioProvider.tsx",
+      "line": 137,
+      "missing": "StudioContext.Provider visual capability",
+      "raisedBy": "src/studio/StudioProvider.tsx#surface",
+      "slotId": null,
+      "tag": "StudioContext.Provider"
+    },
+    {
+      "code": "DF5",
+      "elementId": "src/studio/StudioProvider.tsx#WholeStudioProvider@e7516f9c24fe",
+      "evidence": "Unknown visual import or local component <WholeStudioProvider>; no registered slot resolves.",
+      "file": "src/studio/StudioProvider.tsx",
+      "line": 141,
+      "missing": "WholeStudioProvider visual capability",
+      "raisedBy": "src/studio/StudioProvider.tsx#surface",
+      "slotId": null,
+      "tag": "WholeStudioProvider"
+    },
+    {
+      "code": "DF2",
+      "elementId": "src/studio/StudioProvider.tsx#WholeStudioProvider@e7516f9c24fe",
+      "evidence": "unresolved ...: dynamic source cannot establish token-only styling.",
+      "file": "src/studio/StudioProvider.tsx",
+      "line": 141,
+      "raisedBy": "src/studio/StudioProvider.tsx#surface",
+      "slotId": null,
+      "tag": "WholeStudioProvider"
+    },
+    {
+      "code": "DF5",
+      "elementId": "src/studio/StudioProvider.tsx#LegacyStudioProvider@96828a77eace",
+      "evidence": "Unknown visual import or local component <LegacyStudioProvider>; no registered slot resolves.",
+      "file": "src/studio/StudioProvider.tsx",
+      "line": 142,
+      "missing": "LegacyStudioProvider visual capability",
+      "raisedBy": "src/studio/StudioProvider.tsx#surface",
+      "slotId": null,
+      "tag": "LegacyStudioProvider"
+    },
+    {
+      "code": "DF2",
+      "elementId": "src/studio/StudioProvider.tsx#LegacyStudioProvider@96828a77eace",
+      "evidence": "unresolved ...: dynamic source cannot establish token-only styling.",
+      "file": "src/studio/StudioProvider.tsx",
+      "line": 142,
+      "raisedBy": "src/studio/StudioProvider.tsx#surface",
+      "slotId": null,
+      "tag": "LegacyStudioProvider"
+    },
+    {
+      "code": "DF2",
+      "elementId": "src/studio/StudioTopBar.tsx#Tabs@855adfbcb802",
+      "evidence": "unresolved class utilities: min-w-0, gap-0",
+      "file": "src/studio/StudioTopBar.tsx",
+      "line": 16,
+      "raisedBy": "src/studio/StudioTopBar.tsx#surface",
+      "slotId": null,
+      "tag": "Tabs"
+    },
+    {
+      "code": "DF1",
+      "elementId": "src/studio/StudioTopBar.tsx#header@77d955dbf1db",
+      "evidence": "Raw <header> has visual classes; bind a library surface.",
+      "file": "src/studio/StudioTopBar.tsx",
+      "line": 17,
+      "missing": "header visual capability",
+      "raisedBy": "src/studio/StudioTopBar.tsx#surface",
+      "slotId": null,
+      "tag": "header"
+    },
+    {
+      "code": "DF2",
+      "elementId": "src/studio/StudioTopBar.tsx#header@77d955dbf1db",
+      "evidence": "unresolved class utilities: min-w-0, gap-md",
+      "file": "src/studio/StudioTopBar.tsx",
+      "line": 17,
+      "raisedBy": "src/studio/StudioTopBar.tsx#surface",
+      "slotId": null,
+      "tag": "header"
+    },
+    {
+      "code": "DF2",
+      "elementId": "src/studio/StudioTopBar.tsx#Tabs.List@1fb4c1c44da7",
+      "evidence": "unresolved class utilities: min-w-0, border-0",
+      "file": "src/studio/StudioTopBar.tsx",
+      "line": 18,
+      "raisedBy": "src/studio/StudioTopBar.tsx#surface",
+      "slotId": null,
+      "tag": "Tabs.List"
+    },
+    {
+      "code": "DF2",
+      "elementId": "src/studio/StudioTopBar.tsx#Tabs.Tab@e3c4557f6228",
+      "evidence": "unresolved class utilities: shrink-0, gap-sm, px-sm, py-xs",
+      "file": "src/studio/StudioTopBar.tsx",
+      "line": 19,
+      "raisedBy": "src/studio/StudioTopBar.tsx#surface",
+      "slotId": null,
+      "tag": "Tabs.Tab"
+    },
+    {
+      "code": "DF3",
+      "elementId": "src/studio/StudioTopBar.tsx#svg@5381294c12d1",
+      "evidence": "Inline <svg> must use an assets component or icon id.",
+      "file": "src/studio/StudioTopBar.tsx",
+      "line": 21,
+      "raisedBy": "src/studio/StudioTopBar.tsx#surface",
+      "slotId": "components.icon",
+      "tag": "svg"
+    },
+    {
+      "code": "DF2",
+      "elementId": "src/studio/StudioTopBar.tsx#svg@5381294c12d1",
+      "evidence": "unresolved style: dynamic source cannot establish token-only styling.",
+      "file": "src/studio/StudioTopBar.tsx",
+      "line": 21,
+      "raisedBy": "src/studio/StudioTopBar.tsx#surface",
+      "slotId": null,
+      "tag": "svg"
+    },
+    {
+      "code": "DF4",
+      "elementId": "src/studio/StudioTopBar.tsx#svg@5381294c12d1",
+      "evidence": "missing-declared-reads: tokens.spacing",
+      "file": "src/studio/StudioTopBar.tsx",
+      "line": 21,
+      "raisedBy": "src/studio/StudioTopBar.tsx#surface",
+      "slotId": "src/studio/StudioTopBar.tsx#surface",
+      "tag": "svg"
+    },
+    {
+      "code": "DF1",
+      "elementId": "src/studio/StudioTopBar.tsx#circle@7f74eaca5d70",
+      "evidence": "Raw <circle> has no library component.",
+      "file": "src/studio/StudioTopBar.tsx",
+      "line": 21,
+      "missing": "circle visual capability",
+      "raisedBy": "src/studio/StudioTopBar.tsx#surface",
+      "slotId": null,
+      "tag": "circle"
+    },
+    {
+      "code": "DF1",
+      "elementId": "src/studio/StudioTopBar.tsx#circle@660965dcd6d2",
+      "evidence": "Raw <circle> has no library component.",
+      "file": "src/studio/StudioTopBar.tsx",
+      "line": 21,
+      "missing": "circle visual capability",
+      "raisedBy": "src/studio/StudioTopBar.tsx#surface",
+      "slotId": null,
+      "tag": "circle"
+    },
+    {
+      "code": "DF1",
+      "elementId": "src/studio/StudioTopBar.tsx#span@5d9618b04600",
+      "evidence": "Raw <span> has visual classes; bind a library surface.",
+      "file": "src/studio/StudioTopBar.tsx",
+      "line": 21,
+      "missing": "span visual capability",
+      "raisedBy": "src/studio/StudioTopBar.tsx#surface",
+      "slotId": null,
+      "tag": "span"
+    },
+    {
+      "code": "DF2",
+      "elementId": "src/studio/StudioTopBar.tsx#span@5d9618b04600",
+      "evidence": "unresolved class utilities: text-caption",
+      "file": "src/studio/StudioTopBar.tsx",
+      "line": 21,
+      "raisedBy": "src/studio/StudioTopBar.tsx#surface",
+      "slotId": null,
+      "tag": "span"
+    },
+    {
+      "code": "DF2",
+      "elementId": "src/studio/StudioTopBar.tsx#div@b68574218b54",
+      "evidence": "unresolved class utilities: shrink-0, gap-sm",
+      "file": "src/studio/StudioTopBar.tsx",
+      "line": 24,
+      "raisedBy": "src/studio/StudioTopBar.tsx#surface",
+      "slotId": null,
+      "tag": "div"
+    },
+    {
+      "code": "DF1",
+      "elementId": "src/studio/StudioTopBar.tsx#div@33f78ebc87ee",
+      "evidence": "Raw <div> has visual classes; bind a library surface.",
+      "file": "src/studio/StudioTopBar.tsx",
+      "line": 25,
+      "missing": "div visual capability",
+      "raisedBy": "src/studio/StudioTopBar.tsx#surface",
+      "slotId": null,
+      "tag": "div"
+    },
+    {
+      "code": "DF2",
+      "elementId": "src/studio/StudioTopBar.tsx#div@33f78ebc87ee",
+      "evidence": "unresolved class utilities: text-body-s, text-ink-secondary",
+      "file": "src/studio/StudioTopBar.tsx",
+      "line": 25,
+      "raisedBy": "src/studio/StudioTopBar.tsx#surface",
+      "slotId": null,
+      "tag": "div"
+    },
+    {
+      "code": "DF5",
+      "elementId": "src/studio/TreeView.tsx#AriaTreeItem@f166c18ff344",
+      "evidence": "Unknown visual import or local component <AriaTreeItem>; no registered slot resolves.",
+      "file": "src/studio/TreeView.tsx",
+      "line": 51,
+      "missing": "AriaTreeItem visual capability",
+      "raisedBy": "src/studio/TreeView.tsx#surface",
+      "slotId": null,
+      "tag": "AriaTreeItem"
+    },
+    {
+      "code": "DF2",
+      "elementId": "src/studio/TreeView.tsx#AriaTreeItem@f166c18ff344",
+      "evidence": "unresolved className: dynamic source cannot establish token-only styling.",
+      "file": "src/studio/TreeView.tsx",
+      "line": 51,
+      "raisedBy": "src/studio/TreeView.tsx#surface",
+      "slotId": null,
+      "tag": "AriaTreeItem"
+    },
+    {
+      "code": "DF2",
+      "elementId": "src/studio/TreeView.tsx#AriaTreeItem@f166c18ff344",
+      "evidence": "unresolved style: dynamic source cannot establish token-only styling.",
+      "file": "src/studio/TreeView.tsx",
+      "line": 51,
+      "raisedBy": "src/studio/TreeView.tsx#surface",
+      "slotId": null,
+      "tag": "AriaTreeItem"
+    },
+    {
+      "code": "DF5",
+      "elementId": "src/studio/TreeView.tsx#AriaTreeItemContent@e1ab59cfc572",
+      "evidence": "Unknown visual import or local component <AriaTreeItemContent>; no registered slot resolves.",
+      "file": "src/studio/TreeView.tsx",
+      "line": 62,
+      "missing": "AriaTreeItemContent visual capability",
+      "raisedBy": "src/studio/TreeView.tsx#surface",
+      "slotId": null,
+      "tag": "AriaTreeItemContent"
+    },
+    {
+      "code": "DF1",
+      "elementId": "src/studio/TreeView.tsx#div@741f9d24cc7c",
+      "evidence": "Raw <div> has visual classes; bind a library surface.",
+      "file": "src/studio/TreeView.tsx",
+      "line": 63,
+      "missing": "div visual capability",
+      "raisedBy": "src/studio/TreeView.tsx#surface",
+      "slotId": null,
+      "tag": "div"
+    },
+    {
+      "code": "DF2",
+      "elementId": "src/studio/TreeView.tsx#div@741f9d24cc7c",
+      "evidence": "unresolved class utilities: min-w-0, gap-sm, py-xs, pe-md",
+      "file": "src/studio/TreeView.tsx",
+      "line": 63,
+      "raisedBy": "src/studio/TreeView.tsx#surface",
+      "slotId": null,
+      "tag": "div"
+    },
+    {
+      "code": "DF2",
+      "elementId": "src/studio/TreeView.tsx#div@741f9d24cc7c",
+      "evidence": "unresolved style: dynamic source cannot establish token-only styling.",
+      "file": "src/studio/TreeView.tsx",
+      "line": 63,
+      "raisedBy": "src/studio/TreeView.tsx#surface",
+      "slotId": null,
+      "tag": "div"
+    },
+    {
+      "code": "DF2",
+      "elementId": "src/studio/TreeView.tsx#div@741f9d24cc7c",
+      "evidence": "Hard-coded raw-length: 16px",
+      "file": "src/studio/TreeView.tsx",
+      "line": 63,
+      "raisedBy": "src/studio/TreeView.tsx#surface",
+      "slotId": null,
+      "tag": "div"
+    },
+    {
+      "code": "DF2",
+      "elementId": "src/studio/TreeView.tsx#div@741f9d24cc7c",
+      "evidence": "Hard-coded raw-length: 8px",
+      "file": "src/studio/TreeView.tsx",
+      "line": 63,
+      "raisedBy": "src/studio/TreeView.tsx#surface",
+      "slotId": null,
+      "tag": "div"
+    },
+    {
+      "code": "DF4",
+      "elementId": "src/studio/TreeView.tsx#div@741f9d24cc7c",
+      "evidence": "missing-declared-reads: tokens.spacing",
+      "file": "src/studio/TreeView.tsx",
+      "line": 63,
+      "raisedBy": "src/studio/TreeView.tsx#surface",
+      "slotId": "src/studio/TreeView.tsx#surface",
+      "tag": "div"
+    },
+    {
+      "code": "DF5",
+      "elementId": "src/studio/TreeView.tsx#AriaButton@013ddac24a44",
+      "evidence": "Unknown visual import or local component <AriaButton>; no registered slot resolves.",
+      "file": "src/studio/TreeView.tsx",
+      "line": 66,
+      "missing": "AriaButton visual capability",
+      "raisedBy": "src/studio/TreeView.tsx#surface",
+      "slotId": null,
+      "tag": "AriaButton"
+    },
+    {
+      "code": "DF2",
+      "elementId": "src/studio/TreeView.tsx#AriaButton@013ddac24a44",
+      "evidence": "unresolved class utilities: shrink-0, outline-none",
+      "file": "src/studio/TreeView.tsx",
+      "line": 66,
+      "raisedBy": "src/studio/TreeView.tsx#surface",
+      "slotId": null,
+      "tag": "AriaButton"
+    },
+    {
+      "code": "DF2",
+      "elementId": "src/studio/TreeView.tsx#Icon@e6e0c433c9f1",
+      "evidence": "unresolved className: dynamic source cannot establish token-only styling.",
+      "file": "src/studio/TreeView.tsx",
+      "line": 67,
+      "raisedBy": "src/studio/TreeView.tsx#surface",
+      "slotId": null,
+      "tag": "Icon"
+    },
+    {
+      "code": "DF2",
+      "elementId": "src/studio/TreeView.tsx#span@b26e3a91d5e3",
+      "evidence": "unresolved class utilities: shrink-0",
+      "file": "src/studio/TreeView.tsx",
+      "line": 69,
+      "raisedBy": "src/studio/TreeView.tsx#surface",
+      "slotId": null,
+      "tag": "span"
+    },
+    {
+      "code": "DF2",
+      "elementId": "src/studio/TreeView.tsx#span@b26e3a91d5e3",
+      "evidence": "Hard-coded raw-length: 1rem",
+      "file": "src/studio/TreeView.tsx",
+      "line": 69,
+      "raisedBy": "src/studio/TreeView.tsx#surface",
+      "slotId": null,
+      "tag": "span"
+    },
+    {
+      "code": "DF4",
+      "elementId": "src/studio/TreeView.tsx#span@b26e3a91d5e3",
+      "evidence": "missing-declared-reads: tokens.icon-size",
+      "file": "src/studio/TreeView.tsx",
+      "line": 69,
+      "raisedBy": "src/studio/TreeView.tsx#surface",
+      "slotId": "src/studio/TreeView.tsx#surface",
+      "tag": "span"
+    },
+    {
+      "code": "DF1",
+      "elementId": "src/studio/TreeView.tsx#span@cd60dcbd42e2",
+      "evidence": "Raw <span> has visual classes; bind a library surface.",
+      "file": "src/studio/TreeView.tsx",
+      "line": 70,
+      "missing": "span visual capability",
+      "raisedBy": "src/studio/TreeView.tsx#surface",
+      "slotId": null,
+      "tag": "span"
+    },
+    {
+      "code": "DF2",
+      "elementId": "src/studio/TreeView.tsx#span@cd60dcbd42e2",
+      "evidence": "unresolved class utilities: min-w-0",
+      "file": "src/studio/TreeView.tsx",
+      "line": 70,
+      "raisedBy": "src/studio/TreeView.tsx#surface",
+      "slotId": null,
+      "tag": "span"
+    },
+    {
+      "code": "DF5",
+      "elementId": "src/studio/TreeView.tsx#Rows@f26d7747a59a",
+      "evidence": "Unknown visual import or local component <Rows>; no registered slot resolves.",
+      "file": "src/studio/TreeView.tsx",
+      "line": 73,
+      "missing": "Rows visual capability",
+      "raisedBy": "src/studio/TreeView.tsx#surface",
+      "slotId": null,
+      "tag": "Rows"
+    },
+    {
+      "code": "DF5",
+      "elementId": "src/studio/TreeView.tsx#AriaTree@86ab98d9a904",
+      "evidence": "Unknown visual import or local component <AriaTree>; no registered slot resolves.",
+      "file": "src/studio/TreeView.tsx",
+      "line": 99,
+      "missing": "AriaTree visual capability",
+      "raisedBy": "src/studio/TreeView.tsx#surface",
+      "slotId": null,
+      "tag": "AriaTree"
+    },
+    {
+      "code": "DF2",
+      "elementId": "src/studio/TreeView.tsx#AriaTree@86ab98d9a904",
+      "evidence": "unresolved className: dynamic source cannot establish token-only styling.",
+      "file": "src/studio/TreeView.tsx",
+      "line": 99,
+      "raisedBy": "src/studio/TreeView.tsx#surface",
+      "slotId": null,
+      "tag": "AriaTree"
+    },
+    {
+      "code": "DF5",
+      "elementId": "src/studio/TreeView.tsx#Rows@51844e7f0946",
+      "evidence": "Unknown visual import or local component <Rows>; no registered slot resolves.",
+      "file": "src/studio/TreeView.tsx",
+      "line": 102,
+      "missing": "Rows visual capability",
+      "raisedBy": "src/studio/TreeView.tsx#surface",
+      "slotId": null,
+      "tag": "Rows"
+    },
+    {
+      "code": "DF5",
+      "elementId": "src/studio/WholeStudio.tsx#WholeContext.Provider@37689c3b1fce",
+      "evidence": "Unknown visual import or local component <WholeContext.Provider>; no registered slot resolves.",
+      "file": "src/studio/WholeStudio.tsx",
+      "line": 82,
+      "missing": "WholeContext.Provider visual capability",
+      "raisedBy": "src/studio/WholeStudio.tsx#surface",
+      "slotId": null,
+      "tag": "WholeContext.Provider"
+    },
+    {
+      "code": "DF5",
+      "elementId": "src/studio/WholeStudio.tsx#LegacyStudioProvider@726c93183f0d",
+      "evidence": "Unknown visual import or local component <LegacyStudioProvider>; no registered slot resolves.",
+      "file": "src/studio/WholeStudio.tsx",
+      "line": 82,
+      "missing": "LegacyStudioProvider visual capability",
+      "raisedBy": "src/studio/WholeStudio.tsx#surface",
+      "slotId": null,
+      "tag": "LegacyStudioProvider"
+    },
+    {
+      "code": "DF5",
+      "elementId": "src/studio/WholeStudio.tsx#ValueBridge@cb6a0c4634ba",
+      "evidence": "Unknown visual import or local component <ValueBridge>; no registered slot resolves.",
+      "file": "src/studio/WholeStudio.tsx",
+      "line": 82,
+      "missing": "ValueBridge visual capability",
+      "raisedBy": "src/studio/WholeStudio.tsx#surface",
+      "slotId": null,
+      "tag": "ValueBridge"
+    },
+    {
+      "code": "DF2",
+      "elementId": "src/studio/WholeStudio.tsx#div@f7745a3d0828",
+      "evidence": "unresolved className: dynamic source cannot establish token-only styling.",
+      "file": "src/studio/WholeStudio.tsx",
+      "line": 91,
+      "raisedBy": "src/studio/WholeStudio.tsx#surface",
+      "slotId": null,
+      "tag": "div"
+    },
+    {
+      "code": "DF5",
+      "elementId": "src/studio/WholeStudio.tsx#StudioTopBar@adfac07752e0",
+      "evidence": "Unknown visual import or local component <StudioTopBar>; no registered slot resolves.",
+      "file": "src/studio/WholeStudio.tsx",
+      "line": 91,
+      "missing": "StudioTopBar visual capability",
+      "raisedBy": "src/studio/WholeStudio.tsx#surface",
+      "slotId": null,
+      "tag": "StudioTopBar"
+    },
+    {
+      "code": "DF5",
+      "elementId": "src/studio/WholeStudio.tsx#Scorecard@aa82cbb6c89b",
+      "evidence": "Unknown visual import or local component <Scorecard>; no registered slot resolves.",
+      "file": "src/studio/WholeStudio.tsx",
+      "line": 92,
+      "missing": "Scorecard visual capability",
+      "raisedBy": "src/studio/WholeStudio.tsx#surface",
+      "slotId": null,
+      "tag": "Scorecard"
+    },
+    {
+      "code": "DF1",
+      "elementId": "src/studio/WholeStudio.tsx#aside@85f34820f8ae",
+      "evidence": "Raw <aside> has no library component.",
+      "file": "src/studio/WholeStudio.tsx",
+      "line": 92,
+      "missing": "aside visual capability",
+      "raisedBy": "src/studio/WholeStudio.tsx#surface",
+      "slotId": null,
+      "tag": "aside"
+    },
+    {
+      "code": "DF2",
+      "elementId": "src/studio/WholeStudio.tsx#aside@85f34820f8ae",
+      "evidence": "unresolved class utilities: border, border-line-base, bg-surface-base, p-md",
+      "file": "src/studio/WholeStudio.tsx",
+      "line": 92,
+      "raisedBy": "src/studio/WholeStudio.tsx#surface",
+      "slotId": null,
+      "tag": "aside"
+    },
+    {
+      "code": "DF5",
+      "elementId": "src/studio/WholeStudio.tsx#LegacyStudioCanvas@b75a807aeba1",
+      "evidence": "Unknown visual import or local component <LegacyStudioCanvas>; no registered slot resolves.",
+      "file": "src/studio/WholeStudio.tsx",
+      "line": 98,
+      "missing": "LegacyStudioCanvas visual capability",
+      "raisedBy": "src/studio/WholeStudio.tsx#surface",
+      "slotId": null,
+      "tag": "LegacyStudioCanvas"
+    },
+    {
+      "code": "DF2",
+      "elementId": "src/studio/WholeStudio.tsx#LegacyStudioCanvas@b75a807aeba1",
+      "evidence": "unresolved ...: dynamic source cannot establish token-only styling.",
+      "file": "src/studio/WholeStudio.tsx",
+      "line": 98,
+      "raisedBy": "src/studio/WholeStudio.tsx#surface",
+      "slotId": null,
+      "tag": "LegacyStudioCanvas"
+    },
+    {
+      "code": "DF5",
+      "elementId": "src/studio/WholeStudio.tsx#ContractCanvas@ac44b10ff528",
+      "evidence": "Unknown visual import or local component <ContractCanvas>; no registered slot resolves.",
+      "file": "src/studio/WholeStudio.tsx",
+      "line": 98,
+      "missing": "ContractCanvas visual capability",
+      "raisedBy": "src/studio/WholeStudio.tsx#surface",
+      "slotId": null,
+      "tag": "ContractCanvas"
+    },
+    {
+      "code": "DF2",
+      "elementId": "src/studio/WholeStudio.tsx#ContractCanvas@ac44b10ff528",
+      "evidence": "unresolved ...: dynamic source cannot establish token-only styling.",
+      "file": "src/studio/WholeStudio.tsx",
+      "line": 98,
+      "raisedBy": "src/studio/WholeStudio.tsx#surface",
+      "slotId": null,
+      "tag": "ContractCanvas"
+    },
+    {
+      "code": "DF2",
+      "elementId": "src/studio/WholeStudio.tsx#div@2c651fc47c71",
+      "evidence": "unresolved className: dynamic source cannot establish token-only styling.",
+      "file": "src/studio/WholeStudio.tsx",
+      "line": 116,
+      "raisedBy": "src/studio/WholeStudio.tsx#surface",
+      "slotId": null,
+      "tag": "div"
+    },
+    {
+      "code": "DF2",
+      "elementId": "src/studio/WholeStudio.tsx#div@2c651fc47c71",
+      "evidence": "unresolved inline styling: no token read establishes these values.",
+      "file": "src/studio/WholeStudio.tsx",
+      "line": 116,
+      "raisedBy": "src/studio/WholeStudio.tsx#surface",
+      "slotId": null,
+      "tag": "div"
+    },
+    {
+      "code": "DF2",
+      "elementId": "src/studio/WholeStudio.tsx#div@670884fa75ae",
+      "evidence": "unresolved inline styling: no token read establishes these values.",
+      "file": "src/studio/WholeStudio.tsx",
+      "line": 117,
+      "raisedBy": "src/studio/WholeStudio.tsx#surface",
+      "slotId": null,
+      "tag": "div"
+    },
+    {
+      "code": "DF2",
+      "elementId": "src/studio/WholeStudio.tsx#div@2a6d859d29bc",
+      "evidence": "unresolved class utilities: p-3xl",
+      "file": "src/studio/WholeStudio.tsx",
+      "line": 117,
+      "raisedBy": "src/studio/WholeStudio.tsx#surface",
+      "slotId": null,
+      "tag": "div"
+    },
+    {
+      "code": "DF2",
+      "elementId": "src/studio/WholeStudio.tsx#div@2a6d859d29bc",
+      "evidence": "Hard-coded raw-length: 22rem",
+      "file": "src/studio/WholeStudio.tsx",
+      "line": 117,
+      "raisedBy": "src/studio/WholeStudio.tsx#surface",
+      "slotId": null,
+      "tag": "div"
+    },
+    {
+      "code": "DF1",
+      "elementId": "src/studio/WholeStudio.tsx#section@411123dd6df1",
+      "evidence": "Raw <section> has visual classes; bind a library surface.",
+      "file": "src/studio/WholeStudio.tsx",
+      "line": 118,
+      "missing": "section visual capability",
+      "raisedBy": "src/studio/WholeStudio.tsx#surface",
+      "slotId": null,
+      "tag": "section"
+    },
+    {
+      "code": "DF2",
+      "elementId": "src/studio/WholeStudio.tsx#section@411123dd6df1",
+      "evidence": "unresolved class utilities: rounded-surface, border, border-line-base, bg-surface-base, p-md",
+      "file": "src/studio/WholeStudio.tsx",
+      "line": 118,
+      "raisedBy": "src/studio/WholeStudio.tsx#surface",
+      "slotId": null,
+      "tag": "section"
+    },
+    {
+      "code": "DF2",
+      "elementId": "src/studio/WholeStudio.tsx#section@411123dd6df1",
+      "evidence": "Hard-coded raw-length: 40rem",
+      "file": "src/studio/WholeStudio.tsx",
+      "line": 118,
+      "raisedBy": "src/studio/WholeStudio.tsx#surface",
+      "slotId": null,
+      "tag": "section"
+    },
+    {
+      "code": "DF1",
+      "elementId": "src/studio/WholeStudio.tsx#div@60a123aaae0e",
+      "evidence": "Raw <div> has visual classes; bind a library surface.",
+      "file": "src/studio/WholeStudio.tsx",
+      "line": 120,
+      "missing": "div visual capability",
+      "raisedBy": "src/studio/WholeStudio.tsx#surface",
+      "slotId": null,
+      "tag": "div"
+    },
+    {
+      "code": "DF2",
+      "elementId": "src/studio/WholeStudio.tsx#div@60a123aaae0e",
+      "evidence": "unresolved class utilities: border, border-line-base, p-md",
+      "file": "src/studio/WholeStudio.tsx",
+      "line": 120,
+      "raisedBy": "src/studio/WholeStudio.tsx#surface",
+      "slotId": null,
+      "tag": "div"
+    },
+    {
+      "code": "DF1",
+      "elementId": "src/studio/WholeStudio.tsx#details@074e242351d3",
+      "evidence": "Raw <details> has no library component. Bind components.disclosure.",
+      "file": "src/studio/WholeStudio.tsx",
+      "line": 120,
+      "raisedBy": "src/studio/WholeStudio.tsx#surface",
+      "slotId": "components.disclosure",
+      "tag": "details"
+    },
+    {
+      "code": "DF1",
+      "elementId": "src/studio/WholeStudio.tsx#summary@9f07e8d02984",
+      "evidence": "Raw <summary> has no library component. Bind components.disclosure.",
+      "file": "src/studio/WholeStudio.tsx",
+      "line": 120,
+      "raisedBy": "src/studio/WholeStudio.tsx#surface",
+      "slotId": "components.disclosure",
+      "tag": "summary"
+    },
+    {
+      "code": "DF2",
+      "elementId": "src/studio/WholeStudio.tsx#pre@2d41310d154a",
+      "evidence": "unresolved inline styling: no token read establishes these values.",
+      "file": "src/studio/WholeStudio.tsx",
+      "line": 120,
+      "raisedBy": "src/studio/WholeStudio.tsx#surface",
+      "slotId": null,
+      "tag": "pre"
+    },
+    {
+      "code": "DF1",
+      "elementId": "src/studio/WholeStudio.tsx#details@f5478d52f7e4",
+      "evidence": "Raw <details> has no library component. Bind components.disclosure.",
+      "file": "src/studio/WholeStudio.tsx",
+      "line": 121,
+      "raisedBy": "src/studio/WholeStudio.tsx#surface",
+      "slotId": "components.disclosure",
+      "tag": "details"
+    },
+    {
+      "code": "DF1",
+      "elementId": "src/studio/WholeStudio.tsx#summary@9f07e8d02984.2",
+      "evidence": "Raw <summary> has no library component. Bind components.disclosure.",
+      "file": "src/studio/WholeStudio.tsx",
+      "line": 121,
+      "raisedBy": "src/studio/WholeStudio.tsx#surface",
+      "slotId": "components.disclosure",
+      "tag": "summary"
+    },
+    {
+      "code": "DF2",
+      "elementId": "src/studio/WholeStudio.tsx#pre@c0db157609ab",
+      "evidence": "unresolved inline styling: no token read establishes these values.",
+      "file": "src/studio/WholeStudio.tsx",
+      "line": 121,
+      "raisedBy": "src/studio/WholeStudio.tsx#surface",
+      "slotId": null,
+      "tag": "pre"
+    },
+    {
+      "code": "DF1",
+      "elementId": "src/studio/WholeStudio.tsx#aside@4ff5547840c2",
+      "evidence": "Raw <aside> has no library component.",
+      "file": "src/studio/WholeStudio.tsx",
+      "line": 127,
+      "missing": "aside visual capability",
+      "raisedBy": "src/studio/WholeStudio.tsx#surface",
+      "slotId": null,
+      "tag": "aside"
+    },
+    {
+      "code": "DF2",
+      "elementId": "src/studio/WholeStudio.tsx#aside@4ff5547840c2",
+      "evidence": "unresolved class utilities: border, border-line-base, bg-surface-base, p-md",
+      "file": "src/studio/WholeStudio.tsx",
+      "line": 127,
+      "raisedBy": "src/studio/WholeStudio.tsx#surface",
+      "slotId": null,
+      "tag": "aside"
+    },
+    {
+      "code": "DF2",
+      "elementId": "src/studio/WholeStudio.tsx#aside@4ff5547840c2",
+      "evidence": "Hard-coded raw-length: 18rem",
+      "file": "src/studio/WholeStudio.tsx",
+      "line": 127,
+      "raisedBy": "src/studio/WholeStudio.tsx#surface",
+      "slotId": null,
+      "tag": "aside"
+    },
+    {
+      "code": "DF1",
+      "elementId": "src/studio/WholeStudio.tsx#label@663d31d6c854",
+      "evidence": "Raw <label> has no library component. Bind components.field.",
+      "file": "src/studio/WholeStudio.tsx",
+      "line": 127,
+      "raisedBy": "src/studio/WholeStudio.tsx#surface",
+      "slotId": "components.field",
+      "tag": "label"
+    },
+    {
+      "code": "DF1",
+      "elementId": "src/studio/WholeStudio.tsx#input@defb6a946ea5",
+      "evidence": "Raw <input> has no library component. Bind components.text-field.",
+      "file": "src/studio/WholeStudio.tsx",
+      "line": 127,
+      "raisedBy": "src/studio/WholeStudio.tsx#surface",
+      "slotId": "components.text-field",
+      "tag": "input"
+    },
+    {
+      "code": "DF1",
+      "elementId": "src/studio/WholeStudio.tsx#aside@dff83d3bbb0b",
+      "evidence": "Raw <aside> has no library component.",
+      "file": "src/studio/WholeStudio.tsx",
+      "line": 128,
+      "missing": "aside visual capability",
+      "raisedBy": "src/studio/WholeStudio.tsx#surface",
+      "slotId": null,
+      "tag": "aside"
+    },
+    {
+      "code": "DF2",
+      "elementId": "src/studio/WholeStudio.tsx#aside@dff83d3bbb0b",
+      "evidence": "unresolved class utilities: border, border-line-base, bg-surface-base, p-md",
+      "file": "src/studio/WholeStudio.tsx",
+      "line": 128,
+      "raisedBy": "src/studio/WholeStudio.tsx#surface",
+      "slotId": null,
+      "tag": "aside"
+    },
+    {
+      "code": "DF2",
+      "elementId": "src/studio/WholeStudio.tsx#aside@dff83d3bbb0b",
+      "evidence": "Hard-coded raw-length: 22rem",
+      "file": "src/studio/WholeStudio.tsx",
+      "line": 128,
+      "raisedBy": "src/studio/WholeStudio.tsx#surface",
+      "slotId": null,
+      "tag": "aside"
+    },
+    {
+      "code": "DF2",
+      "elementId": "src/studio/WholeStudio.tsx#pre@fcd4eb68672f",
+      "evidence": "unresolved inline styling: no token read establishes these values.",
+      "file": "src/studio/WholeStudio.tsx",
+      "line": 128,
+      "raisedBy": "src/studio/WholeStudio.tsx#surface",
+      "slotId": null,
+      "tag": "pre"
+    },
+    {
+      "code": "DF1",
+      "elementId": "src/studio/WholeStudio.tsx#details@46cff599d315",
+      "evidence": "Raw <details> has no library component. Bind components.disclosure.",
+      "file": "src/studio/WholeStudio.tsx",
+      "line": 128,
+      "raisedBy": "src/studio/WholeStudio.tsx#surface",
+      "slotId": "components.disclosure",
+      "tag": "details"
+    },
+    {
+      "code": "DF1",
+      "elementId": "src/studio/WholeStudio.tsx#summary@c7c429396dd4",
+      "evidence": "Raw <summary> has no library component. Bind components.disclosure.",
+      "file": "src/studio/WholeStudio.tsx",
+      "line": 128,
+      "raisedBy": "src/studio/WholeStudio.tsx#surface",
+      "slotId": "components.disclosure",
+      "tag": "summary"
+    },
+    {
+      "code": "DF2",
+      "elementId": "src/studio/WholeStudio.tsx#pre@21900015c441",
+      "evidence": "unresolved inline styling: no token read establishes these values.",
+      "file": "src/studio/WholeStudio.tsx",
+      "line": 128,
+      "raisedBy": "src/studio/WholeStudio.tsx#surface",
+      "slotId": null,
+      "tag": "pre"
+    },
+    {
+      "code": "DF1",
+      "elementId": "src/studio/WholeStudio.tsx#details@bca04d01e30e",
+      "evidence": "Raw <details> has no library component. Bind components.disclosure.",
+      "file": "src/studio/WholeStudio.tsx",
+      "line": 128,
+      "raisedBy": "src/studio/WholeStudio.tsx#surface",
+      "slotId": "components.disclosure",
+      "tag": "details"
+    },
+    {
+      "code": "DF1",
+      "elementId": "src/studio/WholeStudio.tsx#summary@8027a511d223",
+      "evidence": "Raw <summary> has no library component. Bind components.disclosure.",
+      "file": "src/studio/WholeStudio.tsx",
+      "line": 128,
+      "raisedBy": "src/studio/WholeStudio.tsx#surface",
+      "slotId": "components.disclosure",
+      "tag": "summary"
+    },
+    {
+      "code": "DF2",
+      "elementId": "src/studio/WholeStudio.tsx#nav@2846baa71e38",
+      "evidence": "unresolved inline styling: no token read establishes these values.",
+      "file": "src/studio/WholeStudio.tsx",
+      "line": 129,
+      "raisedBy": "src/studio/WholeStudio.tsx#surface",
+      "slotId": null,
+      "tag": "nav"
+    },
+    {
+      "code": "DF1",
+      "elementId": "src/studio/WholeStudio.tsx#div@7c1b4bd8d300",
+      "evidence": "Raw <div> has visual classes; bind a library surface.",
+      "file": "src/studio/WholeStudio.tsx",
+      "line": 130,
+      "missing": "div visual capability",
+      "raisedBy": "src/studio/WholeStudio.tsx#surface",
+      "slotId": null,
+      "tag": "div"
+    },
+    {
+      "code": "DF2",
+      "elementId": "src/studio/WholeStudio.tsx#div@7c1b4bd8d300",
+      "evidence": "unresolved class utilities: bg-surface-base, p-sm",
+      "file": "src/studio/WholeStudio.tsx",
+      "line": 130,
+      "raisedBy": "src/studio/WholeStudio.tsx#surface",
+      "slotId": null,
+      "tag": "div"
+    },
+    {
+      "code": "DF2",
+      "elementId": "src/studio/WholeStudio.tsx#div@7c1b4bd8d300",
+      "evidence": "unresolved inline styling: no token read establishes these values.",
+      "file": "src/studio/WholeStudio.tsx",
+      "line": 130,
+      "raisedBy": "src/studio/WholeStudio.tsx#surface",
+      "slotId": null,
+      "tag": "div"
+    },
+    {
+      "code": "DF1",
+      "elementId": "src/studio/WholeStudio.tsx#output@5a1407b2c28a",
+      "evidence": "Raw <output> has no library component.",
+      "file": "src/studio/WholeStudio.tsx",
+      "line": 130,
+      "missing": "output visual capability",
+      "raisedBy": "src/studio/WholeStudio.tsx#surface",
+      "slotId": null,
+      "tag": "output"
+    },
+    {
+      "code": "DF2",
+      "elementId": "src/tokens/preview/index.tsx#div@69c789834f9c",
+      "evidence": "unresolved style: dynamic source cannot establish token-only styling.",
+      "file": "src/tokens/preview/index.tsx",
+      "line": 67,
+      "raisedBy": "src/tokens/preview/index.tsx#surface",
+      "slotId": null,
+      "tag": "div"
+    },
+    {
+      "code": "DF1",
+      "elementId": "src/tokens/preview/index.tsx#button@697eb82d6163",
+      "evidence": "Raw <button> has no library component. Bind components.button.",
+      "file": "src/tokens/preview/index.tsx",
+      "line": 84,
+      "raisedBy": "src/tokens/preview/index.tsx#surface",
+      "slotId": "components.button",
+      "tag": "button"
+    },
+    {
+      "code": "DF2",
+      "elementId": "src/tokens/preview/index.tsx#div@a7910bdd5935",
+      "evidence": "unresolved class utilities: transition-transform, motion-reduce:transition-none",
+      "file": "src/tokens/preview/index.tsx",
+      "line": 85,
+      "raisedBy": "src/tokens/preview/index.tsx#surface",
+      "slotId": null,
+      "tag": "div"
+    },
+    {
+      "code": "DF2",
+      "elementId": "src/tokens/preview/index.tsx#div@a7910bdd5935",
+      "evidence": "unresolved style: dynamic source cannot establish token-only styling.",
+      "file": "src/tokens/preview/index.tsx",
+      "line": 85,
+      "raisedBy": "src/tokens/preview/index.tsx#surface",
+      "slotId": null,
+      "tag": "div"
+    },
+    {
+      "code": "DF2",
+      "elementId": "src/tokens/preview/index.tsx#div@9a305faf4bd2",
+      "evidence": "unresolved inline styling: no token read establishes these values.",
+      "file": "src/tokens/preview/index.tsx",
+      "line": 136,
+      "raisedBy": "src/tokens/preview/index.tsx#surface",
+      "slotId": null,
+      "tag": "div"
+    },
+    {
+      "code": "DF2",
+      "elementId": "src/tokens/preview/index.tsx#span@980d8af79ec7",
+      "evidence": "unresolved style: dynamic source cannot establish token-only styling.",
+      "file": "src/tokens/preview/index.tsx",
+      "line": 137,
+      "raisedBy": "src/tokens/preview/index.tsx#surface",
+      "slotId": null,
+      "tag": "span"
+    },
+    {
+      "code": "DF1",
+      "elementId": "src/tokens/preview/index.tsx#output@e29a5e7c964a",
+      "evidence": "Raw <output> has no library component.",
+      "file": "src/tokens/preview/index.tsx",
+      "line": 185,
+      "missing": "output visual capability",
+      "raisedBy": "src/tokens/preview/index.tsx#surface",
+      "slotId": null,
+      "tag": "output"
+    },
+    {
+      "code": "DF3",
+      "elementId": "src/tokens/preview/index.tsx#svg@59ee8b30a33c",
+      "evidence": "Inline <svg> must use an assets component or icon id.",
+      "file": "src/tokens/preview/index.tsx",
+      "line": 205,
+      "raisedBy": "src/tokens/preview/index.tsx#surface",
+      "slotId": "components.icon",
+      "tag": "svg"
+    },
+    {
+      "code": "DF2",
+      "elementId": "src/tokens/preview/index.tsx#svg@59ee8b30a33c",
+      "evidence": "unresolved style: dynamic source cannot establish token-only styling.",
+      "file": "src/tokens/preview/index.tsx",
+      "line": 205,
+      "raisedBy": "src/tokens/preview/index.tsx#surface",
+      "slotId": null,
+      "tag": "svg"
+    },
+    {
+      "code": "DF4",
+      "elementId": "src/tokens/preview/index.tsx#svg@59ee8b30a33c",
+      "evidence": "missing-declared-reads: tokens.text-color",
+      "file": "src/tokens/preview/index.tsx",
+      "line": 205,
+      "raisedBy": "src/tokens/preview/index.tsx#surface",
+      "slotId": "src/tokens/preview/index.tsx#surface",
+      "tag": "svg"
+    },
+    {
+      "code": "DF1",
+      "elementId": "src/tokens/preview/index.tsx#path@1c424de2adcd",
+      "evidence": "Raw <path> has no library component.",
+      "file": "src/tokens/preview/index.tsx",
+      "line": 206,
+      "missing": "path visual capability",
+      "raisedBy": "src/tokens/preview/index.tsx#surface",
+      "slotId": null,
+      "tag": "path"
+    },
+    {
+      "code": "DF5",
+      "elementId": "src/tokens/preview/index.tsx#MotionPreview@80e586ee725c",
+      "evidence": "Unknown visual import or local component <MotionPreview>; no registered slot resolves.",
+      "file": "src/tokens/preview/index.tsx",
+      "line": 210,
+      "missing": "MotionPreview visual capability",
+      "raisedBy": "src/tokens/preview/index.tsx#surface",
+      "slotId": null,
+      "tag": "MotionPreview"
+    },
+    {
+      "code": "DF5",
+      "elementId": "src/tokens/preview/index.tsx#BreakpointPreview@91e74b666ed2",
+      "evidence": "Unknown visual import or local component <BreakpointPreview>; no registered slot resolves.",
+      "file": "src/tokens/preview/index.tsx",
+      "line": 211,
+      "missing": "BreakpointPreview visual capability",
+      "raisedBy": "src/tokens/preview/index.tsx#surface",
+      "slotId": null,
+      "tag": "BreakpointPreview"
+    },
+    {
+      "code": "DF2",
+      "elementId": "src/tokens/preview/index.tsx#div@7df5bd7ab52b",
+      "evidence": "unresolved style: dynamic source cannot establish token-only styling.",
+      "file": "src/tokens/preview/index.tsx",
+      "line": 212,
+      "raisedBy": "src/tokens/preview/index.tsx#surface",
+      "slotId": null,
+      "tag": "div"
+    },
+    {
+      "code": "DF2",
+      "elementId": "src/tokens/preview/index.tsx#span@87ad1aaa8c20",
+      "evidence": "unresolved style: dynamic source cannot establish token-only styling.",
+      "file": "src/tokens/preview/index.tsx",
+      "line": 213,
+      "raisedBy": "src/tokens/preview/index.tsx#surface",
+      "slotId": null,
+      "tag": "span"
+    },
+    {
+      "code": "DF4",
+      "elementId": "src/tokens/preview/index.tsx#span@87ad1aaa8c20",
+      "evidence": "missing-declared-reads: tokens.color-ramp",
+      "file": "src/tokens/preview/index.tsx",
+      "line": 213,
+      "raisedBy": "src/tokens/preview/index.tsx#surface",
+      "slotId": "src/tokens/preview/index.tsx#surface",
+      "tag": "span"
+    },
+    {
+      "code": "DF2",
+      "elementId": "src/tokens/preview/index.tsx#p@db0a28101550",
+      "evidence": "unresolved style: dynamic source cannot establish token-only styling.",
+      "file": "src/tokens/preview/index.tsx",
+      "line": 215,
+      "raisedBy": "src/tokens/preview/index.tsx#surface",
+      "slotId": null,
+      "tag": "p"
+    },
+    {
+      "code": "DF2",
+      "elementId": "src/tokens/preview/index.tsx#div@7dfd0c493d33",
+      "evidence": "unresolved style: dynamic source cannot establish token-only styling.",
+      "file": "src/tokens/preview/index.tsx",
+      "line": 216,
+      "raisedBy": "src/tokens/preview/index.tsx#surface",
+      "slotId": null,
+      "tag": "div"
+    },
+    {
+      "code": "DF2",
+      "elementId": "src/tokens/preview/index.tsx#div@7dfd0c493d33",
+      "evidence": "Hard-coded raw-length: 2px",
+      "file": "src/tokens/preview/index.tsx",
+      "line": 216,
+      "raisedBy": "src/tokens/preview/index.tsx#surface",
+      "slotId": null,
+      "tag": "div"
+    },
+    {
+      "code": "DF4",
+      "elementId": "src/tokens/preview/index.tsx#div@7dfd0c493d33",
+      "evidence": "missing-declared-reads: tokens.border-color",
+      "file": "src/tokens/preview/index.tsx",
+      "line": 216,
+      "raisedBy": "src/tokens/preview/index.tsx#surface",
+      "slotId": "src/tokens/preview/index.tsx#surface",
+      "tag": "div"
+    },
+    {
+      "code": "DF1",
+      "elementId": "src/tokens/preview/index.tsx#button@440293817461",
+      "evidence": "Raw <button> has no library component. Bind components.button.",
+      "file": "src/tokens/preview/index.tsx",
+      "line": 217,
+      "raisedBy": "src/tokens/preview/index.tsx#surface",
+      "slotId": "components.button",
+      "tag": "button"
+    },
+    {
+      "code": "DF2",
+      "elementId": "src/tokens/preview/index.tsx#button@440293817461",
+      "evidence": "unresolved style: dynamic source cannot establish token-only styling.",
+      "file": "src/tokens/preview/index.tsx",
+      "line": 217,
+      "raisedBy": "src/tokens/preview/index.tsx#surface",
+      "slotId": null,
+      "tag": "button"
+    },
+    {
+      "code": "DF2",
+      "elementId": "src/tokens/preview/index.tsx#span@eeef7c20c178",
+      "evidence": "unresolved style: dynamic source cannot establish token-only styling.",
+      "file": "src/tokens/preview/index.tsx",
+      "line": 218,
+      "raisedBy": "src/tokens/preview/index.tsx#surface",
+      "slotId": null,
+      "tag": "span"
+    },
+    {
+      "code": "DF3",
+      "elementId": "src/tokens/preview/index.tsx#svg@ca9589ae1016",
+      "evidence": "Inline <svg> must use an assets component or icon id.",
+      "file": "src/tokens/preview/index.tsx",
+      "line": 219,
+      "raisedBy": "src/tokens/preview/index.tsx#surface",
+      "slotId": "components.icon",
+      "tag": "svg"
+    },
+    {
+      "code": "DF2",
+      "elementId": "src/tokens/preview/index.tsx#svg@ca9589ae1016",
+      "evidence": "unresolved inline styling: no token read establishes these values.",
+      "file": "src/tokens/preview/index.tsx",
+      "line": 219,
+      "raisedBy": "src/tokens/preview/index.tsx#surface",
+      "slotId": null,
+      "tag": "svg"
+    },
+    {
+      "code": "DF1",
+      "elementId": "src/tokens/preview/index.tsx#text@cda0de45f8d5",
+      "evidence": "Raw <text> has no library component.",
+      "file": "src/tokens/preview/index.tsx",
+      "line": 220,
+      "missing": "text visual capability",
+      "raisedBy": "src/tokens/preview/index.tsx#surface",
+      "slotId": null,
+      "tag": "text"
+    },
+    {
+      "code": "DF2",
+      "elementId": "src/tokens/preview/index.tsx#text@cda0de45f8d5",
+      "evidence": "unresolved style: dynamic source cannot establish token-only styling.",
+      "file": "src/tokens/preview/index.tsx",
+      "line": 220,
+      "raisedBy": "src/tokens/preview/index.tsx#surface",
+      "slotId": null,
+      "tag": "text"
+    },
+    {
+      "code": "DF1",
+      "elementId": "src/tokens/preview/index.tsx#rect@c76b82e6dde7",
+      "evidence": "Raw <rect> has no library component.",
+      "file": "src/tokens/preview/index.tsx",
+      "line": 221,
+      "missing": "rect visual capability",
+      "raisedBy": "src/tokens/preview/index.tsx#surface",
+      "slotId": null,
+      "tag": "rect"
+    },
+    {
+      "code": "DF2",
+      "elementId": "src/tokens/preview/index.tsx#rect@c76b82e6dde7",
+      "evidence": "unresolved style: dynamic source cannot establish token-only styling.",
+      "file": "src/tokens/preview/index.tsx",
+      "line": 221,
+      "raisedBy": "src/tokens/preview/index.tsx#surface",
+      "slotId": null,
+      "tag": "rect"
+    },
+    {
+      "code": "DF2",
+      "elementId": "src/tokens/preview/index.tsx#p@de4ff600185b",
+      "evidence": "unresolved style: dynamic source cannot establish token-only styling.",
+      "file": "src/tokens/preview/index.tsx",
+      "line": 223,
+      "raisedBy": "src/tokens/preview/index.tsx#surface",
+      "slotId": null,
+      "tag": "p"
+    },
+    {
+      "code": "DF2",
+      "elementId": "src/tokens/preview/index.tsx#div@629b27f7582c",
+      "evidence": "unresolved style: dynamic source cannot establish token-only styling.",
+      "file": "src/tokens/preview/index.tsx",
+      "line": 224,
+      "raisedBy": "src/tokens/preview/index.tsx#surface",
+      "slotId": null,
+      "tag": "div"
+    },
+    {
+      "code": "DF2",
+      "elementId": "src/tokens/preview/index.tsx#span@7c1027d7170f",
+      "evidence": "unresolved style: dynamic source cannot establish token-only styling.",
+      "file": "src/tokens/preview/index.tsx",
+      "line": 224,
+      "raisedBy": "src/tokens/preview/index.tsx#surface",
+      "slotId": null,
+      "tag": "span"
+    },
+    {
+      "code": "DF2",
+      "elementId": "src/tokens/preview/index.tsx#span@7c1027d7170f.2",
+      "evidence": "unresolved style: dynamic source cannot establish token-only styling.",
+      "file": "src/tokens/preview/index.tsx",
+      "line": 224,
+      "raisedBy": "src/tokens/preview/index.tsx#surface",
+      "slotId": null,
+      "tag": "span"
+    },
+    {
+      "code": "DF2",
+      "elementId": "src/tokens/preview/index.tsx#div@92b3f5e107ad",
+      "evidence": "unresolved style: dynamic source cannot establish token-only styling.",
+      "file": "src/tokens/preview/index.tsx",
+      "line": 225,
+      "raisedBy": "src/tokens/preview/index.tsx#surface",
+      "slotId": null,
+      "tag": "div"
+    },
+    {
+      "code": "DF2",
+      "elementId": "src/tokens/preview/index.tsx#div@39cf21744533",
+      "evidence": "unresolved style: dynamic source cannot establish token-only styling.",
+      "file": "src/tokens/preview/index.tsx",
+      "line": 228,
+      "raisedBy": "src/tokens/preview/index.tsx#surface",
+      "slotId": null,
+      "tag": "div"
+    },
+    {
+      "code": "DF3",
+      "elementId": "src/tokens/preview/index.tsx#svg@9561da0983e8",
+      "evidence": "Inline <svg> must use an assets component or icon id.",
+      "file": "src/tokens/preview/index.tsx",
+      "line": 229,
+      "raisedBy": "src/tokens/preview/index.tsx#surface",
+      "slotId": "components.icon",
+      "tag": "svg"
+    },
+    {
+      "code": "DF2",
+      "elementId": "src/tokens/preview/index.tsx#svg@9561da0983e8",
+      "evidence": "unresolved style: dynamic source cannot establish token-only styling.",
+      "file": "src/tokens/preview/index.tsx",
+      "line": 229,
+      "raisedBy": "src/tokens/preview/index.tsx#surface",
+      "slotId": null,
+      "tag": "svg"
+    },
+    {
+      "code": "DF1",
+      "elementId": "src/tokens/preview/index.tsx#path@6737952977ee",
+      "evidence": "Raw <path> has no library component.",
+      "file": "src/tokens/preview/index.tsx",
+      "line": 230,
+      "missing": "path visual capability",
+      "raisedBy": "src/tokens/preview/index.tsx#surface",
+      "slotId": null,
+      "tag": "path"
+    },
+    {
+      "code": "DF2",
+      "elementId": "src/tokens/preview/index.tsx#div@92b3f5e107ad.2",
+      "evidence": "unresolved style: dynamic source cannot establish token-only styling.",
+      "file": "src/tokens/preview/index.tsx",
+      "line": 235,
+      "raisedBy": "src/tokens/preview/index.tsx#surface",
+      "slotId": null,
+      "tag": "div"
+    },
+    {
+      "code": "DF2",
+      "elementId": "src/tokens/preview/index.tsx#div@92b3f5e107ad.3",
+      "evidence": "unresolved style: dynamic source cannot establish token-only styling.",
+      "file": "src/tokens/preview/index.tsx",
+      "line": 236,
+      "raisedBy": "src/tokens/preview/index.tsx#surface",
+      "slotId": null,
+      "tag": "div"
+    },
+    {
+      "code": "DF2",
+      "elementId": "src/tokens/preview/index.tsx#div@c669449da9cc",
+      "evidence": "unresolved style: dynamic source cannot establish token-only styling.",
+      "file": "src/tokens/preview/index.tsx",
+      "line": 238,
+      "raisedBy": "src/tokens/preview/index.tsx#surface",
+      "slotId": null,
+      "tag": "div"
+    },
+    {
+      "code": "DF2",
+      "elementId": "src/tokens/preview/index.tsx#div@c669449da9cc",
+      "evidence": "Hard-coded raw-length: 8px",
+      "file": "src/tokens/preview/index.tsx",
+      "line": 238,
+      "raisedBy": "src/tokens/preview/index.tsx#surface",
+      "slotId": null,
+      "tag": "div"
+    },
+    {
+      "code": "DF2",
+      "elementId": "src/tokens/preview/index.tsx#div@c669449da9cc",
+      "evidence": "Hard-coded raw-length: 8px",
+      "file": "src/tokens/preview/index.tsx",
+      "line": 238,
+      "raisedBy": "src/tokens/preview/index.tsx#surface",
+      "slotId": null,
+      "tag": "div"
+    },
+    {
+      "code": "DF2",
+      "elementId": "src/tokens/preview/index.tsx#div@c669449da9cc",
+      "evidence": "Hard-coded raw-length: 16px",
+      "file": "src/tokens/preview/index.tsx",
+      "line": 238,
+      "raisedBy": "src/tokens/preview/index.tsx#surface",
+      "slotId": null,
+      "tag": "div"
+    },
+    {
+      "code": "DF4",
+      "elementId": "src/tokens/preview/index.tsx#div@c669449da9cc",
+      "evidence": "missing-declared-reads: tokens.accent-color, tokens.surface-color",
+      "file": "src/tokens/preview/index.tsx",
+      "line": 238,
+      "raisedBy": "src/tokens/preview/index.tsx#surface",
+      "slotId": "src/tokens/preview/index.tsx#surface",
+      "tag": "div"
+    },
+    {
+      "code": "DF2",
+      "elementId": "src/tokens/preview/index.tsx#div@1024b743d6d4",
+      "evidence": "unresolved style: dynamic source cannot establish token-only styling.",
+      "file": "src/tokens/preview/index.tsx",
+      "line": 239,
+      "raisedBy": "src/tokens/preview/index.tsx#surface",
+      "slotId": null,
+      "tag": "div"
+    },
+    {
+      "code": "DF4",
+      "elementId": "src/tokens/preview/index.tsx#div@1024b743d6d4",
+      "evidence": "missing-declared-reads: tokens.surface-color",
+      "file": "src/tokens/preview/index.tsx",
+      "line": 239,
+      "raisedBy": "src/tokens/preview/index.tsx#surface",
+      "slotId": "src/tokens/preview/index.tsx#surface",
+      "tag": "div"
+    },
+    {
+      "code": "DF2",
+      "elementId": "src/tokens/preview/index.tsx#div@7c4031299b89",
+      "evidence": "unresolved style: dynamic source cannot establish token-only styling.",
+      "file": "src/tokens/preview/index.tsx",
+      "line": 242,
+      "raisedBy": "src/tokens/preview/index.tsx#surface",
+      "slotId": null,
+      "tag": "div"
+    },
+    {
+      "code": "DF2",
+      "elementId": "src/tokens/preview/index.tsx#div@7c4031299b89",
+      "evidence": "Hard-coded raw-length: 2px",
+      "file": "src/tokens/preview/index.tsx",
+      "line": 242,
+      "raisedBy": "src/tokens/preview/index.tsx#surface",
+      "slotId": null,
+      "tag": "div"
+    },
+    {
+      "code": "DF4",
+      "elementId": "src/tokens/preview/index.tsx#div@7c4031299b89",
+      "evidence": "missing-declared-reads: tokens.focus-color",
+      "file": "src/tokens/preview/index.tsx",
+      "line": 242,
+      "raisedBy": "src/tokens/preview/index.tsx#surface",
+      "slotId": "src/tokens/preview/index.tsx#surface",
+      "tag": "div"
+    },
+    {
+      "code": "DF2",
+      "elementId": "src/tokens/preview/index.tsx#div@1887592b29b7",
+      "evidence": "unresolved inline styling: no token read establishes these values.",
+      "file": "src/tokens/preview/index.tsx",
+      "line": 244,
+      "raisedBy": "src/tokens/preview/index.tsx#surface",
+      "slotId": null,
+      "tag": "div"
+    },
+    {
+      "code": "DF2",
+      "elementId": "src/tokens/preview/index.tsx#div@6874eb904094",
+      "evidence": "unresolved style: dynamic source cannot establish token-only styling.",
+      "file": "src/tokens/preview/index.tsx",
+      "line": 245,
+      "raisedBy": "src/tokens/preview/index.tsx#surface",
+      "slotId": null,
+      "tag": "div"
+    },
+    {
+      "code": "DF2",
+      "elementId": "src/tokens/preview/index.tsx#div@6874eb904094",
+      "evidence": "Hard-coded raw-length: 2px",
+      "file": "src/tokens/preview/index.tsx",
+      "line": 245,
+      "raisedBy": "src/tokens/preview/index.tsx#surface",
+      "slotId": null,
+      "tag": "div"
+    },
+    {
+      "code": "DF4",
+      "elementId": "src/tokens/preview/index.tsx#div@6874eb904094",
+      "evidence": "missing-declared-reads: tokens.border-color",
+      "file": "src/tokens/preview/index.tsx",
+      "line": 245,
+      "raisedBy": "src/tokens/preview/index.tsx#surface",
+      "slotId": "src/tokens/preview/index.tsx#surface",
+      "tag": "div"
+    },
+    {
+      "code": "DF2",
+      "elementId": "src/tokens/preview/index.tsx#span@87ce4a4d7577",
+      "evidence": "unresolved style: dynamic source cannot establish token-only styling.",
+      "file": "src/tokens/preview/index.tsx",
+      "line": 246,
+      "raisedBy": "src/tokens/preview/index.tsx#surface",
+      "slotId": null,
+      "tag": "span"
+    },
+    {
+      "code": "DF2",
+      "elementId": "src/tokens/preview/index.tsx#div@94f77cc856b1",
+      "evidence": "unresolved style: dynamic source cannot establish token-only styling.",
+      "file": "src/tokens/preview/index.tsx",
+      "line": 248,
+      "raisedBy": "src/tokens/preview/index.tsx#surface",
+      "slotId": null,
+      "tag": "div"
+    },
+    {
+      "code": "DF2",
+      "elementId": "src/tokens/preview/index.tsx#div@92b3f5e107ad.4",
+      "evidence": "unresolved style: dynamic source cannot establish token-only styling.",
+      "file": "src/tokens/preview/index.tsx",
+      "line": 251,
+      "raisedBy": "src/tokens/preview/index.tsx#surface",
+      "slotId": null,
+      "tag": "div"
+    },
+    {
+      "code": "DF1",
+      "elementId": "src/tokens/preview/index.tsx#figure@5eb08f2f7684",
+      "evidence": "Raw <figure> has no library component.",
+      "file": "src/tokens/preview/index.tsx",
+      "line": 254,
+      "missing": "figure visual capability",
+      "raisedBy": "src/tokens/preview/index.tsx#surface",
+      "slotId": null,
+      "tag": "figure"
+    },
+    {
+      "code": "DF2",
+      "elementId": "src/tokens/preview/index.tsx#figure@5eb08f2f7684",
+      "evidence": "unresolved style: dynamic source cannot establish token-only styling.",
+      "file": "src/tokens/preview/index.tsx",
+      "line": 254,
+      "raisedBy": "src/tokens/preview/index.tsx#surface",
+      "slotId": null,
+      "tag": "figure"
+    }
+  ],
+  "ignored": [],
+  "needs": [],
+  "ok": false,
+  "scanned": [
+    {
+      "elements": 0,
+      "file": "src/catalog-assets/catalog.ts"
+    },
+    {
+      "elements": 0,
+      "file": "src/catalog-assets/check.ts"
+    },
+    {
+      "elements": 0,
+      "file": "src/catalog-assets/emit.ts"
+    },
+    {
+      "elements": 0,
+      "file": "src/catalog-assets/identity.ts"
+    },
+    {
+      "elements": 0,
+      "file": "src/catalog-assets/index.ts"
+    },
+    {
+      "elements": 0,
+      "file": "src/catalog-assets/licenses.ts"
+    },
+    {
+      "elements": 0,
+      "file": "src/catalog-assets/svg.ts"
+    },
+    {
+      "elements": 0,
+      "file": "src/catalog-core/api.ts"
+    },
+    {
+      "elements": 0,
+      "file": "src/catalog-core/cell.ts"
+    },
+    {
+      "elements": 0,
+      "file": "src/catalog-core/changeset-components.ts"
+    },
+    {
+      "elements": 0,
+      "file": "src/catalog-core/check-components.ts"
+    },
+    {
+      "elements": 0,
+      "file": "src/catalog-core/check.ts"
+    },
+    {
+      "elements": 0,
+      "file": "src/catalog-core/component-registry.ts"
+    },
+    {
+      "elements": 0,
+      "file": "src/catalog-core/consumption.ts"
+    },
+    {
+      "elements": 0,
+      "file": "src/catalog-core/digest.ts"
+    },
+    {
+      "elements": 0,
+      "file": "src/catalog-core/emit-components.ts"
+    },
+    {
+      "elements": 0,
+      "file": "src/catalog-core/emit.ts"
+    },
+    {
+      "elements": 0,
+      "file": "src/catalog-core/ia-placement.ts"
+    },
+    {
+      "elements": 0,
+      "file": "src/catalog-core/ids.ts"
+    },
+    {
+      "elements": 0,
+      "file": "src/catalog-core/index.ts"
+    },
+    {
+      "elements": 0,
+      "file": "src/catalog-core/leaf-freeze.ts"
+    },
+    {
+      "elements": 0,
+      "file": "src/catalog-core/library-components.ts"
+    },
+    {
+      "elements": 0,
+      "file": "src/catalog-core/library.ts"
+    },
+    {
+      "elements": 0,
+      "file": "src/catalog-core/model.ts"
+    },
+    {
+      "elements": 0,
+      "file": "src/catalog-core/relationships.ts"
+    },
+    {
+      "elements": 0,
+      "file": "src/catalog-core/resolve-components.ts"
+    },
+    {
+      "elements": 0,
+      "file": "src/catalog-core/resolve.ts"
+    },
+    {
+      "elements": 0,
+      "file": "src/catalog-core/rules.ts"
+    },
+    {
+      "elements": 0,
+      "file": "src/catalog-core/runtime-assembly-evidence.ts"
+    },
+    {
+      "elements": 0,
+      "file": "src/catalog-core/runtime-assembly.ts"
+    },
+    {
+      "elements": 0,
+      "file": "src/catalog-core/runtime-ports.ts"
+    },
+    {
+      "elements": 0,
+      "file": "src/catalog-core/sections-contract.ts"
+    },
+    {
+      "elements": 0,
+      "file": "src/catalog-core/stable.ts"
+    },
+    {
+      "elements": 0,
+      "file": "src/catalog-core/types.ts"
+    },
+    {
+      "elements": 0,
+      "file": "src/importers/foundry-components.map.ts"
+    },
+    {
+      "elements": 0,
+      "file": "src/importers/foundry-components.ts"
+    },
+    {
+      "elements": 0,
+      "file": "src/importers/foundry.ts"
+    },
+    {
+      "elements": 0,
+      "file": "src/importers/lucide.ts"
+    },
+    {
+      "elements": 0,
+      "file": "src/importers/phosphor-license.ts"
+    },
+    {
+      "elements": 0,
+      "file": "src/importers/phosphor.ts"
+    },
+    {
+      "elements": 0,
+      "file": "src/importers/shared.ts"
+    },
+    {
+      "elements": 0,
+      "file": "src/internal/declared-peer-ranges.ts"
+    },
+    {
+      "elements": 0,
+      "file": "src/internal/peer-version.ts"
+    },
+    {
+      "elements": 0,
+      "file": "src/studio/__fixtures__/studio.ts"
+    },
+    {
+      "elements": 13,
+      "file": "src/studio/Board.tsx"
+    },
+    {
+      "elements": 0,
+      "file": "src/studio/camera.ts"
+    },
+    {
+      "elements": 9,
+      "file": "src/studio/CandidateCard.tsx"
+    },
+    {
+      "elements": 14,
+      "file": "src/studio/CandidateStage.tsx"
+    },
+    {
+      "elements": 0,
+      "file": "src/studio/canvas-model.ts"
+    },
+    {
+      "elements": 0,
+      "file": "src/studio/catalog-adapter.ts"
+    },
+    {
+      "elements": 0,
+      "file": "src/studio/demo-adapter.ts"
+    },
+    {
+      "elements": 0,
+      "file": "src/studio/engine.ts"
+    },
+    {
+      "elements": 0,
+      "file": "src/studio/evaluation.ts"
+    },
+    {
+      "elements": 0,
+      "file": "src/studio/index.ts"
+    },
+    {
+      "elements": 40,
+      "file": "src/studio/Inspector.tsx"
+    },
+    {
+      "elements": 0,
+      "file": "src/studio/matrix-model.ts"
+    },
+    {
+      "elements": 38,
+      "file": "src/studio/Matrix.tsx"
+    },
+    {
+      "elements": 0,
+      "file": "src/studio/model.ts"
+    },
+    {
+      "elements": 0,
+      "file": "src/studio/preview-css.ts"
+    },
+    {
+      "elements": 23,
+      "file": "src/studio/previews.tsx"
+    },
+    {
+      "elements": 25,
+      "file": "src/studio/Scorecard.tsx"
+    },
+    {
+      "elements": 1,
+      "file": "src/studio/SlotTree.tsx"
+    },
+    {
+      "elements": 6,
+      "file": "src/studio/Studio.tsx"
+    },
+    {
+      "elements": 43,
+      "file": "src/studio/StudioCanvas.tsx"
+    },
+    {
+      "elements": 6,
+      "file": "src/studio/StudioHeader.tsx"
+    },
+    {
+      "elements": 3,
+      "file": "src/studio/StudioProvider.tsx"
+    },
+    {
+      "elements": 14,
+      "file": "src/studio/StudioTopBar.tsx"
+    },
+    {
+      "elements": 10,
+      "file": "src/studio/TreeView.tsx"
+    },
+    {
+      "elements": 0,
+      "file": "src/studio/types.ts"
+    },
+    {
+      "elements": 0,
+      "file": "src/studio/use-layout.ts"
+    },
+    {
+      "elements": 0,
+      "file": "src/studio/visible-rows.ts"
+    },
+    {
+      "elements": 0,
+      "file": "src/studio/whole-model.ts"
+    },
+    {
+      "elements": 86,
+      "file": "src/studio/WholeStudio.tsx"
+    },
+    {
+      "elements": 0,
+      "file": "src/tokens/color.ts"
+    },
+    {
+      "elements": 0,
+      "file": "src/tokens/contrast-pairs.ts"
+    },
+    {
+      "elements": 0,
+      "file": "src/tokens/guidance.ts"
+    },
+    {
+      "elements": 0,
+      "file": "src/tokens/identity-checks.ts"
+    },
+    {
+      "elements": 0,
+      "file": "src/tokens/identity-kit.ts"
+    },
+    {
+      "elements": 0,
+      "file": "src/tokens/internal/parse-css.ts"
+    },
+    {
+      "elements": 0,
+      "file": "src/tokens/internal/resolve-token-value.ts"
+    },
+    {
+      "elements": 47,
+      "file": "src/tokens/preview/index.tsx"
+    },
+    {
+      "elements": 0,
+      "file": "src/tokens/tokens.ts"
+    }
+  ],
+  "schemaVersion": 1,
+  "scope": "Static JSX nodes and literal attributes; dynamic styling remains unresolved, not a runtime conformance claim.",
+  "structural": {
+    "code": 7,
+    "dd": 12,
+    "div": 30,
+    "dl": 3,
+    "dt": 12,
+    "h2": 3,
+    "h3": 4,
+    "h4": 1,
+    "li": 4,
+    "nav": 1,
+    "p": 35,
+    "pre": 1,
+    "section": 3,
+    "span": 7,
+    "ul": 4
+  },
+  "summary": {
+    "elements": 378,
+    "findings": 386,
+    "library": 52,
+    "structural": 127
+  }
+}

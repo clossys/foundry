@@ -1,0 +1,56 @@
+{
+  "$extensions": {
+    "com.clossys.fill": {
+      "id": "lucide/assets.icon-business",
+      "slot": "assets.icon-business",
+      "source": "lucide",
+      "mode": "implementation",
+      "sourceAddress": "lucide-react@1.24.0/dist/esm/icons/briefcase.js",
+      "relation": "same-contract",
+      "builtOn": [],
+      "conforms": [],
+      "evidence": [],
+      "author": "third-party",
+      "trust": "pinned-upstream",
+      "license": "ISC",
+      "pin": {
+        "package": "lucide-react",
+        "version": "1.24.0",
+        "file": "src/icons/Briefcase.ts",
+        "sha256": "dab81f836f47fc08fa113053b3f8cbfd1331e3cce6485c42a71cf73311166394"
+      },
+      "status": "draft",
+      "reads": {
+        "tokens": [],
+        "assets": []
+      }
+    }
+  },
+  "assets": {
+    "icon-business": {
+      "default": {
+        "$type": "glyph",
+        "$value": [
+          [
+            "path",
+            {
+              "d": "M16 20V4a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16",
+              "key": "jecpp"
+            }
+          ],
+          [
+            "rect",
+            {
+              "width": "20",
+              "height": "14",
+              "x": "2",
+              "y": "6",
+              "rx": "2",
+              "key": "i6l2r4"
+            }
+          ]
+        ]
+      }
+    }
+  }
+}

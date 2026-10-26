@@ -61,3 +61,18 @@ describe("PageHeader", () => {
     expect(screen.getByRole("heading")).toHaveTextContent("Prompts (beta)");
   });
 });
+
+it("S4-5 preserves specialized root, host attributes and its own outline", () => {
+  let clicks = 0;
+  const { container } = render(<PageHeader title="Title" id="special" dir="rtl" data-host="yes" style={{ marginTop: 7 }} onClick={() => clicks++} />);
+  const root = container.firstElementChild as HTMLElement;
+  expect(root.tagName).toBe("HEADER");
+  expect(root).toHaveAttribute("id", "special");
+  expect(root).toHaveAttribute("dir", "rtl");
+  expect(root).toHaveAttribute("data-host", "yes");
+  expect(root.style.marginTop).toBe("7px");
+  expect(root.querySelectorAll("#special")).toHaveLength(0);
+  expect(root.querySelectorAll("[data-designer-section-frame]")).toHaveLength(0);
+  expect(root.querySelector("h1")).toHaveTextContent("Title");
+  root.click(); expect(clicks).toBe(1);
+});

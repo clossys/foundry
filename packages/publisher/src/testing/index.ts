@@ -176,3 +176,6 @@ export function expectFrontDoorConformance(config: FrontDoorConfig): void {
     `Front-door conformance failed with ${findings.length} finding${findings.length === 1 ? "" : "s"}:\n${lines.join("\n")}`,
   );
 }
+
+export { checkLayoutRender } from "./layout-render.js";
+export type { LayoutRenderOptions, LayoutRenderResult } from "./layout-render.js";

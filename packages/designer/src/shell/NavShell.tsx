@@ -6,17 +6,17 @@ import {
   ModalOverlay,
   type DialogTriggerProps as AriaDialogTriggerProps,
 } from "react-aria-components";
-import { Button } from "../atoms/Button.js";
-import { Icon } from "../atoms/Icon.js";
-import { cx } from "../atoms/internal/cx.js";
-import { UI_ELEVATION_FLOATING, UI_Z_MODAL } from "../atoms/internal/ui-vars.js";
+import { Button } from "../components/Button.js";
+import { Icon } from "../components/Icon.js";
+import { cx } from "../components/internal/cx.js";
+import { UI_ELEVATION_FLOATING, UI_Z_MODAL } from "../components/internal/ui-vars.js";
 import { X } from "../icons/index.js";
 import { UI_LAYOUT_DRAWER_W } from "./internal/shell-vars.js";
 
 export interface NavShellProps extends Omit<AriaDialogTriggerProps, "children"> {
   /**
    * The site's primary navigation links — typically one or more `Link`
-   * atoms. Rendered TWICE: once inside a plain inline `<nav>` visible from
+   * components. Rendered TWICE: once inside a plain inline `<nav>` visible from
    * the `tablet` breakpoint up, and once inside the mobile drawer's own
    * `<nav>`, visible below it. See this component's own doc comment for
    * why duplication, rather than a single relocated subtree, is the
@@ -57,7 +57,7 @@ export interface NavShellProps extends Omit<AriaDialogTriggerProps, "children"> 
  * **Why `children` renders twice rather than once, relocated.** The
  * drawer's content is portalled to `document.body` by react-aria-
  * components' own `Modal` (the same primitive this package's `Dialog`
- * atom uses — see there for the full mechanism), which cannot be
+ * component uses — see there for the full mechanism), which cannot be
  * conditionally skipped by a breakpoint at RENDER time without reading
  * `matchMedia` — exactly the SSR-unsafe, JS-dependent-layout shape this
  * package's README warns against. Rendering the SAME `children` into both
@@ -74,7 +74,7 @@ export interface NavShellProps extends Omit<AriaDialogTriggerProps, "children"> 
  *
  * **The drawer's accessibility contract**, built entirely on react-aria-
  * components' `DialogTrigger` + `ModalOverlay` + `Modal` + `Dialog` — the
- * same primitives this package's own `Dialog` atom uses (see its own doc
+ * same primitives this package's own `Dialog` component uses (see its own doc
  * comment for the underlying `useModalOverlay`/`useOverlayTrigger`
  * mechanism) — none of it reimplemented here:
  *
@@ -97,7 +97,7 @@ export interface NavShellProps extends Omit<AriaDialogTriggerProps, "children"> 
  *     on (deliberately not opted out of via `isNonModal` — see `Popover`'s
  *     own doc comment for why a general-purpose overlay stays modal).
  *   - **Usable with the keyboard alone, start to finish** — a real
- *     `<button>` (this package's own `Button` atom) opens it on Enter/
+ *     `<button>` (this package's own `Button` component) opens it on Enter/
  *     Space, Tab/Shift+Tab move within the trap, Escape or the close
  *     button's own Enter/Space closes it.
  */

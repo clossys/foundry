@@ -1,5 +1,5 @@
 import type { CSSProperties, HTMLAttributes, ReactNode } from "react";
-import { mergeUiClasses } from "@clossys/designer/atoms/server";
+import { mergeUiClasses } from "@clossys/designer/components/server";
 import { CARDLESS_PAGE_COLUMN_CLASSES, CardlessPageLayout, pageColumnStyle } from "../internal/PageLayout.js";
 import { assertViewContentRoot } from "../internal/viewContentRoot.js";
 import { renderViewLinks, type ViewLinksInput } from "../internal/ViewLinks.js";

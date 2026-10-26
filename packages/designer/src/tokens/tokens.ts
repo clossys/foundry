@@ -2,7 +2,7 @@
  * The token catalog: every custom property this package declares in
  * `styles/tokens.css`, as data. This file is the JS/TS half of the package;
  * `styles/tokens.css` is the CSS half. Both are hand-authored and both are
- * meant to describe the exact same 217 tokens — a test in this package
+ * meant to describe the exact same 226 tokens — a test in this package
  * (`parity.test.ts`) parses `styles/tokens.css` and asserts its custom
  * property names and values match this file entry-for-entry, in both
  * directions. That test is what keeps this file honest; nothing generates
@@ -35,7 +35,7 @@
  */
 
 /**
- * The 31 semantic groups the 217 tokens fall into. Each maps to exactly one
+ * The 32 semantic groups the 226 tokens fall into. Each maps to exactly one
  * CSS custom property prefix — see `FAMILY_PREFIX` in `parity.test.ts` (and
  * the README's naming table) for the concrete mapping.
  */
@@ -44,6 +44,7 @@ export type TokenFamily =
   | "ink"
   | "line"
   | "accent"
+  | "action"
   | "control"
   | "status"
   | "chart"
@@ -76,7 +77,7 @@ export type TokenFamily =
 export interface TokenDefinition {
   /** The full CSS custom property name, including the leading `--`. */
   readonly property: string;
-  /** Which of the 31 semantic groups this token belongs to. */
+  /** Which of the 32 semantic groups this token belongs to. */
   readonly family: TokenFamily;
   /** The value declared for this property in `styles/tokens.css`'s `:root` block. */
   readonly value: string;
@@ -109,7 +110,7 @@ export interface TokenDefinition {
 }
 
 /**
- * All 217 tokens, keyed by their CSS custom property name. A `Record` rather
+ * All 226 tokens, keyed by their CSS custom property name. A `Record` rather
  * than an array because the natural question from JS — "what is
  * `--color-surface-raised` set to?" — is a lookup, not a scan.
  */
@@ -137,6 +138,7 @@ export const TOKENS: Readonly<Record<string, TokenDefinition>> = {
   "--color-ink-link": { property: "--color-ink-link", family: "ink", value: "oklch(0.36 0 0)", brandable: true, themeDependent: true },
   "--color-ink-on-inverse": { property: "--color-ink-on-inverse", family: "ink", value: "oklch(0.9702 0 0)", brandable: true, themeDependent: true },
   "--color-ink-on-inverse-muted": { property: "--color-ink-on-inverse-muted", family: "ink", value: "oklch(0.7763 0 0)", brandable: true, themeDependent: true },
+  "--color-ink-on-action": { property: "--color-ink-on-action", family: "ink", value: "var(--color-ink-on-inverse, oklch(0.9702 0 0))", brandable: false, themeDependent: false },
   "--color-ink-on-accent": { property: "--color-ink-on-accent", family: "ink", value: "var(--color-ink-on-inverse, oklch(0.9702 0 0))", brandable: false, themeDependent: false },
 
   // ── COLOR · LINE ─────────────────────────────────────────────────────
@@ -148,6 +150,11 @@ export const TOKENS: Readonly<Record<string, TokenDefinition>> = {
   "--color-line-panel": { property: "--color-line-panel", family: "line", value: "var(--color-line-base, oklch(0.8761 0 0))", brandable: true, themeDependent: false },
 
   // ── COLOR · ACCENT ───────────────────────────────────────────────────
+  "--color-action": { property: "--color-action", family: "action", value: "#0A0A0A", brandable: true, themeDependent: true },
+  "--color-action-hover": { property: "--color-action-hover", family: "action", value: "#262626", brandable: true, themeDependent: true },
+  "--color-action-pressed": { property: "--color-action-pressed", family: "action", value: "#404040", brandable: true, themeDependent: true },
+  "--color-action-on-inverse": { property: "--color-action-on-inverse", family: "action", value: "#FAFAFA", brandable: true, themeDependent: true },
+  "--color-action-on-inverse-hover": { property: "--color-action-on-inverse-hover", family: "action", value: "#E5E5E5", brandable: true, themeDependent: true },
   "--color-accent": { property: "--color-accent", family: "accent", value: "oklch(0.4748 0 0)", brandable: true, themeDependent: true },
   "--color-accent-text": { property: "--color-accent-text", family: "accent", value: "oklch(0.36 0 0)", brandable: true, themeDependent: true },
   "--color-accent-hover": { property: "--color-accent-hover", family: "accent", value: "oklch(0.36 0 0)", brandable: true, themeDependent: true },
@@ -297,6 +304,9 @@ export const TOKENS: Readonly<Record<string, TokenDefinition>> = {
   "--ui-width-page-padding-x": { property: "--ui-width-page-padding-x", family: "width", value: "clamp(16px, 4vw, 48px)", brandable: false, themeDependent: false },
 
   // ── UI · LAYOUT ─────────────────────────────────────────────────────
+  "--ui-layout-dock-min-block": { property: "--ui-layout-dock-min-block", family: "layout", value: "160px", brandable: false, themeDependent: false },
+  "--ui-layout-dock-default-block": { property: "--ui-layout-dock-default-block", family: "layout", value: "240px", brandable: false, themeDependent: false },
+  "--ui-layout-dock-max-block": { property: "--ui-layout-dock-max-block", family: "layout", value: "480px", brandable: false, themeDependent: false },
   "--ui-layout-sidebar-w": { property: "--ui-layout-sidebar-w", family: "layout", value: "256px", brandable: true, themeDependent: false },
   "--ui-layout-sidebar-rail-w": { property: "--ui-layout-sidebar-rail-w", family: "layout", value: "64px", brandable: false, themeDependent: false },
   "--ui-layout-aside-w": { property: "--ui-layout-aside-w", family: "layout", value: "320px", brandable: false, themeDependent: false },
@@ -308,7 +318,7 @@ export const TOKENS: Readonly<Record<string, TokenDefinition>> = {
   "--ui-density-gap": { property: "--ui-density-gap", family: "density", value: "var(--spacing-lg, 16px)", brandable: false, themeDependent: false },
   "--ui-density-row": { property: "--ui-density-row", family: "density", value: "var(--spacing-3xl, 48px)", brandable: false, themeDependent: false },
 
-  // ── UI · ICON (Icon atom render contract — sm/md/lg alias spacing,
+  // ── UI · ICON (Icon component render contract — sm/md/lg alias spacing,
   //    -stroke is the one literal, brandable member) ──────────────────
   "--ui-icon-sm": { property: "--ui-icon-sm", family: "icon", value: "var(--spacing-lg, 16px)", brandable: false, themeDependent: false },
   "--ui-icon-md": { property: "--ui-icon-md", family: "icon", value: "var(--spacing-xl, 24px)", brandable: false, themeDependent: false },
@@ -365,7 +375,7 @@ export const TOKENS: Readonly<Record<string, TokenDefinition>> = {
 
   // ── UI · RING ───────────────────────────────────────────────────────
   "--ui-ring-focus": { property: "--ui-ring-focus", family: "ring", value: "0 0 0 2px var(--color-accent, oklch(0.4748 0 0))", brandable: false, themeDependent: false },
-  "--ui-ring-on-inverse": { property: "--ui-ring-on-inverse", family: "ring", value: "0 0 0 1px rgba(245, 245, 245, 0.12)", brandable: false, themeDependent: false },
+  "--ui-ring-on-inverse": { property: "--ui-ring-on-inverse", family: "ring", value: "0 0 0 2px var(--color-focus-ring-on-inverse, oklch(0.9702 0 0))", brandable: false, themeDependent: false },
 
   // ── UI · DURATION ───────────────────────────────────────────────────
   "--ui-duration-instant": { property: "--ui-duration-instant", family: "duration", value: "80ms", brandable: false, themeDependent: false },
@@ -440,12 +450,13 @@ export const TOKENS: Readonly<Record<string, TokenDefinition>> = {
 
 };
 
-/** The 31 semantic families, in the order they appear in the README's reference table. */
+/** The 32 semantic families, in the order they appear in the README's reference table. */
 export const TOKEN_FAMILIES: readonly TokenFamily[] = [
   "surface",
   "ink",
   "line",
   "accent",
+  "action",
   "control",
   "status",
   "chart",

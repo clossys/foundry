@@ -1,6 +1,6 @@
 import { Button as AriaButton, Disclosure as AriaDisclosure, DisclosurePanel as AriaDisclosurePanel } from "react-aria-components";
-import { Icon } from "../../atoms/Icon.js";
-import { cx } from "../../atoms/internal/cx.js";
+import { Icon } from "../../components/Icon.js";
+import { cx } from "../../components/internal/cx.js";
 import { ChevronDown } from "../../icons/ChevronDown.js";
 import type { DisclosureRowOptions } from "./disclosure-row-types.js";
 

@@ -1,5 +1,5 @@
 import type { CSSProperties, HTMLAttributes, ReactNode } from "react";
-import { mergeUiClasses } from "@clossys/designer/atoms/server";
+import { mergeUiClasses } from "@clossys/designer/components/server";
 import { SiteFooter, SiteHeader } from "@clossys/designer/shell/server";
 import { PAGE_COLUMN_CLASSES, PageLayout, hasContent, pageColumnStyle } from "../internal/PageLayout.js";
 import { siteHeaderPresentation, type SiteChromeGround } from "../internal/viewChromeGround.js";
@@ -252,8 +252,7 @@ export function AuthView({
       <main
         id={mainId || undefined}
         tabIndex={mainId ? -1 : undefined}
-        className={PAGE_COLUMN_CLASSES}
-        style={pageColumnStyle("form")}
+        className={`${PAGE_COLUMN_CLASSES} max-w-[var(--ui-width-form-max,none)]`}
       >
         {content}
       </main>

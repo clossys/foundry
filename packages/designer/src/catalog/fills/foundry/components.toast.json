@@ -1,0 +1,91 @@
+{
+  "$extensions": {
+    "com.clossys.fill": {
+      "author": "foundry",
+      "builtOn": [
+        "components.button"
+      ],
+      "conforms": [],
+      "evidence": [],
+      "id": "foundry/components.toast",
+      "license": "MIT",
+      "mode": "implementation",
+      "pin": {
+        "export": "./shell#Toaster",
+        "package": "@clossys/designer",
+        "version": "0.12.0"
+      },
+      "relation": "same-contract",
+      "slot": "components.toast",
+      "source": "foundry",
+      "sourceAddress": "./shell#Toaster",
+      "status": "draft",
+      "trust": "foundry"
+    }
+  },
+  "components": {
+    "toast": {
+      "composes": [
+        "components.button"
+      ],
+      "deps": [
+        {
+          "license": "MIT",
+          "name": "react",
+          "version": ">=18"
+        },
+        {
+          "license": "MIT",
+          "name": "tailwind-merge",
+          "version": "^3.7.0"
+        },
+        {
+          "license": "Apache-2.0",
+          "name": "react-aria-components",
+          "version": "^1.19.0"
+        }
+      ],
+      "impl": {
+        "export": "Toaster",
+        "kind": "package",
+        "module": "@clossys/designer/shell"
+      },
+      "license": "MIT",
+      "members": [
+        "action",
+        "timeout",
+        "tone.danger",
+        "tone.info",
+        "tone.success",
+        "tone.warning"
+      ],
+      "pin": {
+        "export": "./shell#Toaster",
+        "package": "@clossys/designer",
+        "version": "0.12.0"
+      },
+      "propMap": {
+        "action": "./shell#toast[options.action]",
+        "timeout": "./shell#toast[options.timeout]",
+        "tone.danger": "./shell#toast.error",
+        "tone.info": "./shell#toast.info",
+        "tone.success": "./shell#toast.success",
+        "tone.warning": "./shell#toast.warning"
+      },
+      "props": [
+        "aria-label",
+        "className"
+      ],
+      "reads": {
+        "assets": [],
+        "components": [
+          "components.button"
+        ],
+        "tokens": []
+      },
+      "root": "rac:UNSTABLE_Toast",
+      "slot": "components.toast",
+      "source": "foundry"
+    }
+  }
+}

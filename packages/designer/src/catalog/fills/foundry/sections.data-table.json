@@ -1,0 +1,60 @@
+{
+  "$extensions": {
+    "com.clossys.fill": {
+      "author": "foundry",
+      "builtOn": [],
+      "conforms": [],
+      "evidence": [],
+      "id": "foundry/sections.data-table",
+      "license": "MIT",
+      "mode": "implementation",
+      "originKinds": [
+        "adopted"
+      ],
+      "pin": {
+        "export": "./blocks#DataTable",
+        "package": "@clossys/designer",
+        "version": "0.12.0"
+      },
+      "relation": "same-contract",
+      "slot": "sections.data-table",
+      "source": "foundry",
+      "sourceAddress": "./blocks#DataTable",
+      "status": "draft",
+      "trust": "foundry"
+    }
+  },
+  "sections": {
+    "data-table": {
+      "configs": {},
+      "impl": {
+        "export": "DataTable",
+        "kind": "package",
+        "module": "@clossys/designer/blocks"
+      },
+      "license": "MIT",
+      "notes": [
+        "Host supplies rowKey. Grouping uses the typed model API; footer is an arbitrary region, not a pagination controller. FlatGrid and ModelTable own implementation dependencies, including direct RAC imports.",
+        "Descriptor only; source imports, token reads, shared anatomy, accessibility, contrast and consumer runtime conformance are unmeasured. Content bindings describe host adaptation points, not type-equivalent converters."
+      ],
+      "parts": [],
+      "pin": {
+        "export": "./blocks#DataTable",
+        "package": "@clossys/designer",
+        "version": "0.12.0"
+      },
+      "propMap": {},
+      "slot": "sections.data-table",
+      "slotMap": {
+        "columns": "./blocks#DataTable.columns",
+        "grouping": "./blocks#DataTable.model",
+        "pagination": "./blocks#DataTable.footer",
+        "rows": "./blocks#DataTable.rows",
+        "selection": "./blocks#DataTable.selectionMode",
+        "sort": "./blocks#DataTable.sortDescriptor",
+        "toolbar": "./blocks#DataTable.toolbar"
+      },
+      "source": "foundry"
+    }
+  }
+}

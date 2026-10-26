@@ -6,7 +6,7 @@
  * Regenerates the file FROM SOURCE (real class scan + real Tailwind
  * compile — see `class-scan.ts`/`generate.ts`) and diffs it against what is
  * actually committed, so a hand-edit or a forgotten regeneration after an
- * atom's classes change is caught rather than silently trusted.
+ * component's classes change is caught rather than silently trusted.
  */
 
 import { readFileSync } from "node:fs";
@@ -15,7 +15,7 @@ import { scanCompiledCssSources } from "./scan-sources.js";
 import { generateCompiledCss } from "./generate.js";
 
 export interface CheckCompiledCssOptions {
-  /** This package's own root directory (holds `styles/` and `src/atoms/`). */
+  /** This package's own root directory (holds `styles/` and `src/components/`). */
   packageRoot: string;
 }
 

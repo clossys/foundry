@@ -2,8 +2,8 @@ import { ItemRenderer } from "./render.js";
 import { renderNavItems } from "./ItemsStatic.js";
 import type { ReactNode } from "react";
 import type { NavGridItem, NavGridProps } from "../NavGrid.js";
-import { cx } from "../../atoms/internal/cx.js";
-import { UI_LAYOUT_TAP_TARGET } from "../../atoms/internal/ui-vars.js";
+import { cx } from "../../components/internal/cx.js";
+import { UI_LAYOUT_TAP_TARGET } from "../../components/internal/ui-vars.js";
 import { assertNoNestedInteractive, cardLinkContainerClassName, hasInteractiveContent } from "../stretched-link.js";
 type LinkedNavItem = Extract<NavGridItem, { href: string }>;
 /** A linked tile's container: the tile is the hit area and carries the ring; tiles sit on the base ground. */
@@ -45,7 +45,7 @@ function LinkedCard({ item }: { item: LinkedNavItem }) {
  * outside the anchor. Previously accepted interactive descriptions use a
  * separate title link without a stretched overlay, keeping their controls
  * operable; linked titles and icons require noninteractive content.
- * An item with `onSelect` renders via this package's own `Button` atom (`variant="ghost"`), with `icon`, `title` and
+ * An item with `onSelect` renders via this package's own `Button` component (`variant="ghost"`), with `icon`, `title` and
  * `description` inside the one `<button>`, so the whole tile is the target.
  * `href`/`onSelect` are mutually exclusive at the type level (`href?:
  * never` on the `onSelect` branch and vice versa) rather than both being

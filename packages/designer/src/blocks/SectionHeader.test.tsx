@@ -78,3 +78,95 @@ describe("SectionHeader", () => {
     expect(root.style.marginTop).toBe("8px");
   });
 });
+
+// S4-1: source capabilities remain independent of document outline.
+describe("S4-1 shared header capabilities", () => {
+  it.each([2, 3, 4, 5, 6] as const)("keeps semantic rank %s at every density", level => {
+    for (const density of ["compact", "standard", "display"] as const) {
+      const view = render(<SectionHeader title="Heading" level={level} density={density} />);
+      expect(view.container.querySelector(`h${level}`)).toHaveTextContent("Heading");
+      expect(view.container.querySelectorAll("h1,h2,h3,h4,h5,h6")).toHaveLength(1);
+      view.unmount();
+    }
+  });
+
+  it("preserves exact compact default markup", () => {
+    const { container } = render(<SectionHeader title="Title" eyebrow="Label" description="Support" actions={<button>Action</button>} />);
+    expect(container.innerHTML).toBe('<div class="flex flex-col gap-xs"><p class="text-caption uppercase tracking-label text-ink-muted">Label</p><div class="flex flex-wrap items-start justify-between gap-md"><div class="flex flex-col gap-xs"><h2 class="text-h3 font-display text-ink-primary">Title</h2><p class="text-body text-ink-secondary">Support</p></div><div class="flex items-center gap-sm"><button>Action</button></div></div></div>');
+  });
+
+  it.each([0, "", null, undefined, false])("retains a real heading for explicit title %s", title => {
+    const { container } = render(<SectionHeader title={title} />);
+    expect(container.querySelectorAll("h2")).toHaveLength(1);
+    expect(container.querySelector("h2")?.textContent).toBe(title === 0 ? "0" : "");
+  });
+
+  it("omits an omitted title and flattens standard supporting copy", () => {
+    const { container } = render(<SectionHeader density="standard" eyebrow="Label" description="Support" />);
+    expect(container.querySelector("h1,h2,h3,h4,h5,h6")).toBeNull();
+    expect(Array.from(container.firstElementChild!.children).map(node => node.textContent)).toEqual(["Label", "Support"]);
+  });
+
+  it.each(["base", "sunken", "inverse"] as const)("selects %s inks without painting a surface", ground => {
+    for (const density of ["compact", "standard", "display"] as const) {
+      const view = render(<SectionHeader title="Title" eyebrow="Label" description="Support" density={density} ground={ground} />);
+      const root = view.container.firstElementChild!;
+      expect(root.querySelector("h2")).toHaveClass(ground === "inverse" ? "text-ink-on-inverse" : "text-ink-primary");
+      expect(root.querySelector("h2")?.className).toContain(density === "display" ? "text-display-m" : density === "standard" ? "text-h2" : "text-h3");
+      expect(root.lastElementChild?.textContent).toContain("Support");
+      expect(root.querySelectorAll('[class*="bg-surface"]')).toHaveLength(0);
+      expect(root.className).not.toContain("bg-");
+      const label = view.getByText("Label");
+      expect(label).toHaveClass(density === "display" ? ground === "inverse" ? "text-accent-on-inverse" : "text-accent-text" : ground === "inverse" ? "text-ink-on-inverse-muted" : "text-ink-muted");
+      expect(view.getByText("Support")).toHaveClass(ground === "inverse" ? "text-ink-on-inverse-muted" : "text-ink-secondary");
+      view.unmount();
+    }
+  });
+
+  it("centers standard actions below the text and keeps titleless start actions trailing", () => {
+    const view = render(<SectionHeader density="standard" align="center" title="Title" actions={<button>Act</button>} />);
+    const root = view.container.firstElementChild!;
+    expect(root).toHaveClass("items-center", "text-center");
+    expect(root.querySelector("h2")?.parentElement).not.toBe(view.getByRole("button").parentElement);
+    expect(view.getByRole("button").parentElement).toHaveClass("justify-center");
+    view.rerender(<SectionHeader density="standard" actions={<button>Act</button>} />);
+    expect(view.container.querySelector("h2")).toBeNull();
+    expect(view.getByRole("button").parentElement).toHaveClass("ms-auto");
+    expect(view.getByRole("button").parentElement?.parentElement?.children).toHaveLength(1);
+  });
+
+  it("keeps display rhythm and actions below supporting copy", () => {
+    const { container } = render(<SectionHeader density="display" eyebrow="Label" title="Title" description="Support" actions={<button>Act</button>} />);
+    const root = container.firstElementChild!;
+    expect(Array.from(root.children).map(node => node.textContent)).toEqual(["Label", "Title", "Support", "Act"]);
+    expect(root.children[1]).toHaveClass("mt-sm", "leading-display", "text-balance", "tablet:text-display-l");
+    expect(root.children[2]).toHaveClass("mt-2xl", "text-body-l", "text-pretty");
+    expect(root.children[3]).toHaveClass("mt-3xl");
+  });
+
+  it("forwards root attributes and events, and merges the FAQ title hook last", () => {
+    let clicks = 0;
+    const { container } = render(<SectionHeader id="header" dir="rtl" role="group" aria-label="Region" data-host="yes" onClick={() => clicks++} title="Title" titleClassName="leading-heading text-h2" className="gap-lg" style={{ marginTop: 7 }} />);
+    const root = container.firstElementChild as HTMLElement;
+    expect(root.tagName).toBe("DIV");
+    expect(root).toHaveAttribute("id", "header");
+    expect(root).toHaveAttribute("dir", "rtl");
+    expect(root).toHaveAttribute("data-host", "yes");
+    expect(root).toHaveAttribute("aria-label", "Region");
+    expect(root).toHaveAttribute("role", "group");
+    expect(root.style.marginTop).toBe("7px");
+    root.click(); expect(clicks).toBe(1);
+    expect(root).toHaveClass("gap-lg");
+    expect(root.querySelector("h2")).toHaveClass("leading-heading", "text-h2");
+    expect(root.querySelector("h2")).not.toHaveClass("text-h3");
+  });
+});
+
+it("S4-1 preserves three supplied actions and an empty compact description-only region", () => {
+  const view = render(<SectionHeader density="standard" title="Title" description="Support" actions={<><button>A</button><button>B</button><button>C</button></>} />);
+  expect(view.getAllByRole("button")).toHaveLength(3);
+  expect(view.getByRole("heading").parentElement?.nextElementSibling).toBe(view.getByRole("button", { name: "A" }).parentElement);
+  view.rerender(<SectionHeader description="Support" />);
+  expect(view.queryByRole("heading")).toBeNull();
+  expect(view.getByText("Support")).toBeInTheDocument();
+});

@@ -1,8 +1,8 @@
 import { useId, type CSSProperties, type ReactNode } from "react";
-import { Icon } from "../atoms/Icon.js";
+import { Icon } from "../components/Icon.js";
 import { Check } from "../icons/Check.js";
-import { Button } from "../atoms/Button.js";
-import { cx } from "../atoms/internal/cx.js";
+import { Button } from "../components/Button.js";
+import { cx } from "../components/internal/cx.js";
 
 /** Card choices: full-width cells of a two-column grid, current-colour edge, no fill; labels may wrap. */
 const CARD_CHOICE_CLASS = "w-full min-w-0 border border-current bg-transparent font-medium text-center whitespace-normal";

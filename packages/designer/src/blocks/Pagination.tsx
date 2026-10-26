@@ -1,7 +1,7 @@
 import type { CSSProperties, HTMLAttributes } from "react";
-import { Button } from "../atoms/Button.js";
-import { Select } from "../atoms/Select.js";
-import { cx } from "../atoms/internal/cx.js";
+import { Button } from "../components/Button.js";
+import { Select } from "../components/Select.js";
+import { cx } from "../components/internal/cx.js";
 
 export interface PaginationProps extends Omit<HTMLAttributes<HTMLElement>, "onChange"> {
   /** The current page, 1-indexed. */
@@ -102,7 +102,7 @@ function buildPageItems(page: number, pageCount: number, siblingCount: number): 
  *
  * Wrapped in a `<nav>` landmark (real navigation, not a generic list), the
  * current page carries `aria-current="page"`, and every control is a real
- * `<button>` (via this package's own `Button` atom) rather than an anchor
+ * `<button>` (via this package's own `Button` component) rather than an anchor
  * styled to look pressable — there is nowhere for a page control to
  * navigate to as a URL in a controlled component like this one, so a link
  * would be the wrong element regardless of styling.

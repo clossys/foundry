@@ -1,0 +1,137 @@
+import { instanceBodyFindings } from "./instance-body.js";
+import { registeredRouteLifecycleStatus } from "./route-lifecycle.js";
+import type { RegisteredRouteLifecycleEvidence, RegisteredRouteNodeCurrentContext } from "./route-lifecycle.js";
+import type { FramePageHeader } from "@clossys/designer/shell";
+import type { InstanceBinding, InstanceRegistries } from "./instance-binding.js";
+import type { PublisherPlanDraft, PublisherPlanItem } from "../planning/plan.js";
+import type { PublisherPlanVersion } from "../planning/change-set.js";
+import type { PublisherChannelId } from "../planning/channel-ids.js";
+import { PUBLISHER_CHANNELS } from "../planning/channel-ids.js";
+import { createPublisherPlanDraft } from "../planning/plan.js";
+import { canonicalPlanJson, sha256 } from "../planning/digest.js";
+
+/** Public source identity. Relative to the adopting consumer, never an executable callback. */
+export interface RouteSourceExport { readonly file: string; readonly export: string }
+export interface RouteRegistration {
+  readonly routeId: string;
+  readonly path: string;
+  readonly title: string;
+  readonly channel: PublisherChannelId;
+  /** Home identity references this one registry; href is derived from that row. */
+  readonly brand: { readonly homeRouteId: string; readonly label: string };
+  readonly entry: RouteSourceExport;
+  readonly planItemId: PublisherPlanItem["id"];
+  readonly composition: {
+    /** The existing Publisher assembly is the only Frame/Section authority. */
+    readonly binding: InstanceBinding;
+    readonly source: RouteSourceExport;
+    /** Narrow host state/library hook; its result contains no page body. */
+    readonly runtime: RouteSourceExport;
+    readonly header: {
+      readonly id: string;
+      readonly data: Omit<FramePageHeader, "actions">;
+      /** A typed client action implementation; never a page body. */
+      readonly actions?: RouteSourceExport;
+    };
+  };
+}
+export interface RouteRegistry { readonly version: 1; readonly consumer: string; readonly routes: readonly RouteRegistration[] }
+export interface RouteRegistryFinding { readonly routeId: string; readonly path: string; readonly message: string }
+export interface RegisteredRouteRow {
+  readonly registration: RouteRegistration;
+  readonly item?: PublisherPlanItem;
+  readonly owner?: { readonly packId: string; readonly milestone: string; readonly answerIds: readonly string[] };
+  readonly frame: InstanceBinding["frame"];
+  readonly substrate?: NonNullable<InstanceBinding["body"]>["kind"];
+  readonly body?: InstanceBinding["body"];
+  readonly sections: readonly { readonly path: string; readonly fill: InstanceBinding["fills"][string][number] }[];
+  readonly status: "planned" | "built" | "reviewed";
+  readonly pending: readonly string[];
+  readonly findings: readonly RouteRegistryFinding[];
+}
+export interface RouteRegistryProjection { readonly rows: readonly RegisteredRouteRow[]; readonly findings: readonly RouteRegistryFinding[] }
+const text = (v: unknown): v is string => typeof v === "string" && v.trim().length > 0;
+const only = (v: object, keys: readonly string[]) => Object.keys(v).every(k => keys.includes(k));
+export const routeSourcePath = (v: string): boolean => text(v) && !v.includes("\\") && !v.startsWith("/") && !v.split("/").some(p => !p || p === "." || p === "..");
+function source(v: RouteSourceExport): boolean { return !!v && only(v, ["file", "export"]) && routeSourcePath(v.file) && /^[A-Za-z_$][\w$]*$/.test(v.export); }
+export function routeCompositionDigest(registration: RouteRegistration): `sha256:${string}` {
+  return `sha256:${sha256(canonicalPlanJson(registration))}`;
+}
+/** Every displayed identity is joined from the plan, never copied into a route-owned status record.
+ * Static registration establishes no runtime, generated-artifact or review clearance. */
+export function projectRouteRegistry(registry: RouteRegistry, plan: PublisherPlanDraft | PublisherPlanVersion | undefined, registries: InstanceRegistries, evidence: Readonly<Record<string, RegisteredRouteLifecycleEvidence>> = {}, currentByRoute: Readonly<Record<string, RegisteredRouteNodeCurrentContext>> = {}): RouteRegistryProjection {
+  const findings: RouteRegistryFinding[] = [];
+  const add = (routeId: string, path: string, message: string) => findings.push({ routeId, path, message });
+  if (!registry || !only(registry, ["version", "consumer", "routes"]) || registry.version !== 1 || !text(registry.consumer) || !Array.isArray(registry.routes)) return { rows: [], findings: [{ routeId: "", path: "registry", message: "A versioned consumer route registry is required" }] };
+  let validPlan = false, aligned = false;
+  if (plan) {
+    try {
+      const { digest: _digest, ...draft } = plan as PublisherPlanVersion;
+      const normalized = createPublisherPlanDraft({ ...draft, status: "draft" }, registries);
+      validPlan = true;
+      aligned = plan.status === "aligned" && plan.digest === `sha256:${sha256(canonicalPlanJson(normalized))}`;
+      if (plan.status === "aligned" && !aligned) add("", "plan", "Aligned plan digest is stale");
+    } catch { add("", "plan", "Publisher plan is invalid"); }
+  }
+  const owners = validPlan ? plan!.milestones.flatMap(m => m.packs.flatMap(p => p.items.map(item => ({ item, milestone: m.id, packId: p.id })))) : [];
+  const ids = new Set<string>(), paths = new Set<string>(), entries = new Set<string>(), bindings = new Set<string>(), headers = new Set<string>();
+  const rows = registry.routes.map((route: RouteRegistration) => {
+    const at = findings.length;
+    try {
+      if (!only(route, ["routeId", "path", "title", "channel", "brand", "entry", "planItemId", "composition"]) || !text(route.routeId) || !text(route.title) || !text(route.planItemId) || !PUBLISHER_CHANNELS.some(c => c.id === route.channel)) add(route.routeId, "route", "Unknown route fields or identity/channel");
+      if (!registeredRouteBrandLink(registry, route)) add(route.routeId, "brand", "Brand requires one exact registered home route and accessible label");
+      if (ids.has(route.routeId)) add(route.routeId, "routeId", "Duplicate route identity"); ids.add(route.routeId);
+      if (!/^\/(?:[^/?#\\]+\/?)*$/.test(route.path) || route.path.includes("//") || route.path.split("/").some(p => p === "." || p === "..")) add(route.routeId, "path", "Canonical absolute route path required");
+      const normalized = route.path.replace(/\/$/, "") || "/";
+      if (route.path !== normalized || route.path.includes("%")) add(route.routeId, "path", "Route path must use its canonical unencoded form");
+      if (paths.has(normalized)) add(route.routeId, "path", "Duplicate route path"); paths.add(normalized);
+      if (!source(route.entry)) add(route.routeId, "entry", "Consumer-relative entry export required");
+      const entry = canonicalPlanJson(route.entry); if (entries.has(entry)) add(route.routeId, "entry", "Duplicate executable entry"); entries.add(entry);
+      const c = route.composition, b = c.binding;
+      for (const message of instanceBodyFindings(b, registries)) add(route.routeId, "composition.binding.body", message);
+      if (!only(c, ["binding", "source", "runtime", "header"]) || !source(c.source) || !source(c.runtime)) add(route.routeId, "composition", "Canonical composition source required");
+      if (bindings.has(b.instanceId)) add(route.routeId, "composition.binding", "Composition belongs to more than one route"); bindings.add(b.instanceId);
+      if (b.path !== route.path || b.context.consumer !== registry.consumer) add(route.routeId, "composition.binding", "Path or consumer differs from the bound instance");
+      if (!only(c.header, ["id", "data", "actions"]) || !text(c.header.id) || c.header.data.title !== route.title || !only(c.header.data, ["title", "nav"]) || c.header.actions && !source(c.header.actions)) add(route.routeId, "composition.header", "Header lease identity/title or action source differs");
+      const nav = c.header.data.nav;
+      if (nav && (!only(nav, ["label", "items", "activeId"]) || !text(nav.label) || !Array.isArray(nav.items) || !nav.items.length || nav.items.some((item: { id: string; label: string; href: string }) => !only(item, ["id", "label", "href"]) || !text(item.id) || !text(item.label) || !text(item.href)) || new Set(nav.items.map((item: { id: string }) => item.id)).size !== nav.items.length || !nav.items.some((item: { id: string; label: string; href: string }) => item.id === nav.activeId))) add(route.routeId, "composition.header.data.nav", "Header navigation must identify one active unique destination");
+      if (headers.has(c.header.id)) add(route.routeId, "composition.header.id", "Duplicate header lease identity"); headers.add(c.header.id);
+      const matches = owners.filter(row => row.item.id === route.planItemId);
+      if (matches.length !== 1 || matches[0]!.item.appRouteId !== route.routeId || owners.filter(row => row.item.appRouteId === route.routeId).length !== 1) add(route.routeId, "planItemId", "Route must join exactly one unchanged plan item/appRouteId");
+      const owner = matches.length === 1 ? matches[0] : undefined;
+      if (owner && (!b.packIds.includes(owner.packId) || owner.item.frame && (owner.item.frame.leaf !== b.frame.leaf || owner.item.frame.config !== b.frame.config) || owner.item.layout && (owner.item.layout.leaf !== b.layout?.leaf || owner.item.layout.config !== b.layout?.config))) add(route.routeId, "composition.binding", "Binding disagrees with plan owner/frame/layout");
+      const sections = [...Object.entries(b.fills).flatMap(([slot, fills]) => fills.map((fill, index) => ({ path: `fills.${slot}.${index}`, fill }))), ...Object.entries(b.frame.slotFills ?? {}).map(([slot, fill]) => ({ path: `frame.slotFills.${slot}`, fill }))];
+      const pending = [...(!validPlan ? ["Valid Publisher plan unavailable"] : []), ...(!aligned ? ["Exact plan alignment pending"] : []), ...(owner?.item.openNeeds.map(n => `${n.slot}: ${n.question}`) ?? []), "Exact selected consumer runtime assembly pending", "Deterministic generated entry/source closure pending", "Real Frame/provider and whole-instance runtime evidence pending", "Exact artifact review evidence pending"];
+      const artifact = evidence[route.routeId];
+      const status = validPlan && aligned && owner && !owner.item.openNeeds.length && findings.length === at && artifact?.source.planDigest === (plan as PublisherPlanVersion)?.digest ? registeredRouteLifecycleStatus(registry, route, artifact, currentByRoute[route.routeId]) : "planned";
+      const stillPending = status === "planned" ? pending : status === "built" ? ["Exact artifact review evidence pending"] : [];
+      return { registration: route, item: owner?.item, owner: owner ? { packId: owner.packId, milestone: owner.milestone, answerIds: owner.item.answerIds } : undefined, frame: b.frame, substrate: b.body?.kind, body: b.body, sections, status, pending: stillPending, findings: findings.slice(at) };
+    } catch { add(route?.routeId ?? "", "composition", "Malformed route composition"); return { registration: route, frame: route?.composition?.binding?.frame, sections: [], status: "planned" as const, pending: ["Valid route composition required"], findings: findings.slice(at) }; }
+  });
+  return { rows, findings };
+}
+/** The Admin tab consumes this projection directly; no built-in route identities exist here. */
+export function registeredRoutesForChannel(projection: RouteRegistryProjection, channel: PublisherChannelId): readonly RegisteredRouteRow[] { return projection.rows.filter(row => row.registration.channel === channel); }
+/** Audience never implies a different Frame leaf. Compare to the exact registered binding. */
+export function registeredRouteFrameFinding(projection: RouteRegistryProjection | undefined, routeId: string | undefined, binding: InstanceBinding | undefined): string | undefined {
+  const rows = projection?.rows.filter(row => row.registration.routeId === routeId) ?? [];
+  if (rows.length !== 1) return "Exact registered route composition is unavailable";
+  if (!binding) return "Adopted route binding is unavailable";
+  const expected = rows[0]!.registration.composition.binding;
+  if (binding.instanceId !== expected.instanceId || binding.path !== expected.path || binding.frame.leaf !== expected.frame.leaf || binding.frame.config !== expected.frame.config) return "Supplied route binding differs from its registered Frame composition";
+  if (rows[0]!.findings.length) return "Registered route composition has unresolved findings";
+  return undefined;
+}
+
+/** Reordering rows never changes a declared home destination. */
+export function registeredRouteBrandLink(registry: RouteRegistry, route: RouteRegistration): { readonly href: string; readonly label: string } | undefined {
+  const brand = route.brand;
+  if (!brand || !only(brand, ["homeRouteId", "label"]) || !text(brand.homeRouteId) || !text(brand.label)) return undefined;
+  const home = registry.routes.filter(row => row.routeId === brand.homeRouteId);
+  if (home.length !== 1) return undefined;
+  const target = home[0]!;
+  if (!text(target.path) || !/^\/(?:[^/?#\\]+\/?)*$/.test(target.path) || target.path.includes("//") || target.path.includes("%") || target.path.split("/").some(part => part === "." || part === "..") || target.path !== (target.path.replace(/\/$/, "") || "/") || target.composition?.binding?.context?.consumer !== registry.consumer || target.composition.binding.path !== target.path) return undefined;
+  return { href: home[0]!.path, label: brand.label };
+}
+
+export function routeRegistryDigest(registry: RouteRegistry): `sha256:${string}` { return `sha256:${sha256(canonicalPlanJson(registry))}`; }

@@ -1,0 +1,182 @@
+{
+  "id": "rac-starter-rewrite@1",
+  "pin": {
+    "url": "https://github.com/adobe/react-spectrum",
+    "commit": "4dd44e0f400636a87a9ad4390903e78c5ae6113c",
+    "files": [
+      {
+        "path": "LICENSE",
+        "sha256": "7dfe6526888bac51759c99f9a51262ba2711a8c12a067f2181609dd9a4066b84"
+      },
+      {
+        "path": "starters/tailwind/package.json",
+        "sha256": "958aa1f722e1ccc670089376c82a8c730e0fbcc28ba7dc225c5fa4664d387923"
+      },
+      {
+        "path": "starters/tailwind/src/Checkbox.tsx",
+        "sha256": "e246f1313c87eb4c1081af40de300d556c299be40c11ac1b128933ea5bf5bcd2"
+      },
+      {
+        "path": "starters/tailwind/src/ColorArea.tsx",
+        "sha256": "44a04c1e0ba61dce9d6c4ffd87768bfd06ae733277f7265a7d7b008c45b8ef60"
+      },
+      {
+        "path": "starters/tailwind/src/ColorField.tsx",
+        "sha256": "d76e4da662a1e087795928eb85775a8e52bb4bb009336b263f1f4a5f2c8c88c4"
+      },
+      {
+        "path": "starters/tailwind/src/ColorPicker.tsx",
+        "sha256": "494f756579492e16c4580726de087c6e6a4826acc5f3ee453ee1fb5faeaec243"
+      },
+      {
+        "path": "starters/tailwind/src/ColorSlider.tsx",
+        "sha256": "098ae73c7d3c60bdc7ace0648cc7d4dacc583cf5006c97d9357e5cfdbbebeb9e"
+      },
+      {
+        "path": "starters/tailwind/src/ColorSwatch.tsx",
+        "sha256": "ebef98ca4eb5cd28f1b4f8bbeca634f987fa4b1648146eabad6531ed4e7f8854"
+      },
+      {
+        "path": "starters/tailwind/src/ColorSwatchPicker.tsx",
+        "sha256": "4186ff2d2f27ce838a05c2304a19a4a9bbcb8754e5a943d18099efc6a70ed914"
+      },
+      {
+        "path": "starters/tailwind/src/ColorThumb.tsx",
+        "sha256": "2c8ed6f3193adf1a57560e088da4cad3b6372c578580951ffe904d7790b1e33a"
+      },
+      {
+        "path": "starters/tailwind/src/ColorWheel.tsx",
+        "sha256": "fca093a3a8173a4b8b4e0c65575d0dbcf26778c6a8a5dad5bde4b25be9692c15"
+      },
+      {
+        "path": "starters/tailwind/src/Dialog.tsx",
+        "sha256": "cae9cef47ed90be73b90093a0198b12bd127325ac1f45f3b0c7ceeaedd45d3e5"
+      },
+      {
+        "path": "starters/tailwind/src/Field.tsx",
+        "sha256": "c10b6a235cd27a7cbf9b9004e5f926797ea5005649662e66bf7c53009d3a43fd"
+      },
+      {
+        "path": "starters/tailwind/src/Form.tsx",
+        "sha256": "956d5378b1f2f5add5cd417d9497748d1deff680e7f84657868d9e938582c9d4"
+      },
+      {
+        "path": "starters/tailwind/src/NavigationTree.tsx",
+        "sha256": "d5e05dc5571b0671c27772d73db04dc883e03356c5a000dd1709d7eb1ef59e89"
+      },
+      {
+        "path": "starters/tailwind/src/NumberField.tsx",
+        "sha256": "5e3d3fe1115903c6b3e4354ef32b94bdd7409679edc5f8ab1551690e38b43531"
+      },
+      {
+        "path": "starters/tailwind/src/Popover.tsx",
+        "sha256": "a3cc4e1b7007d73ad98f75c2ece95cb985768c5d0f8c76307e72c64154f6bf6b"
+      },
+      {
+        "path": "starters/tailwind/src/TagGroup.tsx",
+        "sha256": "83d830348730bfebefa5e2cc9f4314bb32d4f79d8caab891e20a57861d4fa711"
+      },
+      {
+        "path": "starters/tailwind/src/Toolbar.tsx",
+        "sha256": "82e38d4f71deb9a81ac3522bc6209ce7c4856cdf801078b67f3f1348e86e0c56"
+      },
+      {
+        "path": "starters/tailwind/src/Tree.tsx",
+        "sha256": "e04078a83834b50206d2c6c9b0c35cf87346ede97be2e60ba724b5c8943246fe"
+      },
+      {
+        "path": "starters/tailwind/src/utils.ts",
+        "sha256": "cc6475f2c16a751a2193adcf04e4943aa75fe4947eb2b3cb2c3a4846cea18e4b"
+      }
+    ]
+  },
+  "notice": "notices/rac-starter-LICENSE.txt",
+  "upstreamNotice": "absent-at-pinned-commit",
+  "entries": {
+    "color-picker": "ColorPicker",
+    "form": "Form",
+    "navigation-tree": "NavigationTree",
+    "number-field": "NumberField",
+    "tag-group": "TagGroup",
+    "toolbar": "Toolbar",
+    "tree": "Tree"
+  },
+  "closures": {
+    "color-picker": [
+      "starters/tailwind/src/ColorArea.tsx",
+      "starters/tailwind/src/ColorField.tsx",
+      "starters/tailwind/src/ColorPicker.tsx",
+      "starters/tailwind/src/ColorSlider.tsx",
+      "starters/tailwind/src/ColorSwatch.tsx",
+      "starters/tailwind/src/ColorSwatchPicker.tsx",
+      "starters/tailwind/src/ColorThumb.tsx",
+      "starters/tailwind/src/ColorWheel.tsx",
+      "starters/tailwind/src/Dialog.tsx",
+      "starters/tailwind/src/Field.tsx",
+      "starters/tailwind/src/Popover.tsx",
+      "starters/tailwind/src/utils.ts",
+      "LICENSE",
+      "starters/tailwind/package.json"
+    ],
+    "form": [
+      "starters/tailwind/src/Form.tsx",
+      "LICENSE",
+      "starters/tailwind/package.json"
+    ],
+    "navigation-tree": [
+      "starters/tailwind/src/NavigationTree.tsx",
+      "starters/tailwind/src/utils.ts",
+      "LICENSE",
+      "starters/tailwind/package.json"
+    ],
+    "number-field": [
+      "starters/tailwind/src/Field.tsx",
+      "starters/tailwind/src/NumberField.tsx",
+      "starters/tailwind/src/utils.ts",
+      "LICENSE",
+      "starters/tailwind/package.json"
+    ],
+    "tag-group": [
+      "starters/tailwind/src/Field.tsx",
+      "starters/tailwind/src/TagGroup.tsx",
+      "starters/tailwind/src/utils.ts",
+      "LICENSE",
+      "starters/tailwind/package.json"
+    ],
+    "toolbar": [
+      "starters/tailwind/src/Toolbar.tsx",
+      "LICENSE",
+      "starters/tailwind/package.json"
+    ],
+    "tree": [
+      "starters/tailwind/src/Checkbox.tsx",
+      "starters/tailwind/src/Field.tsx",
+      "starters/tailwind/src/Tree.tsx",
+      "starters/tailwind/src/utils.ts",
+      "LICENSE",
+      "starters/tailwind/package.json"
+    ]
+  },
+  "dependencies": [
+    {
+      "name": "react",
+      "version": "19.3.0",
+      "license": "MIT"
+    },
+    {
+      "name": "react-aria-components",
+      "version": "1.21.1",
+      "license": "Apache-2.0"
+    },
+    {
+      "name": "class-variance-authority",
+      "version": "0.7.1",
+      "license": "Apache-2.0"
+    },
+    {
+      "name": "tailwind-merge",
+      "version": "3.7.0",
+      "license": "MIT"
+    }
+  ]
+}

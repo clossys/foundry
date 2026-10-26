@@ -1,0 +1,99 @@
+{
+  "$extensions": {
+    "com.clossys.fill": {
+      "author": "foundry",
+      "builtOn": [],
+      "conforms": [],
+      "evidence": [],
+      "id": "foundry/components.link",
+      "license": "MIT",
+      "mode": "implementation",
+      "pin": {
+        "export": "./components#Link",
+        "package": "@clossys/designer",
+        "version": "0.12.0"
+      },
+      "relation": "same-contract",
+      "slot": "components.link",
+      "source": "foundry",
+      "sourceAddress": "./components#Link",
+      "status": "draft",
+      "trust": "foundry"
+    }
+  },
+  "components": {
+    "link": {
+      "composes": [],
+      "deps": [
+        {
+          "license": "MIT",
+          "name": "react",
+          "version": ">=18"
+        },
+        {
+          "license": "MIT",
+          "name": "tailwind-merge",
+          "version": "^3.7.0"
+        },
+        {
+          "license": "Apache-2.0",
+          "name": "react-aria-components",
+          "version": "^1.19.0"
+        }
+      ],
+      "impl": {
+        "export": "Link",
+        "kind": "package",
+        "module": "@clossys/designer/components"
+      },
+      "license": "MIT",
+      "members": [
+        "appearance.button",
+        "appearance.inline"
+      ],
+      "pin": {
+        "export": "./components#Link",
+        "package": "@clossys/designer",
+        "version": "0.12.0"
+      },
+      "propMap": {
+        "appearance.button": "./components#Link.buttonVariant",
+        "appearance.inline": "./components#Link.variant=default"
+      },
+      "props": [
+        "buttonSize",
+        "buttonVariant",
+        "children",
+        "className",
+        "href",
+        "variant"
+      ],
+      "reads": {
+        "assets": [],
+        "components": [],
+        "tokens": [
+          "tokens.accent-color",
+          "tokens.action-color",
+          "tokens.body-size",
+          "tokens.border-color",
+          "tokens.control-color",
+          "tokens.control-radius",
+          "tokens.easing",
+          "tokens.focus-color",
+          "tokens.focus-outline",
+          "tokens.focus-shadow",
+          "tokens.radius",
+          "tokens.spacing",
+          "tokens.state-opacity",
+          "tokens.status-color",
+          "tokens.surface-color",
+          "tokens.text-color",
+          "tokens.typeface"
+        ]
+      },
+      "root": "rac:Link",
+      "slot": "components.link",
+      "source": "foundry"
+    }
+  }
+}

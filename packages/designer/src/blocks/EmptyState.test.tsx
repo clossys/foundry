@@ -1,3 +1,4 @@
+import { renderToStaticMarkup as renderS4Server } from "react-dom/server";
 import { describe, expect, it } from "vitest";
 import { render, screen } from "@testing-library/react";
 import { EmptyState } from "./EmptyState.js";
@@ -61,4 +62,25 @@ describe("EmptyState", () => {
     );
     expect(screen.getByRole("heading")).toHaveTextContent("No prompts yet");
   });
+});
+
+it("S4-3 keeps icon, centered shared title, and recovery action in reading order on the original root", () => {
+  let clicks = 0;
+  const { container } = render(<EmptyState id="empty" dir="rtl" data-host="empty" style={{ marginTop: 9 }} onClick={() => clicks++} icon={<span>Icon</span>} title="Title" description="Support" action={<button>Recover</button>} />);
+  const root = container.firstElementChild as HTMLElement;
+  expect(root.tagName).toBe("DIV");
+  expect(root).toHaveAttribute("id", "empty");
+  expect(root).toHaveAttribute("dir", "rtl");
+  expect(root.style.marginTop).toBe("9px");
+  expect(Array.from(root.children).map(n => n.textContent)).toEqual(["Icon", "TitleSupport", "Recover"]);
+  expect(root.children[1]).toHaveClass("items-center", "text-center");
+  expect(root.children[2]).toHaveClass("mt-sm");
+  expect(root.querySelectorAll("#empty")).toHaveLength(0);
+  root.click(); expect(clicks).toBe(1);
+});
+
+it("S4 server-renders the supplied title through the real shared Header", () => {
+  const markup = renderS4Server(<EmptyState title="Title" description="Support" />);
+  expect(markup).toContain("<h2");
+  expect(markup).toContain("Title</h2>");
 });

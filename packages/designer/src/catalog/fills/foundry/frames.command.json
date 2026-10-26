@@ -1,0 +1,49 @@
+{
+  "$extensions": {
+    "com.clossys.fill": {
+      "author": "foundry",
+      "builtOn": [],
+      "conforms": [],
+      "evidence": [],
+      "id": "foundry/frames.command",
+      "license": "MIT",
+      "mode": "implementation",
+      "pin": {
+        "export": "./blocks#CommandMenu",
+        "package": "@clossys/designer",
+        "version": "0.12.0"
+      },
+      "relation": "subset",
+      "slot": "frames.command",
+      "source": "foundry",
+      "sourceAddress": "./blocks#CommandMenu",
+      "status": "draft",
+      "trust": "foundry",
+      "unmapped": [
+        "shortcut.off",
+        "shortcut.on",
+        "slot.search"
+      ]
+    }
+  },
+  "frames": {
+    "command": {
+      "impl": {
+        "export": "CommandMenu",
+        "kind": "package",
+        "module": "@clossys/designer/blocks"
+      },
+      "members": [],
+      "propMap": {},
+      "slot": "frames.command",
+      "slots": {
+        "empty": "emptyMessage",
+        "groups": "groups"
+      },
+      "statePorts": {
+        "open": "isOpen/onOpenChange",
+        "query": "query/onQueryChange"
+      }
+    }
+  }
+}

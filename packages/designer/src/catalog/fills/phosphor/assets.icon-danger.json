@@ -1,0 +1,63 @@
+{
+  "$extensions": {
+    "com.clossys.fill": {
+      "id": "phosphor/assets.icon-danger",
+      "slot": "assets.icon-danger",
+      "source": "phosphor",
+      "mode": "implementation",
+      "sourceAddress": "https://raw.githubusercontent.com/phosphor-icons/core/fe23e2534cdb7bec24bd8e6bd99b3676bcf0d54f/raw/regular/x-circle.svg",
+      "relation": "same-contract",
+      "builtOn": [],
+      "conforms": [],
+      "evidence": [],
+      "author": "third-party",
+      "trust": "pinned-upstream",
+      "license": "MIT",
+      "pin": {
+        "url": "https://raw.githubusercontent.com/phosphor-icons/core/fe23e2534cdb7bec24bd8e6bd99b3676bcf0d54f/raw/regular/x-circle.svg",
+        "commit": "fe23e2534cdb7bec24bd8e6bd99b3676bcf0d54f",
+        "sha256": "e86aa8fd698bc2e4946b46d2b4e6b4e84bec89991961484ed5aa12eaba83ccdf"
+      },
+      "status": "draft",
+      "reads": {
+        "tokens": [],
+        "assets": []
+      }
+    }
+  },
+  "assets": {
+    "icon-danger": {
+      "default": {
+        "$type": "glyph",
+        "$value": [
+          [
+            "line",
+            {
+              "x1": "15",
+              "y1": "9",
+              "x2": "9",
+              "y2": "15"
+            }
+          ],
+          [
+            "line",
+            {
+              "x1": "9",
+              "y1": "9",
+              "x2": "15",
+              "y2": "15"
+            }
+          ],
+          [
+            "circle",
+            {
+              "cx": "12",
+              "cy": "12",
+              "r": "9"
+            }
+          ]
+        ]
+      }
+    }
+  }
+}

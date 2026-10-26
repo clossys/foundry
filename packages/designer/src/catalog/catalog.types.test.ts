@@ -7,7 +7,7 @@ const GROUP_COUNTS: Record<(typeof CATALOGS)[number]["kind"], readonly [number, 
   tokens: [6, 31],
   assets: [3, 7],
   icons: [2, 11],
-  atoms: [4, 17],
+  components: [4, 17],
   blocks: [5, 33],
 };
 
@@ -65,7 +65,7 @@ describe.each(CATALOGS.map((catalog) => [catalog.kind, catalog] as const))("%s c
 
 describe("catalog entry rules", () => {
   it("covers all five catalogs once", () => {
-    expect(CATALOGS.map((catalog) => catalog.kind)).toEqual(["tokens", "assets", "icons", "atoms", "blocks"]);
+    expect(CATALOGS.map((catalog) => catalog.kind)).toEqual(["tokens", "assets", "icons", "components", "blocks"]);
   });
 
   it("gives every brand-optional token a fallback", () => {
@@ -81,10 +81,10 @@ describe("catalog entry rules", () => {
     expect(chevron?.nodes).toBe(ChevronRight);
   });
 
-  it("keeps parked atoms and parked status in step", () => {
-    for (const atom of CATALOGS[3].entries) {
-      expect(atom.status === "parked", atom.id).toBe(atom.lifecycle === "parked");
-      expect(atom.status === "in-flight", atom.id).toBe(atom.inFlight !== undefined);
+  it("keeps parked components and parked status in step", () => {
+    for (const component of CATALOGS[3].entries) {
+      expect(component.status === "parked", component.id).toBe(component.lifecycle === "parked");
+      expect(component.status === "in-flight", component.id).toBe(component.inFlight !== undefined);
     }
   });
 

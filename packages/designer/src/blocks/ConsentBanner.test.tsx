@@ -342,7 +342,7 @@ describe("ConsentBanner: opaque and responsive", () => {
 
   it("carries no transition or animation classes and no fixed positioning on its own elements", () => {
     const { root } = setup();
-    // The Button atom's own classes are out of scope; check every other element.
+    // The Button component's own classes are out of scope; check every other element.
     const own = [root, ...root.querySelectorAll("*")].filter((el) => el.tagName !== "BUTTON");
     for (const el of own) {
       expect(el.getAttribute("class") ?? "").not.toMatch(

@@ -1,5 +1,5 @@
 import type { CSSProperties, HTMLAttributes, ReactNode } from "react";
-import { mergeUiClasses } from "@clossys/designer/atoms/server";
+import { mergeUiClasses } from "@clossys/designer/components/server";
 import { SiteFooter, SiteHeader } from "@clossys/designer/shell/server";
 import { PAGE_COLUMN_CLASSES, PageLayout, hasContent, pageColumnStyle } from "../internal/PageLayout.js";
 import { siteHeaderPresentation, type SiteChromeGround } from "../internal/viewChromeGround.js";
@@ -207,7 +207,7 @@ export function CaptureView({
       ) : (
         <SiteHeader {...siteHeaderPresentation(chromeGround)} brand={brand} nav={nav} actions={<>{headerSecondaryAction}{headerAction}</>} />
       )}
-      <main id={mainId || undefined} tabIndex={mainId ? -1 : undefined} className={PAGE_COLUMN_CLASSES} style={pageColumnStyle("prose")}>
+      <main id={mainId || undefined} tabIndex={mainId ? -1 : undefined} className={`${PAGE_COLUMN_CLASSES} max-w-[var(--ui-width-prose-max,none)]`}>
         {content}
       </main>
       {footer !== undefined ? footer : <SiteFooter ground={chromeGround} secondary={footerSecondary} />}

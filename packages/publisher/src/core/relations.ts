@@ -10,9 +10,9 @@ export interface RelationIdentity {
   sourceRevision: string;
   context: InstanceBlockBinding["context"];
 }
-export type RelationNodeKind = "assembly" | "instance" | "block" | "atom" | "token";
+export type RelationNodeKind = "assembly" | "instance" | "block" | "component" | "token";
 type BaseNode<Kind extends string> = Kind extends string ? { kind: Kind; key: string; identity: RelationIdentity } : never;
-export type RelationNode = BaseNode<"assembly" | "atom" | "token"> |
+export type RelationNode = BaseNode<"assembly" | "component" | "token"> |
   (BaseNode<"block"> & { roleIdentity?: BlockRoleBindingRefIdentity }) |
   (BaseNode<"instance"> & { binding: InstanceBlockBinding; witness?: { record: WebRolePairEvidence; fresh: WebRolePairEvidence } });
 export type RelationRouteBinding = BaseNode<"route-binding">;
@@ -25,7 +25,7 @@ type Edge<Kind extends string, From extends RelationNodeKind | "route-binding", 
 export type RelationEdge = Edge<"route-instance", "route-binding", "instance"> |
   (Edge<"placement", "assembly", "instance"> & { placementKey: string; location: Readonly<Record<string, string>> }) |
   Edge<"instance-frame" | "instance-view", "instance", "block"> |
-  Edge<"block-block", "block", "block"> | Edge<"block-atom", "block", "atom"> | Edge<"atom-token", "atom", "token">;
+  Edge<"block-block", "block", "block"> | Edge<"block-component", "block", "component"> | Edge<"component-token", "component", "token">;
 export interface RelationsInput {
   nodes: RelationNode[];
   routeBindings: RelationRouteBinding[];
@@ -73,7 +73,7 @@ function freeze<T>(value: T): T {
 const pairs = {
   "route-instance": ["route-binding", "instance"], placement: ["assembly", "instance"],
   "instance-frame": ["instance", "block"], "instance-view": ["instance", "block"],
-  "block-block": ["block", "block"], "block-atom": ["block", "atom"], "atom-token": ["atom", "token"],
+  "block-block": ["block", "block"], "block-component": ["block", "component"], "component-token": ["component", "token"],
 } as const;
 /** Validates membership and exact use, never renderer authentication or qualification. */
 export function validateRelations(value: unknown): RelationsResult {
@@ -90,7 +90,7 @@ export function validateRelations(value: unknown): RelationsResult {
       if (!object(node) || !text(node.key) || !text(node.kind)) return refuse("shape");
       if (!keys(node, ["kind", "key", "identity", ...(node.kind === "instance" ? ["binding", "witness"] : node.kind === "block" ? ["roleIdentity"] : [])])) return refuse("unknown-field");
       if (!(node.kind === "route-binding" ? input.routeBindings.includes(node) :
-        input.nodes.includes(node as RelationNode) && ["assembly", "instance", "block", "atom", "token"].includes(node.kind))) return refuse("shape");
+        input.nodes.includes(node as RelationNode) && ["assembly", "instance", "block", "component", "token"].includes(node.kind))) return refuse("shape");
       const id = node.identity;
       if (!object(id)) return refuse("identity");
       if (!keys(id, ["ref", "sourceRevision", "context"]) || object(id.context) && !keys(id.context, ["consumer", "brand", "medium"])) return refuse("unknown-field");

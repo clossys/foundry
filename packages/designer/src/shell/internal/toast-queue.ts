@@ -1,3 +1,4 @@
+import type { ButtonProps } from "../../components/Button.js";
 import type { ReactNode } from "react";
 import { UNSTABLE_ToastQueue as AriaToastQueue } from "react-aria-components";
 
@@ -8,9 +9,12 @@ export interface ToastRecord {
   title: ReactNode;
   description?: ReactNode;
   variant: ToastVariant;
+  action?: ToastOptions["action"];
 }
 
 export interface ToastOptions {
+  /** Host-authored action; the toast closes after the library Button invokes onPress. */
+  action?: { label: ReactNode; onPress: NonNullable<ButtonProps["onPress"]>; isDisabled?: boolean };
   /** A line of supporting copy under the title. */
   description?: ReactNode;
   /**
@@ -39,7 +43,7 @@ const DEFAULT_TOAST_TIMEOUT_MS = 5000;
  * The toast queue — one instance, module-scoped, shared by every caller of
  * `toast(...)` and by `<Toaster />`. A toast system is a singleton by
  * nature (see this package's README, "Placement rules" — a portal, a
- * queue, and an imperative API put it outside the atoms/blocks/views/shell
+ * queue, and an imperative API put it outside the components/blocks/views/shell
  * ladder entirely): there is exactly one notification queue per
  * application, the same way there is exactly one `Shell`. Creating it here
  * — at module scope, not inside a component — is what makes `toast.success(...)`
@@ -53,9 +57,9 @@ const DEFAULT_TOAST_TIMEOUT_MS = 5000;
 export const toastQueue = new AriaToastQueue<ToastRecord>({ maxVisibleToasts: 5 });
 
 function addToast(variant: ToastVariant, title: ReactNode, options: ToastOptions = {}): ToastHandle {
-  const { description, timeout, onClose } = options;
+  const { description, timeout, onClose, action } = options;
   const resolvedTimeout = timeout === null ? undefined : (timeout ?? DEFAULT_TOAST_TIMEOUT_MS);
-  const id = toastQueue.add({ title, description, variant }, { timeout: resolvedTimeout, onClose });
+  const id = toastQueue.add({ title, description, variant, action }, { timeout: resolvedTimeout, onClose });
   return { id, dismiss: () => toastQueue.close(id) };
 }
 

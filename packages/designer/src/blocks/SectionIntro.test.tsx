@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { render, screen } from "@testing-library/react";
-import { buttonLinkClassName, iconButtonLinkClassName } from "../atoms/button-classes.js";
+import { buttonLinkClassName, iconButtonLinkClassName } from "../components/button-classes.js";
 import { SectionIntro } from "./SectionIntro.js";
 
 describe("SectionIntro", () => {
@@ -86,7 +86,8 @@ describe("SectionIntro", () => {
 describe("buttonLinkClassName", () => {
   it("gives an anchor the Button look with a focus-visible outline, without the button-only classes", () => {
     const look = buttonLinkClassName("primary", "lg").split(" ");
-    expect(look).toEqual(expect.arrayContaining(["bg-accent", "text-ink-on-accent", "focus-visible:outline-2", "focus-visible:outline-offset-2", "focus-visible:outline-accent"]));
+    expect(look).toEqual(expect.arrayContaining(["bg-action", "text-ink-on-action", "hover:bg-action-hover", "data-pressed:bg-action-pressed", "focus-visible:outline-2", "focus-visible:outline-offset-2", "focus-visible:outline-focus-ring"]));
+    for (const oldClass of ["bg-accent", "text-ink-on-accent", "focus-visible:outline-accent"]) expect(look).not.toContain(oldClass);
     expect(look).not.toContain("outline-none");
     expect(look).not.toContain("disabled:cursor-not-allowed");
   });
@@ -106,13 +107,14 @@ describe("buttonLinkClassName outline", () => {
         "ring-1",
         "hover:ring-2",
         "focus-visible:outline-2",
-        "focus-visible:outline-accent",
+        "focus-visible:outline-focus-ring",
       ]),
     );
     // No border (it would grow the box past primary's) and no ink of its own (it takes the ground's).
     expect(outline.filter((token) => token === "border" || token.startsWith("border-"))).toEqual([]);
     expect(outline.filter((token) => token.startsWith("text-ink-"))).toEqual([]);
     expect(outline).not.toContain("outline-none");
+    expect(outline).not.toContain("focus-visible:outline-accent");
   });
 
   it("takes the ground's primary ink from the actions row, so the edge reads on light and dark grounds", () => {
@@ -141,7 +143,7 @@ describe("iconButtonLinkClassName", () => {
         "active:border-ink-primary",
         "focus-visible:outline-2",
         "focus-visible:outline-offset-2",
-        "focus-visible:outline-accent",
+        "focus-visible:outline-focus-ring",
         "focus-visible:ring-2",
         "focus-visible:ring-surface-raised",
         "motion-reduce:transition-none",
@@ -151,5 +153,6 @@ describe("iconButtonLinkClassName", () => {
     expect(inverse).toEqual(expect.arrayContaining(["bg-surface-inverse-raised", "text-ink-on-inverse", "border-line-on-inverse", "active:border-ink-on-inverse"]));
     expect(inverse).not.toContain("bg-surface-raised");
     expect(base).not.toContain("outline-none");
+    expect(base).not.toContain("focus-visible:outline-accent");
   });
 });

@@ -436,7 +436,7 @@ describe("MC5 exact authored alternatives and static frame", () => {
   it("has one graphic with linked authored title/description and static hidden native marks", () => {
     const { container } = render(<ServerScatterChart {...base} />);
     const svg = container.querySelector('svg[data-chart-part="frame"]')!;
-    expect(svg.getAttribute("role")).toBe("img");
+    expect(svg.getAttribute("role")).toBe("group");
     const title = container.querySelector(`[id="${svg.getAttribute("aria-labelledby")}"]`)!;
     const description = container.querySelector(`[id="${svg.getAttribute("aria-describedby")}"]`)!;
     expect(title.textContent).toBe(base.title);
@@ -446,7 +446,8 @@ describe("MC5 exact authored alternatives and static frame", () => {
       expect(marker.getAttribute("aria-hidden") ?? pointGroup(container, point.id).getAttribute("aria-hidden")).toBe("true");
       expect(marker.hasAttribute("tabindex")).toBe(false);
     }
-    expect(container.querySelectorAll("[tabindex]")).toHaveLength(0);
+    expect(container.querySelectorAll("[tabindex]")).toHaveLength(base.points.length);
+    for (const target of container.querySelectorAll("[tabindex]")) expect(target).toHaveAttribute("data-chart-tooltip-trigger");
     expect(container.querySelector("details table")).not.toBeNull();
     expect(renderToStaticMarkup(<ServerScatterChart {...base} />)).not.toMatch(/onpointer|onkeydown|onfocus/i);
   });

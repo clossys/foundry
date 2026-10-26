@@ -70,4 +70,4 @@ export function ConversationPanel() {
 
 The fake source yields local text on a timer. The generation counter discards stale chunks after Stop or a replacement run. A production host also cleans up its source when its panel unmounts.
 
-The block composes Avatar, Textarea, Button, IconButton (which composes Icon), Tooltip and Link. Its plain semantic elements provide the conversation region, log, author/message layout, optional timestamp, progress row and safe text structure. Suggestion pills use Button because the Chip atom's action removes a label rather than selecting a suggestion.
+The block composes Avatar, Textarea, Button, IconButton (which composes Icon), Tooltip and Link. Its plain semantic elements provide the conversation region, log, author/message layout, optional timestamp, progress row and safe text structure. Suggestion pills use Button because the Chip component's action removes a label rather than selecting a suggestion.

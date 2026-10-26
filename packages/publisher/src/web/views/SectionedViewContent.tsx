@@ -5,7 +5,7 @@ import { resolveActionEmphasis } from "../../core/page-flow.js";
 import { desugarRecipe, SECTIONED_VIEW_CONTENT_CONTRACT } from "../../core/content-contract.js";
 import { resolveRoleActionEmphasis } from "../../core/sectioned-view.js";
 import { renderAction, renderRoleActions } from "./SectionedViewActions.js";
-import { SECTION_GROUND_CLASSES } from "@clossys/designer/blocks/server";
+import { SectionHeader, SECTION_GROUND_CLASSES } from "@clossys/designer/blocks/server";
 import type { ReactNode } from "react";
 import type { ResolvedSectionedViewAction, ResolvedSectionedViewContentAction, ResolvedSectionedViewContentSection, ResolvedSectionedViewDocument, ResolvedSectionedViewHeroMedia, ResolvedSectionedViewSection, SectionedViewGround, SectionedViewStatTrend, SectionedViewStatus, SectionedViewStatusDisposition } from "../../core/sectioned-view.js";
 import { isRenderAsset } from "../../internal/assets.js";
@@ -494,11 +494,8 @@ function renderStatGrid(section: Extract<ResolvedSectionedViewSection, { kind: "
   return (
     <div key={section.id} id={section.id} className={`flex flex-col gap-lg ${colors.surface}`}>
       {hasHeadingRegion ? (
-        <div className="flex flex-col gap-xs">
-          {section.eyebrow ? <p className={`text-caption uppercase tracking-label ${colors.muted}`}>{section.eyebrow}</p> : null}
-          <h2 className={`text-h2 font-display ${colors.primary}`}>{section.heading}</h2>
-          {section.description ? <p className={`text-body ${colors.secondary}`}>{section.description}</p> : null}
-        </div>
+        <SectionHeader density="standard" level={2} ground={section.ground}
+          eyebrow={section.eyebrow} title={section.heading} description={section.description} />
       ) : null}
       <div className="grid grid-cols-1 gap-lg tablet:grid-cols-2 desktop:grid-cols-4">
         {section.items.map((item) => (

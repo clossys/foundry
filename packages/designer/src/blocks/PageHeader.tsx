@@ -1,5 +1,5 @@
 import type { HTMLAttributes, ReactNode } from "react";
-import { cx } from "../atoms/internal/cx.js";
+import { cx } from "../components/internal/cx.js";
 
 export interface PageHeaderProps extends Omit<HTMLAttributes<HTMLElement>, "title"> {
   /** The page's own name. The only required prop. */
@@ -8,11 +8,11 @@ export interface PageHeaderProps extends Omit<HTMLAttributes<HTMLElement>, "titl
   description?: ReactNode;
   /**
    * Slot for the page's primary actions — typically one or more `Button`
-   * atoms. Rendered at the trailing edge of the title row.
+   * components. Rendered at the trailing edge of the title row.
    */
   actions?: ReactNode;
   /**
-   * Slot for a `Breadcrumb` atom (or any `ReactNode`), rendered above the
+   * Slot for a `Breadcrumb` component (or any `ReactNode`), rendered above the
    * title. Not required — a top-level page has nowhere to link back to.
    */
   breadcrumb?: ReactNode;

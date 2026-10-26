@@ -1,0 +1,66 @@
+{
+  "$extensions": {
+    "com.clossys.fill": {
+      "id": "lucide/assets.icon-integration",
+      "slot": "assets.icon-integration",
+      "source": "lucide",
+      "mode": "implementation",
+      "sourceAddress": "lucide-react@1.23.0/dist/esm/icons/plug.js",
+      "relation": "same-contract",
+      "builtOn": [],
+      "conforms": [],
+      "evidence": [],
+      "author": "third-party",
+      "trust": "pinned-upstream",
+      "license": "ISC",
+      "pin": {
+        "package": "lucide-react",
+        "version": "1.23.0",
+        "file": "src/icons/Plug.ts",
+        "sha256": "7a8b54b6476e72844d33fcbb3753367f392b68600ef45406223142f65e5805bc"
+      },
+      "status": "draft",
+      "reads": {
+        "tokens": [],
+        "assets": []
+      }
+    }
+  },
+  "assets": {
+    "icon-integration": {
+      "default": {
+        "$type": "glyph",
+        "$value": [
+          [
+            "path",
+            {
+              "d": "M12 22v-5",
+              "key": "1ega77"
+            }
+          ],
+          [
+            "path",
+            {
+              "d": "M15 8V2",
+              "key": "18g5xt"
+            }
+          ],
+          [
+            "path",
+            {
+              "d": "M17 8a1 1 0 0 1 1 1v4a4 4 0 0 1-4 4h-4a4 4 0 0 1-4-4V9a1 1 0 0 1 1-1z",
+              "key": "1xoxul"
+            }
+          ],
+          [
+            "path",
+            {
+              "d": "M9 8V2",
+              "key": "14iosj"
+            }
+          ]
+        ]
+      }
+    }
+  }
+}

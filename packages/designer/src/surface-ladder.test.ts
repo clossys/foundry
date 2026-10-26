@@ -25,11 +25,11 @@ describe("checkSurfaceLadder", () => {
     expect(result.findings.some((f) => f.rule === "surface:dual-designer-css-root")).toBe(true);
   });
 
-  it("flags designer blocks beside a foreign atom entrypoint", () => {
+  it.each(["atoms", "components"])("flags designer blocks beside a foreign %s entrypoint", (subpath) => { // rename-negative: preserve foreign package vocabulary
     writeFileSync(
       join(dir, "page.tsx"),
       `import { Hero } from "@clossys/designer/blocks";
-import { Button } from "@acme/ui/atoms";
+import { Button } from "@acme/ui/${subpath}";
 `,
       "utf8",
     );

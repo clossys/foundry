@@ -1,0 +1,61 @@
+{
+  "$extensions": {
+    "com.clossys.fill": {
+      "author": "foundry",
+      "builtOn": [],
+      "conforms": [
+        "dtcg#format",
+        "dtcg#alias"
+      ],
+      "derivation": {
+        "from": "dtcg#alias",
+        "rule": "materialize only retired-source references from historical Foundry token cells; retain live aliases"
+      },
+      "evidence": [
+        {
+          "check": "C1",
+          "clause": "dtcg#format"
+        },
+        {
+          "check": "C2",
+          "clause": "dtcg#alias"
+        }
+      ],
+      "id": "foundry/tokens.transition-easing",
+      "license": "MIT",
+      "mode": "derived",
+      "pin": {
+        "file": "historical Foundry token cells",
+        "sha256": "f01c048dd4396977a0fba16075553b3d8ed453317450f616533f4fd5211670de"
+      },
+      "relation": "same-contract",
+      "slot": "tokens.transition-easing",
+      "source": "foundry",
+      "sourceAddress": "styles/tokens.css",
+      "status": "draft",
+      "trust": "foundry"
+    }
+  },
+  "tokens": {
+    "transition-easing": {
+      "enter": {
+        "$type": "cubicBezier",
+        "$value": [
+          0,
+          0,
+          0.2,
+          1
+        ]
+      },
+      "exit": {
+        "$type": "cubicBezier",
+        "$value": [
+          0.4,
+          0,
+          1,
+          1
+        ]
+      }
+    }
+  }
+}

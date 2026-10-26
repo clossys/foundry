@@ -1,3 +1,4 @@
+import sectionHomes from "./maps/blocks-to-sections.json" with { type: "json" };
 import type {
   BlockContract,
   BlockEntry,
@@ -207,6 +208,10 @@ const DECISIONS = at("respond", "decisions");
 const NOTICES = at("respond", "notices");
 const NOTIFICATIONS = at("respond", "notifications");
 
+// Explicit legacy addresses; membership is verified against the section registry and retired aliases.
+const sectionLeafByBlock: Readonly<Partial<Record<BlockId, NonNullable<BlockEntry["sectionLeaf"]>>>> =
+  sectionHomes as Readonly<Partial<Record<BlockId, NonNullable<BlockEntry["sectionLeaf"]>>>>;
+
 /** Block leaves, in display order. */
 export const BLOCK_ENTRIES: readonly BlockEntry[] = [
   // Explain / Headings
@@ -306,7 +311,7 @@ export const BLOCK_ENTRIES: readonly BlockEntry[] = [
   exported(RECORDS, "ResourceList", {
     id: "items.resource-list",
     label: "Resource list",
-    notes: ["Built on the grid list atom."],
+    notes: ["Built on the grid list component."],
   }),
   spec(RECORDS, { id: "matrix.data-grid", label: "Data grid" }),
 
@@ -321,7 +326,7 @@ export const BLOCK_ENTRIES: readonly BlockEntry[] = [
   built(CONTAINERS, "ResizablePane", {
     id: "matrix.resizable-pane",
     label: "Resizable pane",
-    notes: ["Depends on the owner decision for the resize handle atom: rebuilt with it, or parked with it."],
+    notes: ["Depends on the owner decision for the resize handle component: rebuilt with it, or parked with it."],
   }),
   exported(CONTAINERS, "CatalogWorkspace", { id: "matrix.catalog-workspace", label: "Catalog workspace" }),
   exported(CONTAINERS, "FlowCanvas", { id: "matrix.flow-canvas", label: "Flow canvas" }),
@@ -420,7 +425,10 @@ export const BLOCK_ENTRIES: readonly BlockEntry[] = [
 
   // Respond / Notifications
   spec(NOTIFICATIONS, { id: "items.notification-center", label: "Notification center" }),
-];
+].map((block): BlockEntry => {
+  const sectionLeaf = sectionLeafByBlock[block.id];
+  return sectionLeaf === undefined ? block : { ...block, sectionLeaf };
+});
 
 const MODEL_API = "Data-model API for a block; not a component.";
 const HOOK = "Hook paired with a block; not a component.";

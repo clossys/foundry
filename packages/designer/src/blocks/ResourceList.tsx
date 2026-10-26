@@ -1,13 +1,13 @@
 "use client";
 
 import { useId, useState, type HTMLAttributes, type ReactNode } from "react";
-import { Button } from "../atoms/Button.js";
-import { GridList } from "../atoms/GridList.js";
-import { IconButton } from "../atoms/IconButton.js";
-import { Menu } from "../atoms/Menu.js";
-import { Skeleton } from "../atoms/Skeleton.js";
-import { cx } from "../atoms/internal/cx.js";
-import { UI_LAYOUT_TAP_TARGET } from "../atoms/internal/ui-vars.js";
+import { Button } from "../components/Button.js";
+import { GridList } from "../components/GridList.js";
+import { IconButton } from "../components/IconButton.js";
+import { Menu } from "../components/Menu.js";
+import { Skeleton } from "../components/Skeleton.js";
+import { cx } from "../components/internal/cx.js";
+import { UI_LAYOUT_TAP_TARGET } from "../components/internal/ui-vars.js";
 import { ChevronDown } from "../icons/ChevronDown.js";
 import { EmptyState, type EmptyStateProps } from "./EmptyState.js";
 

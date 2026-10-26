@@ -1,14 +1,14 @@
 import type { CSSProperties, ReactNode } from "react";
 import { Toolbar as AriaToolbar, type ToolbarProps as AriaToolbarProps } from "react-aria-components";
-import { cx } from "../atoms/internal/cx.js";
+import { cx } from "../components/internal/cx.js";
 
 export interface ToolbarProps
   extends Omit<AriaToolbarProps, "children" | "className" | "style"> {
-  /** Slot for the toolbar's leading actions — typically one or more `Button` atoms (bulk actions, view toggles). */
+  /** Slot for the toolbar's leading actions — typically one or more `Button` components (bulk actions, view toggles). */
   leading?: ReactNode;
-  /** Slot for a search/filter control — typically a `TextField` or `Select` atom. Grows to fill the space between `leading` and `trailing`. */
+  /** Slot for a search/filter control — typically a `TextField` or `Select` component. Grows to fill the space between `leading` and `trailing`. */
   search?: ReactNode;
-  /** Slot for the toolbar's trailing actions — typically one or more `Button`/`Menu` atoms. Pinned to the trailing edge when there's room. */
+  /** Slot for the toolbar's trailing actions — typically one or more `Button`/`Menu` components. Pinned to the trailing edge when there's room. */
   trailing?: ReactNode;
   /**
    * Accessible name for the toolbar landmark.

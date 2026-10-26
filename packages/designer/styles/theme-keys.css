@@ -49,6 +49,12 @@
   --color-line-panel:             var(--color-line-panel, var(--color-line-base, oklch(0.8761 0 0)));
 
   /* ── COLOR · ACCENT ───────────────────────────────────────────── */
+  --color-action: var(--color-action, #0A0A0A);
+  --color-action-hover: var(--color-action-hover, #262626);
+  --color-action-pressed: var(--color-action-pressed, #404040);
+  --color-action-on-inverse: var(--color-action-on-inverse, #FAFAFA);
+  --color-action-on-inverse-hover: var(--color-action-on-inverse-hover, #E5E5E5);
+  --color-ink-on-action: var(--color-ink-on-action, var(--color-ink-on-inverse, oklch(0.9702 0 0)));
   --color-accent:                 var(--color-accent, oklch(0.4748 0 0));
   --color-accent-text:            var(--color-accent-text, oklch(0.36 0 0));
   --color-accent-hover:           var(--color-accent-hover, oklch(0.36 0 0));
@@ -1089,8 +1095,8 @@
   }
 }
 @utility control-h-sm { @apply tap-target; min-block-size: var(--ui-control-h-sm, 32px); }
-@utility control-h-md { min-block-size: var(--ui-control-h-md, var(--ui-layout-tap-target, 44px)); }
-@utility control-h-lg { min-block-size: var(--ui-control-h-lg, 52px); }
+@utility control-h-md { @apply tap-target; min-block-size: var(--ui-control-h-md, var(--ui-layout-tap-target, 44px)); }
+@utility control-h-lg { @apply tap-target; min-block-size: var(--ui-control-h-lg, 52px); }
 @utility control-row {
   min-block-size: var(--ui-control-row-h, 36px);
   @media (pointer: coarse) { min-block-size: var(--ui-layout-tap-target, 44px); }
@@ -1106,7 +1112,7 @@
   }
 }
 
-/* These recipes are defined without adopting them in any existing Atom. */
+/* These recipes are defined without adopting them in any existing Component. */
 @keyframes overlay-fade { from { opacity: 0; } to { opacity: 1; } }
 @keyframes overlay-pop {
   from { opacity: 0; transform: translateY(var(--ui-motion-shift, 4px)); }
@@ -1204,3 +1210,46 @@
 @container scene (min-width: 800px) { [data-template="converge"] > [data-scene-desk] { display: block; } [data-template="converge"] > [data-scene-linear] { position: absolute; inline-size: 1px; block-size: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; } }
 @container scene (min-width: 520px) { [data-template="evidence-trail"] > [data-scene-desk] { display: block; } [data-template="evidence-trail"] > [data-scene-linear] { position: absolute; inline-size: 1px; block-size: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; } }
 @container scene (min-width: 900px) { [data-template="approval-chain"] > [data-scene-desk] { display: block; } [data-template="approval-chain"] > [data-scene-linear] { position: absolute; inline-size: 1px; block-size: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; } }
+
+/* Bounded registry motion: React Aria keeps entering/exiting nodes mounted until
+ * these animations finish. Paint and time stay on the consumer token seam. */
+@keyframes library-transition {
+  from { opacity: var(--library-opacity, 1); transform: translate(var(--library-x, 0), var(--library-y, 0)) scale(var(--library-scale, 1)); }
+  to { opacity: 1; transform: translate(0, 0) scale(1); }
+}
+@utility library-enter {
+  animation: library-transition var(--ui-duration-fast, 160ms) var(--ease-enter, cubic-bezier(0, 0, .2, 1)) both;
+  @media (prefers-reduced-motion: reduce) { animation-duration: 0s; }
+}
+@utility library-exit {
+  animation: library-transition var(--ui-duration-fast, 160ms) var(--ease-exit, cubic-bezier(.4, 0, 1, 1)) reverse both;
+  @media (prefers-reduced-motion: reduce) { animation-duration: 0s; }
+}
+@utility library-fade { --library-opacity: 0; }
+@utility library-zoom { --library-scale: .95; }
+@utility library-slide-top { --library-y: calc(-1 * var(--ui-motion-shift, 4px)); }
+@utility library-slide-bottom { --library-y: var(--ui-motion-shift, 4px); }
+@utility library-slide-left { --library-x: calc(-1 * var(--ui-motion-shift, 4px)); }
+@utility library-slide-right { --library-x: var(--ui-motion-shift, 4px); }
+
+/* Frames own region motion. Content stays mounted through inline-size transitions. */
+.frame-docked-navigation, .frame-docked-panel {
+  transition-property: inline-size, visibility;
+  transition-duration: var(--ui-duration-default), 0s;
+  transition-timing-function: var(--ease-enter);
+}
+.frame-docked-navigation[data-open="false"], .frame-docked-panel[data-open="false"] {
+  visibility: hidden;
+  transition-timing-function: var(--ease-exit);
+  transition-delay: 0s, var(--ui-duration-default);
+}
+.frame-header-container { contain: layout; }
+.frame-header-grid { grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr); }
+.frame-header-grid[data-frame-header-overflow="navigation"] { grid-template-columns: minmax(0, 1fr) auto; }
+[data-drawer-placement="start"], [data-drawer-placement="end"] {
+  animation: sheet-slide var(--ui-duration-default) var(--ease-enter) both;
+}
+@media (prefers-reduced-motion: reduce) {
+  .frame-docked-navigation, .frame-docked-panel { transition: none; }
+  [data-drawer-placement="start"], [data-drawer-placement="end"] { animation: none; }
+}

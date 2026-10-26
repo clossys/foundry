@@ -1,5 +1,6 @@
+import { SectionHeader } from "./SectionHeader.js";
 import type { CSSProperties, HTMLAttributes, ReactNode } from "react";
-import { cx } from "../atoms/internal/cx.js";
+import { cx } from "../components/internal/cx.js";
 import { FAQ_ANSWER_STYLE, FAQ_ROW_CLASSES } from "./Faq.server.js";
 import { disclosureRow } from "./internal/disclosure-row.js";
 import { SECTION_GROUND_CLASSES, type SectionGround } from "./section-ground.js";
@@ -38,7 +39,7 @@ export interface FaqProps extends Omit<HTMLAttributes<HTMLDivElement>, "title"> 
 
 /**
  * A list of expand/collapse question/answer pairs — an optional heading
- * region above the list, which is what makes `Faq` a block, not an atom
+ * region above the list, which is what makes `Faq` a block, not an component
  * (this package's README, "Placement rules", test 2: the heading and the
  * list differ in kind, even though the ITEMS inside the list are a
  * homogeneous repeat, the same shape `FeatureGrid`'s items and `NavGrid`'s
@@ -48,11 +49,11 @@ export interface FaqProps extends Omit<HTMLAttributes<HTMLDivElement>, "title"> 
  *
  * **Built on react-aria-components' own `Disclosure`/`DisclosurePanel`, one
  * per item, rather than a hand-rolled expand/collapse mechanism** (the same
- * primitives this package's `Disclosure` atom wraps). They supply real
+ * primitives this package's `Disclosure` component wraps). They supply real
  * `aria-expanded`/`aria-controls` wiring, Enter/Space-and-click toggling,
  * and keep collapsed content in the DOM (`hidden`, not unmounted) so
  * browser find-in-page can still reach it. `Faq` composes them directly,
- * not through the atom, so the row can take the FAQ recipe
+ * not through the component, so the row can take the FAQ recipe
  * (`FAQ_ROW_CLASSES`, shared with the server implementation): the whole row
  * as the hit area, the question at the body-l step, and a Designer
  * `ChevronDown` at the end that turns when open, and the answer's height
@@ -85,22 +86,13 @@ export function Faq({
   style,
   ...rest
 }: FaqProps) {
-  const HeadingTag = `h${headingLevel}` as `h${FaqHeadingLevel}`;
   const colors = SECTION_GROUND_CLASSES[ground];
   const hasHeadingRegion = eyebrow !== undefined || heading !== undefined || description !== undefined;
 
   return (
     <div {...rest} className={cx("flex flex-col gap-lg", colors.surface, className)} style={style}>
       {hasHeadingRegion ? (
-        <div className="flex flex-col gap-xs">
-          {eyebrow ? <p className={cx("text-caption uppercase tracking-label", colors.muted)}>{eyebrow}</p> : null}
-          {heading ? (
-            <HeadingTag className={cx("text-h2 font-display leading-heading", colors.primary)}>{heading}</HeadingTag>
-          ) : null}
-          {description ? (
-            <p className={cx("text-body", colors.secondary)}>{description}</p>
-          ) : null}
-        </div>
+        <SectionHeader density="standard" level={headingLevel} ground={ground} eyebrow={eyebrow} description={description} {...(heading ? { title: heading } : {})} titleClassName="leading-heading" />
       ) : null}
       <div className={cx(FAQ_ROW_CLASSES.list, colors.border)}>
         {items.map(item => disclosureRow({ id: item.id, question: item.question, answer: item.answer, recipe: FAQ_ROW_CLASSES, colors, answerStyle: FAQ_ANSWER_STYLE }))}

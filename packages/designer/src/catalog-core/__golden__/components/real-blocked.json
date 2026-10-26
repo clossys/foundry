@@ -1,0 +1,188 @@
+{
+  "blockedCount": 24,
+  "descriptorCount": 26,
+  "leaves": [
+    {
+      "blockers": 7,
+      "codes": [
+        "K4"
+      ],
+      "slot": "components.avatar"
+    },
+    {
+      "blockers": 7,
+      "codes": [
+        "K4"
+      ],
+      "slot": "components.badge"
+    },
+    {
+      "blockers": 4,
+      "codes": [
+        "K4"
+      ],
+      "slot": "components.banner"
+    },
+    {
+      "blockers": 4,
+      "codes": [
+        "K4",
+        "K7"
+      ],
+      "slot": "components.breadcrumbs"
+    },
+    {
+      "blockers": 9,
+      "codes": [
+        "K4"
+      ],
+      "slot": "components.button"
+    },
+    {
+      "blockers": 15,
+      "codes": [
+        "K4"
+      ],
+      "slot": "components.calendar"
+    },
+    {
+      "blockers": 6,
+      "codes": [
+        "K4"
+      ],
+      "slot": "components.card"
+    },
+    {
+      "blockers": 1,
+      "codes": [
+        "K4"
+      ],
+      "slot": "components.checkbox"
+    },
+    {
+      "blockers": 36,
+      "codes": [
+        "K4"
+      ],
+      "slot": "components.combo-box"
+    },
+    {
+      "blockers": 5,
+      "codes": [
+        "K4"
+      ],
+      "slot": "components.dialog"
+    },
+    {
+      "blockers": 4,
+      "codes": [
+        "K4"
+      ],
+      "slot": "components.disclosure"
+    },
+    {
+      "blockers": 3,
+      "codes": [
+        "K4"
+      ],
+      "slot": "components.keyboard"
+    },
+    {
+      "blockers": 11,
+      "codes": [
+        "K4"
+      ],
+      "slot": "components.menu"
+    },
+    {
+      "blockers": 6,
+      "codes": [
+        "K4"
+      ],
+      "slot": "components.popover"
+    },
+    {
+      "blockers": 0,
+      "codes": [],
+      "slot": "components.progress-bar"
+    },
+    {
+      "blockers": 0,
+      "codes": [],
+      "slot": "components.radio-group"
+    },
+    {
+      "blockers": 31,
+      "codes": [
+        "K4"
+      ],
+      "slot": "components.select"
+    },
+    {
+      "blockers": 4,
+      "codes": [
+        "K4"
+      ],
+      "slot": "components.separator"
+    },
+    {
+      "blockers": 1,
+      "codes": [
+        "K4"
+      ],
+      "slot": "components.skeleton"
+    },
+    {
+      "blockers": 4,
+      "codes": [
+        "K4"
+      ],
+      "slot": "components.slider"
+    },
+    {
+      "blockers": 6,
+      "codes": [
+        "K4"
+      ],
+      "slot": "components.switch"
+    },
+    {
+      "blockers": 3,
+      "codes": [
+        "K4"
+      ],
+      "slot": "components.table"
+    },
+    {
+      "blockers": 16,
+      "codes": [
+        "K4"
+      ],
+      "slot": "components.tabs"
+    },
+    {
+      "blockers": 11,
+      "codes": [
+        "K4"
+      ],
+      "slot": "components.toggle-button"
+    },
+    {
+      "blockers": 8,
+      "codes": [
+        "K4"
+      ],
+      "slot": "components.toggle-group"
+    },
+    {
+      "blockers": 6,
+      "codes": [
+        "K4"
+      ],
+      "slot": "components.tooltip"
+    }
+  ],
+  "message": "Rewrite blockers are not runtime conformance evidence.",
+  "runtimeConformance": "unassessed",
+  "version": 1
+}
