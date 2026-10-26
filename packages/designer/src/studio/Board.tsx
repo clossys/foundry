@@ -15,6 +15,7 @@ import type { StudioCandidateWorkflow } from "./types.js";
 import { activeCandidateSource } from "./candidate-display.js";
 import { valueBoardPrompt } from "./prepared-library-boards.js";
 import { CompactPreview } from "./previews.js";
+import { BoardChosenSummary, LeafLabel } from "./board-summary.js";
 
 /**
  * One fixed-shape plate per row so chosen and unchosen rows line up. It shows the specimen alone:
@@ -23,7 +24,7 @@ import { CompactPreview } from "./previews.js";
 const COMPACT_PLATE = "flex shrink-0 min-h-[var(--ui-control-h-lg)] min-w-[var(--ui-control-h-lg)] items-center justify-center rounded-control border border-line-base bg-surface-raised p-sm [&_[data-member-value]]:hidden [&_[data-preview-note]]:hidden";
 
 /** Self-contained placement group: its title and complete library matrix. */
-export const Board = memo(function Board({ board, boardRef, summary, onOpen, workflow, contextTokens = [], variants, ...matrix }: Omit<ComponentProps<typeof Matrix>, "rows"> & { board: MatrixBoard; boardRef: Ref<HTMLElement>; summary?: { errors: number; warnings: number; sources: readonly string[] }; onOpen?: () => void; workflow?: StudioCandidateWorkflow; contextTokens?: readonly { id: string; value: string }[]; variants?: Readonly<Record<string, readonly string[]>> }): ReactElement {
+export const Board = memo(function Board({ board, boardRef, summary, onOpen, workflow, contextTokens = [], variants, ...matrix }: Omit<ComponentProps<typeof Matrix>, "rows"> & { board: MatrixBoard; boardRef: Ref<HTMLElement>; summary?: { errors: number; warnings: number; sources: readonly string[]; chosen?: number; total?: number }; onOpen?: () => void; workflow?: StudioCandidateWorkflow; contextTokens?: readonly { id: string; value: string }[]; variants?: Readonly<Record<string, readonly string[]>> }): ReactElement {
   const id = `studio-board-${encodeURIComponent(board.id)}`;
   const headingId = useId();
   const [editing, setEditing] = useState(false);
@@ -31,6 +32,10 @@ export const Board = memo(function Board({ board, boardRef, summary, onOpen, wor
   const text = matrix.labels.board;
   const edit = () => { setEditing(true); for (const row of rows) if (row.candidatesReady === false) matrix.onRequestRow?.(row, matrix.sources[0] ?? matrix.working.source.id); };
   const promptData = (row: MatrixRow, current = false): CandidatePromptData => valueBoardPrompt({ board, row, consumer: matrix.working.source.id, contextTokens, variants, workflow, returnStep: text.returnStep }, current);
+  const check = summary ? matrix.labels.checkSummary(summary.errors, summary.warnings) : "";
+  const chosenLabel = matrix.labels.chosenSummary;
+  const chosenLine = (className: string) => summary && chosenLabel ? <BoardChosenSummary className={className} label={chosenLabel}
+    chosen={summary.chosen ?? rows.filter(row => row.candidates.some(candidate => candidate.selected)).length} total={summary.total ?? rows.length} /> : null;
   const sources = matrix.sources.filter(source => rows.some(row => row.candidates.some(candidate => candidate.source === source && (candidate.fill.sourceAddress !== "" || candidate.members.length > 0))) || rows.some(row => row.candidatesReady === false));
   return <section tabIndex={-1} id={id} ref={boardRef} data-studio-board={board.id} data-board-mode={editing ? "edit" : "view"} aria-labelledby={headingId} className="flex h-max w-max shrink-0 flex-col gap-sm rounded-surface border border-line-base bg-surface-base p-md">
     <BoardHeader id={headingId} title={board.label} editing={editing} labels={text} onEdit={edit} onDone={() => setEditing(false)} />
@@ -42,12 +47,13 @@ export const Board = memo(function Board({ board, boardRef, summary, onOpen, wor
     </> : <Table aria-label={matrix.labels.matrix.label} className="w-fit">
       <Table.Header><Table.Column id="leaf" isRowHeader>{matrix.labels.matrix.leaf}</Table.Column><Table.Column id="preview"><span className="sr-only">{matrix.labels.stageLabel}</span></Table.Column></Table.Header>
       <Table.Body>{rows.map(row => { const active = row.candidates.find(candidate => candidate.selected); return <Table.Row key={row.id} id={row.id} data-studio-row={row.id} data-scope="slot">
-        <Table.Cell><span ref={element => { matrix.onRowElement?.(row.id, element?.closest("tr") ?? null); }}>{row.label}</span></Table.Cell><Table.Cell>{active ? <CandidateCell candidate={active} labels={matrix.labels} /> : <LeafCell className={LIBRARY_COLUMN_FLOW} style={LIBRARY_COLUMN_BOUND} status={text.notChosen} actions={<><Button variant="ghost" size="sm" onPress={edit}>{text.choose}</Button><CandidatePromptDialog trigger={<Button variant="ghost" size="sm">{text.askAgent}</Button>} data={promptData(row)} labels={matrix.labels} workflow={workflow} /></>} />}</Table.Cell>
+        <Table.Cell><span ref={element => { matrix.onRowElement?.(row.id, element?.closest("tr") ?? null); }}><LeafLabel id={row.id} name={matrix.labels.leafName?.(row.id)} /></span></Table.Cell><Table.Cell>{active ? <CandidateCell candidate={active} labels={matrix.labels} /> : <LeafCell className={LIBRARY_COLUMN_FLOW} style={LIBRARY_COLUMN_BOUND} status={text.notChosen} actions={<><Button variant="ghost" size="sm" onPress={edit}>{text.choose}</Button><CandidatePromptDialog trigger={<Button variant="ghost" size="sm">{text.askAgent}</Button>} data={promptData(row)} labels={matrix.labels} workflow={workflow} /></>} />}</Table.Cell>
       </Table.Row>; })}</Table.Body>
     </Table>}</div>}
     // Compact: per L3 row a miniature of its chosen specimen beside its name and library, legible at text-h0.
     compact={summary ? <div data-studio-zoom-compact="" className="flex flex-col gap-md text-h0">
-      <p className="break-words text-ink-secondary">{matrix.labels.checkSummary(summary.errors, summary.warnings)}</p>
+      {chosenLine("text-ink-primary")}
+      {check ? <p className="break-words text-ink-secondary">{check}</p> : null}
       <ul className="flex flex-col gap-md">{rows.map(row => { const active = row.candidates.find(candidate => candidate.selected), source = activeCandidateSource(row.candidates); return <li key={row.id} data-studio-compact-specimen={row.id} className="flex min-w-0 items-center gap-md">
         <div data-compact-plate="" aria-hidden className={COMPACT_PLATE}>{active ? <CompactPreview candidate={active} labels={matrix.labels} /> : null}</div>
         <p className="min-w-0 break-words"><span className="text-ink-primary">{row.label}</span> <span className={source ? "text-ink-secondary" : "text-ink-muted"}>{source ?? text.notChosen}</span></p>
@@ -56,7 +62,8 @@ export const Board = memo(function Board({ board, boardRef, summary, onOpen, wor
     // Overview: the board name, its check summary and the only Open action.
     overview={summary ? <div data-studio-zoom-summary="" className="flex flex-col items-start gap-md">
       <p className="break-words text-display-xl text-ink-primary">{board.label}</p>
-      <p className="break-words text-display-m text-ink-secondary">{matrix.labels.checkSummary(summary.errors, summary.warnings)}</p>
+      {chosenLine("text-display-m text-ink-primary")}
+      {check ? <p className="break-words text-display-m text-ink-secondary">{check}</p> : null}
       {onOpen ? <Button variant="ghost" size="sm" onPress={onOpen}>{matrix.labels.canvas.openBoard(board.label)}</Button> : null}
     </div> : undefined} />
   </section>;
