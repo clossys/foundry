@@ -2,7 +2,10 @@
 import { expect, it } from "vitest";
 import { syntheticSurface, adoptedSurface, syntheticDerivation } from "./__fixtures__/surface-engine/synthetic.js";
 import { applyLibraryChange, libraryHash, resolve, emit } from "./api.js";
-import { surfaceOf, surfacePortionHash, surfaceSelection, surfaceManifest } from "./surface-library.js";
+import { isSurfacePackageEntry, surfaceEntryOf, surfaceOf, surfacePortionHash, surfaceSelection, surfaceManifest } from "./surface-library.js";
+import { importFoundrySections } from "../importers/foundry-sections.js";
+import { readSurfacePackageEvidence } from "../library-cli/surface-package-evidence.js";
+import type { SurfaceCandidateDocument } from "./surface-types.js";
 const adopt={portion:"surfaces" as const,change:{op:"adopt" as const,slot:"sections.synthetic" as const,source:"synthetic"}};
 
 it("SYNTHETIC absent legacy bytes/hash, explicit empty identity, source bytes and whole CAS",()=>{
@@ -40,3 +43,4 @@ it("SYNTHETIC two-surface dependencies reject downstream removal and cycles as o
  const upstream=syntheticDerivation(first,[{kind:"surface",id:second.bundle.slot}]);input.catalog.surfaces!.rules=[downstream.rule,upstream.rule];
  expect(()=>applyLibraryChange(input.catalog,input.library,{baseHash:libraryHash(input.library),changes:[{portion:"surfaces",change:{op:"derive",slot:first.bundle.slot,rule:upstream.rule.identity.id,inputs:upstream.rule.inputs}}],surfaceBundles:[upstream.bundle]},{surfaceOptions:input.surfaceOptions!})).toThrow(/cycle/);
 });
+it("REAL source adoption replaces an adopted package pointer at the same leaf",async()=>{const pkg=(importFoundrySections().fills as unknown as SurfaceCandidateDocument[]).find(doc=>isSurfacePackageEntry(surfaceEntryOf(doc)))!;const meta=pkg.$extensions["com.clossys.fill"];const f=syntheticSurface({leaf:meta.slot.slice("sections.".length)});const {input,bundle}=f;input.catalog.surfaces!.fills=[pkg,...input.catalog.surfaces!.fills];const surfaceOptions={...input.surfaceOptions!,packages:await readSurfacePackageEvidence([pkg])};const pointer=applyLibraryChange(input.catalog,input.library,{baseHash:libraryHash(input.library),changes:[{portion:"surfaces",change:{op:"adopt",slot:meta.slot as `sections.${string}`,source:meta.source}}]},{surfaceOptions});expect(isSurfacePackageEntry(surfaceEntryOf(pointer.surfaces!.fills[0]!))).toBe(true);const switched=applyLibraryChange(input.catalog,pointer,{baseHash:libraryHash(pointer),changes:[{portion:"surfaces",change:{op:"adopt",slot:bundle.slot,source:"synthetic"}}],surfaceBundles:[bundle]},{surfaceOptions});expect(switched.surfaces!.fills).toHaveLength(1);expect(surfaceOf(switched.surfaces!.fills[0]!).origin!.kind).toBe("adopted");});

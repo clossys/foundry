@@ -43,8 +43,9 @@ export async function materializeSurfaceSourceFill(input: SurfaceMaterialization
     let output = transform.run({ candidate: runtimeSnapshot(candidate), upstream: upstreamFrozen });
     let inputs: SurfaceInputIdentity[] = [];
     if (rule) {
-        const current = input.library.surfaces?.fills.find(doc => surfaceOf(doc).slot === input.slot);
-        const old = current ? surfaceOf(current) : undefined;
+        // A package pointer at this slot retains no derivation base, so it faults S6 below like an absent fill.
+        const current = input.library.surfaces?.fills.map(doc => surfaceEntryOf(doc)).find(fill => fill.slot === input.slot);
+        const old = current && !isSurfacePackageEntry(current) ? current : undefined;
         if (!old?.origin || old.origin.kind === "authored" || stableStringify(old.origin.base) !== stableStringify(base) || stableStringify(rule.base) !== stableStringify(base))
             surfaceFault("S6 retained derivation base differs");
         const resolved = resolve({ catalog: input.catalog, library: input.library, componentOptions: input.componentOptions, surfaceOptions: input.surfaceOptions });

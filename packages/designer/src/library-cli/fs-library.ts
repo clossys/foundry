@@ -11,6 +11,17 @@ import { canonicalSurfacePortion, isSurfacePackageEntry, surfaceEntryOf, surface
 import { runtimeSnapshot } from "../catalog-core/runtime-ports.js";
 import type { SurfaceResolutionOptions, SurfaceDocument, SurfaceEntry, SurfaceFile } from "../catalog-core/surface-types.js";
 import type { DogfoodFinding, NeedRecord, NeedStatus, NeedCandidate } from "../catalog-core/dogfood.js";
+import { foundrySurfaceCatalog } from "./surface-catalog.js";
+import { readSurfacePackageEvidence } from "./surface-package-evidence.js";
+
+/** A host that omits the surfaces portion gets Foundry's own Section and Frame contracts; a host-supplied portion stays authoritative. */
+const withSurfaces = (catalog: CompositeCatalogData): CompositeCatalogData => catalog.surfaces === undefined ? { ...catalog, surfaces: foundrySurfaceCatalog() } : catalog;
+/** Host-passed resolution options are used as given. Otherwise, when surfaces are in play, package-pointer
+ * evidence is read from the installed package barrels; measurements are never invented. */
+async function surfaceOptionsFor(catalog: CompositeCatalogData, given: SurfaceResolutionOptions | undefined, inPlay: boolean): Promise<SurfaceResolutionOptions | undefined> {
+  if (given !== undefined || !inPlay) return given;
+  return { packages: await readSurfacePackageEvidence(catalog.surfaces?.fills ?? []), measurements: [] };
+}
 
 /** Paths a leaf owns, verified against the stored bytes; a package pointer owns none and has none to verify. */
 const ownedSurfacePaths = (fill: SurfaceEntry, files: readonly SurfaceFile[]): string[] => { if (!isSurfacePackageEntry(fill)) verifySurfaceFiles(fill, files); return surfaceOutputs(fill).map(row => row.path); };
@@ -246,7 +257,7 @@ async function readUnlocked(root: string, catalog: CatalogData): Promise<Library
 export function readLibrary(root: string, catalog: CatalogData): Promise<LibraryData>;
 export function readLibrary(root: string, catalog: CompositeCatalogData): Promise<CompositeLibraryData>;
 export async function readLibrary(root: string, catalog: CatalogData | CompositeCatalogData): Promise<LibraryData | CompositeLibraryData> {
-  return locked<LibraryData | CompositeLibraryData>(root, path => "values" in catalog ? readCompositeUnlocked(path, catalog) : readUnlocked(path, catalog));
+  return locked<LibraryData | CompositeLibraryData>(root, path => "values" in catalog ? readCompositeUnlocked(path, withSurfaces(catalog)) : readUnlocked(path, catalog));
 }
 
 async function checkUnlocked(root: string, catalog: CatalogData, library: LibraryData): Promise<CheckResult> {
@@ -259,9 +270,11 @@ async function checkUnlocked(root: string, catalog: CatalogData, library: Librar
 export function checkLibrary(root: string, catalog: CatalogData): Promise<CheckResult>;
 export function checkLibrary(root: string, catalog: CompositeCatalogData, componentOptions?: CompositeEngineInput["componentOptions"], surfaceOptions?: SurfaceResolutionOptions): Promise<CompositeCheckResult>;
 export async function checkLibrary(root: string, catalog: CatalogData | CompositeCatalogData, componentOptions?: CompositeEngineInput["componentOptions"], surfaceOptions?: SurfaceResolutionOptions): Promise<CompositeCheckResult> {
-  return locked(root, async path => "values" in catalog
-    ? checkCompositeUnlocked(path, catalog, await readCompositeUnlocked(path, catalog), componentOptions, surfaceOptions)
-    : checkUnlocked(path, catalog, await readUnlocked(path, catalog)));
+  return locked(root, async path => {
+    if (!("values" in catalog)) return checkUnlocked(path, catalog, await readUnlocked(path, catalog));
+    const composite = withSurfaces(catalog), library = await readCompositeUnlocked(path, composite);
+    return checkCompositeUnlocked(path, composite, library, componentOptions, await surfaceOptionsFor(composite, surfaceOptions, library.surfaces !== undefined));
+  });
 }
 
 /** Stage an entire generation. A failed stage is invisible; failed second rename restores the old root. */
@@ -312,12 +325,13 @@ export async function writeLibrary(root: string, catalog: CatalogData, changes: 
 }
 
 /** Composite CAS, validation and persistence reuse the same lock and disk boundary as value writes. */
-export async function writeCompositeLibrary(root: string, catalog: CompositeCatalogData, changes: CompositeChangeSet, componentOptions?: CompositeEngineInput["componentOptions"], surfaceOptions?: SurfaceResolutionOptions): Promise<CompositeLibraryData> {
-  const snapshot = runtimeSnapshot(changes);
+export async function writeCompositeLibrary(root: string, hostCatalog: CompositeCatalogData, changes: CompositeChangeSet, componentOptions?: CompositeEngineInput["componentOptions"], hostSurfaceOptions?: SurfaceResolutionOptions): Promise<CompositeLibraryData> {
+  const snapshot = runtimeSnapshot(changes), catalog = withSurfaces(hostCatalog);
   if(!isCompositeChangeSet(snapshot,catalog))throw new LibraryInputError("Invalid composite changeset");
   return locked(root, async path => {
     const current = await readCompositeUnlocked(path, catalog);
     if (snapshot.baseHash !== compositeLibraryHash(current)) throw new LibraryConflictError("Changeset baseHash does not match library");
+    const surfaceOptions = await surfaceOptionsFor(catalog, hostSurfaceOptions, current.surfaces !== undefined || snapshot.changes.some(operation => operation.portion === "surfaces"));
     const library = applyCompositeLibraryChange(catalog, current, snapshot, surfaceOptions?{componentOptions,surfaceOptions}:undefined);
     const result = await checkCompositeUnlocked(path, catalog, library, componentOptions, surfaceOptions);
     if (!result.ok) throw new LibraryCheckError(result);
@@ -332,17 +346,18 @@ export async function writeCompositeLibrary(root: string, catalog: CompositeCata
 
 export function emitLibrary(root: string, catalog: CatalogData, options?: { check?: boolean; targets?: readonly EmitTarget[] }): Promise<{ ok: boolean; drift: string[] }>;
 export function emitLibrary(root: string, catalog: CompositeCatalogData, options?: { check?: boolean; targets?: readonly CompositeEmitTarget[]; componentOptions?: CompositeEngineInput["componentOptions"]; surfaceOptions?: SurfaceResolutionOptions }): Promise<{ ok: boolean; drift: string[] }>;
-export async function emitLibrary(root: string, catalog: CatalogData | CompositeCatalogData, options: { check?: boolean; targets?: readonly CompositeEmitTarget[]; componentOptions?: CompositeEngineInput["componentOptions"]; surfaceOptions?: SurfaceResolutionOptions } = {}): Promise<{ ok: boolean; drift: string[] }> {
+export async function emitLibrary(root: string, hostCatalog: CatalogData | CompositeCatalogData, hostOptions: { check?: boolean; targets?: readonly CompositeEmitTarget[]; componentOptions?: CompositeEngineInput["componentOptions"]; surfaceOptions?: SurfaceResolutionOptions } = {}): Promise<{ ok: boolean; drift: string[] }> {
   return locked(root, async path => {
-    const composite = "values" in catalog;
-    const library = composite ? await readCompositeUnlocked(path, catalog) : await readUnlocked(path, catalog);
-    const result = composite ? await checkCompositeUnlocked(path, catalog, library as CompositeLibraryData, options.componentOptions, options.surfaceOptions) : await checkUnlocked(path, catalog, library as LibraryData);
+    const composite = "values" in hostCatalog, catalog = composite ? withSurfaces(hostCatalog) : hostCatalog;
+    const library = composite ? await readCompositeUnlocked(path, catalog as CompositeCatalogData) : await readUnlocked(path, catalog as CatalogData);
+    const options = composite ? { ...hostOptions, surfaceOptions: await surfaceOptionsFor(catalog as CompositeCatalogData, hostOptions.surfaceOptions, (library as CompositeLibraryData).surfaces !== undefined) } : hostOptions;
+    const result = composite ? await checkCompositeUnlocked(path, catalog as CompositeCatalogData, library as CompositeLibraryData, options.componentOptions, options.surfaceOptions) : await checkUnlocked(path, catalog as CatalogData, library as LibraryData);
     if (!result.ok) throw new LibraryCheckError(result);
     // Legacy value folders keep their existing generated bytes and default targets.
     const metadata = JSON.parse(new TextDecoder("utf-8", { fatal: true }).decode(await regularFile(containedPath(path, "metadata.json"))));
     const files = composite && metadata.format === "composite-v1"
-      ? libraryFiles(catalog, library as CompositeLibraryData, options.targets, options.componentOptions, options.surfaceOptions)
-      : libraryFiles(composite ? catalog.values : catalog, composite ? valuePortion(library as CompositeLibraryData) : library as LibraryData, options.targets as readonly EmitTarget[] | undefined);
+      ? libraryFiles(catalog as CompositeCatalogData, library as CompositeLibraryData, options.targets, options.componentOptions, options.surfaceOptions)
+      : libraryFiles(composite ? (catalog as CompositeCatalogData).values : catalog as CatalogData, composite ? valuePortion(library as CompositeLibraryData) : library as LibraryData, options.targets as readonly EmitTarget[] | undefined);
     const drift: string[] = [];
     for (const [name, contents] of files) {
       try { if (new TextDecoder("utf-8", { fatal: true }).decode(await regularFile(containedPath(path, name))) !== contents) drift.push(name); }
@@ -424,7 +439,8 @@ export async function setNeed(input: string, id: string, change: { status: NeedS
   });
 }
 /** Closed composite dispatch; existing value/component validators retain their contracts. */
-export function isCompositeChangeSet(value:unknown,catalog:CompositeCatalogData):value is CompositeChangeSet {
+export function isCompositeChangeSet(value:unknown,hostCatalog:CompositeCatalogData):value is CompositeChangeSet {
+  const catalog=withSurfaces(hostCatalog);
   try{value=runtimeSnapshot(value);}catch{return false;}
   if(!record(value)||!exactKeys(value,["baseHash","changes"],["bundles","surfaceBundles"])||typeof value.baseHash!=="string"||!/^sha256:[a-f0-9]{64}$/.test(value.baseHash)||!Array.isArray(value.changes)||value.changes.length>256||value.bundles!==undefined&&!Array.isArray(value.bundles)||value.surfaceBundles!==undefined&&!Array.isArray(value.surfaceBundles))return false;
   return value.changes.every(operation=>{

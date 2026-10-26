@@ -6,9 +6,10 @@ import { fileURLToPath } from "node:url";
 import { runDogfood, dogfoodSourceModules, DOGFOOD_PACKAGE_NAME, type DogfoodException, type NeedStatus } from "../catalog-core/dogfood.js";
 import { consumerDogfoodSources, parseConsumerDogfoodContract, runConsumerDogfood } from "./consumer-dogfood.js";
 import tokenSlots from "../catalog/slots/tokens.json" with { type: "json" };
-import { importFoundryFrames, importFoundrySections, libraryHash, loadCatalog, loadComponentRegistry, loadSectionRegistry, loadBuildCatalog, type CompositeFinding, type CompositeEmitTarget } from "../catalog-core/index.js";
-import type { SurfaceCandidateDocument, SurfaceResolutionOptions } from "../catalog-core/surface-types.js";
+import { libraryHash, loadCatalog, loadComponentRegistry, type CompositeFinding, type CompositeEmitTarget } from "../catalog-core/index.js";
+import type { SurfaceResolutionOptions } from "../catalog-core/surface-types.js";
 import { readSurfacePackageEvidence } from "./surface-package-evidence.js";
+import { foundrySurfaceCatalog } from "./surface-catalog.js";
 import { compositeLibraryHash } from "../catalog-core/library-components.js";
 import type { EngineInput } from "../catalog-core/resolve.js";
 import { checkLibrary, emitLibrary, isLibraryChangeSet, isCompositeChangeSet, writeCompositeLibrary, LIBRARY_EMIT_TARGETS, LibraryCheckError, LibraryConflictError, LibraryInputError, readLibrary, writeLibrary, readNeeds, writeNeeds, setNeed, NEED_STATUSES, isNeedCandidate } from "./fs-library.js";
@@ -151,7 +152,7 @@ export async function main(argv: string[], io: LibraryCliIO = defaultIO): Promis
       io.out(args.json ? JSON.stringify({ needs, open: open.length, parents }) : `${open.length} needs are open; ${parents.length} block these parents.\nID\tStatus\tParent\tMissing\n${needs.map(row => `${row.id}\t${row.status}\t${row.raisedBy}\t${row.missing}`).join("\n")}`); return 0;
     }
     const catalog = loadCatalog();
-    const compositeCatalog = { values: catalog, components: { slots: loadComponentRegistry().slots, fills: [] }, surfaces: {slots:[...loadSectionRegistry().slots,...loadBuildCatalog().slots.filter((slot):slot is import("../catalog-core/types.js").FrameSlot=>slot.layer==="frames")],fills:[...importFoundrySections().fills,...importFoundryFrames().fills] as unknown as SurfaceCandidateDocument[],transforms:[],rules:[],materializations:[]} };
+    const compositeCatalog = { values: catalog, components: { slots: loadComponentRegistry().slots, fills: [] }, surfaces: foundrySurfaceCatalog() };
     // Package-pointer leaves are checked against the export inventory of the packages actually installed beside this CLI.
     const surfaceOptions = async (): Promise<SurfaceResolutionOptions> => ({ packages: await readSurfacePackageEvidence(compositeCatalog.surfaces.fills), measurements: [] });
     if (args.command === "dogfood" || args.command === "dogfood-consumer") {

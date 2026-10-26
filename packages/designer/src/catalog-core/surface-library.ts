@@ -478,7 +478,9 @@ export function applySurfaceOperation(catalog: CompositeCatalogData, library: Co
             surfaceFault("S2 adoption has derivation inputs");
         if (bundle.inputsHash !== surfaceDerivationHash(bundle.base, bundle.transform, bundle.rule, catalog, operation.slot, bundle.inputs))
             surfaceFault("S6 stale derivation");
-        document = current && surfaceDescriptorHash(surfaceOf(current)) === surfaceDescriptorHash(sourceFill) && stableStringify(surfaceOf(current).origin) === stableStringify(sourceFill.origin) ? current : bundle.document;
+        // A package pointer at this leaf is replaced, never retained as the source fill.
+        const prior = current ? surfaceEntryOf(current) : undefined;
+        document = prior && !isSurfacePackageEntry(prior) && surfaceDescriptorHash(prior) === surfaceDescriptorHash(sourceFill) && stableStringify(prior.origin) === stableStringify(sourceFill.origin) ? current : bundle.document;
         newFiles = bundle.files;
     }
     else if (operation.op === "author") {
