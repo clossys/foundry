@@ -262,7 +262,7 @@ export const BLOCK_ENTRIES: readonly BlockEntry[] = [
     id: "items.ordered-step-sequence",
     label: "Ordered steps (legacy)",
   }),
-  spec(SEQUENCE, { id: "items.timeline", label: "Timeline", inFlight: pr(2391, "draft") }),
+  exported(SEQUENCE, "Timeline", { id: "items.timeline", label: "Timeline" }),
 
   // Explain / Brand
   exported(BRAND, "Lockup", { id: "say.lockup", label: "Lockup" }),
@@ -302,6 +302,7 @@ export const BLOCK_ENTRIES: readonly BlockEntry[] = [
   recipe(METRICS, "items.raw", { id: "items.stat-grid", label: "Stat grid" }),
   built(METRICS, "StatusList", { id: "items.status-list", label: "Status list" }),
   exported(METRICS, "UsageMeter", { id: "items.usage-meter", label: "Usage meter" }),
+  exported(METRICS, "UsageSummary", { id: "items.usage-summary", label: "Usage summary", notes: ["A list of usage meter records."] }),
 
   // Organize / Records
   built(RECORDS, "DataTable", { id: "matrix.data-table", label: "Data table" }),
@@ -317,8 +318,8 @@ export const BLOCK_ENTRIES: readonly BlockEntry[] = [
 
   // Organize / Activity
   exported(ACTIVITY, "EventItem", { id: "items.event-item", label: "Event item" }),
-  spec(ACTIVITY, { id: "items.activity-feed", label: "Activity feed" }),
-  spec(ACTIVITY, { id: "matrix.audit-log", label: "Audit log" }),
+  exported(ACTIVITY, "ActivityFeed", { id: "items.activity-feed", label: "Activity feed", notes: ["Built on the event item block."] }),
+  exported(ACTIVITY, "AuditLog", { id: "matrix.audit-log", label: "Audit log", notes: ["Built on the data table block."] }),
 
   // Organize / Containers
   built(CONTAINERS, "Panel", { id: "matrix.panel", label: "Panel" }),

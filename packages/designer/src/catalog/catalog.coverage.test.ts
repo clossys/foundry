@@ -176,6 +176,7 @@ const FROZEN_BLOCK_IDS: readonly string[] = [
   "items.topics",
   "items.tree",
   "items.usage-meter",
+  "items.usage-summary",
   "matrix.access-matrix",
   "matrix.audit-log",
   "matrix.canvas-surface",

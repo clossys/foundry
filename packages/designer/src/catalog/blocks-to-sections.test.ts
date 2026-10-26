@@ -38,7 +38,7 @@ const unmapped = [
   "matrix.resizable-pane", "form.consent-banner", "items.notification-center",
   "items.specimen-stack", "say.specimen", "matrix.specimen-panel", "say.anatomy-callouts", "matrix.scene",
   "matrix.catalog-workspace", "matrix.flow-canvas", "matrix.catalog-browser", "matrix.canvas-surface",
-  "items.raw", "matrix.raw", "items.relation-graph", "form.refresh-status",
+  "items.raw", "matrix.raw", "items.relation-graph", "form.refresh-status", "items.usage-summary",
 ];
 
 describe("legacy block section homes", () => {
@@ -54,11 +54,11 @@ describe("legacy block section homes", () => {
 
   it("agrees with existing retirement aliases without replacing legacy IDs", () => {
     expect(mapping).toEqual(Object.fromEntries(retired.map(row => [row.id, row.replacedBy])));
-    expect(BLOCK_ENTRIES).toHaveLength(88);
+    expect(BLOCK_ENTRIES).toHaveLength(89);
     expect(BLOCK_ENTRIES.map(block => block.id).sort()).toEqual([...Object.keys(expected), ...unmapped].sort());
   });
 
-  it("attaches homes to mapped entries and leaves the other 31 addresses absent", () => {
+  it("attaches homes to mapped entries and leaves the other 32 addresses absent", () => {
     const mapped = BLOCK_ENTRIES.filter(block => block.sectionLeaf !== undefined);
     expect(Object.fromEntries(mapped.map(block => [block.id, block.sectionLeaf]))).toEqual(expected);
     expect(BLOCK_ENTRIES.filter(block => block.sectionLeaf === undefined).map(block => block.id).sort()).toEqual([...unmapped].sort());
@@ -72,12 +72,12 @@ describe("legacy block section homes", () => {
       expect(block?.export, id).toBeNull();
       expect(block?.recipeOf, id).toBe(id === "matrix.comparison" ? "matrix.raw" : "items.raw");
     }
-    for (const id of ["items.media-gallery", "items.timeline", "matrix.data-grid", "items.activity-feed", "matrix.audit-log", "form.form-wizard", "form.settings-section", "form.save-bar", "form.filter-builder", "say.error-state", "say.notice-stack", "form.load-more"]) {
+    for (const id of ["items.media-gallery", "matrix.data-grid", "form.form-wizard", "form.settings-section", "form.save-bar", "form.filter-builder", "say.error-state", "say.notice-stack", "form.load-more"]) {
       const block = BLOCK_ENTRIES.find(block => block.id === id);
       expect(block?.export, id).toBeNull();
       expect(block?.built, id).toBe("no");
     }
-    for (const [id, name] of [["items.stat", "Stat"], ["items.usage-meter", "UsageMeter"], ["items.event-item", "EventItem"], ["say.testimonial", "Testimonial"], ["matrix.grouped-table", "GroupedTable"], ["items.record-ledger", "RecordLedger"]]) {
+    for (const [id, name] of [["items.stat", "Stat"], ["items.usage-meter", "UsageMeter"], ["items.event-item", "EventItem"], ["say.testimonial", "Testimonial"], ["matrix.grouped-table", "GroupedTable"], ["items.record-ledger", "RecordLedger"], ["items.timeline", "Timeline"], ["items.activity-feed", "ActivityFeed"], ["matrix.audit-log", "AuditLog"]]) {
       expect(BLOCK_ENTRIES.find(block => block.id === id)?.export, id).toBe(name);
     }
   });

@@ -1,0 +1,54 @@
+{
+  "$extensions": {
+    "com.clossys.fill": {
+      "author": "foundry",
+      "builtOn": [],
+      "conforms": [],
+      "evidence": [],
+      "id": "foundry/sections.timeline",
+      "license": "MIT",
+      "mode": "implementation",
+      "originKinds": [
+        "adopted"
+      ],
+      "pin": {
+        "export": "./blocks#Timeline",
+        "package": "@clossys/designer",
+        "version": "0.12.0"
+      },
+      "relation": "same-contract",
+      "slot": "sections.timeline",
+      "source": "foundry",
+      "sourceAddress": "./blocks#Timeline",
+      "status": "draft",
+      "trust": "foundry"
+    }
+  },
+  "sections": {
+    "timeline": {
+      "configs": {},
+      "impl": {
+        "export": "Timeline",
+        "kind": "package",
+        "module": "@clossys/designer/blocks"
+      },
+      "license": "MIT",
+      "notes": [
+        "Events carry a machine-readable date, host-formatted dateText, heading and optional description. Root is an ordered list; the marker rail is drawn with line tokens, not a separator component.",
+        "Descriptor only; source imports, token reads, shared anatomy, accessibility, contrast and consumer runtime conformance are unmeasured. Content bindings describe host adaptation points, not type-equivalent converters."
+      ],
+      "parts": [],
+      "pin": {
+        "export": "./blocks#Timeline",
+        "package": "@clossys/designer",
+        "version": "0.12.0"
+      },
+      "propMap": {},
+      "slot": "sections.timeline",
+      "slotMap": {
+        "events": "./blocks#Timeline.events"
+      },
+      "source": "foundry"
+    }
+  }
+}

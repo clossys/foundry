@@ -20,12 +20,13 @@ describe("planSurfacePreviews", () => {
   it("accounts for every planned Sections/Frames leaf of the real catalog: a preview or a named reason", () => {
     const { plan, fills } = realPlan();
     const planned = plan.rows.filter(row => row.status !== "not-chosen");
-    expect(planned.filter(row => row.slot.startsWith("sections."))).toHaveLength(26);
+    expect(planned.filter(row => row.slot.startsWith("sections."))).toHaveLength(30);
     expect(planned.filter(row => row.slot.startsWith("frames."))).toHaveLength(5);
     const result = planSurfacePreviews({ plan, fills });
     const previewed = Object.keys(result.previews), gaps = result.unrenderable.map(gap => gap.slot);
     expect([...previewed, ...gaps].sort()).toEqual(planned.map(row => row.slot).sort());
-    expect(previewed.filter(slot => slot.startsWith("sections."))).toHaveLength(18);
+    expect(previewed.filter(slot => slot.startsWith("sections."))).toHaveLength(22);
+    for (const slot of ["sections.activity-feed", "sections.audit-log", "sections.timeline", "sections.usage"]) expect(previewed, slot).toContain(slot);
     expect(previewed.filter(slot => slot.startsWith("frames.")).sort()).toEqual(["frames.app-header", "frames.site-footer", "frames.site-header"]);
     expect(result.unrenderable.every(gap => gap.reason.length > 0)).toBe(true);
     // A Publisher frame is reported, never imitated by a designer export.

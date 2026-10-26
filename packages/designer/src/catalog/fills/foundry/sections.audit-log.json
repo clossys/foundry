@@ -1,0 +1,56 @@
+{
+  "$extensions": {
+    "com.clossys.fill": {
+      "author": "foundry",
+      "builtOn": [],
+      "conforms": [],
+      "evidence": [],
+      "id": "foundry/sections.audit-log",
+      "license": "MIT",
+      "mode": "implementation",
+      "originKinds": [
+        "adopted"
+      ],
+      "pin": {
+        "export": "./blocks#AuditLog",
+        "package": "@clossys/designer",
+        "version": "0.12.0"
+      },
+      "relation": "same-contract",
+      "slot": "sections.audit-log",
+      "source": "foundry",
+      "sourceAddress": "./blocks#AuditLog",
+      "status": "draft",
+      "trust": "foundry"
+    }
+  },
+  "sections": {
+    "audit-log": {
+      "configs": {},
+      "impl": {
+        "export": "AuditLog",
+        "kind": "package",
+        "module": "@clossys/designer/blocks"
+      },
+      "license": "MIT",
+      "notes": [
+        "Composes DataTable with fixed time, actor, action and target columns; host supplies labels. Filter and export are host regions in the DataTable toolbar; the block never filters or exports rows itself.",
+        "Descriptor only; source imports, token reads, shared anatomy, accessibility, contrast and consumer runtime conformance are unmeasured. Content bindings describe host adaptation points, not type-equivalent converters."
+      ],
+      "parts": [],
+      "pin": {
+        "export": "./blocks#AuditLog",
+        "package": "@clossys/designer",
+        "version": "0.12.0"
+      },
+      "propMap": {},
+      "slot": "sections.audit-log",
+      "slotMap": {
+        "entries": "./blocks#AuditLog.entries",
+        "export": "./blocks#AuditLog.exportAction",
+        "filter": "./blocks#AuditLog.filter"
+      },
+      "source": "foundry"
+    }
+  }
+}
