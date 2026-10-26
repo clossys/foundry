@@ -137,7 +137,13 @@ describe("offline library decisions", () => {
       expect(JSON.parse(output[1]!).changed).toBe(false);
       expect(await runApplyDecisions([root], io)).toBe(2);
       expect(await runApplyDecisions([...args, "--catalog", catalogPath], io)).toBe(2);
-      expect(await runApplyDecisions([root, "--catalog", catalogPath], io)).toBe(1);
+      // Absent observations are runtime-pending, but emission still refuses undeclared package exports.
+      expect(await runApplyDecisions([root, "--catalog", catalogPath], io)).toBe(2);
+      expect(errors.at(-1)).toMatch(/unavailable package export Button/);
+      // Supplied observations that fail are a check failure.
+      const stale = structuredClone(componentOptions!); stale.evidence!.observations["components.button"]!.sourceHash = `sha256:${"0".repeat(64)}`;
+      await fs.writeFile(observations, JSON.stringify(stale));
+      expect(await runApplyDecisions(args, io)).toBe(1);
       expect(errors.at(-1)).toMatch(/check failed/);
     } finally { await fs.rm(temporary, { recursive: true, force: true }); }
   });

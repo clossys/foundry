@@ -19,8 +19,7 @@ export function CandidateChoice({ candidate, source = candidate?.source, target,
   // Selection is still checked against the actual candidate by the provider.
   if (source === undefined) return null;
   // Display counts: a runtime-pending finding reads as the neutral pending line, never as an error badge.
-  const pending = candidate ? checkCounts(candidate.findings).pending : 0;
-  const shown = candidate ? { errors: Math.max(0, candidate.errors - pending), notices: candidate.notices, pending } : undefined;
+  const shown = candidate ? checkCounts(candidate.findings) : undefined;
   return <div className="relative w-full" aria-busy={!candidate || undefined}>
     <RadioGroup.Radio value={source} isDisabled={candidate ? !candidate.usable : false} aria-label={labels.useSource(source, target)}
       className={PREVIEW_CHOICE_CLASS}>

@@ -80,8 +80,20 @@ describe("SYNTHETIC component code generation; no shipped conformance claims", (
     profile.components["components.button"]!.propMap = profile.components["components.button"]!.descriptor.propMap;
     expect(() => emitComponents(profile, ["component-index"])).toThrow(/unsupported propMap/);
     const missing = packageProfile(); missing.check = { ok: false, findings: [] };
-    expect(() => emitComponents(missing, ["component-index"])).toThrow(/observations/);
+    expect(() => emitComponents(missing, ["component-index"])).toThrow(/checks failed/);
     expect(JSON.parse(emitComponents(missing, ["components-consumption"])[0]!.content).status).toBe("blocked");
+  });
+  it("emits a runtime-pending selection with the same code and never reports it as observations-pass", () => {
+    const observed = packageProfile(), input = synthetic();
+    const library = applyComponentLibraryChange(input.catalog, input.library, { baseHash: componentLibraryHash(input.library), changes: [{ op: "adopt", slot: input.candidate.slot, source: input.candidate.source }] });
+    const pending = resolveComponents({ catalog: input.catalog, library, values: input.check, evidence: { ...input.check, observations: {} }, packageExports });
+    expect(pending.check.ok).toBe(true);
+    expect(pending.check.findings.length).toBeGreaterThan(0);
+    expect(pending.check.findings.every(finding => finding.severity === "notice")).toBe(true);
+    const status = (profile: typeof observed) => JSON.parse(emitComponents(profile, ["components-consumption"])[0]!.content).status;
+    expect(status(pending)).toBe("runtime-pending");
+    expect(status(observed)).toBe("observations-pass");
+    expect(emitComponents(pending, ["component-index"])).toEqual(emitComponents(observed, ["component-index"]));
   });
   it.each(["select", "combo-box", "calendar", "popover", "checkbox"])("owns exactly one %s facade in a checker-approved SYNTHETIC selected layout", async leaf => {
     // Synthetic Button protocol under the selected path layout: this proves the

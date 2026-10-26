@@ -1,6 +1,7 @@
 import { isSurfacePackageEntry, surfaceEntryOf } from "./surface-library.js";
 import { surfaceRuntimeIdentity } from "./surface-check.js";
 import { libraryHash, resolve } from "./api.js";
+import { isObservationPending } from "./check-components.js";
 import { checkConsumerRuntimePorts, isRuntimeDigest, runtimeHash, runtimeSnapshot, runtimeSourceFindings, runtimeStageModuleIdentity } from "./runtime-ports.js";
 import type { ConsumerRuntimePorts, RuntimeCell, RuntimeContent, RuntimeContentRef, RuntimeDigest, RuntimeFillDescriptor, RuntimeJson, RuntimeRendererDescriptor, RuntimeFramePageHeader, RuntimeStageDescriptor, RuntimeFrameStage } from "./runtime-ports.js";
 import type { BuildCatalogData, CompositeEngineInput, CompositeResolved } from "./types.js";
@@ -135,6 +136,9 @@ export function prepareRuntimeAssembly<Node>(input: RuntimeAssemblyInput<Node>):
     const wholeHash = libraryHash(library);
     const profile = runtimeSnapshot(resolve({ ...input.engine, library }));
     if (!profile.check.ok || profile.check.findings.some(f => f.severity === "error")) fail("refused", "consumer library checks failed");
+    // Adoption admits absent component observations; a runtime assembly never runs without them.
+    const unobserved = [...new Set(profile.check.findings.filter(isObservationPending).map(f => f.subject))].sort();
+    if (unobserved.length) fail("pending", `component runtime observations required: ${unobserved.join(", ")}`);
     const check = checkConsumerRuntimePorts(input.ports, input.contracts, { consumer: profile.consumer, libraryHash: wholeHash, selectionHash: profile.selectionHash });
     if (check.status !== "valid") fail("refused", check.findings.map(f => `${f.path}: ${f.message}`).join("; "));
     const manifest = runtimeSnapshot(input.ports.manifest), binding = runtimeSnapshot(input.binding), layout = input.layout && runtimeSnapshot(input.layout.descriptor);

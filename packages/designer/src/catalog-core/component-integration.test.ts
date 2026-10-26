@@ -140,10 +140,13 @@ describe("SYNTHETIC components through the public composite facade", () => {
     const profile = client.resolve(input);
     profile.check.findings = [...profile.check.findings, { code: "C1", rule: "test", severity: "error", subject: "test", message: "broken" }];
     expect(() => client.emit(profile, ["component-index"])).toThrow(/findings/);
-    const noEvidence = client.resolve({ ...input, componentOptions: {} });
-    expect(noEvidence.components.check.ok).toBe(false);
-    expect(() => client.emit(noEvidence, ["css-brand"])).toThrow(/findings/);
-    expect(client.emit(noEvidence, ["components-consumption"])[0]!.contents).toContain("blocked");
+    // Absent evidence is runtime-pending, not refused: the same code emits, reported as runtime-pending.
+    const noEvidence = client.resolve({ ...input, componentOptions: { ...input.componentOptions, evidence: { ...input.componentOptions!.evidence!, observations: {} } } });
+    expect(noEvidence.components.check.ok).toBe(true);
+    expect(noEvidence.components.check.findings.length).toBeGreaterThan(0);
+    expect(noEvidence.components.check.findings.every(finding => finding.severity === "notice")).toBe(true);
+    expect(client.emit(noEvidence, ["component-index"])).toEqual(client.emit(client.resolve(input), ["component-index"]));
+    expect(JSON.parse(client.emit(noEvidence, ["components-consumption"])[0]!.contents).status).toBe("runtime-pending");
     expect(() => client.emit(client.resolve(input), ["component-index"], {})).not.toThrow();
     const noGlyph = structuredClone(input.library); noGlyph.values.fills = noGlyph.values.fills.filter(f => metaOf(f).slot !== "assets.icon-close");
     expect(client.check({ ...input, library: noGlyph }).ok).toBe(false);

@@ -19,6 +19,7 @@ it("classifies exactly the checker's unobserved-fill codes as runtime pending", 
   const unavailable = findings.filter(finding => finding.message === OBSERVATIONS_UNAVAILABLE);
   expect([...new Set(unavailable.map(finding => finding.code))].sort()).toEqual([...RUNTIME_PENDING_CODES].sort());
   expect(unavailable.every(isRuntimePending)).toBe(true);
+  expect(unavailable.every(finding => finding.severity === "notice")).toBe(true);
   // Every other finding the checker raised for this fill (e.g. an unknown contract) stays a real error.
   const others = findings.filter(finding => finding.message !== OBSERVATIONS_UNAVAILABLE);
   expect(others.length).toBeGreaterThan(0);
@@ -27,12 +28,15 @@ it("classifies exactly the checker's unobserved-fill codes as runtime pending", 
 
 it("keeps a pending code loud on a fill whose observations were supplied, and other codes loud", () => {
   const supplied = { code: "K5", severity: "error", message: "Accessibility evidence is stale for source or consumer tokens" };
-  const memberPrefixed = { code: "K6", severity: "error", message: `label: ${OBSERVATIONS_UNAVAILABLE}` };
-  const otherCode = { code: "K8", severity: "error", message: OBSERVATIONS_UNAVAILABLE };
+  const memberPrefixed = { code: "K6", severity: "notice", message: `label: ${OBSERVATIONS_UNAVAILABLE}` };
+  const otherCode = { code: "K8", severity: "notice", message: OBSERVATIONS_UNAVAILABLE };
+  // An error is never pending, whatever its message.
+  const errorSeverity = { code: "K2", severity: "error", message: OBSERVATIONS_UNAVAILABLE };
   expect(isRuntimePending(supplied)).toBe(false);
   expect(isRuntimePending(memberPrefixed)).toBe(true);
   expect(isRuntimePending(otherCode)).toBe(false);
-  expect(checkCounts([supplied, memberPrefixed, otherCode, { code: "A5", severity: "notice", message: "n" }])).toEqual({ errors: 2, notices: 1, pending: 1 });
+  expect(isRuntimePending(errorSeverity)).toBe(false);
+  expect(checkCounts([supplied, memberPrefixed, otherCode, errorSeverity, { code: "A5", severity: "notice", message: "n" }])).toEqual({ errors: 2, notices: 2, pending: 1 });
 });
 
 it("renders the pending count as a quiet neutral line with its own words, nothing at zero", () => {

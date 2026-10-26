@@ -82,9 +82,14 @@ it('vf13: a studio candidate whose errors are all runtime-pending shows the neut
   const { smallCatalog, emptyLibrary } = await import('../../studio/__fixtures__/studio.js');
   const { OBSERVATIONS_UNAVAILABLE } = await import('../../catalog-core/check-components.js');
   const library = emptyLibrary(), base = buildCandidates({ catalog: smallCatalog, library, working: library, slotId: 'tokens.surface-color', scope: 'slot', target: 'tokens.surface-color' })[0]!;
-  const findings = [{ code: 'K2' as const, rule: 'r', severity: 'error' as const, subject: 's', message: OBSERVATIONS_UNAVAILABLE }];
-  const { container } = render(<RadioGroup label="Choices"><CandidateChoice candidate={{ ...base, findings, errors: 1, notices: 0 }} target="leaf" labels={labels} /></RadioGroup>);
+  const findings = [{ code: 'K2' as const, rule: 'r', severity: 'notice' as const, subject: 's', message: OBSERVATIONS_UNAVAILABLE }];
+  const { container, unmount } = render(<RadioGroup label="Choices"><CandidateChoice candidate={{ ...base, findings, errors: 0, notices: 1 }} target="leaf" labels={labels} /></RadioGroup>);
   expect(container.querySelector('[data-studio-runtime-pending]')).not.toBeNull();
-  expect(screen.queryByRole('button', { name: labels.checkSummary(1, 0) })).toBeNull();
+  expect(screen.queryByRole('button', { name: labels.checkSummary(0, 1) })).toBeNull();
   expect(container.querySelector('[data-error-reason]')).toBeNull();
+  unmount();
+  // Pending notices never hide a real error or inflate the notice count.
+  const mixed = [{ code: 'K3' as const, rule: 'r', severity: 'error' as const, subject: 's', message: 'Token read tokens.x does not resolve' }, ...findings, { ...findings[0]!, code: 'K5' as const }];
+  render(<RadioGroup label="Choices"><CandidateChoice candidate={{ ...base, findings: mixed, errors: 1, notices: 2 }} target="leaf" labels={labels} /></RadioGroup>);
+  expect(screen.getByRole('button', { name: labels.checkSummary(1, 0) })).toBeInTheDocument();
 });
