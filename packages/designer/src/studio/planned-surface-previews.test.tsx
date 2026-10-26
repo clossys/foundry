@@ -1,15 +1,16 @@
 /** @vitest-environment jsdom */
-import { describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
+import { act, cleanup, render, screen } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 import { renderToStaticMarkup } from "react-dom/server";
 import { importFoundryFrames, importFoundrySections, loadBuildCatalog, planSurfaceDefaults } from "../catalog-core/index.js";
 import type { SurfaceDefaultCandidateDocument, SurfaceDefaultsInput } from "../catalog-core/index.js";
 import * as studioEntry from "./index.js";
 import { packageSurfacePreview, planSurfacePreviews } from "./planned-surface-previews.js";
 
-/** Leaves adopted by vf26 whose designer exports have no preview sample content yet (follow-up lane). */
-const SAMPLE_GAPS = [["sections.chat", "blocks#Chat"], ["sections.explorer", "blocks#Explorer"], ["sections.hero", "blocks#Hero"], ["sections.newsletter", "blocks#NewsletterBand"],
-  ["frames.app-shell", "frames#AppFrame"], ["frames.command", "blocks#CommandMenu"]].map(([slot, pointer]) => ({ slot, reason: `no preview sample content for @clossys/designer/${pointer}` }));
 const SITE_SHELL_GAP = { slot: "frames.site-shell", reason: "@clossys/publisher/web#SiteFrame is not a designer export; the designer does not render it" };
+
+afterEach(() => { cleanup(); vi.unstubAllGlobals(); });
 
 function realPlan() {
   const slots = loadBuildCatalog().slots.filter(slot => slot.layer === "sections" || slot.layer === "frames") as SurfaceDefaultsInput["catalog"]["slots"];
@@ -30,20 +31,19 @@ describe("planSurfacePreviews", () => {
     const result = planSurfacePreviews({ plan, fills });
     const previewed = Object.keys(result.previews), gaps = result.unrenderable.map(gap => gap.slot);
     expect([...previewed, ...gaps].sort()).toEqual(planned.map(row => row.slot).sort());
-    // Every planned designer export has sample content except the named gaps; the Publisher frame waits for its host.
-    expect(previewed.filter(slot => slot.startsWith("sections."))).toHaveLength(41);
+    // Every planned designer export has sample content; only the Publisher frame waits for its host.
+    expect(previewed.filter(slot => slot.startsWith("sections."))).toHaveLength(45);
     for (const slot of ["sections.activity-feed", "sections.audit-log", "sections.timeline", "sections.usage"]) expect(previewed, slot).toContain(slot);
     for (const leaf of ["consent", "error-state", "stats", "data-grid", "cards", "call-to-action", "notices", "gallery", "data-table"]) expect(previewed, leaf).toContain(`sections.${leaf}`);
-    expect(previewed.filter(slot => slot.startsWith("frames.")).sort()).toEqual(["frames.app-header", "frames.app-sidebar", "frames.inspector", "frames.sheet", "frames.site-footer", "frames.site-header"]);
-    const bySlot = (gaps: readonly { slot: string }[]) => [...gaps].sort((x, y) => x.slot.localeCompare(y.slot));
-    expect(bySlot(result.unrenderable)).toEqual(bySlot([...SAMPLE_GAPS, SITE_SHELL_GAP]));
+    expect(previewed.filter(slot => slot.startsWith("frames.")).sort()).toEqual(["frames.app-header", "frames.app-shell", "frames.app-sidebar", "frames.command", "frames.inspector", "frames.sheet", "frames.site-footer", "frames.site-header"]);
+    expect(result.unrenderable).toEqual([SITE_SHELL_GAP]);
   });
 
   it("renders a non-designer export only from the host's own sample for that exact pointer", () => {
     const { plan, fills } = realPlan();
     const host = { "@clossys/publisher/web#SiteFrame": () => <p>host-site-frame</p> };
     const result = planSurfacePreviews({ plan, fills, samples: host });
-    expect(result.unrenderable).toEqual(SAMPLE_GAPS);
+    expect(result.unrenderable).toEqual([]);
     expect(result.previews["frames.site-shell"]).toMatchObject({ pointer: "@clossys/publisher/web#SiteFrame", fill: "foundry/frames.site-shell" });
     expect(renderToStaticMarkup(<>{result.previews["frames.site-shell"]!.render()}</>)).toBe("<p>host-site-frame</p>");
     // A sample for another pointer is never borrowed.
@@ -99,6 +99,45 @@ describe("planSurfacePreviews", () => {
     expect(result.previews["frames.app-sidebar"]?.pointer).toBe("@clossys/designer/blocks#AppNavigation");
     expect(html["frames.app-sidebar"]).toContain("Workspace navigation");
     expect(html["frames.app-sidebar"]).toContain("Billing");
+    // Adopted leaves render their real export with realistic sample content.
+    const adopted: Record<string, [pointer: string, text: string]> = {
+      "sections.chat": ["@clossys/designer/blocks#Chat", "How do I invite a teammate"],
+      "sections.explorer": ["@clossys/designer/blocks#Explorer", "Campaigns"],
+      "sections.hero": ["@clossys/designer/blocks#Hero", "Ship pages your whole team can trust"],
+      "sections.newsletter": ["@clossys/designer/blocks#NewsletterBand", "One email a month"],
+      "frames.app-shell": ["@clossys/designer/frames#AppFrame", "Review the spring launch"],
+      "frames.command": ["@clossys/designer/blocks#CommandMenu", "Open command menu"],
+    };
+    for (const [slot, [pointer, text]] of Object.entries(adopted)) {
+      expect(result.previews[slot]?.pointer, slot).toBe(pointer);
+      expect(html[slot], slot).toContain(text);
+    }
+    expect(html["sections.chat"]).toContain("Open Settings, choose Members");
+    expect(html["sections.newsletter"]).toContain('type="email"');
+    expect(html["frames.app-shell"]).toContain("<main");
+    // The command menu is an overlay: it previews closed, as its opener, never as an open dialog over the board.
+    expect(html["frames.command"]).not.toContain('role="dialog"');
+    expect(html["frames.command"]).toContain("<button");
+  });
+
+  it("opens the real command menu from the closed command preview", async () => {
+    const { plan, fills } = realPlan();
+    const user = userEvent.setup();
+    render(<>{planSurfacePreviews({ plan, fills }).previews["frames.command"]!.render()}</>);
+    expect(screen.queryByRole("dialog")).toBeNull();
+    await user.click(screen.getByRole("button", { name: "Open command menu" }));
+    const dialog = await screen.findByRole("dialog");
+    expect(dialog).toHaveTextContent("Open projects");
+    expect(dialog).toHaveTextContent("New project");
+  });
+
+  it("keeps the app frame preview off the board's keyboard: its command shortcut never opens a menu", () => {
+    vi.stubGlobal("matchMedia", vi.fn((media: string) => ({ media, matches: true, onchange: null, addEventListener() {}, removeEventListener() {}, addListener() {}, removeListener() {}, dispatchEvent: () => true })));
+    const { plan, fills } = realPlan();
+    render(<>{planSurfacePreviews({ plan, fills }).previews["frames.app-shell"]!.render()}</>);
+    expect(screen.getByRole("main")).toHaveTextContent("Review the spring launch");
+    for (const init of [{ key: "k", metaKey: true }, { key: "k", ctrlKey: true }]) act(() => void window.dispatchEvent(new KeyboardEvent("keydown", { ...init, bubbles: true, cancelable: true })));
+    expect(screen.queryByRole("dialog")).toBeNull();
   });
 
   it("reports a planned fill missing from the candidate documents instead of rendering it", () => {
