@@ -42,6 +42,17 @@ describe("Foundry source token reads", () => {
     expect(foundrySourceTokenReads("<Label className=\"text-caption font-body focus-visible:text-ink-primary rounded-control px-md\" />", index))
       .toEqual(["tokens.caption-size", "tokens.control-radius", "tokens.spacing", "tokens.text-color", "tokens.typeface"]);
   });
+  it("reads the named control-height utilities as the control-size slot they consume (theme-keys @utility control-h-*)", () => {
+    expect(foundrySourceTokenReads("<Tag className=\"control-h-md inline-flex\" />", index)).toEqual(["tokens.control-size"]);
+    expect(foundrySourceTokenReads("cx(\"hover:control-h-sm\", \"control-h-lg\")", index)).toEqual(["tokens.control-size"]);
+    expect(foundrySourceTokenReads("<div className=\"control-h-xl\" />", index)).toEqual([]);
+  });
+  it("declares every token a controls-group Foundry fill's source consumes: TagGroup reads its control height and focus outline", () => {
+    const tagGroup = importFoundryComponents({ slots: componentSlots as unknown as readonly ComponentSlot[] }).fills.find(fill => fill.$extensions["com.clossys.fill"].slot === "components.tag-group")!;
+    const reads = Object.values(tagGroup.components)[0]!.reads.tokens;
+    for (const read of derived()["tag-group"]!) expect(reads).toContain(read);
+    expect(reads).toEqual(expect.arrayContaining(["tokens.control-size", "tokens.focus-outline", "tokens.focus-color"]));
+  });
   it("commits the derivation for every mapped component (UPDATE_FOUNDRY_COMPONENT_FILLS=1 rewrites it)", () => {
     const bytes = JSON.stringify(derived(), null, 2) + "\n";
     if (process.env.UPDATE_FOUNDRY_COMPONENT_FILLS === "1") writeFileSync(resolve(here, "foundry-source-reads.json"), bytes);
@@ -72,9 +83,10 @@ describe("Foundry source token reads", () => {
     const omissions = Object.fromEntries(importFoundryComponents().coverage.flatMap(row => row.notes.filter(note => note.includes("source-consumed")).map(note => [row.slot.slice(11), note.replace(/^Frozen reads omit source-consumed (.*); .*$/, "$1")])));
     // Slider (Foundry slot added by the slider mapping) and tag-group (mapped with its craft record) extend the ask list: their sources consume type, radius,
     // text-colour and focus tokens that the frozen contracts' allowedReads do not yet list. Both are genuine omissions of the same class as the rest.
-    expect(Object.keys(omissions).sort()).toEqual(["chart-range", "chart-scatter", "chart-sparkline", "checkbox", "disclosure", "grid-list", "menu", "slider", "tabs", "tag-group", "toast", "tree"]);
-    expect(omissions["slider"]).toBe("tokens.body-size, tokens.radius, tokens.text-color, tokens.typeface");
-    expect(omissions["tag-group"]).toBe("tokens.focus-color, tokens.focus-outline");
+    expect(Object.keys(omissions).sort()).toEqual(["chart-range", "chart-scatter", "chart-sparkline", "checkbox", "disclosure", "grid-list", "menu", "slider", "tabs", "toast", "tree"]);
+    expect(omissions["slider"]).toBe("tokens.body-size, tokens.control-size, tokens.radius, tokens.text-color, tokens.typeface");
+    // tag-group: its contract now lists the control-size and focus-outline/colour its TagGroup source consumes.
+    expect(omissions["tag-group"]).toBeUndefined();
     expect(omissions["color-picker"]).toBeUndefined();
     expect(omissions["number-field"]).toBeUndefined();
   });

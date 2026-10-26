@@ -65,6 +65,9 @@ function utilityProperties(utility: string): string[] {
   if (radius) out.push(`--radius-${radius[1]}`);
   const spacing = SPACING.exec(bare);
   if (spacing) out.push(`--spacing-${spacing[1]}`);
+  // styles/theme-keys.css `@utility control-h-*` sets min-block-size from var(--ui-control-h-*).
+  const control = /^control-h-([a-z]+)$/.exec(bare);
+  if (control) out.push(`--ui-control-h-${control[1]}`);
   return out;
 }
 

@@ -83,6 +83,9 @@
         "tokens": [
           "tokens.accent-color",
           "tokens.caption-size",
+          "tokens.control-size",
+          "tokens.focus-color",
+          "tokens.focus-outline",
           "tokens.focus-shadow",
           "tokens.letter-spacing",
           "tokens.radius",
