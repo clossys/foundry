@@ -159,6 +159,9 @@ export type { EmittedTokenManifest, EmittedTokenDefinition } from "./emit.js";
 export type { ComponentCheckInput, ComponentObservation, ComponentMeasurement, ComponentFinding, ComponentCheckResult } from "./check-components.js";
 export { buildComponentsConsumption, scanComponentReads } from "./consumption.js";
 export type { ConsumptionReads, ConsumptionToken, ConsumptionBlocker, ConsumptionFill, ConsumptionSourceScan, ConsumptionCoverage, ConsumptionReceipt, ConsumptionInput, ConsumptionFinding } from "./consumption.js";
+/** Cross-layer usage graph derived from the consumption producers and route bindings. */
+export { buildUsageGraph, uses, usedBy, closure, graphFindings } from "./usage-graph.js";
+export type { UsageGraph, UsageGraphInputs, UsageGraphFill, UsageGraphFinding, UsageNode, UsageEdge, UsageEdgeSite, UsageLayer, UsageEdgeKind, UsageEvidence, UsageDirection, UsageReverseComposes, UsageBindingLike, UsageFillSelectionLike, UsageRuntimeObservation } from "./usage-graph.js";
 
 export * from "./runtime-ports.js";
 export * from "./runtime-assembly.js";
