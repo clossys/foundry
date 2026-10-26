@@ -7,11 +7,13 @@ import { applyCompositeLibraryChange, compositeLibraryHash, checkComposite, reso
 import { assertComponentFiles, componentOf, type ComponentDocument } from "../catalog-core/resolve-components.js";
 import type { CompositeCatalogData, CompositeLibraryData, CompositeChangeSet, CompositeCheckResult, CompositeEmitTarget, CompositeEngineInput } from "../catalog-core/types.js";
 
-import { canonicalSurfacePortion, surfaceOf, surfaceSelection, verifySurfaceFiles } from "../catalog-core/surface-library.js";
+import { canonicalSurfacePortion, isSurfacePackageEntry, surfaceEntryOf, surfaceOutputs, surfaceSelection, verifySurfaceFiles } from "../catalog-core/surface-library.js";
 import { runtimeSnapshot } from "../catalog-core/runtime-ports.js";
-import type { SurfaceResolutionOptions, SurfaceDocument } from "../catalog-core/surface-types.js";
+import type { SurfaceResolutionOptions, SurfaceDocument, SurfaceEntry, SurfaceFile } from "../catalog-core/surface-types.js";
 import type { DogfoodFinding, NeedRecord, NeedStatus, NeedCandidate } from "../catalog-core/dogfood.js";
 
+/** Paths a leaf owns, verified against the stored bytes; a package pointer owns none and has none to verify. */
+const ownedSurfacePaths = (fill: SurfaceEntry, files: readonly SurfaceFile[]): string[] => { if (!isSurfacePackageEntry(fill)) verifySurfaceFiles(fill, files); return surfaceOutputs(fill).map(row => row.path); };
 export const LIBRARY_EMIT_TARGETS: readonly EmitTarget[] = ["css-brand", "css-scales", "css-fonts", "tailwind-theme", "notices"];
 
 export class LibraryInputError extends Error {}
@@ -154,7 +156,7 @@ function compositeFiles(catalog: CompositeCatalogData, input: CompositeLibraryDa
   }
   files.set("metadata.json", stableStringify({ format: "composite-v1", ...(copy.adoptedAt === undefined ? {} : { adoptedAt: copy.adoptedAt }), values, components, files: ownedFiles.map(file => file.path), ...(copy.surfaces===undefined?{}:{surfaces:{version:1,files:copy.surfaces.files.map(file=>file.path)}}) }));
   for (const file of ownedFiles) files.set(file.path, file.content);
-  if(copy.surfaces){for(const doc of copy.surfaces.fills){const fill=surfaceOf(doc);if(!catalog.surfaces?.slots.some(slot=>slot.id===fill.slot))throw new LibraryInputError("Unknown surface contract");files.set(`fills/${fill.slot}.json`,stableStringify(doc));}for(const file of copy.surfaces.files){if(files.has(file.path))throw new LibraryInputError("Overlapping surface ownership");files.set(file.path,file.content);}files.set("surface-selection.json",stableStringify(surfaceSelection(copy)));}
+  if(copy.surfaces){for(const doc of copy.surfaces.fills){const fill=surfaceEntryOf(doc);if(!catalog.surfaces?.slots.some(slot=>slot.id===fill.slot))throw new LibraryInputError("Unknown surface contract");files.set(`fills/${fill.slot}.json`,stableStringify(doc));}for(const file of copy.surfaces.files){if(files.has(file.path))throw new LibraryInputError("Overlapping surface ownership");files.set(file.path,file.content);}files.set("surface-selection.json",stableStringify(surfaceSelection(copy)));}
   const profile = resolveComposite({ catalog, library: copy, componentOptions, surfaceOptions });
   files.set("resolved.json", stableStringify(profile));
   for (const file of emitComposite(profile, targets)) {
@@ -164,7 +166,7 @@ function compositeFiles(catalog: CompositeCatalogData, input: CompositeLibraryDa
   const valueNames = copy.values.fills.map(fill => fill.$extensions["com.clossys.fill"].slot).sort();
   const componentNames = [...seen].sort();
   files.set("index.ts", '// Generated consumer library. Do not edit.\nimport type { CompositeLibraryData } from "@clossys/designer/catalog";\nimport source from "./source.json";\nimport metadata from "./metadata.json";\nimport selection from "./selection.json";\n'
-    + [...valueNames, ...componentNames, ...(copy.surfaces?.fills.map(doc=>surfaceOf(doc).slot)??[])].map((name, index) => `import fill${index} from "./fills/${name}.json";\n`).join("")
+    + [...valueNames, ...componentNames, ...(copy.surfaces?.fills.map(doc=>surfaceEntryOf(doc).slot)??[])].map((name, index) => `import fill${index} from "./fills/${name}.json";\n`).join("")
     + `export const library = { source, ...${JSON.stringify(copy.adoptedAt === undefined ? {} : { adoptedAt: copy.adoptedAt })}, values: { ...metadata.values, selection, fills: [${valueNames.map((_, index) => `fill${index}`).join(", ")}] }, components: { ...metadata.components, fills: [${componentNames.map((_, index) => `fill${index + valueNames.length}`).join(", ")}], files: ${JSON.stringify(ownedFiles)} }${copy.surfaces===undefined?"":`, surfaces: { version: 1, fills: [${copy.surfaces.fills.map((_,index)=>`fill${index+valueNames.length+componentNames.length}`).join(", ")}], files: ${JSON.stringify(copy.surfaces.files)} }`} } as unknown as CompositeLibraryData;\n`);
   return files;
 }
@@ -195,7 +197,7 @@ async function readCompositeUnlocked(root: string, catalog: CompositeCatalogData
       components.push(fill);
     } else if(/^(sections|frames)\.[a-z][a-z0-9-]*$/.test(id)) {
       if(metadata.surfaces===undefined||!catalog.surfaces?.slots.some(slot=>slot.id===id))throw new LibraryInputError("Orphan or unknown surface fill");
-      const doc=raw as SurfaceDocument;if(surfaceOf(doc).slot!==id||await regularFile(containedPath(root,`fills/${name}`)).then(buffer=>buffer.toString("utf8"))!==stableStringify(canonicalSurfacePortion({version:1,fills:[doc],files:[]}).fills[0]))throw new LibraryInputError("Noncanonical surface fill");surfaces.push(doc);
+      const doc=raw as SurfaceDocument;if(surfaceEntryOf(doc).slot!==id||await regularFile(containedPath(root,`fills/${name}`)).then(buffer=>buffer.toString("utf8"))!==stableStringify(canonicalSurfacePortion({version:1,fills:[doc],files:[]}).fills[0]))throw new LibraryInputError("Noncanonical surface fill");surfaces.push(doc);
     } else {
       if (!valueIds.has(id)) throw new LibraryInputError("Unknown library fill filename");
       const parsed = parseFill(raw);
@@ -208,7 +210,7 @@ async function readCompositeUnlocked(root: string, catalog: CompositeCatalogData
   const library = { source, ...(metadata.adoptedAt === undefined ? {} : { adoptedAt: metadata.adoptedAt }), values: { ...metadata.values, fills, selection }, components: { ...metadata.components, fills: components, files: ownedFiles } } as unknown as CompositeLibraryData;
   if(metadata.surfaces!==undefined){
     const inventory=metadata.surfaces as {version:1;files:string[]};const surfaceFiles=await Promise.all(inventory.files.map(async name=>({path:name,content:new TextDecoder("utf-8",{fatal:true}).decode(await regularFile(containedPath(root,name)))})));
-    const portion=canonicalSurfacePortion({version:1,fills:surfaces,files:surfaceFiles});const claimed=new Set(portion.fills.flatMap(doc=>{const fill=surfaceOf(doc);verifySurfaceFiles(fill,portion.files);return fill.outputSha256.map(row=>row.path);}));
+    const portion=canonicalSurfacePortion({version:1,fills:surfaces,files:surfaceFiles});const claimed=new Set(portion.fills.flatMap(doc=>ownedSurfacePaths(surfaceEntryOf(doc),portion.files)));
     if(portion.files.some(file=>!claimed.has(file.path)||ownedFiles.some(component=>component.path===file.path))||stableStringify(inventory.files)!==stableStringify(portion.files.map(file=>file.path)))throw new LibraryInputError("Orphan/overlapping/noncanonical surface inventory");
     for(const file of portion.files.filter(file=>file.path.startsWith("surfaces/receipts/"))){let receipt:unknown;try{receipt=JSON.parse(file.content);}catch{throw new LibraryInputError("Invalid surface receipt");}if(file.content!==stableStringify(receipt))throw new LibraryInputError("Noncanonical surface receipt");}
     library.surfaces=portion;const expected=stableStringify(surfaceSelection(library));if(new TextDecoder("utf-8",{fatal:true}).decode(await regularFile(containedPath(root,"surface-selection.json")))!==expected)throw new LibraryInputError("Surface selection drift");
@@ -443,7 +445,7 @@ function projectionManagedPaths(catalog:CompositeCatalogData,library:CompositeLi
   for(const file of library.components.files)paths.add(file.path);
   for(const path of ["component-index.ts","components-consumption.json","notices/components.json"])paths.add(path);
   if(library.components.fills.some(doc=>componentOf(doc).reads.assets.length))paths.add("adapters/glyphs.ts");
-  if(library.surfaces!==undefined){const portion=canonicalSurfacePortion(library.surfaces);for(const doc of portion.fills){const fill=surfaceOf(doc);verifySurfaceFiles(fill,portion.files);paths.add(`fills/${fill.slot}.json`);paths.add(fill.slot.replace(".","/")+"/index.ts");}for(const file of portion.files)paths.add(file.path);for(const path of ["surface-index.ts","surface-selection.json","surfaces-consumption.json","notices/surfaces.json"])paths.add(path);}
+  if(library.surfaces!==undefined){const portion=canonicalSurfacePortion(library.surfaces);for(const doc of portion.fills){const fill=surfaceEntryOf(doc);ownedSurfacePaths(fill,portion.files);paths.add(`fills/${fill.slot}.json`);paths.add(fill.slot.replace(".","/")+"/index.ts");}for(const file of portion.files)paths.add(file.path);for(const path of ["surface-index.ts","surface-selection.json","surfaces-consumption.json","notices/surfaces.json"])paths.add(path);}
   return new Map([...paths].map(path=>[path,""]));
 }
 /** Finite projection ownership. Host files never become cleanup candidates. */
