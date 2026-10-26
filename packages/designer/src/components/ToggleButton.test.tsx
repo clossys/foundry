@@ -27,7 +27,7 @@ describe("Foundry ToggleButton", () => {
     const user = userEvent.setup();
     render(<ToggleButton>Bold</ToggleButton>);
     const button = screen.getByRole("button", { name: "Bold" });
-    expect(classes(button)).toEqual(expect.arrayContaining(["bg-surface-raised", "border-line-base", "text-ink-primary"]));
+    expect(classes(button)).toEqual(expect.arrayContaining(["bg-surface-raised", "border-line-control", "text-ink-primary"]));
     expect(classes(button)).not.toContain("bg-action");
     await user.click(button);
     expect(button).toHaveAttribute("data-selected", "true");

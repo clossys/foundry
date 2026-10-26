@@ -123,7 +123,7 @@ export function ComboBox({
       <div
         className={cx(
           "flex items-center gap-sm rounded-control border bg-surface-raised px-md py-sm",
-          isInvalid ? "border-status-danger" : "border-line-base",
+          isInvalid ? "border-status-danger" : "border-line-control",
         )}
         style={{ opacity: isDisabled ? UI_ALPHA_DISABLED : undefined }}
       >

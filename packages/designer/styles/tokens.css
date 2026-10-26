@@ -203,11 +203,19 @@ html:not([data-brand-bound]):not([data-suppress-brand-banner])::before {
   --color-ink-on-accent:           var(--color-ink-on-inverse, oklch(0.9702 0 0));
 
   /* ════════════════════════════════════════════════════════════════
-   * COLOR · LINE (4 · hairlines and dividers)
+   * COLOR · LINE (5 · hairlines, dividers and the control boundary)
    * ════════════════════════════════════════════════════════════════ */
   --color-line-base:              oklch(0.8761 0 0);
   --color-line-strong:            oklch(0.7763 0 0);
   --color-line-on-inverse:        oklch(0.9702 0 0 / 0.14);
+  /* Control boundary: the RESTING edge of a form control or outlined button
+   * (text, select, combo box, checkbox, radio, switch, number and date
+   * fields). Unlike the decorative hairlines above it must clear 3:1 (WCAG
+   * 1.4.11) against every surface a control sits on — base, sunken, raised
+   * and aside, in both themes — so --color-line-base can stay a light
+   * hairline. The lightest value that clears 3:1 on the sunken well
+   * (3.06:1); src/tokens/visual-pass-contrast.test.ts pins it. */
+  --color-line-control:           oklch(0.62 0 0);
   /* Panel identity: the edge colour of an outlined card or product panel.
    * Brandable; an alias of the base line, so it follows the theme. */
   --color-line-panel:             var(--color-line-base, oklch(0.8761 0 0));
@@ -690,6 +698,7 @@ html:not([data-brand-bound]):not([data-suppress-brand-banner])::before {
     --color-line-base:              oklch(0.30 0 0);
     --color-line-strong:            oklch(0.40 0 0);
     --color-line-on-inverse:        oklch(0.2178 0 0 / 0.14); /* flips with --color-surface-inverse */
+    --color-line-control:           oklch(0.54 0 0);      /* 3:1 on the raised panel, the lightest dark surface */
 
     /* ── COLOR · ACCENT ─────────────────────────────────────────── */
     --color-action: #FAFAFA;
@@ -800,6 +809,7 @@ html:not([data-brand-bound]):not([data-suppress-brand-banner])::before {
   --color-line-base:              oklch(0.30 0 0);
   --color-line-strong:            oklch(0.40 0 0);
   --color-line-on-inverse:        oklch(0.2178 0 0 / 0.14);
+  --color-line-control:           oklch(0.54 0 0);
 
   /* ── COLOR · ACCENT ───────────────────────────────────────────── */
   --color-action: #FAFAFA;

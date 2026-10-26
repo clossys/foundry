@@ -54,6 +54,25 @@
           ]
         }
       },
+      "control": {
+        "$extensions": {
+          "com.clossys.css": {
+            "raw": "oklch(0.62 0 0)"
+          },
+          "com.clossys.modes": {
+            "dark": "oklch(0.54 0 0)"
+          }
+        },
+        "$type": "color",
+        "$value": {
+          "colorSpace": "oklch",
+          "components": [
+            0.62,
+            0,
+            0
+          ]
+        }
+      },
       "on-inverse": {
         "$extensions": {
           "com.clossys.css": {

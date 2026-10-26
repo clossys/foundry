@@ -46,6 +46,7 @@
   --color-line-base:              var(--color-line-base, oklch(0.8761 0 0));
   --color-line-strong:            var(--color-line-strong, oklch(0.7763 0 0));
   --color-line-on-inverse:        var(--color-line-on-inverse, oklch(0.9702 0 0 / 0.14));
+  --color-line-control:           var(--color-line-control, oklch(0.62 0 0));
   --color-line-panel:             var(--color-line-panel, var(--color-line-base, oklch(0.8761 0 0)));
 
   /* ── COLOR · ACCENT ───────────────────────────────────────────── */

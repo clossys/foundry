@@ -111,13 +111,15 @@
   --color-ink-on-inverse:          ;
   --color-ink-on-inverse-muted:    ;
 
-  /* ─── LINE (3 required) ──────────────────────────────────────────
+  /* ─── LINE (4 required) ──────────────────────────────────────────
    * --color-line-on-inverse is typically an rgba/oklch value with alpha,
    * since it sits on top of --color-surface-inverse rather than the page
-   * ground. */
+   * ground. --color-line-control is the resting edge of a form control and
+   * must clear 3:1 on every surface a control sits on (WCAG 1.4.11). */
   --color-line-base:               ;
   --color-line-strong:             ;
   --color-line-on-inverse:         ;
+  --color-line-control:            ;
 
   /* ─── ACCENT (5 required) ────────────────────────────────────────
    * --color-accent-tint is usually your accent color at ~10% alpha. */
@@ -241,10 +243,11 @@
     --color-ink-on-inverse:          ;
     --color-ink-on-inverse-muted:    ;
 
-    /* ─── LINE (3 required) ────────────────────────────────────── */
+    /* ─── LINE (4 required) ────────────────────────────────────── */
     --color-line-base:               ;
     --color-line-strong:             ;
     --color-line-on-inverse:         ;
+    --color-line-control:            ;
 
     /* ─── ACCENT (5 required) ──────────────────────────────────── */
     --color-action: ;
@@ -310,10 +313,11 @@
   --color-ink-on-inverse:          ;
   --color-ink-on-inverse-muted:    ;
 
-  /* ─── LINE (3 required) ──────────────────────────────────────── */
+  /* ─── LINE (4 required) ──────────────────────────────────────── */
   --color-line-base:               ;
   --color-line-strong:             ;
   --color-line-on-inverse:         ;
+  --color-line-control:            ;
 
   /* ─── ACCENT (5 required) ────────────────────────────────────── */
   --color-action: ;

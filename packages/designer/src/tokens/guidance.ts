@@ -234,6 +234,13 @@ export const TOKEN_GUIDANCE: Readonly<Record<string, TokenGuidance>> = {
     application: {"cssProperty": "border-color", "valueType": "color", "context": "Borders and separators composited on inverse surfaces."},
     specimen: "border",
   },
+  "--color-line-control": {
+    purpose: "The control line draws the resting boundary that identifies a form control or outlined button.",
+    use: "Use it for the resting edge of text, select, combo box, number and date fields, checkbox, radio and switch marks, and outlined buttons.",
+    misuse: "Do not use it for decorative dividers or panel edges; those stay on the base line so the page keeps a light hairline.",
+    application: {"cssProperty": "border-color", "valueType": "color", "context": "Resting control boundaries; held at 3:1 (WCAG 1.4.11) against base, sunken, raised and aside surfaces in both themes."},
+    specimen: "border",
+  },
   "--color-line-panel": {
     purpose: "The panel line owns the authored outline of cards and product panels.",
     use: "Pair panel line with the panel border-width and corner tokens.",
@@ -1764,7 +1771,7 @@ export const TOKEN_DISPLAY_GROUPS: readonly TokenDisplayGroup[] = [
   { id: "color", label: "Color", families: [
     { id: "surface", label: "Surface", properties: ["--color-surface-base", "--color-surface-sunken", "--color-surface-raised", "--color-surface-inverse", "--color-surface-inverse-raised", "--color-surface-aside", "--color-surface-selected", "--color-surface-glass", "--color-surface-glass-inverse"] },
     { id: "ink", label: "Ink", properties: ["--color-ink-on-action", "--color-ink-primary", "--color-ink-secondary", "--color-ink-muted", "--color-ink-link", "--color-ink-on-inverse", "--color-ink-on-inverse-muted", "--color-ink-on-accent"] },
-    { id: "line", label: "Line", properties: ["--color-line-base", "--color-line-strong", "--color-line-on-inverse", "--color-line-panel"] },
+    { id: "line", label: "Line", properties: ["--color-line-base", "--color-line-strong", "--color-line-on-inverse", "--color-line-control", "--color-line-panel"] },
     { id: "action", label: "Action", properties: ["--color-action", "--color-action-hover", "--color-action-pressed", "--color-action-on-inverse", "--color-action-on-inverse-hover"] },
     { id: "accent", label: "Accent", properties: ["--color-accent", "--color-accent-text", "--color-accent-hover", "--color-accent-tint", "--color-accent-on-inverse"] },
     { id: "control", label: "Control", properties: ["--color-control-tonal", "--color-control-tonal-hover", "--color-control-tonal-inverse", "--color-control-tonal-inverse-hover", "--color-control-quiet"] },

@@ -95,3 +95,31 @@ describe("visual pass: dark surface order and hover step", () => {
     }
   });
 });
+
+/*
+ * VF-8: `--color-line-control` is the resting boundary of a form control or
+ * outlined button. WCAG 1.4.11 asks 3:1 for a boundary needed to identify the
+ * control, so it is pinned against every surface a control sits on (page,
+ * sunken well, raised panel, right rail) in both themes. `--color-line-base`
+ * stays a decorative hairline with its value unchanged.
+ */
+describe("visual pass: control boundary line (VF-8)", () => {
+  const CONTROL_SURFACES = ["--color-surface-base", "--color-surface-sunken", "--color-surface-raised", "--color-surface-aside"];
+  for (const [name, theme] of Object.entries(themes)) {
+    it(`${name}: --color-line-control clears 3:1 (WCAG 1.4.11) on every control surface`, () => {
+      const ratios = CONTROL_SURFACES.map((surface) => contrastRatio(value(theme, "--color-line-control"), value(theme, surface)));
+      expect(Math.min(...ratios)).toBeGreaterThanOrEqual(3);
+    });
+
+    it(`${name}: --color-line-control stays the lightest-weight line that clears 3:1 (within 0.15 of the floor)`, () => {
+      const ratios = CONTROL_SURFACES.map((surface) => contrastRatio(value(theme, "--color-line-control"), value(theme, surface)));
+      expect(Math.min(...ratios)).toBeLessThan(3.15);
+    });
+  }
+
+  it("--color-line-base stays the decorative hairline it was (light 0.8761, dark 0.30)", () => {
+    expect(value(light, "--color-line-base")).toBe("oklch(0.8761 0 0)");
+    expect(value(darkMedia, "--color-line-base")).toBe("oklch(0.30 0 0)");
+    expect(value(darkExplicit, "--color-line-base")).toBe("oklch(0.30 0 0)");
+  });
+});

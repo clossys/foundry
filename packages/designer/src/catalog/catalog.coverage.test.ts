@@ -28,13 +28,13 @@ import {
 } from "./index.js";
 import type { TokenId } from "./types.js";
 
-/** Frozen token leaf ids, 168. */
+/** Frozen token leaf ids, 169. */
 const FROZEN_TOKEN_IDS: readonly string[] = [
   "--color-surface-base", "--color-surface-sunken", "--color-surface-raised", "--color-surface-inverse",
   "--color-surface-inverse-raised", "--color-surface-aside", "--color-surface-selected",
   "--color-surface-glass", "--color-surface-glass-inverse", "--color-ink-primary", "--color-ink-secondary",
   "--color-ink-muted", "--color-ink-link", "--color-ink-on-inverse", "--color-ink-on-inverse-muted",
-  "--color-ink-on-primary", "--color-line-base", "--color-line-strong", "--color-line-on-inverse",
+  "--color-ink-on-primary", "--color-line-base", "--color-line-strong", "--color-line-on-inverse", "--color-line-control",
   "--color-line-panel", "--color-primary", "--color-primary-text", "--color-primary-hover",
   "--color-primary-tint", "--color-primary-on-inverse", "--color-control-tonal",
   "--color-control-tonal-hover", "--color-control-tonal-inverse", "--color-control-tonal-inverse-hover",
@@ -229,10 +229,10 @@ function aliases(value: unknown): TokenId[] {
 describe("token catalog coverage", () => {
   const ids = TOKEN_ENTRIES.map((entry) => entry.id);
 
-  it("matches the frozen id list exactly, 168 leaves", () => {
+  it("matches the frozen id list exactly, 169 leaves", () => {
     expect(duplicates(ids)).toEqual([]);
-    expect(FROZEN_TOKEN_IDS).toHaveLength(168);
-    expect(ids).toHaveLength(168);
+    expect(FROZEN_TOKEN_IDS).toHaveLength(169);
+    expect(ids).toHaveLength(169);
     expect([...ids].sort()).toEqual([...FROZEN_TOKEN_IDS].sort());
   });
 

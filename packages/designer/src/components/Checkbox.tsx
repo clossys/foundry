@@ -73,7 +73,7 @@ function CheckboxRoot({ children, className, style, ...rest }: CheckboxProps) {
               BOX_BASE,
               renderProps.isSelected || renderProps.isIndeterminate
                 ? "border-action bg-action text-ink-on-action"
-                : "border-line-base bg-surface-raised",
+                : "border-line-control bg-surface-raised",
               renderProps.isInvalid ? "border-status-danger" : "",
             )}
             style={{

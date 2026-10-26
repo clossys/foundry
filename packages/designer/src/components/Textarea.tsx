@@ -73,7 +73,7 @@ export function Textarea({
         className={(renderProps) =>
           cx(
             "resize-y rounded-control border bg-surface-raised px-md py-sm text-body text-ink-primary outline-hidden",
-            renderProps.isInvalid ? "border-status-danger" : "border-line-base",
+            renderProps.isInvalid ? "border-status-danger" : "border-line-control",
             textareaClassName,
           )
         }

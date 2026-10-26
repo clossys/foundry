@@ -55,6 +55,7 @@
   ["--color-ink-primary","oklch(0.2178 0 0)","text","color","color"],
   ["--color-ink-secondary","oklch(0.36 0 0)","text","color","color"],
   ["--color-line-base","oklch(0.8761 0 0)","border","border-color","color"],
+  ["--color-line-control","oklch(0.62 0 0)","border","border-color","color"],
   ["--color-line-on-inverse","oklch(0.9702 0 0 / 0.14)","border","border-color","color"],
   ["--color-line-panel","var(--color-line-base, oklch(0.8761 0 0))","border","border-color","color"],
   ["--color-line-strong","oklch(0.7763 0 0)","border","border-color","color"],

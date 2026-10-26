@@ -67,7 +67,7 @@ export function TextField({
           cx(
             "rounded-control border bg-surface-raised px-md py-sm text-body text-ink-primary outline-hidden",
             SIZE_CLASSES[size],
-            renderProps.isInvalid ? "border-status-danger" : "border-line-base",
+            renderProps.isInvalid ? "border-status-danger" : "border-line-control",
             inputClassName,
           )
         }

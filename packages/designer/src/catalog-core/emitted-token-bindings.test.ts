@@ -34,7 +34,7 @@ describe("selected emitted token bindings (SYNTHETIC component, real value catal
     expect(manifest.tokens.find(row => row.id === "tokens.letter-spacing.widest")).toMatchObject({ outputs: ["--tracking-widest"], values: { light: "0.1em", dark: "0.1em" } });
   });
   it("checks the public full value catalog with an empty consumer without C4 errors", () => {
-    expect(Object.keys(TOKENS)).toHaveLength(226);
+    expect(Object.keys(TOKENS)).toHaveLength(227);
     expect(client.check({ catalog: client.loadCatalog(), library: empty() }).findings.filter(f => f.code === "C4" && f.severity === "error")).toEqual([]);
   });
   it("shares actual selected theme outputs with component resolution, preserving 1.375 and 0.1em", () => {

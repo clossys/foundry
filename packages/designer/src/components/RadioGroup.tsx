@@ -124,7 +124,7 @@ function RadioGroupRadio({ children, description, className, ...rest }: RadioGro
             aria-hidden="true"
             className={cx(
               DOT_BASE,
-              renderProps.isSelected ? "border-action" : "border-line-base bg-surface-raised",
+              renderProps.isSelected ? "border-action" : "border-line-control bg-surface-raised",
               renderProps.isInvalid ? "border-status-danger" : "",
             )}
             style={{

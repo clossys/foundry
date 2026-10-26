@@ -263,10 +263,11 @@ describe("R2 foundations exact shared-token contract", () => {
     expect(Object.keys(expectedNew)).toHaveLength(29);
     const actionProperties = ["--color-action", "--color-action-hover", "--color-action-pressed", "--color-action-on-inverse", "--color-action-on-inverse-hover", "--color-ink-on-action"];
     const dockProperties = ["--ui-layout-dock-min-block", "--ui-layout-dock-default-block", "--ui-layout-dock-max-block"];
-    const expected = [...legacyProperties, ...Object.keys(expectedNew), ...actionProperties, ...dockProperties].sort();
+    const controlLineProperties = ["--color-line-control"];
+    const expected = [...legacyProperties, ...Object.keys(expectedNew), ...actionProperties, ...dockProperties, ...controlLineProperties].sort();
     expect(Object.keys(TOKENS).sort()).toEqual(expected);
     expect([...root.keys()].sort()).toEqual(expected);
-    expect(expected).toHaveLength(226);
+    expect(expected).toHaveLength(227);
     expect(TOKEN_FAMILIES).toHaveLength(32);
   });
 

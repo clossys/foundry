@@ -91,7 +91,7 @@ export const DateField = forwardRef(function DateField<T extends DateValue = Dat
               className={(renderProps) =>
                 cx(
                   "flex items-center gap-0.5 rounded-control border bg-surface-raised px-md py-sm text-body text-ink-primary",
-                  renderProps.isInvalid ? "border-status-danger" : "border-line-base",
+                  renderProps.isInvalid ? "border-status-danger" : "border-line-control",
                   inputClassName,
                 )
               }
@@ -122,7 +122,7 @@ export const DateField = forwardRef(function DateField<T extends DateValue = Dat
               type="button"
               aria-label={pickerTrigger.label}
               isDisabled={state.isDisabled || state.isReadOnly}
-              className="rounded-control border border-line-base bg-surface-raised px-md py-sm text-body text-ink-primary"
+              className="rounded-control border border-line-control bg-surface-raised px-md py-sm text-body text-ink-primary"
               style={button => ({
                 opacity: button.isDisabled ? UI_ALPHA_DISABLED : undefined,
                 boxShadow: button.isFocusVisible ? UI_RING_FOCUS : undefined,

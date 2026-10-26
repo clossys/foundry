@@ -272,6 +272,19 @@ export const TOKEN_ENTRIES: readonly TokenEntry[] = [
     sourceRows: [19], previousIds: [],
   },
   {
+    id: "--color-line-control", label: "Line control",
+    l1: "color", l2: "line", tier: "brand-required", lever: false, inTheme: true, lifecycle: "draft", ownerReview: "not-yet-reviewed",
+    modes: "per-mode", reference: { light: { literal: "oklch(0.62 0 0)" }, dark: { literal: "oklch(0.54 0 0)" } },
+    utilities: ["bg-line-control", "text-line-control", "border-line-control"],
+    pairs: [
+      { fg: "--color-line-control", bg: "--color-surface-base", min: 3 },
+      { fg: "--color-line-control", bg: "--color-surface-sunken", min: 3 },
+      { fg: "--color-line-control", bg: "--color-surface-raised", min: 3 },
+    ],
+    sourceRows: [], previousIds: [],
+    notes: ["Resting control boundary (VF-8); the base line stays a decorative hairline."],
+  },
+  {
     id: "--color-line-panel", label: "Line panel",
     l1: "color", l2: "line", tier: "brand-optional", lever: true, inTheme: true, lifecycle: "draft", ownerReview: "not-yet-reviewed",
     modes: "invariant", reference: { alias: "--color-line-base" },
