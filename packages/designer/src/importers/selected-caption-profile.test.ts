@@ -37,11 +37,11 @@ describe("selected caption source prerequisite; runtime profile remains unavaila
   it("inherits root geometry only without an explicit Calendar trigger size", () => {
     const code = entry("select"), trigger = code.slice(code.indexOf("function SelectTrigger("), code.indexOf("function SelectContent("));
     expect(trigger).not.toContain('size = "default"');
-    expect(trigger).toContain('group-data-[size=sm]/select:not-data-[size]:h-(--ui-control-h-sm)');
-    expect(trigger).toContain('group-data-[size=lg]/select:not-data-[size]:h-(--ui-control-h-lg)');
-    expect(trigger).toContain('data-[size=sm]:h-(--ui-control-h-sm)');
+    expect(trigger).toContain('group-data-[size=sm]/select:not-data-[size]:h-(--ui-control-h-sm,calc(var(--spacing)*7))');
+    expect(trigger).toContain('group-data-[size=lg]/select:not-data-[size]:h-(--ui-control-h-lg,calc(var(--spacing)*9))');
+    expect(trigger).toContain('data-[size=sm]:h-(--ui-control-h-sm,calc(var(--spacing)*7))');
     expect(trigger).toContain('data-[size=lg]:h-(--ui-control-h-lg)');
-    expect(trigger).toContain('data-[size=default]:h-(--ui-control-h-md)');
+    expect(trigger).toContain('data-[size=default]:h-(--ui-control-h-md,calc(var(--spacing)*8))');
     expect(trigger).toContain('className={composeRenderProps(className, (className) => cn(');
     expect(entry("calendar")).toContain("<SelectTrigger>");
   });

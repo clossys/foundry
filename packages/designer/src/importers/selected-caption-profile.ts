@@ -3,8 +3,8 @@ import type { SourceFile } from "./rewrite.js";
 
 // Exact normalized G1 entries. Raw upstream pins remain authenticated separately.
 const entries: Readonly<Record<string, string>> = {
-  "components/select/select.tsx": "32bec40aac3856c64e0c9bda5e721a494cd5621e524be887001a1dc0f91f8ce6",
-  "components/calendar/calendar.tsx": "dc0afbbb8cb9a44602ee1e3777e5e532b48491444897f34046bb96e2b28b5a47",
+  "components/select/select.tsx": "33440c6c43dd2f172e9659558d030aad7cd413d33cdb6c4a1f5455e906c463ae",
+  "components/calendar/calendar.tsx": "747066556b83fadecaa82b18a4f3ffe0c9bc29c1c168338c5fb561b844f6d5a5",
 };
 /**
  * Bounded caption adapter; it resolves no style finding or runtime observation.
@@ -29,7 +29,7 @@ export function selectedCaptionSource(file: SourceFile): SourceFile {
   trigger = trigger.replace('className={cn(', 'className={composeRenderProps(className, (className) => cn(').replace('        className\n      )}', '        className\n      ))}');
   // Every inherited rule requires absence of an explicit trigger size. An
   // explicit trigger size remains an override, including under a size="lg" root.
-  trigger = trigger.replace('data-[size=default]:h-(--ui-control-h-md)', 'h-(--ui-control-h-md) group-data-[size=sm]/select:not-data-[size]:h-(--ui-control-h-sm) group-data-[size=lg]/select:not-data-[size]:h-(--ui-control-h-lg) group-data-[size=sm]/select:not-data-[size]:rounded-(--radius-control) data-[size=default]:h-(--ui-control-h-md)');
+  trigger = trigger.replace('data-[size=default]:h-(--ui-control-h-md,calc(var(--spacing)*8))', 'h-(--ui-control-h-md,calc(var(--spacing)*8)) group-data-[size=sm]/select:not-data-[size]:h-(--ui-control-h-sm,calc(var(--spacing)*7)) group-data-[size=lg]/select:not-data-[size]:h-(--ui-control-h-lg,calc(var(--spacing)*9)) group-data-[size=sm]/select:not-data-[size]:rounded-(--radius-control) data-[size=default]:h-(--ui-control-h-md,calc(var(--spacing)*8))');
   content = content.slice(0, start) + trigger + content.slice(end);
   return { ...file, content };
 }
