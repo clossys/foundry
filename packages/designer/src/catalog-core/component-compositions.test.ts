@@ -12,7 +12,7 @@ const direct = ["components.calendar", "components.date-field", "components.popo
 describe("production date-picker composition", () => {
   it("registers one fresh materialized source template with exact direct inputs", () => {
     const rules = loadComponentCompositionRules();
-    expect(rules).toHaveLength(1);
+    expect(rules.map(rule => rule.id)).toEqual(["compose:date-picker@1", "compose:file-trigger@1"]);
     expect(rules[0]).toMatchObject({ id: "compose:date-picker@1", kind: "compose", slot: "components.date-picker", inputs: direct });
     expect(rules[0]!.template.impl).toEqual({ kind: "source", entry: "components/date-picker/date-picker.tsx", export: "DatePicker" });
     expect(rules[0]!.template).not.toHaveProperty("origin");

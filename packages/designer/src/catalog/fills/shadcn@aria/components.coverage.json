@@ -1,4 +1,100 @@
 {
+  "compose": [
+    {
+      "constituents": [
+        "calendar",
+        "date-field",
+        "popover"
+      ],
+      "depth": 0,
+      "leaf": "date-picker",
+      "reason": "constituent components.date-field=foundry is not shadcn@aria",
+      "slot": "components.date-picker",
+      "source": "foundry",
+      "status": "gap"
+    },
+    {
+      "constituents": [
+        "field"
+      ],
+      "depth": 0,
+      "leaf": "date-field",
+      "reason": "new styling: no pinned item imports RAC DateField/DateInput/DateSegment; segment, placeholder and focus styling would be new",
+      "slot": "components.date-field",
+      "source": "foundry",
+      "status": "gap"
+    },
+    {
+      "constituents": [],
+      "depth": 0,
+      "leaf": "field",
+      "reason": "K2: pinned field.tsx renders div/p FieldDescription and FieldError, not RAC Text+FieldError, and no registered leaf supplies them; an executable profile over field.tsx is needed, not a composition",
+      "slot": "components.field",
+      "source": "foundry",
+      "status": "gap"
+    },
+    {
+      "constituents": [
+        "field"
+      ],
+      "depth": 0,
+      "leaf": "text-field",
+      "reason": "K1: size.sm/md/lg unmapped; pinned input and textarea carry one control size",
+      "slot": "components.text-field",
+      "source": "foundry",
+      "status": "gap"
+    },
+    {
+      "constituents": [
+        "field",
+        "button"
+      ],
+      "depth": 0,
+      "leaf": "search-field",
+      "reason": "K2: no pinned item imports RAC SearchField; part.clear/part.submit need the input-group addon layout and input-group is rejected (Group is not SearchField)",
+      "slot": "components.search-field",
+      "source": "foundry",
+      "status": "gap"
+    },
+    {
+      "constituents": [],
+      "depth": 0,
+      "leaf": "form",
+      "reason": "K2: form is absent at the pinned commit (404) and Form renders no constituent leaf that could carry a source",
+      "slot": "components.form",
+      "source": "foundry",
+      "status": "gap"
+    },
+    {
+      "constituents": [
+        "button"
+      ],
+      "depth": 0,
+      "leaf": "file-trigger",
+      "reason": "every constituent is shadcn@aria; no new styling",
+      "slot": "components.file-trigger",
+      "source": "shadcn@aria",
+      "status": "composed"
+    },
+    {
+      "constituents": [],
+      "depth": 0,
+      "leaf": "spinner",
+      "reason": "K2: pinned spinner is an IconPlaceholder svg, not RAC ProgressBar; size.sm/md/lg and the spin glyph would be new styling",
+      "slot": "components.spinner",
+      "source": "foundry",
+      "status": "gap"
+    },
+    {
+      "constituents": [],
+      "depth": 0,
+      "leaf": "toolbar",
+      "reason": "new styling: no pinned item imports RAC Toolbar; orientation.horizontal/vertical layout would be new styling",
+      "slot": "components.toolbar",
+      "source": "foundry",
+      "status": "gap"
+    }
+  ],
   "pin": {
     "base": "aria",
     "commit": "daaf156ee00ed91cc7e6bdd937c1b4973152d141",

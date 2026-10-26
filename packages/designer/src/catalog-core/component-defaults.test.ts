@@ -61,7 +61,7 @@ const EXPECTED_DEFAULTS = {
   avatar: "shadcn@aria", badge: "shadcn@aria", banner: "shadcn@aria", breadcrumbs: "shadcn@aria", button: "foundry", calendar: "shadcn@aria", card: "foundry",
   "chart-area": "foundry", "chart-bar": "foundry", "chart-heatmap": "foundry", "chart-line": "foundry", "chart-range": "foundry",
   "chart-scatter": "foundry", "chart-sparkline": "foundry", "chart-status-strip": "foundry", "chart-waterfall": "foundry", checkbox: "shadcn@aria", "color-picker": "foundry", "combo-box": "shadcn@aria",
-  "date-field": "foundry", "date-picker": "compose:date-picker@1", dialog: "shadcn@aria", disclosure: "shadcn@aria", field: "foundry", "grid-list": "foundry", "file-trigger": "foundry", form: "foundry", icon: "foundry", keyboard: "shadcn@aria", link: "foundry", logo: "foundry",
+  "date-field": "foundry", "date-picker": "compose:date-picker@1", dialog: "shadcn@aria", disclosure: "shadcn@aria", field: "foundry", "grid-list": "foundry", "file-trigger": "compose:file-trigger@1", form: "foundry", icon: "foundry", keyboard: "shadcn@aria", link: "foundry", logo: "foundry",
   menu: "foundry", meter: "foundry", "native-action": "foundry", "navigation-tree": "foundry", "number-field": "foundry", popover: "shadcn@aria", "progress-bar": "shadcn@aria", "radio-group": "shadcn@aria",
   "resize-handle": "foundry", "search-field": "foundry", select: "shadcn@aria", "semantic-content": "foundry", separator: "shadcn@aria", skeleton: "shadcn@aria", slider: "shadcn@aria",
   spinner: "foundry", "status-mark": "foundry", switch: "shadcn@aria", table: "foundry", tabs: "shadcn@aria", "tag-group": "foundry", "text-field": "foundry", toast: "foundry", "toggle-button": "shadcn@aria", "toggle-group": "shadcn@aria",
@@ -204,6 +204,19 @@ describe("component default fills", () => {
     expect(row("menu")).toMatchObject({ status: "default", source: "foundry", fill: "foundry/components.menu" });
     expect(row("chart-sparkline")).toMatchObject({ status: "default", source: "foundry", fill: "foundry/components.chart-sparkline" });
     expect(row("date-picker")).toMatchObject({ status: "default", basis: "rule", rule: "compose:date-picker@1" });
+  });
+  it("seats the composed shadcn@aria file-trigger by preference and by choice, ahead of the Foundry fill", () => {
+    const { input } = setup();
+    const rule = input.catalog.rules!.find(candidate => candidate.slot === "components.file-trigger")!;
+    expect(rule).toMatchObject({ id: "compose:file-trigger@1", kind: "compose", inputs: ["components.button"] });
+    expect(rule.template.source).toBe("shadcn@aria");
+    const plan = planComponentDefaults(input);
+    expect(plan.rows.find(row => row.slot === "components.file-trigger")).toMatchObject({ status: "default", basis: "rule", rule: "compose:file-trigger@1", reasons: [] });
+    expect(plan.findings.filter(finding => finding.subject === "components.file-trigger")).toEqual([]);
+    const chosen = planComponentDefaults({ ...input, choices: { "components.file-trigger": "shadcn@aria" } });
+    expect(chosen.rows.find(row => row.slot === "components.file-trigger")).toMatchObject({ basis: "rule", rule: "compose:file-trigger@1" });
+    const foundry = planComponentDefaults({ ...input, choices: { "components.file-trigger": "foundry" } });
+    expect(foundry.rows.find(row => row.slot === "components.file-trigger")).toMatchObject({ source: "foundry", fill: "foundry/components.file-trigger" });
   });
   it("sets aside only the pin-provenance K8 on a registered composition, never another finding or another slot", () => {
     const { input } = setup();

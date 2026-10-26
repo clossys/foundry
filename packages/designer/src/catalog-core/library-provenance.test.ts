@@ -8,7 +8,9 @@ import type { ComponentCandidateDocument } from "./resolve-components.js";
 const catalog = loadCatalog();
 const directory = new URL("../catalog/fills/shadcn@aria/", import.meta.url);
 const documents = readdirSync(directory).filter(name => name !== "components.coverage.json").map(name =>
-  JSON.parse(readFileSync(new URL(name, directory), "utf8")) as ComponentCandidateDocument);
+  JSON.parse(readFileSync(new URL(name, directory), "utf8")) as ComponentCandidateDocument)
+  // A registered-composition template is a rule's output, not a pinned upstream draft.
+  .filter(doc => !doc.$extensions["com.clossys.fill"].originKinds?.includes("composed"));
 const slots = loadBuildCatalog().slots.filter(slot => slot.layer === "components").map(slot => slot.id);
 const commit = "daaf156ee00ed91cc7e6bdd937c1b4973152d141";
 const columns = () => componentLibraryColumns(catalog.sources, documents, slots, "preview");
