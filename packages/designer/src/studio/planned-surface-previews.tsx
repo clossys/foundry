@@ -51,7 +51,7 @@ import { PageBar } from "../blocks/PageBar.js";
 import { SECTION_BLOCK_SAMPLES } from "../blocks/section-samples.js";
 import { SiteHeader } from "../shell/SiteHeader.js";
 import { SiteFooter } from "../shell/SiteFooter.js";
-import { STRUCTURED_BLOCK_SAMPLES } from "./surface-preview-samples.js";
+import { STRUCTURED_BLOCK_SAMPLES, STRUCTURED_FRAME_SAMPLES } from "./surface-preview-samples.js";
 
 /** This designer build renders only its own package exports. Another package's export (for example a Publisher frame) is reported, not imitated. */
 const DESIGNER_PACKAGE = "@clossys/designer/";
@@ -96,6 +96,7 @@ const SHELL_SAMPLES: Readonly<Record<string, () => ReactNode>> = {
 };
 const FRAME_SAMPLES: Readonly<Record<string, () => ReactNode>> = {
   InspectorFrame: () => <InspectorFrame label="Details" handleLabel="Resize details" closeLabel="Close details" openLabel="Show details" min={220} max={420} defaultValue={280}><p>Selected: Hero heading</p></InspectorFrame>,
+  ...STRUCTURED_FRAME_SAMPLES,
 };
 const SAMPLES: Readonly<Record<string, () => ReactNode>> = {
   ...Object.fromEntries(Object.entries(BLOCK_SAMPLES).map(([name, sample]) => [BLOCKS + name, sample])),

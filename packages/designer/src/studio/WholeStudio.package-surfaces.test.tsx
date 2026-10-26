@@ -25,10 +25,9 @@ const SAMPLE_TEXT: Record<string, string> = {
   "sections.comparison": "Version history", "sections.content": "One place for every project", "sections.data-table": "Fabrikam", "sections.form": "Work email",
   "sections.pricing": "Choose Team", "sections.resource-list": "Help centre", "sections.status-list": "Mobile alerts", "sections.task-list": "Publish the launch page",
   "frames.site-shell": "host-site-frame", "frames.sheet": "Open filters",
+  "sections.chat": "How do I invite a teammate", "sections.explorer": "Campaigns", "sections.hero": "Ship pages your whole team can trust",
+  "sections.newsletter": "One email a month", "frames.app-shell": "Review the spring launch", "frames.command": "Open command menu",
 };
-
-/** Leaves adopted by vf26 whose designer exports have no preview sample content yet (follow-up lane): shown as unavailable, never imitated. */
-const SAMPLE_GAPS = new Set(["sections.chat", "sections.explorer", "sections.hero", "sections.newsletter", "frames.app-shell", "frames.command"]);
 
 function mount(preview: CompositeStudioSnapshot["preview"], samples: Parameters<typeof planSurfacePreviews>[0]["samples"] = HOST_SAMPLES) {
   const fills = fixture.catalog.surfaces!.fills as unknown as SurfaceDefaultCandidateDocument[], slots = fixture.catalog.surfaces!.slots as unknown as SurfaceDefaultsInput["catalog"]["slots"];
@@ -41,13 +40,14 @@ const row = (slot: string) => document.querySelector<HTMLElement>(`[data-studio-
 describe("adopted package-pointer surfaces on the Studio board", { timeout: 120_000 }, () => {
   it("previews every adopted Section and Frame with its real export and sample content", async () => {
     const user = userEvent.setup();
+    // Every leaf with sample text is an adopted leaf of the fixture, so none is skipped.
+    expect(fixture.decisions.map(row => row.slot)).toEqual(expect.arrayContaining(Object.keys(SAMPLE_TEXT)));
     mount(() => undefined);
     await screen.findByText("L-saved");
     const check = (slots: readonly string[]) => {
       for (const slot of slots) {
         const cell = row(slot);
         expect(cell, slot).not.toBeNull();
-        if (SAMPLE_GAPS.has(slot)) { expect(cell, slot).toHaveTextContent(labels.previewUnavailable); continue; }
         expect(cell, slot).not.toHaveTextContent(labels.previewUnavailable);
         // Adopted, not planned: the cell is the chosen preview, never the planned-default label.
         expect(cell!.querySelector("[data-studio-planned]"), slot).toBeNull();

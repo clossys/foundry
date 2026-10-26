@@ -3,10 +3,15 @@
  * Frames. Data only: surface-preview-samples.tsx renders each real block export
  * with it. Preview content, never adoption or conformance evidence.
  */
+import type { AccountMenuLink } from "../blocks/account-menu-types.js";
+import type { AppNavigationNode } from "../blocks/app-navigation-tree.js";
+import type { ChatMessage } from "../blocks/chat/types.js";
+import type { CommandMenuGroup } from "../blocks/command-menu-types.js";
 import type { MatrixGridProps } from "../blocks/Matrix.js";
 import type { ResourceListProps } from "../blocks/ResourceList.js";
 import type { StatusListProps } from "../blocks/StatusList.js";
 import type { TaskListProps } from "../blocks/TaskList.js";
+import type { TreeNode } from "../blocks/tree-model.js";
 
 export const comparisonSample: MatrixGridProps = {
   arrangement: "grid",
@@ -92,4 +97,83 @@ export const sheetSample = {
   closeLabel: "Close filters",
   trigger: "Open filters",
   body: "Narrow the list by status, owner and date.",
+};
+
+export const chatSample = {
+  label: "Support conversation",
+  placeholder: "Ask about your workspace",
+  messages: [
+    { id: "ask", role: "user", content: "How do I invite a teammate to the workspace?", timestamp: "09:41" },
+    { id: "answer", role: "assistant", content: "Open Settings, choose Members and select Invite. Enter their work email and pick a role; they get access as soon as they accept.", timestamp: "09:41" },
+  ] satisfies readonly ChatMessage[],
+  suggestions: ["Change a member's role", "Remove a member"],
+};
+
+export const explorerSample = {
+  label: "Project files",
+  selectedId: "landing-page",
+  defaultExpandedIds: ["campaigns", "spring-launch"],
+  tree: [
+    { id: "brand", label: "Brand", children: [{ id: "logo", label: "Logo.svg" }, { id: "palette", label: "Colour palette.pdf" }] },
+    { id: "campaigns", label: "Campaigns", children: [
+      { id: "spring-launch", label: "Spring launch", children: [{ id: "landing-page", label: "Landing page.docx" }, { id: "launch-email", label: "Launch email.docx" }] },
+    ] },
+    { id: "readme", label: "Read me.md" },
+  ] satisfies readonly TreeNode[],
+  details: { "landing-page": "Edited today", "launch-email": "Edited yesterday", readme: "Edited last week" } as Readonly<Record<string, string>>,
+};
+
+export const heroSample = {
+  eyebrow: "New",
+  heading: "Ship pages your whole team can trust",
+  description: "Draft, review and publish from one shared workspace, with every change checked before it goes live.",
+  primary: "Start free",
+  secondary: "Book a demo",
+};
+
+export const newsletterSample = {
+  label: "Newsletter sign-up",
+  emailLabel: "Work email",
+  submitLabel: "Subscribe",
+  pendingLabel: "Subscribing",
+  sentMessage: "Thanks. Check your inbox to confirm your subscription.",
+  failedMessage: "We could not subscribe you. Check the address and try again.",
+  privacyNote: "One email a month. Unsubscribe at any time.",
+};
+
+const commandGroups: readonly CommandMenuGroup[] = [
+  { id: "go", label: "Go to", items: [{ id: "projects", label: "Open projects", href: "#projects" }, { id: "settings", label: "Open settings", href: "#settings" }] },
+  { id: "create", label: "Create", items: [{ id: "new-project", label: "New project", shortcutHint: "N", href: "#new-project" }] },
+];
+
+export const commandSample = {
+  trigger: "Open command menu",
+  heading: "Commands",
+  searchLabel: "Find a command",
+  closeLabel: "Close commands",
+  emptyMessage: "No matching commands.",
+  groups: commandGroups,
+};
+
+/** A neutral geometric mark: the frame shows the host mark only as an image. */
+const SAMPLE_MARK = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Cpath fill='currentColor' d='M4 4h24v24H4z'/%3E%3C/svg%3E";
+
+export const appFrameSample = {
+  markSrc: SAMPLE_MARK,
+  workspace: "Northwind",
+  navigationLabel: "Workspace navigation",
+  navigation: [
+    { id: "overview", label: "Overview", href: "#overview" },
+    { id: "projects", label: "Projects", href: "#projects", children: [{ id: "spring-launch", label: "Spring launch", href: "#spring-launch" }] },
+    { id: "reports", label: "Reports", href: "#reports" },
+  ] satisfies readonly AppNavigationNode[],
+  activeId: "overview",
+  page: "Overview",
+  actor: { name: "Ada Park", secondaryText: "Design lead" },
+  signedOutLabel: "Sign in",
+  accountSection: "Account",
+  accountEntries: [{ id: "profile", kind: "link", label: "Profile", href: "#profile" }, { id: "preferences", kind: "link", label: "Preferences", href: "#preferences" }] satisfies readonly AccountMenuLink[],
+  commands: { ...commandSample, triggerLabel: "Search commands" },
+  heading: "Next milestone",
+  body: "Review the spring launch pages before Friday's planning session.",
 };
