@@ -343,3 +343,22 @@ describe("CommandMenu", () => {
     finally { wrapper.remove(); }
   });
 });
+
+describe("CommandMenu visual pass (VF-1 shell-12/13)", () => {
+  it("marks the active option with the accent tint and an inline-start accent edge, never an underline", async () => {
+    const { input } = await open();
+    await userEvent.keyboard("{ArrowDown}");
+    const active = screen.getAllByRole("option").find((option) => option.getAttribute("aria-selected") === "true")!;
+    expect(active).toHaveClass("bg-accent-tint", "border-s-accent", "no-underline");
+    expect(active).not.toHaveClass("underline");
+    const rest = screen.getAllByRole("option").filter((option) => option !== active);
+    for (const option of rest) expect(option).toHaveClass("border-s-transparent", "no-underline");
+    expect(input).toHaveClass("outline-hidden");
+  });
+
+  it("draws the search field's token ring whenever it holds focus, not only on keyboard focus", async () => {
+    const { input } = await open();
+    expect(input).toHaveFocus();
+    expect(input.style.boxShadow).toContain("--color-accent");
+  });
+});

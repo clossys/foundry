@@ -6,6 +6,8 @@ import { fireEvent, render, screen, waitFor, within } from "@testing-library/rea
 import userEvent from "@testing-library/user-event";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { AppNavigation } from "./AppNavigation.js";
+import { Icon } from "../components/Icon.js";
+import { ChevronDown } from "../icons/ChevronDown.js";
 import { getAppNavigationCloseStyle } from "./app-navigation-layout.js";
 import type { AppNavigationNode } from "./app-navigation-tree.js";
 
@@ -177,7 +179,7 @@ describe("AppNavigation", () => {
     expect(chevron).toHaveClass("icon-control-md");
     expect(chevron).not.toHaveAttribute("style");
     const css = readFileSync(resolve(import.meta.dirname, "../../styles/compiled.css"), "utf8");
-    expect(css).toMatch(/\.control-h-md \{[\s\S]*?min-block-size: var\(--ui-control-h-md, var\(--ui-layout-tap-target, 44px\)\)/);
+    expect(css).toMatch(/\.control-h-md \{[\s\S]*?min-block-size: var\(--ui-control-h-md, 32px\)/);
     expect(css).toMatch(/\.icon-control-md \{\s*inline-size: var\(--ui-layout-tap-target, 44px\);\s*block-size: var\(--ui-layout-tap-target, 44px\)/);
   });
 
@@ -439,5 +441,25 @@ describe("AppNavigation frame slots", () => {
     expect(screen.getByRole("button", { name: "Open navigation" })).toHaveFocus();
     await user.click(screen.getByRole("button", { name: "Open navigation" }));
     expect(screen.getByRole("navigation", { name: "Workspace destinations" })).toBeInTheDocument();
+  });
+});
+
+describe("AppNavigation visual pass (VF-1 shell-01/02, cross-05)", () => {
+  it("marks the current destination with the selected surface and an accent edge, never an outline", () => {
+    render(<AppNavigation tree={tree} activeId="blocks" />);
+    const current = screen.getByRole("link", { name: "Blocks" });
+    expect(current).toHaveClass("bg-surface-selected", "border-s-2", "border-s-accent", "font-medium");
+    expect(current).not.toHaveClass("outline-solid", "outline-line-strong", "font-semibold");
+    const rest = screen.getByRole("link", { name: "Home" });
+    expect(rest).toHaveClass("border-s-2", "border-s-transparent", "hover:bg-control-tonal-hover");
+    expect(rest).not.toHaveClass("hover:bg-surface-sunken");
+  });
+
+  it("binds destination icons to the small icon step", () => {
+    const withIcon: readonly AppNavigationNode[] = [{ id: "home", label: "Home", href: "#home", icon: <Icon glyph={ChevronDown} decorative size="lg" /> }];
+    const { container } = render(<AppNavigation tree={withIcon} activeId="home" />);
+    const svg = container.querySelector("[data-navigation-node-id=home] svg") as SVGElement;
+    expect(svg.style.width).toContain("--ui-icon-sm");
+    expect((svg.parentElement as HTMLElement).style.inlineSize).toContain("--ui-icon-sm");
   });
 });

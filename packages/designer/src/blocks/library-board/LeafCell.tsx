@@ -1,8 +1,8 @@
 'use client';
 import type { HTMLAttributes, ReactNode } from 'react';
 import { Button } from '../../components/Button.js';
+import { IconButton } from '../../components/IconButton.js';
 import { Card } from '../../components/Card.js';
-import { Icon } from '../../components/Icon.js';
 import { Tooltip } from '../../components/Tooltip.js';
 import { Settings } from '../../icons/Settings.js';
 import { SectionHeader } from '../SectionHeader.js';
@@ -20,9 +20,10 @@ export interface LeafCellProps extends Omit<HTMLAttributes<HTMLDivElement>, 'chi
  * One leaf cell on every Designer layer. A filled, unchosen or unavailable leaf keeps
  * the same plate skeleton (preview, status, actions); only the content differs.
  * Empty slots stay in place but are hidden, so a filled cell looks exactly as before.
+ * The slots share one centre line, so a status reads level with its action buttons.
  */
 export function LeafCell({ preview, status, actions, className, ...rest }: LeafCellProps) {
-  return <Card {...rest} variant="plate" data-candidate-cell="" className={['flex w-max items-start gap-md p-sm', className].filter(Boolean).join(' ')}>
+  return <Card {...rest} variant="plate" data-candidate-cell="" className={['flex w-max items-center gap-md p-sm', className].filter(Boolean).join(' ')}>
     {preview}
     <div data-cell-status="" hidden={status == null} className={status == null ? undefined : 'text-ink-muted'}>{status}</div>
     <div data-cell-actions="" hidden={actions == null} className={actions == null ? undefined : 'flex items-center gap-sm'}>{actions}</div>
@@ -41,10 +42,28 @@ export interface BoardHeaderProps {
   readonly action?: ReactNode;
 }
 
-/** One board header on every Designer layer: heading, optional action, gear (or Done while editing). */
+/**
+ * One board header on every Designer layer: heading, optional action, gear (or Done
+ * while editing). The gear is the square small icon control (28px box, 44px hit area).
+ */
 export function BoardHeader({ id, title, editing, labels, onEdit, onDone, action }: BoardHeaderProps) {
   return <SectionHeader data-board-header="" title={<span id={id}>{title}</span>} level={3} actions={<>
     {action}
-    {editing ? <Button size="sm" onPress={onDone}>{labels.done}</Button> : <Tooltip trigger={<Button variant="ghost" size="sm" aria-label={labels.changeSelection} onPress={onEdit}><Icon glyph={Settings} decorative size="sm" /></Button>}>{labels.changeSelection}</Tooltip>}
+    {editing ? <Button size="sm" onPress={onDone}>{labels.done}</Button> : <Tooltip trigger={<IconButton size="sm" shape="square" icon={Settings} label={labels.changeSelection} onPress={onEdit} />}>{labels.changeSelection}</Tooltip>}
   </>} />;
+}
+
+/**
+ * The board plate on every Designer layer: the raised surface on the canvas ground,
+ * edged with the hairline (`--color-line-base`), so a board reads as one object above
+ * the canvas instead of a box drawn on it.
+ */
+export const BOARD_SURFACE_CLASS = 'flex h-max w-max shrink-0 flex-col gap-sm rounded-surface border border-line-base bg-surface-raised p-md';
+
+/**
+ * A leaf's row label. A label that is still the leaf's id is set in the mono face
+ * with tabular figures, so ids read as ids; a human label keeps the body face.
+ */
+export function LeafLabel({ id, label }: { readonly id: string; readonly label: ReactNode }) {
+  return label === id ? <span data-leaf-id="" className="font-mono tabular-nums">{label}</span> : <>{label}</>;
 }

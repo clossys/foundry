@@ -5,7 +5,7 @@ import { Table } from '../../components/Table.js';
 import { RadioGroup } from '../../components/RadioGroup.js';
 import { Tooltip } from '../../components/Tooltip.js';
 import { Badge } from '../../components/Badge.js';
-import { BoardHeader, LeafCell } from './LeafCell.js';
+import { BOARD_SURFACE_CLASS, BoardHeader, LeafCell, LeafLabel } from './LeafCell.js';
 import { MatrixChoices } from '../matrix/choices.js';
 import { CandidatePromptDialog } from './CandidatePromptDialog.js';
 import { assertLibraryBoardRecords, assertLibraryPreviewIdentity, type LibraryBoardCommand, type LibraryBoardRecords, type LibraryPreviewIdentity } from './model.js';
@@ -44,11 +44,11 @@ export function LibraryBoardSection({ records, labels, previews, workflow, onCom
   const prompt = (row: typeof rows.items[number], refresh = false) => <CandidatePromptDialog trigger={<Button variant="ghost" size="sm">{refresh ? labels.board.refresh : labels.board.create}</Button>} data={refresh ? row.refreshPrompt! : row.prompt} labels={labels} workflow={workflow} />;
   const custom = columns.items.find(column => column.role === 'consumer');
   const choiceColumns = columns.items.filter(column => rows.items.some(row => row.candidates.some(candidate => candidate.source === column.source)));
-  return <section data-library-board={rows.boardId} data-board-mode={controls.mode} aria-labelledby={headingId} className="flex h-max w-max shrink-0 flex-col gap-sm rounded-surface border border-line-base bg-surface-base p-md">
+  return <section data-library-board={rows.boardId} data-board-mode={controls.mode} aria-labelledby={headingId} className={BOARD_SURFACE_CLASS}>
     <BoardHeader id={headingId} title={rows.label} editing={controls.mode === 'edit'} labels={labels.board} onEdit={() => command('board-edit')} onDone={() => command('board-done')} />
     {controls.mode === 'view' ? <Table aria-label={labels.matrix.label} className="w-max">
       <Table.Header><Table.Column id="leaf" isRowHeader>{labels.matrix.leaf}</Table.Column><Table.Column id="preview"><span className="sr-only">{labels.stageLabel}</span></Table.Column></Table.Header>
-      <Table.Body>{rows.items.map(row => <Table.Row key={row.id} id={row.id}><Table.Cell>{row.label}</Table.Cell><Table.Cell>{row.selectedSource ? cell(row.selectedPreview) : <LeafCell status={labels.board.notChosen} actions={<><Button variant="ghost" size="sm" onPress={() => command('board-edit')}>{labels.board.choose}</Button><CandidatePromptDialog trigger={<Button variant="ghost" size="sm">{labels.board.askAgent}</Button>} data={row.prompt} labels={labels} workflow={workflow} /></>} />}</Table.Cell></Table.Row>)}</Table.Body>
+      <Table.Body>{rows.items.map(row => <Table.Row key={row.id} id={row.id}><Table.Cell><LeafLabel id={row.id} label={row.label} /></Table.Cell><Table.Cell>{row.selectedSource ? cell(row.selectedPreview) : <LeafCell status={labels.board.notChosen} actions={<><Button variant="ghost" size="sm" onPress={() => command('board-edit')}>{labels.board.choose}</Button><CandidatePromptDialog trigger={<Button variant="ghost" size="sm">{labels.board.askAgent}</Button>} data={row.prompt} labels={labels} workflow={workflow} /></>} />}</Table.Cell></Table.Row>)}</Table.Body>
     </Table> : rows.layer === 'sections' || rows.layer === 'frames' ? <div className="grid gap-md">{rows.items.map(row => <section key={row.id} aria-label={row.label}><h4>{row.label}</h4>{preview(row.selectedPreview)}<div className="flex gap-sm">{prompt(row)}{row.refreshPrompt ? prompt(row, true) : null}</div></section>)}</div> : <MatrixChoices arrangement="choices" aria-label={labels.matrix.label} columns={[...choiceColumns.map(column => ({ id: column.source, label: <Tooltip trigger={<span tabIndex={0}>{column.label}</span>}>{column.license}{column.restriction ? ` · ${column.restriction}` : ''}</Tooltip> })), { id: 'library-board-custom-actions', label: labels.board.custom }]}
       onChange={(id, source) => {
         const candidate = rows.items.find(row => row.id === id)?.candidates.find(candidate => candidate.source === source);
