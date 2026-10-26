@@ -17,6 +17,9 @@ import type { AppFrameAccount, AppFrameProps } from "./app-frame-types.js";
 
 const CONTROL = "inline-flex shrink-0 items-center justify-center rounded-control border-0 bg-transparent px-sm text-body text-ink-primary focus-visible:outline-solid focus-visible:outline-2 focus-visible:outline-accent forced-colors:border-current";
 const TAP = { minBlockSize: APP_FRAME_LAYOUT.tap, minInlineSize: APP_FRAME_LAYOUT.tap };
+/** The two edge toggles share one glyph, each facing its own edge: the panel toggle is the navigation toggle's mirror in either direction. */
+const NAVIGATION_GLYPH = "rtl:-scale-x-100";
+const PANEL_GLYPH = "-scale-x-100 rtl:scale-x-100";
 
 function SignedOutMenu({ sections, signedOutLabel, onRoute, markSrc }: AppFrameAccount & { markSrc: string }) {
   const populated = sections.filter(section => section.entries.length > 0);
@@ -203,10 +206,10 @@ function FrameContent({ brand, navigation, account, commands, children, toasts, 
   const panelTrigger = rightPanel && (narrow ? <div className="contents" onFocusCapture={capturePanelFocus}><ModalContext.Provider value={{ style: { direction: dir } }}><Drawer fullViewport wide="sheet" placement="end" dismissAt={APP_FRAME_WIDE_QUERY}
     heading={rightPanel.label} closeLabel={closeLabel} closeButtonStyle={panelCloseButtonStyle} navigationKey={navigation.navigationKey}
     isOpen={panelOpen} onOpenChange={next => { setPanelOpen(next); if (next) { setNavDrawerOpen(false); navigation.onDrawerOpenChange?.(false); } }}
-    trigger={<Button variant="ghost" className={CONTROL} style={corner} aria-label={openLabel} aria-expanded={panelOpen} data-application-frame-panel="trigger"><Icon glyph={List} decorative className="-scale-x-100" /></Button>}>
+    trigger={<Button variant="ghost" className={CONTROL} style={corner} aria-label={openLabel} aria-expanded={panelOpen} data-application-frame-panel="trigger"><Icon glyph={List} decorative className={PANEL_GLYPH} /></Button>}>
     <FrameSlotOutlet slot="right-panel">{rightPanel.children}</FrameSlotOutlet>
   </Drawer></ModalContext.Provider></div> : <Button variant="ghost" className={CONTROL} style={corner} aria-controls={generated + "-panel"} aria-expanded={!collapsed} aria-label={collapsed ? openLabel : closeLabel} data-application-frame-panel="trigger"
-    onPress={() => changeCollapsed(!collapsed)}><Icon glyph={List} decorative className="-scale-x-100" /></Button>);
+    onPress={() => changeCollapsed(!collapsed)}><Icon glyph={List} decorative className={PANEL_GLYPH} /></Button>);
   const navOpen = layout.navigationOverlay ? navigation.drawerOpen ?? navDrawerOpen : !navCollapsed;
   const changeNav = () => {
     if (layout.navigationOverlay) { if (!navOpen) setPanelOpen(false); setNavDrawerOpen(!navOpen); navigation.onDrawerOpenChange?.(!navOpen); }
@@ -214,7 +217,7 @@ function FrameContent({ brand, navigation, account, commands, children, toasts, 
   };
   const navigationTrigger = <Button variant="ghost" className={CONTROL}
     style={corner} data-application-frame-navigation="trigger"
-    aria-controls={generated + "-navigation"} aria-label={navOpen ? navigationCloseLabel : navigationOpenLabel} aria-expanded={navOpen} onPress={changeNav}><Icon glyph={List} decorative /></Button>;
+    aria-controls={generated + "-navigation"} aria-label={navOpen ? navigationCloseLabel : navigationOpenLabel} aria-expanded={navOpen} onPress={changeNav}><Icon glyph={List} decorative className={NAVIGATION_GLYPH} /></Button>;
   const commandTrigger = <div style={{ paddingBlockStart: `calc(${APP_FRAME_LAYOUT.tap} + ${APP_FRAME_LAYOUT.gutter})` }}><Button variant="ghost" className={CONTROL + " w-full justify-start gap-sm"} style={TAP} onPress={openCommands}><Icon glyph={Search} decorative /><span className="min-w-0 truncate">{triggerLabel}</span></Button></div>;
   const pageBar = <PageBar position={headerPosition} surface={headerSurface} header={resolvedHeader} onNavigate={onNavigate} context={context} root={root} page={page} workspaces={workspaces} narrow={!wide}
     reserveStart={false} reserveEnd={false} onHeightChange={setBarHeight} dir={dir}
