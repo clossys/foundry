@@ -4,7 +4,7 @@ import { Banner, Button, Icon, Tabs } from "../components/index.js";
 import { ChevronDown } from "../icons/index.js";
 import { ResizablePane } from "../blocks/index.js";
 import { FrameModuleOutlet, FrameSlotOutlet, useFrameSlotModules } from "../shell/index.js";
-import { visibleFrameNotices, type AppFrameNotice } from "./frame-notices.js";
+import { useFrameNoticeLeases, visibleFrameNotices, type AppFrameNotice } from "./frame-notices.js";
 import { frameDockGeometry, FRAME_DOCK_DEFAULTS, type FrameDockBounds } from "./frame-dock-layout.js";
 import { FrameZoomGestures } from "./frame-zoom-gestures.js";
 
@@ -33,7 +33,8 @@ export function FrameDock({ notices = [], dock }: { notices?: readonly AppFrameN
     try { sessionStorage.setItem(DISMISS_KEY, JSON.stringify([...next])); } catch {}
     return next;
   });
-  const visible = visibleFrameNotices(notices, dismissed);
+  const leased = useFrameNoticeLeases();
+  const visible = visibleFrameNotices(leased.length ? [...notices, ...leased] : notices, dismissed);
   useLayoutEffect(() => {
     const root = region.current;
     const frame = root?.closest<HTMLElement>("[data-application-frame]");

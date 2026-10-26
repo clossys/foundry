@@ -3,13 +3,14 @@ import { act, cleanup, fireEvent, render, screen } from "@testing-library/react"
 import userEvent from "@testing-library/user-event";
 import { Studio } from "./Studio.js";
 import { FrameSlotProvider, FrameModuleOutlet } from "../shell/FrameSlots.js";
+import { FrameNoticeProvider } from "../frames/frame-notices.js";
 import { CanvasMap } from "../components/CanvasMap.js";
 import { labels, smallCatalog, emptyLibrary } from "./__fixtures__/studio.js";
 afterEach(() => { cleanup(); window.history.replaceState(null, "", "/"); });
 it("leases Explorer, Map and Zoom into actual Frame hosts and ties grid geometry to the camera", async () => {
-  const view = render(<FrameSlotProvider><Studio catalog={smallCatalog} adapter={{ load: async () => ({ library: emptyLibrary() }), save: async () => ({ ok: false, reason: "unavailable" }) }} labels={labels} />
+  const view = render(<FrameSlotProvider><FrameNoticeProvider><Studio catalog={smallCatalog} adapter={{ load: async () => ({ library: emptyLibrary() }), save: async () => ({ ok: false, reason: "unavailable" }) }} labels={labels} />
     <div data-test-dock=""><FrameModuleOutlet id="explorer" /><FrameModuleOutlet id="map" /><FrameModuleOutlet id="zoom" /></div>
-  </FrameSlotProvider>);
+  </FrameNoticeProvider></FrameSlotProvider>);
   await screen.findByRole("link", { name: "Tokens" });
   expect(screen.getByRole("treegrid", { name: labels.treeLabel })).toBeInTheDocument();
   expect(screen.getByRole("toolbar", { name: labels.canvas.zoomLabel })).toBeInTheDocument();

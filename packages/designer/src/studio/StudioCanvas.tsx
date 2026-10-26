@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { WholeStudioCanvas, useWholeStudio } from "./WholeStudio.js";
-import { Banner } from "../components/Banner.js";
+import { useFrameNotice } from "../frames/frame-notices.js";
 import { Button } from "../components/Button.js";
 import { CanvasExplorer } from "./CanvasExplorer.js";
 import { CanvasModules } from "./CanvasModules.js";
@@ -33,6 +33,8 @@ export function LegacyStudioCanvas({ panelInsets, className, candidateWorkflow }
   const [explorerOpen, setExplorerOpen] = useState(true); const [inspectorOpen, setInspectorOpen] = useState(false);
   const boardRefs = useRef(new Map<string, (element: HTMLElement | null) => void>()); const openActions = useRef(new Map<string, () => void>());
   const text = state.labels.canvas; const enabled = Boolean(state.ready);
+  // The frame owns transient chrome: a failed load is a frame notice, never a canvas-local banner.
+  useFrameNotice(state.phase.status === "error" ? { id: "studio-load-failed", severity: "error", text: state.labels.loadFailed } : null);
   const canvas = useCanvasWorld(state.layer, pose => {
     latest.current.cameras.current.set(latest.current.layer, pose);
     if (canvas.surface.current) latest.current.showRows(visibleStudioRows(canvas.surface.current, latest.current.rowElements.current, pose.zoom));
@@ -71,7 +73,6 @@ export function LegacyStudioCanvas({ panelInsets, className, candidateWorkflow }
     {state.livePreview && state.live?.css ? <style data-studio-preview="">{state.live.css}</style> : null}
     {state.ready ? <style data-studio-candidates="">{candidateStyles}</style> : null}
     {state.phase.status === "loading" ? <p role="status">{state.labels.loading}</p> : null}
-    {state.phase.status === "error" ? <Banner variant="danger">{state.labels.loadFailed}</Banner> : null}
 
     <CanvasSurface aria-label={text.label} viewport={canvas.pose} onViewportChange={canvas.setPose} selection={[]} onSelectionChange={() => {}}
       worldBounds={canvas.bounds} items={[]} itemInteraction="content" minZoom={.12} maxZoom={2}

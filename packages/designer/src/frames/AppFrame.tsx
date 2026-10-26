@@ -10,6 +10,8 @@ import { FrameSlotProvider, FrameSlotOutlet, useFramePageHeader } from "../shell
 import { assertAppFrameBrand } from "./AppFrameBrand.js";
 import { FrameDock } from "./FrameDock.js";
 import { SkipLink } from "../shell/SkipLink.js";
+import { ToasterFrameInsetProvider, type ToasterFrameInset } from "../shell/Toaster.js";
+import { FrameNoticeProvider } from "./frame-notices.js";
 import { APP_FRAME_ALWAYS_NARROW, APP_FRAME_ALWAYS_WIDE, APP_FRAME_LAYOUT, APP_FRAME_WIDE_QUERY, appFrameMainId, appFramePanels, appFrameCorner, appFrameDirection } from "./app-frame-layout.js";
 import type { AppFrameAccount, AppFrameProps } from "./app-frame-types.js";
 
@@ -172,6 +174,23 @@ function FrameContent({ brand, navigation, account, commands, children, toasts, 
     drawerToRelease.current = null;
     frame.current?.querySelector<HTMLElement>('[data-application-frame-panel="trigger"]')?.focus();
   }, [narrow, panelOpen, handoffVersion]);
+  const stage = useRef<HTMLDivElement>(null);
+  const [toastInset, setToastInset] = useState<ToasterFrameInset | null>(null);
+  const hasToasts = toasts !== undefined && toasts !== null && toasts !== false;
+  useLayoutEffect(() => {
+    const element = stage.current;
+    if (!hasToasts || !element) return;
+    // Toasts portal to the document; anchoring them to the stage corner keeps them clear of the header and dock.
+    const measure = () => {
+      const rect = element.getBoundingClientRect(), direction = appFrameDirection(element);
+      const next = { blockEnd: Math.max(0, window.innerHeight - rect.bottom), inlineEnd: Math.max(0, direction === "rtl" ? rect.left : window.innerWidth - rect.right), direction };
+      setToastInset(previous => previous?.blockEnd === next.blockEnd && previous.inlineEnd === next.inlineEnd && previous.direction === next.direction ? previous : next);
+    };
+    measure();
+    const observer = typeof ResizeObserver === "function" ? new ResizeObserver(measure) : undefined;
+    observer?.observe(element); window.addEventListener("resize", measure);
+    return () => { observer?.disconnect(); window.removeEventListener("resize", measure); };
+  }, [hasToasts, dir]);
   const changeCollapsed = (next: boolean) => { setPanelCollapsed(next); rightPanel?.onCollapsedChange?.(next); };
   const accountControl = account.actor ? <AccountMenu {...account} actor={{ ...account.actor, image: brand.markSrc }} /> : <SignedOutMenu {...account} markSrc={brand.markSrc} />;
   const footer = <div className="flex min-w-0 items-center justify-between gap-xs">
@@ -219,7 +238,7 @@ function FrameContent({ brand, navigation, account, commands, children, toasts, 
             <div className="min-w-0 flex-1">{pageBar}</div>
             {rightPanel ? <Tooltip trigger={panelTrigger}>{panelOpen || panelDocked ? closeLabel : openLabel}</Tooltip> : <span aria-hidden="true" className="icon-control-md shrink-0" />}
           </div>
-          <div data-application-frame-region="stage" data-stage-navigation={layout.navigationOverlay ? "overlay" : "docked"} data-stage-panel={narrow ? "overlay" : "docked"}
+          <div ref={stage} data-application-frame-region="stage" data-stage-navigation={layout.navigationOverlay ? "overlay" : "docked"} data-stage-panel={narrow ? "overlay" : "docked"}
             className="relative isolate min-h-0 min-w-0 flex-1 overflow-hidden">
             <main id={target} tabIndex={-1} className="h-full min-h-0 min-w-0 overflow-auto focus-visible:outline-solid focus-visible:outline-2 focus-visible:outline-accent">{children}</main>
           </div>
@@ -234,7 +253,7 @@ function FrameContent({ brand, navigation, account, commands, children, toasts, 
         </aside>}
       </div>
       <CommandMenu {...commandProps} dir={dir} isOpen={commandOpen} onOpenChange={setCommandOpen} query={query} onQueryChange={setQuery} />
-      {toasts}
+      {hasToasts ? <ToasterFrameInsetProvider value={toastInset}>{toasts}</ToasterFrameInsetProvider> : null}
     </div>
   </PopoverContext.Provider></ModalContext.Provider>;
 
@@ -242,5 +261,5 @@ function FrameContent({ brand, navigation, account, commands, children, toasts, 
 
 /** Host-resolved application chrome; the host owns routes, account actions and main-free route content. */
 export function AppFrame(props: AppFrameProps) {
-  return <ThemeProvider storageKey={props.theme?.storageKey} defaultPreference={props.theme?.defaultPreference}><FrameSlotProvider><FrameContent {...props} /></FrameSlotProvider></ThemeProvider>;
+  return <ThemeProvider storageKey={props.theme?.storageKey} defaultPreference={props.theme?.defaultPreference}><FrameSlotProvider><FrameNoticeProvider><FrameContent {...props} /></FrameNoticeProvider></FrameSlotProvider></ThemeProvider>;
 }

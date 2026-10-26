@@ -1,4 +1,4 @@
-import type { ReactNode } from "react";
+import { createContext, useContext, type CSSProperties, type ReactNode } from "react";
 import {
   UNSTABLE_Toast as AriaToast,
   UNSTABLE_ToastContent as AriaToastContent,
@@ -27,6 +27,21 @@ const VARIANT_CLASSES: Record<ToastVariant, string> = {
   danger: "border-status-danger bg-status-danger-tint text-status-danger-text",
   info: "border-status-info bg-status-info-tint text-status-info-text",
 };
+
+/**
+ * Viewport-edge distances, in px, of the area a frame reserves for toasts (its stage). A frame supplies it so the
+ * portalled viewport anchors to the stage corner instead of the window corner, clear of the frame's header and dock.
+ * Internal to the frame contract; not a public prop.
+ */
+export interface ToasterFrameInset { blockEnd: number; inlineEnd: number; direction: "ltr" | "rtl" }
+const ToasterFrameInsetContext = createContext<ToasterFrameInset | null>(null);
+export const ToasterFrameInsetProvider = ToasterFrameInsetContext.Provider;
+function frameInsetStyle(inset: ToasterFrameInset | null): CSSProperties {
+  if (!inset) return {};
+  const edge = (px: number) => `calc(${px}px + var(--spacing-md))`;
+  // Physical sides override both logical class insets, whatever direction the toast region itself resolves.
+  return inset.direction === "rtl" ? { bottom: edge(inset.blockEnd), left: edge(inset.inlineEnd), right: "auto" } : { bottom: edge(inset.blockEnd), right: edge(inset.inlineEnd), left: "auto" };
+}
 
 export interface ToasterProps {
   /**
@@ -90,12 +105,14 @@ export interface ToasterProps {
  * so this override is a normal prop, not a hack.
  */
 export function Toaster({ "aria-label": ariaLabel, className }: ToasterProps) {
+  const frameInset = useContext(ToasterFrameInsetContext);
   return (
     <AriaToastRegion
       queue={toastQueue}
       aria-label={ariaLabel}
       className={cx("fixed bottom-md end-md flex flex-col gap-sm", className)}
-      style={{ zIndex: UI_Z_TOAST }}
+      style={{ zIndex: UI_Z_TOAST, ...frameInsetStyle(frameInset) }}
+      data-toaster-placement={frameInset ? "frame" : "viewport"}
     >
       {({ toast: queuedToast }) => <ToasterItem toast={queuedToast} />}
     </AriaToastRegion>
