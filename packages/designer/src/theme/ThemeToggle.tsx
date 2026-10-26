@@ -9,6 +9,15 @@ import type { ThemePreference } from "./internal/theme-core.js";
 
 const PREFERENCES: readonly ThemePreference[] = ["system", "light", "dark"];
 
+/*
+ * The selected preference is a surface step with the primary ink and a 1px
+ * ink ring (the state reads at 3:1 or more without a fill), not the full
+ * action fill, which made the toggle the brightest object in a dark
+ * sidebar. Colour-only motion on the fast tier.
+ */
+const SELECTED_STEP =
+  "icon-control-md shrink-0 transition-colors duration-(--ui-duration-fast) data-selected:bg-surface-selected data-selected:text-ink-primary data-selected:ring-1 data-selected:ring-inset data-selected:ring-current aria-pressed:bg-surface-selected aria-pressed:text-ink-primary";
+
 export interface ThemePreferenceLabels {
   readonly system: string;
   readonly light: string;
@@ -73,7 +82,7 @@ export function ThemeToggle({
         }
       }}>
       {PREFERENCES.map(target => <Tooltip key={target} trigger={
-        <ToggleGroupItem id={target} aria-label={preferenceLabels[target]} className="icon-control-md shrink-0">
+        <ToggleGroupItem id={target} aria-label={preferenceLabels[target]} className={SELECTED_STEP}>
           <Icon glyph={PREFERENCE_GLYPH[target]} decorative />
         </ToggleGroupItem>
       }>{toggleLabel(preference, target, preferenceLabels)}</Tooltip>)}

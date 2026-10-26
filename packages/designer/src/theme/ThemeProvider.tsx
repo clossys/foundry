@@ -4,6 +4,7 @@ import {
   useContext,
   useEffect,
   useMemo,
+  useRef,
   useState,
   useSyncExternalStore,
   type ReactNode,
@@ -11,6 +12,7 @@ import {
 import {
   DEFAULT_STORAGE_KEY,
   applyThemeDom,
+  suppressThemeTransitions,
   readStoredPreference,
   resolveTheme,
   writeStoredPreference,
@@ -145,7 +147,13 @@ export function ThemeProvider({
   // every change, including the one-tick correction effect above and any
   // later `setPreference` call. Idempotent against what the head script
   // already applied, so this never produces a visible change on its own.
+  // A later change also drops transitions for that switch (see
+  // `suppressThemeTransitions`); the first sync, which changes nothing
+  // visible, does not.
+  const synced = useRef(false);
   useEffect(() => {
+    if (synced.current) suppressThemeTransitions(document.documentElement);
+    synced.current = true;
     applyThemeDom(document.documentElement, preference);
   }, [preference]);
 

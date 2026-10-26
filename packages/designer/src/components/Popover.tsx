@@ -107,7 +107,7 @@ export function Popover({
         placement={placement}
         offset={offset}
         className={cx(
-          "rounded-control border border-overlay-border bg-overlay-surface p-md outline-none",
+          "overlay-motion-pop rounded-control border border-overlay-border bg-overlay-surface p-md outline-none",
           className,
         )}
         style={{ boxShadow: UI_ELEVATION_FLOATING, zIndex: UI_Z_POPOVER, ...style }}

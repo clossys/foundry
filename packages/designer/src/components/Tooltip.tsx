@@ -80,7 +80,7 @@ export function Tooltip({
       <AriaTooltip
         placement={placement}
         className={cx(
-          "rounded-control border border-overlay-border bg-overlay-surface px-sm py-xs text-caption text-ink-primary outline-none",
+          "overlay-motion-fade rounded-control border border-overlay-border bg-overlay-surface px-sm py-xs text-caption text-ink-primary outline-none",
           className,
         )}
         style={{ boxShadow: UI_ELEVATION_FLOATING, zIndex: UI_Z_TOOLTIP }}
