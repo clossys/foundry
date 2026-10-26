@@ -3,6 +3,7 @@
  * Frames. Data only: surface-preview-samples.tsx renders each real block export
  * with it. Preview content, never adoption or conformance evidence.
  */
+import type { AppNavigationProps } from "../blocks/AppNavigation.js";
 import type { MatrixGridProps } from "../blocks/Matrix.js";
 import type { ResourceListProps } from "../blocks/ResourceList.js";
 import type { StatusListProps } from "../blocks/StatusList.js";
@@ -93,3 +94,14 @@ export const sheetSample = {
   trigger: "Open filters",
   body: "Narrow the list by status, owner and date.",
 };
+
+/** vf34: the app sidebar frame (AppNavigation). Kept in its own block. */
+export const appSidebarSample = {
+  label: "Workspace navigation",
+  activeId: "projects",
+  tree: [
+    { id: "workspace", label: "Workspace", children: [{ id: "projects", label: "Projects", href: "#projects" }, { id: "members", label: "Members", href: "#members" }] },
+    { id: "billing", label: "Billing", href: "#billing" },
+    { id: "settings", label: "Settings", href: "#settings" },
+  ],
+} as const satisfies Pick<AppNavigationProps, "label" | "activeId" | "tree">;

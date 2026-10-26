@@ -176,23 +176,23 @@
       "unresolvedMemberAxes": []
     },
     {
-      "missingMembers": [
-        "arrangement.library-board"
-      ],
+      "missingMembers": [],
       "missingRequiredSlots": [],
-      "missingSlots": [
-        "controls"
-      ],
+      "missingSlots": [],
       "notes": [
-        "The exported Matrix supports arrangement=grid for authored comparison cells and arrangement=choices for content-sized native RadioGroup rows. Choices accepts one or more library columns and unbounded leaf rows without an internal scroll region.",
+        "The exported Matrix preserves Matrix arrangement=grid for authored comparison cells and arrangement=choices for content-sized native RadioGroup rows. Choices accepts one or more library columns and unbounded leaf rows without an internal scroll region.",
+        "The explicit library-board configuration selects LibraryBoardSection typed columns, rows and controls records through LIBRARY_BOARD_CONFIG; its canonical member is arrangement.library-board. Grid remains the existing literal. Selected runtime qualification remains separate.",
         "The choices assembly consumes SectionHeader, RadioGroup, Card, Badge, Tooltip and token-backed table layout; Studio supplies checked token, asset or component previews.",
         "Descriptor only; source imports, token reads, shared anatomy, accessibility, contrast and consumer runtime conformance are unmeasured. Content bindings describe host adaptation points, not type-equivalent converters."
       ],
       "slot": "sections.comparison",
-      "status": "subset",
-      "supportedMembers": [],
+      "status": "candidate",
+      "supportedMembers": [
+        "arrangement.library-board"
+      ],
       "supportedSlots": [
         "columns",
+        "controls",
         "highlight",
         "rows"
       ],

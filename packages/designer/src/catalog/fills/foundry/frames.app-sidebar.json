@@ -21,8 +21,7 @@
       "trust": "foundry",
       "unmapped": [
         "slot.account",
-        "slot.theme",
-        "state.theme"
+        "slot.theme"
       ]
     }
   },

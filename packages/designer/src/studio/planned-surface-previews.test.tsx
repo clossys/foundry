@@ -26,7 +26,7 @@ describe("planSurfacePreviews", () => {
     const { plan, fills } = realPlan();
     const planned = plan.rows.filter(row => row.status !== "not-chosen");
     expect(planned.filter(row => row.slot.startsWith("sections."))).toHaveLength(45);
-    expect(planned.filter(row => row.slot.startsWith("frames."))).toHaveLength(8);
+    expect(planned.filter(row => row.slot.startsWith("frames."))).toHaveLength(9);
     const result = planSurfacePreviews({ plan, fills });
     const previewed = Object.keys(result.previews), gaps = result.unrenderable.map(gap => gap.slot);
     expect([...previewed, ...gaps].sort()).toEqual(planned.map(row => row.slot).sort());
@@ -34,7 +34,7 @@ describe("planSurfacePreviews", () => {
     expect(previewed.filter(slot => slot.startsWith("sections."))).toHaveLength(41);
     for (const slot of ["sections.activity-feed", "sections.audit-log", "sections.timeline", "sections.usage"]) expect(previewed, slot).toContain(slot);
     for (const leaf of ["consent", "error-state", "stats", "data-grid", "cards", "call-to-action", "notices", "gallery", "data-table"]) expect(previewed, leaf).toContain(`sections.${leaf}`);
-    expect(previewed.filter(slot => slot.startsWith("frames.")).sort()).toEqual(["frames.app-header", "frames.inspector", "frames.sheet", "frames.site-footer", "frames.site-header"]);
+    expect(previewed.filter(slot => slot.startsWith("frames.")).sort()).toEqual(["frames.app-header", "frames.app-sidebar", "frames.inspector", "frames.sheet", "frames.site-footer", "frames.site-header"]);
     const bySlot = (gaps: readonly { slot: string }[]) => [...gaps].sort((x, y) => x.slot.localeCompare(y.slot));
     expect(bySlot(result.unrenderable)).toEqual(bySlot([...SAMPLE_GAPS, SITE_SHELL_GAP]));
   });
@@ -95,6 +95,10 @@ describe("planSurfacePreviews", () => {
     expect(result.previews["sections.comparison"]?.pointer).toBe("@clossys/designer/blocks#Matrix");
     expect(html["sections.comparison"]).toContain("<table");
     expect(result.previews["frames.site-header"]?.pointer).toBe("@clossys/designer/shell/server#SiteHeader");
+    // vf34: the app sidebar renders the real AppNavigation with its sample tree.
+    expect(result.previews["frames.app-sidebar"]?.pointer).toBe("@clossys/designer/blocks#AppNavigation");
+    expect(html["frames.app-sidebar"]).toContain("Workspace navigation");
+    expect(html["frames.app-sidebar"]).toContain("Billing");
   });
 
   it("reports a planned fill missing from the candidate documents instead of rendering it", () => {
