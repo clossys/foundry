@@ -2326,13 +2326,12 @@ a native JS `Date` — see "Why these dependencies" above for why that
 package ships as a real dependency of this one rather than an unlisted
 transitive of `react-aria-components`.
 
-A full `DatePicker` (this field plus a calendar-grid popover) was
-considered and deliberately NOT built instead: react-aria-components' own
-`DatePicker` composes a `Calendar` internally, and `Calendar` isn't one of
-this package's components (see "What's deliberately not here") — shipping
-`DatePicker` would mean building that calendar grid as an unavoidable side
-effect of a component this package wasn't asked for. `DateField` alone —
-direct keyboard entry, no calendar — is already complete on its own.
+`DateField` itself is direct keyboard entry with no calendar, and is
+complete on its own. A calendar-grid picker is composed rather than
+exported: `Calendar` ships as its own component (single date or range),
+and the catalog's registered `compose:date-picker@1` rule wires
+`DateField`, `Popover` and `Calendar` into a consumer-owned `DatePicker`
+source file.
 
 ### `ComboBox`
 
@@ -8192,24 +8191,24 @@ over the IDENTICAL fixture in the same test, exits `0`.
 
 ## What's deliberately not here
 
-**Components:** thirty-seven ship —
+**Components:** forty ship —
 `Button`, `NativeAction`, `IconButton`, `Icon`, `TextField`, `Badge`, `Card`, `Breadcrumb`, `Link`,
 `Checkbox`, `Switch`, `Select`, `Textarea`, `Avatar`, `Spinner`, `Menu`,
 `Dialog`, `Tabs`, `Table`, `Field`, `Skeleton`, `Tooltip`, `Banner`,
-`RadioGroup`, `Popover`, `DateField`, `ComboBox`, `SearchField`,
+`RadioGroup`, `Popover`, `DateField`, `Calendar`, `ComboBox`, `SearchField`,
 `FileTrigger`, `Disclosure`, `ProgressBar`, `Separator`, `Chip`,
-`StatusMark`, `Meter`, `ResizeHandle`, `Logomark` and `GridList`. No `Modal` exposed as a public component of
+`StatusMark`, `Meter`, `ResizeHandle`, `Logomark`, `GridList` and `ToggleButton`. No `Modal` exposed as a public component of
 its own beyond what `Dialog` and `Popover` already compose internally —
 that gets added here only once something real needs a bare modal overlay
 with neither `Dialog`'s fixed trigger/content shape nor `Popover`'s
-anchored one, not speculatively. `Slider`, `Calendar`, `NumberField`,
-`Toolbar`, and `Accordion` are all deliberately NOT here either — each is a
-real, plausible future component, but none was asked for by this rung; `Calendar`
-in particular is why `DateField` ships alone rather than as a full
-`DatePicker` (see `DateField`'s own section above) — adding it
+anchored one, not speculatively. `Slider`, `NumberField`, `Toolbar`, and
+`Accordion` are all deliberately NOT here either — each is a real,
+plausible future component, but none was asked for by this rung. Adding one
 speculatively, just because a related component shipped, is the exact
 un-bounded growth this package's own "variant rule" warns against one level
-up. They get added here only once something real needs them.
+up. They get added here only once something real needs them, as `Calendar`
+and `ToggleButton` were when the catalog's date-picker and toggle-button
+slots needed Foundry implementations.
 
 **Blocks:** shipped blocks include `AccessMatrix`, `ColumnMapper`, `Lockup`, `PageHeader`, `AccountMenu`, `EmptyState`, `DataTable`, `CanvasSurface`, `DetailView`, `Pagination`, `UsageMeter`, `Stat`, `Form`, `FieldGroup`, `ConfirmDialog`, `Toolbar`, `NavGrid`, `SectionHeader`, `Hero`, `ContentSection`, `SectionIntro`, `MediaFigure`, `MarketingChapter`, `FeatureGrid`, `Matrix`, `Specimen`, `SpecimenPanel`, `OrderedStepSequence`, `StatusList`, `Faq`, `PricingTable`, `Testimonial`, `TableOfContents`, `TestimonialSet`, `LogoCloud`, `PeopleGrid`, `ArticleBody`, `SectionFrame`, `ConsentBanner`, `Panel`, `Drawer`, `ResizablePane`, `CommandMenu`, `AppNavigation`, `PageBar`, `Explorer`, `RecordLedger`, `AnatomyCallouts`, `Scene`, `Item`, `Tree`, `Items`, `GroupedTable`, `CatalogWorkspace`, `CatalogBrowser`, `Chat`, `NewsletterBand`, `ResourceList`, `RelationGraph`, `TaskList` and `EventItem`. Current inventory counts come from the shared catalog
 in the repository check `src/catalog/catalog.coverage.test.ts` (not shipped in the installed package). No
