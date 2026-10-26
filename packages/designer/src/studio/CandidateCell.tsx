@@ -10,7 +10,7 @@ export const CandidateCell = memo(function CandidateCell({ candidate, labels, pr
   if (!candidate) return <Card variant="plate" data-candidate-cell="" className="flex w-max items-start gap-md p-sm">{preview ?? <p>{labels.previewUnavailable}</p>}</Card>;
   return <Card variant="plate" data-studio-candidate={candidate.index} data-candidate-cell="" className="flex w-max items-start gap-md p-sm">
     {candidate.previewable ? candidate.members.map(entry => <div key={entry.id} data-candidate-variant={entry.id} className="min-w-[var(--ui-control-h-lg)]">
-      {candidate.members.length > 1 ? <p className="text-caption text-ink-secondary">{entry.id.slice(entry.member.slot.length + 1)}</p> : null}
+      <p data-member-key="" className="text-caption text-ink-secondary">{entry.id.slice(entry.member.slot.length + 1)}</p>
       <CompactPreview candidate={{ ...candidate, members: [entry] }} labels={labels} />
     </div>) : <p>{labels.previewUnavailable}</p>}
   </Card>;

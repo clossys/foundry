@@ -66,11 +66,23 @@ export function SlotPreview({ members, labels, limit = PREVIEW_LIMIT, fontDeclar
   );
 }
 
+/**
+ * The specimen of one member inside a labelled cell. The cell owns the member key, so this never
+ * re-enters the labelled SlotPreview; it adds the member value only where the specimen shows none.
+ */
 export function CompactPreview({ candidate, labels }: { candidate: Candidate; labels: StudioLabels }): ReactElement | null {
-  const member = candidate.members[0]?.member;
-  if (!candidate.previewable || !member) return null;
+  const id = candidate.members[0]?.id, member = candidate.members[0]?.member;
+  if (!candidate.previewable || !id || !member) return null;
   const spec = describePreview(member, 0);
-  if (spec.kind === "text" && spec.visualUnsupported) return <Specimen id={candidate.members[0]!.id} member={member} spec={spec} labels={labels} />;
-  if (member.$type === "color" || member.$type === "duration" || member.$type === "cubicBezier") return <TokenValuePreview id={candidate.members[0]!.id} member={member} sampleText={labels.sampleText} lightLabel={labels.inspector.light} darkLabel={labels.inspector.dark} compact />;
-  return <SlotPreview members={candidate.members} labels={labels} limit={1} />;
+  const compact = !(spec.kind === "text" && spec.visualUnsupported) && (member.$type === "color" || member.$type === "duration" || member.$type === "cubicBezier");
+  const specimen = compact
+    ? <TokenValuePreview id={id} member={member} sampleText={labels.sampleText} lightLabel={labels.inspector.light} darkLabel={labels.inspector.dark} compact />
+    : <Specimen id={id} member={member} spec={spec} labels={labels} />;
+  const valueShown = member.slot.startsWith("assets.") || spec.kind === "text" || spec.kind === "ruler";
+  const family = member.$type === "fontFamily" && member.font?.kind === "fontsource" ? firstFamily(member.css.light) : undefined;
+  return <>
+    {specimen}
+    {valueShown ? null : <code data-member-value="">{member.css.light}</code>}
+    {family !== undefined && !isFontDeclared(family) ? <small data-preview-note="font">{labels.fontNotLoaded}</small> : null}
+  </>;
 }

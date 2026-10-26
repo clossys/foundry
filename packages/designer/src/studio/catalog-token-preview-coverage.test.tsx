@@ -111,7 +111,10 @@ function conformance(): { verdicts: Record<string, Verdict>; selected: Map<strin
         const { type, fallback } = specimenOf(variant);
         if (fallback) verdict.specimen.push(`${key}: ${fallback}`);
         else types.set(type!, [...types.get(type!) ?? [], key]);
-        const names = [...variant.querySelectorAll("*")].filter(element => element.children.length === 0 && visible(element) && element.textContent?.trim() === key).length;
+        // One visible key owner; any other visible text equal to the key is a second label, unless
+        // the member's value is literally the key (e.g. elevation `none` = `none`).
+        const named = [...variant.querySelectorAll("*")].filter(element => element.children.length === 0 && visible(element) && element.textContent?.trim() === key);
+        const names = named.filter(element => element.hasAttribute("data-member-key")).length + (key === member.css.light ? 0 : named.filter(element => !element.hasAttribute("data-member-key")).length);
         if (names !== 1) verdict.label.push(`${key}: ${names} visible labels`);
       }
       if (types.size > 1) verdict.specimen.push(`mixed specimen types ${[...types.keys()].sort(byCodeUnit).join(" + ")}`);
