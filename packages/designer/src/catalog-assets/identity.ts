@@ -1,4 +1,4 @@
-import { generateIdentityDirections, recolorSvg, composeLockup, identityPlateSvg, reverseTwoToneSvg, type IdentityTokenInput, type LockupFontLicence } from '../tokens/identity-kit.js';
+import { generateIdentityDirections, recolorSvg, composeLockup, identityPlateSvg, type IdentityTokenInput, type LockupFontLicence } from '../tokens/identity-kit.js';
 import { resolve, libraryHash } from '../catalog-core/resolve.js';
 import { applyLibraryChange, createDerivationInputsHasher } from '../catalog-core/library.js';
 import { cssText, flatten } from '../catalog-core/model.js';
@@ -46,20 +46,25 @@ function wordmarkWidth(name:string):number {
  let em=0; for(const ch of name) em+=/[A-Z0-9]/.test(ch)?0.72:/\s/.test(ch)?0.28:0.6;
  return Math.ceil((56+em*WORDMARK_SIZE+[...name].length*WORDMARK_TRACKING)/4)*4;
 }
-/** Reversed mark: a recognised two-tone mark keeps its ink glyph on an inverse plate; any other mark is recoloured flat. */
-function reversedMark(svg:string,onInverse:string):string { return reverseTwoToneSvg(svg,onInverse)??recolour(svg,onInverse); }
 /**
- * Reversed lockup: the nested mark is reversed as a two-tone mark and the rest (the
- * wordmark) is recoloured flat. A lockup without exactly one nested, recognised mark
+ * Reversed mark: one on-inverse paint. A recognised two-tone mark becomes a knockout
+ * (the plate in the on-inverse ink with the glyph cut through it), so the glyph shows
+ * as whatever dark ground the mark sits on and A5 measures the only paint there is,
+ * the plate against that ground. Painting the glyph in the mark's own plate tone would
+ * vanish on a ground of that tone (1.00:1). Any other mark is recoloured flat.
+ */
+function reversedMark(svg:string,onInverse:string):string { return recolour(svg,onInverse); }
+/**
+ * Reversed lockup: the nested mark is reversed as {@link reversedMark} does and the
+ * rest (the wordmark) is recoloured flat. A lockup without exactly one nested mark
  * directly after its root tag is recoloured flat as a whole, as before.
  */
 function reversedLockup(seed:string,onInverse:string):string {
  const root=/^\s*<svg\b[^>]*>/.exec(seed)?.[0]; const nested=root?/^<svg\b([^>]*)>([\s\S]*?)<\/svg>/.exec(seed.slice(root.length)):null;
  if(!root||!nested||/<svg\b/.test(nested[2]!)) return recolour(seed,onInverse);
- const box=/\bviewBox="([^"]*)"/.exec(nested[1]!)?.[1]; const reversed=box===undefined?undefined:reverseTwoToneSvg(`<svg xmlns="http://www.w3.org/2000/svg" viewBox="${box}">${nested[2]}</svg>`,onInverse);
- if(reversed===undefined) return recolour(seed,onInverse);
- const paint=/^<svg\b[^>]*?\s(color="[^"]*")\s(fill="[^"]*")/.exec(reversed)!;
- const markTag=`<svg${nested[1]!.replace(/\s(?:color|fill)="[^"]*"/g,'')} ${paint[1]} ${paint[2]}>${svgBody(reversed)}</svg>`;
+ const box=/\bviewBox="([^"]*)"/.exec(nested[1]!)?.[1]; if(box===undefined) return recolour(seed,onInverse);
+ const reversed=reversedMark(`<svg xmlns="http://www.w3.org/2000/svg" viewBox="${box}">${nested[2]}</svg>`,onInverse);
+ const markTag=`<svg${nested[1]!.replace(/\s(?:color|fill)="[^"]*"/g,'')}>${svgBody(reversed)}</svg>`;
  const rest=recolour(root+seed.slice(root.length+nested[0].length),onInverse); const restRoot=/^\s*<svg\b[^>]*>/.exec(rest)![0];
  return restRoot+markTag+rest.slice(restRoot.length);
 }

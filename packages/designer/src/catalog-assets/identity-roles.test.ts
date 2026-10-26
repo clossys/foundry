@@ -8,6 +8,7 @@ import type {LibraryData,DtcgToken} from '../catalog-core/types.js';
 import {withAssetCatalog} from './catalog.js';
 import {createConsumerIdentitySeeds,deriveIdentity,checkIdentityDerivations} from './identity.js';
 import {inspectSvg} from './svg.js';
+import {checkAssetProfile} from './check.js';
 
 /*
  * Identity roles from a plate-and-star mark whose star paint is inherited from its group,
@@ -51,10 +52,11 @@ describe('identity roles derived from a group-painted two-tone mark',()=>{
   expect(px(STAR.x,STAR.y)[3]).toBe(0);
   expect(px(CORNER.x,CORNER.y)[3]).toBe(0);
  });
- it('reversed paints the ink star on the inverse plate, never plate-on-plate',async()=>{
+ it('reversed paints the inverse plate with the star cut through to the ground, never plate-on-plate',async()=>{
   const px=await raster(members()('assets.mark.reversed'),100);
   expect(hex(px(PLATE.x,PLATE.y))).toBe(ON_INVERSE);
-  expect(hex(px(STAR.x,STAR.y))).toBe('#0a0a0a');
+  expect(px(PLATE.x,PLATE.y)[3]).toBe(255);
+  expect(px(STAR.x,STAR.y)[3]).toBe(0);
   expect(px(CORNER.x,CORNER.y)[3]).toBe(0);
  });
  it('favicon has no square backing and its star is the opposite of its plate in both schemes',async()=>{
@@ -87,7 +89,13 @@ describe('identity roles derived from a group-painted two-tone mark',()=>{
   const px=await raster(lockup,width*4,192);
   const at=(p:{x:number;y:number})=>px(p.x*0.48*4,p.y*0.48*4);
   expect(hex(at(PLATE))).toBe(ON_INVERSE);
-  expect(hex(at(STAR))).toBe('#0a0a0a');
+  expect(at(PLATE)[3]).toBe(255);
+  expect(at(STAR)[3]).toBe(0);
+ });
+ it('reversed roles pass the A5 contrast check on every inverse and dark ground',()=>{
+  const library=deriveIdentity(catalog,createConsumerIdentitySeeds(catalog,base(),{name:'Example',suppliedSvg:MARK,fontLicence:{family:'sans-serif',outlining:'unknown'}}));
+  const a5=checkAssetProfile(catalog,library).filter(f=>f.code==='A5'&&f.subject.endsWith('.reversed'));
+  expect(a5.map(f=>[f.subject,f.verdict])).toEqual([['assets.lockup.reversed','satisfied'],['assets.mark.reversed','satisfied']]);
  });
  it('lockup wordmark is set at weight 600 with negative tracking in a viewBox trimmed to its content',()=>{
   const lockup=members()('assets.lockup.positive');
@@ -98,5 +106,81 @@ describe('identity roles derived from a group-painted two-tone mark',()=>{
   expect(width).toBeGreaterThanOrEqual(56+7*22*0.5);
   expect(width).toBeLessThanOrEqual(56+7*22*0.7);
   expect(width%4).toBe(0);
+ });
+});
+
+/*
+ * The consumer kit as a real product library holds it: the mark exported with whitespace between
+ * tags, the star inheriting the inverse ink from its group, the plate in the primary ink, and a
+ * lockup seed nesting that mark beside a live-text wordmark. Tokens are the product's own values.
+ */
+const K={primary:'#0A0A0A',primaryDark:'#FAFAFA',onInverse:'#FAFAFA',base:'#F5F5F5',baseDark:'#0F0F0F',inverse:'#0A0A0A'};
+const KIT_BODY=`\n  <rect width="100" height="100" rx="21.875" fill="#0A0A0A"/>\n  <g transform="translate(50 50)" fill="#FAFAFA">${[0,72,144,216,288].map(d=>`<rect x="-5.75" y="-32" width="11.5" height="32" transform="rotate(${d.toFixed(1)})"/>`).join('')}</g>\n`;
+const KIT_MARK=`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" width="100" height="100" role="img" aria-label="Example" data-clear-space="0.2">${KIT_BODY}</svg>\n`;
+const KIT_LOCKUP=`<svg aria-label="Example" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 48" data-clear-space="0.2"><svg x="0" y="0" width="48" height="48" viewBox="0 0 100 100">${KIT_BODY}</svg><text x="56" y="31" font-size="22" font-family="sans-serif" fill="#0A0A0A">Example</text></svg>`;
+function kitLibrary():LibraryData{
+ let library:LibraryData={source:{id:'example',kind:'consumer',author:'consumer',license:'MIT',extends:'foundry'},fills:[],adoptedAt:'2026-10-23',rubricVersion:'test',strategy:{posture:'proven'},direction:{rule:'identity-mark@1'}};
+ const color=(value:string,dark?:string):DtcgToken=>({$type:'color',$value:value,$extensions:{'com.clossys.css':{raw:value},...(dark?{'com.clossys.modes':{dark}}:{})}});
+ const svg=(value:string):DtcgToken=>({$type:'svg',$value:value,$extensions:{'com.clossys.origin':{kind:'authored',license:'MIT',note:'Consumer identity seed'}}});
+ library=applyLibraryChange(catalog,library,{baseHash:libraryHash(library),changes:[
+  {op:'author',slot:'tokens.text-color',tokens:{primary:color(K.primary,K.primaryDark),'on-inverse':color(K.onInverse,K.inverse),'on-accent':color(K.onInverse)}},
+  {op:'author',slot:'tokens.surface-color',tokens:{base:color(K.base,K.baseDark),inverse:color(K.inverse,K.primaryDark)}},
+  {op:'author',slot:'tokens.accent-color',tokens:{default:color('#6E3FC7')}},
+  {op:'author',slot:'tokens.typeface',tokens:{display:{$type:'fontFamily',$value:['sans-serif']}}},
+  {op:'author',slot:'assets.mark',tokens:{positive:svg(KIT_MARK)}},
+  {op:'author',slot:'assets.lockup',tokens:{positive:svg(KIT_LOCKUP)}},
+ ]});
+ return deriveIdentity(catalog,library);
+}
+describe('identity roles derived from the product-shaped consumer kit',()=>{
+ const library=kitLibrary();
+ const get=(id:string):string=>resolve({catalog,library}).members[id]!.value.light as string;
+ /** Composite a role onto a ground, as the specimen and a page do. */
+ async function on(svg:string,ground:string,width:number,height=width){
+  const data=await sharp(Buffer.from(svg),{density:288}).resize(width,height,{fit:'fill'}).flatten({background:ground}).raw().toBuffer();
+  return (x:number,y:number):string=>{const i=(Math.round(y)*width+Math.round(x))*3;return '#'+[data[i]!,data[i+1]!,data[i+2]!].map(v=>v.toString(16).padStart(2,'0')).join('');};
+ }
+ it('materializes exactly the builtin rule output (no A12 identity drift)',()=>{
+  expect(checkIdentityDerivations(catalog,library)).toEqual([]);
+  expect(checkAssetProfile(catalog,library).filter(f=>f.code==='A12'&&['assets.identity','assets.mark','assets.lockup','assets.favicon','assets.app-icon'].includes(f.subject)&&f.verdict!=='satisfied')).toEqual([]);
+ });
+ it('reversed mark and lockup measure at least 3:1 against every inverse and dark ground',()=>{
+  const a5=checkAssetProfile(catalog,library).filter(f=>f.code==='A5'&&f.subject.endsWith('.reversed'));
+  expect(a5.map(f=>f.subject)).toEqual(['assets.lockup.reversed','assets.mark.reversed']);
+  for(const f of a5){expect(f.verdict,f.subject).toBe('satisfied');expect(Number(/Minimum contrast ([\d.]+):1/.exec(f.message)![1]),f.subject).toBeGreaterThanOrEqual(3);}
+ });
+ it('reversed mark shows the star on every dark ground: a light plate with the star cut through to the ground',async()=>{
+  for(const ground of [K.inverse,K.baseDark,'#1a1a1a']){
+   const px=await on(get('assets.mark.reversed'),ground,100);
+   expect(px(PLATE.x,PLATE.y),ground).toBe(K.onInverse.toLowerCase());
+   expect(px(STAR.x,STAR.y),ground).toBe(ground.toLowerCase());
+  }
+ });
+ it('reversed lockup keeps the star visible in its mark and sets the wordmark in the inverse ink',async()=>{
+  const lockup=get('assets.lockup.reversed');
+  expect(lockup).toMatch(/<text[^>]*fill="#FAFAFA"/i);
+  const px=await on(lockup,K.inverse,320*4,192);
+  const at=(p:{x:number;y:number})=>px(p.x*0.48*4,p.y*0.48*4);
+  expect(at(PLATE)).toBe(K.onInverse.toLowerCase());
+  expect(at(STAR)).toBe(K.inverse.toLowerCase());
+ });
+ it('mono is one currentColor paint with the star knocked out, never a solid block',async()=>{
+  const mono=get('assets.mark.mono');
+  expect(new Set([...mono.replace(/<mask[\s\S]*?<\/mask>/g,'').matchAll(/\b(?:fill|stroke|color)="([^"]+)"/g)].map(m=>m[1]))).toEqual(new Set(['currentColor']));
+  expect(checkAssetProfile(catalog,library).find(f=>f.code==='A7')?.verdict).toBe('satisfied');
+  const px=await on(mono.replace('<svg ','<svg color="#000000" '),'#ffffff',100);
+  expect(px(PLATE.x,PLATE.y)).toBe('#000000');
+  expect(px(STAR.x,STAR.y)).toBe('#ffffff');
+ });
+ it('favicon and app icons keep the star in the opposite ink of their plate',async()=>{
+  const favicon=await on(get('assets.favicon.vector'),'#ffffff',100);
+  expect(favicon(PLATE.x,PLATE.y)).toBe(K.primary.toLowerCase());
+  expect(favicon(STAR.x,STAR.y)).toBe(K.onInverse.toLowerCase());
+  for(const id of ['assets.app-icon.standard','assets.app-icon.maskable']){
+   const px=await on(get(id),'#ffffff',512);
+   const at=(p:{x:number;y:number})=>px(116+p.x*2.8,116+p.y*2.8);
+   expect(at(PLATE),id).toBe(K.primary.toLowerCase());
+   expect(at(STAR),id).toBe(K.onInverse.toLowerCase());
+  }
  });
 });
