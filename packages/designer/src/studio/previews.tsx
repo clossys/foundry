@@ -1,7 +1,8 @@
 "use client";
 
-import { Logomark } from "../components/Logomark.js";
-import { inspectSvg } from "../catalog-assets/svg.js";
+import { inspectGlyph, inspectSvg } from "../catalog-assets/svg.js";
+import type { IconNode } from "../components/Icon.js";
+import { IconSpecimen, RatioSpecimen, SvgSpecimen, ratioOf } from "./asset-specimens.js";
 import type { ReactElement } from "react";
 import type { StudioLabels } from "./types.js";
 import { TokenPreview, TokenValuePreview } from "../tokens/preview/index.js";
@@ -29,10 +30,17 @@ export function isFontDeclared(family: string): boolean {
 const firstFamily = (css: string): string => (css.split(",")[0] ?? "").trim().replace(/^["']|["']$/g, "");
 function Specimen({ id, member, spec, labels }: { id: string; member: Candidate["members"][number]["member"]; spec: PreviewSpec; labels: PreviewLabels }): ReactElement {
   if (member.slot.startsWith("assets.")) {
-    if (member.$type !== "svg" || typeof member.value.light !== "string") return <code>{member.css.light}</code>;
+    // Assets render as specimens by value type; a value that fails its check never renders as artwork.
+    const unsupported = <p data-preview-kind="unsupported-asset">{labels.visualPreviewUnsupported}</p>;
+    if (member.$type === "glyph") {
+      try { inspectGlyph(member.value.light); } catch { return unsupported; }
+      return <IconSpecimen glyph={member.value.light as IconNode} name={member.slot.replace(/^assets\.icon-/, "")} />;
+    }
+    if (member.$type === "rules") { const ratio = ratioOf(member.value.light); return ratio ? <RatioSpecimen {...ratio} /> : unsupported; }
+    if (member.$type !== "svg" || typeof member.value.light !== "string") return unsupported;
     try { inspectSvg(member.value.light, id === "assets.favicon.vector" ? { favicon: true } : undefined); }
     catch { return <code>{member.css.light}</code>; }
-    return <Logomark src={`data:image/svg+xml,${encodeURIComponent(member.value.light)}`} size="lg" title={id} />;
+    return <SvgSpecimen id={id} slot={member.slot} svg={member.value.light} />;
   }
   if (spec.kind === "text" && spec.visualUnsupported) return <div data-preview-kind="unsupported-text"><p>{labels.visualPreviewUnsupported}</p><dl><dt>{labels.inspector.light}</dt><dd><code>{spec.css}</code></dd><dt>{labels.inspector.dark}</dt><dd><code>{spec.dark}</code></dd></dl></div>;
   if (spec.kind === "token") return <TokenPreview property={spec.property} sampleText={labels.sampleText} unsupportedMessage={spec.property} />;

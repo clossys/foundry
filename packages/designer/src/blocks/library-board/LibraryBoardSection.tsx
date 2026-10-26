@@ -1,12 +1,11 @@
 'use client';
-import type { ReactNode } from 'react';
+import { useId, type ReactNode } from 'react';
 import { Button } from '../../components/Button.js';
 import { Table } from '../../components/Table.js';
-import { Card } from '../../components/Card.js';
 import { RadioGroup } from '../../components/RadioGroup.js';
 import { Tooltip } from '../../components/Tooltip.js';
 import { Badge } from '../../components/Badge.js';
-import { SectionHeader } from '../SectionHeader.js';
+import { BoardHeader, LeafCell } from './LeafCell.js';
 import { MatrixChoices } from '../matrix/choices.js';
 import { CandidatePromptDialog } from './CandidatePromptDialog.js';
 import { assertLibraryBoardRecords, assertLibraryPreviewIdentity, type LibraryBoardCommand, type LibraryBoardRecords, type LibraryPreviewIdentity } from './model.js';
@@ -14,7 +13,7 @@ import type { CandidateWorkflow, LibraryBoardLabels } from './types.js';
 export interface LibraryBoardPreviewPort {
   readonly selectionHash: string;
   readonly sourceHashes: Readonly<Record<string, string>>;
-  /** Original checked preview provider; called only for exact prepared identity. */
+  /** Original checked preview provider; called only for exact prepared identity. It returns the leaf's whole cell (the shared `LeafCell` anatomy), never a second plate around one. */
   render(identity: LibraryPreviewIdentity): ReactNode | undefined;
 }
 export interface LibraryBoardSectionProps {
@@ -31,22 +30,25 @@ export function LibraryBoardSection({ records, labels, previews, workflow, onCom
   assertLibraryBoardRecords(records);
   const { rows, columns, controls } = records;
   const command = (name: 'board-edit' | 'board-done') => onCommand({ version: 1, command: name, boardId: rows.boardId });
-  const preview = (identity: LibraryPreviewIdentity | undefined) => {
-    if (!identity) return <p>{labels.previewUnavailable}</p>;
+  const headingId = useId();
+  /** The checked preview for an exact prepared identity, or undefined when none may render. */
+  const rendered = (identity: LibraryPreviewIdentity | undefined): ReactNode | undefined => {
+    if (!identity) return undefined;
     assertLibraryPreviewIdentity(identity);
-    if (identity.selectionHash !== previews.selectionHash || previews.sourceHashes[identity.source] !== identity.sourceHash) return <p>{labels.previewUnavailable}</p>;
-    let node: ReactNode;
-    try { node = previews.render(identity); } catch { node = undefined; }
-    return node ?? <p>{labels.previewUnavailable}</p>;
+    if (identity.selectionHash !== previews.selectionHash || previews.sourceHashes[identity.source] !== identity.sourceHash) return undefined;
+    try { return previews.render(identity) ?? undefined; } catch { return undefined; }
   };
+  const preview = (identity: LibraryPreviewIdentity | undefined) => rendered(identity) ?? <p>{labels.previewUnavailable}</p>;
+  /** One leaf cell: the provider's checked cell, or the shared cell with the unavailable status in its status slot. */
+  const cell = (identity: LibraryPreviewIdentity | undefined) => rendered(identity) ?? <LeafCell status={labels.previewUnavailable} />;
   const prompt = (row: typeof rows.items[number], refresh = false) => <CandidatePromptDialog trigger={<Button variant="ghost" size="sm">{refresh ? labels.board.refresh : labels.board.create}</Button>} data={refresh ? row.refreshPrompt! : row.prompt} labels={labels} workflow={workflow} />;
   const custom = columns.items.find(column => column.role === 'consumer');
   const choiceColumns = columns.items.filter(column => rows.items.some(row => row.candidates.some(candidate => candidate.source === column.source)));
-  return <section data-library-board={rows.boardId} data-board-mode={controls.mode} aria-label={rows.label} className="flex h-max w-max shrink-0 flex-col gap-sm rounded-surface border border-line-base bg-surface-base p-md">
-    <SectionHeader title={rows.label} level={3} actions={controls.mode === 'edit' ? <Button size="sm" onPress={() => command('board-done')}>{labels.board.done}</Button> : <Tooltip trigger={<Button size="sm" variant="ghost" aria-label={labels.board.changeSelection} onPress={() => command('board-edit')}>{labels.board.changeSelection}</Button>}>{labels.board.changeSelection}</Tooltip>} />
+  return <section data-library-board={rows.boardId} data-board-mode={controls.mode} aria-labelledby={headingId} className="flex h-max w-max shrink-0 flex-col gap-sm rounded-surface border border-line-base bg-surface-base p-md">
+    <BoardHeader id={headingId} title={rows.label} editing={controls.mode === 'edit'} labels={labels.board} onEdit={() => command('board-edit')} onDone={() => command('board-done')} />
     {controls.mode === 'view' ? <Table aria-label={labels.matrix.label} className="w-max">
       <Table.Header><Table.Column id="leaf" isRowHeader>{labels.matrix.leaf}</Table.Column><Table.Column id="preview"><span className="sr-only">{labels.stageLabel}</span></Table.Column></Table.Header>
-      <Table.Body>{rows.items.map(row => <Table.Row key={row.id} id={row.id}><Table.Cell>{row.label}</Table.Cell><Table.Cell>{row.selectedSource ? <Card variant="plate" className="flex w-max items-start gap-md p-sm">{preview(row.selectedPreview)}</Card> : <div className="flex items-center gap-sm text-ink-muted"><span>{labels.board.notChosen}</span><Button variant="ghost" size="sm" onPress={() => command('board-edit')}>{labels.board.choose}</Button><CandidatePromptDialog trigger={<Button variant="ghost" size="sm">{labels.board.askAgent}</Button>} data={row.prompt} labels={labels} workflow={workflow} /></div>}</Table.Cell></Table.Row>)}</Table.Body>
+      <Table.Body>{rows.items.map(row => <Table.Row key={row.id} id={row.id}><Table.Cell>{row.label}</Table.Cell><Table.Cell>{row.selectedSource ? cell(row.selectedPreview) : <LeafCell status={labels.board.notChosen} actions={<><Button variant="ghost" size="sm" onPress={() => command('board-edit')}>{labels.board.choose}</Button><CandidatePromptDialog trigger={<Button variant="ghost" size="sm">{labels.board.askAgent}</Button>} data={row.prompt} labels={labels} workflow={workflow} /></>} />}</Table.Cell></Table.Row>)}</Table.Body>
     </Table> : rows.layer === 'sections' || rows.layer === 'frames' ? <div className="grid gap-md">{rows.items.map(row => <section key={row.id} aria-label={row.label}><h4>{row.label}</h4>{preview(row.selectedPreview)}<div className="flex gap-sm">{prompt(row)}{row.refreshPrompt ? prompt(row, true) : null}</div></section>)}</div> : <MatrixChoices arrangement="choices" aria-label={labels.matrix.label} columns={[...choiceColumns.map(column => ({ id: column.source, label: <Tooltip trigger={<span tabIndex={0}>{column.label}</span>}>{column.license}{column.restriction ? ` · ${column.restriction}` : ''}</Tooltip> })), { id: 'library-board-custom-actions', label: labels.board.custom }]}
       onChange={(id, source) => {
         const candidate = rows.items.find(row => row.id === id)?.candidates.find(candidate => candidate.source === source);
@@ -60,7 +62,7 @@ export function LibraryBoardSection({ records, labels, previews, workflow, onCom
           const candidate = row.candidates.find(candidate => candidate.source === column.source);
           if (!candidate) return [column.source, null];
           const errors = candidate.findings.filter(finding => finding.severity === 'error').length, notices = candidate.findings.filter(finding => finding.severity === 'notice').length;
-          return [column.source, <div className="relative"><RadioGroup.Radio value={candidate.source} aria-label={labels.useSource(candidate.source, row.id)} isDisabled={!controls.canSave || controls.pending || !candidate.usable || column.referenceOnly || errors > 0} className={PREVIEW_CHOICE_CLASS}><Card variant="plate" className="flex w-max items-start gap-md p-sm">{preview(candidate.previewIdentity)}</Card></RadioGroup.Radio>
+          return [column.source, <div className="relative"><RadioGroup.Radio value={candidate.source} aria-label={labels.useSource(candidate.source, row.id)} isDisabled={!controls.canSave || controls.pending || !candidate.usable || column.referenceOnly || errors > 0} className={PREVIEW_CHOICE_CLASS}>{cell(candidate.previewIdentity)}</RadioGroup.Radio>
             {errors > 0 ? <Tooltip trigger={<Button variant="ghost" size="sm" aria-label={labels.checkSummary(errors, notices)}><Badge variant="danger">!</Badge></Button>}>{candidate.findings.map((finding, index) => <p key={index}>{finding.code}: {finding.message}</p>)}</Tooltip> : null}</div>];
         })), 'library-board-custom-actions': <div className="flex gap-sm">{prompt(row)}{custom && row.refreshPrompt ? prompt(row, true) : null}</div> }
       }))} />}

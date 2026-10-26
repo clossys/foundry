@@ -1,7 +1,7 @@
 "use client";
 import { Disclosure } from "../components/Disclosure.js";
 
-import { memo, useCallback, useMemo, useState, type Dispatch, type SetStateAction, type ReactNode } from "react";
+import { memo, useCallback, useId, useMemo, useState, type Dispatch, type SetStateAction, type ReactNode } from "react";
 import type { LayerId, Placement, CompositeResolved, CompositeLibraryOperation, BuildCatalogData } from "../catalog-core/index.js";
 import { Button } from "../components/Button.js";
 import { SearchField } from "../components/SearchField.js";
@@ -18,16 +18,14 @@ import { CanvasExplorer } from "./CanvasExplorer.js";
 import { CanvasModules } from "./CanvasModules.js";
 import { TreeView } from "./TreeView.js";
 import { SlotModule } from "../shell/FrameSlots.js";
-import { SectionHeader } from "../blocks/SectionHeader.js";
 import { Matrix as Comparison } from "../blocks/Matrix.js";
 import { Badge } from "../components/Badge.js";
 import { Tooltip } from "../components/Tooltip.js";
 import { PREVIEW_CHOICE_CLASS } from "./CandidateChoice.js";
 import { CandidateCell } from "./CandidateCell.js";
+import { BoardHeader, LeafCell } from "../blocks/library-board/LeafCell.js";
 import { CandidatePromptDialog } from "./CandidatePromptDialog.js";
 import { Table } from "../components/Table.js";
-import { Icon } from "../components/Icon.js";
-import { Settings } from "../icons/Settings.js";
 import { CanvasSurface } from "../blocks/canvas/CanvasSurface.js";
 import { CanvasLod, CanvasLodLayers } from "../blocks/canvas/CanvasLod.js";
 import { useCanvasWorld } from "./useCanvasWorld.js";
@@ -155,6 +153,7 @@ interface ContractBoardsProps {
 // Session revision notifications also reach this canvas through portal blur.
 // Only actual board inputs should prepare its tables, previews and prompts again.
 const ContractBoards = memo(function ContractBoards({ boards, layer, query, editing, setEditing, candidates, libraries, profile, previewLeaf, runtime, slots, consumer, t, candidateWorkflow, setLeaf, edit, canEdit, open }: ContractBoardsProps) {
+  const headingBase = useId();
   return <>{boards.map(domain => <section key={domain.id} aria-label={domain.label} data-studio-domain={domain.id} className="flex items-start gap-2xl">
         <h2 className="text-body text-ink-secondary">{domain.label}</h2>
         {domain.boards.map(board => {
@@ -168,8 +167,8 @@ const ContractBoards = memo(function ContractBoards({ boards, layer, query, edit
           const findings = profile?.check.findings.filter(finding => board.leaves.some(leaf => finding.subject === leaf.id || finding.subject.startsWith(leaf.id + "."))) ?? [];
           const summary = t.checkSummary(findings.filter(finding => finding.severity === "error").length, findings.filter(finding => finding.severity === "notice").length);
           const chosen = (id: string) => profile?.components.components[id]?.descriptor.source ?? runtime?.manifest.fills.find(fill => fill.leaf === id)?.library;
-          return <section key={board.id} tabIndex={-1} data-studio-board={boardKey} data-board-mode={isEditing ? "edit" : "view"} aria-label={board.label} className="h-max w-max shrink-0 rounded-surface border border-line-base bg-surface-base p-md">
-            <SectionHeader title={board.label} level={3} actions={isEditing ? <Button size="sm" onPress={() => setBoardEditing(false)}>{t.board.done}</Button> : <Tooltip trigger={<Button size="sm" variant="ghost" aria-label={t.board.changeSelection} onPress={() => setBoardEditing(true)}><Icon glyph={Settings} decorative size="sm" /></Button>}>{t.board.changeSelection}</Tooltip>} />
+          return <section key={board.id} tabIndex={-1} data-studio-board={boardKey} data-board-mode={isEditing ? "edit" : "view"} aria-labelledby={`${headingBase}${boardKey}`} className="h-max w-max shrink-0 rounded-surface border border-line-base bg-surface-base p-md">
+            <BoardHeader id={`${headingBase}${boardKey}`} title={board.label} editing={isEditing} labels={t.board} onEdit={() => setBoardEditing(true)} onDone={() => setBoardEditing(false)} />
             <CanvasLodLayers compact={<div data-studio-zoom-compact="" className="flex flex-col gap-md text-h0">
               <p className="break-words text-ink-secondary">{summary}</p>
               <ul className="flex flex-col gap-sm">{leaves.map(leaf => { const source = chosen(leaf.id); return <li key={leaf.id} className="break-words"><span className="text-ink-primary">{leaf.id}</span> <span className={source ? "text-ink-secondary" : "text-ink-muted"}>{source ?? t.board.notChosen}</span></li>; })}</ul>
@@ -184,7 +183,7 @@ const ContractBoards = memo(function ContractBoards({ boards, layer, query, edit
               const runtimeSelected = Object.keys(profile?.surfaces?.fills ?? {}).includes(leaf.id) || runtime?.manifest.fills.some(fill => fill.leaf === leaf.id);
               let preview: ReactNode;
               if (selected || runtimeSelected) try { preview = profile ? previewLeaf?.(leaf.id, profile) : undefined; } catch { /* Findings remain in the inspector; preview never fabricates a sample. */ }
-              return <Table.Row key={leaf.id} id={leaf.id} data-studio-row={leaf.id}><Table.Cell>{leaf.id}</Table.Cell><Table.Cell>{selected || runtimeSelected ? <CandidateCell labels={t} preview={preview} /> : <div className="flex items-center gap-sm text-ink-muted"><span>{t.board.notChosen}</span><Button variant="ghost" size="sm" onPress={() => setBoardEditing(true)}>{t.board.choose}</Button><CandidatePromptDialog trigger={<Button variant="ghost" size="sm">{t.board.askAgent}</Button>} data={data(leaf.id)} labels={t} workflow={candidateWorkflow} /></div>}</Table.Cell></Table.Row>;
+              return <Table.Row key={leaf.id} id={leaf.id} data-studio-row={leaf.id}><Table.Cell>{leaf.id}</Table.Cell><Table.Cell>{selected || runtimeSelected ? <CandidateCell labels={t} preview={preview} /> : <LeafCell status={t.board.notChosen} actions={<><Button variant="ghost" size="sm" onPress={() => setBoardEditing(true)}>{t.board.choose}</Button><CandidatePromptDialog trigger={<Button variant="ghost" size="sm">{t.board.askAgent}</Button>} data={data(leaf.id)} labels={t} workflow={candidateWorkflow} /></>} />}</Table.Cell></Table.Row>;
             })}</Table.Body></Table> : layer === "components" ? <Comparison arrangement="choices" aria-label={t.matrix.label} columns={[...columns.map(id => ({ id, label: id })), { id: "studio-custom-actions", label: t.board.custom }]} onFocusCell={id => setLeaf(id)}
               onChange={(id, source) => { const candidate = candidates.find(candidate => candidate.meta.slot === id && candidate.meta.source === source); if (candidate?.result?.available && !candidate.result.findings.some(f => f.severity === "error") && canEdit) edit(id, [candidate.result.change]); }}
               rows={leaves.map(leaf => ({ id: leaf.id, label: leaf.id, name: <>{t.useGroup} {leaf.id}</>, selected: profile?.components.components[leaf.id]?.descriptor.source ?? null,
