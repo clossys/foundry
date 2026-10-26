@@ -62,7 +62,9 @@ const values = (axis: string, prop: string, names: readonly string[]): Record<st
 
 /** Only APIs evidenced in public blocks source; generic recipe rows are not implementations. */
 export const FOUNDRY_SECTION_MAP: Readonly<Record<string, FoundrySectionMapping>> = {
+  "activity-feed": mapping("ActivityFeed", { events: "events", grouping: "groups", filters: "filters" }, {}, { notes: ["Each event renders through EventItem; host supplies labels and emptyState. Groups name event ids and every event must sit in exactly one group. Root is section; header and band are external."] }),
   "access-matrix": mapping("AccessMatrix", { roles: "roles", permissions: "groups[].permissions" }, {}, { notes: ["Permissions are grouped; the host also supplies value, labels and optional onChange. The source owns a native table rather than a component table leaf."] }),
+  "audit-log": mapping("AuditLog", { entries: "entries", filter: "filter", export: "exportAction" }, {}, { notes: ["Composes DataTable with fixed time, actor, action and target columns; host supplies labels. Filter and export are host regions in the DataTable toolbar; the block never filters or exports rows itself."] }),
   article: mapping("ArticleBody", { body: "children" }, {}, { notes: ["Accepts pre-structured React children, not a rich-node parser; no dedicated table-of-contents slot. Requires an external SectionFrame."] }),
   band: mapping("SectionFrame", {}, { ...values("ground", "ground", ["base", "sunken", "inverse"]), ...values("measure", "measure", ["prose", "content", "wide"]) }, { notes: ["SectionGround excludes transparent. Rhythm is fixed in source, with no specified contract member values."] }),
   "call-to-action": mapping("CallToAction", { header: "title,eyebrow,description", actions: "primaryAction,secondaryAction" }, {}, { notes: ["Header is the composed SectionHeader (eyebrow, title, description) on a section ground; actions are one primary and at most one secondary host node, so the two-action ceiling is structural."] }),
@@ -100,16 +102,14 @@ export const FOUNDRY_SECTION_MAP: Readonly<Record<string, FoundrySectionMapping>
   "status-list": mapping("StatusList", { items: "items", legend: "legendLabel" }, { ...values("status", "items[].state", ["available", "partial", "planned"]), "status.not-offered": "items[].disposition=not-offered" }, { notes: ["Host supplies labels including disposition labels and legendLabel. Not-offered is a separate disposition, never a fourth readiness state."] }),
   steps: mapping("OrderedStepSequence", { steps: "items" }, {}, { notes: ["Steps require authored ordinal and heading; no per-step status member. Source owns its heading and layout."] }),
   "table-of-contents": mapping("TableOfContents", { headings: "items", "active-id": "currentId" }, {}, { notes: ["Host supplies label. Items are heading ids/labels; optional scroll tracking is source behavior, not a conformance observation."] }),
+  timeline: mapping("Timeline", { events: "events" }, {}, { notes: ["Events carry a machine-readable date, host-formatted dateText, heading and optional description. Root is an ordered list; the marker rail is drawn with line tokens, not a separator component."] }),
   "task-list": mapping("TaskList", { tasks: "items" }, {}, { notes: ["Tasks have status, not a done checkbox, due or assignee API. Host supplies statusLabels, progressText and emptyState. No checkbox/avatar composition is claimed."] }),
   wizard: mapping("FormWizard", { steps: "steps", progress: "progress", back: "onBack", next: "onNext", review: "review" }, {}, { notes: ["Current step is controlled by id; the host supplies onNext/onBack and validation. Progress defaults to a ProgressBar; review shows on the last step only. No band or section-header anatomy."] }),
   testimonials: mapping("TestimonialSet", { quotes: "items" }, { "layout.single": "items.length=1", "layout.grid": "items.length[2,3,4,6]" }, { notes: ["Source selects single or grid geometry from enforced item counts; quote attribution uses attributorName/attributorRole/portrait. Root is ul with external anatomy."] }),
+  usage: mapping("UsageSummary", { meters: "meters" }, {}, { notes: ["Each meter record renders through UsageMeter (host-formatted used, limit and period text, optional thresholds). Root is section; an empty list requires emptyState."] }),
 };
 
 const GAPS: Readonly<Record<string, string>> = {
-  "activity-feed": "EventItem is one event, not an exported activity-feed section.",
-  "audit-log": "Registry row is a spec; no audit-log package export.",
-  timeline: "A timeline model or recipe is not an exported timeline section.",
-  usage: "UsageMeter accepts one meter; no verified configured meters-array section.",
 };
 const UNMEASURED = "Descriptor only; source imports, token reads, shared anatomy, accessibility, contrast and consumer runtime conformance are unmeasured. Content bindings describe host adaptation points, not type-equivalent converters.";
 

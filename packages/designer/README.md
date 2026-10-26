@@ -195,7 +195,7 @@ and its exception list can only shrink.
   `MarketingChapter`, `FeatureGrid`, `Item`, `Items`, `Tree`, `AnatomyCallouts`, `RecordLedger`, `Scene`, `Matrix`,
   `Specimen`, `SpecimenPanel`, `OrderedStepSequence`, `StatusList`, `Faq`,
   `PricingTable`, `Testimonial`, `TableOfContents`, `TestimonialSet`, `LogoCloud`, `PeopleGrid`, `ArticleBody`, `ConsentBanner`, `ErrorState`, `StatGroup`, `RecordCards`, `CallToAction`, `NoticeList`, `Gallery`, `NewsletterBand`, `Panel`, `Drawer`,
-  `ResizablePane`, `CommandMenu`, `AppNavigation`, `PageBar`, `GroupedTable`, `Lockup`, `Explorer`, `CatalogWorkspace`, `CatalogBrowser`, `Chat`, `ResourceList`, `RelationGraph`, `TaskList` and `EventItem` (see "Blocks" below). Current leaf, group and lifecycle
+  `ResizablePane`, `CommandMenu`, `AppNavigation`, `PageBar`, `GroupedTable`, `Lockup`, `Explorer`, `CatalogWorkspace`, `CatalogBrowser`, `Chat`, `ResourceList`, `RelationGraph`, `TaskList`, `EventItem`, `ActivityFeed`, `AuditLog`, `Timeline` and `UsageSummary` (see "Blocks" below). Current leaf, group and lifecycle
   counts are derived from the shared catalog in the repository check
   `src/catalog/catalog.coverage.test.ts` (a repository test, not shipped in the installed package).
 - **`shell`** — the persistent frame around content (nav, layout chrome)
@@ -4604,6 +4604,60 @@ const event: EventRecord = {
 const labels: EventLabels = { unread: "Unread", changedFrom: "changed from", changedTo: "to", cleared: "cleared" };
 
 <EventItem event={event} labels={labels} />;
+```
+
+### `ActivityFeed`
+
+A server-safe feed of `EventItem` rows in authored order. Optional groups put
+every event under exactly one heading (an unknown or ungrouped event throws);
+a host filter region renders above the list, and the supplied empty state
+replaces it when there are no events.
+
+```tsx
+import { ActivityFeed } from "@clossys/designer/blocks";
+
+<ActivityFeed aria-label="Activity" events={[event]} labels={labels}
+  groups={[{ id: "today", label: "Today", eventIds: [event.id] }]}
+  emptyState={{ title: "No activity yet" }} />;
+```
+
+### `AuditLog`
+
+A read-only audit trail on `DataTable` with fixed time, actor, action and
+target columns. The time cell is a `<time>` row header; a host filter and an
+export action share the toolbar above the grid.
+
+```tsx
+import { AuditLog } from "@clossys/designer/blocks";
+
+<AuditLog aria-label="Audit log"
+  labels={{ time: "Time", actor: "Actor", action: "Action", target: "Target" }}
+  entries={[{ id: "a1", at: "2026-10-19T14:32:00Z", timeText: "Oct 19, 14:32", actor: "Ada Park", action: "Published page", target: "Pricing" }]}
+  exportAction={<Button>Export</Button>} />;
+```
+
+### `Timeline`
+
+A server-safe dated sequence: one ordered list of `<time>` dates and event
+headings joined by a decorative marker rail. Events must not be empty.
+
+```tsx
+import { Timeline } from "@clossys/designer/blocks";
+
+<Timeline aria-label="Company history" headingLevel={3}
+  events={[{ id: "founded", at: "2019-04", dateText: "April 2019", heading: "Founded" }]} />;
+```
+
+### `UsageSummary`
+
+Several limits at once: a responsive list of `UsageMeter` records, each
+carrying its own `id`. An empty list needs an `emptyState`.
+
+```tsx
+import { UsageSummary } from "@clossys/designer/blocks";
+
+<UsageSummary aria-label="Plan usage"
+  meters={[{ id: "seats", label: "Seats", used: 12, limit: 25, usedText: "12 seats", limitText: "of 25", periodText: "This period" }]} />;
 ```
 
 ### `SectionFrame`

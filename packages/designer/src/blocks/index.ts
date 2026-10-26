@@ -71,6 +71,8 @@ export type { PaginationProps } from "./Pagination.js";
 
 export { UsageMeter } from "./UsageMeter.js";
 export type { UsageMeterProps, UsageMeterThreshold } from "./UsageMeter.js";
+export { UsageSummary } from "./UsageSummary.js";
+export type { UsageSummaryProps, UsageSummaryMeter } from "./UsageSummary.js";
 
 export { Stat } from "./Stat.js";
 export type { StatProps, StatTrend } from "./Stat.js";
@@ -180,6 +182,12 @@ export type {
 export { StatusList } from "./StatusList.js";
 export { EventItem } from "./EventItem.js";
 export type { EventActor, EventChange, EventRecord, EventLabels, EventItemProps } from "./EventItem.js";
+export { ActivityFeed } from "./ActivityFeed.js";
+export type { ActivityFeedProps, ActivityFeedGroup } from "./ActivityFeed.js";
+export { AuditLog } from "./AuditLog.js";
+export type { AuditLogProps, AuditLogEntry, AuditLogLabels } from "./AuditLog.js";
+export { Timeline } from "./Timeline.js";
+export type { TimelineProps, TimelineEvent, TimelineHeadingLevel } from "./Timeline.js";
 export { TaskList } from "./TaskList.js";
 export type { TaskStatus, TaskListItem, TaskListProps } from "./TaskList.js";
 export type {

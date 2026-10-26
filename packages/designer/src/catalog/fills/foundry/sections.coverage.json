@@ -19,22 +19,20 @@
     },
     {
       "missingMembers": [],
-      "missingRequiredSlots": [
-        "events"
+      "missingRequiredSlots": [],
+      "missingSlots": [],
+      "notes": [
+        "Each event renders through EventItem; host supplies labels and emptyState. Groups name event ids and every event must sit in exactly one group. Root is section; header and band are external.",
+        "Descriptor only; source imports, token reads, shared anatomy, accessibility, contrast and consumer runtime conformance are unmeasured. Content bindings describe host adaptation points, not type-equivalent converters."
       ],
-      "missingSlots": [
+      "slot": "sections.activity-feed",
+      "status": "candidate",
+      "supportedMembers": [],
+      "supportedSlots": [
         "events",
         "filters",
         "grouping"
       ],
-      "notes": [
-        "EventItem is one event, not an exported activity-feed section.",
-        "Descriptor only; source imports, token reads, shared anatomy, accessibility, contrast and consumer runtime conformance are unmeasured. Content bindings describe host adaptation points, not type-equivalent converters."
-      ],
-      "slot": "sections.activity-feed",
-      "status": "unavailable",
-      "supportedMembers": [],
-      "supportedSlots": [],
       "unresolvedMemberAxes": []
     },
     {
@@ -57,22 +55,20 @@
     },
     {
       "missingMembers": [],
-      "missingRequiredSlots": [
-        "entries"
+      "missingRequiredSlots": [],
+      "missingSlots": [],
+      "notes": [
+        "Composes DataTable with fixed time, actor, action and target columns; host supplies labels. Filter and export are host regions in the DataTable toolbar; the block never filters or exports rows itself.",
+        "Descriptor only; source imports, token reads, shared anatomy, accessibility, contrast and consumer runtime conformance are unmeasured. Content bindings describe host adaptation points, not type-equivalent converters."
       ],
-      "missingSlots": [
+      "slot": "sections.audit-log",
+      "status": "candidate",
+      "supportedMembers": [],
+      "supportedSlots": [
         "entries",
         "export",
         "filter"
       ],
-      "notes": [
-        "Registry row is a spec; no audit-log package export.",
-        "Descriptor only; source imports, token reads, shared anatomy, accessibility, contrast and consumer runtime conformance are unmeasured. Content bindings describe host adaptation points, not type-equivalent converters."
-      ],
-      "slot": "sections.audit-log",
-      "status": "unavailable",
-      "supportedMembers": [],
-      "supportedSlots": [],
       "unresolvedMemberAxes": []
     },
     {
@@ -849,38 +845,34 @@
     },
     {
       "missingMembers": [],
-      "missingRequiredSlots": [
-        "events"
-      ],
-      "missingSlots": [
-        "events"
-      ],
+      "missingRequiredSlots": [],
+      "missingSlots": [],
       "notes": [
-        "A timeline model or recipe is not an exported timeline section.",
+        "Events carry a machine-readable date, host-formatted dateText, heading and optional description. Root is an ordered list; the marker rail is drawn with line tokens, not a separator component.",
         "Descriptor only; source imports, token reads, shared anatomy, accessibility, contrast and consumer runtime conformance are unmeasured. Content bindings describe host adaptation points, not type-equivalent converters."
       ],
       "slot": "sections.timeline",
-      "status": "unavailable",
+      "status": "candidate",
       "supportedMembers": [],
-      "supportedSlots": [],
+      "supportedSlots": [
+        "events"
+      ],
       "unresolvedMemberAxes": []
     },
     {
       "missingMembers": [],
-      "missingRequiredSlots": [
-        "meters"
-      ],
-      "missingSlots": [
-        "meters"
-      ],
+      "missingRequiredSlots": [],
+      "missingSlots": [],
       "notes": [
-        "UsageMeter accepts one meter; no verified configured meters-array section.",
+        "Each meter record renders through UsageMeter (host-formatted used, limit and period text, optional thresholds). Root is section; an empty list requires emptyState.",
         "Descriptor only; source imports, token reads, shared anatomy, accessibility, contrast and consumer runtime conformance are unmeasured. Content bindings describe host adaptation points, not type-equivalent converters."
       ],
       "slot": "sections.usage",
-      "status": "unavailable",
+      "status": "candidate",
       "supportedMembers": [],
-      "supportedSlots": [],
+      "supportedSlots": [
+        "meters"
+      ],
       "unresolvedMemberAxes": []
     },
     {

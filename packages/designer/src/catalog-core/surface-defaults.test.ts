@@ -22,12 +22,12 @@ function setup(overrides: Partial<SurfaceDefaultsInput> = {}) {
 const ledger = (plan: ReturnType<typeof planSurfaceDefaults>) => Object.fromEntries(plan.rows.map(row => [row.slot, row.status === "not-chosen" ? "-" : row.source!]));
 const reasons = (plan: ReturnType<typeof planSurfaceDefaults>, slot: string) => plan.rows.find(row => row.slot === slot)!.reasons.join(" || ");
 
-const SECTION_DEFAULTS = ["access-matrix", "article", "band", "call-to-action", "cards", "column-mapper", "comparison", "consent", "content", "data-grid", "data-table", "empty-state",
-  "error-state", "faq", "features", "filter-builder", "form", "gallery", "link-index", "logo-cloud", "media", "notices", "page-header", "pagination", "people",
-  "pricing", "record-detail", "resource-list", "section-header", "settings", "stats", "status-list", "steps", "table-of-contents", "task-list", "testimonials", "wizard"].map(leaf => `sections.${leaf}`);
+const SECTION_DEFAULTS = ["access-matrix", "activity-feed", "article", "audit-log", "band", "call-to-action", "cards", "column-mapper", "comparison", "consent", "content", "data-grid",
+  "data-table", "empty-state", "error-state", "faq", "features", "filter-builder", "form", "gallery", "link-index", "logo-cloud", "media", "notices", "page-header",
+  "pagination", "people", "pricing", "record-detail", "resource-list", "section-header", "settings", "stats", "status-list", "steps", "table-of-contents", "task-list", "testimonials", "timeline", "usage", "wizard"].map(leaf => `sections.${leaf}`);
 /** A Foundry candidate exists but leaves a required content slot unmapped. */
 const SECTION_INELIGIBLE = { "sections.chat": ["composer"], "sections.explorer": ["list"], "sections.hero": ["header"], "sections.newsletter": ["email"] };
-const SECTION_NO_CANDIDATE = ["activity-feed", "audit-log", "timeline", "usage"].map(leaf => `sections.${leaf}`);
+const SECTION_NO_CANDIDATE: string[] = [];
 const FRAME_DEFAULTS = ["app-header", "inspector", "sheet", "site-footer", "site-header", "site-shell"].map(leaf => `frames.${leaf}`);
 const FRAME_NOT_CHOSEN = ["app-shell", "app-sidebar", "command"].map(leaf => `frames.${leaf}`);
 
@@ -40,7 +40,7 @@ describe("surface default fills", () => {
     expect(input.slots.filter(slot => slot.startsWith("frames.")).length).toBe(9);
     const expected = Object.fromEntries(input.slots.map(slot => [slot, [...SECTION_DEFAULTS, ...FRAME_DEFAULTS].includes(slot) ? "foundry" : "-"]));
     expect(ledger(plan)).toEqual(expected);
-    expect(Object.values(ledger(plan)).filter(value => value !== "-")).toHaveLength(43);
+    expect(Object.values(ledger(plan)).filter(value => value !== "-")).toHaveLength(47);
     expect(plan.findings).toEqual([]);
     expect(plan.rows.find(row => row.slot === "frames.site-header")).toEqual({ slot: "frames.site-header", status: "default", basis: "preference", source: "foundry", fill: "foundry/frames.site-header", reasons: [] });
   });

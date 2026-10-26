@@ -11,6 +11,14 @@
 import type { ReactNode } from "react";
 import type { SurfaceDefaultCandidateDocument, SurfaceDefaultsPlan } from "../catalog-core/surface-defaults.js";
 import { AccessMatrix } from "../blocks/AccessMatrix.js";
+import { ActivityFeed } from "../blocks/ActivityFeed.js";
+import { activityFeedSample } from "../blocks/activity-feed/sample.js";
+import { AuditLog } from "../blocks/AuditLog.js";
+import { auditLogSample } from "../blocks/audit-log/sample.js";
+import { Timeline } from "../blocks/Timeline.js";
+import { timelineSample } from "../blocks/timeline/sample.js";
+import { UsageSummary } from "../blocks/UsageSummary.js";
+import { usageSummarySample } from "../blocks/usage-summary/sample.js";
 import { accessMatrixSample } from "../blocks/access-matrix/sample.js";
 import { ArticleBody } from "../blocks/ArticleBody.js";
 import { ColumnMapper } from "../blocks/ColumnMapper.js";
@@ -51,6 +59,10 @@ const noop = () => {};
 /** Fixed sample content per package export pointer (module#export); absent pointers are unrenderable. */
 const BLOCK_SAMPLES: Readonly<Record<string, () => ReactNode>> = {
   AccessMatrix: () => <AccessMatrix {...accessMatrixSample} />,
+  ActivityFeed: () => <ActivityFeed {...activityFeedSample} />,
+  AuditLog: () => <AuditLog {...auditLogSample} />,
+  Timeline: () => <Timeline {...timelineSample} />,
+  UsageSummary: () => <UsageSummary {...usageSummarySample} />,
   ArticleBody: () => <ArticleBody><h2>Getting started</h2><p>Set up a workspace, invite your team and publish the first page.</p></ArticleBody>,
   ColumnMapper: () => <ColumnMapper {...columnMapperSample} />,
   DetailView: () => <DetailView title="Order 1042" fields={[{ label: "Customer", value: "Northwind" }, { label: "Status", value: "Shipped" }, { label: "Total", value: "$1,280.00" }, { label: "Placed", value: "12 March 2026" }]} />,

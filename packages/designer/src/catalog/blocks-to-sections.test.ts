@@ -38,7 +38,7 @@ const unmapped = [
   "matrix.resizable-pane", "form.consent-banner", "items.notification-center",
   "items.specimen-stack", "say.specimen", "matrix.specimen-panel", "say.anatomy-callouts", "matrix.scene",
   "matrix.catalog-workspace", "matrix.flow-canvas", "matrix.catalog-browser", "matrix.canvas-surface",
-  "items.raw", "matrix.raw", "items.relation-graph", "form.refresh-status", "say.call-to-action",
+  "items.raw", "matrix.raw", "items.relation-graph", "form.refresh-status", "say.call-to-action", "items.usage-summary",
 ];
 
 describe("legacy block section homes", () => {
@@ -72,12 +72,12 @@ describe("legacy block section homes", () => {
       expect(block?.export, id).toBeNull();
       expect(block?.recipeOf, id).toBe(id === "matrix.comparison" ? "matrix.raw" : "items.raw");
     }
-    for (const id of ["items.timeline", "matrix.data-grid", "items.activity-feed", "matrix.audit-log", "form.save-bar", "form.load-more"]) {
+    for (const id of ["matrix.data-grid", "form.save-bar", "form.load-more"]) {
       const block = BLOCK_ENTRIES.find(block => block.id === id);
       expect(block?.export, id).toBeNull();
       expect(block?.built, id).toBe("no");
     }
-    for (const [id, name] of [["items.stat", "Stat"], ["items.usage-meter", "UsageMeter"], ["items.event-item", "EventItem"], ["say.testimonial", "Testimonial"], ["matrix.grouped-table", "GroupedTable"], ["items.record-ledger", "RecordLedger"], ["form.filter-builder", "FilterBuilder"], ["form.form-wizard", "FormWizard"], ["form.settings-section", "SettingsSection"], ["items.cards", "RecordCards"], ["items.stat-grid", "StatGroup"], ["items.media-gallery", "Gallery"], ["say.error-state", "ErrorState"], ["say.notice-stack", "NoticeList"], ["say.call-to-action", "CallToAction"]]) {
+    for (const [id, name] of [["items.stat", "Stat"], ["items.usage-meter", "UsageMeter"], ["items.event-item", "EventItem"], ["say.testimonial", "Testimonial"], ["matrix.grouped-table", "GroupedTable"], ["items.record-ledger", "RecordLedger"], ["form.filter-builder", "FilterBuilder"], ["form.form-wizard", "FormWizard"], ["form.settings-section", "SettingsSection"], ["items.cards", "RecordCards"], ["items.stat-grid", "StatGroup"], ["items.media-gallery", "Gallery"], ["say.error-state", "ErrorState"], ["say.notice-stack", "NoticeList"], ["say.call-to-action", "CallToAction"], ["items.timeline", "Timeline"], ["items.activity-feed", "ActivityFeed"], ["matrix.audit-log", "AuditLog"]]) {
       expect(BLOCK_ENTRIES.find(block => block.id === id)?.export, id).toBe(name);
     }
   });
