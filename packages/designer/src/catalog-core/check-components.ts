@@ -82,6 +82,13 @@ const LICENSES = new Set(["MIT", "Apache-2.0", "BSD-2-Clause", "BSD-3-Clause", "
 const CHARTS = new Set(["bar", "line", "area", "scatter", "sparkline", "heatmap", "range", "waterfall", "status-strip"].map(name => `components.chart-${name}`));
 const FORBIDDEN_MODULES = ["@radix-ui/", "radix-ui", "@base-ui/", "@tanstack/", "sonner", "react-resizable-panels", "embla-carousel-react", "input-otp", "recharts", "@headlessui/", "@shadcn/react"];
 const FORBIDDEN = new RegExp("^(?:" + FORBIDDEN_MODULES.map(module => module.endsWith("/") ? module : `${module}(?:/|$)`).join("|") + ")");
+/** Emitted per fill (or `member: ` prefixed) when no source/runtime observation was gathered. */
+export const OBSERVATIONS_UNAVAILABLE = "Source and runtime observations are unavailable";
+/** Coherence groups every profile check applies, before caller-supplied groups. */
+export const DEFAULT_COHERENCE_GROUPS: NonNullable<ComponentCheckInput["coherenceGroups"]> = [
+  { id: "controls", kind: "controls", slots: ["field", "form", "text-field", "search-field", "checkbox", "radio-group", "switch", "select", "combo-box", "toggle-group", "tag-group", "number-field", "slider", "date-field"].map(name => `components.${name}`) },
+  { id: "charts", kind: "charts", slots: [...CHARTS] }, { id: "date", kind: "date", slots: ["components.date-field", "components.calendar", "components.date-picker"] },
+];
 const GLYPHS = /[✓✔✕✖×✗▾▴▸◂▶◀▲▼←→↑↓⌄⌃⌵⌫⊕⊖⚠ℹ]/u;
 const SYSTEM_COLORS = new Set(["Canvas", "CanvasText", "ButtonFace", "ButtonText", "Highlight", "HighlightText", "Field", "FieldText", "LinkText"]);
 const ROOT_PROTOCOL: Readonly<Record<string, { roles: readonly string[]; keys: readonly string[] }>> = {
@@ -233,7 +240,7 @@ export function checkComponentProfile(input: ComponentCheckInput): ComponentChec
     const add = (code: ComponentCheckCode, subject: string, message: string, compatibility?: ComponentCompatibilityCode): void => { findings.push({ code, rule: compatibility ?? code, subject, severity: "error", message: observedMember ? `${observedMember}: ${message}` : message, ...(compatibility ? { compatibility } : {}) }); };
     const memberObservation = observedMember ? commonObservation?.memberObservations?.[observedMember] : undefined;
     const observation = observedMember ? memberObservation && commonObservation ? { ...commonObservation, ...memberObservation } : undefined : commonObservation;
-    if (!observation?.files.length) { for (const code of ["K2", "K4", "K5", "K6", "K7", "K10", "K12"] as const) add(code, fill.slot, "Source and runtime observations are unavailable"); continue; }
+    if (!observation?.files.length) { for (const code of ["K2", "K4", "K5", "K6", "K7", "K10", "K12"] as const) add(code, fill.slot, OBSERVATIONS_UNAVAILABLE); continue; }
     if (ownedRule && (!input.compositions || !observation.files.some(file => file.path === (fill.impl.kind === "source" ? fill.impl.entry : "")) || observation.files.some(file => !input.compositions!.library.files.some(actual => actual.path === file.path && actual.content === file.content)))) add("K8", fill.slot, "Observed composition source differs from current materialized output");
     const freshEvidence = observation.sourceHash === componentSourceHash(observation.files) && observation.tokensHash === tokenHash;
     if (!freshEvidence) { add("K5", fill.slot, "Accessibility evidence is stale for source or consumer tokens"); add("K6", fill.slot, "Contrast evidence is stale for source or consumer tokens"); }
@@ -360,11 +367,7 @@ export function checkComponentProfile(input: ComponentCheckInput): ComponentChec
     active.add(slot); for (const target of [...new Set([...(fills.get(slot)?.composes ?? []), ...(fills.get(slot)?.reads.components ?? [])])].sort()) if (fills.has(target)) walk(target, [...trail, slot]); active.delete(slot); visited.add(slot);
   };
   for (const slot of [...fills.keys()].sort()) walk(slot, []);
-  const defaultGroups: NonNullable<ComponentCheckInput["coherenceGroups"]> = [
-    { id: "controls", kind: "controls", slots: ["field", "form", "text-field", "search-field", "checkbox", "radio-group", "switch", "select", "combo-box", "toggle-group", "tag-group", "number-field", "slider", "date-field"].map(name => `components.${name}`) },
-    { id: "charts", kind: "charts", slots: [...CHARTS] }, { id: "date", kind: "date", slots: ["components.date-field", "components.calendar", "components.date-picker"] },
-  ];
-  for (const group of [...defaultGroups, ...(input.coherenceGroups ?? [])]) {
+  for (const group of [...DEFAULT_COHERENCE_GROUPS, ...(input.coherenceGroups ?? [])]) {
     const members = group.slots.map(slot => fills.get(slot)).filter((fill): fill is ComponentCheckFill => !!fill);
     if (new Set(members.map(fill => fill.source)).size < 2) continue;
     if (group.kind === "charts") { add("K11", group.id, "Chart coherence group must have one source"); continue; }
