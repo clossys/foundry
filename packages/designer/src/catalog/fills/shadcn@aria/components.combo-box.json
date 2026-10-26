@@ -91,7 +91,7 @@
         },
         {
           "path": "components/_parts/input-group/input-group.tsx",
-          "sha256": "9d6b974a20847848edf53e84186df0bb0aae07de680437028c8aa94cd752f8da"
+          "sha256": "d0183abd70d5c26e97ac0f5cbe12bb24887c6fc0a62d678388749868dc178d41"
         },
         {
           "path": "components/_parts/utils/index.ts",
@@ -99,7 +99,7 @@
         },
         {
           "path": "components/combo-box/combobox.tsx",
-          "sha256": "2a143be4ceb1e4029eed307926b2bf80cef0d96c1c81234eab2d316e4b23f059"
+          "sha256": "2ff0263cba28f39fce01f8bee5fc089193968662fef20ca9854e9bed11c3effc"
         },
         {
           "path": "notices/THIRD-PARTY.md",

@@ -1,6 +1,12 @@
 import adapterData from "../catalog/adapters/shadcn@aria.json" with { type: "json" };
 import componentSlots from "../catalog/slots/components.json" with { type: "json" };
 import { sha256 } from "../catalog-core/digest.js";
+import { shadcnAriaStyleRead } from "./shadcn-aria-style-vars.js";
+
+/** Set for the duration of one synchronous rewrite from its input. */
+let styleDefaults = false;
+const styleRead = (property: string, fixed: string, hint?: "length"): string =>
+  styleDefaults ? shadcnAriaStyleRead(property, fixed, hint) : `(${hint ? `${hint}:` : ""}${property})`;
 
 export interface SourceFile { path: string; content: string }
 export interface RewriteIssue { code: "K2" | "K4" | "K7" | "K9"; file: string; value: string; message: string }
@@ -20,6 +26,8 @@ export interface RewriteInput {
   item: string; leaf: string; files: readonly SourceFile[]; styles: string;
   /** Registry item -> consumer leaf, including aliases such as input -> text-field. */
   leafByItem: Readonly<Record<string, string>>;
+  /** Give each shadcn@aria style variable the style's own value as its fallback. */
+  styleDefaults?: boolean;
 }
 const FOREIGN_ICON_MODULES = ["lucide-react", "@phosphor-icons/react", "react-icons"];
 const FOREIGN_ICONS = new RegExp("^(?:" + FOREIGN_ICON_MODULES.join("|") + ")(?:/|$)");
@@ -32,6 +40,9 @@ const adapter = adapterData as {
   sizeLengths: Record<string, { member: string; property: string }>; sizeSteps: Record<string, string>;
 };
 const sorted = (values: Iterable<string>): string[] => [...new Set(values)].sort();
+/** One solid focus outline; its width reads the focus variable with the style's ring-3 default. */
+const focusOutline = (prefix: string, paint: string): string =>
+  ["outline-solid", `outline-${styleRead("--ui-border-focus", "ring-3", "length")}`, "outline-offset-(--ui-focus-offset)", `outline-(${paint})`].map(atom => prefix + atom).join(" ");
 
 /** Exact selected source bindings; unmatched spellings remain findings. */
 const selectedBindings: Readonly<Record<string, Readonly<Record<string, { output: string; tokens: readonly string[]; note: string }>>>> = {
@@ -700,6 +711,16 @@ function styleRules(css: string): Map<string, string> {
 
 /** Deterministic source transform. Issues are blockers, never a conformance pass. */
 export function rewriteShadcnAria(input: RewriteInput): RewriteResult {
+  const previous = styleDefaults;
+  styleDefaults = input.styleDefaults === true;
+  try {
+    return rewriteSource(input);
+  } finally {
+    styleDefaults = previous;
+  }
+}
+
+function rewriteSource(input: RewriteInput): RewriteResult {
   if (!/^[a-z][a-z0-9-]*$/.test(input.item) || !/^[a-z][a-z0-9-]*$/.test(input.leaf)) throw new Error("rewrite: invalid item or leaf");
   const paths = new Set<string>();
   for (const file of input.files) {
@@ -813,7 +834,7 @@ export function rewriteShadcnAria(input: RewriteInput): RewriteResult {
       if (ownFocus) {
         tokens.add("tokens.focus-outline.width"); tokens.add("tokens.focus-outline.offset"); tokens.add("tokens.focus-color.default");
         notes.push({ file, value, message: "Restyled selected focusable surface: replace outline suppression with its own existing token-bound keyboard outline" });
-        return "focus-visible:outline-solid focus-visible:outline-(length:--ui-border-focus) focus-visible:outline-offset-(--ui-focus-offset) focus-visible:outline-(--color-focus-ring)";
+        return focusOutline("focus-visible:", "--color-focus-ring");
       }
       if (input.item === "accordion" && stack.includes("cn-accordion-content")
         && ["data-open:animate-accordion-down", "data-closed:animate-accordion-up"].includes(value)) {
@@ -829,7 +850,7 @@ export function rewriteShadcnAria(input: RewriteInput): RewriteResult {
       if (input.item === "slider" && stack.includes("cn-slider-thumb") && ["hover:ring-3", "active:ring-3"].includes(value)) {
         tokens.add("tokens.border-width.rule");
         notes.push({ file, value, message: "Restyled selected decorative thumb ring from 3px to existing 2px rule width; independent keyboard focus remains token bound" });
-        return `${prefix}ring-(length:--ui-border-rule)`;
+        return `${prefix}ring-${styleRead("--ui-border-rule", "ring-3", "length")}`;
       }
     }
     const selected = selectedBindings[input.leaf]?.[value];
@@ -870,7 +891,7 @@ export function rewriteShadcnAria(input: RewriteInput): RewriteResult {
         const size = /^(h|size)-(7|8|9)$/.exec(atom);
         if (control && size) {
           const member = adapter.controlSizes[size[2]!]!; tokens.add(`tokens.control-size.${member}`);
-          return `${prefix}${variants}${size[1]}-(${adapter.controlProperties[member]})`;
+          return `${prefix}${variants}${size[1]}-${styleRead(adapter.controlProperties[member]!, `h-${size[2]}`)}`;
         }
         return utility(prefix + term, file, [...stack, base]);
       }).join(" ");
@@ -957,7 +978,7 @@ export function rewriteShadcnAria(input: RewriteInput): RewriteResult {
     });
     if ((invalidRing || interactiveDangerRing) && expressionTerms.includes(prefix + "ring-3") && /^(?:ring-3|ring-destructive(?:\/(?:20|40))?)$/.test(base)) {
       tokens.add("tokens.focus-outline.width"); tokens.add("tokens.focus-outline.offset"); tokens.add("tokens.status-color.danger");
-      return ["outline-solid", "outline-(length:--ui-border-focus)", "outline-offset-(--ui-focus-offset)", "outline-(--color-status-danger)"].map(atom => prefix + atom).join(" ");
+      return focusOutline(prefix, "--color-status-danger");
     }
     if (base === "border-collapse") return value;
     if (cardSpacing && cardFiles.has(file)) {
@@ -988,14 +1009,14 @@ export function rewriteShadcnAria(input: RewriteInput): RewriteResult {
     const exactSize = /^(h|w|size|min-h|min-w|max-h|max-w)-(?:\[([0-9.]+px)\]|([0-9.]+))$/.exec(base);
     if (exactSize) {
       const binding = adapter.sizeLengths[exactSize[2] ?? adapter.sizeSteps[exactSize[3]!]!];
-      if (binding) { tokens.add(binding.member); return `${prefix}${exactSize[1]}-(${binding.property})`; }
+      if (binding) { tokens.add(binding.member); return `${prefix}${exactSize[1]}-${styleRead(binding.property, base)}`; }
     }
     // Focus width and paint form one solid outline. Invalid-state rings and decorative
     // borders remain separate; they must not accidentally count as focus clearance.
     const focus = /(?:focus-visible|focus-within|has-focus)/.test(prefix) || prefix === "group-data-[focused=true]/day:";
     if ((focus && /^ring-(?:3|ring(?:\/50)?|destructive\/(?:20|40))$/.test(base)) || (!prefix && /^(?:ring-3|ring-ring\/50)$/.test(base))) {
       tokens.add("tokens.focus-outline.width"); tokens.add("tokens.focus-outline.offset"); tokens.add("tokens.focus-color.default");
-      return ["outline-solid", "outline-(length:--ui-border-focus)", "outline-offset-(--ui-focus-offset)", "outline-(--color-focus-ring)"].map(atom => prefix + atom).join(" ");
+      return focusOutline(prefix, "--color-focus-ring");
     }
     const elevation = /^shadow-(none|xs|sm|md|lg|xl|2xl)(!)?$/.exec(base);
     if (elevation) {
@@ -1016,18 +1037,21 @@ export function rewriteShadcnAria(input: RewriteInput): RewriteResult {
       return `${prefix}library-slide-${motion[5]}`;
     }
     if (base === "duration-100") {
-      tokens.add("tokens.duration.fast"); return `${prefix}duration-(--ui-duration-fast)`;
+      tokens.add("tokens.duration.fast"); return `${prefix}duration-${styleRead("--ui-duration-fast", base)}`;
+    }
+    if (styleDefaults && base === "duration-200") {
+      tokens.add("tokens.duration.default"); return `${prefix}duration-${styleRead("--ui-duration-default", base)}`;
     }
     const opacity = /^opacity-(50|70)$/.exec(base);
     if (opacity) {
       const member = opacity[1] === "50" ? "disabled" : "stale";
       tokens.add(`tokens.state-opacity.${member}`);
-      return `${prefix}opacity-(--ui-alpha-${member})`;
+      return `${prefix}opacity-${styleRead(`--ui-alpha-${member}`, base)}`;
     }
     const z = /^z-(0|10|20|30|40|50|60|70|80|90|100)$/.exec(base);
     if (z && allowedTokens.includes("tokens.z-index")) {
       const member = ({ "0": "base", "10": "sticky", "20": "shell", "30": "aside", "40": "notice", "50": "modal", "60": "toast", "70": "palette", "80": "tooltip", "90": "progress", "100": "skip-link" } as Record<string, string>)[z[1]!]!;
-      tokens.add(`tokens.z-index.${member}`); return `${prefix}z-(--ui-z-${member})`;
+      tokens.add(`tokens.z-index.${member}`); return `${prefix}z-${styleRead(`--ui-z-${member}`, base)}`;
     }
     if (base === "font-sans") {
       const family = adapter.fieldTypography.family!;
@@ -1049,7 +1073,7 @@ export function rewriteShadcnAria(input: RewriteInput): RewriteResult {
     if (/^transition(?:-(?:all|colors|opacity|shadow|transform|\[[a-z-]+(?:,[a-z-]+)*\]))?$/.test(base)) {
       const output = [`${prefix}${base}`];
       let ambiguous = false;
-      for (const [kind, member, property] of [["duration", "tokens.duration.default", "--ui-duration-default"], ["ease", "tokens.easing.default", "--ease-default"]]) {
+      for (const [kind, member, property] of [["duration", "tokens.duration.default", "--ui-duration-default"], ["ease", "tokens.easing.default", styleDefaults ? "--default-transition-timing-function" : "--ease-default"]]) {
         if (!explicitTiming.has(`${kind}:${prefix}`) && !explicitTiming.has(`${kind}:`)) {
           if ((activeTiming ?? fileTiming.get(file))?.has(`${kind}:${prefix}`) || (activeTiming ?? fileTiming.get(file))?.has(`${kind}:`)) { ambiguous = true; continue; }
           tokens.add(member!); output.push(`${prefix}${kind}-(${property})`);
@@ -1061,7 +1085,7 @@ export function rewriteShadcnAria(input: RewriteInput): RewriteResult {
     if (base === "transition-none") return value;
     const border = /^(border(?:-[trblxyse])?)(?:-1|-\[1px\])?$/.exec(base);
     if (border) {
-      tokens.add("tokens.border-width.hairline"); return `${prefix}${border[1]}-(length:--ui-border-hairline)`;
+      tokens.add("tokens.border-width.hairline"); return `${prefix}${border[1]}-${styleRead("--ui-border-hairline", base, "length")}`;
     }
     // Rewrite every upstream theme reference, including references in color-mix().
     let next = base.replace(/--([a-z][a-z0-9-]*)/g, (all, name: string) => {
@@ -1095,7 +1119,7 @@ export function rewriteShadcnAria(input: RewriteInput): RewriteResult {
         return `${prefix}${space[1]}-(${adapter.spacingProperties[restyle]})`;
       }
       const member = adapter.spacing[space[2]!];
-      if (member) { tokens.add(`tokens.spacing.${member}`); return `${prefix}${space[1]}-(${adapter.spacingProperties[member]})`; }
+      if (member) { tokens.add(`tokens.spacing.${member}`); return `${prefix}${space[1]}-${/^(?:h|size)$/.test(space[1]!) ? styleRead(adapter.spacingProperties[member]!, `${space[1]}-${space[2]}`) : `(${adapter.spacingProperties[member]})`}`; }
       add("K4", file, value, "No spacing member has the exact source length");
     }
     if (/(?:#[\da-f]{3,8}\b|\d*\.?\d+(?:px|rem|em)\b|--spacing\()/i.test(next)) add("K4", file, value, "Literal colour or length remains after rewriting");

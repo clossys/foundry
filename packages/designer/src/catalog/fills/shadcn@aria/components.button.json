@@ -90,7 +90,7 @@
         },
         {
           "path": "components/button/button.tsx",
-          "sha256": "98a76d9435a6893930055ad9ea7b4dd96c2c0291895bd2647080da1c4552748b"
+          "sha256": "82b4032dae93ca0a340dad81f3fbb7c783ebb733ab870a6f48f2034d0e919a67"
         },
         {
           "path": "components/button/index.ts",

@@ -70,7 +70,7 @@
         },
         {
           "path": "components/tooltip/tooltip.tsx",
-          "sha256": "c057570498fca69ab6ec47d438f1068080161fa6b91e382566861bfd1fc52e6c"
+          "sha256": "fbad0ba771961a73e008ba38e70c4d45e0b74b8406cb5e9975971652d5eaf95c"
         },
         {
           "path": "notices/THIRD-PARTY.md",

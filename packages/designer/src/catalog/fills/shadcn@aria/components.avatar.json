@@ -65,7 +65,7 @@
         },
         {
           "path": "components/avatar/avatar.tsx",
-          "sha256": "ce56f1492b0db8884f19ee4fdb22cedb2f3f1203db1d7f480ead9aafdce99be4"
+          "sha256": "2c61f7462adb36f313a09c4698c19b0b0a4f06e8cac3e988b5e35ed0c73ecee2"
         },
         {
           "path": "components/avatar/index.ts",

@@ -92,7 +92,7 @@
         },
         {
           "path": "components/menu/dropdown-menu.tsx",
-          "sha256": "f4ca637911003892d9a171acb4c931c4abc8af64e805a64507fa70ea39f2bd46"
+          "sha256": "35561948328195da61ce4c40fe5a09ab34ac74a696ea424ef402d8fcf884135b"
         },
         {
           "path": "components/menu/index.ts",

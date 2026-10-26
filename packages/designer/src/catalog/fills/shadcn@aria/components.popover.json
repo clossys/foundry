@@ -68,7 +68,7 @@
         },
         {
           "path": "components/popover/popover.tsx",
-          "sha256": "45993c51e8f62cbe089393a4695c892d736eb3cc9dce6519c23700bc50f9dca3"
+          "sha256": "d25fa6d91404b2da5f68b7cab7ad3c7a7ad653fadced9e0e68be734762cc151c"
         },
         {
           "path": "notices/THIRD-PARTY.md",

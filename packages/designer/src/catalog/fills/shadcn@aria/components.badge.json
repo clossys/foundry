@@ -70,7 +70,7 @@
         },
         {
           "path": "components/badge/badge.tsx",
-          "sha256": "9bbdff1bff8601158876819b49062218034076e440081a03107ea62c42ef5028"
+          "sha256": "5b61c780225f796bad7d8f54ab3cbb7e7c5a2b82a2cbb7513593e497b7effda4"
         },
         {
           "path": "components/badge/index.ts",
