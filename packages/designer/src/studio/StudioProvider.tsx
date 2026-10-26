@@ -10,6 +10,7 @@ import { liveCss } from "./preview-css.js";
 import { EditSession, type EditSessionState, type EditTiming } from "./edit-session.js";
 import { initialStudioLayer, studioLayerFromFragment } from "./layer-navigation.js";
 import { valueHistoryChanges } from "./history.js";
+import { identityStarterChange } from "../catalog-assets/identity.js";
 import { useEditSession } from "./useEditSession.js";
 import type { EditFeedbackState } from "./EditFeedback.js";
 import type { LegacyStudioProps, StudioProviderProps } from "./types.js";
@@ -146,13 +147,19 @@ function useStudioState({ catalog: catalogProp, adapter, labels, initialSlotId =
     apply(changesFor({ catalog, library, scope: row.scope, target: row.target, source }));
     if (row.scope === "node") setGroupChoices(current => ({ ...current, [row.target]: source }));
   };
+  /** Generate starter: the identity kit's members as an authored Custom fill on this brand row, never an adoption. */
+  const generateStarter = (row: MatrixRow): void => {
+    if (!working) return;
+    requestRow(row.id);
+    apply([identityStarterChange(catalog, working, row.id)]);
+  };
   const resetList = library && focusedRow ? changesFor({ catalog, library, scope: focusedRow.scope, target: focusedRow.target }) : [];
   const canReset = working !== undefined && resetList.some(entry => working.fills.some(fill => fill.$extensions["com.clossys.fill"].slot === entry.slot));
   const closeScore = (): void => { setScoreOpen(false); scoreTrigger.current?.focus(); };
   const reset = (): void => { apply(resetList); if (focusedRow?.scope === "node") setGroupChoices(current => { const next = { ...current }; delete next[focusedRow.target]; return next; }); };
   return { catalog, activeCatalog, layer, layers, setLayer: setActiveLayer, labels, adapter, phase: ready ?? (sharedLayer ? { status: sharedLayer.phase ?? 'loading' } : phase), ready, pending, working, tree, groups, counts, rows, boards, sources, summary, resolved, focusedRow, focused, live,
     livePreview, saving, autosave, apply, slotId, setSlotId, expanded, setExpanded, focusedCell, setFocusedCell, showRows, requestRow, groupChoices, boardElements, rowElements, canvasActions, cameras,
-    scoreOpen, setScoreOpen, scoreTrigger, closeScore, canReset, reset, use };
+    scoreOpen, setScoreOpen, scoreTrigger, closeScore, canReset, reset, use, generateStarter };
 }
 type StudioSession = ReturnType<typeof useStudioState>;
 const StudioContext = createContext<StudioSession | null>(null);

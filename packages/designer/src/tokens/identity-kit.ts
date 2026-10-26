@@ -1027,3 +1027,26 @@ export function composeLockup(input: ComposeLockupInput): LockupSpec {
     rendering: "live-text",
   };
 }
+
+/**
+ * "Generate starter" for the brand rows. Brand rows offer no source: the Custom cell runs this kit and the
+ * host writes the result as an authored Custom fill (never an adopted one). Members follow the asset slot
+ * contracts; the first (wordmark) direction is the starter.
+ */
+export const IDENTITY_STARTER_SLOTS = {
+  "assets.lockup": ["positive", "reversed"],
+  "assets.mark": ["mono", "positive", "reversed"],
+  "assets.favicon": ["vector"],
+  "assets.app-icon": ["maskable", "standard"],
+} as const satisfies Readonly<Record<string, readonly string[]>>;
+export type IdentityStarterSlot = keyof typeof IDENTITY_STARTER_SLOTS;
+export const isIdentityStarterSlot = (slot: string): slot is IdentityStarterSlot => Object.hasOwn(IDENTITY_STARTER_SLOTS, slot);
+
+/**
+ * The starter seeds: the first (wordmark) direction's lockup and mark. Every other brand member is derived
+ * from these two by the same identity rules the catalog runs, so a starter and a derive never disagree.
+ */
+export function identityStarterSeeds(brand: IdentityBrandInput, tokens: IdentityTokenInput): { readonly lockup: string; readonly mark: string } {
+  const { variants } = generateIdentityDirections(brand, tokens)[0];
+  return { lockup: variants.primary, mark: variants.mark };
+}

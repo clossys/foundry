@@ -52,6 +52,7 @@ export function LegacyStudioCanvas({ panelInsets, className, candidateWorkflow }
   const registerRow = useCallback((id: string, element: HTMLTableRowElement | null) => { const elements = latest.current.rowElements.current; if (element) elements.set(id, element); else elements.delete(id); }, []);
   const expand = useCallback((id: string) => latest.current.setExpanded(current => { const next = new Set(current); if (!next.delete(id)) next.add(id); return next; }), []);
   const use = useCallback((row: MatrixRow, source: string) => latest.current.use(row, source), []);
+  const starter = useMemo(() => ({ label: state.labels.board.generateStarter ?? "Generate starter", onGenerate: (row: MatrixRow) => latest.current.generateStarter(row) }), [state.labels.board.generateStarter]);
   const requestRow = useCallback((row: MatrixRow, source: string) => { latest.current.requestRow(row.id, source); setInspectorOpen(true); }, []);
   const focusCell = useCallback((row: MatrixRow, candidate: Candidate) => {
     if (row.leaves.length === 1) latest.current.setSlotId(row.leaves[0]!);
@@ -88,7 +89,7 @@ export function LegacyStudioCanvas({ panelInsets, className, candidateWorkflow }
             if (!openActions.current.has(board.id)) openActions.current.set(board.id, () => { const element = latest.current.boardElements.current.get(board.id); if (element) camera.current?.flyTo(element, { focus: true }); });
             const summary = summaries.get(board.id)!; const matches = state.working && state.pending ? boardMatches({ board, domain: domain.label, query, filter, working: state.working, changes: state.pending, groupChoices: state.groupChoices, warnings: summary.warnings }) : true;
             return <div key={board.id} data-studio-board-match={matches ? "" : undefined} data-studio-board-wrapper={board.id} className={matches ? undefined : "opacity-[var(--ui-alpha-disabled)]"}>
-              {state.working && state.pending ? <Board board={board} boardRef={boardRefs.current.get(board.id)!} summary={summary} onOpen={openActions.current.get(board.id)!} workflow={candidateWorkflow} variants={variants} contextTokens={contextTokens} sources={state.sources} labels={state.labels} working={state.working} changes={state.pending} groups={state.groups} groupChoices={state.groupChoices} expanded={state.expanded} layout="wide" onExpand={expand} onUse={use} onRowElement={registerRow} onFocusCell={focusCell} onRequestRow={requestRow} /> : null}
+              {state.working && state.pending ? <Board board={board} boardRef={boardRefs.current.get(board.id)!} summary={summary} onOpen={openActions.current.get(board.id)!} workflow={candidateWorkflow} variants={variants} contextTokens={contextTokens} sources={state.sources} labels={state.labels} working={state.working} changes={state.pending} groups={state.groups} groupChoices={state.groupChoices} expanded={state.expanded} layout="wide" onExpand={expand} onUse={use} onRowElement={registerRow} onFocusCell={focusCell} onRequestRow={requestRow} starter={starter} /> : null}
             </div>;
           })}
         </CanvasDomain>)}</CanvasLod>

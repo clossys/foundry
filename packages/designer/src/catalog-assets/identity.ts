@@ -1,7 +1,8 @@
-import { generateIdentityDirections, recolorSvg, composeLockup, identityPlateSvg, type IdentityTokenInput, type LockupFontLicence } from '../tokens/identity-kit.js';
+import { generateIdentityDirections, recolorSvg, composeLockup, identityPlateSvg, identityStarterSeeds, isIdentityStarterSlot, type IdentityTokenInput, type LockupFontLicence } from '../tokens/identity-kit.js';
 import { resolve, libraryHash } from '../catalog-core/resolve.js';
 import { applyLibraryChange, createDerivationInputsHasher } from '../catalog-core/library.js';
 import { cssText, flatten } from '../catalog-core/model.js';
+import { defaultPreset, presetValues, sourceRoster, tokenContract } from '../catalog-core/token-contract.js';
 import type { CatalogData, CatalogRule, DtcgToken, LibraryData, Resolved } from '../catalog-core/types.js';
 import { AssetValidationError, escapeXml, inspectSvg, safeColor, svgBody, svgViewBox } from './svg.js';
 export const IDENTITY_RULES = ['identity-lockup@1','identity-mark@1','identity-favicon@1','identity-app-icon@1'] as const;
@@ -21,7 +22,7 @@ const string = (profile: Resolved,id: string): string => { const value=profile.m
 function ink(profile: Resolved,id: string, dark=false): string { const member=profile.members[id]; if(!member) throw new AssetValidationError(`missing token input ${id}`); return safeColor(cssText(member.$type,(dark ? member.value.dark : member.value.light)??member.value.light)); }
 function tokens(profile: Resolved): IdentityTokenInput { const font=profile.members['tokens.typeface.display']; return {ink:ink(profile,'tokens.text-color.primary'),onInverse:ink(profile,'tokens.text-color.on-inverse'),surfaceBase:ink(profile,'tokens.surface-color.base'),surfaceInverse:ink(profile,'tokens.surface-color.inverse'),accent:ink(profile,'tokens.accent-color.default'),onAccent:ink(profile,'tokens.text-color.on-accent'),fontFamily:font ? cssText(font.$type,font.value.light) : ''}; }
 function normalizeGenerated(svg: string): string { const result=svg.replace(/style="color:([^";]+)"/g,(_,color:string)=>`color="${escapeXml(safeColor(color))}"`); inspectSvg(result); return result; }
-function named(svg: string,name: string): string { const elements=inspectSvg(svg); const attrs=elements[0]!.attrs; const existing=attrs['aria-label']; if(existing) return svg.replace(/\saria-label=(?:"[^"]*"|'[^']*')/,` aria-label="${escapeXml(name)}"`); return svg.replace(/^\s*<svg\b/,`<svg aria-label="${escapeXml(name)}"`); }
+function named(svg: string,name: string,favicon=false): string { const elements=inspectSvg(svg,{favicon}); const attrs=elements[0]!.attrs; const existing=attrs['aria-label']; if(existing) return svg.replace(/\saria-label=(?:"[^"]*"|'[^']*')/,` aria-label="${escapeXml(name)}"`); return svg.replace(/^\s*<svg\b/,`<svg aria-label="${escapeXml(name)}"`); }
 /** Explicit consumer creation. Name and artwork become authored seed members, never direction fields. */
 export function createConsumerIdentitySeeds(catalog: CatalogData, library: LibraryData, input: { name: string; suppliedSvg?: string; fontLicence: LockupFontLicence }): LibraryData {
  if(!input.name.trim()||input.name.length>160) throw new AssetValidationError('consumer name is required (maximum 160 characters)');
@@ -33,6 +34,34 @@ export function createConsumerIdentitySeeds(catalog: CatalogData, library: Libra
  }
  const token=(svg:string): DtcgToken => ({$type:'svg',$value:named(svg,input.name),$extensions:{'com.clossys.origin':{kind:'authored',license:library.source.license,note:`Consumer identity seed; live text; font outlining ${input.fontLicence.outlining}; family ${input.fontLicence.family}`}}});
  return applyLibraryChange(catalog,library,{baseHash:libraryHash(library),changes:[{op:'author',slot:'assets.mark',tokens:{positive:token(mark)}},{op:'author',slot:'assets.lockup',tokens:{positive:token(lockup)}}]});
+}
+/** Starter inputs: the library's own tokens, else the default preset's contract value, so a fresh library can start. */
+function starterTokens(profile: Resolved): IdentityTokenInput {
+ const preset=defaultPreset(sourceRoster);
+ const pick=(id: string): string => { if(profile.members[id]) return ink(profile,id); const [layer,leaf,...member]=id.split('.'); const value=presetValues(tokenContract,preset,`${layer}.${leaf}`)[member.join('.')]?.light; if(value===undefined) throw new AssetValidationError(`missing token input ${id}`); return safeColor(value); };
+ const font=profile.members['tokens.typeface.display'];
+ return {ink:pick('tokens.text-color.primary'),onInverse:pick('tokens.text-color.on-inverse'),surfaceBase:pick('tokens.surface-color.base'),surfaceInverse:pick('tokens.surface-color.inverse'),accent:pick('tokens.accent-color.default'),onAccent:pick('tokens.text-color.on-accent'),fontFamily:font ? cssText(font.$type,font.value.light) : 'sans-serif'};
+}
+/** The brand name a starter writes: the label an existing brand member carries, else the library id. */
+function brandName(library: LibraryData): string {
+ for(const fill of library.fills) { if(!fill.assets) continue; const label=/aria-label=\\"([^"\\]+)\\"/.exec(JSON.stringify(fill.assets))?.[1]; if(label) return label.replace(/&quot;/g,'"').replace(/&lt;/g,'<').replace(/&gt;/g,'>').replace(/&amp;/g,'&'); }
+ return library.source.id;
+}
+/**
+ * Generate starter for one brand slot: the identity kit's starter members as one `author` change, every
+ * token an authored Custom value under the library's own licence. Never an adoption: brand rows offer no source.
+ */
+export function identityStarterChange(catalog: CatalogData, library: LibraryData, slot: string): { op: 'author'; slot: string; tokens: Record<string, DtcgToken> } {
+ if(!isIdentityStarterSlot(slot)) throw new AssetValidationError(`${slot} has no identity starter`);
+ const name=brandName(library); const t=starterTokens(resolve({catalog,library})); const seeds=identityStarterSeeds({name},t);
+ const lockup=normalizeGenerated(seeds.lockup), mark=normalizeGenerated(seeds.mark);
+ const members: Record<string,string> = slot==='assets.lockup' ? {positive:lockup,reversed:reversedLockup(lockup,t.onInverse)}
+  : slot==='assets.mark' ? {positive:mark,reversed:reversedMark(mark,t.onInverse),mono:recolour(mark,'currentColor')}
+  : slot==='assets.favicon' ? {vector:identityPlateSvg(mark,t.ink,t.onInverse,true)}
+  : {standard:badge(mark,t.ink,t.onInverse,false),maskable:badge(mark,t.ink,t.onInverse,true)};
+ for(const svg of Object.values(members)) inspectSvg(svg,{favicon:slot==='assets.favicon'});
+ const values=Object.fromEntries(Object.entries(members).map(([member,svg]) => [member,{$type:'svg',$value:named(svg,name,slot==='assets.favicon'),$extensions:{'com.clossys.origin':{kind:'authored' as const,license:library.source.license,note:'Identity kit starter; edit freely'}}} as DtcgToken]));
+ return {op:'author',slot,tokens:values};
 }
 /** Live-text wordmark: 22px at weight 600, tracked -0.02em (the tight tracking token). */
 const WORDMARK_SIZE=22, WORDMARK_TRACKING=-0.44;
