@@ -100,11 +100,11 @@
         "url": "https://github.com/shadcn-ui/ui"
       },
       "propMap": {
-        "content.image": "AvatarImage: img src/alt and loading/error state",
-        "content.initials": "AvatarFallback: children forwarded to fallback div",
-        "size.lg": "Avatar.size=lg: data-size and matching utility variants",
-        "size.md": "Avatar.size=default: data-size and matching utility variants",
-        "size.sm": "Avatar.size=sm: data-size and matching utility variants"
+        "content.image": "Avatar",
+        "content.initials": "Avatar",
+        "size.lg": "Avatar.size=lg",
+        "size.md": "Avatar.size=default",
+        "size.sm": "Avatar.size=sm"
       },
       "props": [],
       "reads": {

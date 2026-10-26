@@ -5,6 +5,8 @@ import fileTriggerRule from "../catalog/rules/components.file-trigger.json" with
 import type { ComponentCheckFill } from "../catalog-core/check-components.js";
 import type { ComponentSlot, FillMeta } from "../catalog-core/types.js";
 import { sha256 } from "../catalog-core/digest.js";
+import { componentMemberBinding } from "../catalog-core/emit-components.js";
+import type { ResolvedComponent } from "../catalog-core/resolve-components.js";
 import { stableStringify } from "../catalog-core/stable.js";
 import { rewriteShadcnAria, type RewriteIssue, type RewriteNote, type RewriteResult, type SourceFile } from "./rewrite.js";
 import { normalizeSelectedSource } from "./normalize-selected-source.js";
@@ -180,8 +182,12 @@ function runtimeFailure(item: ShadcnRegistryItem, slot: ComponentSlot): string |
   return;
 }
 
-/** Only members directly evidenced by pinned source surfaces are mapped. */
-function memberMap(item: string, code: string, slot: ComponentSlot): Record<string, string> {
+/**
+ * Only members directly evidenced by pinned source surfaces are mapped, and only as emitter
+ * pointers (`Export`, `Export.prop[=value]`, or `Export[data-state]` for an intrinsic state).
+ * Evidence without such a pointer leaves the member unmapped; it is never written as prose.
+ */
+function memberMap(item: string, code: string, slot: ComponentSlot, own: string): Record<string, string> {
   const map: Record<string, string> = {};
   const add = (member: string, pointer: string): void => { if (slot.contract.members.mode === "closed" && slot.contract.members.names.includes(member)) map[member] = pointer; };
   if (item === "button") {
@@ -193,65 +199,63 @@ function memberMap(item: string, code: string, slot: ComponentSlot): Record<stri
   // Forwarded RAC props retain the pinned root's public state/orientation API.
   const forwardsProps = /\{\.\.\.props\}/.test(code);
   if (item === "checkbox" && /CheckboxProps/.test(code) && forwardsProps) {
-    add("scope.single", "Checkbox: CheckboxProps forwarded to CheckboxPrimitive");
-    if (/isSelected/.test(code)) add("state.checked", "Checkbox composeRenderProps.isSelected");
-    if (/isIndeterminate/.test(code)) add("state.indeterminate", "Checkbox composeRenderProps.isIndeterminate");
+    add("scope.single", "Checkbox");
+    if (/isSelected/.test(code)) add("state.checked", "Checkbox.isSelected");
+    if (/isIndeterminate/.test(code)) add("state.indeterminate", "Checkbox.isIndeterminate");
   }
   if (item === "radio-group" && /RadioGroupProps/.test(code) && forwardsProps) {
-    for (const orientation of ["horizontal", "vertical"]) add(`orientation.${orientation}`, `RadioGroupProps.orientation=${orientation} forwarded to RadioGroupPrimitive`);
+    for (const orientation of ["horizontal", "vertical"]) add(`orientation.${orientation}`, `RadioGroup.orientation=${orientation}`);
   }
   if (item === "switch" && /SwitchProps/.test(code) && forwardsProps && /isSelected/.test(code)) {
-    add("state.on", "Switch composeRenderProps.isSelected=true");
-    add("state.off", "Switch composeRenderProps.isSelected=false");
+    add("state.on", "Switch.isSelected=true");
+    add("state.off", "Switch.isSelected=false");
   }
   if (item === "slider" && /SliderPrimitiveProps<T>/.test(code) && forwardsProps) {
-    if (/type SliderValue = number \| number\[\]/.test(code) && /state\.values\.map/.test(code)) {
-      add("selection.single", "SliderProps<number>.value; state.values maps one thumb");
-      add("selection.range", "SliderProps<number[]>.value; state.values maps indexed thumbs");
-    }
-    for (const orientation of ["horizontal", "vertical"]) if (code.includes(`data-${orientation}`)) add(`orientation.${orientation}`, `SliderPrimitiveProps.orientation=${orientation}`);
+    // Arity follows the value (number or number[]): the root itself serves both selections.
+    if (/type SliderValue = number \| number\[\]/.test(code) && /state\.values\.map/.test(code)) { add("selection.single", "Slider"); add("selection.range", "Slider"); }
+    for (const orientation of ["horizontal", "vertical"]) if (code.includes(`data-${orientation}`)) add(`orientation.${orientation}`, `Slider.orientation=${orientation}`);
   }
   if (item === "toggle" && /ToggleButtonProps/.test(code) && forwardsProps) {
     for (const [member, value] of Object.entries({ sm: "sm", md: "default", lg: "lg" })) if (new RegExp(`cn-toggle-size-${value}\\b`).test(code)) add(`size.${member}`, `Toggle.size=${value}`);
-    if (/cn-toggle-variant-default/.test(code) && /bg-transparent/.test(code)) add("variant.ghost", "Toggle.variant=default: transparent surface");
+    if (/cn-toggle-variant-default/.test(code) && /bg-transparent/.test(code)) add("variant.ghost", "Toggle.variant=default");
     if (/cn-toggle-variant-outline/.test(code)) add("variant.outline", "Toggle.variant=outline");
-    if (/data-selected:/.test(code)) add("state.selected", "ToggleButtonProps.isSelected; data-selected styles");
+    if (/data-selected:/.test(code)) add("state.selected", "Toggle.isSelected");
   }
   if (item === "toggle-group" && /ToggleButtonGroupProps/.test(code) && forwardsProps) {
-    for (const selection of ["single", "multiple"]) add(`selection.${selection}`, `ToggleButtonGroupProps.selectionMode=${selection} forwarded to ToggleGroupPrimitive`);
+    for (const selection of ["single", "multiple"]) add(`selection.${selection}`, `ToggleGroup.selectionMode=${selection}`);
     for (const orientation of ["horizontal", "vertical"]) if (code.includes(`"${orientation}"`)) add(`orientation.${orientation}`, `ToggleGroup.orientation=${orientation}`);
   }
   if (item === "select") {
     for (const [member, pointer] of Object.entries(selectedCaptionMembers)) add(member, pointer);
   }
-  if (item === "combobox" && /ComboBox as ComboBoxPrimitive/.test(code) && /ComboBoxPrimitive as Combobox/.test(code)) add("allows-custom", "Combobox directly exports RAC ComboBox.allowsCustomValue");
+  // Capability members the root forwards to its RAC primitive point at the root export itself.
+  if (item === "combobox" && /ComboBox as ComboBoxPrimitive/.test(code) && /ComboBoxPrimitive as Combobox/.test(code)) add("allows-custom", "Combobox");
   if (item === "dialog") {
     for (const [member, pointer] of Object.entries(dialogExecutableMembers)) add(member, pointer);
   }
-  if ((item === "popover" || item === "tooltip") && /placement = /.test(code) && /placement=\{placement\}/.test(code)) {
-    add("placement", `${item === "popover" ? "Popover" : "Tooltip"}.placement forwarded to RAC primitive`);
-  }
+  if ((item === "popover" || item === "tooltip") && /placement = /.test(code) && /placement=\{placement\}/.test(code)) add("placement", item === "popover" ? "Popover" : "Tooltip");
   if (item === "dropdown-menu") {
     for (const [member, pointer] of Object.entries(menuExecutableMembers)) add(member, pointer);
   }
   if (item === "avatar" && /data-size=\{size\}/.test(code)) {
-    for (const [member, value] of Object.entries({ sm: "sm", md: "default", lg: "lg" })) if (code.includes(`"${value}"`) && code.includes(`size=${value}`)) add(`size.${member}`, `Avatar.size=${value}: data-size and matching utility variants`);
-    if (/<img\b/.test(code) && /data-slot="avatar-image"/.test(code)) add("content.image", "AvatarImage: img src/alt and loading/error state");
-    if (/function AvatarFallback/.test(code) && /data-slot="avatar-fallback"/.test(code) && forwardsProps) add("content.initials", "AvatarFallback: children forwarded to fallback div");
+    for (const [member, value] of Object.entries({ sm: "sm", md: "default", lg: "lg" })) if (code.includes(`"${value}"`) && code.includes(`size=${value}`)) add(`size.${member}`, `Avatar.size=${value}`);
+    // AvatarImage and AvatarFallback are children the Avatar root composes, not alternate roots.
+    if (/<img\b/.test(code) && /data-slot="avatar-image"/.test(code)) add("content.image", "Avatar");
+    if (/function AvatarFallback/.test(code) && /data-slot="avatar-fallback"/.test(code) && forwardsProps) add("content.initials", "Avatar");
   }
   if (item === "breadcrumb") {
-    if (/isCurrent/.test(code) && /aria-current="page"/.test(code)) add("current", "BreadcrumbItem.isCurrent; BreadcrumbPage aria-current=page");
-    if (/function BreadcrumbEllipsis/.test(code) && /data-slot="breadcrumb-ellipsis"/.test(code)) add("collapsed", "BreadcrumbEllipsis: collapsed-path visual; unresolved glyph retained as K7");
+    if (/isCurrent/.test(code) && /aria-current="page"/.test(code)) add("current", "Breadcrumb");
+    if (/function BreadcrumbEllipsis/.test(code) && /data-slot="breadcrumb-ellipsis"/.test(code)) add("collapsed", "Breadcrumb");
   }
   if (item === "tabs" && /React.ComponentProps<typeof TabsPrimitive>/.test(code) && forwardsProps) {
-    for (const orientation of ["horizontal", "vertical"]) if (code.includes(`data-${orientation}`)) add(`orientation.${orientation}`, `TabsPrimitive.orientation=${orientation}: forwarded RAC prop and data-${orientation} layout`);
+    for (const orientation of ["horizontal", "vertical"]) if (code.includes(`data-${orientation}`)) add(`orientation.${orientation}`, `Tabs.orientation=${orientation}`);
   }
   if (item === "separator" && /orientation=\{orientation\}/.test(code)) {
-    for (const orientation of ["horizontal", "vertical"]) if (code.includes(`orientation=${orientation}`)) add(`orientation.${orientation}`, `Separator.orientation=${orientation}: RAC prop and aria-orientation utility`);
+    for (const orientation of ["horizontal", "vertical"]) if (code.includes(`orientation=${orientation}`)) add(`orientation.${orientation}`, `Separator.orientation=${orientation}`);
   }
   if (item === "kbd" && /Keyboard as KbdPrimitive/.test(code) && forwardsProps) {
-    if (/data-slot="kbd"/.test(code)) add("scope.single", "Kbd: children forwarded to RAC Keyboard");
-    if (/data-slot="kbd-group"/.test(code)) add("scope.chord", "KbdGroup: chord children forwarded to RAC Keyboard");
+    if (/data-slot="kbd"/.test(code)) add("scope.single", "Kbd");
+    if (/data-slot="kbd-group"/.test(code)) add("scope.chord", "KbdGroup");
   }
   if (item === "badge") {
     for (const [member, value] of Object.entries({ neutral: "secondary", danger: "destructive" })) if (new RegExp(`\\b${value}: "cn-badge-variant-${value}"`).test(code)) add(`tone.${member}`, `Badge.variant=${value}`);
@@ -260,21 +264,29 @@ function memberMap(item: string, code: string, slot: ComponentSlot): Record<stri
     for (const [member, value] of Object.entries({ info: "default", danger: "destructive" })) if (new RegExp(`\\b${value}: "cn-alert-variant-${value}"`).test(code)) add(`tone.${member}`, `Alert.variant=${value}`);
   }
   if (item === "progress" && /ProgressBar as ProgressPrimitive/.test(code) && forwardsProps) {
-    if (/percentage/.test(code)) add("progress.determinate", "ProgressBarProps.value forwarded to RAC ProgressBar; percentage drives the indicator");
-    if (/isIndeterminate/.test(code)) add("progress.indeterminate", "ProgressBarProps.isIndeterminate forwarded to RAC ProgressBar");
+    if (/percentage/.test(code)) add("progress.determinate", "Progress.isIndeterminate=false");
+    if (/isIndeterminate/.test(code)) add("progress.indeterminate", "Progress.isIndeterminate=true");
   }
-  if (item === "skeleton" && /data-slot="skeleton"/.test(code)) add("shape.block", "Skeleton: block placeholder div");
-  if (item === "table" && /type TableProps/.test(code) && /type ColumnProps/.test(code) && forwardsProps) {
-    add("selection", "TableProps.selectionMode forwarded to RAC Table");
-    add("sort", "TableProps.sortDescriptor and ColumnProps.allowsSorting forwarded to RAC Table and Column");
-  }
+  if (item === "skeleton" && /data-slot="skeleton"/.test(code)) add("shape.block", "Skeleton");
+  if (item === "table" && /type TableProps/.test(code) && /type ColumnProps/.test(code) && forwardsProps) { add("selection", "Table"); add("sort", "Table"); }
   if (item === "calendar") { add("selection.single", "Calendar"); if (/RangeCalendar/.test(code)) add("selection.range", "RangeCalendar"); }
   if (item === "accordion" || item === "collapsible") add(item === "accordion" ? "scope.group" : "scope.single", item === "accordion" ? "Accordion" : "Collapsible");
-  if (/isDisabled|disabled:/.test(code)) add("state.disabled", "isDisabled");
-  if (item !== "select" && /aria-invalid|isInvalid/.test(code)) add("state.invalid", "isInvalid");
-  if (/focus-visible:/.test(code)) add("state.focus-visible", "data-focus-visible");
-  if (/hover:/.test(code)) add("state.hover", "data-hovered");
+  if (/isDisabled|disabled:/.test(code)) add("state.disabled", `${own}.isDisabled`);
+  if (item !== "select" && /aria-invalid|isInvalid/.test(code)) add("state.invalid", `${own}.isInvalid`);
+  if (/focus-visible:/.test(code)) add("state.focus-visible", `${own}[data-focus-visible]`);
+  if (/hover:/.test(code)) add("state.hover", `${own}[data-hovered]`);
   return Object.fromEntries(Object.entries(map).sort(([a], [b]) => a.localeCompare(b)));
+}
+/**
+ * The persist emitter's own parser checks every pointer, so a fill that passes plan/check cannot
+ * fail at persist on its propMap. A single-axis member is served only by the bare root export
+ * (the emitter dispatches nothing for it); anything else has no pointer and stays unmapped.
+ */
+function emittablePropMap(slot: string, impl: { kind: "source"; entry: string; export: string }, map: Readonly<Record<string, string>>): Record<string, string> {
+  const component = { slot, impl, descriptor: { slot, impl } } as unknown as ResolvedComponent;
+  const bindings = Object.entries(map).map(([member, pointer]) => [member, componentMemberBinding(component, member, pointer)] as const);
+  const root = (binding: (typeof bindings)[number][1]) => binding.name === impl.export && !("property" in binding);
+  return Object.fromEntries(bindings.filter(([member, binding]) => "intrinsic" in binding || root(binding) || /^[a-z][a-z0-9-]*\.[a-z][a-z0-9-]*$/.test(member)).map(([member]) => [member, map[member]!]));
 }
 const exportNames: Record<string, string> = { toggle: "Toggle", "dropdown-menu": "DropdownMenu", "context-menu": "ContextMenu", combobox: "Combobox", kbd: "Kbd", alert: "Alert", progress: "Progress", breadcrumb: "Breadcrumb", accordion: "Accordion", collapsible: "Collapsible", "alert-dialog": "AlertDialog", "hover-card": "HoverCard", "radio-group": "RadioGroup", "toggle-group": "ToggleGroup" };
 const utils = 'import { clsx, type ClassValue } from "clsx"\nimport { twMerge } from "tailwind-merge"\nexport function cn(...inputs: ClassValue[]) { return twMerge(clsx(inputs)) }\n';
@@ -383,7 +395,8 @@ export function importShadcnAriaComponents(input: ShadcnComponentInput): ShadcnC
     receipt.push({ item: name, slot: slot.id, runtime: "U-V", status: filled.has(slot.id) ? "alternate" : "candidate", reason: `${slot.contract.root.startsWith("rac:") ? "Pinned root import verified" : "Pinned source has no foreign headless engine"}; token, glyph, dependency and runtime checks remain required`, issues: rewritten.issues, ...(rewritten.notes ? { notes: rewritten.notes } : {}) });
     if (filled.has(slot.id)) continue;
     filled.add(slot.id);
-    const propMap = memberMap(name, original.content + (rewritten.files.find(file => file.path === `components/${leaf}/${name}.tsx`)?.content ?? ""), slot);
+    const impl = { kind: "source" as const, entry: `components/${leaf}/${name}.tsx`, export: exportNames[name] ?? name.split("-").map(word => word[0]!.toUpperCase() + word.slice(1)).join("") };
+    const propMap = emittablePropMap(slot.id, impl, memberMap(name, original.content + (rewritten.files.find(file => file.path === `components/${leaf}/${name}.tsx`)?.content ?? ""), slot, impl.export));
     const members = Object.keys(propMap), required = slot.contract.members.mode === "closed" ? slot.contract.members.names : slot.contract.members.required ?? [];
     const pin = { url: SHADCN_ARIA_COMPONENT_PIN.url, commit: SHADCN_ARIA_COMPONENT_PIN.commit, files: [...closure.values(), ...(command ? [command] : []), input.styles, input.notice].map(file => ({ path: file.path, sha256: pinDigest(file.content) })).sort((a, b) => a.path.localeCompare(b.path)) };
     const composes = result.reads.components;
@@ -394,7 +407,7 @@ export function importShadcnAriaComponents(input: ShadcnComponentInput): ShadcnC
     const reads = inherited.length ? { ...result.reads, tokens: sorted([...result.reads.tokens, ...inherited]) } : result.reads;
     const descriptor: ShadcnComponentFillDoc["components"][string] = {
       slot: slot.id, source: SOURCE, root: slot.contract.root, members, props: name === "calendar" ? ["id", "className", "style", "children", "aria-label", "aria-labelledby", "value", "defaultValue", "onChange", "isDisabled", "isReadOnly", "isInvalid", "minValue", "maxValue", "defaultFocusedValue", "focusedValue", "onFocusChange", "isDateUnavailable", "firstDayOfWeek", "numberOfMonths", "buttonVariant", "captionLayout", "showWeekNumber", "headerFormat", "renderCell"] : [], propMap, reads, composes,
-      impl: { kind: "source", entry: `components/${leaf}/${name}.tsx`, export: exportNames[name] ?? name.split("-").map(word => word[0]!.toUpperCase() + word.slice(1)).join("") },
+      impl,
       license: "MIT", pin, notice: adapter.notice, transform: "shadcn-aria-rewrite@1", item: name,
       deps: [...npmDeps.filter(dep => dep.name === "react" || dep.name === "react-aria-components" && imports(original.content).length > 0 || dep.name === "class-variance-authority" && [...closure.values()].some(file => file.content.includes('from "class-variance-authority"')) || ["clsx", "tailwind-merge"].includes(dep.name)),
         ...sorted([...closure.values()].flatMap(file => dependencies(file.content))).filter(dep => !result.contextualInputs?.includes(dep)).map(dep => ({ name: dep, version: SHADCN_ARIA_COMPONENT_PIN.commit, license: "MIT", registryItem: dep, ...(SHADCN_COMPONENT_ITEMS[dep] ? { slot: `components.${SHADCN_COMPONENT_ITEMS[dep]}` } : {}) }))],

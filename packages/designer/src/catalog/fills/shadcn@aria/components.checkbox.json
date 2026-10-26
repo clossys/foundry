@@ -104,10 +104,10 @@
         "url": "https://github.com/shadcn-ui/ui"
       },
       "propMap": {
-        "scope.single": "Checkbox: CheckboxProps forwarded to CheckboxPrimitive",
-        "state.checked": "Checkbox composeRenderProps.isSelected",
-        "state.indeterminate": "Checkbox composeRenderProps.isIndeterminate",
-        "state.invalid": "isInvalid"
+        "scope.single": "Checkbox",
+        "state.checked": "Checkbox.isSelected",
+        "state.indeterminate": "Checkbox.isIndeterminate",
+        "state.invalid": "Checkbox.isInvalid"
       },
       "props": [],
       "reads": {

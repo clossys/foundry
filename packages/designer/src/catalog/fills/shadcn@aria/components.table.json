@@ -102,8 +102,8 @@
         "url": "https://github.com/shadcn-ui/ui"
       },
       "propMap": {
-        "selection": "TableProps.selectionMode forwarded to RAC Table",
-        "sort": "TableProps.sortDescriptor and ColumnProps.allowsSorting forwarded to RAC Table and Column"
+        "selection": "Table",
+        "sort": "Table"
       },
       "props": [],
       "reads": {

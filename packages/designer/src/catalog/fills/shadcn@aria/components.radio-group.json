@@ -103,9 +103,9 @@
         "url": "https://github.com/shadcn-ui/ui"
       },
       "propMap": {
-        "orientation.horizontal": "RadioGroupProps.orientation=horizontal forwarded to RadioGroupPrimitive",
-        "orientation.vertical": "RadioGroupProps.orientation=vertical forwarded to RadioGroupPrimitive",
-        "state.invalid": "isInvalid"
+        "orientation.horizontal": "RadioGroup.orientation=horizontal",
+        "orientation.vertical": "RadioGroup.orientation=vertical",
+        "state.invalid": "RadioGroup.isInvalid"
       },
       "props": [],
       "reads": {

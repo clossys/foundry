@@ -137,8 +137,8 @@
         "url": "https://github.com/shadcn-ui/ui"
       },
       "propMap": {
-        "allows-custom": "Combobox directly exports RAC ComboBox.allowsCustomValue",
-        "state.invalid": "isInvalid"
+        "allows-custom": "Combobox",
+        "state.invalid": "Combobox.isInvalid"
       },
       "props": [],
       "reads": {

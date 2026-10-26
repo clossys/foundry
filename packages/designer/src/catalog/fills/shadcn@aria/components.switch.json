@@ -103,9 +103,9 @@
         "url": "https://github.com/shadcn-ui/ui"
       },
       "propMap": {
-        "state.disabled": "isDisabled",
-        "state.off": "Switch composeRenderProps.isSelected=false",
-        "state.on": "Switch composeRenderProps.isSelected=true"
+        "state.disabled": "Switch.isDisabled",
+        "state.off": "Switch.isSelected=false",
+        "state.on": "Switch.isSelected=true"
       },
       "props": [],
       "reads": {

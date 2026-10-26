@@ -102,8 +102,8 @@
         "url": "https://github.com/shadcn-ui/ui"
       },
       "propMap": {
-        "scope.chord": "KbdGroup: chord children forwarded to RAC Keyboard",
-        "scope.single": "Kbd: children forwarded to RAC Keyboard"
+        "scope.chord": "KbdGroup",
+        "scope.single": "Kbd"
       },
       "props": [],
       "reads": {

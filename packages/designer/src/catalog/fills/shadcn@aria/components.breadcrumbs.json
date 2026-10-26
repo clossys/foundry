@@ -106,8 +106,8 @@
         "url": "https://github.com/shadcn-ui/ui"
       },
       "propMap": {
-        "collapsed": "BreadcrumbEllipsis: collapsed-path visual; unresolved glyph retained as K7",
-        "current": "BreadcrumbItem.isCurrent; BreadcrumbPage aria-current=page"
+        "collapsed": "Breadcrumb",
+        "current": "Breadcrumb"
       },
       "props": [],
       "reads": {

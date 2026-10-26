@@ -107,8 +107,8 @@
         "url": "https://github.com/shadcn-ui/ui"
       },
       "propMap": {
-        "orientation.horizontal": "TabsPrimitive.orientation=horizontal: forwarded RAC prop and data-horizontal layout",
-        "orientation.vertical": "TabsPrimitive.orientation=vertical: forwarded RAC prop and data-vertical layout"
+        "orientation.horizontal": "Tabs.orientation=horizontal",
+        "orientation.vertical": "Tabs.orientation=vertical"
       },
       "props": [],
       "reads": {
