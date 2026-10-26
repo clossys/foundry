@@ -28,9 +28,9 @@ function bindingFindings(input: readonly Slot[], properties: readonly string[]):
   return findings.sort(compare);
 }
 const counts: Record<string, number> = {
-  "tokens.accent-color": 5, "tokens.action-color": 5, "tokens.behavior-timing": 6, "tokens.blur": 2, "tokens.body-size": 4, "tokens.border-color": 6, "tokens.border-width": 3,
+  "tokens.accent-color": 5, "tokens.action-color": 5, "tokens.animation": 0, "tokens.behavior-timing": 6, "tokens.blur": 2, "tokens.body-size": 4, "tokens.border-color": 6, "tokens.border-width": 3,
   "tokens.brandmark-size": 6, "tokens.breakpoint": 6, "tokens.caption-size": 1, "tokens.categorical-color": 8, "tokens.chart-color": 4, "tokens.code-size": 1,
-  "tokens.color-ramp": 11, "tokens.content-size": 13, "tokens.control-color": 5, "tokens.control-radius": 1, "tokens.control-size": 8, "tokens.density": 5,
+  "tokens.color-ramp": 11, "tokens.container-width": 0, "tokens.content-size": 13, "tokens.control-color": 5, "tokens.control-radius": 1, "tokens.control-size": 8, "tokens.density": 5,
   "tokens.display-face": 4, "tokens.display-size": 3, "tokens.diverging-color": 3, "tokens.duration": 5, "tokens.easing": 4, "tokens.elevation": 4,
   "tokens.focus-color": 2, "tokens.focus-outline": 2, "tokens.focus-shadow": 2, "tokens.font-size": 0, "tokens.font-weight": 0, "tokens.gutter": 1,
   "tokens.heading-size": 4, "tokens.icon-size": 3, "tokens.icon-stroke": 1, "tokens.letter-spacing": 4, "tokens.line-height": 2, "tokens.radius": 4,
@@ -51,8 +51,8 @@ describe("catalog token bindings", () => {
   it("reports a shipped property without a binding", () => {
     expect(bindingFindings([fixtureSlot("tokens.font-weight", {}), fixtureSlot("tokens.shadow", {})], ["--x"])).toEqual(["binding: shipped token --x is not bound"]);
   });
-  it("pins 53 slots and every slot's bound count", () => {
-    expect(slots).toHaveLength(53);
+  it("pins 55 slots and every slot's bound count", () => {
+    expect(slots).toHaveLength(55);
     expect(Object.fromEntries(slots.map(slot => [slot.id, Object.keys(slot.contract.emit ?? {}).length]))).toEqual(counts);
     expect(slots.map(slot => slot.id)).toEqual(Object.keys(counts).sort(compare));
   });
@@ -84,15 +84,15 @@ describe("catalog token bindings", () => {
       expect(slot.contract.modes).toEqual(colorRole || themeDependent ? ["light", "dark"] : ["light"]);
     }
   });
-  it("places all 53 slots exactly once under seven ordered domains without facet branches", () => {
+  it("places all 55 slots exactly once under seven ordered domains without facet branches", () => {
     const tree = tokenPlacement as unknown as Placement;
     const domains: Record<string, readonly string[]> = {
       color: ["color-ramp", "surface-color", "text-color", "border-color", "accent-color", "action-color", "control-color", "status-color", "focus-color", "scrim-color", "chart-color", "categorical-color", "sequential-color", "diverging-color"],
       type: ["font-size", "font-weight", "line-height", "letter-spacing", "typeface", "display-size", "display-face", "heading-size", "body-size", "caption-size", "code-size"],
-      space: ["spacing", "breakpoint", "content-size", "region-width", "gutter", "density"],
+      space: ["spacing", "breakpoint", "content-size", "region-width", "gutter", "container-width", "density"],
       shape: ["radius", "border-width", "control-radius", "surface-radius", "icon-size", "icon-stroke", "brandmark-size"],
       depth: ["shadow", "blur", "z-index", "elevation", "focus-shadow"],
-      motion: ["duration", "easing", "behavior-timing", "transition-duration", "transition-easing", "shift-distance"],
+      motion: ["duration", "easing", "behavior-timing", "transition-duration", "animation", "transition-easing", "shift-distance"],
       interaction: ["state-opacity", "touch-target", "control-size", "focus-outline"],
     };
     expect(tree.layer).toBe("tokens");
@@ -111,18 +111,18 @@ describe("catalog token bindings", () => {
       const domainLeaves = "children" in node ? node.children.flatMap(family => "leaves" in family ? family.leaves : []) : [];
       expect(domainLeaves.toSorted(compare)).toEqual(domains[node.id]!.map(id => "tokens." + id).toSorted(compare));
     }
-    expect(placed).toHaveLength(53);
-    expect(new Set(placed).size).toBe(53);
+    expect(placed).toHaveLength(55);
+    expect(new Set(placed).size).toBe(55);
     expect(placed.toSorted(compare)).toEqual(slots.map(slot => slot.id));
     expect(retired).toEqual([]);
   });
   it("retains scale and role as slot metadata independent of placement", () => {
     const scale = new Set([
       "color-ramp", "font-size", "font-weight", "line-height", "letter-spacing", "spacing", "breakpoint",
-      "radius", "border-width", "shadow", "blur", "z-index", "duration", "easing",
+      "radius", "border-width", "shadow", "blur", "z-index", "duration", "easing", "container-width", "animation",
     ].map(id => "tokens." + id));
     for (const slot of slots) expect(slot.contract.tier).toBe(scale.has(slot.id) ? "scale" : "role");
-    expect(slots.filter(slot => slot.contract.tier === "scale")).toHaveLength(14);
+    expect(slots.filter(slot => slot.contract.tier === "scale")).toHaveLength(16);
     expect(slots.filter(slot => slot.contract.tier === "role")).toHaveLength(39);
   });
 });

@@ -63,7 +63,7 @@ describe("pinned upstream token importers", () => {
     expect(shadcn[0]!.$extensions["com.clossys.fill"].unmapped).toContain("--sidebar");
     expect(Object.keys(shadcn.find(fill => fill.$extensions["com.clossys.fill"].slot === "tokens.status-color")!.tokens["status-color"]!)).toEqual(["danger"]);
   });
-  it("pins every generated cell and the 53-leaf coverage report", () => {
+  it("pins every generated cell and the 55-leaf coverage report (53 filled)", () => {
     for (const [directory, fills] of [["foundry", foundry], ["tailwind-default", tailwind], ["shadcn-aria", shadcn]] as const) {
       expect(readdirSync(resolve(here, "../catalog/fills", directory)).filter(file => file.startsWith("tokens.")).sort()).toEqual(fills.map(fill => `${fill.$extensions["com.clossys.fill"].slot}.json`).sort());
       for (const fill of fills) expect(read(`../catalog/fills/${directory}/${fill.$extensions["com.clossys.fill"].slot}.json`)).toBe(stableStringify(fill));
@@ -71,7 +71,7 @@ describe("pinned upstream token importers", () => {
     const report = leafCoverage(slots, generatedTokenFills());
     expect(report.totals.foundry?.filledLeaves).toBe(38);
     expect(report.unionFilledLeaves).toBe(53);
-    expect(report.uncoveredLeaves).toEqual([]);
+    expect(report.uncoveredLeaves).toEqual(["tokens.animation", "tokens.container-width"]);
     expect(read("token-leaf-coverage.json")).toBe(stableStringify(report));
   });
 });

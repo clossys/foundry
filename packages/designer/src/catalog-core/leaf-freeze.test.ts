@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import tokenIA from "../catalog/ia/tokens.json" with { type: "json" };
 import assetIA from "../catalog/ia/assets.json" with { type: "json" };
 import componentIA from "../catalog/ia/components.json" with { type: "json" };
@@ -9,6 +9,7 @@ import tokenFreeze from "../catalog/ia/tokens.leaf-freeze.json" with { type: "js
 import assetFreeze from "../catalog/ia/assets.leaf-freeze.json" with { type: "json" };
 import componentAmendments from "../catalog/ia/components.leaf-amendments.json" with { type: "json" };
 import assetAmendments from "../catalog/ia/assets.leaf-amendments.json" with { type: "json" };
+import tokenAmendments from "../catalog/ia/tokens.leaf-amendments.json" with { type: "json" };
 import componentFreeze from "../catalog/ia/components.leaf-freeze.json" with { type: "json" };
 import { sha256 } from "./digest.js";
 import { checkFrozenLeafSets, assertFrozenLeafSets, type FrozenLeafLayer } from "./leaf-freeze.js";
@@ -59,7 +60,7 @@ describe("owner-signed leaf membership", () => {
     });
     it(`${layer}: allows regrouping, reordering, labels and metadata changes`, () => {
       const value = input();
-      const ids = fixture.layer === "components" ? [...fixture.freeze.leafIds, "components.semantic-content", "components.native-action"] : fixture.layer === "assets" ? [...fixture.freeze.leafIds, ...assetAmendments.addedLeafIds] : fixture.freeze.leafIds;
+      const ids = fixture.layer === "components" ? [...fixture.freeze.leafIds, "components.semantic-content", "components.native-action"] : fixture.layer === "assets" ? [...fixture.freeze.leafIds, ...assetAmendments.addedLeafIds] : [...fixture.freeze.leafIds, ...tokenAmendments.addedLeaves.map(row => row.id)];
       value.ia.nodes = [{ id: "new-domain", label: "New domain", children: [{ id: "new-family", label: "New family", leaves: [...ids].reverse() }] }];
       value.slots.reverse();
       Object.assign(value.slots[0]!, { description: "Metadata remains separate" });
@@ -91,7 +92,7 @@ describe("owner-signed leaf membership", () => {
       }
       expect(fixture.slots).toEqual(beforeSlots);
       expect(fixture.ia).toEqual(beforeIA);
-      expect(loadBuildCatalog().slots).toHaveLength(214);
+      expect(loadBuildCatalog().slots).toHaveLength(216);
     });
   }
 
@@ -131,6 +132,50 @@ describe("owner-signed Media leaf amendment", () => {
     expect(checkFrozenLeafSets([assetIA as Placement], slots, ["assets"])).toEqual([expect.objectContaining({ source: "slots", unexpected: ["assets.audio"], missing: [] })]);
     const without = structuredClone(assetSlots).filter(slot => slot.id !== "assets.pattern");
     expect(checkFrozenLeafSets([assetIA as Placement], without, ["assets"])).toEqual([expect.objectContaining({ source: "slots", missing: ["assets.pattern"], unexpected: [] })]);
+  });
+});
+
+describe("owner-signed token leaf amendment", () => {
+  const signed = "OWNER 2026-10-26T18:03Z ledger #44";
+  const added = ["tokens.container-width", "tokens.animation"];
+  it("adds exactly the two signed leaves to the unchanged 53 signed IDs: 55 leaves, 0 removals", () => {
+    expect(tokenAmendments).toMatchObject({ schemaVersion: 1, layer: "tokens", baseSignedHead: tokenFreeze.signedHead, status: "owner-signed" });
+    expect(tokenAmendments.addedLeaves).toEqual(added.map(id => expect.objectContaining({ id, signed })));
+    expect(tokenAmendments.recorded).toEqual([expect.objectContaining({ id: "tokens.scrim-color", change: "none", signed })]);
+    expect(tokenFreeze.leafIds).toHaveLength(53);
+    expect(sha256([...tokenFreeze.leafIds].sort().join("\n"))).toBe("4def8821fd3a0304e559e73830eec4664ab69f3f841661e8cc7656d1aaef9e19");
+    const ids = tokenSlots.map(slot => slot.id);
+    expect(ids).toHaveLength(55);
+    expect(tokenFreeze.leafIds.filter(id => !ids.includes(id))).toEqual([]);
+    expect(ids.filter(id => !tokenFreeze.leafIds.includes(id)).sort()).toEqual([...added].sort());
+    expect(checkFrozenLeafSets([tokenIA as Placement], tokenSlots, ["tokens"])).toEqual([]);
+  });
+  it("refuses a third unsigned token leaf and a missing signed addition", () => {
+    const slots = structuredClone(tokenSlots);
+    slots.push({ ...slots[0]!, id: "tokens.spring" });
+    expect(checkFrozenLeafSets([tokenIA as Placement], slots, ["tokens"])).toEqual([expect.objectContaining({ source: "slots", unexpected: ["tokens.spring"], missing: [] })]);
+    for (const id of added) {
+      const without = structuredClone(tokenSlots).filter(slot => slot.id !== id);
+      expect(checkFrozenLeafSets([tokenIA as Placement], without, ["tokens"])).toEqual([expect.objectContaining({ source: "slots", missing: [id], unexpected: [] })]);
+    }
+  });
+  for (const [label, edit] of [
+    ["an addition without signed", (value: typeof tokenAmendments) => { delete (value.addedLeaves[0] as { signed?: string }).signed; }],
+    ["an addition with a different signature", (value: typeof tokenAmendments) => { value.addedLeaves[1]!.signed = "OWNER unsigned"; }],
+    ["a recorded row without signed", (value: typeof tokenAmendments) => { delete (value.recorded[0] as { signed?: string }).signed; }],
+    ["an addition that is already a signed leaf", (value: typeof tokenAmendments) => { value.addedLeaves[0]!.id = "tokens.radius"; }],
+    ["a duplicate addition", (value: typeof tokenAmendments) => { value.addedLeaves[1]!.id = value.addedLeaves[0]!.id; }],
+  ] as const) it(`refuses to load ${label}`, async () => {
+    const value = structuredClone(tokenAmendments);
+    edit(value);
+    vi.resetModules();
+    vi.doMock("../catalog/ia/tokens.leaf-amendments.json", () => ({ default: value }));
+    try {
+      await expect(import("./leaf-freeze.js")).rejects.toThrow("LEAF_FREEZE: invalid explicit token amendment");
+    } finally {
+      vi.doUnmock("../catalog/ia/tokens.leaf-amendments.json");
+      vi.resetModules();
+    }
   });
 });
 

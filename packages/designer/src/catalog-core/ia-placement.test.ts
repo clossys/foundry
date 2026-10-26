@@ -10,7 +10,7 @@ type CrossReference = { node: string; leaves: string[] };
 type WithReferences = Placement & { crossReferences?: CrossReference[] };
 
 const fixtures = [tokens, assets, components, sections, frames];
-const counts = { tokens: [7, 21, 53], assets: [4, 10, 48], components: [6, 27, 59], sections: [6, 22, 45], frames: [3, 8, 9] };
+const counts = { tokens: [7, 21, 55], assets: [4, 10, 48], components: [6, 27, 59], sections: [6, 22, 45], frames: [3, 8, 9] };
 const leafIds = (tree: Placement): string[] => tree.nodes.flatMap(group => "children" in group ? group.children.flatMap(family => "leaves" in family ? family.leaves : []) : []);
 
 describe("IA1 exact three levels and IA2 unmixed nodes", () => {
@@ -54,7 +54,7 @@ describe("IA1 exact three levels and IA2 unmixed nodes", () => {
         expect(() => loadBuildCatalog()).toThrow("IA1");
         if (layer === "tokens" || layer === "assets") expect(() => loadCatalog()).toThrow("IA1");
       } finally { Object.assign(input, { nodes: original }); }
-      expect(loadBuildCatalog().slots).toHaveLength(214);
+      expect(loadBuildCatalog().slots).toHaveLength(216);
     });
   }
 
@@ -85,6 +85,11 @@ describe("owner-signed IA moves (ledger #44, 2026-10-26)", () => {
     expect(tokens.nodes[0]!.id).toBe("color");
     expect(tokens.nodes[0]!.children[0]).toEqual({ id: "color-engine", label: "Engine", leaves: ["tokens.color-ramp"] });
     expect(family(tokens as Placement, "color-palettes")).toEqual(["tokens.accent-color", "tokens.status-color"]);
+  });
+  it("adds container-width under Space > Layout and animation under Motion > Timing, once each", () => {
+    expect(family(tokens as Placement, "space-layout")).toContain("tokens.container-width");
+    expect(family(tokens as Placement, "motion-timing")).toContain("tokens.animation");
+    for (const id of ["tokens.container-width", "tokens.animation", "tokens.color-ramp"]) expect(homes(tokens as Placement, id)).toHaveLength(1);
   });
   it("gives each cross-layer moved id one home leaf and exactly one cross-reference", () => {
     const { placements } = build();
@@ -135,6 +140,6 @@ describe("owner-signed IA moves (ledger #44, 2026-10-26)", () => {
       (assets as WithReferences).crossReferences!.push({ node: "imagery", leaves: ["tokens.icon-stroke"] });
       expect(() => loadCatalog()).toThrow("cross-referenced 2 times");
     } finally { Object.assign(assets, { crossReferences: original }); }
-    expect(loadBuildCatalog().slots).toHaveLength(214);
+    expect(loadBuildCatalog().slots).toHaveLength(216);
   });
 });

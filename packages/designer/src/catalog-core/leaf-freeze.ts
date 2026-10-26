@@ -3,6 +3,7 @@ import assets from "../catalog/ia/assets.leaf-freeze.json" with { type: "json" }
 import components from "../catalog/ia/components.leaf-freeze.json" with { type: "json" };
 import componentAmendments from "../catalog/ia/components.leaf-amendments.json" with { type: "json" };
 import assetAmendments from "../catalog/ia/assets.leaf-amendments.json" with { type: "json" };
+import tokenAmendments from "../catalog/ia/tokens.leaf-amendments.json" with { type: "json" };
 import type { Placement, PlacementNode } from "./types.js";
 
 export type FrozenLeafLayer = "tokens" | "assets" | "components";
@@ -34,9 +35,23 @@ if (assetAmendments.schemaVersion !== 1 || assetAmendments.layer !== "assets" ||
     assetAmendments.addedLeafIds.some(id => !id.startsWith("assets.") || assets.leafIds.includes(id))) {
   throw new Error("LEAF_FREEZE: invalid explicit asset amendment");
 }
+// The owner-signed token amendment: every row carries the owner signature; added leaves are new to the signed baseline.
+const tokenSignature = "OWNER 2026-10-26T18:03Z ledger #44";
+const tokenAddedIds: readonly string[] = Array.isArray(tokenAmendments.addedLeaves) ? tokenAmendments.addedLeaves.map(row => row?.id) : [];
+const signedRow = (row: unknown): boolean => row !== null && typeof row === "object" && (row as { signed?: unknown }).signed === tokenSignature && typeof (row as { id?: unknown }).id === "string";
+if (tokenAmendments.schemaVersion !== 1 || tokenAmendments.layer !== "tokens" ||
+    tokenAmendments.baseSignedHead !== tokens.signedHead ||
+    tokenAmendments.status !== "owner-signed" ||
+    !Array.isArray(tokenAmendments.addedLeaves) || !tokenAmendments.addedLeaves.length || !Array.isArray(tokenAmendments.recorded) ||
+    ![...tokenAmendments.addedLeaves, ...tokenAmendments.recorded].every(signedRow) ||
+    new Set(tokenAddedIds).size !== tokenAddedIds.length ||
+    tokenAddedIds.some(id => !id.startsWith("tokens.") || tokens.leafIds.includes(id)) ||
+    tokenAmendments.recorded.some(row => !tokens.leafIds.includes(row.id))) {
+  throw new Error("LEAF_FREEZE: invalid explicit token amendment");
+}
 // Copy signed IDs plus the explicit versioned additions once, never current slots or IA.
 const baseline: Readonly<Record<FrozenLeafLayer, ReadonlySet<string>>> = {
-  tokens: new Set(tokens.leafIds),
+  tokens: new Set([...tokens.leafIds, ...tokenAddedIds]),
   assets: new Set([...assets.leafIds, ...assetAmendments.addedLeafIds]),
   components: new Set([...components.leafIds, ...componentAmendments.addedLeafIds]),
 };
