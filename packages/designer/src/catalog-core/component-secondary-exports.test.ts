@@ -142,7 +142,7 @@ describe("SYNTHETIC authenticated leaf secondary exports; no real runtime claim"
     // Parser evidence only: no check.ok, source bundle, adoption or real runtime.
     expect(componentSecondaryExports(input.candidate, [input.file])).toEqual([...rows].sort((a, b) => a.name.localeCompare(b.name)));
   });
-  it("proves only the exact adopted ToggleGroup concrete functions, independently of private context and CVA", () => {
+  it("proves only the exact adopted ToggleGroup concrete functions, independently of private context and CVA", async () => {
     const root = new URL("../", import.meta.url);
     const fixtures = new URL("importers/__fixtures__/shadcn-aria/", root);
     const styles = readFileSync(new URL("style-nova.css", fixtures), "utf8");
@@ -184,7 +184,7 @@ describe("SYNTHETIC authenticated leaf secondary exports; no real runtime claim"
     input.candidate.impl = { kind: "source", entry: file.path, export: "ToggleGroup" };
     expect(componentSecondaryExports(input.candidate, [file])).toEqual([{ name: "ToggleGroupItem", export: "ToggleGroupItem" }]);
     const runtimeFiles = [...selected, ...["components/toggle-button/index.ts", "components/_parts/utils/index.ts"].map(path => ({ path, content: readFileSync(new URL(path, root), "utf8") }))];
-    const runtime = selectedRuntime(runtimeFiles).load(file.path);
+    const runtime = await selectedRuntime(runtimeFiles).loadAsync(file.path);
     expect(Object.keys(runtime).sort()).toEqual(exports);
     for (const name of functions) expect(typeof runtime[name]).toBe("function");
     for (const name of ["ToggleGroupContext", "VariantProps", "toggleVariants", "Missing", "React", "Context"]) {
