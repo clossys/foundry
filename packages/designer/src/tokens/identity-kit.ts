@@ -385,18 +385,6 @@ export function identityPlateSvg(svg: string, ink: string, onInverse: string, fa
   return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="${box.minX} ${box.minY} ${box.width} ${box.height}" color="${glyph}" fill="${plate}" data-clear-space="${CLEAR_SPACE_RATIO}">${style}${body}</svg>`;
 }
 
-/**
- * The reversed role of a recognised two-tone mark: the first tone's layer
- * (the plate) takes `plate`, and the second layer keeps the mark's own
- * first tone, so the glyph reads as the original ink cut into a light
- * plate instead of collapsing into one flat colour. Returns `undefined` for
- * a mark outside the recognised subset; callers keep their flat recolour.
- */
-export function reverseTwoToneSvg(svg: string, plate: string): string | undefined {
-  const mark = recogniseFlatTwoTone(svg);
-  return mark ? identityPlateSvg(svg, plate, mark.toneA) : undefined;
-}
-
 function buildVariantSet(input: {
   lockupGlyph: string;
   markGlyph: string;
