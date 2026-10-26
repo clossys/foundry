@@ -15,6 +15,7 @@ it("leases Explorer, Map and Zoom into actual Frame hosts and ties grid geometry
   expect(screen.getByRole("treegrid", { name: labels.treeLabel })).toBeInTheDocument();
   expect(screen.getByRole("toolbar", { name: labels.canvas.zoomLabel })).toBeInTheDocument();
   expect(screen.getByRole("button", { name: labels.canvas.minimap }).closest("[data-test-dock]")).not.toBeNull();
+  expect(view.container.querySelector("[data-studio-canvas]")).toHaveAttribute("data-frame-bleed");
   expect(view.container.querySelector("[data-canvas-controls]")).toBeNull();
   expect(view.container.querySelector("[data-canvas-panel]")).toBeNull();
   const stage = screen.getByRole("region", { name: labels.canvas.label });

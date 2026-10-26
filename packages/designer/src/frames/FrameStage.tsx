@@ -133,7 +133,7 @@ export function FrameStage<Section extends FrameStageSectionRef>(props: FrameSta
   }
   if (body.kind !== 'canvas' || !canvas || !camera) throw new TypeError('FrameStage canvas inputs unavailable');
   const canvasSize = { width: Math.max(1, size.width), height: Math.max(1, size.height) };
-  return <div ref={host} data-frame-stage="" data-frame-stage-scroll={contract.scroll} className="relative h-full min-h-0 min-w-0" onKeyDownCapture={keydown}>
+  return <div ref={host} data-frame-stage="" data-frame-bleed="" data-frame-stage-scroll={contract.scroll} className="relative h-full min-h-0 min-w-0" onKeyDownCapture={keydown}>
     <CanvasSurface aria-label={props['aria-label']} viewport={camera.viewport} onViewportChange={camera.onViewportChange} selection={[]} onSelectionChange={() => {}}
       worldBounds={{ ...bounds, width: Math.max(1, bounds.width), height: Math.max(1, bounds.height) }} items={[]} itemInteraction="content" contentLayout={flowing ? 'flow' : 'positioned'} contentScroll={contract.scroll}
       viewSize={canvasSize} minZoom={camera.minZoom} maxZoom={camera.maxZoom} fitPadding={flowing ? 0 : camera.fitPadding} actionsRef={setActions} grid="dots">

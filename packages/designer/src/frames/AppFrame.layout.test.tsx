@@ -68,6 +68,8 @@ describe("AppFrame reserved layout", () => {
     expect(document.querySelector("[data-application-frame]")).toHaveClass("h-full", "overflow-hidden");
     expect(region("stage")).toHaveClass("relative", "isolate", "flex-1", "overflow-hidden");
     expect(screen.getByRole("main")).toHaveClass("h-full", "overflow-auto");
+    // cross-10: page content sits on the 16/24 spacing-scale inset; a bleeding canvas child drops it.
+    expect(screen.getByRole("main")).toHaveClass("p-lg", "tablet-lg:p-xl", "has-[[data-frame-bleed]]:p-0");
     expect(region("header").parentElement).toBe(region("stage").parentElement);
     expect(region("stage").nextElementSibling).toBe(region("dock"));
     expect(region("dock")).toHaveClass("shrink-0");
@@ -96,6 +98,11 @@ describe("AppFrame reserved layout", () => {
     expect(region("dock")).toContainElement(screen.getByRole("tab", { name: "Explorer" }));
     expect(region("dock")).toContainElement(screen.getByRole("button", { name: "Zoom in" }));
     expect(screen.queryByRole("button", { name: "Explorer item" })).toBeNull();
+    // studio-12: tabs and the expand toggle share the small control height (28px box, 44px hit area).
+    for (const tab of screen.getAllByRole("tab")) { expect(tab).toHaveClass("control-h-sm"); expect(tab.className).not.toContain("min-h-[var(--ui-layout-tap-target)]"); }
+    const toggle = screen.getByRole("button", { name: "Expand page modules" });
+    expect(toggle).toHaveClass("icon-control-sm", "rounded-control");
+    expect(toggle).not.toHaveClass("icon-control-md");
     await userEvent.click(screen.getByRole("tab", { name: "Explorer" }));
     expect(region("dock")).toContainElement(screen.getByRole("button", { name: "Explorer item" }));
     const pane = screen.getByRole("region", { name: "Page modules" });

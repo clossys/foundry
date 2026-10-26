@@ -252,7 +252,7 @@ function FrameContent({ brand, navigation, account: { avatar = "mark", ...accoun
           </div>
           <div ref={stage} data-application-frame-region="stage" data-stage-navigation={layout.navigationOverlay ? "overlay" : "docked"} data-stage-panel={narrow ? "overlay" : "docked"}
             className="relative isolate min-h-0 min-w-0 flex-1 overflow-hidden">
-            <main id={target} tabIndex={-1} className="h-full min-h-0 min-w-0 overflow-auto focus-visible:outline-solid focus-visible:outline-2 focus-visible:outline-accent">{children}</main>
+            <main id={target} tabIndex={-1} className="h-full min-h-0 min-w-0 overflow-auto p-lg tablet-lg:p-xl has-[[data-frame-bleed]]:p-0 focus-visible:outline-solid focus-visible:outline-2 focus-visible:outline-accent">{children}</main>
           </div>
           <FrameDock notices={notices} dock={dock} sheet={!wide} />
         </div>
