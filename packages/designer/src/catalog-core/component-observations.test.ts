@@ -60,13 +60,13 @@ function packageSource(module: string, name: string): ComponentSourceFile[] | un
 }
 
 let cached: ReturnType<typeof build> | undefined;
-function build() {
+function build(picks: Record<string, string> = PICKS) {
   const bundles = loadCatalogBundles();
   const registry = loadComponentRegistry();
   const { values, tokens, assets } = consumer();
   const catalog = { slots: registry.slots, fills: bundles.componentFills, rules: loadComponentCompositionRules() };
   const installedRac = { version: RAC.version, instance: "react-aria-components" };
-  const plan = planComponentDefaults({ catalog, slots: registry.slots.map(slot => slot.id), tokens, assets, installedRac, bundles: bundles.sourceBundles, preference: PREFERENCE, picks: PICKS, fallback: FALLBACK });
+  const plan = planComponentDefaults({ catalog, slots: registry.slots.map(slot => slot.id), tokens, assets, installedRac, bundles: bundles.sourceBundles, preference: PREFERENCE, picks, fallback: FALLBACK });
   const source = { kind: "consumer", author: "consumer", id: "observations-consumer" } as CompositeLibraryData["source"];
   const empty: CompositeLibraryData = { source, adoptedAt: "2026-10-26", values: { fills: [] }, components: { fills: [], files: [] } };
   const adopted = applyDecisions({ values, components: catalog } as CompositeCatalogData, empty, plan.decisions, { bundles: bundles.sourceBundles });
@@ -151,6 +151,22 @@ describe("observeComponentSources on the real catalog", () => {
       expect(observation.rac.dependency).toBe("source");
     }
     expect(check(result.evidence).filter(finding => finding.code === "K8")).toEqual([]);
+  }, 120_000);
+  it("materializes the shadcn@aria combo-box and select input-group part, so observed source clears their pending K9", () => {
+    const leaves = ["components.combo-box", "components.select"];
+    const { input, check, fills } = build({ ...PICKS, ...Object.fromEntries(leaves.map(slot => [slot, "shadcn@aria"])) });
+    const picked = fills.filter(fill => leaves.includes(fill.slot));
+    expect(picked.map(fill => [fill.slot, fill.item])).toEqual([["components.combo-box", "combobox"], ["components.select", "select"]]);
+    for (const fill of picked) for (const dep of fill.deps.filter(dep => dep.registryItem)) {
+      if (dep.slot && fill.composes.includes(dep.slot)) continue;
+      expect(fill.parts?.map(part => part.item), `${fill.slot} ${dep.registryItem}`).toContain(dep.registryItem);
+      const module = `components/_parts/${dep.registryItem}/${dep.registryItem}.tsx`;
+      expect(fill.outputSha256?.map(receipt => receipt.path), `${fill.slot} ${dep.registryItem}`).toContain(module);
+      expect(input.files.find(file => file.path === module)?.content, `${fill.slot} ${dep.registryItem}`).toMatch(/export \{[^}]*\bInputGroup\b/);
+    }
+    const k9 = (findings: ReturnType<typeof check>) => findings.filter(finding => finding.code === "K9" && leaves.includes(finding.subject));
+    expect(k9(check()).map(finding => finding.severity)).toEqual(["notice", "notice"]);
+    expect(k9(check(observeComponentSources(input).evidence))).toEqual([]);
   }, 120_000);
   it("is deterministic", () => {
     const { input } = real();

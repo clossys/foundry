@@ -176,4 +176,28 @@ describe("pinned shadcn aria component import", () => {
     expect(calendar.files.some(file => /_parts\/(?:button|select)\//.test(file.path))).toBe(false);
     expect(calendar.files.some(file => file.path.includes("_parts/input-group/"))).toBe(false);
   });
+
+  it("declares only registry dependencies that every fill composes or materializes", () => {
+    const result = importShadcnAriaComponents(pinnedInput());
+    for (const doc of result.fills) {
+      const fill = Object.values(doc.components)[0]!;
+      const files = result.rewrites[fill.item!]!.files;
+      for (const dep of fill.deps.filter(dep => dep.registryItem)) {
+        const rebound = !!dep.slot && fill.composes.includes(dep.slot);
+        const materialized = fill.parts!.some(part => part.item === dep.registryItem) && files.some(file => file.path.includes(`_parts/${dep.registryItem}/`));
+        expect(rebound || materialized, `${fill.slot} ${dep.registryItem}`).toBe(true);
+      }
+    }
+  });
+
+  it("keeps the borrowed CommandList as menu provenance without its unused command imports", () => {
+    const result = importShadcnAriaComponents(pinnedInput());
+    const menu = result.fills.map(doc => Object.values(doc.components)[0]!).find(fill => fill.slot === "components.menu")!;
+    expect(menu.item).toBe("dropdown-menu");
+    expect(menu.pin!.files!.map(file => file.path)).toContain("apps/v4/registry/bases/aria/ui/command.tsx");
+    expect(menu.deps.map(dep => dep.registryItem).filter(Boolean)).toEqual([]);
+    const emitted = result.rewrites["dropdown-menu"]!.files.map(file => file.content).join("\n");
+    expect(emitted).toContain("function InlineMenu<");
+    expect(emitted).not.toMatch(/input-group|\/dialog/);
+  });
 });
