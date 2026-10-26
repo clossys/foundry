@@ -66,9 +66,9 @@ describe('signed token coverage decisions', () => {
     const focus = flatten(prepared.find(fill => fill.$extensions['com.clossys.fill'].slot === 'tokens.focus-color')!);
     expect(focus['tokens.focus-color.default']!.$value).toBe('{tokens.accent-color.default}');
   });
-  it('reports 53/53 candidate leaves with per-source provided members separately from consumer truth', () => {
+  it('reports 55/55 candidate leaves with per-source provided members separately from consumer truth', () => {
     const report = leafCoverage(catalog.slots, catalog.fills);
-    expect(report.kind).toBe('candidate-availability'); expect(report.unionFilledLeaves).toBe(53); expect(report.uncoveredLeaves).toEqual([]);
+    expect(report.kind).toBe('candidate-availability'); expect(report.leaves).toHaveLength(55); expect(report.unionFilledLeaves).toBe(55); expect(report.uncoveredLeaves).toEqual([]);
     expect(report.totals.foundry?.filledLeaves).toBe(38); expect(report.totals['foundry-baseline']?.filledLeaves).toBe(3);
     expect(report.leaves.every(leaf => Object.values(leaf.providedMembers).some(members => members.length > 0))).toBe(true);
     expect(read('token-leaf-coverage.json')).toBe(JSON.stringify(JSON.parse(read('token-leaf-coverage.json')), null, 2) + '\n');
