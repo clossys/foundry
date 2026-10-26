@@ -78,14 +78,20 @@ const everyFill: Persisted[] = [
   ...selectable.map(doc => ({ id: fillId(doc), source: doc.$extensions["com.clossys.fill"].source, slot: Object.values(doc.components)[0]!.slot, persist: () => persistOne(doc) })),
   ...rules.map(rule => ({ id: rule.id, source: "compose", slot: rule.slot, persist: () => persistDescriptor(rule.id, rule.template, rule.files) })),
 ];
-/** The propMap-class refusal each fill raises on the persist path, or undefined when it persists. */
+/**
+ * Persisting one fill alone leaves out its sibling slots' files, so a relative import of another
+ * slot's module is unresolvable here by construction; that one message is an isolation artifact,
+ * not a persist refusal. Every other throw is what the product's whole-library persist would raise.
+ */
+const ISOLATION_ARTIFACT = /^components: missing import \.\.?\//;
+/** The refusal each fill raises on the persist path, or undefined when it persists. */
 function refusalOf(fill: Persisted): string | undefined {
-  try { fill.persist(); return undefined; } catch (error) { const message = (error as Error).message; return PROPMAP_REFUSAL.test(message) ? message : undefined; }
+  try { fill.persist(); return undefined; } catch (error) { const message = (error as Error).message; return ISOLATION_ARTIFACT.test(message) ? undefined : message; }
 }
 
 /**
  * Fills the persist emitter still refuses, keyed by fill id, each with its reason (the refusal it
- * raises today). This list may only shrink: a listed fill that now persists fails the stale check
+ * raises today, without the "components: " prefix). This list may only shrink: a listed fill that now persists fails the stale check
  * below until it is removed, and a refusal not listed here fails the main check.
  */
 const KNOWN_REFUSED: Readonly<Record<string, string>> = {
@@ -120,6 +126,35 @@ const KNOWN_REFUSED: Readonly<Record<string, string>> = {
   "foundry/components.toast": "unsupported propMap components.toast.action",
   "foundry/components.tooltip": "unsupported member dispatch placement",
   "foundry/components.tree": "unsupported member dispatch expand",
+  // shadcn@aria: the materialized output carries its own components/<slot>/index.ts, which the
+  // component-index target would overwrite with the generated adapter, so persist refuses.
+  "shadcn@aria/components.avatar": "generated entrypoint conflicts with materialized source",
+  "shadcn@aria/components.badge": "generated entrypoint conflicts with materialized source",
+  "shadcn@aria/components.banner": "generated entrypoint conflicts with materialized source",
+  "shadcn@aria/components.breadcrumbs": "generated entrypoint conflicts with materialized source",
+  "shadcn@aria/components.button": "generated entrypoint conflicts with materialized source",
+  "shadcn@aria/components.card": "generated entrypoint conflicts with materialized source",
+  "shadcn@aria/components.dialog": "generated entrypoint conflicts with materialized source",
+  "shadcn@aria/components.disclosure": "generated entrypoint conflicts with materialized source",
+  "shadcn@aria/components.keyboard": "generated entrypoint conflicts with materialized source",
+  "shadcn@aria/components.menu": "generated entrypoint conflicts with materialized source",
+  "shadcn@aria/components.progress-bar": "generated entrypoint conflicts with materialized source",
+  "shadcn@aria/components.radio-group": "generated entrypoint conflicts with materialized source",
+  "shadcn@aria/components.separator": "generated entrypoint conflicts with materialized source",
+  "shadcn@aria/components.skeleton": "generated entrypoint conflicts with materialized source",
+  "shadcn@aria/components.slider": "generated entrypoint conflicts with materialized source",
+  "shadcn@aria/components.switch": "generated entrypoint conflicts with materialized source",
+  "shadcn@aria/components.table": "generated entrypoint conflicts with materialized source",
+  "shadcn@aria/components.tabs": "generated entrypoint conflicts with materialized source",
+  "shadcn@aria/components.toggle-button": "generated entrypoint conflicts with materialized source",
+  "shadcn@aria/components.toggle-group": "generated entrypoint conflicts with materialized source",
+  "shadcn@aria/components.tooltip": "generated entrypoint conflicts with materialized source",
+  // shadcn@aria popover and the date-picker composition: a named import the emitter parses as empty.
+  "shadcn@aria/components.popover": "unavailable named import  from react-aria-components",
+  "compose:date-picker@1": "unavailable named import  from react-aria-components",
+  // rac-starter: import forms the emitter's source scanner does not accept.
+  "rac-starter/components.form": "unsupported import syntax in components/form/Form.tsx",
+  "rac-starter/components.toolbar": "unsupported import syntax in components/toolbar/Toolbar.tsx",
 };
 
 describe("pack check: every selectable component fill persists", () => {
@@ -167,6 +202,7 @@ describe("pack check: every selectable fill from every source persists, except a
     expect(Object.keys(KNOWN_REFUSED).filter(id => !ids.has(id))).toEqual([]);
     const persisted = everyFill.filter(fill => fill.id in KNOWN_REFUSED && refusalOf(fill) === undefined).map(fill => fill.id);
     expect(persisted, "now persists; delete from KNOWN_REFUSED").toEqual([]);
-    for (const [id, reason] of Object.entries(KNOWN_REFUSED)) expect(reason, id).toMatch(/^unsupported (?:propMap|member dispatch) /);
+    // Each reason is the refusal the fill raises today; a changed refusal is a changed entry.
+    for (const fill of everyFill.filter(fill => fill.id in KNOWN_REFUSED)) expect(refusalOf(fill), fill.id).toBe(`components: ${KNOWN_REFUSED[fill.id]}`);
   });
 });
