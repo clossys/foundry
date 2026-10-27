@@ -82,6 +82,26 @@ describe("WL10 checked registered nonvisual provider from the registered-route c
     }
   }, SCAN_TIMEOUT);
 
+  it("a provider that mutates its inputs gets no proof and its wrapper still fails", async () => {
+    const inputs = "  const inputs = useStudioInputs();", at = (line: string) => nonvisual.replace(inputs, `${inputs}\n  ${line}`);
+    const probes = [
+      at('inputs.node.append("Old chrome");'),
+      at("inputs.node.textContent = inputs.chrome;"),
+      at("inputs.container.append(inputs.chrome);"),
+      at("inputs.node.replaceChildren();"),
+      at('useEffect(() => { inputs.node.append("Old chrome"); });'),
+      at('const n = inputs.node; n.append("Old chrome");'),
+      at('const { node } = inputs; node.append("Old chrome");'),
+      at('inputs.node.textContent += "Old chrome";'),
+    ];
+    const proved: boolean[] = [];
+    for (const mutating of probes) {
+      const { routes, refused } = await produce(await setup(designerRoute(), mutating));
+      proved.push(routes.providers!.length > 0 || refused.length === 0 || !wrapperReported(routes));
+    }
+    expect(proved, `proof issued per probe: ${proved}`).toEqual(probes.map(() => false));
+  }, SCAN_TIMEOUT);
+
   it("an altered emitted mount gets no proof and still fails", async () => {
     const route = await setup(), emitted = emitRegisteredRoutePage("routes.ts", route);
     for (const altered of [
