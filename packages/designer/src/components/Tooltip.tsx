@@ -48,7 +48,7 @@ export interface TooltipProps extends Omit<TooltipTriggerComponentProps, "childr
    * Describe a natively disabled control. A disabled element takes neither hover nor focus,
    * so the component owns the focus target instead (react-aria's `Focusable`): one element
    * with `disabledTriggerRole`, `aria-disabled="true"`, the control's own accessible name
-   * (via `aria-labelledby` on the control) and the tooltip's `aria-describedby`. The disabled
+   * (its `aria-labelledby`, else `aria-label`, else its text) and the tooltip's `aria-describedby`. The disabled
    * control inside it stays rendered but is hidden from assistive tech, so the tree holds one
    * control, not two. The consumer passes the disabled control unchanged and adds no wrapper.
    * Requires one trigger element.
@@ -122,7 +122,7 @@ export function Tooltip({
   return (
     <TooltipTrigger {...rest} trigger={triggerAction}>
       {disabledTrigger ? (
-        <DisabledTrigger role={disabledTriggerRole} trigger={trigger as ReactElement<{ id?: string }>} />
+        <DisabledTrigger role={disabledTriggerRole} trigger={trigger as ReactElement<DisabledTriggerNaming>} />
       ) : trigger}
       <AriaTooltip
         placement={placement}
@@ -138,17 +138,28 @@ export function Tooltip({
   );
 }
 
+/** The naming props a disabled trigger forwards onto its focus target. */
+interface DisabledTriggerNaming {
+  id?: string;
+  "aria-label"?: string;
+  "aria-labelledby"?: string;
+}
+
 /**
  * The focus target for a natively disabled control: an interactive role, `aria-disabled`, the
- * control's own name through `aria-labelledby`, and react-aria's hover/focus/description wiring
+ * control's own naming forwarded (its `aria-labelledby`, else `aria-label`, else its text by id), and react-aria's hover/focus/description wiring
  * from `Focusable`. The control itself is presentational content of this target.
  */
-function DisabledTrigger({ role, trigger }: { role: DisabledTriggerRole; trigger: ReactElement<{ id?: string }> }) {
+function DisabledTrigger({ role, trigger }: { role: DisabledTriggerRole; trigger: ReactElement<DisabledTriggerNaming> }) {
   const generated = useId();
   const controlId = trigger.props.id ?? generated;
+  // Accessible-name computation follows one aria-labelledby hop only, so the control's own
+  // naming is forwarded as-is: its labelledby ids, else its aria-label, else its text by id.
+  const { "aria-labelledby": labelledBy, "aria-label": label } = trigger.props;
+  const naming = labelledBy ? { "aria-labelledby": labelledBy } : label ? { "aria-label": label } : { "aria-labelledby": controlId };
   return (
     <Focusable>
-      <span role={role} tabIndex={0} aria-disabled="true" aria-labelledby={controlId} className="inline-flex" data-tooltip-disabled-trigger="">
+      <span role={role} tabIndex={0} aria-disabled="true" {...naming} className="inline-flex" data-tooltip-disabled-trigger="">
         <span aria-hidden="true" className="inline-flex">{cloneElement(trigger, { id: controlId })}</span>
       </span>
     </Focusable>

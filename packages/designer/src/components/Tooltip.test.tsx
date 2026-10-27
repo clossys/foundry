@@ -204,6 +204,35 @@ describe("manual controlled Tooltip", () => {
     expect(await screen.findByRole("tooltip")).toHaveTextContent("Publishing is locked.");
   });
 
+  it("forwards an icon-only disabled control's external aria-labelledby onto its focus target", async () => {
+    const user = userEvent.setup();
+    render(
+      <>
+        <span id="external-label">Archive project</span>
+        <Tooltip disabledTrigger trigger={<Button isDisabled aria-labelledby="external-label"><svg aria-hidden="true" /></Button>} delay={0} closeDelay={0}>
+          Archiving is locked.
+        </Tooltip>
+      </>,
+    );
+    await user.tab();
+    const control = screen.getByRole("button", { name: "Archive project" });
+    expect(control).toHaveFocus();
+    expect(control).toHaveAttribute("aria-labelledby", "external-label");
+    expect(control).toHaveAttribute("aria-disabled", "true");
+    await screen.findByRole("tooltip");
+    expect(control).toHaveAccessibleDescription("Archiving is locked.");
+  });
+
+  it("forwards an icon-only disabled control's aria-label onto its focus target", async () => {
+    const user = userEvent.setup();
+    render(<Tooltip disabledTrigger trigger={<Button isDisabled aria-label="Delete draft" />} delay={0} closeDelay={0}>Drafts are locked.</Tooltip>);
+    await user.tab();
+    const control = screen.getByRole("button", { name: "Delete draft" });
+    expect(control).toHaveFocus();
+    expect(control).toHaveAttribute("aria-label", "Delete draft");
+    expect(control).not.toHaveAttribute("aria-labelledby");
+  });
+
   it("takes the wrapped control's role from disabledTriggerRole and its name from an icon-only aria-label", async () => {
     const user = userEvent.setup();
     render(
