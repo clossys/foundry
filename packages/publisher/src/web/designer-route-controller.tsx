@@ -63,25 +63,17 @@ export function createPublisherDesignerController(input: {
       controls.set(id, { mode: control.mode, canSave: control.canSave, pending: control.pending }); update();
     },
     removeBoard(id: string) { if (controls.delete(id)) update(); },
-    /** Delegates to the original shared EditSession. Failed flushes, edits and
-     * history remain owned there; this controller implements no persistence. */
-    flush() { return mounted?.whole.session?.flush() ?? Promise.resolve(false); },
-    edit(...args: Parameters<WholeStudioState["edit"]>) {
-      if (!mounted?.whole.session) return false;
-      mounted.whole.edit(...args); return true;
-    },
+    /** The read-only Designer holds no edit session, so there is nothing to
+     * flush; this controller implements no persistence and never saves. */
+    flush(): Promise<boolean> { return Promise.resolve(false); },
     factoryInputs(): DesignerFactoryInputs {
       if (!mounted) return { status: "pending", needs: ["ORIGINAL_MOUNT_UNAVAILABLE"] };
       const { prepared, whole } = mounted;
       const needs: string[] = [];
-      const session = whole.session?.getSnapshot();
-      // The original session can advance synchronously before React/effect
-      // observation catches up, even while library and selection stay equal.
-      // Its immutable snapshot/revision includes current edits and history.
-      if (!session || session !== whole.sessionState || session.revision !== prepared.projection.session.revision || session.status !== prepared.projection.session.status)
-        needs.push("CURRENT_SESSION_REVISION_UNAVAILABLE");
       if (prepared.status !== "prepared") needs.push(prepared.code);
-      if (!whole.session || whole.sessionIdentity !== prepared.projection.session.id || !whole.input ||
+      // The committed load is the only session: its snapshot and identity, the
+      // working library hash and the selection hash must match the projection.
+      if (!whole.snapshot || whole.sessionIdentity !== prepared.projection.session.id || !whole.input ||
         libraryHash(whole.input.library) !== prepared.projection.libraryHash || resolve(whole.input).selectionHash !== prepared.projection.selectionHash)
         needs.push("CURRENT_PROVIDER_ASSOCIATION_UNAVAILABLE");
       if (prepared.status === "prepared" && prepared.boards.some(board => board.previews.status === "pending" && board.previews.code === "SOURCE_HASH_ASSOCIATION_UNAVAILABLE"))
