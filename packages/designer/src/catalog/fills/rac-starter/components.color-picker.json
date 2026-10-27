@@ -499,43 +499,43 @@
         },
         {
           "path": "components/color-picker/ColorArea.tsx",
-          "sha256": "3064168f7aa0d2437dffe8418abd22119286df6c8d40992f272fab28fe823713"
+          "sha256": "6c68637bff2127434b4696ea9258609ba603a9605e0bd91724241aca4acdfde6"
         },
         {
           "path": "components/color-picker/ColorField.tsx",
-          "sha256": "781f07a6cfcbee80a717ee5fbf4a7e96111cf4eff3df92ec905af15f34c39176"
+          "sha256": "ebaa824f19b1de921da17c3a6c1628a5cec6bfe6ca26b06aeedf54ab0c1007df"
         },
         {
           "path": "components/color-picker/ColorPicker.tsx",
-          "sha256": "8e1f799588794d3ac3ae0eea26920acede772f11d24aa2f827e2a569cb9d2d82"
+          "sha256": "fd04c4170e6c5842f1701cfff0762565b2f15437e26b7fad7d37ae6b52d2fdcf"
         },
         {
           "path": "components/color-picker/ColorSlider.tsx",
-          "sha256": "2a84547b5ec2e6b6e1ebbb971d5f7aaba03616b6e679ba81c885aa1b96bdb54c"
+          "sha256": "ed3f30d703a5d5c744006f171ff18ddb47e274acbaf297fa575f37ee3342c8cc"
         },
         {
           "path": "components/color-picker/ColorSwatch.tsx",
-          "sha256": "eca13d6c0b0c57b6542d74c6399954f00a047f4714644ac7738f963784b11e09"
+          "sha256": "11ccc2025401360810c12984a42ec6296245fe52e0891a4422d57e71556778e1"
         },
         {
           "path": "components/color-picker/ColorSwatchPicker.tsx",
-          "sha256": "4a71aae14b2343ca3e88efd0bcf6b153f8cac748ad027cfcd2d60467de6e3e43"
+          "sha256": "a57a5c07095f83c191ed92b4ca208f0d5f5ec8130a397e8ee427f4a035280bd1"
         },
         {
           "path": "components/color-picker/ColorThumb.tsx",
-          "sha256": "310c0e6706409545eb8bb233067d620584ec3c53d7cfa25d64263837a9ea9d27"
+          "sha256": "9ea7e81c7150012674f070609f805efd2cf013396cefe7426f1ad83ac4c30b65"
         },
         {
           "path": "components/color-picker/ColorWheel.tsx",
-          "sha256": "d75ac4dc588c09ec79fbf543fc24b64e590f8e8f3fe8f376d6a982ccfc577045"
+          "sha256": "38efd303787ec3c013e522896acd65ccc4ba638027537062802871bebb3342cc"
         },
         {
           "path": "components/color-picker/Field.context.tsx",
-          "sha256": "887d8f7f20d34e40120208862b3ed7090f5e338c3466316991e31e9590d8f363"
+          "sha256": "d8dc97e10c12b76abbefa7fef43ad63116f1fefe3c8bc862e0bc0a95ed6222d2"
         },
         {
           "path": "components/color-picker/utils.ts",
-          "sha256": "6c03c04bd6a82a7f2aadeaf34f7182317837a96232bae3b99f3ade8d4e74912f"
+          "sha256": "b619639c43b72ae48cd23036dfac785c7c29adaaf16e4116a650f845fce79d88"
         },
         {
           "path": "notices/rac-starter-LICENSE.txt",

@@ -1,6 +1,6 @@
 // @vitest-environment node
 import { describe, expect, it } from "vitest";
-import { readFileSync } from "node:fs";
+import { readFileSync, writeFileSync } from "node:fs";
 import { resolve } from "node:path";
 import data from "../rac-starter.data.json" with { type: "json" };
 import { importRacStarter, generatedRacStarterFiles, RAC_STARTER_PIN, type RacStarterInput } from "./rac-starter.js";
@@ -46,6 +46,8 @@ describe("authenticated Adobe starter declarations", () => {
   });
   it("keeps upstream/output hashes distinct and reproduces all stored declaration bytes", () => {
     const generated = generatedRacStarterFiles(input());
+    // Explicit local regeneration writes only this generator's enumerated fill files.
+    if (process.env.UPDATE_RAC_STARTER_FILLS === "1") for (const [name, bytes] of Object.entries(generated)) writeFileSync(resolve(import.meta.dirname, "../catalog/fills/rac-starter", name), bytes);
     for (const [name, bytes] of Object.entries(generated)) {
       expect(readFileSync(resolve(import.meta.dirname, "../catalog/fills/rac-starter", name), "utf8")).toBe(bytes);
     }

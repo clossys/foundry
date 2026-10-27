@@ -1,6 +1,6 @@
 [
   {
-    "content": "import { Fragment, createElement, type ReactNode } from \"react\";\nexport { Button } from \"./components/button/index.js\";\nexport function LibraryProvider({ children }: { children: ReactNode }) { return createElement(Fragment, null, children); }\n",
+    "content": "import { Fragment, createElement, type ReactNode } from \"react\";\nexport { Button } from \"./components/button/index\";\nexport function LibraryProvider({ children }: { children: ReactNode }) { return createElement(Fragment, null, children); }\n",
     "path": "component-index.ts"
   },
   {

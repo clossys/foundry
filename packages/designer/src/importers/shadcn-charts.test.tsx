@@ -64,7 +64,7 @@ describe("shadcn charts source (charts-core on Recharts)", () => {
     const chart = importShadcnCharts(input).rewrites["chart-bar"]!.files.find(file => file.path === "components/chart/chart.tsx")!.content;
     // Only the registry alias import differs from upstream.
     expect(chart).toBe(resolveChartAlias(input.chart.content));
-    expect(chart.split("\n").filter((line, index) => line !== input.chart.content.split("\n")[index])).toEqual(['import { cn } from "../_parts/utils/index.js"']);
+    expect(chart.split("\n").filter((line, index) => line !== input.chart.content.split("\n")[index])).toEqual(['import { cn } from "../_parts/utils/index"']);
   });
 
   it("covers 100% of the charts-core members with committed, regenerated fills", () => {

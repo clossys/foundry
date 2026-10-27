@@ -164,7 +164,7 @@ describe("pack check: shadcn@aria materialized sources persist through the real 
   const OWNERSHIP_REFUSAL = /components: (?:generated entrypoint conflicts with materialized source|wildcard (?:source )?exports)/;
   // The import-grammar refusals on valid source: a namespace import of an observed package, or a trailing comma.
   // A sibling's sub-parts are not in the emitter-owned leaf entrypoint, which exports only the contract component.
-  const CROSS_LEAF_REFUSAL = /components: (?:unavailable named import \w+|missing import) from \.\.\/[a-z-]+\/index\.js/;
+  const CROSS_LEAF_REFUSAL = /components: (?:unavailable named import \w+|missing import) from \.\.\/[a-z-]+\/index$/;
   const IMPORT_GRAMMAR_REFUSAL = /components: (?:unsupported import syntax|unverified import syntax|unavailable named import {2}from)/;
   const refusal = (docs: readonly ComponentCandidateDocument[]): string => { try { persistTogether(docs); return ""; } catch (error) { return (error as Error).message; } };
   it("materializes no emitter-owned leaf entrypoint and no wildcard re-export", () => {
@@ -173,14 +173,14 @@ describe("pack check: shadcn@aria materialized sources persist through the real 
     const files = shadcn.flatMap(doc => materialized.get(Object.values(doc.components)[0]!.slot)!);
     expect(files.filter(file => /^components\/[a-z][a-z0-9-]*\/index\.ts$/.test(file.path)).map(file => file.path)).toEqual([]);
     expect(files.filter(file => /\bexport\s*\*/.test(file.content)).map(file => file.path)).toEqual([]);
-    expect(files.filter(file => /^components\/_parts\/[a-z-]+\/index\.ts$/.test(file.path) && !file.path.includes("/utils/")).every(file => /^export \{ [A-Za-z, ]+ \} from "\.\/[a-z-]+\.js"\n$/.test(file.content))).toBe(true);
+    expect(files.filter(file => /^components\/_parts\/[a-z-]+\/index\.ts$/.test(file.path) && !file.path.includes("/utils/")).every(file => /^export \{ [A-Za-z, ]+ \} from "\.\/[a-z-]+"\n$/.test(file.content))).toBe(true);
   });
   it("all 26 fills persisted together hit no entrypoint-ownership refusal", () => {
     expect(refusal([...shadcn, icon])).not.toMatch(OWNERSHIP_REFUSAL);
   });
   it("materialized sources take only a sibling's contract name from its emitter-owned entrypoint", () => {
     const contract = (leaf: string) => leaf.split("-").map(word => word[0]!.toUpperCase() + word.slice(1)).join("");
-    const edges = [...materialized.values()].flat().flatMap(file => [...file.content.matchAll(/\bimport\s+(?:type\s+)?\{([^}]*)\}\s*from\s*"(?:\.\.\/)+([a-z][a-z0-9-]*)\/index\.js"/g)]
+    const edges = [...materialized.values()].flat().flatMap(file => [...file.content.matchAll(/\bimport\s+(?:type\s+)?\{([^}]*)\}\s*from\s*"(?:\.\.\/)+([a-z][a-z0-9-]*)\/index"/g)]
       .filter(match => match[2] !== "icon" && match[2] !== "_parts")
       .flatMap(match => match[1]!.split(",").map(name => name.trim()).filter(Boolean).filter(name => name !== contract(match[2]!)).map(name => `${file.path} -> ${match[2]}#${name}`)));
     expect(edges).toEqual([]);
@@ -198,6 +198,20 @@ describe("pack check: shadcn@aria materialized sources persist through the real 
     visit(Object.values(doc.components)[0]!.slot);
     expect(refusal([doc, ...shadcn.filter(other => composes.has(Object.values(other.components)[0]!.slot)), ...composes.has("components.icon") ? [icon] : []])).not.toMatch(OWNERSHIP_REFUSAL);
     expect(refusal([doc, ...shadcn.filter(other => composes.has(Object.values(other.components)[0]!.slot)), ...composes.has("components.icon") ? [icon] : []])).not.toMatch(IMPORT_GRAMMAR_REFUSAL);
+  });
+  // Next's Turbopack and jiti resolve a relative module only by its real name or by extension search,
+  // so a `.js` request for a `.ts`/`.tsx` file is "Module not found". Every relative request is extensionless.
+  it("persists no relative module specifier with a file extension: a leaf with _parts, its leaf index, and the component index", () => {
+    const bySlot = new Map([...shadcn, icon].map(other => [Object.values(other.components)[0]!.slot, other]));
+    const composes = new Set<string>(["components.select"]);
+    const visit = (slot: string): void => { for (const next of Object.values(bySlot.get(slot)!.components)[0]!.reads.components) if (!composes.has(next)) { composes.add(next); visit(next); } };
+    visit("components.select");
+    const files = persistTogether([...composes].map(slot => bySlot.get(slot)!));
+    const paths = files.map(file => file.path);
+    expect(paths).toEqual(expect.arrayContaining(["component-index.ts", "components/select/index.ts", "components/select/select.tsx", "components/_parts/input-group/index.ts", "components/_parts/input-group/input-group.tsx", "components/_parts/utils/index.ts"]));
+    const specifiers = files.filter(file => /\.tsx?$/.test(file.path)).flatMap(file => [...file.content.matchAll(/\b(?:from|import)\s*["'](\.\.?\/[^"']*)["']/g)].map(match => `${file.path} -> ${match[1]}`));
+    for (const path of ["component-index.ts", "components/select/index.ts", "components/select/select.tsx", "components/_parts/input-group/index.ts", "components/_parts/input-group/input-group.tsx"]) expect(specifiers.some(row => row.startsWith(`${path} -> `)), path).toBe(true);
+    expect(specifiers.filter(row => /\.(?:js|ts|tsx)$/.test(row))).toEqual([]);
   });
 });
 
@@ -223,7 +237,7 @@ describe("pack check: the asset Icon adapter persists with no asset-reading leaf
   const byId = (id: string) => bundles.componentFills.find(doc => fillId(doc) === id)!;
   it("emits the glyph module the Icon leaf imports, and no glyph provider", () => {
     const files = persistOne(byId("foundry/components.icon"));
-    expect(files.find(file => file.path === "components/icon/index.ts")!.content).toContain('from "../../assets/glyphs.js"');
+    expect(files.find(file => file.path === "components/icon/index.ts")!.content).toContain('from "../../assets/glyphs"');
     expect(files.find(file => file.path === "assets/glyphs.ts")!.content).toBe("export const glyphs = {} as const;\n");
     expect(files.find(file => file.path === "component-index.ts")!.content).not.toContain("GlyphProvider");
   });

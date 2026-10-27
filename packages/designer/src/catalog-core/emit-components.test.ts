@@ -12,11 +12,16 @@ import { stableStringify } from "./stable.js";
 import { sha256 } from "./digest.js";
 import { componentSourceHash } from "./check-components.js";
 
-const golden = (name: string) => readFileSync(resolve(import.meta.dirname, "__golden__/components", name), "utf8");
+// Explicit local regeneration (UPDATE_COMPONENT_EMIT_GOLDENS=1) writes only a golden whose emitted bytes are passed.
+const golden = (name: string, emitted?: string) => {
+  const path = resolve(import.meta.dirname, "__golden__/components", name);
+  if (emitted !== undefined && process.env.UPDATE_COMPONENT_EMIT_GOLDENS === "1") writeFileSync(path, emitted);
+  return readFileSync(path, "utf8");
+};
 // Synthetic codegen goldens are written only by the emitter: UPDATE_COMPONENT_CODEGEN_GOLDENS=1.
 const codegenGolden = (name: string, actual: string) => {
   if (process.env.UPDATE_COMPONENT_CODEGEN_GOLDENS === "1") writeFileSync(resolve(import.meta.dirname, "__golden__/components", name), actual);
-  return golden(name);
+  return golden(name, actual);
 };
 const packageExports = { "test-kit/components": ["Button"], "react-aria-components": ["Button"] };
 const looseSurfaces = 'declare module "test-kit/components" { export const Button: import("react").ComponentType<Record<string, unknown>>; }\ndeclare module "react-aria-components" { export const Button: import("react").ComponentType<Record<string, unknown>>; }\n';

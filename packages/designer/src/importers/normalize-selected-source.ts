@@ -62,11 +62,11 @@ export function normalizeSelectedSource(file: SourceFile): SourceFile {
   // The authenticated Aria ToggleGroup emits data-orientation, not the
   // boolean attributes used by its original styling variants.
   if (file.path === "components/toggle-group/toggle-group.tsx") {
-    const helper = 'import { toggleVariants } from "../toggle-button/index.js"';
+    const helper = 'import { toggleVariants } from "../toggle-button/index"';
     if (file.content.includes(helper)) {
-      if (sha256(file.content) !== "88d36c616e90ccc67df0cb937120cfb3f7176ff44a7ef77f020c1f41089572b9") refuse(file.path, "selected ToggleGroup closure receipt differs");
+      if (sha256(file.content) !== "d9e87f1aff21011279ae71d7c9cdbeb7aed98e984e32ab0dd9bb6ce21d14beec") refuse(file.path, "selected ToggleGroup closure receipt differs");
       // This is the same private CVA value, not a component secondary export.
-      file = { ...file, content: file.content.replace(helper, 'import { toggleVariants } from "../toggle-button/toggle.js"') };
+      file = { ...file, content: file.content.replace(helper, 'import { toggleVariants } from "../toggle-button/toggle"') };
     }
     file = { ...file, content: file.content.replace(/\b(group-)?data-(horizontal|vertical)(?=[:/])/g,
       (_match, group: string | undefined, orientation: string) => `${group ?? ""}data-[orientation=${orientation}]`) };

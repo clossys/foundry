@@ -45,7 +45,7 @@ describe("SYNTHETIC authenticated leaf secondary exports; no real runtime claim"
     expect(profile.check.ok).toBe(true);
     const files = emitComponents(profile, ["component-index"]);
     expect(publicNames(leaf(files))).toEqual(["Button", ...secondaryNames].sort());
-    for (const name of secondaryNames) expect(leaf(files)).toContain(`export { ${name} } from "./button.js";`);
+    for (const name of secondaryNames) expect(leaf(files)).toContain(`export { ${name} } from "./button";`);
     expect(files.find(file => file.path === "component-index.ts")!.content).not.toMatch(/Button(?:Content|Group|Item|Trigger|Value|Private)/);
     const caller = { path: "components/caller/caller.tsx", content: 'import { ButtonTrigger } from "../button/index.js";' };
     expect(() => assertComponentImportClosure([...files, caller], { react: ["Fragment", "createElement", "ReactNode", "forwardRef", "ComponentType"], "react-aria-components": ["Button"] })).not.toThrow();
@@ -76,7 +76,7 @@ describe("SYNTHETIC authenticated leaf secondary exports; no real runtime claim"
     const input = secondaryFixture(rows), before = structuredClone(rows);
     const { profile } = await secondaryProfile(input);
     const text = leaf(emitComponents(profile, ["component-index"]));
-    expect(text).toContain('export { ButtonValue as PublicValue } from "./button.js";');
+    expect(text).toContain('export { ButtonValue as PublicValue } from "./button";');
     expect(publicNames(text)).toEqual(["Button", ...rows.map(row => row.name)].sort());
     expect(rows).toEqual(before);
   });
@@ -155,10 +155,10 @@ describe("SYNTHETIC authenticated leaf secondary exports; no real runtime claim"
       const materialized = readFileSync(new URL(file.path, root), "utf8");
       // The UI handoff retains its old materialized module until the Mid owner
       // applies this exact closure correction. No other byte difference is allowed.
-      expect(item === "toggle-group" ? materialized.replace('import { toggleVariants } from "../toggle-button/index.js"',
-        'import { toggleVariants } from "../toggle-button/toggle.js"') : materialized).toBe(file.content);
+      // The package's own copy keeps NodeNext .js specifiers; consumer output is extensionless.
+      expect(materialized.replace(/(from "\.\.?\/[^"]*)\.js"/g, '$1"')).toBe(file.content);
       if (item === "toggle-group") {
-        expect(file.content).toContain('import { toggleVariants } from "../toggle-button/toggle.js"');
+        expect(file.content).toContain('import { toggleVariants } from "../toggle-button/toggle"');
         expect(() => normalizeSelectedSource({ ...result.files[0]!, content: result.files[0]!.content + " " })).toThrow(/closure receipt differs/);
       }
       return file;

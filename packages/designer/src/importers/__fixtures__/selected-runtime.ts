@@ -21,7 +21,7 @@ export function selectedRuntime(files: readonly SourceFile[], packages: Readonly
       if(packages[specifier])return load(packages[specifier]!);
       if(!specifier.startsWith("."))return nativeRequire(specifier);
       const target=posix.normalize(posix.join(posix.dirname(path),specifier));
-      const resolved=[target,target.replace(/\.js$/,".ts"),target.replace(/\.js$/,".tsx")].find(candidate=>source.has(candidate));
+      const resolved=[target,`${target}.ts`,`${target}.tsx`,target.replace(/\.js$/,".ts"),target.replace(/\.js$/,".tsx")].find(candidate=>source.has(candidate));
       if(!resolved)throw new Error(`Missing selected import ${specifier} from ${path}`);
       return load(resolved);
     };
@@ -40,7 +40,7 @@ export function selectedRuntime(files: readonly SourceFile[], packages: Readonly
     if(packages[specifier])return packages[specifier];
     if(!specifier.startsWith("."))return undefined;
     const target=posix.normalize(posix.join(posix.dirname(from),specifier));
-    const resolved=[target,target.replace(/\.js$/,".ts"),target.replace(/\.js$/,".tsx")].find(candidate=>source.has(candidate));
+    const resolved=[target,`${target}.ts`,`${target}.tsx`,target.replace(/\.js$/,".ts"),target.replace(/\.js$/,".tsx")].find(candidate=>source.has(candidate));
     if(!resolved)throw new Error(`Missing selected import ${specifier} from ${from}`);
     return resolved;
   };

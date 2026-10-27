@@ -85,7 +85,7 @@
         },
         {
           "path": "components/toggle-group/toggle-group.tsx",
-          "sha256": "56f69f2968acbd448637ea5c84cc6d4808563231e6b9825c380bcb82a9e24fb9"
+          "sha256": "f74fc274ff2a880ed9bf9c1854ef96d0266717903c745436dc92da9b4603f5d7"
         },
         {
           "path": "notices/THIRD-PARTY.md",

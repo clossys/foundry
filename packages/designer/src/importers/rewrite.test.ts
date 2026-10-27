@@ -142,8 +142,8 @@ describe("shadcn-aria-rewrite@1", () => {
   });
   it("rebinds known registry leaves and keeps non-leaf dependencies as parts", () => {
     const result = rewrite('import { Button } from "@/components/ui/button"\nimport { InputGroup } from "@/components/ui/input-group"');
-    expect(result.files[0]!.content).toContain('"../button/index.js"');
-    expect(result.files[0]!.content).toContain('"../_parts/input-group/index.js"');
+    expect(result.files[0]!.content).toContain('"../button/index"');
+    expect(result.files[0]!.content).toContain('"../_parts/input-group/index"');
     expect(result.parts).toEqual(["input-group"]);
     expect(result.reads.components).toEqual(["components.button"]);
   });

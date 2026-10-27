@@ -67,7 +67,7 @@
         },
         {
           "path": "components/progress-bar/progress.tsx",
-          "sha256": "fbe69f704709b1f87fac331f24ab9b9eac3ca383bc5b2cc682c780d9a9c2fc03"
+          "sha256": "1e39e25a8250827e8af68c0c81001142a5941e86160cb09e76fc50acf17b2c76"
         },
         {
           "path": "notices/THIRD-PARTY.md",

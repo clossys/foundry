@@ -28,7 +28,7 @@ function moduleExports(code: string, rac: Record<string, unknown>): Record<strin
   const compiled = ts.transpileModule(code, { compilerOptions: { module: ts.ModuleKind.CommonJS, jsx: ts.JsxEmit.React } });
   const exports = {};
   const nativeRequire = createRequire(import.meta.url);
-  const require = (name: string) => name === "react-aria-components" ? rac : name.endsWith("/_parts/utils/index.js") ? { cn: (...values: unknown[]) => values.filter(Boolean).join(" ") } : nativeRequire(name);
+  const require = (name: string) => name === "react-aria-components" ? rac : name.endsWith("/_parts/utils/index") ? { cn: (...values: unknown[]) => values.filter(Boolean).join(" ") } : nativeRequire(name);
   new Function("require", "exports", compiled.outputText)(require, exports);
   return exports;
 }

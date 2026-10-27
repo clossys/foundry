@@ -119,22 +119,22 @@ export function importRacStarter(input: RacStarterInput) {
       for (const [local, target] of [["Dialog", "dialog"], ["Popover", "popover"], ["Checkbox", "checkbox"]] as const) {
         const pattern = new RegExp(`from\\s*(['"])\\./${local}\\1`, "g");
         if ((leaf === "color-picker" && local !== "Checkbox" || leaf === "tree" && local === "Checkbox") && pattern.test(content)) {
-          pattern.lastIndex = 0; content = content.replace(pattern, `from "../${target}/index.js"`); components.add(`components.${target}`);
+          pattern.lastIndex = 0; content = content.replace(pattern, `from "../${target}/index"`); components.add(`components.${target}`);
         }
       }
       // Field.tsx contains contextual Label/Group/Input helpers, not the selected Field wrapper.
-      content = content.replace(/from\s*(['"])\.\/Field\1/g, 'from "./Field.context.js"');
-      content = content.replace(/from\s*(['"])(\.\/[A-Za-z][A-Za-z0-9]*)\1/g, 'from "$2.js"');
+      content = content.replace(/from\s*(['"])\.\/Field\1/g, 'from "./Field.context"');
+      content = content.replace(/from\s*(['"])(\.\/[A-Za-z][A-Za-z0-9]*)\1/g, 'from "$2"');
       if (/from\s*['"]tailwind-variants['"]/.test(content)) {
         needsVariants = true;
-        content = content.replace(/import\s*\{\s*tv\s*\}\s*from\s*['"]tailwind-variants['"];?/g, 'import { starterVariants as tv } from "../_parts/rac-starter-variants/index.js";');
+        content = content.replace(/import\s*\{\s*tv\s*\}\s*from\s*['"]tailwind-variants['"];?/g, 'import { starterVariants as tv } from "../_parts/rac-starter-variants/index";');
         for (const key of ["defaultVariants", "slots"]) if (new RegExp(`\\b${key}\\s*:`).test(content)) issues.push({ code: "K9", file: original.path, value: key, message: `Unsupported starter ${key} style semantics require an exact locked-CVA representation` });
       }
       files.push({ path: original.path === `${root}Field.tsx` ? `${root}Field.context.tsx` : original.path, content });
     }
     if (leaf === "color-picker") {
       const entry = files.find(file => file.path.endsWith("/ColorPicker.tsx"))!;
-      for (const part of ["ColorArea", "ColorWheel", "ColorSlider", "ColorField", "ColorSwatchPicker"]) entry.content += `\nexport { ${part} } from "./${part}.js";\n`;
+      for (const part of ["ColorArea", "ColorWheel", "ColorSlider", "ColorField", "ColorSwatchPicker"]) entry.content += `\nexport { ${part} } from "./${part}";\n`;
     }
     const rewrite = rewriteShadcnAria({ item: leaf, leaf, files, styles: "", leafByItem: {} });
     issues.push(...rewrite.issues);

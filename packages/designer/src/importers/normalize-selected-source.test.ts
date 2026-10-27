@@ -66,7 +66,7 @@ describe("selected pinned-source normalization", () => {
       expect(implementation.content).toContain('import { Input } from "react-aria-components"');
       expect(implementation.content).toContain('import { TextArea as Textarea } from "react-aria-components"');
       const index = bundle.files.find(file => file.path === "components/_parts/input-group/index.ts")!;
-      expect(index.content).toBe(`export { ${inputGroupNames.join(", ")} } from "./input-group.js"\n`);
+      expect(index.content).toBe(`export { ${inputGroupNames.join(", ")} } from "./input-group"\n`);
       for (const file of [implementation, index]) expect(bundle.outputSha256).toContainEqual({ path: file.path, sha256: sha256(file.content) });
     }
     for (const path of ["components/_parts/input-group/input-group.tsx", "components/_parts/input-group/index.ts"]) {

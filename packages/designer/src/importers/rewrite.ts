@@ -1222,13 +1222,13 @@ function rewriteSource(input: RewriteInput): RewriteResult {
       return iconCall(asset, kept);
     });
     content = content.replace(/import\s*\{\s*IconPlaceholder\s*\}\s*from\s*["'][^"']+icon-placeholder["']\s*;?/g, "");
-    if (needsIcon) content = content.replace(/("use client"\s*)?/, match => `${match}import { Icon as LibraryIcon } from "${relative}icon/index.js"\n`);
+    if (needsIcon) content = content.replace(/("use client"\s*)?/, match => `${match}import { Icon as LibraryIcon } from "${relative}icon/index"\n`);
     content = content.replace(/(from\s*["'])(@\/components\/ui\/|@\/registry\/bases\/aria\/ui\/)([a-z][a-z0-9-]*)(["'])/g, (_all, before: string, _prefix: string, item: string, after: string) => {
       const leaf = input.leafByItem[item];
-      if (leaf) { components.add(`components.${leaf}`); return `${before}${relative}${leaf}/index.js${after}`; }
-      parts.add(item); return `${before}${relative}_parts/${item}/index.js${after}`;
+      if (leaf) { components.add(`components.${leaf}`); return `${before}${relative}${leaf}/index${after}`; }
+      parts.add(item); return `${before}${relative}_parts/${item}/index${after}`;
     });
-    content = content.replace(/(from\s*["'])cn(["'])/g, `$1${relative}_parts/utils/index.js$2`);
+    content = content.replace(/(from\s*["'])cn(["'])/g, `$1${relative}_parts/utils/index$2`);
     if (content.includes("_parts/utils/")) parts.add("utils");
     // These authenticated entries contain only imports and separate named functions.
     // Their Popover timing cannot override an unrelated trigger's class expression.
@@ -1243,7 +1243,7 @@ function rewriteSource(input: RewriteInput): RewriteResult {
     content = content.replace(/"(?:\\.|[^"\\])*"|'(?:\\.|[^'\\])*'/g, (quoted, offset: number) => {
       activeTiming = functionTiming.find(scope => offset >= scope.start && offset < scope.end)?.keys;
       const inner = quoted.slice(1, -1);
-      if (!/(?:\bcn-|\b(?:bg|text|border|ring|rounded|h|w|size|p[trblxy]?|m[trblxy]?|gap|font|leading|duration|shadow|animate|fade|zoom|slide|outline|opacity|z|transition|ease|origin|translate-[xy])-|\b(?:border|transition)(?:\s|$))/.test(inner) || inner.includes("/index.js")) return quoted;
+      if (!/(?:\bcn-|\b(?:bg|text|border|ring|rounded|h|w|size|p[trblxy]?|m[trblxy]?|gap|font|leading|duration|shadow|animate|fade|zoom|slide|outline|opacity|z|transition|ease|origin|translate-[xy])-|\b(?:border|transition)(?:\s|$))/.test(inner) || /^\.\.?\//.test(inner)) return quoted;
       explicitTiming = new Set(timingKeys(inner.split(/\s+/)));
       expressionSourceTerms = inner.split(/\s+/);
       expressionTerms = timingTerms(inner.split(/\s+/));

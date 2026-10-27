@@ -53,7 +53,7 @@
       "outputSha256": [
         {
           "path": "components/file-trigger/file-trigger.tsx",
-          "sha256": "65d99a66486bc744a4738adfedea05425de2736914addd0329c211893cb2e49f"
+          "sha256": "44fd1b6e5ce3d0e736af2f12d5fb482c594968194b42297ab1c7380b9efcd3e1"
         },
         {
           "path": "notices/file-trigger.md",

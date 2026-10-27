@@ -94,8 +94,8 @@ describe("six pinned control evidence surfaces", () => {
         Checkbox: ({ children, isSelected, isIndeterminate, ...props }: Record<string, unknown>) => React.createElement("label", props, (children as (state: unknown) => React.ReactNode)({ isSelected, isIndeterminate })),
         composeRenderProps: (children: React.ReactNode, render: (children: React.ReactNode, state: unknown) => React.ReactNode) => (state: unknown) => render(children, state),
       };
-      if (name.endsWith("/icon/index.js")) return { Icon: ({ asset }: { asset: string }) => React.createElement("i", { "data-asset": asset }) };
-      if (name.endsWith("/_parts/utils/index.js")) return { cn: (...values: unknown[]) => values.filter(Boolean).join(" ") };
+      if (name.endsWith("/icon/index")) return { Icon: ({ asset }: { asset: string }) => React.createElement("i", { "data-asset": asset }) };
+      if (name.endsWith("/_parts/utils/index")) return { cn: (...values: unknown[]) => values.filter(Boolean).join(" ") };
       throw new Error(`Unexpected checkbox module ${name}`);
     };
     new Function("require", "exports", "React", output.outputText)(require, exports, React);

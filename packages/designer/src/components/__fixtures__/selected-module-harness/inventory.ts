@@ -68,7 +68,7 @@ export function staticImports(path: string, content = readFileSync(path, "utf8")
   return edges;
 }
 
-const options: ts.CompilerOptions = { module: ts.ModuleKind.NodeNext, moduleResolution: ts.ModuleResolutionKind.NodeNext, jsx: ts.JsxEmit.ReactJSX, strict: true, skipLibCheck: false };
+const options: ts.CompilerOptions = { module: ts.ModuleKind.ESNext, moduleResolution: ts.ModuleResolutionKind.Bundler, jsx: ts.JsxEmit.ReactJSX, strict: true, skipLibCheck: false };
 export function resolveType(specifier: string, from: string): string {
   const resolution = ts.resolveModuleName(specifier, from, options, ts.sys).resolvedModule;
   if (!resolution) throw new Error(`missing type target ${specifier} from ${from}`);
