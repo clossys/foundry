@@ -27,8 +27,6 @@ const NON_RENDER_VALUES = new Set(["UNSTABLE_ToastQueue", "composeRenderProps"])
 const BASELINE: Readonly<Record<string, readonly string[]>> = {
   // Mobile navigation sheet renders raw Dialog/Modal; nav shell is the frame lane's file.
   "designer/src/shell/NavShell.tsx": ["Dialog", "DialogTrigger", "Modal", "ModalOverlay"],
-  // Toast region renders raw UNSTABLE_Toast*/Text; needs a Foundry Toast component first.
-  "designer/src/shell/Toaster.tsx": ["Text", "UNSTABLE_Toast", "UNSTABLE_ToastContent", "UNSTABLE_ToastRegion"],
 };
 
 /** Non-Aria headless engines: allowed only with a registered exception record for that component. */

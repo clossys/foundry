@@ -1,5 +1,6 @@
 "use client";
 import { cloneElement, useState, type ComponentType, type ReactElement, type ReactNode } from "react";
+import { UNSTABLE_ToastQueue as ToastQueue } from "react-aria-components";
 import { Button } from "../components/index.js";
 
 type Specimen = ReactElement<Record<string, unknown>>;
@@ -22,3 +23,26 @@ function ContainedDialog({ Content, specimen }: { readonly Content: ComponentTyp
 
 export const containedDialog = (Content: ComponentType<Record<string, unknown>>) => (specimen: ReactNode): ReactNode =>
   <ContainedDialog Content={Content} specimen={specimen as Specimen} />;
+
+interface ToastSample { readonly trigger: string; readonly toast: Readonly<Record<string, unknown>> }
+
+/**
+ * The shell Toaster in its `container` placement, drawing a queue owned by this cell, so its toasts render in
+ * place and never reach the app-wide queue the page's own Toaster draws. The queue is react-aria-components'
+ * own `ToastQueue` (state plumbing, not a render primitive). The sample toast is queued once on mount so the idle
+ * cell shows it; a Foundry Button queues it again after it is dismissed through its own close button.
+ */
+function ContainedToaster({ sample, specimen }: { readonly sample: ToastSample; readonly specimen: Specimen }) {
+  const [queue] = useState(() => {
+    const cellQueue = new ToastQueue<Readonly<Record<string, unknown>>>({ maxVisibleToasts: 1 });
+    cellQueue.add({ ...sample.toast });
+    return cellQueue;
+  });
+  return <div data-specimen-contained-host="toast">
+    <Button variant="secondary" onPress={() => queue.add({ ...sample.toast })}>{sample.trigger}</Button>
+    {cloneElement(specimen, { queue, placement: "container" })}
+  </div>;
+}
+
+export const containedToaster = (sample: ToastSample) => (specimen: ReactNode): ReactNode =>
+  <ContainedToaster sample={sample} specimen={specimen as Specimen} />;

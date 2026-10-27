@@ -1,9 +1,9 @@
 "use client";
 import { cloneElement, useState, type ComponentType, type ReactElement, type ReactNode } from "react";
 import { Button as TriggerButton } from "react-aria-components";
-import { componentSpecimenCollections, componentSpecimenColor, componentSpecimenField, componentSpecimenOverlays, componentSpecimenProps, componentSpecimenSourceSamples, componentSpecimenTable, componentSpecimenText, componentSpecimenUnavailable } from "./component-specimen-sample-content.js";
+import { componentSpecimenCollections, componentSpecimenColor, componentSpecimenField, componentSpecimenOverlays, componentSpecimenProps, componentSpecimenSourceSamples, componentSpecimenTable, componentSpecimenText, componentSpecimenToast, componentSpecimenUnavailable } from "./component-specimen-sample-content.js";
 import type { SpecimenUnavailableReason } from "./preview-outcome.js";
-import { containedDialog } from "./component-specimen-contained.js";
+import { containedDialog, containedToaster } from "./component-specimen-contained.js";
 
 type Renderable = ComponentType<Record<string, unknown>>;
 type Namespace = Readonly<Record<string, unknown>>;
@@ -168,7 +168,7 @@ function sourceSample(key: string, exports: Namespace): ComponentSpecimenSample 
   }
 }
 
-/** Why sample data cannot draw this export (`./shell#Toaster`), or undefined when it can. */
+/** Why sample data cannot draw this export (`./shell#Brandmark`), or undefined when it can. */
 export const componentSpecimenUnavailableReason = (key: string): SpecimenUnavailableReason | undefined =>
   Object.hasOwn(componentSpecimenUnavailable, key) ? componentSpecimenUnavailable[key] : undefined;
 
@@ -183,6 +183,7 @@ export function componentSpecimenSample(key: string, Component: unknown, exports
   if (key === "./components#Table") return table(Component);
   if (key === "./components#Field") return { props: { ...componentSpecimenField }, children: (field: Record<string, unknown>) => <input {...field} /> };
   if (key === "./components#ColorPicker") return colorPicker(Component);
+  if (key === "./shell#Toaster") return { props: { "aria-label": componentSpecimenToast.label }, host: containedToaster(componentSpecimenToast) };
   const composed = collection(key, Component, exports) ?? overlay(key, Component, exports);
   if (composed) return composed;
   const props = Object.hasOwn(componentSpecimenProps, key) ? componentSpecimenProps[key] : undefined;
