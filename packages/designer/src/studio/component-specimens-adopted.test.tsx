@@ -2,7 +2,8 @@ import { createRequire } from "node:module";
 import { execFileSync } from "node:child_process";
 import { expect, it, vi } from "vitest";
 import { renderToString } from "react-dom/server";
-import { cleanup, render, within } from "@testing-library/react";
+import { cleanup, render, waitFor, within } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 import * as components from "../components/index.js";
 import * as charts from "../charts/index.js";
 import * as shell from "../shell/index.js";
@@ -168,6 +169,23 @@ it("draws the shadcn@aria DialogContent open in its cell, without hiding, scroll
   const outside = within(container).getByRole("button", { name: "Outside" });
   outside.focus();
   expect(document.activeElement).toBe(outside);
+  // Interaction: the cell opens the vendored Dialog itself, the real modal, and Escape closes it again.
+  const user = userEvent.setup();
+  await user.click(within(host).getByRole("button", { name: "Open dialog" }));
+  const modal = await waitFor(() => {
+    const found = document.querySelector<HTMLElement>("[data-slot='dialog-overlay'] [data-slot='dialog-content'] [data-slot='dialog']");
+    expect(found).not.toBeNull();
+    return found!;
+  });
+  expect(modal).toHaveAccessibleName("Dialog title");
+  // Open, it is the real modal: the page outside it is hidden and its scroll locked.
+  expect(pageOutside(modal).scrollLocked).toBe(true);
+  await waitFor(() => expect(modal!.contains(document.activeElement)).toBe(true));
+  await user.keyboard("{Escape}");
+  await waitFor(() => expect(document.querySelector("[data-slot='dialog-overlay'], [data-slot='dialog-content']")).toBeNull());
+  // Closed again, the page is back to the idle contained specimen.
+  expect(within(host).getByText("Dialog content")).toBeTruthy();
+  expect(pageOutside(cell)).toEqual({ hidden: [], scrollLocked: false });
   cleanup();
   errors.mockRestore();
 }, 120_000);
