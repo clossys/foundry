@@ -10,10 +10,11 @@ import { Studio, StudioEditBoundary } from "./Studio.js";
 import { useStudioSession } from "./StudioProvider.js";
 import type { StudioAdapter } from "./types.js";
 import { labels, smallCatalog, emptyLibrary, adopt } from "./__fixtures__/studio.js";
+import { boardOf } from "./__fixtures__/library-board-dom.js";
 
 afterEach(() => { cleanup(); vi.restoreAllMocks(); vi.useRealTimers(); window.history.replaceState(null, "", "/"); });
 const radio = (source = "foundry", target = "tokens.surface-color") => {
-  const board = document.querySelector<HTMLElement>(`[data-studio-row="${target}"]`)!.closest<HTMLElement>("[data-studio-board]")!;
+  const board = boardOf(target)!;
   if (board.dataset.boardMode === "view") fireEvent.click(within(board).getByRole("button", { name: labels.board.changeSelection }));
   return within(board).getByRole("radio", { name: labels.useSource(source, target) });
 };

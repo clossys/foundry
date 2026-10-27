@@ -16,10 +16,12 @@ export function CanvasModules({ canvas, labels, explorer }: { canvas: ReturnType
     const measure = () => {
       const box = surface.getBoundingClientRect();
       setSize({ width: Math.max(1, surface.clientWidth || box.width), height: Math.max(1, surface.clientHeight || box.height) });
-      setItems([...world.querySelectorAll<HTMLElement>("[data-studio-board]")].map(board => {
+      // Each canvas board is the registered library-board Section inside its structural board wrapper.
+      setItems([...world.querySelectorAll<HTMLElement>("[data-studio-canvas-board]:not([hidden])")].map(wrapper => {
+        const board = wrapper.querySelector<HTMLElement>("section[data-library-board]") ?? wrapper;
         const rect = board.getBoundingClientRect();
         const label = board.ownerDocument.getElementById(board.getAttribute("aria-labelledby") ?? "")?.textContent ?? undefined;
-        return { id: board.dataset.studioBoard!, label, rect: { x: (rect.left - box.left - canvas.pose.x) / canvas.pose.zoom,
+        return { id: wrapper.dataset.studioCanvasBoard!, label, rect: { x: (rect.left - box.left - canvas.pose.x) / canvas.pose.zoom,
           y: (rect.top - box.top - canvas.pose.y) / canvas.pose.zoom, width: rect.width / canvas.pose.zoom, height: rect.height / canvas.pose.zoom } };
       }));
     };

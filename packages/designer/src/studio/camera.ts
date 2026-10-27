@@ -55,7 +55,7 @@ export function createStudioCamera({ viewport, world, initial, onPose }: {
     highlightTimer = setTimeout(clearHighlight, 250);
     if (options.focus) element.focus({ preventScroll: true });
   };
-  const isControl = (target: EventTarget | null): boolean => target instanceof Element && Boolean(target.closest("input, textarea, select, button, a, [role=radio], [role=tab], [data-studio-panel]"));
+  const isControl = (target: EventTarget | null): boolean => target instanceof Element && Boolean(target.closest("input, textarea, select, button, a, [role=radio], [role=tab], [role=spinbutton], [role=textbox], [contenteditable]:not([contenteditable=false]), [data-studio-panel]"));
   const wheel = (event: WheelEvent): void => {
     if (event.target instanceof Element && event.target.closest("[data-studio-panel]")) return;
     event.preventDefault();

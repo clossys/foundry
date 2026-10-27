@@ -46,6 +46,25 @@ import type { CompositeStudioSnapshot } from './types.js';
 import type { LibraryBoardCommand } from '../blocks/library-board/model.js';
 import { evaluateWhole, previewComponent } from './whole-model.js';
 import { isRuntimePending } from './runtime-pending.js';
+import { packageSurfacePreview } from './planned-surface-previews.js';
+import type { SurfaceSampleState } from './surface-preview-sample-content.js';
+/**
+ * An adopted package-pointer Section or Frame owns no source for a host preview to build: it previews its real
+ * export through the planned-preview samples, keyed by the same export pointer (so host-owned samples such as a
+ * Publisher frame apply), and stays unavailable when no sample exists rather than imitating one.
+ */
+export function adoptedPackagePreview(leaf: string, profile: CompositeResolved | undefined, planned: CompositeStudioSnapshot['plannedPreviews']): { node: ReactNode; state: SurfaceSampleState } | undefined {
+  // A non-surface leaf id simply finds no adopted surface fill.
+  const document = profile?.surfaces?.fills[leaf as `sections.${string}`]?.document;
+  if (!document) return undefined;
+  const rows = Object.values(planned?.previews ?? {});
+  const samples = Object.fromEntries(rows.map(row => [row.pointer, row.render]));
+  const preview = packageSurfacePreview(document as unknown as Parameters<typeof packageSurfacePreview>[0], samples, planned?.sampleState);
+  if (!('render' in preview)) return undefined;
+  // A planned row's render already draws its own sample state; name that state, not the host-sample default.
+  const state = rows.find(row => row.pointer === preview.pointer)?.state ?? preview.state;
+  try { const node = preview.render(); return node == null ? undefined : { node, state }; } catch { return undefined; }
+}
 export interface PreparedCompositeLibraryBoardInput {
   readonly layer: 'components' | 'sections' | 'frames';
   readonly board: { readonly id: string; readonly label: string; readonly leaves: readonly { readonly id: string }[] };
@@ -104,7 +123,10 @@ export function compositeLibraryBoard(input: PreparedCompositeLibraryBoardInput,
     else if (input.layer === 'components') { const proposal = proposals.find(proposal => proposal.meta.slot === value.leaf && proposal.meta.source === value.source); if (proposal && (allowed(proposal) || staticSpecimen(proposal)) && proposal.result?.available) prepared = proposal.result.profile; }
     else if (selectedSource(value.leaf) === value.source && selectedAvailable(value.leaf)) prepared = profile;
     if (!prepared) return undefined;
-    return <CandidateCell labels={input.labels} preview={input.snapshot.preview?.(value.leaf, prepared)} />;
+    // The host's own preview comes first; an adopted package-pointer Section or Frame then previews its real export.
+    let node = input.snapshot.preview?.(value.leaf, prepared), sampleState: SurfaceSampleState | undefined;
+    if (node == null && input.layer !== 'components') { const adopted = adoptedPackagePreview(value.leaf, prepared, input.snapshot.plannedPreviews); node = adopted?.node; sampleState = adopted?.state; }
+    return <CandidateCell labels={input.labels} preview={node} sampleState={sampleState} />;
   } };
   return { records, previews, changeFor(command) {
     if (input.layer !== 'components' || command.command !== 'use-source' || command.boardId !== input.board.id || !input.canSave || input.pending) return undefined;
