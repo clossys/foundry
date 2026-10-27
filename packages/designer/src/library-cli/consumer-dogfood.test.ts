@@ -194,6 +194,19 @@ describe("consumer source boundary (zero finding allowlist)", () => {
     expect(runConsumerDogfood(input).findings.filter(row => row.code === "DF5" && row.tag === "Published")).toEqual([]);
     expect(runDogfood({ files: input.files }).findings).toContainEqual(expect.objectContaining({ code: "DF5", tag: "Published" }));
   });
+  it("qualifies the actual Publisher IndexView/DetailsView and direct Designer blocks a console page renders (G3)", async () => {
+    const publisher = fileURLToPath(new URL("../../../publisher/src/web/index.ts", import.meta.url));
+    await write("Page.tsx", `${header} import {IndexView, DetailsView} from "@clossys/publisher/web"; import {DataTable, EmptyState, Panel} from "@clossys/designer/blocks"; export default function Page(){return <><Lease id="example" header={{title:"Example"}}/><IndexView/><DetailsView/><Panel><DataTable/><EmptyState/></Panel></>}`);
+    const input = await consumerDogfoodSources(["Page.tsx"], { ...contract, sources: { "@clossys/publisher/web": publisher } }, root, root);
+    expect(input.files.some(file => file.file.endsWith("/web/views/IndexView.tsx"))).toBe(true);
+    expect(input.files.some(file => file.file.endsWith("/web/views/DetailsView.tsx"))).toBe(true);
+    const df5 = runConsumerDogfood(input).findings.filter(row => row.code === "DF5" && row.file === "Page.tsx");
+    expect(df5).toEqual([]);
+    // An unregistered symbol spelled as a blocks import still has no slot.
+    await write("Page.tsx", `${header} import {Fabricated} from "@clossys/designer/blocks"; export default function Page(){return <><Lease id="example" header={{title:"Example"}}/><Fabricated/></>}`);
+    const spoof = await consumerDogfoodSources(["Page.tsx"], contract, root, root);
+    expect(runConsumerDogfood(spoof).findings).toContainEqual(expect.objectContaining({ code: "DF5", tag: "Fabricated" }));
+  });
   it("passes mapped project views through the actual dogfood-consumer CLI without promoting JSON to source", async () => {
     await write("Page.tsx", `${header} import {Publisher} from "@example/publisher";export default function Page(){return <><Lease id="example" header={{title:"Example"}}/><Publisher/></>}`);
     await write("Publisher.tsx", 'import {Button} from "@clossys/designer/components";import copy from "./copy.json";export function Publisher(){return <Button>{copy.title}</Button>}');

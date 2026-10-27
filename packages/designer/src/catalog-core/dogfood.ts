@@ -75,7 +75,8 @@ interface Parsed { exports: SourceExport[]; definitions: SourceDefinition[]; non
 
 /** A balanced JSX node scanner, not a TypeScript compiler. Dynamic attribute values and
  * unsupported/malformed syntax stay explicit findings; observations are a lower bound. */
-function parseJsx(source: string): Parsed {
+/** `jsx` is false for TypeScript-only (.ts) sources, where `<` only opens type syntax. */
+function parseJsx(source: string, jsx = true): Parsed {
   const result: Parsed = { exports: [], definitions: [], nonCode: [], importBindings: [], contextProviders: new Set(), modules: new Set(), comments: [], elements: [], imports: new Map(), unresolved: [] };
   let i = 0;
   const issue = (message: string, start = i) => result.unresolved.push({ start, message: `unresolved ${message}` });
@@ -175,7 +176,8 @@ function parseJsx(source: string): Parsed {
       if (["'", '"', "`"].includes(source[i] ?? "")) { quoted(); last = "value"; continue; }
       // Keep bounded declaration spans for source-owned view qualification.
       // JSX in a different or unused declaration cannot qualify an empty view.
-      const fn = /^(export\s+)?(?:async\s+)?function\s+([A-Za-z_$][\w$]*)\s*\(/.exec(source.slice(i));
+      // Simple type parameters (function View<Row>(...)) still name a render body.
+      const fn = /^(export\s+)?(?:async\s+)?function\s+([A-Za-z_$][\w$]*)\s*(?:<[^<>()]*>\s*)?\(/.exec(source.slice(i));
       if (fn) {
         const start = i; i += fn[0].length; js(")"); space();
         if (source[i] === ":") { while (i < source.length && source[i] !== "{" && source[i] !== ";") i++; }
@@ -203,7 +205,7 @@ function parseJsx(source: string): Parsed {
       // TypeScript type arguments (Record<string, unknown>, fn<Props>), not JSX.
       // The trailing comma/extends forms also identify generic arrow parameters.
       const genericArrow = source[i] === "<" && /^<[A-Za-z_$][\w$]*(?:\s*,|\s+extends\b)[^<>]*>\s*\(/.test(source.slice(i));
-      if (source[i] === "<" && /[A-Za-z>]/.test(source[i + 1] ?? "") && (!last || /[=(:\[,!&|?;{}]/.test(last)) && !genericArrow) { element(); last = "value"; continue; }
+      if (jsx && source[i] === "<" && /[A-Za-z>]/.test(source[i + 1] ?? "") && (!last || /[=(:\[,!&|?;{}]/.test(last)) && !genericArrow) { element(); last = "value"; continue; }
       if (source.slice(i, i + 2) === "=>") { i += 2; last = "="; continue; }
       if (source[i] === "{") { i++; js("}"); last = "value"; continue; }
       if (source[i] === "(") { i++; js(")"); last = "value"; continue; }
@@ -288,6 +290,10 @@ function composeAt(file: string, node: Element, parsed: Parsed, input: DogfoodIn
   const slotId = input.resolvedImports ? input.resolvedImports[`${file}:${imported.module}#${symbol}`] :
     module === frame.module && symbol === frame.export ? appFrameFill.$extensions["com.clossys.fill"].slot :
       registeredServerSlot(module, symbol) ??
+      // The client blocks barrel exports every registered block (checked against
+      // its real source in dogfood.test.ts); a block export resolves to its own
+      // block slot, as the server barrel's does, before the component vocabulary.
+      (module === `${DOGFOOD_PACKAGE_NAME}/blocks` ? serverBlockSlots.get(symbol) : undefined) ??
       (["components", "icons", "charts", "blocks", "shell"].some(path => module === `${DOGFOOD_PACKAGE_NAME}/${path}`) ? knownSlot(symbol) : undefined);
   return slotId ? { file, line: 0, tag: node.tag, slotId, module: imported.module, symbol } : undefined;
 }
@@ -303,7 +309,7 @@ function sourceViewQualifier(input: DogfoodInput) {
   const parsedFiles = new Map<string, Parsed>();
   const parsedAt = (file: string) => {
     if (!files.has(file) || input.files.filter(row => row.file === file).length !== 1) return undefined;
-    if (!parsedFiles.has(file)) parsedFiles.set(file, parseJsx(files.get(file)!));
+    if (!parsedFiles.has(file)) parsedFiles.set(file, parseJsx(files.get(file)!, !/\.[cm]?ts$/.test(file)));
     const parsed = parsedFiles.get(file)!;
     return parsed.unresolved.length ? undefined : parsed;
   };
