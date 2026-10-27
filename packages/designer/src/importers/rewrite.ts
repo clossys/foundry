@@ -41,6 +41,62 @@ const adapter = adapterData as {
 };
 const sorted = (values: Iterable<string>): string[] => [...new Set(values)].sort();
 /**
+ * The pinned shadcn Button's prop values, as the Foundry Button members they evidence. A source that
+ * imports Button is rebound to the consumer's Button leaf, whose entrypoint dispatches only declared
+ * members and throws on anything else, so every literal such a source passes is translated with this
+ * table. The slot declares one square member and no sized one: each shadcn icon size takes
+ * shape.icon-only. `defaultSize` is the pinned Button's own default size.
+ */
+export const SHADCN_BUTTON_MEMBERS = Object.freeze({
+  variant: Object.freeze({ default: "primary", secondary: "secondary", ghost: "ghost", destructive: "danger", outline: "outline" }) as Readonly<Record<string, string>>,
+  size: Object.freeze({ default: "md", sm: "sm", lg: "lg" }) as Readonly<Record<string, string>>,
+  iconSizes: Object.freeze(["icon", "icon-xs", "icon-sm", "icon-lg"]) as readonly string[],
+  iconSize: "icon",
+  defaultSize: "default",
+});
+const buttonMemberNames = new Set(componentSlots.find(slot => slot.id === "components.button")?.contract.members.names ?? []);
+/** The declared Button member one shadcn Button prop literal names, or undefined when the slot declares none. */
+function buttonMember(axis: "size" | "variant", value: string): { axis: "size" | "shape" | "variant"; value: string } | undefined {
+  const member = axis === "variant" ? { axis, value: SHADCN_BUTTON_MEMBERS.variant[value] }
+    : SHADCN_BUTTON_MEMBERS.iconSizes.includes(value) ? { axis: "shape" as const, value: "icon-only" }
+      : { axis, value: SHADCN_BUTTON_MEMBERS.size[value] };
+  return member.value && buttonMemberNames.has(`${member.axis}.${member.value}`) ? member as { axis: "size" | "shape" | "variant"; value: string } : undefined;
+}
+const BUTTON_SOURCE_IMPORT = /\bimport\s*\{([^}]*)\}\s*from\s*["']@\/(?:components\/ui|registry\/bases\/aria\/ui)\/button["']/;
+/** The local name a source binds the registry Button to, when it imports it. */
+function rebindsButton(content: string): string | undefined {
+  const list = BUTTON_SOURCE_IMPORT.exec(content)?.[1];
+  const binding = list?.split(",").map(value => value.trim()).find(value => /^Button(?:\s+as\s+[A-Za-z][A-Za-z0-9]*)?$/.test(value));
+  return binding?.split(/\s+as\s+/).at(-1);
+}
+/** Top-level functions whose props are the rebound Button's own props, with the Button axes each keeps. */
+function buttonShapedWrappers(content: string, local: string): Map<string, { start: number; end: number; axes: ("size" | "variant")[] }> {
+  const wrappers = new Map<string, { start: number; end: number; axes: ("size" | "variant")[] }>();
+  const starts = [...content.matchAll(/^function ([A-Z][A-Za-z0-9]*)\(\{/gm)];
+  const props = new RegExp(`^function [A-Za-z0-9]+\\(\\{[^}]*\\}:\\s*(Omit<)?(?:React\\.)?ComponentProps<typeof ${local}>(?:,\\s*((?:"[a-z-]+"\\s*\\|?\\s*)+)>)?`);
+  starts.forEach((start, index) => {
+    const end = starts[index + 1]?.index ?? content.length;
+    const shaped = props.exec(content.slice(start.index, end));
+    if (!shaped || start[1] === local || Boolean(shaped[1]) !== Boolean(shaped[2])) return;
+    const omitted = [...(shaped[2] ?? "").matchAll(/"([a-z-]+)"/g)].map(match => match[1]!);
+    wrappers.set(start[1]!, { start: start.index, end, axes: (["size", "variant"] as const).filter(axis => !omitted.includes(axis)) });
+  });
+  return wrappers;
+}
+/** The end (exclusive) of the JSX opening tag starting at `from`, at brace depth zero outside quotes. */
+function openingTagEnd(content: string, from: number): number {
+  let depth = 0, quote = "";
+  for (let index = from; index < content.length; index++) {
+    const char = content[index]!;
+    if (quote) { if (char === quote) quote = ""; continue; }
+    if (char === '"' || char === "'" || char === "`") quote = char;
+    else if (char === "{") depth++;
+    else if (char === "}") depth--;
+    else if (char === ">" && depth === 0) return index + 1;
+  }
+  return content.length;
+}
+/**
  * One bound Icon call. Icon's accessibility contract is a compile-time union (decorative, or a
  * label), so a call with neither does not typecheck. Upstream glyphs are aria-hidden by default
  * (lucide, and shadcn's IconPlaceholder over it): unnamed calls stay decorative, and an explicit
@@ -1146,11 +1202,65 @@ function rewriteSource(input: RewriteInput): RewriteResult {
     if (/^(?:ring|border|outline|shadow|leading|tracking|font|duration|delay|ease|animate|fade|zoom|slide|opacity|z|transition)-/.test(next) && next === base) add("K4", file, value, "Design utility needs a consumer binding");
     return prefix + next;
   };
+  // A registry Button import is rebound to the consumer's Button leaf, whose entrypoint dispatches
+  // declared members only. Its call sites, and those of wrappers typed with its props (in any file of
+  // this item), pass shadcn values; each becomes the declared member it evidences, or a K9 finding.
+  const reboundButton = input.item !== "button" && input.leafByItem.button === "button";
+  const buttonWrappers = new Map<string, readonly ("size" | "variant")[]>();
+  if (reboundButton) for (const file of input.files) {
+    const local = rebindsButton(file.content);
+    if (local) for (const [name, wrapper] of buttonShapedWrappers(file.content, local)) buttonWrappers.set(name, wrapper.axes);
+  }
+  const translateButtonProps = (source: string, path: string): string => {
+    let content = source;
+    const local = rebindsButton(content);
+    // A wrapper default is translated in place. A size default equal to the Button's own is dropped
+    // with its explicit forward: an unset size then stays unset (keeping that default), and a caller's
+    // shape member is never overridden by a size the wrapper always forwards.
+    for (const [name, wrapper] of local ? [...buttonShapedWrappers(content, local)].reverse() : []) {
+      let body = content.slice(wrapper.start, wrapper.end);
+      const head = /^function [A-Za-z0-9]+\(\{([^}]*)\}/.exec(body)!;
+      let list = head[1]!, rest = body.slice(head[0].length);
+      for (const axis of wrapper.axes) {
+        const fallback = new RegExp(`(\\n\\s*)${axis} = "([^"]*)"(,?)`).exec(list);
+        if (!fallback) continue;
+        const value = fallback[2]!;
+        if (axis === "size" && value === SHADCN_BUTTON_MEMBERS.defaultSize) {
+          const forward = /\n\s*size=\{size\}(?=\s)/;
+          if (rest.split(forward).length === 2 && /\{\.\.\.props\}/.test(rest)) {
+            list = list.replace(fallback[0], ""); rest = rest.replace(forward, "");
+            notes.push({ file: path, value: `${name} size = "${value}"`, message: "Rebound Button: the wrapper's size default is the Button's own; size is forwarded only when a caller passes it" });
+          } else add("K9", path, `${name} size=${value}`, "Rebound Button wrapper forwards its default size in an unsupported form");
+          continue;
+        }
+        const member = buttonMember(axis, value);
+        if (!member || member.axis !== axis) { add("K9", path, `${name} ${axis}=${value}`, "Rebound Button default has no declared member on its own axis"); continue; }
+        list = list.replace(fallback[0], `${fallback[1]}${axis} = "${member.value}"${fallback[3]}`);
+      }
+      body = head[0].replace(head[1]!, list) + rest;
+      content = content.slice(0, wrapper.start) + body + content.slice(wrapper.end);
+    }
+    const callers: [string, readonly ("size" | "variant")[]][] = [...(local ? [[local, ["size", "variant"] as const] as [string, readonly ("size" | "variant")[]]] : []), ...buttonWrappers];
+    for (const [name, axes] of callers) {
+      for (const match of [...content.matchAll(new RegExp(`<${name}(?=[\\s/>])`, "g"))].reverse()) {
+        const end = openingTagEnd(content, match.index + match[0].length);
+        const tag = content.slice(match.index, end).replace(/(\s)(size|variant)="([^"]*)"/g, (all, space: string, axis: "size" | "variant", value: string) => {
+          if (!axes.includes(axis)) return all;
+          const member = buttonMember(axis, value);
+          if (!member) { add("K9", path, `<${name}> ${axis}=${value}`, "Rebound Button value has no declared member"); return all; }
+          if (member.axis === "shape" && value !== SHADCN_BUTTON_MEMBERS.iconSize) notes.push({ file: path, value: `<${name}> size="${value}"`, message: "Restyled source: Button size to declared shape.icon-only; the slot declares no sized square member" });
+          return `${space}${member.axis}="${member.value}"`;
+        });
+        content = content.slice(0, match.index) + tag + content.slice(end);
+      }
+    }
+    return content;
+  };
   const files = input.files.map(file => {
     const inPart = file.path.includes("/_parts/");
     const relative = inPart ? "../../" : "../";
     let needsIcon = false;
-    let content = file.content;
+    let content = reboundButton ? translateButtonProps(file.content, file.path) : file.content;
     if (consumerVariables.get(file.path)?.has("--gap")) {
       content = content.replace('"--gap": `calc(var(--spacing) * ${spacing})`', '"--gap": `calc(var(--spacing-xs) * ${spacing})`');
       tokens.add("tokens.spacing.xs");
