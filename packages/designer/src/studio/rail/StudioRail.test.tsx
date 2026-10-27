@@ -17,12 +17,12 @@ import * as studioApi from "../index.js";
 import { componentIntegration } from "../../catalog-core/__fixtures__/component-integration.js";
 import type { CompositeStudioLabels } from "../types.js";
 
-afterEach(() => { cleanup(); try { localStorage.clear(); } catch { /* jsdom always has storage */ } window.history.replaceState(null, "", "/"); vi.restoreAllMocks(); });
+afterEach(() => { cleanup(); try { localStorage.clear(); } catch { /* jsdom always has storage */ } window.history.replaceState(null, "", "/"); vi.restoreAllMocks(); vi.unstubAllGlobals(); });
 
 const wholeLabels = { ...labels, whole: { signoff: "W-signoff", proposed: "W-proposed", contract: "W-contract", contentSlots: "W-slots", configurations: "W-config", unresolved: "W-unresolved", unassessed: "W-unassessed" } } as CompositeStudioLabels;
 const legacy = () => {
   const library = adopt(emptyLibrary(), "tokens.surface-color", "foundry");
-  return <StudioProvider catalog={smallCatalog} adapter={{ load: async () => ({ library }), save: vi.fn() }} labels={labels}><Studio /></StudioProvider>;
+  return <StudioProvider catalog={smallCatalog} initialSlotId="tokens.surface-color" adapter={{ load: async () => ({ library }), save: vi.fn() }} labels={labels}><Studio /></StudioProvider>;
 };
 function compositeAdapter() {
   const input = componentIntegration();
@@ -76,7 +76,7 @@ describe("right rail of cards", () => {
   }, 30_000);
 
   it("becomes an overlay drawer on a narrow viewport", async () => {
-    vi.spyOn(window, "matchMedia").mockImplementation(query => ({ matches: false, media: query, onchange: null, addEventListener: () => {}, removeEventListener: () => {}, addListener: () => {}, removeListener: () => {}, dispatchEvent: () => false }) as MediaQueryList);
+    vi.stubGlobal("matchMedia", (query: string) => ({ matches: false, media: query, onchange: null, addEventListener: () => {}, removeEventListener: () => {}, addListener: () => {}, removeListener: () => {}, dispatchEvent: () => false }) as MediaQueryList);
     render(legacy());
     await studioReady();
     expect(railCards()).toEqual([]);

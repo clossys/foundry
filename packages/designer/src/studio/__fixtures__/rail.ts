@@ -14,9 +14,11 @@ export const layerRows = (label: string): HTMLElement[] => within(screen.getByRo
 export async function chooseLayer(labels: Pick<StudioLabels, "layers" | "rail">, name: string, user = userEvent.setup()): Promise<void> {
   const show = screen.queryAllByRole("button", { name: labels.rail.show })[0];
   if (show) await user.click(show);
-  const trigger = await waitFor(() => screen.getByRole("button", { name: new RegExp(`${labels.layers.label}$`) }));
-  if (trigger.textContent?.trim() === name) return;
-  await user.click(trigger);
+  // Re-query each time: a layer change can swap the canvas (and its rail) for another layer kind.
+  const trigger = () => screen.getByRole("button", { name: new RegExp(`${labels.layers.label}$`) });
+  const current = await waitFor(trigger);
+  if (current.textContent?.trim() === name) return;
+  await user.click(current);
   await user.click(await screen.findByRole("option", { name }));
-  await waitFor(() => expect(trigger.textContent?.trim()).toBe(name));
+  await waitFor(() => expect(trigger().textContent?.trim()).toBe(name));
 }

@@ -2,12 +2,16 @@
 import { useLayoutEffect, useState, type ReactNode } from "react";
 import { CanvasZoom } from "../components/CanvasZoom.js";
 import { CanvasMap } from "../components/CanvasMap.js";
-import { SlotModule } from "../shell/FrameSlots.js";
+import { StudioRail } from "./rail/StudioRail.js";
 import type { StudioLabels } from "./types.js";
 import type { useCanvasWorld } from "./useCanvasWorld.js";
 import type { CanvasRect } from "../blocks/canvas/models.js";
 
-export function CanvasModules({ canvas, labels, explorer }: { canvas: ReturnType<typeof useCanvasWorld>; labels: StudioLabels; explorer: ReactNode }) {
+/**
+ * The canvas's modules, moved (not rebuilt) into the Designer's right rail: the explorer, the inspector body, the
+ * canvas map (measured from the rendered boards) and the zoom control. Nothing registers into frame chrome.
+ */
+export function CanvasModules({ canvas, labels, explorer, explorerHeader, inspector }: { canvas: ReturnType<typeof useCanvasWorld>; labels: StudioLabels; explorer: ReactNode; explorerHeader?: ReactNode; inspector: ReactNode }) {
   const [items, setItems] = useState<readonly { id: string; rect: CanvasRect; label?: string }[]>([]);
   const [size, setSize] = useState({ width: 1, height: 1 });
   useLayoutEffect(() => {
@@ -28,9 +32,7 @@ export function CanvasModules({ canvas, labels, explorer }: { canvas: ReturnType
     measure(); const observer = typeof ResizeObserver === "function" ? new ResizeObserver(measure) : undefined;
     observer?.observe(surface); observer?.observe(world); return () => observer?.disconnect();
   }, [canvas.bounds, canvas.pose]);
-  return <>
-    <SlotModule id="explorer" slot="dock-tab" label={labels.treeLabel} order={0}>{explorer}</SlotModule>
-    <SlotModule id="map" slot="dock-tab" label={labels.canvas.minimap} order={1}><CanvasMap label={labels.canvas.minimap} items={items} bounds={canvas.bounds} viewport={canvas.pose} viewSize={size} onViewportChange={canvas.setPose} /></SlotModule>
-    <SlotModule id="zoom" slot="dock-strip" label={labels.canvas.zoomLabel} order={0}><CanvasZoom value={canvas.pose.zoom} min={.12} max={2} labels={{ group: labels.canvas.zoomLabel, out: labels.canvas.zoomOut, in: labels.canvas.zoomIn, fit: labels.canvas.fit, percent: labels.canvas.zoomLabel }} onChange={value => canvas.actions.current?.zoom(value / canvas.pose.zoom)} onFit={() => canvas.actions.current?.fit()} /></SlotModule>
-  </>;
+  return <StudioRail labels={labels} explorer={explorer} explorerHeader={explorerHeader} inspector={inspector}
+    map={<CanvasMap label={labels.canvas.minimap} items={items} bounds={canvas.bounds} viewport={canvas.pose} viewSize={size} onViewportChange={canvas.setPose} />}
+    zoom={<CanvasZoom value={canvas.pose.zoom} min={.12} max={2} labels={{ group: labels.canvas.zoomLabel, out: labels.canvas.zoomOut, in: labels.canvas.zoomIn, fit: labels.canvas.fit, percent: labels.canvas.zoomLabel }} onChange={value => canvas.actions.current?.zoom(value / canvas.pose.zoom)} onFit={() => canvas.actions.current?.fit()} />} />;
 }

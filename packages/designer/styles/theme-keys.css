@@ -1333,6 +1333,8 @@
 @utility candidate-variant-min-inline { min-width: var(--ui-control-h-lg); }
 /* FilterBuilder match select: caps the control at the aside measure (max-w-xs resolved to the 4px spacing token). */
 @utility filter-match-width { max-width: var(--ui-layout-aside-w, 320px); }
+/* Designer right rail: the Studio rail Section is one inspector measure wide. */
+@utility designer-rail-width { inline-size: var(--ui-layout-inspector-w); }
 /* A token specimen and its value text stay inside one token-bounded box at every zoom tier (VR2 studio-01). */
 @utility token-specimen-contain { max-inline-size: var(--ui-layout-sidebar-w); overflow: hidden; overflow-wrap: anywhere; }
 @utility calendar-cell-size { width: var(--ui-control-h-sm, 32px); height: var(--ui-control-h-sm, 32px); }
