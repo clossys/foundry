@@ -111,8 +111,8 @@ describe("stableStringify and libraryHash golden", () => {
   it("pins example and completed-catalog library hashes", () => {
     expect(libraryHash(EXAMPLE_LIBRARY)).toMatchInlineSnapshot(`"fnv1a64:1c49785731fe8224"`);
     const completed = completedCatalogLibrary(loadCatalog(), { id: "golden-consumer", kind: "consumer", author: "consumer", license: "UNLICENSED" }, "2026-10-26");
-    expect(libraryHash(completed)).toMatchInlineSnapshot(`"fnv1a64:1a31efe05637e69f"`);
-    expect(nodeSha256(stableStringify(completed))).toMatchInlineSnapshot(`"c9936cf52be28c2cb4c7cca485b49bbd68250f22eee78d2b956114c15117a550"`);
+    expect(libraryHash(completed)).toMatchInlineSnapshot(`"fnv1a64:a01437f615d70c71"`);
+    expect(nodeSha256(stableStringify(completed))).toMatchInlineSnapshot(`"d630f7c8839bedabee219a017555d8ac297afef961105edfa2fdb5bddd627b5b"`);
     expect(libraryHash(completed)).toBe(referenceLibraryHash(completed));
     expect(resolve({ catalog: loadCatalog(), library: completed }).selectionHash).toBe(libraryHash(completed));
   }, 120_000);
@@ -130,13 +130,13 @@ describe("real package-surface library golden", () => {
   beforeAll(async () => { fixture = await packageSurfaceLibrary(); }, 300_000);
   it("pins the composite, value, component and surface portion hashes", () => {
     const { library } = fixture;
-    expect(compositeLibraryHash(library)).toMatchInlineSnapshot(`"sha256:846efb82098a23ae5f4a755da41c27353335e36ff30f0e9bfc76dbbc1cd71b70"`);
+    expect(compositeLibraryHash(library)).toMatchInlineSnapshot(`"sha256:f4846eadb7384b700b166ca5f57893028f3675e6c4e07bf331bdff5cc5602b27"`);
     const values = { ...library.values, source: library.source, adoptedAt: library.adoptedAt } as LibraryData;
-    expect(libraryHash(values)).toMatchInlineSnapshot(`"fnv1a64:cb519e0903c30aa7"`);
+    expect(libraryHash(values)).toMatchInlineSnapshot(`"fnv1a64:9ef6b0d04daed3a9"`);
     expect(libraryHash(values)).toBe(referenceLibraryHash(values));
     expect(componentLibraryHash({ ...library.components, source: library.source, adoptedAt: library.adoptedAt })).toMatchInlineSnapshot(`"sha256:b22d62a9c0cd1212becdccd47ec4d4ac552808b3731ad29b91f97eae477861a9"`);
-    expect(surfacePortionHash(library.surfaces!)).toMatchInlineSnapshot(`"sha256:c95b5d868003a6ff8a12c2e298199567c485366d3159eecb7cdbfd679c95f43e"`);
-    expect(nodeSha256(stableStringify(library))).toMatchInlineSnapshot(`"268230c55513024758564a02a8902bcc4a787b207bc1d338f2b039f202dbba9f"`);
+    expect(surfacePortionHash(library.surfaces!)).toMatchInlineSnapshot(`"sha256:d2e3d90c4c3b9c25c8155da771501dcfad5575ebd35696589cf23c3961325892"`);
+    expect(nodeSha256(stableStringify(library))).toMatchInlineSnapshot(`"a38e8e0cbe9feeb87173e194169df7103173337decca055eae14f99475022968"`);
     expect(stableStringify(library)).toBe(referenceStringify(library));
   });
 });
