@@ -1,6 +1,9 @@
 import { useId, type ReactNode } from "react";
 import { cx } from "../components/internal/cx.js";
 import { FieldGroup, type FieldGroupLayout } from "./FieldGroup.js";
+import { dsAttrs } from "../catalog-core/provenance-attrs.js";
+/** Section root provenance (D1): the selected Foundry fill this block is. */
+const SECTION_STAMP = dsAttrs("sections", "sections.settings", "foundry/sections.settings");
 
 export interface SettingsSectionGroup {
   readonly id: string;
@@ -33,7 +36,7 @@ export interface SettingsSectionProps {
 export function SettingsSection({ heading, description, groups, dirty = [], saveBar, labels, className }: SettingsSectionProps) {
   const headingId = useId();
   for (const id of dirty) if (!groups.some(group => group.id === id)) throw new TypeError(`SettingsSection: unknown dirty group ${id}.`);
-  return <section aria-labelledby={headingId} className={cx("flex min-w-0 flex-col gap-lg text-body text-ink-primary", className)}>
+  return <section {...SECTION_STAMP} aria-labelledby={headingId} className={cx("flex min-w-0 flex-col gap-lg text-body text-ink-primary", className)}>
     <header className="flex flex-col gap-xs">
       <h2 id={headingId} className="m-0 text-h3 font-display leading-heading text-ink-primary">{heading}</h2>
       {description ? <p className="m-0 text-body-s text-ink-secondary">{description}</p> : null}

@@ -4,6 +4,9 @@ import { cx } from "../components/internal/cx.js";
 import { FAQ_ANSWER_STYLE, FAQ_ROW_CLASSES } from "./Faq.server.js";
 import { disclosureRow } from "./internal/disclosure-row.js";
 import { SECTION_GROUND_CLASSES, type SectionGround } from "./section-ground.js";
+import { dsAttrs } from "../catalog-core/provenance-attrs.js";
+/** Section root provenance (D1): the selected Foundry fill this block is. */
+const SECTION_STAMP = dsAttrs("sections", "sections.faq", "foundry/sections.faq");
 
 export type FaqHeadingLevel = 2 | 3 | 4 | 5 | 6;
 
@@ -90,7 +93,7 @@ export function Faq({
   const hasHeadingRegion = eyebrow !== undefined || heading !== undefined || description !== undefined;
 
   return (
-    <div {...rest} className={cx("flex flex-col gap-lg", colors.surface, className)} style={style}>
+    <div {...SECTION_STAMP} {...rest} className={cx("flex flex-col gap-lg", colors.surface, className)} style={style}>
       {hasHeadingRegion ? (
         <SectionHeader density="standard" level={headingLevel} ground={ground} eyebrow={eyebrow} description={description} {...(heading ? { title: heading } : {})} titleClassName="leading-heading" />
       ) : null}

@@ -1,6 +1,9 @@
 import type { ReactNode } from "react";
 import { cx } from "../components/internal/cx.js";
 import { DataTable, type DataTableColumn } from "./DataTable.js";
+import { dsAttrs } from "../catalog-core/provenance-attrs.js";
+/** Section root provenance (D1): the selected Foundry fill this block is. */
+const SECTION_STAMP = dsAttrs("sections", "sections.audit-log", "foundry/sections.audit-log");
 
 export interface AuditLogEntry {
   id: string;
@@ -49,6 +52,7 @@ export function AuditLog({ "aria-label": label, entries, labels, filter, exportA
   const hasToolbar = (filter !== undefined && filter !== null) || (exportAction !== undefined && exportAction !== null);
   return (
     <DataTable
+      {...SECTION_STAMP}
       aria-label={label}
       className={cx("min-w-0", className)}
       columns={columns}

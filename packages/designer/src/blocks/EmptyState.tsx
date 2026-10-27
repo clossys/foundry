@@ -1,6 +1,9 @@
 import { SectionHeader } from "./SectionHeader.js";
 import type { HTMLAttributes, ReactNode } from "react";
 import { cx } from "../components/internal/cx.js";
+import { dsAttrs } from "../catalog-core/provenance-attrs.js";
+/** Section root provenance (D1): the selected Foundry fill this block is. */
+const SECTION_STAMP = dsAttrs("sections", "sections.empty-state", "foundry/sections.empty-state");
 
 export interface EmptyStateProps extends Omit<HTMLAttributes<HTMLDivElement>, "title"> {
   /** Slot for an icon or illustration, rendered above the title. */
@@ -39,7 +42,7 @@ export function EmptyState({
 }: EmptyStateProps) {
   return (
     <div
-      {...rest}
+      {...SECTION_STAMP} {...rest}
       className={cx(
         "flex flex-col justify-center gap-sm p-2xl text-center",
         className,

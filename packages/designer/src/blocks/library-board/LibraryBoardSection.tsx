@@ -28,8 +28,9 @@ export interface LibraryBoardSectionProps {
   readonly onCommand: (command: LibraryBoardCommand) => void;
 }
 import { PREVIEW_CHOICE_CLASS } from './choice-class.js';
+import { dsPassThrough } from "../../catalog-core/provenance-attrs.js";
 /** Existing comparison Section, rendered from checked board records in either body substrate. */
-export function LibraryBoardSection({ records, labels, previews, workflow, onCommand }: LibraryBoardSectionProps) {
+export function LibraryBoardSection({ records, labels, previews, workflow, onCommand, ...passthrough }: LibraryBoardSectionProps) {
   assertLibraryBoardRecords(records);
   const { rows, columns, controls } = records;
   const command = (name: 'board-edit' | 'board-done') => onCommand({ version: 1, command: name, boardId: rows.boardId });
@@ -47,7 +48,7 @@ export function LibraryBoardSection({ records, labels, previews, workflow, onCom
   const prompt = (row: typeof rows.items[number], refresh = false) => <CandidatePromptDialog trigger={<Button variant="ghost" size="sm">{refresh ? labels.board.refresh : labels.board.create}</Button>} data={refresh ? row.refreshPrompt! : row.prompt} labels={labels} workflow={workflow} />;
   const custom = columns.items.find(column => column.role === 'consumer');
   const choiceColumns = columns.items.filter(column => rows.items.some(row => row.candidates.some(candidate => candidate.source === column.source)));
-  return <section data-library-board={rows.boardId} data-board-mode={controls.mode} aria-labelledby={headingId} className={BOARD_SURFACE_CLASS}>
+  return <section {...dsPassThrough(passthrough)} data-library-board={rows.boardId} data-board-mode={controls.mode} aria-labelledby={headingId} className={BOARD_SURFACE_CLASS}>
     <BoardHeader id={headingId} title={rows.label} editing={controls.mode === 'edit'} labels={labels.board} onEdit={() => command('board-edit')} onDone={() => command('board-done')} />
     {controls.mode === 'view' ? <Table aria-label={labels.matrix.label} className="w-max">
       <Table.Header><Table.Column id="leaf" isRowHeader>{labels.matrix.leaf}</Table.Column><Table.Column id="preview"><span className="sr-only">{labels.stageLabel}</span></Table.Column></Table.Header>

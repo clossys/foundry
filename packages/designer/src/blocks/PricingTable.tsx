@@ -6,6 +6,9 @@ import { cx } from "../components/internal/cx.js";
 import { Matrix } from "./Matrix.server.js";
 import type { MatrixCellData, MatrixGridProps } from "./Matrix.js";
 import { SECTION_GROUND_CLASSES, type SectionGround } from "./section-ground.js";
+import { dsAttrs } from "../catalog-core/provenance-attrs.js";
+/** Section root provenance (D1): the selected Foundry fill this block is. */
+const SECTION_STAMP = dsAttrs("sections", "sections.pricing", "foundry/sections.pricing");
 
 export type PricingTableHeadingLevel = 2 | 3 | 4 | 5 | 6;
 
@@ -208,7 +211,7 @@ export function PricingTable({
   }
 
   return (
-    <div {...rest} className={cx("flex flex-col gap-lg", className)} style={style}>
+    <div {...SECTION_STAMP} {...rest} className={cx("flex flex-col gap-lg", className)} style={style}>
       {hasHeadingRegion ? (
         <SectionHeader density="standard" level={headingLevel} ground={ground} description={description} {...(heading ? { title: heading } : {})} />
       ) : null}

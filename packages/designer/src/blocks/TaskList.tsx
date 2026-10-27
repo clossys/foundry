@@ -6,6 +6,9 @@ import { UI_BORDER_HAIRLINE, UI_LAYOUT_TAP_TARGET } from "../components/internal
 import type { EmptyStateProps } from "./EmptyState.js";
 import { SectionHeader } from "./SectionHeader.js";
 import { assertNoNestedInteractive, CardLinkTitle, cardLinkContainerClassName } from "./stretched-link.js";
+import { dsAttrs } from "../catalog-core/provenance-attrs.js";
+/** Section root provenance (D1): the selected Foundry fill this block is. */
+const SECTION_STAMP = dsAttrs("sections", "sections.task-list", "foundry/sections.task-list");
 
 export type TaskStatus = "todo" | "in-progress" | "blocked" | "done";
 
@@ -32,7 +35,7 @@ export function TaskList({ items, statusLabels, progressText, emptyState, classN
   const doneCount = items.filter(item => item.status === "done").length;
   const { icon, title, description, action, className: emptyClassName, ...emptyProps } = emptyState;
   return (
-    <section {...rest} className={cx("flex flex-col gap-md px-sm tablet:px-md", className)}>
+    <section {...SECTION_STAMP} {...rest} className={cx("flex flex-col gap-md px-sm tablet:px-md", className)}>
       {items.length === 0 ? <div {...emptyProps} className={cx("flex flex-col gap-sm p-2xl", emptyClassName)}>
         {icon ? <div>{icon}</div> : null}
         <SectionHeader title={title} description={description} actions={action} level={2} />

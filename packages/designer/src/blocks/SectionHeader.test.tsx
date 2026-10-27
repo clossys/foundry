@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { render, screen } from "@testing-library/react";
 import { SectionHeader } from "./SectionHeader.js";
+import { withoutDsAttrs } from "../catalog-core/provenance-attrs.js";
 
 describe("SectionHeader", () => {
   it("renders the required title as a heading, defaulting to level 2", () => {
@@ -92,7 +93,7 @@ describe("S4-1 shared header capabilities", () => {
 
   it("preserves exact compact default markup", () => {
     const { container } = render(<SectionHeader title="Title" eyebrow="Label" description="Support" actions={<button>Action</button>} />);
-    expect(container.innerHTML).toBe('<div class="flex flex-col gap-xs"><p class="text-caption uppercase tracking-label text-ink-muted">Label</p><div class="flex flex-wrap items-start justify-between gap-md"><div class="flex flex-col gap-xs"><h2 class="text-h3 font-display text-ink-primary">Title</h2><p class="text-body text-ink-secondary">Support</p></div><div class="flex items-center gap-sm"><button>Action</button></div></div></div>');
+    expect(withoutDsAttrs(container.innerHTML)).toBe('<div class="flex flex-col gap-xs"><p class="text-caption uppercase tracking-label text-ink-muted">Label</p><div class="flex flex-wrap items-start justify-between gap-md"><div class="flex flex-col gap-xs"><h2 class="text-h3 font-display text-ink-primary">Title</h2><p class="text-body text-ink-secondary">Support</p></div><div class="flex items-center gap-sm"><button>Action</button></div></div></div>');
   });
 
   it.each([0, "", null, undefined, false])("retains a real heading for explicit title %s", title => {

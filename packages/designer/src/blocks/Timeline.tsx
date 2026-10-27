@@ -1,5 +1,8 @@
 import type { HTMLAttributes, ReactNode } from "react";
 import { cx } from "../components/internal/cx.js";
+import { dsAttrs } from "../catalog-core/provenance-attrs.js";
+/** Section root provenance (D1): the selected Foundry fill this block is. */
+const SECTION_STAMP = dsAttrs("sections", "sections.timeline", "foundry/sections.timeline");
 
 export interface TimelineEvent {
   id: string;
@@ -25,7 +28,7 @@ export function Timeline({ events, headingLevel = 3, className, ...rest }: Timel
   if (events.length === 0) throw new TypeError("Timeline: events must not be empty.");
   const Heading = `h${headingLevel}` as const;
   return (
-    <ol {...rest} className={cx("flex min-w-0 flex-col font-body", className)}>
+    <ol {...SECTION_STAMP} {...rest} className={cx("flex min-w-0 flex-col font-body", className)}>
       {events.map((event, index) => {
         const rail = index < events.length - 1;
         return (

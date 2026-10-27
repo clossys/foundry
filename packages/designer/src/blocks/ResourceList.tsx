@@ -10,6 +10,9 @@ import { cx } from "../components/internal/cx.js";
 import { UI_LAYOUT_TAP_TARGET } from "../components/internal/ui-vars.js";
 import { ChevronDown } from "../icons/ChevronDown.js";
 import { EmptyState, type EmptyStateProps } from "./EmptyState.js";
+import { dsAttrs } from "../catalog-core/provenance-attrs.js";
+/** Section root provenance (D1): the selected Foundry fill this block is. */
+const SECTION_STAMP = dsAttrs("sections", "sections.resource-list", "foundry/sections.resource-list");
 
 export interface ResourceListAction {
   id: string;
@@ -110,7 +113,7 @@ export function ResourceList({
   const selection = selectedKeys ?? internalKeys;
   const hasSelection = selectionMode === "multiple" && items.some(item =>
     !item.isDisabled && (selection === "all" || selection.has(item.id)));
-  return <section {...rest} aria-label={ariaLabel} className={cx("flex min-w-0 flex-col gap-md", className)}>
+  return <section {...SECTION_STAMP} {...rest} aria-label={ariaLabel} className={cx("flex min-w-0 flex-col gap-md", className)}>
     {toolbar}
     {hasSelection ? bulkBar : null}
     {error != null && error !== false ? error : isLoading ? <div>

@@ -1,6 +1,9 @@
 import type { CSSProperties, ReactNode } from "react";
 import { Button } from "../components/Button.js";
 import { CompatNavGrid } from "./items/compat-nav.js";
+import { dsAttrs } from "../catalog-core/provenance-attrs.js";
+/** Section root provenance (D1): the selected Foundry fill this block is. */
+const SECTION_STAMP = dsAttrs("sections", "sections.link-index", "foundry/sections.link-index");
 
 interface NavGridItemBase {
   /** Stable identifier — the React key. */
@@ -35,5 +38,5 @@ export interface NavGridProps {
 }
 
 export function NavGrid(props: NavGridProps) {
-  return <CompatNavGrid {...props} renderAction={(item, className, children) => <Button key={item.id} variant="ghost" onPress={() => item.onSelect()} className={className}>{children}</Button>} />;
+  return <CompatNavGrid {...SECTION_STAMP} {...props} renderAction={(item, className, children) => <Button key={item.id} variant="ghost" onPress={() => item.onSelect()} className={className}>{children}</Button>} />;
 }
