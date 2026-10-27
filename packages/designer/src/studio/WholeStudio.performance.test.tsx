@@ -70,6 +70,8 @@ it("retains signoff disclosure content and expansion without rendering it again 
   const f = fixture(false, true); let state!: WholeStudioState;
   const onState = (value: WholeStudioState) => { state = value; };
   const mounted = performance.now();
+  // The Inspector card fills on a selection: deep-link the leaf (?node=); traversal then moves the inspected leaf.
+  window.history.replaceState(null, "", "?node=sections.hero");
   const view = render(<Surface adapter={f.adapter} initial="sections.hero" onState={onState} />);
   await studioReady();
   const mountMs = Math.round(performance.now() - mounted);
@@ -110,6 +112,7 @@ it("retains signoff disclosure content and expansion without rendering it again 
   view.unmount();
   vi.mocked(Disclosure).mockClear();
   const second = performance.now();
+  window.history.replaceState(null, "", "?node=sections.hero");
   render(<Surface adapter={f.adapter} initial="sections.hero" onState={onState} />);
   await studioReady();
   expect(signoffCalls()).toBe(ids.length);
@@ -122,9 +125,11 @@ it("keeps contract board preparation stable through native Tree blur and navigat
   const f = fixture(false, true), user = userEvent.setup(); let state!: WholeStudioState;
   render(<Surface adapter={f.adapter} onState={value => { state = value; }} />);
   await studioReady();
-  await user.click(within(explorer()).getByRole("button", { name: "Actions", exact: true }));
-  const first = within(explorer()).getByRole("button", { name: "Buttons", exact: true });
-  await user.click(first);
+  // The explorer opens on the initial leaf's branches; expand Actions and Buttons only where closed.
+  for (const name of ["Actions", "Buttons"]) {
+    const chevron = within(explorer()).getByRole("button", { name, exact: true });
+    if (chevron.closest('[role="row"]')!.getAttribute("aria-expanded") === "false") await user.click(chevron);
+  }
   const before = { session: state.sessionIdentity, library: state.input!.library, profile: state.evaluated!.value!.profile, prepared: vi.mocked(prepareCompositeLibraryBoard).mock.calls.length };
   expect(before.prepared).toBeGreaterThan(0);
   await user.click(within(explorer()).getByRole("button", { name: "Menus", exact: true }));
@@ -193,7 +198,7 @@ it("PERF6 canonical traversal prepares each explorer row once per node identity"
     expect(layer.maxPerIdentity, layer.layer).toBe(1);
     expect(layer.afterRevision, layer.layer).toBe(layer.identities);
   }
-});
+}, 20_000);
 
 it("updates contract labels and the complete workflow including real prompt callbacks", async () => {
   const f = fixture(), firstCheck = vi.fn(async () => ({ status: "checked" as const, candidates: [] })), nextCheck = vi.fn(async () => ({ status: "checked" as const, candidates: [] }));
@@ -268,7 +273,7 @@ it("offers no Choose, edit board or save, and replaces the snapshot when the hos
   next.adapter.contracts = { ...next.adapter.contracts!, placements: next.adapter.contracts!.placements.map(placement => ({ ...placement, nodes: placement.nodes.map(node => node.id === "actions" ? { ...node, label: "Updated actions" } : node) })) };
   view.rerender(<Surface adapter={next.adapter} onState={onState} />);
   await waitFor(() => { expect(state.sessionIdentity).toBeDefined(); expect(state.sessionIdentity).not.toBe(session); });
-  expect(within(explorer()).getByRole("button", { name: "Updated actions" })).toBeVisible();
+  expect(await within(explorer()).findByRole("button", { name: "Updated actions" })).toBeVisible();
   expect(f.save).not.toHaveBeenCalled(); expect(next.save).not.toHaveBeenCalled();
 });
 

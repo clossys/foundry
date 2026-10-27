@@ -36,15 +36,23 @@ export function ExplorerTree({ query = "" }: { query?: string }) {
   const { counts, labels } = state;
   const nodes = useMemo(() => explorerNodes(placements, labels.layers, query), [placements, labels.layers, query]);
   const index = useMemo(() => explorerIndex(nodes), [nodes]);
-  // Value leaves carry their member count, as the slot tree did.
+  // Value leaves carry their member count, as the slot tree did. A subtree with no counted leaf keeps its
+  // identity, so the tree's memoised rows are not prepared again for it.
   const shown = useMemo(() => {
-    const decorate = (node: TreeViewNode): TreeViewNode => node.children?.length ? { ...node, children: node.children.map(decorate) }
-      : node.id in counts ? { ...node, label: `${node.label} (${labels.memberCount(counts[node.id] ?? 0)})` } : node;
+    const decorate = (node: TreeViewNode): TreeViewNode => {
+      if (!node.children?.length) return node.id in counts ? { ...node, label: `${node.label} (${labels.memberCount(counts[node.id] ?? 0)})` } : node;
+      const children = node.children.map(decorate);
+      return children.every((child, index) => child === node.children![index]) ? node : { ...node, children };
+    };
     return nodes.map(decorate);
   }, [nodes, counts, labels]);
   const layerIds = useMemo(() => new Set<string>(EXPLORER_LAYER_ORDER), []);
   const [expanded, setExpanded] = useState<ReadonlySet<string>>(() => new Set([state.layer, ...branchesAbove(placements, state.selected ?? state.slotId)]));
   const latest = useRef(expanded); latest.current = expanded;
+  // The tree first mounts once the library has loaded, so its rows (and their member counts) are prepared once;
+  // a later host reload keeps it mounted.
+  const [loaded, setLoaded] = useState(() => Boolean(state.ready));
+  if (state.ready && !loaded) setLoaded(true);
   // Following the active layer (and the selection) keeps one layer open; other expanded branches stay open.
   useEffect(() => {
     setExpanded(current => {
@@ -56,6 +64,7 @@ export function ExplorerTree({ query = "" }: { query?: string }) {
   }, [state.layer, state.selected, placements, layerIds]);
   // The tree's collection treats Escape as its own (and marks it handled), so the card clears the selection here:
   // Escape closes the Inspector card wherever focus is.
+  if (!loaded) return null;
   return <div className="min-w-0" onKeyDownCapture={event => { if (event.key === "Escape" && state.selected !== undefined) state.select(undefined); }}>
     <TreeView nodes={shown} aria-label={labels.treeLabel} currentId={state.selected} expandedIds={expanded}
     onNavigate={id => { const entry = index.get(id); if (entry) state.onNavigate(entry.target); }}

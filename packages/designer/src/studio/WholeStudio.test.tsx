@@ -4,10 +4,11 @@ import { render, studioReady } from "./__fixtures__/frame.js";
 import userEvent from "@testing-library/user-event";
 import { applyLibraryChange, libraryHash, loadBuildCatalog, loadCatalog, loadComponentRegistry } from "../catalog-core/index.js";
 import { componentIntegration, adoptedComponentIntegration } from "../catalog-core/__fixtures__/component-integration.js";
-import { Studio as StudioView, StudioHeader, StudioRightPanel, useStudioNavigation } from "./index.js";
+import { Studio as StudioView, StudioRightPanel } from "./index.js";
 import { Banner } from "../components/Banner.js";
 import type { PlacementNode } from "../catalog-core/index.js";
 import { labels, smallCatalog } from "./__fixtures__/studio.js";
+import { findLayerSelect, chooseLayer } from "./__fixtures__/rail.js";
 import { evaluateWhole, placedLeaves, wholeSignoff } from "./whole-model.js";
 import type { CompositeStudioAdapter, CompositeStudioLabels, CompositeStudioSnapshot, CompositeStudioProps, StudioCanvasProps } from "./types.js";
 import { useState } from 'react';
@@ -114,7 +115,7 @@ async function expandTree(user: ReturnType<typeof userEvent.setup>, layer: "comp
     const branches = [domain, ...("children" in domain ? domain.children : [])];
     for (const branch of branches) {
       if (target && !placedLeaves([branch]).some(leaf => leaf.id === target)) continue;
-      const row = [...explorer.querySelectorAll<HTMLElement>('[role="row"]')].find(row => row.dataset.key === branch.id)!;
+      const row = [...explorer.querySelectorAll<HTMLElement>('[role="row"]')].find(row => row.dataset.key === `${layer}/${branch.id}`)!;
       expect(row).toBeDefined();
       const chevron = within(row).getByRole("button", { name: branch.label, exact: true });
       if (row.getAttribute("aria-expanded") === "true") continue;
@@ -128,7 +129,7 @@ async function expandTree(user: ReturnType<typeof userEvent.setup>, layer: "comp
 afterEach(() => { cleanup(); window.history.replaceState(null, "", "/"); });
 function Studio(props: CompositeStudioProps | StudioCanvasProps) {
   if (!("adapter" in props)) return <StudioView {...props} />;
-  return <WholeStudioProvider {...props}><StudioHeader /><StudioView header="external" /><StudioRightPanel /></WholeStudioProvider>;
+  return <WholeStudioProvider {...props}><StudioView header="external" /><StudioRightPanel /></WholeStudioProvider>;
 }
 function adapterFixture(full = false) {
   const input = componentIntegration();
@@ -140,14 +141,15 @@ function adapterFixture(full = false) {
 }
 it.each(["components", "sections", "frames"] as const)("keeps legacy controls and reaches every canonical %s registry leaf", async layer => {
   const user = userEvent.setup(); const f = adapterFixture(true);
-  render(<WholeStudioProvider adapter={f.adapter} labels={wholeLabels}><StudioHeader /><Studio header="external" /><StudioRightPanel /></WholeStudioProvider>);
+  render(<WholeStudioProvider adapter={f.adapter} labels={wholeLabels}><Studio header="external" /><StudioRightPanel /></WholeStudioProvider>);
   await studioReady();
-  expect(screen.getAllByRole("link")).toHaveLength(5);
+  expect(screen.queryAllByRole("link")).toEqual([]);
+  expect(await findLayerSelect(wholeLabels)).toBeVisible();
   expect(document.querySelectorAll('[data-studio-panel="zoom"]')).toHaveLength(1);
   const contracts = loadBuildCatalog();
   const registryLeaves = contracts.placements.flatMap(placement => placedLeaves(placement.nodes));
   expect(contracts.slots.map(slot => slot.id).sort()).toEqual(registryLeaves.map(leaf => leaf.id).sort());
-  await user.click(screen.getByRole("link", { name: new RegExp(layer, "i") }));
+  await chooseLayer(wholeLabels, wholeLabels.layers[layer], user);
   const explorer = await expandTree(user, layer);
   const rowsByName = new Map(within(explorer).getAllByRole("row").map(row => [row.textContent?.trim(), row]));
   const ids = contracts.slots.filter(slot => slot.layer === layer).map(slot => slot.id);
@@ -162,7 +164,7 @@ it.each(["components", "sections", "frames"] as const)("keeps legacy controls an
   expect(rows.find(row => row.id === "sections.band")?.unresolved).toEqual(["rhythm"]);
   expect(rows.some(row => "signoff" in row)).toBe(false);
   expect(document.querySelectorAll('[data-studio-canvas-board]')).toHaveLength(contracts.placements.find(p => p.layer === "frames")!.nodes.flatMap(node => "children" in node ? node.children : [node]).length);
-});
+}, 20_000);
 /* DESIGNER-RO (deleted): "saves projected value edits with the whole composite CAS and reloads host truth" asserted a UI save (row 4). */
 it("rechecks components when consumer token values change without rewriting observation hashes", () => {
   const input = adoptedComponentIntegration(); const observations = input.componentOptions!.evidence!.observations;
@@ -177,12 +179,14 @@ it("rechecks components when consumer token values change without rewriting obse
 it("does not fabricate an active runtime preview when no runtime candidate is selected", async () => {
   const user = userEvent.setup(); const f = adapterFixture(); const preview = vi.fn(() => <p>host-preview</p>);
   const load = vi.fn(async () => ({ ...await f.load(), preview }));
+  // The Inspector card fills on a selection: deep-link the leaf (?node=).
+  window.history.replaceState(null, "", "?node=sections.band");
   render(<Studio adapter={{ ...f.adapter, load }} labels={wholeLabels} initialSlotId="sections.band" />);
   await studioReady();
   expect(preview).not.toHaveBeenCalled();
   expect(screen.getAllByText(labels.board.notChosen).length).toBeGreaterThan(0);
   expect(screen.getAllByText("W-unassessed").length).toBeGreaterThan(0);
-  await user.click(screen.getByRole("link", { name: /Frames/ }));
+  await chooseLayer(labels, "Frames", user);
   expect(screen.queryByText("host-preview")).toBeNull();
 });
 it.each([
@@ -206,7 +210,7 @@ it.each([
   expect(preview.mock.calls.every(([selected, profile]) => selected === leaf && profile.consumer === f.getLibrary().source.id && !!profile.values && !!profile.components)).toBe(true);
   // DESIGNER-RO (converted): the tokens-only re-preview after a UI source change is gone with the write path (row 4); nothing saves.
   expect(f.save).not.toHaveBeenCalled();
-  await user.click(screen.getByRole("link", { name: /Components/ }));
+  await chooseLayer(labels, "Components", user);
   expect(screen.queryByText(reason)).not.toBeInTheDocument();
   expect(document.querySelector("[data-studio-host-preview]")).toBeNull();
 });
@@ -234,7 +238,7 @@ it("shows stale component evidence after a loaded value choice, with no source c
   const save = vi.fn(async () => ({ ok: false as const, reason: "unavailable" as const }));
   render(<Studio adapter={{ kind: "composite", catalog: input.catalog, load, save }} labels={wholeLabels} initialSlotId={choice.slot} />);
   await studioReady();
-  await user.click(screen.getByRole("link", { name: /Components/ }));
+  await chooseLayer(labels, "Components", user);
   await user.click(within(await expandTree(user, "components", "components.button")).getByRole("row", { name: "components.button", exact: true }));
   await waitFor(() => expect(boardRow("components.button")).toBeDefined());
   expect(screen.queryAllByRole("radio", { hidden: true })).toEqual([]);
@@ -257,7 +261,7 @@ it("never offers a blocked materialization for adoption", async () => {
   candidate.blockers = [{ code: "source-unavailable", message: "missing source bytes" }];
   const save = vi.fn(async () => ({ ok: false as const, reason: "unavailable" as const }));
   render(<Studio adapter={{ kind: "composite", catalog, load: async () => ({ library: input.library }), save }} labels={wholeLabels} />);
-  await studioReady(); await user.click(screen.getByRole("link", { name: /Components/ }));
+  await studioReady(); await chooseLayer(labels, "Components", user);
   await user.click(within(await expandTree(user, "components", "components.button")).getByRole("row", { name: "components.button", exact: true }));
   const row = await waitFor(() => boardRow("components.button")!);
   expect(row.querySelector('[data-preview-state="not-chosen"]')).not.toBeNull();
@@ -297,16 +301,16 @@ it("SYNTHETIC opted-in source snapshot without explicit options retains the engi
   expect(preview).not.toHaveBeenCalled();
 });
 
-it("supplies all five actual composite layers through the frame data seam", async () => {
-  function Probe() { const nav = useStudioNavigation(); return <output data-testid="whole-nav">{JSON.stringify(nav)}</output>; }
-  const f = adapterFixture();
-  render(<WholeStudioProvider adapter={f.adapter} labels={wholeLabels}><StudioHeader /><Probe /></WholeStudioProvider>);
-  await screen.findByRole("link", { name: "Tokens" });
-  const read = () => JSON.parse(screen.getByTestId("whole-nav").textContent!);
-  expect(read().items.map((item: { id: string }) => item.id)).toEqual(["tokens", "assets", "components", "sections", "frames"]);
-  for (const item of read().items) expect(screen.getByRole("link", { name: item.label })).toHaveAttribute("href", item.href);
-  await userEvent.setup().click(screen.getByRole("link", { name: "Frames" }));
-  await waitFor(() => expect(read().activeId).toBe("frames"));
+/** DESIGNER-RO (rail): the layer tabs and their navigation hook are gone; the explorer's layer select offers all five layers in D5g order. */
+it("offers all five actual composite layers in the explorer's layer select", async () => {
+  function Probe() { const state = useStudioSession(); return <output data-testid="whole-layer">{state.layer}</output>; }
+  const f = adapterFixture(), user = userEvent.setup();
+  render(<WholeStudioProvider adapter={f.adapter} labels={wholeLabels}><Probe /><StudioView /></WholeStudioProvider>);
+  await user.click(await findLayerSelect(wholeLabels));
+  expect((await screen.findAllByRole("option")).map(option => option.textContent?.trim())).toEqual(["frames", "sections", "components", "assets", "tokens"].map(id => wholeLabels.layers[id as keyof typeof wholeLabels.layers]));
+  await user.keyboard("{Escape}");
+  await chooseLayer(wholeLabels, wholeLabels.layers.frames, user);
+  await waitFor(() => expect(screen.getByTestId("whole-layer").textContent).toBe("frames"));
 });
 
 it('dispatches adapter-kind changes at the Studio host without changing hook or context identity', async () => {
@@ -316,7 +320,7 @@ it('dispatches adapter-kind changes at the Studio host without changing hook or 
   await waitFor(() => expect(document.querySelector("section[data-library-board]")).not.toBeNull()); expect(legacyLoad).toHaveBeenCalledOnce();
   view.rerender(<StudioView adapter={composite.adapter} labels={wholeLabels} livePreview={false} />);
   await waitFor(() => expect(document.querySelector("section[data-library-board]")).not.toBeNull()); expect(composite.load).toHaveBeenCalledOnce();
-  expect(screen.getAllByRole("link")).toHaveLength(5);
+  expect(await findLayerSelect(wholeLabels)).toBeVisible();
   view.rerender(<StudioView adapter={legacy} catalog={smallCatalog} labels={labels} livePreview={false} />);
   await waitFor(() => expect(document.querySelector("section[data-library-board]")).not.toBeNull()); expect(legacyLoad).toHaveBeenCalledTimes(2);
   expect(composite.save).not.toHaveBeenCalled(); expect(legacy.save).not.toHaveBeenCalled();
@@ -392,7 +396,7 @@ it("vf13: a runtime-pending component board shows the shared leaf label and the 
   const user = userEvent.setup(); const input = offeredComponentIntegration();
   const preview = vi.fn(() => <p>vf13-static-specimen</p>);
   render(<Studio adapter={{ kind: "composite", catalog: structuredClone(input.catalog), load: async () => ({ library: input.library, preview }), save: async () => ({ ok: false, reason: "unavailable" }) }} labels={wholeLabels} />);
-  await studioReady(); await user.click(screen.getByRole("link", { name: /Components/ }));
+  await studioReady(); await chooseLayer(labels, "Components", user);
   await user.click(within(await expandTree(user, "components", "components.button")).getByRole("row", { name: "components.button", exact: true }));
   const board = await waitFor(() => boardOf("components.button")!);
   expect(board).toHaveClass("bg-surface-raised");

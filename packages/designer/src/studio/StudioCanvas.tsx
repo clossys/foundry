@@ -48,7 +48,7 @@ export function LegacyStudioCanvas({ panelInsets, className, candidateWorkflow }
   const registerBoard = useCallback((id: string, element: HTMLElement | null) => { const elements = latest.current.boardElements.current; if (element) elements.set(id, element); else elements.delete(id); }, []);
   // A board's reveal selects the row's leaf (the Inspector card fills) and focuses that cell.
   const focusCell = useCallback((row: MatrixRow, candidate: Candidate) => {
-    latest.current.select(row.leaves.length === 1 ? row.leaves[0]! : row.id);
+    latest.current.select(row.leaves.length === 1 ? row.leaves[0]! : row.id, false);
     latest.current.setFocusedCell(current => current.row === row.id && current.source === candidate.source ? current : { row: row.id, source: candidate.source });
   }, [state.layer]);
   const reveal = useCallback((id: string, focus = false) => {

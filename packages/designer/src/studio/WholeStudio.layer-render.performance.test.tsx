@@ -1,16 +1,17 @@
 /**
  * Per-layer render cost of the filled Studio (designer criteria 4 and 11): the package-surface library mounted with
- * header, canvas and right panel, then each of the five layers switched to in turn. Each switch is stamped from the
- * click until the layer's board rows are drawn, with the document's element count and the whole-library resolves
+ * canvas, rail and right panel, then each of the five layers switched to in turn. Each switch is stamped from the
+ * navigation (the explorer's layer select calls the same `onNavigate`) until the layer's board rows are drawn, with the document's element count and the whole-library resolves
  * it ran. Budgets carry headroom for a loaded machine; the resolve count is exact.
  */
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
-import { act, cleanup, fireEvent, screen, waitFor } from "@testing-library/react";
+import { act, cleanup, waitFor } from "@testing-library/react";
 import { render, studioReady } from "./__fixtures__/frame.js";
 import { labels } from "./__fixtures__/studio.js";
 import { packageSurfaceLibrary, type PackageSurfaceLibrary } from "../library-cli/__fixtures__/package-surface-library.js";
-import { Studio as StudioView, StudioHeader, StudioRightPanel } from "./index.js";
+import { Studio as StudioView, StudioRightPanel } from "./index.js";
 import { WholeStudioProvider } from "./WholeStudioProvider.js";
+import { useStudioSession } from "./StudioProvider.js";
 import { boardRowLeaf } from "./canvas-boards.js";
 import { STUDIO_LAYERS } from "./layer-navigation.js";
 import { resolve, type LayerId } from "../catalog-core/index.js";
@@ -39,9 +40,12 @@ beforeAll(async () => { fixture = await packageSurfaceLibrary(); }, 120_000);
 beforeEach(() => { vi.stubGlobal("matchMedia", vi.fn((media: string) => ({ media, matches: false, onchange: null, addEventListener() {}, removeEventListener() {}, addListener() {}, removeListener() {}, dispatchEvent: () => true }))); });
 afterEach(() => { cleanup(); vi.unstubAllGlobals(); window.history.replaceState(null, "", "/"); });
 
+/** The live Studio session, read by a probe so a layer switch goes through the same navigation the rail uses. */
+let session!: ReturnType<typeof useStudioSession>;
+function Probe() { session = useStudioSession(); return null; }
 function mount() {
   const load = vi.fn(async (): Promise<CompositeStudioSnapshot> => ({ library: structuredClone(fixture.library), surfaceOptions: fixture.options, preview: () => undefined }));
-  render(<WholeStudioProvider adapter={{ kind: "composite", catalog: fixture.catalog, load, save: async () => ({ ok: false, reason: "unavailable" }) }} labels={wholeLabels} initialSlotId="sections.faq"><StudioHeader /><StudioView header="external" /><StudioRightPanel /></WholeStudioProvider>);
+  render(<WholeStudioProvider adapter={{ kind: "composite", catalog: fixture.catalog, load, save: async () => ({ ok: false, reason: "unavailable" }) }} labels={wholeLabels} initialSlotId="sections.faq"><Probe /><StudioView /><StudioRightPanel /></WholeStudioProvider>);
 }
 /** The rows the canvas draws for a layer, by their leaf id. */
 const rowsOf = (layer: LayerId) => [...document.querySelectorAll<HTMLElement>("section[data-library-board] tr")].filter(row => boardRowLeaf(row)?.startsWith(`${layer}.`));
@@ -50,10 +54,9 @@ interface Stamp { layer: LayerId; ms: number; rows: number; nodes: number }
 async function traverse(): Promise<{ stamps: Stamp[]; resolves: number }> {
   const stamps: Stamp[] = [], before = vi.mocked(resolve).mock.calls.length;
   for (const layer of STUDIO_LAYERS) {
-    const link = screen.getByRole("link", { name: new RegExp(`^${labels.layers[layer]}`) });
     const start = performance.now();
-    await act(async () => { fireEvent.click(link); });
-    await waitFor(() => { expect(rowsOf(layer).length).toBeGreaterThan(0); expect(link).toHaveAttribute("aria-current", "page"); }, { timeout: 60_000, interval: 5 });
+    await act(async () => { session.onNavigate({ layer }); });
+    await waitFor(() => { expect(rowsOf(layer).length).toBeGreaterThan(0); expect(session.layer).toBe(layer); }, { timeout: 60_000, interval: 5 });
     stamps.push({ layer, ms: Math.round(performance.now() - start), rows: rowsOf(layer).length, nodes: document.body.querySelectorAll("*").length });
   }
   return { stamps, resolves: vi.mocked(resolve).mock.calls.length - before };

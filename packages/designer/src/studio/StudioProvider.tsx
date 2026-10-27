@@ -82,11 +82,14 @@ function useStudioState({ catalog: catalogProp, adapter, labels, initialSlotId: 
     if (next !== layerRef.current) setLocalSelected(undefined);
     setLocalLayer(next); return true;
   };
-  /** Select an L3 leaf (the Inspector card fills) or clear the selection. */
-  const select = (leaf: string | undefined): void => {
+  /**
+   * Select an L3 leaf (the Inspector card fills) or clear the selection. A leaf picked from outside the canvas
+   * (the explorer, a usage entry, a link) is demanded so its row is evaluated; a board's own row already is.
+   */
+  const select = (leaf: string | undefined, demand = true): void => {
     if (sharedLayer?.select) sharedLayer.select(leaf); else setLocalSelected(leaf);
     if (leaf === undefined) return;
-    setSlotId(leaf); setDemandedRow(leaf);
+    setSlotId(leaf); if (demand) setDemandedRow(leaf);
     setFocusedCell(current => current.row === leaf ? current : { row: leaf });
   };
   // One navigation callback for the explorer, the inspector's usage entries, the scorecard and the boards. It

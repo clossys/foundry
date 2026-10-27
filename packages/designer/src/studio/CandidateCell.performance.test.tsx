@@ -10,6 +10,7 @@ import { CompactPreview } from "./previews.js";
 import { buildCandidates } from "./model.js";
 import { orderTokenMembers } from "../tokens/preview/member-order.js";
 import { adopt, emptyLibrary, labels, smallCatalog } from "./__fixtures__/studio.js";
+import { findLayerSelect } from "./__fixtures__/rail.js";
 import { applyLibraryChange, libraryHash } from "../catalog-core/index.js";
 
 vi.mock("./previews.js", async importOriginal => {
@@ -74,7 +75,7 @@ it("carries the loaded token context into the inspector prompt and refreshes hos
     return <StudioProvider adapter={adapter} catalog={smallCatalog} labels={labels}><Studio candidateWorkflow={{ checkCandidates: check }} /></StudioProvider>;
   }
   const view = renderFrame(<Surface check={firstCheck} />);
-  await screen.findByRole("link", { name: "Tokens" });
+  await findLayerSelect();
   view.rerender(<Surface check={nextCheck} />);
   const current = await waitFor(() => boardRow("tokens.surface-color", view.container)!);
   await userEvent.click(within(current).getByText("tokens.surface-color"));

@@ -98,7 +98,11 @@ function ContractCanvas({ className, candidateWorkflow }: StudioCanvasProps) {
       {s.layer !== "components" ? <><p>{t.whole.unassessed}</p>{s.evaluated?.value?.runtime?.findings.map((finding, index) => <p key={index}>{finding.path}: {finding.message}</p>)}<ContractSignoff contracts={s.contracts} labels={t.whole} none={t.inspector.none} /></> : null}
       {t.usage && s.leaf ? <StudioUsage id={s.leaf} labels={t.usage} /> : null}
       <InspectorChange labels={t} {...(prompts ? { prompts } : {})} />
-    </section> : <p data-studio-inspector-empty="" className="text-body-s text-ink-secondary">{t.rail.inspectorEmpty}</p>;
+    </section> : <div className="flex min-w-0 flex-col gap-xs">
+      {/* A whole-library refusal is not a leaf's: it stays visible with nothing selected. */}
+      {s.evaluated?.error ? <p role="alert">{s.evaluated.error}</p> : null}
+      <p data-studio-inspector-empty="" className="text-body-s text-ink-secondary">{t.rail.inspectorEmpty}</p>
+    </div>;
   return <div data-studio-body="" className="relative flex h-full w-full min-h-0 min-w-0 flex-1">
     <div data-studio="" data-studio-canvas="" className={["relative isolate min-h-0 min-w-0 flex-1 overflow-hidden", className].filter(Boolean).join(" ")}>
     <CanvasLod zoom={canvas.pose.zoom}><CanvasSurface aria-label={t.canvas.label} viewport={canvas.pose} onViewportChange={canvas.setPose} selection={[]} onSelectionChange={() => {}}

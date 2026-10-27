@@ -6,13 +6,14 @@ import { applyLibraryChange, loadCatalog, loadComponentRegistry, type LayerId } 
 import { componentIntegration } from "../catalog-core/__fixtures__/component-integration.js";
 import { resolve } from "../catalog-core/api.js";
 import { runtimeHash } from "../catalog-core/runtime-ports.js";
-import { Studio, StudioHeader, StudioRightPanel } from "./index.js";
+import { Studio, StudioRightPanel } from "./index.js";
 import { WholeStudioProvider } from "./WholeStudioProvider.js";
 import { CandidateCell } from "./CandidateCell.js";
 import { buildCandidates } from "./model.js";
 import { LibraryBoardSection } from "../blocks/library-board/LibraryBoardSection.js";
 import { valueLibraryBoardPreviews, valueLibraryBoardRecords, type PreparedLibraryBoardInput } from "./library-board-adapter.js";
 import { adopt, emptyLibrary, labels, smallCatalog } from "./__fixtures__/studio.js";
+import { chooseLayer } from "./__fixtures__/rail.js";
 import type { CompositeStudioAdapter, CompositeStudioLabels } from "./types.js";
 
 afterEach(cleanup);
@@ -77,12 +78,12 @@ function fullStudio() {
 describe("one board and cell anatomy on every layer", () => {
   it("renders every board of the five layers with one header and one plate cell per leaf", async () => {
     const user = userEvent.setup();
-    render(<WholeStudioProvider adapter={fullStudio()} labels={wholeLabels}><StudioHeader /><Studio header="external" /><StudioRightPanel /></WholeStudioProvider>);
+    render(<WholeStudioProvider adapter={fullStudio()} labels={wholeLabels}><Studio header="external" /><StudioRightPanel /></WholeStudioProvider>);
     await studioReady();
     const report: Record<string, { boards: number; nonconforming: number; header: number; cells: number; faults: string[] }> = {};
     let filled = 0, unchosen = 0;
     for (const layer of LAYERS) {
-      await user.click(screen.getByRole("link", { name: labels.layers[layer] }));
+      await chooseLayer(labels, labels.layers[layer], user);
       await waitFor(() => expect(document.querySelector(`[data-studio-canvas-board^="${layer}/"] > section[data-library-board]`)).not.toBeNull(), { timeout: 20000 });
       // Every canvas board is the registered library-board Section.
       const boards = [...document.querySelectorAll<HTMLElement>("[data-studio-canvas-board] > section[data-library-board]")];

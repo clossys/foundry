@@ -1,5 +1,5 @@
 "use client";
-import { useEffect, useState, type ReactNode } from "react";
+import { useSyncExternalStore, type ReactNode } from "react";
 import { Button } from "../../components/Button.js";
 import { Card } from "../../components/Card.js";
 import { Disclosure } from "../../components/Disclosure.js";
@@ -19,18 +19,21 @@ export interface StudioRailProps {
   readonly zoom: ReactNode;
 }
 
-/** Wide while the frame's wide query matches; a page without matchMedia (tests, SSR) is treated as wide. */
-function useWideRail(): boolean {
-  const [wide, setWide] = useState(true);
-  useEffect(() => {
-    if (typeof window === "undefined" || typeof window.matchMedia !== "function") return;
-    const media = window.matchMedia(APP_FRAME_WIDE_QUERY);
-    const sync = (): void => setWide(media.matches);
-    sync(); media.addEventListener?.("change", sync);
-    return () => media.removeEventListener?.("change", sync);
-  }, []);
-  return wide;
-}
+const hasMedia = (): boolean => typeof window !== "undefined" && typeof window.matchMedia === "function";
+const subscribeWide = (change: () => void): (() => void) => {
+  if (!hasMedia()) return () => {};
+  const media = window.matchMedia(APP_FRAME_WIDE_QUERY);
+  media.addEventListener?.("change", change);
+  return () => media.removeEventListener?.("change", change);
+};
+const wideNow = (): boolean => !hasMedia() || window.matchMedia(APP_FRAME_WIDE_QUERY).matches;
+const wideOnServer = (): boolean => true;
+/**
+ * Wide while the frame's wide query matches; a page without matchMedia (tests, SSR) is treated as wide. Read
+ * synchronously, so a narrow page never mounts the full rail just to swap it for the drawer (hydration still
+ * starts from the server's wide answer).
+ */
+const useWideRail = (): boolean => useSyncExternalStore(subscribeWide, wideNow, wideOnServer);
 
 /** One rail card: a header (title and chevron, plus an optional control) over a collapsible body. */
 function RailCard({ id, title, expanded, onExpandedChange, header, children }: { id: RailCardId; title: string; expanded: boolean; onExpandedChange(expanded: boolean): void; header?: ReactNode; children: ReactNode }) {

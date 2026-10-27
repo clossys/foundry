@@ -4,11 +4,12 @@ import { cleanup, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { render, studioReady } from "./__fixtures__/frame.js";
 import { labels } from "./__fixtures__/studio.js";
+import { chooseLayer } from "./__fixtures__/rail.js";
 import { packageSurfaceLibrary, type PackageSurfaceLibrary } from "../library-cli/__fixtures__/package-surface-library.js";
 import { planSurfaceDefaults, type SurfaceDefaultCandidateDocument, type SurfaceDefaultsInput } from "../catalog-core/index.js";
 import { planSurfacePreviews } from "./planned-surface-previews.js";
 import { specimenDataset } from "./specimen-dataset.js";
-import { Studio as StudioView, StudioHeader, StudioRightPanel } from "./index.js";
+import { Studio as StudioView, StudioRightPanel } from "./index.js";
 import { WholeStudioProvider } from "./WholeStudioProvider.js";
 import { boardRow } from "./__fixtures__/library-board-dom.js";
 import type { CompositeStudioLabels, CompositeStudioSnapshot } from "./types.js";
@@ -37,7 +38,7 @@ function mount(preview: CompositeStudioSnapshot["preview"], samples: Parameters<
   // A test may withhold planned rows so an adopted leaf can only draw its state through its own package preview.
   for (const [leaf, planned] of Object.entries(plannedPreviews.previews)) if (dropPlanned(planned.pointer)) delete plannedPreviews.previews[leaf];
   const load = vi.fn(async (): Promise<CompositeStudioSnapshot> => ({ library: structuredClone(fixture.library), surfaceOptions: fixture.options, preview, plannedPreviews }));
-  render(<WholeStudioProvider adapter={{ kind: "composite", catalog: fixture.catalog, load, save: async () => ({ ok: false, reason: "unavailable" }) }} labels={wholeLabels} initialSlotId="sections.faq"><StudioHeader /><StudioView header="external" /><StudioRightPanel /></WholeStudioProvider>);
+  render(<WholeStudioProvider adapter={{ kind: "composite", catalog: fixture.catalog, load, save: async () => ({ ok: false, reason: "unavailable" }) }} labels={wholeLabels} initialSlotId="sections.faq"><StudioView header="external" /><StudioRightPanel /></WholeStudioProvider>);
 }
 const row = (slot: string) => boardRow(slot) ?? null;
 /** The library has loaded (DESIGNER-RO: no save status any more); the boards mount after the composite profile evaluates. */
@@ -66,7 +67,7 @@ describe("adopted package-pointer surfaces on the Studio board", { timeout: 120_
       }
     };
     check(fixture.decisions.map(row => row.slot).filter(slot => slot.startsWith("sections.")));
-    await user.click(screen.getByRole("link", { name: /Frames/ }));
+    await chooseLayer(labels, "Frames", user);
     await waitFor(() => expect(row("frames.sheet")).not.toBeNull());
     check(fixture.decisions.map(row => row.slot).filter(slot => slot.startsWith("frames.")));
   });
@@ -87,7 +88,7 @@ describe("adopted package-pointer surfaces on the Studio board", { timeout: 120_
     await loaded();
     expect(row("sections.data-table")).toHaveTextContent("host-table");
     expect(row("sections.data-table")).not.toHaveTextContent(specimenDataset.sections.dataTable.rows[1]!.customer);
-    await user.click(screen.getByRole("link", { name: /Frames/ }));
+    await chooseLayer(labels, "Frames", user);
     await waitFor(() => expect(row("frames.sheet")).not.toBeNull());
     expect(row("frames.site-shell")).toHaveTextContent(labels.previewUnavailable);
     expect(row("frames.site-shell")!.querySelector("[data-candidate-cell]")).toHaveAttribute("data-preview-state", "unavailable");

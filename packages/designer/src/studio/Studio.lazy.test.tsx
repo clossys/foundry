@@ -8,6 +8,7 @@ import { buildCandidates } from "./model.js";
 import { activeCandidateSource } from "./candidate-display.js";
 import { studioEngine } from "./engine.js";
 import { labels, smallCatalog, adopt } from "./__fixtures__/studio.js";
+import { findLayerSelect } from "./__fixtures__/rail.js";
 import type { CatalogData } from "../catalog-core/index.js";
 
 vi.mock("./engine.js", async importOriginal => {
@@ -56,12 +57,14 @@ it("renders a generic group > family > leaf tree with counts and working filter 
   ] };
   const library = adopt(); const check = vi.spyOn(studioEngine, "check"); const apply = vi.spyOn(studioEngine, "applyLibraryChange");
   render(<Studio catalog={catalog} adapter={{ load: async () => ({ library }), save: async () => ({ ok: false, reason: "unavailable" }) }} labels={labels} initialSlotId="tokens.surface-color" />);
-  await screen.findByRole("link", { name: "Tokens" });
+  await findLayerSelect();
   expect(check).toHaveBeenCalledTimes(1); expect(apply).not.toHaveBeenCalled();
   const tree = within(screen.getByRole("treegrid", { name: labels.treeLabel }));
-  expect(tree.getByRole("row", { name: /^Color/ })).toHaveAttribute("aria-level", "1");
-  expect(tree.getByRole("row", { name: /^Palette/ })).toHaveAttribute("aria-level", "2");
-  expect(tree.getByRole("row", { name: /^tokens.surface-color \(L-count/ })).toHaveAttribute("aria-level", "3");
+  // DESIGNER-RO (rail): the explorer's top level is the layer; group, family and leaf sit under it.
+  expect(tree.getByRole("row", { name: /^Tokens/ })).toHaveAttribute("aria-level", "1");
+  expect(tree.getByRole("row", { name: /^Color/ })).toHaveAttribute("aria-level", "2");
+  expect(tree.getByRole("row", { name: /^Palette/ })).toHaveAttribute("aria-level", "3");
+  expect(tree.getByRole("row", { name: /^tokens.surface-color \(L-count/ })).toHaveAttribute("aria-level", "4");
   expect(document.querySelector('[data-studio-domain="tokens/color"]')).not.toBeNull();
   expect(document.querySelector('[data-studio-canvas-board="tokens/palette"] > section[data-library-board]')).not.toBeNull();
   expect(screen.queryAllByRole("radio")).toHaveLength(0);

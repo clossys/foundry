@@ -3,6 +3,7 @@ import { act, cleanup, fireEvent, render as plainRender, screen, waitFor } from 
 import { render } from "./__fixtures__/frame.js";
 import { Studio } from "./index.js";
 import { smallCatalog, labels, emptyLibrary } from "./__fixtures__/studio.js";
+import { findLayerSelect } from "./__fixtures__/rail.js";
 import { TOKENS } from "../tokens/tokens.js";
 import { CanvasSurface } from "../blocks/canvas/CanvasSurface.js";
 import { CANVAS_LOD_TEXT, CanvasLod } from "../blocks/canvas/CanvasLod.js";
@@ -12,7 +13,7 @@ import { legibleZoomFloor, openOnFirstBoard, revealDelta, worldExtent } from "./
 
 afterEach(() => { cleanup(); vi.restoreAllMocks(); window.history.replaceState(null, "", "/"); });
 const px = (token: string) => Number.parseFloat(TOKENS[token]!.value);
-const mount = async () => { render(<Studio catalog={smallCatalog} adapter={{ load: async () => ({ library: emptyLibrary() }), save: async () => ({ ok: false, reason: "unavailable" }) }} labels={labels} />); await screen.findByRole("link", { name: "Tokens" }); };
+const mount = async () => { render(<Studio catalog={smallCatalog} adapter={{ load: async () => ({ library: emptyLibrary() }), save: async () => ({ ok: false, reason: "unavailable" }) }} labels={labels} />); await findLayerSelect(); };
 const world = () => document.querySelector<HTMLElement>("[data-studio-world]")!;
 const pose = () => {
   const match = /translate\((-?[\d.e-]+)px, (-?[\d.e-]+)px\) scale\(([\d.e-]+)\)/.exec(world().style.transform)!;

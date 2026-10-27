@@ -6,15 +6,22 @@ import { FrameSlotProvider, FrameModuleOutlet } from "../shell/FrameSlots.js";
 import { FrameNoticeProvider } from "../frames/frame-notices.js";
 import { CanvasMap } from "../components/CanvasMap.js";
 import { labels, smallCatalog, emptyLibrary } from "./__fixtures__/studio.js";
+import { findLayerSelect, railCard, railCards } from "./__fixtures__/rail.js";
 afterEach(() => { cleanup(); window.history.replaceState(null, "", "/"); });
-it("leases Explorer, Map and Zoom into actual Frame hosts and ties grid geometry to the camera", async () => {
+/** DESIGNER-RO (rail): the modules live in the page's right rail cards; nothing is leased into the frame's hosts. */
+it("places Explorer, Map and Zoom in the rail cards, leases nothing to Frame hosts, and ties grid geometry to the camera", async () => {
   const view = render(<FrameSlotProvider><FrameNoticeProvider><Studio catalog={smallCatalog} adapter={{ load: async () => ({ library: emptyLibrary() }), save: async () => ({ ok: false, reason: "unavailable" }) }} labels={labels} />
     <div data-test-dock=""><FrameModuleOutlet id="explorer" /><FrameModuleOutlet id="map" /><FrameModuleOutlet id="zoom" /></div>
   </FrameNoticeProvider></FrameSlotProvider>);
-  await screen.findByRole("link", { name: "Tokens" });
-  expect(screen.getByRole("treegrid", { name: labels.treeLabel })).toBeInTheDocument();
-  expect(screen.getByRole("toolbar", { name: labels.canvas.zoomLabel })).toBeInTheDocument();
-  expect(screen.getByRole("button", { name: labels.canvas.minimap }).closest("[data-test-dock]")).not.toBeNull();
+  await findLayerSelect();
+  expect(railCards().map(card => card.dataset.studioRailCard)).toEqual(["explorer", "inspector", "map", "zoom"]);
+  expect(railCard("explorer")!.contains(screen.getByRole("treegrid", { name: labels.treeLabel }))).toBe(true);
+  expect(railCard("zoom")!.contains(screen.getByRole("toolbar", { name: labels.canvas.zoomLabel }))).toBe(true);
+  // The map card's disclosure trigger and the map itself share the map label; both live in the map card.
+  const maps = screen.getAllByRole("button", { name: labels.canvas.minimap });
+  expect(maps).toHaveLength(2); expect(maps.every(button => railCard("map")!.contains(button))).toBe(true);
+  const dock = view.container.querySelector<HTMLElement>("[data-test-dock]")!;
+  expect(dock.querySelector('[role="treegrid"], [role="toolbar"], button')).toBeNull(); expect(dock.textContent).toBe("");
   expect(view.container.querySelector("[data-studio-canvas]")).toHaveAttribute("data-frame-bleed");
   expect(view.container.querySelector("[data-canvas-controls]")).toBeNull();
   expect(view.container.querySelector("[data-canvas-panel]")).toBeNull();

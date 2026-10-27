@@ -2,6 +2,7 @@ import { expect } from "vitest";
 import { screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import type { StudioLabels } from "../types.js";
+import { labels as fixtureLabels } from "./studio.js";
 
 /** The rail's cards, in rendered order. */
 export const railCards = (): HTMLElement[] => [...document.querySelectorAll<HTMLElement>("[data-studio-rail-card]")];
@@ -22,3 +23,6 @@ export async function chooseLayer(labels: Pick<StudioLabels, "layers" | "rail">,
   await user.click(await screen.findByRole("option", { name }));
   await waitFor(() => expect(trigger().textContent?.trim()).toBe(name));
 }
+
+/** The explorer card's layer select: present from the first paint, as the layer tabs were. */
+export const findLayerSelect = (labels: Pick<StudioLabels, "layers"> = fixtureLabels): Promise<HTMLElement> => screen.findByRole("button", { name: new RegExp(`${labels.layers.label}$`) });

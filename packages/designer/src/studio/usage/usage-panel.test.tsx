@@ -10,7 +10,7 @@ import { buildUsageGraph, type UsageGraph, type UsageGraphInputs } from "../../c
 import { checkWiring, type WiringException } from "../../catalog-core/wiring.js";
 import { componentIntegration } from "../../catalog-core/__fixtures__/component-integration.js";
 import { labels as studioLabels, smallCatalog } from "../__fixtures__/studio.js";
-import { Studio, StudioHeader, StudioRightPanel } from "../index.js";
+import { Studio, StudioRightPanel } from "../index.js";
 import { WholeStudioProvider } from "../WholeStudioProvider.js";
 import type { CompositeStudioLabels } from "../types.js";
 import { UsagePanel, type UsagePanelLabels } from "./UsagePanel.js";
@@ -163,9 +163,11 @@ describe("Studio mounts", () => {
     const input = componentIntegration();
     const library = { ...input.library, values: { fills: [] } };
     const adapter = { kind: "composite" as const, catalog: { ...input.catalog, values: smallCatalog }, load: async () => ({ library, componentOptions: input.componentOptions, usageGraph: graph }), save: async () => ({ ok: false as const, reason: "unavailable" as const }) };
-    render(<WholeStudioProvider adapter={adapter} labels={wholeLabels} initialSlotId="components.button"><StudioHeader /><Studio header="external" /><StudioRightPanel /></WholeStudioProvider>);
+    // The Inspector card fills on a selection: deep-link the leaf (?node=), as a shared Designer URL does.
+    window.history.replaceState(null, "", "?node=components.button");
+    render(<WholeStudioProvider adapter={adapter} labels={wholeLabels} initialSlotId="components.button"><Studio /><StudioRightPanel /></WholeStudioProvider>);
     const inspector = () => document.querySelector<HTMLElement>('[data-studio-panel="inspector"]')!;
-    await waitFor(() => expect(inspector()?.querySelector('[data-studio-usage="components.button"]')).not.toBeNull());
+    await waitFor(() => expect(inspector()?.querySelector('[data-studio-usage="components.button"]') ?? null).not.toBeNull());
     expect(rowIds(within(inspector()).getByRole("heading", { name: "U-used-where", level: 4 }).closest("section")!, "frames")).toEqual(["frames.app-shell"]);
     // Pages have no Studio tab: the row is text, not a control.
     await user.click(within(inspector()).getByRole("switch", { name: "U-transitive" }));
@@ -173,10 +175,10 @@ describe("Studio mounts", () => {
     await user.click(within(inspector()).getByRole("switch", { name: "U-transitive" }));
     // A row in another layer switches tab and selection.
     await user.click(within(inspector()).getByRole("button", { name: "frames.app-shell" }));
-    await waitFor(() => expect(inspector()?.querySelector('[data-studio-usage="frames.app-shell"]')).not.toBeNull());
+    await waitFor(() => expect(inspector()?.querySelector('[data-studio-usage="frames.app-shell"]') ?? null).not.toBeNull());
     expect(within(inspector()).getByRole("heading", { name: "frames.app-shell", level: 2 })).toBeInTheDocument();
     await user.click(within(inspector()).getByRole("button", { name: "U-back" }));
-    await waitFor(() => expect(inspector()?.querySelector('[data-studio-usage="components.button"]')).not.toBeNull());
+    await waitFor(() => expect(inspector()?.querySelector('[data-studio-usage="components.button"]') ?? null).not.toBeNull());
     expect(within(inspector()).getByRole("button", { name: "U-back" })).toBeDisabled();
   });
 });
