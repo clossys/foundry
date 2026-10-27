@@ -20,7 +20,6 @@ function fixture(actor: boolean): AppFrameProps {
     navigation: { tree: [{ id: "nav.example", label: "Tools", href: "/tools/example" }], label: "Tools" },
     account: { ...(actor ? { actor: { name: "Sam River" } } : {}), signedOutLabel: "Signed out", sections: [{ id: "account", entries: [{ kind: "link", id: "profile", label: "Profile", href: "#profile" }] }] },
     commands: { heading: "Commands", triggerLabel: "Commands", searchLabel: "Search", closeLabel: "Close", emptyMessage: "Empty", groups: [] },
-    header: { title: "Overview", nav: { label: "Sections", activeId: "a", items: [{ id: "a", label: "First", href: "#a" }, { id: "b", label: "Second", href: "#b" }] } },
     children: <p>Content</p>,
   };
 }

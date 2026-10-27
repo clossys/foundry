@@ -95,6 +95,14 @@ describe("provenance-scan over SSR fixtures (D3: WL1, WL5, WL6, WL7)", () => {
     expect(scan(render(), { surfaces: [{ leaf: "sections.hero", components: { "components.button": "other/components.button" } }] }).findings).toEqual([{ code: "WL7", severity: "error", subject: "sections.hero", message: "binds components.button to other/components.button, selection is test-kit/components.button" }]);
     expect(scan(render(), { surfaces: [{ leaf: "sections.hero", components: { "components.button": "test-kit/components.button" } }] }).findings).toEqual([]);
   });
+  it("WL7: an adopted package pointer renders its origin fill's stamp only through fillOrigins", () => {
+    const adopted = { ...selection, "sections.hero": "acme/sections.hero" };
+    const wl7 = (extra: Partial<ProvenanceScanInput>) => scan(render(), { selection: adopted, ...extra }).findings.filter(finding => finding.code === "WL7").map(finding => finding.message);
+    expect(wl7({})).toEqual(["renders foundry/sections.hero, selection is acme/sections.hero"]);
+    expect(wl7({ fillOrigins: { "acme/sections.hero": "foundry/sections.hero" } })).toEqual([]);
+    // The origin map names one package fill; any other stamp is still a mismatch.
+    expect(scan(render({ heroFill: "other/sections.hero" }), { selection: adopted, fillOrigins: { "acme/sections.hero": "foundry/sections.hero" } }).findings.filter(finding => finding.code === "WL7")).toHaveLength(1);
+  });
   it("WL5: missing page root, malformed stamps, rendered leaves without a node and unselected graph endpoints", () => {
     const bare = render().replace(/^<div data-ds-layer="pages" data-ds-leaf="pages.home" data-ds-fill="acme\/pages.home"/, "<div");
     expect(scan(bare).findings.map(finding => [finding.code, finding.subject, finding.message])).toContainEqual(["WL5", "pages.home", "page root stamp is missing; the whole document is scanned as the page"]);

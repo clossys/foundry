@@ -76,7 +76,7 @@ export const replacedThemeChildren: AppFrameProps["theme"] = { children: <p>Othe
 export const unsupportedDirection: AppFrameProps = { ...props, dir: "auto" };
 // @ts-expect-error there is no separate presentation bag with ignored controls
 export const ignoredPresentation = <AppFrame {...props} presentation={{ sticky: false }} />;
-// @ts-expect-error the header is composed by AppFrame
+// @ts-expect-error the page header is leased through PageHeaderModule, never a frame prop
 export const replacedHeader = <AppFrame {...props} header={<header />} />;
 // @ts-expect-error the skip link cannot be disabled
 export const disabledSkip = <AppFrame {...props} skipLink={false} />;

@@ -510,7 +510,8 @@ it("contract boards preview planned surface defaults labelled as planned, withou
   const row = document.querySelector<HTMLElement>('[data-studio-zoom-full] [data-studio-row="sections.band"]')!;
   const cell = row.querySelector<HTMLElement>("[data-studio-planned]")!;
   expect(cell).toHaveAttribute("data-studio-planned", "foundry/sections.band");
-  expect(cell).toHaveTextContent("A full-width band that holds one section.");
+  // The band previews around the first Section its contract admits, from the specimen dataset.
+  expect(cell).toHaveTextContent("View orders");
   expect(cell).toHaveTextContent("P-planned");
   // Planned is not chosen: the host preview is never asked and the chosen line stays at zero.
   expect(preview).not.toHaveBeenCalled();

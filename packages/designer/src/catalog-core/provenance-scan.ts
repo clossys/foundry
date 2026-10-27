@@ -34,6 +34,11 @@ export interface ProvenanceScanInput {
   /** The route's usage graph. Without it WL5 reports only malformed or missing stamps. */
   readonly graph?: UsageGraph;
   readonly surfaces?: readonly ProvenanceSurfaceBinding[];
+  /**
+   * Selected consumer fill id → the package fill its renderer stamps (`planSurfaceRuntime().origins`).
+   * An adopted package pointer renders the package's own stamp; WL7 accepts exactly that origin.
+   */
+  readonly fillOrigins?: Readonly<Record<string, string>>;
 }
 export interface ProvenanceScan {
   readonly findings: readonly ProvenanceFinding[];
@@ -178,7 +183,7 @@ export function scanProvenance(input: ProvenanceScanInput): ProvenanceScan {
     if (layer === "pages") continue;
     const selected = input.selection[leaf];
     if (!selected) report("WL7", leaf, `renders ${fill}, but the leaf has no selected fill`, selectorOf(element));
-    else if (selected !== fill) report("WL7", leaf, `renders ${fill}, selection is ${selected}`, selectorOf(element));
+    else if (selected !== fill && input.fillOrigins?.[selected] !== fill) report("WL7", leaf, `renders ${fill}, selection is ${selected}`, selectorOf(element));
   }
   for (const surface of input.surfaces ?? []) for (const [leaf, bound] of Object.entries(surface.components).sort(([a], [b]) => compare(a, b))) {
     const selected = input.selection[leaf];

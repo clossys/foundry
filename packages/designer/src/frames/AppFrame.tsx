@@ -47,10 +47,11 @@ function SignedOutMenu({ sections, signedOutLabel, onRoute, markSrc }: Omit<AppF
   </Menu>;
 }
 
-function FrameContent({ brand, navigation, account: { avatar = "initials", ...account }, commands, children, toasts, rightPanel, theme, themeControl, footerLayout = "inline", dir, header, onNavigate, notices, dock, headerPosition, headerSurface, context, root, page, workspaces, breadcrumbLabel, collapsedBreadcrumbLabel, pageInfoLabel, pageActionsLabel,
+function FrameContent({ brand, navigation, account: { avatar = "initials", ...account }, commands, children, toasts, rightPanel, theme, themeControl, footerLayout = "inline", dir, onNavigate, layout: shellLayout = "standard", stage: stageInset = "contained", notices, dock, headerPosition, headerSurface, context, root, page, workspaces, breadcrumbLabel, collapsedBreadcrumbLabel, pageInfoLabel, pageActionsLabel,
   /** @default "Skip to content" */
   skipLabel = "Skip to content", mainId }: AppFrameProps) {
-  const resolvedHeader = useFramePageHeader(header);
+  // The page header is leased by PageHeaderModule only; the frame takes no header prop.
+  const resolvedHeader = useFramePageHeader();
   assertAppFrameBrand(brand);
   const {
     /** @default "Open navigation" */ openLabel: navigationOpenLabel = "Open navigation",
@@ -76,7 +77,7 @@ function FrameContent({ brand, navigation, account: { avatar = "initials", ...ac
     // A panel first supplied after mount starts from its own defaults, not the absent-panel placeholders.
     setPanelSupplied(true); setWidth(rightPanel.defaultValue); setPanelCollapsed(rightPanel.defaultCollapsed ?? false);
   }
-  const [navigationCollapsed, setNavigationCollapsed] = useState(navigation.defaultCollapsed ?? false);
+  const [navigationCollapsed, setNavigationCollapsed] = useState(navigation.defaultCollapsed ?? shellLayout === "immersive");
   const collapsed = rightPanel?.collapsed ?? panelCollapsed;
   const navCollapsed = navigation.collapsed ?? navigationCollapsed;
   const { openLabel = "Open panel", closeLabel = "Close panel" } = rightPanel ?? {};
@@ -230,12 +231,12 @@ function FrameContent({ brand, navigation, account: { avatar = "initials", ...ac
     <Logomark src={brand.markSrc} size="sm" />{brand.navigationMark && <span className="min-w-0 truncate text-body text-ink-primary">{brand.navigationMark.label}</span>}
   </div>;
   const commandTrigger = <div>{navigationBrand}<Button variant="ghost" className={CONTROL + " w-full justify-start gap-sm"} onPress={openCommands}><Icon glyph={Search} decorative /><span className="min-w-0 truncate">{triggerLabel}</span></Button></div>;
-  const pageBar = <PageBar position={headerPosition} surface={headerSurface ?? "solid"} header={resolvedHeader} onNavigate={onNavigate} context={context} root={root} page={page} workspaces={workspaces} narrow={!wide}
+  const pageBar = <PageBar position={headerPosition} surface={headerSurface ?? (shellLayout === "immersive" ? "glass" : "solid")} header={resolvedHeader} onNavigate={onNavigate} context={context} root={root} page={page} workspaces={workspaces} narrow={!wide}
     reserveStart={false} reserveEnd={false} dir={dir}
     labels={{ breadcrumb: breadcrumbLabel ?? "Breadcrumb", collapsedBreadcrumb: collapsedBreadcrumbLabel ?? "More breadcrumb levels", pageInfo: pageInfoLabel ?? "Page information",
       pageActions: pageActionsLabel ?? "More page actions" }} />;
   return <ModalContext.Provider value={{ style: { direction: dir } }}><PopoverContext.Provider value={{ style: { direction: dir } }}>
-    <div ref={frame} dir={dir} data-application-frame="" {...FRAME_STAMP} className="relative flex h-full min-h-0 min-w-0 flex-col overflow-hidden bg-surface-base text-body text-ink-primary">
+    <div ref={frame} dir={dir} data-application-frame="" data-application-frame-layout={shellLayout} data-application-frame-stage={stageInset} {...FRAME_STAMP} className="relative flex h-full min-h-0 min-w-0 flex-col overflow-hidden bg-surface-base text-body text-ink-primary">
       <SkipLink targetId={target}>{skipLabel}</SkipLink>
       <span aria-hidden="true" className="absolute size-0 overflow-hidden"><span ref={sidebarProbe} className="block" style={{ inlineSize: APP_FRAME_LAYOUT.sidebar }} /></span>
       <div className="flex min-h-0 min-w-0 flex-1">
@@ -253,7 +254,7 @@ function FrameContent({ brand, navigation, account: { avatar = "initials", ...ac
           </div>
           <div ref={stage} data-application-frame-region="stage" data-stage-navigation={layout.navigationOverlay ? "overlay" : "docked"} data-stage-panel={narrow ? "overlay" : "docked"}
             className="relative isolate min-h-0 min-w-0 flex-1 overflow-hidden">
-            <main id={target} tabIndex={-1} className="flex h-full min-h-0 min-w-0 flex-col gap-lg overflow-auto p-lg tablet-lg:p-xl frame-main-bleed focus-visible:outline-solid focus-visible:outline-2 focus-visible:outline-focus-ring">{children}</main>
+            <main id={target} tabIndex={-1} className={"flex h-full min-h-0 min-w-0 flex-col gap-lg overflow-auto " + (stageInset === "full" ? "" : "p-lg tablet-lg:p-xl frame-main-bleed ") + "focus-visible:outline-solid focus-visible:outline-2 focus-visible:outline-focus-ring"}>{children}</main>
           </div>
           <FrameDock notices={notices} dock={dock} sheet={!wide} />
         </div>

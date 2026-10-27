@@ -20,11 +20,7 @@
       "status": "draft",
       "trust": "foundry",
       "unmapped": [
-        "layout.immersive",
-        "layout.standard",
-        "slot.progress",
-        "stage.contained",
-        "stage.full"
+        "slot.progress"
       ]
     }
   },
@@ -36,11 +32,19 @@
         "module": "@clossys/designer/frames"
       },
       "members": [
+        "layout.immersive",
+        "layout.standard",
+        "stage.contained",
+        "stage.full",
         "theme.dark",
         "theme.light",
         "theme.system"
       ],
       "propMap": {
+        "layout.immersive": "layout=immersive",
+        "layout.standard": "layout=standard",
+        "stage.contained": "stage=contained",
+        "stage.full": "stage=full",
         "theme.dark": "theme.defaultPreference=dark",
         "theme.light": "theme.defaultPreference=light",
         "theme.system": "theme.defaultPreference=system"
@@ -48,7 +52,7 @@
       "slot": "frames.app-shell",
       "slots": {
         "command": "commands",
-        "header": "header",
+        "header": "context",
         "inspector": "rightPanel",
         "main": "children",
         "sidebar": "navigation",

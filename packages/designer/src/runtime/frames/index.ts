@@ -1,0 +1,21 @@
+/** Frame renderer registry: one package-owned runtime renderer per designer Frames leaf. */
+import { mergeRendererGroups, type SurfaceRendererGroup } from "../contract.js";
+import { appHeaderRenderer } from "./app-header.js";
+import { appShellRenderer } from "./app-shell.js";
+import { appSidebarRenderer } from "./app-sidebar.js";
+import { commandRenderer } from "./command.js";
+import { inspectorRenderer } from "./inspector.js";
+import { sheetRenderer } from "./sheet.js";
+import { siteFooterRenderer } from "./site-footer.js";
+import { siteHeaderRenderer } from "./site-header.js";
+
+export const frameRenderers: SurfaceRendererGroup = mergeRendererGroups({
+  "frames.app-shell": appShellRenderer,
+  "frames.site-header": siteHeaderRenderer,
+  "frames.app-header": appHeaderRenderer,
+  "frames.app-sidebar": appSidebarRenderer,
+  "frames.inspector": inspectorRenderer,
+  "frames.site-footer": siteFooterRenderer,
+  "frames.sheet": sheetRenderer,
+  "frames.command": commandRenderer,
+});
