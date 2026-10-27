@@ -1,18 +1,20 @@
 import { Children } from "react";
-import type { CSSProperties, ReactNode } from "react";
-import { Card } from "@clossys/designer/components/server";
+import type { CSSProperties, HTMLAttributes, ReactNode } from "react";
+import { Card, mergeUiClasses } from "@clossys/designer/components/server";
+import { SectionFrame } from "@clossys/designer/blocks/server";
 
 /**
- * The classes of a page layout's column. A chrome-free view puts them on its
- * content root; the deprecated legacy page puts them on its own `<main>`.
+ * The classes of the deprecated legacy page's `<main>`: the page column, with
+ * its own gutter and slot rhythm, for a view that draws its own chrome.
  */
 export const PAGE_COLUMN_CLASSES = "mx-auto flex w-full flex-1 flex-col gap-xl px-lg py-2xl";
 
 /**
- * The column of the card-free layout: the page column, with its content
- * centred vertically in the space the page frame's `<main>` gives it.
+ * The page column as a Section (`sections.band`): measured, centred, filling
+ * the frame's `<main>`, with the page rhythm above and below. The band's own
+ * content column owns the gutter and the gap between the slots.
  */
-export const CARDLESS_PAGE_COLUMN_CLASSES = `${PAGE_COLUMN_CLASSES} justify-center`;
+const PAGE_SECTION_CLASSES = "mx-auto flex w-full flex-1 flex-col py-2xl";
 
 /** The notes line under either layout's body: centred, small, secondary ink. */
 const NOTES_CLASSES = "flex flex-col items-center gap-xs text-center text-body-s text-ink-secondary";
@@ -22,8 +24,36 @@ const NOTES_CLASSES = "flex flex-col items-center gap-xs text-center text-body-s
  * form column for a sign-in page, the prose column for a capture or document
  * page.
  */
-export function pageColumnStyle(measure: "form" | "prose", style?: CSSProperties): CSSProperties {
+function pageColumnStyle(measure: "form" | "prose", style?: CSSProperties): CSSProperties {
   return { maxWidth: measure === "form" ? "var(--ui-width-form-max, none)" : "var(--ui-width-prose-max, none)", ...style };
+}
+
+export interface PageColumnProps extends Omit<HTMLAttributes<HTMLElement>, "children"> {
+  /** The column's measure: the form column (sign-in, status) or the prose column (capture, document). */
+  measure: "form" | "prose";
+  /** Centre the content vertically in the frame's `<main>`: the card-free layout. */
+  centered?: boolean;
+  children: ReactNode;
+}
+
+/**
+ * The shared page column of every chrome-free front-door view, and that view's
+ * one placement in `SiteFrame`'s content slot. It is a Section, Designer's
+ * `SectionFrame` (`sections.band`), so nothing the view draws sits in the
+ * frame's `<main>` outside a Section (E5, WL1). The view's root attributes,
+ * `className` and `style` land on the Section, which is the column.
+ */
+export function PageColumn({ measure, centered = false, className, style, children, ...rest }: PageColumnProps) {
+  return (
+    <SectionFrame
+      {...rest}
+      measure="prose"
+      className={mergeUiClasses(PAGE_SECTION_CLASSES, centered ? "justify-center" : undefined, className)}
+      style={pageColumnStyle(measure, style)}
+    >
+      {children}
+    </SectionFrame>
+  );
 }
 
 /** True when a slot has something to render: `null`, `undefined`, booleans, `""` and an empty list do not. */
@@ -73,8 +103,8 @@ export interface PageLayoutProps extends PageLayoutHeaderProps {
  * The layout shared by `CaptureView`, `DocumentView`, `AuthView` and the framed
  * `LegalView`: the header (title and subtitle), the body card and the optional
  * notes, centered in that order. It returns the three slots only, for the view to place in its
- * own column, and renders no header, footer or `<main>` landmark: the page frame
- * owns those. Every string is a prop.
+ * `PageColumn` (or the legacy page's `<main>`), and renders no header, footer or `<main>`
+ * landmark: the page frame owns those. Every string is a prop.
  */
 export function PageLayout({ title, subtitle, children, notes, cardLabel, surface, alignment }: PageLayoutProps) {
   const card = surface === "plate"
@@ -107,7 +137,7 @@ export interface CardlessPageLayoutProps extends PageLayoutHeaderProps {
  * The card-free layout used by `StatusView`: the same
  * header as `PageLayout` (title and subtitle), then one primary action and the
  * optional notes, centered, with no card. It returns the slots only, for the
- * view to place in its own column, and renders no header, footer or `<main>`
+ * view to place in its centred `PageColumn`, and renders no header, footer or `<main>`
  * landmark: the page frame owns those. Every string is a prop.
  */
 export function CardlessPageLayout({ title, subtitle, action, notes }: CardlessPageLayoutProps) {
