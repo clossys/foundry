@@ -4,6 +4,7 @@ import { expect, it, vi } from "vitest";
 import { renderToString } from "react-dom/server";
 import { cleanup, render, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
+import * as reactAriaComponents from "react-aria-components";
 import * as components from "../components/index.js";
 import * as charts from "../charts/index.js";
 import * as shell from "../shell/index.js";
@@ -75,7 +76,8 @@ function vendoredModule(files: readonly { path: string; content: string }[], ent
   `], { input: JSON.stringify({ files, entry }), encoding: "utf8" });
   const module = { exports: {} as Record<string, unknown> };
   const host = createRequire(import.meta.url);
-  const require = (specifier: string) => specifier.startsWith("leaf:") ? dependency(specifier.slice(5)) : specifier === "@clossys/designer/components" ? components : host(specifier);
+  // react-aria-components is a peer dependency: a consumer's bundle resolves its vendored files and Foundry to one instance.
+  const require = (specifier: string) => specifier.startsWith("leaf:") ? dependency(specifier.slice(5)) : specifier === "@clossys/designer/components" ? components : specifier === "react-aria-components" ? reactAriaComponents : host(specifier);
   new Function("require", "exports", "module", bundled)(require, module.exports, module);
   return module.exports;
 }
@@ -230,6 +232,42 @@ it("draws the shadcn@aria DialogContent open in its cell, without hiding, scroll
   // Closed again, the page is back to the idle contained specimen.
   expect(within(host).getByText(d.dialog.body)).toBeTruthy();
   expect(pageOutside(cell)).toEqual({ hidden: [], scrollLocked: false });
+  cleanup();
+  errors.mockRestore();
+}, 120_000);
+
+it("keeps the held-open tooltip specimen from swallowing Escape for the dialog it shares a board with", async () => {
+  const errors = vi.spyOn(console, "error").mockImplementation(() => {});
+  const { leaves, modules } = adoptedShadcnLeaves();
+  const specimens = componentSpecimenPreview({ modules: { ...hostModules, ...modules } });
+  const profile = (leaf: string) => leaves.find(entry => entry.leaf === leaf)!.profile;
+  // Studio's containment-overlays board draws both cells at once, the tooltip held open.
+  const { container } = render(<><button type="button">Outside</button>{specimens.preview("components.tooltip", profile("components.tooltip"))}{specimens.preview("components.dialog", profile("components.dialog"))}</>);
+  expect(await within(container.querySelector<HTMLElement>("[data-specimen-overlay-host]")!).findByText(d.tooltip.content)).toBeTruthy();
+  // An Escape anywhere on the page still reaches the page: nothing stops it in the capture phase.
+  const reached: string[] = [];
+  const listen = (event: KeyboardEvent) => { reached.push(event.key); };
+  window.addEventListener("keydown", listen);
+  const user = userEvent.setup();
+  within(container).getByRole("button", { name: "Outside" }).focus();
+  await user.keyboard("{Escape}");
+  expect(reached).toEqual(["Escape"]);
+  window.removeEventListener("keydown", listen);
+  // The real modal opened from the dialog cell closes on Escape.
+  const host = container.querySelector<HTMLElement>("[data-specimen-contained-host='dialog']")!;
+  await user.click(within(host).getByRole("button", { name: "Open dialog" }));
+  const modal = await waitFor(() => {
+    const found = document.querySelector<HTMLElement>("[data-slot='dialog-overlay'] [data-slot='dialog']");
+    expect(found).not.toBeNull();
+    return found!;
+  });
+  await waitFor(() => expect(modal.contains(document.activeElement)).toBe(true));
+  await user.keyboard("{Escape}");
+  await waitFor(() => expect(document.querySelector("[data-slot='dialog-overlay']")).toBeNull());
+  // The tooltip specimen still draws, held open, inside its own cell.
+  const tooltipHost = container.querySelector<HTMLElement>("[data-specimen-overlay-host]")!;
+  expect(within(tooltipHost).getByText(d.tooltip.content)).toBeTruthy();
+  expect(tooltipHost.querySelector("[data-slot='tooltip-content']")).not.toBeNull();
   cleanup();
   errors.mockRestore();
 }, 120_000);
