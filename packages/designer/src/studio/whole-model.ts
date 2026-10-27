@@ -1,5 +1,5 @@
 import { applyLibraryChange, checkConsumerRuntimePorts, libraryHash, resolve } from "../catalog-core/index.js";
-import type { BuildCatalogData, CompositeChangeSet, CompositeEngineInput, CompositeLibraryData, PlacementNode } from "../catalog-core/index.js";
+import type { BuildCatalogData, CompositeChangeSet, CompositeEngineInput, CompositeLibraryData, CompositeResolved, PlacementNode } from "../catalog-core/index.js";
 import type { CompositeStudioSnapshot } from "./types.js";
 
 export function placedLeaves(nodes: readonly PlacementNode[], parents: readonly string[] = []): { id: string; placement: readonly string[] }[] {
@@ -12,9 +12,21 @@ export function wholeSignoff(contracts: BuildCatalogData) {
     return { ...leaf, layer: p.layer, status: "proposed" as const, contract: slot.contract, requires: slot.requires, unresolved: slot.contract.kind === "section" ? slot.contract.unresolvedMemberAxes ?? [] : [] };
   }));
 }
+/** One whole-library resolution per immutable engine input: the provider's committed-library check and every
+ * evaluation of that input share it. A failed resolution is not kept, so it fails again where it is read. */
+const resolutions = new WeakMap<CompositeEngineInput, CompositeResolved>();
+export function resolveWhole(input: CompositeEngineInput): CompositeResolved {
+  let profile = resolutions.get(input); if (!profile) resolutions.set(input, profile = resolve(input));
+  return profile;
+}
+/** The working library's whole-library hash. A kept resolution of this input already carries it as its selection
+ * hash (the same composite library hash of the same library), so the library is not hashed again. */
+export function wholeLibraryHash(input: CompositeEngineInput): string {
+  return resolutions.get(input)?.selectionHash ?? libraryHash(input.library);
+}
 function evaluate(input: CompositeEngineInput, snapshot: CompositeStudioSnapshot, contracts: BuildCatalogData) {
-  const profile = resolve(input);
-  const runtime = snapshot.runtime ? checkConsumerRuntimePorts(snapshot.runtime, contracts, { consumer: input.library.source.id, libraryHash: libraryHash(input.library) as `sha256:${string}`, selectionHash: profile.selectionHash as `sha256:${string}` }) : undefined;
+  const profile = resolveWhole(input);
+  const runtime = snapshot.runtime ? checkConsumerRuntimePorts(snapshot.runtime, contracts, { consumer: input.library.source.id, libraryHash: wholeLibraryHash(input) as `sha256:${string}`, selectionHash: profile.selectionHash as `sha256:${string}` }) : undefined;
   return { profile, runtime };
 }
 type WholeEvaluation = ReturnType<typeof evaluate>;

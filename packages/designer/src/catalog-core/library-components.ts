@@ -67,21 +67,71 @@ export function checkComposite(input: CompositeEngineInput): CompositeCheckResul
 }
 /** The value and component halves of a composite resolution; they read only the values and components portions. */
 interface PortionResolution { values: Resolved; components: ReturnType<typeof componentProfile>; findings: CompositeCheckResult["findings"] }
-function resolvePortions(input: CompositeEngineInput): PortionResolution {
+function computePortions(input: CompositeEngineInput): PortionResolution {
   const owned = portions(input.library);
   const values = resolveValues({ catalog: input.catalog.values, library: owned.values });
   const components = componentProfile(input, values);
   return { values, components, findings: [...checkValues({ catalog: input.catalog.values, library: owned.values, fileExists: input.fileExists }).findings, ...components.check.findings] };
 }
-function resolveCompositeFrom(input: CompositeEngineInput, { values, components, findings }: PortionResolution): CompositeResolved {
-  const profile: CompositeResolved = { consumer: input.library.source.id, selectionHash: compositeLibraryHash(input.library), values, components,
+/**
+ * Everything a portion resolution reads besides the library: the value and component catalogs and each of their
+ * fields, the component options and each of theirs, and the file probe. Compared by identity, so a catalog or option
+ * field replaced in place is a different input.
+ * Catalogs are build-time data, loaded once and never mutated deeper than a replaced top-level field.
+ */
+function portionReads(input: CompositeEngineInput): readonly unknown[] {
+  const { values, components } = input.catalog, options = input.componentOptions;
+  return [values, ...Object.values(values), components, ...Object.values(components), options, ...(options ? Object.values(options) : []), input.fileExists];
+}
+interface PortionEntry { readonly digest: string; readonly reads: readonly unknown[]; readonly portions: PortionResolution }
+/** Few distinct catalogs or options ever resolve one library object; older entries are dropped. */
+const PORTION_ENTRIES = 4;
+const portionCache = new WeakMap<CompositeLibraryData, readonly PortionEntry[]>();
+/**
+ * One portion resolution per library digest: keyed by the library object and re-checked against its digest, so a
+ * library changed in place, or another library, never reuses a result, and by everything else the resolution reads.
+ */
+function resolvePortions(input: CompositeEngineInput, digest = compositeLibraryHash(input.library)): PortionResolution {
+  const reads = portionReads(input);
+  // Entries for another digest describe this object before an in-place change: they can never be read again.
+  const entries = (portionCache.get(input.library) ?? []).filter(entry => entry.digest === digest);
+  const hit = entries.find(entry => entry.reads.length === reads.length && entry.reads.every((read, index) => read === reads[index]));
+  if (hit) return hit.portions;
+  const resolved = computePortions(input);
+  portionCache.set(input.library, [{ digest, reads, portions: resolved }, ...entries].slice(0, PORTION_ENTRIES));
+  return resolved;
+}
+function resolveCompositeFrom(input: CompositeEngineInput, { values, components, findings }: PortionResolution, selectionHash = compositeLibraryHash(input.library)): CompositeResolved {
+  const profile: CompositeResolved = { consumer: input.library.source.id, selectionHash, values, components,
     check: { ok: !findings.some(finding => finding.severity === "error"), findings: [...findings] } };
   const surfaces=resolveSurfaces(input,profile);
   if(surfaces){profile.surfaces=surfaces;profile.check={ok:profile.check.ok&&surfaces.check.ok,findings:[...findings,...surfaces.check.findings]};}
   return profile;
 }
 export function resolveComposite(input: CompositeEngineInput): CompositeResolved {
-  return resolveCompositeFrom(input, resolvePortions(input));
+  const digest = compositeLibraryHash(input.library);
+  return resolveCompositeFrom(input, resolvePortions(input, digest), digest);
+}
+/**
+ * The library an empty change set yields, without applying one: what
+ * `applyCompositeLibraryChange(catalog, library, { baseHash: compositeLibraryHash(library), changes: [] }, options)`
+ * returns (deep-equal, with the same hash: each owned portion without its own source and date), throwing where that
+ * apply throws. The apply's closing check resolves a library with surface fills; `resolveResult` lets the caller
+ * resolve the result with its own engine input instead, so its later evaluation shares that one resolution. Only
+ * when that throws does the apply's own check run, so an error is always the apply's.
+ */
+export function committedCompositeLibrary(catalog: CompositeCatalogData, library: CompositeLibraryData, options?: SurfaceApplyOptions, resolveResult?: (result: CompositeLibraryData) => unknown): CompositeLibraryData {
+  const { values, components } = portions(library);
+  const { source: _valueSource, adoptedAt: _valueDate, ...valuePortion } = values;
+  const { source: _componentSource, adoptedAt: _componentDate, ...componentPortion } = components;
+  const result: CompositeLibraryData = { ...library, values: valuePortion, components: componentPortion };
+  if (result.surfaces?.fills.length) {
+    if (!options) throw new CatalogError("surfaces: S8 explicit resolution options required");
+    let resolved = false;
+    if (resolveResult) try { resolveResult(result); resolved = true; } catch { /* The apply's own check below decides. */ }
+    if (!resolved) { const final = { catalog, library: result, componentOptions: options.componentOptions, surfaceOptions: options.surfaceOptions }; resolveComposite(final); }
+  }
+  return result;
 }
 /** One CAS, ordered dispatch, and no observable partial result on failure. */
 export function applyCompositeLibraryChange(catalog: CompositeCatalogData, library: CompositeLibraryData, cs: CompositeChangeSet, options?: SurfaceApplyOptions): CompositeLibraryData {
@@ -92,7 +142,7 @@ export function applyCompositeLibraryChange(catalog: CompositeCatalogData, libra
   // resolve them once and reuse the result until a values or components operation replaces either portion.
   let resolved: { values: LibraryData; components: ComponentLibrary; portions: PortionResolution } | undefined;
   const current = (input: CompositeEngineInput): PortionResolution => {
-    if (resolved?.values !== values || resolved.components !== components) resolved = { values, components, portions: resolvePortions(input) };
+    if (resolved?.values !== values || resolved.components !== components) resolved = { values, components, portions: computePortions(input) };
     return resolved.portions;
   };
   for (const operation of cs.changes) {
