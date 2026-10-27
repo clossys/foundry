@@ -68,7 +68,7 @@ function dispatchTable(files: readonly ComponentFile[]): Record<string, Record<s
   return JSON.parse(table[1]!) as Record<string, Record<string, unknown>>;
 }
 
-const BUTTON_IMPORT = /\bimport\s*\{\s*Button\s*\}\s*from\s*"(?:\.\.\/)+button\/index\.js"/;
+const BUTTON_IMPORT = /\bimport\s*\{\s*Button\s*\}\s*from\s*"(?:\.\.\/)+button\/index(?:\.js)?"/;
 /** One JSX opening tag of `name`, scanned to its closing `>` at brace depth zero. */
 function openingTags(content: string, name: string): string[] {
   const tags: string[] = [];
