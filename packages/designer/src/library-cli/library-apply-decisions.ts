@@ -8,6 +8,7 @@ import { compositeLibraryHash } from "../catalog-core/library-components.js";
 import type { CompositeCatalogData } from "../catalog-core/types.js";
 import { decisionChangeSet, materializeDecisionBundles, type DecisionOptions } from "./apply-decisions.js";
 import { LibraryCheckError, LibraryConflictError, readLibrary, writeCompositeLibrary } from "./fs-library.js";
+import { inputDigest } from "./write-receipt.js";
 
 const USAGE = "Usage: node library-apply-decisions.js <folder> --catalog <offline-catalog.json> [--bundles <verified-bundles.json>] [--component-options <observations.json>]";
 async function json(path: string): Promise<unknown> {
@@ -43,7 +44,7 @@ export async function runApplyDecisions(argv: readonly string[], io: DecisionCli
     if (options.has("--component-options")) supplied.componentOptions = await json(options.get("--component-options")!) as DecisionOptions["componentOptions"];
     const bundles = await materializeDecisionBundles(catalog, decisions, supplied);
     const change = decisionChangeSet(catalog, library, decisions, bundles);
-    const result = await writeCompositeLibrary(folder, catalog, change, supplied.componentOptions);
+    const result = await writeCompositeLibrary(folder, catalog, change, supplied.componentOptions, undefined, { command: "designer-library-apply-decisions", inputs: { decisions: inputDigest(decisions) } });
     io.out(JSON.stringify({ baseHash: change.baseHash, hash: compositeLibraryHash(result), changed: change.baseHash !== compositeLibraryHash(result), decisions: change.changes.length }));
     return 0;
   } catch (error) {
