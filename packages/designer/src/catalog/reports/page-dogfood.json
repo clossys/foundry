@@ -4485,10 +4485,10 @@
     },
     {
       "code": "DF1",
-      "elementId": "src/studio/Inspector.tsx#div@0f40f0239e3d",
+      "elementId": "src/studio/Inspector.tsx#div@db55f1072d69",
       "evidence": "Raw <div> has visual classes; bind a library surface.",
       "file": "src/studio/Inspector.tsx",
-      "line": 23,
+      "line": 35,
       "missing": "div visual capability",
       "raisedBy": "src/studio/Inspector.tsx#surface",
       "slotId": null,
@@ -4496,20 +4496,20 @@
     },
     {
       "code": "DF2",
-      "elementId": "src/studio/Inspector.tsx#div@0f40f0239e3d",
+      "elementId": "src/studio/Inspector.tsx#div@db55f1072d69",
       "evidence": "unresolved class utilities: min-w-0, gap-md",
       "file": "src/studio/Inspector.tsx",
-      "line": 23,
+      "line": 35,
       "raisedBy": "src/studio/Inspector.tsx#surface",
       "slotId": null,
       "tag": "div"
     },
     {
       "code": "DF1",
-      "elementId": "src/studio/Inspector.tsx#dl@c0e4edc4e764",
+      "elementId": "src/studio/Inspector.tsx#dl@85e02aa814a0",
       "evidence": "Raw <dl> has visual classes; bind a library surface.",
       "file": "src/studio/Inspector.tsx",
-      "line": 24,
+      "line": 36,
       "missing": "dl visual capability",
       "raisedBy": "src/studio/Inspector.tsx#surface",
       "slotId": null,
@@ -4517,10 +4517,10 @@
     },
     {
       "code": "DF2",
-      "elementId": "src/studio/Inspector.tsx#dl@c0e4edc4e764",
+      "elementId": "src/studio/Inspector.tsx#dl@85e02aa814a0",
       "evidence": "unresolved class utilities: gap-xs, text-body",
       "file": "src/studio/Inspector.tsx",
-      "line": 24,
+      "line": 36,
       "raisedBy": "src/studio/Inspector.tsx#surface",
       "slotId": null,
       "tag": "dl"
@@ -4530,7 +4530,7 @@
       "elementId": "src/studio/Inspector.tsx#div@b73e351e0937",
       "evidence": "unresolved className: dynamic source cannot establish token-only styling.",
       "file": "src/studio/Inspector.tsx",
-      "line": 25,
+      "line": 37,
       "raisedBy": "src/studio/Inspector.tsx#surface",
       "slotId": null,
       "tag": "div"
@@ -4540,7 +4540,7 @@
       "elementId": "src/studio/Inspector.tsx#dt@8ba63377065d",
       "evidence": "Raw <dt> has visual classes; bind a library surface.",
       "file": "src/studio/Inspector.tsx",
-      "line": 25,
+      "line": 37,
       "missing": "dt visual capability",
       "raisedBy": "src/studio/Inspector.tsx#surface",
       "slotId": null,
@@ -4551,7 +4551,7 @@
       "elementId": "src/studio/Inspector.tsx#dt@8ba63377065d",
       "evidence": "unresolved class utilities: text-ink-secondary",
       "file": "src/studio/Inspector.tsx",
-      "line": 25,
+      "line": 37,
       "raisedBy": "src/studio/Inspector.tsx#surface",
       "slotId": null,
       "tag": "dt"
@@ -4561,7 +4561,7 @@
       "elementId": "src/studio/Inspector.tsx#dd@a5ae608e04c3",
       "evidence": "Raw <dd> has visual classes; bind a library surface.",
       "file": "src/studio/Inspector.tsx",
-      "line": 25,
+      "line": 37,
       "missing": "dd visual capability",
       "raisedBy": "src/studio/Inspector.tsx#surface",
       "slotId": null,
@@ -4572,7 +4572,7 @@
       "elementId": "src/studio/Inspector.tsx#dd@a5ae608e04c3",
       "evidence": "unresolved class utilities: min-w-0, text-ink-primary",
       "file": "src/studio/Inspector.tsx",
-      "line": 25,
+      "line": 37,
       "raisedBy": "src/studio/Inspector.tsx#surface",
       "slotId": null,
       "tag": "dd"
@@ -4582,7 +4582,7 @@
       "elementId": "src/studio/Inspector.tsx#dl@49de63ecee60",
       "evidence": "unresolved class utilities: gap-sm",
       "file": "src/studio/Inspector.tsx",
-      "line": 26,
+      "line": 38,
       "raisedBy": "src/studio/Inspector.tsx#surface",
       "slotId": null,
       "tag": "dl"
@@ -4592,7 +4592,7 @@
       "elementId": "src/studio/Inspector.tsx#div@2fefd2bf07f1",
       "evidence": "unresolved className: dynamic source cannot establish token-only styling.",
       "file": "src/studio/Inspector.tsx",
-      "line": 30,
+      "line": 42,
       "raisedBy": "src/studio/Inspector.tsx#surface",
       "slotId": null,
       "tag": "div"
@@ -4602,7 +4602,7 @@
       "elementId": "src/studio/Inspector.tsx#div@a2e8e19c607f",
       "evidence": "unresolved className: dynamic source cannot establish token-only styling.",
       "file": "src/studio/Inspector.tsx",
-      "line": 31,
+      "line": 43,
       "raisedBy": "src/studio/Inspector.tsx#surface",
       "slotId": null,
       "tag": "div"
@@ -4612,7 +4612,7 @@
       "elementId": "src/studio/Inspector.tsx#div@1058d0b98f69",
       "evidence": "unresolved className: dynamic source cannot establish token-only styling.",
       "file": "src/studio/Inspector.tsx",
-      "line": 32,
+      "line": 44,
       "raisedBy": "src/studio/Inspector.tsx#surface",
       "slotId": null,
       "tag": "div"
@@ -4622,7 +4622,7 @@
       "elementId": "src/studio/Inspector.tsx#div@f091dcd27554",
       "evidence": "unresolved className: dynamic source cannot establish token-only styling.",
       "file": "src/studio/Inspector.tsx",
-      "line": 33,
+      "line": 45,
       "raisedBy": "src/studio/Inspector.tsx#surface",
       "slotId": null,
       "tag": "div"
@@ -4632,10 +4632,31 @@
       "elementId": "src/studio/Inspector.tsx#div@5b1b41718e24",
       "evidence": "unresolved className: dynamic source cannot establish token-only styling.",
       "file": "src/studio/Inspector.tsx",
-      "line": 34,
+      "line": 46,
       "raisedBy": "src/studio/Inspector.tsx#surface",
       "slotId": null,
       "tag": "div"
+    },
+    {
+      "code": "DF5",
+      "elementId": "src/studio/Inspector.tsx#StudioUsage@1b0279e5a970",
+      "evidence": "Unknown visual import or local component <StudioUsage>; no registered slot resolves.",
+      "file": "src/studio/Inspector.tsx",
+      "line": 52,
+      "missing": "StudioUsage visual capability",
+      "raisedBy": "src/studio/Inspector.tsx#surface",
+      "slotId": null,
+      "tag": "StudioUsage"
+    },
+    {
+      "code": "DF2",
+      "elementId": "src/studio/Inspector.tsx#StudioUsage@1b0279e5a970",
+      "evidence": "unresolved ...: dynamic source cannot establish token-only styling.",
+      "file": "src/studio/Inspector.tsx",
+      "line": 52,
+      "raisedBy": "src/studio/Inspector.tsx#surface",
+      "slotId": null,
+      "tag": "StudioUsage"
     },
     {
       "code": "DF5",
@@ -7119,11 +7140,349 @@
       "tag": "Rows"
     },
     {
+      "code": "DF5",
+      "elementId": "src/studio/usage/StudioUsage.tsx#UsagePanel@4c2f824a460e",
+      "evidence": "Unknown visual import or local component <UsagePanel>; no registered slot resolves.",
+      "file": "src/studio/usage/StudioUsage.tsx",
+      "line": 50,
+      "missing": "UsagePanel visual capability",
+      "raisedBy": "src/studio/usage/StudioUsage.tsx#surface",
+      "slotId": null,
+      "tag": "UsagePanel"
+    },
+    {
+      "code": "DF2",
+      "elementId": "src/studio/usage/StudioUsage.tsx#UsagePanel@4c2f824a460e",
+      "evidence": "unresolved ...: dynamic source cannot establish token-only styling.",
+      "file": "src/studio/usage/StudioUsage.tsx",
+      "line": 50,
+      "raisedBy": "src/studio/usage/StudioUsage.tsx#surface",
+      "slotId": null,
+      "tag": "UsagePanel"
+    },
+    {
+      "code": "DF2",
+      "elementId": "src/studio/usage/StudioUsage.tsx#UsagePanel@4c2f824a460e",
+      "evidence": "unresolved ...: dynamic source cannot establish token-only styling.",
+      "file": "src/studio/usage/StudioUsage.tsx",
+      "line": 50,
+      "raisedBy": "src/studio/usage/StudioUsage.tsx#surface",
+      "slotId": null,
+      "tag": "UsagePanel"
+    },
+    {
+      "code": "DF2",
+      "elementId": "src/studio/usage/UsagePanel.tsx#section@729a897d0bfe",
+      "evidence": "unresolved class utilities: gap-xs",
+      "file": "src/studio/usage/UsagePanel.tsx",
+      "line": 60,
+      "raisedBy": "src/studio/usage/UsagePanel.tsx#surface",
+      "slotId": null,
+      "tag": "section"
+    },
+    {
+      "code": "DF2",
+      "elementId": "src/studio/usage/UsagePanel.tsx#h4@e51402efd246",
+      "evidence": "unresolved className: dynamic source cannot establish token-only styling.",
+      "file": "src/studio/usage/UsagePanel.tsx",
+      "line": 61,
+      "raisedBy": "src/studio/usage/UsagePanel.tsx#surface",
+      "slotId": null,
+      "tag": "h4"
+    },
+    {
+      "code": "DF2",
+      "elementId": "src/studio/usage/UsagePanel.tsx#p@f9c2bec722c7",
+      "evidence": "unresolved className: dynamic source cannot establish token-only styling.",
+      "file": "src/studio/usage/UsagePanel.tsx",
+      "line": 62,
+      "raisedBy": "src/studio/usage/UsagePanel.tsx#surface",
+      "slotId": null,
+      "tag": "p"
+    },
+    {
+      "code": "DF2",
+      "elementId": "src/studio/usage/UsagePanel.tsx#ul@c34094cb0bb4",
+      "evidence": "unresolved class utilities: gap-xs",
+      "file": "src/studio/usage/UsagePanel.tsx",
+      "line": 79,
+      "raisedBy": "src/studio/usage/UsagePanel.tsx#surface",
+      "slotId": null,
+      "tag": "ul"
+    },
+    {
+      "code": "DF2",
+      "elementId": "src/studio/usage/UsagePanel.tsx#li@d76c090a06bd",
+      "evidence": "unresolved class utilities: gap-sm",
+      "file": "src/studio/usage/UsagePanel.tsx",
+      "line": 81,
+      "raisedBy": "src/studio/usage/UsagePanel.tsx#surface",
+      "slotId": null,
+      "tag": "li"
+    },
+    {
+      "code": "DF2",
+      "elementId": "src/studio/usage/UsagePanel.tsx#span@42bbe81c3e0e",
+      "evidence": "unresolved className: dynamic source cannot establish token-only styling.",
+      "file": "src/studio/usage/UsagePanel.tsx",
+      "line": 82,
+      "raisedBy": "src/studio/usage/UsagePanel.tsx#surface",
+      "slotId": null,
+      "tag": "span"
+    },
+    {
+      "code": "DF2",
+      "elementId": "src/studio/usage/UsagePanel.tsx#span@2df69853c423",
+      "evidence": "unresolved className: dynamic source cannot establish token-only styling.",
+      "file": "src/studio/usage/UsagePanel.tsx",
+      "line": 83,
+      "raisedBy": "src/studio/usage/UsagePanel.tsx#surface",
+      "slotId": null,
+      "tag": "span"
+    },
+    {
+      "code": "DF2",
+      "elementId": "src/studio/usage/UsagePanel.tsx#span@bce44fd6f897",
+      "evidence": "unresolved className: dynamic source cannot establish token-only styling.",
+      "file": "src/studio/usage/UsagePanel.tsx",
+      "line": 86,
+      "raisedBy": "src/studio/usage/UsagePanel.tsx#surface",
+      "slotId": null,
+      "tag": "span"
+    },
+    {
+      "code": "DF2",
+      "elementId": "src/studio/usage/UsagePanel.tsx#section@dad469f1bf4c",
+      "evidence": "unresolved class utilities: gap-xs",
+      "file": "src/studio/usage/UsagePanel.tsx",
+      "line": 89,
+      "raisedBy": "src/studio/usage/UsagePanel.tsx#surface",
+      "slotId": null,
+      "tag": "section"
+    },
+    {
+      "code": "DF2",
+      "elementId": "src/studio/usage/UsagePanel.tsx#h5@0d32f354d738",
+      "evidence": "unresolved className: dynamic source cannot establish token-only styling.",
+      "file": "src/studio/usage/UsagePanel.tsx",
+      "line": 90,
+      "raisedBy": "src/studio/usage/UsagePanel.tsx#surface",
+      "slotId": null,
+      "tag": "h5"
+    },
+    {
+      "code": "DF2",
+      "elementId": "src/studio/usage/UsagePanel.tsx#ul@f273159603c9",
+      "evidence": "unresolved class utilities: gap-xs",
+      "file": "src/studio/usage/UsagePanel.tsx",
+      "line": 92,
+      "raisedBy": "src/studio/usage/UsagePanel.tsx#surface",
+      "slotId": null,
+      "tag": "ul"
+    },
+    {
+      "code": "DF2",
+      "elementId": "src/studio/usage/UsagePanel.tsx#li@f52872b23677",
+      "evidence": "unresolved class utilities: gap-sm",
+      "file": "src/studio/usage/UsagePanel.tsx",
+      "line": 92,
+      "raisedBy": "src/studio/usage/UsagePanel.tsx#surface",
+      "slotId": null,
+      "tag": "li"
+    },
+    {
+      "code": "DF2",
+      "elementId": "src/studio/usage/UsagePanel.tsx#span@13ce84e1493e",
+      "evidence": "unresolved className: dynamic source cannot establish token-only styling.",
+      "file": "src/studio/usage/UsagePanel.tsx",
+      "line": 93,
+      "raisedBy": "src/studio/usage/UsagePanel.tsx#surface",
+      "slotId": null,
+      "tag": "span"
+    },
+    {
+      "code": "DF2",
+      "elementId": "src/studio/usage/UsagePanel.tsx#span@6288d88c2406",
+      "evidence": "unresolved className: dynamic source cannot establish token-only styling.",
+      "file": "src/studio/usage/UsagePanel.tsx",
+      "line": 93,
+      "raisedBy": "src/studio/usage/UsagePanel.tsx#surface",
+      "slotId": null,
+      "tag": "span"
+    },
+    {
+      "code": "DF2",
+      "elementId": "src/studio/usage/UsagePanel.tsx#section@134fec8d7d11",
+      "evidence": "unresolved class utilities: gap-sm",
+      "file": "src/studio/usage/UsagePanel.tsx",
+      "line": 95,
+      "raisedBy": "src/studio/usage/UsagePanel.tsx#surface",
+      "slotId": null,
+      "tag": "section"
+    },
+    {
+      "code": "DF2",
+      "elementId": "src/studio/usage/UsagePanel.tsx#div@3c78afc4377c",
+      "evidence": "unresolved class utilities: gap-sm",
+      "file": "src/studio/usage/UsagePanel.tsx",
+      "line": 96,
+      "raisedBy": "src/studio/usage/UsagePanel.tsx#surface",
+      "slotId": null,
+      "tag": "div"
+    },
+    {
+      "code": "DF2",
+      "elementId": "src/studio/usage/UsagePanel.tsx#h3@305d67cb403a",
+      "evidence": "unresolved className: dynamic source cannot establish token-only styling.",
+      "file": "src/studio/usage/UsagePanel.tsx",
+      "line": 97,
+      "raisedBy": "src/studio/usage/UsagePanel.tsx#surface",
+      "slotId": null,
+      "tag": "h3"
+    },
+    {
+      "code": "DF2",
+      "elementId": "src/studio/usage/UsagePanel.tsx#p@3fd48546f92b",
+      "evidence": "unresolved className: dynamic source cannot establish token-only styling.",
+      "file": "src/studio/usage/UsagePanel.tsx",
+      "line": 101,
+      "raisedBy": "src/studio/usage/UsagePanel.tsx#surface",
+      "slotId": null,
+      "tag": "p"
+    },
+    {
+      "code": "DF2",
+      "elementId": "src/studio/usage/UsagePanel.tsx#p@432466365a2f",
+      "evidence": "unresolved class utilities: gap-sm",
+      "file": "src/studio/usage/UsagePanel.tsx",
+      "line": 103,
+      "raisedBy": "src/studio/usage/UsagePanel.tsx#surface",
+      "slotId": null,
+      "tag": "p"
+    },
+    {
+      "code": "DF2",
+      "elementId": "src/studio/usage/UsagePanel.tsx#span@4bf63c140dc4",
+      "evidence": "unresolved className: dynamic source cannot establish token-only styling.",
+      "file": "src/studio/usage/UsagePanel.tsx",
+      "line": 104,
+      "raisedBy": "src/studio/usage/UsagePanel.tsx#surface",
+      "slotId": null,
+      "tag": "span"
+    },
+    {
+      "code": "DF2",
+      "elementId": "src/studio/usage/UsagePanel.tsx#span@1b47e8335c1e",
+      "evidence": "unresolved className: dynamic source cannot establish token-only styling.",
+      "file": "src/studio/usage/UsagePanel.tsx",
+      "line": 104,
+      "raisedBy": "src/studio/usage/UsagePanel.tsx#surface",
+      "slotId": null,
+      "tag": "span"
+    },
+    {
+      "code": "DF5",
+      "elementId": "src/studio/usage/UsagePanel.tsx#List@3b697407e700",
+      "evidence": "Unknown visual import or local component <List>; no registered slot resolves.",
+      "file": "src/studio/usage/UsagePanel.tsx",
+      "line": 106,
+      "missing": "List visual capability",
+      "raisedBy": "src/studio/usage/UsagePanel.tsx#surface",
+      "slotId": null,
+      "tag": "List"
+    },
+    {
+      "code": "DF5",
+      "elementId": "src/studio/usage/UsagePanel.tsx#List@7df7e1d4c58f",
+      "evidence": "Unknown visual import or local component <List>; no registered slot resolves.",
+      "file": "src/studio/usage/UsagePanel.tsx",
+      "line": 107,
+      "missing": "List visual capability",
+      "raisedBy": "src/studio/usage/UsagePanel.tsx#surface",
+      "slotId": null,
+      "tag": "List"
+    },
+    {
+      "code": "DF5",
+      "elementId": "src/studio/usage/UsagePanel.tsx#List@185851370780",
+      "evidence": "Unknown visual import or local component <List>; no registered slot resolves.",
+      "file": "src/studio/usage/UsagePanel.tsx",
+      "line": 108,
+      "missing": "List visual capability",
+      "raisedBy": "src/studio/usage/UsagePanel.tsx#surface",
+      "slotId": null,
+      "tag": "List"
+    },
+    {
+      "code": "DF5",
+      "elementId": "src/studio/usage/UsagePanel.tsx#List@576121312565",
+      "evidence": "Unknown visual import or local component <List>; no registered slot resolves.",
+      "file": "src/studio/usage/UsagePanel.tsx",
+      "line": 109,
+      "missing": "List visual capability",
+      "raisedBy": "src/studio/usage/UsagePanel.tsx#surface",
+      "slotId": null,
+      "tag": "List"
+    },
+    {
+      "code": "DF5",
+      "elementId": "src/studio/usage/UsagePanel.tsx#List@41e057961e1a",
+      "evidence": "Unknown visual import or local component <List>; no registered slot resolves.",
+      "file": "src/studio/usage/UsagePanel.tsx",
+      "line": 110,
+      "missing": "List visual capability",
+      "raisedBy": "src/studio/usage/UsagePanel.tsx#surface",
+      "slotId": null,
+      "tag": "List"
+    },
+    {
+      "code": "DF2",
+      "elementId": "src/studio/usage/UsagePanel.tsx#ul@841cec28ac6c",
+      "evidence": "unresolved class utilities: gap-sm",
+      "file": "src/studio/usage/UsagePanel.tsx",
+      "line": 110,
+      "raisedBy": "src/studio/usage/UsagePanel.tsx#surface",
+      "slotId": null,
+      "tag": "ul"
+    },
+    {
+      "code": "DF2",
+      "elementId": "src/studio/usage/UsagePanel.tsx#li@a70ae1be9c07",
+      "evidence": "unresolved className: dynamic source cannot establish token-only styling.",
+      "file": "src/studio/usage/UsagePanel.tsx",
+      "line": 110,
+      "raisedBy": "src/studio/usage/UsagePanel.tsx#surface",
+      "slotId": null,
+      "tag": "li"
+    },
+    {
+      "code": "DF5",
+      "elementId": "src/studio/usage/UsagePanel.tsx#List@8c09222b7e0f",
+      "evidence": "Unknown visual import or local component <List>; no registered slot resolves.",
+      "file": "src/studio/usage/UsagePanel.tsx",
+      "line": 111,
+      "missing": "List visual capability",
+      "raisedBy": "src/studio/usage/UsagePanel.tsx#surface",
+      "slotId": null,
+      "tag": "List"
+    },
+    {
+      "code": "DF5",
+      "elementId": "src/studio/usage/UsagePanel.tsx#List@f3bf038ad8db",
+      "evidence": "Unknown visual import or local component <List>; no registered slot resolves.",
+      "file": "src/studio/usage/UsagePanel.tsx",
+      "line": 112,
+      "missing": "List visual capability",
+      "raisedBy": "src/studio/usage/UsagePanel.tsx#surface",
+      "slotId": null,
+      "tag": "List"
+    },
+    {
       "code": "DF2",
       "elementId": "src/studio/WholeStudio.tsx#div@f973789e965a",
       "evidence": "unresolved className: dynamic source cannot establish token-only styling.",
       "file": "src/studio/WholeStudio.tsx",
-      "line": 33,
+      "line": 34,
       "raisedBy": "src/studio/WholeStudio.tsx#surface",
       "slotId": null,
       "tag": "div"
@@ -7133,7 +7492,7 @@
       "elementId": "src/studio/WholeStudio.tsx#StudioTopBar@a6931f0d8b5e",
       "evidence": "Unknown visual import or local component <StudioTopBar>; no registered slot resolves.",
       "file": "src/studio/WholeStudio.tsx",
-      "line": 33,
+      "line": 34,
       "missing": "StudioTopBar visual capability",
       "raisedBy": "src/studio/WholeStudio.tsx#surface",
       "slotId": null,
@@ -7144,7 +7503,7 @@
       "elementId": "src/studio/WholeStudio.tsx#StudioStatus@76ce4c743d99",
       "evidence": "Unknown visual import or local component <StudioStatus>; no registered slot resolves.",
       "file": "src/studio/WholeStudio.tsx",
-      "line": 41,
+      "line": 42,
       "missing": "StudioStatus visual capability",
       "raisedBy": "src/studio/WholeStudio.tsx#surface",
       "slotId": null,
@@ -7155,7 +7514,7 @@
       "elementId": "src/studio/WholeStudio.tsx#Scorecard@aa82cbb6c89b",
       "evidence": "Unknown visual import or local component <Scorecard>; no registered slot resolves.",
       "file": "src/studio/WholeStudio.tsx",
-      "line": 43,
+      "line": 44,
       "missing": "Scorecard visual capability",
       "raisedBy": "src/studio/WholeStudio.tsx#surface",
       "slotId": null,
@@ -7166,7 +7525,7 @@
       "elementId": "src/studio/WholeStudio.tsx#section@9976df965037",
       "evidence": "Raw <section> has visual classes; bind a library surface.",
       "file": "src/studio/WholeStudio.tsx",
-      "line": 43,
+      "line": 44,
       "missing": "section visual capability",
       "raisedBy": "src/studio/WholeStudio.tsx#surface",
       "slotId": null,
@@ -7177,7 +7536,7 @@
       "elementId": "src/studio/WholeStudio.tsx#section@9976df965037",
       "evidence": "unresolved class utilities: border, border-line-base, bg-surface-base, p-md",
       "file": "src/studio/WholeStudio.tsx",
-      "line": 43,
+      "line": 44,
       "raisedBy": "src/studio/WholeStudio.tsx#surface",
       "slotId": null,
       "tag": "section"
@@ -7187,7 +7546,7 @@
       "elementId": "src/studio/WholeStudio.tsx#RuntimePendingLine@8d5ae15b528e",
       "evidence": "Unknown visual import or local component <RuntimePendingLine>; no registered slot resolves.",
       "file": "src/studio/WholeStudio.tsx",
-      "line": 43,
+      "line": 44,
       "missing": "RuntimePendingLine visual capability",
       "raisedBy": "src/studio/WholeStudio.tsx#surface",
       "slotId": null,
@@ -7198,7 +7557,7 @@
       "elementId": "src/studio/WholeStudio.tsx#LegacyStudioCanvas@b75a807aeba1",
       "evidence": "Unknown visual import or local component <LegacyStudioCanvas>; no registered slot resolves.",
       "file": "src/studio/WholeStudio.tsx",
-      "line": 59,
+      "line": 60,
       "missing": "LegacyStudioCanvas visual capability",
       "raisedBy": "src/studio/WholeStudio.tsx#surface",
       "slotId": null,
@@ -7209,7 +7568,7 @@
       "elementId": "src/studio/WholeStudio.tsx#LegacyStudioCanvas@b75a807aeba1",
       "evidence": "unresolved ...: dynamic source cannot establish token-only styling.",
       "file": "src/studio/WholeStudio.tsx",
-      "line": 59,
+      "line": 60,
       "raisedBy": "src/studio/WholeStudio.tsx#surface",
       "slotId": null,
       "tag": "LegacyStudioCanvas"
@@ -7219,7 +7578,7 @@
       "elementId": "src/studio/WholeStudio.tsx#ContractCanvas@ac44b10ff528",
       "evidence": "Unknown visual import or local component <ContractCanvas>; no registered slot resolves.",
       "file": "src/studio/WholeStudio.tsx",
-      "line": 60,
+      "line": 61,
       "missing": "ContractCanvas visual capability",
       "raisedBy": "src/studio/WholeStudio.tsx#surface",
       "slotId": null,
@@ -7230,17 +7589,17 @@
       "elementId": "src/studio/WholeStudio.tsx#ContractCanvas@ac44b10ff528",
       "evidence": "unresolved ...: dynamic source cannot establish token-only styling.",
       "file": "src/studio/WholeStudio.tsx",
-      "line": 60,
+      "line": 61,
       "raisedBy": "src/studio/WholeStudio.tsx#surface",
       "slotId": null,
       "tag": "ContractCanvas"
     },
     {
       "code": "DF1",
-      "elementId": "src/studio/WholeStudio.tsx#div@f1c1109fda28",
+      "elementId": "src/studio/WholeStudio.tsx#div@b88c6790576b",
       "evidence": "Raw <div> has visual classes; bind a library surface.",
       "file": "src/studio/WholeStudio.tsx",
-      "line": 104,
+      "line": 105,
       "missing": "div visual capability",
       "raisedBy": "src/studio/WholeStudio.tsx#surface",
       "slotId": null,
@@ -7248,10 +7607,10 @@
     },
     {
       "code": "DF2",
-      "elementId": "src/studio/WholeStudio.tsx#div@f1c1109fda28",
+      "elementId": "src/studio/WholeStudio.tsx#div@b88c6790576b",
       "evidence": "unresolved className: dynamic source cannot establish token-only styling.",
       "file": "src/studio/WholeStudio.tsx",
-      "line": 104,
+      "line": 105,
       "raisedBy": "src/studio/WholeStudio.tsx#surface",
       "slotId": null,
       "tag": "div"
@@ -7261,7 +7620,7 @@
       "elementId": "src/studio/WholeStudio.tsx#CanvasLod@711b592646f2",
       "evidence": "Unknown visual import or local component <CanvasLod>; no registered slot resolves.",
       "file": "src/studio/WholeStudio.tsx",
-      "line": 105,
+      "line": 106,
       "missing": "CanvasLod visual capability",
       "raisedBy": "src/studio/WholeStudio.tsx#surface",
       "slotId": null,
@@ -7272,7 +7631,7 @@
       "elementId": "src/studio/WholeStudio.tsx#CanvasSurface@c1472942c0b5",
       "evidence": "Unknown visual import or local component <CanvasSurface>; no registered slot resolves.",
       "file": "src/studio/WholeStudio.tsx",
-      "line": 105,
+      "line": 106,
       "missing": "CanvasSurface visual capability",
       "raisedBy": "src/studio/WholeStudio.tsx#surface",
       "slotId": null,
@@ -7283,7 +7642,7 @@
       "elementId": "src/studio/WholeStudio.tsx#CanvasSurface@c1472942c0b5",
       "evidence": "unresolved class utilities: inset-0, rounded-none, border-0",
       "file": "src/studio/WholeStudio.tsx",
-      "line": 105,
+      "line": 106,
       "raisedBy": "src/studio/WholeStudio.tsx#surface",
       "slotId": null,
       "tag": "CanvasSurface"
@@ -7293,7 +7652,7 @@
       "elementId": "src/studio/WholeStudio.tsx#CanvasBoards@bf129599b502",
       "evidence": "Unknown visual import or local component <CanvasBoards>; no registered slot resolves.",
       "file": "src/studio/WholeStudio.tsx",
-      "line": 109,
+      "line": 110,
       "missing": "CanvasBoards visual capability",
       "raisedBy": "src/studio/WholeStudio.tsx#surface",
       "slotId": null,
@@ -7304,7 +7663,7 @@
       "elementId": "src/studio/WholeStudio.tsx#CanvasModules@5e95340a9a32",
       "evidence": "Unknown visual import or local component <CanvasModules>; no registered slot resolves.",
       "file": "src/studio/WholeStudio.tsx",
-      "line": 111,
+      "line": 112,
       "missing": "CanvasModules visual capability",
       "raisedBy": "src/studio/WholeStudio.tsx#surface",
       "slotId": null,
@@ -7315,7 +7674,7 @@
       "elementId": "src/studio/WholeStudio.tsx#CanvasExplorer@422b55202981",
       "evidence": "Unknown visual import or local component <CanvasExplorer>; no registered slot resolves.",
       "file": "src/studio/WholeStudio.tsx",
-      "line": 111,
+      "line": 112,
       "missing": "CanvasExplorer visual capability",
       "raisedBy": "src/studio/WholeStudio.tsx#surface",
       "slotId": null,
@@ -7326,7 +7685,7 @@
       "elementId": "src/studio/WholeStudio.tsx#TreeView@3455a671f63a",
       "evidence": "Unknown visual import or local component <TreeView>; no registered slot resolves.",
       "file": "src/studio/WholeStudio.tsx",
-      "line": 112,
+      "line": 113,
       "missing": "TreeView visual capability",
       "raisedBy": "src/studio/WholeStudio.tsx#surface",
       "slotId": null,
@@ -7334,10 +7693,10 @@
     },
     {
       "code": "DF5",
-      "elementId": "src/studio/WholeStudio.tsx#SlotModule@8e074b70ccf3",
+      "elementId": "src/studio/WholeStudio.tsx#SlotModule@29281d90274a",
       "evidence": "Unknown visual import or local component <SlotModule>; no registered slot resolves.",
       "file": "src/studio/WholeStudio.tsx",
-      "line": 114,
+      "line": 115,
       "missing": "SlotModule visual capability",
       "raisedBy": "src/studio/WholeStudio.tsx#surface",
       "slotId": null,
@@ -7348,7 +7707,7 @@
       "elementId": "src/studio/WholeStudio.tsx#EditFeedback@89364bb65ebb",
       "evidence": "Unknown visual import or local component <EditFeedback>; no registered slot resolves.",
       "file": "src/studio/WholeStudio.tsx",
-      "line": 118,
+      "line": 119,
       "missing": "EditFeedback visual capability",
       "raisedBy": "src/studio/WholeStudio.tsx#surface",
       "slotId": null,
@@ -7359,11 +7718,22 @@
       "elementId": "src/studio/WholeStudio.tsx#ContractSignoff@f64c69342a59",
       "evidence": "Unknown visual import or local component <ContractSignoff>; no registered slot resolves.",
       "file": "src/studio/WholeStudio.tsx",
-      "line": 121,
+      "line": 122,
       "missing": "ContractSignoff visual capability",
       "raisedBy": "src/studio/WholeStudio.tsx#surface",
       "slotId": null,
       "tag": "ContractSignoff"
+    },
+    {
+      "code": "DF5",
+      "elementId": "src/studio/WholeStudio.tsx#StudioUsage@71f69ddfb365",
+      "evidence": "Unknown visual import or local component <StudioUsage>; no registered slot resolves.",
+      "file": "src/studio/WholeStudio.tsx",
+      "line": 124,
+      "missing": "StudioUsage visual capability",
+      "raisedBy": "src/studio/WholeStudio.tsx#surface",
+      "slotId": null,
+      "tag": "StudioUsage"
     },
     {
       "code": "DF5",
@@ -9954,7 +10324,7 @@
       "file": "src/studio/index.ts"
     },
     {
-      "elements": 40,
+      "elements": 41,
       "file": "src/studio/Inspector.tsx"
     },
     {
@@ -10075,6 +10445,26 @@
     },
     {
       "elements": 0,
+      "file": "src/studio/usage/committed-graph.ts"
+    },
+    {
+      "elements": 0,
+      "file": "src/studio/usage/model.ts"
+    },
+    {
+      "elements": 1,
+      "file": "src/studio/usage/StudioUsage.tsx"
+    },
+    {
+      "elements": 42,
+      "file": "src/studio/usage/UsagePanel.tsx"
+    },
+    {
+      "elements": 0,
+      "file": "src/studio/usage/useUsageNavigation.ts"
+    },
+    {
+      "elements": 0,
       "file": "src/studio/use-layout.ts"
     },
     {
@@ -10094,7 +10484,7 @@
       "file": "src/studio/whole-model.ts"
     },
     {
-      "elements": 45,
+      "elements": 46,
       "file": "src/studio/WholeStudio.tsx"
     },
     {
@@ -10211,22 +10601,24 @@
   "structural": {
     "code": 12,
     "dd": 13,
-    "div": 42,
+    "div": 43,
     "dl": 4,
     "dt": 13,
     "h2": 2,
-    "h3": 3,
-    "li": 4,
-    "p": 21,
+    "h3": 4,
+    "h4": 1,
+    "h5": 1,
+    "li": 7,
+    "p": 25,
     "pre": 3,
-    "section": 2,
-    "span": 20,
-    "ul": 4
+    "section": 5,
+    "span": 29,
+    "ul": 7
   },
   "summary": {
-    "elements": 829,
-    "findings": 868,
-    "library": 177,
-    "structural": 143
+    "elements": 874,
+    "findings": 904,
+    "library": 186,
+    "structural": 169
   }
 }
