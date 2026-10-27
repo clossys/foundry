@@ -2,6 +2,7 @@ import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { renderToStaticMarkup } from "react-dom/server";
+import { withoutDsAttrs } from "../catalog-core/provenance-attrs.js";
 import { SiteFooter } from "./SiteFooter.js";
 import { SiteHeader } from "./SiteHeader.js";
 
@@ -29,7 +30,8 @@ const columns = (
 );
 const legal = <SiteFooter.Legal entity="Acme Studio" links={[{ label: "Privacy", href: "/privacy" }]} linksLabel="Legal links" />;
 
-const html = (node: React.ReactElement) => renderToStaticMarkup(node);
+/** The recorded markup predates the WIRE-3 DOM provenance stamp; the stamp is asserted in `frames/frames-wiring.test.ts`. */
+const html = (node: React.ReactElement) => withoutDsAttrs(renderToStaticMarkup(node));
 
 beforeEach(() => {
   vi.useFakeTimers();

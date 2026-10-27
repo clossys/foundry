@@ -79,11 +79,20 @@ function framed(child: ReactElement): ReactElement {
   );
 }
 
-/** The view's chrome-free root and the layout's slots, by position: header, action, notes. */
+/** The Section root a chrome-free view's column is: Designer's `SectionFrame` (`sections.band`). */
+const SECTION_ROOT = "section[data-designer-section-frame]";
+
+/**
+ * The view's chrome-free root (the Section that is the column), the Section's one content
+ * column, and the layout's slots in it, by position: header, action, notes.
+ */
 function slots(container: HTMLElement) {
   const root = container.firstElementChild as HTMLElement;
-  const [header, action, notes] = [...root.children] as (HTMLElement | undefined)[];
-  return { root, header: header!, action: action ?? null, notes: notes ?? null };
+  expect(root.matches(SECTION_ROOT)).toBe(true);
+  expect(root.children).toHaveLength(1);
+  const parent = root.firstElementChild as HTMLElement;
+  const [header, action, notes] = [...parent.children] as (HTMLElement | undefined)[];
+  return { root, parent, header: header!, action: action ?? null, notes: notes ?? null };
 }
 
 describe("card-free layout: header, action and notes", () => {
@@ -98,8 +107,8 @@ describe("card-free layout: header, action and notes", () => {
 
     it("puts the action after the header and the notes after the action, with no card", () => {
       const { container } = render(fixture.build({ notes: NOTES }));
-      const { root, header, action, notes } = slots(container);
-      expect(root.children).toHaveLength(3);
+      const { parent, header, action, notes } = slots(container);
+      expect(parent.children).toHaveLength(3);
       expect(header).toContainElement(screen.getByRole("heading", { level: 1 }));
       expect(action).toContainElement(screen.getByRole("link", { name: "Back to home" }));
       expect(notes).toContainElement(screen.getByRole("link", { name: "Contact us" }));
@@ -128,22 +137,26 @@ describe("card-free layout: header, action and notes", () => {
       ["an empty list", []],
     ])("omits the notes element when notes is %s", (_label, empty) => {
       const { container } = render(fixture.build({ notes: empty as ReactNode }));
-      const { root, action } = slots(container);
-      expect(root.children).toHaveLength(2);
-      expect(root.lastElementChild).toBe(action);
+      const { parent, action } = slots(container);
+      expect(parent.children).toHaveLength(2);
+      expect(parent.lastElementChild).toBe(action);
     });
 
-    it("renders no header, footer or main of its own, and exactly one h1", () => {
+    it("is one Section, the column itself, and renders no header, footer or main of its own, and exactly one h1", () => {
       const { container } = render(fixture.build({ notes: NOTES }));
-      expect(container.firstElementChild?.tagName).toBe("DIV");
+      expect(container.children).toHaveLength(1);
+      expect(container.firstElementChild?.tagName).toBe("SECTION");
+      expect(container.firstElementChild?.matches(SECTION_ROOT)).toBe(true);
+      expect(container.querySelectorAll("[data-designer-section-frame]")).toHaveLength(1);
       expect(container.querySelector("header, main, footer, nav, [role='main'], [role='banner'], [role='contentinfo']")).toBeNull();
       expect(container.querySelectorAll("h1")).toHaveLength(1);
     });
 
-    it("inside SiteFrame leaves exactly one main (with the frame's id) holding the one h1", () => {
+    it("inside SiteFrame leaves exactly one main (with the frame's id) holding the one h1, and only the Section", () => {
       const { container } = render(framed(fixture.build({ notes: NOTES })));
       const mains = container.querySelectorAll("main");
       expect(mains).toHaveLength(1);
+      expect([...mains[0]!.children].map((child) => child.matches(SECTION_ROOT))).toEqual([true]);
       expect(mains[0]).toHaveAttribute("id", SITE_MAIN_ID);
       expect(container.querySelectorAll("h1")).toHaveLength(1);
       expect(mains[0]).toContainElement(container.querySelector("h1"));
@@ -157,7 +170,9 @@ describe("card-free layout: header, action and notes", () => {
       expect(view).toBe(shared.container.innerHTML);
       shared.unmount();
       const card = render(<CaptureView heading="Page title" description="Page subtitle." form={<p>Card body</p>} />);
-      expect((card.container.firstElementChild as HTMLElement).firstElementChild?.outerHTML).toBe(view);
+      const cardColumn = card.container.firstElementChild as HTMLElement;
+      expect(cardColumn.matches(SECTION_ROOT)).toBe(true);
+      expect(cardColumn.firstElementChild?.firstElementChild?.outerHTML).toBe(view);
     });
 
     it("refuses a landmark role or the frame's main id on its content root", () => {
@@ -178,9 +193,9 @@ describe("card-free layout: header, action and notes", () => {
 
   it("renders a status-only placeholder page as the header alone", () => {
     const { container } = render(<StatusView status="Only a title" />);
-    const { root } = slots(container);
-    expect(root.children).toHaveLength(1);
-    expect(root.querySelector("p")).toBeNull();
+    const { parent } = slots(container);
+    expect(parent.children).toHaveLength(1);
+    expect(parent.querySelector("p")).toBeNull();
   });
 
   it("ships no copy of its own: the only words are the props", () => {

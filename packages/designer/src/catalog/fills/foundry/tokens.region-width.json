@@ -51,6 +51,42 @@
         "$type": "dimension",
         "$value": "min(20rem, 85vw)"
       },
+      "inspector": {
+        "$extensions": {
+          "com.clossys.css": {
+            "raw": "280px"
+          }
+        },
+        "$type": "dimension",
+        "$value": {
+          "unit": "px",
+          "value": 280
+        }
+      },
+      "inspector-max": {
+        "$extensions": {
+          "com.clossys.css": {
+            "raw": "420px"
+          }
+        },
+        "$type": "dimension",
+        "$value": {
+          "unit": "px",
+          "value": 420
+        }
+      },
+      "inspector-min": {
+        "$extensions": {
+          "com.clossys.css": {
+            "raw": "220px"
+          }
+        },
+        "$type": "dimension",
+        "$value": {
+          "unit": "px",
+          "value": 220
+        }
+      },
       "sidebar": {
         "$extensions": {
           "com.clossys.css": {

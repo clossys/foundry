@@ -1,5 +1,4 @@
 import type { HTMLAttributes, ReactNode } from "react";
-import { Button as AriaButton } from "react-aria-components";
 import { Button } from "../components/Button.js";
 import { Dialog } from "../components/Dialog.js";
 import { cx } from "../components/internal/cx.js";
@@ -37,7 +36,8 @@ const TILE = "block w-full overflow-hidden rounded-panel bg-surface-sunken";
 
 /**
  * A grid of images with optional captions. With `lightbox` on (the default),
- * each image is a React Aria button that opens a modal `Dialog` showing the
+ * each image is a Foundry `Button` (ghost, reshaped to the tile; its own
+ * focus ring) that opens a modal `Dialog` showing the
  * image at full measure with its caption and a close action; with it off the
  * gallery is a list of plain figures. The host supplies every image node and
  * its alternative text; the gallery never fetches or crops.
@@ -53,9 +53,9 @@ export function Gallery({ images, label, lightbox = true, labels = DEFAULT_LABEL
                 <Dialog
                   size="lg"
                   trigger={
-                    <AriaButton aria-label={labels.enlarge(image.label)} className={cx(TILE, "cursor-zoom-in focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus-ring")}>
+                    <Button variant="ghost" aria-label={labels.enlarge(image.label)} className={cx(TILE, "p-0 cursor-zoom-in")}>
                       {image.media}
-                    </AriaButton>
+                    </Button>
                   }
                 >
                   {({ close }) => (

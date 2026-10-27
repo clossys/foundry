@@ -14,6 +14,9 @@ import type { SurfaceResolutionOptions, SurfaceDocument, SurfaceEntry, SurfaceFi
 import type { DogfoodFinding, NeedRecord, NeedStatus, NeedCandidate } from "../catalog-core/dogfood.js";
 import { foundrySurfaceCatalog } from "./surface-catalog.js";
 import { readSurfacePackageEvidence } from "./surface-package-evidence.js";
+import { checkReceipt, digest, inputDigest, libraryManifest, nextReceipt, readReceipt, resolveStamp, DESIGNER_RECEIPT_FILE, type DesignerReceiptVerdict, type DesignerWriteStamp } from "./write-receipt.js";
+export { DESIGNER_RECEIPT_FILE } from "./write-receipt.js";
+export type { DesignerReceipt, DesignerReceiptFinding, DesignerReceiptVerdict, DesignerWriteEntry, DesignerWriteStamp } from "./write-receipt.js";
 
 /** A host that omits the surfaces portion gets Foundry's own Section and Frame contracts; a host-supplied portion stays authoritative. */
 const withSurfaces = (catalog: CompositeCatalogData): CompositeCatalogData => catalog.surfaces === undefined ? { ...catalog, surfaces: foundrySurfaceCatalog() } : catalog;
@@ -278,13 +281,17 @@ export async function checkLibrary(root: string, catalog: CatalogData | Composit
   });
 }
 
-/** Stage an entire generation. A failed stage is invisible; failed second rename restores the old root. */
-async function persistLibrary(root: string, files: ReadonlyMap<string, string>, replaceFills = true, ownership?: { previous: readonly string[]; next: readonly string[] }): Promise<void> {
+/** Stage an entire generation. A failed stage is invisible; failed second rename restores the old root.
+ * Every generation is stamped in the library receipt (DESIGNER-GATE): the stamp is required, so no write path persists unrecorded. */
+async function persistLibrary(root: string, files: ReadonlyMap<string, string>, replaceFills: boolean, ownership: { previous: readonly string[]; next: readonly string[] } | undefined, stamp: Required<DesignerWriteStamp>): Promise<void> {
   const staging = join(dirname(root), `.${basename(root)}-staging`), backup = join(dirname(root), `.${basename(root)}-backup`);
   // Validate the complete map before touching any path, including future emitter outputs.
   for (const name of files.keys()) containedPath(staging, name);
   if(ownership)for(const paths of [ownership.previous,ownership.next]){if(new Set(paths).size!==paths.length)throw new LibraryInputError("Duplicate projection ownership");for(const name of paths)containedPath(staging,name);}
   await evidenceFiles(root);
+  const previousReceipt = await readReceipt(root);
+  if (typeof previousReceipt === "string") throw new LibraryInputError(`Invalid designer write receipt: ${previousReceipt}`);
+  const before = await libraryManifest(root);
   let moved = false, committed = false, staged = false;
   try {
     await fs.mkdir(staging); staged = true;
@@ -297,6 +304,8 @@ async function persistLibrary(root: string, files: ReadonlyMap<string, string>, 
       await fs.mkdir(dirname(path), { recursive: true });
       await fs.writeFile(path + ".tmp", content, { flag: "wx" }); await fs.rename(path + ".tmp", path);
     }
+    const receipt = nextReceipt(previousReceipt, stamp, before, await libraryManifest(staging));
+    if (receipt) { const path = join(staging, DESIGNER_RECEIPT_FILE); await fs.writeFile(path + ".tmp", stableStringify(receipt), { flag: "wx" }); await fs.rename(path + ".tmp", path); }
     await directoryRoot(root);
     await fs.rename(root, backup); moved = true;
     await fs.rename(staging, root); committed = true;
@@ -311,24 +320,26 @@ async function persistLibrary(root: string, files: ReadonlyMap<string, string>, 
 }
 
 /** Explicit changes only. CAS, validation, checking and the swap happen under one shared lock. */
-export async function writeLibrary(root: string, catalog: CatalogData, changes: ChangeSet): Promise<LibraryData> {
+export async function writeLibrary(root: string, catalog: CatalogData, changes: ChangeSet, stamp?: DesignerWriteStamp): Promise<LibraryData> {
   const snapshot: unknown = structuredClone(changes);
   if (!isLibraryChangeSet(snapshot, catalog)) throw new LibraryInputError("Invalid library changeset");
+  const receipt = resolveStamp("writeLibrary", { baseHash: snapshot.baseHash, changeset: inputDigest(snapshot), changes: snapshot.changes.map(change => ({ op: change.op, slot: change.slot })) }, stamp);
   return locked(root, async path => {
     const current = await readUnlocked(path, catalog);
     if (snapshot.baseHash !== libraryHash(current)) throw new LibraryConflictError("Changeset baseHash does not match library");
     const library = applyLibraryChange(catalog, current, snapshot);
     const result = await checkUnlocked(path, catalog, library);
     if (!result.ok) throw new LibraryCheckError(result);
-    await persistLibrary(path, libraryFiles(catalog, library));
+    await persistLibrary(path, libraryFiles(catalog, library), true, undefined, receipt);
     return library;
   });
 }
 
 /** Composite CAS, validation and persistence reuse the same lock and disk boundary as value writes. */
-export async function writeCompositeLibrary(root: string, hostCatalog: CompositeCatalogData, changes: CompositeChangeSet, componentOptions?: CompositeEngineInput["componentOptions"], hostSurfaceOptions?: SurfaceResolutionOptions): Promise<CompositeLibraryData> {
+export async function writeCompositeLibrary(root: string, hostCatalog: CompositeCatalogData, changes: CompositeChangeSet, componentOptions?: CompositeEngineInput["componentOptions"], hostSurfaceOptions?: SurfaceResolutionOptions, stamp?: DesignerWriteStamp): Promise<CompositeLibraryData> {
   const snapshot = runtimeSnapshot(changes), catalog = withSurfaces(hostCatalog);
   if(!isCompositeChangeSet(snapshot,catalog))throw new LibraryInputError("Invalid composite changeset");
+  const receipt = resolveStamp("writeCompositeLibrary", { baseHash: snapshot.baseHash, changeset: inputDigest(snapshot), changes: snapshot.changes.map(operation => ({ portion: operation.portion, op: operation.change.op, slot: operation.change.slot })) }, stamp);
   return locked(root, async path => {
     const current = await readCompositeUnlocked(path, catalog);
     if (snapshot.baseHash !== compositeLibraryHash(current)) throw new LibraryConflictError("Changeset baseHash does not match library");
@@ -339,15 +350,15 @@ export async function writeCompositeLibrary(root: string, hostCatalog: Composite
     const files = libraryFiles(catalog, library, undefined, componentOptions, surfaceOptions);
     if (compositeLibraryHash(library) !== compositeLibraryHash(current)) {
       const projection=current.surfaces!==undefined||library.surfaces!==undefined?await projectionOwnership(path,projectionManagedPaths(catalog,current),files):undefined;
-      await persistLibrary(path, files, true, projection);
+      await persistLibrary(path, files, true, projection, receipt);
     }
     return library;
   });
 }
 
-export function emitLibrary(root: string, catalog: CatalogData, options?: { check?: boolean; targets?: readonly EmitTarget[] }): Promise<{ ok: boolean; drift: string[] }>;
-export function emitLibrary(root: string, catalog: CompositeCatalogData, options?: { check?: boolean; targets?: readonly CompositeEmitTarget[]; componentOptions?: CompositeEngineInput["componentOptions"]; surfaceOptions?: SurfaceResolutionOptions }): Promise<{ ok: boolean; drift: string[] }>;
-export async function emitLibrary(root: string, hostCatalog: CatalogData | CompositeCatalogData, hostOptions: { check?: boolean; targets?: readonly CompositeEmitTarget[]; componentOptions?: CompositeEngineInput["componentOptions"]; surfaceOptions?: SurfaceResolutionOptions } = {}): Promise<{ ok: boolean; drift: string[] }> {
+export function emitLibrary(root: string, catalog: CatalogData, options?: { check?: boolean; targets?: readonly EmitTarget[]; stamp?: DesignerWriteStamp }): Promise<{ ok: boolean; drift: string[] }>;
+export function emitLibrary(root: string, catalog: CompositeCatalogData, options?: { check?: boolean; targets?: readonly CompositeEmitTarget[]; componentOptions?: CompositeEngineInput["componentOptions"]; surfaceOptions?: SurfaceResolutionOptions; stamp?: DesignerWriteStamp }): Promise<{ ok: boolean; drift: string[] }>;
+export async function emitLibrary(root: string, hostCatalog: CatalogData | CompositeCatalogData, hostOptions: { check?: boolean; targets?: readonly CompositeEmitTarget[]; componentOptions?: CompositeEngineInput["componentOptions"]; surfaceOptions?: SurfaceResolutionOptions; stamp?: DesignerWriteStamp } = {}): Promise<{ ok: boolean; drift: string[] }> {
   return locked(root, async path => {
     const composite = "values" in hostCatalog, catalog = composite ? withSurfaces(hostCatalog) : hostCatalog;
     const library = composite ? await readCompositeUnlocked(path, catalog as CompositeCatalogData) : await readUnlocked(path, catalog as CatalogData);
@@ -367,7 +378,7 @@ export async function emitLibrary(root: string, hostCatalog: CatalogData | Compo
     if (options.check) return { ok: drift.length === 0, drift };
     let projection:{previous:string[];next:string[]}|undefined;
     if(composite&&(library as CompositeLibraryData).surfaces!==undefined){const complete=projectionManagedPaths(catalog as CompositeCatalogData,library as CompositeLibraryData);projection=await projectionOwnership(path,complete,new Map([...complete,...files]));}
-    await persistLibrary(path, files, true, projection);
+    await persistLibrary(path, files, true, projection, resolveStamp("emitLibrary", { targets: options.targets ? [...options.targets] : "default", ...(options.componentOptions === undefined ? {} : { observations: inputDigest(options.componentOptions) }) }, options.stamp));
     return { ok: true, drift };
   });
 }
@@ -407,7 +418,7 @@ export async function readNeeds(input: string): Promise<NeedRecord[]> {
   return locked(input, async root => { await evidenceFiles(root); return readNeedsUnlocked(root); });
 }
 /** Writes only an explicit root, under the existing transaction/containment boundary. */
-export async function writeNeeds(input: string, findings: readonly DogfoodFinding[], now = new Date().toISOString()): Promise<NeedRecord[]> {
+export async function writeNeeds(input: string, findings: readonly DogfoodFinding[], now = new Date().toISOString(), stamp?: DesignerWriteStamp): Promise<NeedRecord[]> {
   return locked(input, async root => {
     await evidenceFiles(root);
     const needs = await readNeedsUnlocked(root), changed = new Map<string, string>();
@@ -423,11 +434,11 @@ export async function writeNeeds(input: string, findings: readonly DogfoodFindin
         changed.set(`needs/${need.id}.json`, stableStringify(need));
       }
     }
-    if (changed.size) await persistLibrary(root, changed, false);
+    if (changed.size) await persistLibrary(root, changed, false, undefined, resolveStamp("writeNeeds", { findings: inputDigest(findings), now }, stamp));
     return needs;
   });
 }
-export async function setNeed(input: string, id: string, change: { status: NeedStatus; candidate?: NeedCandidate; closedBy?: string }, now = new Date().toISOString()): Promise<NeedRecord> {
+export async function setNeed(input: string, id: string, change: { status: NeedStatus; candidate?: NeedCandidate; closedBy?: string }, now = new Date().toISOString(), stamp?: DesignerWriteStamp): Promise<NeedRecord> {
   if (!needId(id) || !record(change) || !exactKeys(change, ["status"], ["candidate", "closedBy"]) || !NEED_STATUSES.includes(change.status) || change.candidate !== undefined && !isNeedCandidate(change.candidate)) throw new LibraryInputError("Invalid NEED update");
   return locked(input, async root => {
     await evidenceFiles(root); const needs = await readNeedsUnlocked(root), need = needs.find(row => row.id === id);
@@ -436,8 +447,16 @@ export async function setNeed(input: string, id: string, change: { status: NeedS
     if (after < before || after > before + 1) throw new LibraryInputError("NEED status must move one step forward");
     const updated = { ...need, ...change, updatedAt: now };
     if (!isNeedRecord(updated)) throw new LibraryInputError("Invalid NEED update: candidate or closure evidence required");
-    await persistLibrary(root, new Map([[`needs/${id}.json`, stableStringify(updated)]]), false); return updated;
+    await persistLibrary(root, new Map([[`needs/${id}.json`, stableStringify(updated)]]), false, undefined, resolveStamp("setNeed", { id, ...change, now }, stamp)); return updated;
   });
+}
+/** usage-graph.json through the same locked, stamped generation as every other designer write. */
+export async function writeUsageGraph(input: string, content: string, stamp?: DesignerWriteStamp): Promise<void> {
+  return locked(input, root => persistLibrary(root, new Map([["usage-graph.json", content]]), false, undefined, resolveStamp("writeUsageGraph", { output: digest(content) }, stamp)));
+}
+/** DESIGNER-GATE check: library files match the last designer write receipt; `base` adds the append-only history check. */
+export async function checkLibraryReceipt(input: string, options: { base?: unknown } = {}): Promise<DesignerReceiptVerdict> {
+  return locked(input, root => checkReceipt(root, options.base));
 }
 /** Closed composite dispatch; existing value/component validators retain their contracts. */
 export function isCompositeChangeSet(value:unknown,hostCatalog:CompositeCatalogData):value is CompositeChangeSet {

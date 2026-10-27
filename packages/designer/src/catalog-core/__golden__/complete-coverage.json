@@ -1,6 +1,6 @@
 {
   "assetLeaves": 48,
-  "boundProperties": 227,
+  "boundProperties": 230,
   "complete": true,
   "consumer": "example-complete-catalog",
   "kind": "materialized-consumer-coverage",
@@ -982,7 +982,7 @@
       ]
     },
     {
-      "members": 4,
+      "members": 7,
       "originKinds": [
         "adopted"
       ],

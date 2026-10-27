@@ -16,8 +16,8 @@ import { APP_FRAME_ALWAYS_NARROW, APP_FRAME_ALWAYS_WIDE, APP_FRAME_LAYOUT, APP_F
 import type { AppFrameAccount, AppFrameProps } from "./app-frame-types.js";
 import { dsAttrs } from "../catalog-core/provenance-attrs.js";
 
-/** Frame provenance stamp (D1): provenance-scan reads it back from the rendered root. */
-const APP_SHELL_STAMP = dsAttrs("frames", "frames.app-shell", "foundry/frames.app-shell");
+/** DOM provenance (WIRE-3 D1): this frame root stamps its leaf and fill. */
+const FRAME_STAMP = dsAttrs("frames", "frames.app-shell", "foundry/frames.app-shell");
 
 const CONTROL = "control-h-md inline-flex shrink-0 items-center justify-center rounded-control border-0 bg-transparent px-sm text-body text-ink-primary focus-visible:outline-solid focus-visible:outline-2 focus-visible:outline-focus-ring forced-colors:border-current";
 /** The two edge toggles share one glyph, each facing its own edge: the panel toggle is the navigation toggle's mirror in either direction. */
@@ -236,7 +236,7 @@ function FrameContent({ brand, navigation, account: { avatar = "initials", ...ac
     labels={{ breadcrumb: breadcrumbLabel ?? "Breadcrumb", collapsedBreadcrumb: collapsedBreadcrumbLabel ?? "More breadcrumb levels", pageInfo: pageInfoLabel ?? "Page information",
       pageActions: pageActionsLabel ?? "More page actions" }} />;
   return <ModalContext.Provider value={{ style: { direction: dir } }}><PopoverContext.Provider value={{ style: { direction: dir } }}>
-    <div ref={frame} dir={dir} data-application-frame="" data-application-frame-layout={shellLayout} data-application-frame-stage={stageInset} {...APP_SHELL_STAMP} className="relative flex h-full min-h-0 min-w-0 flex-col overflow-hidden bg-surface-base text-body text-ink-primary">
+    <div ref={frame} dir={dir} data-application-frame="" data-application-frame-layout={shellLayout} data-application-frame-stage={stageInset} {...FRAME_STAMP} className="relative flex h-full min-h-0 min-w-0 flex-col overflow-hidden bg-surface-base text-body text-ink-primary">
       <SkipLink targetId={target}>{skipLabel}</SkipLink>
       <span aria-hidden="true" className="absolute size-0 overflow-hidden"><span ref={sidebarProbe} className="block" style={{ inlineSize: APP_FRAME_LAYOUT.sidebar }} /></span>
       <div className="flex min-h-0 min-w-0 flex-1">

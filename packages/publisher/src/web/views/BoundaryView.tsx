@@ -2,7 +2,7 @@ import type { ReactNode } from "react";
 import { Card, mergeUiClasses } from "@clossys/designer/components/server";
 import { SectionHeader } from "@clossys/designer/blocks/server";
 import { SiteFooter, SiteHeader } from "@clossys/designer/shell/server";
-import { PAGE_COLUMN_CLASSES, hasContent, pageColumnStyle } from "../internal/PageLayout.js";
+import { PAGE_COLUMN_CLASSES, PageColumn, hasContent } from "../internal/PageLayout.js";
 import { siteHeaderPresentation, type SiteChromeGround } from "../internal/viewChromeGround.js";
 import { assertViewContentRoot, usesLegacyChrome } from "../internal/viewContentRoot.js";
 import type { ErrorViewProps } from "./ErrorView.js";
@@ -156,9 +156,9 @@ export function BoundaryView({
   if (!legacyChrome) {
     assertViewContentRoot("BoundaryView", rest);
     return (
-      <div {...rest} className={mergeUiClasses(PAGE_COLUMN_CLASSES, className)} style={pageColumnStyle("form", style)}>
+      <PageColumn {...rest} measure="form" className={className} style={style}>
         {content}
-      </div>
+      </PageColumn>
     );
   }
 

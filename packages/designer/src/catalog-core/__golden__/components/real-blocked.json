@@ -1,104 +1,80 @@
 {
-  "blockedCount": 24,
-  "descriptorCount": 26,
+  "blockedCount": 0,
+  "descriptorCount": 27,
   "leaves": [
     {
-      "blockers": 7,
-      "codes": [
-        "K4"
-      ],
+      "blockers": 0,
+      "codes": [],
       "slot": "components.avatar"
     },
     {
-      "blockers": 7,
-      "codes": [
-        "K4"
-      ],
+      "blockers": 0,
+      "codes": [],
       "slot": "components.badge"
     },
     {
-      "blockers": 4,
-      "codes": [
-        "K4"
-      ],
+      "blockers": 0,
+      "codes": [],
       "slot": "components.banner"
     },
     {
-      "blockers": 4,
-      "codes": [
-        "K4",
-        "K7"
-      ],
+      "blockers": 0,
+      "codes": [],
       "slot": "components.breadcrumbs"
     },
     {
-      "blockers": 9,
-      "codes": [
-        "K4"
-      ],
+      "blockers": 0,
+      "codes": [],
       "slot": "components.button"
     },
     {
-      "blockers": 15,
-      "codes": [
-        "K4"
-      ],
+      "blockers": 0,
+      "codes": [],
       "slot": "components.calendar"
     },
     {
-      "blockers": 6,
-      "codes": [
-        "K4"
-      ],
+      "blockers": 0,
+      "codes": [],
       "slot": "components.card"
     },
     {
-      "blockers": 1,
-      "codes": [
-        "K4"
-      ],
+      "blockers": 0,
+      "codes": [],
       "slot": "components.checkbox"
     },
     {
-      "blockers": 36,
-      "codes": [
-        "K4"
-      ],
+      "blockers": 0,
+      "codes": [],
       "slot": "components.combo-box"
     },
     {
-      "blockers": 5,
-      "codes": [
-        "K4"
-      ],
+      "blockers": 0,
+      "codes": [],
       "slot": "components.dialog"
     },
     {
-      "blockers": 4,
-      "codes": [
-        "K4"
-      ],
+      "blockers": 0,
+      "codes": [],
       "slot": "components.disclosure"
     },
     {
-      "blockers": 3,
-      "codes": [
-        "K4"
-      ],
+      "blockers": 0,
+      "codes": [],
+      "slot": "components.file-trigger"
+    },
+    {
+      "blockers": 0,
+      "codes": [],
       "slot": "components.keyboard"
     },
     {
-      "blockers": 11,
-      "codes": [
-        "K4"
-      ],
+      "blockers": 0,
+      "codes": [],
       "slot": "components.menu"
     },
     {
-      "blockers": 6,
-      "codes": [
-        "K4"
-      ],
+      "blockers": 0,
+      "codes": [],
       "slot": "components.popover"
     },
     {
@@ -112,73 +88,53 @@
       "slot": "components.radio-group"
     },
     {
-      "blockers": 31,
-      "codes": [
-        "K4"
-      ],
+      "blockers": 0,
+      "codes": [],
       "slot": "components.select"
     },
     {
-      "blockers": 4,
-      "codes": [
-        "K4"
-      ],
+      "blockers": 0,
+      "codes": [],
       "slot": "components.separator"
     },
     {
-      "blockers": 1,
-      "codes": [
-        "K4"
-      ],
+      "blockers": 0,
+      "codes": [],
       "slot": "components.skeleton"
     },
     {
-      "blockers": 4,
-      "codes": [
-        "K4"
-      ],
+      "blockers": 0,
+      "codes": [],
       "slot": "components.slider"
     },
     {
-      "blockers": 6,
-      "codes": [
-        "K4"
-      ],
+      "blockers": 0,
+      "codes": [],
       "slot": "components.switch"
     },
     {
-      "blockers": 3,
-      "codes": [
-        "K4"
-      ],
+      "blockers": 0,
+      "codes": [],
       "slot": "components.table"
     },
     {
-      "blockers": 16,
-      "codes": [
-        "K4"
-      ],
+      "blockers": 0,
+      "codes": [],
       "slot": "components.tabs"
     },
     {
-      "blockers": 11,
-      "codes": [
-        "K4"
-      ],
+      "blockers": 0,
+      "codes": [],
       "slot": "components.toggle-button"
     },
     {
-      "blockers": 8,
-      "codes": [
-        "K4"
-      ],
+      "blockers": 0,
+      "codes": [],
       "slot": "components.toggle-group"
     },
     {
-      "blockers": 6,
-      "codes": [
-        "K4"
-      ],
+      "blockers": 0,
+      "codes": [],
       "slot": "components.tooltip"
     }
   ],
