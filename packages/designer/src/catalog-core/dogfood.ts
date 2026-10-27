@@ -407,6 +407,19 @@ export function dogfoodComposes(input: DogfoodInput): DogfoodCompose[] {
   });
 }
 
+/** Consumer-mode import qualification (G4). Every static import, re-export and
+ * side-effect import must be relative or runner-resolved project source, the
+ * React runtime (react, react-dom and their jsx/client/server entries, plus the
+ * server-only/client-only markers), the Next.js framework (next, next/*), a
+ * node: builtin, or a Foundry Designer entry. Anything else, including a
+ * non-Foundry UI library, is an unqualified external the runner never inspected. */
+const consumerRuntimeModules = new Set(["react", "react/jsx-runtime", "react/jsx-dev-runtime", "react-dom", "react-dom/client", "react-dom/server", "server-only", "client-only"]);
+const rawAria = (module: string) => module === "react-aria-components" || module.startsWith("react-aria-components/");
+function qualifiedConsumerModule(module: string, file: string, input: DogfoodInput): boolean {
+  if (module.startsWith(".") || consumerRuntimeModules.has(module) || module.startsWith("node:") || module === DOGFOOD_PACKAGE_NAME || module.startsWith(`${DOGFOOD_PACKAGE_NAME}/`) || module === "next" || module.startsWith("next/")) return true;
+  const edge = `${file}:${module}`;
+  return Object.hasOwn(input.consumerBoundary?.sourceImports ?? {}, edge) || Object.hasOwn(input.localModules ?? {}, edge);
+}
 const quotedLiteral = /^(?:"(?:\\.|[^"\\])*"|'(?:\\.|[^'\\])*')$/;
 function staticAttribute(attribute: Attribute): boolean {
   if (!attribute.dynamic) return true;
@@ -459,6 +472,13 @@ export function runDogfood(input: DogfoodInput) {
       add("DF8", { tag: "page", start: 0, end: 0, attributes: [] }, "Page composition graph requires exactly one imported PageHeaderModule with explicit id and header.");
     if (consumer) {
       if ([...parsed.modules].some(module => module === "react-aria-components" || module.startsWith("react-aria-components/"))) add("DF5", { tag: "import", start: 0, end: 0, attributes: [] }, "Raw react-aria-components import bypasses the consumer component boundary.");
+      // Type-only TypeScript sources import at runtime too; their modules are
+      // collected without JSX so type syntax never reads as markup.
+      const sourceModules = /\.[cm]?ts$/.test(file.file) && !/\.d\.[cm]?ts$/.test(file.file) ? parseJsx(file.content, false).modules : parsed.modules;
+      for (const module of [...sourceModules].sort()) if (!rawAria(module) && !qualifiedConsumerModule(module, file.file, input)) {
+        const quoted = new RegExp(`(["'])${module.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}\\1`).exec(file.content), start = quoted?.index ?? 0;
+        add("DF5", { tag: "import", start, end: start + (quoted?.[0].length ?? 0), attributes: [] }, `Unqualified external import ${module}: not project source the runner resolved, the React/Next.js runtime, a node: builtin or a ${DOGFOOD_PACKAGE_NAME} entry.`);
+      }
       if (/\.css$/.test(file.file)) {
         for (const issue of cssIssues.filter(issue => issue.file === file.file))
           add("DF2", { tag: "css", start: issue.start, end: issue.end, attributes: [] }, issue.evidence);

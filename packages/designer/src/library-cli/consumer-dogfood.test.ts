@@ -207,6 +207,16 @@ describe("consumer source boundary (zero finding allowlist)", () => {
     const spoof = await consumerDogfoodSources(["Page.tsx"], contract, root, root);
     expect(runConsumerDogfood(spoof).findings).toContainEqual(expect.objectContaining({ code: "DF5", tag: "Fabricated" }));
   });
+  it("reports unqualified external and non-Foundry UI library imports, not the qualified runtime boundary (G4)", async () => {
+    await write("Page.tsx", `${header} import {Root} from "@radix-ui/react-dialog"; import clsx from "clsx"; export {motion} from "framer-motion"; import "some-side-effect"; import "server-only"; import {useRouter} from "next/navigation"; import {useState} from "react"; import {createPortal} from "react-dom"; import {readFile} from "node:fs/promises"; import {Button} from "@clossys/designer/components"; import {helper} from "@/lib/helper"; import {local} from "./local"; export default function Page(){return <Lease id="example" header={{title:"Example"}}/>}`);
+    await write("src/lib/helper.ts", 'import {format} from "date-fns"; export const helper=format;');
+    await write("local.ts", "export const local=1;");
+    const findings = runConsumerDogfood(await sources()).findings.filter(row => row.code === "DF5" && row.tag === "import");
+    const reported = findings.map(row => [row.file, /Unqualified external import ([^\s:]+)/.exec(row.evidence)?.[1]]).sort();
+    expect(reported).toEqual([["Page.tsx", "@radix-ui/react-dialog"], ["Page.tsx", "clsx"], ["Page.tsx", "framer-motion"], ["Page.tsx", "some-side-effect"], ["src/lib/helper.ts", "date-fns"]]);
+    // The non-consumer catalog mode keeps its previous contract.
+    expect(runDogfood({ files: [{ file: "Page.tsx", content: 'import clsx from "clsx"; export const x=clsx;' }] }).findings).toEqual([]);
+  });
   it("passes mapped project views through the actual dogfood-consumer CLI without promoting JSON to source", async () => {
     await write("Page.tsx", `${header} import {Publisher} from "@example/publisher";export default function Page(){return <><Lease id="example" header={{title:"Example"}}/><Publisher/></>}`);
     await write("Publisher.tsx", 'import {Button} from "@clossys/designer/components";import copy from "./copy.json";export function Publisher(){return <Button>{copy.title}</Button>}');
