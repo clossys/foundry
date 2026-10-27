@@ -104,6 +104,13 @@ function parseBinding(component: ResolvedComponent, member: string, pointer: str
   const value = match[5] === "true" ? true : match[5] === "false" ? false : match[5];
   return { module, name: match[2]!, ...(match[3] ? { part: match[3] } : {}), ...(match[4] ? { property: match[4], value: value ?? true } : {}), ...(intrinsic ? { intrinsic: true } : {}) };
 }
+/**
+ * Whether a selection's emitted code includes the consumer glyph module: a selected leaf reads an asset,
+ * or the asset Icon adapter is selected, whose leaf imports that module whatever else is selected.
+ */
+export function emitsGlyphModule(components: readonly { slot: string; reads: { assets: readonly string[] } }[]): boolean {
+  return components.some(component => component.slot === "components.icon" || component.reads.assets.length > 0);
+}
 function leafModule(component: ResolvedComponent, packageExports: ResolvedComponents["packageExports"], files: readonly ComponentFile[], glyphModule?: ComponentEmitOptions["glyphModule"]): ComponentFile {
   const path = `components/${component.slot.slice(11)}/index.ts`;
   const name = nameOf(component.slot); assertComponentIdentifier(name);
@@ -201,7 +208,7 @@ export function emitComponents(profile: ResolvedComponents, targets: readonly Co
     const root: string[] = [];
     for (const component of components) root.push(`export { ${nameOf(component.slot)} } from ${quote(`./components/${component.slot.slice(11)}/index.js`)};`);
     const assets = sortedComponentIds(components.flatMap(component => component.reads.assets));
-    if (assets.length) {
+    if (emitsGlyphModule(components)) {
       const glyphs = options.glyphModule;
       if (!glyphs || assets.some(asset => !(asset in glyphs.glyphs))) throw new CatalogError("components: glyph module is unavailable");
       assertComponentPath(glyphs.path, true);
@@ -210,6 +217,10 @@ export function emitComponents(profile: ResolvedComponents, targets: readonly Co
         inspectGlyph(data); return [asset, data];
       }));
       generated.push({ path: glyphs.path, content: `export const glyphs = ${JSON.stringify(glyphData, null, 2)} as const;\n` });
+    }
+    // Only a leaf that reads an asset needs the registered provider; the Icon adapter passes its glyph directly.
+    if (assets.length) {
+      const glyphs = options.glyphModule!;
       const providerModule = components.find(component => component.impl.kind === "package" && component.descriptor.pin?.package === "@clossys/designer")?.descriptor.pin?.package;
       if (!providerModule) throw new CatalogError("components: registered glyph provider package is unavailable");
       const module = `${providerModule}/components`;
