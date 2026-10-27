@@ -14,7 +14,7 @@ type Specimen = ReactElement<Record<string, unknown>>;
  */
 function ContainedDialog({ Content, specimen }: { readonly Content: ComponentType<Record<string, unknown>>; readonly specimen: Specimen }) {
   const [open, setOpen] = useState(false);
-  return <div data-specimen-contained-host="dialog" style={{ position: "relative" }}>
+  return <div data-specimen-contained-host="dialog" className="relative">
     <Content {...specimen.props} />
     <Button variant="secondary" onPress={() => setOpen(true)}>Open dialog</Button>
     {open ? cloneElement(specimen, { isOpen: true, onOpenChange: setOpen }) : null}

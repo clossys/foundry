@@ -1,7 +1,7 @@
 "use client";
 import { Disclosure } from "../components/Disclosure.js";
 
-import { memo, useCallback, useMemo, useState, type CSSProperties } from "react";
+import { memo, useCallback, useMemo, useState } from "react";
 import type { LayerId, Placement, BuildCatalogData } from "../catalog-core/index.js";
 import { Button } from "../components/Button.js";
 import { useStudioSession } from "./StudioProvider.js";
@@ -19,7 +19,7 @@ import { SlotModule } from "../shell/FrameSlots.js";
 import { RuntimePendingLine } from "./board-summary.js";
 import { checkCounts } from "./runtime-pending.js";
 import { CanvasSurface } from "../blocks/canvas/CanvasSurface.js";
-import { CANVAS_ZOOM_VAR } from "../blocks/canvas/CanvasLod.js";
+import { CanvasLod } from "../blocks/canvas/CanvasLod.js";
 import { useCanvasWorld } from "./useCanvasWorld.js";
 import { placedLeaves, wholeSignoff } from "./whole-model.js";
 import { prepareCompositeLibraryBoard } from "./prepared-library-boards.js";
@@ -100,12 +100,12 @@ function ContractCanvas({ className, candidateWorkflow }: StudioCanvasProps) {
   }, [boards, session, setLeaf]);
   const activeBoard = groups.flatMap(domain => domain.boards).find(board => board.leaves.some(leaf => leaf.id === s.leaf));
   return <div data-studio="" data-studio-canvas="" className={["relative isolate min-h-0 flex-1 overflow-hidden", className].filter(Boolean).join(" ")}>
-    <CanvasSurface aria-label={t.canvas.label} viewport={canvas.pose} onViewportChange={canvas.setPose} selection={[]} onSelectionChange={() => {}}
-      worldBounds={canvas.bounds} items={[]} itemInteraction="content" minZoom={.12} maxZoom={2} grid="dots" style={{ [CANVAS_ZOOM_VAR]: canvas.pose.zoom } as CSSProperties}
+    <CanvasLod zoom={canvas.pose.zoom}><CanvasSurface aria-label={t.canvas.label} viewport={canvas.pose} onViewportChange={canvas.setPose} selection={[]} onSelectionChange={() => {}}
+      worldBounds={canvas.bounds} items={[]} itemInteraction="content" minZoom={.12} maxZoom={2} grid="dots"
       onSurfaceElement={canvas.onSurfaceElement} onWorldElement={canvas.onWorldElement} actionsRef={canvas.actions}
       worldClassName="flex h-max w-max flex-col gap-3xl p-3xl" className="absolute inset-0 rounded-none border-0">
       <CanvasBoards boards={boards} labels={t} workflow={candidateWorkflow} onCommand={command} />
-    </CanvasSurface>
+    </CanvasSurface></CanvasLod>
     <CanvasModules canvas={canvas} labels={t} explorer={<CanvasExplorer labels={t} query={query} onQuery={setQuery} filter={filter} onFilter={setFilter} libraries={libraries.map(id => ({ id, available: !activeBoard || (s.layer === "components" ? documents.some(doc => doc.$extensions["com.clossys.fill"].source === id && activeBoard.leaves.some(leaf => leaf.id === doc.$extensions["com.clossys.fill"].slot)) : Boolean(s.snapshot?.runtime?.manifest.fills.some(fill => fill.library === id && activeBoard.leaves.some(leaf => leaf.id === fill.leaf)))) }))}>
       <TreeView nodes={tree} aria-label={t.treeLabel} currentId={s.leaf} onNavigate={s.setLeaf} />
     </CanvasExplorer>} />

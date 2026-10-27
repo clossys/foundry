@@ -51,6 +51,8 @@ it("renders every value-layer canvas board as the registered library-board Secti
     if (layer !== "Tokens") await userEvent.click(screen.getByRole("link", { name: layer }));
     await waitFor(() => expect(document.querySelector("[data-studio-world] section[data-library-board]")).not.toBeNull());
     expect(declared.boards).toBeGreaterThan(0);
+    // The camera zoom reaches board titles through the registered CanvasLod owner, not a Studio inline style.
+    expect(document.querySelector("[data-studio-world]")!.closest<HTMLElement>("[data-canvas-lod]")?.style.getPropertyValue("--canvas-zoom")).toMatch(/^\d/);
     const findings = scanCanvas(declared.boards);
     expect(findings.filter(finding => finding.code === "WL1"), layer).toEqual([]);
     expect(findings.filter(finding => finding.code === "WL6"), layer).toEqual([]);

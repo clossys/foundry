@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { WholeStudioCanvas, useWholeStudio } from "./WholeStudio.js";
 import { useFrameNotice } from "../frames/frame-notices.js";
 import { CanvasExplorer } from "./CanvasExplorer.js";
@@ -11,7 +11,7 @@ import { EditFeedback } from "./EditFeedback.js";
 import { AssetExemptions } from "./AssetExemptions.js";
 import { boardMatches, canvasDomains, type CanvasFilter } from "./canvas-model.js";
 import { CanvasSurface } from "../blocks/canvas/CanvasSurface.js";
-import { CANVAS_ZOOM_VAR } from "../blocks/canvas/CanvasLod.js";
+import { CanvasLod } from "../blocks/canvas/CanvasLod.js";
 import { CanvasBoards, canvasPreviewPort, canvasSourceDigests } from "./canvas-boards.js";
 import { prepareValueLibraryBoard } from "./prepared-library-boards.js";
 import { runtimeHash } from "../catalog-core/runtime-ports.js";
@@ -106,15 +106,15 @@ export function LegacyStudioCanvas({ panelInsets, className, candidateWorkflow }
     {state.ready ? <style data-studio-candidates="">{candidateStyles}</style> : null}
     {state.phase.status === "loading" ? <p role="status">{state.labels.loading}</p> : null}
 
-    <CanvasSurface aria-label={text.label} viewport={canvas.pose} onViewportChange={canvas.setPose} selection={[]} onSelectionChange={() => {}}
+    <CanvasLod zoom={canvas.pose.zoom}><CanvasSurface aria-label={text.label} viewport={canvas.pose} onViewportChange={canvas.setPose} selection={[]} onSelectionChange={() => {}}
       worldBounds={canvas.bounds} items={[]} itemInteraction="content" minZoom={.12} maxZoom={2}
       onSurfaceElement={canvas.onSurfaceElement} onWorldElement={canvas.onWorldElement} actionsRef={canvas.actions}
       worldClassName="flex h-max w-max flex-col gap-3xl p-3xl" className="absolute inset-0 rounded-none border-0 bg-surface-raised"
-      instructionText={text.hint} grid="dots" recenterLabel={text.minimap} style={{ [CANVAS_ZOOM_VAR]: canvas.pose.zoom } as CSSProperties}
+      instructionText={text.hint} grid="dots" recenterLabel={text.minimap}
       zoomOutLabel={text.zoomOut} zoomInLabel={text.zoomIn} zoomPercentageLabel={text.zoomLabel} fitLabel={text.fit}
       >
         <CanvasBoards boards={boards} labels={state.labels} workflow={candidateWorkflow} onCommand={command} onBoardElement={registerBoard} onRowElement={registerRow} />
-    </CanvasSurface>
+    </CanvasSurface></CanvasLod>
     {state.focused && state.focusedRow ? <SlotModule id="value-inspector" slot="right-panel" label={state.labels.inspectorLabel}><aside data-studio-panel="inspector" aria-label={state.labels.inspectorLabel} className="p-md">
       {state.autosave ? <EditFeedback leaf={state.focused.fill.slot} state={state.autosave} labels={state.labels} /> : null}
       <Inspector candidate={state.focused} labels={state.labels} canReset={state.canReset} resolved={state.resolved} tier={(() => { const contract = state.catalog.slots.find(slot => slot.id === state.focused?.fill.slot)?.contract; return contract?.kind === "token" ? contract.tier : undefined; })()} onReset={state.reset} />
