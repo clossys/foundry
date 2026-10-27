@@ -135,11 +135,26 @@ function nonvisualRouteProvider(source: string, mount: RouteProviderMount, known
   const imports = module.match(new RegExp(`import\\s*\\{\\s*${component}\\s*\\}\\s*from\\s*["']${escapeRegExp(known.module)}["'];?`, "g")) ?? [];
   if (imports.length !== 1 || (module.match(new RegExp(`(?<![\\w$])${component}(?![\\w$])`, "g")) ?? []).length !== 3) return false;
   if ((module.match(/(?<![\w$])export(?![\w$])/g) ?? []).length !== 1) return false;
-  const head = mount.source.export === "default" ? `export\\s+default\\s+function(?:\\s+${id})?` : `export\\s+function\\s+${escapeRegExp(mount.source.export)}`;
+  // The module grammar is an allowlist, not a list of refused operations: import
+  // declarations, then the one exported function, whose body (below) only binds reads.
+  // No module-level statement runs anywhere else.
+  const quoted = `(?:"[^"\\n]*"|'[^'\\n]*')`, named = `${id}(?:\\s+as\\s+${id})?`;
+  const importDeclaration = `import\\s+(?:type\\s+)?(?:${id}|\\*\\s*as\\s+${id}|\\{\\s*${named}(?:\\s*,\\s*${named})*\\s*,?\\s*\\})\\s*from\\s*${quoted}\\s*;`;
+  if (!new RegExp(`^\\s*(?:${importDeclaration}\\s*)*export\\s`).test(module)) return false;
+  const head =mount.source.export === "default" ? `export\\s+default\\s+function(?:\\s+${id})?` : `export\\s+function\\s+${escapeRegExp(mount.source.export)}`;
   const shape = new RegExp(`${head}\\s*\\(\\s*\\{\\s*children\\s*\\}\\s*(?::\\s*\\{\\s*children\\s*:\\s*(?:React\\.)?ReactNode\\s*;?\\s*\\})?\\s*\\)\\s*\\{([\\s\\S]*?)(return\\s*<${component}((?:\\s+${id}=(?:\\{[^{}]*\\}|"[^"\\n]*"))*)\\s*>\\s*\\{children\\}\\s*<\\/${component}\\s*>\\s*;?)\\s*\\}\\s*$`).exec(module);
   if (!shape) return false;
   const [, body, mountText, attributes] = shape;
   if (/(?<![\w$])(?:return|children)(?![\w$])/.test(body!)) return false;
+  // The body is only `const` bindings of reads, so nothing in it calls a method on,
+  // assigns to (plain, compound, logical, `++`/`--`) or deletes from a value reached
+  // through its inputs, by alias, destructuring or a nested function: each binding is a
+  // name or a flat object/array pattern of names, initialized by a hook call with no
+  // argument (no callback, so no nested function and no effect) or by a member read
+  // (`a.b`, `a["b"]`). Every other statement or expression is refused.
+  const pattern = `(?:${id}|\\{\\s*${id}(?:\\s*,\\s*${id})*\\s*,?\\s*\\}|\\[\\s*${id}(?:\\s*,\\s*${id})*\\s*,?\\s*\\])`;
+  const read = `${id}(?:\\s*\\.\\s*${id}|\\s*\\[\\s*${quoted}\\s*\\])*`, hook = `use[A-Z][\\w$]*\\s*\\(\\s*\\)`;
+  if (!new RegExp(`^\\s*(?:const\\s+${pattern}\\s*=\\s*(?:${hook}|${read})\\s*;\\s*)*$`).test(body!)) return false;
   for (const [, name, value] of attributes!.matchAll(new RegExp(`(${id})=(\\{[^{}]*\\}|"[^"\\n]*")`, "g"))) {
     if (!known.props.includes(name!)) return false;
     if (value!.startsWith("{") && !new RegExp(`^\\{\\s*(?:${id}(?:\\.${id})*|true|false|"[^"\\n]*")\\s*\\}$`).test(value!)) return false;

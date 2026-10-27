@@ -277,6 +277,48 @@ describe("registered nonvisual provider ownership seam (synthetic fixtures; no r
     for (const source of probes) refused.push(providerRefused((await check(await setup(designerRoute(), source))).findings));
     expect(refused, `refused per probe: ${refused}`).toEqual(probes.map(() => true));
   }, SCAN_TIMEOUT);
+
+  it("(k) the provider body may not call, assign or delete through its inputs, directly, by alias or in a nested function", async () => {
+    const inputs = "  const inputs = useStudioInputs();", at = (line: string) => nonvisual.replace(inputs, `${inputs}\n  ${line}`);
+    const probes = [
+      // The four reviewer probes: a live DOM input gains visible content or loses the page.
+      at('inputs.node.append("Old chrome");'),
+      at("inputs.node.textContent = inputs.chrome;"),
+      at("inputs.container.append(inputs.chrome);"),
+      at("inputs.node.replaceChildren();"),
+      // Inside an effect, a layout effect, a hook callback and a named nested function.
+      at('useEffect(() => { inputs.node.append("Old chrome"); });'),
+      at("useLayoutEffect(() => { inputs.node.replaceChildren(); }, []);"),
+      at('const chrome = useMemo(() => inputs.node.append("Old chrome"), []);'),
+      at('const reset = function () { inputs.node.textContent = ""; };'),
+      at("inputs.nodes.forEach(node => node.remove());"),
+      // Through an alias, an object or array destructuring, or a chained read.
+      at('const n = inputs.node; n.append("Old chrome");'),
+      at('const { node } = inputs; node.append("Old chrome");'),
+      at("const [node] = inputs.nodes; node.remove();"),
+      at('const { node } = inputs; node.textContent = "Old chrome";'),
+      // Compound, logical, update and delete forms.
+      at('inputs.node.textContent += "Old chrome";'),
+      at('inputs.node.textContent ||= "Old chrome";'),
+      at("inputs.count++;"),
+      at("--inputs.count;"),
+      at("delete inputs.node.dataset.page;"),
+      // At module level, outside the function body.
+      nonvisual.replace("export function", 'useStudioInputs().node.append("Old chrome");\nexport function'),
+      // A hook given any argument, which can be a callback.
+      at("const chrome = useStudioChrome(inputs.node);"),
+    ];
+    const refused: boolean[] = [];
+    for (const source of probes) refused.push(providerRefused((await check(await setup(designerRoute(), source))).findings));
+    expect(refused, `refused per probe: ${refused}`).toEqual(probes.map(() => true));
+    // Reads stay admitted: a hook result, a plain or literal-key member path, and object or array destructuring.
+    for (const source of [
+      nonvisual,
+      nonvisual.replace(inputs, `${inputs}\n  const { adapter, labels } = inputs;`).replace("adapter={inputs.adapter} labels={inputs.labels}", "adapter={adapter} labels={labels}"),
+      nonvisual.replace(inputs, `${inputs}\n  const studio = inputs.studio;\n  const adapter = studio["adapter"];`).replace("adapter={inputs.adapter}", "adapter={adapter}"),
+      nonvisual.replace(inputs, "  const [inputs] = useStudioInputPair();"),
+    ]) expect(providerRefused((await check(await setup(designerRoute(), source))).findings), source).toBe(false);
+  }, SCAN_TIMEOUT);
 });
 
 /** Identifier names whose source text is an escape, as the TypeScript parser resolves them. */
