@@ -82,7 +82,7 @@ describe("select and combo-box source closure", () => {
     const names = ["InputGroup", "InputGroupInput", "InputGroupTextarea"];
     // Compile the tested declarations verbatim, without unrelated cva button/addon code.
     const contextSource = parsed.statements.filter(statement =>
-      ts.isImportDeclaration(statement) && /^(?:react|react-aria-components)$|utils\/index\.js$/.test((statement.moduleSpecifier as ts.StringLiteral).text)
+      ts.isImportDeclaration(statement) && /^(?:react|react-aria-components)$|utils\/index$/.test((statement.moduleSpecifier as ts.StringLiteral).text)
       || ts.isFunctionDeclaration(statement) && names.includes(statement.name?.text ?? "")
     ).map(statement => statement.getFullText(parsed)).join("\n") + "\nexport { " + names.join(", ") + " };";
     // Compile in Node: jsdom's Uint8Array realm is incompatible with esbuild.
@@ -93,9 +93,9 @@ describe("select and combo-box source closure", () => {
       const result = await build({ stdin: { contents: data.source, loader: "tsx", resolveDir: process.cwd() }, bundle: true, write: false, format: "cjs", platform: "node", packages: "external", plugins: [{
         name: "generated-input-group",
         setup(builder) {
-          builder.onResolve({ filter: /_parts\\/utils\\/index\\.js$/ }, () => ({ path: "utils", namespace: "generated" }));
+          builder.onResolve({ filter: /_parts\\/utils\\/index$/ }, () => ({ path: "utils", namespace: "generated" }));
           builder.onLoad({ filter: /.*/, namespace: "generated" }, () => ({ contents: data.utils, loader: "ts", resolveDir: process.cwd() }));
-          builder.onResolve({ filter: /\\/button\\/index\\.js$/ }, (args) => ({ path: args.path, external: true }));
+          builder.onResolve({ filter: /\\/button\\/index$/ }, (args) => ({ path: args.path, external: true }));
         },
       }] });
       process.stdout.write(result.outputFiles[0].text);

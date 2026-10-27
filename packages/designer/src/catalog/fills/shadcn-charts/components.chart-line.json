@@ -69,11 +69,11 @@
         },
         {
           "path": "components/chart-line/chart-line.tsx",
-          "sha256": "41f1fd3759dde63fae48b3681207cb4666beb6f99dda73a2b98a28509a09dc01"
+          "sha256": "223c0ddf394bff9a018bf91eef0ea349d8318132bdb4db6b682ee31574392080"
         },
         {
           "path": "components/chart/chart.tsx",
-          "sha256": "717ad38bc0b66215aa16e807db6896681e352faa71e22163c9e2e180f7a091de"
+          "sha256": "332cfd34270c6596893e18310f59a3224c27d3a8a79decedd4bd17fa928ecb89"
         },
         {
           "path": "notices/THIRD-PARTY.md",

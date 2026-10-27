@@ -79,7 +79,7 @@
         },
         {
           "path": "components/toggle-button/toggle.tsx",
-          "sha256": "308c3c9abb39d85ab28d1087c622fe7f863a68af08c54bc823497ef5ee2d8130"
+          "sha256": "2b45fb1b21a5ce43734794d427803ad8476ae19361f33cc25a0ef4813b3cdad9"
         },
         {
           "path": "notices/THIRD-PARTY.md",

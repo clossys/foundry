@@ -68,7 +68,7 @@
         },
         {
           "path": "components/switch/switch.tsx",
-          "sha256": "fd2ef1c8e9539c6694421178ea622d2ce3dbd010ee86defd30ffb78587892415"
+          "sha256": "3fd09f5b623aa1e03cb48f3e9d9dc0f0f024ff2cbb63e5f880182a449330dcb3"
         },
         {
           "path": "notices/THIRD-PARTY.md",

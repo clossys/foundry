@@ -19,7 +19,8 @@ const quote = (value: unknown): string => JSON.stringify(value);
 function relative(from: string, to: string): string {
   const a = from.split("/").slice(0, -1), b = to.split("/");
   while (a.length && b.length && a[0] === b[0]) { a.shift(); b.shift(); }
-  return `${a.length ? "../".repeat(a.length) : "./"}${b.join("/").replace(/\.tsx?$/, ".js")}`;
+  // Extensionless: bundler resolvers (Turbopack, jiti) find a .ts/.tsx module by extension search only.
+  return `${a.length ? "../".repeat(a.length) : "./"}${b.join("/").replace(/\.tsx?$/, "")}`;
 }
 function exportedNames(code: string): string[] {
   if (/\bexport\s*\*/.test(code)) throw new CatalogError("components: wildcard exports require an explicit inspected surface");
@@ -39,7 +40,7 @@ function targetPath(from: string, specifier: string, paths: ReadonlySet<string>)
     else parts.push(part);
   }
   const path = parts.join("/");
-  return [path, path.replace(/\.js$/, ".ts"), path.replace(/\.js$/, ".tsx")].find(path => paths.has(path));
+  return [path, `${path}.ts`, `${path}.tsx`, path.replace(/\.js$/, ".ts"), path.replace(/\.js$/, ".tsx")].find(path => paths.has(path));
 }
 /** Static, named imports only. Unsupported syntax stays an error rather than an inferred surface. */
 export function assertComponentImportClosure(files: readonly ComponentFile[], packageExports: ResolvedComponents["packageExports"]): void {
@@ -212,7 +213,7 @@ export function emitComponents(profile: ResolvedComponents, targets: readonly Co
     // Never overwrite adopted bytes: an upstream index needs its own unambiguous materialization.
     if (retained.length !== profile.files.length) throw new CatalogError("components: generated entrypoint conflicts with materialized source");
     const root: string[] = [];
-    for (const component of components) root.push(`export { ${nameOf(component.slot)} } from ${quote(`./components/${component.slot.slice(11)}/index.js`)};`);
+    for (const component of components) root.push(`export { ${nameOf(component.slot)} } from ${quote(`./components/${component.slot.slice(11)}/index`)};`);
     const assets = sortedComponentIds(components.flatMap(component => component.reads.assets));
     if (emitsGlyphModule(components)) {
       const glyphs = options.glyphModule;

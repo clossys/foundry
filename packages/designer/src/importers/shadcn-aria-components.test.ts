@@ -57,18 +57,18 @@ describe("pinned shadcn aria component import", () => {
   });
   it("binds a sibling's own module only for sub-parts, keeps contract-only and Icon imports on the entrypoint, refuses an ambiguous leaf", () => {
     const leafByItem = { button: "button", select: "select", toggle: "toggle-button", input: "text-field", textarea: "text-field" };
-    const source = 'import { Button } from "../button/index.js"\nimport {\n  Select,\n  SelectContent,\n} from "../select/index.js"\nimport { Icon as LibraryIcon } from "../icon/index.js"\nimport { cn } from "../_parts/utils/index.js"\nimport { Button as Deep, buttonVariants } from "../../button/index.js"\nimport { ToggleButton } from "../toggle-button/index.js"\nimport { toggleVariants } from "../toggle-button/index.js"';
+    const source = 'import { Button } from "../button/index"\nimport {\n  Select,\n  SelectContent,\n} from "../select/index"\nimport { Icon as LibraryIcon } from "../icon/index"\nimport { cn } from "../_parts/utils/index"\nimport { Button as Deep, buttonVariants } from "../../button/index"\nimport { ToggleButton } from "../toggle-button/index"\nimport { toggleVariants } from "../toggle-button/index"';
     const bound = bindSiblingLeafModules(source, leafByItem);
-    expect(bound.content).toBe('import { Button } from "../button/index.js"\nimport {\n  Select,\n  SelectContent,\n} from "../select/select.js"\nimport { Icon as LibraryIcon } from "../icon/index.js"\nimport { cn } from "../_parts/utils/index.js"\nimport { Button as Deep, buttonVariants } from "../../button/button.js"\nimport { ToggleButton } from "../toggle-button/index.js"\nimport { toggleVariants } from "../toggle-button/toggle.js"');
+    expect(bound.content).toBe('import { Button } from "../button/index"\nimport {\n  Select,\n  SelectContent,\n} from "../select/select"\nimport { Icon as LibraryIcon } from "../icon/index"\nimport { cn } from "../_parts/utils/index"\nimport { Button as Deep, buttonVariants } from "../../button/button"\nimport { ToggleButton } from "../toggle-button/index"\nimport { toggleVariants } from "../toggle-button/toggle"');
     expect(bound.ambiguous).toEqual([]);
-    expect(bindSiblingLeafModules('import { TextField } from "../text-field/index.js"', leafByItem)).toEqual({ content: 'import { TextField } from "../text-field/index.js"', ambiguous: [] });
-    expect(bindSiblingLeafModules('import { Input } from "../text-field/index.js"', leafByItem)).toEqual({ content: 'import { Input } from "../text-field/index.js"', ambiguous: ["text-field"] });
+    expect(bindSiblingLeafModules('import { TextField } from "../text-field/index"', leafByItem)).toEqual({ content: 'import { TextField } from "../text-field/index"', ambiguous: [] });
+    expect(bindSiblingLeafModules('import { Input } from "../text-field/index"', leafByItem)).toEqual({ content: 'import { Input } from "../text-field/index"', ambiguous: ["text-field"] });
   });
   it("calendar rebind owns day styles and preserves single/range root protocols", () => {
     const result = importShadcnAriaComponents(pinnedInput());
     const code = result.rewrites.calendar!.files.find(file => file.path.endsWith("calendar.tsx"))!.content;
     expect(code).not.toContain("buttonVariants");
-    expect(code).toContain('import { Button } from "../button/index.js"');
+    expect(code).toContain('import { Button } from "../button/index"');
     expect(code).toContain('import { forwardRef as ReactForwardRef } from "react"');
     expect(code).toContain("ReactForwardRef(function Calendar");
     expect(code).toContain("ReactForwardRef(function RangeCalendar");

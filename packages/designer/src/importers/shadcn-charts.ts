@@ -62,7 +62,7 @@ export const SHADCN_CHART_CHROME = Object.freeze({
 });
 
 const ALIAS_IMPORT = 'import { cn } from "cn"';
-const ALIAS_TARGET = 'import { cn } from "../_parts/utils/index.js"';
+const ALIAS_TARGET = 'import { cn } from "../_parts/utils/index"';
 const UTILS = 'import { clsx, type ClassValue } from "clsx"\nimport { twMerge } from "tailwind-merge"\nexport function cn(...inputs: ClassValue[]) { return twMerge(clsx(inputs)) }\n';
 const READS = ["tokens.border-color", "tokens.categorical-color", "tokens.chart-color", "tokens.surface-color", "tokens.text-color"];
 const DEPS = [
@@ -91,7 +91,7 @@ function composition(leaf: ChartLeaf): string {
   return `"use client"
 
 import { ${leaf.mark}, ${leaf.chart}, CartesianGrid, XAxis } from "recharts"
-import { type ChartConfig, ChartContainer, ChartLegend, ChartLegendContent, ChartTooltip, ChartTooltipContent } from "../chart/chart.js"
+import { type ChartConfig, ChartContainer, ChartLegend, ChartLegendContent, ChartTooltip, ChartTooltipContent } from "../chart/chart"
 
 export interface ${leaf.exportName}Series { key: string; label: string }
 export interface ${leaf.exportName}Props {

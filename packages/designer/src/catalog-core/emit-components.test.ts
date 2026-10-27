@@ -1,5 +1,5 @@
 // @vitest-environment node
-import { readFileSync, readdirSync } from "node:fs";
+import { readFileSync, readdirSync, writeFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { describe, expect, it } from "vitest";
 import ts from "typescript";
@@ -12,7 +12,12 @@ import { stableStringify } from "./stable.js";
 import { sha256 } from "./digest.js";
 import { componentSourceHash } from "./check-components.js";
 
-const golden = (name: string) => readFileSync(resolve(import.meta.dirname, "__golden__/components", name), "utf8");
+// Explicit local regeneration (UPDATE_COMPONENT_EMIT_GOLDENS=1) writes only a golden whose emitted bytes are passed.
+const golden = (name: string, emitted?: string) => {
+  const path = resolve(import.meta.dirname, "__golden__/components", name);
+  if (emitted !== undefined && process.env.UPDATE_COMPONENT_EMIT_GOLDENS === "1") writeFileSync(path, emitted);
+  return readFileSync(path, "utf8");
+};
 const packageExports = { "test-kit/components": ["Button"], "react-aria-components": ["Button"] };
 function typecheckSynthetic(files: readonly { path: string; content: string }[]): readonly string[] {
   const root = resolve(import.meta.dirname, "__synthetic_codegen__");
@@ -37,7 +42,7 @@ describe("SYNTHETIC component code generation; no shipped conformance claims", (
   it("matches the all-package synthetic golden and parses every emitted TypeScript module", () => {
     const profile = packageProfile(); expect(profile.check.ok).toBe(true);
     const files = emitComponents(profile, ["component-index"]);
-    expect(stableStringify(files)).toBe(golden("synthetic-package.json"));
+    expect(stableStringify(files)).toBe(golden("synthetic-package.json", stableStringify(files)));
     for (const file of files) expect(ts.transpileModule(file.content, { compilerOptions: { target: ts.ScriptTarget.ES2022, module: ts.ModuleKind.ESNext }, reportDiagnostics: true }).diagnostics).toEqual([]);
     expect(typecheckSynthetic(files)).toEqual([]);
   });
@@ -54,7 +59,7 @@ describe("SYNTHETIC component code generation; no shipped conformance claims", (
     const profile = resolveComponents({ catalog, library, values: input.check, evidence, packageExports });
     expect(profile.check.ok).toBe(true);
     const files = emitComponents(profile, ["component-index"]);
-    expect(stableStringify(files)).toBe(golden("synthetic-mixed.json"));
+    expect(stableStringify(files)).toBe(golden("synthetic-mixed.json", stableStringify(files)));
     expect(typecheckSynthetic(files)).toEqual([]);
     for (let seed = 1; seed <= 5; seed++) {
       let state = seed;

@@ -346,14 +346,14 @@ function calendarContextSource(source: string): string {
  */
 export function bindSiblingLeafModules(content: string, leafByItem: Readonly<Record<string, string>>): { content: string; ambiguous: string[] } {
   const ambiguous: string[] = [];
-  const bound = content.replace(/(\bimport\s+(?:type\s+)?\{([^}]*)\}\s*from\s*")((?:\.\.\/)+)([a-z][a-z0-9-]*)\/index\.js(")/g, (all, before: string, list: string, up: string, leaf: string, after: string) => {
+  const bound = content.replace(/(\bimport\s+(?:type\s+)?\{([^}]*)\}\s*from\s*")((?:\.\.\/)+)([a-z][a-z0-9-]*)\/index(")/g, (all, before: string, list: string, up: string, leaf: string, after: string) => {
     // The emitter's contract name for components.<leaf>.
     const contract = leaf.split("-").map(word => word[0]!.toUpperCase() + word.slice(1)).join("");
     const names = list.replace(/,\s*$/, "").split(",").map(binding => binding.trim().replace(/^type\s+/, "").split(/\s+as\s+/)[0]);
     if (names.every(name => name === contract)) return all;
     const items = Object.keys(leafByItem).filter(item => leafByItem[item] === leaf);
     if (items.length !== 1) { ambiguous.push(leaf); return all; }
-    return `${before}${up}${leaf}/${items[0]}.js${after}`;
+    return `${before}${up}${leaf}/${items[0]}${after}`;
   });
   return { content: bound, ambiguous };
 }
@@ -423,7 +423,7 @@ export function importShadcnAriaComponents(input: ShadcnComponentInput): ShadcnC
     // never a wildcard the emitter would refuse.
     for (const part of result.parts.filter(part => part !== "utils")) {
       if (!partExports[part]) { closureIssues.push({ code: "K9", file: original.path, value: part, message: "Private part needs an explicit export list" }); continue; }
-      files.push({ path: `components/_parts/${part}/index.ts`, content: `export { ${partExports[part]!.join(", ")} } from "./${part}.js"\n` });
+      files.push({ path: `components/_parts/${part}/index.ts`, content: `export { ${partExports[part]!.join(", ")} } from "./${part}"\n` });
     }
     for (const dep of sorted([...closure.values()].flatMap(file => dependencies(file.content)))) {
       const dependency = items.get(dep), contract = slots.get(`components.${SHADCN_COMPONENT_ITEMS[dep]}`);

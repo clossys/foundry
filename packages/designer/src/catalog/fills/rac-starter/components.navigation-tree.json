@@ -226,11 +226,11 @@
         },
         {
           "path": "components/navigation-tree/NavigationTree.tsx",
-          "sha256": "94a0a8ee58e2849d3c34d8198090e9754cbd0ea05fb5d4bce01c3827616e4799"
+          "sha256": "b2a89ce27bd54c02c37a981478d6783c06dbf5973d5850ac3778da920f1821fc"
         },
         {
           "path": "components/navigation-tree/utils.ts",
-          "sha256": "6c03c04bd6a82a7f2aadeaf34f7182317837a96232bae3b99f3ade8d4e74912f"
+          "sha256": "b619639c43b72ae48cd23036dfac785c7c29adaaf16e4116a650f845fce79d88"
         },
         {
           "path": "notices/rac-starter-LICENSE.txt",
