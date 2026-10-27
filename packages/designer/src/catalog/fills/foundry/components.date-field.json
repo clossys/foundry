@@ -48,10 +48,10 @@
       },
       "license": "MIT",
       "members": [
+        "content.date",
+        "content.time",
         "granularity",
-        "state.invalid",
-        "value.date",
-        "value.time"
+        "state.invalid"
       ],
       "pin": {
         "export": "./components#DateField",
@@ -59,10 +59,10 @@
         "version": "0.12.0"
       },
       "propMap": {
+        "content.date": "./components#DateField",
+        "content.time": "./components#DateField",
         "granularity": "./components#DateField",
-        "state.invalid": "./components#DateField.isInvalid",
-        "value.date": "./components#DateField",
-        "value.time": "./components#DateField"
+        "state.invalid": "./components#DateField.isInvalid"
       },
       "props": [
         "className",

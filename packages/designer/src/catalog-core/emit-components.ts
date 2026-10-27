@@ -190,11 +190,16 @@ function leafModule(component: ResolvedComponent, packageExports: ResolvedCompon
   }
   const table: Record<string, Record<string, { target: string; property?: string; value?: string | boolean }>> = Object.create(null);
   const partTargets = new Set<string>();
+  const passThrough = new Set<string>();
   for (const { member, binding } of bindings) {
     if (binding.intrinsic) continue;
     const parts = member.split(".");
+    const bareRoot = binding.module === base.module && binding.name === base.name && !binding.part && !binding.property;
     // A single-axis capability member mapped to the root export itself is served by that root: nothing to dispatch.
-    if (parts.length === 1 && binding.module === base.module && binding.name === base.name && !binding.part && !binding.property) continue;
+    if (parts.length === 1 && bareRoot) continue;
+    // So is a bare-root member whose axis is one of the export's real props (DateField `value`): the caller's
+    // prop value (a CalendarDate) is never a member key, so it reaches the root untouched.
+    if (parts.length === 2 && bareRoot && component.descriptor.props.includes(parts[0]!)) { passThrough.add(parts[0]!); continue; }
     if (parts.length !== 2 || !/^[a-z][a-z0-9-]*$/.test(parts[0]!) || !/^[a-z][a-z0-9-]*$/.test(parts[1]!)) throw new CatalogError(`components: unsupported member dispatch ${member}`);
     const axis = parts[0]!, value = parts[1]!;
     // A compound sub-part dispatches to a static property of its imported export (Disclosure.Group).
@@ -203,6 +208,8 @@ function leafModule(component: ResolvedComponent, packageExports: ResolvedCompon
     table[axis] ??= Object.create(null) as Record<string, { target: string; property?: string; value?: string | boolean }>;
     table[axis]![value] = { target, ...(binding.property ? { property: binding.property, value: binding.value } : {}) };
   }
+  // One name cannot be both the caller's own prop and a dispatch key.
+  for (const axis of passThrough) if (table[axis]) throw new CatalogError(`components: member axis ${axis} is a real prop of ${name} and cannot also dispatch`);
   const targets = [...imports.values(), ...[...partTargets].sort().map(target => `${quote(target)}: ${target}`)].join(", ");
   // `satisfies` checks that every target is a function or class component without erasing its real type:
   // a `never` parameter admits any props type, generics and statics included. Dispatch opens the props

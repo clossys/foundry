@@ -6,6 +6,7 @@ import ts from "typescript";
 import * as React from "react";
 import { createElement, forwardRef, type ReactNode } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
+import { CalendarDate } from "@internationalized/date";
 import { synthetic, syntheticSource } from "./__fixtures__/component-engine/synthetic.js";
 import { applyComponentLibraryChange, materializeSourceFill } from "./changeset-components.js";
 import { assertComponentIdentifier, assertPackageSpecifier, componentLibraryHash, componentMaterializationReport, resolveComponents } from "./resolve-components.js";
@@ -230,9 +231,9 @@ function selectProfile(identity: boolean) {
   (profile as { packageExports: Record<string, readonly string[]> }).packageExports = { ...profile.packageExports, "test-kit/components": ["Select"] };
   return profile;
 }
-function loadIndex(content: string, Select: unknown): Record<string, unknown> {
+function loadIndex(content: string, kit: Record<string, unknown>): Record<string, unknown> {
   const { outputText } = ts.transpileModule(content, { compilerOptions: { target: ts.ScriptTarget.ES2022, module: ts.ModuleKind.CommonJS } });
-  const modules: Record<string, unknown> = { react: React, "test-kit/components": { Select } }, exports: Record<string, unknown> = {};
+  const modules: Record<string, unknown> = { react: React, "test-kit/components": kit }, exports: Record<string, unknown> = {};
   new Function("require", "exports", outputText)((id: string) => { if (!Object.hasOwn(modules, id)) throw new Error(`unexpected import ${id}`); return modules[id]; }, exports);
   return exports;
 }
@@ -246,7 +247,7 @@ describe("provenance stamping wrapper (D1, D2)", () => {
     const Item = (props: { children?: ReactNode }) => createElement("li", { role: "option" }, props.children);
     const refs: unknown[] = [];
     const Impl = Object.assign(forwardRef<HTMLUListElement, Record<string, unknown>>(function Impl(props, ref) { refs.push(ref); return createElement("ul", { ...props, ref }); }), { Item });
-    const { Select } = loadIndex(index, Impl) as { Select: React.ForwardRefExoticComponent<Record<string, unknown>> & { Item: typeof Item; render: (props: object, ref: unknown) => React.ReactElement<{ ref?: unknown }> } };
+    const { Select } = loadIndex(index, { Select: Impl }) as { Select: React.ForwardRefExoticComponent<Record<string, unknown>> & { Item: typeof Item; render: (props: object, ref: unknown) => React.ReactElement<{ ref?: unknown }> } };
     expect(Select.Item).toBe(Item);
     const ref = { current: null };
     const html = renderToStaticMarkup(createElement(Select, { ref, ...(identity ? {} : { variant: "primary" }) }, createElement(Select.Item, null, "One")));
@@ -266,6 +267,42 @@ describe("provenance stamping wrapper (D1, D2)", () => {
     expect(typecheckSynthetic([...emitComponents(selectProfile(true), ["component-index"]), usage], surfaces)).toEqual([]);
     const dispatchUsage = { path: "usage.ts", content: 'import { createElement, createRef } from "react";\nimport { Select } from "./component-index";\nexport const usage = createElement(Select, { ref: createRef<HTMLDivElement>(), variant: "primary" }, createElement(Select.Item, { id: "a" }, "A"));\n' };
     expect(typecheckSynthetic([...emitComponents(selectProfile(false), ["component-index"]), dispatchUsage], surfaces)).toEqual([]);
+  });
+});
+// A DateField-shaped synthetic leaf (2b P1): the checker-approved package profile renamed, with the given
+// propMap and the implementation's real props, so a member axis can share its name with a real prop.
+function dateFieldProfile(propMap: Record<string, string>) {
+  const profile = packageProfile(), button = profile.components["components.button"]!;
+  const field = JSON.parse(JSON.stringify(button).replaceAll("components.button", "components.date-field").replaceAll("Button", "DateField")) as typeof button;
+  field.descriptor.propMap = propMap; field.propMap = propMap;
+  (field.descriptor as { props: readonly string[] }).props = ["className", "granularity", "isInvalid", "label", "value"];
+  delete profile.components["components.button"]; profile.components["components.date-field"] = field;
+  (profile as { packageExports: Record<string, readonly string[]> }).packageExports = { ...profile.packageExports, "test-kit/components": ["DateField"] };
+  return profile;
+}
+const root = "./components#DateField";
+describe("bare-root member axes named after a real prop (2b P1)", () => {
+  it("DateField value={CalendarDate} reaches the implementation: a value.date/value.time bare-root axis never dispatches the value prop", () => {
+    const files = emitComponents(dateFieldProfile({ "value.date": root, "value.time": root, granularity: root, "state.invalid": `${root}.isInvalid` }), ["component-index"]);
+    const index = files.find(file => file.path === "components/date-field/index.ts")!.content;
+    expect(index).not.toContain('"value": {');
+    const seen: Record<string, unknown>[] = [];
+    const Impl = forwardRef<HTMLDivElement, Record<string, unknown>>(function Impl(props, ref) { seen.push(props); return createElement("div", { ref, "data-ds-leaf": props["data-ds-leaf"] }, String(props.value)); });
+    const { DateField } = loadIndex(index, { DateField: Impl }) as { DateField: React.ComponentType<Record<string, unknown>> };
+    const value = new CalendarDate(2026, 10, 26);
+    expect(renderToStaticMarkup(createElement(DateField, { label: "Due", value, state: "invalid" }))).toBe('<div data-ds-leaf="components.date-field">2026-10-26</div>');
+    expect(seen[0]!.value).toBe(value);
+    expect(seen[0]!.isInvalid).toBe(true);
+    expect(seen[0]).not.toHaveProperty("state");
+  });
+  it("refuses an axis that is both a real prop and a dispatch axis", () => {
+    expect(() => emitComponents(dateFieldProfile({ "value.date": root, "value.time": `${root}.granularity=minute` }), ["component-index"])).toThrow(/member axis value is a real prop of DateField/);
+  });
+  it("the committed foundry DateField fill has no member axis named after one of its props", () => {
+    const doc = JSON.parse(readFileSync(resolve(import.meta.dirname, "../catalog/fills/foundry/components.date-field.json"), "utf8")) as ComponentCandidateDocument;
+    const fill = doc.components["date-field"]!;
+    expect(fill.members.filter(member => member.includes(".") && fill.props.includes(member.split(".")[0]!))).toEqual([]);
+    expect(fill.members).toEqual(expect.arrayContaining(["content.date", "content.time"]));
   });
 });
 describe("real source materialization remains blocked", () => {
