@@ -705,6 +705,11 @@
       "notes": [
         {
           "file": "apps/v4/registry/bases/aria/ui/combobox.tsx",
+          "message": "Restyled source: Button size to declared shape.icon-only; the slot declares no sized square member",
+          "value": "<Button> size=\"icon-xs\""
+        },
+        {
+          "file": "apps/v4/registry/bases/aria/ui/combobox.tsx",
           "message": "Preserved the selected translucent surface's explicit animation cancellation",
           "value": "animate-none"
         },
@@ -1521,6 +1526,11 @@
       "notes": [
         {
           "file": "apps/v4/registry/bases/aria/ui/dialog.tsx",
+          "message": "Restyled source: Button size to declared shape.icon-only; the slot declares no sized square member",
+          "value": "<DialogClose> size=\"icon-sm\""
+        },
+        {
+          "file": "apps/v4/registry/bases/aria/ui/dialog.tsx",
           "message": "Restyled source: Use the consumer modal scrim role (existing default40% and mode binding), replacing literal black10%; contrast thresholds stay unchanged.",
           "value": "bg-black/10"
         },
@@ -1528,6 +1538,11 @@
           "file": "apps/v4/registry/bases/aria/ui/dialog.tsx",
           "message": "Removed marker-only class absent from the pinned stylesheet",
           "value": "cn-font-heading"
+        },
+        {
+          "file": "apps/v4/registry/bases/aria/ui/dialog.tsx",
+          "message": "Rebound Button: the wrapper's size default is the Button's own; size is forwarded only when a caller passes it",
+          "value": "DialogClose size = \"default\""
         },
         {
           "file": "apps/v4/registry/bases/aria/ui/dialog.tsx",
@@ -1567,6 +1582,11 @@
       ],
       "item": "alert-dialog",
       "notes": [
+        {
+          "file": "apps/v4/registry/bases/aria/ui/alert-dialog.tsx",
+          "message": "Rebound Button: the wrapper's size default is the Button's own; size is forwarded only when a caller passes it",
+          "value": "AlertDialogCancel size = \"default\""
+        },
         {
           "file": "apps/v4/registry/bases/aria/ui/alert-dialog.tsx",
           "message": "Restyled source: Use the consumer modal scrim role (existing default40% and mode binding), replacing literal black10%; contrast thresholds stay unchanged.",

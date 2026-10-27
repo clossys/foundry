@@ -182,9 +182,11 @@ function leafModule(component: ResolvedComponent, packageExports: ResolvedCompon
   rows.push(`const mappings: Record<string, Record<string, {target: string; property?: string; value?: unknown}>> = ${JSON.stringify(table, null, 2)};`);
   rows.push(`export const ${name} = forwardRef<unknown, Record<string, unknown>>(function ${name}(props, ref) {`);
   rows.push(`  const next = { ...props }; let target = ${quote(imports.get(`${base.module}#${base.name}`))};`);
+  // Each axis is read from the caller's props, never from `next`: one member's mapped property may share
+  // a later axis's name (a shape member mapped to the impl's size prop), and that output is not an input.
   rows.push('  for (const [axis, choices] of Object.entries(mappings)) {');
-  rows.push('    if (!(axis in next)) continue;');
-  rows.push('    const key = String(next[axis]); if (!Object.hasOwn(choices, key)) throw new Error("Unsupported component member");');
+  rows.push('    if (!(axis in props)) continue;');
+  rows.push('    const key = String(props[axis]); if (!Object.hasOwn(choices, key)) throw new Error("Unsupported component member");');
   rows.push('    const mapping = choices[key]!;');
   rows.push('    delete next[axis];');
   rows.push('    if (mapping.target !== ' + quote(imports.get(`${base.module}#${base.name}`)) + ') target = mapping.target;');

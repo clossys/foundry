@@ -8,7 +8,7 @@ import { sha256 } from "../catalog-core/digest.js";
 import { componentMemberBinding } from "../catalog-core/emit-components.js";
 import type { ResolvedComponent } from "../catalog-core/resolve-components.js";
 import { stableStringify } from "../catalog-core/stable.js";
-import { rewriteShadcnAria, type RewriteIssue, type RewriteNote, type RewriteResult, type SourceFile } from "./rewrite.js";
+import { rewriteShadcnAria, SHADCN_BUTTON_MEMBERS, type RewriteIssue, type RewriteNote, type RewriteResult, type SourceFile } from "./rewrite.js";
 import { normalizeSelectedSource } from "./normalize-selected-source.js";
 import { selectedCaptionSource, selectedCaptionMembers } from "./selected-caption-profile.js";
 import { dialogExecutableSource, dialogExecutableMembers } from "./dialog-executable-profile.js";
@@ -200,9 +200,10 @@ function memberMap(item: string, code: string, slot: ComponentSlot, own: string)
   const map: Record<string, string> = {};
   const add = (member: string, pointer: string): void => { if (slot.contract.members.mode === "closed" && slot.contract.members.names.includes(member)) map[member] = pointer; };
   if (item === "button") {
-    for (const [member, value] of Object.entries({ primary: "default", secondary: "secondary", ghost: "ghost", danger: "destructive", outline: "outline" })) if (new RegExp(`\\b${value}:`).test(code)) add(`variant.${member}`, `Button.variant=${value}`);
-    for (const [member, value] of Object.entries({ sm: "sm", md: "default", lg: "lg" })) if (new RegExp(`\\b${value}:`).test(code)) add(`size.${member}`, `Button.size=${value}`);
-    add("shape.text", "Button"); if (/icon:/.test(code)) add("shape.icon-only", "Button.size=icon");
+    // One table both maps these members and translates the literals a rebinding source passes (rewrite.ts).
+    for (const [value, member] of Object.entries(SHADCN_BUTTON_MEMBERS.variant)) if (new RegExp(`\\b${value}:`).test(code)) add(`variant.${member}`, `Button.variant=${value}`);
+    for (const [value, member] of Object.entries(SHADCN_BUTTON_MEMBERS.size)) if (new RegExp(`\\b${value}:`).test(code)) add(`size.${member}`, `Button.size=${value}`);
+    add("shape.text", "Button"); if (new RegExp(`\\b${SHADCN_BUTTON_MEMBERS.iconSize}:`).test(code)) add("shape.icon-only", `Button.size=${SHADCN_BUTTON_MEMBERS.iconSize}`);
     add("ground.base", "Button");
   }
   // Forwarded RAC props retain the pinned root's public state/orientation API.
