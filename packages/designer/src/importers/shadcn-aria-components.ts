@@ -15,6 +15,7 @@ import { selectedCaptionSource, selectedCaptionMembers } from "./selected-captio
 import { dialogExecutableSource, dialogExecutableMembers } from "./dialog-executable-profile.js";
 import { menuExecutableSource, menuExecutableMembers } from "./menu-executable-profile.js";
 import { toggleExecutableSource } from "./toggle-executable-profile.js";
+import { tooltipExecutableSource, tooltipExecutableReads, tooltipExecutableProps } from "./tooltip-executable-profile.js";
 
 export const SHADCN_ARIA_COMPONENT_PIN = Object.freeze({ url: adapter.pin.url, commit: adapter.pin.commit, base: "aria", style: "nova" });
 const SOURCE = "shadcn@aria";
@@ -424,10 +425,12 @@ export function importShadcnAriaComponents(input: ShadcnComponentInput): ShadcnC
     // pinned provenance, but its dialog/input-group imports never ship.
     if (command) verifyShadcnSource(command);
     const selected = name === "dialog" ? dialogExecutableSource(original) : name === "dropdown-menu" ? menuExecutableSource(original, command!) : name === "toggle" || name === "toggle-group" ? toggleExecutableSource(name, original) : original;
-    const result = rewriteShadcnAria({ item: name, leaf, files: [selected, ...privateFiles], styles: input.styles.content, leafByItem: SHADCN_COMPONENT_ITEMS, styleDefaults: true });
+    const aria = rewriteShadcnAria({ item: name, leaf, files: [selected, ...privateFiles], styles: input.styles.content, leafByItem: SHADCN_COMPONENT_ITEMS, styleDefaults: true });
+    // The selected tooltip profile binds its delay and close timing to these behavior-timing leaves.
+    const result: RewriteResult = name === "tooltip" ? { ...aria, reads: { ...aria.reads, tokens: sorted([...aria.reads.tokens, ...tooltipExecutableReads]) } } : aria;
     const files: SourceFile[] = result.files.map(file => {
       const normalized = normalizeSelectedSource(name === "calendar" && file.path === "components/calendar/calendar.tsx" ? { ...file, content: calendarContextSource(file.content) } : file);
-      const received = ["select", "calendar"].includes(name) ? selectedCaptionSource(normalized) : normalized;
+      const received = name === "tooltip" && file.path === "components/tooltip/tooltip.tsx" ? tooltipExecutableSource(normalized) : ["select", "calendar"].includes(name) ? selectedCaptionSource(normalized) : normalized;
       const bound = bindSiblingLeafModules(received.content, SHADCN_COMPONENT_ITEMS);
       for (const leaf of bound.ambiguous) closureIssues.push({ code: "K9", file: file.path, value: leaf, message: "Sibling leaf module is ambiguous" });
       return { ...received, content: bound.content };
@@ -461,7 +464,7 @@ export function importShadcnAriaComponents(input: ShadcnComponentInput): ShadcnC
       .flatMap(dep => (rewrites[dep]?.reads.tokens ?? []).filter(read => /^tokens\.(?:control-size|focus-outline|focus-color)\./.test(read))));
     const reads = inherited.length ? { ...result.reads, tokens: sorted([...result.reads.tokens, ...inherited]) } : result.reads;
     const descriptor: ShadcnComponentFillDoc["components"][string] = {
-      slot: slot.id, source: SOURCE, root: slot.contract.root, members, props: name === "calendar" ? ["id", "className", "style", "children", "aria-label", "aria-labelledby", "value", "defaultValue", "onChange", "isDisabled", "isReadOnly", "isInvalid", "minValue", "maxValue", "defaultFocusedValue", "focusedValue", "onFocusChange", "isDateUnavailable", "firstDayOfWeek", "numberOfMonths", "buttonVariant", "captionLayout", "showWeekNumber", "headerFormat", "renderCell"] : [], propMap, reads, composes,
+      slot: slot.id, source: SOURCE, root: slot.contract.root, members, props: name === "calendar" ? ["id", "className", "style", "children", "aria-label", "aria-labelledby", "value", "defaultValue", "onChange", "isDisabled", "isReadOnly", "isInvalid", "minValue", "maxValue", "defaultFocusedValue", "focusedValue", "onFocusChange", "isDateUnavailable", "firstDayOfWeek", "numberOfMonths", "buttonVariant", "captionLayout", "showWeekNumber", "headerFormat", "renderCell"] : name === "tooltip" ? [...tooltipExecutableProps] : [], propMap, reads, composes,
       impl,
       license: "MIT", pin, notice: adapter.notice, transform: "shadcn-aria-rewrite@1", item: name,
       deps: [...npmDeps.filter(dep => dep.name === "react" || dep.name === "react-aria-components" && imports(original.content).length > 0 || dep.name === "class-variance-authority" && [...closure.values()].some(file => file.content.includes('from "class-variance-authority"')) || ["clsx", "tailwind-merge"].includes(dep.name)),

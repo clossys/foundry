@@ -59,26 +59,29 @@ describe("overlay and display pinned source evidence", () => {
     // Existing resolved alternate is a positive materialization control only.
     expect(materializeShadcnComponent(result, "collapsible").length).toBeGreaterThan(0);
   });
-  it("passes tooltip delay and closeDelay through the actual rewritten trigger while recording the default gap", () => {
+  it("passes consumer-bound tooltip timing through the actual rewritten trigger without invented defaults", () => {
     const result = importShadcnAriaComponents(input());
     const source = result.rewrites.tooltip!.files.find(file => file.path === "components/tooltip/tooltip.tsx")!.content;
     const Trigger = () => null, Focusable = () => null;
     const exports = moduleExports(source, { TooltipTrigger: Trigger, Tooltip: () => null, OverlayArrow: () => null, Focusable });
     const delay = timing.tokens["behavior-timing"]["tooltip-delay"].$value.value;
     const closeDelay = timing.tokens["behavior-timing"]["tooltip-close"].$value.value;
+    const behaviorTiming = {
+      "tokens.behavior-timing.tooltip-delay": timing.tokens["behavior-timing"]["tooltip-delay"].$value,
+      "tokens.behavior-timing.tooltip-close": timing.tokens["behavior-timing"]["tooltip-close"].$value,
+    };
     expect([delay, closeDelay]).toEqual([500, 300]);
     const children = [React.createElement("button", { key: "trigger" }, "Help"), React.createElement("span", { key: "tip" }, "Details")];
-    const explicit = exports.TooltipTrigger!({ children, delay, closeDelay, isDisabled: true, "aria-label": "Help" });
+    const explicit = exports.TooltipTrigger!({ children, behaviorTiming, delay, closeDelay, isDisabled: true, "aria-label": "Help" });
     expect(explicit.type).toBe(Trigger);
     expect(explicit.props).toMatchObject({ delay, closeDelay, isDisabled: true, "aria-label": "Help" });
     expect(explicit.props.children[0].type).toBe(Focusable);
     expect(explicit.props.children[1].type).toBe("span");
-    const defaults = exports.TooltipTrigger!({ children });
-    expect(defaults.props.delay).toBe(0);
-    expect(defaults.props).not.toHaveProperty("closeDelay");
-    // Planned semantic permission does not establish token-to-prop transport.
+    const bound = exports.TooltipTrigger!({ children, behaviorTiming });
+    expect(bound.props).toMatchObject({ delay, closeDelay });
+    expect(() => exports.TooltipTrigger!({ children })).toThrow(/tooltip timing binding/);
     expect(slots.find(slot => slot.id === "components.tooltip")!.contract.allowedReads.tokens).toContain("tokens.behavior-timing");
-    expect(result.rewrites.tooltip!.reads.tokens.some(read => read.startsWith("tokens.behavior-timing"))).toBe(false);
+    expect(result.rewrites.tooltip!.reads.tokens).toEqual(expect.arrayContaining(["tokens.behavior-timing.tooltip-delay", "tokens.behavior-timing.tooltip-close"]));
   });
   it("keeps the popover trigger/context protocol and placement forwarding intact", () => {
     const result = importShadcnAriaComponents(input());
