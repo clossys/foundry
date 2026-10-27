@@ -77,6 +77,14 @@ export interface CanvasSurfaceProps {
   minZoom?: number;
   maxZoom?: number;
   fitPadding?: number;
+  /**
+   * A host-driven camera move: while set, every viewport change animates the
+   * world with this duration and easing (CSS values, normally token `var()`s).
+   * Reduced motion snaps instead. Clear it when the move ends.
+   */
+  viewportTransition?: { readonly duration: string; readonly easing: string };
+  /** Called when the world layer's own transform transition ends (a fit or a host-driven move). */
+  onViewportTransitionEnd?: () => void;
   /** Keyboard and gesture help. @default "Arrow keys move item focus. Shift and arrows extend selection. Plus and minus zoom; zero or Home fits. Escape clears selection. Drag empty space or hold Space to pan; Shift and drag selects." */
   instructionText?: string;
   /** Minimap accessible name. @default "Recenter canvas" */
@@ -115,7 +123,7 @@ export function CanvasSurface(props: CanvasSurfaceProps) {
   const {
   "aria-label": label, viewport, onViewportChange, selection, onSelectionChange, worldBounds, items, edges = [],
   children, renderItem, itemInteraction = "select", worldClassName, contentLayout = "positioned", contentScroll = "region", onSurfaceElement, onWorldElement, actionsRef, overlays = [], overlayInsets, overlayLayout = "wide", viewSize, minimap = false, zoomControls = false, grid, gridPattern,
-  minZoom = 0.1, maxZoom = 8, fitPadding = 0, className, style,
+  minZoom = 0.1, maxZoom = 8, fitPadding = 0, viewportTransition, onViewportTransitionEnd, className, style,
   instructionText = "Arrow keys move item focus. Shift and arrows extend selection. Plus and minus zoom; zero or Home fits. Escape clears selection. Drag empty space or hold Space to pan; Shift and drag selects.",
   recenterLabel = "Recenter canvas", zoomGroupLabel = "Canvas zoom", zoomOutLabel = "Zoom out",
   zoomPercentageLabel = "Canvas zoom percentage", zoomInLabel = "Zoom in", fitLabel = "Fit canvas",
@@ -179,6 +187,7 @@ export function CanvasSurface(props: CanvasSurfaceProps) {
   const [marquee, setMarquee] = useState<CanvasRect | null>(null);
   const [fitting, setFitting] = useState(false);
   const [reducedMotion, setReducedMotion] = useState(false);
+  const moving = viewportTransition !== undefined && !flowing;
   const instructionId = useId();
   const size = viewSize ?? measured ?? { width: 1, height: 1 };
   const map = minimapModel(worldBounds, viewport, size);
@@ -474,10 +483,11 @@ export function CanvasSurface(props: CanvasSurfaceProps) {
     /* Named inline-style exception: the camera-relative pattern layer (recipe from assets.pattern, offset by pan, scaled by zoom). */
     style={{ ...(grid && !flowing ? { ...patternBackground(gridPattern ?? PATTERN_RECIPES[grid === "dots" ? "dots" : "grid"], viewport.zoom), backgroundPosition: `${viewport.x}px ${viewport.y}px`, "--canvas-grid-zoom": viewport.zoom } : {}), ...style, touchAction: flowing ? "auto" : "none", overflow: flowing ? contentScroll === "document" ? "visible" : "auto" : "hidden", ...(viewSize ? { width: viewSize.width, height: flowing && contentScroll === "document" ? "auto" : viewSize.height, boxSizing: "content-box" } : {}) }}>
     <p id={instructionId} className="sr-only">{instructionText}</p>
-    <div ref={element => { worldRef.current = element; onWorldElement?.(element); }} data-canvas-world="" dir="ltr" className={cx(flowing ? "relative" : "absolute inset-0", worldClassName, fitting && !reducedMotion && "transition-transform motion-reduce:transition-none")}
-      onTransitionEnd={event => { if (event.target === event.currentTarget) setFitting(false); }}
+    <div ref={element => { worldRef.current = element; onWorldElement?.(element); }} data-canvas-world="" dir="ltr" className={cx(flowing ? "relative" : "absolute inset-0", worldClassName, (fitting || moving) && !reducedMotion && "transition-transform motion-reduce:transition-none")}
+      onTransitionEnd={event => { if (event.target !== event.currentTarget) return; setFitting(false); onViewportTransitionEnd?.(); }}
       style={{ transformOrigin: "0 0", transform: flowing ? undefined : `translate(${viewport.x}px, ${viewport.y}px) scale(${viewport.zoom})`,
-        transitionDuration: fitting && !reducedMotion ? "var(--ui-duration-fast, 160ms)" : "0s", transitionTimingFunction: "var(--ease-default, ease)" }}>
+        transitionDuration: reducedMotion ? "0s" : moving ? viewportTransition.duration : fitting ? "var(--ui-duration-fast, 160ms)" : "0s",
+        transitionTimingFunction: moving ? viewportTransition.easing : "var(--ease-default, ease)" }}>
       {edges.length ? <svg data-canvas-edges="" aria-hidden="true" focusable="false" className="pointer-events-none absolute text-ink-muted"
         viewBox={`${worldBounds.x} ${worldBounds.y} ${worldBounds.width} ${worldBounds.height}`}
         style={{ left: worldBounds.x, top: worldBounds.y, width: worldBounds.width, height: worldBounds.height }}>
