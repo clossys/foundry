@@ -12,6 +12,10 @@ import type { ResolvedSiteIconLink, ResolvedSiteLink } from "./internal/resolveS
 import { SITE_MAIN_ID } from "./types.js";
 import type { SiteFrameProps } from "./types.js";
 
+/** The frames.site-shell provenance stamp: this export is the foundry fill's package pointer. */
+// The frames.site-shell provenance stamp (Designer dsAttrs shape), written literally: SiteFrame keeps its server-only import boundary.
+const FRAME_STAMP = { "data-ds-layer": "frames", "data-ds-leaf": "frames.site-shell", "data-ds-fill": "foundry/frames.site-shell" } as const;
+
 const LINK_CLASSES =
   "inline-flex min-h-[var(--ui-layout-tap-target)] items-center px-xs text-inherit no-underline hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent";
 // An icon-only link has no text to widen it, so it takes the tap target in both axes, icon centred.
@@ -140,7 +144,7 @@ export function SiteFrame({ shell, presentation, resolveCopy, resolveAsset, chil
   ) : null;
 
   return (
-    <div data-frame-root="" className={`flex min-h-dvh flex-col${footer?.placement === "overlay" ? " relative" : ""}`}>
+    <div data-frame-root="" className={`flex min-h-dvh flex-col${footer?.placement === "overlay" ? " relative" : ""}`} {...FRAME_STAMP}>
       <SiteSkipLink targetId={SITE_MAIN_ID} label={resolved.skipLink} followHeaderGround={resolved.header.surface === "glass"} />
       <SiteHeader
         surface={resolved.header.surface}
