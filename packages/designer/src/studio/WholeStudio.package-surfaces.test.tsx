@@ -7,6 +7,7 @@ import { labels } from "./__fixtures__/studio.js";
 import { packageSurfaceLibrary, type PackageSurfaceLibrary } from "../library-cli/__fixtures__/package-surface-library.js";
 import { planSurfaceDefaults, type SurfaceDefaultCandidateDocument, type SurfaceDefaultsInput } from "../catalog-core/index.js";
 import { planSurfacePreviews } from "./planned-surface-previews.js";
+import { specimenDataset } from "./specimen-dataset.js";
 import { Studio as StudioView, StudioHeader, StudioRightPanel } from "./index.js";
 import { WholeStudioProvider } from "./WholeStudioProvider.js";
 import { boardItem, boardOf, boardRow } from "./__fixtures__/library-board-dom.js";
@@ -21,13 +22,13 @@ afterEach(() => { cleanup(); vi.unstubAllGlobals(); window.history.replaceState(
 
 /** The host knows the Publisher frame; the designer never imitates it. */
 const HOST_SAMPLES = { "@clossys/publisher/web#SiteFrame": () => <p>host-site-frame</p> };
-/** Distinct sample text per adopted leaf this unit added content for. */
+/** Distinct specimen-dataset text per adopted leaf, drawn through its package runtime renderer. */
 const SAMPLE_TEXT: Record<string, string> = {
-  "sections.comparison": "Version history", "sections.content": "One place for every project", "sections.data-table": "Fabrikam", "sections.form": "Work email",
-  "sections.pricing": "Choose Team", "sections.resource-list": "Help centre", "sections.status-list": "Mobile alerts", "sections.task-list": "Publish the launch page",
-  "frames.site-shell": "host-site-frame", "frames.sheet": "Open filters",
-  "sections.chat": "How do I invite a teammate", "sections.explorer": "Campaigns", "sections.hero": "Ship pages your whole team can trust",
-  "sections.newsletter": "One email a month", "frames.app-shell": "Review the spring launch", "frames.command": "Open command menu",
+  "sections.comparison": specimenDataset.sections.comparison.rows[0]!.label, "sections.content": specimenDataset.sections.content.heading, "sections.data-table": specimenDataset.sections.dataTable.rows[1]!.customer, "sections.form": specimenDataset.sections.form.fields[0]!.label,
+  "sections.pricing": specimenDataset.sections.pricing.tiers[0]!.cta, "sections.resource-list": specimenDataset.sections.resourceList.items[0]!.title, "sections.status-list": specimenDataset.sections.statusList.groups![0]!.items[0]!.label, "sections.task-list": specimenDataset.sections.taskList.items[0]!.title,
+  "frames.site-shell": "host-site-frame", "frames.sheet": specimenDataset.frames.sheet.trigger,
+  "sections.chat": specimenDataset.sections.chat.messages[0]!.content, "sections.explorer": specimenDataset.list.items[0]!.label, "sections.hero": specimenDataset.sections.hero.heading,
+  "sections.newsletter": specimenDataset.sections.newsletter.emailLabel, "frames.app-shell": specimenDataset.frames.app.skipLabel, "frames.command": specimenDataset.frames.command.trigger,
 };
 
 function mount(preview: CompositeStudioSnapshot["preview"], samples: Parameters<typeof planSurfacePreviews>[0]["samples"] = HOST_SAMPLES, sampleState?: Parameters<typeof planSurfacePreviews>[0]["sampleState"], dropPlanned: (pointer: string) => boolean = () => false) {
@@ -70,17 +71,27 @@ describe("adopted package-pointer surfaces on the Studio board", { timeout: 120_
     check(fixture.decisions.map(row => row.slot).filter(slot => slot.startsWith("frames.")));
   });
 
+  it("previews sections.data-grid through its own leaf, not the data-table preview that shares its export", async () => {
+    mount(() => undefined);
+    await screen.findByText("L-saved");
+    // data-grid and data-table both point at ./blocks#DataTable; a preview keyed by that export draws the wrong leaf.
+    const grid = row("sections.data-grid")!;
+    expect(grid.querySelector('[data-ds-leaf="sections.data-grid"]')).not.toBeNull();
+    expect(grid.querySelector('[data-ds-leaf="sections.data-table"]')).toBeNull();
+    expect(row("sections.data-table")!.querySelector('[data-ds-leaf="sections.data-table"]')).not.toBeNull();
+  });
+
   it("keeps the host's own preview first, and without a host sample the Publisher frame is unavailable rather than imitated", async () => {
     const user = userEvent.setup();
     mount(leaf => leaf === "sections.data-table" ? <p>host-table</p> : undefined, {});
     await loaded();
     expect(row("sections.data-table")).toHaveTextContent("host-table");
-    expect(row("sections.data-table")).not.toHaveTextContent("Fabrikam");
+    expect(row("sections.data-table")).not.toHaveTextContent(specimenDataset.sections.dataTable.rows[1]!.customer);
     await user.click(screen.getByRole("link", { name: /Frames/ }));
     await waitFor(() => expect(row("frames.sheet")).not.toBeNull());
     expect(row("frames.site-shell")).toHaveTextContent(labels.previewUnavailable);
     expect(row("frames.site-shell")!.querySelector("[data-candidate-cell]")).toHaveAttribute("data-preview-state", "unavailable");
-    expect(row("frames.sheet")).toHaveTextContent("Open filters");
+    expect(row("frames.sheet")).toHaveTextContent(specimenDataset.frames.sheet.trigger);
   });
 
   it("previews adopted package leaves in the board's choosing view as well", async () => {
@@ -91,7 +102,7 @@ describe("adopted package-pointer surfaces on the Studio board", { timeout: 120_
     await user.click(within(board).getByRole("button", { name: labels.board.changeSelection }));
     const editing = boardItem("sections.data-table", document.querySelector<HTMLElement>('section[data-library-board][data-board-mode="edit"]')!);
     expect(editing).toBeDefined();
-    expect(editing).toHaveTextContent("Fabrikam");
+    expect(editing).toHaveTextContent(specimenDataset.sections.dataTable.rows[1]!.customer);
   });
 
   it("vf35: renders adopted package leaves in the host's requested sample state and names it on the cell", async () => {
@@ -100,11 +111,11 @@ describe("adopted package-pointer surfaces on the Studio board", { timeout: 120_
     const list = row("sections.resource-list")!.querySelector<HTMLElement>("[data-candidate-cell]")!;
     expect(list).toHaveAttribute("data-sample-state", "empty");
     expect(list).toHaveTextContent("No projects yet");
-    expect(list).not.toHaveTextContent("Help centre");
+    expect(list).not.toHaveTextContent(specimenDataset.sections.resourceList.items[0]!.title);
     // An export without that state keeps its default sample and says so.
     const table = row("sections.form")!.querySelector<HTMLElement>("[data-candidate-cell]")!;
     expect(table).toHaveAttribute("data-sample-state", "default");
-    expect(table).toHaveTextContent("Work email");
+    expect(table).toHaveTextContent(specimenDataset.sections.form.fields[0]!.label);
   });
 
   it("vf35: an adopted leaf with no planned row still draws the requested state through its own package preview", async () => {
@@ -113,6 +124,6 @@ describe("adopted package-pointer surfaces on the Studio board", { timeout: 120_
     const orders = row("sections.data-table")!.querySelector<HTMLElement>("[data-candidate-cell]")!;
     expect(orders).toHaveAttribute("data-sample-state", "empty");
     expect(orders).toHaveTextContent("No orders yet");
-    expect(orders).not.toHaveTextContent("Fabrikam");
+    expect(orders).not.toHaveTextContent(specimenDataset.sections.dataTable.rows[1]!.customer);
   });
 });

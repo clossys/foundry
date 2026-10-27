@@ -74,18 +74,22 @@ describe("AppFrame composition", () => {
     expect(main).toHaveFocus();
   });
 
-  it("cycles all three preferences, stamps the whole document, and restores persisted state", async () => {
+  // The theme control is three explicit radio options (System, Light, Dark) since 0d04b4c23,
+  // per the sidebar spec D3 (icon-only single-select ToggleGroup); it no longer cycles.
+  it("selects all three preferences, stamps the whole document, and restores persisted state", async () => {
     const props = fixture(); props.theme = { storageKey: "atlas-theme", defaultPreference: "system" };
     const view = render(<AppFrame {...props} />);
-    for (const [current, next] of [["System", "light"], ["Light", "dark"], ["Dark", "system"]]) {
-      await userEvent.click(screen.getByRole("button", { name: new RegExp("Theme: " + current) }));
+    expect(screen.getByRole("radio", { name: "System" })).toBeChecked();
+    for (const [label, next] of [["Light", "light"], ["Dark", "dark"], ["System", "system"]]) {
+      await userEvent.click(screen.getByRole("radio", { name: label }));
+      expect(screen.getByRole("radio", { name: label })).toBeChecked();
       expect(localStorage.getItem("atlas-theme")).toBe(next);
       if (next === "system") expect(document.documentElement).not.toHaveAttribute("data-theme");
       else expect(document.documentElement).toHaveAttribute("data-theme", next);
     }
-    await userEvent.click(screen.getByRole("button", { name: /Theme: System/ }));
+    await userEvent.click(screen.getByRole("radio", { name: "Light" }));
     view.unmount(); render(<AppFrame {...props} />);
-    await waitFor(() => expect(screen.getByRole("button", { name: /Theme: Light/ })).toBeInTheDocument());
+    await waitFor(() => expect(screen.getByRole("radio", { name: "Light" })).toBeChecked());
   });
 
   it.each([true, false])("keeps one named default theme slot in the navigation footer keyboard order when wide=%s", async matches => {
@@ -94,13 +98,13 @@ describe("AppFrame composition", () => {
     if (!matches) await userEvent.click(screen.getByRole("button", { name: "Open navigation" }));
     const footer = document.querySelector('[data-application-navigation-region="footer"]')!;
     const slot = footer.querySelector('[data-application-frame-slot="theme-control"]');
-    const toggle = screen.getByRole("button", { name: /Theme: System/ });
+    const toggle = screen.getByRole("radiogroup", { name: "Theme" });
     expect(document.querySelectorAll('[data-application-frame-slot="theme-control"]')).toHaveLength(1);
     expect(slot).toContainElement(toggle);
-    expect(screen.getAllByRole("button", { name: /Theme:/, hidden: true })).toHaveLength(1);
+    expect(screen.getAllByRole("radiogroup", { name: "Theme", hidden: true })).toHaveLength(1);
     screen.getByRole("button", { name: "Sam River" }).focus();
     await userEvent.tab();
-    expect(toggle).toHaveFocus();
+    expect(within(toggle).getByRole("radio", { name: "System" })).toHaveFocus();
     expect(screen.getByRole("banner", { hidden: true })).not.toContainElement(toggle);
   });
 
@@ -108,21 +112,22 @@ describe("AppFrame composition", () => {
     const props = fixture();
     props.themeControl = <ThemeToggle aria-label="Host theme preference" />;
     const view = render(<AppFrame {...props} />);
-    const control = screen.getByRole("button", { name: "Host theme preference" });
-    expect(screen.queryByRole("button", { name: /Theme:/ })).not.toBeInTheDocument();
+    const control = screen.getByRole("radiogroup", { name: "Host theme preference" });
+    expect(screen.queryByRole("radiogroup", { name: "Theme" })).not.toBeInTheDocument();
     expect(document.querySelector('[data-application-navigation-region="footer"]')).toContainElement(control);
     screen.getByRole("button", { name: "Sam River" }).focus();
     await userEvent.tab();
-    expect(control).toHaveFocus();
-    await userEvent.keyboard("{Enter}");
+    expect(within(control).getByRole("radio", { name: "System" })).toHaveFocus();
+    await userEvent.keyboard("{ArrowRight}{Enter}");
     expect(localStorage.getItem("ui-theme")).toBe("light");
     expect(document.documentElement).toHaveAttribute("data-theme", "light");
     view.unmount();
     render(<AppFrame {...props} />);
     expect(document.documentElement).toHaveAttribute("data-theme", "light");
-    await userEvent.click(screen.getByRole("button", { name: "Host theme preference" }));
+    const restored = screen.getByRole("radiogroup", { name: "Host theme preference" });
+    await userEvent.click(within(restored).getByRole("radio", { name: "Dark" }));
     expect(localStorage.getItem("ui-theme")).toBe("dark");
-    await userEvent.click(screen.getByRole("button", { name: "Host theme preference" }));
+    await userEvent.click(within(restored).getByRole("radio", { name: "System" }));
     expect(localStorage.getItem("ui-theme")).toBe("system");
     expect(document.documentElement).not.toHaveAttribute("data-theme");
   });
@@ -132,7 +137,8 @@ describe("AppFrame composition", () => {
     render(<AppFrame {...fixture()} themeControl={null} />);
     if (!matches) await userEvent.click(screen.getByRole("button", { name: "Open navigation" }));
     expect(document.querySelector('[data-application-frame-slot="theme-control"]')).toBeNull();
-    expect(screen.queryByRole("button", { name: /Theme:/, hidden: true })).not.toBeInTheDocument();
+    expect(screen.queryByRole("radiogroup", { name: "Theme", hidden: true })).not.toBeInTheDocument();
+    expect(screen.queryByRole("radio", { hidden: true })).not.toBeInTheDocument();
     const account = screen.getByRole("button", { name: "Sam River" });
     expect(document.querySelector('[data-application-navigation-region="footer"]')).toContainElement(account);
     account.focus();
@@ -142,13 +148,13 @@ describe("AppFrame composition", () => {
   it("moves the sole theme control into the narrow navigation drawer with the account", async () => {
     wide.matches = false;
     render(<AppFrame {...fixture()} />);
-    expect(screen.queryByRole("button", { name: /Theme:/ })).not.toBeInTheDocument();
+    expect(screen.queryByRole("radiogroup", { name: "Theme" })).not.toBeInTheDocument();
     await userEvent.click(screen.getByRole("button", { name: "Open navigation" }));
     const drawer = await screen.findByRole("dialog", { name: "Workspace navigation" });
-    const toggle = within(drawer).getByRole("button", { name: /Theme: System/ });
-    expect(screen.getAllByRole("button", { name: /Theme:/, hidden: true })).toEqual([toggle]);
+    const toggle = within(drawer).getByRole("radiogroup", { name: "Theme" });
+    expect(screen.getAllByRole("radiogroup", { name: "Theme", hidden: true })).toEqual([toggle]);
     expect(drawer.querySelector('[data-application-navigation-region="footer"]')).toContainElement(toggle);
-    await userEvent.click(toggle);
+    await userEvent.click(within(toggle).getByRole("radio", { name: "Light" }));
     expect(document.documentElement).toHaveAttribute("data-theme", "light");
     await userEvent.keyboard("{Escape}");
     await waitFor(() => expect(screen.getByRole("button", { name: "Open navigation" })).toHaveFocus());
@@ -167,7 +173,7 @@ describe("AppFrame composition", () => {
     let root: ReturnType<typeof hydrateRoot> | undefined;
     try {
       await act(async () => { root = hydrateRoot(container, <AppFrame {...props} />, { onRecoverableError: recoverable }); });
-      await waitFor(() => expect(within(container).getByRole("button", { name: new RegExp("Theme: " + preference[0]!.toUpperCase() + preference.slice(1)) })).toBeInTheDocument());
+      await waitFor(() => expect(within(container).getByRole("radio", { name: preference[0]!.toUpperCase() + preference.slice(1) })).toBeChecked());
       expect(recoverable).not.toHaveBeenCalled();
       expect(container.querySelector('[data-application-navigation-region="footer"]')).toContainElement(container.querySelector('[data-application-frame-slot="theme-control"]'));
       if (preference === "system") expect(document.documentElement).not.toHaveAttribute("data-theme");
@@ -560,7 +566,14 @@ describe("AppFrame composition", () => {
     render(<AppFrame {...props} />);
     expect(screen.queryByRole("separator")).not.toBeInTheDocument();
     expect(screen.queryByRole("button", { name: "Open panel" })).not.toBeInTheDocument();
-    await userEvent.click(screen.getByRole("button", { name: "Night to Automatic" }));
+    // Since 0d04b4c23 the labels name the three radios and toggleLabel is each option's tooltip copy.
+    expect(screen.getByRole("radio", { name: "Night" })).toBeChecked();
+    screen.getByRole("button", { name: "Sam River" }).focus();
+    await userEvent.tab();
+    expect(screen.getByRole("radio", { name: "Automatic" })).toHaveFocus();
+    expect(await screen.findByRole("tooltip")).toHaveTextContent("Night to Automatic");
+    await userEvent.keyboard("{Enter}");
+    expect(screen.getByRole("radio", { name: "Automatic" })).toBeChecked();
     expect(screen.getByText("Chosen system")).toBeInTheDocument();
     expect(localStorage.getItem("custom-theme")).toBe("system");
   });

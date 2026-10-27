@@ -8,6 +8,7 @@ import { sha256 } from "../catalog-core/digest.js";
 import { rewriteShadcnAria } from "./rewrite.js";
 import slots from "../catalog/slots/components.json" with { type: "json" };
 import type { ComponentSlot } from "../catalog-core/types.js";
+import { componentSecondaryExports } from "../catalog-core/component-secondary-exports.js";
 import { bindSiblingLeafModules, generatedShadcnComponentFiles, importShadcnAriaComponents, materializeShadcnComponent, SHADCN_ARIA_COMPONENT_PIN, SHADCN_COMPONENT_ITEMS, verifyShadcnSource, type ShadcnComponentInput } from "./shadcn-aria-components.js";
 
 const here = resolve(import.meta.dirname, "__fixtures__/shadcn-aria");
@@ -148,7 +149,7 @@ describe("pinned shadcn aria component import", () => {
     for (const doc of result.fills) {
       const meta = doc.$extensions["com.clossys.fill"], fill = Object.values(doc.components)[0]!;
       expect(meta.conforms).toEqual([]); expect(meta.evidence).toEqual([]); expect(meta.status).toBe("draft");
-      expect(fill.rac).toBeUndefined(); expect(fill).not.toHaveProperty("measurements");
+      expect(fill.rac).toEqual({ range: expect.stringMatching(/^\^1\.\d+\.\d+$/), peer: false, instance: "react-aria-components" }); expect(fill).not.toHaveProperty("measurements");
       const contract = bySlot.get(fill.slot)!.contract;
       if (contract.members.mode === "closed") expect(fill.members.every(member => contract.members.names.includes(member))).toBe(true);
     }
@@ -197,6 +198,40 @@ describe("pinned shadcn aria component import", () => {
         expect(rebound || materialized, `${fill.slot} ${dep.registryItem}`).toBe(true);
       }
     }
+  });
+
+  it("approves exactly the five Calendar-caption Select parts as same-entry identity aliases and nothing else", () => {
+    const result = importShadcnAriaComponents(pinnedInput());
+    const descriptors = result.fills.map(doc => Object.values(doc.components)[0]!);
+    const select = descriptors.find(fill => fill.slot === "components.select")!;
+    const five = ["SelectContent", "SelectGroup", "SelectItem", "SelectTrigger", "SelectValue"].map(name => ({ name, export: name }));
+    expect(select.secondaryExports).toEqual(five);
+    // The approval is proved against the exact authenticated entry the descriptor receipts.
+    expect(componentSecondaryExports(select, materializeShadcnComponent(result, "select"))).toEqual(five);
+    expect(select.impl).toEqual({ kind: "source", entry: "components/select/select.tsx", export: "Select" });
+    for (const name of ["SelectList", "SelectInput", "SelectLabel", "SelectPopover", "SelectSeparator", "SelectEmpty", "Select"]) expect(select.secondaryExports!.map(row => row.name)).not.toContain(name);
+    expect(descriptors.filter(fill => fill.secondaryExports !== undefined).map(fill => fill.slot).sort()).toEqual(["components.dialog", "components.menu", "components.select"]);
+  });
+
+  it("approves exactly the three command-result Menu parts as caller-named aliases of the same selected entry (API-M1)", () => {
+    const result = importShadcnAriaComponents(pinnedInput());
+    const menu = result.fills.map(doc => Object.values(doc.components)[0]!).find(fill => fill.slot === "components.menu")!;
+    const three = [{ name: "MenuGroup", export: "DropdownMenuGroup" }, { name: "MenuItem", export: "DropdownMenuItem" }, { name: "MenuLabel", export: "DropdownMenuLabel" }];
+    expect(menu.secondaryExports).toEqual(three);
+    expect(componentSecondaryExports(menu, result.rewrites["dropdown-menu"]!.files)).toEqual(three);
+    expect(menu.impl).toEqual({ kind: "source", entry: "components/menu/dropdown-menu.tsx", export: "DropdownMenu" });
+    // No public InlineMenu, trigger, submenu, separator, shortcut or root alias.
+    for (const name of ["InlineMenu", "DropdownMenu", "DropdownMenuTrigger", "DropdownMenuSub", "DropdownMenuSubTrigger", "DropdownMenuSubContent", "DropdownMenuSeparator", "DropdownMenuShortcut", "DropdownMenuContent"]) expect(menu.secondaryExports!.map(row => row.export)).not.toContain(name);
+  });
+
+  it("approves exactly the three Dialog naming parts as same-entry identity aliases (API-D1)", () => {
+    const result = importShadcnAriaComponents(pinnedInput());
+    const dialog = result.fills.map(doc => Object.values(doc.components)[0]!).find(fill => fill.slot === "components.dialog")!;
+    const three = ["DialogDescription", "DialogHeader", "DialogTitle"].map(name => ({ name, export: name }));
+    expect(dialog.secondaryExports).toEqual(three);
+    expect(componentSecondaryExports(dialog, result.rewrites.dialog!.files)).toEqual(three);
+    expect(dialog.impl).toEqual({ kind: "source", entry: "components/dialog/dialog.tsx", export: "Dialog" });
+    for (const name of ["DialogTrigger", "DialogClose", "DialogOverlay", "DialogFooter", "DialogContent", "DialogPortal", "Dialog"]) expect(dialog.secondaryExports!.map(row => row.export)).not.toContain(name);
   });
 
   it("keeps the borrowed CommandList as menu provenance without its unused command imports", () => {

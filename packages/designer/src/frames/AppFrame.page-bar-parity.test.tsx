@@ -5,6 +5,7 @@ import userEvent from "@testing-library/user-event";
 import { renderToString } from "react-dom/server";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { APP_FRAME_WIDE_QUERY } from "./app-frame-layout.js";
+import { PageHeaderModule } from "../shell/index.js";
 import { AppFrame } from "./AppFrame.js";
 import type { AppFrameProps } from "./app-frame-types.js";
 
@@ -95,7 +96,7 @@ describe("AppFrame PageBar composition", () => {
     expect(screen.queryByRole("button", { name: /Use .* width/ })).toBeNull();
   });
   it("forwards page-level title, centered navigation and actions without a header brand", () => {
-    render(<AppFrame {...fixture()} header={{ title: "Overview", nav: { label: "Views", activeId: "board", items: [{ id: "board", label: "Board", href: "/board" }] }, actions: { render: () => <button>Publish</button> } }} />);
+    render(<AppFrame {...fixture()}><PageHeaderModule id="page" header={{ title: "Overview", nav: { label: "Views", activeId: "board", items: [{ id: "board", label: "Board", href: "/board" }] }, actions: { render: () => <button>Publish</button> } }} /></AppFrame>);
     expect(within(bar()).getByRole("heading", { level: 1, name: "Overview" })).toBeInTheDocument();
     expect(within(bar()).getByRole("link", { name: "Board" })).toHaveAttribute("aria-current", "page");
     expect(within(bar()).getByRole("button", { name: "Publish" })).toBeInTheDocument();

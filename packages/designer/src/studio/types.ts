@@ -54,7 +54,11 @@ export interface StudioLabels {
   saveFailed: { unavailable: string; conflict: string; invalid: string; failed: string };
   loading: string;
   loadFailed: string;
-  sampleText: string;
+  /**
+   * @deprecated Ignored. Token specimens draw the shared specimen dataset's sample text, so host copy never
+   * replaces it; kept optional so an existing labels object still type-checks.
+   */
+  sampleText?: string;
   fontNotLoaded: string;
   inspector: { representedLeaf: string; trust: string; usedBy: string; none: string; source: string; mode: string; licence: string; pin: string; status: string; evidence: string; members: string; findings: string; via: string; light: string; dark: string; alias: string; builtOn: string; relation: string };
 }

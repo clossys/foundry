@@ -8,31 +8,24 @@
  * leaf to the profile, the runtime manifest or the chosen count, and it records
  * every planned leaf it cannot render with the reason instead of inventing one.
  * An adopted package-pointer leaf owns no source to render, so the Studio
- * previews it through the same pointer-to-sample resolution.
+ * previews it through the same pointer-to-sample resolution. A leaf with a
+ * package runtime renderer (runtime/index.ts) previews through that renderer
+ * and the specimen dataset; the fixed samples below cover the rest.
  */
 import type { ReactNode } from "react";
 import type { SurfaceDefaultCandidateDocument, SurfaceDefaultsPlan } from "../catalog-core/surface-defaults.js";
 import { AccessMatrix } from "../blocks/AccessMatrix.js";
 import { ActivityFeed } from "../blocks/ActivityFeed.js";
-import { activityFeedSample } from "../blocks/activity-feed/sample.js";
 import { AuditLog } from "../blocks/AuditLog.js";
-import { auditLogSample } from "../blocks/audit-log/sample.js";
 import { Timeline } from "../blocks/Timeline.js";
-import { timelineSample } from "../blocks/timeline/sample.js";
 import { UsageSummary } from "../blocks/UsageSummary.js";
-import { usageSummarySample } from "../blocks/usage-summary/sample.js";
-import { accessMatrixSample } from "../blocks/access-matrix/sample.js";
 import { ArticleBody } from "../blocks/ArticleBody.js";
 import { ColumnMapper } from "../blocks/ColumnMapper.js";
-import { columnMapperSample } from "../blocks/column-mapper/sample.js";
 import { DetailView } from "../blocks/DetailView.js";
 import { EmptyState } from "../blocks/EmptyState.js";
 import { FilterBuilder } from "../blocks/FilterBuilder.js";
-import { filterBuilderSample } from "../blocks/filter-builder/sample.js";
 import { FormWizard } from "../blocks/FormWizard.js";
-import { formWizardSample } from "../blocks/form-wizard/sample.js";
 import { SettingsSection } from "../blocks/SettingsSection.js";
-import { settingsSectionSample } from "../blocks/settings-section/sample.js";
 import { InspectorFrame } from "../frames/InspectorFrame.js";
 import { Faq } from "../blocks/Faq.js";
 import { FeatureGrid } from "../blocks/FeatureGrid.js";
@@ -48,11 +41,24 @@ import { SectionHeader } from "../blocks/SectionHeader.js";
 import { TableOfContents } from "../blocks/TableOfContents.js";
 import { TestimonialSet } from "../blocks/TestimonialSet.js";
 import { PageBar } from "../blocks/PageBar.js";
-import { SECTION_BLOCK_SAMPLES } from "../blocks/section-samples.js";
+import { CallToAction } from "../blocks/CallToAction.js";
+import { RecordCards } from "../blocks/RecordCards.js";
+import { ConsentBanner } from "../blocks/ConsentBanner.js";
+import { ErrorState } from "../blocks/ErrorState.js";
+import { Gallery } from "../blocks/Gallery.js";
+import { NoticeList } from "../blocks/NoticeList.js";
+import { StatGroup } from "../blocks/StatGroup.js";
+import { Button } from "../components/Button.js";
+import { Link } from "../components/Link.js";
+import { SemanticContent } from "../components/SemanticContent.js";
 import { SiteHeader } from "../shell/SiteHeader.js";
 import { SiteFooter } from "../shell/SiteFooter.js";
+import { RatioFixture } from "./ratio-fixture.js";
+import { specimenDataset } from "./specimen-dataset.js";
 import { APP_SIDEBAR_SAMPLES, STRUCTURED_BLOCK_SAMPLES, STRUCTURED_BLOCK_STATE_SAMPLES, STRUCTURED_FRAME_SAMPLES, type SurfaceStateSamples } from "./surface-preview-samples.js";
 import { SURFACE_SAMPLE_STATES, type SurfaceSampleState } from "./surface-preview-sample-content.js";
+import { surfaceRuntimeRenderers } from "../runtime/index.js";
+import { surfaceRuntimePreview, type SurfacePreviewEntry } from "../runtime/preview.js";
 
 export { SURFACE_SAMPLE_STATES, type SurfaceSampleState };
 
@@ -62,53 +68,71 @@ const BLOCKS = "@clossys/designer/blocks#", SHELL = "@clossys/designer/shell/ser
 
 const noop = () => {};
 
-/** Fixed sample content per package export pointer (module#export); absent pointers are unrenderable. */
+const { sections: S, frames: F } = specimenDataset;
+/** A media placeholder: the dataset's generated fixture image, labelled, cropped to the frame the block gives it. */
+const media = (label: string): ReactNode => <SemanticContent as="span" role="img" aria-label={label} className="block aspect-video overflow-hidden"><RatioFixture /></SemanticContent>;
+
+/** Sample content per package export pointer (module#export), all drawn from the shared dataset; absent pointers are unrenderable. */
 const BLOCK_SAMPLES: Readonly<Record<string, () => ReactNode>> = {
-  AccessMatrix: () => <AccessMatrix {...accessMatrixSample} />,
-  ActivityFeed: () => <ActivityFeed {...activityFeedSample} />,
-  AuditLog: () => <AuditLog {...auditLogSample} />,
-  Timeline: () => <Timeline {...timelineSample} />,
-  UsageSummary: () => <UsageSummary {...usageSummarySample} />,
-  ArticleBody: () => <ArticleBody><h2>Getting started</h2><p>Set up a workspace, invite your team and publish the first page.</p></ArticleBody>,
-  ColumnMapper: () => <ColumnMapper {...columnMapperSample} />,
-  DetailView: () => <DetailView title="Order 1042" fields={[{ label: "Customer", value: "Northwind" }, { label: "Status", value: "Shipped" }, { label: "Total", value: "$1,280.00" }, { label: "Placed", value: "12 March 2026" }]} />,
-  EmptyState: () => <EmptyState title="No projects yet" description="Create a project to start collecting work in one place." />,
-  Faq: () => <Faq heading="Questions" items={[{ id: "billing", question: "How does billing work?", answer: "You are billed monthly for the seats in use." }, { id: "cancel", question: "Can I cancel at any time?", answer: "Yes. Your workspace stays readable after cancelling." }]} />,
-  FilterBuilder: () => <FilterBuilder {...filterBuilderSample} />,
-  FormWizard: () => <FormWizard {...formWizardSample} />,
-  SettingsSection: () => <SettingsSection {...settingsSectionSample} />,
-  FeatureGrid: () => <FeatureGrid heading="Why teams switch" items={[{ id: "fast", heading: "Fast setup", description: "Start from a working default in minutes." }, { id: "safe", heading: "Safe changes", description: "Every change is checked before it ships." }, { id: "shared", heading: "Shared library", description: "One source of truth for every product." }]} />,
-  LogoCloud: () => <LogoCloud items={["Northwind", "Contoso", "Fabrikam"].map(name => ({ id: name.toLowerCase(), name, logo: <span>{name}</span> }))} />,
-  MediaFigure: () => <MediaFigure caption="The workspace overview"><svg role="img" aria-label="Workspace overview" viewBox="0 0 16 9" width="100%"><rect width="16" height="9" fill="currentColor" opacity="0.12" /></svg></MediaFigure>,
-  NavGrid: () => <NavGrid heading="Explore" items={[{ id: "guides", title: "Guides", description: "Step-by-step walkthroughs.", href: "#guides" }, { id: "reference", title: "Reference", description: "Every option, in one place.", href: "#reference" }]} />,
-  OrderedStepSequence: () => <OrderedStepSequence heading="How it works" items={[{ id: "connect", ordinal: 1, heading: "Connect", description: "Link your data source." }, { id: "review", ordinal: 2, heading: "Review", description: "Check what will change." }, { id: "publish", ordinal: 3, heading: "Publish", description: "Ship it to your audience." }]} />,
-  PageHeader: () => <PageHeader title="Projects" description="Everything your team is working on." />,
-  Pagination: () => <Pagination page={2} pageCount={8} onPageChange={noop} />,
-  PeopleGrid: () => <PeopleGrid people={[{ id: "ada", name: "Ada Park", role: "Design lead", initials: "AP" }, { id: "sam", name: "Sam Ortiz", role: "Engineering", initials: "SO" }, { id: "lee", name: "Lee Chen", role: "Operations", initials: "LC" }]} columns={3} />,
-  SectionFrame: () => <SectionFrame ground="sunken" measure="content"><p>A full-width band that holds one section.</p></SectionFrame>,
-  SectionHeader: () => <SectionHeader eyebrow="Overview" title="Plan your launch" description="The pieces you need, in the order you need them." />,
-  TableOfContents: () => <TableOfContents label="On this page" presentation="inline" trackCurrent={false} items={[{ id: "intro", label: "Introduction" }, { id: "setup", label: "Setup" }, { id: "options", label: "Options", level: 3 }]} />,
-  TestimonialSet: () => <TestimonialSet items={[{ id: "one", quote: "We shipped our redesign in a week.", attributorName: "Ada Park", attributorRole: "Design lead" }, { id: "two", quote: "Reviews take minutes, not days.", attributorName: "Sam Ortiz", attributorRole: "Engineering" }]} />,
-  ...SECTION_BLOCK_SAMPLES,
-  PageBar: () => <PageBar position="static" root={{ label: "Workspace" }} labels={{ breadcrumb: "Breadcrumb", collapsedBreadcrumb: "More pages", pageInfo: "Page details", pageActions: "Page actions" }} />,
+  AccessMatrix: () => <AccessMatrix {...S.accessMatrix} />,
+  ActivityFeed: () => <ActivityFeed {...S.activityFeed} />,
+  AuditLog: () => <AuditLog {...S.auditLog} />,
+  Timeline: () => <Timeline {...S.timeline} />,
+  UsageSummary: () => <UsageSummary {...S.usageSummary} />,
+  ArticleBody: () => <ArticleBody><SemanticContent as="h2">{S.articleBody.heading}</SemanticContent><SemanticContent as="p">{S.articleBody.body}</SemanticContent></ArticleBody>,
+  ColumnMapper: () => <ColumnMapper {...S.columnMapper} />,
+  DetailView: () => <DetailView {...S.detailView} />,
+  EmptyState: () => <EmptyState {...S.emptyState} />,
+  Faq: () => <Faq {...S.faq} />,
+  FilterBuilder: () => <FilterBuilder {...S.filterBuilder} />,
+  FormWizard: () => <FormWizard {...S.formWizard} />,
+  SettingsSection: () => <SettingsSection {...S.settingsSection} />,
+  FeatureGrid: () => <FeatureGrid {...S.featureGrid} />,
+  LogoCloud: () => <LogoCloud items={S.logoCloud.names.map(name => ({ id: name.toLowerCase(), name, logo: <SemanticContent as="span">{name}</SemanticContent> }))} />,
+  MediaFigure: () => <MediaFigure caption={S.mediaFigure.caption}>{media(S.mediaFigure.label)}</MediaFigure>,
+  NavGrid: () => <NavGrid {...S.navGrid} />,
+  OrderedStepSequence: () => <OrderedStepSequence {...S.orderedSteps} />,
+  PageHeader: () => <PageHeader {...S.pageHeader} />,
+  Pagination: () => <Pagination {...S.pagination} onPageChange={noop} />,
+  PeopleGrid: () => <PeopleGrid {...S.peopleGrid} />,
+  SectionFrame: () => <SectionFrame ground="sunken" measure="content"><SemanticContent as="p">{S.sectionFrame.body}</SemanticContent></SectionFrame>,
+  SectionHeader: () => <SectionHeader {...S.sectionHeader} />,
+  TableOfContents: () => <TableOfContents {...S.tableOfContents} presentation="inline" trackCurrent={false} />,
+  TestimonialSet: () => <TestimonialSet {...S.testimonials} />,
+  CallToAction: () => <CallToAction eyebrow={S.callToAction.eyebrow} title={S.callToAction.title} description={S.callToAction.description}
+    primaryAction={<Link href={S.callToAction.primary.href} buttonVariant="primary">{S.callToAction.primary.label}</Link>}
+    secondaryAction={<Link href={S.callToAction.secondary.href} buttonVariant="secondary">{S.callToAction.secondary.label}</Link>} />,
+  RecordCards: () => <RecordCards {...S.recordCards} />,
+  ConsentBanner: () => <ConsentBanner title={S.consentBanner.title} body={S.consentBanner.body} acceptLabel={S.consentBanner.acceptLabel} rejectLabel={S.consentBanner.rejectLabel} onAccept={noop} onReject={noop}
+    privacyLink={<Link href={S.consentBanner.privacy.href}>{S.consentBanner.privacy.label}</Link>} />,
+  ErrorState: () => <ErrorState kind="failure" code={S.errorState.code} title={S.errorState.title} description={S.errorState.description}
+    retry={<Button variant="primary" size="md" onPress={noop}>{S.errorState.retryLabel}</Button>} report={<Link href={S.errorState.report.href}>{S.errorState.report.label}</Link>} />,
+  Gallery: () => <Gallery label={S.gallery.label} images={S.gallery.images.map(image => ({ ...image, media: media(image.label) }))} />,
+  NoticeList: () => <NoticeList label={S.noticeList.label} onDismiss={noop}
+    notices={S.noticeList.notices.map(({ action, ...notice }) => ({ ...notice, action: action ? <Link href={action.href}>{action.label}</Link> : undefined }))} />,
+  StatGroup: () => <StatGroup {...S.statGroup} />,
+  PageBar: () => <PageBar position="static" {...S.pageBar} />,
   ...STRUCTURED_BLOCK_SAMPLES,
   ...APP_SIDEBAR_SAMPLES,
 };
 /** vf35: block exports' own non-default sample states, by export name (see surface-preview-samples.tsx). */
 const BLOCK_STATE_SAMPLES: SurfaceStateSamples = {
-  ActivityFeed: { empty: () => <ActivityFeed {...activityFeedSample} events={[]} groups={[]} /> },
+  ActivityFeed: { empty: () => <ActivityFeed {...S.activityFeed} events={[]} groups={[]} /> },
   AuditLog: {
-    empty: () => <AuditLog {...auditLogSample} entries={[]} />,
-    loading: () => <AuditLog {...auditLogSample} isLoading />,
+    empty: () => <AuditLog {...S.auditLog} entries={[]} />,
+    loading: () => <AuditLog {...S.auditLog} isLoading />,
   },
   ...STRUCTURED_BLOCK_STATE_SAMPLES,
 };
 const SHELL_SAMPLES: Readonly<Record<string, () => ReactNode>> = {
-  SiteHeader: () => <SiteHeader position="static" brand={<span>Northwind</span>} nav={<a href="#product">Product</a>} />,
-  SiteFooter: () => <SiteFooter secondary={<p>Northwind, sample footer</p>} />,
+  SiteHeader: () => <SiteHeader position="static" brand={<SemanticContent as="span">{F.siteHeader.brand}</SemanticContent>} nav={<Link href={F.siteHeader.nav.href}>{F.siteHeader.nav.label}</Link>} />,
+  SiteFooter: () => <SiteFooter secondary={<SemanticContent as="p">{F.siteFooter.body}</SemanticContent>} />,
 };
 const FRAME_SAMPLES: Readonly<Record<string, () => ReactNode>> = {
-  InspectorFrame: () => <InspectorFrame label="Details" handleLabel="Resize details" closeLabel="Close details" openLabel="Show details" min={220} max={420} defaultValue={280}><p>Selected: Hero heading</p></InspectorFrame>,
+  InspectorFrame: () => {
+    const { body, ...inspector } = F.inspector;
+    return <InspectorFrame {...inspector}><SemanticContent as="p">{body}</SemanticContent></InspectorFrame>;
+  },
   ...STRUCTURED_FRAME_SAMPLES,
 };
 const SAMPLES: Readonly<Record<string, () => ReactNode>> = {
@@ -172,9 +196,16 @@ export function packageSurfacePreview(doc: SurfacePointerDocument, samples: Surf
   const hosted = Object.hasOwn(samples, pointer) ? samples[pointer] : undefined;
   if (hosted) return { pointer, render: hosted, state: "default" };
   if (!impl.module.startsWith(DESIGNER_PACKAGE)) return { reason: `${pointer} is not a designer export; the designer does not render it` };
+  const stated = state === "default" || !Object.hasOwn(STATE_SAMPLES, pointer) ? undefined : STATE_SAMPLES[pointer]![state];
+  // A leaf with a package runtime renderer previews through it, from the specimen dataset: the same renderer
+  // the consumer runtime draws. Only an export's own non-default state samples still render beside it.
+  const leaf = (entries[0] as SurfacePreviewEntry).slot;
+  if (!stated && typeof leaf === "string" && Object.hasOwn(surfaceRuntimeRenderers, leaf)) {
+    const runtime = surfaceRuntimePreview(entries[0] as SurfacePreviewEntry);
+    return "reason" in runtime ? runtime : { pointer, render: runtime.render, state: "default" };
+  }
   const sample = Object.hasOwn(SAMPLES, pointer) ? SAMPLES[pointer] : undefined;
   if (!sample) return { reason: `no preview sample content for ${pointer}` };
-  const stated = state === "default" || !Object.hasOwn(STATE_SAMPLES, pointer) ? undefined : STATE_SAMPLES[pointer]![state];
   return stated ? { pointer, render: stated, state } : { pointer, render: sample, state: "default" };
 }
 

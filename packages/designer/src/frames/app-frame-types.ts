@@ -1,5 +1,5 @@
 import type { ReactNode } from "react";
-import type { PageBarHeader, FrameNavigate, PageBarDestination, PageBarCrumb, PageBarAction, PageBarPage, AccountMenuActor, AccountMenuProps, AccountMenuSection, AppNavigationProps, CommandMenuProps } from "../blocks/index.js";
+import type { FrameNavigate, PageBarDestination, PageBarCrumb, PageBarAction, PageBarPage, AccountMenuActor, AccountMenuProps, AccountMenuSection, AppNavigationProps, CommandMenuProps } from "../blocks/index.js";
 import type { ThemeProviderProps, ThemeToggleProps } from "../theme/index.js";
 
 /** Host mark beside its visible name at the top of the navigation, above command search. */
@@ -17,6 +17,11 @@ export interface AppFrameBrand {
 
 /** Profile Avatar content: the host mark, or the signed-in actor's initials. A signed-out row always keeps the mark. */
 export type AppFrameAccountAvatar = "mark" | "initials";
+
+/** Shell arrangement: the standard docked chrome, or an immersive shell whose header floats over the stage. */
+export type AppFrameLayout = "standard" | "immersive";
+/** Main stage inset: contained (padded) or full (edge to edge). */
+export type AppFrameStage = "contained" | "full";
 
 /** Navigation footer arrangement: one row (account beside the theme control), or the theme control on its own row above a full-width account row. */
 export type AppFrameFooterLayout = "inline" | "stacked";
@@ -69,8 +74,11 @@ export interface AppFrameProps {
     /** @default true */
     shortcutEnabled?: boolean;
   };
-  header?: PageBarHeader;
   onNavigate?: FrameNavigate;
+  /** `immersive` floats a glass header over the stage and opens with the navigation collapsed. @default "standard" */
+  layout?: AppFrameLayout;
+  /** `full` runs the stage edge to edge with no main padding. @default "contained" */
+  stage?: AppFrameStage;
   notices?: readonly import("./frame-notices.js").AppFrameNotice[];
   dock?: import("./FrameDock.js").AppFrameDock;
   /** Omitted retains the floating sticky bar; glass always uses fixed overlay positioning. */
@@ -109,6 +117,5 @@ export interface AppFrameProps {
   mainId?: string;
 }
 
-export type { PageBarHeader as AppFrameHeader, PageBarHeaderNav as AppFrameHeaderNav, PageBarHeaderActions as AppFrameHeaderActions } from "../blocks/index.js";
 export type { AppFrameNotice } from "./frame-notices.js";
 export type { AppFrameDock } from "./FrameDock.js";

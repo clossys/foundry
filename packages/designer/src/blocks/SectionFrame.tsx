@@ -13,9 +13,21 @@ const SECTION_STAMP = dsAttrs("sections", "sections.band", "foundry/sections.ban
 
 export type { SectionMeasure };
 
+/**
+ * The band's own ground: every `SectionGround`, plus `transparent`, which only
+ * the band takes. A transparent band paints no surface and sets no ink, so it
+ * takes both from wherever it sits (a parent band, an image, the page) and
+ * claims no ground pairing of its own. Blocks keep the closed `SectionGround`
+ * set: widening the band's ground does not widen theirs.
+ */
+export type SectionFrameGround = SectionGround | "transparent";
+
+/** No surface and no ink class: nothing paints, the context shows through. */
+const TRANSPARENT_GROUND = { surface: "", primary: "" } as const;
+
 export interface SectionFrameProps extends HTMLAttributes<HTMLElement> {
-  /** Semantic section ground; selects the complete matching surface and foreground policy. @default "base" */
-  ground?: SectionGround;
+  /** Semantic section ground; selects the complete matching surface and foreground policy. `transparent` sets neither. @default "base" */
+  ground?: SectionFrameGround;
   /**
    * How wide the framed column is — `content` (default app column),
    * `wide` (stat rows and multi-column bands), or `prose` (long-form
@@ -45,7 +57,7 @@ export function SectionFrame({
   style,
   ...rest
 }: SectionFrameProps) {
-  const colors = SECTION_GROUND_CLASSES[ground];
+  const colors = ground === "transparent" ? TRANSPARENT_GROUND : SECTION_GROUND_CLASSES[ground];
 
   return (
     <section

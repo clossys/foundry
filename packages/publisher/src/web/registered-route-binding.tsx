@@ -52,7 +52,7 @@ function prepareRoute(registry: RouteRegistry, routeId: string, runtime: Registe
     const route = routes[0]!; let binding = route.composition.binding;
     const brand = registeredRouteBrandLink(registry, route);
     if (!brand) return { status: "refused", findings: ["Exact registered brand home link is unavailable"] };
-    if (!runtime || !only(runtime, ["assembly", "instanceLibrary", "registries", "layoutRenderer", "cell", "headerActions", "designerQuery", "source"]) || !only(runtime.assembly, ["identity", "engine", "contracts", "ports", "themes", "states", "breakpointPixels", "breakpointBasis", "css", "assets", "runner", "stage", "stageMeasurements", "query"]) || !only(runtime.assembly.ports, ["manifest", "renderers", "resolveContent", "frameOrder", "stageActions"])) return { status: "refused", findings: ["Host runtime contains an unknown page/body escape"] };
+    if (!runtime || !only(runtime, ["assembly", "instanceLibrary", "registries", "layoutRenderer", "cell", "headerActions", "designerQuery", "source"]) || !only(runtime.assembly, ["identity", "engine", "contracts", "ports", "themes", "states", "breakpointPixels", "breakpointBasis", "css", "assets", "runner", "stage", "stageMeasurements", "query"]) || !only(runtime.assembly.ports, ["manifest", "renderers", "resolveContent", "frameOrder", "stageActions", "frameHost"])) return { status: "refused", findings: ["Host runtime contains an unknown page/body escape"] };
     let materialization: RouteRuntimeMaterialization | undefined;
     let assembly = runtime.assembly;
     if (binding.body?.source.kind === "derived" && display?.token !== plainDisplay) {

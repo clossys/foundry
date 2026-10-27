@@ -2,7 +2,7 @@ import { hashComponentInputClosure, validateInstalledComponentRule } from "./com
 import { CatalogError } from "./api.js";
 import { sha256 } from "./digest.js";
 import { stableStringify } from "./stable.js";
-import { checkComponentProfile } from "./check-components.js";
+import { checkComponentProfile, componentDescriptorDigest } from "./check-components.js";
 import { assertComponentSecondaryExports, componentSecondaryExports } from "./component-secondary-exports.js";
 import type { ComponentCheckFill, ComponentCheckInput, ComponentCheckResult } from "./check-components.js";
 import type { ComponentSlot, FillMeta, Source } from "./types.js";
@@ -88,8 +88,7 @@ export function componentOf(doc: ComponentCandidateDocument): ComponentCandidate
 }
 /** Hash domain excludes only provenance, so local descriptor edits remain detectable. */
 export function componentDescriptorHash(fill: ComponentCandidate): string {
-  const { origin: _origin, ...descriptor } = fill as ComponentCandidate & { origin?: ComponentOrigin };
-  return sha256(stableStringify(descriptor));
+  return componentDescriptorDigest(fill);
 }
 export function componentLibraryHash(library: ComponentLibrary): string {
   return `sha256:${sha256(stableStringify({ ...library, fills: [...library.fills].sort((a, b) => compare(a.$extensions["com.clossys.fill"].slot, b.$extensions["com.clossys.fill"].slot)), files: [...library.files].sort((a, b) => compare(a.path, b.path)) }))}`;
@@ -181,6 +180,6 @@ export function resolveComponents(input: ComponentResolutionInput): ResolvedComp
     const origin = (fill as ComponentCandidate & { origin: ComponentOrigin }).origin;
     return { ...fill, source: origin.kind === "adopted" ? origin.source : fill.source };
   });
-  const check = checkComponentProfile({ compositions: { rules: input.catalog.rules ?? [], library: input.library }, slots: input.catalog.slots, fills: checkedFills, tokens: input.values.tokens, assets: input.values.assets, requiredMembers: input.requiredMembers, observations: input.evidence?.observations ?? {}, installedRac: input.evidence?.installedRac ?? { version: "", instance: "" }, classBindings: input.evidence?.classBindings, coherenceGroups: input.evidence?.coherenceGroups });
+  const check = checkComponentProfile({ compositions: { rules: input.catalog.rules ?? [], library: input.library }, slots: input.catalog.slots, fills: checkedFills, tokens: input.values.tokens, assets: input.values.assets, requiredMembers: input.requiredMembers, observations: input.evidence?.observations ?? {}, installedRac: input.evidence?.installedRac ?? { version: "", instance: "" }, classBindings: input.evidence?.classBindings, coherenceGroups: input.evidence?.coherenceGroups, descriptorHashes: Object.fromEntries([...fills].map(([slot, fill]) => [slot, componentDescriptorHash(fill)])) });
   return { consumer: input.library.source.id, selectionHash: componentLibraryHash(input.library), components, files: structuredClone(input.library.files), check, packageExports: structuredClone(input.packageExports ?? {}) };
 }

@@ -69,6 +69,7 @@ it("gives a 1-member and a 286-member candidate the identical cap and wraps ever
   const cells = [single, ramp].map(candidate => {
     const view = render(<CandidateCell candidate={candidate} labels={labels} />);
     const cell = view.container.querySelector<HTMLElement>("[data-candidate-cell]")!;
+    // Every member renders, in the ordinal display order CandidateCell applies since 1a4aeab8e (amber.50 before amber.100).
     expect([...cell.querySelectorAll<HTMLElement>("[data-candidate-variant]")].map(variant => variant.dataset.candidateVariant)).toEqual(orderTokenMembers(candidate.members).map(entry => entry.id));
     expect(cell).toHaveClass("flex", "flex-wrap");
     expect(cell.className).not.toMatch(UNBOUNDED);

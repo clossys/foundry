@@ -3,13 +3,19 @@ import type { ReactElement, ReactNode } from "react";
 import { Card } from "../components/Card.js";
 import { Icon, type IconNode, type IconSize } from "../components/Icon.js";
 import { Logomark } from "../components/Logomark.js";
-import { UI_BRANDMARK_HEIGHT_LG } from "../internal/brandmark.js";
+import { SemanticContent } from "../components/SemanticContent.js";
 import { RatioFixture } from "./ratio-fixture.js";
+import { specimenDataset } from "./specimen-dataset.js";
+import { specimenOverride } from "../tokens/preview/specimens.js";
 import { MediaFigure } from "../blocks/MediaFigure.js";
 import { isImageResource, isVideoResource, mediaLeafOf, type ImageResource, type VideoResource } from "../catalog-assets/media.js";
 import { isPatternRecipe, patternBackground, type PatternRecipe } from "../tokens/pattern.js";
 
-/** One specimen type per assets leaf; every member and candidate of a leaf shares it. */
+/**
+ * One specimen type per assets leaf; every member and candidate of a leaf shares it. Every specimen root
+ * carries `data-layer="assets"`; its sizes and captions come from the shared specimen dataset, and a member's
+ * own value (a ratio, a pattern tile) reaches CSS only as an `asset-under-review` override.
+ */
 export type AssetSpecimenKind = "logo" | "favicon" | "app-icon" | "icon" | "ratio" | "image" | "video" | "pattern";
 
 /**
@@ -24,58 +30,59 @@ const LOGO_GROUND: Readonly<Record<string, SpecimenGround>> = { positive: "light
 const CAPTION = "text-caption text-ink-secondary";
 const dataUri = (svg: string) => `data:image/svg+xml,${encodeURIComponent(svg)}`;
 
-/** The share of a maskable icon's side that the platform guarantees to keep: a circle of 80 percent, the circle the identity badge keeps its symbol inside. */
-const SAFE_ZONE_SHARE = 0.8;
+/** The share of a maskable icon's side that the platform guarantees to keep: the circle the identity badge keeps its symbol inside. */
+const APP_ICON = specimenDataset.assets.appIcon;
 /** The CSS sizes a favicon is drawn at: the tab strip, a high-density tab or bookmark, and a shortcut tile. */
-const FAVICON_PX = [16, 32, 48] as const;
+const FAVICON = specimenDataset.assets.favicon;
 /** The icon size tokens, smallest first. */
 const ICON_SIZES: readonly IconSize[] = ["sm", "md", "lg"];
 
 /** A plate in a fixed-polarity ground, outlined so the ground that matches the page still reads as a plate. */
-function Ground({ ground, children, ...rest }: { ground: SpecimenGround; children: ReactNode; className?: string; "data-asset-specimen"?: string; "data-app-icon"?: string }): ReactElement {
+function Ground({ ground, children, ...rest }: { ground: SpecimenGround; children: ReactNode; className?: string; "data-layer"?: string; "data-asset-specimen"?: string; "data-app-icon"?: string }): ReactElement {
   return <div {...rest} data-ground={ground} className={`flex w-max items-center gap-sm rounded-panel border border-line-panel p-sm ${GROUND_CLASSES[ground]}`}>{children}</div>;
 }
 
 /** The maskable safe zone drawn over its artwork: a dashed circle in the secondary ink, in a box that fills the mark it sits on. */
 function SafeZone(): ReactElement {
-  return <svg data-safe-zone="" aria-hidden="true" focusable="false" viewBox="0 0 100 100" className="pointer-events-none absolute inset-0 h-full w-full text-ink-secondary">
-    <circle cx={50} cy={50} r={50 * SAFE_ZONE_SHARE} fill="none" stroke="currentColor" strokeWidth={1} strokeDasharray="3 2" vectorEffect="non-scaling-stroke" />
+  const half = APP_ICON.viewBox / 2;
+  return <svg data-safe-zone="" aria-hidden="true" focusable="false" viewBox={`0 0 ${APP_ICON.viewBox} ${APP_ICON.viewBox}`} className="pointer-events-none absolute inset-0 h-full w-full text-ink-secondary">
+    <circle cx={half} cy={half} r={half * APP_ICON.safeZoneShare} fill="none" stroke="currentColor" strokeWidth={1} strokeDasharray={APP_ICON.dash} vectorEffect="non-scaling-stroke" />
   </svg>;
 }
 
 /** A checked SVG member: logo variants on their ground, a favicon in browser-tab chrome at its real sizes, an app icon on its plate. */
 export function SvgSpecimen({ id, slot, svg }: { id: string; slot: string; svg: string }): ReactElement {
   const role = id.slice(slot.length + 1), src = dataUri(svg);
-  if (slot === "assets.favicon") return <div data-asset-specimen="favicon" className="flex w-max flex-col items-start gap-xs">
+  if (slot === "assets.favicon") return <div data-layer="assets" data-asset-specimen="favicon" className="flex w-max flex-col items-start gap-xs">
     {(["light", "dark"] as const).map(ground => <Ground key={ground} ground={ground}>
-      {FAVICON_PX.map(side => <img key={side} src={src} alt="" width={side} height={side} title={`${id} ${side} px`} />)}
+      {FAVICON.sizes.map(side => <img key={side} src={src} alt="" width={side} height={side} title={[id, side, FAVICON.unit].join(" ")} />)}
     </Ground>)}
-    <span className={CAPTION}>{FAVICON_PX.join(", ")} px</span>
+    <SemanticContent as="span" className={CAPTION}>{[FAVICON.sizes.join(", "), FAVICON.unit].join(" ")}</SemanticContent>
   </div>;
-  if (slot === "assets.app-icon") return <Ground ground="light" data-asset-specimen="app-icon" data-app-icon={role}>
+  if (slot === "assets.app-icon") return <Ground ground="light" data-layer="assets" data-asset-specimen="app-icon" data-app-icon={role}>
     <span className="relative flex">
       <Logomark src={src} size="lg" title={id} />
       {role === "maskable" ? <SafeZone /> : null}
     </span>
   </Ground>;
-  return <Ground ground={LOGO_GROUND[role] ?? "light"} data-asset-specimen="logo">
+  return <Ground ground={LOGO_GROUND[role] ?? "light"} data-layer="assets" data-asset-specimen="logo">
     <Logomark src={src} size="lg" title={id} />
   </Ground>;
 }
 
 /** A checked glyph drawn as the icon it is at every icon size token, labelled with its name. */
 export function IconSpecimen({ glyph, name }: { glyph: IconNode; name: string }): ReactElement {
-  return <div data-asset-specimen="icon" className="flex w-max flex-col items-center gap-xs">
+  return <div data-layer="assets" data-asset-specimen="icon" className="flex w-max flex-col items-center gap-xs">
     <span className="flex items-end gap-sm">{ICON_SIZES.map(size => <Icon key={size} glyph={glyph} decorative size={size} />)}</span>
-    <span className={CAPTION}>{name}</span>
+    <SemanticContent as="span" className={CAPTION}>{name}</SemanticContent>
   </div>;
 }
 
 /** An image ratio as the crop it makes of one generated fixture image, with the ratio as its label. */
 export function RatioSpecimen({ width, height }: { width: number; height: number }): ReactElement {
-  return <div data-asset-specimen="ratio" className="flex w-max flex-col items-start gap-xs">
-    <Card variant="outline" aria-hidden className="overflow-hidden p-0" style={{ height: UI_BRANDMARK_HEIGHT_LG, aspectRatio: `${width} / ${height}` }}><RatioFixture /></Card>
-    <span className={CAPTION}>{width}:{height}</span>
+  return <div data-layer="assets" data-asset-specimen="ratio" className="flex w-max flex-col items-start gap-xs" {...specimenOverride("asset-under-review", { "--studio-specimen-value": `${width} / ${height}` })}>
+    <Card variant="outline" aria-hidden data-ratio-frame="" className="h-3xl aspect-(--studio-specimen-value) overflow-hidden p-0"><RatioFixture /></Card>
+    <SemanticContent as="span" className={CAPTION}>{width}:{height}</SemanticContent>
   </div>;
 }
 
@@ -90,13 +97,13 @@ export function ratioOf(value: unknown): { width: number; height: number } | und
 const MEDIA = "block h-4xl w-auto";
 /** A checked image resource as the image it is, framed, at its intrinsic aspect, with its alt policy and kind facet. */
 export function ImageSpecimen({ image }: { image: ImageResource }): ReactElement {
-  return <MediaFigure data-asset-specimen="image" framed className="w-max" caption={<span className={CAPTION}>{image.kind}</span>}>
+  return <MediaFigure data-layer="assets" data-asset-specimen="image" framed className="w-max" caption={<SemanticContent as="span" className={CAPTION}>{image.kind}</SemanticContent>}>
     <img src={image.src} alt={image.decorative === true ? "" : image.alt} width={image.width} height={image.height} className={MEDIA} />
   </MediaFigure>;
 }
 /** A checked video resource as a player the viewer starts: controls, metadata only, never autoplay, captions attached. */
 export function VideoSpecimen({ video }: { video: VideoResource }): ReactElement {
-  return <MediaFigure data-asset-specimen="video" framed className="w-max" caption={<span className={CAPTION}>{video.width}×{video.height}</span>}>
+  return <MediaFigure data-layer="assets" data-asset-specimen="video" framed className="w-max" caption={<SemanticContent as="span" className={CAPTION}>{video.width}×{video.height}</SemanticContent>}>
     <video controls preload="metadata" poster={video.poster} width={video.width} height={video.height} className={MEDIA}>
       <source src={video.src} type={video.mediaType} />
       {video.captions ? <track kind="captions" src={video.captions.src} srcLang={video.captions.srclang} label={video.captions.label} default /> : null}
@@ -105,9 +112,11 @@ export function VideoSpecimen({ video }: { video: VideoResource }): ReactElement
 }
 /** A pattern recipe painted at its real tile size on the light reference ground, named by its shape. */
 export function PatternSpecimen({ recipe }: { recipe: PatternRecipe }): ReactElement {
-  return <div data-asset-specimen="pattern" className="flex w-max flex-col items-start gap-xs">
-    <Ground ground="light"><span aria-hidden className="block size-3xl" style={patternBackground(recipe)} /></Ground>
-    <span className={CAPTION}>{recipe.shape}</span>
+  const { backgroundImage, backgroundSize } = patternBackground(recipe);
+  return <div data-layer="assets" data-asset-specimen="pattern" className="flex w-max flex-col items-start gap-xs"
+    {...specimenOverride("asset-under-review", { "--studio-pattern-image": backgroundImage, "--studio-pattern-size": backgroundSize })}>
+    <Ground ground="light"><span aria-hidden data-pattern-tile="" className="block size-3xl bg-(image:--studio-pattern-image) bg-size-(--studio-pattern-size)" /></Ground>
+    <SemanticContent as="span" className={CAPTION}>{recipe.shape}</SemanticContent>
   </div>;
 }
 /**

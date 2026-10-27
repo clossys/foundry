@@ -39,7 +39,7 @@ const signatures = {
 };
 const counts = {
   surface: 24, text: 29, border: 10, control: 12, status: 12, chart: 22,
-  font: 7, space: 14, size: 29, icon: 4, brandmark: 6, radius: 8,
+  font: 7, space: 14, size: 32, icon: 4, brandmark: 6, radius: 8,
   shadow: 4, blur: 2, ring: 5, layer: 11, opacity: 4, motion: 18, breakpoint: 6,
 };
 const interactive = [
@@ -105,10 +105,10 @@ function samplePaint(sample: HTMLElement, role: "color" | "background", tokens: 
 }
 
 describe("exact-property TokenPreview", () => {
-  it("pins the literal 227-property inventory, application bindings and shipped CSS values independently", () => {
+  it("pins the literal 230-property inventory, application bindings and shipped CSS values independently", () => {
     const expected = supportedProperties.map(([property]) => property);
-    expect(expected).toHaveLength(227);
-    expect(new Set(expected).size).toBe(227);
+    expect(expected).toHaveLength(230);
+    expect(new Set(expected).size).toBe(230);
     expect(Object.keys(TOKENS).sort()).toEqual(expected);
     expect(Object.keys(TOKEN_GUIDANCE).sort()).toEqual(expected);
     const declarations = parseRootDeclarations(tokensCss);
@@ -123,10 +123,10 @@ describe("exact-property TokenPreview", () => {
     }
   });
 
-  it("partitions all 227 supported properties bidirectionally with zero unavailable", () => {
+  it("partitions all 230 supported properties bidirectionally with zero unavailable", () => {
     const supported = Object.keys(TOKEN_GUIDANCE);
     expect(Object.keys(TOKEN_GUIDANCE).sort()).toEqual(Object.keys(TOKENS).sort());
-    expect(supported).toHaveLength(227);
+    expect(supported).toHaveLength(230);
     expect(new Set(interactive).size).toBe(24);
     expect(supported.sort()).toEqual(Object.keys(TOKENS).sort());
     expect(interactive.slice().sort()).toEqual(supported.filter(property => ["motion", "breakpoint"].includes(TOKEN_GUIDANCE[property]!.specimen)).sort());

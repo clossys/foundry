@@ -63,7 +63,8 @@ describe("selected caption source prerequisite; runtime profile remains unavaila
       expect(descriptor.pin!.files).toContainEqual({ path: raw.path, sha256: sha256(raw.content) });
       expect(descriptor.deps).toContainEqual({ name: "react", version: "19.2.3", license: "MIT" });
       expect(descriptor.rac).toBeUndefined();
-      expect(descriptor).not.toHaveProperty("secondaryExports");
+      // API-S1 approves exactly five Select parts (proved in shadcn-aria-components.test.ts); Calendar approves none.
+      if (item === "calendar") expect(descriptor).not.toHaveProperty("secondaryExports");
       expect(descriptor).not.toHaveProperty("measurements");
       expect(fill.$extensions["com.clossys.fill"].status).toBe("draft");
       expect(fill.$extensions["com.clossys.fill"].evidence).toEqual([]);

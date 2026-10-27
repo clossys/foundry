@@ -54,7 +54,15 @@ const DEFAULT_TOAST_TIMEOUT_MS = 5000;
  * `<Toaster />` subscribes to this exact instance via react-aria-components'
  * `useToastQueue`/`ToastRegion`; see `Toaster.tsx`.
  */
-export const toastQueue = new AriaToastQueue<ToastRecord>({ maxVisibleToasts: 5 });
+export const toastQueue = createToastQueue<ToastRecord>(5);
+
+/**
+ * A toast queue of its own, for a host that draws a bounded `Toaster` (its `queue` prop) apart from the app-wide
+ * one, such as a Studio specimen cell. The one place a queue is constructed, so no caller reaches past the shell.
+ */
+export function createToastQueue<T>(maxVisibleToasts: number): AriaToastQueue<T> {
+  return new AriaToastQueue<T>({ maxVisibleToasts });
+}
 
 function addToast(variant: ToastVariant, title: ReactNode, options: ToastOptions = {}): ToastHandle {
   const { description, timeout, onClose, action } = options;

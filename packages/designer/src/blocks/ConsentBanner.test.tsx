@@ -387,7 +387,8 @@ describe("CONSENT-1 card presentation", () => {
     for (const presentation of [undefined, "banner"] as const) {
       const html = withoutDsAttrs(renderToStaticMarkup(<ConsentBanner title="Banner title" body="Banner body" acceptLabel="Accept label" rejectLabel="Reject label" onAccept={() => {}} onReject={() => {}} privacyLink={<a href="/privacy">Privacy link</a>} presentation={presentation} />))
         .replace(/\bid="[^"]+"/g, 'id="ID"').replace(/\baria-labelledby="[^"]+"/g, 'aria-labelledby="ID"');
-      expect(createHash("sha256").update(html).digest("hex")).toBe("4c11cfd188883db4e64ba36ea087b757806362f34808b884513a56c226282f01");
+      // Re-pinned after the Foundry Button base and secondary edge changed (8909907f3, ad1a46c90): only the two choice buttons' classes differ.
+      expect(createHash("sha256").update(html).digest("hex")).toBe("a004cf6a1ef1fc0a87379a1a57f9d72981b0ef9a65e4fbed9eae9c2fb8de9b56");
     }
   });
 

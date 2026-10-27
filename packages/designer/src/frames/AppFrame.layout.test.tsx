@@ -1,5 +1,7 @@
 // @vitest-environment jsdom
 import "@testing-library/jest-dom/vitest";
+import { readFileSync } from "node:fs";
+import { resolve } from "node:path";
 import { act, cleanup, render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { renderToString } from "react-dom/server";
@@ -53,23 +55,25 @@ function resize(width: number) {
 }
 
 describe("AppFrame reserved layout", () => {
-  it("consumes a page header lease inside the real Frame and restores the host fallback", () => {
-    const view = render(<AppFrame {...fixture()} header={{ title: "Host fallback" }}><PageHeaderModule id="page" header={{ title: "Leased page", nav: { label: "Page views", activeId: "one", items: [{ id: "one", label: "Overview", href: "#overview" }] }, actions: { render: ({ compact }) => <button>Action {String(compact)}</button> } }} /></AppFrame>);
+  it("consumes a page header lease inside the real Frame and drops it when the lease ends", () => {
+    const view = render(<AppFrame {...fixture()}><PageHeaderModule id="page" header={{ title: "Leased page", nav: { label: "Page views", activeId: "one", items: [{ id: "one", label: "Overview", href: "#overview" }] }, actions: { render: ({ compact }) => <button>Action {String(compact)}</button> } }} /></AppFrame>);
     expect(screen.getAllByRole("heading", { level: 1 })).toHaveLength(1);
     expect(screen.getByRole("heading", { name: "Leased page" })).toBeInTheDocument();
     expect(screen.getByRole("navigation", { name: "Page views" })).toBeInTheDocument();
     expect(region("header")).toContainElement(screen.getByRole("button", { name: "Action false" }));
-    view.rerender(<AppFrame {...fixture()} header={{ title: "Host fallback" }} />);
-    expect(screen.getByRole("heading", { name: "Host fallback" })).toBeInTheDocument();
+    // The frame takes no header prop: without a lease there is no page heading at all.
+    view.rerender(<AppFrame {...fixture()} />);
+    expect(screen.queryByRole("heading", { name: "Leased page" })).toBeNull();
     expect(screen.queryByRole("button", { name: /Action false/ })).toBeNull();
   });
   it("reserves separate header, stage and dock rows inside the definite-height host", () => {
-    render(<AppFrame {...fixture()} header={{ title: "Project canvas" }} notices={[{ id: "saved", severity: "info", text: "Project saved" }]} />);
+    render(<AppFrame {...fixture()} notices={[{ id: "saved", severity: "info", text: "Project saved" }]}><PageHeaderModule id="page" header={{ title: "Project canvas" }} /></AppFrame>);
     expect(document.querySelector("[data-application-frame]")).toHaveClass("h-full", "overflow-hidden");
     expect(region("stage")).toHaveClass("relative", "isolate", "flex-1", "overflow-hidden");
     expect(screen.getByRole("main")).toHaveClass("h-full", "overflow-auto");
-    // cross-10: page content sits on the 16/24 spacing-scale inset; a bleeding canvas child drops it.
-    expect(screen.getByRole("main")).toHaveClass("p-lg", "tablet-lg:p-xl", "frame-main-bleed");
+    // cross-10: page content sits on the 16/24 spacing-scale inset (the named frame-main-inset); a bleeding canvas child drops it.
+    expect(screen.getByRole("main")).toHaveClass("frame-main-inset", "frame-main-bleed");
+    expect(readFileSync(resolve(import.meta.dirname, "../../styles/theme-keys.css"), "utf8")).toMatch(/@utility frame-main-inset \{\s*padding: var\(--spacing-lg, 16px\);\s*@media \(width >= 1024px\) \{ padding: var\(--spacing-xl, 24px\); \}\s*\}/);
     expect(region("header").parentElement).toBe(region("stage").parentElement);
     expect(region("stage").nextElementSibling).toBe(region("dock"));
     expect(region("dock")).toHaveClass("shrink-0");
@@ -176,7 +180,7 @@ describe("AppFrame reserved layout", () => {
     expect(screen.getByRole("button", { name: "Map action" })).toBeVisible();
   });
   it("hydrates one page header, stage and leased module registry without recoverable errors", async () => {
-    const tree = <AppFrame {...fixture()} header={{ title: "Project canvas" }}><SlotModule id="zoom" slot="dock-strip" label="Zoom"><button>Zoom in</button></SlotModule></AppFrame>;
+    const tree = <AppFrame {...fixture()}><PageHeaderModule id="page" header={{ title: "Project canvas" }} /><SlotModule id="zoom" slot="dock-strip" label="Zoom"><button>Zoom in</button></SlotModule></AppFrame>;
     const host = document.createElement("div"); host.innerHTML = renderToString(tree); document.body.append(host);
     const recoverable = vi.fn(); let root: ReturnType<typeof hydrateRoot> | undefined;
     try {

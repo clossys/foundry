@@ -1,19 +1,15 @@
 import type { ReactNode } from "react";
-import {
-  Dialog as AriaDialog,
-  DialogTrigger,
-  Modal,
-  ModalOverlay,
-  type DialogTriggerProps as AriaDialogTriggerProps,
-} from "react-aria-components";
 import { Button } from "../components/Button.js";
+import { Dialog, type DialogProps } from "../components/Dialog.js";
 import { Icon } from "../components/Icon.js";
 import { cx } from "../components/internal/cx.js";
-import { UI_ELEVATION_FLOATING, UI_Z_MODAL } from "../components/internal/ui-vars.js";
 import { X } from "../icons/index.js";
 import { UI_LAYOUT_DRAWER_W } from "./internal/shell-vars.js";
 
-export interface NavShellProps extends Omit<AriaDialogTriggerProps, "children"> {
+/** The drawer's open-state props: every `Dialog` trigger prop, none of its surface props (the drawer owns those). */
+type NavShellDialogProps = Omit<DialogProps, "trigger" | "children" | "size" | "role" | "isDismissable" | "className" | "style" | "overlayClassName" | "modalClassName" | "modalStyle">;
+
+export interface NavShellProps extends NavShellDialogProps {
   /**
    * The site's primary navigation links — typically one or more `Link`
    * components. Rendered TWICE: once inside a plain inline `<nav>` visible from
@@ -72,11 +68,11 @@ export interface NavShellProps extends Omit<AriaDialogTriggerProps, "children"> 
  * DOM `id` — never hits this; documented here rather than silently
  * accepted.
  *
- * **The drawer's accessibility contract**, built entirely on react-aria-
- * components' `DialogTrigger` + `ModalOverlay` + `Modal` + `Dialog` — the
- * same primitives this package's own `Dialog` component uses (see its own doc
- * comment for the underlying `useModalOverlay`/`useOverlayTrigger`
- * mechanism) — none of it reimplemented here:
+ * **The drawer's accessibility contract** comes from composing this
+ * package's own `Dialog` component (see its doc comment for the underlying
+ * `useModalOverlay`/`useOverlayTrigger` mechanism); the drawer only restyles
+ * its surface and names it with a visually hidden `Dialog.Heading`. None of
+ * it is reimplemented here:
  *
  *   - **Focus moves into the drawer on open, and is trapped there while
  *     open** — `useDialog`'s own `FocusScope`, `contain`ed for as long as
@@ -114,36 +110,33 @@ export function NavShell({
       <nav aria-label={ariaLabel} className={cx("hidden items-center gap-md tablet:flex", className)}>
         {children}
       </nav>
-      <DialogTrigger {...rest}>
-        <Button variant="ghost" size="sm" className="tablet:hidden">
-          {triggerLabel}
-        </Button>
-        <ModalOverlay className="fixed inset-0 bg-overlay-scrim" style={{ zIndex: UI_Z_MODAL }} isDismissable>
-          <Modal
-            className="fixed inset-y-0 start-0 flex h-full flex-col outline-none"
-            style={{ width: UI_LAYOUT_DRAWER_W }}
-          >
-            <AriaDialog
-              aria-label={ariaLabel}
-              className="flex h-full w-full flex-col gap-lg overflow-auto border-e border-overlay-border bg-overlay-surface p-lg text-body text-ink-primary outline-none"
-              style={{ boxShadow: UI_ELEVATION_FLOATING }}
-            >
-              {({ close }) => (
-                <>
-                  <div className="flex items-center justify-end">
-                    <Button variant="ghost" size="sm" aria-label={closeLabel} onPress={close}>
-                      <Icon glyph={X} decorative />
-                    </Button>
-                  </div>
-                  <nav aria-label={ariaLabel} className="flex flex-col gap-sm">
-                    {children}
-                  </nav>
-                </>
-              )}
-            </AriaDialog>
-          </Modal>
-        </ModalOverlay>
-      </DialogTrigger>
+      <Dialog
+        {...rest}
+        isDismissable
+        trigger={
+          <Button variant="ghost" size="sm" className="tablet:hidden">
+            {triggerLabel}
+          </Button>
+        }
+        overlayClassName="block p-0"
+        modalClassName="fixed inset-y-0 start-0 h-full max-w-none flex-col outline-none"
+        modalStyle={{ width: UI_LAYOUT_DRAWER_W }}
+        className="h-full max-h-none gap-lg rounded-none border-0 border-e"
+      >
+        {({ close }) => (
+          <>
+            <Dialog.Heading className="sr-only">{ariaLabel}</Dialog.Heading>
+            <div className="flex items-center justify-end">
+              <Button variant="ghost" size="sm" aria-label={closeLabel} onPress={close}>
+                <Icon glyph={X} decorative />
+              </Button>
+            </div>
+            <nav aria-label={ariaLabel} className="flex flex-col gap-sm">
+              {children}
+            </nav>
+          </>
+        )}
+      </Dialog>
     </>
   );
 }

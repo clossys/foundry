@@ -1,6 +1,6 @@
 /** Canonical client application Frames; content and actions remain host-owned. */
 export { AppFrame } from "./AppFrame.js";
-export type { AppFrameProps, AppFrameBrand, AppFrameBrandNavigationMark, AppFrameAccount, AppFrameAccountAvatar, AppFrameFooterLayout, AppFrameRightPanel, AppFrameHeader, AppFrameHeaderNav, AppFrameHeaderActions, AppFrameNotice, AppFrameDock } from "./app-frame-types.js";
+export type { AppFrameProps, AppFrameBrand, AppFrameBrandNavigationMark, AppFrameAccount, AppFrameAccountAvatar, AppFrameFooterLayout, AppFrameRightPanel, AppFrameLayout, AppFrameStage, AppFrameNotice, AppFrameDock } from "./app-frame-types.js";
 export { APP_FRAME_CONTRACT, APP_FRAME_CONFIG_SCHEMA } from "./app-frame-contract.js";
 export { APP_FRAME_RIGHT_PANEL_CONFIG } from "./right-panel-config.js";
 export { AppFrameSpecimen } from "./AppFrame.specimen.js";
@@ -11,6 +11,10 @@ export type { InspectorFrameProps, InspectorFramePresentation } from "./Inspecto
 
 export { FrameStage, frameSectionRefKey } from "./FrameStage.js";
 export type { FrameStageProps, FrameStageSectionRef } from "./FrameStage.js";
+
+/** Package-owned surface runtime renderers (Frames and Sections) for ConsumerRuntimePorts. */
+export { surfaceRuntimeRenderers, surfaceRuntimePointers, surfaceRuntimeCallbacks, SURFACE_RUNTIME_POINTER, surfaceRendererId } from "../runtime/index.js";
+export type { SurfaceRendererEntry, SurfaceRendererGroup, SurfaceRuntimeRenderer, SurfaceRuntimeLeaf } from "../runtime/index.js";
 
 export { useFrameNotice } from "./frame-notices.js";
 export type { FrameNoticeApi } from "./frame-notices.js";

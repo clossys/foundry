@@ -115,6 +115,11 @@
         "role.modal": "Dialog"
       },
       "props": [],
+      "rac": {
+        "instance": "react-aria-components",
+        "peer": false,
+        "range": "^1.20.0"
+      },
       "reads": {
         "assets": [
           "assets.icon-close"
@@ -149,6 +154,20 @@
         ]
       },
       "root": "rac:Dialog",
+      "secondaryExports": [
+        {
+          "export": "DialogDescription",
+          "name": "DialogDescription"
+        },
+        {
+          "export": "DialogHeader",
+          "name": "DialogHeader"
+        },
+        {
+          "export": "DialogTitle",
+          "name": "DialogTitle"
+        }
+      ],
       "slot": "components.dialog",
       "source": "shadcn@aria",
       "transform": "shadcn-aria-rewrite@1"

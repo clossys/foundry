@@ -176,6 +176,7 @@ export type { ProvenanceScan, ProvenanceScanInput, ProvenanceFinding, Provenance
 export * from "./runtime-ports.js";
 export * from "./runtime-assembly.js";
 export * from "./runtime-assembly-evidence.js";
+export * from "./surface-runtime-manifest.js";
 
 /** Pure candidate inventory; consumer ownership and checks stay with the composite API. */
 export { importFoundryComponents } from "../importers/foundry-components.js";
@@ -184,8 +185,10 @@ export type { FoundryComponentImportInput, FoundryComponentImport, FoundryCompon
 export { loadComponentCompositionRules } from "./component-compositions.js";
 export { planComponentDefaults } from "./component-defaults.js";
 export { observeComponentSources } from "./component-observations.js";
+export { joinComponentQualification } from "./component-qualification.js";
+export type { ComponentQualificationJoinInput, ComponentQualificationJoinRecord, ComponentQualificationJoin } from "./component-qualification.js";
 export { bindCompiledClasses } from "./component-class-bindings.js";
-export type { ComponentObservationInput, ComponentObservationProbe, ComponentObservationResult } from "./component-observations.js";
+export type { ComponentObservationInput, ComponentObservationProbe, ComponentObservationResult, ComponentBrowserArtifact } from "./component-observations.js";
 export type { ComponentDefaultsInput, ComponentDefaultsPlan, ComponentDefaultRow, ComponentDefaultBasis } from "./component-defaults.js";
 /** Pure Sections/Frames candidate inventories and their default-fill planner. */
 export { importFoundrySections } from "../importers/foundry-sections.js";

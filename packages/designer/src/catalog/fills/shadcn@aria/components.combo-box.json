@@ -141,6 +141,11 @@
         "state.invalid": "Combobox.isInvalid"
       },
       "props": [],
+      "rac": {
+        "instance": "react-aria-components",
+        "peer": false,
+        "range": "^1.20.0"
+      },
       "reads": {
         "assets": [
           "assets.icon-check",

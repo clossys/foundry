@@ -34,7 +34,7 @@ const counts: Record<string, number> = {
   "tokens.display-face": 4, "tokens.display-size": 3, "tokens.diverging-color": 3, "tokens.duration": 5, "tokens.easing": 4, "tokens.elevation": 4,
   "tokens.focus-color": 2, "tokens.focus-outline": 2, "tokens.focus-shadow": 2, "tokens.font-size": 0, "tokens.font-weight": 0, "tokens.gutter": 1,
   "tokens.heading-size": 4, "tokens.icon-size": 3, "tokens.icon-stroke": 1, "tokens.letter-spacing": 4, "tokens.line-height": 2, "tokens.radius": 4,
-  "tokens.region-width": 4, "tokens.scrim-color": 1, "tokens.sequential-color": 7, "tokens.shadow": 0, "tokens.shift-distance": 1, "tokens.spacing": 10,
+  "tokens.region-width": 7, "tokens.scrim-color": 1, "tokens.sequential-color": 7, "tokens.shadow": 0, "tokens.shift-distance": 1, "tokens.spacing": 10,
   "tokens.state-opacity": 4, "tokens.status-color": 12, "tokens.surface-color": 11, "tokens.surface-radius": 3, "tokens.text-color": 8, "tokens.touch-target": 1,
   "tokens.transition-duration": 1, "tokens.transition-easing": 2, "tokens.typeface": 3, "tokens.z-index": 11,
 };
@@ -56,9 +56,9 @@ describe("catalog token bindings", () => {
     expect(Object.fromEntries(slots.map(slot => [slot.id, Object.keys(slot.contract.emit ?? {}).length]))).toEqual(counts);
     expect(slots.map(slot => slot.id)).toEqual(Object.keys(counts).sort(compare));
   });
-  it("pins 227 bindings, 65 brandable bindings, 50 historically bound slots and fourteen dark slots", () => {
+  it("pins 230 bindings, 65 brandable bindings, 50 historically bound slots and fourteen dark slots", () => {
     const properties = slots.flatMap(slot => Object.values(slot.contract.emit ?? {}));
-    expect(properties).toHaveLength(227);
+    expect(properties).toHaveLength(230);
     expect(tokens.filter(token => token.brandable && properties.includes(token.property as `--${string}`))).toHaveLength(65);
     expect(slots.filter(slot => Object.keys(slot.contract.emit ?? {}).length > 0)).toHaveLength(50);
     expect(slots.filter(slot => slot.contract.modes.includes("dark")).map(slot => slot.id)).toEqual([

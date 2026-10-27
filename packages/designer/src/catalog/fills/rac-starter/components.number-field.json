@@ -390,6 +390,11 @@
         "step": "NumberField"
       },
       "props": [],
+      "rac": {
+        "instance": "react-aria-components",
+        "peer": false,
+        "range": "^1.21.1"
+      },
       "reads": {
         "assets": [
           "assets.icon-chevron-down",

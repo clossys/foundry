@@ -1,5 +1,7 @@
 // @vitest-environment jsdom
 import "@testing-library/jest-dom/vitest";
+import { readFileSync } from "node:fs";
+import { resolve } from "node:path";
 import { cleanup, render, screen } from "@testing-library/react";
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
 import { SlotModule } from "../shell/index.js";
@@ -78,6 +80,8 @@ it("sizes the header row from its own content, with no inline measured block siz
 it("stacks main content children on the lg spacing token so a banner never touches the content below it", () => {
   render(<AppFrame {...props}><div role="status">Banner</div><section aria-label="Cards">Cards</section></AppFrame>);
   const main = screen.getByRole("main");
-  expect(main).toHaveClass("flex", "flex-col", "gap-lg");
+  expect(main).toHaveClass("flex", "flex-col", "frame-main-gap");
   expect(main.style.gap).toBe("");
+  // The frame names its gap; the named utility carries the lg spacing token.
+  expect(readFileSync(resolve(import.meta.dirname, "../../styles/theme-keys.css"), "utf8")).toContain("@utility frame-main-gap { gap: var(--spacing-lg, 16px); }");
 });

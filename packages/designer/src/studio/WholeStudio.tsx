@@ -82,7 +82,9 @@ function ContractCanvas({ className, candidateWorkflow }: StudioCanvasProps) {
     const id = `${layer}/${group.id}`, shown = matching.length ? matching : group.leaves, leaves = new Set(shown.map(leaf => leaf.id));
     // A runtime-manifest selection is digested from its manifest entry, the only record this canvas renders for it.
     const sourceHashes = canvasSourceDigests([...documents.filter(doc => leaves.has(doc.$extensions["com.clossys.fill"].slot)).map(doc => [doc.$extensions["com.clossys.fill"].source, doc] as const),
-      ...(layer === "components" ? [] : s.snapshot!.runtime?.manifest.fills ?? []).filter(fill => leaves.has(fill.leaf)).map(fill => [fill.library, fill] as const)]);
+      ...(layer === "components" ? [] : s.snapshot!.runtime?.manifest.fills ?? []).filter(fill => leaves.has(fill.leaf)).map(fill => [fill.library, fill] as const),
+      // A planned default is digested from its planned row, the only record this canvas renders for it.
+      ...(layer === "components" ? [] : Object.values(s.snapshot!.plannedPreviews?.previews ?? {})).filter(row => leaves.has(row.slot)).map(row => [row.source, { slot: row.slot, fill: row.fill, pointer: row.pointer, state: row.state ?? "default" }] as const)]);
     const prepared = prepareCompositeLibraryBoard({ layer, board: { id, label: group.label, leaves: shown }, mode: editing.has(id) ? "edit" : "view", canSave: Boolean(s.changes), pending: false,
       input: s.input!, snapshot: s.snapshot!, changes: s.changes!, contracts: s.contracts, profile, sources: values.catalog.sources, labels: t, workflow: candidateWorkflow, sourceHashes });
     return { id, domain: domain.id, hidden: matching.length === 0, records: prepared.records, previews: canvasPreviewPort(prepared.previews), changeFor: prepared.changeFor };

@@ -17,6 +17,10 @@ import { deriveDesignerLayerBoardsV1, DESIGNER_LAYER_BOARDS_QUERY } from './desi
 import { runtimeHash } from '../catalog-core/runtime-ports.js';
 import { valueLibraryBoardRecords, valueLibraryBoardPreviews } from './library-board-adapter.js';
 import { boardOf, boardRow } from "./__fixtures__/library-board-dom.js";
+import { boardRowLeaf } from "./canvas-boards.js";
+import { importFoundryFrames, importFoundrySections, planSurfaceDefaults, type SurfaceDefaultsInput } from "../catalog-core/index.js";
+import { planSurfacePreviews } from "./planned-surface-previews.js";
+import { accessMatrixSample } from "../blocks/access-matrix/sample.js";
 import { OFFERED_SOURCE, adoptedOfferedComponentIntegration, offeredComponentIntegration } from "./__fixtures__/roster-source.js";
 
 const wholeLabels: CompositeStudioLabels = { ...labels, whole: { signoff: "W-signoff", proposed: "W-proposed", contract: "W-contract", contentSlots: "W-slots", configurations: "W-config", unresolved: "W-unresolved", unassessed: "W-unassessed" } };
@@ -396,6 +400,41 @@ it("contract boards count runtime-pending findings neutrally, apart from errors,
   expect(radio).toBeDisabled();
 });
 
+it("contract boards preview planned surface defaults labelled as planned, without choosing or counting them", async () => {
+  const f = adapterFixture();
+  const slots = loadBuildCatalog().slots.filter(slot => slot.layer === "sections" || slot.layer === "frames") as SurfaceDefaultsInput["catalog"]["slots"];
+  const fills = [...importFoundrySections().fills, ...importFoundryFrames().fills];
+  const plannedPreviews = planSurfacePreviews({ fills, plan: planSurfaceDefaults({ catalog: { slots, fills }, slots: slots.map(slot => slot.id), preference: ["foundry"] }) });
+  const preview = vi.fn(() => <p>host-preview</p>);
+  const load = vi.fn(async () => ({ ...await f.load(), preview, plannedPreviews }));
+  const named: CompositeStudioLabels = { ...wholeLabels, plannedPreview: "P-planned" };
+  render(<Studio adapter={{ ...f.adapter, load }} labels={named} initialSlotId="sections.band" />);
+  await screen.findByText("L-saved");
+  await waitFor(() => expect(boardRow("sections.band")).toBeDefined());
+  const cell = boardRow("sections.band")!.querySelector<HTMLElement>("[data-studio-planned]")!;
+  expect(cell).toHaveAttribute("data-studio-planned", "foundry/sections.band");
+  expect(cell).toHaveAttribute("data-candidate-cell");
+  expect(cell).toHaveAttribute("data-preview-state", "planned");
+  // The band previews around the first Section its contract admits (the access matrix), with that Section's sample content.
+  expect(cell).toHaveTextContent(accessMatrixSample.roles[2]!.lockedReason!);
+  expect(cell).toHaveTextContent("P-planned");
+  // Planned is not chosen: the host preview is never asked, nothing is saved, and the library adopts no surface.
+  expect(preview).not.toHaveBeenCalled();
+  expect(f.save).not.toHaveBeenCalled();
+  expect(Object.keys(f.getLibrary().surfaces?.fills ?? {})).toEqual([]);
+  const board = boardOf("sections.band")!;
+  const rows = [...board.querySelectorAll<HTMLElement>("tr")].filter(row => boardRowLeaf(row) !== undefined);
+  expect(rows.length).toBeGreaterThan(1);
+  for (const other of rows) {
+    const id = boardRowLeaf(other)!, cellHook = other.querySelector("[data-candidate-cell]");
+    if (plannedPreviews.previews[id]) { expect(other.querySelector("[data-studio-planned]"), id).not.toBeNull(); expect(cellHook).toHaveAttribute("data-preview-state", "planned"); expect(cellHook).toHaveAttribute("data-sample-state", "default"); expect(other).toHaveTextContent("P-planned"); }
+    else { expect(other.querySelector("[data-studio-planned]"), id).toBeNull(); expect(other).toHaveTextContent(labels.board.notChosen); expect(cellHook).toHaveAttribute("data-preview-state", "not-chosen"); expect(cellHook).not.toHaveAttribute("data-sample-state"); }
+  }
+  // Editing the board shows candidates, never the planned default as a selection.
+  await userEvent.click(within(board).getByRole("button", { name: labels.board.changeSelection }));
+  await waitFor(() => expect(document.querySelector('section[data-library-board][data-board-mode="edit"]')).not.toBeNull());
+  expect(document.querySelector('section[data-library-board][data-board-mode="edit"] [data-studio-planned]')).toBeNull();
+});
 it("vf13: a runtime-pending component tile shows its static specimen, a worded badge, the shared leaf label and the raised board plate", async () => {
   const user = userEvent.setup(); const input = offeredComponentIntegration();
   const preview = vi.fn(() => <p>vf13-static-specimen</p>);

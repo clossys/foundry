@@ -15,7 +15,8 @@ import { labels } from "./__fixtures__/studio.js";
  *
  * D3 (per-specimen min/max width) is an owner decision held open; these are the DEFAULTS this
  * packet ships, derived from existing size tokens only (no token value changed):
- *   shape specimens (radius, shadow, blur, density, focus):   min --ui-control-h-lg (52px), max --spacing-6xl (128px)
+ *   shape specimens (radius, shadow, blur, density, focus,
+ *   icon, opacity):                                            min --ui-control-h-lg (52px), max --spacing-6xl (128px)
  *   motion:                                                    min --spacing-6xl (128px),   max --ui-layout-sidebar-w (256px)
  *   text-metric:                                               min --ui-control-h-lg (52px), max --ui-layout-sidebar-w (256px)
  *   ruler (true-px scale, 256px track):                        min = max = 256px
@@ -32,6 +33,8 @@ const D3_DEFAULTS: Record<TokenSpecimenKind, { min: number; max: number }> = {
   density: { min: 52, max: 128 },
   focus: { min: 52, max: 128 },
   "layer-fan": { min: 128, max: 128 },
+  icon: { min: 52, max: 128 },
+  opacity: { min: 52, max: 128 },
 };
 
 const catalog = loadCatalog();

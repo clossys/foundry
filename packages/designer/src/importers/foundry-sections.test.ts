@@ -96,7 +96,8 @@ describe("Foundry section package descriptors", () => {
     });
     for (const leaf of ["consent", "error-state", "stats", "data-grid", "cards", "call-to-action", "notices", "gallery"]) expect(rows.get(`sections.${leaf}`)!.missingRequiredSlots, leaf).toEqual([]);
     for (const leaf of ["consent", "error-state", "stats", "cards", "call-to-action", "notices", "gallery"]) expect(rows.get(`sections.${leaf}`)!.status, leaf).toBe("candidate");
-    expect(rows.get("sections.data-grid")!.missingSlots).toEqual(["pinning"]);
+    expect(rows.get("sections.data-grid")!.missingSlots).toEqual([]);
+    expect(FOUNDRY_SECTION_MAP["data-grid"]!.slotMap.pinning).toBe("./blocks#DataTable.model.pinnedColumns");
   });
 
   it("maps activity-feed, audit-log, timeline and usage to their list blocks with every content slot", () => {
@@ -113,14 +114,15 @@ describe("Foundry section package descriptors", () => {
 
   it("does not infer absent APIs from contract names or matching legacy labels", () => {
     const rows = new Map(imported().coverage.map(row => [row.slot, row]));
-    expect(rows.get("sections.band")!.missingMembers).toContain("ground.transparent");
+    expect(rows.get("sections.band")!.missingMembers).toEqual([]);
     expect(rows.get("sections.band")!.unresolvedMemberAxes).toEqual(["rhythm"]);
     expect(rows.get("sections.pagination")!.missingMembers).toEqual(["mode.cursor", "mode.load-more"]);
-    expect(rows.get("sections.section-header")!.supportedMembers).toEqual([]);
+    expect(rows.get("sections.section-header")!.supportedMembers).toEqual(["align.center", "align.start", "density.compact", "density.display", "density.standard"]);
     expect(rows.get("sections.hero")!.missingRequiredSlots).toEqual([]);
     expect(rows.get("sections.page-header")!.missingMembers).toEqual(["config.record", "config.standard"]);
-    expect(rows.get("sections.features")!.missingMembers).toEqual(["layout.list", "layout.split"]);
-    expect(rows.get("sections.faq")!.missingMembers).toEqual(["layout.two-column"]);
+    expect(rows.get("sections.features")!.missingMembers).toEqual([]);
+    expect(rows.get("sections.faq")!.missingMembers).toEqual([]);
+    expect(rows.get("sections.article")!.missingSlots).toEqual([]);
     expect(rows.get("sections.logo-cloud")!.missingMembers).toEqual([]);
     expect(rows.get("sections.testimonials")!.missingMembers).toEqual([]);
     expect(rows.get("sections.chat")!.missingMembers).toEqual(["part.attachment", "part.questionnaire", "part.trace"]);

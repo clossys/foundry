@@ -7,6 +7,7 @@ import { renderToStaticMarkup } from "react-dom/server";
 import ts from "typescript";
 import { afterAll, afterEach, beforeAll, describe, expect, it, vi } from "vitest";
 import { render, screen } from "@testing-library/react";
+import { withoutDsAttrs } from "../catalog-core/provenance-attrs.js";
 import { scanStyleSources } from "../style-scan.js";
 import { checkTokenPurity } from "../token-gate.js";
 import { TOKENS } from "../tokens/tokens.js";
@@ -707,6 +708,7 @@ describe("frozen legacy SSR without tailwind-merge", () => {
   it.each(ABSENT_HEADER_GOLDENS)("preserves default/image/accent header $name", entry => {
     const Header = absentHeader;
     const Component = absentBrandmark;
-    expect(renderToStaticMarkup(<Header {...entry.header as Parameters<typeof Header>[0]} brand={<Component {...entry.props as BrandmarkProps} />} />)).toBe(entry.html);
+    // The frozen goldens predate the frame DOM provenance stamp (asserted in frames/frames-wiring.test.ts).
+    expect(withoutDsAttrs(renderToStaticMarkup(<Header {...entry.header as Parameters<typeof Header>[0]} brand={<Component {...entry.props as BrandmarkProps} />} />))).toBe(entry.html);
   });
 });

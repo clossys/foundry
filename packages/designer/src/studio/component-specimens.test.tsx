@@ -16,6 +16,7 @@ import * as studioEntry from "./index.js";
 import { componentSpecimenPreview as fromModule } from "./component-specimens.js";
 import { labels } from "./__fixtures__/studio.js";
 import { CandidateCell } from "./CandidateCell.js";
+import { boardRowLeaf } from "./canvas-boards.js";
 import type { CompositeStudioLabels, CompositeStudioSnapshot } from "./types.js";
 import { specimenDataset } from "./specimen-dataset.js";
 
@@ -32,8 +33,9 @@ function hostStudio(preview: CompositeStudioSnapshot["preview"]) {
   </WholeStudioProvider>);
   return { input, profile: resolve(input) };
 }
-const chosenCells = () => [...document.querySelectorAll<HTMLElement>("[data-studio-zoom-full] [data-studio-row]")]
-  .map(row => ({ id: row.dataset.studioRow!, cell: row.querySelector<HTMLElement>("[data-candidate-cell]")! }))
+/** Each canvas board is the library-board Section: a row's leaf is read the way the canvas reads it. */
+const chosenCells = () => [...document.querySelectorAll<HTMLElement>("section[data-library-board] tr")]
+  .flatMap(row => { const id = boardRowLeaf(row); return id ? [{ id, cell: row.querySelector<HTMLElement>("[data-candidate-cell]")! }] : []; })
   .filter(({ cell }) => cell && cell.dataset.previewState !== "not-chosen" && cell.dataset.previewState !== "planned");
 
 it("is the public studio entry", () => {

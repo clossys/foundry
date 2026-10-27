@@ -358,7 +358,11 @@ describe("LegalView dates", () => {
 
   it("caps the content width with the prose-max token and a non-length fallback", () => {
     const html = render(legalDoc("terms"));
-    const start = mode === "self-chromed" ? html.indexOf("<main") : html.indexOf("<div", html.indexOf("<main"));
+    // The framed column is the view's Section root; the self-chromed column is the legacy page's own main.
+    const afterMain = html.indexOf("<main");
+    const section = /<section\b[^>]*\bdata-designer-section-frame=""/.exec(html.slice(afterMain));
+    const start = mode === "self-chromed" ? afterMain : section ? afterMain + section.index : -1;
+    expect(start).toBeGreaterThan(-1);
     const mainTag = html.slice(start, html.indexOf(">", start) + 1);
     if (mode === "self-chromed") {
       expect(mainTag).toContain("max-w-[var(--ui-width-prose-max,none)]");
@@ -761,28 +765,41 @@ if (mode === "framed") describe("frame ownership", () => {
 
 const VOID_TAGS = new Set(["area", "base", "br", "col", "embed", "hr", "img", "input", "link", "meta", "source", "track", "wbr"]);
 
-/** The root element's open tag and each of its direct children as `{ open, inner }`, from static markup. */
+/**
+ * The column's open tag and its slots (open tag and inner markup each). A chrome-free view's
+ * column is its Section root, whose one content column holds the slots, so the slots sit one
+ * level further down than the root.
+ */
 function skeleton(html: string): { root: string; children: Array<{ open: string; inner: string }> } {
+  // The root is the sections.band Section (stamped by WIRE-3), then its one content column.
+  expect(html).toMatch(/^<section\b[^>]*><div [^>]*>/);
+  const rootTag = /^<section\b[^>]*>/.exec(html)![0];
+  expect(rootTag).toContain('data-designer-section-frame=""');
+  expect(rootTag).toContain('data-ds-leaf="sections.band"');
+  expect(html).toMatch(/<\/div><\/section>$/);
+  const SLOT_DEPTH = 2;
   const tag = /<(\/?)([a-zA-Z][a-zA-Z0-9-]*)\b[^>]*?(\/?)>/g;
   const stack: string[] = [];
   const children: Array<{ open: string; inner: string; start: number }> = [];
   let root = "";
+  let rootOpens = 0;
   for (let match = tag.exec(html); match !== null; match = tag.exec(html)) {
     const [whole, closing, name, selfClosing] = match as unknown as [string, string, string, string];
     const lower = name.toLowerCase();
     if (closing === "/") {
       stack.pop();
-      if (stack.length === 1) {
+      if (stack.length === SLOT_DEPTH) {
         const child = children[children.length - 1]!;
         child.inner = html.slice(child.start, match.index);
       }
       continue;
     }
-    if (stack.length === 0) root = whole;
-    else if (stack.length === 1) children.push({ open: whole, inner: "", start: match.index + whole.length });
+    if (stack.length < SLOT_DEPTH) { root += whole; rootOpens += 1; }
+    else if (stack.length === SLOT_DEPTH) children.push({ open: whole, inner: "", start: match.index + whole.length });
     if (selfClosing !== "/" && !VOID_TAGS.has(lower)) stack.push(lower);
-    else if (stack.length === 1) children[children.length - 1]!.inner = "";
+    else if (stack.length === SLOT_DEPTH) children[children.length - 1]!.inner = "";
   }
+  expect(rootOpens).toBe(SLOT_DEPTH); // the Section and its one content column, nothing beside them
   return { root, children: children.map(({ open, inner }) => ({ open, inner })) };
 }
 

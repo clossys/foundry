@@ -65,7 +65,9 @@ export interface ComponentSpecimenOptions {
    * Specimen content by leaf; an entry replaces everything below. A leaf without one renders the implementation
    * export once, labelled with the leaf, then once per drawn member, labelled with its member key. A data-driven
    * Foundry component (charts, table, tree, field, ...) draws with designer-provided neutral sample content
-   * instead of the label; another library's data-driven component needs an entry here.
+   * instead of the label; another library's data-driven component needs an entry here. Where designer samples
+   * apply (Foundry package exports, vendored shadcn@aria source), a row without one reads unavailable
+   * (`needs-sample-content`) instead of drawing its label.
    */
   readonly specimens?: Readonly<Record<string, ComponentSpecimenRender>>;
   /** Wraps every specimen, e.g. the library's emitted `LibraryProvider`. */
@@ -199,15 +201,16 @@ export function componentSpecimenPreview(options: ComponentSpecimenOptions): Com
     const render = options.specimens && Object.hasOwn(options.specimens, leaf) ? options.specimens[leaf] : undefined;
     const component = profile.components.components[leaf]!;
     // Designer samples (and the reasons sample data cannot draw an export) cover Foundry's own package exports and
-    // the vendored shadcn@aria source, keyed by its `impl.entry#export`. The binding names the library a component
+    // the vendored shadcn@aria and shadcn-charts source, keyed by its `impl.entry#export`. The binding names the library a component
     // came from; resolve() stamps the adopter's id on descriptor.source. A composed leaf is Foundry's rule source.
-    const samples = !render && (binding.source === "foundry" && component.impl.kind === "package" || (binding.source === "shadcn@aria" || component.origin.kind === "composed") && component.impl.kind === "source");
+    const samples = !render && (binding.source === "foundry" && component.impl.kind === "package" || (binding.source === "shadcn@aria" || binding.source === "shadcn-charts" || component.origin.kind === "composed") && component.impl.kind === "source");
     const keyOf = (specifier: string, exportName: string) => component.impl.kind === "package" ? sampleKey(specifier, exportName) : `${specifier}#${exportName}`;
     const sample = samples ? componentSpecimenSample(keyOf(binding.specifier, binding.exportName), binding.Component, binding.exports) : undefined;
     // A row that would get the leaf label as children it cannot take is declared unavailable instead of thrown.
     const structured = structuredChildren(component.descriptor.root);
+    // Where designer samples apply, a row with no sample is declared unavailable: it never falls back to its label.
     const unavailableOf = (row: SpecimenRow) => (samples ? componentSpecimenUnavailableReason(keyOf(row.specifier, row.exportName)) : undefined)
-      ?? (structured && !(sample && row.Component === binding.Component) ? "needs-sample-content" : undefined);
+      ?? ((samples || structured) && !(sample && row.Component === binding.Component) ? "needs-sample-content" : undefined);
     const rows = render ? [] : specimenRows(binding);
     const unavailable = rows.map(unavailableOf).filter(reason => reason !== undefined);
     const total = render ? 1 : rows.length - unavailable.length;

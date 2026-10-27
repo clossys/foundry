@@ -6,7 +6,6 @@ import { Button } from "../components/Button.js";
 import { Icon } from "../components/Icon.js";
 import { Menu } from "../components/Menu.js";
 import { Tooltip } from "../components/Tooltip.js";
-import { Check } from "../icons/Check.js";
 import { ChevronUp } from "../icons/ChevronUp.js";
 import type { AccountMenuProps, AccountMenuSection } from "./account-menu-types.js";
 export type { AccountMenuProps } from "./account-menu-types.js";
@@ -58,7 +57,6 @@ export function AccountMenu({ actor, sections, contextLabel, triggerLabel, colla
     textValue={entry.label} isDisabled={entry.isDisabled} isDestructive={entry.kind === "destructive"}
     href={entry.kind === "link" ? entry.href : undefined}
     onAction={entry.kind === "link" ? () => onRoute?.(entry) : entry.kind === "preference" ? undefined : entry.onAction}>
-    {entry.kind === "preference" && entry.checked && <Icon glyph={Check} decorative size="sm" />}
     {entry.label}
   </Menu.Item>);
   return <Menu className="min-w-0" popoverClassName="box-border max-w-full" trigger={collapsed ? <Tooltip trigger={trigger} delay={0}>{label}</Tooltip> : trigger}

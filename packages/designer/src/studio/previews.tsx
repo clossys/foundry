@@ -8,10 +8,13 @@ import type { StudioLabels } from "./types.js";
 import { TokenPreview, TokenValuePreview } from "../tokens/preview/index.js";
 import { OklchSwatch, TokenLeafSpecimen, TokenValueText, oklchSwatchable, tokenLeafSpecimenKind } from "../tokens/preview/specimens.js";
 import { describePreview, previewRows, type Candidate, type PreviewSpec } from "./model.js";
+import { specimenDataset } from "./specimen-dataset.js";
+
+/** Text every token specimen sets: the shared dataset's sample, never host label copy. */
+const SAMPLE_TEXT = specimenDataset.tokens.sampleText;
 
 /** Copy for the previews. The host supplies it; this module holds no English. */
 export interface PreviewLabels {
-  sampleText: string;
   fontNotLoaded: string;
   visualPreviewUnsupported: string;
   inspector: Pick<StudioLabels["inspector"], "light" | "dark">;
@@ -48,9 +51,9 @@ function Specimen({ id, member, spec, labels }: { id: string; member: Candidate[
     return <SvgSpecimen id={id} slot={member.slot} svg={member.value.light} />;
   }
   if (spec.kind === "text" && spec.visualUnsupported) return <div data-preview-kind="unsupported-text"><p>{labels.visualPreviewUnsupported}</p><dl><dt>{labels.inspector.light}</dt><dd><code>{spec.css}</code></dd><dt>{labels.inspector.dark}</dt><dd><code>{spec.dark}</code></dd></dl></div>;
-  if (spec.kind === "token") return <TokenPreview property={spec.property} sampleText={labels.sampleText} unsupportedMessage={spec.property} />;
+  if (spec.kind === "token") return <TokenPreview property={spec.property} sampleText={SAMPLE_TEXT} unsupportedMessage={spec.property} />;
   if (spec.kind === "text") return <code data-preview-kind="text">{spec.css}</code>;
-  return <TokenValuePreview id={id} member={member} sampleText={labels.sampleText} lightLabel="" darkLabel="" />;
+  return <TokenValuePreview id={id} member={member} sampleText={SAMPLE_TEXT} lightLabel="" darkLabel="" />;
 }
 
 /** The preview of one card: a row per member, capped at `limit`. */
@@ -88,7 +91,7 @@ export function CompactPreview({ candidate, labels }: { candidate: Candidate; la
   if (!candidate.previewable || !id || !member) return null;
   const family = member.$type === "fontFamily" && member.font?.kind === "fontsource" ? firstFamily(member.css.light) : undefined;
   // A token leaf with its own specimen (C21-4) paints it; the value stays as separate readable text.
-  if (tokenLeafSpecimenKind(member)) return <><TokenLeafSpecimen id={id} member={member} sampleText={labels.sampleText} /><TokenValueText css={member.css.light} /></>;
+  if (tokenLeafSpecimenKind(member)) return <><TokenLeafSpecimen id={id} member={member} /><TokenValueText css={member.css.light} /></>;
   // An achromatic oklch value with a `none` channel paints from its strictly parsed channels.
   if (oklchSwatchable(member)) return <>
     <OklchSwatch id={id} light={member.css.light} dark={member.css.dark} lightLabel={labels.inspector.light} darkLabel={labels.inspector.dark} />
@@ -97,7 +100,7 @@ export function CompactPreview({ candidate, labels }: { candidate: Candidate; la
   const spec = describePreview(member, 0);
   const compact = !(spec.kind === "text" && spec.visualUnsupported) && (member.$type === "color" || member.$type === "duration" || member.$type === "cubicBezier");
   const specimen = compact
-    ? <TokenValuePreview id={id} member={member} sampleText={labels.sampleText} lightLabel={labels.inspector.light} darkLabel={labels.inspector.dark} compact />
+    ? <TokenValuePreview id={id} member={member} sampleText={SAMPLE_TEXT} lightLabel={labels.inspector.light} darkLabel={labels.inspector.dark} compact />
     : <Specimen id={id} member={member} spec={spec} labels={labels} />;
   const valueShown = member.slot.startsWith("assets.") || spec.kind === "text" || spec.kind === "ruler";
   return <>

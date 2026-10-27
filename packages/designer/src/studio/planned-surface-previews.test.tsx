@@ -8,6 +8,7 @@ import type { SurfaceDefaultCandidateDocument, SurfaceDefaultsInput } from "../c
 import * as studioEntry from "./index.js";
 import { packageSurfacePreview, planSurfacePreviews, SURFACE_SAMPLE_STATES } from "./planned-surface-previews.js";
 import { surfaceStateSample } from "./surface-preview-sample-content.js";
+import { specimenDataset } from "./specimen-dataset.js";
 
 const SITE_SHELL_GAP = { slot: "frames.site-shell", reason: "@clossys/publisher/web#SiteFrame is not a designer export; the designer does not render it" };
 
@@ -51,12 +52,12 @@ describe("planSurfacePreviews", () => {
     expect(planSurfacePreviews({ plan, fills, samples: { "@clossys/publisher/web#Other": host["@clossys/publisher/web#SiteFrame"] } }).previews["frames.site-shell"]).toBeUndefined();
   });
 
-  it("previews an adopted package pointer document through the same samples, and names why it cannot", () => {
+  it("previews an adopted package pointer document through the same runtime renderers, and names why it cannot", () => {
     const { fills } = realPlan();
     const doc = (slot: string) => fills.find(candidate => candidate.$extensions["com.clossys.fill"].slot === slot)!;
     const table = packageSurfacePreview(doc("sections.data-table"));
     expect(table).toMatchObject({ pointer: "@clossys/designer/blocks#DataTable" });
-    expect(renderToStaticMarkup(<>{"render" in table ? table.render() : null}</>)).toContain("Northwind");
+    expect(renderToStaticMarkup(<>{"render" in table ? table.render() : null}</>)).toContain(specimenDataset.sections.dataTable.rows[1]!.customer);
     expect(packageSurfacePreview(doc("frames.site-shell"))).toEqual({ reason: "@clossys/publisher/web#SiteFrame is not a designer export; the designer does not render it" });
     expect(packageSurfacePreview({ ...doc("sections.faq"), sections: {} } as SurfaceDefaultCandidateDocument)).toEqual({ reason: "planned fill has no package export pointer" });
   });
@@ -76,44 +77,43 @@ describe("planSurfacePreviews", () => {
     expect(planSurfacePreviews({ plan: demoted, fills }).previews["sections.faq"]).toBeUndefined();
   });
 
-  it("renders each preview with the real block export and its sample content", () => {
+  it("renders each preview through its package runtime renderer and the specimen dataset", () => {
     const { plan, fills } = realPlan();
     const result = planSurfacePreviews({ plan, fills });
     const html = Object.fromEntries(Object.values(result.previews).map(preview => [preview.slot, renderToStaticMarkup(<>{preview.render()}</>)]));
     for (const [slot, markup] of Object.entries(html)) expect(markup.length, slot).toBeGreaterThan(20);
-    expect(html["sections.faq"]).toContain("How does billing work?");
-    expect(html["sections.access-matrix"]).toContain("View projects");
+    expect(html["sections.faq"]).toContain(specimenDataset.sections.faq.items[0]!.question);
+    expect(html["sections.access-matrix"]).toContain(specimenDataset.sections.accessMatrix.groups[0]!.permissions[0]!.label);
     expect(html["sections.pagination"]).toContain("nav");
     expect(html["frames.site-header"]).toContain("Northwind");
     expect(html["sections.filter-builder"]).toContain("Filter records");
-    expect(html["sections.settings"]).toContain("Workspace settings");
-    expect(html["sections.wizard"]).toContain("Setup steps");
+    expect(html["sections.settings"]).toContain("Save changes");
+    expect(html["sections.wizard"]).toContain("Upload progress");
     expect(html["frames.inspector"]).toContain("<aside");
     expect(result.previews["frames.inspector"]?.pointer).toBe("@clossys/designer/frames#InspectorFrame");
-    // Structured Sections render their real block with sample rows, tiers and items.
-    const samples: Record<string, string> = { "sections.comparison": "Version history", "sections.content": "One place for every project", "sections.data-table": "Fabrikam", "sections.form": "Work email", "sections.pricing": "Choose Team", "sections.resource-list": "Help centre", "sections.status-list": "Mobile alerts", "sections.task-list": "Publish the launch page", "frames.sheet": "Open filters" };
+    // Structured Sections render their real block with the dataset's rows, tiers and items.
+    const samples: Record<string, string> = { "sections.comparison": specimenDataset.sections.comparison.rows[0]!.label, "sections.content": specimenDataset.sections.content.heading, "sections.data-table": specimenDataset.sections.dataTable.rows[1]!.customer, "sections.form": specimenDataset.sections.form.fields[0]!.label, "sections.pricing": specimenDataset.sections.pricing.tiers[0]!.cta, "sections.resource-list": specimenDataset.sections.resourceList.items[0]!.title, "sections.status-list": specimenDataset.sections.statusList.groups![0]!.items[0]!.label, "sections.task-list": specimenDataset.sections.taskList.items[0]!.title, "frames.sheet": specimenDataset.frames.sheet.trigger };
     for (const [slot, text] of Object.entries(samples)) expect(html[slot], slot).toContain(text);
     expect(result.previews["sections.comparison"]?.pointer).toBe("@clossys/designer/blocks#Matrix");
     expect(html["sections.comparison"]).toContain("<table");
     expect(result.previews["frames.site-header"]?.pointer).toBe("@clossys/designer/shell/server#SiteHeader");
-    // vf34: the app sidebar renders the real AppNavigation with its sample tree.
+    // vf34: the app sidebar renders the real AppNavigation with the dataset's navigation tree.
     expect(result.previews["frames.app-sidebar"]?.pointer).toBe("@clossys/designer/blocks#AppNavigation");
-    expect(html["frames.app-sidebar"]).toContain("Workspace navigation");
-    expect(html["frames.app-sidebar"]).toContain("Billing");
-    // Adopted leaves render their real export with realistic sample content.
+    expect(html["frames.app-sidebar"]).toContain(specimenDataset.frames.appSidebar.label);
+    for (const item of specimenDataset.frames.appSidebar.tree) expect(html["frames.app-sidebar"]).toContain(item.label);
+    // Adopted leaves render their real export with the dataset's content.
     const adopted: Record<string, [pointer: string, text: string]> = {
-      "sections.chat": ["@clossys/designer/blocks#Chat", "How do I invite a teammate"],
-      "sections.explorer": ["@clossys/designer/blocks#Explorer", "Campaigns"],
-      "sections.hero": ["@clossys/designer/blocks#Hero", "Ship pages your whole team can trust"],
-      "sections.newsletter": ["@clossys/designer/blocks#NewsletterBand", "One email a month"],
-      "frames.app-shell": ["@clossys/designer/frames#AppFrame", "Review the spring launch"],
-      "frames.command": ["@clossys/designer/blocks#CommandMenu", "Open command menu"],
+      "sections.chat": ["@clossys/designer/blocks#Chat", specimenDataset.sections.chat.messages[0]!.content],
+      "sections.explorer": ["@clossys/designer/blocks#Explorer", specimenDataset.list.items[0]!.label],
+      "sections.hero": ["@clossys/designer/blocks#Hero", specimenDataset.sections.hero.heading],
+      "sections.newsletter": ["@clossys/designer/blocks#NewsletterBand", specimenDataset.sections.newsletter.emailLabel],
+      "frames.app-shell": ["@clossys/designer/frames#AppFrame", specimenDataset.frames.app.skipLabel],
+      "frames.command": ["@clossys/designer/blocks#CommandMenu", specimenDataset.frames.command.trigger],
     };
     for (const [slot, [pointer, text]] of Object.entries(adopted)) {
       expect(result.previews[slot]?.pointer, slot).toBe(pointer);
       expect(html[slot], slot).toContain(text);
     }
-    expect(html["sections.chat"]).toContain("Open Settings, choose Members");
     expect(html["sections.newsletter"]).toContain('type="email"');
     expect(html["frames.app-shell"]).toContain("<main");
     // The command menu is an overlay: it previews closed, as its opener, never as an open dialog over the board.
@@ -126,17 +126,17 @@ describe("planSurfacePreviews", () => {
     const user = userEvent.setup();
     render(<>{planSurfacePreviews({ plan, fills }).previews["frames.command"]!.render()}</>);
     expect(screen.queryByRole("dialog")).toBeNull();
-    await user.click(screen.getByRole("button", { name: "Open command menu" }));
+    await user.click(screen.getByRole("button", { name: specimenDataset.frames.command.trigger }));
     const dialog = await screen.findByRole("dialog");
-    expect(dialog).toHaveTextContent("Open projects");
-    expect(dialog).toHaveTextContent("New project");
+    for (const item of specimenDataset.frames.command.groups.flatMap(group => group.items)) expect(dialog).toHaveTextContent(item.label);
   });
 
   it("keeps the app frame preview off the board's keyboard: its command shortcut never opens a menu", () => {
     vi.stubGlobal("matchMedia", vi.fn((media: string) => ({ media, matches: true, onchange: null, addEventListener() {}, removeEventListener() {}, addListener() {}, removeListener() {}, dispatchEvent: () => true })));
     const { plan, fills } = realPlan();
     render(<>{planSurfacePreviews({ plan, fills }).previews["frames.app-shell"]!.render()}</>);
-    expect(screen.getByRole("main")).toHaveTextContent("Review the spring launch");
+    expect(screen.getByRole("main")).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: specimenDataset.frames.app.skipLabel })).toBeInTheDocument();
     for (const init of [{ key: "k", metaKey: true }, { key: "k", ctrlKey: true }]) act(() => void window.dispatchEvent(new KeyboardEvent("keydown", { ...init, bubbles: true, cancelable: true })));
     expect(screen.queryByRole("dialog")).toBeNull();
   });
@@ -169,16 +169,16 @@ describe("surface sample states", () => {
     const empty = packageSurfacePreview(list, {}, "empty");
     expect(empty).toMatchObject({ pointer: "@clossys/designer/blocks#ResourceList", state: "empty" });
     expect(html(empty)).toContain("No projects yet");
-    expect(html(empty)).not.toContain("Help centre");
+    expect(html(empty)).not.toContain(specimenDataset.sections.resourceList.items[0]!.title);
     const loading = packageSurfacePreview(list, {}, "loading");
     expect(loading).toMatchObject({ state: "loading" });
     expect(html(loading)).toContain('role="status"');
     expect(html(loading)).toContain(surfaceStateSample.loadingLabel);
-    expect(html(loading)).not.toContain("Help centre");
+    expect(html(loading)).not.toContain(specimenDataset.sections.resourceList.items[0]!.title);
     const error = packageSurfacePreview(list, {}, "error");
     expect(error).toMatchObject({ state: "error" });
     expect(html(error)).toContain(surfaceStateSample.error.title);
-    expect(html(error)).not.toContain("Help centre");
+    expect(html(error)).not.toContain(specimenDataset.sections.resourceList.items[0]!.title);
     const long = packageSurfacePreview(list, {}, "long-content");
     expect(long).toMatchObject({ state: "long-content" });
     expect(html(long)).toContain(surfaceStateSample.longTitle);
@@ -187,10 +187,10 @@ describe("surface sample states", () => {
   it("keeps an export without that state on its default sample, and says it is the default", () => {
     const table = packageSurfacePreview(doc("sections.data-table"), {}, "error");
     expect(table).toMatchObject({ state: "default" });
-    expect(html(table)).toContain("Fabrikam");
+    expect(html(table)).toContain(specimenDataset.sections.dataTable.rows[1]!.customer);
     const faq = packageSurfacePreview(doc("sections.faq"), {}, "empty");
     expect(faq).toMatchObject({ state: "default" });
-    expect(html(faq)).toContain("How does billing work?");
+    expect(html(faq)).toContain(specimenDataset.sections.faq.items[0]!.question);
   });
 
   it("never applies a state to a host-owned sample", () => {

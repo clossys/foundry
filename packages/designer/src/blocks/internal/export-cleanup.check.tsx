@@ -8,7 +8,8 @@ import { OrderedStepSequence, type OrderedStepSequenceItem, type OrderedStepSequ
 type Equal<A, B> = (<T>() => T extends A ? 1 : 2) extends (<T>() => T extends B ? 1 : 2) ? true : false;
 type Expect<T extends true> = T;
 export type PublishedFeatureItemKeys = Expect<Equal<keyof FeatureGridItem, "id" | "icon" | "heading" | "description">>;
-export type PublishedFeatureProps = Expect<Equal<Exclude<keyof FeatureGridProps, keyof HTMLAttributes<HTMLDivElement>>, "eyebrow" | "heading" | "description" | "items" | "headingLevel" | "ground">>;
+export type PublishedFeatureProps = Expect<Equal<Exclude<keyof FeatureGridProps, keyof HTMLAttributes<HTMLDivElement>>, "eyebrow" | "heading" | "description" | "items" | "headingLevel" | "ground" | "layout">>;
+export type PublishedFeatureLayout = Expect<Equal<NonNullable<FeatureGridProps["layout"]>, "grid" | "list" | "split">>;
 export type PublishedStepItemKeys = Expect<Equal<keyof OrderedStepSequenceItem, "id" | "ordinal" | "label" | "heading" | "description">>;
 export type PublishedStepProps = Expect<Equal<Exclude<keyof OrderedStepSequenceProps, keyof HTMLAttributes<HTMLElement>>, "eyebrow" | "heading" | "description" | "items" | "headingLevel" | "ground">>;
 export type PublishedOrdinal = Expect<Equal<OrderedStepSequenceItem["ordinal"], string | number>>;

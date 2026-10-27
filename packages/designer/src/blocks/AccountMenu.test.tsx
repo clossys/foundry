@@ -296,9 +296,14 @@ it("reports only changed preferences, including the peer select-all callback, wi
     { id: "other", kind: "preference", label: "Another", checked: false, onCheckedChange: all },
   ] }]} />);
   const user = await open();
-  expect(screen.getByRole("menuitemcheckbox", { name: "Already enabled" }).querySelector("svg path")).toHaveAttribute("d", "M20 6 9 17l-5-5");
+  const on = screen.getByRole("menuitemcheckbox", { name: "Already enabled" });
+  expect(on.querySelector("svg path")).toHaveAttribute("d", "M20 6 9 17l-5-5");
+  // Menu draws the one leading check slot for a selection-mode item since 8a9fd5344; it is hidden while unchecked.
+  expect(on.querySelectorAll("svg")).toHaveLength(1);
+  expect(on.querySelector("[data-menu-check]")).not.toHaveClass("invisible");
   const off = screen.getByRole("menuitemcheckbox", { name: "Enable this" });
-  expect(off.querySelector("svg")).toBeNull();
+  expect(off.querySelectorAll("svg")).toHaveLength(1);
+  expect(off.querySelector("[data-menu-check]")).toHaveClass("invisible");
   await user.click(off);
   expect(changed).toHaveBeenCalledExactlyOnceWith(true);
   expect(unchanged).not.toHaveBeenCalled(); expect(all).not.toHaveBeenCalled();

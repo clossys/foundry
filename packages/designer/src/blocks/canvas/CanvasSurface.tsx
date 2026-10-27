@@ -477,7 +477,7 @@ export function CanvasSurface(props: CanvasSurfaceProps) {
       onTransitionEnd={event => { if (event.target === event.currentTarget) setFitting(false); }}
       style={{ transformOrigin: "0 0", transform: flowing ? undefined : `translate(${viewport.x}px, ${viewport.y}px) scale(${viewport.zoom})`,
         transitionDuration: fitting && !reducedMotion ? "var(--ui-duration-fast, 160ms)" : "0s", transitionTimingFunction: "var(--ease-default, ease)" }}>
-      {edges.length ? <svg data-canvas-edges="" aria-hidden="true" focusable="false" className="pointer-events-none absolute text-ink-tertiary"
+      {edges.length ? <svg data-canvas-edges="" aria-hidden="true" focusable="false" className="pointer-events-none absolute text-ink-muted"
         viewBox={`${worldBounds.x} ${worldBounds.y} ${worldBounds.width} ${worldBounds.height}`}
         style={{ left: worldBounds.x, top: worldBounds.y, width: worldBounds.width, height: worldBounds.height }}>
         {edges.map(edge => {

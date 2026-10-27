@@ -6,6 +6,10 @@ import { cx } from "../components/internal/cx.js";
 import { SHELL_GROUND_CLASSES } from "./internal/shell-ground.js";
 import { UI_BORDER_HAIRLINE, UI_LAYOUT_TAP_TARGET, UI_Z_SHELL } from "./internal/shell-vars.js";
 import { resolveFrameHeaderOptions } from "../catalog-core/frame-header-options.js";
+import { dsAttrs } from "../catalog-core/provenance-attrs.js";
+
+/** DOM provenance (WIRE-3 D1): this frame root stamps its leaf and fill. */
+const FRAME_STAMP = dsAttrs("frames", "frames.site-header", "foundry/frames.site-header");
 
 /** One header surface: an in-flow solid plate, an always-transparent row, or fixed scroll glass. */
 export type SiteHeaderSurface = "solid" | "transparent" | "glass";
@@ -89,7 +93,7 @@ function SiteHeaderRoot({ brand, nav, actions, navPlacement = "centered", surfac
       } satisfies Partial<BrandmarkProps>)
     : brand;
   return (
-    <header {...rest} data-header-root="" data-surface={surface} data-tone={tone}
+    <header {...FRAME_STAMP} {...rest} data-header-root="" data-surface={surface} data-tone={tone}
       {...(glass ? { "data-placement": "overlay", "data-menu-open": menuOpen ? "" : undefined } : {})}
       className={cx("site-header-contract site-header-ink py-sm", INK_CLASSES[tone],
         glass ? "site-header-overlay" : solid ? cx(colors.surface, "border-b", colors.border) : undefined,

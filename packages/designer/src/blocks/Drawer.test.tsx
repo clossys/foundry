@@ -91,7 +91,8 @@ describe("Drawer", () => {
     expect(close.textContent?.trim()).toBe("");
     await userEvent.tab();
     expect(close).toHaveFocus();
-    expect(close.style.boxShadow).toContain("--ui-ring-focus");
+    // The Foundry Button draws keyboard focus as the package outline, not a box-shadow ring, since 0d04b4c23 (bound in d14cc4b3b).
+    expect(close.style.outline).toContain("var(--color-focus-ring)");
     await userEvent.keyboard(key === "Enter" ? "{Enter}" : " ");
     await waitFor(() => expect(screen.queryByRole("dialog")).not.toBeInTheDocument());
     await waitFor(() => expect(trigger).toHaveFocus());

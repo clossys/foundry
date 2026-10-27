@@ -8,6 +8,10 @@ import type { CandidatePromptData } from './candidate-prompt.js';
 import type { MatrixBoard, MatrixRow } from './matrix-model.js';
 import type { Candidate } from './model.js';
 import { CandidateCell } from './CandidateCell.js';
+import { Button } from '../components/Button.js';
+import { LeafCell } from '../blocks/library-board/LeafCell.js';
+import { CandidatePromptDialog } from '../blocks/library-board/CandidatePromptDialog.js';
+import type { CandidateWorkflow } from '../blocks/library-board/types.js';
 import type { StudioLabels } from './types.js';
 import { activeCandidateSource } from './candidate-display.js';
 export interface PreparedLibraryBoardInput {
@@ -55,17 +59,32 @@ import type { SurfaceSampleState } from './surface-preview-sample-content.js';
  * export through the planned-preview samples, keyed by the same export pointer (so host-owned samples such as a
  * Publisher frame apply), and stays unavailable when no sample exists rather than imitating one.
  */
+/** A leaf's planned default rendered once, with the sample state it draws; undefined when it has none or it cannot render. */
+export function plannedSurfacePreview(planned: CompositeStudioSnapshot['plannedPreviews'], leaf: string): { source: string; fill: string; state: SurfaceSampleState; node: ReactNode } | undefined {
+  const row = planned?.previews[leaf];
+  if (!row) return undefined;
+  let node: ReactNode;
+  try { node = row.render(); } catch { return undefined; }
+  return node == null ? undefined : { source: row.source, fill: row.fill, state: row.state ?? 'default', node };
+}
+const DESIGNER_EXPORTS = '@clossys/designer/';
 export function adoptedPackagePreview(leaf: string, profile: CompositeResolved | undefined, planned: CompositeStudioSnapshot['plannedPreviews']): { node: ReactNode; state: SurfaceSampleState } | undefined {
   // A non-surface leaf id simply finds no adopted surface fill.
   const document = profile?.surfaces?.fills[leaf as `sections.${string}`]?.document;
   if (!document) return undefined;
-  const rows = Object.values(planned?.previews ?? {});
-  const samples = Object.fromEntries(rows.map(row => [row.pointer, row.render]));
+  // Several leaves may point at one export (sections.data-grid and sections.data-table share DataTable), so a
+  // leaf's own planned row is found by leaf id; a row drawn for another leaf is never borrowed by its export.
+  const own = planned?.previews[leaf];
+  if (own) {
+    // A planned row's render already draws its own sample state; name that state, not the host-sample default.
+    try { const node = own.render(); return node == null ? undefined : { node, state: own.state ?? 'default' }; } catch { return undefined; }
+  }
+  // Without its own row, only host-owned samples (another package's export, such as a Publisher frame) apply by pointer.
+  const hosted = Object.values(planned?.previews ?? {}).filter(row => !row.pointer.startsWith(DESIGNER_EXPORTS));
+  const samples = Object.fromEntries(hosted.map(row => [row.pointer, row.render]));
   const preview = packageSurfacePreview(document as unknown as Parameters<typeof packageSurfacePreview>[0], samples, planned?.sampleState);
   if (!('render' in preview)) return undefined;
-  // A planned row's render already draws its own sample state; name that state, not the host-sample default.
-  const state = rows.find(row => row.pointer === preview.pointer)?.state ?? preview.state;
-  try { const node = preview.render(); return node == null ? undefined : { node, state }; } catch { return undefined; }
+  try { const node = preview.render(); return node == null ? undefined : { node, state: preview.state }; } catch { return undefined; }
 }
 export interface PreparedCompositeLibraryBoardInput {
   readonly layer: 'components' | 'sections' | 'frames';
@@ -79,6 +98,7 @@ export interface PreparedCompositeLibraryBoardInput {
   readonly mode: 'view' | 'edit'; readonly canSave: boolean; readonly pending: boolean;
   readonly prompt: (leaf: string, refresh: boolean) => CandidatePromptData;
   readonly labels: StudioLabels;
+  readonly workflow?: CandidateWorkflow;
 }
 /** Prepares actual component proposals once against the current whole-library working selection.
  * Surface rows expose selected checked previews and prompts; they gain no component adoption command.
@@ -117,13 +137,23 @@ export function compositeLibraryBoard(input: PreparedCompositeLibraryBoardInput,
   // without them, explicit surface options (an adopted package-pointer leaf previews its own export).
   const surfacesEvaluated = evaluated.runtime ? evaluated.runtime.status === 'valid' : input.snapshot.surfaceOptions !== undefined;
   const selectedPreviewable = (leaf: string, source: string) => selectedSource(leaf) === source && (input.layer === 'components' || surfacesEvaluated);
+  // A Section or Frame leaf nobody chose shows its planned default in the view table, labelled as planned. It is
+  // previewed, never adopted: it adds nothing to the profile, the runtime manifest or the chosen count, the host
+  // preview is not asked, and an unrenderable sample or a host that does not digest its source leaves the plain
+  // not-chosen cell.
+  const planned = new Map(input.layer === 'components' || input.mode !== 'view' ? [] : leaves.flatMap(leaf => {
+    const row = selectedSource(leaf) ? undefined : plannedSurfacePreview(input.snapshot.plannedPreviews, leaf);
+    return row && identity(leaf, row.source) ? [[leaf, row] as const] : [];
+  }));
   // A candidate the engine cannot materialize (a blocked source, say) reports why as an error, so its check badge
   // and reason show; it was never usable.
   const unavailableFindings = (result: typeof proposals[number]['result']) => result && !result.available ? [{ code: 'CANDIDATE_UNAVAILABLE', severity: 'error' as const, message: result.error }] : undefined;
   const records: LibraryBoardRecords = {
     columns: { version: 1, items: columns }, controls: { version: 1, mode: input.mode, canSave: input.canSave, pending: input.pending },
     rows: { version: 1, layer: input.layer, boardId: input.board.id, label: input.board.label, items: leaves.map(leaf => {
-      const selected = selectedSource(leaf);
+      const selected = selectedSource(leaf), plannedRow = planned.get(leaf);
+      // The Section draws a planned row through its preview cell; the planned source is shown, not selected.
+      if (plannedRow) return { id: leaf, label: leaf, scope: 'slot', selectedSource: plannedRow.source, selectedPreview: identity(leaf, plannedRow.source)!, candidates: [], prompt: input.prompt(leaf, false) };
       return { id: leaf, label: leaf, scope: 'slot', selectedSource: selected,
         ...(selected && selectedPreviewable(leaf, selected) ? { selectedPreview: identity(leaf, selected) } : {}),
         candidates: input.layer === 'components' ? proposals.filter(proposal => proposal.meta.slot === leaf && columns.some(column => column.source === proposal.meta.source)).map(proposal => ({ source: proposal.meta.source, usable: !!allowed(proposal) || preparation?.currentSelectionOnly === true && input.mode === 'view' && proposal.meta.source === selected && selectedAvailable(leaf), ...((allowed(proposal) || input.mode === 'edit' && staticSpecimen(proposal) || preparation?.currentSelectionOnly === true && input.mode === 'view' && proposal.meta.source === selected && selectedAvailable(leaf)) ? { previewIdentity: identity(leaf, proposal.meta.source) } : {}), findings: (unavailableFindings(proposal.result) ?? proposal.result?.findings ?? (proposal.meta.source === selected ? profile.check.findings.filter(finding => finding.subject === leaf || finding.subject.startsWith(leaf + '.')) : [{ code: 'CANDIDATE_EVALUATION_NOT_REQUESTED', severity: 'notice' as const, message: 'Alternative candidate evaluation has not been requested' }])).map(({ code, severity, message }) => ({ code, severity, message })), provenance: libraryItemProvenance(input.sources, proposal.meta) })) : [],
@@ -132,6 +162,9 @@ export function compositeLibraryBoard(input: PreparedCompositeLibraryBoardInput,
   };
   const previews: LibraryBoardPreviewPort = { selectionHash: profile.selectionHash, sourceHashes: input.sourceHashes, render(value) {
     if (value.selectionHash !== profile.selectionHash || value.sourceHash !== input.sourceHashes[value.source] || !leaves.includes(value.leaf)) return undefined;
+    const plannedRow = planned.get(value.leaf);
+    if (plannedRow) return plannedRow.source === value.source ? <LeafCell data-studio-planned={plannedRow.fill} data-sample-state={plannedRow.state} previewState="planned" preview={plannedRow.node}
+      status={input.labels.plannedPreview ?? 'Planned default, not adopted'} actions={<CandidatePromptDialog trigger={<Button variant="ghost" size="sm">{input.labels.board.askAgent}</Button>} data={input.prompt(value.leaf, false)} labels={input.labels} workflow={input.workflow} />} /> : undefined;
     let prepared: CompositeResolved | undefined;
     if (input.mode === 'view') { if (selectedPreviewable(value.leaf, value.source)) prepared = profile; }
     else if (input.layer === 'components') { const proposal = proposals.find(proposal => proposal.meta.slot === value.leaf && proposal.meta.source === value.source); if (proposal && (allowed(proposal) || staticSpecimen(proposal)) && proposal.result?.available) prepared = proposal.result.profile; }

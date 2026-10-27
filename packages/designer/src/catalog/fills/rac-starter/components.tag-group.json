@@ -620,6 +620,11 @@
         "selection.single": "TagGroup.selectionMode=single"
       },
       "props": [],
+      "rac": {
+        "instance": "react-aria-components",
+        "peer": false,
+        "range": "^1.21.1"
+      },
       "reads": {
         "assets": [
           "assets.icon-close"
