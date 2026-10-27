@@ -1,4 +1,6 @@
 import { createRef } from "react";
+import { readFileSync } from "node:fs";
+import { join } from "node:path";
 import { render, screen, fireEvent } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 import { SemanticContent } from "./SemanticContent.js";
@@ -64,4 +66,14 @@ it("preserves small annotation inheritance and its native attributes without def
   expect(ref.current).toBe(screen.getByText("Detail"));
   expect(ref.current?.style.cssText).toBe("");
   expect(ref.current?.className).toBe("");
+});
+
+it("covers inline emphasis and a visually-hidden heading that stays in the document outline", () => {
+  render(<SemanticContent as="section" aria-labelledby="console-title"><SemanticContent as="h1" id="console-title" className="sr-only">Console</SemanticContent><SemanticContent as="p">Mode: <SemanticContent as="strong">Preview</SemanticContent></SemanticContent></SemanticContent>);
+  const heading = screen.getByRole("heading", { level: 1, name: "Console" });
+  expect(heading).toHaveClass("sr-only");
+  expect(screen.getByRole("region", { name: "Console" })).toContainElement(heading);
+  expect(screen.getByText("Preview").tagName).toBe("STRONG");
+  const compiled = readFileSync(join(import.meta.dirname, "../../styles/compiled.css"), "utf8");
+  expect(compiled).toMatch(/\.sr-only \{[^}]*clip-path: inset\(50%\)|\.sr-only \{[^}]*clip: rect\(0, 0, 0, 0\)/);
 });
