@@ -153,11 +153,12 @@ describe("portion memo", () => {
     const after = resolve(input);
     expect(notFound(after, path)).toHaveLength(1);
     expect(after.check.ok).toBe(false);
-    expect(after).toEqual(fresh(input));
     present.add(path);
     expect(notFound(resolve(input), path)).toEqual([]);
     // Only the probe reran: the value and component resolution is still the one computation.
     expect(calls.components).toBe(1);
+    present.delete(path);
+    expect(resolve(input)).toEqual(fresh(input));
   });
 
   it("probes evidence afresh through a fresh input or callback wrapper sharing every other reference", () => {
