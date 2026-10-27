@@ -75,13 +75,18 @@ describe("WL10 checked registered nonvisual provider", () => {
     for (const content of visual) {
       expect(wl10(content).length, content).toBeGreaterThan(0);
       // Evidence for the proved provider never admits a different wrapper.
-      expect(wl10(content, [claim(content)]).length, content).toBeGreaterThan(0);
+      const claimed = wl10(content, [claim(content)]);
+      expect(claimed.length, content).toBeGreaterThan(0);
+      // The evidence is judged and refused, not ignored.
+      expect(refusal(claimed), content).not.toBe("");
     }
     const chrome = visual[0]!;
     expect(wrapperReported(wl10(chrome, [claim(chrome, { module: "../chrome/app-chrome.tsx", export: "Chrome" })]), "Chrome")).toBe(true);
     // A proved provider admits nothing on another route module.
     const other = { path: "generated/other.tsx", content: page() };
-    expect(wrapperReported(wl10(page(), [claim(page())], [other]).filter(row => row.file === other.path))).toBe(true);
+    const beside = wl10(page(), [claim(page())], [other]);
+    expect(wrapperReported(beside.filter(row => row.file === other.path))).toBe(true);
+    expect(beside.filter(row => row.file === ROUTE)).toEqual([]);
   });
 
   it("an altered mount still fails, even with a proof bound to the altered bytes", () => {
