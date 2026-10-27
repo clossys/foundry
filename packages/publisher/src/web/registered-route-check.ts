@@ -107,22 +107,28 @@ const escapeRegExp = (value: string) => value.replace(/[.*+?^${}()|[\]\\/]/g, "\
 function nonvisualRouteProvider(source: string, mount: RouteProviderMount, known: { readonly module: string; readonly component: string; readonly props: readonly string[] }): boolean {
   const id = "[A-Za-z_$][\\w$]*", component = escapeRegExp(known.component);
   const module = source.replace(/^\s*["']use client["'];?/, "");
-  // An escape makes source text differ from the name it binds: `chil\u0064ren` is
-  // `children` and `\u0057holeStudioProvider` is the provider. No parser ships at
-  // runtime, so the module must spell every name literally; every raw-text check
-  // below then reads the names the module actually resolves.
-  if (/\\u/.test(module)) return false;
+  // An escape makes source text differ from the name it spells: `chil\u0064ren` is
+  // `children`, `\u0057holeStudioProvider` is the provider and the key
+  // `"inner\x48TML"` is "innerHTML", and so are the octal, line-continuation and
+  // identity forms. No parser ships at runtime, so rather than decode, the module may
+  // hold no backslash at all (comments included); every raw-text check below then
+  // reads the names and keys the module actually resolves.
+  if (module.includes("\\")) return false;
   // Direct eval can rebind `children` from computed text no check here can read.
   if (/(?<![\w$])eval(?![\w$])/.test(module)) return false;
   // Imperative or element-factory markup is never nonvisual, wherever it appears.
   if (/\b(?:createElement|cloneElement|createPortal|jsxs?|jsxDEV|dangerouslySetInnerHTML|innerHTML|outerHTML|insertAdjacentHTML|document)\b/.test(module)) return false;
   // Computed access reaches a property by text that check never reads
   // (`globalThis["docu" + "ment"]`, directly or through an alias). The global
-  // object and the reflection and code-building primitives are refused by name...
-  if (/(?<![\w$])(?:globalThis|window|self|global|Reflect|Function)(?![\w$])/.test(module)) return false;
-  // ...and on any receiver a bracket key must be a plain string literal, which that check reads.
-  for (const [, before, key] of module.matchAll(/([\w$]+|[)\]}]|\?\.)\s*\[([^\]]*)/g)) {
-    if (/^(?:const|let|var|return|typeof|in|of|case|new|void|delete|await|yield|throw|else|do)$/.test(before!)) continue;
+  // object and the reflection, property-definition and code-building primitives are
+  // refused by name...
+  if (/(?<![\w$])(?:globalThis|window|self|global|Reflect|Object|Function)(?![\w$])/.test(module)) return false;
+  // ...and every bracket holds only a plain string literal, which that check reads: a
+  // member key on any receiver, a computed object key and an array literal alike. Only
+  // a declaration's destructuring pattern binds names here rather than reading them, and
+  // a bracket nested inside one (a default value) is still read on its own.
+  for (const [, before, key] of module.matchAll(/([\w$]*)\s*\[([^\][]*)/g)) {
+    if (/^(?:const|let|var)$/.test(before!)) continue;
     if (!/^\s*(?:"[^"\n]*"|'[^'\n]*')?\s*$/.test(key!)) return false;
   }
   // One unaliased import of the registered component from its original module, used only by the mount.
@@ -171,6 +177,7 @@ async function checkRegisteredRoutesInternal(input: RegisteredRouteCheckInput) {
       }
       if (/^route\./.test(name)) {
         // A handler with no default export and no element; an escape can hide either from this raw read.
+        // Only an identifier escape can spell a keyword or a tag; a string escape spells no syntax.
         if (/export\s+(?:async\s+)?function\s+(?:GET|POST|PUT|PATCH|DELETE|HEAD|OPTIONS)\b|export\s+(?:const|let)\s+(?:GET|POST|PUT|PATCH|DELETE|HEAD|OPTIONS)\b/.test(source) && !/export\s+default\b|<\s*[A-Za-z]|\\u/.test(source)) classifications.push({ file: path, kind: "http" });
         else findings.push({ code: "RR2", file: path, message: "Unsupported HTTP route source classification" });
         return;
