@@ -1,0 +1,15 @@
+{
+  "id": "open-props",
+  "kind": "external",
+  "author": "third-party",
+  "license": "MIT",
+  "pin": {
+    "package": "open-props",
+    "version": "1.7.23",
+    "commit": "fcb77853851109cc45a801fc18b36293eb1f5be7",
+    "file": "src/props.aspects.css",
+    "url": "https://raw.githubusercontent.com/argyleink/open-props/fcb77853851109cc45a801fc18b36293eb1f5be7/src/props.aspects.css",
+    "sha256": "fcdbb315c25f081d3c5a2da83c4cab23f773f16cdd20ee56bfa933272744f6e2"
+  },
+  "homepage": "https://open-props.style"
+}

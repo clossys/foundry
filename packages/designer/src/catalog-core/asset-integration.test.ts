@@ -43,8 +43,9 @@ describe("asset integration through the public catalog", () => {
     const catalog = client.loadCatalog();
     expect(catalog.slots.filter(slot => slot.layer === "tokens")).toHaveLength(55);
     expect(catalog.slots.filter(slot => slot.layer === "assets")).toHaveLength(48);
-    expect(catalog.fills.filter(fill => !!fill.assets)).toHaveLength(85);
+    expect(catalog.fills.filter(fill => !!fill.assets)).toHaveLength(86);
     expect(catalog.fills.filter(fill => !!fill.assets && metaOf(fill).source === "phosphor")).toHaveLength(40);
+    expect(catalog.fills.filter(fill => !!fill.assets && metaOf(fill).source === "open-props")).toHaveLength(1);
     metaOf(catalog.fills.find(fill => !!fill.assets)!).license = "changed";
     expect(client.loadCatalog().fills.some(fill => metaOf(fill).license === "changed")).toBe(false);
   });
