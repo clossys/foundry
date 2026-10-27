@@ -294,6 +294,8 @@ function TableCell({ className, style, children, ...rest }: TableCellProps) {
     <AriaCell
       {...rest}
       ref={ref}
+      // React Aria derives a cell's text value only from string children; the wrapping fragment below hides it, so pass it on.
+      textValue={rest.textValue ?? (typeof children === "string" ? children : undefined)}
       children={typeof children === "function" ? (renderProps) => <>{children(renderProps)}{keys}</> : <>{children}{keys}</>}
       className={cx("px-md py-sm outline-none", className)}
       style={(renderProps) => ({

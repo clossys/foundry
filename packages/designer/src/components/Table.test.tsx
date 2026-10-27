@@ -133,6 +133,35 @@ describe("Table", () => {
     expect(document.activeElement?.textContent).toBe("4");
   });
 
+  it("keeps a plain-text cell's text value, so typing a row's first letter jumps to that row", async () => {
+    const user = userEvent.setup();
+    render(
+      <Table aria-label="People">
+        <Table.Header>
+          <Table.Column id="name" isRowHeader>
+            Name
+          </Table.Column>
+        </Table.Header>
+        <Table.Body>
+          {["Ada", "Grace", "Mary"].map((name) => (
+            <Table.Row key={name} id={name}>
+              <Table.Cell>{name}</Table.Cell>
+            </Table.Row>
+          ))}
+        </Table.Body>
+      </Table>,
+    );
+    screen.getByRole("grid", { name: "People" }).focus();
+    expect(document.activeElement).toBe(screen.getByRole("row", { name: "Ada" }));
+    // Type-to-jump matches each row's text value, so every row is reached by its own first letter: none is empty.
+    for (const [key, name] of [["g", "Grace"], ["m", "Mary"], ["a", "Ada"]] as const) {
+      await user.keyboard(key);
+      expect(document.activeElement, name).toBe(screen.getByRole("row", { name }));
+      // Let the typeahead buffer reset before the next letter starts a fresh search.
+      await act(() => new Promise((resolve) => setTimeout(resolve, 1100)));
+    }
+  });
+
   it("select-all reaches the indeterminate state with a partial selection, and full selection clears it", async () => {
     function Controlled() {
       const [selected, setSelected] = useState<"all" | Set<Key>>(new Set());
