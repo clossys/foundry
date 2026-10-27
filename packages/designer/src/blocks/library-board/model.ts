@@ -1,6 +1,6 @@
 import type { LayerId } from '../../catalog-core/types.js';
 import type { LibraryColumn, LibraryItemProvenance } from '../../catalog-core/library-roster.js';
-import { runtimeSnapshot } from '../../catalog-core/runtime-ports.js';
+import { assertRuntimeSnapshot } from '../../catalog-core/runtime-ports.js';
 import type { CandidatePromptData } from './candidate-prompt.js';
 export interface LibraryPreviewIdentity { readonly leaf: string; readonly source: string; readonly selectionHash: string; readonly sourceHash: string }
 export interface LibraryBoardCandidate {
@@ -38,7 +38,7 @@ const text = (value: unknown) => { if (typeof value !== 'string' || !value.trim(
 export function assertLibraryPreviewIdentity(value: unknown): asserts value is LibraryPreviewIdentity { const row = record(value, ['leaf','source','selectionHash','sourceHash']); for (const field of Object.values(row)) text(field); }
 /** Closed serializable content records never carry JSX, render callbacks or executable names. */
 export function assertLibraryBoardRecords(value: unknown): asserts value is LibraryBoardRecords {
-  runtimeSnapshot(value);
+  assertRuntimeSnapshot(value);
   const top = record(value, ['columns','rows','controls']);
   const columns = record(top.columns, ['version','items']), rows = record(top.rows, ['version','layer','boardId','label','items']), controls = record(top.controls, ['version','mode','canSave','pending']);
   if (columns.version !== 1 || rows.version !== 1 || controls.version !== 1 || !['view','edit'].includes(String(controls.mode)) || typeof controls.canSave !== 'boolean' || typeof controls.pending !== 'boolean' || !['tokens','assets','components','sections','frames'].includes(String(rows.layer))) throw new TypeError('Unsupported library board record version or mode');
@@ -63,7 +63,7 @@ export function assertLibraryBoardRecords(value: unknown): asserts value is Libr
       for (const finding of candidate.findings) { const f = record(finding, ['code','severity','message']); text(f.code); text(f.message); if (f.severity !== 'error' && f.severity !== 'notice' && f.severity !== 'warning') throw new TypeError('Invalid finding'); }
     }
   }
-  runtimeSnapshot(top);
+  assertRuntimeSnapshot(top);
 }
 function assertPrompt(value: unknown): void {
   const prompt = record(value, ['consumer','board','slot','variants','guidelines','tokens','siblings','currentCandidate','returnStep'], ['consumer','board','slot','variants','tokens','siblings','returnStep']);

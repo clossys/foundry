@@ -221,8 +221,8 @@ export interface ConsumerRuntimePorts<Node> {
 export interface RuntimePortFinding { readonly path: string; readonly message: string }
 export interface RuntimePortCheck { readonly status: "valid" | "refused"; readonly findings: readonly RuntimePortFinding[] }
 
-/** Reject accessors, functions, exotic objects, cycles, sparse arrays and non-finite data. */
-export function runtimeSnapshot<T>(input: T): T {
+/** Both modes inspect the same descriptors; only a requested snapshot allocates copies. */
+function walkRuntimeSnapshot(input: unknown, snapshot: boolean): unknown {
   const active = new Set<object>();
   const copy = (value: unknown): unknown => {
     if (value === null || typeof value === "string" || typeof value === "boolean") return value;
@@ -234,18 +234,24 @@ export function runtimeSnapshot<T>(input: T): T {
     const keys = Reflect.ownKeys(fields).filter(key => !(array && key === "length"));
     if (array && (keys.length !== value.length || keys.some((key, index) => key !== String(index)))) throw new TypeError("runtime: sparse snapshot array");
     active.add(value);
-    const entries: [string, unknown][] = [];
+    const entries: [string, unknown][] | undefined = snapshot ? [] : undefined;
     for (const key of keys) {
       const field = fields[key as string]!;
       if (typeof key !== "string" || !field.enumerable || !("value" in field)) throw new TypeError("runtime: snapshot accessor or hidden field");
       if (field.value === undefined && !array) continue;
-      entries.push([key, copy(field.value)]);
+      const item = copy(field.value);
+      if (entries) entries.push([key, item]);
     }
     active.delete(value);
-    return Object.freeze(array ? entries.map(([, item]) => item) : Object.fromEntries(entries));
+    return entries ? Object.freeze(array ? entries.map(([, item]) => item) : Object.fromEntries(entries)) : undefined;
   };
-  return copy(input) as T;
+  return copy(input);
 }
+/** Validate snapshot data without copying, freezing or changing the caller's input.
+ * Accepted object fields may contain undefined, so this does not narrow to RuntimeJson. */
+export function assertRuntimeSnapshot(input: unknown): void { walkRuntimeSnapshot(input, false); }
+/** Reject accessors, functions, exotic objects, cycles, sparse arrays and non-finite data. */
+export function runtimeSnapshot<T>(input: T): T { return walkRuntimeSnapshot(input, true) as T; }
 export function runtimeHash(value: unknown): RuntimeDigest { return `sha256:${sha256(stableStringify(runtimeSnapshot(value)))}`; }
 export function isRuntimeDigest(value: unknown): value is RuntimeDigest { return typeof value === "string" && /^sha256:[a-f0-9]{64}$/.test(value); }
 export function runtimeSourceFindings(renderer: RuntimeRendererDescriptor): string[] {
