@@ -94,13 +94,13 @@ function matrix(contract: ComponentContract): { states: string[]; grounds: strin
   return { states: values("state", "default"), grounds: values("ground", "base") };
 }
 
-/** What a browser runner records for one rendered root: every protocol role and key, bound focus, legible forced colours, a text contrast pair. */
+/** What a browser runner records for one rendered root: every protocol role and key (a disabled state handles no activation key), bound focus, legible forced colours, a text contrast pair. */
 function measure(contract: ComponentContract, root: string): ComponentMeasurement[] {
   const protocols = rootNames(root).map(name => ROOT_PROTOCOL[name]).filter(protocol => !!protocol);
   const roles = [...new Set(protocols.flatMap(protocol => protocol.roles))], keyboard = [...new Set(protocols.flatMap(protocol => protocol.keys))];
   const { states, grounds } = matrix(contract);
   return states.flatMap(state => (["light", "dark"] as const).flatMap(mode => grounds.map(ground => ({
-    state, mode, ground, roles, keyboard, axeViolations: [], focusTokens: [FOCUS],
+    state, mode, ground, roles, keyboard: state === "disabled" ? keyboard.filter(key => key !== "Enter" && key !== "Space") : keyboard, axeViolations: [], focusTokens: [FOCUS],
     forcedColors: { foreground: "ButtonText", background: "ButtonFace" }, target: { width: 32, height: 32 },
     contrast: [{ foreground: TEXT, background: SURFACE, kind: "text" as const }],
   }))));
