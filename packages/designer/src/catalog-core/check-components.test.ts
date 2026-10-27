@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { checkComponentProfile, DEFAULT_COHERENCE_GROUPS, componentRacRangeIncludes, componentSourceHash, componentTokensHash, isObservationPending, OBSERVATIONS_UNAVAILABLE } from "./check-components.js";
+import { checkComponentProfile, DEFAULT_COHERENCE_GROUPS, componentDescriptorDigest, componentRacInstanceMatches, componentRacRangeIncludes, componentSourceHash, componentTokensHash, isObservationPending, OBSERVATIONS_UNAVAILABLE } from "./check-components.js";
 import type { ComponentCheckInput, ComponentCheckCode, ComponentCompatibilityCode } from "./check-components.js";
 import { componentProfile, composedProfile } from "./__fixtures__/components/profile.js";
 import { sha256 } from "./digest.js";
@@ -289,6 +289,33 @@ describe("same-layer compatibility K12 CC1-CC5", () => {
       const profile = fixture(true); if (issue === "range") profile.fills[0]!.rac!.range = "^2.0.0"; else if (issue === "instance") profile.observations["components.button"]!.rac.instance = "private-rac"; else if (issue === "peer") profile.fills[0]!.rac!.peer = false; else profile.observations["components.button"]!.rac.dependency = "bundled";
       code(profile, "K12", "CC3");
     }
+  });
+  it("CC3 binds a package-named descriptor only to that package's own resolved install", () => {
+    const installed = "/consumer/app/node_modules/react-aria-components";
+    expect(componentRacInstanceMatches("react-aria-components", installed)).toBe(true);
+    expect(componentRacInstanceMatches("react-aria-components", "node_modules/react-aria-components")).toBe(true);
+    expect(componentRacInstanceMatches(installed, installed)).toBe(true);
+    for (const [declared, actual] of [["react-aria-components", "/consumer/app/node_modules/react-aria-components-fork"], ["react-aria-components", "/consumer/app/node_modules/kit/react-aria-components"],
+      ["react-aria-components", "/consumer/app/vendor/react-aria-components"], ["react-aria-components", ""], ["", installed], ["consumer-rac", installed], ["/other/node_modules/react-aria-components", installed]]) expect(componentRacInstanceMatches(declared!, actual!), `${declared} -> ${actual}`).toBe(false);
+    const profile = fixture(true);
+    for (const observation of Object.values(profile.observations)) observation!.rac.instance = installed;
+    profile.installedRac.instance = installed;
+    for (const fill of profile.fills) fill.rac!.instance = "react-aria-components";
+    expect(checkComponentProfile(profile).findings.filter(finding => finding.compatibility === "CC3")).toEqual([]);
+    profile.fills[0]!.rac!.instance = "react-aria-components-fork"; code(profile, "K12", "CC3");
+    const observed = fixture(true); observed.installedRac.instance = installed; for (const fill of observed.fills) fill.rac!.instance = "react-aria-components";
+    code(observed, "K12", "CC3");
+  });
+  it("K5/K6 refuse runtime evidence measured for a different descriptor", () => {
+    const profile = fixture();
+    profile.observations["components.button"]!.descriptorHash = componentDescriptorDigest(profile.fills[0]!);
+    expect(checkComponentProfile(profile)).toEqual({ ok: true, findings: [] });
+    profile.observations["components.button"]!.descriptorHash = sha256("another descriptor");
+    code(profile, "K5"); code(profile, "K6");
+    const edited = fixture(); edited.observations["components.button"]!.descriptorHash = componentDescriptorDigest(edited.fills[0]!);
+    edited.fills[0]!.props = [...edited.fills[0]!.props, "aria-label"]; code(edited, "K5");
+    const given = fixture(); given.observations["components.button"]!.descriptorHash = componentDescriptorDigest(given.fills[0]!);
+    given.descriptorHashes = { "components.button": sha256("rewritten before check") }; code(given, "K6");
   });
   it("CC4 rejects a leaf retained as a private registry part", () => {
     const profile = fixture(true); profile.fills[1]!.parts = [{ item: "button" }]; code(profile, "K12", "CC4");

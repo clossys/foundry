@@ -100,6 +100,11 @@
         "slot",
         "variant"
       ],
+      "rac": {
+        "instance": "react-aria-components",
+        "peer": true,
+        "range": "^1.19.0"
+      },
       "reads": {
         "assets": [
           "assets.icon-chevron-right"

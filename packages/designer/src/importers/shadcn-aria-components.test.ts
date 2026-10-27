@@ -148,7 +148,7 @@ describe("pinned shadcn aria component import", () => {
     for (const doc of result.fills) {
       const meta = doc.$extensions["com.clossys.fill"], fill = Object.values(doc.components)[0]!;
       expect(meta.conforms).toEqual([]); expect(meta.evidence).toEqual([]); expect(meta.status).toBe("draft");
-      expect(fill.rac).toBeUndefined(); expect(fill).not.toHaveProperty("measurements");
+      expect(fill.rac).toEqual({ range: expect.stringMatching(/^\^1\.\d+\.\d+$/), peer: false, instance: "react-aria-components" }); expect(fill).not.toHaveProperty("measurements");
       const contract = bySlot.get(fill.slot)!.contract;
       if (contract.members.mode === "closed") expect(fill.members.every(member => contract.members.names.includes(member))).toBe(true);
     }

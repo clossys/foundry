@@ -8,6 +8,7 @@ import { sha256 } from "../catalog-core/digest.js";
 import { componentMemberBinding } from "../catalog-core/emit-components.js";
 import type { ResolvedComponent } from "../catalog-core/resolve-components.js";
 import { stableStringify } from "../catalog-core/stable.js";
+import { componentRacDeclaration } from "./component-rac.js";
 import { rewriteShadcnAria, SHADCN_BUTTON_MEMBERS, type RewriteIssue, type RewriteNote, type RewriteResult, type SourceFile } from "./rewrite.js";
 import { normalizeSelectedSource } from "./normalize-selected-source.js";
 import { selectedCaptionSource, selectedCaptionMembers } from "./selected-caption-profile.js";
@@ -71,6 +72,7 @@ function composedTemplate(row: ShadcnComposeReceipt, slot: ComponentSlot): Shadc
       impl: { kind: "source", entry: `components/${row.leaf}/${row.leaf}.tsx`, export: template.export }, license: "MIT", notice: `notices/${row.leaf}.md`,
       deps: [{ name: "react", version: ">=18", license: "MIT" }, { name: "react-aria-components", version: "^1.19.0", license: "Apache-2.0" }],
       outputSha256: rule.files.map(file => ({ path: file.path, sha256: sha256(file.content) })).sort((a, b) => a.path.localeCompare(b.path)),
+      rac: componentRacDeclaration({ impl: { kind: "source" }, deps: [{ name: "react-aria-components", version: "^1.19.0", license: "Apache-2.0" }] }, { peer: false }),
     } as ComponentCheckFill },
   };
 }
@@ -453,6 +455,8 @@ export function importShadcnAriaComponents(input: ShadcnComponentInput): ShadcnC
         ...sorted([...closure.values()].flatMap(file => dependencies(file.content))).filter(dep => !result.contextualInputs?.includes(dep)).map(dep => ({ name: dep, version: SHADCN_ARIA_COMPONENT_PIN.commit, license: "MIT", registryItem: dep, ...(SHADCN_COMPONENT_ITEMS[dep] ? { slot: `components.${SHADCN_COMPONENT_ITEMS[dep]}` } : {}) }))],
       parts: result.parts.map(item => ({ item })), outputSha256: rewritten.outputSha256, blockers: rewritten.issues,
     };
+    // Source descriptors resolve the consumer's own react-aria-components install; never a peer (CC3).
+    descriptor.rac = componentRacDeclaration(descriptor, { peer: false });
     fills.push({ $extensions: { "com.clossys.fill": {
       id: `${SOURCE}/${slot.id}`, slot: slot.id, source: SOURCE, mode: "implementation", sourceAddress: `${SHADCN_ARIA_COMPONENT_PIN.url}/blob/${pin.commit}/${original.path}`,
       relation: members.length === required.length ? "same-contract" : "subset", builtOn: composes, conforms: [], evidence: [],

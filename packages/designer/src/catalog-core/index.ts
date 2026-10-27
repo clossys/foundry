@@ -180,7 +180,7 @@ export { loadComponentCompositionRules } from "./component-compositions.js";
 export { planComponentDefaults } from "./component-defaults.js";
 export { observeComponentSources } from "./component-observations.js";
 export { bindCompiledClasses } from "./component-class-bindings.js";
-export type { ComponentObservationInput, ComponentObservationProbe, ComponentObservationResult } from "./component-observations.js";
+export type { ComponentObservationInput, ComponentObservationProbe, ComponentObservationResult, ComponentBrowserArtifact } from "./component-observations.js";
 export type { ComponentDefaultsInput, ComponentDefaultsPlan, ComponentDefaultRow, ComponentDefaultBasis } from "./component-defaults.js";
 /** Pure Sections/Frames candidate inventories and their default-fill planner. */
 export { importFoundrySections } from "../importers/foundry-sections.js";

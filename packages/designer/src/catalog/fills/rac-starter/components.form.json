@@ -82,6 +82,11 @@
         "validation.native": "Form.validationBehavior=native"
       },
       "props": [],
+      "rac": {
+        "instance": "react-aria-components",
+        "peer": false,
+        "range": "^1.21.1"
+      },
       "reads": {
         "assets": [],
         "components": [],

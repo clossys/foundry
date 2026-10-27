@@ -2,6 +2,7 @@ import componentSlots from "../catalog/slots/components.json" with { type: "json
 import type { ComponentSlot, FillMeta } from "../catalog-core/types.js";
 import type { ComponentCandidate } from "../catalog-core/resolve-components.js";
 import { stableStringify } from "../catalog-core/stable.js";
+import { componentRacDeclaration } from "./component-rac.js";
 import { FOUNDRY_COMPONENT_GAPS, FOUNDRY_COMPONENT_MAP } from "./foundry-components.map.js";
 import type { FoundryComponentMapping, FoundryComponentSubpath } from "./foundry-components.map.js";
 import foundrySourceReads from "./foundry-source-reads.json" with { type: "json" };
@@ -91,6 +92,8 @@ export function importFoundryComponents(input: FoundryComponentImportInput = {})
         ]),
       ],
     };
+    // This package declares react-aria-components as a peer, so every package descriptor it ships is a RAC peer (CC3).
+    descriptor.rac = componentRacDeclaration(descriptor, { peer: true });
     fills.push({ $extensions: { "com.clossys.fill": {
       id: `foundry/${slot.id}`, slot: slot.id, source: "foundry", mode: "implementation",
       sourceAddress: pin.export, relation: missing.length ? "subset" : "same-contract", builtOn: composes,

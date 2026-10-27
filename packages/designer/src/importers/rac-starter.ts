@@ -2,6 +2,7 @@ import adapter from "../catalog/adapters/rac-starter.json" with { type: "json" }
 import slots from "../catalog/slots/components.json" with { type: "json" };
 import { sha256 } from "../catalog-core/digest.js";
 import { stableStringify } from "../catalog-core/stable.js";
+import { componentRacDeclaration } from "./component-rac.js";
 import { componentDescriptorHash, type ComponentCandidateDocument, type ComponentFile } from "../catalog-core/resolve-components.js";
 import type { ComponentTransform, SourceBundle } from "../catalog-core/changeset-components.js";
 import { rewriteShadcnAria, type RewriteIssue, type SourceFile } from "./rewrite.js";
@@ -155,6 +156,8 @@ export function importRacStarter(input: RacStarterInput) {
       pin: { ...RAC_STARTER_PIN, files: upstreamFiles.map(file => ({ path: file.path, sha256: sha256(file.content) })).sort((a, b) => a.path.localeCompare(b.path)) },
       transform: transformId, notice: adapter.notice, deps, outputSha256: output.map(file => ({ path: file.path, sha256: sha256(file.content) })).sort((a, b) => a.path.localeCompare(b.path)), blockers,
       ...(leaf === "tag-group" ? { secondaryExports: [{ name: "Tag", export: "Tag" }] } : {}),
+      // Source descriptors resolve the consumer's own react-aria-components install; never a peer (CC3).
+      rac: componentRacDeclaration({ impl: { kind: "source" }, deps }, { peer: false }),
     };
     const doc: ComponentCandidateDocument = { $extensions: { "com.clossys.fill": {
       id: `${SOURCE}/${slot}`, slot, source: SOURCE, mode: "implementation", sourceAddress: `${RAC_STARTER_PIN.url}/blob/${RAC_STARTER_PIN.commit}/${root}${name}.tsx`,

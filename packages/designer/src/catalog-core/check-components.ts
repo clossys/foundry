@@ -58,8 +58,14 @@ export interface ComponentObservation {
   root: ComponentContract["root"]; forwardsRef: boolean; forwardsRenderProps: boolean;
   rac: { version: string; instance: string; dependency: "peer" | "bundled" | "source" };
   calls: readonly ComponentCallSite[];
-  /** Measured size-member bindings, needed when controls mix sources. */
+  /** Measured size-member bindings (`size.*` member -> `tokens.control-size.*`), needed when controls mix sources. */
   geometry?: Readonly<Record<string, string>>;
+  /**
+   * Digest of the exact adopted descriptor the runtime evidence was measured against
+   * (`componentDescriptorDigest`, equal to `origin.sha256` for an adopted fill). When present it must
+   * equal the checked descriptor's digest, so evidence measured for another descriptor is refused.
+   */
+  descriptorHash?: string;
   measurements: readonly ComponentMeasurement[];
   memberObservations?: Readonly<Record<string, Pick<ComponentObservation, "root" | "forwardsRef" | "forwardsRenderProps" | "calls" | "measurements">>>;
 }
@@ -75,6 +81,8 @@ export interface ComponentCheckInput {
   /** Classes whose compiled declaration has been independently mapped to this token member. */
   classBindings?: Readonly<Record<string, string>>;
   coherenceGroups?: readonly { id: string; slots: readonly string[]; kind: "controls" | "charts" | "date" | "preferred" }[];
+  /** Descriptor digests keyed by slot, computed before checking rewrites a fill's display source. Absent: digested from the fill as given. */
+  descriptorHashes?: Readonly<Record<string, string>>;
 }
 export interface ComponentCheckResult { ok: boolean; findings: readonly ComponentFinding[] }
 const FOREIGN_ICON_MODULES = ["lucide-react", "@phosphor-icons/react", "react-icons"];
@@ -107,7 +115,7 @@ export const DEFAULT_COHERENCE_GROUPS: NonNullable<ComponentCheckInput["coherenc
 ];
 const GLYPHS = /[✓✔✕✖×✗▾▴▸◂▶◀▲▼←→↑↓⌄⌃⌵⌫⊕⊖⚠ℹ]/u;
 const SYSTEM_COLORS = new Set(["Canvas", "CanvasText", "ButtonFace", "ButtonText", "Highlight", "HighlightText", "Field", "FieldText", "LinkText"]);
-const ROOT_PROTOCOL: Readonly<Record<string, { roles: readonly string[]; keys: readonly string[] }>> = {
+export const ROOT_PROTOCOL: Readonly<Record<string, { roles: readonly string[]; keys: readonly string[] }>> = {
   Button: { roles: ["button"], keys: ["Enter", "Space"] }, ToggleButton: { roles: ["button"], keys: ["Enter", "Space"] },
   Select: { roles: ["button", "listbox"], keys: ["ArrowDown", "ArrowUp", "Enter", "Escape"] },
   ComboBox: { roles: ["combobox", "listbox"], keys: ["ArrowDown", "ArrowUp", "Enter", "Escape"] },
@@ -164,6 +172,22 @@ export function componentSourceHash(files: readonly ComponentSourceFile[]): stri
   return sha256(stableStringify([...files].map(({ path, content }) => ({ path, content })).sort((a, b) => a.path.localeCompare(b.path))));
 }
 export function componentTokensHash(tokens: ComponentCheckInput["tokens"]): string { return sha256(stableStringify(tokens)); }
+/** Descriptor digest; the hash domain excludes only provenance (`origin`), so local descriptor edits remain detectable. */
+export function componentDescriptorDigest(fill: ComponentCheckFill): string {
+  const { origin: _origin, ...descriptor } = fill as ComponentCheckFill & { origin?: unknown };
+  return sha256(stableStringify(descriptor));
+}
+export const RAC_PACKAGE = "react-aria-components";
+/**
+ * A descriptor declares the RAC package it binds (`rac.instance`), never a consumer's install path, which it
+ * cannot know. It matches the consumer singleton when it names the installed instance exactly, or names the
+ * package and the installed instance is that package's own `node_modules/<package>` directory. Anything else fails closed.
+ */
+export function componentRacInstanceMatches(declared: string, installed: string): boolean {
+  if (!declared || !installed) return false;
+  if (declared === installed) return true;
+  return declared === RAC_PACKAGE && (installed === `node_modules/${RAC_PACKAGE}` || installed.endsWith(`/node_modules/${RAC_PACKAGE}`));
+}
 
 /** Remove comments without deleting string contents (URLs and quoted module names stay observable). */
 function codeText(source: string): string {
@@ -268,6 +292,7 @@ export function checkComponentProfile(input: ComponentCheckInput): ComponentChec
     if (ownedRule && (!input.compositions || !observation.files.some(file => file.path === (fill.impl.kind === "source" ? fill.impl.entry : "")) || observation.files.some(file => !input.compositions!.library.files.some(actual => actual.path === file.path && actual.content === file.content)))) add("K8", fill.slot, "Observed composition source differs from current materialized output");
     const freshEvidence = observation.sourceHash === componentSourceHash(observation.files) && observation.tokensHash === tokenHash;
     if (!freshEvidence) { add("K5", fill.slot, "Accessibility evidence is stale for source or consumer tokens"); add("K6", fill.slot, "Contrast evidence is stale for source or consumer tokens"); }
+    if (observation.descriptorHash !== undefined && observation.descriptorHash !== (input.descriptorHashes?.[fill.slot] ?? componentDescriptorDigest(fill))) { add("K5", fill.slot, "Accessibility evidence was measured for a different descriptor"); add("K6", fill.slot, "Contrast evidence was measured for a different descriptor"); }
     const files = observation.files.map(file => ({ ...file, code: codeText(file.content) }));
     const modules = files.flatMap(file => imports(file.code));
     for (const path of [...files.map(file => file.path), ...modules]) {
@@ -343,7 +368,7 @@ export function checkComponentProfile(input: ComponentCheckInput): ComponentChec
       }
     }
     // CC3 applies to every fill, including presentational fills that compose RAC descendants.
-    if (!fill.rac || fill.rac.instance !== input.installedRac.instance || observation.rac.instance !== input.installedRac.instance || observation.rac.version !== input.installedRac.version || observation.rac.dependency === "bundled" || fill.impl.kind === "package" && (!fill.rac.peer || observation.rac.dependency !== "peer") || !componentRacRangeIncludes(fill.rac.range, input.installedRac.version)) add("K12", fill.slot, "RAC range, peer declaration or observed install differs from consumer singleton", "CC3");
+    if (!fill.rac || !componentRacInstanceMatches(fill.rac.instance, input.installedRac.instance) || observation.rac.instance !== input.installedRac.instance || observation.rac.version !== input.installedRac.version || observation.rac.dependency === "bundled" || fill.impl.kind === "package" && (!fill.rac.peer || observation.rac.dependency !== "peer") || !componentRacRangeIncludes(fill.rac.range, input.installedRac.version)) add("K12", fill.slot, "RAC range, peer declaration or observed install differs from consumer singleton", "CC3");
     for (const target of fill.composes) if (!observation.calls.some(call => call.target === target)) add("K12", fill.slot, `No call-site observation for composed leaf ${target}`, "CC1");
     // Compare literal JSX call surfaces as well as the independently gathered
     // protocol observations. Unsupported spreads/dynamic members fail closed.
