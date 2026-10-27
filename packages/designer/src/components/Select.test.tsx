@@ -180,4 +180,30 @@ describe("Select", () => {
     await user.click(trigger);
     expect(screen.queryByRole("listbox")).not.toBeInTheDocument();
   });
+  it("takes its accessible name from aria-label when no visible label is rendered", () => {
+    const { container } = render(<Select label={null} aria-label="Theme" options={FRUIT_OPTIONS} />);
+    expect(screen.getByRole("button", { name: /Theme/ })).toBeInTheDocument();
+    const visibleLabels = [...container.querySelectorAll("label")].filter(label => !label.closest('[data-testid="hidden-select-container"]'));
+    expect(visibleLabels).toEqual([]);
+  });
+
+  it("takes its accessible name from aria-labelledby when no visible label is rendered", () => {
+    render(<><span id="external-name">Workspace</span><Select label={null} aria-labelledby="external-name" options={FRUIT_OPTIONS} /></>);
+    expect(screen.getByRole("button", { name: /Workspace/ })).toBeInTheDocument();
+  });
+
+  it("refuses a select with no label, aria-label or aria-labelledby", () => {
+    vi.spyOn(console, "error").mockImplementation(() => {});
+    expect(() => render(<Select label={null} options={FRUIT_OPTIONS} />)).toThrow("Select requires a label, aria-label or aria-labelledby.");
+    vi.mocked(console.error).mockRestore();
+  });
+
+  it("compact width sizes the field to its content instead of filling the row", () => {
+    const { container, rerender } = render(<Select label="Fruit" options={FRUIT_OPTIONS} />);
+    const field = () => container.querySelector("div[data-rac]");
+    expect(field()).not.toHaveClass("w-fit");
+    rerender(<Select label="Fruit" width="compact" options={FRUIT_OPTIONS} />);
+    expect(field()).toHaveClass("inline-flex", "w-fit", "max-w-full");
+    expect(screen.getByRole("button", { name: /Fruit/ })).toBeInTheDocument();
+  });
 });
