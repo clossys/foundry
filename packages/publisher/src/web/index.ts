@@ -121,6 +121,8 @@ export type { ActivateDetails, ActivateFailure, ActivateFormProps, ActivateResul
 
 // The page frame: owns the skip link, banner, the page's one <main> and contentinfo; views render chrome-free inside it.
 export { SITE_MAIN_ID, SITE_PAGE_LAYERS, SITE_SURFACE_KINDS, SiteFrame, siteShellFor } from "./frame/index.js";
+// The frames.site-shell surface runtime renderer: Publisher's registry beside Designer's (@clossys/designer/frames).
+export { SITE_SHELL_RUNTIME_POINTER, siteShellRuntimeCallbacks, siteShellRuntimePointers, siteShellRuntimeRenderers } from "./site-shell-runtime.js";
 export type {
   SiteBrandInput,
   SiteChromeGround,
