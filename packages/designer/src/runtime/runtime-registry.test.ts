@@ -7,6 +7,8 @@ import { mergeRendererGroups, runtimeMember, runtimeRecord, runtimeText, surface
 import { surfaceRuntimeCallbacks, surfaceRuntimePointers, surfaceRuntimeRenderers } from "./index.js";
 import { sectionRenderers } from "./sections/index.js";
 import { frameRenderers } from "./frames/index.js";
+import sectionSlots from "../catalog/slots/sections.json" with { type: "json" };
+import frameSlots from "../catalog/slots/frames.json" with { type: "json" };
 
 const entry = (leaf: SurfaceRendererEntry["leaf"]): SurfaceRendererEntry => ({ leaf, render: () => leaf, sample: () => ({}) });
 
@@ -24,6 +26,13 @@ describe("surface runtime registry", () => {
       expect(surfaceRuntimeCallbacks([leaf])[surfaceRendererId(leaf)]).toBe(row.render);
     }
     expect(() => surfaceRuntimeCallbacks(["sections.not-a-leaf"])).toThrow(/no package renderer/);
+  });
+  it("covers every Sections leaf and every Frames leaf except the publisher-owned site shell", () => {
+    const ids = (rows: readonly { id: string }[]) => rows.map(row => row.id).sort();
+    expect(Object.keys(sectionRenderers).sort()).toEqual(ids(sectionSlots as readonly { id: string }[]));
+    expect(Object.keys(sectionRenderers)).toHaveLength(45);
+    expect(Object.keys(frameRenderers).sort()).toEqual(ids(frameSlots as readonly { id: string }[]).filter(id => id !== "frames.site-shell"));
+    expect(Object.keys(frameRenderers)).toHaveLength(8);
   });
   it("ships the registry by name from the frames barrel the pointer names", () => {
     expect(SURFACE_RUNTIME_POINTER).toEqual({ module: "@clossys/designer/frames", export: "surfaceRuntimeRenderers" });

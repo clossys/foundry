@@ -8,7 +8,9 @@
  * leaf to the profile, the runtime manifest or the chosen count, and it records
  * every planned leaf it cannot render with the reason instead of inventing one.
  * An adopted package-pointer leaf owns no source to render, so the Studio
- * previews it through the same pointer-to-sample resolution.
+ * previews it through the same pointer-to-sample resolution. A leaf with a
+ * package runtime renderer (runtime/index.ts) previews through that renderer
+ * and the specimen dataset; the fixed samples below cover the rest.
  */
 import type { ReactNode } from "react";
 import type { SurfaceDefaultCandidateDocument, SurfaceDefaultsPlan } from "../catalog-core/surface-defaults.js";
@@ -53,6 +55,8 @@ import { SiteHeader } from "../shell/SiteHeader.js";
 import { SiteFooter } from "../shell/SiteFooter.js";
 import { APP_SIDEBAR_SAMPLES, STRUCTURED_BLOCK_SAMPLES, STRUCTURED_BLOCK_STATE_SAMPLES, STRUCTURED_FRAME_SAMPLES, type SurfaceStateSamples } from "./surface-preview-samples.js";
 import { SURFACE_SAMPLE_STATES, type SurfaceSampleState } from "./surface-preview-sample-content.js";
+import { surfaceRuntimeRenderers } from "../runtime/index.js";
+import { surfaceRuntimePreview, type SurfacePreviewEntry } from "../runtime/preview.js";
 
 export { SURFACE_SAMPLE_STATES, type SurfaceSampleState };
 
@@ -172,9 +176,16 @@ export function packageSurfacePreview(doc: SurfacePointerDocument, samples: Surf
   const hosted = Object.hasOwn(samples, pointer) ? samples[pointer] : undefined;
   if (hosted) return { pointer, render: hosted, state: "default" };
   if (!impl.module.startsWith(DESIGNER_PACKAGE)) return { reason: `${pointer} is not a designer export; the designer does not render it` };
+  const stated = state === "default" || !Object.hasOwn(STATE_SAMPLES, pointer) ? undefined : STATE_SAMPLES[pointer]![state];
+  // A leaf with a package runtime renderer previews through it, from the specimen dataset: the same renderer
+  // the consumer runtime draws. Only an export's own non-default state samples still render beside it.
+  const leaf = (entries[0] as SurfacePreviewEntry).slot;
+  if (!stated && typeof leaf === "string" && Object.hasOwn(surfaceRuntimeRenderers, leaf)) {
+    const runtime = surfaceRuntimePreview(entries[0] as SurfacePreviewEntry);
+    return "reason" in runtime ? runtime : { pointer, render: runtime.render, state: "default" };
+  }
   const sample = Object.hasOwn(SAMPLES, pointer) ? SAMPLES[pointer] : undefined;
   if (!sample) return { reason: `no preview sample content for ${pointer}` };
-  const stated = state === "default" || !Object.hasOwn(STATE_SAMPLES, pointer) ? undefined : STATE_SAMPLES[pointer]![state];
   return stated ? { pointer, render: stated, state } : { pointer, render: sample, state: "default" };
 }
 

@@ -93,7 +93,9 @@ function sample(dataset: Parameters<SurfaceRendererEntry["sample"]>[0]): Json {
       tree: dataset.navigation.items.map(item => ({ id: item.id, label: item.label, href: item.href })),
       account: { actor: { name: person.name }, signedOutLabel: "Sign in", sections: [{ id: "account", entries: [{ id: "profile", kind: "link", label: "Profile", href: "#profile" }, { id: "sign-out", kind: "action", label: "Sign out" }] }] },
     },
-    command: { triggerLabel: "Search commands", heading: "Commands", searchLabel: "Search commands", closeLabel: "Close", emptyMessage: "No matching commands", groups: [{ id: "pages", label: "Pages", items: dataset.navigation.items.map(item => ({ id: item.id, label: item.label, href: item.href })) }] },
+    command: { triggerLabel: "Search commands", heading: "Commands", searchLabel: "Search commands", closeLabel: "Close", emptyMessage: "No matching commands", groups: [{ id: "pages", label: "Pages", items: dataset.navigation.items.map(item => ({ id: item.id, label: item.label, href: item.href })) }],
+      // Specimen content draws on Studio boards, which own the keyboard: the global shortcut stays off here.
+      shortcutEnabled: false },
   };
 }
 
