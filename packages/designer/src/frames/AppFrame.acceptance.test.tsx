@@ -151,12 +151,13 @@ describe("AppFrame acceptance", () => {
     const output = screen.getByLabelText("Resolved theme");
     expect(output).toHaveTextContent("light");
     await user.click(screen.getByRole("button", { name: "Retained count 0" }));
-    const control = screen.getByRole("button", { name: "Host theme" });
+    // The host control is the three-radio ThemeToggle since 0d04b4c23 (sidebar spec D3).
+    const control = screen.getByRole("radiogroup", { name: "Host theme" });
     expect(control.closest('[data-application-frame-slot="theme-control"]')).not.toBeNull();
-    await user.click(control);
+    await user.click(within(control).getByRole("radio", { name: "Dark" }));
     expect(output).toHaveTextContent("dark");
     expect(document.documentElement).toHaveAttribute("data-theme", "dark");
-    await user.click(control);
+    await user.click(within(control).getByRole("radio", { name: "Light" }));
     expect(output).toHaveTextContent("light");
     expect(screen.getByRole("region", { name: "Themed block" })).toBe(block);
     expect(screen.getByRole("button", { name: "Retained count 1" })).toBeInTheDocument();
@@ -173,6 +174,13 @@ describe("AppFrame acceptance", () => {
     expect(within(sheet).getByRole("navigation", { name: "Workspace navigation" })).toBeInTheDocument();
     for (let i = 0; i < 9; i++) { await user.tab(); expect(sheet).toContainElement(document.activeElement as HTMLElement); }
     for (let i = 0; i < 9; i++) { await user.tab({ shift: true }); expect(sheet).toContainElement(document.activeElement as HTMLElement); }
+    // The loop ends on the theme radio (three radios with tooltips since 0d04b4c23, sidebar spec D3); its
+    // keyboard-focus tooltip takes the first Escape (WCAG 1.4.13), and the second dismisses the sheet.
+    expect(within(sheet).getByRole("radio", { name: "System" })).toHaveFocus();
+    expect(await screen.findByRole("tooltip", { hidden: true })).toHaveTextContent("System");
+    await user.keyboard("{Escape}");
+    await waitFor(() => expect(screen.queryByRole("tooltip", { hidden: true })).not.toBeInTheDocument());
+    expect(screen.getByRole("dialog", { name: "Workspace navigation" })).toBe(sheet);
     await user.keyboard("{Escape}");
     await waitFor(() => expect(screen.queryByRole("dialog")).not.toBeInTheDocument());
     await waitFor(() => expect(trigger).toHaveFocus());
@@ -465,7 +473,7 @@ describe("AppFrame floating stage", () => {
     expect(nav.querySelector("button")).toHaveAccessibleName("Find a command");
     expect(within(nav).getByRole("link", { name: "Home" })).toContainElement(screen.getByTestId("home-icon"));
     const footer = nav.querySelector('[data-application-navigation-region="footer"]')!;
-    expect(footer).toContainElement(screen.getByRole("button", { name: "Example member" })); expect(footer).toContainElement(screen.getByRole("button", { name: /Theme:/ }));
+    expect(footer).toContainElement(screen.getByRole("button", { name: "Example member" })); expect(footer).toContainElement(screen.getByRole("radiogroup", { name: "Theme" }));
     expect(within(nav).queryByText("Workspace navigation")).not.toBeInTheDocument();
     await user.click(screen.getByRole("button", { name: "Close navigation" }));
     await user.keyboard("{Control>}k{/Control}"); expect(await screen.findByRole("dialog", { name: "Commands" })).toBeInTheDocument();

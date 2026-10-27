@@ -183,8 +183,11 @@ describe("exported AppFrame specimen", () => {
   it("persists all three theme preferences for the whole frame", async () => {
     const user = userEvent.setup();
     render(<AppFrameSpecimen />);
-    for (const [current, next] of [["System", "Light"], ["Light", "Dark"], ["Dark", "System"]] as const) {
-      await user.click(screen.getByRole("button", { name: `Theme: ${current}. Activate to switch to ${next}.` }));
+    // Three explicit radios since 0d04b4c23 (sidebar spec D3); each preference is one direct selection.
+    expect(screen.getByRole("radio", { name: "System" })).toBeChecked();
+    for (const next of ["Light", "Dark", "System"] as const) {
+      await user.click(screen.getByRole("radio", { name: next }));
+      expect(screen.getByRole("radio", { name: next })).toBeChecked();
       expect(localStorage.getItem("example-app-theme")).toBe(next.toLowerCase());
       if (next === "System") expect(document.documentElement).not.toHaveAttribute("data-theme");
       else expect(document.documentElement).toHaveAttribute("data-theme", next.toLowerCase());
