@@ -10,6 +10,7 @@ import { GROUP_A_CONTENT, GROUP_A_LEAVES, type GroupALeaf } from "./group-a-data
 import { groupBRenderers } from "./group-b.js";
 import { groupBDataset } from "./group-b-dataset.js";
 import { GROUP_C_LEAVES, sectionDatasetC, sectionRenderersC, type GroupCLeaf } from "./group-c.js";
+import { withLibraryBoard } from "./library-board.js";
 
 type SampleContent = Readonly<Record<string, RuntimeJson>>;
 type SampleOf = (dataset: SpecimenDataset) => SampleContent;
@@ -31,7 +32,9 @@ function member<Leaf extends string>(leaves: readonly Leaf[], leaf: string): Lea
   return (leaves as readonly string[]).includes(short) ? short as Leaf : undefined;
 }
 
-const groupA = adaptSectionGroup(GROUP_A_SECTION_RENDERERS, leaf => {
+// sections.comparison: the arrangement.library-board member draws the live board through its Section host port.
+const groupARenderers = { ...GROUP_A_SECTION_RENDERERS, "sections.comparison": withLibraryBoard(GROUP_A_SECTION_RENDERERS["sections.comparison"]!) };
+const groupA = adaptSectionGroup(groupARenderers, leaf => {
   const short = member<GroupALeaf>(GROUP_A_LEAVES, leaf);
   return short ? () => GROUP_A_CONTENT[short] : undefined;
 });
