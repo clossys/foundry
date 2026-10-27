@@ -422,4 +422,21 @@ describe("qualification rule groups (QUAL-RECOUNT G1, G2, G7a, G11)", () => {
       expect(k4(flagged), cls).toEqual([`Utility ${utility} has no bound consumer token`]);
     }
   });
+  it("check-components K4 exempts value-free utilities and still flags h-3", () => {
+    const free = ["w-full", "w-fit", "h-auto", "min-w-0", "max-w-none", "p-0", "pt-0", "m-0", "ml-auto", "-mx-0", "gap-0", "rounded-full", "rounded-none", "rounded-t-none", "border-0", "border-b-0",
+      "border-transparent", "border-s-transparent", "border-inherit", "border-collapse", "border-solid", "bg-transparent", "bg-clip-padding", "bg-blend-color", "text-center", "text-left", "text-current", "text-balance", "text-pretty", "hover:bg-transparent"];
+    const profile = fixture(); append(profile, ` const cls = "${free.join(" ")}";`);
+    expect(k4(profile)).toEqual([]);
+    // A value-free name that the compiled CSS did bind to a token is still judged by its binding.
+    const bound = fixture(); append(bound, ' const cls = "p-0";'); bound.classBindings = { "p-0": "tokens.spacing.none" };
+    expect(k4(bound)).toEqual(["Utility p-0 has no bound consumer token"]);
+    // Must still flag: every length, colour or spacing value, named or arbitrary.
+    for (const [cls, message] of [["h-3", "Utility h-3 has no bound consumer token"], ["w-3", "Utility w-3 has no bound consumer token"], ["p-2", "Utility p-2 has no bound consumer token"],
+      ["w-px", "Utility w-px has no bound consumer token"], ["h-screen", "Utility h-screen has no bound consumer token"], ["w-1/2", "Utility w-1/2 has no bound consumer token"], ["rounded-md", "Utility rounded-md has no bound consumer token"],
+      ["border-2", "Utility border-2 has no bound consumer token"], ["bg-white", "Utility bg-white has no bound consumer token"], ["text-sm", "Utility text-sm has no bound consumer token"], ["mt-auto-2", "Utility mt-auto-2 has no bound consumer token"],
+      ["bg-[#fff]", "Literal colour or length in button.tsx"], ["text-[13px]", "Literal colour or length in button.tsx"]] as const) {
+      const flagged = fixture(); append(flagged, ` const cls = "${free.join(" ")} ${cls}";`);
+      expect(k4(flagged), cls).toEqual([message]);
+    }
+  });
 });

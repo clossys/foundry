@@ -229,6 +229,21 @@ function classUtilities(code: string): string[] {
   }
   return found;
 }
+/**
+ * K4 utilities whose compiled Tailwind declaration carries no length, colour or spacing value: a keyword
+ * (auto, fit/min/max-content, none, transparent, currentcolor, inherit, alignment, wrap, clip, blend, border
+ * style), zero, 100% (`full`) or the maximum radius. Closed per family; every other value, including `px`,
+ * `screen`, fractions, theme steps and arbitrary values, still needs a bound consumer token or fails as a literal.
+ */
+const VALUE_FREE_UTILITIES: readonly RegExp[] = [
+  /^(?:min-|max-)?[hw]-(?:0|auto|full|fit|min|max)$/, /^max-[hw]-none$/,
+  /^[pm][trblxy]?-0$/, /^m[trblxy]?-auto$/, /^gap(?:-[xy])?-0$/,
+  /^rounded(?:-(?:[trblse]|[tb][lr]|[se][se]))?-(?:none|full)$/,
+  /^border(?:-[xytrblse])?-(?:0|transparent|current|inherit)$/, /^border-(?:solid|dashed|dotted|double|hidden|none|collapse|separate)$/,
+  /^bg-(?:transparent|current|inherit|none)$/, /^bg-(?:clip-(?:border|padding|content|text)|origin-(?:border|padding|content))$/,
+  /^bg-blend-(?:normal|multiply|screen|overlay|darken|lighten|color-dodge|color-burn|hard-light|soft-light|difference|exclusion|hue|saturation|color|luminosity)$/,
+  /^text-(?:left|center|right|justify|start|end|wrap|nowrap|balance|pretty|ellipsis|clip|transparent|current|inherit)$/,
+];
 function rootNames(root: string): string[] { return root.startsWith("rac:") ? root.slice(4).split("+") : []; }
 /** Contracts grant leaves; declarations may name a leaf or one exact member. */
 function tokenLeaf(read: string): string | undefined {
@@ -334,6 +349,8 @@ export function checkComponentProfile(input: ComponentCheckInput): ComponentChec
       if (/(?:#[\da-f]{3,8}\b|\b(?:rgb|hsl|oklch|oklab|lab|lch)a?\s*\(|\b\d*\.?\d+(?:px|rem|em|vh|vw|ch)\b)/i.test(file.code)) add("K4", fill.slot, `Literal colour or length in ${file.path}`);
       for (const utility of classUtilities(file.code)) {
         const binding = input.classBindings?.[utility];
+        // A value-free utility is exempt only while the compiled CSS bound it to no token; a bound class is judged by its binding.
+        if (!binding && VALUE_FREE_UTILITIES.some(pattern => pattern.test(utility))) continue;
         if (!binding || !input.tokens[binding] || !isRead(fill, binding)) add("K4", fill.slot, `Utility ${utility} has no bound consumer token`);
       }
       if (modules.some(module => FOREIGN_ICONS.test(module) || /\.svg(?:\?|$)/.test(module)) || GLYPHS.test(file.code)) add("K7", fill.slot, `Foreign icon import or text glyph in ${file.path}`);
