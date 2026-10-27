@@ -61,6 +61,8 @@ export interface StudioLabels {
   sampleText?: string;
   fontNotLoaded: string;
   inspector: { representedLeaf: string; trust: string; usedBy: string; none: string; source: string; mode: string; licence: string; pin: string; status: string; evidence: string; members: string; findings: string; via: string; light: string; dark: string; alias: string; builtOn: string; relation: string };
+  /** Copy for the Usage area in every inspector (Using what, Used where, OWN-1). Omitted: no Usage area is shown. */
+  usage?: import("./usage/UsagePanel.js").UsagePanelLabels;
 }
 
 export interface StudioPanelInsets {
@@ -116,6 +118,8 @@ export interface CompositeStudioSnapshot {
   preview?: (leaf: string, profile: import("../catalog-core/index.js").CompositeResolved) => ReactNode | undefined;
   /** Preview-only renderings of planned Sections/Frames defaults (planSurfacePreviews). Never adopts, chooses or counts a leaf. */
   plannedPreviews?: import("./planned-surface-previews.js").PlannedSurfacePreviews;
+  /** The consumer's committed usage graph (`library/usage-graph.json`), re-derived with each selection. Omitted: the committed Foundry graph. */
+  usageGraph?: import("../catalog-core/index.js").UsageGraph;
 }
 export interface CompositeStudioAdapter {
   kind: "composite";

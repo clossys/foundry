@@ -15,6 +15,7 @@ import { EditFeedback } from "./EditFeedback.js";
 import { CanvasExplorer } from "./CanvasExplorer.js";
 import { CanvasModules } from "./CanvasModules.js";
 import { TreeView } from "./TreeView.js";
+import { StudioUsage } from "./usage/StudioUsage.js";
 import { SlotModule } from "../shell/FrameSlots.js";
 import { RuntimePendingLine } from "./board-summary.js";
 import { checkCounts } from "./runtime-pending.js";
@@ -120,6 +121,7 @@ function ContractCanvas({ className, candidateWorkflow }: StudioCanvasProps) {
       {profile?.check.findings.filter(f => f.subject === s.leaf || f.subject.startsWith(s.leaf + ".")).map((finding, index) => <p key={index}>{finding.code}: {finding.message}</p>)}
       {s.layer !== "components" ? <><p>{t.whole.unassessed}</p>{s.evaluated?.value?.runtime?.findings.map((finding, index) => <p key={index}>{finding.path}: {finding.message}</p>)}<ContractSignoff contracts={s.contracts} labels={t.whole} none={t.inspector.none} /></> : null}
       {s.layer === "components" && profile?.components.components[s.leaf] ? <Button onPress={() => { if (s.changes) s.edit(s.leaf, [{ portion: "components", change: { op: "remove", slot: s.leaf } }]); }}>{t.resetToDefault}</Button> : null}
+      {t.usage && s.leaf ? <StudioUsage id={s.leaf} labels={t.usage} /> : null}
     </section></SlotModule>
   </div>;
 }
