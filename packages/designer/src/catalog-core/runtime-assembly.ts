@@ -2,7 +2,7 @@ import { isSurfacePackageEntry, surfaceEntryOf } from "./surface-library.js";
 import { surfaceRuntimeIdentity } from "./surface-check.js";
 import { libraryHash, resolve } from "./api.js";
 import { isObservationPending } from "./check-components.js";
-import { checkConsumerRuntimePorts, isRuntimeDigest, runtimeHash, runtimeSnapshot, runtimeSourceFindings, runtimeStageModuleIdentity } from "./runtime-ports.js";
+import { checkConsumerRuntimePorts, isRuntimeDigest, runtimeHash, runtimeSnapshot, runtimeSourceFindings, runtimeStageModuleIdentity, SECTION_HEADER_CONTENT_KEY } from "./runtime-ports.js";
 import type { ConsumerRuntimePorts, RuntimeCell, RuntimeContent, RuntimeContentRef, RuntimeDigest, RuntimeFillDescriptor, RuntimeJson, RuntimeRendererDescriptor, RuntimeFramePageHeader, RuntimeStageDescriptor, RuntimeFrameStage } from "./runtime-ports.js";
 import type { BuildCatalogData, CompositeEngineInput, CompositeResolved } from "./types.js";
 import type { CompositionBody, CanvasBody, FlowBody } from "./body-substrate.js";
@@ -14,6 +14,12 @@ export interface RuntimeFillSelection {
   readonly config: string | null;
   readonly members: readonly string[];
   readonly content: Readonly<Record<string, RuntimeContentRef>>;
+  /**
+   * Sections nested inside this one, in reading order: only for a parent that each child's contract names as
+   * its `anatomy.band` (sections.band). Each child resolves at `<path>.children.<index>` and reaches the parent
+   * renderer as `slots.children`.
+   */
+  readonly children?: readonly RuntimeFillSelection[];
 }
 export interface RuntimeAssemblyBinding {
   readonly id: string;
@@ -109,6 +115,20 @@ export type RuntimeAssemblyResult<Node> = { readonly status: "ready"; readonly a
   | { readonly status: "pending" | "refused"; readonly findings: readonly string[] };
 class AssemblyFault extends Error { constructor(readonly status: "pending" | "refused", message: string) { super(message); } }
 function fail(status: "pending" | "refused", message: string): never { throw new AssemblyFault(status, message); }
+/** Anatomy header copy against the header contract's slots: known keys only, required present, copy as text, bounded actions. */
+function sectionHeaderFinding(value: RuntimeJson, slots: readonly { readonly name: string; readonly type: string; readonly required?: boolean; readonly max?: number }[]): string | undefined {
+  if (!value || typeof value !== "object" || Array.isArray(value)) return "header anatomy copy must be one object";
+  const record = value as Readonly<Record<string, RuntimeJson>>;
+  const unknown = Object.keys(record).filter(key => !slots.some(slot => slot.name === key));
+  if (unknown.length) return `header anatomy has no ${unknown.sort().join(", ")} slot`;
+  for (const slot of slots) {
+    const field = record[slot.name];
+    if (field === undefined) { if (slot.required) return `header anatomy ${slot.name} is required`; continue; }
+    if (slot.type === "copy" && (typeof field !== "string" || !field.trim())) return `header anatomy ${slot.name} must be non-empty text`;
+    if (slot.type === "action" && (!Array.isArray(field) || !field.length || slot.max !== undefined && field.length > slot.max || field.some(action => !action || typeof action !== "object" || Array.isArray(action)))) return `header anatomy ${slot.name} must list 1-${slot.max ?? "n"} action records`;
+  }
+  return undefined;
+}
 export function runtimeCellKey(cell: RuntimeCell): string { return JSON.stringify([cell.theme, cell.state, cell.width]); }
 
 /** 320 and every resolved consumer breakpoint ±1; never substitute catalog numbers. */
@@ -224,7 +244,9 @@ export function prepareRuntimeAssembly<Node>(input: RuntimeAssemblyInput<Node>):
     const renderers = { ...input.ports.renderers };
     // Behaviour, not data: shape-checked by checkConsumerRuntimePorts, frozen, never snapshotted or hashed.
     const frameHost = input.ports.frameHost && Object.freeze({ ...input.ports.frameHost });
+    const sectionHosts = Object.freeze({ ...input.ports.sectionHosts });
     const selections: Record<string, RuntimeFillSelection> = {};
+    const childPaths: Record<string, readonly string[]> = {};
     const resolveFill = (selected: RuntimeFillSelection, path: string, kind: "frame" | "section"): void => {
       const fill = manifest.fills.find(fill => fill.leaf === selected.leaf && fill.config === selected.config && fill.fill === selected.fill && fill.kind === kind);
       if (!fill) fail("pending", `${path}: exact consumer runtime fill missing`);
@@ -234,20 +256,38 @@ export function prepareRuntimeAssembly<Node>(input: RuntimeAssemblyInput<Node>):
       if (!contract || (contract.kind !== "frame" && contract.kind !== "section")) fail("refused", `${path}: contract unavailable`);
       const allowed = contract.kind === "section" ? contract.slots.map(slot => slot.name) : contract.slots.filter(slot => slot.accepts === "host-node").map(slot => slot.id);
       const required = contract.kind === "section" ? contract.slots.filter(slot => slot.required).map(slot => slot.name) : contract.slots.filter(slot => slot.required && slot.accepts === "host-node").map(slot => slot.id);
-      if (Object.keys(selected.content).some(name => !allowed.includes(name) || !fill.slots.includes(name))) fail("refused", `${path}: unknown content slot`);
+      // Anatomy header copy rides one reserved key when the contract names a header part and has no slot of that name.
+      const headerLeaf = contract.kind === "section" && !allowed.includes(SECTION_HEADER_CONTENT_KEY) ? contract.anatomy?.header ?? null : null;
+      const headerContract = headerLeaf === null ? undefined : input.contracts.slots.find(slot => slot.id === headerLeaf)?.contract;
+      const isHeader = (name: string) => headerLeaf !== null && name === SECTION_HEADER_CONTENT_KEY;
+      if (Object.keys(selected.content).some(name => !isHeader(name) && (!allowed.includes(name) || !fill.slots.includes(name)))) fail("refused", `${path}: unknown content slot`);
+      if (Object.keys(selected.content).some(isHeader) && headerContract?.kind !== "section") fail("refused", `${path}: header anatomy contract unavailable`);
       if (required.some(name => !selected.content[name])) fail("pending", `${path}: required content missing`);
       const content: Record<string, RuntimeContent> = {};
       for (const [name, reference] of Object.entries(selected.content)) {
         if (!reference || !reference.ref?.trim() || !["copy", "media", "records", "action", "region"].includes(reference.kind)) fail("refused", `${path}.${name}: invalid content reference`);
-        if (contract.kind === "section" && contract.slots.find(slot => slot.name === name)?.type !== reference.kind) fail("refused", `${path}.${name}: wrong content kind`);
+        if (contract.kind === "section" && (isHeader(name) ? reference.kind !== "copy" : contract.slots.find(slot => slot.name === name)?.type !== reference.kind)) fail("refused", `${path}.${name}: wrong content kind`);
         const resolved = input.ports.resolveContent(runtimeSnapshot(reference));
         if (!resolved) fail("pending", `${path}.${name}: consumer content unresolved`);
         const current = runtimeSnapshot(resolved);
         if (runtimeHash(current.reference) !== runtimeHash(reference) || current.hash !== runtimeHash(current.value)) fail("refused", `${path}.${name}: stale or foreign content binding`);
         if (current.value === null || current.value === "" || Array.isArray(current.value) && current.value.length === 0) fail("pending", `${path}.${name}: empty required content`);
+        if (isHeader(name) && headerContract?.kind === "section") {
+          const finding = sectionHeaderFinding(current.value, headerContract.slots);
+          if (finding) fail("refused", `${path}.${name}: ${finding}`);
+        }
         content[name] = current;
       }
       descriptors[path] = fill; contentSnapshot[path] = runtimeSnapshot(content); selections[path] = selected;
+      if (selected.children !== undefined) {
+        if (kind !== "section" || !Array.isArray(selected.children) || !selected.children.length) fail("refused", `${path}: children must be a non-empty Section list`);
+        childPaths[path] = selected.children.map((child, index) => {
+          const at = `${path}.children.${index}`;
+          const childContract = input.contracts.slots.find(slot => slot.id === child.leaf)?.contract;
+          if (childContract?.kind !== "section" || childContract.anatomy?.band !== selected.leaf) fail("refused", `${at}: ${child.leaf} does not take ${selected.leaf} as its band`);
+          resolveFill(child, at, "section"); return at;
+        });
+      }
     };
     resolveFill(binding.frame, "frame", "frame");
     const stageContent: Record<string, RuntimeContent> = {};
@@ -368,9 +408,10 @@ export function prepareRuntimeAssembly<Node>(input: RuntimeAssemblyInput<Node>):
     const snapshot: RuntimeAssemblySnapshot = runtimeSnapshot({ version: 1, hash: runtimeHash(data), data: data as unknown as RuntimeJson, cells, breakpoints, expectedOrder, measuredPaths, ...(binding.body ? { stageWidths, orderPending, ...(stageMeasurements ? { stageBasisHash: runtimeHash(stageMeasurements) } : {}) } : {}) });
     const render = (cell: RuntimeCell): Node => {
       if (!cells.some(candidate => runtimeCellKey(candidate) === runtimeCellKey(cell))) throw new Error("runtime: cell outside bound matrix");
-      const draw = (path: string, slots: Readonly<Record<string, readonly Node[]>> = {}, frameStage?: RuntimeFrameStage<Node>): Node => {
+      const draw = (path: string, slots: Readonly<Record<string, readonly Node[]>> = childPaths[path] ? { children: childPaths[path]!.map(child => draw(child)) } : {}, frameStage?: RuntimeFrameStage<Node>): Node => {
         const fill = descriptors[path]!;
-        return renderers[fill.renderer.id]!({ path, fill, selection: selections[path]!, cell: runtimeSnapshot(cell), content: contentSnapshot[path]!, slots, profile, ...(path === "frame" && pageHeader ? { pageHeader } : {}), ...(path === "frame" && frameStage ? { stage: frameStage } : {}), ...(path === "frame" && frameHost ? { host: frameHost } : {}) });
+        const sectionHost = path === "frame" || !Object.hasOwn(sectionHosts, fill.leaf) ? undefined : sectionHosts[fill.leaf];
+        return renderers[fill.renderer.id]!({ path, fill, selection: selections[path]!, cell: runtimeSnapshot(cell), content: contentSnapshot[path]!, slots, profile, ...(path === "frame" && pageHeader ? { pageHeader } : {}), ...(path === "frame" && frameStage ? { stage: frameStage } : {}), ...(path === "frame" && frameHost ? { host: frameHost } : {}), ...(sectionHost ? { sectionHost } : {}) });
       };
       const slots = Object.fromEntries(Object.entries(paths).map(([slot, values]) => [slot, values.map(path => draw(path))]));
       let frameStage: RuntimeFrameStage<Node> | undefined;

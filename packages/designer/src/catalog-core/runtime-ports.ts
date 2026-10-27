@@ -127,7 +127,21 @@ export interface RuntimeRenderInput<Node> {
   readonly stage?: RuntimeFrameStage<Node>;
   /** The host interaction port, supplied only to the exact selected Frame renderer. */
   readonly host?: RuntimeFrameHost<Node>;
+  /** The live port registered for this Section's leaf (ConsumerRuntimePorts.sectionHosts), never a Frame's. */
+  readonly sectionHost?: RuntimeSectionHost;
 }
+/**
+ * Content key carrying a Section's anatomy header copy when its contract names `anatomy.header` and has no
+ * contract slot of that name. Its value is one object keyed by the header contract's slot names
+ * (sections.section-header: eyebrow, heading, description, actions), checked against that contract.
+ */
+export const SECTION_HEADER_CONTENT_KEY = "header";
+/**
+ * Live behaviour for one Section leaf, keyed by leaf in ConsumerRuntimePorts.sectionHosts (for example the
+ * comparison library-board's checked previews and board commands). Behaviour, not data: never snapshotted.
+ * Each renderer that reads one owns and checks its exact shape.
+ */
+export type RuntimeSectionHost = Readonly<Record<string, unknown>>;
 export type RuntimeThemePreference = "system" | "light" | "dark";
 /** Host interaction port for the selected Frame. A Frame's props split in
  * two: JSON content (the fill's host-node slots, resolved through RuntimeContent) and
@@ -182,11 +196,22 @@ export function runtimeFrameHostFindings(host: unknown): string[] {
   if (theme && (theme.preference !== undefined && !["system", "light", "dark"].includes(theme.preference as string) || theme.onPreferenceChange !== undefined && typeof theme.onPreferenceChange !== "function")) findings.push("frame host theme port is invalid");
   return findings;
 }
+/** Shape check only: one record per `sections.*` leaf, each a non-array object. */
+export function runtimeSectionHostFindings(hosts: unknown): string[] {
+  if (hosts === undefined) return [];
+  if (!hosts || typeof hosts !== "object" || Array.isArray(hosts)) return ["section hosts must be a record keyed by Section leaf"];
+  return Object.entries(hosts as Record<string, unknown>).flatMap(([leaf, host]) => [
+    ...(/^sections\.[a-z0-9-]+$/.test(leaf) ? [] : [`section host key ${leaf} is not a Section leaf`]),
+    ...(host && typeof host === "object" && !Array.isArray(host) ? [] : [`section host ${leaf} must be a record`]),
+  ]);
+}
 export interface ConsumerRuntimePorts<Node> {
   readonly manifest: ConsumerRuntimeManifest;
   readonly renderers: Readonly<Record<string, (input: RuntimeRenderInput<Node>) => Node>>;
   /** Behaviour for the selected Frame only (navigation guard, actions, icons, theme, panels). */
   readonly frameHost?: RuntimeFrameHost<Node>;
+  /** Live behaviour per Section leaf; delivered only to Sections of that leaf. */
+  readonly sectionHosts?: Readonly<Record<string, RuntimeSectionHost>>;
   resolveContent(reference: RuntimeContentRef): RuntimeContent | undefined;
   /** Required when frame section slots exist: complete order including layout and frame fills. */
   frameOrder?(input: { readonly cell: RuntimeCell; readonly layout: readonly string[]; readonly slots: Readonly<Record<string, readonly string[]>> }): readonly string[];
@@ -284,6 +309,7 @@ export function checkConsumerRuntimePorts<Node>(ports: ConsumerRuntimePorts<Node
   try {
     for (const [index, fill] of ports.manifest.fills.entries()) if (typeof ports.renderers[fill.renderer.id] !== "function") findings.push({ path: `fills.${index}.renderer`, message: "runtime callback missing" });
     for (const message of runtimeFrameHostFindings(ports.frameHost)) findings.push({ path: "frameHost", message });
+    for (const message of runtimeSectionHostFindings(ports.sectionHosts)) findings.push({ path: "sectionHosts", message });
   }
   catch { findings.push({ path: "manifest", message: "invalid runtime manifest or ports" }); }
   return { status: findings.length ? "refused" : "valid", findings };
