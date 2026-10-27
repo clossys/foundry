@@ -2,7 +2,7 @@ import { expect, it, vi } from "vitest";
 import { render, fireEvent, screen, within, waitFor } from "@testing-library/react";
 import { boardRow } from "./__fixtures__/library-board-dom.js";
 import userEvent from "@testing-library/user-event";
-import { render as renderFrame } from "./__fixtures__/frame.js";
+import { render as renderFrame, findLayerSelect } from "./__fixtures__/frame.js";
 import { StudioProvider } from "./StudioProvider.js";
 import { Studio } from "./Studio.js";
 import { CandidateCell } from "./CandidateCell.js";
@@ -10,7 +10,6 @@ import { CompactPreview } from "./previews.js";
 import { buildCandidates } from "./model.js";
 import { orderTokenMembers } from "../tokens/preview/member-order.js";
 import { adopt, emptyLibrary, labels, smallCatalog } from "./__fixtures__/studio.js";
-import { findLayerSelect } from "./__fixtures__/rail.js";
 import { applyLibraryChange, libraryHash } from "../catalog-core/index.js";
 
 vi.mock("./previews.js", async importOriginal => {

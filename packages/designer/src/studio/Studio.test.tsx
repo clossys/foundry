@@ -1,11 +1,10 @@
 import { afterEach, expect, it, vi } from "vitest";
 import { act, cleanup, fireEvent, screen, waitFor, within } from "@testing-library/react";
-import { render, studioReady } from "./__fixtures__/frame.js";
+import { render, studioReady, chooseLayer, findLayerSelect } from "./__fixtures__/frame.js";
 import { boardRow } from "./__fixtures__/library-board-dom.js";
 import userEvent from "@testing-library/user-event";
 import { applyLibraryChange, generateSelection, libraryHash, type ChangeSet } from "../catalog-core/index.js";
 import { StudioProvider, StudioRightPanel } from "./index.js";
-import { chooseLayer, findLayerSelect } from "./__fixtures__/rail.js";
 import { Studio } from "./Studio.js";
 import type { StudioAdapter } from "./types.js";
 import { labels, smallCatalog, emptyLibrary, adopt } from "./__fixtures__/studio.js";
@@ -68,7 +67,7 @@ it("normalises a legacy layer fragment and restores the layer from the select an
 it("changes the layer from the explorer's layer select at once, with no flush and no save", async () => {
   const adapter = hostAdapter();
   render(<StudioProvider adapter={adapter} catalog={smallCatalog} labels={labels}><Studio /><StudioRightPanel /></StudioProvider>); await studioReady();
-  await chooseLayer(labels, "Assets");
+  await chooseLayer(labels, "Assets", userEvent.setup());
   await waitFor(() => expect(window.location.search).toBe("?layer=assets"));
   expect(adapter.save).not.toHaveBeenCalled();
 });

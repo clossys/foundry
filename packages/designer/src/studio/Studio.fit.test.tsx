@@ -1,9 +1,8 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { act, cleanup, fireEvent, render as plainRender, screen, waitFor } from "@testing-library/react";
-import { render } from "./__fixtures__/frame.js";
+import { render, findLayerSelect } from "./__fixtures__/frame.js";
 import { Studio } from "./index.js";
 import { smallCatalog, labels, emptyLibrary } from "./__fixtures__/studio.js";
-import { findLayerSelect } from "./__fixtures__/rail.js";
 import { TOKENS } from "../tokens/tokens.js";
 import { CanvasSurface } from "../blocks/canvas/CanvasSurface.js";
 import { CANVAS_LOD_TEXT, CanvasLod } from "../blocks/canvas/CanvasLod.js";

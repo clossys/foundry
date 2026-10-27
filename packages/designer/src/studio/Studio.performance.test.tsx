@@ -1,14 +1,13 @@
 import { afterEach, expect, it, vi } from "vitest";
 import { cleanup, fireEvent, screen, waitFor, within } from "@testing-library/react";
 import { boardOf, boardRow } from "./__fixtures__/library-board-dom.js";
-import { render } from "./__fixtures__/frame.js";
+import { render, findLayerSelect } from "./__fixtures__/frame.js";
 import userEvent from "@testing-library/user-event";
 import { Studio as StudioSurface, StudioProvider, StudioRightPanel, type StudioProps } from "./index.js";
 function Studio(props: StudioProps) { return <StudioProvider {...props}><StudioSurface /><StudioRightPanel /></StudioProvider>; }
 import { studioEngine } from "./engine.js";
 import { applyLibraryChange, libraryHash } from "../catalog-core/index.js";
 import { labels, smallCatalog, adopt, emptyLibrary } from "./__fixtures__/studio.js";
-import { findLayerSelect } from "./__fixtures__/rail.js";
 
 // Keep the real engine, with a mutable seam so calls from the provider and canvas can be counted together.
 vi.mock("./engine.js", async importOriginal => {

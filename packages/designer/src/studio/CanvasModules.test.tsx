@@ -6,7 +6,7 @@ import { FrameSlotProvider, FrameModuleOutlet } from "../shell/FrameSlots.js";
 import { FrameNoticeProvider } from "../frames/frame-notices.js";
 import { CanvasMap } from "../components/CanvasMap.js";
 import { labels, smallCatalog, emptyLibrary } from "./__fixtures__/studio.js";
-import { findLayerSelect, railCard, railCards } from "./__fixtures__/rail.js";
+import { findLayerSelect, railCard, railCards } from "./__fixtures__/frame.js";
 afterEach(() => { cleanup(); window.history.replaceState(null, "", "/"); });
 /** DESIGNER-RO (rail): the modules live in the page's right rail cards; nothing is leased into the frame's hosts. */
 it("places Explorer, Map and Zoom in the rail cards, leases nothing to Frame hosts, and ties grid geometry to the camera", async () => {

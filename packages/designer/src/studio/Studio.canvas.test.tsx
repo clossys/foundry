@@ -1,10 +1,9 @@
 import { afterEach, expect, it } from "vitest";
 import { act, cleanup, fireEvent, screen } from "@testing-library/react";
-import { render } from "./__fixtures__/frame.js";
+import { render, findLayerSelect, chooseLayer } from "./__fixtures__/frame.js";
 import userEvent from "@testing-library/user-event";
 import { Studio } from "./index.js";
 import { smallCatalog, labels, emptyLibrary } from "./__fixtures__/studio.js";
-import { findLayerSelect, chooseLayer } from "./__fixtures__/rail.js";
 afterEach(() => { cleanup(); window.history.replaceState(null, "", "/"); });
 const mount = async () => { render(<Studio catalog={smallCatalog} adapter={{load:async () => ({library:emptyLibrary()}), save:async () => ({ok:false,reason:"unavailable"})}} labels={labels}/>); await findLayerSelect(); };
 it("preserves the immersive world, keyboard pan, zoom controls and minimap", async () => {

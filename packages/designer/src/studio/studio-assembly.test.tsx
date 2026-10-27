@@ -5,12 +5,11 @@ import { afterEach, expect, it, vi } from "vitest";
 import { act, cleanup, fireEvent, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { parseDate } from "@internationalized/date";
-import { render } from "./__fixtures__/frame.js";
+import { render, findLayerSelect, chooseLayer } from "./__fixtures__/frame.js";
 import { Studio } from "./index.js";
 import { StudioProvider, useStudioSession } from "./StudioProvider.js";
 import { canvasPreviewPort } from "./canvas-boards.js";
 import { smallCatalog, labels, emptyLibrary, adopt } from "./__fixtures__/studio.js";
-import { findLayerSelect, chooseLayer } from "./__fixtures__/rail.js";
 import { Matrix as Comparison } from "../blocks/Matrix.js";
 import { valueLibraryBoardRecords, valueLibraryBoardPreviews, type PreparedLibraryBoardInput } from "./library-board-adapter.js";
 import { buildCandidates } from "./model.js";
@@ -49,7 +48,7 @@ it("renders every value-layer canvas board as the registered library-board Secti
   </StudioProvider>);
   await findLayerSelect();
   for (const layer of ["Tokens", "Assets"]) {
-    if (layer !== "Tokens") await chooseLayer(labels, layer);
+    if (layer !== "Tokens") await chooseLayer(labels, layer, userEvent.setup());
     await waitFor(() => expect(document.querySelector("[data-studio-world] section[data-library-board]")).not.toBeNull());
     expect(declared.boards).toBeGreaterThan(0);
     // The camera zoom reaches board titles through the registered CanvasLod owner, not a Studio inline style.

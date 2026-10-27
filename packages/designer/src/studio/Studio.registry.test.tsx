@@ -1,6 +1,6 @@
 import { afterEach, expect, it } from "vitest";
 import { act, cleanup, fireEvent, waitFor, within } from "@testing-library/react";
-import { render } from "./__fixtures__/frame.js";
+import { render, chooseLayer, findLayerSelect } from "./__fixtures__/frame.js";
 import userEvent from "@testing-library/user-event";
 import { loadBuildCatalog, type LayerId } from "../catalog-core/index.js";
 import { Studio } from "./Studio.js";
@@ -9,7 +9,6 @@ import { StudioRightPanel } from "./StudioRightPanel.js";
 import { catalogStudioAdapter } from "./catalog-adapter.js";
 import { labels } from "./__fixtures__/studio.js";
 import { boardRowLeaf } from "./canvas-boards.js";
-import { chooseLayer, findLayerSelect } from "./__fixtures__/rail.js";
 
 afterEach(() => { cleanup(); window.history.replaceState(null, "", "/"); });
 const layers: readonly LayerId[] = ["tokens", "assets", "components", "sections", "frames"];

@@ -2,9 +2,8 @@
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 import { cleanup, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { render, studioReady } from "./__fixtures__/frame.js";
+import { render, studioReady, chooseLayer } from "./__fixtures__/frame.js";
 import { labels } from "./__fixtures__/studio.js";
-import { chooseLayer } from "./__fixtures__/rail.js";
 import { packageSurfaceLibrary, type PackageSurfaceLibrary } from "../library-cli/__fixtures__/package-surface-library.js";
 import { planSurfaceDefaults, type SurfaceDefaultCandidateDocument, type SurfaceDefaultsInput } from "../catalog-core/index.js";
 import { planSurfacePreviews } from "./planned-surface-previews.js";

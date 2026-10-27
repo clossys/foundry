@@ -1,7 +1,7 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { cleanup, render as renderPlain, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { render, studioReady } from "./__fixtures__/frame.js";
+import { render, studioReady, chooseLayer } from "./__fixtures__/frame.js";
 import { applyLibraryChange, loadCatalog, loadComponentRegistry, type LayerId } from "../catalog-core/index.js";
 import { componentIntegration } from "../catalog-core/__fixtures__/component-integration.js";
 import { resolve } from "../catalog-core/api.js";
@@ -13,7 +13,6 @@ import { buildCandidates } from "./model.js";
 import { LibraryBoardSection } from "../blocks/library-board/LibraryBoardSection.js";
 import { valueLibraryBoardPreviews, valueLibraryBoardRecords, type PreparedLibraryBoardInput } from "./library-board-adapter.js";
 import { adopt, emptyLibrary, labels, smallCatalog } from "./__fixtures__/studio.js";
-import { chooseLayer } from "./__fixtures__/rail.js";
 import type { CompositeStudioAdapter, CompositeStudioLabels } from "./types.js";
 
 afterEach(cleanup);

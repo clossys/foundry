@@ -1,6 +1,6 @@
 import { afterEach, expect, it, vi } from "vitest";
 import { act, cleanup, fireEvent, screen, waitFor, within } from "@testing-library/react";
-import { render } from "./__fixtures__/frame.js";
+import { render, findLayerSelect } from "./__fixtures__/frame.js";
 import { StudioProvider, useStudioSession } from "./StudioProvider.js";
 import { boardRow } from "./__fixtures__/library-board-dom.js";
 import { Studio } from "./Studio.js";
@@ -8,7 +8,6 @@ import { buildCandidates } from "./model.js";
 import { activeCandidateSource } from "./candidate-display.js";
 import { studioEngine } from "./engine.js";
 import { labels, smallCatalog, adopt } from "./__fixtures__/studio.js";
-import { findLayerSelect } from "./__fixtures__/rail.js";
 import type { CatalogData } from "../catalog-core/index.js";
 
 vi.mock("./engine.js", async importOriginal => {

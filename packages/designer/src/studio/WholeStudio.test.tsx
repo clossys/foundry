@@ -1,6 +1,6 @@
 import { afterEach, expect, it, vi } from "vitest";
 import { act, cleanup, fireEvent, screen, waitFor, within } from "@testing-library/react";
-import { render, studioReady } from "./__fixtures__/frame.js";
+import { render, studioReady, findLayerSelect, chooseLayer } from "./__fixtures__/frame.js";
 import userEvent from "@testing-library/user-event";
 import { applyLibraryChange, libraryHash, loadBuildCatalog, loadCatalog, loadComponentRegistry } from "../catalog-core/index.js";
 import { componentIntegration, adoptedComponentIntegration } from "../catalog-core/__fixtures__/component-integration.js";
@@ -8,7 +8,6 @@ import { Studio as StudioView, StudioRightPanel } from "./index.js";
 import { Banner } from "../components/Banner.js";
 import type { PlacementNode } from "../catalog-core/index.js";
 import { labels, smallCatalog } from "./__fixtures__/studio.js";
-import { findLayerSelect, chooseLayer } from "./__fixtures__/rail.js";
 import { evaluateWhole, placedLeaves, wholeSignoff } from "./whole-model.js";
 import type { CompositeStudioAdapter, CompositeStudioLabels, CompositeStudioSnapshot, CompositeStudioProps, StudioCanvasProps } from "./types.js";
 import { useState } from 'react';
