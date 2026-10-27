@@ -164,6 +164,9 @@ export type { ConsumptionReads, ConsumptionToken, ConsumptionBlocker, Consumptio
 /** Cross-layer usage graph derived from the consumption producers and route bindings. */
 export { buildUsageGraph, uses, usedBy, closure, graphFindings } from "./usage-graph.js";
 export type { UsageGraph, UsageGraphInputs, UsageGraphFill, UsageGraphFinding, UsageNode, UsageEdge, UsageEdgeSite, UsageLayer, UsageEdgeKind, UsageEvidence, UsageDirection, UsageReverseComposes, UsageBindingLike, UsageFillSelectionLike, UsageRuntimeObservation } from "./usage-graph.js";
+/** Static wiring checks above Components (WL2, WL3, WL4, WL8, WL9, WL10) and the wiring-exception reader. */
+export { checkWiring, readWiringExceptions, wiringScope, foundryWiringExceptions, WIRING_REASON_CODES, WIRING_HEADLESS_MODULES } from "./wiring.js";
+export type { WiringCode, WiringReasonCode, WiringException, WiringExceptionStatus, WiringExceptionState, WiringFinding, WiringLayer, WiringSource, WiringSurfaceFill, WiringGeneratedArtifact, WiringRoutes, WiringInput, WiringResult } from "./wiring.js";
 
 export * from "./runtime-ports.js";
 export * from "./runtime-assembly.js";

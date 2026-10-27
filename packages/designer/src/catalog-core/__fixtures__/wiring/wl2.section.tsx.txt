@@ -1,0 +1,7 @@
+export function AsideBand({ children }: { children: React.ReactNode }) {
+  return (
+    <section style={{ "--band-aside": "var(--ui-layout-aside-w)" }}>
+      {children}
+    </section>
+  );
+}

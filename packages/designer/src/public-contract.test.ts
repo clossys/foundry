@@ -1135,3 +1135,29 @@ describe("compiled usage graph public contract", () => {
     }
   }, 30_000);
 });
+
+describe("compiled wiring public contract", () => {
+  it("exports the static wiring checks additively through catalog and catalog/server", () => {
+    for (const entry of ["catalog-core/index.js", "catalog-core/server.js"]) {
+      const filename = join(packageRoot, "wiring-consumer.check.ts");
+      const consumer = `
+        import { checkWiring, readWiringExceptions, wiringScope, foundryWiringExceptions, WIRING_REASON_CODES, WIRING_HEADLESS_MODULES, type WiringInput, type WiringResult, type WiringFinding, type WiringException, type WiringCode, type WiringReasonCode } from ${JSON.stringify(join(packageRoot, "dist", entry))};
+        const input: WiringInput = { sources: [{ path: "frames/a.tsx", content: "export const A = 1;", layer: "frames" }], tokens: [], exceptions: foundryWiringExceptions(), now: "2026-10-26" };
+        const result: WiringResult = checkWiring(input);
+        const findings: readonly WiringFinding[] = result.findings, code: WiringCode | undefined = findings[0]?.code;
+        const rows: readonly WiringException[] = readWiringExceptions([], [], "2026-10-26").exceptions.map(row => row.row);
+        const reason: WiringReasonCode = WIRING_REASON_CODES[0], scope: "components" | "above" = wiringScope("frames/a.tsx", []);
+        const engines: readonly string[] = WIRING_HEADLESS_MODULES;
+        void code; void rows; void reason; void scope; void engines;
+      `;
+      const options = { strict: true, noEmit: true, skipLibCheck: true, target: ts.ScriptTarget.ES2022, module: ts.ModuleKind.ESNext, moduleResolution: ts.ModuleResolutionKind.Bundler };
+      const host = ts.createCompilerHost(options), original = host.getSourceFile.bind(host);
+      host.getSourceFile = (path, language, error, fresh) => path === filename ? ts.createSourceFile(path, consumer, language, true) : original(path, language, error, fresh);
+      expect(ts.getPreEmitDiagnostics(ts.createProgram([filename], options, host)).map(d => ts.flattenDiagnosticMessageText(d.messageText, "\n")), entry).toEqual([]);
+      const script = `import * as api from ${JSON.stringify(join(packageRoot, "dist", entry))};
+        const result = api.checkWiring({ sources: [{ path: "frames/a.tsx", content: "import { Button } from \\"react-aria-components\\";", layer: "frames" }], tokens: [], exceptions: api.foundryWiringExceptions(), now: "2026-10-26" });
+        process.stdout.write(JSON.stringify({ types: ["checkWiring","readWiringExceptions","wiringScope","foundryWiringExceptions"].map(name => typeof api[name]), codes: result.findings.map(row => row.code), reasons: api.WIRING_REASON_CODES }));`;
+      expect(JSON.parse(execFileSync(process.execPath, ["--input-type=module", "-e", script], { encoding: "utf8", cwd: packageRoot })), entry).toEqual({ types: Array(4).fill("function"), codes: ["WL3"], reasons: ["layout-geometry", "surface-ground", "document-head", "motion-orchestration"] });
+    }
+  }, 30_000);
+});

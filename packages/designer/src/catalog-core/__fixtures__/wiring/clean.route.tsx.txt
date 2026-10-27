@@ -1,0 +1,6 @@
+import { RegisteredRoutePage } from "@clossys/publisher/web";
+import { registry, useRuntime } from "./runtime";
+
+export default function Page() {
+  return <RegisteredRoutePage registry={registry} routeId="studio" useRuntime={useRuntime} />;
+}

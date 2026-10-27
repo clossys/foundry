@@ -1,5 +1,6 @@
 import type { LibraryOperation } from "./api.js";
 import type { Finding } from "./types.js";
+import type { WiringCode } from "./wiring.js";
 
 export interface CheckGuidance {
   meaning: string;
@@ -39,3 +40,20 @@ export const CHECK_GUIDANCE = {
 
 /** Derived from the exhaustive record so list and explanations cannot drift. */
 export const CHECK_CODES = Object.freeze(Object.keys(CHECK_GUIDANCE) as Finding["code"][]);
+
+/** Wiring (WL1-WL10): source checks above Components, outside the catalog `Finding` union. WL1, WL5, WL6 and WL7 are runtime (DOM) codes; the rest are static (`checkWiring`). */
+export const WIRING_GUIDANCE = {
+  WL1: { meaning: "A rendered element sits outside every declared Section.", severities: ["error"], typicalCause: "A page or frame renders markup directly instead of inside a Section fill.", fixOps: [], fix: "Move the element into a Section that composes registered Components; a frame region holds Sections, never loose markup." },
+  WL2: { meaning: "A Section or Frame reads tokens.* or assets.* directly without a current wiring exception.", severities: ["error", "notice"], typicalCause: "A layer above Components styles itself from a token or asset instead of composing a component that owns the read.", fixOps: [], fix: "Compose a components.* leaf that owns the read. A structural read on the closed A3 list needs a current wiring-exceptions row naming the exact read. A notice means the token inventory was not supplied and reads stayed unmeasured." },
+  WL3: { meaning: "A source above Components imports a headless engine.", severities: ["error"], typicalCause: "An engine on the K2 list or a React Aria package is imported by a Section, Frame or Page, type-only imports included.", fixOps: [], fix: "Compose the registered components.* leaf that wraps the engine; only a component leaf's own files may import it." },
+  WL4: { meaning: "A source above Components carries a raw value.", severities: ["error"], typicalCause: "A hex, rgb or hsl colour, a px, rem, em or ms literal, an arbitrary utility, a var() fallback, a non-hand-off inline style or a JS numeric layout constant.", fixOps: [], fix: "Read the value through a component or a bare custom-property hand-off with no fallback; token-gate:ignore does not apply to wiring." },
+  WL5: { meaning: "A rendered element is not linked to its declared slot fill.", severities: ["error", "notice"], typicalCause: "An element has no provenance stamp, or a selected leaf is never rendered (notice).", fixOps: ["adopt"], fix: "Render the element through its registered fill so provenance links it; remove or render an unused selected leaf." },
+  WL6: { meaning: "A declared section is never rendered.", severities: ["error"], typicalCause: "The page declares a Section in its assembly but no rendered element carries it.", fixOps: [], fix: "Render the declared Section through the runtime assembly or remove it from the declaration." },
+  WL7: { meaning: "A selection does not reach the rendered output.", severities: ["error"], typicalCause: "A selected fill or variant is overridden or dropped before render.", fixOps: [], fix: "Trace the selection through the runtime assembly and remove the override so the selected fill renders." },
+  WL8: { meaning: "A generated artifact has drifted, is missing or has no generator.", severities: ["error"], typicalCause: "The committed artifact was hand-edited, never regenerated, or no generator produces it.", fixOps: [], fix: "Regenerate the artifact with its documented generator; an artifact with no generator needs one before it ships." },
+  WL9: { meaning: "A wiring exception is invalid, dead or unsigned.", severities: ["error", "warning"], typicalCause: "A reasonCode outside A3, a missing read, element, hash, owner or expiry, a changed element hash, a past expiry, or a proposed row (warning).", fixOps: [], fix: "Correct or remove the row; refresh the hash only after review of the changed element. A proposed row stays a warning until the owner signs it." },
+  WL10: { meaning: "A page or route module renders something other than the runtime assembly.", severities: ["error"], typicalCause: "A route imports components, blocks, sections or frames, or renders raw markup beside the assembly.", fixOps: [], fix: "Make the route render only the runtime assembly entry; move the content into a declared Section." },
+} as const satisfies Record<WiringCode, CheckGuidance>;
+
+/** Derived from the wiring record so the list and explanations cannot drift. */
+export const WIRING_CODES = Object.freeze(Object.keys(WIRING_GUIDANCE) as WiringCode[]);
