@@ -29,18 +29,21 @@ it.each([true, false])("hydrates with stable IDs before correcting viewport and 
   const host = document.createElement("div"); host.innerHTML = renderToString(tree); document.body.append(host);
   const mainId = host.querySelector("main")!.id;
   expect(host.querySelector('a[href^="#"]')).toHaveAttribute("href", "#" + mainId);
-  expect(within(host).getByRole("button", { name: /Theme: System/ })).toBeInTheDocument();
+  // The theme control is three explicit radios since 0d04b4c23 (sidebar spec D3); the server renders the default.
+  expect(within(host).getByRole("radio", { name: "System" })).toBeChecked();
   const recoverable = vi.fn();
   let root: ReturnType<typeof hydrateRoot> | undefined;
   try {
     await act(async () => { root = hydrateRoot(host, tree, { onRecoverableError: recoverable }); });
     expect(recoverable).not.toHaveBeenCalled();
     expect(host.querySelector("main")).toHaveAttribute("id", mainId);
-    expect(within(host).getByRole("region", { name: "Host notifications" })).toBe(host.firstElementChild!.lastElementChild);
+    // The default navigation brand mark (0e370345e) is an <img>, so React's server render hoists a preload
+    // <link> ahead of the frame root; address the root by its stamp, not as the host's first child.
+    expect(within(host).getByRole("region", { name: "Host notifications" })).toBe(host.querySelector("[data-application-frame]")!.lastElementChild);
     expect(within(within(host).getByRole("region", { name: "Host notifications" })).getByRole("status")).toHaveTextContent("Saved");
     expect(document.documentElement).toHaveAttribute("data-theme", "dark");
     if (!wide) await userEvent.click(within(host).getByRole("button", { name: "Open navigation" }));
-    expect((wide ? within(host) : within(document.body)).getByRole("button", { name: /Theme: Dark/ })).toBeInTheDocument();
+    expect((wide ? within(host) : within(document.body)).getByRole("radio", { name: "Dark" })).toBeChecked();
     if (!wide) await userEvent.keyboard("{Escape}");
     if (!wide) expect(within(host).getByRole("button", { name: "Open navigation" })).toBeInTheDocument();
     const user = userEvent.setup(); await user.click(within(host).getByRole("link", { name: "Skip to content" }));
