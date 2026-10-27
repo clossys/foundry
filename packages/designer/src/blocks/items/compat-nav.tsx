@@ -77,7 +77,7 @@ export function CompatNavGrid({ heading, items, className, style, renderAction, 
           item.href !== undefined ? (
             <LinkedCard key={item.id} item={item} />
           ) : (
-            renderAction(item, cx(CARD_BASE, "w-full justify-start"), <NavGridCardContent item={item} />)
+            renderAction(item, cx(CARD_BASE, "w-full justify-start whitespace-normal"), <NavGridCardContent item={item} />)
           ),
         )}
       </div>}
