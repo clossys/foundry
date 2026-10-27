@@ -21,7 +21,7 @@ import type { CompositeEngineInput, CompositeLibraryData } from "./types.js";
 
 const optionsOf = (input: CompositeEngineInput) => input.surfaceOptions ? { componentOptions: input.componentOptions, surfaceOptions: input.surfaceOptions } : undefined;
 /** The old mount path: an empty change set applied to the committed library. */
-const applied = (input: CompositeEngineInput, options = optionsOf(input)): CompositeLibraryData =>
+const applied = (input: CompositeEngineInput, options: ReturnType<typeof optionsOf>): CompositeLibraryData =>
   applyLibraryChange(input.catalog, input.library, { baseHash: libraryHash(input.library), changes: [] }, options);
 const outcome = (run: () => CompositeLibraryData): { library: CompositeLibraryData } | { error: string } => {
   try { return { library: run() }; } catch (error) { return { error: error instanceof Error ? error.message : String(error) }; }
@@ -39,7 +39,7 @@ describe("committed composite library", () => {
   ];
   it.each(inputs)("with %s equals the empty change set's result, with the same hash", (_name, make) => {
     const input = make(), before = structuredClone(input.library);
-    const old = applied(input);
+    const old = applied(input, optionsOf(input));
     for (const library of [
       committedCompositeLibrary(input.catalog, input.library, optionsOf(input)),
       committedCompositeLibrary(input.catalog, input.library, optionsOf(input), result => resolve({ ...input, library: result })),
@@ -75,7 +75,7 @@ describe("committed composite library", () => {
       expect(outcome(() => committedCompositeLibrary(input.catalog, input.library, options, () => { throw new Error("caller resolution"); }))).toEqual(old);
     }
     expect(outcome(() => applied(missing, undefined))).toEqual({ error: expect.stringContaining("S8") });
-    expect(outcome(() => applied(tampered))).toHaveProperty("error");
+    expect(outcome(() => applied(tampered, optionsOf(tampered)))).toHaveProperty("error");
   });
 });
 
