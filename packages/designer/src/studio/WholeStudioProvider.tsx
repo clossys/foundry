@@ -1,12 +1,13 @@
 "use client";
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
-import { applyLibraryChange, libraryHash, loadBuildCatalog } from "../catalog-core/index.js";
-import type { CompositeChangeSet, CompositeEngineInput, LayerId } from "../catalog-core/index.js";
+import { libraryHash, loadBuildCatalog } from "../catalog-core/index.js";
+import type { CompositeChangeSet, CompositeEngineInput, CompositeLibraryData, LayerId } from "../catalog-core/index.js";
+import { committedCompositeLibrary } from "../catalog-core/library-components.js";
 import { runtimeHash, runtimeSnapshot } from "../catalog-core/runtime-ports.js";
 import type { RuntimeDigest } from "../catalog-core/runtime-ports.js";
 import { StudioProvider, useStudioSession } from "./StudioProvider.js";
 import { normaliseWindowLocation, resolverFromPlacements } from "./layer-navigation.js";
-import { evaluateWhole, placedLeaves } from "./whole-model.js";
+import { evaluateWhole, placedLeaves, resolveWhole, wholeLibraryHash } from "./whole-model.js";
 import type { CompositeStudioAdapter, CompositeStudioProps, CompositeStudioSnapshot, StudioAdapter, StudioCandidateWorkflow } from "./types.js";
 import type { DesignerLayerBoardProjection } from "./designer-layer-boards.js";
 import type { DesignerLayerBoardsInput } from "./designer-layer-boards.js";
@@ -48,14 +49,20 @@ function useWholeState({ adapter: host, labels, initialSlotId }: CompositeStudio
   }, [adapter]);
   // The committed change set: no pending operation, only the host's bundles.
   const changes = useMemo<CompositeChangeSet | undefined>(() => snapshot ? { baseHash: libraryHash(snapshot.library), changes: [], ...(snapshot.bundles ? { bundles: snapshot.bundles } : {}), ...(snapshot.surfaceBundles ? { surfaceBundles: snapshot.surfaceBundles } : {}) } : undefined, [snapshot]);
+  // With no pending operation the working library is the committed one: no change set is applied. Its closing
+  // check is the evaluation's own resolution of the one engine input below, so the library resolves once.
   const workingResult = useMemo(() => {
     if (!snapshot || !changes) return undefined;
-    try { return { library: applyLibraryChange(adapter.catalog, snapshot.library, changes, snapshot.surfaceOptions ? { componentOptions: snapshot.componentOptions, surfaceOptions: snapshot.surfaceOptions } : undefined) }; }
-    catch (error) { return { error: error instanceof Error ? error.message : String(error) }; }
+    const inputFor = (library: CompositeLibraryData): CompositeEngineInput => ({ catalog: adapter.catalog, library, componentOptions: snapshot.componentOptions, surfaceOptions: snapshot.surfaceOptions, fileExists: snapshot.fileExists });
+    try {
+      let checked: CompositeEngineInput | undefined;
+      const library = committedCompositeLibrary(adapter.catalog, snapshot.library, snapshot.surfaceOptions ? { componentOptions: snapshot.componentOptions, surfaceOptions: snapshot.surfaceOptions } : undefined, result => resolveWhole(checked = inputFor(result)));
+      return { library, input: checked ?? inputFor(library) };
+    } catch (error) { return { error: error instanceof Error ? error.message : String(error) }; }
   }, [adapter.catalog, snapshot, changes]);
   const working = workingResult?.library;
   // One input per working library and snapshot, so prepared boards stay stable.
-  const input = useMemo<CompositeEngineInput | undefined>(() => working && snapshot ? { catalog: adapter.catalog, library: working, componentOptions: snapshot.componentOptions, surfaceOptions: snapshot.surfaceOptions, fileExists: snapshot.fileExists } : undefined, [adapter.catalog, working, snapshot]);
+  const input = workingResult?.input;
   // Reference dependencies include host catalog, observations, runtime ports and preview identity.
   const evaluated = useMemo(() => {
     if (workingResult?.error) return { error: workingResult.error };
@@ -104,9 +111,10 @@ export function WholeStudioProvider({ children, ...props }: CompositeStudioProps
 export function useDesignerLayerBoardProjection(): { readonly projection: DesignerLayerBoardProjection; readonly projectionHash: RuntimeDigest } {
   const state = useWholeStudio();
   const values = useStudioSession();
-  // Hash the working library once per working library, not on every render of a projection reader.
-  const working = state?.input?.library;
-  const workingHash = useMemo(() => working ? libraryHash(working) as RuntimeDigest : null, [working]);
+  // Hash the working library once per engine input, not on every render of a projection reader; its kept
+  // resolution already carries that hash, so a resolved input is not hashed again.
+  const engineInput = state?.input;
+  const workingHash = useMemo(() => engineInput ? wholeLibraryHash(engineInput) as RuntimeDigest : null, [engineInput]);
   if (!state) throw new TypeError('Original WholeStudioProvider required');
   const valueLayer = state.layer === 'tokens' || state.layer === 'assets';
   const placements = (valueLayer ? values.activeCatalog.placements : state.contracts.placements).filter(placement => placement.layer === state.layer);
