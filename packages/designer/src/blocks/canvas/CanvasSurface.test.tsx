@@ -279,6 +279,23 @@ describe("canvas surface controls and motion", () => {
     act(() => handler({ matches: false })); fireEvent.keyDown(surface, { key: "+" }); expect(world).not.toHaveClass("transition-transform");
     expect(world.style.transitionDuration).toBe("0s");
   });
+  it("animates a host-driven move with the host's duration and easing, reports its end, and snaps under reduced motion", () => {
+    const onViewportTransitionEnd = vi.fn();
+    const transition = { duration: "var(--ui-duration-default)", easing: "var(--ease-decelerate)" };
+    const { world, rerender, props } = setup({ viewportTransition: transition, onViewportTransitionEnd });
+    expect(world).toHaveClass("transition-transform");
+    expect(world.style.transitionDuration).toBe("var(--ui-duration-default)");
+    expect(world.style.transitionTimingFunction).toBe("var(--ease-decelerate)");
+    fireEvent.transitionEnd(world.firstElementChild ?? world.appendChild(document.createElement("span")));
+    expect(onViewportTransitionEnd).not.toHaveBeenCalled();
+    fireEvent.transitionEnd(world); expect(onViewportTransitionEnd).toHaveBeenCalledTimes(1);
+    rerender(<CanvasSurface {...props} viewportTransition={undefined} />);
+    expect(world).not.toHaveClass("transition-transform"); expect(world.style.transitionDuration).toBe("0s");
+    const handler = media.addEventListener.mock.calls.find(call => call[0] === "change")![1];
+    act(() => handler({ matches: true }));
+    rerender(<CanvasSurface {...props} />);
+    expect(world).not.toHaveClass("transition-transform"); expect(world.style.transitionDuration).toBe("0s");
+  });
   it("respects reduced motion at mount and exposes instructions with a unique id", () => {
     media.matches = true;
     const { surface, world } = setup(); fireEvent.keyDown(surface, { key: "Home" });
