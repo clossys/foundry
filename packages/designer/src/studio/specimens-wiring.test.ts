@@ -40,6 +40,7 @@ const RENDER_FILES = [
   "studio/asset-specimens.tsx",
   "studio/component-specimens.tsx",
   "studio/component-specimen-samples.tsx",
+  "studio/component-specimen-contained.tsx",
   "studio/previews.tsx",
   "studio/frame-preview.tsx",
   "studio/planned-surface-previews.tsx",

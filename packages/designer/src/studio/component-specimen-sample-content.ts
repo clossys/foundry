@@ -125,7 +125,7 @@ export const componentSpecimenSourceSamples = {
   "components/menu/dropdown-menu.tsx#DropdownMenu": d.menu,
   "components/tooltip/tooltip.tsx#Tooltip": d.tooltip,
   "components/date-picker/date-picker.tsx#DatePicker": d.dates.picker,
-  "components/dialog/dialog.tsx#Dialog": { title: d.dialog.title, content: d.dialog.body },
+  "components/dialog/dialog.tsx#Dialog": { trigger: d.dialog.trigger, title: d.dialog.title, content: d.dialog.body },
   "components/keyboard/kbd.tsx#Kbd": { text: d.text.keyboard },
   "components/badge/badge.tsx#Badge": { text: d.text.badge },
   "components/button/button.tsx#Button": { text: d.text.action },

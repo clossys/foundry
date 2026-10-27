@@ -234,7 +234,7 @@ it("draws the shadcn@aria DialogContent open in its cell, without hiding, scroll
   expect(document.activeElement).toBe(outside);
   // Interaction: the cell opens the vendored Dialog itself, the real modal, and Escape closes it again.
   const user = userEvent.setup();
-  await user.click(within(host).getByRole("button", { name: "Open dialog" }));
+  await user.click(within(host).getByRole("button", { name: d.dialog.trigger }));
   const modal = await waitFor(() => {
     const found = document.querySelector<HTMLElement>("[data-slot='dialog-overlay'] [data-slot='dialog-content'] [data-slot='dialog']");
     expect(found).not.toBeNull();
@@ -272,7 +272,7 @@ it("keeps the held-open tooltip specimen from swallowing Escape for the dialog i
   window.removeEventListener("keydown", listen);
   // The real modal opened from the dialog cell closes on Escape.
   const host = container.querySelector<HTMLElement>("[data-specimen-contained-host='dialog']")!;
-  await user.click(within(host).getByRole("button", { name: "Open dialog" }));
+  await user.click(within(host).getByRole("button", { name: d.dialog.trigger }));
   const modal = await waitFor(() => {
     const found = document.querySelector<HTMLElement>("[data-slot='dialog-overlay'] [data-slot='dialog']");
     expect(found).not.toBeNull();

@@ -263,7 +263,7 @@ function sourceSample(key: string, exports: Namespace): ComponentSpecimenSample 
       // The module's own DialogContent is the inner RAC Dialog without ModalOverlay/Modal: it draws open, in place.
       const found = parts("DialogContent", "DialogHeader", "DialogTitle", "DialogDescription"); if (!found) return undefined;
       const [Content, Header, Title, Description] = found as [Renderable, Renderable, Renderable, Renderable];
-      return { props: {}, children: <Header><Title>{s[key].title}</Title><Description>{s[key].content}</Description></Header>, host: containedDialog(Content) };
+      return { props: {}, children: <Header><Title>{s[key].title}</Title><Description>{s[key].content}</Description></Header>, host: containedDialog(Content, s[key].trigger) };
     }
     case "components/banner/alert.tsx#Alert": {
       const found = parts("AlertDescription"); if (!found) return undefined;
