@@ -292,6 +292,14 @@ function sourceSample(key: string, exports: Namespace): ComponentSpecimenSample 
       const { label, items, defaultSelectedKeys } = s[key];
       return { props: { "aria-label": label, defaultSelectedKeys }, children: items.map(item => <Item key={item.id} id={item.id}>{item.label}</Item>) };
     }
+    // shadcn-charts take Recharts rows: one per category, one field per series, drawn as a static picture.
+    case "components/chart-area/chart-area.tsx#ChartArea":
+    case "components/chart-bar/chart-bar.tsx#ChartBar":
+    case "components/chart-line/chart-line.tsx#ChartLine": {
+      const { rows: { categoryKey, frame }, categories, series } = s[key];
+      const data = categories.map((category, index) => ({ [categoryKey]: category, ...Object.fromEntries(series.map(line => [line.name, line.values[index]!])) }));
+      return { props: { data, categoryKey, series: series.map(line => ({ key: line.name, label: line.name })), initialDimension: frame, isAnimationActive: false } };
+    }
     case "components/slider/slider.tsx#Slider": return { props: { "aria-label": s[key].label, defaultValue: s[key].defaultValue } };
     case "components/table/table.tsx#Table": {
       const found = parts("TableHeader", "TableHead", "TableBody", "TableRow", "TableCell"); if (!found) return undefined;

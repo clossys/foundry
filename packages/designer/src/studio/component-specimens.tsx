@@ -201,9 +201,9 @@ export function componentSpecimenPreview(options: ComponentSpecimenOptions): Com
     const render = options.specimens && Object.hasOwn(options.specimens, leaf) ? options.specimens[leaf] : undefined;
     const component = profile.components.components[leaf]!;
     // Designer samples (and the reasons sample data cannot draw an export) cover Foundry's own package exports and
-    // the vendored shadcn@aria source, keyed by its `impl.entry#export`. The binding names the library a component
+    // the vendored shadcn@aria and shadcn-charts source, keyed by its `impl.entry#export`. The binding names the library a component
     // came from; resolve() stamps the adopter's id on descriptor.source. A composed leaf is Foundry's rule source.
-    const samples = !render && (binding.source === "foundry" && component.impl.kind === "package" || (binding.source === "shadcn@aria" || component.origin.kind === "composed") && component.impl.kind === "source");
+    const samples = !render && (binding.source === "foundry" && component.impl.kind === "package" || (binding.source === "shadcn@aria" || binding.source === "shadcn-charts" || component.origin.kind === "composed") && component.impl.kind === "source");
     const keyOf = (specifier: string, exportName: string) => component.impl.kind === "package" ? sampleKey(specifier, exportName) : `${specifier}#${exportName}`;
     const sample = samples ? componentSpecimenSample(keyOf(binding.specifier, binding.exportName), binding.Component, binding.exports) : undefined;
     // A row that would get the leaf label as children it cannot take is declared unavailable instead of thrown.

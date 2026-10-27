@@ -139,4 +139,7 @@ export const componentSpecimenSourceSamples = {
   "components/skeleton/skeleton.tsx#Skeleton": { "aria-label": d.skeleton["aria-label"] },
   "components/toggle-group/toggle-group.tsx#ToggleGroup": d.toggles,
   "components/separator/separator.tsx#Separator": d.separator,
+  "components/chart-area/chart-area.tsx#ChartArea": { rows: d.charts.rows, categories: d.charts.area.x, series: d.charts.area.series },
+  "components/chart-bar/chart-bar.tsx#ChartBar": { rows: d.charts.rows, categories: d.charts.bar.categories, series: d.charts.bar.series },
+  "components/chart-line/chart-line.tsx#ChartLine": { rows: d.charts.rows, categories: d.charts.line.x, series: d.charts.line.series },
 } as const;
