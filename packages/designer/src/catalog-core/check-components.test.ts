@@ -411,16 +411,26 @@ describe("qualification rule groups (QUAL-RECOUNT G1, G2, G7a, G11)", () => {
   }
   it("check-components K4 ignores utility names inside custom properties and reads v4 arbitrary forms whole", () => {
     const profile = hairline();
-    append(profile, ' const cls = "border-(length:--ui-border-hairline) data-[open]:border-t-(length:--ui-border-hairline) [.border-b]:rounded-l-(--ui-border-hairline) scroll-py-1";');
+    append(profile, ' const cls = "border-(length:--ui-border-hairline) data-[open]:border-t-(length:--ui-border-hairline) [.border-b]:rounded-l-(--ui-border-hairline)";');
     expect(k4(profile)).toEqual([]);
     // The property inside a whole v4 form is still judged, by the unbound-property rule, never as a utility.
     const unbound = fixture(); append(unbound, ' const cls = "border-t-(length:--ui-border-hairline)";');
     expect(k4(unbound)).toEqual(["Unbound CSS property --ui-border-hairline in button.tsx"]);
     // Must still flag: real named-value utilities, behind variants, negation and important.
-    for (const [cls, utility] of [["h-3", "h-3"], ["border-2", "border-2"], ["hover:border-2", "border-2"], ["[&>svg]:h-3", "h-3"], ["-mt-2", "mt-2"], ["!h-3", "h-3"], ["h-3!", "h-3"]] as const) {
+    for (const [cls, utility] of [["h-3", "h-3"], ["border-2", "border-2"], ["hover:border-2", "border-2"], ["[&>svg]:h-3", "h-3"], ["-mt-2", "mt-2"], ["!h-3", "h-3"], ["h-3!", "h-3"], ["scroll-py-1", "scroll-py-1"]] as const) {
       const flagged = hairline(); append(flagged, ` const cls = "border-(length:--ui-border-hairline) ${cls}";`);
       expect(k4(flagged), cls).toEqual([`Utility ${utility} has no bound consumer token`]);
     }
+  });
+  it("check-components K4 judges scroll padding and margin utilities as spacing", () => {
+    // Must flag: scroll-padding and scroll-margin carry a spacing value, as in the shipped combo-box, menu and select sources.
+    for (const [cls, utility] of [["scroll-py-1", "scroll-py-1"], ["scroll-my-1", "scroll-my-1"], ["scroll-px-1", "scroll-px-1"], ["scroll-p-2", "scroll-p-2"], ["-scroll-mt-2", "scroll-mt-2"], ["data-[open]:scroll-pb-4", "scroll-pb-4"]] as const) {
+      const flagged = fixture(); append(flagged, ` const cls = "${cls}";`);
+      expect(k4(flagged), cls).toEqual([`Utility ${utility} has no bound consumer token`]);
+    }
+    // Value-free: zero carries no spacing value. Scroll behaviour and snap utilities are outside the family.
+    const free = fixture(); append(free, ' const cls = "scroll-p-0 scroll-my-0 scroll-px-0 scroll-smooth scroll-auto";');
+    expect(k4(free)).toEqual([]);
   });
   it("check-components K4 exempts value-free utilities and still flags h-3", () => {
     const free = ["w-full", "w-fit", "h-auto", "min-w-0", "max-w-none", "p-0", "pt-0", "m-0", "ml-auto", "-mx-0", "gap-0", "rounded-full", "rounded-none", "rounded-t-none", "border-0", "border-b-0",

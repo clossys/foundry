@@ -207,13 +207,14 @@ function codeText(source: string): string {
 function imports(source: string): string[] {
   return [...source.matchAll(/(?:\bfrom\s*|\bimport\s*|\bimport\s*\(\s*|\brequire\s*\(\s*)["']([^"']+)["']/g)].map(match => match[1]!);
 }
-/** K4 utility families; each named value needs a bound consumer token. */
-const UTILITY = /^(?:h|w|min-h|min-w|max-h|max-w|p[trblxy]?|m[trblxy]?|gap|rounded|text|bg|border)-[\w./-]+/;
+/** K4 utility families; each named value needs a bound consumer token. Scroll padding and margin are spacing. */
+const UTILITY = /^(?:h|w|min-h|min-w|max-h|max-w|p[trblxy]?|m[trblxy]?|scroll-[pm][trblxy]?|gap|rounded|text|bg|border)-[\w./-]+/;
 /**
  * K4 utilities, read from whole class tokens (split on whitespace and quotes). Variants are stripped at the
  * last top-level `:`, then a utility is matched only at the start of what remains, so a family name inside a
  * `--custom-property`, a `(length:--…)` argument, an arbitrary variant (`[.border-b]:`) or a longer utility
- * (`scroll-py-1`) is never a match. A Tailwind v4 `-(…)` or `-[…]` value is read whole, never truncated, and is
+ * (`outline-border-focus`) is never a match; `scroll-p*`/`scroll-m*` are their own spacing family.
+ * A Tailwind v4 `-(…)` or `-[…]` value is read whole, never truncated, and is
  * not a named value: its contents are judged by the unbound-property and literal rules, exactly as `border-(…)`
  * always was, so `border-t-(…)` no longer fails as a truncated `border-t-`.
  */
@@ -239,7 +240,7 @@ function classUtilities(code: string): string[] {
  */
 const VALUE_FREE_UTILITIES: readonly RegExp[] = [
   /^(?:min-|max-)?[hw]-(?:0|auto|full|fit|min|max)$/, /^max-[hw]-none$/,
-  /^[pm][trblxy]?-0$/, /^m[trblxy]?-auto$/, /^gap(?:-[xy])?-0$/,
+  /^[pm][trblxy]?-0$/, /^scroll-[pm][trblxy]?-0$/, /^m[trblxy]?-auto$/, /^gap(?:-[xy])?-0$/,
   /^rounded(?:-(?:[trblse]|[tb][lr]|[se][se]))?-(?:none|full)$/,
   /^border(?:-[xytrblse])?-(?:0|transparent|current|inherit)$/, /^border-(?:solid|dashed|dotted|double|hidden|none|collapse|separate)$/,
   /^bg-(?:transparent|current|inherit|none)$/, /^bg-(?:clip-(?:border|padding|content|text)|origin-(?:border|padding|content))$/,
