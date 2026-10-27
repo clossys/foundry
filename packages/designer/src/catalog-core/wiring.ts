@@ -2,7 +2,8 @@
  * Static wiring checks for sources above Components (Sections, Frames, Pages): WL2 direct
  * token/asset reads without a current wiring exception, WL3 headless-engine imports, WL4 raw
  * values, WL8 generated-artifact drift, WL9 invalid wiring exceptions and WL10 route modules
- * that render anything but the runtime assembly. WL1, WL5, WL6 and WL7 are runtime (DOM) codes
+ * that render anything but the runtime assembly (a Publisher-checked registered nonvisual provider
+ * is admitted only at its exact emitted mount). WL1, WL5, WL6 and WL7 are runtime (DOM) codes
  * and belong to the provenance scan. Pure: no I/O; the clock is read only when `now` is omitted.
  * Observations are a static lower bound, never a runtime conformance claim.
  */
@@ -31,7 +32,27 @@ export interface WiringSource { path: string; content: string; layer: WiringLaye
 export interface WiringSurfaceFill { id: string; slot: string; sourceFiles: readonly string[]; scannedReads: { tokens: readonly string[]; assets: readonly string[] }; scannedTokenMembers: readonly string[] }
 /** One `--check` runner row: the committed bytes and a fresh regeneration (absent: no generator). */
 export interface WiringGeneratedArtifact { path: string; committed?: string; regenerated?: string }
-export interface WiringRoutes { modules: readonly { path: string; content: string }[]; assembly: readonly { module: string; export: string }[] }
+/** Publisher's registered-route check output for one nonvisual provider: the exact emitted route
+ * bytes and the exact provider bytes its provider proof classified nonvisual, bound by `digest`.
+ * Integrity-bound data from that check, not a signature; Designer never runs the provider proof. */
+export interface WiringProviderProof {
+  kind: "publisher.registered-provider-check";
+  version: 1;
+  route: { path: string; hash: string };
+  provider: { file: string; export: string; hash: string };
+  /** The registered original-provider id the check admitted. */
+  mount: string;
+  digest: string;
+}
+/** A checked registered nonvisual provider. WL10 admits it only at its exact emitted mount in
+ * `route`: wrapping the runtime assembly entry alone. `module` is the specifier `route` imports. */
+export interface WiringCheckedProvider { route: string; module: string; export: string; proof: WiringProviderProof }
+export interface WiringRoutes {
+  modules: readonly { path: string; content: string }[];
+  assembly: readonly { module: string; export: string }[];
+  /** Publisher-issued provider evidence; a bare identity without its proof admits nothing. */
+  providers?: readonly WiringCheckedProvider[];
+}
 export interface WiringInput {
   /** Files above Components. A file under a registered component leaf's own `components/<leaf>/` directory is exempt. */
   sources: readonly WiringSource[];
@@ -174,6 +195,86 @@ function rawValues(source: WiringSource): WiringFinding[] {
   return findings;
 }
 
+const IDENT = "[A-Za-z_$][\\w$]*";
+const SHA256 = /^sha256:[0-9a-f]{64}$/;
+const PROVIDER_PROOF_KIND = "publisher.registered-provider-check";
+const escapeRegExp = (value: string): string => value.replace(/[.*+?^${}()|[\]\\/]/g, "\\$&");
+const record = (value: unknown, keys: readonly string[]): value is Record<string, unknown> =>
+  typeof value === "object" && value !== null && !Array.isArray(value) && Object.keys(value).sort().join(",") === [...keys].sort().join(",");
+const text = (value: unknown): value is string => typeof value === "string" && value.length > 0;
+/** The digest Publisher binds over a proof's fields, in this order. */
+const providerProofDigest = (proof: WiringProviderProof): string =>
+  elementHash(JSON.stringify([proof.kind, proof.version, proof.route.path, proof.route.hash, proof.provider.file, proof.provider.export, proof.provider.hash, proof.mount]));
+/** A relative specifier resolved against the importing file's consumer-relative path. */
+function relativeTarget(from: string, specifier: string): string | undefined {
+  if (!/^\.\.?\//.test(specifier)) return undefined;
+  const parts = from.split("/"); parts.pop();
+  for (const part of specifier.split("/")) {
+    if (part === ".") continue;
+    if (part === "..") { if (!parts.length || parts.at(-1) === "..") return undefined; parts.pop(); continue; }
+    if (!part) return undefined;
+    parts.push(part);
+  }
+  return parts.join("/");
+}
+/** Whether `code` binds `local` to `module#exportName` through one plain import clause. */
+function importsLocal(code: string, local: string, module: string, exportName: string): boolean {
+  for (const match of code.matchAll(/\bimport\s+(?!type\b)([^;"'`]*?)\s*from\s*(["'])([^"'\n]+)\2/g)) {
+    if (match[3] !== module) continue;
+    const clause = match[1]!, named = /\{([^}]*)\}/.exec(clause), primary = /^\s*([A-Za-z_$][\w$]*)\s*(?:,|$)/.exec(clause);
+    if (exportName === "default" && primary?.[1] === local) return true;
+    for (const part of named?.[1]?.split(",") ?? []) {
+      const binding = /^\s*([A-Za-z_$][\w$]*)(?:\s+as\s+([A-Za-z_$][\w$]*))?\s*$/.exec(part);
+      if (binding && binding[1] === exportName && (binding[2] ?? binding[1]) === local) return true;
+    }
+  }
+  return false;
+}
+
+/** WL10 admission for one checked provider claim on one route module: the Publisher proof for
+ * these exact route bytes, the proved provider identity as the route imports it, and the exact
+ * emitted mount (the provider, with no props, wraps the assembly entry alone as the default
+ * export's whole return). Any other shape is refused, never partly admitted. */
+function checkedProviderMount(route: { path: string; content: string }, claim: unknown, assembly: WiringRoutes["assembly"]): { admitted: string } | { refused: string } {
+  if (!record(claim, ["route", "module", "export", "proof"]) || !text(claim.route) || !text(claim.module) || !text(claim.export) || !(claim.export === "default" || new RegExp(`^${IDENT}$`).test(claim.export)))
+    return { refused: "evidence is not { route, module, export, proof }" };
+  // Provenance: only the Publisher check's proof, bound to these exact route bytes, admits anything.
+  const proof = claim.proof;
+  if (!record(proof, ["kind", "version", "route", "provider", "mount", "digest"]) || proof.kind !== PROVIDER_PROOF_KIND || proof.version !== 1 || !text(proof.mount) || !text(proof.digest)
+    || !record(proof.route, ["path", "hash"]) || !text(proof.route.path) || !text(proof.route.hash) || !SHA256.test(proof.route.hash)
+    || !record(proof.provider, ["file", "export", "hash"]) || !text(proof.provider.file) || !text(proof.provider.export) || !text(proof.provider.hash) || !SHA256.test(proof.provider.hash))
+    return { refused: "no Publisher registered-provider proof" };
+  if (proof.digest !== providerProofDigest(proof as unknown as WiringProviderProof)) return { refused: "the proof digest does not match its fields" };
+  if (claim.route !== route.path || proof.route.path !== route.path || proof.route.hash !== elementHash(route.content)) return { refused: "the proof does not bind this route module's exact bytes" };
+  // Identity: the claimed module and export are the proved provider, as this route imports it.
+  if (claim.export !== proof.provider.export || relativeTarget(route.path, claim.module) !== proof.provider.file) return { refused: "the claimed module or export is not the proved provider" };
+  // Raw text must spell every name the module binds (no parser ships at runtime): an escape
+  // (a backslash-u code point spelling RegisteredProvider) or direct eval could bind a name no read below sees.
+  if (/\\u/.test(route.content)) return { refused: "the route module spells a name through a \\u escape" };
+  const code = mask(route.content, false, false), bare = mask(route.content, false, true);
+  if (/(?<![\w$])eval(?![\w$])/.test(code)) return { refused: "the route module calls eval" };
+  // Exactly one import from the provider module, binding exactly the proved export.
+  const specifier = escapeRegExp(claim.module);
+  const statements = [...code.matchAll(new RegExp(`\\bimport\\b[^;"'\`]*?\\bfrom\\s*(["'])${specifier}\\1\\s*;?`, "g"))];
+  const clause = claim.export === "default" ? `\\s+(${IDENT})\\s+` : `\\s*\\{\\s*${escapeRegExp(claim.export)}(?:\\s+as\\s+(${IDENT}))?\\s*\\}\\s*`;
+  const binding = statements.length === 1 ? new RegExp(`^import${clause}from\\s*(["'])${specifier}\\2\\s*;?$`).exec(statements[0]![0]) : null;
+  if (!binding) return { refused: "the route does not import the proved provider exactly once" };
+  const local = binding[1] ?? claim.export, name = escapeRegExp(local);
+  // Used only by the mount: its import binding, its opening tag and its closing tag.
+  if ((bare.match(new RegExp(`(?<![\\w$])${name}(?![\\w$])`, "g")) ?? []).length !== 3) return { refused: `${local} is used outside its one mount` };
+  // The exact emitted module: an optional "use client" directive and imports, then only the default
+  // export, whose whole body returns <Provider> (no props) around the one assembly entry.
+  const leadingImport = /^\s*import\b[^;"'`]*?(["'])[^"'\n]+\1\s*;?/;
+  let rest = code.replace(/^\s*(["'])use client\1\s*;?/, "");
+  while (leadingImport.test(rest)) rest = rest.replace(leadingImport, "");
+  const entry = `<(${IDENT})(?:\\s+${IDENT}=(?:\\{\\s*${IDENT}\\s*\\}|"[^"\\n]*"))*\\s*\\/>`;
+  const shape = new RegExp(`^\\s*export\\s+default\\s+function(?:\\s+${IDENT})?\\s*\\(\\s*\\)\\s*\\{\\s*return\\s*<${name}>${entry}<\\/${name}>\\s*;?\\s*\\}\\s*$`).exec(rest);
+  if (!shape) return { refused: `the module is not imports plus a default export whose whole return is ${local}, with no props, around one assembly entry (no siblings, nesting or other code)` };
+  const tag = shape[1]!;
+  if (!assembly.some(row => importsLocal(code, tag, row.module, row.export))) return { refused: `<${tag}> inside ${local} is not the runtime assembly entry` };
+  return { admitted: `${route.path}:${claim.module}#${claim.export}` };
+}
+
 /** WL9: validates a wiring-exceptions document. Liveness reuses DF6 semantics: a changed hash or a past expiry is dead.
  * JSX files anchor an element (`file#tag@hash12`); any file may anchor itself whole (`file#file@hash12`, hash of the file). */
 export function readWiringExceptions(document: unknown, files: readonly { path: string; content: string }[], now?: string): { exceptions: { row: WiringException; state: WiringExceptionState }[]; findings: WiringFinding[] } {
@@ -249,12 +350,24 @@ export function checkWiring(input: WiringInput): WiringResult {
   if (input.routes) {
     const assemblyModules = new Set(input.routes.assembly.map(row => row.module));
     if (!input.routes.assembly.length) findings.push({ code: "WL10", severity: "error", file: "", line: 0, subject: "routes", evidence: "No runtime assembly identity supplied; route modules cannot be checked." });
+    const claims: readonly unknown[] = input.routes.providers ?? [], claimed = (claim: unknown): unknown => (claim as { route?: unknown } | null)?.route;
+    for (const claim of claims) if (!input.routes.modules.some(route => route.path === claimed(claim)))
+      findings.push({ code: "WL10", severity: "error", file: String(claimed(claim) ?? ""), line: 1, subject: "routes", evidence: "Checked provider evidence names no supplied route module; nothing is admitted." });
     for (const route of input.routes.modules) {
       const add = (line: number, evidence: string) => findings.push({ code: "WL10", severity: "error", file: route.path, line, subject: route.path, evidence });
       for (const row of importScan(route.path, route.content)) if (!assemblyModules.has(row.module) && (VISUAL_MODULE.test(row.module) || headless(row.module)))
         add(row.line, `Route module imports ${row.module} instead of only the runtime assembly`);
-      // The shared dogfood JSX walk; only the supplied assembly identities resolve, so every other element is reported.
-      const report = runDogfood({ files: [{ file: route.path, content: route.content }], resolvedImports: Object.fromEntries(input.routes.assembly.map(row => [`${route.path}:${row.module}#${row.export}`, "pages.runtime-assembly"])) });
+      const resolvedImports: Record<string, string> = Object.fromEntries(input.routes.assembly.map(row => [`${route.path}:${row.module}#${row.export}`, "pages.runtime-assembly"]));
+      // A checked registered nonvisual provider resolves only at its exact emitted mount; a refused claim admits nothing.
+      const mine = claims.filter(claim => claimed(claim) === route.path);
+      if (mine.length > 1) add(1, "More than one checked provider claims this route module; none is admitted.");
+      else if (mine.length === 1) {
+        const verdict = checkedProviderMount(route, mine[0], input.routes.assembly);
+        if ("admitted" in verdict) resolvedImports[verdict.admitted] = "pages.registered-provider";
+        else add(1, `Checked provider is not admitted: ${verdict.refused}`);
+      }
+      // The shared dogfood JSX walk; only the supplied assembly identities (and an admitted provider mount) resolve, so every other element is reported.
+      const report = runDogfood({ files: [{ file: route.path, content: route.content }], resolvedImports });
       const seen = new Set<string>();
       for (const row of report.findings) if (["DF1", "DF2", "DF3", "DF5"].includes(row.code) && !seen.has(row.elementId)) { seen.add(row.elementId); add(row.line, `Route module renders <${row.tag}> outside the runtime assembly`); }
       const code = mask(route.content, false, true);

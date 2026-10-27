@@ -333,7 +333,7 @@ test("the repository omission matrix is closed against every current publishable
 
 const addedRuntimeSpecifiers = {
   "@clossys/designer": ["catalog", "catalog/server", "studio", "studio/queries", "studio/state", "catalog-bundles", "frames"],
-  "@clossys/publisher": ["web/registered-route", "web/registered-route-check"],
+  "@clossys/publisher": ["web/registered-route", "web/registered-route-check", "web/registered-route-wiring"],
 };
 test("each added runtime export is required in every optional-peer row", async () => {
   const packages = await discoverPublishablePackages(process.cwd());
@@ -426,31 +426,37 @@ test("Publisher's optional-peer matrix binds both default and react-server web o
     ...expected([], { default: "rejects", "react-server": "imports" }, "rejects", "rejects"),
     "@clossys/publisher/web/registered-route": "rejects",
     "@clossys/publisher/web/registered-route-check": { browser: "refuses", default: "imports" },
+    "@clossys/publisher/web/registered-route-wiring": { browser: "refuses", default: "imports" },
   });
   assert.deepEqual(rows.react, {
     ...expected(["@clossys/publisher/document", "@clossys/publisher/testing"], { default: "rejects", "react-server": "rejects" }, "rejects", "rejects"),
     "@clossys/publisher/web/registered-route": "rejects",
     "@clossys/publisher/web/registered-route-check": { browser: "refuses", default: "imports" },
+    "@clossys/publisher/web/registered-route-wiring": { browser: "refuses", default: "imports" },
   });
   assert.deepEqual(rows["react-aria-components"], {
     ...expected([], { default: "rejects", "react-server": "imports" }, "rejects", "rejects"),
     "@clossys/publisher/web/registered-route": "rejects",
     "@clossys/publisher/web/registered-route-check": { browser: "refuses", default: "imports" },
+    "@clossys/publisher/web/registered-route-wiring": { browser: "refuses", default: "imports" },
   });
   assert.deepEqual(rows["react-dom"], {
     ...expected(["@clossys/publisher/testing"], { default: "rejects", "react-server": "imports" }, "rejects", "rejects"),
     "@clossys/publisher/web/registered-route": "rejects",
     "@clossys/publisher/web/registered-route-check": { browser: "refuses", default: "imports" },
+    "@clossys/publisher/web/registered-route-wiring": { browser: "refuses", default: "imports" },
   });
   assert.deepEqual(rows["tailwind-merge"], {
     ...expected([], { default: "imports", "react-server": "imports" }),
     "@clossys/publisher/web/registered-route": "imports",
     "@clossys/publisher/web/registered-route-check": { browser: "refuses", default: "imports" },
+    "@clossys/publisher/web/registered-route-wiring": { browser: "refuses", default: "imports" },
   });
   assert.deepEqual(rows.tailwindcss, {
     ...expected(),
     "@clossys/publisher/web/registered-route": "imports",
     "@clossys/publisher/web/registered-route-check": { browser: "refuses", default: "imports" },
+    "@clossys/publisher/web/registered-route-wiring": { browser: "refuses", default: "imports" },
   });
 });
 
