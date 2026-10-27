@@ -8,6 +8,7 @@ import * as charts from "../charts/index.js";
 import * as shell from "../shell/index.js";
 import { loadBuildCatalog } from "../catalog-core/index.js";
 import { loadCatalogBundles } from "../catalog-bundles.js";
+import { loadComponentCompositionRules } from "../catalog-core/component-compositions.js";
 import type { CompositeResolved, ResolvedComponent } from "../catalog-core/index.js";
 import { componentSpecimenPreview } from "./component-specimens.js";
 
@@ -62,7 +63,7 @@ function vendoredModule(files: readonly { path: string; content: string }[], ent
           if (!args.path.startsWith(".")) return { path: args.path, external: true };
           const path = find(posix.normalize(posix.join(posix.dirname(args.importer), args.path)));
           if (path) return { path, namespace: "vendored" };
-          const leaf = /(?:^|\\/)components\\/([a-z][a-z0-9-]*)\\/index\\.js$/.exec(posix.join(posix.dirname(args.importer), args.path))?.[1];
+          const leaf = /(?:^|\\/)components\\/([a-z][a-z0-9-]*)\\/index(?:\\.js)?$/.exec(posix.join(posix.dirname(args.importer), args.path))?.[1];
           return leaf ? { path: "leaf:" + leaf, external: true } : { errors: [{ text: "unresolved " + args.path }] };
         });
         builder.onLoad({ filter: /.*/, namespace: "vendored" }, args => ({ contents: files.get(args.path), loader: args.path.endsWith(".tsx") ? "tsx" : "ts" }));
@@ -72,7 +73,7 @@ function vendoredModule(files: readonly { path: string; content: string }[], ent
   `], { input: JSON.stringify({ files, entry }), encoding: "utf8" });
   const module = { exports: {} as Record<string, unknown> };
   const host = createRequire(import.meta.url);
-  const require = (specifier: string) => specifier.startsWith("leaf:") ? dependency(specifier.slice(5)) : host(specifier);
+  const require = (specifier: string) => specifier.startsWith("leaf:") ? dependency(specifier.slice(5)) : specifier === "@clossys/designer/components" ? components : host(specifier);
   new Function("require", "exports", "module", bundled)(require, module.exports, module);
   return module.exports;
 }
@@ -139,5 +140,47 @@ it("draws the non-modal shadcn@aria overlays open in the browser, inside the spe
     expect(container.querySelector("[data-specimen-error]"), leaf).toBeNull();
     cleanup();
   }
+  errors.mockRestore();
+}, 120_000);
+
+/** The composed date-picker as a consumer's library persists it: the rule's own source, materialized with `.js` specifiers. */
+function persistedDatePicker() {
+  const rule = loadComponentCompositionRules().find(candidate => candidate.id === "compose:date-picker@1")!;
+  const files = [...rule.files.map(file => ({ path: file.path, content: file.content.replace(/(from\s*"\.\.?\/[^"]+?)"/g, "$1.js\"") })), { path: "adapters/glyphs.ts", content: "export const glyphs = { \"assets.icon-date\": [] };" }];
+  const entry = (rule.template.impl as { entry: string }).entry;
+  const component = { slot: rule.slot, originKind: "composed", origin: { kind: "composed", rule: rule.id, reads: rule.inputs, inputsHash: "persisted" }, impl: rule.template.impl, propMap: rule.template.propMap, reads: { tokens: {}, assets: ["assets.icon-date"], components: rule.inputs }, descriptor: { ...rule.template, source: "consumer-app" } } as unknown as ResolvedComponent;
+  return { modules: { [entry]: vendoredModule(files, entry, () => components) }, profile: { selectionHash: "selection-date-picker", components: { components: { [rule.slot]: component } } } as unknown as CompositeResolved };
+}
+
+it("draws the persisted composed date-picker in the browser from its designer sample, with no string child", () => {
+  const errors = vi.spyOn(console, "error").mockImplementation(() => {});
+  const { modules, profile } = persistedDatePicker();
+  const specimens = componentSpecimenPreview({ modules: { ...hostModules, ...modules } });
+  const { container } = render(<>{specimens.preview("components.date-picker", profile)}</>);
+  expect(container.querySelector("[data-specimen-error]")).toBeNull();
+  expect(container.querySelector("[data-specimen-unavailable]")).toBeNull();
+  expect(within(container).getAllByRole("group").length).toBeGreaterThan(0);
+  expect(within(container).getByText("Due date")).toBeTruthy();
+  cleanup();
+  errors.mockRestore();
+}, 120_000);
+
+it("draws the persisted shadcn@aria table in the browser from its own vendored parts", () => {
+  const errors = vi.spyOn(console, "error").mockImplementation(() => {});
+  const { leaves, modules } = adoptedShadcnLeaves();
+  const specimens = componentSpecimenPreview({ modules: { ...hostModules, ...modules } });
+  const { profile } = leaves.find(entry => entry.leaf === "components.table")!;
+  const { container } = render(<>{specimens.preview("components.table", profile)}</>);
+  expect(container.querySelector("[data-specimen-error]")).toBeNull();
+  const grid = within(container).getByRole("grid", { name: "Recent orders" });
+  expect(within(grid).getByText("Order 1001")).toBeTruthy();
+  cleanup();
+  // With no sample for its library, a collection-rooted leaf is declared unavailable, never handed its label as children.
+  const unsampled = structuredClone(profile) as unknown as { components: { components: Record<string, { origin: { source: string } }> } };
+  unsampled.components.components["components.table"]!.origin.source = "another-library";
+  const fallback = render(<>{specimens.preview("components.table", unsampled as unknown as CompositeResolved)}</>);
+  expect(fallback.container.querySelector("[data-specimen-error]")).toBeNull();
+  expect(fallback.container.querySelector("[data-specimen-unavailable]")?.getAttribute("data-specimen-unavailable")).toBe("needs-sample-content");
+  cleanup();
   errors.mockRestore();
 }, 120_000);

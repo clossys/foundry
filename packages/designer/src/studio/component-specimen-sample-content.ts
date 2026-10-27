@@ -107,4 +107,5 @@ export const componentSpecimenSourceSamples = {
   "components/popover/popover.tsx#Popover": { trigger: "Open popover", title: "Popover title", content: "Popover content" },
   "components/menu/dropdown-menu.tsx#DropdownMenu": { label: "Actions", items: [{ id: "edit", label: "Edit item" }, { id: "archive", label: "Archive item" }] },
   "components/tooltip/tooltip.tsx#Tooltip": { trigger: "Show tooltip", content: "Tooltip content" },
+  "components/date-picker/date-picker.tsx#DatePicker": { label: "Due date", triggerLabel: "Choose date" },
 } as const;

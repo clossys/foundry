@@ -122,6 +122,10 @@ function defaultSpecimen(binding: ComponentSpecimenBinding, sample: ComponentSpe
   </div>; });
 }
 
+/** RAC roots whose children are a collection, or (the composed date pickers) a render function: never handed the leaf label. */
+const STRUCTURED_CHILDREN = new Set(["Table", "GridList", "ListBox", "Menu", "Tree", "Breadcrumbs", "DatePicker", "DateRangePicker"]);
+const structuredChildren = (root: string | undefined) => root?.startsWith("rac:") === true && root.slice(4).split("+").some(name => STRUCTURED_CHILDREN.has(name));
+
 /** `@scope/name/charts` is `./charts`; a sample key is the export address a Foundry fill pins (`./charts#BarChart`). */
 const sampleKey = (specifier: string, exportName: string) => {
   const parts = specifier.split("/");
@@ -178,11 +182,14 @@ export function componentSpecimenPreview(options: ComponentSpecimenOptions): Com
     const component = profile.components.components[leaf]!;
     // Designer samples (and the reasons sample data cannot draw an export) cover Foundry's own package exports and
     // the vendored shadcn@aria source, keyed by its `impl.entry#export`. The binding names the library a component
-    // came from; resolve() stamps the adopter's id on descriptor.source.
-    const samples = !render && (binding.source === "foundry" && component.impl.kind === "package" || binding.source === "shadcn@aria" && component.impl.kind === "source");
+    // came from; resolve() stamps the adopter's id on descriptor.source. A composed leaf is Foundry's rule source.
+    const samples = !render && (binding.source === "foundry" && component.impl.kind === "package" || (binding.source === "shadcn@aria" || component.origin.kind === "composed") && component.impl.kind === "source");
     const keyOf = (specifier: string, exportName: string) => component.impl.kind === "package" ? sampleKey(specifier, exportName) : `${specifier}#${exportName}`;
     const sample = samples ? componentSpecimenSample(keyOf(binding.specifier, binding.exportName), binding.Component, binding.exports) : undefined;
-    const unavailableOf = (row: SpecimenRow) => samples ? componentSpecimenUnavailableReason(keyOf(row.specifier, row.exportName)) : undefined;
+    // A row that would get the leaf label as children it cannot take is declared unavailable instead of thrown.
+    const structured = structuredChildren(component.descriptor.root);
+    const unavailableOf = (row: SpecimenRow) => (samples ? componentSpecimenUnavailableReason(keyOf(row.specifier, row.exportName)) : undefined)
+      ?? (structured && !(sample && row.Component === binding.Component) ? "needs-sample-content" : undefined);
     const rows = render ? [] : specimenRows(binding);
     const unavailable = rows.map(unavailableOf).filter(reason => reason !== undefined);
     const total = render ? 1 : rows.length - unavailable.length;

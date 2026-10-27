@@ -10407,7 +10407,11 @@ its own, so without a host specimen its cell reads unavailable with
 A logo's `content.lockup` member is drawn by the shell `Brandmark`, which needs
 the host's own mark asset and wordmark; without a host specimen that member is
 marked `data-specimen-unavailable="needs-brand-asset"` and the logo's other
-specimens draw.
+specimens draw. A component whose children are a collection (a table, grid
+list, list box, menu, tree or breadcrumbs) or a render function (the composed
+date pickers) is never handed its leaf label as children: without sample
+content or a host specimen, it is marked
+`data-specimen-unavailable="needs-sample-content"` instead of throwing.
 
 ### Consumer runtime ports and responsive assembly evidence
 

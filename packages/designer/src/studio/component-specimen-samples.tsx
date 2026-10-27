@@ -157,6 +157,17 @@ function sourceSample(key: string, exports: Namespace): ComponentSpecimenSample 
       return { props: {}, children: content, host: specimen => <OverlayHost>{container => <Trigger isOpen><TriggerButton>{trigger}</TriggerButton>{cloneElement(specimen as ReactElement<Record<string, unknown>>, { UNSTABLE_portalContainer: container })}</Trigger>}</OverlayHost> };
     }
     case "components/slider/slider.tsx#Slider": return { props: { "aria-label": s[key].label, defaultValue: s[key].defaultValue } };
+    case "components/table/table.tsx#Table": {
+      const found = parts("TableHeader", "TableHead", "TableBody", "TableRow", "TableCell"); if (!found) return undefined;
+      const [Header, Head, Body, Row, Cell] = found as [Renderable, Renderable, Renderable, Renderable, Renderable];
+      const { label, columns, rows } = componentSpecimenTable;
+      return { props: { "aria-label": label }, children: [
+        <Header key="header">{columns.map((column, index) => <Head key={column.id} id={column.id} isRowHeader={index === 0}>{column.label}</Head>)}</Header>,
+        <Body key="body">{rows.map(row => <Row key={row.id} id={row.id}>{columns.map(column => <Cell key={column.id}>{row[column.id]}</Cell>)}</Row>)}</Body>,
+      ] };
+    }
+    // The composed wrapper calls a render-function child, so it draws its own default content from its naming props alone.
+    case "components/date-picker/date-picker.tsx#DatePicker": return { props: { label: s[key].label, triggerLabel: s[key].triggerLabel } };
     default: return undefined;
   }
 }
