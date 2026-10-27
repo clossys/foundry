@@ -71,6 +71,14 @@ describe("derived surface dogfood", () => {
     expect(raw.findings).toContainEqual(expect.objectContaining({ code: "DF1", tag: "button", file: "publisher/src/web/View.tsx" }));
     expect(raw.findings).toContainEqual(expect.objectContaining({ code: "DF2", tag: "span", file: "publisher/src/web/View.tsx" }));
   });
+  it("accepts only observed JSON terminals in a public view's source closure", () => {
+    const original = observedView('import {Card} from "@clossys/designer/components";import copy from "./copy.json";export function View(){return <Card>{copy.title}</Card>;}');
+    const fixture: DogfoodInput = { ...original, data: ["publisher/src/web/copy.json"], consumerBoundary: { ...original.consumerBoundary!, sourceImports: { ...original.consumerBoundary!.sourceImports, "publisher/src/web/View.tsx:./copy.json": "publisher/src/web/copy.json" } } };
+    expect(runDogfood(fixture).findings.filter(row => row.code === "DF5")).toEqual([]);
+    for (const data of [[], ["unobserved.json"], ["publisher/src/web/copy.json", "publisher/src/web/copy.json"], ["publisher/src/web/View.tsx"]]) expect(runDogfood({ ...fixture, data }).findings).toContainEqual(expect.objectContaining({ code: "DF5", tag: "Published" }));
+    const missingSource: DogfoodInput = { ...fixture, data: ["publisher/src/web/View.tsx"], files: fixture.files.filter(row => !row.file.endsWith("View.tsx")) };
+    expect(runDogfood(missingSource).findings).toContainEqual(expect.objectContaining({ code: "DF5", tag: "Published" }));
+  });
   it("qualifies the real public PublisherCompositionsView from measured repository source without granting a slot", () => {
     const root = fileURLToPath(new URL("../../../..", import.meta.url));
     const barrel = "packages/publisher/src/web/index.ts", view = "packages/publisher/src/web/compositions/PublisherCompositionsView.tsx";

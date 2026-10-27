@@ -31,6 +31,8 @@ export interface NeedRecord { id: string; raisedBy: string; missing: string; kin
 export interface DogfoodException { name: string; file: string; elementId: string; hash: string; reason: string; owner: string; expiry: string }
 export interface DogfoodInput {
   files: readonly { file: string; content: string }[]; tokens?: readonly ConsumptionToken[]; themeCss?: string;
+  /** JSON paths actually parsed by the source runner; never source or export bytes. */
+  data?: readonly string[];
   /** Fresh selected source values for CSS definitions; never expected CSS or a submitted manifest. */
   tokenLibrary?: EngineInput;
   contracts?: Readonly<Record<string, SurfaceReadContract>>; exceptions?: readonly DogfoodException[]; needs?: readonly NeedRecord[];
@@ -39,7 +41,9 @@ export interface DogfoodInput {
   /** Exact source/export identities resolved by the source runner, never inferred from a local symbol's spelling. */
   resolvedImports?: Readonly<Record<string, string>>;
   /** Consumer mode follows source modules; these identities never suppress their findings. */
-  consumerBoundary?: { readonly pages: readonly string[]; readonly sourceImports: Readonly<Record<string, string>>; readonly pageChromeFiles?: readonly string[] };
+  consumerBoundary?: { readonly pages: readonly string[]; readonly sourceImports: Readonly<Record<string, string>>; readonly pageChromeFiles?: readonly string[];
+    /** Exact edges resolved from the runner's explicit project-source contract. */
+    readonly projectSourceImports?: readonly string[] };
 }
 export interface DogfoodCompose { file: string; line: number; tag: string; slotId: string; module: string; symbol: string }
 export const STRUCTURAL_TAGS = Object.freeze(["div", "span", "section", "ul", "ol", "li", "p", "h1", "h2", "h3", "h4", "h5", "h6", "dl", "dt", "dd", "code", "pre", "header", "main", "nav", "footer"] as const);
@@ -289,10 +293,13 @@ function composeAt(file: string, node: Element, parsed: Parsed, input: DogfoodIn
 }
 
 /** A source-owned composition is inspected, never promoted to a registered slot.
- * The pure checker needs the runner's observed public manifest, barrel and source
- * edges. Missing observations cannot be replaced by a familiar package name. */
+ * Public packages need observed manifest/export bytes. Explicit project-source
+ * edges instead come from the consumer runner's resolution contract. Both paths
+ * require a rendered registered composition and keep descendant findings. These
+ * are caller observations, not filesystem authentication or package-name trust. */
 function sourceViewQualifier(input: DogfoodInput) {
   const files = new Map(input.files.map(file => [file.file, file.content]));
+  const data = new Set((input.data ?? []).filter(file => typeof file === "string" && /\.json$/.test(file) && !files.has(file) && input.data!.filter(row => row === file).length === 1));
   const parsedFiles = new Map<string, Parsed>();
   const parsedAt = (file: string) => {
     if (!files.has(file) || input.files.filter(row => row.file === file).length !== 1) return undefined;
@@ -302,8 +309,9 @@ function sourceViewQualifier(input: DogfoodInput) {
   };
   const targetAt = (file: string, module: string) => {
     const target = input.consumerBoundary?.sourceImports[`${file}:${module}`];
-    return target && files.has(target) ? target : undefined;
+    return target && (files.has(target) || data.has(target)) ? target : undefined;
   };
+  const projectEdge = (file: string, module: string) => input.consumerBoundary?.projectSourceImports?.includes(`${file}:${module}`) === true;
   const normalize = (path: string) => {
     const parts: string[] = [];
     for (const part of path.split("/")) if (part === "..") { if (!parts.length) return undefined; parts.pop(); } else if (part && part !== ".") parts.push(part);
@@ -334,6 +342,7 @@ function sourceViewQualifier(input: DogfoodInput) {
     });
   };
   const complete = (file: string, seen = new Set<string>()): boolean => {
+    if (data.has(file)) return true;
     if (seen.has(file)) return true;
     seen = new Set([...seen, file]);
     const parsed = parsedAt(file);
@@ -371,7 +380,7 @@ function sourceViewQualifier(input: DogfoodInput) {
       const identity = importedIdentity(node, parsed, input, file);
       if (identity) {
         const target = targetAt(file, identity.original);
-        return !!target && (identity.original.startsWith(".") || publicEntry(identity.original, target)) && qualifies(target, identity.symbol, true, trail);
+        return !!target && (identity.original.startsWith(".") || projectEdge(file, identity.original) || publicEntry(identity.original, target)) && qualifies(target, identity.symbol, true, trail);
       }
       return qualifies(file, node.tag, false, trail);
     })()));
@@ -380,7 +389,7 @@ function sourceViewQualifier(input: DogfoodInput) {
     const identity = importedIdentity(node, parsed, input, file);
     if (!identity || identity.original.startsWith(".")) return false;
     const target = targetAt(file, identity.original);
-    return !!target && publicEntry(identity.original, target) && qualifies(target, identity.symbol, true);
+    return !!target && (projectEdge(file, identity.original) || publicEntry(identity.original, target)) && qualifies(target, identity.symbol, true);
   };
 }
 

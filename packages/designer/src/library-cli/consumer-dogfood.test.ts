@@ -151,12 +151,60 @@ describe("consumer source boundary (zero finding allowlist)", () => {
     await write("copy.json", '{"title":"Example","quoted":"<button/>"}');
     const input = await sources(); const report = runConsumerDogfood(input);
     expect(report.findings).toEqual([]); expect(report.ok).toBe(true);
+    expect(input.consumerBoundary.projectSourceImports).toEqual(["Page.tsx:@example/publisher"]);
+    expect(runConsumerDogfood({ ...input, consumerBoundary: { ...input.consumerBoundary, projectSourceImports: [] } }).findings).toContainEqual(expect.objectContaining({ code: "DF5", tag: "Publisher" }));
     expect(input.data).toEqual(["copy.json"]);
     expect(report.scanned.map(file => file.file)).toEqual(["Page.tsx", "Publisher.tsx"]);
     // The existing strict checker is unchanged: unresolved project widgets stay findings.
     expect(runDogfood({ files: input.files }).findings.some(finding => finding.code === "DF5")).toBe(true);
     await write("Publisher.tsx", 'export function Publisher(){return <button>Publish</button>}');
     expect(runConsumerDogfood(await sources()).findings).toEqual(expect.arrayContaining([expect.objectContaining({ file: "Publisher.tsx", code: "DF1" })]));
+  });
+  it("qualifies nested explicitly mapped project views with observed JSON dependencies and refuses missing or spoofed observations", async () => {
+    await write("Page.tsx", `${header} import { Publisher } from "@example/publisher"; export default function Page(){return <><Lease id="example" header={{title:"Example"}}/><Publisher/></>}`);
+    await write("Publisher.tsx", 'import {Inner} from "@/Inner.js";export function Publisher(){return <Inner/>}');
+    await write("src/Inner.tsx", 'import {Button} from "@clossys/designer/components";import copy from "./copy.json";export function Inner(){return <Button>{copy.title}</Button>}');
+    await write("src/copy.json", '{"title":"Example","quoted":"<button/>"}');
+    const input = await sources();
+    expect(input.data).toEqual(["src/copy.json"]);
+    expect(input.consumerBoundary.sourceImports["src/Inner.tsx:./copy.json"]).toBe("src/copy.json");
+    expect(input.consumerBoundary.projectSourceImports).toEqual(["Page.tsx:@example/publisher", "Publisher.tsx:@/Inner.js"]);
+    expect(runConsumerDogfood(input).findings).toEqual([]);
+    expect(runDogfood({ ...input, data: [] }).findings).toContainEqual(expect.objectContaining({ code: "DF5", tag: "Publisher" }));
+    for (const data of [[], ["src/copy.json", "src/copy.json"], ["Publisher.tsx"], ["unknown.json"], ["raw.css"], ["src/copy.json", "Page.tsx"]]) expect(() => runConsumerDogfood({ ...input, data })).toThrow();
+    for (const projectSourceImports of [["missing:edge"], [""], ["Page.tsx:@example/publisher", "Page.tsx:@example/publisher"]]) expect(() => runConsumerDogfood({ ...input, consumerBoundary: { ...input.consumerBoundary, projectSourceImports } })).toThrow(/project source edge/);
+    expect(() => runConsumerDogfood({ ...input, files: [...input.files, { file: "src/copy.json", content: "{}" }] })).toThrow(/conflicting/);
+    for (const content of ['export function Inner(){return null}', 'import {Button} from "@clossys/designer/components";export function Inner(){return <div/>}', 'import {Button} from "@clossys/designer/components";function Inner(){return <Button/>}']) {
+      await write("src/Inner.tsx", content);
+      expect(runConsumerDogfood(await sources()).findings).toContainEqual(expect.objectContaining({ code: "DF5", tag: "Publisher" }));
+    }
+    await write("src/Inner.tsx", 'import {Button} from "@clossys/designer/components";export function Inner(){return <Button><button/><span style={{color:"#123456"}}/></Button>}');
+    const raw = runConsumerDogfood(await sources());
+    expect(raw.findings).toContainEqual(expect.objectContaining({ code: "DF1", file: "src/Inner.tsx", tag: "button" }));
+    expect(raw.findings).toContainEqual(expect.objectContaining({ code: "DF2", file: "src/Inner.tsx", tag: "span" }));
+  });
+  it("qualifies the actual PublisherCompositionsView through the real project source runner", async () => {
+    const publisher = fileURLToPath(new URL("../../../publisher/src/web/index.ts", import.meta.url));
+    await write("Page.tsx", `${header} import {PublisherCompositionsView as Published} from "@clossys/publisher/web";export default function Page(){return <><Lease id="example" header={{title:"Example"}}/><Published/></>}`);
+    const input = await consumerDogfoodSources(["Page.tsx"], { ...contract, sources: { "@clossys/publisher/web": publisher } }, root, root);
+    expect(input.consumerBoundary.projectSourceImports).toContain("Page.tsx:@clossys/publisher/web");
+    expect(input.files.some(file => file.file.endsWith("/web/compositions/PublisherCompositionsView.tsx"))).toBe(true);
+    expect(input.data.some(file => file.endsWith(".json"))).toBe(true);
+    expect(input.files.some(file => file.file.endsWith("/package.json"))).toBe(false);
+    expect(runConsumerDogfood(input).findings.filter(row => row.code === "DF5" && row.tag === "Published")).toEqual([]);
+    expect(runDogfood({ files: input.files }).findings).toContainEqual(expect.objectContaining({ code: "DF5", tag: "Published" }));
+  });
+  it("passes mapped project views through the actual dogfood-consumer CLI without promoting JSON to source", async () => {
+    await write("Page.tsx", `${header} import {Publisher} from "@example/publisher";export default function Page(){return <><Lease id="example" header={{title:"Example"}}/><Publisher/></>}`);
+    await write("Publisher.tsx", 'import {Button} from "@clossys/designer/components";import copy from "./copy.json";export function Publisher(){return <Button>{copy.title}</Button>}');
+    await write("copy.json", '{"title":"Example"}');
+    await write("contract.json", JSON.stringify(contract));
+    const out: string[] = [], errors: string[] = [];
+    const code = await main(["dogfood-consumer", join(root, "Page.tsx"), "--root", root, "--contract", join(root, "contract.json"), "--json"], { out: text => out.push(text), error: text => errors.push(text) });
+    expect(errors).toEqual([]); expect(code).toBe(0);
+    const report = JSON.parse(out.join(""));
+    expect(report.findings).toEqual([]);
+    expect(report.scanned.map((file: { file: string }) => file.file.split("/").at(-1))).toEqual(["Page.tsx", "Publisher.tsx"]);
   });
   it("scans stylesheet colors and does not honor suppression comments or source labels", async () => {
     await write("Page.tsx", `${header} import "./console.css"; export default function Page(){return <><Lease id="example" header={{title:"Example"}}/><div style={{color:"#123456"}}/></>} // token-gate:ignore test`);

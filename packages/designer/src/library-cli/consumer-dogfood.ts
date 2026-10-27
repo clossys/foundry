@@ -35,6 +35,7 @@ export async function consumerDogfoodSources(paths: readonly string[], contract:
   const own = resolve(fileURLToPath(new URL("../../src", import.meta.url)));
   const visited = new Set<string>();
   const files = new Map<string, string>(), data: string[] = [], localModules: Record<string, string> = {}, sourceImports: Record<string, string> = {};
+  const projectSourceImports = new Set<string>();
   const display = (file: string) => relative(cwd, file).split("\\").join("/");
   const pages = contract.pages.map(page => display(resolve(base, page)));
   async function target(base: string): Promise<string> {
@@ -61,14 +62,14 @@ export async function consumerDogfoodSources(paths: readonly string[], contract:
     files.set(file, content);
     const css = extname(file) === ".css";
     for (const module of css ? dogfoodCssImports(content) : dogfoodSourceModules(content)) {
-      let local: string | undefined, nextPackageRoot: string | undefined;
+      let local: string | undefined, nextPackageRoot: string | undefined, mappedProject = false;
       if (module.startsWith(".")) {
         local = await target(resolve(dirname(file), module));
         if (css && packageRoot) { await stylesheetPackageTarget(local, packageRoot); nextPackageRoot = packageRoot; }
       }
       else {
         const key = Object.keys(contract.sources).sort((a, b) => b.length - a.length).find(key => module === key || key.endsWith("/") && module.startsWith(key));
-        if (key) local = await target(resolve(base, contract.sources[key]!, key.endsWith("/") ? module.slice(key.length) : ""));
+        if (key) { local = await target(resolve(base, contract.sources[key]!, key.endsWith("/") ? module.slice(key.length) : "")); mappedProject = true; }
         else if (module === `${DOGFOOD_PACKAGE_NAME}/studio`) local = await target(join(own, "studio/index.ts"));
         else if (module === `${DOGFOOD_PACKAGE_NAME}/studio/state`) local = await target(join(own, "studio/WholeStudioProvider.tsx"));
         else if (css || module.endsWith(".css")) {
@@ -82,7 +83,11 @@ export async function consumerDogfoodSources(paths: readonly string[], contract:
       const primitive = /^(components|icons|charts|blocks|shell|frames)\//.exec(owned)?.[1];
       if (primitive) { localModules[`${display(file)}:${module}`] = `${DOGFOOD_PACKAGE_NAME}/${primitive}`; continue; }
       await visit(local, nextPackageRoot);
-      if (files.has(local) && /\.[cm]?[jt]sx?$/.test(local)) sourceImports[`${display(file)}:${module}`] = display(local);
+      if (files.has(local) && /\.[cm]?[jt]sx?$/.test(local) || data.includes(local)) {
+        const edge = `${display(file)}:${module}`;
+        sourceImports[edge] = display(local);
+        if (mappedProject) projectSourceImports.add(edge);
+      }
     }
   }
   if (!paths.length) throw new Error("Consumer dogfood requires source paths");
@@ -94,12 +99,15 @@ export async function consumerDogfoodSources(paths: readonly string[], contract:
     for (const [edge, target] of Object.entries(sourceImports)) if ([...pageChromeFiles].some(page => edge.startsWith(page + ":"))) pageChromeFiles.add(target);
   }
   return { files: [...files].map(([file, content]) => ({ file: display(file), content })), localModules,
-    consumerBoundary: { pages, sourceImports, pageChromeFiles: [...pageChromeFiles].sort() }, data: data.map(display).sort() };
+    consumerBoundary: { pages, sourceImports, pageChromeFiles: [...pageChromeFiles].sort(), projectSourceImports: [...projectSourceImports].sort() }, data: data.map(display).sort() };
 }
 /** No exception manifest, suppression comment or caller-selected visual boundary is accepted. */
 export function runConsumerDogfood(input: Omit<DogfoodInput, "exceptions" | "consumerBoundary"> & { consumerBoundary: NonNullable<DogfoodInput["consumerBoundary"]> }) {
+  const data = input.data ?? [], projectEdges = input.consumerBoundary.projectSourceImports ?? [];
+  if (data.some(file => typeof file !== "string" || !file.trim() || /[\0\r\n]/.test(file) || !/\.json$/.test(file) || input.files.some(source => source.file === file)) || new Set(data).size !== data.length) throw new Error("Invalid or conflicting parsed JSON observation");
+  if (projectEdges.some(edge => typeof edge !== "string" || !edge.trim() || !Object.hasOwn(input.consumerBoundary.sourceImports, edge)) || new Set(projectEdges).size !== projectEdges.length) throw new Error("Invalid project source edge observation");
   for (const page of input.consumerBoundary.pages) if (!input.files.some(file => file.file === page)) throw new Error(`Unscanned page contract: ${page}`);
   if (!input.consumerBoundary.pages.length) throw new Error("At least one page contract is required");
-  for (const target of Object.values(input.consumerBoundary.sourceImports)) if (!input.files.some(file => file.file === target)) throw new Error(`Unscanned source boundary: ${target}`);
+  for (const target of Object.values(input.consumerBoundary.sourceImports)) if (typeof target !== "string" || !target.trim() || input.files.filter(file => file.file === target).length + data.filter(file => file === target).length !== 1) throw new Error(`Unscanned or ambiguous source boundary: ${target}`);
   return { ...runDogfood({ ...input, exceptions: [] }), consumerBoundary: input.consumerBoundary };
 }

@@ -238,6 +238,23 @@ test("numeric issue references and issue URLs are prose, while colors in propert
   }
 }));
 
+test("vendor-prefixed CSS declarations retain raw color and pixel checks", () => fixture(({ put, scan }) => {
+  put("consumer/main.css", ".a{-webkit-tap-highlight-color:var(--color-ink);-webkit-mask-position:var(--space-md)}");
+  assert.equal(scan("consumer").ok, true);
+  put("consumer/main.css", ".a{-webkit-tap-highlight-color:#123456;-webkit-mask-position:12px}");
+  const findings = scan("consumer").findings;
+  for (const code of ["DG3", "DG5"]) assert.ok(findings.some(row => row.code === code), code);
+}));
+
+test("digits-only shadow colors remain paint while positively identified issue prose stays clean", () => fixture(({ put, scan }) => {
+  put("consumer/value.ts", 'export const titles=["issue #123", "Fix #1234 and #5678", "Closed (#12345678)", "#123456 page layout", "https://example.invalid/issues/4#000"];');
+  assert.equal(scan("consumer").ok, true);
+  for (const value of ["0 0 0 2px #000", "0 0 0 2px #333333", "linear-gradient(#000, #333333)", "#000 0 0 2px", "inset 0 0 #333333", "#333333 solid", "solid #000", "#333333 left top", "#000 fixed"]) {
+    put("consumer/value.ts", `export const value=${JSON.stringify(value)};`);
+    assert.ok(scan("consumer").findings.some(row => row.code === "DG3"), value);
+  }
+}));
+
 test("raw pixels are rejected in consumer CSS, style declarations and arbitrary classes, not numeric prose", () => fixture(({ put, scan }) => {
   put("consumer/main.css", "/* 12px is documentation. */ .pane{width:var(--content-width);padding:var(--space-md)}");
   put("consumer/feed.ts", 'export const description="The old pane was 320px wide; issue #123 tracks it"; export const count=320;');
@@ -269,6 +286,30 @@ test("external public modules are source-inspected, including aliased controls a
   put("tools/src/label.ts", 'export const label="button";');
   put("consumer/Main.tsx", 'import {label as Action} from "@fixture/tools";export const X=()=> <Action/>;');
   assert.ok(scan("consumer").findings.some(row => row.code === "DG2" && row.file.endsWith("consumer/Main.tsx")));
+}));
+
+test("named and namespace external imports inspect executed entry and intermediate barrel side effects", () => fixture(({ put, scan }) => {
+  put("tools/package.json", JSON.stringify({ name: "@fixture/tools", exports: { ".": "./dist/index.js" } }));
+  put("tools/src/View.tsx", "export const View=()=> null;");
+  for (const declaration of ['import {View} from "@fixture/tools";', 'import * as Tools from "@fixture/tools";']) {
+    put("consumer/Main.tsx", `${declaration}export const X=()=> <${declaration.includes("* as") ? "Tools.View" : "View"}/>;`);
+    for (const side of ["index", "middle"]) {
+      put("tools/src/index.ts", `${side === "index" ? 'import "./raw.css";import "./Side.js";' : ""}export {View} from "./middle.js";`);
+      put("tools/src/middle.ts", `${side === "middle" ? 'import "./raw.css";import "./Side.js";' : ""}export {View} from "./View.js";`);
+      put("tools/src/raw.css", ".effect{color:var(--color-ink)}");
+      put("tools/src/Side.tsx", "export const Side=()=> <div/>;");
+      const clean = scan("consumer");
+      assert.equal(clean.ok, true, JSON.stringify(clean.findings));
+      for (const file of ["raw.css", "Side.tsx", "middle.ts"]) assert.ok(clean.inventory.some(row => row.file.endsWith(file)), file);
+      put("tools/src/raw.css", ".effect{color:#123456}");
+      put("tools/src/Side.tsx", "export const Side=()=> <button/>;");
+      const raw = scan("consumer").findings;
+      assert.ok(raw.some(row => row.code === "DG3" && row.file.endsWith("raw.css")), `${declaration}:${side}:color`);
+      assert.ok(raw.some(row => row.code === "DG2" && row.file.endsWith("Side.tsx")), `${declaration}:${side}:control`);
+    }
+    put("consumer/Main.tsx", declaration.includes("* as") ? 'import * as Tools from "@fixture/tools";export const X=()=> <Tools.Missing/>;' : 'import {Missing} from "@fixture/tools";export const X=()=> <Missing/>;');
+    assert.ok(scan("consumer").findings.some(row => row.code === "DG0"));
+  }
 }));
 
 test("external missing, foreign, private, malformed and unknown exports stay unqualified", () => fixture(({ put, scan }) => {

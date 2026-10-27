@@ -16,23 +16,33 @@ const acceptedFoundation = JSON.parse(readFileSync(new URL("./designer-foundatio
 const reactRuntime = new Set(["react", "react/jsx-runtime", "react/jsx-dev-runtime", "react-dom", "react-dom/client", "react-dom/server"]);
 const builtins = new Set(builtinModules.map(name => name.replace(/^node:/, "")));
 const pixel = /(?:^|[^\w.-])-?(?:\d+(?:\.\d+)?|\.\d+)px\b/i;
-const declaration = /(?:^|[;{])\s*(?:--[\w-]+|[A-Za-z][\w-]*)\s*:\s*([^;}]+)/g;
+const declaration = /(?:^|[;{])\s*(?:--[\w-]+|-?[A-Za-z][\w-]*)\s*:\s*([^;}]+)/g;
 const styleName = /^(?:color|background(?:Color)?|border.*|outline.*|fill|stroke|boxShadow|textShadow|width|height|minWidth|maxWidth|minHeight|maxHeight|padding.*|margin.*|gap|rowGap|columnGap|top|left|right|bottom|inset.*|fontSize|lineHeight|letterSpacing|.*Radius)$/i;
 function literalStyleContext(node) {
   const parent = node.parent;
   if (ts.isJsxAttribute(parent)) return ["class", "className", "style", "fill", "stroke", "color"].includes(parent.name.getText());
   return (ts.isPropertyAssignment(parent) || ts.isVariableDeclaration(parent)) && parent.name && styleName.test(parent.name.getText().replace(/["']/g, ""));
 }
-function rawColor(value, styling = false) {
+function literalTitleContext(node) {
+  let owner = node.parent;
+  while (ts.isArrayLiteralExpression(owner) || ts.isParenthesizedExpression(owner)) owner = owner.parent;
+  return (ts.isPropertyAssignment(owner) || ts.isVariableDeclaration(owner)) && owner.name && /^(?:titles?|headings?)$/i.test(owner.name.getText().replace(/["']/g, ""));
+}
+function rawColor(value, styling = false, issueTitle = false) {
   // URL fragments and numeric issue references are prose, while the same bytes
   // in a declaration, color property or arbitrary class are still paint.
   const clean = value.replace(/https?:\/\/[^\s"'<>]+/g, "");
   if (/\brgba?\s*\(/i.test(clean)) return true;
   return [...clean.matchAll(/#[\da-f]{3,8}\b/gi)].some(match => {
-    if (styling || /\b(?:[\w-]*gradient|drop-shadow|color-mix|light-dark)\s*\(/i.test(clean) || /\b(?:solid|dashed|dotted|double)\s+#/i.test(clean) || /\[[^\]]*#/.test(clean) || [...clean.matchAll(declaration)].some(row => color.test(row[1]))) return true;
+    if (styling || /\b(?:[\w-]*gradient|drop-shadow|color-mix|light-dark)\s*\(/i.test(clean) || /\b(?:solid|dashed|dotted|double)\s+#|#[\da-f]{3,8}\s+(?:solid|dashed|dotted|double)\b/i.test(clean) || /\[[^\]]*#/.test(clean) || [...clean.matchAll(declaration)].some(row => color.test(row[1]))) return true;
     if (!/^#\d+$/.test(match[0])) return true;
-    const remainder = clean.slice(0, match.index) + clean.slice(match.index + match[0].length);
-    return !/[A-Za-z]/.test(remainder);
+    const before = clean.slice(0, match.index), after = clean.slice(match.index + match[0].length);
+    // Numeric references need an observed prose form. A unit's letters (2px)
+    // do not make a shadow/paint value prose.
+    const reference = /\b(?:issue|issues|fix|fixes|fixed|close|closes|closed|refs?|pull|pr)\s*\(?\s*$/i.test(before)
+      || /\b(?:issue|issues|fix|fixes|fixed|close|closes|closed|refs?|pull|pr)\b[^#]*#\d+(?:\s*(?:,|and|&)\s*#\d+)*\s*(?:,|and|&)\s*$/i.test(before)
+      || issueTitle && /^\s*$/.test(before) && /^\s+[A-Za-z][A-Za-z\s-]*$/.test(after);
+    return !reference;
   });
 }
 function rawPixel(value, styling = false) {
@@ -212,7 +222,9 @@ export function scanDesignerDogfood({ roots, designerRoot, foundationReceipt = a
           for (const witness of implementation.witnesses) record(witness);
           visit(implementation.file);
         }
-        else visit(target);
+        // Every evaluated barrel contributes imports and side effects, even
+        // when the selected symbol is declared deeper in the export chain.
+        visit(target);
         return target;
       } catch (error) { add("DG0", node, error.message); }
     };
@@ -350,7 +362,7 @@ export function scanDesignerDogfood({ roots, designerRoot, foundationReceipt = a
         if (property(unwrap(node.expression)) === "setAttribute" && node.arguments[0] && ts.isStringLiteralLike(node.arguments[0]) && node.arguments[0].text === "style") add("DG4", node, "inline style attribute mutation");
       }
       const literal = ts.isStringLiteralLike(node) || [ts.SyntaxKind.TemplateHead, ts.SyntaxKind.TemplateMiddle, ts.SyntaxKind.TemplateTail].includes(node.kind);
-      if (literal && rawColor(node.text, literalStyleContext(node))) add("DG3", node, "raw color literal");
+      if (literal && rawColor(node.text, literalStyleContext(node), literalTitleContext(node))) add("DG3", node, "raw color literal");
       if (literal && rawPixel(node.text, literalStyleContext(node))) add("DG5", node, "raw pixel dimension bypasses registered token binding");
       if (literal && /\[[^\]]*(?:\d(?:px|rem|em|vh|vw|vmin|vmax)|#[\da-f]{3,8})[^\]]*\]/i.test(node.text)) add("DG5", node, "arbitrary class paint bypasses registered token binding");
       if (ts.isBinaryExpression(node) && node.operatorToken.kind === ts.SyntaxKind.EqualsToken && styleTarget(node.left)) add("DG4", node, "imperative inline style bypasses Foundry ownership");
