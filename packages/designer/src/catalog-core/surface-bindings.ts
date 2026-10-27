@@ -2,8 +2,9 @@
 import { emitComponents } from "./emit-components.js";
 import { inspectGlyph } from "../catalog-assets/svg.js";
 import { analyzeSurfaceSource, relativeSurfacePath } from "./surface-source-analysis.js";
-import { surfaceDigest } from "./surface-library.js";
-import type { CompositeResolved } from "./types.js";
+import { isSurfacePackageEntry, surfaceDigest, surfaceEntryOf, surfaceOf } from "./surface-library.js";
+import type { CompositeEngineInput, CompositeResolved } from "./types.js";
+import type { WiringFinding } from "./wiring.js";
 import type { SurfaceCandidate, SurfaceFile, SurfacePackageEvidence } from "./surface-types.js";
 export function bindSurfaceSource(fill: SurfaceCandidate, files: readonly SurfaceFile[], profile: CompositeResolved, packages: readonly SurfacePackageEvidence[]) {
     const glyphs: Record<string, unknown> = {};
@@ -73,4 +74,45 @@ export function bindSurfaceSource(fill: SurfaceCandidate, files: readonly Surfac
     const entry = files.find(file => file.path === fill.impl.entry);
     const resolvedBindings = bindings.map(binding => ({ ...binding, closure: reachableFiles }));
     return { proof, componentFiles: reachableFiles, packages: usedPackages, apiHash: surfaceDigest({ api: fill.api, entry: fill.impl.entry, entryHash: entry ? surfaceDigest(entry.content) : null, bindings: resolvedBindings, packages: usedPackages }) };
+}
+
+const publicName = (slot: string): string => slot.slice("components.".length).split("-").map(word => word[0]!.toUpperCase() + word.slice(1)).join("");
+/** True when the selected fill for `slot` is exactly the package export a surface would render. */
+const rendersSelected = (profile: CompositeResolved, slot: string, module: string, name: string): boolean => {
+    const selected = profile.components.components[slot];
+    return !selected || (selected.impl.kind === "package" && selected.impl.module === module && selected.impl.export === name);
+};
+/**
+ * Static WL7 over surface descriptors (G3): a Section or Frame whose bound component differs from the selected
+ * fill. A package-pointer surface renders its own package's components for every component its contract may
+ * compose, so it is listed whenever a selection differs (package pointers stay previews only). A source-kind
+ * surface is listed for each external value import of a selected component's public name: only the consumer
+ * component-index carries the selected fill and its provenance stamp, so a direct import never reaches a
+ * re-selection. That is the import the `bind-selected-components@1` rule re-binds. An unselected component is
+ * S4's finding, not WL7's. The rendered `data-ds-fill` half of WL7 is a DOM check (provenance-scan).
+ */
+export function surfaceSwapFindings(input: CompositeEngineInput, profile: CompositeResolved): WiringFinding[] {
+    const findings: WiringFinding[] = [];
+    const selected = Object.keys(profile.components.components).filter(id => id.startsWith("components."));
+    for (const doc of input.library.surfaces?.fills ?? []) {
+        const entry = surfaceEntryOf(doc);
+        if (isSurfacePackageEntry(entry)) {
+            const contract = input.catalog.surfaces?.slots.find(row => row.id === entry.slot)?.contract;
+            const composes = contract && "allowedComposes" in contract ? contract.allowedComposes : [];
+            const pkg = entry.origin?.pin.package ?? ("pin" in entry ? entry.pin.package : "");
+            for (const slot of composes.filter(id => selected.includes(id)))
+                if (!rendersSelected(profile, slot, `${pkg}/components`, publicName(slot)))
+                    findings.push({ code: "WL7", severity: "error", file: `fills/${entry.slot}.json`, line: 0, subject: entry.slot, evidence: `package-pointer surface renders ${pkg}/components#${publicName(slot)}, not the selected ${slot} fill` });
+            continue;
+        }
+        const fill = surfaceOf(doc);
+        const owned = input.library.surfaces!.files.filter(file => fill.outputSha256.some(row => row.path === file.path));
+        const { proof } = bindSurfaceSource(fill, owned, profile, input.surfaceOptions?.packages ?? []);
+        for (const edge of proof.imports.filter(row => !row.module.startsWith(".") && row.kind === "value")) {
+            const slot = selected.find(id => publicName(id) === edge.name);
+            if (slot)
+                findings.push({ code: "WL7", severity: "error", file: edge.file, line: 0, subject: fill.slot, evidence: `imports ${edge.module}#${edge.name} directly, so the selected ${slot} fill never reaches it; derive it through bind-selected-components@1` });
+        }
+    }
+    return findings.sort((a, b) => a.subject < b.subject ? -1 : a.subject > b.subject ? 1 : a.evidence < b.evidence ? -1 : 1);
 }
