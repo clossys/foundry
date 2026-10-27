@@ -6,7 +6,7 @@ import type { ComponentCheckFill } from "../catalog-core/check-components.js";
 import type { ComponentSlot, FillMeta } from "../catalog-core/types.js";
 import { sha256 } from "../catalog-core/digest.js";
 import { componentMemberBinding } from "../catalog-core/emit-components.js";
-import type { ResolvedComponent } from "../catalog-core/resolve-components.js";
+import type { ComponentCandidate, ResolvedComponent } from "../catalog-core/resolve-components.js";
 import { stableStringify } from "../catalog-core/stable.js";
 import { componentRacDeclaration } from "./component-rac.js";
 import { rewriteShadcnAria, SHADCN_BUTTON_MEMBERS, type RewriteIssue, type RewriteNote, type RewriteResult, type SourceFile } from "./rewrite.js";
@@ -38,6 +38,7 @@ export interface ShadcnComponentFillDoc {
   $extensions: { "com.clossys.fill": FillMeta };
   components: Readonly<Record<string, ComponentCheckFill & {
     transform: "shadcn-aria-rewrite@1"; item: string;
+    secondaryExports?: ComponentCandidate["secondaryExports"];
     outputSha256: RewriteResult["outputSha256"];
     blockers: readonly RewriteIssue[];
   }>>;
@@ -301,6 +302,14 @@ function emittablePropMap(slot: string, impl: { kind: "source"; entry: string; e
   return Object.fromEntries(bindings.filter(([member, binding]) => "intrinsic" in binding || root(binding) || /^[a-z][a-z0-9-]*\.[a-z][a-z0-9-]*$/.test(member)).map(([member]) => [member, map[member]!]));
 }
 const exportNames: Record<string, string> = { toggle: "Toggle", "dropdown-menu": "DropdownMenu", "context-menu": "ContextMenu", combobox: "Combobox", kbd: "Kbd", alert: "Alert", progress: "Progress", breadcrumb: "Breadcrumb", accordion: "Accordion", collapsible: "Collapsible", "alert-dialog": "AlertDialog", "hover-card": "HoverCard", "radio-group": "RadioGroup", "toggle-group": "ToggleGroup" };
+/**
+ * Approved same-entry secondary exports, by caller checkpoint. Each name is a local function value of the
+ * item's own authenticated entry (proved again by componentSecondaryExports at resolve/emit); nothing else
+ * in an entry's export list becomes public. Select: the five Calendar-caption parts (API-S1).
+ */
+const secondaryExportApprovals: Readonly<Record<string, readonly { name: string; export: string }[]>> = {
+  select: ["SelectContent", "SelectGroup", "SelectItem", "SelectTrigger", "SelectValue"].map(name => ({ name, export: name })),
+};
 const partExports: Readonly<Record<string, readonly string[]>> = { "input-group": ["InputGroup", "InputGroupAddon", "InputGroupButton", "InputGroupText", "InputGroupInput", "InputGroupTextarea"] };
 const utils = 'import { clsx, type ClassValue } from "clsx"\nimport { twMerge } from "tailwind-merge"\nexport function cn(...inputs: ClassValue[]) { return twMerge(clsx(inputs)) }\n';
 const npmDeps = [
@@ -454,6 +463,7 @@ export function importShadcnAriaComponents(input: ShadcnComponentInput): ShadcnC
       deps: [...npmDeps.filter(dep => dep.name === "react" || dep.name === "react-aria-components" && imports(original.content).length > 0 || dep.name === "class-variance-authority" && [...closure.values()].some(file => file.content.includes('from "class-variance-authority"')) || ["clsx", "tailwind-merge"].includes(dep.name)),
         ...sorted([...closure.values()].flatMap(file => dependencies(file.content))).filter(dep => !result.contextualInputs?.includes(dep)).map(dep => ({ name: dep, version: SHADCN_ARIA_COMPONENT_PIN.commit, license: "MIT", registryItem: dep, ...(SHADCN_COMPONENT_ITEMS[dep] ? { slot: `components.${SHADCN_COMPONENT_ITEMS[dep]}` } : {}) }))],
       parts: result.parts.map(item => ({ item })), outputSha256: rewritten.outputSha256, blockers: rewritten.issues,
+      ...(secondaryExportApprovals[name] ? { secondaryExports: secondaryExportApprovals[name]!.map(row => ({ ...row })) } : {}),
     };
     // Source descriptors resolve the consumer's own react-aria-components install; never a peer (CC3).
     descriptor.rac = componentRacDeclaration(descriptor, { peer: false });

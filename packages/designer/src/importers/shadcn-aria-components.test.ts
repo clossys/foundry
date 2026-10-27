@@ -8,6 +8,7 @@ import { sha256 } from "../catalog-core/digest.js";
 import { rewriteShadcnAria } from "./rewrite.js";
 import slots from "../catalog/slots/components.json" with { type: "json" };
 import type { ComponentSlot } from "../catalog-core/types.js";
+import { componentSecondaryExports } from "../catalog-core/component-secondary-exports.js";
 import { bindSiblingLeafModules, generatedShadcnComponentFiles, importShadcnAriaComponents, materializeShadcnComponent, SHADCN_ARIA_COMPONENT_PIN, SHADCN_COMPONENT_ITEMS, verifyShadcnSource, type ShadcnComponentInput } from "./shadcn-aria-components.js";
 
 const here = resolve(import.meta.dirname, "__fixtures__/shadcn-aria");
@@ -197,6 +198,19 @@ describe("pinned shadcn aria component import", () => {
         expect(rebound || materialized, `${fill.slot} ${dep.registryItem}`).toBe(true);
       }
     }
+  });
+
+  it("approves exactly the five Calendar-caption Select parts as same-entry identity aliases and nothing else", () => {
+    const result = importShadcnAriaComponents(pinnedInput());
+    const descriptors = result.fills.map(doc => Object.values(doc.components)[0]!);
+    const select = descriptors.find(fill => fill.slot === "components.select")!;
+    const five = ["SelectContent", "SelectGroup", "SelectItem", "SelectTrigger", "SelectValue"].map(name => ({ name, export: name }));
+    expect(select.secondaryExports).toEqual(five);
+    // The approval is proved against the exact authenticated entry the descriptor receipts.
+    expect(componentSecondaryExports(select, materializeShadcnComponent(result, "select"))).toEqual(five);
+    expect(select.impl).toEqual({ kind: "source", entry: "components/select/select.tsx", export: "Select" });
+    for (const name of ["SelectList", "SelectInput", "SelectLabel", "SelectPopover", "SelectSeparator", "SelectEmpty", "Select"]) expect(select.secondaryExports!.map(row => row.name)).not.toContain(name);
+    expect(descriptors.filter(fill => fill.secondaryExports !== undefined && fill.slot !== "components.select").map(fill => fill.slot)).toEqual([]);
   });
 
   it("keeps the borrowed CommandList as menu provenance without its unused command imports", () => {
