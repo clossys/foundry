@@ -53,11 +53,12 @@ describe("CatalogWorkspace", () => {
     await userEvent.keyboard("{ArrowUp}");
     const other = screen.getByRole("treeitem", { name: "First" }); expect(other).toHaveFocus();
     expect(selected).not.toHaveFocus(); expect(selected).toHaveAttribute("aria-selected", "true");
-    expect(selected).toHaveClass("bg-surface-raised", "border", "border-line-base", "text-ink-primary");
+    // The selected leaf takes the secondary Button look, whose resting edge is line-control since ad1a46c90.
+    expect(selected).toHaveClass("bg-surface-raised", "border", "border-line-control", "text-ink-primary");
     expect(other).not.toHaveClass("bg-surface-raised");
     expect(screen.getByRole("treeitem", { name: "Nested" })).not.toHaveClass("bg-surface-raised");
     result.rerender(<CatalogWorkspace {...base} onSelect={onSelect} selectedId={first.id} />);
-    expect(other).toHaveFocus(); expect(other).toHaveClass("bg-surface-raised", "border-line-base");
+    expect(other).toHaveFocus(); expect(other).toHaveClass("bg-surface-raised", "border-line-control");
     expect(selected).not.toHaveClass("bg-surface-raised"); expect(selected).toHaveAttribute("aria-selected", "false");
   });
   it("passes original selected leaf objects into both slots and follows host rerenders without remount", async () => {
