@@ -57,7 +57,7 @@ describe("planSurfacePreviews", () => {
     const doc = (slot: string) => fills.find(candidate => candidate.$extensions["com.clossys.fill"].slot === slot)!;
     const table = packageSurfacePreview(doc("sections.data-table"));
     expect(table).toMatchObject({ pointer: "@clossys/designer/blocks#DataTable" });
-    expect(renderToStaticMarkup(<>{"render" in table ? table.render() : null}</>)).toContain("Chen Wu");
+    expect(renderToStaticMarkup(<>{"render" in table ? table.render() : null}</>)).toContain(specimenDataset.sections.dataTable.rows[1]!.customer);
     expect(packageSurfacePreview(doc("frames.site-shell"))).toEqual({ reason: "@clossys/publisher/web#SiteFrame is not a designer export; the designer does not render it" });
     expect(packageSurfacePreview({ ...doc("sections.faq"), sections: {} } as SurfaceDefaultCandidateDocument)).toEqual({ reason: "planned fill has no package export pointer" });
   });
@@ -82,8 +82,8 @@ describe("planSurfacePreviews", () => {
     const result = planSurfacePreviews({ plan, fills });
     const html = Object.fromEntries(Object.values(result.previews).map(preview => [preview.slot, renderToStaticMarkup(<>{preview.render()}</>)]));
     for (const [slot, markup] of Object.entries(html)) expect(markup.length, slot).toBeGreaterThan(20);
-    expect(html["sections.faq"]).toContain("Ships in two days.");
-    expect(html["sections.access-matrix"]).toContain("View orders");
+    expect(html["sections.faq"]).toContain(specimenDataset.sections.faq.items[0]!.question);
+    expect(html["sections.access-matrix"]).toContain(specimenDataset.sections.accessMatrix.groups[0]!.permissions[0]!.label);
     expect(html["sections.pagination"]).toContain("nav");
     expect(html["frames.site-header"]).toContain("Northwind");
     expect(html["sections.filter-builder"]).toContain("Filter records");
@@ -92,7 +92,7 @@ describe("planSurfacePreviews", () => {
     expect(html["frames.inspector"]).toContain("<aside");
     expect(result.previews["frames.inspector"]?.pointer).toBe("@clossys/designer/frames#InspectorFrame");
     // Structured Sections render their real block with the dataset's rows, tiers and items.
-    const samples: Record<string, string> = { "sections.comparison": "Wholesale", "sections.content": "Three items, shipped to Ada Park.", "sections.data-table": "Chen Wu", "sections.form": "Project name", "sections.pricing": "Save changes", "sections.resource-list": "Bram Osei", "sections.status-list": "Store pickup", "sections.task-list": "Pack order", "frames.sheet": specimenDataset.dialog.trigger };
+    const samples: Record<string, string> = { "sections.comparison": specimenDataset.sections.comparison.rows[0]!.label, "sections.content": specimenDataset.sections.content.heading, "sections.data-table": specimenDataset.sections.dataTable.rows[1]!.customer, "sections.form": specimenDataset.sections.form.fields[0]!.label, "sections.pricing": specimenDataset.sections.pricing.tiers[0]!.cta, "sections.resource-list": specimenDataset.sections.resourceList.items[0]!.title, "sections.status-list": specimenDataset.sections.statusList.groups![0]!.items[0]!.label, "sections.task-list": specimenDataset.sections.taskList.items[0]!.title, "frames.sheet": specimenDataset.dialog.trigger };
     for (const [slot, text] of Object.entries(samples)) expect(html[slot], slot).toContain(text);
     expect(result.previews["sections.comparison"]?.pointer).toBe("@clossys/designer/blocks#Matrix");
     expect(html["sections.comparison"]).toContain("<table");
@@ -103,10 +103,10 @@ describe("planSurfacePreviews", () => {
     for (const item of specimenDataset.navigation.items) expect(html["frames.app-sidebar"]).toContain(item.label);
     // Adopted leaves render their real export with the dataset's content.
     const adopted: Record<string, [pointer: string, text: string]> = {
-      "sections.chat": ["@clossys/designer/blocks#Chat", "ships in two days."],
-      "sections.explorer": ["@clossys/designer/blocks#Explorer", "Launch plan"],
-      "sections.hero": ["@clossys/designer/blocks#Hero", "Northwind"],
-      "sections.newsletter": ["@clossys/designer/blocks#NewsletterBand", "Email address"],
+      "sections.chat": ["@clossys/designer/blocks#Chat", specimenDataset.sections.chat.messages[0]!.content],
+      "sections.explorer": ["@clossys/designer/blocks#Explorer", specimenDataset.list.items[0]!.label],
+      "sections.hero": ["@clossys/designer/blocks#Hero", specimenDataset.sections.hero.heading],
+      "sections.newsletter": ["@clossys/designer/blocks#NewsletterBand", specimenDataset.sections.newsletter.emailLabel],
       "frames.app-shell": ["@clossys/designer/frames#AppFrame", "Skip to content"],
       "frames.command": ["@clossys/designer/blocks#CommandMenu", "Open command menu"],
     };
@@ -169,16 +169,16 @@ describe("surface sample states", () => {
     const empty = packageSurfacePreview(list, {}, "empty");
     expect(empty).toMatchObject({ pointer: "@clossys/designer/blocks#ResourceList", state: "empty" });
     expect(html(empty)).toContain("No projects yet");
-    expect(html(empty)).not.toContain("Bram Osei");
+    expect(html(empty)).not.toContain(specimenDataset.sections.resourceList.items[0]!.title);
     const loading = packageSurfacePreview(list, {}, "loading");
     expect(loading).toMatchObject({ state: "loading" });
     expect(html(loading)).toContain('role="status"');
     expect(html(loading)).toContain(surfaceStateSample.loadingLabel);
-    expect(html(loading)).not.toContain("Bram Osei");
+    expect(html(loading)).not.toContain(specimenDataset.sections.resourceList.items[0]!.title);
     const error = packageSurfacePreview(list, {}, "error");
     expect(error).toMatchObject({ state: "error" });
     expect(html(error)).toContain(surfaceStateSample.error.title);
-    expect(html(error)).not.toContain("Bram Osei");
+    expect(html(error)).not.toContain(specimenDataset.sections.resourceList.items[0]!.title);
     const long = packageSurfacePreview(list, {}, "long-content");
     expect(long).toMatchObject({ state: "long-content" });
     expect(html(long)).toContain(surfaceStateSample.longTitle);
@@ -187,10 +187,10 @@ describe("surface sample states", () => {
   it("keeps an export without that state on its default sample, and says it is the default", () => {
     const table = packageSurfacePreview(doc("sections.data-table"), {}, "error");
     expect(table).toMatchObject({ state: "default" });
-    expect(html(table)).toContain("Chen Wu");
+    expect(html(table)).toContain(specimenDataset.sections.dataTable.rows[1]!.customer);
     const faq = packageSurfacePreview(doc("sections.faq"), {}, "empty");
     expect(faq).toMatchObject({ state: "default" });
-    expect(html(faq)).toContain("Ships in two days.");
+    expect(html(faq)).toContain(specimenDataset.sections.faq.items[0]!.question);
   });
 
   it("never applies a state to a host-owned sample", () => {

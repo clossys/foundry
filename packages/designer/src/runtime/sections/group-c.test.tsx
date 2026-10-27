@@ -118,49 +118,51 @@ function wiringOf(leaf: GroupCLeaf, source = read(`./${leaf}.tsx`)) {
   return { result, outside: rows.filter(row => !allowed.has(row.module)).map(row => row.module) };
 }
 
-/** Real component roles each leaf must render from dataset content. */
+const S = specimenDataset.sections;
+/** Real component roles each leaf must render from dataset content: each leaf's `specimenDataset.sections` record. */
 const ROLES: Record<GroupCLeaf, (root: HTMLElement) => void> = {
   cards: root => {
     const list = within(root).getByRole("list");
-    expect(within(list).getAllByRole("listitem")).toHaveLength(3);
-    expect(within(list).getAllByRole("link").map(link => link.textContent)).toEqual(specimenDataset.table.rows.slice(0, 3).map(row => row.order));
+    expect(within(list).getAllByRole("listitem")).toHaveLength(S.recordCards.records.length);
+    expect(within(list).getAllByRole("link").map(link => link.textContent)).toEqual(S.recordCards.records.map(record => record.title));
   },
   chat: root => {
     expect(within(root).getByRole("log")).toBeTruthy();
-    expect(within(root).getByRole("textbox", { name: specimenDataset.searchField.label })).toBeTruthy();
-    expect(within(root).getByText(specimenDataset.dialog.body)).toBeTruthy();
+    expect(within(root).getByPlaceholderText(S.chat.placeholder)).toBeTruthy();
+    for (const message of S.chat.messages) expect(within(root).getByText(message.content)).toBeTruthy();
   },
   consent: root => {
-    expect(within(root).getByRole("button", { name: specimenDataset.dialog.actions[1].label })).toBeTruthy();
-    expect(within(root).getByRole("button", { name: specimenDataset.dialog.actions[0].label })).toBeTruthy();
-    expect(within(root).getByRole("link", { name: specimenDataset.text.link })).toBeTruthy();
+    expect(within(root).getByRole("button", { name: S.consentBanner.acceptLabel })).toBeTruthy();
+    expect(within(root).getByRole("button", { name: S.consentBanner.rejectLabel })).toBeTruthy();
+    expect(within(root).getByRole("link", { name: S.consentBanner.privacy.label })).toHaveAttribute("href", S.consentBanner.privacy.href);
   },
   "empty-state": root => {
-    expect(within(root).getByRole("heading", { name: specimenDataset.list.label })).toBeTruthy();
+    expect(within(root).getByRole("heading", { name: S.emptyState.title })).toBeTruthy();
     expect(within(root).getByRole("img", { name: specimenDataset.icon.label })).toBeTruthy();
     expect(within(root).getByRole("button", { name: specimenDataset.text.upload })).toBeTruthy();
   },
   "error-state": root => {
-    expect(within(root).getByRole("heading", { name: specimenDataset.toasts.danger.title })).toBeTruthy();
-    expect(within(root).getByRole("button", { name: specimenDataset.text.submit })).toBeTruthy();
-    expect(within(root).getByRole("link", { name: specimenDataset.text.link })).toBeTruthy();
+    expect(within(root).getByRole("heading", { name: S.errorState.title })).toBeTruthy();
+    expect(within(root).getByText(S.errorState.code)).toBeTruthy();
+    expect(within(root).getByRole("button", { name: S.errorState.retryLabel })).toBeTruthy();
+    expect(within(root).getByRole("link", { name: S.errorState.report.label })).toBeTruthy();
   },
   form: root => {
-    expect(within(root).getByRole("textbox", { name: specimenDataset.textField.label })).toBeTruthy();
-    expect(within(root).getByRole("checkbox", { name: specimenDataset.text.checkbox })).toBeTruthy();
-    expect(within(root).getAllByText(specimenDataset.select.label).length).toBeGreaterThan(0);
-    expect(within(root).getByRole("button", { name: specimenDataset.text.submit })).toBeTruthy();
+    expect(within(root).getByRole("heading", { name: S.form.heading })).toBeTruthy();
+    for (const field of S.form.fields) expect(within(root).getByRole("textbox", { name: field.label })).toHaveAttribute("type", field.type);
+    expect(within(root).getByRole("button", { name: S.form.submit })).toBeTruthy();
   },
   "link-index": root => {
-    expect(within(root).getAllByRole("link").map(link => link.getAttribute("href"))).toEqual(specimenDataset.navigation.items.map(item => item.href));
+    expect(within(root).getAllByRole("link").map(link => link.getAttribute("href"))).toEqual(S.navGrid.items.map(item => item.href));
   },
   notices: root => {
     const list = within(root).getByRole("list");
-    expect(within(list).getAllByRole("listitem")).toHaveLength(3);
-    expect(within(root).getByText(specimenDataset.toasts.danger.description)).toBeTruthy();
+    expect(within(list).getAllByRole("listitem")).toHaveLength(S.noticeList.notices.length);
+    for (const notice of S.noticeList.notices) expect(within(root).getByText(notice.message)).toBeTruthy();
   },
   "page-header": root => {
-    expect(within(root).getByRole("heading", { level: 1, name: specimenDataset.card.title })).toBeTruthy();
+    expect(within(root).getByRole("heading", { level: 1, name: S.pageHeader.title })).toBeTruthy();
+    expect(within(root).getByText(S.pageHeader.description)).toBeTruthy();
     const crumbs = within(root).getAllByRole("link");
     expect(crumbs.map(link => link.textContent)).toEqual(specimenDataset.breadcrumbs.items.map(item => item.label));
     expect(crumbs.at(-1)!.getAttribute("aria-current")).toBe("page");
@@ -168,29 +170,32 @@ const ROLES: Record<GroupCLeaf, (root: HTMLElement) => void> = {
   },
   pagination: root => {
     expect(within(root).getByRole("navigation")).toBeTruthy();
-    expect(within(root).getAllByRole("button").length).toBeGreaterThan(2);
+    expect(root.querySelector('[aria-current="page"]')?.textContent).toContain(String(S.pagination.page));
   },
   "section-header": root => {
-    expect(within(root).getByRole("heading", { name: specimenDataset.table.label })).toBeTruthy();
+    expect(within(root).getByRole("heading", { name: S.sectionHeader.title })).toBeTruthy();
+    expect(within(root).getByText(S.sectionHeader.eyebrow)).toBeTruthy();
     expect(within(root).getByRole("link", { name: specimenDataset.text.link })).toBeTruthy();
   },
   settings: root => {
-    expect(within(root).getAllByRole("group").length).toBeGreaterThanOrEqual(2);
+    expect(within(root).getByRole("heading", { name: S.settingsSection.heading as string })).toBeTruthy();
+    expect(within(root).getAllByRole("group").length).toBeGreaterThanOrEqual(S.settingsSection.groups.length);
     expect(within(root).getAllByRole("switch").length).toBe(2);
     expect(within(root).getByRole("button", { name: specimenDataset.text.action })).toBeTruthy();
   },
   steps: root => {
     const list = within(root).getByRole("list");
-    expect(within(list).getAllByRole("listitem")).toHaveLength(3);
+    expect(within(list).getAllByRole("listitem")).toHaveLength(S.orderedSteps.items.length);
+    for (const item of S.orderedSteps.items) expect(within(root).getByText(item.heading)).toBeTruthy();
   },
   "table-of-contents": root => {
-    expect(within(root).getByRole("navigation", { name: specimenDataset.navigation.label })).toBeTruthy();
-    expect(within(root).getAllByRole("link").map(link => link.getAttribute("href"))).toEqual(specimenDataset.tabs.items.concat([]).map(item => `#${item.id}`).concat(specimenDataset.disclosure.items.map(item => `#${item.id}`)));
+    expect(within(root).getByRole("navigation", { name: S.tableOfContents.label })).toBeTruthy();
+    expect(within(root).getAllByRole("link").map(link => link.getAttribute("href"))).toEqual(S.tableOfContents.items.map(item => `#${item.id}`));
   },
   wizard: root => {
     expect(within(root).getByRole("progressbar")).toBeTruthy();
-    expect(within(root).getByRole("button", { name: specimenDataset.dialog.actions[0].label })).toBeTruthy();
-    expect(within(root).getByRole("button", { name: specimenDataset.text.submit })).toBeTruthy();
+    expect(within(root).getByRole("button", { name: S.formWizard.labels.back })).toBeTruthy();
+    expect(within(root).getByRole("button", { name: S.formWizard.labels.next })).toBeTruthy();
   },
 };
 
