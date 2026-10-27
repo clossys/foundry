@@ -3,6 +3,9 @@ import "@testing-library/jest-dom/vitest";
 import { cleanup, fireEvent, render, screen, within } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import ts from "typescript";
+import { existsSync, readdirSync, readFileSync } from "node:fs";
+import { dirname, join, resolve } from "node:path";
+import { fileURLToPath } from "node:url";
 import userEvent from "@testing-library/user-event";
 import type { LayoutCompilerPort } from "../../core/layout-source.js";
 import type { FlowInstanceBinding as InstanceBinding, InstanceRegistries } from "../../core/instance-binding.js";
@@ -129,21 +132,16 @@ describe("Publisher Instances", () => {
     render(<PublisherInstancesView {...base} library={library} />);
     choose("Sign in");
     const calls = resolveFill.mock.calls.length;
-    for (const width of [1280, 768]) {
-      await select("Viewport", `${width} px`);
-      expect(screen.getByTitle(`Sign in · ${width} px light placeholder preview`)).toHaveStyle({ width: `${width}px` });
-    }
-    await select("Viewport", "320 px");
+    for (const width of [1280, 768, 320]) await select("Viewport", `${width} px`);
     await select("Theme", "dark");
     await select("State", "error");
     expect(resolveFill).toHaveBeenCalledTimes(calls);
-    const frame = screen.getByTitle("Sign in · 320 px dark placeholder preview") as HTMLIFrameElement;
-    fireEvent.load(frame);
-    expect(frame.style.width).toBe("320px");
-    expect(frame.contentDocument!.body).toHaveTextContent("state: error · LK12 pending");
-    expect(frame.contentDocument!.body).toHaveTextContent("pending S4");
-    expect(frame.contentDocument!.body.querySelector("[data-section-placeholder]")).toBeTruthy();
-    expect(frame.contentDocument!.body.querySelector("[data-section]")).toBeNull();
+    // No host runtime: the Foundry empty state names the reason; nothing stands in for the Frame or Sections.
+    const region = screen.getByRole("region", { name: "Scrollable instance render" });
+    expect(within(region).getByRole("heading", { name: "Runtime render unavailable" })).toBeVisible();
+    expect(region).toHaveTextContent("No registered-route runtime supplied by the host.");
+    expect(within(region).queryByTitle(/placeholder/i)).toBeNull();
+    expect(region.querySelector("iframe, [data-instance-placeholder], [data-section-placeholder], [data-layout-placeholder], [data-placeholder-slot]")).toBeNull();
     choose("About"); expect(screen.getByRole("button", { name: /State/ })).toHaveTextContent("default");
   });
 
@@ -212,10 +210,28 @@ it("keeps absent frame host content explicit without inferring required slots", 
   expect(within(host).queryByText(/required.*missing/i)).toBeNull();
 });
 
-// Row 397 (REAL, hand-styled scroll region): the placeholder scroller is a Foundry Card, never a raw div.
-it("renders the placeholder scroller through the Foundry Card surface", () => {
+// Row 397 (REAL, hand-styled scroll region): the render scroller is a Foundry Card, never a raw div.
+it("renders the instance scroller through the Foundry Card surface", () => {
   render(<PublisherInstancesView {...base} />);
-  const region = screen.getByRole("region", { name: "Scrollable instance placeholder" });
+  const region = screen.getByRole("region", { name: "Scrollable instance render" });
   expect(region).toHaveAttribute("data-variant", "outline");
   expect(region).toHaveAttribute("tabindex", "0");
+});
+
+// DEL-IPF (WIRE-6): the placeholder diagram is deleted from shipped source (tests excluded) with no shim, rename or export left behind.
+it("ships no InstancePlaceholderFrame in the package source or its web exports", () => {
+  const here = dirname(fileURLToPath(import.meta.url));
+  const root = resolve(here, "../..") + "/";
+  expect(existsSync(join(here, "InstancePlaceholderFrame.tsx"))).toBe(false);
+  const offenders: string[] = [];
+  const walk = (dir: string) => {
+    for (const entry of readdirSync(dir, { withFileTypes: true })) {
+      const path = join(dir, entry.name);
+      if (entry.isDirectory()) walk(path);
+      else if (/\.(?:ts|tsx|mts|mjs)$/.test(entry.name) && !/\.test\.tsx?$/.test(entry.name) && /InstancePlaceholder|data-instance-placeholder|data-section-placeholder/.test(readFileSync(path, "utf8"))) offenders.push(path.slice(root.length));
+    }
+  };
+  walk(root);
+  expect(offenders).toEqual([]);
+  for (const file of ["index.ts", "client.ts"]) expect(readFileSync(resolve(here, "..", file), "utf8")).not.toMatch(/InstancePlaceholder/);
 });
