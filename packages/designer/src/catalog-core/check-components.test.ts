@@ -481,6 +481,34 @@ describe("qualification rule groups (QUAL-RECOUNT G1, G2, G7a, G11)", () => {
     append(split, ' const cls = "w-(--foo)";');
     expect(k4(split)).toEqual(["Unbound CSS property --foo in button.tsx"]);
   });
+  it("K4 exempts a file-local property only when every definition is a judged token value", () => {
+    const unique = (profile: ComponentCheckInput) => [...new Set(k4(profile))];
+    // Exempt: a token var() or a calc() of token vars, as an arbitrary property, a string style value or a CSS declaration.
+    const exempt = ' const cls = "[--pad:calc(var(--control)_*_2)] p-(--pad)"; const style = { "--gap": "calc(var(--control) * -0.5)", gap: "var(--gap)" };'
+      + ' const css = `.x { --inset: var(--surface); margin: var(--inset); }`;';
+    const profile = fixture(); append(profile, exempt);
+    expect(k4(profile)).toEqual([]);
+    // Must flag: a named colour, a %, theme(), a JS expression, a type annotation, a ternary, a template interpolation
+    // (the toggle-group --gap shape), a var() fallback, a cycle, and any one unjudged definition beside a judged one.
+    for (const [usage, properties] of [
+      [' const cls = "[--c:black] bg-(--c)";', ["--c"]],
+      [' const cls = "[--w:50%] w-(--w)";', ["--w"]],
+      [' const cls = "[--g:theme(spacing.2)] gap-(--g)";', ["--g"]],
+      [' const el = <div style={{"--js": props.gap, gap: "var(--js)"}} />;', ["--js"]],
+      [' type Vars = { "--v": string }; const cls = "h-(--v)";', ["--v"]],
+      [' const s = { "--t": wide ? "var(--text)" : "var(--surface)", color: "var(--t)" };', ["--t"]],
+      [' const s = { ...style, "--tg": `calc(var(--control) * ${spacing})` }; const cls = "gap-(--tg)";', ["--tg"]],
+      [' const cls = "[--f:var(--text,black)] text-(--f)";', ["--f"]],
+      [' const cls = "[--a:var(--b)] [--b:var(--a)] w-(--a)";', ["--a", "--b"]],
+      [' const more = { "--gap": props.gap };', ["--gap"]],
+    ] as const) {
+      const flagged = fixture(); append(flagged, exempt + usage);
+      expect.soft(unique(flagged), usage).toEqual(properties.map(property => `Unbound CSS property ${property} in button.tsx`));
+    }
+    // The real toggle-group source, standalone.
+    const toggle = fixture(); append(toggle, ' const s = { ...style, "--gap": `calc(var(--surface) * ${spacing})` }; const cls = "flex gap-(--gap)";');
+    expect.soft(unique(toggle)).toEqual(["Unbound CSS property --gap in button.tsx"]);
+  });
   it("K5 disabled state does not require activation keys", () => {
     const k5 = (profile: ComponentCheckInput) => checkComponentProfile(profile).findings.filter(f => f.code === "K5").map(f => f.message);
     const disabled = (keyboard: string[]) => {

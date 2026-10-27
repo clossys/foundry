@@ -272,12 +272,57 @@ const RAC_RUNTIME_PROPERTIES: Readonly<Record<string, string>> = {
   "--table-row-level": "Table: the depth of the row within the table, for indentation",
 };
 /**
- * Custom properties a file defines itself: a Tailwind arbitrary property `[--name:value]` (behind any variant), a
- * style-object key `"--name": value`, or a CSS declaration `--name: value`. A use of such a property is not an
- * unbound consumer property; the defining value stays in the file and is judged by the same property and literal rules.
+ * A defining value whose every part the unbound-property rule judges: one token `var(--name)` with no fallback, or a
+ * `calc()` of such vars and plain numbers. Returns the names it reads, or undefined for anything else (a named colour,
+ * a `%` or unit, `theme()`, a fallback, a nested function).
+ */
+function judgedDefinition(value: string): string[] | undefined {
+  const VAR = /var\((--[a-zA-Z][\w-]*)\)/g;
+  const text = value.trim();
+  const reads = [...text.matchAll(VAR)].map(match => match[1]!);
+  if (/^var\(--[a-zA-Z][\w-]*\)$/.test(text)) return reads;
+  const calc = /^calc\((.*)\)$/s.exec(text);
+  return calc && reads.length && /^[\u0001\d.\s+*/()-]*$/.test(calc[1]!.replace(VAR, "\u0001")) ? reads : undefined;
+}
+/** The text between `from` and the `]` that closes the arbitrary property at depth 0, or undefined. */
+function arbitraryValue(code: string, from: number): string | undefined {
+  let depth = 0;
+  for (let i = from; i < code.length; i++) {
+    const char = code[i]!;
+    if (char === "[" || char === "(") depth++; else if (char === ")") depth--; else if (char === "]") { if (depth === 0) return code.slice(from, i); depth--; }
+    if (/[\s"'`]/.test(char)) return undefined;
+  }
+  return undefined;
+}
+/** A style-object value that is one complete string literal without interpolation, ending the entry; else undefined. */
+function literalValue(code: string, from: number): string | undefined {
+  const match = /^\s*(["'`])((?:\\.|(?!\1)[^\\])*)\1\s*[,}]/s.exec(code.slice(from));
+  return match && !(match[1] === "`" && match[2]!.includes("${")) ? match[2] : undefined;
+}
+/**
+ * Custom properties a file defines itself and may use unbound: a Tailwind arbitrary property `[--name:value]` (behind
+ * any variant), a style-object key `"--name": "value"`, or a CSS declaration `--name: value`. A property is exempt only
+ * when EVERY definition of it in the file is a judged literal (see judgedDefinition) and every var it reads is either
+ * judged by the unbound-property rule or itself exempt. A JS expression, a type annotation, a ternary, a template
+ * interpolation or any unrecognised definition shape keeps the property flagged, as does a definition cycle.
  */
 function definedProperties(code: string): Set<string> {
-  return new Set([...code.matchAll(/(?:^|[[{;,\s"'])(--[a-zA-Z][\w-]*)["']?\]?\s*:/gm)].map(match => match[1]!));
+  const definitions = new Map<string, (string[] | undefined)[]>();
+  for (const match of code.matchAll(/(^|[[{;,\s"'])(--[a-zA-Z][\w-]*)(["']?)(\]?)\s*:/gm)) {
+    const [whole, before, name, quote, bracket] = match as unknown as [string, string, string, string, string];
+    const after = match.index + whole.length;
+    let value: string | undefined;
+    if (before === "[" && !quote && !bracket) value = arbitraryValue(code, after)?.replace(/_/g, " ");
+    else if ((before === '"' || before === "'") && quote === before) value = literalValue(code, after);
+    else if (!quote && !bracket) value = /^([^;}"'`\n$]*)[;}"'`\n]/.exec(code.slice(after))?.[1];
+    definitions.set(name, [...definitions.get(name) ?? [], value === undefined ? undefined : judgedDefinition(value)]);
+  }
+  const exempt = new Set<string>();
+  for (let changed = true; changed;) {
+    changed = false;
+    for (const [name, reads] of definitions) if (!exempt.has(name) && reads.every(read => read?.every(inner => !definitions.has(inner) || exempt.has(inner)))) { exempt.add(name); changed = true; }
+  }
+  return exempt;
 }
 function rootNames(root: string): string[] { return root.startsWith("rac:") ? root.slice(4).split("+") : []; }
 /** Contracts grant leaves; declarations may name a leaf or one exact member. */
