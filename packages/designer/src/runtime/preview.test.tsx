@@ -35,6 +35,13 @@ describe("surfaceRuntimePreview", () => {
     }
     expect(reasons).toEqual({});
   });
+  it("draws a band around the first registered Section its contract admits", () => {
+    const band = surfaceRuntimePreview(entryOf("sections.band")), child = surfaceRuntimePreview(entryOf("sections.access-matrix"));
+    if (!("render" in band) || !("render" in child)) throw new Error("band or access-matrix preview refused");
+    const childText = render(<>{child.render()}</>).container.textContent!;
+    cleanup();
+    expect(render(<>{band.render()}</>).container.textContent).toBe(childText);
+  });
   it("gives a reason for an unregistered leaf or a sample slot the fill does not map", () => {
     expect(surfaceRuntimePreview({ slot: "sections.not-a-leaf" })).toEqual({ reason: "no package runtime renderer for sections.not-a-leaf" });
     const faq = entryOf("sections.faq");
