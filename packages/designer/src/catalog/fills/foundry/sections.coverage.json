@@ -219,15 +219,13 @@
     {
       "missingMembers": [],
       "missingRequiredSlots": [],
-      "missingSlots": [
-        "header"
-      ],
+      "missingSlots": [],
       "notes": [
-        "Header is spread across heading, eyebrow, description and actions; there is no section-header region prop. Source uses SectionIntro rather than the frozen section-header fill.",
+        "Header is spread across heading, eyebrow, description and actions; there is no single section-header region prop. Source uses SectionIntro rather than the frozen section-header fill.",
         "Descriptor only; source imports, token reads, shared anatomy, accessibility, contrast and consumer runtime conformance are unmeasured. Content bindings describe host adaptation points, not type-equivalent converters."
       ],
       "slot": "sections.content",
-      "status": "subset",
+      "status": "candidate",
       "supportedMembers": [
         "layout.split-end",
         "layout.split-start",
@@ -236,6 +234,7 @@
       "supportedSlots": [
         "body",
         "footnote",
+        "header",
         "media"
       ],
       "unresolvedMemberAxes": []
@@ -427,7 +426,7 @@
       "missingRequiredSlots": [],
       "missingSlots": [],
       "notes": [
-        "Images are host nodes with their own alternative text; the lightbox is the Foundry Dialog opened from a React Aria button per image. Host supplies label.",
+        "Images are host nodes with their own alternative text; the lightbox is the Foundry Dialog opened from a React Aria button per image. The images content carries the gallery's accessible label with the images.",
         "Descriptor only; source imports, token reads, shared anatomy, accessibility, contrast and consumer runtime conformance are unmeasured. Content bindings describe host adaptation points, not type-equivalent converters."
       ],
       "slot": "sections.gallery",
@@ -531,7 +530,7 @@
       "missingRequiredSlots": [],
       "missingSlots": [],
       "notes": [
-        "Email is a built-in email TextField the host adapts through emailLabel; it is not replaceable by a host node. submitLabel is copy for the built-in action. Host supplies pendingLabel, sentMessage and failedMessage. Consent text does not prove confirmation behavior.",
+        "Email is a built-in email TextField the host adapts through emailLabel; it is not replaceable by a host node. The submit content carries the built-in action's copy (submitLabel, pendingLabel, sentMessage, failedMessage) and its same-origin form action. Consent text does not prove confirmation behavior.",
         "Descriptor only; source imports, token reads, shared anatomy, accessibility, contrast and consumer runtime conformance are unmeasured. Content bindings describe host adaptation points, not type-equivalent converters."
       ],
       "slot": "sections.newsletter",

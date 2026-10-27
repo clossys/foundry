@@ -34,7 +34,7 @@
       },
       "license": "MIT",
       "notes": [
-        "Images are host nodes with their own alternative text; the lightbox is the Foundry Dialog opened from a React Aria button per image. Host supplies label.",
+        "Images are host nodes with their own alternative text; the lightbox is the Foundry Dialog opened from a React Aria button per image. The images content carries the gallery's accessible label with the images.",
         "Descriptor only; source imports, token reads, shared anatomy, accessibility, contrast and consumer runtime conformance are unmeasured. Content bindings describe host adaptation points, not type-equivalent converters."
       ],
       "parts": [],
@@ -49,7 +49,7 @@
       },
       "slot": "sections.gallery",
       "slotMap": {
-        "images": "./blocks#Gallery.images"
+        "images": "./blocks#Gallery.images,label"
       },
       "source": "foundry"
     }
