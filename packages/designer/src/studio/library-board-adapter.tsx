@@ -47,9 +47,8 @@ export function valueLibraryBoardPreviews(input: PreparedLibraryBoardInput, labe
   } };
 }
 
-import type { BuildCatalogData, CompositeChangeSet, CompositeEngineInput, CompositeLibraryOperation, CompositeResolved } from '../catalog-core/types.js';
+import type { BuildCatalogData, CompositeChangeSet, CompositeEngineInput, CompositeResolved } from '../catalog-core/types.js';
 import type { CompositeStudioSnapshot } from './types.js';
-import type { LibraryBoardCommand } from '../blocks/library-board/model.js';
 import { evaluateWhole, previewComponent } from './whole-model.js';
 import { isRuntimePending } from './runtime-pending.js';
 import { packageSurfacePreview } from './planned-surface-previews.js';
@@ -106,7 +105,6 @@ export interface PreparedCompositeLibraryBoardInput {
 export function compositeLibraryBoard(input: PreparedCompositeLibraryBoardInput, preparation?: { readonly currentSelectionOnly: true }): {
   readonly records: LibraryBoardRecords;
   readonly previews: LibraryBoardPreviewPort;
-  readonly changeFor: (command: LibraryBoardCommand) => readonly CompositeLibraryOperation[] | undefined;
 } {
   const evaluated = evaluateWhole(input.input, input.snapshot, input.contracts), profile = evaluated.profile;
   const consumer = input.input.library.source.id, leaves = input.board.leaves.map(leaf => leaf.id);
@@ -177,9 +175,6 @@ export function compositeLibraryBoard(input: PreparedCompositeLibraryBoardInput,
     if (node == null && input.layer !== 'components') { const adopted = adoptedPackagePreview(value.leaf, prepared, input.snapshot.plannedPreviews); node = adopted?.node; sampleState = adopted?.state; }
     return <CandidateCell labels={input.labels} preview={node} sampleState={sampleState} />;
   } };
-  return { records, previews, changeFor(command) {
-    if (input.layer !== 'components' || command.command !== 'use-source' || command.boardId !== input.board.id || !input.canSave || input.pending) return undefined;
-    const proposal = proposals.find(proposal => proposal.meta.slot === command.leafId && proposal.meta.source === command.source);
-    return proposal && allowed(proposal) && proposal.result?.available ? [proposal.result.change] : undefined;
-  } };
+  // Read-only: records and previews only. No command maps to a library change.
+  return { records, previews };
 }

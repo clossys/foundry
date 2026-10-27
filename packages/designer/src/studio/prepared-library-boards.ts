@@ -83,7 +83,7 @@ export interface PreparedCompositeBoardOptions extends Omit<PreparedCompositeLib
   readonly profile: CompositeResolved;
 }
 /** Reuses the current composite adapter; it does not mint runtime ports or qualifying evidence. */
-export function prepareCompositeLibraryBoard(input: PreparedCompositeBoardOptions): { readonly records: LibraryBoardRecords; readonly previews: PreparedBoardPreviews; readonly changeFor: ReturnType<typeof compositeLibraryBoard>['changeFor'] } {
+export function prepareCompositeLibraryBoard(input: PreparedCompositeBoardOptions): { readonly records: LibraryBoardRecords; readonly previews: PreparedBoardPreviews } {
   const leaves = new Set(input.board.leaves.map(leaf => leaf.id));
   const candidates = input.layer === 'components'
     ? input.input.catalog.components.fills.filter(doc => leaves.has(doc.$extensions['com.clossys.fill'].slot)).map(doc => doc.$extensions['com.clossys.fill'].source)
@@ -95,7 +95,7 @@ export function prepareCompositeLibraryBoard(input: PreparedCompositeBoardOption
   const association = associatedHashes(input.mode === 'edit' ? [...selectedSources, ...candidates] : selectedSources, input);
   const prepared = compositeLibraryBoard({ ...input, sourceHashes: association.hashes, workflow: input.workflow,
     prompt: (leaf, refresh) => compositeBoardPrompt({ board: input.board, leaf, consumer: input.input.library.source.id, slots: input.contracts.slots, profile: input.profile, workflow: input.workflow, returnStep: input.labels.board.returnStep }, refresh) }, input.mode === 'view' ? { currentSelectionOnly: true } : undefined);
-  return { records: prepared.records, changeFor: prepared.changeFor, previews: association.missing.length
+  return { records: prepared.records, previews: association.missing.length
     ? { status: 'pending', code: 'SOURCE_HASH_ASSOCIATION_UNAVAILABLE', sources: association.missing }
     : { status: 'available', port: prepared.previews } };
 }

@@ -1,7 +1,7 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { cleanup, render as renderPlain, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { render } from "./__fixtures__/frame.js";
+import { render, studioReady } from "./__fixtures__/frame.js";
 import { applyLibraryChange, loadCatalog, loadComponentRegistry, type LayerId } from "../catalog-core/index.js";
 import { componentIntegration } from "../catalog-core/__fixtures__/component-integration.js";
 import { resolve } from "../catalog-core/api.js";
@@ -31,7 +31,8 @@ function headerFaults(board: HTMLElement, title: string): string[] {
   const target = named ? document.getElementById(named) : null;
   if (!target || !heading?.contains(target) || target.textContent !== title) faults.push("board is not named by its heading");
   const gear = header ? [...header.querySelectorAll<HTMLElement>("button")].filter(button => button.getAttribute("aria-label") === labels.board.changeSelection) : [];
-  if (gear.length !== 1 || !gear[0]!.hasAttribute("data-rac") || gear[0]!.textContent !== "") faults.push("no single icon gear");
+  // DESIGNER-RO (converted, rows 8-9): the header's selection gear is removed; a header that still carries one is nonconforming.
+  if (gear.length !== 0) faults.push("a selection gear remains");
   return faults;
 }
 function cellFaults(cell: HTMLElement): string[] {
@@ -77,7 +78,7 @@ describe("one board and cell anatomy on every layer", () => {
   it("renders every board of the five layers with one header and one plate cell per leaf", async () => {
     const user = userEvent.setup();
     render(<WholeStudioProvider adapter={fullStudio()} labels={wholeLabels}><StudioHeader /><Studio header="external" /><StudioRightPanel /></WholeStudioProvider>);
-    await screen.findByText("L-saved");
+    await studioReady();
     const report: Record<string, { boards: number; nonconforming: number; header: number; cells: number; faults: string[] }> = {};
     let filled = 0, unchosen = 0;
     for (const layer of LAYERS) {

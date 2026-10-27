@@ -5,19 +5,24 @@ import type { CatalogData, ChangeSet, Finding, LibraryData, Selection } from "..
 
 export type StudioWriteResult<F = Finding, L = LibraryData> = { ok: true; library: L } | { ok: false; reason: "unavailable" | "conflict" | "invalid" | "failed"; findings?: readonly F[] };
 
-/** How the Studio reads and writes a consumer's library. The host supplies it; the Studio never touches files or the network. */
+/** How the Studio reads a consumer's library. The host supplies it; the Studio never touches files or the network. */
 export interface StudioAdapter {
   /** Optional catalog carried by a read-only preview adapter. An explicit Studio catalog takes precedence. */
   catalog?: CatalogData;
-  /** Called on mount and again after every successful save. selection is a compatibility field; fills are authoritative. */
+  /** Called once on mount. selection is a compatibility field; fills are authoritative. */
   load(): Promise<{ library: LibraryData; selection?: Selection }>;
-  /** Persist these library operations atomically against baseHash, then regenerate selection v2. Studio reloads after ok. */
-  save(changes: ChangeSet): Promise<StudioWriteResult & { selection?: Selection }>;
+  /**
+   * @deprecated Ignored. The Designer is read-only: no rendered control, shortcut or blur calls it. Every change
+   * goes through a coding agent running the designer skill; kept optional so an existing adapter still type-checks.
+   */
+  save?(changes: ChangeSet): Promise<StudioWriteResult & { selection?: Selection }>;
 }
 
 /** All chrome copy. The Studio has no English of its own. */
 export interface StudioLabels {
-  board: { changeSelection: string; done: string; notChosen: string; choose: string; askAgent: string; custom: string; create: string; refresh: string; promptTitle: string; promptInstruction: string; returnStep: string; copy: string; copied: string; copyFailed: string; close: string; checkCandidates: string; checking: string; candidatesUnavailable: string; candidatesFailed: string; pendingSelection: string; noNewCandidates: string; /** Custom-cell action on brand rows (identity kit). Omitted: "Generate starter". */ generateStarter?: string };
+  board: {
+    /** @deprecated Ignored: the board has no edit mode. */ changeSelection?: string; /** @deprecated Ignored: the board has no edit mode. */ done?: string;
+    notChosen: string; /** @deprecated Ignored: a not-chosen row offers Ask agent only. */ choose?: string; askAgent: string; /** @deprecated Ignored: the edit-mode Custom column is gone. */ custom?: string; create: string; refresh: string; promptTitle: string; promptInstruction: string; returnStep: string; copy: string; copied: string; copyFailed: string; close: string; checkCandidates: string; checking: string; candidatesUnavailable: string; candidatesFailed: string; pendingSelection: string; noNewCandidates: string; /** @deprecated Ignored: Generate starter is gone; a coding agent authors a starter. */ generateStarter?: string };
   canvas: { noCandidatesInBoard: string; label: string; hint: string; search: string; explorerOpen: string; explorerClose: string; inspectorClose: string; minimap: string; filters: Record<CanvasFilter, string>; zoomLabel: string; zoomIn: string; zoomOut: string; fit: string; zoom: (percent: number) => string; openBoard: (name: string) => string; goToBoard: (name: string) => string };
   layers: { label: string; tokens: string; assets: string; components: string; sections: string; frames: string; disabled: string };
   scorecard: { title: string; close: string; resolved: string; checks: string; issues: string; noIssues: string; target: string; categories: Record<CheckCategory, string>; counts: (errors: number, notices: number) => string; supported: (codes: readonly string[]) => string };
@@ -25,13 +30,14 @@ export interface StudioLabels {
   treeLabel: string;
   stageLabel: string;
   inspectorLabel: string;
-  /** Visible label of the group of Use radios. */
-  useGroup: string;
-  /** Accessible name of each Use radio. */
-  useSource: (source: string, target: string) => string;
+  /** @deprecated Ignored: the Use radios are gone. */
+  useGroup?: string;
+  /** @deprecated Ignored: the Use radios are gone. */
+  useSource?: (source: string, target: string) => string;
   /** Available members from the contract and loaded fills, including members without a visual preview. */
   memberCount: (count: number) => string;
-  scope: { explanation: string; label: string; member: string; slot: string; node: string; memberPicker: string; nodePicker: string };
+  /** @deprecated Ignored: the "Apply to" scope control is gone. */
+  scope?: { explanation: string; label: string; member: string; slot: string; node: string; memberPicker: string; nodePicker: string };
   /** One-line status of a card. An empty string renders no board check line. */
   checkSummary: (errors: number, notices: number) => string;
   /** Neutral count of statically eligible fills awaiting runtime qualification (never counted as errors). Omitted: "N runtime pending". */
@@ -49,9 +55,17 @@ export interface StudioLabels {
   referenceOnly: string;
   inUseByDefault: string;
   noFill: string;
-  autosave: { saving: string; saved: string; notSaved: string; retry: string; undo: string; redo: string; changedElsewhere: string; keepMine: string; takeTheirs: string };
-  resetToDefault: string;
-  saveFailed: { unavailable: string; conflict: string; invalid: string; failed: string };
+  /** @deprecated Ignored: the Designer never saves, so it has no save status, undo, redo or conflict controls. */
+  autosave?: { saving: string; saved: string; notSaved: string; retry: string; undo: string; redo: string; changedElsewhere: string; keepMine: string; takeTheirs: string };
+  /** @deprecated Ignored: Reset to default is gone. */
+  resetToDefault?: string;
+  /** @deprecated Ignored: the Designer never saves. */
+  saveFailed?: { unavailable: string; conflict: string; invalid: string; failed: string };
+  /**
+   * The inspector's one read-only change line: how to hand a change to a coding agent (the designer skill).
+   * Omitted: no line is shown.
+   */
+  howToChange?: string;
   loading: string;
   loadFailed: string;
   /**
@@ -71,7 +85,7 @@ export interface StudioPanelInsets {
 export interface StudioHeaderProps {
   className?: string;
   layerHref?: (layer: import("../catalog-core/index.js").LayerId) => string;
-  /** Called after the session's edits have flushed and the layer selection changes. */
+  /** Called after the layer selection changes. */
   onLayerNavigate?: (layer: import("../catalog-core/index.js").LayerId, href: string) => void | Promise<void>;
 }
 /** A checked summary is pending display data; it grants no selection or persistence authority. */
@@ -88,10 +102,11 @@ export interface StudioCanvasProps { header?: "internal" | "external"; panelInse
 export interface StudioProviderProps extends Omit<StudioProps, "header" | "panelInsets" | "className"> { children: ReactNode }
 export interface CompositeStudioProviderProps extends Omit<CompositeStudioProps, "header" | "panelInsets" | "className"> { children: ReactNode }
 
+/** @deprecated The Designer holds no unsaved edits, so there is nothing to flush. */
 export interface StudioSessionControls { flush(): Promise<boolean> }
 
 export interface StudioProps extends StudioCanvasProps {
-  /** Await before controlled host navigation. Unmount cleanup alone cannot guarantee persistence. */
+  /** @deprecated Ignored: the Designer holds no unsaved edits. */
   sessionRef?: Ref<StudioSessionControls>;
   /** Defaults to the adapter catalog, then the engine's shipped catalog. Its `placements` build the slot tree. */
   catalog?: CatalogData;
@@ -100,7 +115,7 @@ export interface StudioProps extends StudioCanvasProps {
   labels: StudioLabels;
   /** @default "tokens.accent-color" */
   initialSlotId?: string;
-  /** Re-themes the whole document from the working consumer library while mounted. @default true */
+  /** @deprecated Ignored: there is no unsaved working state to preview. */
   livePreview?: boolean;
   className?: string;
 }
@@ -126,17 +141,20 @@ export interface CompositeStudioAdapter {
   catalog: import("../catalog-core/index.js").CompositeCatalogData;
   contracts?: import("../catalog-core/index.js").BuildCatalogData;
   load(): Promise<CompositeStudioSnapshot>;
-  save(changes: import("../catalog-core/index.js").CompositeChangeSet): Promise<StudioWriteResult<import("../catalog-core/index.js").CompositeFinding, import("../catalog-core/index.js").CompositeLibraryData>>;
+  /** @deprecated Ignored. The Designer is read-only; changes go through a coding agent. */
+  save?(changes: import("../catalog-core/index.js").CompositeChangeSet): Promise<StudioWriteResult<import("../catalog-core/index.js").CompositeFinding, import("../catalog-core/index.js").CompositeLibraryData>>;
 }
 /** Extra chrome is required only by the composite host. */
 export interface CompositeStudioLabels extends StudioLabels {
   whole: { signoff: string; proposed: string; contract: string; contentSlots: string; configurations: string; unresolved: string; unassessed: string };
 }
 export interface CompositeStudioProps extends StudioCanvasProps {
+  /** @deprecated Ignored: the Designer holds no unsaved edits. */
   sessionRef?: Ref<StudioSessionControls>;
   adapter: CompositeStudioAdapter;
   labels: CompositeStudioLabels;
   initialSlotId?: string;
+  /** @deprecated Ignored: there is no unsaved working state to preview. */
   livePreview?: boolean;
 }
 export type LegacyStudioProps = StudioProps;

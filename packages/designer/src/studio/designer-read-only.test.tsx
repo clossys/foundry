@@ -35,17 +35,27 @@ function expectNoWriteControls(where: string) {
 }
 
 const INTERACTIVE = 'button, [role="button"], [role="radio"], [role="switch"], [role="checkbox"], [role="menuitem"], [role="option"], [role="row"], [role="gridcell"], [role="treeitem"], [role="slider"], [role="tab"], select';
+const press = (control: HTMLElement) => act(async () => {
+  fireEvent.click(control);
+  for (const key of ["Enter", " "]) { fireEvent.keyDown(control, { key }); fireEvent.keyUp(control, { key }); }
+  fireEvent.blur(control);
+});
+/** Drive every control inside an open dialog (Copy, Check candidates, Open in), then close it. */
+async function driveDialogs() {
+  for (const dialog of [...document.querySelectorAll<HTMLElement>('[role="dialog"]')]) {
+    for (const control of [...dialog.querySelectorAll<HTMLElement>("button")]) if (control.isConnected && control.textContent !== labels.board.close) await press(control);
+    const close = within(dialog).queryAllByRole("button", { name: labels.board.close, hidden: true })[0];
+    await act(async () => { if (close) fireEvent.click(close); else fireEvent.keyDown(dialog, { key: "Escape" }); });
+  }
+}
 /** Click, Enter, Space and blur on every remaining control (twice, so controls revealed by the first pass are driven too), then the undo/redo shortcuts. */
 async function driveEveryControl() {
   for (let pass = 0; pass < 2; pass++) {
     for (const control of [...document.querySelectorAll<HTMLElement>(INTERACTIVE)]) {
-      if (!control.isConnected) continue;
-      await act(async () => {
-        fireEvent.click(control);
-        for (const key of ["Enter", " "]) { fireEvent.keyDown(control, { key }); fireEvent.keyUp(control, { key }); }
-        fireEvent.blur(control);
-        fireEvent.keyDown(document.activeElement ?? document.body, { key: "Escape" });
-      });
+      if (!control.isConnected || control.closest('[role="dialog"]')) continue;
+      await press(control);
+      await driveDialogs();
+      await act(async () => { fireEvent.keyDown(document.activeElement ?? document.body, { key: "Escape" }); });
     }
   }
   for (const modifiers of [{ metaKey: true }, { ctrlKey: true }, { metaKey: true, shiftKey: true }, { ctrlKey: true, shiftKey: true }]) {
@@ -107,9 +117,7 @@ async function expectReadOnlyInspector(save: ReturnType<typeof vi.fn>, leaf: str
   for (const button of within(inspector).queryAllByRole("button", { hidden: true })) {
     expect(button.hasAttribute("aria-expanded") || prompts.has(button.textContent ?? ""), `inspector button ${button.textContent}`).toBe(true);
   }
-  for (const button of within(inspector).queryAllByRole("button", { hidden: true })) {
-    await act(async () => { fireEvent.click(button); fireEvent.keyDown(document.activeElement ?? document.body, { key: "Escape" }); });
-  }
+  for (const button of within(inspector).queryAllByRole("button", { hidden: true })) { await press(button); await driveDialogs(); }
   expect(save).not.toHaveBeenCalled();
 }
 

@@ -2,6 +2,8 @@
 
 import type { ReactElement } from "react";
 import { Button } from "../components/Button.js";
+import { CandidatePromptDialog } from "../blocks/library-board/CandidatePromptDialog.js";
+import type { CandidatePromptData } from "../blocks/library-board/candidate-prompt.js";
 import type { Resolved, Tier } from "../catalog-core/index.js";
 import type { UsageGraph } from "../catalog-core/usage-graph.js";
 import { inspectorModel, type Candidate } from "./model.js";
@@ -11,12 +13,32 @@ import { StudioUsage, useStudioUsageData } from "./usage/StudioUsage.js";
 
 const row = "flex min-w-0 flex-wrap justify-between gap-sm";
 
+/** The prompts an inspector offers: hand a new or refreshed candidate to a coding agent. Nothing here writes. */
+export interface InspectorPrompts { readonly create: CandidatePromptData; readonly refresh?: CandidatePromptData; readonly workflow?: import("./types.js").StudioCandidateWorkflow }
+
 /**
- * Focus changes the definition list, never the selection. A role token's Used by, and the Usage area when the host
- * supplies its labels, are read from the usage graph API only (spec C5).
+ * The inspector's only change surface: the labels' read-only "how to change" line (the designer skill a coding
+ * agent runs) and the Create/Refresh prompt dialogs, which copy a prompt and never write.
  */
-export function Inspector({ candidate, labels, canReset, onReset, tier, graph }: {
-  candidate: Candidate; labels: StudioLabels; canReset: boolean; onReset: () => void;
+export function InspectorChange({ labels, prompts }: { labels: StudioLabels; prompts?: InspectorPrompts }): ReactElement | null {
+  if (!labels.howToChange && !prompts) return null;
+  return <div data-studio-inspector-change="" className="flex min-w-0 flex-col gap-sm">
+    {labels.howToChange ? <p className="text-body text-ink-secondary">{labels.howToChange}</p> : null}
+    {prompts ? <div className="flex flex-wrap gap-sm">
+      <CandidatePromptDialog trigger={<Button variant="ghost" size="sm">{labels.board.create}</Button>} data={prompts.create} labels={labels} {...(prompts.workflow ? { workflow: prompts.workflow } : {})} />
+      {prompts.refresh ? <CandidatePromptDialog trigger={<Button variant="ghost" size="sm">{labels.board.refresh}</Button>} data={prompts.refresh} labels={labels} {...(prompts.workflow ? { workflow: prompts.workflow } : {})} /> : null}
+    </div> : null}
+  </div>;
+}
+
+/**
+ * Read-only: focus changes the definition list, never the selection, and nothing here writes. A role token's Used
+ * by, and the Usage area when the host supplies its labels, are read from the usage graph API only (spec C5).
+ */
+export function Inspector({ candidate, labels, tier, graph, prompts }: {
+  candidate: Candidate; labels: StudioLabels;
+  /** Create/Refresh prompt data for this leaf. Omitted: no prompt dialogs. */
+  prompts?: InspectorPrompts;
   /** @deprecated Ignored: Used by is read from the usage graph, not from resolved aliases. */
   resolved?: Resolved;
   tier?: Tier;
@@ -50,6 +72,6 @@ export function Inspector({ candidate, labels, canReset, onReset, tier, graph }:
       <div><dt>{text.findings}</dt><dd>{model.findings.length ? <ul>{model.findings.map((finding, index) => <li key={`${finding.code}:${finding.subject}:${index}`}>{finding.message}</li>)}</ul> : text.none}</dd></div>
     </dl>
     {labels.usage ? <StudioUsage id={leaf} labels={labels.usage} {...(graph ? { graph } : {})} /> : null}
-    <div><Button variant="secondary" size="sm" isDisabled={!canReset} onPress={onReset}>{labels.resetToDefault}</Button></div>
+    <InspectorChange labels={labels} {...(prompts ? { prompts } : {})} />
   </div>;
 }

@@ -12,7 +12,7 @@ import { runtimeHash } from '../../catalog-core/runtime-ports.js';
 /*
  * Visual pass (VF-1) pins for the shared board anatomy: the board plate is the
  * raised surface (never the canvas ground), the leaf cell centres its slots on
- * one line, the gear is the square small icon control and a leaf label that is
+ * one line, the header is a title with no edit control and a leaf label that is
  * still an id is set in the mono face.
  */
 function input(label: string): PreparedLibraryBoardInput {
@@ -41,12 +41,13 @@ describe('board anatomy visual pass (VF-1)', () => {
     expect(cell).not.toHaveClass('items-start');
   });
 
-  it('makes the gear the square small icon control (components-08, sf-09)', () => {
-    render(<BoardHeader id="h" title="Icons" editing={false} labels={labels.board} onEdit={() => {}} onDone={() => {}} />);
-    const gear = screen.getByRole('button', { name: labels.board.changeSelection });
-    expect(gear).toHaveClass('icon-control-sm', 'rounded-control');
-    expect(gear).not.toHaveClass('rounded-pill');
-    expect(gear.textContent).toBe('');
+  // DESIGNER-RO (converted from the gear pin): the board header is a title only. It has no gear and no Done:
+  // the board has no edit mode, so its header offers no control at all.
+  it('draws the board header as a title with no edit control (components-08, sf-09)', () => {
+    render(<BoardHeader id="h" title="Icons" />);
+    expect(screen.getByRole('heading', { name: 'Icons' })).toBeInTheDocument();
+    expect(screen.queryAllByRole('button')).toEqual([]);
+    expect(document.querySelector('[data-studio-control="edit-mode"]')).toBeNull();
   });
 
   it('sets a leaf label that is still its id in the mono face, and leaves a human label alone (components-09)', () => {
@@ -84,13 +85,6 @@ describe('board capture hooks (vf35)', () => {
     const cell = container.querySelector<HTMLElement>('[data-candidate-cell]')!;
     expect(cell).toHaveAttribute('data-ground', 'sunken');
     expect(cell).toHaveClass(`bg-surface-${cell.dataset.ground}`);
-  });
-
-  it('gives the board gear and its Done button one edit-mode control hook', () => {
-    const view = render(<BoardHeader id="h" title="Icons" editing={false} labels={labels.board} onEdit={() => {}} onDone={() => {}} />);
-    expect(screen.getByRole('button', { name: labels.board.changeSelection })).toHaveAttribute('data-studio-control', 'edit-mode');
-    view.rerender(<BoardHeader id="h" title="Icons" editing labels={labels.board} onEdit={() => {}} onDone={() => {}} />);
-    expect(screen.getByRole('button', { name: labels.board.done })).toHaveAttribute('data-studio-control', 'edit-mode');
   });
 
   it('marks an unchosen library board leaf as not chosen', () => {

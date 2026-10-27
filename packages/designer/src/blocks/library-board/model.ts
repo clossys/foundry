@@ -23,7 +23,11 @@ export interface LibraryBoardRecords {
   readonly rows: { readonly version: 1; readonly layer: LayerId; readonly boardId: string; readonly label: string; readonly items: readonly LibraryBoardRow[] };
   readonly controls: { readonly version: 1; readonly mode: 'view' | 'edit'; readonly canSave: boolean; readonly pending: boolean };
 }
-export type LibraryBoardCommand = { readonly version: 1; readonly command: 'board-edit' | 'board-done'; readonly boardId: string } | { readonly version: 1; readonly command: 'use-source' | 'reveal'; readonly boardId: string; readonly leafId: string; readonly source: string };
+/**
+ * The board's one command: reveal a leaf (select its row and open the inspector). It writes nothing; the board
+ * is read-only, and a change is handed to a coding agent. `source` names the cell revealed, when there is one.
+ */
+export type LibraryBoardCommand = { readonly version: 1; readonly command: 'reveal'; readonly boardId: string; readonly leafId: string; readonly source?: string };
 const record = (value: unknown, keys: readonly string[], required: readonly string[] = keys): Record<string, unknown> => {
   if (!value || typeof value !== 'object' || Array.isArray(value)) throw new TypeError('Library board record required');
   const row = value as Record<string, unknown>;
@@ -72,7 +76,7 @@ function assertPrompt(value: unknown): void {
 export function assertLibraryBoardCommand(value: unknown): asserts value is LibraryBoardCommand {
   if (!value || typeof value !== 'object') throw new TypeError('Library board command required');
   const name = (value as {command?:unknown}).command;
-  const row = record(value, name === 'board-edit' || name === 'board-done' ? ['version','command','boardId'] : ['version','command','boardId','leafId','source']);
-  if (row.version !== 1 || !['board-edit','board-done','use-source','reveal'].includes(String(name))) throw new TypeError('Unknown library board command');
+  const row = record(value, ['version','command','boardId','leafId','source'], ['version','command','boardId','leafId']);
+  if (row.version !== 1 || name !== 'reveal') throw new TypeError('Unknown library board command');
   for (const [key, field] of Object.entries(row)) if (key !== 'version') text(field);
 }

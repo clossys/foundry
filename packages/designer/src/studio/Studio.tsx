@@ -6,16 +6,11 @@ import { StudioProvider, useOptionalStudioSession } from "./StudioProvider.js";
 import { WholeStudioProvider } from "./WholeStudioProvider.js";
 import type { CompositeStudioProps, StudioCanvasProps, StudioProps } from "./types.js";
 
-/** Actual field boundary shared by the Studio surface and consumer-supplied editors. */
-export function StudioEditBoundary({ children }: { children: React.ReactNode }) {
-  const state = useOptionalStudioSession();
-  return <div onBlurCapture={() => { void state?.autosave?.flush(); }} onKeyDownCapture={event => { if (event.key === "Enter") void state?.autosave?.flush(); }} className="isolate flex h-full w-full min-h-0 min-w-0 flex-col">{children}</div>;
-}
 function StudioSurface({ header = "internal", ...props }: StudioCanvasProps) {
-  return <StudioEditBoundary>
+  return <div className="isolate flex h-full w-full min-h-0 min-w-0 flex-col">
     {header === "internal" ? <StudioHeader /> : null}
     <StudioCanvas className={props.className} panelInsets={props.panelInsets} candidateWorkflow={props.candidateWorkflow} />
-  </StudioEditBoundary>;
+  </div>;
 }
 export function Studio(props: StudioCanvasProps): React.JSX.Element;
 export function Studio(props: StudioProps): React.JSX.Element;
@@ -28,8 +23,8 @@ export function Studio(props: StudioProps | CompositeStudioProps | StudioCanvasP
   const surface = <StudioSurface header={props.header} panelInsets={props.panelInsets} className={props.className} candidateWorkflow={props.candidateWorkflow} />;
   if ("kind" in props.adapter && props.adapter.kind === "composite") {
     const composite = props as CompositeStudioProps;
-    return <WholeStudioProvider sessionRef={composite.sessionRef} adapter={composite.adapter} labels={composite.labels} initialSlotId={composite.initialSlotId} livePreview={composite.livePreview}>{surface}</WholeStudioProvider>;
+    return <WholeStudioProvider adapter={composite.adapter} labels={composite.labels} initialSlotId={composite.initialSlotId}>{surface}</WholeStudioProvider>;
   }
   const legacy = props as StudioProps;
-  return <StudioProvider sessionRef={legacy.sessionRef} adapter={legacy.adapter} labels={legacy.labels} initialSlotId={legacy.initialSlotId} livePreview={legacy.livePreview} catalog={legacy.catalog}>{surface}</StudioProvider>;
+  return <StudioProvider adapter={legacy.adapter} labels={legacy.labels} initialSlotId={legacy.initialSlotId} catalog={legacy.catalog}>{surface}</StudioProvider>;
 }

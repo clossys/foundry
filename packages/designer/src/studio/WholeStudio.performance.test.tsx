@@ -3,16 +3,16 @@ import { isValidElement } from "react";
 import { Disclosure } from "../components/Disclosure.js";
 import { act, cleanup, fireEvent, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { render } from "./__fixtures__/frame.js";
+import { render, studioReady } from "./__fixtures__/frame.js";
 import { labels } from "./__fixtures__/studio.js";
 import { Studio } from "./Studio.js";
 import { StudioRightPanel } from "./StudioRightPanel.js";
 import { WholeStudioProvider, useWholeStudio, type WholeStudioState } from "./WholeStudioProvider.js";
 import { prepareCompositeLibraryBoard } from "./prepared-library-boards.js";
-import { applyLibraryChange, loadBuildCatalog, loadCatalog, loadComponentRegistry, resolve, type BuildCatalogData, type PlacementNode } from "../catalog-core/index.js";
-import { OFFERED_SOURCE, adoptedOfferedComponentIntegration, offeredComponentIntegration } from "./__fixtures__/roster-source.js";
+import { applyLibraryChange, libraryHash, loadBuildCatalog, loadCatalog, loadComponentRegistry, resolve, type BuildCatalogData, type PlacementNode } from "../catalog-core/index.js";
+import { adoptedOfferedComponentIntegration, offeredComponentIntegration } from "./__fixtures__/roster-source.js";
 import { standardM1FixtureEngine, standardM1Runtime } from "../catalog-core/__fixtures__/standard-m1-runtime.js";
-import { boardOf, boardRow } from "./__fixtures__/library-board-dom.js";
+import { boardRow } from "./__fixtures__/library-board-dom.js";
 import type { CompositeStudioAdapter, CompositeStudioLabels, CompositeStudioSnapshot, StudioCandidateWorkflow } from "./types.js";
 
 vi.mock("./prepared-library-boards.js", async importOriginal => {
@@ -63,7 +63,6 @@ function Surface({ adapter, labels = wholeLabels, workflow, onState, initial = "
   return <WholeStudioProvider adapter={adapter} labels={labels} initialSlotId={initial}><Probe /><Studio candidateWorkflow={workflow} /><StudioRightPanel /></WholeStudioProvider>;
 }
 const row = (id: string) => boardRow(id)!;
-const board = (id: string) => boardOf(id)!;
 const explorer = () => document.querySelector<HTMLElement>('[data-studio-panel="explorer"]')!;
 function promptData(dialog: HTMLElement) { return JSON.parse(dialog.querySelector("code")!.textContent!.split("\n\n").slice(1).join("\n\n")); }
 
@@ -72,7 +71,7 @@ it("retains signoff disclosure content and expansion without rendering it again 
   const onState = (value: WholeStudioState) => { state = value; };
   const mounted = performance.now();
   const view = render(<Surface adapter={f.adapter} initial="sections.hero" onState={onState} />);
-  await screen.findByText(labels.autosave.saved);
+  await studioReady();
   const mountMs = Math.round(performance.now() - mounted);
   const inspector = () => document.querySelector<HTMLElement>('[data-studio-panel="inspector"]')!;
   const ids = f.adapter.contracts!.slots.filter(slot => slot.layer === "sections" || slot.layer === "frames").map(slot => slot.id);
@@ -84,13 +83,13 @@ it("retains signoff disclosure content and expansion without rendering it again 
   const trigger = within(inspector()).getByRole("button", { name: "sections.hero", exact: true });
   fireEvent.click(trigger);
   expect(trigger).toHaveAttribute("aria-expanded", "true");
-  const initial = signoffCalls(), started = performance.now(), session = state.session;
+  const initial = signoffCalls(), started = performance.now(), session = state.sessionIdentity;
   expect(initial).toBe(ids.length);
   for (const id of ids.slice(1, 6)) act(() => state.setLeaf(id));
   const after = signoffCalls();
   console.info("PERF5 signoff traversal", JSON.stringify({ leaves: 5, mountMs, initialRenders: initial, additionalRenders: after - initial, elapsedMs: Math.round(performance.now() - started) }));
   expect(within(inspector()).getByRole("heading", { level: 2 })).toHaveTextContent(ids[5]!);
-  expect(state.session).toBe(session);
+  expect(state.sessionIdentity).toBe(session);
   expect(within(inspector()).getByRole("button", { name: "sections.hero", exact: true })).toBe(trigger);
   expect(trigger).toHaveAttribute("aria-expanded", "true");
   expect(signoffCalls()).toBe(initial);
@@ -105,32 +104,32 @@ it("retains signoff disclosure content and expansion without rendering it again 
   expect(inspector().textContent).toContain("Current unresolved: No unresolved axes");
   const next = { ...f.adapter, contracts: { ...f.adapter.contracts!, slots: f.adapter.contracts!.slots.map(slot => slot.id === "sections.hero" ? { ...slot, contract: { ...slot.contract, description: "Current contract content" } } : slot) } };
   view.rerender(<Surface adapter={next} labels={nextNone} initial="sections.hero" onState={onState} />);
-  await waitFor(() => expect(state.session).not.toBe(session));
+  await waitFor(() => expect(state.sessionIdentity).not.toBe(session));
   expect(inspector().textContent).toContain("Current contract content");
   expect(within(inspector()).getByRole("button", { name: "sections.hero", exact: true })).toHaveAttribute("aria-expanded", "true");
   view.unmount();
   vi.mocked(Disclosure).mockClear();
   const second = performance.now();
   render(<Surface adapter={f.adapter} initial="sections.hero" onState={onState} />);
-  await screen.findByText(labels.autosave.saved);
+  await studioReady();
   expect(signoffCalls()).toBe(ids.length);
-  expect(state.session).not.toBe(session);
+  expect(state.sessionIdentity).not.toBe(session);
   console.info("PERF5 second fresh source mount", JSON.stringify({ mountMs: Math.round(performance.now() - second), signoffRenders: signoffCalls(), qualifier: "warm module source fixture; not installed Admin qualification" }));
 });
 
-it("keeps contract board preparation stable when native Tree blur advances the original session revision", async () => {
+/** DESIGNER-RO (converted, row 13): there is no session revision or flush; native Tree blur and navigation keep the loaded snapshot and the prepared boards. */
+it("keeps contract board preparation stable through native Tree blur and navigation", async () => {
   const f = fixture(false, true), user = userEvent.setup(); let state!: WholeStudioState;
   render(<Surface adapter={f.adapter} onState={value => { state = value; }} />);
-  await screen.findByText(labels.autosave.saved);
+  await studioReady();
   await user.click(within(explorer()).getByRole("button", { name: "Actions", exact: true }));
   const first = within(explorer()).getByRole("button", { name: "Buttons", exact: true });
   await user.click(first);
-  const before = { revision: state.sessionState!.revision, session: state.session, library: state.input!.library, edits: state.sessionState!.edits, profile: state.evaluated!.value!.profile, prepared: vi.mocked(prepareCompositeLibraryBoard).mock.calls.length };
+  const before = { session: state.sessionIdentity, library: state.input!.library, profile: state.evaluated!.value!.profile, prepared: vi.mocked(prepareCompositeLibraryBoard).mock.calls.length };
   expect(before.prepared).toBeGreaterThan(0);
   await user.click(within(explorer()).getByRole("button", { name: "Menus", exact: true }));
-  expect(state.sessionState!.revision).toBeGreaterThan(before.revision);
-  expect(state.session).toBe(before.session); expect(state.input!.library).toBe(before.library);
-  expect(state.sessionState!.edits).toBe(before.edits); expect(state.evaluated!.value!.profile).toBe(before.profile);
+  expect(state.sessionIdentity).toBe(before.session); expect(state.input!.library).toBe(before.library);
+  expect(state.evaluated!.value!.profile).toBe(before.profile);
   expect(prepareCompositeLibraryBoard).toHaveBeenCalledTimes(before.prepared);
   expect(f.save).not.toHaveBeenCalled();
   // Explorer state and native keyboard navigation remain outside the board boundary.
@@ -142,12 +141,12 @@ it("keeps contract board preparation stable when native Tree blur advances the o
 });
 
 // Expands every canonical branch of one layer through the native chevron (as the installed Admin
-// traversal probe does), then advances the original session revision without an edit.
+// traversal probe does), then blurs the tree (DESIGNER-RO: no session revision or flush remains to advance).
 async function canonicalTraversal(layer: "components" | "sections", initial: string) {
   const f = fixture(false, true); let state!: WholeStudioState;
   const mountedAt = performance.now();
   render(<Surface adapter={f.adapter} initial={initial} onState={value => { state = value; }} />);
-  await screen.findByText(labels.autosave.saved);
+  await studioReady();
   const mountMs = Math.round(performance.now() - mountedAt);
   const contracts = f.adapter.contracts!, placement = contracts.placements.find(entry => entry.layer === layer)!;
   const expected = contracts.slots.filter(slot => slot.layer === layer).map(slot => slot.id);
@@ -163,11 +162,9 @@ async function canonicalTraversal(layer: "components" | "sections", initial: str
     expect(row.getAttribute("aria-expanded"), branch.id).toBe("true");
   }
   const expanded = total(), traversalMs = Math.round(performance.now() - started);
-  const session = state.session, revision = state.sessionState!.revision, library = state.input!.library;
-  fireEvent.focusOut(tree.querySelector('[role="row"]')!);
-  await act(async () => { await state.session!.flush(); });
-  expect(state.sessionState!.revision).toBeGreaterThan(revision + 1);
-  expect(state.session).toBe(session); expect(state.input!.library).toBe(library); expect(f.save).not.toHaveBeenCalled();
+  const session = state.sessionIdentity, library = state.input!.library;
+  await act(async () => { fireEvent.focusOut(tree.querySelector('[role="row"]')!); });
+  expect(state.sessionIdentity).toBe(session); expect(state.input!.library).toBe(library); expect(f.save).not.toHaveBeenCalled();
   const rows = [...tree.querySelectorAll<HTMLElement>('[role="row"]')];
   for (const id of expected) {
     const leafRow = rows.find(candidate => candidate.textContent?.trim() === id);
@@ -202,7 +199,7 @@ it("updates contract labels and the complete workflow including real prompt call
   const f = fixture(), firstCheck = vi.fn(async () => ({ status: "checked" as const, candidates: [] })), nextCheck = vi.fn(async () => ({ status: "checked" as const, candidates: [] }));
   const onState = () => {}, workflow = { returnStep: "First return", guidelines: { "components.button": ["First guideline"] }, checkCandidates: firstCheck };
   const view = render(<Surface adapter={f.adapter} onState={onState} workflow={workflow} />);
-  await screen.findByText(labels.autosave.saved);
+  await studioReady();
   const nextLabels = { ...wholeLabels, board: { ...labels.board, askAgent: "Updated ask", promptInstruction: "Updated instruction" } };
   view.rerender(<Surface adapter={f.adapter} onState={onState} labels={nextLabels} workflow={workflow} />);
   expect(within(row("components.button")).getByRole("button", { name: "Updated ask" })).toBeVisible();
@@ -221,75 +218,77 @@ it("updates contract labels and the complete workflow including real prompt call
   await waitFor(() => expect(launch).toHaveBeenCalledWith("https://example.test/editor", nextWorkflow.actions.openWithTargets[0]));
 });
 
-it("refreshes selected previews and prompt token context after actual library edits and host preview replacement", async () => {
+/**
+ * DESIGNER-RO (converted, rows 10 and 13): the Studio no longer edits the library or reloads on Take theirs. A change
+ * arrives from the host (a coding agent wrote the library): a new adapter loads the edited library, and the selected
+ * preview and prompt token context follow it, with no save.
+ */
+it("refreshes selected previews and prompt token context after a host library change and host preview replacement", async () => {
   const f = fixture(true); let state!: WholeStudioState;
   const preview = vi.fn((leaf: string, profile: Parameters<NonNullable<CompositeStudioSnapshot["preview"]>>[1]) => <output data-testid={`preview-${leaf}`}>{profile.values.members["tokens.surface-color.base"]?.css.light}</output>);
   f.replace({ ...f.get(), preview });
-  render(<Surface adapter={f.adapter} onState={value => { state = value; }} />);
-  await screen.findByText(labels.autosave.saved);
+  const view = render(<Surface adapter={f.adapter} onState={value => { state = value; }} />);
+  await studioReady();
   const selected = screen.getByTestId("preview-components.button"); expect(selected).toHaveTextContent("#ffffff");
   const originalProfile = state.evaluated!.value!.profile, originalLibrary = state.input!.library;
-  const originalPreviewCalls = preview.mock.calls.length;
-  await act(async () => { await state.session!.flush(); });
-  expect(preview).toHaveBeenCalledTimes(originalPreviewCalls);
-  act(() => state.session!.edit("tokens.surface-color", [{ portion: "values", change: { op: "author", slot: "tokens.surface-color", tokens: { base: { $type: "color", $value: "#123456", $extensions: { "com.clossys.css": { raw: "#123456" } } } } } }]));
+  const edited = applyLibraryChange(f.adapter.catalog, f.get().library, { baseHash: libraryHash(f.get().library), changes: [{ portion: "values", change: { op: "author", slot: "tokens.surface-color", tokens: { base: { $type: "color", $value: "#123456", $extensions: { "com.clossys.css": { raw: "#123456" } } } } } }] });
+  f.replace({ ...f.get(), library: edited });
+  const changed = { ...f.adapter };
+  view.rerender(<Surface adapter={changed} onState={value => { state = value; }} />);
   await waitFor(() => expect(screen.getByTestId("preview-components.button")).toHaveTextContent("#123456"));
-  await waitFor(() => expect(state.sessionState!.status).toBe("saved"));
-  expect(f.save).toHaveBeenCalledOnce(); expect(state.input!.library).not.toBe(originalLibrary); expect(state.evaluated!.value!.profile).not.toBe(originalProfile);
+  expect(f.save).not.toHaveBeenCalled(); expect(state.input!.library).not.toBe(originalLibrary); expect(state.evaluated!.value!.profile).not.toBe(originalProfile);
   fireEvent.click(within(row("components.select")).getByRole("button", { name: labels.board.askAgent }));
   const dialog = await screen.findByRole("dialog");
   expect(promptData(dialog).tokens).toContainEqual({ id: "tokens.surface-color.base", value: "#123456" });
   fireEvent.click(within(dialog).getByRole("button", { name: labels.board.close }));
   const nextPreview = vi.fn((leaf: string) => <output data-testid={`replacement-${leaf}`}>Replacement preview</output>);
   f.replace({ ...f.get(), preview: nextPreview });
-  const session = state.session;
-  await act(async () => { await state.session!.takeTheirs("components.button"); });
-  expect(state.session).toBe(session); expect(screen.getByTestId("replacement-components.button")).toHaveTextContent("Replacement preview");
+  view.rerender(<Surface adapter={{ ...f.adapter }} onState={value => { state = value; }} />);
+  expect(await screen.findByTestId("replacement-components.button")).toHaveTextContent("Replacement preview");
   // Query changes still alter the actual board rows: a board with no matching row stays mounted but is not shown.
   fireEvent.change(screen.getByRole("searchbox", { name: labels.canvas.search }), { target: { value: "select" } });
   expect(row("components.button")).not.toBeVisible(); expect(row("components.select")).toBeVisible();
+  expect(f.save).not.toHaveBeenCalled();
 });
 
-it("keeps Choose, native candidate save and Done bound to the original session", async () => {
-  const f = fixture(), user = userEvent.setup(); let state!: WholeStudioState;
+/**
+ * DESIGNER-RO (converted, rows 2, 4 and 8-9): "keeps Choose, native candidate save and Done bound to the original
+ * session" asserted the removed Choose/edit board/source radio/Done path and its save. What remains: no Choose, no
+ * edit board and no save, and a host contract change still replaces the loaded snapshot.
+ */
+it("offers no Choose, edit board or save, and replaces the snapshot when the host contracts change", async () => {
+  const f = fixture(); let state!: WholeStudioState;
   const onState = (value: WholeStudioState) => { state = value; };
   const view = render(<Surface adapter={f.adapter} onState={onState} />);
-  await screen.findByText(labels.autosave.saved); const session = state.session;
-  await user.click(within(row("components.button")).getByRole("button", { name: labels.board.choose }));
-  expect(board("components.button")).toHaveAttribute("data-board-mode", "edit");
-  await user.click(screen.getByRole("radio", { name: labels.useSource(OFFERED_SOURCE, "components.button") }));
-  await waitFor(() => expect(f.save).toHaveBeenCalledOnce());
-  await waitFor(() => expect(state.sessionState!.status).toBe("saved"));
-  expect(state.session).toBe(session);
-  expect(f.save.mock.calls[0]![0].changes).toEqual([{ portion: "components", change: { op: "adopt", slot: "components.button", source: OFFERED_SOURCE } }]);
-  await user.click(within(board("components.button")).getByRole("button", { name: labels.board.done }));
-  expect(board("components.button")).toHaveAttribute("data-board-mode", "view");
-  expect(state.evaluated!.value!.profile.components.components["components.button"]?.descriptor.source).toBe(f.get().library.source.id);
+  await studioReady(); const session = state.sessionIdentity;
+  await waitFor(() => expect(boardRow("components.button")).toBeDefined());
+  expect(within(row("components.button")).queryByRole("button", { name: labels.board.choose })).toBeNull();
+  expect(document.querySelector('[data-board-mode="edit"]')).toBeNull(); expect(screen.queryAllByRole("radio", { hidden: true })).toEqual([]);
   const next = fixture();
   next.adapter.contracts = { ...next.adapter.contracts!, placements: next.adapter.contracts!.placements.map(placement => ({ ...placement, nodes: placement.nodes.map(node => node.id === "actions" ? { ...node, label: "Updated actions" } : node) })) };
   view.rerender(<Surface adapter={next.adapter} onState={onState} />);
-  await waitFor(() => { expect(state.session).toBeDefined(); expect(state.session).not.toBe(session); });
+  await waitFor(() => { expect(state.sessionIdentity).toBeDefined(); expect(state.sessionIdentity).not.toBe(session); });
   expect(within(explorer()).getByRole("button", { name: "Updated actions" })).toBeVisible();
-  fireEvent.click(within(row("components.button")).getByRole("button", { name: labels.board.choose }));
-  fireEvent.click(screen.getByRole("radio", { name: labels.useSource(OFFERED_SOURCE, "components.button") }));
-  await waitFor(() => expect(next.save).toHaveBeenCalledOnce());
-  expect(f.save).toHaveBeenCalledOnce();
+  expect(f.save).not.toHaveBeenCalled(); expect(next.save).not.toHaveBeenCalled();
 });
 
+/** DESIGNER-RO (converted, row 10): Take theirs is gone; the host's reloaded runtime ports arrive through a new adapter. */
 it("updates real runtime selection and preview content when the host reloads runtime ports", async () => {
   const engine = standardM1FixtureEngine();
   const runtime = standardM1Runtime({ engine, identity: { kind: "git", head: "1".repeat(40), tree: "2".repeat(40) }, source: { entry: "fixture.tsx", files: { "fixture.tsx": "// SYNTHETIC runtime source descriptor; no browser qualification" }, dependencies: {} }, css: [] });
   const ports = { ...runtime.ports, manifest: { ...runtime.ports.manifest, fills: runtime.ports.manifest.fills.filter(fill => fill.leaf === "sections.hero"), selectionHash: resolve(engine).selectionHash as `sha256:${string}` } };
   let snapshot: CompositeStudioSnapshot = { library: engine.library, runtime: { ...ports, manifest: { ...ports.manifest, fills: [] } }, preview: leaf => <span data-testid="runtime-preview">{leaf}</span> };
   let state!: WholeStudioState;
-  const adapter: CompositeStudioAdapter = { kind: "composite", catalog: engine.catalog, contracts: contractsFor("sections.hero"), load: async () => snapshot, save: async () => ({ ok: false, reason: "unavailable" }) };
-  render(<Surface adapter={adapter} initial="sections.hero" onState={value => { state = value; }} />);
-  await screen.findByText(labels.autosave.saved);
+  const save = vi.fn(async () => ({ ok: false as const, reason: "unavailable" as const }));
+  const adapter: CompositeStudioAdapter = { kind: "composite", catalog: engine.catalog, contracts: contractsFor("sections.hero"), load: async () => snapshot, save };
+  const view = render(<Surface adapter={adapter} initial="sections.hero" onState={value => { state = value; }} />);
+  await studioReady();
   expect(screen.queryByTestId("runtime-preview")).toBeNull();
   snapshot = { ...snapshot, runtime: ports };
-  await act(async () => { await state.session!.takeTheirs("sections.hero"); });
-  expect(state.evaluated!.value!.runtime).toEqual({ status: "valid", findings: [] });
-  expect(screen.getByTestId("runtime-preview")).toHaveTextContent("sections.hero");
+  view.rerender(<Surface adapter={{ ...adapter }} initial="sections.hero" onState={value => { state = value; }} />);
+  await waitFor(() => expect(state.evaluated?.value?.runtime).toEqual({ status: "valid", findings: [] }));
+  expect(await screen.findByTestId("runtime-preview")).toHaveTextContent("sections.hero");
+  expect(save).not.toHaveBeenCalled();
 });
 
 it("offers board prompts only once the host snapshot names the consumer, never an empty one while loading", async () => {

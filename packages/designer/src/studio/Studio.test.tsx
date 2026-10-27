@@ -1,75 +1,51 @@
-import { createRef } from "react";
 import { afterEach, expect, it, vi } from "vitest";
 import { act, cleanup, fireEvent, screen, waitFor, within } from "@testing-library/react";
-import { render } from "./__fixtures__/frame.js";
+import { render, studioReady } from "./__fixtures__/frame.js";
+import { boardRow } from "./__fixtures__/library-board-dom.js";
 import userEvent from "@testing-library/user-event";
 import { applyLibraryChange, generateSelection, libraryHash, type ChangeSet } from "../catalog-core/index.js";
-import { StudioProvider, StudioHeader, useStudioNavigation, StudioRightPanel, type StudioSessionControls } from "./index.js";
+import { StudioProvider, StudioHeader, useStudioNavigation, StudioRightPanel } from "./index.js";
 import { StudioTopBar } from "./StudioTopBar.js";
-import { Studio, StudioEditBoundary } from "./Studio.js";
-import { useStudioSession } from "./StudioProvider.js";
+import { Studio } from "./Studio.js";
 import type { StudioAdapter } from "./types.js";
 import { labels, smallCatalog, emptyLibrary, adopt } from "./__fixtures__/studio.js";
 
 afterEach(() => { cleanup(); vi.restoreAllMocks(); vi.useRealTimers(); window.history.replaceState(null, "", "/"); });
-/**
- * The canvas token board offers presets, not sources (the library-board roster shows Custom only for a token
- * slot), so these autosave tests adopt a source through the session's own `use`, the port the canvas drives.
+/*
+ * DESIGNER-RO (deleted): the autosave, inline Retry, reload-retry and continuous-field flush tests (blur, Enter,
+ * host-leave flush, layer-link flush and its failure) asserted write behaviour the read-only Designer no longer has
+ * (inventory rows 10, 11 and 13: EditFeedback, StudioStatus, the autosave flush and StudioEditBoundary).
  */
-function UseFixture() {
-  const state = useStudioSession(), row = state.rows.find(row => row.id === "tokens.surface-color");
-  return <>{["foundry", "shadcn@aria"].map(source => <button key={source} type="button" onClick={() => { if (row) state.use(row, source); }}>{`use ${source}`}</button>)}
-    <output data-testid="adopted">{state.working ? generateSelection(state.working).slots.flatMap(slot => slot.sources.map(source => `${source}/${slot.slot}`)).join(",") : ""}</output></>;
-}
-const use = (source = "foundry") => screen.getByRole("button", { name: `use ${source}` });
-const adopted = (source = "foundry") => expect(screen.getByTestId("adopted").textContent?.split(",")).toContain(`${source}/tokens.surface-color`);
 function hostAdapter() {
   let library = emptyLibrary();
   const load = vi.fn(async () => ({ library: structuredClone(library) }));
-  const save = vi.fn<StudioAdapter["save"]>(async (changes: ChangeSet) => {
+  const save = vi.fn<NonNullable<StudioAdapter["save"]>>(async (changes: ChangeSet) => {
     if (changes.baseHash !== libraryHash(library)) return { ok: false, reason: "conflict" };
     library = applyLibraryChange(smallCatalog, library, changes); return { ok: true, library: structuredClone(library) };
   });
   return { load, save, read: () => library };
 }
 function Host({ adapter, panel = true }: { adapter: StudioAdapter; panel?: boolean }) {
-  return <StudioProvider catalog={smallCatalog} initialSlotId="tokens.surface-color" adapter={adapter} labels={labels}><StudioHeader /><UseFixture /><Studio header="external" />{panel ? <aside aria-label="Details"><StudioRightPanel /></aside> : null}</StudioProvider>;
+  return <StudioProvider catalog={smallCatalog} initialSlotId="tokens.surface-color" adapter={adapter} labels={labels}><StudioHeader /><Studio header="external" />{panel ? <aside aria-label="Details"><StudioRightPanel /></aside> : null}</StudioProvider>;
 }
-async function mount(adapter: StudioAdapter = hostAdapter()) { const view = render(<Host adapter={adapter} />); await screen.findByText("L-saved"); return view; }
-it("autosaves discrete edits immediately, reloads authoritative truth and uses the reloaded hash next", async () => {
-  const user = userEvent.setup(), adapter = hostAdapter(); await mount(adapter);
-  await user.click(use()); await waitFor(() => expect(adapter.load).toHaveBeenCalledTimes(2)); await screen.findByText("L-saved");
-  expect(adapter.save.mock.calls[0]?.[0]).toEqual({ baseHash: libraryHash(emptyLibrary()), changes: [{ op: "adopt", slot: "tokens.surface-color", source: "foundry" }] });
-  adopted();
-  await user.click(use("shadcn@aria")); await waitFor(() => expect(adapter.load).toHaveBeenCalledTimes(3));
-  expect(adapter.save.mock.calls[1]?.[0].baseHash).toBe(libraryHash(adopt()));
-  expect(screen.queryByRole("button", { name: /^(Save|Discard|L-save|L-discard)$/ })).toBeNull();
-});
+async function mount(adapter: StudioAdapter = hostAdapter()) { const view = render(<Host adapter={adapter} />); await studioReady(); return view; }
+/** DESIGNER-RO (converted): the live preview of unsaved state is gone, so the board row shows the authoritative fill. */
 it("loads authoritative fills even when the host's compatible selection is stale", async () => {
   await mount({ load: async () => ({ library: adopt(), selection: generateSelection(emptyLibrary()) }), save: vi.fn() });
-  expect(document.querySelector("[data-studio-preview]")?.textContent).toContain("--color-surface-base");
+  await waitFor(() => expect(boardRow("tokens.surface-color")).toBeDefined());
+  expect(boardRow("tokens.surface-color")!.textContent).not.toContain(labels.board.notChosen);
+  expect(boardRow("tokens.surface-color")!.textContent).toContain("--color-surface-raised");
+  expect(document.querySelector("style[data-studio-preview]")).toBeNull();
 });
-it("retains a failed leaf with inline Retry and keeps the attempted value visible", async () => {
-  const user = userEvent.setup(), adapter = hostAdapter(); adapter.save.mockResolvedValueOnce({ ok: false, reason: "failed" }); await mount(adapter);
-  await user.click(use()); await screen.findByText("L-failed");
-  adopted();
-  const feedback = document.querySelector('[data-studio-edit-error="tokens.surface-color"]') as HTMLElement;
-  await user.click(within(feedback).getByRole("button", { name: "L-retry" })); await screen.findByText("L-saved"); expect(adapter.save).toHaveBeenCalledTimes(2);
-});
-it("retries only the load after an acknowledged save whose reload failed", async () => {
-  const user = userEvent.setup(), adapter = hostAdapter(); await mount(adapter); adapter.load.mockRejectedValueOnce(new Error("offline"));
-  await user.click(use()); await screen.findByText("L-failed");
-  const feedback = document.querySelector('[data-studio-edit-error="tokens.surface-color"]') as HTMLElement;
-  await user.click(within(feedback).getByRole("button", { name: "L-retry" })); await screen.findByText("L-saved"); expect(adapter.save).toHaveBeenCalledTimes(1);
-});
-it("keeps status and score out of the real-link header, and history works with its panel unmounted", async () => {
-  const user = userEvent.setup(), adapter = hostAdapter(); const view = await mount(adapter);
+/** DESIGNER-RO (converted): the header half is unchanged; the undo shortcut with the panel unmounted now never saves. */
+it("keeps status and score out of the real-link header, and the undo shortcut never saves with its panel unmounted", async () => {
+  const adapter = hostAdapter(); const view = await mount(adapter);
   const header = document.querySelector("[data-studio-header]") as HTMLElement;
   expect(within(header).getAllByRole("link")).toHaveLength(5); expect(header.textContent).toBe("TokensAssetsComponentsSectionsFrames");
-  expect(within(header).queryByRole("button")).toBeNull(); expect(within(screen.getByRole("complementary", { name: "Details" })).getByText("L-saved")).toBeVisible();
-  await user.click(use()); await screen.findByText("L-saved"); view.rerender(<Host adapter={adapter} panel={false} />);
-  fireEvent.keyDown(document.body, { key: "z", metaKey: true }); await waitFor(() => expect(adapter.save).toHaveBeenCalledTimes(2));
-  expect(adapter.read().fills).toHaveLength(0);
+  expect(within(header).queryByRole("button")).toBeNull(); expect(document.querySelector("[data-studio-save-status]")).toBeNull();
+  view.rerender(<Host adapter={adapter} panel={false} />);
+  for (const key of ["z", "Z"]) await act(async () => { fireEvent.keyDown(document.body, { key, metaKey: true }); fireEvent.keyDown(document.body, { key, ctrlKey: true, shiftKey: true }); });
+  expect(adapter.save).not.toHaveBeenCalled(); expect(adapter.load).toHaveBeenCalledTimes(1);
 });
 it("uses fragment mount, keyboard activation and back/forward to restore the selected layer", async () => {
   window.history.replaceState(null, "", "#studio-layer=assets"); const user = userEvent.setup(); await mount();
@@ -81,40 +57,13 @@ it("uses fragment mount, keyboard activation and back/forward to restore the sel
   await act(async () => { window.location.hash = "#unrelated"; window.dispatchEvent(new HashChangeEvent("hashchange")); });
   expect(screen.getByRole("link", { name: "Assets" })).toHaveAttribute("aria-current", "page");
 });
-function ContinuousField() {
-  const state = useStudioSession();
-  return <StudioEditBoundary><input aria-label="Value" onChange={event => state.apply([{ op: "author", slot: "tokens.surface-color", tokens: { base: { $type: "color", $value: event.currentTarget.value } } }], "continuous", "base")} /></StudioEditBoundary>;
-}
-it.each(["blur", "Enter"])("flushes an actual continuous field %s boundary exactly once before 500ms", async boundary => {
-  const adapter = hostAdapter(); render(<StudioProvider adapter={adapter} catalog={smallCatalog} labels={labels}><ContinuousField /><StudioRightPanel /></StudioProvider>);
-  await screen.findByText("L-saved"); vi.useFakeTimers(); const input = screen.getByRole("textbox", { name: "Value" });
-  fireEvent.change(input, { target: { value: "#ffffff" } }); fireEvent.change(input, { target: { value: "#000000" } }); expect(adapter.save).not.toHaveBeenCalled();
-  await act(async () => { if (boundary === "blur") fireEvent.blur(input); else fireEvent.keyDown(input, { key: "Enter" }); });
-  expect(adapter.save).toHaveBeenCalledTimes(1); await act(async () => { await vi.advanceTimersByTimeAsync(1000); }); expect(adapter.save).toHaveBeenCalledTimes(1);
-});
-it("awaits a deferred host-leave flush and reports false when the actual save fails", async () => {
-  const adapter = hostAdapter(), sessionRef = createRef<StudioSessionControls>(); let release!: () => void;
-  const gate = new Promise<void>(resolve => { release = resolve; }); adapter.save.mockImplementationOnce(async () => { await gate; return { ok: false, reason: "failed" }; });
-  render(<StudioProvider adapter={adapter} catalog={smallCatalog} labels={labels} sessionRef={sessionRef}><ContinuousField /><StudioRightPanel /></StudioProvider>); await screen.findByText("L-saved");
-  fireEvent.change(screen.getByRole("textbox"), { target: { value: "#ffffff" } }); let complete = false;
-  const leaving = sessionRef.current!.flush().then(saved => { complete = true; return saved; }); expect(complete).toBe(false);
-  await act(async () => { release(); expect(await leaving).toBe(false); }); expect(screen.getByText("L-not-saved")).toBeVisible();
-});
-it("flushes the actual layer link before changing selection or calling the host router", async () => {
-  const adapter = hostAdapter(); let release!: () => void;
-  const gate = new Promise<void>(resolve => { release = resolve; }); const save = adapter.save.getMockImplementation()!;
-  adapter.save.mockImplementationOnce(async changes => { await gate; return save(changes); }); const navigate = vi.fn();
-  render(<StudioProvider adapter={adapter} catalog={smallCatalog} labels={labels}><StudioHeader layerHref={id => `/designer?layer=${id}`} onLayerNavigate={navigate} /><ContinuousField /><StudioRightPanel /></StudioProvider>); await screen.findByText("L-saved");
-  fireEvent.change(screen.getByRole("textbox"), { target: { value: "#ffffff" } }); fireEvent.click(screen.getByRole("link", { name: "Assets" }));
-  expect(adapter.save).toHaveBeenCalledTimes(1); expect(navigate).not.toHaveBeenCalled(); expect(screen.getByRole("link", { name: "Tokens" })).toHaveAttribute("aria-current", "page");
-  await act(async () => { release(); }); await waitFor(() => expect(navigate).toHaveBeenCalledWith("assets", "/designer?layer=assets"));
-  expect(screen.getByRole("link", { name: "Assets" })).toHaveAttribute("aria-current", "page");
-});
-it("keeps the layer, URL and edited field when the layer-link flush fails", async () => {
-  const adapter = hostAdapter(); adapter.save.mockResolvedValueOnce({ ok: false, reason: "failed" }); const navigate = vi.fn();
-  render(<StudioProvider adapter={adapter} catalog={smallCatalog} labels={labels}><StudioHeader onLayerNavigate={navigate} /><ContinuousField /><StudioRightPanel /></StudioProvider>); await screen.findByText("L-saved");
-  fireEvent.change(screen.getByRole("textbox"), { target: { value: "#ffffff" } }); fireEvent.click(screen.getByRole("link", { name: "Assets" })); await screen.findByText("L-not-saved");
-  expect(navigate).not.toHaveBeenCalled(); expect(window.location.hash).toBe(""); expect(screen.getByRole("textbox")).toHaveValue("#ffffff"); expect(screen.getByRole("link", { name: "Tokens" })).toHaveAttribute("aria-current", "page");
+/** DESIGNER-RO (converted): with no unsaved edit to flush, the layer link changes selection and calls the host router at once. */
+it("changes the layer and calls the host router at once, with no flush and no save", async () => {
+  const adapter = hostAdapter(); const navigate = vi.fn();
+  render(<StudioProvider adapter={adapter} catalog={smallCatalog} labels={labels}><StudioHeader layerHref={id => `/designer?layer=${id}`} onLayerNavigate={navigate} /><Studio header="external" /><StudioRightPanel /></StudioProvider>); await studioReady();
+  fireEvent.click(screen.getByRole("link", { name: "Assets" }));
+  await waitFor(() => expect(navigate).toHaveBeenCalledWith("assets", "/designer?layer=assets"));
+  expect(screen.getByRole("link", { name: "Assets" })).toHaveAttribute("aria-current", "page"); expect(adapter.save).not.toHaveBeenCalled();
 });
 
 it("supplies frame navigation data matching the mounted header and provider selection", async () => {

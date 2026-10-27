@@ -1,6 +1,6 @@
 import { afterEach, expect, it, vi } from "vitest";
 import { act, cleanup, fireEvent, screen, waitFor, within } from "@testing-library/react";
-import { render } from "./__fixtures__/frame.js";
+import { render, studioReady } from "./__fixtures__/frame.js";
 import userEvent from "@testing-library/user-event";
 import { applyLibraryChange, libraryHash, loadBuildCatalog, loadCatalog, loadComponentRegistry } from "../catalog-core/index.js";
 import { componentIntegration, adoptedComponentIntegration } from "../catalog-core/__fixtures__/component-integration.js";
@@ -21,7 +21,7 @@ import { boardRowLeaf } from "./canvas-boards.js";
 import { importFoundryFrames, importFoundrySections, planSurfaceDefaults, type SurfaceDefaultsInput } from "../catalog-core/index.js";
 import { planSurfacePreviews } from "./planned-surface-previews.js";
 import { accessMatrixSample } from "../blocks/access-matrix/sample.js";
-import { OFFERED_SOURCE, adoptedOfferedComponentIntegration, offeredComponentIntegration } from "./__fixtures__/roster-source.js";
+import { adoptedOfferedComponentIntegration, offeredComponentIntegration } from "./__fixtures__/roster-source.js";
 
 const wholeLabels: CompositeStudioLabels = { ...labels, whole: { signoff: "W-signoff", proposed: "W-proposed", contract: "W-contract", contentSlots: "W-slots", configurations: "W-config", unresolved: "W-unresolved", unassessed: "W-unassessed" } };
 it('state-only original provider keeps children mounted while loading and uses one shared value session', async () => {
@@ -30,7 +30,7 @@ it('state-only original provider keeps children mounted while loading and uses o
   function Probe() {
     const whole = useWholeStudio()!, values = useStudioSession(), { projection } = useDesignerLayerBoardProjection();
     const [edit, setEdit] = useState(false);
-    return <section data-testid="original-provider-probe"><button onClick={() => setEdit(true)}>{edit ? 'Local Edit retained' : 'Local Edit'}</button><output>{projection.phase}</output><span>{values.phase.status}</span><span>{whole.sessionState?.status}</span></section>;
+    return <section data-testid="original-provider-probe"><button onClick={() => setEdit(true)}>{edit ? 'Local Edit retained' : 'Local Edit'}</button><output>{projection.phase}</output><span>{values.phase.status}</span><span>{whole.layer}</span></section>;
   }
   render(<WholeStudioProvider adapter={{ ...f.adapter, load }} labels={wholeLabels}><Probe /></WholeStudioProvider>);
   const child = screen.getByTestId('original-provider-probe');
@@ -61,31 +61,18 @@ it('refuses state refs crossing two actual original provider sessions', async ()
   render(<><WholeStudioProvider adapter={{ ...f.adapter, catalog }} labels={wholeLabels}><Probe id="first-session" /></WholeStudioProvider><WholeStudioProvider adapter={{ ...f.adapter, catalog }} labels={wholeLabels}><Probe id="second-session" /></WholeStudioProvider></>);
   await waitFor(() => { expect(screen.getByTestId('first-session')).toHaveTextContent('ready'); expect(screen.getByTestId('second-session')).toHaveTextContent('ready'); });
   const a = states.get('first-session')!, b = states.get('second-session')!;
-  expect(a.whole.session).not.toBe(b.whole.session); expect(a.projected.projection.session.id).not.toBe(b.projected.projection.session.id);
+  // DESIGNER-RO (converted): the WholeStudio EditSession is gone; the two providers' projection sessions stay distinct.
+  expect(a.projected.projection.session.id).not.toBe(b.projected.projection.session.id); expect("session" in a.whole).toBe(false);
   const reference = { kind: 'action' as const, ref: 'SYNTHETIC-empty-return' }, value = { command: 'SYNTHETIC-return' };
   const section = { sessionId: a.projected.projection.session.id, fill: { section: 'sections.empty-state' as const, content: { actions: reference } }, content: [{ reference, value, hash: runtimeHash(value) }], layout: { leaf: 'layouts.stack' as const, config: 'stack.workspace', members: { align: 'start', measure: 'full' }, slot: 'body' } };
   const input = { query: DESIGNER_LAYER_BOARDS_QUERY, ...a.projected, records: [], arrangement: { kind: 'grid' as const, columns: 2, gap: { x: 12, y: 8 } }, stateSections: { empty: section } };
   expect(deriveDesignerLayerBoardsV1(input).status).toBe('materialized');
   expect(() => deriveDesignerLayerBoardsV1({ ...input, stateSections: { empty: { ...section, sessionId: b.projected.projection.session.id } } })).toThrow(/different original session/);
 });
-it('failed original flush keeps the active layer, same EditSession and unsaved edit identity', async () => {
-  const f = adapterFixture();
-  const save = vi.fn(async () => ({ ok: false as const, reason: 'unavailable' as const }));
-  let current!: { whole: NonNullable<ReturnType<typeof useWholeStudio>>; values: ReturnType<typeof useStudioSession> };
-  function Probe() { current = { whole: useWholeStudio()!, values: useStudioSession() }; return <output>{current.whole.sessionState?.status ?? 'loading'}</output>; }
-  render(<WholeStudioProvider adapter={{ ...f.adapter, save }} labels={wholeLabels}><Probe /></WholeStudioProvider>);
-  await screen.findByText('saved');
-  const session = current.whole.session;
-  const row = current.values.rows.find(row => row.id === 'tokens.surface-color')!;
-  act(() => current.values.use(row, 'foundry'));
-  await screen.findByText('not-saved');
-  const edits = current.whole.sessionState!.edits;
-  let moved: boolean | undefined;
-  await act(async () => { moved = await current.whole.setLayer('components'); });
-  expect(moved).toBe(false); expect(current.whole.layer).toBe('tokens');
-  expect(current.whole.session).toBe(session); expect(current.whole.sessionState!.edits).toEqual(edits);
-  expect(current.values.layer).toBe('tokens'); expect(save).toHaveBeenCalledOnce();
-});
+/*
+ * DESIGNER-RO (deleted): "failed original flush keeps the active layer, same EditSession and unsaved edit identity"
+ * asserted the layer-change flush of an unsaved edit (inventory rows 11 and 13); there is no edit to flush.
+ */
 it('query rerun preserves actual checked value preview identity and never promotes an unavailable source', async () => {
   const f = adapterFixture(); let current!: { whole: NonNullable<ReturnType<typeof useWholeStudio>>; values: ReturnType<typeof useStudioSession>; projected: ReturnType<typeof useDesignerLayerBoardProjection> };
   function Probe() { current = { whole: useWholeStudio()!, values: useStudioSession(), projected: useDesignerLayerBoardProjection() }; return <output>{current.projected.projection.phase}</output>; }
@@ -114,23 +101,11 @@ it('query rerun preserves actual checked value preview identity and never promot
   expect(result.content.filter(content => content.reference.ref.endsWith('/rows')).map(content => content.value)).toEqual(prepared.map(value => value.records.rows));
   expect(f.save).not.toHaveBeenCalled();
 });
-async function editBoard(user: ReturnType<typeof userEvent.setup>, slot: string) {
-  const board = await waitFor(() => { const found = boardOf(slot); expect(found).toBeDefined(); return found!; });
-  await user.click(within(board).getByRole("button", { name: labels.board.changeSelection }));
-}
-/**
- * Token boards offer presets, not sources (the library-board roster is Custom only for a token slot), so a
- * token source change runs through the value session's own `use`, the port the canvas drives.
+/*
+ * DESIGNER-RO: the editBoard (Change selection) and useSource (the value session's `use`) helpers drove removed write
+ * paths (inventory rows 4 and 8-9). A test that needs a value choice now loads a library that already has it.
  */
-let values: ReturnType<typeof useStudioSession> | undefined;
-function SessionProbe() { values = useStudioSession(); return null; }
-async function useSource(slot: string, source: string) {
-  const row = values!.rows.find(row => row.id === slot)!;
-  expect(row).toBeDefined();
-  await act(async () => { values!.use(row, source); });
-}
 /** A board's check badge: the danger Badge's Tooltip trigger, named by the check summary. */
-const checkBadge = (slot: string) => boardRow(slot)!.querySelector<HTMLButtonElement>('button[aria-label^="L-check"]')!;
 async function expandTree(user: ReturnType<typeof userEvent.setup>, layer: "components" | "sections" | "frames", target?: string) {
   const explorer = document.querySelector<HTMLElement>('[data-studio-panel="explorer"]')!;
   const placement = loadBuildCatalog().placements.find(placement => placement.layer === layer)!;
@@ -150,10 +125,10 @@ async function expandTree(user: ReturnType<typeof userEvent.setup>, layer: "comp
   }
   return explorer;
 }
-afterEach(() => { cleanup(); values = undefined; window.history.replaceState(null, "", "/"); });
+afterEach(() => { cleanup(); window.history.replaceState(null, "", "/"); });
 function Studio(props: CompositeStudioProps | StudioCanvasProps) {
   if (!("adapter" in props)) return <StudioView {...props} />;
-  return <WholeStudioProvider {...props}><SessionProbe /><StudioHeader /><StudioView header="external" /><StudioRightPanel /></WholeStudioProvider>;
+  return <WholeStudioProvider {...props}><StudioHeader /><StudioView header="external" /><StudioRightPanel /></WholeStudioProvider>;
 }
 function adapterFixture(full = false) {
   const input = componentIntegration();
@@ -166,7 +141,7 @@ function adapterFixture(full = false) {
 it.each(["components", "sections", "frames"] as const)("keeps legacy controls and reaches every canonical %s registry leaf", async layer => {
   const user = userEvent.setup(); const f = adapterFixture(true);
   render(<WholeStudioProvider adapter={f.adapter} labels={wholeLabels}><StudioHeader /><Studio header="external" /><StudioRightPanel /></WholeStudioProvider>);
-  await screen.findByText("L-saved");
+  await studioReady();
   expect(screen.getAllByRole("link")).toHaveLength(5);
   expect(document.querySelectorAll('[data-studio-panel="zoom"]')).toHaveLength(1);
   const contracts = loadBuildCatalog();
@@ -188,15 +163,7 @@ it.each(["components", "sections", "frames"] as const)("keeps legacy controls an
   expect(rows.some(row => "signoff" in row)).toBe(false);
   expect(document.querySelectorAll('[data-studio-canvas-board]')).toHaveLength(contracts.placements.find(p => p.layer === "frames")!.nodes.flatMap(node => "children" in node ? node.children : [node]).length);
 });
-it("saves projected value edits with the whole composite CAS and reloads host truth", async () => {
-  const user = userEvent.setup(); const f = adapterFixture(); const hash = libraryHash(f.getLibrary());
-  render(<Studio adapter={f.adapter} labels={wholeLabels} initialSlotId="tokens.surface-color" />);
-  await screen.findByText("L-saved");
-  await useSource("tokens.surface-color", "foundry");
-  await waitFor(() => expect(f.load).toHaveBeenCalledTimes(2));
-  expect(f.save.mock.calls[0]?.[0]).toEqual({ baseHash: hash, changes: [{ portion: "values", change: { op: "adopt", slot: "tokens.surface-color", source: "foundry" } }] });
-  await screen.findByText("L-saved");
-});
+/* DESIGNER-RO (deleted): "saves projected value edits with the whole composite CAS and reloads host truth" asserted a UI save (row 4). */
 it("rechecks components when consumer token values change without rewriting observation hashes", () => {
   const input = adoptedComponentIntegration(); const observations = input.componentOptions!.evidence!.observations;
   const bytes = JSON.stringify(observations);
@@ -211,7 +178,7 @@ it("does not fabricate an active runtime preview when no runtime candidate is se
   const user = userEvent.setup(); const f = adapterFixture(); const preview = vi.fn(() => <p>host-preview</p>);
   const load = vi.fn(async () => ({ ...await f.load(), preview }));
   render(<Studio adapter={{ ...f.adapter, load }} labels={wholeLabels} initialSlotId="sections.band" />);
-  await screen.findByText("L-saved");
+  await studioReady();
   expect(preview).not.toHaveBeenCalled();
   expect(screen.getAllByText(labels.board.notChosen).length).toBeGreaterThan(0);
   expect(screen.getAllByText("W-unassessed").length).toBeGreaterThan(0);
@@ -237,12 +204,8 @@ it.each([
   expect(document.querySelector("[data-studio-host-preview]")).toHaveAttribute("data-studio-host-preview", leaf);
   expect(preview.mock.calls.length).toBeGreaterThan(0);
   expect(preview.mock.calls.every(([selected, profile]) => selected === leaf && profile.consumer === f.getLibrary().source.id && !!profile.values && !!profile.components)).toBe(true);
-  if (leaf.startsWith("tokens.")) {
-    const before = preview.mock.calls.at(-1)![1].selectionHash;
-    await useSource(leaf, "foundry");
-    await waitFor(() => expect(preview.mock.calls.at(-1)![1].selectionHash).not.toBe(before));
-    expect(screen.getByText(reason)).toBeVisible();
-  }
+  // DESIGNER-RO (converted): the tokens-only re-preview after a UI source change is gone with the write path (row 4); nothing saves.
+  expect(f.save).not.toHaveBeenCalled();
   await user.click(screen.getByRole("link", { name: /Components/ }));
   expect(screen.queryByText(reason)).not.toBeInTheDocument();
   expect(document.querySelector("[data-studio-host-preview]")).toBeNull();
@@ -256,71 +219,61 @@ it("reports a host value-preview error while retaining the value canvas", async 
   expect(screen.getByRole("treegrid", { name: labels.treeLabel })).toBeInTheDocument();
 });
 
-it("autosaves a loaded value choice with its fresh composite base then blocks stale component evidence without a second write", async () => {
-  const user = userEvent.setup(); const input = offeredComponentIntegration(); let library = input.library;
+/**
+ * DESIGNER-RO (converted): the value choice is no longer made (and autosaved) from the UI (row 4), so the host library
+ * already carries it. The stale component evidence it causes is still checked and shown, there is no source radio,
+ * and nothing is ever saved.
+ */
+it("shows stale component evidence after a loaded value choice, with no source choice and no write", async () => {
+  // The component is adopted so its row shows its own check badge: an unchosen candidate's findings lived only in the removed edit board.
+  const user = userEvent.setup(); const input = adoptedOfferedComponentIntegration();
   const choice = { slot: "tokens.surface-color", source: "shadcn@aria" };
+  const library = applyLibraryChange(input.catalog, input.library, { baseHash: libraryHash(input.library), changes: [{ portion: "values", change: { op: "adopt", slot: choice.slot, source: choice.source } }] });
   const observations = JSON.stringify(input.componentOptions?.evidence?.observations);
   const load = vi.fn(async () => ({ library, componentOptions: input.componentOptions }));
-  const save = vi.fn(async (cs: Parameters<CompositeStudioAdapter["save"]>[0]) => { library = applyLibraryChange(input.catalog, library, cs); return { ok: true as const, library: structuredClone(library) }; });
-  const startHash = libraryHash(library);
+  const save = vi.fn(async () => ({ ok: false as const, reason: "unavailable" as const }));
   render(<Studio adapter={{ kind: "composite", catalog: input.catalog, load, save }} labels={wholeLabels} initialSlotId={choice.slot} />);
-  await screen.findByText("L-saved");
-  expect(save).not.toHaveBeenCalled(); expect(load).toHaveBeenCalledTimes(1);
-  await useSource(choice.slot, choice.source);
-  await waitFor(() => expect(save).toHaveBeenCalledTimes(1));
-  expect(save.mock.calls[0]![0]).toEqual({ baseHash: startHash, changes: [{ portion: "values", change: { op: "adopt", slot: choice.slot, source: choice.source } }] });
-  await waitFor(() => expect(load).toHaveBeenCalledTimes(2)); const firstHash = libraryHash(library);
+  await studioReady();
   await user.click(screen.getByRole("link", { name: /Components/ }));
-  expect(firstHash).not.toBe(startHash);
   await user.click(within(await expandTree(user, "components", "components.button")).getByRole("row", { name: "components.button", exact: true }));
-  await editBoard(user, "components.button");
-  const blocked = screen.getByRole("radio", { name: labels.useSource(OFFERED_SOURCE, "components.button") });
-  expect(blocked).toBeDisabled();
-  await user.click(blocked);
-  const badge = checkBadge("components.button");
-  fireEvent.mouseMove(document.body); await user.hover(badge);
-  const tooltip = await screen.findByRole("tooltip", {}, { timeout: 2500 });
-  expect(tooltip).toHaveTextContent("K5"); expect(tooltip).toHaveTextContent("K6");
-  expect(save.mock.calls.map(([cs]) => cs.baseHash)).toEqual([startHash]);
-  expect(save.mock.calls.map(([cs]) => cs.changes.length)).toEqual([1]);
-  expect(save.mock.calls[0]?.[0].changes[0]?.portion).toBe("values");
-  expect(save.mock.calls[0]?.[0].changes[0]?.change).toEqual({ op: "adopt", slot: choice.slot, source: choice.source });
-  expect(load).toHaveBeenCalledTimes(2);
-  expect(libraryHash(library)).toBe(firstHash);
+  await waitFor(() => expect(boardRow("components.button")).toBeDefined());
+  expect(screen.queryAllByRole("radio", { hidden: true })).toEqual([]);
+  // DESIGNER-RO (converted): the per-candidate check badge lived only in the removed edit board (rows 8-9); the
+  // adopted component's stale evidence stays listed in the read-only scorecard.
+  await user.click(screen.getByRole("button", { name: labels.scorecard.title }));
+  const card = screen.getByRole("region", { name: labels.scorecard.title });
+  expect(card).toHaveTextContent("K5"); expect(card).toHaveTextContent("K6");
+  expect(save).not.toHaveBeenCalled(); expect(load).toHaveBeenCalledTimes(1);
   expect(JSON.stringify(input.componentOptions?.evidence?.observations)).toBe(observations);
 });
-it("shows blocked materializations as inspectable candidates without an enabled adoption control", async () => {
+/**
+ * DESIGNER-RO (converted, rows 8-9): the blocked candidate's check badge and disabled radio lived only in the removed
+ * edit board. What remains: a blocked materialization is never offered for adoption (no radio, no save) and the row
+ * stays not chosen. Its candidate-level reason is not shown in view mode (recorded as an open question in the receipt).
+ */
+it("never offers a blocked materialization for adoption", async () => {
   const user = userEvent.setup(); const input = offeredComponentIntegration();
   const catalog = structuredClone(input.catalog); const candidate = Object.values(catalog.components.fills[0]!.components)[0]!;
   candidate.blockers = [{ code: "source-unavailable", message: "missing source bytes" }];
-  render(<Studio adapter={{ kind: "composite", catalog, load: async () => ({ library: input.library }), save: async () => ({ ok: false, reason: "unavailable" }) }} labels={wholeLabels} />);
-  await screen.findByText("L-saved"); await user.click(screen.getByRole("link", { name: /Components/ }));
+  const save = vi.fn(async () => ({ ok: false as const, reason: "unavailable" as const }));
+  render(<Studio adapter={{ kind: "composite", catalog, load: async () => ({ library: input.library }), save }} labels={wholeLabels} />);
+  await studioReady(); await user.click(screen.getByRole("link", { name: /Components/ }));
   await user.click(within(await expandTree(user, "components", "components.button")).getByRole("row", { name: "components.button", exact: true }));
-  await editBoard(user, "components.button");
-  expect(screen.getByRole("radio", { name: labels.useSource(OFFERED_SOURCE, "components.button") })).toBeDisabled();
-  const badge = checkBadge("components.button");
-  fireEvent.mouseMove(document.body); await user.hover(badge);
-  expect(await screen.findByRole("tooltip", {}, { timeout: 2500 })).toHaveTextContent(/blocked materialization/);
+  const row = await waitFor(() => boardRow("components.button")!);
+  expect(row.querySelector('[data-preview-state="not-chosen"]')).not.toBeNull();
+  expect(screen.queryAllByRole("radio", { hidden: true })).toEqual([]);
+  expect(save).not.toHaveBeenCalled();
 });
-it("replaces the editing session when the host adapter snapshot changes", async () => {
+it("replaces the loaded snapshot when the host adapter changes", async () => {
   const f = adapterFixture(); const view = render(<Studio adapter={f.adapter} labels={wholeLabels} />);
-  await screen.findByText("L-saved");
+  await studioReady();
   const replacement = { ...f.adapter, load: vi.fn(async () => ({ library: { ...f.getLibrary(), source: { ...f.getLibrary().source, id: "replacement" } } })) };
   view.rerender(<Studio adapter={replacement} labels={wholeLabels} />);
   await waitFor(() => expect(replacement.load).toHaveBeenCalledTimes(1));
-  await screen.findByText("L-saved");
+  await studioReady();
   expect(f.load).toHaveBeenCalledTimes(1);
 });
-it("keeps the local value and canvas when an acknowledged composite save cannot reload", async () => {
-  const user = userEvent.setup(); const f = adapterFixture();
-  const load = vi.fn().mockResolvedValueOnce(await f.load()).mockRejectedValueOnce(new Error("offline"));
-  render(<Studio adapter={{ ...f.adapter, load }} labels={wholeLabels} initialSlotId="tokens.surface-color" />);
-  await screen.findByText("L-saved");
-  await useSource("tokens.surface-color", "foundry");
-  expect(await screen.findByText("L-not-saved")).toBeVisible();
-  expect(document.querySelector('[data-studio-canvas]')).not.toBeNull();
-  expect(screen.getAllByRole("button", { name: labels.autosave.retry }).length).toBeGreaterThan(0);
-});
+/* DESIGNER-RO (deleted): "keeps the local value and canvas when an acknowledged composite save cannot reload" asserted the failed-save Retry (rows 10-11). */
 
 it("SYNTHETIC opted-in source snapshot forwards explicit surface options and authenticated bundles", async () => {
   const { adoptedSurface } = await import("../catalog-core/__fixtures__/surface-engine/synthetic.js");
@@ -381,23 +334,20 @@ it("contract boards count runtime-pending findings neutrally, apart from errors,
   expect(pending).toBe(7); expect(errors).toBe(0);
   expect(findings.filter(finding => finding.message.endsWith("Source and runtime observations are unavailable")).every(finding => finding.severity === "notice")).toBe(true);
   render(<Studio adapter={{ kind: "composite", catalog: input.catalog, load, save }} labels={{ ...wholeLabels, runtimePending: count => `P-pending ${count}` }} initialSlotId={slot} />);
-  await screen.findByText("L-saved");
+  await studioReady();
   // Scorecard: the same split, with every pending finding still listed.
   const user = userEvent.setup();
   await user.click(screen.getByRole("button", { name: labels.scorecard.title }));
   const card = screen.getByRole("region", { name: labels.scorecard.title });
   expect(card.querySelector("[data-studio-runtime-pending]")).toHaveTextContent(/^P-pending \d+$/);
   expect(within(card).getAllByText(/Source and runtime observations are unavailable/).length).toBe(Number(card.querySelector("[data-studio-runtime-pending]")!.textContent!.split(" ")[1]));
-  // Choosing view: a candidate whose only blockers are runtime-pending reads as the neutral pending line, never an error badge, and stays unselectable.
-  await editBoard(user, slot);
-  const radio = await screen.findByRole("radio", { name: labels.useSource(OFFERED_SOURCE, slot) });
-  const row = boardRow(slot)!;
-  const lines = [...row.querySelectorAll<HTMLElement>("[data-studio-runtime-pending]")];
-  expect(lines.length).toBeGreaterThan(0);
-  for (const line of lines) { expect(line).toHaveTextContent(/^P-pending [1-9]\d*$/); expect(line).toHaveClass("text-ink-secondary"); expect(line.className).not.toMatch(/danger|success/); }
+  // DESIGNER-RO (converted): the board is view-only (rows 8-9). Its per-candidate pending line and check badge lived only
+  // in the removed edit board; the pending findings stay counted and listed in the scorecard above, the view row carries
+  // no error badge, and there is no source radio at all.
+  const row = await waitFor(() => boardRow(slot)!);
   expect(row.querySelector('button[aria-label^="L-check"]')).toBeNull();
   expect(errors).toBe(0); expect(notices).toBeGreaterThanOrEqual(0);
-  expect(radio).toBeDisabled();
+  expect(screen.queryAllByRole("radio", { hidden: true })).toEqual([]); expect(save).not.toHaveBeenCalled();
 });
 
 it("contract boards preview planned surface defaults labelled as planned, without choosing or counting them", async () => {
@@ -409,7 +359,7 @@ it("contract boards preview planned surface defaults labelled as planned, withou
   const load = vi.fn(async () => ({ ...await f.load(), preview, plannedPreviews }));
   const named: CompositeStudioLabels = { ...wholeLabels, plannedPreview: "P-planned" };
   render(<Studio adapter={{ ...f.adapter, load }} labels={named} initialSlotId="sections.band" />);
-  await screen.findByText("L-saved");
+  await studioReady();
   await waitFor(() => expect(boardRow("sections.band")).toBeDefined());
   const cell = boardRow("sections.band")!.querySelector<HTMLElement>("[data-studio-planned]")!;
   expect(cell).toHaveAttribute("data-studio-planned", "foundry/sections.band");
@@ -430,25 +380,26 @@ it("contract boards preview planned surface defaults labelled as planned, withou
     if (plannedPreviews.previews[id]) { expect(other.querySelector("[data-studio-planned]"), id).not.toBeNull(); expect(cellHook).toHaveAttribute("data-preview-state", "planned"); expect(cellHook).toHaveAttribute("data-sample-state", "default"); expect(other).toHaveTextContent("P-planned"); }
     else { expect(other.querySelector("[data-studio-planned]"), id).toBeNull(); expect(other).toHaveTextContent(labels.board.notChosen); expect(cellHook).toHaveAttribute("data-preview-state", "not-chosen"); expect(cellHook).not.toHaveAttribute("data-sample-state"); }
   }
-  // Editing the board shows candidates, never the planned default as a selection.
-  await userEvent.click(within(board).getByRole("button", { name: labels.board.changeSelection }));
-  await waitFor(() => expect(document.querySelector('section[data-library-board][data-board-mode="edit"]')).not.toBeNull());
-  expect(document.querySelector('section[data-library-board][data-board-mode="edit"] [data-studio-planned]')).toBeNull();
+  // DESIGNER-RO (converted): the board has no edit mode (rows 8-9), so the planned default can never be offered as a selection.
+  expect(within(board).queryByRole("button", { name: labels.board.changeSelection, hidden: true })).toBeNull();
+  expect(document.querySelector('section[data-library-board][data-board-mode="edit"]')).toBeNull();
 });
-it("vf13: a runtime-pending component tile shows its static specimen, a worded badge, the shared leaf label and the raised board plate", async () => {
+/**
+ * DESIGNER-RO (converted): the edit-mode tile (its static specimen and disabled radio) is gone (rows 2-3, 8-9). The
+ * view board keeps the raised plate, the shared leaf label in the row header, and worded check badges.
+ */
+it("vf13: a runtime-pending component board shows the shared leaf label and the raised board plate", async () => {
   const user = userEvent.setup(); const input = offeredComponentIntegration();
   const preview = vi.fn(() => <p>vf13-static-specimen</p>);
   render(<Studio adapter={{ kind: "composite", catalog: structuredClone(input.catalog), load: async () => ({ library: input.library, preview }), save: async () => ({ ok: false, reason: "unavailable" }) }} labels={wholeLabels} />);
-  await screen.findByText("L-saved"); await user.click(screen.getByRole("link", { name: /Components/ }));
+  await studioReady(); await user.click(screen.getByRole("link", { name: /Components/ }));
   await user.click(within(await expandTree(user, "components", "components.button")).getByRole("row", { name: "components.button", exact: true }));
-  await editBoard(user, "components.button");
-  const board = document.querySelector<HTMLElement>('section[data-library-board][data-board-mode="edit"]')!;
+  const board = await waitFor(() => boardOf("components.button")!);
   expect(board).toHaveClass("bg-surface-raised");
-  expect(within(board).getAllByText("vf13-static-specimen").length).toBeGreaterThan(0);
   expect(within(board).queryByText(labels.previewUnavailable)).toBeNull();
-  const header = board.querySelector('th[scope="row"]')!;
+  const header = boardRow("components.button")!.querySelector('[role="rowheader"]')!;
   expect(header.querySelector("[data-leaf-label]")).toHaveClass("font-normal");
   expect(header.querySelector("[data-leaf-id]")).toHaveClass("font-mono");
   for (const badge of board.querySelectorAll('button[aria-label^="L-check"]')) expect(badge.textContent!.trim().length).toBeGreaterThan(1);
-  expect(screen.getByRole("radio", { name: labels.useSource(OFFERED_SOURCE, "components.button") })).toBeDisabled();
+  expect(screen.queryAllByRole("radio", { hidden: true })).toEqual([]);
 });

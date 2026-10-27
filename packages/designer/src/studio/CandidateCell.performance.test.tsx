@@ -1,14 +1,16 @@
 import { expect, it, vi } from "vitest";
 import { render, fireEvent, screen, within, waitFor } from "@testing-library/react";
-import { boardOf, boardRow } from "./__fixtures__/library-board-dom.js";
+import { boardRow } from "./__fixtures__/library-board-dom.js";
+import userEvent from "@testing-library/user-event";
 import { render as renderFrame } from "./__fixtures__/frame.js";
-import { StudioProvider, useStudioSession } from "./StudioProvider.js";
+import { StudioProvider } from "./StudioProvider.js";
 import { Studio } from "./Studio.js";
 import { CandidateCell } from "./CandidateCell.js";
 import { CompactPreview } from "./previews.js";
 import { buildCandidates } from "./model.js";
 import { orderTokenMembers } from "../tokens/preview/member-order.js";
-import { adopt, labels, smallCatalog } from "./__fixtures__/studio.js";
+import { adopt, emptyLibrary, labels, smallCatalog } from "./__fixtures__/studio.js";
+import { applyLibraryChange, libraryHash } from "../catalog-core/index.js";
 
 vi.mock("./previews.js", async importOriginal => {
   const actual = await importOriginal<typeof import("./previews.js")>();
@@ -56,28 +58,28 @@ it("reuses the actual selected preview across matrix reprojection and updates ev
   expect(view.container.textContent).toBe("Host preview two");
 });
 
-it("refreshes prompt token context and host callbacks after the working selection changes", async () => {
-  const library = adopt();
+/**
+ * DESIGNER-RO (converted): the working selection no longer changes from the UI (no apply), so the token context is the
+ * loaded library's own authored value. The prompt now opens from the read-only inspector's Create, and the
+ * host-callback refresh on rerender is unchanged.
+ */
+it("carries the loaded token context into the inspector prompt and refreshes host callbacks on rerender", async () => {
+  const base = emptyLibrary();
+  const library = applyLibraryChange(smallCatalog, base, { baseHash: libraryHash(base), changes: [{ op: "author", slot: "tokens.surface-color", tokens: { base: { $type: "color", $value: "#123456", $extensions: { "com.clossys.css": { raw: "#123456" } } } } }] });
   const firstCheck = vi.fn(async () => ({ status: "checked" as const, candidates: [] }));
   const nextCheck = vi.fn(async () => ({ status: "checked" as const, candidates: [] }));
-  const adapter = { load: async () => ({ library }), save: async () => ({ ok: false as const, reason: "unavailable" as const }) };
-  function EditContext() {
-    const state = useStudioSession();
-    return <button onClick={() => state.apply([{ op: "author", slot: "tokens.surface-color", tokens: { base: { $type: "color", $value: "#123456", $extensions: { "com.clossys.css": { raw: "#123456" } } } } }])}>Change context fixture</button>;
-  }
+  const save = vi.fn(async () => ({ ok: false as const, reason: "unavailable" as const }));
+  const adapter = { load: async () => ({ library }), save };
   function Surface({ check }: { check: typeof firstCheck }) {
-    return <StudioProvider adapter={adapter} catalog={smallCatalog} labels={labels}>
-      <EditContext /><Studio candidateWorkflow={{ checkCandidates: check }} />
-    </StudioProvider>;
+    return <StudioProvider adapter={adapter} catalog={smallCatalog} labels={labels}><Studio candidateWorkflow={{ checkCandidates: check }} /></StudioProvider>;
   }
   const view = renderFrame(<Surface check={firstCheck} />);
   await screen.findByRole("link", { name: "Tokens" });
-  fireEvent.click(screen.getByText("Change context fixture"));
   view.rerender(<Surface check={nextCheck} />);
-  const board = await waitFor(() => boardOf("tokens.surface-color", view.container)!);
-  fireEvent.click(within(board).getByRole("button", { name: labels.board.changeSelection }));
   const current = await waitFor(() => boardRow("tokens.surface-color", view.container)!);
-  fireEvent.click(within(current as HTMLElement).getByRole("button", { name: labels.board.create }));
+  await userEvent.click(within(current).getByText("tokens.surface-color"));
+  const inspector = await waitFor(() => document.querySelector<HTMLElement>('[data-studio-panel="inspector"]')!);
+  fireEvent.click(within(inspector).getByRole("button", { name: labels.board.create }));
   const dialog = await screen.findByRole("dialog");
   const prompt = JSON.parse(dialog.querySelector("code")!.textContent!.split("\n\n").slice(1).join("\n\n"));
   expect(prompt.tokens).toContainEqual({ id: "tokens.surface-color.base", value: "#123456" });
@@ -86,5 +88,5 @@ it("refreshes prompt token context and host callbacks after the working selectio
   if (contract.members.mode === "closed") expect(prompt.variants).toEqual(contract.members.names.map(name => `tokens.surface-color.${name}`));
   fireEvent.click(within(dialog).getByRole("button", { name: labels.board.checkCandidates }));
   await waitFor(() => expect(nextCheck).toHaveBeenCalledWith("tokens.surface-color"));
-  expect(firstCheck).not.toHaveBeenCalled();
+  expect(firstCheck).not.toHaveBeenCalled(); expect(save).not.toHaveBeenCalled();
 });

@@ -1,6 +1,6 @@
 import { afterEach, expect, it, vi } from "vitest";
 import { cleanup, fireEvent, screen, waitFor, within } from "@testing-library/react";
-import { boardOf } from "./__fixtures__/library-board-dom.js";
+import { boardOf, boardRow } from "./__fixtures__/library-board-dom.js";
 import { render } from "./__fixtures__/frame.js";
 import userEvent from "@testing-library/user-event";
 import { Studio as StudioSurface, StudioProvider, StudioRightPanel, type StudioProps } from "./index.js";
@@ -15,7 +15,8 @@ vi.mock("./engine.js", async importOriginal => {
   return { ...actual, studioEngine: { ...actual.studioEngine } };
 });
 
-it("preserves actual Designer errors and unavailable candidates independently of browser form validation", async () => {
+/** DESIGNER-RO (converted): the edit board and its disabled source radio are gone (rows 8-9); the scorecard half is unchanged. */
+it("preserves actual Designer errors with no source choice for browser form validation to touch", async () => {
   const base = emptyLibrary();
   const library = applyLibraryChange(smallCatalog, base, { baseHash: libraryHash(base), changes: [
     { op: "author", slot: "tokens.surface-color", tokens: { base: { $type: "color", $value: "red; color: blue" } } },
@@ -26,9 +27,9 @@ it("preserves actual Designer errors and unavailable candidates independently of
   render(<Studio catalog={smallCatalog} adapter={{ load: async () => ({ library }), save: async () => ({ ok: false, reason: "unavailable" }) }}
     labels={labels} initialSlotId="tokens.surface-color" />);
   await screen.findByRole("link", { name: "Tokens" });
-  fireEvent.click(within((await waitFor(() => boardOf("tokens.surface-color")!))).getByRole("button", { name: labels.board.changeSelection }));
-  fireEvent.focus(screen.getByRole("radio", { name: labels.useSource(library.source.id, "tokens.surface-color") }));
-  expect(screen.getByRole("radio", { name: labels.useSource(library.source.id, "tokens.surface-color") })).toBeDisabled();
+  const board = await waitFor(() => boardOf("tokens.surface-color")!);
+  expect(within(board).queryByRole("button", { name: labels.board.changeSelection, hidden: true })).toBeNull();
+  expect(screen.queryAllByRole("radio", { hidden: true })).toEqual([]);
   expect(document.querySelector("[data-studio-preview]")).toBeNull();
   await userEvent.setup().click(screen.getByRole("button", { name: labels.scorecard.title }));
   const score = screen.getByRole("region", { name: labels.scorecard.title });
@@ -38,6 +39,7 @@ it("preserves actual Designer errors and unavailable candidates independently of
 });
 afterEach(() => { cleanup(); vi.restoreAllMocks(); window.history.replaceState(null, "", "/"); });
 
+/** DESIGNER-RO (converted): the row is requested by selecting it (reveal) instead of focusing an edit-board source radio. */
 it("does no additional adoption, resolution, checking or emission on focus, score, search and filter rerenders", async () => {
   const apply = vi.spyOn(studioEngine, "applyLibraryChange");
   const resolve = vi.spyOn(studioEngine, "resolve");
@@ -48,16 +50,17 @@ it("does no additional adoption, resolution, checking or emission on focus, scor
   const adapter = { load: async () => ({ library }), save: async () => ({ ok: false as const, reason: "unavailable" as const }) };
   render(<Studio catalog={smallCatalog} adapter={adapter} labels={labels} initialSlotId="assets.icon-search" />);
   await screen.findByRole("link", { name: "Tokens" });
-  fireEvent.click(within((await waitFor(() => boardOf("assets.icon-search")!))).getByRole("button", { name: labels.board.changeSelection }));
-  // Request this row once; subsequent focus and display changes must reuse its checked candidates.
-  fireEvent.focus(screen.getByRole("radio", { name: labels.useSource("lucide", "assets.icon-search") }));
+  const user = userEvent.setup();
+  const row = await waitFor(() => boardRow("assets.icon-search")!);
+  // Request this row once; subsequent selection and display changes must reuse its checked candidates.
+  await user.click(within(row).getByText("assets.icon-search"));
+  await waitFor(() => expect(document.querySelector('[data-studio-panel="inspector"]')).not.toBeNull());
   const count = () => [apply.mock.calls.length, resolve.mock.calls.length, check.mock.calls.length, emit.mock.calls.length];
   const before = count();
-  expect(before.every(value => value > 0)).toBe(true);
+  // DESIGNER-RO (converted): no candidate is applied to a hypothetical library any more (the edit board is gone), so adoption stays at zero.
+  expect(before[0]).toBe(0); expect(before.slice(1).every(value => value > 0)).toBe(true);
   const css = document.querySelector("[data-studio-candidates]")?.textContent;
-  const live = document.querySelector("[data-studio-preview]")?.textContent;
-  const user = userEvent.setup();
-  fireEvent.focus(screen.getByRole("radio", { name: labels.useSource("lucide", "assets.icon-search") }));
+  await user.click(within(boardRow("assets.icon-search")!).getByText("assets.icon-search"));
   expect(document.querySelector('[data-studio-panel="inspector"]')).not.toBeNull();
   await user.click(screen.getByRole("button", { name: labels.scorecard.title }));
   expect(screen.getByRole("region", { name: labels.scorecard.title })).toBeInTheDocument();
@@ -70,5 +73,5 @@ it("does no additional adoption, resolution, checking or emission on focus, scor
   expect(screen.getByRole("button", { name: labels.canvas.filters.warnings })).toBeInTheDocument();
   expect(count()).toEqual(before);
   expect(document.querySelector("[data-studio-candidates]")?.textContent).toBe(css);
-  expect(document.querySelector("[data-studio-preview]")?.textContent).toBe(live);
+  expect(document.querySelector("[data-studio-preview]")).toBeNull();
 });
