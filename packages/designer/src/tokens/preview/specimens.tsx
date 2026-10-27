@@ -2,6 +2,7 @@
 
 import { useState, type CSSProperties, type ReactElement, type ReactNode } from "react";
 import { Card } from "../../components/Card.js";
+import { Icon, type IconSize } from "../../components/Icon.js";
 import { SemanticContent } from "../../components/SemanticContent.js";
 import { Toggle } from "../../components/toggle-button/index.js";
 import { unsafeText } from "../../catalog-core/model.js";
@@ -15,11 +16,12 @@ import { specimenDataset } from "../../studio/specimen-dataset.js";
  * One specimen type per token leaf (C21-4). Every member of a leaf paints the same specimen;
  * only the member's own checked value differs, bound once as `--studio-specimen-value` on the
  * specimen root (a `token-under-review` override, see {@link specimenOverride}) and read by token
- * utilities. Specimens compose existing Foundry parts (Card, Toggle, SemanticContent) and token
- * classes; their sample text, labels and rulers come from the shared specimen dataset, and a host
- * may override the text and the play label.
+ * utilities. Specimens compose existing Foundry parts (Card, Icon, Toggle, SemanticContent) and token
+ * classes; their sample text, labels, glyph and rulers come from the shared specimen dataset, and a host
+ * may override the text and the play label. A part that reads its own token (the Icon's size and
+ * stroke) takes the member through that token, overridden on the same root.
  */
-export type TokenSpecimenKind = "motion" | "radius" | "shadow" | "blur" | "text-metric" | "ruler" | "density" | "focus" | "layer-fan";
+export type TokenSpecimenKind = "motion" | "radius" | "shadow" | "blur" | "text-metric" | "ruler" | "density" | "focus" | "layer-fan" | "icon" | "opacity";
 
 export const TOKEN_LEAF_SPECIMENS: Readonly<Record<string, TokenSpecimenKind>> = Object.freeze({
   "tokens.duration": "motion",
@@ -28,14 +30,31 @@ export const TOKEN_LEAF_SPECIMENS: Readonly<Record<string, TokenSpecimenKind>> =
   "tokens.easing": "motion",
   "tokens.transition-easing": "motion",
   "tokens.radius": "radius",
+  "tokens.control-radius": "radius",
+  "tokens.surface-radius": "radius",
   "tokens.shadow": "shadow",
+  "tokens.elevation": "shadow",
+  "tokens.focus-shadow": "shadow",
   "tokens.blur": "blur",
   "tokens.font-size": "text-metric",
+  "tokens.body-size": "text-metric",
+  "tokens.caption-size": "text-metric",
+  "tokens.code-size": "text-metric",
+  "tokens.heading-size": "text-metric",
+  "tokens.display-size": "text-metric",
+  "tokens.typeface": "text-metric",
+  "tokens.display-face": "text-metric",
   "tokens.font-weight": "text-metric",
   "tokens.letter-spacing": "text-metric",
   "tokens.line-height": "text-metric",
   "tokens.breakpoint": "ruler",
   "tokens.control-size": "ruler",
+  "tokens.spacing": "ruler",
+  "tokens.gutter": "ruler",
+  "tokens.touch-target": "ruler",
+  "tokens.brandmark-size": "ruler",
+  "tokens.shift-distance": "ruler",
+  "tokens.border-width": "ruler",
   "tokens.content-size": "ruler",
   "tokens.region-width": "ruler",
   "tokens.container-width": "ruler",
@@ -43,6 +62,9 @@ export const TOKEN_LEAF_SPECIMENS: Readonly<Record<string, TokenSpecimenKind>> =
   "tokens.density": "density",
   "tokens.focus-outline": "focus",
   "tokens.z-index": "layer-fan",
+  "tokens.icon-size": "icon",
+  "tokens.icon-stroke": "icon",
+  "tokens.state-opacity": "opacity",
 });
 
 /**
@@ -60,6 +82,8 @@ export const TOKEN_SPECIMEN_WIDTHS: Readonly<Record<TokenSpecimenKind, { readonl
   density: { min: 52, max: 128, className: "min-w-(--ui-control-h-lg) max-w-(--spacing-6xl)" },
   focus: { min: 52, max: 128, className: "min-w-(--ui-control-h-lg) max-w-(--spacing-6xl)" },
   "layer-fan": { min: 128, max: 128, className: "min-w-(--spacing-6xl) max-w-(--spacing-6xl)" },
+  icon: { min: 52, max: 128, className: "min-w-(--ui-control-h-lg) max-w-(--spacing-6xl)" },
+  opacity: { min: 52, max: 128, className: "min-w-(--ui-control-h-lg) max-w-(--spacing-6xl)" },
 });
 
 /**
@@ -72,8 +96,21 @@ const RULERS = SAMPLES.rulers;
 // Static class strings so the utilities are generated; index = tick position on the track.
 const TICK_POSITIONS = ["start-0", "start-1/4 -translate-x-1/2", "start-1/2 -translate-x-1/2", "start-3/4 -translate-x-1/2", "end-0"] as const;
 
+const TEXT_SIZE = "text-(length:--studio-specimen-value) leading-none";
+/** Text-metric leaves whose member is a size: they set the sample's first word, so the largest step still fits. */
+const TEXT_SIZE_LEAVES = new Set(["tokens.font-size", "tokens.body-size", "tokens.caption-size", "tokens.code-size", "tokens.heading-size", "tokens.display-size"]);
+/** The utility a text-metric member applies, by leaf or, where members differ in role, by leaf and member key. */
 const TEXT_METRIC: Readonly<Record<string, string>> = {
-  "tokens.font-size": "text-(length:--studio-specimen-value) leading-none",
+  "tokens.font-size": TEXT_SIZE,
+  "tokens.body-size": TEXT_SIZE,
+  "tokens.caption-size": TEXT_SIZE,
+  "tokens.code-size": TEXT_SIZE,
+  "tokens.heading-size": TEXT_SIZE,
+  "tokens.display-size": TEXT_SIZE,
+  "tokens.typeface": "text-body-l font-(family-name:--studio-specimen-value)",
+  "tokens.display-face.weight": "text-body-l font-(weight:--studio-specimen-value)",
+  "tokens.display-face.stretch": "text-body-l font-stretch-(--studio-specimen-value)",
+  "tokens.display-face.scale-x": "text-body-l origin-left rtl:origin-right scale-x-(--studio-specimen-value)",
   "tokens.font-weight": "text-body-l font-(weight:--studio-specimen-value)",
   "tokens.letter-spacing": "text-body-l tracking-(--studio-specimen-value)",
   // The line box is tinted so the leading itself is visible.
@@ -107,10 +144,16 @@ const bound = (css: string, extra?: Readonly<Record<`--${string}`, string>>): Sp
 /** A CSS `animation` shorthand: a keyframes name, a time, then plain timing words or one cubic-bezier. */
 const ANIMATION = /^[a-z][a-z0-9-]*\s+(?:\d*\.)?\d+m?s(?:\s+(?:[a-z-]+|cubic-bezier\([\d.\s,+-]+\)))*$/;
 
+/** A CSS `font-style` keyword, the grammar of a display face's style member. */
+const FONT_STYLE = /^(?:normal|italic|oblique(?:\s+-?(?:\d*\.)?\d+deg)?)$/;
+/** The display face's style member: a font-style keyword under a dimension-typed leaf. */
+const fontStyleMember = (member: ResolvedMember): boolean => member.slot === "tokens.display-face" && member.emit?.endsWith("-style") === true;
+
 /** The checked value a specimen may paint, or undefined when the member is outside its grammar. */
 function paintable(member: ResolvedMember): string | undefined {
   const css = member.css.light;
-  const checked = member.slot === "tokens.animation" ? ANIMATION.test(css.trim()) : checkedPreviewCss(member.$type, css);
+  const checked = member.slot === "tokens.animation" ? ANIMATION.test(css.trim())
+    : fontStyleMember(member) ? FONT_STYLE.test(css.trim()) : checkedPreviewCss(member.$type, css);
   return typeof css === "string" && css.trim() && !unsafeText(css) && checked ? css : undefined;
 }
 
@@ -193,8 +236,13 @@ function LayerFanSpecimen({ css, property }: { css: string; property?: string })
   </figure>;
 }
 
-function frame(kind: TokenSpecimenKind, css: string, children: ReactNode, className?: string): ReactElement {
-  return <figure data-layer="tokens" data-token-specimen={kind} data-kind={kind} {...bound(css)} className={join("m-0 overflow-hidden", TOKEN_SPECIMEN_WIDTHS[kind].className, className)}>{children}</figure>;
+/** The icon steps the registered Icon takes; an icon-size member draws at its own step. */
+const ICON_STEPS: readonly IconSize[] = ["sm", "md", "lg"];
+/** A member's emitted custom property, when it is a plain one a registered part can read. */
+const emitted = (member: ResolvedMember): `--${string}` | undefined => member.emit !== undefined && /^--[a-z][a-z0-9-]*$/.test(member.emit) ? member.emit : undefined;
+
+function frame(kind: TokenSpecimenKind, css: string, children: ReactNode, className?: string, extra?: Readonly<Record<`--${string}`, string>>): ReactElement {
+  return <figure data-layer="tokens" data-token-specimen={kind} data-kind={kind} {...bound(css, extra)} className={join("m-0 overflow-hidden", TOKEN_SPECIMEN_WIDTHS[kind].className, className)}>{children}</figure>;
 }
 
 export interface TokenLeafSpecimenProps {
@@ -243,9 +291,23 @@ export function TokenLeafSpecimen({ id, member, sampleText = SAMPLES.sampleText,
       <span aria-hidden="true" data-specimen-target="" className="absolute inset-y-0 end-0 block w-1/2 border-s border-line-base bg-surface-glass backdrop-blur-(--studio-specimen-value)" />
     </Card>);
     case "text-metric": {
-      const sample = member.slot === "tokens.font-size" ? sampleText.trim().split(/\s+/)[0] ?? sampleText : sampleText;
-      return frame(kind, css, <SemanticContent as="span" data-specimen-target="" className={join("block whitespace-nowrap text-ink-primary", TEXT_METRIC[member.slot])}>{sample}</SemanticContent>);
+      // No utility reads a font-style value, so the style member picks the keyword's own utility.
+      const metric = fontStyleMember(member) ? join("text-body-l", css.trim() === "normal" ? "not-italic" : "italic") : TEXT_METRIC[`${member.slot}.${key}`] ?? TEXT_METRIC[member.slot];
+      const sample = TEXT_SIZE_LEAVES.has(member.slot) ? sampleText.trim().split(/\s+/)[0] ?? sampleText : sampleText;
+      return frame(kind, css, <SemanticContent as="span" data-specimen-target="" className={join("block whitespace-nowrap text-ink-primary", metric)}>{sample}</SemanticContent>);
     }
+    case "icon": {
+      // The registered Icon reads its own size and stroke tokens; the member overrides the one it emits, on the root.
+      const target = emitted(member);
+      const step = ICON_STEPS.find(candidate => candidate === key) ?? "lg";
+      return frame(kind, css, <span data-specimen-target="" className="inline-flex text-ink-primary">
+        <Icon decorative glyph={specimenDataset.icon.glyph} size={step} />
+      </span>, "p-sm", target ? { [target]: css } : undefined);
+    }
+    case "opacity": return frame(kind, css, <Card variant="plate" className="flex items-center gap-xs p-md">
+      <span aria-hidden="true" className="block size-lg rounded-control bg-accent" />
+      <span aria-hidden="true" data-specimen-target="" className="block size-lg rounded-control bg-accent opacity-(--studio-specimen-value)" />
+    </Card>);
     case "density": {
       // One sample row; the member applies to its own role: the gap, the padding or the row height.
       const role = key === "gap" ? "gap-(--studio-specimen-value) p-xs" : key === "pad" ? "gap-xs p-(--studio-specimen-value)" : "gap-xs px-xs h-(--studio-specimen-value)";

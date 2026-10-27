@@ -12,6 +12,8 @@ import type { StatusMarkTone } from "../components/StatusMark.js";
 import type { IconNode } from "../icons/types.js";
 import { FileText } from "../icons/FileText.js";
 import { identityStarterSeeds } from "../tokens/identity-kit.js";
+import { defaultPreset, presetValues, sourceRoster, tokenContract } from "../catalog-core/token-contract.js";
+import { oklchToLinearSRGB, parseOklch } from "../tokens/color.js";
 import type { AppNavigationProps } from "../blocks/AppNavigation.js";
 import type { AccountMenuLink } from "../blocks/account-menu-types.js";
 import type { AppNavigationNode } from "../blocks/app-navigation-tree.js";
@@ -98,7 +100,7 @@ const orderRows = people.map((person, index) => {
   const cents = int(1_500, 240_000);
   return {
     id: `order-${1001 + index}`,
-    order: `#${1001 + index}`,
+    order: `ORD-${1001 + index}`,
     customer: person.name,
     status: statuses[index % statuses.length]!,
     items: String(items),
@@ -107,11 +109,30 @@ const orderRows = people.map((person, index) => {
   };
 });
 
-/** The brand mark, drawn by the identity kit that derives the registered `assets.mark` fill, for the sample name. */
+/**
+ * The brand mark, drawn by the identity kit that derives the registered `assets.mark` fill, for the sample name.
+ * Its inks are the Foundry default preset's own token values, the same starter inputs a fresh library derives from.
+ */
 const brandName = "Northwind";
+const preset = defaultPreset(sourceRoster);
+const presetInk = (slot: string, member: string): string => {
+  const value = presetValues(tokenContract, preset, slot)[member]?.light;
+  if (value === undefined) throw new TypeError(`the default preset has no ${slot}.${member}`);
+  return value;
+};
+/**
+ * A preset colour in the form React Aria's colour parser reads: the token's own `oklch()` value, encoded as
+ * sRGB hex. The colour picker's swatches are the default preset's first categorical chart colours.
+ */
+const presetSwatch = (slot: string, member: string): string => {
+  const encode = (linear: number) => Math.round(255 * (linear <= 0.0031308 ? 12.92 * linear : 1.055 * linear ** (1 / 2.4) - 0.055));
+  return `#${oklchToLinearSRGB(parseOklch(presetInk(slot, member))).map(channel => encode(channel).toString(16).padStart(2, "0")).join("")}`;
+};
+const chartSwatches = ["1", "2", "3"].map(member => presetSwatch("tokens.categorical-color", member));
 const brandMark = identityStarterSeeds({ name: brandName }, {
-  ink: "#1f2937", onInverse: "#ffffff", surfaceBase: "#ffffff", surfaceInverse: "#111827",
-  accent: "#2563eb", onAccent: "#ffffff", fontFamily: "sans-serif",
+  ink: presetInk("tokens.text-color", "primary"), onInverse: presetInk("tokens.text-color", "on-inverse"),
+  surfaceBase: presetInk("tokens.surface-color", "base"), surfaceInverse: presetInk("tokens.surface-color", "inverse"),
+  accent: presetInk("tokens.accent-color", "default"), onAccent: presetInk("tokens.text-color", "on-accent"), fontFamily: "sans-serif",
 }).mark;
 
 const selectOptions: readonly SelectOption[] = [
@@ -140,6 +161,12 @@ const tokens = {
     "tokens.region-width": { scale: "1:1.5625", factor: 0.64, ticks: [0, 100, 200, 300, 400] },
     "tokens.container-width": { scale: "1:5", factor: 0.2, ticks: [0, 320, 640, 960, 1280] },
     "tokens.control-size": { scale: "4:1", factor: 4, ticks: [0, 16, 32, 48, 64] },
+    "tokens.spacing": { scale: "2:1", factor: 2, ticks: [0, 32, 64, 96, 128] },
+    "tokens.gutter": { scale: "4:1", factor: 4, ticks: [0, 16, 32, 48, 64] },
+    "tokens.touch-target": { scale: "4:1", factor: 4, ticks: [0, 16, 32, 48, 64] },
+    "tokens.brandmark-size": { scale: "4:1", factor: 4, ticks: [0, 16, 32, 48, 64] },
+    "tokens.shift-distance": { scale: "16:1", factor: 16, ticks: [0, 4, 8, 12, 16] },
+    "tokens.border-width": { scale: "16:1", factor: 16, ticks: [0, 4, 8, 12, 16] },
   } as Readonly<Record<string, { readonly scale: string; readonly factor: number; readonly ticks: readonly number[] }>>,
 } as const;
 
@@ -535,7 +562,7 @@ export const specimenDataset = {
   /** One toast per variant, for a toast region that takes a queue. */
   toasts: {
     info: { title: "Sync scheduled", description: "Changes publish at the top of the hour." },
-    success: { title: "Order shipped", description: "Order #1001 left the warehouse." },
+    success: { title: "Order shipped", description: "Order ORD-1001 left the warehouse." },
     warning: { title: "Storage nearly full", description: "4.6 of 5 GB is in use." },
     danger: { title: "Payment failed", description: "The card on file was declined." },
   },
@@ -544,7 +571,7 @@ export const specimenDataset = {
   dialog: {
     trigger: "Open details",
     title: "Order details",
-    body: "Order #1001 ships in two days.",
+    body: "Order ORD-1001 ships in two days.",
     actions: [{ id: "cancel", label: "Cancel" }, { id: "confirm", label: "Save changes" }],
   },
   popover: { trigger: "Show info", label: "Order info", content: "Updated two days ago." },
@@ -554,11 +581,11 @@ export const specimenDataset = {
   combobox: { label: "Assignee", placeholder: "Search people", options: assignees },
   list: { label: "Saved notes", items: [{ id: "plan", label: "Planning note" }, { id: "review", label: "Review checklist" }, { id: "launch", label: "Launch plan" }] },
   radio: { label: "Billing plan", defaultValue: "monthly", items: [{ id: "monthly", label: "Monthly" }, { id: "yearly", label: "Yearly" }] },
-  tabs: { label: "Order sections", items: [{ id: "summary", label: "Summary", content: "Summary of order #1001." }, { id: "activity", label: "Activity", content: "Shipped by Bram Osei." }] },
+  tabs: { label: "Order sections", items: [{ id: "summary", label: "Summary", content: "Summary of order ORD-1001." }, { id: "activity", label: "Activity", content: "Shipped by Bram Osei." }] },
   tags: { label: "Labels", items: [{ id: "urgent", label: "Urgent" }, { id: "gift", label: "Gift" }, { id: "wholesale", label: "Wholesale" }] },
   toggles: { label: "Alignment", items: [{ id: "left", label: "Left" }, { id: "center", label: "Center" }, { id: "right", label: "Right" }], defaultSelectedKeys: ["left"] },
   toolbar: { label: "Formatting", items: [{ id: "bold", label: "Bold" }, { id: "italic", label: "Italic" }] },
-  breadcrumbs: { items: [{ id: "home", label: "Home", href: "#home" }, { id: "orders", label: "Orders", href: "#orders" }, { id: "current", label: "Order #1001" }] },
+  breadcrumbs: { items: [{ id: "home", label: "Home", href: "#home" }, { id: "orders", label: "Orders", href: "#orders" }, { id: "current", label: "Order ORD-1001" }] },
   navigation: { label: "Sections", items: [{ id: "overview", label: "Overview", href: "#overview" }, { id: "settings", label: "Settings", href: "#settings" }] },
   tree: {
     label: "Files",
@@ -569,7 +596,7 @@ export const specimenDataset = {
     defaultExpandedKeys: ["docs"],
   },
   disclosure: { items: [{ id: "shipping", label: "Shipping", content: "Ships in two days." }, { id: "returns", label: "Returns", content: "Returns within thirty days." }] },
-  card: { title: "Order #1001", content: "Three items, shipped to Ada Park." },
+  card: { title: "Order ORD-1001", content: "Three items, shipped to Ada Park." },
   text: {
     action: "Save changes",
     badge: "New",
@@ -601,7 +628,7 @@ export const specimenDataset = {
   separator: { orientation: "horizontal" as const },
   semantic: { as: "p" as const },
   nativeAction: { type: "button" as const },
-  color: { label: "Accent color", defaultValue: "hsl(215, 65%, 50%)", swatches: ["hsl(215, 65%, 50%)", "hsl(155, 55%, 40%)", "hsl(30, 75%, 55%)"] },
+  color: { label: "Chart color", defaultValue: chartSwatches[0]!, swatches: chartSwatches },
   charts: {
     area: { title: "Weekly visits", x: MONTHS.slice(0, 4), series: [{ name: "Visits", values: visits }, { name: "Returns", values: returns }] },
     bar: { title: "Orders by region", categories: ["North", "South", "East"], series: [{ name: "Orders", values: series(3, 6, 20) }] },
