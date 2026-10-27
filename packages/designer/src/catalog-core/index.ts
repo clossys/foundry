@@ -176,6 +176,7 @@ export type { ProvenanceScan, ProvenanceScanInput, ProvenanceFinding, Provenance
 export * from "./runtime-ports.js";
 export * from "./runtime-assembly.js";
 export * from "./runtime-assembly-evidence.js";
+export * from "./surface-runtime-manifest.js";
 
 /** Pure candidate inventory; consumer ownership and checks stay with the composite API. */
 export { importFoundryComponents } from "../importers/foundry-components.js";

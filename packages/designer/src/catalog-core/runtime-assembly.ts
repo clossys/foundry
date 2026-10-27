@@ -222,6 +222,8 @@ export function prepareRuntimeAssembly<Node>(input: RuntimeAssemblyInput<Node>):
     const contentSnapshot: Record<string, Readonly<Record<string, RuntimeContent>>> = {};
     const descriptors: Record<string, RuntimeFillDescriptor> = {};
     const renderers = { ...input.ports.renderers };
+    // Behaviour, not data: shape-checked by checkConsumerRuntimePorts, frozen, never snapshotted or hashed.
+    const frameHost = input.ports.frameHost && Object.freeze({ ...input.ports.frameHost });
     const selections: Record<string, RuntimeFillSelection> = {};
     const resolveFill = (selected: RuntimeFillSelection, path: string, kind: "frame" | "section"): void => {
       const fill = manifest.fills.find(fill => fill.leaf === selected.leaf && fill.config === selected.config && fill.fill === selected.fill && fill.kind === kind);
@@ -368,7 +370,7 @@ export function prepareRuntimeAssembly<Node>(input: RuntimeAssemblyInput<Node>):
       if (!cells.some(candidate => runtimeCellKey(candidate) === runtimeCellKey(cell))) throw new Error("runtime: cell outside bound matrix");
       const draw = (path: string, slots: Readonly<Record<string, readonly Node[]>> = {}, frameStage?: RuntimeFrameStage<Node>): Node => {
         const fill = descriptors[path]!;
-        return renderers[fill.renderer.id]!({ path, fill, selection: selections[path]!, cell: runtimeSnapshot(cell), content: contentSnapshot[path]!, slots, profile, ...(path === "frame" && pageHeader ? { pageHeader } : {}), ...(path === "frame" && frameStage ? { stage: frameStage } : {}) });
+        return renderers[fill.renderer.id]!({ path, fill, selection: selections[path]!, cell: runtimeSnapshot(cell), content: contentSnapshot[path]!, slots, profile, ...(path === "frame" && pageHeader ? { pageHeader } : {}), ...(path === "frame" && frameStage ? { stage: frameStage } : {}), ...(path === "frame" && frameHost ? { host: frameHost } : {}) });
       };
       const slots = Object.fromEntries(Object.entries(paths).map(([slot, values]) => [slot, values.map(path => draw(path))]));
       let frameStage: RuntimeFrameStage<Node> | undefined;

@@ -76,7 +76,10 @@ describe("Foundry frame descriptors", () => {
     }
     const rows = new Map(result().coverage.map(row => [row.slot, row]));
     expect(rows.get("frames.inspector")).toMatchObject({ status: "candidate", supported: ["presentation.collapsed", "presentation.docked", "presentation.overlay"], missingSlots: [], missingRequiredSlots: [], missingStatePorts: [] });
-    expect(rows.get("frames.app-shell")!.missing).toEqual(["layout.immersive", "layout.standard", "stage.contained", "stage.full"]);
+    expect(rows.get("frames.app-shell")!.missing).toEqual([]);
+    expect(FOUNDRY_FRAME_MAP["app-shell"]!.members).toMatchObject({ "layout.immersive": "layout=immersive", "stage.full": "stage=full" });
+    expect(FOUNDRY_FRAME_MAP["app-shell"]!.slots.header).toBe("context");
+    expect(readFileSync(resolve(here, "../frames/app-frame-types.ts"), "utf8")).toMatch(/layout\?: AppFrameLayout;[\s\S]*stage\?: AppFrameStage;/);
     expect(rows.get("frames.site-shell")!.missingSlots).toEqual(["consent", "progress"]);
     expect(rows.get("frames.app-header")!.missingSlots).toEqual([]);
     expect(rows.get("frames.app-header")!.missing).toEqual([]);

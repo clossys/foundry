@@ -19,24 +19,23 @@
       ]
     },
     {
-      "missing": [
-        "layout.immersive",
-        "layout.standard",
-        "stage.contained",
-        "stage.full"
-      ],
+      "missing": [],
       "missingRequiredSlots": [],
       "missingSlots": [
         "progress"
       ],
       "missingStatePorts": [],
       "notes": [
-        "Canonical Designer Frames owns AppFrame. Removed width and layout modes remain unsupported contract members. The width port is the resizable inspector (rightPanel) width in pixels; the sidebar width is fixed. The theme port is a controlled preference passed through to ThemeProvider; without it the provider owns and stores the preference. Command state is internally owned; no progress slot is exposed.",
+        "Canonical Designer Frames owns AppFrame. layout=immersive floats a glass header over the stage and opens with the navigation collapsed; stage=full drops the main inset. The header slot is the app-header context region; the page header itself is leased through PageHeaderModule, never a frame prop. The width port is the resizable inspector (rightPanel) width in pixels; the sidebar width is fixed. The theme port is a controlled preference passed through to ThemeProvider; without it the provider owns and stores the preference. Command state is internally owned; no progress slot is exposed.",
         "Descriptor only; anatomy, source, accessibility, contrast, layout and rendered conformance are unmeasured."
       ],
       "slot": "frames.app-shell",
       "status": "subset",
       "supported": [
+        "layout.immersive",
+        "layout.standard",
+        "stage.contained",
+        "stage.full",
         "theme.dark",
         "theme.light",
         "theme.system"

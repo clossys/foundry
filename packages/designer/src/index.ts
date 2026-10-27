@@ -543,7 +543,7 @@ export type { FormWizardStep, FormWizardLabels, FormWizardProps } from "./blocks
 export { AppFrame, AppFrameSpecimen, APP_FRAME_CONTRACT, APP_FRAME_CONFIG_SCHEMA } from "./frames/index.js";
 export { InspectorFrame } from "./frames/index.js";
 export type { InspectorFrameProps, InspectorFramePresentation } from "./frames/index.js";
-export type { AppFrameProps, AppFrameBrand, AppFrameAccount, AppFrameRightPanel, AppFrameHeader, AppFrameHeaderNav, AppFrameHeaderActions, AppFrameNotice, AppFrameDock, AppFrameSpecimenProps } from "./frames/index.js";
+export type { AppFrameProps, AppFrameBrand, AppFrameAccount, AppFrameRightPanel, AppFrameLayout, AppFrameStage, AppFrameNotice, AppFrameDock, AppFrameSpecimenProps } from "./frames/index.js";
 
 export { SemanticContent } from "./components/SemanticContent.js";
 export type { SemanticContentTag, SemanticContentProps } from "./components/SemanticContent.js";
