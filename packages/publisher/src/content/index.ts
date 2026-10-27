@@ -11,3 +11,5 @@ export { isContentJson, isSourceAnswer } from "./json.js";
 export type { ContentJson, ContentJsonObject, SourceAnswer } from "./json.js";
 export type { ContentWorkspace, ContentBrief, ContentOpenQuestion, ContentLink, ContentApproval, CandidateContent, ContentRevision, ContentCandidate, ContentRelease, ContentSlot, ContentRegistry } from "./model.js";
 export { validateCandidateContent, validateContentCandidate, validateContentSlot, validateContentWorkspace, validateContentRegistry, parseContentRegistry } from "./validate.js";
+export { validateConsumerLibrarySnapshots, checkContentLibraryReferences } from "./library.js";
+export type { ConsumerLibrarySnapshot } from "./library.js";
