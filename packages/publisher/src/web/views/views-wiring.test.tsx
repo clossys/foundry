@@ -6,13 +6,10 @@
  * Each view renders inside SiteFrame's `<main>` content slot, and every styled or
  * interactive element there sits inside a Section root. Two layers of proof:
  *
- * 1. Now: a structural check over the SSR markup, with Section roots found by the
- *    band marker every `SectionFrame` (`sections.band`) already renders.
- * 2. Once WIRE-3 merges: the real `provenance-scan` over the same markup gives
- *    WL1 = 0, the frame root is stamped `frames.site-shell` and the outermost
- *    stamps in `<main>` are `sections.*` only. PENDING(WIRE-3): `scanProvenance`,
- *    `dsAttrs` and the section-root stamps come from WIRE-3; until they are in
- *    `@clossys/designer/catalog`, that block reports as todo.
+ * 1. A structural check over the SSR markup, with Section roots found by the band marker every
+ *    `SectionFrame` (`sections.band`) renders.
+ * 2. WIRE-3's `provenance-scan` over the same markup: WL1 = 0 for each view on its own and inside the
+ *    frame, and the outermost stamps in `<main>` are `sections.*` only.
  *
  * WL10 is static and in base (WIRE-2): the view modules the documents mount import
  * no `@clossys/designer/components` surface and only the frame and the sections.
@@ -23,8 +20,7 @@ import type { ReactElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
 import type { CopyRef, CopyResolver } from "@clossys/writer";
-import * as catalog from "@clossys/designer/catalog";
-import { checkWiring } from "@clossys/designer/catalog";
+import { checkWiring, dsAttrs, scanProvenance } from "@clossys/designer/catalog";
 import { SiteFrame } from "../frame/SiteFrame.js";
 import { SITE_MAIN_ID } from "../frame/types.js";
 import type { SiteShellInput } from "../frame/types.js";
@@ -113,47 +109,62 @@ describe("views in SiteFrame: structural (sections only in the content slot)", (
   });
 });
 
-// PENDING(WIRE-3): scanProvenance and the stamps. The catalog entry is read by name so this file
-// compiles on a base without them; once WIRE-3 merges these run and the todo disappears.
-interface ScanFinding { readonly code: string; readonly selector?: string }
-type Scan = (input: {
-  html: string;
-  route: { id: string; binding: { id: string; frame: string; frameSlots: Record<string, never[]>; sections: Record<string, never[]> } };
-  selection: Record<string, string>;
-}) => { readonly findings: readonly ScanFinding[] };
-type Stamp = (layer: "pages", leaf: string, fill: string) => Record<string, string>;
-const scanProvenance = (catalog as Record<string, unknown>).scanProvenance as Scan | undefined;
-const dsAttrs = (catalog as Record<string, unknown>).dsAttrs as Stamp | undefined;
+// WIRE-3's provenance-scan over the same markup. Section roots carry their stamp (`sections.band` from
+// SectionFrame, `sections.empty-state`, ...); the page root stamp is the route runtime's.
+const route = (id: string) => ({ id, binding: { id, frame: "frames.site-shell", frameSlots: {}, sections: {} } });
+const page = (id: string, children: ReactElement): string =>
+  renderToStaticMarkup(<div {...dsAttrs("pages", `pages.${id}`, `foundry/pages.${id}`)}>{children}</div>);
+const wl1 = (id: string, html: string) =>
+  scanProvenance({ html, route: route(id), selection: {} }).findings.filter((finding) => finding.code === "WL1").map((finding) => finding.message);
+const routeId = (name: string) => name.replace(/[^A-Za-z]+/g, "-").replace(/-$/, "").toLowerCase();
 
-describe("views in SiteFrame: provenance-scan (WL1)", () => {
-  if (!scanProvenance || !dsAttrs) {
-    it.todo("PENDING(WIRE-3): WL1 = 0 for every view in SiteFrame, frame root stamped frames.site-shell");
-    return;
-  }
-  const scan = scanProvenance, stamp = dsAttrs;
-  const route = (id: string) => ({ id, binding: { id, frame: "frames.site-shell", frameSlots: {}, sections: {} } });
-  const page = (id: string, children: ReactElement): string =>
-    renderToStaticMarkup(<div {...stamp("pages", `pages.${id}`, `foundry/pages.${id}`)}>{children}</div>);
-  const wl1 = (id: string, html: string) => scan({ html, route: route(id), selection: {} }).findings.filter((finding) => finding.code === "WL1");
+/**
+ * SiteFrame's root as `frames.site-shell` stamps it. SiteFrame cannot spread the stamp itself yet: its
+ * import allowlist (frame.test.tsx, owner-held) does not admit `@clossys/designer/catalog`. Until it does,
+ * the stamp is applied to the rendered root here, from the same `dsAttrs`, so the scan sees the frame.
+ */
+const FRAME_STAMP = dsAttrs("frames", "frames.site-shell", "foundry/frames.site-shell");
+const stampFrame = (html: string): string => {
+  const attrs = Object.entries(FRAME_STAMP).map(([name, value]) => ` ${name}="${value}"`).join("");
+  expect(html.split('<div data-frame-root=""').length).toBe(2);
+  return html.replace('<div data-frame-root=""', `<div data-frame-root=""${attrs}`);
+};
 
+describe("views: provenance-scan (WL1)", () => {
   for (const { name, element } of VIEWS) {
-    it(`${name} in SiteFrame: WL1 = 0 and main holds only sections.*`, () => {
-      const id = name.replace(/[^A-Za-z]+/g, "-").replace(/-$/, "").toLowerCase();
-      const html = page(id, <SiteFrame shell={shell} resolveCopy={resolveCopy} resolveAsset={resolveAsset}>{element}</SiteFrame>);
+    const id = routeId(name);
+
+    it(`${name} on its own: WL1 = 0, every styled or interactive element is inside a sections.* stamp`, () => {
+      const html = page(id, element);
       expect(wl1(id, html)).toEqual([]);
       const document = new DOMParser().parseFromString(html, "text/html");
-      expect(document.querySelector("[data-frame-root]")?.getAttribute("data-ds-leaf")).toBe("frames.site-shell");
-      const main = document.getElementById(SITE_MAIN_ID)!;
-      const outermost = [...main.querySelectorAll("[data-ds-layer]")].filter((node) => !node.parentElement?.closest("[data-ds-layer]:not([data-ds-layer='frames']):not([data-ds-layer='pages'])"));
+      const outermost = [...document.querySelectorAll("[data-ds-layer]:not([data-ds-layer='pages'])")].filter(
+        (node) => !node.parentElement?.closest("[data-ds-layer]:not([data-ds-layer='pages'])"),
+      );
       expect(outermost.length).toBeGreaterThan(0);
       expect(outermost.map((node) => node.getAttribute("data-ds-layer"))).toEqual(outermost.map(() => "sections"));
     });
+
+    it(`${name} in frames.site-shell: WL1 = 0 and main holds only sections.* roots`, () => {
+      const html = page(id, <SiteFrame shell={shell} resolveCopy={resolveCopy} resolveAsset={resolveAsset}>{element}</SiteFrame>);
+      expect(wl1(id, stampFrame(html))).toEqual([]);
+      const main = new DOMParser().parseFromString(html, "text/html").getElementById(SITE_MAIN_ID)!;
+      expect(main.children.length).toBeGreaterThan(0);
+      expect([...main.children].map((child) => child.getAttribute("data-ds-layer"))).toEqual([...main.children].map(() => "sections"));
+    });
   }
 
-  it("a view drawing its own chrome without SiteFrame fires WL1", () => {
+  it("the scan sees the content slot: a styled element straight in SiteFrame's main fires WL1", () => {
+    const html = page("bare", <SiteFrame shell={shell} resolveCopy={resolveCopy} resolveAsset={resolveAsset}><p className="text-ink-primary">Bare</p></SiteFrame>);
+    expect(wl1("bare", stampFrame(html))).toEqual(["<p> in the frame content slot has no Section ancestor"]);
+  });
+
+  it("a view drawing its own deprecated chrome fires WL1 (the legacy path stays non-conformant)", () => {
     const html = page("legacy-boundary", <BoundaryView status="403" title="Not authorized" brand={<span>Example</span>} />);
     expect(wl1("legacy-boundary", html).length).toBeGreaterThan(0);
   });
+
+  it.todo("SiteFrame stamps its own root frames.site-shell (owner landing item: admit @clossys/designer/catalog for SiteFrame.tsx in frame.test.tsx's import allowlist)");
 });
 
 describe("views: WL10 (the documents mount only the frame and section-composed views)", () => {
