@@ -80,7 +80,10 @@ const twMerge = await (async () => {
     const { extendTailwindMerge } = await import("tailwind-merge");
     return extendTailwindMerge({
       extend: {
-        classGroups: { py: ["py-frame-display"] },
+        // Named `@utility` paddings (`styles/theme-keys.css`) sit outside the token scale, so each
+        // joins its axis group by name: `px-frame-control` must replace a Button's own `px-md`,
+        // and `p-frame-panel` a Card's own `p-lg`.
+        classGroups: { py: ["py-frame-display"], px: ["px-frame-control"], p: ["p-frame-panel"] },
         theme: {
           spacing: tokenSuffixes("--spacing-"),
           radius: tokenSuffixes("--radius-"),

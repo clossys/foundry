@@ -1296,6 +1296,21 @@
    `format: "id"` columns bind to it. */
 @utility type-id { font-family: var(--font-mono, ui-monospace, monospace); font-variant-numeric: tabular-nums; }
 @utility frame-main-bleed { &:has([data-frame-bleed]) { padding: 0; } }
+/* App frame chrome spacing, named so the frame layer reads no spacing token itself.
+   px-frame-control (the chrome controls' inline inset) and p-frame-panel (the docked
+   panel's inset) join tailwind-merge's px and p groups in components/internal/cx.ts,
+   so they replace a Button's own px-md and a Card's own p-lg. */
+@utility px-frame-control { padding-inline: var(--spacing-sm, 8px); }
+@utility p-frame-panel { padding: var(--spacing-sm, 8px); }
+@utility frame-account-row { gap: var(--spacing-sm, 8px); padding-inline: var(--spacing-sm, 8px); padding-block: var(--spacing-sm, 8px); }
+@utility frame-brand-gap { gap: var(--spacing-sm, 8px); }
+@utility frame-footer-gap { gap: var(--spacing-xs, 4px); }
+@utility frame-header-row { gap: var(--spacing-xs, 4px); padding-inline: var(--spacing-sm, 8px); }
+@utility frame-main-gap { gap: var(--spacing-lg, 16px); }
+@utility frame-main-inset {
+  padding: var(--spacing-lg, 16px);
+  @media (width >= 1024px) { padding: var(--spacing-xl, 24px); }
+}
 @utility frame-region-closed { inline-size: 0; }
 @utility frame-nav-width {
   inline-size: 0;
