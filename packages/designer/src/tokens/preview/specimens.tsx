@@ -2,18 +2,22 @@
 
 import { useState, type CSSProperties, type ReactElement, type ReactNode } from "react";
 import { Card } from "../../components/Card.js";
+import { SemanticContent } from "../../components/SemanticContent.js";
 import { Toggle } from "../../components/toggle-button/index.js";
 import { unsafeText } from "../../catalog-core/model.js";
 import type { ResolvedMember } from "../../catalog-core/types.js";
 import { TOKENS } from "../tokens.js";
 import { checkedPreviewCss } from "./checked-css.js";
 import { displayTokenValue } from "./member-order.js";
+import { specimenDataset } from "../../studio/specimen-dataset.js";
 
 /**
  * One specimen type per token leaf (C21-4). Every member of a leaf paints the same specimen;
  * only the member's own checked value differs, bound once as `--studio-specimen-value` on the
- * specimen root and read by token utilities. Specimens compose existing Foundry parts (Card,
- * Toggle) and token classes; they hold no copy beyond the host-overridable defaults.
+ * specimen root (a `token-under-review` override, see {@link specimenOverride}) and read by token
+ * utilities. Specimens compose existing Foundry parts (Card, Toggle, SemanticContent) and token
+ * classes; their sample text, labels and rulers come from the shared specimen dataset, and a host
+ * may override the text and the play label.
  */
 export type TokenSpecimenKind = "motion" | "radius" | "shadow" | "blur" | "text-metric" | "ruler" | "density" | "focus" | "layer-fan";
 
@@ -52,23 +56,19 @@ export const TOKEN_SPECIMEN_WIDTHS: Readonly<Record<TokenSpecimenKind, { readonl
   shadow: { min: 52, max: 128, className: "min-w-(--ui-control-h-lg) max-w-(--spacing-6xl)" },
   blur: { min: 52, max: 128, className: "min-w-(--ui-control-h-lg) max-w-(--spacing-6xl)" },
   "text-metric": { min: 52, max: 256, className: "min-w-(--ui-control-h-lg) max-w-(--ui-layout-sidebar-w)" },
-  ruler: { min: 256, max: 256, className: "min-w-[256px] max-w-[256px]" },
+  ruler: { min: 256, max: 256, className: "min-w-(--ui-layout-sidebar-w) max-w-(--ui-layout-sidebar-w)" },
   density: { min: 52, max: 128, className: "min-w-(--ui-control-h-lg) max-w-(--spacing-6xl)" },
   focus: { min: 52, max: 128, className: "min-w-(--ui-control-h-lg) max-w-(--spacing-6xl)" },
   "layer-fan": { min: 128, max: 128, className: "min-w-(--spacing-6xl) max-w-(--spacing-6xl)" },
 });
 
 /**
- * One true-px ruler per size leaf: a 256px track drawn at a fixed scale, so every member of the
- * leaf is measured against the same axis. The bar is the member's own length times `factor`.
+ * One true-px ruler per size leaf, from the dataset: a track the sidebar width long (256px) drawn
+ * at a fixed scale, so every member of the leaf is measured against the same axis. The bar is the
+ * member's own length times `factor`.
  */
-const RULERS: Readonly<Record<string, { readonly scale: string; readonly factor: number; readonly ticks: readonly number[] }>> = {
-  "tokens.breakpoint": { scale: "1:6.25", factor: 0.16, ticks: [0, 400, 800, 1200, 1600] },
-  "tokens.content-size": { scale: "1:5", factor: 0.2, ticks: [0, 320, 640, 960, 1280] },
-  "tokens.region-width": { scale: "1:1.5625", factor: 0.64, ticks: [0, 100, 200, 300, 400] },
-  "tokens.container-width": { scale: "1:5", factor: 0.2, ticks: [0, 320, 640, 960, 1280] },
-  "tokens.control-size": { scale: "4:1", factor: 4, ticks: [0, 16, 32, 48, 64] },
-};
+const SAMPLES = specimenDataset.tokens;
+const RULERS = SAMPLES.rulers;
 // Static class strings so the utilities are generated; index = tick position on the track.
 const TICK_POSITIONS = ["start-0", "start-1/4 -translate-x-1/2", "start-1/2 -translate-x-1/2", "start-3/4 -translate-x-1/2", "end-0"] as const;
 
@@ -82,7 +82,27 @@ const TEXT_METRIC: Readonly<Record<string, string>> = {
 
 const CAPTION = "text-caption text-ink-muted";
 const join = (...classes: Array<string | false | undefined>): string => classes.filter(Boolean).join(" ");
-const bound = (css: string, extra?: Record<string, string | number>): CSSProperties => ({ "--studio-specimen-value": css, ...extra }) as CSSProperties;
+
+/**
+ * Why a specimen sets a custom property inline. Closed: a specimen sets nothing inline but a
+ * reason-coded custom-property override, and token utilities read it.
+ * - `token-under-review`: the member value under review, bound on the token specimen root.
+ * - `token-scale-context`: the shipped neighbours a member is judged against (the layer fan's plates).
+ * - `asset-under-review`: the asset member's own checked value (a ratio, a pattern tile).
+ */
+export const SPECIMEN_OVERRIDE_REASONS = ["token-under-review", "token-scale-context", "asset-under-review"] as const;
+export type SpecimenOverrideReason = typeof SPECIMEN_OVERRIDE_REASONS[number];
+export interface SpecimenOverride {
+  style: CSSProperties;
+  "data-specimen-override": "";
+  "data-override-reason": SpecimenOverrideReason;
+}
+/** The one audited door a specimen's inline style goes through: custom properties only, with their reason code. */
+export function specimenOverride(reason: SpecimenOverrideReason, properties: Readonly<Record<`--${string}`, string>>): SpecimenOverride {
+  return { style: { ...properties } as CSSProperties, "data-specimen-override": "", "data-override-reason": reason };
+}
+/** The member under review, bound on a token specimen root. */
+const bound = (css: string, extra?: Readonly<Record<`--${string}`, string>>): SpecimenOverride => specimenOverride("token-under-review", { "--studio-specimen-value": css, ...extra });
 
 /** A CSS `animation` shorthand: a keyframes name, a time, then plain timing words or one cubic-bezier. */
 const ANIMATION = /^[a-z][a-z0-9-]*\s+(?:\d*\.)?\d+m?s(?:\s+(?:[a-z-]+|cubic-bezier\([\d.\s,+-]+\)))*$/;
@@ -105,7 +125,7 @@ export function cubicBezierPoints(css: string): readonly [number, number, number
 
 function MotionSpecimen({ css, role, linear, curve, playLabel }: { css: string; role: "duration" | "easing" | "animation"; linear: boolean; curve?: readonly [number, number, number, number]; playLabel: string }): ReactElement {
   const [playing, setPlaying] = useState(false);
-  if (role === "animation") return <figure data-token-specimen="motion" data-kind="motion" data-playing={String(playing)} style={bound(css)}
+  if (role === "animation") return <figure data-layer="tokens" data-token-specimen="motion" data-kind="motion" data-playing={String(playing)} {...bound(css)}
     className={join("m-0 grid justify-items-start gap-xs overflow-hidden", TOKEN_SPECIMEN_WIDTHS.motion.className)}>
     {/* The member's own keyframes run on the sample only while playing; reduced motion keeps it still. */}
     <span aria-hidden="true" data-motion-target="" className={join("block size-xl rounded-control bg-accent", playing && "animate-(--studio-specimen-value) motion-reduce:animate-none")} />
@@ -114,7 +134,7 @@ function MotionSpecimen({ css, role, linear, curve, playLabel }: { css: string; 
   const timing = role === "duration"
     ? join("duration-(--studio-specimen-value)", linear ? "ease-linear" : "ease-(--ease-default)")
     : "duration-(--ui-duration-deliberate) ease-(--studio-specimen-value)";
-  return <figure data-token-specimen="motion" data-kind="motion" data-playing={String(playing)} style={bound(css)}
+  return <figure data-layer="tokens" data-token-specimen="motion" data-kind="motion" data-playing={String(playing)} {...bound(css)}
     className={join("m-0 grid justify-items-start gap-xs overflow-hidden", TOKEN_SPECIMEN_WIDTHS.motion.className)}>
     <div className="flex items-center gap-sm">
       {curve ? <svg aria-hidden="true" data-easing-curve="" viewBox="0 0 1 1" className="size-xl shrink-0 overflow-visible fill-none stroke-accent">
@@ -122,13 +142,18 @@ function MotionSpecimen({ css, role, linear, curve, playLabel }: { css: string; 
       </svg> : null}
       {/* The track mirrors in right-to-left documents, so the dot always travels from the inline start. */}
       <span aria-hidden="true" className="relative block h-md w-(--spacing-6xl) shrink-0 rounded-pill bg-surface-sunken rtl:-scale-x-100">
-        <span data-motion-target="" className={join(
-          "absolute start-0 top-0 block size-md rounded-pill bg-accent transition-transform",
-          timing,
-          playing ? "translate-x-[calc(var(--spacing-6xl)-var(--spacing-md))]" : "translate-x-0",
-          // Reduced motion shows where the movement ends, with no transition.
-          "motion-reduce:transition-none motion-reduce:translate-x-[calc(var(--spacing-6xl)-var(--spacing-md))]",
-        )} />
+        {/* The lane is the track less one dot, so moving the full lane width ends the dot at the track's end. */}
+        <span className="absolute inset-y-0 start-0 end-md block">
+          <span data-motion-target="" className={join(
+            "block h-full w-full transition-transform",
+            timing,
+            playing ? "translate-x-full" : "translate-x-0",
+            // Reduced motion shows where the movement ends, with no transition.
+            "motion-reduce:transition-none motion-reduce:translate-x-full",
+          )}>
+            <span className="block size-md rounded-pill bg-accent" />
+          </span>
+        </span>
       </span>
     </div>
     <Toggle size="sm" variant="outline" isSelected={playing} onChange={setPlaying}>{playLabel}</Toggle>
@@ -137,28 +162,29 @@ function MotionSpecimen({ css, role, linear, curve, playLabel }: { css: string; 
 
 function RulerSpecimen({ css, leaf }: { css: string; leaf: string }): ReactElement {
   const ruler = RULERS[leaf]!;
-  return <figure data-token-specimen="ruler" data-kind="ruler" data-ruler-scale={ruler.scale} style={bound(css, { "--studio-ruler-bar": `calc(${css} * ${ruler.factor})` })}
+  return <figure data-layer="tokens" data-token-specimen="ruler" data-kind="ruler" data-ruler-scale={ruler.scale} {...bound(css, { "--studio-ruler-bar": `calc(${css} * ${ruler.factor})` })}
     className={join("m-0 grid gap-xs overflow-hidden", TOKEN_SPECIMEN_WIDTHS.ruler.className)}>
-    <span aria-hidden="true" className="relative block h-sm w-[256px] overflow-hidden rounded-pill bg-surface-sunken">
+    <span aria-hidden="true" className="relative block h-sm w-(--ui-layout-sidebar-w) overflow-hidden rounded-pill bg-surface-sunken">
       <span data-ruler-bar="" className="absolute inset-y-0 start-0 block w-(--studio-ruler-bar) max-w-full rounded-pill bg-accent" />
     </span>
-    <span aria-hidden="true" className={join("relative block h-lg w-[256px]", CAPTION)}>
-      {ruler.ticks.map((tick, index) => <span key={tick} data-ruler-tick={tick} className={join("absolute top-0", TICK_POSITIONS[index])}>{index === ruler.ticks.length - 1 ? `${tick}px` : tick}</span>)}
+    <span aria-hidden="true" className={join("relative block h-lg w-(--ui-layout-sidebar-w)", CAPTION)}>
+      {ruler.ticks.map((tick, index) => <span key={tick} data-ruler-tick={tick} className={join("absolute top-0", TICK_POSITIONS[index])}>{index === ruler.ticks.length - 1 ? `${tick}${SAMPLES.unit}` : tick}</span>)}
     </span>
   </figure>;
 }
 
 function LayerFanSpecimen({ css, property }: { css: string; property?: string }): ReactElement {
   const ranks = Object.values(TOKENS).filter(token => token.family === "z").sort((a, b) => Number(a.value) - Number(b.value));
-  return <figure data-token-specimen="layer-fan" data-kind="layer-fan" style={bound(css)}
+  return <figure data-layer="tokens" data-token-specimen="layer-fan" data-kind="layer-fan" {...bound(css)}
     className={join("relative isolate m-0 h-4xl overflow-hidden", TOKEN_SPECIMEN_WIDTHS["layer-fan"].className)}>
     {ranks.map((token, rank) => {
       const current = token.property === property;
-      return <span key={token.property} aria-hidden="true" data-layer-rank={rank} data-layer={token.property} data-current={current ? "" : undefined}
-        style={{
+      // Each plate sits at its shipped rank and z value; only the member's own plate takes the value under review.
+      return <span key={token.property} aria-hidden="true" data-layer-rank={rank} data-layer-property={token.property} data-current={current ? "" : undefined}
+        {...specimenOverride("token-scale-context", {
           "--plate-x": `calc(${rank} * var(--spacing-sm))`, "--plate-y": `calc(${rank} * var(--spacing-xs))`,
-          "--plate-z": current ? css : `var(${token.property}, ${token.value})`,
-        } as CSSProperties}
+          "--plate-z": current ? css : String(token.value),
+        })}
         className={join(
           "absolute block h-xl w-3xl rounded-control border start-(--plate-x) top-(--plate-y) z-(--plate-z)",
           current ? "border-accent bg-accent" : "border-line-strong bg-surface-raised",
@@ -168,15 +194,15 @@ function LayerFanSpecimen({ css, property }: { css: string; property?: string })
 }
 
 function frame(kind: TokenSpecimenKind, css: string, children: ReactNode, className?: string): ReactElement {
-  return <figure data-token-specimen={kind} data-kind={kind} style={bound(css)} className={join("m-0 overflow-hidden", TOKEN_SPECIMEN_WIDTHS[kind].className, className)}>{children}</figure>;
+  return <figure data-layer="tokens" data-token-specimen={kind} data-kind={kind} {...bound(css)} className={join("m-0 overflow-hidden", TOKEN_SPECIMEN_WIDTHS[kind].className, className)}>{children}</figure>;
 }
 
 export interface TokenLeafSpecimenProps {
   id: string;
   member: ResolvedMember;
-  /** Text shown by text specimens. */
-  sampleText: string;
-  /** The motion control's label. @default "Play" */
+  /** Text shown by text specimens. @default the shared dataset's sample text */
+  sampleText?: string;
+  /** The motion control's label. @default the shared dataset's play label */
   playLabel?: string;
 }
 
@@ -194,7 +220,7 @@ export function tokenLeafSpecimenKind(member: ResolvedMember): TokenSpecimenKind
 }
 
 /** The one specimen of a token leaf for this member, or null when `tokenLeafSpecimenKind` has none. */
-export function TokenLeafSpecimen({ id, member, sampleText, playLabel = "Play" }: TokenLeafSpecimenProps): ReactElement | null {
+export function TokenLeafSpecimen({ id, member, sampleText = SAMPLES.sampleText, playLabel = SAMPLES.playLabel }: TokenLeafSpecimenProps): ReactElement | null {
   const kind = tokenLeafSpecimenKind(member);
   const css = member.css.light;
   if (!kind) return null;
@@ -213,12 +239,12 @@ export function TokenLeafSpecimen({ id, member, sampleText, playLabel = "Play" }
     </Card>);
     case "blur": return frame(kind, css, <Card variant="plate" className="relative flex items-center gap-xs p-md">
       <span aria-hidden="true" className="block size-lg shrink-0 rounded-pill bg-accent" />
-      <span aria-hidden="true" className="text-body-l font-semibold text-ink-primary">Aa</span>
+      <SemanticContent as="span" aria-hidden="true" className="text-body-l font-semibold text-ink-primary">{SAMPLES.glyphs}</SemanticContent>
       <span aria-hidden="true" data-specimen-target="" className="absolute inset-y-0 end-0 block w-1/2 border-s border-line-base bg-surface-glass backdrop-blur-(--studio-specimen-value)" />
     </Card>);
     case "text-metric": {
       const sample = member.slot === "tokens.font-size" ? sampleText.trim().split(/\s+/)[0] ?? sampleText : sampleText;
-      return frame(kind, css, <span data-specimen-target="" className={join("block whitespace-nowrap text-ink-primary", TEXT_METRIC[member.slot])}>{sample}</span>);
+      return frame(kind, css, <SemanticContent as="span" data-specimen-target="" className={join("block whitespace-nowrap text-ink-primary", TEXT_METRIC[member.slot])}>{sample}</SemanticContent>);
     }
     case "density": {
       // One sample row; the member applies to its own role: the gap, the padding or the row height.
@@ -230,7 +256,7 @@ export function TokenLeafSpecimen({ id, member, sampleText, playLabel = "Play" }
     case "focus": {
       // A focused sample: the member is the ring width or its offset; the other keeps the shipped token.
       const role = key === "offset" ? "outline-(length:--ui-border-focus) outline-offset-(--studio-specimen-value)" : "outline-(length:--studio-specimen-value) outline-offset-(--ui-focus-offset)";
-      return frame(kind, css, <span data-specimen-target="" data-focus-role={key} className={join("inline-flex h-(--ui-control-h-sm) items-center whitespace-nowrap rounded-control border border-line-strong bg-surface-raised px-md text-caption text-ink-primary outline-solid outline-focus-ring", role)}>{sampleText}</span>, "p-sm");
+      return frame(kind, css, <SemanticContent as="span" data-specimen-target="" data-focus-role={key} className={join("inline-flex h-(--ui-control-h-sm) items-center whitespace-nowrap rounded-control border border-line-strong bg-surface-raised px-md text-caption text-ink-primary outline-solid outline-focus-ring", role)}>{sampleText}</SemanticContent>, "p-sm");
     }
   }
 }
@@ -242,22 +268,17 @@ export function oklchChannels(css: string): { l: string; c: string; h: string; a
   return { l: match[1]!, c: match[2]!, h: match[3]!, ...(match[4] ? { alpha: match[4] } : {}) };
 }
 
-/** Rebuilds an oklch value from its parsed channels, so only the strict grammar ever reaches CSS. */
-function oklchCss(channels: NonNullable<ReturnType<typeof oklchChannels>>): string {
-  return `oklch(${channels.l} ${channels.c} ${channels.h}${channels.alpha ? ` / ${channels.alpha}` : ""})`;
-}
-
 /**
  * A light/dark swatch for an `oklch()` value with a `none` channel (achromatic Tailwind ramps),
  * painted only from strictly parsed channels. Other colours keep `TokenValuePreview`.
  */
 export function OklchSwatch({ id, light, dark, lightLabel, darkLabel }: { id: string; light: string; dark?: string; lightLabel: string; darkLabel: string }): ReactElement | null {
-  const lightChannels = oklchChannels(light), darkChannels = oklchChannels(dark ?? light);
-  if (!lightChannels || !darkChannels) return null;
-  const paint = [oklchCss(lightChannels), oklchCss(darkChannels)] as const;
-  return <span data-token-value-preview={id} data-studio-color-swatch="" className="inline-flex size-xl shrink-0 overflow-hidden border border-line-base">
-    <span role="img" aria-label={`${lightLabel} ${light}`} className="h-full w-1/2 bg-(--studio-swatch)" style={{ "--studio-swatch": paint[0] } as CSSProperties} />
-    <span role="img" aria-label={`${darkLabel} ${dark ?? light}`} className="h-full w-1/2 bg-(--studio-swatch)" style={{ "--studio-swatch": paint[1] } as CSSProperties} />
+  // Only a value the anchored oklch grammar accepts whole ever reaches CSS, as the member under review.
+  if (!oklchChannels(light) || !oklchChannels(dark ?? light)) return null;
+  const paint = [light.trim(), (dark ?? light).trim()] as const;
+  return <span data-layer="tokens" data-token-value-preview={id} data-studio-color-swatch="" className="inline-flex size-xl shrink-0 overflow-hidden border border-line-base">
+    <span role="img" aria-label={`${lightLabel} ${light}`} className="h-full w-1/2 bg-(--studio-swatch)" {...specimenOverride("token-under-review", { "--studio-swatch": paint[0] })} />
+    <span role="img" aria-label={`${darkLabel} ${dark ?? light}`} className="h-full w-1/2 bg-(--studio-swatch)" {...specimenOverride("token-under-review", { "--studio-swatch": paint[1] })} />
   </span>;
 }
 

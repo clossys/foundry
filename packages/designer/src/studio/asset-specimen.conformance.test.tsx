@@ -157,7 +157,9 @@ function mediaFaults(slot: string, specimen: HTMLElement, value: unknown): strin
   }
   if (slot === "assets.pattern") {
     const recipe = v as { ink: string; tile: string };
-    return [...specimen.querySelectorAll<HTMLElement>("*")].some(element => element.style.backgroundImage.includes(`var(${recipe.ink})`) && element.style.backgroundSize.includes(`var(${recipe.tile})`)) ? [] : ["no pattern tile from its recipe"];
+    // The recipe reaches CSS only as the specimen root's asset-under-review override, which the tile reads.
+    const image = specimen.style.getPropertyValue("--studio-pattern-image"), size = specimen.style.getPropertyValue("--studio-pattern-size");
+    return specimen.querySelector("[data-pattern-tile]") && image.includes(`var(${recipe.ink})`) && size.includes(`var(${recipe.tile})`) ? [] : ["no pattern tile from its recipe"];
   }
   return [`unexpected rules leaf ${slot}`];
 }
@@ -185,7 +187,8 @@ function specimenRow(candidate: Candidate, entry: Candidate["members"][number]):
   if (specimen && slot !== "assets.image-ratio" && entry.member.$type === "rules") faults.push(...mediaFaults(slot, specimen, entry.member.value.light));
   if (specimen && slot === "assets.image-ratio" && entry.member.$type === "rules") {
     const { width, height } = entry.member.value.light as { width: number; height: number };
-    if (![...specimen.querySelectorAll<HTMLElement>("*")].some(element => element.style.aspectRatio.replace(/\s/g, "") === `${width}/${height}`)) faults.push("no ratio frame");
+    // The ratio reaches CSS only as the specimen root's asset-under-review override, which the frame reads.
+    if (!specimen.querySelector("[data-ratio-frame]") || specimen.style.getPropertyValue("--studio-specimen-value").replace(/\s/g, "") !== `${width}/${height}`) faults.push("no ratio frame");
   }
   view.unmount();
   return { slot, source: candidate.source, member: entry.id, faults, kind };
