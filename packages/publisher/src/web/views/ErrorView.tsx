@@ -1,6 +1,6 @@
 import type { CSSProperties, HTMLAttributes, ReactNode } from "react";
 import { mergeUiClasses } from "@clossys/designer/components/server";
-import { EmptyState } from "@clossys/designer/blocks/server";
+import { EmptyState, SectionFrame } from "@clossys/designer/blocks/server";
 import { assertViewContentRoot } from "../internal/viewContentRoot.js";
 
 /**
@@ -78,7 +78,13 @@ export interface ErrorViewProps extends Omit<HTMLAttributes<HTMLDivElement>, "ti
  */
 export function ErrorView(props: ErrorViewProps) {
   assertViewContentRoot("ErrorView", { role: props.role, id: props.id });
-  return <ErrorViewBody {...props} />;
+  // In SiteFrame's content slot the page sits in a `sections.band` (E5, WL1); the band
+  // adds no padding of its own, so the body keeps its full-height centred layout.
+  return (
+    <SectionFrame measure="content" className="py-0">
+      <ErrorViewBody {...props} />
+    </SectionFrame>
+  );
 }
 
 /**

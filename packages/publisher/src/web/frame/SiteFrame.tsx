@@ -139,6 +139,8 @@ export function SiteFrame({ shell, presentation, resolveCopy, resolveAsset, chil
     />
   ) : null;
 
+  // PENDING(WIRE-3): stamp this root with dsAttrs("frames", "frames.site-shell", "foundry/frames.site-shell")
+  // from @clossys/designer/catalog once WIRE-3 merges; views-wiring.test.tsx asserts it then.
   return (
     <div data-frame-root="" className={`flex min-h-dvh flex-col${footer?.placement === "overlay" ? " relative" : ""}`}>
       <SiteSkipLink targetId={SITE_MAIN_ID} label={resolved.skipLink} followHeaderGround={resolved.header.surface === "glass"} />
