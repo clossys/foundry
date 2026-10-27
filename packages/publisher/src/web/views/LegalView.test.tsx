@@ -359,7 +359,9 @@ describe("LegalView dates", () => {
   it("caps the content width with the prose-max token and a non-length fallback", () => {
     const html = render(legalDoc("terms"));
     // The framed column is the view's Section root; the self-chromed column is the legacy page's own main.
-    const start = mode === "self-chromed" ? html.indexOf("<main") : html.indexOf("<section data-designer-section-frame", html.indexOf("<main"));
+    const afterMain = html.indexOf("<main");
+    const section = /<section\b[^>]*\bdata-designer-section-frame=""/.exec(html.slice(afterMain));
+    const start = mode === "self-chromed" ? afterMain : section ? afterMain + section.index : -1;
     expect(start).toBeGreaterThan(-1);
     const mainTag = html.slice(start, html.indexOf(">", start) + 1);
     if (mode === "self-chromed") {
@@ -769,7 +771,11 @@ const VOID_TAGS = new Set(["area", "base", "br", "col", "embed", "hr", "img", "i
  * level further down than the root.
  */
 function skeleton(html: string): { root: string; children: Array<{ open: string; inner: string }> } {
-  expect(html).toMatch(/^<section data-designer-section-frame=""[^>]*><div [^>]*>/);
+  // The root is the sections.band Section (stamped by WIRE-3), then its one content column.
+  expect(html).toMatch(/^<section\b[^>]*><div [^>]*>/);
+  const rootTag = /^<section\b[^>]*>/.exec(html)![0];
+  expect(rootTag).toContain('data-designer-section-frame=""');
+  expect(rootTag).toContain('data-ds-leaf="sections.band"');
   expect(html).toMatch(/<\/div><\/section>$/);
   const SLOT_DEPTH = 2;
   const tag = /<(\/?)([a-zA-Z][a-zA-Z0-9-]*)\b[^>]*?(\/?)>/g;

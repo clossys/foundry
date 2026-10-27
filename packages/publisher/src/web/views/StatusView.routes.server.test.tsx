@@ -25,7 +25,9 @@ describe("StatusView routes through the server entry", () => {
     expect(html.match(/<a /g)).toHaveLength(2);
     expect(html.indexOf('href="/"')).toBeLessThan(html.indexOf('href="/help"'));
     expect(html).not.toMatch(/<main\b|<header\b|<footer\b| routes=/);
-    expect(html).toMatch(/^<section data-designer-section-frame=/);
+    const rootTag = /^<section\b[^>]*>/.exec(html)?.[0] ?? "";
+    expect(rootTag).toContain('data-designer-section-frame=""');
+    expect(rootTag).toContain('data-ds-leaf="sections.band"');
     const fragment = JSDOM.fragment(html);
     const hiddenSpaces = fragment.querySelectorAll('span[aria-hidden="true"]');
     expect(Array.from(hiddenSpaces, span => span.textContent)).toEqual(["\u00a0", "\u00a0"]);
