@@ -4,20 +4,19 @@
  * observations a usage graph accepts as `runtime` input. No DOM, no network and no React: the input
  * is the markup string, the route's binding, the selection and (optionally) the route's usage graph.
  */
+import { WIRING_GUIDANCE } from "./check-guidance.js";
 import { DS_ATTR, DS_LAYERS, type DsLayer } from "./provenance-attrs.js";
 import type { UsageBindingLike, UsageEdgeKind, UsageGraph, UsageRuntimeObservation } from "./usage-graph.js";
+import type { WiringCode } from "./wiring.js";
 
-// SEAM(WIRE-2): the WL code definitions are owned by WIRE-2 (catalog-core/wiring.ts and check-guidance.ts).
-// Until those merge, the four codes this scanner reports are declared here with their D3 meanings. The
-// integrator points this one alias and table at WIRE-2's definitions; nothing else in this file names a code.
-export type ProvenanceFindingCode = "WL1" | "WL5" | "WL6" | "WL7";
+// The four runtime (DOM) codes this scanner reports; their definitions are WIRE-2's wiring guidance.
+export type ProvenanceFindingCode = Extract<WiringCode, "WL1" | "WL5" | "WL6" | "WL7">;
 export const PROVENANCE_FINDING_CODES: Readonly<Record<ProvenanceFindingCode, string>> = Object.freeze({
-  WL1: "styled or interactive element outside any section or frame, or in a frame content slot outside a section",
-  WL5: "unlinked element: a rendered leaf or edge the route's usage graph does not hold, or a graph edge whose endpoint is unselected or unrendered",
-  WL6: "route section declared in the binding but not rendered, or rendered but not declared",
-  WL7: "rendered fill differs from the selection, or a package-pointer surface binds a component other than the selected fill",
+  WL1: WIRING_GUIDANCE.WL1.meaning,
+  WL5: WIRING_GUIDANCE.WL5.meaning,
+  WL6: WIRING_GUIDANCE.WL6.meaning,
+  WL7: WIRING_GUIDANCE.WL7.meaning,
 });
-// END SEAM(WIRE-2)
 
 export interface ProvenanceFinding {
   readonly code: ProvenanceFindingCode;
