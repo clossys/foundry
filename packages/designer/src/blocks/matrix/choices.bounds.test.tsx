@@ -11,6 +11,7 @@ import { buildCandidates, emptyChanges } from "../../studio/model.js";
 import { labels, smallCatalog, emptyLibrary } from "../../studio/__fixtures__/studio.js";
 import { loadCatalog } from "../../catalog-core/index.js";
 import { completedTokenLibrary } from "../../importers/__fixtures__/completed-token-library.js";
+import { orderTokenMembers } from "../../tokens/preview/member-order.js";
 import { APP_FRAME_RIGHT_PANEL_CONFIG } from "../../frames/right-panel-config.js";
 
 // A preset no source file ships: a bound that follows it was read from the
@@ -70,7 +71,8 @@ it("gives a 1-member and a 286-member candidate the identical cap and wraps ever
   const cells = [single, ramp].map(candidate => {
     const view = render(<CandidateCell candidate={candidate} labels={labels} />);
     const cell = view.container.querySelector<HTMLElement>("[data-candidate-cell]")!;
-    expect([...cell.querySelectorAll<HTMLElement>("[data-candidate-variant]")].map(variant => variant.dataset.candidateVariant)).toEqual(candidate.members.map(entry => entry.id));
+    // Every member renders, in the ordinal display order CandidateCell applies since 1a4aeab8e (amber.50 before amber.100).
+    expect([...cell.querySelectorAll<HTMLElement>("[data-candidate-variant]")].map(variant => variant.dataset.candidateVariant)).toEqual(orderTokenMembers(candidate.members).map(entry => entry.id));
     expect(cell).toHaveClass("flex", "flex-wrap");
     expect(cell.className).not.toMatch(UNBOUNDED);
     // No member, member key or container between them and the cell is hidden, clipped or height-capped.
