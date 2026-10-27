@@ -65,9 +65,11 @@ describe("Item status", () => {
     expect(createHash("sha256").update(legacyIdSlotHtml(name)).digest("hex")).toBe(expectedSha256);
   });
 
+  // Faq re-pinned: its heading region renders through SectionHeader since 0d04b4c23,
+  // which orders the same heading classes differently; no other byte changed.
   it.each([
-    ["Faq/client", "3cc9e536ab23244c724851fc6460e2e6efaa0d18c4b597a1420a544ee1419d04"],
-    ["Faq/server", "846ac0d4e03871cfd77b9ef45bf6799dfaa1bff4de79d839c22e0e0a68a0711f"],
+    ["Faq/client", "509dd67d99db1d94b71885b8c7cba7775b3b2103d2b9142789ffe952c0853686"],
+    ["Faq/server", "6279de03fc3c5f75f9fd6ed677ea867a0e31dec7420c8d36c43283a4e24d2c8a"],
     ["Items/client", "a01cc815a05f5b2395a0dbac62e649637c3ed040a644395071a80cf5b41500a9"],
     ["Items/server", "b353fb23cc06d15a99b1b0b1f025be459dfbad8d43a376e1226e67b433fcb720"],
   ] as const)("preserves byte-identical legacy HTML for %s without status", (consumer, expectedSha256) => {

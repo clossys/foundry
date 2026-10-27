@@ -161,6 +161,13 @@ interface ConformanceInputs {
   registrations: readonly BlockThemeRegistration[];
 }
 
+/*
+ * First authored class list in each exempt Block's own source. The Toolbar
+ * Block renders through the Foundry Toolbar (c866f93c5), so its first owned
+ * class list is a plain region string rather than a cx() call.
+ */
+const EXEMPT_CLASS_ANCHORS = [["Toolbar", 'className="'], ["Panel", 'className={cx("']] as const;
+
 function realInputs(): ConformanceInputs {
   return {
     sources: new Map([...blockSources(), ...blockSources(resolve(packageRoot, "src/components"))]),
@@ -478,23 +485,24 @@ describe("Block theme conformance", () => {
     "text-line-base", "fill-line-base", "stroke-line-base",
     "hover:text-line-base", "[&_span]:text-line-base",
   ])("refuses a foreground-free exemption with authored foreground %s", utility => {
-    for (const name of ["Toolbar", "Panel"]) {
+    for (const [name, anchor] of EXEMPT_CLASS_ANCHORS) {
       const input = realInputs();
       const file = input.registrations.find(entry => entry.exportName === name)!.source;
       const source = input.sources.get(file)!;
-      expect(source).toContain('className={cx("');
-      input.sources.set(file, source.replace('className={cx("', `className={cx("${utility} `));
+      expect(source).toContain(anchor);
+      input.sources.set(file, source.replace(anchor, `${anchor}${utility} `));
       expect(conformanceFindings(input), `${name}: ${utility}`)
         .toContain(`${name}: stale exemption now owns or delegates a contrast foreground`);
     }
   });
 
   it("keeps structural text and surface or edge paint foreground-free", () => {
-    for (const name of ["Toolbar", "Panel"]) {
+    for (const [name, anchor] of EXEMPT_CLASS_ANCHORS) {
       const input = realInputs();
       const file = input.registrations.find(entry => entry.exportName === name)!.source;
       const source = input.sources.get(file)!;
-      input.sources.set(file, source.replace('className={cx("', 'className={cx("border-line-base bg-surface-base text-body-s stroke-2 '));
+      expect(source).toContain(anchor);
+      input.sources.set(file, source.replace(anchor, `${anchor}border-line-base bg-surface-base text-body-s stroke-2 `));
       expect(conformanceFindings(input), name).toEqual([]);
     }
   });
