@@ -109,12 +109,13 @@ export const BLOCK_THEME_CONFORMANCE: readonly BlockThemeRegistration[] = [
   { exportName: "Tree", source: "src/blocks/tree/Tree.tsx", contrastPairs: GROUNDED_READING },
   { exportName: "Items", source: "src/blocks/items/Items.tsx", contrastPairs: GROUNDED_READING },
   { exportName: "GroupedTable", source: "src/blocks/GroupedTable.tsx", contrastPairs: [...RAISED_READING, "ink-primary/surface-sunken"] },
-  { exportName: "CanvasSurface", source: "src/blocks/canvas/CanvasSurface.tsx", contrastPairs: ["ink-primary/surface-base", "ink-primary/surface-raised"] },
+  { exportName: "CanvasSurface", source: "src/blocks/canvas/CanvasSurface.tsx", contrastPairs: ["ink-primary/surface-base", "ink-primary/surface-raised", "ink-muted/surface-base"] },
   { exportName: "CatalogWorkspace", source: "src/blocks/CatalogWorkspace.tsx", contrastPairs: [...BASE_READING, ...RAISED_READING] },
   { exportName: "CatalogBrowser", source: "src/blocks/CatalogBrowser.tsx", contrastPairs: [...BASE_READING, ...RAISED_READING] },
-  { exportName: "Chat", source: "src/blocks/chat/Chat.tsx", contrastPairs: [...BASE_READING, ...RAISED_READING, "ink-primary/surface-sunken", "ink-secondary/surface-sunken", "ink-link/surface-base"] },
+  { exportName: "Chat", source: "src/blocks/chat/Chat.tsx", contrastPairs: [...BASE_READING, ...RAISED_READING, "ink-primary/surface-sunken", "ink-secondary/surface-sunken"] },
   { exportName: "RelationGraph", source: "src/blocks/RelationGraph.tsx", contrastPairs: [...BASE_READING, ...RAISED_READING, "ink-muted/surface-raised"] },
   { exportName: "FlowCanvas", source: "src/blocks/FlowCanvas.tsx", contrastPairs: ["ink-secondary/surface-base", "ink-muted/surface-base", ...RAISED_READING, "ink-primary/surface-sunken", "ink-secondary/surface-sunken"] },
+  { exportName: "LibraryBoardSection", source: "src/blocks/library-board/LibraryBoardSection.tsx", contrastPairs: [...RAISED_READING, "ink-muted/surface-raised", "status-danger-text/surface-raised"] },
 ];
 
 /** Explicitly classified value exports, never a casing-based escape for new Blocks. */
@@ -179,4 +180,8 @@ export const NON_BLOCK_THEME_EXPORTS: Readonly<Record<string, string>> = {
   clearSelection: "Returns an empty selection identifier array; renders no UI or paint.",
   navigate: "Queries supplied item geometry for the next spatial identifier; renders no UI or paint.",
   minimapModel: "Computes plain minimap dimensions and viewport coordinates; renders no UI or paint.",
+  frameLinkNavigation: "Delegates an ordinary self-target link click to a host navigate callback; renders no UI or paint.",
+  assertLibraryBoardRecords: "Library board record validation over supplied plain data; renders no UI or paint.",
+  assertLibraryBoardCommand: "Library board command validation over supplied plain data; renders no UI or paint.",
+  LIBRARY_BOARD_CONFIG: "Library board matrix configuration as plain constant data; the rendered LibraryBoardSection is registered separately.",
 };
