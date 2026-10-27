@@ -13,7 +13,8 @@ import type { RegisteredRouteRuntime } from "./registered-route-binding.js";
  * history and live provider data belong to its overlay, never package fixtures. */
 export const DESIGNER_ADMIN_ROUTE = Object.freeze({
   path: "/agents/designer", title: "Designer", channel: "admin",
-  frame: { leaf: "frames.app-shell" },
+  // Admin chrome: the standard docked shell, a full-bleed Stage and the viewer's system theme.
+  frame: { leaf: "frames.app-shell", members: { layout: "standard", stage: "full", theme: "system" } },
   body: { kind: "canvas", source: { kind: "derived", query: { id: "designer.layer-boards", version: 1 } }, arrangement: "lanes" },
   // The JSON control input stays outside the source tree; generated pages import the
   // typed registry module, and every module they import lives under src.
@@ -96,7 +97,10 @@ export function prepareDesignerRouteRegistration(input: DesignerRouteRegistratio
   if (!input.binding) needs.push({ field: "composition.binding", reason: "Original provider projection, checked board records and selected-token-resolved lanes arrangement must produce the canonical body/fills" });
   if (!input.header) needs.push({ field: "composition.header", reason: "Original PageHeaderModule navigation/action lease from the current Studio session is unavailable" });
   if (input.binding) {
-    const b = input.binding;
+    const b = input.binding, members: Readonly<Record<string, string>> = DESIGNER_ADMIN_ROUTE.frame.members;
+    // An absent selection keeps the binding's existing projection; a present one must be the admin choice.
+    if (b.frame.members !== undefined && (Object.keys(b.frame.members).length !== Object.keys(members).length ||
+      Object.entries(members).some(([axis, member]) => !Object.hasOwn(b.frame.members!, axis) || b.frame.members![axis] !== member))) throw new Error("Designer frame member selection must be the admin standard/full/system choice");
     if (b.frame.leaf !== DESIGNER_ADMIN_ROUTE.frame.leaf || b.layout !== undefined || b.body?.kind !== "canvas" || b.body.source.kind !== "derived" || b.body.source.query.id !== "designer.layer-boards" || b.body.source.query.version !== 1 || b.body.arrangement.kind !== "lanes" || b.body.arrangement.groupKey !== "domain") throw new Error("Designer requires its original Canvas/lanes/domain derived query binding without a flow Layout");
   }
   if (input.binding && input.header) {

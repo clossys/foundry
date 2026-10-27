@@ -24,6 +24,19 @@ export type RouteRuntimeBindingResult =
       /** Page-root provenance stamp (D1, D2): spread on the route's root element so provenance-scan can attribute it. */
       readonly pageRoot: DsAttrs }
   | { readonly status: "pending" | "refused"; readonly findings: readonly string[] };
+/** One verified descriptor member per selected axis, in descriptor order. The selection narrows the
+ * descriptor and never adds to it; a choice that conflicts with the selected config is refused. */
+function selectedFrameMembers(members: readonly string[], selection: unknown, config: string | undefined): readonly string[] | undefined {
+  if (selection === null || typeof selection !== "object" || Array.isArray(selection) || Object.keys(selection).length === 0) return undefined;
+  const chosen = new Set<string>();
+  for (const [axis, member] of Object.entries(selection)) {
+    if (!axis || axis.includes(".") || typeof member !== "string" || !member) return undefined;
+    const name = `${axis}.${member}`;
+    if (!members.includes(name) || (config?.startsWith(`${axis}.`) && config !== name)) return undefined;
+    chosen.add(name);
+  }
+  return members.filter(member => chosen.has(member));
+}
 /** Resolve only the exact consumer's current selected surfaces. This projects the canonical
  * InstanceBinding; it cannot pick a catalog candidate or infer a missing configuration. */
 export function deriveRouteRuntimeBinding(binding: InstanceBinding, engine: CompositeEngineInput, manifest: ConsumerRuntimeManifest, materialization?: RouteRuntimeMaterialization): RouteRuntimeBindingResult {
@@ -46,18 +59,22 @@ export function resolveSelectedRouteRuntimeBinding(binding: InstanceBinding, eng
     if (!profile.check.ok || profile.check.findings.some(f => f.severity === "error")) return { status: "refused", findings: ["Selected consumer library checks failed"] };
     if (binding.context.consumer !== profile.consumer || manifest.consumer !== profile.consumer || manifest.libraryHash !== hash || manifest.selectionHash !== profile.selectionHash) return { status: "refused", findings: ["Stale or foreign consumer library/selection identity"] };
     if (!profile.surfaces) return { status: "pending", findings: ["Consumer-selected executable surfaces are unavailable"] };
-    const findings: string[] = [];
-    const pick = (leaf: `frames.${string}` | `sections.${string}`, config: string | undefined, content: RuntimeFillSelection["content"], path: string): RuntimeFillSelection | undefined => {
+    const findings: string[] = [], refusals: string[] = [];
+    const pick = (leaf: `frames.${string}` | `sections.${string}`, config: string | undefined, content: RuntimeFillSelection["content"], path: string, selection?: unknown): RuntimeFillSelection | undefined => {
       const selected = profile.surfaces!.fills[leaf];
       if (!selected) { findings.push(`${path}: selected consumer surface missing`); return; }
       const id = selected.document.$extensions["com.clossys.fill"].id;
       const fills = manifest.fills.filter(fill => fill.leaf === leaf && fill.fill === id && fill.config === (config ?? null) && fill.library === profile.consumer);
       if (fills.length !== 1) { findings.push(`${path}: exact selected fill/config runtime descriptor missing or ambiguous`); return; }
       const fill = fills[0]!;
-      return { leaf, fill: id, config: config ?? null, members: [...fill.members], content };
+      if (selection === undefined) return { leaf, fill: id, config: config ?? null, members: [...fill.members], content };
+      const members = selectedFrameMembers(fill.members, selection, config);
+      if (!members) { refusals.push(`${path}: frame member selection is not one verified descriptor member per axis`); return; }
+      return { leaf, fill: id, config: config ?? null, members: [...members], content };
     };
     const section = (fill: SectionFill, path: string) => pick(fill.section, fill.config, fill.content, path);
-    const frame = pick(binding.frame.leaf, binding.frame.config, binding.frame.content ?? {}, "frame");
+    const frame = pick(binding.frame.leaf, binding.frame.config, binding.frame.content ?? {}, "frame", binding.frame.members);
+    if (refusals.length) return { status: "refused", findings: refusals };
     const sections: Record<string, RuntimeFillSelection[]> = {};
     for (const [slot, fills] of Object.entries(binding.fills)) sections[slot] = fills.flatMap((fill, index) => { const selected = section(fill, `fills.${slot}.${index}`); return selected ? [selected] : []; });
     const frameSlots: Record<string, RuntimeFillSelection[]> = {};

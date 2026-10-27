@@ -38,6 +38,10 @@ function plain(value: unknown, seen = new Set<object>()): boolean {
   seen.delete(value);
   return true;
 }
+/** One choice per axis: a non-empty record whose axes cannot themselves address a member. */
+function memberSelection(value: unknown): value is Record<string, string> {
+  return object(value) && Object.keys(value).length > 0 && Object.entries(value).every(([axis, member]) => text(axis) && !axis.includes(".") && text(member));
+}
 function ref(value: unknown): value is ContentRef {
   return object(value) && fields(value, ["kind", "ref"]) &&
     ["copy", "media", "records", "action", "region"].includes(value.kind as string) && text(value.ref);
@@ -70,8 +74,8 @@ export function inspectInstanceChecks(input: unknown, library: ConsumerInstanceL
       (input.path !== undefined && (!text(input.path) || !input.path.startsWith("/") || input.path.startsWith("//")))) {
       add("LK7", "instance", "Binding must contain only assembly data and consumer references"); return finish();
     }
-    if (!object(input.frame) || !fields(input.frame, ["leaf", "config", "content", "slotFills"]) || !text(input.frame.leaf) ||
-      (input.frame.config !== undefined && !text(input.frame.config)) ||
+    if (!object(input.frame) || !fields(input.frame, ["leaf", "config", "content", "slotFills", "members"]) || !text(input.frame.leaf) ||
+      (input.frame.config !== undefined && !text(input.frame.config)) || (input.frame.members !== undefined && !memberSelection(input.frame.members)) ||
       (input.frame.content !== undefined && (!object(input.frame.content) || Object.entries(input.frame.content).some(([name, value]) => !text(name) || !ref(value))))) { add("LK1", "frame", "Invalid frame binding"); return finish(); }
     if (input.body !== undefined) {
       for (const message of instanceBodyFindings(input as unknown as AnyInstanceBinding, registries)) add("LK7", "body", message);
@@ -94,6 +98,15 @@ export function inspectInstanceChecks(input: unknown, library: ConsumerInstanceL
     const layout = registries.layouts.find(leaf => leaf.id === binding.layout.leaf);
     if (!active(frame) || !surface(frame!.contract.surface, binding.surface) || (binding.surface === "site" ? binding.frame.leaf !== "frames.site-shell" : binding.frame.leaf !== "frames.app-shell") ||
       (binding.frame.config !== undefined && !frame!.contract.configs.includes(binding.frame.config))) add("LK1", "frame", "Frame must be an active matching page shell and config");
+    if (binding.frame.members !== undefined) {
+      const declared = frame?.contract.members;
+      if (!Array.isArray(declared)) add("LK1", "frame", "Frame member selection requires the frame's declared members");
+      else for (const [axis, member] of Object.entries(binding.frame.members)) {
+        if (!declared.some(name => typeof name === "string" && name.startsWith(`${axis}.`))) add("LK1", "frame", "Frame member axis is not declared by the frame");
+        else if (!declared.includes(`${axis}.${member}`)) add("LK1", "frame", "Frame member is not declared on its axis");
+        else if (binding.frame.config?.startsWith(`${axis}.`) && binding.frame.config !== `${axis}.${member}`) add("LK1", "frame", "Frame member conflicts with the frame config");
+      }
+    }
     if (!active(layout)) { add("LK2", "layout", "Layout is unknown, held or retired"); return finish(); }
     if (!surface(layout!.contract.surface, binding.surface)) add("LK1", "layout", "Layout surface must match the frame");
     let effective: ReturnType<typeof getEffectiveLayoutContract>;

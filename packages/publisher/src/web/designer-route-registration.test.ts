@@ -14,7 +14,7 @@ describe("Publisher-owned Designer registration preparation", () => {
   it("owns the real route path and Canvas/lanes versioned query without invented parameters or a flow Layout", () => {
     expect(DESIGNER_ADMIN_ROUTE.path).toBe("/agents/designer");
     expect(DESIGNER_ADMIN_ROUTE.channel).toBe("admin");
-    expect(DESIGNER_ADMIN_ROUTE.frame).toEqual({ leaf: "frames.app-shell" });
+    expect(DESIGNER_ADMIN_ROUTE.frame).toEqual({ leaf: "frames.app-shell", members: { layout: "standard", stage: "full", theme: "system" } });
     expect(DESIGNER_ADMIN_ROUTE.body).toEqual({ kind: "canvas", source: { kind: "derived", query: { id: "designer.layer-boards", version: 1 } }, arrangement: "lanes" });
     expect(DESIGNER_ADMIN_ROUTE.body).not.toHaveProperty("boards");
     expect(DESIGNER_ADMIN_ROUTE.body).not.toHaveProperty("gap");
@@ -58,5 +58,14 @@ describe("Publisher-owned Designer registration preparation", () => {
     const plan = { ...source.plan, milestones: source.plan.milestones.map(m => ({ ...m, packs: m.packs.map(p => ({ ...p, items: [...p.items, { ...p.items[0]!, id: "another.item" }] })) })) };
     expect(() => prepareDesignerRouteRegistration({ ...source, plan })).toThrow("exactly one existing App Studio plan item");
     expect(() => prepareDesignerRouteRegistration({ ...source, binding: syntheticRoute().composition.binding })).toThrow("original Canvas/lanes/domain");
+  });
+  it("accepts only the admin standard/full/system frame selection on a Designer binding, or none", () => {
+    const { layout: _layout, ...canonical } = syntheticRoute("example.designer").composition.binding as { layout?: unknown };
+    const body = { kind: "canvas", source: { kind: "derived", query: { id: "designer.layer-boards", version: 1 } }, boards: [], arrangement: { kind: "lanes", groupKey: "domain" } };
+    const designer = (members?: Record<string, string>) => ({ ...canonical, body, frame: { leaf: "frames.app-shell", ...(members ? { members } : {}) } }) as unknown as NonNullable<DesignerRouteRegistrationInput["binding"]>;
+    expect(prepareDesignerRouteRegistration({ ...input(), binding: designer() }).route.frame.members).toEqual({ layout: "standard", stage: "full", theme: "system" });
+    expect(() => prepareDesignerRouteRegistration({ ...input(), binding: designer({ theme: "system", stage: "full", layout: "standard" }) })).not.toThrow();
+    for (const members of [{ layout: "immersive", stage: "full", theme: "system" }, { layout: "standard" }, { layout: "standard", stage: "full", theme: "system", density: "compact" }])
+      expect(() => prepareDesignerRouteRegistration({ ...input(), binding: designer(members) })).toThrow("admin standard/full/system");
   });
 });
