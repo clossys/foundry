@@ -20,7 +20,32 @@ export function dialogExecutableSource(file: SourceFile): SourceFile {
   // The rebound Button leaf is the consumer's open member-dispatch facade, so its props no longer carry
   // the pinned Button's string className; DialogClose keeps that contract for the cn call it makes.
   replace('}: React.ComponentProps<typeof Button>) {', '}: React.ComponentProps<typeof Button> & { className?: string }) {');
+  content = dialogContentPart(content);
   return { ...file, content };
+}
+
+/**
+ * Lift the inner RAC Dialog, with its close button, out of the ModalOverlay/Modal wrapper into an exported
+ * `DialogContent` part that `Dialog` composes. The part is the pinned inner dialog verbatim, except that naming,
+ * description and ref arrive as props; it adds no state owner and is never modal, so it can be drawn open in place.
+ */
+function dialogContentPart(source: string): string {
+  const open = '        <DialogPrimitive\n', close = '        </DialogPrimitive>\n';
+  const start = source.indexOf(open), end = source.indexOf(close) + close.length;
+  if (start < 0 || end < start + open.length || source.indexOf(open, start + 1) >= 0) throw new Error("dialog-profile: inner dialog surface differs");
+  const routed = '          aria-label={ariaLabel}\n          aria-labelledby={ariaLabelledby}\n          aria-describedby={ariaDescribedby}\n          ref={ref}\n';
+  const inner = source.slice(start, end);
+  if (inner.split(routed).length !== 2) throw new Error("dialog-profile: inner dialog props differ");
+  const part = inner.replace(routed, "").replace(/\n(\s*className="[^"]*")\n/, "\n$1\n          {...props}\n")
+    .split("\n").map(line => line.slice(Math.min(4, line.length - line.trimStart().length))).join("\n");
+  if (!part.includes("{...props}")) throw new Error("dialog-profile: inner dialog className differs");
+  const composed = `        <DialogContent\n${routed}          showCloseButton={showCloseButton}\n        >\n          {children}\n        </DialogContent>\n`;
+  const declaration = 'function DialogContent({\n  children,\n  showCloseButton = true,\n  ...props\n}: Omit<React.ComponentProps<typeof DialogPrimitive>, "className" | "style"> & {\n  showCloseButton?: boolean\n}) {\n  return (\n' + part + '  )\n}\n\n';
+  let content = source.slice(0, start) + composed + source.slice(end);
+  const header = content.indexOf("function DialogHeader(");
+  if (header < 0 || content.split("\n  DialogClose,\n").length !== 2) throw new Error("dialog-profile: export surface differs");
+  content = content.slice(0, header) + declaration + content.slice(header);
+  return content.replace("\n  DialogClose,\n", "\n  DialogClose,\n  DialogContent,\n");
 }
 
 export const dialogExecutableMembers: Readonly<Record<string, string>> = Object.freeze({

@@ -14,8 +14,16 @@ describe("selected Dialog executable source",()=>{
     const declaration=parsed.statements.find(row=>ts.isFunctionDeclaration(row)&&row.name?.text==="Dialog")!;
     const tags:ts.JsxOpeningElement[]=[];
     const visit=(node:ts.Node)=>{if(ts.isJsxOpeningElement(node))tags.push(node);ts.forEachChild(node,visit);};visit(declaration);
-    const inner=tags.filter(tag=>tag.tagName.getText(parsed)==="DialogPrimitive");expect(inner).toHaveLength(1);
-    for(const prop of ["aria-label={ariaLabel}","aria-labelledby={ariaLabelledby}","aria-describedby={ariaDescribedby}","ref={ref}"])expect(inner[0]!.getText(parsed)).toContain(prop);
+    const inner=tags.filter(tag=>tag.tagName.getText(parsed)==="DialogContent");expect(inner).toHaveLength(1);
+    for(const prop of ["aria-label={ariaLabel}","aria-labelledby={ariaLabelledby}","aria-describedby={ariaDescribedby}","ref={ref}","showCloseButton={showCloseButton}"])expect(inner[0]!.getText(parsed)).toContain(prop);
+    expect(tags.filter(tag=>tag.tagName.getText(parsed)==="DialogPrimitive")).toEqual([]);
+    // DialogContent is the one inner RAC Dialog, exported and outside any ModalOverlay/Modal, so it draws non-modally.
+    const content=parsed.statements.find(row=>ts.isFunctionDeclaration(row)&&row.name?.text==="DialogContent")!;
+    const contentTags:ts.JsxOpeningElement[]=[];
+    const visitContent=(node:ts.Node)=>{if(ts.isJsxOpeningElement(node))contentTags.push(node);ts.forEachChild(node,visitContent);};visitContent(content);
+    expect(contentTags.map(tag=>tag.tagName.getText(parsed))).toEqual(["DialogPrimitive","DialogClose","span"]);
+    expect(contentTags[0]!.getText(parsed)).toContain("{...props}");
+    expect(code).toMatch(/export \{[^}]*\bDialogContent,/);
     expect(tags.filter(tag=>tag.tagName.getText(parsed)==="DialogOverlay")).toHaveLength(1);
     expect(tags.find(tag=>tag.tagName.getText(parsed)==="DialogOverlay")!.getText(parsed)).toBe("<DialogOverlay isDismissable={isDismissable} {...props}>");
     expect(code).toContain('children: DialogPrimitiveProps["children"]');

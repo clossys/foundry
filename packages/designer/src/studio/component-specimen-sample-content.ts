@@ -79,11 +79,12 @@ export const componentSpecimenColor = {
   swatches: ["hsl(215, 65%, 50%)", "hsl(155, 55%, 40%)", "hsl(30, 75%, 55%)"],
 } as const;
 
-/** The one toast a Toaster specimen's own queue holds. */
-export const componentSpecimenToast = { title: "Changes saved", description: "The project was updated.", variant: "success" } as const;
-
-/** Exports a preview cannot draw from sample data, and why: the brand lockup draws the host's own mark asset and wordmark. */
+/**
+ * Exports a preview cannot draw from sample data, and why. The toast region renders only the app-wide queue
+ * (it takes no queue of its own); the brand lockup draws the host's own mark asset and wordmark.
+ */
 export const componentSpecimenUnavailable: Readonly<Record<string, SpecimenUnavailableReason>> = {
+  "./shell#Toaster": "needs-host-queue",
   "./shell#Brandmark": "needs-brand-asset",
 };
 

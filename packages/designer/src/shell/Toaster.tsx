@@ -1,12 +1,10 @@
-import { createContext, useCallback, useContext, useMemo, useSyncExternalStore, type ContextType, type CSSProperties, type ReactNode } from "react";
+import { createContext, useContext, type CSSProperties, type ReactNode } from "react";
 import {
   UNSTABLE_Toast as AriaToast,
   UNSTABLE_ToastContent as AriaToastContent,
   UNSTABLE_ToastRegion as AriaToastRegion,
-  UNSTABLE_ToastStateContext as AriaToastStateContext,
   Text,
   type QueuedToast,
-  type UNSTABLE_ToastQueue as ToastQueue,
 } from "react-aria-components";
 import { Button } from "../components/Button.js";
 import { cx } from "../components/internal/cx.js";
@@ -44,14 +42,6 @@ function frameInsetStyle(inset: ToasterFrameInset | null): CSSProperties {
   // Physical sides override both logical class insets, whatever direction the toast region itself resolves.
   return inset.direction === "rtl" ? { bottom: edge(inset.blockEnd), left: edge(inset.inlineEnd), right: "auto" } : { bottom: edge(inset.blockEnd), right: edge(inset.inlineEnd), left: "auto" };
 }
-
-/**
- * A specimen-local queue for Studio's component specimens. Under it the Toaster draws that queue in place, inside the
- * specimen's own cell, instead of portalling the app-wide queue to `document.body`: react-aria-components' ToastRegion
- * always portals, and this package does not depend on react-aria's portal provider. Internal; not a public prop.
- */
-const ToasterSpecimenQueueContext = createContext<ToastQueue<ToastRecord> | null>(null);
-export const ToasterSpecimenQueueProvider = ToasterSpecimenQueueContext.Provider;
 
 export interface ToasterProps {
   /**
@@ -116,8 +106,6 @@ export interface ToasterProps {
  */
 export function Toaster({ "aria-label": ariaLabel, className }: ToasterProps) {
   const frameInset = useContext(ToasterFrameInsetContext);
-  const specimenQueue = useContext(ToasterSpecimenQueueContext);
-  if (specimenQueue) return <SpecimenToaster queue={specimenQueue} aria-label={ariaLabel} className={className} />;
   return (
     <AriaToastRegion
       queue={toastQueue}
@@ -126,39 +114,12 @@ export function Toaster({ "aria-label": ariaLabel, className }: ToasterProps) {
       style={{ zIndex: UI_Z_TOAST, ...frameInsetStyle(frameInset) }}
       data-toaster-placement={frameInset ? "frame" : "viewport"}
     >
-      {({ toast: queuedToast }) => <ToasterItem toast={queuedToast} queue={toastQueue} />}
+      {({ toast: queuedToast }) => <ToasterItem toast={queuedToast} />}
     </AriaToastRegion>
   );
 }
 
-/**
- * The same toasts drawn in place from a specimen-local queue: react-aria-components' own Toast, given the queue's
- * state the way its `useToastQueue` builds it, listed as its ToastList lists them. No portal, no viewport placement,
- * and the app-wide queue is never read or written.
- */
-function SpecimenToaster({ queue, "aria-label": ariaLabel, className }: ToasterProps & { queue: ToastQueue<ToastRecord> }) {
-  const subscribe = useCallback((onChange: () => void) => queue.subscribe(onChange), [queue]);
-  const snapshot = useCallback(() => queue.visibleToasts, [queue]);
-  const visibleToasts = useSyncExternalStore(subscribe, snapshot, snapshot);
-  const state = useMemo((): NonNullable<ContextType<typeof AriaToastStateContext>> => ({
-    visibleToasts,
-    add: (content, options) => queue.add(content, options),
-    close: key => queue.close(key),
-    pauseAll: () => queue.pauseAll(),
-    resumeAll: () => queue.resumeAll(),
-  }), [queue, visibleToasts]);
-  return (
-    <div role="region" aria-label={ariaLabel ?? "Notifications"} className={cx("flex flex-col gap-sm", className)} data-toaster-placement="specimen">
-      <AriaToastStateContext.Provider value={state}>
-        <ol style={{ display: "contents" }}>
-          {visibleToasts.map(queuedToast => <li key={queuedToast.key} style={{ display: "contents" }}><ToasterItem toast={queuedToast} queue={queue} /></li>)}
-        </ol>
-      </AriaToastStateContext.Provider>
-    </div>
-  );
-}
-
-function ToasterItem({ toast: queuedToast, queue }: { toast: QueuedToast<ToastRecord>; queue: ToastQueue<ToastRecord> }) {
+function ToasterItem({ toast: queuedToast }: { toast: QueuedToast<ToastRecord> }) {
   const { variant, title, description, action } = queuedToast.content;
   return (
     <AriaToast
@@ -178,7 +139,7 @@ function ToasterItem({ toast: queuedToast, queue }: { toast: QueuedToast<ToastRe
             {description}
           </Text>
         ) : null}
-        {action ? <Button data-toast-part="action" variant="secondary" size="sm" onPress={event => { action.onPress(event); queue.close(queuedToast.key); }} isDisabled={action.isDisabled}>
+        {action ? <Button data-toast-part="action" variant="secondary" size="sm" onPress={event => { action.onPress(event); toastQueue.close(queuedToast.key); }} isDisabled={action.isDisabled}>
           {action.label}
         </Button> : null}
       </ToasterContent>

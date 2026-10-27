@@ -857,7 +857,7 @@ function rewriteSource(input: RewriteInput): RewriteResult {
   // These selected-source restyles are authenticated independently of generic
   // utility rewriting. Changed modules or styles retain their original findings.
   const selectedRestyles: Readonly<Record<string, { leaf: string; hashes: readonly string[] }>> = {
-    dialog: { leaf: "dialog", hashes: ["ff8a8e6b372e7eb06c931975d8ac1ea59d9271051ac178a62c95f6acae20bb35", "9361795cc0801cf902adeef084cda2cbe15ee2373433319a3cbb47b8a6879063"] },
+    dialog: { leaf: "dialog", hashes: ["ff8a8e6b372e7eb06c931975d8ac1ea59d9271051ac178a62c95f6acae20bb35", "8bc4da15877b3ac969c84d545fda45d90130d5ab076123641afa950022e2325d"] },
     "dropdown-menu": { leaf: "menu", hashes: ["50a583093755eb29800812b189860b10f3aac3f7d48a3be23abe59c73dbb551d", "dab0795b541e7987375948a544ae678dfbc3608fc44afce3ce45972700a9d9ef"] },
     popover: { leaf: "popover", hashes: ["ff617496f63c49105c177be5c2d21a2e4174a5417c3d675179b21cf98854deea"] },
     accordion: { leaf: "disclosure", hashes: ["1fe5c781263e046e1c897eb6a32a6f9f188963d53b1bef2ea23b8686597949ed"] },

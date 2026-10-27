@@ -5,9 +5,9 @@ import { createContext } from "react";
 export type PreviewFailureReason = "specimen-error" | SpecimenUnavailableReason;
 /**
  * Why a specimen is not drawn from designer sample content: the export only draws the host's own app-wide
- * toast queue, the member draws the host's own brand assets, or the overlay opens only from the host's own trigger. Rendered as `data-specimen-unavailable`.
+ * toast queue, or the member draws the host's own brand assets. Rendered as `data-specimen-unavailable`.
  */
-export type SpecimenUnavailableReason = "needs-host-queue" | "needs-brand-asset" | "needs-host-trigger";
+export type SpecimenUnavailableReason = "needs-host-queue" | "needs-brand-asset";
 
 /**
  * Set by the leaf cell that shows a host preview. Preview content reports a reason once nothing it holds
