@@ -5,9 +5,10 @@ import { describe, expect, it } from "vitest";
 import componentSlots from "../catalog/slots/components.json" with { type: "json" };
 import { loadCatalogBundles } from "../catalog-bundles.js";
 import { loadComponentCompositionRules } from "../catalog-core/component-compositions.js";
-import { componentMemberBinding, emitComponents } from "../catalog-core/emit-components.js";
-import { componentDescriptorHash } from "../catalog-core/resolve-components.js";
-import type { ComponentCandidate, ComponentCandidateDocument, ComponentFile, ResolvedComponent, ResolvedComponents } from "../catalog-core/resolve-components.js";
+import { componentFillId, componentMemberBinding, emitComponents } from "../catalog-core/emit-components.js";
+import { DS_ATTR, dsAttrs } from "../catalog-core/provenance-attrs.js";
+import { componentDescriptorHash, sortedComponentIds } from "../catalog-core/resolve-components.js";
+import type { ComponentCandidate, ComponentCandidateDocument, ComponentFile, ComponentRule, ResolvedComponent, ResolvedComponents } from "../catalog-core/resolve-components.js";
 import type { ComponentSlot } from "../catalog-core/types.js";
 
 /**
@@ -38,13 +39,20 @@ function persistOne(doc: ComponentCandidateDocument, owned?: readonly ComponentF
   if (descriptor.impl.kind === "composed") return [];
   return persistDescriptor(fillId(doc), descriptor, owned ?? (descriptor.impl.kind === "source" ? outputs.get(fillId(doc)) ?? [] : []));
 }
-// A composition rule persists its template against the rule's own materialized files.
-function persistDescriptor(fill: string, descriptor: ComponentCandidate, files: readonly ComponentFile[]): ComponentFile[] {
+/**
+ * A composition rule persists its template against the rule's own materialized files, under the origin
+ * the product installs it with (changeset-components' compose op): composed, naming the rule. A rule id
+ * is never an adopted fill id, so the leaf's provenance stamp names the consumer's own fill.
+ */
+function composedOrigin(rule: ComponentRule): ResolvedComponent["origin"] {
+  return { kind: "composed", rule: rule.id, reads: sortedComponentIds(rule.inputs), inputsHash: `sha256:${"0".repeat(64)}` };
+}
+function persistDescriptor(fill: string, descriptor: ComponentCandidate, files: readonly ComponentFile[], composed?: ResolvedComponent["origin"]): ComponentFile[] {
   if (descriptor.impl.kind === "composed") throw new Error(`composed descriptor reached persist for ${fill}`);
   if (descriptor.impl.kind === "source" && !files.length) throw new Error(`no materialized output for ${fill}`);
+  const origin: ResolvedComponent["origin"] = composed ?? { kind: "adopted", source: descriptor.source, fill, pin: descriptor.pin, license: descriptor.license ?? "MIT", sha256: componentDescriptorHash(descriptor), adoptedAt: "2026-01-01T00:00:00.000Z" };
   const component: ResolvedComponent = {
-    slot: descriptor.slot, originKind: "adopted",
-    origin: { kind: "adopted", source: descriptor.source, fill, pin: descriptor.pin, license: descriptor.license ?? "MIT", sha256: componentDescriptorHash(descriptor), adoptedAt: "2026-01-01T00:00:00.000Z" },
+    slot: descriptor.slot, originKind: origin.kind, origin,
     impl: descriptor.impl as ResolvedComponent["impl"], propMap: structuredClone(descriptor.propMap),
     reads: { tokens: {}, assets: [], components: [] }, descriptor,
   };
@@ -76,7 +84,7 @@ const rules = loadComponentCompositionRules();
 type Persisted = { id: string; source: string; slot: string; persist: () => void };
 const everyFill: Persisted[] = [
   ...selectable.map(doc => ({ id: fillId(doc), source: doc.$extensions["com.clossys.fill"].source, slot: Object.values(doc.components)[0]!.slot, persist: () => persistOne(doc) })),
-  ...rules.map(rule => ({ id: rule.id, source: "compose", slot: rule.slot, persist: () => persistDescriptor(rule.id, rule.template, rule.files) })),
+  ...rules.map(rule => ({ id: rule.id, source: "compose", slot: rule.slot, persist: () => persistDescriptor(rule.id, rule.template, rule.files, composedOrigin(rule)) })),
 ];
 /**
  * Persisting one fill alone leaves out its sibling slots' files, so a relative import of another
@@ -227,6 +235,28 @@ describe("pack check: every registered composition template persists", () => {
     for (const [member, pointer] of Object.entries(rule.template.propMap)) expect(() => componentMemberBinding(component, member, pointer), `${rule.slot}.${member} = ${pointer}`).not.toThrow();
     expect(Object.keys(rule.template.propMap).sort()).toEqual([...rule.template.members].sort());
     expect(persistThrows([doc(rule)], () => rule.files).filter(message => PROPMAP_REFUSAL.test(message))).toEqual([]);
+  });
+  // Provenance: an installed composition's stamp names the consumer's own fill, never the rule id.
+  // The rule id (`compose:<leaf>@<n>`) is not a `<source>/<leaf>` fill id and stays refused as one.
+  it.each(rules.map(rule => [rule.slot, rule] as const))("%s: persists under its composed origin with a valid provenance stamp", (_slot, rule) => {
+    const origin = composedOrigin(rule);
+    // The stamp the emitter writes for this leaf: the consumer's own fill, a safe `<source>/<leaf>` id.
+    const fill = componentFillId({ slot: rule.slot, origin }, "pack-check");
+    expect(fill).toBe(`pack-check/${rule.slot}`);
+    expect(dsAttrs("components", rule.slot, fill)[DS_ATTR.fill]).toBe(fill);
+    // Persisted alone, the only refusal is the sibling-input isolation artifact, raised after every leaf is stamped.
+    let refusal: string | undefined;
+    try { persistDescriptor(rule.id, rule.template, rule.files, origin); } catch (error) { refusal = (error as Error).message; }
+    expect(refusal === undefined || ISOLATION_ARTIFACT.test(refusal), refusal).toBe(true);
+    // The rule id (`compose:<leaf>@<n>`) is not a fill id: forged into an adopted origin it is refused, as it must be.
+    expect(() => dsAttrs("components", rule.slot, rule.id)).toThrow(`provenance: unsafe fill id ${rule.id}`);
+    expect(() => persistDescriptor(rule.id, rule.template, rule.files)).toThrow(`provenance: unsafe fill id ${rule.id}`);
+  });
+  it("the fill-id check still refuses unsafe ids", () => {
+    for (const unsafe of ["../etc/components.button", "a/../components.button", "a/b/components.button", "a\\components.button", "a/components.button\"", "a/components.button>", "a/components.button x", "/components.button", "a/components", ""]) {
+      expect(() => dsAttrs("components", "components.button", unsafe), unsafe).toThrow("provenance: unsafe fill id");
+    }
+    expect(() => dsAttrs("components", "components.button", "shadcn@aria/components.button")).not.toThrow();
   });
 });
 
