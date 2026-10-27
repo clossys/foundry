@@ -1,13 +1,10 @@
 # @clossys/publisher
 
-**The publisher role — did we put it out to an audience, and can we prove
-what shipped?** This package is named for the job, not the artifact: it is
-recut from two donor packages, `@example/surface` (the composer half
-— eight subpaths, unchanged) and `@example/ledger` (the record half,
-now the `./record` subpath), per
-[decision 10](../../docs/DECISIONS.md#10-recutting-the-expression-surface-into-role-shaped-packages).
-The vocabulary inside each half is unchanged: renaming the role does not
-rename what it composes or what it records.
+Publisher assembles content from registered Designer frames and sections,
+checks it, records owner approval and hands an immutable release to the system
+that lands it. The v1 content contract pairs Designer visuals with hand-written
+copy. The package and its agent guide provide generic capability; the consumer
+owns its workspace data and library selections.
 
 ```bash
 npm install @clossys/publisher
@@ -15,6 +12,173 @@ npm install @clossys/publisher
 
 This package is published to `https://registry.npmjs.org` with public
 access; installing it requires no authentication.
+
+## Content contract
+
+The slot-and-candidate model below is the new content contract. It describes the
+intended workflow; it does not claim that the new model, stage engine, canvas,
+renderers or handover are complete. The shipped API reference later in this
+README remains available while the older surface and pack modules retire.
+Those modules have not been deleted by this documentation change.
+
+### Fixed hierarchy and permanent slots
+
+A workspace is the scope, not another hierarchy level. There are exactly three
+L1 groups and nine L2 kinds, in this order. Adding a group or kind requires
+owner sign-off.
+
+| L1 | L2 kinds | One L3 slot |
+| --- | --- | --- |
+| `websites` | `site`, `app`, `admin`, `demo`, `internal` | one URL |
+| `documents` | `slides`, `docs` | one deck or document file |
+| `communications` | `messages`, `videos` | one message or video file |
+
+An L3 slot is a permanent publishable position. Its id is issued from its
+original address, such as `websites/site/home`, and stays unchanged when its
+L1, L2 or position changes. A deploy target or destination is a field on the
+slot, not a level. Slides and scenes are sections inside a candidate, not slots.
+Images are Designer assets used by sections, not standalone slots.
+`websites/internal` is development-only and its Publish stage is Not applicable.
+Milestones and bundles are free tags, such as `milestone:launch`.
+
+### Candidates and immutable revisions
+
+A candidate is an agent draft, alternative, rewrite or import for one slot.
+A slot has at most one active candidate. Candidates progress through draft,
+in review, approved, active and retired; a retired candidate can become active
+again only by rollback to a previously released revision. A slot without an
+active candidate says "No active candidate" rather than implying a release.
+
+A content change creates the next immutable candidate revision (`r1`, `r2`,
+and so on). The digest covers the candidate name, brief, composition, links,
+type settings and open questions. It excludes approval, history, state and
+tags. Tags are mutable filters and do not create a content revision.
+For redirects, `redirectTarget` replaces composition in the digest; changing
+the destination creates a new revision and invalidates approval.
+A new revision of an approved or active candidate returns it to draft and
+invalidates its approval. Other candidates remain unchanged.
+
+Approval records its source (`owner` or `imported-baseline`), revision and
+digest. Activation requires an approval for the current revision and digest
+from either source. An imported baseline can preserve an existing active
+candidate, but Publish still requires current owner-source approval. Imported
+status never substitutes for that approval.
+
+### Designer composition and hand-written copy
+
+Every content or status candidate consists of one registered Designer frame
+and ordered Designer sections. Publisher owns the brief, section order and
+intents, links between slots, and inline copy. Designer owns visual authoring:
+frames, sections, configs, assets and layout. Publisher stores their references,
+resolves them against the consumer library at Assemble and Review, and pins the
+resolved library version. It does not copy Designer implementations or invent
+layout. Only a redirect slot may omit composition; it must name its redirect
+target.
+
+The composition has a `frame` reference (`frameId`, `configId`), ordered
+`sections` (`key`, `sectionId`, `configId`, `intent`, `fields` and an optional
+pinned section reference), and `libraryVersion`. Each copy field carries
+`field`, `text`, `source: "handwritten"`, optional `locale` and optional
+Designer asset references. Text is plain unless the registered section schema
+allows rich marks. The brief records audience, goal, key message, call to
+action, tone, constraints and source answers.
+
+Hand-written copy is real content, authored through the coding agent and
+stored inline. It can pass Review, receive approval and be published. A missing
+Writer never blocks it. A missing required field is Needs input and names the
+section key and field. Writer is a future seam on this field shape, not a CMS
+or copy-generation pipeline required by v1. Existing legacy Writer-based APIs
+below retain their own contracts during retirement.
+
+A reused section pins `{ candidateId, sectionKey, revision }`. Following a newer
+source revision is an explicit agent change that creates a revision of the
+receiving candidate and requires Review and Approve again. Nothing follows a
+newer revision silently. Frame, section, config and asset references must all
+resolve in the registered consumer library; otherwise Review fails.
+
+### Five stages per candidate
+
+Each candidate runs Define → Assemble → Review → Approve → Publish. Approval
+and publishing are per candidate, not per board or workspace.
+
+| Stage | Exit condition |
+| --- | --- |
+| Define | Brief complete; frame, section order and intents chosen; links valid; no blocking open question |
+| Assemble | Words, Visuals and Assembly all Done: required hand-written fields present, Designer references resolve, and the medium render is stored by digest |
+| Review | Closed-world references, frame/section compatibility, rendered evidence and the applicable medium checks pass |
+| Approve | Owner approval recorded against the current revision and digest |
+| Publish | Active candidate's release frozen and handed over; destination readback is live and matches the manifest digest |
+
+Stage values are Failing, Needs input, Waiting, Done and Not applicable.
+Roll-up is worst-wins: Failing > Needs input > Waiting > Done; Not applicable
+is ignored. An empty or all-Not-applicable group rolls up to Not applicable.
+Assemble shows Words as "handwritten" when its required fields are complete;
+that counts as Done. A missing frame or renderer is Waiting with its reason,
+not a successful render. A non-active candidate's Publish is Waiting "not active".
+
+### Read-only canvas and consumer data
+
+The planned Publisher page uses Designer's shared Studio canvas inside
+`frames.app-shell`: one lane per L1, one board per L2 and one row per slot.
+All nine boards remain visible, including empty boards. The slot inspector
+compares candidates and shows composition, copy sources, stages, findings,
+questions, releases and revision history. The page is read-only. Every content
+change, candidate switch, approval and saved-view change goes through the
+coding agent; page controls do not edit the source of record.
+
+The capability package owns the fixed hierarchy, schemas, checks, rendering
+and handover contracts, and agent guide. The consumer owns its slots,
+candidates, copy, library selection, saved views and route bindings. Consumer
+records belong in the consumer's repository or database, not in this package.
+Rendered binaries belong in a content-addressed object store, not git.
+A view resolves system preset → consumer default → session URL settings;
+filters and sorting do not change the fixed hierarchy.
+
+### Release and handover contract
+
+The planned release freezes one active candidate revision as slot release N.
+Its manifest pins the candidate digest, section-reference revisions, Designer
+library and renderer versions, approval and artifact hashes. Website releases
+are batched into a target build manifest covering the active non-internal slots
+of that deploy target. A slot is live only when the deployed build contains its
+release at the matching digest. Rollback reactivates a previously released
+candidate and reuses its release; it does not re-render. Re-publish uses the
+same release for another destination.
+
+Publisher never holds destination credentials, deploys, sends or uploads.
+Builder owns website deployment, Distributor owns artifact landing and external
+connectors, and Messenger owns message sending. Publisher only renders, freezes,
+hands over and reads destination status. An unknown readback is Waiting; a
+mismatching digest is Failing. A missing destination system remains Waiting
+with its name. Package publication through npm or GitHub Releases is outside
+this content workflow.
+
+### Implementation status
+
+| Capability | Status in this documentation base |
+| --- | --- |
+| Legacy surface, pack, record and channel APIs | Existing implementation; reference retained below during retirement |
+| Slot/candidate model and public content entry points | New contract; implementation and public export integration pending |
+| Five-stage engine, read-only shared canvas and inspector | Planned; the legacy channel workspace below is not this canvas |
+| Composition-based web renderer and per-target build manifest | Planned; existing web renderers do not prove this pipeline |
+| Composition-based paged, message and video renderers | Planned; missing frames/renderers must report Waiting |
+| Release freeze, destination handover and matching live readback | Planned; existing ledger APIs do not establish destination landing |
+| Distributor connectors and Builder deploy operation | Future work; no deployment, sending or upload is claimed |
+
+The planned public split is `@clossys/publisher/content` for runtime-neutral
+contracts and validation, and `@clossys/publisher/content/node` for Node-only
+digest and revision helpers. Neither entry point is available in this
+documentation base; source and export integration are pending. Check the
+installed manifest before using either path.
+
+## Retained API reference
+
+The following sections document the existing APIs and their evidence limits.
+Surface documents, Writer registries, launch packs, templates and channel tabs
+are legacy contracts being retired. They remain implemented and documented;
+they do not override the content contract above or establish that its new
+pipeline is built. Use the installed version's manifest to determine available
+entry points and commands.
 
 ## Verified publication rate
 
@@ -151,6 +315,7 @@ Use explicit subpaths:
 - `@clossys/publisher/web/consent` — the client-only browser consent assembly: `ConsentExperience`, `bindTransport`, `useAnalyticsAllowed` and `useConsentStatus`. Under `react-server` it resolves a module that throws at import. See "Browser consent," below.
 - `@clossys/publisher/web/consent/preview` — the fixed-clock consent preview for development review. It resolves only under the `development` condition; every other condition, and `react-server`, resolves a module that throws at import.
 - `@clossys/publisher/consent-copy` — server-only consent copy resolution, `resolveConsentCopy`. Under the `browser` condition it resolves a module that throws at import.
+- Pending integration: `@clossys/publisher/web/registered-route-wiring` — server-only `registeredRouteWiringRoutes`, providing Designer `checkWiring` route input with tamper-evident proof only for a provider that passed the registered-route check at the exact emitted mount. The planned `browser` target throws at import. This entry point is not available in this documentation base; check the installed manifest before using it.
 - `@clossys/publisher/document` — the product-neutral structured-document contract (sections, paragraphs, lists, tables, callouts, safe links) and its renderer.
 - `@clossys/publisher/email`, `/print`, `/image`, `/slides` — channel renderers.
 - `@clossys/publisher/record` — the append-only, content-addressed publication ledger and its drift checker. See "`record` — the append-only publication ledger," below.
@@ -178,6 +343,9 @@ both targets.
 
 ## Why `publisher` is one package, not two
 
+The historical package recut is recorded in
+[decision 10](../../docs/DECISIONS.md#10-recutting-the-expression-surface-into-role-shaped-packages).
+
 Composition without a record is unprovable, and every time the publisher
 runs, the record runs — there is no publish that legitimately skips it. That
 argues for one install and one version, which one package with a `./record`
@@ -192,37 +360,14 @@ see "`record` — the append-only publication ledger," below, for the half
 that proves it: a publication record is a DOCUMENT the composer never
 imports.
 
-## Scope: this package renders and validates. It does not compose.
+## Legacy SurfaceDocument scope
 
-Stated plainly because evaluating it and discovering this costs real time:
-**there is no compose step here, and there will not be one.** Nothing in this
-package takes an intent, a brief, or a content plan and *selects* a template
-to put it in. Every export is a `render*`, a `resolve*`, or a `validate*`.
-
-The boundary is: a caller authors a `SurfaceDocument` — naming its template
-explicitly — and this package validates it, resolves its copy and assets
-against real approved registries, renders it for a channel, and reports what
-it did. Deciding *which* document to build, from *what* intent, is the
-consumer's job and stays there.
-
-This is a scope decision, not a gap awaiting a contributor. Template selection
-is where product judgement lives: which page shape serves which audience at
-which moment is exactly the reasoning a shared package cannot hold for someone
-else, and a `compose(intent, target)` that guessed would be wrong in a way
-that is expensive to discover and impossible to override cleanly. Drawing the
-line at "you name the template, we guarantee everything after it" is what lets
-this package promise something real — validated content, resolved copy
-provenance, deterministic output — instead of promising judgement it does not
-have.
-
-What that leaves the consumer owning: intent-to-template selection, and any
-catalog of their own templates worth selecting from. What it leaves this
-package owning: everything from a named template onward.
-
-Making the *set* of selectable web templates extensible is a separate and
-genuinely open question — see the template-registry proposal in this
-repository's issues. That is about who may add a template, not about who picks
-one; extensibility does not imply composition.
+The existing SurfaceDocument renderer validates a caller-authored document,
+resolves its copy and assets, and renders the named template. It does not
+select a template from an intent or brief. Its existing APIs and examples below
+remain valid during retirement. This boundary applies to that legacy renderer;
+the new candidate contract gives Publisher the brief, narrative and assembly
+responsibilities described above.
 
 ## SurfaceDocument and renderer boundary
 
@@ -7024,7 +7169,11 @@ Use StatusView for a cardless status page with a call to action. See
 content, form and date examples. Existing views remain available unchanged.
 
 
-## Publisher channel workspace
+## Legacy Publisher channel workspace
+
+This is the existing channel-based page, pending replacement by the read-only
+slot canvas described above. Its current local UI choices are not the new
+agent-only content workflow.
 
 `PublisherPage` from `@clossys/publisher/web/client` mounts inside
 `AppFrame` from `@clossys/designer/frames`. It leases one `PageHeaderModule`;
@@ -7085,11 +7234,38 @@ Layout and state Sections. Neither a host query callback nor a caller-authored
 result is accepted. Query/provider source, current library/selection, Edit state,
 body, labels and content participate in the joined receipt identity.
 
+### Pending route bootstrap and loader integration
+
+The following loader/bootstrap contract is awaiting source integration and
+qualification; it is not available in this documentation base. Existing
+registered-route APIs above do not establish it.
+
 Derived execution additionally requires same-context source revalidation and
 the mounted original provider hooks. Branded source receipts cannot be copied
-through JSON or transferred from server to browser. That browser revalidation
-boundary, actual consumer qualification and Canvas lifecycle promotion remain
-pending; package source fixtures do not establish them.
+through JSON or transferred from server to browser. The server may pass the
+plain `bootstrap` data from `prepareRegisteredNodeRoute` instead; the browser's
+one path back is `materializeRegisteredRouteSourceEvidence`, which re-runs the
+fixed query and checks the library hash, materialization id and source match
+before minting evidence. The bootstrap is unsigned, so that evidence is
+client-only and display-only: the live binder accepts it, while the Node,
+lifecycle and bootstrap paths accept only Node-minted evidence. Actual consumer
+qualification and Canvas lifecycle promotion remain pending; package source
+fixtures do not establish them.
+
+A route may register one server data loader as `composition.loader`
+(`{ file, export }`, a consumer module separate from the entry, page, runtime,
+action and provider modules). The emitted entry then becomes the server page: it
+imports only that zero-argument loader, awaits it and passes the result through
+`registeredRouteServerData` (from `@clossys/publisher/core`, refusing
+non-serializable data at compile time and at runtime) to the emitted client
+page's `RegisteredServerDataRoutePage`, whose runtime hook receives the typed
+data. Routes without a loader keep their exact emitted bytes. The checker admits
+only the registered export under the closed lexical policy shared with the
+provider seam (no `\u` escapes, `eval`, global object or reflection access, or
+non-literal bracket keys), so loader modules spell their types out rather than
+using indexed access types.
+
+### Registered route checks
 
 `checkRegisteredRoutes` and `publisher-registered-route-check` discover entries
 under explicitly admitted route roots and compare them with the registry and
