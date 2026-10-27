@@ -2,8 +2,9 @@
 import * as fs from "node:fs/promises";
 import { join } from "node:path";
 import { tmpdir } from "node:os";
+import ts from "typescript";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
-import { checkRegisteredRoutes } from "./registered-route-check.js";
+import { checkRegisteredRoutes, documentOnlyLayout, redirectOnlyRoute } from "./registered-route-check.js";
 import { emitRegisteredRouteAdapter, emitRegisteredRoutePage, emitRegisteredRouteRegistryModule } from "./registered-route-source.js";
 import { syntheticPlan, syntheticRoute, SYNTHETIC_ROUTE_REGISTRIES } from "../core/__fixtures__/registered-route.js";
 import type { RouteRegistration } from "../core/route-registry.js";
@@ -168,4 +169,90 @@ describe("registered nonvisual provider ownership seam (synthetic fixtures; no r
     const defaultExport = designerRoute({ id: "designer.whole-studio", source: { file: PROVIDER_FILE, export: "default" } });
     expect(emitRegisteredRoutePage("routes.ts", defaultExport)).toContain('import RegisteredProvider from "../providers/designer.tsx";');
   });
+
+  it("(f) an identifier escape cannot rebind children, substitute the provider or hide imperative markup", async () => {
+    const inputs = "  const inputs = useStudioInputs();";
+    const probes: (readonly [source: string, resolves: string])[] = [
+      // `children` reassigned before the mount, so the registered page is dropped.
+      [nonvisual.replace(inputs, `${inputs}\n  chil\\u0064ren = null;`), "children"],
+      [nonvisual.replace(inputs, `${inputs}\n  chil\\u{64}ren = null;`), "children"],
+      // The registered provider binding shadowed by a substitute component.
+      [nonvisual.replace(inputs, `  const \\u0057holeStudioProvider = Fragment;\n${inputs}`), "WholeStudioProvider"],
+      [nonvisual.replace(inputs, `  const \\u{57}holeStudioProvider = Fragment;\n${inputs}`), "WholeStudioProvider"],
+      // Imperative markup behind an escaped element-factory or document name.
+      [nonvisual.replace(inputs, `${inputs}\n  const chrome = React.cr\\u0065ateElement("header", null, "Old chrome");`), "createElement"],
+      [nonvisual.replace(inputs, `${inputs}\n  useEffect(() => { docum\\u{65}nt.body.append("Old chrome"); });`), "document"],
+    ];
+    const refused: boolean[] = [];
+    for (const [source, name] of probes) {
+      // The TypeScript parser resolves each escape to the guarded name (identifier.text),
+      // so every probe is a real rebinding rather than a differently named binding.
+      expect(escapedIdentifierNames(source), source).toContain(name);
+      refused.push(providerRefused((await check(await setup(designerRoute(), source))).findings));
+      // Resolved to its literal spelling, the same module stays refused.
+      const resolved = source.replace(/\\u(?:\{([0-9a-fA-F]+)\}|([0-9a-fA-F]{4}))/g, (_, braced: string | undefined, plain: string | undefined) => String.fromCodePoint(parseInt(braced ?? plain!, 16)));
+      expect(escapedIdentifierNames(resolved)).toEqual([]);
+      expect(providerRefused((await check(await setup(designerRoute(), resolved))).findings), resolved).toBe(true);
+    }
+    expect(refused, `refused per probe: ${refused}`).toEqual(probes.map(() => true));
+  }, SCAN_TIMEOUT);
+
+  it("(g) direct eval cannot rebind children from computed text", async () => {
+    const source = nonvisual.replace("  const inputs = useStudioInputs();", '  const inputs = useStudioInputs();\n  eval("chil" + "dren = null");');
+    expect(providerRefused((await check(await setup(designerRoute(), source))).findings)).toBe(true);
+  }, SCAN_TIMEOUT);
+
+  it("(h) sibling route classifiers never admit a name hidden behind an escape", async () => {
+    // A route handler hiding an element or a default export behind an escape is not an HTTP route.
+    const route = await setup(), handlers: [refused: boolean, classified: boolean][] = [];
+    for (const handler of [
+      'export function GET() { return new Response("ok"); }\nexport function Chrome() { return <\\u0064iv />; }\n',
+      'export function GET() { return new Response("ok"); }\nexport \\u{64}efault function Page() { return null; }\n',
+    ]) {
+      await write("app/api/route.tsx", handler);
+      const result = await check(route);
+      handlers.push([result.findings.some(finding => finding.code === "RR2" && finding.file === "app/api/route.tsx"), result.classifications.some(row => row.file === "app/api/route.tsx")]);
+    }
+    expect(handlers, `refused, classified per handler: ${JSON.stringify(handlers)}`).toEqual([[true, false], [true, false]]);
+    // Redirect and document-layout recognition already fail closed on an escaped name (pinned),
+    // while their literal spellings stay admitted.
+    const redirect = (call: string) => `import { redirect } from "next/navigation";\nexport default function Page() { ${call}("/x"); }\n`;
+    expect([redirect("redirect"), redirect("re\\u0064irect"), redirect("re\\u{64}irect")].map(redirectOnlyRoute)).toEqual([true, false, false]);
+    const layout = (param: string, value: string) => `export default function Layout({ ${param} }) { return ${value}; }\n`;
+    expect([layout("children", "children"), layout("chil\\u0064ren", "children"), layout("children", "chil\\u{64}ren")].map(documentOnlyLayout)).toEqual([true, false, false]);
+  }, SCAN_TIMEOUT);
+
+  it("(i) computed or reflective access cannot reach a refused name the token check never reads", async () => {
+    const inputs = "  const inputs = useStudioInputs();", at = (line: string) => nonvisual.replace(inputs, `${inputs}\n  ${line}`);
+    const probes = [
+      // A computed key on the global object, directly or through an alias.
+      at('useEffect(() => { globalThis["docu" + "ment"].body.append("Old chrome"); });'),
+      at('const root = window; useEffect(() => { root["docu" + "ment"].body.append("Old chrome"); });'),
+      // A computed key on any receiver.
+      at("useEffect(() => { inputs.host[inputs.key].body.append(inputs.chrome); });"),
+      at("useEffect(() => { inputs.host?.[inputs.key].body.append(inputs.chrome); });"),
+      // Reflection and code building reach the same property without a bracket.
+      at("useEffect(() => { Reflect.get(inputs.host, inputs.key).body.append(inputs.chrome); });"),
+      at('useEffect(() => { Function("ret" + "urn docu" + "ment")().body.append("Old chrome"); });'),
+      // A plain literal key that names a refused token.
+      at('useEffect(() => { inputs.host["document"].body.append(inputs.chrome); });'),
+      at('useEffect(() => { inputs.node["inner" + "HTML"] = inputs.chrome; });'),
+    ];
+    const refused: boolean[] = [];
+    for (const source of probes) refused.push(providerRefused((await check(await setup(designerRoute(), source))).findings));
+    expect(refused, `refused per probe: ${refused}`).toEqual(probes.map(() => true));
+    // A plain literal key and array destructuring stay admitted.
+    for (const source of [
+      nonvisual.replace(inputs, `${inputs}\n  const adapter = inputs["adapter"];`).replace("adapter={inputs.adapter}", "adapter={adapter}"),
+      nonvisual.replace(inputs, "  const [inputs] = [useStudioInputs()];"),
+    ]) expect(providerRefused((await check(await setup(designerRoute(), source))).findings), source).toBe(false);
+  }, SCAN_TIMEOUT);
 });
+
+/** Identifier names whose source text is an escape, as the TypeScript parser resolves them. */
+function escapedIdentifierNames(source: string): string[] {
+  const file = ts.createSourceFile("provider.tsx", source, ts.ScriptTarget.Latest, true, ts.ScriptKind.TSX), names: string[] = [];
+  const visit = (node: ts.Node): void => { if (ts.isIdentifier(node) && node.getText(file) !== node.text) names.push(node.text); ts.forEachChild(node, visit); };
+  visit(file);
+  return names;
+}

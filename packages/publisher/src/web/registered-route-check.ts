@@ -107,8 +107,24 @@ const escapeRegExp = (value: string) => value.replace(/[.*+?^${}()|[\]\\/]/g, "\
 function nonvisualRouteProvider(source: string, mount: RouteProviderMount, known: { readonly module: string; readonly component: string; readonly props: readonly string[] }): boolean {
   const id = "[A-Za-z_$][\\w$]*", component = escapeRegExp(known.component);
   const module = source.replace(/^\s*["']use client["'];?/, "");
+  // An escape makes source text differ from the name it binds: `chil\u0064ren` is
+  // `children` and `\u0057holeStudioProvider` is the provider. No parser ships at
+  // runtime, so the module must spell every name literally; every raw-text check
+  // below then reads the names the module actually resolves.
+  if (/\\u/.test(module)) return false;
+  // Direct eval can rebind `children` from computed text no check here can read.
+  if (/(?<![\w$])eval(?![\w$])/.test(module)) return false;
   // Imperative or element-factory markup is never nonvisual, wherever it appears.
   if (/\b(?:createElement|cloneElement|createPortal|jsxs?|jsxDEV|dangerouslySetInnerHTML|innerHTML|outerHTML|insertAdjacentHTML|document)\b/.test(module)) return false;
+  // Computed access reaches a property by text that check never reads
+  // (`globalThis["docu" + "ment"]`, directly or through an alias). The global
+  // object and the reflection and code-building primitives are refused by name...
+  if (/(?<![\w$])(?:globalThis|window|self|global|Reflect|Function)(?![\w$])/.test(module)) return false;
+  // ...and on any receiver a bracket key must be a plain string literal, which that check reads.
+  for (const [, before, key] of module.matchAll(/([\w$]+|[)\]}]|\?\.)\s*\[([^\]]*)/g)) {
+    if (/^(?:const|let|var|return|typeof|in|of|case|new|void|delete|await|yield|throw|else|do)$/.test(before!)) continue;
+    if (!/^\s*(?:"[^"\n]*"|'[^'\n]*')?\s*$/.test(key!)) return false;
+  }
   // One unaliased import of the registered component from its original module, used only by the mount.
   const imports = module.match(new RegExp(`import\\s*\\{\\s*${component}\\s*\\}\\s*from\\s*["']${escapeRegExp(known.module)}["'];?`, "g")) ?? [];
   if (imports.length !== 1 || (module.match(new RegExp(`(?<![\\w$])${component}(?![\\w$])`, "g")) ?? []).length !== 3) return false;
@@ -154,7 +170,8 @@ async function checkRegisteredRoutesInternal(input: RegisteredRouteCheckInput) {
         return;
       }
       if (/^route\./.test(name)) {
-        if (/export\s+(?:async\s+)?function\s+(?:GET|POST|PUT|PATCH|DELETE|HEAD|OPTIONS)\b|export\s+(?:const|let)\s+(?:GET|POST|PUT|PATCH|DELETE|HEAD|OPTIONS)\b/.test(source) && !/export\s+default\b|<\s*[A-Za-z]/.test(source)) classifications.push({ file: path, kind: "http" });
+        // A handler with no default export and no element; an escape can hide either from this raw read.
+        if (/export\s+(?:async\s+)?function\s+(?:GET|POST|PUT|PATCH|DELETE|HEAD|OPTIONS)\b|export\s+(?:const|let)\s+(?:GET|POST|PUT|PATCH|DELETE|HEAD|OPTIONS)\b/.test(source) && !/export\s+default\b|<\s*[A-Za-z]|\\u/.test(source)) classifications.push({ file: path, kind: "http" });
         else findings.push({ code: "RR2", file: path, message: "Unsupported HTTP route source classification" });
         return;
       }
