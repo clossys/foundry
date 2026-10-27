@@ -77,6 +77,7 @@ function computePortions(input: CompositeEngineInput): PortionResolution {
  * Everything a portion resolution reads besides the library: the value and component catalogs and each of their
  * fields, the component options and each of theirs, and the file probe. Compared by identity, so a catalog or option
  * field replaced in place is a different input.
+ * Catalogs are build-time data, loaded once and never mutated deeper than a replaced top-level field.
  */
 function portionReads(input: CompositeEngineInput): readonly unknown[] {
   const { values, components } = input.catalog, options = input.componentOptions;
