@@ -439,4 +439,26 @@ describe("qualification rule groups (QUAL-RECOUNT G1, G2, G7a, G11)", () => {
       expect(k4(flagged), cls).toEqual([message]);
     }
   });
+  it("K4 unbound-property rule exempts RAC runtime and file-local properties", () => {
+    const exempt = ' const cls = "w-(--trigger-width) origin-(--trigger-anchor-point) h-(--disclosure-panel-height) [--cell-size:var(--text)] data-[size=sm]:[--cell-size:var(--surface)] size-(--cell-size)";'
+      + ' const style = { "--gap": "var(--surface)", gap: "var(--gap)" };';
+    const profile = fixture(); append(profile, exempt);
+    expect(k4(profile)).toEqual([]);
+    // RAC runtime properties are exempt only where the observed source imports react-aria-components.
+    const native = fixture(); source(native, 'export const X = () => <div className="w-(--trigger-width)" style={{color:"var(--text)"}} />;');
+    expect(k4(native)).toEqual(["Unbound CSS property --trigger-width in button.tsx"]);
+    // Must still flag: an unknown property not defined in the file, a non-RAC overlay property, the Tailwind theme
+    // --spacing (judged as a length needs the compiled CSS, which this check is not given), and the defining value itself.
+    for (const [usage, property] of [[' const cls = "w-(--foo)";', "--foo"], [' const cls = "max-h-(--available-height)";', "--available-height"],
+      [' const cls = "h-(--control,calc(var(--spacing)*8))";', "--spacing"], [' const cls = "[--cell-size:var(--foreign)] size-(--cell-size)";', "--foreign"],
+      [' const cls = "ease-(--default-transition-timing-function)";', "--default-transition-timing-function"]] as const) {
+      const flagged = fixture(); append(flagged, exempt + usage);
+      expect(k4(flagged), property).toEqual([`Unbound CSS property ${property} in button.tsx`]);
+    }
+    // A property defined in another file is not local to the file that uses it.
+    const split = fixture(); const observation = split.observations["components.button"]!;
+    observation.files.push({ path: "theme.tsx", content: 'const cls = "[--foo:var(--text)]";' }); observation.sourceHash = componentSourceHash(observation.files);
+    append(split, ' const cls = "w-(--foo)";');
+    expect(k4(split)).toEqual(["Unbound CSS property --foo in button.tsx"]);
+  });
 });

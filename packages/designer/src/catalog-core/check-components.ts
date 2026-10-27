@@ -244,6 +244,35 @@ const VALUE_FREE_UTILITIES: readonly RegExp[] = [
   /^bg-blend-(?:normal|multiply|screen|overlay|darken|lighten|color-dodge|color-burn|hard-light|soft-light|difference|exclusion|hue|saturation|color|luminosity)$/,
   /^text-(?:left|center|right|justify|start|end|wrap|nowrap|balance|pretty|ellipsis|clip|transparent|current|inherit)$/,
 ];
+/**
+ * Custom properties React Aria Components itself sets at runtime, so a consumer token can never bind them. Each is
+ * listed in the "CSS variables" table of its RAC docs page (source: adobe/react-spectrum
+ * `packages/dev/s2-docs/pages/react-aria/<Page>.mdx`, published at react-aria.adobe.com/<Page>) and set in the
+ * installed `react-aria-components` / `react-aria` dist. Only a fill whose observed source imports
+ * `react-aria-components` is exempted for them.
+ */
+const RAC_RUNTIME_PROPERTIES: Readonly<Record<string, string>> = {
+  "--trigger-width": "Popover: the width of the popover trigger element (also styling guide, CSS variables)",
+  "--trigger-anchor-point": "Popover and Tooltip: the position of the trigger relative to the overlay, for transform-origin",
+  "--disclosure-panel-width": "Disclosure: the panel's intrinsic width, for animations",
+  "--disclosure-panel-height": "Disclosure: the panel's intrinsic height, for animations",
+  "--tab-panel-width": "Tabs: the width of the active tab panel, for animations",
+  "--tab-panel-height": "Tabs: the height of the active tab panel, for animations",
+  "--visual-viewport-width": "Modal: the width of the visual viewport",
+  "--visual-viewport-height": "Modal: the height of the visual viewport",
+  "--page-width": "Modal: the width of the <body> element, for the backdrop",
+  "--page-height": "Modal: the height of the <body> element, for the backdrop",
+  "--tree-item-level": "Tree: the depth of the item within the tree, for indentation",
+  "--table-row-level": "Table: the depth of the row within the table, for indentation",
+};
+/**
+ * Custom properties a file defines itself: a Tailwind arbitrary property `[--name:value]` (behind any variant), a
+ * style-object key `"--name": value`, or a CSS declaration `--name: value`. A use of such a property is not an
+ * unbound consumer property; the defining value stays in the file and is judged by the same property and literal rules.
+ */
+function definedProperties(code: string): Set<string> {
+  return new Set([...code.matchAll(/(?:^|[[{;,\s"'])(--[a-zA-Z][\w-]*)["']?\]?\s*:/gm)].map(match => match[1]!));
+}
 function rootNames(root: string): string[] { return root.startsWith("rac:") ? root.slice(4).split("+") : []; }
 /** Contracts grant leaves; declarations may name a leaf or one exact member. */
 function tokenLeaf(read: string): string | undefined {
@@ -343,8 +372,10 @@ export function checkComponentProfile(input: ComponentCheckInput): ComponentChec
     if (contract.root.startsWith("rac:") && (!observation.forwardsRef || !observation.forwardsRenderProps)) add("K2", fill.slot, "RAC implementations must forward refs and render props");
     for (const root of rootNames(contract.root)) if (!files.some(file => [...file.code.matchAll(/import\s*\{([^}]+)\}\s*from\s*["']react-aria-components["']/g)].some(match => match[1]!.split(",").some(binding => binding.trim().split(/\s+as\s+/)[0] === root)))) add("K2", fill.slot, `Missing RAC root import ${root}`);
     if (files.some(file => /\b(?:import|require)\s*\(\s*[^"'\s]/.test(file.code))) add("K2", fill.slot, "Dynamic module resolution is unverified");
+    const racImported = modules.includes(RAC_PACKAGE);
     for (const file of files) {
-      const properties = [...file.code.matchAll(/--[a-zA-Z][\w-]*/g)].map(match => match[0]);
+      const local = definedProperties(file.code);
+      const properties = [...file.code.matchAll(/--[a-zA-Z][\w-]*/g)].map(match => match[0]).filter(property => !local.has(property) && !(racImported && Object.hasOwn(RAC_RUNTIME_PROPERTIES, property)));
       for (const property of properties) if (!Object.entries(input.tokens).some(([member, token]) => token.property === property && isRead(fill, member))) add("K4", fill.slot, `Unbound CSS property ${property} in ${file.path}`);
       if (/(?:#[\da-f]{3,8}\b|\b(?:rgb|hsl|oklch|oklab|lab|lch)a?\s*\(|\b\d*\.?\d+(?:px|rem|em|vh|vw|ch)\b)/i.test(file.code)) add("K4", fill.slot, `Literal colour or length in ${file.path}`);
       for (const utility of classUtilities(file.code)) {
