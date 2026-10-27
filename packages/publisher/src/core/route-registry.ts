@@ -36,6 +36,10 @@ export interface RouteRegistration {
     /** Optional registered nonvisual provider mounted around the emitted page.
      * Only an identity in ROUTE_PROVIDER_MOUNTS for its exact derived body is valid. */
     readonly provider?: RouteProviderMount;
+    /** Optional consumer-registered server data loader. The emitted server page (the
+     * route entry) imports exactly this export, awaits it with no arguments and passes
+     * its serializable result to the emitted client page. Data only, never a callback. */
+    readonly loader?: RouteSourceExport;
   };
 }
 /** Closed set of original providers a registered route may mount. Data only:
@@ -81,6 +85,21 @@ export function routeProviderMount(route: RouteRegistration): (typeof ROUTE_PROV
   if ([route.entry?.file, c.source?.file, c.runtime?.file, c.header?.actions?.file].includes(ref.file)) return undefined;
   return mount;
 }
+/** Next special files are routing/endpoint surfaces, never a registered data loader. */
+const NEXT_SPECIAL_FILE = /(?:^|\/)(?:page|layout|template|route|default|loading|error|global-error|not-found|middleware|instrumentation)\.[cm]?[jt]sx?$/;
+/** The registered server data loader, or undefined when absent or invalid for this route.
+ * It needs a separate default-export entry (the emitted server page) and its own module:
+ * never the entry, page, runtime, action or provider module, nor a Next special file. */
+export function routeServerLoader(route: RouteRegistration): RouteSourceExport | undefined {
+  const c = route?.composition, loader: unknown = c?.loader;
+  if (!loader || typeof loader !== "object" || Array.isArray(loader) || !source(loader as RouteSourceExport)) return undefined;
+  const ref = loader as RouteSourceExport;
+  if (!/[^/]\.[cm]?[jt]sx?$/.test(ref.file) || ref.file.endsWith(".d.ts") || NEXT_SPECIAL_FILE.test(ref.file)) return undefined;
+  // The entry becomes the emitted JSX server page, so it must be a JSX module.
+  if (route.entry?.export !== "default" || typeof route.entry.file !== "string" || !/\.[jt]sx$/.test(route.entry.file) || route.entry.file === c.source?.file) return undefined;
+  if ([route.entry.file, c.source?.file, c.runtime?.file, c.header?.actions?.file, c.provider?.source?.file].includes(ref.file)) return undefined;
+  return ref;
+}
 export function routeCompositionDigest(registration: RouteRegistration): `sha256:${string}` {
   return `sha256:${sha256(canonicalPlanJson(registration))}`;
 }
@@ -116,8 +135,9 @@ export function projectRouteRegistry(registry: RouteRegistry, plan: PublisherPla
       const entry = canonicalPlanJson(route.entry); if (entries.has(entry)) add(route.routeId, "entry", "Duplicate executable entry"); entries.add(entry);
       const c = route.composition, b = c.binding;
       for (const message of instanceBodyFindings(b, registries)) add(route.routeId, "composition.binding.body", message);
-      if (!only(c, ["binding", "source", "runtime", "header", "provider"]) || !source(c.source) || !source(c.runtime)) add(route.routeId, "composition", "Canonical composition source required");
+      if (!only(c, ["binding", "source", "runtime", "header", "provider", "loader"]) || !source(c.source) || !source(c.runtime)) add(route.routeId, "composition", "Canonical composition source required");
       if ("provider" in c && !routeProviderMount(route)) add(route.routeId, "composition.provider", "Provider must be one registered nonvisual mount for its derived body");
+      if ("loader" in c && !routeServerLoader(route)) add(route.routeId, "composition.loader", "Loader must be one consumer server module export, separate from the entry, page, runtime, action and provider modules");
       if (bindings.has(b.instanceId)) add(route.routeId, "composition.binding", "Composition belongs to more than one route"); bindings.add(b.instanceId);
       if (b.path !== route.path || b.context.consumer !== registry.consumer) add(route.routeId, "composition.binding", "Path or consumer differs from the bound instance");
       if (!only(c.header, ["id", "data", "actions"]) || !text(c.header.id) || c.header.data.title !== route.title || !only(c.header.data, ["title", "nav"]) || c.header.actions && !source(c.header.actions)) add(route.routeId, "composition.header", "Header lease identity/title or action source differs");

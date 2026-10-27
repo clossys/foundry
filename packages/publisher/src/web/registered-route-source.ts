@@ -1,4 +1,4 @@
-import { routeProviderMount, routeSourcePath } from "../core/route-registry.js";
+import { routeProviderMount, routeServerLoader, routeSourcePath } from "../core/route-registry.js";
 import type { RouteRegistration, RouteRegistry, RouteSourceExport } from "../core/route-registry.js";
 function modulePath(from: string, to: string): string {
   if (!routeSourcePath(from) || !routeSourcePath(to)) throw new Error("Consumer-relative source paths required");
@@ -48,23 +48,48 @@ export function emitRegisteredRoutePage(registryModule: string, route: RouteRegi
   if (!typedModule(registryModule) || route.composition.source.export !== "default") throw new Error("Typed registry module and default emitted page export required");
   const file = route.composition.source.file, provider = route.composition.provider;
   if (provider && !routeProviderMount(route)) throw new Error("Registered nonvisual provider mount required");
-  const tree = sourceTree(registryModule), imports = [file, route.composition.runtime.file, route.composition.header.actions?.file, provider?.source?.file];
+  const loader = "loader" in route.composition ? routeServerLoader(route) : undefined;
+  if ("loader" in route.composition && !loader) throw new Error("Registered server data loader required");
+  const tree = sourceTree(registryModule), imports = [file, route.composition.runtime.file, route.composition.header.actions?.file, provider?.source?.file, loader?.file];
   if (tree !== undefined && imports.some(path => path !== undefined && !String(path).startsWith(`${tree}/`))) throw new Error("Generated page imports must stay inside the typed registry module's source tree");
-  const page = `<RegisteredRoutePage registry={registry} routeId=${JSON.stringify(route.routeId)} useRuntime={useRuntime}${route.composition.header.actions ? " renderActions={renderActions}" : ""} />`;
+  // A route without a loader keeps its exact prior bytes; a loader adds only the typed data prop.
+  const page = `<${loader ? "RegisteredServerDataRoutePage" : "RegisteredRoutePage"} registry={registry} routeId=${JSON.stringify(route.routeId)}${loader ? " data={data}" : ""} useRuntime={useRuntime}${route.composition.header.actions ? " renderActions={renderActions}" : ""} />`;
   return [
     '"use client";',
     `import registry from ${JSON.stringify(modulePath(file, registryModule))};`,
-    'import { RegisteredRoutePage } from "@clossys/publisher/web/registered-route";',
+    ...(loader ? [
+      'import { RegisteredServerDataRoutePage } from "@clossys/publisher/web/registered-route";',
+      'import type { RegisteredRouteServerData } from "@clossys/publisher/web/registered-route";',
+      typeOnly(loader, file, "RegisteredLoader"),
+    ] : ['import { RegisteredRoutePage } from "@clossys/publisher/web/registered-route";']),
     named(route.composition.runtime, file, "useRuntime"),
     ...(route.composition.header.actions ? [named(route.composition.header.actions, file, "renderActions")] : []),
     ...(provider ? [named(provider.source, file, "RegisteredProvider")] : []),
-    "export default function RegisteredPage() {",
+    loader ? "export default function RegisteredPage({ data }: { readonly data: RegisteredRouteServerData<typeof RegisteredLoader> }) {" : "export default function RegisteredPage() {",
     `  return ${provider ? `<RegisteredProvider>${page}</RegisteredProvider>` : page};`,
     "}", "",
   ].join("\n");
 }
+function typeOnly(ref: RouteSourceExport, from: string, local: string): string {
+  const module = JSON.stringify(modulePath(from, ref.file));
+  return ref.export === "default" ? `import type ${local} from ${module};` : `import type { ${ref.export} as ${local} } from ${module};`;
+}
+/** The route entry. Without a registered loader it re-exports the emitted page
+ * unchanged. With one, it is the one server page: it imports exactly the registered
+ * loader, awaits it with no arguments and passes the checked serializable result as
+ * the emitted client page's only prop. No other import, call or fetch is emitted. */
 export function emitRegisteredRouteAdapter(route: RouteRegistration): string {
   if (route.entry.export !== "default") throw new Error("Next page entries require the default export");
   if (route.entry.file === route.composition.source.file) throw new Error("A direct emitted page needs no adapter");
-  return `export { default } from ${JSON.stringify(modulePath(route.entry.file, route.composition.source.file))};\n`;
+  if (!("loader" in route.composition)) return `export { default } from ${JSON.stringify(modulePath(route.entry.file, route.composition.source.file))};\n`;
+  const loader = routeServerLoader(route);
+  if (!loader) throw new Error("Registered server data loader required");
+  return [
+    'import { registeredRouteServerData } from "@clossys/publisher/core";',
+    named(loader, route.entry.file, "registeredLoader"),
+    `import RegisteredPage from ${JSON.stringify(modulePath(route.entry.file, route.composition.source.file))};`,
+    "export default async function RegisteredServerPage() {",
+    "  return <RegisteredPage data={registeredRouteServerData(await registeredLoader())} />;",
+    "}", "",
+  ].join("\n");
 }

@@ -48,6 +48,9 @@ export interface DesignerRouteRegistrationInput {
   readonly binding?: InstanceBinding;
   /** Current original navigation/actions are not replaced by a title-only lease. */
   readonly header?: RouteRegistration["composition"]["header"];
+  /** Optional consumer-supplied server data loader binding (module and export), as
+   * registry data only. Publisher never names or invents a consumer loader. */
+  readonly loader?: RouteRegistration["composition"]["loader"];
   /** A genuine existing Node input; no callback mints runtime or acceptance. */
   readonly node?: Omit<RegisteredRouteCheckInput, "plan" | "registries"> & { readonly runtime: RegisteredRouteRuntime };
 }
@@ -101,7 +104,7 @@ export function prepareDesignerRouteRegistration(input: DesignerRouteRegistratio
     const registration: RouteRegistration = {
       routeId: route.routeId, path: route.path, title: route.title, channel: route.channel,
       brand: input.brand, entry: DESIGNER_ADMIN_ROUTE.entry, planItemId: route.planItemId,
-      composition: { binding: input.binding, source: DESIGNER_ADMIN_ROUTE.source, runtime: DESIGNER_ADMIN_ROUTE.runtime, header: input.header },
+      composition: { binding: input.binding, source: DESIGNER_ADMIN_ROUTE.source, runtime: DESIGNER_ADMIN_ROUTE.runtime, header: input.header, ...(input.loader !== undefined ? { loader: input.loader } : {}) },
     };
     registry = { version: 1, consumer: input.consumer, routes: [registration] };
     const findings = projectRouteRegistry(registry, plan, input.registries).findings;

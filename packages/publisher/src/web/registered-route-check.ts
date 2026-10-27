@@ -18,12 +18,12 @@ import type { ConsumerInstanceLibrary } from "../core/instance-binding.js";
 import type { InstanceRegistries } from "../core/instance-binding.js";
 import type { PublisherPlanDraft } from "../planning/plan.js";
 import type { PublisherPlanVersion } from "../planning/change-set.js";
-import { projectRouteRegistry, routeProviderMount, routeSourcePath } from "../core/route-registry.js";
-import type { RouteProviderMount, RouteRegistry } from "../core/route-registry.js";
+import { projectRouteRegistry, routeProviderMount, routeServerLoader, routeSourcePath } from "../core/route-registry.js";
+import type { RouteProviderMount, RouteRegistry, RouteSourceExport } from "../core/route-registry.js";
 import { emitRegisteredRouteAdapter, emitRegisteredRoutePage, emitRegisteredRouteRegistryModule, registeredRouteRegistryPlacement } from "./registered-route-source.js";
 export { emitRegisteredRouteAdapter, emitRegisteredRoutePage, emitRegisteredRouteRegistryModule, registeredRouteRegistryPlacement } from "./registered-route-source.js";
-import { isCurrentRegisteredRouteSourceEvidence, recordRegisteredRouteSourceEvidence } from "../core/route-source-evidence.js";
-import type { RegisteredRouteSourceEvidence } from "../core/route-source-evidence.js";
+import { isCurrentRegisteredRouteSourceEvidence, recordRegisteredRouteSourceEvidence, registeredRouteSourceBootstrap } from "../core/route-source-evidence.js";
+import type { RegisteredRouteSourceBootstrap, RegisteredRouteSourceEvidence } from "../core/route-source-evidence.js";
 import { beginRegisteredRouteNodeTransaction, issueRegisteredRouteNodeCurrent } from "../core/route-node-current.js";
 import { runtimeSnapshot } from "@clossys/designer/catalog";
 import type { PlainRegisteredRouteProjection } from "../core/route-projection.js";
@@ -141,6 +141,58 @@ function nonvisualRouteProvider(source: string, mount: RouteProviderMount, known
   // Outside the one mount, the module contains no JSX at all.
   return !/<\s*[A-Za-z/>]/.test(module.replace(mountText!, ""));
 }
+/** Closed lexical policy shared with the provider seam; no runtime TypeScript parser.
+ * With no escape anywhere, an identifier's source text is its name, so the exact text
+ * checks below cannot be forged by an escaped spelling. */
+function closedLexicalFinding(source: string): string | undefined {
+  if (/\\u/.test(source)) return "Unicode escapes are refused";
+  if (/(?<![\w$])(?:eval|Function)(?![\w$])/.test(source)) return "eval and Function constructors are refused";
+  if (/(?:[\w$)\]]|\?\.)\s*\[(?!\s*(?:"[^"\\\n]*"|'[^'\\\n]*'|\d+)?\s*\])/.test(source)) return "Computed member access with a non-literal key is refused";
+  return undefined;
+}
+/** The registered loader module exports exactly one zero-argument loader under its
+ * registered name. It is never a client module or server-action endpoint, and it
+ * exports nothing else that a page could reach. Type-only exports are erased. */
+function registeredLoaderModuleFinding(source: string, loader: RouteSourceExport): string | undefined {
+  const lexical = closedLexicalFinding(source);
+  if (lexical) return lexical;
+  if (/(["'])use (?:server|client)\1/.test(source)) return "Loader module cannot be a client module or a server-action endpoint";
+  if (/(?<![\w$.])(?:module|exports)\s*(?:\.|\[)/.test(source)) return "Loader module cannot assign CommonJS exports";
+  const exports = [...source.matchAll(/(?<![\w$.])export(?![\w$])(?!\s+(?:type|interface)\s)/g)];
+  if (exports.length !== 1) return "Loader module must export exactly the registered loader";
+  const name = escapeRegExp(loader.export);
+  const shape = loader.export === "default"
+    ? /^export\s+default\s+(?:async\s+)?function(?:\s+[A-Za-z_$][\w$]*)?\s*\(\s*\)/
+    : new RegExp(`^export\\s+(?:(?:async\\s+)?function\\s+${name}\\s*\\(\\s*\\)|const\\s+${name}\\s*=\\s*(?:async\\s*)?\\(\\s*\\)\\s*(?::[^=]*)?=>)`);
+  return shape.test(source.slice(exports[0]!.index)) ? undefined : "Loader module does not export the registered zero-argument loader";
+}
+/** A route with a registered loader: its entry is the emitted server page, which may
+ * import only the Publisher data check, the registered loader under its registered
+ * name and the emitted client page, and calls nothing else (no fetch or dynamic
+ * import). Exact emitted bytes are still compared in the RR4 loop. */
+async function registeredServerLoaderFindings(root: string, route: RouteRegistry["routes"][number]): Promise<RegisteredRouteFinding[]> {
+  if (!route?.composition || !("loader" in route.composition)) return [];
+  const loader = routeServerLoader(route);
+  if (!loader) return []; // RR1 already refuses the registration.
+  const findings: RegisteredRouteFinding[] = [];
+  try {
+    const finding = registeredLoaderModuleFinding(await read(root, loader.file), loader);
+    if (finding) findings.push({ code: "RR4", file: loader.file, message: `Registered server loader refused: ${finding}` });
+  } catch (error) { findings.push({ code: "RR4", file: loader.file, message: `Registered server loader module is absent or invalid: ${(error as Error).message}` }); }
+  try {
+    const page = await read(root, route.entry.file), lexical = closedLexicalFinding(page);
+    // Every import or re-export specifier, bare side-effect imports included.
+    const specifiers = [...page.matchAll(/(?<![\w$.])(?:import|export)(?![\w$])[^;"']*?(["'])([^"'\n]*)\1/g)].map(match => match[2]);
+    const expected = emitRegisteredRouteAdapter(route), wanted = [...expected.matchAll(/from\s*(["'])([^"'\n]*)\1/g)].map(match => match[2]);
+    const local = loader.export === "default" ? /^import registeredLoader from /m : new RegExp(`^import \\{ ${escapeRegExp(loader.export)} as registeredLoader \\} from `, "m");
+    const message = lexical
+      ?? (/(?<![\w$])(?:fetch|require|XMLHttpRequest|WebSocket|EventSource)(?![\w$])|(?<![\w$.])import\s*\(/.test(page) ? "Server page cannot fetch or load other modules" : undefined)
+      ?? (specifiers.join("\n") !== wanted.join("\n") ? "Server page imports differ from the registered loader binding" : undefined)
+      ?? (!local.test(page) ? "Server page does not import the registered loader export" : undefined);
+    if (message) findings.push({ code: "RR4", file: route.entry.file, message: `Registered server page refused: ${message}` });
+  } catch { findings.push({ code: "RR4", file: route.entry.file, message: "Registered server page is absent or invalid" }); }
+  return findings;
+}
 /** Read-only filesystem discovery, exact emitter linkage and the original HOST1
  * source findings. A passing result is source closure, never rendered qualification. */
 export interface RegisteredRouteCheckInput { readonly root: string; readonly contract: RegisteredRouteContract; readonly plan?: PublisherPlanDraft | PublisherPlanVersion; readonly registries: InstanceRegistries; readonly styling?: RegisteredRouteStyling }
@@ -214,6 +266,7 @@ async function checkRegisteredRoutesInternal(input: RegisteredRouteCheckInput) {
       if (await read(root, route.composition.source.file) !== generated) findings.push({ code: "RR4", file: route.composition.source.file, message: "Page implementation differs from its deterministic registered composition" });
       if (route.entry.file !== route.composition.source.file && await read(root, route.entry.file) !== emitRegisteredRouteAdapter(route)) findings.push({ code: "RR4", file: route.entry.file, message: "Route adapter does not execute the exact generated composition" });
     } catch { findings.push({ code: "RR4", file: route.entry.file, message: "Registered composition source is absent or invalid" }); }
+    findings.push(...await registeredServerLoaderFindings(root, route));
   }
   let dogfood: ReturnType<typeof runConsumerDogfood> | undefined;
   const sourceEvidence: RegisteredRouteSourceEvidence[] = [];
@@ -279,6 +332,12 @@ async function checkRegisteredRoutesInternal(input: RegisteredRouteCheckInput) {
   return { materializations, checked: { version: 2 as const, ok: !findings.length && dogfood?.ok === true && sourceEvidencePending.length === 0, scope: contract.routeRoots, registry, projection, classifications, findings, dogfood, sourceEvidence, sourceEvidencePending, runtime: "pending" as const } };
 }
 
+/** Plain data the emitted server page may pass on as a loader result; the client
+ * re-materializes it through materializeRegisteredRouteSourceEvidence. Absent, never
+ * a weaker substitute, when the Node evidence cannot be bound to this engine. */
+function nodeRouteSourceBootstrap(registry: RouteRegistry, route: RouteRegistry["routes"][number], source: RegisteredRouteSourceEvidence, engine: CompositeEngineInput, materialization: RouteRuntimeMaterialization | undefined): { readonly bootstrap?: RegisteredRouteSourceBootstrap } {
+  try { return { bootstrap: registeredRouteSourceBootstrap({ registry, route, source, engine, materialization }) }; } catch { return {}; }
+}
 /** Stateless Node operation. The browser receives only projection, whose tag is
  * explicitly unverified; source/materialization receipts remain server artifacts. */
 export async function prepareRegisteredNodeRoute(input: RegisteredRouteCheckInput & { readonly routeId: string; readonly runtime: RegisteredRouteRuntime; readonly renderActions?: RegisteredRouteHeaderActions }) {
@@ -309,6 +368,6 @@ export async function prepareRegisteredNodeRoute(input: RegisteredRouteCheckInpu
   if (!prepared.input) return { status: "refused" as const, findings: ["Canonical Node assembly input unavailable"] };
   try {
     const current = issueRegisteredRouteNodeCurrent({ transaction, registry: checked.registry, route, source, plan: input.plan, assembly: prepared.input, original: input.runtime.assembly, materialization: prepared.materialization, query: input.runtime.designerQuery });
-    return { ...prepared, projection, current };
+    return { ...prepared, projection, current, ...nodeRouteSourceBootstrap(checked.registry, route, source, input.runtime.assembly.engine, prepared.materialization) };
   } catch { return { status: "refused" as const, findings: ["Exact current Node source/query/assembly transaction unavailable"] }; }
 }

@@ -227,7 +227,7 @@ export type { PublisherConfiguration, PublisherMediaSettings, PublisherLaneRecom
 
 export { PUBLISHER_CHANNELS } from "../planning/channel-ids.js";
 export type { PublisherChannelId } from "../planning/channel-ids.js";
-export { projectRouteRegistry, registeredRoutesForChannel, registeredRouteBrandLink, routeRegistryDigest, routeCompositionDigest, registeredRouteFrameFinding } from "./route-registry.js";
+export { projectRouteRegistry, routeServerLoader, registeredRoutesForChannel, registeredRouteBrandLink, routeRegistryDigest, routeCompositionDigest, registeredRouteFrameFinding } from "./route-registry.js";
 export type { RouteSourceExport, RouteRegistration, RouteRegistry, RouteRegistryFinding, RegisteredRouteRow, RouteRegistryProjection } from "./route-registry.js";
 export type { InstanceBinding, FlowInstanceBinding, CanvasInstanceBinding, InstanceBindingBase, InstanceSectionRef, SectionFill, InstanceRegistries, ConsumerInstanceLibrary } from "./instance-binding.js";
 export { instanceBodyFill, instanceBodyFindings } from "./instance-body.js";
@@ -238,3 +238,5 @@ export type { RouteRuntimeBindingResult } from "./route-runtime.js";
 export { deriveRegisteredRouteLifecycle } from "./route-lifecycle.js";
 export type { RegisteredRouteLifecycleEvidence, RegisteredRouteLifecycleResult, RegisteredRouteNodeCurrentContext } from "./route-lifecycle.js";
 export type { RegisteredRouteSourceEvidence } from "./route-source-evidence.js";
+export { registeredRouteServerData } from "./route-server-data.js";
+export type { RegisteredRouteSerializable, RegisteredRouteServerData } from "./route-server-data.js";

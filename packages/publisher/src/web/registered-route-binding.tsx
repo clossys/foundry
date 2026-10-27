@@ -11,7 +11,7 @@ import type { RouteRegistration, RouteRegistry } from "../core/route-registry.js
 import { currentRouteRuntimeMaterialization, deriveRouteRuntimeBinding, resolveSelectedRouteRuntimeBinding, selectedRouteRuntimeManifest } from "../core/route-runtime.js";
 import { materializeRegisteredDesignerRoute } from "./registered-route-query.js";
 import type { RegisteredDesignerQuery } from "./registered-route-query.js";
-import { isCurrentRegisteredRouteSourceEvidence } from "../core/route-source-evidence.js";
+import { isCurrentRegisteredRouteLiveSourceEvidence, isCurrentRegisteredRouteSourceEvidence } from "../core/route-source-evidence.js";
 import type { RegisteredRouteSourceEvidence } from "../core/route-source-evidence.js";
 import { plainRouteProjectionRegistry } from "../core/route-projection.js";
 import type { PlainRegisteredRouteProjection } from "../core/route-projection.js";
@@ -62,7 +62,10 @@ function prepareRoute(registry: RouteRegistry, routeId: string, runtime: Registe
       const result = materializeRegisteredDesignerRoute(binding, assembly.engine, runtime.registries, runtime.instanceLibrary, runtime.designerQuery);
       if (result.status !== "materialized") return result;
       materialization = result.materialization; binding = materialization.binding;
-      if (!runtime.source || !isCurrentRegisteredRouteSourceEvidence(runtime.source, registry, route, materialization.digest)) return { status: "pending", findings: ["Current reached original provider/query source materialization evidence unavailable"] };
+      // Node-verified evidence, or evidence this client minted from a checked bootstrap
+      // (materializeRegisteredRouteSourceEvidence). The Node entry already required
+      // Node-verified evidence before reaching here.
+      if (!runtime.source || !isCurrentRegisteredRouteLiveSourceEvidence(runtime.source, registry, route, materialization.digest)) return { status: "pending", findings: ["Current reached original provider/query source materialization evidence unavailable"] };
       if (!assembly.stage) return { status: "pending", findings: ["Exact derived body Stage unavailable"] };
       const originals = assembly.ports.resolveContent;
       const content = new Map(result.contents.map(value => [runtimeHash(value.reference), value]));
