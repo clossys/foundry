@@ -10387,9 +10387,19 @@ is any member whose pointer the dispatcher cannot express; those are listed in
 `binding.unbound`.
 
 Data-driven Foundry components (charts, table, tree, field, menus and other
-overlays) draw with neutral sample content the designer provides, so every
-Foundry package component renders without host data. That content is preview
-material only, never adoption or conformance evidence. A `specimens` entry for a
+overlays) draw with neutral sample content from one shared, deterministic
+synthetic dataset (a fixed seed and anchor date, never the clock or a random
+source), so every Foundry package component renders without host data. That
+content is preview material only, never adoption or conformance evidence.
+
+A measurer sets a specimen's state and content through `probes`, keyed by leaf,
+instead of mutating the drawn DOM: `{ states: ["disabled", "selected"], props,
+children }`. Each state in `COMPONENT_SPECIMEN_PROBE_STATES` is forced through
+the component's own prop (`disabled` is `isDisabled`, `open` on a disclosure is
+`isExpanded`). A state the component has no prop for, such as hover,
+focus-visible or a momentary press that the fills style with CSS
+pseudo-classes, is listed on the set's `data-specimen-probe-unsupported` and
+never faked; the forced ones are on `data-specimen-probe-states`. A `specimens` entry for a
 leaf replaces it. Another library's data-driven component needs its own
 `specimens` entry. The binding also carries `specifier`, `exportName` and the
 whole module as `exports`, so that entry can draw compound parts.

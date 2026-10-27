@@ -17,6 +17,7 @@ import { componentSpecimenPreview as fromModule } from "./component-specimens.js
 import { labels } from "./__fixtures__/studio.js";
 import { CandidateCell } from "./CandidateCell.js";
 import type { CompositeStudioLabels, CompositeStudioSnapshot } from "./types.js";
+import { specimenDataset } from "./specimen-dataset.js";
 
 const wholeLabels: CompositeStudioLabels = { ...labels, whole: { signoff: "W-signoff", proposed: "W-proposed", contract: "W-contract", contentSlots: "W-slots", configurations: "W-config", unresolved: "W-unresolved", unassessed: "W-unassessed" } };
 const hostModules = { "@clossys/designer/components": components, "@clossys/designer/charts": charts, "@clossys/designer/shell": shell };
@@ -242,6 +243,7 @@ it("draws every Foundry package component live from designer sample content when
 
 it("draws the shell Toaster's own toast in its cell from a cell queue, dismisses it by its close button and shows it again", async () => {
   const user = userEvent.setup();
+  const { title, description } = specimenDataset.toasts[specimenDataset.toaster.variant];
   const leaf = foundryLeaves().find(entry => entry.leaf === "components.toast")!;
   render(<CandidateCell labels={labels} preview={componentSpecimenPreview({ modules: hostModules }).preview(leaf.leaf, leaf.profile)} />);
   const cell = document.querySelector<HTMLElement>("[data-candidate-cell]")!;
@@ -250,11 +252,11 @@ it("draws the shell Toaster's own toast in its cell from a cell queue, dismisses
   expect(host).not.toBeNull();
   // In place: the stack is the Toaster's container placement inside the cell, never the fixed, portalled viewport.
   const shown = within(host).getByRole("status");
-  expect(shown).toHaveTextContent("Changes saved");
-  expect(shown).toHaveTextContent("Your draft is up to date.");
+  expect(shown).toHaveTextContent(title);
+  expect(shown).toHaveTextContent(description);
   expect(host.querySelector("ol")).not.toHaveClass("fixed");
   expect(document.querySelector("[data-toaster-placement]")).toBeNull();
-  expect(screen.getAllByText("Changes saved").every(node => cell.contains(node))).toBe(true);
+  expect(screen.getAllByText(title).every(node => cell.contains(node))).toBe(true);
   // The cell's queue is its own: the app-wide queue stays empty, and a page toast never draws in the cell.
   expect(toastQueue.visibleToasts).toEqual([]);
   const page = shell.toast("Page toast");
@@ -263,9 +265,9 @@ it("draws the shell Toaster's own toast in its cell from a cell queue, dismisses
   page.dismiss();
   // Dismissed through the toast's own close button, then queued again from the cell's show action.
   await user.click(within(host).getByRole("button", { name: "Close" }));
-  await vi.waitFor(() => expect(within(host).queryByText("Changes saved")).toBeNull());
-  await user.click(within(host).getByRole("button", { name: "Show toast" }));
-  await vi.waitFor(() => expect(within(host).getByRole("status")).toHaveTextContent("Changes saved"));
+  await vi.waitFor(() => expect(within(host).queryByText(title)).toBeNull());
+  await user.click(within(host).getByRole("button", { name: specimenDataset.toaster.trigger }));
+  await vi.waitFor(() => expect(within(host).getByRole("status")).toHaveTextContent(title));
   expect(toastQueue.visibleToasts).toEqual([]);
 });
 

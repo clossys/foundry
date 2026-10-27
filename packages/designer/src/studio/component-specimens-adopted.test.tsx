@@ -12,6 +12,7 @@ import { loadCatalogBundles } from "../catalog-bundles.js";
 import { loadComponentCompositionRules } from "../catalog-core/component-compositions.js";
 import type { CompositeResolved, ResolvedComponent } from "../catalog-core/index.js";
 import { componentSpecimenPreview } from "./component-specimens.js";
+import { specimenDataset as d } from "./specimen-dataset.js";
 
 const hostModules = { "@clossys/designer/components": components, "@clossys/designer/charts": charts, "@clossys/designer/shell": shell };
 
@@ -119,10 +120,10 @@ it("binds and server-renders every adopted shadcn@aria leaf from its vendored so
   expect(Object.entries(outcome).filter(([, state]) => state !== "live")).toEqual([]);
   // The menu draws open in place through the module's own InlineMenu, with no Popover, so it server-renders.
   const menu = renderToString(<>{specimens.preview("components.menu", leaves.find(entry => entry.leaf === "components.menu")!.profile)}</>);
-  expect(menu).toContain("Archive item");
+  expect(menu).toContain(d.menu.items[2].label);
   expect(menu).toMatch(/role="menu"/);
   // Compound leaves draw the designer sample through their own vendored parts, not the leaf label.
-  for (const [leaf, text] of [["components.tabs", "Summary content"], ["components.breadcrumbs", "Overview"], ["components.disclosure", "Returns"], ["components.radio-group", "Yearly"], ["components.card", "Card title"]] as const) {
+  for (const [leaf, text] of [["components.tabs", d.tabs.items[0].content], ["components.breadcrumbs", d.breadcrumbs.items[2].label], ["components.disclosure", d.disclosure.items[1].label], ["components.radio-group", d.radio.items[1].label], ["components.card", d.card.title]] as const) {
     expect(renderToString(<>{specimens.preview(leaf, leaves.find(entry => entry.leaf === leaf)!.profile)}</>), leaf).toContain(text);
   }
   expect(errors.mock.calls.map(call => String(call[0])).filter(message => /NaN/.test(message))).toEqual([]);
@@ -133,7 +134,7 @@ it("draws the non-modal shadcn@aria overlays open in the browser, inside the spe
   const errors = vi.spyOn(console, "error").mockImplementation(() => {});
   const { leaves, modules } = adoptedShadcnLeaves();
   const specimens = componentSpecimenPreview({ modules: { ...hostModules, ...modules } });
-  for (const [leaf, text, slot] of [["components.popover", "Popover content", "popover-content"], ["components.tooltip", "Tooltip content", "tooltip-content"]] as const) {
+  for (const [leaf, text, slot] of [["components.popover", d.popover.content, "popover-content"], ["components.tooltip", d.tooltip.content, "tooltip-content"]] as const) {
     const { container } = render(<>{specimens.preview(leaf, leaves.find(entry => entry.leaf === leaf)!.profile)}</>);
     const host = container.querySelector("[data-specimen-overlay-host]")!;
     expect(await within(host as HTMLElement).findByText(text), leaf).toBeTruthy();
@@ -174,7 +175,7 @@ it("draws the persisted shadcn@aria table in the browser from its own vendored p
   const { container } = render(<>{specimens.preview("components.table", profile)}</>);
   expect(container.querySelector("[data-specimen-error]")).toBeNull();
   const grid = within(container).getByRole("grid", { name: "Recent orders" });
-  expect(within(grid).getByText("Order 1001")).toBeTruthy();
+  expect(within(grid).getByText(d.table.rows[0]!.order)).toBeTruthy();
   cleanup();
   // With no sample for its library, a collection-rooted leaf is declared unavailable, never handed its label as children.
   const unsampled = structuredClone(profile) as unknown as { components: { components: Record<string, { origin: { source: string } }> } };
@@ -202,8 +203,8 @@ it("draws the shadcn@aria DialogContent open in its cell, without hiding, scroll
   const cell = container.querySelector("[data-component-specimens='components.dialog']")!;
   const host = cell.querySelector<HTMLElement>("[data-specimen-contained-host='dialog']")!;
   expect(host).not.toBeNull();
-  expect(await within(host).findByText("Dialog content")).toBeTruthy();
-  expect(within(host).getByRole("dialog", { name: "Dialog title" })).toHaveAttribute("data-slot", "dialog");
+  expect(await within(host).findByText(d.dialog.body)).toBeTruthy();
+  expect(within(host).getByRole("dialog", { name: d.dialog.title })).toHaveAttribute("data-slot", "dialog");
   expect(within(host).getByRole("button", { name: "Close" })).toBeTruthy();
   // The vendored module's own inner part draws: no ModalOverlay or Modal is mounted anywhere.
   expect(document.querySelector("[data-slot='dialog-overlay'], [data-slot='dialog-content']")).toBeNull();
@@ -220,14 +221,14 @@ it("draws the shadcn@aria DialogContent open in its cell, without hiding, scroll
     expect(found).not.toBeNull();
     return found!;
   });
-  expect(modal).toHaveAccessibleName("Dialog title");
+  expect(modal).toHaveAccessibleName(d.dialog.title);
   // Open, it is the real modal: the page outside it is hidden and its scroll locked.
   expect(pageOutside(modal).scrollLocked).toBe(true);
   await waitFor(() => expect(modal!.contains(document.activeElement)).toBe(true));
   await user.keyboard("{Escape}");
   await waitFor(() => expect(document.querySelector("[data-slot='dialog-overlay'], [data-slot='dialog-content']")).toBeNull());
   // Closed again, the page is back to the idle contained specimen.
-  expect(within(host).getByText("Dialog content")).toBeTruthy();
+  expect(within(host).getByText(d.dialog.body)).toBeTruthy();
   expect(pageOutside(cell)).toEqual({ hidden: [], scrollLocked: false });
   cleanup();
   errors.mockRestore();
