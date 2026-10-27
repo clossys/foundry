@@ -86,9 +86,6 @@ export const componentSpecimenColor = {
 export const componentSpecimenUnavailable: Readonly<Record<string, SpecimenUnavailableReason>> = {
   "./shell#Toaster": "needs-host-queue",
   "./shell#Brandmark": "needs-brand-asset",
-  // The vendored shadcn@aria Dialog always wraps its content in ModalOverlay and Modal and exports no inner dialog
-  // part: held open in a preview, the modal would lock the page's scroll and hide the rest of Studio from assistive technology.
-  "components/dialog/dialog.tsx#Dialog": "needs-host-trigger",
 };
 
 /**
@@ -108,4 +105,5 @@ export const componentSpecimenSourceSamples = {
   "components/menu/dropdown-menu.tsx#DropdownMenu": { label: "Actions", items: [{ id: "edit", label: "Edit item" }, { id: "archive", label: "Archive item" }] },
   "components/tooltip/tooltip.tsx#Tooltip": { trigger: "Show tooltip", content: "Tooltip content" },
   "components/date-picker/date-picker.tsx#DatePicker": { label: "Due date", triggerLabel: "Choose date" },
+  "components/dialog/dialog.tsx#Dialog": { title: "Dialog title", content: "Dialog content" },
 } as const;

@@ -114,8 +114,8 @@ it("binds and server-renders every adopted shadcn@aria leaf from its vendored so
   }
   const bad = Object.fromEntries(Object.entries(outcome).filter(([, state]) => state !== "live" && !state.startsWith("unavailable:")));
   expect(bad).toEqual({});
-  // Only the modal-only overlays stay unavailable, each with its named reason.
-  expect(Object.entries(outcome).filter(([, state]) => state !== "live")).toEqual([["components.dialog", "unavailable:needs-host-trigger"]]);
+  // Every leaf draws, the Dialog included: its own non-modal DialogContent part draws in place, not a modal.
+  expect(Object.entries(outcome).filter(([, state]) => state !== "live")).toEqual([]);
   // The menu draws open in place through the module's own InlineMenu, with no Popover, so it server-renders.
   const menu = renderToString(<>{specimens.preview("components.menu", leaves.find(entry => entry.leaf === "components.menu")!.profile)}</>);
   expect(menu).toContain("Archive item");
@@ -181,6 +181,36 @@ it("draws the persisted shadcn@aria table in the browser from its own vendored p
   const fallback = render(<>{specimens.preview("components.table", unsampled as unknown as CompositeResolved)}</>);
   expect(fallback.container.querySelector("[data-specimen-error]")).toBeNull();
   expect(fallback.container.querySelector("[data-specimen-unavailable]")?.getAttribute("data-specimen-unavailable")).toBe("needs-sample-content");
+  cleanup();
+  errors.mockRestore();
+}, 120_000);
+
+/** Elements outside the cell that are hidden from assistive technology or inert, and whether the page's scroll is locked. */
+function pageOutside(cell: Element) {
+  const hidden = [document.documentElement, document.body, ...document.body.querySelectorAll<HTMLElement>("*")]
+    .filter(node => !cell.contains(node) && (node.getAttribute("aria-hidden") === "true" || node.hasAttribute("inert") || (node as HTMLElement & { inert?: boolean }).inert === true))
+    .map(node => node.outerHTML.slice(0, 80));
+  return { hidden, scrollLocked: document.documentElement.style.overflow === "hidden" || document.body.style.overflow === "hidden" };
+}
+
+it("draws the shadcn@aria DialogContent open in its cell, without hiding, scroll-locking or trapping the page", async () => {
+  const errors = vi.spyOn(console, "error").mockImplementation(() => {});
+  const { leaves, modules } = adoptedShadcnLeaves();
+  const specimens = componentSpecimenPreview({ modules: { ...hostModules, ...modules } });
+  const { container } = render(<><button type="button">Outside</button>{specimens.preview("components.dialog", leaves.find(entry => entry.leaf === "components.dialog")!.profile)}</>);
+  const cell = container.querySelector("[data-component-specimens='components.dialog']")!;
+  const host = cell.querySelector<HTMLElement>("[data-specimen-contained-host='dialog']")!;
+  expect(host).not.toBeNull();
+  expect(await within(host).findByText("Dialog content")).toBeTruthy();
+  expect(within(host).getByRole("dialog", { name: "Dialog title" })).toHaveAttribute("data-slot", "dialog");
+  expect(within(host).getByRole("button", { name: "Close" })).toBeTruthy();
+  // The vendored module's own inner part draws: no ModalOverlay or Modal is mounted anywhere.
+  expect(document.querySelector("[data-slot='dialog-overlay'], [data-slot='dialog-content']")).toBeNull();
+  expect(cell.querySelector("[data-specimen-error], [data-specimen-unavailable]")).toBeNull();
+  expect(pageOutside(cell)).toEqual({ hidden: [], scrollLocked: false });
+  const outside = within(container).getByRole("button", { name: "Outside" });
+  outside.focus();
+  expect(document.activeElement).toBe(outside);
   cleanup();
   errors.mockRestore();
 }, 120_000);
