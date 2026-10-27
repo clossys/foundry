@@ -179,6 +179,8 @@ export type { FoundryComponentImportInput, FoundryComponentImport, FoundryCompon
 export { loadComponentCompositionRules } from "./component-compositions.js";
 export { planComponentDefaults } from "./component-defaults.js";
 export { observeComponentSources } from "./component-observations.js";
+export { joinComponentQualification } from "./component-qualification.js";
+export type { ComponentQualificationJoinInput, ComponentQualificationJoinRecord, ComponentQualificationJoin } from "./component-qualification.js";
 export { bindCompiledClasses } from "./component-class-bindings.js";
 export type { ComponentObservationInput, ComponentObservationProbe, ComponentObservationResult, ComponentBrowserArtifact } from "./component-observations.js";
 export type { ComponentDefaultsInput, ComponentDefaultsPlan, ComponentDefaultRow, ComponentDefaultBasis } from "./component-defaults.js";

@@ -11,6 +11,7 @@ import { loadComponentCompositionRules } from "./component-compositions.js";
 import { componentOf, type ComponentCandidate, type ComponentCandidateDocument, type ComponentOrigin } from "./resolve-components.js";
 import { componentSourceHash, componentTokensHash, ROOT_PROTOCOL, type ComponentMeasurement, type ComponentSourceFile } from "./check-components.js";
 import { observeComponentSources, type ComponentBrowserArtifact, type ComponentObservationInput } from "./component-observations.js";
+import { joinComponentQualification } from "./component-qualification.js";
 import { componentRacDeclaration } from "../importers/component-rac.js";
 import { completedCatalogLibrary } from "./__fixtures__/completed-catalog-library.js";
 import type { ComponentContract, ComponentSlot, CompositeCatalogData, CompositeLibraryData, LibraryData } from "./types.js";
@@ -138,16 +139,12 @@ function qualification(edit: (doc: ComponentCandidateDocument) => void = () => {
   const observe = (overrides: Pick<ComponentObservationInput, "probes"> & { artifacts?: Record<string, ComponentBrowserArtifact | undefined> } = {}) => observeComponentSources({
     slots, fills, files: library.components.files, bundles: [], tokens, installedRac: INSTALLED_RAC, packageSource, racPeers: [...KITS], artifacts: overrides.artifacts ?? artifacts(), probes: overrides.probes,
   });
-  /** A consumer's accept step: one public check, then the per-slot descriptor/source/token/observation join over the artifacts it qualified. */
+  /** A consumer's accept step: one public check, then the public per-slot join (identity only, one record per slot) over the artifacts it qualified. */
   const accept = (observed: ReturnType<typeof observe>, checked: CompositeLibraryData = library, supplied: Record<string, ComponentBrowserArtifact | undefined> = artifacts()) => {
     const result = check({ catalog, library: checked, componentOptions: { packageExports, evidence: observed.evidence } });
-    const join = checked.components.fills.map(doc => componentOf(doc) as ComponentCandidate & { origin: ComponentOrigin & { sha256: string } }).flatMap(fill => {
-      const observation = observed.evidence.observations[fill.slot], artifact = supplied[fill.slot];
-      const bound = !!observation && !!artifact && artifact.descriptorHash === fill.origin.sha256 && artifact.sourceHash === observation.sourceHash && artifact.tokensHash === observation.tokensHash &&
-        (observation.measurements.length > 0 || Object.values(observation.memberObservations ?? {}).some(member => member.measurements.length > 0));
-      return bound && result.ok ? [] : [{ code: "QUALIFICATION_JOIN", subject: fill.slot }];
-    });
-    return { result, join, errors: result.findings.filter(finding => finding.severity === "error") };
+    const joined = joinComponentQualification({ fills: checked.components.fills.map(doc => componentOf(doc) as ComponentCandidate), observations: observed.evidence.observations, artifacts: supplied });
+    const join = joined.records.filter(record => !record.joined).map(record => ({ code: "QUALIFICATION_JOIN", subject: record.slot, reasons: record.reasons }));
+    return { result, join, records: joined.records, errors: result.findings.filter(finding => finding.severity === "error") };
   };
   return { slots, fills, library, catalog, tokens, assets, artifacts, observe, accept };
 }
@@ -170,19 +167,28 @@ describe("component qualification join (SYNTHETIC fixture library)", () => {
     expect(memberRooted.length).toBeGreaterThan(0);
     for (const slot of memberRooted) expect(Object.values(observed.evidence.observations[slot]!.memberObservations!).every(member => member.measurements.length > 0)).toBe(true);
     expect(fills.filter(fill => fill.members.some(member => member.startsWith("size."))).every(fill => !!observed.evidence.observations[fill.slot]!.geometry)).toBe(true);
-    const { result, join, errors } = accept(observed);
+    const { result, join, records, errors } = accept(observed);
+    expect(records.map(record => record.slot)).toEqual(slots.map(slot => slot.id).sort());
+    expect(records.every(record => record.joined && record.descriptorHash && record.observationHash)).toBe(true);
     expect(errors.map(error => `${error.code} ${error.subject} ${error.message}`)).toEqual([]);
     expect(result.findings.filter(finding => finding.subject.startsWith("components.") && /unavailable/.test(finding.message))).toEqual([]);
     expect(result.ok).toBe(true);
     expect(histogram(join)).toEqual({});
   }, 300_000);
 
-  it("refuses the join when the descriptor carries no RAC declaration (CC3)", () => {
+  it("QUALIFICATION_JOIN emits one record per slot and the join passes while a K-code finding (CC3) remains a check finding", () => {
     const dropped = qualification(doc => { for (const fill of Object.values(doc.components)) if (fill.slot === "components.button") delete fill.rac; });
-    const { errors, join } = dropped.accept(dropped.observe());
+    const { errors, join, records, result } = dropped.accept(dropped.observe());
     expect(errorsFor(errors, "components.button")).toEqual(["CC3"]);
-    expect(join.map(row => row.subject)).toContain("components.button");
-    expect(join).toHaveLength(59);
+    expect(result.ok).toBe(false);
+    expect(records).toHaveLength(59);
+    expect(new Set(records.map(record => record.slot)).size).toBe(59);
+    expect(join).toEqual([]);
+    // A forged descriptor on the same library is a join failure for exactly that slot, with its reason.
+    const supplied = dropped.artifacts(); supplied["components.button"] = { ...supplied["components.button"]!, descriptorHash: "0".repeat(64) };
+    const forged = dropped.accept(dropped.observe({ artifacts: dropped.artifacts() }), undefined, supplied);
+    expect(forged.records).toHaveLength(59);
+    expect(forged.join).toEqual([{ code: "QUALIFICATION_JOIN", subject: "components.button", reasons: expect.arrayContaining(["Artifact was measured for a different descriptor", "Observation does not carry the artifact's descriptor"]) }]);
   }, 300_000);
 
   it("refuses tampered geometry at the artifact and at the check", () => {
@@ -201,14 +207,14 @@ describe("component qualification join (SYNTHETIC fixture library)", () => {
     expect(errorsFor(accept(observed, undefined, missing).errors, "components.select")).toContain("K11");
   }, 300_000);
 
-  it("refuses the join when member-root measurements are empty", () => {
+  it("keeps empty member-root measurements a K10 finding, never a join failure", () => {
     const { observe, accept, artifacts, slots } = fixture();
     for (const slot of slots.filter(slot => slot.contract.memberRoots)) {
       const supplied = artifacts(); const artifact = supplied[slot.id]!;
       supplied[slot.id] = { ...artifact, memberMeasurements: Object.fromEntries(Object.keys(artifact.memberMeasurements!).map(member => [member, []])) };
       const { errors, join } = accept(observe({ artifacts: supplied }), undefined, supplied);
       expect(errorsFor(errors, slot.id)).toContain("K10");
-      expect(join.map(row => row.subject)).toContain(slot.id);
+      expect(join).toEqual([]);
       const omitted = artifacts(); const { memberMeasurements: _members, ...bare } = omitted[slot.id]!; omitted[slot.id] = bare;
       expect(observe({ artifacts: omitted }).refused).toEqual([{ slot: slot.id, reason: expect.stringMatching(/member-root/) }]);
     }
@@ -239,7 +245,13 @@ describe("component qualification join (SYNTHETIC fixture library)", () => {
     expect(observe({ artifacts: stray }).refused).toEqual([{ slot: "components.unknown", reason: expect.stringMatching(/no adopted descriptor/) }]);
     expect(observe({ probes: { [slot]: { forwardsRef: true, forwardsRenderProps: true, measurements: artifacts()[slot]!.measurements } } }).refused).toEqual([{ slot, reason: expect.stringMatching(/both a probe and a browser artifact/) }]);
     const absent = artifacts(); delete absent[slot];
-    expect(errorsFor(accept(observe({ artifacts: absent }), undefined, absent).errors, slot)).toContain("K10");
+    const unjoined = accept(observe({ artifacts: absent }), undefined, absent);
+    expect(errorsFor(unjoined.errors, slot)).toContain("K10");
+    expect(unjoined.join).toEqual([{ code: "QUALIFICATION_JOIN", subject: slot, reasons: ["No browser artifact for the slot"] }]);
+    // An observation persisted from one artifact never joins a different artifact for the same descriptor.
+    const remeasured = artifacts(); remeasured[slot] = { ...remeasured[slot]!, measurements: remeasured[slot]!.measurements.slice(1) };
+    expect(accept(observe(), undefined, remeasured).join).toEqual([{ code: "QUALIFICATION_JOIN", subject: slot, reasons: ["Observation measurements differ from the artifact"] }]);
+    expect(joinComponentQualification({ fills, observations: observe().evidence.observations, artifacts: stray }).stray).toEqual(["components.unknown"]);
     expect(fills.find(fill => fill.slot === slot)).toBeDefined();
   }, 300_000);
 });
