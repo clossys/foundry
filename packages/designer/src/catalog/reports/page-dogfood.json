@@ -7063,6 +7063,289 @@
       "tag": "source"
     },
     {
+      "code": "DF5",
+      "elementId": "src/studio/system-canvas/SystemCanvas.tsx#CompactPreview@7e882406f342",
+      "evidence": "Unknown visual import or local component <CompactPreview>; no registered slot resolves.",
+      "file": "src/studio/system-canvas/SystemCanvas.tsx",
+      "line": 184,
+      "missing": "CompactPreview visual capability",
+      "raisedBy": "src/studio/system-canvas/SystemCanvas.tsx#surface",
+      "slotId": null,
+      "tag": "CompactPreview"
+    },
+    {
+      "code": "DF2",
+      "elementId": "src/studio/system-canvas/SystemCanvas.tsx#Skeleton@0397446f6e55",
+      "evidence": "unresolved class utilities: min-h-0",
+      "file": "src/studio/system-canvas/SystemCanvas.tsx",
+      "line": 188,
+      "raisedBy": "src/studio/system-canvas/SystemCanvas.tsx#surface",
+      "slotId": null,
+      "tag": "Skeleton"
+    },
+    {
+      "code": "DF5",
+      "elementId": "src/studio/system-canvas/SystemCanvas.tsx#CanvasPlaced@63c20413826d",
+      "evidence": "Unknown visual import or local component <CanvasPlaced>; no registered slot resolves.",
+      "file": "src/studio/system-canvas/SystemCanvas.tsx",
+      "line": 194,
+      "missing": "CanvasPlaced visual capability",
+      "raisedBy": "src/studio/system-canvas/SystemCanvas.tsx#surface",
+      "slotId": null,
+      "tag": "CanvasPlaced"
+    },
+    {
+      "code": "DF2",
+      "elementId": "src/studio/system-canvas/SystemCanvas.tsx#CanvasPlaced@63c20413826d",
+      "evidence": "unresolved class utilities: rounded-control, border, border-line-base, bg-surface-base",
+      "file": "src/studio/system-canvas/SystemCanvas.tsx",
+      "line": 194,
+      "raisedBy": "src/studio/system-canvas/SystemCanvas.tsx#surface",
+      "slotId": null,
+      "tag": "CanvasPlaced"
+    },
+    {
+      "code": "DF1",
+      "elementId": "src/studio/system-canvas/SystemCanvas.tsx#h3@fe33c51d87ff",
+      "evidence": "Raw <h3> has visual classes; bind a library surface.",
+      "file": "src/studio/system-canvas/SystemCanvas.tsx",
+      "line": 195,
+      "missing": "h3 visual capability",
+      "raisedBy": "src/studio/system-canvas/SystemCanvas.tsx#surface",
+      "slotId": null,
+      "tag": "h3"
+    },
+    {
+      "code": "DF2",
+      "elementId": "src/studio/system-canvas/SystemCanvas.tsx#h3@fe33c51d87ff",
+      "evidence": "unresolved className: dynamic source cannot establish token-only styling.",
+      "file": "src/studio/system-canvas/SystemCanvas.tsx",
+      "line": 195,
+      "raisedBy": "src/studio/system-canvas/SystemCanvas.tsx#surface",
+      "slotId": null,
+      "tag": "h3"
+    },
+    {
+      "code": "DF5",
+      "elementId": "src/studio/system-canvas/SystemCanvas.tsx#CanvasChipGrid@366c538fbbdc",
+      "evidence": "Unknown visual import or local component <CanvasChipGrid>; no registered slot resolves.",
+      "file": "src/studio/system-canvas/SystemCanvas.tsx",
+      "line": 196,
+      "missing": "CanvasChipGrid visual capability",
+      "raisedBy": "src/studio/system-canvas/SystemCanvas.tsx#surface",
+      "slotId": null,
+      "tag": "CanvasChipGrid"
+    },
+    {
+      "code": "DF5",
+      "elementId": "src/studio/system-canvas/SystemCanvas.tsx#CanvasPlaced@2f2724c848ac",
+      "evidence": "Unknown visual import or local component <CanvasPlaced>; no registered slot resolves.",
+      "file": "src/studio/system-canvas/SystemCanvas.tsx",
+      "line": 202,
+      "missing": "CanvasPlaced visual capability",
+      "raisedBy": "src/studio/system-canvas/SystemCanvas.tsx#surface",
+      "slotId": null,
+      "tag": "CanvasPlaced"
+    },
+    {
+      "code": "DF1",
+      "elementId": "src/studio/system-canvas/SystemCanvas.tsx#span@4071ab899541",
+      "evidence": "Raw <span> has visual classes; bind a library surface.",
+      "file": "src/studio/system-canvas/SystemCanvas.tsx",
+      "line": 203,
+      "missing": "span visual capability",
+      "raisedBy": "src/studio/system-canvas/SystemCanvas.tsx#surface",
+      "slotId": null,
+      "tag": "span"
+    },
+    {
+      "code": "DF2",
+      "elementId": "src/studio/system-canvas/SystemCanvas.tsx#span@4071ab899541",
+      "evidence": "unresolved className: dynamic source cannot establish token-only styling.",
+      "file": "src/studio/system-canvas/SystemCanvas.tsx",
+      "line": 203,
+      "raisedBy": "src/studio/system-canvas/SystemCanvas.tsx#surface",
+      "slotId": null,
+      "tag": "span"
+    },
+    {
+      "code": "DF5",
+      "elementId": "src/studio/system-canvas/SystemCanvas.tsx#CanvasPlaced@257e18b4d5c6",
+      "evidence": "Unknown visual import or local component <CanvasPlaced>; no registered slot resolves.",
+      "file": "src/studio/system-canvas/SystemCanvas.tsx",
+      "line": 206,
+      "missing": "CanvasPlaced visual capability",
+      "raisedBy": "src/studio/system-canvas/SystemCanvas.tsx#surface",
+      "slotId": null,
+      "tag": "CanvasPlaced"
+    },
+    {
+      "code": "DF2",
+      "elementId": "src/studio/system-canvas/SystemCanvas.tsx#CanvasPlaced@257e18b4d5c6",
+      "evidence": "unresolved className: dynamic source cannot establish token-only styling.",
+      "file": "src/studio/system-canvas/SystemCanvas.tsx",
+      "line": 206,
+      "raisedBy": "src/studio/system-canvas/SystemCanvas.tsx#surface",
+      "slotId": null,
+      "tag": "CanvasPlaced"
+    },
+    {
+      "code": "DF1",
+      "elementId": "src/studio/system-canvas/SystemCanvas.tsx#div@6741865321ff",
+      "evidence": "Raw <div> has visual classes; bind a library surface.",
+      "file": "src/studio/system-canvas/SystemCanvas.tsx",
+      "line": 209,
+      "missing": "div visual capability",
+      "raisedBy": "src/studio/system-canvas/SystemCanvas.tsx#surface",
+      "slotId": null,
+      "tag": "div"
+    },
+    {
+      "code": "DF2",
+      "elementId": "src/studio/system-canvas/SystemCanvas.tsx#div@6741865321ff",
+      "evidence": "unresolved class utilities: min-w-0, gap-xs",
+      "file": "src/studio/system-canvas/SystemCanvas.tsx",
+      "line": 209,
+      "raisedBy": "src/studio/system-canvas/SystemCanvas.tsx#surface",
+      "slotId": null,
+      "tag": "div"
+    },
+    {
+      "code": "DF2",
+      "elementId": "src/studio/system-canvas/SystemCanvas.tsx#Button@1e82b4ee5430",
+      "evidence": "unresolved className: dynamic source cannot establish token-only styling.",
+      "file": "src/studio/system-canvas/SystemCanvas.tsx",
+      "line": 210,
+      "raisedBy": "src/studio/system-canvas/SystemCanvas.tsx#surface",
+      "slotId": null,
+      "tag": "Button"
+    },
+    {
+      "code": "DF1",
+      "elementId": "src/studio/system-canvas/SystemCanvas.tsx#div@155f364482df",
+      "evidence": "Raw <div> has visual classes; bind a library surface.",
+      "file": "src/studio/system-canvas/SystemCanvas.tsx",
+      "line": 220,
+      "missing": "div visual capability",
+      "raisedBy": "src/studio/system-canvas/SystemCanvas.tsx#surface",
+      "slotId": null,
+      "tag": "div"
+    },
+    {
+      "code": "DF2",
+      "elementId": "src/studio/system-canvas/SystemCanvas.tsx#div@155f364482df",
+      "evidence": "unresolved className: dynamic source cannot establish token-only styling.",
+      "file": "src/studio/system-canvas/SystemCanvas.tsx",
+      "line": 220,
+      "raisedBy": "src/studio/system-canvas/SystemCanvas.tsx#surface",
+      "slotId": null,
+      "tag": "div"
+    },
+    {
+      "code": "DF5",
+      "elementId": "src/studio/system-canvas/SystemCanvas.tsx#CanvasLod@fa2a87694bec",
+      "evidence": "Unknown visual import or local component <CanvasLod>; no registered slot resolves.",
+      "file": "src/studio/system-canvas/SystemCanvas.tsx",
+      "line": 221,
+      "missing": "CanvasLod visual capability",
+      "raisedBy": "src/studio/system-canvas/SystemCanvas.tsx#surface",
+      "slotId": null,
+      "tag": "CanvasLod"
+    },
+    {
+      "code": "DF5",
+      "elementId": "src/studio/system-canvas/SystemCanvas.tsx#CanvasSurface@c1ef58af9a64",
+      "evidence": "Unknown visual import or local component <CanvasSurface>; no registered slot resolves.",
+      "file": "src/studio/system-canvas/SystemCanvas.tsx",
+      "line": 222,
+      "missing": "CanvasSurface visual capability",
+      "raisedBy": "src/studio/system-canvas/SystemCanvas.tsx#surface",
+      "slotId": null,
+      "tag": "CanvasSurface"
+    },
+    {
+      "code": "DF2",
+      "elementId": "src/studio/system-canvas/SystemCanvas.tsx#CanvasSurface@c1ef58af9a64",
+      "evidence": "unresolved ...: dynamic source cannot establish token-only styling.",
+      "file": "src/studio/system-canvas/SystemCanvas.tsx",
+      "line": 222,
+      "raisedBy": "src/studio/system-canvas/SystemCanvas.tsx#surface",
+      "slotId": null,
+      "tag": "CanvasSurface"
+    },
+    {
+      "code": "DF2",
+      "elementId": "src/studio/system-canvas/SystemCanvas.tsx#CanvasSurface@c1ef58af9a64",
+      "evidence": "unresolved ...: dynamic source cannot establish token-only styling.",
+      "file": "src/studio/system-canvas/SystemCanvas.tsx",
+      "line": 222,
+      "raisedBy": "src/studio/system-canvas/SystemCanvas.tsx#surface",
+      "slotId": null,
+      "tag": "CanvasSurface"
+    },
+    {
+      "code": "DF2",
+      "elementId": "src/studio/system-canvas/SystemCanvas.tsx#CanvasSurface@c1ef58af9a64",
+      "evidence": "unresolved ...: dynamic source cannot establish token-only styling.",
+      "file": "src/studio/system-canvas/SystemCanvas.tsx",
+      "line": 222,
+      "raisedBy": "src/studio/system-canvas/SystemCanvas.tsx#surface",
+      "slotId": null,
+      "tag": "CanvasSurface"
+    },
+    {
+      "code": "DF2",
+      "elementId": "src/studio/system-canvas/SystemCanvas.tsx#CanvasSurface@c1ef58af9a64",
+      "evidence": "unresolved class utilities: inset-0, rounded-none, border-0, bg-surface-raised",
+      "file": "src/studio/system-canvas/SystemCanvas.tsx",
+      "line": 222,
+      "raisedBy": "src/studio/system-canvas/SystemCanvas.tsx#surface",
+      "slotId": null,
+      "tag": "CanvasSurface"
+    },
+    {
+      "code": "DF5",
+      "elementId": "src/studio/system-canvas/SystemCanvas.tsx#CanvasPlaced@4184692f85bf",
+      "evidence": "Unknown visual import or local component <CanvasPlaced>; no registered slot resolves.",
+      "file": "src/studio/system-canvas/SystemCanvas.tsx",
+      "line": 228,
+      "missing": "CanvasPlaced visual capability",
+      "raisedBy": "src/studio/system-canvas/SystemCanvas.tsx#surface",
+      "slotId": null,
+      "tag": "CanvasPlaced"
+    },
+    {
+      "code": "DF2",
+      "elementId": "src/studio/system-canvas/SystemCanvas.tsx#CanvasPlaced@4184692f85bf",
+      "evidence": "unresolved class utilities: rounded-control",
+      "file": "src/studio/system-canvas/SystemCanvas.tsx",
+      "line": 228,
+      "raisedBy": "src/studio/system-canvas/SystemCanvas.tsx#surface",
+      "slotId": null,
+      "tag": "CanvasPlaced"
+    },
+    {
+      "code": "DF1",
+      "elementId": "src/studio/system-canvas/SystemCanvas.tsx#div@7c7c191baa87",
+      "evidence": "Raw <div> has visual classes; bind a library surface.",
+      "file": "src/studio/system-canvas/SystemCanvas.tsx",
+      "line": 231,
+      "missing": "div visual capability",
+      "raisedBy": "src/studio/system-canvas/SystemCanvas.tsx#surface",
+      "slotId": null,
+      "tag": "div"
+    },
+    {
+      "code": "DF2",
+      "elementId": "src/studio/system-canvas/SystemCanvas.tsx#div@7c7c191baa87",
+      "evidence": "unresolved class utilities: start-md, top-md, rounded-control, bg-surface-base, px-sm, py-xs",
+      "file": "src/studio/system-canvas/SystemCanvas.tsx",
+      "line": 231,
+      "raisedBy": "src/studio/system-canvas/SystemCanvas.tsx#surface",
+      "slotId": null,
+      "tag": "div"
+    },
+    {
       "code": "DF1",
       "elementId": "src/studio/TreeView.tsx#span@cd60dcbd42e2",
       "evidence": "Raw <span> has visual classes; bind a library surface.",
@@ -10479,6 +10762,38 @@
       "file": "src/studio/surface-preview-samples.tsx"
     },
     {
+      "elements": 0,
+      "file": "src/studio/system-canvas/__fixtures__/system.ts"
+    },
+    {
+      "elements": 0,
+      "file": "src/studio/system-canvas/breadcrumb.ts"
+    },
+    {
+      "elements": 0,
+      "file": "src/studio/system-canvas/graph.ts"
+    },
+    {
+      "elements": 0,
+      "file": "src/studio/system-canvas/layout.ts"
+    },
+    {
+      "elements": 0,
+      "file": "src/studio/system-canvas/lod.ts"
+    },
+    {
+      "elements": 0,
+      "file": "src/studio/system-canvas/navigation.ts"
+    },
+    {
+      "elements": 0,
+      "file": "src/studio/system-canvas/stops.ts"
+    },
+    {
+      "elements": 18,
+      "file": "src/studio/system-canvas/SystemCanvas.tsx"
+    },
+    {
       "elements": 5,
       "file": "src/studio/TreeView.tsx"
     },
@@ -10655,9 +10970,9 @@
     "ul": 7
   },
   "summary": {
-    "elements": 853,
-    "findings": 910,
-    "library": 174,
+    "elements": 871,
+    "findings": 937,
+    "library": 179,
     "structural": 161
   }
 }
