@@ -1,6 +1,7 @@
 "use client";
 import { cloneElement, useId, useRef, useState, type ComponentType, type ContextType, type FormEvent, type ReactElement, type ReactNode } from "react";
-import { Button as TriggerButton, TooltipTriggerStateContext } from "react-aria-components";
+import { TooltipTriggerStateContext } from "react-aria-components";
+import { Button } from "../components/Button.js";
 import { componentSpecimenActions, componentSpecimenCard, componentSpecimenCollections, componentSpecimenColor, componentSpecimenField, componentSpecimenOverlays, componentSpecimenProps, componentSpecimenSourceSamples, componentSpecimenTable, componentSpecimenText, componentSpecimenToast, componentSpecimenUnavailable } from "./component-specimen-sample-content.js";
 import type { SpecimenUnavailableReason } from "./preview-outcome.js";
 import { containedDialog, containedToaster } from "./component-specimen-contained.js";
@@ -182,22 +183,21 @@ function OverlayHost({ children }: { readonly children: (container: HTMLElement)
   return <div ref={setContainer} data-specimen-overlay-host="">{container ? children(container) : null}</div>;
 }
 
-/** A tooltip trigger state that stays open: opening and closing are no-ops, so the specimen draws statically. */
 const heldOpen: NonNullable<ContextType<typeof TooltipTriggerStateContext>> = { isOpen: true, shouldSkipAnimation: true, open: () => {}, close: () => {} };
 
 /**
- * The vendored Tooltip held open beside a plain trigger, anchored through the Tooltip's own `triggerRef` and given an
- * open trigger state through React Aria's own context. It is never placed in a TooltipTrigger: while its tooltip is
- * open, React Aria's trigger listens for Escape on the whole document in the capture phase and stops it there, so a
- * trigger held open would swallow every Escape on the page, including the one that closes a dialog opened from a
- * neighbouring cell.
+ * The vendored Tooltip held open beside the registered Foundry Button, anchored through the Tooltip's own
+ * `triggerRef` and given an open trigger state through React Aria's own context. It is never placed in a
+ * TooltipTrigger: while its tooltip is open, React Aria's trigger listens for Escape on the whole document in the
+ * capture phase and stops it there, so a trigger held open would swallow every Escape on the page, including the one
+ * that closes a dialog opened from a neighbouring cell.
  */
 function HeldTooltip({ trigger, specimen }: { readonly trigger: ReactNode; readonly specimen: ReactElement<Record<string, unknown>> }) {
-  const triggerRef = useRef<HTMLButtonElement>(null);
+  const anchorRef = useRef<HTMLDivElement>(null);
   const id = useId();
   return <OverlayHost>{container => <TooltipTriggerStateContext.Provider value={heldOpen}>
-    <TriggerButton ref={triggerRef} aria-describedby={id}>{trigger}</TriggerButton>
-    {cloneElement(specimen, { id, triggerRef, UNSTABLE_portalContainer: container })}
+    <div ref={anchorRef} data-specimen-tooltip-anchor="" className="inline-flex"><Button variant="secondary" aria-describedby={id}>{trigger}</Button></div>
+    {cloneElement(specimen, { id, triggerRef: anchorRef, UNSTABLE_portalContainer: container })}
   </TooltipTriggerStateContext.Provider>}</OverlayHost>;
 }
 
@@ -246,7 +246,7 @@ function sourceSample(key: string, exports: Namespace): ComponentSpecimenSample 
       const [Trigger, Title, Description] = found as [Renderable, Renderable, Renderable];
       const { trigger, title, content } = s[key];
       // Non-modal, so holding it open never hides the rest of Studio or locks its scroll.
-      return { props: { isNonModal: true }, children: [<Title key="title">{title}</Title>, <Description key="content">{content}</Description>], host: specimen => <OverlayHost>{container => <Trigger isOpen><TriggerButton>{trigger}</TriggerButton>{cloneElement(specimen as ReactElement<Record<string, unknown>>, { UNSTABLE_portalContainer: container })}</Trigger>}</OverlayHost> };
+      return { props: { isNonModal: true }, children: [<Title key="title">{title}</Title>, <Description key="content">{content}</Description>], host: specimen => <OverlayHost>{container => <Trigger isOpen><Button variant="secondary">{trigger}</Button>{cloneElement(specimen as ReactElement<Record<string, unknown>>, { UNSTABLE_portalContainer: container })}</Trigger>}</OverlayHost> };
     }
     case "components/menu/dropdown-menu.tsx#DropdownMenu": {
       // The module's own InlineMenu is the same RAC Menu without the Popover: it draws open, in place, on the server too.

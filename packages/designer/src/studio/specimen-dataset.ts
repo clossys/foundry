@@ -12,11 +12,45 @@ import type { StatusMarkTone } from "../components/StatusMark.js";
 import type { IconNode } from "../icons/types.js";
 import { FileText } from "../icons/FileText.js";
 import { identityStarterSeeds } from "../tokens/identity-kit.js";
+import { defaultPreset, presetValues, sourceRoster, tokenContract } from "../catalog-core/token-contract.js";
+import { oklchToLinearSRGB, parseOklch } from "../tokens/color.js";
+import type { AppNavigationProps } from "../blocks/AppNavigation.js";
+import type { AccountMenuLink } from "../blocks/account-menu-types.js";
+import type { AppNavigationNode } from "../blocks/app-navigation-tree.js";
+import type { ChatMessage } from "../blocks/chat/types.js";
+import type { CommandMenuGroup } from "../blocks/command-menu-types.js";
+import type { MatrixGridProps } from "../blocks/Matrix.js";
+import type { ResourceListProps } from "../blocks/ResourceList.js";
+import type { StatusListProps } from "../blocks/StatusList.js";
+import type { TaskListProps } from "../blocks/TaskList.js";
+import type { TreeNode } from "../blocks/tree-model.js";
+import type { DetailViewProps } from "../blocks/DetailView.js";
+import type { FaqProps } from "../blocks/Faq.js";
+import type { FeatureGridProps } from "../blocks/FeatureGrid.js";
+import type { NavGridProps } from "../blocks/NavGrid.js";
+import type { OrderedStepSequenceProps } from "../blocks/OrderedStepSequence.js";
+import type { PeopleGridProps } from "../blocks/PeopleGrid.js";
+import type { TableOfContentsProps } from "../blocks/TableOfContents.js";
+import type { TestimonialSetProps } from "../blocks/TestimonialSet.js";
+import type { PageBarProps } from "../blocks/PageBar.js";
+import type { RecordCardsProps } from "../blocks/RecordCards.js";
+import type { NoticeListItem } from "../blocks/NoticeList.js";
+import type { StatGroupProps } from "../blocks/StatGroup.js";
+import { accessMatrixSample } from "../blocks/access-matrix/sample.js";
+import { activityFeedSample } from "../blocks/activity-feed/sample.js";
+import { auditLogSample } from "../blocks/audit-log/sample.js";
+import { columnMapperSample } from "../blocks/column-mapper/sample.js";
+import { filterBuilderSample } from "../blocks/filter-builder/sample.js";
+import { formWizardSample } from "../blocks/form-wizard/sample.js";
+import { settingsSectionSample } from "../blocks/settings-section/sample.js";
+import { timelineSample } from "../blocks/timeline/sample.js";
+import { usageSummarySample } from "../blocks/usage-summary/sample.js";
 
 /**
- * The one shared, deterministic synthetic dataset every Studio component specimen draws from. Data only:
- * component-specimen-sample-content.ts addresses each component's props into it and
- * component-specimen-samples.tsx renders the real registered fill with them. Nothing here reads the clock or a
+ * The one shared, deterministic synthetic dataset every Studio specimen draws from, on all five layers: token
+ * sample text and rulers, asset captions and the ratio fixture's geometry, component props, and Section and
+ * Frame content. Data only: component-specimen-sample-content.ts and surface-preview-sample-content.ts address
+ * into it, and the specimen files render the real registered parts with it. Nothing here reads the clock or a
  * random source: dates come from {@link SPECIMEN_ANCHOR_DATE} and every generated number from the seeded
  * generator below, evaluated once when the module loads, so each render draws the same values. Shapes follow
  * each component's own prop types. Preview content, never adoption or conformance evidence.
@@ -27,8 +61,8 @@ export const SPECIMEN_DATASET_SEED = 20260115;
 /** The fixed date every date in the dataset is counted from. */
 export const SPECIMEN_ANCHOR_DATE = new CalendarDate(2026, 1, 15);
 
-/** mulberry32: a small deterministic generator, so a seed always yields the same sequence. */
-function seeded(seed: number): () => number {
+/** mulberry32: a small deterministic generator, so a seed always yields the same sequence. The one generator every specimen uses. */
+export function seeded(seed: number): () => number {
   let state = seed >>> 0;
   return () => {
     state = (state + 0x6d2b79f5) >>> 0;
@@ -66,7 +100,7 @@ const orderRows = people.map((person, index) => {
   const cents = int(1_500, 240_000);
   return {
     id: `order-${1001 + index}`,
-    order: `#${1001 + index}`,
+    order: `ORD-${1001 + index}`,
     customer: person.name,
     status: statuses[index % statuses.length]!,
     items: String(items),
@@ -75,11 +109,30 @@ const orderRows = people.map((person, index) => {
   };
 });
 
-/** The brand mark, drawn by the identity kit that derives the registered `assets.mark` fill, for the sample name. */
+/**
+ * The brand mark, drawn by the identity kit that derives the registered `assets.mark` fill, for the sample name.
+ * Its inks are the Foundry default preset's own token values, the same starter inputs a fresh library derives from.
+ */
 const brandName = "Northwind";
+const preset = defaultPreset(sourceRoster);
+const presetInk = (slot: string, member: string): string => {
+  const value = presetValues(tokenContract, preset, slot)[member]?.light;
+  if (value === undefined) throw new TypeError(`the default preset has no ${slot}.${member}`);
+  return value;
+};
+/**
+ * A preset colour in the form React Aria's colour parser reads: the token's own `oklch()` value, encoded as
+ * sRGB hex. The colour picker's swatches are the default preset's first categorical chart colours.
+ */
+const presetSwatch = (slot: string, member: string): string => {
+  const encode = (linear: number) => Math.round(255 * (linear <= 0.0031308 ? 12.92 * linear : 1.055 * linear ** (1 / 2.4) - 0.055));
+  return `#${oklchToLinearSRGB(parseOklch(presetInk(slot, member))).map(channel => encode(channel).toString(16).padStart(2, "0")).join("")}`;
+};
+const chartSwatches = ["1", "2", "3"].map(member => presetSwatch("tokens.categorical-color", member));
 const brandMark = identityStarterSeeds({ name: brandName }, {
-  ink: "#1f2937", onInverse: "#ffffff", surfaceBase: "#ffffff", surfaceInverse: "#111827",
-  accent: "#2563eb", onAccent: "#ffffff", fontFamily: "sans-serif",
+  ink: presetInk("tokens.text-color", "primary"), onInverse: presetInk("tokens.text-color", "on-inverse"),
+  surfaceBase: presetInk("tokens.surface-color", "base"), surfaceInverse: presetInk("tokens.surface-color", "inverse"),
+  accent: presetInk("tokens.accent-color", "default"), onAccent: presetInk("tokens.text-color", "on-accent"), fontFamily: "sans-serif",
 }).mark;
 
 const selectOptions: readonly SelectOption[] = [
@@ -91,6 +144,384 @@ const selectOptions: readonly SelectOption[] = [
 const assignees: readonly ComboBoxOption[] = people.slice(0, 5).map(person => ({ id: person.id, label: person.name }));
 
 const visits = series(4, 10, 30), returns = series(4, 4, 14);
+
+/** Token layer: the sample text every text specimen sets, and one true-px ruler per size leaf. */
+const tokens = {
+  sampleText: "The quick brown fox jumped over the lazy dog",
+  /** The two-glyph sample a blur specimen sets behind its glass. */
+  glyphs: "Aa",
+  /** The motion specimen's play control. */
+  playLabel: "Play",
+  /** The unit the last ruler tick is labelled in. */
+  unit: "px",
+  /** A 256px track drawn at a fixed scale per size leaf; the bar is the member's own length times `factor`. */
+  rulers: {
+    "tokens.breakpoint": { scale: "1:6.25", factor: 0.16, ticks: [0, 400, 800, 1200, 1600] },
+    "tokens.content-size": { scale: "1:5", factor: 0.2, ticks: [0, 320, 640, 960, 1280] },
+    "tokens.region-width": { scale: "1:1.5625", factor: 0.64, ticks: [0, 100, 200, 300, 400] },
+    "tokens.container-width": { scale: "1:5", factor: 0.2, ticks: [0, 320, 640, 960, 1280] },
+    "tokens.control-size": { scale: "4:1", factor: 4, ticks: [0, 16, 32, 48, 64] },
+    "tokens.spacing": { scale: "2:1", factor: 2, ticks: [0, 32, 64, 96, 128] },
+    "tokens.gutter": { scale: "4:1", factor: 4, ticks: [0, 16, 32, 48, 64] },
+    "tokens.touch-target": { scale: "4:1", factor: 4, ticks: [0, 16, 32, 48, 64] },
+    "tokens.brandmark-size": { scale: "4:1", factor: 4, ticks: [0, 16, 32, 48, 64] },
+    "tokens.shift-distance": { scale: "16:1", factor: 16, ticks: [0, 4, 8, 12, 16] },
+    "tokens.border-width": { scale: "16:1", factor: 16, ticks: [0, 4, 8, 12, 16] },
+  } as Readonly<Record<string, { readonly scale: string; readonly factor: number; readonly ticks: readonly number[] }>>,
+} as const;
+
+/** Asset layer: the sizes and captions asset specimens draw, and the ratio fixture's generated landscape. */
+const assetSamples = {
+  /** The CSS sizes a favicon is drawn at: the tab strip, a high-density tab or bookmark, and a shortcut tile. */
+  favicon: { sizes: [16, 32, 48], unit: "px" },
+  /** A maskable icon's guaranteed safe zone: a circle of 80 percent of its side, in a 100-unit view box. */
+  appIcon: { safeZoneShare: 0.8, viewBox: 100, dash: "3 2" },
+  /** The image an image-ratio specimen crops: a sun and four ridges from its own fixed seed. */
+  ratioFixture: {
+    seed: 0x5eed,
+    viewBox: { width: 1200, height: 800 },
+    /** Ridges back to front, each lighter behind the next: aerial perspective on the neutral ramp. */
+    ridges: [
+      { base: 0.5, amplitude: 0.09, fill: "fill-neutral-300" },
+      { base: 0.62, amplitude: 0.08, fill: "fill-neutral-400" },
+      { base: 0.74, amplitude: 0.07, fill: "fill-neutral-600" },
+      { base: 0.86, amplitude: 0.05, fill: "fill-neutral-800" },
+    ],
+    samples: 24,
+    sun: { x: { from: 0.58, span: 0.16 }, y: { from: 0.26, span: 0.08 }, radius: 0.09 },
+    frequencies: [1, 2, 5],
+  },
+} as const;
+
+/** One order row of the Section data table samples. */
+export interface SampleOrder { id: string; customer: string; status: string; total: string }
+const sectionOrders = [
+  { id: "1042", customer: "Northwind", status: "Shipped", total: "$1,280.00" },
+  { id: "1043", customer: "Contoso", status: "Processing", total: "$640.00" },
+  { id: "1044", customer: "Fabrikam", status: "Delivered", total: "$2,015.50" },
+] satisfies readonly SampleOrder[];
+
+const comparison: MatrixGridProps = {
+  arrangement: "grid",
+  featured: { column: "team" },
+  featuredLabel: "Most popular",
+  columns: [{ id: "starter", label: "Starter" }, { id: "team", label: "Team" }, { id: "scale", label: "Scale" }],
+  rows: [
+    { id: "seats", label: "Seats", cells: { starter: { type: "text", text: "3" }, team: { type: "text", text: "25" }, scale: { type: "text", text: "Unlimited" } } },
+    { id: "history", label: "Version history", cells: { starter: { type: "text", text: "7 days" }, team: { type: "text", text: "1 year" }, scale: { type: "text", text: "Unlimited" } } },
+    { id: "support", label: "Support", cells: { starter: { type: "text", text: "Email" }, team: { type: "text", text: "Priority" }, scale: { type: "text", text: "Dedicated" } } },
+  ],
+};
+
+const projectsEmpty = { title: "No projects yet", description: "Create a project to start collecting work in one place." };
+
+const resourceList: Omit<ResourceListProps, "onAction"> = {
+  "aria-label": "Projects",
+  actionsLabel: text => `Actions for ${text}`,
+  emptyState: projectsEmpty,
+  items: [
+    { id: "launch", textValue: "Spring launch", title: "Spring launch", description: "Campaign pages and assets.", meta: "Updated today" },
+    { id: "docs", textValue: "Help centre", title: "Help centre", description: "Guides and reference articles.", meta: "Updated yesterday" },
+    { id: "brand", textValue: "Brand refresh", title: "Brand refresh", description: "Logo, colour and type review.", meta: "Updated last week" },
+  ],
+};
+
+const statusList: StatusListProps = {
+  heading: "Coverage",
+  legendLabel: "Status",
+  labels: { available: "Available", partial: "Partial", planned: "Planned", dispositions: { "not-offered": "Not offered" } },
+  groups: [
+    { id: "data", heading: "Data", items: [{ id: "reports", label: "Reports", state: "available" }, { id: "exports", label: "Exports", state: "partial" }] },
+    { id: "alerts", heading: "Alerts", items: [{ id: "email", label: "Email alerts", state: "available" }, { id: "mobile", label: "Mobile alerts", state: "planned" }] },
+  ],
+};
+
+const taskList: TaskListProps = {
+  "aria-label": "Launch checklist",
+  progressText: "2 of 4 done",
+  statusLabels: { todo: "To do", "in-progress": "In progress", blocked: "Blocked", done: "Done" },
+  emptyState: { title: "No tasks", description: "Add a task to start the checklist." },
+  items: [
+    { id: "copy", title: "Write page copy", status: "done" },
+    { id: "review", title: "Review with legal", status: "done" },
+    { id: "assets", title: "Export final assets", status: "in-progress" },
+    { id: "publish", title: "Publish the launch page", status: "todo" },
+  ],
+};
+
+const commandGroups: readonly CommandMenuGroup[] = [
+  { id: "go", label: "Go to", items: [{ id: "projects", label: "Open projects", href: "#projects" }, { id: "settings", label: "Open settings", href: "#settings" }] },
+  { id: "create", label: "Create", items: [{ id: "new-project", label: "New project", shortcutHint: "N", href: "#new-project" }] },
+];
+const command = {
+  trigger: "Open command menu",
+  heading: "Commands",
+  searchLabel: "Find a command",
+  closeLabel: "Close commands",
+  emptyMessage: "No matching commands.",
+  groups: commandGroups,
+};
+
+const people3 = [
+  { id: "ada", name: "Ada Park", role: "Design lead", initials: "AP" },
+  { id: "sam", name: "Sam Ortiz", role: "Engineering", initials: "SO" },
+  { id: "lee", name: "Lee Chen", role: "Operations", initials: "LC" },
+] as const;
+const sectionLink = (label: string, href: string) => ({ label, href });
+
+/** Section layer: the content every Studio-owned Section preview renders, by block. Block-owned samples are addressed, not copied. */
+const sections = {
+  comparison,
+  content: {
+    eyebrow: "Overview",
+    heading: "One place for every project",
+    description: "Plans, files and decisions stay together, so the team works from the same page.",
+    body: "Start with a template, invite collaborators and publish when the work is ready.",
+  },
+  dataTable: {
+    label: "Recent orders",
+    headers: { id: "Order", customer: "Customer", status: "Status", total: "Total" },
+    rows: sectionOrders,
+  },
+  /** Copy for the non-default sample states (vf35): empty, loading, error and long content. */
+  states: {
+    loadingLabel: "Loading projects",
+    error: { title: "Projects could not load", description: "Check your connection, then try again." },
+    tableEmpty: { title: "No orders yet", description: "Orders appear here once a customer checks out." },
+    longTitle: "Quarterly customer research synthesis for the enterprise onboarding redesign programme",
+    longDescription: "Interview notes, survey results and usability findings from every regional team, gathered into one reviewed summary with the decisions each finding led to and the open questions still waiting on an owner.",
+    longCustomer: "Northwind Traders International Holdings and Subsidiaries",
+    longTotal: "$148,920.75",
+    longMeta: "Updated today",
+    longOrderId: "1045",
+    longResourceId: "research",
+  },
+  form: {
+    heading: "Contact details",
+    fields: [{ id: "name", label: "Full name", type: "text" }, { id: "email", label: "Work email", type: "email" }],
+    submit: "Save",
+  },
+  pricing: {
+    heading: "Plans",
+    tiers: [
+      { id: "starter", name: "Starter", price: "$0", features: ["3 seats", "Email support"], cta: "Start free", featured: false, badge: undefined },
+      { id: "team", name: "Team", price: "$24", features: ["25 seats", "Version history", "Priority support"], cta: "Choose Team", featured: true, badge: "Most popular" },
+      { id: "scale", name: "Scale", price: "Contact us", features: ["Unlimited seats", "Dedicated support"], cta: "Talk to sales", featured: false, badge: undefined },
+    ],
+  },
+  resourceList,
+  statusList,
+  taskList,
+  sheet: {
+    heading: "Filters",
+    closeLabel: "Close filters",
+    trigger: "Open filters",
+    body: "Narrow the list by status, owner and date.",
+  },
+  chat: {
+    label: "Support conversation",
+    placeholder: "Ask about your workspace",
+    messages: [
+      { id: "ask", role: "user", content: "How do I invite a teammate to the workspace?", timestamp: "09:41" },
+      { id: "answer", role: "assistant", content: "Open Settings, choose Members and select Invite. Enter their work email and pick a role; they get access as soon as they accept.", timestamp: "09:41" },
+    ] satisfies readonly ChatMessage[],
+    suggestions: ["Change a member's role", "Remove a member"],
+  },
+  explorer: {
+    label: "Project files",
+    selectedId: "landing-page",
+    defaultExpandedIds: ["campaigns", "spring-launch"],
+    tree: [
+      { id: "brand", label: "Brand", children: [{ id: "logo", label: "Logo.svg" }, { id: "palette", label: "Colour palette.pdf" }] },
+      { id: "campaigns", label: "Campaigns", children: [
+        { id: "spring-launch", label: "Spring launch", children: [{ id: "landing-page", label: "Landing page.docx" }, { id: "launch-email", label: "Launch email.docx" }] },
+      ] },
+      { id: "readme", label: "Read me.md" },
+    ] satisfies readonly TreeNode[],
+    details: { "landing-page": "Edited today", "launch-email": "Edited yesterday", readme: "Edited last week" } as Readonly<Record<string, string>>,
+  },
+  hero: {
+    eyebrow: "New",
+    heading: "Ship pages your whole team can trust",
+    description: "Draft, review and publish from one shared workspace, with every change checked before it goes live.",
+    primary: "Start free",
+    secondary: "Book a demo",
+    headingLevel: 2,
+  },
+  newsletter: {
+    label: "Newsletter sign-up",
+    emailLabel: "Work email",
+    submitLabel: "Subscribe",
+    pendingLabel: "Subscribing",
+    sentMessage: "Thanks. Check your inbox to confirm your subscription.",
+    failedMessage: "We could not subscribe you. Check the address and try again.",
+    privacyNote: "One email a month. Unsubscribe at any time.",
+  },
+  command,
+  articleBody: { heading: "Getting started", body: "Set up a workspace, invite your team and publish the first page." },
+  detailView: {
+    title: "Order 1042",
+    fields: [{ label: "Customer", value: "Northwind" }, { label: "Status", value: "Shipped" }, { label: "Total", value: "$1,280.00" }, { label: "Placed", value: "12 March 2026" }],
+  } satisfies Pick<DetailViewProps, "title" | "fields">,
+  emptyState: projectsEmpty,
+  faq: {
+    heading: "Questions",
+    items: [
+      { id: "billing", question: "How does billing work?", answer: "You are billed monthly for the seats in use." },
+      { id: "cancel", question: "Can I cancel at any time?", answer: "Yes. Your workspace stays readable after cancelling." },
+    ],
+  } satisfies Pick<FaqProps, "heading" | "items">,
+  featureGrid: {
+    heading: "Why teams switch",
+    items: [
+      { id: "fast", heading: "Fast setup", description: "Start from a working default in minutes." },
+      { id: "safe", heading: "Safe changes", description: "Every change is checked before it ships." },
+      { id: "shared", heading: "Shared library", description: "One source of truth for every product." },
+    ],
+  } satisfies Pick<FeatureGridProps, "heading" | "items">,
+  logoCloud: { names: ["Northwind", "Contoso", "Fabrikam"] },
+  mediaFigure: { caption: "The workspace overview", label: "Workspace overview" },
+  navGrid: {
+    heading: "Explore",
+    items: [
+      { id: "guides", title: "Guides", description: "Step-by-step walkthroughs.", href: "#guides" },
+      { id: "reference", title: "Reference", description: "Every option, in one place.", href: "#reference" },
+    ],
+  } satisfies NavGridProps,
+  orderedSteps: {
+    heading: "How it works",
+    items: [
+      { id: "connect", ordinal: 1, heading: "Connect", description: "Link your data source." },
+      { id: "review", ordinal: 2, heading: "Review", description: "Check what will change." },
+      { id: "publish", ordinal: 3, heading: "Publish", description: "Ship it to your audience." },
+    ],
+  } satisfies Pick<OrderedStepSequenceProps, "heading" | "items">,
+  pageHeader: { title: "Projects", description: "Everything your team is working on." },
+  pagination: { page: 2, pageCount: 8 },
+  peopleGrid: { people: people3, columns: 3 } satisfies Pick<PeopleGridProps, "people" | "columns">,
+  sectionFrame: { body: "A full-width band that holds one section." },
+  sectionHeader: { eyebrow: "Overview", title: "Plan your launch", description: "The pieces you need, in the order you need them." },
+  tableOfContents: {
+    label: "On this page",
+    items: [{ id: "intro", label: "Introduction" }, { id: "setup", label: "Setup" }, { id: "options", label: "Options", level: 3 }],
+  } satisfies Pick<TableOfContentsProps, "label" | "items">,
+  testimonials: {
+    items: [
+      { id: "one", quote: "We shipped our redesign in a week.", attributorName: people3[0].name, attributorRole: people3[0].role },
+      { id: "two", quote: "Reviews take minutes, not days.", attributorName: people3[1].name, attributorRole: people3[1].role },
+    ],
+  } satisfies Pick<TestimonialSetProps, "items">,
+  pageBar: {
+    root: { label: "Workspace" },
+    labels: { breadcrumb: "Breadcrumb", collapsedBreadcrumb: "More pages", pageInfo: "Page details", pageActions: "Page actions" },
+  } satisfies Pick<PageBarProps, "root" | "labels">,
+  callToAction: {
+    eyebrow: "Get started",
+    title: "Ship your next launch with one library",
+    description: "Start free. Invite your team when you are ready.",
+    primary: sectionLink("Start free", "#start"),
+    secondary: sectionLink("Talk to sales", "#sales"),
+  },
+  recordCards: {
+    records: [
+      { id: "brand", title: "Brand refresh", description: "New marks, colour and type for the spring launch.", href: "#brand", badge: { label: "Active", variant: "success" }, meta: "Updated 2 days ago" },
+      { id: "docs", title: "Docs site", description: "Guides and reference for the public API.", href: "#docs", badge: { label: "Review", variant: "warning" }, meta: "Updated today" },
+      { id: "billing", title: "Billing portal", description: "Self-serve plans and invoices.", href: "#billing", meta: "Updated last week" },
+    ],
+  } satisfies Pick<RecordCardsProps, "records">,
+  consentBanner: {
+    title: "Cookies on this site",
+    body: "We use analytics cookies to understand how the site is used. You can change your choice at any time.",
+    acceptLabel: "Accept analytics",
+    rejectLabel: "Reject analytics",
+    privacy: sectionLink("Privacy policy", "#privacy"),
+  },
+  errorState: {
+    code: "Error 503",
+    title: "This page did not load",
+    description: "The service is busy. Your work is saved; try again in a moment.",
+    retryLabel: "Try again",
+    report: sectionLink("Check service status", "#status"),
+  },
+  gallery: {
+    label: "Workspace screens",
+    images: [
+      { id: "overview", label: "Workspace overview", caption: "Overview" },
+      { id: "editor", label: "Page editor", caption: "Editor" },
+      { id: "library", label: "Component library", caption: "Library" },
+    ],
+  },
+  noticeList: {
+    label: "Account notices",
+    notices: [
+      { id: "trial", tone: "warning", title: "Trial ends in 3 days.", message: "Choose a plan to keep your projects.", action: sectionLink("See plans", "#plans") },
+      { id: "export", tone: "success", message: "Your export is ready to download." },
+      { id: "maintenance", tone: "info", title: "Scheduled maintenance.", message: "Saving is paused on Sunday from 02:00 to 02:30 UTC.", dismissible: false },
+    ] satisfies readonly (Omit<NoticeListItem, "action"> & { action?: { label: string; href: string } })[],
+  },
+  statGroup: {
+    items: [
+      { id: "active", label: "Active users", value: "2,481", delta: "+12%", trend: "up", description: "vs. last 30 days" },
+      { id: "conversion", label: "Conversion", value: "3.4%", delta: "-0.2 pts", trend: "down", description: "vs. last 30 days" },
+      { id: "revenue", label: "Revenue", value: "$48.2k", delta: "+4%", trend: "up", description: "vs. last 30 days" },
+      { id: "churn", label: "Churn", value: "1.1%", delta: "0 pts", trend: "neutral", description: "vs. last 30 days" },
+    ],
+  } satisfies Pick<StatGroupProps, "items">,
+  /** Samples the blocks own beside their source, addressed here so every Section preview draws from this dataset. */
+  accessMatrix: accessMatrixSample,
+  activityFeed: activityFeedSample,
+  auditLog: auditLogSample,
+  columnMapper: columnMapperSample,
+  filterBuilder: filterBuilderSample,
+  formWizard: formWizardSample,
+  settingsSection: settingsSectionSample,
+  timeline: timelineSample,
+  usageSummary: usageSummarySample,
+} as const;
+
+/** A neutral geometric mark: the frame shows the host mark only as an image. */
+const SAMPLE_MARK = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Cpath fill='currentColor' d='M4 4h24v24H4z'/%3E%3C/svg%3E";
+
+/** Frame layer: the content every Studio-owned Frame preview renders. */
+const frames = {
+  /** vf34: the app sidebar frame (AppNavigation). */
+  appSidebar: {
+    label: "Workspace navigation",
+    activeId: "projects",
+    tree: [
+      { id: "workspace", label: "Workspace", children: [{ id: "projects", label: "Projects", href: "#projects" }, { id: "members", label: "Members", href: "#members" }] },
+      { id: "billing", label: "Billing", href: "#billing" },
+      { id: "settings", label: "Settings", href: "#settings" },
+    ],
+  } satisfies Pick<AppNavigationProps, "label" | "activeId" | "tree">,
+  app: {
+    markSrc: SAMPLE_MARK,
+    workspace: brandName,
+    navigationLabel: "Workspace navigation",
+    navigation: [
+      { id: "overview", label: "Overview", href: "#overview" },
+      { id: "projects", label: "Projects", href: "#projects", children: [{ id: "spring-launch", label: "Spring launch", href: "#spring-launch" }] },
+      { id: "reports", label: "Reports", href: "#reports" },
+    ] satisfies readonly AppNavigationNode[],
+    activeId: "overview",
+    page: "Overview",
+    actor: { name: people3[0].name, secondaryText: people3[0].role },
+    signedOutLabel: "Sign in",
+    accountSection: "Account",
+    accountSectionId: "account",
+    accountEntries: [{ id: "profile", kind: "link", label: "Profile", href: "#profile" }, { id: "preferences", kind: "link", label: "Preferences", href: "#preferences" }] satisfies readonly AccountMenuLink[],
+    commands: { ...command, triggerLabel: "Search commands" },
+    heading: "Next milestone",
+    body: "Review the spring launch pages before Friday's planning session.",
+  },
+  inspector: {
+    label: "Details", handleLabel: "Resize details", closeLabel: "Close details", openLabel: "Show details",
+    min: 220, max: 420, defaultValue: 280,
+    body: "Selected: Hero heading",
+  },
+  siteHeader: { brand: brandName, nav: sectionLink("Product", "#product") },
+  siteFooter: { body: `${brandName}, sample footer` },
+} as const;
 
 export const specimenDataset = {
   seed: SPECIMEN_DATASET_SEED,
@@ -108,7 +539,11 @@ export const specimenDataset = {
   assets: {
     mark: { slot: "assets.mark", member: "positive", name: brandName, svg: brandMark, src: `data:image/svg+xml,${encodeURIComponent(brandMark)}` },
     glyph: { slot: "assets.icon-file-text", glyph: FileText as IconNode },
+    ...assetSamples,
   },
+  tokens,
+  sections,
+  frames,
   logo: { src: `data:image/svg+xml,${encodeURIComponent(brandMark)}`, size: "md", title: brandName } satisfies LogomarkProps,
   icon: { glyph: FileText as IconNode, label: "Document" },
   table: {
@@ -127,7 +562,7 @@ export const specimenDataset = {
   /** One toast per variant, for a toast region that takes a queue. */
   toasts: {
     info: { title: "Sync scheduled", description: "Changes publish at the top of the hour." },
-    success: { title: "Order shipped", description: "Order #1001 left the warehouse." },
+    success: { title: "Order shipped", description: "Order ORD-1001 left the warehouse." },
     warning: { title: "Storage nearly full", description: "4.6 of 5 GB is in use." },
     danger: { title: "Payment failed", description: "The card on file was declined." },
   },
@@ -136,7 +571,7 @@ export const specimenDataset = {
   dialog: {
     trigger: "Open details",
     title: "Order details",
-    body: "Order #1001 ships in two days.",
+    body: "Order ORD-1001 ships in two days.",
     actions: [{ id: "cancel", label: "Cancel" }, { id: "confirm", label: "Save changes" }],
   },
   popover: { trigger: "Show info", label: "Order info", content: "Updated two days ago." },
@@ -146,11 +581,11 @@ export const specimenDataset = {
   combobox: { label: "Assignee", placeholder: "Search people", options: assignees },
   list: { label: "Saved notes", items: [{ id: "plan", label: "Planning note" }, { id: "review", label: "Review checklist" }, { id: "launch", label: "Launch plan" }] },
   radio: { label: "Billing plan", defaultValue: "monthly", items: [{ id: "monthly", label: "Monthly" }, { id: "yearly", label: "Yearly" }] },
-  tabs: { label: "Order sections", items: [{ id: "summary", label: "Summary", content: "Summary of order #1001." }, { id: "activity", label: "Activity", content: "Shipped by Bram Osei." }] },
+  tabs: { label: "Order sections", items: [{ id: "summary", label: "Summary", content: "Summary of order ORD-1001." }, { id: "activity", label: "Activity", content: "Shipped by Bram Osei." }] },
   tags: { label: "Labels", items: [{ id: "urgent", label: "Urgent" }, { id: "gift", label: "Gift" }, { id: "wholesale", label: "Wholesale" }] },
   toggles: { label: "Alignment", items: [{ id: "left", label: "Left" }, { id: "center", label: "Center" }, { id: "right", label: "Right" }], defaultSelectedKeys: ["left"] },
   toolbar: { label: "Formatting", items: [{ id: "bold", label: "Bold" }, { id: "italic", label: "Italic" }] },
-  breadcrumbs: { items: [{ id: "home", label: "Home", href: "#home" }, { id: "orders", label: "Orders", href: "#orders" }, { id: "current", label: "Order #1001" }] },
+  breadcrumbs: { items: [{ id: "home", label: "Home", href: "#home" }, { id: "orders", label: "Orders", href: "#orders" }, { id: "current", label: "Order ORD-1001" }] },
   navigation: { label: "Sections", items: [{ id: "overview", label: "Overview", href: "#overview" }, { id: "settings", label: "Settings", href: "#settings" }] },
   tree: {
     label: "Files",
@@ -161,7 +596,7 @@ export const specimenDataset = {
     defaultExpandedKeys: ["docs"],
   },
   disclosure: { items: [{ id: "shipping", label: "Shipping", content: "Ships in two days." }, { id: "returns", label: "Returns", content: "Returns within thirty days." }] },
-  card: { title: "Order #1001", content: "Three items, shipped to Ada Park." },
+  card: { title: "Order ORD-1001", content: "Three items, shipped to Ada Park." },
   text: {
     action: "Save changes",
     badge: "New",
@@ -193,7 +628,7 @@ export const specimenDataset = {
   separator: { orientation: "horizontal" as const },
   semantic: { as: "p" as const },
   nativeAction: { type: "button" as const },
-  color: { label: "Accent color", defaultValue: "hsl(215, 65%, 50%)", swatches: ["hsl(215, 65%, 50%)", "hsl(155, 55%, 40%)", "hsl(30, 75%, 55%)"] },
+  color: { label: "Chart color", defaultValue: chartSwatches[0]!, swatches: chartSwatches },
   charts: {
     area: { title: "Weekly visits", x: MONTHS.slice(0, 4), series: [{ name: "Visits", values: visits }, { name: "Returns", values: returns }] },
     bar: { title: "Orders by region", categories: ["North", "South", "East"], series: [{ name: "Orders", values: series(3, 6, 20) }] },

@@ -11,6 +11,7 @@ import { scanProvenance } from "../../catalog-core/provenance-scan.js";
 import { checkWiring } from "../../catalog-core/wiring.js";
 import { GROUP_A_CONTENT, GROUP_A_LEAVES, GROUP_A_MEMBERS, groupASectionInput, type GroupAFillDocument, type GroupALeaf } from "./group-a-dataset.js";
 import { GROUP_A_SECTION_INPUTS, GROUP_A_SECTION_RENDERERS } from "./group-a.js";
+import { specimenDataset } from "../../studio/specimen-dataset.js";
 
 const here = dirname(fileURLToPath(import.meta.url));
 const fill = (leaf: GroupALeaf): GroupAFillDocument => JSON.parse(readFileSync(resolve(here, `../../catalog/fills/foundry/sections.${leaf}.json`), "utf8")) as GroupAFillDocument;
@@ -47,7 +48,7 @@ const ROLES: Readonly<Record<GroupALeaf, (view: ReturnType<typeof within>, conta
   band: view => { expect(view.getByText("Sync scheduled")).toBeInTheDocument(); },
   "call-to-action": view => { expect(view.getByRole("heading", { name: "Order details" })).toBeInTheDocument(); expect(view.getByRole("link", { name: "View order" })).toHaveAttribute("href", "#order-1001"); expect(view.getByRole("link", { name: "Orders" })).toBeInTheDocument(); },
   comparison: view => { expect(view.getByRole("table")).toBeInTheDocument(); expect(view.getAllByRole("columnheader").map(cell => cell.textContent)).toEqual(expect.arrayContaining([expect.stringContaining("Monthly"), expect.stringContaining("Yearly")])); expect(view.getByRole("rowheader", { name: /Urgent/ })).toBeInTheDocument(); },
-  content: view => { expect(view.getByRole("heading", { name: "Order #1001" })).toBeInTheDocument(); expect(view.getByRole("link", { name: "View order" })).toBeInTheDocument(); expect(view.getAllByText("Response time").length).toBeGreaterThan(0); },
+  content: view => { expect(view.getByRole("heading", { name: specimenDataset.card.title })).toBeInTheDocument(); expect(view.getByRole("link", { name: "View order" })).toBeInTheDocument(); expect(view.getAllByText("Response time").length).toBeGreaterThan(0); },
   faq: view => { expect(view.getByRole("button", { name: "Shipping" })).toHaveAttribute("aria-expanded", "false"); expect(view.getByRole("button", { name: "Returns" })).toBeInTheDocument(); },
   features: view => { for (const name of ["Sync scheduled", "Order shipped", "Storage nearly full"]) expect(view.getByText(name)).toBeInTheDocument(); },
   gallery: view => { expect(view.getAllByRole("button").length).toBe(3); expect(view.getAllByText("Orders by region").length).toBeGreaterThan(0); },

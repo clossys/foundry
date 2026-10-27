@@ -27,7 +27,10 @@ it("ships a small, licence-free image: under 30 KB, no text, no external raster,
 it("fills every image-ratio specimen frame with the fixture, cropped to cover that ratio", () => {
   for (const [width, height] of [[3, 2], [1, 1], [9, 16]] as const) {
     const { container, unmount } = render(<RatioSpecimen width={width} height={height} />);
-    const frame = [...container.querySelectorAll<HTMLElement>("*")].find(element => element.style.aspectRatio.replace(/\s/g, "") === `${width}/${height}`)!;
+    const root = container.querySelector<HTMLElement>("[data-specimen-override]")!;
+    expect(root.style.getPropertyValue("--studio-specimen-value").replace(/\s/g, "")).toBe(`${width}/${height}`);
+    const frame = root.querySelector<HTMLElement>("[data-ratio-frame]")!;
+    expect(frame.classList).toContain("aspect-(--studio-specimen-value)");
     const image = frame.querySelector("svg[data-ratio-fixture]")!;
     expect(image.getAttribute("preserveAspectRatio")).toBe("xMidYMid slice");
     expect(image.querySelectorAll("path")).toHaveLength(4);

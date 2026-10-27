@@ -79,9 +79,17 @@ function resolveSelection(input: EngineInput, { chosen, notices }: { chosen: Rec
   return { version: 1, consumer: input.library.source.id, selectionHash: profileHash(input.library), members, notices, ...(input.library.baseline ? { baseline: input.library.baseline } : {}) };
 }
 function profileHash(library: LibraryData): string {
-  let hash = 0xcbf29ce484222325n;
   const ordered = { ...library, fills: [...library.fills].sort((a,b) => compare(metaOf(a).id,metaOf(b).id)) };
-  for (const byte of new TextEncoder().encode(stableStringify(ordered))) hash = BigInt.asUintN(64, (hash ^ BigInt(byte)) * 0x100000001b3n);
-  return `fnv1a64:${hash.toString(16).padStart(16,"0")}`;
+  const bytes = new TextEncoder().encode(stableStringify(ordered));
+  // FNV-1a 64 in four 16-bit limbs (h3 most significant): per byte, hash = (hash ^ byte) * 0x100000001b3 mod 2^64.
+  // The prime is 2^40 + 0x1b3, so the product is hash * 0x1b3 plus hash shifted by 40 bits (limb 2, << 8).
+  let h0 = 0x2325, h1 = 0x8422, h2 = 0x9ce4, h3 = 0xcbf2;
+  for (let index = 0; index < bytes.length; index++) {
+    h0 ^= bytes[index]!;
+    const t0 = h0 * 0x1b3, t1 = h1 * 0x1b3 + (t0 >>> 16), t2 = h2 * 0x1b3 + (h0 << 8) + (t1 >>> 16), t3 = h3 * 0x1b3 + (h1 << 8) + (t2 >>> 16);
+    h0 = t0 & 0xffff; h1 = t1 & 0xffff; h2 = t2 & 0xffff; h3 = t3 & 0xffff;
+  }
+  const limb = (word: number) => word.toString(16).padStart(4, "0");
+  return `fnv1a64:${limb(h3)}${limb(h2)}${limb(h1)}${limb(h0)}`;
 }
 export { profileHash as libraryHash };
