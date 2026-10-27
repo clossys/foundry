@@ -163,6 +163,8 @@ describe("pack check: shadcn@aria materialized sources persist through the real 
   // Later closure findings (third-party inventories, glyph provider, import syntax) are measured elsewhere.
   const OWNERSHIP_REFUSAL = /components: (?:generated entrypoint conflicts with materialized source|wildcard (?:source )?exports)/;
   // The import-grammar refusals on valid source: a namespace import of an observed package, or a trailing comma.
+  // A sibling's sub-parts are not in the emitter-owned leaf entrypoint, which exports only the contract component.
+  const CROSS_LEAF_REFUSAL = /components: (?:unavailable named import \w+|missing import) from \.\.\/[a-z-]+\/index\.js/;
   const IMPORT_GRAMMAR_REFUSAL = /components: (?:unsupported import syntax|unverified import syntax|unavailable named import {2}from)/;
   const refusal = (docs: readonly ComponentCandidateDocument[]): string => { try { persistTogether(docs); return ""; } catch (error) { return (error as Error).message; } };
   it("materializes no emitter-owned leaf entrypoint and no wildcard re-export", () => {
@@ -175,6 +177,16 @@ describe("pack check: shadcn@aria materialized sources persist through the real 
   });
   it("all 26 fills persisted together hit no entrypoint-ownership refusal", () => {
     expect(refusal([...shadcn, icon])).not.toMatch(OWNERSHIP_REFUSAL);
+  });
+  it("materialized sources take only a sibling's contract name from its emitter-owned entrypoint", () => {
+    const contract = (leaf: string) => leaf.split("-").map(word => word[0]!.toUpperCase() + word.slice(1)).join("");
+    const edges = [...materialized.values()].flat().flatMap(file => [...file.content.matchAll(/\bimport\s+(?:type\s+)?\{([^}]*)\}\s*from\s*"(?:\.\.\/)+([a-z][a-z0-9-]*)\/index\.js"/g)]
+      .filter(match => match[2] !== "icon" && match[2] !== "_parts")
+      .flatMap(match => match[1]!.split(",").map(name => name.trim()).filter(Boolean).filter(name => name !== contract(match[2]!)).map(name => `${file.path} -> ${match[2]}#${name}`)));
+    expect(edges).toEqual([]);
+  });
+  it("all 26 fills persisted together hit no cross-leaf sub-part refusal", () => {
+    expect(refusal([...shadcn, icon])).not.toMatch(CROSS_LEAF_REFUSAL);
   });
   it("all 26 fills persisted together hit no import-grammar refusal", () => {
     expect(refusal([...shadcn, icon])).not.toMatch(IMPORT_GRAMMAR_REFUSAL);
