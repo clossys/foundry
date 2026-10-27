@@ -55,9 +55,10 @@ export function assertComponentImportClosure(files: readonly ComponentFile[], pa
       return "";
     });
     if (/\b(?:import|require)\s*\(/.test(code) || /\bimport\s+(?!type\s*\{|\{)[^;\n]*\bfrom\b/.test(code) || /\bimport\s*["']/.test(code)) throw new CatalogError(`components: unsupported import syntax in ${file.path}`);
-    for (const match of code.matchAll(/\b(?:import|export)\s+(?:type\s+)?\{([^}]+)\}\s*from\s*["']([^"']+)["']/g)) {
-      const specifier = match[2]!;
+    for (const match of code.matchAll(/\b(?:import|export)\s+(type\s+)?\{([^}]+)\}\s*from\s*["']([^"']+)["']/g)) {
+      const specifier = match[3]!, typeOnlyStatement = match[1] !== undefined;
       let names: readonly string[];
+      let listed = true;
       if (specifier.startsWith(".")) {
         const path = targetPath(file.path, specifier, paths);
         if (!path) throw new CatalogError(`components: missing import ${specifier}`);
@@ -65,11 +66,16 @@ export function assertComponentImportClosure(files: readonly ComponentFile[], pa
       } else {
         assertPackageSpecifier(specifier);
         names = packageExports[specifier] ?? [];
+        listed = Object.hasOwn(packageExports, specifier);
       }
       // One trailing comma closes a multi-line list in valid source; any other empty binding is refused.
-      for (const binding of match[1]!.replace(/,\s*$/, "").split(",")) {
+      for (const binding of match[2]!.replace(/,\s*$/, "").split(",")) {
+        const typeOnly = typeOnlyStatement || /^\s*type\s+/.test(binding);
         const imported = binding.trim().replace(/^type\s+/, "").split(/\s+as\s+/)[0];
-        if (!imported || !/^[A-Za-z_$][\w$]*$/.test(imported) || !names.includes(imported)) throw new CatalogError(`components: unavailable named import ${imported} from ${specifier}`);
+        // A package type binding is erased at compile time and checked by the compiler, so a runtime
+        // inventory cannot hold it; the package itself must still be observed. Value bindings stay closed.
+        const available = typeOnly && !specifier.startsWith(".") ? listed : names.includes(imported ?? "");
+        if (!imported || !/^[A-Za-z_$][\w$]*$/.test(imported) || !available) throw new CatalogError(`components: unavailable named import ${imported} from ${specifier}`);
       }
     }
     if (/\bexport\s*\*/.test(code)) throw new CatalogError("components: wildcard source exports are unsupported");
