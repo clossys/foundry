@@ -400,7 +400,8 @@ export function CanvasSurface(props: CanvasSurfaceProps) {
     if (flowing) return;
     suppressClick.current = false;
     const target = event.target as Element;
-    if (itemInteraction === "content" && target.closest("button, a, [role=radio], [role=tab]")) return;
+    // An actionable row (a board's L3 row, whose press opens the inspector) keeps its pointer like a button.
+    if (itemInteraction === "content" && target.closest("button, a, [role=radio], [role=tab], [role=row][data-react-aria-pressable]")) return;
     if (event.button !== 0 || target.closest("[data-canvas-controls], [data-canvas-minimap], [data-canvas-panel], input, textarea, select, a, [contenteditable]:not([contenteditable=false])") ||
       (target.closest("button") && !target.closest("[data-canvas-item]"))) return;
     const onItem = !!target.closest("[data-canvas-item]");

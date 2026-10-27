@@ -44,8 +44,11 @@ it("draws the live library board from board records and the comparison Section h
   expect(screen.getByRole("region", { name: "Icons" })).toHaveAttribute("data-library-board", "assets/icons");
   expect(screen.getByRole("row", { name: /Search/ })).toBeInTheDocument();
   expect(screen.queryByText(labels.previewUnavailable)).toBeNull();
-  await userEvent.click(screen.getByRole("button", { name: labels.board.changeSelection }));
-  expect(onCommand).toHaveBeenCalledWith({ version: 1, command: "board-edit", boardId: "assets/icons" });
+  // DESIGNER-RO (converted from the gear's board-edit command): the board has no edit control; selecting a row
+  // through the host port emits reveal, the only command.
+  expect(screen.queryByRole("button", { name: labels.board.changeSelection })).toBeNull();
+  await userEvent.click(screen.getByRole("row", { name: /Search/ }));
+  expect(onCommand.mock.calls).toEqual([[{ version: 1, command: "reveal", boardId: "assets/icons", leafId: "assets.icon-search", source: "lucide" }]]);
 });
 
 it("refuses the board without its port, with stray content or malformed records; other arrangements keep the grid", () => {

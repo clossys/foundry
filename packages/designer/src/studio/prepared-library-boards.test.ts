@@ -93,7 +93,8 @@ it('keeps composite records available with a named pending preview and preserves
   expect(prepared.previews).toMatchObject({ status: 'pending', code: 'SOURCE_HASH_ASSOCIATION_UNAVAILABLE' });
   expect(prepared.records.rows.items.map(row => row.id)).toEqual(['components.button']);
   expect(prepared.records.controls).toEqual({ version: 1, mode: 'view', canSave: false, pending: true });
-  expect(prepared.changeFor({ version: 1, command: 'use-source', boardId: prepared.records.rows.boardId, leafId: 'components.button', source: 'test-kit' })).toBeUndefined();
+  // DESIGNER-RO (converted): a prepared board exposes no change port at all (row 16), not one that answers undefined.
+  expect('changeFor' in prepared).toBe(false);
   expect(runtimeHash(input.library)).toBe(before);
 });
 
@@ -136,6 +137,7 @@ it('does not evaluate alternative proposals in view mode and evaluates them only
     expect(blocked.usable).toBe(false); expect(blocked.previewIdentity).toBeUndefined();
     expect(blocked.findings).toContainEqual({ code: 'K5', severity: 'error', message: 'Accessibility evidence is stale for source or consumer tokens' });
     expect(blocked.findings).toContainEqual({ code: 'K6', severity: 'error', message: 'Contrast evidence is stale for source or consumer tokens' });
-    expect(legacy.changeFor({ version: 1, command: 'use-source', boardId: options.board.id, leafId: 'components.button', source: 'shadcn@aria' })).toBeUndefined();
+    // DESIGNER-RO (converted): a blocked candidate has no change port to refuse (row 16).
+    expect('changeFor' in legacy).toBe(false);
   } finally { preview.mockRestore(); }
 });

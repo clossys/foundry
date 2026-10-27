@@ -1,8 +1,8 @@
 /** Adopted package-pointer Sections and Frames on the Studio board: the real export with sample content, never "preview unavailable". */
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
-import { cleanup, screen, waitFor, within } from "@testing-library/react";
+import { cleanup, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { render } from "./__fixtures__/frame.js";
+import { render, studioReady } from "./__fixtures__/frame.js";
 import { labels } from "./__fixtures__/studio.js";
 import { packageSurfaceLibrary, type PackageSurfaceLibrary } from "../library-cli/__fixtures__/package-surface-library.js";
 import { planSurfaceDefaults, type SurfaceDefaultCandidateDocument, type SurfaceDefaultsInput } from "../catalog-core/index.js";
@@ -10,7 +10,7 @@ import { planSurfacePreviews } from "./planned-surface-previews.js";
 import { specimenDataset } from "./specimen-dataset.js";
 import { Studio as StudioView, StudioHeader, StudioRightPanel } from "./index.js";
 import { WholeStudioProvider } from "./WholeStudioProvider.js";
-import { boardItem, boardOf, boardRow } from "./__fixtures__/library-board-dom.js";
+import { boardRow } from "./__fixtures__/library-board-dom.js";
 import type { CompositeStudioLabels, CompositeStudioSnapshot } from "./types.js";
 
 const wholeLabels: CompositeStudioLabels = { ...labels, whole: { signoff: "W-signoff", proposed: "W-proposed", contract: "W-contract", contentSlots: "W-slots", configurations: "W-config", unresolved: "W-unresolved", unassessed: "W-unassessed" } };
@@ -40,9 +40,9 @@ function mount(preview: CompositeStudioSnapshot["preview"], samples: Parameters<
   render(<WholeStudioProvider adapter={{ kind: "composite", catalog: fixture.catalog, load, save: async () => ({ ok: false, reason: "unavailable" }) }} labels={wholeLabels} initialSlotId="sections.faq"><StudioHeader /><StudioView header="external" /><StudioRightPanel /></WholeStudioProvider>);
 }
 const row = (slot: string) => boardRow(slot) ?? null;
-/** "L-saved" shows once the library loads; the boards mount after the composite profile evaluates. */
+/** The library has loaded (DESIGNER-RO: no save status any more); the boards mount after the composite profile evaluates. */
 async function loaded() {
-  await screen.findByText("L-saved");
+  await studioReady();
   await waitFor(() => expect(document.querySelector("section[data-library-board]")).not.toBeNull());
 }
 
@@ -73,7 +73,7 @@ describe("adopted package-pointer surfaces on the Studio board", { timeout: 120_
 
   it("previews sections.data-grid through its own leaf, not the data-table preview that shares its export", async () => {
     mount(() => undefined);
-    await screen.findByText("L-saved");
+    await loaded();
     // data-grid and data-table both point at ./blocks#DataTable; a preview keyed by that export draws the wrong leaf.
     const grid = row("sections.data-grid")!;
     expect(grid.querySelector('[data-ds-leaf="sections.data-grid"]')).not.toBeNull();
@@ -94,16 +94,8 @@ describe("adopted package-pointer surfaces on the Studio board", { timeout: 120_
     expect(row("frames.sheet")).toHaveTextContent(specimenDataset.frames.sheet.trigger);
   });
 
-  it("previews adopted package leaves in the board's choosing view as well", async () => {
-    const user = userEvent.setup();
-    mount(() => undefined);
-    await loaded();
-    const board = boardOf("sections.data-table")!;
-    await user.click(within(board).getByRole("button", { name: labels.board.changeSelection }));
-    const editing = boardItem("sections.data-table", document.querySelector<HTMLElement>('section[data-library-board][data-board-mode="edit"]')!);
-    expect(editing).toBeDefined();
-    expect(editing).toHaveTextContent(specimenDataset.sections.dataTable.rows[1]!.customer);
-  });
+  // DESIGNER-RO: "previews adopted package leaves in the board's choosing view as well" was deleted: the choosing (edit)
+  // board and its gear are removed (inventory rows 2, 8-9); the view board previews above cover adopted package leaves.
 
   it("vf35: renders adopted package leaves in the host's requested sample state and names it on the cell", async () => {
     mount(() => undefined, HOST_SAMPLES, "empty");

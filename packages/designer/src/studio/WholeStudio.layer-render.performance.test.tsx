@@ -6,7 +6,7 @@
  */
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 import { act, cleanup, fireEvent, screen, waitFor } from "@testing-library/react";
-import { render } from "./__fixtures__/frame.js";
+import { render, studioReady } from "./__fixtures__/frame.js";
 import { labels } from "./__fixtures__/studio.js";
 import { packageSurfaceLibrary, type PackageSurfaceLibrary } from "../library-cli/__fixtures__/package-surface-library.js";
 import { Studio as StudioView, StudioHeader, StudioRightPanel } from "./index.js";
@@ -62,7 +62,7 @@ async function traverse(): Promise<{ stamps: Stamp[]; resolves: number }> {
 describe("filled Studio per-layer render cost", { timeout: 180_000 }, () => {
   it("switches to each of the five layers within its time, element and resolve budget", async () => {
     mount();
-    await screen.findByText("L-saved", undefined, { timeout: 60_000 });
+    await studioReady(60_000);
     await waitFor(() => expect(document.querySelector("section[data-library-board]")).not.toBeNull(), { timeout: 60_000 });
     // The first pass mounts each layer's modules cold; the second is the steady state a designer switches in.
     const cold = await traverse(), warm = await traverse();

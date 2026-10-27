@@ -7,13 +7,12 @@ import { CanvasExplorer } from "./CanvasExplorer.js";
 import { CanvasModules } from "./CanvasModules.js";
 import { SlotModule } from "../shell/FrameSlots.js";
 import { cx } from "../components/internal/cx.js";
-import { EditFeedback } from "./EditFeedback.js";
 import { AssetExemptions } from "./AssetExemptions.js";
 import { boardMatches, canvasDomains, type CanvasFilter } from "./canvas-model.js";
 import { CanvasSurface } from "../blocks/canvas/CanvasSurface.js";
 import { CanvasLod } from "../blocks/canvas/CanvasLod.js";
 import { CanvasBoards, canvasPreviewPort, canvasSourceDigests } from "./canvas-boards.js";
-import { prepareValueLibraryBoard } from "./prepared-library-boards.js";
+import { prepareValueLibraryBoard, valueBoardPrompt } from "./prepared-library-boards.js";
 import { runtimeHash } from "../catalog-core/runtime-ports.js";
 import type { LibraryBoardCommand } from "../blocks/library-board/model.js";
 import { useCanvasWorld } from "./useCanvasWorld.js";
@@ -33,7 +32,6 @@ export function LegacyStudioCanvas({ panelInsets, className, candidateWorkflow }
   const state = useStudioSession(); const latest = useRef(state); latest.current = state;
   const [query, setQuery] = useState(""); const [filter, setFilter] = useState<CanvasFilter>("all");
   const [explorerOpen, setExplorerOpen] = useState(true); const [inspectorOpen, setInspectorOpen] = useState(false);
-  const [editing, setEditing] = useState<ReadonlySet<string>>(new Set());
   const text = state.labels.canvas; const enabled = Boolean(state.ready);
   // The frame owns transient chrome: a failed load is a frame notice, never a canvas-local banner.
   useFrameNotice(state.phase.status === "error" ? { id: "studio-load-failed", severity: "error", text: state.labels.loadFailed } : null);
@@ -71,38 +69,28 @@ export function LegacyStudioCanvas({ panelInsets, className, candidateWorkflow }
   const selectionHash = useMemo(() => state.resolved?.selectionHash ?? (state.working ? runtimeHash(state.working) : undefined), [state.resolved, state.working]);
   const boards = useMemo(() => state.working && state.pending && selectionHash ? domains.flatMap(domain => domain.boards.map(board => {
     const prepared = prepareValueLibraryBoard({ layer: state.layer, board, sources: state.catalog.sources, consumerSource: state.working!.source.id, selectionHash, sourceHashes: digests.get(board.id),
-      mode: editing.has(board.id) ? "edit" : "view", canSave: true, pending: false, labels: state.labels, workflow: candidateWorkflow, contextTokens, variants });
+      mode: "view", canSave: false, pending: false, labels: state.labels, workflow: candidateWorkflow, contextTokens, variants });
     const matches = boardMatches({ board, domain: domain.label, query, filter, working: state.working!, changes: state.pending!, groupChoices: state.groupChoices, warnings: warnings.get(board.id) ?? 0 });
     return { id: board.id, domain: domain.id, hidden: !matches, records: prepared.records, previews: canvasPreviewPort(prepared.previews) };
-  })) : [], [domains, digests, selectionHash, editing, query, filter, warnings, state.working, state.pending, state.layer, state.catalog.sources, state.labels, state.groupChoices, candidateWorkflow, contextTokens, variants]);
-  // A board open for editing evaluates every one of its rows, so its choice matrix offers each source.
-  const setEditRows = state.setEditRows;
-  useEffect(() => {
-    const ids = new Set(state.boards.filter(board => editing.has(board.id)).flatMap(board => board.rows.filter(row => row.scope === "slot").map(row => row.id)));
-    setEditRows(current => current.size === ids.size && [...current].every(id => ids.has(id)) ? current : ids);
-  }, [setEditRows, state.boards, editing]);
+  })) : [], [domains, digests, selectionHash, query, filter, warnings, state.working, state.pending, state.layer, state.catalog.sources, state.labels, state.groupChoices, candidateWorkflow, contextTokens, variants]);
+  // Reveal is the board's only command: it focuses the row's chosen cell (else its first candidate) so the
+  // inspector shows it. Nothing writes.
   const command = useCallback((input: LibraryBoardCommand) => {
-    const current = latest.current, board = current.boards.find(board => board.id === input.boardId);
-    if (!board) return;
-    if (!("leafId" in input)) {
-      const entering = input.command === "board-edit";
-      setEditing(previous => { const next = new Set(previous); if (entering) next.add(board.id); else next.delete(board.id); return next; });
-      return;
-    }
-    const { command, leafId, source } = input;
-    const row = board.rows.find(row => row.id === leafId);
-    if (!row) return;
-    if (command === "use-source") current.use(row, source);
-    else {
-      // A source column reveals its own cell; the Custom column (no candidate of its own, the only column a
-      // token board has) reveals the row's chosen candidate, so every row can reach the inspector.
-      const candidate = row.candidates.find(candidate => candidate.source === source) ?? row.candidates.find(candidate => candidate.selected) ?? row.candidates[0];
-      if (candidate) focusCell(row, candidate);
-    }
+    if (input.command !== "reveal") return;
+    const row = latest.current.boards.find(board => board.id === input.boardId)?.rows.find(row => row.id === input.leafId);
+    const candidate = row?.candidates.find(candidate => candidate.source === input.source) ?? row?.candidates.find(candidate => candidate.selected) ?? row?.candidates[0];
+    if (row && candidate) { focusCell(row, candidate); return; }
+    // A row not yet evaluated (off-screen until now): demand it; the inspector shows its chosen, else default, else first candidate.
+    const current = latest.current; current.setSlotId(input.leafId); current.requestRow(input.leafId); current.setFocusedCell({ row: input.leafId }); setInspectorOpen(true);
   }, [focusCell]);
+  const focusedBoard = state.focusedRow ? state.boards.find(board => board.rows.includes(state.focusedRow!)) : undefined;
+  const prompts = useMemo(() => {
+    if (!focusedBoard || !state.focusedRow || !state.working) return undefined;
+    const input = { board: focusedBoard, row: state.focusedRow, consumer: state.working.source.id, contextTokens, variants, workflow: candidateWorkflow, returnStep: state.labels.board.returnStep };
+    return { create: valueBoardPrompt(input), ...(state.focusedRow.candidates.some(candidate => candidate.selected) ? { refresh: valueBoardPrompt(input, true) } : {}), ...(candidateWorkflow ? { workflow: candidateWorkflow } : {}) };
+  }, [focusedBoard, state.focusedRow, state.working, contextTokens, variants, candidateWorkflow, state.labels.board.returnStep]);
   return <div data-studio="" data-layout={narrow ? "narrow" : "wide"} data-studio-canvas="" data-frame-bleed="" className={cx("relative isolate h-full w-full min-h-0 min-w-0 flex-1 overflow-hidden bg-surface-raised text-ink-primary", className)}>
     {state.layer === "assets" && state.summary ? <AssetExemptions findings={state.summary.issues.map(issue => issue.finding)} label={state.labels.assetExemption} /> : null}
-    {state.livePreview && state.live?.css ? <style data-studio-preview="">{state.live.css}</style> : null}
     {state.ready ? <style data-studio-candidates="">{candidateStyles}</style> : null}
     {state.phase.status === "loading" ? <p role="status">{state.labels.loading}</p> : null}
 
@@ -116,8 +104,7 @@ export function LegacyStudioCanvas({ panelInsets, className, candidateWorkflow }
         <CanvasBoards boards={boards} labels={state.labels} workflow={candidateWorkflow} onCommand={command} onBoardElement={registerBoard} onRowElement={registerRow} />
     </CanvasSurface></CanvasLod>
     {state.focused && state.focusedRow ? <SlotModule id="value-inspector" slot="right-panel" label={state.labels.inspectorLabel}><aside data-studio-panel="inspector" aria-label={state.labels.inspectorLabel} className="p-md">
-      {state.autosave ? <EditFeedback leaf={state.focused.fill.slot} state={state.autosave} labels={state.labels} /> : null}
-      <Inspector candidate={state.focused} labels={state.labels} canReset={state.canReset} resolved={state.resolved} tier={(() => { const contract = state.catalog.slots.find(slot => slot.id === state.focused?.fill.slot)?.contract; return contract?.kind === "token" ? contract.tier : undefined; })()} onReset={state.reset} />
+      <Inspector candidate={state.focused} labels={state.labels} resolved={state.resolved} tier={(() => { const contract = state.catalog.slots.find(slot => slot.id === state.focused?.fill.slot)?.contract; return contract?.kind === "token" ? contract.tier : undefined; })()} {...(prompts ? { prompts } : {})} />
     </aside></SlotModule> : null}
     <CanvasModules canvas={canvas} labels={state.labels} explorer={<CanvasExplorer labels={state.labels} query={query} onQuery={setQuery} filter={filter} onFilter={setFilter}
       libraries={state.sources.map(id => { const board = state.boards.find(board => board.id === state.slotId || board.leaves.includes(state.slotId)); return { id, available: (board ? [board] : state.boards).some(board => board.rows.some(row => row.candidates.some(candidate => candidate.source === id && (candidate.fill.sourceAddress !== "" || candidate.members.length > 0)))) }; })}>

@@ -94,11 +94,11 @@ it("keeps checked current previews through delayed geometry and overview until e
   }
   expect(qualified.find(candidate => candidate.source === "fixture-complete")!.members.every(({ member }) => member.origin?.kind === "adopted" && member.origin.source === "fixture-complete")).toBe(true);
   const apply = vi.spyOn(studioEngine, "applyLibraryChange"), resolve = vi.spyOn(studioEngine, "resolve"), check = vi.spyOn(studioEngine, "check");
-  /** Fixture controls beside the real canvas: explicit row demand and a session source change. */
+  let useStudioSessionProbe: object | undefined;
+  /** Fixture controls beside the real canvas: explicit row demand. DESIGNER-RO: the session source change ("use fixture") is gone with `use` (row 4). */
   function Fixtures() {
-    const state = useStudioSession();
+    const state = useStudioSession(); useStudioSessionProbe = state;
     return <><button onClick={() => state.showRows(new Set(["tokens.surface-color"]))}>demand fixture</button>
-      <button onClick={() => { const row = state.rows.find(row => row.id === "tokens.surface-color"); if (row) state.use(row, "fixture-complete"); }}>use fixture</button>
       <output data-testid="measured-ready">{state.ready ? "measured ready" : "loading"}</output>
       <output data-testid="selected-ready">{String(state.rows.find(row => row.id === "tokens.surface-color")?.candidatesReady)}</output></>;
   }
@@ -114,8 +114,10 @@ it("keeps checked current previews through delayed geometry and overview until e
   fireEvent.click(screen.getByText("demand fixture"));
   expect(screen.getByTestId("selected-ready")).toHaveTextContent("true"); expect(apply).toHaveBeenCalledTimes(2);
   expect(preview()!.textContent).toBe(content);
-  // Token boards offer presets, not sources (Custom only on the library board), so the source change runs through the session.
-  fireEvent.click(screen.getByText("use fixture"));
+  // DESIGNER-RO (converted): the session can no longer change the source ("use" is removed, row 4), so the chosen
+  // foundry row keeps drawing every closed member and stays chosen; nothing is saved.
+  expect("use" in useStudioSessionProbe!).toBe(false);
   await waitFor(() => expect([...boardRow("tokens.surface-color")!.querySelectorAll<HTMLElement>("[data-candidate-variant]")].map(element => element.dataset.candidateVariant).sort()).toEqual(expectedMembers));
   expect(within(boardRow("tokens.surface-color")!).queryByText(labels.board.notChosen)).toBeNull();
+  expect(apply).toHaveBeenCalledTimes(2);
 });

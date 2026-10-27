@@ -2,7 +2,7 @@ import { afterEach, expect, it, vi } from "vitest";
 import { cleanup, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import type { ReactNode } from "react";
-import { render } from "./__fixtures__/frame.js";
+import { render, studioReady } from "./__fixtures__/frame.js";
 import * as components from "../components/index.js";
 import * as charts from "../charts/index.js";
 import * as shell from "../shell/index.js";
@@ -45,7 +45,7 @@ it("is the public studio entry", () => {
 it("host perspective: an adopted component library passed as modules renders every chosen component cell live", async () => {
   const specimens = componentSpecimenPreview({ modules: hostModules });
   const { profile } = hostStudio(specimens.preview);
-  await screen.findByText("L-saved");
+  await studioReady();
   const chosen = Object.keys(profile.components.components);
   expect(chosen).toEqual(["components.button"]);
   const cells = chosenCells();
@@ -70,7 +70,7 @@ it("host perspective: an adopted component library passed as modules renders eve
 it("a host without the library's modules keeps the chosen cell unavailable and bind() names the missing module", async () => {
   const specimens = componentSpecimenPreview({ modules: {} });
   const { profile } = hostStudio(specimens.preview);
-  await screen.findByText("L-saved");
+  await studioReady();
   const [only] = chosenCells();
   expect(only!.cell).toHaveAttribute("data-preview-state", "unavailable");
   expect(within(only!.cell).getByText(labels.previewUnavailable)).toBeVisible();
@@ -166,7 +166,7 @@ it("host perspective: a chosen cell whose every specimen throws reads unavailabl
   const errors = vi.spyOn(console, "error").mockImplementation(() => {});
   const Boom = () => { throw new Error("cannot draw"); };
   hostStudio(componentSpecimenPreview({ modules: { "@clossys/designer/components": { ...components, Button: Boom } } }).preview);
-  await screen.findByText("L-saved");
+  await studioReady();
   const [only] = chosenCells();
   await vi.waitFor(() => expect(only!.cell).toHaveAttribute("data-preview-state", "unavailable"));
   expect(only!.cell).toHaveAttribute("data-preview-reason", "specimen-error");

@@ -123,7 +123,8 @@ describe("keyboard focus stays inside the visible stage (VR1 studio-18)", () => 
     const surface = document.querySelector<HTMLElement>("[data-studio-viewport]")!;
     vi.spyOn(surface, "getBoundingClientRect").mockReturnValue(rect(0, 0, 800, 600));
     const board = document.querySelector<HTMLElement>("[data-studio-world] section[data-library-board]")!;
-    const control = board.querySelector<HTMLElement>("button")!;
+    // DESIGNER-RO (converted): the board's first control was the removed gear; take its first remaining keyboard stop.
+    const control = [...board.querySelectorAll<HTMLElement>('button, a[href], [role="grid"], [role="row"], [tabindex]')].find(node => node.tabIndex >= 0)!;
     vi.spyOn(control, "getBoundingClientRect").mockReturnValue(rect(100, 900, 28, 28));
     const before = pose();
     surface.scrollTop = 0;

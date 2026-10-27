@@ -1,10 +1,6 @@
 'use client';
 import type { HTMLAttributes, ReactNode } from 'react';
-import { Button } from '../../components/Button.js';
-import { IconButton } from '../../components/IconButton.js';
 import { Card, type CardGround } from '../../components/Card.js';
-import { Tooltip } from '../../components/Tooltip.js';
-import { Settings } from '../../icons/Settings.js';
 import { SectionHeader } from '../SectionHeader.js';
 import { CANVAS_COUNTER_SCALED_TITLE } from '../canvas/CanvasLod.js';
 
@@ -49,23 +45,16 @@ export interface BoardHeaderProps {
   /** Id for the heading text; the board section names itself with `aria-labelledby`. */
   readonly id: string;
   readonly title: ReactNode;
-  readonly editing: boolean;
-  readonly labels: { readonly changeSelection: string; readonly done: string };
-  readonly onEdit: () => void;
-  readonly onDone: () => void;
-  /** Optional board-level action, placed before the gear. */
+  /** Optional board-level action. */
   readonly action?: ReactNode;
 }
 
 /**
- * One board header on every Designer layer: heading, optional action, gear (or Done
- * while editing). The gear is the square small icon control (28px box, 44px hit area).
+ * One board header on every Designer layer: heading and optional action. The board is read-only; it has no
+ * edit mode, so there is no gear and no Done (a change is handed to a coding agent).
  */
-export function BoardHeader({ id, title, editing, labels, onEdit, onDone, action }: BoardHeaderProps) {
-  return <SectionHeader data-board-header="" title={<span id={id} data-canvas-title="" className={CANVAS_COUNTER_SCALED_TITLE}>{title}</span>} level={3} actions={<>
-    {action}
-    {editing ? <Button size="sm" data-studio-control="edit-mode" onPress={onDone}>{labels.done}</Button> : <Tooltip trigger={<IconButton size="sm" shape="square" icon={Settings} label={labels.changeSelection} data-studio-control="edit-mode" onPress={onEdit} />}>{labels.changeSelection}</Tooltip>}
-  </>} />;
+export function BoardHeader({ id, title, action }: BoardHeaderProps) {
+  return <SectionHeader data-board-header="" title={<span id={id} data-canvas-title="" className={CANVAS_COUNTER_SCALED_TITLE}>{title}</span>} level={3} {...(action ? { actions: action } : {})} />;
 }
 
 /**

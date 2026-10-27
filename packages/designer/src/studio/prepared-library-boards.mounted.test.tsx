@@ -4,7 +4,6 @@ import { WholeStudioProvider, useWholeStudio, useDesignerPreparedLibraryBoards, 
 import { useStudioSession } from './StudioProvider.js';
 import { adopt, smallCatalog, labels } from './__fixtures__/studio.js';
 import { deriveDesignerLayerBoardsV1, DESIGNER_LAYER_BOARDS_QUERY } from './designer-layer-boards.js';
-import { runtimeHash } from '../catalog-core/runtime-ports.js';
 import { loadBuildCatalog } from '../catalog-core/index.js';
 import type { CompositeStudioAdapter, CompositeStudioLabels } from './types.js';
 
@@ -21,14 +20,14 @@ function fixture() {
 }
 type Observed = { whole: NonNullable<ReturnType<typeof useWholeStudio>>; values: ReturnType<typeof useStudioSession>; prepared: ReturnType<typeof useDesignerPreparedLibraryBoards> };
 
-it('exposes original records without source hashes and preserves one session across Tokens, Assets and Tokens', async () => {
+/** DESIGNER-RO (converted): the session's edit/flush/undo/redo/retry are gone; the projection's session identity is what stays stable. */
+it('exposes original records without source hashes and preserves one session identity across Tokens, Assets and Tokens, with no write entry point', async () => {
   const f = fixture(); let observed!: Observed;
   const options: DesignerPreparedLibraryBoardOptions = { workflow: { returnStep: 'SYNTHETIC original host return' }, board: () => ({ mode: 'view', canSave: false, pending: false }) };
   function Probe() { observed = { whole: useWholeStudio()!, values: useStudioSession(), prepared: useDesignerPreparedLibraryBoards(options) }; return <output>{observed.prepared.status}</output>; }
   render(<WholeStudioProvider adapter={f.adapter} labels={f.wholeLabels}><Probe /></WholeStudioProvider>);
   await screen.findByText('prepared');
-  const session = observed.whole.session, identity = observed.prepared.projection.session.id;
-  const originals = { edit: session!.edit, flush: session!.flush, undo: session!.undo, redo: session!.redo, retry: session!.retry };
+  const identity = observed.prepared.projection.session.id;
   const check = (layer: 'tokens' | 'assets') => {
     const prepared = observed.prepared; expect(prepared.status).toBe('prepared');
     if (prepared.status !== 'prepared') throw new Error('Expected mounted records');
@@ -40,13 +39,14 @@ it('exposes original records without source hashes and preserves one session acr
     const result = deriveDesignerLayerBoardsV1({ query: DESIGNER_LAYER_BOARDS_QUERY, projection: prepared.projection, projectionHash: prepared.projectionHash, records: prepared.records,
       arrangement: { kind: 'lanes', groupKey: 'domain', gap: { x: 12, y: 8 }, laneGap: 20 }, stateSections: {} });
     expect(result.status).toBe('materialized');
-    expect(observed.whole.session).toBe(session); expect(observed.whole.snapshot?.runtime).toBeUndefined();
-    expect(observed.whole.sessionState?.edits).toEqual([]);
+    expect(prepared.projection.session.id).toBe(identity); expect(observed.whole.snapshot?.runtime).toBeUndefined();
+    expect(prepared.projection.session.edits).toEqual([]);
   };
   check('tokens');
   await act(async () => { await observed.whole.setLayer('assets'); }); check('assets');
   await act(async () => { await observed.whole.setLayer('tokens'); }); check('tokens');
-  expect({ edit: session!.edit, flush: session!.flush, undo: session!.undo, redo: session!.redo, retry: session!.retry }).toEqual(originals);
+  for (const key of ['session', 'sessionState', 'valueSession', 'edit', 'feedback', 'saving']) expect(key in observed.whole, key).toBe(false);
+  for (const key of ['apply', 'use', 'reset', 'canReset', 'generateStarter', 'adapter', 'live', 'saving']) expect(key in observed.values, key).toBe(false);
   expect(f.load).toHaveBeenCalledOnce(); expect(f.save).not.toHaveBeenCalled();
 });
 
@@ -63,46 +63,8 @@ it('does not infer omitted controller state, and exposes pending original loadin
   expect(observed).toMatchObject({ status: 'pending', code: 'DESIGNER_PROVIDER_UNAVAILABLE', boards: [] });
 });
 
-it('keeps failed original edits and history on the same session, with stale preview identities rejected', async () => {
-  const f = fixture(); let observed!: Observed;
-  const sourceHashes = { example: runtimeHash('SYNTHETIC source owner association') };
-  const options: DesignerPreparedLibraryBoardOptions = { board: () => ({ mode: 'view', canSave: false, pending: false, sourceHashes }) };
-  function Probe() { observed = { whole: useWholeStudio()!, values: useStudioSession(), prepared: useDesignerPreparedLibraryBoards(options) }; return <output>{observed.prepared.status}:{observed.whole.sessionState?.status}</output>; }
-  render(<WholeStudioProvider adapter={f.adapter} labels={f.wholeLabels}><Probe /></WholeStudioProvider>);
-  await screen.findByText('prepared:saved');
-  const session = observed.whole.session, before = observed.prepared;
-  if (before.status !== 'prepared') throw new Error('Expected original records');
-  const initialBoard = before.boards.find(board => board.records.rows.items.some(row => row.selectedPreview))!;
-  const initialIdentity = initialBoard.records.rows.items.find(row => row.selectedPreview)!.selectedPreview!;
-  act(() => observed.whole.edit('tokens.surface-color', [{ portion: 'values', change: { op: 'remove', slot: 'tokens.surface-color' } }]));
-  await screen.findByText('prepared:not-saved');
-  const edits = observed.whole.sessionState!.edits;
-  const committed = session!.getSnapshot().committed;
-  expect(edits).toHaveLength(1);
-  expect(edits[0]).toMatchObject({ leaf: 'tokens.surface-color', status: 'failed', failure: { ok: false, reason: 'unavailable' } });
-  expect(observed.whole.sessionState!.historyFailure).toBeUndefined();
-  expect(f.save).toHaveBeenCalledOnce();
-  const next = observed.prepared;
-  if (next.status !== 'prepared') throw new Error('Expected edited original records');
-  const updatedBoard = next.boards.find(board => board.records.rows.boardId === initialBoard.records.rows.boardId)!;
-  expect(next.projection.selectionHash).not.toBe(before.projection.selectionHash);
-  expect(updatedBoard.previews.status).toBe('available');
-  if (updatedBoard.previews.status === 'available') expect(updatedBoard.previews.port.render(initialIdentity)).toBeUndefined();
-  let moved: boolean | undefined;
-  await act(async () => { moved = await observed.whole.setLayer('assets'); });
-  expect(moved).toBe(false); expect(observed.whole.layer).toBe('tokens');
-  expect(observed.whole.session).toBe(session); expect(observed.whole.sessionState!.edits).toEqual(edits);
-  expect(observed.whole.sessionState!.canUndo).toBe(true);
-  expect(observed.whole.sessionState!.historyFailure).toBeUndefined();
-  expect(f.save).toHaveBeenCalledOnce();
-  act(() => session!.undo());
-  await screen.findByText('prepared:saved');
-  expect(observed.whole.session).toBe(session);
-  expect(observed.whole.sessionState!.edits).toEqual([]);
-  expect(session!.getSnapshot().committed).toBe(committed);
-  expect(observed.whole.sessionState!.historyFailure).toBeUndefined();
-  expect(observed.whole.sessionState!.canUndo).toBe(false);
-  expect(observed.whole.sessionState!.canRedo).toBe(false);
-  expect(observed.prepared.projection.selectionHash).toBe(before.projection.selectionHash);
-  expect(f.save).toHaveBeenCalledOnce();
-});
+/*
+ * DESIGNER-RO (deleted): "keeps failed original edits and history on the same session, with stale preview identities
+ * rejected" drove WholeStudio edit, undo and the failed-save history, which the read-only Designer no longer exposes
+ * (inventory rows 10-13).
+ */
