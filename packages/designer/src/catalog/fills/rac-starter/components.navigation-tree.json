@@ -226,7 +226,7 @@
         },
         {
           "path": "components/navigation-tree/NavigationTree.tsx",
-          "sha256": "94a0a8ee58e2849d3c34d8198090e9754cbd0ea05fb5d4bce01c3827616e4799"
+          "sha256": "10b52b1b566389787342b7538d638ae432f827da11a69402be7e843793ee7a1c"
         },
         {
           "path": "components/navigation-tree/utils.ts",

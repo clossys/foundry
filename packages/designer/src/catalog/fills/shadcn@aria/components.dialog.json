@@ -80,7 +80,7 @@
         },
         {
           "path": "components/dialog/dialog.tsx",
-          "sha256": "cc862f814171f27b9fb3de5ca59b9c361a665edbe8afeb0d7919cb12a9c72882"
+          "sha256": "cd1b643685839961c5c3bc1bd719aab2580fbcb9e21c8c3585512af09262b834"
         },
         {
           "path": "notices/THIRD-PARTY.md",

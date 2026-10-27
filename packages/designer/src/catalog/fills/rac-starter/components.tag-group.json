@@ -580,7 +580,7 @@
         },
         {
           "path": "components/tag-group/TagGroup.tsx",
-          "sha256": "ecf12f8a34cfceac5488c24572cf9be849105fcdd2d1e6eacb5fce00081cc2ec"
+          "sha256": "613cfc63f01b29f87475483e651914e62bad251dbf80b83f4b439da4eed8aedd"
         },
         {
           "path": "components/tag-group/utils.ts",
