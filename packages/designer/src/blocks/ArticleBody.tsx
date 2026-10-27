@@ -1,5 +1,8 @@
 import type { CSSProperties, HTMLAttributes, ReactNode } from "react";
 import { cx } from "../components/internal/cx.js";
+import { dsAttrs } from "../catalog-core/provenance-attrs.js";
+/** Section root provenance (D1): the selected Foundry fill this block is. */
+const SECTION_STAMP = dsAttrs("sections", "sections.article", "foundry/sections.article");
 export interface ArticleBodyProps extends HTMLAttributes<HTMLElement> {
   /**
    * Pre-structured content — headings, paragraphs, lists, a blockquote,
@@ -52,7 +55,7 @@ export interface ArticleBodyProps extends HTMLAttributes<HTMLElement> {
 export function ArticleBody({ children, className, style, ...rest }: ArticleBodyProps) {
   return (
     <article
-      {...rest}
+      {...SECTION_STAMP} {...rest}
       className={cx(
         "flex flex-col gap-md",
         "[&_h1]:text-h1 [&_h1]:font-display [&_h1]:text-ink-primary [&_h1]:mt-xl",

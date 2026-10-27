@@ -4,6 +4,9 @@ import { UI_BORDER_HAIRLINE } from "../components/internal/ui-vars.js";
 import { SECTION_MEASURE_MAX } from "./internal/block-vars.js";
 import { SECTION_GROUND_CLASSES, type SectionGround } from "./section-ground.js";
 import { SectionIntro, type SectionIntroEmphasis } from "./SectionIntro.js";
+import { dsAttrs } from "../catalog-core/provenance-attrs.js";
+/** Section root provenance (D1): the selected Foundry fill this block is. */
+const SECTION_STAMP = dsAttrs("sections", "sections.content", "foundry/sections.content");
 
 export type ContentSectionHeadingLevel = 2 | 3 | 4 | 5 | 6;
 
@@ -266,7 +269,7 @@ export function ContentSection({
       const hasCompanion = !headerSplit || hasSupportIntro || (!hasClosing && hasContent(footnote));
       return (
         <div
-          {...rest}
+          {...SECTION_STAMP} {...rest}
           data-content-section=""
           data-layout={layout}
           className={cx("grid w-full grid-cols-1 gap-y-2xl tablet-lg:grid-cols-12 tablet-lg:items-start tablet-lg:gap-x-4xl", hasClosing ? "tablet-lg:gap-y-3xl" : "tablet-lg:gap-y-0", padding, className)}
@@ -325,7 +328,7 @@ export function ContentSection({
     const atStart = layout === "split-start" || layout === "split" && mediaSide === "start";
     return (
       <div
-        {...rest}
+        {...SECTION_STAMP} {...rest}
         data-content-section=""
         data-layout={layout === "split-start" ? "split-start" : layout === "split-end" ? "split-end" : "split"}
         data-media-side={layout === "split" ? atStart ? "start" : "end" : undefined}
@@ -384,7 +387,7 @@ export function ContentSection({
 
   return (
     <div
-      {...rest}
+      {...SECTION_STAMP} {...rest}
       data-content-section=""
       className={cx("flex w-full flex-col", MODULE_GAP, centred ? "items-center" : "items-start", padding, className)}
       style={style}

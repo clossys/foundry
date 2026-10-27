@@ -11,6 +11,9 @@ import { FileText } from "../../icons/FileText.js";
 import type { IconNode } from "../../icons/types.js";
 import { defaultContent } from "./content.js";
 import type { ChatActions, ChatLabels, ChatMessage, ChatProps } from "./types.js";
+import { dsAttrs } from "../../catalog-core/provenance-attrs.js";
+/** Section root provenance (D1): the selected Foundry fill this block is. */
+const SECTION_STAMP = dsAttrs("sections", "sections.chat", "foundry/sections.chat");
 
 const PROGRESS_ROW_CLASSES = "flex flex-wrap items-center gap-sm text-body-s text-ink-secondary";
 
@@ -141,7 +144,7 @@ function ChatView({
   }
 
   return (
-    <section aria-label={label} className="flex h-full min-h-0 min-w-0 w-full flex-col bg-surface-base text-body text-ink-primary" onKeyDown={keyDown}>
+    <section {...SECTION_STAMP} aria-label={label} className="flex h-full min-h-0 min-w-0 w-full flex-col bg-surface-base text-body text-ink-primary" onKeyDown={keyDown}>
       <div ref={logRef} role="log" aria-label={logLabel} aria-live="polite" className="flex min-h-0 min-w-0 flex-1 flex-col gap-lg overflow-y-auto break-words p-md" onScroll={() => {
         const log = logRef.current;
         if (!log) return;

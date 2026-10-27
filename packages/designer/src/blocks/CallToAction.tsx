@@ -2,6 +2,9 @@ import { useId, type HTMLAttributes, type ReactNode } from "react";
 import { cx } from "../components/internal/cx.js";
 import { SECTION_GROUND_CLASSES, type SectionGround } from "./section-ground.js";
 import { SectionHeader, type SectionHeaderLevel } from "./SectionHeader.js";
+import { dsAttrs } from "../catalog-core/provenance-attrs.js";
+/** Section root provenance (D1): the selected Foundry fill this block is. */
+const SECTION_STAMP = dsAttrs("sections", "sections.call-to-action", "foundry/sections.call-to-action");
 
 export interface CallToActionProps extends Omit<HTMLAttributes<HTMLElement>, "title"> {
   /** The ask, as the section heading. Header region, with `eyebrow` and `description`. */
@@ -31,7 +34,7 @@ export function CallToAction({ title, eyebrow, description, primaryAction, secon
   const titleId = useId();
   return (
     <section
-      {...rest}
+      {...SECTION_STAMP} {...rest}
       aria-labelledby={titleId}
       data-ground={ground}
       className={cx("flex flex-col items-center gap-lg rounded-panel px-lg py-3xl text-center", SECTION_GROUND_CLASSES[ground].surface, className)}

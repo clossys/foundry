@@ -2,6 +2,9 @@ import type { ReactNode } from "react";
 import { Button } from "../components/Button.js";
 import { ProgressBar } from "../components/ProgressBar.js";
 import { cx } from "../components/internal/cx.js";
+import { dsAttrs } from "../catalog-core/provenance-attrs.js";
+/** Section root provenance (D1): the selected Foundry fill this block is. */
+const SECTION_STAMP = dsAttrs("sections", "sections.wizard", "foundry/sections.wizard");
 
 export interface FormWizardStep {
   readonly id: string;
@@ -37,7 +40,7 @@ export function FormWizard({ steps, currentStep, onNext, onBack, progress, revie
   const index = steps.findIndex(step => step.id === currentStep);
   if (index < 0) throw new TypeError(`FormWizard: unknown step ${currentStep}.`);
   const position = index + 1, last = position === steps.length;
-  return <div className={cx("flex min-w-0 flex-col gap-lg text-body text-ink-primary", className)}>
+  return <div {...SECTION_STAMP} className={cx("flex min-w-0 flex-col gap-lg text-body text-ink-primary", className)}>
     <ol aria-label={labels.steps} className="m-0 flex list-none flex-wrap gap-md p-0">
       {steps.map((step, stepIndex) => <li key={step.id} aria-current={stepIndex === index ? "step" : undefined}
         className={cx("inline-flex items-center gap-xs text-body-s", stepIndex === index ? "font-medium text-ink-primary" : "text-ink-secondary")}>

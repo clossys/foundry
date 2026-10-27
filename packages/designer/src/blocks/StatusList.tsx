@@ -2,6 +2,9 @@ import { SectionHeader } from "./SectionHeader.js";
 import type { CSSProperties, HTMLAttributes, ReactNode } from "react";
 import { cx } from "../components/internal/cx.js";
 import { SECTION_GROUND_CLASSES, type SectionGround, type SectionStatusTone } from "./section-ground.js";
+import { dsAttrs } from "../catalog-core/provenance-attrs.js";
+/** Section root provenance (D1): the selected Foundry fill this block is. */
+const SECTION_STAMP = dsAttrs("sections", "sections.status-list", "foundry/sections.status-list");
 
 /** The closed readiness axis. A deliberate non-capability belongs in `StatusListDisposition`, not here. */
 export type StatusListState = "available" | "partial" | "planned";
@@ -174,7 +177,7 @@ export function StatusList({
   );
 
   return (
-    <section {...rest} className={cx("flex flex-col gap-lg", colors.surface, className)} style={style}>
+    <section {...SECTION_STAMP} {...rest} className={cx("flex flex-col gap-lg", colors.surface, className)} style={style}>
       {hasHeadingRegion ? (
         <SectionHeader density="standard" level={headingLevel} ground={ground} eyebrow={eyebrow} description={description} {...(heading ? { title: heading } : {})} />
       ) : null}

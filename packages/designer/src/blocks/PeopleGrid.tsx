@@ -3,6 +3,9 @@ import { cx } from "../components/internal/cx.js";
 import { UI_LAYOUT_TAP_TARGET } from "../components/internal/ui-vars.js";
 import { SECTION_GROUND_CLASSES, type SectionGround } from "./section-ground.js";
 import { assertNoNestedInteractive, CardLinkTitle, cardLinkContainerClassName } from "./stretched-link.js";
+import { dsAttrs } from "../catalog-core/provenance-attrs.js";
+/** Section root provenance (D1): the selected Foundry fill this block is. */
+const SECTION_STAMP = dsAttrs("sections", "sections.people", "foundry/sections.people");
 
 export interface PeopleGridPerson {
   id: string;
@@ -77,7 +80,7 @@ export function PeopleGrid({ people, media = "avatar", columns = 3, headingLevel
   const photo = media === "photo";
   const baseColumns = photo ? "grid-cols-2" : "grid-cols-1";
   return (
-    <ul {...rest} role="list" className={cx("m-0 grid list-none gap-x-lg gap-y-xl p-0", baseColumns, COLUMN_CLASSES[columns], colors.primary, className)} style={style}>
+    <ul {...SECTION_STAMP} {...rest} role="list" className={cx("m-0 grid list-none gap-x-lg gap-y-xl p-0", baseColumns, COLUMN_CLASSES[columns], colors.primary, className)} style={style}>
       {people.map(person => <PersonCard key={person.id} person={person} media={media} headingLevel={headingLevel} ground={ground} />)}
     </ul>
   );

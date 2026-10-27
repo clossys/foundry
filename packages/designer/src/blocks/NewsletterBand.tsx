@@ -9,6 +9,9 @@ import { cx } from "../components/internal/cx.js";
 import { UI_LAYOUT_TAP_TARGET } from "../components/internal/ui-vars.js";
 import { XCircle } from "../icons/XCircle.js";
 import { SECTION_GROUND_CLASSES, type SectionGround } from "./section-ground.js";
+import { dsAttrs } from "../catalog-core/provenance-attrs.js";
+/** Section root provenance (D1): the selected Foundry fill this block is. */
+const SECTION_STAMP = dsAttrs("sections", "sections.newsletter", "foundry/sections.newsletter");
 
 export type NewsletterStatus = "idle" | "pending" | "sent" | "failed";
 
@@ -84,6 +87,7 @@ export function NewsletterBand({
 
   const form = (
     <form
+      {...(ground === "inverse" ? {} : SECTION_STAMP)}
       ref={formRef}
       method={method}
       action={action}
@@ -131,7 +135,7 @@ export function NewsletterBand({
     </form>
   );
   return ground === "inverse" ? (
-    <div className={SECTION_GROUND_CLASSES.inverse.surface}>
+    <div {...SECTION_STAMP} className={SECTION_GROUND_CLASSES.inverse.surface}>
       <div className="rounded-panel bg-surface-raised p-lg text-ink-primary">{form}</div>
     </div>
   ) : form;
