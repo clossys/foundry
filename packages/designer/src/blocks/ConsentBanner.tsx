@@ -3,6 +3,9 @@ import { Icon } from "../components/Icon.js";
 import { Check } from "../icons/Check.js";
 import { Button } from "../components/Button.js";
 import { cx } from "../components/internal/cx.js";
+import { dsAttrs } from "../catalog-core/provenance-attrs.js";
+/** Section root provenance (D1): the selected Foundry fill this block is. */
+const SECTION_STAMP = dsAttrs("sections", "sections.consent", "foundry/sections.consent");
 
 /** Card choices: full-width cells of a two-column grid, current-colour edge, no fill; labels may wrap. */
 const CARD_CHOICE_CLASS = "w-full min-w-0 border border-current bg-transparent font-medium text-center whitespace-normal";
@@ -70,6 +73,7 @@ export function ConsentBanner({
   const card = presentation === "card";
   return (
     <section
+      {...SECTION_STAMP}
       data-consent-banner=""
       data-consent-presentation={card ? "card" : undefined}
       aria-labelledby={titleId}

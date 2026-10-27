@@ -10,6 +10,7 @@ import { PivotGrid } from "./PivotGrid.js";
 import { sortViewRows } from "./presentation.js";
 import { ViewOptions } from "./ViewOptions.js";
 import { editView, parseDataTableViewModel, type DataTableViewModel, type DataTableViewModelV1 } from "./view-model.js";
+import { dsPassThrough } from "../../catalog-core/provenance-attrs.js";
 
 type DisplayRow<Row> = { kind: "leaf"; key: string; row: Row } | { kind: "group"; key: string; group: TableGroup<Row>; open: boolean };
 const leafKey = (key: Key) => "leaf:" + JSON.stringify([typeof key, key]);
@@ -65,11 +66,11 @@ export function ModelTable<Row>({
     } }));
     const keys = new Map(props.rows.map(row => [leafKey(props.rowKey(row)), props.rowKey(row)]));
     const selectedKeys = typeof props.selectedKeys === "string" ? props.selectedKeys : props.selectedKeys ? new Set([...props.selectedKeys].map(leafKey)) : undefined;
-    grid = <FlatGrid {...props} {...props.messages} {...sortProps} className={undefined} style={undefined} toolbar={undefined} footer={undefined} columns={groupedColumns} rows={display} rowKey={item => item.key} density={model.density}
+    grid = <FlatGrid {...props} {...props.messages} {...sortProps} data-ds-layer={undefined} data-ds-leaf={undefined} data-ds-fill={undefined} className={undefined} style={undefined} toolbar={undefined} footer={undefined} columns={groupedColumns} rows={display} rowKey={item => item.key} density={model.density}
       disabledKeys={display.filter(item => item.kind === "group").map(item => item.key)} selectedKeys={selectedKeys}
       onSelectionChange={next => props.onSelectionChange?.(next === "all" ? "all" : new Set([...next].flatMap(key => keys.has(String(key)) ? [keys.get(String(key))!] : [])))} />;
-  } else grid = <FlatGrid {...props} {...props.messages} {...sortProps} className={undefined} style={undefined} toolbar={undefined} footer={undefined} rows={sorted} columns={columns} density={model.density} />;
-  return <div className={cx("flex flex-col gap-md", props.className)} style={props.style}>
+  } else grid = <FlatGrid {...props} {...props.messages} {...sortProps} data-ds-layer={undefined} data-ds-leaf={undefined} data-ds-fill={undefined} className={undefined} style={undefined} toolbar={undefined} footer={undefined} rows={sorted} columns={columns} density={model.density} />;
+  return <div {...dsPassThrough(props)} className={cx("flex flex-col gap-md", props.className)} style={props.style}>
     {toolbar ? <div className="flex flex-wrap items-center justify-between gap-md">{toolbar}</div> : null}
     <ViewOptions {...props.messages} messages={props.messages} model={model} change={onModelChange} facets={filtered.facets} labels={labels} />
     {grid}

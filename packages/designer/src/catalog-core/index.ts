@@ -167,6 +167,11 @@ export type { UsageGraph, UsageGraphInputs, UsageGraphFill, UsageGraphFinding, U
 /** Static wiring checks above Components (WL2, WL3, WL4, WL8, WL9, WL10) and the wiring-exception reader. */
 export { checkWiring, readWiringExceptions, wiringScope, foundryWiringExceptions, WIRING_REASON_CODES, WIRING_HEADLESS_MODULES } from "./wiring.js";
 export type { WiringCode, WiringReasonCode, WiringException, WiringExceptionStatus, WiringExceptionState, WiringFinding, WiringLayer, WiringSource, WiringSurfaceFill, WiringGeneratedArtifact, WiringRoutes, WiringInput, WiringResult } from "./wiring.js";
+/** DOM provenance stamps (data-ds-layer/leaf/fill) and the runtime WL scanner (WL1, WL5, WL6, WL7). */
+export { dsAttrs, dsPassThrough, withoutDsAttrs, DS_ATTR, DS_LAYERS } from "./provenance-attrs.js";
+export type { DsAttrs, DsLayer } from "./provenance-attrs.js";
+export { scanProvenance, PROVENANCE_FINDING_CODES } from "./provenance-scan.js";
+export type { ProvenanceScan, ProvenanceScanInput, ProvenanceFinding, ProvenanceFindingCode, ProvenanceSurfaceBinding } from "./provenance-scan.js";
 
 export * from "./runtime-ports.js";
 export * from "./runtime-assembly.js";

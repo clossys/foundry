@@ -12,6 +12,9 @@ import { Link } from "../components/Link.js";
 import { cx } from "../components/internal/cx.js";
 import { actionRowClassName } from "../components/internal/action-row.js";
 import { UI_RING_FOCUS } from "../components/internal/ui-vars.js";
+import { dsAttrs } from "../catalog-core/provenance-attrs.js";
+/** Section root provenance (D1): the selected Foundry fill this block is. */
+const SECTION_STAMP = dsAttrs("sections", "sections.form", "foundry/sections.form");
 
 export interface FormError {
   /**
@@ -242,7 +245,7 @@ export function Form({
 
   return (
     <form
-      {...rest}
+      {...SECTION_STAMP} {...rest}
       ref={validation?.formRef}
       noValidate={validation ? true : rest.noValidate}
       aria-busy={validation?.isSubmitting ? true : rest["aria-busy"]}

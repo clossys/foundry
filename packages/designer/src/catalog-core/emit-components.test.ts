@@ -3,6 +3,9 @@ import { readFileSync, readdirSync, writeFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { describe, expect, it } from "vitest";
 import ts from "typescript";
+import * as React from "react";
+import { createElement, forwardRef, type ReactNode } from "react";
+import { renderToStaticMarkup } from "react-dom/server";
 import { synthetic, syntheticSource } from "./__fixtures__/component-engine/synthetic.js";
 import { applyComponentLibraryChange, materializeSourceFill } from "./changeset-components.js";
 import { assertComponentIdentifier, assertPackageSpecifier, componentLibraryHash, componentMaterializationReport, resolveComponents } from "./resolve-components.js";
@@ -217,6 +220,54 @@ describe("SYNTHETIC component code generation; no shipped conformance claims", (
   });
 });
 
+// A Select-shaped synthetic leaf: the same checker-approved package profile renamed, so the stamping
+// wrapper is exercised over an export that carries a compound static (Select.Item).
+function selectProfile(identity: boolean) {
+  const profile = packageProfile(), button = profile.components["components.button"]!;
+  const select = JSON.parse(JSON.stringify(button).replaceAll("components.button", "components.select").replaceAll("Button", "Select")) as typeof button;
+  if (identity) { select.descriptor.propMap = Object.fromEntries(Object.keys(select.propMap).map(member => [member, "./components#Select"])); select.propMap = select.descriptor.propMap; }
+  delete profile.components["components.button"]; profile.components["components.select"] = select;
+  (profile as { packageExports: Record<string, readonly string[]> }).packageExports = { ...profile.packageExports, "test-kit/components": ["Select"] };
+  return profile;
+}
+function loadIndex(content: string, Select: unknown): Record<string, unknown> {
+  const { outputText } = ts.transpileModule(content, { compilerOptions: { target: ts.ScriptTarget.ES2022, module: ts.ModuleKind.CommonJS } });
+  const modules: Record<string, unknown> = { react: React, "test-kit/components": { Select } }, exports: Record<string, unknown> = {};
+  new Function("require", "exports", outputText)((id: string) => { if (!Object.hasOwn(modules, id)) throw new Error(`unexpected import ${id}`); return modules[id]; }, exports);
+  return exports;
+}
+describe("provenance stamping wrapper (D1, D2)", () => {
+  it.each([["identity", true], ["dispatch", false]] as const)("%s index stamps data-ds-*, forwards ref and keeps Select.Item", (_label, identity) => {
+    const files = emitComponents(selectProfile(identity), ["component-index"]);
+    const index = files.find(file => file.path === "components/select/index.ts")!.content;
+    expect(index).toContain(identity ? "const target = Impl0 satisfies" : "const targets = { Impl0 } satisfies");
+    expect(index).not.toMatch(/use client|useState|useContext|useEffect/);
+    expect(index).not.toMatch(/from "\.[^"]*\.(?:js|ts|tsx)"/);
+    const Item = (props: { children?: ReactNode }) => createElement("li", { role: "option" }, props.children);
+    const refs: unknown[] = [];
+    const Impl = Object.assign(forwardRef<HTMLUListElement, Record<string, unknown>>(function Impl(props, ref) { refs.push(ref); return createElement("ul", { ...props, ref }); }), { Item });
+    const { Select } = loadIndex(index, Impl) as { Select: React.ForwardRefExoticComponent<Record<string, unknown>> & { Item: typeof Item; render: (props: object, ref: unknown) => React.ReactElement<{ ref?: unknown }> } };
+    expect(Select.Item).toBe(Item);
+    const ref = { current: null };
+    const html = renderToStaticMarkup(createElement(Select, { ref, ...(identity ? {} : { variant: "primary" }) }, createElement(Select.Item, null, "One")));
+    for (const attr of ['data-ds-layer="components"', 'data-ds-leaf="components.select"', 'data-ds-fill="test-kit/components.select"']) expect(html).toContain(attr);
+    expect(html).toMatch(/^<ul [^>]*><li role="option">One<\/li><\/ul>$/);
+    expect(refs).toContain(ref);
+    expect(Select.render({}, ref).props.ref).toBe(ref);
+  });
+  it("typechecks one emitted wrapped index with a ref and Select.Item usage: 0 diagnostics", () => {
+    const surfaces = `declare module "test-kit/components" {
+  import type { ForwardRefExoticComponent, ReactNode, RefAttributes } from "react";
+  interface SelectProps { label: string; ground?: "base" | "inverse"; size?: "md"; state?: "hover"; variant?: "primary"; children?: ReactNode }
+  export const Select: ForwardRefExoticComponent<SelectProps & RefAttributes<HTMLDivElement>> & { Item: (props: { id: string; children?: ReactNode }) => ReactNode };
+}
+`;
+    const usage = { path: "usage.ts", content: 'import { createElement, createRef } from "react";\nimport { Select } from "./component-index";\nconst ref = createRef<HTMLDivElement>();\nexport const usage = createElement(Select, { ref, label: "Pick" }, createElement(Select.Item, { id: "a" }, "A"));\n// @ts-expect-error the wrapped identity export keeps the implementation props\nexport const wrong = createElement(Select, { label: 1 });\n' };
+    expect(typecheckSynthetic([...emitComponents(selectProfile(true), ["component-index"]), usage], surfaces)).toEqual([]);
+    const dispatchUsage = { path: "usage.ts", content: 'import { createElement, createRef } from "react";\nimport { Select } from "./component-index";\nexport const usage = createElement(Select, { ref: createRef<HTMLDivElement>(), variant: "primary" }, createElement(Select.Item, { id: "a" }, "A"));\n' };
+    expect(typecheckSynthetic([...emitComponents(selectProfile(false), ["component-index"]), dispatchUsage], surfaces)).toEqual([]);
+  });
+});
 describe("real source materialization remains blocked", () => {
   it("reports 24 of 26 descriptors blocked and refuses real button, select and calendar adoption", () => {
     const directory = resolve(import.meta.dirname, "../catalog/fills/shadcn@aria");

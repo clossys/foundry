@@ -5,6 +5,7 @@ import type { NavGridItem, NavGridProps } from "../NavGrid.js";
 import { cx } from "../../components/internal/cx.js";
 import { UI_LAYOUT_TAP_TARGET } from "../../components/internal/ui-vars.js";
 import { assertNoNestedInteractive, cardLinkContainerClassName, hasInteractiveContent } from "../stretched-link.js";
+import { dsPassThrough } from "../../catalog-core/provenance-attrs.js";
 type LinkedNavItem = Extract<NavGridItem, { href: string }>;
 /** A linked tile's container: the tile is the hit area and carries the ring; tiles sit on the base ground. */
 const LINKED_TILE = cardLinkContainerClassName("control", "base");
@@ -64,12 +65,12 @@ function LinkedCard({ item }: { item: LinkedNavItem }) {
  * state, the same pattern `DetailView`'s and `Shell.SideNav`'s own
  * responsive layouts already use.
  */
-export function CompatNavGrid({ heading, items, className, style, renderAction }: NavGridProps & { renderAction: (item: Extract<NavGridItem, { onSelect: () => void }>, className: string, children: ReactNode) => ReactNode }) {
+export function CompatNavGrid({ heading, items, className, style, renderAction, ...passthrough }: NavGridProps & { renderAction: (item: Extract<NavGridItem, { onSelect: () => void }>, className: string, children: ReactNode) => ReactNode }) {
   const linked = items.every(item => item.href !== undefined);
   const icons = items.filter((item) => Boolean(item.icon)).length;
   const useLinkedItems = linked && items.length >= 2 && items.length <= 6 && (icons === 0 || icons === items.length) && !items.some(item => hasInteractiveContent([item.description]));
   return (
-    <div className={cx("flex flex-col gap-md", className)} style={style}>
+    <div {...dsPassThrough(passthrough)} className={cx("flex flex-col gap-md", className)} style={style}>
       {heading ? <h2 className="text-h2 font-display text-ink-primary">{heading}</h2> : null}
       {useLinkedItems ? renderNavItems(items.map(item => ({ id: item.id, heading: item.title, description: item.description, icon: item.icon, href: item.href }))) : <div className="grid grid-cols-1 gap-md tablet:grid-cols-2 desktop:grid-cols-3">
         {items.map((item) =>

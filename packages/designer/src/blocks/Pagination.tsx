@@ -2,6 +2,9 @@ import type { CSSProperties, HTMLAttributes } from "react";
 import { Button } from "../components/Button.js";
 import { Select } from "../components/Select.js";
 import { cx } from "../components/internal/cx.js";
+import { dsAttrs } from "../catalog-core/provenance-attrs.js";
+/** Section root provenance (D1): the selected Foundry fill this block is. */
+const SECTION_STAMP = dsAttrs("sections", "sections.pagination", "foundry/sections.pagination");
 
 export interface PaginationProps extends Omit<HTMLAttributes<HTMLElement>, "onChange"> {
   /** The current page, 1-indexed. */
@@ -138,7 +141,7 @@ export function Pagination({
 
   return (
     <nav
-      {...rest}
+      {...SECTION_STAMP} {...rest}
       aria-label={ariaLabel}
       className={cx("flex flex-wrap items-center justify-between gap-md", className)}
       style={style}

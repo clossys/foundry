@@ -4,6 +4,7 @@ import { assertComponentDescriptor, assertComponentIdentifier, assertComponentPa
 import { componentSecondaryExports } from "./component-secondary-exports.js";
 import { isObservationPending } from "./check-components.js";
 import { inspectGlyph } from "../catalog-assets/svg.js";
+import { dsAttrs, type DsAttrs } from "./provenance-attrs.js";
 import type { ComponentFile, ResolvedComponent, ResolvedComponents } from "./resolve-components.js";
 
 export type ComponentEmitTarget = "component-index" | "notices" | "components-consumption";
@@ -118,8 +119,26 @@ function parseBinding(component: ResolvedComponent, member: string, pointer: str
 export function emitsGlyphModule(components: readonly { slot: string; reads: { assets: readonly string[] } }[]): boolean {
   return components.some(component => component.slot === "components.icon" || component.reads.assets.length > 0);
 }
-function leafModule(component: ResolvedComponent, packageExports: ResolvedComponents["packageExports"], files: readonly ComponentFile[], glyphModule?: ComponentEmitOptions["glyphModule"]): ComponentFile {
+/** The selected fill a component stamp names: the adopted catalog fill, otherwise the consumer's own fill. */
+export function componentFillId(component: Pick<ResolvedComponent, "slot" | "origin">, consumer: string): string {
+  return component.origin.kind === "adopted" ? component.origin.fill : `${consumer}/${component.slot}`;
+}
+// Server-safe stamping (D2): no hooks, context or client directive. Statics (Select.Item) are hoisted from the
+// implementation except React's own keys, so the wrapper keeps the export's compound surface.
+function stampRows(stamp: DsAttrs): string[] {
+  return [
+    `const stamp = ${JSON.stringify(stamp)} as const;`,
+    'const reactKeys = new Set(["$$typeof", "render", "type", "compare", "displayName", "propTypes", "defaultProps", "contextType", "contextTypes", "childContextTypes", "getDefaultProps", "getDerivedStateFromProps", "getDerivedStateFromError", "mixins", "length", "name", "prototype", "arguments", "caller"]);',
+    'function statics(impl: unknown): Record<string, unknown> {',
+    '  const hoisted: Record<string, unknown> = {};',
+    '  if (typeof impl === "function" || (typeof impl === "object" && impl !== null)) for (const key of Object.getOwnPropertyNames(impl)) if (!reactKeys.has(key)) hoisted[key] = (impl as Record<string, unknown>)[key];',
+    '  return hoisted;',
+    '}',
+  ];
+}
+function leafModule(component: ResolvedComponent, packageExports: ResolvedComponents["packageExports"], files: readonly ComponentFile[], fill: string, glyphModule?: ComponentEmitOptions["glyphModule"]): ComponentFile {
   const path = `components/${component.slot.slice(11)}/index.ts`;
+  const stamp = dsAttrs("components", component.slot, fill);
   const name = nameOf(component.slot); assertComponentIdentifier(name);
   assertComponentDescriptor(component.descriptor);
   if (component.descriptor.secondaryExports !== undefined) {
@@ -150,15 +169,25 @@ function leafModule(component: ResolvedComponent, packageExports: ResolvedCompon
     rows.unshift('import { createElement, type ComponentProps } from "react";', `import { glyphs } from ${quote(relative(path, glyphModule.path))};`);
     const impl = imports.get(`${base.module}#${base.name}`)!;
     rows.push('type WithAsset<Props> = Props extends unknown ? Omit<Props, "glyph" | "children"> & { asset: keyof typeof glyphs } : never;');
+    rows.push(`const stamp = ${JSON.stringify(stamp)} as const;`);
     rows.push(`export function Icon({ asset, ...props }: WithAsset<ComponentProps<typeof ${impl}>>) {`);
     rows.push('  const glyph = glyphs[asset]; if (!glyph) throw new Error("Missing consumer glyph");');
-    rows.push(`  return createElement(${impl}, { ...props, glyph });`, '}');
+    rows.push(`  return createElement(${impl}, { ...props, ...stamp, glyph });`, '}');
     return { path, content: rows.join("\n") + "\n" };
   }
-  // A transparent alias is sufficient only when every contract member maps to the same export.
+  // When every contract member maps to the same export, the stamping wrapper keeps that export's own type.
   const identity = bindings.every(({ binding }) => binding.module === base.module && binding.name === base.name && !binding.part && !binding.property);
-  if (identity) return { path, content: rows.join("\n") + `\nexport { ${imports.get(`${base.module}#${base.name}`)} as ${name} };\n` };
+  const baseLocal = imports.get(`${base.module}#${base.name}`)!;
   rows.unshift('import { createElement, forwardRef, type ComponentType } from "react";');
+  rows.push(...stampRows(stamp));
+  if (identity) {
+    rows.push(`const target = ${baseLocal} satisfies ((props: never) => unknown) | (new (props: never) => unknown);`);
+    rows.push(`const Stamped = forwardRef<unknown, Record<string, unknown>>(function ${name}(props, ref) {`);
+    rows.push('  return createElement(target as unknown as ComponentType<Record<string, unknown>>, { ...props, ...stamp, ref });');
+    rows.push('});');
+    rows.push(`export const ${name} = Object.assign(Stamped, statics(${baseLocal})) as unknown as typeof ${baseLocal};`);
+    return { path, content: rows.join("\n") + "\n" };
+  }
   const table: Record<string, Record<string, { target: string; property?: string; value?: string | boolean }>> = Object.create(null);
   const partTargets = new Set<string>();
   for (const { member, binding } of bindings) {
@@ -180,7 +209,8 @@ function leafModule(component: ResolvedComponent, packageExports: ResolvedCompon
   // only at createElement, where the mapping table has already chosen the target.
   rows.push(`const targets = { ${targets} } satisfies Record<string, ((props: never) => unknown) | (new (props: never) => unknown)>;`);
   rows.push(`const mappings: Record<string, Record<string, {target: string; property?: string; value?: unknown}>> = ${JSON.stringify(table, null, 2)};`);
-  rows.push(`export const ${name} = forwardRef<unknown, Record<string, unknown>>(function ${name}(props, ref) {`);
+  rows.push('type Statics<T> = Omit<T, "$$typeof" | "render" | "type" | "compare" | "displayName" | "propTypes" | "defaultProps">;');
+  rows.push(`const Dispatch = forwardRef<unknown, Record<string, unknown>>(function ${name}(props, ref) {`);
   rows.push(`  const next = { ...props }; let target = ${quote(imports.get(`${base.module}#${base.name}`))};`);
   // Each axis is read from the caller's props, never from `next`: one member's mapped property may share
   // a later axis's name (a shape member mapped to the impl's size prop), and that output is not an input.
@@ -192,8 +222,9 @@ function leafModule(component: ResolvedComponent, packageExports: ResolvedCompon
   rows.push('    if (mapping.target !== ' + quote(imports.get(`${base.module}#${base.name}`)) + ') target = mapping.target;');
   rows.push('    if (mapping.property) next[mapping.property] = mapping.value;');
   rows.push('  }');
-  rows.push('  return createElement((targets as Record<string, unknown>)[target] as ComponentType<Record<string, unknown>>, { ...next, ref });');
+  rows.push('  return createElement((targets as Record<string, unknown>)[target] as ComponentType<Record<string, unknown>>, { ...next, ...stamp, ref });');
   rows.push('});');
+  rows.push(`export const ${name} = Object.assign(Dispatch, statics(${baseLocal})) as unknown as typeof Dispatch & Statics<typeof ${baseLocal}>;`);
   return { path, content: rows.join("\n") + "\n" };
 }
 /**
@@ -213,7 +244,7 @@ export function emitComponents(profile: ResolvedComponents, targets: readonly Co
     if (!profile.check.ok) throw new CatalogError("components: checks failed; code generation refused");
     const names = new Set<string>();
     for (const component of components) { const name = nameOf(component.slot); assertComponentIdentifier(name); if (names.has(name)) throw new CatalogError("components: colliding contract names"); names.add(name); }
-    const generated = components.map(component => leafModule(component, profile.packageExports, profile.files, options.glyphModule));
+    const generated = components.map(component => leafModule(component, profile.packageExports, profile.files, componentFillId(component, profile.consumer), options.glyphModule));
     const retained = profile.files.filter(file => !generated.some(generated => generated.path === file.path));
     // Never overwrite adopted bytes: an upstream index needs its own unambiguous materialization.
     if (retained.length !== profile.files.length) throw new CatalogError("components: generated entrypoint conflicts with materialized source");

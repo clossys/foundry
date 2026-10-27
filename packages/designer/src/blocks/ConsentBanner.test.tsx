@@ -8,6 +8,7 @@ import { act, render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { ConsentBanner } from "./ConsentBanner.js";
 import { TOKENS } from "../tokens/tokens.js";
+import { withoutDsAttrs } from "../catalog-core/provenance-attrs.js";
 
 function setup(overrides: Partial<Parameters<typeof ConsentBanner>[0]> = {}) {
   const onAccept = vi.fn();
@@ -384,7 +385,7 @@ function consentCardUtility(): string {
 describe("CONSENT-1 card presentation", () => {
   it("preserves the immutable-base banner HTML by default and by explicit opt-in", () => {
     for (const presentation of [undefined, "banner"] as const) {
-      const html = renderToStaticMarkup(<ConsentBanner title="Banner title" body="Banner body" acceptLabel="Accept label" rejectLabel="Reject label" onAccept={() => {}} onReject={() => {}} privacyLink={<a href="/privacy">Privacy link</a>} presentation={presentation} />)
+      const html = withoutDsAttrs(renderToStaticMarkup(<ConsentBanner title="Banner title" body="Banner body" acceptLabel="Accept label" rejectLabel="Reject label" onAccept={() => {}} onReject={() => {}} privacyLink={<a href="/privacy">Privacy link</a>} presentation={presentation} />))
         .replace(/\bid="[^"]+"/g, 'id="ID"').replace(/\baria-labelledby="[^"]+"/g, 'aria-labelledby="ID"');
       expect(createHash("sha256").update(html).digest("hex")).toBe("4c11cfd188883db4e64ba36ea087b757806362f34808b884513a56c226282f01");
     }

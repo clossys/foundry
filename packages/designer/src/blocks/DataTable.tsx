@@ -5,6 +5,9 @@ import { FlatGrid } from "./data-table/FlatGrid.js";
 import { ModelTable } from "./data-table/ModelTable.js";
 import type { DataTableMessages } from "./data-table/messages.js";
 import type { DataTableViewModel, DataTableViewModelV1 } from "./data-table/view-model.js";
+import { dsAttrs } from "../catalog-core/provenance-attrs.js";
+/** Section root provenance (D1): the selected Foundry fill this block is. */
+const SECTION_STAMP = dsAttrs("sections", "sections.data-table", "foundry/sections.data-table");
 
 export type DataTableSelectionMode = "none" | "single" | "multiple";
 
@@ -106,5 +109,5 @@ export interface DataTableProps<Row> {
 
 /** Legacy controlled grid, or a saved local view over the same rows and column renderers. */
 export function DataTable<Row>(props: DataTableProps<Row>) {
-  return props.model ? <ModelTable {...props} {...props.messages} model={props.model} /> : <FlatGrid {...props} {...props.messages} />;
+  return props.model ? <ModelTable {...SECTION_STAMP} {...props} {...props.messages} model={props.model} /> : <FlatGrid {...SECTION_STAMP} {...props} {...props.messages} />;
 }
