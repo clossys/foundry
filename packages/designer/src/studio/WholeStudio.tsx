@@ -1,7 +1,7 @@
 "use client";
 import { Disclosure } from "../components/Disclosure.js";
 
-import { memo, useCallback, useMemo, useState } from "react";
+import { memo, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { Placement, BuildCatalogData } from "../catalog-core/index.js";
 import { Button } from "../components/Button.js";
 import { useStudioSession } from "./StudioProvider.js";
@@ -12,6 +12,7 @@ import { Scorecard } from "./Scorecard.js";
 import { CanvasExplorer } from "./CanvasExplorer.js";
 import { CanvasModules } from "./CanvasModules.js";
 import { ExplorerTree, LayerSelect } from "./rail/ExplorerTree.js";
+import { RailFocusHandoff, type RailFocus } from "./rail/rail-focus.js";
 import { StudioUsage } from "./usage/StudioUsage.js";
 import { RuntimePendingLine } from "./board-summary.js";
 import { checkCounts } from "./runtime-pending.js";
@@ -46,10 +47,14 @@ export function WholeStudioCanvas(props: StudioCanvasProps) {
     try { return { node: leaf && profile ? s.snapshot?.preview?.(leaf.id, profile) : undefined }; }
     catch (error) { return { error: error instanceof Error ? error.message : String(error) }; }
   }, [leaf?.id, profile, s.snapshot?.preview]);
-  return <>{valueLayer ? <>
+  // Crossing between the value and contract layers swaps the canvas and its rail; the new rail's equivalent control
+  // reads the recorded focus as it mounts, and the record is dropped once that commit lands.
+  const railFocus = useRef<RailFocus | undefined>(undefined);
+  useEffect(() => { railFocus.current = undefined; }, [valueLayer]);
+  return <RailFocusHandoff.Provider value={railFocus}>{valueLayer ? <>
     {preview.node != null || preview.error ? <div data-studio-host-preview={leaf?.id}>{preview.node}{preview.error ? <p role="alert">{preview.error}</p> : null}</div> : null}
     <LegacyStudioCanvas {...props} />
-  </> : <ContractCanvas {...props} />}</>;
+  </> : <ContractCanvas {...props} />}</RailFocusHandoff.Provider>;
 }
 function ContractCanvas({ className, candidateWorkflow }: StudioCanvasProps) {
   const s = useWholeStudio()!; const values = useStudioSession(); const t = s.labels; const [query, setQuery] = useState("");
