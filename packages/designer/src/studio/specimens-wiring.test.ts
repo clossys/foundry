@@ -261,6 +261,29 @@ describe("specimen role and reason-coded overrides", () => {
     expect(container.textContent).toContain(specimenDataset.tokens.sampleText);
   });
 
+  it("draws the dataset sample in every Studio text-metric and focus cell, never the host's label copy", () => {
+    const leaves = Object.entries(TOKEN_LEAF_SPECIMENS).filter(([, kind]) => kind === "text-metric" || kind === "focus").map(([slot]) => slot);
+    expect(leaves).toHaveLength(12);
+    const sample = specimenDataset.tokens.sampleText, firstWord = sample.trim().split(/\s+/)[0]!;
+    const faults: string[] = [];
+    let drawn = 0;
+    for (const slot of leaves) {
+      const candidate = buildCandidates({ catalog, library: signed, working: signed, scope: "slot", target: slot, slotId: slot }).find(entry => entry.selected);
+      if (!candidate) { faults.push(`${slot}: no selected fill`); continue; }
+      const { container, unmount } = render(createElement(CandidateCell, { candidate, labels }));
+      const targets = [...container.querySelectorAll("figure[data-kind='text-metric'] [data-specimen-target], figure[data-kind='focus'] [data-specimen-target]")];
+      if (targets.length === 0) faults.push(`${slot}: no text specimen drawn`);
+      for (const target of targets) {
+        drawn++;
+        const text = target.textContent ?? "";
+        if (text !== sample && text !== firstWord) faults.push(`${slot}: draws ${JSON.stringify(text)}`);
+      }
+      unmount();
+    }
+    expect(faults).toEqual([]);
+    expect(drawn).toBeGreaterThanOrEqual(leaves.length);
+  }, 60_000);
+
   it("stamps every asset specimen with data-layer=\"assets\" and reason-codes its overrides", () => {
     const { mark, glyph } = specimenDataset.assets;
     const specimens: Record<string, ReactElement> = {
