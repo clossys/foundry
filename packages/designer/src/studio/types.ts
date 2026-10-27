@@ -27,6 +27,11 @@ export interface StudioLabels {
   layers: { label: string; tokens: string; assets: string; components: string; sections: string; frames: string; disabled: string };
   scorecard: { title: string; close: string; resolved: string; checks: string; issues: string; noIssues: string; target: string; categories: Record<CheckCategory, string>; counts: (errors: number, notices: number) => string; supported: (codes: readonly string[]) => string };
   matrix: { label: string; leaf: string; libraries: string; showAll: string; expand: (leaf: string) => string; collapse: (leaf: string) => string; differs: string; pending: string };
+  /**
+   * The right rail of cards (Explorer, Inspector, Canvas map, Zoom): its landmark name, the show and hide
+   * controls for the whole rail, and the Inspector card's hint while no leaf is selected.
+   */
+  rail: { label: string; show: string; hide: string; inspectorEmpty: string };
   treeLabel: string;
   stageLabel: string;
   inspectorLabel: string;
