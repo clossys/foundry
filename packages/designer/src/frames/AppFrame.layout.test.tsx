@@ -1,5 +1,7 @@
 // @vitest-environment jsdom
 import "@testing-library/jest-dom/vitest";
+import { readFileSync } from "node:fs";
+import { resolve } from "node:path";
 import { act, cleanup, render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { renderToString } from "react-dom/server";
@@ -69,8 +71,9 @@ describe("AppFrame reserved layout", () => {
     expect(document.querySelector("[data-application-frame]")).toHaveClass("h-full", "overflow-hidden");
     expect(region("stage")).toHaveClass("relative", "isolate", "flex-1", "overflow-hidden");
     expect(screen.getByRole("main")).toHaveClass("h-full", "overflow-auto");
-    // cross-10: page content sits on the 16/24 spacing-scale inset; a bleeding canvas child drops it.
-    expect(screen.getByRole("main")).toHaveClass("p-lg", "tablet-lg:p-xl", "frame-main-bleed");
+    // cross-10: page content sits on the 16/24 spacing-scale inset (the named frame-main-inset); a bleeding canvas child drops it.
+    expect(screen.getByRole("main")).toHaveClass("frame-main-inset", "frame-main-bleed");
+    expect(readFileSync(resolve(import.meta.dirname, "../../styles/theme-keys.css"), "utf8")).toMatch(/@utility frame-main-inset \{\s*padding: var\(--spacing-lg, 16px\);\s*@media \(width >= 1024px\) \{ padding: var\(--spacing-xl, 24px\); \}\s*\}/);
     expect(region("header").parentElement).toBe(region("stage").parentElement);
     expect(region("stage").nextElementSibling).toBe(region("dock"));
     expect(region("dock")).toHaveClass("shrink-0");

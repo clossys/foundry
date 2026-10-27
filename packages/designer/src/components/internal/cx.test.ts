@@ -19,6 +19,11 @@ describe("cx", () => {
     expect(cx("gap-sm", "gap-lg")).toBe("gap-lg");
   });
 
+  it("resolves the named frame paddings against the token-named ones on their own axis", () => {
+    expect(cx("px-md", "px-frame-control")).toBe("px-frame-control");
+    expect(cx("p-lg", "p-frame-panel")).toBe("p-frame-panel");
+  });
+
   it("resolves a conflicting token-named radius utility (regression: unextended tailwind-merge does not recognize rounded-control/rounded-pill as conflicting)", () => {
     expect(cx("rounded-control", "rounded-pill")).toBe("rounded-pill");
   });

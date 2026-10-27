@@ -24,6 +24,16 @@ describe("Button", () => {
     expect(classes).toContain("hover:bg-action-hover");
   });
 
+  it("lets the named frame-control inline padding replace its own px-md, as the px-sm it stands for did", () => {
+    render(<Button variant="ghost" className="px-frame-control">Save</Button>);
+    const classes = screen.getByRole("button", { name: "Save" }).className.split(" ");
+    // A named `@utility` is outside tailwind-merge's token scale; only its `px` class-group
+    // registration in `cx` makes it conflict with px-md instead of both shipping.
+    expect(classes).toContain("px-frame-control");
+    expect(classes).not.toContain("px-md");
+    expect(classes).toContain("control-h-md");
+  });
+
   it("still carries its own non-conflicting built-in classes alongside a consumer className", () => {
     render(<Button className="my-extra-class">Save</Button>);
     const button = screen.getByRole("button", { name: "Save" });

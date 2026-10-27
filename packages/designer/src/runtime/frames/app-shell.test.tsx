@@ -47,10 +47,10 @@ describe("frames.app-shell runtime renderer", () => {
     unmount();
     render(<>{entry.render(input({ members: ["layout.immersive", "stage.full", "theme.light"] }))}</>);
     expect(standard).toMatchObject({ layout: "standard", stage: "contained", nav: "true" });
-    expect(standard.main.split(" ")).toContain("p-lg");
+    expect(standard.main.split(" ")).toContain("frame-main-inset");
     expect(shell().dataset.applicationFrameLayout).toBe("immersive");
     expect(shell().dataset.applicationFrameStage).toBe("full");
-    expect(main().className.split(" ")).not.toContain("p-lg");
+    expect(main().className.split(" ")).not.toContain("frame-main-inset");
     expect(document.querySelector('[data-application-frame-region="navigation"]')).toHaveAttribute("data-open", "false");
     expect(document.body.innerHTML).not.toBe(standard.html);
   });
