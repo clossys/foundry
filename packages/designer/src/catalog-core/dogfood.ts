@@ -43,7 +43,9 @@ export interface DogfoodInput {
   /** Consumer mode follows source modules; these identities never suppress their findings. */
   consumerBoundary?: { readonly pages: readonly string[]; readonly sourceImports: Readonly<Record<string, string>>; readonly pageChromeFiles?: readonly string[];
     /** Exact edges resolved from the runner's explicit project-source contract. */
-    readonly projectSourceImports?: readonly string[] };
+    readonly projectSourceImports?: readonly string[];
+    /** Exact stylesheet edges the runner resolved and scanned (consumer CSS closure). */
+    readonly stylesheetImports?: Readonly<Record<string, string>> };
 }
 export interface DogfoodCompose { file: string; line: number; tag: string; slotId: string; module: string; symbol: string }
 export const STRUCTURAL_TAGS = Object.freeze(["div", "span", "section", "ul", "ol", "li", "p", "h1", "h2", "h3", "h4", "h5", "h6", "dl", "dt", "dd", "code", "pre", "header", "main", "nav", "footer"] as const);
@@ -75,7 +77,8 @@ interface Parsed { exports: SourceExport[]; definitions: SourceDefinition[]; non
 
 /** A balanced JSX node scanner, not a TypeScript compiler. Dynamic attribute values and
  * unsupported/malformed syntax stay explicit findings; observations are a lower bound. */
-function parseJsx(source: string): Parsed {
+/** `jsx` is false for TypeScript-only (.ts) sources, where `<` only opens type syntax. */
+function parseJsx(source: string, jsx = true): Parsed {
   const result: Parsed = { exports: [], definitions: [], nonCode: [], importBindings: [], contextProviders: new Set(), modules: new Set(), comments: [], elements: [], imports: new Map(), unresolved: [] };
   let i = 0;
   const issue = (message: string, start = i) => result.unresolved.push({ start, message: `unresolved ${message}` });
@@ -107,7 +110,7 @@ function parseJsx(source: string): Parsed {
       if (namedExport[3]) result.modules.add(namedExport[3]);
       result.nonCode.push({ start: i, end: i + namedExport[0].length }); i += namedExport[0].length; return true;
     }
-    const reexport = /^(?:export\s+(?:\{[^}]*\}|\*)\s+from\s*|import\s*)(["'])([^"']+)\1/.exec(source.slice(i));
+    const reexport = /^(?:export\s+(?:\{[^}]*\}|\*(?:\s+as\s+(?:[A-Za-z_$][\w$]*|"[^"]*"|'[^']*'))?)\s+from\s*|import\s*)(["'])([^"']+)\1/.exec(source.slice(i));
     if (reexport) { result.modules.add(reexport[2]!); result.nonCode.push({ start: i, end: i + reexport[0].length }); i += reexport[0].length; return true; }
     const match = /^import\s+(?!type\b)([\s\S]*?)\s+from\s*(["'])([^"']+)\2/.exec(source.slice(i));
     if (!match) return false;
@@ -175,7 +178,8 @@ function parseJsx(source: string): Parsed {
       if (["'", '"', "`"].includes(source[i] ?? "")) { quoted(); last = "value"; continue; }
       // Keep bounded declaration spans for source-owned view qualification.
       // JSX in a different or unused declaration cannot qualify an empty view.
-      const fn = /^(export\s+)?(?:async\s+)?function\s+([A-Za-z_$][\w$]*)\s*\(/.exec(source.slice(i));
+      // Simple type parameters (function View<Row>(...)) still name a render body.
+      const fn = /^(export\s+)?(?:async\s+)?function\s+([A-Za-z_$][\w$]*)\s*(?:<[^<>()]*>\s*)?\(/.exec(source.slice(i));
       if (fn) {
         const start = i; i += fn[0].length; js(")"); space();
         if (source[i] === ":") { while (i < source.length && source[i] !== "{" && source[i] !== ";") i++; }
@@ -203,7 +207,7 @@ function parseJsx(source: string): Parsed {
       // TypeScript type arguments (Record<string, unknown>, fn<Props>), not JSX.
       // The trailing comma/extends forms also identify generic arrow parameters.
       const genericArrow = source[i] === "<" && /^<[A-Za-z_$][\w$]*(?:\s*,|\s+extends\b)[^<>]*>\s*\(/.test(source.slice(i));
-      if (source[i] === "<" && /[A-Za-z>]/.test(source[i + 1] ?? "") && (!last || /[=(:\[,!&|?;{}]/.test(last)) && !genericArrow) { element(); last = "value"; continue; }
+      if (jsx && source[i] === "<" && /[A-Za-z>]/.test(source[i + 1] ?? "") && (!last || /[=(:\[,!&|?;{}]/.test(last)) && !genericArrow) { element(); last = "value"; continue; }
       if (source.slice(i, i + 2) === "=>") { i += 2; last = "="; continue; }
       if (source[i] === "{") { i++; js("}"); last = "value"; continue; }
       if (source[i] === "(") { i++; js(")"); last = "value"; continue; }
@@ -256,7 +260,8 @@ function lexicalReactProviders(source: string, parsed: Parsed): Set<string> {
 }
 
 /** Import/export edges come from the same comment/string-aware source walk. */
-export function dogfoodSourceModules(source: string): string[] { return [...parseJsx(source).modules]; }
+/** `jsx` is false for TypeScript-only (.ts/.mts/.cts) sources, as runDogfood parses them. */
+export function dogfoodSourceModules(source: string, jsx = true): string[] { return [...parseJsx(source, jsx).modules]; }
 
 function importedIdentity(node: Element, parsed: Parsed, input: DogfoodInput, file: string) {
   const [binding, ...parts] = node.tag.split("."), imported = parsed.imports.get(binding!);
@@ -288,6 +293,10 @@ function composeAt(file: string, node: Element, parsed: Parsed, input: DogfoodIn
   const slotId = input.resolvedImports ? input.resolvedImports[`${file}:${imported.module}#${symbol}`] :
     module === frame.module && symbol === frame.export ? appFrameFill.$extensions["com.clossys.fill"].slot :
       registeredServerSlot(module, symbol) ??
+      // The client blocks barrel exports every registered block (checked against
+      // its real source in dogfood.test.ts); a block export resolves to its own
+      // block slot, as the server barrel's does, before the component vocabulary.
+      (module === `${DOGFOOD_PACKAGE_NAME}/blocks` ? serverBlockSlots.get(symbol) : undefined) ??
       (["components", "icons", "charts", "blocks", "shell"].some(path => module === `${DOGFOOD_PACKAGE_NAME}/${path}`) ? knownSlot(symbol) : undefined);
   return slotId ? { file, line: 0, tag: node.tag, slotId, module: imported.module, symbol } : undefined;
 }
@@ -303,7 +312,7 @@ function sourceViewQualifier(input: DogfoodInput) {
   const parsedFiles = new Map<string, Parsed>();
   const parsedAt = (file: string) => {
     if (!files.has(file) || input.files.filter(row => row.file === file).length !== 1) return undefined;
-    if (!parsedFiles.has(file)) parsedFiles.set(file, parseJsx(files.get(file)!));
+    if (!parsedFiles.has(file)) parsedFiles.set(file, parseJsx(files.get(file)!, !/\.[cm]?ts$/.test(file)));
     const parsed = parsedFiles.get(file)!;
     return parsed.unresolved.length ? undefined : parsed;
   };
@@ -401,6 +410,29 @@ export function dogfoodComposes(input: DogfoodInput): DogfoodCompose[] {
   });
 }
 
+/** Consumer-mode import qualification (G4). Every static import, re-export and
+ * side-effect import must be relative or runner-resolved project source, the
+ * React runtime (react, react-dom and their jsx/client/server entries, plus the
+ * server-only/client-only markers), the Next.js framework (next, next/*), a
+ * node: builtin, or a Foundry Designer entry. Anything else, including a
+ * non-Foundry UI library, is an unqualified external the runner never inspected. */
+const consumerRuntimeModules = new Set(["react", "react/jsx-runtime", "react/jsx-dev-runtime", "react-dom", "react-dom/client", "react-dom/server", "server-only", "client-only"]);
+const rawAria = (module: string) => module === "react-aria-components" || module.startsWith("react-aria-components/");
+function qualifiedConsumerModule(module: string, file: string, input: DogfoodInput): boolean {
+  if (module.startsWith(".") || consumerRuntimeModules.has(module) || module.startsWith("node:") || module === DOGFOOD_PACKAGE_NAME || module.startsWith(`${DOGFOOD_PACKAGE_NAME}/`) || module === "next" || module.startsWith("next/")) return true;
+  const edge = `${file}:${module}`;
+  return Object.hasOwn(input.consumerBoundary?.sourceImports ?? {}, edge) || Object.hasOwn(input.consumerBoundary?.stylesheetImports ?? {}, edge) || Object.hasOwn(input.localModules ?? {}, edge);
+}
+/** Raw px in @media/@container thresholds (G5), matching the strict checker's
+ * raw CSS pixel query rule; declarations are already covered by the value engine. */
+function dogfoodCssQueryPixels(content: string): { start: number; end: number; evidence: string }[] {
+  const clean = content.replace(/\/\*[\s\S]*?\*\//g, comment => " ".repeat(comment.length));
+  return [...clean.matchAll(/@(?:media|container)\b\s*([^{};]+)/gi)].flatMap(query => {
+    const pixels = [...query[1]!.matchAll(/(?:^|[^\w.-])(-?(?:\d+(?:\.\d+)?|\.\d+)px)\b/gi)].map(row => row[1]!);
+    return pixels.length ? [{ start: query.index!, end: query.index! + query[0].length, evidence: `Hard-coded pixel query threshold: ${pixels.join(", ")} bypasses registered token binding.` }] : [];
+  });
+}
+
 const quotedLiteral = /^(?:"(?:\\.|[^"\\])*"|'(?:\\.|[^'\\])*')$/;
 function staticAttribute(attribute: Attribute): boolean {
   if (!attribute.dynamic) return true;
@@ -452,9 +484,18 @@ export function runDogfood(input: DogfoodInput) {
     if (page && (leases.length !== 1 || leases.some(node => !node.attributes.some(attr => attr.name === "id" && attr.value) || !node.attributes.some(attr => attr.name === "header" && attr.value))))
       add("DF8", { tag: "page", start: 0, end: 0, attributes: [] }, "Page composition graph requires exactly one imported PageHeaderModule with explicit id and header.");
     if (consumer) {
-      if ([...parsed.modules].some(module => module === "react-aria-components" || module.startsWith("react-aria-components/"))) add("DF5", { tag: "import", start: 0, end: 0, attributes: [] }, "Raw react-aria-components import bypasses the consumer component boundary.");
+      // TypeScript sources (.ts/.mts/.cts) import at runtime too; their modules
+      // are collected without JSX so type syntax never reads as markup.
+      const sourceModules = /\.[cm]?ts$/.test(file.file) && !/\.d\.[cm]?ts$/.test(file.file) ? parseJsx(file.content, false).modules : parsed.modules;
+      if ([...sourceModules].some(rawAria)) add("DF5", { tag: "import", start: 0, end: 0, attributes: [] }, "Raw react-aria-components import bypasses the consumer component boundary.");
+      for (const module of [...sourceModules].sort()) if (!rawAria(module) && !qualifiedConsumerModule(module, file.file, input)) {
+        const quoted = new RegExp(`(["'])${module.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}\\1`).exec(file.content), start = quoted?.index ?? 0;
+        add("DF5", { tag: "import", start, end: start + (quoted?.[0].length ?? 0), attributes: [] }, `Unqualified external import ${module}: not project source the runner resolved, the React/Next.js runtime, a node: builtin or a ${DOGFOOD_PACKAGE_NAME} entry.`);
+      }
       if (/\.css$/.test(file.file)) {
         for (const issue of cssIssues.filter(issue => issue.file === file.file))
+          add("DF2", { tag: "css", start: issue.start, end: issue.end, attributes: [] }, issue.evidence);
+        for (const issue of dogfoodCssQueryPixels(file.content))
           add("DF2", { tag: "css", start: issue.start, end: issue.end, attributes: [] }, issue.evidence);
       }
     }

@@ -170,6 +170,17 @@ describe("derived surface dogfood", () => {
       expect(dogfoodComposes(input(source)).map(row => row.symbol).sort()).toEqual(candidates.filter(symbol => exported.has(symbol) && registered.includes(symbol)));
     }
   });
+  it("resolves every registered block export from the public blocks barrel to its own block slot (G3)", () => {
+    const barrel = readFileSync(new URL("../blocks/index.ts", import.meta.url), "utf8");
+    expect(barrel).not.toMatch(/^export\s*\*/m);
+    const exported = new Set([...barrel.matchAll(/^export\s*\{([^}]+)\}\s*from/gm)].flatMap(match => match[1]!.split(",").map(value => value.trim().split(/\s+as\s+/).at(-1)!)));
+    const entries = BLOCK_ENTRIES.flatMap(row => row.export ? [[row.export, row.id] as const] : []);
+    expect(entries.length).toBeGreaterThan(0);
+    expect(entries.filter(([symbol]) => !exported.has(symbol))).toEqual([]);
+    const source = entries.map(([symbol], index) => `import { ${symbol} as Symbol${index} } from "@clossys/designer/blocks";`).join("\n") + `\nconst Page=()=> <>${entries.map((_, index) => `<Symbol${index}/>`).join("")}</>`;
+    expect(dogfoodComposes(input(source)).map(row => [row.symbol, row.slotId])).toEqual(entries.map(([symbol, id]) => [symbol, id]));
+    expect(runDogfood(input(source)).findings.filter(row => row.code === "DF5")).toEqual([]);
+  });
   it.each([
     ["components", "Button"], ["components", "Item"], ["blocks", "Card"], ["blocks", "Button"],
   ])("rejects non-exported or wrong-family %s/server#%s", (family, symbol) => {

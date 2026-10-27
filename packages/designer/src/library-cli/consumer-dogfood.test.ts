@@ -194,6 +194,63 @@ describe("consumer source boundary (zero finding allowlist)", () => {
     expect(runConsumerDogfood(input).findings.filter(row => row.code === "DF5" && row.tag === "Published")).toEqual([]);
     expect(runDogfood({ files: input.files }).findings).toContainEqual(expect.objectContaining({ code: "DF5", tag: "Published" }));
   });
+  it("qualifies the actual Publisher IndexView/DetailsView and direct Designer blocks a console page renders (G3)", async () => {
+    const publisher = fileURLToPath(new URL("../../../publisher/src/web/index.ts", import.meta.url));
+    await write("Page.tsx", `${header} import {IndexView, DetailsView} from "@clossys/publisher/web"; import {DataTable, EmptyState, Panel} from "@clossys/designer/blocks"; export default function Page(){return <><Lease id="example" header={{title:"Example"}}/><IndexView/><DetailsView/><Panel><DataTable/><EmptyState/></Panel></>}`);
+    const input = await consumerDogfoodSources(["Page.tsx"], { ...contract, sources: { "@clossys/publisher/web": publisher } }, root, root);
+    expect(input.files.some(file => file.file.endsWith("/web/views/IndexView.tsx"))).toBe(true);
+    expect(input.files.some(file => file.file.endsWith("/web/views/DetailsView.tsx"))).toBe(true);
+    const df5 = runConsumerDogfood(input).findings.filter(row => row.code === "DF5" && row.file === "Page.tsx");
+    expect(df5).toEqual([]);
+    // An unregistered symbol spelled as a blocks import still has no slot.
+    await write("Page.tsx", `${header} import {Fabricated} from "@clossys/designer/blocks"; export default function Page(){return <><Lease id="example" header={{title:"Example"}}/><Fabricated/></>}`);
+    const spoof = await consumerDogfoodSources(["Page.tsx"], contract, root, root);
+    expect(runConsumerDogfood(spoof).findings).toContainEqual(expect.objectContaining({ code: "DF5", tag: "Fabricated" }));
+  });
+  it("reports unqualified external and non-Foundry UI library imports, not the qualified runtime boundary (G4)", async () => {
+    await write("Page.tsx", `${header} import {Root} from "@radix-ui/react-dialog"; import clsx from "clsx"; export {motion} from "framer-motion"; import "some-side-effect"; import "server-only"; import {useRouter} from "next/navigation"; import {useState} from "react"; import {createPortal} from "react-dom"; import {readFile} from "node:fs/promises"; import {Button} from "@clossys/designer/components"; import {helper} from "@/lib/helper"; import {local} from "./local"; export default function Page(){return <Lease id="example" header={{title:"Example"}}/>}`);
+    await write("src/lib/helper.ts", 'import {format} from "date-fns"; export const helper=format;');
+    await write("local.ts", "export const local=1;");
+    const findings = runConsumerDogfood(await sources()).findings.filter(row => row.code === "DF5" && row.tag === "import");
+    const reported = findings.map(row => [row.file, /Unqualified external import ([^\s:]+)/.exec(row.evidence)?.[1]]).sort();
+    expect(reported).toEqual([["Page.tsx", "@radix-ui/react-dialog"], ["Page.tsx", "clsx"], ["Page.tsx", "framer-motion"], ["Page.tsx", "some-side-effect"], ["src/lib/helper.ts", "date-fns"]]);
+    // The non-consumer catalog mode keeps its previous contract.
+    expect(runDogfood({ files: [{ file: "Page.tsx", content: 'import clsx from "clsx"; export const x=clsx;' }] }).findings).toEqual([]);
+  });
+  it("parses reached TypeScript sources (.ts/.mts/.cts) for raw react-aria-components runtime imports, never type-only ones (G4-R1a)", async () => {
+    await write("Page.tsx", `${page} import {AriaButton} from "@/lib/aria"; import {AriaMenu} from "./src/lib/menu.mts"; import {AriaList} from "./src/lib/legacy.cts"; import {first} from "@/lib/generic"; import type {Id} from "@/lib/types"; import {types} from "@/lib/types"; import {plain} from "./src/lib/plain.mjs";`);
+    await write("src/lib/aria.ts", 'import {Button} from "react-aria-components"; export const AriaButton = Button;');
+    await write("src/lib/menu.mts", 'import {Menu} from "react-aria-components/Menu"; export const AriaMenu = Menu;');
+    await write("src/lib/legacy.cts", 'import {ListBox} from "react-aria-components"; export const AriaList = ListBox;');
+    await write("src/lib/generic.ts", 'export function first<T>(rows: T[]): T { return rows[0]!; }\nexport const make = <T>(row: T) => row;\nimport {Popover} from "react-aria-components";\nimport {deep} from "./deep";\nexport const AriaPopover = [Popover, deep];');
+    await write("src/lib/deep.ts", 'import {Tabs} from "react-aria-components"; export const deep = Tabs;');
+    await write("src/lib/plain.mjs", 'import {Switch} from "react-aria-components"; export const plain = Switch;');
+    await write("src/lib/types.ts", 'import type {Key} from "react-aria-components"; export type {Selection} from "react-aria-components"; export type Id = Key; export const types = 1;');
+    const findings = runConsumerDogfood(await sources()).findings.filter(row => row.code === "DF5" && row.tag === "import");
+    expect(findings.filter(row => /Raw react-aria-components/.test(row.evidence)).map(row => row.file).sort()).toEqual(["src/lib/aria.ts", "src/lib/deep.ts", "src/lib/generic.ts", "src/lib/legacy.cts", "src/lib/menu.mts", "src/lib/plain.mjs"]);
+    expect(findings.filter(row => /Unqualified external import/.test(row.evidence))).toEqual([]);
+  });
+  it("collects namespace and star re-exports in reached sources as imports, never type-only re-exports (G4-R1b)", async () => {
+    await write("Page.tsx", `${page} export * as Widgets from "unqualified-ui"; export * from "other-ui"; export type * from "types-only-ui"; export type * as Types from "types-ns-ui"; export * as Local from "./local-ns"; export * as "kebab-ns" from "string-ns-ui"; import {Kit} from "@/lib/barrel";`);
+    await write("local-ns.ts", "export const one = 1;");
+    await write("src/lib/barrel.ts", 'export * as Kit from "kit-ui";');
+    const input = await sources();
+    expect(input.files.map(file => file.file)).toContain("local-ns.ts");
+    const reported = runConsumerDogfood(input).findings.filter(row => row.code === "DF5" && row.tag === "import").map(row => [row.file, /Unqualified external import ([^\s:]+)/.exec(row.evidence)?.[1]]).sort();
+    expect(reported).toEqual([["Page.tsx", "other-ui"], ["Page.tsx", "string-ns-ui"], ["Page.tsx", "unqualified-ui"], ["src/lib/barrel.ts", "kit-ui"]]);
+  });
+  it("qualifies a resolved and scanned package stylesheet export, and refuses a forged stylesheet edge (G4-R1c)", async () => {
+    await write("Page.tsx", `${page} import "@example/ui/styles.css";`);
+    await write("node_modules/@example/ui/package.json", JSON.stringify({ name: "@example/ui", exports: { "./styles.css": "./dist/styles.css" } }));
+    await write("node_modules/@example/ui/dist/styles.css", '@import "./base.css"; .x { display: block; }');
+    await write("node_modules/@example/ui/dist/base.css", ".y { display: block; }");
+    const input = await sources();
+    expect(input.files.map(file => file.file)).toEqual(expect.arrayContaining(["node_modules/@example/ui/dist/styles.css", "node_modules/@example/ui/dist/base.css"]));
+    expect(runConsumerDogfood(input).findings).toEqual([]);
+    const boundary = input.consumerBoundary as typeof input.consumerBoundary & { stylesheetImports?: Record<string, string> };
+    for (const stylesheetImports of [{ "Page.tsx:clsx": "missing.css" }, { "Page.tsx:clsx": "Page.tsx" }, { "Unscanned.tsx:clsx": "node_modules/@example/ui/dist/base.css" }])
+      expect(() => runConsumerDogfood({ ...input, consumerBoundary: { ...boundary, stylesheetImports } })).toThrow(/stylesheet boundary/);
+  });
   it("passes mapped project views through the actual dogfood-consumer CLI without promoting JSON to source", async () => {
     await write("Page.tsx", `${header} import {Publisher} from "@example/publisher";export default function Page(){return <><Lease id="example" header={{title:"Example"}}/><Publisher/></>}`);
     await write("Publisher.tsx", 'import {Button} from "@clossys/designer/components";import copy from "./copy.json";export function Publisher(){return <Button>{copy.title}</Button>}');
@@ -213,6 +270,24 @@ describe("consumer source boundary (zero finding allowlist)", () => {
     expect(report.ignored).toEqual([]); expect(report.exceptions).toEqual([]);
     expect(report.findings.filter(finding => finding.file === "console.css").length).toBeGreaterThanOrEqual(2);
     expect(report.findings.some(finding => finding.evidence.includes("inline styles"))).toBe(true);
+  });
+  it("reports raw px in consumer CSS declarations, media/container thresholds, className and style (G5)", async () => {
+    const cases: [string, string, string][] = [
+      ["declaration", ".pane{width:12px}", "<div/>"],
+      ["media", "@media (width >= 320px){.pane{display:block}}", "<div/>"],
+      ["container", "@container pane (min-width:320px){.pane{display:block}}", "<div/>"],
+      ["className", ".pane{display:block}", '<div className="w-[12px]"/>'],
+      ["style", ".pane{display:block}", '<div style={{width:"12px"}}/>'],
+    ];
+    for (const [name, css, element] of cases) {
+      await write("Page.tsx", `${header} import "./console.css"; export default function Page(){return <><Lease id="example" header={{title:"Example"}}/>${element}</>}`);
+      await write("console.css", css);
+      const findings = runConsumerDogfood(await sources()).findings.filter(row => row.code === "DF2" && /(?:12|320)px|inline styles/.test(row.evidence));
+      expect(findings.length, name).toBeGreaterThan(0);
+    }
+    await write("Page.tsx", `${header} import "./console.css"; export default function Page(){return <><Lease id="example" header={{title:"Example"}}/><div/></>}`);
+    await write("console.css", "/* 12px is documentation */ @media (width >= 20rem){.pane{display:block}} @container pane (width >= 20rem){.pane{display:block}}");
+    expect(runConsumerDogfood(await sources()).findings).toEqual([]);
   });
   it.each(["header", "h1", "nav"])("forbids raw %s even in a reachable page helper", async tag => {
     await write("Page.tsx", `${header} import { Publisher } from "@example/publisher"; export default function Page(){return <><Lease id="example" header={{title:"Example"}}/><Publisher/></>}`);

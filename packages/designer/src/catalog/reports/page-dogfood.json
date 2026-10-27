@@ -75,17 +75,6 @@
       "tag": "span"
     },
     {
-      "code": "DF5",
-      "elementId": "src/frames/AppFrame.tsx#AccountMenu@e83d6a33f18b",
-      "evidence": "Unknown visual import or local component <AccountMenu>; no registered slot resolves.",
-      "file": "src/frames/AppFrame.tsx",
-      "line": 211,
-      "missing": "AccountMenu visual capability",
-      "raisedBy": "src/frames/AppFrame.tsx#surface",
-      "slotId": null,
-      "tag": "AccountMenu"
-    },
-    {
       "code": "DF2",
       "elementId": "src/frames/AppFrame.tsx#AccountMenu@e83d6a33f18b",
       "evidence": "unresolved ...: dynamic source cannot establish token-only styling.",
@@ -243,17 +232,6 @@
       "tag": "ModalContext.Provider"
     },
     {
-      "code": "DF5",
-      "elementId": "src/frames/AppFrame.tsx#Drawer@0c5bbc037dd7",
-      "evidence": "Unknown visual import or local component <Drawer>; no registered slot resolves.",
-      "file": "src/frames/AppFrame.tsx",
-      "line": 222,
-      "missing": "Drawer visual capability",
-      "raisedBy": "src/frames/AppFrame.tsx#surface",
-      "slotId": null,
-      "tag": "Drawer"
-    },
-    {
       "code": "DF2",
       "elementId": "src/frames/AppFrame.tsx#Button@969f8c3e079b",
       "evidence": "unresolved className: dynamic source cannot establish token-only styling.",
@@ -409,17 +387,6 @@
     },
     {
       "code": "DF5",
-      "elementId": "src/frames/AppFrame.tsx#PageBar@3b1fe533b3f3",
-      "evidence": "Unknown visual import or local component <PageBar>; no registered slot resolves.",
-      "file": "src/frames/AppFrame.tsx",
-      "line": 243,
-      "missing": "PageBar visual capability",
-      "raisedBy": "src/frames/AppFrame.tsx#surface",
-      "slotId": null,
-      "tag": "PageBar"
-    },
-    {
-      "code": "DF5",
       "elementId": "src/frames/AppFrame.tsx#ModalContext.Provider@8da73de1eada",
       "evidence": "Unknown visual import or local component <ModalContext.Provider>; no registered slot resolves.",
       "file": "src/frames/AppFrame.tsx",
@@ -565,17 +532,6 @@
       "raisedBy": "src/frames/AppFrame.tsx#surface",
       "slotId": null,
       "tag": "FrameSlotOutlet"
-    },
-    {
-      "code": "DF5",
-      "elementId": "src/frames/AppFrame.tsx#AppNavigation@9e8079df273c",
-      "evidence": "Unknown visual import or local component <AppNavigation>; no registered slot resolves.",
-      "file": "src/frames/AppFrame.tsx",
-      "line": 253,
-      "missing": "AppNavigation visual capability",
-      "raisedBy": "src/frames/AppFrame.tsx#surface",
-      "slotId": null,
-      "tag": "AppNavigation"
     },
     {
       "code": "DF2",
@@ -734,17 +690,6 @@
       "tag": "aside"
     },
     {
-      "code": "DF5",
-      "elementId": "src/frames/AppFrame.tsx#ResizablePane@ec2c976b0a4d",
-      "evidence": "Unknown visual import or local component <ResizablePane>; no registered slot resolves.",
-      "file": "src/frames/AppFrame.tsx",
-      "line": 272,
-      "missing": "ResizablePane visual capability",
-      "raisedBy": "src/frames/AppFrame.tsx#surface",
-      "slotId": null,
-      "tag": "ResizablePane"
-    },
-    {
       "code": "DF2",
       "elementId": "src/frames/AppFrame.tsx#ResizablePane@ec2c976b0a4d",
       "evidence": "unresolved class utilities: h-full, min-h-0, shrink-0, rounded-none, border-0, border-s, border-line-base, p-frame-panel",
@@ -764,17 +709,6 @@
       "raisedBy": "src/frames/AppFrame.tsx#surface",
       "slotId": null,
       "tag": "FrameSlotOutlet"
-    },
-    {
-      "code": "DF5",
-      "elementId": "src/frames/AppFrame.tsx#CommandMenu@ca5d3a091d5e",
-      "evidence": "Unknown visual import or local component <CommandMenu>; no registered slot resolves.",
-      "file": "src/frames/AppFrame.tsx",
-      "line": 278,
-      "missing": "CommandMenu visual capability",
-      "raisedBy": "src/frames/AppFrame.tsx#surface",
-      "slotId": null,
-      "tag": "CommandMenu"
     },
     {
       "code": "DF2",
@@ -893,17 +827,6 @@
       "raisedBy": "src/frames/FrameDock.tsx#surface",
       "slotId": null,
       "tag": "FrameModuleOutlet"
-    },
-    {
-      "code": "DF5",
-      "elementId": "src/frames/FrameDock.tsx#ResizablePane@2b245bc6e2a6",
-      "evidence": "Unknown visual import or local component <ResizablePane>; no registered slot resolves.",
-      "file": "src/frames/FrameDock.tsx",
-      "line": 72,
-      "missing": "ResizablePane visual capability",
-      "raisedBy": "src/frames/FrameDock.tsx#surface",
-      "slotId": null,
-      "tag": "ResizablePane"
     },
     {
       "code": "DF2",
@@ -1039,17 +962,6 @@
       "raisedBy": "src/frames/FrameDock.tsx#surface",
       "slotId": null,
       "tag": "div"
-    },
-    {
-      "code": "DF5",
-      "elementId": "src/frames/FrameDock.tsx#Drawer@a9ed085775c8",
-      "evidence": "Unknown visual import or local component <Drawer>; no registered slot resolves.",
-      "file": "src/frames/FrameDock.tsx",
-      "line": 82,
-      "missing": "Drawer visual capability",
-      "raisedBy": "src/frames/FrameDock.tsx#surface",
-      "slotId": null,
-      "tag": "Drawer"
     },
     {
       "code": "DF2",
@@ -1268,17 +1180,6 @@
       "tag": "FrameSlotOutlet"
     },
     {
-      "code": "DF5",
-      "elementId": "src/frames/InspectorFrame.tsx#Drawer@78df52f2cf79",
-      "evidence": "Unknown visual import or local component <Drawer>; no registered slot resolves.",
-      "file": "src/frames/InspectorFrame.tsx",
-      "line": 49,
-      "missing": "Drawer visual capability",
-      "raisedBy": "src/frames/InspectorFrame.tsx#surface",
-      "slotId": null,
-      "tag": "Drawer"
-    },
-    {
       "code": "DF2",
       "elementId": "src/frames/InspectorFrame.tsx#Drawer@78df52f2cf79",
       "evidence": "unresolved className: dynamic source cannot establish token-only styling.",
@@ -1320,17 +1221,6 @@
       "tag": "aside"
     },
     {
-      "code": "DF5",
-      "elementId": "src/frames/InspectorFrame.tsx#ResizablePane@83291ceb986f",
-      "evidence": "Unknown visual import or local component <ResizablePane>; no registered slot resolves.",
-      "file": "src/frames/InspectorFrame.tsx",
-      "line": 53,
-      "missing": "ResizablePane visual capability",
-      "raisedBy": "src/frames/InspectorFrame.tsx#surface",
-      "slotId": null,
-      "tag": "ResizablePane"
-    },
-    {
       "code": "DF2",
       "elementId": "src/frames/InspectorFrame.tsx#ResizablePane@83291ceb986f",
       "evidence": "unresolved class utilities: h-full, min-h-0, rounded-none, border-0, border-s, border-line-base, p-sm",
@@ -1339,17 +1229,6 @@
       "raisedBy": "src/frames/InspectorFrame.tsx#surface",
       "slotId": null,
       "tag": "ResizablePane"
-    },
-    {
-      "code": "DF5",
-      "elementId": "src/runtime/frames/app-header.tsx#PageBar@45bd6f9927b9",
-      "evidence": "Unknown visual import or local component <PageBar>; no registered slot resolves.",
-      "file": "src/runtime/frames/app-header.tsx",
-      "line": 44,
-      "missing": "PageBar visual capability",
-      "raisedBy": "src/runtime/frames/app-header.tsx#surface",
-      "slotId": null,
-      "tag": "PageBar"
     },
     {
       "code": "DF2",
@@ -1394,17 +1273,6 @@
       "tag": "AppFrame"
     },
     {
-      "code": "DF5",
-      "elementId": "src/runtime/frames/app-sidebar.tsx#AppNavigation@e3794274660b",
-      "evidence": "Unknown visual import or local component <AppNavigation>; no registered slot resolves.",
-      "file": "src/runtime/frames/app-sidebar.tsx",
-      "line": 44,
-      "missing": "AppNavigation visual capability",
-      "raisedBy": "src/runtime/frames/app-sidebar.tsx#surface",
-      "slotId": null,
-      "tag": "AppNavigation"
-    },
-    {
       "code": "DF2",
       "elementId": "src/runtime/frames/app-sidebar.tsx#AppNavigation@e3794274660b",
       "evidence": "unresolved ...: dynamic source cannot establish token-only styling.",
@@ -1444,17 +1312,6 @@
       "raisedBy": "src/runtime/frames/app-sidebar.tsx#surface",
       "slotId": null,
       "tag": "RuntimeAppSidebar"
-    },
-    {
-      "code": "DF5",
-      "elementId": "src/runtime/frames/command.tsx#CommandMenu@9c3e36852833",
-      "evidence": "Unknown visual import or local component <CommandMenu>; no registered slot resolves.",
-      "file": "src/runtime/frames/command.tsx",
-      "line": 35,
-      "missing": "CommandMenu visual capability",
-      "raisedBy": "src/runtime/frames/command.tsx#surface",
-      "slotId": null,
-      "tag": "CommandMenu"
     },
     {
       "code": "DF2",
@@ -1507,17 +1364,6 @@
       "raisedBy": "src/runtime/frames/inspector.tsx#surface",
       "slotId": null,
       "tag": "InspectorFrame"
-    },
-    {
-      "code": "DF5",
-      "elementId": "src/runtime/frames/sheet.tsx#Drawer@406a5df3cd63",
-      "evidence": "Unknown visual import or local component <Drawer>; no registered slot resolves.",
-      "file": "src/runtime/frames/sheet.tsx",
-      "line": 32,
-      "missing": "Drawer visual capability",
-      "raisedBy": "src/runtime/frames/sheet.tsx#surface",
-      "slotId": null,
-      "tag": "Drawer"
     },
     {
       "code": "DF2",
@@ -1690,17 +1536,6 @@
     },
     {
       "code": "DF5",
-      "elementId": "src/runtime/sections/access-matrix.tsx#AccessMatrix@a421613ea4a7",
-      "evidence": "Unknown visual import or local component <AccessMatrix>; no registered slot resolves.",
-      "file": "src/runtime/sections/access-matrix.tsx",
-      "line": 21,
-      "missing": "AccessMatrix visual capability",
-      "raisedBy": "src/runtime/sections/access-matrix.tsx#surface",
-      "slotId": null,
-      "tag": "AccessMatrix"
-    },
-    {
-      "code": "DF5",
       "elementId": "src/runtime/sections/access-matrix.tsx#AccessMatrixFill@c457abdba592",
       "evidence": "Unknown visual import or local component <AccessMatrixFill>; no registered slot resolves.",
       "file": "src/runtime/sections/access-matrix.tsx",
@@ -1709,17 +1544,6 @@
       "raisedBy": "src/runtime/sections/access-matrix.tsx#surface",
       "slotId": null,
       "tag": "AccessMatrixFill"
-    },
-    {
-      "code": "DF5",
-      "elementId": "src/runtime/sections/activity-feed.tsx#ActivityFeed@a01e455e7443",
-      "evidence": "Unknown visual import or local component <ActivityFeed>; no registered slot resolves.",
-      "file": "src/runtime/sections/activity-feed.tsx",
-      "line": 13,
-      "missing": "ActivityFeed visual capability",
-      "raisedBy": "src/runtime/sections/activity-feed.tsx#surface",
-      "slotId": null,
-      "tag": "ActivityFeed"
     },
     {
       "code": "DF5",
@@ -1733,28 +1557,6 @@
       "tag": "LinkRegion"
     },
     {
-      "code": "DF5",
-      "elementId": "src/runtime/sections/article.tsx#TableOfContents@9905e8628115",
-      "evidence": "Unknown visual import or local component <TableOfContents>; no registered slot resolves.",
-      "file": "src/runtime/sections/article.tsx",
-      "line": 24,
-      "missing": "TableOfContents visual capability",
-      "raisedBy": "src/runtime/sections/article.tsx#surface",
-      "slotId": null,
-      "tag": "TableOfContents"
-    },
-    {
-      "code": "DF5",
-      "elementId": "src/runtime/sections/article.tsx#ArticleBody@2d21bbef83ef",
-      "evidence": "Unknown visual import or local component <ArticleBody>; no registered slot resolves.",
-      "file": "src/runtime/sections/article.tsx",
-      "line": 30,
-      "missing": "ArticleBody visual capability",
-      "raisedBy": "src/runtime/sections/article.tsx#surface",
-      "slotId": null,
-      "tag": "ArticleBody"
-    },
-    {
       "code": "DF2",
       "elementId": "src/runtime/sections/article.tsx#ArticleBody@2d21bbef83ef",
       "evidence": "unresolved ...: dynamic source cannot establish token-only styling.",
@@ -1763,17 +1565,6 @@
       "raisedBy": "src/runtime/sections/article.tsx#surface",
       "slotId": null,
       "tag": "ArticleBody"
-    },
-    {
-      "code": "DF5",
-      "elementId": "src/runtime/sections/audit-log.tsx#AuditLog@6c3cba8d3d0e",
-      "evidence": "Unknown visual import or local component <AuditLog>; no registered slot resolves.",
-      "file": "src/runtime/sections/audit-log.tsx",
-      "line": 12,
-      "missing": "AuditLog visual capability",
-      "raisedBy": "src/runtime/sections/audit-log.tsx#surface",
-      "slotId": null,
-      "tag": "AuditLog"
     },
     {
       "code": "DF5",
@@ -1810,50 +1601,6 @@
     },
     {
       "code": "DF5",
-      "elementId": "src/runtime/sections/call-to-action.tsx#CallToAction@c603924397d2",
-      "evidence": "Unknown visual import or local component <CallToAction>; no registered slot resolves.",
-      "file": "src/runtime/sections/call-to-action.tsx",
-      "line": 15,
-      "missing": "CallToAction visual capability",
-      "raisedBy": "src/runtime/sections/call-to-action.tsx#surface",
-      "slotId": null,
-      "tag": "CallToAction"
-    },
-    {
-      "code": "DF5",
-      "elementId": "src/runtime/sections/cards.tsx#RecordCards@c6902d10fd4b",
-      "evidence": "Unknown visual import or local component <RecordCards>; no registered slot resolves.",
-      "file": "src/runtime/sections/cards.tsx",
-      "line": 31,
-      "missing": "RecordCards visual capability",
-      "raisedBy": "src/runtime/sections/cards.tsx#surface",
-      "slotId": null,
-      "tag": "RecordCards"
-    },
-    {
-      "code": "DF5",
-      "elementId": "src/runtime/sections/chat.tsx#Chat@0de166ad6467",
-      "evidence": "Unknown visual import or local component <Chat>; no registered slot resolves.",
-      "file": "src/runtime/sections/chat.tsx",
-      "line": 33,
-      "missing": "Chat visual capability",
-      "raisedBy": "src/runtime/sections/chat.tsx#surface",
-      "slotId": null,
-      "tag": "Chat"
-    },
-    {
-      "code": "DF5",
-      "elementId": "src/runtime/sections/column-mapper.tsx#ColumnMapper@3665ac7e3c3d",
-      "evidence": "Unknown visual import or local component <ColumnMapper>; no registered slot resolves.",
-      "file": "src/runtime/sections/column-mapper.tsx",
-      "line": 11,
-      "missing": "ColumnMapper visual capability",
-      "raisedBy": "src/runtime/sections/column-mapper.tsx#surface",
-      "slotId": null,
-      "tag": "ColumnMapper"
-    },
-    {
-      "code": "DF5",
       "elementId": "src/runtime/sections/column-mapper.tsx#ColumnMapperFill@ee175d75d237",
       "evidence": "Unknown visual import or local component <ColumnMapperFill>; no registered slot resolves.",
       "file": "src/runtime/sections/column-mapper.tsx",
@@ -1865,28 +1612,6 @@
     },
     {
       "code": "DF5",
-      "elementId": "src/runtime/sections/comparison.tsx#Matrix@ce975d2b3092",
-      "evidence": "Unknown visual import or local component <Matrix>; no registered slot resolves.",
-      "file": "src/runtime/sections/comparison.tsx",
-      "line": 45,
-      "missing": "Matrix visual capability",
-      "raisedBy": "src/runtime/sections/comparison.tsx#surface",
-      "slotId": null,
-      "tag": "Matrix"
-    },
-    {
-      "code": "DF5",
-      "elementId": "src/runtime/sections/consent.tsx#ConsentBanner@b05aa92090d6",
-      "evidence": "Unknown visual import or local component <ConsentBanner>; no registered slot resolves.",
-      "file": "src/runtime/sections/consent.tsx",
-      "line": 20,
-      "missing": "ConsentBanner visual capability",
-      "raisedBy": "src/runtime/sections/consent.tsx#surface",
-      "slotId": null,
-      "tag": "ConsentBanner"
-    },
-    {
-      "code": "DF5",
       "elementId": "src/runtime/sections/content.tsx#Fragment@22eaf66ffa4e",
       "evidence": "Unknown visual import or local component <Fragment>; no registered slot resolves.",
       "file": "src/runtime/sections/content.tsx",
@@ -1895,28 +1620,6 @@
       "raisedBy": "src/runtime/sections/content.tsx#surface",
       "slotId": null,
       "tag": "Fragment"
-    },
-    {
-      "code": "DF5",
-      "elementId": "src/runtime/sections/content.tsx#ContentSection@cfed851a8af0",
-      "evidence": "Unknown visual import or local component <ContentSection>; no registered slot resolves.",
-      "file": "src/runtime/sections/content.tsx",
-      "line": 24,
-      "missing": "ContentSection visual capability",
-      "raisedBy": "src/runtime/sections/content.tsx#surface",
-      "slotId": null,
-      "tag": "ContentSection"
-    },
-    {
-      "code": "DF5",
-      "elementId": "src/runtime/sections/content.tsx#ContentSection@d8bec32eef4e",
-      "evidence": "Unknown visual import or local component <ContentSection>; no registered slot resolves.",
-      "file": "src/runtime/sections/content.tsx",
-      "line": 25,
-      "missing": "ContentSection visual capability",
-      "raisedBy": "src/runtime/sections/content.tsx#surface",
-      "slotId": null,
-      "tag": "ContentSection"
     },
     {
       "code": "DF5",
@@ -1964,39 +1667,6 @@
     },
     {
       "code": "DF5",
-      "elementId": "src/runtime/sections/empty-state.tsx#EmptyState@d4f04a204efd",
-      "evidence": "Unknown visual import or local component <EmptyState>; no registered slot resolves.",
-      "file": "src/runtime/sections/empty-state.tsx",
-      "line": 37,
-      "missing": "EmptyState visual capability",
-      "raisedBy": "src/runtime/sections/empty-state.tsx#surface",
-      "slotId": null,
-      "tag": "EmptyState"
-    },
-    {
-      "code": "DF5",
-      "elementId": "src/runtime/sections/error-state.tsx#ErrorState@75b7c59df0e8",
-      "evidence": "Unknown visual import or local component <ErrorState>; no registered slot resolves.",
-      "file": "src/runtime/sections/error-state.tsx",
-      "line": 29,
-      "missing": "ErrorState visual capability",
-      "raisedBy": "src/runtime/sections/error-state.tsx#surface",
-      "slotId": null,
-      "tag": "ErrorState"
-    },
-    {
-      "code": "DF5",
-      "elementId": "src/runtime/sections/explorer.tsx#Explorer@48ab9ecae269",
-      "evidence": "Unknown visual import or local component <Explorer>; no registered slot resolves.",
-      "file": "src/runtime/sections/explorer.tsx",
-      "line": 15,
-      "missing": "Explorer visual capability",
-      "raisedBy": "src/runtime/sections/explorer.tsx#surface",
-      "slotId": null,
-      "tag": "Explorer"
-    },
-    {
-      "code": "DF5",
       "elementId": "src/runtime/sections/explorer.tsx#ExplorerFill@31a4f5124b12",
       "evidence": "Unknown visual import or local component <ExplorerFill>; no registered slot resolves.",
       "file": "src/runtime/sections/explorer.tsx",
@@ -2007,17 +1677,6 @@
       "tag": "ExplorerFill"
     },
     {
-      "code": "DF5",
-      "elementId": "src/runtime/sections/faq.tsx#Faq@81e644897668",
-      "evidence": "Unknown visual import or local component <Faq>; no registered slot resolves.",
-      "file": "src/runtime/sections/faq.tsx",
-      "line": 15,
-      "missing": "Faq visual capability",
-      "raisedBy": "src/runtime/sections/faq.tsx#surface",
-      "slotId": null,
-      "tag": "Faq"
-    },
-    {
       "code": "DF2",
       "elementId": "src/runtime/sections/faq.tsx#Faq@81e644897668",
       "evidence": "unresolved ...: dynamic source cannot establish token-only styling.",
@@ -2028,17 +1687,6 @@
       "tag": "Faq"
     },
     {
-      "code": "DF5",
-      "elementId": "src/runtime/sections/features.tsx#FeatureGrid@fb535c3c8e06",
-      "evidence": "Unknown visual import or local component <FeatureGrid>; no registered slot resolves.",
-      "file": "src/runtime/sections/features.tsx",
-      "line": 15,
-      "missing": "FeatureGrid visual capability",
-      "raisedBy": "src/runtime/sections/features.tsx#surface",
-      "slotId": null,
-      "tag": "FeatureGrid"
-    },
-    {
       "code": "DF2",
       "elementId": "src/runtime/sections/features.tsx#FeatureGrid@fb535c3c8e06",
       "evidence": "unresolved ...: dynamic source cannot establish token-only styling.",
@@ -2047,17 +1695,6 @@
       "raisedBy": "src/runtime/sections/features.tsx#surface",
       "slotId": null,
       "tag": "FeatureGrid"
-    },
-    {
-      "code": "DF5",
-      "elementId": "src/runtime/sections/filter-builder.tsx#FilterBuilder@1f8acadb9e50",
-      "evidence": "Unknown visual import or local component <FilterBuilder>; no registered slot resolves.",
-      "file": "src/runtime/sections/filter-builder.tsx",
-      "line": 8,
-      "missing": "FilterBuilder visual capability",
-      "raisedBy": "src/runtime/sections/filter-builder.tsx#surface",
-      "slotId": null,
-      "tag": "FilterBuilder"
     },
     {
       "code": "DF5",
@@ -2069,17 +1706,6 @@
       "raisedBy": "src/runtime/sections/filter-builder.tsx#surface",
       "slotId": null,
       "tag": "FilterBuilderFill"
-    },
-    {
-      "code": "DF5",
-      "elementId": "src/runtime/sections/gallery.tsx#Gallery@406f9339b944",
-      "evidence": "Unknown visual import or local component <Gallery>; no registered slot resolves.",
-      "file": "src/runtime/sections/gallery.tsx",
-      "line": 21,
-      "missing": "Gallery visual capability",
-      "raisedBy": "src/runtime/sections/gallery.tsx#surface",
-      "slotId": null,
-      "tag": "Gallery"
     },
     {
       "code": "DF5",
@@ -2114,28 +1740,6 @@
       "tag": "SemanticContent"
     },
     {
-      "code": "DF5",
-      "elementId": "src/runtime/sections/group-b-parts.tsx#Pagination@3780cd945bab",
-      "evidence": "Unknown visual import or local component <Pagination>; no registered slot resolves.",
-      "file": "src/runtime/sections/group-b-parts.tsx",
-      "line": 41,
-      "missing": "Pagination visual capability",
-      "raisedBy": "src/runtime/sections/group-b-parts.tsx#surface",
-      "slotId": null,
-      "tag": "Pagination"
-    },
-    {
-      "code": "DF5",
-      "elementId": "src/runtime/sections/group-b-table.tsx#DataTable@9d2ba14f9d82",
-      "evidence": "Unknown visual import or local component <DataTable>; no registered slot resolves.",
-      "file": "src/runtime/sections/group-b-table.tsx",
-      "line": 63,
-      "missing": "DataTable visual capability",
-      "raisedBy": "src/runtime/sections/group-b-table.tsx#surface",
-      "slotId": null,
-      "tag": "DataTable"
-    },
-    {
       "code": "DF2",
       "elementId": "src/runtime/sections/group-b-table.tsx#source@e3b0c44298fc",
       "evidence": "unresolved JSX attribute",
@@ -2167,17 +1771,6 @@
     },
     {
       "code": "DF5",
-      "elementId": "src/runtime/sections/hero.tsx#Hero@efc118b0b814",
-      "evidence": "Unknown visual import or local component <Hero>; no registered slot resolves.",
-      "file": "src/runtime/sections/hero.tsx",
-      "line": 18,
-      "missing": "Hero visual capability",
-      "raisedBy": "src/runtime/sections/hero.tsx#surface",
-      "slotId": null,
-      "tag": "Hero"
-    },
-    {
-      "code": "DF5",
       "elementId": "src/runtime/sections/library-board.tsx#LibraryBoardSection@3acdf1d07eec",
       "evidence": "Unknown visual import or local component <LibraryBoardSection>; no registered slot resolves.",
       "file": "src/runtime/sections/library-board.tsx",
@@ -2199,116 +1792,6 @@
     },
     {
       "code": "DF5",
-      "elementId": "src/runtime/sections/link-index.tsx#NavGrid@98d6574b59a0",
-      "evidence": "Unknown visual import or local component <NavGrid>; no registered slot resolves.",
-      "file": "src/runtime/sections/link-index.tsx",
-      "line": 29,
-      "missing": "NavGrid visual capability",
-      "raisedBy": "src/runtime/sections/link-index.tsx#surface",
-      "slotId": null,
-      "tag": "NavGrid"
-    },
-    {
-      "code": "DF5",
-      "elementId": "src/runtime/sections/logo-cloud.tsx#LogoCloud@0bbaf6ddbf2e",
-      "evidence": "Unknown visual import or local component <LogoCloud>; no registered slot resolves.",
-      "file": "src/runtime/sections/logo-cloud.tsx",
-      "line": 27,
-      "missing": "LogoCloud visual capability",
-      "raisedBy": "src/runtime/sections/logo-cloud.tsx#surface",
-      "slotId": null,
-      "tag": "LogoCloud"
-    },
-    {
-      "code": "DF5",
-      "elementId": "src/runtime/sections/media.tsx#MediaFigure@da44574b9c40",
-      "evidence": "Unknown visual import or local component <MediaFigure>; no registered slot resolves.",
-      "file": "src/runtime/sections/media.tsx",
-      "line": 11,
-      "missing": "MediaFigure visual capability",
-      "raisedBy": "src/runtime/sections/media.tsx#surface",
-      "slotId": null,
-      "tag": "MediaFigure"
-    },
-    {
-      "code": "DF5",
-      "elementId": "src/runtime/sections/newsletter.tsx#NewsletterBand@73a40a4adf2b",
-      "evidence": "Unknown visual import or local component <NewsletterBand>; no registered slot resolves.",
-      "file": "src/runtime/sections/newsletter.tsx",
-      "line": 16,
-      "missing": "NewsletterBand visual capability",
-      "raisedBy": "src/runtime/sections/newsletter.tsx#surface",
-      "slotId": null,
-      "tag": "NewsletterBand"
-    },
-    {
-      "code": "DF5",
-      "elementId": "src/runtime/sections/notices.tsx#NoticeList@a0c63a90e0ec",
-      "evidence": "Unknown visual import or local component <NoticeList>; no registered slot resolves.",
-      "file": "src/runtime/sections/notices.tsx",
-      "line": 25,
-      "missing": "NoticeList visual capability",
-      "raisedBy": "src/runtime/sections/notices.tsx#surface",
-      "slotId": null,
-      "tag": "NoticeList"
-    },
-    {
-      "code": "DF5",
-      "elementId": "src/runtime/sections/page-header.tsx#PageHeader@518bb39e6204",
-      "evidence": "Unknown visual import or local component <PageHeader>; no registered slot resolves.",
-      "file": "src/runtime/sections/page-header.tsx",
-      "line": 33,
-      "missing": "PageHeader visual capability",
-      "raisedBy": "src/runtime/sections/page-header.tsx#surface",
-      "slotId": null,
-      "tag": "PageHeader"
-    },
-    {
-      "code": "DF5",
-      "elementId": "src/runtime/sections/pagination.tsx#Pagination@6de5d0f9692a",
-      "evidence": "Unknown visual import or local component <Pagination>; no registered slot resolves.",
-      "file": "src/runtime/sections/pagination.tsx",
-      "line": 21,
-      "missing": "Pagination visual capability",
-      "raisedBy": "src/runtime/sections/pagination.tsx#surface",
-      "slotId": null,
-      "tag": "Pagination"
-    },
-    {
-      "code": "DF5",
-      "elementId": "src/runtime/sections/people.tsx#PeopleGrid@31ed82935bc2",
-      "evidence": "Unknown visual import or local component <PeopleGrid>; no registered slot resolves.",
-      "file": "src/runtime/sections/people.tsx",
-      "line": 20,
-      "missing": "PeopleGrid visual capability",
-      "raisedBy": "src/runtime/sections/people.tsx#surface",
-      "slotId": null,
-      "tag": "PeopleGrid"
-    },
-    {
-      "code": "DF5",
-      "elementId": "src/runtime/sections/pricing.tsx#PricingTable@1c8241f39204",
-      "evidence": "Unknown visual import or local component <PricingTable>; no registered slot resolves.",
-      "file": "src/runtime/sections/pricing.tsx",
-      "line": 34,
-      "missing": "PricingTable visual capability",
-      "raisedBy": "src/runtime/sections/pricing.tsx#surface",
-      "slotId": null,
-      "tag": "PricingTable"
-    },
-    {
-      "code": "DF5",
-      "elementId": "src/runtime/sections/record-detail.tsx#DetailView@026db2369d56",
-      "evidence": "Unknown visual import or local component <DetailView>; no registered slot resolves.",
-      "file": "src/runtime/sections/record-detail.tsx",
-      "line": 18,
-      "missing": "DetailView visual capability",
-      "raisedBy": "src/runtime/sections/record-detail.tsx#surface",
-      "slotId": null,
-      "tag": "DetailView"
-    },
-    {
-      "code": "DF5",
       "elementId": "src/runtime/sections/record-detail.tsx#ActionPart@6610c9cfe1ea",
       "evidence": "Unknown visual import or local component <ActionPart>; no registered slot resolves.",
       "file": "src/runtime/sections/record-detail.tsx",
@@ -2317,17 +1800,6 @@
       "raisedBy": "src/runtime/sections/record-detail.tsx#surface",
       "slotId": null,
       "tag": "ActionPart"
-    },
-    {
-      "code": "DF5",
-      "elementId": "src/runtime/sections/resource-list.tsx#ResourceList@c7abf38948c2",
-      "evidence": "Unknown visual import or local component <ResourceList>; no registered slot resolves.",
-      "file": "src/runtime/sections/resource-list.tsx",
-      "line": 18,
-      "missing": "ResourceList visual capability",
-      "raisedBy": "src/runtime/sections/resource-list.tsx#surface",
-      "slotId": null,
-      "tag": "ResourceList"
     },
     {
       "code": "DF2",
@@ -2373,50 +1845,6 @@
       "tag": "ResourceListFill"
     },
     {
-      "code": "DF5",
-      "elementId": "src/runtime/sections/section-header.tsx#SectionHeader@dfa89d5aa90a",
-      "evidence": "Unknown visual import or local component <SectionHeader>; no registered slot resolves.",
-      "file": "src/runtime/sections/section-header.tsx",
-      "line": 29,
-      "missing": "SectionHeader visual capability",
-      "raisedBy": "src/runtime/sections/section-header.tsx#surface",
-      "slotId": null,
-      "tag": "SectionHeader"
-    },
-    {
-      "code": "DF5",
-      "elementId": "src/runtime/sections/settings.tsx#SettingsSection@b39fdb81926e",
-      "evidence": "Unknown visual import or local component <SettingsSection>; no registered slot resolves.",
-      "file": "src/runtime/sections/settings.tsx",
-      "line": 47,
-      "missing": "SettingsSection visual capability",
-      "raisedBy": "src/runtime/sections/settings.tsx#surface",
-      "slotId": null,
-      "tag": "SettingsSection"
-    },
-    {
-      "code": "DF5",
-      "elementId": "src/runtime/sections/stats.tsx#StatGroup@69a8b2df06a8",
-      "evidence": "Unknown visual import or local component <StatGroup>; no registered slot resolves.",
-      "file": "src/runtime/sections/stats.tsx",
-      "line": 8,
-      "missing": "StatGroup visual capability",
-      "raisedBy": "src/runtime/sections/stats.tsx#surface",
-      "slotId": null,
-      "tag": "StatGroup"
-    },
-    {
-      "code": "DF5",
-      "elementId": "src/runtime/sections/status-list.tsx#StatusList@bbb742a8bebb",
-      "evidence": "Unknown visual import or local component <StatusList>; no registered slot resolves.",
-      "file": "src/runtime/sections/status-list.tsx",
-      "line": 18,
-      "missing": "StatusList visual capability",
-      "raisedBy": "src/runtime/sections/status-list.tsx#surface",
-      "slotId": null,
-      "tag": "StatusList"
-    },
-    {
       "code": "DF2",
       "elementId": "src/runtime/sections/status-list.tsx#StatusList@bbb742a8bebb",
       "evidence": "unresolved ...: dynamic source cannot establish token-only styling.",
@@ -2425,83 +1853,6 @@
       "raisedBy": "src/runtime/sections/status-list.tsx#surface",
       "slotId": null,
       "tag": "StatusList"
-    },
-    {
-      "code": "DF5",
-      "elementId": "src/runtime/sections/steps.tsx#OrderedStepSequence@3703e38b0337",
-      "evidence": "Unknown visual import or local component <OrderedStepSequence>; no registered slot resolves.",
-      "file": "src/runtime/sections/steps.tsx",
-      "line": 19,
-      "missing": "OrderedStepSequence visual capability",
-      "raisedBy": "src/runtime/sections/steps.tsx#surface",
-      "slotId": null,
-      "tag": "OrderedStepSequence"
-    },
-    {
-      "code": "DF5",
-      "elementId": "src/runtime/sections/table-of-contents.tsx#TableOfContents@3f97329ded65",
-      "evidence": "Unknown visual import or local component <TableOfContents>; no registered slot resolves.",
-      "file": "src/runtime/sections/table-of-contents.tsx",
-      "line": 24,
-      "missing": "TableOfContents visual capability",
-      "raisedBy": "src/runtime/sections/table-of-contents.tsx#surface",
-      "slotId": null,
-      "tag": "TableOfContents"
-    },
-    {
-      "code": "DF5",
-      "elementId": "src/runtime/sections/task-list.tsx#TaskList@893429d54f88",
-      "evidence": "Unknown visual import or local component <TaskList>; no registered slot resolves.",
-      "file": "src/runtime/sections/task-list.tsx",
-      "line": 11,
-      "missing": "TaskList visual capability",
-      "raisedBy": "src/runtime/sections/task-list.tsx#surface",
-      "slotId": null,
-      "tag": "TaskList"
-    },
-    {
-      "code": "DF5",
-      "elementId": "src/runtime/sections/testimonials.tsx#TestimonialSet@06335989007f",
-      "evidence": "Unknown visual import or local component <TestimonialSet>; no registered slot resolves.",
-      "file": "src/runtime/sections/testimonials.tsx",
-      "line": 21,
-      "missing": "TestimonialSet visual capability",
-      "raisedBy": "src/runtime/sections/testimonials.tsx#surface",
-      "slotId": null,
-      "tag": "TestimonialSet"
-    },
-    {
-      "code": "DF5",
-      "elementId": "src/runtime/sections/timeline.tsx#Timeline@f24884907699",
-      "evidence": "Unknown visual import or local component <Timeline>; no registered slot resolves.",
-      "file": "src/runtime/sections/timeline.tsx",
-      "line": 7,
-      "missing": "Timeline visual capability",
-      "raisedBy": "src/runtime/sections/timeline.tsx#surface",
-      "slotId": null,
-      "tag": "Timeline"
-    },
-    {
-      "code": "DF5",
-      "elementId": "src/runtime/sections/usage.tsx#UsageSummary@1940cd8e3493",
-      "evidence": "Unknown visual import or local component <UsageSummary>; no registered slot resolves.",
-      "file": "src/runtime/sections/usage.tsx",
-      "line": 7,
-      "missing": "UsageSummary visual capability",
-      "raisedBy": "src/runtime/sections/usage.tsx#surface",
-      "slotId": null,
-      "tag": "UsageSummary"
-    },
-    {
-      "code": "DF5",
-      "elementId": "src/runtime/sections/wizard.tsx#FormWizard@ff1ff63c3640",
-      "evidence": "Unknown visual import or local component <FormWizard>; no registered slot resolves.",
-      "file": "src/runtime/sections/wizard.tsx",
-      "line": 38,
-      "missing": "FormWizard visual capability",
-      "raisedBy": "src/runtime/sections/wizard.tsx#surface",
-      "slotId": null,
-      "tag": "FormWizard"
     },
     {
       "code": "DF5",
@@ -2810,17 +2161,6 @@
       "tag": "SemanticContent"
     },
     {
-      "code": "DF5",
-      "elementId": "src/studio/asset-specimens.tsx#MediaFigure@7d0960284c49",
-      "evidence": "Unknown visual import or local component <MediaFigure>; no registered slot resolves.",
-      "file": "src/studio/asset-specimens.tsx",
-      "line": 100,
-      "missing": "MediaFigure visual capability",
-      "raisedBy": "src/studio/asset-specimens.tsx#surface",
-      "slotId": null,
-      "tag": "MediaFigure"
-    },
-    {
       "code": "DF2",
       "elementId": "src/studio/asset-specimens.tsx#MediaFigure@7d0960284c49",
       "evidence": "unresolved class utilities: w-max",
@@ -2860,17 +2200,6 @@
       "raisedBy": "src/studio/asset-specimens.tsx#surface",
       "slotId": null,
       "tag": "img"
-    },
-    {
-      "code": "DF5",
-      "elementId": "src/studio/asset-specimens.tsx#MediaFigure@93137efb2692",
-      "evidence": "Unknown visual import or local component <MediaFigure>; no registered slot resolves.",
-      "file": "src/studio/asset-specimens.tsx",
-      "line": 106,
-      "missing": "MediaFigure visual capability",
-      "raisedBy": "src/studio/asset-specimens.tsx#surface",
-      "slotId": null,
-      "tag": "MediaFigure"
     },
     {
       "code": "DF2",
@@ -3240,17 +2569,6 @@
       "raisedBy": "src/studio/CandidateCell.tsx#surface",
       "slotId": null,
       "tag": "div"
-    },
-    {
-      "code": "DF5",
-      "elementId": "src/studio/canvas-boards.tsx#Comparison@5d87aacca0c5",
-      "evidence": "Unknown visual import or local component <Comparison>; no registered slot resolves.",
-      "file": "src/studio/canvas-boards.tsx",
-      "line": 84,
-      "missing": "Comparison visual capability",
-      "raisedBy": "src/studio/canvas-boards.tsx#surface",
-      "slotId": null,
-      "tag": "Comparison"
     },
     {
       "code": "DF5",
@@ -4316,17 +3634,6 @@
       "tag": "Provider"
     },
     {
-      "code": "DF5",
-      "elementId": "src/studio/frame-preview.tsx#PageBar@cde44bf13a14",
-      "evidence": "Unknown visual import or local component <PageBar>; no registered slot resolves.",
-      "file": "src/studio/frame-preview.tsx",
-      "line": 20,
-      "missing": "PageBar visual capability",
-      "raisedBy": "src/studio/frame-preview.tsx#surface",
-      "slotId": null,
-      "tag": "PageBar"
-    },
-    {
       "code": "DF2",
       "elementId": "src/studio/frame-preview.tsx#PageBar@cde44bf13a14",
       "evidence": "unresolved ...: dynamic source cannot establish token-only styling.",
@@ -4733,17 +4040,6 @@
       "tag": "RatioFixture"
     },
     {
-      "code": "DF5",
-      "elementId": "src/studio/planned-surface-previews.tsx#AccessMatrix@745b9d26626f",
-      "evidence": "Unknown visual import or local component <AccessMatrix>; no registered slot resolves.",
-      "file": "src/studio/planned-surface-previews.tsx",
-      "line": 77,
-      "missing": "AccessMatrix visual capability",
-      "raisedBy": "src/studio/planned-surface-previews.tsx#surface",
-      "slotId": null,
-      "tag": "AccessMatrix"
-    },
-    {
       "code": "DF2",
       "elementId": "src/studio/planned-surface-previews.tsx#AccessMatrix@745b9d26626f",
       "evidence": "unresolved ...: dynamic source cannot establish token-only styling.",
@@ -4752,17 +4048,6 @@
       "raisedBy": "src/studio/planned-surface-previews.tsx#surface",
       "slotId": null,
       "tag": "AccessMatrix"
-    },
-    {
-      "code": "DF5",
-      "elementId": "src/studio/planned-surface-previews.tsx#ActivityFeed@79df72282240",
-      "evidence": "Unknown visual import or local component <ActivityFeed>; no registered slot resolves.",
-      "file": "src/studio/planned-surface-previews.tsx",
-      "line": 78,
-      "missing": "ActivityFeed visual capability",
-      "raisedBy": "src/studio/planned-surface-previews.tsx#surface",
-      "slotId": null,
-      "tag": "ActivityFeed"
     },
     {
       "code": "DF2",
@@ -4775,17 +4060,6 @@
       "tag": "ActivityFeed"
     },
     {
-      "code": "DF5",
-      "elementId": "src/studio/planned-surface-previews.tsx#AuditLog@21884056061b",
-      "evidence": "Unknown visual import or local component <AuditLog>; no registered slot resolves.",
-      "file": "src/studio/planned-surface-previews.tsx",
-      "line": 79,
-      "missing": "AuditLog visual capability",
-      "raisedBy": "src/studio/planned-surface-previews.tsx#surface",
-      "slotId": null,
-      "tag": "AuditLog"
-    },
-    {
       "code": "DF2",
       "elementId": "src/studio/planned-surface-previews.tsx#AuditLog@21884056061b",
       "evidence": "unresolved ...: dynamic source cannot establish token-only styling.",
@@ -4794,17 +4068,6 @@
       "raisedBy": "src/studio/planned-surface-previews.tsx#surface",
       "slotId": null,
       "tag": "AuditLog"
-    },
-    {
-      "code": "DF5",
-      "elementId": "src/studio/planned-surface-previews.tsx#Timeline@4944675f9130",
-      "evidence": "Unknown visual import or local component <Timeline>; no registered slot resolves.",
-      "file": "src/studio/planned-surface-previews.tsx",
-      "line": 80,
-      "missing": "Timeline visual capability",
-      "raisedBy": "src/studio/planned-surface-previews.tsx#surface",
-      "slotId": null,
-      "tag": "Timeline"
     },
     {
       "code": "DF2",
@@ -4817,17 +4080,6 @@
       "tag": "Timeline"
     },
     {
-      "code": "DF5",
-      "elementId": "src/studio/planned-surface-previews.tsx#UsageSummary@3cc84c31b90e",
-      "evidence": "Unknown visual import or local component <UsageSummary>; no registered slot resolves.",
-      "file": "src/studio/planned-surface-previews.tsx",
-      "line": 81,
-      "missing": "UsageSummary visual capability",
-      "raisedBy": "src/studio/planned-surface-previews.tsx#surface",
-      "slotId": null,
-      "tag": "UsageSummary"
-    },
-    {
       "code": "DF2",
       "elementId": "src/studio/planned-surface-previews.tsx#UsageSummary@3cc84c31b90e",
       "evidence": "unresolved ...: dynamic source cannot establish token-only styling.",
@@ -4836,28 +4088,6 @@
       "raisedBy": "src/studio/planned-surface-previews.tsx#surface",
       "slotId": null,
       "tag": "UsageSummary"
-    },
-    {
-      "code": "DF5",
-      "elementId": "src/studio/planned-surface-previews.tsx#ArticleBody@3150613c77bd",
-      "evidence": "Unknown visual import or local component <ArticleBody>; no registered slot resolves.",
-      "file": "src/studio/planned-surface-previews.tsx",
-      "line": 82,
-      "missing": "ArticleBody visual capability",
-      "raisedBy": "src/studio/planned-surface-previews.tsx#surface",
-      "slotId": null,
-      "tag": "ArticleBody"
-    },
-    {
-      "code": "DF5",
-      "elementId": "src/studio/planned-surface-previews.tsx#ColumnMapper@995228b1798c",
-      "evidence": "Unknown visual import or local component <ColumnMapper>; no registered slot resolves.",
-      "file": "src/studio/planned-surface-previews.tsx",
-      "line": 83,
-      "missing": "ColumnMapper visual capability",
-      "raisedBy": "src/studio/planned-surface-previews.tsx#surface",
-      "slotId": null,
-      "tag": "ColumnMapper"
     },
     {
       "code": "DF2",
@@ -4870,17 +4100,6 @@
       "tag": "ColumnMapper"
     },
     {
-      "code": "DF5",
-      "elementId": "src/studio/planned-surface-previews.tsx#DetailView@53adb5040f64",
-      "evidence": "Unknown visual import or local component <DetailView>; no registered slot resolves.",
-      "file": "src/studio/planned-surface-previews.tsx",
-      "line": 84,
-      "missing": "DetailView visual capability",
-      "raisedBy": "src/studio/planned-surface-previews.tsx#surface",
-      "slotId": null,
-      "tag": "DetailView"
-    },
-    {
       "code": "DF2",
       "elementId": "src/studio/planned-surface-previews.tsx#DetailView@53adb5040f64",
       "evidence": "unresolved ...: dynamic source cannot establish token-only styling.",
@@ -4889,17 +4108,6 @@
       "raisedBy": "src/studio/planned-surface-previews.tsx#surface",
       "slotId": null,
       "tag": "DetailView"
-    },
-    {
-      "code": "DF5",
-      "elementId": "src/studio/planned-surface-previews.tsx#EmptyState@2fb60ef5ece9",
-      "evidence": "Unknown visual import or local component <EmptyState>; no registered slot resolves.",
-      "file": "src/studio/planned-surface-previews.tsx",
-      "line": 85,
-      "missing": "EmptyState visual capability",
-      "raisedBy": "src/studio/planned-surface-previews.tsx#surface",
-      "slotId": null,
-      "tag": "EmptyState"
     },
     {
       "code": "DF2",
@@ -4912,17 +4120,6 @@
       "tag": "EmptyState"
     },
     {
-      "code": "DF5",
-      "elementId": "src/studio/planned-surface-previews.tsx#Faq@cdfef9efd231",
-      "evidence": "Unknown visual import or local component <Faq>; no registered slot resolves.",
-      "file": "src/studio/planned-surface-previews.tsx",
-      "line": 86,
-      "missing": "Faq visual capability",
-      "raisedBy": "src/studio/planned-surface-previews.tsx#surface",
-      "slotId": null,
-      "tag": "Faq"
-    },
-    {
       "code": "DF2",
       "elementId": "src/studio/planned-surface-previews.tsx#Faq@cdfef9efd231",
       "evidence": "unresolved ...: dynamic source cannot establish token-only styling.",
@@ -4931,17 +4128,6 @@
       "raisedBy": "src/studio/planned-surface-previews.tsx#surface",
       "slotId": null,
       "tag": "Faq"
-    },
-    {
-      "code": "DF5",
-      "elementId": "src/studio/planned-surface-previews.tsx#FilterBuilder@45d43b8cfcbb",
-      "evidence": "Unknown visual import or local component <FilterBuilder>; no registered slot resolves.",
-      "file": "src/studio/planned-surface-previews.tsx",
-      "line": 87,
-      "missing": "FilterBuilder visual capability",
-      "raisedBy": "src/studio/planned-surface-previews.tsx#surface",
-      "slotId": null,
-      "tag": "FilterBuilder"
     },
     {
       "code": "DF2",
@@ -4954,17 +4140,6 @@
       "tag": "FilterBuilder"
     },
     {
-      "code": "DF5",
-      "elementId": "src/studio/planned-surface-previews.tsx#FormWizard@d7a12d2b8a67",
-      "evidence": "Unknown visual import or local component <FormWizard>; no registered slot resolves.",
-      "file": "src/studio/planned-surface-previews.tsx",
-      "line": 88,
-      "missing": "FormWizard visual capability",
-      "raisedBy": "src/studio/planned-surface-previews.tsx#surface",
-      "slotId": null,
-      "tag": "FormWizard"
-    },
-    {
       "code": "DF2",
       "elementId": "src/studio/planned-surface-previews.tsx#FormWizard@d7a12d2b8a67",
       "evidence": "unresolved ...: dynamic source cannot establish token-only styling.",
@@ -4973,17 +4148,6 @@
       "raisedBy": "src/studio/planned-surface-previews.tsx#surface",
       "slotId": null,
       "tag": "FormWizard"
-    },
-    {
-      "code": "DF5",
-      "elementId": "src/studio/planned-surface-previews.tsx#SettingsSection@ab0bfe70d1cf",
-      "evidence": "Unknown visual import or local component <SettingsSection>; no registered slot resolves.",
-      "file": "src/studio/planned-surface-previews.tsx",
-      "line": 89,
-      "missing": "SettingsSection visual capability",
-      "raisedBy": "src/studio/planned-surface-previews.tsx#surface",
-      "slotId": null,
-      "tag": "SettingsSection"
     },
     {
       "code": "DF2",
@@ -4996,17 +4160,6 @@
       "tag": "SettingsSection"
     },
     {
-      "code": "DF5",
-      "elementId": "src/studio/planned-surface-previews.tsx#FeatureGrid@e4593f5e2e46",
-      "evidence": "Unknown visual import or local component <FeatureGrid>; no registered slot resolves.",
-      "file": "src/studio/planned-surface-previews.tsx",
-      "line": 90,
-      "missing": "FeatureGrid visual capability",
-      "raisedBy": "src/studio/planned-surface-previews.tsx#surface",
-      "slotId": null,
-      "tag": "FeatureGrid"
-    },
-    {
       "code": "DF2",
       "elementId": "src/studio/planned-surface-previews.tsx#FeatureGrid@e4593f5e2e46",
       "evidence": "unresolved ...: dynamic source cannot establish token-only styling.",
@@ -5015,39 +4168,6 @@
       "raisedBy": "src/studio/planned-surface-previews.tsx#surface",
       "slotId": null,
       "tag": "FeatureGrid"
-    },
-    {
-      "code": "DF5",
-      "elementId": "src/studio/planned-surface-previews.tsx#LogoCloud@96a7277b9779",
-      "evidence": "Unknown visual import or local component <LogoCloud>; no registered slot resolves.",
-      "file": "src/studio/planned-surface-previews.tsx",
-      "line": 91,
-      "missing": "LogoCloud visual capability",
-      "raisedBy": "src/studio/planned-surface-previews.tsx#surface",
-      "slotId": null,
-      "tag": "LogoCloud"
-    },
-    {
-      "code": "DF5",
-      "elementId": "src/studio/planned-surface-previews.tsx#MediaFigure@8893b1417567",
-      "evidence": "Unknown visual import or local component <MediaFigure>; no registered slot resolves.",
-      "file": "src/studio/planned-surface-previews.tsx",
-      "line": 92,
-      "missing": "MediaFigure visual capability",
-      "raisedBy": "src/studio/planned-surface-previews.tsx#surface",
-      "slotId": null,
-      "tag": "MediaFigure"
-    },
-    {
-      "code": "DF5",
-      "elementId": "src/studio/planned-surface-previews.tsx#NavGrid@3b3b94adf3ae",
-      "evidence": "Unknown visual import or local component <NavGrid>; no registered slot resolves.",
-      "file": "src/studio/planned-surface-previews.tsx",
-      "line": 93,
-      "missing": "NavGrid visual capability",
-      "raisedBy": "src/studio/planned-surface-previews.tsx#surface",
-      "slotId": null,
-      "tag": "NavGrid"
     },
     {
       "code": "DF2",
@@ -5060,17 +4180,6 @@
       "tag": "NavGrid"
     },
     {
-      "code": "DF5",
-      "elementId": "src/studio/planned-surface-previews.tsx#OrderedStepSequence@048d47f042e4",
-      "evidence": "Unknown visual import or local component <OrderedStepSequence>; no registered slot resolves.",
-      "file": "src/studio/planned-surface-previews.tsx",
-      "line": 94,
-      "missing": "OrderedStepSequence visual capability",
-      "raisedBy": "src/studio/planned-surface-previews.tsx#surface",
-      "slotId": null,
-      "tag": "OrderedStepSequence"
-    },
-    {
       "code": "DF2",
       "elementId": "src/studio/planned-surface-previews.tsx#OrderedStepSequence@048d47f042e4",
       "evidence": "unresolved ...: dynamic source cannot establish token-only styling.",
@@ -5079,17 +4188,6 @@
       "raisedBy": "src/studio/planned-surface-previews.tsx#surface",
       "slotId": null,
       "tag": "OrderedStepSequence"
-    },
-    {
-      "code": "DF5",
-      "elementId": "src/studio/planned-surface-previews.tsx#PageHeader@f1d77f7edeb0",
-      "evidence": "Unknown visual import or local component <PageHeader>; no registered slot resolves.",
-      "file": "src/studio/planned-surface-previews.tsx",
-      "line": 95,
-      "missing": "PageHeader visual capability",
-      "raisedBy": "src/studio/planned-surface-previews.tsx#surface",
-      "slotId": null,
-      "tag": "PageHeader"
     },
     {
       "code": "DF2",
@@ -5102,17 +4200,6 @@
       "tag": "PageHeader"
     },
     {
-      "code": "DF5",
-      "elementId": "src/studio/planned-surface-previews.tsx#Pagination@ad953db9ad85",
-      "evidence": "Unknown visual import or local component <Pagination>; no registered slot resolves.",
-      "file": "src/studio/planned-surface-previews.tsx",
-      "line": 96,
-      "missing": "Pagination visual capability",
-      "raisedBy": "src/studio/planned-surface-previews.tsx#surface",
-      "slotId": null,
-      "tag": "Pagination"
-    },
-    {
       "code": "DF2",
       "elementId": "src/studio/planned-surface-previews.tsx#Pagination@ad953db9ad85",
       "evidence": "unresolved ...: dynamic source cannot establish token-only styling.",
@@ -5121,17 +4208,6 @@
       "raisedBy": "src/studio/planned-surface-previews.tsx#surface",
       "slotId": null,
       "tag": "Pagination"
-    },
-    {
-      "code": "DF5",
-      "elementId": "src/studio/planned-surface-previews.tsx#PeopleGrid@5623f63eb9a3",
-      "evidence": "Unknown visual import or local component <PeopleGrid>; no registered slot resolves.",
-      "file": "src/studio/planned-surface-previews.tsx",
-      "line": 97,
-      "missing": "PeopleGrid visual capability",
-      "raisedBy": "src/studio/planned-surface-previews.tsx#surface",
-      "slotId": null,
-      "tag": "PeopleGrid"
     },
     {
       "code": "DF2",
@@ -5155,17 +4231,6 @@
       "tag": "SectionFrame"
     },
     {
-      "code": "DF5",
-      "elementId": "src/studio/planned-surface-previews.tsx#SectionHeader@64fc678019d0",
-      "evidence": "Unknown visual import or local component <SectionHeader>; no registered slot resolves.",
-      "file": "src/studio/planned-surface-previews.tsx",
-      "line": 99,
-      "missing": "SectionHeader visual capability",
-      "raisedBy": "src/studio/planned-surface-previews.tsx#surface",
-      "slotId": null,
-      "tag": "SectionHeader"
-    },
-    {
       "code": "DF2",
       "elementId": "src/studio/planned-surface-previews.tsx#SectionHeader@64fc678019d0",
       "evidence": "unresolved ...: dynamic source cannot establish token-only styling.",
@@ -5174,17 +4239,6 @@
       "raisedBy": "src/studio/planned-surface-previews.tsx#surface",
       "slotId": null,
       "tag": "SectionHeader"
-    },
-    {
-      "code": "DF5",
-      "elementId": "src/studio/planned-surface-previews.tsx#TableOfContents@e844938380b8",
-      "evidence": "Unknown visual import or local component <TableOfContents>; no registered slot resolves.",
-      "file": "src/studio/planned-surface-previews.tsx",
-      "line": 100,
-      "missing": "TableOfContents visual capability",
-      "raisedBy": "src/studio/planned-surface-previews.tsx#surface",
-      "slotId": null,
-      "tag": "TableOfContents"
     },
     {
       "code": "DF2",
@@ -5197,17 +4251,6 @@
       "tag": "TableOfContents"
     },
     {
-      "code": "DF5",
-      "elementId": "src/studio/planned-surface-previews.tsx#TestimonialSet@1cde6e7c9ec3",
-      "evidence": "Unknown visual import or local component <TestimonialSet>; no registered slot resolves.",
-      "file": "src/studio/planned-surface-previews.tsx",
-      "line": 101,
-      "missing": "TestimonialSet visual capability",
-      "raisedBy": "src/studio/planned-surface-previews.tsx#surface",
-      "slotId": null,
-      "tag": "TestimonialSet"
-    },
-    {
       "code": "DF2",
       "elementId": "src/studio/planned-surface-previews.tsx#TestimonialSet@1cde6e7c9ec3",
       "evidence": "unresolved ...: dynamic source cannot establish token-only styling.",
@@ -5216,28 +4259,6 @@
       "raisedBy": "src/studio/planned-surface-previews.tsx#surface",
       "slotId": null,
       "tag": "TestimonialSet"
-    },
-    {
-      "code": "DF5",
-      "elementId": "src/studio/planned-surface-previews.tsx#CallToAction@7be898fcb273",
-      "evidence": "Unknown visual import or local component <CallToAction>; no registered slot resolves.",
-      "file": "src/studio/planned-surface-previews.tsx",
-      "line": 102,
-      "missing": "CallToAction visual capability",
-      "raisedBy": "src/studio/planned-surface-previews.tsx#surface",
-      "slotId": null,
-      "tag": "CallToAction"
-    },
-    {
-      "code": "DF5",
-      "elementId": "src/studio/planned-surface-previews.tsx#RecordCards@2d254f6d77c1",
-      "evidence": "Unknown visual import or local component <RecordCards>; no registered slot resolves.",
-      "file": "src/studio/planned-surface-previews.tsx",
-      "line": 105,
-      "missing": "RecordCards visual capability",
-      "raisedBy": "src/studio/planned-surface-previews.tsx#surface",
-      "slotId": null,
-      "tag": "RecordCards"
     },
     {
       "code": "DF2",
@@ -5250,61 +4271,6 @@
       "tag": "RecordCards"
     },
     {
-      "code": "DF5",
-      "elementId": "src/studio/planned-surface-previews.tsx#ConsentBanner@c7e3839e929c",
-      "evidence": "Unknown visual import or local component <ConsentBanner>; no registered slot resolves.",
-      "file": "src/studio/planned-surface-previews.tsx",
-      "line": 106,
-      "missing": "ConsentBanner visual capability",
-      "raisedBy": "src/studio/planned-surface-previews.tsx#surface",
-      "slotId": null,
-      "tag": "ConsentBanner"
-    },
-    {
-      "code": "DF5",
-      "elementId": "src/studio/planned-surface-previews.tsx#ErrorState@39c6d49342eb",
-      "evidence": "Unknown visual import or local component <ErrorState>; no registered slot resolves.",
-      "file": "src/studio/planned-surface-previews.tsx",
-      "line": 108,
-      "missing": "ErrorState visual capability",
-      "raisedBy": "src/studio/planned-surface-previews.tsx#surface",
-      "slotId": null,
-      "tag": "ErrorState"
-    },
-    {
-      "code": "DF5",
-      "elementId": "src/studio/planned-surface-previews.tsx#Gallery@4ed89beb0307",
-      "evidence": "Unknown visual import or local component <Gallery>; no registered slot resolves.",
-      "file": "src/studio/planned-surface-previews.tsx",
-      "line": 110,
-      "missing": "Gallery visual capability",
-      "raisedBy": "src/studio/planned-surface-previews.tsx#surface",
-      "slotId": null,
-      "tag": "Gallery"
-    },
-    {
-      "code": "DF5",
-      "elementId": "src/studio/planned-surface-previews.tsx#NoticeList@ea2646a6fa04",
-      "evidence": "Unknown visual import or local component <NoticeList>; no registered slot resolves.",
-      "file": "src/studio/planned-surface-previews.tsx",
-      "line": 111,
-      "missing": "NoticeList visual capability",
-      "raisedBy": "src/studio/planned-surface-previews.tsx#surface",
-      "slotId": null,
-      "tag": "NoticeList"
-    },
-    {
-      "code": "DF5",
-      "elementId": "src/studio/planned-surface-previews.tsx#StatGroup@4f6aa2fa6109",
-      "evidence": "Unknown visual import or local component <StatGroup>; no registered slot resolves.",
-      "file": "src/studio/planned-surface-previews.tsx",
-      "line": 113,
-      "missing": "StatGroup visual capability",
-      "raisedBy": "src/studio/planned-surface-previews.tsx#surface",
-      "slotId": null,
-      "tag": "StatGroup"
-    },
-    {
       "code": "DF2",
       "elementId": "src/studio/planned-surface-previews.tsx#StatGroup@4f6aa2fa6109",
       "evidence": "unresolved ...: dynamic source cannot establish token-only styling.",
@@ -5313,17 +4279,6 @@
       "raisedBy": "src/studio/planned-surface-previews.tsx#surface",
       "slotId": null,
       "tag": "StatGroup"
-    },
-    {
-      "code": "DF5",
-      "elementId": "src/studio/planned-surface-previews.tsx#PageBar@857d4f830ec2",
-      "evidence": "Unknown visual import or local component <PageBar>; no registered slot resolves.",
-      "file": "src/studio/planned-surface-previews.tsx",
-      "line": 114,
-      "missing": "PageBar visual capability",
-      "raisedBy": "src/studio/planned-surface-previews.tsx#surface",
-      "slotId": null,
-      "tag": "PageBar"
     },
     {
       "code": "DF2",
@@ -5336,17 +4291,6 @@
       "tag": "PageBar"
     },
     {
-      "code": "DF5",
-      "elementId": "src/studio/planned-surface-previews.tsx#ActivityFeed@8b5ca4f06b27",
-      "evidence": "Unknown visual import or local component <ActivityFeed>; no registered slot resolves.",
-      "file": "src/studio/planned-surface-previews.tsx",
-      "line": 120,
-      "missing": "ActivityFeed visual capability",
-      "raisedBy": "src/studio/planned-surface-previews.tsx#surface",
-      "slotId": null,
-      "tag": "ActivityFeed"
-    },
-    {
       "code": "DF2",
       "elementId": "src/studio/planned-surface-previews.tsx#ActivityFeed@8b5ca4f06b27",
       "evidence": "unresolved ...: dynamic source cannot establish token-only styling.",
@@ -5357,33 +4301,11 @@
       "tag": "ActivityFeed"
     },
     {
-      "code": "DF5",
-      "elementId": "src/studio/planned-surface-previews.tsx#AuditLog@4c3324231142",
-      "evidence": "Unknown visual import or local component <AuditLog>; no registered slot resolves.",
-      "file": "src/studio/planned-surface-previews.tsx",
-      "line": 122,
-      "missing": "AuditLog visual capability",
-      "raisedBy": "src/studio/planned-surface-previews.tsx#surface",
-      "slotId": null,
-      "tag": "AuditLog"
-    },
-    {
       "code": "DF2",
       "elementId": "src/studio/planned-surface-previews.tsx#AuditLog@4c3324231142",
       "evidence": "unresolved ...: dynamic source cannot establish token-only styling.",
       "file": "src/studio/planned-surface-previews.tsx",
       "line": 122,
-      "raisedBy": "src/studio/planned-surface-previews.tsx#surface",
-      "slotId": null,
-      "tag": "AuditLog"
-    },
-    {
-      "code": "DF5",
-      "elementId": "src/studio/planned-surface-previews.tsx#AuditLog@166b121817f3",
-      "evidence": "Unknown visual import or local component <AuditLog>; no registered slot resolves.",
-      "file": "src/studio/planned-surface-previews.tsx",
-      "line": 123,
-      "missing": "AuditLog visual capability",
       "raisedBy": "src/studio/planned-surface-previews.tsx#surface",
       "slotId": null,
       "tag": "AuditLog"
@@ -5812,17 +4734,6 @@
       "raisedBy": "src/studio/rail/StudioRail.tsx#surface",
       "slotId": null,
       "tag": "div"
-    },
-    {
-      "code": "DF5",
-      "elementId": "src/studio/rail/StudioRail.tsx#Drawer@7c03d1b724a4",
-      "evidence": "Unknown visual import or local component <Drawer>; no registered slot resolves.",
-      "file": "src/studio/rail/StudioRail.tsx",
-      "line": 67,
-      "missing": "Drawer visual capability",
-      "raisedBy": "src/studio/rail/StudioRail.tsx#surface",
-      "slotId": null,
-      "tag": "Drawer"
     },
     {
       "code": "DF1",
@@ -6329,17 +5240,6 @@
       "tag": "CanvasLod"
     },
     {
-      "code": "DF5",
-      "elementId": "src/studio/StudioCanvas.tsx#CanvasSurface@249902c4d4b7",
-      "evidence": "Unknown visual import or local component <CanvasSurface>; no registered slot resolves.",
-      "file": "src/studio/StudioCanvas.tsx",
-      "line": 99,
-      "missing": "CanvasSurface visual capability",
-      "raisedBy": "src/studio/StudioCanvas.tsx#surface",
-      "slotId": null,
-      "tag": "CanvasSurface"
-    },
-    {
       "code": "DF2",
       "elementId": "src/studio/StudioCanvas.tsx#CanvasSurface@249902c4d4b7",
       "evidence": "unresolved class utilities: inset-0, rounded-none, border-0, bg-surface-raised",
@@ -6501,17 +5401,6 @@
       "tag": "h1"
     },
     {
-      "code": "DF5",
-      "elementId": "src/studio/surface-preview-samples.tsx#CommandMenu@9c3e36852833",
-      "evidence": "Unknown visual import or local component <CommandMenu>; no registered slot resolves.",
-      "file": "src/studio/surface-preview-samples.tsx",
-      "line": 40,
-      "missing": "CommandMenu visual capability",
-      "raisedBy": "src/studio/surface-preview-samples.tsx#surface",
-      "slotId": null,
-      "tag": "CommandMenu"
-    },
-    {
       "code": "DF2",
       "elementId": "src/studio/surface-preview-samples.tsx#CommandMenu@9c3e36852833",
       "evidence": "unresolved ...: dynamic source cannot establish token-only styling.",
@@ -6520,17 +5409,6 @@
       "raisedBy": "src/studio/surface-preview-samples.tsx#surface",
       "slotId": null,
       "tag": "CommandMenu"
-    },
-    {
-      "code": "DF5",
-      "elementId": "src/studio/surface-preview-samples.tsx#Matrix@31bd48595474",
-      "evidence": "Unknown visual import or local component <Matrix>; no registered slot resolves.",
-      "file": "src/studio/surface-preview-samples.tsx",
-      "line": 46,
-      "missing": "Matrix visual capability",
-      "raisedBy": "src/studio/surface-preview-samples.tsx#surface",
-      "slotId": null,
-      "tag": "Matrix"
     },
     {
       "code": "DF2",
@@ -6543,50 +5421,6 @@
       "tag": "Matrix"
     },
     {
-      "code": "DF5",
-      "elementId": "src/studio/surface-preview-samples.tsx#ContentSection@3938bc08d5aa",
-      "evidence": "Unknown visual import or local component <ContentSection>; no registered slot resolves.",
-      "file": "src/studio/surface-preview-samples.tsx",
-      "line": 47,
-      "missing": "ContentSection visual capability",
-      "raisedBy": "src/studio/surface-preview-samples.tsx#surface",
-      "slotId": null,
-      "tag": "ContentSection"
-    },
-    {
-      "code": "DF5",
-      "elementId": "src/studio/surface-preview-samples.tsx#DataTable@78fbef084b46",
-      "evidence": "Unknown visual import or local component <DataTable>; no registered slot resolves.",
-      "file": "src/studio/surface-preview-samples.tsx",
-      "line": 48,
-      "missing": "DataTable visual capability",
-      "raisedBy": "src/studio/surface-preview-samples.tsx#surface",
-      "slotId": null,
-      "tag": "DataTable"
-    },
-    {
-      "code": "DF5",
-      "elementId": "src/studio/surface-preview-samples.tsx#PricingTable@3e2b3b7e4c1e",
-      "evidence": "Unknown visual import or local component <PricingTable>; no registered slot resolves.",
-      "file": "src/studio/surface-preview-samples.tsx",
-      "line": 52,
-      "missing": "PricingTable visual capability",
-      "raisedBy": "src/studio/surface-preview-samples.tsx#surface",
-      "slotId": null,
-      "tag": "PricingTable"
-    },
-    {
-      "code": "DF5",
-      "elementId": "src/studio/surface-preview-samples.tsx#ResourceList@d96238d44fdb",
-      "evidence": "Unknown visual import or local component <ResourceList>; no registered slot resolves.",
-      "file": "src/studio/surface-preview-samples.tsx",
-      "line": 53,
-      "missing": "ResourceList visual capability",
-      "raisedBy": "src/studio/surface-preview-samples.tsx#surface",
-      "slotId": null,
-      "tag": "ResourceList"
-    },
-    {
       "code": "DF2",
       "elementId": "src/studio/surface-preview-samples.tsx#ResourceList@d96238d44fdb",
       "evidence": "unresolved ...: dynamic source cannot establish token-only styling.",
@@ -6595,17 +5429,6 @@
       "raisedBy": "src/studio/surface-preview-samples.tsx#surface",
       "slotId": null,
       "tag": "ResourceList"
-    },
-    {
-      "code": "DF5",
-      "elementId": "src/studio/surface-preview-samples.tsx#StatusList@2d093bca68f5",
-      "evidence": "Unknown visual import or local component <StatusList>; no registered slot resolves.",
-      "file": "src/studio/surface-preview-samples.tsx",
-      "line": 54,
-      "missing": "StatusList visual capability",
-      "raisedBy": "src/studio/surface-preview-samples.tsx#surface",
-      "slotId": null,
-      "tag": "StatusList"
     },
     {
       "code": "DF2",
@@ -6618,17 +5441,6 @@
       "tag": "StatusList"
     },
     {
-      "code": "DF5",
-      "elementId": "src/studio/surface-preview-samples.tsx#TaskList@1d4b1f54c32f",
-      "evidence": "Unknown visual import or local component <TaskList>; no registered slot resolves.",
-      "file": "src/studio/surface-preview-samples.tsx",
-      "line": 55,
-      "missing": "TaskList visual capability",
-      "raisedBy": "src/studio/surface-preview-samples.tsx#surface",
-      "slotId": null,
-      "tag": "TaskList"
-    },
-    {
       "code": "DF2",
       "elementId": "src/studio/surface-preview-samples.tsx#TaskList@1d4b1f54c32f",
       "evidence": "unresolved ...: dynamic source cannot establish token-only styling.",
@@ -6637,50 +5449,6 @@
       "raisedBy": "src/studio/surface-preview-samples.tsx#surface",
       "slotId": null,
       "tag": "TaskList"
-    },
-    {
-      "code": "DF5",
-      "elementId": "src/studio/surface-preview-samples.tsx#Chat@ac9f8c0da7d8",
-      "evidence": "Unknown visual import or local component <Chat>; no registered slot resolves.",
-      "file": "src/studio/surface-preview-samples.tsx",
-      "line": 56,
-      "missing": "Chat visual capability",
-      "raisedBy": "src/studio/surface-preview-samples.tsx#surface",
-      "slotId": null,
-      "tag": "Chat"
-    },
-    {
-      "code": "DF5",
-      "elementId": "src/studio/surface-preview-samples.tsx#Explorer@e91d19dd8e1b",
-      "evidence": "Unknown visual import or local component <Explorer>; no registered slot resolves.",
-      "file": "src/studio/surface-preview-samples.tsx",
-      "line": 57,
-      "missing": "Explorer visual capability",
-      "raisedBy": "src/studio/surface-preview-samples.tsx#surface",
-      "slotId": null,
-      "tag": "Explorer"
-    },
-    {
-      "code": "DF5",
-      "elementId": "src/studio/surface-preview-samples.tsx#Hero@03d74a71311d",
-      "evidence": "Unknown visual import or local component <Hero>; no registered slot resolves.",
-      "file": "src/studio/surface-preview-samples.tsx",
-      "line": 58,
-      "missing": "Hero visual capability",
-      "raisedBy": "src/studio/surface-preview-samples.tsx#surface",
-      "slotId": null,
-      "tag": "Hero"
-    },
-    {
-      "code": "DF5",
-      "elementId": "src/studio/surface-preview-samples.tsx#NewsletterBand@d6b443a69be4",
-      "evidence": "Unknown visual import or local component <NewsletterBand>; no registered slot resolves.",
-      "file": "src/studio/surface-preview-samples.tsx",
-      "line": 60,
-      "missing": "NewsletterBand visual capability",
-      "raisedBy": "src/studio/surface-preview-samples.tsx#surface",
-      "slotId": null,
-      "tag": "NewsletterBand"
     },
     {
       "code": "DF5",
@@ -6695,17 +5463,6 @@
     },
     {
       "code": "DF5",
-      "elementId": "src/studio/surface-preview-samples.tsx#Drawer@cd4b265dee83",
-      "evidence": "Unknown visual import or local component <Drawer>; no registered slot resolves.",
-      "file": "src/studio/surface-preview-samples.tsx",
-      "line": 64,
-      "missing": "Drawer visual capability",
-      "raisedBy": "src/studio/surface-preview-samples.tsx#surface",
-      "slotId": null,
-      "tag": "Drawer"
-    },
-    {
-      "code": "DF5",
       "elementId": "src/studio/surface-preview-samples.tsx#Record@a51031eece40",
       "evidence": "Unknown visual import or local component <Record>; no registered slot resolves.",
       "file": "src/studio/surface-preview-samples.tsx",
@@ -6716,66 +5473,11 @@
       "tag": "Record"
     },
     {
-      "code": "DF5",
-      "elementId": "src/studio/surface-preview-samples.tsx#DataTable@3bcd6fdafa0d",
-      "evidence": "Unknown visual import or local component <DataTable>; no registered slot resolves.",
-      "file": "src/studio/surface-preview-samples.tsx",
-      "line": 81,
-      "missing": "DataTable visual capability",
-      "raisedBy": "src/studio/surface-preview-samples.tsx#surface",
-      "slotId": null,
-      "tag": "DataTable"
-    },
-    {
-      "code": "DF5",
-      "elementId": "src/studio/surface-preview-samples.tsx#DataTable@a9887c3b5592",
-      "evidence": "Unknown visual import or local component <DataTable>; no registered slot resolves.",
-      "file": "src/studio/surface-preview-samples.tsx",
-      "line": 82,
-      "missing": "DataTable visual capability",
-      "raisedBy": "src/studio/surface-preview-samples.tsx#surface",
-      "slotId": null,
-      "tag": "DataTable"
-    },
-    {
-      "code": "DF5",
-      "elementId": "src/studio/surface-preview-samples.tsx#DataTable@fd27ca3f9ab9",
-      "evidence": "Unknown visual import or local component <DataTable>; no registered slot resolves.",
-      "file": "src/studio/surface-preview-samples.tsx",
-      "line": 83,
-      "missing": "DataTable visual capability",
-      "raisedBy": "src/studio/surface-preview-samples.tsx#surface",
-      "slotId": null,
-      "tag": "DataTable"
-    },
-    {
-      "code": "DF5",
-      "elementId": "src/studio/surface-preview-samples.tsx#ResourceList@3e780cc9995c",
-      "evidence": "Unknown visual import or local component <ResourceList>; no registered slot resolves.",
-      "file": "src/studio/surface-preview-samples.tsx",
-      "line": 86,
-      "missing": "ResourceList visual capability",
-      "raisedBy": "src/studio/surface-preview-samples.tsx#surface",
-      "slotId": null,
-      "tag": "ResourceList"
-    },
-    {
       "code": "DF2",
       "elementId": "src/studio/surface-preview-samples.tsx#ResourceList@3e780cc9995c",
       "evidence": "unresolved ...: dynamic source cannot establish token-only styling.",
       "file": "src/studio/surface-preview-samples.tsx",
       "line": 86,
-      "raisedBy": "src/studio/surface-preview-samples.tsx#surface",
-      "slotId": null,
-      "tag": "ResourceList"
-    },
-    {
-      "code": "DF5",
-      "elementId": "src/studio/surface-preview-samples.tsx#ResourceList@6dbb49fd6e70",
-      "evidence": "Unknown visual import or local component <ResourceList>; no registered slot resolves.",
-      "file": "src/studio/surface-preview-samples.tsx",
-      "line": 87,
-      "missing": "ResourceList visual capability",
       "raisedBy": "src/studio/surface-preview-samples.tsx#surface",
       "slotId": null,
       "tag": "ResourceList"
@@ -6791,44 +5493,11 @@
       "tag": "ResourceList"
     },
     {
-      "code": "DF5",
-      "elementId": "src/studio/surface-preview-samples.tsx#ResourceList@c80ee9f1aa80",
-      "evidence": "Unknown visual import or local component <ResourceList>; no registered slot resolves.",
-      "file": "src/studio/surface-preview-samples.tsx",
-      "line": 88,
-      "missing": "ResourceList visual capability",
-      "raisedBy": "src/studio/surface-preview-samples.tsx#surface",
-      "slotId": null,
-      "tag": "ResourceList"
-    },
-    {
       "code": "DF2",
       "elementId": "src/studio/surface-preview-samples.tsx#ResourceList@c80ee9f1aa80",
       "evidence": "unresolved ...: dynamic source cannot establish token-only styling.",
       "file": "src/studio/surface-preview-samples.tsx",
       "line": 88,
-      "raisedBy": "src/studio/surface-preview-samples.tsx#surface",
-      "slotId": null,
-      "tag": "ResourceList"
-    },
-    {
-      "code": "DF5",
-      "elementId": "src/studio/surface-preview-samples.tsx#ErrorState@f37cbdae61d0",
-      "evidence": "Unknown visual import or local component <ErrorState>; no registered slot resolves.",
-      "file": "src/studio/surface-preview-samples.tsx",
-      "line": 88,
-      "missing": "ErrorState visual capability",
-      "raisedBy": "src/studio/surface-preview-samples.tsx#surface",
-      "slotId": null,
-      "tag": "ErrorState"
-    },
-    {
-      "code": "DF5",
-      "elementId": "src/studio/surface-preview-samples.tsx#ResourceList@747d4b1edd66",
-      "evidence": "Unknown visual import or local component <ResourceList>; no registered slot resolves.",
-      "file": "src/studio/surface-preview-samples.tsx",
-      "line": 89,
-      "missing": "ResourceList visual capability",
       "raisedBy": "src/studio/surface-preview-samples.tsx#surface",
       "slotId": null,
       "tag": "ResourceList"
@@ -6853,17 +5522,6 @@
       "raisedBy": "src/studio/surface-preview-samples.tsx#surface",
       "slotId": null,
       "tag": "Record"
-    },
-    {
-      "code": "DF5",
-      "elementId": "src/studio/surface-preview-samples.tsx#AppNavigation@2af6f11d5c76",
-      "evidence": "Unknown visual import or local component <AppNavigation>; no registered slot resolves.",
-      "file": "src/studio/surface-preview-samples.tsx",
-      "line": 95,
-      "missing": "AppNavigation visual capability",
-      "raisedBy": "src/studio/surface-preview-samples.tsx#surface",
-      "slotId": null,
-      "tag": "AppNavigation"
     },
     {
       "code": "DF2",
@@ -7406,17 +6064,6 @@
       "raisedBy": "src/studio/system-canvas/SystemCanvas.tsx#surface",
       "slotId": null,
       "tag": "CanvasLod"
-    },
-    {
-      "code": "DF5",
-      "elementId": "src/studio/system-canvas/SystemCanvas.tsx#CanvasSurface@c1ef58af9a64",
-      "evidence": "Unknown visual import or local component <CanvasSurface>; no registered slot resolves.",
-      "file": "src/studio/system-canvas/SystemCanvas.tsx",
-      "line": 222,
-      "missing": "CanvasSurface visual capability",
-      "raisedBy": "src/studio/system-canvas/SystemCanvas.tsx#surface",
-      "slotId": null,
-      "tag": "CanvasSurface"
     },
     {
       "code": "DF2",
@@ -8218,17 +6865,6 @@
       "raisedBy": "src/studio/WholeStudio.tsx#surface",
       "slotId": null,
       "tag": "CanvasLod"
-    },
-    {
-      "code": "DF5",
-      "elementId": "src/studio/WholeStudio.tsx#CanvasSurface@c1472942c0b5",
-      "evidence": "Unknown visual import or local component <CanvasSurface>; no registered slot resolves.",
-      "file": "src/studio/WholeStudio.tsx",
-      "line": 108,
-      "missing": "CanvasSurface visual capability",
-      "raisedBy": "src/studio/WholeStudio.tsx#surface",
-      "slotId": null,
-      "tag": "CanvasSurface"
     },
     {
       "code": "DF2",
@@ -11201,8 +9837,8 @@
   },
   "summary": {
     "elements": 884,
-    "findings": 958,
-    "library": 183,
+    "findings": 834,
+    "library": 307,
     "structural": 162
   }
 }

@@ -28,9 +28,57 @@ function runtimeEntry(value, css = false) {
   throw new Error("unresolved runtime export condition");
 }
 
+/** Exact key first, then the single-"*" pattern with the longest prefix, then the
+ * longest key, as Node selects package exports/imports. The matched remainder is
+ * substituted into the selected runtime target; nothing else is guessed. */
+function mappedEntry(map, key, css) {
+  if (Object.hasOwn(map, key)) return runtimeEntry(map[key], css);
+  const [selected] = Object.keys(map).filter(pattern => pattern.split("*").length === 2).map(pattern => {
+    const [prefix, suffix] = pattern.split("*");
+    return { pattern, prefix, suffix };
+  }).filter(({ prefix, suffix }) => key.startsWith(prefix) && key.endsWith(suffix) && key.length > prefix.length + suffix.length)
+    .sort((a, b) => b.prefix.length - a.prefix.length || b.pattern.length - a.pattern.length);
+  if (!selected) return undefined;
+  const replacement = key.slice(selected.prefix.length, key.length - selected.suffix.length);
+  if (replacement.split("/").some(part => !part || part === "." || part === ".." || part === "node_modules")) throw new Error(`unsafe package pattern ${key}`);
+  return runtimeEntry(map[selected.pattern], css).split("*").join(replacement);
+}
+
+/** Map a selected package entry to the bytes the gate inspects. Workspace dist
+ * exports map to the same authored src entry, as Designer's existing source
+ * contract does; installed packages use their actual exported bytes. Neither
+ * path is treated as a trusted boundary. */
+function packageEntryFile(root, entry, designerRoot, specifier) {
+  if (typeof entry !== "string" || !entry.startsWith("./") || !inside(root, resolve(root, entry))) throw new Error(`unregistered public export ${specifier}`);
+  const workspace = dirname(root) === realpathSync(dirname(designerRoot));
+  const target = workspace && entry.startsWith("./dist/") ? dogfoodLocalFile(resolve(root, "src/_entry.ts"), "./" + entry.slice(7)) : dogfoodLocalFile(resolve(root, "_entry.js"), entry);
+  if (!inside(root, target)) throw new Error(`package export leaves its source boundary: ${specifier}`);
+  return target;
+}
+
+/** A "#" specifier belongs to the importing file's nearest package scope and
+ * resolves only through that manifest's own imports map. */
+function packageImportFile(file, specifier, designerRoot, { css, onRead }) {
+  if (!/^#[^/]/.test(specifier) || /[\\:%?]/.test(specifier.slice(1)) || specifier.slice(1).split("/").some(part => !part || part === "." || part === "..")) throw new Error(`unqualified external import ${specifier}`);
+  for (let parent = dirname(file);; parent = dirname(parent)) {
+    let manifest;
+    try { manifest = JSON.parse(readFileSync(resolve(parent, "package.json"), "utf8")); } catch (error) {
+      if (error.code !== "ENOENT" && error.code !== "ENOTDIR") throw new Error(`malformed package manifest for ${specifier}`);
+      if (dirname(parent) === parent) break;
+      continue;
+    }
+    const root = realpathSync(parent), imports = manifest.imports;
+    onRead(resolve(root, "package.json"));
+    const entry = imports && typeof imports === "object" && !Array.isArray(imports) ? mappedEntry(imports, specifier, css) : undefined;
+    return packageEntryFile(root, entry, designerRoot, specifier);
+  }
+  throw new Error(`unresolved package import ${specifier}`);
+}
+
 /** Resolve an exact public package export to actual source. No package name earns
  * an exemption: the caller must inspect the returned file and its closure. */
 export function dogfoodPackageFile(file, specifier, designerRoot, { css = false, onRead = () => {} } = {}) {
+  if (specifier.startsWith("#")) return packageImportFile(file, specifier, designerRoot, { css, onRead });
   const match = /^(@[^/.][^/]*\/[^/.][^/]*|[^@./][^/]*)(\/.*)?$/.exec(specifier);
   if (!match || /[\\:%?#]/.test(specifier) || specifier.split("/").some(part => !part || part === "." || part === "..")) throw new Error(`unqualified external import ${specifier}`);
   const name = match[1], subpath = match[2] ? "." + match[2] : ".";
@@ -54,16 +102,9 @@ export function dogfoodPackageFile(file, specifier, designerRoot, { css = false,
     let entry;
     if (exports !== undefined) {
       const subpaths = exports && typeof exports === "object" && Object.keys(exports).some(key => key.startsWith("."));
-      entry = runtimeEntry(subpaths ? exports[subpath] : subpath === "." ? exports : undefined, css);
+      entry = subpaths ? mappedEntry(exports, subpath, css) : runtimeEntry(subpath === "." ? exports : undefined, css);
     } else if (subpath === "." && typeof manifest.main === "string") entry = manifest.main.startsWith("./") ? manifest.main : "./" + manifest.main;
-    if (typeof entry !== "string" || !entry.startsWith("./") || !inside(root, resolve(root, entry))) throw new Error(`unregistered public export ${specifier}`);
-    // This is a source gate. Workspace dist exports map to the same authored src
-    // entry, as Designer's existing source contract does; installed packages use
-    // their actual exported bytes. Neither path is treated as a trusted boundary.
-    const workspace = dirname(root) === realpathSync(dirname(designerRoot));
-    const target = workspace && entry.startsWith("./dist/") ? dogfoodLocalFile(resolve(root, "src/_entry.ts"), "./" + entry.slice(7)) : dogfoodLocalFile(resolve(root, "_entry.js"), entry);
-    if (!inside(root, target)) throw new Error(`package export leaves its source boundary: ${specifier}`);
-    return target;
+    return packageEntryFile(root, entry, designerRoot, specifier);
   }
   throw new Error(`unresolved external import ${specifier}`);
 }
