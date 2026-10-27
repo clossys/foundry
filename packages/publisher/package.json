@@ -130,6 +130,14 @@
     "./web/registered-route": {
       "types": "./dist/web/registered-route.d.ts",
       "import": "./dist/web/registered-route.js"
+    },
+    "./content": {
+      "types": "./dist/content/index.d.ts",
+      "import": "./dist/content/index.js"
+    },
+    "./content/node": {
+      "types": "./dist/content/node.d.ts",
+      "import": "./dist/content/node.js"
     }
   },
   "imports": {
