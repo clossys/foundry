@@ -31,6 +31,8 @@ export interface NeedRecord { id: string; raisedBy: string; missing: string; kin
 export interface DogfoodException { name: string; file: string; elementId: string; hash: string; reason: string; owner: string; expiry: string }
 export interface DogfoodInput {
   files: readonly { file: string; content: string }[]; tokens?: readonly ConsumptionToken[]; themeCss?: string;
+  /** JSON paths actually parsed by the source runner; never source or export bytes. */
+  data?: readonly string[];
   /** Fresh selected source values for CSS definitions; never expected CSS or a submitted manifest. */
   tokenLibrary?: EngineInput;
   contracts?: Readonly<Record<string, SurfaceReadContract>>; exceptions?: readonly DogfoodException[]; needs?: readonly NeedRecord[];
@@ -39,7 +41,9 @@ export interface DogfoodInput {
   /** Exact source/export identities resolved by the source runner, never inferred from a local symbol's spelling. */
   resolvedImports?: Readonly<Record<string, string>>;
   /** Consumer mode follows source modules; these identities never suppress their findings. */
-  consumerBoundary?: { readonly pages: readonly string[]; readonly sourceImports: Readonly<Record<string, string>>; readonly pageChromeFiles?: readonly string[] };
+  consumerBoundary?: { readonly pages: readonly string[]; readonly sourceImports: Readonly<Record<string, string>>; readonly pageChromeFiles?: readonly string[];
+    /** Exact edges resolved from the runner's explicit project-source contract. */
+    readonly projectSourceImports?: readonly string[] };
 }
 export interface DogfoodCompose { file: string; line: number; tag: string; slotId: string; module: string; symbol: string }
 export const STRUCTURAL_TAGS = Object.freeze(["div", "span", "section", "ul", "ol", "li", "p", "h1", "h2", "h3", "h4", "h5", "h6", "dl", "dt", "dd", "code", "pre", "header", "main", "nav", "footer"] as const);
@@ -65,12 +69,14 @@ const interactive = new Set(["button", "input", "select", "textarea", "details",
 const capabilities: Record<string, string> = { button: "components.button", input: "components.text-field", select: "components.select", textarea: "components.text-field", a: "components.link", details: "components.disclosure", summary: "components.disclosure", svg: "components.icon", form: "components.form", fieldset: "components.field", legend: "components.field", label: "components.field", table: "components.table", tr: "components.table", td: "components.table", th: "components.table", thead: "components.table", tbody: "components.table", option: "components.select", progress: "components.progress-bar", meter: "components.meter", dialog: "components.dialog" };
 interface Attribute { name: string; value: string; start: number; dynamic: boolean }
 interface Element { tag: string; start: number; end: number; attributes: Attribute[] }
-interface Parsed { nonCode: { start: number; end: number }[]; importBindings: { binding: string; module: string; symbol: string }[]; contextProviders: Set<string>; modules: Set<string>; comments: { start: number; end: number }[]; elements: Element[]; imports: Map<string, { module: string; symbol: string }>; unresolved: { start: number; message: string }[] }
+interface SourceExport { symbol: string; original: string; module?: string }
+interface SourceDefinition { name: string; start: number; end: number; exported: boolean }
+interface Parsed { exports: SourceExport[]; definitions: SourceDefinition[]; nonCode: { start: number; end: number }[]; importBindings: { binding: string; module: string; symbol: string }[]; contextProviders: Set<string>; modules: Set<string>; comments: { start: number; end: number }[]; elements: Element[]; imports: Map<string, { module: string; symbol: string }>; unresolved: { start: number; message: string }[] }
 
 /** A balanced JSX node scanner, not a TypeScript compiler. Dynamic attribute values and
  * unsupported/malformed syntax stay explicit findings; observations are a lower bound. */
 function parseJsx(source: string): Parsed {
-  const result: Parsed = { nonCode: [], importBindings: [], contextProviders: new Set(), modules: new Set(), comments: [], elements: [], imports: new Map(), unresolved: [] };
+  const result: Parsed = { exports: [], definitions: [], nonCode: [], importBindings: [], contextProviders: new Set(), modules: new Set(), comments: [], elements: [], imports: new Map(), unresolved: [] };
   let i = 0;
   const issue = (message: string, start = i) => result.unresolved.push({ start, message: `unresolved ${message}` });
   const space = () => { while (/\s/.test(source[i] ?? "") && i < source.length) i++; };
@@ -92,6 +98,15 @@ function parseJsx(source: string): Parsed {
     return false;
   }
   function imports(): boolean {
+    const namedExport = /^export\s*\{([^}]*)\}(?:\s*from\s*(["'])([^"']+)\2)?/.exec(source.slice(i));
+    if (namedExport) {
+      for (const part of namedExport[1]!.split(",")) {
+        const binding = /^\s*(?!type\s)(\w+)(?:\s+as\s+(\w+))?\s*$/.exec(part);
+        if (binding) result.exports.push({ symbol: binding[2] ?? binding[1]!, original: binding[1]!, ...(namedExport[3] ? { module: namedExport[3] } : {}) });
+      }
+      if (namedExport[3]) result.modules.add(namedExport[3]);
+      result.nonCode.push({ start: i, end: i + namedExport[0].length }); i += namedExport[0].length; return true;
+    }
     const reexport = /^(?:export\s+(?:\{[^}]*\}|\*)\s+from\s*|import\s*)(["'])([^"']+)\1/.exec(source.slice(i));
     if (reexport) { result.modules.add(reexport[2]!); result.nonCode.push({ start: i, end: i + reexport[0].length }); i += reexport[0].length; return true; }
     const match = /^import\s+(?!type\b)([\s\S]*?)\s+from\s*(["'])([^"']+)\2/.exec(source.slice(i));
@@ -152,12 +167,29 @@ function parseJsx(source: string): Parsed {
     }
     node.end = i;
   }
-  function js(end?: string): void {
+  function js(end?: string, optionalEnd = false): void {
     let last = "";
     while (i < source.length) {
       if (end && source[i] === end) { i++; return; }
       if (comment()) continue;
       if (["'", '"', "`"].includes(source[i] ?? "")) { quoted(); last = "value"; continue; }
+      // Keep bounded declaration spans for source-owned view qualification.
+      // JSX in a different or unused declaration cannot qualify an empty view.
+      const fn = /^(export\s+)?(?:async\s+)?function\s+([A-Za-z_$][\w$]*)\s*\(/.exec(source.slice(i));
+      if (fn) {
+        const start = i; i += fn[0].length; js(")"); space();
+        if (source[i] === ":") { while (i < source.length && source[i] !== "{" && source[i] !== ";") i++; }
+        if (source[i] === "{") {
+          i++; js("}"); result.definitions.push({ name: fn[2]!, start, end: i, exported: !!fn[1] });
+        } else if (source[i] === ";") i++; // An overload/type declaration has no render body.
+        else issue("function source body", start);
+        last = "value"; continue;
+      }
+      const variable = /^(export\s+)?(?:const|let|var)\s+([A-Za-z_$][\w$]*)\s*=/.exec(source.slice(i));
+      if (variable) {
+        const start = i; i += variable[0].length; js(";", true);
+        result.definitions.push({ name: variable[2]!, start, end: i, exported: !!variable[1] }); last = ";"; continue;
+      }
       if (/^(?:import|export)\b/.test(source.slice(i)) && imports()) { last = "value"; continue; }
       if (/[A-Za-z_$]/.test(source[i] ?? "")) {
         const word = /^[A-Za-z_$][\w$]*/.exec(source.slice(i))![0]; i += word.length;
@@ -174,10 +206,12 @@ function parseJsx(source: string): Parsed {
       if (source[i] === "<" && /[A-Za-z>]/.test(source[i + 1] ?? "") && (!last || /[=(:\[,!&|?;{}]/.test(last)) && !genericArrow) { element(); last = "value"; continue; }
       if (source.slice(i, i + 2) === "=>") { i += 2; last = "="; continue; }
       if (source[i] === "{") { i++; js("}"); last = "value"; continue; }
+      if (source[i] === "(") { i++; js(")"); last = "value"; continue; }
+      if (source[i] === "[") { i++; js("]"); last = "value"; continue; }
       if (!/\s/.test(source[i]!)) last = source[i]!;
       i++;
     }
-    if (end) issue("unbalanced expression");
+    if (end && !optionalEnd) issue("unbalanced expression");
   }
   js(); result.contextProviders = lexicalReactProviders(source, result); return result;
 }
@@ -258,6 +292,107 @@ function composeAt(file: string, node: Element, parsed: Parsed, input: DogfoodIn
   return slotId ? { file, line: 0, tag: node.tag, slotId, module: imported.module, symbol } : undefined;
 }
 
+/** A source-owned composition is inspected, never promoted to a registered slot.
+ * Public packages need observed manifest/export bytes. Explicit project-source
+ * edges instead come from the consumer runner's resolution contract. Both paths
+ * require a rendered registered composition and keep descendant findings. These
+ * are caller observations, not filesystem authentication or package-name trust. */
+function sourceViewQualifier(input: DogfoodInput) {
+  const files = new Map(input.files.map(file => [file.file, file.content]));
+  const data = new Set((input.data ?? []).filter(file => typeof file === "string" && /\.json$/.test(file) && !files.has(file) && input.data!.filter(row => row === file).length === 1));
+  const parsedFiles = new Map<string, Parsed>();
+  const parsedAt = (file: string) => {
+    if (!files.has(file) || input.files.filter(row => row.file === file).length !== 1) return undefined;
+    if (!parsedFiles.has(file)) parsedFiles.set(file, parseJsx(files.get(file)!));
+    const parsed = parsedFiles.get(file)!;
+    return parsed.unresolved.length ? undefined : parsed;
+  };
+  const targetAt = (file: string, module: string) => {
+    const target = input.consumerBoundary?.sourceImports[`${file}:${module}`];
+    return target && (files.has(target) || data.has(target)) ? target : undefined;
+  };
+  const projectEdge = (file: string, module: string) => input.consumerBoundary?.projectSourceImports?.includes(`${file}:${module}`) === true;
+  const normalize = (path: string) => {
+    const parts: string[] = [];
+    for (const part of path.split("/")) if (part === "..") { if (!parts.length) return undefined; parts.pop(); } else if (part && part !== ".") parts.push(part);
+    return (path.startsWith("/") ? "/" : "") + parts.join("/");
+  };
+  const publicEntry = (module: string, target: string) => {
+    const match = /^(@[^/]+\/[^/]+|[^@./][^/]*)(\/.*)?$/.exec(module);
+    if (!match || /[\\:%?#]/.test(module) || module.split("/").some(part => part === "." || part === "..")) return false;
+    const key = match[2] ? "." + match[2] : ".";
+    const runtime = (value: unknown): string | undefined => {
+      if (typeof value === "string") return value;
+      if (!value || typeof value !== "object" || Array.isArray(value)) return undefined;
+      for (const [condition, entry] of Object.entries(value)) if (["import", "node", "default"].includes(condition)) return runtime(entry);
+      return undefined;
+    };
+    return input.files.some(file => {
+      if (!file.file.endsWith("/package.json") || input.files.filter(row => row.file === file.file).length !== 1) return false;
+      try {
+        const manifest = JSON.parse(file.content);
+        if (manifest.name !== match[1] || !manifest.exports) return false;
+        const paths = typeof manifest.exports === "object" && Object.keys(manifest.exports).some(name => name.startsWith("."));
+        const entry = runtime(paths ? manifest.exports[key] : key === "." ? manifest.exports : undefined);
+        if (!entry?.startsWith("./") || entry.split("/").some(part => part === "..")) return false;
+        const root = file.file.slice(0, -"package.json".length), candidates = [normalize(root + entry)];
+        if (entry.startsWith("./dist/")) for (const extension of [".ts", ".tsx", ".js", ".jsx"]) candidates.push(normalize(root + "src/" + entry.slice(7).replace(/\.[cm]?jsx?$/, extension)));
+        return candidates.includes(normalize(target));
+      } catch { return false; }
+    });
+  };
+  const complete = (file: string, seen = new Set<string>()): boolean => {
+    if (data.has(file)) return true;
+    if (seen.has(file)) return true;
+    seen = new Set([...seen, file]);
+    const parsed = parsedAt(file);
+    return !!parsed && [...parsed.modules].every(module => {
+      if (["react", "react/jsx-runtime", "react/jsx-dev-runtime", "react-dom"].includes(module) || module.startsWith(`${DOGFOOD_PACKAGE_NAME}/`)) return true;
+      const target = targetAt(file, module);
+      return !!target && complete(target, seen);
+    });
+  };
+  const qualifies = (file: string, symbol: string, exported: boolean, trail = new Set<string>()): boolean => {
+    const id = `${file}#${symbol}`;
+    if (trail.has(id) || symbol.includes(".")) return false;
+    trail = new Set([...trail, id]);
+    const parsed = parsedAt(file);
+    if (!parsed) return false;
+    const definitions = parsed.definitions.filter(row => row.name === symbol && (!exported || row.exported));
+    const exports = exported ? parsed.exports.filter(row => row.symbol === symbol) : [];
+    if (definitions.length + exports.length !== 1) return false;
+    if (exports.length) {
+      const row = exports[0]!;
+      if (!row.module) return qualifies(file, row.original, false, trail);
+      const target = targetAt(file, row.module);
+      return !!target && qualifies(target, row.original, true, trail);
+    }
+    if (!complete(file)) return false;
+    const definition = definitions[0]!, content = files.get(file)!;
+    const children = parsed.elements.filter(node => node.start >= definition.start && node.end <= definition.end && !parsed.definitions.some(other => other !== definition && other.start > definition.start && other.end < definition.end && node.start >= other.start && node.end <= other.end));
+    const roots = children.filter(node => /(?:\breturn|=>)\s*\(?\s*(?:<>\s*)?$/.test(content.slice(definition.start, node.start)));
+    const registered = (node: Element) => {
+      const binding = node.tag.split(".")[0]!, escaped = binding.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+      const shadowed = parsed.definitions.some(row => row.name === binding) || new RegExp(`\\bfunction\\s+\\w+\\s*\\([^)]*\\b${escaped}\\b[^)]*\\)|\\([^)]*\\b${escaped}\\b[^)]*\\)\\s*=>`).test(content);
+      return !shadowed && parsed.importBindings.filter(row => row.binding === binding).length === 1 && !!composeAt(file, node, parsed, input);
+    };
+    return children.some(node => roots.some(root => node.start >= root.start && node.end <= root.end) && (registered(node) || (() => {
+      const identity = importedIdentity(node, parsed, input, file);
+      if (identity) {
+        const target = targetAt(file, identity.original);
+        return !!target && (identity.original.startsWith(".") || projectEdge(file, identity.original) || publicEntry(identity.original, target)) && qualifies(target, identity.symbol, true, trail);
+      }
+      return qualifies(file, node.tag, false, trail);
+    })()));
+  };
+  return (file: string, node: Element, parsed: Parsed) => {
+    const identity = importedIdentity(node, parsed, input, file);
+    if (!identity || identity.original.startsWith(".")) return false;
+    const target = targetAt(file, identity.original);
+    return !!target && (projectEdge(file, identity.original) || publicEntry(identity.original, target)) && qualifies(target, identity.symbol, true);
+  };
+}
+
 /** Observed JSX edges use the same parser and provenance rules as DF5. */
 export function dogfoodComposes(input: DogfoodInput): DogfoodCompose[] {
   return [...input.files].sort((a, b) => a.file.localeCompare(b.file)).flatMap(file => {
@@ -287,9 +422,10 @@ export function runDogfood(input: DogfoodInput) {
     return [...extracted.candidates.map(candidate => `Hard-coded ${candidate.kind}: ${candidate.raw}`), ...extracted.unchecked.map(issue => `Unresolved CSS: ${issue.detail}`)];
   }) : [];
   let library = 0;
+  const sourceView = sourceViewQualifier(input);
   const allowed = new Set<string>(STRUCTURAL_TAGS), today = input.now ?? new Date().toISOString().slice(0, 10);
   for (const file of [...input.files].sort((a, b) => a.file.localeCompare(b.file))) {
-    const parsed: Parsed = /\.[cm]?tsx$|\.[cm]?jsx?$/.test(file.file) ? parseJsx(file.content) : { nonCode: [], importBindings: [], contextProviders: new Set<string>(), modules: new Set<string>(), comments: [], elements: [], imports: new Map(), unresolved: [] }, duplicates = new Map<string, number>();
+    const parsed: Parsed = /\.[cm]?tsx$|\.[cm]?jsx?$/.test(file.file) ? parseJsx(file.content) : { exports: [], definitions: [], nonCode: [], importBindings: [], contextProviders: new Set<string>(), modules: new Set<string>(), comments: [], elements: [], imports: new Map(), unresolved: [] }, duplicates = new Map<string, number>();
     const lineAt = (start: number) => file.content.slice(0, start).split("\n").length;
     scanned.push({ file: file.file, elements: parsed.elements.length });
     const add = (code: DogfoodCode, node: Element, evidence: string, slotId: string | null = null, missing?: string) => {
@@ -337,9 +473,11 @@ export function runDogfood(input: DogfoodInput) {
           // An unbound page/helper has no authored composition contract to violate.
           if (contract && ![...(contract.allowedComposes ?? []), ...(contract.allowedReads.components ?? [])].includes(slot)) add("DF4", node, `missing-declared-compose: ${slot}`, contract.id);
         }
+        else if (sourceView(file.file, node, parsed)) { /* Inspected source composition; no slot or library ownership is invented. */ }
         else if (consumer && (pageHeader(node, parsed, input, file.file) || frameStage(node, parsed) || parsed.contextProviders.has(node.tag) || (() => {
           const identity = importedIdentity(node, parsed, input, file.file);
-          return identity && consumer.sourceImports[`${file.file}:${identity.original}`] !== undefined;
+          const target = identity && consumer.sourceImports[`${file.file}:${identity.original}`];
+          return identity && identity.original.startsWith(".") && input.files.some(source => source.file === target);
         })())) { /* Source-owned helpers are checked in their reachable files, never exempted. */ }
         else add("DF5", node, `Unknown visual import or local component <${node.tag}>; no registered slot resolves.`, null, `${node.tag} visual capability`);
       } else {
