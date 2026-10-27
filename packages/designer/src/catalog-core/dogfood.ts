@@ -420,6 +420,16 @@ function qualifiedConsumerModule(module: string, file: string, input: DogfoodInp
   const edge = `${file}:${module}`;
   return Object.hasOwn(input.consumerBoundary?.sourceImports ?? {}, edge) || Object.hasOwn(input.localModules ?? {}, edge);
 }
+/** Raw px in @media/@container thresholds (G5), matching the strict checker's
+ * raw CSS pixel query rule; declarations are already covered by the value engine. */
+function dogfoodCssQueryPixels(content: string): { start: number; end: number; evidence: string }[] {
+  const clean = content.replace(/\/\*[\s\S]*?\*\//g, comment => " ".repeat(comment.length));
+  return [...clean.matchAll(/@(?:media|container)\b\s*([^{};]+)/gi)].flatMap(query => {
+    const pixels = [...query[1]!.matchAll(/(?:^|[^\w.-])(-?(?:\d+(?:\.\d+)?|\.\d+)px)\b/gi)].map(row => row[1]!);
+    return pixels.length ? [{ start: query.index!, end: query.index! + query[0].length, evidence: `Hard-coded pixel query threshold: ${pixels.join(", ")} bypasses registered token binding.` }] : [];
+  });
+}
+
 const quotedLiteral = /^(?:"(?:\\.|[^"\\])*"|'(?:\\.|[^'\\])*')$/;
 function staticAttribute(attribute: Attribute): boolean {
   if (!attribute.dynamic) return true;
@@ -481,6 +491,8 @@ export function runDogfood(input: DogfoodInput) {
       }
       if (/\.css$/.test(file.file)) {
         for (const issue of cssIssues.filter(issue => issue.file === file.file))
+          add("DF2", { tag: "css", start: issue.start, end: issue.end, attributes: [] }, issue.evidence);
+        for (const issue of dogfoodCssQueryPixels(file.content))
           add("DF2", { tag: "css", start: issue.start, end: issue.end, attributes: [] }, issue.evidence);
       }
     }

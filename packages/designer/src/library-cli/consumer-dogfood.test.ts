@@ -237,6 +237,24 @@ describe("consumer source boundary (zero finding allowlist)", () => {
     expect(report.findings.filter(finding => finding.file === "console.css").length).toBeGreaterThanOrEqual(2);
     expect(report.findings.some(finding => finding.evidence.includes("inline styles"))).toBe(true);
   });
+  it("reports raw px in consumer CSS declarations, media/container thresholds, className and style (G5)", async () => {
+    const cases: [string, string, string][] = [
+      ["declaration", ".pane{width:12px}", "<div/>"],
+      ["media", "@media (width >= 320px){.pane{display:block}}", "<div/>"],
+      ["container", "@container pane (min-width:320px){.pane{display:block}}", "<div/>"],
+      ["className", ".pane{display:block}", '<div className="w-[12px]"/>'],
+      ["style", ".pane{display:block}", '<div style={{width:"12px"}}/>'],
+    ];
+    for (const [name, css, element] of cases) {
+      await write("Page.tsx", `${header} import "./console.css"; export default function Page(){return <><Lease id="example" header={{title:"Example"}}/>${element}</>}`);
+      await write("console.css", css);
+      const findings = runConsumerDogfood(await sources()).findings.filter(row => row.code === "DF2" && /(?:12|320)px|inline styles/.test(row.evidence));
+      expect(findings.length, name).toBeGreaterThan(0);
+    }
+    await write("Page.tsx", `${header} import "./console.css"; export default function Page(){return <><Lease id="example" header={{title:"Example"}}/><div/></>}`);
+    await write("console.css", "/* 12px is documentation */ @media (width >= 20rem){.pane{display:block}} @container pane (width >= 20rem){.pane{display:block}}");
+    expect(runConsumerDogfood(await sources()).findings).toEqual([]);
+  });
   it.each(["header", "h1", "nav"])("forbids raw %s even in a reachable page helper", async tag => {
     await write("Page.tsx", `${header} import { Publisher } from "@example/publisher"; export default function Page(){return <><Lease id="example" header={{title:"Example"}}/><Publisher/></>}`);
     await write("Publisher.tsx", `export function Publisher(){return <${tag}>Title</${tag}>}`);
