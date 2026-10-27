@@ -1,10 +1,12 @@
 import { afterEach, expect, it, vi } from "vitest";
 import { cleanup, screen, within } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 import type { ReactNode } from "react";
 import { render } from "./__fixtures__/frame.js";
 import * as components from "../components/index.js";
 import * as charts from "../charts/index.js";
 import * as shell from "../shell/index.js";
+import { toastQueue } from "../shell/internal/toast-queue.js";
 import { loadBuildCatalog, resolve } from "../catalog-core/index.js";
 import { loadCatalogBundles } from "../catalog-bundles.js";
 import { adoptedComponentIntegration } from "../catalog-core/__fixtures__/component-integration.js";
@@ -231,11 +233,40 @@ it("draws every Foundry package component live from designer sample content when
   }
   // Live means drawn: no cell reads live over an empty plate.
   expect(blank).toEqual([]);
-  // The toast region draws only the app-wide queue, which it does not let a preview replace; the cell names why.
-  expect(unavailableCells).toEqual({ "components.toast": "needs-host-queue" });
+  // Every cell draws: the toast region renders a cell-owned queue in place (see the Toaster test below).
+  expect(unavailableCells).toEqual({});
   // A member that needs the host's own brand assets says so instead of throwing; the leaf's other specimens draw.
   expect(unavailableMembers).toEqual({ "components.logo/content.lockup": "needs-brand-asset" });
   errors.mockRestore();
+});
+
+it("draws the shell Toaster's own toast in its cell from a cell queue, dismisses it by its close button and shows it again", async () => {
+  const user = userEvent.setup();
+  const leaf = foundryLeaves().find(entry => entry.leaf === "components.toast")!;
+  render(<CandidateCell labels={labels} preview={componentSpecimenPreview({ modules: hostModules }).preview(leaf.leaf, leaf.profile)} />);
+  const cell = document.querySelector<HTMLElement>("[data-candidate-cell]")!;
+  await vi.waitFor(() => expect(cell).toHaveAttribute("data-preview-state", "live"));
+  const host = cell.querySelector<HTMLElement>(`[data-component-specimen="components.toast"] [data-specimen-contained-host="toast"]`)!;
+  expect(host).not.toBeNull();
+  // In place: the stack is the Toaster's container placement inside the cell, never the fixed, portalled viewport.
+  const shown = within(host).getByRole("status");
+  expect(shown).toHaveTextContent("Changes saved");
+  expect(shown).toHaveTextContent("Your draft is up to date.");
+  expect(host.querySelector("ol")).not.toHaveClass("fixed");
+  expect(document.querySelector("[data-toaster-placement]")).toBeNull();
+  expect(screen.getAllByText("Changes saved").every(node => cell.contains(node))).toBe(true);
+  // The cell's queue is its own: the app-wide queue stays empty, and a page toast never draws in the cell.
+  expect(toastQueue.visibleToasts).toEqual([]);
+  const page = shell.toast("Page toast");
+  await new Promise(resolve => setTimeout(resolve, 0));
+  expect(within(cell).queryByText("Page toast")).toBeNull();
+  page.dismiss();
+  // Dismissed through the toast's own close button, then queued again from the cell's show action.
+  await user.click(within(host).getByRole("button", { name: "Close" }));
+  await vi.waitFor(() => expect(within(host).queryByText("Changes saved")).toBeNull());
+  await user.click(within(host).getByRole("button", { name: "Show toast" }));
+  await vi.waitFor(() => expect(within(host).getByRole("status")).toHaveTextContent("Changes saved"));
+  expect(toastQueue.visibleToasts).toEqual([]);
 });
 
 it("host specimens override designer sample content", () => {

@@ -7679,7 +7679,7 @@ not a grab-bag).
 | `SiteFooterProps` | type | Props for `SiteFooter`: `columns`, `secondary`, legacy `ground` divider policy, optional `rule="top"` on transparent ground, plus native `<footer>` attributes except `children`. Paint remains locally dark. |
 | `SiteFooterColumnProps` | type | Props for `SiteFooter.Column`: `heading`, `children` (the column's own links), `className`. |
 | `Toaster` | component | The toast viewport — mount once, anywhere in the same tree as `Shell`. |
-| `ToasterProps` | type | Props for `Toaster`: `aria-label` (default `"Notifications"`), `className`. |
+| `ToasterProps` | type | Props for `Toaster`: `aria-label` (default `"Notifications"`), `className`, `queue` (default: the app-wide `toast()` queue) and `placement` (`"viewport"`, the default, or `"container"` to draw in place). |
 | `toast` | value | Imperative toast API: `toast(title, options?)`, `toast.success`/`.error`/`.warning`/`.info`, `toast.dismiss`, `toast.dismissAll`. |
 | `ToastFunction` | type | The callable shape of `toast` itself. |
 | `ToastHandle` | type | Returned by every `toast(...)` call: `{ id, dismiss() }`. |
@@ -10401,9 +10401,10 @@ a placeholder. A specimen that throws is replaced by a hidden
 `data-specimen-error` marker. The cell stays live while at least one specimen
 renders. Once every specimen of a leaf has thrown, or the provider has, the cell
 reads `data-preview-state="unavailable"` with `data-preview-reason="specimen-error"`.
-The toast region draws only the app-wide `toast()` queue and takes no queue of
-its own, so without a host specimen its cell reads unavailable with
-`data-preview-reason="needs-host-queue"`; a preview never pushes into that queue.
+The toast region's specimen mounts `Toaster` with `placement="container"` and a
+queue owned by the cell, so the sample toast draws in place inside the cell and
+is dismissed by its own close button; a preview never pushes into the app-wide
+`toast()` queue.
 The vendored shadcn@aria dialog module exports its inner, non-modal
 `DialogContent` part, which `Dialog` wraps in its modal overlay; the specimen
 draws that part open inside its cell, so it never locks page scroll, hides the

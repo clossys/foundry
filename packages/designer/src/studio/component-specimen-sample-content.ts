@@ -80,13 +80,19 @@ export const componentSpecimenColor = {
 } as const;
 
 /**
- * Exports a preview cannot draw from sample data, and why. The toast region renders only the app-wide queue
- * (it takes no queue of its own); the brand lockup draws the host's own mark asset and wordmark.
+ * Exports a preview cannot draw from sample data, and why. The brand lockup draws the host's own mark asset
+ * and wordmark.
  */
 export const componentSpecimenUnavailable: Readonly<Record<string, SpecimenUnavailableReason>> = {
-  "./shell#Toaster": "needs-host-queue",
   "./shell#Brandmark": "needs-brand-asset",
 };
+
+/** The Toaster's sample: its region label, the cell's show action and the one toast that action queues. */
+export const componentSpecimenToast = {
+  label: "Notifications",
+  trigger: "Show toast",
+  toast: { title: "Changes saved", description: "Your draft is up to date.", variant: "success" },
+} as const;
 
 /**
  * Neutral sample content for vendored shadcn@aria source components, keyed by the descriptor's
