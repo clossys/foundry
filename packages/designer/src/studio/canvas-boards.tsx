@@ -1,6 +1,5 @@
 "use client";
-import { memo, useCallback, useContext, useLayoutEffect, useRef, type ReactNode } from "react";
-import { TableStateContext } from "react-aria-components";
+import { memo, useCallback, useLayoutEffect, useRef } from "react";
 import { Matrix as Comparison } from "../blocks/Matrix.js";
 import type { LibraryBoardPreviewPort } from "../blocks/library-board/LibraryBoardSection.js";
 import type { LibraryBoardCommand, LibraryBoardRecords } from "../blocks/library-board/model.js";
@@ -15,34 +14,16 @@ import type { PreparedBoardPreviews } from "./prepared-library-boards.js";
 export const EDITABLE_CONTROL = "input, textarea, select, [role=spinbutton], [role=textbox], [contenteditable]:not([contenteditable=false])";
 export const isEditableControl = (target: EventTarget | null): boolean => typeof Element !== "undefined" && target instanceof Element && target.closest(EDITABLE_CONTROL) !== null;
 
-/**
- * A board's view table is a React Aria grid: its cells capture ArrowUp/ArrowDown to move between rows,
- * so an inline date segment inside a preview never sees them. While focus sits in an editable control
- * the grid's own keyboard navigation is paused through its state, and resumes when focus leaves it.
- * Outside a table (edit-mode choices) there is no grid state and this is a plain pass-through.
- */
-function CellKeyScope({ children }: { children: ReactNode }) {
-  const grid = useContext(TableStateContext);
-  const paused = useRef(false);
-  const pause = (value: boolean) => {
-    if (!grid || paused.current === value) return;
-    paused.current = value;
-    grid.setKeyboardNavigationDisabled(value);
-  };
-  useLayoutEffect(() => () => pause(false), []);
-  return <div data-studio-cell-keys="" onFocusCapture={event => pause(isEditableControl(event.target))} onBlurCapture={event => { if (!isEditableControl(event.relatedTarget) || !event.currentTarget.contains(event.relatedTarget as Node)) pause(false); }}>{children}</div>;
-}
-
 /** No preview port: every cell shows the Section's own unavailable status. */
 const NO_PREVIEWS: LibraryBoardPreviewPort = { selectionHash: "unavailable", sourceHashes: {}, render: () => undefined };
-/** The canvas port: the prepared previews, each cell scoped so its editable controls keep their keys. */
+/**
+ * The canvas port: the prepared previews. A text-entry control inside a preview (a DateField segment)
+ * keeps its own arrow keys because the library Table pauses its grid navigation while focus is in one.
+ */
 export function canvasPreviewPort(previews: PreparedBoardPreviews): LibraryBoardPreviewPort {
   if (previews.status !== "available") return NO_PREVIEWS;
   const port = previews.port;
-  return { selectionHash: port.selectionHash, sourceHashes: port.sourceHashes, render(identity) {
-    const node = port.render(identity);
-    return node == null ? undefined : <CellKeyScope>{node}</CellKeyScope>;
-  } };
+  return { selectionHash: port.selectionHash, sourceHashes: port.sourceHashes, render: identity => port.render(identity) ?? undefined };
 }
 
 /**

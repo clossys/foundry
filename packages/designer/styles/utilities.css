@@ -399,11 +399,11 @@
 @source inline("focus-within:block focus-within:not-sr-only focus-within:overflow-x-auto focus-within:w-full focus.");
 @source inline("focus/gesture focus: focus:bg-accent focus:fixed focus:not-sr-only focus:outline-none focus:px-md");
 @source inline("focus:py-sm focus:rounded-control focus:start-sm focus:text-body focus:text-ink-on-accent");
-@source inline("focus:top-sm focusItem focusPanelTrigger focusQueue: focusable focused focusedBoard focusin folder");
-@source inline("folder. follow followed followingColumn follows follows. font font-body font-display font-medium");
-@source inline("font-mono font-normal font-semibold font-size font-style font: fontFamily fontFamily: fontSize:");
-@source inline("fontStyleMember fontsource footer footer-duplicate-link footer-icon-limit footer-link-limit");
-@source inline("footerLayout footnote for forbidden force force: forced forced-colors");
+@source inline("focus:top-sm focusItem focusPanelTrigger focusQueue: focusable focused focusedBoard focusin focusout");
+@source inline("folder folder. follow followed followingColumn follows follows. font font-body font-display");
+@source inline("font-medium font-mono font-normal font-semibold font-size font-style font: fontFamily fontFamily:");
+@source inline("fontSize: fontStyleMember fontsource footer footer-duplicate-link footer-icon-limit");
+@source inline("footer-link-limit footerLayout footnote for forbidden force force: forced forced-colors");
 @source inline("forced-colors:-outline-offset-2 forced-colors:[forced-color-adjust:preserve-parent-color]");
 @source inline("forced-colors:bg-current forced-colors:border-current forced-colors:border-solid");
 @source inline("forced-colors:fill-current forced-colors:focus-visible:outline");

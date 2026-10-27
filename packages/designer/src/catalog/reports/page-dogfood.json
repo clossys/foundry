@@ -3338,21 +3338,10 @@
     },
     {
       "code": "DF5",
-      "elementId": "src/studio/canvas-boards.tsx#CellKeyScope@a88b5c1e1be9",
-      "evidence": "Unknown visual import or local component <CellKeyScope>; no registered slot resolves.",
-      "file": "src/studio/canvas-boards.tsx",
-      "line": 44,
-      "missing": "CellKeyScope visual capability",
-      "raisedBy": "src/studio/canvas-boards.tsx#surface",
-      "slotId": null,
-      "tag": "CellKeyScope"
-    },
-    {
-      "code": "DF5",
       "elementId": "src/studio/canvas-boards.tsx#Comparison@5d87aacca0c5",
       "evidence": "Unknown visual import or local component <Comparison>; no registered slot resolves.",
       "file": "src/studio/canvas-boards.tsx",
-      "line": 103,
+      "line": 84,
       "missing": "Comparison visual capability",
       "raisedBy": "src/studio/canvas-boards.tsx#surface",
       "slotId": null,
@@ -3363,7 +3352,7 @@
       "elementId": "src/studio/canvas-boards.tsx#CanvasBoard@3204a5007afe",
       "evidence": "Unknown visual import or local component <CanvasBoard>; no registered slot resolves.",
       "file": "src/studio/canvas-boards.tsx",
-      "line": 109,
+      "line": 90,
       "missing": "CanvasBoard visual capability",
       "raisedBy": "src/studio/canvas-boards.tsx#surface",
       "slotId": null,
@@ -3374,7 +3363,7 @@
       "elementId": "src/studio/canvas-boards.tsx#CanvasBoard@3204a5007afe",
       "evidence": "unresolved ...: dynamic source cannot establish token-only styling.",
       "file": "src/studio/canvas-boards.tsx",
-      "line": 109,
+      "line": 90,
       "raisedBy": "src/studio/canvas-boards.tsx#surface",
       "slotId": null,
       "tag": "CanvasBoard"
@@ -9889,7 +9878,7 @@
       "file": "src/studio/CandidatePromptDialog.tsx"
     },
     {
-      "elements": 5,
+      "elements": 3,
       "file": "src/studio/canvas-boards.tsx"
     },
     {
@@ -10222,7 +10211,7 @@
   "structural": {
     "code": 12,
     "dd": 13,
-    "div": 43,
+    "div": 42,
     "dl": 4,
     "dt": 13,
     "h2": 2,
@@ -10235,9 +10224,9 @@
     "ul": 4
   },
   "summary": {
-    "elements": 831,
-    "findings": 869,
+    "elements": 829,
+    "findings": 868,
     "library": 177,
-    "structural": 144
+    "structural": 143
   }
 }
