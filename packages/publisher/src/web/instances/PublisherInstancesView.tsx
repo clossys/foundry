@@ -11,7 +11,8 @@ import type { LayoutCompilerPort } from "../../core/layout-source.js";
 import { getEffectiveLayoutContract } from "../../layouts/resolve.js";
 import type { EffectivePageLayoutContract } from "../../layouts/resolve.js";
 import type { BreakpointValues } from "../../core/flow-stage.js";
-import { InstancePlaceholderFrame } from "./InstancePlaceholderFrame.js";
+import { InstanceRuntimeRender } from "./InstanceRuntimeRender.js";
+import type { InstanceRuntimeRoutes } from "./InstanceRuntimeRender.js";
 
 export interface PublisherInstancesViewProps {
   /** Replace structural inputs when their contents or lookup observations change. */
@@ -20,6 +21,7 @@ export interface PublisherInstancesViewProps {
   readonly registries: InstanceRegistries;
   /** Host parser syntax only. Omission genuinely refuses LK11. */
   readonly compiler?: LayoutCompilerPort;
+  /** Kept for API stability; the runtime assembly owns breakpoints now that no placeholder diagram reads them. */
   readonly breakpointValues: BreakpointValues;
   readonly designerHref: string;
   readonly packLabels?: Readonly<Record<string, string>>;
@@ -30,6 +32,8 @@ export interface PublisherInstancesViewProps {
   /** A containing pack can render its exact evaluation instead of recomputing its evidence panel. */
   readonly checkResultsPanel?: ReactNode;
   readonly assemblyTargetPrefix?: string;
+  /** The host's registered-route runtime. An instance renders only through that closed binder; without it the preview states why. */
+  readonly runtimeRoutes?: InstanceRuntimeRoutes;
 }
 const groups = [
   ["Structure", ["LK1", "LK2", "LK3", "LK4", "LK5", "LK6", "LK7", "LK15", "LK16"]],
@@ -38,7 +42,7 @@ const groups = [
 const status = (count: number) => count ? `${count} ${count === 1 ? "finding" : "findings"} · LK12 pending` : "Static checks pass · LK12 pending";
 
 /** Read-only instance assembly and static evidence. No fill fallback or shipping operation. */
-export function PublisherInstancesView({ instances, library, registries, compiler, breakpointValues, designerHref, packLabels, presentation = "standalone", assemblyPanel, checkResultsPanel, assemblyTargetPrefix }: PublisherInstancesViewProps) {
+export function PublisherInstancesView({ instances, library, registries, compiler, designerHref, packLabels, presentation = "standalone", assemblyPanel, checkResultsPanel, assemblyTargetPrefix, runtimeRoutes }: PublisherInstancesViewProps) {
   const id = useId();
   const { rows, packs } = useMemo(() => {
     const occurrences = new Map<string, number>();
@@ -126,7 +130,7 @@ export function PublisherInstancesView({ instances, library, registries, compile
     </li>)}</ul>
   </section>)}</>;
   return <section aria-labelledby={`${id}-title`} className="grid min-w-0 gap-lg text-ink-primary">
-    <SectionHeader id={`${id}-title`} title={presentation === "item" ? "Item inspector" : "Instances"} description={<>Library: {library.id} · read-only<br />Assembly preview only. Frame and section placeholders pending F5 / S4; responsive render checks LK12 pending.</>} />
+    <SectionHeader id={`${id}-title`} title={presentation === "item" ? "Item inspector" : "Instances"} description={<>Library: {library.id} · read-only<br />Frames and Sections render only through the registered-route runtime; responsive render checks LK12 pending.</>} />
     <div className={presentation === "item" ? "grid min-w-0 gap-lg desktop:grid-cols-2" : "grid min-w-0 gap-lg desktop:grid-cols-[var(--ui-layout-sidebar-w)_minmax(0,1fr)_var(--ui-layout-aside-w)]"}>
       {presentation === "standalone" && <Panel><nav aria-label="Instances by pack and surface" className="grid content-start gap-lg">
         {packs.map(pack => <section key={pack.packId} aria-label={packLabels?.[pack.packId] ?? pack.packId} className="grid gap-md">
@@ -139,15 +143,14 @@ export function PublisherInstancesView({ instances, library, registries, compile
         <div className="grid min-w-0 content-start gap-lg">
           {assemblyPanel}
         <Panel><section id={assemblyTargetPrefix ? `${assemblyTargetPrefix}-render` : undefined} tabIndex={assemblyTargetPrefix ? -1 : undefined} aria-labelledby={`${id}-preview-title`} className="grid content-start gap-md">
-          <SectionHeader level={3} id={`${id}-preview-title`} title={<>{binding.label} · assembly preview</>} />
+          <SectionHeader level={3} id={`${id}-preview-title`} title={<>{binding.label} · runtime render</>} />
           <div className="flex flex-wrap gap-md">
             <Select label="Viewport" selectedKey={String(width)} onSelectionChange={key => { if (key != null) setWidth(Number(key) as typeof width); }} options={[320, 768, 1280].map(value => ({ id: String(value), label: `${value} px` }))} />
             <Select label="Theme" selectedKey={theme} onSelectionChange={key => { if (key != null) setTheme(String(key) as typeof theme); }} options={[{ id: "light", label: "light" }, { id: "dark", label: "dark" }]} />
             <Select label="State" selectedKey={state ?? ""} onSelectionChange={key => setChosenState(key ? String(key) : undefined)} options={[{ id: "", label: "default" }, ...(binding.states?.filter(value => value !== "default").map(value => ({ id: value, label: value })) ?? [])]} />
           </div>
-          <p>Placeholder content refs only · no copy resolved into the preview.</p>
-          <Card variant="outline" role="region" aria-label="Scrollable instance placeholder" tabIndex={0} className="min-w-0 overflow-x-auto">
-            <InstancePlaceholderFrame binding={binding} contract={contract} width={width} theme={theme} state={state} breakpointValues={breakpointValues} />
+          <Card variant="outline" role="region" aria-label="Scrollable instance render" tabIndex={0} className="min-w-0 overflow-x-auto">
+            <InstanceRuntimeRender binding={binding} routes={runtimeRoutes} width={width} theme={theme} state={state} />
           </Card>
         </section></Panel>
         </div>
@@ -194,7 +197,7 @@ export function PublisherInstancesView({ instances, library, registries, compile
               return <p key={name} id={anchor(selected!.index, `${path}.content.${name}`)} tabIndex={-1}>{name}{slot?.required ? " (required)" : ""}: {reference ? `${reference.kind} · ${reference.ref} · ${bound ? "bound" : "missing resolution"}` : "missing ref"}</p>;
             })}</div>;
           })}</section>
-          <p id={anchor(selected!.index, "states")} tabIndex={-1}>Declared states: {binding.states?.join(", ") || "none"}</p><p id={anchor(selected!.index, "outline")} tabIndex={-1}>Outline is checked statically; placeholders do not prove rendered headings.</p>
+          <p id={anchor(selected!.index, "states")} tabIndex={-1}>Declared states: {binding.states?.join(", ") || "none"}</p><p id={anchor(selected!.index, "outline")} tabIndex={-1}>Outline is checked statically; rendered headings are not measured here.</p>
         </aside></Panel>
       </> : null}
     </div>
@@ -202,7 +205,7 @@ export function PublisherInstancesView({ instances, library, registries, compile
       {selected && <p>{selected.binding.label}: {status(selected.checked.findings.length)}</p>}
       {groups.map(([name, codes]) => <section key={name} aria-label={`${name} checks`} className="grid gap-sm"><SectionHeader level={4} title={<>{name} · {codes.join(", ")}</>} />
         {selected && <ul>{selected.checked.findings.filter(finding => (codes as readonly string[]).includes(finding.code)).map((finding, index) => <li key={index}>{findingLink(finding, selected.index)}</li>)}</ul>}
-        {name === "Responsive" && <p>LK12 pending · rendered responsive evidence is unavailable for placeholders.</p>}
+        {name === "Responsive" && <p>LK12 pending · rendered responsive evidence is not measured here.</p>}
         {presentation === "standalone" && packs.map(pack => <div key={pack.packId}><SectionHeader level={5} title={<>{packLabels?.[pack.packId] ?? pack.packId} · pack closure</>} /><p>{status(pack.checked.findings.length)}</p><ul>{pack.checked.findings.filter(finding => (codes as readonly string[]).includes(finding.code)).map((finding, index) => {
           const match = /^instances\.(\d+)(?:\.(.*))?$/.exec(finding.path);
           const row = match ? pack.members[Number(match[1])] : undefined;
