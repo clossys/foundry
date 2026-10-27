@@ -6,9 +6,8 @@ import { plainJson } from "./dataset-json.js";
  * The group-b Sections bound to the one shared synthetic dataset: each leaf's content, keyed by its contract
  * slot names, read from its `specimenDataset.sections` record (L7). Values are plain JSON, exactly what runtime
  * assembly delivers as `RuntimeContent.value`. Labels a renderer owns (headers, empty states, accessible names)
- * are not content and are not here. Optional chrome regions no sections record carries read the shared
- * component records (the search field, the menu, the list); the two that have none are listed in
- * dataset-binding.test.ts as needs-from-L7.
+ * are not content and are not here; the renderers read those from the same records. Optional chrome regions
+ * read their sections chrome records or the shared component records (the search field, the menu, the list).
  */
 const { sections: S, searchField, menu, list } = specimenDataset;
 
@@ -45,7 +44,7 @@ export const groupBDataset: Readonly<Record<`sections.${string}`, Readonly<Recor
   "sections.audit-log": {
     entries: plainJson(S.auditLog.entries),
     filter: search,
-    export: { label: "Export entries" },
+    export: plainJson(S.auditLogExport),
   },
   "sections.column-mapper": {
     "source-columns": plainJson(S.columnMapper.sourceColumns),
@@ -84,14 +83,15 @@ export const groupBDataset: Readonly<Record<`sections.${string}`, Readonly<Recor
   "sections.resource-list": {
     records: S.resourceList.items.map(item => plainJson({ id: item.id, title: item.title, description: item.description, meta: item.meta })),
     selection: [{ id: S.resourceList.items[0]!.id }],
-    toolbar: { label: "Customer list options", toggles: [{ id: "archived", label: "Show archived" }] },
+    toolbar: plainJson(S.resourceListChrome.toolbar),
     pagination: wholePage(S.resourceList.items.length),
   },
   "sections.stats": {
     stats: plainJson(S.statGroup.items),
   },
   "sections.status-list": {
-    items: plainJson((S.statusList.groups ?? []).flatMap(group => group.items)),
+    // Grouped records keep each group's heading; the renderer draws them as StatusList groups.
+    items: plainJson(S.statusList.groups ?? []),
     legend: plainJson(S.statusList.legendLabel),
   },
   "sections.task-list": {

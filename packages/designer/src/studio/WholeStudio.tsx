@@ -166,17 +166,24 @@ interface ContractBoardsProps {
  * export through the planned-preview samples, keyed by the same export pointer (so host-owned samples such as a
  * Publisher frame apply), and stays unavailable when no sample exists rather than imitating one.
  */
+const DESIGNER_EXPORTS = "@clossys/designer/";
 function adoptedPackagePreview(leaf: string, profile: CompositeResolved | undefined, planned: CompositeStudioSnapshot["plannedPreviews"]): { node: ReactNode; state: SurfaceSampleState } | undefined {
   // A non-surface leaf id simply finds no adopted surface fill.
   const document = profile?.surfaces?.fills[leaf as `sections.${string}`]?.document;
   if (!document) return undefined;
-  const rows = Object.values(planned?.previews ?? {});
-  const samples = Object.fromEntries(rows.map(row => [row.pointer, row.render]));
+  // Several leaves may point at one export (sections.data-grid and sections.data-table share DataTable), so a
+  // leaf's own planned row is found by leaf id; a row drawn for another leaf is never borrowed by its export.
+  const own = planned?.previews[leaf];
+  if (own) {
+    // A planned row's render already draws its own sample state; name that state, not the host-sample default.
+    try { const node = own.render(); return node == null ? undefined : { node, state: own.state ?? "default" }; } catch { return undefined; }
+  }
+  // Without its own row, only host-owned samples (another package's export, such as a Publisher frame) apply by pointer.
+  const hosted = Object.values(planned?.previews ?? {}).filter(row => !row.pointer.startsWith(DESIGNER_EXPORTS));
+  const samples = Object.fromEntries(hosted.map(row => [row.pointer, row.render]));
   const preview = packageSurfacePreview(document as unknown as Parameters<typeof packageSurfacePreview>[0], samples, planned?.sampleState);
   if (!("render" in preview)) return undefined;
-  // A planned row's render already draws its own sample state; name that state, not the host-sample default.
-  const state = rows.find(row => row.pointer === preview.pointer)?.state ?? preview.state;
-  try { const node = preview.render(); return node == null ? undefined : { node, state }; } catch { return undefined; }
+  try { const node = preview.render(); return node == null ? undefined : { node, state: preview.state }; } catch { return undefined; }
 }
 
 const ContractBoards = memo(function ContractBoards({ narrow, boards, layer, query, editing, setEditing, candidates, libraries, profile, previewLeaf, runtime, planned, slots, consumer, t, candidateWorkflow, setLeaf, edit, canEdit, open }: ContractBoardsProps) {

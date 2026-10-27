@@ -45,11 +45,11 @@ export function renderAppHeader(input: RuntimeRenderInput<ReactNode>): ReactNode
 }
 
 function sample(dataset: Parameters<SurfaceRendererEntry["sample"]>[0]): FrameJson {
-  const [first, ...rest] = dataset.breadcrumbs.items;
+  const [first, ...rest] = dataset.breadcrumbs.items, header = dataset.frames.appHeader;
   return {
-    info: { title: rest.at(-1)?.label ?? dataset.card.title, description: dataset.card.content, labels: { breadcrumb: "Breadcrumb", collapsedBreadcrumb: "Show path", pageInfo: "Page details", pageActions: "Page actions" } },
+    info: { title: rest.at(-1)?.label ?? dataset.card.title, description: dataset.card.content, labels: header.labels },
     trail: [first, ...rest.slice(0, -1)].filter(item => item !== undefined).map(item => ({ id: item.id, label: item.label, ...("href" in item ? { href: item.href } : {}) })),
-    actions: [{ id: "share", label: "Share", action: "page.share" }, { id: "edit", label: dataset.text.action, action: "page.save", primary: true }],
+    actions: [header.share, { id: "edit", label: dataset.text.action, action: "page.save", primary: true }],
   };
 }
 

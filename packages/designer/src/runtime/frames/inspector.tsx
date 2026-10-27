@@ -32,7 +32,7 @@ export function renderInspector(input: RuntimeRenderInput<ReactNode>): ReactNode
 }
 
 function sample(dataset: Parameters<SurfaceRendererEntry["sample"]>[0]): FrameJson {
-  return { content: { label: dataset.card.title, handleLabel: dataset.resize.label, openLabel: "Show details", closeLabel: "Hide details", min: dataset.resize.min, max: dataset.resize.max, defaultValue: dataset.resize.value, body: dataset.card.content } };
+  return { content: dataset.frames.inspector };
 }
 
 export const inspectorRenderer: SurfaceRendererEntry = { leaf: "frames.inspector", render: renderInspector, sample };

@@ -10,6 +10,7 @@ import { Button } from "../../components/Button.js";
 import { Link } from "../../components/Link.js";
 import type { RuntimeRenderInput } from "../../catalog-core/runtime-ports.js";
 import { runtimeMember, runtimeValue, type SurfaceRendererEntry } from "../contract.js";
+import { plainJson } from "../sections/dataset-json.js";
 import { frameContent, guardedNavigate, type FrameInput, type FrameJson } from "./frame-content.js";
 
 const read = frameContent("frames.app-sidebar");
@@ -49,8 +50,8 @@ export function renderAppSidebar(input: RuntimeRenderInput<ReactNode>): ReactNod
 
 function sample(dataset: Parameters<SurfaceRendererEntry["sample"]>[0]): FrameJson {
   return {
-    tree: { label: dataset.navigation.label, activeId: dataset.navigation.items[0].id, items: dataset.navigation.items.map(item => ({ id: item.id, label: item.label, href: item.href })) },
-    header: { label: "New page", action: "page.new" },
+    tree: { label: dataset.frames.appSidebar.label, activeId: dataset.frames.appSidebar.activeId, items: plainJson(dataset.frames.appSidebar.tree) },
+    header: dataset.frames.appSidebarHeader,
   };
 }
 

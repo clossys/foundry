@@ -3,6 +3,7 @@ import { DataTable, type DataTableColumn, type DataTableProps } from "../../bloc
 import type { DataTableViewModel } from "../../blocks/data-table/view-model.js";
 import type { TableColumnKind } from "../../blocks/table-model/index.js";
 import type { DsAttrs } from "../../catalog-core/provenance-attrs.js";
+import { specimenDataset } from "../../studio/specimen-dataset.js";
 
 /**
  * The DataTable glue shared by sections.data-table and sections.data-grid. Rows and column records are
@@ -66,8 +67,8 @@ export function TableFill(props: TableFillProps) {
     rows={props.rows}
     rowKey={row => row.id}
     isLoading={props.isLoading}
-    emptyStateTitle="No rows"
-    emptyStateDescription="Rows will appear here."
+    emptyStateTitle={specimenDataset.sections.states.tableEmpty.title}
+    emptyStateDescription={specimenDataset.sections.states.tableEmpty.description}
     toolbar={props.toolbar}
     footer={props.footer}
     {...(props.selected ? { selectionMode: "multiple" as const, selectedKeys, onSelectionChange: keys => setSelected(keys === "all" ? "all" : [...keys] as (string | number)[]) } : {})}

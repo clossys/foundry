@@ -9,6 +9,7 @@ import type { CommandMenuProps } from "../../blocks/command-menu-types.js";
 import { Button } from "../../components/Button.js";
 import type { RuntimeRenderInput } from "../../catalog-core/runtime-ports.js";
 import { runtimeText, runtimeValue, type SurfaceRendererEntry } from "../contract.js";
+import { plainJson } from "../sections/dataset-json.js";
 import { frameContent, type FrameInput, type FrameJson } from "./frame-content.js";
 
 const read = frameContent("frames.command");
@@ -40,13 +41,10 @@ export function renderCommand(input: RuntimeRenderInput<ReactNode>): ReactNode {
 }
 
 function sample(dataset: Parameters<SurfaceRendererEntry["sample"]>[0]): FrameJson {
+  const command = dataset.frames.command;
   return {
-    search: { label: "Find a command", heading: "Commands", closeLabel: "Close commands", triggerLabel: "Open command menu" },
-    groups: [
-      { id: "go", label: "Go to", items: dataset.navigation.items.map(item => ({ id: item.id, label: item.label, href: item.href })) },
-      { id: "actions", label: dataset.menu.label, items: dataset.menu.items.map(item => ({ id: item.id, label: item.label, action: `order.${item.id}` })) },
-    ],
-    empty: "No matching commands.",
+    search: { label: command.searchLabel, heading: command.heading, closeLabel: command.closeLabel, triggerLabel: command.trigger },
+    groups: plainJson(command.groups), empty: command.emptyMessage,
   };
 }
 

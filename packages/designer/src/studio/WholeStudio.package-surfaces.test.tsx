@@ -25,9 +25,9 @@ const HOST_SAMPLES = { "@clossys/publisher/web#SiteFrame": () => <p>host-site-fr
 const SAMPLE_TEXT: Record<string, string> = {
   "sections.comparison": specimenDataset.sections.comparison.rows[0]!.label, "sections.content": specimenDataset.sections.content.heading, "sections.data-table": specimenDataset.sections.dataTable.rows[1]!.customer, "sections.form": specimenDataset.sections.form.fields[0]!.label,
   "sections.pricing": specimenDataset.sections.pricing.tiers[0]!.cta, "sections.resource-list": specimenDataset.sections.resourceList.items[0]!.title, "sections.status-list": specimenDataset.sections.statusList.groups![0]!.items[0]!.label, "sections.task-list": specimenDataset.sections.taskList.items[0]!.title,
-  "frames.site-shell": "host-site-frame", "frames.sheet": "Open details",
+  "frames.site-shell": "host-site-frame", "frames.sheet": specimenDataset.frames.sheet.trigger,
   "sections.chat": specimenDataset.sections.chat.messages[0]!.content, "sections.explorer": specimenDataset.list.items[0]!.label, "sections.hero": specimenDataset.sections.hero.heading,
-  "sections.newsletter": specimenDataset.sections.newsletter.emailLabel, "frames.app-shell": "Skip to content", "frames.command": "Open command menu",
+  "sections.newsletter": specimenDataset.sections.newsletter.emailLabel, "frames.app-shell": specimenDataset.frames.app.skipLabel, "frames.command": specimenDataset.frames.command.trigger,
 };
 
 function mount(preview: CompositeStudioSnapshot["preview"], samples: Parameters<typeof planSurfacePreviews>[0]["samples"] = HOST_SAMPLES, sampleState?: Parameters<typeof planSurfacePreviews>[0]["sampleState"], dropPlanned: (pointer: string) => boolean = () => false) {
@@ -65,6 +65,16 @@ describe("adopted package-pointer surfaces on the Studio board", { timeout: 120_
     check(fixture.decisions.map(row => row.slot).filter(slot => slot.startsWith("frames.")));
   });
 
+  it("previews sections.data-grid through its own leaf, not the data-table preview that shares its export", async () => {
+    mount(() => undefined);
+    await screen.findByText("L-saved");
+    // data-grid and data-table both point at ./blocks#DataTable; a preview keyed by that export draws the wrong leaf.
+    const grid = row("sections.data-grid")!;
+    expect(grid.querySelector('[data-ds-leaf="sections.data-grid"]')).not.toBeNull();
+    expect(grid.querySelector('[data-ds-leaf="sections.data-table"]')).toBeNull();
+    expect(row("sections.data-table")!.querySelector('[data-ds-leaf="sections.data-table"]')).not.toBeNull();
+  });
+
   it("keeps the host's own preview first, and without a host sample the Publisher frame is unavailable rather than imitated", async () => {
     const user = userEvent.setup();
     mount(leaf => leaf === "sections.data-table" ? <p>host-table</p> : undefined, {});
@@ -75,7 +85,7 @@ describe("adopted package-pointer surfaces on the Studio board", { timeout: 120_
     await waitFor(() => expect(row("frames.sheet")).not.toBeNull());
     expect(row("frames.site-shell")).toHaveTextContent(labels.previewUnavailable);
     expect(row("frames.site-shell")!.querySelector("[data-candidate-cell]")).toHaveAttribute("data-preview-state", "unavailable");
-    expect(row("frames.sheet")).toHaveTextContent("Open details");
+    expect(row("frames.sheet")).toHaveTextContent(specimenDataset.frames.sheet.trigger);
   });
 
   it("previews adopted package leaves in the board's choosing view as well", async () => {

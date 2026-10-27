@@ -27,6 +27,7 @@ function input(options: { members?: string[]; host?: RuntimeFrameHost<ReactNode>
     ...(options.host ? { host: options.host } : {}), ...(options.pageHeader ? { pageHeader: options.pageHeader } : {}),
   } as unknown as RuntimeRenderInput<ReactNode>;
 }
+const app = specimenDataset.frames.app, [overview, , reports] = app.navigation;
 const shell = () => document.querySelector<HTMLElement>("[data-application-frame]")!;
 const main = () => document.querySelector<HTMLElement>("main")!;
 
@@ -35,9 +36,11 @@ describe("frames.app-shell runtime renderer", () => {
     render(<>{entry.render(input())}</>);
     expect(shell()).toHaveAttribute(DS_ATTR.layer, "frames");
     expect(shell()).toHaveAttribute(DS_ATTR.leaf, "frames.app-shell");
-    expect(screen.getByRole("navigation", { name: specimenDataset.navigation.label })).toBeInTheDocument();
-    expect(screen.getByRole("link", { name: "Settings" })).toHaveAttribute("href", "#settings");
-    expect(screen.getByText("Skip to content")).toBeInTheDocument();
+    // Every chrome string is the shared dataset's frames.app record, never a literal of the renderer.
+    expect(screen.getByRole("navigation", { name: app.navigationLabel })).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: reports.label })).toHaveAttribute("href", reports.href);
+    expect(screen.getByText(app.skipLabel)).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: app.commands.triggerLabel })).toBeInTheDocument();
     expect(main()).toHaveTextContent("Route body");
   });
 
@@ -56,13 +59,13 @@ describe("frames.app-shell runtime renderer", () => {
   });
 
   it("routes every navigation through the host's pending-save guard", async () => {
-    const navigate = vi.fn(), beforeNavigate = vi.fn(async (href: string) => href !== "#settings");
+    const navigate = vi.fn(), beforeNavigate = vi.fn(async (href: string) => href !== reports.href);
     render(<>{entry.render(input({ host: { navigate, beforeNavigate } }))}</>);
-    fireEvent.click(screen.getByRole("link", { name: "Settings" }));
-    await waitFor(() => expect(beforeNavigate).toHaveBeenCalledWith("#settings"));
+    fireEvent.click(screen.getByRole("link", { name: reports.label }));
+    await waitFor(() => expect(beforeNavigate).toHaveBeenCalledWith(reports.href));
     expect(navigate).not.toHaveBeenCalled();
-    fireEvent.click(screen.getByRole("link", { name: "Overview" }));
-    await waitFor(() => expect(navigate).toHaveBeenCalledWith("#overview"));
+    fireEvent.click(screen.getByRole("link", { name: overview.label }));
+    await waitFor(() => expect(navigate).toHaveBeenCalledWith(overview.href));
     expect(guardedNavigate(undefined)).toBeUndefined();
   });
 
