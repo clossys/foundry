@@ -26,3 +26,9 @@ export const testPlacements: readonly Placement[] = [
   { layer: "sections", nodes: [{ id: "parts", label: "Parts", children: [{ id: "parts-structure", label: "Structure", leaves: ["sections.band", "sections.section-header"] }] }] },
   { layer: "frames", nodes: [{ id: "page-shells", label: "Page shells", children: [{ id: "page-shells-documents", label: "Documents", leaves: ["frames.site-shell"] }] }] },
 ];
+
+/** Host words for SystemCanvas tests. */
+export const testLabels = {
+  label: "System canvas", hint: "Scroll or pinch to zoom; drag to pan.", breadcrumb: "Canvas position",
+  layers: { tokens: "Tokens", assets: "Assets", components: "Components", sections: "Sections", frames: "Frames" },
+} as const;
