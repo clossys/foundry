@@ -9,3 +9,6 @@ export const boardRow = (leaf: string, root: ParentNode = document): HTMLElement
 /** The library-board Section that holds a leaf, in either mode. */
 export const boardOf = (leaf: string, root: ParentNode = document): HTMLElement | undefined =>
   boardSections(root).find(board => boardRow(leaf, board) !== undefined || [...board.querySelectorAll("h4")].some(heading => heading.textContent === leaf));
+/** A leaf's place on a board in either mode: its table row, or (a sections or frames board in edit mode) its headed item. */
+export const boardItem = (leaf: string, root: ParentNode = document): HTMLElement | undefined =>
+  boardRow(leaf, root) ?? [...root.querySelectorAll<HTMLElement>("section[data-library-board] section[aria-label]")].find(item => item.querySelector("h4")?.textContent === leaf || item.getAttribute("aria-label") === leaf);

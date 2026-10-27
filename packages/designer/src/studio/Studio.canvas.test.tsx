@@ -13,5 +13,5 @@ it("preserves the immersive world, keyboard pan, zoom controls and minimap", asy
 });
 it("keeps the explorer keyboard tree and layer-specific boards", async () => {
   const user=userEvent.setup(); await mount(); expect(screen.getByRole("treegrid",{name:"L-tree"})).toBeInTheDocument();
-  await user.click(screen.getByRole("link",{name:"Assets"})); expect(document.querySelector('[data-studio-board="assets/icons-navigation"]')).toBeNull(); expect(document.querySelector('[data-studio-board="assets/icons-actions"]')).not.toBeNull();
+  await user.click(screen.getByRole("link",{name:"Assets"})); expect(document.querySelector('[data-studio-canvas-board="assets/icons-navigation"]')).toBeNull(); expect(document.querySelector('[data-studio-canvas-board="assets/icons-actions"]')).not.toBeNull();
 });

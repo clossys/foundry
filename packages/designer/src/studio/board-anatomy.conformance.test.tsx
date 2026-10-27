@@ -54,8 +54,7 @@ function cellFaults(cell: HTMLElement): string[] {
   return faults;
 }
 function boardFaults(board: HTMLElement, title: string): { header: string[]; cells: string[] } {
-  const full = board.querySelector<HTMLElement>("[data-studio-zoom-full]") ?? board;
-  const rows = [...full.querySelectorAll<HTMLElement>("tbody tr, [role=row][data-studio-row]")].filter(row => row.querySelectorAll("td, [role=gridcell]").length > 0);
+  const rows = [...board.querySelectorAll<HTMLElement>("tbody tr, [role=row][data-studio-row]")].filter(row => row.querySelectorAll("td, [role=gridcell]").length > 0);
   const cells: string[] = rows.length === 0 ? ["no rows"] : [];
   for (const row of rows) {
     const columns = row.querySelectorAll<HTMLElement>("td, [role=gridcell]");
@@ -83,17 +82,18 @@ describe("one board and cell anatomy on every layer", () => {
     let filled = 0, unchosen = 0;
     for (const layer of LAYERS) {
       await user.click(screen.getByRole("link", { name: labels.layers[layer] }));
-      await waitFor(() => expect(document.querySelector(`[data-studio-board^="${layer}/"]`)).not.toBeNull(), { timeout: 20000 });
-      const boards = [...document.querySelectorAll<HTMLElement>("[data-studio-board]")];
+      await waitFor(() => expect(document.querySelector(`[data-studio-canvas-board^="${layer}/"] > section[data-library-board]`)).not.toBeNull(), { timeout: 20000 });
+      // Every canvas board is the registered library-board Section.
+      const boards = [...document.querySelectorAll<HTMLElement>("[data-studio-canvas-board] > section[data-library-board]")];
       const entry = report[layer] = { boards: boards.length, nonconforming: 0, header: 0, cells: 0, faults: [] as string[] };
       for (const board of boards) {
         const title = board.querySelector("h3")?.textContent ?? "";
         const { header, cells } = boardFaults(board, title);
         if (header.length) entry.header += 1;
         if (cells.length) entry.cells += 1;
-        if (header.length || cells.length) { entry.nonconforming += 1; entry.faults.push(`${board.getAttribute("data-studio-board")}: ${[...header, ...cells].slice(0, 3).join("; ")}`); }
-        filled += board.querySelectorAll("[data-studio-zoom-full] [data-candidate-cell] [data-cell-status][hidden]").length;
-        unchosen += [...board.querySelectorAll("[data-studio-zoom-full] [data-cell-status]")].filter(status => status.textContent === labels.board.notChosen).length;
+        if (header.length || cells.length) { entry.nonconforming += 1; entry.faults.push(`${board.parentElement!.dataset.studioCanvasBoard}: ${[...header, ...cells].slice(0, 3).join("; ")}`); }
+        filled += board.querySelectorAll("[data-candidate-cell] [data-cell-status][hidden]").length;
+        unchosen += [...board.querySelectorAll("[data-cell-status]")].filter(status => status.textContent === labels.board.notChosen).length;
       }
     }
     // Per layer: nonconforming boards / boards (header faults, cell faults).

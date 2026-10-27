@@ -2,10 +2,7 @@ import { afterEach, expect, it, vi } from "vitest";
 import { act, cleanup, fireEvent, screen, waitFor, within } from "@testing-library/react";
 import { render } from "./__fixtures__/frame.js";
 import { StudioProvider, useStudioSession } from "./StudioProvider.js";
-import { Board } from "./Board.js";
-import { useCanvasWorld } from "./useCanvasWorld.js";
-import { visibleStudioRows } from "./visible-rows.js";
-import userEvent from "@testing-library/user-event";
+import { boardRow } from "./__fixtures__/library-board-dom.js";
 import { Studio } from "./Studio.js";
 import { buildCandidates } from "./model.js";
 import { activeCandidateSource } from "./candidate-display.js";
@@ -66,8 +63,7 @@ it("renders a generic group > family > leaf tree with counts and working filter 
   expect(tree.getByRole("row", { name: /^Palette/ })).toHaveAttribute("aria-level", "2");
   expect(tree.getByRole("row", { name: /^tokens.surface-color \(L-count/ })).toHaveAttribute("aria-level", "3");
   expect(document.querySelector('[data-studio-domain="tokens/color"]')).not.toBeNull();
-  expect(document.querySelector('[data-studio-board="tokens/palette"]')).not.toBeNull();
-  expect(document.querySelector('[data-studio-zoom-summary]')?.textContent).not.toContain("foundry");
+  expect(document.querySelector('[data-studio-canvas-board="tokens/palette"] > section[data-library-board]')).not.toBeNull();
   expect(screen.queryAllByRole("radio")).toHaveLength(0);
   fireEvent.click(screen.getByRole("button", { name: labels.canvas.filters.all }));
   fireEvent.click(screen.getByRole("menuitem", { name: labels.canvas.filters.warnings }));
@@ -98,40 +94,28 @@ it("keeps checked current previews through delayed geometry and overview until e
   }
   expect(qualified.find(candidate => candidate.source === "fixture-complete")!.members.every(({ member }) => member.origin?.kind === "adopted" && member.origin.source === "fixture-complete")).toBe(true);
   const apply = vi.spyOn(studioEngine, "applyLibraryChange"), resolve = vi.spyOn(studioEngine, "resolve"), check = vi.spyOn(studioEngine, "check");
-  function MeasuredBoard() {
+  /** Fixture controls beside the real canvas: explicit row demand and a session source change. */
+  function Fixtures() {
     const state = useStudioSession();
-    const canvas = useCanvasWorld("tokens", pose => { if (canvas.surface.current) state.showRows(visibleStudioRows(canvas.surface.current, state.rowElements.current, pose.zoom)); });
-    const board = state.boards.find(board => board.leaves.includes("tokens.surface-color"));
-    return <><button onClick={() => canvas.setPose({ x: 0, y: 0, zoom: .2 })}>overview fixture</button><button onClick={() => state.showRows(new Set(["tokens.surface-color"]))}>demand fixture</button>
+    return <><button onClick={() => state.showRows(new Set(["tokens.surface-color"]))}>demand fixture</button>
+      <button onClick={() => { const row = state.rows.find(row => row.id === "tokens.surface-color"); if (row) state.use(row, "fixture-complete"); }}>use fixture</button>
       <output data-testid="measured-ready">{state.ready ? "measured ready" : "loading"}</output>
-      <output data-testid="selected-ready">{String(state.rows.find(row => row.id === "tokens.surface-color")?.candidatesReady)}</output>
-      <div ref={canvas.onSurfaceElement}><div ref={canvas.onWorldElement}>{board && state.working && state.pending ? <Board board={board} boardRef={null} sources={state.sources} labels={labels} working={state.working} changes={state.pending} expanded={state.expanded} groupChoices={state.groupChoices} onExpand={() => {}} onUse={(row, source) => state.use(row, source)} onFocusCell={() => {}} onRequestRow={row => state.requestRow(row.id)} onRowElement={(id, element) => { if (element) state.rowElements.current.set(id, element); else state.rowElements.current.delete(id); }} /> : null}</div></div>
-    </>;
+      <output data-testid="selected-ready">{String(state.rows.find(row => row.id === "tokens.surface-color")?.candidatesReady)}</output></>;
   }
-  const view = render(<StudioProvider catalog={catalog} adapter={{ load: async () => ({ library }), save: async () => ({ ok: false as const, reason: "unavailable" as const }) }} labels={labels}><MeasuredBoard /></StudioProvider>);
+  render(<StudioProvider catalog={catalog} adapter={{ load: async () => ({ library }), save: async () => ({ ok: false as const, reason: "unavailable" as const }) }} labels={labels}><Fixtures /><Studio header="external" /></StudioProvider>);
   await screen.findByText("measured ready");
-  const preview = () => view.container.querySelector('[data-studio-row="tokens.surface-color"] [data-candidate-cell]');
-  expect(preview()).not.toBeNull(); const content = preview()!.textContent;
+  const preview = () => boardRow("tokens.surface-color")?.querySelector("[data-candidate-cell]") ?? null;
+  await waitFor(() => expect(preview()).not.toBeNull()); const content = preview()!.textContent;
   expect(screen.getByTestId("selected-ready")).toHaveTextContent("false");
   expect([apply.mock.calls.length, resolve.mock.calls.length, check.mock.calls.length]).toEqual([0, 1, 1]);
   measured = true; await act(async () => { notifications.forEach(notify => notify()); });
-  expect(preview()!.textContent).toBe(content);
-  fireEvent.click(screen.getByText("overview fixture"));
   expect(preview()!.textContent).toBe(content); expect(apply).not.toHaveBeenCalled();
   expect(screen.getByTestId("selected-ready")).toHaveTextContent("false");
   fireEvent.click(screen.getByText("demand fixture"));
   expect(screen.getByTestId("selected-ready")).toHaveTextContent("true"); expect(apply).toHaveBeenCalledTimes(2);
   expect(preview()!.textContent).toBe(content);
-  await userEvent.setup().click(screen.getByRole("button", { name: labels.board.changeSelection }));
-  const initial = screen.getByRole("radio", { name: labels.useSource("foundry", "tokens.surface-color") });
-  const target = screen.getByRole("radio", { name: labels.useSource("fixture-complete", "tokens.surface-color") });
-  expect(initial).toBeEnabled(); expect(initial).toBeChecked(); expect(target).toBeEnabled();
-  const user = userEvent.setup(); await user.click(initial);
-  expect(initial).toHaveFocus(); expect(initial).toBeChecked();
-  await user.keyboard("{ArrowRight}");
-  await waitFor(() => expect(target).toBeChecked()); expect(target).toHaveFocus();
-  await user.click(screen.getByRole("button", { name: labels.board.done }));
-  const selectedRow = view.container.querySelector<HTMLElement>('[data-studio-row="tokens.surface-color"]')!;
-  expect([...selectedRow.querySelectorAll<HTMLElement>("[data-candidate-variant]")].map(element => element.dataset.candidateVariant).sort()).toEqual(expectedMembers);
-  expect(within(selectedRow).queryByText(labels.board.notChosen)).toBeNull();
+  // Token boards offer presets, not sources (Custom only on the library board), so the source change runs through the session.
+  fireEvent.click(screen.getByText("use fixture"));
+  await waitFor(() => expect([...boardRow("tokens.surface-color")!.querySelectorAll<HTMLElement>("[data-candidate-variant]")].map(element => element.dataset.candidateVariant).sort()).toEqual(expectedMembers));
+  expect(within(boardRow("tokens.surface-color")!).queryByText(labels.board.notChosen)).toBeNull();
 });

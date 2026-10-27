@@ -20,32 +20,18 @@ const pose = () => {
 };
 const rect = (left: number, top: number, width: number, height: number) => ({ x: left, y: top, left, top, width, height, right: left + width, bottom: top + height, toJSON() {} }) as DOMRect;
 
-describe("studio canvas domain rail (VR1 studio-01/02, components-12)", () => {
-  it("wide: the domain label is a rail-token-wide vertical column beside the boards, never a page-width gutter", async () => {
-    await mount();
-    const domain = document.querySelector<HTMLElement>("[data-studio-world] [data-studio-domain]")!;
-    const label = domain.querySelector<HTMLElement>("[data-studio-domain-label]")!;
-    expect(domain.dataset.studioDomainLayout).toBe("wide");
-    expect(domain).toHaveClass("flex", "items-start");
-    expect(domain).not.toHaveClass("flex-col");
-    expect(label.className.split(/\s+/)).toContain("canvas-domain-rail");
-    expect(label.className).not.toMatch(/aside-w|(?:^|\s)h-\[/);
-    expect(label.nextElementSibling?.querySelector("[data-studio-board]")).not.toBeNull();
-  });
-  it("narrow: the label sits above a stacked list of boards, and first load opens on the first board at a legible zoom", async () => {
+describe("first load on a narrow stage (VR1 studio-01/02)", () => {
+  const BOARD = "[data-studio-canvas-board]:not([hidden]) > section[data-library-board]";
+  it("opens on the first library board at a legible zoom", async () => {
     vi.spyOn(HTMLElement.prototype, "clientWidth", "get").mockReturnValue(390);
     const original = HTMLElement.prototype.getBoundingClientRect;
     vi.spyOn(HTMLElement.prototype, "getBoundingClientRect").mockImplementation(function (this: HTMLElement) {
       if (this.matches("[data-studio-world]")) return rect(0, 0, 2000, 4000);
       if (this.matches("[data-studio-domain]") && this === document.querySelector("[data-studio-domain]")) return rect(48, 48, 1400, 900);
-      if (this.matches("[data-studio-board]") && this === document.querySelector("[data-studio-board]")) return rect(48, 90, 1200, 800);
+      if (this.matches(BOARD) && this === document.querySelector(BOARD)) return rect(48, 90, 1200, 800);
       return original.call(this);
     });
     await mount();
-    const domain = document.querySelector<HTMLElement>("[data-studio-world] [data-studio-domain]")!;
-    await waitFor(() => expect(domain.dataset.studioDomainLayout).toBe("narrow"));
-    expect(domain).toHaveClass("flex", "flex-col");
-    expect(domain.querySelector("[data-studio-domain-label]")!.className).not.toMatch(/canvas-domain-rail|writing-mode|rail-w/);
     const gutter = px("--spacing-md"), zoom = Math.min(1, Math.max(legibleZoomFloor(), (390 - gutter * 2) / 1200));
     await waitFor(() => expect(pose().zoom).toBeCloseTo(zoom, 5));
     expect(pose().x).toBeCloseTo(gutter - 48 * zoom, 5);
@@ -55,8 +41,8 @@ describe("studio canvas domain rail (VR1 studio-01/02, components-12)", () => {
   });
   it("narrow opening never drops below the legible floor for a very wide first board, and never above 1:1", () => {
     const host = document.createElement("div"), worldNode = document.createElement("div");
-    worldNode.innerHTML = '<section data-studio-domain="d"><h2>D</h2><section data-studio-board="b"></section></section>';
-    const board = worldNode.querySelector<HTMLElement>("[data-studio-board]")!, domain = worldNode.querySelector<HTMLElement>("[data-studio-domain]")!;
+    worldNode.innerHTML = '<div data-studio-canvas-board="b" data-studio-domain="d"><section data-library-board="b"></section></div>';
+    const board = worldNode.querySelector<HTMLElement>("section[data-library-board]")!, domain = worldNode.querySelector<HTMLElement>("[data-studio-domain]")!;
     Object.defineProperty(host, "clientWidth", { value: 390, configurable: true });
     vi.spyOn(worldNode, "getBoundingClientRect").mockReturnValue(rect(0, 0, 9000, 9000));
     vi.spyOn(domain, "getBoundingClientRect").mockReturnValue(rect(48, 48, 6000, 900));
@@ -64,6 +50,9 @@ describe("studio canvas domain rail (VR1 studio-01/02, components-12)", () => {
     expect(openOnFirstBoard(host, worldNode, { x: 0, y: 0, zoom: 1 })!.zoom).toBe(legibleZoomFloor());
     wide.mockReturnValue(rect(48, 90, 200, 800));
     expect(openOnFirstBoard(host, worldNode, { x: 0, y: 0, zoom: 1 })!.zoom).toBe(1);
+    // A board the explorer filter hides is never the opening target.
+    board.parentElement!.hidden = true;
+    expect(openOnFirstBoard(host, worldNode, { x: 0, y: 0, zoom: 1 })).toBeUndefined();
   });
 });
 
@@ -129,17 +118,14 @@ describe("keyboard focus stays inside the visible stage (VR1 studio-18)", () => 
     expect(revealDelta(stage, rect(100, 700, 50, 20))).toEqual({ x: 0, y: 600 - inset - 720 });
     expect(revealDelta(stage, rect(100, -40, 50, 2000))).toEqual({ x: 0, y: 40 + inset });
   });
-  it("Tab focus on an off-stage control restores native scroll and pans the camera to it; programmatic board focus does not", async () => {
+  it("Tab focus on an off-stage board control restores native scroll and pans the camera to it", async () => {
     await mount();
     const surface = document.querySelector<HTMLElement>("[data-studio-viewport]")!;
     vi.spyOn(surface, "getBoundingClientRect").mockReturnValue(rect(0, 0, 800, 600));
-    const board = document.querySelector<HTMLElement>("[data-studio-world] [data-studio-board]")!;
+    const board = document.querySelector<HTMLElement>("[data-studio-world] section[data-library-board]")!;
     const control = board.querySelector<HTMLElement>("button")!;
     vi.spyOn(control, "getBoundingClientRect").mockReturnValue(rect(100, 900, 28, 28));
     const before = pose();
-    act(() => { board.focus(); });
-    await new Promise(resolve => requestAnimationFrame(() => resolve(undefined)));
-    expect(pose()).toEqual(before);
     surface.scrollTop = 0;
     act(() => { control.focus(); surface.scrollTop = 120; });
     await waitFor(() => expect(pose().y).toBeCloseTo(before.y + (600 - px("--spacing-md") - 928), 5));
@@ -159,12 +145,12 @@ describe("board map (VR1 studio-19)", () => {
     expect(svg.querySelector('[data-canvas-map-item="gone"]')).toBeNull();
   });
   it("the studio map names each board rectangle with its board heading", async () => {
-    vi.spyOn(HTMLElement.prototype, "getBoundingClientRect").mockImplementation(function (this: HTMLElement) { return this.matches("[data-studio-board]") ? rect(10, 10, 100, 100) : rect(0, 0, 800, 600); });
+    vi.spyOn(HTMLElement.prototype, "getBoundingClientRect").mockImplementation(function (this: HTMLElement) { return this.matches("section[data-library-board]") ? rect(10, 10, 100, 100) : rect(0, 0, 800, 600); });
     vi.spyOn(HTMLElement.prototype, "offsetWidth", "get").mockReturnValue(4000);
     vi.spyOn(HTMLElement.prototype, "offsetHeight", "get").mockReturnValue(4000);
     await mount();
-    const board = document.querySelector<HTMLElement>("[data-studio-world] [data-studio-board]")!;
+    const board = document.querySelector<HTMLElement>("[data-studio-world] [data-studio-canvas-board] > section[data-library-board]")!;
     const name = document.getElementById(board.getAttribute("aria-labelledby")!)!.textContent;
-    await waitFor(() => expect(document.querySelector(`[data-canvas-map-item="${board.dataset.studioBoard}"] title`)).toHaveTextContent(name!));
+    await waitFor(() => expect(document.querySelector(`[data-canvas-map-item="${board.parentElement!.dataset.studioCanvasBoard}"] title`)).toHaveTextContent(name!));
   });
 });

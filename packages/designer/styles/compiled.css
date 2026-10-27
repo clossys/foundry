@@ -2831,9 +2831,6 @@
   .text-display-m {
     font-size: var(--text-display-m, 44px);
   }
-  .text-display-xl {
-    font-size: var(--text-display-xl, 72px);
-  }
   .text-h0 {
     font-size: var(--text-h0, 32px);
   }
@@ -3191,6 +3188,9 @@
   }
   .frame-region-closed {
     inline-size: 0;
+  }
+  .library-column-bound {
+    max-inline-size: 420px;
   }
   .ring-inset {
     --tw-ring-inset: inset;

@@ -93,7 +93,12 @@ export function LegacyStudioCanvas({ panelInsets, className, candidateWorkflow }
     const row = board.rows.find(row => row.id === leafId);
     if (!row) return;
     if (command === "use-source") current.use(row, source);
-    else { const candidate = row.candidates.find(candidate => candidate.source === source); if (candidate) focusCell(row, candidate); }
+    else {
+      // A source column reveals its own cell; the Custom column (no candidate of its own, the only column a
+      // token board has) reveals the row's chosen candidate, so every row can reach the inspector.
+      const candidate = row.candidates.find(candidate => candidate.source === source) ?? row.candidates.find(candidate => candidate.selected) ?? row.candidates[0];
+      if (candidate) focusCell(row, candidate);
+    }
   }, [focusCell]);
   return <div data-studio="" data-layout={narrow ? "narrow" : "wide"} data-studio-canvas="" data-frame-bleed="" className={cx("relative isolate h-full w-full min-h-0 min-w-0 flex-1 overflow-hidden bg-surface-raised text-ink-primary", className)}>
     {state.layer === "assets" && state.summary ? <AssetExemptions findings={state.summary.issues.map(issue => issue.finding)} label={state.labels.assetExemption} /> : null}

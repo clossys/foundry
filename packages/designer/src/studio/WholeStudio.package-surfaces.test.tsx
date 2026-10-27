@@ -9,6 +9,7 @@ import { planSurfaceDefaults, type SurfaceDefaultCandidateDocument, type Surface
 import { planSurfacePreviews } from "./planned-surface-previews.js";
 import { Studio as StudioView, StudioHeader, StudioRightPanel } from "./index.js";
 import { WholeStudioProvider } from "./WholeStudioProvider.js";
+import { boardItem, boardOf, boardRow } from "./__fixtures__/library-board-dom.js";
 import type { CompositeStudioLabels, CompositeStudioSnapshot } from "./types.js";
 
 const wholeLabels: CompositeStudioLabels = { ...labels, whole: { signoff: "W-signoff", proposed: "W-proposed", contract: "W-contract", contentSlots: "W-slots", configurations: "W-config", unresolved: "W-unresolved", unassessed: "W-unassessed" } };
@@ -37,7 +38,7 @@ function mount(preview: CompositeStudioSnapshot["preview"], samples: Parameters<
   const load = vi.fn(async (): Promise<CompositeStudioSnapshot> => ({ library: structuredClone(fixture.library), surfaceOptions: fixture.options, preview, plannedPreviews }));
   render(<WholeStudioProvider adapter={{ kind: "composite", catalog: fixture.catalog, load, save: async () => ({ ok: false, reason: "unavailable" }) }} labels={wholeLabels} initialSlotId="sections.faq"><StudioHeader /><StudioView header="external" /><StudioRightPanel /></WholeStudioProvider>);
 }
-const row = (slot: string) => document.querySelector<HTMLElement>(`[data-studio-zoom-full] [data-studio-row="${slot}"]`);
+const row = (slot: string) => boardRow(slot) ?? null;
 
 describe("adopted package-pointer surfaces on the Studio board", { timeout: 120_000 }, () => {
   it("previews every adopted Section and Frame with its real export and sample content", async () => {
@@ -81,10 +82,10 @@ describe("adopted package-pointer surfaces on the Studio board", { timeout: 120_
     const user = userEvent.setup();
     mount(() => undefined);
     await screen.findByText("L-saved");
-    const board = row("sections.data-table")!.closest<HTMLElement>("[data-studio-board]")!;
+    const board = boardOf("sections.data-table")!;
     await user.click(within(board).getByRole("button", { name: labels.board.changeSelection }));
-    const editing = document.querySelector<HTMLElement>('[data-studio-board][data-board-mode="edit"] [data-studio-row="sections.data-table"]');
-    expect(editing).not.toBeNull();
+    const editing = boardItem("sections.data-table", document.querySelector<HTMLElement>('section[data-library-board][data-board-mode="edit"]')!);
+    expect(editing).toBeDefined();
     expect(editing).toHaveTextContent("Fabrikam");
   });
 

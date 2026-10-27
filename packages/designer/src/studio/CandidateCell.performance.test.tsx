@@ -1,5 +1,6 @@
 import { expect, it, vi } from "vitest";
 import { render, fireEvent, screen, within, waitFor } from "@testing-library/react";
+import { boardOf, boardRow } from "./__fixtures__/library-board-dom.js";
 import { render as renderFrame } from "./__fixtures__/frame.js";
 import { StudioProvider, useStudioSession } from "./StudioProvider.js";
 import { Studio } from "./Studio.js";
@@ -71,10 +72,9 @@ it("refreshes prompt token context and host callbacks after the working selectio
   await screen.findByRole("link", { name: "Tokens" });
   fireEvent.click(screen.getByText("Change context fixture"));
   view.rerender(<Surface check={nextCheck} />);
-  const row = view.container.querySelector('[data-studio-row="tokens.surface-color"]')!;
-  const board = row.closest<HTMLElement>("[data-studio-board]")!;
+  const board = await waitFor(() => boardOf("tokens.surface-color", view.container)!);
   fireEvent.click(within(board).getByRole("button", { name: labels.board.changeSelection }));
-  const current = view.container.querySelector('[data-studio-row="tokens.surface-color"]')!;
+  const current = await waitFor(() => boardRow("tokens.surface-color", view.container)!);
   fireEvent.click(within(current as HTMLElement).getByRole("button", { name: labels.board.create }));
   const dialog = await screen.findByRole("dialog");
   const prompt = JSON.parse(dialog.querySelector("code")!.textContent!.split("\n\n").slice(1).join("\n\n"));

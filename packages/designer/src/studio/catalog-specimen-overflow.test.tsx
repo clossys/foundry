@@ -3,7 +3,8 @@ import { cleanup, render } from "@testing-library/react";
 import { loadCatalog } from "../catalog-core/index.js";
 import { completedTokenLibrary } from "../importers/__fixtures__/completed-token-library.js";
 import { buildCandidates } from "./model.js";
-import { CandidateCell, LIBRARY_COLUMN_BOUND } from "./CandidateCell.js";
+import { CandidateCell } from "./CandidateCell.js";
+import { APP_FRAME_RIGHT_PANEL_CONFIG } from "../frames/right-panel-config.js";
 import { TOKEN_LEAF_SPECIMENS, TOKEN_SPECIMEN_WIDTHS, type TokenSpecimenKind } from "../tokens/preview/specimens.js";
 import { labels } from "./__fixtures__/studio.js";
 
@@ -40,7 +41,7 @@ it("ships the D3 default bounds, each within the library column cap", () => {
   expect(Object.fromEntries(Object.entries(TOKEN_SPECIMEN_WIDTHS).map(([kind, width]) => [kind, { min: width.min, max: width.max }]))).toEqual(D3_DEFAULTS);
   for (const width of Object.values(TOKEN_SPECIMEN_WIDTHS)) {
     expect(width.min).toBeLessThanOrEqual(width.max);
-    expect(width.max).toBeLessThanOrEqual(Number(LIBRARY_COLUMN_BOUND.maxWidth));
+    expect(width.max).toBeLessThanOrEqual(APP_FRAME_RIGHT_PANEL_CONFIG.max);
   }
 });
 

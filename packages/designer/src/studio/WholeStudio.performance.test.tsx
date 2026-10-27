@@ -12,6 +12,7 @@ import { compositeBoardPrompt } from "./prepared-library-boards.js";
 import { applyLibraryChange, loadBuildCatalog, loadCatalog, loadComponentRegistry, resolve, type BuildCatalogData, type PlacementNode } from "../catalog-core/index.js";
 import { componentIntegration, adoptedComponentIntegration } from "../catalog-core/__fixtures__/component-integration.js";
 import { standardM1FixtureEngine, standardM1Runtime } from "../catalog-core/__fixtures__/standard-m1-runtime.js";
+import { boardOf, boardRow } from "./__fixtures__/library-board-dom.js";
 import type { CompositeStudioAdapter, CompositeStudioLabels, CompositeStudioSnapshot, StudioCandidateWorkflow } from "./types.js";
 
 vi.mock("./prepared-library-boards.js", async importOriginal => {
@@ -60,8 +61,8 @@ function Surface({ adapter, labels = wholeLabels, workflow, onState, initial = "
   function Probe() { onState(useWholeStudio()!); return null; }
   return <WholeStudioProvider adapter={adapter} labels={labels} initialSlotId={initial}><Probe /><Studio candidateWorkflow={workflow} /><StudioRightPanel /></WholeStudioProvider>;
 }
-const row = (id: string) => document.querySelector<HTMLElement>(`[data-studio-row="${id}"]`)!;
-const board = (id: string) => row(id).closest<HTMLElement>("[data-studio-board]")!;
+const row = (id: string) => boardRow(id)!;
+const board = (id: string) => boardOf(id)!;
 const explorer = () => document.querySelector<HTMLElement>('[data-studio-panel="explorer"]')!;
 function promptData(dialog: HTMLElement) { return JSON.parse(dialog.querySelector("code")!.textContent!.split("\n\n").slice(1).join("\n\n")); }
 
@@ -245,7 +246,7 @@ it("refreshes selected previews and prompt token context after actual library ed
   expect(state.session).toBe(session); expect(screen.getByTestId("replacement-components.button")).toHaveTextContent("Replacement preview");
   // Query changes still alter the actual board rows.
   fireEvent.change(screen.getByRole("searchbox", { name: labels.canvas.search }), { target: { value: "select" } });
-  expect(row("components.button")).toBeNull(); expect(row("components.select")).not.toBeNull();
+  expect(boardRow("components.button")).toBeUndefined(); expect(boardRow("components.select")).toBeDefined();
 });
 
 it("keeps Choose, native candidate save and Done bound to the original session", async () => {
