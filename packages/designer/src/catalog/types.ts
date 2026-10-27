@@ -145,7 +145,7 @@ export interface ContrastPair {
   readonly over?: TokenValue;
 }
 
-/** One token leaf. `consumers` is computed from source, so it is not authored here. */
+/** One token leaf. `consumers` is computed from the usage graph ({@link ComputedLeafConsumers}), so it is not authored here. */
 export type TokenEntry = CatalogLeafBase &
   TokenPlacement &
   TokenModes &
@@ -298,7 +298,7 @@ export interface IconSource {
   readonly renamedFrom?: string;
 }
 
-/** One glyph leaf. `consumers` is computed from source, so it is not authored here. */
+/** One glyph leaf. `consumers` is computed from the usage graph ({@link ComputedLeafConsumers}), so it is not authored here. */
 export type IconEntry = CatalogLeafBase &
   IconPlacement & {
     /** Export name from `./icons`, frozen. */
@@ -493,7 +493,7 @@ export interface BlockContract {
   readonly alsoUsedFor: readonly string[];
 }
 
-/** One block leaf. `components`, `tokens` and `composedBy` are computed, so they are not authored here. */
+/** One block leaf. `components`, `tokens` and `composedBy` are computed from the usage graph ({@link ComputedBlockRelations}), so they are not authored here. */
 export type BlockEntry = Omit<CatalogLeafBase, "lifecycle"> &
   BlockPlacement &
   BlockLifecycleFields & {
@@ -515,6 +515,28 @@ export type BlockEntry = Omit<CatalogLeafBase, "lifecycle"> &
     readonly signedOff: boolean;
     readonly contract?: BlockContract;
   };
+
+// ---------------------------------------------------------------------------
+// Computed usage fields
+// ---------------------------------------------------------------------------
+
+/**
+ * The computed `consumers` of a token or glyph leaf: the usage-graph ids of every element that reads
+ * the leaf or one of its members. Filled from the usage graph API (`usedBy`), never authored.
+ */
+export interface ComputedLeafConsumers {
+  readonly consumers: readonly string[];
+}
+
+/**
+ * The computed relations of a block leaf, read from its section leaf in the usage graph: the components it
+ * composes, the tokens it reads, and the frames and pages that use it. Filled from `uses`/`usedBy`, never authored.
+ */
+export interface ComputedBlockRelations {
+  readonly components: readonly `components.${string}`[];
+  readonly tokens: readonly `tokens.${string}`[];
+  readonly composedBy: readonly string[];
+}
 
 // ---------------------------------------------------------------------------
 // Catalog wrapper

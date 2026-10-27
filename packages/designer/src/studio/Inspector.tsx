@@ -3,19 +3,31 @@
 import type { ReactElement } from "react";
 import { Button } from "../components/Button.js";
 import type { Resolved, Tier } from "../catalog-core/index.js";
+import type { UsageGraph } from "../catalog-core/usage-graph.js";
 import { inspectorModel, type Candidate } from "./model.js";
 import type { StudioLabels } from "./types.js";
+import { usageModel } from "./usage/model.js";
+import { StudioUsage, useStudioUsageData } from "./usage/StudioUsage.js";
 
 const row = "flex min-w-0 flex-wrap justify-between gap-sm";
 
-/** Focus changes the definition list, never the selection. Alias use is read from the real resolved graph only. */
-export function Inspector({ candidate, labels, canReset, onReset, resolved, tier }: {
-  candidate: Candidate; labels: StudioLabels; canReset: boolean; onReset: () => void; resolved?: Resolved; tier?: Tier;
+/**
+ * Focus changes the definition list, never the selection. A role token's Used by, and the Usage area when the host
+ * supplies its labels, are read from the usage graph API only (spec C5).
+ */
+export function Inspector({ candidate, labels, canReset, onReset, tier, graph }: {
+  candidate: Candidate; labels: StudioLabels; canReset: boolean; onReset: () => void;
+  /** @deprecated Ignored: Used by is read from the usage graph, not from resolved aliases. */
+  resolved?: Resolved;
+  tier?: Tier;
+  /** The usage graph. Omitted: the host snapshot's, else the committed Foundry graph. */
+  graph?: UsageGraph;
 }): ReactElement {
   const model = inspectorModel(candidate);
   const text = labels.inspector;
-  const ids = new Set(candidate.members.map(member => member.id));
-  const usedBy = tier === "role" ? Object.entries(resolved?.members ?? {}).filter(([, member]) => Object.values(member.alias).some(alias => ids.has(alias))).map(([id]) => id) : [];
+  const leaf = candidate.fill.slot;
+  const usage = useStudioUsageData(graph, tier === "role");
+  const usedBy = tier === "role" && usage ? usageModel(usage.graph, leaf).usedWhere.flatMap(group => group.rows.map(entry => entry.id)) : [];
   const facts: readonly (readonly [string, string | undefined])[] = [
     [text.source, model.source], [text.representedLeaf, candidate.fill.slot], [text.mode, model.mode], [text.relation, model.relation], [text.licence, model.license],
     [text.pin, model.pin], [text.trust, candidate.fill.trust], [text.status, model.status], [text.builtOn, model.builtOn.join(", ") || undefined], [text.evidence, model.evidence.join(", ") || undefined],
@@ -34,9 +46,10 @@ export function Inspector({ candidate, labels, canReset, onReset, resolved, tier
           {entry.dark !== undefined || aliases?.dark !== undefined ? <div className={row}><dt>{text.alias} {text.dark}</dt><dd>{aliases?.dark ?? text.none}</dd></div> : null}
         </dl></dd>
       </div>; })}</dl></dd></div>
-      {tier === "role" ? <div><dt>{text.usedBy}</dt><dd>{usedBy.length ? <ul>{usedBy.map(id => <li key={id}>{id}</li>)}</ul> : text.none}</dd></div> : null}
+      {tier === "role" ? <div><dt>{text.usedBy}</dt><dd aria-busy={!usage}>{usedBy.length ? <ul>{usedBy.map(id => <li key={id}>{id}</li>)}</ul> : usage ? text.none : null}</dd></div> : null}
       <div><dt>{text.findings}</dt><dd>{model.findings.length ? <ul>{model.findings.map((finding, index) => <li key={`${finding.code}:${finding.subject}:${index}`}>{finding.message}</li>)}</ul> : text.none}</dd></div>
     </dl>
+    {labels.usage ? <StudioUsage id={leaf} labels={labels.usage} {...(graph ? { graph } : {})} /> : null}
     <div><Button variant="secondary" size="sm" isDisabled={!canReset} onPress={onReset}>{labels.resetToDefault}</Button></div>
   </div>;
 }

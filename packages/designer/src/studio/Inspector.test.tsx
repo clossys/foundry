@@ -1,5 +1,6 @@
 import { afterEach, expect, it } from "vitest";
 import { cleanup, render, screen } from "@testing-library/react";
+import { buildUsageGraph } from "../catalog-core/usage-graph.js";
 import { catalog as DEMO_CATALOG, emptyLibrary } from "./__fixtures__/studio.js";
 const DEMO_LIBRARY = emptyLibrary();
 const DEMO_SELECTION = DEMO_LIBRARY;
@@ -9,16 +10,20 @@ import type { StudioLabels } from "./types.js";
 
 const labels = { resetToDefault: "Reset", inspector: { source: "Source", representedLeaf: "Represented leaf", trust: "Trust", usedBy: "Used by", none: "None", mode: "Mode", relation: "Relation", licence: "License", pin: "Pin", status: "Status", builtOn: "Built on", evidence: "Evidence", members: "Members", light: "Light", dark: "Dark", via: "Via", alias: "Alias", findings: "Findings" } } as StudioLabels;
 afterEach(cleanup);
-it("shows plain definitions, actual metadata and only actual alias consumers for role members", () => {
+/** Used by is read from the usage graph (B5): one component reads the accent token. */
+const graph = buildUsageGraph({
+  inventory: { tokens: ["tokens.accent-color"], components: ["components.button"] },
+  selection: { "tokens.accent-color": "foundry/tokens.accent-color", "components.button": "foundry/components.button" },
+  components: { fills: [{ id: "foundry/components.button", slot: "components.button", scanStatus: "lower-bound", declaredReads: { tokens: ["tokens.accent-color"], assets: [] }, scannedReads: { tokens: [], assets: [] } }], reverseComposes: {} },
+});
+it("shows plain definitions, actual metadata and only the graph's consumers for role members", async () => {
   const candidate = buildCandidates({ catalog: DEMO_CATALOG, library: DEMO_LIBRARY, working: DEMO_SELECTION, slotId: "tokens.accent-color", scope: "slot", target: "tokens.accent-color" }).find(candidate => candidate.source === "foundry")!;
-  const member = candidate.members[0]!;
-  const resolved = { ...candidate.resolved, members: { ...candidate.resolved.members, "tokens.surface-color.base": { ...member.member, slot: "tokens.surface-color", alias: { light: member.id } } } };
-  const view = render(<Inspector candidate={candidate} labels={labels} canReset={false} onReset={() => undefined} tier="role" resolved={resolved} />);
+  const view = render(<Inspector candidate={candidate} labels={labels} canReset={false} onReset={() => undefined} tier="role" graph={graph} />);
   expect(view.container.querySelector("table")).toBeNull();
   expect(screen.getByText("Represented leaf")).toBeInTheDocument();
   expect(screen.getByText("Trust")).toBeInTheDocument();
   expect(screen.getByText("Used by")).toBeInTheDocument();
-  expect(screen.getByText("tokens.surface-color.base")).toBeInTheDocument();
+  expect(await screen.findByText("components.button")).toBeInTheDocument();
   expect(screen.getByText(candidate.fill.slot)).toBeInTheDocument();
   expect(screen.getAllByText("Light").length).toBe(candidate.members.length);
   expect(screen.getAllByText("Dark").length).toBe(candidate.members.filter(entry => entry.member.css.dark !== undefined).length);
