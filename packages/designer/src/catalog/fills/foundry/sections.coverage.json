@@ -242,18 +242,17 @@
     {
       "missingMembers": [],
       "missingRequiredSlots": [],
-      "missingSlots": [
-        "pinning"
-      ],
+      "missingSlots": [],
       "notes": [
-        "Cells are rendered by the column definitions (cell renderers); no column pinning API, so pinning stays unmapped. Host supplies rowKey and label.",
+        "Cells are rendered by the column definitions (cell renderers); pinning binds the view model's pinnedColumns, a leading prefix of at most three visible columns. Host supplies rowKey, label and onModelChange.",
         "Descriptor only; source imports, token reads, shared anatomy, accessibility, contrast and consumer runtime conformance are unmeasured. Content bindings describe host adaptation points, not type-equivalent converters."
       ],
       "slot": "sections.data-grid",
-      "status": "subset",
+      "status": "candidate",
       "supportedMembers": [],
       "supportedSlots": [
         "cells",
+        "pinning",
         "rows"
       ],
       "unresolvedMemberAxes": []
@@ -643,11 +642,10 @@
       "missingMembers": [],
       "missingRequiredSlots": [],
       "missingSlots": [
-        "groups",
-        "status"
+        "groups"
       ],
       "notes": [
-        "No grouped ledger/status API. RecordLedger is an independent exported part, not an automatically configured DetailView composition.",
+        "Status renders as a Badge the host composes into the title row. No grouped ledger API, so groups stay unmapped; RecordLedger is an independent exported part, not an automatically configured DetailView composition.",
         "Descriptor only; source imports, token reads, shared anatomy, accessibility, contrast and consumer runtime conformance are unmeasured. Content bindings describe host adaptation points, not type-equivalent converters."
       ],
       "slot": "sections.record-detail",
@@ -655,7 +653,8 @@
       "supportedMembers": [],
       "supportedSlots": [
         "actions",
-        "fields"
+        "fields",
+        "status"
       ],
       "unresolvedMemberAxes": []
     },

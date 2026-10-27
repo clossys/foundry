@@ -7,7 +7,8 @@ import type { SpecimenDataset } from "../../studio/specimen-dataset.js";
 import { mergeRendererGroups, type SurfaceRendererEntry, type SurfaceRendererGroup, type SurfaceRuntimeLeaf, type SurfaceRuntimeRenderer } from "../contract.js";
 import { GROUP_A_SECTION_RENDERERS } from "./group-a.js";
 import { GROUP_A_CONTENT, GROUP_A_LEAVES, type GroupALeaf } from "./group-a-dataset.js";
-import { sectionRenderers as groupB } from "./group-b.js";
+import { groupBRenderers } from "./group-b.js";
+import { groupBDataset } from "./group-b-dataset.js";
 import { GROUP_C_LEAVES, sectionDatasetC, sectionRenderersC, type GroupCLeaf } from "./group-c.js";
 
 type SampleContent = Readonly<Record<string, RuntimeJson>>;
@@ -33,6 +34,10 @@ function member<Leaf extends string>(leaves: readonly Leaf[], leaf: string): Lea
 const groupA = adaptSectionGroup(GROUP_A_SECTION_RENDERERS, leaf => {
   const short = member<GroupALeaf>(GROUP_A_LEAVES, leaf);
   return short ? () => GROUP_A_CONTENT[short] : undefined;
+});
+const groupB = adaptSectionGroup(groupBRenderers, leaf => {
+  const content = Object.hasOwn(groupBDataset, leaf) ? groupBDataset[leaf as `sections.${string}`] : undefined;
+  return content ? () => content : undefined;
 });
 const groupC = adaptSectionGroup(sectionRenderersC, leaf => {
   const short = member<GroupCLeaf>(GROUP_C_LEAVES, leaf);
