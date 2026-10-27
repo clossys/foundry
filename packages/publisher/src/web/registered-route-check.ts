@@ -18,10 +18,10 @@ import type { ConsumerInstanceLibrary } from "../core/instance-binding.js";
 import type { InstanceRegistries } from "../core/instance-binding.js";
 import type { PublisherPlanDraft } from "../planning/plan.js";
 import type { PublisherPlanVersion } from "../planning/change-set.js";
-import { projectRouteRegistry, routeSourcePath } from "../core/route-registry.js";
-import type { RouteRegistry } from "../core/route-registry.js";
-import { emitRegisteredRouteAdapter, emitRegisteredRoutePage } from "./registered-route-source.js";
-export { emitRegisteredRouteAdapter, emitRegisteredRoutePage } from "./registered-route-source.js";
+import { projectRouteRegistry, routeProviderMount, routeSourcePath } from "../core/route-registry.js";
+import type { RouteProviderMount, RouteRegistry } from "../core/route-registry.js";
+import { emitRegisteredRouteAdapter, emitRegisteredRoutePage, emitRegisteredRouteRegistryModule, registeredRouteRegistryPlacement } from "./registered-route-source.js";
+export { emitRegisteredRouteAdapter, emitRegisteredRoutePage, emitRegisteredRouteRegistryModule, registeredRouteRegistryPlacement } from "./registered-route-source.js";
 import { isCurrentRegisteredRouteSourceEvidence, recordRegisteredRouteSourceEvidence } from "../core/route-source-evidence.js";
 import type { RegisteredRouteSourceEvidence } from "../core/route-source-evidence.js";
 import { beginRegisteredRouteNodeTransaction, issueRegisteredRouteNodeCurrent } from "../core/route-node-current.js";
@@ -54,7 +54,9 @@ async function immutableSourceIdentity(root: string, files: readonly { readonly 
 export interface RegisteredRouteContract {
   readonly version: 2;
   readonly sources: Readonly<Record<string, string>>;
-  readonly registry: { readonly file: string; readonly export: "default" };
+  /** `file` is the finite JSON control input the checker reads, kept outside the source
+   * tree; `module` is the typed registry generated pages import, under it. */
+  readonly registry: { readonly file: string; readonly export: "default"; readonly module: string };
   readonly routeRoots: readonly { readonly directory: string; readonly basePath: string }[];
 }
 export interface RegisteredRouteStyling { readonly engine: CompositeEngineInput; readonly manifest: ConsumerRuntimeManifest; readonly designer?: Readonly<Record<string, { readonly query: RegisteredDesignerQuery; readonly instanceLibrary: ConsumerInstanceLibrary }>> }
@@ -63,7 +65,8 @@ const fields = (v: object, allowed: readonly string[]) => Object.keys(v).sort().
 export function parseRegisteredRouteContract(value: unknown): RegisteredRouteContract {
   if (!value || typeof value !== "object" || Array.isArray(value)) throw new Error("Route contract must be an object");
   const c = value as RegisteredRouteContract;
-  if (!fields(c, ["version", "sources", "registry", "routeRoots"]) || c.version !== 2 || !c.registry || !fields(c.registry, ["file", "export"]) || c.registry.export !== "default" || !routeSourcePath(c.registry.file) || !c.registry.file.endsWith(".json") || !Array.isArray(c.routeRoots) || !c.routeRoots.length) throw new Error("Strict version 2 registry source and nonempty route roots required");
+  if (!fields(c, ["version", "sources", "registry", "routeRoots"]) || c.version !== 2 || !c.registry || !fields(c.registry, ["file", "export", "module"]) || c.registry.export !== "default" || !Array.isArray(c.routeRoots) || !c.routeRoots.length) throw new Error("Strict version 2 registry source and nonempty route roots required");
+  registeredRouteRegistryPlacement(c.registry.file, c.registry.module);
   // Reuse HOST1's exact source-boundary validation, without weakening v1 fields.
   parseConsumerDogfoodContract({ version: 1, sources: c.sources, pages: ["contract-validation.tsx"] });
   if (Object.keys(c.sources).some(module => module === "@clossys/publisher" || module.startsWith("@clossys/publisher/"))) throw new Error("Publisher registered execution source cannot be remapped by the consumer");
@@ -97,6 +100,31 @@ export function documentOnlyLayout(source: string): boolean {
   const prefix = source.replace(/^\s*(?:import\s+type\s*\{\s*ReactNode\s*\}\s*from\s*["']react["'];?\s*)?/, "");
   return /^\s*export\s+default\s+function\s+[A-Za-z_$][\w$]*\(\s*\{\s*children\s*\}\s*(?::\s*\{\s*children\s*:\s*(?:React\.)?ReactNode\s*;?\s*\})?\s*\)\s*\{\s*return\s*(?:children|\(?\s*<html(?:\s+lang=["'][a-zA-Z-]+["'])?>\s*<body>\s*\{children\}\s*<\/body>\s*<\/html>\s*\)?)\s*;?\s*\}\s*$/.test(prefix);
 }
+const escapeRegExp = (value: string) => value.replace(/[.*+?^${}()|[\]\\/]/g, "\\$&");
+/** Recognize the one closed nonvisual provider module a registration names: its
+ * single export returns exactly the registered original provider around children,
+ * with allowlisted plain prop values, and the module renders no markup anywhere. */
+function nonvisualRouteProvider(source: string, mount: RouteProviderMount, known: { readonly module: string; readonly component: string; readonly props: readonly string[] }): boolean {
+  const id = "[A-Za-z_$][\\w$]*", component = escapeRegExp(known.component);
+  const module = source.replace(/^\s*["']use client["'];?/, "");
+  // Imperative or element-factory markup is never nonvisual, wherever it appears.
+  if (/\b(?:createElement|cloneElement|createPortal|jsxs?|jsxDEV|dangerouslySetInnerHTML|innerHTML|outerHTML|insertAdjacentHTML|document)\b/.test(module)) return false;
+  // One unaliased import of the registered component from its original module, used only by the mount.
+  const imports = module.match(new RegExp(`import\\s*\\{\\s*${component}\\s*\\}\\s*from\\s*["']${escapeRegExp(known.module)}["'];?`, "g")) ?? [];
+  if (imports.length !== 1 || (module.match(new RegExp(`(?<![\\w$])${component}(?![\\w$])`, "g")) ?? []).length !== 3) return false;
+  if ((module.match(/(?<![\w$])export(?![\w$])/g) ?? []).length !== 1) return false;
+  const head = mount.source.export === "default" ? `export\\s+default\\s+function(?:\\s+${id})?` : `export\\s+function\\s+${escapeRegExp(mount.source.export)}`;
+  const shape = new RegExp(`${head}\\s*\\(\\s*\\{\\s*children\\s*\\}\\s*(?::\\s*\\{\\s*children\\s*:\\s*(?:React\\.)?ReactNode\\s*;?\\s*\\})?\\s*\\)\\s*\\{([\\s\\S]*?)(return\\s*<${component}((?:\\s+${id}=(?:\\{[^{}]*\\}|"[^"\\n]*"))*)\\s*>\\s*\\{children\\}\\s*<\\/${component}\\s*>\\s*;?)\\s*\\}\\s*$`).exec(module);
+  if (!shape) return false;
+  const [, body, mountText, attributes] = shape;
+  if (/(?<![\w$])(?:return|children)(?![\w$])/.test(body!)) return false;
+  for (const [, name, value] of attributes!.matchAll(new RegExp(`(${id})=(\\{[^{}]*\\}|"[^"\\n]*")`, "g"))) {
+    if (!known.props.includes(name!)) return false;
+    if (value!.startsWith("{") && !new RegExp(`^\\{\\s*(?:${id}(?:\\.${id})*|true|false|"[^"\\n]*")\\s*\\}$`).test(value!)) return false;
+  }
+  // Outside the one mount, the module contains no JSX at all.
+  return !/<\s*[A-Za-z/>]/.test(module.replace(mountText!, ""));
+}
 /** Read-only filesystem discovery, exact emitter linkage and the original HOST1
  * source findings. A passing result is source closure, never rendered qualification. */
 export interface RegisteredRouteCheckInput { readonly root: string; readonly contract: RegisteredRouteContract; readonly plan?: PublisherPlanDraft | PublisherPlanVersion; readonly registries: InstanceRegistries; readonly styling?: RegisteredRouteStyling }
@@ -109,7 +137,7 @@ async function checkRegisteredRoutesInternal(input: RegisteredRouteCheckInput) {
   const registry = JSON.parse(registryText) as RouteRegistry;
   const projection = projectRouteRegistry(registry, input.plan, input.registries, {}, {});
   const findings: RegisteredRouteFinding[] = projection.findings.map(f => ({ code: "RR1", file: contract.registry.file, message: `${f.routeId}:${f.path}: ${f.message}` }));
-  const entries = new Map<string, string>(), classifications: { file: string; kind: "page" | "redirect" | "document" | "http" }[] = [];
+  const entries = new Map<string, string>(), classifications: { file: string; kind: "page" | "redirect" | "document" | "http" | "provider" }[] = [];
   const allRoots = contract.routeRoots.map(r => r.directory);
   for (const boundary of contract.routeRoots) {
     async function visit(path: string): Promise<void> {
@@ -140,14 +168,32 @@ async function checkRegisteredRoutesInternal(input: RegisteredRouteCheckInput) {
     await visit(boundary.directory);
   }
   if (!entries.size) findings.push({ code: "RR2", file: "", message: "No executable visual page entries discovered in admitted roots" });
+  // A provider is admitted only as the registered route's own closed nonvisual
+  // module; layouts and every other mount site keep the rules above.
+  for (const route of registry.routes ?? []) {
+    if (!route?.composition || !("provider" in route.composition)) continue;
+    const known = routeProviderMount(route), file = route.composition.provider?.source?.file;
+    if (!known) continue; // RR1 already refuses the registration.
+    try {
+      if (Object.keys(contract.sources).some(key => key === known.module || key.endsWith("/") && known.module.startsWith(key))) throw new Error("Original provider module cannot be remapped");
+      if (!nonvisualRouteProvider(await read(root, file!), route.composition.provider!, known)) throw new Error("Provider renders or mounts more than the registered original provider");
+      classifications.push({ file: file!, kind: "provider" });
+    } catch (error) { findings.push({ code: "RR2", file: String(file), message: `Registered provider is not the exact nonvisual original-provider mount: ${(error as Error).message}` }); }
+  }
   for (const [file, path] of entries) {
     const matches = registry.routes?.filter(route => route.entry.file === file) ?? [];
     if (matches.length !== 1 || matches[0]!.path !== path) findings.push({ code: "RR3", file, message: "Discovered page must join exactly one registered route and derived URL path" });
   }
+  // Every emitted page reads the registry through its typed module; that module is
+  // generated output too and must be the exact bytes for the JSON control input.
+  const registryModule = contract.registry.module;
+  try {
+    if (await read(root, registryModule) !== emitRegisteredRouteRegistryModule(registry)) findings.push({ code: "RR4", file: registryModule, message: "Typed registry module differs from its deterministic registered JSON" });
+  } catch { findings.push({ code: "RR4", file: registryModule, message: "Typed registry module is absent or invalid" }); }
   for (const route of registry.routes ?? []) {
     if (!entries.has(route.entry.file)) findings.push({ code: "RR3", file: route.entry.file, message: "Registry entry has no discovered executable page" });
     try {
-      const generated = emitRegisteredRoutePage(contract.registry.file, route);
+      const generated = emitRegisteredRoutePage(contract.registry.module, route);
       if (await read(root, route.composition.source.file) !== generated) findings.push({ code: "RR4", file: route.composition.source.file, message: "Page implementation differs from its deterministic registered composition" });
       if (route.entry.file !== route.composition.source.file && await read(root, route.entry.file) !== emitRegisteredRouteAdapter(route)) findings.push({ code: "RR4", file: route.entry.file, message: "Route adapter does not execute the exact generated composition" });
     } catch { findings.push({ code: "RR4", file: route.entry.file, message: "Registered composition source is absent or invalid" }); }

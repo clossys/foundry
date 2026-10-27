@@ -57,4 +57,31 @@ describe("registered routes are projections over Publisher records (synthetic da
     const route = syntheticRoute(); expect(routeCompositionDigest(route)).not.toBe(routeCompositionDigest({ ...route, title: "Changed" }));
     expect(PUBLISHER_CHANNELS.map(c => c.label)).toEqual(["Site", "App", "Admin", "Content", "Messages", "Documents"]);
   });
+  it("admits a provider only as one registered mount for its exact derived body", () => {
+    const withProvider = (provider: unknown, query: unknown = { id: "designer.layer-boards", version: 1 }): RouteRegistration => {
+      const route = structuredClone(syntheticRoute());
+      Object.assign(route.composition.binding, { body: { ...route.composition.binding.body!, source: { kind: "derived", query } } });
+      Object.assign(route.composition, { provider });
+      return route;
+    };
+    const valid = { id: "designer.whole-studio", source: { file: "providers/designer.tsx", export: "DesignerStudioProvider" } };
+    const findings = (route: RouteRegistration) => projectRouteRegistry(registry([route]), syntheticPlan([route]), SYNTHETIC_ROUTE_REGISTRIES).findings.filter(f => f.path.startsWith("composition"));
+    expect(findings(withProvider(valid))).toEqual([]);
+    const route = syntheticRoute();
+    for (const invalid of [
+      withProvider({ ...valid, id: "example.other" }),
+      withProvider({ ...valid, extra: true }),
+      withProvider({ id: valid.id }),
+      withProvider({ ...valid, source: { file: "/abs/designer.tsx", export: "DesignerStudioProvider" } }),
+      withProvider({ ...valid, source: { file: "providers/designer.tsx", export: "not valid" } }),
+      withProvider({ ...valid, source: route.composition.source }),
+      withProvider({ ...valid, source: { file: route.composition.runtime.file, export: "DesignerStudioProvider" } }),
+      withProvider({ ...valid, source: { file: route.entry.file, export: "DesignerStudioProvider" } }),
+      withProvider(valid, { id: "designer.layer-boards", version: 2 }),
+      withProvider(null),
+      Object.assign(structuredClone(route), { composition: { ...structuredClone(route.composition), provider: valid } }),
+    ]) expect(findings(invalid)).toContainEqual(expect.objectContaining({ path: "composition.provider" }));
+    // The provider is part of the bound composition identity.
+    expect(routeCompositionDigest(withProvider(valid))).not.toBe(routeCompositionDigest(withProvider({ ...valid, source: { ...valid.source, export: "default" } })));
+  });
 });

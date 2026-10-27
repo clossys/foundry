@@ -33,8 +33,23 @@ export interface RouteRegistration {
       /** A typed client action implementation; never a page body. */
       readonly actions?: RouteSourceExport;
     };
+    /** Optional registered nonvisual provider mounted around the emitted page.
+     * Only an identity in ROUTE_PROVIDER_MOUNTS for its exact derived body is valid. */
+    readonly provider?: RouteProviderMount;
   };
 }
+/** Closed set of original providers a registered route may mount. Data only:
+ * the checker admits a provider module only as this exact nonvisual mount. */
+export const ROUTE_PROVIDER_MOUNTS = {
+  "designer.whole-studio": {
+    module: "@clossys/designer/studio/state",
+    component: "WholeStudioProvider",
+    props: ["adapter", "labels", "initialSlotId", "livePreview", "sessionRef"],
+    body: { id: "designer.layer-boards", version: 1 },
+  },
+} as const satisfies Readonly<Record<string, { readonly module: string; readonly component: string; readonly props: readonly string[]; readonly body: { readonly id: string; readonly version: number } }>>;
+export type RouteProviderId = keyof typeof ROUTE_PROVIDER_MOUNTS;
+export interface RouteProviderMount { readonly id: RouteProviderId; readonly source: RouteSourceExport }
 export interface RouteRegistry { readonly version: 1; readonly consumer: string; readonly routes: readonly RouteRegistration[] }
 export interface RouteRegistryFinding { readonly routeId: string; readonly path: string; readonly message: string }
 export interface RegisteredRouteRow {
@@ -54,6 +69,18 @@ const text = (v: unknown): v is string => typeof v === "string" && v.trim().leng
 const only = (v: object, keys: readonly string[]) => Object.keys(v).every(k => keys.includes(k));
 export const routeSourcePath = (v: string): boolean => text(v) && !v.includes("\\") && !v.startsWith("/") && !v.split("/").some(p => !p || p === "." || p === "..");
 function source(v: RouteSourceExport): boolean { return !!v && only(v, ["file", "export"]) && routeSourcePath(v.file) && /^[A-Za-z_$][\w$]*$/.test(v.export); }
+/** The registered provider mount, or undefined when absent or invalid for this route. */
+export function routeProviderMount(route: RouteRegistration): (typeof ROUTE_PROVIDER_MOUNTS)[RouteProviderId] | undefined {
+  const c = route?.composition, p: unknown = c?.provider;
+  if (!p || typeof p !== "object" || Array.isArray(p) || !only(p, ["id", "source"])) return undefined;
+  const { id, source: ref } = p as RouteProviderMount;
+  if (typeof id !== "string" || !Object.hasOwn(ROUTE_PROVIDER_MOUNTS, id) || !source(ref)) return undefined;
+  const mount = ROUTE_PROVIDER_MOUNTS[id], body = c.binding?.body?.source;
+  if (body?.kind !== "derived" || body.query?.id !== mount.body.id || body.query.version !== mount.body.version) return undefined;
+  // Never the page, adapter, runtime or action module: the provider is its own closed module.
+  if ([route.entry?.file, c.source?.file, c.runtime?.file, c.header?.actions?.file].includes(ref.file)) return undefined;
+  return mount;
+}
 export function routeCompositionDigest(registration: RouteRegistration): `sha256:${string}` {
   return `sha256:${sha256(canonicalPlanJson(registration))}`;
 }
@@ -89,7 +116,8 @@ export function projectRouteRegistry(registry: RouteRegistry, plan: PublisherPla
       const entry = canonicalPlanJson(route.entry); if (entries.has(entry)) add(route.routeId, "entry", "Duplicate executable entry"); entries.add(entry);
       const c = route.composition, b = c.binding;
       for (const message of instanceBodyFindings(b, registries)) add(route.routeId, "composition.binding.body", message);
-      if (!only(c, ["binding", "source", "runtime", "header"]) || !source(c.source) || !source(c.runtime)) add(route.routeId, "composition", "Canonical composition source required");
+      if (!only(c, ["binding", "source", "runtime", "header", "provider"]) || !source(c.source) || !source(c.runtime)) add(route.routeId, "composition", "Canonical composition source required");
+      if ("provider" in c && !routeProviderMount(route)) add(route.routeId, "composition.provider", "Provider must be one registered nonvisual mount for its derived body");
       if (bindings.has(b.instanceId)) add(route.routeId, "composition.binding", "Composition belongs to more than one route"); bindings.add(b.instanceId);
       if (b.path !== route.path || b.context.consumer !== registry.consumer) add(route.routeId, "composition.binding", "Path or consumer differs from the bound instance");
       if (!only(c.header, ["id", "data", "actions"]) || !text(c.header.id) || c.header.data.title !== route.title || !only(c.header.data, ["title", "nav"]) || c.header.actions && !source(c.header.actions)) add(route.routeId, "composition.header", "Header lease identity/title or action source differs");

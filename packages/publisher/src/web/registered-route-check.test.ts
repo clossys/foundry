@@ -3,7 +3,7 @@ import { join } from "node:path";
 import { tmpdir } from "node:os";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { checkRegisteredRoutes, parseRegisteredRouteContract, redirectOnlyRoute, documentOnlyLayout } from "./registered-route-check.js";
-import { emitRegisteredRouteAdapter, emitRegisteredRoutePage } from "./registered-route-source.js";
+import { emitRegisteredRouteAdapter, emitRegisteredRoutePage, emitRegisteredRouteRegistryModule } from "./registered-route-source.js";
 import { syntheticPlan, syntheticRoute, SYNTHETIC_ROUTE_REGISTRIES } from "../core/__fixtures__/registered-route.js";
 
 import { parseConsumerDogfoodContract } from "@clossys/designer/catalog/server";
@@ -12,10 +12,10 @@ beforeEach(async () => { root = await fs.realpath(await fs.mkdtemp(join(tmpdir()
 afterEach(async () => { await fs.rm(root, { recursive: true, force: true }); });
 const route = () => syntheticRoute();
 async function write(file: string, text: string) { await fs.mkdir(join(root, file, ".."), { recursive: true }); await fs.writeFile(join(root, file), text); }
-const contract = () => ({ version: 2 as const, registry: { file: "routes.json", export: "default" as const }, sources: {}, routeRoots: [{ directory: "app", basePath: "/" }] });
+const contract = () => ({ version: 2 as const, registry: { file: "routes.json", export: "default" as const, module: "routes.ts" }, sources: {}, routeRoots: [{ directory: "app", basePath: "/" }] });
 async function setup() {
-  const r = route(); await write("routes.json", JSON.stringify({ version: 1, consumer: "example", routes: [r] }));
-  await write(r.entry.file, emitRegisteredRouteAdapter(r)); await write(r.composition.source.file, emitRegisteredRoutePage("routes.json", r)); await write("runtime.ts", "export function useRuntime(){throw new Error('SYNTHETIC unresolved runtime')}");
+  const r = route(); await write("routes.json", JSON.stringify({ version: 1, consumer: "example", routes: [r] })); await write("routes.ts", emitRegisteredRouteRegistryModule({ version: 1, consumer: "example", routes: [r] }));
+  await write(r.entry.file, emitRegisteredRouteAdapter(r)); await write(r.composition.source.file, emitRegisteredRoutePage("routes.ts", r)); await write("runtime.ts", "export function useRuntime(){throw new Error('SYNTHETIC unresolved runtime')}");
   return r;
 }
 const check = () => checkRegisteredRoutes({ root, contract: contract(), plan: syntheticPlan([route()]), registries: SYNTHETIC_ROUTE_REGISTRIES });
@@ -58,7 +58,7 @@ describe("strict registered route source closure (synthetic fixtures; no runtime
   });
   it("registry orphan and path drift fail and outside roots are never claimed as covered", async () => {
     const r = await setup(); await write("outside/page.tsx", "export default function Page(){return null}");
-    await write("routes.json", JSON.stringify({ version: 1, consumer: "example", routes: [{ ...r, path: "/changed" }] }));
+    await write("routes.json", JSON.stringify({ version: 1, consumer: "example", routes: [{ ...r, path: "/changed" }] })); await write("routes.ts", emitRegisteredRouteRegistryModule({ version: 1, consumer: "example", routes: [{ ...r, path: "/changed" }] }));
     const result = await check(); expect(result.findings.some(f => f.code === "RR3")).toBe(true); expect(result.classifications.some(c => c.file.startsWith("outside/"))).toBe(false);
     expect(result.scope).toEqual([{ directory: "app", basePath: "/" }]); expect(result.runtime).toBe("pending");
   });
