@@ -12,11 +12,17 @@ import type { StudioAdapter } from "./types.js";
 import { labels, smallCatalog, emptyLibrary, adopt } from "./__fixtures__/studio.js";
 
 afterEach(() => { cleanup(); vi.restoreAllMocks(); vi.useRealTimers(); window.history.replaceState(null, "", "/"); });
-const radio = (source = "foundry", target = "tokens.surface-color") => {
-  const board = document.querySelector<HTMLElement>(`[data-studio-row="${target}"]`)!.closest<HTMLElement>("[data-studio-board]")!;
-  if (board.dataset.boardMode === "view") fireEvent.click(within(board).getByRole("button", { name: labels.board.changeSelection }));
-  return within(board).getByRole("radio", { name: labels.useSource(source, target) });
-};
+/**
+ * The canvas token board offers presets, not sources (the library-board roster shows Custom only for a token
+ * slot), so these autosave tests adopt a source through the session's own `use`, the port the canvas drives.
+ */
+function UseFixture() {
+  const state = useStudioSession(), row = state.rows.find(row => row.id === "tokens.surface-color");
+  return <>{["foundry", "shadcn@aria"].map(source => <button key={source} type="button" onClick={() => { if (row) state.use(row, source); }}>{`use ${source}`}</button>)}
+    <output data-testid="adopted">{state.working ? generateSelection(state.working).slots.flatMap(slot => slot.sources.map(source => `${source}/${slot.slot}`)).join(",") : ""}</output></>;
+}
+const use = (source = "foundry") => screen.getByRole("button", { name: `use ${source}` });
+const adopted = (source = "foundry") => expect(screen.getByTestId("adopted").textContent?.split(",")).toContain(`${source}/tokens.surface-color`);
 function hostAdapter() {
   let library = emptyLibrary();
   const load = vi.fn(async () => ({ library: structuredClone(library) }));
@@ -27,15 +33,15 @@ function hostAdapter() {
   return { load, save, read: () => library };
 }
 function Host({ adapter, panel = true }: { adapter: StudioAdapter; panel?: boolean }) {
-  return <StudioProvider catalog={smallCatalog} initialSlotId="tokens.surface-color" adapter={adapter} labels={labels}><StudioHeader /><Studio header="external" />{panel ? <aside aria-label="Details"><StudioRightPanel /></aside> : null}</StudioProvider>;
+  return <StudioProvider catalog={smallCatalog} initialSlotId="tokens.surface-color" adapter={adapter} labels={labels}><StudioHeader /><UseFixture /><Studio header="external" />{panel ? <aside aria-label="Details"><StudioRightPanel /></aside> : null}</StudioProvider>;
 }
 async function mount(adapter: StudioAdapter = hostAdapter()) { const view = render(<Host adapter={adapter} />); await screen.findByText("L-saved"); return view; }
 it("autosaves discrete edits immediately, reloads authoritative truth and uses the reloaded hash next", async () => {
   const user = userEvent.setup(), adapter = hostAdapter(); await mount(adapter);
-  await user.click(radio()); await waitFor(() => expect(adapter.load).toHaveBeenCalledTimes(2)); await screen.findByText("L-saved");
+  await user.click(use()); await waitFor(() => expect(adapter.load).toHaveBeenCalledTimes(2)); await screen.findByText("L-saved");
   expect(adapter.save.mock.calls[0]?.[0]).toEqual({ baseHash: libraryHash(emptyLibrary()), changes: [{ op: "adopt", slot: "tokens.surface-color", source: "foundry" }] });
-  expect(radio()).toBeChecked();
-  await user.click(radio("shadcn@aria")); await waitFor(() => expect(adapter.load).toHaveBeenCalledTimes(3));
+  adopted();
+  await user.click(use("shadcn@aria")); await waitFor(() => expect(adapter.load).toHaveBeenCalledTimes(3));
   expect(adapter.save.mock.calls[1]?.[0].baseHash).toBe(libraryHash(adopt()));
   expect(screen.queryByRole("button", { name: /^(Save|Discard|L-save|L-discard)$/ })).toBeNull();
 });
@@ -45,14 +51,14 @@ it("loads authoritative fills even when the host's compatible selection is stale
 });
 it("retains a failed leaf with inline Retry and keeps the attempted value visible", async () => {
   const user = userEvent.setup(), adapter = hostAdapter(); adapter.save.mockResolvedValueOnce({ ok: false, reason: "failed" }); await mount(adapter);
-  await user.click(radio()); await screen.findByText("L-failed");
-  expect(radio()).toBeChecked();
+  await user.click(use()); await screen.findByText("L-failed");
+  adopted();
   const feedback = document.querySelector('[data-studio-edit-error="tokens.surface-color"]') as HTMLElement;
   await user.click(within(feedback).getByRole("button", { name: "L-retry" })); await screen.findByText("L-saved"); expect(adapter.save).toHaveBeenCalledTimes(2);
 });
 it("retries only the load after an acknowledged save whose reload failed", async () => {
   const user = userEvent.setup(), adapter = hostAdapter(); await mount(adapter); adapter.load.mockRejectedValueOnce(new Error("offline"));
-  await user.click(radio()); await screen.findByText("L-failed");
+  await user.click(use()); await screen.findByText("L-failed");
   const feedback = document.querySelector('[data-studio-edit-error="tokens.surface-color"]') as HTMLElement;
   await user.click(within(feedback).getByRole("button", { name: "L-retry" })); await screen.findByText("L-saved"); expect(adapter.save).toHaveBeenCalledTimes(1);
 });
@@ -61,7 +67,7 @@ it("keeps status and score out of the real-link header, and history works with i
   const header = document.querySelector("[data-studio-header]") as HTMLElement;
   expect(within(header).getAllByRole("link")).toHaveLength(5); expect(header.textContent).toBe("TokensAssetsComponentsSectionsFrames");
   expect(within(header).queryByRole("button")).toBeNull(); expect(within(screen.getByRole("complementary", { name: "Details" })).getByText("L-saved")).toBeVisible();
-  await user.click(radio()); await screen.findByText("L-saved"); view.rerender(<Host adapter={adapter} panel={false} />);
+  await user.click(use()); await screen.findByText("L-saved"); view.rerender(<Host adapter={adapter} panel={false} />);
   fireEvent.keyDown(document.body, { key: "z", metaKey: true }); await waitFor(() => expect(adapter.save).toHaveBeenCalledTimes(2));
   expect(adapter.read().fills).toHaveLength(0);
 });

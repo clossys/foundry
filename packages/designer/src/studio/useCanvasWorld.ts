@@ -55,7 +55,7 @@ export function legibleZoomFloor(): number {
  * the domain label, instead of fitting the whole world to an illegible zoom.
  */
 export function openOnFirstBoard(host: HTMLElement, world: HTMLElement, pose: Viewport): Viewport | undefined {
-  const board = world.querySelector<HTMLElement>("[data-studio-board]");
+  const board = world.querySelector<HTMLElement>("[data-studio-canvas-board]:not([hidden]) > section[data-library-board]");
   const domain = board?.closest<HTMLElement>("[data-studio-domain]") ?? board;
   if (!board || !domain) return undefined;
   const origin = world.getBoundingClientRect(), rect = board.getBoundingClientRect(), top = domain.getBoundingClientRect();

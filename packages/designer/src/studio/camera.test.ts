@@ -30,7 +30,7 @@ describe("Studio imperative camera", () => {
     viewport.getBoundingClientRect = () => ({ left: 0, top: 0, width: 1000, height: 800 } as DOMRect);
     item.getBoundingClientRect = () => ({ left: 1500, top: 1000, width: 400, height: 200 } as DOMRect);
     camera.flyTo(item, { reducedMotion: true }); expect(camera.read()).toMatchObject({ x: -1200, y: -700 }); expect(world.style.transition).toBe("none");
-    camera.flyTo(item, { reducedMotion: false }); expect(world.style.transition).toContain("250ms");
+    camera.flyTo(item, { reducedMotion: false }); expect(world.style.transition).toBe("transform var(--ui-duration-default) var(--ease-default)");
   });
   it("drags and pinches with tracked pointers, then stops on cancellation", () => {
     const { camera, viewport } = setup();

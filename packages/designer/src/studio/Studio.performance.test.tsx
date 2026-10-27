@@ -1,5 +1,6 @@
 import { afterEach, expect, it, vi } from "vitest";
-import { cleanup, fireEvent, screen, within } from "@testing-library/react";
+import { cleanup, fireEvent, screen, waitFor, within } from "@testing-library/react";
+import { boardOf } from "./__fixtures__/library-board-dom.js";
 import { render } from "./__fixtures__/frame.js";
 import userEvent from "@testing-library/user-event";
 import { Studio as StudioSurface, StudioProvider, StudioRightPanel, type StudioProps } from "./index.js";
@@ -25,7 +26,7 @@ it("preserves actual Designer errors and unavailable candidates independently of
   render(<Studio catalog={smallCatalog} adapter={{ load: async () => ({ library }), save: async () => ({ ok: false, reason: "unavailable" }) }}
     labels={labels} initialSlotId="tokens.surface-color" />);
   await screen.findByRole("link", { name: "Tokens" });
-  fireEvent.click(within(document.querySelector('[data-studio-row="tokens.surface-color"]')!.closest<HTMLElement>("[data-studio-board]")!).getByRole("button", { name: labels.board.changeSelection }));
+  fireEvent.click(within((await waitFor(() => boardOf("tokens.surface-color")!))).getByRole("button", { name: labels.board.changeSelection }));
   fireEvent.focus(screen.getByRole("radio", { name: labels.useSource(library.source.id, "tokens.surface-color") }));
   expect(screen.getByRole("radio", { name: labels.useSource(library.source.id, "tokens.surface-color") })).toBeDisabled();
   expect(document.querySelector("[data-studio-preview]")).toBeNull();
@@ -42,20 +43,21 @@ it("does no additional adoption, resolution, checking or emission on focus, scor
   const resolve = vi.spyOn(studioEngine, "resolve");
   const check = vi.spyOn(studioEngine, "check");
   const emit = vi.spyOn(studioEngine, "emit");
-  const library = adopt();
+  // An asset board: token boards offer presets (Custom only), so a source radio cell is an asset or component one.
+  const library = adopt(adopt(), "assets.icon-search", "lucide");
   const adapter = { load: async () => ({ library }), save: async () => ({ ok: false as const, reason: "unavailable" as const }) };
-  render(<Studio catalog={smallCatalog} adapter={adapter} labels={labels} initialSlotId="tokens.surface-color" />);
+  render(<Studio catalog={smallCatalog} adapter={adapter} labels={labels} initialSlotId="assets.icon-search" />);
   await screen.findByRole("link", { name: "Tokens" });
-  fireEvent.click(within(document.querySelector('[data-studio-row="tokens.surface-color"]')!.closest<HTMLElement>("[data-studio-board]")!).getByRole("button", { name: labels.board.changeSelection }));
+  fireEvent.click(within((await waitFor(() => boardOf("assets.icon-search")!))).getByRole("button", { name: labels.board.changeSelection }));
   // Request this row once; subsequent focus and display changes must reuse its checked candidates.
-  fireEvent.focus(screen.getByRole("radio", { name: labels.useSource("foundry", "tokens.surface-color") }));
+  fireEvent.focus(screen.getByRole("radio", { name: labels.useSource("lucide", "assets.icon-search") }));
   const count = () => [apply.mock.calls.length, resolve.mock.calls.length, check.mock.calls.length, emit.mock.calls.length];
   const before = count();
   expect(before.every(value => value > 0)).toBe(true);
   const css = document.querySelector("[data-studio-candidates]")?.textContent;
   const live = document.querySelector("[data-studio-preview]")?.textContent;
   const user = userEvent.setup();
-  fireEvent.focus(screen.getByRole("radio", { name: labels.useSource("foundry", "tokens.surface-color") }));
+  fireEvent.focus(screen.getByRole("radio", { name: labels.useSource("lucide", "assets.icon-search") }));
   expect(document.querySelector('[data-studio-panel="inspector"]')).not.toBeNull();
   await user.click(screen.getByRole("button", { name: labels.scorecard.title }));
   expect(screen.getByRole("region", { name: labels.scorecard.title })).toBeInTheDocument();

@@ -1,4 +1,4 @@
-import type { CSSProperties, ReactNode } from "react";
+import { useCallback, useContext, useEffect, useRef, type CSSProperties, type ReactNode, type Ref, type RefObject } from "react";
 import {
   Cell as AriaCell,
   Column as AriaColumn,
@@ -8,6 +8,7 @@ import {
   Table as AriaTable,
   TableBody as AriaTableBody,
   TableHeader as AriaTableHeader,
+  TableStateContext,
   type CellProps as AriaCellProps,
   type ColumnProps as AriaColumnProps,
   type ResizableTableContainerProps as AriaResizableTableContainerProps,
@@ -229,11 +230,71 @@ export interface TableCellProps extends Omit<AriaCellProps, "className" | "style
   style?: CSSProperties;
 }
 
+/**
+ * A text-entry element: a native field, a React Aria DateField/TimeField
+ * segment (a spin button), a text box or an editable region.
+ */
+const TEXT_ENTRY = "input, textarea, select, [role=spinbutton], [role=textbox], [contenteditable]:not([contenteditable=false])";
+const isTextEntry = (target: EventTarget | null): target is Element =>
+  typeof Element !== "undefined" && target instanceof Element && target.closest(TEXT_ENTRY) !== null;
+
+/**
+ * The grid's cells capture the arrow keys to move between rows and cells, so
+ * a text-entry element inside a cell (a DateField segment's ArrowUp/ArrowDown,
+ * an input's caret keys) would never see them. While focus is in one, the
+ * cell pauses the table's own keyboard navigation through react-aria-components'
+ * table state, and resumes it when focus leaves for anything else. Consumers
+ * set nothing.
+ *
+ * It renders nothing: it sits among the cell's children because that is where
+ * the table state is in scope (a collection item's own component body runs in
+ * the collection builder, not in the rendered table), and reaches the cell
+ * element through the ref the cell already forwards.
+ */
+function TextEntryKeys({ cell }: { cell: RefObject<HTMLTableCellElement | null> }) {
+  const state = useContext(TableStateContext);
+  useEffect(() => {
+    const element = cell.current;
+    if (!element || !state) return;
+    let paused = false;
+    const pause = (value: boolean) => {
+      if (paused === value) return;
+      paused = value;
+      state.setKeyboardNavigationDisabled(value);
+    };
+    const onFocusIn = (event: FocusEvent) => pause(isTextEntry(event.target));
+    const onFocusOut = (event: FocusEvent) => {
+      const next = event.relatedTarget;
+      if (!(next instanceof Node && element.contains(next) && isTextEntry(next))) pause(false);
+    };
+    const active = element.ownerDocument.activeElement;
+    if (active && element.contains(active) && isTextEntry(active)) pause(true);
+    element.addEventListener("focusin", onFocusIn);
+    element.addEventListener("focusout", onFocusOut);
+    return () => {
+      element.removeEventListener("focusin", onFocusIn);
+      element.removeEventListener("focusout", onFocusOut);
+      pause(false);
+    };
+  }, [cell, state]);
+  return null;
+}
+
 /** One cell within a `Table.Row`. */
-function TableCell({ className, style, ...rest }: TableCellProps) {
+function TableCell({ className, style, children, ...rest }: TableCellProps) {
+  const cell = useRef<HTMLTableCellElement | null>(null);
+  const forwarded = (rest as { ref?: Ref<HTMLTableCellElement> }).ref;
+  const ref = useCallback((node: HTMLTableCellElement | null) => {
+    cell.current = node;
+    if (typeof forwarded === "function") forwarded(node);
+    else if (forwarded) (forwarded as RefObject<HTMLTableCellElement | null>).current = node;
+  }, [forwarded]);
+  const keys = <TextEntryKeys cell={cell} />;
   return (
     <AriaCell
       {...rest}
+      ref={ref}
+      children={typeof children === "function" ? (renderProps) => <>{children(renderProps)}{keys}</> : <>{children}{keys}</>}
       className={cx("px-md py-sm outline-none", className)}
       style={(renderProps) => ({
         boxShadow: renderProps.isFocusVisible ? UI_RING_FOCUS : undefined,

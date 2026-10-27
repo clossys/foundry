@@ -1,18 +1,21 @@
 "use client";
 import type { Candidate } from "./model.js";
-import { memo, useState, type CSSProperties, type ReactNode } from "react";
+import { memo, useState, type ReactNode } from "react";
 import { PreviewOutcomeContext, type PreviewFailureReason } from "./preview-outcome.js";
 import { CompactPreview } from "./previews.js";
 import { LeafCell } from "../blocks/library-board/LeafCell.js";
 import type { StudioLabels } from "./types.js";
-import { APP_FRAME_RIGHT_PANEL_CONFIG } from "../frames/right-panel-config.js";
 import { orderTokenMembers } from "../tokens/preview/member-order.js";
 import type { SurfaceSampleState } from "./surface-preview-sample-content.js";
 
-/** Every library column and the Edit column share one cap: the frame right panel preset's maximum. */
-export const LIBRARY_COLUMN_BOUND: CSSProperties = { maxWidth: APP_FRAME_RIGHT_PANEL_CONFIG.max };
+/**
+ * Every library column and the Edit column share one cap, the frame right panel preset's maximum: the
+ * `library-column-bound` utility (styles/theme-keys.css), pinned equal to `APP_FRAME_RIGHT_PANEL_CONFIG.max`.
+ * A class, never a style attribute.
+ */
+export const LIBRARY_COLUMN_BOUND = "library-column-bound";
 /** Fit the column and wrap members at the cap instead of sizing the cell to max-content. */
-export const LIBRARY_COLUMN_FLOW = "w-fit flex-wrap";
+export const LIBRARY_COLUMN_FLOW = `w-fit flex-wrap ${LIBRARY_COLUMN_BOUND}`;
 
 type Member = Candidate["members"][number];
 const memberKey = (entry: Member) => entry.id.slice(entry.member.slot.length + 1);
@@ -33,7 +36,7 @@ function HostPreviewCell({ labels, preview, sampleState }: { labels: StudioLabel
   const [failure, setFailure] = useState<PreviewFailureReason>();
   const live = preview != null && failure === undefined;
   return <PreviewOutcomeContext.Provider value={setFailure}>
-    <LeafCell className={LIBRARY_COLUMN_FLOW} style={LIBRARY_COLUMN_BOUND} data-sample-state={sampleState} data-preview-reason={preview == null ? undefined : failure} preview={preview} previewState={live ? "live" : "unavailable"} status={live ? undefined : labels.previewUnavailable} />
+    <LeafCell className={LIBRARY_COLUMN_FLOW} data-sample-state={sampleState} data-preview-reason={preview == null ? undefined : failure} preview={preview} previewState={live ? "live" : "unavailable"} status={live ? undefined : labels.previewUnavailable} />
   </PreviewOutcomeContext.Provider>;
 }
 
@@ -51,7 +54,7 @@ export const CandidateCell = memo(function CandidateCell({ candidate, labels, pr
   // Token members display in ordinal or value order (amber.50 before amber.100, xs .. 9xl).
   const members = candidate.previewable ? orderTokenMembers(candidate.members) : [];
   const families = memberFamilies(members);
-  return <LeafCell className={LIBRARY_COLUMN_FLOW} style={LIBRARY_COLUMN_BOUND} data-studio-candidate={candidate.index} previewState={candidate.previewable ? "live" : "unavailable"} status={candidate.previewable ? undefined : labels.previewUnavailable}
+  return <LeafCell className={LIBRARY_COLUMN_FLOW} data-studio-candidate={candidate.index} previewState={candidate.previewable ? "live" : "unavailable"} status={candidate.previewable ? undefined : labels.previewUnavailable}
     preview={!candidate.previewable ? undefined : families.length > 1
       ? families.map(({ family, members }, index) => <div key={family + index} data-candidate-family={family} className="flex basis-full flex-wrap items-start gap-md">{members.map(variant)}</div>)
       : members.map(variant)} />;

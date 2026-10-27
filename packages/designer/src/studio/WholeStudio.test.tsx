@@ -16,8 +16,12 @@ import { useStudioSession } from './StudioProvider.js';
 import { deriveDesignerLayerBoardsV1, DESIGNER_LAYER_BOARDS_QUERY } from './designer-layer-boards.js';
 import { runtimeHash } from '../catalog-core/runtime-ports.js';
 import { valueLibraryBoardRecords, valueLibraryBoardPreviews } from './library-board-adapter.js';
+import { boardOf, boardRow } from "./__fixtures__/library-board-dom.js";
+import { boardRowLeaf } from "./canvas-boards.js";
 import { importFoundryFrames, importFoundrySections, planSurfaceDefaults, type SurfaceDefaultsInput } from "../catalog-core/index.js";
 import { planSurfacePreviews } from "./planned-surface-previews.js";
+import { accessMatrixSample } from "../blocks/access-matrix/sample.js";
+import { OFFERED_SOURCE, adoptedOfferedComponentIntegration, offeredComponentIntegration } from "./__fixtures__/roster-source.js";
 
 const wholeLabels: CompositeStudioLabels = { ...labels, whole: { signoff: "W-signoff", proposed: "W-proposed", contract: "W-contract", contentSlots: "W-slots", configurations: "W-config", unresolved: "W-unresolved", unassessed: "W-unassessed" } };
 it('state-only original provider keeps children mounted while loading and uses one shared value session', async () => {
@@ -111,9 +115,22 @@ it('query rerun preserves actual checked value preview identity and never promot
   expect(f.save).not.toHaveBeenCalled();
 });
 async function editBoard(user: ReturnType<typeof userEvent.setup>, slot: string) {
-  const row = document.querySelector<HTMLElement>(`[data-studio-row="${slot}"]`)!;
-  await user.click(within(row.closest<HTMLElement>("[data-studio-board]")!).getByRole("button", { name: labels.board.changeSelection }));
+  const board = await waitFor(() => { const found = boardOf(slot); expect(found).toBeDefined(); return found!; });
+  await user.click(within(board).getByRole("button", { name: labels.board.changeSelection }));
 }
+/**
+ * Token boards offer presets, not sources (the library-board roster is Custom only for a token slot), so a
+ * token source change runs through the value session's own `use`, the port the canvas drives.
+ */
+let values: ReturnType<typeof useStudioSession> | undefined;
+function SessionProbe() { values = useStudioSession(); return null; }
+async function useSource(slot: string, source: string) {
+  const row = values!.rows.find(row => row.id === slot)!;
+  expect(row).toBeDefined();
+  await act(async () => { values!.use(row, source); });
+}
+/** A board's check badge: the danger Badge's Tooltip trigger, named by the check summary. */
+const checkBadge = (slot: string) => boardRow(slot)!.querySelector<HTMLButtonElement>('button[aria-label^="L-check"]')!;
 async function expandTree(user: ReturnType<typeof userEvent.setup>, layer: "components" | "sections" | "frames", target?: string) {
   const explorer = document.querySelector<HTMLElement>('[data-studio-panel="explorer"]')!;
   const placement = loadBuildCatalog().placements.find(placement => placement.layer === layer)!;
@@ -133,10 +150,10 @@ async function expandTree(user: ReturnType<typeof userEvent.setup>, layer: "comp
   }
   return explorer;
 }
-afterEach(() => { cleanup(); window.history.replaceState(null, "", "/"); });
+afterEach(() => { cleanup(); values = undefined; window.history.replaceState(null, "", "/"); });
 function Studio(props: CompositeStudioProps | StudioCanvasProps) {
   if (!("adapter" in props)) return <StudioView {...props} />;
-  return <WholeStudioProvider {...props}><StudioHeader /><StudioView header="external" /><StudioRightPanel /></WholeStudioProvider>;
+  return <WholeStudioProvider {...props}><SessionProbe /><StudioHeader /><StudioView header="external" /><StudioRightPanel /></WholeStudioProvider>;
 }
 function adapterFixture(full = false) {
   const input = componentIntegration();
@@ -169,14 +186,13 @@ it.each(["components", "sections", "frames"] as const)("keeps legacy controls an
   expect(rows.every(row => row.placement.length === 3 && row.status === "proposed")).toBe(true);
   expect(rows.find(row => row.id === "sections.band")?.unresolved).toEqual(["rhythm"]);
   expect(rows.some(row => "signoff" in row)).toBe(false);
-  expect(document.querySelectorAll('[data-studio-board]')).toHaveLength(contracts.placements.find(p => p.layer === "frames")!.nodes.flatMap(node => "children" in node ? node.children : [node]).length);
+  expect(document.querySelectorAll('[data-studio-canvas-board]')).toHaveLength(contracts.placements.find(p => p.layer === "frames")!.nodes.flatMap(node => "children" in node ? node.children : [node]).length);
 });
 it("saves projected value edits with the whole composite CAS and reloads host truth", async () => {
   const user = userEvent.setup(); const f = adapterFixture(); const hash = libraryHash(f.getLibrary());
   render(<Studio adapter={f.adapter} labels={wholeLabels} initialSlotId="tokens.surface-color" />);
   await screen.findByText("L-saved");
-  await editBoard(user, "tokens.surface-color");
-  await user.click(screen.getByRole("radio", { name: labels.useSource("foundry", "tokens.surface-color") }));
+  await useSource("tokens.surface-color", "foundry");
   await waitFor(() => expect(f.load).toHaveBeenCalledTimes(2));
   expect(f.save.mock.calls[0]?.[0]).toEqual({ baseHash: hash, changes: [{ portion: "values", change: { op: "adopt", slot: "tokens.surface-color", source: "foundry" } }] });
   await screen.findByText("L-saved");
@@ -223,8 +239,7 @@ it.each([
   expect(preview.mock.calls.every(([selected, profile]) => selected === leaf && profile.consumer === f.getLibrary().source.id && !!profile.values && !!profile.components)).toBe(true);
   if (leaf.startsWith("tokens.")) {
     const before = preview.mock.calls.at(-1)![1].selectionHash;
-    await editBoard(user, leaf);
-    await user.click(screen.getByRole("radio", { name: labels.useSource("foundry", leaf) }));
+    await useSource(leaf, "foundry");
     await waitFor(() => expect(preview.mock.calls.at(-1)![1].selectionHash).not.toBe(before));
     expect(screen.getByText(reason)).toBeVisible();
   }
@@ -241,80 +256,8 @@ it("reports a host value-preview error while retaining the value canvas", async 
   expect(screen.getByRole("treegrid", { name: labels.treeLabel })).toBeInTheDocument();
 });
 
-it("autosaves the first cold pointer click exactly once after checking the actual candidate", async () => {
-  const user = userEvent.setup(); const input = componentIntegration(); let library = input.library;
-  const slot = "tokens.surface-color", source = "shadcn@aria";
-  const startLibrary = structuredClone(library), startHash = libraryHash(library);
-  const expectedChange = { baseHash: startHash, changes: [{ portion: "values" as const, change: { op: "adopt" as const, slot, source } }] };
-  const load = vi.fn(async () => ({ library, componentOptions: input.componentOptions }));
-  const save = vi.fn(async (changes: Parameters<CompositeStudioAdapter["save"]>[0]) => {
-    library = applyLibraryChange(input.catalog, library, changes);
-    return { ok: true as const, library: structuredClone(library) };
-  });
-  render(<Studio adapter={{ kind: "composite", catalog: input.catalog, load, save }} labels={wholeLabels} initialSlotId={slot} />);
-  await screen.findByText("L-saved");
-  await editBoard(user, slot);
-  const cold = screen.getByRole("radio", { name: labels.useSource(source, slot) });
-  const cell = cold.closest('[data-studio-card]')!;
-  expect(cell.querySelector('[data-studio-candidate]')).toBeNull();
-  expect(cold).not.toBeChecked(); expect(save).not.toHaveBeenCalled(); expect(load).toHaveBeenCalledTimes(1);
-  // No focus or hover preparation: pointer-down itself demands this previously unevaluated row.
-  expect(cell.querySelector('[aria-busy="true"]')).not.toBeNull();
-  expect(cell).toHaveTextContent(labels.loading);
-  await user.pointer({ target: cold, keys: "[MouseLeft>]" });
-  expect(cold).toBe(screen.getByRole("radio", { name: labels.useSource(source, slot) }));
-  expect(cell.querySelector('[data-studio-candidate]')).not.toBeNull();
-  expect(cell.querySelector("[aria-busy]")).toBeNull();
-  expect(cold).toBeEnabled(); expect(save).not.toHaveBeenCalled();
-  await user.pointer({ target: cold, keys: "[/MouseLeft]" });
-  await waitFor(() => expect(save).toHaveBeenCalledTimes(1));
-  expect(save.mock.calls[0]![0]).toEqual({ baseHash: startHash, changes: [{ portion: "values", change: { op: "adopt", slot, source } }] });
-  await waitFor(() => expect(load).toHaveBeenCalledTimes(2));
-  expect(libraryHash(library)).not.toBe(startHash);
-  expect(library).toEqual(applyLibraryChange(input.catalog, startLibrary, expectedChange));
-  expect(save).toHaveBeenCalledTimes(1);
-});
-it("does not save a cold choice whose actual source has no usable fill", async () => {
-  const user = userEvent.setup(); const input = componentIntegration();
-  const slot = "tokens.surface-color", source = "lucide";
-  const load = vi.fn(async () => ({ library: input.library, componentOptions: input.componentOptions }));
-  const save = vi.fn<CompositeStudioAdapter["save"]>();
-  const hash = libraryHash(input.library);
-  render(<Studio adapter={{ kind: "composite", catalog: input.catalog, load, save }} labels={wholeLabels} initialSlotId={slot} />);
-  await screen.findByText("L-saved"); await editBoard(user, slot);
-  const cold = screen.getByRole("radio", { name: labels.useSource(source, slot) });
-  const cell = cold.closest('[data-studio-card]')!;
-  expect(cell.querySelector('[data-studio-candidate]')).toBeNull();
-  await user.pointer({ target: cold, keys: "[MouseLeft>]" });
-  // This source is absent from the checked row, so its evaluating affordance disappears.
-  expect(screen.queryByRole("radio", { name: labels.useSource(source, slot) })).toBeNull();
-  await user.pointer({ keys: "[/MouseLeft]" });
-  expect(save).not.toHaveBeenCalled(); expect(load).toHaveBeenCalledTimes(1);
-  expect(libraryHash(input.library)).toBe(hash);
-});
-it("does not save a cold choice rejected by actual candidate findings", async () => {
-  const user = userEvent.setup(); const input = componentIntegration();
-  const slot = "tokens.surface-color", source = "shadcn@aria";
-  const catalog = structuredClone(input.catalog);
-  const fill = catalog.values.fills.find(fill => fill.$extensions["com.clossys.fill"].slot === slot && fill.$extensions["com.clossys.fill"].source === source)!;
-  fill.tokens = { "surface-color": { base: { $type: "color", $value: "red; color: blue" } } };
-  const load = vi.fn(async () => ({ library: input.library, componentOptions: input.componentOptions }));
-  const save = vi.fn<CompositeStudioAdapter["save"]>();
-  render(<Studio adapter={{ kind: "composite", catalog, load, save }} labels={wholeLabels} initialSlotId={slot} />);
-  await screen.findByText("L-saved"); await editBoard(user, slot);
-  const cold = screen.getByRole("radio", { name: labels.useSource(source, slot) });
-  const cell = cold.closest('[data-studio-card]')!;
-  expect(cell.querySelector('[data-studio-candidate]')).toBeNull();
-  await user.pointer({ target: cold, keys: "[MouseLeft>]" });
-  expect(cold).toBe(screen.getByRole("radio", { name: labels.useSource(source, slot) }));
-  expect(cell.querySelector('[data-studio-candidate]')).not.toBeNull();
-  expect(cold).toBeDisabled(); expect(cold).not.toBeChecked();
-  expect(within(cell).getByRole("button", { name: /L-check [1-9]/ })).toBeInTheDocument();
-  await user.pointer({ target: cold, keys: "[/MouseLeft]" });
-  expect(save).not.toHaveBeenCalled(); expect(load).toHaveBeenCalledTimes(1);
-});
 it("autosaves a loaded value choice with its fresh composite base then blocks stale component evidence without a second write", async () => {
-  const user = userEvent.setup(); const input = componentIntegration(); let library = input.library;
+  const user = userEvent.setup(); const input = offeredComponentIntegration(); let library = input.library;
   const choice = { slot: "tokens.surface-color", source: "shadcn@aria" };
   const observations = JSON.stringify(input.componentOptions?.evidence?.observations);
   const load = vi.fn(async () => ({ library, componentOptions: input.componentOptions }));
@@ -322,16 +265,8 @@ it("autosaves a loaded value choice with its fresh composite base then blocks st
   const startHash = libraryHash(library);
   render(<Studio adapter={{ kind: "composite", catalog: input.catalog, load, save }} labels={wholeLabels} initialSlotId={choice.slot} />);
   await screen.findByText("L-saved");
-  await editBoard(user, choice.slot);
-  act(() => screen.getByRole("radio", { name: labels.useSource(choice.source, choice.slot) }).focus());
-  const row = document.querySelector<HTMLElement>(`[data-studio-row="${choice.slot}"]`)!;
-  const cell = [...row.querySelectorAll<HTMLElement>('[data-studio-card]')].find(cell => cell.dataset.studioCard === choice.source)!;
-  expect(cell.querySelector('[data-studio-candidate]')).not.toBeNull();
-  expect(cell.querySelector('[data-candidate-variant="tokens.surface-color.base"] [data-studio-color-swatch]')).not.toBeNull();
-  const loadedChoice = within(cell).getByRole("radio", { name: labels.useSource(choice.source, choice.slot) });
-  expect(loadedChoice).toBeEnabled(); expect(loadedChoice).not.toBeChecked();
   expect(save).not.toHaveBeenCalled(); expect(load).toHaveBeenCalledTimes(1);
-  await user.click(loadedChoice);
+  await useSource(choice.slot, choice.source);
   await waitFor(() => expect(save).toHaveBeenCalledTimes(1));
   expect(save.mock.calls[0]![0]).toEqual({ baseHash: startHash, changes: [{ portion: "values", change: { op: "adopt", slot: choice.slot, source: choice.source } }] });
   await waitFor(() => expect(load).toHaveBeenCalledTimes(2)); const firstHash = libraryHash(library);
@@ -339,10 +274,10 @@ it("autosaves a loaded value choice with its fresh composite base then blocks st
   expect(firstHash).not.toBe(startHash);
   await user.click(within(await expandTree(user, "components", "components.button")).getByRole("row", { name: "components.button", exact: true }));
   await editBoard(user, "components.button");
-  const blocked = screen.getByRole("radio", { name: labels.useSource("test-kit", "components.button") });
+  const blocked = screen.getByRole("radio", { name: labels.useSource(OFFERED_SOURCE, "components.button") });
   expect(blocked).toBeDisabled();
   await user.click(blocked);
-  const badge = document.querySelector('[data-studio-row="components.button"]')!.querySelector<HTMLButtonElement>('button[aria-label]')!;
+  const badge = checkBadge("components.button");
   fireEvent.mouseMove(document.body); await user.hover(badge);
   const tooltip = await screen.findByRole("tooltip", {}, { timeout: 2500 });
   expect(tooltip).toHaveTextContent("K5"); expect(tooltip).toHaveTextContent("K6");
@@ -355,15 +290,15 @@ it("autosaves a loaded value choice with its fresh composite base then blocks st
   expect(JSON.stringify(input.componentOptions?.evidence?.observations)).toBe(observations);
 });
 it("shows blocked materializations as inspectable candidates without an enabled adoption control", async () => {
-  const user = userEvent.setup(); const input = componentIntegration();
+  const user = userEvent.setup(); const input = offeredComponentIntegration();
   const catalog = structuredClone(input.catalog); const candidate = Object.values(catalog.components.fills[0]!.components)[0]!;
   candidate.blockers = [{ code: "source-unavailable", message: "missing source bytes" }];
   render(<Studio adapter={{ kind: "composite", catalog, load: async () => ({ library: input.library }), save: async () => ({ ok: false, reason: "unavailable" }) }} labels={wholeLabels} />);
   await screen.findByText("L-saved"); await user.click(screen.getByRole("link", { name: /Components/ }));
   await user.click(within(await expandTree(user, "components", "components.button")).getByRole("row", { name: "components.button", exact: true }));
   await editBoard(user, "components.button");
-  expect(screen.getByRole("radio", { name: labels.useSource("test-kit", "components.button") })).toBeDisabled();
-  const badge = document.querySelector('[data-studio-row="components.button"]')!.querySelector<HTMLButtonElement>('button[aria-label]')!;
+  expect(screen.getByRole("radio", { name: labels.useSource(OFFERED_SOURCE, "components.button") })).toBeDisabled();
+  const badge = checkBadge("components.button");
   fireEvent.mouseMove(document.body); await user.hover(badge);
   expect(await screen.findByRole("tooltip", {}, { timeout: 2500 })).toHaveTextContent(/blocked materialization/);
 });
@@ -381,8 +316,7 @@ it("keeps the local value and canvas when an acknowledged composite save cannot 
   const load = vi.fn().mockResolvedValueOnce(await f.load()).mockRejectedValueOnce(new Error("offline"));
   render(<Studio adapter={{ ...f.adapter, load }} labels={wholeLabels} initialSlotId="tokens.surface-color" />);
   await screen.findByText("L-saved");
-  await editBoard(user, "tokens.surface-color");
-  await user.click(screen.getByRole("radio", { name: labels.useSource("foundry", "tokens.surface-color") }));
+  await useSource("tokens.surface-color", "foundry");
   expect(await screen.findByText("L-not-saved")).toBeVisible();
   expect(document.querySelector('[data-studio-canvas]')).not.toBeNull();
   expect(screen.getAllByRole("button", { name: labels.autosave.retry }).length).toBeGreaterThan(0);
@@ -426,45 +360,17 @@ it('dispatches adapter-kind changes at the Studio host without changing hook or 
   const composite = adapterFixture(), legacyLoad = vi.fn(async () => ({ library: { source: { id: "example", kind: "consumer" as const, author: "example", license: "MIT" }, fills: [] } }));
   const legacy = { catalog: smallCatalog, load: legacyLoad, save: vi.fn(async () => ({ ok: false as const, reason: "unavailable" as const })) };
   const view = render(<StudioView adapter={legacy} catalog={smallCatalog} labels={labels} livePreview={false} />);
-  await waitFor(() => expect(document.querySelector("[data-studio-row]")).not.toBeNull()); expect(legacyLoad).toHaveBeenCalledOnce();
+  await waitFor(() => expect(document.querySelector("section[data-library-board]")).not.toBeNull()); expect(legacyLoad).toHaveBeenCalledOnce();
   view.rerender(<StudioView adapter={composite.adapter} labels={wholeLabels} livePreview={false} />);
-  await waitFor(() => expect(document.querySelector("[data-studio-row]")).not.toBeNull()); expect(composite.load).toHaveBeenCalledOnce();
+  await waitFor(() => expect(document.querySelector("section[data-library-board]")).not.toBeNull()); expect(composite.load).toHaveBeenCalledOnce();
   expect(screen.getAllByRole("link")).toHaveLength(5);
   view.rerender(<StudioView adapter={legacy} catalog={smallCatalog} labels={labels} livePreview={false} />);
-  await waitFor(() => expect(document.querySelector("[data-studio-row]")).not.toBeNull()); expect(legacyLoad).toHaveBeenCalledTimes(2);
+  await waitFor(() => expect(document.querySelector("section[data-library-board]")).not.toBeNull()); expect(legacyLoad).toHaveBeenCalledTimes(2);
   expect(composite.save).not.toHaveBeenCalled(); expect(legacy.save).not.toHaveBeenCalled();
 });
 
-it("contract boards show the host chosen line in tabular figures and name leaf rows with a mono id", async () => {
-  const f = adapterFixture();
-  const named: CompositeStudioLabels = { ...wholeLabels, chosenSummary: (chosen, total) => `${chosen} of ${total} chosen`, leafName: id => id === "sections.band" ? "Band" : undefined };
-  render(<Studio adapter={f.adapter} labels={named} initialSlotId="sections.band" />);
-  await screen.findByText("L-saved");
-  const row = document.querySelector<HTMLElement>('[data-studio-row="sections.band"]')!;
-  const label = row.querySelector<HTMLElement>("[data-studio-leaf-label]")!;
-  expect(label).toHaveTextContent("Band");
-  expect(label.querySelector("[data-studio-leaf-id]")).toHaveTextContent("sections.band");
-  expect(label.querySelector("[data-studio-leaf-id]")).toHaveClass("font-mono", "tabular-nums");
-  const board = row.closest<HTMLElement>("[data-studio-board]")!;
-  const lines = [...board.querySelectorAll<HTMLElement>("[data-studio-chosen-summary]")];
-  expect(lines.length).toBeGreaterThan(0);
-  const total = board.querySelectorAll('[data-studio-zoom-full] [data-studio-row]').length;
-  for (const line of lines) { expect(line).toHaveTextContent(new RegExp(`^\\d+ of ${total} chosen$`)); expect(line).toHaveClass("tabular-nums"); }
-});
-
-it("contract boards wrap the overview Open label inside the board instead of ellipsising it", async () => {
-  const f = adapterFixture();
-  render(<Studio adapter={f.adapter} labels={wholeLabels} initialSlotId="sections.band" />);
-  await screen.findByText("L-saved");
-  const board = document.querySelector<HTMLElement>('[data-studio-row="sections.band"]')!.closest<HTMLElement>("[data-studio-board]")!;
-  const overview = board.querySelector<HTMLElement>("[data-studio-zoom-summary]")!;
-  const label = overview.querySelector<HTMLElement>("button [data-studio-wrapping-label]")!;
-  expect(label).toHaveClass("whitespace-normal", "break-words");
-  expect(overview.querySelector(".truncate")).toBeNull();
-});
-
 it("contract boards count runtime-pending findings neutrally, apart from errors, without hiding them", async () => {
-  const input = adoptedComponentIntegration(), slot = "components.button";
+  const input = adoptedOfferedComponentIntegration(), slot = "components.button";
   const componentOptions = { ...input.componentOptions!, evidence: { ...input.componentOptions!.evidence!, observations: {} } };
   const load = vi.fn(async () => ({ library: input.library, componentOptions }));
   const save = vi.fn(async () => ({ ok: true as const, library: structuredClone(input.library) }));
@@ -476,24 +382,21 @@ it("contract boards count runtime-pending findings neutrally, apart from errors,
   expect(findings.filter(finding => finding.message.endsWith("Source and runtime observations are unavailable")).every(finding => finding.severity === "notice")).toBe(true);
   render(<Studio adapter={{ kind: "composite", catalog: input.catalog, load, save }} labels={{ ...wholeLabels, runtimePending: count => `P-pending ${count}` }} initialSlotId={slot} />);
   await screen.findByText("L-saved");
-  const board = document.querySelector<HTMLElement>(`[data-studio-zoom-full] [data-studio-row="${slot}"]`)!.closest<HTMLElement>("[data-studio-board]")!;
-  const lines = [...board.querySelectorAll<HTMLElement>("[data-studio-runtime-pending]")];
-  for (const tier of ["[data-studio-zoom-summary]", "[data-studio-zoom-compact]"]) expect(board.querySelector(`${tier} [data-studio-runtime-pending]`)).not.toBeNull();
-  for (const line of lines) { expect(line).toHaveTextContent(`P-pending ${pending}`); expect(line).toHaveClass("text-ink-secondary"); expect(line.className).not.toMatch(/danger|success/); }
-  expect(board).toHaveTextContent(`L-check ${errors}/${notices}`);
   // Scorecard: the same split, with every pending finding still listed.
   const user = userEvent.setup();
   await user.click(screen.getByRole("button", { name: labels.scorecard.title }));
   const card = screen.getByRole("region", { name: labels.scorecard.title });
   expect(card.querySelector("[data-studio-runtime-pending]")).toHaveTextContent(/^P-pending \d+$/);
   expect(within(card).getAllByText(/Source and runtime observations are unavailable/).length).toBe(Number(card.querySelector("[data-studio-runtime-pending]")!.textContent!.split(" ")[1]));
-  // Choosing view: a candidate whose only blockers are runtime-pending wears the neutral badge, stays unselectable, and lists every finding.
+  // Choosing view: a candidate whose only blockers are runtime-pending reads as the neutral pending line, never an error badge, and stays unselectable.
   await editBoard(user, slot);
-  const radio = await screen.findByRole("radio", { name: labels.useSource("test-kit", slot) });
-  const badge = await waitFor(() => { const found = radio.closest("label")!.parentElement!.querySelector<HTMLElement>("[data-studio-check-tone]"); expect(found).not.toBeNull(); return found!; });
-  expect(badge).toHaveAttribute("data-studio-check-tone", "runtime-pending");
-  expect(badge.className).not.toMatch(/danger/);
-  expect(badge.closest("button")).toHaveAccessibleName(`P-pending ${pending}`);
+  const radio = await screen.findByRole("radio", { name: labels.useSource(OFFERED_SOURCE, slot) });
+  const row = boardRow(slot)!;
+  const lines = [...row.querySelectorAll<HTMLElement>("[data-studio-runtime-pending]")];
+  expect(lines.length).toBeGreaterThan(0);
+  for (const line of lines) { expect(line).toHaveTextContent(/^P-pending [1-9]\d*$/); expect(line).toHaveClass("text-ink-secondary"); expect(line.className).not.toMatch(/danger|success/); }
+  expect(row.querySelector('button[aria-label^="L-check"]')).toBeNull();
+  expect(errors).toBe(0); expect(notices).toBeGreaterThanOrEqual(0);
   expect(radio).toBeDisabled();
 });
 
@@ -504,41 +407,48 @@ it("contract boards preview planned surface defaults labelled as planned, withou
   const plannedPreviews = planSurfacePreviews({ fills, plan: planSurfaceDefaults({ catalog: { slots, fills }, slots: slots.map(slot => slot.id), preference: ["foundry"] }) });
   const preview = vi.fn(() => <p>host-preview</p>);
   const load = vi.fn(async () => ({ ...await f.load(), preview, plannedPreviews }));
-  const named: CompositeStudioLabels = { ...wholeLabels, chosenSummary: (chosen, total) => `${chosen} of ${total} chosen`, plannedPreview: "P-planned" };
+  const named: CompositeStudioLabels = { ...wholeLabels, plannedPreview: "P-planned" };
   render(<Studio adapter={{ ...f.adapter, load }} labels={named} initialSlotId="sections.band" />);
   await screen.findByText("L-saved");
-  const row = document.querySelector<HTMLElement>('[data-studio-zoom-full] [data-studio-row="sections.band"]')!;
-  const cell = row.querySelector<HTMLElement>("[data-studio-planned]")!;
+  await waitFor(() => expect(boardRow("sections.band")).toBeDefined());
+  const cell = boardRow("sections.band")!.querySelector<HTMLElement>("[data-studio-planned]")!;
   expect(cell).toHaveAttribute("data-studio-planned", "foundry/sections.band");
-  // The band previews around the first Section its contract admits, from the specimen dataset.
-  expect(cell).toHaveTextContent("View orders");
+  expect(cell).toHaveAttribute("data-candidate-cell");
+  expect(cell).toHaveAttribute("data-preview-state", "planned");
+  // The band previews around the first Section its contract admits (the access matrix), with that Section's sample content.
+  expect(cell).toHaveTextContent(accessMatrixSample.roles[2]!.lockedReason!);
   expect(cell).toHaveTextContent("P-planned");
-  // Planned is not chosen: the host preview is never asked and the chosen line stays at zero.
+  // Planned is not chosen: the host preview is never asked, nothing is saved, and the library adopts no surface.
   expect(preview).not.toHaveBeenCalled();
-  const board = row.closest<HTMLElement>("[data-studio-board]")!;
-  for (const line of board.querySelectorAll<HTMLElement>("[data-studio-chosen-summary]")) expect(line).toHaveTextContent(/^0 of \d+ chosen$/);
-  for (const other of board.querySelectorAll<HTMLElement>("[data-studio-zoom-full] [data-studio-row]")) {
-    const id = other.dataset.studioRow!;
-    const cellHook = other.querySelector("[data-candidate-cell]");
-    if (plannedPreviews.previews[id]) { expect(other.querySelector("[data-studio-planned]")).not.toBeNull(); expect(cellHook).toHaveAttribute("data-preview-state", "planned"); expect(cellHook).toHaveAttribute("data-sample-state", "default"); }
-    else { expect(other.querySelector("[data-studio-planned]")).toBeNull(); expect(other).toHaveTextContent(labels.board.notChosen); expect(cellHook).toHaveAttribute("data-preview-state", "not-chosen"); expect(cellHook).not.toHaveAttribute("data-sample-state"); }
+  expect(f.save).not.toHaveBeenCalled();
+  expect(Object.keys(f.getLibrary().surfaces?.fills ?? {})).toEqual([]);
+  const board = boardOf("sections.band")!;
+  const rows = [...board.querySelectorAll<HTMLElement>("tr")].filter(row => boardRowLeaf(row) !== undefined);
+  expect(rows.length).toBeGreaterThan(1);
+  for (const other of rows) {
+    const id = boardRowLeaf(other)!, cellHook = other.querySelector("[data-candidate-cell]");
+    if (plannedPreviews.previews[id]) { expect(other.querySelector("[data-studio-planned]"), id).not.toBeNull(); expect(cellHook).toHaveAttribute("data-preview-state", "planned"); expect(cellHook).toHaveAttribute("data-sample-state", "default"); expect(other).toHaveTextContent("P-planned"); }
+    else { expect(other.querySelector("[data-studio-planned]"), id).toBeNull(); expect(other).toHaveTextContent(labels.board.notChosen); expect(cellHook).toHaveAttribute("data-preview-state", "not-chosen"); expect(cellHook).not.toHaveAttribute("data-sample-state"); }
   }
+  // Editing the board shows candidates, never the planned default as a selection.
+  await userEvent.click(within(board).getByRole("button", { name: labels.board.changeSelection }));
+  await waitFor(() => expect(document.querySelector('section[data-library-board][data-board-mode="edit"]')).not.toBeNull());
+  expect(document.querySelector('section[data-library-board][data-board-mode="edit"] [data-studio-planned]')).toBeNull();
 });
-
 it("vf13: a runtime-pending component tile shows its static specimen, a worded badge, the shared leaf label and the raised board plate", async () => {
-  const user = userEvent.setup(); const input = componentIntegration();
+  const user = userEvent.setup(); const input = offeredComponentIntegration();
   const preview = vi.fn(() => <p>vf13-static-specimen</p>);
   render(<Studio adapter={{ kind: "composite", catalog: structuredClone(input.catalog), load: async () => ({ library: input.library, preview }), save: async () => ({ ok: false, reason: "unavailable" }) }} labels={wholeLabels} />);
   await screen.findByText("L-saved"); await user.click(screen.getByRole("link", { name: /Components/ }));
   await user.click(within(await expandTree(user, "components", "components.button")).getByRole("row", { name: "components.button", exact: true }));
   await editBoard(user, "components.button");
-  const board = document.querySelector<HTMLElement>('[data-studio-board][data-board-mode="edit"]')!;
+  const board = document.querySelector<HTMLElement>('section[data-library-board][data-board-mode="edit"]')!;
   expect(board).toHaveClass("bg-surface-raised");
   expect(within(board).getAllByText("vf13-static-specimen").length).toBeGreaterThan(0);
   expect(within(board).queryByText(labels.previewUnavailable)).toBeNull();
   const header = board.querySelector('th[scope="row"]')!;
-  expect(header.querySelector("[data-studio-leaf-label]")).toHaveClass("font-normal");
-  expect(header.querySelector("[data-studio-leaf-id]")).toHaveClass("font-mono");
-  for (const badge of board.querySelectorAll("[data-studio-check-tone]")) expect(badge.textContent!.trim().length).toBeGreaterThan(1);
-  expect(screen.getByRole("radio", { name: labels.useSource("test-kit", "components.button") })).toBeDisabled();
+  expect(header.querySelector("[data-leaf-label]")).toHaveClass("font-normal");
+  expect(header.querySelector("[data-leaf-id]")).toHaveClass("font-mono");
+  for (const badge of board.querySelectorAll('button[aria-label^="L-check"]')) expect(badge.textContent!.trim().length).toBeGreaterThan(1);
+  expect(screen.getByRole("radio", { name: labels.useSource(OFFERED_SOURCE, "components.button") })).toBeDisabled();
 });

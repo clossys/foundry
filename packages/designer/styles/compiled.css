@@ -1731,6 +1731,9 @@
     letter-spacing: var(--tracking-tight, -0.02em);
     transform: scaleX(var(--font-display-scale-x, 1));
   }
+  .transform {
+    transform: var(--tw-rotate-x,) var(--tw-rotate-y,) var(--tw-rotate-z,) var(--tw-skew-x,) var(--tw-skew-y,);
+  }
   .transform-none {
     transform: none;
   }
@@ -1798,9 +1801,6 @@
   .list-none {
     list-style-type: none;
   }
-  .grid-flow-col {
-    grid-auto-flow: column;
-  }
   .ledger-columns-two {
     grid-template-columns: minmax(0, 1fr);
     @media (width >= 48rem) {
@@ -1839,9 +1839,6 @@
   }
   .grid-cols-3 {
     grid-template-columns: repeat(3, minmax(0, 1fr));
-  }
-  .grid-cols-4 {
-    grid-template-columns: repeat(4, minmax(0, 1fr));
   }
   .grid-cols-\[auto_1fr\] {
     grid-template-columns: auto 1fr;
@@ -2856,9 +2853,6 @@
   .text-display-m {
     font-size: var(--text-display-m, 44px);
   }
-  .text-display-xl {
-    font-size: var(--text-display-xl, 72px);
-  }
   .text-h0 {
     font-size: var(--text-h0, 32px);
   }
@@ -3216,6 +3210,9 @@
   }
   .frame-region-closed {
     inline-size: 0;
+  }
+  .library-column-bound {
+    max-inline-size: 420px;
   }
   .ring-inset {
     --tw-ring-inset: inset;
@@ -4482,6 +4479,26 @@
   inherits: false;
   initial-value: 0;
 }
+@property --tw-rotate-x {
+  syntax: "*";
+  inherits: false;
+}
+@property --tw-rotate-y {
+  syntax: "*";
+  inherits: false;
+}
+@property --tw-rotate-z {
+  syntax: "*";
+  inherits: false;
+}
+@property --tw-skew-x {
+  syntax: "*";
+  inherits: false;
+}
+@property --tw-skew-y {
+  syntax: "*";
+  inherits: false;
+}
 @property --tw-space-y-reverse {
   syntax: "*";
   inherits: false;
@@ -4727,6 +4744,11 @@
     *, ::before, ::after, ::backdrop {
       --tw-border-spacing-x: 0;
       --tw-border-spacing-y: 0;
+      --tw-rotate-x: initial;
+      --tw-rotate-y: initial;
+      --tw-rotate-z: initial;
+      --tw-skew-x: initial;
+      --tw-skew-y: initial;
       --tw-space-y-reverse: 0;
       --tw-divide-y-reverse: 0;
       --tw-border-style: solid;

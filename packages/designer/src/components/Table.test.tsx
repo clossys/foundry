@@ -1,8 +1,10 @@
 import { useState } from "react";
 import { describe, expect, it, vi } from "vitest";
-import { render, screen, within } from "@testing-library/react";
+import { act, render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import type { ColumnSize, Key, SortDescriptor } from "react-aria-components";
+import { parseDate } from "@internationalized/date";
+import { DateField } from "./DateField.js";
 import { Table } from "./Table.js";
 
 interface PromptRow {
@@ -233,6 +235,68 @@ function ResizableTable({ onResize, onResizeEnd }: { onResize?: (widths: Map<Key
     </Table.ResizableContainer>
   );
 }
+
+/** Two rows whose second column holds a text-entry control: a DateField, then a plain text input. */
+function EditableTable() {
+  return (
+    <Table aria-label="Schedule">
+      <Table.Header>
+        <Table.Column id="name" isRowHeader>Name</Table.Column>
+        <Table.Column id="due">Due</Table.Column>
+      </Table.Header>
+      <Table.Body>
+        <Table.Row id="a">
+          <Table.Cell>Ada</Table.Cell>
+          <Table.Cell><DateField label="Due" defaultValue={parseDate("2026-10-27")} /></Table.Cell>
+        </Table.Row>
+        <Table.Row id="b">
+          <Table.Cell>Grace</Table.Cell>
+          <Table.Cell><input aria-label="Note" defaultValue="later" /></Table.Cell>
+        </Table.Row>
+        <Table.Row id="c">
+          <Table.Cell>Alan</Table.Cell>
+          <Table.Cell>9</Table.Cell>
+        </Table.Row>
+      </Table.Body>
+    </Table>
+  );
+}
+
+describe("Table text entry inside a cell", () => {
+  it("a DateField segment in a cell keeps ArrowUp/ArrowDown: the value changes and focus stays in its row", async () => {
+    const user = userEvent.setup();
+    render(<EditableTable />);
+    const field = screen.getByRole("group", { name: "Due" });
+    const day = within(field).getAllByRole("spinbutton").find(segment => /day/i.test(segment.getAttribute("aria-label") ?? ""))!;
+    expect(day).toHaveAttribute("aria-valuenow", "27");
+    await user.click(day);
+    expect(day).toHaveFocus();
+    await user.keyboard("{ArrowUp}");
+    expect(day).toHaveAttribute("aria-valuenow", "28");
+    expect(day).toHaveFocus();
+    await user.keyboard("{ArrowDown}{ArrowDown}");
+    expect(day).toHaveAttribute("aria-valuenow", "26");
+    expect(day).toHaveFocus();
+  });
+
+  it("a text input in a cell keeps its arrow keys; leaving it restores the grid's row navigation", async () => {
+    const user = userEvent.setup();
+    render(<EditableTable />);
+    const note = screen.getByRole("textbox", { name: "Note" });
+    await user.click(note);
+    await user.keyboard("{ArrowUp}");
+    expect(note).toHaveFocus();
+    await user.keyboard("{ArrowDown}");
+    expect(note).toHaveFocus();
+    // Focus on the cell itself, outside the input: arrows move between rows again.
+    const cell = note.closest<HTMLElement>("[role=gridcell]")!;
+    act(() => cell.focus());
+    await user.keyboard("{ArrowDown}");
+    expect(document.activeElement?.textContent).toBe("9");
+    await user.keyboard("{ArrowUp}");
+    expect(screen.getByRole("row", { name: /Grace/ })).toContainElement(document.activeElement as HTMLElement);
+  });
+});
 
 describe("Table column resizing", () => {
   it("renders a labelled resizer only on columns that allow resizing", () => {

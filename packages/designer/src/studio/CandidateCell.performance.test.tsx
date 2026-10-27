@@ -1,11 +1,13 @@
 import { expect, it, vi } from "vitest";
 import { render, fireEvent, screen, within, waitFor } from "@testing-library/react";
+import { boardOf, boardRow } from "./__fixtures__/library-board-dom.js";
 import { render as renderFrame } from "./__fixtures__/frame.js";
 import { StudioProvider, useStudioSession } from "./StudioProvider.js";
 import { Studio } from "./Studio.js";
 import { CandidateCell } from "./CandidateCell.js";
 import { CompactPreview } from "./previews.js";
 import { buildCandidates } from "./model.js";
+import { orderTokenMembers } from "../tokens/preview/member-order.js";
 import { adopt, labels, smallCatalog } from "./__fixtures__/studio.js";
 
 vi.mock("./previews.js", async importOriginal => {
@@ -33,9 +35,10 @@ it("reuses the actual selected preview across matrix reprojection and updates ev
   expect(preview).toHaveBeenCalledTimes(initial * 2);
   expect(preview.mock.calls.at(-changed.members.length)?.[0].candidate.members[0]?.member.css.light).toBe("#123456");
 
+  // Member input order never decides display order: token members always display in `orderTokenMembers` order.
   const reordered = { ...changed, members: [...changed.members].reverse() };
   view.rerender(<CandidateCell candidate={reordered} labels={labels} />);
-  expect(view.container.querySelector("[data-candidate-variant]")?.getAttribute("data-candidate-variant")).toBe(reordered.members[0]?.id);
+  expect([...view.container.querySelectorAll("[data-candidate-variant]")].map(node => node.getAttribute("data-candidate-variant"))).toEqual(orderTokenMembers(reordered.members).map(entry => entry.id));
   const reindexed = { ...reordered, index: reordered.index + 1 };
   view.rerender(<CandidateCell candidate={reindexed} labels={labels} />);
   expect(view.container.querySelector("[data-studio-candidate]")?.getAttribute("data-studio-candidate")).toBe(String(reindexed.index));
@@ -71,10 +74,9 @@ it("refreshes prompt token context and host callbacks after the working selectio
   await screen.findByRole("link", { name: "Tokens" });
   fireEvent.click(screen.getByText("Change context fixture"));
   view.rerender(<Surface check={nextCheck} />);
-  const row = view.container.querySelector('[data-studio-row="tokens.surface-color"]')!;
-  const board = row.closest<HTMLElement>("[data-studio-board]")!;
+  const board = await waitFor(() => boardOf("tokens.surface-color", view.container)!);
   fireEvent.click(within(board).getByRole("button", { name: labels.board.changeSelection }));
-  const current = view.container.querySelector('[data-studio-row="tokens.surface-color"]')!;
+  const current = await waitFor(() => boardRow("tokens.surface-color", view.container)!);
   fireEvent.click(within(current as HTMLElement).getByRole("button", { name: labels.board.create }));
   const dialog = await screen.findByRole("dialog");
   const prompt = JSON.parse(dialog.querySelector("code")!.textContent!.split("\n\n").slice(1).join("\n\n"));

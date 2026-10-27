@@ -54,12 +54,11 @@ function scan(files: DogfoodInput["files"], localModules: DogfoodInput["localMod
 
 /**
  * Known residuals at base 73ae54c52, each owned by the lane fixing that file. This list may only
- * shrink: a count may go down or a row may be deleted, never added or raised. When L3 and L7
- * land, delete their rows and flip the `it.fails` below to `it`.
+ * shrink: a count may go down or a row may be deleted, never added or raised. L3 landed (Board.tsx
+ * is gone; CandidateCell.tsx has no inline style), so its rows are deleted. When L7 lands, delete
+ * its rows and flip the `it.fails` below to `it`.
  */
-const PINNED_RESIDUALS: readonly { owner: "L3" | "L7"; file: string; category: Category; count: number }[] = [
-  { owner: "L3", file: "src/studio/Board.tsx", category: "inline-style", count: 2 },
-  { owner: "L3", file: "src/studio/CandidateCell.tsx", category: "inline-style", count: 2 },
+const PINNED_RESIDUALS: readonly { owner: "L7"; file: string; category: Category; count: number }[] = [
   { owner: "L7", file: "src/studio/asset-specimens.tsx", category: "inline-style", count: 2 },
   { owner: "L7", file: "src/studio/component-specimen-contained.tsx", category: "raw-rac-import", count: 1 },
   { owner: "L7", file: "src/studio/component-specimen-contained.tsx", category: "inline-style", count: 1 },
@@ -77,7 +76,7 @@ const { report, residuals } = scan(studio, sources.localModules);
 describe("Studio dogfood, zero allowlist (criterion 9)", () => {
   it("scans every shipped Studio source with no exception or ignore marker honoured", () => {
     const names = studio.map(row => row.file);
-    for (const file of ["Board.tsx", "CandidateCell.tsx", "TreeView.tsx", "WholeStudio.tsx", "specimen-dataset.ts", "component-specimen-samples.tsx"]) expect(names).toContain(STUDIO + file);
+    for (const file of ["canvas-boards.tsx", "CandidateCell.tsx", "TreeView.tsx", "WholeStudio.tsx", "specimen-dataset.ts", "component-specimen-samples.tsx"]) expect(names).toContain(STUDIO + file);
     expect(names.some(name => /\.test\.[cm]?[jt]sx?$/.test(name))).toBe(false);
     expect(report.exceptions).toEqual([]);
     expect(report.ignored).toEqual([]);
@@ -112,7 +111,7 @@ describe("Studio dogfood, zero allowlist (criterion 9)", () => {
     expect(excess).toEqual([]);
   });
 
-  // Fails today because of the pinned residuals above (L3: Board.tsx, CandidateCell.tsx; L7:
+  // Fails today because of the pinned residuals above (L7:
   // specimen-dataset.ts, asset-specimens.tsx, component-specimen-samples.tsx,
   // component-specimen-contained.tsx). When `it.fails` itself goes red, Studio is clean: flip to `it`.
   it.fails("is strictly clean: no raw RAC import, raw html control, raw colour or inline style", () => {

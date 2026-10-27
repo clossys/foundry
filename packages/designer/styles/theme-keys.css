@@ -1312,6 +1312,9 @@
   @media (width >= 1024px) { padding: var(--spacing-xl, 24px); }
 }
 @utility frame-region-closed { inline-size: 0; }
+/* The library column cap: the AppFrame right panel preset's maximum
+   (APP_FRAME_RIGHT_PANEL_CONFIG.max), pinned equal by choices.bounds.test.tsx. */
+@utility library-column-bound { max-inline-size: 420px; }
 @utility frame-nav-width {
   inline-size: 0;
   @media (width >= 1024px) { inline-size: var(--ui-layout-sidebar-w); }

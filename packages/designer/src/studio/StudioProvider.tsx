@@ -45,6 +45,8 @@ function useStudioState({ catalog: catalogProp, adapter, labels, initialSlotId =
   const [expanded, setExpanded] = useState<ReadonlySet<string>>(new Set());
   const [visibleRows, setVisibleRows] = useState<ReadonlySet<string>>(new Set());
   const [demandedRow, setDemandedRow] = useState<string>();
+  // Rows of boards open for editing: their choice matrix needs every row's candidates, visible or not.
+  const [editRows, setEditRows] = useState<ReadonlySet<string>>(new Set());
   const [focusedCell, setFocusedCell] = useState<{ row: string; source?: string }>({ row: initialSlotId });
   const [groupChoices, setGroupChoices] = useState<Record<string, string>>({});
   const [scoreOpen, setScoreOpen] = useState(false);
@@ -110,14 +112,14 @@ function useStudioState({ catalog: catalogProp, adapter, labels, initialSlotId =
   const evaluation = useMemo(() => working ? createStudioEvaluation({ catalog, working }) : undefined, [catalog, working]);
   const candidateCache = useMemo(() => new Map<string, Candidate[]>(), [catalog, library, working]);
   const evaluateRows = useMemo(() => {
-    const ids = new Set(visibleRows);
+    const ids = new Set([...visibleRows, ...editRows]);
     if (demandedRow) ids.add(demandedRow);
     for (const id of expanded) {
       ids.add(id);
       if (library) scopeTargets({ catalog, library, slotId: id, scope: "member" }).forEach(member => ids.add(member));
     }
     return ids;
-  }, [catalog, library, visibleRows, demandedRow, expanded]);
+  }, [catalog, library, visibleRows, editRows, demandedRow, expanded]);
   const rows = useMemo(() => library && working && pending ? matrixRows({ catalog, placements: activeCatalog.placements, library, working, cache: candidateCache, evaluation, changes: pending, expanded, evaluateRows }) : [], [catalog, library, working, candidateCache, evaluation, pending, expanded, evaluateRows, activeCatalog]);
   const boards = useMemo(() => library && working ? matrixBoards({ catalog: activeCatalog, library, working }, rows) : [], [activeCatalog, library, working, rows]);
   const sources = useMemo(() => library ? matrixSources({ catalog, library }) : [], [catalog, library]);
@@ -158,7 +160,7 @@ function useStudioState({ catalog: catalogProp, adapter, labels, initialSlotId =
   const closeScore = (): void => { setScoreOpen(false); scoreTrigger.current?.focus(); };
   const reset = (): void => { apply(resetList); if (focusedRow?.scope === "node") setGroupChoices(current => { const next = { ...current }; delete next[focusedRow.target]; return next; }); };
   return { catalog, activeCatalog, layer, layers, setLayer: setActiveLayer, labels, adapter, phase: ready ?? (sharedLayer ? { status: sharedLayer.phase ?? 'loading' } : phase), ready, pending, working, tree, groups, counts, rows, boards, sources, summary, resolved, focusedRow, focused, live,
-    livePreview, saving, autosave, apply, slotId, setSlotId, expanded, setExpanded, focusedCell, setFocusedCell, showRows, requestRow, groupChoices, boardElements, rowElements, canvasActions, cameras,
+    livePreview, saving, autosave, apply, slotId, setSlotId, expanded, setExpanded, focusedCell, setFocusedCell, showRows, requestRow, setEditRows, groupChoices, boardElements, rowElements, canvasActions, cameras,
     scoreOpen, setScoreOpen, scoreTrigger, closeScore, canReset, reset, use, generateStarter };
 }
 type StudioSession = ReturnType<typeof useStudioState>;

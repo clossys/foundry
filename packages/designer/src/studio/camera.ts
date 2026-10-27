@@ -1,5 +1,4 @@
 import { UI_RING_FOCUS } from "../components/internal/ui-vars.js";
-import { TOKENS } from "../tokens/tokens.js";
 
 export interface CameraPose { x: number; y: number; zoom: number }
 export interface StudioCamera {
@@ -24,7 +23,7 @@ export function createStudioCamera({ viewport, world, initial, onPose }: {
   const size = () => ({ width: viewport.clientWidth || 1, height: viewport.clientHeight || 1 });
   const paint = (animate = false): void => {
     world.style.transformOrigin = "0 0";
-    world.style.transition = animate ? `transform 250ms var(--ease-default, ${TOKENS["--ease-default"]!.value})` : "none";
+    world.style.transition = animate ? "transform var(--ui-duration-default) var(--ease-default)" : "none";
     world.style.transform = `translate(${pose.x}px, ${pose.y}px) scale(${pose.zoom})`;
     const semantic = pose.zoom < .5 ? "summary" : pose.zoom <= .9 ? "quiet" : "full";
     world.dataset.semantic = semantic;
@@ -55,7 +54,7 @@ export function createStudioCamera({ viewport, world, initial, onPose }: {
     highlightTimer = setTimeout(clearHighlight, 250);
     if (options.focus) element.focus({ preventScroll: true });
   };
-  const isControl = (target: EventTarget | null): boolean => target instanceof Element && Boolean(target.closest("input, textarea, select, button, a, [role=radio], [role=tab], [data-studio-panel]"));
+  const isControl = (target: EventTarget | null): boolean => target instanceof Element && Boolean(target.closest("input, textarea, select, button, a, [role=radio], [role=tab], [role=spinbutton], [role=textbox], [contenteditable]:not([contenteditable=false]), [data-studio-panel]"));
   const wheel = (event: WheelEvent): void => {
     if (event.target instanceof Element && event.target.closest("[data-studio-panel]")) return;
     event.preventDefault();

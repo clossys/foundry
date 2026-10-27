@@ -10,6 +10,7 @@ import { planSurfacePreviews } from "./planned-surface-previews.js";
 import { specimenDataset } from "./specimen-dataset.js";
 import { Studio as StudioView, StudioHeader, StudioRightPanel } from "./index.js";
 import { WholeStudioProvider } from "./WholeStudioProvider.js";
+import { boardItem, boardOf, boardRow } from "./__fixtures__/library-board-dom.js";
 import type { CompositeStudioLabels, CompositeStudioSnapshot } from "./types.js";
 
 const wholeLabels: CompositeStudioLabels = { ...labels, whole: { signoff: "W-signoff", proposed: "W-proposed", contract: "W-contract", contentSlots: "W-slots", configurations: "W-config", unresolved: "W-unresolved", unassessed: "W-unassessed" } };
@@ -38,7 +39,12 @@ function mount(preview: CompositeStudioSnapshot["preview"], samples: Parameters<
   const load = vi.fn(async (): Promise<CompositeStudioSnapshot> => ({ library: structuredClone(fixture.library), surfaceOptions: fixture.options, preview, plannedPreviews }));
   render(<WholeStudioProvider adapter={{ kind: "composite", catalog: fixture.catalog, load, save: async () => ({ ok: false, reason: "unavailable" }) }} labels={wholeLabels} initialSlotId="sections.faq"><StudioHeader /><StudioView header="external" /><StudioRightPanel /></WholeStudioProvider>);
 }
-const row = (slot: string) => document.querySelector<HTMLElement>(`[data-studio-zoom-full] [data-studio-row="${slot}"]`);
+const row = (slot: string) => boardRow(slot) ?? null;
+/** "L-saved" shows once the library loads; the boards mount after the composite profile evaluates. */
+async function loaded() {
+  await screen.findByText("L-saved");
+  await waitFor(() => expect(document.querySelector("section[data-library-board]")).not.toBeNull());
+}
 
 describe("adopted package-pointer surfaces on the Studio board", { timeout: 120_000 }, () => {
   it("previews every adopted Section and Frame with its real export and sample content", async () => {
@@ -46,7 +52,7 @@ describe("adopted package-pointer surfaces on the Studio board", { timeout: 120_
     // Every leaf with sample text is an adopted leaf of the fixture, so none is skipped.
     expect(fixture.decisions.map(row => row.slot)).toEqual(expect.arrayContaining(Object.keys(SAMPLE_TEXT)));
     mount(() => undefined);
-    await screen.findByText("L-saved");
+    await loaded();
     const check = (slots: readonly string[]) => {
       for (const slot of slots) {
         const cell = row(slot);
@@ -78,7 +84,7 @@ describe("adopted package-pointer surfaces on the Studio board", { timeout: 120_
   it("keeps the host's own preview first, and without a host sample the Publisher frame is unavailable rather than imitated", async () => {
     const user = userEvent.setup();
     mount(leaf => leaf === "sections.data-table" ? <p>host-table</p> : undefined, {});
-    await screen.findByText("L-saved");
+    await loaded();
     expect(row("sections.data-table")).toHaveTextContent("host-table");
     expect(row("sections.data-table")).not.toHaveTextContent(specimenDataset.sections.dataTable.rows[1]!.customer);
     await user.click(screen.getByRole("link", { name: /Frames/ }));
@@ -91,17 +97,17 @@ describe("adopted package-pointer surfaces on the Studio board", { timeout: 120_
   it("previews adopted package leaves in the board's choosing view as well", async () => {
     const user = userEvent.setup();
     mount(() => undefined);
-    await screen.findByText("L-saved");
-    const board = row("sections.data-table")!.closest<HTMLElement>("[data-studio-board]")!;
+    await loaded();
+    const board = boardOf("sections.data-table")!;
     await user.click(within(board).getByRole("button", { name: labels.board.changeSelection }));
-    const editing = document.querySelector<HTMLElement>('[data-studio-board][data-board-mode="edit"] [data-studio-row="sections.data-table"]');
-    expect(editing).not.toBeNull();
+    const editing = boardItem("sections.data-table", document.querySelector<HTMLElement>('section[data-library-board][data-board-mode="edit"]')!);
+    expect(editing).toBeDefined();
     expect(editing).toHaveTextContent(specimenDataset.sections.dataTable.rows[1]!.customer);
   });
 
   it("vf35: renders adopted package leaves in the host's requested sample state and names it on the cell", async () => {
     mount(() => undefined, HOST_SAMPLES, "empty");
-    await screen.findByText("L-saved");
+    await loaded();
     const list = row("sections.resource-list")!.querySelector<HTMLElement>("[data-candidate-cell]")!;
     expect(list).toHaveAttribute("data-sample-state", "empty");
     expect(list).toHaveTextContent("No projects yet");
@@ -114,7 +120,7 @@ describe("adopted package-pointer surfaces on the Studio board", { timeout: 120_
 
   it("vf35: an adopted leaf with no planned row still draws the requested state through its own package preview", async () => {
     mount(() => undefined, HOST_SAMPLES, "empty", pointer => pointer.endsWith("#DataTable"));
-    await screen.findByText("L-saved");
+    await loaded();
     const orders = row("sections.data-table")!.querySelector<HTMLElement>("[data-candidate-cell]")!;
     expect(orders).toHaveAttribute("data-sample-state", "empty");
     expect(orders).toHaveTextContent("No orders yet");

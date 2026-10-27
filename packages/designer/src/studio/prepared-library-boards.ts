@@ -90,9 +90,10 @@ export function prepareCompositeLibraryBoard(input: PreparedCompositeBoardOption
     : [...(input.input.catalog.surfaces?.fills ?? []), ...(input.input.library.surfaces?.fills ?? [])].filter(doc => leaves.has(doc.$extensions['com.clossys.fill'].slot)).map(doc => doc.$extensions['com.clossys.fill'].source);
   const selectedSources = input.layer === 'components'
     ? [...leaves].flatMap(leaf => input.profile.components.components[leaf] ? [input.profile.components.components[leaf]!.descriptor.source] : [])
-    : Object.values(input.profile.surfaces?.fills ?? {}).filter(fill => leaves.has(fill.document.$extensions['com.clossys.fill'].slot)).map(fill => fill.document.$extensions['com.clossys.fill'].source);
+    : [...Object.values(input.profile.surfaces?.fills ?? {}).filter(fill => leaves.has(fill.document.$extensions['com.clossys.fill'].slot)).map(fill => fill.document.$extensions['com.clossys.fill'].source),
+      ...(input.snapshot.runtime?.manifest.fills ?? []).filter(fill => leaves.has(fill.leaf) && !input.profile.surfaces?.fills[fill.leaf as `sections.${string}`]).map(fill => fill.library)];
   const association = associatedHashes(input.mode === 'edit' ? [...selectedSources, ...candidates] : selectedSources, input);
-  const prepared = compositeLibraryBoard({ ...input, sourceHashes: association.hashes,
+  const prepared = compositeLibraryBoard({ ...input, sourceHashes: association.hashes, workflow: input.workflow,
     prompt: (leaf, refresh) => compositeBoardPrompt({ board: input.board, leaf, consumer: input.input.library.source.id, slots: input.contracts.slots, profile: input.profile, workflow: input.workflow, returnStep: input.labels.board.returnStep }, refresh) }, input.mode === 'view' ? { currentSelectionOnly: true } : undefined);
   return { records: prepared.records, changeFor: prepared.changeFor, previews: association.missing.length
     ? { status: 'pending', code: 'SOURCE_HASH_ASSOCIATION_UNAVAILABLE', sources: association.missing }
