@@ -43,7 +43,9 @@ export interface DogfoodInput {
   /** Consumer mode follows source modules; these identities never suppress their findings. */
   consumerBoundary?: { readonly pages: readonly string[]; readonly sourceImports: Readonly<Record<string, string>>; readonly pageChromeFiles?: readonly string[];
     /** Exact edges resolved from the runner's explicit project-source contract. */
-    readonly projectSourceImports?: readonly string[] };
+    readonly projectSourceImports?: readonly string[];
+    /** Exact stylesheet edges the runner resolved and scanned (consumer CSS closure). */
+    readonly stylesheetImports?: Readonly<Record<string, string>> };
 }
 export interface DogfoodCompose { file: string; line: number; tag: string; slotId: string; module: string; symbol: string }
 export const STRUCTURAL_TAGS = Object.freeze(["div", "span", "section", "ul", "ol", "li", "p", "h1", "h2", "h3", "h4", "h5", "h6", "dl", "dt", "dd", "code", "pre", "header", "main", "nav", "footer"] as const);
@@ -108,7 +110,7 @@ function parseJsx(source: string, jsx = true): Parsed {
       if (namedExport[3]) result.modules.add(namedExport[3]);
       result.nonCode.push({ start: i, end: i + namedExport[0].length }); i += namedExport[0].length; return true;
     }
-    const reexport = /^(?:export\s+(?:\{[^}]*\}|\*)\s+from\s*|import\s*)(["'])([^"']+)\1/.exec(source.slice(i));
+    const reexport = /^(?:export\s+(?:\{[^}]*\}|\*(?:\s+as\s+(?:[A-Za-z_$][\w$]*|"[^"]*"|'[^']*'))?)\s+from\s*|import\s*)(["'])([^"']+)\1/.exec(source.slice(i));
     if (reexport) { result.modules.add(reexport[2]!); result.nonCode.push({ start: i, end: i + reexport[0].length }); i += reexport[0].length; return true; }
     const match = /^import\s+(?!type\b)([\s\S]*?)\s+from\s*(["'])([^"']+)\2/.exec(source.slice(i));
     if (!match) return false;
@@ -258,7 +260,8 @@ function lexicalReactProviders(source: string, parsed: Parsed): Set<string> {
 }
 
 /** Import/export edges come from the same comment/string-aware source walk. */
-export function dogfoodSourceModules(source: string): string[] { return [...parseJsx(source).modules]; }
+/** `jsx` is false for TypeScript-only (.ts/.mts/.cts) sources, as runDogfood parses them. */
+export function dogfoodSourceModules(source: string, jsx = true): string[] { return [...parseJsx(source, jsx).modules]; }
 
 function importedIdentity(node: Element, parsed: Parsed, input: DogfoodInput, file: string) {
   const [binding, ...parts] = node.tag.split("."), imported = parsed.imports.get(binding!);
@@ -418,7 +421,7 @@ const rawAria = (module: string) => module === "react-aria-components" || module
 function qualifiedConsumerModule(module: string, file: string, input: DogfoodInput): boolean {
   if (module.startsWith(".") || consumerRuntimeModules.has(module) || module.startsWith("node:") || module === DOGFOOD_PACKAGE_NAME || module.startsWith(`${DOGFOOD_PACKAGE_NAME}/`) || module === "next" || module.startsWith("next/")) return true;
   const edge = `${file}:${module}`;
-  return Object.hasOwn(input.consumerBoundary?.sourceImports ?? {}, edge) || Object.hasOwn(input.localModules ?? {}, edge);
+  return Object.hasOwn(input.consumerBoundary?.sourceImports ?? {}, edge) || Object.hasOwn(input.consumerBoundary?.stylesheetImports ?? {}, edge) || Object.hasOwn(input.localModules ?? {}, edge);
 }
 /** Raw px in @media/@container thresholds (G5), matching the strict checker's
  * raw CSS pixel query rule; declarations are already covered by the value engine. */
@@ -481,10 +484,10 @@ export function runDogfood(input: DogfoodInput) {
     if (page && (leases.length !== 1 || leases.some(node => !node.attributes.some(attr => attr.name === "id" && attr.value) || !node.attributes.some(attr => attr.name === "header" && attr.value))))
       add("DF8", { tag: "page", start: 0, end: 0, attributes: [] }, "Page composition graph requires exactly one imported PageHeaderModule with explicit id and header.");
     if (consumer) {
-      if ([...parsed.modules].some(module => module === "react-aria-components" || module.startsWith("react-aria-components/"))) add("DF5", { tag: "import", start: 0, end: 0, attributes: [] }, "Raw react-aria-components import bypasses the consumer component boundary.");
-      // Type-only TypeScript sources import at runtime too; their modules are
-      // collected without JSX so type syntax never reads as markup.
+      // TypeScript sources (.ts/.mts/.cts) import at runtime too; their modules
+      // are collected without JSX so type syntax never reads as markup.
       const sourceModules = /\.[cm]?ts$/.test(file.file) && !/\.d\.[cm]?ts$/.test(file.file) ? parseJsx(file.content, false).modules : parsed.modules;
+      if ([...sourceModules].some(rawAria)) add("DF5", { tag: "import", start: 0, end: 0, attributes: [] }, "Raw react-aria-components import bypasses the consumer component boundary.");
       for (const module of [...sourceModules].sort()) if (!rawAria(module) && !qualifiedConsumerModule(module, file.file, input)) {
         const quoted = new RegExp(`(["'])${module.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}\\1`).exec(file.content), start = quoted?.index ?? 0;
         add("DF5", { tag: "import", start, end: start + (quoted?.[0].length ?? 0), attributes: [] }, `Unqualified external import ${module}: not project source the runner resolved, the React/Next.js runtime, a node: builtin or a ${DOGFOOD_PACKAGE_NAME} entry.`);

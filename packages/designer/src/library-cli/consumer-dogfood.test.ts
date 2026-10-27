@@ -217,6 +217,40 @@ describe("consumer source boundary (zero finding allowlist)", () => {
     // The non-consumer catalog mode keeps its previous contract.
     expect(runDogfood({ files: [{ file: "Page.tsx", content: 'import clsx from "clsx"; export const x=clsx;' }] }).findings).toEqual([]);
   });
+  it("parses reached TypeScript sources (.ts/.mts/.cts) for raw react-aria-components runtime imports, never type-only ones (G4-R1a)", async () => {
+    await write("Page.tsx", `${page} import {AriaButton} from "@/lib/aria"; import {AriaMenu} from "./src/lib/menu.mts"; import {AriaList} from "./src/lib/legacy.cts"; import {first} from "@/lib/generic"; import type {Id} from "@/lib/types"; import {types} from "@/lib/types"; import {plain} from "./src/lib/plain.mjs";`);
+    await write("src/lib/aria.ts", 'import {Button} from "react-aria-components"; export const AriaButton = Button;');
+    await write("src/lib/menu.mts", 'import {Menu} from "react-aria-components/Menu"; export const AriaMenu = Menu;');
+    await write("src/lib/legacy.cts", 'import {ListBox} from "react-aria-components"; export const AriaList = ListBox;');
+    await write("src/lib/generic.ts", 'export function first<T>(rows: T[]): T { return rows[0]!; }\nexport const make = <T>(row: T) => row;\nimport {Popover} from "react-aria-components";\nimport {deep} from "./deep";\nexport const AriaPopover = [Popover, deep];');
+    await write("src/lib/deep.ts", 'import {Tabs} from "react-aria-components"; export const deep = Tabs;');
+    await write("src/lib/plain.mjs", 'import {Switch} from "react-aria-components"; export const plain = Switch;');
+    await write("src/lib/types.ts", 'import type {Key} from "react-aria-components"; export type {Selection} from "react-aria-components"; export type Id = Key; export const types = 1;');
+    const findings = runConsumerDogfood(await sources()).findings.filter(row => row.code === "DF5" && row.tag === "import");
+    expect(findings.filter(row => /Raw react-aria-components/.test(row.evidence)).map(row => row.file).sort()).toEqual(["src/lib/aria.ts", "src/lib/deep.ts", "src/lib/generic.ts", "src/lib/legacy.cts", "src/lib/menu.mts", "src/lib/plain.mjs"]);
+    expect(findings.filter(row => /Unqualified external import/.test(row.evidence))).toEqual([]);
+  });
+  it("collects namespace and star re-exports in reached sources as imports, never type-only re-exports (G4-R1b)", async () => {
+    await write("Page.tsx", `${page} export * as Widgets from "unqualified-ui"; export * from "other-ui"; export type * from "types-only-ui"; export type * as Types from "types-ns-ui"; export * as Local from "./local-ns"; export * as "kebab-ns" from "string-ns-ui"; import {Kit} from "@/lib/barrel";`);
+    await write("local-ns.ts", "export const one = 1;");
+    await write("src/lib/barrel.ts", 'export * as Kit from "kit-ui";');
+    const input = await sources();
+    expect(input.files.map(file => file.file)).toContain("local-ns.ts");
+    const reported = runConsumerDogfood(input).findings.filter(row => row.code === "DF5" && row.tag === "import").map(row => [row.file, /Unqualified external import ([^\s:]+)/.exec(row.evidence)?.[1]]).sort();
+    expect(reported).toEqual([["Page.tsx", "other-ui"], ["Page.tsx", "string-ns-ui"], ["Page.tsx", "unqualified-ui"], ["src/lib/barrel.ts", "kit-ui"]]);
+  });
+  it("qualifies a resolved and scanned package stylesheet export, and refuses a forged stylesheet edge (G4-R1c)", async () => {
+    await write("Page.tsx", `${page} import "@example/ui/styles.css";`);
+    await write("node_modules/@example/ui/package.json", JSON.stringify({ name: "@example/ui", exports: { "./styles.css": "./dist/styles.css" } }));
+    await write("node_modules/@example/ui/dist/styles.css", '@import "./base.css"; .x { display: block; }');
+    await write("node_modules/@example/ui/dist/base.css", ".y { display: block; }");
+    const input = await sources();
+    expect(input.files.map(file => file.file)).toEqual(expect.arrayContaining(["node_modules/@example/ui/dist/styles.css", "node_modules/@example/ui/dist/base.css"]));
+    expect(runConsumerDogfood(input).findings).toEqual([]);
+    const boundary = input.consumerBoundary as typeof input.consumerBoundary & { stylesheetImports?: Record<string, string> };
+    for (const stylesheetImports of [{ "Page.tsx:clsx": "missing.css" }, { "Page.tsx:clsx": "Page.tsx" }, { "Unscanned.tsx:clsx": "node_modules/@example/ui/dist/base.css" }])
+      expect(() => runConsumerDogfood({ ...input, consumerBoundary: { ...boundary, stylesheetImports } })).toThrow(/stylesheet boundary/);
+  });
   it("passes mapped project views through the actual dogfood-consumer CLI without promoting JSON to source", async () => {
     await write("Page.tsx", `${header} import {Publisher} from "@example/publisher";export default function Page(){return <><Lease id="example" header={{title:"Example"}}/><Publisher/></>}`);
     await write("Publisher.tsx", 'import {Button} from "@clossys/designer/components";import copy from "./copy.json";export function Publisher(){return <Button>{copy.title}</Button>}');
