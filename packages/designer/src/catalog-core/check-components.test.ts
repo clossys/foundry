@@ -461,4 +461,23 @@ describe("qualification rule groups (QUAL-RECOUNT G1, G2, G7a, G11)", () => {
     append(split, ' const cls = "w-(--foo)";');
     expect(k4(split)).toEqual(["Unbound CSS property --foo in button.tsx"]);
   });
+  it("K5 disabled state does not require activation keys", () => {
+    const k5 = (profile: ComponentCheckInput) => checkComponentProfile(profile).findings.filter(f => f.code === "K5").map(f => f.message);
+    const disabled = (keyboard: string[]) => {
+      const profile = fixture();
+      for (const names of [(profile.slots[0]!.contract.members as { names: string[] }).names, profile.fills[0]!.members]) names[names.indexOf("state.hover")] = "state.disabled";
+      delete profile.fills[0]!.propMap["state.hover"]; profile.fills[0]!.propMap["state.disabled"] = "isDisabled";
+      for (const measurement of profile.observations["components.button"]!.measurements) { measurement.state = "disabled"; measurement.keyboard = keyboard; }
+      return profile;
+    };
+    // Enter and Space produced no activation on the disabled button: that is the evidence, not a missing key.
+    expect(k5(disabled([]))).toEqual([]);
+    expect(k5(disabled(["ArrowDown", "Home"]))).toEqual([]);
+    // Must still flag: a disabled control that DOES activate, on either key, and a disabled control missing its roles.
+    for (const keys of [["Enter"], ["Space"], ["Enter", "Space"]]) expect(k5(disabled(keys)), keys.join("+")).toContain("Roles, keyboard or axe evidence fails for disabled/light/base");
+    const roleless = disabled([]); roleless.observations["components.button"]!.measurements[0]!.roles = []; expect(k5(roleless)).toContain("Roles, keyboard or axe evidence fails for disabled/light/base");
+    // An enabled state still requires the activation keys to be observed.
+    const enabled = fixture(); for (const measurement of enabled.observations["components.button"]!.measurements) measurement.keyboard = [];
+    expect(k5(enabled)).toContain("Roles, keyboard or axe evidence fails for hover/light/base");
+  });
 });

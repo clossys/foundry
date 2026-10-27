@@ -113,6 +113,8 @@ export const DEFAULT_COHERENCE_GROUPS: NonNullable<ComponentCheckInput["coherenc
   { id: "controls", kind: "controls", slots: ["text-field", "search-field", "checkbox", "radio-group", "switch", "select", "combo-box", "toggle-group", "tag-group", "number-field", "slider", "date-field"].map(name => `components.${name}`) },
   { id: "charts", kind: "charts", slots: [...CHARTS] }, { id: "date", kind: "date", slots: ["components.date-field", "components.calendar", "components.date-picker"] },
 ];
+/** Protocol keys that activate a control; a disabled state must show they are not handled. */
+const ACTIVATION_KEYS: readonly string[] = ["Enter", "Space"];
 const GLYPHS = /[✓✔✕✖×✗▾▴▸◂▶◀▲▼←→↑↓⌄⌃⌵⌫⊕⊖⚠ℹ]/u;
 const SYSTEM_COLORS = new Set(["Canvas", "CanvasText", "ButtonFace", "ButtonText", "Highlight", "HighlightText", "Field", "FieldText", "LinkText"]);
 export const ROOT_PROTOCOL: Readonly<Record<string, { roles: readonly string[]; keys: readonly string[] }>> = {
@@ -408,7 +410,9 @@ export function checkComponentProfile(input: ComponentCheckInput): ComponentChec
       const measurement = matching[0]!;
       const roots = rootNames(contract.root);
       const protocols = roots.map(root => ROOT_PROTOCOL[root]);
-      if (measurement.axeViolations.length || protocols.some(protocol => protocol && (protocol.roles.some(role => !measurement.roles.includes(role)) || protocol.keys.some(key => !measurement.keyboard.includes(key)))) || protocols.some(protocol => !protocol)) add("K5", fill.slot, `Roles, keyboard or axe evidence fails for ${state}/${mode}/${ground}`);
+      // A disabled state proves its activation keys produce no activation (the key is not handled), rather than being observed.
+      const noActivation = state === "disabled";
+      if (measurement.axeViolations.length || protocols.some(protocol => protocol && (protocol.roles.some(role => !measurement.roles.includes(role)) || protocol.keys.some(key => noActivation && ACTIVATION_KEYS.includes(key) ? measurement.keyboard.includes(key) : !measurement.keyboard.includes(key)))) || protocols.some(protocol => !protocol)) add("K5", fill.slot, `Roles, keyboard or axe evidence fails for ${state}/${mode}/${ground}`);
       const interactive = protocols.some(protocol => !!protocol?.keys.length) || fill.slot === "components.resize-handle";
       const directFocus = measurement.focusTokens.length > 0 && measurement.focusTokens.every(member => /^tokens\.focus-/.test(member) && !!input.tokens[member] && isRead(fill, member));
       let delegatedFocus = false;
