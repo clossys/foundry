@@ -34,10 +34,23 @@ describe("route runtime frame member selection", () => {
     if (result.status !== "resolved") return;
     expect(result.binding.frame.members).toEqual(["layout.standard", "stage.full", "theme.system"]);
   });
-  it("narrows only the axes a partial selection names", () => {
+  it("narrows only the axes a partial selection names; every other axis projects as it does without one", () => {
     const { result } = project({ members: { layout: "standard" } });
     expect(result.status).toBe("resolved");
-    if (result.status === "resolved") expect(result.binding.frame.members).toEqual(["layout.standard"]);
+    if (result.status === "resolved") expect(result.binding.frame.members).toEqual(["layout.standard", "stage.contained", "stage.full", "theme.dark", "theme.light", "theme.system"]);
+  });
+  it("keeps the frame config's member when a partial selection omits its axis (reviewer repro)", () => {
+    const descriptor = ["layout.immersive", "theme.system"];
+    const { result } = project({ config: "layout.immersive", members: { theme: "system" } }, descriptor, "layout.immersive");
+    expect(result.status, JSON.stringify(result)).toBe("resolved");
+    if (result.status === "resolved") expect(result.binding.frame.members).toEqual(["layout.immersive", "theme.system"]);
+  });
+  it("narrows an omitted config axis to the config member, never to another member on that axis", () => {
+    const { result } = project({ config: "layout.immersive", members: { theme: "system" } }, DESCRIPTOR, "layout.immersive");
+    expect(result.status, JSON.stringify(result)).toBe("resolved");
+    if (result.status === "resolved") expect(result.binding.frame.members).toEqual(["layout.immersive", "stage.contained", "stage.full", "theme.system"]);
+    const standard = project({ config: "layout.standard", members: { stage: "full", theme: "system" } }, DESCRIPTOR, "layout.standard").result;
+    expect(standard.status === "resolved" && standard.binding.frame.members).toEqual(["layout.standard", "stage.full", "theme.system"]);
   });
   it.each([
     ["an unknown axis", { density: "compact" }],
