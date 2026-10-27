@@ -18,7 +18,8 @@ export interface TextFieldProps extends Omit<AriaTextFieldProps, "children"> {
    * Required. Rendered as a real `<label>`, programmatically associated
    * with the input via `for`/`id` (react-aria-components generates and
    * wires the id) — the accessible-name path a screen reader announces,
-   * not a `placeholder` standing in for it.
+   * not a `placeholder` standing in for it. Pass null only when an external
+   * label names the input through its id or aria-labelledby.
    */
   label: ReactNode;
   /** Placeholder shown inside the empty input. Not a label substitute. */
@@ -60,7 +61,7 @@ export function TextField({
 }: TextFieldProps) {
   return (
     <AriaTextField {...rest} className={cx("flex flex-col gap-xs", className)}>
-      <Label className="text-body-s text-ink-secondary font-body">{label}</Label>
+      {label != null ? <Label className="text-body-s text-ink-secondary font-body">{label}</Label> : null}
       <Input
         placeholder={placeholder}
         className={(renderProps) =>

@@ -1,9 +1,11 @@
-import type { ReactNode } from "react";
+import { cloneElement, isValidElement, useId, useRef, useState, type ReactNode, type RefObject } from "react";
 import {
   Tooltip as AriaTooltip,
   TooltipTrigger,
+  TooltipTriggerStateContext,
   type TooltipTriggerComponentProps,
   type Placement,
+  type TooltipProps as AriaTooltipProps,
 } from "react-aria-components";
 import { cx } from "./internal/cx.js";
 import { UI_ELEVATION_FLOATING, UI_Z_TOOLTIP } from "./internal/ui-vars.js";
@@ -38,6 +40,20 @@ export interface TooltipProps extends Omit<TooltipTriggerComponentProps, "childr
   placement?: Placement;
   /** Merged onto the tooltip's own surface element. */
   className?: string;
+  /** Controlled opening without hover/focus listeners or a document Escape handler. Requires `isOpen`. */
+  manual?: boolean;
+  /**
+   * A custom tooltip surface for manual mode. The component still owns its trigger's description,
+   * anchor and state; the renderer draws the supplied surface in the provided portal container.
+   */
+  renderSurface?: (props: {
+    readonly id: string;
+    readonly triggerRef: RefObject<Element | null>;
+    readonly portalContainer: Element;
+    readonly placement: Placement;
+    readonly children: ReactNode;
+    readonly className?: string;
+  }) => ReactNode;
 }
 
 /**
@@ -72,8 +88,17 @@ export function Tooltip({
   triggerAction,
   placement = "top",
   className,
+  manual = false,
+  renderSurface,
   ...rest
 }: TooltipProps) {
+  if (manual) {
+    if (typeof rest.isOpen !== "boolean") throw new TypeError("Manual Tooltip requires controlled isOpen.");
+    if (!isValidElement(trigger)) throw new TypeError("Manual Tooltip requires one trigger element.");
+    return <ManualTooltip trigger={trigger} children={children} placement={placement} className={className}
+      isOpen={rest.isOpen} onOpenChange={rest.onOpenChange} renderSurface={renderSurface} />;
+  }
+  if (renderSurface) throw new TypeError("Tooltip renderSurface requires manual mode.");
   return (
     <TooltipTrigger {...rest} trigger={triggerAction}>
       {trigger}
@@ -89,4 +114,31 @@ export function Tooltip({
       </AriaTooltip>
     </TooltipTrigger>
   );
+}
+
+/** An externally controlled tooltip must not install the interactive trigger's global key listener. */
+function ManualTooltip({ trigger, children, placement = "top", className, isOpen, onOpenChange, renderSurface }: TooltipProps) {
+  const id = useId();
+  const triggerRef = useRef<HTMLDivElement>(null);
+  const [container, setContainer] = useState<HTMLDivElement | null>(null);
+  const describedBy = isValidElement<{ "aria-describedby"?: string }>(trigger)
+    ? [trigger.props["aria-describedby"], isOpen ? id : undefined].filter(Boolean).join(" ") || undefined : undefined;
+  // RAC forwards id to the DOM, but its Tooltip declaration omits DOMProps.
+  // Keep that runtime id in a typed spread so description links retain their target.
+  const surfaceProps: AriaTooltipProps & { id: string } = {
+    id, triggerRef, UNSTABLE_portalContainer: container ?? undefined, placement,
+  };
+  return <div ref={setContainer} data-tooltip-host="">
+    <TooltipTriggerStateContext.Provider value={{ isOpen: isOpen === true, shouldSkipAnimation: true,
+      open: () => onOpenChange?.(true), close: () => onOpenChange?.(false) }}>
+      <div ref={triggerRef} className="inline-flex" data-tooltip-anchor="">
+        {isValidElement<{ "aria-describedby"?: string }>(trigger) ? cloneElement(trigger, { "aria-describedby": describedBy }) : trigger}
+      </div>
+      {container && isOpen ? renderSurface
+        ? renderSurface({ id, triggerRef, portalContainer: container, placement, children, className })
+        : <AriaTooltip {...surfaceProps}
+          className={cx("overlay-motion-fade rounded-control border border-overlay-border bg-overlay-surface px-sm py-xs text-caption text-ink-primary outline-none", className)}
+          style={{ boxShadow: UI_ELEVATION_FLOATING, zIndex: UI_Z_TOOLTIP }}>{children}</AriaTooltip> : null}
+    </TooltipTriggerStateContext.Provider>
+  </div>;
 }
