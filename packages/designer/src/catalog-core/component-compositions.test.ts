@@ -49,7 +49,7 @@ describe("production date-picker composition", () => {
   });
   it("keeps real selected closure blocked by its absent generated facades", () => {
     const { library } = productionCompositionFixture();
-    expect(() => assertComponentImportClosure(library.files.filter(file => file.path === "components/select/select.tsx"), {})).toThrow("components: missing import ../icon/index.js");
+    expect(() => assertComponentImportClosure(library.files.filter(file => file.path === "components/select/select.tsx"), {})).toThrow(/^components: missing import \.\.\/icon\/index$/);
   });
   it("K8 accepts exact registered source provenance only in its current consumer context", () => {
     const { catalog, library } = productionCompositionFixture();
