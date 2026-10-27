@@ -1,6 +1,6 @@
 "use client";
-import { cloneElement, useState, type ComponentType, type FormEvent, type ReactElement, type ReactNode } from "react";
-import { Button as TriggerButton } from "react-aria-components";
+import { cloneElement, useId, useRef, useState, type ComponentType, type ContextType, type FormEvent, type ReactElement, type ReactNode } from "react";
+import { Button as TriggerButton, TooltipTriggerStateContext } from "react-aria-components";
 import { componentSpecimenActions, componentSpecimenCard, componentSpecimenCollections, componentSpecimenColor, componentSpecimenField, componentSpecimenOverlays, componentSpecimenProps, componentSpecimenSourceSamples, componentSpecimenTable, componentSpecimenText, componentSpecimenToast, componentSpecimenUnavailable } from "./component-specimen-sample-content.js";
 import type { SpecimenUnavailableReason } from "./preview-outcome.js";
 import { containedDialog, containedToaster } from "./component-specimen-contained.js";
@@ -182,6 +182,25 @@ function OverlayHost({ children }: { readonly children: (container: HTMLElement)
   return <div ref={setContainer} data-specimen-overlay-host="">{container ? children(container) : null}</div>;
 }
 
+/** A tooltip trigger state that stays open: opening and closing are no-ops, so the specimen draws statically. */
+const heldOpen: NonNullable<ContextType<typeof TooltipTriggerStateContext>> = { isOpen: true, shouldSkipAnimation: true, open: () => {}, close: () => {} };
+
+/**
+ * The vendored Tooltip held open beside a plain trigger, anchored through the Tooltip's own `triggerRef` and given an
+ * open trigger state through React Aria's own context. It is never placed in a TooltipTrigger: while its tooltip is
+ * open, React Aria's trigger listens for Escape on the whole document in the capture phase and stops it there, so a
+ * trigger held open would swallow every Escape on the page, including the one that closes a dialog opened from a
+ * neighbouring cell.
+ */
+function HeldTooltip({ trigger, specimen }: { readonly trigger: ReactNode; readonly specimen: ReactElement<Record<string, unknown>> }) {
+  const triggerRef = useRef<HTMLButtonElement>(null);
+  const id = useId();
+  return <OverlayHost>{container => <TooltipTriggerStateContext.Provider value={heldOpen}>
+    <TriggerButton ref={triggerRef} aria-describedby={id}>{trigger}</TriggerButton>
+    {cloneElement(specimen, { id, triggerRef, UNSTABLE_portalContainer: container })}
+  </TooltipTriggerStateContext.Provider>}</OverlayHost>;
+}
+
 /** Vendored shadcn@aria compounds, drawn with the parts their own module exports. */
 function sourceSample(key: string, exports: Namespace): ComponentSpecimenSample | undefined {
   const parts = (...names: string[]) => { const found = names.map(name => part(exports, name)); return found.every(Boolean) ? found as Renderable[] : undefined; };
@@ -237,10 +256,8 @@ function sourceSample(key: string, exports: Namespace): ComponentSpecimenSample 
       return { props: { "aria-label": label }, children: items.map(item => <Item key={item.id} id={item.id}>{item.label}</Item>), host: specimen => <Inline {...(specimen as ReactElement<Record<string, unknown>>).props} /> };
     }
     case "components/tooltip/tooltip.tsx#Tooltip": {
-      const found = parts("TooltipTrigger"); if (!found) return undefined;
-      const [Trigger] = found as [Renderable];
       const { trigger, content } = s[key];
-      return { props: {}, children: content, host: specimen => <OverlayHost>{container => <Trigger isOpen><TriggerButton>{trigger}</TriggerButton>{cloneElement(specimen as ReactElement<Record<string, unknown>>, { UNSTABLE_portalContainer: container })}</Trigger>}</OverlayHost> };
+      return { props: {}, children: content, host: specimen => <HeldTooltip trigger={trigger} specimen={specimen as ReactElement<Record<string, unknown>>} /> };
     }
     case "components/dialog/dialog.tsx#Dialog": {
       // The module's own DialogContent is the inner RAC Dialog without ModalOverlay/Modal: it draws open, in place.
