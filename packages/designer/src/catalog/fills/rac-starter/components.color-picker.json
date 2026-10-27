@@ -608,6 +608,11 @@
         "part.wheel": "ColorWheel"
       },
       "props": [],
+      "rac": {
+        "instance": "react-aria-components",
+        "peer": false,
+        "range": "^1.21.1"
+      },
       "reads": {
         "assets": [],
         "components": [

@@ -1,4 +1,4 @@
-import { componentSourceHash, componentTokensHash, type ComponentCallSite, type ComponentCheckInput, type ComponentMeasurement, type ComponentObservation, type ComponentSourceFile } from "./check-components.js";
+import { componentDescriptorDigest, componentSourceHash, componentTokensHash, type ComponentCallSite, type ComponentCheckInput, type ComponentMeasurement, type ComponentObservation, type ComponentSourceFile } from "./check-components.js";
 import type { ComponentCandidate, ComponentFile } from "./resolve-components.js";
 import type { ComponentContract, ComponentSlot } from "./types.js";
 import type { SourceBundle } from "./changeset-components.js";
@@ -13,10 +13,31 @@ import type { SourceBundle } from "./changeset-components.js";
  * - ref/render-prop forwarding and state measurements come only from a caller-supplied runtime probe
  *   or browser runner. Without one they fail closed (false / no measurements), so the check reports
  *   the precise missing measurement instead of the blanket "observations unavailable".
+ * - member-root measurements and size geometry come only from a per-slot browser artifact that binds to
+ *   the exact descriptor, source bytes, consumer tokens and installed react-aria-components it measured.
+ *   An artifact that does not bind is refused: its slot keeps no runtime evidence (and is listed in
+ *   `refused`), so the check reports the missing measurements as errors rather than pending notices.
  */
 export interface ComponentObservationProbe {
   forwardsRef: boolean; forwardsRenderProps: boolean;
   measurements?: readonly ComponentMeasurement[];
+}
+/** One slot's browser qualification, as a browser runner records it from the rendered consumer module graph. */
+export interface ComponentBrowserArtifact {
+  slot: string;
+  /** `componentDescriptorDigest` of the adopted descriptor that was rendered (`origin.sha256` for an adopted fill). */
+  descriptorHash: string;
+  /** `componentSourceHash` of the observed source and `componentTokensHash` of the consumer tokens that were rendered. */
+  sourceHash: string; tokensHash: string;
+  /** The react-aria-components version and resolved instance the rendered module graph loaded. */
+  rac: { version: string; instance: string };
+  forwardsRef: boolean; forwardsRenderProps: boolean;
+  /** Root-cell measurements (`member` empty). */
+  measurements: readonly ComponentMeasurement[];
+  /** Per member-root measurements, keyed by exactly the contract's `memberRoots` members. */
+  memberMeasurements?: Readonly<Record<string, readonly ComponentMeasurement[]>>;
+  /** Each `size.*` member of the descriptor mapped to the `tokens.control-size.*` member its rendered control resolves. */
+  geometry?: Readonly<Record<string, string>>;
 }
 export interface ComponentObservationInput {
   slots: readonly ComponentSlot[];
@@ -34,11 +55,15 @@ export interface ComponentObservationInput {
   racPeers?: readonly string[];
   /** Runtime probe results keyed by slot. Absent: forwarding is unproven and no measurement exists. */
   probes?: Readonly<Record<string, ComponentObservationProbe | undefined>>;
+  /** Per-slot browser artifacts keyed by slot. A slot takes a probe or an artifact, never both. */
+  artifacts?: Readonly<Record<string, ComponentBrowserArtifact | undefined>>;
 }
 export interface ComponentObservationResult {
   evidence: Required<Pick<ComponentCheckInput, "observations" | "installedRac">>;
   /** Slots with no observable bytes, and why. */
   unobserved: readonly { slot: string; reason: string }[];
+  /** Slots whose supplied browser artifact did not bind; they carry no runtime evidence. */
+  refused: readonly { slot: string; reason: string }[];
 }
 
 const compare = (a: string, b: string): number => a < b ? -1 : a > b ? 1 : 0;
@@ -113,8 +138,28 @@ export function exportSource(read: (path: string) => string | undefined, paths: 
   return undefined;
 }
 
+const sameKeys = (a: readonly string[], b: readonly string[]): boolean => a.length === b.length && [...a].sort(compare).every((key, index) => key === [...b].sort(compare)[index]);
+/** Why a browser artifact does not bind to this slot's descriptor, observed bytes, tokens and RAC install; undefined when it binds. */
+function artifactRefusal(artifact: ComponentBrowserArtifact, fill: ComponentCandidate, contract: ComponentContract, files: readonly ComponentSourceFile[], input: ComponentObservationInput, tokensHash: string): string | undefined {
+  if (artifact.slot !== fill.slot) return `Artifact slot ${artifact.slot} differs from ${fill.slot}`;
+  if (artifact.descriptorHash !== componentDescriptorDigest(fill)) return "Artifact was measured for a different descriptor";
+  if (artifact.sourceHash !== componentSourceHash(files)) return "Artifact was measured for different source bytes";
+  if (artifact.tokensHash !== tokensHash) return "Artifact was measured for different consumer tokens";
+  if (!artifact.rac || artifact.rac.version !== input.installedRac.version || artifact.rac.instance !== input.installedRac.instance) return "Artifact react-aria-components identity differs from the installed singleton";
+  const memberRoots = Object.keys(contract.memberRoots ?? {});
+  if (!sameKeys(Object.keys(artifact.memberMeasurements ?? {}), memberRoots)) return "Artifact member-root measurements differ from the contract's member roots";
+  if (artifact.geometry) {
+    const sizes = fill.members.filter(member => member.startsWith("size."));
+    const reads = new Set(fill.reads.tokens.map(read => read.split(".").slice(0, 2).join(".")));
+    if (!sameKeys(Object.keys(artifact.geometry), sizes)) return "Artifact geometry does not cover exactly the descriptor's size members";
+    if (Object.values(artifact.geometry).some(token => !/^tokens\.control-size\.[a-z0-9-]+$/.test(token) || !Object.hasOwn(input.tokens, token) || !reads.has("tokens.control-size"))) return "Artifact geometry names a token that is not a read consumer control-size member";
+  }
+  return undefined;
+}
+
 export function observeComponentSources(input: ComponentObservationInput): ComponentObservationResult {
   const tokensHash = componentTokensHash(input.tokens);
+  const refused: { slot: string; reason: string }[] = [];
   const slots = new Map(input.slots.map(slot => [slot.id, slot]));
   const byslot = new Map(input.fills.map(fill => [fill.slot, fill]));
   const observations: Record<string, ComponentObservation> = {};
@@ -136,7 +181,11 @@ export function observeComponentSources(input: ComponentObservationInput): Compo
       files = resolved.map(file => ({ ...file }));
     } else { unobserved.push({ slot: fill.slot, reason: "Unmaterialized composition" }); continue; }
     files.sort((a, b) => compare(a.path, b.path));
-    const probe = input.probes?.[fill.slot];
+    const supplied = input.artifacts?.[fill.slot];
+    const refusal = supplied && (input.probes?.[fill.slot] ? "Slot has both a probe and a browser artifact" : artifactRefusal(supplied, fill, contract, files, input, tokensHash));
+    if (refusal) refused.push({ slot: fill.slot, reason: refusal });
+    const artifact = refusal ? undefined : supplied;
+    const probe = refusal ? undefined : artifact ?? input.probes?.[fill.slot];
     const peer = fill.impl.kind === "package" && !!fill.pin?.package && (input.racPeers ?? []).includes(fill.pin.package);
     const dependency: ComponentObservation["rac"]["dependency"] = fill.impl.kind === "source" ? "source" : peer ? "peer" : "bundled";
     const memberRoots = Object.entries(contract.memberRoots ?? {}).sort(([a], [b]) => compare(a, b));
@@ -144,10 +193,12 @@ export function observeComponentSources(input: ComponentObservationInput): Compo
     observations[fill.slot] = {
       files, ...upstream, sourceHash: componentSourceHash(files), tokensHash,
       root: observedRoot(contract.root, files), forwardsRef: probe?.forwardsRef ?? false, forwardsRenderProps: probe?.forwardsRenderProps ?? false,
-      rac: { version: input.installedRac.version, instance: input.installedRac.instance, dependency },
+      rac: { version: artifact?.rac.version ?? input.installedRac.version, instance: artifact?.rac.instance ?? input.installedRac.instance, dependency },
       calls, measurements: [...(probe?.measurements ?? [])],
-      ...(memberRoots.length ? { memberObservations: Object.fromEntries(memberRoots.map(([member, root]) => [member, { root: observedRoot(root, files), forwardsRef: probe?.forwardsRef ?? false, forwardsRenderProps: probe?.forwardsRenderProps ?? false, calls, measurements: [] }])) } : {}),
+      ...(artifact ? { descriptorHash: artifact.descriptorHash, ...(artifact.geometry ? { geometry: { ...artifact.geometry } } : {}) } : {}),
+      ...(memberRoots.length ? { memberObservations: Object.fromEntries(memberRoots.map(([member, root]) => [member, { root: observedRoot(root, files), forwardsRef: probe?.forwardsRef ?? false, forwardsRenderProps: probe?.forwardsRenderProps ?? false, calls, measurements: [...(artifact?.memberMeasurements?.[member] ?? [])] }])) } : {}),
     };
   }
-  return { evidence: { observations, installedRac: { ...input.installedRac } }, unobserved };
+  for (const slot of Object.keys(input.artifacts ?? {})) if (input.artifacts![slot] && !byslot.has(slot)) refused.push({ slot, reason: "Artifact names no adopted descriptor" });
+  return { evidence: { observations, installedRac: { ...input.installedRac } }, unobserved, refused };
 }

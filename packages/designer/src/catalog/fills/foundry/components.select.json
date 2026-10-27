@@ -77,6 +77,11 @@
         "selectedKey",
         "size"
       ],
+      "rac": {
+        "instance": "react-aria-components",
+        "peer": true,
+        "range": "^1.19.0"
+      },
       "reads": {
         "assets": [],
         "components": [],

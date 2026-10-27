@@ -73,6 +73,11 @@
         "defaultCamera",
         "onSelect"
       ],
+      "rac": {
+        "instance": "react-aria-components",
+        "peer": false,
+        "range": "^1.19.0"
+      },
       "reads": {
         "assets": [],
         "components": [

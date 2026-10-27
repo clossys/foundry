@@ -68,7 +68,8 @@ describe("Foundry component package descriptors", () => {
       expect(result.fills[index]!.$extensions["com.clossys.fill"].conforms).toEqual([]);
       expect(fill).not.toHaveProperty("files");
       expect(fill).not.toHaveProperty("measurements");
-      expect(fill).not.toHaveProperty("rac");
+      // CC3: every package descriptor declares the RAC package it binds and this package's declared peer range, never a consumer install path.
+      expect(fill.rac).toEqual({ range: "^1.19.0", peer: true, instance: "react-aria-components" });
     }
     const bySlot = new Map(descriptors.map(fill => [fill.slot, fill]));
     expect(bySlot.get("components.button")!.propMap["shape.icon-only"]).toBe("./components#IconButton");
@@ -186,6 +187,7 @@ it("stores the exact pending NativeAction draft with real exports, native states
   expect(fill.reads.tokens).toEqual(["tokens.action-color", "tokens.body-size", "tokens.control-radius", "tokens.duration", "tokens.easing", "tokens.focus-color", "tokens.focus-outline", "tokens.spacing", "tokens.state-opacity", "tokens.text-color", "tokens.typeface"]);
   expect(doc.$extensions["com.clossys.fill"]).toMatchObject({ status: "draft", conforms: [], evidence: [] });
   const files = generatedFoundryComponentFiles({ exports });
+  if (process.env.UPDATE_FOUNDRY_COMPONENT_FILLS === "1") writeFileSync(resolve(fillsDirectory, "components.native-action.json"), files["components.native-action.json"]!);
   expect(readFileSync(resolve(fillsDirectory, "components.native-action.json"), "utf8")).toBe(files["components.native-action.json"]);
   expect(() => importFoundryComponents({ exports: { ...exports, components: exports.components.filter(name => name !== "NativeAction") } })).toThrow("unavailable package export");
   const profile = checkComponentProfile({ slots, fills: [fill], observations: {}, tokens: {}, assets: [], installedRac: { version: "1.21.1", instance: "consumer" } });

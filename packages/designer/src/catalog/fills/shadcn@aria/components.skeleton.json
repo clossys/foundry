@@ -95,6 +95,11 @@
         "shape.block": "Skeleton"
       },
       "props": [],
+      "rac": {
+        "instance": "react-aria-components",
+        "peer": false,
+        "range": "^1.19.0"
+      },
       "reads": {
         "assets": [],
         "components": [],
