@@ -2,6 +2,9 @@ import { SectionHeader } from "./SectionHeader.js";
 import type { CSSProperties, HTMLAttributes, ReactNode } from "react";
 import { cx } from "../components/internal/cx.js";
 import { SECTION_GROUND_CLASSES, type SectionGround } from "./section-ground.js";
+import { dsAttrs } from "../catalog-core/provenance-attrs.js";
+/** Section root provenance (D1): the selected Foundry fill this block is. */
+const SECTION_STAMP = dsAttrs("sections", "sections.steps", "foundry/sections.steps");
 
 export type OrderedStepSequenceHeadingLevel = 2 | 3 | 4 | 5 | 6;
 export type OrderedStepSequenceGround = SectionGround;
@@ -57,7 +60,7 @@ export function OrderedStepSequence({ eyebrow, heading, description, items, head
   const lines = STEP_LINE_CLASSES[ground];
   const hasHeadingRegion = eyebrow !== undefined || heading !== undefined || description !== undefined;
   return (
-    <section {...rest} className={cx("flex flex-col gap-lg", colors.surface, className)} style={style}>
+    <section {...SECTION_STAMP} {...rest} className={cx("flex flex-col gap-lg", colors.surface, className)} style={style}>
       {hasHeadingRegion ? (
         <SectionHeader density="standard" level={headingLevel} ground={ground} eyebrow={eyebrow} description={description} {...(heading ? { title: heading } : {})} />
       ) : null}

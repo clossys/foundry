@@ -4,6 +4,9 @@ import { cx } from "../components/internal/cx.js";
 import type { TableColumnKind } from "./table-model/types.js";
 import { useDebouncedSummary } from "./access-matrix/summary.js";
 import { assertColumnMapper, columnMapperIssues, mappedSource } from "./column-mapper/issues.js";
+import { dsAttrs } from "../catalog-core/provenance-attrs.js";
+/** Section root provenance (D1): the selected Foundry fill this block is. */
+const SECTION_STAMP = dsAttrs("sections", "sections.column-mapper", "foundry/sections.column-mapper");
 
 export interface ColumnMapperTarget { readonly id: string; readonly label: string; readonly kind: TableColumnKind; readonly required: boolean; readonly description?: string }
 export interface ColumnMapperSource { readonly id: string; readonly header: string; readonly samples: readonly string[] }
@@ -37,7 +40,7 @@ export function ColumnMapper(props: ColumnMapperProps) {
   const mapped = targets.filter(target => mappedSource(mapping, target.id) !== null).length;
   const announced = useDebouncedSummary(labels.summary(mapped, targets.length, issues.length));
   const options = [{ id: "", label: labels.notMapped }, ...sourceColumns.map(source => ({ id: source.id, label: source.header }))];
-  return <fieldset className={cx("m-0 flex min-w-0 flex-col gap-lg border-0 bg-surface-raised p-0 text-body text-ink-primary", className)}>
+  return <fieldset {...SECTION_STAMP} className={cx("m-0 flex min-w-0 flex-col gap-lg border-0 bg-surface-raised p-0 text-body text-ink-primary", className)}>
     <legend className="mb-md text-body-l font-medium">{labels.legend}</legend>
     {targets.map(target => {
       const sourceId = mappedSource(mapping, target.id);

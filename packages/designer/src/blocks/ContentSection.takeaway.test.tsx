@@ -3,6 +3,7 @@ import { renderToStaticMarkup } from "react-dom/server";
 import { render } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
 import { ContentSection, type ContentSectionProps } from "./ContentSection.js";
+import { withoutDsAttrs } from "../catalog-core/provenance-attrs.js";
 
 interface LayoutCase {
   name: string;
@@ -109,16 +110,16 @@ describe("ContentSection takeaway and source", () => {
   });
 
   it.each(layouts)("absent takeaway and source keep the DOM byte-identical: $name", (layout) => {
-    expect(renderToStaticMarkup(view(layout))).toBe(GOLDEN_HTML[layout.name]);
+    expect(withoutDsAttrs(renderToStaticMarkup(view(layout)))).toBe(GOLDEN_HTML[layout.name]);
     for (const absent of [undefined, null, false, ""]) {
-      expect(renderToStaticMarkup(view(layout, { takeaway: absent, source: absent }))).toBe(GOLDEN_HTML[layout.name]);
+      expect(withoutDsAttrs(renderToStaticMarkup(view(layout, { takeaway: absent, source: absent })))).toBe(GOLDEN_HTML[layout.name]);
     }
   });
 
   it.each(layouts)("absent takeaway and source preserve nested useId markup: $name", (layout) => {
-    expect(renderToStaticMarkup(viewWithIds(layout))).toBe(ID_GOLDEN_HTML[layout.name]);
+    expect(withoutDsAttrs(renderToStaticMarkup(viewWithIds(layout)))).toBe(ID_GOLDEN_HTML[layout.name]);
     for (const absent of [undefined, null, false, ""]) {
-      expect(renderToStaticMarkup(viewWithIds(layout, { takeaway: absent, source: absent }))).toBe(ID_GOLDEN_HTML[layout.name]);
+      expect(withoutDsAttrs(renderToStaticMarkup(viewWithIds(layout, { takeaway: absent, source: absent })))).toBe(ID_GOLDEN_HTML[layout.name]);
     }
   });
 

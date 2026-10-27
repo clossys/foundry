@@ -5,6 +5,7 @@ import { Matrix as ServerMatrix } from "./Matrix.server.js";
 import { render, screen, within } from "@testing-library/react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { PricingTable, type PricingTableProps, type PricingTier } from "./PricingTable.js";
+import { withoutDsAttrs } from "../catalog-core/provenance-attrs.js";
 
 const TIERS: PricingTier[] = [
   {
@@ -339,12 +340,12 @@ const FIXED_BARE_MARKUP = "<div class=\"flex flex-col gap-lg\"><div class=\"grid
 describe("PricingTable fixed-price byte preservation", () => {
   it("preserves the captured heading, description and native-attribute render bytes", () => {
     const props = { heading: "Heading", description: "Description", tiers: TIERS, id: "tiers", dir: "rtl" };
-    expect(markup(props)).toBe(FIXED_HEADED_MARKUP);
-    expect(markup({ ...props, ground: "base" })).toBe(FIXED_HEADED_MARKUP);
+    expect(withoutDsAttrs(markup(props))).toBe(FIXED_HEADED_MARKUP);
+    expect(withoutDsAttrs(markup({ ...props, ground: "base" }))).toBe(FIXED_HEADED_MARKUP);
   });
 
   it("preserves the captured headingless render bytes without optional wrappers", () => {
-    expect(markup({ tiers: TIERS })).toBe(FIXED_BARE_MARKUP);
+    expect(withoutDsAttrs(markup({ tiers: TIERS }))).toBe(FIXED_BARE_MARKUP);
   });
 });
 

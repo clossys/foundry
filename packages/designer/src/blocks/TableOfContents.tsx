@@ -7,6 +7,9 @@ import {
   renderTableOfContentsSidebar,
   validateTableOfContents,
 } from "./TableOfContents.server.js";
+import { dsAttrs } from "../catalog-core/provenance-attrs.js";
+/** Section root provenance (D1): the selected Foundry fill this block is. */
+const SECTION_STAMP = dsAttrs("sections", "sections.table-of-contents", "foundry/sections.table-of-contents");
 
 export interface TableOfContentsItem {
   /** The id of the target element in the page; the link is `#{id}`. No whitespace and no `#`. */
@@ -80,7 +83,7 @@ export function TableOfContents(props: TableOfContentsProps) {
 
   if (presentation === "inline") {
     return (
-      <div className={cx(BOX_CLASSES, className)} style={style}>
+      <div {...SECTION_STAMP} className={cx(BOX_CLASSES, className)} style={style}>
         <Disclosure
           title={label}
           defaultExpanded

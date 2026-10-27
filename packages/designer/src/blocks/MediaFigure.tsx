@@ -2,6 +2,9 @@ import type { CSSProperties, HTMLAttributes, ReactNode } from "react";
 import { cx } from "../components/internal/cx.js";
 import { SECTION_MEASURE_MAX } from "./internal/block-vars.js";
 import { SECTION_GROUND_CLASSES, type SectionGround } from "./section-ground.js";
+import { dsAttrs } from "../catalog-core/provenance-attrs.js";
+/** Section root provenance (D1): the selected Foundry fill this block is. */
+const SECTION_STAMP = dsAttrs("sections", "sections.media", "foundry/sections.media");
 
 /**
  * How wide the figure runs inside its section's column: the whole column, or
@@ -53,7 +56,7 @@ export function MediaFigure({
   const contained = measure === "content";
   return (
     <figure
-      {...rest}
+      {...SECTION_STAMP} {...rest}
       data-media-figure=""
       className={cx("m-0 flex w-full flex-col gap-sm", className)}
       style={contained ? { maxWidth: SECTION_MEASURE_MAX.content, ...style } : style}

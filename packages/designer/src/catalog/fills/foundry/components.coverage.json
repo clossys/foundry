@@ -285,10 +285,10 @@
       "slot": "components.date-field",
       "status": "candidate",
       "supported": [
+        "content.date",
+        "content.time",
         "granularity",
-        "state.invalid",
-        "value.date",
-        "value.time"
+        "state.invalid"
       ]
     },
     {

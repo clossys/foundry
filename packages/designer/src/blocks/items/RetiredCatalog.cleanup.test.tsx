@@ -10,6 +10,7 @@ import type { ItemData, ItemsProps } from "./types.js";
 import legacy from "./legacy-ssr.test.json";
 import catalog from "./legacy-catalog-ssr.test.json";
 import headless from "./legacy-headless-catalog-ssr.test.json";
+import { withoutDsAttrs } from "../../catalog-core/provenance-attrs.js";
 
 interface FrozenCase { name: string; block: string; props: Record<string, unknown>; html?: string; error?: string }
 function decode(value: unknown): unknown {
@@ -35,7 +36,7 @@ describe("retained published and frame literals", () => {
     const Component = retainedBlocks[fixture.block as keyof typeof retainedBlocks];
     const render = () => renderToStaticMarkup(createElement(Component as unknown as (props: object) => ReactNode, decode(fixture.props) as object));
     if (fixture.error !== undefined) expect(render).toThrow(fixture.error);
-    else expect(render()).toBe(fixture.html);
+    else expect(withoutDsAttrs(render())).toBe(fixture.html);
   });
 });
 

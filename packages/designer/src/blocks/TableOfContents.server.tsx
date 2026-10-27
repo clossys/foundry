@@ -3,6 +3,9 @@ import { UI_LAYOUT_TAP_TARGET } from "../components/internal/ui-vars.js";
 import { cx } from "../components/internal/cx.js";
 import { UI_BRANDMARK_HEIGHT_LG } from "../internal/brandmark.js";
 import type { TableOfContentsItem, TableOfContentsProps } from "./TableOfContents.js";
+import { dsAttrs } from "../catalog-core/provenance-attrs.js";
+/** Section root provenance (D1): the selected Foundry fill this block is. */
+const SECTION_STAMP = dsAttrs("sections", "sections.table-of-contents", "foundry/sections.table-of-contents");
 
 const MIN_ITEMS = 2;
 const MAX_ITEMS = 30;
@@ -87,6 +90,7 @@ export function renderTableOfContentsSidebar(
 ): ReactNode {
   return (
     <nav
+      {...SECTION_STAMP}
       aria-label={label}
       className={cx("desktop:sticky desktop:max-h-dvh desktop:overflow-y-auto", className)}
       style={{ insetBlockStart: SITE_HEADER_CLEARANCE, zIndex: Z_STICKY, ...style }}
@@ -118,7 +122,7 @@ export function TableOfContents(props: TableOfContentsProps) {
   const { label, items, presentation = "sidebar", currentId, className, style } = props;
   if (presentation === "inline") {
     return (
-      <details open className={cx(BOX_CLASSES, className)} style={style}>
+      <details open {...SECTION_STAMP} className={cx(BOX_CLASSES, className)} style={style}>
         <summary className={cx("cursor-pointer rounded-default py-sm text-body text-ink-primary", FOCUS_CLASSES)}>
           {label}
         </summary>
