@@ -65,6 +65,16 @@ describe("adopted package-pointer surfaces on the Studio board", { timeout: 120_
     check(fixture.decisions.map(row => row.slot).filter(slot => slot.startsWith("frames.")));
   });
 
+  it("previews sections.data-grid through its own leaf, not the data-table preview that shares its export", async () => {
+    mount(() => undefined);
+    await screen.findByText("L-saved");
+    // data-grid and data-table both point at ./blocks#DataTable; a preview keyed by that export draws the wrong leaf.
+    const grid = row("sections.data-grid")!;
+    expect(grid.querySelector('[data-ds-leaf="sections.data-grid"]')).not.toBeNull();
+    expect(grid.querySelector('[data-ds-leaf="sections.data-table"]')).toBeNull();
+    expect(row("sections.data-table")!.querySelector('[data-ds-leaf="sections.data-table"]')).not.toBeNull();
+  });
+
   it("keeps the host's own preview first, and without a host sample the Publisher frame is unavailable rather than imitated", async () => {
     const user = userEvent.setup();
     mount(leaf => leaf === "sections.data-table" ? <p>host-table</p> : undefined, {});
