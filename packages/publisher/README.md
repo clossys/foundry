@@ -7087,9 +7087,27 @@ body, labels and content participate in the joined receipt identity.
 
 Derived execution additionally requires same-context source revalidation and
 the mounted original provider hooks. Branded source receipts cannot be copied
-through JSON or transferred from server to browser. That browser revalidation
-boundary, actual consumer qualification and Canvas lifecycle promotion remain
-pending; package source fixtures do not establish them.
+through JSON or transferred from server to browser. The server may pass the
+plain `bootstrap` data from `prepareRegisteredNodeRoute` instead; the browser's
+one path back is `materializeRegisteredRouteSourceEvidence`, which re-runs the
+fixed query and checks the library hash, materialization id and source match
+before minting evidence. The bootstrap is unsigned, so that evidence is
+client-only and display-only: the live binder accepts it, while the Node,
+lifecycle and bootstrap paths accept only Node-minted evidence. Actual consumer
+qualification and Canvas lifecycle promotion remain pending; package source
+fixtures do not establish them.
+
+A route may register one server data loader as `composition.loader`
+(`{ file, export }`, a consumer module separate from the entry, page, runtime,
+action and provider modules). The emitted entry then becomes the server page: it
+imports only that zero-argument loader, awaits it and passes the result through
+`registeredRouteServerData` (from `@clossys/publisher/core`, refusing
+non-serializable data at compile time and at runtime) to the emitted client
+page's `RegisteredServerDataRoutePage`, whose runtime hook receives the typed
+data. Routes without a loader keep their exact emitted bytes. The checker admits
+only the registered export under the closed lexical policy (no `\u` escapes,
+`eval` or computed member access), so loader modules spell their types out
+rather than using indexed access types.
 
 `checkRegisteredRoutes` and `publisher-registered-route-check` discover entries
 under explicitly admitted route roots and compare them with the registry and

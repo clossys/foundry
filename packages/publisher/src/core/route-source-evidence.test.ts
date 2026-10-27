@@ -1,13 +1,15 @@
 /** @vitest-environment node */
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import * as fs from "node:fs/promises";
-import { join } from "node:path";
+import { readFileSync } from "node:fs";
+import { join, resolve as resolvePath } from "node:path";
 import { tmpdir } from "node:os";
 import { libraryHash, runtimeHash } from "@clossys/designer/catalog";
 import { compileRegisteredRouteFixture, type CompiledRegisteredRoute } from "../web/__fixtures__/registered-route-runtime.js";
 import { syntheticDerivedRoute } from "../web/__fixtures__/registered-route-bootstrap.js";
 import { materializeRegisteredDesignerRoute } from "../web/registered-route-query.js";
-import { materializeRegisteredRouteSourceEvidence } from "../web/registered-route.js";
+import { materializeRegisteredRouteSourceEvidence, prepareRegisteredRouteFromNode } from "../web/registered-route.js";
+import { routeCompositionDigest, routeRegistryDigest } from "./route-registry.js";
 import { isCurrentRegisteredRouteLiveSourceEvidence, isCurrentRegisteredRouteSourceEvidence, recordRegisteredRouteSourceEvidence, registeredRouteSourceBootstrap } from "./route-source-evidence.js";
 import { syntheticRoute } from "./__fixtures__/registered-route.js";
 
@@ -104,5 +106,31 @@ describe("serialized route source bootstrap (synthetic fixtures; no runtime clea
     expect(client(f, edit(f, p => { p.source.routeId = "example.other"; })).status).toBe("refused");
     const staticRoute = syntheticRoute(), staticRegistry = { version: 1 as const, consumer: "example", routes: [staticRoute] };
     expect(materializeRegisteredRouteSourceEvidence(f.wire, staticRegistry, staticRoute.routeId, { ...f.runtime(), designerQuery: undefined }).status).toBe("refused");
+  }, 60_000);
+  it("a hand-built, digest-consistent payload mints client-only evidence that every Node, lifecycle and bootstrap consumer refuses", () => {
+    // Accepted residual (unsigned bootstrap): a client can compute every public digest
+    // itself. What it mints must stay live-display-only.
+    const f = syntheticDerivedRoute(compiled);
+    const query = materializeRegisteredDesignerRoute(f.route.composition.binding, f.engine, f.registries, f.instanceLibrary, f.designerQuery);
+    if (query.status !== "materialized") throw new Error(query.findings.join("; "));
+    const handBuilt = { kind: "publisher.route-source-bootstrap", version: 1, library: libraryHash(f.engine.library), source: { routeId: f.route.routeId, registry: routeRegistryDigest(f.registry), composition: routeCompositionDigest(f.route), identity: { kind: "git", head: "5".repeat(40), tree: "6".repeat(40) }, files: {}, materialization: query.materialization.digest } };
+    const minted = materializeRegisteredRouteSourceEvidence(handBuilt, f.registry, f.route.routeId, f.runtime());
+    expect(minted.status, JSON.stringify(minted)).toBe("materialized");
+    if (minted.status !== "materialized") return;
+    const digest = query.materialization.digest;
+    expect(isCurrentRegisteredRouteLiveSourceEvidence(minted.source, f.registry, f.route, digest)).toBe(true);
+    // Node predicate (shared by the Node-current transaction, lifecycle and checker joins).
+    expect(isCurrentRegisteredRouteSourceEvidence(minted.source, f.registry, f.route, digest)).toBe(false);
+    // Server bootstrap: client evidence can never be re-serialized as Node evidence.
+    expect(() => registeredRouteSourceBootstrap({ registry: f.registry, route: f.route, source: minted.source, engine: f.engine, materialization: query.materialization })).toThrow(/Node-verified/);
+    // Node entry to the binder.
+    const node = prepareRegisteredRouteFromNode(f.registry, f.route.routeId, f.runtime(), { source: minted.source, materialization: query.materialization });
+    expect(node).toEqual({ status: "refused", findings: ["Current authenticated Node source/materialization receipts required"] });
+    // Lifecycle and Node-current consumers import only the Node predicate.
+    for (const file of ["route-lifecycle.ts", "route-node-current.ts"]) {
+      const text = readFileSync(resolvePath(import.meta.dirname, file), "utf8");
+      expect(text, file).toContain("isCurrentRegisteredRouteSourceEvidence(");
+      expect(text, file).not.toContain("isCurrentRegisteredRouteLiveSourceEvidence");
+    }
   }, 60_000);
 });
