@@ -9569,6 +9569,10 @@
     },
     {
       "elements": 0,
+      "file": "src/catalog-assets/open-props-license.ts"
+    },
+    {
+      "elements": 0,
       "file": "src/catalog-assets/svg.ts"
     },
     {
@@ -9886,6 +9890,10 @@
     {
       "elements": 0,
       "file": "src/importers/lucide.ts"
+    },
+    {
+      "elements": 0,
+      "file": "src/importers/open-props-image-ratio.ts"
     },
     {
       "elements": 0,
