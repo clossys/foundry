@@ -3,9 +3,7 @@ import { dirname, resolve } from "node:path";
 import { describe, expect, it } from "vitest";
 import ts from "typescript";
 import { loadCatalogBundles } from "../catalog-bundles.js";
-import { emitComponents } from "../catalog-core/emit-components.js";
-import { componentDescriptorHash } from "../catalog-core/resolve-components.js";
-import type { ComponentCandidateDocument, ResolvedComponent, ResolvedComponents } from "../catalog-core/resolve-components.js";
+import { emittedIconLeaf, emittedIconLeafPaths } from "./__fixtures__/emitted-icon-leaf.js";
 
 /**
  * Type-level check of the emitted icon call sites. The rewrite turns every shadcn glyph into
@@ -19,7 +17,6 @@ const designerSrc = resolve(import.meta.dirname, "..");
 // Virtual files live inside the package so "react" resolves from its real node_modules.
 const root = resolve(designerSrc, "__icon_typecheck__");
 const bundles = loadCatalogBundles();
-const fillId = (doc: ComponentCandidateDocument) => doc.$extensions["com.clossys.fill"].id;
 
 /** Every `<LibraryIcon … />` element in the materialized shadcn sources, as written. */
 function emittedIconCalls(): { file: string; text: string }[] {
@@ -35,35 +32,13 @@ function emittedIconCalls(): { file: string; text: string }[] {
   return calls;
 }
 
-/** The asset Icon leaf and glyph module exactly as a product persist emits them. */
-function emittedIconLeaf(assets: readonly string[]): { path: string; content: string }[] {
-  const doc = bundles.componentFills.find(candidate => fillId(candidate) === "foundry/components.icon")!;
-  const descriptor = Object.values(doc.components)[0]!;
-  const component: ResolvedComponent = {
-    slot: descriptor.slot, originKind: "adopted",
-    origin: { kind: "adopted", source: descriptor.source, fill: fillId(doc), pin: descriptor.pin, license: descriptor.license ?? "MIT", sha256: componentDescriptorHash(descriptor), adoptedAt: "2026-01-01T00:00:00.000Z" },
-    impl: descriptor.impl as ResolvedComponent["impl"], propMap: structuredClone(descriptor.propMap),
-    reads: { tokens: {}, assets: [], components: [] }, descriptor,
-  };
-  const profile: ResolvedComponents = {
-    consumer: "icon-typecheck", selectionHash: `sha256:${"0".repeat(64)}`,
-    components: { [descriptor.slot]: component }, files: [],
-    check: { ok: true, findings: [] } as unknown as ResolvedComponents["check"],
-    packageExports: { "@clossys/designer/components": ["Icon"] },
-  };
-  // Glyph geometry is not what this check measures: each asset gets one valid stand-in path.
-  const glyphs = Object.fromEntries(assets.map(asset => [asset, [["path", { d: "M4 12h16" }]]]));
-  return emitComponents(profile, ["component-index"], { glyphModule: { path: "assets/glyphs.ts", glyphs } })
-    .filter(file => file.path === "components/icon/index.ts" || file.path === "assets/glyphs.ts");
-}
-
 function typecheck(files: Record<string, string>): string[] {
   const virtual = new Map(Object.entries(files).map(([path, content]) => [resolve(root, path), content]));
   const options: ts.CompilerOptions = {
     target: ts.ScriptTarget.ES2022, lib: ["lib.es2022.d.ts", "lib.dom.d.ts", "lib.dom.iterable.d.ts"],
     module: ts.ModuleKind.ESNext, moduleResolution: ts.ModuleResolutionKind.Bundler, jsx: ts.JsxEmit.ReactJSX,
     strict: true, noEmit: true, skipLibCheck: true, isolatedModules: true, esModuleInterop: true, types: [],
-    paths: { "@clossys/designer/components": [resolve(designerSrc, "components/Icon.tsx")] },
+    paths: { ...emittedIconLeafPaths },
   };
   const host = ts.createCompilerHost(options, true);
   const { fileExists, readFile, getSourceFile } = host;
