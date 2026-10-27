@@ -4,7 +4,7 @@ import { join } from "node:path";
 import { tmpdir } from "node:os";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { checkRegisteredRoutes } from "./registered-route-check.js";
-import { emitRegisteredRouteAdapter, emitRegisteredRoutePage } from "./registered-route-source.js";
+import { emitRegisteredRouteAdapter, emitRegisteredRoutePage, emitRegisteredRouteRegistryModule } from "./registered-route-source.js";
 import { syntheticPlan, syntheticRoute, SYNTHETIC_ROUTE_REGISTRIES } from "../core/__fixtures__/registered-route.js";
 import type { RouteRegistration } from "../core/route-registry.js";
 
@@ -33,10 +33,10 @@ const nonvisual = [
   "  return <WholeStudioProvider adapter={inputs.adapter} labels={inputs.labels}>{children}</WholeStudioProvider>;",
   "}", "",
 ].join("\n");
-const contract = () => ({ version: 2 as const, registry: { file: "routes.json", export: "default" as const }, sources: {} as Record<string, string>, routeRoots: [{ directory: "app", basePath: "/" }] });
+const contract = () => ({ version: 2 as const, registry: { file: "routes.json", export: "default" as const, module: "routes.ts" }, sources: {} as Record<string, string>, routeRoots: [{ directory: "app", basePath: "/" }] });
 async function setup(route = designerRoute(), provider = nonvisual) {
-  await write("routes.json", JSON.stringify({ version: 1, consumer: "example", routes: [route] }));
-  await write(route.entry.file, emitRegisteredRouteAdapter(route)); await write(route.composition.source.file, emitRegisteredRoutePage("routes.json", route));
+  await write("routes.json", JSON.stringify({ version: 1, consumer: "example", routes: [route] })); await write("routes.ts", emitRegisteredRouteRegistryModule({ version: 1, consumer: "example", routes: [route] }));
+  await write(route.entry.file, emitRegisteredRouteAdapter(route)); await write(route.composition.source.file, emitRegisteredRoutePage("routes.ts", route));
   await write("runtime.ts", "export function useRuntime(){throw new Error('SYNTHETIC unresolved runtime')}\nexport function useStudioInputs(){throw new Error('SYNTHETIC unresolved provider inputs')}");
   await write(PROVIDER_FILE, provider);
   return route;
@@ -49,10 +49,10 @@ const providerRefused = (findings: readonly { code: string; file: string }[]) =>
 describe("registered nonvisual provider ownership seam (synthetic fixtures; no runtime clearance)", () => {
   it("(a) admits exactly the registered Designer provider and the emitted page mounts it around the page", async () => {
     const route = await setup();
-    const page = emitRegisteredRoutePage("routes.json", route);
+    const page = emitRegisteredRoutePage("routes.ts", route);
     expect(page).toBe([
       '"use client";',
-      'import registry from "../routes.json" with { type: "json" };',
+      'import registry from "../routes.ts";',
       'import { RegisteredRoutePage } from "@clossys/publisher/web/registered-route";',
       'import { useRuntime as useRuntime } from "../runtime.ts";',
       'import { DesignerStudioProvider as RegisteredProvider } from "../providers/designer.tsx";',
@@ -86,13 +86,13 @@ describe("registered nonvisual provider ownership seam (synthetic fixtures; no r
     for (const provider of [{ id: "example.other", source: { file: PROVIDER_FILE, export: "DesignerStudioProvider" } }, { id: "designer.whole-studio", source: { file: PROVIDER_FILE, export: "DesignerStudioProvider" }, extra: true }, { id: "designer.whole-studio", source: { file: "../escape.tsx", export: "DesignerStudioProvider" } }]) {
       // The emitter refuses an invalid mount, so the consumer tree holds a valid emission
       // and only the registry row is changed.
-      const route = designerRoute(provider); expect(() => emitRegisteredRoutePage("routes.json", route)).toThrow();
-      await setup(); await write("routes.json", JSON.stringify({ version: 1, consumer: "example", routes: [route] }));
+      const route = designerRoute(provider); expect(() => emitRegisteredRoutePage("routes.ts", route)).toThrow();
+      await setup(); await write("routes.json", JSON.stringify({ version: 1, consumer: "example", routes: [route] })); await write("routes.ts", emitRegisteredRouteRegistryModule({ version: 1, consumer: "example", routes: [route] }));
       expect((await check(route)).findings).toContainEqual(expect.objectContaining({ code: "RR1", message: expect.stringContaining("composition.provider") }));
     }
     const staticRoute = structuredClone(syntheticRoute()); Object.assign(staticRoute.composition, { provider: { id: "designer.whole-studio", source: { file: PROVIDER_FILE, export: "DesignerStudioProvider" } } });
-    expect(() => emitRegisteredRoutePage("routes.json", staticRoute)).toThrow();
-    await setup(syntheticRoute()); await write("routes.json", JSON.stringify({ version: 1, consumer: "example", routes: [staticRoute] }));
+    expect(() => emitRegisteredRoutePage("routes.ts", staticRoute)).toThrow();
+    await setup(syntheticRoute()); await write("routes.json", JSON.stringify({ version: 1, consumer: "example", routes: [staticRoute] })); await write("routes.ts", emitRegisteredRouteRegistryModule({ version: 1, consumer: "example", routes: [staticRoute] }));
     expect((await check(staticRoute)).findings).toContainEqual(expect.objectContaining({ code: "RR1", message: expect.stringContaining("composition.provider") }));
     // A nonvisual module that exports a different name, mounts a different component or
     // imports the provider from a different module is not the registered provider.
@@ -126,7 +126,7 @@ describe("registered nonvisual provider ownership seam (synthetic fixtures; no r
     expect((await check(route)).findings).toContainEqual(expect.objectContaining({ code: "RR2", file: "app/layout.tsx" }));
     // In the emitted page: exact generation is still required (existing RR4).
     await fs.rm(join(root, "app/layout.tsx"));
-    await write(route.composition.source.file, emitRegisteredRoutePage("routes.json", route).replace("<RegisteredProvider><RegisteredRoutePage", "<RegisteredProvider><div><RegisteredRoutePage").replace("/></RegisteredProvider>", "/></div></RegisteredProvider>"));
+    await write(route.composition.source.file, emitRegisteredRoutePage("routes.ts", route).replace("<RegisteredProvider><RegisteredRoutePage", "<RegisteredProvider><div><RegisteredRoutePage").replace("/></RegisteredProvider>", "/></div></RegisteredProvider>"));
     expect((await check(route)).findings).toContainEqual(expect.objectContaining({ code: "RR4", file: route.composition.source.file }));
   }, SCAN_TIMEOUT);
 
@@ -154,11 +154,11 @@ describe("registered nonvisual provider ownership seam (synthetic fixtures; no r
 
   it("(e) exact generation: emitting twice is byte-identical and a route without a provider keeps its prior bytes", () => {
     const withProvider = designerRoute(), without = syntheticRoute();
-    expect(emitRegisteredRoutePage("routes.json", withProvider)).toBe(emitRegisteredRoutePage("routes.json", structuredClone(withProvider)));
+    expect(emitRegisteredRoutePage("routes.ts", withProvider)).toBe(emitRegisteredRoutePage("routes.ts", structuredClone(withProvider)));
     expect(emitRegisteredRouteAdapter(withProvider)).toBe(emitRegisteredRouteAdapter(structuredClone(withProvider)));
-    expect(emitRegisteredRoutePage("routes.json", without)).toBe([
+    expect(emitRegisteredRoutePage("routes.ts", without)).toBe([
       '"use client";',
-      'import registry from "../routes.json" with { type: "json" };',
+      'import registry from "../routes.ts";',
       'import { RegisteredRoutePage } from "@clossys/publisher/web/registered-route";',
       'import { useRuntime as useRuntime } from "../runtime.ts";',
       "export default function RegisteredPage() {",
@@ -166,6 +166,6 @@ describe("registered nonvisual provider ownership seam (synthetic fixtures; no r
       "}", "",
     ].join("\n"));
     const defaultExport = designerRoute({ id: "designer.whole-studio", source: { file: PROVIDER_FILE, export: "default" } });
-    expect(emitRegisteredRoutePage("routes.json", defaultExport)).toContain('import RegisteredProvider from "../providers/designer.tsx";');
+    expect(emitRegisteredRoutePage("routes.ts", defaultExport)).toContain('import RegisteredProvider from "../providers/designer.tsx";');
   });
 });

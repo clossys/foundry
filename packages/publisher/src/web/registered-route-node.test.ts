@@ -11,7 +11,7 @@ import { consumerDogfoodSources, runConsumerDogfood } from "@clossys/designer/ca
 import { compile } from "tailwindcss";
 import { createRequire } from "node:module";
 import { scanClassCandidates } from "../../../designer/dist/compiled-css/class-scan.js";
-import { checkRegisteredRoutes, emitRegisteredRouteAdapter, emitRegisteredRoutePage } from "./registered-route-check.js";
+import { checkRegisteredRoutes, emitRegisteredRouteAdapter, emitRegisteredRoutePage, emitRegisteredRouteRegistryModule } from "./registered-route-check.js";
 import { syntheticPlan, SYNTHETIC_ROUTE_REGISTRIES } from "../core/__fixtures__/registered-route.js";
 import { PublisherPlanStore } from "../planning/change-set.js";
 import { compileRegisteredRouteFixture, syntheticRegisteredRoute, type CompiledRegisteredRoute } from "./__fixtures__/registered-route-runtime.js";
@@ -45,13 +45,13 @@ it("keeps an immutable Node source graph unauthenticated when selected styling i
   const registries = { ...selectedRegistries, frames: [...SYNTHETIC_ROUTE_REGISTRIES.frames, ...selectedRegistries.frames] };
   delete (route.composition.header as { actions?: unknown }).actions;
   const write = async (file: string, contents: string) => { await fs.mkdir(dirname(join(root, file)), { recursive: true }); await fs.writeFile(join(root, file), contents); };
-  await write("routes.json", JSON.stringify(registry));
+  await write("routes.json", JSON.stringify(registry)); await write("routes.ts", emitRegisteredRouteRegistryModule(registry));
   await write(route.entry.file, emitRegisteredRouteAdapter(route));
-  await write(route.composition.source.file, emitRegisteredRoutePage("routes.json", route));
+  await write(route.composition.source.file, emitRegisteredRoutePage("routes.ts", route));
   await write("runtime.tsx", `import { AppFrame } from "@clossys/designer/frames";\nimport { PageHeaderModule } from "@clossys/designer/shell";\nimport "./selected.css";\nexport function useRuntime(){throw new Error("SYNTHETIC fixture source only")}\nexport function SelectedFrame({header,children}) {return <AppFrame><PageHeaderModule id={header.id} header={header.data}/>{children}</AppFrame>}\n`);
   Object.assign(route.composition, { runtime: { file: "runtime.tsx", export: "useRuntime" } });
-  await write("routes.json", JSON.stringify(registry));
-  await write(route.composition.source.file, emitRegisteredRoutePage("routes.json", route));
+  await write("routes.json", JSON.stringify(registry)); await write("routes.ts", emitRegisteredRouteRegistryModule(registry));
+  await write(route.composition.source.file, emitRegisteredRoutePage("routes.ts", route));
   await write("selected.css", "");
   const source = await consumerDogfoodSources([route.entry.file], { version: 1, sources: { "@clossys/publisher/web/registered-route": join(import.meta.dirname, "registered-route.js") }, pages: [route.entry.file] }, root, root);
   expect(source.files.some(file => file.file.endsWith("publisher/src/core/flow-stage.ts"))).toBe(true);
@@ -66,7 +66,7 @@ it("keeps an immutable Node source graph unauthenticated when selected styling i
   await exec("git", ["-C", root, "add", "."]);
   await exec("git", ["-C", root, "-c", "user.name=Example Test", "-c", "user.email=test@example.test", "-c", "commit.gpgsign=false", "commit", "--quiet", "-m", "Synthetic immutable source fixture"]);
   const store = new PublisherPlanStore(registries), plan = await store.apply(store.propose(syntheticPlan([route])), () => true);
-  const result = await checkRegisteredRoutes({ root, contract: { version: 2, sources: {}, registry: { file: "routes.json", export: "default" }, routeRoots: [{ directory: "app", basePath: "/" }] }, plan, registries, styling: { engine, manifest } });
+  const result = await checkRegisteredRoutes({ root, contract: { version: 2, sources: {}, registry: { file: "routes.json", export: "default", module: "routes.ts" }, routeRoots: [{ directory: "app", basePath: "/" }] }, plan, registries, styling: { engine, manifest } });
   if (process.env.ROUTE_NODE_DIAGNOSTIC === "1") console.info(JSON.stringify({ findings: result.findings, dogfood: result.dogfood?.findings, pending: result.sourceEvidencePending }, null, 2));
   expect(result.findings).toEqual([]);
   expect(result.dogfood?.findings).toContainEqual(expect.objectContaining({ code: "DF2", evidence: expect.stringContaining("unresolved class utilities: gap-lg") }));

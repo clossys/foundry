@@ -20,8 +20,8 @@ import type { PublisherPlanDraft } from "../planning/plan.js";
 import type { PublisherPlanVersion } from "../planning/change-set.js";
 import { projectRouteRegistry, routeProviderMount, routeSourcePath } from "../core/route-registry.js";
 import type { RouteProviderMount, RouteRegistry } from "../core/route-registry.js";
-import { emitRegisteredRouteAdapter, emitRegisteredRoutePage } from "./registered-route-source.js";
-export { emitRegisteredRouteAdapter, emitRegisteredRoutePage } from "./registered-route-source.js";
+import { emitRegisteredRouteAdapter, emitRegisteredRoutePage, emitRegisteredRouteRegistryModule, registeredRouteRegistryPlacement } from "./registered-route-source.js";
+export { emitRegisteredRouteAdapter, emitRegisteredRoutePage, emitRegisteredRouteRegistryModule, registeredRouteRegistryPlacement } from "./registered-route-source.js";
 import { isCurrentRegisteredRouteSourceEvidence, recordRegisteredRouteSourceEvidence } from "../core/route-source-evidence.js";
 import type { RegisteredRouteSourceEvidence } from "../core/route-source-evidence.js";
 import { beginRegisteredRouteNodeTransaction, issueRegisteredRouteNodeCurrent } from "../core/route-node-current.js";
@@ -54,7 +54,9 @@ async function immutableSourceIdentity(root: string, files: readonly { readonly 
 export interface RegisteredRouteContract {
   readonly version: 2;
   readonly sources: Readonly<Record<string, string>>;
-  readonly registry: { readonly file: string; readonly export: "default" };
+  /** `file` is the finite JSON control input the checker reads, kept outside the source
+   * tree; `module` is the typed registry generated pages import, under it. */
+  readonly registry: { readonly file: string; readonly export: "default"; readonly module: string };
   readonly routeRoots: readonly { readonly directory: string; readonly basePath: string }[];
 }
 export interface RegisteredRouteStyling { readonly engine: CompositeEngineInput; readonly manifest: ConsumerRuntimeManifest; readonly designer?: Readonly<Record<string, { readonly query: RegisteredDesignerQuery; readonly instanceLibrary: ConsumerInstanceLibrary }>> }
@@ -63,7 +65,8 @@ const fields = (v: object, allowed: readonly string[]) => Object.keys(v).sort().
 export function parseRegisteredRouteContract(value: unknown): RegisteredRouteContract {
   if (!value || typeof value !== "object" || Array.isArray(value)) throw new Error("Route contract must be an object");
   const c = value as RegisteredRouteContract;
-  if (!fields(c, ["version", "sources", "registry", "routeRoots"]) || c.version !== 2 || !c.registry || !fields(c.registry, ["file", "export"]) || c.registry.export !== "default" || !routeSourcePath(c.registry.file) || !c.registry.file.endsWith(".json") || !Array.isArray(c.routeRoots) || !c.routeRoots.length) throw new Error("Strict version 2 registry source and nonempty route roots required");
+  if (!fields(c, ["version", "sources", "registry", "routeRoots"]) || c.version !== 2 || !c.registry || !fields(c.registry, ["file", "export", "module"]) || c.registry.export !== "default" || !Array.isArray(c.routeRoots) || !c.routeRoots.length) throw new Error("Strict version 2 registry source and nonempty route roots required");
+  registeredRouteRegistryPlacement(c.registry.file, c.registry.module);
   // Reuse HOST1's exact source-boundary validation, without weakening v1 fields.
   parseConsumerDogfoodContract({ version: 1, sources: c.sources, pages: ["contract-validation.tsx"] });
   if (Object.keys(c.sources).some(module => module === "@clossys/publisher" || module.startsWith("@clossys/publisher/"))) throw new Error("Publisher registered execution source cannot be remapped by the consumer");
@@ -181,10 +184,16 @@ async function checkRegisteredRoutesInternal(input: RegisteredRouteCheckInput) {
     const matches = registry.routes?.filter(route => route.entry.file === file) ?? [];
     if (matches.length !== 1 || matches[0]!.path !== path) findings.push({ code: "RR3", file, message: "Discovered page must join exactly one registered route and derived URL path" });
   }
+  // Every emitted page reads the registry through its typed module; that module is
+  // generated output too and must be the exact bytes for the JSON control input.
+  const registryModule = contract.registry.module;
+  try {
+    if (await read(root, registryModule) !== emitRegisteredRouteRegistryModule(registry)) findings.push({ code: "RR4", file: registryModule, message: "Typed registry module differs from its deterministic registered JSON" });
+  } catch { findings.push({ code: "RR4", file: registryModule, message: "Typed registry module is absent or invalid" }); }
   for (const route of registry.routes ?? []) {
     if (!entries.has(route.entry.file)) findings.push({ code: "RR3", file: route.entry.file, message: "Registry entry has no discovered executable page" });
     try {
-      const generated = emitRegisteredRoutePage(contract.registry.file, route);
+      const generated = emitRegisteredRoutePage(contract.registry.module, route);
       if (await read(root, route.composition.source.file) !== generated) findings.push({ code: "RR4", file: route.composition.source.file, message: "Page implementation differs from its deterministic registered composition" });
       if (route.entry.file !== route.composition.source.file && await read(root, route.entry.file) !== emitRegisteredRouteAdapter(route)) findings.push({ code: "RR4", file: route.entry.file, message: "Route adapter does not execute the exact generated composition" });
     } catch { findings.push({ code: "RR4", file: route.entry.file, message: "Registered composition source is absent or invalid" }); }

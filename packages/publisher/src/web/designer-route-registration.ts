@@ -5,7 +5,7 @@ import { createPublisherPlanDraft } from "../planning/plan.js";
 import type { PublisherPlanDraft } from "../planning/plan.js";
 import { PublisherPlanStore } from "../planning/change-set.js";
 import type { PublisherPlanChangeSet } from "../planning/change-set.js";
-import { emitRegisteredRouteAdapter, emitRegisteredRoutePage } from "./registered-route-source.js";
+import { emitRegisteredRouteAdapter, emitRegisteredRoutePage, emitRegisteredRouteRegistryModule } from "./registered-route-source.js";
 import type { RegisteredRouteCheckInput } from "./registered-route-check.js";
 import type { RegisteredRouteRuntime } from "./registered-route-binding.js";
 
@@ -15,10 +15,13 @@ export const DESIGNER_ADMIN_ROUTE = Object.freeze({
   path: "/agents/designer", title: "Designer", channel: "admin",
   frame: { leaf: "frames.app-shell" },
   body: { kind: "canvas", source: { kind: "derived", query: { id: "designer.layer-boards", version: 1 } }, arrangement: "lanes" },
+  // The JSON control input stays outside the source tree; generated pages import the
+  // typed registry module, and every module they import lives under src.
   registryFile: "publisher/routes.json",
+  registryModule: "src/publisher/routes.ts",
   entry: { file: "src/app/(console)/agents/designer/page.tsx", export: "default" },
-  source: { file: "publisher/generated/designer.tsx", export: "default" },
-  runtime: { file: "publisher/runtime/designer.tsx", export: "useDesignerRegisteredRouteRuntime" },
+  source: { file: "src/publisher/generated/designer.tsx", export: "default" },
+  runtime: { file: "src/publisher/runtime/designer.tsx", export: "useDesignerRegisteredRouteRuntime" },
   header: { id: "admin-designer", data: { title: "Designer" } },
 } as const);
 
@@ -105,14 +108,15 @@ export function prepareDesignerRouteRegistration(input: DesignerRouteRegistratio
     if (findings.length) throw new Error(`Designer registration refused: ${findings.map(f => `${f.path}: ${f.message}`).join("; ")}`);
     outputs = [
       { file: DESIGNER_ADMIN_ROUTE.registryFile, contents: `${JSON.stringify(registry, null, 2)}\n` },
-      { file: DESIGNER_ADMIN_ROUTE.source.file, contents: emitRegisteredRoutePage(DESIGNER_ADMIN_ROUTE.registryFile, registration) },
+      { file: DESIGNER_ADMIN_ROUTE.registryModule, contents: emitRegisteredRouteRegistryModule(registry) },
+      { file: DESIGNER_ADMIN_ROUTE.source.file, contents: emitRegisteredRoutePage(DESIGNER_ADMIN_ROUTE.registryModule, registration) },
       { file: DESIGNER_ADMIN_ROUTE.entry.file, contents: emitRegisteredRouteAdapter(registration) },
     ];
   }
   const designer = input.node?.styling?.designer?.[input.routeId];
   if (!designer) needs.push({ field: "styling.designer", reason: "Current original WholeStudioProvider projection/session/Edit/history, checked records, query/provider sources and lanes parameters are unavailable" });
   if (!input.node) needs.push({ field: "node", reason: "Actual engine, selected runtime manifest, complete reached CSS and Node runtime assembly are unavailable" });
-  if (input.node && (input.node.contract.registry.file !== DESIGNER_ADMIN_ROUTE.registryFile || input.node.contract.registry.export !== "default")) throw new Error("Node contract must load the Publisher-owned registry output");
+  if (input.node && (input.node.contract.registry.file !== DESIGNER_ADMIN_ROUTE.registryFile || input.node.contract.registry.module !== DESIGNER_ADMIN_ROUTE.registryModule || input.node.contract.registry.export !== "default")) throw new Error("Node contract must load the Publisher-owned registry output");
   const nodeInput = registry && input.node ? { ...input.node, plan, registries: input.registries, routeId: input.routeId } : undefined;
   return { status: "planned", route, plan, proposal, ...(registry ? { registry } : {}), ...(nodeInput ? { nodeInput } : {}), outputs, needs };
 }
