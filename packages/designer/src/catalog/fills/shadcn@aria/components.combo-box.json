@@ -91,7 +91,7 @@
         },
         {
           "path": "components/_parts/input-group/input-group.tsx",
-          "sha256": "d0183abd70d5c26e97ac0f5cbe12bb24887c6fc0a62d678388749868dc178d41"
+          "sha256": "173f99861954a7d801a493038a06e6ea1c962f24c3b14e017ae27234675d41bc"
         },
         {
           "path": "components/_parts/utils/index.ts",

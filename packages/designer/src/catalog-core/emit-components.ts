@@ -174,7 +174,10 @@ function leafModule(component: ResolvedComponent, packageExports: ResolvedCompon
     table[axis]![value] = { target, ...(binding.property ? { property: binding.property, value: binding.value } : {}) };
   }
   const targets = [...imports.values(), ...[...partTargets].sort().map(target => `${quote(target)}: ${target}`)].join(", ");
-  rows.push(`const targets: Record<string, ComponentType<Record<string, unknown>>> = { ${targets} };`);
+  // `satisfies` checks that every target is a function or class component without erasing its real type:
+  // a `never` parameter admits any props type, generics and statics included. Dispatch opens the props
+  // only at createElement, where the mapping table has already chosen the target.
+  rows.push(`const targets = { ${targets} } satisfies Record<string, ((props: never) => unknown) | (new (props: never) => unknown)>;`);
   rows.push(`const mappings: Record<string, Record<string, {target: string; property?: string; value?: unknown}>> = ${JSON.stringify(table, null, 2)};`);
   rows.push(`export const ${name} = forwardRef<unknown, Record<string, unknown>>(function ${name}(props, ref) {`);
   rows.push(`  const next = { ...props }; let target = ${quote(imports.get(`${base.module}#${base.name}`))};`);
@@ -186,7 +189,7 @@ function leafModule(component: ResolvedComponent, packageExports: ResolvedCompon
   rows.push('    if (mapping.target !== ' + quote(imports.get(`${base.module}#${base.name}`)) + ') target = mapping.target;');
   rows.push('    if (mapping.property) next[mapping.property] = mapping.value;');
   rows.push('  }');
-  rows.push('  return createElement(targets[target]!, { ...next, ref });');
+  rows.push('  return createElement((targets as Record<string, unknown>)[target] as ComponentType<Record<string, unknown>>, { ...next, ref });');
   rows.push('});');
   return { path, content: rows.join("\n") + "\n" };
 }

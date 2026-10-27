@@ -1,5 +1,5 @@
 // @vitest-environment node
-import { readFileSync, readdirSync } from "node:fs";
+import { readFileSync, readdirSync, writeFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { describe, expect, it } from "vitest";
 import ts from "typescript";
@@ -13,11 +13,17 @@ import { sha256 } from "./digest.js";
 import { componentSourceHash } from "./check-components.js";
 
 const golden = (name: string) => readFileSync(resolve(import.meta.dirname, "__golden__/components", name), "utf8");
+// Synthetic codegen goldens are written only by the emitter: UPDATE_COMPONENT_CODEGEN_GOLDENS=1.
+const codegenGolden = (name: string, actual: string) => {
+  if (process.env.UPDATE_COMPONENT_CODEGEN_GOLDENS === "1") writeFileSync(resolve(import.meta.dirname, "__golden__/components", name), actual);
+  return golden(name);
+};
 const packageExports = { "test-kit/components": ["Button"], "react-aria-components": ["Button"] };
-function typecheckSynthetic(files: readonly { path: string; content: string }[]): readonly string[] {
+const looseSurfaces = 'declare module "test-kit/components" { export const Button: import("react").ComponentType<Record<string, unknown>>; }\ndeclare module "react-aria-components" { export const Button: import("react").ComponentType<Record<string, unknown>>; }\n';
+function typecheckSynthetic(files: readonly { path: string; content: string }[], surfaces = looseSurfaces): readonly string[] {
   const root = resolve(import.meta.dirname, "__synthetic_codegen__");
   const virtual = new Map(files.filter(file => /\.tsx?$/.test(file.path)).map(file => [resolve(root, file.path), file.content]));
-  virtual.set(resolve(root, "surfaces.d.ts"), 'declare module "test-kit/components" { export const Button: import("react").ComponentType<Record<string, unknown>>; }\ndeclare module "react-aria-components" { export const Button: import("react").ComponentType<Record<string, unknown>>; }\n');
+  virtual.set(resolve(root, "surfaces.d.ts"), surfaces);
   const options: ts.CompilerOptions = { noEmit: true, jsx: ts.JsxEmit.ReactJSX, strict: true, skipLibCheck: true, target: ts.ScriptTarget.ES2022, module: ts.ModuleKind.ESNext, moduleResolution: ts.ModuleResolutionKind.Bundler, types: [] };
   const host = ts.createCompilerHost(options);
   const originalFile = host.fileExists.bind(host), originalRead = host.readFile.bind(host), originalSource = host.getSourceFile.bind(host), originalDirectory = host.directoryExists!.bind(host);
@@ -37,7 +43,7 @@ describe("SYNTHETIC component code generation; no shipped conformance claims", (
   it("matches the all-package synthetic golden and parses every emitted TypeScript module", () => {
     const profile = packageProfile(); expect(profile.check.ok).toBe(true);
     const files = emitComponents(profile, ["component-index"]);
-    expect(stableStringify(files)).toBe(golden("synthetic-package.json"));
+    expect(stableStringify(files)).toBe(codegenGolden("synthetic-package.json", stableStringify(files)));
     for (const file of files) expect(ts.transpileModule(file.content, { compilerOptions: { target: ts.ScriptTarget.ES2022, module: ts.ModuleKind.ESNext }, reportDiagnostics: true }).diagnostics).toEqual([]);
     expect(typecheckSynthetic(files)).toEqual([]);
   });
@@ -54,7 +60,7 @@ describe("SYNTHETIC component code generation; no shipped conformance claims", (
     const profile = resolveComponents({ catalog, library, values: input.check, evidence, packageExports });
     expect(profile.check.ok).toBe(true);
     const files = emitComponents(profile, ["component-index"]);
-    expect(stableStringify(files)).toBe(golden("synthetic-mixed.json"));
+    expect(stableStringify(files)).toBe(codegenGolden("synthetic-mixed.json", stableStringify(files)));
     expect(typecheckSynthetic(files)).toEqual([]);
     for (let seed = 1; seed <= 5; seed++) {
       let state = seed;
@@ -131,6 +137,22 @@ describe("SYNTHETIC component code generation; no shipped conformance claims", (
     expect(index).toContain('"Impl0.Group": Impl0.Group');
     expect(index).toContain('"target": "Impl0.Group"');
     expect(ts.transpileModule(index, { compilerOptions: { target: ts.ScriptTarget.ES2022, module: ts.ModuleKind.ESNext }, reportDiagnostics: true }).diagnostics).toEqual([]);
+  });
+  it("typechecks a dispatch index over a real generic compound component without erasing its props", () => {
+    const profile = packageProfile(), button = profile.components["components.button"]!;
+    const axis = button.descriptor.members.find(member => member.includes("."))!;
+    button.descriptor.propMap = { ...button.descriptor.propMap, [axis]: "./components#Button.Group" };
+    button.propMap = button.descriptor.propMap;
+    const files = emitComponents(profile, ["component-index"]);
+    expect(files.find(file => file.path === "components/button/index.ts")!.content).toContain('"Impl0.Group": Impl0.Group');
+    // Typed like a real library export: generic, with required props and a static sub-component.
+    const surfaces = `declare module "test-kit/components" {
+  import type { ForwardRefExoticComponent, ReactElement, RefAttributes } from "react";
+  interface ButtonProps<T extends object> { label: string; items?: readonly T[]; ground?: "base" | "inverse"; size?: "md"; state?: "hover"; variant?: "primary" }
+  export const Button: (<T extends object = object>(props: ButtonProps<T> & RefAttributes<HTMLButtonElement>) => ReactElement) & { Group: ForwardRefExoticComponent<{ orientation: "horizontal" | "vertical" } & RefAttributes<HTMLDivElement>> };
+}
+`;
+    expect(typecheckSynthetic(files, surfaces)).toEqual([]);
   });
   it("emits a runtime-pending selection with the same code and never reports it as observations-pass", () => {
     const observed = packageProfile(), input = synthetic();

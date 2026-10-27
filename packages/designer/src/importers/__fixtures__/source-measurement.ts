@@ -87,7 +87,7 @@ function leafModule(component: ResolvedComponent, packageExports: ResolvedCompon
     table[axis]![value] = { target: imports.get(`${binding.module}#${binding.name}`)!, ...(binding.property ? { property: binding.property, value: binding.value } : {}) };
   }
   const targets = [...imports.values()].join(", ");
-  rows.push(`const targets: Record<string, ComponentType<Record<string, unknown>>> = { ${targets} };`);
+  rows.push(`const targets = { ${targets} } satisfies Record<string, ((props: never) => unknown) | (new (props: never) => unknown)>;`);
   rows.push(`const mappings: Record<string, Record<string, {target: string; property?: string; value?: unknown}>> = ${JSON.stringify(table, null, 2)};`);
   rows.push(`export const ${name} = forwardRef<unknown, Record<string, unknown>>(function ${name}(props, ref) {`);
   rows.push(`  const next = { ...props }; let target = ${quote(imports.get(`${base.module}#${base.name}`))};`);
@@ -99,7 +99,7 @@ function leafModule(component: ResolvedComponent, packageExports: ResolvedCompon
   rows.push('    if (mapping.target !== ' + quote(imports.get(`${base.module}#${base.name}`)) + ') target = mapping.target;');
   rows.push('    if (mapping.property) next[mapping.property] = mapping.value;');
   rows.push('  }');
-  rows.push('  return createElement(targets[target]!, { ...next, ref });');
+  rows.push('  return createElement((targets as Record<string, unknown>)[target] as ComponentType<Record<string, unknown>>, { ...next, ref });');
   rows.push('});');
   return { path, content: rows.join("\n") + "\n" };
 }

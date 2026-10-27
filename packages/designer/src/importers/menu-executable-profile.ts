@@ -15,7 +15,9 @@ export function menuExecutableSource(file: SourceFile, command: SourceFile): Sou
     .replace("typeof MenuPrimitive<object>", "typeof MenuPrimitive<T>")
     .replace('    className?: string\n    children?: React.ReactNode', '    className?: MenuProps<T>["className"]\n    children?: MenuProps<T>["children"]')
     .replace('        className\n      )}\n    >\n      <MenuPrimitive', '        typeof className === "function" ? undefined : className\n      )}\n    >\n      <MenuPrimitive')
-    .replace('        className="max-h-[inherit] overflow-x-hidden overflow-y-auto outline-hidden"', '        className={composeRenderProps(typeof className === "function" ? className : undefined, (className) => cn("max-h-[inherit] overflow-x-hidden overflow-y-auto outline-hidden", className))}')
+    // The typed wrap parameter makes composeRenderProps infer T = string | undefined; from the render
+    // function alone it infers T = undefined and rejects the wrapped string.
+    .replace('        className="max-h-[inherit] overflow-x-hidden overflow-y-auto outline-hidden"', '        className={composeRenderProps(typeof className === "function" ? className : undefined, (className: string | undefined) => cn("max-h-[inherit] overflow-x-hidden overflow-y-auto outline-hidden", className))}')
     .replace("function DropdownMenuGroup({", "function DropdownMenuGroup<T extends object>({")
     .replace('Omit<MenuSectionPrimitiveProps<object>, "children">', 'Omit<MenuSectionPrimitiveProps<T>, "children">')
     .replace('  children?: React.ReactNode\n}) {\n  return <MenuSectionPrimitive', '  children?: MenuSectionPrimitiveProps<T>["children"]\n}) {\n  return <MenuSectionPrimitive')
