@@ -17,7 +17,7 @@ import { choose, type EngineInput } from "../catalog-core/resolve.js";
 import { consumptionReport } from "../catalog-core/relationships.js";
 import { buildSurfaceConsumption } from "../catalog-core/surface-consumption.js";
 import { buildUsageGraph, serializeUsageGraph, type UsageGraphInputs } from "../catalog-core/usage-graph.js";
-import { checkLibrary, emitLibrary, isLibraryChangeSet, isCompositeChangeSet, writeCompositeLibrary, LIBRARY_EMIT_TARGETS, LibraryCheckError, LibraryConflictError, LibraryInputError, readLibrary, writeLibrary, readNeeds, writeNeeds, setNeed, NEED_STATUSES, isNeedCandidate } from "./fs-library.js";
+import { checkLibrary, checkLibraryReceipt, emitLibrary, isLibraryChangeSet, isCompositeChangeSet, writeCompositeLibrary, writeUsageGraph, LIBRARY_EMIT_TARGETS, LibraryCheckError, LibraryConflictError, LibraryInputError, readLibrary, writeLibrary, readNeeds, writeNeeds, setNeed, NEED_STATUSES, isNeedCandidate } from "./fs-library.js";
 
 const USAGE = `Usage: designer-library <command> --root <consumer-library>
 
@@ -31,23 +31,25 @@ Commands:
   needs [--status open,proposed] [--json]    List needs and blocked parents.
   needs set NEED-NNN --status <status> [--candidate <json>] [--closed-by <ref>]
   graph --check|--write                  Derive usage-graph.json from consumption producers, or fail on drift.
+  receipt [--base <receipt.json>] [--json]  Fail when library files differ from the last designer write receipt.
   recommend                              Unavailable until the chooser ships.
 
 Emit targets: css-brand, css-scales, css-fonts, tailwind-theme, notices, component-index, components-consumption, surface-index, surfaces-consumption.
 Composite folders also emit component targets by default; value folders retain all five value targets. No values are invented or auto-filled.
 --observations supplies package-export evidence ({ "packageExports": { "<module>": ["<Export>"] } });
 it defaults to <root>/component-observations.json when present. Without evidence, package-pointer leaves are refused.
+Every write stamps designer-receipt.json with its command, inputs and content hash; never hand-edit library files.
 Chooser output belongs in the Studio basket; apply requires the human's explicit instruction in this session.
 Exit codes: 0 = success, 1 = failed verdict or conflict, 2 = usage, invalid input or unavailable.
 `;
-type Command = "status" | "check" | "emit" | "apply" | "recommend" | "dogfood" | "dogfood-consumer" | "needs" | "graph";
-type Args = { command: Command; root: string; layer?: string; changeset?: string; json: boolean; drift: boolean; write: boolean; targets?: CompositeEmitTarget[]; paths: string[]; writeNeeds: boolean; status?: string; candidate?: string; closedBy?: string; contract?: string; observations?: string };
+type Command = "status" | "check" | "emit" | "apply" | "recommend" | "dogfood" | "dogfood-consumer" | "needs" | "graph" | "receipt";
+type Args = { base?: string; command: Command; root: string; layer?: string; changeset?: string; json: boolean; drift: boolean; write: boolean; targets?: CompositeEmitTarget[]; paths: string[]; writeNeeds: boolean; status?: string; candidate?: string; closedBy?: string; contract?: string; observations?: string };
 export interface LibraryCliIO { out(text: string): void; error(text: string): void }
 const defaultIO: LibraryCliIO = { out: text => console.log(text), error: text => console.error(text) };
 
 function parseArgs(argv: string[]): Args {
   const [command, ...flags] = argv;
-  if (!["status", "check", "emit", "apply", "recommend", "dogfood", "dogfood-consumer", "needs", "graph"].includes(command ?? "")) throw new LibraryInputError("A known command is required");
+  if (!["status", "check", "emit", "apply", "recommend", "dogfood", "dogfood-consumer", "needs", "graph", "receipt"].includes(command ?? "")) throw new LibraryInputError("A known command is required");
   const values = new Map<string, string>(), toggles = new Set<string>(), targets: CompositeEmitTarget[] = [], paths: string[] = [];
   for (let i = 0; i < flags.length; i++) {
     const flag = flags[i]!;
@@ -56,7 +58,7 @@ function parseArgs(argv: string[]): Args {
       if (toggles.has(flag)) throw new LibraryInputError(`Duplicate ${flag}`);
       toggles.add(flag); continue;
     }
-    if (!["--root", "--layer", "--changeset", "--target", "--status", "--candidate", "--closed-by", "--contract", "--observations"].includes(flag)) throw new LibraryInputError(`Unknown option ${flag}`);
+    if (!["--root", "--layer", "--changeset", "--target", "--status", "--candidate", "--closed-by", "--contract", "--observations", "--base"].includes(flag)) throw new LibraryInputError(`Unknown option ${flag}`);
     const value = flags[++i];
     if (!value || value.startsWith("-")) throw new LibraryInputError(`${flag} requires a value`);
     if (flag === "--target") {
@@ -78,12 +80,13 @@ function parseArgs(argv: string[]): Args {
   if (toggles.has("--json") && (command === "emit" || command === "recommend" || command === "graph")) throw new LibraryInputError("--json requires status, check or apply");
   if (toggles.has("--write-needs") && command !== "dogfood") throw new LibraryInputError("--write-needs requires dogfood");
   if (values.has("--observations") && !["check", "emit", "apply"].includes(command!)) throw new LibraryInputError("--observations requires check, emit or apply");
+  if (values.has("--base") && command !== "receipt") throw new LibraryInputError("--base requires receipt");
   if ((command === "dogfood-consumer") !== values.has("--contract")) throw new LibraryInputError("dogfood-consumer requires --contract; other commands do not accept it");
   if (["dogfood", "dogfood-consumer"].includes(command!) && !paths.length) throw new LibraryInputError("dogfood requires source paths");
   if (command === "needs" && paths.length && (paths.length !== 2 || paths[0] !== "set")) throw new LibraryInputError("needs accepts only set NEED-NNN");
   if (["--status", "--candidate", "--closed-by"].some(flag => values.has(flag)) && command !== "needs") throw new LibraryInputError("NEED options require needs");
   if (command === "needs" && !paths.length && (values.has("--candidate") || values.has("--closed-by"))) throw new LibraryInputError("candidate and closed-by require needs set");
-  return { paths, contract: values.get("--contract"), observations: values.get("--observations"), writeNeeds: toggles.has("--write-needs"), status: values.get("--status"), candidate: values.get("--candidate"), closedBy: values.get("--closed-by"), command: command as Command, root, layer, changeset, json: toggles.has("--json"), drift: toggles.has("--check"), write: toggles.has("--write"), ...(targets.length ? { targets } : {}) };
+  return { base: values.get("--base"), paths, contract: values.get("--contract"), observations: values.get("--observations"), writeNeeds: toggles.has("--write-needs"), status: values.get("--status"), candidate: values.get("--candidate"), closedBy: values.get("--closed-by"), command: command as Command, root, layer, changeset, json: toggles.has("--json"), drift: toggles.has("--check"), write: toggles.has("--write"), ...(targets.length ? { targets } : {}) };
 }
 
 /** Filter only findings attributable to the other layer; cross-layer findings stay visible. */
@@ -217,13 +220,18 @@ export async function main(argv: string[], io: LibraryCliIO = defaultIO): Promis
   try {
     const args = parseArgs(argv);
     if (args.command === "recommend") { io.error("recommend unavailable: the chooser has not shipped; no library was changed"); return 2; }
+    if (args.command === "receipt") {
+      const verdict = await checkLibraryReceipt(args.root, args.base ? { base: JSON.parse(await readRegularText(pathResolve(args.base))) } : {});
+      io.out(args.json ? JSON.stringify(verdict) : `${verdict.ok ? "Designer write receipt matches the library" : "Designer write receipt check failed"}; contentHash ${verdict.contentHash}${verdict.findings.map(finding => `\n${finding.code}${finding.path ? ` ${finding.path}` : ""} ${finding.message}`).join("")}`);
+      return verdict.ok ? 0 : 1;
+    }
 
     if (args.command === "needs") {
       if (args.paths.length) {
         if (!args.status || !NEED_STATUSES.includes(args.status as NeedStatus)) throw new LibraryInputError("needs set requires one valid --status");
         const candidate: unknown = args.candidate ? JSON.parse(args.candidate) : undefined;
         if (candidate !== undefined && !isNeedCandidate(candidate)) throw new LibraryInputError("Invalid NEED candidate");
-        const need = await setNeed(args.root, args.paths[1]!, { status: args.status as NeedStatus, ...(candidate ? { candidate } : {}), ...(args.closedBy ? { closedBy: args.closedBy } : {}) });
+        const need = await setNeed(args.root, args.paths[1]!, { status: args.status as NeedStatus, ...(candidate ? { candidate } : {}), ...(args.closedBy ? { closedBy: args.closedBy } : {}) }, undefined, { command: "designer-library needs set" });
         io.out(args.json ? JSON.stringify(need) : `${need.id} ${need.status}`); return 0;
       }
       const statuses = args.status?.split(",");
@@ -261,7 +269,7 @@ export async function main(argv: string[], io: LibraryCliIO = defaultIO): Promis
       }
       const report = consumerSources ? runConsumerDogfood({ ...consumerSources, needs, tokens, themeCss, tokenLibrary }) : runDogfood({ ...sources, needs, tokens, themeCss, exceptions });
       if (args.writeNeeds) {
-        const written = await writeNeeds(args.root, report.findings);
+        const written = await writeNeeds(args.root, report.findings, undefined, { command: "designer-library dogfood --write-needs", inputs: { paths: args.paths } });
         for (const finding of report.findings) { const need = written.find(row => row.raisedBy === finding.raisedBy && row.missing === finding.missing); if (need) finding.needId = need.id; }
         report.needs = written.filter(need => report.findings.some(finding => finding.raisedBy === need.raisedBy && finding.missing === need.missing)).map(row => row.id);
       }
@@ -270,11 +278,7 @@ export async function main(argv: string[], io: LibraryCliIO = defaultIO): Promis
     }
     if (args.command === "graph") {
       const output = serializeUsageGraph(buildUsageGraph(await libraryUsageGraphInputs(args.root, catalog, compositeCatalog))), path = pathResolve(args.root, "usage-graph.json");
-      if (args.write) {
-        const handle = await fs.open(path, constants.O_WRONLY | constants.O_CREAT | constants.O_TRUNC | constants.O_NOFOLLOW, 0o644);
-        try { await handle.writeFile(output); } finally { await handle.close(); }
-        io.out("usage-graph.json written"); return 0;
-      }
+      if (args.write) { await writeUsageGraph(args.root, output, { command: "designer-library graph --write" }); io.out("usage-graph.json written"); return 0; }
       let current: string | undefined;
       try { current = await readRegularText(path); } catch (error) { if ((error as NodeJS.ErrnoException).code !== "ENOENT") throw error; }
       if (current !== output) { io.error("usage-graph.json is stale; run designer-library graph --root <library> --write"); return 1; }
@@ -301,7 +305,7 @@ export async function main(argv: string[], io: LibraryCliIO = defaultIO): Promis
       return ok ? 0 : 1;
     }
     if (args.command === "emit") {
-      const result = await emitLibrary(args.root, compositeCatalog, { check: args.drift, targets: args.targets, componentOptions: await readObservations(args.root, args.observations), surfaceOptions: await surfaceOptions() });
+      const result = await emitLibrary(args.root, compositeCatalog, { check: args.drift, targets: args.targets, componentOptions: await readObservations(args.root, args.observations), surfaceOptions: await surfaceOptions(), ...(args.drift ? {} : { stamp: { command: "designer-library emit" } }) });
       io.out(result.ok ? args.drift ? "Library emission is current" : "Library emission written" : `Library emission drift: ${result.drift.join(", ")}`);
       return result.ok ? 0 : 1;
     }
@@ -312,10 +316,10 @@ export async function main(argv: string[], io: LibraryCliIO = defaultIO): Promis
       changes = JSON.parse(new TextDecoder("utf-8", { fatal: true }).decode(await handle.readFile()));
     } finally { await handle.close(); }
     if(changes&&typeof changes==="object"&&"baseHash" in changes&&typeof changes.baseHash==="string"&&changes.baseHash.startsWith("sha256:")){
-      if(!isCompositeChangeSet(changes,compositeCatalog))throw new LibraryInputError("Invalid composite changeset");const library=await writeCompositeLibrary(args.root,compositeCatalog,changes,await readObservations(args.root,args.observations),await surfaceOptions());const result={ok:true,baseHash:compositeLibraryHash(library)};io.out(args.json?JSON.stringify(result):`Library changes applied; baseHash ${result.baseHash}`);return 0;
+      if(!isCompositeChangeSet(changes,compositeCatalog))throw new LibraryInputError("Invalid composite changeset");const library=await writeCompositeLibrary(args.root,compositeCatalog,changes,await readObservations(args.root,args.observations),await surfaceOptions(),{command:"designer-library apply"});const result={ok:true,baseHash:compositeLibraryHash(library)};io.out(args.json?JSON.stringify(result):`Library changes applied; baseHash ${result.baseHash}`);return 0;
     }
     if (!isLibraryChangeSet(changes, catalog)) throw new LibraryInputError("Invalid library changeset");
-    const library = await writeLibrary(args.root, catalog, changes);
+    const library = await writeLibrary(args.root, catalog, changes, { command: "designer-library apply" });
     const result = { ok: true, baseHash: libraryHash(library) };
     io.out(args.json ? JSON.stringify(result) : `Library changes applied; baseHash ${result.baseHash}`);
     return 0;
