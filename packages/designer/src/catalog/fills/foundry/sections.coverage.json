@@ -679,22 +679,22 @@
       "unresolvedMemberAxes": []
     },
     {
-      "missingMembers": [
+      "missingMembers": [],
+      "missingRequiredSlots": [],
+      "missingSlots": [],
+      "notes": [
+        "Heading level is configurable via level; id is inherited HTML input. align and density map to the block's own props; the block enforces no two-action maximum.",
+        "Descriptor only; source imports, token reads, shared anatomy, accessibility, contrast and consumer runtime conformance are unmeasured. Content bindings describe host adaptation points, not type-equivalent converters."
+      ],
+      "slot": "sections.section-header",
+      "status": "candidate",
+      "supportedMembers": [
         "align.center",
         "align.start",
         "density.compact",
         "density.display",
         "density.standard"
       ],
-      "missingRequiredSlots": [],
-      "missingSlots": [],
-      "notes": [
-        "Heading level is configurable via level; id is inherited HTML input. No align or density members and no enforced two-action maximum.",
-        "Descriptor only; source imports, token reads, shared anatomy, accessibility, contrast and consumer runtime conformance are unmeasured. Content bindings describe host adaptation points, not type-equivalent converters."
-      ],
-      "slot": "sections.section-header",
-      "status": "subset",
-      "supportedMembers": [],
       "supportedSlots": [
         "actions",
         "description",

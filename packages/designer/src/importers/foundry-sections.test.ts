@@ -116,7 +116,7 @@ describe("Foundry section package descriptors", () => {
     expect(rows.get("sections.band")!.missingMembers).toContain("ground.transparent");
     expect(rows.get("sections.band")!.unresolvedMemberAxes).toEqual(["rhythm"]);
     expect(rows.get("sections.pagination")!.missingMembers).toEqual(["mode.cursor", "mode.load-more"]);
-    expect(rows.get("sections.section-header")!.supportedMembers).toEqual([]);
+    expect(rows.get("sections.section-header")!.supportedMembers).toEqual(["align.center", "align.start", "density.compact", "density.display", "density.standard"]);
     expect(rows.get("sections.hero")!.missingRequiredSlots).toEqual([]);
     expect(rows.get("sections.page-header")!.missingMembers).toEqual(["config.record", "config.standard"]);
     expect(rows.get("sections.features")!.missingMembers).toEqual(["layout.list", "layout.split"]);
