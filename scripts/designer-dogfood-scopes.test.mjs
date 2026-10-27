@@ -1,9 +1,11 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { spawnSync } from "node:child_process";
+import { mkdtempSync, mkdirSync, copyFileSync, writeFileSync, rmSync, realpathSync } from "node:fs";
+import { tmpdir } from "node:os";
 import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
-import { designerDogfoodScopes } from "./lib/designer-dogfood-scopes.mjs";
+import { designerDogfoodRoots, designerDogfoodScopes } from "./lib/designer-dogfood-scopes.mjs";
 
 const repo = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const command = resolve(repo, "scripts/check-designer-dogfood.mjs");
@@ -44,4 +46,30 @@ test("the real CLI emits a failed machine report when admin scope is omitted", (
     assert.deepEqual(report.inventory, []);
     assert.ok(report.findings.some(row => row.code === "DG0" && /Admin shell source scope is required/.test(row.message)));
   }
+});
+
+
+test("flattened scanner roots retain Studio and Publisher when additional roots are supplied", () => {
+  const scopes = designerDogfoodScopes(["--root", "extra/Page.tsx", "--admin-root", "admin/Shell.tsx"], "/fixture/repository", "/fixture/consumer");
+  assert.deepEqual(designerDogfoodRoots(scopes), [...scopes.studio, ...scopes.publisher, ...scopes.adminShell, ...scopes.additional]);
+});
+
+test("the real CLI forwards mandatory and additional roots to the scanner", () => {
+  const root = realpathSync(mkdtempSync(resolve(tmpdir(), "dogfood-command-wiring-")));
+  try {
+    mkdirSync(resolve(root, "scripts/lib"), { recursive: true });
+    copyFileSync(command, resolve(root, "scripts/check-designer-dogfood.mjs"));
+    copyFileSync(resolve(repo, "scripts/lib/designer-dogfood-scopes.mjs"), resolve(root, "scripts/lib/designer-dogfood-scopes.mjs"));
+    // A test-only scanner records actual arguments. It does not inspect or qualify production sources.
+    writeFileSync(resolve(root, "scripts/lib/designer-dogfood.mjs"), 'export function scanDesignerDogfood({roots}) { return { ok: true, findings: [], inventory: roots.map(file => ({file})) }; }');
+    const child = spawnSync(process.execPath, [resolve(root, "scripts/check-designer-dogfood.mjs"), "--root", "extra/Page.tsx", "--admin-root", "admin/Shell.tsx"], { cwd: root, encoding: "utf8" });
+    assert.equal(child.status, 0, child.stderr);
+    const report = JSON.parse(child.stdout);
+    assert.deepEqual(report.inventory.map(row => row.file).sort(), [
+      resolve(root, "packages/designer/src/studio"),
+      resolve(root, "packages/publisher/src/web/publisher/PublisherPage.tsx"),
+      resolve(root, "admin/Shell.tsx"),
+      resolve(root, "extra/Page.tsx"),
+    ].sort());
+  } finally { rmSync(root, { recursive: true, force: true }); }
 });

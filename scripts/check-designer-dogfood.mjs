@@ -10,12 +10,12 @@
 import { resolve, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
 import { scanDesignerDogfood } from "./lib/designer-dogfood.mjs";
-import { designerDogfoodScopes } from "./lib/designer-dogfood-scopes.mjs";
+import { designerDogfoodRoots, designerDogfoodScopes } from "./lib/designer-dogfood-scopes.mjs";
 const repo = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 let report;
 try {
   const consumerScopes = designerDogfoodScopes(process.argv.slice(2), repo);
-  report = { ...scanDesignerDogfood({ designerRoot: resolve(repo, "packages/designer"), roots: [...new Set(Object.values(consumerScopes).flat())] }), consumerScopes };
+  report = { ...scanDesignerDogfood({ designerRoot: resolve(repo, "packages/designer"), roots: designerDogfoodRoots(consumerScopes) }), consumerScopes };
 } catch (error) {
   report = { schema: "designer-dogfood/v1", ok: false, findings: [{ code: "DG0", file: "", line: 1, message: error.message }], inventory: [], foundation: [] };
 }

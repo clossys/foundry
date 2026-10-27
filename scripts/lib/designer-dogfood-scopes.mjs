@@ -19,3 +19,8 @@ export function designerDogfoodScopes(args, repoRoot, cwd = process.cwd()) {
     additional: [...new Set(additional)].sort(),
   };
 }
+
+/** The exact roots passed to the scanner, including every required consumer scope. */
+export function designerDogfoodRoots(scopes) {
+  return [...new Set(Object.values(scopes).flat())];
+}
