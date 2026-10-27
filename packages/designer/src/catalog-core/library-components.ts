@@ -74,32 +74,44 @@ function computePortions(input: CompositeEngineInput): PortionResolution {
   return { values, components, findings: [...checkValues({ catalog: input.catalog.values, library: owned.values, fileExists: input.fileExists }).findings, ...components.check.findings] };
 }
 /**
- * Everything a portion resolution reads besides the library: the value and component catalogs and each of their
- * fields, the component options and each of theirs, and the file probe. Compared by identity, so a catalog or option
- * field replaced in place is a different input.
+ * Everything the probe-independent part of a portion resolution reads besides the library: the value and component
+ * catalogs and each of their fields, and the component options and each of theirs. Compared by identity, so a catalog
+ * or option field replaced in place is a different input.
  * Catalogs are build-time data, loaded once and never mutated deeper than a replaced top-level field.
  */
 function portionReads(input: CompositeEngineInput): readonly unknown[] {
   const { values, components } = input.catalog, options = input.componentOptions;
-  return [values, ...Object.values(values), components, ...Object.values(components), options, ...(options ? Object.values(options) : []), input.fileExists];
+  return [values, ...Object.values(values), components, ...Object.values(components), options, ...(options ? Object.values(options) : [])];
 }
-interface PortionEntry { readonly digest: string; readonly reads: readonly unknown[]; readonly portions: PortionResolution }
+interface PortionEntry {
+  readonly digest: string; readonly reads: readonly unknown[];
+  readonly values: Resolved; readonly components: ReturnType<typeof componentProfile>;
+  /** The value check without a file probe: it reads nothing but the library and catalog, so it is kept too. */
+  unprobed?: CompositeCheckResult["findings"];
+}
 /** Few distinct catalogs or options ever resolve one library object; older entries are dropped. */
 const PORTION_ENTRIES = 4;
 const portionCache = new WeakMap<CompositeLibraryData, readonly PortionEntry[]>();
 /**
- * One portion resolution per library digest: keyed by the library object and re-checked against its digest, so a
- * library changed in place, or another library, never reuses a result, and by everything else the resolution reads.
+ * One value and component resolution per library digest: keyed by the library object and re-checked against its
+ * digest, so a library changed in place, or another library, never reuses a result, and by everything else that
+ * resolution reads. A file probe's answer is never kept: with `fileExists` the value check runs afresh on every call,
+ * so evidence deleted or added between two calls is seen, whatever callback asks.
  */
 function resolvePortions(input: CompositeEngineInput, digest = compositeLibraryHash(input.library)): PortionResolution {
   const reads = portionReads(input);
   // Entries for another digest describe this object before an in-place change: they can never be read again.
   const entries = (portionCache.get(input.library) ?? []).filter(entry => entry.digest === digest);
-  const hit = entries.find(entry => entry.reads.length === reads.length && entry.reads.every((read, index) => read === reads[index]));
-  if (hit) return hit.portions;
-  const resolved = computePortions(input);
-  portionCache.set(input.library, [{ digest, reads, portions: resolved }, ...entries].slice(0, PORTION_ENTRIES));
-  return resolved;
+  let entry = entries.find(entry => entry.reads.length === reads.length && entry.reads.every((read, index) => read === reads[index]));
+  if (!entry) {
+    const owned = portions(input.library);
+    const values = resolveValues({ catalog: input.catalog.values, library: owned.values });
+    entry = { digest, reads, values, components: componentProfile(input, values) };
+    portionCache.set(input.library, [entry, ...entries].slice(0, PORTION_ENTRIES));
+  }
+  const valueCheck = { catalog: input.catalog.values, library: portions(input.library).values };
+  const valueFindings = input.fileExists ? checkValues({ ...valueCheck, fileExists: input.fileExists }).findings : (entry.unprobed ??= checkValues(valueCheck).findings);
+  return { values: entry.values, components: entry.components, findings: [...valueFindings, ...entry.components.check.findings] };
 }
 function resolveCompositeFrom(input: CompositeEngineInput, { values, components, findings }: PortionResolution, selectionHash = compositeLibraryHash(input.library)): CompositeResolved {
   const profile: CompositeResolved = { consumer: input.library.source.id, selectionHash, values, components,

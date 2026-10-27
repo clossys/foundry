@@ -125,9 +125,51 @@ describe("portion memo", () => {
     input.catalog.values = { ...input.catalog.values };
     resolve(input);
     expect(calls.components).toBe(2);
+    // A file probe is not a resolution input: the portions are kept and the value check probes afresh.
     input.fileExists = () => true;
     const probed = resolve(input);
-    expect(calls.components).toBe(3);
+    expect(calls.components).toBe(2);
     expect(probed).toEqual(fresh(input));
+  });
+
+  /** A consumer value fill citing one evidence file, so the value check probes it. */
+  function withEvidence(input: CompositeEngineInput, path: string): CompositeEngineInput {
+    input.catalog.values = { ...input.catalog.values, standards: [...input.catalog.values.standards, { id: "example", title: "Example", version: "1", url: "https://example.org", clauses: [{ id: "rule", title: "Rule" }] }] };
+    const meta = input.library.values.fills[0]!.$extensions["com.clossys.fill"];
+    meta.conforms = [...meta.conforms, "example#rule"];
+    meta.evidence = [...meta.evidence, { clause: "example#rule", path }];
+    return input;
+  }
+  const notFound = (profile: ReturnType<typeof resolve>, path: string) => profile.check.findings.filter(f => f.code === "C3" && f.severity === "error" && f.message.endsWith(`not found at ${path}`));
+
+  it("probes evidence afresh when the file changes between resolutions with the same callback", () => {
+    const path = "evidence/changing.test.ts", present = new Set([path]);
+    const input = withEvidence(componentIntegration(), path);
+    input.fileExists = file => present.has(file);
+    calls.components = 0;
+    const before = resolve(input);
+    expect(notFound(before, path)).toEqual([]);
+    present.delete(path);
+    const after = resolve(input);
+    expect(notFound(after, path)).toHaveLength(1);
+    expect(after.check.ok).toBe(false);
+    expect(after).toEqual(fresh(input));
+    present.add(path);
+    expect(notFound(resolve(input), path)).toEqual([]);
+    // Only the probe reran: the value and component resolution is still the one computation.
+    expect(calls.components).toBe(1);
+  });
+
+  it("probes evidence afresh through a fresh input or callback wrapper sharing every other reference", () => {
+    const path = "evidence/wrapped.test.ts", present = new Set([path]);
+    const input = withEvidence(componentIntegration(), path);
+    const probe = (file: string) => present.has(file);
+    input.fileExists = probe;
+    expect(notFound(resolve(input), path)).toEqual([]);
+    present.delete(path);
+    expect(notFound(resolve({ ...input }), path)).toHaveLength(1);
+    expect(notFound(resolve({ ...input, fileExists: file => probe(file) }), path)).toHaveLength(1);
+    present.add(path);
+    expect(notFound(resolve({ ...input, fileExists: file => probe(file) }), path)).toEqual([]);
   });
 });
