@@ -217,17 +217,24 @@ describe("SYNTHETIC component code generation; no shipped conformance claims", (
   });
 });
 
-describe("real source materialization remains blocked", () => {
-  it("reports 24 of 26 descriptors blocked and refuses real button, select and calendar adoption", () => {
+describe("real source materialization requires an authenticated bundle", () => {
+  // The rewriter's exact selected bindings (rewrite.ts selectedBindings, each kept as a "Restyled source"
+  // note) account for every former K4/K7 tuple, so no committed shadcn@aria descriptor carries a rewrite
+  // blocker. The 27th descriptor is the registered file-trigger composition. Zero blockers is still not
+  // conformance, and adoption without the materializer's authenticated bytes still refuses.
+  it("reports 0 of 27 descriptors blocked and still refuses real adoption without its source bundle or rule", () => {
     const directory = resolve(import.meta.dirname, "../catalog/fills/shadcn@aria");
     const fills = readdirSync(directory).filter(path => path !== "components.coverage.json").map(path => JSON.parse(readFileSync(resolve(directory, path), "utf8")) as ComponentCandidateDocument);
     const input = synthetic();
     const report = componentMaterializationReport({ ...input.catalog, fills });
-    expect(stableStringify(report)).toBe(golden("real-blocked.json"));
-    expect(report.blockedCount).toBe(24); expect(report.descriptorCount).toBe(26);
-    for (const slot of ["components.button", "components.select", "components.calendar"]) {
+    expect(stableStringify(report)).toBe(golden("real-blocked.json", stableStringify(report)));
+    expect(report.blockedCount).toBe(0); expect(report.descriptorCount).toBe(27);
+    expect(report.runtimeConformance).toBe("unassessed");
+    const adopt = (slot: string) => {
       const catalog = { ...input.catalog, slots: [{ ...input.catalog.slots[0]!, id: slot }], fills };
-      expect(() => applyComponentLibraryChange(catalog, input.library, { baseHash: componentLibraryHash(input.library), changes: [{ op: "adopt", slot, source: "shadcn@aria" }] })).toThrow(/blocked materialization/);
-    }
+      return () => applyComponentLibraryChange(catalog, input.library, { baseHash: componentLibraryHash(input.library), changes: [{ op: "adopt", slot, source: "shadcn@aria" }] });
+    };
+    for (const slot of ["components.button", "components.select", "components.calendar"]) expect(adopt(slot)).toThrow(/source bundle required/);
+    expect(adopt("components.file-trigger")).toThrow(/compose-only candidate requires its registered rule/);
   });
 });

@@ -137,7 +137,7 @@ describe('signed token coverage decisions', () => {
 
 
 describe('generic shadcn rewrite blocker accounting', () => {
-  it('pins every remaining K-code per fill after generic bindings without implying conformance', () => {
+  it('pins zero remaining K-codes per fill after exact selected bindings without implying conformance', () => {
     const fixture = pathResolve(here, '__fixtures__/shadcn-aria');
     const bytes = (name: string) => readFileSync(pathResolve(fixture, name), 'utf8');
     const result = importShadcnAriaComponents({
@@ -151,84 +151,10 @@ describe('generic shadcn rewrite blocker accounting', () => {
       for (const issue of fill.blockers) codes[issue.code] = (codes[issue.code] ?? 0) + 1;
       return [fill.slot, codes];
     }));
-    expect(counts).toEqual({
-      "components.avatar": {
-            "K4": 7
-      },
-      "components.badge": {
-            "K4": 7
-      },
-      "components.banner": {
-            "K4": 4
-      },
-      "components.breadcrumbs": {
-            "K4": 2,
-            "K7": 2
-      },
-      "components.button": {
-            "K4": 9
-      },
-      "components.calendar": {
-            "K4": 15
-      },
-      "components.card": {
-            "K4": 6
-      },
-      "components.checkbox": {
-            "K4": 1
-      },
-      "components.combo-box": {
-            "K4": 36
-      },
-      "components.dialog": {
-            "K4": 5
-      },
-      "components.disclosure": {
-            "K4": 4
-      },
-      "components.keyboard": {
-            "K4": 3
-      },
-      "components.menu": {
-            "K4": 11
-      },
-      "components.popover": {
-            "K4": 6
-      },
-      "components.progress-bar": {},
-      "components.radio-group": {},
-      "components.select": {
-            "K4": 31
-      },
-      "components.separator": {
-            "K4": 4
-      },
-      "components.skeleton": {
-            "K4": 1
-      },
-      "components.slider": {
-            "K4": 4
-      },
-      "components.switch": {
-            "K4": 6
-      },
-      "components.table": {
-            "K4": 3
-      },
-      "components.tabs": {
-            "K4": 16
-      },
-      "components.toggle-button": {
-            "K4": 11
-      },
-      "components.toggle-group": {
-            "K4": 8
-      },
-      "components.tooltip": {
-            "K4": 6
-      }
-});
-    expect(result.fills.reduce((total, doc) => total + Object.values(doc.components)[0]!.blockers.length, 0)).toBe(208);
+    // rewrite.ts selectedBindings accounts for every former K4/K7 tuple as a "Restyled source" note.
+    expect(Object.values(counts).every(codes => Object.keys(codes).length === 0)).toBe(true);
+    expect(Object.keys(counts)).toHaveLength(26);
+    expect(result.fills.reduce((total, doc) => total + Object.values(doc.components)[0]!.blockers.length, 0)).toBe(0);
     expect(result.fills.every(doc => doc.$extensions['com.clossys.fill'].status === 'draft' && doc.$extensions['com.clossys.fill'].evidence.length === 0)).toBe(true);
   });
 });

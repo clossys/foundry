@@ -83,12 +83,14 @@ describe("selected pinned-source normalization", () => {
       expect(bundle.files.map(file => file.path)).toContain(`components/${leaf}/${entry}.tsx`);
     }
   });
-  it("B1-N4 receipts every final file and retains all 208 rewrite blockers", () => {
+  // The former 206 K4 + 2 K7 tuples are now accounted for by rewrite.ts selectedBindings: each exact,
+  // accepted restyle is kept as a "Restyled source" receipt note rather than a blocker.
+  it("B1-N4 receipts every final file and keeps every accepted restyle as a note, not a blocker", () => {
     const result = importShadcnAriaComponents(pinnedInput());
     const blockers = result.fills.flatMap(doc => Object.values(doc.components).flatMap(fill => fill.blockers));
-    expect(blockers).toHaveLength(208);
-    expect(blockers.filter(issue => issue.code === "K4")).toHaveLength(206);
-    expect(blockers.filter(issue => issue.code === "K7")).toHaveLength(2);
+    expect(blockers).toHaveLength(0);
+    const restyled = result.receipt.filter(row => row.status === "candidate").flatMap(row => row.notes ?? []).filter(note => note.message.startsWith("Restyled source"));
+    expect(restyled).toHaveLength(136);
     for (const [item, bundle] of Object.entries(result.rewrites)) {
       expect(bundle.outputSha256, item).toEqual(bundle.files.map(file => ({ path: file.path, sha256: sha256(file.content) })).sort((a, b) => a.path.localeCompare(b.path)));
     }
