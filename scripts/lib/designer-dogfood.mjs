@@ -28,15 +28,24 @@ function literalTitleContext(node) {
   while (ts.isArrayLiteralExpression(owner) || ts.isParenthesizedExpression(owner)) owner = owner.parent;
   return (ts.isPropertyAssignment(owner) || ts.isVariableDeclaration(owner)) && owner.name && /^(?:titles?|headings?)$/i.test(owner.name.getText().replace(/["']/g, ""));
 }
-function rawColor(value, styling = false, issueTitle = false) {
+function literalAnchorContext(node) {
+  const parent = node.parent, name = ts.isJsxAttribute(parent) || ts.isPropertyAssignment(parent) || ts.isVariableDeclaration(parent) ? parent.name?.getText().replace(/["']/g, "") : undefined;
+  return name !== undefined && /^(?:href|to|hash|anchor|fragment)$/i.test(name) && /^#[\w-]+$/.test(node.text);
+}
+function rawColor(value, styling = false, issueTitle = false, anchor = false) {
   // URL fragments and numeric issue references are prose, while the same bytes
   // in a declaration, color property or arbitrary class are still paint.
   const clean = value.replace(/https?:\/\/[^\s"'<>]+/g, "");
   if (/\brgba?\s*\(/i.test(clean)) return true;
   return [...clean.matchAll(/#[\da-f]{3,8}\b/gi)].some(match => {
     if (styling || /\b(?:[\w-]*gradient|drop-shadow|color-mix|light-dark)\s*\(/i.test(clean) || /\b(?:solid|dashed|dotted|double)\s+#|#[\da-f]{3,8}\s+(?:solid|dashed|dotted|double)\b/i.test(clean) || /\[[^\]]*#/.test(clean) || [...clean.matchAll(declaration)].some(row => color.test(row[1]))) return true;
-    if (!/^#\d+$/.test(match[0])) return true;
     const before = clean.slice(0, match.index), after = clean.slice(match.index + match[0].length);
+    // A fragment glued to a path or owner/repository token (owner/repo#12,
+    // docs/page.md#add, /settings#cafe) and a whole #fragment link target
+    // address a document, never paint. A bare word before # stays paint.
+    const token = /[^\s,;:()[\]{}"'`<>=]*$/.exec(before)[0];
+    if (/[/.]/.test(token) && /[\w/-]$/.test(token) || anchor) return false;
+    if (!/^#\d+$/.test(match[0])) return true;
     // Numeric references need an observed prose form. A unit's letters (2px)
     // do not make a shadow/paint value prose.
     const reference = /\b(?:issue|issues|fix|fixes|fixed|close|closes|closed|refs?|pull|pr)\s*\(?\s*$/i.test(before)
@@ -362,7 +371,7 @@ export function scanDesignerDogfood({ roots, designerRoot, foundationReceipt = a
         if (property(unwrap(node.expression)) === "setAttribute" && node.arguments[0] && ts.isStringLiteralLike(node.arguments[0]) && node.arguments[0].text === "style") add("DG4", node, "inline style attribute mutation");
       }
       const literal = ts.isStringLiteralLike(node) || [ts.SyntaxKind.TemplateHead, ts.SyntaxKind.TemplateMiddle, ts.SyntaxKind.TemplateTail].includes(node.kind);
-      if (literal && rawColor(node.text, literalStyleContext(node), literalTitleContext(node))) add("DG3", node, "raw color literal");
+      if (literal && rawColor(node.text, literalStyleContext(node), literalTitleContext(node), literalAnchorContext(node))) add("DG3", node, "raw color literal");
       if (literal && rawPixel(node.text, literalStyleContext(node))) add("DG5", node, "raw pixel dimension bypasses registered token binding");
       if (literal && /\[[^\]]*(?:\d(?:px|rem|em|vh|vw|vmin|vmax)|#[\da-f]{3,8})[^\]]*\]/i.test(node.text)) add("DG5", node, "arbitrary class paint bypasses registered token binding");
       if (ts.isBinaryExpression(node) && node.operatorToken.kind === ts.SyntaxKind.EqualsToken && styleTarget(node.left)) add("DG4", node, "imperative inline style bypasses Foundry ownership");

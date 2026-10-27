@@ -269,6 +269,19 @@ test("numeric issue references and issue URLs are prose, while colors in propert
   }
 }));
 
+test("repository issue references and path anchors are references, while unanchored hex stays paint", () => fixture(({ put, scan }) => {
+  // A generated program feed cites cross-repository issues as owner/repo#N.
+  put("consumer/feed.generated.ts", 'export const feed=[{"ref":"example/project#1966","title":"Pin"},{"ref":"example-org/other.repo#2596"},{"source":"see example/project#123 and docs/guide.md#add"}];');
+  put("consumer/links.ts", 'export const links={href:"#beef",anchor:"#fade",to:"/settings#cafe",hash:"#add"};');
+  const clean = scan("consumer");
+  assert.equal(clean.ok, true, JSON.stringify(clean.findings));
+  put("consumer/links.ts", "export const links={};");
+  for (const content of ['export const ref="#abcdef";', 'export const border="1px solid#000";', 'export const fill="solid#abc";', 'export const color="#1966";', 'export const href="rgb(1,2,3)";', 'export const css="color: example/project#123;";', 'export const X=()=> <div className="bg-[#123456]"/>;']) {
+    put("consumer/feed.generated.ts", content);
+    assert.ok(scan("consumer").findings.some(row => row.code === "DG3"), content);
+  }
+}));
+
 test("vendor-prefixed CSS declarations retain raw color and pixel checks", () => fixture(({ put, scan }) => {
   put("consumer/main.css", ".a{-webkit-tap-highlight-color:var(--color-ink);-webkit-mask-position:var(--space-md)}");
   assert.equal(scan("consumer").ok, true);
