@@ -8,7 +8,7 @@ import { sha256 } from "../catalog-core/digest.js";
 import { rewriteShadcnAria } from "./rewrite.js";
 import slots from "../catalog/slots/components.json" with { type: "json" };
 import type { ComponentSlot } from "../catalog-core/types.js";
-import { generatedShadcnComponentFiles, importShadcnAriaComponents, materializeShadcnComponent, SHADCN_ARIA_COMPONENT_PIN, SHADCN_COMPONENT_ITEMS, verifyShadcnSource, type ShadcnComponentInput } from "./shadcn-aria-components.js";
+import { bindSiblingLeafModules, generatedShadcnComponentFiles, importShadcnAriaComponents, materializeShadcnComponent, SHADCN_ARIA_COMPONENT_PIN, SHADCN_COMPONENT_ITEMS, verifyShadcnSource, type ShadcnComponentInput } from "./shadcn-aria-components.js";
 
 const here = resolve(import.meta.dirname, "__fixtures__/shadcn-aria");
 const read = (name: string): string => readFileSync(resolve(here, name), "utf8");
@@ -54,6 +54,15 @@ describe("pinned shadcn aria component import", () => {
       file.content = content;
       expect(() => verifyShadcnSource(file), kind).not.toThrow();
     }
+  });
+  it("binds a sibling's own module only for sub-parts, keeps contract-only and Icon imports on the entrypoint, refuses an ambiguous leaf", () => {
+    const leafByItem = { button: "button", select: "select", toggle: "toggle-button", input: "text-field", textarea: "text-field" };
+    const source = 'import { Button } from "../button/index.js"\nimport {\n  Select,\n  SelectContent,\n} from "../select/index.js"\nimport { Icon as LibraryIcon } from "../icon/index.js"\nimport { cn } from "../_parts/utils/index.js"\nimport { Button as Deep, buttonVariants } from "../../button/index.js"\nimport { ToggleButton } from "../toggle-button/index.js"\nimport { toggleVariants } from "../toggle-button/index.js"';
+    const bound = bindSiblingLeafModules(source, leafByItem);
+    expect(bound.content).toBe('import { Button } from "../button/index.js"\nimport {\n  Select,\n  SelectContent,\n} from "../select/select.js"\nimport { Icon as LibraryIcon } from "../icon/index.js"\nimport { cn } from "../_parts/utils/index.js"\nimport { Button as Deep, buttonVariants } from "../../button/button.js"\nimport { ToggleButton } from "../toggle-button/index.js"\nimport { toggleVariants } from "../toggle-button/toggle.js"');
+    expect(bound.ambiguous).toEqual([]);
+    expect(bindSiblingLeafModules('import { TextField } from "../text-field/index.js"', leafByItem)).toEqual({ content: 'import { TextField } from "../text-field/index.js"', ambiguous: [] });
+    expect(bindSiblingLeafModules('import { Input } from "../text-field/index.js"', leafByItem)).toEqual({ content: 'import { Input } from "../text-field/index.js"', ambiguous: ["text-field"] });
   });
   it("calendar rebind owns day styles and preserves single/range root protocols", () => {
     const result = importShadcnAriaComponents(pinnedInput());

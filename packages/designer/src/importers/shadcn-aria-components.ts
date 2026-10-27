@@ -336,6 +336,27 @@ function calendarContextSource(source: string): string {
 }
 
 /** Pure import: pinned input is caller-supplied; no registry calls or runtime claims. */
+/**
+ * Applied after every normalized-source receipt. The emitter owns each `components/<leaf>/index.ts`
+ * and exports only the leaf's contract name from it, whichever source fills that leaf. An import of
+ * that name alone stays on the entrypoint, so it composes with any source. An import that also needs
+ * a sub-part binds the sibling's own module (`components/<leaf>/<item>.tsx`), which exists only when
+ * this source fills that leaf; otherwise the emitter refuses it as missing. The asset Icon adapter is
+ * a contract-only import. A leaf filled by several items is left unbound for the caller to refuse.
+ */
+export function bindSiblingLeafModules(content: string, leafByItem: Readonly<Record<string, string>>): { content: string; ambiguous: string[] } {
+  const ambiguous: string[] = [];
+  const bound = content.replace(/(\bimport\s+(?:type\s+)?\{([^}]*)\}\s*from\s*")((?:\.\.\/)+)([a-z][a-z0-9-]*)\/index\.js(")/g, (all, before: string, list: string, up: string, leaf: string, after: string) => {
+    // The emitter's contract name for components.<leaf>.
+    const contract = leaf.split("-").map(word => word[0]!.toUpperCase() + word.slice(1)).join("");
+    const names = list.replace(/,\s*$/, "").split(",").map(binding => binding.trim().replace(/^type\s+/, "").split(/\s+as\s+/)[0]);
+    if (names.every(name => name === contract)) return all;
+    const items = Object.keys(leafByItem).filter(item => leafByItem[item] === leaf);
+    if (items.length !== 1) { ambiguous.push(leaf); return all; }
+    return `${before}${up}${leaf}/${items[0]}.js${after}`;
+  });
+  return { content: bound, ambiguous };
+}
 export function importShadcnAriaComponents(input: ShadcnComponentInput): ShadcnComponentImport {
   if (input.styles.path !== STYLE || input.notice.path !== "LICENSE.md") throw new Error("shadcn-components: missing style or licence input");
   verifyShadcnSource(input.styles); verifyShadcnSource(input.notice);
@@ -390,7 +411,10 @@ export function importShadcnAriaComponents(input: ShadcnComponentInput): ShadcnC
     const result = rewriteShadcnAria({ item: name, leaf, files: [selected, ...privateFiles], styles: input.styles.content, leafByItem: SHADCN_COMPONENT_ITEMS, styleDefaults: true });
     const files: SourceFile[] = result.files.map(file => {
       const normalized = normalizeSelectedSource(name === "calendar" && file.path === "components/calendar/calendar.tsx" ? { ...file, content: calendarContextSource(file.content) } : file);
-      return ["select", "calendar"].includes(name) ? selectedCaptionSource(normalized) : normalized;
+      const received = ["select", "calendar"].includes(name) ? selectedCaptionSource(normalized) : normalized;
+      const bound = bindSiblingLeafModules(received.content, SHADCN_COMPONENT_ITEMS);
+      for (const leaf of bound.ambiguous) closureIssues.push({ code: "K9", file: file.path, value: leaf, message: "Sibling leaf module is ambiguous" });
+      return { ...received, content: bound.content };
     });
     files.push({ path: adapter.notice, content: `# Third-party notice\n\nSource: ${SHADCN_ARIA_COMPONENT_PIN.url}\nCommit: ${SHADCN_ARIA_COMPONENT_PIN.commit}\nTransform: shadcn-aria-rewrite@1\n\n${input.notice.content}` });
     if (result.parts.includes("utils")) files.push({ path: "components/_parts/utils/index.ts", content: utils });
