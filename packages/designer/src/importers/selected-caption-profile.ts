@@ -3,8 +3,8 @@ import type { SourceFile } from "./rewrite.js";
 
 // Exact normalized G1 entries. Raw upstream pins remain authenticated separately.
 const entries: Readonly<Record<string, string>> = {
-  "components/select/select.tsx": "33440c6c43dd2f172e9659558d030aad7cd413d33cdb6c4a1f5455e906c463ae",
-  "components/calendar/calendar.tsx": "747066556b83fadecaa82b18a4f3ffe0c9bc29c1c168338c5fb561b844f6d5a5",
+  "components/select/select.tsx": "ee2db6fc9a01696c8683cb396cd576e010e6b02e89d354c0de84d731f4195ebb",
+  "components/calendar/calendar.tsx": "d2acdb6357f0e6ed98f82eb6d49e5a5688a6495eb6e3fb1535f7f963f812dca6",
 };
 /**
  * Bounded caption adapter; it resolves no style finding or runtime observation.

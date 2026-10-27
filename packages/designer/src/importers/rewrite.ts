@@ -40,6 +40,17 @@ const adapter = adapterData as {
   sizeLengths: Record<string, { member: string; property: string }>; sizeSteps: Record<string, string>;
 };
 const sorted = (values: Iterable<string>): string[] => [...new Set(values)].sort();
+/**
+ * One bound Icon call. Icon's accessibility contract is a compile-time union (decorative, or a
+ * label), so a call with neither does not typecheck. Upstream glyphs are aria-hidden by default
+ * (lucide, and shadcn's IconPlaceholder over it): unnamed calls stay decorative, and an explicit
+ * aria-hidden (a prop Icon owns) becomes the same `decorative`; a named call is kept as written.
+ */
+const iconCall = (asset: string, attributes: string): string => {
+  const kept = attributes.trim().replace(/(^|\s)aria-hidden(?:=(?:"true"|\{true\}))?(?=\s|$)\s*/g, "$1").trim();
+  const named = /(?:^|\s)(?:decorative|label|aria-label)(?=[\s=]|$)/.test(kept);
+  return `<LibraryIcon asset="${asset}"${named ? "" : " decorative"}${kept ? " " + kept : ""} />`;
+};
 /** One solid focus outline; its width reads the focus variable with the style's ring-3 default. */
 const focusOutline = (prefix: string, paint: string): string =>
   ["outline-solid", `outline-${styleRead("--ui-border-focus", "ring-3", "length")}`, "outline-offset-(--ui-focus-offset)", `outline-(${paint})`].map(atom => prefix + atom).join(" ");
@@ -1182,7 +1193,7 @@ function rewriteSource(input: RewriteInput): RewriteResult {
         const pattern = new RegExp(`<${local}\\b([^>]*?)\\/>`, "g");
         if (!asset || !pattern.test(content)) { unresolved = true; add("K7", file.path, imported!, "Lucide binding has no equivalent asset or a non-static call site"); continue; }
         pattern.lastIndex = 0;
-        content = content.replace(pattern, (_all, attributes: string) => `<LibraryIcon asset="${asset}"${attributes.trim() ? " " + attributes.trim() : ""} />`);
+        content = content.replace(pattern, (_all, attributes: string) => iconCall(asset, attributes));
         assets.add(asset); components.add("components.icon"); needsIcon = true;
       }
       if (!unresolved) content = content.replace(declaration[0], "");
@@ -1201,7 +1212,7 @@ function rewriteSource(input: RewriteInput): RewriteResult {
       if (!asset) { add("K7", file.path, name ?? "IconPlaceholder", "No asset leaf maps this glyph"); return all; }
       needsIcon = true; assets.add(asset); components.add("components.icon");
       const kept = attributes.replace(/\b(?:lucide|tabler|hugeicons|phosphor|remixicon)="[^"]*"\s*/g, "").trim();
-      return `<LibraryIcon asset="${asset}"${kept ? " " + kept : ""} />`;
+      return iconCall(asset, kept);
     });
     content = content.replace(/import\s*\{\s*IconPlaceholder\s*\}\s*from\s*["'][^"']+icon-placeholder["']\s*;?/g, "");
     if (needsIcon) content = content.replace(/("use client"\s*)?/, match => `${match}import { Icon as LibraryIcon } from "${relative}icon/index.js"\n`);

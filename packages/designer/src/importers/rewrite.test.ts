@@ -133,6 +133,13 @@ describe("shadcn-aria-rewrite@1", () => {
     expect(result.reads.assets).toEqual(["assets.icon-check"]);
     expect(rewrite('import { Unknown } from "lucide-react"\nconst glyph = <Unknown />').issues).toContainEqual(expect.objectContaining({ code: "K7" }));
   });
+  it("emits an unnamed glyph as decorative, satisfying Icon's accessibility union, and never overrides a named one", () => {
+    const placeholder = rewrite('const value = <IconPlaceholder lucide="CheckIcon" data-slot="field-label" />').files[0]!.content;
+    expect(placeholder).toContain('<LibraryIcon asset="assets.icon-check" decorative data-slot="field-label" />');
+    expect(rewrite('const value = <IconPlaceholder lucide="CheckIcon" aria-hidden="true" data-slot="x" />').files[0]!.content).toContain('<LibraryIcon asset="assets.icon-check" decorative data-slot="x" />');
+    expect(rewrite('import { Check } from "lucide-react"\nconst glyph = <Check />').files[0]!.content).toContain('<LibraryIcon asset="assets.icon-check" decorative />');
+    expect(rewrite('const value = <IconPlaceholder lucide="CheckIcon" label="Done" />').files[0]!.content).toContain('<LibraryIcon asset="assets.icon-check" label="Done" />');
+  });
   it("rebinds known registry leaves and keeps non-leaf dependencies as parts", () => {
     const result = rewrite('import { Button } from "@/components/ui/button"\nimport { InputGroup } from "@/components/ui/input-group"');
     expect(result.files[0]!.content).toContain('"../button/index.js"');
@@ -424,7 +431,7 @@ describe("shadcn-aria-rewrite@1", () => {
     const source='<IconPlaceholder lucide="MoreHorizontalIcon" aria-hidden="true" />';
     const breadcrumb=rewriteShadcnAria({item:"breadcrumb",leaf:"breadcrumbs",files:[{path:"breadcrumb.tsx",content:source}],styles:"",leafByItem:{}});
     expect(breadcrumb.reads.assets).toEqual(["assets.icon-chevron-down"]);
-    expect(breadcrumb.files[0]!.content).toContain('asset="assets.icon-chevron-down" aria-hidden="true"');
+    expect(breadcrumb.files[0]!.content).toContain('<LibraryIcon asset="assets.icon-chevron-down" decorative />');
     expect(breadcrumb.issues).toEqual([]);
     expect(rewrite(source).issues).toContainEqual(expect.objectContaining({code:"K7"}));
   });
