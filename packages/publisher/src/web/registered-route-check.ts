@@ -146,8 +146,14 @@ function nonvisualRouteProvider(source: string, mount: RouteProviderMount, known
  * checks below cannot be forged by an escaped spelling. */
 function closedLexicalFinding(source: string): string | undefined {
   if (/\\u/.test(source)) return "Unicode escapes are refused";
-  if (/(?<![\w$])(?:eval|Function)(?![\w$])/.test(source)) return "eval and Function constructors are refused";
-  if (/(?:[\w$)\]]|\?\.)\s*\[(?!\s*(?:"[^"\\\n]*"|'[^'\\\n]*'|\d+)?\s*\])/.test(source)) return "Computed member access with a non-literal key is refused";
+  if (/(?<![\w$])eval(?![\w$])/.test(source)) return "eval is refused";
+  // The global object and the reflection and code-building primitives, as in the provider seam.
+  if (/(?<![\w$])(?:globalThis|window|self|global|Reflect|Function)(?![\w$])/.test(source)) return "Global object, Reflect and Function access is refused";
+  // On any receiver a bracket key must be a plain string literal (destructuring and array literals are not access).
+  for (const [, before, key] of source.matchAll(/([\w$]+|[)\]}]|\?\.)\s*\[([^\]]*)/g)) {
+    if (/^(?:const|let|var|return|typeof|in|of|case|new|void|delete|await|yield|throw|else|do)$/.test(before!)) continue;
+    if (!/^\s*(?:"[^"\n]*"|'[^'\n]*')?\s*$/.test(key!)) return "Computed member access with a non-literal key is refused";
+  }
   return undefined;
 }
 /** The registered loader module exports exactly one zero-argument loader under its

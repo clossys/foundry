@@ -7105,9 +7105,10 @@ imports only that zero-argument loader, awaits it and passes the result through
 non-serializable data at compile time and at runtime) to the emitted client
 page's `RegisteredServerDataRoutePage`, whose runtime hook receives the typed
 data. Routes without a loader keep their exact emitted bytes. The checker admits
-only the registered export under the closed lexical policy (no `\u` escapes,
-`eval` or computed member access), so loader modules spell their types out
-rather than using indexed access types.
+only the registered export under the closed lexical policy shared with the
+provider seam (no `\u` escapes, `eval`, global object or reflection access, or
+non-literal bracket keys), so loader modules spell their types out rather than
+using indexed access types.
 
 `checkRegisteredRoutes` and `publisher-registered-route-check` discover entries
 under explicitly admitted route roots and compare them with the registry and
