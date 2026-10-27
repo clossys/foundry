@@ -23,8 +23,7 @@
       "status": "draft",
       "trust": "foundry",
       "unmapped": [
-        "slot.groups",
-        "slot.status"
+        "slot.groups"
       ]
     }
   },
@@ -38,7 +37,7 @@
       },
       "license": "MIT",
       "notes": [
-        "No grouped ledger/status API. RecordLedger is an independent exported part, not an automatically configured DetailView composition.",
+        "Status renders as a Badge the host composes into the title row. No grouped ledger API, so groups stay unmapped; RecordLedger is an independent exported part, not an automatically configured DetailView composition.",
         "Descriptor only; source imports, token reads, shared anatomy, accessibility, contrast and consumer runtime conformance are unmeasured. Content bindings describe host adaptation points, not type-equivalent converters."
       ],
       "parts": [],
@@ -51,7 +50,8 @@
       "slot": "sections.record-detail",
       "slotMap": {
         "actions": "./blocks#DetailView.actions",
-        "fields": "./blocks#DetailView.fields"
+        "fields": "./blocks#DetailView.fields",
+        "status": "./blocks#DetailView.title"
       },
       "source": "foundry"
     }

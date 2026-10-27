@@ -96,7 +96,8 @@ describe("Foundry section package descriptors", () => {
     });
     for (const leaf of ["consent", "error-state", "stats", "data-grid", "cards", "call-to-action", "notices", "gallery"]) expect(rows.get(`sections.${leaf}`)!.missingRequiredSlots, leaf).toEqual([]);
     for (const leaf of ["consent", "error-state", "stats", "cards", "call-to-action", "notices", "gallery"]) expect(rows.get(`sections.${leaf}`)!.status, leaf).toBe("candidate");
-    expect(rows.get("sections.data-grid")!.missingSlots).toEqual(["pinning"]);
+    expect(rows.get("sections.data-grid")!.missingSlots).toEqual([]);
+    expect(FOUNDRY_SECTION_MAP["data-grid"]!.slotMap.pinning).toBe("./blocks#DataTable.model.pinnedColumns");
   });
 
   it("maps activity-feed, audit-log, timeline and usage to their list blocks with every content slot", () => {
