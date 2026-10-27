@@ -115,10 +115,10 @@ it("z-index shows the 11 registered layers as a fan stack in rank order with the
   const figure = variant.querySelector<HTMLElement>('figure[data-token-specimen="layer-fan"]');
   expect(figure, key).not.toBeNull();
   const plates = [...figure!.querySelectorAll<HTMLElement>("[data-layer-rank]")];
-  expect(plates.map(plate => plate.dataset.layer)).toEqual(ranks);
+  expect(plates.map(plate => plate.dataset.layerProperty)).toEqual(ranks);
   expect(plates.map(plate => Number(plate.dataset.layerRank))).toEqual(ranks.map((_, index) => index));
   const current = plates.filter(plate => plate.hasAttribute("data-current"));
-  expect(current.map(plate => plate.dataset.layer), key).toEqual([member.emit]);
+  expect(current.map(plate => plate.dataset.layerProperty), key).toEqual([member.emit]);
   expect(current[0]!.style.getPropertyValue("--plate-z")).toBe(member.css.light);
  }
  cleanup();
