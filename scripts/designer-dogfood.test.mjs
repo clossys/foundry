@@ -164,3 +164,36 @@ test("synthetic registered native action requires real authored ownership and re
   put("designer/src/components/NativeAction.tsx", 'export const NativeAction=()=> <input/>;');
   assert.ok(scan("consumer").findings.some(row=>row.code==="DG0"&&row.message.includes("identity differs")));
 },true));
+
+test("zero-allowlist source mutations fail independently in Studio, admin shell and Publisher", () => fixture(({ put, scan }) => {
+  const roots = ["studio/Studio.tsx", "admin/Shell.tsx", "publisher/PublisherPage.tsx"];
+  const clean = 'import {Button} from "../designer/src/components/Button.js";export const Page=()=> <Button>Open</Button>;';
+  for (const path of roots) put(path, clean);
+  const baseline = scan(...roots);
+  assert.equal(baseline.ok, true);
+  assert.deepEqual(baseline.inventory.map(row => row.file.split("/").slice(-2).join("/")).sort(), [...roots].sort());
+  const mutations = [
+    ["DG1", 'import {Button as Raw} from "react-aria-components";export const Page=()=> <Raw/>;'],
+    ...["button", "input", "select", "textarea"].map(tag => ["DG2", `export const Page=()=> <${tag}/>;`]),
+    ["DG3", 'export const Page=()=> <div className="bg-[#aabbcc]"/>;'],
+    ["DG3", 'export const paint={ink:"rgb(1,2,3)"};'],
+    ["DG4", 'export const Page=()=> <div style={{color:"red"}}/>;'],
+  ];
+  for (const path of roots) for (const [code, content] of mutations) {
+    put(path, "// token-gate:ignore owner=fixture; pinned-residual count=100\n" + content);
+    const report = scan(...roots);
+    assert.equal(report.ok, false, `${path} ${code} must fail`);
+    assert.ok(report.findings.some(row => row.file.endsWith(path) && row.code === code), `${path} ${code}: ${JSON.stringify(report.findings)}`);
+    put(path, clean);
+    assert.equal(scan(...roots).ok, true, `${path} restoration`);
+  }
+  put("admin/Shell.tsx", clean + '\nimport "./console.css";');
+  put("admin/console.css", '.console{color:var(--color-ink-primary)}');
+  assert.equal(scan(...roots).ok, true);
+  for (const value of ["#abcdef", "rgb(1, 2, 3)"]) {
+    put("admin/console.css", `.console{color:${value}}`);
+    const report = scan(...roots);
+    assert.equal(report.ok, false);
+    assert.ok(report.findings.some(row => row.file.endsWith("admin/console.css") && row.code === "DG3"));
+  }
+}));

@@ -1,13 +1,23 @@
 #!/usr/bin/env node
+/**
+ * Usage: node scripts/check-designer-dogfood.mjs --admin-root SOURCE [--admin-root SOURCE]... [--root ADDITIONAL_SOURCE]...
+ * Admin roots are explicit caller-owned shell entries/directories and stylesheets. Supply every shell entry
+ * that is not reachable from another supplied entry; local imports (including CSS) are followed.
+ * Studio's whole shipped source directory and PublisherPage's reachable closure are always required.
+ * --root adds scope; it no longer replaces those consumers. Missing admin scope fails before scanning.
+ * No exception manifest, ignore comment or source allowlist can waive a consumer finding.
+ */
 import { resolve, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
 import { scanDesignerDogfood } from "./lib/designer-dogfood.mjs";
+import { designerDogfoodScopes } from "./lib/designer-dogfood-scopes.mjs";
 const repo = resolve(dirname(fileURLToPath(import.meta.url)), "..");
-const args = process.argv.slice(2), roots = [];
-for (let i = 0; i < args.length; i++) {
-  if (args[i] !== "--root" || !args[i + 1] || args[i + 1].startsWith("--")) throw new Error("usage: check-designer-dogfood.mjs [--root SOURCE]...");
-  roots.push(resolve(args[++i]));
+let report;
+try {
+  const consumerScopes = designerDogfoodScopes(process.argv.slice(2), repo);
+  report = { ...scanDesignerDogfood({ designerRoot: resolve(repo, "packages/designer"), roots: [...new Set(Object.values(consumerScopes).flat())] }), consumerScopes };
+} catch (error) {
+  report = { schema: "designer-dogfood/v1", ok: false, findings: [{ code: "DG0", file: "", line: 1, message: error.message }], inventory: [], foundation: [] };
 }
-const report = scanDesignerDogfood({ designerRoot: resolve(repo, "packages/designer"), roots: roots.length ? roots : [resolve(repo, "packages/designer/src/studio/index.ts"), resolve(repo, "packages/publisher/src/web/publisher/PublisherPage.tsx")] });
 process.stdout.write(JSON.stringify(report, null, 2) + "\n");
 process.exitCode = report.ok ? 0 : 1;
