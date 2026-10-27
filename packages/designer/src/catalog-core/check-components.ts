@@ -300,13 +300,35 @@ function literalValue(code: string, from: number): string | undefined {
   return match && !(match[1] === "`" && match[2]!.includes("${")) ? match[2] : undefined;
 }
 /**
+ * Whether an object key in the file is computed (`[expr]:`, including a template literal) and is or could be a custom
+ * property. Its value is set from JS the definition scan cannot read, and it may override a literal definition of the
+ * same name, so its presence voids every file-local exemption. Only a plain string or template literal without escapes
+ * or interpolation that names no custom property, or a number, cannot be one. A TS index signature or mapped type
+ * (`[key: T]`, `[K in T]`) sets no value and is not a key.
+ */
+function computedCustomKey(code: string): boolean {
+  for (const match of code.matchAll(/[{,]\s*\[/g)) {
+    const open = match.index + match[0].length - 1;
+    let close = -1;
+    for (let i = open, depth = 0; i < code.length && close < 0; i++) { if (code[i] === "[") depth++; else if (code[i] === "]" && --depth === 0) close = i; }
+    if (close < 0 || !/^\s*:/.test(code.slice(close + 1))) continue;
+    const key = code.slice(open + 1, close).trim();
+    if (/^[A-Za-z_$][\w$]*\s*:|^[A-Za-z_$][\w$]*\s+in\s/.test(key)) continue;
+    const literal = /^(?:"([^"\\\n]*)"|'([^'\\\n]*)'|`([^`\\$]*)`|\d+)$/.exec(key);
+    if (!literal || (literal[1] ?? literal[2] ?? literal[3] ?? "").trim().startsWith("--")) return true;
+  }
+  return false;
+}
+/**
  * Custom properties a file defines itself and may use unbound: a Tailwind arbitrary property `[--name:value]` (behind
  * any variant), a style-object key `"--name": "value"`, or a CSS declaration `--name: value`. A property is exempt only
  * when EVERY definition of it in the file is a judged literal (see judgedDefinition) and every var it reads is either
  * judged by the unbound-property rule or itself exempt. A JS expression, a type annotation, a ternary, a template
  * interpolation or any unrecognised definition shape keeps the property flagged, as does a definition cycle.
+ * It fails closed: a file with a computed object key that is or could be a custom property exempts nothing.
  */
 function definedProperties(code: string): Set<string> {
+  if (computedCustomKey(code)) return new Set();
   const definitions = new Map<string, (string[] | undefined)[]>();
   for (const match of code.matchAll(/(^|[[{;,\s"'])(--[a-zA-Z][\w-]*)(["']?)(\]?)\s*:/gm)) {
     const [whole, before, name, quote, bracket] = match as unknown as [string, string, string, string, string];

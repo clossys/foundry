@@ -509,6 +509,34 @@ describe("qualification rule groups (QUAL-RECOUNT G1, G2, G7a, G11)", () => {
     const toggle = fixture(); append(toggle, ' const s = { ...style, "--gap": `calc(var(--surface) * ${spacing})` }; const cls = "flex gap-(--gap)";');
     expect.soft(unique(toggle)).toEqual(["Unbound CSS property --gap in button.tsx"]);
   });
+  it("K4 voids every file-local exemption when an object key is computed and is or could be a custom property", () => {
+    const unique = (profile: ComponentCheckInput) => [...new Set(k4(profile))];
+    const exempt = ' const cls = "[--pad:calc(var(--control)_*_2)] p-(--pad)"; const style = { "--gap": "calc(var(--control) * -0.5)", gap: "var(--gap)" };'
+      + ' const css = `.x { --inset: var(--surface); margin: var(--inset); }`;';
+    const all = ["--pad", "--gap", "--inset"];
+    // Must flag: (a) the reviewer's case, a safe literal definition overridden by a template key; (b) a computed name;
+    // (c) a template key with interpolation; plus a bracketed string, an escaped literal and a member expression.
+    // The key's value comes from JS the definition scan cannot read, so no definition in the file is trusted.
+    for (const [usage, properties] of [
+      [' const s = { "--gap": "var(--control)" }; const t = { [`--gap`]: props.gap }; const cls = "gap-(--gap)";', ["--gap"]],
+      [' const s = { "--gap": "var(--control)", [name]: props.gap }; const cls = "gap-(--gap)";', ["--gap"]],
+      [' const s = { "--gap": "var(--control)", [`--${a}`]: props.gap }; const cls = "gap-(--gap)";', ["--gap"]],
+      [exempt + ' const t = { [`--gap`]: props.gap };', all],
+      [exempt + ' const t = { ...style, [name]: props.gap };', all],
+      [exempt + ' const t = {\n  [`--${part}-size`]: props.size };', all],
+      [exempt + ' const t = { ["--gap"]: props.gap };', all],
+      [exempt + ' const t = { ["\\u002d-gap"]: props.gap };', all],
+      [exempt + ' const t = { [vars.gap]: props.gap };', all],
+    ] as const) {
+      const flagged = fixture(); append(flagged, usage);
+      expect.soft(unique(flagged).sort(), usage).toEqual(properties.map(property => `Unbound CSS property ${property} in button.tsx`).sort());
+    }
+    // (d) Control: plain token-valued definitions stay exempt beside keys that cannot be a custom property
+    // (plain literals naming no custom property, a number) and TS index signatures or mapped types, which set no value.
+    const control = fixture();
+    append(control, exempt + ' const t = { [`color`]: props.color, ["margin"]: 0, [0]: 1 }; type V = { [key: string]: string }; type M = { [K in Keys]: string };');
+    expect(k4(control)).toEqual([]);
+  });
   it("K5 disabled state does not require activation keys", () => {
     const k5 = (profile: ComponentCheckInput) => checkComponentProfile(profile).findings.filter(f => f.code === "K5").map(f => f.message);
     const disabled = (keyboard: string[]) => {
