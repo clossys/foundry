@@ -85,20 +85,24 @@ describe("AppFrame acceptance", () => {
     expect(disclosure).toHaveFocus();
     await user.keyboard("{Enter}");
     expect(screen.getByRole("link", { name: "Tasks" })).toBeInTheDocument();
-    await user.keyboard("{Home}{ArrowDown}");
-    expect(screen.getByRole("link", { name: "Projects" })).toHaveFocus();
-    await user.keyboard("{End}");
+    // Since 0d04b4c23 the navigation is the RAC NavigationTree (sidebar spec D2, custom keyboard deleted): the
+    // chevron is a row child, Up/Down move between row destinations, Left/Right collapse and expand in place.
+    const projects = screen.getByRole("link", { name: "Projects" });
+    await user.keyboard("{ArrowDown}");
     expect(screen.getByRole("link", { name: "Tasks" })).toHaveFocus();
-    await user.keyboard("{ArrowUp}{Enter}");
-    expect(disclosure).toHaveFocus();
-    expect(screen.queryByRole("link", { name: "Tasks" })).not.toBeInTheDocument();
-    await user.keyboard("{ArrowRight}");
-    expect(screen.getByRole("link", { name: "Tasks" })).toBeInTheDocument();
+    await user.keyboard("{ArrowUp}");
+    expect(projects).toHaveFocus();
     await user.keyboard("{ArrowLeft}");
     expect(screen.queryByRole("link", { name: "Tasks" })).not.toBeInTheDocument();
-    expect(screen.getByRole("link", { name: "Projects" })).toHaveFocus();
+    expect(projects).toHaveFocus();
     await user.keyboard("{ArrowRight}");
     expect(screen.getByRole("link", { name: "Tasks" })).toBeInTheDocument();
+    expect(projects).toHaveFocus();
+    // Home and End still reach the last and first rows (tree pattern; AppNavigation's Home/End requirement probe).
+    await user.keyboard("{End}");
+    expect.soft(screen.getByRole("link", { name: "Tasks" })).toHaveFocus();
+    await user.keyboard("{Home}");
+    expect.soft(screen.getByRole("link", { name: "Home" })).toHaveFocus();
     await user.click(screen.getByRole("button", { name: "Close navigation" }));
     expect(screen.getByRole("button", { name: "Open navigation" })).toHaveFocus();
   });
