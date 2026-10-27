@@ -9,7 +9,7 @@
  * no host runtime, a refused or pending assembly, or a cell outside the bound matrix shows the
  * Foundry empty state with the actual reason. Nothing is drawn in place of a Frame or Section.
  */
-import type { ReactNode } from "react";
+import { Component, type ReactNode } from "react";
 import { EmptyState } from "@clossys/designer/blocks";
 import type { RuntimeCell } from "@clossys/designer/catalog";
 import type { InstanceBinding } from "../../core/instance-binding.js";
@@ -64,6 +64,17 @@ export function InstanceRuntimeRender({ binding, routes, labels = instanceRuntim
   return <RegisteredInstance key={matches[0]!.routeId} route={matches[0]!} routes={routes} label={binding.label} labels={labels} {...cell} />;
 }
 
+const message = (error: unknown) => error instanceof Error ? error.message : String(error);
+
+/** Contains an error thrown while React reconciles the runtime's rendered descendants (the synchronous
+ * try/catch only covers `assembly.render`). A new `resetKey` (route, cell, width or theme) clears it. */
+class RuntimeRenderBoundary extends Component<{ readonly resetKey: string; readonly labels: InstanceRuntimeRenderLabels; readonly children: ReactNode }, { readonly failure?: string }> {
+  override state: { readonly failure?: string } = {};
+  static getDerivedStateFromError(error: unknown) { return { failure: message(error) }; }
+  override componentDidUpdate(previous: { readonly resetKey: string }) { if (this.state.failure !== undefined && previous.resetKey !== this.props.resetKey) this.setState({ failure: undefined }); }
+  override render() { return this.state.failure !== undefined ? <Unavailable labels={this.props.labels} reason={this.props.labels.renderFailed(this.state.failure)} /> : this.props.children; }
+}
+
 /** Keyed by route id, so the host hook always runs in the same order for one mount. */
 function RegisteredInstance({ route, routes, label, labels, width, theme, state }: { readonly route: RouteRegistration; readonly routes: InstanceRuntimeRoutes; readonly label: string; readonly labels: InstanceRuntimeRenderLabels; readonly width: 320 | 768 | 1280; readonly theme: "light" | "dark"; readonly state?: string }) {
   const prepared = routes.usePreparedRoute(route);
@@ -72,6 +83,8 @@ function RegisteredInstance({ route, routes, label, labels, width, theme, state 
   const cell = prepared.assembly.snapshot.cells.find(row => row.width === wanted.width && row.theme === wanted.theme && row.state === wanted.state);
   if (!cell) return <Unavailable labels={labels} reason={labels.outsideMatrix(wanted, prepared.assembly.snapshot.cells)} />;
   let node: ReactNode;
-  try { node = prepared.assembly.render(cell); } catch (error) { return <Unavailable labels={labels} reason={labels.renderFailed(error instanceof Error ? error.message : String(error))} />; }
-  return <PreviewViewport width={width} theme={theme} mode="instance" title={labels.viewportTitle(label, cell)}>{node}</PreviewViewport>;
+  try { node = prepared.assembly.render(cell); } catch (error) { return <Unavailable labels={labels} reason={labels.renderFailed(message(error))} />; }
+  return <RuntimeRenderBoundary resetKey={`${route.routeId}\u0000${cell.width}\u0000${cell.theme}\u0000${cell.state}`} labels={labels}>
+    <PreviewViewport width={width} theme={theme} mode="instance" title={labels.viewportTitle(label, cell)}>{node}</PreviewViewport>
+  </RuntimeRenderBoundary>;
 }
