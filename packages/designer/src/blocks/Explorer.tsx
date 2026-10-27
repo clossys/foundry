@@ -8,6 +8,9 @@ import { FileText } from "../icons/FileText.js";
 import { Folder } from "../icons/Folder.js";
 import { TOKENS } from "../tokens/tokens.js";
 import { indexTree, type TreeNode } from "./tree-model.js";
+import { dsAttrs } from "../catalog-core/provenance-attrs.js";
+/** Section root provenance (D1): the selected Foundry fill this block is. */
+const SECTION_STAMP = dsAttrs("sections", "sections.explorer", "foundry/sections.explorer");
 
 const ROW = "relative w-full min-w-0 justify-start gap-sm text-start";
 const GUIDE = "pointer-events-none absolute border-s border-line-base";
@@ -136,13 +139,13 @@ export function Explorer<T extends TreeNode & { children?: readonly T[] }>({ tre
   useLayoutEffect(() => { if (ownsFocus.current && active !== undefined) controls.current.get(active)?.focus(); }, [active]);
   const register = (id: string, element: HTMLElement | null) => { if (element) controls.current.set(id, element); else controls.current.delete(id); };
   const panes = list !== undefined && list !== null && list !== false;
-  const treeElement = <div role="tree" aria-label={label} aria-multiselectable={false} data-explorer="" className={cx(TREE, panes ? TREE_PANE : className)}
+  const treeElement = <div {...(panes ? {} : SECTION_STAMP)} role="tree" aria-label={label} aria-multiselectable={false} data-explorer="" className={cx(TREE, panes ? TREE_PANE : className)}
     onFocusCapture={() => { ownsFocus.current = true; }} onBlurCapture={event => { if (!event.currentTarget.contains(event.relatedTarget as Node | null)) ownsFocus.current = false; }}>
     {tree.map((node, position) => <Row key={node.id} node={node} level={1} position={position + 1} count={tree.length}
       expanded={expanded} active={active} selectedId={selectedId} activate={activate} focus={setFocused} keyboard={keyboard} register={register} renderDetails={renderDetails} />)}
   </div>;
   if (!panes) return treeElement;
-  return <div data-explorer-layout="panes" className={cx(PANES, className)}>
+  return <div {...SECTION_STAMP} data-explorer-layout="panes" className={cx(PANES, className)}>
     {treeElement}
     <section aria-label={listLabel} data-explorer-region="list" className={LIST_PANE}>{list}</section>
   </div>;

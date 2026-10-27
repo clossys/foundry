@@ -7,6 +7,9 @@ import {
   UI_WIDTH_PAGE_PADDING_X,
 } from "./internal/block-vars.js";
 import { SECTION_GROUND_CLASSES, type SectionGround } from "./section-ground.js";
+import { dsAttrs } from "../catalog-core/provenance-attrs.js";
+/** Section root provenance (D1): the selected Foundry fill this block is. */
+const SECTION_STAMP = dsAttrs("sections", "sections.band", "foundry/sections.band");
 
 export type { SectionMeasure };
 
@@ -46,7 +49,7 @@ export function SectionFrame({
 
   return (
     <section
-      {...rest}
+      {...SECTION_STAMP} {...rest}
       {...{ [SECTION_FRAME_DATA_ATTR]: "" }}
       className={cx(colors.surface, colors.primary, "py-lg", className)}
       style={style}

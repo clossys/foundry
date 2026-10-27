@@ -1,6 +1,9 @@
 import type { HTMLAttributes, ReactNode } from "react";
 import { Banner, type BannerVariant } from "../components/Banner.js";
 import { cx } from "../components/internal/cx.js";
+import { dsAttrs } from "../catalog-core/provenance-attrs.js";
+/** Section root provenance (D1): the selected Foundry fill this block is. */
+const SECTION_STAMP = dsAttrs("sections", "sections.notices", "foundry/sections.notices");
 
 export interface NoticeListItem {
   /** Stable key, passed back to `onDismiss`. */
@@ -35,7 +38,7 @@ export interface NoticeListProps extends Omit<HTMLAttributes<HTMLElement>, "chil
  */
 export function NoticeList({ notices, label, onDismiss, dismissLabel, className, ...rest }: NoticeListProps) {
   return (
-    <section {...rest} aria-label={label} className={cx("flex flex-col", className)}>
+    <section {...SECTION_STAMP} {...rest} aria-label={label} className={cx("flex flex-col", className)}>
       <ul role="list" className="flex flex-col gap-sm">
         {notices.map(notice => (
           <li key={notice.id}>

@@ -7,6 +7,7 @@ import { SectionHeader } from "../SectionHeader.js";
 import type { DataTableProps } from "../DataTable.js";
 import type { DataTableDensity } from "./view-model.js";
 import { visibleColumns } from "./empty-columns.js";
+import { dsPassThrough } from "../../catalog-core/provenance-attrs.js";
 
 function columnStyle(width: string | number | undefined): CSSProperties | undefined {
   if (width === undefined) return undefined;
@@ -45,13 +46,14 @@ export function FlatGrid<Row>({
   density,
   disabledKeys,
   hideEmptyColumns = false,
+  ...passthrough
 }: DataTableProps<Row> & DataTableMessages & { density?: DataTableDensity; disabledKeys?: Iterable<Key> }) {
   const columns = hideEmptyColumns && !isLoading ? visibleColumns(allColumns, rows) : allColumns;
   const showSelectionColumn = selectionMode === "multiple";
   const disabled = new Set(disabledKeys);
 
   return (
-    <div className={cx("flex flex-col gap-md", className)} style={style}>
+    <div {...dsPassThrough(passthrough)} className={cx("flex flex-col gap-md", className)} style={style}>
       {toolbar ? <div className="flex flex-wrap items-center justify-between gap-md">{toolbar}</div> : null}
       <div className="overflow-x-auto rounded-control border border-line-base">
         <Table

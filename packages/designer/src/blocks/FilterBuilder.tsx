@@ -2,6 +2,9 @@ import { Button } from "../components/Button.js";
 import { Select } from "../components/Select.js";
 import { TextField } from "../components/TextField.js";
 import { cx } from "../components/internal/cx.js";
+import { dsAttrs } from "../catalog-core/provenance-attrs.js";
+/** Section root provenance (D1): the selected Foundry fill this block is. */
+const SECTION_STAMP = dsAttrs("sections", "sections.filter-builder", "foundry/sections.filter-builder");
 
 export interface FilterBuilderField { readonly id: string; readonly label: string }
 export interface FilterBuilderOperator {
@@ -57,7 +60,7 @@ export function FilterBuilder({ fields, operators, groups, onGroupsChange, label
     replace(groupId, group => ({ ...group, conditions: group.conditions.map(condition => condition.id === conditionId ? { ...condition, ...patch } : condition) }));
   const fieldOptions = fields.map(field => ({ id: field.id, label: field.label }));
   const operatorOptions = operators.map(operator => ({ id: operator.id, label: operator.label }));
-  return <fieldset className={cx("m-0 flex min-w-0 flex-col gap-lg border-0 p-0 text-body text-ink-primary", className)}>
+  return <fieldset {...SECTION_STAMP} className={cx("m-0 flex min-w-0 flex-col gap-lg border-0 p-0 text-body text-ink-primary", className)}>
     <legend className="mb-md text-body-l font-medium">{labels.legend}</legend>
     {groups.map((group, groupIndex) => <div key={group.id} role="group" aria-label={labels.group(groupIndex + 1)} className="flex min-w-0 flex-col gap-md rounded-surface border border-line-base bg-surface-raised p-md">
       <Select label={labels.match} size="sm" className="filter-match-width" selectedKey={group.match}

@@ -1,6 +1,9 @@
 import type { CSSProperties, HTMLAttributes, ReactNode } from "react";
 import { CompatFeatureGrid } from "./items/compat-features.js";
 import type { SectionGround } from "./section-ground.js";
+import { dsAttrs } from "../catalog-core/provenance-attrs.js";
+/** Section root provenance (D1): the selected Foundry fill this block is. */
+const SECTION_STAMP = dsAttrs("sections", "sections.features", "foundry/sections.features");
 
 export type FeatureGridHeadingLevel = 2 | 3 | 4 | 5 | 6;
 
@@ -40,4 +43,4 @@ export interface FeatureGridProps extends Omit<HTMLAttributes<HTMLDivElement>, "
 }
 
 /** Published feature copy keeps its original count, heading and presence policy. */
-export function FeatureGrid({ ground = "base", ...props }: FeatureGridProps) { return <CompatFeatureGrid {...props} ground={ground} />; }
+export function FeatureGrid({ ground = "base", ...props }: FeatureGridProps) { return <CompatFeatureGrid {...SECTION_STAMP} {...props} ground={ground} />; }

@@ -10,6 +10,9 @@ import { hasContent } from "./items/policies.js";
 import { SECTION_GROUND_CLASSES, type SectionGround } from "./section-ground.js";
 import { MatrixGrid } from "./matrix/grid.js";
 import { LibraryBoardSection, type LibraryBoardSectionProps } from "./library-board/LibraryBoardSection.js";
+import { dsAttrs } from "../catalog-core/provenance-attrs.js";
+/** Section root provenance (D1): the selected Foundry fill this block is. */
+const SECTION_STAMP = dsAttrs("sections", "sections.comparison", "foundry/sections.comparison");
 
 /** Explicit selected comparison configuration; the existing grid literal stays unchanged. */
 export const LIBRARY_BOARD_CONFIG = { id: "library-board", members: ["arrangement.library-board"], props: { arrangement: "library-board" } } as const;
@@ -179,10 +182,10 @@ export function MatrixRenderer({ arrangement: _arrangement, sides, featured, hea
 
 /** Two equal plates or one responsive comparison table. Server-safe. */
 export function Matrix(props: MatrixProps) {
-  if (props.arrangement === "library-board") return <LibraryBoardSection {...props} />;
-  if (props.arrangement === "choices") return <MatrixChoices {...props} />;
-  if (props.arrangement === "grid") return <MatrixGrid {...props} />;
+  if (props.arrangement === "library-board") return <LibraryBoardSection {...SECTION_STAMP} {...props} />;
+  if (props.arrangement === "choices") return <MatrixChoices {...SECTION_STAMP} {...props} />;
+  if (props.arrangement === "grid") return <MatrixGrid {...SECTION_STAMP} {...props} />;
   if (props.arrangement !== undefined && props.arrangement !== "sides") throw new TypeError("Matrix: unknown arrangement.");
   assertMatrix(props);
-  return <MatrixRenderer {...props} />;
+  return <MatrixRenderer {...SECTION_STAMP} {...props} />;
 }

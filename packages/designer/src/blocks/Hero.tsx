@@ -2,6 +2,9 @@ import type { CSSProperties, HTMLAttributes, ReactNode } from "react";
 import { cx } from "../components/internal/cx.js";
 import { SectionIntro, type SectionIntroProps } from "./SectionIntro.js";
 import { SECTION_GROUND_CLASSES, type SectionGround } from "./section-ground.js";
+import { dsAttrs } from "../catalog-core/provenance-attrs.js";
+/** Section root provenance (D1): the selected Foundry fill this block is. */
+const SECTION_STAMP = dsAttrs("sections", "sections.hero", "foundry/sections.hero");
 
 export type HeroHeadingLevel = 1 | 2;
 
@@ -121,7 +124,7 @@ export function Hero({
 
   return (
     <section
-      {...rest}
+      {...SECTION_STAMP} {...rest}
       className={cx(
         colors.surface,
         splitLayout

@@ -1,6 +1,9 @@
 import { useId, type HTMLAttributes, type ReactNode } from "react";
 import { cx } from "../components/internal/cx.js";
 import { SectionHeader, type SectionHeaderLevel } from "./SectionHeader.js";
+import { dsAttrs } from "../catalog-core/provenance-attrs.js";
+/** Section root provenance (D1): the selected Foundry fill this block is. */
+const SECTION_STAMP = dsAttrs("sections", "sections.error-state", "foundry/sections.error-state");
 
 /** What went wrong: the four failure kinds a page shows in place of its content. */
 export type ErrorStateKind = "not-found" | "failure" | "forbidden" | "offline";
@@ -36,7 +39,7 @@ export function ErrorState({ kind, title, description, code, retry, report, head
   const actions = retry || report ? <>{retry}{report}</> : undefined;
   return (
     <section
-      {...rest}
+      {...SECTION_STAMP} {...rest}
       aria-labelledby={titleId}
       data-error-kind={kind}
       className={cx("flex flex-col items-center gap-sm p-2xl text-center", className)}

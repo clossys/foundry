@@ -3,6 +3,9 @@ import { Badge, type BadgeVariant } from "../components/Badge.js";
 import { Card } from "../components/Card.js";
 import { Link } from "../components/Link.js";
 import { cx } from "../components/internal/cx.js";
+import { dsAttrs } from "../catalog-core/provenance-attrs.js";
+/** Section root provenance (D1): the selected Foundry fill this block is. */
+const SECTION_STAMP = dsAttrs("sections", "sections.cards", "foundry/sections.cards");
 
 export type RecordCardsLayout = "grid" | "list";
 export type RecordCardsHeadingLevel = 2 | 3 | 4;
@@ -43,7 +46,7 @@ const LAYOUT_CLASSES: Record<RecordCardsLayout, string> = {
 export function RecordCards({ records, layout = "grid", headingLevel = 3, className, ...rest }: RecordCardsProps) {
   const Heading = `h${headingLevel}` as "h2" | "h3" | "h4";
   return (
-    <ul {...rest} role="list" data-layout={layout} className={cx(LAYOUT_CLASSES[layout], className)}>
+    <ul {...SECTION_STAMP} {...rest} role="list" data-layout={layout} className={cx(LAYOUT_CLASSES[layout], className)}>
       {records.map(record => (
         <li key={record.id} className="flex min-w-0">
           <Card variant="outline" className="flex w-full flex-col gap-xs p-lg">

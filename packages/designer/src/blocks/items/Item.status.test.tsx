@@ -9,6 +9,7 @@ import { Item } from "./Item.js";
 import { Items } from "./Items.js";
 import { Items as ServerItems } from "./Items.server.js";
 import type { ItemData, ItemProps } from "./types.js";
+import { withoutDsAttrs } from "../../catalog-core/provenance-attrs.js";
 
 const single = { id: "one", heading: "Search", treatment: "plain", size: "standard", ground: "base" } as const;
 const data = (count = 3): ItemData[] => Array.from({ length: count }, (_, index) => ({
@@ -23,7 +24,7 @@ function legacyDisclosureHtml(consumer: DisclosureConsumer): string {
     const Component = consumer === "Faq/client" ? Faq : ServerFaq;
     for (const ground of ["base", "sunken", "inverse"] as const) for (const headingLevel of [2, 3, 4, 5, 6] as const) for (const region of [false, true]) {
       const items = [{ id: "first", question: <span>First question</span>, answer: <p>First answer</p> }, { id: "second", question: "Second question", answer: "Second answer" }];
-      records[`${consumer}/${ground}/h${headingLevel}/region-${region}`] = renderToStaticMarkup(<Component ground={ground} headingLevel={headingLevel} items={items} {...(region ? { heading: "Questions", eyebrow: "Help", description: "Supporting copy" } : {})} />);
+      records[`${consumer}/${ground}/h${headingLevel}/region-${region}`] = withoutDsAttrs(renderToStaticMarkup(<Component ground={ground} headingLevel={headingLevel} items={items} {...(region ? { heading: "Questions", eyebrow: "Help", description: "Supporting copy" } : {})} />));
     }
   } else {
     const Component = consumer === "Items/client" ? Items : ServerItems;

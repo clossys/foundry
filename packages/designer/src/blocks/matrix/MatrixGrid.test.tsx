@@ -4,6 +4,7 @@ import { describe, expect, it } from "vitest";
 import { render, screen, within } from "@testing-library/react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { Matrix, type MatrixProps } from "../Matrix.js";
+import { withoutDsAttrs } from "../../catalog-core/provenance-attrs.js";
 
 type Grid = Extract<MatrixProps, { arrangement: "grid" }>;
 type Cell = Grid["rows"][number]["cells"][string];
@@ -209,7 +210,7 @@ describe("Matrix unchanged sides", () => {
       const node = (name: string): ReactNode => nested ? <Authored name={name} /> : name;
       const sides = ["first", "second"].map((id, i) => ({ id, ...(labels ? { label: node(`Label ${i}`) } : {}), heading: node(`Heading ${i}`), ...(i === 0 ? { description: node("Supporting copy") } : {}), ...(form === "points" ? { points: [node(`Point ${i}a`), node(`Point ${i}b`)] } : { visual: node(`Visual ${i}`) }) })) as Extract<MatrixProps, { arrangement?: "sides" }>["sides"];
       const props = { sides, ground, headingLevel, featured: "second", id: "authored-matrix", "aria-label": "Authored comparison", "data-reference": "comparison", className: "authored-comparison", style: { inlineSize: "100%" }, ...(explicit ? { arrangement: "sides" as const } : {}) };
-      records.push({ key: `${ground}/${form}/${explicit}/${nested}/${labels}/${headingLevel}`, html: renderToStaticMarkup(<Matrix {...props} />) });
+      records.push({ key: `${ground}/${form}/${explicit}/${nested}/${labels}/${headingLevel}`, html: withoutDsAttrs(renderToStaticMarkup(<Matrix {...props} />)) });
     }
     expect(records).toHaveLength(96);
     // Captured from valid legacy inputs before implementation; both new sides modes

@@ -1,6 +1,9 @@
 import { SectionHeader } from "./SectionHeader.js";
 import type { CSSProperties, HTMLAttributes, ReactNode } from "react";
 import { cx } from "../components/internal/cx.js";
+import { dsAttrs } from "../catalog-core/provenance-attrs.js";
+/** Section root provenance (D1): the selected Foundry fill this block is. */
+const SECTION_STAMP = dsAttrs("sections", "sections.record-detail", "foundry/sections.record-detail");
 
 export interface DetailViewField {
   /** The field's name — rendered in a `<dt>`. */
@@ -56,7 +59,7 @@ export interface DetailViewProps extends Omit<HTMLAttributes<HTMLElement>, "titl
 export function DetailView({ title, fields, actions, className, style, ...rest }: DetailViewProps) {
   const hasHeader = title !== undefined || actions !== undefined;
   return (
-    <section {...rest} className={cx("flex flex-col gap-md", className)} style={style}>
+    <section {...SECTION_STAMP} {...rest} className={cx("flex flex-col gap-md", className)} style={style}>
       {hasHeader ? (
         <SectionHeader density="standard" level={2}
           {...(title !== undefined ? { title } : {})}
