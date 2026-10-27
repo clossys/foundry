@@ -1,6 +1,6 @@
 /** @vitest-environment jsdom */
 import "@testing-library/jest-dom/vitest";
-import { act, cleanup, render, screen, waitFor } from "@testing-library/react";
+import { act, cleanup, render, screen } from "@testing-library/react";
 import { afterAll, afterEach, beforeAll, expect, it, vi } from "vitest";
 import * as fs from "node:fs/promises";
 import { join } from "node:path";
@@ -16,7 +16,7 @@ let temporary: string, compiled: CompiledRegisteredRoute;
 beforeAll(async () => { temporary = await fs.realpath(await fs.mkdtemp(join(tmpdir(), "SYNTHETIC-provider-join-"))); compiled = await compileRegisteredRouteFixture(temporary); }, 30000);
 afterAll(async () => { await fs.rm(temporary, { recursive: true, force: true }); });
 afterEach(() => { cleanup(); vi.restoreAllMocks(); });
-it("materializes original provider checked records without replacing preview/Edit/failed-flush ownership", async () => {
+it("materializes original provider checked records from the read-only committed state, with no edit session or save", async () => {
   const save = vi.fn(async () => ({ ok: false as const, reason: "unavailable" as const }));
   // The compiled surface fixture bounds value slots; give the real provider the
   // matching catalog slice, rather than full-catalog placements with missing slots.
@@ -33,10 +33,9 @@ it("materializes original provider checked records without replacing preview/Edi
   render(<WholeStudioProvider adapter={adapter} labels={wholeLabels} initialSlotId="assets.icon-close"><Probe /></WholeStudioProvider>);
   await screen.findByText("ready");
   act(() => current.values.requestRow("assets.icon-close"));
-  const session = current.whole.session;
   const prepared = current.values.boards.map(board => {
     const { projection } = current.projected;
-    const input = { layer: "assets" as const, board, sources: current.values.catalog.sources, consumerSource: projection.consumer!, selectionHash: projection.selectionHash!, sourceHashes: Object.fromEntries(board.rows.flatMap(row => row.candidates.map(candidate => [candidate.source, runtimeHash(candidate.fill)]))), mode: "edit" as const, canSave: true, pending: current.whole.saving,
+    const input = { layer: "assets" as const, board, sources: current.values.catalog.sources, consumerSource: projection.consumer!, selectionHash: projection.selectionHash!, sourceHashes: Object.fromEntries(board.rows.flatMap(row => row.candidates.map(candidate => [candidate.source, runtimeHash(candidate.fill)]))), mode: "edit" as const, canSave: true, pending: false,
       prompt: (row: typeof board.rows[number]) => ({ consumer: projection.consumer!, board: { id: board.id, label: board.label }, slot: { id: row.id, label: row.id }, variants: [], tokens: [], siblings: [], returnStep: labels.board.returnStep }) };
     return { records: valueLibraryBoardRecords(input), previews: valueLibraryBoardPreviews(input, labels) };
   });
@@ -63,15 +62,13 @@ it("materializes original provider checked records without replacing preview/Edi
   expect(owner!.previews.render({ ...identity, selectionHash: runtimeHash("stale") })).toBeUndefined();
   expect(result.materialization.binding.fills["sections.comparison"]).toHaveLength(projection.boards.length);
   expect(document.querySelector("[data-studio-canvas]")).toBeNull();
-  const before = projection.session;
-  act(() => current.whole.session!.edit("tokens.surface-color", [{ portion: "values", change: { op: "adopt", slot: "tokens.surface-color", source: "foundry" } }]));
-  await waitFor(() => expect(current.whole.sessionState?.edits.length).toBeGreaterThan(0));
-  const edits = current.whole.sessionState!.edits;
+  // The read-only Designer holds no edit session: no edit, nothing blocks a layer move, the committed identity stays put.
+  const before = projection.session, sessionIdentity = current.whole.sessionIdentity;
+  expect("session" in current.whole).toBe(false); expect("edit" in current.whole).toBe(false);
   let moved: boolean | undefined;
   await act(async () => { moved = await current.whole.setLayer("components"); });
-  expect(moved).toBe(false); expect(current.whole.layer).toBe("assets"); expect(current.whole.session).toBe(session);
-  expect(current.whole.sessionState!.edits).toEqual(edits); expect(current.projected.projection.session.id).toBe(before.id);
-  expect(current.projected.projection.session.revision).toBeGreaterThan(before.revision);
+  expect(moved).toBe(true); expect(current.whole.layer).toBe("components"); expect(current.whole.sessionIdentity).toBe(sessionIdentity);
+  expect(current.projected.projection.session).toMatchObject({ id: before.id, revision: before.revision, edits: [], history: null });
   expect(libraryHash(current.whole.input!.library)).toBe(current.projected.projection.libraryHash);
-  expect(save).toHaveBeenCalledTimes(1);
+  expect(save).not.toHaveBeenCalled();
 });

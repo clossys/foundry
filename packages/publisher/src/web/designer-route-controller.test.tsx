@@ -4,6 +4,7 @@ import { useEffect } from "react";
 import { act, cleanup, render, screen, waitFor } from "@testing-library/react";
 import { afterEach, expect, it, vi } from "vitest";
 import { WholeStudioProvider, useWholeStudio, useDesignerPreparedLibraryBoards } from "@clossys/designer/studio/state";
+import type { CompositeStudioSnapshot } from "@clossys/designer/studio";
 import { loadBuildCatalog, runtimeHash } from "@clossys/designer/catalog";
 import type { CompositeStudioAdapter, CompositeStudioLabels } from "@clossys/designer/studio";
 import type { DesignerPreparedLibraryBoards, WholeStudioState } from "@clossys/designer/studio/state";
@@ -12,7 +13,7 @@ import { createPublisherDesignerController, createPublisherDesignerMount } from 
 import type { PublisherDesignerBoardSource } from "./designer-route-controller.js";
 
 afterEach(cleanup);
-/** Synthetic caller policy/source facts, real original provider and EditSession.
+/** Synthetic caller policy/source facts, real original read-only provider (no EditSession).
  * These tests qualify neither Product native controls nor a consumer source map. */
 function fixture() {
   const { source, adoptedAt, ...values } = adopt(adopt(), "assets.icon-search", "lucide");
@@ -29,7 +30,7 @@ function mount(controller: ReturnType<typeof createPublisherDesignerController>)
     const whole = useWholeStudio()!, prepared = useDesignerPreparedLibraryBoards(boards.options);
     current = { whole, prepared };
     useEffect(() => boards.observe(prepared, whole), [boards, prepared, whole]);
-    return <output>{prepared.status}:{whole.sessionState?.status}</output>;
+    return <output>{prepared.status}:{prepared.projection.session.status}</output>;
   }
   const source = { useRuntime: vi.fn() }, loadFrame = vi.fn();
   // Exact Product factory argument order; one factory/Page identity for all
@@ -61,11 +62,11 @@ it("does not invent default controls, hashes, workflow, a mounted source or runt
   expect(m.current().whole.snapshot?.runtime).toBeUndefined();
   expect(m.createPage).toHaveBeenCalledOnce(); expect(m.adapter.load).toHaveBeenCalledOnce(); expect(m.save).not.toHaveBeenCalled();
 });
-it("updates caller-owned board state and workflow without replacing the provider/session", async () => {
+it("updates caller-owned board state and workflow without replacing the provider or its committed session identity", async () => {
   const workflow = { returnStep: "SYNTHETIC return to original host", checkCandidates: vi.fn(async () => ({ status: "unavailable" as const })) };
   const controller = createPublisherDesignerController({ workflow }), m = mount(controller);
   await supplyCurrentBoards(m, controller);
-  const session = m.current().whole.session, identity = m.current().prepared.projection.session.id;
+  const session = m.current().whole.sessionIdentity, identity = m.current().prepared.projection.session.id;
   expect(controller.boards.options.workflow).toBe(workflow);
   const prepared = m.current().prepared;
   if (prepared.status !== "prepared") throw new Error("Expected original prepared records");
@@ -73,27 +74,24 @@ it("updates caller-owned board state and workflow without replacing the provider
   const id = prepared.projection.boards[0]!.id;
   act(() => controller.setBoard(id, { mode: "view", canSave: false, pending: true }));
   expect(controller.boards.options.board(id)).toMatchObject({ mode: "view", canSave: false, pending: true });
-  expect(m.current().whole.session).toBe(session); expect(m.current().prepared.projection.session.id).toBe(identity);
+  expect(m.current().whole.sessionIdentity).toBe(session); expect(m.current().prepared.projection.session.id).toBe(identity);
   expect(m.createPage).toHaveBeenCalledOnce(); expect(m.adapter.load).toHaveBeenCalledOnce();
   act(() => controller.removeBoard(id));
   await waitFor(() => expect(m.current().prepared.status).toBe("pending"));
-  expect(m.current().whole.session).toBe(session);
+  expect(m.current().whole.sessionIdentity).toBe(session);
 });
-it("delegates edit/failed flush to the same original session and revokes its live mount on cleanup", async () => {
-  const controller = createPublisherDesignerController({}), m = mount(controller);
+it("exposes no edit, resolves flush false without an edit session and revokes its live mount on cleanup", async () => {
+  const controller = createPublisherDesignerController({});
+  expect("edit" in controller).toBe(false);
+  expect(await controller.flush()).toBe(false);
+  const m = mount(controller);
   await supplyCurrentBoards(m, controller);
-  const session = m.current().whole.session;
-  act(() => { expect(controller.edit("tokens.surface-color", [{ portion: "values", change: { op: "remove", slot: "tokens.surface-color" } }])).toBe(true); });
-  await screen.findByText("prepared:not-saved");
-  const edits = m.current().whole.sessionState!.edits;
-  expect(edits[0]).toMatchObject({ status: "failed", failure: { reason: "unavailable" } });
   let flushed: boolean | undefined;
   await act(async () => { flushed = await controller.flush(); });
-  expect(flushed).toBe(false); expect(m.current().whole.session).toBe(session);
-  expect(m.current().whole.sessionState!.edits).toEqual(edits);
+  expect(flushed).toBe(false); expect(m.save).not.toHaveBeenCalled();
   m.rendered.unmount();
   expect(controller.factoryInputs()).toEqual({ status: "pending", needs: ["ORIGINAL_MOUNT_UNAVAILABLE"] });
-  expect(controller.edit("tokens.surface-color", [])).toBe(false); expect(await controller.flush()).toBe(false);
+  expect(await controller.flush()).toBe(false);
 });
 it("uses only an explicit source-owner descriptor association and refuses stale descriptor hashes", async () => {
   const source = { entry: "preview.js", files: { "preview.js": "// SYNTHETIC source-owner bytes" }, dependencies: {} };
@@ -110,22 +108,25 @@ it("uses only an explicit source-owner descriptor association and refuses stale 
   expect(m.current().whole.snapshot?.runtime).toBeUndefined();
 });
 
-it("rejects retained prepared inputs as soon as the original session revision advances with unchanged selection", async () => {
-  const controller = createPublisherDesignerController({}), m = mount(controller);
+it("reaches inputs from the committed read-only state and stays pending on a session-identity or hash mismatch", async () => {
+  const source = { entry: "preview.js", files: { "preview.js": "// SYNTHETIC source-owner bytes" }, dependencies: {} };
+  const descriptor = { id: "SYNTHETIC-owner", source, sourceHash: runtimeHash(source) };
+  const controller = createPublisherDesignerController({ sources: { example: descriptor } }), m = mount(controller);
   await supplyCurrentBoards(m, controller);
-  const before = m.current(), session = before.whole.session!;
-  let completion!: Promise<boolean>;
-  act(() => {
-    completion = controller.flush();
-    expect(session.getSnapshot().revision).toBeGreaterThan(before.prepared.projection.session.revision);
-    expect(session.getSnapshot().committed).toBe(before.whole.sessionState!.committed);
-    expect(controller.factoryInputs()).toMatchObject({ status: "pending", needs: expect.arrayContaining(["CURRENT_SESSION_REVISION_UNAVAILABLE"]) });
-  });
-  await act(async () => { expect(await completion).toBe(true); });
-  expect(m.current().prepared.projection.libraryHash).toBe(before.prepared.projection.libraryHash);
-  expect(m.current().prepared.projection.selectionHash).toBe(before.prepared.projection.selectionHash);
-  expect(m.current().prepared.projection.session.id).toBe(before.prepared.projection.session.id);
-  const refreshed = controller.factoryInputs();
-  expect(refreshed.status).toBe("pending");
-  if (refreshed.status === "pending") expect(refreshed.needs).not.toContain("CURRENT_SESSION_REVISION_UNAVAILABLE");
+  const { prepared, whole } = m.current();
+  if (prepared.status !== "prepared" || !whole.snapshot) throw new Error("Expected committed prepared records");
+  // Synthetic Stage runtime ports on the committed snapshot; the fixture host supplies none.
+  const ports = { SYNTHETIC: "ports" } as unknown as NonNullable<CompositeStudioSnapshot["runtime"]>;
+  const committed: WholeStudioState = { ...whole, snapshot: { ...whole.snapshot, runtime: ports } };
+  act(() => { m.rendered.unmount(); });
+  const settle = (p: DesignerPreparedLibraryBoards, w: WholeStudioState) => { const release = controller.boards.observe(p, w); const result = controller.factoryInputs(); release(); return result; };
+  expect(settle(prepared, committed)).toEqual({ status: "inputs", prepared, whole: committed, ports, sources: { example: descriptor } });
+  const identityMismatch = settle(prepared, { ...committed, sessionIdentity: "SYNTHETIC-other-session" });
+  expect(identityMismatch).toEqual({ status: "pending", needs: ["CURRENT_PROVIDER_ASSOCIATION_UNAVAILABLE"] });
+  const libraryMismatch = settle({ ...prepared, projection: { ...prepared.projection, libraryHash: runtimeHash("SYNTHETIC stale library") } }, committed);
+  expect(libraryMismatch).toEqual({ status: "pending", needs: ["CURRENT_PROVIDER_ASSOCIATION_UNAVAILABLE"] });
+  const selectionMismatch = settle({ ...prepared, projection: { ...prepared.projection, selectionHash: runtimeHash("SYNTHETIC stale selection") } }, committed);
+  expect(selectionMismatch).toEqual({ status: "pending", needs: ["CURRENT_PROVIDER_ASSOCIATION_UNAVAILABLE"] });
+  expect(settle(prepared, { ...committed, snapshot: undefined })).toMatchObject({ status: "pending", needs: expect.arrayContaining(["CURRENT_PROVIDER_ASSOCIATION_UNAVAILABLE"]) });
+  expect(m.save).not.toHaveBeenCalled();
 });
