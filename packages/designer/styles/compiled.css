@@ -921,6 +921,9 @@
   .start-0 {
     inset-inline-start: calc(var(--spacing, 0.25rem) * 0);
   }
+  .start-md {
+    inset-inline-start: var(--spacing-md, 12px);
+  }
   .start-sm {
     inset-inline-start: var(--spacing-sm, 8px);
   }
@@ -935,6 +938,9 @@
   }
   .top-1\/2 {
     top: calc(1 / 2 * 100%);
+  }
+  .top-md {
+    top: var(--spacing-md, 12px);
   }
   .bottom-0 {
     bottom: 0px;
