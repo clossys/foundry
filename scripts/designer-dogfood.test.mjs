@@ -26,7 +26,7 @@ function fixture(run, native = false) {
   const files = Object.fromEntries(["src/components/index.ts", "src/components/Button.tsx", "src/catalog/slots/components.json", "src/catalog/aliases/components.json", "src/catalog/fills/foundry/components.button.json", ...(native ? ["src/components/NativeAction.tsx", "src/catalog/fills/foundry/components.native-action.json"] : [])].map(path => [path, createHash("sha256").update(readFileSync(resolve(designerRoot, path))).digest("hex")]));
   const foundationReceipt = {schema: "designer-foundation/v1", files};
   const scan = (...paths) => scanDesignerDogfood({ designerRoot, foundationReceipt, roots: paths.map(path => resolve(root, path)) });
-  try { run({ put, scan, root }); } finally { rmSync(root, { recursive: true, force: true }); }
+  try { run({ put, scan, root, designerRoot, foundationReceipt }); } finally { rmSync(root, { recursive: true, force: true }); }
 }
 const rejects = (text, code) => fixture(({put, scan}) => { put("consumer/Main.tsx", text); const report = scan("consumer"); assert.equal(report.ok, false); assert.ok(report.findings.some(finding => finding.code === code), JSON.stringify(report.findings)); });
 
@@ -196,4 +196,124 @@ test("zero-allowlist source mutations fail independently in Studio, admin shell 
     assert.equal(report.ok, false);
     assert.ok(report.findings.some(row => row.file.endsWith("admin/console.css") && row.code === "DG3"));
   }
+}));
+
+test("bare public package CSS imports resolve the exported stylesheet and inspect its bytes", () => fixture(({ put, scan }) => {
+  put("designer/package.json", JSON.stringify({ name: "@fixture/designer", exports: { "./theme.css": "./styles/theme.css" } }));
+  put("designer/styles/theme.css", ".owned {color:var(--color-ink);width:var(--size-content)}");
+  put("consumer/main.css", '@import "@fixture/designer/theme.css";');
+  const clean = scan("consumer");
+  assert.equal(clean.ok, true, JSON.stringify(clean.findings));
+  assert.ok(clean.inventory.some(row => row.file.endsWith("designer/styles/theme.css")));
+  put("designer/styles/theme.css", ".owned {color:#abcdef;width:12px}");
+  const raw = scan("consumer");
+  for (const code of ["DG3", "DG5"]) assert.ok(raw.findings.some(row => row.code === code && row.file.endsWith("designer/styles/theme.css")));
+  for (const statement of ['@import "@fixture/designer/private.css";', '@import "@foreign/designer/theme.css";', '@import "https://example.invalid/theme.css";', '@import "@fixture/designer/theme.css"garbage;']) {
+    put("consumer/main.css", statement);
+    assert.ok(scan("consumer").findings.some(row => row.code === "DG0"), statement);
+  }
+}));
+
+test("package CSS conditions select runtime CSS, never types or a guessed package-relative file", () => fixture(({ put, scan }) => {
+  put("theme/package.json", JSON.stringify({ name: "@fixture/theme", exports: { "./theme.css": { types: "./types/theme.d.ts", default: "./styles/theme.css" } } }));
+  put("theme/styles/theme.css", ".theme{color:var(--color-ink)}");
+  put("consumer/main.css", '@import url("@fixture/theme/theme.css");');
+  assert.equal(scan("consumer").ok, true);
+  put("theme/package.json", JSON.stringify({ name: "@fixture/theme", exports: { "./theme.css": { types: "./styles/theme.css" } } }));
+  assert.ok(scan("consumer").findings.some(row => row.code === "DG0"));
+  put("theme/package.json", JSON.stringify({ name: "@fixture/theme", exports: { ".": { import: "./index.js", style: "./styles/theme.css" } } }));
+  put("consumer/main.css", '@import "@fixture/theme";');
+  assert.equal(scan("consumer").ok, true);
+  put("theme/package.json", JSON.stringify({ name: "@fixture/theme", exports: { "./theme.css": "../outside.css" } }));
+  assert.ok(scan("consumer").findings.some(row => row.code === "DG0"));
+}));
+
+test("numeric issue references and issue URLs are prose, while colors in properties and classes remain paint", () => fixture(({ put, scan }) => {
+  put("consumer/feed.ts", 'export const titles=["Issue #123", "Fix #1234 and #5678", "#123456 page layout", "Closed (#12345678)", "https://example.invalid/issues/123#123", "https://example.invalid/pull/4#abcdef"];');
+  assert.equal(scan("consumer").ok, true);
+  for (const content of ['const value="#123";', 'const color="#123";', 'const color="issue #123";', 'const value="#abcdef";', 'const value="rgb(1,2,3)";', 'const value="rgba(1,2,3,.5)";', 'const value="linear-gradient(#123, #456)";', 'const css="color: #123;";', 'const X=()=> <div className="bg-[#123]"/>;']) {
+    put("consumer/feed.ts", "export const feed=[];");
+    put("consumer/Main.tsx", content);
+    assert.ok(scan("consumer").findings.some(row => row.code === "DG3"), content);
+  }
+}));
+
+test("raw pixels are rejected in consumer CSS, style declarations and arbitrary classes, not numeric prose", () => fixture(({ put, scan }) => {
+  put("consumer/main.css", "/* 12px is documentation. */ .pane{width:var(--content-width);padding:var(--space-md)}");
+  put("consumer/feed.ts", 'export const description="The old pane was 320px wide; issue #123 tracks it"; export const count=320;');
+  assert.equal(scan("consumer").ok, true);
+  for (const css of [".pane{width:12px}", ".pane{padding:0 12px}", ".pane{width:calc(100% - 12px)}", ".pane{--custom-gap:12px}", ".pane{width:.5px}", "@media (width >= 320px){.pane{display:block}}", "@container pane (min-width:320px){.pane{display:block}}"] ) {
+    put("consumer/main.css", css);
+    assert.ok(scan("consumer").findings.some(row => row.code === "DG5"), css);
+  }
+  put("consumer/main.css", "@media (width >= 20rem){.pane{display:block}} @container pane (width >= 20rem){.pane{display:block}}");
+  assert.equal(scan("consumer").ok, true);
+  put("consumer/main.css", ".pane{width:var(--content-width)}");
+  for (const content of ['export const width="12px";', 'export const offset="24px";', 'export const offset="calc(100% - 24px)";', 'export const data={size:"24px"};', 'export const paint={padding:"12px"};', 'export const css=`width: 12px;`;', 'export const X=()=> <div className="w-[12px]"/>;']) {
+    put("consumer/Main.tsx", content);
+    assert.ok(scan("consumer").findings.some(row => row.code === "DG5"), content);
+  }
+}));
+
+test("external public modules are source-inspected, including aliased controls and nested imports", () => fixture(({ put, scan }) => {
+  put("tools/package.json", JSON.stringify({ name: "@fixture/tools", exports: { ".": { import: "./dist/index.js" } } }));
+  put("tools/src/index.ts", 'export { label } from "./label.js";');
+  put("tools/src/label.ts", 'export const label="Current label";');
+  put("consumer/Main.tsx", 'import {label} from "@fixture/tools";export const X=()=> <div>{label}</div>;');
+  const clean = scan("consumer");
+  assert.equal(clean.ok, true, JSON.stringify(clean.findings));
+  for (const path of ["tools/src/index.ts", "tools/src/label.ts"]) assert.ok(clean.inventory.some(row => row.file.endsWith(path)));
+  put("tools/src/label.ts", 'import {Hidden} from "./Hidden.js"; export const label="Current label";');
+  put("tools/src/Hidden.tsx", 'export const Hidden=()=> <button/>;');
+  assert.ok(scan("consumer").findings.some(row => row.code === "DG2" && row.file.endsWith("Hidden.tsx")));
+  put("tools/src/label.ts", 'export const label="button";');
+  put("consumer/Main.tsx", 'import {label as Action} from "@fixture/tools";export const X=()=> <Action/>;');
+  assert.ok(scan("consumer").findings.some(row => row.code === "DG2" && row.file.endsWith("consumer/Main.tsx")));
+}));
+
+test("external missing, foreign, private, malformed and unknown exports stay unqualified", () => fixture(({ put, scan }) => {
+  put("tools/package.json", JSON.stringify({ name: "@fixture/tools", exports: { ".": "./dist/index.js" } }));
+  put("tools/src/index.ts", 'export const value="safe";');
+  for (const module of ["@fixture/missing", "@foreign/tools", "@fixture/tools/private", "@fixture/tools/../private", "node:not-a-real-runtime"]) {
+    put("consumer/Main.tsx", `import {value} from ${JSON.stringify(module)};export const X=()=> <div>{value}</div>;`);
+    assert.ok(scan("consumer").findings.some(row => row.code === "DG0"), module);
+  }
+  put("consumer/Main.tsx", 'import {Fake} from "@fixture/tools";export const X=()=> <Fake/>;');
+  assert.ok(scan("consumer").findings.some(row => row.code === "DG0"));
+  put("tools/src/index.ts", 'export const Fake=()=> <div;');
+  assert.ok(scan("consumer").findings.some(row => row.code === "DG0"));
+  put("tools/src/index.ts", 'export {Fake} from "./missing.js";');
+  assert.ok(scan("consumer").findings.some(row => row.code === "DG0"));
+}));
+
+test("external exports grant no boundary to empty wrappers, and installed exports use actual bytes", () => fixture(({ put, scan }) => {
+  put("consumer/node_modules/widget/package.json", JSON.stringify({ name: "widget", exports: { ".": { import: "./index.jsx" } } }));
+  put("consumer/node_modules/widget/index.jsx", 'export const Fake=()=> null;');
+  put("consumer/Main.tsx", 'import {Fake} from "widget";export const X=()=> <Fake/>;');
+  const empty = scan("consumer");
+  assert.equal(empty.ok, true);
+  assert.equal(empty.foundation.length, 1, "inspected external helpers do not acquire foundation ownership");
+  assert.ok(empty.inventory.some(row => row.file.endsWith("widget/index.jsx")));
+  put("consumer/node_modules/widget/index.jsx", 'export const Fake=()=> <input/>;');
+  assert.ok(scan("consumer").findings.some(row => row.code === "DG2" && row.file.endsWith("widget/index.jsx")));
+  put("consumer/node_modules/widget/package.json", JSON.stringify({ name: "lookalike", exports: { ".": "./index.js" } }));
+  assert.ok(scan("consumer").findings.some(row => row.code === "DG0"));
+}));
+
+test("external namespace JSX requires an actual public export, and unsupported source types refuse", () => fixture(({ put, scan }) => {
+  put("tools/package.json", JSON.stringify({ name: "@fixture/tools", exports: { ".": "./dist/index.js" } }));
+  put("tools/src/index.ts", "export const View=()=> null;");
+  put("consumer/Main.tsx", 'import * as Tools from "@fixture/tools";export const X=()=> <Tools.View/>;');
+  assert.equal(scan("consumer").ok, true);
+  for (const tag of ["Tools.Missing", "Tools.View.Missing"]) {
+    put("consumer/Main.tsx", `import * as Tools from "@fixture/tools";export const X=()=> <${tag}/>;`);
+    assert.ok(scan("consumer").findings.some(row => row.code === "DG0"), tag);
+  }
+  put("tools/package.json", JSON.stringify({ name: "@fixture/tools", exports: { ".": "./opaque.txt" } }));
+  put("tools/opaque.txt", "ordinary prose");
+  put("consumer/Main.tsx", 'import "@fixture/tools";export const X=()=> <div/>;');
+  assert.ok(scan("consumer").findings.some(row => row.code === "DG0" && row.message.includes("unsupported")));
+  put("consumer/Main.tsx", 'import "./opaque.txt";');
+  put("consumer/opaque.txt", "ordinary prose");
+  assert.ok(scan("consumer").findings.some(row => row.code === "DG0" && row.message.includes("unsupported")));
 }));

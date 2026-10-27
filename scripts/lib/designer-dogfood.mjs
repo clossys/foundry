@@ -1,7 +1,9 @@
 import ts from "typescript";
 import { readFileSync, readdirSync, realpathSync, statSync } from "node:fs";
-import { dirname, extname, isAbsolute, relative, resolve, sep } from "node:path";
+import { extname, isAbsolute, relative, resolve, sep } from "node:path";
 import { createHash } from "node:crypto";
+import { builtinModules } from "node:module";
+import { dogfoodLocalFile as localFile, dogfoodPackageFile, dogfoodExport } from "./designer-dogfood-imports.mjs";
 
 const controls = new Set(["button", "input", "select", "textarea", "details", "summary", "dialog", "a"]);
 const color = /#[\da-f]{3,8}\b|\brgba?\s*\(/i;
@@ -11,14 +13,30 @@ const inside = (root, file) => { const path = relative(root, file); return !isAb
 const hash = bytes => createHash("sha256").update(bytes).digest("hex");
 const acceptedFoundation = JSON.parse(readFileSync(new URL("./designer-foundation.json", import.meta.url), "utf8"));
 
-/** Resolve real source files only. A missing import is evidence, never an empty module. */
-function localFile(file, specifier) {
-  const path = resolve(dirname(file), specifier);
-  const base = path.replace(/\.[cm]?jsx?$/, "");
-  for (const candidate of [path, ...sourceExtensions.map(extension => base + extension), ...sourceExtensions.map(extension => resolve(path, "index" + extension))]) {
-    try { if (statSync(candidate).isFile()) return realpathSync(candidate); } catch { /* next exact source candidate */ }
-  }
-  throw new Error(`unresolved local import ${specifier}`);
+const reactRuntime = new Set(["react", "react/jsx-runtime", "react/jsx-dev-runtime", "react-dom", "react-dom/client", "react-dom/server"]);
+const builtins = new Set(builtinModules.map(name => name.replace(/^node:/, "")));
+const pixel = /(?:^|[^\w.-])-?(?:\d+(?:\.\d+)?|\.\d+)px\b/i;
+const declaration = /(?:^|[;{])\s*(?:--[\w-]+|[A-Za-z][\w-]*)\s*:\s*([^;}]+)/g;
+const styleName = /^(?:color|background(?:Color)?|border.*|outline.*|fill|stroke|boxShadow|textShadow|width|height|minWidth|maxWidth|minHeight|maxHeight|padding.*|margin.*|gap|rowGap|columnGap|top|left|right|bottom|inset.*|fontSize|lineHeight|letterSpacing|.*Radius)$/i;
+function literalStyleContext(node) {
+  const parent = node.parent;
+  if (ts.isJsxAttribute(parent)) return ["class", "className", "style", "fill", "stroke", "color"].includes(parent.name.getText());
+  return (ts.isPropertyAssignment(parent) || ts.isVariableDeclaration(parent)) && parent.name && styleName.test(parent.name.getText().replace(/["']/g, ""));
+}
+function rawColor(value, styling = false) {
+  // URL fragments and numeric issue references are prose, while the same bytes
+  // in a declaration, color property or arbitrary class are still paint.
+  const clean = value.replace(/https?:\/\/[^\s"'<>]+/g, "");
+  if (/\brgba?\s*\(/i.test(clean)) return true;
+  return [...clean.matchAll(/#[\da-f]{3,8}\b/gi)].some(match => {
+    if (styling || /\b(?:[\w-]*gradient|drop-shadow|color-mix|light-dark)\s*\(/i.test(clean) || /\b(?:solid|dashed|dotted|double)\s+#/i.test(clean) || /\[[^\]]*#/.test(clean) || [...clean.matchAll(declaration)].some(row => color.test(row[1]))) return true;
+    if (!/^#\d+$/.test(match[0])) return true;
+    const remainder = clean.slice(0, match.index) + clean.slice(match.index + match[0].length);
+    return !/[A-Za-z]/.test(remainder);
+  });
+}
+function rawPixel(value, styling = false) {
+  return pixel.test(value) && (styling || /^\s*-?(?:\d+(?:\.\d+)?|\.\d+)px\s*$/i.test(value) || /\b(?:calc|clamp|min|max|translate[XYZ]?|translate3d)\s*\(/i.test(value) || [...value.matchAll(declaration)].some(row => pixel.test(row[1])) || /\[[^\]]*\d(?:\.\d+)?px\b/.test(value));
 }
 function filesBelow(root) {
   if (statSync(root).isFile()) return source(root) ? [realpathSync(root)] : [];
@@ -117,7 +135,8 @@ function exportedExpression(file, name, trail = new Set()) {
 }
 /** Strict source gate. All files and reachable local helpers are inspected once. */
 export function scanDesignerDogfood({ roots, designerRoot, foundationReceipt = acceptedFoundation }) {
-  const findings = [], inventory = [], seen = new Set();
+  const findings = [], inventory = [], seen = new Set(), recorded = new Set();
+  const record = file => { if (!recorded.has(file)) { inventory.push({ file, sha256: hash(readFileSync(file)) }); recorded.add(file); } };
   let boundaries;
   try { boundaries = foundationComponents(designerRoot, foundationReceipt); }
   catch (error) { return { schema: "designer-dogfood/v1", ok: false, findings: [{ code: "DG0", file: resolve(designerRoot), line: 1, message: error.message }], inventory, foundation: [] }; }
@@ -129,7 +148,7 @@ export function scanDesignerDogfood({ roots, designerRoot, foundationReceipt = a
     const add = (code, node, message) => findings.push({ code, file, line: node ? ts.getLineAndCharacterOfPosition(ast, node.getStart(ast)).line + 1 : 1, message });
     let ast;
     try { text = readFileSync(file, "utf8"); } catch (error) { findings.push({ code: "DG0", file, line: 1, message: error.message }); return; }
-    inventory.push({ file, sha256: hash(text) });
+    record(file);
     const foundationName = relative(designerRoot, file).split(sep).join("/");
     if (["src/tokens/tokens.ts", "src/tokens/guidance.ts"].includes(foundationName)) {
       if (hash(text) !== foundationReceipt.files[foundationName]) findings.push({ code: "DG0", file, line: 1, message: "registered token definition identity differs" });
@@ -142,19 +161,30 @@ export function scanDesignerDogfood({ roots, designerRoot, foundationReceipt = a
     }
     if (extname(file) === ".css") {
       const clean = text.replace(/\/\*[\s\S]*?\*\//g, "");
-      for (const match of clean.matchAll(/(?:^|[;{])\s*[\w-]+\s*:\s*([^;}]+)/g)) if (color.test(match[1])) findings.push({ code: "DG3", file, line: clean.slice(0, match.index).split("\n").length, message: "raw CSS color" });
+      for (const match of clean.matchAll(declaration)) {
+        const line = clean.slice(0, match.index).split("\n").length;
+        if (color.test(match[1])) findings.push({ code: "DG3", file, line, message: "raw CSS color" });
+        if (pixel.test(match[1])) findings.push({ code: "DG5", file, line, message: "raw CSS pixel dimension bypasses registered token binding" });
+      }
+      for (const query of clean.matchAll(/@(?:media|container)\b\s*([^{};]+)/g)) if (pixel.test(query[1])) findings.push({ code: "DG5", file, line: clean.slice(0, query.index).split("\n").length, message: "raw CSS pixel query threshold bypasses registered token binding" });
       for (const statement of clean.matchAll(/@import\s+([^;]+)(?:;|$)/g)) {
         const match = /^(?:url\(\s*)?["']([^"']+)["']/.exec(statement[1].trim());
-        try { if (!match) throw new Error("unresolved CSS import scope"); if (/^(?:https?:|data:|\/\/)/.test(match[1])) throw new Error("unqualified external CSS import"); visit(localFile(file, match[1].startsWith(".") ? match[1] : "./" + match[1])); } catch (error) { findings.push({ code: "DG0", file, line: 1, message: error.message }); }
+        try {
+          if (!match || !/^(?:url\(\s*)?["'][^"']+["'](?:\s*\))?(?:\s+[^;]+)?$/.test(statement[1].trim())) throw new Error("unresolved CSS import scope");
+          if (/^(?:[\w-]+:|\/)/.test(match[1])) throw new Error("unqualified external CSS import");
+          const target = match[1].startsWith(".") ? localFile(file, match[1]) : dogfoodPackageFile(file, match[1], designerRoot, { css: true, onRead: record });
+          if (extname(target) !== ".css") throw new Error("CSS import does not resolve to a stylesheet");
+          visit(target);
+        } catch (error) { findings.push({ code: "DG0", file, line: 1, message: error.message }); }
       }
       return;
     }
     ast = ts.createSourceFile(file, text, ts.ScriptTarget.Latest, true, /x$/.test(file) ? ts.ScriptKind.TSX : ts.ScriptKind.TS);
     for (const diagnostic of ast.parseDiagnostics) add("DG0", undefined, ts.flattenDiagnosticMessageText(diagnostic.messageText, " "));
-    const lexical = new Map(), imports = new Map(), importedBindings = new Map(), namespaces = new Map(), elementFactories = new Set(["createElement"]);
+    const lexical = new Map(), imports = new Map(), importedBindings = new Map(), namespaces = new Map(), publicNamespaces = new Set(), elementFactories = new Set(["createElement"]);
     const importModule = (specifier, node) => {
       if (specifier === "react-aria-components" || specifier.startsWith("react-aria-components/")) { add("DG1", node, "raw React Aria import"); return; }
-      if (specifier.startsWith(".")) { try { const target = localFile(file, specifier); if (!boundaries.has(target)) visit(target); } catch (error) { add("DG0", node, error.message); } return; }
+      if (specifier.startsWith(".")) { try { const target = localFile(file, specifier); if (!boundaries.has(target)) visit(target); return target; } catch (error) { add("DG0", node, error.message); } return; }
       if (specifier.startsWith(packageName + "/")) {
         const subpath = specifier.slice(packageName.length + 1);
         try {
@@ -166,10 +196,25 @@ export function scanDesignerDogfood({ roots, designerRoot, foundationReceipt = a
           const name = relative(designerRoot, target).split(sep).join("/");
           if (hash(readFileSync(target)) !== foundationReceipt.files[name]) throw new Error(`foundation export identity differs: ${specifier}`);
           if (!boundaries.has(target)) visit(target);
+          return target;
         } catch (error) { add("DG0", node, error.message); }
         return;
       }
-      if (!["react", "react/jsx-runtime", "react/jsx-dev-runtime", "react-dom", "react-dom/client", "react-dom/server"].includes(specifier) && !specifier.startsWith("node:")) add("DG0", node, `unqualified external import ${specifier}`);
+      if (reactRuntime.has(specifier) || specifier.startsWith("node:") && builtins.has(specifier.slice(5))) return;
+      try {
+        const target = dogfoodPackageFile(file, specifier, designerRoot, { onRead: record });
+        const clause = ts.isImportDeclaration(node) ? node.importClause : undefined;
+        const symbols = clause ? [...(clause.name ? ["default"] : []), ...(clause.namedBindings && ts.isNamedImports(clause.namedBindings) ? clause.namedBindings.elements.filter(row => !row.isTypeOnly).map(row => (row.propertyName ?? row.name).text) : [])] : [];
+        // Public export presence is established from its implementation, never
+        // inferred from a package name or a locally aliased component spelling.
+        if (symbols.length) for (const symbol of symbols) {
+          const implementation = dogfoodExport(target, symbol);
+          for (const witness of implementation.witnesses) record(witness);
+          visit(implementation.file);
+        }
+        else visit(target);
+        return target;
+      } catch (error) { add("DG0", node, error.message); }
     };
     const scopeOf = node => {
       for (let parent = node.parent; parent; parent = parent.parent) if (ts.isBlock(parent) || ts.isSourceFile(parent) || ts.isFunctionLike(parent) || ts.isForStatement(parent) || ts.isForOfStatement(parent) || ts.isForInStatement(parent)) return parent;
@@ -193,11 +238,14 @@ export function scanDesignerDogfood({ roots, designerRoot, foundationReceipt = a
       if (ts.isVariableDeclaration(node) && ts.isObjectBindingPattern(node.name) && node.initializer) for (const binding of node.name.elements) if (ts.isIdentifier(binding.name) && !binding.dotDotDotToken) bind(node, binding.name.text, { object: node.initializer, key: (binding.propertyName ?? binding.name).text });
       if (ts.isImportDeclaration(node) && ts.isStringLiteral(node.moduleSpecifier) && !node.importClause?.isTypeOnly) {
         const specifier = node.moduleSpecifier.text;
-        importModule(specifier, node);
+        const resolvedTarget = importModule(specifier, node);
         const clause = node.importClause;
-        if (specifier.startsWith(".") && clause?.namedBindings) try {
-          const target = localFile(file, specifier);
-          if (ts.isNamespaceImport(clause.namedBindings)) namespaces.set(clause.namedBindings.name.text, target);
+        if (resolvedTarget && clause?.namedBindings) try {
+          const target = resolvedTarget;
+          if (ts.isNamespaceImport(clause.namedBindings)) {
+            namespaces.set(clause.namedBindings.name.text, target);
+            if (!specifier.startsWith(".") && !specifier.startsWith(packageName + "/")) publicNamespaces.add(clause.namedBindings.name.text);
+          }
           else for (const binding of clause.namedBindings.elements) if (!binding.isTypeOnly) importedBindings.set(binding.name.text, { target, name: (binding.propertyName ?? binding.name).text });
         } catch { /* importModule already reports the unresolved edge */ }
         if (clause?.name) imports.set(clause.name.text, specifier);
@@ -275,6 +323,13 @@ export function scanDesignerDogfood({ roots, designerRoot, foundationReceipt = a
     };
     const inspect = node => {
       if (ts.isJsxOpeningElement(node) || ts.isJsxSelfClosingElement(node)) {
+        const [namespace, member, ...parts] = node.tagName.getText(ast).split(".");
+        if (publicNamespaces.has(namespace)) try {
+          if (!member || parts.length) throw new Error("unresolved namespace visual export");
+          const implementation = dogfoodExport(namespaces.get(namespace), member);
+          for (const witness of implementation.witnesses) record(witness);
+          visit(implementation.file);
+        } catch (error) { add("DG0", node, error.message); }
         if (controlTag(node.tagName)) add("DG2", node, "raw interactive element");
         const paint = unwrap(node.tagName), paintName = ts.isStringLiteralLike(paint) ? paint.text : node.tagName.getText(ast);
         if (["svg", "path", "circle", "rect", "polygon", "polyline", "ellipse", "line"].includes(paintName)) add("DG6", node, "unregistered SVG paint must use an owned asset or diagram mechanism");
@@ -295,7 +350,8 @@ export function scanDesignerDogfood({ roots, designerRoot, foundationReceipt = a
         if (property(unwrap(node.expression)) === "setAttribute" && node.arguments[0] && ts.isStringLiteralLike(node.arguments[0]) && node.arguments[0].text === "style") add("DG4", node, "inline style attribute mutation");
       }
       const literal = ts.isStringLiteralLike(node) || [ts.SyntaxKind.TemplateHead, ts.SyntaxKind.TemplateMiddle, ts.SyntaxKind.TemplateTail].includes(node.kind);
-      if (literal && color.test(node.text)) add("DG3", node, "raw color literal");
+      if (literal && rawColor(node.text, literalStyleContext(node))) add("DG3", node, "raw color literal");
+      if (literal && rawPixel(node.text, literalStyleContext(node))) add("DG5", node, "raw pixel dimension bypasses registered token binding");
       if (literal && /\[[^\]]*(?:\d(?:px|rem|em|vh|vw|vmin|vmax)|#[\da-f]{3,8})[^\]]*\]/i.test(node.text)) add("DG5", node, "arbitrary class paint bypasses registered token binding");
       if (ts.isBinaryExpression(node) && node.operatorToken.kind === ts.SyntaxKind.EqualsToken && styleTarget(node.left)) add("DG4", node, "imperative inline style bypasses Foundry ownership");
       if (ts.isBinaryExpression(node) && node.operatorToken.kind === ts.SyntaxKind.EqualsToken && ["innerHTML", "outerHTML"].includes(property(node.left))) add("DG0", node, "unqualified raw markup mutation");
