@@ -24,18 +24,24 @@ export type RouteRuntimeBindingResult =
       /** Page-root provenance stamp (D1, D2): spread on the route's root element so provenance-scan can attribute it. */
       readonly pageRoot: DsAttrs }
   | { readonly status: "pending" | "refused"; readonly findings: readonly string[] };
-/** One verified descriptor member per selected axis, in descriptor order. The selection narrows the
- * descriptor and never adds to it; a choice that conflicts with the selected config is refused. */
+const memberAxis = (member: string) => member.includes(".") ? member.slice(0, member.indexOf(".")) : undefined;
+/** Narrow the verified descriptor, in its order: each named axis keeps only its chosen member, and
+ * the frame config's axis keeps the config member even when the selection omits it (as a layout
+ * config's members carry under explicit ones). Any other axis projects exactly as with no selection,
+ * so a selection never adds a member and never drops a choice to a renderer default. A choice that
+ * conflicts with the config is refused. */
 function selectedFrameMembers(members: readonly string[], selection: unknown, config: string | undefined): readonly string[] | undefined {
   if (selection === null || typeof selection !== "object" || Array.isArray(selection) || Object.keys(selection).length === 0) return undefined;
-  const chosen = new Set<string>();
+  const chosen = new Map<string, string>();
   for (const [axis, member] of Object.entries(selection)) {
     if (!axis || axis.includes(".") || typeof member !== "string" || !member) return undefined;
     const name = `${axis}.${member}`;
     if (!members.includes(name) || (config?.startsWith(`${axis}.`) && config !== name)) return undefined;
-    chosen.add(name);
+    chosen.set(axis, name);
   }
-  return members.filter(member => chosen.has(member));
+  const configAxis = config !== undefined && members.includes(config) ? memberAxis(config) : undefined;
+  if (configAxis !== undefined && !chosen.has(configAxis)) chosen.set(configAxis, config!);
+  return members.filter(member => { const axis = memberAxis(member); return axis === undefined || !chosen.has(axis) || chosen.get(axis) === member; });
 }
 /** Resolve only the exact consumer's current selected surfaces. This projects the canonical
  * InstanceBinding; it cannot pick a catalog candidate or infer a missing configuration. */
