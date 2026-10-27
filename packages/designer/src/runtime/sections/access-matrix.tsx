@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { AccessMatrix, type AccessCellValue, type AccessGroup, type AccessMatrixValue, type AccessPermission, type AccessRole } from "../../blocks/AccessMatrix.js";
 import { recordsOf, type GroupBSection, type SectionRenderInput } from "./group-b-support.js";
+import { specimenDataset } from "../../studio/specimen-dataset.js";
 
 /** One permission record: the block's permission plus the role cells it already holds. */
 export interface AccessPermissionRecord extends AccessPermission { readonly grants?: Readonly<Record<string, AccessCellValue>> }
@@ -13,18 +14,17 @@ function valueFrom(groups: readonly AccessGroupRecord[]): AccessMatrixValue {
   return value;
 }
 
+const { accessMatrix } = specimenDataset.sections;
+
 function AccessMatrixFill({ roles, groups }: { readonly roles: readonly AccessRole[]; readonly groups: readonly AccessGroupRecord[] }) {
   const [value, setValue] = useState(() => valueFrom(groups));
   return <AccessMatrix
-    aria-label="Workspace access"
+    aria-label={accessMatrix["aria-label"]}
     roles={roles}
     groups={groups.map(({ permissions, ...group }) => ({ ...group, permissions: permissions.map(({ grants: _grants, ...permission }) => permission) }))}
     value={value}
     onChange={setValue}
-    labels={{
-      permissionHeader: "Permission", cell: (role, permission) => `${role}: ${permission}`, groupAll: (role, group) => `${role}: all of ${group}`,
-      inherited: "Inherited", locked: "Locked", changeSummary: (grants, revokes) => `${grants} added, ${revokes} removed`,
-    }}
+    labels={accessMatrix.labels}
   />;
 }
 

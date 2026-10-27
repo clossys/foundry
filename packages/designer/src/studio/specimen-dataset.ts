@@ -236,9 +236,11 @@ const statusList: StatusListProps = {
   ],
 };
 
+/** A task list's progress line: how many of its tasks are done. */
+const taskProgress = (done: number, total: number) => `${done} of ${total} done`;
 const taskList: TaskListProps = {
   "aria-label": "Launch checklist",
-  progressText: "2 of 4 done",
+  progressText: taskProgress(2, 4),
   statusLabels: { todo: "To do", "in-progress": "In progress", blocked: "Blocked", done: "Done" },
   emptyState: { title: "No tasks", description: "Add a task to start the checklist." },
   items: [
@@ -282,6 +284,7 @@ const sections = {
     label: "Recent orders",
     headers: { id: "Order", customer: "Customer", status: "Status", total: "Total" },
     rows: sectionOrders,
+    paginationLabel: "Order pages",
   },
   /** Copy for the non-default sample states (vf35): empty, loading, error and long content. */
   states: {
@@ -462,13 +465,14 @@ const sections = {
     ] satisfies readonly (Omit<NoticeListItem, "action"> & { action?: { label: string; href: string } })[],
   },
   statGroup: {
+    "aria-label": "Key figures",
     items: [
       { id: "active", label: "Active users", value: "2,481", delta: "+12%", trend: "up", description: "vs. last 30 days" },
       { id: "conversion", label: "Conversion", value: "3.4%", delta: "-0.2 pts", trend: "down", description: "vs. last 30 days" },
       { id: "revenue", label: "Revenue", value: "$48.2k", delta: "+4%", trend: "up", description: "vs. last 30 days" },
       { id: "churn", label: "Churn", value: "1.1%", delta: "0 pts", trend: "neutral", description: "vs. last 30 days" },
     ],
-  } satisfies Pick<StatGroupProps, "items">,
+  } satisfies Pick<StatGroupProps, "aria-label" | "items">,
   /** Samples the blocks own beside their source, addressed here so every Section preview draws from this dataset. */
   accessMatrix: accessMatrixSample,
   activityFeed: activityFeedSample,
@@ -479,6 +483,15 @@ const sections = {
   settingsSection: settingsSectionSample,
   timeline: timelineSample,
   usageSummary: usageSummarySample,
+  /** Chrome the group-b Section renderers draw beside their records (data-grid, audit-log, resource-list, task-list). */
+  dataGrid: { label: "Order grid" },
+  auditLogExport: { label: "Export entries" },
+  resourceListChrome: {
+    toolbar: { label: "Project list options", toggles: [{ id: "archived", label: "Show archived" }] },
+    paginationLabel: "Project pages",
+    selectRowLabel: (name: string) => `Select ${name}`,
+  },
+  taskProgress,
 } as const;
 
 /** A neutral geometric mark: the frame shows the host mark only as an image. */

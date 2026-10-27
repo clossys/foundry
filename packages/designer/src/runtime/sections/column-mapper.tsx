@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { ColumnMapper, type ColumnMapperSource, type ColumnMapperTarget, type ColumnMapping } from "../../blocks/ColumnMapper.js";
 import { recordsOf, type GroupBSection, type SectionRenderInput } from "./group-b-support.js";
+import { specimenDataset } from "../../studio/specimen-dataset.js";
 
 /** One mapping record: which source column fills a target field, or null when it is not mapped. */
 export interface ColumnMappingRecord { readonly target: string; readonly source: string | null }
@@ -12,11 +13,7 @@ function ColumnMapperFill({ targets, sourceColumns, mapping }: { readonly target
     sourceColumns={sourceColumns}
     mapping={value}
     onMappingChange={setValue}
-    labels={{
-      legend: "Match file columns to fields", notMapped: "Not mapped", required: "Required",
-      requiredMissing: target => `${target} needs a column`, duplicate: header => `"${header}" is used more than once`,
-      samples: values => `Examples: ${values.join(", ")}`, summary: (mapped, total, problems) => `${mapped} of ${total} fields mapped, ${problems} to fix`,
-    }}
+    labels={specimenDataset.sections.columnMapper.labels}
   />;
 }
 

@@ -32,10 +32,7 @@ const STRUCTURAL = new Set(["kind", "chart", "type", "variant", "icon"]);
  * Copy no dataset record carries yet (needs-from-L7): optional chrome regions the fill maps but the dataset has
  * no record for. Each entry is the exact string; anything else unbound fails.
  */
-const UNBOUND: Readonly<Record<string, readonly string[]>> = {
-  "sections.audit-log": ["Export entries"],
-  "sections.resource-list": ["Customer list options", "archived", "Show archived"],
-};
+const UNBOUND: Readonly<Record<string, readonly string[]>> = {};
 
 /** Paths of strings in `content` the dataset does not hold (an `#id` anchor counts when the id is dataset data). */
 function unboundStrings(leaf: string, content: RuntimeJson, path = "", key = ""): string[] {
