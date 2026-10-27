@@ -71,8 +71,9 @@ const rows = (list: readonly RuntimeObject[]): readonly RuntimeObject[] => list;
 /**
  * Leaf -> its content, keyed by contract slot, bound to the shared synthetic dataset: each leaf reads its
  * `specimenDataset.sections` record (L7); regions no record carries (illustrations, breadcrumbs, form controls a
- * block sample holds as React nodes) read the shared component records. `header` carries the anatomy copy no
- * contract slot holds yet (see group-c-content `ANATOMY_CONTENT_KEY`).
+ * block sample holds as React nodes) read the shared component records. `header` is the runtime header channel
+ * (sections.section-header slots, see group-c-content `ANATOMY_CONTENT_KEY`), only on leaves whose contract
+ * names `anatomy.header`.
  */
 export const sectionDatasetC: Readonly<Record<GroupCLeaf, (dataset: SpecimenDataset) => Content>> = {
   cards: ({ sections: S }) => ({
@@ -108,7 +109,7 @@ export const sectionDatasetC: Readonly<Record<GroupCLeaf, (dataset: SpecimenData
     links: plainJson(S.navGrid.items),
   }),
   notices: ({ sections: S }) => ({
-    [ANATOMY_CONTENT_KEY]: { label: S.noticeList.label },
+    [ANATOMY_CONTENT_KEY]: { heading: S.noticeList.label },
     // The notice record's link action has no contract component (NEED: components.link), so it is left out.
     notices: S.noticeList.notices.map(({ action: _action, ...notice }) => plainJson(notice)),
   }),
@@ -152,14 +153,13 @@ export const sectionDatasetC: Readonly<Record<GroupCLeaf, (dataset: SpecimenData
     steps: plainJson(S.orderedSteps.items),
   }),
   "table-of-contents": ({ sections: S }) => ({
-    [ANATOMY_CONTENT_KEY]: { label: S.tableOfContents.label },
     headings: plainJson(S.tableOfContents.items),
     "active-id": S.tableOfContents.items[0]!.id,
   }),
   wizard: d => {
     const sample = d.sections.formWizard;
     return {
-      [ANATOMY_CONTENT_KEY]: { label: sample.labels.steps },
+      [ANATOMY_CONTENT_KEY]: { heading: sample.labels.steps },
       // The sample's step bodies are React nodes; ids, labels and the current step are its.
       steps: sample.steps.map(step => ({ id: step.id, label: plain(step.label), current: step.id === sample.currentStep })),
       progress: { label: d.progress.label },

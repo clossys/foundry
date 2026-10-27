@@ -7,7 +7,7 @@ import { afterEach, describe, expect, it } from "vitest";
 import * as blocks from "../../blocks/index.js";
 import { dsAttrs } from "../../catalog-core/provenance-attrs.js";
 import { scanProvenance } from "../../catalog-core/provenance-scan.js";
-import { runtimeHash, type RuntimeContent, type RuntimeFillDescriptor, type RuntimeJson, type RuntimeRenderInput } from "../../catalog-core/runtime-ports.js";
+import { runtimeHash, SECTION_HEADER_CONTENT_KEY, type RuntimeContent, type RuntimeFillDescriptor, type RuntimeJson, type RuntimeRenderInput } from "../../catalog-core/runtime-ports.js";
 import type { CompositeResolved } from "../../catalog-core/types.js";
 import { checkWiring } from "../../catalog-core/wiring.js";
 import { specimenDataset } from "../../studio/specimen-dataset.js";
@@ -27,7 +27,7 @@ interface FillDocument {
   readonly $extensions: { readonly "com.clossys.fill": { readonly id: string; readonly pin: { readonly export: string } } };
   readonly sections: Record<string, { readonly impl: { readonly export: string; readonly module: string }; readonly slotMap: Record<string, string>; readonly propMap: Record<string, string> }>;
 }
-interface ContractRow { readonly id: string; readonly contract: { readonly slots: readonly { readonly name: string; readonly type: RuntimeContent["reference"]["kind"]; readonly required?: boolean }[]; readonly allowedComposes: readonly string[]; readonly parts?: readonly string[]; readonly members: { readonly names?: readonly string[] } } }
+interface ContractRow { readonly id: string; readonly contract: { readonly slots: readonly { readonly name: string; readonly type: RuntimeContent["reference"]["kind"]; readonly required?: boolean }[]; readonly allowedComposes: readonly string[]; readonly parts?: readonly string[]; readonly members: { readonly names?: readonly string[] }; readonly anatomy?: { readonly header?: string | null } } }
 
 const contracts = new Map((JSON.parse(read("../../catalog/slots/sections.json")) as ContractRow[]).map(row => [row.id, row.contract]));
 const fillOf = (leaf: GroupCLeaf): FillDocument => JSON.parse(read(`../../catalog/fills/foundry/sections.${leaf}.json`)) as FillDocument;
@@ -279,7 +279,22 @@ describe("group-c members, refusals and optional slots", () => {
 
   it("refuses required anatomy copy that no contract slot carries, naming the NEED", () => {
     const { [ANATOMY_CONTENT_KEY]: _header, ...bare } = sectionDatasetC["empty-state"](specimenDataset);
-    expect(() => renderLeaf("empty-state", inputFor("empty-state", bare))).toThrow(/NEED: a header copy slot on sections.empty-state/);
+    expect(() => renderLeaf("empty-state", inputFor("empty-state", bare))).toThrow(/NEED: anatomy.header on sections.empty-state/);
+  });
+
+  it("puts header copy only on the runtime header channel, keyed by the section-header slots (L9)", () => {
+    expect(ANATOMY_CONTENT_KEY).toBe(SECTION_HEADER_CONTENT_KEY);
+    const headerSlots = contracts.get("sections.section-header")!.slots;
+    for (const leaf of GROUP_C_LEAVES) {
+      const header = sectionDatasetC[leaf](specimenDataset)[ANATOMY_CONTENT_KEY];
+      if (header === undefined) continue;
+      // Assembly admits the channel only where the contract names a header part (table-of-contents has none).
+      expect(contracts.get(`sections.${leaf}`)!.anatomy?.header, leaf).toBe("sections.section-header");
+      expect(Object.keys(header as object).filter(key => !headerSlots.some(slot => slot.name === key)), leaf).toEqual([]);
+      for (const slot of headerSlots) if (slot.required) expect((header as Record<string, RuntimeJson>)[slot.name], `${leaf}.${slot.name}`).toBeTruthy();
+    }
+    for (const leaf of ["notices", "wizard"] as const) expect(sectionDatasetC[leaf](specimenDataset)[ANATOMY_CONTENT_KEY], leaf).toHaveProperty("heading");
+    expect(sectionDatasetC["table-of-contents"](specimenDataset)).not.toHaveProperty(ANATOMY_CONTENT_KEY);
   });
 
   it("refuses more actions than the contract allows", () => {

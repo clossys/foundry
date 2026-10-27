@@ -1,5 +1,5 @@
 import type { ReactNode } from "react";
-import type { RuntimeJson, RuntimeRenderInput } from "../../catalog-core/runtime-ports.js";
+import { SECTION_HEADER_CONTENT_KEY, type RuntimeJson, type RuntimeRenderInput } from "../../catalog-core/runtime-ports.js";
 
 /**
  * Shared, markup-free readers for the group-c Section renderers. A renderer receives its content as JSON
@@ -19,11 +19,12 @@ export interface SectionInputs {
 }
 
 /**
- * Anatomy copy (a Section's own heading, description, eyebrow or region label) has no contract slot yet, so
- * the runtime assembly cannot deliver it. Renderers read it from this reserved content key when present and
- * refuse, naming the NEED, when the block requires it. Remove once the contracts carry a header copy slot.
+ * Anatomy header copy (a Section's own eyebrow, heading and description) rides the runtime header channel
+ * (runtime-ports `SECTION_HEADER_CONTENT_KEY`): one object keyed by the sections.section-header slot names,
+ * which assembly delivers only to a leaf whose contract names `anatomy.header`. Renderers read it here and
+ * refuse, naming the NEED, when the block requires it.
  */
-export const ANATOMY_CONTENT_KEY = "header";
+export const ANATOMY_CONTENT_KEY = SECTION_HEADER_CONTENT_KEY;
 
 export const noop = (): void => {};
 
@@ -89,19 +90,20 @@ export function actionsOf(leaf: string, slot: string, value: RuntimeJson | undef
   });
 }
 
-export interface AnatomyCopy { readonly heading?: string; readonly description?: string; readonly eyebrow?: string; readonly label?: string }
+/** The copy keys of the header channel (sections.section-header copy slots); its `actions` are read by the leaf that maps them. */
+export interface AnatomyCopy { readonly heading?: string; readonly description?: string; readonly eyebrow?: string }
 
 export function anatomyOf(input: RuntimeRenderInput<ReactNode>): AnatomyCopy {
   const value = slotValue(input, ANATOMY_CONTENT_KEY);
   const pick = (key: keyof AnatomyCopy) => stringField(value, key);
   const copy: Record<string, string> = {};
-  for (const key of ["heading", "description", "eyebrow", "label"] as const) { const text = pick(key); if (text) copy[key] = text; }
+  for (const key of ["heading", "description", "eyebrow"] as const) { const text = pick(key); if (text) copy[key] = text; }
   return copy;
 }
 
 export function requiredAnatomy(input: RuntimeRenderInput<ReactNode>, leaf: string, key: keyof AnatomyCopy): string {
   const text = anatomyOf(input)[key];
-  if (!text) throw new TypeError(`${leaf}: anatomy ${key} is required, but no contract slot carries it (NEED: a header copy slot on ${leaf})`);
+  if (!text) throw new TypeError(`${leaf}: anatomy ${key} is required, but no contract slot carries it (NEED: anatomy.header on ${leaf})`);
   return text;
 }
 
