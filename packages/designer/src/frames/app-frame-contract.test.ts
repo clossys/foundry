@@ -70,6 +70,7 @@ describe("data-readable AppFrame contract", () => {
       "theme.defaultPreference": { values: ["system", "light", "dark"], default: "system" },
       "account.avatar": { values: ["mark", "initials"], default: "mark" },
       footerLayout: { values: ["inline", "stacked"], default: "inline" },
+      fill: { values: ["host", "viewport"], default: "host" },
       dir: { values: ["ltr", "rtl"], default: null, omission: "inherit document direction" },
     });
     expect(APP_FRAME_CONTRACT.defaults).toMatchObject({ skipLabel: "Skip to content", themeStorageKey: "ui-theme", rightPanelOpenLabel: "Open panel", rightPanelCloseLabel: "Close panel" });

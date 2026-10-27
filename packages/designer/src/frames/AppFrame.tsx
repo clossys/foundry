@@ -24,6 +24,8 @@ const FRAME_STAMP = dsAttrs("frames", "frames.app-shell", "foundry/frames.app-sh
  * class scan pairs backticks file-wide, so a class literal inside the JSX below can be skipped.
  */
 const HEADER_ROW = "frame-header-container relative flex min-w-0 shrink-0 items-center frame-header-row";
+/** Root block size per `fill`: the host's definite height, or the dynamic viewport with no host glue. */
+const ROOT_FILL: Record<NonNullable<AppFrameProps["fill"]>, string> = { host: "h-full", viewport: "h-dvh" };
 const MAIN = "flex h-full min-h-0 min-w-0 flex-col frame-main-gap overflow-auto ";
 const MAIN_INSET = "frame-main-inset frame-main-bleed ";
 const CONTROL = "control-h-md inline-flex shrink-0 items-center justify-center rounded-control border-0 bg-transparent px-frame-control text-body text-ink-primary focus-visible:outline-solid focus-visible:outline-2 focus-visible:outline-focus-ring forced-colors:border-current";
@@ -54,7 +56,7 @@ function SignedOutMenu({ sections, signedOutLabel, onRoute, markSrc }: Omit<AppF
   </Menu>;
 }
 
-function FrameContent({ brand, navigation, account: { avatar = "initials", ...account }, commands, children, toasts, rightPanel, theme, themeControl, footerLayout = "inline", dir, onNavigate, layout: shellLayout = "standard", stage: stageInset = "contained", notices, dock, headerPosition, headerSurface, context, root, page, workspaces, breadcrumbLabel, collapsedBreadcrumbLabel, pageInfoLabel, pageActionsLabel,
+function FrameContent({ brand, navigation, account: { avatar = "initials", ...account }, commands, children, toasts, rightPanel, theme, themeControl, footerLayout = "inline", fill = "host", dir, onNavigate, layout: shellLayout = "standard", stage: stageInset = "contained", notices, dock, headerPosition, headerSurface, context, root, page, workspaces, breadcrumbLabel, collapsedBreadcrumbLabel, pageInfoLabel, pageActionsLabel,
   /** @default "Skip to content" */
   skipLabel = "Skip to content", mainId }: AppFrameProps) {
   // The page header is leased by PageHeaderModule only; the frame takes no header prop.
@@ -243,7 +245,7 @@ function FrameContent({ brand, navigation, account: { avatar = "initials", ...ac
     labels={{ breadcrumb: breadcrumbLabel ?? "Breadcrumb", collapsedBreadcrumb: collapsedBreadcrumbLabel ?? "More breadcrumb levels", pageInfo: pageInfoLabel ?? "Page information",
       pageActions: pageActionsLabel ?? "More page actions" }} />;
   return <ModalContext.Provider value={{ style: { direction: dir } }}><PopoverContext.Provider value={{ style: { direction: dir } }}>
-    <div ref={frame} dir={dir} data-application-frame="" data-application-frame-layout={shellLayout} data-application-frame-stage={stageInset} {...FRAME_STAMP} className="relative flex h-full min-h-0 min-w-0 flex-col overflow-hidden bg-surface-base text-body text-ink-primary">
+    <div ref={frame} dir={dir} data-application-frame="" data-application-frame-layout={shellLayout} data-application-frame-stage={stageInset} data-application-frame-fill={fill} {...FRAME_STAMP} className={"relative flex min-h-0 min-w-0 flex-col overflow-hidden bg-surface-base text-body text-ink-primary " + ROOT_FILL[fill]}>
       <SkipLink targetId={target}>{skipLabel}</SkipLink>
       <span aria-hidden="true" className="absolute size-0 overflow-hidden"><span ref={sidebarProbe} className="block" style={{ inlineSize: APP_FRAME_LAYOUT.sidebar }} /></span>
       <div className="flex min-h-0 min-w-0 flex-1">

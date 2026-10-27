@@ -18,6 +18,7 @@ export const APP_FRAME_CONFIG_SCHEMA = freeze({
   "theme.defaultPreference": { values: ["system", "light", "dark"], default: "system" },
   "account.avatar": { values: ["mark", "initials"], default: "mark" },
   footerLayout: { values: ["inline", "stacked"], default: "inline" },
+  fill: { values: ["host", "viewport"], default: "host" },
   dir: { values: ["ltr", "rtl"], default: null, omission: "inherit document direction" },
 } as const);
 
@@ -64,7 +65,7 @@ export const APP_FRAME_CONTRACT = freeze({
     "page.title", "page.breadcrumb", "page.status", "page.description", "page.updatedAt", "page.meta", "page.actions", "page.scope", "workspaces",
     "breadcrumbLabel", "collapsedBreadcrumbLabel", "pageInfoLabel", "pageActionsLabel",
     "children", "rightPanel.children", "rightPanel.label", "rightPanel.handleLabel", "rightPanel.min", "rightPanel.max", "rightPanel.defaultValue",
-    "theme.storageKey", "theme.preferenceLabels", "theme.toggleLabel", "theme.preferenceAnnouncement", "footerLayout", "skipLabel", "mainId",
+    "theme.storageKey", "theme.preferenceLabels", "theme.toggleLabel", "theme.preferenceAnnouncement", "footerLayout", "fill", "skipLabel", "mainId",
   ],
   statePorts: [
     "navigation.collapsed", "navigation.defaultCollapsed", "navigation.onCollapsedChange",
@@ -76,7 +77,7 @@ export const APP_FRAME_CONTRACT = freeze({
     "supply the host mark, navigation, account, command and accessible-label data",
     "own routing, navigation state, command index and all action callbacks",
     "omit account.actor for signed-out presentation; no guest identity is synthesized",
-    "supply a definite-height host; stage uses the remaining space after header, side panels and bottom dock",
+    "supply a definite-height host, or set fill to viewport; stage uses the remaining space after header, side panels and bottom dock",
     "supply context content without main, banner or contentinfo landmarks or a second page h1",
     "supply one chrome-free View as children without another main landmark; when page is supplied, omit the View page header",
     "supply rightPanel content and numeric resize bounds when the optional panel is present",

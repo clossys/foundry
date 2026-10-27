@@ -110,6 +110,12 @@ export interface AppFrameProps {
   themeControl?: ReactNode;
   /** @default "inline" */
   footerLayout?: AppFrameFooterLayout;
+  /**
+   * `host` (default) fills a definite-height host element. `viewport` sizes the frame to the
+   * dynamic viewport itself, so a host root needs no full-height wrapper.
+   * @default "host"
+   */
+  fill?: "host" | "viewport";
   dir?: "ltr" | "rtl";
   /** @default "Skip to content" */
   skipLabel?: string;
