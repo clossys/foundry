@@ -105,10 +105,11 @@ describe("group-a Section runtime renderers", () => {
 
   it("refuses content the fill does not map and members outside it", () => {
     const article = groupASectionInput("article", fill("article"));
-    const toc = { ...article, content: { ...article.content, toc: { ...article.content.body!, reference: { kind: "region" as const, ref: "dataset:toc" } } } };
-    expect(() => GROUP_A_SECTION_RENDERERS["sections.article"]!(toc)).toThrow(/toc is not mapped/);
-    const band = groupASectionInput("band", fill("band"), { members: ["ground.transparent"] });
-    expect(() => GROUP_A_SECTION_RENDERERS["sections.band"]!(band)).toThrow(/ground.transparent is not mapped/);
+    const summary = { ...article, content: { ...article.content, summary: { ...article.content.body!, reference: { kind: "region" as const, ref: "dataset:summary" } } } };
+    expect(() => GROUP_A_SECTION_RENDERERS["sections.article"]!(summary)).toThrow(/summary is not mapped/);
+    // Rhythm is an unresolved member axis: the contract declares no member values, so the fill maps none.
+    const band = groupASectionInput("band", fill("band"), { members: ["rhythm.tight"] });
+    expect(() => GROUP_A_SECTION_RENDERERS["sections.band"]!(band)).toThrow(/rhythm.tight is not mapped/);
     const comparison = groupASectionInput("comparison", fill("comparison"), { members: ["arrangement.library-board"] });
     expect(() => GROUP_A_SECTION_RENDERERS["sections.comparison"]!(comparison)).toThrow(/library-board/);
   });

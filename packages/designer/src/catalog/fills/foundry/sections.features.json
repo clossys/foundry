@@ -16,16 +16,12 @@
         "package": "@clossys/designer",
         "version": "0.12.0"
       },
-      "relation": "subset",
+      "relation": "same-contract",
       "slot": "sections.features",
       "source": "foundry",
       "sourceAddress": "./blocks#FeatureGrid",
       "status": "draft",
-      "trust": "foundry",
-      "unmapped": [
-        "layout.list",
-        "layout.split"
-      ]
+      "trust": "foundry"
     }
   },
   "sections": {
@@ -38,7 +34,7 @@
       },
       "license": "MIT",
       "notes": [
-        "CompatFeatureGrid fixes the grid layout. Items have icon, heading and description but no per-item link prop; list and split layouts are absent.",
+        "The layout prop selects the column grid, a one-per-row list with the icon beside the copy, or the heading region beside a two-column grid from desktop. Items have icon, heading and description but no per-item link prop.",
         "Descriptor only; source imports, token reads, shared anatomy, accessibility, contrast and consumer runtime conformance are unmeasured. Content bindings describe host adaptation points, not type-equivalent converters."
       ],
       "parts": [],
@@ -48,7 +44,9 @@
         "version": "0.12.0"
       },
       "propMap": {
-        "layout.grid": "./blocks#FeatureGrid.items[grid]"
+        "layout.grid": "./blocks#FeatureGrid.layout=grid",
+        "layout.list": "./blocks#FeatureGrid.layout=list",
+        "layout.split": "./blocks#FeatureGrid.layout=split"
       },
       "slot": "sections.features",
       "slotMap": {

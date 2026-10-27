@@ -38,18 +38,17 @@
     {
       "missingMembers": [],
       "missingRequiredSlots": [],
-      "missingSlots": [
-        "toc"
-      ],
+      "missingSlots": [],
       "notes": [
-        "Accepts pre-structured React children, not a rich-node parser; no dedicated table-of-contents slot. Requires an external SectionFrame.",
+        "Accepts pre-structured React children, not a rich-node parser. The toc region is a host node (the registered TableOfContents) laid beside the body from desktop, outside the body typography. Requires an external SectionFrame.",
         "Descriptor only; source imports, token reads, shared anatomy, accessibility, contrast and consumer runtime conformance are unmeasured. Content bindings describe host adaptation points, not type-equivalent converters."
       ],
       "slot": "sections.article",
-      "status": "subset",
+      "status": "candidate",
       "supportedMembers": [],
       "supportedSlots": [
-        "body"
+        "body",
+        "toc"
       ],
       "unresolvedMemberAxes": []
     },
@@ -72,13 +71,11 @@
       "unresolvedMemberAxes": []
     },
     {
-      "missingMembers": [
-        "ground.transparent"
-      ],
+      "missingMembers": [],
       "missingRequiredSlots": [],
       "missingSlots": [],
       "notes": [
-        "SectionGround excludes transparent. Rhythm is fixed in source, with no specified contract member values.",
+        "SectionFrame alone widens its ground with transparent (no surface, inherited ink); block grounds stay the closed SectionGround. Rhythm is fixed in source, with no specified contract member values.",
         "Descriptor only; source imports, token reads, shared anatomy, accessibility, contrast and consumer runtime conformance are unmeasured. Content bindings describe host adaptation points, not type-equivalent converters."
       ],
       "slot": "sections.band",
@@ -87,6 +84,7 @@
         "ground.base",
         "ground.inverse",
         "ground.sunken",
+        "ground.transparent",
         "measure.content",
         "measure.prose",
         "measure.wide"
@@ -344,19 +342,18 @@
       "unresolvedMemberAxes": []
     },
     {
-      "missingMembers": [
-        "layout.two-column"
-      ],
+      "missingMembers": [],
       "missingRequiredSlots": [],
       "missingSlots": [],
       "notes": [
-        "Source has a fixed vertical disclosure list and no two-column layout API; section headings are hand-rendered.",
+        "The layout prop renders one vertical disclosure list or two lists side by side from tablet, first half first; section headings are hand-rendered.",
         "Descriptor only; source imports, token reads, shared anatomy, accessibility, contrast and consumer runtime conformance are unmeasured. Content bindings describe host adaptation points, not type-equivalent converters."
       ],
       "slot": "sections.faq",
-      "status": "subset",
+      "status": "candidate",
       "supportedMembers": [
-        "layout.list"
+        "layout.list",
+        "layout.two-column"
       ],
       "supportedSlots": [
         "items"
@@ -364,20 +361,19 @@
       "unresolvedMemberAxes": []
     },
     {
-      "missingMembers": [
-        "layout.list",
-        "layout.split"
-      ],
+      "missingMembers": [],
       "missingRequiredSlots": [],
       "missingSlots": [],
       "notes": [
-        "CompatFeatureGrid fixes the grid layout. Items have icon, heading and description but no per-item link prop; list and split layouts are absent.",
+        "The layout prop selects the column grid, a one-per-row list with the icon beside the copy, or the heading region beside a two-column grid from desktop. Items have icon, heading and description but no per-item link prop.",
         "Descriptor only; source imports, token reads, shared anatomy, accessibility, contrast and consumer runtime conformance are unmeasured. Content bindings describe host adaptation points, not type-equivalent converters."
       ],
       "slot": "sections.features",
-      "status": "subset",
+      "status": "candidate",
       "supportedMembers": [
-        "layout.grid"
+        "layout.grid",
+        "layout.list",
+        "layout.split"
       ],
       "supportedSlots": [
         "items"

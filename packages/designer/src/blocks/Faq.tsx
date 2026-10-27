@@ -1,7 +1,7 @@
 import { SectionHeader } from "./SectionHeader.js";
 import type { CSSProperties, HTMLAttributes, ReactNode } from "react";
 import { cx } from "../components/internal/cx.js";
-import { FAQ_ANSWER_STYLE, FAQ_ROW_CLASSES } from "./Faq.server.js";
+import { FAQ_ANSWER_STYLE, FAQ_ROW_CLASSES, faqColumns, faqLists } from "./Faq.server.js";
 import { disclosureRow } from "./internal/disclosure-row.js";
 import { SECTION_GROUND_CLASSES, type SectionGround } from "./section-ground.js";
 import { dsAttrs } from "../catalog-core/provenance-attrs.js";
@@ -9,6 +9,8 @@ import { dsAttrs } from "../catalog-core/provenance-attrs.js";
 const SECTION_STAMP = dsAttrs("sections", "sections.faq", "foundry/sections.faq");
 
 export type FaqHeadingLevel = 2 | 3 | 4 | 5 | 6;
+/** How the questions are laid out: one list, or two side-by-side lists from tablet. */
+export type FaqLayout = "list" | "two-column";
 
 export interface FaqItem {
   /** Stable identifier — the React key. */
@@ -36,6 +38,14 @@ export interface FaqProps extends Omit<HTMLAttributes<HTMLDivElement>, "title"> 
   headingLevel?: FaqHeadingLevel;
   /** Semantic section ground; selects the complete matching surface and foreground policy. @default "base" */
   ground?: SectionGround;
+  /**
+   * `list` is the single vertical list. `two-column` splits the questions
+   * into two lists, first half first, that stack below tablet and sit side
+   * by side from it; each keeps the hairlines and its questions open
+   * independently, and the reading order stays the item order.
+   * @default "list"
+   */
+  layout?: FaqLayout;
   className?: string;
   style?: CSSProperties;
 }
@@ -85,21 +95,21 @@ export function Faq({
   items,
   headingLevel = 2,
   ground = "base",
+  layout = "list",
   className,
   style,
   ...rest
 }: FaqProps) {
   const colors = SECTION_GROUND_CLASSES[ground];
   const hasHeadingRegion = eyebrow !== undefined || heading !== undefined || description !== undefined;
+  const columns = faqColumns(items, layout).map(column => column.map(item => disclosureRow({ id: item.id, question: item.question, answer: item.answer, recipe: FAQ_ROW_CLASSES, colors, answerStyle: FAQ_ANSWER_STYLE })));
 
   return (
     <div {...SECTION_STAMP} {...rest} className={cx("flex flex-col gap-lg", colors.surface, className)} style={style}>
       {hasHeadingRegion ? (
         <SectionHeader density="standard" level={headingLevel} ground={ground} eyebrow={eyebrow} description={description} {...(heading ? { title: heading } : {})} titleClassName="leading-heading" />
       ) : null}
-      <div className={cx(FAQ_ROW_CLASSES.list, colors.border)}>
-        {items.map(item => disclosureRow({ id: item.id, question: item.question, answer: item.answer, recipe: FAQ_ROW_CLASSES, colors, answerStyle: FAQ_ANSWER_STYLE }))}
-      </div>
+      {faqLists(columns, layout, colors.border)}
     </div>
   );
 }
