@@ -132,6 +132,23 @@ it("binds and server-renders every adopted shadcn@aria leaf from its vendored so
   errors.mockRestore();
 }, 120_000);
 
+it("fills every shadcn@aria specimen from the dataset, never from its leaf id or variant keys", () => {
+  const errors = vi.spyOn(console, "error").mockImplementation(() => {});
+  const { leaves, modules } = adoptedShadcnLeaves();
+  const specimens = componentSpecimenPreview({ modules: { ...hostModules, ...modules } });
+  const fed = { "components.banner": d.text.banner, "components.calendar": d.dates.calendar["aria-label"], "components.combo-box": d.combobox.placeholder, "components.select": d.select.label, "components.skeleton": d.skeleton["aria-label"], "components.toggle-group": d.toggles.items[0].label } as const;
+  const faults: string[] = [];
+  for (const { leaf, profile } of leaves) {
+    const html = renderToString(<>{specimens.preview(leaf, profile)}</>);
+    const members = Object.keys((profile.components.components[leaf] as unknown as { propMap: Record<string, unknown> }).propMap);
+    for (const label of [leaf, ...members]) if (html.includes(`>${label}<`)) faults.push(`${leaf} draws "${label}"`);
+    const text = (fed as Record<string, string>)[leaf];
+    if (text !== undefined && !html.includes(text)) faults.push(`${leaf} lacks "${text}"`);
+  }
+  expect(faults).toEqual([]);
+  errors.mockRestore();
+}, 120_000);
+
 it("draws the non-modal shadcn@aria overlays open in the browser, inside the specimen cell", async () => {
   const errors = vi.spyOn(console, "error").mockImplementation(() => {});
   const { leaves, modules } = adoptedShadcnLeaves();

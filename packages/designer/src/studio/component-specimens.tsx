@@ -65,7 +65,9 @@ export interface ComponentSpecimenOptions {
    * Specimen content by leaf; an entry replaces everything below. A leaf without one renders the implementation
    * export once, labelled with the leaf, then once per drawn member, labelled with its member key. A data-driven
    * Foundry component (charts, table, tree, field, ...) draws with designer-provided neutral sample content
-   * instead of the label; another library's data-driven component needs an entry here.
+   * instead of the label; another library's data-driven component needs an entry here. Where designer samples
+   * apply (Foundry package exports, vendored shadcn@aria source), a row without one reads unavailable
+   * (`needs-sample-content`) instead of drawing its label.
    */
   readonly specimens?: Readonly<Record<string, ComponentSpecimenRender>>;
   /** Wraps every specimen, e.g. the library's emitted `LibraryProvider`. */
@@ -206,8 +208,9 @@ export function componentSpecimenPreview(options: ComponentSpecimenOptions): Com
     const sample = samples ? componentSpecimenSample(keyOf(binding.specifier, binding.exportName), binding.Component, binding.exports) : undefined;
     // A row that would get the leaf label as children it cannot take is declared unavailable instead of thrown.
     const structured = structuredChildren(component.descriptor.root);
+    // Where designer samples apply, a row with no sample is declared unavailable: it never falls back to its label.
     const unavailableOf = (row: SpecimenRow) => (samples ? componentSpecimenUnavailableReason(keyOf(row.specifier, row.exportName)) : undefined)
-      ?? (structured && !(sample && row.Component === binding.Component) ? "needs-sample-content" : undefined);
+      ?? ((samples || structured) && !(sample && row.Component === binding.Component) ? "needs-sample-content" : undefined);
     const rows = render ? [] : specimenRows(binding);
     const unavailable = rows.map(unavailableOf).filter(reason => reason !== undefined);
     const total = render ? 1 : rows.length - unavailable.length;

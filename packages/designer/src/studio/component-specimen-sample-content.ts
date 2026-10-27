@@ -132,4 +132,11 @@ export const componentSpecimenSourceSamples = {
   "components/switch/switch.tsx#Switch": { text: d.text.switch },
   "components/checkbox/checkbox.tsx#Checkbox": { text: d.text.checkbox },
   "components/toggle-button/toggle.tsx#Toggle": { text: d.text.toggle },
+  "components/banner/alert.tsx#Alert": { text: d.text.banner },
+  "components/calendar/calendar.tsx#Calendar": d.dates.calendar,
+  "components/combo-box/combobox.tsx#Combobox": d.combobox,
+  "components/select/select.tsx#Select": d.select,
+  "components/skeleton/skeleton.tsx#Skeleton": { "aria-label": d.skeleton["aria-label"] },
+  "components/toggle-group/toggle-group.tsx#ToggleGroup": d.toggles,
+  "components/separator/separator.tsx#Separator": d.separator,
 } as const;
