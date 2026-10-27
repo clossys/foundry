@@ -22,10 +22,10 @@ afterEach(() => { cleanup(); vi.unstubAllGlobals(); window.history.replaceState(
 const HOST_SAMPLES = { "@clossys/publisher/web#SiteFrame": () => <p>host-site-frame</p> };
 /** Distinct specimen-dataset text per adopted leaf, drawn through its package runtime renderer. */
 const SAMPLE_TEXT: Record<string, string> = {
-  "sections.comparison": "Wholesale", "sections.content": "Order #1001", "sections.data-table": "Chen Wu", "sections.form": "Project name",
-  "sections.pricing": "Save changes", "sections.resource-list": "Bram Osei", "sections.status-list": "Store pickup", "sections.task-list": "Pack order #1001",
+  "sections.comparison": "Wholesale", "sections.content": "Three items, shipped to Ada Park.", "sections.data-table": "Chen Wu", "sections.form": "Project name",
+  "sections.pricing": "Save changes", "sections.resource-list": "Bram Osei", "sections.status-list": "Store pickup", "sections.task-list": "Pack order",
   "frames.site-shell": "host-site-frame", "frames.sheet": "Open details",
-  "sections.chat": "Order #1001 ships in two days.", "sections.explorer": "Launch plan", "sections.hero": "Northwind",
+  "sections.chat": "ships in two days.", "sections.explorer": "Launch plan", "sections.hero": "Northwind",
   "sections.newsletter": "Email address", "frames.app-shell": "Skip to content", "frames.command": "Open command menu",
 };
 

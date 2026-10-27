@@ -92,7 +92,7 @@ describe("planSurfacePreviews", () => {
     expect(html["frames.inspector"]).toContain("<aside");
     expect(result.previews["frames.inspector"]?.pointer).toBe("@clossys/designer/frames#InspectorFrame");
     // Structured Sections render their real block with the dataset's rows, tiers and items.
-    const samples: Record<string, string> = { "sections.comparison": "Wholesale", "sections.content": "Order #1001", "sections.data-table": "Chen Wu", "sections.form": "Project name", "sections.pricing": "Save changes", "sections.resource-list": "Bram Osei", "sections.status-list": "Store pickup", "sections.task-list": "Pack order #1001", "frames.sheet": specimenDataset.dialog.trigger };
+    const samples: Record<string, string> = { "sections.comparison": "Wholesale", "sections.content": "Three items, shipped to Ada Park.", "sections.data-table": "Chen Wu", "sections.form": "Project name", "sections.pricing": "Save changes", "sections.resource-list": "Bram Osei", "sections.status-list": "Store pickup", "sections.task-list": "Pack order", "frames.sheet": specimenDataset.dialog.trigger };
     for (const [slot, text] of Object.entries(samples)) expect(html[slot], slot).toContain(text);
     expect(result.previews["sections.comparison"]?.pointer).toBe("@clossys/designer/blocks#Matrix");
     expect(html["sections.comparison"]).toContain("<table");
@@ -103,7 +103,7 @@ describe("planSurfacePreviews", () => {
     for (const item of specimenDataset.navigation.items) expect(html["frames.app-sidebar"]).toContain(item.label);
     // Adopted leaves render their real export with the dataset's content.
     const adopted: Record<string, [pointer: string, text: string]> = {
-      "sections.chat": ["@clossys/designer/blocks#Chat", "Order #1001 ships in two days."],
+      "sections.chat": ["@clossys/designer/blocks#Chat", "ships in two days."],
       "sections.explorer": ["@clossys/designer/blocks#Explorer", "Launch plan"],
       "sections.hero": ["@clossys/designer/blocks#Hero", "Northwind"],
       "sections.newsletter": ["@clossys/designer/blocks#NewsletterBand", "Email address"],
