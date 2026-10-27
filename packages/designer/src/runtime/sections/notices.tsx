@@ -7,14 +7,13 @@ type BannerVariant = NonNullable<NoticeListItem["tone"]>;
 const TONES: readonly BannerVariant[] = ["info", "success", "warning", "danger"];
 
 /**
- * notices -> NoticeList.notices, each a Foundry Banner. The region label is anatomy copy no contract slot
- * carries. A notice action needs components.link, which the contract does not allow, so it is refused.
+ * notices -> NoticeList.notices, each a Foundry Banner. The region label is the header channel's heading. A notice action needs components.link, which the contract does not allow, so it is refused.
  */
 export const noticesInputs: SectionInputs = { slots: ["notices"], members: [] };
 
 export const renderNotices: SectionRenderer = input => {
   refuseUnmapped(input, noticesInputs);
-  const label = requiredAnatomy(input, LEAF, "label");
+  const label = requiredAnatomy(input, LEAF, "heading");
   const notices = recordsOf(LEAF, "notices", requireSlot(input, LEAF, "notices")).map((row, index): NoticeListItem => {
     const id = stringField(row, "id"), message = stringField(row, "message");
     if (!id || !message) throw new TypeError(`${LEAF}: notice ${index} needs an id and a message`);

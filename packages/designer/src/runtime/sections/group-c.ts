@@ -6,6 +6,7 @@ import { consentInputs, renderConsent } from "./consent.js";
 import { emptyStateInputs, renderEmptyState } from "./empty-state.js";
 import { errorStateInputs, renderErrorState } from "./error-state.js";
 import { formInputs, renderForm } from "./form.js";
+import { plainJson } from "./dataset-json.js";
 import { ANATOMY_CONTENT_KEY, type RuntimeObject, type SectionInputs, type SectionRenderer } from "./group-c-content.js";
 import { linkIndexInputs, renderLinkIndex } from "./link-index.js";
 import { noticesInputs, renderNotices } from "./notices.js";
@@ -63,102 +64,108 @@ export const sectionInputsC: Readonly<Record<GroupCLeaf, SectionInputs>> = {
 };
 
 type Content = Readonly<Record<string, RuntimeJson>>;
-const PAGE_SIZE = 3;
 const plain = (value: unknown): string => typeof value === "string" ? value : "";
 /** Types a row list as JSON records, so literal rows with differing optional fields stay RuntimeJson. */
 const rows = (list: readonly RuntimeObject[]): readonly RuntimeObject[] => list;
 
 /**
- * Leaf -> its content, keyed by contract slot, bound to the shared synthetic dataset. Every string is a dataset
- * record; `header` carries the anatomy copy no contract slot holds yet (see group-c-content `ANATOMY_CONTENT_KEY`).
+ * Leaf -> its content, keyed by contract slot, bound to the shared synthetic dataset: each leaf reads its
+ * `specimenDataset.sections` record (L7); regions no record carries (illustrations, breadcrumbs, form controls a
+ * block sample holds as React nodes) read the shared component records. `header` is the runtime header channel
+ * (sections.section-header slots, see group-c-content `ANATOMY_CONTENT_KEY`), only on leaves whose contract
+ * names `anatomy.header`.
  */
 export const sectionDatasetC: Readonly<Record<GroupCLeaf, (dataset: SpecimenDataset) => Content>> = {
-  cards: d => ({
-    records: d.table.rows.slice(0, PAGE_SIZE).map(row => ({ id: row.id, title: row.order, description: row.customer, href: `#${row.id}`, meta: row.total })),
+  cards: ({ sections: S }) => ({
+    records: plainJson(S.recordCards.records),
   }),
-  chat: d => ({
-    parts: [{ id: "ask", role: "user", content: d.dialog.trigger }, { id: "answer", role: "assistant", content: d.dialog.body }],
-    composer: { label: d.searchField.label, placeholder: d.searchField.placeholder },
+  chat: ({ sections: S }) => ({
+    parts: plainJson(S.chat.messages),
+    composer: { placeholder: S.chat.placeholder },
   }),
-  consent: d => ({
-    copy: { title: d.toasts.info.title, body: d.toasts.info.description },
-    actions: [{ id: d.dialog.actions[1].id, label: d.dialog.actions[1].label }, { id: d.dialog.actions[0].id, label: d.dialog.actions[0].label }],
-    policy: { label: d.text.link, href: d.text.linkHref },
+  consent: ({ sections: S }) => ({
+    copy: { title: S.consentBanner.title, body: S.consentBanner.body },
+    actions: [{ label: S.consentBanner.acceptLabel }, { label: S.consentBanner.rejectLabel }],
+    policy: plainJson(S.consentBanner.privacy),
   }),
   "empty-state": d => ({
-    [ANATOMY_CONTENT_KEY]: { heading: d.list.label, description: d.text.paragraph },
+    [ANATOMY_CONTENT_KEY]: { heading: d.sections.emptyState.title, description: d.sections.emptyState.description },
     illustration: { icon: "FileText", label: d.icon.label },
     actions: [{ label: d.text.upload }],
   }),
-  "error-state": d => ({
-    [ANATOMY_CONTENT_KEY]: { heading: d.toasts.danger.title, description: d.toasts.danger.description },
-    code: d.table.rows[0]!.order,
-    retry: { label: d.text.submit },
-    report: { label: d.text.link, href: d.text.linkHref },
+  "error-state": ({ sections: S }) => ({
+    [ANATOMY_CONTENT_KEY]: { heading: S.errorState.title, description: S.errorState.description },
+    code: S.errorState.code,
+    retry: { label: S.errorState.retryLabel },
+    report: plainJson(S.errorState.report),
   }),
-  form: d => ({
-    [ANATOMY_CONTENT_KEY]: { heading: d.dialog.title },
-    fields: rows([
-      { id: "name", kind: "text", label: d.textField.label, placeholder: d.textField.placeholder, description: d.textField.description },
-      { id: "status", kind: "select", label: d.select.label, placeholder: d.select.placeholder, options: d.select.options.map(option => ({ id: option.id, label: plain(option.label) })) },
-      { id: "updates", kind: "checkbox", label: d.text.checkbox },
-    ]),
-    submit: { label: d.text.submit },
+  form: ({ sections: S }) => ({
+    [ANATOMY_CONTENT_KEY]: { heading: S.form.heading },
+    fields: rows(S.form.fields.map(field => ({ id: field.id, kind: field.type, label: field.label }))),
+    submit: { label: S.form.submit },
   }),
-  "link-index": d => ({
-    [ANATOMY_CONTENT_KEY]: { heading: d.navigation.label },
-    links: d.navigation.items.map(item => ({ id: item.id, title: item.label, href: item.href })),
+  "link-index": ({ sections: S }) => ({
+    [ANATOMY_CONTENT_KEY]: { heading: S.navGrid.heading },
+    links: plainJson(S.navGrid.items),
   }),
-  notices: d => ({
-    [ANATOMY_CONTENT_KEY]: { label: d.toaster.label },
-    notices: (["info", "warning", "danger"] as const).map(tone => ({ id: tone, tone, title: d.toasts[tone].title, message: d.toasts[tone].description })),
+  notices: ({ sections: S }) => ({
+    [ANATOMY_CONTENT_KEY]: { heading: S.noticeList.label },
+    // The notice record's link action has no contract component (NEED: components.link), so it is left out.
+    notices: S.noticeList.notices.map(({ action: _action, ...notice }) => plainJson(notice)),
   }),
   "page-header": d => ({
-    title: d.card.title,
-    description: d.card.content,
+    title: d.sections.pageHeader.title,
+    description: d.sections.pageHeader.description,
     breadcrumbs: { items: d.breadcrumbs.items.map((item): RuntimeObject => "href" in item ? { id: item.id, label: item.label, href: item.href } : { id: item.id, label: item.label }) },
     actions: [{ label: d.dialog.trigger }],
   }),
-  pagination: d => ({
-    page: { page: 1, pageCount: Math.ceil(d.table.rows.length / PAGE_SIZE), pageSize: PAGE_SIZE },
-    total: d.table.rows.length,
+  pagination: ({ sections: S }) => ({
+    page: plainJson(S.pagination),
   }),
   "section-header": d => ({
-    eyebrow: d.text.badge,
-    heading: d.table.label,
-    description: d.text.paragraph,
+    eyebrow: d.sections.sectionHeader.eyebrow,
+    heading: d.sections.sectionHeader.title,
+    description: d.sections.sectionHeader.description,
     actions: [{ label: d.text.link, href: d.text.linkHref }],
   }),
-  settings: d => ({
-    [ANATOMY_CONTENT_KEY]: { heading: d.navigation.items[1].label },
-    groups: rows([
-      {
-        id: "general", legend: d.navigation.items[1].label,
-        controls: [{ id: "status", kind: "select", label: d.select.label, placeholder: d.select.placeholder, selected: d.select.defaultSelectedKey, options: d.select.options.map(option => ({ id: option.id, label: plain(option.label) })) }],
-      },
-      {
-        id: "notifications", legend: d.toaster.label,
-        controls: [{ id: "alerts", kind: "switch", label: d.text.switch, selected: true }, { id: "updates", kind: "switch", label: d.text.checkbox }],
-      },
-    ]),
-    dirty: ["notifications"],
-    "save-bar": { label: d.text.action, save: d.text.action, discard: d.dialog.actions[0].label, unsaved: d.text.draft },
+  settings: d => {
+    const sample = d.sections.settingsSection;
+    const [general, notifications] = sample.groups;
+    return {
+      [ANATOMY_CONTENT_KEY]: { heading: plain(sample.heading), description: plain(sample.description) },
+      // The sample's controls are React nodes; the group ids and legends are its, the controls the component records.
+      groups: rows([
+        {
+          id: general!.id, legend: plain(general!.legend),
+          controls: [{ id: "status", kind: "select", label: d.select.label, placeholder: d.select.placeholder, selected: d.select.defaultSelectedKey, options: d.select.options.map(option => ({ id: option.id, label: plain(option.label) })) }],
+        },
+        {
+          id: notifications!.id, legend: plain(notifications!.legend),
+          controls: [{ id: "switch", kind: "switch", label: d.text.switch, selected: true }, { id: "checkbox", kind: "switch", label: d.text.checkbox }],
+        },
+      ]),
+      dirty: [...(sample.dirty ?? [])],
+      "save-bar": { label: plain(sample.labels?.saveBar), save: d.text.action, discard: d.dialog.actions[0].label, unsaved: plain(sample.labels?.unsaved) },
+    };
+  },
+  steps: ({ sections: S }) => ({
+    [ANATOMY_CONTENT_KEY]: { heading: S.orderedSteps.heading },
+    steps: plainJson(S.orderedSteps.items),
   }),
-  steps: d => ({
-    [ANATOMY_CONTENT_KEY]: { heading: d.list.label },
-    steps: d.list.items.map(item => ({ id: item.id, heading: item.label })),
+  "table-of-contents": ({ sections: S }) => ({
+    headings: plainJson(S.tableOfContents.items),
+    "active-id": S.tableOfContents.items[0]!.id,
   }),
-  "table-of-contents": d => ({
-    [ANATOMY_CONTENT_KEY]: { label: d.navigation.label },
-    headings: [...d.tabs.items, ...d.disclosure.items].map(item => ({ id: item.id, label: item.label })),
-    "active-id": d.tabs.items[0].id,
-  }),
-  wizard: d => ({
-    [ANATOMY_CONTENT_KEY]: { label: d.tabs.label },
-    steps: [...d.tabs.items, d.disclosure.items[0]].map((item, index) => ({ id: item.id, label: item.label, content: item.content, current: index === 1 })),
-    progress: { label: d.progress.label },
-    back: { label: d.dialog.actions[0].label },
-    next: { label: d.text.submit, finish: d.text.action },
-    review: { label: d.card.title, summary: d.card.content },
-  }),
+  wizard: d => {
+    const sample = d.sections.formWizard;
+    return {
+      [ANATOMY_CONTENT_KEY]: { heading: sample.labels.steps },
+      // The sample's step bodies are React nodes; ids, labels and the current step are its.
+      steps: sample.steps.map(step => ({ id: step.id, label: plain(step.label), current: step.id === sample.currentStep })),
+      progress: { label: d.progress.label },
+      back: { label: sample.labels.back },
+      next: { label: sample.labels.next, finish: sample.labels.finish },
+      review: { label: sample.labels.review },
+    };
+  },
 };

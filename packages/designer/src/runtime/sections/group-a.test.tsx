@@ -41,25 +41,26 @@ function wiring(leaf: GroupALeaf, html: string) {
   }).findings;
 }
 
+const S = specimenDataset.sections;
 /** Real registered component roles each leaf must render from its dataset content. */
 const ROLES: Readonly<Record<GroupALeaf, (view: ReturnType<typeof within>, container: HTMLElement) => void>> = {
-  article: view => { expect(view.getByRole("heading", { level: 2, name: "Summary" })).toBeInTheDocument(); expect(view.getByRole("list")).toBeInTheDocument(); },
+  article: view => { expect(view.getByRole("heading", { level: 2, name: S.articleBody.heading })).toBeInTheDocument(); expect(view.getByText(S.articleBody.body)).toBeInTheDocument(); },
   // FeatureGrid item headings are plain paragraphs under the grid's own heading level.
-  band: view => { expect(view.getByText("Sync scheduled")).toBeInTheDocument(); },
-  "call-to-action": view => { expect(view.getByRole("heading", { name: "Order details" })).toBeInTheDocument(); expect(view.getByRole("link", { name: "View order" })).toHaveAttribute("href", "#order-1001"); expect(view.getByRole("link", { name: "Orders" })).toBeInTheDocument(); },
-  comparison: view => { expect(view.getByRole("table")).toBeInTheDocument(); expect(view.getAllByRole("columnheader").map(cell => cell.textContent)).toEqual(expect.arrayContaining([expect.stringContaining("Monthly"), expect.stringContaining("Yearly")])); expect(view.getByRole("rowheader", { name: /Urgent/ })).toBeInTheDocument(); },
-  content: view => { expect(view.getByRole("heading", { name: specimenDataset.card.title })).toBeInTheDocument(); expect(view.getByRole("link", { name: "View order" })).toBeInTheDocument(); expect(view.getAllByText("Response time").length).toBeGreaterThan(0); },
-  faq: view => { expect(view.getByRole("button", { name: "Shipping" })).toHaveAttribute("aria-expanded", "false"); expect(view.getByRole("button", { name: "Returns" })).toBeInTheDocument(); },
-  features: view => { for (const name of ["Sync scheduled", "Order shipped", "Storage nearly full"]) expect(view.getByText(name)).toBeInTheDocument(); },
-  gallery: view => { expect(view.getAllByRole("button").length).toBe(3); expect(view.getAllByText("Orders by region").length).toBeGreaterThan(0); },
-  hero: view => { expect(view.getByRole("heading", { level: 1, name: "Northwind" })).toBeInTheDocument(); expect(view.getByRole("link", { name: "View order" })).toBeInTheDocument(); expect(view.getAllByText("Orders by region").length).toBeGreaterThan(0); },
-  "logo-cloud": view => { expect(view.getAllByRole("listitem")).toHaveLength(4); expect(view.getByText("Northwind Labs")).toBeInTheDocument(); },
+  band: view => { expect(view.getByText(S.featureGrid.items[0]!.heading)).toBeInTheDocument(); },
+  "call-to-action": view => { expect(view.getByRole("heading", { name: S.callToAction.title })).toBeInTheDocument(); expect(view.getByRole("link", { name: S.callToAction.primary.label })).toHaveAttribute("href", S.callToAction.primary.href); expect(view.getByRole("link", { name: S.callToAction.secondary.label })).toBeInTheDocument(); },
+  comparison: view => { expect(view.getByRole("table")).toBeInTheDocument(); expect(view.getAllByRole("columnheader").map(cell => cell.textContent)).toEqual(expect.arrayContaining(S.comparison.columns.map(column => expect.stringContaining(column.label as string)))); expect(view.getByRole("rowheader", { name: S.comparison.rows[0]!.label as string })).toBeInTheDocument(); expect(view.getAllByText(S.comparison.featuredLabel as string).length).toBeGreaterThan(0); },
+  content: view => { expect(view.getByRole("heading", { name: S.content.heading })).toBeInTheDocument(); expect(view.getByText(S.content.body)).toBeInTheDocument(); expect(view.getByRole("link", { name: specimenDataset.text.link })).toBeInTheDocument(); expect(view.getAllByText(specimenDataset.charts.line.title).length).toBeGreaterThan(0); },
+  faq: view => { expect(view.getByRole("button", { name: S.faq.items[0]!.question })).toHaveAttribute("aria-expanded", "false"); expect(view.getByRole("button", { name: S.faq.items[1]!.question })).toBeInTheDocument(); },
+  features: view => { for (const item of S.featureGrid.items) expect(view.getByText(item.heading)).toBeInTheDocument(); },
+  gallery: view => { expect(view.getAllByRole("button").length).toBe(S.gallery.images.length); expect(view.getAllByText(S.gallery.images[0]!.caption).length).toBeGreaterThan(0); },
+  hero: view => { expect(view.getByRole("heading", { level: 1, name: S.hero.heading })).toBeInTheDocument(); expect(view.getByRole("link", { name: S.hero.primary })).toBeInTheDocument(); expect(view.getAllByText(specimenDataset.charts.bar.title).length).toBeGreaterThan(0); },
+  "logo-cloud": view => { expect(view.getAllByRole("listitem")).toHaveLength(S.logoCloud.names.length); for (const name of S.logoCloud.names) expect(view.getByText(name)).toBeInTheDocument(); },
   // MediaFigure's own figure holds the chart, which is itself a labelled figure.
-  media: (view, container) => { expect(view.getAllByRole("figure").length).toBeGreaterThan(0); expect([...container.querySelectorAll("figcaption")].map(caption => caption.textContent)).toContain("Orders by region"); },
-  newsletter: view => { expect(view.getByRole("textbox", { name: /Email address/ })).toHaveAttribute("type", "email"); expect(view.getByRole("button", { name: "Submit" })).toBeInTheDocument(); },
-  people: view => { expect(view.getAllByRole("listitem")).toHaveLength(4); expect(view.getByText("Ada Park")).toBeInTheDocument(); },
-  pricing: view => { expect(view.getByText("Draft")).toBeInTheDocument(); expect(view.getByRole("link", { name: "Save changes" })).toBeInTheDocument(); expect(view.getByRole("link", { name: "Submit" })).toBeInTheDocument(); },
-  testimonials: view => { expect(view.getAllByRole("listitem")).toHaveLength(3); expect(view.getByText("Ada Park")).toBeInTheDocument(); },
+  media: (view, container) => { expect(view.getAllByRole("figure").length).toBeGreaterThan(0); expect([...container.querySelectorAll("figcaption")].map(caption => caption.textContent)).toContain(S.mediaFigure.caption); },
+  newsletter: (view, container) => { expect(view.getByRole("textbox", { name: new RegExp(S.newsletter.emailLabel) })).toHaveAttribute("type", "email"); expect(view.getByRole("button", { name: S.newsletter.submitLabel })).toBeInTheDocument(); expect(container.querySelector("form")).toHaveAttribute("action", S.newsletter.action); },
+  people: view => { expect(view.getAllByRole("listitem")).toHaveLength(S.peopleGrid.people.length); expect(view.getByText(S.peopleGrid.people[0].name)).toBeInTheDocument(); },
+  pricing: view => { for (const tier of S.pricing.tiers) expect(view.getByRole("link", { name: tier.cta })).toHaveAttribute("href", `#${tier.id}`); expect(view.getByText(S.pricing.tiers[1]!.price)).toBeInTheDocument(); },
+  testimonials: view => { expect(view.getAllByRole("listitem")).toHaveLength(S.testimonials.items.length); expect(view.getByText(S.testimonials.items[0]!.attributorName)).toBeInTheDocument(); },
 };
 
 describe("group-a Section runtime renderers", () => {
@@ -94,11 +95,11 @@ describe("group-a Section runtime renderers", () => {
   });
 
   it("selects members through the fill's propMap", () => {
-    expect(rendered("logo-cloud", ["count.4", "monochrome.true"])).toContain("grayscale");
+    expect(rendered("logo-cloud", ["count.3", "monochrome.true"])).toContain("grayscale");
     expect(rendered("logo-cloud")).not.toContain("grayscale");
     expect(mounted(rendered("gallery", ["lightbox.disabled"])).querySelectorAll("button")).toHaveLength(0);
     expect(rendered("hero", ["layout.editorial", "size.compact"])).not.toBe(rendered("hero"));
-    expect(() => rendered("logo-cloud", ["count.3"])).toThrow(/count/);
+    expect(() => rendered("logo-cloud", ["count.4"])).toThrow(/count/);
     expect(() => rendered("testimonials", ["layout.single"])).toThrow(/layout/);
   });
 

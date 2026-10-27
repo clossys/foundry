@@ -1,6 +1,6 @@
 /**
- * Group-a Section content bound to the shared synthetic dataset (studio/specimen-dataset.ts until the L7
- * dataset contract lands). Data only: every value is plain RuntimeJson addressed by contract slot, exactly
+ * Group-a Section content bound to the shared synthetic dataset's `specimenDataset.sections` records (L7).
+ * Data only: every value is plain RuntimeJson addressed by contract slot, exactly
  * what a consumer's resolveContent would hand the assembly, and every name, number and series is read from
  * the dataset rather than restated. `groupASectionInput` builds the RuntimeRenderInput a preview or test
  * passes to a renderer; the real manifest producer and its renderer descriptors are L9's.
@@ -11,101 +11,69 @@ import type { SectionSlot } from "../../catalog-core/sections-contract.js";
 import type { CompositeResolved } from "../../catalog-core/types.js";
 import { runtimeHash, type RuntimeContent, type RuntimeContentRef, type RuntimeFillDescriptor, type RuntimeJson, type RuntimeRenderInput, type RuntimeSourceClosure } from "../../catalog-core/runtime-ports.js";
 import { specimenDataset as data } from "../../studio/specimen-dataset.js";
+import { plainJson } from "./dataset-json.js";
 
 export const GROUP_A_LEAVES = ["article", "band", "call-to-action", "comparison", "content", "faq", "features", "gallery", "hero", "logo-cloud", "media", "newsletter", "people", "pricing", "testimonials"] as const;
 export type GroupALeaf = (typeof GROUP_A_LEAVES)[number];
 
-const brand = data.assets.mark.name;
-const [ada, bram, chen, dara] = data.people;
-const roles = ["Design lead", "Engineering", "Operations", "Support"] as const;
-const team = [ada, bram, chen, dara].map((person, index) => ({ id: person.id, name: person.name, initials: person.initials, role: roles[index]! }));
+const S = data.sections;
 const barMedia = { kind: "chart", chart: "bar", title: data.charts.bar.title, categories: [...data.charts.bar.categories], series: data.charts.bar.series.map(row => ({ name: row.name, values: [...row.values] })) };
 const lineMedia = { kind: "chart", chart: "line", title: data.charts.line.title, x: [...data.charts.line.x], series: data.charts.line.series.map(row => ({ name: row.name, values: [...row.values] })) };
-const markMedia = { kind: "mark", src: data.assets.mark.src, title: brand };
-const plans = data.radio.items;
-/** One tier's amount per billing interval, read from the dataset's seeded order totals. */
-const prices = (tier: number) => Object.fromEntries(plans.map((plan, interval) => {
-  const amount = data.table.rows[tier * plans.length + interval]!.total;
-  return [plan.id, { amount, priceText: `${amount} ${plan.label}` }];
-}));
-/** A select option's label; the dataset types option labels as nodes, the runtime content must be text. */
-const optionLabel = (index: number): string => {
-  const label = data.select.options[index]?.label;
-  if (typeof label !== "string") throw new Error(`group-a dataset: select option ${index} has no text label`);
-  return label;
-};
+const markMedia = (title: string) => ({ kind: "mark", src: data.assets.mark.src, title });
 
-/** Content values per leaf, keyed by contract slot. Only slots the leaf's fill maps appear here. */
+/**
+ * Content values per leaf, keyed by contract slot. Only slots the leaf's fill maps appear here. Every leaf with a
+ * `specimenDataset.sections` record reads it; media the records do not carry (charts, the brand mark) comes from
+ * the shared asset and chart records.
+ */
 export const GROUP_A_CONTENT: Readonly<Record<GroupALeaf, Readonly<Record<string, RuntimeJson>>>> = {
-  article: {
-    body: [
-      { kind: "heading", text: data.tabs.items[0].label },
-      { kind: "paragraph", text: data.tabs.items[0].content },
-      { kind: "heading", text: data.tabs.items[1].label },
-      { kind: "paragraph", text: data.tabs.items[1].content },
-      { kind: "list", items: data.list.items.map(item => item.label) },
-    ],
-  },
+  article: { body: [{ kind: "heading", text: S.articleBody.heading }, { kind: "paragraph", text: S.articleBody.body }] },
   band: {},
   "call-to-action": {
-    header: { eyebrow: data.text.badge, title: data.dialog.title, description: data.dialog.body },
-    actions: { primary: { label: data.text.link, href: data.text.linkHref }, secondary: { label: data.breadcrumbs.items[1].label, href: data.breadcrumbs.items[1].href } },
+    header: { eyebrow: S.callToAction.eyebrow, title: S.callToAction.title, description: S.callToAction.description },
+    actions: { primary: plainJson(S.callToAction.primary), secondary: plainJson(S.callToAction.secondary) },
   },
   comparison: {
-    columns: plans.map(plan => ({ id: plan.id, label: plan.label })),
-    // Figure cells from the dataset's weekly series, one series per plan column. Mark cells need markLabels and
-    // a keyLabel the comparison contract has no slot for, so the preview binds none.
-    rows: data.tags.items.map((tag, index) => ({ id: tag.id, label: tag.label, cells: Object.fromEntries(plans.map((plan, column) => [plan.id, { type: "figure", value: String(data.charts.area.series[column]!.values[index]) }])) })),
-    highlight: { column: plans[1].id, label: data.text.badge },
+    // Text cells from the comparison record. Mark cells need markLabels and a keyLabel the comparison contract
+    // has no slot for (owner item), so the preview binds none.
+    columns: plainJson(S.comparison.columns),
+    rows: plainJson(S.comparison.rows),
+    highlight: plainJson({ ...S.comparison.featured, label: S.comparison.featuredLabel }),
   },
   content: {
-    header: { eyebrow: data.text.statusMark, heading: data.card.title, description: data.card.content, actions: [{ label: data.text.link, href: data.text.linkHref, variant: "primary" }] },
-    body: [{ kind: "paragraph", text: data.toasts.success.description }, { kind: "list", items: data.toolbar.items.map(item => item.label) }],
+    header: { eyebrow: S.content.eyebrow, heading: S.content.heading, description: S.content.description, actions: [{ label: data.text.link, href: data.text.linkHref, variant: "primary" }] },
+    body: [{ kind: "paragraph", text: S.content.body }],
     media: lineMedia,
     footnote: data.popover.content,
   },
-  faq: { items: data.disclosure.items.map(item => ({ id: item.id, question: item.label, answer: item.content })) },
-  features: { items: Object.entries(data.toasts).slice(0, 3).map(([id, toast]) => ({ id, heading: toast.title, description: toast.description })) },
-  gallery: {
-    images: {
-      label: data.charts.bar.title,
-      items: [
-        { id: "orders", label: data.charts.bar.title, media: barMedia, caption: data.charts.bar.series[0].name },
-        { id: "response", label: data.charts.line.title, media: lineMedia, caption: data.charts.line.series[0].name },
-        { id: "mark", label: brand, media: markMedia, caption: brand },
-      ],
-    },
-  },
+  faq: { items: plainJson(S.faq.items) },
+  features: { items: plainJson(S.featureGrid.items) },
+  gallery: { images: { label: S.gallery.label, items: S.gallery.images.map(image => ({ id: image.id, label: image.label, media: markMedia(image.label), caption: image.caption })) } },
   hero: {
-    header: { eyebrow: data.text.badge, heading: brand, description: data.text.paragraph },
+    header: { eyebrow: S.hero.eyebrow, heading: S.hero.heading, description: S.hero.description },
     media: barMedia,
-    actions: { primary: { label: data.text.link, href: data.text.linkHref }, secondary: { label: data.navigation.items[0].label, href: data.navigation.items[0].href } },
+    actions: { primary: { label: S.hero.primary, href: S.callToAction.primary.href }, secondary: { label: S.hero.secondary, href: S.callToAction.secondary.href } },
   },
-  "logo-cloud": { logos: ["", " Labs", " Retail", " Health"].map((suffix, index) => ({ id: `logo-${index + 1}`, name: `${brand}${suffix}`, src: data.assets.mark.src })) },
-  media: { figure: { media: barMedia, caption: data.charts.bar.title } },
+  "logo-cloud": { logos: S.logoCloud.names.map(name => ({ id: name, name, src: data.assets.mark.src })) },
+  media: { figure: { media: barMedia, caption: S.mediaFigure.caption } },
   newsletter: {
-    // The dataset has no email field or form destination yet (needs-from-L7); these two are the only literals here.
-    email: { label: "Email address" },
-    consent: data.text.checkbox,
-    submit: { label: data.text.submit, pendingLabel: data.spinner.label, sentMessage: data.toasts.success.title, failedMessage: data.toasts.danger.title, action: "/subscribe" },
+    email: { label: S.newsletter.emailLabel },
+    consent: S.newsletter.privacyNote,
+    submit: { label: S.newsletter.submitLabel, pendingLabel: S.newsletter.pendingLabel, sentMessage: S.newsletter.sentMessage, failedMessage: S.newsletter.failedMessage, action: S.newsletter.action },
   },
-  people: { people: team },
+  people: { people: plainJson(S.peopleGrid.people) },
   pricing: {
-    plans: [
-      { id: "starter", name: optionLabel(0), description: data.text.paragraph, priceByInterval: prices(0), features: data.tags.items.slice(0, 2).map(tag => tag.label), cta: { label: data.text.action, href: data.text.linkHref } },
-      { id: "team", name: optionLabel(2), description: data.card.content, priceByInterval: prices(1), features: data.tags.items.map(tag => tag.label), cta: { label: data.text.submit, href: data.text.linkHref }, badge: data.text.badge },
-    ],
-    interval: plans[0].id,
-    highlight: ["team"],
+    plans: S.pricing.tiers.map(tier => plainJson({ id: tier.id, name: tier.name, price: tier.price, features: tier.features, cta: { label: tier.cta, href: `#${tier.id}` }, badge: tier.badge })),
+    highlight: S.pricing.tiers.filter(tier => tier.featured).map(tier => tier.id),
   },
-  testimonials: { quotes: [data.toasts.success, data.toasts.info, data.toasts.warning].map((toast, index) => ({ id: team[index]!.id, quote: toast.description, attributorName: team[index]!.name, attributorRole: team[index]!.role })) },
+  testimonials: { quotes: plainJson(S.testimonials.items) },
 };
 
 /** Members the preview selects per leaf; every one is in the leaf's fill propMap. */
 export const GROUP_A_MEMBERS: Readonly<Record<GroupALeaf, readonly string[]>> = {
   article: [], band: ["ground.sunken", "measure.content"], "call-to-action": [], comparison: [], content: ["layout.split-end"],
   faq: ["layout.list"], features: ["layout.grid"], gallery: ["lightbox.enabled"], hero: ["layout.split", "size.display"],
-  "logo-cloud": ["count.4", "monochrome.false"], media: [], newsletter: [], people: [], pricing: [], testimonials: ["layout.grid"],
+  "logo-cloud": ["count.3", "monochrome.false"], media: [], newsletter: [], people: [], pricing: [], testimonials: ["layout.grid"],
 };
 
 const contracts = sectionSlots as unknown as readonly SectionSlot[];

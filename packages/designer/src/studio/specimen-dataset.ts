@@ -356,6 +356,8 @@ const sections = {
     sentMessage: "Thanks. Check your inbox to confirm your subscription.",
     failedMessage: "We could not subscribe you. Check the address and try again.",
     privacyNote: "One email a month. Unsubscribe at any time.",
+    /** The same-origin path the sign-up form posts to. */
+    action: "/subscribe",
   },
   command,
   articleBody: { heading: "Getting started", body: "Set up a workspace, invite your team and publish the first page." },

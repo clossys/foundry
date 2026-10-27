@@ -8,13 +8,13 @@ const LEAF = "sections.wizard";
 /**
  * steps -> FormWizard.steps and currentStep (the step marked current, else the first); progress -> a registered
  * ProgressBar whose label template fills `{position}` and `{total}`; back -> onBack and its label; next -> onNext,
- * its label and its finish label; review -> the last step's review region. The step list label is anatomy copy.
+ * its label and its finish label; review -> the last step's review region. The step list label is the header channel's heading.
  */
 export const wizardInputs: SectionInputs = { slots: ["steps", "progress", "back", "next", "review"], members: [] };
 
 export const renderWizard: SectionRenderer = input => {
   refuseUnmapped(input, wizardInputs);
-  const label = requiredAnatomy(input, LEAF, "label");
+  const label = requiredAnatomy(input, LEAF, "heading");
   let current: string | undefined;
   const steps = recordsOf(LEAF, "steps", requireSlot(input, LEAF, "steps")).map((row, index): FormWizardStep => {
     const id = stringField(row, "id"), stepLabel = stringField(row, "label");

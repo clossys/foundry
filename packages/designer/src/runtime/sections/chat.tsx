@@ -27,7 +27,7 @@ export const renderChat: SectionRenderer = input => {
   });
   const composer = requireSlot(input, LEAF, "composer");
   const composerLabel = stringField(composer, "label"), placeholder = stringField(composer, "placeholder");
-  const { label } = anatomyOf(input);
+  const { heading: label } = anatomyOf(input);
   const status = input.cell.state === "error" ? "error" : input.cell.state === "loading" ? "streaming" : "idle";
   return (
     <Chat

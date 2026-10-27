@@ -10,6 +10,7 @@ import { loadSectionRegistry } from "../../catalog-core/sections-contract.js";
 import type { CompositeResolved } from "../../catalog-core/types.js";
 import { checkWiring } from "../../catalog-core/wiring.js";
 import { GROUP_B_SECTIONS, groupBRenderers } from "./group-b.js";
+import { specimenDataset } from "../../studio/specimen-dataset.js";
 import { groupBDataset } from "./group-b-dataset.js";
 import type { SectionRenderInput } from "./group-b-support.js";
 
@@ -58,6 +59,7 @@ function provenanceOf(leaf: Leaf, html: string) {
   return scan.findings.filter(row => row.code !== "WL7" || row.subject === leaf).map(row => `${row.code} ${row.subject} ${row.message}`);
 }
 
+const S = specimenDataset.sections;
 /** Real component roles each leaf's composed block renders from the dataset. */
 const ROLES: Readonly<Record<Leaf, (root: HTMLElement) => void>> = {
   "sections.access-matrix": root => {
@@ -66,25 +68,26 @@ const ROLES: Readonly<Record<Leaf, (root: HTMLElement) => void>> = {
   },
   "sections.activity-feed": root => {
     expect(within(root).getAllByRole("listitem").length).toBeGreaterThanOrEqual(groupBDataset["sections.activity-feed"]!.events!.length as number);
-    expect(within(root).getByRole("link", { name: "All activity" })).toBeTruthy();
+    for (const group of S.activityFeed.groups ?? []) expect(within(root).getByRole("link", { name: group.label as string })).toHaveAttribute("href", `#${group.id}`);
   },
   "sections.audit-log": root => {
     expect(within(root).getByRole("grid")).toBeTruthy();
     expect(within(root).getAllByRole("columnheader").length).toBeGreaterThanOrEqual(4);
-    expect(within(root).getByRole("searchbox", { name: "Search entries" })).toBeTruthy();
+    expect(within(root).getByRole("searchbox", { name: specimenDataset.searchField.label })).toBeTruthy();
     expect(within(root).getByRole("button", { name: "Export entries" })).toBeTruthy();
   },
   "sections.column-mapper": root => {
     expect(within(root).getAllByRole("button").length).toBeGreaterThanOrEqual(4);
-    expect(within(root).getByText("Order number")).toBeTruthy();
+    expect(within(root).getByText(S.columnMapper.targets[0]!.label as string)).toBeTruthy();
   },
   "sections.data-grid": root => {
     expect(within(root).getByRole("grid", { name: "Order grid" })).toBeTruthy();
-    expect(within(root).getAllByRole("columnheader")[0]!.textContent).toMatch(/^Order/);
+    expect(within(root).getAllByRole("columnheader")[0]!.textContent).toMatch(new RegExp(`^${S.dataTable.headers.id}`));
   },
   "sections.data-table": root => {
     expect(within(root).getByRole("grid", { name: "Recent orders" })).toBeTruthy();
-    expect(within(root).getByRole("textbox", { name: "Filter orders" })).toBeTruthy();
+    expect(within(root).getByRole("textbox", { name: specimenDataset.searchField.label })).toBeTruthy();
+    for (const row of S.dataTable.rows) expect(within(root).getAllByText(row.customer).length).toBeGreaterThan(0);
     expect(within(root).getAllByRole("checkbox").length).toBeGreaterThanOrEqual(1);
   },
   "sections.explorer": root => {
@@ -99,8 +102,8 @@ const ROLES: Readonly<Record<Leaf, (root: HTMLElement) => void>> = {
   "sections.record-detail": root => {
     expect(within(root).getByRole("heading", { name: /Order details/ })).toBeTruthy();
     expect(within(root).getAllByRole("term").length).toBe(groupBDataset["sections.record-detail"]!.fields!.length as number);
-    expect(within(root).getByRole("button", { name: "Refund order" })).toBeTruthy();
-    expect(within(root).getByRole("button", { name: "Print invoice" })).toBeTruthy();
+    for (const item of specimenDataset.menu.items.slice(0, 2)) expect(within(root).getByRole("button", { name: item.label })).toBeTruthy();
+    for (const field of S.detailView.fields) expect(within(root).getAllByText(field.value as string).length).toBeGreaterThan(0);
   },
   "sections.resource-list": root => {
     expect(within(root).getByRole("grid", { name: "Customers" })).toBeTruthy();
@@ -108,21 +111,21 @@ const ROLES: Readonly<Record<Leaf, (root: HTMLElement) => void>> = {
     expect(within(root).getAllByRole("checkbox").length).toBeGreaterThanOrEqual(2);
   },
   "sections.stats": root => {
-    expect(within(root).getAllByRole("listitem").length).toBe(4);
+    expect(within(root).getAllByRole("listitem").length).toBe(S.statGroup.items.length);
   },
   "sections.status-list": root => {
     expect(within(root).getAllByRole("list").length).toBeGreaterThanOrEqual(1);
-    expect(within(root).getByText("Store pickup")).toBeTruthy();
+    for (const group of S.statusList.groups ?? []) for (const item of group.items) expect(within(root).getByText(item.label as string)).toBeTruthy();
   },
   "sections.task-list": root => {
-    expect(within(root).getAllByRole("listitem").length).toBeGreaterThanOrEqual(5);
+    expect(within(root).getAllByRole("listitem").length).toBeGreaterThanOrEqual(S.taskList.items.length);
   },
   "sections.timeline": root => {
     expect(within(root).getByRole("list", { name: "Order history" })).toBeTruthy();
-    expect(within(root).getAllByRole("heading").length).toBe(4);
+    expect(within(root).getAllByRole("heading").length).toBe(S.timeline.events.length);
   },
   "sections.usage": root => {
-    expect(within(root).getAllByRole("meter").length).toBe(3);
+    expect(within(root).getAllByRole("meter").length).toBe(S.usageSummary.meters.length);
   },
 };
 
