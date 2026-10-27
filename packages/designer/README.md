@@ -10401,9 +10401,11 @@ a placeholder. A specimen that throws is replaced by a hidden
 `data-specimen-error` marker. The cell stays live while at least one specimen
 renders. Once every specimen of a leaf has thrown, or the provider has, the cell
 reads `data-preview-state="unavailable"` with `data-preview-reason="specimen-error"`.
-The toast region draws only the app-wide `toast()` queue and takes no queue of
-its own, so without a host specimen its cell reads unavailable with
-`data-preview-reason="needs-host-queue"`; a preview never pushes into that queue.
+The toast region draws in place, inside its cell, from a queue local to the
+specimen and seeded with one sample toast; a preview never reads or pushes into
+the app-wide `toast()` queue. The vendored shadcn@aria `Dialog` draws open inside
+its cell without its modal overlay, so it never locks page scroll, hides the rest
+of Studio from assistive technology or contains focus.
 A logo's `content.lockup` member is drawn by the shell `Brandmark`, which needs
 the host's own mark asset and wordmark; without a host specimen that member is
 marked `data-specimen-unavailable="needs-brand-asset"` and the logo's other

@@ -231,8 +231,8 @@ it("draws every Foundry package component live from designer sample content when
   }
   // Live means drawn: no cell reads live over an empty plate.
   expect(blank).toEqual([]);
-  // The toast region draws only the app-wide queue, which it does not let a preview replace; the cell names why.
-  expect(unavailableCells).toEqual({ "components.toast": "needs-host-queue" });
+  // The toast region draws a specimen-local queue in its cell, so every leaf draws.
+  expect(unavailableCells).toEqual({});
   // A member that needs the host's own brand assets says so instead of throwing; the leaf's other specimens draw.
   expect(unavailableMembers).toEqual({ "components.logo/content.lockup": "needs-brand-asset" });
   errors.mockRestore();

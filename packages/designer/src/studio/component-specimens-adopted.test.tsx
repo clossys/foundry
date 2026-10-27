@@ -9,6 +9,7 @@ import * as shell from "../shell/index.js";
 import { loadBuildCatalog } from "../catalog-core/index.js";
 import { loadCatalogBundles } from "../catalog-bundles.js";
 import type { CompositeResolved, ResolvedComponent } from "../catalog-core/index.js";
+import { toastQueue } from "../shell/internal/toast-queue.js";
 import { componentSpecimenPreview } from "./component-specimens.js";
 
 const hostModules = { "@clossys/designer/components": components, "@clossys/designer/charts": charts, "@clossys/designer/shell": shell };
@@ -62,7 +63,7 @@ function vendoredModule(files: readonly { path: string; content: string }[], ent
           if (!args.path.startsWith(".")) return { path: args.path, external: true };
           const path = find(posix.normalize(posix.join(posix.dirname(args.importer), args.path)));
           if (path) return { path, namespace: "vendored" };
-          const leaf = /(?:^|\\/)components\\/([a-z][a-z0-9-]*)\\/index\\.js$/.exec(posix.join(posix.dirname(args.importer), args.path))?.[1];
+          const leaf = /(?:^|\\/)components\\/([a-z][a-z0-9-]*)\\/index(?:\\.js)?$/.exec(posix.join(posix.dirname(args.importer), args.path))?.[1];
           return leaf ? { path: "leaf:" + leaf, external: true } : { errors: [{ text: "unresolved " + args.path }] };
         });
         builder.onLoad({ filter: /.*/, namespace: "vendored" }, args => ({ contents: files.get(args.path), loader: args.path.endsWith(".tsx") ? "tsx" : "ts" }));
@@ -113,8 +114,8 @@ it("binds and server-renders every adopted shadcn@aria leaf from its vendored so
   }
   const bad = Object.fromEntries(Object.entries(outcome).filter(([, state]) => state !== "live" && !state.startsWith("unavailable:")));
   expect(bad).toEqual({});
-  // Only the modal-only overlays stay unavailable, each with its named reason.
-  expect(Object.entries(outcome).filter(([, state]) => state !== "live")).toEqual([["components.dialog", "unavailable:needs-host-trigger"]]);
+  // Every leaf draws, the modal-only Dialog included: its surface draws in a contained host, not a modal.
+  expect(Object.entries(outcome).filter(([, state]) => state !== "live")).toEqual([]);
   // The menu draws open in place through the module's own InlineMenu, with no Popover, so it server-renders.
   const menu = renderToString(<>{specimens.preview("components.menu", leaves.find(entry => entry.leaf === "components.menu")!.profile)}</>);
   expect(menu).toContain("Archive item");
@@ -141,3 +142,56 @@ it("draws the non-modal shadcn@aria overlays open in the browser, inside the spe
   }
   errors.mockRestore();
 }, 120_000);
+
+/** Elements outside the cell that are hidden from assistive technology or inert, and whether the page's scroll is locked. */
+function pageOutside(cell: Element) {
+  const hidden = [document.documentElement, document.body, ...document.body.querySelectorAll<HTMLElement>("*")]
+    .filter(node => !cell.contains(node) && (node.getAttribute("aria-hidden") === "true" || node.hasAttribute("inert") || (node as HTMLElement & { inert?: boolean }).inert === true))
+    .map(node => node.outerHTML.slice(0, 80));
+  return { hidden, scrollLocked: document.documentElement.style.overflow === "hidden" || document.body.style.overflow === "hidden" };
+}
+
+it("draws the shadcn@aria Dialog open in a contained host in its cell, without hiding, scroll-locking or trapping the page", async () => {
+  const errors = vi.spyOn(console, "error").mockImplementation(() => {});
+  const { leaves, modules } = adoptedShadcnLeaves();
+  const specimens = componentSpecimenPreview({ modules: { ...hostModules, ...modules } });
+  const { container } = render(<><button type="button">Outside</button>{specimens.preview("components.dialog", leaves.find(entry => entry.leaf === "components.dialog")!.profile)}</>);
+  const cell = container.querySelector("[data-component-specimens='components.dialog']")!;
+  const host = cell.querySelector<HTMLElement>("[data-specimen-contained-host='dialog']")!;
+  expect(host).not.toBeNull();
+  expect(await within(host).findByText("Dialog content")).toBeTruthy();
+  expect(within(host).getByRole("dialog")).toHaveAttribute("data-slot", "dialog");
+  expect(host.querySelector("[data-slot='dialog-overlay'] [data-slot='dialog-content'] [data-slot='dialog']")).not.toBeNull();
+  // The surface's fixed positioning resolves against the host, never the window.
+  expect(host.style.contain).toBe("layout");
+  expect(cell.querySelector("[data-specimen-error], [data-specimen-unavailable]")).toBeNull();
+  expect(pageOutside(cell)).toEqual({ hidden: [], scrollLocked: false });
+  const outside = within(container).getByRole("button", { name: "Outside" });
+  outside.focus();
+  expect(document.activeElement).toBe(outside);
+  cleanup();
+  errors.mockRestore();
+}, 120_000);
+
+it("draws the Foundry Toaster from a specimen-local queue in its cell, leaving the app-wide queue untouched", async () => {
+  const errors = vi.spyOn(console, "error").mockImplementation(() => {});
+  const before = toastQueue.visibleToasts;
+  const touched = (["add", "close", "clear", "pauseAll", "resumeAll"] as const).map(name => vi.spyOn(toastQueue, name));
+  const leaf = adoptedFoundryLeaves().find(entry => entry.leaf === "components.toast")!;
+  const specimens = componentSpecimenPreview({ modules: hostModules });
+  // The app's own Toaster, mounted beside Studio, keeps drawing only the app-wide queue.
+  const { container } = render(<><button type="button">Outside</button><shell.Toaster />{specimens.preview(leaf.leaf, leaf.profile)}</>);
+  const cell = container.querySelector("[data-component-specimens='components.toast']")!;
+  const host = cell.querySelector<HTMLElement>("[data-specimen-contained-host='toast']")!;
+  expect(host).not.toBeNull();
+  expect(await within(host).findByText("Changes saved")).toBeTruthy();
+  expect(within(host).getByRole("region")).toHaveAttribute("data-toaster-placement", "specimen");
+  expect(cell.querySelector("[data-specimen-error], [data-specimen-unavailable]")).toBeNull();
+  expect(document.querySelector("[data-toaster-placement='viewport'], [data-toaster-placement='frame']")).toBeNull();
+  expect(toastQueue.visibleToasts).toBe(before);
+  for (const spy of touched) expect(spy).not.toHaveBeenCalled();
+  expect(pageOutside(cell)).toEqual({ hidden: [], scrollLocked: false });
+  cleanup();
+  for (const spy of touched) spy.mockRestore();
+  errors.mockRestore();
+});

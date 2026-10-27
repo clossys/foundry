@@ -79,16 +79,12 @@ export const componentSpecimenColor = {
   swatches: ["hsl(215, 65%, 50%)", "hsl(155, 55%, 40%)", "hsl(30, 75%, 55%)"],
 } as const;
 
-/**
- * Exports a preview cannot draw from sample data, and why. The toast region renders only the app-wide queue
- * (it takes no queue of its own); the brand lockup draws the host's own mark asset and wordmark.
- */
+/** The one toast a Toaster specimen's own queue holds. */
+export const componentSpecimenToast = { title: "Changes saved", description: "The project was updated.", variant: "success" } as const;
+
+/** Exports a preview cannot draw from sample data, and why: the brand lockup draws the host's own mark asset and wordmark. */
 export const componentSpecimenUnavailable: Readonly<Record<string, SpecimenUnavailableReason>> = {
-  "./shell#Toaster": "needs-host-queue",
   "./shell#Brandmark": "needs-brand-asset",
-  // The vendored shadcn@aria Dialog always wraps its content in ModalOverlay and Modal and exports no inner dialog
-  // part: held open in a preview, the modal would lock the page's scroll and hide the rest of Studio from assistive technology.
-  "components/dialog/dialog.tsx#Dialog": "needs-host-trigger",
 };
 
 /**
@@ -107,4 +103,5 @@ export const componentSpecimenSourceSamples = {
   "components/popover/popover.tsx#Popover": { trigger: "Open popover", title: "Popover title", content: "Popover content" },
   "components/menu/dropdown-menu.tsx#DropdownMenu": { label: "Actions", items: [{ id: "edit", label: "Edit item" }, { id: "archive", label: "Archive item" }] },
   "components/tooltip/tooltip.tsx#Tooltip": { trigger: "Show tooltip", content: "Tooltip content" },
+  "components/dialog/dialog.tsx#Dialog": { title: "Dialog title", content: "Dialog content" },
 } as const;
