@@ -166,6 +166,20 @@
         ]
       },
       "root": "rac:Menu",
+      "secondaryExports": [
+        {
+          "export": "DropdownMenuGroup",
+          "name": "MenuGroup"
+        },
+        {
+          "export": "DropdownMenuItem",
+          "name": "MenuItem"
+        },
+        {
+          "export": "DropdownMenuLabel",
+          "name": "MenuLabel"
+        }
+      ],
       "slot": "components.menu",
       "source": "shadcn@aria",
       "transform": "shadcn-aria-rewrite@1"

@@ -210,7 +210,18 @@ describe("pinned shadcn aria component import", () => {
     expect(componentSecondaryExports(select, materializeShadcnComponent(result, "select"))).toEqual(five);
     expect(select.impl).toEqual({ kind: "source", entry: "components/select/select.tsx", export: "Select" });
     for (const name of ["SelectList", "SelectInput", "SelectLabel", "SelectPopover", "SelectSeparator", "SelectEmpty", "Select"]) expect(select.secondaryExports!.map(row => row.name)).not.toContain(name);
-    expect(descriptors.filter(fill => fill.secondaryExports !== undefined && fill.slot !== "components.select").map(fill => fill.slot)).toEqual([]);
+    expect(descriptors.filter(fill => fill.secondaryExports !== undefined).map(fill => fill.slot).sort()).toEqual(["components.menu", "components.select"]);
+  });
+
+  it("approves exactly the three command-result Menu parts as caller-named aliases of the same selected entry (API-M1)", () => {
+    const result = importShadcnAriaComponents(pinnedInput());
+    const menu = result.fills.map(doc => Object.values(doc.components)[0]!).find(fill => fill.slot === "components.menu")!;
+    const three = [{ name: "MenuGroup", export: "DropdownMenuGroup" }, { name: "MenuItem", export: "DropdownMenuItem" }, { name: "MenuLabel", export: "DropdownMenuLabel" }];
+    expect(menu.secondaryExports).toEqual(three);
+    expect(componentSecondaryExports(menu, result.rewrites["dropdown-menu"]!.files)).toEqual(three);
+    expect(menu.impl).toEqual({ kind: "source", entry: "components/menu/dropdown-menu.tsx", export: "DropdownMenu" });
+    // No public InlineMenu, trigger, submenu, separator, shortcut or root alias.
+    for (const name of ["InlineMenu", "DropdownMenu", "DropdownMenuTrigger", "DropdownMenuSub", "DropdownMenuSubTrigger", "DropdownMenuSubContent", "DropdownMenuSeparator", "DropdownMenuShortcut", "DropdownMenuContent"]) expect(menu.secondaryExports!.map(row => row.export)).not.toContain(name);
   });
 
   it("keeps the borrowed CommandList as menu provenance without its unused command imports", () => {

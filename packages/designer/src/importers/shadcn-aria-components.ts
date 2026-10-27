@@ -305,10 +305,12 @@ const exportNames: Record<string, string> = { toggle: "Toggle", "dropdown-menu":
 /**
  * Approved same-entry secondary exports, by caller checkpoint. Each name is a local function value of the
  * item's own authenticated entry (proved again by componentSecondaryExports at resolve/emit); nothing else
- * in an entry's export list becomes public. Select: the five Calendar-caption parts (API-S1).
+ * in an entry's export list becomes public. Select: the five Calendar-caption parts (API-S1). Menu: the three
+ * command-result parts under their caller names, aliasing the dropdown parts of the same entry (API-M1).
  */
 const secondaryExportApprovals: Readonly<Record<string, readonly { name: string; export: string }[]>> = {
   select: ["SelectContent", "SelectGroup", "SelectItem", "SelectTrigger", "SelectValue"].map(name => ({ name, export: name })),
+  "dropdown-menu": [{ name: "MenuGroup", export: "DropdownMenuGroup" }, { name: "MenuItem", export: "DropdownMenuItem" }, { name: "MenuLabel", export: "DropdownMenuLabel" }],
 };
 const partExports: Readonly<Record<string, readonly string[]>> = { "input-group": ["InputGroup", "InputGroupAddon", "InputGroupButton", "InputGroupText", "InputGroupInput", "InputGroupTextarea"] };
 const utils = 'import { clsx, type ClassValue } from "clsx"\nimport { twMerge } from "tailwind-merge"\nexport function cn(...inputs: ClassValue[]) { return twMerge(clsx(inputs)) }\n';
