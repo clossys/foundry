@@ -107,3 +107,6 @@ export const UI_BORDER_PANEL = `var(--ui-border-panel, ${UI_BORDER_HAIRLINE})`;
  * so the fallback composes the floating read.
  */
 export const UI_ELEVATION_PANEL = `var(--ui-elevation-panel, ${UI_ELEVATION_FLOATING})`;
+
+/** The notice measure: inline-size cap of a compact, bounded notice such as `Banner density="compact"`. */
+export const UI_WIDTH_NOTICE_MAX = "var(--ui-width-notice-max, 24rem)";

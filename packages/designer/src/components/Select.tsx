@@ -40,6 +40,8 @@ export interface SelectOption {
 }
 
 export type SelectSize = "sm" | "md" | "lg";
+/** `full` fills the row (the long-standing look); `compact` sizes the field to its trigger content. */
+export type SelectWidth = "full" | "compact";
 
 // Trigger padding and type step per size, matching Button's size scale; md is
 // the long-standing default look.
@@ -49,12 +51,20 @@ const SIZE_CLASSES: Record<SelectSize, string> = {
   lg: "px-lg py-md text-body-l",
 };
 
+const WIDTH_CLASSES: Record<SelectWidth, string> = {
+  full: "flex",
+  compact: "inline-flex w-fit max-w-full",
+};
+
 export interface SelectProps
   extends Omit<AriaSelectProps<SelectOption>, "children" | "placeholder"> {
   /**
    * Required. Rendered as a real label, programmatically associated with
    * the trigger — the accessible-name path a screen reader announces, not
-   * a `placeholder` standing in for it.
+   * a `placeholder` standing in for it. Pass null only where the row already
+   * names the control (a compact header toolbar, say) and supply `aria-label`
+   * or `aria-labelledby` instead; react-aria-components wires either onto the
+   * trigger. A select with none of the three throws.
    */
   label: ReactNode;
   /** Helper text below the field, read by assistive tech via `aria-describedby`. */
@@ -75,6 +85,8 @@ export interface SelectProps
   triggerClassName?: string;
   /** Trigger padding and type step. @default "md" */
   size?: SelectSize;
+  /** `compact` sizes the field to its trigger content instead of filling the row. @default "full" */
+  width?: SelectWidth;
 }
 
 /**
@@ -122,10 +134,14 @@ export function Select({
   className,
   triggerClassName,
   size = "md",
+  width = "full",
   isDisabled,
   isInvalid,
   ...rest
 }: SelectProps) {
+  if (label == null && !rest["aria-label"]?.trim() && !rest["aria-labelledby"]?.trim()) {
+    throw new TypeError("Select requires a label, aria-label or aria-labelledby.");
+  }
   const checkGlyph = useGlyph("assets.icon-check");
   const expandGlyph = useGlyph("assets.icon-chevron-down");
   return (
@@ -134,9 +150,9 @@ export function Select({
       isDisabled={isDisabled}
       isInvalid={isInvalid}
       placeholder={placeholder}
-      className={cx("flex flex-col gap-xs", className)}
+      className={cx(WIDTH_CLASSES[width], "flex-col gap-xs", className)}
     >
-      <Label className="text-body-s text-ink-secondary font-body">{label}</Label>
+      {label != null ? <Label className="text-body-s text-ink-secondary font-body">{label}</Label> : null}
       <AriaButton
         isDisabled={isDisabled}
         className={(renderProps) =>

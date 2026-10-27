@@ -1,8 +1,15 @@
-import type { CSSProperties, ReactNode } from "react";
+import { useId, type CSSProperties, type ReactNode } from "react";
 import { Toolbar as FoundryToolbar, type ToolbarProps as FoundryToolbarProps } from "../components/Toolbar.js";
 
 export interface ToolbarProps
-  extends Omit<FoundryToolbarProps, "children" | "className" | "style" | "variant"> {
+  extends Omit<FoundryToolbarProps, "children" | "className" | "style" | "variant" | "title"> {
+  /**
+   * Header-row title at the start of the row — typically a heading. The actions in
+   * `trailing` stay pinned to the end, so a header row of toolbar controls needs no
+   * consumer flex row. Without an explicit `aria-label`/`aria-labelledby`, the
+   * toolbar is named by this title.
+   */
+  title?: ReactNode;
   /** Slot for the toolbar's leading actions — typically one or more `Button` components (bulk actions, view toggles). */
   leading?: ReactNode;
   /** Slot for a search/filter control — typically a `TextField` or `Select` component. Grows to fill the space between `leading` and `trailing`. */
@@ -57,24 +64,29 @@ export interface ToolbarProps
  * overflowing once the three regions no longer fit on one line.
  */
 export function Toolbar({
+  title,
   leading,
   search,
   trailing,
   orientation = "horizontal",
-  "aria-label": ariaLabel = "Toolbar",
+  "aria-label": ariaLabel,
   className,
   style,
   ...rest
 }: ToolbarProps) {
+  const titleId = useId();
+  const namedByTitle = title != null && ariaLabel == null && rest["aria-labelledby"] == null;
   return (
     <FoundryToolbar
       {...rest}
       variant="bare"
       orientation={orientation}
-      aria-label={ariaLabel}
+      aria-label={namedByTitle ? undefined : (ariaLabel ?? "Toolbar")}
+      aria-labelledby={namedByTitle ? titleId : rest["aria-labelledby"]}
       className={className}
       style={style}
     >
+      {title != null ? <div id={titleId} className="min-w-0">{title}</div> : null}
       {leading ? <div className="flex flex-wrap items-center gap-sm">{leading}</div> : null}
       {search ? <div className="min-w-[12rem] flex-1">{search}</div> : null}
       {trailing ? (

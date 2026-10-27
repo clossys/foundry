@@ -178,4 +178,82 @@ describe("manual controlled Tooltip", () => {
     expect(() => render(<Tooltip manual trigger={<Button>Info</Button>}>Detail</Tooltip>)).toThrow("requires controlled isOpen");
     expect(() => render(<Tooltip renderSurface={() => null} trigger={<Button>Info</Button>}>Detail</Tooltip>)).toThrow("requires manual mode");
   });
+  it("gives a disabled trigger one named, disabled, focusable control that the tooltip describes", async () => {
+    const user = userEvent.setup();
+    render(
+      <Tooltip disabledTrigger trigger={<Button isDisabled>Publish</Button>} delay={0} closeDelay={0}>
+        Publishing is locked.
+      </Tooltip>,
+    );
+    await user.tab();
+    const control = screen.getByRole("button", { name: "Publish" });
+    expect(control).toHaveFocus();
+    expect(control).toHaveAttribute("aria-disabled", "true");
+    expect(control).toHaveAttribute("data-tooltip-disabled-trigger");
+    const tooltip = await screen.findByRole("tooltip");
+    expect(tooltip).toHaveTextContent("Publishing is locked.");
+    expect(control).toHaveAccessibleDescription("Publishing is locked.");
+    // The natively disabled control stays disabled, takes no focus and is not a second button in the tree.
+    const native = control.querySelector("button")!;
+    expect(native).toBeDisabled();
+    expect(screen.getAllByRole("button")).toEqual([control]);
+    await user.keyboard("{Escape}");
+    await waitFor(() => expect(screen.queryByRole("tooltip")).not.toBeInTheDocument());
+    primePointerModality();
+    await user.hover(control);
+    expect(await screen.findByRole("tooltip")).toHaveTextContent("Publishing is locked.");
+  });
+
+  it("forwards an icon-only disabled control's external aria-labelledby onto its focus target", async () => {
+    const user = userEvent.setup();
+    render(
+      <>
+        <span id="external-label">Archive project</span>
+        <Tooltip disabledTrigger trigger={<Button isDisabled aria-labelledby="external-label"><svg aria-hidden="true" /></Button>} delay={0} closeDelay={0}>
+          Archiving is locked.
+        </Tooltip>
+      </>,
+    );
+    await user.tab();
+    const control = screen.getByRole("button", { name: "Archive project" });
+    expect(control).toHaveFocus();
+    expect(control).toHaveAttribute("aria-labelledby", "external-label");
+    expect(control).toHaveAttribute("aria-disabled", "true");
+    await screen.findByRole("tooltip");
+    expect(control).toHaveAccessibleDescription("Archiving is locked.");
+  });
+
+  it("forwards an icon-only disabled control's aria-label onto its focus target", async () => {
+    const user = userEvent.setup();
+    render(<Tooltip disabledTrigger trigger={<Button isDisabled aria-label="Delete draft" />} delay={0} closeDelay={0}>Drafts are locked.</Tooltip>);
+    await user.tab();
+    const control = screen.getByRole("button", { name: "Delete draft" });
+    expect(control).toHaveFocus();
+    expect(control).toHaveAttribute("aria-label", "Delete draft");
+    expect(control).not.toHaveAttribute("aria-labelledby");
+  });
+
+  it("takes the wrapped control's role from disabledTriggerRole and its name from an icon-only aria-label", async () => {
+    const user = userEvent.setup();
+    render(
+      <Tooltip disabledTrigger disabledTriggerRole="link" trigger={<Button isDisabled aria-label="Open report" />} delay={0} closeDelay={0}>
+        Reports are building.
+      </Tooltip>,
+    );
+    await user.tab();
+    const control = screen.getByRole("link", { name: "Open report" });
+    expect(control).toHaveFocus();
+    expect(control).toHaveAttribute("aria-disabled", "true");
+    await screen.findByRole("tooltip");
+    expect(control).toHaveAccessibleDescription("Reports are building.");
+  });
+
+  it("refuses a disabled trigger that is not one element", () => {
+    expect(() => render(<Tooltip disabledTrigger trigger="Publish">Locked</Tooltip>)).toThrow("Tooltip disabledTrigger requires one trigger element.");
+  });
+
+  it("leaves an enabled trigger unwrapped", () => {
+    render(<Tooltip trigger={<Button>Info</Button>}>Detail</Tooltip>);
+    expect(document.querySelector("[data-tooltip-disabled-trigger]")).toBeNull();
+  });
 });

@@ -1,7 +1,9 @@
+import type { CSSProperties } from "react";
 import { cx } from "./internal/cx.js";
+import { UI_WIDTH_NOTICE_MAX } from "./internal/ui-vars.js";
 import { Icon } from "./Icon.js";
 import { X } from "../icons/X.js";
-import type { BannerProps, BannerVariant } from "./Banner.js";
+import type { BannerDensity, BannerProps, BannerVariant } from "./Banner.js";
 
 export const VARIANT_CLASSES: Record<BannerVariant, string> = {
   info: "border-status-info bg-status-info-tint text-status-info-text",
@@ -14,13 +16,24 @@ export const VARIANT_CLASSES: Record<BannerVariant, string> = {
 export const BANNER_DISMISS_CLASSES =
   "shrink-0 rounded-default px-xs py-xs text-body-s hover:bg-surface-selected focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent";
 
+const DENSITY_CLASSES: Record<BannerDensity, string> = {
+  default: "gap-sm p-md",
+  compact: "gap-xs px-sm py-xs",
+};
+
 /** The outer region's classes, shared by the server and client `Banner`. */
-export function bannerClassName(variant: BannerVariant, className: string | undefined): string {
+export function bannerClassName(variant: BannerVariant, className: string | undefined, density: BannerDensity = "default"): string {
   return cx(
-    "flex items-start gap-sm rounded-control border p-md text-body-s font-body",
+    "flex items-start rounded-control border text-body-s font-body",
+    DENSITY_CLASSES[density],
     VARIANT_CLASSES[variant],
     className,
   );
+}
+
+/** The outer region's inline style, shared by the server and client `Banner`: compact caps the inline size at the notice measure token. */
+export function bannerStyle(density: BannerDensity, style: CSSProperties | undefined): CSSProperties | undefined {
+  return density === "compact" ? { maxInlineSize: UI_WIDTH_NOTICE_MAX, ...style } : style;
 }
 
 /** The client `BannerProps`, restating the one default this file applies. */
@@ -45,6 +58,7 @@ export function Banner({
   children,
   onDismiss,
   dismissLabel = "Dismiss",
+  density = "default",
   className,
   style,
   ...rest
@@ -55,8 +69,8 @@ export function Banner({
       {...rest}
       role={isAssertive ? "alert" : "status"}
       aria-live={isAssertive ? "assertive" : "polite"}
-      className={bannerClassName(variant, className)}
-      style={style}
+      className={bannerClassName(variant, className, density)}
+      style={bannerStyle(density, style)}
     >
       <div className="flex-1">{children}</div>
       {onDismiss ? (

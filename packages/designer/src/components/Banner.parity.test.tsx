@@ -34,6 +34,7 @@ const CASES: Array<[string, BannerProps]> = [
   ["danger with dismiss", { variant: "danger", children: "Broke.", onDismiss: () => {} }],
   ["warning with custom label, class and style", { variant: "warning", children: "Careful.", onDismiss: () => {}, dismissLabel: "Hide this update", className: "p-lg", style: { marginTop: "8px" } }],
   ["success with dismiss and id", { variant: "success", children: "Saved.", onDismiss: () => {}, id: "b" }],
+  ["compact density with dismiss and style", { density: "compact", children: "Synced.", onDismiss: () => {}, style: { marginTop: "8px" } }],
 ];
 
 describe("Banner server/client parity", () => {

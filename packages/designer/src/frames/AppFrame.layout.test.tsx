@@ -66,6 +66,17 @@ describe("AppFrame reserved layout", () => {
     expect(screen.queryByRole("heading", { name: "Leased page" })).toBeNull();
     expect(screen.queryByRole("button", { name: /Action false/ })).toBeNull();
   });
+  it("fills the viewport itself when fill is viewport, so the host root needs no height glue", () => {
+    const view = render(<AppFrame {...fixture()} fill="viewport" />);
+    const root = document.querySelector("[data-application-frame]");
+    expect(root).toHaveClass("h-dvh", "overflow-hidden");
+    expect(root).not.toHaveClass("h-full");
+    expect(root).toHaveAttribute("data-application-frame-fill", "viewport");
+    expect(screen.getByRole("main")).toHaveClass("h-full", "overflow-auto");
+    view.rerender(<AppFrame {...fixture()} />);
+    expect(document.querySelector("[data-application-frame]")).toHaveClass("h-full");
+    expect(document.querySelector("[data-application-frame]")).toHaveAttribute("data-application-frame-fill", "host");
+  });
   it("reserves separate header, stage and dock rows inside the definite-height host", () => {
     render(<AppFrame {...fixture()} notices={[{ id: "saved", severity: "info", text: "Project saved" }]}><PageHeaderModule id="page" header={{ title: "Project canvas" }} /></AppFrame>);
     expect(document.querySelector("[data-application-frame]")).toHaveClass("h-full", "overflow-hidden");

@@ -43,7 +43,7 @@ export const FOUNDRY_COMPONENT_MAP: Readonly<Record<string, FoundryComponentMapp
   tree: component("Tree", { selection: "", expand: "" }, ["children", "selectionMode", "selectedKeys", "onSelectionChange", "expandedKeys", "onExpandedChange", "disabledKeys", "aria-label", "aria-labelledby", "className"], { assets: ["assets.icon-chevron-right"], ...craft("tree") }),
   avatar: component("Avatar", { ...sizes, "content.image": ".src", "content.initials": ".alt" }, ["alt", "src", "size", "className"]),
   badge: component("Badge", dimension("tone", "variant", ["neutral", "danger"]), ["variant", "children", "className"]),
-  banner: component("Banner", dimension("tone", "variant", ["info", "danger"]), ["variant", "children", "onDismiss", "dismissLabel", "className"]),
+  banner: component("Banner", dimension("tone", "variant", ["info", "danger"]), ["variant", "children", "onDismiss", "dismissLabel", "density", "className"]),
   breadcrumbs: component("Breadcrumb", { current: "" }, ["children", "className", "aria-label"], { notes: ["No collapsed trail API is exported."] }),
   button: component("Button", { ...dimension("variant", "variant", ["primary", "secondary", "ghost", "danger", "outline"]), ...sizes, ...dimension("ground", "ground", ["base"]), "shape.text": "", "shape.icon-only": "=IconButton", "state.hover": "[data-hovered]", "state.focus-visible": "[data-focus-visible]", "state.disabled": ".isDisabled" }, ["variant", "size", "ground", "children", "isDisabled", "isPending", "onPress", "className", "aria-label", "slot"], { composes: ["components.icon"] }),
   card: component("Card", {}, ["variant", "ground", "children", "className"]),
@@ -65,7 +65,7 @@ export const FOUNDRY_COMPONENT_MAP: Readonly<Record<string, FoundryComponentMapp
   "radio-group": component("RadioGroup", { ...orientations, "state.invalid": ".isInvalid" }, ["label", "children", "orientation", "isInvalid", "description", "errorMessage", "className"]),
   "resize-handle": component("ResizeHandle", orientations, ["orientation", "value", "min", "max", "resetValue", "label", "onChange", "className"]),
   "search-field": component("SearchField", { "part.clear": "", "part.submit": "", "state.empty": "", "state.filled": "" }, ["label", "value", "onChange", "onSubmit", "description", "errorMessage", "className"]),
-  select: component("Select", { "selection.single": ".selectedKey", "state.invalid": ".isInvalid", ...sizes }, ["label", "options", "selectedKey", "onSelectionChange", "isInvalid", "size", "description", "errorMessage", "className"]),
+  select: component("Select", { "selection.single": ".selectedKey", "state.invalid": ".isInvalid", ...sizes }, ["label", "options", "selectedKey", "onSelectionChange", "isInvalid", "size", "width", "description", "errorMessage", "className", "aria-label", "aria-labelledby"]),
   separator: component("Separator", orientations, ["orientation", "decorative", "className"]),
   slider: component("Slider", { ...orientations, "selection.single": "", "selection.range": "" }, ["label", "value", "defaultValue", "onChange", "onChangeEnd", "minValue", "maxValue", "step", "formatOptions", "orientation", "isDisabled", "thumbLabels", "showValue", "className"], { notes: ["A range is a value array with one thumbLabels name per thumb; the fill spans the selected range. Source and runtime qualification remain unmeasured."] }),
   skeleton: component("Skeleton", dimension("shape", "shape", ["block"]), ["shape", "aria-label", "className"]),
@@ -88,7 +88,7 @@ export const FOUNDRY_COMPONENT_MAP: Readonly<Record<string, FoundryComponentMapp
   "chart-range": { ...chart("RangeChart", ["title", "rows", "ticks", "labels", "className"]), notes: ["Shared tooltip part is present; accessibility and browser behavior remain unmeasured. Static CSS inspection has no Escape dismissal; long labels in narrow plots may clip. The complete table remains available."] },
   "chart-waterfall": { ...chart("WaterfallChart", ["title", "start", "steps", "end", "labels", "className"]), notes: ["Shared tooltip part is present; accessibility and browser behavior remain unmeasured. Static CSS inspection has no Escape dismissal; long labels in narrow plots may clip. The complete table remains available."] },
   "chart-status-strip": { ...chart("StatusStrip", ["title", "segments", "className"]), notes: ["Shared tooltip part is present; accessibility and browser behavior remain unmeasured. Static CSS inspection has no Escape dismissal; long labels in narrow plots may clip. The complete table remains available."] },
-  tooltip: component("Tooltip", { placement: "" }, ["trigger", "children", "placement", "triggerAction", "className"]),
+  tooltip: component("Tooltip", { placement: "" }, ["trigger", "children", "placement", "triggerAction", "disabledTrigger", "disabledTriggerRole", "className"]),
 };
 
 export const FOUNDRY_COMPONENT_GAPS: Readonly<Record<string, string>> = {

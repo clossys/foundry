@@ -1,5 +1,7 @@
 import data from "./catalog-bundles.data.json" with { type: "json" };
 import starterData from "./rac-starter.data.json" with { type: "json" };
+import headlessPackage from "react-aria-components/package.json" with { type: "json" };
+import { RAC_PACKAGE, type ComponentCheckInput } from "./catalog-core/check-components.js";
 import type { FillDoc } from "./catalog-core/types.js";
 import type { ComponentCandidateDocument, ComponentFile } from "./catalog-core/resolve-components.js";
 import { componentDescriptorHash } from "./catalog-core/resolve-components.js";
@@ -65,6 +67,15 @@ export function loadCatalogBundles() {
 }
 
 export type CatalogBundles = ReturnType<typeof loadCatalogBundles>;
+
+/**
+ * The headless component library this catalog resolves against, as the `installedRac` input of
+ * component checks and default planning. The version is read from the installed
+ * react-aria-components package.json wherever this module resolves it, never typed by hand.
+ */
+export function installedHeadlessLibrary(): ComponentCheckInput["installedRac"] {
+  return { version: headlessPackage.version, instance: RAC_PACKAGE };
+}
 
 /** Complete current record association for board caches; never runtime qualification. */
 export function prepareSourceOwnerClosure(input: CompositeEngineInput) {
