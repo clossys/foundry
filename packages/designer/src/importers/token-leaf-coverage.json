@@ -1383,6 +1383,9 @@
         "foundry": [
           "aside",
           "drawer",
+          "inspector",
+          "inspector-max",
+          "inspector-min",
           "sidebar",
           "sidebar-rail"
         ],
@@ -1395,7 +1398,7 @@
       "slot": "tokens.region-width",
       "values": {
         "carbon-colors": 0,
-        "foundry": 4,
+        "foundry": 7,
         "foundry-baseline": 0,
         "lucide": 0,
         "radix-colors": 0,
@@ -1856,7 +1859,7 @@
     },
     "foundry": {
       "filledLeaves": 38,
-      "members": 146
+      "members": 149
     },
     "foundry-baseline": {
       "filledLeaves": 3,

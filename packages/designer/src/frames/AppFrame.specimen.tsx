@@ -6,6 +6,7 @@ import type { AccountMenuSection, AppNavigationNode } from "../blocks/index.js";
 import { AppFrame } from "./AppFrame.js";
 import { APP_FRAME_SPECIMEN_COMMAND_IDS } from "./app-frame-layout.js";
 import type { AppFrameProps } from "./app-frame-types.js";
+import { APP_FRAME_RIGHT_PANEL_CONFIG } from "./right-panel-config.js";
 
 const EXAMPLE_MARK = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Cpath fill='currentColor' d='M4 4h24v6H10v3h15v6H10v3h18v6H4z'/%3E%3C/svg%3E";
 const PAGES = {
@@ -178,7 +179,7 @@ export function AppFrameSpecimen({
       page={{ title: destination.title, scope: workspaceLabel }}
       commands={commands}
       theme={{ storageKey: "example-app-theme", defaultPreference: "system" }}
-      rightPanel={{ label: contextLabel, handleLabel: resizeContextLabel, min: 220, max: 420, defaultValue: 280,
+      rightPanel={{ label: contextLabel, handleLabel: resizeContextLabel, ...APP_FRAME_RIGHT_PANEL_CONFIG,
         children: <div className="flex flex-col gap-md p-md">
           <h2 className="m-0 text-body font-semibold">{contextHeading}</h2>
           <p className="m-0 text-body-s text-ink-secondary">{currentDestinationPrefix}{destination.title}</p>

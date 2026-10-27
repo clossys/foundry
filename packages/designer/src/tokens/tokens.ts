@@ -450,6 +450,9 @@ export const TOKENS: Readonly<Record<string, TokenDefinition>> = {
   "--ui-table-row-compact": { property: "--ui-table-row-compact", family: "density", value: "36px", brandable: false, themeDependent: false },
   "--ui-duration-confirm-hold": { property: "--ui-duration-confirm-hold", family: "duration", value: "2000ms", brandable: false, themeDependent: false },
   "--ui-table-max-block-default": { property: "--ui-table-max-block-default", family: "layout", value: "min(70vh, 40rem)", brandable: false, themeDependent: false },
+  "--ui-layout-inspector-w": { property: "--ui-layout-inspector-w", family: "layout", value: "280px", brandable: false, themeDependent: false },
+  "--ui-layout-inspector-min-w": { property: "--ui-layout-inspector-min-w", family: "layout", value: "220px", brandable: false, themeDependent: false },
+  "--ui-layout-inspector-max-w": { property: "--ui-layout-inspector-max-w", family: "layout", value: "420px", brandable: false, themeDependent: false },
 
 };
 

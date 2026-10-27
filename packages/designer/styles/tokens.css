@@ -653,6 +653,9 @@ html:not([data-brand-bound]):not([data-suppress-brand-banner])::before {
   --ui-table-row-compact: 36px;
   --ui-duration-confirm-hold: 2000ms;
   --ui-table-max-block-default: min(70vh, 40rem);
+  --ui-layout-inspector-w: 280px;
+  --ui-layout-inspector-min-w: 220px;
+  --ui-layout-inspector-max-w: 420px;
 
 }
 }
