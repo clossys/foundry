@@ -398,3 +398,28 @@ describe("controls label type parity", () => {
     expect(labelFinding(profile)).toBe(true);
   });
 });
+
+describe("qualification rule groups (QUAL-RECOUNT G1, G2, G7a, G11)", () => {
+  const k4 = (profile: ComponentCheckInput) => checkComponentProfile(profile).findings.filter(f => f.code === "K4").map(f => f.message);
+  const append = (profile: Mutable<ComponentCheckInput>, text: string) => source(profile, componentProfile().observations["components.button"]!.files[0]!.content + text);
+  function hairline(): Mutable<ComponentCheckInput> {
+    const profile = fixture();
+    profile.tokens["tokens.border-width.hairline"] = { property: "--ui-border-hairline", light: "1px" };
+    profile.slots[0]!.contract.allowedReads.tokens.push("tokens.border-width");
+    profile.fills[0]!.reads.tokens.push("tokens.border-width"); refreshTokens(profile);
+    return profile;
+  }
+  it("check-components K4 ignores utility names inside custom properties and reads v4 arbitrary forms whole", () => {
+    const profile = hairline();
+    append(profile, ' const cls = "border-(length:--ui-border-hairline) data-[open]:border-t-(length:--ui-border-hairline) [.border-b]:rounded-l-(--ui-border-hairline) scroll-py-1";');
+    expect(k4(profile)).toEqual([]);
+    // The property inside a whole v4 form is still judged, by the unbound-property rule, never as a utility.
+    const unbound = fixture(); append(unbound, ' const cls = "border-t-(length:--ui-border-hairline)";');
+    expect(k4(unbound)).toEqual(["Unbound CSS property --ui-border-hairline in button.tsx"]);
+    // Must still flag: real named-value utilities, behind variants, negation and important.
+    for (const [cls, utility] of [["h-3", "h-3"], ["border-2", "border-2"], ["hover:border-2", "border-2"], ["[&>svg]:h-3", "h-3"], ["-mt-2", "mt-2"], ["!h-3", "h-3"], ["h-3!", "h-3"]] as const) {
+      const flagged = hairline(); append(flagged, ` const cls = "border-(length:--ui-border-hairline) ${cls}";`);
+      expect(k4(flagged), cls).toEqual([`Utility ${utility} has no bound consumer token`]);
+    }
+  });
+});

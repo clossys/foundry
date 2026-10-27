@@ -205,6 +205,30 @@ function codeText(source: string): string {
 function imports(source: string): string[] {
   return [...source.matchAll(/(?:\bfrom\s*|\bimport\s*|\bimport\s*\(\s*|\brequire\s*\(\s*)["']([^"']+)["']/g)].map(match => match[1]!);
 }
+/** K4 utility families; each named value needs a bound consumer token. */
+const UTILITY = /^(?:h|w|min-h|min-w|max-h|max-w|p[trblxy]?|m[trblxy]?|gap|rounded|text|bg|border)-[\w./-]+/;
+/**
+ * K4 utilities, read from whole class tokens (split on whitespace and quotes). Variants are stripped at the
+ * last top-level `:`, then a utility is matched only at the start of what remains, so a family name inside a
+ * `--custom-property`, a `(length:--…)` argument, an arbitrary variant (`[.border-b]:`) or a longer utility
+ * (`scroll-py-1`) is never a match. A Tailwind v4 `-(…)` or `-[…]` value is read whole, never truncated, and is
+ * not a named value: its contents are judged by the unbound-property and literal rules, exactly as `border-(…)`
+ * always was, so `border-t-(…)` no longer fails as a truncated `border-t-`.
+ */
+function classUtilities(code: string): string[] {
+  const found: string[] = [];
+  for (const token of code.split(/[\s"'`]+/)) {
+    let depth = 0; let start = 0;
+    for (let i = 0; i < token.length; i++) {
+      const char = token[i]!;
+      if (char === "[" || char === "(") depth++; else if (char === "]" || char === ")") depth = Math.max(0, depth - 1); else if (char === ":" && depth === 0) start = i + 1;
+    }
+    const base = token.slice(start).replace(/^!/, "").replace(/^-(?=[a-z])/, "");
+    const match = UTILITY.exec(base);
+    if (match && !/^[[(]/.test(base.slice(match[0].length))) found.push(match[0]);
+  }
+  return found;
+}
 function rootNames(root: string): string[] { return root.startsWith("rac:") ? root.slice(4).split("+") : []; }
 /** Contracts grant leaves; declarations may name a leaf or one exact member. */
 function tokenLeaf(read: string): string | undefined {
@@ -308,9 +332,9 @@ export function checkComponentProfile(input: ComponentCheckInput): ComponentChec
       const properties = [...file.code.matchAll(/--[a-zA-Z][\w-]*/g)].map(match => match[0]);
       for (const property of properties) if (!Object.entries(input.tokens).some(([member, token]) => token.property === property && isRead(fill, member))) add("K4", fill.slot, `Unbound CSS property ${property} in ${file.path}`);
       if (/(?:#[\da-f]{3,8}\b|\b(?:rgb|hsl|oklch|oklab|lab|lch)a?\s*\(|\b\d*\.?\d+(?:px|rem|em|vh|vw|ch)\b)/i.test(file.code)) add("K4", fill.slot, `Literal colour or length in ${file.path}`);
-      for (const match of file.code.matchAll(/\b(?:h|w|min-h|min-w|max-h|max-w|p[trblxy]?|m[trblxy]?|gap|rounded|text|bg|border)-[\w./-]+/g)) {
-        const binding = input.classBindings?.[match[0]];
-        if (!binding || !input.tokens[binding] || !isRead(fill, binding)) add("K4", fill.slot, `Utility ${match[0]} has no bound consumer token`);
+      for (const utility of classUtilities(file.code)) {
+        const binding = input.classBindings?.[utility];
+        if (!binding || !input.tokens[binding] || !isRead(fill, binding)) add("K4", fill.slot, `Utility ${utility} has no bound consumer token`);
       }
       if (modules.some(module => FOREIGN_ICONS.test(module) || /\.svg(?:\?|$)/.test(module)) || GLYPHS.test(file.code)) add("K7", fill.slot, `Foreign icon import or text glyph in ${file.path}`);
       for (const match of file.code.matchAll(/<svg\b[^>]*>/g)) {
