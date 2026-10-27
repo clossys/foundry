@@ -24,10 +24,7 @@ const NON_RENDER_VALUES = new Set(["UNSTABLE_ToastQueue", "composeRenderProps"])
  * Known raw imports owned by other lanes, each to be replaced by a styled
  * component and then removed from this list (a stale entry fails the test).
  */
-const BASELINE: Readonly<Record<string, readonly string[]>> = {
-  // Mobile navigation sheet renders raw Dialog/Modal; nav shell is the frame lane's file.
-  "designer/src/shell/NavShell.tsx": ["Dialog", "DialogTrigger", "Modal", "ModalOverlay"],
-};
+const BASELINE: Readonly<Record<string, readonly string[]>> = {};
 
 /** Non-Aria headless engines: allowed only with a registered exception record for that component. */
 const OTHER_HEADLESS_ENGINES: readonly RegExp[] = [
