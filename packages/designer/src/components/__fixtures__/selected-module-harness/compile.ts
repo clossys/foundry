@@ -22,7 +22,7 @@ export async function compileFixture(manifest: ModuleManifest, entries: readonly
   const config = ts.readConfigFile(configPath, ts.sys.readFile);
   if (config.error) throw new Error(ts.flattenDiagnosticMessageText(config.error.messageText, "\n"));
   const parsed = ts.parseJsonConfigFileContent(config.config, ts.sys, root, undefined, configPath);
-  if (!parsed.options.strict || !parsed.options.noEmit || parsed.options.skipLibCheck !== false || parsed.options.module !== ts.ModuleKind.NodeNext || parsed.options.moduleResolution !== ts.ModuleResolutionKind.NodeNext || parsed.options.paths) throw new Error("fixture compiler configuration differs from strict NodeNext contract");
+  if (!parsed.options.strict || !parsed.options.noEmit || parsed.options.skipLibCheck !== false || parsed.options.module !== ts.ModuleKind.ESNext || parsed.options.moduleResolution !== ts.ModuleResolutionKind.Bundler || parsed.options.paths) throw new Error("fixture compiler configuration differs from strict bundler contract");
   const program = ts.createProgram({ rootNames: parsed.fileNames, options: parsed.options });
   const diagnostics = [...parsed.errors, ...ts.getPreEmitDiagnostics(program)].map(diagnostic => ({ code: diagnostic.code, message: ts.flattenDiagnosticMessageText(diagnostic.messageText, "\n"), ...(diagnostic.file ? { file: diagnostic.file.fileName, start: diagnostic.start } : {}) }));
   const result: CompileResult = { status: "refused", compiler: { version: ts.version, entrySha256: fileHash(resolve(packageRoot(resolveTypeScript()).root, "lib/typescript.js")) }, diagnostics, bundle: { version: "unavailable", entrySha256: "unavailable", errors: [] }, edges: [], bindings: manifest.bindings, evidenceClass: manifest.status };
@@ -52,5 +52,5 @@ export async function compileFixture(manifest: ModuleManifest, entries: readonly
 function resolveTypeScript(): string { return new URL(import.meta.resolve("typescript")).pathname; }
 
 export function strictConfig(files: readonly string[]): string {
-  return JSON.stringify({ compilerOptions: { target: "ES2022", strict: true, noEmit: true, module: "NodeNext", moduleResolution: "NodeNext", jsx: "react-jsx", skipLibCheck: false, types: [], lib: ["ES2022", "DOM", "DOM.Iterable"] }, files }, null, 2);
+  return JSON.stringify({ compilerOptions: { target: "ES2022", strict: true, noEmit: true, module: "ESNext", moduleResolution: "Bundler", jsx: "react-jsx", skipLibCheck: false, types: [], lib: ["ES2022", "DOM", "DOM.Iterable"] }, files }, null, 2);
 }
