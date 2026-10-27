@@ -139,7 +139,8 @@ describe("iconButtonLinkClassName", () => {
         "bg-surface-raised",
         "text-ink-primary",
         "border-line-base",
-        "hover:bg-surface-sunken",
+        // Hover takes the tonal step since 8909907f3 (it lightens on a dark ground).
+        "hover:bg-control-tonal-hover",
         "active:border-ink-primary",
         "focus-visible:outline-2",
         "focus-visible:outline-offset-2",
