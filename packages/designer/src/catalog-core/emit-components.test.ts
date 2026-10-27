@@ -80,6 +80,22 @@ describe("SYNTHETIC component code generation; no shipped conformance claims", (
     expect(() => assertComponentImportClosure(file('import { Button,, Link } from "react-aria-components";'), observed)).toThrow(/unavailable named import {2}from/);
     expect(() => assertComponentImportClosure(file('import { , } from "react-aria-components";'), observed)).toThrow(/unavailable named import {2}from/);
   });
+  it("exempts type-only bindings of a listed package from the runtime inventory and keeps value bindings fail-closed", () => {
+    const file = (content: string) => [{ path: "components/button/button.tsx", content }];
+    // Runtime inventories are Object.keys of the module: erased type names never appear in them.
+    const runtime = { "class-variance-authority": ["cva", "cx"], "react-aria-components": ["Button"] };
+    expect(() => assertComponentImportClosure(file('import type { VariantProps } from "class-variance-authority";'), runtime)).not.toThrow();
+    expect(() => assertComponentImportClosure(file('import { cva, type VariantProps } from "class-variance-authority";\nimport {\n  Button as ButtonPrimitive,\n  type ButtonProps as Props,\n} from "react-aria-components";'), runtime)).not.toThrow();
+    expect(() => assertComponentImportClosure(file('export type { ButtonProps } from "react-aria-components";'), runtime)).not.toThrow();
+    // The package itself must still be an observed dependency.
+    expect(() => assertComponentImportClosure(file('import type { ClassValue } from "clsx";'), runtime)).toThrow(/unavailable named import ClassValue from clsx/);
+    expect(() => assertComponentImportClosure(file('import { type ClassValue } from "clsx";'), runtime)).toThrow(/unavailable named import ClassValue from clsx/);
+    // A value binding stays checked against runtime names, beside or without a type binding.
+    expect(() => assertComponentImportClosure(file('import { VariantProps } from "class-variance-authority";'), runtime)).toThrow(/unavailable named import VariantProps from class-variance-authority/);
+    expect(() => assertComponentImportClosure(file('import { type VariantProps, cvb } from "class-variance-authority";'), runtime)).toThrow(/unavailable named import cvb from class-variance-authority/);
+    expect(() => assertComponentImportClosure(file('import { typeVariants } from "class-variance-authority";'), runtime)).toThrow(/unavailable named import typeVariants from class-variance-authority/);
+    expect(() => assertComponentImportClosure(file('import type { 1Bad } from "class-variance-authority";'), runtime)).toThrow(/unavailable named import 1Bad/);
+  });
   it("admits a namespace import only of an observed package dependency", () => {
     const file = (content: string) => [{ path: "components/button/button.tsx", content }];
     expect(() => assertComponentImportClosure(file('import * as React from "react";\nimport type * as Types from "react";'), { react: [] })).not.toThrow();
