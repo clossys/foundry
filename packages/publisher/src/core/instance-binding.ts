@@ -27,7 +27,10 @@ export interface InstanceBindingBase {
   readonly frame: { readonly leaf: `frames.${string}`; readonly config?: string;
     /** Consumer references for declared host-content slots; values stay in the original runtime. */
     readonly content?: Readonly<Record<string, ContentRef>>;
-    readonly slotFills?: { readonly consent?: SectionFill; readonly context?: SectionFill } };
+    readonly slotFills?: { readonly consent?: SectionFill; readonly context?: SectionFill };
+    /** One chosen member per axis (`{ layout: "standard" }` selects `layout.standard`). It narrows the
+     * verified frame descriptor's members and never adds one; absent, every descriptor member projects. */
+    readonly members?: Readonly<Record<string, string>> };
   /** Required even though the early draft illustrated an optional config. */
 
   readonly fills: Readonly<Record<string, readonly SectionFill[]>>;
@@ -57,7 +60,9 @@ export type BindingLeafStatus = "draft" | "stable" | "held" | "deprecated";
 export interface BindingFrameLeaf {
   readonly id: `frames.${string}`;
   readonly status: BindingLeafStatus;
-  readonly contract: { readonly surface: "site" | "app" | "both"; readonly configs: readonly string[]; readonly stage?: FrameStageContract };
+  readonly contract: { readonly surface: "site" | "app" | "both"; readonly configs: readonly string[]; readonly stage?: FrameStageContract;
+    /** Closed `axis.member` names a binding may select from; absent, no member selection validates. */
+    readonly members?: readonly string[] };
 }
 export interface BindingSectionLeaf {
   readonly id: SectionLeafId;

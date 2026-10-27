@@ -253,3 +253,51 @@ describe("LK11 actual renderer source, conservative closed syntax", () => {
     expect(codes(run(f))).toContain("LK11");
   });
 });
+
+describe("frame member selection narrows the frame's declared members, one per axis", () => {
+  const SITE_MEMBERS = ["chrome.full", "chrome.minimal", "footer-placement.flow", "footer-placement.overlay"];
+  const selecting = (members: unknown, declared: readonly string[] | null = SITE_MEMBERS, config?: string) => {
+    const f = instanceFixture();
+    if (declared) (f.registries.frames[0]!.contract as { members?: readonly string[] }).members = declared;
+    if (config !== undefined) {
+      f.binding.frame.config = config;
+      (f.registries.frames[0]!.contract as { configs: string[] }).configs.push(config);
+      f.put("frames.site-shell", config, { groundRead: "leadGround", headerGround: "glass" });
+    }
+    (f.binding.frame as Record<string, unknown>).members = members;
+    return f;
+  };
+  it("accepts a selection of declared members, one per axis", () => {
+    const f = selecting({ chrome: "minimal", "footer-placement": "flow" });
+    expect(run(f)).toEqual({ staticStatus: "valid", findings: [], pendingChecks: ["LK12"] });
+  });
+  it.each([
+    ["an unknown axis", { density: "compact" }, "Frame member axis is not declared by the frame"],
+    ["an unknown member on a known axis", { chrome: "floating" }, "Frame member is not declared on its axis"],
+    ["a fully qualified member as the choice", { chrome: "chrome.minimal" }, "Frame member is not declared on its axis"],
+  ])("refuses %s with LK1", (_, members, message) => {
+    expect(run(selecting(members))).toEqual({ staticStatus: "refused", findings: [{ code: "LK1", path: "frame", message }], pendingChecks: ["LK12"] });
+  });
+  it.each([
+    ["a non-string choice", { chrome: 1 }],
+    ["an array", ["chrome.minimal"]],
+    ["an empty selection", {}],
+    ["an axis that addresses a member", { "chrome.minimal": "minimal" }],
+    ["an empty choice", { chrome: "" }],
+  ])("refuses %s as an invalid frame binding", (_, members) => {
+    expect(run(selecting(members)).findings).toEqual([{ code: "LK1", path: "frame", message: "Invalid frame binding" }]);
+  });
+  it("refuses a choice that conflicts with the member the frame config already selects", () => {
+    expect(run(selecting({ chrome: "minimal" }, SITE_MEMBERS, "chrome.full")).findings).toEqual([{ code: "LK1", path: "frame", message: "Frame member conflicts with the frame config" }]);
+    expect(run(selecting({ chrome: "full" }, SITE_MEMBERS, "chrome.full")).staticStatus).toBe("valid");
+  });
+  it("fails closed when the frame registry declares no members to select from", () => {
+    expect(run(selecting({ chrome: "minimal" }, null)).findings).toEqual([{ code: "LK1", path: "frame", message: "Frame member selection requires the frame's declared members" }]);
+  });
+  it("keeps a binding without a selection valid whether or not members are declared", () => {
+    const declared = instanceFixture();
+    (declared.registries.frames[0]!.contract as { members?: readonly string[] }).members = SITE_MEMBERS;
+    expect(run(declared)).toEqual(run(instanceFixture()));
+    expect(run(instanceFixture()).staticStatus).toBe("valid");
+  });
+});
