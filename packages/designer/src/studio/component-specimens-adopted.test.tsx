@@ -13,6 +13,7 @@ import { loadCatalogBundles } from "../catalog-bundles.js";
 import { loadComponentCompositionRules } from "../catalog-core/component-compositions.js";
 import type { CompositeResolved, ResolvedComponent } from "../catalog-core/index.js";
 import { componentSpecimenPreview } from "./component-specimens.js";
+import { importShadcnCharts, materializeShadcnChart, pinnedShadcnChartsInput } from "../importers/shadcn-charts.js";
 import { specimenDataset as d } from "./specimen-dataset.js";
 
 const hostModules = { "@clossys/designer/components": components, "@clossys/designer/charts": charts, "@clossys/designer/shell": shell };
@@ -132,6 +133,47 @@ it("binds and server-renders every adopted shadcn@aria leaf from its vendored so
   errors.mockRestore();
 }, 120_000);
 
+it("fills every shadcn@aria specimen from the dataset, never from its leaf id or variant keys", () => {
+  const errors = vi.spyOn(console, "error").mockImplementation(() => {});
+  const { leaves, modules } = adoptedShadcnLeaves();
+  const specimens = componentSpecimenPreview({ modules: { ...hostModules, ...modules } });
+  const fed = { "components.banner": d.text.banner, "components.calendar": d.dates.calendar["aria-label"], "components.combo-box": d.combobox.placeholder, "components.select": d.select.label, "components.skeleton": d.skeleton["aria-label"], "components.toggle-group": d.toggles.items[0].label } as const;
+  const faults: string[] = [];
+  for (const { leaf, profile } of leaves) {
+    const html = renderToString(<>{specimens.preview(leaf, profile)}</>);
+    const members = Object.keys((profile.components.components[leaf] as unknown as { propMap: Record<string, unknown> }).propMap);
+    for (const label of [leaf, ...members]) if (html.includes(`>${label}<`)) faults.push(`${leaf} draws "${label}"`);
+    const text = (fed as Record<string, string>)[leaf];
+    if (text !== undefined && !html.includes(text)) faults.push(`${leaf} lacks "${text}"`);
+  }
+  expect(faults).toEqual([]);
+  errors.mockRestore();
+}, 120_000);
+
+it("draws every adopted shadcn-charts leaf as a live Recharts chart of the dataset series", async () => {
+  const result = importShadcnCharts(pinnedShadcnChartsInput());
+  const chartFills = result.fills.map(doc => Object.values(doc.components)[0]! as unknown as ResolvedComponent["descriptor"] & { slot: string; impl: { entry: string; export: string } });
+  expect(chartFills.map(fill => fill.slot).sort()).toEqual(["components.chart-area", "components.chart-bar", "components.chart-line"]);
+  const modules: Record<string, Record<string, unknown>> = {};
+  for (const fill of chartFills) modules[fill.impl.entry] = vendoredModule(materializeShadcnChart(result, fill.slot.slice("components.".length)), fill.impl.entry, () => components);
+  const specimens = componentSpecimenPreview({ modules: { ...hostModules, ...modules } });
+  const fed = { "components.chart-area": d.charts.area.series, "components.chart-bar": d.charts.bar.series, "components.chart-line": d.charts.line.series } as const;
+  const marks = { "components.chart-area": ".recharts-area-area", "components.chart-bar": ".recharts-bar-rectangle", "components.chart-line": ".recharts-line-curve" } as const;
+  for (const fill of chartFills) {
+    const component = { slot: fill.slot, originKind: "adopted", origin: { kind: "adopted", source: "shadcn-charts" }, impl: fill.impl, propMap: fill.propMap, reads: { tokens: {}, assets: [], components: [] }, descriptor: { ...fill, source: "consumer-app" } } as unknown as ResolvedComponent;
+    const profile = { selectionHash: `selection-${fill.slot}`, components: { components: { [fill.slot]: component } } } as unknown as CompositeResolved;
+    const { container } = render(<>{specimens.preview(fill.slot, profile)}</>);
+    const leaf = fill.slot as keyof typeof marks;
+    await waitFor(() => expect(container.querySelectorAll(`svg.recharts-surface ${marks[leaf]}`).length, leaf).toBeGreaterThan(0));
+    expect(container.querySelector("[data-specimen-unavailable], [data-specimen-error]"), leaf).toBeNull();
+    for (const line of fed[leaf]) expect(container.querySelector("[data-slot=chart] style")?.textContent, leaf).toContain(`--color-${line.name}:`);
+    expect(container.innerHTML, leaf).not.toContain(`>${leaf}<`);
+    cleanup();
+  }
+  // Recharts leaves its own aria-hidden text-measurement span on <body>; later tests count hidden body children.
+  document.getElementById("recharts_measurement_span")?.remove();
+}, 120_000);
+
 it("draws the non-modal shadcn@aria overlays open in the browser, inside the specimen cell", async () => {
   const errors = vi.spyOn(console, "error").mockImplementation(() => {});
   const { leaves, modules } = adoptedShadcnLeaves();
@@ -217,7 +259,7 @@ it("draws the shadcn@aria DialogContent open in its cell, without hiding, scroll
   expect(document.activeElement).toBe(outside);
   // Interaction: the cell opens the vendored Dialog itself, the real modal, and Escape closes it again.
   const user = userEvent.setup();
-  await user.click(within(host).getByRole("button", { name: "Open dialog" }));
+  await user.click(within(host).getByRole("button", { name: d.dialog.trigger }));
   const modal = await waitFor(() => {
     const found = document.querySelector<HTMLElement>("[data-slot='dialog-overlay'] [data-slot='dialog-content'] [data-slot='dialog']");
     expect(found).not.toBeNull();
@@ -255,7 +297,7 @@ it("keeps the held-open tooltip specimen from swallowing Escape for the dialog i
   window.removeEventListener("keydown", listen);
   // The real modal opened from the dialog cell closes on Escape.
   const host = container.querySelector<HTMLElement>("[data-specimen-contained-host='dialog']")!;
-  await user.click(within(host).getByRole("button", { name: "Open dialog" }));
+  await user.click(within(host).getByRole("button", { name: d.dialog.trigger }));
   const modal = await waitFor(() => {
     const found = document.querySelector<HTMLElement>("[data-slot='dialog-overlay'] [data-slot='dialog']");
     expect(found).not.toBeNull();

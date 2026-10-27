@@ -632,6 +632,8 @@ export const specimenDataset = {
   nativeAction: { type: "button" as const },
   color: { label: "Chart color", defaultValue: chartSwatches[0]!, swatches: chartSwatches },
   charts: {
+    /** Row-shaped chart libraries (Recharts): the field each row names its category by, and the frame drawn before measuring. */
+    rows: { categoryKey: "category", frame: { width: 320, height: 200 } },
     area: { title: "Weekly visits", x: MONTHS.slice(0, 4), series: [{ name: "Visits", values: visits }, { name: "Returns", values: returns }] },
     bar: { title: "Orders by region", categories: ["North", "South", "East"], series: [{ name: "Orders", values: series(3, 6, 20) }] },
     heatmap: { title: "Activity by day", rows: ["Mon", "Tue", "Wed"], columns: ["Morning", "Midday", "Evening"], values: [series(3, 0, 6), series(3, 0, 6), series(3, 0, 6)] },

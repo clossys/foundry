@@ -263,7 +263,42 @@ function sourceSample(key: string, exports: Namespace): ComponentSpecimenSample 
       // The module's own DialogContent is the inner RAC Dialog without ModalOverlay/Modal: it draws open, in place.
       const found = parts("DialogContent", "DialogHeader", "DialogTitle", "DialogDescription"); if (!found) return undefined;
       const [Content, Header, Title, Description] = found as [Renderable, Renderable, Renderable, Renderable];
-      return { props: {}, children: <Header><Title>{s[key].title}</Title><Description>{s[key].content}</Description></Header>, host: containedDialog(Content) };
+      return { props: {}, children: <Header><Title>{s[key].title}</Title><Description>{s[key].content}</Description></Header>, host: containedDialog(Content, s[key].trigger) };
+    }
+    case "components/banner/alert.tsx#Alert": {
+      const found = parts("AlertDescription"); if (!found) return undefined;
+      const [Description] = found as [Renderable];
+      return { props: {}, children: <Description>{s[key].text}</Description> };
+    }
+    // The wrapper draws its own month grid when it has no children.
+    case "components/calendar/calendar.tsx#Calendar": return { props: { ...s[key] } };
+    case "components/combo-box/combobox.tsx#Combobox": {
+      const found = parts("ComboboxInput", "ComboboxContent", "ComboboxList", "ComboboxItem"); if (!found) return undefined;
+      const [Input, Content, List, Item] = found as [Renderable, Renderable, Renderable, Renderable];
+      const { label, placeholder, options } = s[key];
+      return { props: { "aria-label": label }, children: [<Input key="input" placeholder={placeholder} />, <Content key="content"><List>{options.map(option => <Item key={option.id} id={option.id}>{option.label}</Item>)}</List></Content>] };
+    }
+    case "components/select/select.tsx#Select": {
+      const found = parts("SelectTrigger", "SelectValue", "SelectContent", "SelectItem"); if (!found) return undefined;
+      const [Trigger, Value, Content, Item] = found as [Renderable, Renderable, Renderable, Renderable];
+      const { label, placeholder, options, defaultSelectedKey } = s[key];
+      return { props: { "aria-label": label, placeholder, defaultSelectedKey }, children: [<Trigger key="trigger"><Value /></Trigger>, <Content key="content">{options.map(option => <Item key={option.id} id={option.id}>{option.label}</Item>)}</Content>] };
+    }
+    case "components/separator/separator.tsx#Separator":
+    case "components/skeleton/skeleton.tsx#Skeleton": return { props: { ...s[key] } };
+    case "components/toggle-group/toggle-group.tsx#ToggleGroup": {
+      const found = parts("ToggleGroupItem"); if (!found) return undefined;
+      const [Item] = found as [Renderable];
+      const { label, items, defaultSelectedKeys } = s[key];
+      return { props: { "aria-label": label, defaultSelectedKeys }, children: items.map(item => <Item key={item.id} id={item.id}>{item.label}</Item>) };
+    }
+    // shadcn-charts take Recharts rows: one per category, one field per series, drawn as a static picture.
+    case "components/chart-area/chart-area.tsx#ChartArea":
+    case "components/chart-bar/chart-bar.tsx#ChartBar":
+    case "components/chart-line/chart-line.tsx#ChartLine": {
+      const { rows: { categoryKey, frame }, categories, series } = s[key];
+      const data = categories.map((category, index) => ({ [categoryKey]: category, ...Object.fromEntries(series.map(line => [line.name, line.values[index]!])) }));
+      return { props: { data, categoryKey, series: series.map(line => ({ key: line.name, label: line.name })), initialDimension: frame, isAnimationActive: false } };
     }
     case "components/slider/slider.tsx#Slider": return { props: { "aria-label": s[key].label, defaultValue: s[key].defaultValue } };
     case "components/table/table.tsx#Table": {
