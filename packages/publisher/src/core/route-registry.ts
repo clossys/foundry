@@ -94,6 +94,8 @@ export function routeServerLoader(route: RouteRegistration): RouteSourceExport |
   const c = route?.composition, loader: unknown = c?.loader;
   if (!loader || typeof loader !== "object" || Array.isArray(loader) || !source(loader as RouteSourceExport)) return undefined;
   const ref = loader as RouteSourceExport;
+  // Both fields are required strings here; a missing export is never read as a name.
+  if (typeof ref.file !== "string" || typeof ref.export !== "string") return undefined;
   if (!/[^/]\.[cm]?[jt]sx?$/.test(ref.file) || ref.file.endsWith(".d.ts") || NEXT_SPECIAL_FILE.test(ref.file)) return undefined;
   // The entry becomes the emitted JSX server page, so it must be a JSX module.
   if (route.entry?.export !== "default" || typeof route.entry.file !== "string" || !/\.[jt]sx$/.test(route.entry.file) || route.entry.file === c.source?.file) return undefined;

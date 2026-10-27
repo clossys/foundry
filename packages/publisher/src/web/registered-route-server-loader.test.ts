@@ -114,7 +114,9 @@ describe("registered server data loader (synthetic fixtures; no runtime clearanc
     await write(route.entry.file, SERVER_PAGE.replace("loadTools as registeredLoader", "loadOther as registeredLoader"));
     expect(refusedAt((await check(route)).findings, route.entry.file)).toBe(true);
     // A registration that names the client page as its loader never reaches the checker's admission.
-    expect((await check(loaded({ file: "generated/example.tools.tsx", export: "default" }))).findings).toContainEqual(expect.objectContaining({ code: "RR1" }));
+    const misbound = loaded({ file: "generated/example.tools.tsx", export: "default" }), misboundRegistry = { version: 1 as const, consumer: "example", routes: [misbound] };
+    await write("routes.json", JSON.stringify(misboundRegistry)); await write("routes.ts", emitRegisteredRouteRegistryModule(misboundRegistry));
+    expect((await check(misbound)).findings).toContainEqual(expect.objectContaining({ code: "RR1" }));
   }, SCAN_TIMEOUT);
 
   it("refuses an extra import, fetch, dynamic import or ad hoc endpoint beside the server page", async () => {
@@ -130,11 +132,10 @@ describe("registered server data loader (synthetic fixtures; no runtime clearanc
       await write(route.entry.file, page);
       expect(refusedAt((await check(route)).findings, route.entry.file), page).toBe(true);
     }
-    // Fetch inside the registered loader module is consumer data access; an extra
-    // route handler or layout beside the page stays refused as before.
+    // A loader never admits an ad hoc layout beside the server page.
     await write(route.entry.file, SERVER_PAGE);
-    await write("app/tools/tools/route.ts", "export async function GET() { return Response.json({ count: 1 }); }\n");
-    expect((await check(route)).findings.some(finding => finding.file === "app/tools/tools/route.ts")).toBe(true);
+    await write("app/tools/tools/layout.tsx", "export default function Layout({ children }) {\n  return <section>{children}</section>;\n}\n");
+    expect((await check(route)).findings.some(finding => finding.file === "app/tools/tools/layout.tsx")).toBe(true);
   }, SCAN_TIMEOUT);
 
   it("refuses escaped identifiers, eval and computed access that could forge the loader name", async () => {
