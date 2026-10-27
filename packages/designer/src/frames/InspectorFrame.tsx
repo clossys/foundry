@@ -3,6 +3,10 @@ import { cx } from "../components/internal/cx.js";
 import { Drawer } from "../blocks/Drawer.js";
 import { ResizablePane } from "../blocks/ResizablePane.js";
 import { Button } from "../components/Button.js";
+import { dsAttrs } from "../catalog-core/provenance-attrs.js";
+
+/** DOM provenance (WIRE-3 D1): this frame root stamps its leaf and fill. */
+const FRAME_STAMP = dsAttrs("frames", "frames.inspector", "foundry/frames.inspector");
 
 export type InspectorFramePresentation = "docked" | "overlay";
 
@@ -45,7 +49,7 @@ export function InspectorFrame({ label, handleLabel, closeLabel, openLabel, pres
   if (presentation === "overlay") return <Drawer placement="end" wide="sheet" heading={label} closeLabel={closeLabel}
     isOpen={!isCollapsed} onOpenChange={open => changeCollapsed(!open)} className={className}
     trigger={<Button variant="secondary" size="sm" aria-expanded={!isCollapsed}>{openLabel}</Button>}>{children}</Drawer>;
-  return <aside aria-label={label} hidden={isCollapsed} data-collapsed={isCollapsed} className={cx("h-full min-h-0 shrink-0", className)}>
+  return <aside {...FRAME_STAMP} aria-label={label} hidden={isCollapsed} data-collapsed={isCollapsed} className={cx("h-full min-h-0 shrink-0", className)}>
     {isCollapsed ? null : <ResizablePane min={min} max={max} defaultValue={defaultValue} value={value} step={step} label={label} handleLabel={handleLabel}
       handleEdge="start" onChange={onChange} className="h-full min-h-0 rounded-none border-0 border-s border-line-base p-sm">{children}</ResizablePane>}
   </aside>;

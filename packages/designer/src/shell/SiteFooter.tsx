@@ -3,6 +3,10 @@ import { cx } from "../components/internal/cx.js";
 import { SITE_CHROME_GROUND_CLASSES, siteChromeHasBorder, type SiteChromeGround } from "./internal/shell-ground.js";
 import { BADGE_INSET_SHARE, BADGE_RADIUS_SHARE } from "./badge-plate.js";
 import { UI_BORDER_HAIRLINE, UI_BRANDMARK_HEIGHT_SM, UI_LAYOUT_TAP_TARGET, UI_WIDTH_PAGE_PADDING_X, UI_Z_SHELL } from "./internal/shell-vars.js";
+import { dsAttrs } from "../catalog-core/provenance-attrs.js";
+
+/** DOM provenance (WIRE-3 D1): this frame root stamps its leaf and fill. */
+const FRAME_STAMP = dsAttrs("frames", "frames.site-footer", "foundry/frames.site-footer");
 
 export interface SiteFooterProps extends Omit<HTMLAttributes<HTMLElement>, "children"> {
   /**
@@ -44,6 +48,7 @@ function SiteFooterRoot({ columns, secondary, ground = "base", rule = "none", cl
 
   return (
     <footer
+      {...FRAME_STAMP}
       {...rest}
       data-footer-root=""
       className={cx("site-footer-dark", colors.surface, colors.primary, "py-lg", bordered ? cx("border-t", colors.border) : topRule ? "border-t border-line-base" : "", className)}

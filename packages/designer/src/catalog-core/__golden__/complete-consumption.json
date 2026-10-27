@@ -2,9 +2,9 @@
   "counts": {
     "assetEdges": 4,
     "assets": 48,
-    "members": 652,
+    "members": 655,
     "orphanEdges": 0,
-    "resolvedMembers": 651,
+    "resolvedMembers": 654,
     "tokenEdges": 24,
     "tokens": 55,
     "unusedAssets": 46,
@@ -776,9 +776,9 @@
       "assets": [],
       "consumedBy": [],
       "id": "tokens.region-width",
-      "resolved": 4,
+      "resolved": 7,
       "tokens": [],
-      "total": 4
+      "total": 7
     },
     {
       "assets": [],

@@ -1764,6 +1764,39 @@ export const TOKEN_GUIDANCE: Readonly<Record<string, TokenGuidance>> = {
       },
       "specimen": "size"
   },
+  "--ui-layout-inspector-w": {
+      "purpose": "The inspector width sets the default size of a resizable supporting inspector region.",
+      "use": "Use inspector-w as the starting width of a frame's resizable inspector panel.",
+      "misuse": "Do not use the inspector default as a fixed width; the person can resize the panel between its minimum and maximum.",
+      "application": {
+          "cssProperty": "inline-size",
+          "valueType": "length",
+          "context": "Resizable inspector panel default width; resizing stays within inspector-min-w and inspector-max-w."
+      },
+      "specimen": "size"
+  },
+  "--ui-layout-inspector-min-w": {
+      "purpose": "The inspector minimum width is the narrowest a resizable inspector region may become.",
+      "use": "Use inspector-min-w as the lower resize bound of a frame's inspector panel.",
+      "misuse": "Do not apply the inspector minimum to content that should collapse or hide on narrow viewports.",
+      "application": {
+          "cssProperty": "min-inline-size",
+          "valueType": "length",
+          "context": "Resizable inspector panel lower resize bound."
+      },
+      "specimen": "size"
+  },
+  "--ui-layout-inspector-max-w": {
+      "purpose": "The inspector maximum width caps how wide a resizable inspector region may grow.",
+      "use": "Use inspector-max-w as the upper resize bound of a frame's inspector panel and of columns that share its measure.",
+      "misuse": "Do not use the inspector maximum as a minimum or as a page content measure.",
+      "application": {
+          "cssProperty": "max-inline-size",
+          "valueType": "length",
+          "context": "Resizable inspector panel upper resize bound."
+      },
+      "specimen": "size"
+  },
 };
 
 /** Explicit navigation only: every property is a leaf exactly once. */
@@ -1796,7 +1829,7 @@ export const TOKEN_DISPLAY_GROUPS: readonly TokenDisplayGroup[] = [
   ] },
   { id: "sizing", label: "Sizing", families: [
     { id: "content-widths", label: "Content widths", properties: ["--ui-width-content-max", "--ui-width-display-max", "--ui-width-hero-wide", "--ui-width-prose-max", "--ui-width-wide-max", "--ui-width-form-max", "--ui-width-notice-max"] },
-    { id: "app-regions", label: "App regions", properties: ["--ui-layout-dock-min-block", "--ui-layout-dock-default-block", "--ui-layout-dock-max-block", "--ui-layout-sidebar-w", "--ui-layout-sidebar-rail-w", "--ui-layout-aside-w", "--ui-layout-drawer-w", "--ui-layout-toast-w", "--ui-table-max-block-default"] },
+    { id: "app-regions", label: "App regions", properties: ["--ui-layout-dock-min-block", "--ui-layout-dock-default-block", "--ui-layout-dock-max-block", "--ui-layout-sidebar-w", "--ui-layout-sidebar-rail-w", "--ui-layout-aside-w", "--ui-layout-inspector-w", "--ui-layout-inspector-min-w", "--ui-layout-inspector-max-w", "--ui-layout-drawer-w", "--ui-layout-toast-w", "--ui-table-max-block-default"] },
     { id: "interaction-target", label: "Interaction target", properties: ["--ui-layout-tap-target", "--ui-control-h-sm", "--ui-control-h-md", "--ui-control-h-lg", "--ui-control-row-h", "--ui-control-mark", "--ui-control-switch-w", "--ui-control-switch-h", "--ui-control-switch-thumb"] },
     { id: "row-height", label: "Row height", properties: ["--ui-density-row", "--ui-table-row-comfortable", "--ui-table-row-compact"] },
     { id: "icon-sizes", label: "Icon sizes", properties: ["--ui-icon-sm", "--ui-icon-md", "--ui-icon-lg"] },
