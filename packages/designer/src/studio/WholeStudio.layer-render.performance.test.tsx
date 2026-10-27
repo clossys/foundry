@@ -22,13 +22,15 @@ vi.mock("../catalog-core/index.js", async importOriginal => {
   return { ...actual, resolve: vi.fn(actual.resolve) };
 });
 
-/** Milliseconds per layer switch and rendered elements after it (measured at b3a66e74c, see the PERF-2 receipt). */
+/** Milliseconds per layer switch and rendered elements after it (PERF-2 receipt: b3a66e74c spent 1.8-2.0 s on
+ * components and sections re-resolving the whole library once per board; now about 0.2 and 0.45 s). */
 const BUDGET: Readonly<Record<LayerId, { ms: number; nodes: number }>> = {
-  tokens: { ms: 800, nodes: 12_160 }, assets: { ms: 450, nodes: 1_559 }, components: { ms: 2_600, nodes: 1_461 },
-  sections: { ms: 2_400, nodes: 3_651 }, frames: { ms: 800, nodes: 921 },
+  tokens: { ms: 800, nodes: 12_160 }, assets: { ms: 450, nodes: 1_559 }, components: { ms: 600, nodes: 1_461 },
+  sections: { ms: 900, nodes: 3_651 }, frames: { ms: 400, nodes: 921 },
 };
-/** Whole-library resolves one full traversal of the five layers may run. */
-const RESOLVES_PER_TRAVERSAL = 57;
+/** Whole-library resolves one full traversal may run: the provider's evaluation is shared by every board, and a
+ * layer switch changes no library input (b3a66e74c ran 57). */
+const RESOLVES_PER_TRAVERSAL = 0;
 
 const wholeLabels: CompositeStudioLabels = { ...labels, whole: { signoff: "W-signoff", proposed: "W-proposed", contract: "W-contract", contentSlots: "W-slots", configurations: "W-config", unresolved: "W-unresolved", unassessed: "W-unassessed" } };
 let fixture: PackageSurfaceLibrary;
