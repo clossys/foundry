@@ -63,6 +63,7 @@
       "props": [
         "children",
         "className",
+        "density",
         "dismissLabel",
         "onDismiss",
         "variant"

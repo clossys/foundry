@@ -2,9 +2,11 @@ import { Icon } from "./Icon.js";
 import { useGlyph } from "./glyph-context.js";
 import type { CSSProperties, HTMLAttributes, ReactNode } from "react";
 import { Button } from "react-aria-components";
-import { BANNER_DISMISS_CLASSES, bannerClassName } from "./Banner.server.js";
+import { BANNER_DISMISS_CLASSES, bannerClassName, bannerStyle } from "./Banner.server.js";
 
 export type BannerVariant = "info" | "success" | "warning" | "danger";
+/** `compact` tightens the padding and gap and caps the inline size at the notice measure token (`--ui-width-notice-max`). */
+export type BannerDensity = "default" | "compact";
 
 export interface BannerProps extends Omit<HTMLAttributes<HTMLDivElement>, "role" | "children"> {
   /** @default "info" */
@@ -25,6 +27,8 @@ export interface BannerProps extends Omit<HTMLAttributes<HTMLDivElement>, "role"
   onDismiss?: () => void;
   /** Accessible label for the dismiss button. @default "Dismiss" */
   dismissLabel?: string;
+  /** `compact` is a bounded notice: tighter spacing tokens and a notice-measure inline-size cap. @default "default" */
+  density?: BannerDensity;
   /** Merged onto the outer region's inline style. */
   style?: CSSProperties;
 }
@@ -67,6 +71,7 @@ export function Banner({
   children,
   onDismiss,
   dismissLabel = "Dismiss",
+  density = "default",
   className,
   style,
   ...rest
@@ -78,8 +83,8 @@ export function Banner({
       {...rest}
       role={isAssertive ? "alert" : "status"}
       aria-live={isAssertive ? "assertive" : "polite"}
-      className={bannerClassName(variant, className)}
-      style={style}
+      className={bannerClassName(variant, className, density)}
+      style={bannerStyle(density, style)}
     >
       <div className="flex-1">{children}</div>
       {onDismiss ? (

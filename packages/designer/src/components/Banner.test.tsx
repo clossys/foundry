@@ -85,4 +85,19 @@ describe("Banner", () => {
     const region = screen.getByRole("status");
     expect(region.style.marginTop).toBe("8px");
   });
+  it("compact density: a bounded, tighter status region capped at the notice measure token", () => {
+    render(<Banner density="compact" style={{ marginTop: "8px" }}>Saved.</Banner>);
+    const region = screen.getByRole("status");
+    expect(region).toHaveClass("px-sm", "py-xs", "gap-xs");
+    expect(region).not.toHaveClass("p-md");
+    expect(region.style.maxInlineSize).toBe("var(--ui-width-notice-max, 24rem)");
+    expect(region.style.marginTop).toBe("8px");
+  });
+
+  it("default density keeps the full-measure region", () => {
+    render(<Banner>Saved.</Banner>);
+    const region = screen.getByRole("status");
+    expect(region).toHaveClass("p-md", "gap-sm");
+    expect(region.style.maxInlineSize).toBe("");
+  });
 });

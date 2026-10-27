@@ -43,7 +43,7 @@ export const FOUNDRY_COMPONENT_MAP: Readonly<Record<string, FoundryComponentMapp
   tree: component("Tree", { selection: "", expand: "" }, ["children", "selectionMode", "selectedKeys", "onSelectionChange", "expandedKeys", "onExpandedChange", "disabledKeys", "aria-label", "aria-labelledby", "className"], { assets: ["assets.icon-chevron-right"], ...craft("tree") }),
   avatar: component("Avatar", { ...sizes, "content.image": ".src", "content.initials": ".alt" }, ["alt", "src", "size", "className"]),
   badge: component("Badge", dimension("tone", "variant", ["neutral", "danger"]), ["variant", "children", "className"]),
-  banner: component("Banner", dimension("tone", "variant", ["info", "danger"]), ["variant", "children", "onDismiss", "dismissLabel", "className"]),
+  banner: component("Banner", dimension("tone", "variant", ["info", "danger"]), ["variant", "children", "onDismiss", "dismissLabel", "density", "className"]),
   breadcrumbs: component("Breadcrumb", { current: "" }, ["children", "className", "aria-label"], { notes: ["No collapsed trail API is exported."] }),
   button: component("Button", { ...dimension("variant", "variant", ["primary", "secondary", "ghost", "danger", "outline"]), ...sizes, ...dimension("ground", "ground", ["base"]), "shape.text": "", "shape.icon-only": "=IconButton", "state.hover": "[data-hovered]", "state.focus-visible": "[data-focus-visible]", "state.disabled": ".isDisabled" }, ["variant", "size", "ground", "children", "isDisabled", "isPending", "onPress", "className", "aria-label", "slot"], { composes: ["components.icon"] }),
   card: component("Card", {}, ["variant", "ground", "children", "className"]),
