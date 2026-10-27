@@ -1,6 +1,5 @@
 import type { CSSProperties, HTMLAttributes, ReactNode } from "react";
-import { CardlessPageLayout } from "../internal/PageLayout.js";
-import { ViewSection } from "./internal/ViewSection.js";
+import { CardlessPageLayout, PageColumn } from "../internal/PageLayout.js";
 import { assertViewContentRoot } from "../internal/viewContentRoot.js";
 import { renderViewLinks, type ViewLinksInput } from "../internal/ViewLinks.js";
 import { renderReference } from "../internal/renderReference.js";
@@ -62,9 +61,9 @@ export function StatusView({ status, subtitle, reference, action, notes, routes,
   const referenceLine = renderReference(reference);
   const supportingCopy = referenceLine === null ? subtitle : <>{subtitle}{referenceLine}</>;
   return (
-    <ViewSection {...rest} measure="form" centered className={className} style={style}>
+    <PageColumn {...rest} measure="form" centered className={className} style={style}>
       <CardlessPageLayout title={status} subtitle={supportingCopy} action={action} notes={notes} />
       {destinations}
-    </ViewSection>
+    </PageColumn>
   );
 }

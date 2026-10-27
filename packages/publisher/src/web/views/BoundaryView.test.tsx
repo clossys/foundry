@@ -12,7 +12,7 @@ import { BoundaryView } from "./BoundaryView.js";
 
 afterEach(cleanup);
 
-const ALLOWED_IMPORT = /^(react|@clossys\/designer\/.+\/server|\.\/ErrorView\.js|\.\.\/internal\/PageLayout\.js|\.\/internal\/ViewSection\.js|\.\.\/internal\/viewChromeGround\.js|\.\.\/internal\/viewContentRoot\.js)$/;
+const ALLOWED_IMPORT = /^(react|@clossys\/designer\/.+\/server|\.\/ErrorView\.js|\.\.\/internal\/PageLayout\.js|\.\.\/internal\/viewChromeGround\.js|\.\.\/internal\/viewContentRoot\.js)$/;
 
 /**
  * Every module specifier named by an `import` statement (bare, type, or

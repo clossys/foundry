@@ -5,7 +5,7 @@ import { ArticleBody, DetailView, PageHeader } from "@clossys/designer/blocks/se
 import { SiteFooter, SiteHeader } from "@clossys/designer/shell/server";
 import { assertViewContentRoot } from "../internal/viewContentRoot.js";
 import { siteHeaderPresentation, type SiteChromeGround } from "../internal/viewChromeGround.js";
-import { PAGE_COLUMN_CLASSES, PageLayout, pageColumnStyle } from "../internal/PageLayout.js";
+import { PAGE_COLUMN_CLASSES, PageColumn, PageLayout } from "../internal/PageLayout.js";
 import { renderViewLinks, type ViewLinksInput } from "../internal/ViewLinks.js";
 import { RenderError } from "../../internal/errors.js";
 import { renderStructuredDocument } from "../../document/render.js";
@@ -218,12 +218,12 @@ export function LegalView({
 
   if (framed) {
     return (
-      <div {...rest} className={mergeUiClasses(PAGE_COLUMN_CLASSES, className)} style={pageColumnStyle("prose", style)}>
+      <PageColumn {...rest} measure="prose" className={className} style={style}>
         <PageLayout title={title} subtitle={summaryText} notes={references === null ? undefined : <div className="w-full text-start">{references}</div>}>
           {dates}
           <ArticleBody>{rendered.element}</ArticleBody>
         </PageLayout>
-      </div>
+      </PageColumn>
     );
   }
 

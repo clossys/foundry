@@ -7,6 +7,20 @@ import { ErrorView } from "./ErrorView.js";
 
 afterEach(cleanup);
 
+/**
+ * The view's one Section root (`sections.band`) and the error page's own content root inside it:
+ * the Section's content column holds exactly the body, which keeps the consumer's className and style.
+ */
+function body(container: HTMLElement): HTMLElement {
+  expect(container.children).toHaveLength(1);
+  const section = container.firstElementChild as HTMLElement;
+  expect(section.matches("section[data-designer-section-frame]")).toBe(true);
+  expect(section.children).toHaveLength(1);
+  const column = section.firstElementChild as HTMLElement;
+  expect(column.children).toHaveLength(1);
+  return column.firstElementChild as HTMLElement;
+}
+
 describe("ErrorView", () => {
   it("renders the status as real text content in the page's own <h1>", () => {
     render(<ErrorView status={404} title="Page not found" />);
@@ -76,7 +90,8 @@ describe("ErrorView", () => {
 
   it("forwards className, and the consumer's conflicting class wins the merge", () => {
     const { container } = render(<ErrorView status={404} title="Page not found" className="gap-sm p-lg" />);
-    const root = container.firstElementChild as HTMLElement;
+    const root = body(container);
+    expect(root.querySelector("h1")?.textContent).toBe("404");
     expect(root.className).toContain("gap-sm");
     expect(root.className).not.toContain("gap-lg");
     expect(root.className).toContain("p-lg");
@@ -87,7 +102,8 @@ describe("ErrorView", () => {
     const { container } = render(
       <ErrorView status={404} title="Page not found" style={{ marginTop: "8px" }} />,
     );
-    const root = container.firstElementChild as HTMLElement;
+    const root = body(container);
+    expect(root.querySelector("h1")?.textContent).toBe("404");
     expect(root.style.marginTop).toBe("8px");
   });
 

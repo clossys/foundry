@@ -1,8 +1,7 @@
 import type { CSSProperties, HTMLAttributes, ReactNode } from "react";
 import { mergeUiClasses } from "@clossys/designer/components/server";
 import { SiteFooter, SiteHeader } from "@clossys/designer/shell/server";
-import { PAGE_COLUMN_CLASSES, PageLayout, hasContent } from "../internal/PageLayout.js";
-import { ViewSection } from "./internal/ViewSection.js";
+import { PAGE_COLUMN_CLASSES, PageColumn, PageLayout, hasContent } from "../internal/PageLayout.js";
 import { siteHeaderPresentation, type SiteChromeGround } from "../internal/viewChromeGround.js";
 import { assertViewContentRoot, usesLegacyChrome } from "../internal/viewContentRoot.js";
 
@@ -190,9 +189,9 @@ export function CaptureView({
   if (!legacyChrome) {
     assertViewContentRoot("CaptureView", rest);
     return (
-      <ViewSection {...rest} measure="prose" className={className} style={style}>
+      <PageColumn {...rest} measure="prose" className={className} style={style}>
         {content}
-      </ViewSection>
+      </PageColumn>
     );
   }
 

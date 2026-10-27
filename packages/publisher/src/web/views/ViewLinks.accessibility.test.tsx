@@ -33,8 +33,12 @@ describe("view link region heading references", () => {
     const html = renderToStaticMarkup(pair());
     expect(renderToStaticMarkup(pair())).toBe(html);
     const doc = new JSDOM(html).window.document;
-    const regions = [...doc.querySelectorAll("section")];
+    // Each view is one Section root (its page column); the link regions are the sections inside them.
+    const columns = [...doc.querySelectorAll("section[data-designer-section-frame]")];
+    expect(columns).toHaveLength(2);
+    const regions = [...doc.querySelectorAll("section:not([data-designer-section-frame])")];
     expect(regions).toHaveLength(2);
+    regions.forEach((region, index) => expect(region.parentElement?.closest("section")).toBe(columns[index]));
     const ids = regions.map(region => {
       const id = region.getAttribute("aria-labelledby");
       expect(id).toBeTruthy();
