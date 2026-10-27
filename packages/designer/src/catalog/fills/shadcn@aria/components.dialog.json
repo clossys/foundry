@@ -154,6 +154,20 @@
         ]
       },
       "root": "rac:Dialog",
+      "secondaryExports": [
+        {
+          "export": "DialogDescription",
+          "name": "DialogDescription"
+        },
+        {
+          "export": "DialogHeader",
+          "name": "DialogHeader"
+        },
+        {
+          "export": "DialogTitle",
+          "name": "DialogTitle"
+        }
+      ],
       "slot": "components.dialog",
       "source": "shadcn@aria",
       "transform": "shadcn-aria-rewrite@1"
