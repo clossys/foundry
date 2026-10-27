@@ -10,9 +10,48 @@ export interface ArticleBodyProps extends HTMLAttributes<HTMLElement> {
    * as given, nothing added or removed. The only required prop.
    */
   children: ReactNode;
+  /**
+   * Optional table-of-contents region, usually a `TableOfContents`. When
+   * given, it sits beside the body from desktop (above it below desktop),
+   * and the body's typography scale moves onto an inner body column so it
+   * never restyles the navigation's own links and list. Omitted, the
+   * article renders exactly as before.
+   */
+  toc?: ReactNode;
   className?: string;
   style?: CSSProperties;
 }
+
+/** The body typography scale: descendant variants over registered token utilities. */
+const ARTICLE_TYPOGRAPHY = [
+  "flex flex-col gap-md",
+  "[&_h1]:text-h1 [&_h1]:font-display [&_h1]:text-ink-primary [&_h1]:mt-xl",
+  "[&_h2]:text-h2 [&_h2]:font-display [&_h2]:text-ink-primary [&_h2]:mt-lg",
+  "[&_h3]:text-h3 [&_h3]:font-display [&_h3]:text-ink-primary [&_h3]:mt-md",
+  "[&_h4]:text-h3 [&_h4]:font-display [&_h4]:text-ink-primary [&_h4]:mt-md",
+  "[&_h5]:text-h3 [&_h5]:font-display [&_h5]:text-ink-primary [&_h5]:mt-md",
+  "[&_h6]:text-h3 [&_h6]:font-display [&_h6]:text-ink-primary [&_h6]:mt-md",
+  "[&_p]:text-body [&_p]:text-ink-primary",
+  "[&_a]:text-ink-link [&_a]:underline",
+  "[&_ul]:list-disc [&_ul]:ps-lg [&_ul]:text-body [&_ul]:text-ink-primary",
+  "[&_ol]:list-decimal [&_ol]:ps-lg [&_ol]:text-body [&_ol]:text-ink-primary",
+  "[&_li]:text-body [&_li]:text-ink-primary",
+  "[&_blockquote]:text-blockquote [&_blockquote]:font-display [&_blockquote]:text-ink-secondary [&_blockquote]:border-s [&_blockquote]:border-line-base [&_blockquote]:ps-lg",
+  "[&_strong]:font-semibold [&_strong]:text-ink-primary",
+  "[&_em]:italic",
+  "[&_code]:font-mono [&_code]:text-body-s [&_code]:text-ink-primary [&_code]:bg-surface-sunken [&_code]:rounded-subtle [&_code]:px-xs",
+  "[&_pre]:font-mono [&_pre]:text-code-block [&_pre]:text-ink-primary [&_pre]:bg-surface-sunken [&_pre]:rounded-control [&_pre]:p-md [&_pre]:overflow-x-auto",
+  "[&_pre_code]:bg-transparent [&_pre_code]:p-0",
+  "[&_hr]:border-line-base",
+  "[&_img]:max-w-full [&_img]:h-auto [&_img]:rounded-control",
+] as const;
+
+/** With a toc: one column below desktop, then the region in the first of four columns and the body across three. */
+const ARTICLE_TOC_CLASSES = {
+  root: "grid grid-cols-1 gap-xl desktop:grid-cols-4",
+  region: "min-w-0",
+  body: "min-w-0 desktop:col-span-3",
+} as const;
 
 /**
  * A semantic content region for a marketing/editorial page's long-form
@@ -52,33 +91,19 @@ export interface ArticleBodyProps extends HTMLAttributes<HTMLElement> {
  * wrapper only applies typography; the frame owns padding, ground, and
  * `--ui-width-prose-max`.
  */
-export function ArticleBody({ children, className, style, ...rest }: ArticleBodyProps) {
+export function ArticleBody({ children, toc, className, style, ...rest }: ArticleBodyProps) {
+  if (toc !== undefined && toc !== null && toc !== false) {
+    return (
+      <article {...SECTION_STAMP} {...rest} className={cx(ARTICLE_TOC_CLASSES.root, className)} data-designer-requires-section-frame="" style={style}>
+        <div data-article-toc="" className={ARTICLE_TOC_CLASSES.region}>{toc}</div>
+        <div data-article-body="" className={cx(...ARTICLE_TYPOGRAPHY, ARTICLE_TOC_CLASSES.body)}>{children}</div>
+      </article>
+    );
+  }
   return (
     <article
       {...SECTION_STAMP} {...rest}
-      className={cx(
-        "flex flex-col gap-md",
-        "[&_h1]:text-h1 [&_h1]:font-display [&_h1]:text-ink-primary [&_h1]:mt-xl",
-        "[&_h2]:text-h2 [&_h2]:font-display [&_h2]:text-ink-primary [&_h2]:mt-lg",
-        "[&_h3]:text-h3 [&_h3]:font-display [&_h3]:text-ink-primary [&_h3]:mt-md",
-        "[&_h4]:text-h3 [&_h4]:font-display [&_h4]:text-ink-primary [&_h4]:mt-md",
-        "[&_h5]:text-h3 [&_h5]:font-display [&_h5]:text-ink-primary [&_h5]:mt-md",
-        "[&_h6]:text-h3 [&_h6]:font-display [&_h6]:text-ink-primary [&_h6]:mt-md",
-        "[&_p]:text-body [&_p]:text-ink-primary",
-        "[&_a]:text-ink-link [&_a]:underline",
-        "[&_ul]:list-disc [&_ul]:ps-lg [&_ul]:text-body [&_ul]:text-ink-primary",
-        "[&_ol]:list-decimal [&_ol]:ps-lg [&_ol]:text-body [&_ol]:text-ink-primary",
-        "[&_li]:text-body [&_li]:text-ink-primary",
-        "[&_blockquote]:text-blockquote [&_blockquote]:font-display [&_blockquote]:text-ink-secondary [&_blockquote]:border-s [&_blockquote]:border-line-base [&_blockquote]:ps-lg",
-        "[&_strong]:font-semibold [&_strong]:text-ink-primary",
-        "[&_em]:italic",
-        "[&_code]:font-mono [&_code]:text-body-s [&_code]:text-ink-primary [&_code]:bg-surface-sunken [&_code]:rounded-subtle [&_code]:px-xs",
-        "[&_pre]:font-mono [&_pre]:text-code-block [&_pre]:text-ink-primary [&_pre]:bg-surface-sunken [&_pre]:rounded-control [&_pre]:p-md [&_pre]:overflow-x-auto",
-        "[&_pre_code]:bg-transparent [&_pre_code]:p-0",
-        "[&_hr]:border-line-base",
-        "[&_img]:max-w-full [&_img]:h-auto [&_img]:rounded-control",
-        className,
-      )}
+      className={cx(...ARTICLE_TYPOGRAPHY, className)}
       data-designer-requires-section-frame=""
       style={style}
     >

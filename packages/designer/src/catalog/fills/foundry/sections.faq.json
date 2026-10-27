@@ -16,15 +16,12 @@
         "package": "@clossys/designer",
         "version": "0.12.0"
       },
-      "relation": "subset",
+      "relation": "same-contract",
       "slot": "sections.faq",
       "source": "foundry",
       "sourceAddress": "./blocks#Faq",
       "status": "draft",
-      "trust": "foundry",
-      "unmapped": [
-        "layout.two-column"
-      ]
+      "trust": "foundry"
     }
   },
   "sections": {
@@ -37,7 +34,7 @@
       },
       "license": "MIT",
       "notes": [
-        "Source has a fixed vertical disclosure list and no two-column layout API; section headings are hand-rendered.",
+        "The layout prop renders one vertical disclosure list or two lists side by side from tablet, first half first; section headings are hand-rendered.",
         "Descriptor only; source imports, token reads, shared anatomy, accessibility, contrast and consumer runtime conformance are unmeasured. Content bindings describe host adaptation points, not type-equivalent converters."
       ],
       "parts": [],
@@ -47,7 +44,8 @@
         "version": "0.12.0"
       },
       "propMap": {
-        "layout.list": "./blocks#Faq.items[list]"
+        "layout.list": "./blocks#Faq.layout=list",
+        "layout.two-column": "./blocks#Faq.layout=two-column"
       },
       "slot": "sections.faq",
       "slotMap": {

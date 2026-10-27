@@ -110,12 +110,18 @@ export function mediaNode(content: SectionContent, value: RuntimeJson | undefine
   throw new SectionContentError(content.leaf, `${path}.chart ${chart} has no registered chart component`);
 }
 
-/** Prose blocks for a region body: headings, paragraphs and lists only, each through SemanticContent (no look of its own). */
+/**
+ * Prose blocks for a region body: headings, paragraphs and lists only, each through SemanticContent (no look of its
+ * own). A heading may carry an `id`, the in-page target a table of contents links to.
+ */
 export function proseNodes(content: SectionContent, value: RuntimeJson | undefined, path: string): ReactNode {
   return list(content, value, path).map((row, index) => {
     const block = object(content, row, `${path}.${index}`);
     const kind = text(content, block.kind, `${path}.${index}.kind`);
-    if (kind === "heading") return <SemanticContent key={index} as="h2">{text(content, block.text, `${path}.${index}.text`)}</SemanticContent>;
+    if (kind === "heading") {
+      const id = optionalText(content, block.id, `${path}.${index}.id`);
+      return <SemanticContent key={index} as="h2" {...(id === undefined ? {} : { id })}>{text(content, block.text, `${path}.${index}.text`)}</SemanticContent>;
+    }
     if (kind === "paragraph") return <SemanticContent key={index} as="p">{text(content, block.text, `${path}.${index}.text`)}</SemanticContent>;
     if (kind === "list") return <SemanticContent key={index} as="ul">{texts(content, block.items, `${path}.${index}.items`).map(item => <SemanticContent key={item} as="li">{item}</SemanticContent>)}</SemanticContent>;
     throw new SectionContentError(content.leaf, `${path}.${index}.kind ${kind} is not a prose block`);

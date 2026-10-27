@@ -23,7 +23,6 @@
       "status": "draft",
       "trust": "foundry",
       "unmapped": [
-        "ground.transparent",
         "axis.rhythm"
       ]
     }
@@ -38,7 +37,7 @@
       },
       "license": "MIT",
       "notes": [
-        "SectionGround excludes transparent. Rhythm is fixed in source, with no specified contract member values.",
+        "SectionFrame alone widens its ground with transparent (no surface, inherited ink); block grounds stay the closed SectionGround. Rhythm is fixed in source, with no specified contract member values.",
         "Descriptor only; source imports, token reads, shared anatomy, accessibility, contrast and consumer runtime conformance are unmeasured. Content bindings describe host adaptation points, not type-equivalent converters."
       ],
       "parts": [],
@@ -51,6 +50,7 @@
         "ground.base": "./blocks#SectionFrame.ground=base",
         "ground.inverse": "./blocks#SectionFrame.ground=inverse",
         "ground.sunken": "./blocks#SectionFrame.ground=sunken",
+        "ground.transparent": "./blocks#SectionFrame.ground=transparent",
         "measure.content": "./blocks#SectionFrame.measure=content",
         "measure.prose": "./blocks#SectionFrame.measure=prose",
         "measure.wide": "./blocks#SectionFrame.measure=wide"
