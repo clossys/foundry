@@ -432,6 +432,16 @@ describe("qualification rule groups (QUAL-RECOUNT G1, G2, G7a, G11)", () => {
     const free = fixture(); append(free, ' const cls = "scroll-p-0 scroll-my-0 scroll-px-0 scroll-smooth scroll-auto";');
     expect(k4(free)).toEqual([]);
   });
+  it("check-components K4 judges the named value before an arbitrary modifier", () => {
+    // Must flag: a `/[…]` or `/(…)` modifier never hides the named colour or size in front of it.
+    for (const [cls, utility] of [["bg-black/[0.5]", "bg-black"], ["text-sm/[1.5]", "text-sm"], ["hover:border-white/[0.2]", "border-white"]] as const) {
+      const flagged = fixture(); append(flagged, ` const cls = "${cls}";`);
+      expect(k4(flagged), cls).toEqual([`Utility ${utility} has no bound consumer token`]);
+    }
+    // A whole v4 `-(…)` or `-[…]` value after the family's own `-` is still read whole, not as a named value.
+    const whole = hairline(); append(whole, ' const cls = "border-(length:--ui-border-hairline) border-t-[length:var(--ui-border-hairline)]";');
+    expect(k4(whole)).toEqual([]);
+  });
   it("check-components K4 exempts value-free utilities and still flags h-3", () => {
     const free = ["w-full", "w-fit", "h-auto", "min-w-0", "max-w-none", "p-0", "pt-0", "m-0", "ml-auto", "-mx-0", "gap-0", "rounded-full", "rounded-none", "rounded-t-none", "border-0", "border-b-0",
       "border-transparent", "border-s-transparent", "border-inherit", "border-collapse", "border-solid", "bg-transparent", "bg-clip-padding", "bg-blend-color", "text-center", "text-left", "text-current", "text-balance", "text-pretty", "hover:bg-transparent"];

@@ -228,7 +228,10 @@ function classUtilities(code: string): string[] {
     }
     const base = token.slice(start).replace(/^!/, "").replace(/^-(?=[a-z])/, "");
     const match = UTILITY.exec(base);
-    if (match && !/^[[(]/.test(base.slice(match[0].length))) found.push(match[0]);
+    if (!match) continue;
+    // A `[`/`(` right after the family's own `-` is a whole v4 value; after a `/` modifier the named value is still judged.
+    const arbitraryNext = /^[[(]/.test(base.slice(match[0].length));
+    if (!arbitraryNext) found.push(match[0]); else if (!match[0].endsWith("-")) found.push(match[0].replace(/\/$/, ""));
   }
   return found;
 }
