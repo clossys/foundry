@@ -19,6 +19,9 @@ import {importPatterns} from '../importers/pattern.js';
 import {PATTERN_RECIPES} from '../tokens/pattern.js';
 import {stableStringify} from '../catalog-core/stable.js';
 import {emitWebIcons,emitIdentityFiles,emitGlyphModule,pngDimensions,assetNotices} from './emit.js';
+import { LUCIDE_NOTICES } from './licenses.js';
+import { PHOSPHOR_NOTICES } from '../importers/phosphor-license.js';
+import { OPEN_PROPS_NOTICES } from './open-props-license.js';
 import type {LibraryData,DtcgToken} from '../catalog-core/types.js';
 const catalog=withAssetCatalog(loadCatalog());
 function base():LibraryData{
@@ -108,6 +111,16 @@ describe('coverage, scorecard and real asset files',()=>{
  it('offers every A1–A12 judgement and never treats absent optical evidence as a pass',()=>{const library=complete();const findings=checkAssetProfile(catalog,library,{images:[{id:'hero',width:1200,height:800,alt:'A landscape',format:'webp',bytes:100,maxBytes:200}]});expect(new Set(findings.map(f=>f.code))).toEqual(new Set(Array.from({length:12},(_,i)=>`A${i+1}`)));expect(findings.some(f=>f.code==='A6'&&f.verdict==='indeterminate')).toBe(true);expect(findings.some(f=>f.code==='A8'&&f.verdict==='satisfied')).toBe(true);expect(findings.filter(f=>f.code==='A2'&&f.verdict==='violated')).toEqual([]);expect(findings.some(f=>f.code==='A10'&&f.verdict==='satisfied')).toBe(true);expect(findings.filter(f=>f.verdict==='violated')).toEqual([]);});
  it('checks crop shape, alt, clear space, glyph measurements and maskable geometry',()=>{const library=complete(),profile=resolve({catalog,library});const mark=profile.members['assets.mark.positive']!;mark.value.light=(mark.value.light as string).replace('data-clear-space="0.2"','data-clear-space="0.01"');const mask=profile.members['assets.app-icon.maskable']!;mask.value.light=(mask.value.light as string).replace('width="280"','width="480"');const findings=checkAssetProfile(catalog,library,{resolved:profile,images:[{id:'bad',width:1200,height:1200,format:'webp',bytes:100}],glyphBounds:{'assets.icon-check.default':{x:0,y:0,width:24,height:24}}});for(const code of ['A4','A8','A10','A11'])expect(findings.some(f=>f.code===code&&f.verdict==='violated')).toBe(true);});
  it('writes exact real PNG sizes, ICO16+32, SVG, manifest, glyphs and honest licences',async()=>{const profile=resolve({catalog,library:complete()});const files=await emitWebIcons(profile,{name:'Example',rasterize:async(svg,size)=>new Uint8Array(await sharp(Buffer.from(svg)).resize(size,size).png().toBuffer())});expect(files).toHaveLength(9);for(const f of files.filter(f=>f.path.endsWith('.png'))){const meta=await sharp(f.bytes).metadata();expect(meta.width).toBe(Number(/(\d+)\.png$/.exec(f.path)![1]));expect(meta.height).toBe(meta.width);expect(pngDimensions(f.bytes).width).toBe(meta.width);}const ico=files.find(f=>f.path.endsWith('.ico'))!.bytes;const view=new DataView(ico.buffer);expect(view.getUint16(4,true)).toBe(2);expect([ico[6],ico[22]]).toEqual([16,32]);for(let i=0;i<2;i++){const entry=6+i*16,offset=view.getUint32(entry+12,true),size=view.getUint32(entry+8,true);expect(pngDimensions(ico.slice(offset,offset+size)).width).toBe(i?32:16);}const manifest=JSON.parse(new TextDecoder().decode(files.at(-1)!.bytes));expect(manifest.theme_color).toBe(profile.members['tokens.surface-color.base']!.css.light);expect(manifest.icons.every((icon:any)=>files.some(file=>file.path===icon.src))).toBe(true);expect(emitIdentityFiles(profile)).toHaveLength(5);expect(emitGlyphModule(profile).match(/icon-/g)).toHaveLength(40);const notices=assetNotices(profile);expect(notices).toContain('ISC License');expect(notices).toContain('The MIT License');expect(notices).toContain('lucide/assets.icon-check');},20000);
+ it('retains complete existing notices alongside explicitly adopted ratios',()=>{
+  const before=complete();
+  expect(assetNotices(resolve({catalog,library:before}))).not.toContain(OPEN_PROPS_NOTICES);
+  const library=applyLibraryChange(catalog,before,{baseHash:libraryHash(before),changes:[
+   {op:'adopt',slot:'assets.icon-check',source:'phosphor'},
+   {op:'adopt',slot:'assets.image-ratio',source:'open-props'},
+  ]});
+  const notices=assetNotices(resolve({catalog,library}));
+  for(const text of [LUCIDE_NOTICES,PHOSPHOR_NOTICES,OPEN_PROPS_NOTICES])expect(notices).toContain(text);
+ });
  it('rejects non-PNG and incorrectly sized rasterizer results',async()=>{const profile=resolve({catalog,library:identity()});await expect(emitWebIcons(profile,{name:'Example',rasterize:async()=>new Uint8Array([1,2,3])})).rejects.toThrow(/PNG/);const png=await sharp({create:{width:8,height:8,channels:4,background:'#ffffff'}}).png().toBuffer();await expect(emitWebIcons(profile,{name:'Example',rasterize:async()=>png})).rejects.toThrow(/wrong size/);});
 });
 describe('Media resources and patterns',()=>{

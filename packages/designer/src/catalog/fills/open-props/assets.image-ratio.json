@@ -1,0 +1,77 @@
+{
+  "$extensions": {
+    "com.clossys.fill": {
+      "author": "third-party",
+      "builtOn": [],
+      "conforms": [],
+      "evidence": [],
+      "id": "open-props/assets.image-ratio",
+      "license": "MIT",
+      "mode": "implementation",
+      "pin": {
+        "commit": "fcb77853851109cc45a801fc18b36293eb1f5be7",
+        "file": "src/props.aspects.css",
+        "package": "open-props",
+        "sha256": "fcdbb315c25f081d3c5a2da83c4cab23f773f16cdd20ee56bfa933272744f6e2",
+        "url": "https://raw.githubusercontent.com/argyleink/open-props/fcb77853851109cc45a801fc18b36293eb1f5be7/src/props.aspects.css",
+        "version": "1.7.23"
+      },
+      "reads": {
+        "assets": [],
+        "tokens": []
+      },
+      "relation": "subset",
+      "slot": "assets.image-ratio",
+      "source": "open-props",
+      "sourceAddress": "https://raw.githubusercontent.com/argyleink/open-props/fcb77853851109cc45a801fc18b36293eb1f5be7/src/props.aspects.css",
+      "status": "draft",
+      "trust": "pinned-upstream"
+    }
+  },
+  "assets": {
+    "image-ratio": {
+      "golden": {
+        "$type": "rules",
+        "$value": {
+          "height": 1,
+          "width": 1.618
+        }
+      },
+      "landscape": {
+        "$type": "rules",
+        "$value": {
+          "height": 3,
+          "width": 4
+        }
+      },
+      "portrait": {
+        "$type": "rules",
+        "$value": {
+          "height": 4,
+          "width": 3
+        }
+      },
+      "square": {
+        "$type": "rules",
+        "$value": {
+          "height": 1,
+          "width": 1
+        }
+      },
+      "ultrawide": {
+        "$type": "rules",
+        "$value": {
+          "height": 5,
+          "width": 18
+        }
+      },
+      "widescreen": {
+        "$type": "rules",
+        "$value": {
+          "height": 9,
+          "width": 16
+        }
+      }
+    }
+  }
+}

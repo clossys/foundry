@@ -1,6 +1,7 @@
 import type { Resolved } from '../catalog-core/types.js';
 import { AssetValidationError, inspectSvg, inspectGlyph } from './svg.js';
 import { PHOSPHOR_NOTICES } from '../importers/phosphor-license.js';
+import { OPEN_PROPS_NOTICES } from './open-props-license.js';
 import { LUCIDE_NOTICES } from './licenses.js';
 export type AssetFile = { path: string; mediaType: string; bytes: Uint8Array };
 export type RasterizeSvg = (svg: string, size: number) => Promise<Uint8Array>;
@@ -26,7 +27,7 @@ export function assetNotices(profile:Resolved): string {
  const adopted=Object.entries(profile.members).filter(([id,m])=>id.startsWith('assets.')&&m.origin?.kind==='adopted').sort(([a],[b])=>a<b?-1:1);
  const authored=Object.entries(profile.members).filter(([id,m])=>id.startsWith('assets.')&&m.origin?.kind==='authored').map(([id,m])=>{const o=m.origin!;return o.kind==='authored'?`${id}: consumer authored; ${o.license}; ${o.note??''}`:'';});
  const rows=adopted.map(([id,m])=>{const o=m.origin!;if(o.kind!=='adopted')return '';return `${id}: ${o.source}; ${o.fill}; ${o.member}; ${o.license}; ${JSON.stringify(o.pin??{})}; sha256 ${o.sha256}; adopted ${o.adoptedAt}`;});
- return '# Asset notices\n\n'+[...rows,...authored].join('\n')+(adopted.some(([,m])=>m.origin?.kind==='adopted'&&m.origin.source==='lucide')?'\n\n'+LUCIDE_NOTICES:'')+(adopted.some(([,m])=>m.origin?.kind==='adopted'&&m.origin.source==='phosphor')?'\n\n'+PHOSPHOR_NOTICES:'')+'\n';
+ return '# Asset notices\n\n'+[...rows,...authored].join('\n')+(adopted.some(([,m])=>m.origin?.kind==='adopted'&&m.origin.source==='lucide')?'\n\n'+LUCIDE_NOTICES:'')+(adopted.some(([,m])=>m.origin?.kind==='adopted'&&m.origin.source==='phosphor')?'\n\n'+PHOSPHOR_NOTICES:'')+(adopted.some(([,m])=>m.origin?.kind==='adopted'&&m.origin.source==='open-props')?'\n\n'+OPEN_PROPS_NOTICES:'')+'\n';
 }
 /** SVG/glyph emission stays pure and browser-safe. Raster output requires an explicit server port. */
 export function emitIdentityFiles(profile:Resolved):AssetFile[]{

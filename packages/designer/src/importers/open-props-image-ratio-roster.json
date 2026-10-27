@@ -1,0 +1,50 @@
+[
+  {
+    "member": "square",
+    "property": "--ratio-square",
+    "scalar": "1",
+    "line": 2,
+    "width": 1,
+    "height": 1
+  },
+  {
+    "member": "landscape",
+    "property": "--ratio-landscape",
+    "scalar": "4/3",
+    "line": 3,
+    "width": 4,
+    "height": 3
+  },
+  {
+    "member": "portrait",
+    "property": "--ratio-portrait",
+    "scalar": "3/4",
+    "line": 4,
+    "width": 3,
+    "height": 4
+  },
+  {
+    "member": "widescreen",
+    "property": "--ratio-widescreen",
+    "scalar": "16/9",
+    "line": 5,
+    "width": 16,
+    "height": 9
+  },
+  {
+    "member": "ultrawide",
+    "property": "--ratio-ultrawide",
+    "scalar": "18/5",
+    "line": 6,
+    "width": 18,
+    "height": 5
+  },
+  {
+    "member": "golden",
+    "property": "--ratio-golden",
+    "scalar": "1.6180/1",
+    "line": 7,
+    "width": 1.618,
+    "height": 1
+  }
+]
