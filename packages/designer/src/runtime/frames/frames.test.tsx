@@ -28,6 +28,7 @@ function input(leaf: string, options: { members?: string[]; host?: RuntimeFrameH
     content: contentOf(options.content ?? entry.sample(specimenDataset)), ...(options.host ? { host: options.host } : {}),
   } as unknown as RuntimeRenderInput<ReactNode>;
 }
+const F = specimenDataset.frames;
 const draw = (leaf: string, options?: Parameters<typeof input>[1]) => render(<>{surfaceRuntimeRenderers[leaf]!.render(input(leaf, options))}</>);
 
 describe("designer Frame runtime renderers", () => {
@@ -41,26 +42,49 @@ describe("designer Frame runtime renderers", () => {
   it("renders each leaf's real package export from its sample content", async () => {
     draw("frames.site-header");
     expect(document.querySelector("header[data-header-root]")).toHaveAttribute("data-surface", "solid");
-    expect(screen.getByRole("link", { name: "Get started" })).toHaveAttribute("href", "#start");
+    expect(screen.getByRole("link", { name: F.siteHeader.actions[1].label })).toHaveAttribute("href", F.siteHeader.actions[1].href);
     cleanup(); draw("frames.site-footer");
     expect(document.querySelector("footer[data-footer-root]")).toBeInTheDocument();
-    expect(screen.getByRole("heading", { name: "Company" })).toBeInTheDocument();
+    for (const column of F.siteFooter.columns) expect(screen.getByRole("heading", { name: column.heading })).toBeInTheDocument();
     cleanup(); draw("frames.app-header");
-    expect(screen.getByRole("navigation", { name: "Breadcrumb" })).toBeInTheDocument();
+    expect(screen.getByRole("navigation", { name: F.appHeader.labels.breadcrumb })).toBeInTheDocument();
     expect(screen.getByRole("heading", { level: 1 })).toBeInTheDocument();
     cleanup(); draw("frames.app-sidebar");
-    expect(screen.getByRole("navigation", { name: specimenDataset.navigation.label })).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "New page" })).toBeInTheDocument();
+    expect(screen.getByRole("navigation", { name: F.appSidebar.label })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: F.appSidebarHeader.label })).toBeInTheDocument();
     cleanup(); draw("frames.inspector");
-    expect(screen.getByRole("complementary", { name: specimenDataset.card.title })).toHaveTextContent(specimenDataset.card.content);
+    expect(screen.getByRole("complementary", { name: F.inspector.label })).toHaveTextContent(F.inspector.body);
     // wide.dismiss (the Drawer default) closes the sheet at the wide breakpoint the stub reports; wide.sheet keeps it.
     cleanup(); draw("frames.sheet", { members: ["placement.end", "wide.sheet"] });
-    await userEvent.click(screen.getByRole("button", { name: specimenDataset.dialog.trigger }));
-    await waitFor(() => expect(screen.getByRole("dialog")).toHaveTextContent(specimenDataset.dialog.body));
+    await userEvent.click(screen.getByRole("button", { name: F.sheet.trigger }));
+    await waitFor(() => expect(screen.getByRole("dialog")).toHaveTextContent(F.sheet.body));
     cleanup(); draw("frames.command");
-    await userEvent.click(screen.getByRole("button", { name: "Open command menu" }));
+    await userEvent.click(screen.getByRole("button", { name: F.command.trigger }));
     await waitFor(() => expect(screen.getByRole("dialog")).toBeInTheDocument());
-    expect(screen.getByText(specimenDataset.menu.label)).toBeInTheDocument();
+    for (const group of F.command.groups) expect(screen.getByText(group.label)).toBeInTheDocument();
+  });
+
+  it("draws every Frame sample from the shared specimen dataset, never from renderer literals", () => {
+    // Structural keys (ids, action commands, kinds, variants, sizes) are not copy; every other string is a dataset value.
+    const STRUCTURAL = new Set(["id", "action", "kind", "variant", "size"]);
+    const strings = (value: unknown, key = "", into: string[] = []): string[] => {
+      if (typeof value === "string") { if (!STRUCTURAL.has(key)) into.push(value); }
+      else if (Array.isArray(value)) for (const item of value) strings(item, key, into);
+      else if (value && typeof value === "object") for (const [field, item] of Object.entries(value)) strings(item, field, into);
+      return into;
+    };
+    const dataset = new Set(strings(specimenDataset));
+    const records: Record<string, keyof typeof F> = {
+      "frames.app-shell": "app", "frames.app-header": "appHeader", "frames.app-sidebar": "appSidebar", "frames.inspector": "inspector",
+      "frames.sheet": "sheet", "frames.site-header": "siteHeader", "frames.site-footer": "siteFooter", "frames.command": "command",
+    };
+    expect(Object.keys(records).sort()).toEqual(Object.keys(frameRenderers).sort());
+    for (const [leaf, record] of Object.entries(records)) {
+      const sample = strings(surfaceRuntimeRenderers[leaf]!.sample(specimenDataset)), own = new Set(strings(F[record]));
+      expect(sample.filter(value => !dataset.has(value)), leaf).toEqual([]);
+      // Bound to its own frames record, not merely to some other part of the dataset.
+      expect(sample.filter(value => own.has(value)).length, leaf).toBeGreaterThanOrEqual(2);
+    }
   });
 
   it("swapping selected members visibly changes the rendered Frame", () => {
@@ -69,8 +93,8 @@ describe("designer Frame runtime renderers", () => {
     cleanup(); draw("frames.inspector", { members: ["presentation.overlay"] });
     // Overlay presentation: the same content opens as an end-placed sheet instead of a docked aside.
     expect(screen.queryByRole("complementary")).toBeNull();
-    expect(screen.getByRole("dialog")).toHaveTextContent(specimenDataset.card.content);
-    expect(screen.getByRole("button", { name: "Hide details" })).toBeInTheDocument();
+    expect(screen.getByRole("dialog")).toHaveTextContent(F.inspector.body);
+    expect(screen.getByRole("button", { name: F.inspector.closeLabel })).toBeInTheDocument();
     cleanup(); draw("frames.inspector", { members: ["presentation.collapsed"] });
     expect(document.querySelector("aside")).toHaveAttribute("data-collapsed", "true");
   });

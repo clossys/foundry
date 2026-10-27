@@ -33,7 +33,8 @@ export function renderSheet(input: RuntimeRenderInput<ReactNode>): ReactNode {
 }
 
 function sample(dataset: Parameters<SurfaceRendererEntry["sample"]>[0]): FrameJson {
-  return { heading: { text: dataset.dialog.title, closeLabel: "Close", triggerLabel: dataset.dialog.trigger }, body: dataset.dialog.body };
+  const sheet = dataset.frames.sheet;
+  return { heading: { text: sheet.heading, closeLabel: sheet.closeLabel, triggerLabel: sheet.trigger }, body: sheet.body };
 }
 
 export const sheetRenderer: SurfaceRendererEntry = { leaf: "frames.sheet", render: renderSheet, sample };

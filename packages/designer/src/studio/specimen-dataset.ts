@@ -497,6 +497,8 @@ const sections = {
 /** A neutral geometric mark: the frame shows the host mark only as an image. */
 const SAMPLE_MARK = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Cpath fill='currentColor' d='M4 4h24v24H4z'/%3E%3C/svg%3E";
 
+const signInLabel = "Sign in";
+
 /** Frame layer: the content every Studio-owned Frame preview renders. */
 const frames = {
   /** vf34: the app sidebar frame (AppNavigation). */
@@ -509,7 +511,12 @@ const frames = {
       { id: "settings", label: "Settings", href: "#settings" },
     ],
   } satisfies Pick<AppNavigationProps, "label" | "activeId" | "tree">,
+  /** The app sidebar frame's header command. */
+  appSidebarHeader: { label: "New page", action: "page.new" },
+  /** The app header frame (PageBar): the page bar's own labels plus the page's share command. */
+  appHeader: { labels: sections.pageBar.labels, share: { id: "share", label: "Share", action: "page.share" } },
   app: {
+    skipLabel: "Skip to content",
     markSrc: SAMPLE_MARK,
     workspace: brandName,
     navigationLabel: "Workspace navigation",
@@ -521,10 +528,11 @@ const frames = {
     activeId: "overview",
     page: "Overview",
     actor: { name: people3[0].name, secondaryText: people3[0].role },
-    signedOutLabel: "Sign in",
+    signedOutLabel: signInLabel,
     accountSection: "Account",
     accountSectionId: "account",
     accountEntries: [{ id: "profile", kind: "link", label: "Profile", href: "#profile" }, { id: "preferences", kind: "link", label: "Preferences", href: "#preferences" }] satisfies readonly AccountMenuLink[],
+    signOut: { id: "sign-out", kind: "action", label: "Sign out" },
     commands: { ...command, triggerLabel: "Search commands" },
     heading: "Next milestone",
     body: "Review the spring launch pages before Friday's planning session.",
@@ -534,8 +542,20 @@ const frames = {
     min: 220, max: 420, defaultValue: 280,
     body: "Selected: Hero heading",
   },
-  siteHeader: { brand: brandName, nav: sectionLink("Product", "#product") },
-  siteFooter: { body: `${brandName}, sample footer` },
+  /** The sheet frame shows the same filters sheet the sheet Section does. */
+  sheet: sections.sheet,
+  command,
+  siteHeader: {
+    brand: brandName, homeLabel: `${brandName} home`, nav: sectionLink("Product", "#product"), menuLabel: "Menu",
+    actions: [{ id: "sign-in", ...sectionLink(signInLabel, "#sign-in"), variant: "ghost" }, { id: "start", ...sections.callToAction.primary, variant: "primary" }],
+  },
+  siteFooter: {
+    body: `${brandName}, sample footer`,
+    columns: [
+      { id: "product", heading: "Product", links: [sections.callToAction.primary, sections.callToAction.secondary] },
+      { id: "company", heading: "Company", links: [sectionLink("About", "#about"), sectionLink("Contact", "#contact")] },
+    ],
+  },
 } as const;
 
 export const specimenDataset = {

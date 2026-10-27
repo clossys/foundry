@@ -48,10 +48,11 @@ export function renderSiteHeader(input: RuntimeRenderInput<ReactNode>): ReactNod
 }
 
 function sample(dataset: Parameters<SurfaceRendererEntry["sample"]>[0]): FrameJson {
+  const header = dataset.frames.siteHeader;
   return {
-    brand: { label: `${dataset.assets.mark.name} home`, markSrc: dataset.assets.mark.src, wordmark: dataset.assets.mark.name, size: "md" },
-    nav: { label: dataset.navigation.label, triggerLabel: "Menu", links: dataset.navigation.items.map((item, index) => ({ id: item.id, label: item.label, href: item.href, isCurrent: index === 0 })) },
-    actions: [{ id: "sign-in", label: "Sign in", href: "#sign-in", variant: "ghost" }, { id: "start", label: "Get started", href: "#start", variant: "primary" }],
+    brand: { label: header.homeLabel, markSrc: dataset.assets.mark.src, wordmark: header.brand, size: "md" },
+    nav: { label: dataset.navigation.label, triggerLabel: header.menuLabel, links: dataset.navigation.items.map((item, index) => ({ id: item.id, label: item.label, href: item.href, isCurrent: index === 0 })) },
+    actions: header.actions,
   };
 }
 

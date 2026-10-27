@@ -34,12 +34,7 @@ export function renderSiteFooter(input: RuntimeRenderInput<ReactNode>): ReactNod
 }
 
 function sample(dataset: Parameters<SurfaceRendererEntry["sample"]>[0]): FrameJson {
-  return {
-    columns: [
-      { id: "product", heading: "Product", links: dataset.navigation.items.map(item => ({ label: item.label, href: item.href })) },
-      { id: "company", heading: "Company", links: [{ label: "About", href: "#about" }, { label: "Contact", href: "#contact" }] },
-    ],
-  };
+  return { columns: dataset.frames.siteFooter.columns };
 }
 
 export const siteFooterRenderer: SurfaceRendererEntry = { leaf: "frames.site-footer", render: renderSiteFooter, sample };

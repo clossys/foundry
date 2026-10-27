@@ -92,23 +92,23 @@ describe("planSurfacePreviews", () => {
     expect(html["frames.inspector"]).toContain("<aside");
     expect(result.previews["frames.inspector"]?.pointer).toBe("@clossys/designer/frames#InspectorFrame");
     // Structured Sections render their real block with the dataset's rows, tiers and items.
-    const samples: Record<string, string> = { "sections.comparison": specimenDataset.sections.comparison.rows[0]!.label, "sections.content": specimenDataset.sections.content.heading, "sections.data-table": specimenDataset.sections.dataTable.rows[1]!.customer, "sections.form": specimenDataset.sections.form.fields[0]!.label, "sections.pricing": specimenDataset.sections.pricing.tiers[0]!.cta, "sections.resource-list": specimenDataset.sections.resourceList.items[0]!.title, "sections.status-list": specimenDataset.sections.statusList.groups![0]!.items[0]!.label, "sections.task-list": specimenDataset.sections.taskList.items[0]!.title, "frames.sheet": specimenDataset.dialog.trigger };
+    const samples: Record<string, string> = { "sections.comparison": specimenDataset.sections.comparison.rows[0]!.label, "sections.content": specimenDataset.sections.content.heading, "sections.data-table": specimenDataset.sections.dataTable.rows[1]!.customer, "sections.form": specimenDataset.sections.form.fields[0]!.label, "sections.pricing": specimenDataset.sections.pricing.tiers[0]!.cta, "sections.resource-list": specimenDataset.sections.resourceList.items[0]!.title, "sections.status-list": specimenDataset.sections.statusList.groups![0]!.items[0]!.label, "sections.task-list": specimenDataset.sections.taskList.items[0]!.title, "frames.sheet": specimenDataset.frames.sheet.trigger };
     for (const [slot, text] of Object.entries(samples)) expect(html[slot], slot).toContain(text);
     expect(result.previews["sections.comparison"]?.pointer).toBe("@clossys/designer/blocks#Matrix");
     expect(html["sections.comparison"]).toContain("<table");
     expect(result.previews["frames.site-header"]?.pointer).toBe("@clossys/designer/shell/server#SiteHeader");
     // vf34: the app sidebar renders the real AppNavigation with the dataset's navigation tree.
     expect(result.previews["frames.app-sidebar"]?.pointer).toBe("@clossys/designer/blocks#AppNavigation");
-    expect(html["frames.app-sidebar"]).toContain(specimenDataset.navigation.label);
-    for (const item of specimenDataset.navigation.items) expect(html["frames.app-sidebar"]).toContain(item.label);
+    expect(html["frames.app-sidebar"]).toContain(specimenDataset.frames.appSidebar.label);
+    for (const item of specimenDataset.frames.appSidebar.tree) expect(html["frames.app-sidebar"]).toContain(item.label);
     // Adopted leaves render their real export with the dataset's content.
     const adopted: Record<string, [pointer: string, text: string]> = {
       "sections.chat": ["@clossys/designer/blocks#Chat", specimenDataset.sections.chat.messages[0]!.content],
       "sections.explorer": ["@clossys/designer/blocks#Explorer", specimenDataset.list.items[0]!.label],
       "sections.hero": ["@clossys/designer/blocks#Hero", specimenDataset.sections.hero.heading],
       "sections.newsletter": ["@clossys/designer/blocks#NewsletterBand", specimenDataset.sections.newsletter.emailLabel],
-      "frames.app-shell": ["@clossys/designer/frames#AppFrame", "Skip to content"],
-      "frames.command": ["@clossys/designer/blocks#CommandMenu", "Open command menu"],
+      "frames.app-shell": ["@clossys/designer/frames#AppFrame", specimenDataset.frames.app.skipLabel],
+      "frames.command": ["@clossys/designer/blocks#CommandMenu", specimenDataset.frames.command.trigger],
     };
     for (const [slot, [pointer, text]] of Object.entries(adopted)) {
       expect(result.previews[slot]?.pointer, slot).toBe(pointer);
@@ -126,9 +126,9 @@ describe("planSurfacePreviews", () => {
     const user = userEvent.setup();
     render(<>{planSurfacePreviews({ plan, fills }).previews["frames.command"]!.render()}</>);
     expect(screen.queryByRole("dialog")).toBeNull();
-    await user.click(screen.getByRole("button", { name: "Open command menu" }));
+    await user.click(screen.getByRole("button", { name: specimenDataset.frames.command.trigger }));
     const dialog = await screen.findByRole("dialog");
-    for (const item of [...specimenDataset.navigation.items, ...specimenDataset.menu.items]) expect(dialog).toHaveTextContent(item.label);
+    for (const item of specimenDataset.frames.command.groups.flatMap(group => group.items)) expect(dialog).toHaveTextContent(item.label);
   });
 
   it("keeps the app frame preview off the board's keyboard: its command shortcut never opens a menu", () => {
@@ -136,7 +136,7 @@ describe("planSurfacePreviews", () => {
     const { plan, fills } = realPlan();
     render(<>{planSurfacePreviews({ plan, fills }).previews["frames.app-shell"]!.render()}</>);
     expect(screen.getByRole("main")).toBeInTheDocument();
-    expect(screen.getByRole("link", { name: "Skip to content" })).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: specimenDataset.frames.app.skipLabel })).toBeInTheDocument();
     for (const init of [{ key: "k", metaKey: true }, { key: "k", ctrlKey: true }]) act(() => void window.dispatchEvent(new KeyboardEvent("keydown", { ...init, bubbles: true, cancelable: true })));
     expect(screen.queryByRole("dialog")).toBeNull();
   });

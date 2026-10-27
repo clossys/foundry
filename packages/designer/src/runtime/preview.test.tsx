@@ -4,8 +4,9 @@ import "@testing-library/jest-dom/vitest";
 import { readdirSync, readFileSync } from "node:fs";
 import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
-import { cleanup, render } from "@testing-library/react";
+import { cleanup, render, screen } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { specimenDataset } from "../studio/specimen-dataset.js";
 import { surfaceRuntimeRenderers } from "./index.js";
 import { surfaceRuntimePreview, type SurfacePreviewEntry } from "./preview.js";
 
@@ -34,6 +35,22 @@ describe("surfaceRuntimePreview", () => {
       cleanup();
     }
     expect(reasons).toEqual({});
+  });
+  it("previews Frames chrome from the shared dataset's frames records", () => {
+    const F = specimenDataset.frames;
+    const draw = (leaf: string) => {
+      const preview = surfaceRuntimePreview(entryOf(leaf));
+      if (!("render" in preview)) throw new Error(`${leaf} preview refused: ${preview.reason}`);
+      return render(<>{preview.render()}</>).container;
+    };
+    draw("frames.app-shell");
+    expect(screen.getByText(F.app.skipLabel)).toBeInTheDocument();
+    cleanup();
+    expect(draw("frames.command")).toHaveTextContent(F.command.trigger);
+    cleanup();
+    expect(draw("frames.sheet")).toHaveTextContent(F.sheet.trigger);
+    cleanup();
+    expect(draw("frames.site-footer")).toHaveTextContent(F.siteFooter.columns[0]!.heading);
   });
   it("draws a band around the first registered Section its contract admits", () => {
     const band = surfaceRuntimePreview(entryOf("sections.band")), child = surfaceRuntimePreview(entryOf("sections.access-matrix"));

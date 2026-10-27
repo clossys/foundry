@@ -11,6 +11,7 @@ import { AppFrame } from "../../frames/AppFrame.js";
 import type { AppFrameProps } from "../../frames/app-frame-types.js";
 import { PageHeaderModule } from "../../shell/FrameSlots.js";
 import { runtimeMember, runtimeRecord, runtimeText, type SurfaceRendererEntry } from "../contract.js";
+import { plainJson } from "../sections/dataset-json.js";
 import { frameContent, guardedNavigate, type FrameHost as Host, type FrameJson as Json } from "./frame-content.js";
 
 export { guardedNavigate } from "./frame-content.js";
@@ -85,15 +86,14 @@ export function renderAppShell(input: RuntimeRenderInput<ReactNode>): ReactNode 
 
 /** Designer preview content for this leaf, from the shared synthetic dataset. */
 function sample(dataset: Parameters<SurfaceRendererEntry["sample"]>[0]): Json {
-  const person = dataset.people[0];
+  const app = dataset.frames.app, { triggerLabel, heading, searchLabel, closeLabel, emptyMessage, groups } = app.commands;
   return {
-    "skip-link": "Skip to content",
+    "skip-link": app.skipLabel,
     sidebar: {
-      label: dataset.navigation.label, brand: { markSrc: dataset.assets.mark.src, name: dataset.assets.mark.name }, activeId: dataset.navigation.items[0].id,
-      tree: dataset.navigation.items.map(item => ({ id: item.id, label: item.label, href: item.href })),
-      account: { actor: { name: person.name }, signedOutLabel: "Sign in", sections: [{ id: "account", entries: [{ id: "profile", kind: "link", label: "Profile", href: "#profile" }, { id: "sign-out", kind: "action", label: "Sign out" }] }] },
+      label: app.navigationLabel, brand: { markSrc: app.markSrc, name: app.workspace }, activeId: app.activeId, tree: plainJson(app.navigation),
+      account: { actor: plainJson(app.actor), signedOutLabel: app.signedOutLabel, sections: [{ id: app.accountSectionId, label: app.accountSection, entries: plainJson([...app.accountEntries, app.signOut]) }] },
     },
-    command: { triggerLabel: "Search commands", heading: "Commands", searchLabel: "Search commands", closeLabel: "Close", emptyMessage: "No matching commands", groups: [{ id: "pages", label: "Pages", items: dataset.navigation.items.map(item => ({ id: item.id, label: item.label, href: item.href })) }],
+    command: { triggerLabel, heading, searchLabel, closeLabel, emptyMessage, groups: plainJson(groups),
       // Specimen content draws on Studio boards, which own the keyboard: the global shortcut stays off here.
       shortcutEnabled: false },
   };
