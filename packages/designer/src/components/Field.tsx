@@ -99,7 +99,7 @@ export function Field({
   const describedBy = [descriptionId, errorId].filter(Boolean).join(" ") || undefined;
 
   return (
-    <AriaTextField isInvalid={isInvalid} isRequired={isRequired} isDisabled={isDisabled} validationBehavior="aria"
+    <AriaTextField id={fieldId} isInvalid={isInvalid} isRequired={isRequired} isDisabled={isDisabled} validationBehavior="aria"
       className={cx("flex flex-col gap-xs", className)} style={{ opacity: isDisabled ? UI_ALPHA_DISABLED : undefined, ...style }}>
       <Label htmlFor={fieldId} className="text-body-s text-ink-secondary font-body">
         {label}

@@ -3,6 +3,7 @@ import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { Button } from "./Button.js";
 import { Tooltip } from "./Tooltip.js";
+import { Tooltip as Surface } from "react-aria-components";
 
 // react-aria-components' `TooltipTrigger` (like `MenuTrigger`/`DialogTrigger`)
 // wires its hover/focus/press behavior onto its trigger child via CONTEXT,
@@ -122,5 +123,59 @@ describe("Tooltip", () => {
     expect(screen.queryByRole("tooltip")).not.toBeInTheDocument();
     await user.tab();
     await screen.findByRole("tooltip");
+  });
+});
+
+
+describe("manual controlled Tooltip", () => {
+  it("keeps its anchor description connected while leaving Escape to the page", async () => {
+    const user = userEvent.setup();
+    const open = <Tooltip manual isOpen trigger={<Button aria-describedby="existing">Info</Button>}>Manual detail</Tooltip>;
+    const view = render(open);
+    const tooltip = await screen.findByRole("tooltip");
+    const trigger = screen.getByRole("button", { name: "Info" });
+    expect(trigger).toHaveAttribute("aria-describedby", `existing ${tooltip.id}`);
+    expect(tooltip.closest("[data-tooltip-host]")).not.toBeNull();
+    const reached: string[] = [];
+    const listen = (event: KeyboardEvent) => { reached.push(event.key); };
+    window.addEventListener("keydown", listen);
+    try {
+      trigger.focus();
+      await user.keyboard("{Escape}");
+      expect(reached).toEqual(["Escape"]);
+      expect(screen.getByRole("tooltip")).toBe(tooltip);
+    } finally { window.removeEventListener("keydown", listen); }
+    view.rerender(<Tooltip manual isOpen={false} trigger={<Button aria-describedby="existing">Info</Button>}>Manual detail</Tooltip>);
+    expect(screen.queryByRole("tooltip")).toBeNull();
+    expect(screen.getByRole("button", { name: "Info" })).toHaveAttribute("aria-describedby", "existing");
+  });
+
+  it("renders the actual custom surface with its owned id, anchor, placement and portal", async () => {
+    render(<Tooltip manual isOpen placement="right" trigger={<Button>Custom</Button>}
+      renderSurface={({ id, triggerRef, portalContainer, placement, children }) =>
+        <Surface {...{ id, triggerRef, UNSTABLE_portalContainer: portalContainer, placement }} data-selected-tooltip="yes">{children}</Surface>}>
+      Selected detail
+    </Tooltip>);
+    const user = userEvent.setup();
+    const tooltip = await screen.findByRole("tooltip");
+    expect(tooltip).toHaveAttribute("data-selected-tooltip", "yes");
+    expect(tooltip).toHaveTextContent("Selected detail");
+    expect(screen.getByRole("button", { name: "Custom" })).toHaveAttribute("aria-describedby", tooltip.id);
+    expect(tooltip.closest("[data-tooltip-host]")).not.toBeNull();
+    await waitFor(() => expect(tooltip).toHaveAttribute("data-placement", "right"));
+    const reached: string[] = [];
+    const listen = (event: KeyboardEvent) => { reached.push(event.key); };
+    window.addEventListener("keydown", listen);
+    try {
+      screen.getByRole("button", { name: "Custom" }).focus();
+      await user.keyboard("{Escape}");
+      expect(reached).toEqual(["Escape"]);
+      expect(screen.getByRole("tooltip")).toBe(tooltip);
+    } finally { window.removeEventListener("keydown", listen); }
+  });
+
+  it("requires controlled state and refuses a custom surface outside manual mode", () => {
+    expect(() => render(<Tooltip manual trigger={<Button>Info</Button>}>Detail</Tooltip>)).toThrow("requires controlled isOpen");
+    expect(() => render(<Tooltip renderSurface={() => null} trigger={<Button>Info</Button>}>Detail</Tooltip>)).toThrow("requires manual mode");
   });
 });
