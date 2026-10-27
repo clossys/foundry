@@ -6,6 +6,7 @@ export const labels: StudioLabels = {
   layers: { label: "L-layers", tokens: "Tokens", assets: "Assets", components: "Components", sections: "Sections", frames: "Frames", disabled: "Built after Tokens sign-off" },
   scorecard: { title: "L-score", close: "L-close", resolved: "L-resolved", checks: "L-checks", issues: "L-issues", noIssues: "L-no-issues", target: "Target: needs the check engine", counts: (errors, notices) => `L-score-count ${errors}/${notices}`, supported: codes => `L-supported ${codes.join("/")}`, categories: { contract: "Contract and format", accessibility: "Accessibility", coherence: "Coherence", modes: "Modes", provenance: "Provenance and license", coverage: "Coverage" } },
   matrix: { label: "L-matrix", leaf: "L-leaf", libraries: "L-libraries", showAll: "L-show-all", expand: leaf => `L-expand ${leaf}`, collapse: leaf => `L-collapse ${leaf}`, differs: "L-differs", pending: "L-cell-pending" },
+  rail: { label: "L-rail", show: "L-show-rail", hide: "L-hide-rail", inspectorEmpty: "L-inspector-empty" },
   treeLabel: "L-tree", stageLabel: "L-stage", inspectorLabel: "L-inspector", useGroup: "L-use-group",
   useSource: (source, target) => `L-use ${source} @ ${target}`,
   scope: { label: "L-scope", member: "L-member", slot: "L-slot", node: "L-node", memberPicker: "L-member-picker", nodePicker: "L-node-picker", explanation: "L-specificity" },

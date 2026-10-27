@@ -5,7 +5,6 @@ import { WholeStudioCanvas, useWholeStudio } from "./WholeStudio.js";
 import { useFrameNotice } from "../frames/frame-notices.js";
 import { CanvasExplorer } from "./CanvasExplorer.js";
 import { CanvasModules } from "./CanvasModules.js";
-import { SlotModule } from "../shell/FrameSlots.js";
 import { cx } from "../components/internal/cx.js";
 import { AssetExemptions } from "./AssetExemptions.js";
 import { boardMatches, canvasDomains, type CanvasFilter } from "./canvas-model.js";
@@ -17,7 +16,7 @@ import { runtimeHash } from "../catalog-core/runtime-ports.js";
 import type { LibraryBoardCommand } from "../blocks/library-board/model.js";
 import { useCanvasWorld } from "./useCanvasWorld.js";
 import { Inspector } from "./Inspector.js";
-import { SlotTree } from "./SlotTree.js";
+import { ExplorerTree, LayerSelect } from "./rail/ExplorerTree.js";
 import { candidatesCss } from "./preview-css.js";
 import { visibleStudioRows } from "./visible-rows.js";
 import { useStudioSession } from "./StudioProvider.js";
@@ -31,7 +30,6 @@ import type { StudioCanvasProps } from "./types.js";
 export function LegacyStudioCanvas({ panelInsets, className, candidateWorkflow }: StudioCanvasProps) {
   const state = useStudioSession(); const latest = useRef(state); latest.current = state;
   const [query, setQuery] = useState(""); const [filter, setFilter] = useState<CanvasFilter>("all");
-  const [explorerOpen, setExplorerOpen] = useState(true); const [inspectorOpen, setInspectorOpen] = useState(false);
   const text = state.labels.canvas; const enabled = Boolean(state.ready);
   // The frame owns transient chrome: a failed load is a frame notice, never a canvas-local banner.
   useFrameNotice(state.phase.status === "error" ? { id: "studio-load-failed", severity: "error", text: state.labels.loadFailed } : null);
@@ -48,10 +46,10 @@ export function LegacyStudioCanvas({ panelInsets, className, candidateWorkflow }
   const warnings = useMemo(() => new Map(state.boards.map(board => [board.id, state.summary?.issues.filter(issue => issue.slotId !== undefined && board.leaves.includes(issue.slotId) && issue.finding.severity === "notice").length ?? 0])), [state.boards, state.summary]);
   const registerRow = useCallback((id: string, element: HTMLElement | null) => { const elements = latest.current.rowElements.current; if (element) elements.set(id, element); else elements.delete(id); }, []);
   const registerBoard = useCallback((id: string, element: HTMLElement | null) => { const elements = latest.current.boardElements.current; if (element) elements.set(id, element); else elements.delete(id); }, []);
+  // A board's reveal selects the row's leaf (the Inspector card fills) and focuses that cell.
   const focusCell = useCallback((row: MatrixRow, candidate: Candidate) => {
-    if (row.leaves.length === 1) latest.current.setSlotId(row.leaves[0]!);
+    latest.current.select(row.leaves.length === 1 ? row.leaves[0]! : row.id, false);
     latest.current.setFocusedCell(current => current.row === row.id && current.source === candidate.source ? current : { row: row.id, source: candidate.source });
-    setInspectorOpen(true);
   }, [state.layer]);
   const reveal = useCallback((id: string, focus = false) => {
     const current = latest.current; current.setSlotId(id);
@@ -81,7 +79,7 @@ export function LegacyStudioCanvas({ panelInsets, className, candidateWorkflow }
     const candidate = row?.candidates.find(candidate => candidate.source === input.source) ?? row?.candidates.find(candidate => candidate.selected) ?? row?.candidates[0];
     if (row && candidate) { focusCell(row, candidate); return; }
     // A row not yet evaluated (off-screen until now): demand it; the inspector shows its chosen, else default, else first candidate.
-    const current = latest.current; current.setSlotId(input.leafId); current.requestRow(input.leafId); current.setFocusedCell({ row: input.leafId }); setInspectorOpen(true);
+    const current = latest.current; current.select(input.leafId); current.requestRow(input.leafId);
   }, [focusCell]);
   const focusedBoard = state.focusedRow ? state.boards.find(board => board.rows.includes(state.focusedRow!)) : undefined;
   const prompts = useMemo(() => {
@@ -89,7 +87,11 @@ export function LegacyStudioCanvas({ panelInsets, className, candidateWorkflow }
     const input = { board: focusedBoard, row: state.focusedRow, consumer: state.working.source.id, contextTokens, variants, workflow: candidateWorkflow, returnStep: state.labels.board.returnStep };
     return { create: valueBoardPrompt(input), ...(state.focusedRow.candidates.some(candidate => candidate.selected) ? { refresh: valueBoardPrompt(input, true) } : {}), ...(candidateWorkflow ? { workflow: candidateWorkflow } : {}) };
   }, [focusedBoard, state.focusedRow, state.working, contextTokens, variants, candidateWorkflow, state.labels.board.returnStep]);
-  return <div data-studio="" data-layout={narrow ? "narrow" : "wide"} data-studio-canvas="" data-frame-bleed="" className={cx("relative isolate h-full w-full min-h-0 min-w-0 flex-1 overflow-hidden bg-surface-raised text-ink-primary", className)}>
+  const inspector = state.selected && state.focused && state.focusedRow ? <aside data-studio-panel="inspector" aria-label={state.labels.inspectorLabel} className="min-w-0">
+    <Inspector candidate={state.focused} labels={state.labels} resolved={state.resolved} tier={(() => { const contract = state.catalog.slots.find(slot => slot.id === state.focused?.fill.slot)?.contract; return contract?.kind === "token" ? contract.tier : undefined; })()} {...(prompts ? { prompts } : {})} />
+  </aside> : <p data-studio-inspector-empty="" className="text-body-s text-ink-secondary">{state.labels.rail.inspectorEmpty}</p>;
+  return <div data-studio-body="" className="relative flex h-full w-full min-h-0 min-w-0 flex-1">
+    <div data-studio="" data-layout={narrow ? "narrow" : "wide"} data-studio-canvas="" data-frame-bleed="" className={cx("relative isolate h-full min-h-0 min-w-0 flex-1 overflow-hidden bg-surface-raised text-ink-primary", className)}>
     {state.layer === "assets" && state.summary ? <AssetExemptions findings={state.summary.issues.map(issue => issue.finding)} label={state.labels.assetExemption} /> : null}
     {state.ready ? <style data-studio-candidates="">{candidateStyles}</style> : null}
     {state.phase.status === "loading" ? <p role="status">{state.labels.loading}</p> : null}
@@ -103,12 +105,10 @@ export function LegacyStudioCanvas({ panelInsets, className, candidateWorkflow }
       >
         <CanvasBoards boards={boards} labels={state.labels} workflow={candidateWorkflow} onCommand={command} onBoardElement={registerBoard} onRowElement={registerRow} />
     </CanvasSurface></CanvasLod>
-    {state.focused && state.focusedRow ? <SlotModule id="value-inspector" slot="right-panel" label={state.labels.inspectorLabel}><aside data-studio-panel="inspector" aria-label={state.labels.inspectorLabel} className="p-md">
-      <Inspector candidate={state.focused} labels={state.labels} resolved={state.resolved} tier={(() => { const contract = state.catalog.slots.find(slot => slot.id === state.focused?.fill.slot)?.contract; return contract?.kind === "token" ? contract.tier : undefined; })()} {...(prompts ? { prompts } : {})} />
-    </aside></SlotModule> : null}
-    <CanvasModules canvas={canvas} labels={state.labels} explorer={<CanvasExplorer labels={state.labels} query={query} onQuery={setQuery} filter={filter} onFilter={setFilter}
+    </div>
+    <CanvasModules canvas={canvas} labels={state.labels} inspector={inspector} explorerHeader={<LayerSelect />} explorer={<CanvasExplorer labels={state.labels} query={query} onQuery={setQuery} filter={filter} onFilter={setFilter}
       libraries={state.sources.map(id => { const board = state.boards.find(board => board.id === state.slotId || board.leaves.includes(state.slotId)); return { id, available: (board ? [board] : state.boards).some(board => board.rows.some(row => row.candidates.some(candidate => candidate.source === id && (candidate.fill.sourceAddress !== "" || candidate.members.length > 0)))) }; })}>
-      <SlotTree nodes={state.tree} placements={state.activeCatalog.placements} counts={state.counts} memberCount={state.labels.memberCount} label={state.labels.treeLabel} slotId={state.slotId} onSelect={id => reveal(id)} />
+      <ExplorerTree query={query} />
     </CanvasExplorer>} />
   </div>;
 }

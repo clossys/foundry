@@ -1,11 +1,11 @@
 "use client";
-import { createContext, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
+import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { applyLibraryChange, libraryHash, loadBuildCatalog } from "../catalog-core/index.js";
 import type { CompositeChangeSet, CompositeEngineInput, LayerId } from "../catalog-core/index.js";
 import { runtimeHash, runtimeSnapshot } from "../catalog-core/runtime-ports.js";
 import type { RuntimeDigest } from "../catalog-core/runtime-ports.js";
 import { StudioProvider, useStudioSession } from "./StudioProvider.js";
-import { initialStudioLayer, studioLayerFromFragment } from "./layer-navigation.js";
+import { normaliseWindowLocation, resolverFromPlacements } from "./layer-navigation.js";
 import { evaluateWhole, placedLeaves } from "./whole-model.js";
 import type { CompositeStudioAdapter, CompositeStudioProps, CompositeStudioSnapshot, StudioAdapter, StudioCandidateWorkflow } from "./types.js";
 import type { DesignerLayerBoardProjection } from "./designer-layer-boards.js";
@@ -13,6 +13,7 @@ import type { DesignerLayerBoardsInput } from "./designer-layer-boards.js";
 import { prepareValueLibraryBoard, prepareCompositeLibraryBoard, type PreparedBoardPreviews } from "./prepared-library-boards.js";
 import type { LibraryBoardRecords } from "../blocks/library-board/model.js";
 const LAYERS: readonly LayerId[] = ["tokens", "assets", "components", "sections", "frames"];
+const VALUE_LAYERS: ReadonlySet<LayerId> = new Set(["tokens", "assets"]);
 /** The host adapter as the read-only Designer sees it: catalog, contracts and load. Its save is never reachable. */
 export type CompositeStudioReadAdapter = Pick<CompositeStudioAdapter, "kind" | "catalog" | "contracts" | "load">;
 /**
@@ -24,10 +25,21 @@ function useWholeState({ adapter: host, labels, initialSlotId }: CompositeStudio
   const [snapshot, setSnapshot] = useState<CompositeStudioSnapshot>();
   const sessionIdentity = useMemo(() => globalThis.crypto.randomUUID(), [snapshot]);
   const [failed, setFailed] = useState(false);
-  const [layer, setLayer] = useState<LayerId>(() => { const fragment = initialStudioLayer(); if (fragment) return fragment; const id = initialSlotId?.split(".")[0] as LayerId; return LAYERS.includes(id) ? id : "tokens"; });
-  const [leaf, setLeaf] = useState(initialSlotId ?? "tokens.accent-color");
-  const [score, setScore] = useState(false);
   const contracts = useMemo(() => adapter.contracts ?? loadBuildCatalog(), [adapter.contracts]);
+  // Every leaf the explorer lists: the value catalog's tokens and assets, the contracts' other layers.
+  const resolver = useMemo(() => {
+    const values = adapter.catalog.values.placements.filter(placement => VALUE_LAYERS.has(placement.layer));
+    const { layerOf } = resolverFromPlacements([...values, ...contracts.placements.filter(placement => !VALUE_LAYERS.has(placement.layer))]);
+    return { layers: LAYERS, layerOf };
+  }, [adapter.catalog.values, contracts]);
+  const isLeaf = (id: string | undefined): id is string => id !== undefined && (adapter.catalog.values.slots.some(slot => slot.id === id) || contracts.slots.some(slot => slot.id === id));
+  // The host page owns one canonical URL (?layer=&node=): normalise it once, before the first paint.
+  const [initial] = useState(() => { const location = normaliseWindowLocation(resolver); return { layer: location.layer, leaf: isLeaf(location.node) ? location.node : undefined }; });
+  const [layer, setLayer] = useState<LayerId>(() => { if (initial.layer) return initial.layer; const id = initialSlotId?.split(".")[0] as LayerId; return LAYERS.includes(id) ? id : "tokens"; });
+  const [leaf, setLeaf] = useState(initial.leaf ?? initialSlotId ?? "tokens.accent-color");
+  const [selected, setSelected] = useState<string | undefined>(initial.leaf);
+  const layerRef = useRef(layer); layerRef.current = layer;
+  const [score, setScore] = useState(false);
   const snapshotRef = useRef(snapshot); snapshotRef.current = snapshot;
   useEffect(() => {
     let active = true; setSnapshot(undefined); setFailed(false);
@@ -61,15 +73,24 @@ function useWholeState({ adapter: host, labels, initialSlotId }: CompositeStudio
     ...(snapshot.library.adoptedAt ? { adoptedAt: snapshot.library.adoptedAt } : {}),
   } : undefined, [snapshot?.library]);
   const values = useMemo(() => valueLibrary ? { committed: valueLibrary } : undefined, [valueLibrary]);
+  // A layer change clears the selection in the same update, so a navigation can then select on the new layer.
   const setActiveLayer = async (next: LayerId): Promise<boolean> => {
+    if (next !== layerRef.current) setSelected(undefined);
     setLayer(next); setLeaf(current => contracts.slots.some(slot => slot.id === current && slot.layer === next) ? current : contracts.slots.find(slot => slot.layer === next)?.id ?? "");
     return true;
   };
+  /** The selected L3 leaf (the Inspector card fills), or none. Selecting also makes it the inspected leaf. */
+  const select = useCallback((next: string | undefined): void => { setSelected(next); if (next !== undefined) setLeaf(next); }, []);
+  const latest = useRef({ setActiveLayer, select }); latest.current = { setActiveLayer, select };
   useEffect(() => {
-    const changed = () => { const layer = studioLayerFromFragment(window.location.hash); if (layer) void setActiveLayer(layer); };
+    const changed = (): void => {
+      const location = normaliseWindowLocation(resolver);
+      if (location.layer) void latest.current.setActiveLayer(location.layer);
+      if (isLeaf(location.node)) latest.current.select(location.node);
+    };
     window.addEventListener("hashchange", changed); return () => window.removeEventListener("hashchange", changed);
-  }, []);
-  return { adapter, labels, sessionIdentity, snapshot, contracts, failed, changes, layer, setLayer: setActiveLayer, leaf, setLeaf, score, setScore, input, evaluated, projection, values };
+  }, [resolver]);
+  return { adapter, labels, sessionIdentity, snapshot, contracts, failed, changes, layer, setLayer: setActiveLayer, leaf, setLeaf, selected, select, score, setScore, input, evaluated, projection, values };
 }
 export type WholeStudioState = ReturnType<typeof useWholeState>;
 const WholeContext = createContext<WholeStudioState | null>(null);
@@ -77,7 +98,7 @@ export const useWholeStudio = (): WholeStudioState | null => useContext(WholeCon
 /** State only: children and the one shared value projection remain mounted through loading/error. */
 export function WholeStudioProvider({ children, ...props }: CompositeStudioProps & { children: ReactNode }) {
   const state = useWholeState(props);
-  return <WholeContext.Provider value={state}><StudioProvider layerState={{ layer: state.layer, setLayer: state.setLayer, phase: state.failed ? "error" : "loading" }} values={state.values} adapter={state.projection} labels={props.labels} initialSlotId={props.initialSlotId}>{children}</StudioProvider></WholeContext.Provider>;
+  return <WholeContext.Provider value={state}><StudioProvider layerState={{ layer: state.layer, setLayer: state.setLayer, phase: state.failed ? "error" : "loading", selected: state.selected, select: state.select }} values={state.values} adapter={state.projection} labels={props.labels} initialSlotId={state.selected ?? props.initialSlotId}>{children}</StudioProvider></WholeContext.Provider>;
 }
 /** Finite facts from the original shared session. Preview functions, actions and candidate engines stay outside. */
 export function useDesignerLayerBoardProjection(): { readonly projection: DesignerLayerBoardProjection; readonly projectionHash: RuntimeDigest } {

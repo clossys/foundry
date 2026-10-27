@@ -2,7 +2,7 @@ import { expect, it, vi } from "vitest";
 import { render, fireEvent, screen, within, waitFor } from "@testing-library/react";
 import { boardRow } from "./__fixtures__/library-board-dom.js";
 import userEvent from "@testing-library/user-event";
-import { render as renderFrame } from "./__fixtures__/frame.js";
+import { render as renderFrame, findLayerSelect } from "./__fixtures__/frame.js";
 import { StudioProvider } from "./StudioProvider.js";
 import { Studio } from "./Studio.js";
 import { CandidateCell } from "./CandidateCell.js";
@@ -74,7 +74,7 @@ it("carries the loaded token context into the inspector prompt and refreshes hos
     return <StudioProvider adapter={adapter} catalog={smallCatalog} labels={labels}><Studio candidateWorkflow={{ checkCandidates: check }} /></StudioProvider>;
   }
   const view = renderFrame(<Surface check={firstCheck} />);
-  await screen.findByRole("link", { name: "Tokens" });
+  await findLayerSelect();
   view.rerender(<Surface check={nextCheck} />);
   const current = await waitFor(() => boardRow("tokens.surface-color", view.container)!);
   await userEvent.click(within(current).getByText("tokens.surface-color"));

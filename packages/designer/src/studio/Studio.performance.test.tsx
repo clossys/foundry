@@ -1,7 +1,7 @@
 import { afterEach, expect, it, vi } from "vitest";
 import { cleanup, fireEvent, screen, waitFor, within } from "@testing-library/react";
 import { boardOf, boardRow } from "./__fixtures__/library-board-dom.js";
-import { render } from "./__fixtures__/frame.js";
+import { render, findLayerSelect } from "./__fixtures__/frame.js";
 import userEvent from "@testing-library/user-event";
 import { Studio as StudioSurface, StudioProvider, StudioRightPanel, type StudioProps } from "./index.js";
 function Studio(props: StudioProps) { return <StudioProvider {...props}><StudioSurface /><StudioRightPanel /></StudioProvider>; }
@@ -26,7 +26,7 @@ it("preserves actual Designer errors with no source choice for browser form vali
   expect(errors.length).toBeGreaterThan(0);
   render(<Studio catalog={smallCatalog} adapter={{ load: async () => ({ library }), save: async () => ({ ok: false, reason: "unavailable" }) }}
     labels={labels} initialSlotId="tokens.surface-color" />);
-  await screen.findByRole("link", { name: "Tokens" });
+  await findLayerSelect();
   const board = await waitFor(() => boardOf("tokens.surface-color")!);
   expect(within(board).queryByRole("button", { name: labels.board.changeSelection, hidden: true })).toBeNull();
   expect(screen.queryAllByRole("radio", { hidden: true })).toEqual([]);
@@ -49,7 +49,7 @@ it("does no additional adoption, resolution, checking or emission on focus, scor
   const library = adopt(adopt(), "assets.icon-search", "lucide");
   const adapter = { load: async () => ({ library }), save: async () => ({ ok: false as const, reason: "unavailable" as const }) };
   render(<Studio catalog={smallCatalog} adapter={adapter} labels={labels} initialSlotId="assets.icon-search" />);
-  await screen.findByRole("link", { name: "Tokens" });
+  await findLayerSelect();
   const user = userEvent.setup();
   const row = await waitFor(() => boardRow("assets.icon-search")!);
   // Request this row once; subsequent selection and display changes must reuse its checked candidates.

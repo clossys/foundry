@@ -9,7 +9,6 @@ import { UsagePanel, type UsagePanelLabels } from "./UsagePanel.js";
 import type { UsageHistory } from "./useUsageNavigation.js";
 
 const STUDIO_LAYERS: readonly LayerId[] = ["tokens", "assets", "components", "sections", "frames"];
-const VALUE_LAYERS: ReadonlySet<LayerId> = new Set(["tokens", "assets"]);
 const layerOf = (id: string): LayerId | undefined => STUDIO_LAYERS.find(layer => id.startsWith(layer + "."));
 
 /** One back stack per Studio session, so it survives the value and contract inspectors swapping on a tab change. */
@@ -28,7 +27,7 @@ export function useStudioUsageData(graph?: UsageGraph, enabled = true): UsageDat
 }
 
 /**
- * The Usage area mounted in a Studio inspector. Navigation is the Studio's own: a row switches the layer tab
+ * The Usage area mounted in a Studio inspector. Navigation is the Studio's own: a row switches the layer
  * and selects that element; an element with no Studio tab (a page) renders as text.
  */
 export function StudioUsage({ id, labels, graph }: { id: string; labels: UsagePanelLabels; graph?: UsageGraph }) {
@@ -36,17 +35,12 @@ export function StudioUsage({ id, labels, graph }: { id: string; labels: UsagePa
   const data = useStudioUsageData(graph);
   const layers = whole ? STUDIO_LAYERS : session?.layers ?? [];
   const canNavigate = useCallback((target: string) => { const layer = layerOf(target); return Boolean(layer && layers.includes(layer)); }, [layers]);
-  const setLayer = session?.setLayer, setLeaf = whole?.setLeaf, setSlotId = session?.setSlotId, setFocusedCell = session?.setFocusedCell, actions = session?.canvasActions;
+  const onNavigate = session?.onNavigate, actions = session?.canvasActions;
+  // The Studio's one navigation: switch to the entry's layer, select it (the Inspector card shows it) and reveal it.
   const navigate = useCallback((target: string) => {
     const layer = layerOf(target);
-    if (!layer || !setLayer) return;
-    void setLayer(layer).then(changed => {
-      if (!changed) return;
-      if (setLeaf && !VALUE_LAYERS.has(layer)) { setLeaf(target); return; }
-      setSlotId?.(target); setFocusedCell?.({ row: target });
-      actions?.current?.reveal(target, true);
-    });
-  }, [setLayer, setLeaf, setSlotId, setFocusedCell, actions]);
+    if (layer) onNavigate?.({ layer, leaf: target });
+  }, [onNavigate]);
   return <UsagePanel id={id} labels={labels} onNavigate={navigate} canNavigate={canNavigate} history={historyFor(actions)}
     {...(data ? { graph: data.graph } : {})} {...(data?.exceptions ? { exceptions: data.exceptions } : {})} />;
 }

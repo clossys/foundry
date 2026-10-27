@@ -27,6 +27,11 @@ export interface StudioLabels {
   layers: { label: string; tokens: string; assets: string; components: string; sections: string; frames: string; disabled: string };
   scorecard: { title: string; close: string; resolved: string; checks: string; issues: string; noIssues: string; target: string; categories: Record<CheckCategory, string>; counts: (errors: number, notices: number) => string; supported: (codes: readonly string[]) => string };
   matrix: { label: string; leaf: string; libraries: string; showAll: string; expand: (leaf: string) => string; collapse: (leaf: string) => string; differs: string; pending: string };
+  /**
+   * The right rail of cards (Explorer, Inspector, Canvas map, Zoom): its landmark name, the show and hide
+   * controls for the whole rail, and the Inspector card's hint while no leaf is selected.
+   */
+  rail: { label: string; show: string; hide: string; inspectorEmpty: string };
   treeLabel: string;
   stageLabel: string;
   inspectorLabel: string;
@@ -82,12 +87,6 @@ export interface StudioLabels {
 export interface StudioPanelInsets {
   blockStart?: CSSProperties["insetBlockStart"]; blockEnd?: CSSProperties["insetBlockEnd"]; inlineStart?: CSSProperties["insetInlineStart"]; inlineEnd?: CSSProperties["insetInlineEnd"];
 }
-export interface StudioHeaderProps {
-  className?: string;
-  layerHref?: (layer: import("../catalog-core/index.js").LayerId) => string;
-  /** Called after the layer selection changes. */
-  onLayerNavigate?: (layer: import("../catalog-core/index.js").LayerId, href: string) => void | Promise<void>;
-}
 /** A checked summary is pending display data; it grants no selection or persistence authority. */
 export interface StudioPendingCandidate { id: string; slot: string; label: string; source: string; variants: readonly string[] }
 export type StudioCandidateCheckResult = { status: "checked"; candidates: readonly StudioPendingCandidate[] } | { status: "unavailable" | "failed" };
@@ -98,7 +97,10 @@ export interface StudioCandidateWorkflow {
   actions?: Omit<import("./StudioActions.js").StudioActionsProps, "promptContext" | "taskPrompt">;
   checkCandidates?(slot: string): Promise<StudioCandidateCheckResult>;
 }
-export interface StudioCanvasProps { header?: "internal" | "external"; panelInsets?: StudioPanelInsets; className?: string; candidateWorkflow?: StudioCandidateWorkflow }
+export interface StudioCanvasProps {
+  /** @deprecated Ignored: the Studio has no layer tabs; the right rail's Explorer card switches layers. */
+  header?: "internal" | "external";
+  panelInsets?: StudioPanelInsets; className?: string; candidateWorkflow?: StudioCandidateWorkflow }
 export interface StudioProviderProps extends Omit<StudioProps, "header" | "panelInsets" | "className"> { children: ReactNode }
 export interface CompositeStudioProviderProps extends Omit<CompositeStudioProps, "header" | "panelInsets" | "className"> { children: ReactNode }
 

@@ -20,11 +20,10 @@ export { StudioProvider } from "./StudioProvider.js";
 export { useStudioSession, useOptionalStudioSession } from "./StudioProvider.js";
 export { WholeStudioProvider, useWholeStudio, useDesignerLayerBoardProjection } from "./WholeStudioProvider.js";
 export type { WholeStudioState } from "./WholeStudioProvider.js";
-export { StudioHeader, useStudioNavigation } from "./StudioHeader.js";
 export { StudioRightPanel } from "./StudioRightPanel.js";
 export { catalogStudioAdapter } from "./catalog-adapter.js";
 export { demoStudioAdapter } from "./demo-adapter.js";
-export type { StudioSessionControls, StudioWriteResult, StudioAdapter, CompositeStudioAdapter, CompositeStudioSnapshot, CompositeStudioLabels, CompositeStudioProps, CompositeStudioProviderProps, LegacyStudioProps, StudioLabels, StudioProps, StudioProviderProps, StudioHeaderProps, StudioCanvasProps, StudioPanelInsets } from "./types.js";
+export type { StudioSessionControls, StudioWriteResult, StudioAdapter, CompositeStudioAdapter, CompositeStudioSnapshot, CompositeStudioLabels, CompositeStudioProps, CompositeStudioProviderProps, LegacyStudioProps, StudioLabels, StudioProps, StudioProviderProps, StudioCanvasProps, StudioPanelInsets } from "./types.js";
 
 export { StudioTitle } from "./StudioTitle.js";
 export { StudioActions, type StudioActionsProps, type StudioOpenTarget, type StudioLaunchResult, type StudioActionNotice } from "./StudioActions.js";

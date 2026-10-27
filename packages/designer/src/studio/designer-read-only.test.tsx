@@ -7,8 +7,8 @@
 import { afterEach, expect, it, vi } from "vitest";
 import { act, cleanup, fireEvent, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { render } from "./__fixtures__/frame.js";
-import { Studio, StudioHeader, StudioRightPanel } from "./index.js";
+import { render, findLayerSelect, chooseLayer } from "./__fixtures__/frame.js";
+import { Studio, StudioRightPanel } from "./index.js";
 import { StudioProvider } from "./StudioProvider.js";
 import { WholeStudioProvider } from "./WholeStudioProvider.js";
 import { adopt, emptyLibrary, labels, smallCatalog } from "./__fixtures__/studio.js";
@@ -79,9 +79,9 @@ it("legacy tokens and assets layers render no write control, and driving every c
   const save = vi.fn(async () => ({ ok: false as const, reason: "unavailable" as const }));
   const library = adopt(emptyLibrary(), "tokens.surface-color", "foundry");
   render(<StudioProvider catalog={smallCatalog} adapter={{ load: async () => ({ library }), save }} labels={roLabels}><Studio header="internal" /><StudioRightPanel /></StudioProvider>);
-  await screen.findByRole("link", { name: "Tokens" });
+  await findLayerSelect();
   for (const layer of ["Tokens", "Assets"]) {
-    if (layer !== "Tokens") await userEvent.click(screen.getByRole("link", { name: layer }));
+    if (layer !== "Tokens") await chooseLayer(labels, layer, userEvent.setup());
     await boardsReady();
     expectNoWriteControls(layer);
     await driveEveryControl();
@@ -92,10 +92,10 @@ it("legacy tokens and assets layers render no write control, and driving every c
 
 it("the whole Designer renders no write control on any layer, and driving every control never saves", async () => {
   const { adapter, save } = compositeAdapter();
-  render(<WholeStudioProvider adapter={adapter} labels={wholeLabels}><StudioHeader /><Studio header="external" /><StudioRightPanel /></WholeStudioProvider>);
-  await screen.findByRole("link", { name: "Tokens" });
+  render(<WholeStudioProvider adapter={adapter} labels={wholeLabels}><Studio header="external" /><StudioRightPanel /></WholeStudioProvider>);
+  await findLayerSelect();
   for (const layer of ["Tokens", "Assets", "Components", "Sections", "Frames"]) {
-    if (layer !== "Tokens") await userEvent.click(screen.getByRole("link", { name: layer }));
+    if (layer !== "Tokens") await chooseLayer(labels, layer, userEvent.setup());
     await boardsReady();
     expectNoWriteControls(layer);
     await driveEveryControl();
@@ -123,8 +123,8 @@ async function expectReadOnlyInspector(save: ReturnType<typeof vi.fn>, leaf: str
 
 it("selecting an L3 row opens the read-only inspector with the how-to-change line (whole Designer, components)", async () => {
   const { adapter, save } = compositeAdapter();
-  render(<WholeStudioProvider adapter={adapter} labels={wholeLabels}><StudioHeader /><Studio header="external" /><StudioRightPanel /></WholeStudioProvider>);
-  await userEvent.click(await screen.findByRole("link", { name: "Components" }));
+  render(<WholeStudioProvider adapter={adapter} labels={wholeLabels}><Studio header="external" /><StudioRightPanel /></WholeStudioProvider>);
+  await chooseLayer(wholeLabels, "Components", userEvent.setup());
   await boardsReady();
   const row = firstLeafRow()!, leaf = boardRowLeaf(row)!;
   expect(leaf.startsWith("components.")).toBe(true);

@@ -10,6 +10,6 @@ export function StudioRightPanel() {
   if (whole) return <WholeStudioRightPanel />;
   if (!state.ready || !state.summary) return null;
   return <><Button variant="ghost" aria-expanded={state.scoreOpen} onPress={() => state.setScoreOpen(open => !open)}>{state.labels.scorecard.title}</Button>
-    {state.scoreOpen ? <Scorecard summary={state.summary} labels={state.labels} onClose={state.closeScore} onIssue={id => state.canvasActions.current?.reveal(id, true)} /> : null}
+    {state.scoreOpen ? <Scorecard summary={state.summary} labels={state.labels} onClose={state.closeScore} onIssue={id => state.onNavigate({ layer: state.layer, leaf: id })} /> : null}
   </>;
 }
