@@ -178,27 +178,49 @@ describe("manual controlled Tooltip", () => {
     expect(() => render(<Tooltip manual trigger={<Button>Info</Button>}>Detail</Tooltip>)).toThrow("requires controlled isOpen");
     expect(() => render(<Tooltip renderSurface={() => null} trigger={<Button>Info</Button>}>Detail</Tooltip>)).toThrow("requires manual mode");
   });
-  it("describes a disabled trigger through its own focusable wrapper, with no consumer element", async () => {
+  it("gives a disabled trigger one named, disabled, focusable control that the tooltip describes", async () => {
     const user = userEvent.setup();
     render(
       <Tooltip disabledTrigger trigger={<Button isDisabled>Publish</Button>} delay={0} closeDelay={0}>
         Publishing is locked.
       </Tooltip>,
     );
-    const button = screen.getByRole("button", { name: "Publish" });
-    expect(button).toBeDisabled();
     await user.tab();
-    const wrapper = button.parentElement!;
-    expect(wrapper).toHaveFocus();
-    expect(wrapper).toHaveAttribute("data-tooltip-disabled-trigger");
+    const control = screen.getByRole("button", { name: "Publish" });
+    expect(control).toHaveFocus();
+    expect(control).toHaveAttribute("aria-disabled", "true");
+    expect(control).toHaveAttribute("data-tooltip-disabled-trigger");
     const tooltip = await screen.findByRole("tooltip");
     expect(tooltip).toHaveTextContent("Publishing is locked.");
-    expect(wrapper.getAttribute("aria-describedby")).toBe(tooltip.id);
+    expect(control).toHaveAccessibleDescription("Publishing is locked.");
+    // The natively disabled control stays disabled, takes no focus and is not a second button in the tree.
+    const native = control.querySelector("button")!;
+    expect(native).toBeDisabled();
+    expect(screen.getAllByRole("button")).toEqual([control]);
     await user.keyboard("{Escape}");
     await waitFor(() => expect(screen.queryByRole("tooltip")).not.toBeInTheDocument());
     primePointerModality();
-    await user.hover(wrapper);
+    await user.hover(control);
     expect(await screen.findByRole("tooltip")).toHaveTextContent("Publishing is locked.");
+  });
+
+  it("takes the wrapped control's role from disabledTriggerRole and its name from an icon-only aria-label", async () => {
+    const user = userEvent.setup();
+    render(
+      <Tooltip disabledTrigger disabledTriggerRole="link" trigger={<Button isDisabled aria-label="Open report" />} delay={0} closeDelay={0}>
+        Reports are building.
+      </Tooltip>,
+    );
+    await user.tab();
+    const control = screen.getByRole("link", { name: "Open report" });
+    expect(control).toHaveFocus();
+    expect(control).toHaveAttribute("aria-disabled", "true");
+    await screen.findByRole("tooltip");
+    expect(control).toHaveAccessibleDescription("Reports are building.");
+  });
+
+  it("refuses a disabled trigger that is not one element", () => {
+    expect(() => render(<Tooltip disabledTrigger trigger="Publish">Locked</Tooltip>)).toThrow("Tooltip disabledTrigger requires one trigger element.");
   });
 
   it("leaves an enabled trigger unwrapped", () => {

@@ -1,4 +1,4 @@
-import { cloneElement, isValidElement, useId, useRef, useState, type ReactNode, type RefObject } from "react";
+import { cloneElement, isValidElement, useId, useRef, useState, type ReactElement, type ReactNode, type RefObject } from "react";
 import {
   Focusable,
   Tooltip as AriaTooltip,
@@ -10,6 +10,9 @@ import {
 } from "react-aria-components";
 import { cx } from "./internal/cx.js";
 import { UI_ELEVATION_FLOATING, UI_Z_TOOLTIP } from "./internal/ui-vars.js";
+
+/** Interactive roles a disabled trigger's focus target can expose. */
+export type DisabledTriggerRole = "button" | "link" | "menuitem" | "tab";
 
 export interface TooltipProps extends Omit<TooltipTriggerComponentProps, "children" | "trigger"> {
   /**
@@ -42,13 +45,18 @@ export interface TooltipProps extends Omit<TooltipTriggerComponentProps, "childr
   /** Merged onto the tooltip's own surface element. */
   className?: string;
   /**
-   * Describe a disabled control. A disabled element takes neither hover nor focus,
-   * so the component wraps `trigger` in its own focusable element (react-aria's
-   * `Focusable`) that carries the hover/focus listeners and `aria-describedby`.
-   * The consumer passes the disabled control unchanged and adds no wrapper.
+   * Describe a natively disabled control. A disabled element takes neither hover nor focus,
+   * so the component owns the focus target instead (react-aria's `Focusable`): one element
+   * with `disabledTriggerRole`, `aria-disabled="true"`, the control's own accessible name
+   * (via `aria-labelledby` on the control) and the tooltip's `aria-describedby`. The disabled
+   * control inside it stays rendered but is hidden from assistive tech, so the tree holds one
+   * control, not two. The consumer passes the disabled control unchanged and adds no wrapper.
+   * Requires one trigger element.
    * @default false
    */
   disabledTrigger?: boolean;
+  /** The role the disabled control exposes through its focus target. @default "button" */
+  disabledTriggerRole?: DisabledTriggerRole;
   /** Controlled opening without hover/focus listeners or a document Escape handler. Requires `isOpen`. */
   manual?: boolean;
   /**
@@ -100,6 +108,7 @@ export function Tooltip({
   manual = false,
   renderSurface,
   disabledTrigger = false,
+  disabledTriggerRole = "button",
   ...rest
 }: TooltipProps) {
   if (manual) {
@@ -109,14 +118,11 @@ export function Tooltip({
       isOpen={rest.isOpen} onOpenChange={rest.onOpenChange} renderSurface={renderSurface} />;
   }
   if (renderSurface) throw new TypeError("Tooltip renderSurface requires manual mode.");
+  if (disabledTrigger && !isValidElement(trigger)) throw new TypeError("Tooltip disabledTrigger requires one trigger element.");
   return (
     <TooltipTrigger {...rest} trigger={triggerAction}>
       {disabledTrigger ? (
-        <Focusable>
-          <span tabIndex={0} className="inline-flex" data-tooltip-disabled-trigger="">
-            {trigger}
-          </span>
-        </Focusable>
+        <DisabledTrigger role={disabledTriggerRole} trigger={trigger as ReactElement<{ id?: string }>} />
       ) : trigger}
       <AriaTooltip
         placement={placement}
@@ -129,6 +135,23 @@ export function Tooltip({
         {children}
       </AriaTooltip>
     </TooltipTrigger>
+  );
+}
+
+/**
+ * The focus target for a natively disabled control: an interactive role, `aria-disabled`, the
+ * control's own name through `aria-labelledby`, and react-aria's hover/focus/description wiring
+ * from `Focusable`. The control itself is presentational content of this target.
+ */
+function DisabledTrigger({ role, trigger }: { role: DisabledTriggerRole; trigger: ReactElement<{ id?: string }> }) {
+  const generated = useId();
+  const controlId = trigger.props.id ?? generated;
+  return (
+    <Focusable>
+      <span role={role} tabIndex={0} aria-disabled="true" aria-labelledby={controlId} className="inline-flex" data-tooltip-disabled-trigger="">
+        <span aria-hidden="true" className="inline-flex">{cloneElement(trigger, { id: controlId })}</span>
+      </span>
+    </Focusable>
   );
 }
 
