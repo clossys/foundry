@@ -17,6 +17,9 @@ export function dialogExecutableSource(file: SourceFile): SourceFile {
   replace('          {children}\n          {showCloseButton && (', '          {composeRenderProps(children, (children) => (\n            <>\n          {children}\n          {showCloseButton && (');
   replace('          )}\n        </DialogPrimitive>', '          )}\n            </>\n          ))}\n        </DialogPrimitive>');
   replace('  Dialog as DialogPrimitive,', '  composeRenderProps,\n  Dialog as DialogPrimitive,');
+  // The rebound Button leaf is the consumer's open member-dispatch facade, so its props no longer carry
+  // the pinned Button's string className; DialogClose keeps that contract for the cn call it makes.
+  replace('}: React.ComponentProps<typeof Button>) {', '}: React.ComponentProps<typeof Button> & { className?: string }) {');
   return { ...file, content };
 }
 

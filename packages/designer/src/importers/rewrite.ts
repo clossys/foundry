@@ -790,8 +790,8 @@ function rewriteSource(input: RewriteInput): RewriteResult {
   // These selected-source restyles are authenticated independently of generic
   // utility rewriting. Changed modules or styles retain their original findings.
   const selectedRestyles: Readonly<Record<string, { leaf: string; hashes: readonly string[] }>> = {
-    dialog: { leaf: "dialog", hashes: ["ff8a8e6b372e7eb06c931975d8ac1ea59d9271051ac178a62c95f6acae20bb35", "7093864c5f36660043d96b34a49e7e8c73cebf2a56391cf6a9e6435c95de859f"] },
-    "dropdown-menu": { leaf: "menu", hashes: ["50a583093755eb29800812b189860b10f3aac3f7d48a3be23abe59c73dbb551d", "5b3d5442544c886e9c4c9571a392cf35359fc7cea1ca3f0725f93170e1e172a1"] },
+    dialog: { leaf: "dialog", hashes: ["ff8a8e6b372e7eb06c931975d8ac1ea59d9271051ac178a62c95f6acae20bb35", "9361795cc0801cf902adeef084cda2cbe15ee2373433319a3cbb47b8a6879063"] },
+    "dropdown-menu": { leaf: "menu", hashes: ["50a583093755eb29800812b189860b10f3aac3f7d48a3be23abe59c73dbb551d", "dab0795b541e7987375948a544ae678dfbc3608fc44afce3ce45972700a9d9ef"] },
     popover: { leaf: "popover", hashes: ["ff617496f63c49105c177be5c2d21a2e4174a5417c3d675179b21cf98854deea"] },
     accordion: { leaf: "disclosure", hashes: ["1fe5c781263e046e1c897eb6a32a6f9f188963d53b1bef2ea23b8686597949ed"] },
     skeleton: { leaf: "skeleton", hashes: ["8fcbad84e494a75484a0975221fb40f54c4a7d68f79cfc305cb158d1feb1badf"] },
@@ -1172,6 +1172,13 @@ function rewriteSource(input: RewriteInput): RewriteResult {
           const primitive = item === "input" ? "Input" : "TextArea";
           return `import { ${primitive}${primitive === local ? "" : ` as ${local}`} } from "react-aria-components"\n`;
         });
+    }
+    // The rebound Button leaf is the consumer's open member-dispatch facade, so its props no longer carry
+    // the pinned Button's string className; InputGroupButton keeps that contract for the cn call it makes.
+    if (file.path === "components/_parts/input-group/input-group.tsx" && content.includes("function InputGroupButton(")) {
+      const props = '  VariantProps<typeof inputGroupButtonVariants> & {\n    type?: "button" | "submit" | "reset"\n  }) {';
+      if (content.split(props).length === 2) content = content.replace(props, props.replace('"reset"\n', '"reset"\n    className?: string\n'));
+      else add("K9", file.path, "InputGroupButton", "InputGroupButton props differ from the pinned source");
     }
     for (const declaration of [...content.matchAll(/import\s*\{([^}]+)\}\s*from\s*["']lucide-react["']\s*;?/g)]) {
       let unresolved = false;
