@@ -6,7 +6,9 @@ import { fileURLToPath } from "node:url";
 import { runDogfood, dogfoodSourceModules, DOGFOOD_PACKAGE_NAME, type DogfoodException, type NeedStatus } from "../catalog-core/dogfood.js";
 import { consumerDogfoodSources, parseConsumerDogfoodContract, runConsumerDogfood } from "./consumer-dogfood.js";
 import tokenSlots from "../catalog/slots/tokens.json" with { type: "json" };
-import { libraryHash, loadCatalog, loadComponentRegistry, type CompositeFinding, type CompositeEmitTarget } from "../catalog-core/index.js";
+import { libraryHash, loadCatalog, loadComponentCompositionRules, loadComponentRegistry, type CompositeFinding, type CompositeEmitTarget } from "../catalog-core/index.js";
+import type { CompositeEngineInput } from "../catalog-core/types.js";
+import { loadCatalogBundles } from "../catalog-bundles.js";
 import type { SurfaceResolutionOptions } from "../catalog-core/surface-types.js";
 import { readSurfacePackageEvidence } from "./surface-package-evidence.js";
 import { foundrySurfaceCatalog } from "./surface-catalog.js";
@@ -21,9 +23,9 @@ const USAGE = `Usage: designer-library <command> --root <consumer-library>
 
 Commands:
   status [--json]                         Describe consumer-owned fills and baseHash.
-  check [--layer tokens|assets|components|sections|frames] [--json]
-  emit [--check] [--target <target>]       Regenerate files, or fail on drift.
-  apply --changeset <file> [--json]        Apply only explicitly instructed values.
+  check [--layer tokens|assets|components|sections|frames] [--observations <file>] [--json]
+  emit [--check] [--target <target>] [--observations <file>]  Regenerate files, or fail on drift.
+  apply --changeset <file> [--observations <file>] [--json]  Apply only explicitly instructed values.
   dogfood <path...> [--write-needs] [--json]  Derive surface findings; writes require the flag.
   dogfood-consumer <path...> --contract <file> [--json]  Check reachable consumer sources with zero exceptions.
   needs [--status open,proposed] [--json]    List needs and blocked parents.
@@ -33,11 +35,13 @@ Commands:
 
 Emit targets: css-brand, css-scales, css-fonts, tailwind-theme, notices, component-index, components-consumption, surface-index, surfaces-consumption.
 Composite folders also emit component targets by default; value folders retain all five value targets. No values are invented or auto-filled.
+--observations supplies package-export evidence ({ "packageExports": { "<module>": ["<Export>"] } });
+it defaults to <root>/component-observations.json when present. Without evidence, package-pointer leaves are refused.
 Chooser output belongs in the Studio basket; apply requires the human's explicit instruction in this session.
 Exit codes: 0 = success, 1 = failed verdict or conflict, 2 = usage, invalid input or unavailable.
 `;
 type Command = "status" | "check" | "emit" | "apply" | "recommend" | "dogfood" | "dogfood-consumer" | "needs" | "graph";
-type Args = { command: Command; root: string; layer?: string; changeset?: string; json: boolean; drift: boolean; write: boolean; targets?: CompositeEmitTarget[]; paths: string[]; writeNeeds: boolean; status?: string; candidate?: string; closedBy?: string; contract?: string };
+type Args = { command: Command; root: string; layer?: string; changeset?: string; json: boolean; drift: boolean; write: boolean; targets?: CompositeEmitTarget[]; paths: string[]; writeNeeds: boolean; status?: string; candidate?: string; closedBy?: string; contract?: string; observations?: string };
 export interface LibraryCliIO { out(text: string): void; error(text: string): void }
 const defaultIO: LibraryCliIO = { out: text => console.log(text), error: text => console.error(text) };
 
@@ -52,7 +56,7 @@ function parseArgs(argv: string[]): Args {
       if (toggles.has(flag)) throw new LibraryInputError(`Duplicate ${flag}`);
       toggles.add(flag); continue;
     }
-    if (!["--root", "--layer", "--changeset", "--target", "--status", "--candidate", "--closed-by", "--contract"].includes(flag)) throw new LibraryInputError(`Unknown option ${flag}`);
+    if (!["--root", "--layer", "--changeset", "--target", "--status", "--candidate", "--closed-by", "--contract", "--observations"].includes(flag)) throw new LibraryInputError(`Unknown option ${flag}`);
     const value = flags[++i];
     if (!value || value.startsWith("-")) throw new LibraryInputError(`${flag} requires a value`);
     if (flag === "--target") {
@@ -73,12 +77,13 @@ function parseArgs(argv: string[]): Args {
   if (command === "graph" && toggles.has("--check") === toggles.has("--write")) throw new LibraryInputError("graph requires exactly one of --check or --write");
   if (toggles.has("--json") && (command === "emit" || command === "recommend" || command === "graph")) throw new LibraryInputError("--json requires status, check or apply");
   if (toggles.has("--write-needs") && command !== "dogfood") throw new LibraryInputError("--write-needs requires dogfood");
+  if (values.has("--observations") && !["check", "emit", "apply"].includes(command!)) throw new LibraryInputError("--observations requires check, emit or apply");
   if ((command === "dogfood-consumer") !== values.has("--contract")) throw new LibraryInputError("dogfood-consumer requires --contract; other commands do not accept it");
   if (["dogfood", "dogfood-consumer"].includes(command!) && !paths.length) throw new LibraryInputError("dogfood requires source paths");
   if (command === "needs" && paths.length && (paths.length !== 2 || paths[0] !== "set")) throw new LibraryInputError("needs accepts only set NEED-NNN");
   if (["--status", "--candidate", "--closed-by"].some(flag => values.has(flag)) && command !== "needs") throw new LibraryInputError("NEED options require needs");
   if (command === "needs" && !paths.length && (values.has("--candidate") || values.has("--closed-by"))) throw new LibraryInputError("candidate and closed-by require needs set");
-  return { paths, contract: values.get("--contract"), writeNeeds: toggles.has("--write-needs"), status: values.get("--status"), candidate: values.get("--candidate"), closedBy: values.get("--closed-by"), command: command as Command, root, layer, changeset, json: toggles.has("--json"), drift: toggles.has("--check"), write: toggles.has("--write"), ...(targets.length ? { targets } : {}) };
+  return { paths, contract: values.get("--contract"), observations: values.get("--observations"), writeNeeds: toggles.has("--write-needs"), status: values.get("--status"), candidate: values.get("--candidate"), closedBy: values.get("--closed-by"), command: command as Command, root, layer, changeset, json: toggles.has("--json"), drift: toggles.has("--check"), write: toggles.has("--write"), ...(targets.length ? { targets } : {}) };
 }
 
 /** Filter only findings attributable to the other layer; cross-layer findings stay visible. */
@@ -139,6 +144,28 @@ export async function dogfoodSources(paths: readonly string[], cwd = process.cwd
 async function readOptionalJson(path: string): Promise<unknown> {
   try { return JSON.parse(await readRegularText(path)); } catch (error) { if ((error as NodeJS.ErrnoException).code === "ENOENT") return undefined; throw error; }
 }
+type ComponentOptions = NonNullable<CompositeEngineInput["componentOptions"]>;
+/**
+ * Package-export evidence for package-pointer components, shaped like a persisted library's
+ * component-observations.json. An explicit file must exist; the library's own file is the default.
+ * Absent evidence yields an empty inventory, so package pointers stay refused (fail-closed).
+ */
+async function readObservations(root: string, explicit?: string): Promise<ComponentOptions> {
+  const path = explicit ? pathResolve(explicit) : pathResolve(root, "component-observations.json");
+  let text: string;
+  try { text = await readRegularText(path); }
+  catch (error) {
+    if (!explicit && (error as NodeJS.ErrnoException).code === "ENOENT") return { packageExports: {} };
+    throw new LibraryInputError(`observations unavailable: ${(error as NodeJS.ErrnoException).code ?? (error instanceof Error ? error.message : String(error))} ${path}`);
+  }
+  let value: unknown;
+  try { value = JSON.parse(text); } catch { throw new LibraryInputError(`observations malformed: invalid JSON ${path}`); }
+  const record = (input: unknown): input is Record<string, unknown> => !!input && typeof input === "object" && !Array.isArray(input);
+  if (!record(value) || Object.keys(value).some(key => key !== "packageExports") || !record(value.packageExports)
+    || Object.values(value.packageExports).some(names => !Array.isArray(names) || names.some(name => typeof name !== "string"))) throw new LibraryInputError(`observations malformed: expected { packageExports: { <module>: string[] } } ${path}`);
+  return { packageExports: value.packageExports as ComponentOptions["packageExports"] & object };
+}
+let bundledComponentFills: ReturnType<typeof loadCatalogBundles>["componentFills"] | undefined;
 type CompositeCatalogInput = Parameters<typeof readLibrary>[1] & { values: ReturnType<typeof loadCatalog>; components: { slots: readonly { id: string }[] }; surfaces: ReturnType<typeof foundrySurfaceCatalog> };
 /**
  * Usage-graph inputs for one consumer library, derived only from existing producers: consumptionReport
@@ -156,7 +183,13 @@ async function libraryUsageGraphInputs(root: string, catalog: ReturnType<typeof 
   for (const meta of [...(composite?.components.fills ?? []).map(fill => fill.$extensions["com.clossys.fill"]), ...surfaceFills]) selection[meta.slot] = meta.id;
   const layer = (name: string) => catalog.slots.filter(slot => slot.layer === name);
   const surfaceSlots = composite?.surfaces ? compositeCatalog.surfaces.slots : [];
-  const emitted = composite ? await readOptionalJson(pathResolve(root, "components-consumption.json")) as { leaves?: { slot: string; reads?: { tokens?: string[]; assets?: string[] } }[]; reverseComposes?: Record<string, string[]> } | undefined : undefined;
+  const emitted = composite ? await readOptionalJson(pathResolve(root, "components-consumption.json")) as { leaves?: { slot: string; reads?: { tokens?: Readonly<Record<string, string>>; assets?: string[] } }[]; reverseComposes?: Record<string, string[]> } | undefined : undefined;
+  // emitComponents writes each leaf's token reads as { memberId: cssProperty } (ResolvedComponent.reads.tokens); the graph needs the member ids.
+  const tokenReads = (tokens: unknown): string[] => {
+    if (tokens === undefined) return [];
+    if (!tokens || typeof tokens !== "object" || Array.isArray(tokens)) throw new LibraryInputError("components-consumption.json leaf token reads must map member ids to properties");
+    return Object.keys(tokens).sort();
+  };
   const surfaces = composite?.surfaces ? buildSurfaceConsumption({
     tokens: layer("tokens").map(slot => ({ id: slot.id, contract: { emit: "emit" in slot.contract ? slot.contract.emit : undefined } })) as Parameters<typeof buildSurfaceConsumption>[0]["tokens"],
     assets: layer("assets"), components: compositeCatalog.components.slots,
@@ -173,7 +206,7 @@ async function libraryUsageGraphInputs(root: string, catalog: ReturnType<typeof 
     },
     selection,
     consumption: { leaves: consumptionReport(tokenLibrary).leaves },
-    ...(emitted ? { components: { fills: (emitted.leaves ?? []).filter(leaf => selection[leaf.slot]).map(leaf => ({ id: selection[leaf.slot]!, slot: leaf.slot, declaredReads: { tokens: leaf.reads?.tokens ?? [], assets: leaf.reads?.assets ?? [] } })), reverseComposes: emitted.reverseComposes ?? {} } } : {}),
+    ...(emitted ? { components: { fills: (emitted.leaves ?? []).filter(leaf => selection[leaf.slot]).map(leaf => ({ id: selection[leaf.slot]!, slot: leaf.slot, declaredReads: { tokens: tokenReads(leaf.reads?.tokens), assets: leaf.reads?.assets ?? [] } })), reverseComposes: emitted.reverseComposes ?? {} } } : {}),
     ...(surfaces ? { surfaces: { fills: surfaces.fills, reverseComposes: surfaces.reverseComposes } } : {}),
   };
 }
@@ -200,7 +233,9 @@ export async function main(argv: string[], io: LibraryCliIO = defaultIO): Promis
       io.out(args.json ? JSON.stringify({ needs, open: open.length, parents }) : `${open.length} needs are open; ${parents.length} block these parents.\nID\tStatus\tParent\tMissing\n${needs.map(row => `${row.id}\t${row.status}\t${row.raisedBy}\t${row.missing}`).join("\n")}`); return 0;
     }
     const catalog = loadCatalog();
-    const compositeCatalog = { values: catalog, components: { slots: loadComponentRegistry().slots, fills: [] }, surfaces: foundrySurfaceCatalog() };
+    // The engine's normal component catalog: registry slots, the offline bundle fills and the registered composition rules.
+    bundledComponentFills ??= loadCatalogBundles().componentFills;
+    const compositeCatalog = { values: catalog, components: { slots: loadComponentRegistry().slots, fills: bundledComponentFills, rules: loadComponentCompositionRules() }, surfaces: foundrySurfaceCatalog() };
     // Package-pointer leaves are checked against the export inventory of the packages actually installed beside this CLI.
     const surfaceOptions = async (): Promise<SurfaceResolutionOptions> => ({ packages: await readSurfacePackageEvidence(compositeCatalog.surfaces.fills), measurements: [] });
     if (args.command === "dogfood" || args.command === "dogfood-consumer") {
@@ -260,13 +295,13 @@ export async function main(argv: string[], io: LibraryCliIO = defaultIO): Promis
     }
     if (args.command === "check") {
       if((args.layer==="sections"||args.layer==="frames")&&(await readLibrary(args.root,compositeCatalog)).surfaces===undefined)throw new LibraryInputError("Surface layers unavailable until the library opts in");
-      const result = await checkLibrary(args.root, compositeCatalog, undefined, await surfaceOptions()), findings = layerFindings(result.findings, args.layer);
+      const result = await checkLibrary(args.root, compositeCatalog, await readObservations(args.root, args.observations), await surfaceOptions()), findings = layerFindings(result.findings, args.layer);
       const ok = !findings.some(finding => finding.severity === "error");
       io.out(args.json ? JSON.stringify({ ok, findings }) : `${ok ? "Library check passed" : "Library check failed"}\n${findings.map(finding => `[${finding.severity}] ${finding.code} ${finding.message}`).join("\n")}`);
       return ok ? 0 : 1;
     }
     if (args.command === "emit") {
-      const result = await emitLibrary(args.root, compositeCatalog, { check: args.drift, targets: args.targets, surfaceOptions: await surfaceOptions() });
+      const result = await emitLibrary(args.root, compositeCatalog, { check: args.drift, targets: args.targets, componentOptions: await readObservations(args.root, args.observations), surfaceOptions: await surfaceOptions() });
       io.out(result.ok ? args.drift ? "Library emission is current" : "Library emission written" : `Library emission drift: ${result.drift.join(", ")}`);
       return result.ok ? 0 : 1;
     }
@@ -277,7 +312,7 @@ export async function main(argv: string[], io: LibraryCliIO = defaultIO): Promis
       changes = JSON.parse(new TextDecoder("utf-8", { fatal: true }).decode(await handle.readFile()));
     } finally { await handle.close(); }
     if(changes&&typeof changes==="object"&&"baseHash" in changes&&typeof changes.baseHash==="string"&&changes.baseHash.startsWith("sha256:")){
-      if(!isCompositeChangeSet(changes,compositeCatalog))throw new LibraryInputError("Invalid composite changeset");const library=await writeCompositeLibrary(args.root,compositeCatalog,changes,undefined,await surfaceOptions());const result={ok:true,baseHash:compositeLibraryHash(library)};io.out(args.json?JSON.stringify(result):`Library changes applied; baseHash ${result.baseHash}`);return 0;
+      if(!isCompositeChangeSet(changes,compositeCatalog))throw new LibraryInputError("Invalid composite changeset");const library=await writeCompositeLibrary(args.root,compositeCatalog,changes,await readObservations(args.root,args.observations),await surfaceOptions());const result={ok:true,baseHash:compositeLibraryHash(library)};io.out(args.json?JSON.stringify(result):`Library changes applied; baseHash ${result.baseHash}`);return 0;
     }
     if (!isLibraryChangeSet(changes, catalog)) throw new LibraryInputError("Invalid library changeset");
     const library = await writeLibrary(args.root, catalog, changes);

@@ -64,6 +64,13 @@ writing descriptors or source files does not supply those observations. The
 CLI reports missing evidence and refuses emission when checks fail. Server
 integrations that already hold observations can pass the existing engine's
 `componentOptions` to `libraryFiles`, `checkLibrary` and `emitLibrary`.
+The CLI resolves components against the registered composition rules and the
+offline bundle fills. Package-pointer components need package-export evidence:
+`check`, `emit` and `apply` accept `--observations <file>` shaped as
+`{ "packageExports": { "<module>": ["<Export>"] } }`, and default to the
+library's own `component-observations.json` when it is present. With no
+evidence, package pointers are refused; a named file that is missing or
+malformed is exit 2.
 The CLI also maintains deterministic projection metadata; let the installed
 writer own its location and format.
 `--check` compares generated content without saving it. Exit 0 means the
