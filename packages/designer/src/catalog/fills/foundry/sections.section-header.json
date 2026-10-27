@@ -16,19 +16,12 @@
         "package": "@clossys/designer",
         "version": "0.12.0"
       },
-      "relation": "subset",
+      "relation": "same-contract",
       "slot": "sections.section-header",
       "source": "foundry",
       "sourceAddress": "./blocks#SectionHeader",
       "status": "draft",
-      "trust": "foundry",
-      "unmapped": [
-        "align.center",
-        "align.start",
-        "density.compact",
-        "density.display",
-        "density.standard"
-      ]
+      "trust": "foundry"
     }
   },
   "sections": {
@@ -41,7 +34,7 @@
       },
       "license": "MIT",
       "notes": [
-        "Heading level is configurable via level; id is inherited HTML input. No align or density members and no enforced two-action maximum.",
+        "Heading level is configurable via level; id is inherited HTML input. align and density map to the block's own props; the block enforces no two-action maximum.",
         "Descriptor only; source imports, token reads, shared anatomy, accessibility, contrast and consumer runtime conformance are unmeasured. Content bindings describe host adaptation points, not type-equivalent converters."
       ],
       "parts": [],
@@ -50,7 +43,13 @@
         "package": "@clossys/designer",
         "version": "0.12.0"
       },
-      "propMap": {},
+      "propMap": {
+        "align.center": "./blocks#SectionHeader.align=center",
+        "align.start": "./blocks#SectionHeader.align=start",
+        "density.compact": "./blocks#SectionHeader.density=compact",
+        "density.display": "./blocks#SectionHeader.density=display",
+        "density.standard": "./blocks#SectionHeader.density=standard"
+      },
       "slot": "sections.section-header",
       "slotMap": {
         "actions": "./blocks#SectionHeader.actions",
