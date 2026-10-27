@@ -88,7 +88,7 @@ export const FOUNDRY_COMPONENT_MAP: Readonly<Record<string, FoundryComponentMapp
   "chart-range": { ...chart("RangeChart", ["title", "rows", "ticks", "labels", "className"]), notes: ["Shared tooltip part is present; accessibility and browser behavior remain unmeasured. Static CSS inspection has no Escape dismissal; long labels in narrow plots may clip. The complete table remains available."] },
   "chart-waterfall": { ...chart("WaterfallChart", ["title", "start", "steps", "end", "labels", "className"]), notes: ["Shared tooltip part is present; accessibility and browser behavior remain unmeasured. Static CSS inspection has no Escape dismissal; long labels in narrow plots may clip. The complete table remains available."] },
   "chart-status-strip": { ...chart("StatusStrip", ["title", "segments", "className"]), notes: ["Shared tooltip part is present; accessibility and browser behavior remain unmeasured. Static CSS inspection has no Escape dismissal; long labels in narrow plots may clip. The complete table remains available."] },
-  tooltip: component("Tooltip", { placement: "" }, ["trigger", "children", "placement", "triggerAction", "className"]),
+  tooltip: component("Tooltip", { placement: "" }, ["trigger", "children", "placement", "triggerAction", "disabledTrigger", "className"]),
 };
 
 export const FOUNDRY_COMPONENT_GAPS: Readonly<Record<string, string>> = {

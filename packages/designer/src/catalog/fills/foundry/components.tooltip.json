@@ -61,6 +61,7 @@
       "props": [
         "children",
         "className",
+        "disabledTrigger",
         "placement",
         "trigger",
         "triggerAction"

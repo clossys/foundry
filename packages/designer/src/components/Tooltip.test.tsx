@@ -178,4 +178,31 @@ describe("manual controlled Tooltip", () => {
     expect(() => render(<Tooltip manual trigger={<Button>Info</Button>}>Detail</Tooltip>)).toThrow("requires controlled isOpen");
     expect(() => render(<Tooltip renderSurface={() => null} trigger={<Button>Info</Button>}>Detail</Tooltip>)).toThrow("requires manual mode");
   });
+  it("describes a disabled trigger through its own focusable wrapper, with no consumer element", async () => {
+    const user = userEvent.setup();
+    render(
+      <Tooltip disabledTrigger trigger={<Button isDisabled>Publish</Button>} delay={0} closeDelay={0}>
+        Publishing is locked.
+      </Tooltip>,
+    );
+    const button = screen.getByRole("button", { name: "Publish" });
+    expect(button).toBeDisabled();
+    await user.tab();
+    const wrapper = button.parentElement!;
+    expect(wrapper).toHaveFocus();
+    expect(wrapper).toHaveAttribute("data-tooltip-disabled-trigger");
+    const tooltip = await screen.findByRole("tooltip");
+    expect(tooltip).toHaveTextContent("Publishing is locked.");
+    expect(wrapper.getAttribute("aria-describedby")).toBe(tooltip.id);
+    await user.keyboard("{Escape}");
+    await waitFor(() => expect(screen.queryByRole("tooltip")).not.toBeInTheDocument());
+    primePointerModality();
+    await user.hover(wrapper);
+    expect(await screen.findByRole("tooltip")).toHaveTextContent("Publishing is locked.");
+  });
+
+  it("leaves an enabled trigger unwrapped", () => {
+    render(<Tooltip trigger={<Button>Info</Button>}>Detail</Tooltip>);
+    expect(document.querySelector("[data-tooltip-disabled-trigger]")).toBeNull();
+  });
 });

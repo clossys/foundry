@@ -1,5 +1,6 @@
 import { cloneElement, isValidElement, useId, useRef, useState, type ReactNode, type RefObject } from "react";
 import {
+  Focusable,
   Tooltip as AriaTooltip,
   TooltipTrigger,
   TooltipTriggerStateContext,
@@ -40,6 +41,14 @@ export interface TooltipProps extends Omit<TooltipTriggerComponentProps, "childr
   placement?: Placement;
   /** Merged onto the tooltip's own surface element. */
   className?: string;
+  /**
+   * Describe a disabled control. A disabled element takes neither hover nor focus,
+   * so the component wraps `trigger` in its own focusable element (react-aria's
+   * `Focusable`) that carries the hover/focus listeners and `aria-describedby`.
+   * The consumer passes the disabled control unchanged and adds no wrapper.
+   * @default false
+   */
+  disabledTrigger?: boolean;
   /** Controlled opening without hover/focus listeners or a document Escape handler. Requires `isOpen`. */
   manual?: boolean;
   /**
@@ -90,6 +99,7 @@ export function Tooltip({
   className,
   manual = false,
   renderSurface,
+  disabledTrigger = false,
   ...rest
 }: TooltipProps) {
   if (manual) {
@@ -101,7 +111,13 @@ export function Tooltip({
   if (renderSurface) throw new TypeError("Tooltip renderSurface requires manual mode.");
   return (
     <TooltipTrigger {...rest} trigger={triggerAction}>
-      {trigger}
+      {disabledTrigger ? (
+        <Focusable>
+          <span tabIndex={0} className="inline-flex" data-tooltip-disabled-trigger="">
+            {trigger}
+          </span>
+        </Focusable>
+      ) : trigger}
       <AriaTooltip
         placement={placement}
         className={cx(
