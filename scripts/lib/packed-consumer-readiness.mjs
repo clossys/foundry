@@ -263,21 +263,25 @@ export const OPTIONAL_PEER_POLICY = {
       ...publisherOmissionRow({ web: { default: "rejects", reactServer: "imports" }, client: "rejects", consent: "rejects" }),
       "@clossys/publisher/web/registered-route": "rejects",
       "@clossys/publisher/web/registered-route-check": { "browser": "refuses", "default": "imports" },
+      "@clossys/publisher/web/registered-route-wiring": { "browser": "refuses", "default": "imports" },
     },
     react: {
       ...publisherOmissionRow({ rejected: ["@clossys/publisher/document", "@clossys/publisher/testing"], web: { default: "rejects", reactServer: "rejects" }, client: "rejects", consent: "rejects" }),
       "@clossys/publisher/web/registered-route": "rejects",
       "@clossys/publisher/web/registered-route-check": { "browser": "refuses", "default": "imports" },
+      "@clossys/publisher/web/registered-route-wiring": { "browser": "refuses", "default": "imports" },
     },
     "react-aria-components": {
       ...publisherOmissionRow({ web: { default: "rejects", reactServer: "imports" }, client: "rejects", consent: "rejects" }),
       "@clossys/publisher/web/registered-route": "rejects",
       "@clossys/publisher/web/registered-route-check": { "browser": "refuses", "default": "imports" },
+      "@clossys/publisher/web/registered-route-wiring": { "browser": "refuses", "default": "imports" },
     },
     "react-dom": {
       ...publisherOmissionRow({ rejected: ["@clossys/publisher/testing"], web: { default: "rejects", reactServer: "imports" }, client: "rejects", consent: "rejects" }),
       "@clossys/publisher/web/registered-route": "rejects",
       "@clossys/publisher/web/registered-route-check": { "browser": "refuses", "default": "imports" },
+      "@clossys/publisher/web/registered-route-wiring": { "browser": "refuses", "default": "imports" },
     },
     // #749/#878: publisher/web reaches designer's cx() transitively
     // (publisher has no tailwind-merge import site of its own -- grep
@@ -292,11 +296,13 @@ export const OPTIONAL_PEER_POLICY = {
       ...publisherOmissionRow({ web: { default: "imports", reactServer: "imports" } }),
       "@clossys/publisher/web/registered-route": "imports",
       "@clossys/publisher/web/registered-route-check": { "browser": "refuses", "default": "imports" },
+      "@clossys/publisher/web/registered-route-wiring": { "browser": "refuses", "default": "imports" },
     },
     tailwindcss: {
       ...publisherOmissionRow({ web: { default: "imports", reactServer: "imports" } }),
       "@clossys/publisher/web/registered-route": "imports",
       "@clossys/publisher/web/registered-route-check": { "browser": "refuses", "default": "imports" },
+      "@clossys/publisher/web/registered-route-wiring": { "browser": "refuses", "default": "imports" },
     },
   },
 };
@@ -354,6 +360,9 @@ export const BY_DESIGN_REFUSALS = {
   // message its refusal module throws.
   "@clossys/publisher": {
     "@clossys/publisher/web/registered-route-check": {
+      browser: 'Registered route source checking requires the server filesystem and refuses the "browser" condition',
+    },
+    "@clossys/publisher/web/registered-route-wiring": {
       browser: 'Registered route source checking requires the server filesystem and refuses the "browser" condition',
     },
     "@clossys/publisher/consent-copy": {

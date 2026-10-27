@@ -122,6 +122,11 @@
       "browser": "./dist/web/refuse-registered-route-browser.js",
       "import": "./dist/web/registered-route-check.js"
     },
+    "./web/registered-route-wiring": {
+      "types": "./dist/web/registered-route-wiring.d.ts",
+      "browser": "./dist/web/refuse-registered-route-browser.js",
+      "import": "./dist/web/registered-route-wiring.js"
+    },
     "./web/registered-route": {
       "types": "./dist/web/registered-route.d.ts",
       "import": "./dist/web/registered-route.js"
