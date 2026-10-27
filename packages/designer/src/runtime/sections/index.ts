@@ -3,25 +3,40 @@
  * with a duplicate check. Each group keeps its own table shape; this file is the only place they meet.
  */
 import type { RuntimeJson } from "../../catalog-core/runtime-ports.js";
+import type { SpecimenDataset } from "../../studio/specimen-dataset.js";
 import { mergeRendererGroups, type SurfaceRendererEntry, type SurfaceRendererGroup, type SurfaceRuntimeLeaf, type SurfaceRuntimeRenderer } from "../contract.js";
 import { GROUP_A_SECTION_RENDERERS } from "./group-a.js";
 import { GROUP_A_CONTENT, GROUP_A_LEAVES, type GroupALeaf } from "./group-a-dataset.js";
 import { sectionRenderers as groupB } from "./group-b.js";
-import { sectionRenderers as groupC } from "./group-c.js";
+import { GROUP_C_LEAVES, sectionDatasetC, sectionRenderersC, type GroupCLeaf } from "./group-c.js";
 
 type SampleContent = Readonly<Record<string, RuntimeJson>>;
-/** A group's renderer table plus its dataset-bound sample content, as one SurfaceRendererGroup. */
-export function adaptSectionGroup(renderers: Readonly<Record<string, SurfaceRuntimeRenderer>>, sample: (leaf: string) => SampleContent | undefined): SurfaceRendererGroup {
+type SampleOf = (dataset: SpecimenDataset) => SampleContent;
+/**
+ * A group's renderer table plus its dataset-bound sample content, as one SurfaceRendererGroup. A renderer
+ * without sample content is refused here, so every registered leaf can be drawn by the Studio preview.
+ */
+export function adaptSectionGroup(renderers: Readonly<Record<string, SurfaceRuntimeRenderer>>, sample: (leaf: string) => SampleOf | undefined): SurfaceRendererGroup {
   return Object.fromEntries(Object.entries(renderers).map(([leaf, render]): [string, SurfaceRendererEntry] => {
     const content = sample(leaf);
     if (!content) throw new TypeError(`surface runtime: ${leaf} has a renderer but no sample content`);
-    return [leaf, { leaf: leaf as SurfaceRuntimeLeaf, render, sample: () => content }];
+    return [leaf, { leaf: leaf as SurfaceRuntimeLeaf, render, sample: content }];
   }));
 }
 
-const groupA = adaptSectionGroup(GROUP_A_SECTION_RENDERERS, leaf => {
+/** The leaf's name under `sections.` when it belongs to `leaves`. */
+function member<Leaf extends string>(leaves: readonly Leaf[], leaf: string): Leaf | undefined {
   const short = leaf.slice("sections.".length);
-  return (GROUP_A_LEAVES as readonly string[]).includes(short) ? GROUP_A_CONTENT[short as GroupALeaf] : undefined;
+  return (leaves as readonly string[]).includes(short) ? short as Leaf : undefined;
+}
+
+const groupA = adaptSectionGroup(GROUP_A_SECTION_RENDERERS, leaf => {
+  const short = member<GroupALeaf>(GROUP_A_LEAVES, leaf);
+  return short ? () => GROUP_A_CONTENT[short] : undefined;
+});
+const groupC = adaptSectionGroup(sectionRenderersC, leaf => {
+  const short = member<GroupCLeaf>(GROUP_C_LEAVES, leaf);
+  return short ? sectionDatasetC[short] : undefined;
 });
 
 export const sectionRenderers = mergeRendererGroups(groupA, groupB, groupC);
