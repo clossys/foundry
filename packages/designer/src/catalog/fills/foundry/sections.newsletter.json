@@ -34,7 +34,7 @@
       },
       "license": "MIT",
       "notes": [
-        "Email is a built-in email TextField the host adapts through emailLabel; it is not replaceable by a host node. submitLabel is copy for the built-in action. Host supplies pendingLabel, sentMessage and failedMessage. Consent text does not prove confirmation behavior.",
+        "Email is a built-in email TextField the host adapts through emailLabel; it is not replaceable by a host node. The submit content carries the built-in action's copy (submitLabel, pendingLabel, sentMessage, failedMessage) and its same-origin form action. Consent text does not prove confirmation behavior.",
         "Descriptor only; source imports, token reads, shared anatomy, accessibility, contrast and consumer runtime conformance are unmeasured. Content bindings describe host adaptation points, not type-equivalent converters."
       ],
       "parts": [],
@@ -48,7 +48,7 @@
       "slotMap": {
         "consent": "./blocks#NewsletterBand.privacyNote",
         "email": "./blocks#NewsletterBand.emailLabel",
-        "submit": "./blocks#NewsletterBand.submitLabel"
+        "submit": "./blocks#NewsletterBand.submitLabel,pendingLabel,sentMessage,failedMessage,action"
       },
       "source": "foundry"
     }
