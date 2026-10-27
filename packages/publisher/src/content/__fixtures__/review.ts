@@ -19,3 +19,11 @@ export function reviewFixture(): ContentRegistry {
 export function libraryFixture(): ConsumerLibrarySnapshot[] {
   return [{ consumerId: "sample", version: "1", frames: [{ id: "frames.sample", configIds: ["default"] }], sections: [{ id: "sections.sample", configIds: ["default"] }], assetIds: ["assets.sample"] }];
 }
+
+export function pinnedReviewFixture(): ContentRegistry {
+  const registry = reviewFixture();
+  const candidate = registry.candidates[0]!;
+  const content = { ...candidate, composition: { ...candidate.composition!, sections: [{ ...candidate.composition!.sections[0]!, ref: { candidateId: "source", revision: "r1" as const, sectionKey: "intro" } }] } };
+  const snapshot = createContentRevision(content, "r1", at);
+  return { ...registry, candidates: [{ ...content, history: [snapshot], approval: { ...candidate.approval!, digest: snapshot.digest } }, { ...candidate, id: "source", state: "draft" }] };
+}

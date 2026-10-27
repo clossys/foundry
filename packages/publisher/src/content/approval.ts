@@ -19,6 +19,7 @@ export function checkContentApproval(value: unknown, purpose: ContentApprovalPur
   if (!approval) { add("approval-required", "Current revision requires recorded approval"); return findings; }
   if (approval.revision !== candidate.revision) add("approval-revision", "Approval does not cover the current revision");
   if (approval.digest !== computeContentDigest(candidate)) add("approval-digest", "Approval does not cover current content");
+  if (purpose === "activation" && approval.source === "imported-baseline" && (candidate.origin !== "imported" || candidate.revision !== "r1")) add("imported-baseline-scope", "Baseline activation is restricted to an imported candidate's first revision");
   if (purpose === "publish") {
     if (approval.source !== "owner") add("publish-owner-approval", "Publishing requires owner approval");
     if (candidate.state !== "active") add("publish-active-candidate", "Publishing requires an active candidate");

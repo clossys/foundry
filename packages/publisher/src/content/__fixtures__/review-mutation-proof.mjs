@@ -68,6 +68,54 @@ proof("pinned section cycle", "library", 'add(`${path}.ref`, "section-reference-
   registry.candidates[0].composition.sections[0].ref = ref; registry.candidates[0].history[0].content.composition.sections[0].ref = ref;
   rule(core.checkContentLibraryReferences(registry, fixtures.libraryFixture()), "section-reference-cycle");
 });
+proof("pinned root library version", "library", "target.libraryVersion !== rootVersion", "false", ({ core, fixtures }) => {
+  const registry = structuredClone(fixtures.pinnedReviewFixture()); const libraries = fixtures.libraryFixture();
+  libraries.push({ ...structuredClone(libraries[0]), version: "2" });
+  const target = registry.candidates[1].history[0].content.composition;
+  target.libraryVersion = "2"; target.sections[0].fields[0].assets[0].libraryVersion = "2";
+  rule(core.checkContentLibraryReferences(registry, libraries), "pinned-library-version");
+});
+proof("pinned registration uses root snapshot", "library", "libraryFor({ ...composition, libraryVersion: rootVersion }, path)", "libraryFor(composition, path)", ({ core, fixtures }) => {
+  const registry = structuredClone(fixtures.pinnedReviewFixture()); const libraries = fixtures.libraryFixture();
+  libraries.push({ ...structuredClone(libraries[0]), version: "2", assetIds: ["assets.foreign"] });
+  const target = registry.candidates[1].history[0].content.composition;
+  target.libraryVersion = "2"; target.sections[0].fields[0].assets[0] = { assetId: "assets.foreign", libraryVersion: "2" };
+  const findings = core.checkContentLibraryReferences(registry, libraries);
+  assert(findings.some(f => f.rule === "unregistered-asset" && f.path.includes(".ref.")));
+});
+for (const key of ["sectionId", "configId"]) {
+  proof(`pinned ${key} identity`, "library", `current.${key} !== targetSection.${key}`, "false", ({ core, fixtures }) => {
+    const registry = structuredClone(fixtures.pinnedReviewFixture()); const libraries = fixtures.libraryFixture();
+    libraries[0].sections.push({ id: "sections.other", configIds: ["default", "other"] });
+    libraries[0].sections[0].configIds.push("other");
+    registry.candidates[1].history[0].content.composition.sections[0][key] = key === "sectionId" ? "sections.other" : "other";
+    rule(core.checkContentLibraryReferences(registry, libraries), "pinned-section-identity");
+  });
+}
+proof("asset reference rejects extra keys", "library", 'Object.keys(value).some(key => key !== "assetId" && key !== "libraryVersion")', "false", ({ core, fixtures }) => {
+  const registry = fixtures.reviewFixture(); registry.candidates[0].typeSettings.shareImage.extra = "hidden";
+  rule(core.checkContentLibraryReferences(registry, fixtures.libraryFixture()), "asset-reference-keys");
+});
+for (const nested of ["object", "array"]) {
+  proof(`asset reference inspects nested ${nested}`, "library", 'else asset(value as unknown as DesignerAssetRef, library, path);', 'else asset(value as unknown as DesignerAssetRef, library, path); return;', ({ core, fixtures }) => {
+    const registry = fixtures.reviewFixture(); const asset = { assetId: "missing", libraryVersion: "1" };
+    registry.candidates[0].typeSettings.shareImage.extra = nested === "array" ? [asset] : asset;
+    const findings = core.checkContentLibraryReferences(registry, fixtures.libraryFixture());
+    const suffix = nested === "array" ? "shareImage.extra[0]" : "shareImage.extra";
+    assert(findings.some(f => f.rule === "unregistered-asset" && f.path.endsWith(suffix)));
+  });
+}
+for (const [name, predicate, mutate] of [
+  ["imported baseline origin", 'candidate.origin !== "imported"', candidate => { candidate.approval.source = "imported-baseline"; }],
+  ["imported baseline first revision", 'candidate.revision !== "r1"', (candidate, node, fixtures) => {
+    candidate.origin = "imported"; candidate.name = "Rewrite"; candidate.revision = "r2";
+    candidate.history.push(node.createContentRevision(candidate, "r2", fixtures.at));
+    candidate.approval = { ...candidate.approval, source: "imported-baseline", revision: "r2", digest: candidate.history[1].digest };
+  }],
+]) proof(name, "approval", predicate, "false", ({ node, fixtures }) => {
+  const registry = structuredClone(fixtures.reviewFixture()); mutate(registry.candidates[0], node, fixtures);
+  rule(node.checkContentActivation(registry), "imported-baseline-scope");
+});
 proof("single active candidate", "validate", 'if (active.length > 1) checks.add(p, "one-active-candidate");', "", ({ node, fixtures }) => {
   const registry = fixtures.reviewFixture(); registry.candidates.push({ ...registry.candidates[0], id: "other" });
   rule(node.checkContentActivation(registry), "one-active-candidate");

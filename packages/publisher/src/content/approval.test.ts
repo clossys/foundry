@@ -16,11 +16,20 @@ describe("current revision approval prerequisite", () => {
     expect(checkContentActivation(value)).toEqual([]);
     expect(checkContentApproval(value.candidates[0], "publish").map(f => f.rule)).toContain("publish-owner-approval");
   });
-  it("accepts either recorded activation source without an additional origin restriction", () => {
+  it("refuses baseline approval for candidates that were not imported", () => {
     const value: any = reviewFixture(); value.candidates[0].approval.source = "imported-baseline";
     expect(value.candidates[0].origin).toBe("agent-draft");
-    expect(checkContentActivation(value)).toEqual([]);
+    expect(checkContentActivation(value).map(f => f.rule)).toContain("imported-baseline-scope");
     expect(checkContentApproval(value.candidates[0], "publish").map(f => f.rule)).toContain("publish-owner-approval");
+  });
+  it("refuses baseline activation on a later revision even with its current digest", () => {
+    const value: any = structuredClone(reviewFixture()); const candidate = value.candidates[0];
+    candidate.origin = "imported"; candidate.name = "Rewrite"; candidate.revision = "r2";
+    candidate.history.push(createContentRevision(candidate, "r2", at));
+    candidate.approval = { ...candidate.approval, source: "imported-baseline", revision: "r2", digest: candidate.history[1].digest };
+    expect(checkContentActivation(value).map(f => f.rule)).toContain("imported-baseline-scope");
+    candidate.approval.source = "owner";
+    expect(checkContentActivation(value)).toEqual([]);
   });
   it.each([
     ["missing approval", (v: any) => { delete v.approval; }, "approval-required"],

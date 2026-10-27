@@ -51,7 +51,8 @@ export function validateConsumerLibrarySnapshots(value: unknown): readonly Conte
 /**
  * Closed-world registration and pinned section joins only. This does not certify
  * renderer output, required copy, medium rules, or the complete Review stage.
- * typeSettings reserves objects containing assetId for DesignerAssetRef values.
+ * typeSettings reserves objects containing assetId for exact DesignerAssetRef
+ * values; nested values are inspected even when the outer reference is invalid.
  */
 export function checkContentLibraryReferences(value: unknown, libraries: unknown): readonly ContentFinding[] {
   if (!isContentJson(value)) return [finding("registry", "content-json", "Expected finite, acyclic JSON records")];
@@ -70,10 +71,10 @@ export function checkContentLibraryReferences(value: unknown, libraries: unknown
     if (Array.isArray(value)) { value.forEach((v, i) => settings(v, library, `${path}[${i}]`)); return; }
     if (!object(value)) return;
     if (Object.hasOwn(value, "assetId")) {
+      if (Object.keys(value).some(key => key !== "assetId" && key !== "libraryVersion")) add(path, "asset-reference-keys", "Asset references permit only assetId and libraryVersion");
       if (!text(value.assetId) || !text(value.libraryVersion)) add(path, "asset-reference", "Asset references require assetId and libraryVersion");
       else if (!library) add(path, "asset-library-version", "Asset reference has no composition library");
       else asset(value as unknown as DesignerAssetRef, library, path);
-      return;
     }
     Object.entries(value).forEach(([key, v]) => settings(v, library, `${path}.${key}`));
   }
@@ -82,9 +83,9 @@ export function checkContentLibraryReferences(value: unknown, libraries: unknown
     if (!library) add(`${path}.libraryVersion`, "unavailable-library-version", `Consumer library version unavailable: ${composition.libraryVersion}`);
     return library;
   }
-  function section(composition: Composition, index: number, path: string, visiting: ReadonlySet<string>): void {
+  function section(composition: Composition, index: number, path: string, visiting: ReadonlySet<string>, rootVersion: string): void {
     const current = composition.sections[index]!;
-    const library = libraryFor(composition, path);
+    const library = libraryFor({ ...composition, libraryVersion: rootVersion }, path);
     if (library) {
       const entry = library.sections.find(entry => entry.id === current.sectionId);
       if (!entry) add(`${path}.sectionId`, "unregistered-section", `Unregistered section: ${current.sectionId}`);
@@ -98,7 +99,10 @@ export function checkContentLibraryReferences(value: unknown, libraries: unknown
     const target = candidates.get(ref.candidateId)?.history.find(snapshot => snapshot.revision === ref.revision)?.content.composition;
     const targetIndex = target?.sections.findIndex(section => section.key === ref.sectionKey) ?? -1;
     if (!target || targetIndex < 0) { add(`${path}.ref`, "unresolved-section-reference", "Pinned candidate revision and section key must exist"); return; }
-    section(target, targetIndex, `${path}.ref`, new Set([...visiting, identity]));
+    if (target.libraryVersion !== rootVersion) add(`${path}.ref`, "pinned-library-version", "Pinned sections must use the root candidate's library version");
+    const targetSection = target.sections[targetIndex]!;
+    if (current.sectionId !== targetSection.sectionId || current.configId !== targetSection.configId) add(`${path}.ref`, "pinned-section-identity", "Referencing section and config ids must match the pinned section");
+    section(target, targetIndex, `${path}.ref`, new Set([...visiting, identity]), rootVersion);
   }
   registry.candidates.forEach((candidate, i) => {
     const path = `registry.candidates[${i}]`;
@@ -110,7 +114,7 @@ export function checkContentLibraryReferences(value: unknown, libraries: unknown
       if (!frame) add(`${path}.composition.frame.frameId`, "unregistered-frame", `Unregistered frame: ${composition.frame.frameId}`);
       else if (!frame.configIds.includes(composition.frame.configId)) add(`${path}.composition.frame.configId`, "unregistered-frame-config", `Config not registered for frame: ${composition.frame.configId}`);
     }
-    composition.sections.forEach((_section, j) => section(composition, j, `${path}.composition.sections[${j}]`, new Set()));
+    composition.sections.forEach((_section, j) => section(composition, j, `${path}.composition.sections[${j}]`, new Set(), composition.libraryVersion));
     settings(candidate.typeSettings, library, `${path}.typeSettings`);
   });
   return findings;
