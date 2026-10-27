@@ -244,8 +244,38 @@ describe("registered nonvisual provider ownership seam (synthetic fixtures; no r
     // A plain literal key and array destructuring stay admitted.
     for (const source of [
       nonvisual.replace(inputs, `${inputs}\n  const adapter = inputs["adapter"];`).replace("adapter={inputs.adapter}", "adapter={adapter}"),
-      nonvisual.replace(inputs, "  const [inputs] = [useStudioInputs()];"),
+      nonvisual.replace(inputs, "  const [inputs] = useStudioInputPair();"),
     ]) expect(providerRefused((await check(await setup(designerRoute(), source))).findings), source).toBe(false);
+  }, SCAN_TIMEOUT);
+
+  it("(j) no escape form in a key or name reaches a refused name: the module may hold no backslash", async () => {
+    const inputs = "  const inputs = useStudioInputs();", at = (line: string) => nonvisual.replace(inputs, `${inputs}\n  ${line}`);
+    // Each form spells "innerHTML": hex, unicode, braced unicode, legacy octal, line continuation, identity.
+    const forms = ["inner\\x48TML", "inner\\u0048TML", "inner\\u{48}TML", "inner\\110TML", "inner\\\nHTML", "inner\\HTML"];
+    const bracket = (key: string, quote: string) => at(`useEffect(() => { inputs.node[${quote}${key}${quote}] = inputs.chrome; });`);
+    const dotted = (key: string) => at(`useEffect(() => { inputs.node.${key} = inputs.chrome; });`);
+    for (const key of forms) for (const quote of ['"', "'", "`"]) {
+      // The TypeScript parser resolves every quoted form to the refused name.
+      const file = ts.createSourceFile("key.tsx", `x[${quote}${key}${quote}] = 1;`, ts.ScriptTarget.Latest, true, ts.ScriptKind.TSX);
+      const access = (file.statements[0] as ts.ExpressionStatement).expression as ts.BinaryExpression;
+      expect(((access.left as ts.ElementAccessExpression).argumentExpression as ts.StringLiteralLike).text, key).toBe("innerHTML");
+    }
+    // Identifiers accept only the unicode forms; the parser resolves both to the refused name.
+    for (const key of forms.slice(1, 3)) expect(escapedIdentifierNames(dotted(key)), key).toContain("innerHTML");
+    const probes = [
+      // The round-2 finding, exactly.
+      at('useEffect(() => { inputs.node["inner\\x48TML"] = inputs.chrome; });'),
+      ...forms.flatMap(key => ['"', "'", "`"].map(quote => bracket(key, quote))),
+      ...forms.map(dotted),
+      // Without an escape: a computed object key and a property named by a string argument.
+      at('useEffect(() => { const patch = { ["inner" + "HTML"]: inputs.chrome }; inputs.apply(inputs.node, patch); });'),
+      at('useEffect(() => { Object.defineProperty(inputs.node, "inner" + "HTML", { value: inputs.chrome }); });'),
+      // A computed key nested in a destructuring default is still read.
+      at("useEffect(() => { const [target = inputs.host[inputs.key]] = inputs.none; target.body.append(inputs.chrome); });"),
+    ];
+    const refused: boolean[] = [];
+    for (const source of probes) refused.push(providerRefused((await check(await setup(designerRoute(), source))).findings));
+    expect(refused, `refused per probe: ${refused}`).toEqual(probes.map(() => true));
   }, SCAN_TIMEOUT);
 });
 
