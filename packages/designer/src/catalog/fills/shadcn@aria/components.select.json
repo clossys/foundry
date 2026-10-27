@@ -205,6 +205,28 @@
         ]
       },
       "root": "rac:Select",
+      "secondaryExports": [
+        {
+          "export": "SelectContent",
+          "name": "SelectContent"
+        },
+        {
+          "export": "SelectGroup",
+          "name": "SelectGroup"
+        },
+        {
+          "export": "SelectItem",
+          "name": "SelectItem"
+        },
+        {
+          "export": "SelectTrigger",
+          "name": "SelectTrigger"
+        },
+        {
+          "export": "SelectValue",
+          "name": "SelectValue"
+        }
+      ],
       "slot": "components.select",
       "source": "shadcn@aria",
       "transform": "shadcn-aria-rewrite@1"
