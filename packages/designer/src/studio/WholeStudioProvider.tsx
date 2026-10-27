@@ -103,6 +103,9 @@ export function WholeStudioProvider({ children, ...props }: CompositeStudioProps
 export function useDesignerLayerBoardProjection(): { readonly projection: DesignerLayerBoardProjection; readonly projectionHash: RuntimeDigest } {
   const state = useWholeStudio();
   const values = useStudioSession();
+  // Hash the working library once per working library, not on every render of a projection reader.
+  const working = state?.input?.library;
+  const workingHash = useMemo(() => working ? libraryHash(working) as RuntimeDigest : null, [working]);
   if (!state) throw new TypeError('Original WholeStudioProvider required');
   const valueLayer = state.layer === 'tokens' || state.layer === 'assets';
   const placements = (valueLayer ? values.activeCatalog.placements : state.contracts.placements).filter(placement => placement.layer === state.layer);
@@ -113,7 +116,7 @@ export function useDesignerLayerBoardProjection(): { readonly projection: Design
   const projection: DesignerLayerBoardProjection = runtimeSnapshot({
     phase: state.failed || state.evaluated?.error ? 'error' : state.input && profile ? 'ready' : 'loading',
     layer: state.layer, consumer: state.input?.library.source.id ?? null,
-    libraryHash: state.input ? libraryHash(state.input.library) as RuntimeDigest : null,
+    libraryHash: state.input ? workingHash : null,
     selectionHash: profile ? profile.selectionHash as RuntimeDigest : null,
     session: { id: state.sessionIdentity, revision: state.sessionState?.revision ?? 0, status: state.sessionState?.status ?? 'loading',
       edits: state.sessionState?.edits.map(edit => ({ id: edit.id, leaf: edit.leaf, field: edit.field, status: edit.status, operationsHash: runtimeHash(edit.operations), ...(edit.failure ? { failure: edit.failure } : {}) })) ?? [],
