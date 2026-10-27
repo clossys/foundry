@@ -28,7 +28,8 @@ function statusMarkup(input: unknown): string {
 describe("StatusView next destinations", () => {
   it.each([undefined, { label: "No destinations", items: [] }, { items: [] }, { label: null, items: [] }, { label: "", items: [] }])("emits no route wrapper, label or DOM prop for omitted or empty destinations", input => {
     const { container } = draw(input);
-    expect(container.querySelector("section, [data-item], [data-items], [routes]")).toBeNull();
+    expect(container.querySelector("section:not([data-designer-section-frame]), [data-item], [data-items], [routes]")).toBeNull();
+    expect(container.querySelectorAll("[data-designer-section-frame]")).toHaveLength(1);
     expect(screen.queryByRole("heading", { level: 2 })).toBeNull();
     expect(container.textContent).not.toContain("No destinations");
     expect(screen.getByRole("button", { name: "Try again" })).toBeInTheDocument();
@@ -178,7 +179,7 @@ describe("GlobalErrorDocument framed routes", () => {
   });
   it("forwards empty routes as no additional status content", () => {
     const doc = errorDocument(routes(0));
-    expect(doc.querySelector("main section, [routes]")).toBeNull();
+    expect(doc.querySelector("main section:not([data-designer-section-frame]), [routes]")).toBeNull();
     expect(doc.querySelector("main h2")).toBeNull();
   });
   it("propagates a route refusal through the framed shape", () => {
