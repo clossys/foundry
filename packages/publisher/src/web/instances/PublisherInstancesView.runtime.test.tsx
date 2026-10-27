@@ -32,9 +32,11 @@ afterAll(async () => { await fs.rm(temporary, { recursive: true, force: true });
 
 /** SYNTHETIC compiled selection and callbacks drive the actual closed route binder, as in registered-route.test.tsx.
  * AppFrame, the header provider and the public Layout are actual modules; this is no consumer qualification. */
-function fixture() {
+/** A descendant that throws while React reconciles it, after the assembly's own render returned. */
+function SyntheticDescendantFailure(): never { throw new Error("SYNTHETIC descendant failure"); }
+function fixture(options: { failingDescendant?: boolean } = {}) {
   const { route, registry, engine, profile, frame, content, source, layoutSource, actionSource, registries, consumer, manifest } = syntheticRegisteredRoute(compiled);
-  const section = vi.fn(() => <article aria-label="SYNTHETIC body">{compiled.module.Content!()}</article>);
+  const section = vi.fn(() => <article aria-label="SYNTHETIC body">{options.failingDescendant ? <SyntheticDescendantFailure /> : compiled.module.Content!()}</article>);
   const runtime: RegisteredRouteRuntime = {
     assembly: { identity: { kind: "artifact", name: "SYNTHETIC instances binder", sha256: runtimeHash(compiled.compiled) }, engine,
       contracts: { ...loadBuildCatalog(), slots: engine.catalog.surfaces!.slots.map(slot => ({ ...slot, contract: slot.contract.kind === "frame" ? { ...slot.contract, stage: { accepts: ["flow"] as const, scroll: "region" as const } } : { ...slot.contract, substrates: ["flow"] as const, substrateTests: [{ substrate: "flow" as const, file: "SYNTHETIC.tsx", name: "SYNTHETIC fixture declaration" }] } })) },
@@ -83,6 +85,33 @@ describe("Publisher Instances render through the registered-route runtime", () =
     expect(f.section).toHaveBeenCalled();
     noPlaceholder(frame.contentDocument!.body);
     noPlaceholder(region());
+  });
+
+  it("contains a descendant render error in the Foundry empty state, and the failure does not stick across a cell change", async () => {
+    const user = userEvent.setup();
+    const failing = { failingDescendant: true };
+    const f = fixture(failing);
+    const quiet = vi.spyOn(console, "error").mockImplementation(() => {});
+    render(<PublisherInstancesView instances={[f.binding]} library={f.runtime.instanceLibrary} registries={f.registries} breakpointValues={FIXTURE_BREAKPOINTS} designerHref="/designer"
+      runtimeRoutes={hostRoutes(f.registry, f.runtime, f.renderActions)} />);
+    await select(user, "Viewport", "320 px");
+    // jsdom may already have loaded the srcdoc frame (mounting the throwing portal); load it here if it has not.
+    const pending = within(region()).queryByTitle(`${f.binding.label} · 320 px light runtime render`);
+    if (pending) expect(() => fireEvent.load(pending)).not.toThrow();
+    expect(await within(region()).findByRole("heading", { name: "Runtime render unavailable" })).toBeVisible();
+    expect(region()).toHaveTextContent("Runtime render failed: SYNTHETIC descendant failure");
+    expect(region().querySelector("iframe")).toBeNull();
+    expect(f.section).toHaveBeenCalled();
+    noPlaceholder(region());
+    failing.failingDescendant = false;
+    await select(user, "Theme", "dark");
+    expect(region()).toHaveTextContent("320 px dark default is outside the bound runtime matrix");
+    expect(region()).not.toHaveTextContent("SYNTHETIC descendant failure");
+    await select(user, "Theme", "light");
+    const frame = within(region()).getByTitle(`${f.binding.label} · 320 px light runtime render`) as HTMLIFrameElement;
+    fireEvent.load(frame);
+    expect(within(frame.contentDocument!.body).getByRole("article", { name: "SYNTHETIC body" })).toBeInTheDocument();
+    quiet.mockRestore();
   });
 
   it("states a cell outside the bound runtime matrix instead of drawing it", async () => {
