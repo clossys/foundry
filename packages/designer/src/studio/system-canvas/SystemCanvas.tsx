@@ -228,7 +228,7 @@ export function SystemCanvas({ data, labels, edges = [], selectedLeaf, onSelect,
         {ring ? <CanvasPlaced rect={ring} ring aria-hidden="true" data-system-ring="" className="pointer-events-none rounded-control" /> : null}
       </CanvasSurface>
     </CanvasLod>
-    {crumbs.length ? <div className="pointer-events-none absolute left-md top-md rounded-control bg-surface-base px-sm py-xs" data-system-breadcrumb="">
+    {crumbs.length ? <div className="pointer-events-none absolute start-md top-md rounded-control bg-surface-base px-sm py-xs" data-system-breadcrumb="">
       <Breadcrumb aria-label={labels.breadcrumb}>{crumbs.map((crumb, index) => <Breadcrumb.Item key={index}>{crumb}</Breadcrumb.Item>)}</Breadcrumb>
     </div> : null}
   </div>;
