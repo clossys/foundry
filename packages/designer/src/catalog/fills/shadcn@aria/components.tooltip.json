@@ -66,7 +66,7 @@
         },
         {
           "path": "components/tooltip/tooltip.tsx",
-          "sha256": "07eeec7f086d838941487fe884ccd529938d7d6337f8b2d383a40e3b3639c0ce"
+          "sha256": "b2d158774b4d78c462eeee316120ef9aeac6b9dd094c48f8c73d2466f9f5e958"
         },
         {
           "path": "notices/THIRD-PARTY.md",
@@ -99,7 +99,15 @@
       "propMap": {
         "placement": "Tooltip"
       },
-      "props": [],
+      "props": [
+        "children",
+        "className",
+        "crossOffset",
+        "offset",
+        "placement",
+        "ref",
+        "style"
+      ],
       "rac": {
         "instance": "react-aria-components",
         "peer": false,
@@ -109,6 +117,8 @@
         "assets": [],
         "components": [],
         "tokens": [
+          "tokens.behavior-timing.tooltip-close",
+          "tokens.behavior-timing.tooltip-delay",
           "tokens.border-width.rule",
           "tokens.control-radius.default",
           "tokens.duration.fast",
