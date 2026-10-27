@@ -1,4 +1,6 @@
 import { describe, expect, it } from "vitest";
+import { readFileSync, writeFileSync } from "node:fs";
+import { resolve } from "node:path";
 import { loadComponentCompositionRules } from "./component-compositions.js";
 import { productionCompositionFixture } from "./__fixtures__/date-picker-composition.js";
 import { applyComponentLibraryChange } from "./changeset-components.js";
@@ -9,6 +11,33 @@ import { validateInstalledComponentRule } from "./component-rule-validation.js";
 import { sha256 } from "./digest.js";
 
 const direct = ["components.calendar", "components.date-field", "components.popover"];
+const RELATIVE_SPECIFIER = /\b(?:from|import)\s*["'](\.\.?\/[^"']*)["']/g;
+describe("composition rule templates", () => {
+  it("emit no relative module specifier with a file extension", () => {
+    const offending = loadComponentCompositionRules().flatMap(rule => rule.files.flatMap(file =>
+      [...file.content.matchAll(RELATIVE_SPECIFIER)].map(match => match[1]!).filter(specifier => /\.(?:js|tsx?)$/.test(specifier)).map(specifier => `${rule.id} ${file.path} -> ${specifier}`)));
+    expect(offending).toEqual([]);
+  });
+  it("commits each template's output receipts from the bytes compose installs (UPDATE_COMPONENT_COMPOSITION_FILLS=1 rewrites them)", () => {
+    for (const rule of loadComponentCompositionRules()) {
+      // compose installs rule.files verbatim (changeset-components install); receipts are recomputed from them only.
+      const receipts = rule.template.outputSha256!.map(receipt => ({ path: receipt.path, sha256: sha256(rule.files.find(file => file.path === receipt.path)!.content) }));
+      // Only Foundry-sourced templates are written here; shadcn@aria templates belong to regenerate.mjs.
+      if (process.env.UPDATE_COMPONENT_COMPOSITION_FILLS === "1" && rule.template.source === "foundry") {
+        const path = resolve(import.meta.dirname, `../catalog/fills/foundry/${rule.slot}.json`);
+        let bytes = readFileSync(path, "utf8");
+        for (const [index, receipt] of rule.template.outputSha256!.entries()) {
+          const old = `"sha256": "${receipt.sha256}"`;
+          if (bytes.split(old).length !== 2) throw new Error(`${rule.slot}: receipt ${receipt.path} is not uniquely addressable`);
+          bytes = bytes.replace(old, `"sha256": "${receipts[index]!.sha256}"`);
+        }
+        writeFileSync(path, bytes);
+      }
+      const committed = JSON.parse(readFileSync(resolve(import.meta.dirname, `../catalog/fills/${rule.template.source}/${rule.slot}.json`), "utf8")).components[rule.slot.slice(11)].outputSha256;
+      expect(committed, rule.id).toEqual(receipts);
+    }
+  });
+});
 describe("production date-picker composition", () => {
   it("registers one fresh materialized source template with exact direct inputs", () => {
     const rules = loadComponentCompositionRules();
