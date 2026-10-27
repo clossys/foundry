@@ -228,6 +228,37 @@ test("package CSS conditions select runtime CSS, never types or a guessed packag
   assert.ok(scan("consumer").findings.some(row => row.code === "DG0"));
 }));
 
+test("bare package specifiers resolve through export patterns and package imports, never the importing directory", () => fixture(({ put, scan }) => {
+  // The installed font packages a consumer stylesheet imports publish "./*" and
+  // "./*.css" patterns; the more specific pattern must win, as Node selects it.
+  put("consumer/node_modules/@fixture/fonts/package.json", JSON.stringify({ name: "@fixture/fonts", exports: { ".": { types: "./index.d.css.ts", default: "./index.css" }, "./*": { sass: "./*.css", default: "./*.css" }, "./*.css": { sass: "./*.css", default: "./*.css" }, "./files/*": "./files/*" } }));
+  put("consumer/node_modules/@fixture/fonts/latin-400.css", ".f{font-family:var(--font-sans)}");
+  put("consumer/node_modules/@fixture/fonts/latin-500.css", ".g{font-family:var(--font-sans)}");
+  put("consumer/main.css", '@import "@fixture/fonts/latin-400.css";@import "@fixture/fonts/latin-500";');
+  const clean = scan("consumer");
+  assert.equal(clean.ok, true, JSON.stringify(clean.findings));
+  for (const name of ["latin-400.css", "latin-500.css"]) assert.ok(clean.inventory.some(row => row.file.endsWith(`fonts/${name}`)), name);
+  put("consumer/node_modules/@fixture/fonts/latin-400.css", ".f{color:#123456}");
+  assert.ok(scan("consumer").findings.some(row => row.code === "DG3" && row.file.endsWith("fonts/latin-400.css")));
+  put("consumer/main.css", '@import "@fixture/fonts/missing.css";');
+  assert.ok(scan("consumer").findings.some(row => row.code === "DG0"));
+  // Package-internal "#" imports resolve through the importing package's own
+  // imports map and are inspected, not refused as an unqualified external.
+  put("consumer/main.css", ".a{color:var(--color-ink)}");
+  put("consumer/package.json", JSON.stringify({ name: "@fixture/app", imports: { "#views": { types: "./types/views.d.ts", "react-server": "./src/server.tsx", default: "./src/views.tsx" } } }));
+  put("consumer/src/views.tsx", "export const View=()=> <div/>;");
+  put("consumer/src/Main.tsx", 'import {View} from "#views";export const X=()=> <View/>;');
+  const internal = scan("consumer");
+  assert.equal(internal.ok, true, JSON.stringify(internal.findings));
+  assert.ok(internal.inventory.some(row => row.file.endsWith("src/views.tsx")));
+  put("consumer/src/views.tsx", "export const View=()=> <button/>;");
+  assert.ok(scan("consumer").findings.some(row => row.code === "DG2" && row.file.endsWith("src/views.tsx")));
+  for (const module of ["#missing", "#views/../escape"]) {
+    put("consumer/src/Main.tsx", `import {View} from ${JSON.stringify(module)};export const X=()=> <View/>;`);
+    assert.ok(scan("consumer").findings.some(row => row.code === "DG0"), module);
+  }
+}));
+
 test("numeric issue references and issue URLs are prose, while colors in properties and classes remain paint", () => fixture(({ put, scan }) => {
   put("consumer/feed.ts", 'export const titles=["Issue #123", "Fix #1234 and #5678", "#123456 page layout", "Closed (#12345678)", "https://example.invalid/issues/123#123", "https://example.invalid/pull/4#abcdef"];');
   assert.equal(scan("consumer").ok, true);
