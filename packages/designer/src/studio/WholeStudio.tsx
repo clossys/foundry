@@ -77,12 +77,15 @@ function ContractCanvas({ className, candidateWorkflow }: StudioCanvasProps) {
   const session = s.session;
   // Every board is the registered library-board comparison Section, prepared from the original composite session.
   const boards = useMemo(() => layer && s.input && s.snapshot && s.changes && profile ? groups.flatMap(domain => domain.boards.map(group => {
-    const id = `${layer}/${group.id}`, leaves = new Set(group.leaves.map(leaf => leaf.id));
-    const sourceHashes = canvasSourceDigests(documents.filter(doc => leaves.has(doc.$extensions["com.clossys.fill"].slot)).map(doc => [doc.$extensions["com.clossys.fill"].source, doc] as const));
-    const prepared = prepareCompositeLibraryBoard({ layer, board: { id, label: group.label, leaves: group.leaves }, mode: editing.has(id) ? "edit" : "view", canSave: Boolean(s.changes), pending: false,
+    // The explorer query narrows each board to its matching rows; a board with none is hidden.
+    const needle = query.toLocaleLowerCase(), matching = group.leaves.filter(leaf => leaf.id.toLocaleLowerCase().includes(needle));
+    const id = `${layer}/${group.id}`, shown = matching.length ? matching : group.leaves, leaves = new Set(shown.map(leaf => leaf.id));
+    // A runtime-manifest selection is digested from its manifest entry, the only record this canvas renders for it.
+    const sourceHashes = canvasSourceDigests([...documents.filter(doc => leaves.has(doc.$extensions["com.clossys.fill"].slot)).map(doc => [doc.$extensions["com.clossys.fill"].source, doc] as const),
+      ...(layer === "components" ? [] : s.snapshot!.runtime?.manifest.fills ?? []).filter(fill => leaves.has(fill.leaf)).map(fill => [fill.library, fill] as const)]);
+    const prepared = prepareCompositeLibraryBoard({ layer, board: { id, label: group.label, leaves: shown }, mode: editing.has(id) ? "edit" : "view", canSave: Boolean(s.changes), pending: false,
       input: s.input!, snapshot: s.snapshot!, changes: s.changes!, contracts: s.contracts, profile, sources: values.catalog.sources, labels: t, workflow: candidateWorkflow, sourceHashes });
-    const needle = query.toLocaleLowerCase();
-    return { id, domain: domain.id, hidden: Boolean(needle) && !group.leaves.some(leaf => leaf.id.toLocaleLowerCase().includes(needle)), records: prepared.records, previews: canvasPreviewPort(prepared.previews), changeFor: prepared.changeFor };
+    return { id, domain: domain.id, hidden: matching.length === 0, records: prepared.records, previews: canvasPreviewPort(prepared.previews), changeFor: prepared.changeFor };
   })) : [], [layer, groups, documents, editing, query, profile, s.input, s.snapshot, s.changes, s.contracts, values.catalog.sources, t, candidateWorkflow]);
   const setLeaf = s.setLeaf;
   const command = useCallback((input: LibraryBoardCommand) => {

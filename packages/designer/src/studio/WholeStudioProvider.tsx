@@ -48,7 +48,8 @@ function useWholeState({ adapter, labels, initialSlotId, sessionRef }: Composite
     catch (error) { return { error: error instanceof Error ? error.message : String(error) }; }
   }, [adapter.catalog, snapshot, changes]);
   const working = workingResult?.library;
-  const input: CompositeEngineInput | undefined = working && snapshot ? { catalog: adapter.catalog, library: working, componentOptions: snapshot.componentOptions, surfaceOptions: snapshot.surfaceOptions, fileExists: snapshot.fileExists } : undefined;
+  // One input per working library and snapshot: a session notification that changes neither keeps it, so prepared boards stay stable.
+  const input = useMemo<CompositeEngineInput | undefined>(() => working && snapshot ? { catalog: adapter.catalog, library: working, componentOptions: snapshot.componentOptions, surfaceOptions: snapshot.surfaceOptions, fileExists: snapshot.fileExists } : undefined, [adapter.catalog, working, snapshot]);
   // Reference dependencies include host catalog, observations, runtime ports and preview identity.
   const evaluated = useMemo(() => {
     if (workingResult?.error) return { error: workingResult.error };

@@ -7,6 +7,7 @@ import { Studio } from "./Studio.js";
 import { CandidateCell } from "./CandidateCell.js";
 import { CompactPreview } from "./previews.js";
 import { buildCandidates } from "./model.js";
+import { orderTokenMembers } from "../tokens/preview/member-order.js";
 import { adopt, labels, smallCatalog } from "./__fixtures__/studio.js";
 
 vi.mock("./previews.js", async importOriginal => {
@@ -34,9 +35,10 @@ it("reuses the actual selected preview across matrix reprojection and updates ev
   expect(preview).toHaveBeenCalledTimes(initial * 2);
   expect(preview.mock.calls.at(-changed.members.length)?.[0].candidate.members[0]?.member.css.light).toBe("#123456");
 
+  // Member input order never decides display order: token members always display in `orderTokenMembers` order.
   const reordered = { ...changed, members: [...changed.members].reverse() };
   view.rerender(<CandidateCell candidate={reordered} labels={labels} />);
-  expect(view.container.querySelector("[data-candidate-variant]")?.getAttribute("data-candidate-variant")).toBe(reordered.members[0]?.id);
+  expect([...view.container.querySelectorAll("[data-candidate-variant]")].map(node => node.getAttribute("data-candidate-variant"))).toEqual(orderTokenMembers(reordered.members).map(entry => entry.id));
   const reindexed = { ...reordered, index: reordered.index + 1 };
   view.rerender(<CandidateCell candidate={reindexed} labels={labels} />);
   expect(view.container.querySelector("[data-studio-candidate]")?.getAttribute("data-studio-candidate")).toBe(String(reindexed.index));

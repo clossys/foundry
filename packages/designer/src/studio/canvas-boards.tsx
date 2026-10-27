@@ -1,5 +1,5 @@
 "use client";
-import { useCallback, useContext, useLayoutEffect, useRef, type ReactNode } from "react";
+import { memo, useCallback, useContext, useLayoutEffect, useRef, type ReactNode } from "react";
 import { TableStateContext } from "react-aria-components";
 import { Matrix as Comparison } from "../blocks/Matrix.js";
 import type { LibraryBoardPreviewPort } from "../blocks/library-board/LibraryBoardSection.js";
@@ -82,7 +82,8 @@ export function boardRowLeaf(row: HTMLElement): string | undefined {
  * The wrapper is structural only (no class, style, role or tab stop); it carries the board and domain ids the
  * camera, map and explorer address, and registers the Section's rows for reveal and visible-row loading.
  */
-function CanvasBoard({ board, labels, workflow, onCommand, onBoardElement, onRowElement }: Omit<CanvasBoardsProps, "boards"> & { board: CanvasBoardEntry }) {
+// Memoized: a session notification that leaves the prepared board unchanged does not render its Section (or host previews) again.
+const CanvasBoard = memo(function CanvasBoard({ board, labels, workflow, onCommand, onBoardElement, onRowElement }: Omit<CanvasBoardsProps, "boards"> & { board: CanvasBoardEntry }) {
   const element = useRef<HTMLDivElement | null>(null);
   const rows = useRef(new Map<string, HTMLElement>());
   const register = useRef(onRowElement); register.current = onRowElement;
@@ -101,7 +102,7 @@ function CanvasBoard({ board, labels, workflow, onCommand, onBoardElement, onRow
   return <div ref={ref} data-studio-canvas-board={board.id} data-studio-domain={board.domain} hidden={board.hidden || undefined}>
     <Comparison arrangement="library-board" records={board.records} previews={board.previews} labels={labels} workflow={workflow} onCommand={onCommand} />
   </div>;
-}
+});
 
 /** Every canvas board, on every layer, is the registered library-board comparison Section. */
 export function CanvasBoards({ boards, ...rest }: CanvasBoardsProps) {

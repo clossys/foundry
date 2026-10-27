@@ -21,9 +21,11 @@ export interface PreparedLibraryBoardInput {
 export function valueLibraryBoardRecords(input: PreparedLibraryBoardInput): LibraryBoardRecords {
   const rows = input.board.rows.filter(row => row.scope === 'slot');
   const identity = (leaf: string, candidate: Candidate): LibraryPreviewIdentity | undefined => candidate.previewable && input.sourceHashes[candidate.source] ? { leaf, source: candidate.source, selectionHash: input.selectionHash, sourceHash: input.sourceHashes[candidate.source]! } : undefined;
-  const columns = input.layer === 'components' && input.componentDocuments
+  // The board record carries display columns only: the roster's `reason` and component candidates stay out.
+  const columns = (input.layer === 'components' && input.componentDocuments
     ? componentLibraryColumns(input.sources, input.componentDocuments, rows.map(row => row.id), input.consumerSource).map(({ candidates: _candidates, ...column }) => column)
-    : libraryColumns(input.layer, rows.map(row => row.id), rows.flatMap(row => row.candidates.filter(candidate => candidate.members.length > 0 || candidate.fill.sourceAddress).map(candidate => candidate.source)), input.consumerSource);
+    : libraryColumns(input.layer, rows.map(row => row.id), rows.flatMap(row => row.candidates.filter(candidate => candidate.members.length > 0 || candidate.fill.sourceAddress).map(candidate => candidate.source)), input.consumerSource)
+  ).map(({ reason: _reason, ...column }) => column);
   return { columns: { version: 1, items: columns }, rows: { version: 1, layer: input.layer, boardId: input.board.id, label: input.board.label, items: rows.map(row => {
     const selected = row.candidates.find(candidate => candidate.selected);
     return { id: row.id, label: row.label, scope: 'slot', selectedSource: activeCandidateSource(row.candidates), ...(selected ? { selectedPreview: identity(row.id, selected) } : {}),
@@ -91,11 +93,15 @@ export function compositeLibraryBoard(input: PreparedCompositeLibraryBoardInput,
   const documents = input.input.catalog.components.fills.filter(doc => leaves.includes(doc.$extensions['com.clossys.fill'].slot));
   const proposals = documents.map(doc => ({ doc, meta: doc.$extensions['com.clossys.fill'], result: !preparation?.currentSelectionOnly ? previewComponent(input.input, doc.$extensions['com.clossys.fill'].slot, doc.$extensions['com.clossys.fill'].source, input.changes) : undefined }));
   const surfaceDocuments = [...(input.input.catalog.surfaces?.fills ?? []), ...(input.input.library.surfaces?.fills ?? [])].filter(doc => leaves.includes(doc.$extensions['com.clossys.fill'].slot));
-  const columns = input.layer === 'components'
+  const columns = (input.layer === 'components'
     ? componentLibraryColumns(input.sources, documents, leaves, consumer).map(({ candidates: _candidates, ...column }) => column)
-    : libraryColumns(input.layer, leaves, surfaceDocuments.map(doc => doc.$extensions['com.clossys.fill'].source), consumer);
+    : libraryColumns(input.layer, leaves, surfaceDocuments.map(doc => doc.$extensions['com.clossys.fill'].source), consumer)
+  ).map(({ reason: _reason, ...column }) => column);
   const identity = (leaf: string, source: string): LibraryPreviewIdentity | undefined => input.sourceHashes[source] ? { leaf, source, selectionHash: profile.selectionHash, sourceHash: input.sourceHashes[source]! } : undefined;
-  const selectedSource = (leaf: string): string | null => input.layer === 'components' ? profile.components.components[leaf]?.descriptor.source ?? null : Object.values(profile.surfaces?.fills ?? {}).find(fill => fill.document.$extensions['com.clossys.fill'].slot === leaf)?.document.$extensions['com.clossys.fill'].source ?? null;
+  // A Section or Frame may be selected by the host's runtime manifest alone, as the canvas has always read it.
+  const runtimeFill = (leaf: string) => input.layer === 'components' ? undefined : input.snapshot.runtime?.manifest.fills.find(fill => fill.leaf === leaf);
+  const surfaceFill = (leaf: string) => Object.values(profile.surfaces?.fills ?? {}).find(fill => fill.document.$extensions['com.clossys.fill'].slot === leaf);
+  const selectedSource = (leaf: string): string | null => input.layer === 'components' ? profile.components.components[leaf]?.descriptor.source ?? null : surfaceFill(leaf)?.document.$extensions['com.clossys.fill'].source ?? runtimeFill(leaf)?.library ?? null;
   // Studio selection stays stricter than engine adoption: a runtime-pending candidate is not selectable here.
   const blocking = (finding: { code: string; severity: string; message: string }) => finding.severity === 'error' || isRuntimePending(finding);
   const allowed = (proposal: typeof proposals[number]) => proposal.meta.status !== 'draft' && proposal.result?.available && !proposal.result.findings.some(blocking);
@@ -103,28 +109,38 @@ export function compositeLibraryBoard(input: PreparedCompositeLibraryBoardInput,
   // Display only: `allowed` (selection and adoption) is unchanged, so the tile stays unselectable.
   const staticSpecimen = (proposal: typeof proposals[number]) => proposal.meta.status !== 'draft' && !!proposal.result?.available
     && proposal.result.findings.some(isRuntimePending) && !proposal.result.findings.some(finding => finding.severity === 'error');
-  const selectedAvailable = (leaf: string) => input.layer === 'components'
-    ? !!profile.components.components[leaf] && !input.input.library.components.fills.some(doc => doc.$extensions['com.clossys.fill'].slot === leaf && doc.$extensions['com.clossys.fill'].status === 'draft') && !profile.check.findings.some(finding => (finding.subject === leaf || finding.subject.startsWith(leaf + '.')) && blocking(finding))
-    : evaluated.runtime?.status === 'valid' && !!Object.values(profile.surfaces?.fills ?? {}).find(fill => fill.document.$extensions['com.clossys.fill'].slot === leaf && fill.document.$extensions['com.clossys.fill'].status !== 'draft') && !profile.check.findings.some(finding => (finding.subject === leaf || finding.subject.startsWith(leaf + '.')) && finding.severity === 'error');
+  // Choosing stays strict: a blocking finding withholds the current component selection from being usable.
+  const selectedAvailable = (leaf: string) => !!profile.components.components[leaf] && !profile.check.findings.some(finding => (finding.subject === leaf || finding.subject.startsWith(leaf + '.')) && blocking(finding));
+  // The current selection previews as the canvas always has, an adopted copy (a consumer draft) and a leaf with
+  // blocking findings included: previewing qualifies nothing, and findings stay on the check badges and in the
+  // inspector. A Section or Frame previews only once the host evaluates surfaces: with valid runtime ports, or,
+  // without them, explicit surface options (an adopted package-pointer leaf previews its own export).
+  const surfacesEvaluated = evaluated.runtime ? evaluated.runtime.status === 'valid' : input.snapshot.surfaceOptions !== undefined;
+  const selectedPreviewable = (leaf: string, source: string) => selectedSource(leaf) === source && (input.layer === 'components' || surfacesEvaluated);
+  // A candidate the engine cannot materialize (a blocked source, say) reports why as an error, so its check badge
+  // and reason show; it was never usable.
+  const unavailableFindings = (result: typeof proposals[number]['result']) => result && !result.available ? [{ code: 'CANDIDATE_UNAVAILABLE', severity: 'error' as const, message: result.error }] : undefined;
   const records: LibraryBoardRecords = {
     columns: { version: 1, items: columns }, controls: { version: 1, mode: input.mode, canSave: input.canSave, pending: input.pending },
     rows: { version: 1, layer: input.layer, boardId: input.board.id, label: input.board.label, items: leaves.map(leaf => {
       const selected = selectedSource(leaf);
       return { id: leaf, label: leaf, scope: 'slot', selectedSource: selected,
-        ...(selected && selectedAvailable(leaf) ? { selectedPreview: identity(leaf, selected) } : {}),
-        candidates: input.layer === 'components' ? proposals.filter(proposal => proposal.meta.slot === leaf && columns.some(column => column.source === proposal.meta.source)).map(proposal => ({ source: proposal.meta.source, usable: !!allowed(proposal) || preparation?.currentSelectionOnly === true && input.mode === 'view' && proposal.meta.source === selected && selectedAvailable(leaf), ...((allowed(proposal) || input.mode === 'edit' && staticSpecimen(proposal) || preparation?.currentSelectionOnly === true && input.mode === 'view' && proposal.meta.source === selected && selectedAvailable(leaf)) ? { previewIdentity: identity(leaf, proposal.meta.source) } : {}), findings: (proposal.result?.findings ?? (proposal.meta.source === selected ? profile.check.findings.filter(finding => finding.subject === leaf || finding.subject.startsWith(leaf + '.')) : [{ code: 'CANDIDATE_EVALUATION_NOT_REQUESTED', severity: 'notice' as const, message: 'Alternative candidate evaluation has not been requested' }])).map(({ code, severity, message }) => ({ code, severity, message })), provenance: libraryItemProvenance(input.sources, proposal.meta) })) : [],
+        ...(selected && selectedPreviewable(leaf, selected) ? { selectedPreview: identity(leaf, selected) } : {}),
+        candidates: input.layer === 'components' ? proposals.filter(proposal => proposal.meta.slot === leaf && columns.some(column => column.source === proposal.meta.source)).map(proposal => ({ source: proposal.meta.source, usable: !!allowed(proposal) || preparation?.currentSelectionOnly === true && input.mode === 'view' && proposal.meta.source === selected && selectedAvailable(leaf), ...((allowed(proposal) || input.mode === 'edit' && staticSpecimen(proposal) || preparation?.currentSelectionOnly === true && input.mode === 'view' && proposal.meta.source === selected && selectedAvailable(leaf)) ? { previewIdentity: identity(leaf, proposal.meta.source) } : {}), findings: (unavailableFindings(proposal.result) ?? proposal.result?.findings ?? (proposal.meta.source === selected ? profile.check.findings.filter(finding => finding.subject === leaf || finding.subject.startsWith(leaf + '.')) : [{ code: 'CANDIDATE_EVALUATION_NOT_REQUESTED', severity: 'notice' as const, message: 'Alternative candidate evaluation has not been requested' }])).map(({ code, severity, message }) => ({ code, severity, message })), provenance: libraryItemProvenance(input.sources, proposal.meta) })) : [],
         prompt: input.prompt(leaf, false), ...(selected === consumer ? { refreshPrompt: input.prompt(leaf, true) } : {}) };
     }) },
   };
   const previews: LibraryBoardPreviewPort = { selectionHash: profile.selectionHash, sourceHashes: input.sourceHashes, render(value) {
     if (value.selectionHash !== profile.selectionHash || value.sourceHash !== input.sourceHashes[value.source] || !leaves.includes(value.leaf)) return undefined;
     let prepared: CompositeResolved | undefined;
-    if (input.mode === 'view') { if (selectedSource(value.leaf) === value.source && selectedAvailable(value.leaf)) prepared = profile; }
+    if (input.mode === 'view') { if (selectedPreviewable(value.leaf, value.source)) prepared = profile; }
     else if (input.layer === 'components') { const proposal = proposals.find(proposal => proposal.meta.slot === value.leaf && proposal.meta.source === value.source); if (proposal && (allowed(proposal) || staticSpecimen(proposal)) && proposal.result?.available) prepared = proposal.result.profile; }
-    else if (selectedSource(value.leaf) === value.source && selectedAvailable(value.leaf)) prepared = profile;
+    else if (selectedPreviewable(value.leaf, value.source)) prepared = profile;
     if (!prepared) return undefined;
     // The host's own preview comes first; an adopted package-pointer Section or Frame then previews its real export.
-    let node = input.snapshot.preview?.(value.leaf, prepared), sampleState: SurfaceSampleState | undefined;
+    // A host preview that throws shows the unavailable cell; its findings remain in the inspector, and no sample is fabricated.
+    let node: ReactNode, sampleState: SurfaceSampleState | undefined;
+    try { node = input.snapshot.preview?.(value.leaf, prepared); } catch { node = undefined; }
     if (node == null && input.layer !== 'components') { const adopted = adoptedPackagePreview(value.leaf, prepared, input.snapshot.plannedPreviews); node = adopted?.node; sampleState = adopted?.state; }
     return <CandidateCell labels={input.labels} preview={node} sampleState={sampleState} />;
   } };

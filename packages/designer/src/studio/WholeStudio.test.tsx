@@ -17,6 +17,7 @@ import { deriveDesignerLayerBoardsV1, DESIGNER_LAYER_BOARDS_QUERY } from './desi
 import { runtimeHash } from '../catalog-core/runtime-ports.js';
 import { valueLibraryBoardRecords, valueLibraryBoardPreviews } from './library-board-adapter.js';
 import { boardOf, boardRow } from "./__fixtures__/library-board-dom.js";
+import { OFFERED_SOURCE, adoptedOfferedComponentIntegration, offeredComponentIntegration } from "./__fixtures__/roster-source.js";
 
 const wholeLabels: CompositeStudioLabels = { ...labels, whole: { signoff: "W-signoff", proposed: "W-proposed", contract: "W-contract", contentSlots: "W-slots", configurations: "W-config", unresolved: "W-unresolved", unassessed: "W-unassessed" } };
 it('state-only original provider keeps children mounted while loading and uses one shared value session', async () => {
@@ -252,7 +253,7 @@ it("reports a host value-preview error while retaining the value canvas", async 
 });
 
 it("autosaves a loaded value choice with its fresh composite base then blocks stale component evidence without a second write", async () => {
-  const user = userEvent.setup(); const input = componentIntegration(); let library = input.library;
+  const user = userEvent.setup(); const input = offeredComponentIntegration(); let library = input.library;
   const choice = { slot: "tokens.surface-color", source: "shadcn@aria" };
   const observations = JSON.stringify(input.componentOptions?.evidence?.observations);
   const load = vi.fn(async () => ({ library, componentOptions: input.componentOptions }));
@@ -269,7 +270,7 @@ it("autosaves a loaded value choice with its fresh composite base then blocks st
   expect(firstHash).not.toBe(startHash);
   await user.click(within(await expandTree(user, "components", "components.button")).getByRole("row", { name: "components.button", exact: true }));
   await editBoard(user, "components.button");
-  const blocked = screen.getByRole("radio", { name: labels.useSource("test-kit", "components.button") });
+  const blocked = screen.getByRole("radio", { name: labels.useSource(OFFERED_SOURCE, "components.button") });
   expect(blocked).toBeDisabled();
   await user.click(blocked);
   const badge = checkBadge("components.button");
@@ -285,14 +286,14 @@ it("autosaves a loaded value choice with its fresh composite base then blocks st
   expect(JSON.stringify(input.componentOptions?.evidence?.observations)).toBe(observations);
 });
 it("shows blocked materializations as inspectable candidates without an enabled adoption control", async () => {
-  const user = userEvent.setup(); const input = componentIntegration();
+  const user = userEvent.setup(); const input = offeredComponentIntegration();
   const catalog = structuredClone(input.catalog); const candidate = Object.values(catalog.components.fills[0]!.components)[0]!;
   candidate.blockers = [{ code: "source-unavailable", message: "missing source bytes" }];
   render(<Studio adapter={{ kind: "composite", catalog, load: async () => ({ library: input.library }), save: async () => ({ ok: false, reason: "unavailable" }) }} labels={wholeLabels} />);
   await screen.findByText("L-saved"); await user.click(screen.getByRole("link", { name: /Components/ }));
   await user.click(within(await expandTree(user, "components", "components.button")).getByRole("row", { name: "components.button", exact: true }));
   await editBoard(user, "components.button");
-  expect(screen.getByRole("radio", { name: labels.useSource("test-kit", "components.button") })).toBeDisabled();
+  expect(screen.getByRole("radio", { name: labels.useSource(OFFERED_SOURCE, "components.button") })).toBeDisabled();
   const badge = checkBadge("components.button");
   fireEvent.mouseMove(document.body); await user.hover(badge);
   expect(await screen.findByRole("tooltip", {}, { timeout: 2500 })).toHaveTextContent(/blocked materialization/);
@@ -365,7 +366,7 @@ it('dispatches adapter-kind changes at the Studio host without changing hook or 
 });
 
 it("contract boards count runtime-pending findings neutrally, apart from errors, without hiding them", async () => {
-  const input = adoptedComponentIntegration(), slot = "components.button";
+  const input = adoptedOfferedComponentIntegration(), slot = "components.button";
   const componentOptions = { ...input.componentOptions!, evidence: { ...input.componentOptions!.evidence!, observations: {} } };
   const load = vi.fn(async () => ({ library: input.library, componentOptions }));
   const save = vi.fn(async () => ({ ok: true as const, library: structuredClone(input.library) }));
@@ -385,7 +386,7 @@ it("contract boards count runtime-pending findings neutrally, apart from errors,
   expect(within(card).getAllByText(/Source and runtime observations are unavailable/).length).toBe(Number(card.querySelector("[data-studio-runtime-pending]")!.textContent!.split(" ")[1]));
   // Choosing view: a candidate whose only blockers are runtime-pending reads as the neutral pending line, never an error badge, and stays unselectable.
   await editBoard(user, slot);
-  const radio = await screen.findByRole("radio", { name: labels.useSource("test-kit", slot) });
+  const radio = await screen.findByRole("radio", { name: labels.useSource(OFFERED_SOURCE, slot) });
   const row = boardRow(slot)!;
   const lines = [...row.querySelectorAll<HTMLElement>("[data-studio-runtime-pending]")];
   expect(lines.length).toBeGreaterThan(0);
@@ -396,7 +397,7 @@ it("contract boards count runtime-pending findings neutrally, apart from errors,
 });
 
 it("vf13: a runtime-pending component tile shows its static specimen, a worded badge, the shared leaf label and the raised board plate", async () => {
-  const user = userEvent.setup(); const input = componentIntegration();
+  const user = userEvent.setup(); const input = offeredComponentIntegration();
   const preview = vi.fn(() => <p>vf13-static-specimen</p>);
   render(<Studio adapter={{ kind: "composite", catalog: structuredClone(input.catalog), load: async () => ({ library: input.library, preview }), save: async () => ({ ok: false, reason: "unavailable" }) }} labels={wholeLabels} />);
   await screen.findByText("L-saved"); await user.click(screen.getByRole("link", { name: /Components/ }));
@@ -410,5 +411,5 @@ it("vf13: a runtime-pending component tile shows its static specimen, a worded b
   expect(header.querySelector("[data-leaf-label]")).toHaveClass("font-normal");
   expect(header.querySelector("[data-leaf-id]")).toHaveClass("font-mono");
   for (const badge of board.querySelectorAll('button[aria-label^="L-check"]')) expect(badge.textContent!.trim().length).toBeGreaterThan(1);
-  expect(screen.getByRole("radio", { name: labels.useSource("test-kit", "components.button") })).toBeDisabled();
+  expect(screen.getByRole("radio", { name: labels.useSource(OFFERED_SOURCE, "components.button") })).toBeDisabled();
 });

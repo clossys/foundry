@@ -8,16 +8,17 @@ import { labels } from "./__fixtures__/studio.js";
 import { Studio } from "./Studio.js";
 import { StudioRightPanel } from "./StudioRightPanel.js";
 import { WholeStudioProvider, useWholeStudio, type WholeStudioState } from "./WholeStudioProvider.js";
-import { compositeBoardPrompt } from "./prepared-library-boards.js";
+import { prepareCompositeLibraryBoard } from "./prepared-library-boards.js";
 import { applyLibraryChange, loadBuildCatalog, loadCatalog, loadComponentRegistry, resolve, type BuildCatalogData, type PlacementNode } from "../catalog-core/index.js";
-import { componentIntegration, adoptedComponentIntegration } from "../catalog-core/__fixtures__/component-integration.js";
+import { OFFERED_SOURCE, adoptedOfferedComponentIntegration, offeredComponentIntegration } from "./__fixtures__/roster-source.js";
 import { standardM1FixtureEngine, standardM1Runtime } from "../catalog-core/__fixtures__/standard-m1-runtime.js";
 import { boardOf, boardRow } from "./__fixtures__/library-board-dom.js";
 import type { CompositeStudioAdapter, CompositeStudioLabels, CompositeStudioSnapshot, StudioCandidateWorkflow } from "./types.js";
 
 vi.mock("./prepared-library-boards.js", async importOriginal => {
   const actual = await importOriginal<typeof import("./prepared-library-boards.js")>();
-  return { ...actual, compositeBoardPrompt: vi.fn(actual.compositeBoardPrompt) };
+  // The canvas prepares each library-board Section through this export; counting it counts board preparation.
+  return { ...actual, prepareCompositeLibraryBoard: vi.fn(actual.prepareCompositeLibraryBoard) };
 });
 vi.mock("../components/Disclosure.js", async importOriginal => {
   const actual = await importOriginal<typeof import("../components/Disclosure.js")>();
@@ -46,7 +47,7 @@ function contractsFor(...ids: string[]): BuildCatalogData {
   return { ...contracts, slots: contracts.slots.filter(slot => keep.has(slot.id)), placements: contracts.placements.map(placement => ({ ...placement, nodes: placement.nodes.flatMap(prune) })).filter(placement => placement.nodes.length) };
 }
 function fixture(selected = false, full = false) {
-  const input = selected ? adoptedComponentIntegration() : componentIntegration();
+  const input = selected ? adoptedOfferedComponentIntegration() : offeredComponentIntegration();
   const catalog = full ? { values: loadCatalog(), components: { ...loadComponentRegistry(), fills: [] } } : input.catalog;
   let snapshot: CompositeStudioSnapshot = { library: full ? { ...input.library, values: { fills: [] } } : input.library, componentOptions: input.componentOptions };
   const load = vi.fn(async () => snapshot);
@@ -124,13 +125,13 @@ it("keeps contract board preparation stable when native Tree blur advances the o
   await user.click(within(explorer()).getByRole("button", { name: "Actions", exact: true }));
   const first = within(explorer()).getByRole("button", { name: "Buttons", exact: true });
   await user.click(first);
-  const before = { revision: state.sessionState!.revision, session: state.session, library: state.input!.library, edits: state.sessionState!.edits, profile: state.evaluated!.value!.profile, prompts: vi.mocked(compositeBoardPrompt).mock.calls.length };
-  expect(before.prompts).toBeGreaterThan(0);
+  const before = { revision: state.sessionState!.revision, session: state.session, library: state.input!.library, edits: state.sessionState!.edits, profile: state.evaluated!.value!.profile, prepared: vi.mocked(prepareCompositeLibraryBoard).mock.calls.length };
+  expect(before.prepared).toBeGreaterThan(0);
   await user.click(within(explorer()).getByRole("button", { name: "Menus", exact: true }));
   expect(state.sessionState!.revision).toBeGreaterThan(before.revision);
   expect(state.session).toBe(before.session); expect(state.input!.library).toBe(before.library);
   expect(state.sessionState!.edits).toBe(before.edits); expect(state.evaluated!.value!.profile).toBe(before.profile);
-  expect(compositeBoardPrompt).toHaveBeenCalledTimes(before.prompts);
+  expect(prepareCompositeLibraryBoard).toHaveBeenCalledTimes(before.prepared);
   expect(f.save).not.toHaveBeenCalled();
   // Explorer state and native keyboard navigation remain outside the board boundary.
   await user.click(within(explorer()).getByRole("row", { name: "components.button", exact: true }));
@@ -244,9 +245,9 @@ it("refreshes selected previews and prompt token context after actual library ed
   const session = state.session;
   await act(async () => { await state.session!.takeTheirs("components.button"); });
   expect(state.session).toBe(session); expect(screen.getByTestId("replacement-components.button")).toHaveTextContent("Replacement preview");
-  // Query changes still alter the actual board rows.
+  // Query changes still alter the actual board rows: a board with no matching row stays mounted but is not shown.
   fireEvent.change(screen.getByRole("searchbox", { name: labels.canvas.search }), { target: { value: "select" } });
-  expect(boardRow("components.button")).toBeUndefined(); expect(boardRow("components.select")).toBeDefined();
+  expect(row("components.button")).not.toBeVisible(); expect(row("components.select")).toBeVisible();
 });
 
 it("keeps Choose, native candidate save and Done bound to the original session", async () => {
@@ -256,11 +257,11 @@ it("keeps Choose, native candidate save and Done bound to the original session",
   await screen.findByText(labels.autosave.saved); const session = state.session;
   await user.click(within(row("components.button")).getByRole("button", { name: labels.board.choose }));
   expect(board("components.button")).toHaveAttribute("data-board-mode", "edit");
-  await user.click(screen.getByRole("radio", { name: labels.useSource("test-kit", "components.button") }));
+  await user.click(screen.getByRole("radio", { name: labels.useSource(OFFERED_SOURCE, "components.button") }));
   await waitFor(() => expect(f.save).toHaveBeenCalledOnce());
   await waitFor(() => expect(state.sessionState!.status).toBe("saved"));
   expect(state.session).toBe(session);
-  expect(f.save.mock.calls[0]![0].changes).toEqual([{ portion: "components", change: { op: "adopt", slot: "components.button", source: "test-kit" } }]);
+  expect(f.save.mock.calls[0]![0].changes).toEqual([{ portion: "components", change: { op: "adopt", slot: "components.button", source: OFFERED_SOURCE } }]);
   await user.click(within(board("components.button")).getByRole("button", { name: labels.board.done }));
   expect(board("components.button")).toHaveAttribute("data-board-mode", "view");
   expect(state.evaluated!.value!.profile.components.components["components.button"]?.descriptor.source).toBe(f.get().library.source.id);
@@ -270,7 +271,7 @@ it("keeps Choose, native candidate save and Done bound to the original session",
   await waitFor(() => { expect(state.session).toBeDefined(); expect(state.session).not.toBe(session); });
   expect(within(explorer()).getByRole("button", { name: "Updated actions" })).toBeVisible();
   fireEvent.click(within(row("components.button")).getByRole("button", { name: labels.board.choose }));
-  fireEvent.click(screen.getByRole("radio", { name: labels.useSource("test-kit", "components.button") }));
+  fireEvent.click(screen.getByRole("radio", { name: labels.useSource(OFFERED_SOURCE, "components.button") }));
   await waitFor(() => expect(next.save).toHaveBeenCalledOnce());
   expect(f.save).toHaveBeenCalledOnce();
 });
@@ -291,15 +292,17 @@ it("updates real runtime selection and preview content when the host reloads run
   expect(screen.getByTestId("runtime-preview")).toHaveTextContent("sections.hero");
 });
 
-it("retains the original optional-consumer refresh controls while the host snapshot is loading", async () => {
-  const f = fixture(); let finish!: (value: CompositeStudioSnapshot) => void;
+it("offers board prompts only once the host snapshot names the consumer, never an empty one while loading", async () => {
+  // The library-board Section refuses a prompt without a consumer, so a loading canvas offers no board controls at all.
+  const f = fixture(true); let finish!: (value: CompositeStudioSnapshot) => void;
   const adapter = { ...f.adapter, load: () => new Promise<CompositeStudioSnapshot>(resolve => { finish = resolve; }) };
   render(<Surface adapter={adapter} onState={() => {}} />);
-  fireEvent.click(within(row("components.button")).getByRole("button", { name: labels.board.choose }));
-  fireEvent.click(within(row("components.button")).getByRole("button", { name: labels.board.refresh }));
-  const dialog = await screen.findByRole("dialog");
-  expect(promptData(dialog).consumer).toBe("");
-  expect(promptData(dialog)).not.toHaveProperty("currentCandidate");
-  fireEvent.click(within(dialog).getByRole("button", { name: labels.board.close }));
+  expect(document.querySelector("section[data-library-board]")).toBeNull();
+  for (const name of [labels.board.askAgent, labels.board.refresh]) expect(screen.queryByRole("button", { name })).toBeNull();
   await act(async () => finish(f.get()));
+  await waitFor(() => expect(boardRow("components.select")).toBeDefined());
+  fireEvent.click(within(row("components.select")).getByRole("button", { name: labels.board.askAgent }));
+  const dialog = await screen.findByRole("dialog");
+  expect(promptData(dialog).consumer).toBe(f.get().library.source.id);
+  fireEvent.click(within(dialog).getByRole("button", { name: labels.board.close }));
 });
