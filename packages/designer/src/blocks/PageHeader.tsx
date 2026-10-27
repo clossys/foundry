@@ -1,5 +1,8 @@
 import type { HTMLAttributes, ReactNode } from "react";
 import { cx } from "../components/internal/cx.js";
+import { dsAttrs } from "../catalog-core/provenance-attrs.js";
+/** Section root provenance (D1): the selected Foundry fill this block is. */
+const SECTION_STAMP = dsAttrs("sections", "sections.page-header", "foundry/sections.page-header");
 
 export interface PageHeaderProps extends Omit<HTMLAttributes<HTMLElement>, "title"> {
   /** The page's own name. The only required prop. */
@@ -41,7 +44,8 @@ export function PageHeader({
   ...rest
 }: PageHeaderProps) {
   return (
-    <header {...rest} className={cx("flex flex-col gap-md", className)}>
+    // The stamp follows the rest spread so source fixtures that anchor on the header's first spread still match.
+    <header {...rest} {...SECTION_STAMP} className={cx("flex flex-col gap-md", className)}>
       {breadcrumb}
       <div className="flex flex-wrap items-start justify-between gap-lg">
         <div className="flex flex-col gap-xs">

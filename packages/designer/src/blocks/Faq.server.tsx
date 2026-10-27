@@ -4,6 +4,9 @@ import type { FaqProps } from "./Faq.js";
 import { SECTION_MEASURE_MAX } from "./internal/block-vars.js";
 import { nativeDisclosureRow } from "./internal/disclosure-row.server.js";
 import { SECTION_GROUND_CLASSES } from "./section-ground.js";
+import { dsAttrs } from "../catalog-core/provenance-attrs.js";
+/** Section root provenance (D1): the selected Foundry fill this block is. */
+const SECTION_STAMP = dsAttrs("sections", "sections.faq", "foundry/sections.faq");
 
 /**
  * One row recipe for both FAQ implementations (this file and the React Aria
@@ -68,7 +71,7 @@ export function Faq({
   const hasHeadingRegion = eyebrow !== undefined || heading !== undefined || description !== undefined;
 
   return (
-    <div {...rest} className={cx("flex flex-col gap-lg", colors.surface, className)} style={style}>
+    <div {...SECTION_STAMP} {...rest} className={cx("flex flex-col gap-lg", colors.surface, className)} style={style}>
       {hasHeadingRegion ? (
         <SectionHeader density="standard" level={headingLevel} ground={ground} eyebrow={eyebrow} description={description} {...(heading ? { title: heading } : {})} titleClassName="leading-heading" />
       ) : null}

@@ -2,6 +2,9 @@ import type { HTMLAttributes, ReactNode } from "react";
 import { cx } from "../components/internal/cx.js";
 import { UI_LAYOUT_TAP_TARGET } from "../components/internal/ui-vars.js";
 import { SECTION_GROUND_CLASSES, type SectionGround } from "./section-ground.js";
+import { dsAttrs } from "../catalog-core/provenance-attrs.js";
+/** Section root provenance (D1): the selected Foundry fill this block is. */
+const SECTION_STAMP = dsAttrs("sections", "sections.logo-cloud", "foundry/sections.logo-cloud");
 
 export interface LogoCloudItem {
   id: string;
@@ -43,7 +46,7 @@ export function LogoCloud({ items, tone = "monochrome", ground = "base", classNa
   const monochromeClasses = monochrome ? "grayscale" : undefined;
   const anchorToneClasses = monochrome ? "grayscale hover:grayscale-0 focus-visible:grayscale-0" : undefined;
   return (
-    <ul {...rest} role="list" className={cx("m-0 grid list-none gap-x-xl gap-y-lg p-0", COLUMN_CLASSES[items.length], SECTION_GROUND_CLASSES[ground].primary, className)} style={style}>
+    <ul {...SECTION_STAMP} {...rest} role="list" className={cx("m-0 grid list-none gap-x-xl gap-y-lg p-0", COLUMN_CLASSES[items.length], SECTION_GROUND_CLASSES[ground].primary, className)} style={style}>
       {items.map(item => {
         const markToneClasses = item.href === undefined ? monochromeClasses : undefined;
         const mark = <><span aria-hidden="true" className={cx("inline-flex h-8 w-full max-w-40 overflow-hidden tablet:h-10", markToneClasses)}>{item.logo}</span><span className="sr-only">{item.name}</span></>;

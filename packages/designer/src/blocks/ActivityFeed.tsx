@@ -2,6 +2,9 @@ import type { HTMLAttributes, ReactNode } from "react";
 import { cx } from "../components/internal/cx.js";
 import { EmptyState, type EmptyStateProps } from "./EmptyState.js";
 import { EventItem, type EventLabels, type EventRecord } from "./EventItem.js";
+import { dsAttrs } from "../catalog-core/provenance-attrs.js";
+/** Section root provenance (D1): the selected Foundry fill this block is. */
+const SECTION_STAMP = dsAttrs("sections", "sections.activity-feed", "foundry/sections.activity-feed");
 
 export interface ActivityFeedGroup {
   id: string;
@@ -53,7 +56,7 @@ export function ActivityFeed({ events, groups, labels, filters, emptyState, clas
     if (loose) throw new RangeError(`ActivityFeed: event ${loose.id} is in no group.`);
   }
   return (
-    <section {...rest} className={cx("flex min-w-0 flex-col gap-md font-body", className)}>
+    <section {...SECTION_STAMP} {...rest} className={cx("flex min-w-0 flex-col gap-md font-body", className)}>
       {filters !== undefined && filters !== null ? <div data-activity-filters="" className="flex flex-wrap items-center gap-sm">{filters}</div> : null}
       {events.length === 0 ? <EmptyState {...emptyState} /> : grouped ? (
         <ol className="flex flex-col gap-lg">

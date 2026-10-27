@@ -17,7 +17,7 @@ const SHARED = ["icons/", "tokens/", "internal/peer-version.js", "internal/decla
 const RULES = {
   catalog: { bare: /^$/, local: ["catalog-core/", "catalog-assets/", "catalog/", "tokens/", "importers/", "icons/"] },
   components: { bare: /^(?:react|react-aria-components(?:\/package\.json)?|tailwind-merge)$/, local: ["components/", ...SHARED] },
-  blocks: { bare: /^react$/, typeOnlyBare: /^react-aria-components$/, local: ["blocks/", "components/", ...SHARED] },
+  blocks: { bare: /^react$/, typeOnlyBare: /^react-aria-components$/, local: ["blocks/", "components/", "catalog-core/provenance-attrs.js", ...SHARED] },
   /**
    * tokens, icons, internal: bare specifiers follow the blocks rule plus Node built-ins (existing
    * CLIs and the peer probe); relative imports stay inside src (tokens/index.ts re-exports backdrop/, type-record/).

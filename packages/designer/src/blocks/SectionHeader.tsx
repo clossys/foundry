@@ -1,6 +1,9 @@
 import type { CSSProperties, HTMLAttributes, ReactNode } from "react";
 import { cx } from "../components/internal/cx.js";
 import { SECTION_GROUND_CLASSES, type SectionGround } from "./section-ground.js";
+import { dsAttrs } from "../catalog-core/provenance-attrs.js";
+/** Section root provenance (D1): the selected Foundry fill this block is. */
+const SECTION_STAMP = dsAttrs("sections", "sections.section-header", "foundry/sections.section-header");
 
 export type SectionHeaderLevel = 2 | 3 | 4 | 5 | 6;
 
@@ -78,7 +81,7 @@ export function SectionHeader(props: SectionHeaderProps) {
       !display && !centered && !hasTitle && !description ? "ms-auto" : undefined)}>{actions}</div>
   ) : null;
   return (
-    <div {...rest} className={cx(display ? "flex flex-col" : "flex flex-col gap-xs", centered ? "items-center text-center" : undefined, className)} style={style}>
+    <div {...SECTION_STAMP} {...rest} className={cx(display ? "flex flex-col" : "flex flex-col gap-xs", centered ? "items-center text-center" : undefined, className)} style={style}>
       {eyebrowNode}
       {display || (density === "standard" && (!actions || centered)) ? (
         <>{titleNode}{descriptionNode}{actionsNode}</>

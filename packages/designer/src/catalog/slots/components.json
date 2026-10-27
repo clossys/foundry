@@ -773,8 +773,8 @@
       "members": {
         "mode": "closed",
         "names": [
-          "value.date",
-          "value.time",
+          "content.date",
+          "content.time",
           "granularity",
           "state.invalid"
         ]

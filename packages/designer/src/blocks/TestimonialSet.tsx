@@ -2,6 +2,9 @@ import type { CSSProperties, HTMLAttributes, ReactNode } from "react";
 import { cx } from "../components/internal/cx.js";
 import { renderTestimonial } from "./Testimonial.server.js";
 import { SECTION_GROUND_CLASSES, type SectionGround } from "./section-ground.js";
+import { dsAttrs } from "../catalog-core/provenance-attrs.js";
+/** Section root provenance (D1): the selected Foundry fill this block is. */
+const SECTION_STAMP = dsAttrs("sections", "sections.testimonials", "foundry/sections.testimonials");
 
 export interface TestimonialSetItem {
   /** Stable identifier for the quote. */
@@ -46,7 +49,7 @@ export function TestimonialSet({ items, ground = "base", className, style, ...re
   if (!Array.isArray(items) || !Object.hasOwn(COUNT_CLASSES, items.length)) throw new TypeError("TestimonialSet: requires one, two, three, four or six items.");
   if (ground !== "base" && ground !== "sunken" && ground !== "inverse") throw new TypeError("TestimonialSet: unknown ground.");
   return (
-    <ul {...rest} role="list" className={cx("m-0 list-none p-0", COUNT_CLASSES[items.length], SECTION_GROUND_CLASSES[ground].primary, className)} style={style}>
+    <ul {...SECTION_STAMP} {...rest} role="list" className={cx("m-0 list-none p-0", COUNT_CLASSES[items.length], SECTION_GROUND_CLASSES[ground].primary, className)} style={style}>
       {items.map((item, index) => {
         const span = items.length === 3 && index === 2 ? "tablet:col-span-2 desktop:col-span-1" : undefined;
         return <li key={item.id} className={cx("min-w-0 rounded-panel p-lg text-body-l", PLATE_CLASSES[ground], span)} style={QUOTE_STYLE}>

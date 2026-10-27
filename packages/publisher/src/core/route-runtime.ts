@@ -1,5 +1,5 @@
-import { libraryHash, resolve, runtimeHash, runtimeSnapshot } from "@clossys/designer/catalog";
-import type { CompositeEngineInput, ConsumerRuntimeManifest, RuntimeAssemblyBinding, RuntimeFillSelection, RuntimeDigest, RuntimeJson } from "@clossys/designer/catalog";
+import { dsAttrs, libraryHash, resolve, runtimeHash, runtimeSnapshot } from "@clossys/designer/catalog";
+import type { CompositeEngineInput, DsAttrs, ConsumerRuntimeManifest, RuntimeAssemblyBinding, RuntimeFillSelection, RuntimeDigest, RuntimeJson } from "@clossys/designer/catalog";
 import type { InstanceBinding, SectionFill } from "./instance-binding.js";
 
 /** Internal execution receipt. Only the closed fixed-query adapter records it after
@@ -20,7 +20,9 @@ export function currentRouteRuntimeMaterialization(receipt: RouteRuntimeMaterial
   return !!receipt && !!seal && seal.registered === runtimeHash(registered) && seal.library === libraryHash(engine.library) && seal.selection === resolve(engine).selectionHash && receipt.digest === runtimeHash({ binding: receipt.binding, facts: receipt.facts });
 }
 export type RouteRuntimeBindingResult =
-  | { readonly status: "resolved"; readonly binding: RuntimeAssemblyBinding; readonly instance: InstanceBinding; readonly libraryHash: string; readonly selectionHash: string }
+  | { readonly status: "resolved"; readonly binding: RuntimeAssemblyBinding; readonly instance: InstanceBinding; readonly libraryHash: string; readonly selectionHash: string;
+      /** Page-root provenance stamp (D1, D2): spread on the route's root element so provenance-scan can attribute it. */
+      readonly pageRoot: DsAttrs }
   | { readonly status: "pending" | "refused"; readonly findings: readonly string[] };
 /** Resolve only the exact consumer's current selected surfaces. This projects the canonical
  * InstanceBinding; it cannot pick a catalog candidate or infer a missing configuration. */
@@ -62,7 +64,8 @@ export function resolveSelectedRouteRuntimeBinding(binding: InstanceBinding, eng
     for (const [slot, fill] of Object.entries(binding.frame.slotFills ?? {})) { const selected = section(fill, `frame.slotFills.${slot}`); frameSlots[slot] = selected ? [selected] : []; }
     if (!Object.values(sections).some(fills => fills.length)) findings.push("Real body Section content is unavailable");
     if (findings.length || !frame) return { status: "pending", findings };
-    return runtimeSnapshot({ status: "resolved" as const, instance: binding, binding: { id: binding.instanceId, frame, frameSlots, sections, ...(binding.body ? { body: binding.body } : {}) }, libraryHash: hash, selectionHash: profile.selectionHash });
+    return runtimeSnapshot({ status: "resolved" as const, instance: binding, binding: { id: binding.instanceId, frame, frameSlots, sections, ...(binding.body ? { body: binding.body } : {}) }, libraryHash: hash, selectionHash: profile.selectionHash,
+      pageRoot: dsAttrs("pages", `pages.${binding.instanceId}`, `${profile.consumer}/pages.${binding.instanceId}`) });
   } catch { return { status: "refused", findings: ["Invalid selected consumer assembly data"] }; }
 }
 

@@ -3,6 +3,9 @@ import { Button as AriaButton } from "react-aria-components";
 import { Button } from "../components/Button.js";
 import { Dialog } from "../components/Dialog.js";
 import { cx } from "../components/internal/cx.js";
+import { dsAttrs } from "../catalog-core/provenance-attrs.js";
+/** Section root provenance (D1): the selected Foundry fill this block is. */
+const SECTION_STAMP = dsAttrs("sections", "sections.gallery", "foundry/sections.gallery");
 
 export interface GalleryImage {
   /** Stable key for the image. */
@@ -41,7 +44,7 @@ const TILE = "block w-full overflow-hidden rounded-panel bg-surface-sunken";
  */
 export function Gallery({ images, label, lightbox = true, labels = DEFAULT_LABELS, className, ...rest }: GalleryProps) {
   return (
-    <section {...rest} aria-label={label} data-lightbox={lightbox ? "enabled" : "disabled"} className={cx("flex flex-col", className)}>
+    <section {...SECTION_STAMP} {...rest} aria-label={label} data-lightbox={lightbox ? "enabled" : "disabled"} className={cx("flex flex-col", className)}>
       <ul role="list" className="grid grid-cols-1 gap-md tablet:grid-cols-2 desktop:grid-cols-3">
         {images.map(image => (
           <li key={image.id} className="min-w-0">
