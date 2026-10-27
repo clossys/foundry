@@ -2,7 +2,7 @@
 import { Component as ReactComponent, createElement, useCallback, useContext, useEffect, useState, type ComponentType, type ErrorInfo, type ReactNode } from "react";
 import { componentMemberBinding } from "../catalog-core/emit-components.js";
 import type { CompositeResolved, ResolvedComponent } from "../catalog-core/index.js";
-import { componentSpecimenSample, componentSpecimenUnavailableReason, type ComponentSpecimenSample } from "./component-specimen-samples.js";
+import { componentSpecimenSample, componentSpecimenStateProps, componentSpecimenUnavailableReason, type ComponentSpecimenProbeState, type ComponentSpecimenSample } from "./component-specimen-samples.js";
 import { PreviewOutcomeContext, type SpecimenUnavailableReason } from "./preview-outcome.js";
 
 /** The named exports of one module the host imported, e.g. `import * as components from "@clossys/designer/components"`. */
@@ -70,6 +70,22 @@ export interface ComponentSpecimenOptions {
   readonly specimens?: Readonly<Record<string, ComponentSpecimenRender>>;
   /** Wraps every specimen, e.g. the library's emitted `LibraryProvider`. */
   readonly provider?: ComponentType<{ readonly children?: ReactNode }>;
+  /**
+   * Probe settings by leaf, so a measurer sets a specimen's state and content through the real component's props
+   * instead of mutating the drawn DOM. Applies to the default specimens; a host `specimens` entry draws as authored.
+   */
+  readonly probes?: Readonly<Record<string, ComponentSpecimenProbe>>;
+}
+
+/**
+ * One leaf's probe. `states` are forced through the component's own props (`disabled` is `isDisabled`); a state the
+ * component has no prop for is listed on the specimen set's `data-specimen-probe-unsupported` and never faked.
+ * `props` and `children` set the sample content, applied after the dataset sample and the state props.
+ */
+export interface ComponentSpecimenProbe {
+  readonly states?: readonly ComponentSpecimenProbeState[];
+  readonly props?: Readonly<Record<string, unknown>>;
+  readonly children?: ReactNode;
 }
 
 export interface ComponentSpecimenPreview {
@@ -114,11 +130,13 @@ const specimenRows = (binding: ComponentSpecimenBinding): SpecimenRow[] =>
  * A sample describes the base export; a member bound to another export keeps its label. A row whose export
  * sample data cannot draw (`unavailableOf`) is marked with the reason and never rendered.
  */
-function defaultSpecimen(binding: ComponentSpecimenBinding, sample: ComponentSpecimenSample | undefined, unavailableOf: (row: SpecimenRow) => SpecimenUnavailableReason | undefined, onFail: (name: string) => void): ReactNode {
+type ProbeApplied = { readonly props: Readonly<Record<string, unknown>>; readonly children?: ReactNode };
+function defaultSpecimen(binding: ComponentSpecimenBinding, sample: ComponentSpecimenSample | undefined, unavailableOf: (row: SpecimenRow) => SpecimenUnavailableReason | undefined, onFail: (name: string) => void, probe: ProbeApplied): ReactNode {
+  const content = probe.children === undefined ? {} : { children: probe.children };
   return specimenRows(binding).map(row => { const unavailable = unavailableOf(row); return <div key={row.member} data-component-specimen={row.member}>
     {unavailable ? <span hidden data-specimen-unavailable={unavailable} /> : <SpecimenBoundary name={row.member} onFail={onFail}>{sample && row.Component === binding.Component
-      ? (sample.host ?? (node => node))(createElement(row.Component, { ...sample.props, children: sample.children, ...row.props }))
-      : createElement(row.Component, { ...row.props }, row.member)}</SpecimenBoundary>}
+      ? (sample.host ?? (node => node))(createElement(row.Component, { ...sample.props, children: sample.children, ...row.props, ...probe.props, ...content }))
+      : createElement(row.Component, { children: row.member, ...row.props, ...probe.props, ...content })}</SpecimenBoundary>}
   </div>; });
 }
 
@@ -187,10 +205,15 @@ export function componentSpecimenPreview(options: ComponentSpecimenOptions): Com
     const unavailable = rows.map(unavailableOf).filter(reason => reason !== undefined);
     const total = render ? 1 : rows.length - unavailable.length;
     const Provider = options.provider;
+    const probe = !render && options.probes && Object.hasOwn(options.probes, leaf) ? options.probes[leaf] : undefined;
+    const stateKey = keyOf(binding.specifier, binding.exportName);
+    const forced = (probe?.states ?? []).map(state => ({ state, props: componentSpecimenStateProps(stateKey, state) }));
+    const applied: ProbeApplied = { props: Object.assign({}, ...forced.map(entry => entry.props ?? {}), probe?.props), children: probe?.children };
+    const probeAttributes = probe ? { "data-specimen-probe-states": forced.filter(entry => entry.props).map(entry => entry.state).join(" "), "data-specimen-probe-unsupported": forced.filter(entry => !entry.props).map(entry => entry.state).join(" ") } : {};
     // A new selection or library remounts the set, so an earlier failure never outlives the specimens it described.
-    return <div data-component-specimens={leaf} data-specimen-source={binding.source} className="flex flex-wrap items-center gap-md">
+    return <div data-component-specimens={leaf} data-specimen-source={binding.source} className="flex flex-wrap items-center gap-md" {...probeAttributes}>
       <SpecimenSet key={`${profile.selectionHash}:${binding.specifier}#${binding.exportName}`} total={total} unavailable={unavailable[0]}>{(onFail, onProviderFail) => {
-        const content = render ? <SpecimenBoundary name={leaf} onFail={onFail}>{render(binding)}</SpecimenBoundary> : defaultSpecimen(binding, sample, unavailableOf, onFail);
+        const content = render ? <SpecimenBoundary name={leaf} onFail={onFail}>{render(binding)}</SpecimenBoundary> : defaultSpecimen(binding, sample, unavailableOf, onFail, applied);
         return Provider ? <SpecimenBoundary name={leaf} onFail={onProviderFail}><Provider>{content}</Provider></SpecimenBoundary> : content;
       }}</SpecimenSet>
     </div>;

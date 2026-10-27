@@ -1,7 +1,7 @@
 "use client";
-import { cloneElement, useState, type ComponentType, type ReactElement, type ReactNode } from "react";
+import { cloneElement, useState, type ComponentType, type FormEvent, type ReactElement, type ReactNode } from "react";
 import { Button as TriggerButton } from "react-aria-components";
-import { componentSpecimenCollections, componentSpecimenColor, componentSpecimenField, componentSpecimenOverlays, componentSpecimenProps, componentSpecimenSourceSamples, componentSpecimenTable, componentSpecimenText, componentSpecimenUnavailable } from "./component-specimen-sample-content.js";
+import { componentSpecimenActions, componentSpecimenCard, componentSpecimenCollections, componentSpecimenColor, componentSpecimenField, componentSpecimenOverlays, componentSpecimenProps, componentSpecimenSourceSamples, componentSpecimenTable, componentSpecimenText, componentSpecimenUnavailable } from "./component-specimen-sample-content.js";
 import type { SpecimenUnavailableReason } from "./preview-outcome.js";
 import { containedDialog } from "./component-specimen-contained.js";
 
@@ -20,9 +20,56 @@ export interface ComponentSpecimenSample {
   readonly host?: (specimen: ReactNode) => ReactNode;
 }
 
-/** Inputs a sample cannot carry as data: a controlled handler that has nothing to update. */
+/**
+ * A state a probe can ask a specimen to draw in. Each is forced through the component's own prop where it has
+ * one ({@link componentSpecimenStateProps}); hover, focus-visible and a momentary press are pointer and keyboard
+ * interactions the Foundry fills style with CSS pseudo-classes, which no prop can force.
+ */
+export const COMPONENT_SPECIMEN_PROBE_STATES = ["hover", "focus-visible", "pressed", "disabled", "invalid", "selected", "open", "read-only"] as const;
+export type ComponentSpecimenProbeState = typeof COMPONENT_SPECIMEN_PROBE_STATES[number];
+
+type StateProps = Partial<Record<ComponentSpecimenProbeState, Readonly<Record<string, unknown>>>>;
+const disabled: StateProps = { disabled: { isDisabled: true } };
+const field: StateProps = { ...disabled, invalid: { isInvalid: true }, "read-only": { isReadOnly: true } };
+const toggle: StateProps = { ...disabled, selected: { isSelected: true }, "read-only": { isReadOnly: true } };
+
+/** The component's own props that force each state, by sample key. A state absent here cannot be forced by a prop. */
+const stateProps: Readonly<Record<string, StateProps>> = {
+  "./components#Button": disabled,
+  "./components#Link": disabled,
+  "./components#Slider": disabled,
+  "./components#Tabs": disabled,
+  "./components#ToggleGroup": disabled,
+  "./components#GridList": disabled,
+  "./components#TagGroup": disabled,
+  "./components#ColorPicker": {},
+  "./components#Checkbox": { ...toggle, invalid: { isInvalid: true } },
+  "./components#Switch": toggle,
+  "./components#ToggleButton": { ...toggle, pressed: { isSelected: true } },
+  "./components#TextField": field,
+  "./components#SearchField": field,
+  "./components#NumberField": field,
+  "./components#DateField": field,
+  "./components#Calendar": field,
+  "./components#ComboBox": field,
+  "./components#RadioGroup": field,
+  "./components#Select": { ...disabled, invalid: { isInvalid: true } },
+  "./components#Disclosure": { ...disabled, open: { isExpanded: true } },
+  "components/button/button.tsx#Button": disabled,
+  "components/slider/slider.tsx#Slider": disabled,
+  "components/checkbox/checkbox.tsx#Checkbox": { ...toggle, invalid: { isInvalid: true } },
+  "components/switch/switch.tsx#Switch": toggle,
+  "components/toggle-button/toggle.tsx#Toggle": { ...toggle, pressed: { isSelected: true } },
+};
+
+/** The props that force `state` on the export at `key`, or undefined when the component has no prop for it. */
+export const componentSpecimenStateProps = (key: string, state: ComponentSpecimenProbeState): Readonly<Record<string, unknown>> | undefined =>
+  Object.hasOwn(stateProps, key) ? stateProps[key]![state] : undefined;
+
+/** Inputs a sample cannot carry as data: a controlled handler that has nothing to update, or a submit kept in the cell. */
 const handlers: Readonly<Record<string, Readonly<Record<string, unknown>>>> = {
   "./components#ResizeHandle": { onChange: () => undefined },
+  "./components#Form": { onSubmit: (event: FormEvent) => event.preventDefault() },
 };
 
 const part = (owner: unknown, name: string): Renderable | undefined => {
@@ -30,30 +77,55 @@ const part = (owner: unknown, name: string): Renderable | undefined => {
   return typeof value === "function" || (typeof value === "object" && value !== null && "$$typeof" in value) ? value as Renderable : undefined;
 };
 
+type TreeItem = { readonly id: string; readonly label: string; readonly expandLabel: string; readonly children?: readonly TreeItem[] };
+
 function collection(key: string, Component: unknown, exports: Namespace): ComponentSpecimenSample | undefined {
-  const sample = Object.hasOwn(componentSpecimenCollections, key) ? componentSpecimenCollections[key as keyof typeof componentSpecimenCollections] : undefined;
-  if (!sample) return undefined;
-  const label = "label" in sample ? { "aria-label": sample.label } : {};
+  const c = componentSpecimenCollections;
   switch (key) {
     case "./components#Breadcrumb": {
       const Item = part(Component, "Item");
-      return Item && { props: {}, children: sample.items.map(item => <Item key={item.id} href={"href" in item ? item.href : undefined}>{item.label}</Item>) };
+      return Item && { props: {}, children: c[key].items.map(item => <Item key={item.id} href={"href" in item ? item.href : undefined}>{item.label}</Item>) };
     }
     case "./components#GridList": {
       const Item = part(Component, "Item");
-      return Item && { props: label, children: sample.items.map(item => <Item key={item.id} id={item.id} textValue={item.label}>{item.label}</Item>) };
+      return Item && { props: { "aria-label": c[key].label }, children: c[key].items.map(item => <Item key={item.id} id={item.id} textValue={item.label}>{item.label}</Item>) };
     }
     case "./components#Tree": {
       const Node = part(Component, "Node");
-      return Node && { props: label, children: sample.items.map(item => <Node key={item.id} id={item.id} textValue={item.label} label={item.label} expandLabel={"expandLabel" in item ? item.expandLabel : item.label} />) };
+      if (!Node) return undefined;
+      const node = (item: TreeItem): ReactNode => <Node key={item.id} id={item.id} textValue={item.label} label={item.label} expandLabel={item.expandLabel}>{item.children?.map(node)}</Node>;
+      return { props: { "aria-label": c[key].label, defaultExpandedKeys: c[key].defaultExpandedKeys }, children: c[key].items.map(node) };
     }
     case "./components#Toolbar": {
       const Button = part(exports, "Button");
-      return Button && { props: label, children: sample.items.map(item => <Button key={item.id}>{item.label}</Button>) };
+      return Button && { props: { "aria-label": c[key].label }, children: c[key].items.map(item => <Button key={item.id}>{item.label}</Button>) };
     }
     case "./components#NavigationTree": {
       const Item = part(exports, "NavigationTreeItem"), Content = part(exports, "NavigationTreeItemContent"), Link = part(exports, "Link");
-      return Item && Content && Link && { props: label, children: sample.items.map(item => <Item key={item.id} id={item.id} textValue={item.label} href={"href" in item ? item.href : undefined}><Content><Link>{item.label}</Link></Content></Item>) };
+      return Item && Content && Link && { props: { "aria-label": c[key].label }, children: c[key].items.map(item => <Item key={item.id} id={item.id} textValue={item.label} href={item.href}><Content><Link>{item.label}</Link></Content></Item>) };
+    }
+    case "./components#RadioGroup": {
+      const Radio = part(Component, "Radio");
+      return Radio && { props: { label: c[key].label, defaultValue: c[key].defaultValue }, children: c[key].items.map(item => <Radio key={item.id} value={item.id}>{item.label}</Radio>) };
+    }
+    case "./components#Tabs": {
+      const List = part(Component, "List"), Tab = part(Component, "Tab"), Panel = part(Component, "Panel");
+      return List && Tab && Panel && { props: {}, children: [
+        <List key="list" aria-label={c[key].label}>{c[key].items.map(item => <Tab key={item.id} id={item.id}>{item.label}</Tab>)}</List>,
+        ...c[key].items.map(item => <Panel key={item.id} id={item.id}>{item.content}</Panel>),
+      ] };
+    }
+    case "./components#TagGroup": {
+      const List = part(Component, "List"), Item = part(Component, "Item");
+      return List && Item && { props: { label: c[key].label }, children: <List>{c[key].items.map(item => <Item key={item.id} id={item.id} textValue={item.label}>{item.label}</Item>)}</List> };
+    }
+    case "./components#ToggleGroup": {
+      const Item = part(exports, "ToggleGroupItem");
+      return Item && { props: { "aria-label": c[key].label, selectionMode: "single", defaultSelectedKeys: c[key].defaultSelectedKeys }, children: c[key].items.map(item => <Item key={item.id} id={item.id}>{item.label}</Item>) };
+    }
+    case "./components#Disclosure": {
+      const [first] = c[key].items;
+      return { props: { title: first.label }, children: first.content };
     }
     default: return undefined;
   }
@@ -62,9 +134,9 @@ function collection(key: string, Component: unknown, exports: Namespace): Compon
 function table(Component: unknown): ComponentSpecimenSample | undefined {
   const [Header, Column, Body, Row, Cell] = ["Header", "Column", "Body", "Row", "Cell"].map(name => part(Component, name));
   if (!Header || !Column || !Body || !Row || !Cell) return undefined;
-  const { label, columns, rows } = componentSpecimenTable;
-  return { props: { "aria-label": label }, children: [
-    <Header key="header">{columns.map((column, index) => <Column key={column.id} id={column.id} isRowHeader={index === 0}>{column.label}</Column>)}</Header>,
+  const { label, columns, rows, sortDescriptor } = componentSpecimenTable;
+  return { props: { "aria-label": label, sortDescriptor }, children: [
+    <Header key="header">{columns.map((column, index) => <Column key={column.id} id={column.id} isRowHeader={index === 0} allowsSorting={column.allowsSorting}>{column.label}</Column>)}</Header>,
     <Body key="body">{rows.map(row => <Row key={row.id} id={row.id}>{columns.map(column => <Cell key={column.id}>{row[column.id]}</Cell>)}</Row>)}</Body>,
   ] };
 }
@@ -86,6 +158,19 @@ function colorPicker(Component: unknown): ComponentSpecimenSample | undefined {
   if (!SwatchPicker || !Swatch) return undefined;
   const { label, defaultValue, swatches } = componentSpecimenColor;
   return { props: { defaultValue }, children: <SwatchPicker aria-label={label}>{swatches.map(color => <Swatch key={color} color={color} />)}</SwatchPicker> };
+}
+
+/** Foundry components drawn with sibling Foundry exports: a card's heading and body, an upload trigger, a form. */
+function composed(key: string, exports: Namespace): ComponentSpecimenSample | undefined {
+  const Button = part(exports, "Button"), Content = part(exports, "SemanticContent"), TextField = part(exports, "TextField");
+  const a = componentSpecimenActions;
+  switch (key) {
+    case "./components#Card": return Content && { props: {}, children: [<Content key="title" as="h3">{componentSpecimenCard.title}</Content>, <Content key="body" as="p">{componentSpecimenCard.content}</Content>] };
+    case "./components#FileTrigger": return Button && { props: {}, children: <Button>{a.upload}</Button> };
+    case "./components#Form": return Button && TextField && { props: {}, children: [<TextField key="field" {...a.field} />, <Button key="submit" type="submit">{a.submit}</Button>] };
+    case "./components#Link": return { props: { href: a.href } };
+    default: return undefined;
+  }
 }
 
 /**
@@ -164,6 +249,12 @@ function sourceSample(key: string, exports: Namespace): ComponentSpecimenSample 
       return { props: {}, children: <Header><Title>{s[key].title}</Title><Description>{s[key].content}</Description></Header>, host: containedDialog(Content) };
     }
     case "components/slider/slider.tsx#Slider": return { props: { "aria-label": s[key].label, defaultValue: s[key].defaultValue } };
+    case "components/keyboard/kbd.tsx#Kbd":
+    case "components/badge/badge.tsx#Badge":
+    case "components/button/button.tsx#Button":
+    case "components/switch/switch.tsx#Switch":
+    case "components/checkbox/checkbox.tsx#Checkbox":
+    case "components/toggle-button/toggle.tsx#Toggle": return { props: {}, children: s[key].text };
     default: return undefined;
   }
 }
@@ -174,19 +265,25 @@ export const componentSpecimenUnavailableReason = (key: string): SpecimenUnavail
 
 /**
  * Designer-provided sample content for a Foundry component export (`./components#Meter`) or a vendored
- * shadcn@aria source export (`components/tabs/tabs.tsx#Tabs`), so a data-driven
- * component draws without host data. Undefined when the export needs none or its parts are not in the
- * host's modules. A host `specimens` entry always replaces it.
+ * shadcn@aria source export (`components/tabs/tabs.tsx#Tabs`), drawn from the shared specimen dataset, so a
+ * data-driven component draws without host data. Undefined when the export needs none or its parts are not in
+ * the host's modules. A host `specimens` entry always replaces it.
  */
 export function componentSpecimenSample(key: string, Component: unknown, exports: Namespace): ComponentSpecimenSample | undefined {
   if (!key.startsWith("./")) return sourceSample(key, exports);
   if (key === "./components#Table") return table(Component);
+  // override: field-host-control. Field's contract is a render prop that hands its label, description and ids to
+  // a host-owned native control, so its specimen is that native control.
   if (key === "./components#Field") return { props: { ...componentSpecimenField }, children: (field: Record<string, unknown>) => <input {...field} /> };
   if (key === "./components#ColorPicker") return colorPicker(Component);
-  const composed = collection(key, Component, exports) ?? overlay(key, Component, exports);
-  if (composed) return composed;
+  const built = collection(key, Component, exports) ?? overlay(key, Component, exports) ?? composed(key, exports);
   const props = Object.hasOwn(componentSpecimenProps, key) ? componentSpecimenProps[key] : undefined;
-  if (!props) return undefined;
   const text = Object.hasOwn(componentSpecimenText, key) ? componentSpecimenText[key] : undefined;
-  return { props: { ...props, ...(Object.hasOwn(handlers, key) ? handlers[key] : {}) }, ...(text === undefined ? {} : { children: <>{text}</> }) };
+  const handler = Object.hasOwn(handlers, key) ? handlers[key] : undefined;
+  if (!built && !props && text === undefined) return undefined;
+  return {
+    ...built,
+    props: { ...props, ...built?.props, ...handler },
+    ...(built?.children !== undefined ? { children: built.children } : text === undefined ? {} : { children: <>{text}</> }),
+  };
 }

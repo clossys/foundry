@@ -39,4 +39,6 @@ export type { PreparedLibraryBoardInput, PreparedCompositeLibraryBoardInput } fr
 
 // Live component specimens: a host binds its adopted library's modules into `CompositeStudioSnapshot.preview`.
 export { componentSpecimenPreview } from "./component-specimens.js";
-export type { ComponentSpecimenBinding, ComponentSpecimenComponent, ComponentSpecimenMember, ComponentSpecimenModule, ComponentSpecimenOptions, ComponentSpecimenPreview, ComponentSpecimenRefusal, ComponentSpecimenRefusalCode, ComponentSpecimenRender } from "./component-specimens.js";
+export type { ComponentSpecimenBinding, ComponentSpecimenComponent, ComponentSpecimenMember, ComponentSpecimenModule, ComponentSpecimenOptions, ComponentSpecimenPreview, ComponentSpecimenProbe, ComponentSpecimenRefusal, ComponentSpecimenRefusalCode, ComponentSpecimenRender } from "./component-specimens.js";
+export { COMPONENT_SPECIMEN_PROBE_STATES } from "./component-specimen-samples.js";
+export type { ComponentSpecimenProbeState } from "./component-specimen-samples.js";
