@@ -411,16 +411,36 @@ describe("qualification rule groups (QUAL-RECOUNT G1, G2, G7a, G11)", () => {
   }
   it("check-components K4 ignores utility names inside custom properties and reads v4 arbitrary forms whole", () => {
     const profile = hairline();
-    append(profile, ' const cls = "border-(length:--ui-border-hairline) data-[open]:border-t-(length:--ui-border-hairline) [.border-b]:rounded-l-(--ui-border-hairline) scroll-py-1";');
+    append(profile, ' const cls = "border-(length:--ui-border-hairline) data-[open]:border-t-(length:--ui-border-hairline) [.border-b]:rounded-l-(--ui-border-hairline)";');
     expect(k4(profile)).toEqual([]);
     // The property inside a whole v4 form is still judged, by the unbound-property rule, never as a utility.
     const unbound = fixture(); append(unbound, ' const cls = "border-t-(length:--ui-border-hairline)";');
     expect(k4(unbound)).toEqual(["Unbound CSS property --ui-border-hairline in button.tsx"]);
     // Must still flag: real named-value utilities, behind variants, negation and important.
-    for (const [cls, utility] of [["h-3", "h-3"], ["border-2", "border-2"], ["hover:border-2", "border-2"], ["[&>svg]:h-3", "h-3"], ["-mt-2", "mt-2"], ["!h-3", "h-3"], ["h-3!", "h-3"]] as const) {
+    for (const [cls, utility] of [["h-3", "h-3"], ["border-2", "border-2"], ["hover:border-2", "border-2"], ["[&>svg]:h-3", "h-3"], ["-mt-2", "mt-2"], ["!h-3", "h-3"], ["h-3!", "h-3"], ["scroll-py-1", "scroll-py-1"]] as const) {
       const flagged = hairline(); append(flagged, ` const cls = "border-(length:--ui-border-hairline) ${cls}";`);
       expect(k4(flagged), cls).toEqual([`Utility ${utility} has no bound consumer token`]);
     }
+  });
+  it("check-components K4 judges scroll padding and margin utilities as spacing", () => {
+    // Must flag: scroll-padding and scroll-margin carry a spacing value, as in the shipped combo-box, menu and select sources.
+    for (const [cls, utility] of [["scroll-py-1", "scroll-py-1"], ["scroll-my-1", "scroll-my-1"], ["scroll-px-1", "scroll-px-1"], ["scroll-p-2", "scroll-p-2"], ["-scroll-mt-2", "scroll-mt-2"], ["data-[open]:scroll-pb-4", "scroll-pb-4"]] as const) {
+      const flagged = fixture(); append(flagged, ` const cls = "${cls}";`);
+      expect(k4(flagged), cls).toEqual([`Utility ${utility} has no bound consumer token`]);
+    }
+    // Value-free: zero carries no spacing value. Scroll behaviour and snap utilities are outside the family.
+    const free = fixture(); append(free, ' const cls = "scroll-p-0 scroll-my-0 scroll-px-0 scroll-smooth scroll-auto";');
+    expect(k4(free)).toEqual([]);
+  });
+  it("check-components K4 judges the named value before an arbitrary modifier", () => {
+    // Must flag: a `/[…]` or `/(…)` modifier never hides the named colour or size in front of it.
+    for (const [cls, utility] of [["bg-black/[0.5]", "bg-black"], ["text-sm/[1.5]", "text-sm"], ["hover:border-white/[0.2]", "border-white"]] as const) {
+      const flagged = fixture(); append(flagged, ` const cls = "${cls}";`);
+      expect(k4(flagged), cls).toEqual([`Utility ${utility} has no bound consumer token`]);
+    }
+    // A whole v4 `-(…)` or `-[…]` value after the family's own `-` is still read whole, not as a named value.
+    const whole = hairline(); append(whole, ' const cls = "border-(length:--ui-border-hairline) border-t-[length:var(--ui-border-hairline)]";');
+    expect(k4(whole)).toEqual([]);
   });
   it("check-components K4 exempts value-free utilities and still flags h-3", () => {
     const free = ["w-full", "w-fit", "h-auto", "min-w-0", "max-w-none", "p-0", "pt-0", "m-0", "ml-auto", "-mx-0", "gap-0", "rounded-full", "rounded-none", "rounded-t-none", "border-0", "border-b-0",
@@ -460,6 +480,62 @@ describe("qualification rule groups (QUAL-RECOUNT G1, G2, G7a, G11)", () => {
     observation.files.push({ path: "theme.tsx", content: 'const cls = "[--foo:var(--text)]";' }); observation.sourceHash = componentSourceHash(observation.files);
     append(split, ' const cls = "w-(--foo)";');
     expect(k4(split)).toEqual(["Unbound CSS property --foo in button.tsx"]);
+  });
+  it("K4 exempts a file-local property only when every definition is a judged token value", () => {
+    const unique = (profile: ComponentCheckInput) => [...new Set(k4(profile))];
+    // Exempt: a token var() or a calc() of token vars, as an arbitrary property, a string style value or a CSS declaration.
+    const exempt = ' const cls = "[--pad:calc(var(--control)_*_2)] p-(--pad)"; const style = { "--gap": "calc(var(--control) * -0.5)", gap: "var(--gap)" };'
+      + ' const css = `.x { --inset: var(--surface); margin: var(--inset); }`;';
+    const profile = fixture(); append(profile, exempt);
+    expect(k4(profile)).toEqual([]);
+    // Must flag: a named colour, a %, theme(), a JS expression, a type annotation, a ternary, a template interpolation
+    // (the toggle-group --gap shape), a var() fallback, a cycle, and any one unjudged definition beside a judged one.
+    for (const [usage, properties] of [
+      [' const cls = "[--c:black] bg-(--c)";', ["--c"]],
+      [' const cls = "[--w:50%] w-(--w)";', ["--w"]],
+      [' const cls = "[--g:theme(spacing.2)] gap-(--g)";', ["--g"]],
+      [' const el = <div style={{"--js": props.gap, gap: "var(--js)"}} />;', ["--js"]],
+      [' type Vars = { "--v": string }; const cls = "h-(--v)";', ["--v"]],
+      [' const s = { "--t": wide ? "var(--text)" : "var(--surface)", color: "var(--t)" };', ["--t"]],
+      [' const s = { ...style, "--tg": `calc(var(--control) * ${spacing})` }; const cls = "gap-(--tg)";', ["--tg"]],
+      [' const cls = "[--f:var(--text,black)] text-(--f)";', ["--f"]],
+      [' const cls = "[--a:var(--b)] [--b:var(--a)] w-(--a)";', ["--a", "--b"]],
+      [' const more = { "--gap": props.gap };', ["--gap"]],
+    ] as const) {
+      const flagged = fixture(); append(flagged, exempt + usage);
+      expect.soft(unique(flagged), usage).toEqual(properties.map(property => `Unbound CSS property ${property} in button.tsx`));
+    }
+    // The real toggle-group source, standalone.
+    const toggle = fixture(); append(toggle, ' const s = { ...style, "--gap": `calc(var(--surface) * ${spacing})` }; const cls = "flex gap-(--gap)";');
+    expect.soft(unique(toggle)).toEqual(["Unbound CSS property --gap in button.tsx"]);
+  });
+  it("K4 voids every file-local exemption when an object key is computed and is or could be a custom property", () => {
+    const unique = (profile: ComponentCheckInput) => [...new Set(k4(profile))];
+    const exempt = ' const cls = "[--pad:calc(var(--control)_*_2)] p-(--pad)"; const style = { "--gap": "calc(var(--control) * -0.5)", gap: "var(--gap)" };'
+      + ' const css = `.x { --inset: var(--surface); margin: var(--inset); }`;';
+    const all = ["--pad", "--gap", "--inset"];
+    // Must flag: (a) the reviewer's case, a safe literal definition overridden by a template key; (b) a computed name;
+    // (c) a template key with interpolation; plus a bracketed string, an escaped literal and a member expression.
+    // The key's value comes from JS the definition scan cannot read, so no definition in the file is trusted.
+    for (const [usage, properties] of [
+      [' const s = { "--gap": "var(--control)" }; const t = { [`--gap`]: props.gap }; const cls = "gap-(--gap)";', ["--gap"]],
+      [' const s = { "--gap": "var(--control)", [name]: props.gap }; const cls = "gap-(--gap)";', ["--gap"]],
+      [' const s = { "--gap": "var(--control)", [`--${a}`]: props.gap }; const cls = "gap-(--gap)";', ["--gap"]],
+      [exempt + ' const t = { [`--gap`]: props.gap };', all],
+      [exempt + ' const t = { ...style, [name]: props.gap };', all],
+      [exempt + ' const t = {\n  [`--${part}-size`]: props.size };', all],
+      [exempt + ' const t = { ["--gap"]: props.gap };', all],
+      [exempt + ' const t = { ["\\u002d-gap"]: props.gap };', all],
+      [exempt + ' const t = { [vars.gap]: props.gap };', all],
+    ] as const) {
+      const flagged = fixture(); append(flagged, usage);
+      expect.soft(unique(flagged).sort(), usage).toEqual(properties.map(property => `Unbound CSS property ${property} in button.tsx`).sort());
+    }
+    // (d) Control: plain token-valued definitions stay exempt beside keys that cannot be a custom property
+    // (plain literals naming no custom property, a number) and TS index signatures or mapped types, which set no value.
+    const control = fixture();
+    append(control, exempt + ' const t = { [`color`]: props.color, ["margin"]: 0, [0]: 1 }; type V = { [key: string]: string }; type M = { [K in Keys]: string };');
+    expect(k4(control)).toEqual([]);
   });
   it("K5 disabled state does not require activation keys", () => {
     const k5 = (profile: ComponentCheckInput) => checkComponentProfile(profile).findings.filter(f => f.code === "K5").map(f => f.message);

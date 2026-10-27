@@ -207,13 +207,14 @@ function codeText(source: string): string {
 function imports(source: string): string[] {
   return [...source.matchAll(/(?:\bfrom\s*|\bimport\s*|\bimport\s*\(\s*|\brequire\s*\(\s*)["']([^"']+)["']/g)].map(match => match[1]!);
 }
-/** K4 utility families; each named value needs a bound consumer token. */
-const UTILITY = /^(?:h|w|min-h|min-w|max-h|max-w|p[trblxy]?|m[trblxy]?|gap|rounded|text|bg|border)-[\w./-]+/;
+/** K4 utility families; each named value needs a bound consumer token. Scroll padding and margin are spacing. */
+const UTILITY = /^(?:h|w|min-h|min-w|max-h|max-w|p[trblxy]?|m[trblxy]?|scroll-[pm][trblxy]?|gap|rounded|text|bg|border)-[\w./-]+/;
 /**
  * K4 utilities, read from whole class tokens (split on whitespace and quotes). Variants are stripped at the
  * last top-level `:`, then a utility is matched only at the start of what remains, so a family name inside a
  * `--custom-property`, a `(length:--…)` argument, an arbitrary variant (`[.border-b]:`) or a longer utility
- * (`scroll-py-1`) is never a match. A Tailwind v4 `-(…)` or `-[…]` value is read whole, never truncated, and is
+ * (`outline-border-focus`) is never a match; `scroll-p*`/`scroll-m*` are their own spacing family.
+ * A Tailwind v4 `-(…)` or `-[…]` value is read whole, never truncated, and is
  * not a named value: its contents are judged by the unbound-property and literal rules, exactly as `border-(…)`
  * always was, so `border-t-(…)` no longer fails as a truncated `border-t-`.
  */
@@ -227,7 +228,10 @@ function classUtilities(code: string): string[] {
     }
     const base = token.slice(start).replace(/^!/, "").replace(/^-(?=[a-z])/, "");
     const match = UTILITY.exec(base);
-    if (match && !/^[[(]/.test(base.slice(match[0].length))) found.push(match[0]);
+    if (!match) continue;
+    // A `[`/`(` right after the family's own `-` is a whole v4 value; after a `/` modifier the named value is still judged.
+    const arbitraryNext = /^[[(]/.test(base.slice(match[0].length));
+    if (!arbitraryNext) found.push(match[0]); else if (!match[0].endsWith("-")) found.push(match[0].replace(/\/$/, ""));
   }
   return found;
 }
@@ -239,7 +243,7 @@ function classUtilities(code: string): string[] {
  */
 const VALUE_FREE_UTILITIES: readonly RegExp[] = [
   /^(?:min-|max-)?[hw]-(?:0|auto|full|fit|min|max)$/, /^max-[hw]-none$/,
-  /^[pm][trblxy]?-0$/, /^m[trblxy]?-auto$/, /^gap(?:-[xy])?-0$/,
+  /^[pm][trblxy]?-0$/, /^scroll-[pm][trblxy]?-0$/, /^m[trblxy]?-auto$/, /^gap(?:-[xy])?-0$/,
   /^rounded(?:-(?:[trblse]|[tb][lr]|[se][se]))?-(?:none|full)$/,
   /^border(?:-[xytrblse])?-(?:0|transparent|current|inherit)$/, /^border-(?:solid|dashed|dotted|double|hidden|none|collapse|separate)$/,
   /^bg-(?:transparent|current|inherit|none)$/, /^bg-(?:clip-(?:border|padding|content|text)|origin-(?:border|padding|content))$/,
@@ -268,12 +272,79 @@ const RAC_RUNTIME_PROPERTIES: Readonly<Record<string, string>> = {
   "--table-row-level": "Table: the depth of the row within the table, for indentation",
 };
 /**
- * Custom properties a file defines itself: a Tailwind arbitrary property `[--name:value]` (behind any variant), a
- * style-object key `"--name": value`, or a CSS declaration `--name: value`. A use of such a property is not an
- * unbound consumer property; the defining value stays in the file and is judged by the same property and literal rules.
+ * A defining value whose every part the unbound-property rule judges: one token `var(--name)` with no fallback, or a
+ * `calc()` of such vars and plain numbers. Returns the names it reads, or undefined for anything else (a named colour,
+ * a `%` or unit, `theme()`, a fallback, a nested function).
+ */
+function judgedDefinition(value: string): string[] | undefined {
+  const VAR = /var\((--[a-zA-Z][\w-]*)\)/g;
+  const text = value.trim();
+  const reads = [...text.matchAll(VAR)].map(match => match[1]!);
+  if (/^var\(--[a-zA-Z][\w-]*\)$/.test(text)) return reads;
+  const calc = /^calc\((.*)\)$/s.exec(text);
+  return calc && reads.length && /^[\u0001\d.\s+*/()-]*$/.test(calc[1]!.replace(VAR, "\u0001")) ? reads : undefined;
+}
+/** The text between `from` and the `]` that closes the arbitrary property at depth 0, or undefined. */
+function arbitraryValue(code: string, from: number): string | undefined {
+  let depth = 0;
+  for (let i = from; i < code.length; i++) {
+    const char = code[i]!;
+    if (char === "[" || char === "(") depth++; else if (char === ")") depth--; else if (char === "]") { if (depth === 0) return code.slice(from, i); depth--; }
+    if (/[\s"'`]/.test(char)) return undefined;
+  }
+  return undefined;
+}
+/** A style-object value that is one complete string literal without interpolation, ending the entry; else undefined. */
+function literalValue(code: string, from: number): string | undefined {
+  const match = /^\s*(["'`])((?:\\.|(?!\1)[^\\])*)\1\s*[,}]/s.exec(code.slice(from));
+  return match && !(match[1] === "`" && match[2]!.includes("${")) ? match[2] : undefined;
+}
+/**
+ * Whether an object key in the file is computed (`[expr]:`, including a template literal) and is or could be a custom
+ * property. Its value is set from JS the definition scan cannot read, and it may override a literal definition of the
+ * same name, so its presence voids every file-local exemption. Only a plain string or template literal without escapes
+ * or interpolation that names no custom property, or a number, cannot be one. A TS index signature or mapped type
+ * (`[key: T]`, `[K in T]`) sets no value and is not a key.
+ */
+function computedCustomKey(code: string): boolean {
+  for (const match of code.matchAll(/[{,]\s*\[/g)) {
+    const open = match.index + match[0].length - 1;
+    let close = -1;
+    for (let i = open, depth = 0; i < code.length && close < 0; i++) { if (code[i] === "[") depth++; else if (code[i] === "]" && --depth === 0) close = i; }
+    if (close < 0 || !/^\s*:/.test(code.slice(close + 1))) continue;
+    const key = code.slice(open + 1, close).trim();
+    if (/^[A-Za-z_$][\w$]*\s*:|^[A-Za-z_$][\w$]*\s+in\s/.test(key)) continue;
+    const literal = /^(?:"([^"\\\n]*)"|'([^'\\\n]*)'|`([^`\\$]*)`|\d+)$/.exec(key);
+    if (!literal || (literal[1] ?? literal[2] ?? literal[3] ?? "").trim().startsWith("--")) return true;
+  }
+  return false;
+}
+/**
+ * Custom properties a file defines itself and may use unbound: a Tailwind arbitrary property `[--name:value]` (behind
+ * any variant), a style-object key `"--name": "value"`, or a CSS declaration `--name: value`. A property is exempt only
+ * when EVERY definition of it in the file is a judged literal (see judgedDefinition) and every var it reads is either
+ * judged by the unbound-property rule or itself exempt. A JS expression, a type annotation, a ternary, a template
+ * interpolation or any unrecognised definition shape keeps the property flagged, as does a definition cycle.
+ * It fails closed: a file with a computed object key that is or could be a custom property exempts nothing.
  */
 function definedProperties(code: string): Set<string> {
-  return new Set([...code.matchAll(/(?:^|[[{;,\s"'])(--[a-zA-Z][\w-]*)["']?\]?\s*:/gm)].map(match => match[1]!));
+  if (computedCustomKey(code)) return new Set();
+  const definitions = new Map<string, (string[] | undefined)[]>();
+  for (const match of code.matchAll(/(^|[[{;,\s"'])(--[a-zA-Z][\w-]*)(["']?)(\]?)\s*:/gm)) {
+    const [whole, before, name, quote, bracket] = match as unknown as [string, string, string, string, string];
+    const after = match.index + whole.length;
+    let value: string | undefined;
+    if (before === "[" && !quote && !bracket) value = arbitraryValue(code, after)?.replace(/_/g, " ");
+    else if ((before === '"' || before === "'") && quote === before) value = literalValue(code, after);
+    else if (!quote && !bracket) value = /^([^;}"'`\n$]*)[;}"'`\n]/.exec(code.slice(after))?.[1];
+    definitions.set(name, [...definitions.get(name) ?? [], value === undefined ? undefined : judgedDefinition(value)]);
+  }
+  const exempt = new Set<string>();
+  for (let changed = true; changed;) {
+    changed = false;
+    for (const [name, reads] of definitions) if (!exempt.has(name) && reads.every(read => read?.every(inner => !definitions.has(inner) || exempt.has(inner)))) { exempt.add(name); changed = true; }
+  }
+  return exempt;
 }
 function rootNames(root: string): string[] { return root.startsWith("rac:") ? root.slice(4).split("+") : []; }
 /** Contracts grant leaves; declarations may name a leaf or one exact member. */
