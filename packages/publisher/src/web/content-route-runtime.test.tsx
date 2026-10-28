@@ -41,6 +41,26 @@ describe("content route server rendering", () => {
     expect(html).not.toContain("Sign in | Example"); expect(html).not.toContain("Sign in to continue");
   });
 
+  it("projects a legacy scalar canonical only for the workspace default locale", () => {
+    const input = contentRouteFixture();
+    expect(prepareContentRoute(input).metadata.canonical).toBe("https://example.test/sign-in");
+    const localized = { ...input, locale: "fr", registry: { ...input.registry, slots: input.registry.slots.map(slot => ({ ...slot, locales: ["en", "fr"] })) } };
+    expect(prepareContentRoute(localized).metadata).not.toHaveProperty("canonical");
+  });
+
+  it("projects the exact rendered locale from a canonical map", () => {
+    const input = contentRouteFixture();
+    const mapped = { ...input, registry: { ...input.registry, slots: input.registry.slots.map(slot => ({ ...slot, locales: ["en", "fr"], meta: { canonical: { en: "https://example.test/sign-in", fr: "https://example.test/fr/sign-in" } } })) } };
+    expect(prepareContentRoute(mapped).metadata.canonical).toBe("https://example.test/sign-in");
+    expect(prepareContentRoute({ ...mapped, locale: "fr" }).metadata.canonical).toBe("https://example.test/fr/sign-in");
+  });
+
+  it("omits canonical when the rendered locale is absent from the map", () => {
+    const input = contentRouteFixture();
+    const missing = { ...input, registry: { ...input.registry, slots: input.registry.slots.map(slot => ({ ...slot, locales: ["en", "fr"], meta: { canonical: { fr: "https://example.test/fr/sign-in" } } })) } };
+    expect(prepareContentRoute(missing).metadata).not.toHaveProperty("canonical");
+  });
+
   it("turns missing Writer frame words and section copy into Needs without a partial node", () => {
     const base = content();
     const input = contentRouteFixture({ composition: { ...base.composition!, sections: [{ ...base.composition!.sections[0]!, fields: [] }] } });

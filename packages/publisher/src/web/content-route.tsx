@@ -38,11 +38,15 @@ export function prepareContentRoute(input: ContentRouteInput): PreparedContentRo
 
   const copy = resolveCopy(candidate, locale);
   const pageCopy = copy[PAGE_META_KEY] ?? {};
+  const canonicalPolicy = slot.meta?.canonical;
+  const canonical = typeof canonicalPolicy === "string"
+    ? locale === input.registry.workspace.defaultLocale ? canonicalPolicy : undefined
+    : canonicalPolicy?.[locale];
   const metadata: ContentRouteMetadata = {
     ...(pageCopy.title === undefined ? {} : { title: pageCopy.title }),
     ...(pageCopy.description === undefined ? {} : { description: pageCopy.description }),
     robots: robotsFor(slot),
-    ...(slot.meta?.canonical === undefined ? {} : { canonical: slot.meta.canonical }),
+    ...(canonical === undefined ? {} : { canonical }),
   };
   for (const finding of checkPageMetadata({ ...slot, locales: [locale] }, { ...candidate, pageMeta: candidate.pageMeta?.filter(field => field.locale === locale) })) {
     add("copy", "writer", finding.path, `Writer page metadata is required: ${finding.path} (${finding.rule})`);
