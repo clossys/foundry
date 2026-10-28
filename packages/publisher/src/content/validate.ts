@@ -145,7 +145,19 @@ class Checks {
     if (v.meta !== undefined && this.object(v.meta, `${path}.meta`)) {
       for (const key of Object.keys(v.meta)) if (!["robots", "canonical"].includes(key)) this.add(`${path}.meta.${key}`, "unknown-field");
       if (v.meta.robots !== undefined) this.enum(v.meta.robots, ["index", "noindex"], `${path}.meta.robots`);
-      if (v.meta.canonical !== undefined && !isCanonicalUrl(v.meta.canonical)) this.add(`${path}.meta.canonical`, "canonical-url");
+      if (v.meta.canonical !== undefined) {
+        const canonical = v.meta.canonical;
+        if (typeof canonical === "string") {
+          if (!isCanonicalUrl(canonical)) this.add(`${path}.meta.canonical`, "canonical-url");
+        } else if (!canonical || typeof canonical !== "object" || Array.isArray(canonical) || !Object.keys(canonical).length) {
+          this.add(`${path}.meta.canonical`, "canonical-url");
+        } else {
+          for (const [locale, url] of Object.entries(canonical)) {
+            if (!isContentLocale(locale)) this.add(`${path}.meta.canonical.${locale}`, "canonical-locale");
+            if (!isCanonicalUrl(url)) this.add(`${path}.meta.canonical.${locale}`, "canonical-url");
+          }
+        }
+      }
     }
     if (v.dynamicParams !== undefined) this.jsonObject(v.dynamicParams, `${path}.dynamicParams`);
     this.strings(v.tags, `${path}.tags`);

@@ -6,3 +6,5 @@ export type { ContentApprovalPurpose } from "./approval.js";
 export { loadContentStore, writeContentStore } from "./store/index.js";
 export type { ContentStoreOptions, LoadedContentStore } from "./store/index.js";
 export { readConsumerLibrarySnapshot } from "./store/library.js";
+export { localePathFor, buildLocaleRoutePlan, buildSitemapAlternates } from "./hreflang.js";
+export type { PublisherLocaleManifest, LocaleRouteOptions, LocaleRouteFinding, HreflangAlternate, LocalePageMetadata, LocaleRoutePlan, SitemapLocaleEntry } from "./hreflang.js";

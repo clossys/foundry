@@ -1,6 +1,8 @@
 import { describe, expect, it } from "vitest";
 import type { CopyField } from "./composition.js";
 import { computeContentDigest } from "./digest.js";
+import { buildLocaleRoutePlan } from "./hreflang.js";
+import type { LocaleRouteOptions } from "./hreflang.js";
 import { checkPageMetadata, outputPathFor, robotsFor } from "./metadata.js";
 import type { CandidateContent, ContentSlot } from "./model.js";
 import { createContentRevision } from "./revisions.js";
@@ -11,6 +13,21 @@ import { validateCandidateContent, validateContentRegistry, validateContentSlot 
 const slotFixture = (): ContentSlot => registryFixture().slots[0] as ContentSlot;
 const copy = (key: string, locale = "en", value = "Sample"): CopyField => ({ key, locale, value, source: "writer" });
 const content = (pageMeta?: readonly CopyField[]): CandidateContent => ({ ...contentFixture(), ...(pageMeta === undefined ? {} : { pageMeta }) }) as CandidateContent;
+const localeOptions = (): LocaleRouteOptions => ({
+  workspace: {
+    ...registryFixture().workspace,
+    defaultLocale: "en-US",
+    locales: ["en-US", "fr-CA", "zh-Hant-TW"],
+    deployTargets: [{ id: "sample", repo: "sample", app: "site", origin: "https://example.com" }],
+  },
+  manifest: {
+    defaultLocale: "en-US",
+    locales: ["en-US", "fr-CA", "zh-Hant-TW"].map(tag => ({ tag, dir: "ltr", state: "active" })),
+    fallback: {},
+  },
+  bodyServedLocales: { "en-US": ["en-US"], "fr-CA": ["fr-CA"], "zh-Hant-TW": ["zh-Hant-TW"] },
+  existingUrls: ["https://example.com/about", "https://example.com/fr-ca/about", "https://example.com/zh-hant-tw/about"],
+});
 
 describe("page metadata", () => {
   it("reports malformed copy before checking required text", () => {
@@ -52,6 +69,34 @@ describe("page metadata", () => {
     const findings = checkPageMetadata(slot, content([copy("title", "en"), copy("description", "en")]));
     expect(findings.some(f => f.rule === "slot-locale")).toBe(true);
     expect(findings.some(f => f.path === "content.pageMeta.en-US.title")).toBe(true);
+  });
+  it("keeps native metadata required when locale routing context is provided", () => {
+    const slot = { ...slotFixture(), route: "/about", locales: ["en-US", "fr-CA"] };
+    const options = localeOptions();
+    const findings = checkPageMetadata(slot, content([copy("title", "en-US"), copy("description", "en-US")]), undefined, options);
+    expect(findings).toContainEqual(expect.objectContaining({ path: "content.pageMeta.fr-CA.title", rule: "required-page-metadata" }));
+    expect(findings).toContainEqual(expect.objectContaining({ path: "content.pageMeta.fr-CA.description", rule: "required-page-metadata" }));
+  });
+  it("reports missing emitted hreflang targets and fallback bodies alongside missing native metadata", () => {
+    const slot = { ...slotFixture(), route: "/about", locales: ["en-US", "fr-CA", "zh-Hant-TW"] };
+    const options: LocaleRouteOptions = {
+      ...localeOptions(),
+      bodyServedLocales: { "en-US": ["en-US"], "fr-CA": ["fr-CA"], "zh-Hant-TW": ["en-US"] },
+      existingUrls: ["https://example.com/about", "https://example.com/zh-hant-tw/about"],
+    };
+    const findings = checkPageMetadata(slot, content([copy("title", "en-US"), copy("description", "en-US")]), undefined, options);
+    expect(findings).toContainEqual(expect.objectContaining({ rule: "hreflang-target-missing", severity: "error" }));
+    expect(findings).toContainEqual(expect.objectContaining({ rule: "body-locale-fallback", severity: "warning" }));
+    expect(findings).toContainEqual(expect.objectContaining({ path: "content.pageMeta.zh-Hant-TW.title", rule: "required-page-metadata" }));
+    expect(findings).toContainEqual(expect.objectContaining({ path: "content.pageMeta.fr-CA.description", rule: "required-page-metadata" }));
+  });
+  it("still reports locale findings when metadata copy is malformed", () => {
+    const slot = { ...slotFixture(), route: "/about", locales: ["en-US", "fr-CA"] };
+    const malformed = { ...content(), pageMeta: [{ ...copy("title", "en-US"), value: 42 }] } as unknown as CandidateContent;
+    const findings = checkPageMetadata(slot, malformed, undefined, { ...localeOptions(), existingUrls: ["https://example.com/about"] });
+    expect(findings).toContainEqual(expect.objectContaining({ rule: "string" }));
+    expect(findings).toContainEqual(expect.objectContaining({ rule: "hreflang-target-missing", severity: "error" }));
+    expect(findings.some(finding => finding.rule === "required-page-metadata")).toBe(false);
   });
   it("validates writer fields and only Designer asset id shapes", () => {
     expect(validateCandidateContent({ ...content([copy("title")]), pageMetaAssets: { "og-image": "assets.sample.hero", icon: "assets.sample-icon" } })).toEqual([]);
@@ -106,6 +151,24 @@ describe("logical output paths", () => {
     expect(paths[0]).toBe("sample%2Fa/app/one%2Etwo/page.tsx");
     expect(paths[3]).toBe("%2E%2E/app/hello%20world/page.tsx");
     expect(values.map(outputPathFor)).toEqual(paths);
+  });
+  it("leaves the default locale unprefixed and prefixes other locales in lowercase", () => {
+    expect(outputPathFor({ deployTarget: "sample", route: "/about", locale: "en-US", defaultLocale: "en-US" })).toBe("sample/app/about/page.tsx");
+    expect(outputPathFor({ deployTarget: "sample", route: "/about", locale: "fr-CA", defaultLocale: "en-US" })).toBe("sample/app/fr-ca/about/page.tsx");
+    expect(outputPathFor({ deployTarget: "sample", route: "/", locale: "en-US", defaultLocale: "en-US" })).toBe("sample/app/page.tsx");
+    expect(outputPathFor({ deployTarget: "sample", route: "/", locale: "fr-CA", defaultLocale: "en-US" })).toBe("sample/app/fr-ca/page.tsx");
+    expect(outputPathFor({ deployTarget: "sample/a", route: "/one.two", locale: "fr-CA", defaultLocale: "en-US" })).toBe("sample%2Fa/app/fr-ca/one%2Etwo/page.tsx");
+  });
+  it("canonicalizes locale tags while preserving canonical case in shared head metadata", () => {
+    expect(outputPathFor({ deployTarget: "sample", route: "/about", locale: "zh-hant-tw", defaultLocale: "EN-us" })).toBe("sample/app/zh-hant-tw/about/page.tsx");
+    expect(outputPathFor({ deployTarget: "sample", route: "/about", locale: "EN-us", defaultLocale: "en-US" })).toBe("sample/app/about/page.tsx");
+    const plan = buildLocaleRoutePlan({ ...slotFixture(), route: "/about", locales: ["en-US", "zh-Hant-TW"] }, localeOptions());
+    expect(plan.pages.find(page => page.locale === "zh-Hant-TW")?.alternates).toContainEqual({ hreflang: "zh-Hant-TW", href: "https://example.com/zh-hant-tw/about" });
+  });
+  it("requires locale and defaultLocale together without treating Array.map arguments as locale context", () => {
+    expect(() => outputPathFor({ deployTarget: "sample", route: "/", locale: "fr-CA" })).toThrow(TypeError);
+    expect(() => outputPathFor({ deployTarget: "sample", route: "/", defaultLocale: "en-US" })).toThrow(TypeError);
+    expect([{ deployTarget: "sample", route: "/" }, { deployTarget: "sample", route: "/about" }].map(outputPathFor)).toEqual(["sample/app/page.tsx", "sample/app/about/page.tsx"]);
   });
   it.each([undefined, "relative", "https://example.com/", "//sample", "/a//b", "/a/", "/a?x=1", "/a#part", "/../a", "/a/./b", "/%2e%2e/a", "/a\\b", "/bad%escape"])("rejects noncanonical route %s", route => {
     expect(() => outputPathFor({ deployTarget: "sample", route })).toThrow(TypeError);

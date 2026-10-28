@@ -19,3 +19,6 @@ export type { ContentWorkspace, ContentBrief, ContentOpenQuestion, ContentLink, 
 export { validateCandidateContent, validateContentCandidate, validateContentSlot, validateContentWorkspace, validateContentRegistry, parseContentRegistry } from "./validate.js";
 export { validateConsumerLibrarySnapshots, checkContentLibraryReferences } from "./library.js";
 export type { ConsumerLibrarySnapshot } from "./library.js";
+export { localePathFor, buildLocaleRoutePlan, buildSitemapAlternates } from "./hreflang.js";
+export type { PublisherLocaleManifest, LocaleRouteOptions, LocaleRouteFinding, HreflangAlternate, LocalePageMetadata, LocaleRoutePlan, SitemapLocaleEntry } from "./hreflang.js";
+export type { OutputPathInput } from "./metadata.js";

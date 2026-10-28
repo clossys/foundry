@@ -8,7 +8,7 @@ export interface ContentWorkspace {
   readonly defaultLocale: string;
   readonly locales: readonly string[];
   readonly currentMilestoneTag?: string;
-  readonly deployTargets: readonly { readonly id: string; readonly repo: string; readonly app: string; readonly builderSurfaceId?: string }[];
+  readonly deployTargets: readonly { readonly id: string; readonly repo: string; readonly app: string; readonly builderSurfaceId?: string; readonly origin?: string }[];
   readonly destinations: readonly { readonly id: string; readonly kind: "builder" | "messenger" | "influencer"; readonly ref: string }[];
 }
 export interface ContentBrief {
@@ -87,7 +87,7 @@ export type ContentSlot = ContentPlacement & {
   readonly route?: string;
   readonly deployTarget?: string;
   readonly destination?: string;
-  readonly meta?: { readonly robots?: "index" | "noindex"; readonly canonical?: string };
+  readonly meta?: { readonly robots?: "index" | "noindex"; readonly canonical?: string | Readonly<Record<string, string>> };
   readonly dynamicParams?: ContentJsonObject;
   readonly devOnly: boolean;
   readonly tags: readonly string[];
