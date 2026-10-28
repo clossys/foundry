@@ -2,6 +2,7 @@ import tokens from "../catalog/ia/tokens.leaf-freeze.json" with { type: "json" }
 import assets from "../catalog/ia/assets.leaf-freeze.json" with { type: "json" };
 import components from "../catalog/ia/components.leaf-freeze.json" with { type: "json" };
 import componentAmendments from "../catalog/ia/components.leaf-amendments.json" with { type: "json" };
+import draftAssetAmendments from "../catalog/ia/assets.draft-leaf-amendments.json" with { type: "json" };
 import assetAmendments from "../catalog/ia/assets.leaf-amendments.json" with { type: "json" };
 import tokenAmendments from "../catalog/ia/tokens.leaf-amendments.json" with { type: "json" };
 import type { Placement, PlacementNode } from "./types.js";
@@ -35,6 +36,13 @@ if (assetAmendments.schemaVersion !== 1 || assetAmendments.layer !== "assets" ||
     assetAmendments.addedLeafIds.some(id => !id.startsWith("assets.") || assets.leafIds.includes(id))) {
   throw new Error("LEAF_FREEZE: invalid explicit asset amendment");
 }
+// Draft icon additions do not inherit the separate Media signature.
+if (draftAssetAmendments.schemaVersion !== 1 || draftAssetAmendments.layer !== "assets" ||
+    draftAssetAmendments.baseSignedHead !== assets.signedHead || draftAssetAmendments.status !== "pending-owner-ratification" ||
+    new Set(draftAssetAmendments.addedLeafIds).size !== draftAssetAmendments.addedLeafIds.length ||
+    draftAssetAmendments.addedLeafIds.some(id => !id.startsWith("assets.") || assets.leafIds.includes(id) || assetAmendments.addedLeafIds.includes(id))) {
+  throw new Error("LEAF_FREEZE: invalid draft asset amendment");
+}
 // The owner-signed token amendment: every row carries the owner signature; added leaves are new to the signed baseline.
 const tokenSignature = "OWNER 2026-10-26T18:03Z ledger #44";
 const tokenAddedIds: readonly string[] = Array.isArray(tokenAmendments.addedLeaves) ? tokenAmendments.addedLeaves.map(row => row?.id) : [];
@@ -52,7 +60,7 @@ if (tokenAmendments.schemaVersion !== 1 || tokenAmendments.layer !== "tokens" ||
 // Copy signed IDs plus the explicit versioned additions once, never current slots or IA.
 const baseline: Readonly<Record<FrozenLeafLayer, ReadonlySet<string>>> = {
   tokens: new Set([...tokens.leafIds, ...tokenAddedIds]),
-  assets: new Set([...assets.leafIds, ...assetAmendments.addedLeafIds]),
+  assets: new Set([...assets.leafIds, ...assetAmendments.addedLeafIds, ...draftAssetAmendments.addedLeafIds]),
   components: new Set([...components.leafIds, ...componentAmendments.addedLeafIds]),
 };
 const leaves = (nodes: readonly PlacementNode[]): string[] => nodes.flatMap(node => "leaves" in node ? node.leaves : leaves(node.children));

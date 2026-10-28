@@ -1,0 +1,355 @@
+{
+  "$extensions": {
+    "com.clossys.fill": {
+      "id": "shadcn@aria/components.sidebar",
+      "slot": "components.sidebar",
+      "source": "shadcn@aria",
+      "mode": "implementation",
+      "sourceAddress": "https://github.com/shadcn-ui/ui/blob/96da9cc7f1aa10580a3741664e2a77c721206c00/apps/v4/registry/bases/aria/ui/sidebar.tsx",
+      "relation": "same-contract",
+      "builtOn": [
+        "components.icon",
+        "components.sheet"
+      ],
+      "conforms": [],
+      "evidence": [],
+      "author": "third-party",
+      "trust": "pinned-upstream",
+      "license": "MIT",
+      "status": "draft",
+      "pin": {
+        "url": "https://github.com/shadcn-ui/ui",
+        "commit": "96da9cc7f1aa10580a3741664e2a77c721206c00",
+        "sha256": "183522be3bb9b5c96123461df155e3c5df08e63cf9ac00c9e81a5748d857165f"
+      },
+      "unmapped": []
+    }
+  },
+  "components": {
+    "sidebar": {
+      "slot": "components.sidebar",
+      "source": "shadcn@aria",
+      "root": "presentational",
+      "members": [],
+      "props": [],
+      "propMap": {},
+      "reads": {
+        "tokens": [
+          "tokens.accent-color.text",
+          "tokens.action-color.default",
+          "tokens.border-color.base",
+          "tokens.border-color.strong",
+          "tokens.border-width.hairline",
+          "tokens.border-width.rule",
+          "tokens.breakpoint.mobile-lg",
+          "tokens.caption-size.default",
+          "tokens.content-size.notice",
+          "tokens.control-color.tonal",
+          "tokens.control-radius.default",
+          "tokens.control-size.h-lg",
+          "tokens.control-size.h-md",
+          "tokens.control-size.h-sm",
+          "tokens.duration.default",
+          "tokens.duration.fast",
+          "tokens.easing.default",
+          "tokens.elevation.none",
+          "tokens.elevation.raised",
+          "tokens.focus-color.default",
+          "tokens.focus-outline.offset",
+          "tokens.focus-outline.width",
+          "tokens.font-size.base",
+          "tokens.font-size.sm",
+          "tokens.font-size.xs",
+          "tokens.font-weight.medium",
+          "tokens.radius.subtle",
+          "tokens.region-width.sidebar",
+          "tokens.region-width.sidebar-rail",
+          "tokens.shift-distance.default",
+          "tokens.spacing.2xl",
+          "tokens.spacing.3xl",
+          "tokens.spacing.lg",
+          "tokens.spacing.md",
+          "tokens.spacing.sm",
+          "tokens.spacing.xl",
+          "tokens.spacing.xs",
+          "tokens.state-opacity.disabled",
+          "tokens.status-color.danger",
+          "tokens.surface-color.base",
+          "tokens.surface-color.selected",
+          "tokens.surface-color.sunken",
+          "tokens.text-color.muted",
+          "tokens.text-color.on-action",
+          "tokens.text-color.primary",
+          "tokens.transition-easing.enter",
+          "tokens.transition-easing.exit",
+          "tokens.z-index.aside",
+          "tokens.z-index.modal",
+          "tokens.z-index.sticky"
+        ],
+        "assets": [
+          "assets.icon-panel-left"
+        ],
+        "components": [
+          "components.icon",
+          "components.sheet"
+        ]
+      },
+      "composes": [
+        "components.icon",
+        "components.sheet"
+      ],
+      "impl": {
+        "kind": "source",
+        "entry": "components/sidebar/sidebar.tsx",
+        "export": "Sidebar"
+      },
+      "secondaryExports": [
+        {
+          "name": "SidebarContent",
+          "export": "SidebarContent"
+        },
+        {
+          "name": "SidebarFooter",
+          "export": "SidebarFooter"
+        },
+        {
+          "name": "SidebarGroup",
+          "export": "SidebarGroup"
+        },
+        {
+          "name": "SidebarGroupAction",
+          "export": "SidebarGroupAction"
+        },
+        {
+          "name": "SidebarGroupContent",
+          "export": "SidebarGroupContent"
+        },
+        {
+          "name": "SidebarGroupLabel",
+          "export": "SidebarGroupLabel"
+        },
+        {
+          "name": "SidebarHeader",
+          "export": "SidebarHeader"
+        },
+        {
+          "name": "SidebarInput",
+          "export": "SidebarInput"
+        },
+        {
+          "name": "SidebarInset",
+          "export": "SidebarInset"
+        },
+        {
+          "name": "SidebarMenu",
+          "export": "SidebarMenu"
+        },
+        {
+          "name": "SidebarMenuAction",
+          "export": "SidebarMenuAction"
+        },
+        {
+          "name": "SidebarMenuBadge",
+          "export": "SidebarMenuBadge"
+        },
+        {
+          "name": "SidebarMenuButton",
+          "export": "SidebarMenuButton"
+        },
+        {
+          "name": "SidebarMenuItem",
+          "export": "SidebarMenuItem"
+        },
+        {
+          "name": "SidebarMenuSkeleton",
+          "export": "SidebarMenuSkeleton"
+        },
+        {
+          "name": "SidebarMenuSub",
+          "export": "SidebarMenuSub"
+        },
+        {
+          "name": "SidebarMenuSubButton",
+          "export": "SidebarMenuSubButton"
+        },
+        {
+          "name": "SidebarMenuSubItem",
+          "export": "SidebarMenuSubItem"
+        },
+        {
+          "name": "SidebarProvider",
+          "export": "SidebarProvider"
+        },
+        {
+          "name": "SidebarRail",
+          "export": "SidebarRail"
+        },
+        {
+          "name": "SidebarSeparator",
+          "export": "SidebarSeparator"
+        },
+        {
+          "name": "SidebarTrigger",
+          "export": "SidebarTrigger"
+        }
+      ],
+      "license": "MIT",
+      "pin": {
+        "url": "https://github.com/shadcn-ui/ui",
+        "commit": "96da9cc7f1aa10580a3741664e2a77c721206c00",
+        "files": [
+          {
+            "path": "apps/v4/registry/bases/aria/hooks/use-mobile.ts",
+            "sha256": "ad0936f84f1df79d3697bfbff9c18f8ad58431c1cbaf2359c6a853b0fcc9f28b"
+          },
+          {
+            "path": "apps/v4/registry/bases/aria/ui/button.tsx",
+            "sha256": "8bcff6f70522e6e6cb0ff67f050830ea1a93596403d2d9b035f3b543c7a42e2c"
+          },
+          {
+            "path": "apps/v4/registry/bases/aria/ui/input.tsx",
+            "sha256": "b9596748b7238b5605f558474e9d50afc1535c5832c57134055e4bbde5fa804f"
+          },
+          {
+            "path": "apps/v4/registry/bases/aria/ui/separator.tsx",
+            "sha256": "482ee8e50eaf1095fb6874ac18d430704820d2444a3944e1f93f7ab99e39a793"
+          },
+          {
+            "path": "apps/v4/registry/bases/aria/ui/sidebar.tsx",
+            "sha256": "183522be3bb9b5c96123461df155e3c5df08e63cf9ac00c9e81a5748d857165f"
+          },
+          {
+            "path": "apps/v4/registry/bases/aria/ui/skeleton.tsx",
+            "sha256": "8fcbad84e494a75484a0975221fb40f54c4a7d68f79cfc305cb158d1feb1badf"
+          },
+          {
+            "path": "apps/v4/registry/bases/aria/ui/tooltip.tsx",
+            "sha256": "4cc80f882fec4abad1512f0d35d330603d653169ac210b27c12de10a09458d64"
+          },
+          {
+            "path": "apps/v4/registry/styles/style-nova.css",
+            "sha256": "fd9803ec398290c306b377a46a769cad0c7ff024bf6a626993c113cacc20f16e"
+          },
+          {
+            "path": "LICENSE.md",
+            "sha256": "1564074e13439397221ffd522e2e504d56561994a23d371aa5e3ad43e4f5423f"
+          }
+        ]
+      },
+      "notice": "notices/SHADCN-ARIA-RAIL.md",
+      "transform": "shadcn-aria-rewrite@2",
+      "item": "sidebar",
+      "deps": [
+        {
+          "name": "react",
+          "version": "19.3.0",
+          "license": "MIT"
+        },
+        {
+          "name": "react-aria-components",
+          "version": "1.21.1",
+          "license": "Apache-2.0"
+        },
+        {
+          "name": "class-variance-authority",
+          "version": "0.7.1",
+          "license": "Apache-2.0"
+        },
+        {
+          "name": "clsx",
+          "version": "2.1.1",
+          "license": "MIT"
+        },
+        {
+          "name": "tailwind-merge",
+          "version": "3.7.0",
+          "license": "MIT"
+        }
+      ],
+      "parts": [
+        {
+          "item": "rail-button"
+        },
+        {
+          "item": "rail-input"
+        },
+        {
+          "item": "rail-separator"
+        },
+        {
+          "item": "rail-skeleton"
+        },
+        {
+          "item": "rail-tooltip"
+        },
+        {
+          "item": "rail-use-mobile"
+        }
+      ],
+      "outputSha256": [
+        {
+          "path": "components/_parts/rail-button/button.tsx",
+          "sha256": "8d7b0bef533e698433273b386915ba145dc32c4cbc5e23cab52fc288a893bfc9"
+        },
+        {
+          "path": "components/_parts/rail-button/index.ts",
+          "sha256": "7a049afa00ae6977d11e5ee582dc12eecaec524cd1fcc955bc48602161a5a46d"
+        },
+        {
+          "path": "components/_parts/rail-input/index.ts",
+          "sha256": "f43bbc7f4172399d0c843befa47c94b3180c6c23c907fe3b244840945e1c22d9"
+        },
+        {
+          "path": "components/_parts/rail-input/input.tsx",
+          "sha256": "e48c7a21d1b48036733dbb92dc79242de45cf574e1d275875ee2299b7a9fea3a"
+        },
+        {
+          "path": "components/_parts/rail-separator/index.ts",
+          "sha256": "8264757f8090a5d2c133573ec0a6c92c69ce83de3db4ffd17ae23bf2e26ead6f"
+        },
+        {
+          "path": "components/_parts/rail-separator/separator.tsx",
+          "sha256": "a7f293f18488d21f21a0bc35f3937ebe68a2183e50d557388b90dee5ffcd8514"
+        },
+        {
+          "path": "components/_parts/rail-skeleton/index.ts",
+          "sha256": "2645f0985953484d5fffbbadac332ea4793827c161948aae591d49868e5caf4a"
+        },
+        {
+          "path": "components/_parts/rail-skeleton/skeleton.tsx",
+          "sha256": "521661358076ad30db26a6762dd5026c70ff33a6d131adb71437611342a54bc2"
+        },
+        {
+          "path": "components/_parts/rail-tooltip/index.ts",
+          "sha256": "d45287d868b06c8bed74559a614d6c72b5fc844ed1336107c920c168aebfd3d8"
+        },
+        {
+          "path": "components/_parts/rail-tooltip/tooltip.tsx",
+          "sha256": "e8198121c60ecf69ca26241162ef55a9a287b3ec173fdb5867ee5e46c38c2452"
+        },
+        {
+          "path": "components/_parts/rail-use-mobile/index.ts",
+          "sha256": "31368b9323240b1cfbc13a7065a70c19b948549b818625757caca6942f2fea60"
+        },
+        {
+          "path": "components/_parts/rail-utils/index.ts",
+          "sha256": "d3753f708b15cc1ec47bc3136827134b702e2069eebdb0ddefb1806b95d7c1d9"
+        },
+        {
+          "path": "components/sidebar/sidebar.tsx",
+          "sha256": "50e6d8e099bfdd64393ea6141fe84a89ce580b77756d8773f9c1be8130f2339f"
+        },
+        {
+          "path": "notices/SHADCN-ARIA-RAIL.md",
+          "sha256": "0622dbb67cbca61b6c160be781485d59b3b51a49cdf5bae0132e17a0ecbfe42c"
+        }
+      ],
+      "blockers": [],
+      "rac": {
+        "instance": "react-aria-components",
+        "range": "^1.21.1",
+        "peer": false
+      }
+    }
+  }
+}

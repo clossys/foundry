@@ -194,7 +194,8 @@
     "TriangleAlertIcon": "assets.icon-warning",
     "UserIcon": "assets.icon-user",
     "XCircleIcon": "assets.icon-danger",
-    "XIcon": "assets.icon-close"
+    "XIcon": "assets.icon-close",
+    "PanelLeftIcon": "assets.icon-panel-left"
   },
   "license": "MIT",
   "limitations": [

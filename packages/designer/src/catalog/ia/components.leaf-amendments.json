@@ -5,6 +5,13 @@
   "status": "pending-owner-ratification",
   "addedLeafIds": [
     "components.native-action",
-    "components.semantic-content"
+    "components.semantic-content",
+    "components.sidebar",
+    "components.command",
+    "components.sheet",
+    "components.empty",
+    "components.item",
+    "components.scroll-area",
+    "components.dropdown-menu"
   ]
 }

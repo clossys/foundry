@@ -1,0 +1,154 @@
+{
+  "$extensions": {
+    "com.clossys.fill": {
+      "id": "shadcn@aria/components.empty",
+      "slot": "components.empty",
+      "source": "shadcn@aria",
+      "mode": "implementation",
+      "sourceAddress": "https://github.com/shadcn-ui/ui/blob/96da9cc7f1aa10580a3741664e2a77c721206c00/apps/v4/registry/bases/aria/ui/empty.tsx",
+      "relation": "same-contract",
+      "builtOn": [],
+      "conforms": [],
+      "evidence": [],
+      "author": "third-party",
+      "trust": "pinned-upstream",
+      "license": "MIT",
+      "status": "draft",
+      "pin": {
+        "url": "https://github.com/shadcn-ui/ui",
+        "commit": "96da9cc7f1aa10580a3741664e2a77c721206c00",
+        "sha256": "05c419160ac0226973f6f00d7d8865dc46645a75ea0697138992cdbc736efec4"
+      },
+      "unmapped": []
+    }
+  },
+  "components": {
+    "empty": {
+      "slot": "components.empty",
+      "source": "shadcn@aria",
+      "root": "presentational",
+      "members": [],
+      "props": [],
+      "propMap": {},
+      "reads": {
+        "tokens": [
+          "tokens.action-color.default",
+          "tokens.content-size.notice",
+          "tokens.control-radius.default",
+          "tokens.font-size.sm",
+          "tokens.font-weight.medium",
+          "tokens.letter-spacing.meta",
+          "tokens.line-height.heading",
+          "tokens.spacing.2xl",
+          "tokens.spacing.lg",
+          "tokens.spacing.md",
+          "tokens.spacing.sm",
+          "tokens.spacing.xl",
+          "tokens.surface-color.sunken",
+          "tokens.text-color.muted",
+          "tokens.text-color.primary"
+        ],
+        "assets": [],
+        "components": []
+      },
+      "composes": [],
+      "impl": {
+        "kind": "source",
+        "entry": "components/empty/empty.tsx",
+        "export": "Empty"
+      },
+      "secondaryExports": [
+        {
+          "name": "EmptyHeader",
+          "export": "EmptyHeader"
+        },
+        {
+          "name": "EmptyTitle",
+          "export": "EmptyTitle"
+        },
+        {
+          "name": "EmptyDescription",
+          "export": "EmptyDescription"
+        },
+        {
+          "name": "EmptyContent",
+          "export": "EmptyContent"
+        },
+        {
+          "name": "EmptyMedia",
+          "export": "EmptyMedia"
+        }
+      ],
+      "license": "MIT",
+      "pin": {
+        "url": "https://github.com/shadcn-ui/ui",
+        "commit": "96da9cc7f1aa10580a3741664e2a77c721206c00",
+        "files": [
+          {
+            "path": "apps/v4/registry/bases/aria/ui/empty.tsx",
+            "sha256": "05c419160ac0226973f6f00d7d8865dc46645a75ea0697138992cdbc736efec4"
+          },
+          {
+            "path": "apps/v4/registry/styles/style-nova.css",
+            "sha256": "fd9803ec398290c306b377a46a769cad0c7ff024bf6a626993c113cacc20f16e"
+          },
+          {
+            "path": "LICENSE.md",
+            "sha256": "1564074e13439397221ffd522e2e504d56561994a23d371aa5e3ad43e4f5423f"
+          }
+        ]
+      },
+      "notice": "notices/SHADCN-ARIA-RAIL.md",
+      "transform": "shadcn-aria-rewrite@2",
+      "item": "empty",
+      "deps": [
+        {
+          "name": "react",
+          "version": "19.3.0",
+          "license": "MIT"
+        },
+        {
+          "name": "react-aria-components",
+          "version": "1.21.1",
+          "license": "Apache-2.0"
+        },
+        {
+          "name": "class-variance-authority",
+          "version": "0.7.1",
+          "license": "Apache-2.0"
+        },
+        {
+          "name": "clsx",
+          "version": "2.1.1",
+          "license": "MIT"
+        },
+        {
+          "name": "tailwind-merge",
+          "version": "3.7.0",
+          "license": "MIT"
+        }
+      ],
+      "parts": [],
+      "outputSha256": [
+        {
+          "path": "components/_parts/rail-utils/index.ts",
+          "sha256": "d3753f708b15cc1ec47bc3136827134b702e2069eebdb0ddefb1806b95d7c1d9"
+        },
+        {
+          "path": "components/empty/empty.tsx",
+          "sha256": "100765c44ff5006352e4650ca9f4e508761caf41bdc66eb0350ea9c450b62e3e"
+        },
+        {
+          "path": "notices/SHADCN-ARIA-RAIL.md",
+          "sha256": "0622dbb67cbca61b6c160be781485d59b3b51a49cdf5bae0132e17a0ecbfe42c"
+        }
+      ],
+      "blockers": [],
+      "rac": {
+        "instance": "react-aria-components",
+        "range": "^1.21.1",
+        "peer": false
+      }
+    }
+  }
+}

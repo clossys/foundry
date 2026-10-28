@@ -15,7 +15,7 @@ export interface RewriteResult {
   notes?: readonly RewriteNote[];
   /** Registry input surfaces replaced by their contextual RAC primitive, not a nested field. */
   contextualInputs?: readonly string[];
-  transform: "shadcn-aria-rewrite@1";
+  transform: "shadcn-aria-rewrite@1" | "shadcn-aria-rewrite@2";
   files: readonly SourceFile[];
   outputSha256: readonly { path: string; sha256: string }[];
   reads: { tokens: readonly string[]; assets: readonly string[]; components: readonly string[] };
@@ -28,6 +28,10 @@ export interface RewriteInput {
   leafByItem: Readonly<Record<string, string>>;
   /** Give each shadcn@aria style variable the style's own value as its fallback. */
   styleDefaults?: boolean;
+  /** Component-only v2 adoption; existing v1 receipts retain their exact bytes. */
+  transformVersion?: 2;
+  /** Private registry dependencies retain their own Button API. */
+  retainRegistryButtonProps?: boolean;
 }
 const FOREIGN_ICON_MODULES = ["lucide-react", "@phosphor-icons/react", "react-icons"];
 const FOREIGN_ICONS = new RegExp("^(?:" + FOREIGN_ICON_MODULES.join("|") + ")(?:/|$)");
@@ -920,6 +924,59 @@ function rewriteSource(input: RewriteInput): RewriteResult {
         return `${prefix}ring-${styleRead("--ui-border-rule", "ring-3", "length")}`;
       }
     }
+    if (input.transformVersion === 2) {
+      const bindV2 = (member: string, output: string): string => { tokens.add(member); return prefix + output; };
+      if (["border-dashed", "border-transparent", "border-inherit", "border-0", "ring-0", "opacity-0", "opacity-100"].includes(base)) return value;
+      if (["outline-none", "outline-hidden"].includes(base)) {
+        tokens.add("tokens.focus-outline.width"); tokens.add("tokens.focus-outline.offset"); tokens.add("tokens.focus-color.default");
+        return focusOutline("focus-visible:", "--color-focus-ring");
+      }
+      const bindings: Record<string, [string, string]> = {
+        "tracking-tight": ["tokens.letter-spacing.meta", "tracking-(--tracking-meta)"],
+        "tracking-widest": ["tokens.letter-spacing.label", "tracking-(--tracking-label)"],
+        "max-w-sm": ["tokens.content-size.notice", "max-w-(--ui-width-notice-max)"],
+        "max-h-72": ["tokens.content-size.notice", "max-h-(--ui-width-notice-max)"],
+        "leading-normal": ["tokens.line-height.heading", "leading-(--leading-heading)"],
+        "leading-snug": ["tokens.line-height.heading", "leading-(--leading-heading)"],
+        "h-px": ["tokens.border-width.hairline", "h-(--ui-border-hairline)"],
+        "translate-x-px": ["tokens.border-width.hairline", "translate-x-(--ui-border-hairline)"],
+        "-translate-x-px": ["tokens.border-width.hairline", "-translate-x-(--ui-border-hairline)"],
+        "w-[2px]": ["tokens.border-width.rule", "w-(--ui-border-rule)"],
+        "ring-1": ["tokens.border-width.hairline", "ring-(length:--ui-border-hairline)"],
+        "ring-2": ["tokens.border-width.rule", "ring-(length:--ui-border-rule)"],
+        "duration-200": ["tokens.duration.default", "duration-(--ui-duration-default)"],
+        "duration-150": ["tokens.duration.fast", "duration-(--ui-duration-fast)"],
+        "ease-linear": ["tokens.easing.default", "ease-(--ease-default)"],
+        "ease-in-out": ["tokens.easing.default", "ease-(--ease-default)"],
+        "z-10": ["tokens.z-index.sticky", "z-(--ui-z-sticky)"],
+        "z-20": ["tokens.z-index.aside", "z-(--ui-z-aside)"],
+        "z-50": ["tokens.z-index.modal", "z-(--ui-z-modal)"],
+        "bg-black/10": ["tokens.scrim-color.default", "bg-(--color-overlay-scrim)"],
+      };
+      if (base === "animate-pulse") { notes.push({ file, value, message: "Restyled loading indicator to its static token-bound shape" }); return ""; }
+      if (/^rounded-\[calc\(var\(--radius\)-[35]px\)\]$/.test(base)) return bindV2("tokens.radius.default", "rounded-(--radius-default)");
+      const inset = /^(m[lr])-\[-0\.(?:3|15)rem\]$/.exec(base);
+      if (inset) return bindV2("tokens.spacing.xs", `-${inset[1]}-(--spacing-xs)`);
+      if (base === "pl-7") return bindV2("tokens.spacing.xl", "pl-(--spacing-xl)");
+      if (base === "min-w-[96px]") return bindV2("tokens.spacing.6xl", "min-w-(--spacing-6xl)");
+      const fixed = bindings[base];
+      if (fixed) return bindV2(...fixed);
+      if (base === "text-sm/relaxed") { tokens.add("tokens.line-height.heading"); return bindV2("tokens.font-size.sm", "text-(length:--text-sm) leading-(--leading-heading)"); }
+      const near = /^((?:h|w|min-w|size|mx|top|py|gap|translate-y))-([057]|3\.5|10|0\.5)$/.exec(base);
+      if (near) { const member = ({ "0.5": "xs", "3.5": "lg", "5": "xl", "7": "xl", "10": "2xl" } as Record<string,string>)[near[2]!]; if (member) return bindV2(`tokens.spacing.${member}`, `${near[1]}-(${adapter.spacingProperties[member]})`); }
+      const slide = /^translate-([xy])-\[(-?)2\.5rem\]$/.exec(base);
+      if (slide) return bindV2("tokens.spacing.2xl", `${slide[2] ? "-" : ""}translate-${slide[1]}-(--spacing-2xl)`);
+      if (base.includes("--spacing(4)")) {
+        tokens.add("tokens.spacing.lg"); tokens.add("tokens.region-width.sidebar-rail");
+        let output = base.replaceAll("--spacing(4)", "var(--spacing-lg)");
+        if (output.includes("+2px")) { tokens.add("tokens.border-width.rule"); output = output.replaceAll("+2px", "+var(--ui-border-rule)"); }
+        return prefix + output;
+      }
+      if (/^transition(?:-(?:all|colors|opacity|shadow|transform|\[[a-z-]+(?:,[a-z-]+)*\]))?$/.test(base)) {
+        tokens.add("tokens.duration.default"); tokens.add("tokens.easing.default");
+        return `${value} ${prefix}duration-(--ui-duration-default) ${prefix}ease-(--ease-default)`;
+      }
+    }
     const selected = selectedBindings[input.leaf]?.[value];
     if (selected) {
       for (const member of selected.tokens) tokens.add(member);
@@ -1163,6 +1220,10 @@ function rewriteSource(input: RewriteInput): RewriteResult {
     }
     // Rewrite every upstream theme reference, including references in color-mix().
     let next = base.replace(/--([a-z][a-z0-9-]*)/g, (all, name: string) => {
+      if (input.transformVersion === 2) {
+        const role = ({ "sidebar-width": ["tokens.region-width.sidebar", "--sidebar-width"], "sidebar-width-icon": ["tokens.region-width.sidebar-rail", "--sidebar-width-icon"], "skeleton-width": ["tokens.content-size.notice", "--ui-width-notice-max"], "spacing": ["tokens.spacing.xs", "--spacing-xs"], "color-border": ["tokens.border-color.base", "--color-line-base"] } as Record<string, [string, string]>)[name];
+        if (role) { tokens.add(role[0]); return role[1]; }
+      }
       const radius = /^radius-(?:xs|sm|md|lg|xl|2xl)$/.test(name) ? "radius" : name;
       return bind(radius) ?? all;
     });
@@ -1197,7 +1258,7 @@ function rewriteSource(input: RewriteInput): RewriteResult {
       add("K4", file, value, "No spacing member has the exact source length");
     }
     if (/(?:#[\da-f]{3,8}\b|\d*\.?\d+(?:px|rem|em)\b|--spacing\()/i.test(next)) add("K4", file, value, "Literal colour or length remains after rewriting");
-    for (const property of next.match(/--[a-z][a-z0-9-]*/g) ?? []) if (!engineVariables.get(file)?.has(property) && !consumerVariables.get(file)?.has(property) && ![...Object.values(adapter.bindings).map(binding => binding.property), ...Object.values(adapter.controlProperties), ...Object.values(adapter.spacingProperties), ...Object.values(adapter.fontSizes)].includes(property)) add("K4", file, property, "Private CSS variable needs an independently bound consumer token");
+    for (const property of next.match(/--[a-z][a-z0-9-]*/g) ?? []) if (!engineVariables.get(file)?.has(property) && !(input.transformVersion === 2 && ["--sidebar-width", "--sidebar-width-icon", "--ui-width-notice-max", "--spacing-xs", "--color-line"].includes(property)) && !consumerVariables.get(file)?.has(property) && ![...Object.values(adapter.bindings).map(binding => binding.property), ...Object.values(adapter.controlProperties), ...Object.values(adapter.spacingProperties), ...Object.values(adapter.fontSizes)].includes(property)) add("K4", file, property, "Private CSS variable needs an independently bound consumer token");
     if (/^(?:bg|text|border|outline|ring|fill|stroke|divide|decoration)-(?:[a-z]+-\d{2,3}|black|white)(?:\/|$)/.test(next) || /^(?:bg|text|border|outline|ring|fill|stroke|divide|decoration)-\[/.test(next) && !next.includes("var(--")) add("K4", file, value, "Raw paint or arbitrary design value needs a consumer binding");
     if (/^(?:ring|border|outline|shadow|leading|tracking|font|duration|delay|ease|animate|fade|zoom|slide|opacity|z|transition)-/.test(next) && next === base) add("K4", file, value, "Design utility needs a consumer binding");
     return prefix + next;
@@ -1260,7 +1321,13 @@ function rewriteSource(input: RewriteInput): RewriteResult {
     const inPart = file.path.includes("/_parts/");
     const relative = inPart ? "../../" : "../";
     let needsIcon = false;
-    let content = reboundButton ? translateButtonProps(file.content, file.path) : file.content;
+    let content = reboundButton && !input.retainRegistryButtonProps ? translateButtonProps(file.content, file.path) : file.content;
+    if (input.transformVersion === 2 && input.item === "sidebar") {
+      content = content.replace(/^const SIDEBAR_WIDTH(?:_MOBILE|_ICON)? = .*\n/gm, "")
+        .replace(/^\s*"--sidebar-width(?:-icon)?": SIDEBAR_WIDTH(?:_MOBILE|_ICON)?,\n/gm, "")
+        .replace(/  \/\/ Random width between 50 to 90%\.\n  const \[width\] = React\.useState\(\(\) => \{[\s\S]*?\n  \}\)\n/, "")
+        .replace('"--skeleton-width": width,', 'maxWidth: "var(--ui-width-notice-max)",');
+    }
     if (consumerVariables.get(file.path)?.has("--gap")) {
       content = content.replace('"--gap": `calc(var(--spacing) * ${spacing})`', '"--gap": `calc(var(--spacing-xs) * ${spacing})`');
       tokens.add("tokens.spacing.xs");
@@ -1365,5 +1432,5 @@ function rewriteSource(input: RewriteInput): RewriteResult {
     return { path: inPart ? file.path : `components/${input.leaf}/${name}`, content };
   }).sort((a, b) => a.path.localeCompare(b.path));
   const unique = [...new Map(issues.map(issue => [JSON.stringify(issue), issue])).values()].sort((a, b) => JSON.stringify(a).localeCompare(JSON.stringify(b)));
-  return { transform: "shadcn-aria-rewrite@1", ...(contextualInputs.size ? { contextualInputs: sorted(contextualInputs) } : {}), ...(notes.length ? { notes: [...new Map(notes.map(note => [JSON.stringify(note), note])).values()].sort((a, b) => JSON.stringify(a).localeCompare(JSON.stringify(b))) } : {}), files, outputSha256: files.map(file => ({ path: file.path, sha256: sha256(file.content) })), reads: { tokens: sorted(tokens), assets: sorted(assets), components: sorted(components) }, parts: sorted(parts), issues: unique };
+  return { transform: input.transformVersion === 2 ? "shadcn-aria-rewrite@2" : "shadcn-aria-rewrite@1", ...(contextualInputs.size ? { contextualInputs: sorted(contextualInputs) } : {}), ...(notes.length ? { notes: [...new Map(notes.map(note => [JSON.stringify(note), note])).values()].sort((a, b) => JSON.stringify(a).localeCompare(JSON.stringify(b))) } : {}), files, outputSha256: files.map(file => ({ path: file.path, sha256: sha256(file.content) })), reads: { tokens: sorted(tokens), assets: sorted(assets), components: sorted(components) }, parts: sorted(parts), issues: unique };
 }

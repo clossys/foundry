@@ -157,3 +157,12 @@ AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
 LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
+
+The draft `PanelLeft` glyph also uses the exact `panel-left` path nodes from
+`lucide-react` 1.24.0, under the ISC notice above. Its content pin is retained
+in the Lucide importer roster.
+
+The draft Aria rail additions use the official Aria source at commit
+`96da9cc7f1aa10580a3741664e2a77c721206c00`, under the shadcn MIT notice
+above. Individual fill descriptors retain the upstream addresses, file hashes,
+and the generated source license notice.

@@ -232,3 +232,11 @@ export type { SemanticContentTag, SemanticContentProps } from "./SemanticContent
 
 export { NativeAction } from "./NativeAction.js";
 export type { NativeActionProps } from "./NativeAction.js";
+
+export * from "./sidebar/index.js";
+export * from "./command/index.js";
+export * from "./sheet/index.js";
+export * from "./empty/index.js";
+export * from "./item/index.js";
+export * from "./scroll-area/index.js";
+export * from "./dropdown-menu/index.js";

@@ -50,13 +50,17 @@
     {
       "l2": "actions-menus",
       "leaves": [
-        "components.menu"
+        "components.menu",
+        "components.command",
+        "components.dropdown-menu"
       ],
       "offers": [
         {
           "source": "shadcn@aria",
           "leaves": [
-            "components.menu"
+            "components.menu",
+            "components.command",
+            "components.dropdown-menu"
           ]
         }
       ]
@@ -356,9 +360,16 @@
     {
       "l2": "display-content",
       "leaves": [
-        "components.semantic-content"
+        "components.semantic-content",
+        "components.item"
       ],
       "offers": [
+        {
+          "source": "shadcn@aria",
+          "leaves": [
+            "components.item"
+          ]
+        },
         {
           "source": "foundry",
           "leaves": [
@@ -372,13 +383,15 @@
       "l2": "feedback-messages",
       "leaves": [
         "components.banner",
-        "components.toast"
+        "components.toast",
+        "components.empty"
       ],
       "offers": [
         {
           "source": "shadcn@aria",
           "leaves": [
-            "components.banner"
+            "components.banner",
+            "components.empty"
           ]
         },
         {
@@ -468,9 +481,16 @@
     {
       "l2": "navigation-trees",
       "leaves": [
-        "components.navigation-tree"
+        "components.navigation-tree",
+        "components.sidebar"
       ],
       "offers": [
+        {
+          "source": "shadcn@aria",
+          "leaves": [
+            "components.sidebar"
+          ]
+        },
         {
           "source": "foundry",
           "leaves": [
@@ -486,7 +506,8 @@
         "components.card",
         "components.separator",
         "components.disclosure",
-        "components.resize-handle"
+        "components.resize-handle",
+        "components.scroll-area"
       ],
       "offers": [
         {
@@ -494,7 +515,8 @@
           "leaves": [
             "components.card",
             "components.separator",
-            "components.disclosure"
+            "components.disclosure",
+            "components.scroll-area"
           ]
         },
         {
@@ -511,7 +533,8 @@
       "leaves": [
         "components.dialog",
         "components.popover",
-        "components.tooltip"
+        "components.tooltip",
+        "components.sheet"
       ],
       "offers": [
         {
@@ -519,7 +542,8 @@
           "leaves": [
             "components.dialog",
             "components.popover",
-            "components.tooltip"
+            "components.tooltip",
+            "components.sheet"
           ]
         }
       ]
@@ -560,7 +584,8 @@
         "assets.icon-chevron-right",
         "assets.icon-arrow-right",
         "assets.icon-external-link",
-        "assets.icon-home"
+        "assets.icon-home",
+        "assets.icon-panel-left"
       ],
       "offers": [
         {
@@ -572,7 +597,8 @@
             "assets.icon-chevron-right",
             "assets.icon-arrow-right",
             "assets.icon-external-link",
-            "assets.icon-home"
+            "assets.icon-home",
+            "assets.icon-panel-left"
           ]
         },
         {

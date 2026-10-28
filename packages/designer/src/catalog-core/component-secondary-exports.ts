@@ -30,6 +30,30 @@ interface Token { text: string; quoted?: true }
  * or component qualification; unknown output still uses the bounded parser.
  */
 const selectedFunctionSources: Readonly<Record<string, { sha256: string; functions: readonly string[] }>> = {
+  "components/sidebar/sidebar.tsx": {
+    sha256: "50e6d8e099bfdd64393ea6141fe84a89ce580b77756d8773f9c1be8130f2339f",
+    functions: ["Sidebar", "SidebarContent", "SidebarFooter", "SidebarGroup", "SidebarGroupAction", "SidebarGroupContent", "SidebarGroupLabel", "SidebarHeader", "SidebarInput", "SidebarInset", "SidebarMenu", "SidebarMenuAction", "SidebarMenuBadge", "SidebarMenuButton", "SidebarMenuItem", "SidebarMenuSkeleton", "SidebarMenuSub", "SidebarMenuSubButton", "SidebarMenuSubItem", "SidebarProvider", "SidebarRail", "SidebarSeparator", "SidebarTrigger"],
+  },
+  "components/command/command.tsx": {
+    sha256: "87cca9baf632341de02972eb118885cd42b52c29c78f374dd7d40c572bec3881",
+    functions: ["Command", "CommandDialog", "CommandInput", "CommandList", "CommandEmpty", "CommandGroup", "CommandItem", "CommandShortcut", "CommandSeparator"],
+  },
+  "components/sheet/sheet.tsx": {
+    sha256: "3a13c49425b6eb264bde5743c5e4c7f2a5cbd1e3ca909594f48ce27895ce13f4",
+    functions: ["Sheet", "SheetTrigger", "SheetClose", "SheetContent", "SheetHeader", "SheetFooter", "SheetTitle", "SheetDescription"],
+  },
+  "components/empty/empty.tsx": {
+    sha256: "100765c44ff5006352e4650ca9f4e508761caf41bdc66eb0350ea9c450b62e3e",
+    functions: ["Empty", "EmptyHeader", "EmptyTitle", "EmptyDescription", "EmptyContent", "EmptyMedia"],
+  },
+  "components/item/item.tsx": {
+    sha256: "2c8376d52356f7afe95f66a4439c8a33f3a356ac3b01483f85125783698e35b1",
+    functions: ["Item", "ItemMedia", "ItemContent", "ItemActions", "ItemGroup", "ItemSeparator", "ItemTitle", "ItemDescription", "ItemHeader", "ItemFooter"],
+  },
+  "components/dropdown-menu/dropdown-menu.tsx": {
+    sha256: "c49285f31ee71390240116bf572e43fe918849cd6b47ff1b2108635d48e89060",
+    functions: ["DropdownMenu", "DropdownMenuTrigger", "DropdownMenuGroup", "DropdownMenuLabel", "DropdownMenuItem", "DropdownMenuSeparator", "DropdownMenuShortcut", "DropdownMenuSub", "DropdownMenuSubTrigger", "DropdownMenuSubContent"],
+  },
   "components/toggle-group/toggle-group.tsx": {
     sha256: "56f69f2968acbd448637ea5c84cc6d4808563231e6b9825c380bcb82a9e24fb9",
     functions: ["ToggleGroup", "ToggleGroupItem"],

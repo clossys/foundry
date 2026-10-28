@@ -1,0 +1,56 @@
+{
+  "$extensions": {
+    "com.clossys.fill": {
+      "id": "lucide/assets.icon-panel-left",
+      "slot": "assets.icon-panel-left",
+      "source": "lucide",
+      "mode": "implementation",
+      "sourceAddress": "lucide-react@1.24.0/dist/esm/icons/panel-left.mjs",
+      "relation": "same-contract",
+      "builtOn": [],
+      "conforms": [],
+      "evidence": [],
+      "author": "third-party",
+      "trust": "pinned-upstream",
+      "license": "ISC",
+      "pin": {
+        "package": "lucide-react",
+        "version": "1.24.0",
+        "file": "dist/esm/icons/panel-left.mjs",
+        "sha256": "75236e69e8e6adba1bd1e6bb2e60664a2be2aa9d514997d698528551ee933560"
+      },
+      "status": "draft",
+      "reads": {
+        "tokens": [],
+        "assets": []
+      }
+    }
+  },
+  "assets": {
+    "icon-panel-left": {
+      "default": {
+        "$type": "glyph",
+        "$value": [
+          [
+            "rect",
+            {
+              "width": "18",
+              "height": "18",
+              "x": "3",
+              "y": "3",
+              "rx": "2",
+              "key": "afitv7"
+            }
+          ],
+          [
+            "path",
+            {
+              "d": "M9 3v18",
+              "key": "fh3hqa"
+            }
+          ]
+        ]
+      }
+    }
+  }
+}

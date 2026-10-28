@@ -58,6 +58,7 @@ function setup(overrides: Partial<ComponentDefaultsInput> = {}, order?: readonly
 const ledger = (rows: ReturnType<typeof planComponentDefaults>["rows"]) => Object.fromEntries(rows.map(row => [row.slot.slice(11), row.status === "not-chosen" ? "-" : row.source ?? row.rule!]));
 
 const EXPECTED_DEFAULTS = {
+  sidebar: "shadcn@aria", command: "shadcn@aria", sheet: "shadcn@aria", empty: "shadcn@aria", item: "shadcn@aria", "scroll-area": "shadcn@aria", "dropdown-menu": "shadcn@aria",
   avatar: "shadcn@aria", badge: "shadcn@aria", banner: "shadcn@aria", breadcrumbs: "shadcn@aria", button: "foundry", calendar: "shadcn@aria", card: "foundry",
   "chart-area": "foundry", "chart-bar": "foundry", "chart-heatmap": "foundry", "chart-line": "foundry", "chart-range": "foundry",
   "chart-scatter": "foundry", "chart-sparkline": "foundry", "chart-status-strip": "foundry", "chart-waterfall": "foundry", checkbox: "shadcn@aria", "color-picker": "foundry", "combo-box": "shadcn@aria",
@@ -112,8 +113,8 @@ describe("component default fills", () => {
     const plan = planComponentDefaults(input);
     expect(plan.rows.filter(row => row.source === "rac-starter")).toEqual([]);
     // 52 after vf15 (toolbar unchosen) + toggle-group (vf19) + color-picker and number-field (vf22) + toolbar (vf21) + slider (vf23) + tag-group and tree (vf30) = 59.
-    expect(plan.rows.filter(row => row.status !== "not-chosen")).toHaveLength(59);
-    expect(plan.rows).toHaveLength(59);
+    expect(plan.rows.filter(row => row.status !== "not-chosen")).toHaveLength(66);
+    expect(plan.rows).toHaveLength(66);
     const forced = Object.fromEntries(starterSlots.map(slot => [slot, "rac-starter"]));
     for (const plan of [planComponentDefaults({ ...input, picks: forced }), planComponentDefaults({ ...input, choices: forced })]) {
       for (const slot of starterSlots) {

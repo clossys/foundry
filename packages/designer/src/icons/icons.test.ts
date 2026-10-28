@@ -12,7 +12,7 @@ const glyphEntries = Object.entries(Icons) as [string, unknown][];
 
 describe("shipped icon glyph data", () => {
   it("ships exactly 40 glyphs — the evidence-picked core carried over from the pre-merge icons package plus eight content-list glyphs (see README.md)", () => {
-    expect(glyphEntries.length).toBe(40);
+    expect(glyphEntries.length).toBe(41);
   });
 
   it("no exported name ends in \"Icon\" — these are data, not components (see README.md \"Naming convention\")", () => {
