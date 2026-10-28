@@ -3,15 +3,16 @@
 import "@testing-library/jest-dom/vitest";
 import { cleanup, render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import type { ReactNode } from "react";
+import type { ReactElement, ReactNode } from "react";
 import { afterEach, expect, it, vi } from "vitest";
 import { buildCandidates } from "../../studio/model.js";
 import { valueLibraryBoardPreviews, valueLibraryBoardRecords, type PreparedLibraryBoardInput } from "../../studio/library-board-adapter.js";
 import { adopt, emptyLibrary, labels, smallCatalog } from "../../studio/__fixtures__/studio.js";
 import { resolve } from "../../catalog-core/api.js";
-import { runtimeHash, type RuntimeJson, type RuntimeRenderInput } from "../../catalog-core/runtime-ports.js";
+import { runtimeHash, runtimeSnapshot, type RuntimeJson, type RuntimeRenderInput } from "../../catalog-core/runtime-ports.js";
 import { specimenDataset } from "../../studio/specimen-dataset.js";
 import { sectionRenderers } from "./index.js";
+import { assertLibraryBoardRecords, type LibraryBoardRecords } from "../../blocks/library-board/model.js";
 import type { LibraryBoardSectionHost } from "./library-board.js";
 
 afterEach(() => { cleanup(); vi.restoreAllMocks(); });
@@ -60,4 +61,36 @@ it("refuses the board without its port, with stray content or malformed records;
   expect(() => render(<>{entry.render(input(["arrangement.library-board"], { ...boardContent(), controls: { version: 1 } }, host))}</>)).toThrow();
   render(<>{entry.render(input([], entry.sample(specimenDataset), host))}</>);
   expect(document.querySelector("[data-library-board]")).toBeNull();
+});
+
+
+it("reuses one validated board snapshot across runtime board renders", () => {
+  const host = { previews: valueLibraryBoardPreviews(board(), labels), labels, onCommand: vi.fn() };
+  const original = input(["arrangement.library-board"], boardContent(), host);
+  const content = runtimeSnapshot(original.content);
+  const renderRecords = (data: typeof content) => (entry.render({ ...original, content: data }) as ReactElement<{ records: LibraryBoardRecords }>).props.records;
+  const first = renderRecords(content);
+  assertLibraryBoardRecords(first);
+  const descriptors = vi.spyOn(Object, "getOwnPropertyDescriptors");
+  const repeated: LibraryBoardRecords[] = [];
+  let visits = 0;
+  try {
+    for (let render = 0; render < 4; render++) {
+      const next = renderRecords(content);
+      repeated.push(next);
+      assertLibraryBoardRecords(next);
+    }
+    visits = descriptors.mock.calls.length;
+  } finally { descriptors.mockRestore(); }
+  expect(repeated.every(records => records === first)).toBe(true);
+  expect(visits).toBe(0);
+  const changed = renderRecords(runtimeSnapshot({ ...content, controls: { ...content.controls!, value: { version: 1, mode: "other", canSave: false, pending: false } } }));
+  expect(changed).not.toBe(first);
+  expect(() => assertLibraryBoardRecords(changed)).toThrow(/mode/);
+  const mutable = structuredClone(content);
+  const before = renderRecords(mutable);
+  Object.assign(mutable.controls!.value as object, { mode: "other" });
+  const after = renderRecords(mutable);
+  expect(after).not.toBe(before);
+  expect(() => assertLibraryBoardRecords(after)).toThrow(/mode/);
 });

@@ -1,6 +1,8 @@
 import { afterEach, expect, it, vi } from "vitest";
 import { act, cleanup, fireEvent, render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
+import { CanvasModules } from "./CanvasModules.js";
+import type { useCanvasWorld } from "./useCanvasWorld.js";
 import { Studio } from "./Studio.js";
 import { FrameSlotProvider, FrameModuleOutlet } from "../shell/FrameSlots.js";
 import { FrameNoticeProvider } from "../frames/frame-notices.js";
@@ -58,4 +60,62 @@ it("projects real board rectangles and drags the viewport using world coordinate
   expect(change).toHaveBeenLastCalledWith({ x: -200, y: -100, zoom: 1 });
   pointer("pointerup", 50, 25);
   expect(release).toHaveBeenCalledWith(1); expect(captured.has(1)).toBe(false);
+});
+
+
+it("measures rail boards once across camera renders, then updates on resize and board changes", async () => {
+  const surface = document.createElement("div"), world = document.createElement("div");
+  surface.append(world); document.body.append(surface);
+  let pose = { x: 0, y: 0, zoom: 1 }, width = 100;
+  const box = (left: number, top: number, width: number, height: number) => ({ x: left, y: top, left, top, width, height, right: left + width, bottom: top + height, toJSON() {} });
+  const addBoard = (id: string, x: number) => {
+    const wrapper = document.createElement("div"), board = document.createElement("section");
+    wrapper.dataset.studioCanvasBoard = id; board.dataset.libraryBoard = id;
+    wrapper.append(board); world.append(wrapper);
+    const read = vi.spyOn(board, "getBoundingClientRect").mockImplementation(() => box(pose.x + x * pose.zoom, pose.y + 25 * pose.zoom, width * pose.zoom, 50 * pose.zoom));
+    return { wrapper, read };
+  };
+  const first = addBoard("first", 50);
+  vi.spyOn(surface, "getBoundingClientRect").mockImplementation(() => box(0, 0, 800, 600));
+  const observers: { callback: ResizeObserverCallback; targets: Element[]; disconnect: ReturnType<typeof vi.fn> }[] = [];
+  vi.stubGlobal("ResizeObserver", class {
+    targets: Element[] = []; disconnect = vi.fn();
+    constructor(readonly callback: ResizeObserverCallback) { observers.push(this); }
+    observe(target: Element) { this.targets.push(target); }
+    unobserve(target: Element) { this.targets = this.targets.filter(value => value !== target); }
+  });
+  const canvas = { surface: { current: surface }, world: { current: world }, actions: { current: null }, pose, bounds: { x: 0, y: 0, width: 1000, height: 500 }, setPose: vi.fn() } as unknown as ReturnType<typeof useCanvasWorld>;
+  const modules = () => <CanvasModules canvas={{ ...canvas, pose }} labels={labels} explorer={null} inspector={null} />;
+  try {
+    const view = render(modules());
+    expect(first.read).toHaveBeenCalledTimes(1);
+    for (let frame = 1; frame <= 4; frame++) {
+      pose = { x: -frame * 10, y: -frame * 5, zoom: 1 + frame / 10 };
+      view.rerender(modules());
+    }
+    expect(first.read).toHaveBeenCalledTimes(1);
+    expect(observers).toHaveLength(1);
+    expect(observers[0]!.targets).toContain(first.wrapper.firstElementChild);
+    first.wrapper.firstElementChild!.append(document.createElement("span"));
+    await act(async () => { await Promise.resolve(); });
+    expect(first.read).toHaveBeenCalledTimes(1);
+    width = 140;
+    act(() => observers[0]!.callback([], observers[0] as unknown as ResizeObserver));
+    expect(first.read).toHaveBeenCalledTimes(2);
+    const boardRects = () => [...view.container.querySelectorAll('[data-studio-rail-card="map"] svg rect')];
+    expect(boardRects()[0]).toHaveAttribute("x", "50");
+    expect(boardRects()[0]).toHaveAttribute("width", "140");
+    const second = addBoard("second", 250);
+    await act(async () => { await Promise.resolve(); });
+    expect(second.read).toHaveBeenCalledTimes(1);
+    expect(boardRects()).toHaveLength(3); // two boards plus the viewport
+    first.wrapper.hidden = true;
+    await act(async () => { await Promise.resolve(); });
+    expect(boardRects()).toHaveLength(2);
+    second.wrapper.remove();
+    await act(async () => { await Promise.resolve(); });
+    expect(boardRects()).toHaveLength(1);
+    expect(observers[0]!.targets).not.toContain(second.wrapper.firstElementChild);
+    view.unmount(); expect(observers[0]!.disconnect).toHaveBeenCalledTimes(1);
+  } finally { surface.remove(); vi.unstubAllGlobals(); vi.restoreAllMocks(); }
 });

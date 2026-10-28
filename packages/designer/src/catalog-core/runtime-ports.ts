@@ -1,4 +1,5 @@
 /** Consumer-owned runtime seams. This module imports no renderer or execution tool. */
+import { runtimeSnapshotCopies } from "./runtime-snapshot-identity.js";
 import { sha256 } from "./digest.js";
 import { stableStringify } from "./stable.js";
 import type { FramePageHeader } from "../frame-page-header.js";
@@ -243,7 +244,10 @@ function walkRuntimeSnapshot(input: unknown, snapshot: boolean): unknown {
       if (entries) entries.push([key, item]);
     }
     active.delete(value);
-    return entries ? Object.freeze(array ? entries.map(([, item]) => item) : Object.fromEntries(entries)) : undefined;
+    if (!entries) return undefined;
+    const result = Object.freeze(array ? entries.map(([, item]) => item) : Object.fromEntries(entries));
+    runtimeSnapshotCopies.add(result);
+    return result;
   };
   return copy(input);
 }
