@@ -7,7 +7,7 @@ import ts from "typescript";
 import { expect, it } from "vitest";
 
 const packageRoot = fileURLToPath(new URL("..", import.meta.url));
-const names = ["studio", "voice", "meta", "writer"] as const;
+const names = ["studio", "voice", "meta", "writer", "writer-paging"] as const;
 const recordPath = (name: string) => join(packageRoot, `src/catalog/records/admin-${name}.r1.en.json`);
 
 it("packs complete admin copy and resolves every Designer route-label reference through public exports", () => {
