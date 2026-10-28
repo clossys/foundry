@@ -1,4 +1,4 @@
-import { Fragment, isValidElement, type ReactNode, type HTMLAttributes } from "react";
+import { useRef, Fragment, isValidElement, type ReactNode, type HTMLAttributes } from "react";
 import {
   Menu as AriaMenu,
   MenuItem as AriaMenuItem,
@@ -12,6 +12,7 @@ import {
   type MenuTriggerProps as AriaMenuTriggerProps,
   type MenuSectionProps as AriaMenuSectionProps,
 } from "react-aria-components";
+import { Popover as ControlPopover } from "./Popover.js";
 import { Icon } from "./Icon.js";
 import { useGlyph } from "./glyph-context.js";
 import { controlStateStyle } from "./button-classes.js";
@@ -27,6 +28,10 @@ export interface MenuProps extends Omit<AriaMenuTriggerProps, "children" | "trig
    * `MenuTrigger` via context, the same way `Select`'s trigger works.
    */
   trigger: ReactNode;
+  /** Host controls beside the action list in a named account-style popup. */
+  controls?: ReactNode;
+  /** Required accessible dialog name when controls are supplied. */
+  controlsLabel?: string;
   /** Menu.Item entries, optionally grouped with Menu.Section and Menu.Separator. */
   children: ReactNode;
   /**
@@ -77,11 +82,9 @@ export type MenuSelectionMode = "none" | "single" | "multiple";
  * here — this component only supplies the token-derived visual styling on
  * top.
  *
- * Composes no other component of its own, even though its `trigger` prop is
- * commonly filled with this package's `Button` component by a CONSUMER: that's
- * the consumer's own composition, in their code, the same way a `Button`
- * can be passed into `PageHeader`'s `actions` slot without `PageHeader`
- * importing `Button` itself. This file never imports `Button.js`.
+ * The optional controls slot uses the shared dialog Popover so custom controls
+ * can receive normal Tab focus alongside the action menu. The trigger remains
+ * host-owned; this file never imports Button.js.
  *
  * There's deliberately no `aria-label` prop here for the menu itself.
  * react-aria-components' `MenuTrigger` always wires the menu's
@@ -98,6 +101,8 @@ export type MenuSelectionMode = "none" | "single" | "multiple";
 function MenuRoot({
   trigger,
   triggerAction,
+  controls,
+  controlsLabel,
   children,
   className,
   popoverClassName,
@@ -106,10 +111,35 @@ function MenuRoot({
   defaultSelectedKeys,
   onSelectionChange,
   onAction,
+  onOpenChange,
   ...rest
 }: MenuProps) {
+  const returnFocus = useRef<HTMLElement | null>(null);
+  const changeOpen = (open: boolean) => {
+    if (open) returnFocus.current = document.activeElement instanceof HTMLElement ? document.activeElement : null;
+    onOpenChange?.(open);
+    if (!open) {
+      const target = returnFocus.current;
+      // Wait until the popup's focus scope has unmounted. Restoring in a layout
+      // effect is still inside that scope; waiting for its animation frame leaves
+      // a gap where a second Escape targets the body instead of a parent drawer.
+      queueMicrotask(() => {
+        if (target?.isConnected && target.ownerDocument.activeElement === target.ownerDocument.body) target.focus({ preventScroll: true });
+      });
+    }
+  };
+  if (controls != null) {
+    if (!controlsLabel?.trim()) throw new TypeError("Menu: controls require a non-empty controlsLabel.");
+    return <ControlPopover {...rest} onOpenChange={changeOpen} trigger={trigger} aria-label={controlsLabel} className={popoverClassName}>
+      {({ close }) => <><AriaMenu className={cx("flex flex-col outline-none", className)}
+        selectionMode={selectionMode} selectedKeys={selectedKeys} defaultSelectedKeys={defaultSelectedKeys}
+        onSelectionChange={onSelectionChange} onAction={onAction} onClose={close} aria-label={controlsLabel}>
+        {children}
+      </AriaMenu>{controls}</>}
+    </ControlPopover>;
+  }
   return (
-    <MenuTrigger {...rest} trigger={triggerAction}>
+    <MenuTrigger {...rest} onOpenChange={changeOpen} trigger={triggerAction}>
       {trigger}
       <Popover
         className={cx(
@@ -234,7 +264,7 @@ function MenuSeparator({ className }: MenuSeparatorProps) {
 
 type MenuSectionBaseProps = Pick<AriaMenuSectionProps<object>,
   "selectedKeys" | "onSelectionChange" | "shouldCloseOnSelect"
-> & { children: ReactNode; selectionMode?: "none" | "multiple" };
+> & { children: ReactNode; selectionMode?: "none" | "single" | "multiple" };
 
 /** A section needs an accessible name: a visible `heading`, an `aria-label`, or both. */
 type MenuSectionProps = MenuSectionBaseProps & (
@@ -264,7 +294,7 @@ function hasHeadingText(value: ReactNode): boolean {
 }
 
 /**
- * A named group with optional controlled checkbox selection, owned by the
+ * A named group with optional controlled radio or checkbox selection, owned by the
  * menu peer. Throws if neither `heading` nor `aria-label` carries a
  * non-empty name, since that would render an unnamed menu group.
  */

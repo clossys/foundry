@@ -1,5 +1,8 @@
 import { TOKENS } from "../tokens/index.js";
 
+/** The inspector docks from the existing tablet (md) breakpoint upward. */
+export const INSPECTOR_DOCK_QUERY = "(min-width: " + TOKENS["--breakpoint-tablet"]!.value + ")";
+
 /** The AppFrame right panel's resize bounds, in CSS pixels. */
 export type AppFrameRightPanelConfig = Readonly<{ min: number; max: number; defaultValue: number }>;
 

@@ -4,7 +4,7 @@ import { act } from "react";
 import { hydrateRoot } from "react-dom/client";
 import { renderToString } from "react-dom/server";
 import { afterEach, expect, it, vi } from "vitest";
-import { within } from "@testing-library/react";
+import { waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { APP_FRAME_WIDE_QUERY } from "./app-frame-layout.js";
 import { AppFrame as ShellFixtureAppFrame } from "./AppFrame.js";
@@ -33,8 +33,8 @@ it.each([true, false])("hydrates with stable IDs before correcting viewport and 
   const host = document.createElement("div"); host.innerHTML = renderToString(tree); document.body.append(host);
   const mainId = host.querySelector("main")!.id;
   expect(host.querySelector('a[href^="#"]')).toHaveAttribute("href", "#" + mainId);
-  // The theme control is three explicit radios since 0d04b4c23 (sidebar spec D3); the server renders the default.
-  expect(within(host).getByRole("radio", { name: "System" })).toBeChecked();
+  // The server renders the account trigger; theme choices are revealed only on demand.
+  expect(within(host).queryByRole("menuitemradio")).toBeNull();
   const recoverable = vi.fn();
   let root: ReturnType<typeof hydrateRoot> | undefined;
   try {
@@ -47,9 +47,14 @@ it.each([true, false])("hydrates with stable IDs before correcting viewport and 
     expect(within(within(host).getByRole("region", { name: "Host notifications" })).getByRole("status")).toHaveTextContent("Saved");
     expect(document.documentElement).toHaveAttribute("data-theme", "dark");
     if (!wide) await userEvent.click(within(host).getByRole("button", { name: "Open navigation" }));
-    expect((wide ? within(host) : within(document.body)).getByRole("radio", { name: "Dark" })).toBeChecked();
-    if (!wide) await userEvent.keyboard("{Escape}");
-    if (!wide) expect(within(host).getByRole("button", { name: "Open navigation" })).toBeInTheDocument();
+    await userEvent.click(within(document.body).getByRole("button", { name: "Signed out" }));
+    expect(within(document.body).getByRole("menuitemradio", { name: "Dark" })).toHaveAttribute("aria-checked", "true");
+    await userEvent.keyboard("{Escape}");
+    await waitFor(() => expect(within(document.body).queryByRole("menuitemradio")).toBeNull());
+    if (!wide) {
+      await userEvent.keyboard("{Escape}");
+      await waitFor(() => expect(within(host).getByRole("button", { name: "Open navigation" })).toBeInTheDocument());
+    }
     const user = userEvent.setup(); await user.click(within(host).getByRole("link", { name: "Skip to content" }));
     expect(within(host).getByRole("main")).toHaveFocus();
   } finally { await act(async () => root?.unmount()); host.remove(); }

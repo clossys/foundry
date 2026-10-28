@@ -63,3 +63,23 @@ describe("InspectorFrame", () => {
     expect(() => render(<InspectorFrame {...base} min={500} />)).toThrow(/InspectorFrame: min must not exceed max/);
   });
 });
+
+it("offers an initially closed sheet below the token-derived md breakpoint and restores opener focus", async () => {
+  const user = userEvent.setup(), onCollapsedChange = vi.fn();
+  const media = vi.fn((query: string) => ({ media: query, matches: false, addEventListener() {}, removeEventListener() {} }));
+  vi.stubGlobal("matchMedia", media);
+  try {
+    render(<InspectorFrame {...base} onCollapsedChange={onCollapsedChange} />);
+    expect(media).toHaveBeenCalledWith("(min-width: 768px)");
+    expect(screen.queryByRole("complementary")).toBeNull();
+    expect(screen.queryByRole("dialog")).toBeNull();
+    const opener = screen.getByRole("button", { name: "Show details" });
+    await user.click(opener);
+    const dialog = await screen.findByRole("dialog", { name: "Details" });
+    expect(dialog).toHaveTextContent("Selected layer");
+    expect(dialog.querySelector('[data-drawer-placement="end"]')).not.toBeNull();
+    expect(onCollapsedChange).toHaveBeenCalledWith(false);
+    await user.keyboard("{Escape}");
+    await vi.waitFor(() => expect(opener).toHaveFocus());
+  } finally { vi.unstubAllGlobals(); }
+});

@@ -95,25 +95,24 @@ describe("AppFrame account avatar", () => {
 });
 
 describe("AppFrame footer layout", () => {
-  it("defaults to one inline row: account beside the theme control", () => {
+  it("gives the account the full footer track with theme options inside its popup", () => {
     render(<AppFrame {...fixture()} />);
     const row = navFooter().firstElementChild as HTMLElement;
-    expect(row).toHaveClass("flex", "items-center", "justify-between");
-    expect(row).not.toHaveClass("flex-col");
-    expect(row.querySelector('[data-application-frame-slot="theme-control"]')!.parentElement).toBe(row);
+    expect(row).toHaveClass("w-full", "min-w-0");
+    expect(row.querySelector('[data-application-frame-slot="account"]')).toContainElement(screen.getByRole("button", { name: "Sam River" }));
+    expect(row.querySelector('[data-application-frame-slot="theme-control"]')).toBeNull();
   });
 
-  it("stacked gives the theme control its own row and the account row the full width", () => {
+  it("keeps the legacy stacked option with one full-width account row", () => {
     render(<AppFrame {...fixture({ footerLayout: "stacked" })} />);
     const stack = navFooter().firstElementChild as HTMLElement;
     expect(stack).toHaveAttribute("data-application-frame-footer", "stacked");
-    expect(stack).toHaveClass("flex", "flex-col");
-    const [theme, account] = [...stack.children] as HTMLElement[];
-    expect(theme).toHaveAttribute("data-application-frame-slot", "theme-control");
+    expect(stack).toHaveClass("w-full", "min-w-0");
+    expect(stack.children).toHaveLength(1);
+    const account = stack.firstElementChild!;
     expect(account).toHaveAttribute("data-application-frame-slot", "account");
     expect(account).toHaveClass("w-full", "min-w-0");
     expect(account).toContainElement(screen.getByRole("button", { name: "Sam River" }));
-    expect(theme).not.toContainElement(screen.getByRole("button", { name: "Sam River" }));
   });
 
   it("stacked with themeControl null keeps only the full-width account row", () => {
@@ -123,9 +122,10 @@ describe("AppFrame footer layout", () => {
     expect(stack.firstElementChild).toHaveAttribute("data-application-frame-slot", "account");
   });
 
-  it("truncates a long signed-out label instead of widening the navigation", () => {
+  it("wraps a long signed-out label within the navigation width", () => {
     render(<AppFrame {...fixture({ actor: false, footerLayout: "stacked" })} />);
     const label = screen.getByText("Signed out of every workspace on this device");
-    expect(label).toHaveClass("min-w-0", "truncate");
+    expect(label).toHaveClass("min-w-0", "break-words");
+    expect(label).not.toHaveClass("truncate");
   });
 });

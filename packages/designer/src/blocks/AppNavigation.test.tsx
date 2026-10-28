@@ -183,11 +183,15 @@ describe("AppNavigation", () => {
     for (const name of ["Home", "Catalogs", "Blocks"]) {
       const control = screen.getByRole("link", { name });
       expect(control).toHaveClass("control-h-md");
-      expect(control).not.toHaveAttribute("style");
+      expect(control.style.blockSize).toBe("");
+      expect(control.style.minBlockSize).toBe("");
+      expect(control.style.borderInlineStartWidth).toBe("var(--ui-border-rule)");
     }
     const actionControl = screen.getByRole("button", { name: "Actions" });
     expect(actionControl).toHaveClass("control-h-md");
-    expect(actionControl).not.toHaveAttribute("style");
+    expect(actionControl.style.blockSize).toBe("");
+    expect(actionControl.style.minBlockSize).toBe("");
+    expect(actionControl.style.borderInlineStartWidth).toBe("var(--ui-border-rule)");
     const chevron = screen.getByRole("button", { name: "Collapse Catalogs" });
     expect(chevron).toHaveClass("icon-control-md");
     expect(chevron).not.toHaveAttribute("style");
@@ -461,10 +465,11 @@ describe("AppNavigation visual pass (VF-1 shell-01/02, cross-05)", () => {
   it("marks the current destination with the selected surface and an accent edge, never an outline", () => {
     render(<AppNavigation tree={tree} activeId="blocks" />);
     const current = screen.getByRole("link", { name: "Blocks" });
-    expect(current).toHaveClass("bg-surface-selected", "border-s-2", "border-s-accent", "font-medium");
+    expect(current).toHaveClass("bg-surface-selected", "border-s-accent", "font-medium");
+    expect(current.style.borderInlineStartWidth).toBe("var(--ui-border-rule)");
     expect(current).not.toHaveClass("outline-solid", "outline-line-strong", "font-semibold");
     const rest = screen.getByRole("link", { name: "Home" });
-    expect(rest).toHaveClass("border-s-2", "border-s-transparent", "hover:bg-control-tonal-hover");
+    expect(rest).toHaveClass("border-s-transparent", "hover:bg-control-tonal-hover");
     expect(rest).not.toHaveClass("hover:bg-surface-sunken");
   });
 
@@ -475,4 +480,14 @@ describe("AppNavigation visual pass (VF-1 shell-01/02, cross-05)", () => {
     expect(svg.style.width).toContain("--ui-icon-sm");
     expect((svg.parentElement as HTMLElement).style.inlineSize).toContain("--ui-icon-sm");
   });
+});
+
+it("renders SVG destination glyphs instead of single-letter placeholders", () => {
+  render(<AppNavigation tree={[...tree, { id: "legacy", label: "Legacy destination", href: "#legacy", icon: "L" }]} activeId="blocks" />);
+  for (const name of ["Home", "Catalogs", "Blocks", "Actions", "Legacy destination"]) {
+    const control = screen.getByRole(name === "Actions" ? "button" : "link", { name });
+    const slot = control.querySelector('[aria-hidden="true"]')!;
+    expect(slot.textContent).toBe("");
+    expect(slot.querySelector("svg")).not.toBeNull();
+  }
 });
