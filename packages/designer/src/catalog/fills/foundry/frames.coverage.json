@@ -96,6 +96,22 @@
       "missingSlots": [],
       "missingStatePorts": [],
       "notes": [
+        "Document root. The host supplies Writer-resolved language and direction and a formatted title. Status documents retain noindex and inline critical CSS.",
+        "Descriptor only; anatomy, source, accessibility, contrast, layout and rendered conformance are unmeasured."
+      ],
+      "slot": "frames.document",
+      "status": "candidate",
+      "supported": [
+        "variant.page",
+        "variant.status"
+      ]
+    },
+    {
+      "missing": [],
+      "missingRequiredSlots": [],
+      "missingSlots": [],
+      "missingStatePorts": [],
+      "notes": [
         "InspectorFrame is a named aside around a start-edge ResizablePane when docked and an end-placed Drawer when overlay; collapse and width are host-ownable state. AppFrame rightPanel does not yet compose it.",
         "Descriptor only; anatomy, source, accessibility, contrast, layout and rendered conformance are unmeasured."
       ],

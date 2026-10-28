@@ -501,6 +501,7 @@ const signInLabel = "Sign in";
 
 /** Frame layer: the content every Studio-owned Frame preview renders. */
 const frames = {
+  document: { lang: "en", dir: "ltr", title: "Sample document" },
   /** vf34: the app sidebar frame (AppNavigation). */
   appSidebar: {
     label: "Workspace navigation",

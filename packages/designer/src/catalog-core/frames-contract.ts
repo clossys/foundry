@@ -14,7 +14,7 @@ export interface FrameContract {
   kind: "frame";
   /** Absent means stage capability is unspecified, never implicitly flow or canvas. */
   stage?: FrameStageContract;
-  root: "div" | "header" | "nav" | "aside" | "footer" | "dialog";
+  root: "html" | "div" | "header" | "nav" | "aside" | "footer" | "dialog";
   /** Ordered page landmarks, including landmarks supplied through slots. */
   landmarks: readonly LandmarkSpec[];
   slots: readonly {

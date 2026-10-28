@@ -3568,7 +3568,8 @@ Props (`GlobalErrorDocumentFramedProps`):
 
 | Prop | Required | What it does |
 | --- | --- | --- |
-| `lang` | yes | The `lang` of `<html>`. |
+| `lang` | yes | Canonicalized by Writer and rendered as the `lang` of `<html>`. |
+| `localeManifest` | yes | Writer's declared `locales`; `directionFor` resolves the root `dir` from the matching declaration. |
 | `documentTitle` | yes | `{ page, brand }`, joined by `formatPageTitle`. |
 | `icon` | yes | `{ href, type? }` for the one `<link rel="icon">`. |
 | `htmlClassName` | no | A class on `<html>`, rendered only when non-empty. |
@@ -3581,7 +3582,10 @@ Props (`GlobalErrorDocumentFramedProps`):
 | `notes` | no | A quiet line for a secondary link. |
 | `routes` | no | Caller-labelled destinations, forwarded unchanged to `StatusView`. |
 
-`GlobalErrorDocumentHeadProps` names the first five, which both shapes share.
+`GlobalErrorDocumentHeadProps` names the document head props, which both shapes share.
+Both shapes require `localeManifest`: pass the authoritative Writer manifest
+(or its `locales` projection) alongside `lang`. An undeclared locale or an
+invalid direction throws; there is no inferred direction or default manifest.
 The frame fails closed here as everywhere: a shell the frame refuses throws.
 
 No theme script runs in this document, so it is pinned to the light theme
@@ -3601,6 +3605,9 @@ layout. Pass that class as the optional `htmlClassName` prop; it is rendered as
 
 import { GlobalErrorDocument } from "@clossys/publisher/web";
 import type { SiteFrameInput } from "@clossys/publisher/web";
+import type { WriterManifest } from "@clossys/writer";
+
+declare const localeManifest: Pick<WriterManifest, "locales">; // the configured Writer locales
 
 declare const frame: SiteFrameInput; // the same shell and resolvers the root layout passes to SiteFrame
 
@@ -3608,6 +3615,7 @@ export default function GlobalError({ error, reset }: { error: Error & { digest?
   return (
     <GlobalErrorDocument
       lang="en"
+      localeManifest={localeManifest}
       documentTitle={{ page: "Something went wrong", brand: "Example Studio" }}
       icon={{ href: "/icon.svg", type: "image/svg+xml" }}
       shell={frame.shell}
@@ -3680,7 +3688,7 @@ frame resolves its copy through the `resolveCopy` you pass, so it renders the
 same markup with no context at all. It has no hooks and is not a client
 module, so a server file renders it directly.
 
-Props (`NotFoundDocumentProps`): `lang`, `documentTitle`, `icon`,
+Props (`NotFoundDocumentProps`): `lang`, `localeManifest`, `documentTitle`, `icon`,
 `htmlClassName` and `stylesheets` as on `GlobalErrorDocument`; `shell`,
 `resolveCopy` and `resolveAsset` (`SiteFrameInput`); and `status`,
 `subtitle`, `action`, `notes` and `routes` as on `StatusView`. An unmatched
@@ -3690,6 +3698,9 @@ address has no diagnostic, so `reference` throws, and so do the deprecated
 ```tsx
 import { NotFoundDocument } from "@clossys/publisher/web";
 import type { SiteFrameInput } from "@clossys/publisher/web";
+import type { WriterManifest } from "@clossys/writer";
+
+declare const localeManifest: Pick<WriterManifest, "locales">; // the configured Writer locales
 
 declare const frame: SiteFrameInput; // built from the configured copy, not from the request
 
@@ -3697,6 +3708,7 @@ export default function GlobalNotFound() {
   return (
     <NotFoundDocument
       lang="en"
+      localeManifest={localeManifest}
       documentTitle={{ page: "Page not found", brand: "Example Studio" }}
       icon={{ href: "/icon.svg", type: "image/svg+xml" }}
       stylesheets={["/site.css"]}

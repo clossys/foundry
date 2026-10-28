@@ -5,12 +5,14 @@ import { ErrorViewBody } from "./ErrorView.js";
 import type { ErrorViewProps } from "./ErrorView.js";
 import { StatusView } from "./StatusView.js";
 import type { StatusViewProps } from "./StatusView.js";
-import { StatusDocument } from "./statusDocument.js";
+import { StatusDocument, type StatusDocumentLocaleManifest } from "./statusDocument.js";
 
 /** The document-level props both shapes share: the root `<html>` and the `<head>`. */
 export interface GlobalErrorDocumentHeadProps {
   /** The document language, set on the root `<html>`. Required because this document replaces the root layout that normally sets it. */
   lang: string;
+  /** Writer's declared locales, which authoritatively set the root direction. */
+  localeManifest: StatusDocumentLocaleManifest;
   /**
    * The two parts of the `<title>`, joined and validated by `formatPageTitle`
    * (`<page> · <brand>`). A part with leading or trailing whitespace, or an
@@ -117,7 +119,7 @@ function isFramed(props: GlobalErrorDocumentProps): props is GlobalErrorDocument
  * `metadata` export, and is not a client module.
  */
 export function GlobalErrorDocument(props: GlobalErrorDocumentProps): ReactElement {
-  const { lang, documentTitle, icon, htmlClassName, stylesheets } = props;
+  const { lang, localeManifest, documentTitle, icon, htmlClassName, stylesheets } = props;
   let body: ReactElement;
   if (isFramed(props)) {
     const legacy = props as { title?: unknown; description?: unknown };
@@ -141,6 +143,7 @@ export function GlobalErrorDocument(props: GlobalErrorDocumentProps): ReactEleme
     }
     const {
       lang: _lang,
+      localeManifest: _localeManifest,
       documentTitle: _documentTitle,
       icon: _icon,
       htmlClassName: _htmlClassName,
@@ -157,7 +160,7 @@ export function GlobalErrorDocument(props: GlobalErrorDocumentProps): ReactEleme
     body = <ErrorViewBody {...errorViewProps} />;
   }
   return (
-    <StatusDocument component="GlobalErrorDocument" head={{ lang, documentTitle, icon, htmlClassName, stylesheets }} framed={isFramed(props)}>
+    <StatusDocument component="GlobalErrorDocument" head={{ lang, localeManifest, documentTitle, icon, htmlClassName, stylesheets }} framed={isFramed(props)}>
       {body}
     </StatusDocument>
   );

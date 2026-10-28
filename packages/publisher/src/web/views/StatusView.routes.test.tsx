@@ -149,7 +149,7 @@ const ref = (id: string): CopyRef => ({ id });
 const resolveCopy: CopyResolver = copyRef => COPY[copyRef.id] === undefined ? undefined : { ref: copyRef, text: COPY[copyRef.id]!, recordId: `record-${copyRef.id}`, revision: "1", locale: "en-US", source: { kind: "consumer", reference: "fixture" }, entryId: copyRef.id };
 const resolveAsset = (id: string): unknown => id === "mark" ? { type: "image", src: "/brand/mark.svg", width: 48, height: 48, alt: "Example mark" } : undefined;
 const shell: SiteShellInput = { brand: { assetId: "mark", label: ref("brand"), size: "md", variant: "mark" }, skipLink: ref("skip"), footer: { legal: { entity: ref("entity"), links: [{ href: "/privacy", label: ref("privacy") }] } } };
-const head = { lang: "en", documentTitle: { page: "Something went wrong", brand: "Example Studio" }, icon: { href: "/icon.svg" } };
+const head = { lang: "en", localeManifest: { locales: [{ tag: "en", dir: "ltr" as const, state: "active" as const }] }, documentTitle: { page: "Something went wrong", brand: "Example Studio" }, icon: { href: "/icon.svg" } };
 const framed: GlobalErrorDocumentFramedProps = { ...head, shell, resolveCopy, resolveAsset, status: "500", subtitle: "Something went wrong.", action: <button>Try again</button>, notes: <a href="/contact">Contact us</a> };
 function errorDocument(input: unknown): Document {
   const props = { ...framed, routes: input } as GlobalErrorDocumentFramedProps & { routes: Routes };

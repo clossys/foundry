@@ -9,7 +9,8 @@
           "id": "page-shells-documents",
           "label": "Documents",
           "leaves": [
-            "frames.site-shell"
+            "frames.site-shell",
+            "frames.document"
           ]
         },
         {

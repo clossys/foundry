@@ -35,7 +35,7 @@ const COPY: Readonly<Record<string, string>> = {
 const ref = (id: string): CopyRef => ({ id });
 
 // A resolver that answers from a fixed map and ignores any locale: the document
-// must not need a locale, a request or a provider to render.
+// must not need a locale context, a request or a provider to render.
 const resolveCopy: CopyResolver = (copyRef) => {
   const text = COPY[copyRef.id];
   return text === undefined
@@ -62,6 +62,7 @@ const shell: SiteShellInput = {
 
 const props: NotFoundDocumentProps = {
   lang: "de-CH",
+  localeManifest: { locales: [{ tag: "de-CH", dir: "ltr", state: "active" }] },
   documentTitle: { page: "Page not found", brand: "Example Studio" },
   icon: { href: "/icon.svg", type: "image/svg+xml" },
   shell,
@@ -188,7 +189,7 @@ describe("README unmatched-address example", () => {
     throw new Error(`Unexpected README example import: ${specifier}`);
   };
   // Run the documented component with the shared frame fixture, so the example is tested rather than restated.
-  new Function("require", "exports", "frame", compiled.outputText)(requireExample, exports, { shell, resolveCopy, resolveAsset });
+  new Function("require", "exports", "frame", "localeManifest", compiled.outputText)(requireExample, exports, { shell, resolveCopy, resolveAsset }, { locales: [{ tag: "en", dir: "ltr", state: "active" }] });
 
   it("renders one frame, one h1, the linked stylesheet and a conformant primary action", () => {
     const doc = new DOMParser().parseFromString(renderToStaticMarkup(exports.default!()), "text/html");
