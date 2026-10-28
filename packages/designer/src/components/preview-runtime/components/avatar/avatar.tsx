@@ -63,7 +63,7 @@ function AvatarBadge({ className, ...props }: React.ComponentProps<"span">) {
     <span
       data-slot="avatar-badge"
       className={cn(
-        "bg-(--color-action) text-(--color-ink-on-action) ring-(--color-surface-base) absolute right-0 bottom-0 z-(--ui-z-sticky) inline-flex items-center justify-center rounded-full bg-blend-color ring-(length:--ui-border-rule) select-none",
+        "bg-(--color-action) text-(--color-ink-on-action) ring-(--color-surface-base) absolute end-0 bottom-0 z-(--ui-z-sticky) inline-flex items-center justify-center rounded-full bg-blend-color ring-(length:--ui-border-rule) select-none",
         "group-data-[size=sm]/avatar:size-(--spacing-sm) group-data-[size=sm]/avatar:[&>svg]:hidden",
         "group-data-[size=default]/avatar:size-(--spacing-md) group-data-[size=default]/avatar:[&>svg]:size-(--spacing-sm)",
         "group-data-[size=lg]/avatar:size-(--spacing-md) group-data-[size=lg]/avatar:[&>svg]:size-(--spacing-sm)",

@@ -83,7 +83,7 @@ function Dialog({
       <ModalPrimitive
         data-slot="dialog-content"
         className={cn(
-          "bg-(--color-overlay-surface) text-(--color-ink-primary) data-entering:library-enter data-exiting:library-exit data-exiting:library-fade data-entering:library-fade data-exiting:library-zoom data-entering:library-zoom ring-(--color-ink-primary)/10 grid max-w-[calc(100%-var(--spacing-2xl))] gap-(--spacing-lg) rounded-(--radius-control) p-(--spacing-lg) text-(length:--text-sm) ring-(length:--ui-border-hairline) duration-(--ui-duration-fast,100ms) sm:max-w-sm fixed top-1/2 left-1/2 z-(--ui-z-modal,50) w-full -translate-x-1/2 -translate-y-1/2 focus-visible:outline-solid focus-visible:outline-(length:--ui-border-focus,3px) focus-visible:outline-offset-(--ui-focus-offset) focus-visible:outline-(--color-focus-ring)",
+          "bg-(--color-overlay-surface) text-(--color-ink-primary) data-entering:library-enter data-exiting:library-exit data-exiting:library-fade data-entering:library-fade data-exiting:library-zoom data-entering:library-zoom ring-(--color-ink-primary)/10 grid max-w-[calc(100%-var(--spacing-2xl))] gap-(--spacing-lg) rounded-(--radius-control) p-(--spacing-lg) text-(length:--text-sm) ring-(length:--ui-border-hairline) duration-(--ui-duration-fast,100ms) sm:max-w-[24rem] fixed top-1/2 start-1/2 z-(--ui-z-modal,50) w-full -translate-x-1/2 rtl:translate-x-1/2 -translate-y-1/2 focus-visible:outline-solid focus-visible:outline-(length:--ui-border-focus,3px) focus-visible:outline-offset-(--ui-focus-offset) focus-visible:outline-(--color-focus-ring)",
           className
         )}
       >
@@ -120,7 +120,7 @@ function DialogContent({
       {showCloseButton && (
         <DialogClose
           variant="ghost"
-          className="absolute top-(--spacing-sm) right-(--spacing-sm)"
+          className="absolute top-(--spacing-sm) end-(--spacing-sm)"
           shape="icon-only"
         >
           <LibraryIcon asset="assets.icon-close" decorative />

@@ -2,7 +2,7 @@ import * as React from "react"
 import { cva, type VariantProps } from "class-variance-authority"
 import { cn } from "../_parts/utils/index.js"
 
-const alertVariants = cva("grid gap-[var(--spacing-xs)] rounded-(--radius-control) border-(length:--ui-border-hairline,1px) px-(--spacing-md) py-(--spacing-sm) text-left text-(length:--text-sm) has-data-[slot=alert-action]:relative has-data-[slot=alert-action]:pr-[var(--spacing-4xl)] has-[>svg]:grid-cols-[auto_1fr] has-[>svg]:gap-x-(--spacing-sm) *:[svg]:row-span-2 *:[svg]:translate-y-[var(--spacing-xs)] *:[svg]:text-current *:[svg:not([class*='size-'])]:size-(--spacing-lg,calc(var(--spacing)*4)) group/alert relative w-full", {
+const alertVariants = cva("grid gap-[var(--spacing-xs)] rounded-(--radius-control) border-(length:--ui-border-hairline,1px) px-(--spacing-md) py-(--spacing-sm) text-start text-(length:--text-sm) has-data-[slot=alert-action]:relative has-data-[slot=alert-action]:pe-[var(--spacing-4xl)] has-[>svg]:grid-cols-[auto_1fr] has-[>svg]:gap-x-(--spacing-sm) *:[svg]:row-span-2 *:[svg]:translate-y-[var(--spacing-xs)] *:[svg]:text-current *:[svg:not([class*='size-'])]:size-(--spacing-lg,calc(var(--spacing)*4)) group/alert relative w-full", {
   variants: {
     variant: {
       default: "bg-(--color-surface-raised) text-(--color-ink-primary)",
@@ -62,7 +62,7 @@ function AlertAction({ className, ...props }: React.ComponentProps<"div">) {
   return (
     <div
       data-slot="alert-action"
-      className={cn("absolute top-(--spacing-sm) right-(--spacing-sm)", className)}
+      className={cn("absolute top-(--spacing-sm) end-(--spacing-sm)", className)}
       {...props}
     />
   )

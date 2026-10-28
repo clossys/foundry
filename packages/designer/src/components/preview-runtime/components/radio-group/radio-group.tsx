@@ -35,7 +35,7 @@ function RadioGroupItem({ className, children, ...props }: RadioProps) {
             data-slot="radio-group-indicator"
             className="flex size-(--spacing-lg,calc(var(--spacing)*4)) items-center justify-center"
           >
-            {isSelected && <span className="bg-(--color-ink-on-action) absolute top-1/2 left-1/2 size-(--spacing-sm) -translate-x-1/2 -translate-y-1/2 rounded-full" />}
+            {isSelected && <span className="bg-(--color-ink-on-action) absolute top-1/2 start-1/2 size-(--spacing-sm) -translate-x-1/2 rtl:translate-x-1/2 -translate-y-1/2 rounded-full" />}
           </span>
           {children}
         </>

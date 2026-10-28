@@ -182,7 +182,7 @@ function ComboboxItem<T extends object>({
       data-slot="combobox-item"
       textValue={typeof children === "string" ? children : undefined}
       className={cn(
-        "data-highlighted:bg-(--color-surface-selected) data-highlighted:text-(--color-ink-primary) not-data-[variant=destructive]:data-highlighted:**:text-(--color-ink-primary) gap-(--spacing-sm) rounded-(--radius-control) py-(--spacing-xs) pr-(--spacing-2xl) pl-(--spacing-sm) text-(length:--text-body) [&_svg:not([class*='size-'])]:size-(--spacing-lg,calc(var(--spacing)*4)) data-focused:bg-(--color-surface-selected) data-focused:text-(--color-ink-primary) not-data-[variant=destructive]:data-focused:**:text-(--color-ink-primary) relative flex w-full cursor-default items-center outline-hidden select-none data-disabled:pointer-events-none data-disabled:opacity-(--ui-alpha-disabled,50%) [&_svg]:pointer-events-none [&_svg]:shrink-0",
+        "data-highlighted:bg-(--color-surface-selected) data-highlighted:text-(--color-ink-primary) not-data-[variant=destructive]:data-highlighted:**:text-(--color-ink-primary) gap-(--spacing-sm) rounded-(--radius-control) py-(--spacing-xs) pe-(--spacing-2xl) ps-(--spacing-sm) text-(length:--text-body) [&_svg:not([class*='size-'])]:size-(--spacing-lg,calc(var(--spacing)*4)) data-focused:bg-(--color-surface-selected) data-focused:text-(--color-ink-primary) not-data-[variant=destructive]:data-focused:**:text-(--color-ink-primary) relative flex w-full cursor-default items-center outline-hidden select-none data-disabled:pointer-events-none data-disabled:opacity-(--ui-alpha-disabled,50%) [&_svg]:pointer-events-none [&_svg]:shrink-0",
         className
       )}
       {...props}
@@ -190,7 +190,7 @@ function ComboboxItem<T extends object>({
       {composeRenderProps(children, (children, { isSelected }) => (
         <>
           {children}
-          <span className="pointer-events-none absolute right-(--spacing-sm) flex size-(--spacing-lg,calc(var(--spacing)*4)) items-center justify-center">
+          <span className="pointer-events-none absolute end-(--spacing-sm) flex size-(--spacing-lg,calc(var(--spacing)*4)) items-center justify-center">
             {isSelected ? (
               <LibraryIcon asset="assets.icon-check" decorative className="pointer-events-none" />
             ) : null}
@@ -298,7 +298,7 @@ function ComboboxChip({
     <TagPrimitive
       data-slot="combobox-chip"
       className={cn(
-        "bg-(--color-surface-sunken) text-(--color-ink-primary) flex h-(--spacing-xl) w-fit items-center justify-center gap-(--spacing-xs) rounded-(--radius-control) px-(--spacing-sm) text-(length:--text-caption) font-(weight:--font-weight-medium) whitespace-nowrap has-data-[slot=combobox-chip-remove]:pr-0 has-disabled:pointer-events-none has-disabled:cursor-not-allowed has-disabled:opacity-(--ui-alpha-disabled,50%)",
+        "bg-(--color-surface-sunken) text-(--color-ink-primary) flex h-(--spacing-xl) w-fit items-center justify-center gap-(--spacing-xs) rounded-(--radius-control) px-(--spacing-sm) text-(length:--text-caption) font-(weight:--font-weight-medium) whitespace-nowrap has-data-[slot=combobox-chip-remove]:pe-0 has-disabled:pointer-events-none has-disabled:cursor-not-allowed has-disabled:opacity-(--ui-alpha-disabled,50%)",
         className
       )}
       {...props}

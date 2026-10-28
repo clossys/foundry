@@ -129,7 +129,7 @@ function ProgressValue({
   const { valueText } = useProgress()
   return (
     <span
-      className={cn("text-(--color-ink-muted) ml-auto text-(length:--text-sm) tabular-nums", className)}
+      className={cn("text-(--color-ink-muted) ms-auto text-(length:--text-sm) tabular-nums", className)}
       data-slot="progress-value"
       {...props}
     >

@@ -32,22 +32,22 @@ import {
   SelectValue,
 } from "../select/select.js"
 const cellVariants = cva(
-  "group/day relative mt-(--spacing-sm) aspect-square h-full w-full cursor-default rounded-(--cell-radius) p-0 text-center select-none [&:is(:last-child>[data-selected=true])>div]:rounded-r-(--cell-radius)",
+  "group/day relative mt-(--spacing-sm) aspect-square h-full w-full cursor-default rounded-(--cell-radius) p-0 text-center select-none [&:is(:last-child>[data-selected=true])>div]:rounded-e-(--cell-radius)",
   {
     variants: {
       showWeekNumber: {
         false:
-          "[&:is(:first-child>[data-selected=true])>div]:rounded-l-(--cell-radius)",
-        true: "[&:is(:nth-child(2)>[data-selected=true])>div]:rounded-l-(--cell-radius)",
+          "[&:is(:first-child>[data-selected=true])>div]:rounded-s-(--cell-radius)",
+        true: "[&:is(:nth-child(2)>[data-selected=true])>div]:rounded-s-(--cell-radius)",
       },
       isToday: {
         true: "rounded-(--cell-radius) bg-(--color-surface-sunken) text-(--color-ink-primary) data-[selected=true]:rounded-none",
       },
       isSelectionStart: {
-        true: "relative isolate z-(--ui-z-base) rounded-l-(--cell-radius) bg-(--color-surface-sunken) after:absolute after:inset-y-0 after:right-0 after:w-(--spacing-lg) after:bg-(--color-surface-sunken)",
+        true: "relative isolate z-(--ui-z-base) rounded-s-(--cell-radius) bg-(--color-surface-sunken) after:absolute after:inset-y-0 after:end-0 after:w-(--spacing-lg) after:bg-(--color-surface-sunken)",
       },
       isSelectionEnd: {
-        true: "relative isolate z-(--ui-z-base) rounded-r-(--cell-radius) bg-(--color-surface-sunken) after:absolute after:inset-y-0 after:left-0 after:w-(--spacing-lg) after:bg-(--color-surface-sunken)",
+        true: "relative isolate z-(--ui-z-base) rounded-e-(--cell-radius) bg-(--color-surface-sunken) after:absolute after:inset-y-0 after:start-0 after:w-(--spacing-lg) after:bg-(--color-surface-sunken)",
       },
       isUnavailable: {
         true: "text-(--color-ink-muted) opacity-(--ui-alpha-disabled,50%) [&>div]:line-through",
@@ -208,7 +208,7 @@ function CalendarInner({
                         isRange
                       }
                       className={cn(
-                        "relative isolate z-(--ui-z-sticky) flex aspect-square h-full w-full min-w-(--cell-size) flex-col gap-(--spacing-xs) border-0 leading-(--leading-heading) font-(weight:--font-weight-normal) group-data-[focused=true]/day:relative group-data-[focused=true]/day:z-(--ui-z-sticky) group-data-[focused=true]/day:border-(--color-focus-ring) group-data-[focused=true]/day:outline-solid group-data-[focused=true]/day:outline-(length:--ui-border-focus,3px) group-data-[focused=true]/day:outline-offset-(--ui-focus-offset) group-data-[focused=true]/day:outline-(--color-focus-ring) group-data-[focused=true]/day:outline-solid group-data-[focused=true]/day:outline-(length:--ui-border-focus,3px) group-data-[focused=true]/day:outline-offset-(--ui-focus-offset) group-data-[focused=true]/day:outline-(--color-focus-ring) data-[range-end=true]:rounded-(--cell-radius) data-[range-end=true]:rounded-r-(--cell-radius) data-[range-end=true]:bg-(--color-action) data-[range-end=true]:text-(--color-ink-on-action) data-[range-middle=true]:rounded-none data-[range-middle=true]:bg-(--color-surface-sunken) data-[range-middle=true]:text-(--color-ink-primary) data-[range-start=true]:rounded-(--cell-radius) data-[range-start=true]:rounded-l-(--cell-radius) data-[range-start=true]:bg-(--color-action) data-[range-start=true]:text-(--color-ink-on-action) data-[selected-single=true]:bg-(--color-action) data-[selected-single=true]:text-(--color-ink-on-action) dark:hover:text-(--color-ink-primary) [&>span]:text-(length:--text-xs) [&>span]:opacity-(--ui-alpha-stale)"
+                        "relative isolate z-(--ui-z-sticky) flex aspect-square h-full w-full min-w-(--cell-size) flex-col gap-(--spacing-xs) border-0 leading-(--leading-heading) font-(weight:--font-weight-normal) group-data-[focused=true]/day:relative group-data-[focused=true]/day:z-(--ui-z-sticky) group-data-[focused=true]/day:border-(--color-focus-ring) group-data-[focused=true]/day:outline-solid group-data-[focused=true]/day:outline-(length:--ui-border-focus,3px) group-data-[focused=true]/day:outline-offset-(--ui-focus-offset) group-data-[focused=true]/day:outline-(--color-focus-ring) group-data-[focused=true]/day:outline-solid group-data-[focused=true]/day:outline-(length:--ui-border-focus,3px) group-data-[focused=true]/day:outline-offset-(--ui-focus-offset) group-data-[focused=true]/day:outline-(--color-focus-ring) data-[range-end=true]:rounded-(--cell-radius) data-[range-end=true]:rounded-e-(--cell-radius) data-[range-end=true]:bg-(--color-action) data-[range-end=true]:text-(--color-ink-on-action) data-[range-middle=true]:rounded-none data-[range-middle=true]:bg-(--color-surface-sunken) data-[range-middle=true]:text-(--color-ink-primary) data-[range-start=true]:rounded-(--cell-radius) data-[range-start=true]:rounded-s-(--cell-radius) data-[range-start=true]:bg-(--color-action) data-[range-start=true]:text-(--color-ink-on-action) data-[selected-single=true]:bg-(--color-action) data-[selected-single=true]:text-(--color-ink-on-action) dark:hover:text-(--color-ink-primary) [&>span]:text-(length:--text-xs) [&>span]:opacity-(--ui-alpha-stale)"
                       )}
                     >
                       {renderCell

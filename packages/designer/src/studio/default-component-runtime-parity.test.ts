@@ -8,7 +8,18 @@ import { loadCatalogBundles } from "../catalog-bundles.js";
 import { glyphs } from "../components/preview-runtime/adapters/glyphs.js";
 import profile from "./__fixtures__/default-component-preview-profile.json" with { type: "json" };
 
-it("ships exactly the existing emitter's approved default graph with only local ESM relocation", () => {
+/** Approved finish adaptations; all other emitted implementation bytes remain exact. */
+function previewSource(content: string, path: string): string {
+  const logical: Record<string,string> = { "left-":"start-", "right-":"end-", "ml-":"ms-", "mr-":"me-", "pl-":"ps-", "pr-":"pe-", "border-l-":"border-s-", "border-r-":"border-e-", "rounded-l-":"rounded-s-", "rounded-r-":"rounded-e-", "text-left":"text-start", "text-right":"text-end" };
+  let source = content.replace(/(?<![\w-])(?:-?(?:left|right)-|[mp][lr]-|border-[lr]-|rounded-[lr]-|text-(?:left|right)(?![\w-]))/g, token => {
+    const negative=token.startsWith("-");
+    return (negative ? "-" : "") + logical[negative ? token.slice(1) : token];
+  }).replaceAll("max-w-xs","max-w-[20rem]").replaceAll("max-w-sm","max-w-[24rem]");
+  if (path.endsWith("/dialog.tsx") || path.endsWith("/radio-group.tsx")) source = source.replaceAll("-translate-x-1/2 ","-translate-x-1/2 rtl:translate-x-1/2 ");
+  return source;
+}
+
+it("ships the canonical graph with only approved ESM, logical-class and width adaptations", () => {
   const root = resolve(import.meta.dirname, "..");
   const target = resolve(root, "components/preview-runtime");
   const emitted = emitComponents(profile as ResolvedComponents, ["component-index"], { glyphModule: { path: "adapters/glyphs.ts", glyphs } });
@@ -42,7 +53,7 @@ it("ships exactly the existing emitter's approved default graph with only local 
       } else if (specifier.startsWith(".") && !/\.(?:js|json|mjs)$/.test(specifier)) specifier += ".js";
       return before + specifier + after;
     }) : file.content;
-    expect(readFileSync(path, "utf8"), file.path).toBe(content);
+    expect(readFileSync(path, "utf8"), file.path).toBe(previewSource(content,file.path));
   }
   const bundles = loadCatalogBundles();
   for (const component of Object.values(profile.components)) {
@@ -50,5 +61,28 @@ it("ships exactly the existing emitter's approved default graph with only local 
     const candidate = bundles.componentFills.flatMap(doc => Object.values(doc.components)).find(row => row.slot === component.slot && row.source === component.origin.source)!;
     expect(candidate.pin, component.slot).toEqual(component.origin.pin);
     expect(candidate.outputSha256, component.slot).toEqual(component.descriptor.outputSha256);
+  }
+});
+
+it("uses logical classes throughout the compiled preview closure", async () => {
+  const { readdirSync } = await import("node:fs");
+  const root = resolve(import.meta.dirname, "../components/preview-runtime");
+  const files = readdirSync(root, { recursive: true }).filter(path => path.endsWith(".tsx"));
+  const physical = /(?<![\w-])(?:-?(?:left|right)-|[mp][lr]-|border-[lr]-|rounded-[lr]-|text-(?:left|right)(?![\w-]))/g;
+  const findings = files.flatMap(path => [...readFileSync(resolve(root,path), "utf8").matchAll(physical)].map(match => `${path}: ${match[0]}`));
+  expect(findings).toEqual([]);
+});
+
+it("preserves the exact upstream container widths without spacing-token collisions", () => {
+  const root = resolve(import.meta.dirname, "../components/preview-runtime/components");
+  expect(readFileSync(resolve(root,"tooltip/tooltip.tsx"),"utf8")).toContain("max-w-[20rem]");
+  expect(readFileSync(resolve(root,"dialog/dialog.tsx"),"utf8")).toContain("sm:max-w-[24rem]");
+});
+
+it("keeps explicitly centred overlays and radio indicators centred in RTL", () => {
+  for (const path of ["dialog/dialog.tsx", "radio-group/radio-group.tsx"]) {
+    const source=readFileSync(resolve(import.meta.dirname,"../components/preview-runtime/components",path),"utf8");
+    expect(source).toContain("start-1/2");
+    expect(source).toContain("rtl:translate-x-1/2");
   }
 });

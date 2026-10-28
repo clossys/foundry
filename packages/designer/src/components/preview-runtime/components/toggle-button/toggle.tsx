@@ -17,9 +17,9 @@ const toggleVariants = cva(
         outline: "border-(--color-line-strong) hover:bg-(--color-surface-sunken) border-(length:--ui-border-hairline,1px) bg-transparent",
       },
       size: {
-        default: "h-(--ui-control-h-md,calc(var(--spacing)*8)) min-w-(--spacing-2xl) px-(--spacing-md) has-data-[icon=inline-end]:pr-(--spacing-sm) has-data-[icon=inline-start]:pl-(--spacing-sm)",
-        sm: "h-(--ui-control-h-sm,calc(var(--spacing)*7)) min-w-[var(--spacing-2xl)] rounded-(--radius-control) px-(--spacing-md) text-(length:--text-caption) has-data-[icon=inline-end]:pr-(--spacing-sm) has-data-[icon=inline-start]:pl-(--spacing-sm) [&_svg:not([class*='size-'])]:size-(--ui-control-switch-thumb,calc(var(--spacing)*3.5))",
-        lg: "h-(--ui-control-h-lg,calc(var(--spacing)*9)) min-w-[var(--spacing-2xl)] px-(--spacing-md) has-data-[icon=inline-end]:pr-(--spacing-sm) has-data-[icon=inline-start]:pl-(--spacing-sm)",
+        default: "h-(--ui-control-h-md,calc(var(--spacing)*8)) min-w-(--spacing-2xl) px-(--spacing-md) has-data-[icon=inline-end]:pe-(--spacing-sm) has-data-[icon=inline-start]:ps-(--spacing-sm)",
+        sm: "h-(--ui-control-h-sm,calc(var(--spacing)*7)) min-w-[var(--spacing-2xl)] rounded-(--radius-control) px-(--spacing-md) text-(length:--text-caption) has-data-[icon=inline-end]:pe-(--spacing-sm) has-data-[icon=inline-start]:ps-(--spacing-sm) [&_svg:not([class*='size-'])]:size-(--ui-control-switch-thumb,calc(var(--spacing)*3.5))",
+        lg: "h-(--ui-control-h-lg,calc(var(--spacing)*9)) min-w-[var(--spacing-2xl)] px-(--spacing-md) has-data-[icon=inline-end]:pe-(--spacing-sm) has-data-[icon=inline-start]:ps-(--spacing-sm)",
       },
     },
     defaultVariants: {
