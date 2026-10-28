@@ -48,6 +48,10 @@
       "types": "./dist/media/index.d.ts",
       "import": "./dist/media/index.js"
     },
+    "./web/preview": {
+      "types": "./dist/web/preview/index.d.ts",
+      "import": "./dist/web/preview/index.js"
+    },
     "./web": {
       "types": "./dist/web/index.d.ts",
       "react-server": "./dist/web/server.js",
