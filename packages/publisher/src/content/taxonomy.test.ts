@@ -1,13 +1,16 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import {
-  CONTENT_TAXONOMY, createSlotId, isContentPlacement, isSlotId,
+  CONTENT_TREE, CONTENT_TAXONOMY, createSlotId, isContentL1, isContentL2, isContentPlacement, isSlotId, loadContentTree,
 } from "./taxonomy.js";
 import type { ContentPlacement, SlotId } from "./taxonomy.js";
+import treeData from "./tree.json" with { type: "json" };
 
 afterEach(() => vi.unstubAllGlobals());
 
 describe("content taxonomy", () => {
-  it("contains only the six groups and their ordered kinds", () => {
+  it("loads the seed JSON in presentation order and derives the compatibility view", () => {
+    expect(CONTENT_TREE).toEqual(treeData);
+    expect(loadContentTree()).toEqual(treeData);
     expect(CONTENT_TAXONOMY).toEqual({
       websites: ["site", "admin", "auth", "app", "demo"],
       documents: ["docs"],
@@ -40,12 +43,56 @@ describe("content taxonomy", () => {
     expect(isContentPlacement(l1, l2)).toBe(false);
   });
 
-  it("ties each kind to its group at the type boundary", () => {
+  it("checks editable string placements at runtime", () => {
     const valid: ContentPlacement = { l1: "presentations", l2: "decks" };
-    // @ts-expect-error A registered kind still requires its own group.
     const invalid: ContentPlacement = { l1: "documents", l2: "decks" };
     expect(isContentPlacement(valid.l1, valid.l2)).toBe(true);
     expect(isContentPlacement(invalid.l1, invalid.l2)).toBe(false);
+  });
+
+  it("accepts custom groups, child IDs, labels, ordering and optional frame references", () => {
+    const editable = structuredClone(treeData);
+    const group = editable.nodes[0]!;
+    group.id = "custom";
+    group.label = "Custom group";
+    group.children[0]!.id = "landing";
+    group.children[0]!.label = "Landing page";
+    group.children.reverse();
+    editable.nodes.reverse();
+    const tree = loadContentTree(editable);
+    expect(tree.nodes.at(-1)?.children.at(-1)).toEqual({ id: "landing", label: "Landing page", frame: "site-shell" });
+    expect(isContentL1("custom", tree)).toBe(true);
+    expect(isContentL2("custom", "landing", tree)).toBe(true);
+    expect(isContentPlacement("custom", "landing", tree)).toBe(true);
+    expect(isContentPlacement("websites", "site", tree)).toBe(false);
+    expect(isContentPlacement("custom", "landing")).toBe(false);
+    group.label = "Edited afterward";
+    expect(tree.nodes.at(-1)?.label).toBe("Custom group");
+    expect(Object.isFrozen(tree.nodes)).toBe(true);
+    expect(Object.isFrozen(tree.nodes.at(-1))).toBe(true);
+    expect(Object.isFrozen(tree.nodes.at(-1)?.children)).toBe(true);
+    expect(Object.isFrozen(tree.nodes.at(-1)?.children[0])).toBe(true);
+    expect(loadContentTree({ schemaVersion: 1, nodes: [{ id: "custom", label: "Custom", children: [{ id: "plain", label: "Plain" }] }] }).nodes[0]?.children[0]?.frame).toBeUndefined();
+  });
+
+  it.each([
+    null, {}, { schemaVersion: 2, nodes: [] }, { schemaVersion: 1, nodes: {} },
+    { schemaVersion: 1, nodes: [], extra: true },
+    { schemaVersion: 1, nodes: [{ id: "", label: "Group", children: [] }] },
+    { schemaVersion: 1, nodes: [{ id: "group", label: " ", children: [] }] },
+    { schemaVersion: 1, nodes: [{ id: "group", label: "Group" }] },
+    { schemaVersion: 1, nodes: [{ id: "group", label: "Group", children: [null] }] },
+    { schemaVersion: 1, nodes: [{ id: "group", label: "Group", children: [{ id: "kind", label: "Kind", frame: 1 }] }] },
+    { schemaVersion: 1, nodes: [{ id: "group", label: "Group", children: [{ id: "kind", label: "Kind", extra: true }] }] },
+  ])("rejects malformed tree data %#", input => {
+    expect(() => loadContentTree(input)).toThrow(/Invalid content tree/);
+  });
+
+  it("rejects duplicate group and sibling child IDs", () => {
+    const group = { id: "group", label: "Group", children: [] };
+    expect(() => loadContentTree({ schemaVersion: 1, nodes: [group, group] })).toThrow(/duplicate group/);
+    const child = { id: "kind", label: "Kind" };
+    expect(() => loadContentTree({ schemaVersion: 1, nodes: [{ ...group, children: [child, child] }] })).toThrow(/duplicate child/);
   });
 });
 

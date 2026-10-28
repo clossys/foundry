@@ -7,6 +7,11 @@ export function reviewFixture(): ContentRegistry {
   const content: CandidateContent = {
     name: "Sample", brief: { audience: "Readers", goal: "Inform", keyMessage: "Sample", callToAction: "Continue", tone: "Clear", constraints: [], sourceAnswers: [], version: 1 },
     composition: { frame: { frameId: "frames.sample", configId: "default" }, sections: [{ key: "intro", sectionId: "sections.sample", configId: "default", intent: "continues", fields: [{ key: "heading", locale: "en", value: "Sample", source: "writer" }], assets: [{ assetId: "assets.sample", libraryVersion: "1" }] }], libraryVersion: "1" },
+    pageMeta: [
+      { key: "title", locale: "en", value: "Sample page", source: "writer" },
+      { key: "description", locale: "en", value: "Sample description", source: "writer" },
+    ],
+    pageMetaAssets: { "og-image": "assets.sample", icon: "assets.sample" },
     links: [], typeSettings: { shareImage: { assetId: "assets.sample", libraryVersion: "1" } }, openQuestions: [],
   };
   const snapshot = createContentRevision(content, "r1", at);

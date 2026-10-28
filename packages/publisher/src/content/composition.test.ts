@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { parseComposition, validateComposition, resolveCopy } from "./composition.js";
+import { parseComposition, validateComposition, resolveCopy, PAGE_META_KEY, PAGE_META_FIELDS, validateCopyFields } from "./composition.js";
 
 const fixture = () => ({
   frame: { frameId: "frames.sample", configId: "default" },
@@ -90,5 +90,42 @@ describe("exact-locale Writer copy resolution", () => {
     expect(() => resolveCopy({ composition: fixture() as any }, "bad_locale")).toThrow(TypeError);
     const composition: any = fixture(); composition.sections[0].fields[0].source = "handwritten";
     expect(() => resolveCopy({ composition }, "en")).toThrow(TypeError);
+  });
+});
+
+
+describe("page metadata Writer copy", () => {
+  const pageMeta = () => [
+    { key: "title", locale: "en", value: "Page title", source: "writer" as const },
+    { key: "description", locale: "en", value: "", source: "writer" as const },
+    { key: "title", locale: "fr", value: "Titre de page", source: "writer" as const },
+    { key: "share-text", locale: "en-US", value: "Share", source: "writer" as const },
+  ];
+  it("resolves exact locales in a separate namespace while preserving section copy", () => {
+    const candidate = { composition: fixture(), pageMeta: pageMeta() };
+    const before = structuredClone(candidate);
+    expect(resolveCopy(candidate, "en")).toEqual({ intro: { title: "Sample title" }, [PAGE_META_KEY]: { title: "Page title", description: "" } });
+    expect(resolveCopy(candidate, "fr")).toEqual({ intro: {}, [PAGE_META_KEY]: { title: "Titre de page" } });
+    expect(resolveCopy(candidate, "en-US")).toEqual({ intro: {}, [PAGE_META_KEY]: { "share-text": "Share" } });
+    expect(resolveCopy(candidate, "en-us")).toEqual({ intro: {}, [PAGE_META_KEY]: {} });
+    expect(resolveCopy(candidate, "de")).toEqual({ intro: {}, [PAGE_META_KEY]: {} });
+    expect(candidate).toEqual(before);
+  });
+  it("resolves metadata without composition and only adds the namespace when present", () => {
+    expect(resolveCopy({ pageMeta: pageMeta() }, "en")).toEqual({ [PAGE_META_KEY]: { title: "Page title", description: "" } });
+    expect(resolveCopy({ pageMeta: [] }, "en")).toEqual({ [PAGE_META_KEY]: {} });
+    expect(resolveCopy({}, "en")).toEqual({});
+  });
+  it("rejects section keys that collide with the page namespace", () => {
+    const composition = fixture(); composition.sections[0]!.key = PAGE_META_KEY;
+    expect(validateComposition(composition)).toContainEqual(expect.objectContaining({ path: "composition.sections[0].key", rule: "reserved-section-key" }));
+    expect(() => resolveCopy({ composition, pageMeta: pageMeta() }, "en")).toThrow();
+  });
+  it("shares Writer field validation and limits metadata keys", () => {
+    expect(validateCopyFields(pageMeta(), "pageMeta", PAGE_META_FIELDS)).toEqual([]);
+    for (const value of [null, [{ ...pageMeta()[0], key: "other" }], [{ ...pageMeta()[0], source: "handwritten" }], [{ ...pageMeta()[0], value: 7 }], [pageMeta()[0], pageMeta()[0]]]) {
+      expect(validateCopyFields(value, "pageMeta", PAGE_META_FIELDS).length).toBeGreaterThan(0);
+      expect(() => resolveCopy({ pageMeta: value as any }, "en")).toThrow();
+    }
   });
 });

@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import type { CopyField } from "../composition.js";
 import type { CandidateContent, ContentRevision } from "../model.js";
+import { candidateRevisionContent, computeContentDigest } from "../digest.js";
 import { createContentRevision } from "../revisions.js";
 import { joinStoreRevision, splitStoreRevision } from "./revision.js";
 import type { StoredRevision } from "./revision.js";
@@ -104,5 +105,65 @@ describe("stored revision copy sidecars", () => {
     for (const bad of [null, {}, { ...snapshot(), content: { composition: null } }]) {
       expect(() => splitStoreRevision(bad as ContentRevision, locales)).toThrow(TypeError);
     }
+  });
+});
+
+
+describe("page metadata revision sidecars", () => {
+  const title = (locale: string, value: string): CopyField => ({ key: "title", locale, value, source: "writer" });
+  const metadataContent = (): CandidateContent => ({
+    ...content(),
+    pageMeta: [title("fr", "Page française"), title("en", "Page title"), { key: "description", locale: "en", value: "", source: "writer" }],
+    pageMetaAssets: { "og-image": "assets.share", icon: "assets.icon" },
+    composition: { ...content().composition!, sections: [{ ...content().composition!.sections[0]!, fields: [title("en", "Section title"), title("fr", "Titre de section")] }] },
+  });
+  it("places metadata before section words and retains identities and assets in structure", () => {
+    const original = createContentRevision(metadataContent(), "r2", at);
+    const stored = splitStoreRevision(original, locales);
+    expect(stored.copies.en).toEqual([title("en", "Page title"), { key: "description", locale: "en", value: "", source: "writer" }, title("en", "Section title")]);
+    expect(stored.copies.fr).toEqual([title("fr", "Page française"), title("fr", "Titre de section")]);
+    expect(stored.revision.content.pageMetaAssets).toEqual(original.content.pageMetaAssets);
+    expect(stored.revision.content.pageMeta).toEqual(original.content.pageMeta!.map(({ value: _value, ...identity }) => identity));
+    expect(stored.revision.content.pageMeta!.every(identity => !Object.hasOwn(identity, "value"))).toBe(true);
+    expect(joinStoreRevision(stored.revision, stored.copies, locales)).toEqual(original);
+    const serialized = JSON.parse(JSON.stringify(stored));
+    expect(joinStoreRevision(serialized.revision, serialized.copies, locales)).toEqual(original);
+  });
+  it("detects metadata text, order, identity, asset, and structural value tampering", () => {
+    const stored = splitStoreRevision(createContentRevision(metadataContent(), "r2", at), locales);
+    const copies = structuredClone(stored.copies);
+    (copies.en![0] as { value: string }).value = "Changed";
+    expect(() => joinStoreRevision(stored.revision, copies, locales)).toThrow(/digest/);
+    const swapped = { ...stored.copies, fr: [...stored.copies.fr!].reverse() };
+    expect(() => joinStoreRevision(stored.revision, swapped, locales)).toThrow(/digest/);
+    const identity = structuredClone(stored.revision);
+    (identity.content.pageMeta![0] as { key: string }).key = "description";
+    expect(() => joinStoreRevision(identity, stored.copies, locales)).toThrow();
+    const extraValue = structuredClone(stored.revision);
+    (extraValue.content.pageMeta![0] as unknown as { value: string }).value = "Unexpected";
+    expect(() => joinStoreRevision(extraValue, stored.copies, locales)).toThrow();
+    const assets = { ...stored.revision, content: { ...stored.revision.content, pageMetaAssets: { icon: "assets.other" } } };
+    expect(() => joinStoreRevision(assets, stored.copies, locales)).toThrow(/digest/);
+  });
+  it("round trips metadata without a composition and preserves absent legacy metadata", () => {
+    const { composition: _composition, ...metadata } = metadataContent();
+    const original = createContentRevision({ ...metadata, redirectTarget: "/target" }, "r1", at);
+    const stored = splitStoreRevision(original, locales);
+    expect(joinStoreRevision(stored.revision, stored.copies, locales)).toEqual(original);
+    const legacy = split();
+    expect(legacy.revision.content).not.toHaveProperty("pageMeta");
+    expect(legacy.revision.content).not.toHaveProperty("pageMetaAssets");
+    expect(joinStoreRevision(legacy.revision, legacy.copies, locales)).toEqual(snapshot());
+  });
+  it("hashes metadata changes while excluding slot workflow metadata and preserving legacy shape", () => {
+    const legacy = content();
+    expect(candidateRevisionContent(legacy)).toEqual(legacy);
+    const value = metadataContent();
+    expect(computeContentDigest({ ...value, pageMeta: [title("en", "Changed")] })).not.toBe(computeContentDigest(value));
+    expect(computeContentDigest({ ...value, pageMetaAssets: { icon: "assets.other" } })).not.toBe(computeContentDigest(value));
+    const slotEdit = { ...value, meta: { robots: "noindex" } };
+    expect(computeContentDigest(slotEdit)).toBe(computeContentDigest(value));
+    expect(candidateRevisionContent(slotEdit)).not.toHaveProperty("meta");
+    expect(candidateRevisionContent({ ...legacy, pageMeta: undefined, pageMetaAssets: undefined })).toEqual(legacy);
   });
 });

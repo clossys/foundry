@@ -1,5 +1,4 @@
 import type { CopyField } from "./composition.js";
-import type { ContentPlacement } from "./taxonomy.js";
 import type { ContentRevision } from "./model.js";
 
 function contract(revision: ContentRevision, field: CopyField): void {
@@ -21,10 +20,7 @@ const unlocalized: CopyField = { key: "heading", value: "Sample", source: "write
 const fieldAssets: CopyField = { ...copy, assets: [] };
 // @ts-expect-error The retired field/text shape is not the copy contract.
 const legacy: CopyField = { field: "heading", text: "Sample", locale: "en", source: "writer" };
-// @ts-expect-error The closed taxonomy ties each kind to its group.
-const invalidPlacement: ContentPlacement = { l1: "documents", l2: "site" };
 void contract;
-void invalidPlacement;
 void handwritten;
 void unlocalized;
 void fieldAssets;
