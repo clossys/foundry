@@ -1,0 +1,31 @@
+{
+  "schemaVersion": 1,
+  "layer": "strings",
+  "scope": "leaf-membership-only",
+  "signedHead": null,
+  "ownerSignoffComment": null,
+  "policy": "Proposed membership awaiting owner signature; regrouping not membership",
+  "leafIds": [
+    "strings.actions",
+    "strings.alt-text",
+    "strings.captions",
+    "strings.confirmations",
+    "strings.counters",
+    "strings.descriptions",
+    "strings.email-preheaders",
+    "strings.email-subjects",
+    "strings.empty",
+    "strings.errors",
+    "strings.field-labels",
+    "strings.legal-lines",
+    "strings.loading",
+    "strings.names",
+    "strings.navigation",
+    "strings.page-titles",
+    "strings.share-text",
+    "strings.statuses",
+    "strings.taglines",
+    "strings.transcripts",
+    "strings.warnings"
+  ]
+}
