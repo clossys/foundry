@@ -25,7 +25,7 @@ function composite() {
 }
 const valueCanvas = () => document.querySelector("style[data-studio-candidates]");
 
-it("keeps focus on the layer select when a keyboard choice swaps the value canvas for a contract canvas", async () => {
+it("keeps focus on the layer select when a keyboard choice changes layer on the single canvas", async () => {
   const user = userEvent.setup();
   render(composite());
   await studioReady();
@@ -39,13 +39,14 @@ it("keeps focus on the layer select when a keyboard choice swaps the value canva
   await user.keyboard("{Enter}");
   await waitFor(() => expect(valueCanvas()).toBeNull());
   // The value canvas's rail (and its select) unmounted; the contract canvas's select holds focus.
-  expect(before.isConnected).toBe(false);
+  expect(before.isConnected).toBe(true);
   const after = await findLayerSelect(wholeLabels);
+  expect(after).toBe(before);
   expect(after.textContent?.trim()).toBe(wholeLabels.layers.components);
   await waitFor(() => expect(document.activeElement).toBe(after));
 }, 20_000);
 
-it("keeps focus on the explorer row when a keyboard expand swaps the value canvas for a contract canvas", async () => {
+it("keeps focus on the explorer row when a keyboard expand changes layer on the single canvas", async () => {
   const user = userEvent.setup();
   render(composite());
   await studioReady();
@@ -56,7 +57,7 @@ it("keeps focus on the explorer row when a keyboard expand swaps the value canva
   await user.keyboard("{ArrowRight}");
   await waitFor(() => expect(valueCanvas()).toBeNull());
   // The value canvas's tree unmounted; the contract canvas's tree focuses the same layer row.
-  expect(before.isConnected).toBe(false);
+  expect(before.isConnected).toBe(true);
   const after = await waitFor(() => { const row = layerRows(wholeLabels.treeLabel).find(row => row.dataset.key === "components"); if (!row) throw new Error("no components row"); return row; });
   expect(after.getAttribute("aria-expanded")).toBe("true");
   await waitFor(() => expect(document.activeElement).toBe(after));

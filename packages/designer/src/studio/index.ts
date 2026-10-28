@@ -30,7 +30,6 @@ export { StudioProvider } from "./StudioProvider.js";
 export { useStudioSession, useOptionalStudioSession } from "./StudioProvider.js";
 export { WholeStudioProvider, useWholeStudio, useDesignerLayerBoardProjection } from "./WholeStudioProvider.js";
 export type { WholeStudioState } from "./WholeStudioProvider.js";
-export { StudioRightPanel } from "./StudioRightPanel.js";
 export { catalogStudioAdapter } from "./catalog-adapter.js";
 export { demoStudioAdapter } from "./demo-adapter.js";
 export type { StudioSessionControls, StudioWriteResult, StudioAdapter, CompositeStudioAdapter, CompositeStudioSnapshot, CompositeStudioLabels, CompositeStudioProps, CompositeStudioProviderProps, LegacyStudioProps, StudioLabels, StudioProps, StudioProviderProps, StudioCanvasProps, StudioPanelInsets } from "./types.js";
@@ -51,3 +50,7 @@ export { componentSpecimenPreview } from "./component-specimens.js";
 export type { ComponentSpecimenBinding, ComponentSpecimenComponent, ComponentSpecimenMember, ComponentSpecimenModule, ComponentSpecimenOptions, ComponentSpecimenPreview, ComponentSpecimenProbe, ComponentSpecimenRefusal, ComponentSpecimenRefusalCode, ComponentSpecimenRender } from "./component-specimens.js";
 export { COMPONENT_SPECIMEN_PROBE_STATES } from "./component-specimen-samples.js";
 export type { ComponentSpecimenProbeState } from "./component-specimen-samples.js";
+
+export { DesignerPage } from "./system-canvas/DesignerPage.js";
+export type { DesignerPageProps } from "./system-canvas/DesignerPage.js";
+export type { DesignerHistoryRow } from "./system-canvas/inspector/types.js";

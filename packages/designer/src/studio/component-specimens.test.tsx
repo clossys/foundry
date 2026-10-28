@@ -11,7 +11,7 @@ import { loadBuildCatalog, resolve } from "../catalog-core/index.js";
 import { loadCatalogBundles } from "../catalog-bundles.js";
 import { adoptedComponentIntegration } from "../catalog-core/__fixtures__/component-integration.js";
 import type { CompositeResolved, ResolvedComponent } from "../catalog-core/index.js";
-import { componentSpecimenPreview, Studio as StudioView, StudioRightPanel, WholeStudioProvider } from "./index.js";
+import { componentSpecimenPreview, Studio as StudioView, WholeStudioProvider } from "./index.js";
 import * as studioEntry from "./index.js";
 import { componentSpecimenPreview as fromModule } from "./component-specimens.js";
 import { labels } from "./__fixtures__/studio.js";
@@ -29,7 +29,7 @@ function hostStudio(preview: CompositeStudioSnapshot["preview"]) {
   const input = adoptedComponentIntegration();
   const load = vi.fn(async (): Promise<CompositeStudioSnapshot> => ({ library: input.library, componentOptions: input.componentOptions, preview }));
   render(<WholeStudioProvider adapter={{ kind: "composite", catalog: input.catalog, load, save: async () => ({ ok: false, reason: "unavailable" }) }} labels={wholeLabels} initialSlotId="components.button">
-    <StudioView header="external" /><StudioRightPanel />
+    <StudioView header="external" />
   </WholeStudioProvider>);
   return { input, profile: resolve(input) };
 }

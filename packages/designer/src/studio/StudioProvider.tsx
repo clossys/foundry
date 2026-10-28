@@ -6,7 +6,7 @@ import { studioEngine } from "./engine.js";
 import { createStudioEvaluation } from "./evaluation.js";
 import { matrixBoards, matrixRows, matrixSources, matrixSummary, purePlacementTree } from "./matrix-model.js";
 import { DEFAULT_SLOT_ID, allNodes, emptyChanges, scopeTargets, workingLibrary, type Candidate } from "./model.js";
-import { normaliseWindowLocation, replaceStudioLocation, resolverFromPlacements } from "./layer-navigation.js";
+import { normaliseWindowLocation, replaceStudioLocation, resolverFromPlacements } from "./system-canvas/url.js";
 import type { StudioNavigateTarget } from "./rail/explorer-tree.js";
 import type { LegacyStudioProps, StudioProviderProps } from "./types.js";
 
@@ -51,7 +51,7 @@ function useStudioState({ catalog: catalogProp, adapter, labels, initialSlotId: 
   const boardElements = useRef(new Map<string, HTMLElement>());
   const rowElements = useRef(new Map<string, HTMLElement>());
   const canvasActions = useRef<{ reveal: (id: string, focus?: boolean) => void } | null>(null);
-  const cameras = useRef(new Map<string, import("./camera.js").CameraPose>());
+  const cameras = useRef(new Map<string, import("../blocks/canvas/models.js").Viewport>());
   const [expanded, setExpanded] = useState<ReadonlySet<string>>(new Set());
   const [visibleRows, setVisibleRows] = useState<ReadonlySet<string>>(new Set());
   // A deep-linked (or host-selected) leaf is evaluated at once, so the Inspector card can show it.

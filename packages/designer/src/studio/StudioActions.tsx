@@ -2,7 +2,7 @@
 import { OpenWithActions, type StudioActionsProps as ContextActionsProps } from "../blocks/library-board/OpenWithActions.js";
 import { buildStudioOpenContext } from "./open-context.js";
 import { useStudioSession } from "./StudioProvider.js";
-import { useWholeStudio } from "./WholeStudio.js";
+import { useWholeStudio } from "./WholeStudioProvider.js";
 export type { StudioOpenTarget, StudioLaunchResult, StudioActionNotice } from "../blocks/library-board/OpenWithActions.js";
 export interface StudioActionsProps extends Omit<ContextActionsProps, "promptContext"> { promptContext?: ContextActionsProps["promptContext"] }
 export function StudioActions(props: StudioActionsProps) {

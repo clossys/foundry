@@ -15,7 +15,7 @@ export function render(children: ReactNode) { return renderView(children, { wrap
  * style sheet, and a contract canvas its library boards, only once the library has loaded, so either marks the same
  * moment without any save state.
  */
-export const studioReady = (timeout = 15_000) => waitFor(() => { if (!document.querySelector("style[data-studio-candidates], section[data-library-board]")) throw new Error("Studio library not loaded"); }, { timeout });
+export const studioReady = (timeout = 15_000) => waitFor(() => { if (!document.querySelector("[data-designer-page][data-designer-ready]")) throw new Error("Studio library not loaded"); }, { timeout });
 
 /** The rail's cards, in rendered order. */
 export const railCards = (): HTMLElement[] => [...document.querySelectorAll<HTMLElement>("[data-studio-rail-card]")];

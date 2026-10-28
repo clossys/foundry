@@ -45,6 +45,8 @@ export interface CanvasSurfaceProps {
   items: readonly CanvasItem[];
   /** Connect registered world items. Connector geometry and paint stay inside CanvasSurface. */
   edges?: readonly CanvasEdge[];
+  /** Endpoints for decoration only: never become hit targets or selection items. */
+  edgeItems?: readonly CanvasItem[];
   /** World-layer decoration (for example connectors), rendered once behind the item buttons. */
   children?: ReactNode;
   /** Passive content inside each generated button; never nest interactive controls. Defaults to label. */
@@ -142,7 +144,8 @@ export function CanvasSurface(props: CanvasSurfaceProps) {
   if (new Set(overlays.map(panel => panel.placement)).size !== overlays.length || overlays.some(panel => !["explorer", "inspector"].includes(panel.placement))) throw new TypeError("Canvas overlays require unique closed placements");
   if (!label.trim()) throw new TypeError("CanvasSurface requires an accessible label.");
   validateCanvasItems(items);
-  const itemById = new Map(items.map(item => [item.id, item]));
+  validateCanvasItems(props.edgeItems ?? []);
+  const itemById = new Map([...(props.edgeItems ?? []), ...items].map(item => [item.id, item]));
   if (new Set(edges.map(edge => edge.id)).size !== edges.length || edges.some(edge => !edge.id.trim() || !itemById.has(edge.from) || !itemById.has(edge.to))) throw new TypeError("Canvas edges require unique IDs and existing item endpoints");
   // Validate limits and viewport even when a gesture has not yet happened.
   clamp(viewport, minZoom, maxZoom);

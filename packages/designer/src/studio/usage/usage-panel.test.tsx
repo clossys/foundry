@@ -10,7 +10,7 @@ import { buildUsageGraph, type UsageGraph, type UsageGraphInputs } from "../../c
 import { checkWiring, type WiringException } from "../../catalog-core/wiring.js";
 import { componentIntegration } from "../../catalog-core/__fixtures__/component-integration.js";
 import { labels as studioLabels, smallCatalog } from "../__fixtures__/studio.js";
-import { Studio, StudioRightPanel } from "../index.js";
+import { Studio } from "../index.js";
 import { WholeStudioProvider } from "../WholeStudioProvider.js";
 import type { CompositeStudioLabels } from "../types.js";
 import { UsagePanel, type UsagePanelLabels } from "./UsagePanel.js";
@@ -165,7 +165,7 @@ describe("Studio mounts", () => {
     const adapter = { kind: "composite" as const, catalog: { ...input.catalog, values: smallCatalog }, load: async () => ({ library, componentOptions: input.componentOptions, usageGraph: graph }), save: async () => ({ ok: false as const, reason: "unavailable" as const }) };
     // The Inspector card fills on a selection: deep-link the leaf (?node=), as a shared Designer URL does.
     window.history.replaceState(null, "", "?node=components.button");
-    render(<WholeStudioProvider adapter={adapter} labels={wholeLabels} initialSlotId="components.button"><Studio /><StudioRightPanel /></WholeStudioProvider>);
+    render(<WholeStudioProvider adapter={adapter} labels={wholeLabels} initialSlotId="components.button"><Studio /></WholeStudioProvider>);
     const inspector = () => document.querySelector<HTMLElement>('[data-studio-panel="inspector"]')!;
     await waitFor(() => expect(inspector()?.querySelector('[data-studio-usage="components.button"]') ?? null).not.toBeNull());
     expect(rowIds(within(inspector()).getByRole("heading", { name: "U-used-where", level: 4 }).closest("section")!, "frames")).toEqual(["frames.app-shell"]);

@@ -34,11 +34,11 @@ vi.mock("../catalog-core/resolve-components.js", async importOriginal => {
 import { render, studioReady } from "./__fixtures__/frame.js";
 import { labels } from "./__fixtures__/studio.js";
 import { packageSurfaceLibrary, type PackageSurfaceLibrary } from "../library-cli/__fixtures__/package-surface-library.js";
-import { Studio as StudioView, StudioRightPanel } from "./index.js";
+import { Studio as StudioView } from "./index.js";
 import { WholeStudioProvider, useWholeStudio } from "./WholeStudioProvider.js";
 import { useStudioSession } from "./StudioProvider.js";
 import { boardRowLeaf } from "./canvas-boards.js";
-import { STUDIO_LAYERS } from "./layer-navigation.js";
+import { STUDIO_LAYERS } from "./system-canvas/url.js";
 import { applyLibraryChange, libraryHash, type LayerId } from "../catalog-core/index.js";
 import type { CompositeStudioLabels, CompositeStudioSnapshot } from "./types.js";
 
@@ -58,7 +58,7 @@ let reactMs = 0;
 const onRender: ProfilerOnRenderCallback = (_id, _phase, actualDuration) => { reactMs += actualDuration; };
 function mount() {
   const load = vi.fn(async (): Promise<CompositeStudioSnapshot> => ({ library: committed = structuredClone(fixture.library), surfaceOptions: fixture.options, preview: () => undefined }));
-  render(<Profiler id="studio" onRender={onRender}><WholeStudioProvider adapter={{ kind: "composite", catalog: fixture.catalog, load, save: async () => ({ ok: false, reason: "unavailable" }) }} labels={wholeLabels} initialSlotId="sections.faq"><Probe /><StudioView /><StudioRightPanel /></WholeStudioProvider></Profiler>);
+  render(<Profiler id="studio" onRender={onRender}><WholeStudioProvider adapter={{ kind: "composite", catalog: fixture.catalog, load, save: async () => ({ ok: false, reason: "unavailable" }) }} labels={wholeLabels} initialSlotId="sections.faq"><Probe /><StudioView /></WholeStudioProvider></Profiler>);
 }
 const rowsOf = (layer: LayerId) => [...document.querySelectorAll<HTMLElement>("section[data-library-board] tr")].filter(row => boardRowLeaf(row)?.startsWith(`${layer}.`));
 async function ready() {

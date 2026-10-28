@@ -17,6 +17,7 @@ export interface StudioRailProps {
   readonly inspector: ReactNode;
   readonly map: ReactNode;
   readonly zoom: ReactNode;
+  readonly checks?: ReactNode;
 }
 
 const hasMedia = (): boolean => typeof window !== "undefined" && typeof window.matchMedia === "function";
@@ -48,11 +49,11 @@ function RailCard({ id, title, expanded, onExpandedChange, header, children }: {
 }
 
 /**
- * The Designer's right rail: a page Section (not frame chrome) holding four independent collapsible cards in
- * rail order, Explorer, Inspector, Canvas map and Zoom. The whole rail can be hidden; hidden and collapsed state
+ * The Designer's right rail: a page Section (not frame chrome) holding five independent collapsible cards in
+ * rail order, Explorer, Inspector, Canvas map, Zoom and Checks. The whole rail can be hidden; hidden and collapsed state
  * persist per user. On a narrow viewport the rail is an overlay drawer instead.
  */
-export function StudioRail({ labels, explorer, explorerHeader, inspector, map, zoom }: StudioRailProps) {
+export function StudioRail({ labels, explorer, explorerHeader, inspector, map, zoom, checks }: StudioRailProps) {
   const [view, update] = useRailView();
   const wide = useWideRail();
   const card = (id: RailCardId) => ({ id, expanded: !view.collapsed.includes(id),
@@ -62,6 +63,7 @@ export function StudioRail({ labels, explorer, explorerHeader, inspector, map, z
     <RailCard {...card("inspector")} title={labels.inspectorLabel}>{inspector}</RailCard>
     <RailCard {...card("map")} title={labels.canvas.minimap}>{map}</RailCard>
     <RailCard {...card("zoom")} title={labels.canvas.zoomLabel}>{zoom}</RailCard>
+    <RailCard {...card("checks")} title={labels.scorecard.title}>{checks}</RailCard>
   </>;
   if (!wide) return <div data-studio-rail="overlay" className="absolute end-sm top-sm">
     <Drawer trigger={<Button variant="secondary" size="sm">{labels.rail.show}</Button>} heading={labels.rail.label} closeLabel={labels.rail.hide} placement="end" dismissAt={APP_FRAME_WIDE_QUERY}>

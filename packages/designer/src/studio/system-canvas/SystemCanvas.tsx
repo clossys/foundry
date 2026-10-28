@@ -6,6 +6,7 @@ import { CanvasSurface } from "../../blocks/canvas/CanvasSurface.js";
 import type { CellLodTier } from "../../blocks/canvas/cell-lod.js";
 import type { CanvasRect, CanvasSize, Viewport } from "../../blocks/canvas/models.js";
 import type { LayerId, Placement } from "../../catalog-core/index.js";
+import { SemanticContent } from "../../components/SemanticContent.js";
 import { Badge } from "../../components/Badge.js";
 import { Breadcrumb } from "../../components/Breadcrumb.js";
 import { Button } from "../../components/Button.js";
@@ -21,7 +22,7 @@ import { litSet, type UsageEdge } from "./graph.js";
 import { systemLayout, type SystemBoard, type SystemCell, type SystemMetrics } from "./layout.js";
 import { cellTiers, liveCells, mountsLive, renderedTier } from "./lod.js";
 import { planNavigation, type SystemTarget } from "./navigation.js";
-import { systemStop, systemZoomRange } from "./stops.js";
+import { systemStop, systemZoomRange, stopViewport, type SystemStop, type ZoomRange } from "./stops.js";
 
 /** Host-supplied words; the canvas renders no copy of its own. */
 export interface SystemCanvasLabels {
@@ -56,9 +57,14 @@ export interface SystemCanvasData {
 export interface SystemCanvasHandle {
   /** Move the camera to a rail target (D5g): one eased move, or none when it is already on screen. */
   navigateTo(target: SystemTarget): void;
+  fit(stop: SystemStop, target?: SystemTarget): void;
+  setViewport(viewport: Viewport): void;
 }
 
+export interface SystemCanvasView { readonly viewport: Viewport; readonly size: CanvasSize; readonly range: ZoomRange; readonly layer?: LayerId; readonly board?: string; readonly line?: string }
 export interface SystemCanvasProps {
+  renderStaticThumbnail?: (leaf: string) => ReactNode;
+  onViewChange?: (view: SystemCanvasView) => void;
   data: SystemCanvasData;
   labels: SystemCanvasLabels;
   /** Usage edges, `from` uses `to`; the selected leaf lights its transitive neighbours and dims the rest. */
@@ -78,6 +84,7 @@ export interface SystemCanvasProps {
   className?: string;
 }
 
+const defaultRowWidth = () => Number.parseFloat(TOKENS["--spacing-6xl"]!.value);
 const ms = (token: string) => Number.parseFloat(TOKENS[token]!.value);
 const px = (token: string) => Number.parseFloat(TOKENS[token]!.value);
 /** The camera move: the default duration on the ease-out curve (a dedicated canvas-move token is a recorded NEED). */
@@ -120,7 +127,7 @@ function useMeasured(explicit: CanvasSize | undefined): [CanvasSize | undefined,
  * through `navigateTo`, as one eased camera move whose detail swap waits for
  * the move to end.
  */
-export function SystemCanvas({ data, labels, edges = [], selectedLeaf, onSelect, renderSpecimen, renderThumbnail, studioLabels, handleRef, viewSize, metrics, className }: SystemCanvasProps) {
+export function SystemCanvas({ data, labels, edges = [], selectedLeaf, onSelect, renderSpecimen, renderThumbnail, renderStaticThumbnail, onViewChange, studioLabels, handleRef, viewSize, metrics, className }: SystemCanvasProps) {
   const layout = useMemo(() => systemLayout(data.placements, metrics), [data.placements, metrics]);
   const [size, onSurfaceElement] = useMeasured(viewSize);
   const padding = px("--spacing-xl");
@@ -155,7 +162,17 @@ export function SystemCanvas({ data, labels, edges = [], selectedLeaf, onSelect,
     const fallback = ms(MOVE_TOKEN) * 2;
     moveTimer.current = setTimeout(endMove, fallback);
   }, [endMove, layout, onSelect, padding, range, reduced, size]);
-  useImperativeHandle(handleRef, () => ({ navigateTo }), [navigateTo]);
+  useImperativeHandle(handleRef, () => ({ navigateTo, setViewport: next => { endMove(); setPose(next); }, fit: (stop, target) => {
+    if (!size || !range) return;
+    const cell = target?.leaf ? layout.cells.get(target.leaf) : undefined;
+    const board = cell ? layout.boards.get(cell.board) : target?.l1 ? layout.boards.get(target.layer + "/" + target.l1) : undefined;
+    const row = layout.rows.find(row => row.layer === target?.layer);
+    const rect = stop === "system" ? layout.bounds : stop === "cell" ? cell?.rect : stop === "board" ? board?.rect : row?.rect;
+    if (rect) { const next = stopViewport(stop, rect, size, padding, range); const from = viewportRef.current;
+      if (next.x === from.x && next.y === from.y && next.zoom === from.zoom) return;
+      if (reduced) { endMove(); setPose(next); } else { clearTimeout(moveTimer.current); setHeld(previous => previous ?? from); setPose(next); moveTimer.current = setTimeout(endMove, ms(MOVE_TOKEN) * 2); }
+    }
+  } }), [navigateTo, endMove, layout, padding, range, size, reduced]);
 
   // Free wheel, pinch and pan arrive already clamped to the stop range by the surface.
   const changeViewport = useCallback((next: Viewport) => { endMove(); setPose(next); }, [endMove]);
@@ -176,15 +193,18 @@ export function SystemCanvas({ data, labels, edges = [], selectedLeaf, onSelect,
   const lit = useMemo(() => litSet(edges, selectedLeaf), [edges, selectedLeaf]);
   const dim = (leaf: string) => selectedLeaf !== undefined && !lit.has(leaf);
   const trail = size ? trailAt(layout, viewport, size) : {};
+  const reportView = useRef(onViewChange); reportView.current = onViewChange;
+  useEffect(() => { if (size && range) reportView.current?.({ viewport, size, range, layer: trail.layer, board: trail.board?.id, line: trail.line?.id }); }, [viewport.x, viewport.y, viewport.zoom, size?.width, size?.height, range?.min, range?.max, trail.layer, trail.board?.id, trail.line?.id]);
 
   const cellBody = (cell: SystemCell, tier: CellLodTier): ReactNode => {
     const info = data.cells?.[cell.leaf];
-    if (tier === "near" && mountsLive(cell.layer) && renderSpecimen) return renderSpecimen(cell.leaf);
+    if (tier === "near" && mountsLive(cell.layer) && renderSpecimen) { const specimen = renderSpecimen(cell.leaf); if (specimen != null) return specimen; }
     if (THUMBNAIL_LAYERS.has(cell.layer)) {
       const thumbnail = renderThumbnail?.(cell.leaf) ?? (info?.candidate && studioLabels ? <CompactPreview candidate={info.candidate} labels={studioLabels} /> : null);
       if (thumbnail) return thumbnail;
     }
-    // Components, Sections and Frames: a captured thumbnail is a recorded NEED; until then, a skeleton.
+    if (!THUMBNAIL_LAYERS.has(cell.layer) && renderStaticThumbnail) return renderStaticThumbnail(cell.leaf);
+    // No host capture: retain the explicit pending skeleton.
     return <Skeleton shape="block" data-system-thumbnail="pending" className="min-h-0 flex-1" />;
   };
 
@@ -217,14 +237,15 @@ export function SystemCanvas({ data, labels, edges = [], selectedLeaf, onSelect,
 
   const crumbs = trail.layer ? [labels.layers[trail.layer], trail.board?.label, trail.line?.label].filter((crumb): crumb is string => crumb !== undefined) : [];
 
-  return <div className={cx("relative h-full min-h-0", className)} data-system-canvas="">
+  return <div className={cx("relative h-full min-h-0", className)} data-system-canvas="" data-system-lit={[...lit].sort().join(" ")}>
     <CanvasLod zoom={viewport.zoom}>
       <CanvasSurface aria-label={labels.label} instructionText={labels.hint} viewport={viewport} onViewportChange={changeViewport}
-        selection={[]} onSelectionChange={() => {}} worldBounds={layout.bounds} items={[]} itemInteraction="content" grid="dots"
+        selection={[]} onSelectionChange={() => {}} worldBounds={layout.bounds} items={[]} edgeItems={[...layout.cells.values()].map(cell => ({id:cell.leaf,label:cell.leaf,rect:cell.rect}))} edges={edges.filter(edge => layout.cells.has(edge.from) && layout.cells.has(edge.to) && (!selectedLeaf || lit.has(edge.from) && lit.has(edge.to))).map((edge,index) => ({...edge,id:edge.from+":"+edge.to+":"+index}))} itemInteraction="content" grid="dots"
         {...(range ? { minZoom: range.min, maxZoom: range.max } : {})} fitPadding={padding} {...(viewSize ? { viewSize } : {})}
         {...(held && !reduced ? { viewportTransition: MOVE } : {})} onViewportTransitionEnd={endMove} onSurfaceElement={onSurfaceElement}
         className="absolute inset-0 rounded-none border-0 bg-surface-raised">
         {[...layout.boards.values()].filter(entry => shown.has(entry.id)).flatMap(entry => [...board(entry), ...cellsOf(entry)])}
+        {layout.rows.map(row => <CanvasPlaced key={row.layer} aria-hidden="true" rect={{x:-viewport.x/viewport.zoom,y:row.rect.y,width:defaultRowWidth(),height:defaultRowWidth()}} className="pointer-events-none" data-system-row-label={row.layer}><SemanticContent as="span" className={cx(CANVAS_COUNTER_SCALED_TITLE,"rounded-control bg-surface-base text-body-s text-ink-primary")}>{labels.layers[row.layer]}</SemanticContent></CanvasPlaced>)}
         {ring ? <CanvasPlaced rect={ring} ring aria-hidden="true" data-system-ring="" className="pointer-events-none rounded-control" /> : null}
       </CanvasSurface>
     </CanvasLod>
