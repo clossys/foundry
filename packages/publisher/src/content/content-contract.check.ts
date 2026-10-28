@@ -12,8 +12,12 @@ function contract(revision: ContentRevision, field: CopyField): void {
   field.value = "changed";
 }
 const copy: CopyField = { key: "heading", locale: "en", value: "Sample", source: "writer" };
-// @ts-expect-error Only Writer supplies copy.
 const handwritten: CopyField = { ...copy, source: "handwritten" };
+// @ts-expect-error Unknown copy providers are not readable legacy copy.
+const unknownProvider: CopyField = { ...copy, source: "unknown" };
+const reference: CopyField = { key: "heading", locale: "en", source: "writer", ref: { id: "strings.heading" } };
+// @ts-expect-error Writer refs cannot carry an inline text cache.
+const mixed: CopyField = { ...reference, value: "Cached" };
 // @ts-expect-error Locale is required on each field.
 const unlocalized: CopyField = { key: "heading", value: "Sample", source: "writer" };
 // @ts-expect-error Visual assets belong to the section, not to words.
@@ -22,6 +26,8 @@ const fieldAssets: CopyField = { ...copy, assets: [] };
 const legacy: CopyField = { field: "heading", text: "Sample", locale: "en", source: "writer" };
 void contract;
 void handwritten;
+void unknownProvider;
+void mixed;
 void unlocalized;
 void fieldAssets;
 void legacy;

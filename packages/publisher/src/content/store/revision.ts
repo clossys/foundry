@@ -1,4 +1,5 @@
 import type { Composition, CompositionSection, CopyField } from "../composition.js";
+import { validateCopyFields } from "../composition.js";
 import { computeContentDigest } from "../digest.js";
 import { isContentJson } from "../json.js";
 import type { CandidateContent, ContentRevision } from "../model.js";
@@ -6,7 +7,7 @@ import { createContentRevision } from "../revisions.js";
 import { validateCandidateContent } from "../validate.js";
 import { isContentLocale } from "../vocabulary.js";
 
-type StoredField = Omit<CopyField, "value">;
+type StoredField = CopyField extends infer Field ? Field extends CopyField ? Omit<Field, "value"> : never : never;
 type StoredComposition = Omit<Composition, "sections"> & {
   readonly sections: readonly (Omit<CompositionSection, "fields"> & { readonly fields: readonly StoredField[] })[];
 };
@@ -30,12 +31,24 @@ function jsonObject(value: unknown, label: string): asserts value is Record<stri
 }
 
 function fieldIdentity(value: unknown, withValue: boolean, locales: readonly string[]): asserts value is CopyField {
-  const keys = withValue ? ["key", "locale", "source", "value"] : ["key", "locale", "source"];
+  const reference = object(value) && Object.hasOwn(value, "ref");
+  const keys = reference ? ["key", "locale", "source", "ref"] : withValue ? ["key", "locale", "source", "value"] : ["key", "locale", "source"];
   if (!object(value) || Object.keys(value).length !== keys.length || Object.keys(value).some(key => !keys.includes(key)) ||
     typeof value.key !== "string" || !value.key.trim() || typeof value.locale !== "string" || !locales.includes(value.locale) ||
-    value.source !== "writer" || (withValue && typeof value.value !== "string")) {
+    validateCopyFields([reference || withValue ? value : { ...value, value: "" }], "field").length) {
     throw new TypeError("Revision copy field has invalid identity or value");
   }
+}
+
+function canonical(value: unknown): string {
+  if (Array.isArray(value)) return `[${value.map(canonical).join(",")}]`;
+  if (object(value)) return `{${Object.keys(value).sort().map(key => `${JSON.stringify(key)}:${canonical(value[key])}`).join(",")}}`;
+  return JSON.stringify(value);
+}
+
+function storedIdentity(field: CopyField): StoredField {
+  const { value: _value, ...identity } = field;
+  return identity;
 }
 
 /** Split one fully joined snapshot without changing its existing content digest. */
@@ -54,8 +67,7 @@ export function splitStoreRevision(snapshot: ContentRevision, locales: readonly 
   const splitField = (field: CopyField): StoredField => {
     fieldIdentity(field, true, locales);
     copies[field.locale]!.push(structuredClone(field));
-    const { value: _value, ...identity } = field;
-    return identity;
+    return storedIdentity(field);
   };
   const pageMeta = sourcePageMeta?.map(splitField);
   const composition = sourceComposition && {
@@ -94,7 +106,7 @@ export function joinStoreRevision(revision: StoredRevision, copies: Readonly<Rec
     fieldIdentity(field, false, locales);
     const ordinal = positions.get(field.locale)!;
     const copy = copies[field.locale]![ordinal];
-    if (!copy || copy.key !== field.key || copy.locale !== field.locale || copy.source !== field.source) throw new TypeError("Revision copy does not match its structural field");
+    if (!copy || canonical(storedIdentity(copy)) !== canonical(field)) throw new TypeError("Revision copy does not match its structural field");
     positions.set(field.locale, ordinal + 1);
     return structuredClone(copy);
   };

@@ -1,4 +1,5 @@
-import type { CompositionSection, ContentFinding } from "../composition.js";
+import type { CopyResolver } from "@clossys/writer";
+import type { CompositionSection, ContentFinding, CopyFinding } from "../composition.js";
 import type { ConsumerLibrarySnapshot } from "../library.js";
 import type { ContentCandidate, ContentRegistry, ContentSlot } from "../model.js";
 import type { RevisionId } from "../vocabulary.js";
@@ -47,12 +48,16 @@ export interface ReviewInput {
   /** Current content digest computed upstream, not guessed from approval metadata. */
   readonly digest: string;
   readonly raisedAt: string;
+  /** Server-supplied Writer callback; never stored in candidate content. */
+  readonly copyResolver?: CopyResolver;
 }
 export interface ReviewReport {
   readonly candidateId: string;
   readonly revision: RevisionId;
   readonly digest: string;
   readonly findings: readonly ReviewFinding[];
+  /** Copy provenance warnings do not become blocking Review findings. */
+  readonly copyFindings?: readonly CopyFinding[];
   readonly needs: readonly Need[];
   readonly checkedAgainst: { readonly libraryVersion: string | null; readonly locales: readonly string[] };
 }
@@ -70,5 +75,6 @@ export interface ReviewContext {
   readonly slot: ContentSlot;
   sections: readonly ResolvedReviewSection[];
   add(check: ReviewCheck, path: string, rule: string, message: string): void;
+  copyFinding(finding: CopyFinding): void;
   need(kind: Need["kind"], target: Need["target"], reference: string, detail: string): void;
 }

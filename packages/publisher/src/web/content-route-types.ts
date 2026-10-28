@@ -1,5 +1,5 @@
 import type { ReactElement } from "react";
-import type { Composition, CopyField } from "../content/composition.js";
+import type { Composition, CopyField, CopyFinding, ContentWriterContext } from "../content/composition.js";
 import type { ContentCandidate, ContentRegistry, ContentSlot } from "../content/model.js";
 import type { ConsumerLibrarySnapshot } from "../content/library.js";
 import type { RevisionId } from "../content/vocabulary.js";
@@ -21,6 +21,8 @@ export interface ContentRouteInput {
   /** Temporary read-only Writer projection; persistence belongs to a later content unit. */
   readonly frameCopy?: readonly CopyField[];
   readonly assets?: readonly { readonly assetId: string; readonly libraryVersion: string; readonly src: string }[];
+  /** Finite Writer registries and locale policy; approval time is raisedAt. */
+  readonly writer?: ContentWriterContext;
   readonly raisedAt: string;
 }
 export interface ContentRouteMetadata {
@@ -39,6 +41,7 @@ export interface PreparedContentRoute extends ContentRouteSelection {
   readonly status: "ready" | "needs-input";
   readonly metadata: ContentRouteMetadata;
   readonly needs: readonly ContentRouteNeed[];
+  readonly copyFindings?: readonly CopyFinding[];
   readonly node?: ReactElement;
 }
 /** Version 2 is independent of the retiring plan/layout registration contract. */

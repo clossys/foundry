@@ -1,5 +1,8 @@
 import { describe, expect, it } from "vitest";
-import { parseComposition, validateComposition, resolveCopy, PAGE_META_KEY, PAGE_META_FIELDS, validateCopyFields } from "./composition.js";
+import { parseComposition, validateComposition, resolveCopy as resolveCopyReport, PAGE_META_KEY, PAGE_META_FIELDS, validateCopyFields } from "./composition.js";
+
+// These compatibility cases retain the resolved text map; ref reports have their own suite.
+const resolveCopy = (...args: Parameters<typeof resolveCopyReport>) => resolveCopyReport(...args).copy;
 
 const fixture = () => ({
   frame: { frameId: "frames.sample", configId: "default" },
@@ -25,7 +28,7 @@ describe("Designer composition shape", () => {
     ["missing library version", (v: any) => { delete v.libraryVersion; }, "nonempty-string"],
     ["floating reference", (v: any) => { v.sections[0].ref.revision = "latest"; }, "pinned-revision"],
     ["duplicate section key", (v: any) => { v.sections.push(structuredClone(v.sections[0])); }, "duplicate-section-key"],
-    ["handwritten source", (v: any) => { v.sections[0].fields[0].source = "handwritten"; }, "writer-source"],
+    ["unknown source", (v: any) => { v.sections[0].fields[0].source = "unknown"; }, "writer-source"],
     ["unversioned asset", (v: any) => { delete v.sections[0].assets[0].libraryVersion; }, "nonempty-string"],
     ["layout code", (v: any) => { v.layout = "stack"; }, "unknown-field"],
     ["invalid intent", (v: any) => { v.sections[0].intent = "other"; }, "section-intent"],
@@ -89,7 +92,7 @@ describe("exact-locale Writer copy resolution", () => {
   });
   it("refuses invalid locale selection and malformed copy rather than inventing values", () => {
     expect(() => resolveCopy({ composition: fixture() as any }, "bad_locale")).toThrow(TypeError);
-    const composition: any = fixture(); composition.sections[0].fields[0].source = "handwritten";
+    const composition: any = fixture(); composition.sections[0].fields[0].source = "unknown";
     expect(() => resolveCopy({ composition }, "en")).toThrow(TypeError);
   });
 });
@@ -125,7 +128,7 @@ describe("page metadata Writer copy", () => {
   });
   it("shares Writer field validation and limits metadata keys", () => {
     expect(validateCopyFields(pageMeta(), "pageMeta", PAGE_META_FIELDS)).toEqual([]);
-    for (const value of [null, [{ ...pageMeta()[0], key: "other" }], [{ ...pageMeta()[0], source: "handwritten" }], [{ ...pageMeta()[0], value: 7 }], [pageMeta()[0], pageMeta()[0]]]) {
+    for (const value of [null, [{ ...pageMeta()[0], key: "other" }], [{ ...pageMeta()[0], source: "unknown" }], [{ ...pageMeta()[0], value: 7 }], [pageMeta()[0], pageMeta()[0]]]) {
       expect(validateCopyFields(value, "pageMeta", PAGE_META_FIELDS).length).toBeGreaterThan(0);
       expect(() => resolveCopy({ pageMeta: value as any }, "en")).toThrow();
     }

@@ -1,5 +1,5 @@
-import { PAGE_META_FIELDS, validateCopyFields } from "./composition.js";
-import type { ContentFinding } from "./composition.js";
+import { PAGE_META_FIELDS, PAGE_META_KEY, resolveCopy, validateCopyFields } from "./composition.js";
+import type { ContentFinding, ResolveCopyOptions } from "./composition.js";
 import type { CandidateContent, ContentSlot } from "./model.js";
 import { CONTENT_TREE } from "./taxonomy.js";
 import type { ContentTree } from "./taxonomy.js";
@@ -36,7 +36,7 @@ export function outputPathFor(slot: Pick<ContentSlot, "route" | "deployTarget">)
 }
 
 /** Readiness checks stay separate so legacy snapshots and incomplete drafts remain readable. */
-export function checkPageMetadata(slot: ContentSlot, candidate: CandidateContent, tree: ContentTree = CONTENT_TREE): ContentFinding[] {
+export function checkPageMetadata(slot: ContentSlot, candidate: CandidateContent, tree: ContentTree = CONTENT_TREE, options: ResolveCopyOptions = {}): ContentFinding[] {
   const findings: ContentFinding[] = [...validateCopyFields(candidate.pageMeta ?? [], "content.pageMeta", PAGE_META_FIELDS)];
   if (findings.length) return findings;
   const add = (path: string, rule: string) => findings.push({ path, rule, message: `Invalid ${rule}` });
@@ -47,9 +47,16 @@ export function checkPageMetadata(slot: ContentSlot, candidate: CandidateContent
     if (!slot.locales.includes(field.locale)) add(`content.pageMeta[${index}].locale`, "slot-locale");
   }
   for (const locale of slot.locales) {
+    const result = resolveCopy(candidate.pageMeta === undefined ? {} : { pageMeta: candidate.pageMeta }, locale, options);
+    for (const finding of result.findings) {
+      if (finding.severity !== "error") continue;
+      // Preserve the established readiness path and avoid a second title finding.
+      if (finding.rule === "required-page-metadata") continue;
+      findings.push({ path: `content.${finding.path}`, rule: finding.rule, message: finding.message });
+    }
     for (const key of keys) {
-      const field = fields.find(entry => entry.locale === locale && entry.key === key);
-      if (!field || !field.value.trim()) add(`content.pageMeta.${locale}.${key}`, "required-page-metadata");
+      const value = result.copy[PAGE_META_KEY]?.[key];
+      if (!value?.trim()) add(`content.pageMeta.${locale}.${key}`, "required-page-metadata");
     }
   }
   return findings;
