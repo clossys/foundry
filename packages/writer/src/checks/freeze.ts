@@ -2,7 +2,7 @@ import { loadWriterCatalog, type WriterCatalog } from "../catalog/ia/index.js";
 import { checkWriterLeafSets, loadWriterLeafFreezeSnapshots, WRITER_LEAF_FREEZE_LAYERS, type WriterLeafFreezeOptions, type WriterLeafFreezeSnapshot } from "../catalog-core/leaf-freeze.js";
 import type { WriterLibrary } from "../model/types.js";
 
-export type WriterRuleCode = "WR2" | "WR3" | "WR4" | "WR7" | "WR8" | "WR9" | "WR10" | "WR11";
+export type WriterRuleCode = "WR2" | "WR3" | "WR4" | "WR5" | "WR7" | "WR8" | "WR9" | "WR10" | "WR11";
 export interface WriterCheckFinding { code: WriterRuleCode; severity: "error" | "warning" | "advisory"; path: string; message: string; locale?: string; recordId?: string; field?: string; incomplete?: boolean }
 /** Caller-supplied evidence from a consumer's versioned Designer library; no inferred external IDs. */
 export interface WriterDesignerEvidence { version: string; assets: readonly string[]; leaves: readonly string[]; configs?: Readonly<Record<string, readonly string[]>>; frames: readonly { id: string; logicalProperties?: boolean; configs?: readonly string[] }[] }
