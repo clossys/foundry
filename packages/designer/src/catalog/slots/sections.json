@@ -1084,7 +1084,10 @@
           "kind.sign-in-unavailable",
           "kind.not-authorized",
           "kind.service-unavailable",
-          "kind.sign-out-confirm"
+          "kind.sign-out-confirm",
+          "status.not-found",
+          "status.unavailable",
+          "status.construction"
         ]
       },
       "allowedComposes": [
@@ -2876,7 +2879,8 @@
         "names": [
           "kind.not-found",
           "kind.error",
-          "kind.global-error"
+          "kind.global-error",
+          "error.global"
         ]
       },
       "allowedComposes": [
@@ -3250,7 +3254,8 @@
         "mode": "closed",
         "names": [
           "layout.list",
-          "layout.two-column"
+          "layout.two-column",
+          "about.faq"
         ]
       },
       "allowedComposes": [
@@ -3350,7 +3355,8 @@
         "names": [
           "layout.grid",
           "layout.list",
-          "layout.split"
+          "layout.split",
+          "about.features"
         ]
       },
       "allowedComposes": [
@@ -3643,7 +3649,9 @@
       ],
       "members": {
         "mode": "closed",
-        "names": []
+        "names": [
+          "form.contact"
+        ]
       },
       "allowedComposes": [
         "components.form",
@@ -3946,7 +3954,9 @@
           "layout.split",
           "size.display",
           "size.compact",
-          "size.default"
+          "size.default",
+          "ground.base",
+          "ground.inverse"
         ]
       },
       "allowedComposes": [
@@ -4075,7 +4085,10 @@
       ],
       "members": {
         "mode": "closed",
-        "names": []
+        "names": [
+          "legal.privacy",
+          "legal.terms"
+        ]
       },
       "allowedComposes": [
         "components.semantic-content"
@@ -4388,7 +4401,9 @@
       ],
       "members": {
         "mode": "closed",
-        "names": []
+        "names": [
+          "brand.named"
+        ]
       },
       "allowedComposes": [
         "components.logo"
@@ -4761,7 +4776,9 @@
       ],
       "members": {
         "mode": "closed",
-        "names": []
+        "names": [
+          "legal.draft"
+        ]
       },
       "allowedComposes": [
         "components.banner"
@@ -4909,7 +4926,8 @@
         "mode": "closed",
         "names": [
           "config.standard",
-          "config.record"
+          "config.record",
+          "contact.header"
         ]
       },
       "allowedComposes": [
