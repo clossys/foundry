@@ -935,6 +935,7 @@ function rewriteSource(input: RewriteInput): RewriteResult {
         "tracking-tight": ["tokens.letter-spacing.meta", "tracking-(--tracking-meta)"],
         "tracking-widest": ["tokens.letter-spacing.label", "tracking-(--tracking-label)"],
         "max-w-sm": ["tokens.content-size.notice", "max-w-(--ui-width-notice-max)"],
+        "max-w-xs": ["tokens.content-size.notice", "max-w-(--ui-width-notice-max)"],
         "max-h-72": ["tokens.content-size.notice", "max-h-(--ui-width-notice-max)"],
         "leading-normal": ["tokens.line-height.heading", "leading-(--leading-heading)"],
         "leading-snug": ["tokens.line-height.heading", "leading-(--leading-heading)"],

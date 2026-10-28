@@ -58,7 +58,7 @@ describe("Icon", () => {
 
     it("renders every one of the 40 shipped @clossys/designer/icons glyphs without throwing, each carrying real markup", () => {
       const glyphEntries = Object.entries(Glyphs) as [string, (typeof CIRCLE_GLYPH)][];
-      expect(glyphEntries.length).toBe(40);
+      expect(glyphEntries.length).toBe(41);
       for (const [name, glyph] of glyphEntries) {
         const { unmount } = render(<Icon glyph={glyph} decorative data-testid={name} />);
         const svg = screen.getByTestId(name);

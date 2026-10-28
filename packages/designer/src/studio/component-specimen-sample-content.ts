@@ -113,6 +113,13 @@ export const componentSpecimenToast = {
  * Drawn with the component's own sibling parts from that module, never a stand-in.
  */
 export const componentSpecimenSourceSamples = {
+  "components/command/command.tsx#Command": d.sections.command,
+  "components/dropdown-menu/dropdown-menu.tsx#DropdownMenu": d.menu,
+  "components/empty/empty.tsx#Empty": d.sections.emptyState,
+  "components/item/item.tsx#Item": d.card,
+  "components/scroll-area/scroll-area.tsx#ScrollArea": { label: d.list.label, text: d.text.paragraph },
+  "components/sheet/sheet.tsx#Sheet": d.dialog,
+  "components/sidebar/sidebar.tsx#Sidebar": d.navigation,
   "components/breadcrumbs/breadcrumb.tsx#Breadcrumb": d.breadcrumbs,
   "components/tabs/tabs.tsx#Tabs": d.tabs,
   "components/radio-group/radio-group.tsx#RadioGroup": d.radio,

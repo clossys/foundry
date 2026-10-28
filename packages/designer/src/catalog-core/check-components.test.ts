@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { checkComponentProfile, DEFAULT_COHERENCE_GROUPS, componentDescriptorDigest, componentRacInstanceMatches, componentRacRangeIncludes, componentSourceHash, componentTokensHash, isObservationPending, OBSERVATIONS_UNAVAILABLE } from "./check-components.js";
+import { ROOT_PROTOCOL, checkComponentProfile, DEFAULT_COHERENCE_GROUPS, componentDescriptorDigest, componentRacInstanceMatches, componentRacRangeIncludes, componentSourceHash, componentTokensHash, isObservationPending, OBSERVATIONS_UNAVAILABLE } from "./check-components.js";
 import type { ComponentCheckInput, ComponentCheckCode, ComponentCompatibilityCode } from "./check-components.js";
 import { componentProfile, composedProfile } from "./__fixtures__/components/profile.js";
 import { sha256 } from "./digest.js";
@@ -555,5 +555,36 @@ describe("qualification rule groups (QUAL-RECOUNT G1, G2, G7a, G11)", () => {
     // An enabled state still requires the activation keys to be observed.
     const enabled = fixture(); for (const measurement of enabled.observations["components.button"]!.measurements) measurement.keyboard = [];
     expect(k5(enabled)).toContain("Roles, keyboard or axe evidence fails for hover/light/base");
+  });
+});
+
+
+describe("new Aria root protocols", () => {
+  it.each(["Autocomplete", "ModalOverlay"] as const)("%s requires its observed keyboard and complete matrix evidence", root => {
+    const profile = fixture();
+    profile.slots[0]!.contract.root = `rac:${root}`;
+    profile.fills[0]!.root = `rac:${root}`;
+    const observation = profile.observations["components.button"]!;
+    observation.root = `rac:${root}`;
+    source(profile, `import {${root}} from "react-aria-components"; export const Example = () => <${root} style={{color:"var(--text)",background:"var(--surface)"}}>Continue</${root}>;`);
+    for (const row of observation.measurements) {
+      row.roles = [];
+      row.keyboard = [...ROOT_PROTOCOL[root].keys];
+    }
+    const k5 = (input: ComponentCheckInput) => checkComponentProfile(input).findings.filter(row => row.code === "K5");
+    expect(k5(profile)).toEqual([]);
+    for (const key of ROOT_PROTOCOL[root].keys) {
+      const missing = structuredClone(profile);
+      missing.observations["components.button"]!.measurements[0]!.keyboard = ROOT_PROTOCOL[root].keys.filter(value => value !== key);
+      expect(k5(missing).some(row => row.message.startsWith("Roles, keyboard or axe evidence fails")), key).toBe(true);
+    }
+    const absent = structuredClone(profile);
+    absent.observations["components.button"]!.measurements.pop();
+    expect(k5(absent).some(row => row.message.startsWith("A11y measurement unavailable"))).toBe(true);
+    const unknown = structuredClone(profile);
+    unknown.slots[0]!.contract.root = "rac:UnknownRoot";
+    unknown.fills[0]!.root = "rac:UnknownRoot";
+    unknown.observations["components.button"]!.root = "rac:UnknownRoot";
+    expect(k5(unknown).some(row => row.message.startsWith("Roles, keyboard or axe evidence fails"))).toBe(true);
   });
 });

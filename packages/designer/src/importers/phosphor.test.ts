@@ -35,7 +35,7 @@ describe('pinned raw Phosphor data and runtime coverage',()=>{
  it('offers all 40 icon leaves including the approved seal-check, and roundtrips adoption/emission',()=>{
   const {catalog,profile}=adopted();expect(fills).toHaveLength(40);expect(new Set(roster.map(row=>row.leaf)).size).toBe(40);
   expect(catalog.sources.filter(s=>s.id==='phosphor')).toHaveLength(1);expect(catalog.fills.filter(f=>f.$extensions['com.clossys.fill'].source==='phosphor')).toHaveLength(40);
-  expect(catalog.slots.filter(s=>s.layer==='assets')).toHaveLength(48);expect(roster.some(row=>row.leaf==='assets.icon-document-approved'&&row.upstream==='seal-check')).toBe(true);
+  expect(catalog.slots.filter(s=>s.layer==='assets')).toHaveLength(49);expect(roster.some(row=>row.leaf==='assets.icon-document-approved'&&row.upstream==='seal-check')).toBe(true);
   const emitted=JSON.parse(emitGlyphModule(profile).split('export const glyphs = ')[1]!.split(' as const;')[0]!);
   for(const fill of fills){const meta=fill.$extensions['com.clossys.fill'];expect(JSON.parse(readFileSync(new URL(`../catalog/fills/phosphor/${meta.slot}.json`,import.meta.url),'utf8'))).toEqual(fill);const value=Object.values(flatten(fill))[0]!.$value;expect(profile.members[`${meta.slot}.default`]!.value.light).toEqual(value);expect(emitted[meta.slot.slice(7)]).toEqual(value);}
   expect(assetNotices(profile)).toContain(PHOSPHOR_NOTICES);expect(assetNotices({...profile,members:{}})).not.toContain(PHOSPHOR_NOTICES);

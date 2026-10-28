@@ -89,7 +89,10 @@ function adoptedShadcnLeaves() {
   const slots = new Set(loadBuildCatalog().slots.map(slot => slot.id));
   const fills = bundles.componentFills.flatMap(doc => Object.values(doc.components)).filter(fill => fill.source === "shadcn@aria" && fill.impl.kind === "source" && slots.has(fill.slot));
   const modules: Record<string, Record<string, unknown>> = {};
-  const bundleOf = (slot: string) => bundles.sourceBundles.find(candidate => candidate.slot === slot && candidate.transform === "shadcn-aria-rewrite@1");
+  const bundleOf = (slot: string) => {
+    const fill = fills.find(candidate => candidate.slot === slot)!;
+    return bundles.sourceBundles.find(candidate => candidate.slot === slot && candidate.transform === fill.transform);
+  };
   // Dependency leaves a consumer adopted at their current source: shadcn@aria's own vendored files, else Foundry's package.
   const shipped = new Map(fills.flatMap(fill => bundleOf(fill.slot)!.files).map(file => [file.path, file]));
   const leaves = fills.map(fill => {
@@ -131,6 +134,51 @@ it("binds and server-renders every adopted shadcn@aria leaf from its vendored so
   }
   expect(errors.mock.calls.map(call => String(call[0])).filter(message => /NaN/.test(message))).toEqual([]);
   errors.mockRestore();
+}, 120_000);
+
+it("executes the new rail specimens through their vendored parts and dataset content", async () => {
+  document.documentElement.style.setProperty("--breakpoint-mobile-lg", "48rem");
+  document.documentElement.style.fontSize = "16px";
+  const priorMatchMedia = window.matchMedia;
+  window.matchMedia = query => ({ matches: false, media: query, onchange: null,
+    addListener() {}, removeListener() {}, addEventListener() {}, removeEventListener() {}, dispatchEvent: () => true });
+  try {
+    const { leaves, modules } = adoptedShadcnLeaves();
+    const specimens = componentSpecimenPreview({ modules: { ...hostModules, ...modules } });
+    const draw = (leaf: string) => render(<>{specimens.preview(leaf, leaves.find(entry => entry.leaf === leaf)!.profile)}</>);
+    const user = userEvent.setup();
+    const command = draw("components.command");
+    await user.type(within(command.container).getByRole("searchbox"), d.sections.command.groups[1]!.items[0]!.label);
+    expect(within(command.container).getByRole("menuitem", { name: d.sections.command.groups[1]!.items[0]!.label })).toBeTruthy();
+    cleanup();
+    for (const [leaf, trigger, role, label] of [
+      ["components.sheet", d.dialog.trigger, "dialog", d.dialog.title],
+      ["components.dropdown-menu", d.menu.trigger, "menu", d.menu.trigger],
+    ] as const) {
+      const rendered = draw(leaf);
+      await user.click(within(rendered.container).getByRole("button", { name: trigger }));
+      const overlay = await within(document.body).findByRole(role, { name: label });
+      expect(overlay).toBeTruthy();
+      if (leaf === "components.sheet") {
+        await user.tab();
+        expect(overlay.contains(document.activeElement)).toBe(true);
+      }
+      await user.keyboard("{Escape}");
+      await waitFor(() => expect(within(document.body).queryByRole(role, { name: label })).toBeNull());
+      cleanup();
+    }
+    for (const [leaf, slot, text] of [
+      ["components.empty", "empty-title", d.sections.emptyState.title],
+      ["components.item", "item-title", d.card.title],
+      ["components.scroll-area", "scroll-area", d.text.paragraph],
+      ["components.sidebar", "sidebar-menu-button", d.navigation.items[0]!.label],
+    ] as const) {
+      const rendered = draw(leaf);
+      expect(rendered.container.querySelector(`[data-slot="${slot}"]`)?.textContent).toContain(text);
+      expect(rendered.container.querySelector("[data-specimen-error], [data-specimen-unavailable]")).toBeNull();
+      cleanup();
+    }
+  } finally { window.matchMedia = priorMatchMedia; }
 }, 120_000);
 
 it("fills every shadcn@aria specimen from the dataset, never from its leaf id or variant keys", () => {

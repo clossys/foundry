@@ -51,7 +51,7 @@ function Tooltip({
       offset={offset}
       crossOffset={crossOffset}
       className={cn(
-        "data-entering:library-enter data-entering:library-fade data-entering:library-zoom data-exiting:library-exit data-exiting:library-fade data-exiting:library-zoom data-[placement=bottom]:library-slide-top data-[placement=left]:library-slide-right data-[placement=right]:library-slide-left data-[placement=top]:library-slide-bottom inline-flex items-center gap-(--spacing-sm) rounded-(--radius-control) px-(--spacing-md) py-(--spacing-sm) text-(length:--text-xs) has-data-[slot=kbd]:pr-(--spacing-sm) **:data-[slot=kbd]:relative **:data-[slot=kbd]:isolate **:data-[slot=kbd]:z-(--ui-z-modal) **:data-[slot=kbd]:rounded-(--radius-control) z-(--ui-z-modal) w-fit max-w-xs origin-(--trigger-anchor-point) bg-(--color-ink-primary) text-(--color-surface-base)",
+        "data-entering:library-enter data-entering:library-fade data-entering:library-zoom data-exiting:library-exit data-exiting:library-fade data-exiting:library-zoom data-[placement=bottom]:library-slide-top data-[placement=left]:library-slide-right data-[placement=right]:library-slide-left data-[placement=top]:library-slide-bottom inline-flex items-center gap-(--spacing-sm) rounded-(--radius-control) px-(--spacing-md) py-(--spacing-sm) text-(length:--text-xs) has-data-[slot=kbd]:pr-(--spacing-sm) **:data-[slot=kbd]:relative **:data-[slot=kbd]:isolate **:data-[slot=kbd]:z-(--ui-z-modal) **:data-[slot=kbd]:rounded-(--radius-control) z-(--ui-z-modal) w-fit max-w-(--ui-width-notice-max) origin-(--trigger-anchor-point) bg-(--color-ink-primary) text-(--color-surface-base)",
         className
       )}
       {...props}

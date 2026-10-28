@@ -111,8 +111,8 @@ describe("stableStringify and libraryHash golden", () => {
   it("pins example and completed-catalog library hashes", () => {
     expect(libraryHash(EXAMPLE_LIBRARY)).toMatchInlineSnapshot(`"fnv1a64:1c49785731fe8224"`);
     const completed = completedCatalogLibrary(loadCatalog(), { id: "golden-consumer", kind: "consumer", author: "consumer", license: "UNLICENSED" }, "2026-10-26");
-    expect(libraryHash(completed)).toMatchInlineSnapshot(`"fnv1a64:504dadf7707fd0aa"`);
-    expect(nodeSha256(stableStringify(completed))).toMatchInlineSnapshot(`"f1eda5dca40108b91aa7f85547603c571f59da32dc54231be26ea1a0bfdd82be"`);
+    expect(libraryHash(completed)).toMatchInlineSnapshot(`"fnv1a64:bf2423127e2a3784"`);
+    expect(nodeSha256(stableStringify(completed))).toMatchInlineSnapshot(`"b400dc89a7d339059b06f2072bfaca4bfe5cf5b0b4e6d674a4a5c641e35675d8"`);
     expect(libraryHash(completed)).toBe(referenceLibraryHash(completed));
     expect(resolve({ catalog: loadCatalog(), library: completed }).selectionHash).toBe(libraryHash(completed));
   }, 120_000);

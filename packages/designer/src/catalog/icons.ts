@@ -27,6 +27,7 @@ import { List } from "../icons/List.js";
 import { Lock } from "../icons/Lock.js";
 import { Monitor } from "../icons/Monitor.js";
 import { Moon } from "../icons/Moon.js";
+import { PanelLeft } from "../icons/PanelLeft.js";
 import { Plug } from "../icons/Plug.js";
 import { Receipt } from "../icons/Receipt.js";
 import { Scale } from "../icons/Scale.js";
@@ -313,6 +314,12 @@ export const ICON_ENTRIES: readonly IconEntry[] = [
     id: "Plug", label: "Plug", l1: "subject", l2: "structure",
     source: { library: "lucide", name: "plug", version: "1.23.0" },
     nodes: Plug, sizes: ["sm", "md", "lg"], stroke: { lever: "--ui-icon-stroke" },
+    naming: "decorative", mirrorInRtl: false, lifecycle: "draft", ownerReview: "not-yet-reviewed",
+  },
+  {
+    id: "PanelLeft", label: "Panel left", l1: "subject", l2: "structure",
+    source: { library: "lucide", name: "panel-left", version: "1.24.0" },
+    nodes: PanelLeft, sizes: ["sm", "md", "lg"], stroke: { lever: "--ui-icon-stroke" },
     naming: "decorative", mirrorInRtl: false, lifecycle: "draft", ownerReview: "not-yet-reviewed",
   },
 ];

@@ -5,7 +5,7 @@
       "slot": "assets.icon-panel-left",
       "source": "lucide",
       "mode": "implementation",
-      "sourceAddress": "lucide-react@1.24.0/dist/esm/icons/panel-left.mjs",
+      "sourceAddress": "lucide-react@1.24.0/dist/esm/icons/panel-left.js",
       "relation": "same-contract",
       "builtOn": [],
       "conforms": [],
@@ -16,8 +16,8 @@
       "pin": {
         "package": "lucide-react",
         "version": "1.24.0",
-        "file": "dist/esm/icons/panel-left.mjs",
-        "sha256": "75236e69e8e6adba1bd1e6bb2e60664a2be2aa9d514997d698528551ee933560"
+        "file": "src/icons/PanelLeft.ts",
+        "sha256": "dd3c0b171cb38e6c3c773aa6e1d9eb5eaf2d84f7ab983abb6dbef6bfa4d4e512"
       },
       "status": "draft",
       "reads": {

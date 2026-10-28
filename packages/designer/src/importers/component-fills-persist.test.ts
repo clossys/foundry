@@ -2,6 +2,8 @@
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { describe, expect, it } from "vitest";
+import ts from "typescript";
+import { componentSecondaryExports } from "../catalog-core/component-secondary-exports.js";
 import componentSlots from "../catalog/slots/components.json" with { type: "json" };
 import { loadCatalogBundles } from "../catalog-bundles.js";
 import { loadComponentCompositionRules } from "../catalog-core/component-compositions.js";
@@ -113,7 +115,7 @@ describe("pack check: every selectable component fill persists", () => {
   // Imported packs only: Foundry's own package map is checked by its importer and is not regenerated here.
   const imported = fills.filter(doc => doc.$extensions["com.clossys.fill"].source !== "foundry");
   it("emitComponents (persist path) refuses no imported pack fill's propMap", () => {
-    expect(imported.filter(doc => doc.$extensions["com.clossys.fill"].source === "shadcn@aria")).toHaveLength(26);
+    expect(imported.filter(doc => doc.$extensions["com.clossys.fill"].source === "shadcn@aria")).toHaveLength(33);
     expect(imported.length).toBeGreaterThanOrEqual(33);
     expect(persistThrows(imported).filter(message => PROPMAP_REFUSAL.test(message))).toEqual([]);
   });
@@ -176,21 +178,36 @@ describe("pack check: shadcn@aria materialized sources persist through the real 
   const IMPORT_GRAMMAR_REFUSAL = /components: (?:unsupported import syntax|unverified import syntax|unavailable named import {2}from)/;
   const refusal = (docs: readonly ComponentCandidateDocument[]): string => { try { persistTogether(docs); return ""; } catch (error) { return (error as Error).message; } };
   it("materializes no emitter-owned leaf entrypoint and no wildcard re-export", () => {
-    expect(shadcn).toHaveLength(26);
+    expect(shadcn).toHaveLength(33);
     expect(shadcn.filter(doc => !materialized.has(Object.values(doc.components)[0]!.slot)).map(fillId)).toEqual([]);
     const files = shadcn.flatMap(doc => materialized.get(Object.values(doc.components)[0]!.slot)!);
     expect(files.filter(file => /^components\/[a-z][a-z0-9-]*\/index\.ts$/.test(file.path)).map(file => file.path)).toEqual([]);
     expect(files.filter(file => /\bexport\s*\*/.test(file.content)).map(file => file.path)).toEqual([]);
-    expect(files.filter(file => /^components\/_parts\/[a-z-]+\/index\.ts$/.test(file.path) && !file.path.includes("/utils/")).every(file => /^export \{ [A-Za-z, ]+ \} from "\.\/[a-z-]+"\n$/.test(file.content))).toBe(true);
+    // Component anatomy barrels and private function modules both belong to the authenticated source closure.
+    for (const file of files.filter(file => /^components\/_parts\/[a-z-]+\/index\.ts$/.test(file.path))) {
+      const ast = ts.createSourceFile(file.path, file.content, ts.ScriptTarget.Latest, true, ts.ScriptKind.TS);
+      expect((ast as unknown as { parseDiagnostics: unknown[] }).parseDiagnostics, file.path).toEqual([]);
+      const exported = ast.statements.filter(node => ts.isExportDeclaration(node) ||
+        ts.canHaveModifiers(node) && ts.getModifiers(node)?.some(modifier => modifier.kind === ts.SyntaxKind.ExportKeyword));
+      expect(exported.length, file.path).toBeGreaterThan(0);
+      for (const node of exported) expect(ts.isExportDeclaration(node)
+        ? !!node.exportClause && ts.isNamedExports(node.exportClause)
+        : ts.isFunctionDeclaration(node) && !!node.name && !!node.body, file.path).toBe(true);
+    }
   });
   it("all 26 fills persisted together hit no entrypoint-ownership refusal", () => {
     expect(refusal([...shadcn, icon])).not.toMatch(OWNERSHIP_REFUSAL);
   });
   it("materialized sources take only a sibling's contract name from its emitter-owned entrypoint", () => {
     const contract = (leaf: string) => leaf.split("-").map(word => word[0]!.toUpperCase() + word.slice(1)).join("");
+    const allowed = new Map(shadcn.map(doc => {
+      const descriptor = Object.values(doc.components)[0]!;
+      return [descriptor.slot.slice("components.".length), new Set([contract(descriptor.slot.slice("components.".length)),
+        ...componentSecondaryExports(descriptor, materialized.get(descriptor.slot)!).map(row => row.name)])];
+    }));
     const edges = [...materialized.values()].flat().flatMap(file => [...file.content.matchAll(/\bimport\s+(?:type\s+)?\{([^}]*)\}\s*from\s*"(?:\.\.\/)+([a-z][a-z0-9-]*)\/index"/g)]
       .filter(match => match[2] !== "icon" && match[2] !== "_parts")
-      .flatMap(match => match[1]!.split(",").map(name => name.trim()).filter(Boolean).filter(name => name !== contract(match[2]!)).map(name => `${file.path} -> ${match[2]}#${name}`)));
+      .flatMap(match => match[1]!.split(",").map(name => name.trim()).filter(Boolean).filter(name => !allowed.get(match[2]!)?.has(name)).map(name => `${file.path} -> ${match[2]}#${name}`)));
     expect(edges).toEqual([]);
   });
   it("all 26 fills persisted together hit no cross-leaf sub-part refusal", () => {
@@ -279,7 +296,7 @@ describe("pack check: the asset Icon adapter persists with no asset-reading leaf
 describe("pack check: every selectable fill from every source persists, except a shrinking known-refused list", () => {
   const bySource = (source: string) => everyFill.filter(fill => fill.source === source);
   it("covers every source: shadcn@aria, Foundry including charts, and every composition template", () => {
-    expect(bySource("shadcn@aria")).toHaveLength(26);
+    expect(bySource("shadcn@aria")).toHaveLength(33);
     expect(bySource("foundry").length).toBeGreaterThanOrEqual(57);
     expect(bySource("foundry").filter(fill => fill.slot.startsWith("components.chart-")).length).toBeGreaterThanOrEqual(9);
     expect(bySource("compose").map(fill => fill.slot)).toContain("components.date-picker");

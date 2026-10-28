@@ -1,13 +1,13 @@
 {
   "counts": {
     "assetEdges": 4,
-    "assets": 48,
-    "members": 655,
+    "assets": 49,
+    "members": 656,
     "orphanEdges": 0,
-    "resolvedMembers": 654,
+    "resolvedMembers": 655,
     "tokenEdges": 24,
     "tokens": 55,
-    "unusedAssets": 46,
+    "unusedAssets": 47,
     "unusedTokens": 43
   },
   "leaves": [
@@ -239,6 +239,14 @@
       "assets": [],
       "consumedBy": [],
       "id": "assets.icon-package",
+      "resolved": 1,
+      "tokens": [],
+      "total": 1
+    },
+    {
+      "assets": [],
+      "consumedBy": [],
+      "id": "assets.icon-panel-left",
       "resolved": 1,
       "tokens": [],
       "total": 1

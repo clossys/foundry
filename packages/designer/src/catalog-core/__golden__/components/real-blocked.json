@@ -1,6 +1,6 @@
 {
   "blockedCount": 0,
-  "descriptorCount": 27,
+  "descriptorCount": 34,
   "leaves": [
     {
       "blockers": 0,
@@ -50,6 +50,11 @@
     {
       "blockers": 0,
       "codes": [],
+      "slot": "components.command"
+    },
+    {
+      "blockers": 0,
+      "codes": [],
       "slot": "components.dialog"
     },
     {
@@ -60,7 +65,22 @@
     {
       "blockers": 0,
       "codes": [],
+      "slot": "components.dropdown-menu"
+    },
+    {
+      "blockers": 0,
+      "codes": [],
+      "slot": "components.empty"
+    },
+    {
+      "blockers": 0,
+      "codes": [],
       "slot": "components.file-trigger"
+    },
+    {
+      "blockers": 0,
+      "codes": [],
+      "slot": "components.item"
     },
     {
       "blockers": 0,
@@ -90,12 +110,27 @@
     {
       "blockers": 0,
       "codes": [],
+      "slot": "components.scroll-area"
+    },
+    {
+      "blockers": 0,
+      "codes": [],
       "slot": "components.select"
     },
     {
       "blockers": 0,
       "codes": [],
       "slot": "components.separator"
+    },
+    {
+      "blockers": 0,
+      "codes": [],
+      "slot": "components.sheet"
+    },
+    {
+      "blockers": 0,
+      "codes": [],
+      "slot": "components.sidebar"
     },
     {
       "blockers": 0,
