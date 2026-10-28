@@ -1,3 +1,4 @@
+import { publisherCopyFixtureResolver } from "../__fixtures__/writer-copy.js";
 // @vitest-environment jsdom
 import "@testing-library/jest-dom/vitest";
 import { cleanup, fireEvent, render, screen, within } from "@testing-library/react";
@@ -24,7 +25,7 @@ function Host({ ownerHref, binding }: { ownerHref?: (node: { owner: string }) =>
     navigation={{ tree: [{ id: "home", label: "Home", href: "/home" }], activeId: "home", label: "Workspace navigation" }}
     account={{ signedOutLabel: "Signed out", sections: [] }}
     commands={{ heading: "Commands", searchLabel: "Search", closeLabel: "Close", emptyMessage: "No commands", triggerLabel: "Find a command", groups: [], shortcutEnabled: false }}
-    header={{ title: "Fallback" }}><PublisherPage {...props} instances={binding ? props.instances.map(source => source.instanceId === binding.instanceId ? binding : source) : props.instances} planStore={planStore} assemblyOwnerHref={ownerHref} formatsPanel={<h2>Host Formats configuration</h2>} /></AppFrame>;
+    header={{ title: "Fallback" }}><PublisherPage {...props} copyResolver={publisherCopyFixtureResolver} instances={binding ? props.instances.map(source => source.instanceId === binding.instanceId ? binding : source) : props.instances} planStore={planStore} assemblyOwnerHref={ownerHref} formatsPanel={<h2>Host Formats configuration</h2>} /></AppFrame>;
 }
 
 it("keeps failed Checks visible when a blocking question takes overall state priority", () => {
