@@ -94,7 +94,7 @@
  * namespace, raw `var()` only" escape hatch this package's token layer
  * README describes for values that have no Tailwind `@theme` namespace at
  * all (z-index, elevation, layout widths, ...) — see
- * `packages/ui/src/atoms/internal/ui-vars.ts`'s own header comment for the
+ * `packages/designer/src/components/internal/ui-vars.ts`'s own header comment for the
  * real precedent.
  *
  * WHAT THIS DELIBERATELY DOES NOT DO, mirroring `copy-gate.ts`'s own list:

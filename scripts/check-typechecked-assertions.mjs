@@ -26,7 +26,7 @@
 // full reasoning) is the `*.check.ts(x)` convention: a compile-time-only
 // assertion file, named so it falls OUTSIDE `**/*.test.ts(x)` and therefore
 // INSIDE the real `tsc` run, with zero runtime footprint (never imported by
-// any `index.ts`). `packages/ui/src/atoms/internal/icon-contract.check.tsx`
+// any `index.ts`). `packages/designer/src/components/internal/icon-contract.check.tsx`
 // is the precedent this pattern is drawn from. See CONTRIBUTING.md,
 // "Type-level assertions live in `.check.ts(x)` files" for the convention
 // itself.
@@ -77,7 +77,7 @@
 // recognises them as directives (see `isDirective` below) rather than by a
 // loose substring search — a loose search would also flag a comment that
 // merely TALKS ABOUT the directive in prose (this repo has one:
-// packages/ui/src/atoms/Icon.test.tsx explains, in English, why no
+// packages/designer/src/components/Icon.test.tsx explains, in English, why no
 // directive lives there). `expectTypeOf(...)` and `assertType(...)` are
 // matched as ordinary identifier calls. A `satisfies`-based contract check
 // is NOT matched: at the time this gate was written, no such usage exists
@@ -267,7 +267,7 @@ if (findings.length === 0) {
     console.log(`      ${f.text}`);
   }
   console.log(
-    `\n  Fix: move the assertion into a *.check.ts(x) file (see packages/ui/src/atoms/internal/icon-contract.check.tsx,`,
+    `\n  Fix: move the assertion into a *.check.ts(x) file (see packages/designer/src/components/internal/icon-contract.check.tsx,`,
   );
   console.log(`  and CONTRIBUTING.md, "Type-level assertions live in .check.ts(x) files") so tsc actually checks it.`);
 }

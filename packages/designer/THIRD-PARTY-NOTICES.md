@@ -87,7 +87,7 @@ SOFTWARE.
 SPDX-License-Identifier: MIT
 
 `styles/compiled.css` is output of a Tailwind CSS v4 `compile()` over the
-class names this package's atoms, blocks and shell use (see its header).
+class names this package's components, blocks and shell use (see its header).
 
 MIT License
 
