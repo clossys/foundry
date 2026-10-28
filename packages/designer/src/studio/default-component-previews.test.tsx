@@ -3,6 +3,7 @@ import { renderToStaticMarkup } from "react-dom/server";
 import type { CompositeResolved } from "../catalog-core/index.js";
 import { glyphs } from "../components/preview-runtime/adapters/glyphs.js";
 import { defaultComponentPreviews } from "./default-component-previews.js";
+import { componentDescriptorHash } from "../catalog-core/resolve-components.js";
 import profileData from "./__fixtures__/default-component-preview-profile.json" with { type: "json" };
 
 const profile = () => ({ selectionHash: profileData.selectionHash, components: structuredClone(profileData), values: { members: Object.fromEntries(Object.entries(glyphs).map(([slot, value]) => [slot, { slot, value: { light: value } }])) } }) as unknown as CompositeResolved;
@@ -35,9 +36,52 @@ it("preserves another consumer's matching selection without tying previews to it
   const selected = profile();
   for (const component of Object.values(selected.components.components)) {
     component.descriptor.source = "another-consumer";
+    if (component.origin.kind === "adopted") component.origin.sha256 = componentDescriptorHash(component.descriptor);
     if ("adoptedAt" in component.origin) component.origin.adoptedAt = "2026-10-28";
   }
-  expect(defaultComponentPreviews.preview("components.avatar", selected)).toBeDefined();
+  for (const leaf of Object.keys(selected.components.components)) expect(defaultComponentPreviews.preview(leaf, selected), leaf).toBeDefined();
+});
+
+it("refuses a stale adoption checksum even when its implementation matches", () => {
+  const selected = profile();
+  selected.components.components["components.avatar"]!.descriptor.source = "another-consumer";
+  expect(defaultComponentPreviews.preview("components.avatar", selected)).toBeUndefined();
+});
+
+it("refuses a tampered origin checksum or a rehashed descriptor edit", () => {
+  const checksum = profile(), edited = profile();
+  const stale = checksum.components.components["components.avatar"]!;
+  if (stale.origin.kind !== "adopted") throw new Error("Expected an adopted fixture");
+  stale.origin.sha256 = "0".repeat(64);
+  expect(defaultComponentPreviews.preview(stale.slot, checksum)).toBeUndefined();
+  const changed = edited.components.components["components.avatar"]!;
+  if (changed.origin.kind !== "adopted") throw new Error("Expected an adopted fixture");
+  changed.descriptor.item += "-edited";
+  changed.origin.sha256 = componentDescriptorHash(changed.descriptor);
+  expect(defaultComponentPreviews.preview(changed.slot, edited)).toBeUndefined();
+});
+
+it("accepts additional open-scale members while refusing changed registered CSS bindings", () => {
+  const extended = profile(), changed = profile();
+  const button = extended.components.components["components.button"]!;
+  button.reads.tokens = { ...button.reads.tokens, "tokens.easing.consumer": "--ease-consumer" };
+  extended.values.members["tokens.easing.consumer"] = { slot: "tokens.easing" } as typeof extended.values.members[string];
+  expect(defaultComponentPreviews.preview(button.slot, extended)).toBeDefined();
+  const edited = changed.components.components["components.button"]!;
+  edited.reads.tokens = { ...edited.reads.tokens, "tokens.easing.default": "--ease-consumer" };
+  expect(defaultComponentPreviews.preview(edited.slot, changed)).toBeUndefined();
+});
+
+it("refuses missing registered bindings, undeclared reads and closed-scale extensions", () => {
+  for (const member of ["tokens.not-declared.consumer", "tokens.action-color.consumer", "tokens.chart-color.axis"]) {
+    const selected = profile(), button = selected.components.components["components.button"]!;
+    button.reads.tokens = { ...button.reads.tokens, [member]: member === "tokens.chart-color.axis" ? "--color-chart-axis" : "--color-consumer" };
+    expect(defaultComponentPreviews.preview(button.slot, selected)).toBeUndefined();
+  }
+  const selected = profile(), button = selected.components.components["components.button"]!;
+  const { "tokens.easing.default": _removed, ...tokens } = button.reads.tokens;
+  button.reads.tokens = tokens;
+  expect(defaultComponentPreviews.preview(button.slot, selected)).toBeUndefined();
 });
 
 it("refuses a changed selected glyph rather than presenting its static default as selected", () => {
