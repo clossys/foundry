@@ -1,0 +1,22 @@
+[
+  {
+    "id": "st.0000000001",
+    "leaf": "strings.actions",
+    "context": "Save action in an example interface",
+    "status": "approved",
+    "origin": "authored",
+    "text": "Enregistrer",
+    "approval": {
+      "approvedBy": "owner",
+      "approvedAt": "2026-01-02T00:00:00.000Z",
+      "textFingerprint": "71dc74873e23107dfda512ec806b4cf4b98270b4937e2bcc4202b8a79359d6b5",
+      "fingerprintAlgorithm": "sha256"
+    },
+    "translation": {
+      "sourceFingerprint": "65a48671335f5426b7451fa499684cec299534621f5261269cc69a31a61e5cd3",
+      "fingerprintAlgorithm": "sha256",
+      "translatedAt": "2026-01-01T00:00:00.000Z",
+      "reviewedAt": "2026-01-02T00:00:00.000Z"
+    }
+  }
+]
