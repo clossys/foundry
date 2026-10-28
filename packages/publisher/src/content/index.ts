@@ -19,3 +19,4 @@ export type { ContentWorkspace, ContentBrief, ContentOpenQuestion, ContentLink, 
 export { validateCandidateContent, validateContentCandidate, validateContentSlot, validateContentWorkspace, validateContentRegistry, parseContentRegistry } from "./validate.js";
 export { validateConsumerLibrarySnapshots, checkContentLibraryReferences } from "./library.js";
 export type { ConsumerLibrarySnapshot } from "./library.js";
+export type { ReleaseInput, ReleaseManifest, TargetBuildManifest, HandoverReceipt, ReleaseBundle, ReleaseResult } from "./release/types.js";
