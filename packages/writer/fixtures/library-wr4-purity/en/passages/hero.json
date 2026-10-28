@@ -1,0 +1,14 @@
+[
+  {
+    "id": "ps.0000000001",
+    "leaf": "passages.hero",
+    "context": "Example passage containing deliberately invalid inline copy",
+    "status": "draft",
+    "origin": "authored",
+    "schema": "passages.hero",
+    "schemaDigest": "9f27c2b8001a25d497222f0eb1d4b9355a704744bbdc1c001375c0e84c3d8082",
+    "fields": {
+      "header.heading": "Inline heading"
+    }
+  }
+]

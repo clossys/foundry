@@ -1,0 +1,22 @@
+[
+  {
+    "id": "st.0000000001",
+    "leaf": "strings.actions",
+    "context": "Save action in an example interface",
+    "status": "approved",
+    "origin": "authored",
+    "text": "{count, plural, one {Save}}",
+    "approval": {
+      "approvedBy": "owner",
+      "approvedAt": "2026-01-02T00:00:00.000Z",
+      "textFingerprint": "65a48671335f5426b7451fa499684cec299534621f5261269cc69a31a61e5cd3",
+      "fingerprintAlgorithm": "sha256"
+    },
+    "args": [
+      {
+        "name": "count",
+        "type": "plural"
+      }
+    ]
+  }
+]

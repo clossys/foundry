@@ -1,0 +1,16 @@
+[
+  {
+    "id": "st.0000000001",
+    "leaf": "strings.actions",
+    "context": "Save action in an example interface",
+    "status": "approved",
+    "origin": "authored",
+    "text": "Save",
+    "approval": {
+      "approvedBy": "owner",
+      "approvedAt": "2026-01-02T00:00:00.000Z",
+      "textFingerprint": "f59cafb3777d5df749c3f88e72b0afd12a867c01348c8e55e8e1c3ccb7cb06bb",
+      "fingerprintAlgorithm": "sha256"
+    }
+  }
+]

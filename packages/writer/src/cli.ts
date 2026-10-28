@@ -136,7 +136,8 @@
  * CLI flag without a second pass over this logic.
  */
 
-import { existsSync, readFileSync, realpathSync, statSync } from "node:fs";
+import { existsSync, readFileSync, realpathSync, statSync, lstatSync, renameSync, rmSync, writeFileSync } from "node:fs";
+import { randomUUID } from "node:crypto";
 import { resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import {
@@ -152,6 +153,17 @@ import { checkPassageComposition, readPassageRecord, type PassageGateResult } fr
 import { mainApprovalStateCommand } from "./approval.js";
 import { mainApproveCommand } from "./approve-cli.js";
 import { mainWriterIA } from "./catalog/ia/cli.js";
+import { loadWriterLibrary } from "./loader/load.js";
+import { canonicalWriterJSON, writeWriterReceipt } from "./digest/index.js";
+import { checkWriterFreeze, type WriterCheckFinding, type WriterCheckOptions, type WriterDesignerEvidence } from "./checks/freeze.js";
+import { checkWriterClosedWorld } from "./checks/closed-world.js";
+import { checkWriterPurity, writerPurityShapeFindings } from "./checks/purity.js";
+import { checkWriterCoverage } from "./checks/coverage.js";
+import { checkWriterApproval } from "./checks/approval.js";
+import { checkWriterLength } from "./checks/length.js";
+import { checkWriterICU } from "./checks/icu.js";
+import { checkWriterExpansion, writerPseudoLocale } from "./checks/expansion.js";
+
 import { readCopyRecord } from "./registry.js";
 import { checkRenderRegistryParity } from "./render-registry-parity.js";
 import { scanCopySourceTree, type ScanResult, type UncheckedItem } from "./scan.js";
@@ -1523,6 +1535,111 @@ function runAddressabilityCheck(argv: string[]): void {
  * fires, nothing prints, exit code 0). See `strategy`'s `cli.ts` doc
  * comment for the full story; this is the same fix, applied here.
  */
+/** Writer library checks are additive; legacy command contracts remain separate. */
+export function mainWriterLibrary(argv: string[]): number {
+  type Diagnostic = { code: string; severity?: string; path: string; message: string; incomplete?: boolean; recordId?: string; field?: string };
+  let format: "text" | "json" = "text";
+  const print = (result: { exitCode: number; findings: readonly Diagnostic[]; receipt?: unknown; pseudo?: unknown }): number => {
+    if (format === "json") console.log(JSON.stringify(result, null, 2));
+    else {
+      console.log(`writer-check library: ${result.exitCode === 0 ? "clean" : result.exitCode === 1 ? "findings" : "could not run"}`);
+      for (const finding of result.findings) {
+        const subject = [finding.recordId, finding.field].filter(Boolean).join(":");
+        console.log(`${finding.code}: ${finding.path}${subject ? ` [${subject}]` : ""}: ${finding.message}`);
+      }
+      if (result.pseudo !== undefined) {
+        const pseudo = result.pseudo as ReturnType<typeof writerPseudoLocale>;
+        const fields = pseudo.locales.flatMap(locale => locale.fields);
+        console.log(`pseudo ${pseudo.locale}: ${fields.length} fields, ${fields.filter(field => field.overflow.length > 0).length} overflow(s)`);
+      }
+    }
+    return result.exitCode;
+  };
+  const record = (value: unknown): value is Record<string, unknown> => !!value && typeof value === "object" && !Array.isArray(value);
+  const strings = (value: unknown): value is string[] => Array.isArray(value) && value.every(item => typeof item === "string" && !!item.trim()) && new Set(value).size === value.length;
+  const evidence = (value: unknown): WriterDesignerEvidence[] => {
+    const rows = Array.isArray(value) ? value : [value];
+    for (const row of rows) {
+      if (!record(row) || Object.keys(row).some(key => !["version", "assets", "leaves", "configs", "frames"].includes(key))
+        || typeof row.version !== "string" || !row.version.trim() || !strings(row.assets) || !strings(row.leaves) || !Array.isArray(row.frames)) throw new Error("Designer evidence requires version, assets, leaves and frames");
+      if (row.configs !== undefined && (!record(row.configs) || Object.values(row.configs).some(ids => !Array.isArray(ids) || ids.some(id => typeof id !== "string")))) throw new Error("Designer evidence configs must map leaf IDs to configuration IDs");
+      for (const frame of row.frames) {
+        if (!record(frame) || Object.keys(frame).some(key => !["id", "logicalProperties", "configs"].includes(key)) || typeof frame.id !== "string" || !frame.id.trim()
+          || (frame.logicalProperties !== undefined && typeof frame.logicalProperties !== "boolean")
+          || (frame.configs !== undefined && (!Array.isArray(frame.configs) || frame.configs.some(id => typeof id !== "string")))) throw new Error("Designer frame evidence requires an ID and optional logicalProperties/configs");
+      }
+    }
+    return rows as unknown as WriterDesignerEvidence[];
+  };
+  // Derived reports live beside the model receipt, never inside a source locale.
+  const writeReport = (root: string, name: string, value: unknown): void => {
+    const directory = resolve(realpathSync(root), ".generated");
+    const stat = lstatSync(directory);
+    if (stat.isSymbolicLink() || !stat.isDirectory() || realpathSync(directory) !== directory) throw new Error("Writer generated reports require a regular in-library directory");
+    const target = resolve(directory, name);
+    if (existsSync(target)) {
+      const current = lstatSync(target);
+      if (current.isSymbolicLink() || !current.isFile()) throw new Error("Writer generated report destination must be a regular file");
+    }
+    const temporary = resolve(directory, `.writer-check-${randomUUID()}.tmp`);
+    try {
+      // Diagnostic interfaces have optional fields; JSON omits undefined values before canonical ordering.
+      writeFileSync(temporary, canonicalWriterJSON(JSON.parse(JSON.stringify(value)) as unknown) + "\n", { encoding: "utf8", flag: "wx", mode: 0o600 });
+      renameSync(temporary, target);
+    } finally {
+      rmSync(temporary, { force: true });
+    }
+  };
+  try {
+    if (argv.includes("--help") || argv.includes("-h")) {
+      console.log("Usage: writer-check library <content/writer> [--format text|json] [--designer-evidence <json>] [--pseudo-factor <1..4>]");
+      return 0;
+    }
+    let root: string | undefined, evidenceFile: string | undefined;
+    const options: WriterCheckOptions = {};
+    for (let index = 0; index < argv.length; index += 1) {
+      const token = argv[index]!;
+      if (token === "--format" || token === "--designer-evidence" || token === "--pseudo-factor") {
+        const value = argv[++index];
+        if (value === undefined || value.startsWith("--")) throw new Error(`${token} requires a value`);
+        if (token === "--format") {
+          if (value !== "text" && value !== "json") throw new Error("--format must be text or json");
+          format = value;
+        } else if (token === "--designer-evidence") evidenceFile = value;
+        else {
+          const factor = Number(value);
+          if (!Number.isFinite(factor) || factor < 1 || factor > 4) throw new Error("--pseudo-factor must be a finite number from 1 through 4");
+          options.pseudoFactor = factor;
+        }
+      } else if (token.startsWith("-") || root !== undefined) throw new Error(`Unexpected library argument: ${token}`);
+      else root = token;
+    }
+    if (root === undefined) throw new Error("library requires a content/writer directory");
+    if (evidenceFile !== undefined) options.designerLibraries = evidence(JSON.parse(readFileSync(evidenceFile, "utf8")) as unknown);
+    const loaded = loadWriterLibrary(root);
+    if (loaded.library === null) {
+      return print({ exitCode: loaded.exitCode, findings: [...loaded.issues, ...(loaded.exitCode === 1 ? writerPurityShapeFindings(loaded.issues) : [])] });
+    }
+    const library = loaded.library;
+    const findings: WriterCheckFinding[] = [
+      ...checkWriterFreeze(library, options), ...checkWriterClosedWorld(library, options), ...checkWriterPurity(library, options),
+      ...checkWriterLength(library, options), ...checkWriterICU(library, options), ...checkWriterExpansion(library, options),
+      ...checkWriterCoverage(library, options), ...checkWriterApproval(library, options),
+    ];
+    const incomplete = Object.entries(library.locales).flatMap(([locale, content]) => content.documents.map(document => ({
+      code: "load", path: `${locale}/${document.path}`, message: "Markdown narrative checks require WR-NARR; this library check is incomplete.", incomplete: true,
+    })));
+    const receipt = writeWriterReceipt(root, library), pseudo = writerPseudoLocale(library, options);
+    const exitCode = incomplete.length || findings.some(finding => finding.incomplete) ? 2 : findings.some(finding => finding.severity === "error") ? 1 : 0;
+    const result = { exitCode, findings: [...findings, ...incomplete], receipt, pseudo };
+    writeReport(root, "pseudo-en-XA.json", pseudo);
+    writeReport(root, "writer-check-report.json", result);
+    return print(result);
+  } catch (error) {
+    return print({ exitCode: 2, findings: [{ code: "load", path: "library", message: error instanceof Error ? error.message : "Unable to run Writer library checks", incomplete: true }] });
+  }
+}
+
 function detectMainModule(): boolean {
   const argvPath = process.argv[1];
   if (argvPath === undefined) return false;
@@ -1558,7 +1675,9 @@ function detectMainModule(): boolean {
  */
 if (detectMainModule()) {
   const rawArgs = process.argv.slice(2);
-  if (rawArgs[0] === "ia") {
+  if (rawArgs[0] === "library") {
+    process.exitCode = mainWriterLibrary(rawArgs.slice(1));
+  } else if (rawArgs[0] === "ia") {
     process.exitCode = mainWriterIA(rawArgs.slice(1));
   } else if (rawArgs[0] === "addressability") {
     runAddressabilityCheck(rawArgs.slice(1));

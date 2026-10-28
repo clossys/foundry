@@ -1,0 +1,27 @@
+{
+  "consumer": "writer-library-fixture",
+  "defaultLocale": "en",
+  "locales": [
+    {
+      "tag": "en",
+      "dir": "ltr",
+      "state": "active"
+    },
+    {
+      "tag": "fr",
+      "dir": "ltr",
+      "state": "active"
+    }
+  ],
+  "fallback": {},
+  "strategist": {
+    "path": "strategy"
+  },
+  "leafFreeze": {
+    "lexicon": "",
+    "strings": "",
+    "patterns": "",
+    "passages": "",
+    "narratives": ""
+  }
+}
