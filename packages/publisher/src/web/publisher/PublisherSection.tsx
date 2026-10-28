@@ -1,7 +1,7 @@
 'use client';
 import { useState } from 'react';
 import { Banner, Button, Card, Link, Select } from '@clossys/designer/components';
-import { DataTable, DetailView, EmptyState, Form, SectionHeader, Toolbar } from '@clossys/designer/blocks';
+import { DataTable, DetailView, EmptyState, Form, NoticeList, SectionHeader, Toolbar } from '@clossys/designer/blocks';
 import type { InstanceRegistries } from '../../core/instance-binding.js';
 import type { PublisherConfiguration } from '../../planning/configuration.js';
 import type { PublisherCell, PublisherSectionCommand, PublisherSectionData } from './publisher-sections.js';
@@ -19,13 +19,13 @@ export function PublisherSection(props: PublisherSectionProps) {
   const cell = (value: PublisherCell) => value.kind === 'text' ? value.text : value.kind === 'link' ? <Link href={value.href}>{value.label}</Link> : <Button onPress={() => onCommand(value.command)}>{value.label}</Button>;
   if (data.section === 'sections.form') return <PublisherFormSection {...props} data={data} />;
   if (data.section === 'sections.empty-state' || data.section === 'sections.error-state') return <section aria-label={data.label} data-publisher-section={data.id}><div role={data.section === 'sections.error-state' ? 'alert' : undefined}><EmptyState title={data.label} description={data.message} /></div></section>;
-  if (data.section === 'sections.notices') return <section aria-label={data.label} data-publisher-section={data.id}>{data.notices.map(notice => <Banner key={notice.id} variant={notice.tone}>{notice.message}</Banner>)}</section>;
+  if (data.section === 'sections.notices') return <NoticeList label={data.label} data-publisher-section={data.id} notices={data.notices} />;
   if (data.section === 'sections.record-detail') {
     if (data.actions.length > 2) throw new TypeError('Record detail actions exceed the existing Section bound');
-    return <section aria-label={data.label} data-publisher-section={data.id}><Card><DetailView title={data.label} fields={data.fields.map(field => ({ label: field.label, value: field.value }))} actions={<>{data.actions.map((value,index) => <span key={index}>{cell(value)}</span>)}</>} /></Card></section>;
+    return <section aria-label={data.label} data-publisher-section={data.id}><DetailView title={data.label} fields={data.fields.map(field => ({ label: field.label, value: field.value }))} actions={<>{data.actions.map((value,index) => <span key={index}>{cell(value)}</span>)}</>} /></section>;
   }
   if (data.section !== 'sections.data-table') throw new TypeError('Unsupported Publisher Section');
-  const table = (rows: typeof data.rows, label: string) => <DataTable aria-label={label} columns={data.columns.map((column,index) => ({ id: column.id, header: column.label, isRowHeader: index === 0, cell: (row: typeof data.rows[number]) => cell(row.cells[column.id] ?? { kind: 'text', text: '—' }) }))} rows={rows} rowKey={row => row.id}
+  const table = (rows: typeof data.rows, label: string) => <DataTable aria-label={label} columns={data.columns.map((column,index) => ({ id: column.id, header: column.label, isRowHeader: index === 0, cell: (row: typeof data.rows[number]) => cell(row.cells[column.id] ?? { kind: 'text', text: '—' }) }))} rows={rows} rowKey={row => row.id} toolbar={<><SectionHeader title={label} />{data.toolbar?.length ? <Toolbar aria-label={label} leading={<>{data.toolbar.map((value,index) => <span key={index}>{cell(value)}</span>)}</>} /> : null}</>}
     selectionMode={data.selectedId === undefined ? 'none' : 'single'} selectedKeys={data.selectedId ? [data.selectedId] : []} onSelectionChange={keys => {
       if (keys === 'all') return;
       const row = rows.find(row => keys.has(row.id)), action = row && Object.values(row.cells).find(value => value.kind === 'action');
@@ -33,9 +33,7 @@ export function PublisherSection(props: PublisherSectionProps) {
     }} />;
   const groups = data.grouping ? [...new Set(data.rows.map(row => { const value = row.cells[data.grouping!]; return value?.kind === 'text' ? value.text : ''; }))] : undefined;
   return <section aria-label={data.label} data-publisher-section={data.id}>
-    <SectionHeader title={data.label} />
-    {data.toolbar?.length ? <Toolbar aria-label={data.label} leading={<>{data.toolbar.map((value,index) => <span key={index}>{cell(value)}</span>)}</>} /> : null}
-    {groups?.length ? groups.map(group => <div key={group} role="group" aria-label={`${data.grouping}: ${group}`}><SectionHeader level={3} title={group} />{table(data.rows.filter(row => { const value = row.cells[data.grouping!]; return value?.kind === 'text' && value.text === group; }), `${data.label} · ${group}`)}</div>) : table(data.rows, data.label)}
+    {groups?.length ? groups.map(group => <div key={group} role="group" aria-label={`${data.grouping}: ${group}`}>{table(data.rows.filter(row => { const value = row.cells[data.grouping!]; return value?.kind === 'text' && value.text === group; }), `${data.label} · ${group}`)}</div>) : table(data.rows, data.label)}
   </section>;
 }
 function PublisherFormSection(props: PublisherSectionProps & { data: Extract<PublisherSectionData, { section: 'sections.form' }> }) {
