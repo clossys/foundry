@@ -5,7 +5,11 @@ import { cleanup, render, screen, waitFor, within } from "@testing-library/react
 import userEvent from "@testing-library/user-event";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { APP_FRAME_WIDE_QUERY } from "./app-frame-layout.js";
-import { AppFrameSpecimen } from "./index.js";
+import { AppFrameSpecimen as ShellFixtureAppFrameSpecimen } from "./index.js";
+import { withShellCopy } from "./__fixtures__/shell-copy.js";
+const AppFrameSpecimen = withShellCopy(ShellFixtureAppFrameSpecimen);
+
+
 
 beforeEach(() => {
   localStorage.clear();

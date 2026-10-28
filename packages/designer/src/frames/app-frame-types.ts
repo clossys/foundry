@@ -1,3 +1,4 @@
+import type { ShellCopyResolver } from "../components/Banner.copy.js";
 import type { ReactNode } from "react";
 import type { FrameNavigate, PageBarDestination, PageBarCrumb, PageBarAction, PageBarPage, AccountMenuActor, AccountMenuProps, AccountMenuSection, AppNavigationProps, CommandMenuProps } from "../blocks/index.js";
 import type { ThemeProviderProps, ThemeToggleProps } from "../theme/index.js";
@@ -65,6 +66,8 @@ type FrameAction = PageBarAction;
 type FramePage = PageBarPage;
 
 export interface AppFrameProps {
+  /** Host-configured Writer resolver; inherited from ShellCopyProvider when omitted. No locale or approval is inferred. */
+  copyResolver?: ShellCopyResolver;
   /** Canonical page locale supplied by the host through Writer. */
   locale?: string;
   brand: AppFrameBrand;

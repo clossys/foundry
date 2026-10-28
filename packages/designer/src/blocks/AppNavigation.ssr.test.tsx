@@ -5,8 +5,12 @@ import { hydrateRoot } from "react-dom/client";
 import { renderToString } from "react-dom/server";
 import { describe, expect, it, vi } from "vitest";
 import ts from "typescript";
-import { AppNavigation } from "./AppNavigation.js";
+import { AppNavigation as ShellFixtureAppNavigation } from "./AppNavigation.js";
 import * as blocks from "./index.js";
+import { withShellCopy } from "../frames/__fixtures__/shell-copy.js";
+const AppNavigation = withShellCopy(ShellFixtureAppNavigation);
+
+
 
 describe("AppNavigation public and hydration contract", () => {
   it("hydrates duplicated navigation without collisions or route mismatch", async () => {
@@ -29,9 +33,9 @@ describe("AppNavigation public and hydration contract", () => {
   });
 
   it("publishes the actual client component and source-backed unified Material", () => {
-    expect((blocks as any).AppNavigation).toBe(AppNavigation);
+    expect((blocks as any).AppNavigation).toBe(ShellFixtureAppNavigation);
     const material = blocks.APP_FRAME_MATERIALS.find(entry => entry.id === "app-navigation" as any);
-    expect(material?.component).toBe(AppNavigation);
+    expect(material?.component).toBe(ShellFixtureAppNavigation);
     for (const layer of ["components", "blocks", "shell"]) {
       expect(readFileSync(resolve(import.meta.dirname, `../${layer}/server.ts`), "utf8")).not.toMatch(/AppNavigation|app-navigation-tree/);
     }

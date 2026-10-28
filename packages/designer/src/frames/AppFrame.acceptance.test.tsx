@@ -6,9 +6,14 @@ import userEvent from "@testing-library/user-event";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { Button, Dialog } from "../components/index.js";
 import { Panel } from "../blocks/index.js";
-import { ThemeToggle, useTheme } from "../theme/index.js";
-import { AppFrame } from "./AppFrame.js";
+import { ThemeToggle as ShellFixtureThemeToggle, useTheme } from "../theme/index.js";
+import { AppFrame as ShellFixtureAppFrame } from "./AppFrame.js";
 import type { AppFrameProps } from "./app-frame-types.js";
+import { withShellCopy } from "./__fixtures__/shell-copy.js";
+const ThemeToggle = withShellCopy(ShellFixtureThemeToggle);
+const AppFrame = withShellCopy(ShellFixtureAppFrame, true);
+
+
 
 let viewport: number;
 let listeners: Set<() => void>;

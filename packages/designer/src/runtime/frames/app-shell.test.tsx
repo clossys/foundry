@@ -9,6 +9,8 @@ import { DS_ATTR } from "../../catalog-core/provenance-attrs.js";
 import { specimenDataset } from "../../studio/specimen-dataset.js";
 import { surfaceRuntimeRenderers } from "../index.js";
 import { appShellProps, guardedNavigate } from "./app-shell.js";
+import { ShellCopyProvider } from "../../components/Banner.copy-context.js";
+import { shellCopyFixtureResolver } from "../../frames/__fixtures__/shell-copy.js";
 
 beforeEach(() => {
   localStorage.clear();
@@ -17,7 +19,8 @@ beforeEach(() => {
 });
 afterEach(() => { cleanup(); vi.restoreAllMocks(); vi.unstubAllGlobals(); });
 
-const entry = surfaceRuntimeRenderers["frames.app-shell"]!;
+const originalEntry = surfaceRuntimeRenderers["frames.app-shell"]!;
+const entry = { ...originalEntry, render: (input: RuntimeRenderInput<ReactNode>) => <ShellCopyProvider resolver={shellCopyFixtureResolver}>{originalEntry.render(input)}</ShellCopyProvider> };
 const contentOf = (values: Readonly<Record<string, RuntimeJson>>) => Object.fromEntries(Object.entries(values).map(([slot, value]) => [slot, { reference: { kind: "region" as const, ref: `content:${slot}` }, value, hash: "sha256:0" as const }]));
 function input(options: { members?: string[]; host?: RuntimeFrameHost<ReactNode>; content?: Readonly<Record<string, RuntimeJson>>; pageHeader?: RuntimeRenderInput<ReactNode>["pageHeader"] } = {}): RuntimeRenderInput<ReactNode> {
   return {

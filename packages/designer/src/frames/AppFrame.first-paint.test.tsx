@@ -8,9 +8,13 @@ import { renderToString } from "react-dom/server";
 import { compile } from "tailwindcss";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { TOKENS } from "../tokens/index.js";
-import { AppFrame } from "./AppFrame.js";
+import { AppFrame as ShellFixtureAppFrame } from "./AppFrame.js";
 import { APP_FRAME_NAVIGATION_SIZE, APP_FRAME_PANEL_SIZE, APP_FRAME_PANEL_WIDTH_VAR } from "./app-frame-layout.js";
 import type { AppFrameProps } from "./app-frame-types.js";
+import { withShellCopy } from "./__fixtures__/shell-copy.js";
+const AppFrame = withShellCopy(ShellFixtureAppFrame, true);
+
+
 
 const packageRoot = resolve(import.meta.dirname, "../..");
 const req = createRequire(import.meta.url);

@@ -5,9 +5,13 @@ import { act, cleanup, render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
 import { Toaster, toast as globalToast } from "../shell/Toaster.js";
-import { AppFrame } from "./AppFrame.js";
+import { AppFrame as ShellFixtureAppFrame } from "./AppFrame.js";
 import { useFrameNotice, type AppFrameNotice } from "./frame-notices.js";
 import type { AppFrameProps } from "./app-frame-types.js";
+import { withShellCopy } from "./__fixtures__/shell-copy.js";
+const AppFrame = withShellCopy(ShellFixtureAppFrame, true);
+
+
 
 beforeEach(() => {
   sessionStorage.clear();

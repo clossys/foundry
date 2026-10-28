@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { renderToStaticMarkup } from "react-dom/server";
 import { Banner as ClientBanner, type BannerProps } from "./Banner.js";
+import { shellCopyFixtureResolver } from "../frames/__fixtures__/shell-copy.js";
 import { Banner as ServerBanner } from "./Banner.server.js";
 
 /**
@@ -39,12 +40,12 @@ const CASES: Array<[string, BannerProps]> = [
 
 describe("Banner server/client parity", () => {
   it.each(CASES)("renders the same markup in both variants: %s", (_name, props) => {
-    expect(normalised(renderToStaticMarkup(<ClientBanner {...props} />))).toBe(normalised(renderToStaticMarkup(<ServerBanner {...props} />)));
+    expect(normalised(renderToStaticMarkup(<ClientBanner {...props} copyResolver={shellCopyFixtureResolver} />))).toBe(normalised(renderToStaticMarkup(<ServerBanner {...props} copyResolver={shellCopyFixtureResolver} />)));
   });
 
   it("differs only by the react-aria-components attributes on the dismiss button", () => {
     const props: BannerProps = { children: "x", onDismiss: () => {} };
-    expect(renderToStaticMarkup(<ClientBanner {...props} />)).toContain("data-react-aria-pressable");
-    expect(renderToStaticMarkup(<ServerBanner {...props} />)).not.toContain("data-react-aria-pressable");
+    expect(renderToStaticMarkup(<ClientBanner {...props} copyResolver={shellCopyFixtureResolver} />)).toContain("data-react-aria-pressable");
+    expect(renderToStaticMarkup(<ServerBanner {...props} copyResolver={shellCopyFixtureResolver} />)).not.toContain("data-react-aria-pressable");
   });
 });

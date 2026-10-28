@@ -1,3 +1,5 @@
+import { useShellCopy } from "../components/Banner.copy-context.js";
+import { SHELL_COPY_REFS } from "../components/Banner.copy.js";
 import { useId, useState } from "react";
 import { Icon } from "../components/Icon.js";
 import { ToggleGroup, ToggleGroupItem, type ToggleGroupProps } from "../components/ToggleGroup.js";
@@ -24,11 +26,6 @@ export interface ThemePreferenceLabels {
   readonly dark: string;
 }
 
-const DEFAULT_PREFERENCE_LABELS: ThemePreferenceLabels = {
-  system: "System",
-  light: "Light",
-  dark: "Dark",
-};
 
 const PREFERENCE_GLYPH: Record<ThemePreference, IconNode> = {
   system: Monitor,
@@ -38,9 +35,9 @@ const PREFERENCE_GLYPH: Record<ThemePreference, IconNode> = {
 
 export interface ThemeToggleProps extends Omit<ToggleGroupProps,
   "children" | "selectionMode" | "selectedKeys" | "defaultSelectedKeys" | "onSelectionChange" | "disallowEmptySelection"> {
-  /** Spoken names for each preference. @default System / Light / Dark */
+  /** Spoken preference names; omitted names resolve through the host Writer seam. */
   preferenceLabels?: ThemePreferenceLabels;
-  /** Accessible name of the existing toolbar that owns arrow-key focus. @default "Appearance" */
+  /** Accessible toolbar name; omitted means resolve its Writer reference. */
   toolbarLabel?: string;
   /** Tooltip copy for an individual option, receiving the current and target preference. */
   toggleLabel?: (current: ThemePreference, target: ThemePreference, labels: ThemePreferenceLabels) => string;
@@ -56,23 +53,25 @@ function defaultToggleLabel(_current: ThemePreference, target: ThemePreference, 
   return labels[target];
 }
 
-function defaultPreferenceAnnouncement(next: ThemePreference, labels: ThemePreferenceLabels): string {
-  return `Theme set to ${labels[next]}`;
-}
 
 /** Three explicit preferences, using the adopted fill's native radio selection and focus protocol. */
 export function ThemeToggle({
-  preferenceLabels = DEFAULT_PREFERENCE_LABELS,
-  toolbarLabel = "Appearance",
+  preferenceLabels: suppliedPreferenceLabels,
+  toolbarLabel: suppliedToolbarLabel,
   toggleLabel = defaultToggleLabel,
-  preferenceAnnouncement = defaultPreferenceAnnouncement,
-  "aria-label": ariaLabel = "Theme",
+  preferenceAnnouncement: suppliedPreferenceAnnouncement,
+  "aria-label": suppliedAriaLabel,
   "aria-describedby": describedby,
   preference: hostPreference,
   onPreferenceChange,
   ...rest
 }: ThemeToggleProps) {
   const context = useOptionalTheme();
+  const copy = useShellCopy();
+  const preferenceLabels = suppliedPreferenceLabels ?? { system: copy(SHELL_COPY_REFS.theme.system), light: copy(SHELL_COPY_REFS.theme.light), dark: copy(SHELL_COPY_REFS.theme.dark) };
+  const toolbarLabel = suppliedToolbarLabel ?? copy(SHELL_COPY_REFS.theme.toolbar);
+  const ariaLabel = suppliedAriaLabel ?? copy(SHELL_COPY_REFS.theme.group);
+  const preferenceAnnouncement = suppliedPreferenceAnnouncement ?? ((next: ThemePreference, labels: ThemePreferenceLabels) => copy(SHELL_COPY_REFS.theme.announcement, { theme: labels[next] }));
   if (hostPreference === undefined && !context) throw new Error("useTheme() must be called within a <ThemeProvider>.");
   const preference = hostPreference ?? context!.preference;
   const setPreference = (next: ThemePreference) => {
