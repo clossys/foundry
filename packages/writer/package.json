@@ -25,6 +25,11 @@
     "./front-door": {
       "types": "./dist/front-door-browser.d.ts",
       "import": "./dist/front-door-browser.js"
+    },
+    "./admin-studio.en.json": "./src/catalog/records/admin-studio.r1.en.json",
+    "./admin-studio": {
+      "types": "./dist/admin-studio.d.ts",
+      "import": "./dist/admin-studio.js"
     }
   },
   "bin": {
