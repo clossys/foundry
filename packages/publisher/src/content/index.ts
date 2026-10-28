@@ -3,6 +3,8 @@ export { CONTENT_TAXONOMY, isContentPlacement, createSlotId, isSlotId } from "./
 export type { ContentL1, ContentL2, ContentPlacement, SlotId } from "./taxonomy.js";
 export { CONTENT_STAGES, STAGE_STATUSES, rollUpStageStatuses } from "./stages.js";
 export type { ContentStage, StageStatus, CandidateStages } from "./stages.js";
+export { computeStageReport, canTransitionCandidateState, transitionContentCandidate } from "./stage-engine.js";
+export type { StageKey, StageResult, CandidateStageEvidence, StageReport } from "./stage-engine.js";
 export { CANDIDATE_STATES, CANDIDATE_ORIGINS, SLOT_KINDS, SECTION_INTENTS, LINK_RELATIONS, isRevisionId } from "./vocabulary.js";
 export type { CandidateState, CandidateOrigin, SlotKind, SectionIntent, LinkRelation, RevisionId } from "./vocabulary.js";
 export { validateComposition, parseComposition, resolveCopy } from "./composition.js";
