@@ -30,6 +30,20 @@
     "./admin-studio": {
       "types": "./dist/admin-studio.d.ts",
       "import": "./dist/admin-studio.js"
+    },
+    "./admin-voice.en.json": "./src/catalog/records/admin-voice.r1.en.json",
+    "./admin-voice": {
+      "types": "./dist/admin-voice.d.ts",
+      "import": "./dist/admin-voice.js"
+    },
+    "./admin-meta.en.json": "./src/catalog/records/admin-meta.r1.en.json",
+    "./admin-meta": {
+      "types": "./dist/admin-meta.d.ts",
+      "import": "./dist/admin-meta.js"
+    },
+    "./admin-copy": {
+      "types": "./dist/admin-copy.d.ts",
+      "import": "./dist/admin-copy.js"
     }
   },
   "bin": {
