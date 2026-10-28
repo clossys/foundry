@@ -145,6 +145,10 @@
     "./studio/route/server": {
       "types": "./dist/studio/route-server.d.ts",
       "import": "./dist/studio/route-server.js"
+    },
+    "./frames/error": {
+      "types": "./dist/frames/site-frame/landing/internal/errors.d.ts",
+      "import": "./dist/frames/site-frame/landing/internal/errors.js"
     }
   },
   "bin": {
