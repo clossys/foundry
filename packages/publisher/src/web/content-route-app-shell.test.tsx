@@ -1,5 +1,5 @@
 /** @vitest-environment node */
-import { mkdtemp, writeFile, readFile, rm } from "node:fs/promises";
+import { mkdtemp, writeFile, readFile, rm, realpath } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, describe, expect, it } from "vitest";
@@ -64,7 +64,7 @@ describe("active admin candidate AppFrame adapter", () => {
     }
   });
   it("runs all three slots through the real CLI and review, separate approval and activation, then binds all rendered copy", async () => {
-    const parent = await mkdtemp(join(tmpdir(), "publisher-admin-")); roots.push(parent);
+    const parent = await mkdtemp(join(await realpath(tmpdir()), "publisher-admin-")); roots.push(parent);
     const root = join(parent, "publisher"), designer = join(parent, "designer");
     const { catalog, version } = await designerFixture(designer, "frames.app-shell");
     const catalogFile = join(parent, "catalog.json"), writerFile = join(parent, "writer.json");
