@@ -16,12 +16,15 @@
         "package": "@clossys/designer",
         "version": "0.12.0"
       },
-      "relation": "same-contract",
+      "relation": "subset",
       "slot": "sections.error-message",
       "source": "foundry",
       "sourceAddress": "./blocks#ErrorState",
       "status": "draft",
-      "trust": "foundry"
+      "trust": "foundry",
+      "unmapped": [
+        "error.global"
+      ]
     }
   },
   "sections": {

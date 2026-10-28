@@ -124,7 +124,8 @@
           "chrome.full",
           "chrome.minimal",
           "footer-placement.flow",
-          "footer-placement.overlay"
+          "footer-placement.overlay",
+          "header-placement.overlay"
         ]
       },
       "statePorts": [],

@@ -77,7 +77,7 @@ describe("surface default fills", () => {
   it("shows what a subset default leaves unmapped, and nothing for a same-contract default", () => {
     const plan = planSurfaceDefaults(setup());
     expect(plan.rows.find(row => row.slot === "sections.band")).toMatchObject({ status: "default", unmapped: ["axis.rhythm"] });
-    expect(plan.rows.find(row => row.slot === "frames.site-shell")).toMatchObject({ status: "default", unmapped: ["chrome.full", "chrome.minimal", "slot.consent", "slot.progress"] });
+    expect(plan.rows.find(row => row.slot === "frames.site-shell")).toMatchObject({ status: "default", unmapped: ["chrome.full", "chrome.minimal", "header-placement.overlay", "slot.consent", "slot.progress"] });
     expect(plan.rows.find(row => row.slot === "sections.access-matrix")!.unmapped).toBeUndefined();
   });
 

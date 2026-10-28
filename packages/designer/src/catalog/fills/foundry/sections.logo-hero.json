@@ -16,12 +16,15 @@
         "package": "@clossys/designer",
         "version": "0.12.0"
       },
-      "relation": "same-contract",
+      "relation": "subset",
       "slot": "sections.logo-hero",
       "source": "foundry",
       "sourceAddress": "./blocks#LogoHero",
       "status": "draft",
-      "trust": "foundry"
+      "trust": "foundry",
+      "unmapped": [
+        "brand.named"
+      ]
     }
   },
   "sections": {

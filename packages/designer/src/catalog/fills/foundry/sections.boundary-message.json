@@ -16,12 +16,17 @@
         "package": "@clossys/designer",
         "version": "0.12.0"
       },
-      "relation": "same-contract",
+      "relation": "subset",
       "slot": "sections.boundary-message",
       "source": "foundry",
       "sourceAddress": "./blocks#EmptyState",
       "status": "draft",
-      "trust": "foundry"
+      "trust": "foundry",
+      "unmapped": [
+        "status.construction",
+        "status.not-found",
+        "status.unavailable"
+      ]
     }
   },
   "sections": {

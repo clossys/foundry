@@ -114,7 +114,9 @@ describe.each(configs)("Writer sign-in copy binding: %s", config => {
     expect(screen.getByTestId("locale-witness")).toHaveAttribute("data-locale", "ar");
     const shell = container.querySelector('[data-ds-leaf="frames.auth-shell"]');
     expect(shell).not.toBeNull();
-    expect(shell?.closest('[dir="rtl"]')).toBe(screen.getByTestId("document-locale"));
+    expect(shell).toHaveAttribute("lang", "ar");
+    expect(shell).toHaveAttribute("dir", "rtl");
+    expect(shell?.closest('[dir="rtl"]')).toBe(shell);
     expect(screen.getByRole("link", { name: skip!.text })).toHaveAttribute("href", "#main-content");
     expect(screen.getByRole("heading", { name: fieldValue(values, "header.heading") as string })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: fieldValue(values, "providers[].label") as string })).toBeDisabled();

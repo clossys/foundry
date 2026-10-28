@@ -16,12 +16,15 @@
         "package": "@clossys/designer",
         "version": "0.12.0"
       },
-      "relation": "same-contract",
+      "relation": "subset",
       "slot": "sections.faq",
       "source": "foundry",
       "sourceAddress": "./blocks#Faq",
       "status": "draft",
-      "trust": "foundry"
+      "trust": "foundry",
+      "unmapped": [
+        "about.faq"
+      ]
     }
   },
   "sections": {
