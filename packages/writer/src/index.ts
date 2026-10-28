@@ -1,3 +1,4 @@
+export { pseudoLocalize, pseudoLocaleFields, type WriterPseudoLocale } from "./pseudo.js";
 /**
  * @clossys/writer — public entry point. See README.md for the full
  * picture: the machinery-vs-values split this package mirrors from

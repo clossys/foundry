@@ -1,4 +1,5 @@
 import { parseIcuMessage, type IcuNode } from "../icu/parse.js";
+import { pseudoLiteral } from "../pseudo.js";
 import type { WriterLibrary } from "../model/types.js";
 import type { WriterCheckFinding, WriterCheckOptions } from "./freeze.js";
 import { measureWriterText, writerTextFields, writerTextOverflow, type WriterTextLimits } from "./length.js";
@@ -14,7 +15,6 @@ export interface WriterPseudoReport {
   findings: WriterCheckFinding[];
 }
 const boundedFactor = (value: unknown): value is number => typeof value === "number" && Number.isFinite(value) && value >= 1 && value <= 4;
-const accents: Readonly<Record<string, string>> = { a: "á", e: "é", i: "í", o: "ó", u: "ú", A: "Á", E: "É", I: "Í", O: "Ó", U: "Ú" };
 const quoteLiteral = (text: string, inPlural: boolean): string => text.replace(inPlural ? /[{}#']+/g : /[{}']+/g, syntax => {
   const escaped = syntax.replace(/'/g, "''");
   return syntax.replace(/'/g, "") ? `'${escaped}'` : escaped;
@@ -26,10 +26,7 @@ function pseudoMessage(text: string, factor: number): string | undefined {
   if (parsed.issues.length) return undefined; // WR8 owns malformed or unsupported syntax.
   const render = (nodes: readonly IcuNode[], inPlural = false): string => nodes.map(node => {
     if (node.kind === "literal") {
-      const characters = [...node.text];
-      const expanded = characters.map(character => accents[character] ?? character).join("");
-      const padding = node.text.trim() ? "·".repeat(Math.ceil(characters.length * factor) - characters.length) : "";
-      return quoteLiteral(expanded + padding, inPlural);
+      return quoteLiteral(pseudoLiteral(node.text, "en-XA", factor), inPlural);
     }
     if (node.kind === "pound") return "#";
     if (node.kind === "argument") return node.type === "argument" ? `{${node.name}}` : `{${node.name}, ${node.type}${node.style === undefined ? "" : `, ${node.style}`}}`;
