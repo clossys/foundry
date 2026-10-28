@@ -199,3 +199,7 @@ export type { SiteFramePresentationConfig } from "./frame/site-frame-contract.js
 
 export { IndexView, DetailsView } from "#publisher-web-views";
 export type { IndexViewCollection, IndexViewProps, IndexViewRowRoute, IndexViewTable, DetailsViewBlock, DetailsViewLayout, DetailsViewProps, DetailsViewRegion, DetailsViewSection, DetailsViewSectionState, DetailsViewTab } from "#publisher-web-views";
+
+// Pure inventory projection is also available to React Server Component callers.
+export { projectAppInventory } from "./publisher/app/inventory.js";
+export type { AppInventory, AppRoute, AppLane, AppMissingDecision, AppInventoryProjection, AppPageProjection, AppSubrowProjection, AppScopedStateDeclaration } from "./publisher/app/inventory.js";

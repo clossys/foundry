@@ -8,7 +8,7 @@ import { createHash } from "node:crypto";
 import { resolve as resolveProfile, libraryHash, runtimeHash, emittedTokenProperties, checkConsumerRuntimeManifest } from "@clossys/designer/catalog";
 import type { CompositeEngineInput, ConsumerRuntimeManifest } from "@clossys/designer/catalog";
 import { deriveRouteRuntimeBinding, selectedRouteRuntimeManifest } from "../core/route-runtime.js";
-import { consumerDogfoodSources, parseConsumerDogfoodContract, runConsumerDogfood } from "@clossys/designer/catalog/server";
+import { consumerDogfoodSources, parseConsumerDogfoodContract, runConsumerDogfood } from "@clossys/designer/catalog/dogfood/node";
 import { registeredDesignerQuerySources } from "./registered-route-query-source.js";
 export { registeredDesignerQuerySources } from "./registered-route-query-source.js";
 import { materializeRegisteredDesignerRoute } from "./registered-route-query.js";

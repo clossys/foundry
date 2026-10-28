@@ -77,6 +77,8 @@ export const RENDER_ENVIRONMENT: Readonly<Record<string, RenderEnvironment>> = {
   "./catalog": "server-safe",
   "./catalog-bundles": "server-safe",
   "./catalog/server": "server-safe",
+  "./catalog/node": "server-safe",
+  "./catalog/dogfood/node": "server-safe",
   "./studio": "client-only",
   "./studio/queries": "server-safe",
   "./studio/state": "client-only",

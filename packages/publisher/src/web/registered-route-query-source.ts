@@ -1,6 +1,6 @@
 import { dirname, relative, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
-import { consumerDogfoodSources } from "@clossys/designer/catalog/server";
+import { consumerDogfoodSources } from "@clossys/designer/catalog/dogfood/node";
 import { runtimeHash } from "@clossys/designer/catalog";
 import type { RuntimeRendererDescriptor } from "@clossys/designer/catalog";
 

@@ -372,12 +372,16 @@ const JS_SUBPATHS = [
   "./gate",
   "./catalog",
   "./catalog/server",
+  "./catalog/node",
+  "./catalog/dogfood/node",
   "./studio",
   "./studio/queries",
   "./studio/state",
   "./render-environment",
   "./catalog-bundles",
   "./frames",
+  "./studio/route",
+  "./studio/route/server",
 ] as const;
 const CSS_SUBPATHS = ["./tokens.css", "./theme.css", "./theme-keys.css", "./utilities.css", "./compiled.css", "./brand-template.css"] as const;
 const COMPONENT_DIRS = ["components", "blocks", "charts", "shell", "theme"] as const;

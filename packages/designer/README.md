@@ -290,6 +290,20 @@ Regenerate it with `node scripts/generate-token-docs.mjs` and verify it with
 `node scripts/check-token-docs.mjs` from the repository root. These repository
 tools are not shipped in the installed package.
 
+### Node catalog readers and source scanning
+
+Use `@clossys/designer/catalog/node` for `readLibrary` and
+`readSurfacePackageEvidence`. This reader entry exports those two functions
+without the CLI or source scanner. The existing `catalog/server` tooling entry
+remains available.
+
+Source scanning uses `@clossys/designer/catalog/dogfood/node`, which exports
+`consumerDogfoodSources`, `parseConsumerDogfoodContract`, `runConsumerDogfood`,
+and the `ConsumerDogfoodContract` type. A bundling host must keep these exact
+Node subpaths external when it uses them, so filesystem reads and
+package-relative source paths resolve in the installed Designer package.
+Designer UI entries can remain bundled with the host's React runtime.
+
 ### Node token helper migration
 
 The browser-safe token boundary introduces a breaking source-import change:
