@@ -10,8 +10,12 @@ const library = (): WriterLibrary => ({
   locales: { en: { records: [], documents: [] } },
 });
 
+const unsignedSnapshots = () => loadWriterLeafFreezeSnapshots().map(snapshot => ({
+  ...snapshot, signedHead: null, ownerSignoffComment: null,
+}));
+
 describe("WR2 Writer leaf membership", () => {
-  it("accepts the shipped unsigned proposals with empty heads, without modifying evidence", () => {
+  it("accepts the shipped owner-signed snapshots with empty heads, without modifying evidence", () => {
     const value = library();
     const catalog = loadWriterCatalog();
     const snapshots = loadWriterLeafFreezeSnapshots();
@@ -19,7 +23,13 @@ describe("WR2 Writer leaf membership", () => {
     expect(checkWriterFreeze(value, { catalog, freeze: { snapshots } })).toEqual([]);
     expect(checkWriterFreeze(value)).toEqual([]);
     expect(JSON.stringify({ value, catalog, snapshots })).toBe(before);
-    expect(snapshots.every(snapshot => snapshot.signedHead === null && snapshot.ownerSignoffComment === null)).toBe(true);
+    expect(snapshots.map(({ layer, signedHead, ownerSignoffComment }) => ({ layer, signedHead, ownerSignoffComment }))).toEqual(
+      ["lexicon", "strings", "patterns"].map(layer => ({
+        layer, signedHead: "0b06a262bc9447787b9e79393125f1369bfb3470", ownerSignoffComment: "clossys/workspace#45 comment 6460620037",
+      })),
+    );
+    for (const snapshot of snapshots) value.manifest.leafFreeze[snapshot.layer] = snapshot.signedHead!;
+    expect(checkWriterFreeze(value)).toEqual([]);
   });
 
   it("permits L1/L2 regrouping, labels, order and metadata while preserving membership", () => {
@@ -37,7 +47,7 @@ describe("WR2 Writer leaf membership", () => {
 
   it("rejects coordinated new membership against an unsigned baseline", () => {
     const catalog = loadWriterCatalog();
-    const snapshots = loadWriterLeafFreezeSnapshots();
+    const snapshots = unsignedSnapshots();
     const snapshot = snapshots.find(value => value.layer === "lexicon")!;
     catalog.slots.push({ id: "lexicon.new-unsigned", layer: "lexicon", status: "draft", requires: [], contract: {} });
     catalog.placements.find(value => value.layer === "lexicon")!.nodes = [{ id: "group", label: "Group", leaves: [...snapshot.leafIds, "lexicon.new-unsigned"] }];
@@ -54,8 +64,10 @@ describe("WR2 Writer leaf membership", () => {
   it("requires a nonempty manifest head to match a signed snapshot", () => {
     const value = library();
     const head = "a".repeat(40);
+    const unsigned = unsignedSnapshots();
+    expect(checkWriterFreeze(value, { freeze: { snapshots: unsigned } })).toEqual([]);
     value.manifest.leafFreeze.lexicon = head;
-    expect(checkWriterFreeze(value)).toContainEqual(expect.objectContaining({ code: "WR2", path: "writer.json.leafFreeze.lexicon", message: expect.stringContaining("unsigned candidate") }));
+    expect(checkWriterFreeze(value, { freeze: { snapshots: unsigned } })).toContainEqual(expect.objectContaining({ code: "WR2", path: "writer.json.leafFreeze.lexicon", message: expect.stringContaining("unsigned candidate") }));
     const snapshots = loadWriterLeafFreezeSnapshots().map(snapshot => snapshot.layer === "lexicon"
       ? { ...snapshot, signedHead: head, ownerSignoffComment: "Owner approved this membership." } : snapshot);
     expect(checkWriterFreeze(value, { freeze: { snapshots } })).toEqual([]);
