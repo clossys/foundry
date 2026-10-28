@@ -19,7 +19,7 @@ describe("consumer supplied closed-world library", () => {
     ["section", (_r: any, l: any) => { l[0].sections = []; }, "unregistered-section"],
     ["section config owner", (_r: any, l: any) => { l[0].sections[0].configIds = []; l[0].sections.push({ id: "sections.other", configIds: ["default"] }); }, "unregistered-section-config"],
     ["asset", (_r: any, l: any) => { l[0].assetIds = []; }, "unregistered-asset"],
-    ["asset version", (r: any) => { r.candidates[0].composition.sections[0].fields[0].assets[0].libraryVersion = "2"; }, "asset-library-version"],
+    ["asset version", (r: any) => { r.candidates[0].composition.sections[0].assets[0].libraryVersion = "2"; }, "asset-library-version"],
     ["type settings asset", (r: any) => { r.candidates[0].typeSettings.shareImage.assetId = "missing"; }, "unregistered-asset"],
     ["nested settings assets", (r: any) => { r.candidates[0].typeSettings.nested = [{ image: { assetId: "missing", libraryVersion: "1" } }]; }, "unregistered-asset"],
     ["malformed settings ref", (r: any) => { delete r.candidates[0].typeSettings.shareImage.libraryVersion; }, "asset-reference"],
@@ -62,7 +62,7 @@ describe("consumer supplied closed-world library", () => {
     libraries.push({ ...structuredClone(libraries[0]!), version: "2" });
     expect(checkContentLibraryReferences(value, libraries)).toEqual([]);
     value.candidates[1].history[0].content.composition.libraryVersion = "2";
-    value.candidates[1].history[0].content.composition.sections[0].fields[0].assets[0].libraryVersion = "2";
+    value.candidates[1].history[0].content.composition.sections[0].assets[0].libraryVersion = "2";
     expect(checkContentLibraryReferences(value, libraries).map(f => f.rule)).toContain("pinned-library-version");
   });
   it.each(["sectionId", "configId"])("requires referencing %s to match the pinned section", key => {
@@ -77,7 +77,7 @@ describe("consumer supplied closed-world library", () => {
     libraries.push({ ...structuredClone(libraries[0]!), version: "2" });
     const next = structuredClone(value.candidates[1]); next.id = "next";
     next.history[0].content.composition.libraryVersion = "2";
-    next.history[0].content.composition.sections[0].fields[0].assets[0].libraryVersion = "2";
+    next.history[0].content.composition.sections[0].assets[0].libraryVersion = "2";
     value.candidates.push(next);
     value.candidates[1].history[0].content.composition.sections[0].ref = { candidateId: "next", revision: "r1", sectionKey: "intro" };
     expect(checkContentLibraryReferences(value, libraries).map(f => f.rule)).toContain("pinned-library-version");

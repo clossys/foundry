@@ -90,7 +90,7 @@ export function checkContentLibraryReferences(value: unknown, libraries: unknown
       const entry = library.sections.find(entry => entry.id === current.sectionId);
       if (!entry) add(`${path}.sectionId`, "unregistered-section", `Unregistered section: ${current.sectionId}`);
       else if (!entry.configIds.includes(current.configId)) add(`${path}.configId`, "unregistered-section-config", `Config not registered for section: ${current.configId}`);
-      current.fields.forEach((field, j) => field.assets?.forEach((ref, k) => asset(ref, library, `${path}.fields[${j}].assets[${k}]`)));
+      current.assets?.forEach((ref, k) => asset(ref, library, `${path}.assets[${k}]`));
     }
     if (!current.ref) return;
     const ref = current.ref;

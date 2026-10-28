@@ -35,7 +35,7 @@ describe("current revision approval prerequisite", () => {
     ["missing approval", (v: any) => { delete v.approval; }, "approval-required"],
     ["stale revision", (v: any) => { v.approval.revision = "r2"; }, "approval-revision"],
     ["wrong digest", (v: any) => { v.approval.digest = "forged"; }, "approval-digest"],
-    ["changed current copy", (v: any) => { v.composition.sections[0].fields[0].text = "Changed"; }, "snapshot-content"],
+    ["changed current copy", (v: any) => { v.composition.sections[0].fields[0].value = "Changed"; }, "snapshot-content"],
     ["forged history digest", (v: any) => { v.history[0].digest = "forged"; v.approval.digest = "forged"; }, "revision-digest"],
     ["changed snapshot content", (v: any) => { v.history[0].content.name = "Changed"; }, "revision-digest"],
   ])("refuses %s", (_name, mutate, rule) => {
@@ -61,7 +61,7 @@ describe("current revision approval prerequisite", () => {
     candidate.composition.sections[0].ref = { candidateId: "source", revision: "r1", sectionKey: "intro" };
     candidate.history = [createContentRevision(candidate, "r1", at)]; candidate.approval.digest = candidate.history[0].digest;
     expect(checkContentActivation(value)).toEqual([]);
-    source.history[0].content.composition.sections[0].fields[0].text = "Tampered";
+    source.history[0].content.composition.sections[0].fields[0].value = "Tampered";
     expect(checkContentActivation(value).map(f => f.rule)).toContain("pinned-revision-digest");
   });
   it("refuses unresolved and cyclic pinned histories in the Node prerequisite", () => {

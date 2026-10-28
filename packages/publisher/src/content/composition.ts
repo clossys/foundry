@@ -1,16 +1,16 @@
 import type { RevisionId, SectionIntent } from "./vocabulary.js";
-import { isRevisionId, SECTION_INTENTS } from "./vocabulary.js";
+import { isContentLocale, isRevisionId, SECTION_INTENTS } from "./vocabulary.js";
+import type { CandidateContent } from "./model.js";
 
 export interface DesignerAssetRef {
   readonly assetId: string;
   readonly libraryVersion: string;
 }
 export interface CopyField {
-  readonly field: string;
-  readonly text: string;
-  readonly source: "handwritten";
-  readonly locale?: string;
-  readonly assets?: readonly DesignerAssetRef[];
+  readonly key: string;
+  readonly locale: string;
+  readonly value: string;
+  readonly source: "writer";
 }
 export interface SectionReference {
   readonly candidateId: string;
@@ -23,6 +23,7 @@ export interface CompositionSection {
   readonly configId: string;
   readonly intent: SectionIntent;
   readonly fields: readonly CopyField[];
+  readonly assets?: readonly DesignerAssetRef[];
   readonly ref?: SectionReference;
 }
 export interface Composition {
@@ -61,7 +62,7 @@ export function validateComposition(value: unknown): readonly ContentFinding[] {
     const keys = new Set<string>();
     value.sections.forEach((section, i) => {
       const path = `composition.sections[${i}]`;
-      if (!object(section, path, ["key", "sectionId", "configId", "intent", "fields", "ref"])) return;
+      if (!object(section, path, ["key", "sectionId", "configId", "intent", "fields", "assets", "ref"])) return;
       for (const key of ["key", "sectionId", "configId"]) text(section[key], `${path}.${key}`);
       if (typeof section.key === "string") {
         if (keys.has(section.key)) issue(`${path}.key`, "duplicate-section-key");
@@ -73,21 +74,25 @@ export function validateComposition(value: unknown): readonly ContentFinding[] {
         text(section.ref.sectionKey, `${path}.ref.sectionKey`);
         if (!isRevisionId(section.ref.revision)) issue(`${path}.ref.revision`, "pinned-revision");
       }
+      const copyKeys = new Set<string>();
       if (array(section.fields, `${path}.fields`)) section.fields.forEach((field, j) => {
         const fieldPath = `${path}.fields[${j}]`;
-        if (!object(field, fieldPath, ["field", "text", "source", "locale", "assets"])) return;
-        text(field.field, `${fieldPath}.field`);
+        if (!object(field, fieldPath, ["key", "locale", "value", "source"])) return;
+        text(field.key, `${fieldPath}.key`);
         // Empty draft text is represented honestly; required-field Review decides completeness.
-        if (typeof field.text !== "string") issue(`${fieldPath}.text`, "string");
-        if (field.source !== "handwritten") issue(`${fieldPath}.source`, "handwritten-source");
-        if (field.locale !== undefined) text(field.locale, `${fieldPath}.locale`);
-        if (field.assets !== undefined && array(field.assets, `${fieldPath}.assets`)) field.assets.forEach((asset, k) => {
-          const assetPath = `${fieldPath}.assets[${k}]`;
-          if (object(asset, assetPath, ["assetId", "libraryVersion"])) {
-            text(asset.assetId, `${assetPath}.assetId`);
-            text(asset.libraryVersion, `${assetPath}.libraryVersion`);
-          }
-        });
+        if (typeof field.value !== "string") issue(`${fieldPath}.value`, "string");
+        if (field.source !== "writer") issue(`${fieldPath}.source`, "writer-source");
+        if (!isContentLocale(field.locale)) issue(`${fieldPath}.locale`, "locale");
+        const identity = JSON.stringify([field.locale, field.key]);
+        if (copyKeys.has(identity)) issue(fieldPath, "duplicate-copy-key");
+        copyKeys.add(identity);
+      });
+      if (section.assets !== undefined && array(section.assets, `${path}.assets`)) section.assets.forEach((asset, k) => {
+        const assetPath = `${path}.assets[${k}]`;
+        if (object(asset, assetPath, ["assetId", "libraryVersion"])) {
+          text(asset.assetId, `${assetPath}.assetId`);
+          text(asset.libraryVersion, `${assetPath}.libraryVersion`);
+        }
       });
     });
   }
@@ -98,4 +103,16 @@ export function parseComposition(value: unknown): Composition {
   const findings = validateComposition(value);
   if (findings.length) throw new TypeError(findings.map(f => `${f.path}: ${f.rule}`).join("; "));
   return value as Composition;
+}
+
+export type ResolvedCopy = Readonly<Record<string, Readonly<Record<string, string>>>>;
+
+/** Select Writer values for exactly one locale; Review owns missing-copy findings. */
+export function resolveCopy(candidate: Pick<CandidateContent, "composition">, locale: string): ResolvedCopy {
+  if (!isContentLocale(locale)) throw new TypeError("Copy resolution requires a locale");
+  if (!candidate.composition) return {};
+  const composition = parseComposition(candidate.composition);
+  return Object.fromEntries(composition.sections.map(section => [section.key,
+    Object.fromEntries(section.fields.filter(field => field.locale === locale).map(field => [field.key, field.value])),
+  ]));
 }
