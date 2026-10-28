@@ -1,9 +1,9 @@
 import { validateComposition } from "./composition.js";
 import type { ContentFinding } from "./composition.js";
 import { isContentJson, isSourceAnswer } from "./json.js";
-import type { ContentCandidate, ContentRegistry, ContentSlot, ContentWorkspace } from "./model.js";
-import { isContentPlacement } from "./taxonomy.js";
-import { CANDIDATE_ORIGINS, CANDIDATE_STATES, LINK_RELATIONS, SLOT_KINDS, isRevisionId } from "./vocabulary.js";
+import type { ContentCandidate, ContentRegistry, ContentSlot } from "./model.js";
+import { isContentPlacement, isSlotId } from "./taxonomy.js";
+import { CANDIDATE_ORIGINS, CANDIDATE_STATES, LINK_RELATIONS, SLOT_KINDS, isContentLocale, isRevisionId } from "./vocabulary.js";
 
 class Checks {
   findings: ContentFinding[] = [];
@@ -21,6 +21,12 @@ class Checks {
   }
   strings(v: unknown, path: string): void {
     if (this.array(v, path)) v.forEach((entry, i) => this.text(entry, `${path}[${i}]`));
+  }
+  locales(v: unknown, path: string): void {
+    if (!this.array(v, path)) return;
+    if (!v.length) this.add(path, "nonempty-locales");
+    v.forEach((entry, i) => { if (!isContentLocale(entry)) this.add(`${path}[${i}]`, "locale"); });
+    if (new Set(v).size !== v.length) this.add(path, "duplicate-locale");
   }
   integer(v: unknown, path: string): void {
     if (typeof v !== "number" || !Number.isSafeInteger(v) || v < 1) this.add(path, "positive-integer");
@@ -102,11 +108,10 @@ class Checks {
   }
   slot(v: unknown, path: string): void {
     if (!this.object(v, path)) return;
-    this.text(v.id, `${path}.id`);
-    if (typeof v.id === "string") {
-      const [l1, l2, ...name] = v.id.split("/");
-      if (!isContentPlacement(l1, l2) || !name.join("/").trim()) this.add(`${path}.id`, "creation-address");
-    }
+    if (!isSlotId(v.id)) this.add(`${path}.id`, "slot-id");
+    this.strings(v.aliases, `${path}.aliases`);
+    if (Array.isArray(v.aliases) && new Set(v.aliases).size !== v.aliases.length) this.add(`${path}.aliases`, "duplicate-alias");
+    this.locales(v.locales, `${path}.locales`);
     if (!isContentPlacement(v.l1, v.l2)) this.add(path, "placement");
     for (const key of ["name"]) this.text(v[key], `${path}.${key}`);
     if (this.object(v.position, `${path}.position`)) {
@@ -114,7 +119,7 @@ class Checks {
       if (typeof v.position.order !== "number" || !Number.isFinite(v.position.order)) this.add(`${path}.position.order`, "finite-order");
     }
     this.enum(v.kind, SLOT_KINDS, `${path}.kind`);
-    if (typeof v.devOnly !== "boolean" || (v.l2 === "internal" && v.devOnly !== true)) this.add(`${path}.devOnly`, "dev-only");
+    if (typeof v.devOnly !== "boolean") this.add(`${path}.devOnly`, "dev-only");
     for (const key of ["route", "deployTarget", "destination", "activeCandidateId"]) if (v[key] !== undefined) this.text(v[key], `${path}.${key}`);
     if (v.dynamicParams !== undefined) this.jsonObject(v.dynamicParams, `${path}.dynamicParams`);
     this.strings(v.tags, `${path}.tags`);
@@ -131,6 +136,9 @@ class Checks {
   workspace(v: unknown, path: string): void {
     if (!this.object(v, path)) return;
     this.text(v.consumerId, `${path}.consumerId`);
+    this.locales(v.locales, `${path}.locales`);
+    if (!isContentLocale(v.defaultLocale)) this.add(`${path}.defaultLocale`, "locale");
+    if (Array.isArray(v.locales) && !v.locales.includes(v.defaultLocale)) this.add(`${path}.defaultLocale`, "default-locale-membership");
     if (v.currentMilestoneTag !== undefined) this.text(v.currentMilestoneTag, `${path}.currentMilestoneTag`);
     if (this.array(v.deployTargets, `${path}.deployTargets`)) v.deployTargets.forEach((target, i) => {
       const p = `${path}.deployTargets[${i}]`;
@@ -142,7 +150,7 @@ class Checks {
       const p = `${path}.destinations[${i}]`;
       if (!this.object(target, p)) return;
       for (const key of ["id", "ref"]) this.text(target[key], `${p}.${key}`);
-      this.enum(target.kind, ["distributor", "messenger"], `${p}.kind`);
+      this.enum(target.kind, ["builder", "messenger", "influencer"], `${p}.kind`);
     });
   }
 }
@@ -178,6 +186,16 @@ export function validateContentRegistry(value: unknown): readonly ContentFinding
   registry.slots.forEach((slot, i) => {
     if (slots.has(slot.id)) checks.add(`registry.slots[${i}].id`, "duplicate-slot-id");
     slots.set(slot.id, slot);
+    slot.locales.forEach((locale, j) => {
+      if (!registry.workspace.locales.includes(locale)) checks.add(`registry.slots[${i}].locales[${j}]`, "workspace-locale");
+    });
+  });
+  const aliases = new Set<string>();
+  registry.slots.forEach((slot, i) => {
+    slot.aliases.forEach((alias, j) => {
+      if (slots.has(alias) || aliases.has(alias)) checks.add(`registry.slots[${i}].aliases[${j}]`, "alias-collision");
+      aliases.add(alias);
+    });
   });
   registry.candidates.forEach((candidate, i) => {
     const p = `registry.candidates[${i}]`;

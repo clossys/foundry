@@ -15,3 +15,13 @@ export type RevisionId = `r${number}`;
 export function isRevisionId(value: unknown): value is RevisionId {
   return typeof value === "string" && /^r[1-9][0-9]*$/.test(value);
 }
+
+/** Validate a locale tag without rewriting the stored selection. */
+export function isContentLocale(value: unknown): value is string {
+  if (typeof value !== "string" || !value) return false;
+  try {
+    return Intl.getCanonicalLocales(value).length === 1;
+  } catch {
+    return false;
+  }
+}

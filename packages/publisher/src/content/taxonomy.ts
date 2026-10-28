@@ -1,8 +1,11 @@
-/** The closed content hierarchy. Slot ids retain their creation address after moves. */
+/** The closed content hierarchy, in presentation order. */
 export const CONTENT_TAXONOMY = Object.freeze({
-  websites: Object.freeze(["site", "app", "admin", "demo", "internal"] as const),
-  documents: Object.freeze(["slides", "docs"] as const),
-  communications: Object.freeze(["messages", "videos"] as const),
+  websites: Object.freeze(["site", "admin", "auth", "app", "demo"] as const),
+  documents: Object.freeze(["docs"] as const),
+  presentations: Object.freeze(["decks"] as const),
+  videos: Object.freeze(["clips"] as const),
+  messages: Object.freeze(["email"] as const),
+  social: Object.freeze(["posts"] as const),
 });
 
 export type ContentL1 = keyof typeof CONTENT_TAXONOMY;
@@ -17,11 +20,23 @@ export function isContentPlacement(l1: unknown, l2: unknown): boolean {
     && (CONTENT_TAXONOMY[l1 as ContentL1] as readonly string[]).includes(l2);
 }
 
-/** Issue once when creating a slot; moving a slot preserves this returned id. */
-export function createSlotId(l1: ContentL1, l2: ContentL2, positionName: string): string {
-  if (!isContentPlacement(l1, l2) || typeof positionName !== "string"
-    || !positionName.trim()) {
-    throw new TypeError("Slot creation requires a registered placement and a nonempty position name");
+export type SlotId = `sl_${string}`;
+
+/** Accept only ten lowercase RFC 4648 base32 characters after the prefix. */
+export function isSlotId(value: unknown): value is SlotId {
+  return typeof value === "string" && value.length === 13 && /^sl_[a-z2-7]{10}$/.test(value);
+}
+
+const SLOT_ID_ALPHABET = "abcdefghijklmnopqrstuvwxyz234567";
+
+/** Mint once at creation; preserve the id when a slot moves or is renamed. */
+export function createSlotId(existingIds: ReadonlySet<string> = new Set()): SlotId {
+  for (let attempt = 0; attempt < 128; attempt++) {
+    const bytes = globalThis.crypto.getRandomValues(new Uint8Array(10));
+    // Each byte contributes five unbiased bits, independent of any slot address.
+    const suffix = Array.from(bytes, byte => SLOT_ID_ALPHABET[byte & 31]).join("");
+    const id: SlotId = `sl_${suffix}`;
+    if (!existingIds.has(id)) return id;
   }
-  return `${l1}/${l2}/${positionName}`;
+  throw new Error("Unable to mint a unique slot id after 128 attempts");
 }

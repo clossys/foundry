@@ -1,13 +1,15 @@
 import type { Composition } from "./composition.js";
 import type { ContentJson, ContentJsonObject, SourceAnswer } from "./json.js";
-import type { ContentPlacement } from "./taxonomy.js";
+import type { ContentPlacement, SlotId } from "./taxonomy.js";
 import type { CandidateOrigin, CandidateState, LinkRelation, RevisionId, SlotKind } from "./vocabulary.js";
 
 export interface ContentWorkspace {
   readonly consumerId: string;
+  readonly defaultLocale: string;
+  readonly locales: readonly string[];
   readonly currentMilestoneTag?: string;
   readonly deployTargets: readonly { readonly id: string; readonly repo: string; readonly app: string; readonly builderSurfaceId?: string }[];
-  readonly destinations: readonly { readonly id: string; readonly kind: "distributor" | "messenger"; readonly ref: string }[];
+  readonly destinations: readonly { readonly id: string; readonly kind: "builder" | "messenger" | "influencer"; readonly ref: string }[];
 }
 export interface ContentBrief {
   readonly audience: string;
@@ -73,8 +75,10 @@ export interface ContentRelease {
   readonly at: string;
 }
 export type ContentSlot = ContentPlacement & {
-  /** Creation address; independent of current l1/l2/position. */
-  readonly id: string;
+  /** Opaque identity; independent of placement, aliases, and routes. */
+  readonly id: SlotId;
+  readonly aliases: readonly string[];
+  readonly locales: readonly string[];
   readonly position: { readonly order: number; readonly name: string };
   readonly name: string;
   readonly kind: SlotKind;
