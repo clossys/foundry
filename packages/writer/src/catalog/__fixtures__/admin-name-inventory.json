@@ -1,0 +1,5606 @@
+{
+  "unit": "A4-WR-ADMIN-NAMES",
+  "sourceCommit": "a1f5b0a6fd80f9ffc57220ef5609c4a9041b1e19",
+  "scope": "Draft names and proposed binding keys; not rendered-page coverage",
+  "entries": [
+    {
+      "parent": "publisher.format",
+      "id": "web.page.responsive",
+      "role": "label",
+      "cellId": "publisher.format.web.page.responsive",
+      "recordId": "st.w5h0dvynnd",
+      "file": "admin-meta.r1.en.json",
+      "text": "Responsive page",
+      "source": {
+        "path": "packages/publisher/src/formats/slots/formats.ts",
+        "line": 5
+      }
+    },
+    {
+      "parent": "publisher.format",
+      "id": "email.html",
+      "role": "label",
+      "cellId": "publisher.format.email.html",
+      "recordId": "st.5bvvjt22m9",
+      "file": "admin-meta.r1.en.json",
+      "text": "Email",
+      "source": {
+        "path": "packages/publisher/src/formats/slots/formats.ts",
+        "line": 12
+      }
+    },
+    {
+      "parent": "publisher.format",
+      "id": "image.og",
+      "role": "label",
+      "cellId": "publisher.format.image.og",
+      "recordId": "st.3nrpe15682",
+      "file": "admin-meta.r1.en.json",
+      "text": "Share image",
+      "source": {
+        "path": "packages/publisher/src/formats/slots/formats.ts",
+        "line": 17
+      }
+    },
+    {
+      "parent": "publisher.format",
+      "id": "document.pdf-a4",
+      "role": "label",
+      "cellId": "publisher.format.document.pdf-a4",
+      "recordId": "st.38nk0zqq3b",
+      "file": "admin-meta.r1.en.json",
+      "text": "A4 document",
+      "source": {
+        "path": "packages/publisher/src/formats/slots/formats.ts",
+        "line": 22
+      }
+    },
+    {
+      "parent": "publisher.format",
+      "id": "video.16x9",
+      "role": "label",
+      "cellId": "publisher.format.video.16x9",
+      "recordId": "st.5m39xnebvq",
+      "file": "admin-meta.r1.en.json",
+      "text": "Widescreen video",
+      "source": {
+        "path": "packages/publisher/src/formats/slots/formats.ts",
+        "line": 27
+      }
+    },
+    {
+      "parent": "publisher.format",
+      "id": "deck.16x9",
+      "role": "label",
+      "cellId": "publisher.format.deck.16x9",
+      "recordId": "st.fwfhte7vjh",
+      "file": "admin-meta.r1.en.json",
+      "text": "Widescreen slides",
+      "source": {
+        "path": "packages/publisher/src/formats/slots/formats.ts",
+        "line": 32
+      }
+    },
+    {
+      "parent": "publisher.frame",
+      "id": "frames.document",
+      "role": "label",
+      "cellId": "publisher.frame.frames.document",
+      "recordId": "st.w3ddpdtqay",
+      "file": "admin-meta.r1.en.json",
+      "text": "Document page",
+      "source": {
+        "path": "packages/designer/src/catalog/slots/frames.json",
+        "line": 3
+      }
+    },
+    {
+      "parent": "publisher.frame",
+      "id": "frames.site-shell",
+      "role": "label",
+      "cellId": "publisher.frame.frames.site-shell",
+      "recordId": "st.njmrezf88j",
+      "file": "admin-meta.r1.en.json",
+      "text": "Website page",
+      "source": {
+        "path": "packages/designer/src/catalog/slots/frames.json",
+        "line": 42
+      }
+    },
+    {
+      "parent": "publisher.frame",
+      "id": "frames.app-shell",
+      "role": "label",
+      "cellId": "publisher.frame.frames.app-shell",
+      "recordId": "st.rtxryd7cfz",
+      "file": "admin-meta.r1.en.json",
+      "text": "Workspace page",
+      "source": {
+        "path": "packages/designer/src/catalog/slots/frames.json",
+        "line": 43
+      }
+    },
+    {
+      "parent": "publisher.frame",
+      "id": "frames.auth-shell",
+      "role": "label",
+      "cellId": "publisher.frame.frames.auth-shell",
+      "recordId": "st.v3ycrdrpmn",
+      "file": "admin-meta.r1.en.json",
+      "text": "Sign-in page",
+      "source": {
+        "path": "packages/designer/src/catalog/slots/frames.json",
+        "line": 44
+      }
+    },
+    {
+      "parent": "publisher.frame",
+      "id": "frames.site-header",
+      "role": "label",
+      "cellId": "publisher.frame.frames.site-header",
+      "recordId": "st.4wj43903kc",
+      "file": "admin-meta.r1.en.json",
+      "text": "Website header",
+      "source": {
+        "path": "packages/designer/src/catalog/slots/frames.json",
+        "line": 158
+      }
+    },
+    {
+      "parent": "publisher.frame",
+      "id": "frames.app-header",
+      "role": "label",
+      "cellId": "publisher.frame.frames.app-header",
+      "recordId": "st.8hvjvvw83e",
+      "file": "admin-meta.r1.en.json",
+      "text": "Workspace header",
+      "source": {
+        "path": "packages/designer/src/catalog/slots/frames.json",
+        "line": 324
+      }
+    },
+    {
+      "parent": "publisher.frame",
+      "id": "frames.app-sidebar",
+      "role": "label",
+      "cellId": "publisher.frame.frames.app-sidebar",
+      "recordId": "st.z76k5drqae",
+      "file": "admin-meta.r1.en.json",
+      "text": "Workspace sidebar",
+      "source": {
+        "path": "packages/designer/src/catalog/slots/frames.json",
+        "line": 325
+      }
+    },
+    {
+      "parent": "publisher.frame",
+      "id": "frames.inspector",
+      "role": "label",
+      "cellId": "publisher.frame.frames.inspector",
+      "recordId": "st.pqyk75vw6x",
+      "file": "admin-meta.r1.en.json",
+      "text": "Details panel",
+      "source": {
+        "path": "packages/designer/src/catalog/slots/frames.json",
+        "line": 326
+      }
+    },
+    {
+      "parent": "publisher.frame",
+      "id": "frames.site-footer",
+      "role": "label",
+      "cellId": "publisher.frame.frames.site-footer",
+      "recordId": "st.b0empz5tp2",
+      "file": "admin-meta.r1.en.json",
+      "text": "Website footer",
+      "source": {
+        "path": "packages/designer/src/catalog/slots/frames.json",
+        "line": 159
+      }
+    },
+    {
+      "parent": "publisher.frame",
+      "id": "frames.sheet",
+      "role": "label",
+      "cellId": "publisher.frame.frames.sheet",
+      "recordId": "st.xe1vmezaw2",
+      "file": "admin-meta.r1.en.json",
+      "text": "Overlay panel",
+      "source": {
+        "path": "packages/designer/src/catalog/slots/frames.json",
+        "line": 327
+      }
+    },
+    {
+      "parent": "publisher.frame",
+      "id": "frames.command",
+      "role": "label",
+      "cellId": "publisher.frame.frames.command",
+      "recordId": "st.b0jrfbc3my",
+      "file": "admin-meta.r1.en.json",
+      "text": "Command menu",
+      "source": {
+        "path": "packages/designer/src/catalog/slots/frames.json",
+        "line": 328
+      }
+    },
+    {
+      "parent": "designer.boardName",
+      "id": "designer.ia.tokens.color-controls",
+      "role": "label",
+      "cellId": "designer.boardName.designer.ia.tokens.color-controls",
+      "recordId": "st.hfsb4xz44v",
+      "file": "admin-studio.r1.en.json",
+      "text": "Control colors",
+      "source": {
+        "path": "packages/designer/src/catalog/ia/tokens.json",
+        "line": 1
+      }
+    },
+    {
+      "parent": "designer.boardName",
+      "id": "designer.ia.tokens.interaction-controls",
+      "role": "label",
+      "cellId": "designer.boardName.designer.ia.tokens.interaction-controls",
+      "recordId": "st.9wy8met97b",
+      "file": "admin-studio.r1.en.json",
+      "text": "Control sizes",
+      "source": {
+        "path": "packages/designer/src/catalog/ia/tokens.json",
+        "line": 1
+      }
+    },
+    {
+      "parent": "designer.boardName",
+      "id": "designer.ia.frames.panels",
+      "role": "label",
+      "cellId": "designer.boardName.designer.ia.frames.panels",
+      "recordId": "st.dg3e6jc56v",
+      "file": "admin-studio.r1.en.json",
+      "text": "Page panels",
+      "source": {
+        "path": "packages/designer/src/catalog/ia/frames.json",
+        "line": 1
+      }
+    },
+    {
+      "parent": "designer.boardName",
+      "id": "designer.ia.frames.overlay-shells-panels",
+      "role": "label",
+      "cellId": "designer.boardName.designer.ia.frames.overlay-shells-panels",
+      "recordId": "st.n3jkssxad5",
+      "file": "admin-studio.r1.en.json",
+      "text": "Overlay panels",
+      "source": {
+        "path": "packages/designer/src/catalog/ia/frames.json",
+        "line": 1
+      }
+    },
+    {
+      "parent": "publisher.layout",
+      "id": "layouts.stack",
+      "role": "label",
+      "cellId": "publisher.layout.layouts.stack",
+      "recordId": "st.ajxm6xb824",
+      "file": "admin-meta.r1.en.json",
+      "text": "Vertical stack",
+      "source": {
+        "path": "packages/publisher/src/layouts/slots/layouts.json",
+        "line": 3
+      }
+    },
+    {
+      "parent": "publisher.layout",
+      "id": "layouts.split",
+      "role": "label",
+      "cellId": "publisher.layout.layouts.split",
+      "recordId": "st.gc39szvkj1",
+      "file": "admin-meta.r1.en.json",
+      "text": "Two columns",
+      "source": {
+        "path": "packages/publisher/src/layouts/slots/layouts.json",
+        "line": 212
+      }
+    },
+    {
+      "parent": "publisher.layout",
+      "id": "layouts.sidebar-content",
+      "role": "label",
+      "cellId": "publisher.layout.layouts.sidebar-content",
+      "recordId": "st.jgvacmfx3y",
+      "file": "admin-meta.r1.en.json",
+      "text": "Side panel",
+      "source": {
+        "path": "packages/publisher/src/layouts/slots/layouts.json",
+        "line": 300
+      }
+    },
+    {
+      "parent": "publisher.layout",
+      "id": "layouts.bento",
+      "role": "label",
+      "cellId": "publisher.layout.layouts.bento",
+      "recordId": "st.wbydgfcmr3",
+      "file": "admin-meta.r1.en.json",
+      "text": "Card grid",
+      "source": {
+        "path": "packages/publisher/src/layouts/slots/layouts.json",
+        "line": 452
+      }
+    },
+    {
+      "parent": "publisher.layout",
+      "id": "layouts.staggered-grid",
+      "role": "label",
+      "cellId": "publisher.layout.layouts.staggered-grid",
+      "recordId": "st.hfnrqcnec8",
+      "file": "admin-meta.r1.en.json",
+      "text": "Staggered grid",
+      "source": {
+        "path": "packages/publisher/src/layouts/slots/layouts.json",
+        "line": 546
+      }
+    },
+    {
+      "parent": "publisher.layoutConfig.layouts.stack",
+      "id": "stack.landing",
+      "role": "label",
+      "cellId": "publisher.layoutConfig.layouts.stack.stack.landing",
+      "recordId": "st.h42b0qvyfe",
+      "file": "admin-meta.r1.en.json",
+      "text": "Landing page",
+      "source": {
+        "path": "packages/publisher/src/layouts/slots/layouts.json",
+        "line": 101
+      }
+    },
+    {
+      "parent": "publisher.layoutConfig.layouts.stack",
+      "id": "stack.document",
+      "role": "label",
+      "cellId": "publisher.layoutConfig.layouts.stack.stack.document",
+      "recordId": "st.4vkyd92vs4",
+      "file": "admin-meta.r1.en.json",
+      "text": "Reading page",
+      "source": {
+        "path": "packages/publisher/src/layouts/slots/layouts.json",
+        "line": 115
+      }
+    },
+    {
+      "parent": "publisher.layoutConfig.layouts.stack",
+      "id": "stack.focus",
+      "role": "label",
+      "cellId": "publisher.layoutConfig.layouts.stack.stack.focus",
+      "recordId": "st.evecaayeqq",
+      "file": "admin-meta.r1.en.json",
+      "text": "Focused task",
+      "source": {
+        "path": "packages/publisher/src/layouts/slots/layouts.json",
+        "line": 133
+      }
+    },
+    {
+      "parent": "publisher.layoutConfig.layouts.stack",
+      "id": "stack.index",
+      "role": "label",
+      "cellId": "publisher.layoutConfig.layouts.stack.stack.index",
+      "recordId": "st.6fwq660ah7",
+      "file": "admin-meta.r1.en.json",
+      "text": "Item list",
+      "source": {
+        "path": "packages/publisher/src/layouts/slots/layouts.json",
+        "line": 152
+      }
+    },
+    {
+      "parent": "publisher.layoutConfig.layouts.stack",
+      "id": "stack.workspace",
+      "role": "label",
+      "cellId": "publisher.layoutConfig.layouts.stack.stack.workspace",
+      "recordId": "st.txjd1pf34b",
+      "file": "admin-meta.r1.en.json",
+      "text": "Workspace",
+      "source": {
+        "path": "packages/publisher/src/layouts/slots/layouts.json",
+        "line": 172
+      }
+    },
+    {
+      "parent": "publisher.layoutConfig.layouts.split",
+      "id": "split.default",
+      "role": "label",
+      "cellId": "publisher.layoutConfig.layouts.split.split.default",
+      "recordId": "st.pbs86jv07a",
+      "file": "admin-meta.r1.en.json",
+      "text": "Balanced columns",
+      "source": {
+        "path": "packages/publisher/src/layouts/slots/layouts.json",
+        "line": 278
+      }
+    },
+    {
+      "parent": "publisher.layoutConfig.layouts.sidebar-content",
+      "id": "sidebar-content.record",
+      "role": "label",
+      "cellId": "publisher.layoutConfig.layouts.sidebar-content.sidebar-content.record",
+      "recordId": "st.g385gwchf1",
+      "file": "admin-meta.r1.en.json",
+      "text": "Record details",
+      "source": {
+        "path": "packages/publisher/src/layouts/slots/layouts.json",
+        "line": 406
+      }
+    },
+    {
+      "parent": "publisher.layoutConfig.layouts.sidebar-content",
+      "id": "sidebar-content.docs",
+      "role": "label",
+      "cellId": "publisher.layoutConfig.layouts.sidebar-content.sidebar-content.docs",
+      "recordId": "st.9axe6qwytm",
+      "file": "admin-meta.r1.en.json",
+      "text": "Document navigation",
+      "source": {
+        "path": "packages/publisher/src/layouts/slots/layouts.json",
+        "line": 417
+      }
+    },
+    {
+      "parent": "publisher.layoutConfig.layouts.bento",
+      "id": "bento.default",
+      "role": "label",
+      "cellId": "publisher.layoutConfig.layouts.bento.bento.default",
+      "recordId": "st.7bf87rzb6j",
+      "file": "admin-meta.r1.en.json",
+      "text": "Dashboard cards",
+      "source": {
+        "path": "packages/publisher/src/layouts/slots/layouts.json",
+        "line": 510
+      }
+    },
+    {
+      "parent": "publisher.frameConfig.frames.site-shell",
+      "id": "site",
+      "role": "label",
+      "cellId": "publisher.frameConfig.frames.site-shell.site",
+      "recordId": "st.ytw831pdry",
+      "file": "admin-meta.r1.en.json",
+      "text": "Standard page",
+      "source": {
+        "path": "packages/publisher/src/web/publisher/__fixtures__/standard-website.ts",
+        "line": 24
+      }
+    },
+    {
+      "parent": "publisher.frameConfig.frames.site-shell",
+      "id": "front-door",
+      "role": "label",
+      "cellId": "publisher.frameConfig.frames.site-shell.front-door",
+      "recordId": "st.0szhqxn9xp",
+      "file": "admin-meta.r1.en.json",
+      "text": "Sign-in page",
+      "source": {
+        "path": "packages/publisher/src/web/publisher/__fixtures__/standard-website.ts",
+        "line": 34
+      }
+    },
+    {
+      "parent": "designer.frameOption.frames.document",
+      "id": "variant.page",
+      "role": "label",
+      "cellId": "designer.frameOption.frames.document.variant.page",
+      "recordId": "st.dczaaf9s2z",
+      "file": "admin-studio.r1.en.json",
+      "text": "Page document",
+      "source": {
+        "path": "packages/designer/src/catalog/slots/frames.json",
+        "line": 29
+      }
+    },
+    {
+      "parent": "designer.frameOption.frames.document",
+      "id": "variant.status",
+      "role": "label",
+      "cellId": "designer.frameOption.frames.document.variant.status",
+      "recordId": "st.zjekh6j231",
+      "file": "admin-studio.r1.en.json",
+      "text": "Status document",
+      "source": {
+        "path": "packages/designer/src/catalog/slots/frames.json",
+        "line": 30
+      }
+    },
+    {
+      "parent": "designer.frameOption.frames.site-shell",
+      "id": "chrome.full",
+      "role": "label",
+      "cellId": "designer.frameOption.frames.site-shell.chrome.full",
+      "recordId": "st.w1wk8f1k2h",
+      "file": "admin-studio.r1.en.json",
+      "text": "Full navigation",
+      "source": {
+        "path": "packages/designer/src/catalog/slots/frames.json",
+        "line": 124
+      }
+    },
+    {
+      "parent": "designer.frameOption.frames.site-shell",
+      "id": "chrome.minimal",
+      "role": "label",
+      "cellId": "designer.frameOption.frames.site-shell.chrome.minimal",
+      "recordId": "st.gsj3d5c23w",
+      "file": "admin-studio.r1.en.json",
+      "text": "Minimal navigation",
+      "source": {
+        "path": "packages/designer/src/catalog/slots/frames.json",
+        "line": 125
+      }
+    },
+    {
+      "parent": "designer.frameOption.frames.site-shell",
+      "id": "footer-placement.flow",
+      "role": "label",
+      "cellId": "designer.frameOption.frames.site-shell.footer-placement.flow",
+      "recordId": "st.yrw1mmhyjw",
+      "file": "admin-studio.r1.en.json",
+      "text": "Footer after content",
+      "source": {
+        "path": "packages/designer/src/catalog/slots/frames.json",
+        "line": 126
+      }
+    },
+    {
+      "parent": "designer.frameOption.frames.site-shell",
+      "id": "footer-placement.overlay",
+      "role": "label",
+      "cellId": "designer.frameOption.frames.site-shell.footer-placement.overlay",
+      "recordId": "st.gmqgncyggg",
+      "file": "admin-studio.r1.en.json",
+      "text": "Footer over content",
+      "source": {
+        "path": "packages/designer/src/catalog/slots/frames.json",
+        "line": 127
+      }
+    },
+    {
+      "parent": "designer.frameOption.frames.site-shell",
+      "id": "header-placement.overlay",
+      "role": "label",
+      "cellId": "designer.frameOption.frames.site-shell.header-placement.overlay",
+      "recordId": "st.nnjvve8cas",
+      "file": "admin-studio.r1.en.json",
+      "text": "Header over content",
+      "source": {
+        "path": "packages/designer/src/catalog/slots/frames.json",
+        "line": 128
+      }
+    },
+    {
+      "parent": "designer.frameOption.frames.app-shell",
+      "id": "layout.standard",
+      "role": "label",
+      "cellId": "designer.frameOption.frames.app-shell.layout.standard",
+      "recordId": "st.r2760v8zm7",
+      "file": "admin-studio.r1.en.json",
+      "text": "Standard layout",
+      "source": {
+        "path": "packages/designer/src/catalog/slots/frames.json",
+        "line": 253
+      }
+    },
+    {
+      "parent": "designer.frameOption.frames.app-shell",
+      "id": "layout.immersive",
+      "role": "label",
+      "cellId": "designer.frameOption.frames.app-shell.layout.immersive",
+      "recordId": "st.ksa5w8z32s",
+      "file": "admin-studio.r1.en.json",
+      "text": "Immersive layout",
+      "source": {
+        "path": "packages/designer/src/catalog/slots/frames.json",
+        "line": 254
+      }
+    },
+    {
+      "parent": "designer.frameOption.frames.app-shell",
+      "id": "stage.contained",
+      "role": "label",
+      "cellId": "designer.frameOption.frames.app-shell.stage.contained",
+      "recordId": "st.ez6mw87z9r",
+      "file": "admin-studio.r1.en.json",
+      "text": "Contained canvas",
+      "source": {
+        "path": "packages/designer/src/catalog/slots/frames.json",
+        "line": 255
+      }
+    },
+    {
+      "parent": "designer.frameOption.frames.app-shell",
+      "id": "stage.full",
+      "role": "label",
+      "cellId": "designer.frameOption.frames.app-shell.stage.full",
+      "recordId": "st.wfc3z4rp03",
+      "file": "admin-studio.r1.en.json",
+      "text": "Full canvas",
+      "source": {
+        "path": "packages/designer/src/catalog/slots/frames.json",
+        "line": 256
+      }
+    },
+    {
+      "parent": "designer.frameOption.frames.app-shell",
+      "id": "theme.system",
+      "role": "label",
+      "cellId": "designer.frameOption.frames.app-shell.theme.system",
+      "recordId": "st.2a77nn406k",
+      "file": "admin-studio.r1.en.json",
+      "text": "System theme",
+      "source": {
+        "path": "packages/designer/src/catalog/slots/frames.json",
+        "line": 257
+      }
+    },
+    {
+      "parent": "designer.frameOption.frames.app-shell",
+      "id": "theme.light",
+      "role": "label",
+      "cellId": "designer.frameOption.frames.app-shell.theme.light",
+      "recordId": "st.96npq8j00n",
+      "file": "admin-studio.r1.en.json",
+      "text": "Light theme",
+      "source": {
+        "path": "packages/designer/src/catalog/slots/frames.json",
+        "line": 258
+      }
+    },
+    {
+      "parent": "designer.frameOption.frames.app-shell",
+      "id": "theme.dark",
+      "role": "label",
+      "cellId": "designer.frameOption.frames.app-shell.theme.dark",
+      "recordId": "st.476jt5vjet",
+      "file": "admin-studio.r1.en.json",
+      "text": "Dark theme",
+      "source": {
+        "path": "packages/designer/src/catalog/slots/frames.json",
+        "line": 259
+      }
+    },
+    {
+      "parent": "designer.frameOption.frames.site-header",
+      "id": "surface.solid",
+      "role": "label",
+      "cellId": "designer.frameOption.frames.site-header.surface.solid",
+      "recordId": "st.rfdpnk1f7n",
+      "file": "admin-studio.r1.en.json",
+      "text": "Solid background",
+      "source": {
+        "path": "packages/designer/src/catalog/slots/frames.json",
+        "line": 448
+      }
+    },
+    {
+      "parent": "designer.frameOption.frames.site-header",
+      "id": "surface.transparent",
+      "role": "label",
+      "cellId": "designer.frameOption.frames.site-header.surface.transparent",
+      "recordId": "st.srzp5yepxy",
+      "file": "admin-studio.r1.en.json",
+      "text": "Clear background",
+      "source": {
+        "path": "packages/designer/src/catalog/slots/frames.json",
+        "line": 449
+      }
+    },
+    {
+      "parent": "designer.frameOption.frames.site-header",
+      "id": "surface.glass",
+      "role": "label",
+      "cellId": "designer.frameOption.frames.site-header.surface.glass",
+      "recordId": "st.5ccwgqgt2n",
+      "file": "admin-studio.r1.en.json",
+      "text": "Blurred background",
+      "source": {
+        "path": "packages/designer/src/catalog/slots/frames.json",
+        "line": 450
+      }
+    },
+    {
+      "parent": "designer.frameOption.frames.site-header",
+      "id": "tone.base",
+      "role": "label",
+      "cellId": "designer.frameOption.frames.site-header.tone.base",
+      "recordId": "st.gtfwyrz6qw",
+      "file": "admin-studio.r1.en.json",
+      "text": "Standard colors",
+      "source": {
+        "path": "packages/designer/src/catalog/slots/frames.json",
+        "line": 451
+      }
+    },
+    {
+      "parent": "designer.frameOption.frames.site-header",
+      "id": "tone.inverse",
+      "role": "label",
+      "cellId": "designer.frameOption.frames.site-header.tone.inverse",
+      "recordId": "st.2zvh7czj3j",
+      "file": "admin-studio.r1.en.json",
+      "text": "Reversed colors",
+      "source": {
+        "path": "packages/designer/src/catalog/slots/frames.json",
+        "line": 452
+      }
+    },
+    {
+      "parent": "designer.frameOption.frames.site-header",
+      "id": "nav-placement.leading",
+      "role": "label",
+      "cellId": "designer.frameOption.frames.site-header.nav-placement.leading",
+      "recordId": "st.w5x5x39c1a",
+      "file": "admin-studio.r1.en.json",
+      "text": "Navigation at start",
+      "source": {
+        "path": "packages/designer/src/catalog/slots/frames.json",
+        "line": 453
+      }
+    },
+    {
+      "parent": "designer.frameOption.frames.site-header",
+      "id": "nav-placement.centered",
+      "role": "label",
+      "cellId": "designer.frameOption.frames.site-header.nav-placement.centered",
+      "recordId": "st.16vzn156y6",
+      "file": "admin-studio.r1.en.json",
+      "text": "Centered navigation",
+      "source": {
+        "path": "packages/designer/src/catalog/slots/frames.json",
+        "line": 454
+      }
+    },
+    {
+      "parent": "designer.frameOption.frames.site-header",
+      "id": "position.sticky",
+      "role": "label",
+      "cellId": "designer.frameOption.frames.site-header.position.sticky",
+      "recordId": "st.fjgby5zygk",
+      "file": "admin-studio.r1.en.json",
+      "text": "Stays in view",
+      "source": {
+        "path": "packages/designer/src/catalog/slots/frames.json",
+        "line": 455
+      }
+    },
+    {
+      "parent": "designer.frameOption.frames.site-header",
+      "id": "position.static",
+      "role": "label",
+      "cellId": "designer.frameOption.frames.site-header.position.static",
+      "recordId": "st.wd9t4rmq3n",
+      "file": "admin-studio.r1.en.json",
+      "text": "Scrolls with content",
+      "source": {
+        "path": "packages/designer/src/catalog/slots/frames.json",
+        "line": 456
+      }
+    },
+    {
+      "parent": "designer.frameOption.frames.app-header",
+      "id": "surface.glass",
+      "role": "label",
+      "cellId": "designer.frameOption.frames.app-header.surface.glass",
+      "recordId": "st.5ccwgqgt2n",
+      "file": "admin-studio.r1.en.json",
+      "text": "Blurred background",
+      "source": {
+        "path": "packages/designer/src/catalog/slots/frames.json",
+        "line": 450
+      }
+    },
+    {
+      "parent": "designer.frameOption.frames.app-header",
+      "id": "fallback.opaque",
+      "role": "label",
+      "cellId": "designer.frameOption.frames.app-header.fallback.opaque",
+      "recordId": "st.byrjykzrn2",
+      "file": "admin-studio.r1.en.json",
+      "text": "Solid backup background",
+      "source": {
+        "path": "packages/designer/src/catalog/slots/frames.json",
+        "line": 537
+      }
+    },
+    {
+      "parent": "designer.frameOption.frames.app-header",
+      "id": "position.sticky",
+      "role": "label",
+      "cellId": "designer.frameOption.frames.app-header.position.sticky",
+      "recordId": "st.fjgby5zygk",
+      "file": "admin-studio.r1.en.json",
+      "text": "Stays in view",
+      "source": {
+        "path": "packages/designer/src/catalog/slots/frames.json",
+        "line": 455
+      }
+    },
+    {
+      "parent": "designer.frameOption.frames.app-header",
+      "id": "position.static",
+      "role": "label",
+      "cellId": "designer.frameOption.frames.app-header.position.static",
+      "recordId": "st.wd9t4rmq3n",
+      "file": "admin-studio.r1.en.json",
+      "text": "Scrolls with content",
+      "source": {
+        "path": "packages/designer/src/catalog/slots/frames.json",
+        "line": 456
+      }
+    },
+    {
+      "parent": "designer.frameOption.frames.app-sidebar",
+      "id": "presentation.docked",
+      "role": "label",
+      "cellId": "designer.frameOption.frames.app-sidebar.presentation.docked",
+      "recordId": "st.nbpr93wj68",
+      "file": "admin-studio.r1.en.json",
+      "text": "Docked panel",
+      "source": {
+        "path": "packages/designer/src/catalog/slots/frames.json",
+        "line": 616
+      }
+    },
+    {
+      "parent": "designer.frameOption.frames.app-sidebar",
+      "id": "presentation.collapsed",
+      "role": "label",
+      "cellId": "designer.frameOption.frames.app-sidebar.presentation.collapsed",
+      "recordId": "st.qew1g2x6ms",
+      "file": "admin-studio.r1.en.json",
+      "text": "Collapsed panel",
+      "source": {
+        "path": "packages/designer/src/catalog/slots/frames.json",
+        "line": 617
+      }
+    },
+    {
+      "parent": "designer.frameOption.frames.app-sidebar",
+      "id": "presentation.overlay",
+      "role": "label",
+      "cellId": "designer.frameOption.frames.app-sidebar.presentation.overlay",
+      "recordId": "st.njcj3qqb0e",
+      "file": "admin-studio.r1.en.json",
+      "text": "Overlay panel",
+      "source": {
+        "path": "packages/designer/src/catalog/slots/frames.json",
+        "line": 618
+      }
+    },
+    {
+      "parent": "designer.frameOption.frames.inspector",
+      "id": "presentation.docked",
+      "role": "label",
+      "cellId": "designer.frameOption.frames.inspector.presentation.docked",
+      "recordId": "st.nbpr93wj68",
+      "file": "admin-studio.r1.en.json",
+      "text": "Docked panel",
+      "source": {
+        "path": "packages/designer/src/catalog/slots/frames.json",
+        "line": 616
+      }
+    },
+    {
+      "parent": "designer.frameOption.frames.inspector",
+      "id": "presentation.collapsed",
+      "role": "label",
+      "cellId": "designer.frameOption.frames.inspector.presentation.collapsed",
+      "recordId": "st.qew1g2x6ms",
+      "file": "admin-studio.r1.en.json",
+      "text": "Collapsed panel",
+      "source": {
+        "path": "packages/designer/src/catalog/slots/frames.json",
+        "line": 617
+      }
+    },
+    {
+      "parent": "designer.frameOption.frames.inspector",
+      "id": "presentation.overlay",
+      "role": "label",
+      "cellId": "designer.frameOption.frames.inspector.presentation.overlay",
+      "recordId": "st.njcj3qqb0e",
+      "file": "admin-studio.r1.en.json",
+      "text": "Overlay panel",
+      "source": {
+        "path": "packages/designer/src/catalog/slots/frames.json",
+        "line": 618
+      }
+    },
+    {
+      "parent": "designer.frameOption.frames.site-footer",
+      "id": "ground.base",
+      "role": "label",
+      "cellId": "designer.frameOption.frames.site-footer.ground.base",
+      "recordId": "st.y072bfqj65",
+      "file": "admin-studio.r1.en.json",
+      "text": "Standard background",
+      "source": {
+        "path": "packages/designer/src/catalog/slots/frames.json",
+        "line": 800
+      }
+    },
+    {
+      "parent": "designer.frameOption.frames.site-footer",
+      "id": "ground.inverse",
+      "role": "label",
+      "cellId": "designer.frameOption.frames.site-footer.ground.inverse",
+      "recordId": "st.jq17fy257c",
+      "file": "admin-studio.r1.en.json",
+      "text": "Reversed background",
+      "source": {
+        "path": "packages/designer/src/catalog/slots/frames.json",
+        "line": 801
+      }
+    },
+    {
+      "parent": "designer.frameOption.frames.site-footer",
+      "id": "rule.on",
+      "role": "label",
+      "cellId": "designer.frameOption.frames.site-footer.rule.on",
+      "recordId": "st.5fvjdv1ds7",
+      "file": "admin-studio.r1.en.json",
+      "text": "Show divider",
+      "source": {
+        "path": "packages/designer/src/catalog/slots/frames.json",
+        "line": 802
+      }
+    },
+    {
+      "parent": "designer.frameOption.frames.site-footer",
+      "id": "rule.off",
+      "role": "label",
+      "cellId": "designer.frameOption.frames.site-footer.rule.off",
+      "recordId": "st.ne0180h530",
+      "file": "admin-studio.r1.en.json",
+      "text": "Hide divider",
+      "source": {
+        "path": "packages/designer/src/catalog/slots/frames.json",
+        "line": 803
+      }
+    },
+    {
+      "parent": "designer.frameOption.frames.site-footer",
+      "id": "overlay.on",
+      "role": "label",
+      "cellId": "designer.frameOption.frames.site-footer.overlay.on",
+      "recordId": "st.742pveh5bs",
+      "file": "admin-studio.r1.en.json",
+      "text": "Over content",
+      "source": {
+        "path": "packages/designer/src/catalog/slots/frames.json",
+        "line": 804
+      }
+    },
+    {
+      "parent": "designer.frameOption.frames.site-footer",
+      "id": "overlay.off",
+      "role": "label",
+      "cellId": "designer.frameOption.frames.site-footer.overlay.off",
+      "recordId": "st.v7t7c2pr8y",
+      "file": "admin-studio.r1.en.json",
+      "text": "After content",
+      "source": {
+        "path": "packages/designer/src/catalog/slots/frames.json",
+        "line": 805
+      }
+    },
+    {
+      "parent": "designer.frameOption.frames.sheet",
+      "id": "placement.start",
+      "role": "label",
+      "cellId": "designer.frameOption.frames.sheet.placement.start",
+      "recordId": "st.rd1wks5c2n",
+      "file": "admin-studio.r1.en.json",
+      "text": "At start",
+      "source": {
+        "path": "packages/designer/src/catalog/slots/frames.json",
+        "line": 873
+      }
+    },
+    {
+      "parent": "designer.frameOption.frames.sheet",
+      "id": "placement.end",
+      "role": "label",
+      "cellId": "designer.frameOption.frames.sheet.placement.end",
+      "recordId": "st.q8zq27jzn6",
+      "file": "admin-studio.r1.en.json",
+      "text": "At end",
+      "source": {
+        "path": "packages/designer/src/catalog/slots/frames.json",
+        "line": 874
+      }
+    },
+    {
+      "parent": "designer.frameOption.frames.sheet",
+      "id": "placement.bottom",
+      "role": "label",
+      "cellId": "designer.frameOption.frames.sheet.placement.bottom",
+      "recordId": "st.npk8a246pf",
+      "file": "admin-studio.r1.en.json",
+      "text": "At bottom",
+      "source": {
+        "path": "packages/designer/src/catalog/slots/frames.json",
+        "line": 875
+      }
+    },
+    {
+      "parent": "designer.frameOption.frames.sheet",
+      "id": "wide.dismiss",
+      "role": "label",
+      "cellId": "designer.frameOption.frames.sheet.wide.dismiss",
+      "recordId": "st.bqn0rgkke1",
+      "file": "admin-studio.r1.en.json",
+      "text": "Hide on wide screens",
+      "source": {
+        "path": "packages/designer/src/catalog/slots/frames.json",
+        "line": 876
+      }
+    },
+    {
+      "parent": "designer.frameOption.frames.sheet",
+      "id": "wide.sheet",
+      "role": "label",
+      "cellId": "designer.frameOption.frames.sheet.wide.sheet",
+      "recordId": "st.g0stjcdq45",
+      "file": "admin-studio.r1.en.json",
+      "text": "Panel on wide screens",
+      "source": {
+        "path": "packages/designer/src/catalog/slots/frames.json",
+        "line": 877
+      }
+    },
+    {
+      "parent": "designer.frameOption.frames.command",
+      "id": "shortcut.on",
+      "role": "label",
+      "cellId": "designer.frameOption.frames.command.shortcut.on",
+      "recordId": "st.1gh330mabf",
+      "file": "admin-studio.r1.en.json",
+      "text": "Keyboard shortcut on",
+      "source": {
+        "path": "packages/designer/src/catalog/slots/frames.json",
+        "line": 951
+      }
+    },
+    {
+      "parent": "designer.frameOption.frames.command",
+      "id": "shortcut.off",
+      "role": "label",
+      "cellId": "designer.frameOption.frames.command.shortcut.off",
+      "recordId": "st.f99jjh9znb",
+      "file": "admin-studio.r1.en.json",
+      "text": "Keyboard shortcut off",
+      "source": {
+        "path": "packages/designer/src/catalog/slots/frames.json",
+        "line": 952
+      }
+    },
+    {
+      "parent": "publisher.screenSize",
+      "id": "mobile",
+      "role": "label",
+      "cellId": "publisher.screenSize.mobile",
+      "recordId": "st.txzn8z1qg7",
+      "file": "admin-meta.r1.en.json",
+      "text": "Phone",
+      "source": {
+        "path": "packages/publisher/src/formats/slots/formats.ts",
+        "line": 7
+      }
+    },
+    {
+      "parent": "publisher.breakpoint",
+      "id": "tokens.breakpoint.mobile",
+      "role": "label",
+      "cellId": "publisher.breakpoint.tokens.breakpoint.mobile",
+      "recordId": "st.txzn8z1qg7",
+      "file": "admin-meta.r1.en.json",
+      "text": "Phone",
+      "source": {
+        "path": "packages/publisher/src/formats/slots/formats.ts",
+        "line": 7
+      }
+    },
+    {
+      "parent": "publisher.screenSize",
+      "id": "mobile-lg",
+      "role": "label",
+      "cellId": "publisher.screenSize.mobile-lg",
+      "recordId": "st.xp5eskkvj3",
+      "file": "admin-meta.r1.en.json",
+      "text": "Large phone",
+      "source": {
+        "path": "packages/publisher/src/formats/slots/formats.ts",
+        "line": 7
+      }
+    },
+    {
+      "parent": "publisher.breakpoint",
+      "id": "tokens.breakpoint.mobile-lg",
+      "role": "label",
+      "cellId": "publisher.breakpoint.tokens.breakpoint.mobile-lg",
+      "recordId": "st.xp5eskkvj3",
+      "file": "admin-meta.r1.en.json",
+      "text": "Large phone",
+      "source": {
+        "path": "packages/publisher/src/formats/slots/formats.ts",
+        "line": 7
+      }
+    },
+    {
+      "parent": "publisher.screenSize",
+      "id": "tablet",
+      "role": "label",
+      "cellId": "publisher.screenSize.tablet",
+      "recordId": "st.j57xeagqqc",
+      "file": "admin-meta.r1.en.json",
+      "text": "Tablet",
+      "source": {
+        "path": "packages/publisher/src/formats/slots/formats.ts",
+        "line": 7
+      }
+    },
+    {
+      "parent": "publisher.breakpoint",
+      "id": "tokens.breakpoint.tablet",
+      "role": "label",
+      "cellId": "publisher.breakpoint.tokens.breakpoint.tablet",
+      "recordId": "st.j57xeagqqc",
+      "file": "admin-meta.r1.en.json",
+      "text": "Tablet",
+      "source": {
+        "path": "packages/publisher/src/formats/slots/formats.ts",
+        "line": 7
+      }
+    },
+    {
+      "parent": "publisher.screenSize",
+      "id": "tablet-lg",
+      "role": "label",
+      "cellId": "publisher.screenSize.tablet-lg",
+      "recordId": "st.psm20y3g29",
+      "file": "admin-meta.r1.en.json",
+      "text": "Large tablet",
+      "source": {
+        "path": "packages/publisher/src/formats/slots/formats.ts",
+        "line": 7
+      }
+    },
+    {
+      "parent": "publisher.breakpoint",
+      "id": "tokens.breakpoint.tablet-lg",
+      "role": "label",
+      "cellId": "publisher.breakpoint.tokens.breakpoint.tablet-lg",
+      "recordId": "st.psm20y3g29",
+      "file": "admin-meta.r1.en.json",
+      "text": "Large tablet",
+      "source": {
+        "path": "packages/publisher/src/formats/slots/formats.ts",
+        "line": 7
+      }
+    },
+    {
+      "parent": "publisher.screenSize",
+      "id": "desktop",
+      "role": "label",
+      "cellId": "publisher.screenSize.desktop",
+      "recordId": "st.646wxbsgag",
+      "file": "admin-meta.r1.en.json",
+      "text": "Desktop",
+      "source": {
+        "path": "packages/publisher/src/formats/slots/formats.ts",
+        "line": 7
+      }
+    },
+    {
+      "parent": "publisher.breakpoint",
+      "id": "tokens.breakpoint.desktop",
+      "role": "label",
+      "cellId": "publisher.breakpoint.tokens.breakpoint.desktop",
+      "recordId": "st.646wxbsgag",
+      "file": "admin-meta.r1.en.json",
+      "text": "Desktop",
+      "source": {
+        "path": "packages/publisher/src/formats/slots/formats.ts",
+        "line": 7
+      }
+    },
+    {
+      "parent": "publisher.screenSize",
+      "id": "wide",
+      "role": "label",
+      "cellId": "publisher.screenSize.wide",
+      "recordId": "st.m8rb9g7ftb",
+      "file": "admin-meta.r1.en.json",
+      "text": "Wide screen",
+      "source": {
+        "path": "packages/publisher/src/formats/slots/formats.ts",
+        "line": 7
+      }
+    },
+    {
+      "parent": "publisher.breakpoint",
+      "id": "tokens.breakpoint.wide",
+      "role": "label",
+      "cellId": "publisher.breakpoint.tokens.breakpoint.wide",
+      "recordId": "st.m8rb9g7ftb",
+      "file": "admin-meta.r1.en.json",
+      "text": "Wide screen",
+      "source": {
+        "path": "packages/publisher/src/formats/slots/formats.ts",
+        "line": 7
+      }
+    },
+    {
+      "parent": "publisher.layoutOption.layouts.stack.measure",
+      "id": "full",
+      "role": "label",
+      "cellId": "publisher.layoutOption.layouts.stack.measure.full",
+      "recordId": "st.ana61jy0p8",
+      "file": "admin-meta.r1.en.json",
+      "text": "Full width",
+      "source": {
+        "path": "packages/publisher/src/layouts/slots/layouts.json",
+        "line": 84
+      }
+    },
+    {
+      "parent": "publisher.layoutOption.layouts.stack.measure",
+      "id": "wide",
+      "role": "label",
+      "cellId": "publisher.layoutOption.layouts.stack.measure.wide",
+      "recordId": "st.8dyaww7dzk",
+      "file": "admin-meta.r1.en.json",
+      "text": "Wide content",
+      "source": {
+        "path": "packages/publisher/src/layouts/slots/layouts.json",
+        "line": 85
+      }
+    },
+    {
+      "parent": "publisher.layoutOption.layouts.stack.measure",
+      "id": "content",
+      "role": "label",
+      "cellId": "publisher.layoutOption.layouts.stack.measure.content",
+      "recordId": "st.vhkjr72c56",
+      "file": "admin-meta.r1.en.json",
+      "text": "Content width",
+      "source": {
+        "path": "packages/publisher/src/layouts/slots/layouts.json",
+        "line": 26
+      }
+    },
+    {
+      "parent": "publisher.layoutOption.layouts.stack.measure",
+      "id": "prose",
+      "role": "label",
+      "cellId": "publisher.layoutOption.layouts.stack.measure.prose",
+      "recordId": "st.4e2fw2re1h",
+      "file": "admin-meta.r1.en.json",
+      "text": "Reading width",
+      "source": {
+        "path": "packages/publisher/src/layouts/slots/layouts.json",
+        "line": 87
+      }
+    },
+    {
+      "parent": "publisher.layoutOption.layouts.stack.measure",
+      "id": "form",
+      "role": "label",
+      "cellId": "publisher.layoutOption.layouts.stack.measure.form",
+      "recordId": "st.j3cstzxqbm",
+      "file": "admin-meta.r1.en.json",
+      "text": "Form width",
+      "source": {
+        "path": "packages/publisher/src/layouts/slots/layouts.json",
+        "line": 51
+      }
+    },
+    {
+      "parent": "publisher.layoutOption.layouts.stack.align",
+      "id": "start",
+      "role": "label",
+      "cellId": "publisher.layoutOption.layouts.stack.align.start",
+      "recordId": "st.rd1wks5c2n",
+      "file": "admin-meta.r1.en.json",
+      "text": "At start",
+      "source": {
+        "path": "packages/publisher/src/layouts/slots/layouts.json",
+        "line": 91
+      }
+    },
+    {
+      "parent": "publisher.layoutOption.layouts.stack.align",
+      "id": "center",
+      "role": "label",
+      "cellId": "publisher.layoutOption.layouts.stack.align.center",
+      "recordId": "st.19r4rps8z4",
+      "file": "admin-meta.r1.en.json",
+      "text": "Centered",
+      "source": {
+        "path": "packages/publisher/src/layouts/slots/layouts.json",
+        "line": 92
+      }
+    },
+    {
+      "parent": "publisher.layoutOption.layouts.stack.lead",
+      "id": "required",
+      "role": "label",
+      "cellId": "publisher.layoutOption.layouts.stack.lead.required",
+      "recordId": "st.hkp1srfq0x",
+      "file": "admin-meta.r1.en.json",
+      "text": "Required",
+      "source": {
+        "path": "packages/publisher/src/layouts/slots/layouts.json",
+        "line": 95
+      }
+    },
+    {
+      "parent": "publisher.layoutOption.layouts.stack.lead",
+      "id": "optional",
+      "role": "label",
+      "cellId": "publisher.layoutOption.layouts.stack.lead.optional",
+      "recordId": "st.8grbg3g8mq",
+      "file": "admin-meta.r1.en.json",
+      "text": "Optional",
+      "source": {
+        "path": "packages/publisher/src/layouts/slots/layouts.json",
+        "line": 96
+      }
+    },
+    {
+      "parent": "publisher.layoutOption.layouts.split.ratio",
+      "id": "1:1",
+      "role": "label",
+      "cellId": "publisher.layoutOption.layouts.split.ratio.1:1",
+      "recordId": "st.j1x20g5ma9",
+      "file": "admin-meta.r1.en.json",
+      "text": "Equal columns",
+      "source": {
+        "path": "packages/publisher/src/layouts/slots/layouts.json",
+        "line": 263
+      }
+    },
+    {
+      "parent": "publisher.layoutOption.layouts.split.ratio",
+      "id": "3:2",
+      "role": "label",
+      "cellId": "publisher.layoutOption.layouts.split.ratio.3:2",
+      "recordId": "st.mkw5r8sdh7",
+      "file": "admin-meta.r1.en.json",
+      "text": "Wider first column",
+      "source": {
+        "path": "packages/publisher/src/layouts/slots/layouts.json",
+        "line": 264
+      }
+    },
+    {
+      "parent": "publisher.layoutOption.layouts.split.ratio",
+      "id": "2:3",
+      "role": "label",
+      "cellId": "publisher.layoutOption.layouts.split.ratio.2:3",
+      "recordId": "st.yqadfrrjf9",
+      "file": "admin-meta.r1.en.json",
+      "text": "Wider second column",
+      "source": {
+        "path": "packages/publisher/src/layouts/slots/layouts.json",
+        "line": 265
+      }
+    },
+    {
+      "parent": "publisher.layoutOption.layouts.split.collapse",
+      "id": "start-first",
+      "role": "label",
+      "cellId": "publisher.layoutOption.layouts.split.collapse.start-first",
+      "recordId": "st.6mdn92wcyk",
+      "file": "admin-meta.r1.en.json",
+      "text": "First column on top",
+      "source": {
+        "path": "packages/publisher/src/layouts/slots/layouts.json",
+        "line": 268
+      }
+    },
+    {
+      "parent": "publisher.layoutOption.layouts.split.collapse",
+      "id": "end-first",
+      "role": "label",
+      "cellId": "publisher.layoutOption.layouts.split.collapse.end-first",
+      "recordId": "st.av8qx33gjs",
+      "file": "admin-meta.r1.en.json",
+      "text": "Second column on top",
+      "source": {
+        "path": "packages/publisher/src/layouts/slots/layouts.json",
+        "line": 269
+      }
+    },
+    {
+      "parent": "publisher.layoutOption.layouts.split.align",
+      "id": "top",
+      "role": "label",
+      "cellId": "publisher.layoutOption.layouts.split.align.top",
+      "recordId": "st.p7xaz60gtc",
+      "file": "admin-meta.r1.en.json",
+      "text": "At top",
+      "source": {
+        "path": "packages/publisher/src/layouts/slots/layouts.json",
+        "line": 272
+      }
+    },
+    {
+      "parent": "publisher.layoutOption.layouts.split.align",
+      "id": "center",
+      "role": "label",
+      "cellId": "publisher.layoutOption.layouts.split.align.center",
+      "recordId": "st.19r4rps8z4",
+      "file": "admin-meta.r1.en.json",
+      "text": "Centered",
+      "source": {
+        "path": "packages/publisher/src/layouts/slots/layouts.json",
+        "line": 92
+      }
+    },
+    {
+      "parent": "publisher.layoutOption.layouts.sidebar-content.side",
+      "id": "start",
+      "role": "label",
+      "cellId": "publisher.layoutOption.layouts.sidebar-content.side.start",
+      "recordId": "st.rd1wks5c2n",
+      "file": "admin-meta.r1.en.json",
+      "text": "At start",
+      "source": {
+        "path": "packages/publisher/src/layouts/slots/layouts.json",
+        "line": 91
+      }
+    },
+    {
+      "parent": "publisher.layoutOption.layouts.sidebar-content.side",
+      "id": "end",
+      "role": "label",
+      "cellId": "publisher.layoutOption.layouts.sidebar-content.side.end",
+      "recordId": "st.q8zq27jzn6",
+      "file": "admin-meta.r1.en.json",
+      "text": "At end",
+      "source": {
+        "path": "packages/publisher/src/layouts/slots/layouts.json",
+        "line": 246
+      }
+    },
+    {
+      "parent": "publisher.layoutOption.layouts.sidebar-content.aside-width",
+      "id": "region",
+      "role": "label",
+      "cellId": "publisher.layoutOption.layouts.sidebar-content.aside-width.region",
+      "recordId": "st.ya04kydxn7",
+      "file": "admin-meta.r1.en.json",
+      "text": "Saved panel width",
+      "source": {
+        "path": "packages/publisher/src/layouts/slots/layouts.json",
+        "line": 204
+      }
+    },
+    {
+      "parent": "publisher.layoutOption.layouts.sidebar-content.aside-width",
+      "id": "third",
+      "role": "label",
+      "cellId": "publisher.layoutOption.layouts.sidebar-content.aside-width.third",
+      "recordId": "st.p35pa5phkx",
+      "file": "admin-meta.r1.en.json",
+      "text": "One third",
+      "source": {
+        "path": "packages/publisher/src/layouts/slots/layouts.json",
+        "line": 389
+      }
+    },
+    {
+      "parent": "publisher.layoutOption.layouts.sidebar-content.sticky",
+      "id": "none",
+      "role": "label",
+      "cellId": "publisher.layoutOption.layouts.sidebar-content.sticky.none",
+      "recordId": "st.qw7keqyzgs",
+      "file": "admin-meta.r1.en.json",
+      "text": "Not sticky",
+      "source": {
+        "path": "packages/publisher/src/layouts/slots/layouts.json",
+        "line": 392
+      }
+    },
+    {
+      "parent": "publisher.layoutOption.layouts.sidebar-content.sticky",
+      "id": "aside",
+      "role": "label",
+      "cellId": "publisher.layoutOption.layouts.sidebar-content.sticky.aside",
+      "recordId": "st.mz5vrchgfx",
+      "file": "admin-meta.r1.en.json",
+      "text": "Sticky side panel",
+      "source": {
+        "path": "packages/publisher/src/layouts/slots/layouts.json",
+        "line": 364
+      }
+    },
+    {
+      "parent": "publisher.layoutOption.layouts.sidebar-content.stacked-aside",
+      "id": "before",
+      "role": "label",
+      "cellId": "publisher.layoutOption.layouts.sidebar-content.stacked-aside.before",
+      "recordId": "st.1vjd1q75gn",
+      "file": "admin-meta.r1.en.json",
+      "text": "Before content",
+      "source": {
+        "path": "packages/publisher/src/layouts/slots/layouts.json",
+        "line": 396
+      }
+    },
+    {
+      "parent": "publisher.layoutOption.layouts.sidebar-content.stacked-aside",
+      "id": "after",
+      "role": "label",
+      "cellId": "publisher.layoutOption.layouts.sidebar-content.stacked-aside.after",
+      "recordId": "st.v7t7c2pr8y",
+      "file": "admin-meta.r1.en.json",
+      "text": "After content",
+      "source": {
+        "path": "packages/publisher/src/layouts/slots/layouts.json",
+        "line": 397
+      }
+    },
+    {
+      "parent": "publisher.layoutOption.layouts.sidebar-content.breakpoint",
+      "id": "tablet",
+      "role": "label",
+      "cellId": "publisher.layoutOption.layouts.sidebar-content.breakpoint.tablet",
+      "recordId": "st.j57xeagqqc",
+      "file": "admin-meta.r1.en.json",
+      "text": "Tablet",
+      "source": {
+        "path": "packages/publisher/src/layouts/slots/layouts.json",
+        "line": 284
+      }
+    },
+    {
+      "parent": "publisher.layoutOption.layouts.sidebar-content.breakpoint",
+      "id": "tablet-lg",
+      "role": "label",
+      "cellId": "publisher.layoutOption.layouts.sidebar-content.breakpoint.tablet-lg",
+      "recordId": "st.psm20y3g29",
+      "file": "admin-meta.r1.en.json",
+      "text": "Large tablet",
+      "source": {
+        "path": "packages/publisher/src/layouts/slots/layouts.json",
+        "line": 401
+      }
+    },
+    {
+      "parent": "publisher.layoutOption.layouts.bento.density",
+      "id": "airy",
+      "role": "label",
+      "cellId": "publisher.layoutOption.layouts.bento.density.airy",
+      "recordId": "st.8ac2dy1j6t",
+      "file": "admin-meta.r1.en.json",
+      "text": "Spacious",
+      "source": {
+        "path": "packages/publisher/src/layouts/slots/layouts.json",
+        "line": 499
+      }
+    },
+    {
+      "parent": "publisher.layoutOption.layouts.bento.density",
+      "id": "standard",
+      "role": "label",
+      "cellId": "publisher.layoutOption.layouts.bento.density.standard",
+      "recordId": "st.208gg0xrk7",
+      "file": "admin-meta.r1.en.json",
+      "text": "Standard spacing",
+      "source": {
+        "path": "packages/publisher/src/layouts/slots/layouts.json",
+        "line": 500
+      }
+    },
+    {
+      "parent": "publisher.layoutOption.layouts.bento.density",
+      "id": "dense",
+      "role": "label",
+      "cellId": "publisher.layoutOption.layouts.bento.density.dense",
+      "recordId": "st.0rj8qzqqr1",
+      "file": "admin-meta.r1.en.json",
+      "text": "Compact",
+      "source": {
+        "path": "packages/publisher/src/layouts/slots/layouts.json",
+        "line": 501
+      }
+    },
+    {
+      "parent": "publisher.layoutOption.layouts.bento.rhythm",
+      "id": "uniform",
+      "role": "label",
+      "cellId": "publisher.layoutOption.layouts.bento.rhythm.uniform",
+      "recordId": "st.s9f5fst22q",
+      "file": "admin-meta.r1.en.json",
+      "text": "Even cards",
+      "source": {
+        "path": "packages/publisher/src/layouts/slots/layouts.json",
+        "line": 504
+      }
+    },
+    {
+      "parent": "publisher.layoutOption.layouts.bento.rhythm",
+      "id": "feature-first",
+      "role": "label",
+      "cellId": "publisher.layoutOption.layouts.bento.rhythm.feature-first",
+      "recordId": "st.1t0mm884hr",
+      "file": "admin-meta.r1.en.json",
+      "text": "Featured card first",
+      "source": {
+        "path": "packages/publisher/src/layouts/slots/layouts.json",
+        "line": 505
+      }
+    },
+    {
+      "parent": "publisher.layoutOption.layouts.staggered-grid.columns",
+      "id": "2",
+      "role": "label",
+      "cellId": "publisher.layoutOption.layouts.staggered-grid.columns.2",
+      "recordId": "st.gc39szvkj1",
+      "file": "admin-meta.r1.en.json",
+      "text": "Two columns",
+      "source": {
+        "path": "packages/publisher/src/layouts/slots/layouts.json",
+        "line": 66
+      }
+    },
+    {
+      "parent": "publisher.layoutOption.layouts.staggered-grid.columns",
+      "id": "3",
+      "role": "label",
+      "cellId": "publisher.layoutOption.layouts.staggered-grid.columns.3",
+      "recordId": "st.v54z11633r",
+      "file": "admin-meta.r1.en.json",
+      "text": "Three columns",
+      "source": {
+        "path": "packages/publisher/src/layouts/slots/layouts.json",
+        "line": 264
+      }
+    },
+    {
+      "parent": "publisher.layoutOption.layouts.staggered-grid.columns",
+      "id": "4",
+      "role": "label",
+      "cellId": "publisher.layoutOption.layouts.staggered-grid.columns.4",
+      "recordId": "st.5waybca904",
+      "file": "admin-meta.r1.en.json",
+      "text": "Four columns",
+      "source": {
+        "path": "packages/publisher/src/layouts/slots/layouts.json",
+        "line": 66
+      }
+    },
+    {
+      "parent": "publisher.delivery",
+      "id": "static-site-bundle",
+      "role": "label",
+      "cellId": "publisher.delivery.static-site-bundle",
+      "recordId": "st.bq1tgg5m9s",
+      "file": "admin-meta.r1.en.json",
+      "text": "Website files",
+      "source": {
+        "path": "packages/publisher/src/formats/slots/formats.ts",
+        "line": 6
+      }
+    },
+    {
+      "parent": "publisher.delivery",
+      "id": "html",
+      "role": "label",
+      "cellId": "publisher.delivery.html",
+      "recordId": "st.t9rjb0zacv",
+      "file": "admin-meta.r1.en.json",
+      "text": "Formatted email",
+      "source": {
+        "path": "packages/publisher/src/formats/slots/formats.ts",
+        "line": 5
+      }
+    },
+    {
+      "parent": "publisher.delivery",
+      "id": "text",
+      "role": "label",
+      "cellId": "publisher.delivery.text",
+      "recordId": "st.njpw08vzht",
+      "file": "admin-meta.r1.en.json",
+      "text": "Plain text email",
+      "source": {
+        "path": "packages/publisher/src/formats/slots/formats.ts",
+        "line": 13
+      }
+    },
+    {
+      "parent": "publisher.delivery",
+      "id": "png",
+      "role": "label",
+      "cellId": "publisher.delivery.png",
+      "recordId": "st.mzbvtkmpyt",
+      "file": "admin-meta.r1.en.json",
+      "text": "PNG image",
+      "source": {
+        "path": "packages/publisher/src/formats/slots/formats.ts",
+        "line": 17
+      }
+    },
+    {
+      "parent": "publisher.delivery",
+      "id": "jpg",
+      "role": "label",
+      "cellId": "publisher.delivery.jpg",
+      "recordId": "st.vw22186kca",
+      "file": "admin-meta.r1.en.json",
+      "text": "JPEG image",
+      "source": {
+        "path": "packages/publisher/src/formats/slots/formats.ts",
+        "line": 18
+      }
+    },
+    {
+      "parent": "publisher.delivery",
+      "id": "webp",
+      "role": "label",
+      "cellId": "publisher.delivery.webp",
+      "recordId": "st.vqbfsehtdy",
+      "file": "admin-meta.r1.en.json",
+      "text": "WebP image",
+      "source": {
+        "path": "packages/publisher/src/formats/slots/formats.ts",
+        "line": 18
+      }
+    },
+    {
+      "parent": "publisher.delivery",
+      "id": "svg",
+      "role": "label",
+      "cellId": "publisher.delivery.svg",
+      "recordId": "st.jf1d9enncg",
+      "file": "admin-meta.r1.en.json",
+      "text": "SVG image",
+      "source": {
+        "path": "packages/publisher/src/formats/slots/formats.ts",
+        "line": 18
+      }
+    },
+    {
+      "parent": "publisher.delivery",
+      "id": "pdf",
+      "role": "label",
+      "cellId": "publisher.delivery.pdf",
+      "recordId": "st.gqknqsddz5",
+      "file": "admin-meta.r1.en.json",
+      "text": "PDF file",
+      "source": {
+        "path": "packages/publisher/src/formats/slots/formats.ts",
+        "line": 22
+      }
+    },
+    {
+      "parent": "publisher.delivery",
+      "id": "docx",
+      "role": "label",
+      "cellId": "publisher.delivery.docx",
+      "recordId": "st.0m2js1y5mb",
+      "file": "admin-meta.r1.en.json",
+      "text": "Word document",
+      "source": {
+        "path": "packages/publisher/src/formats/slots/formats.ts",
+        "line": 23
+      }
+    },
+    {
+      "parent": "publisher.delivery",
+      "id": "mp4",
+      "role": "label",
+      "cellId": "publisher.delivery.mp4",
+      "recordId": "st.mxw8fkzay1",
+      "file": "admin-meta.r1.en.json",
+      "text": "Video file",
+      "source": {
+        "path": "packages/publisher/src/formats/slots/formats.ts",
+        "line": 27
+      }
+    },
+    {
+      "parent": "publisher.delivery",
+      "id": "gif",
+      "role": "label",
+      "cellId": "publisher.delivery.gif",
+      "recordId": "st.11b9v26pw2",
+      "file": "admin-meta.r1.en.json",
+      "text": "Animated image",
+      "source": {
+        "path": "packages/publisher/src/formats/slots/formats.ts",
+        "line": 28
+      }
+    },
+    {
+      "parent": "publisher.delivery",
+      "id": "pptx",
+      "role": "label",
+      "cellId": "publisher.delivery.pptx",
+      "recordId": "st.0p0z43t0r6",
+      "file": "admin-meta.r1.en.json",
+      "text": "PowerPoint file",
+      "source": {
+        "path": "packages/publisher/src/formats/slots/formats.ts",
+        "line": 33
+      }
+    },
+    {
+      "parent": "publisher.delivery",
+      "id": "google-slides",
+      "role": "label",
+      "cellId": "publisher.delivery.google-slides",
+      "recordId": "st.ham7xxzz5s",
+      "file": "admin-meta.r1.en.json",
+      "text": "Google Slides",
+      "source": {
+        "path": "packages/publisher/src/formats/slots/formats.ts",
+        "line": 33
+      }
+    },
+    {
+      "parent": "publisher.delivery",
+      "id": "link",
+      "role": "label",
+      "cellId": "publisher.delivery.link",
+      "recordId": "st.4az8nbwgv2",
+      "file": "admin-meta.r1.en.json",
+      "text": "Share link",
+      "source": {
+        "path": "packages/publisher/src/formats/slots/formats.ts",
+        "line": 33
+      }
+    },
+    {
+      "parent": "publisher.slideFidelity",
+      "id": "editable",
+      "role": "label",
+      "cellId": "publisher.slideFidelity.editable",
+      "recordId": "st.nmqsjbp5z8",
+      "file": "admin-meta.r1.en.json",
+      "text": "Editable slides",
+      "source": {
+        "path": "packages/publisher/src/formats/contract.ts",
+        "line": 16
+      }
+    },
+    {
+      "parent": "publisher.slideFidelity",
+      "id": "flat",
+      "role": "label",
+      "cellId": "publisher.slideFidelity.flat",
+      "recordId": "st.46ah8fmxwp",
+      "file": "admin-meta.r1.en.json",
+      "text": "Slide images",
+      "source": {
+        "path": "packages/publisher/src/formats/contract.ts",
+        "line": 16
+      }
+    },
+    {
+      "parent": "publisher.mediaValue",
+      "id": "responsive",
+      "role": "label",
+      "cellId": "publisher.mediaValue.responsive",
+      "recordId": "st.kxksyhfv5j",
+      "file": "admin-meta.r1.en.json",
+      "text": "Adapts to the screen",
+      "source": {
+        "path": "packages/publisher/src/formats/contract.ts",
+        "line": 4
+      }
+    },
+    {
+      "parent": "publisher.mediaValue",
+      "id": "fixed",
+      "role": "label",
+      "cellId": "publisher.mediaValue.fixed",
+      "recordId": "st.yh4j1z1r22",
+      "file": "admin-meta.r1.en.json",
+      "text": "Fixed size",
+      "source": {
+        "path": "packages/publisher/src/formats/contract.ts",
+        "line": 31
+      }
+    },
+    {
+      "parent": "publisher.mediaValue",
+      "id": "paper",
+      "role": "label",
+      "cellId": "publisher.mediaValue.paper",
+      "recordId": "st.f4qfqbeyt6",
+      "file": "admin-meta.r1.en.json",
+      "text": "Paper size",
+      "source": {
+        "path": "packages/publisher/src/formats/contract.ts",
+        "line": 32
+      }
+    },
+    {
+      "parent": "publisher.mediaValue",
+      "id": "aspect-ratio",
+      "role": "label",
+      "cellId": "publisher.mediaValue.aspect-ratio",
+      "recordId": "st.6607y7n18x",
+      "file": "admin-meta.r1.en.json",
+      "text": "Fixed proportions",
+      "source": {
+        "path": "packages/publisher/src/formats/contract.ts",
+        "line": 33
+      }
+    },
+    {
+      "parent": "publisher.mediaValue",
+      "id": "px",
+      "role": "label",
+      "cellId": "publisher.mediaValue.px",
+      "recordId": "st.pkzy9r4q0t",
+      "file": "admin-meta.r1.en.json",
+      "text": "Pixels",
+      "source": {
+        "path": "packages/publisher/src/formats/contract.ts",
+        "line": 31
+      }
+    },
+    {
+      "parent": "publisher.mediaValue",
+      "id": "mm",
+      "role": "label",
+      "cellId": "publisher.mediaValue.mm",
+      "recordId": "st.rwp1xww556",
+      "file": "admin-meta.r1.en.json",
+      "text": "Millimeters",
+      "source": {
+        "path": "packages/publisher/src/formats/contract.ts",
+        "line": 32
+      }
+    },
+    {
+      "parent": "publisher.mediaValue",
+      "id": "html",
+      "role": "label",
+      "cellId": "publisher.mediaValue.html",
+      "recordId": "st.ractwch234",
+      "file": "admin-meta.r1.en.json",
+      "text": "Web content",
+      "source": {
+        "path": "packages/publisher/src/formats/contract.ts",
+        "line": 4
+      }
+    },
+    {
+      "parent": "publisher.mediaValue",
+      "id": "png",
+      "role": "label",
+      "cellId": "publisher.mediaValue.png",
+      "recordId": "st.wx6z3yc2r4",
+      "file": "admin-meta.r1.en.json",
+      "text": "Image",
+      "source": {
+        "path": "packages/publisher/src/formats/contract.ts",
+        "line": 11
+      }
+    },
+    {
+      "parent": "publisher.mediaValue",
+      "id": "pdf",
+      "role": "label",
+      "cellId": "publisher.mediaValue.pdf",
+      "recordId": "st.ab6r5kbp6h",
+      "file": "admin-meta.r1.en.json",
+      "text": "Document file",
+      "source": {
+        "path": "packages/publisher/src/formats/contract.ts",
+        "line": 4
+      }
+    },
+    {
+      "parent": "publisher.mediaValue",
+      "id": "mp4",
+      "role": "label",
+      "cellId": "publisher.mediaValue.mp4",
+      "recordId": "st.rjydrbvwgq",
+      "file": "admin-meta.r1.en.json",
+      "text": "Video",
+      "source": {
+        "path": "packages/publisher/src/formats/contract.ts",
+        "line": 13
+      }
+    },
+    {
+      "parent": "publisher.mediaValue",
+      "id": "slides",
+      "role": "label",
+      "cellId": "publisher.mediaValue.slides",
+      "recordId": "st.33rp5w6vzk",
+      "file": "admin-meta.r1.en.json",
+      "text": "Slides",
+      "source": {
+        "path": "packages/publisher/src/formats/contract.ts",
+        "line": 9
+      }
+    },
+    {
+      "parent": "publisher.contentKey",
+      "id": "format",
+      "role": "label",
+      "cellId": "publisher.contentKey.format",
+      "recordId": "st.j7paney0ax",
+      "file": "admin-meta.r1.en.json",
+      "text": "Output format",
+      "source": {
+        "path": "packages/publisher/src/planning/configuration.ts",
+        "line": 2
+      }
+    },
+    {
+      "parent": "publisher.contentKey",
+      "id": "frame",
+      "role": "label",
+      "cellId": "publisher.contentKey.frame",
+      "recordId": "st.3scggksgrg",
+      "file": "admin-meta.r1.en.json",
+      "text": "Page frame",
+      "source": {
+        "path": "packages/publisher/src/planning/configuration.ts",
+        "line": 12
+      }
+    },
+    {
+      "parent": "publisher.contentKey",
+      "id": "layout",
+      "role": "label",
+      "cellId": "publisher.contentKey.layout",
+      "recordId": "st.aw6a6azky1",
+      "file": "admin-meta.r1.en.json",
+      "text": "Page layout",
+      "source": {
+        "path": "packages/publisher/src/planning/configuration.ts",
+        "line": 3
+      }
+    },
+    {
+      "parent": "publisher.contentKey",
+      "id": "media",
+      "role": "label",
+      "cellId": "publisher.contentKey.media",
+      "recordId": "st.bx4e2346g1",
+      "file": "admin-meta.r1.en.json",
+      "text": "Media settings",
+      "source": {
+        "path": "packages/publisher/src/planning/configuration.ts",
+        "line": 12
+      }
+    },
+    {
+      "parent": "publisher.contentKey",
+      "id": "deliveries",
+      "role": "label",
+      "cellId": "publisher.contentKey.deliveries",
+      "recordId": "st.6kh2kxcdny",
+      "file": "admin-meta.r1.en.json",
+      "text": "Delivery options",
+      "source": {
+        "path": "packages/publisher/src/planning/configuration.ts",
+        "line": 12
+      }
+    },
+    {
+      "parent": "publisher.contentKey",
+      "id": "deploymentSurface",
+      "role": "label",
+      "cellId": "publisher.contentKey.deploymentSurface",
+      "recordId": "st.8dnq7p5hjt",
+      "file": "admin-meta.r1.en.json",
+      "text": "Hosting destination",
+      "source": {
+        "path": "packages/publisher/src/planning/configuration.ts",
+        "line": 12
+      }
+    },
+    {
+      "parent": "publisher.contentKey",
+      "id": "kind",
+      "role": "label",
+      "cellId": "publisher.contentKey.kind",
+      "recordId": "st.gpycs4dwpb",
+      "file": "admin-meta.r1.en.json",
+      "text": "Content type",
+      "source": {
+        "path": "packages/publisher/src/planning/configuration.ts",
+        "line": 12
+      }
+    },
+    {
+      "parent": "publisher.contentKey",
+      "id": "size",
+      "role": "label",
+      "cellId": "publisher.contentKey.size",
+      "recordId": "st.aa0s69mdxk",
+      "file": "admin-meta.r1.en.json",
+      "text": "Size",
+      "source": {
+        "path": "packages/publisher/src/planning/configuration.ts",
+        "line": 10
+      }
+    },
+    {
+      "parent": "publisher.contentKey",
+      "id": "width",
+      "role": "label",
+      "cellId": "publisher.contentKey.width",
+      "recordId": "st.xzafjzzqrw",
+      "file": "admin-meta.r1.en.json",
+      "text": "Width",
+      "source": {
+        "path": "packages/publisher/src/planning/configuration.ts",
+        "line": 1
+      }
+    },
+    {
+      "parent": "publisher.contentKey",
+      "id": "height",
+      "role": "label",
+      "cellId": "publisher.contentKey.height",
+      "recordId": "st.dpjacmwvwx",
+      "file": "admin-meta.r1.en.json",
+      "text": "Height",
+      "source": {
+        "path": "packages/publisher/src/planning/configuration.ts",
+        "line": 1
+      }
+    },
+    {
+      "parent": "publisher.contentKey",
+      "id": "unit",
+      "role": "label",
+      "cellId": "publisher.contentKey.unit",
+      "recordId": "st.dscawwgdn0",
+      "file": "admin-meta.r1.en.json",
+      "text": "Unit",
+      "source": {
+        "path": "packages/publisher/src/planning/configuration.ts",
+        "line": 1
+      }
+    },
+    {
+      "parent": "publisher.contentKey",
+      "id": "breakpoints",
+      "role": "label",
+      "cellId": "publisher.contentKey.breakpoints",
+      "recordId": "st.6wq074c83n",
+      "file": "admin-meta.r1.en.json",
+      "text": "Screen sizes",
+      "source": {
+        "path": "packages/publisher/src/planning/configuration.ts",
+        "line": 1
+      }
+    },
+    {
+      "parent": "publisher.contentKey",
+      "id": "fps",
+      "role": "label",
+      "cellId": "publisher.contentKey.fps",
+      "recordId": "st.ezd94nrksb",
+      "file": "admin-meta.r1.en.json",
+      "text": "Frame rate",
+      "source": {
+        "path": "packages/publisher/src/planning/configuration.ts",
+        "line": 10
+      }
+    },
+    {
+      "parent": "publisher.contentKey",
+      "id": "brandAssets",
+      "role": "label",
+      "cellId": "publisher.contentKey.brandAssets",
+      "recordId": "st.dnajr0b50g",
+      "file": "admin-meta.r1.en.json",
+      "text": "Brand assets",
+      "source": {
+        "path": "packages/publisher/src/planning/configuration.ts",
+        "line": 19
+      }
+    },
+    {
+      "parent": "publisher.contentKey",
+      "id": "content",
+      "role": "label",
+      "cellId": "publisher.contentKey.content",
+      "recordId": "st.qge0061dwy",
+      "file": "admin-meta.r1.en.json",
+      "text": "Page content",
+      "source": {
+        "path": "packages/publisher/src/planning/configuration.ts",
+        "line": 21
+      }
+    },
+    {
+      "parent": "publisher.contentKey",
+      "id": "integrations",
+      "role": "label",
+      "cellId": "publisher.contentKey.integrations",
+      "recordId": "st.db5eb82s3w",
+      "file": "admin-meta.r1.en.json",
+      "text": "Connected services",
+      "source": {
+        "path": "packages/publisher/src/planning/configuration.ts",
+        "line": 22
+      }
+    },
+    {
+      "parent": "publisher.contentKey",
+      "id": "lead",
+      "role": "label",
+      "cellId": "publisher.contentKey.lead",
+      "recordId": "st.13d97mrmzy",
+      "file": "admin-meta.r1.en.json",
+      "text": "Introduction",
+      "source": {
+        "path": "packages/publisher/src/planning/configuration.ts",
+        "line": 1
+      }
+    },
+    {
+      "parent": "publisher.contentKey",
+      "id": "body",
+      "role": "label",
+      "cellId": "publisher.contentKey.body",
+      "recordId": "st.s4ye4v70hj",
+      "file": "admin-meta.r1.en.json",
+      "text": "Page body",
+      "source": {
+        "path": "packages/publisher/src/planning/configuration.ts",
+        "line": 1
+      }
+    },
+    {
+      "parent": "publisher.contentKey",
+      "id": "logo",
+      "role": "label",
+      "cellId": "publisher.contentKey.logo",
+      "recordId": "st.dgdbty02r2",
+      "file": "admin-meta.r1.en.json",
+      "text": "Logo",
+      "source": {
+        "path": "packages/publisher/src/planning/configuration.ts",
+        "line": 1
+      }
+    },
+    {
+      "parent": "publisher.contentKey",
+      "id": "favicon",
+      "role": "label",
+      "cellId": "publisher.contentKey.favicon",
+      "recordId": "st.a7d1spjaqx",
+      "file": "admin-meta.r1.en.json",
+      "text": "Browser icon",
+      "source": {
+        "path": "packages/publisher/src/planning/configuration.ts",
+        "line": 1
+      }
+    },
+    {
+      "parent": "publisher.contentKey",
+      "id": "app-icons",
+      "role": "label",
+      "cellId": "publisher.contentKey.app-icons",
+      "recordId": "st.nt06ktnza0",
+      "file": "admin-meta.r1.en.json",
+      "text": "App icons",
+      "source": {
+        "path": "packages/publisher/src/planning/configuration.ts",
+        "line": 1
+      }
+    },
+    {
+      "parent": "publisher.contentKey",
+      "id": "share-image",
+      "role": "label",
+      "cellId": "publisher.contentKey.share-image",
+      "recordId": "st.3nrpe15682",
+      "file": "admin-meta.r1.en.json",
+      "text": "Share image",
+      "source": {
+        "path": "packages/publisher/src/planning/configuration.ts",
+        "line": 1
+      }
+    },
+    {
+      "parent": "publisher.contentKey",
+      "id": "dependencies",
+      "role": "label",
+      "cellId": "publisher.contentKey.dependencies",
+      "recordId": "st.c0eqtzz07g",
+      "file": "admin-meta.r1.en.json",
+      "text": "Page requirements",
+      "source": {
+        "path": "packages/publisher/src/planning/configuration.ts",
+        "line": 102
+      }
+    },
+    {
+      "parent": "publisher.contentKey",
+      "id": "implementation",
+      "role": "label",
+      "cellId": "publisher.contentKey.implementation",
+      "recordId": "st.seam5630v9",
+      "file": "admin-meta.r1.en.json",
+      "text": "Page setup",
+      "source": {
+        "path": "packages/publisher/src/planning/configuration.ts",
+        "line": 101
+      }
+    },
+    {
+      "parent": "publisher.contentKey",
+      "id": "binding",
+      "role": "label",
+      "cellId": "publisher.contentKey.binding",
+      "recordId": "st.x3fp2x1p5m",
+      "file": "admin-meta.r1.en.json",
+      "text": "Page connection",
+      "source": {
+        "path": "packages/publisher/src/planning/configuration.ts",
+        "line": 1
+      }
+    },
+    {
+      "parent": "publisher.contentKey",
+      "id": "fills",
+      "role": "label",
+      "cellId": "publisher.contentKey.fills",
+      "recordId": "st.zmavzn3xkt",
+      "file": "admin-meta.r1.en.json",
+      "text": "Page sections",
+      "source": {
+        "path": "packages/publisher/src/planning/configuration.ts",
+        "line": 1
+      }
+    },
+    {
+      "parent": "publisher.brandAsset",
+      "id": "brandAssets.logo",
+      "role": "label",
+      "cellId": "publisher.brandAsset.brandAssets.logo",
+      "recordId": "st.dgdbty02r2",
+      "file": "admin-meta.r1.en.json",
+      "text": "Logo",
+      "source": {
+        "path": "packages/publisher/src/planning/configuration.ts",
+        "line": 1
+      }
+    },
+    {
+      "parent": "publisher.brandAsset",
+      "id": "brandAssets.favicon",
+      "role": "label",
+      "cellId": "publisher.brandAsset.brandAssets.favicon",
+      "recordId": "st.a7d1spjaqx",
+      "file": "admin-meta.r1.en.json",
+      "text": "Browser icon",
+      "source": {
+        "path": "packages/publisher/src/planning/configuration.ts",
+        "line": 1
+      }
+    },
+    {
+      "parent": "publisher.brandAsset",
+      "id": "brandAssets.app-icons",
+      "role": "label",
+      "cellId": "publisher.brandAsset.brandAssets.app-icons",
+      "recordId": "st.nt06ktnza0",
+      "file": "admin-meta.r1.en.json",
+      "text": "App icons",
+      "source": {
+        "path": "packages/publisher/src/planning/configuration.ts",
+        "line": 1
+      }
+    },
+    {
+      "parent": "publisher.brandAsset",
+      "id": "brandAssets.share-image",
+      "role": "label",
+      "cellId": "publisher.brandAsset.brandAssets.share-image",
+      "recordId": "st.3nrpe15682",
+      "file": "admin-meta.r1.en.json",
+      "text": "Share image",
+      "source": {
+        "path": "packages/publisher/src/planning/configuration.ts",
+        "line": 1
+      }
+    },
+    {
+      "parent": "publisher.content",
+      "id": "content.lead",
+      "role": "label",
+      "cellId": "publisher.content.content.lead",
+      "recordId": "st.13d97mrmzy",
+      "file": "admin-meta.r1.en.json",
+      "text": "Introduction",
+      "source": {
+        "path": "packages/publisher/src/planning/configuration.ts",
+        "line": 1
+      }
+    },
+    {
+      "parent": "publisher.content",
+      "id": "content.body",
+      "role": "label",
+      "cellId": "publisher.content.content.body",
+      "recordId": "st.s4ye4v70hj",
+      "file": "admin-meta.r1.en.json",
+      "text": "Page body",
+      "source": {
+        "path": "packages/publisher/src/planning/configuration.ts",
+        "line": 1
+      }
+    },
+    {
+      "parent": "publisher.milestone",
+      "id": "M1",
+      "role": "label",
+      "cellId": "publisher.milestone.M1",
+      "recordId": "st.q5h8dscbvd",
+      "file": "admin-meta.r1.en.json",
+      "text": "First impression",
+      "source": {
+        "path": "packages/publisher/src/planning/menu.ts",
+        "line": 7
+      }
+    },
+    {
+      "parent": "publisher.milestone",
+      "id": "M2",
+      "role": "label",
+      "cellId": "publisher.milestone.M2",
+      "recordId": "st.hzbwxz7scj",
+      "file": "admin-meta.r1.en.json",
+      "text": "First conversation",
+      "source": {
+        "path": "packages/publisher/src/planning/menu.ts",
+        "line": 7
+      }
+    },
+    {
+      "parent": "publisher.milestone",
+      "id": "M3",
+      "role": "label",
+      "cellId": "publisher.milestone.M3",
+      "recordId": "st.3em05xxb4a",
+      "file": "admin-meta.r1.en.json",
+      "text": "First customer",
+      "source": {
+        "path": "packages/publisher/src/planning/menu.ts",
+        "line": 7
+      }
+    },
+    {
+      "parent": "publisher.milestone",
+      "id": "M4",
+      "role": "label",
+      "cellId": "publisher.milestone.M4",
+      "recordId": "st.jw9z8mq94p",
+      "file": "admin-meta.r1.en.json",
+      "text": "Proof and support",
+      "source": {
+        "path": "packages/publisher/src/planning/menu.ts",
+        "line": 7
+      }
+    },
+    {
+      "parent": "publisher.pack",
+      "id": "pack.standard-website",
+      "role": "label",
+      "cellId": "publisher.pack.pack.standard-website",
+      "recordId": "st.mzsb8ttnr2",
+      "file": "admin-meta.r1.en.json",
+      "text": "Website pages",
+      "source": {
+        "path": "packages/publisher/src/planning/menu.ts",
+        "line": 12
+      }
+    },
+    {
+      "parent": "publisher.pack",
+      "id": "pack.brand-assets",
+      "role": "label",
+      "cellId": "publisher.pack.pack.brand-assets",
+      "recordId": "st.dnajr0b50g",
+      "file": "admin-meta.r1.en.json",
+      "text": "Brand assets",
+      "source": {
+        "path": "packages/publisher/src/planning/menu.ts",
+        "line": 13
+      }
+    },
+    {
+      "parent": "publisher.pack",
+      "id": "pack.conversation",
+      "role": "label",
+      "cellId": "publisher.pack.pack.conversation",
+      "recordId": "st.xwezy7dxcq",
+      "file": "admin-meta.r1.en.json",
+      "text": "Start conversations",
+      "source": {
+        "path": "packages/publisher/src/planning/menu.ts",
+        "line": 14
+      }
+    },
+    {
+      "parent": "publisher.pack",
+      "id": "pack.customer",
+      "role": "label",
+      "cellId": "publisher.pack.pack.customer",
+      "recordId": "st.3qsgx5gpa8",
+      "file": "admin-meta.r1.en.json",
+      "text": "Serve customers",
+      "source": {
+        "path": "packages/publisher/src/planning/menu.ts",
+        "line": 15
+      }
+    },
+    {
+      "parent": "publisher.pack",
+      "id": "pack.app",
+      "role": "label",
+      "cellId": "publisher.pack.pack.app",
+      "recordId": "st.p7d3pb66a4",
+      "file": "admin-meta.r1.en.json",
+      "text": "Workspace pages",
+      "source": {
+        "path": "packages/publisher/src/planning/menu.ts",
+        "line": 16
+      }
+    },
+    {
+      "parent": "publisher.pack",
+      "id": "pack.proof",
+      "role": "label",
+      "cellId": "publisher.pack.pack.proof",
+      "recordId": "st.jw9z8mq94p",
+      "file": "admin-meta.r1.en.json",
+      "text": "Proof and support",
+      "source": {
+        "path": "packages/publisher/src/planning/menu.ts",
+        "line": 17
+      }
+    },
+    {
+      "parent": "publisher.menuItem",
+      "id": "website.home",
+      "role": "label",
+      "cellId": "publisher.menuItem.website.home",
+      "recordId": "st.9pds3yfrp5",
+      "file": "admin-meta.r1.en.json",
+      "text": "Home",
+      "source": {
+        "path": "packages/publisher/src/planning/menu.ts",
+        "line": 48
+      }
+    },
+    {
+      "parent": "publisher.menuItem",
+      "id": "website.showcase",
+      "role": "label",
+      "cellId": "publisher.menuItem.website.showcase",
+      "recordId": "st.371y0j9d03",
+      "file": "admin-meta.r1.en.json",
+      "text": "Showcase",
+      "source": {
+        "path": "packages/publisher/src/planning/menu.ts",
+        "line": 48
+      }
+    },
+    {
+      "parent": "publisher.menuItem",
+      "id": "website.about",
+      "role": "label",
+      "cellId": "publisher.menuItem.website.about",
+      "recordId": "st.vyba0swrc3",
+      "file": "admin-meta.r1.en.json",
+      "text": "About",
+      "source": {
+        "path": "packages/publisher/src/planning/menu.ts",
+        "line": 49
+      }
+    },
+    {
+      "parent": "publisher.menuItem",
+      "id": "website.terms",
+      "role": "label",
+      "cellId": "publisher.menuItem.website.terms",
+      "recordId": "st.dvptr48bb1",
+      "file": "admin-meta.r1.en.json",
+      "text": "Terms",
+      "source": {
+        "path": "packages/publisher/src/planning/menu.ts",
+        "line": 42
+      }
+    },
+    {
+      "parent": "publisher.menuItem",
+      "id": "website.privacy",
+      "role": "label",
+      "cellId": "publisher.menuItem.website.privacy",
+      "recordId": "st.pqdh5sabxr",
+      "file": "admin-meta.r1.en.json",
+      "text": "Privacy",
+      "source": {
+        "path": "packages/publisher/src/planning/menu.ts",
+        "line": 42
+      }
+    },
+    {
+      "parent": "publisher.menuItem",
+      "id": "website.contact",
+      "role": "label",
+      "cellId": "publisher.menuItem.website.contact",
+      "recordId": "st.v8355nrj3s",
+      "file": "admin-meta.r1.en.json",
+      "text": "Contact",
+      "source": {
+        "path": "packages/publisher/src/planning/menu.ts",
+        "line": 50
+      }
+    },
+    {
+      "parent": "publisher.menuItem",
+      "id": "website.not-found",
+      "role": "label",
+      "cellId": "publisher.menuItem.website.not-found",
+      "recordId": "st.xebhn5e4b0",
+      "file": "admin-meta.r1.en.json",
+      "text": "Page not found",
+      "source": {
+        "path": "packages/publisher/src/planning/menu.ts",
+        "line": 50
+      }
+    },
+    {
+      "parent": "publisher.menuItem",
+      "id": "website.error",
+      "role": "label",
+      "cellId": "publisher.menuItem.website.error",
+      "recordId": "st.c96vhqe3yr",
+      "file": "admin-meta.r1.en.json",
+      "text": "Page error",
+      "source": {
+        "path": "packages/publisher/src/planning/menu.ts",
+        "line": 50
+      }
+    },
+    {
+      "parent": "publisher.menuItem",
+      "id": "assets.brand",
+      "role": "label",
+      "cellId": "publisher.menuItem.assets.brand",
+      "recordId": "st.99j8djb08w",
+      "file": "admin-meta.r1.en.json",
+      "text": "Brand identity",
+      "source": {
+        "path": "packages/publisher/src/planning/menu.ts",
+        "line": 45
+      }
+    },
+    {
+      "parent": "publisher.menuItem",
+      "id": "assets.share",
+      "role": "label",
+      "cellId": "publisher.menuItem.assets.share",
+      "recordId": "st.xh07kgpprw",
+      "file": "admin-meta.r1.en.json",
+      "text": "Default share image",
+      "source": {
+        "path": "packages/publisher/src/planning/menu.ts",
+        "line": 52
+      }
+    },
+    {
+      "parent": "publisher.menuItem",
+      "id": "conversation.email",
+      "role": "label",
+      "cellId": "publisher.menuItem.conversation.email",
+      "recordId": "st.v24nj9t76z",
+      "file": "admin-meta.r1.en.json",
+      "text": "Contact confirmation",
+      "source": {
+        "path": "packages/publisher/src/planning/menu.ts",
+        "line": 53
+      }
+    },
+    {
+      "parent": "publisher.menuItem",
+      "id": "conversation.og",
+      "role": "label",
+      "cellId": "publisher.menuItem.conversation.og",
+      "recordId": "st.2pmfz6jsq9",
+      "file": "admin-meta.r1.en.json",
+      "text": "Generated share image",
+      "source": {
+        "path": "packages/publisher/src/planning/menu.ts",
+        "line": 54
+      }
+    },
+    {
+      "parent": "publisher.menuItem",
+      "id": "conversation.pdf",
+      "role": "label",
+      "cellId": "publisher.menuItem.conversation.pdf",
+      "recordId": "st.g5z3aayq26",
+      "file": "admin-meta.r1.en.json",
+      "text": "One-page document",
+      "source": {
+        "path": "packages/publisher/src/planning/menu.ts",
+        "line": 55
+      }
+    },
+    {
+      "parent": "publisher.menuItem",
+      "id": "conversation.deck",
+      "role": "label",
+      "cellId": "publisher.menuItem.conversation.deck",
+      "recordId": "st.v4gw1fv525",
+      "file": "admin-meta.r1.en.json",
+      "text": "Presentation",
+      "source": {
+        "path": "packages/publisher/src/planning/menu.ts",
+        "line": 56
+      }
+    },
+    {
+      "parent": "publisher.menuItem",
+      "id": "conversation.demo",
+      "role": "label",
+      "cellId": "publisher.menuItem.conversation.demo",
+      "recordId": "st.4ah5tfb8yx",
+      "file": "admin-meta.r1.en.json",
+      "text": "Demo requests",
+      "source": {
+        "path": "packages/publisher/src/planning/menu.ts",
+        "line": 57
+      }
+    },
+    {
+      "parent": "publisher.menuItem",
+      "id": "customer.auth",
+      "role": "label",
+      "cellId": "publisher.menuItem.customer.auth",
+      "recordId": "st.x7dmhkppe0",
+      "file": "admin-meta.r1.en.json",
+      "text": "Sign-in and account",
+      "source": {
+        "path": "packages/publisher/src/planning/menu.ts",
+        "line": 58
+      }
+    },
+    {
+      "parent": "publisher.menuItem",
+      "id": "customer.sale",
+      "role": "label",
+      "cellId": "publisher.menuItem.customer.sale",
+      "recordId": "st.e55d3wg67j",
+      "file": "admin-meta.r1.en.json",
+      "text": "Payments and agreements",
+      "source": {
+        "path": "packages/publisher/src/planning/menu.ts",
+        "line": 59
+      }
+    },
+    {
+      "parent": "publisher.menuItem",
+      "id": "customer.receipt",
+      "role": "label",
+      "cellId": "publisher.menuItem.customer.receipt",
+      "recordId": "st.3ffnksh61f",
+      "file": "admin-meta.r1.en.json",
+      "text": "Receipt email",
+      "source": {
+        "path": "packages/publisher/src/planning/menu.ts",
+        "line": 60
+      }
+    },
+    {
+      "parent": "publisher.menuItem",
+      "id": "customer.portal",
+      "role": "label",
+      "cellId": "publisher.menuItem.customer.portal",
+      "recordId": "st.5egv166yh0",
+      "file": "admin-meta.r1.en.json",
+      "text": "Customer portal",
+      "source": {
+        "path": "packages/publisher/src/planning/menu.ts",
+        "line": 61
+      }
+    },
+    {
+      "parent": "publisher.menuItem",
+      "id": "app.ops",
+      "role": "label",
+      "cellId": "publisher.menuItem.app.ops",
+      "recordId": "st.p7d3pb66a4",
+      "file": "admin-meta.r1.en.json",
+      "text": "Workspace pages",
+      "source": {
+        "path": "packages/publisher/src/planning/menu.ts",
+        "line": 62
+      }
+    },
+    {
+      "parent": "publisher.menuItem",
+      "id": "proof.cases",
+      "role": "label",
+      "cellId": "publisher.menuItem.proof.cases",
+      "recordId": "st.dcxmkbefqg",
+      "file": "admin-meta.r1.en.json",
+      "text": "Case studies",
+      "source": {
+        "path": "packages/publisher/src/planning/menu.ts",
+        "line": 63
+      }
+    },
+    {
+      "parent": "publisher.menuItem",
+      "id": "proof.help",
+      "role": "label",
+      "cellId": "publisher.menuItem.proof.help",
+      "recordId": "st.pah139zshe",
+      "file": "admin-meta.r1.en.json",
+      "text": "Help pages",
+      "source": {
+        "path": "packages/publisher/src/planning/menu.ts",
+        "line": 64
+      }
+    },
+    {
+      "parent": "publisher.menuItem",
+      "id": "proof.status",
+      "role": "label",
+      "cellId": "publisher.menuItem.proof.status",
+      "recordId": "st.qjrnxj2xjm",
+      "file": "admin-meta.r1.en.json",
+      "text": "Service status",
+      "source": {
+        "path": "packages/publisher/src/planning/menu.ts",
+        "line": 65
+      }
+    },
+    {
+      "parent": "publisher.menuItem",
+      "id": "proof.video",
+      "role": "label",
+      "cellId": "publisher.menuItem.proof.video",
+      "recordId": "st.gdp5mx15km",
+      "file": "admin-meta.r1.en.json",
+      "text": "Product video",
+      "source": {
+        "path": "packages/publisher/src/planning/menu.ts",
+        "line": 66
+      }
+    },
+    {
+      "parent": "publisher.planPage",
+      "id": "/agents/designer",
+      "role": "label",
+      "cellId": "publisher.planPage./agents/designer",
+      "recordId": "st.pb0ynfnh58",
+      "file": "admin-meta.r1.en.json",
+      "text": "Designer",
+      "source": {
+        "path": "packages/publisher/src/planning/menu.ts",
+        "line": 62
+      },
+      "lookup": {
+        "field": "route.path",
+        "value": "/agents/designer"
+      }
+    },
+    {
+      "parent": "publisher.planPage",
+      "id": "/agents/writer",
+      "role": "label",
+      "cellId": "publisher.planPage./agents/writer",
+      "recordId": "st.m22sa9p9y4",
+      "file": "admin-meta.r1.en.json",
+      "text": "Writer",
+      "source": {
+        "path": "packages/publisher/src/planning/menu.ts",
+        "line": 62
+      },
+      "lookup": {
+        "field": "route.path",
+        "value": "/agents/writer"
+      }
+    },
+    {
+      "parent": "publisher.planPage",
+      "id": "/agents/publisher",
+      "role": "label",
+      "cellId": "publisher.planPage./agents/publisher",
+      "recordId": "st.eyyshzcr6r",
+      "file": "admin-meta.r1.en.json",
+      "text": "Publisher",
+      "source": {
+        "path": "packages/publisher/src/planning/menu.ts",
+        "line": 62
+      },
+      "lookup": {
+        "field": "route.path",
+        "value": "/agents/publisher"
+      }
+    },
+    {
+      "parent": "publisher.planHeader",
+      "id": "planLabel",
+      "role": "label",
+      "cellId": "publisher.planHeader.planLabel",
+      "recordId": "st.3nqw88vr1y",
+      "file": "admin-meta.r1.en.json",
+      "text": "Publishing plan",
+      "source": {
+        "path": "packages/publisher/src/web/publisher/PublisherPlanView.tsx",
+        "line": 16
+      }
+    },
+    {
+      "parent": "publisher.planHeader",
+      "id": "flowLabel",
+      "role": "help",
+      "cellId": "publisher.planHeader.flowLabel",
+      "recordId": "st.svn2dpwy9y",
+      "file": "admin-meta.r1.en.json",
+      "text": "Choose pages, apply the plan, then set up publishing.",
+      "source": {
+        "path": "packages/publisher/src/web/publisher/PublisherPlanView.tsx",
+        "line": 17
+      }
+    },
+    {
+      "parent": "publisher.planHeader",
+      "id": "alignmentDescription",
+      "role": "help",
+      "cellId": "publisher.planHeader.alignmentDescription",
+      "recordId": "st.v8f4pf41x5",
+      "file": "admin-meta.r1.en.json",
+      "text": "Applying a plan saves a version. It does not approve or publish the pages.",
+      "source": {
+        "path": "packages/publisher/src/web/publisher/PublisherPlanView.tsx",
+        "line": 18
+      }
+    },
+    {
+      "parent": "publisher.planHeader",
+      "id": "emptyLabel",
+      "role": "label",
+      "cellId": "publisher.planHeader.emptyLabel",
+      "recordId": "st.aqw8w685d8",
+      "file": "admin-meta.r1.en.json",
+      "text": "Plan your pages",
+      "source": {
+        "path": "packages/publisher/src/web/publisher/PublisherPlanView.tsx",
+        "line": 19
+      }
+    },
+    {
+      "parent": "publisher.planHeader",
+      "id": "alignedVersionLabel",
+      "role": "label",
+      "cellId": "publisher.planHeader.alignedVersionLabel",
+      "recordId": "st.cwa1m5smec",
+      "file": "admin-meta.r1.en.json",
+      "text": "Applied version",
+      "source": {
+        "path": "packages/publisher/src/web/publisher/PublisherPlanView.tsx",
+        "line": 20
+      }
+    },
+    {
+      "parent": "publisher.planHeader",
+      "id": "noAlignedPlanLabel",
+      "role": "label",
+      "cellId": "publisher.planHeader.noAlignedPlanLabel",
+      "recordId": "st.rktxnd55w7",
+      "file": "admin-meta.r1.en.json",
+      "text": "No applied plan",
+      "source": {
+        "path": "packages/publisher/src/web/publisher/PublisherPlanView.tsx",
+        "line": 21
+      }
+    },
+    {
+      "parent": "publisher.planHeader",
+      "id": "versionsLabel",
+      "role": "label",
+      "cellId": "publisher.planHeader.versionsLabel",
+      "recordId": "st.fh0brxmy2g",
+      "file": "admin-meta.r1.en.json",
+      "text": "Plan history",
+      "source": {
+        "path": "packages/publisher/src/web/publisher/PublisherPlanView.tsx",
+        "line": 22
+      }
+    },
+    {
+      "parent": "publisher.planHeader",
+      "id": "versionLabel",
+      "role": "label",
+      "cellId": "publisher.planHeader.versionLabel",
+      "recordId": "st.qfhzc6xc71",
+      "file": "admin-meta.r1.en.json",
+      "text": "Version number",
+      "source": {
+        "path": "packages/publisher/src/web/publisher/PublisherPlanView.tsx",
+        "line": 23
+      }
+    },
+    {
+      "parent": "publisher.planHeader",
+      "id": "alignedLabel",
+      "role": "label",
+      "cellId": "publisher.planHeader.alignedLabel",
+      "recordId": "st.nsdd63t787",
+      "file": "admin-meta.r1.en.json",
+      "text": "Applied",
+      "source": {
+        "path": "packages/publisher/src/web/publisher/PublisherPlanView.tsx",
+        "line": 24
+      }
+    },
+    {
+      "parent": "publisher.planHeader",
+      "id": "proposalLabel",
+      "role": "label",
+      "cellId": "publisher.planHeader.proposalLabel",
+      "recordId": "st.nbq8qj2x04",
+      "file": "admin-meta.r1.en.json",
+      "text": "Proposed plan",
+      "source": {
+        "path": "packages/publisher/src/web/publisher/PublisherPlanView.tsx",
+        "line": 25
+      }
+    },
+    {
+      "parent": "publisher.planHeader",
+      "id": "draftVersionLabel",
+      "role": "label",
+      "cellId": "publisher.planHeader.draftVersionLabel",
+      "recordId": "st.yyp7k5n4zz",
+      "file": "admin-meta.r1.en.json",
+      "text": "Draft version",
+      "source": {
+        "path": "packages/publisher/src/web/publisher/PublisherPlanView.tsx",
+        "line": 26
+      }
+    },
+    {
+      "parent": "publisher.planHeader",
+      "id": "currentMilestoneLabel",
+      "role": "label",
+      "cellId": "publisher.planHeader.currentMilestoneLabel",
+      "recordId": "st.asxk4zdpjk",
+      "file": "admin-meta.r1.en.json",
+      "text": "Current milestone",
+      "source": {
+        "path": "packages/publisher/src/web/publisher/PublisherPlanView.tsx",
+        "line": 27
+      }
+    },
+    {
+      "parent": "publisher.planHeader",
+      "id": "draftDescription",
+      "role": "help",
+      "cellId": "publisher.planHeader.draftDescription",
+      "recordId": "st.dcfkm4c8qy",
+      "file": "admin-meta.r1.en.json",
+      "text": "The pages keep using the applied version.",
+      "source": {
+        "path": "packages/publisher/src/web/publisher/PublisherPlanView.tsx",
+        "line": 28
+      }
+    },
+    {
+      "parent": "publisher.planHeader",
+      "id": "itemLabel",
+      "role": "label",
+      "cellId": "publisher.planHeader.itemLabel",
+      "recordId": "st.e4r21vvvkm",
+      "file": "admin-meta.r1.en.json",
+      "text": "Page item",
+      "source": {
+        "path": "packages/publisher/src/web/publisher/PublisherPlanView.tsx",
+        "line": 29
+      }
+    },
+    {
+      "parent": "publisher.planHeader",
+      "id": "hostReferenceLabel",
+      "role": "label",
+      "cellId": "publisher.planHeader.hostReferenceLabel",
+      "recordId": "st.x3fp2x1p5m",
+      "file": "admin-meta.r1.en.json",
+      "text": "Page connection",
+      "source": {
+        "path": "packages/publisher/src/web/publisher/PublisherPlanView.tsx",
+        "line": 30
+      }
+    },
+    {
+      "parent": "publisher.planHeader",
+      "id": "answersLabel",
+      "role": "label",
+      "cellId": "publisher.planHeader.answersLabel",
+      "recordId": "st.kckcfaeqwt",
+      "file": "admin-meta.r1.en.json",
+      "text": "Setup answers",
+      "source": {
+        "path": "packages/publisher/src/web/publisher/PublisherPlanView.tsx",
+        "line": 31
+      }
+    },
+    {
+      "parent": "publisher.planHeader",
+      "id": "needsInputLabel",
+      "role": "label",
+      "cellId": "publisher.planHeader.needsInputLabel",
+      "recordId": "st.q3n3qeyzhd",
+      "file": "admin-meta.r1.en.json",
+      "text": "Needs information",
+      "source": {
+        "path": "packages/publisher/src/web/publisher/PublisherPlanView.tsx",
+        "line": 32
+      }
+    },
+    {
+      "parent": "publisher.planHeader",
+      "id": "findingsLabel",
+      "role": "label",
+      "cellId": "publisher.planHeader.findingsLabel",
+      "recordId": "st.ztmy1m4bfn",
+      "file": "admin-meta.r1.en.json",
+      "text": "Plan issues",
+      "source": {
+        "path": "packages/publisher/src/web/publisher/PublisherPlanView.tsx",
+        "line": 33
+      }
+    },
+    {
+      "parent": "publisher.planHeader",
+      "id": "aligningLabel",
+      "role": "label",
+      "cellId": "publisher.planHeader.aligningLabel",
+      "recordId": "st.6ymm4ps05r",
+      "file": "admin-meta.r1.en.json",
+      "text": "Applying plan",
+      "source": {
+        "path": "packages/publisher/src/web/publisher/PublisherPlanView.tsx",
+        "line": 34
+      }
+    },
+    {
+      "parent": "publisher.planHeader",
+      "id": "alignLabel",
+      "role": "button",
+      "cellId": "publisher.planHeader.alignLabel",
+      "recordId": "st.rdsa1ky831",
+      "file": "admin-meta.r1.en.json",
+      "text": "Apply plan",
+      "source": {
+        "path": "packages/publisher/src/web/publisher/PublisherPlanView.tsx",
+        "line": 35
+      }
+    },
+    {
+      "parent": "publisher.planHeader",
+      "id": "missingApprovalLabel",
+      "role": "help",
+      "cellId": "publisher.planHeader.missingApprovalLabel",
+      "recordId": "st.x3wc4fsbh5",
+      "file": "admin-meta.r1.en.json",
+      "text": "Ask an agent to set up plan approval before applying changes.",
+      "source": {
+        "path": "packages/publisher/src/web/publisher/PublisherPlanView.tsx",
+        "line": 36
+      }
+    },
+    {
+      "parent": "publisher.planHeader",
+      "id": "menuLabel",
+      "role": "label",
+      "cellId": "publisher.planHeader.menuLabel",
+      "recordId": "st.skypphnt91",
+      "file": "admin-meta.r1.en.json",
+      "text": "Available pages",
+      "source": {
+        "path": "packages/publisher/src/web/publisher/PublisherPlanView.tsx",
+        "line": 37
+      }
+    },
+    {
+      "parent": "publisher.planHeader",
+      "id": "menuVersionLabel",
+      "role": "label",
+      "cellId": "publisher.planHeader.menuVersionLabel",
+      "recordId": "st.2bkwsb39e7",
+      "file": "admin-meta.r1.en.json",
+      "text": "Page list version",
+      "source": {
+        "path": "packages/publisher/src/web/publisher/PublisherPlanView.tsx",
+        "line": 38
+      }
+    },
+    {
+      "parent": "publisher.planHeader",
+      "id": "capabilityDescription",
+      "role": "help",
+      "cellId": "publisher.planHeader.capabilityDescription",
+      "recordId": "st.pb08q17tct",
+      "file": "admin-meta.r1.en.json",
+      "text": "Available options can be set up. Planned options are not ready to use.",
+      "source": {
+        "path": "packages/publisher/src/web/publisher/PublisherPlanView.tsx",
+        "line": 39
+      }
+    },
+    {
+      "parent": "publisher.planHeader",
+      "id": "sectionsLabel",
+      "role": "label",
+      "cellId": "publisher.planHeader.sectionsLabel",
+      "recordId": "st.zmavzn3xkt",
+      "file": "admin-meta.r1.en.json",
+      "text": "Page sections",
+      "source": {
+        "path": "packages/publisher/src/web/publisher/PublisherPlanView.tsx",
+        "line": 40
+      }
+    },
+    {
+      "parent": "publisher.planHeader",
+      "id": "framesLabel",
+      "role": "label",
+      "cellId": "publisher.planHeader.framesLabel",
+      "recordId": "st.bxss0nzety",
+      "file": "admin-meta.r1.en.json",
+      "text": "Page frames",
+      "source": {
+        "path": "packages/publisher/src/web/publisher/PublisherPlanView.tsx",
+        "line": 41
+      }
+    },
+    {
+      "parent": "publisher.planHeader",
+      "id": "formatsLabel",
+      "role": "label",
+      "cellId": "publisher.planHeader.formatsLabel",
+      "recordId": "st.wg9byce5rb",
+      "file": "admin-meta.r1.en.json",
+      "text": "Output formats",
+      "source": {
+        "path": "packages/publisher/src/web/publisher/PublisherPlanView.tsx",
+        "line": 42
+      }
+    },
+    {
+      "parent": "publisher.planHeader",
+      "id": "noneLabel",
+      "role": "label",
+      "cellId": "publisher.planHeader.noneLabel",
+      "recordId": "st.qcry3z237f",
+      "file": "admin-meta.r1.en.json",
+      "text": "None",
+      "source": {
+        "path": "packages/publisher/src/web/publisher/PublisherPlanView.tsx",
+        "line": 43
+      }
+    },
+    {
+      "parent": "publisher.planHeader",
+      "id": "alignmentFailedLabel",
+      "role": "error",
+      "cellId": "publisher.planHeader.alignmentFailedLabel",
+      "recordId": "st.aamt9c6zdr",
+      "file": "admin-meta.r1.en.json",
+      "text": "The plan could not be applied. Try again.",
+      "source": {
+        "path": "packages/publisher/src/web/publisher/PublisherPlanView.tsx",
+        "line": 44
+      }
+    },
+    {
+      "parent": "publisher.planHeader",
+      "id": "configurationLabel",
+      "role": "label",
+      "cellId": "publisher.planHeader.configurationLabel",
+      "recordId": "st.63a9vxm2rv",
+      "file": "admin-meta.r1.en.json",
+      "text": "Suggested setup",
+      "source": {
+        "path": "packages/publisher/src/web/publisher/PublisherPlanView.tsx",
+        "line": 45
+      }
+    },
+    {
+      "parent": "publisher.planHeader",
+      "id": "updateConfigurationLabel",
+      "role": "button",
+      "cellId": "publisher.planHeader.updateConfigurationLabel",
+      "recordId": "st.88pmra6hcv",
+      "file": "admin-meta.r1.en.json",
+      "text": "Update setup",
+      "source": {
+        "path": "packages/publisher/src/web/publisher/PublisherPlanView.tsx",
+        "line": 46
+      }
+    },
+    {
+      "parent": "publisher.planHeader",
+      "id": "recommendationLabel",
+      "role": "label",
+      "cellId": "publisher.planHeader.recommendationLabel",
+      "recordId": "st.m70rydry0g",
+      "file": "admin-meta.r1.en.json",
+      "text": "Original suggestion",
+      "source": {
+        "path": "packages/publisher/src/web/publisher/PublisherPlanView.tsx",
+        "line": 47
+      }
+    },
+    {
+      "parent": "publisher.planHeader",
+      "id": "overridesLabel",
+      "role": "label",
+      "cellId": "publisher.planHeader.overridesLabel",
+      "recordId": "st.5jnhndq9pz",
+      "file": "admin-meta.r1.en.json",
+      "text": "Changed options",
+      "source": {
+        "path": "packages/publisher/src/web/publisher/PublisherPlanView.tsx",
+        "line": 48
+      }
+    },
+    {
+      "parent": "publisher.planHeader",
+      "id": "requirementsLabel",
+      "role": "label",
+      "cellId": "publisher.planHeader.requirementsLabel",
+      "recordId": "st.av63bcybsc",
+      "file": "admin-meta.r1.en.json",
+      "text": "Requirements",
+      "source": {
+        "path": "packages/publisher/src/web/publisher/PublisherPlanView.tsx",
+        "line": 49
+      }
+    },
+    {
+      "parent": "publisher.planHeader",
+      "id": "deliveryLabel",
+      "role": "label",
+      "cellId": "publisher.planHeader.deliveryLabel",
+      "recordId": "st.61gjjj4avn",
+      "file": "admin-meta.r1.en.json",
+      "text": "Suggested delivery",
+      "source": {
+        "path": "packages/publisher/src/web/publisher/PublisherPlanView.tsx",
+        "line": 50
+      }
+    },
+    {
+      "parent": "publisher.planHeader",
+      "id": "exportLabel",
+      "role": "label",
+      "cellId": "publisher.planHeader.exportLabel",
+      "recordId": "st.5jy8qjqk1m",
+      "file": "admin-meta.r1.en.json",
+      "text": "Create files",
+      "source": {
+        "path": "packages/publisher/src/web/publisher/PublisherPlanView.tsx",
+        "line": 51
+      }
+    },
+    {
+      "parent": "publisher.planHeader",
+      "id": "deployLabel",
+      "role": "label",
+      "cellId": "publisher.planHeader.deployLabel",
+      "recordId": "st.79tb5peek7",
+      "file": "admin-meta.r1.en.json",
+      "text": "Publish files",
+      "source": {
+        "path": "packages/publisher/src/web/publisher/PublisherPlanView.tsx",
+        "line": 52
+      }
+    },
+    {
+      "parent": "publisher.setupQuestion",
+      "id": "brandAssets.logo",
+      "role": "instruction",
+      "cellId": "publisher.setupQuestion.brandAssets.logo",
+      "recordId": "st.ww0dkpyzrj",
+      "file": "admin-meta.r1.en.json",
+      "text": "Which logo should this page use?",
+      "source": {
+        "path": "packages/publisher/src/planning/configuration.ts",
+        "line": 1
+      }
+    },
+    {
+      "parent": "publisher.setupQuestion",
+      "id": "brandAssets.favicon",
+      "role": "instruction",
+      "cellId": "publisher.setupQuestion.brandAssets.favicon",
+      "recordId": "st.eqwyjjbnb9",
+      "file": "admin-meta.r1.en.json",
+      "text": "Which browser icon should this page use?",
+      "source": {
+        "path": "packages/publisher/src/planning/configuration.ts",
+        "line": 1
+      }
+    },
+    {
+      "parent": "publisher.setupQuestion",
+      "id": "brandAssets.app-icons",
+      "role": "instruction",
+      "cellId": "publisher.setupQuestion.brandAssets.app-icons",
+      "recordId": "st.wj5hep7xsv",
+      "file": "admin-meta.r1.en.json",
+      "text": "Which app icons should this page use?",
+      "source": {
+        "path": "packages/publisher/src/planning/configuration.ts",
+        "line": 1
+      }
+    },
+    {
+      "parent": "publisher.setupQuestion",
+      "id": "brandAssets.share-image",
+      "role": "instruction",
+      "cellId": "publisher.setupQuestion.brandAssets.share-image",
+      "recordId": "st.xk232vqc3r",
+      "file": "admin-meta.r1.en.json",
+      "text": "Which image should appear when this page is shared?",
+      "source": {
+        "path": "packages/publisher/src/planning/configuration.ts",
+        "line": 1
+      }
+    },
+    {
+      "parent": "publisher.setupQuestion",
+      "id": "content.lead",
+      "role": "instruction",
+      "cellId": "publisher.setupQuestion.content.lead",
+      "recordId": "st.z041nyncjb",
+      "file": "admin-meta.r1.en.json",
+      "text": "Which text should introduce this page?",
+      "source": {
+        "path": "packages/publisher/src/planning/configuration.ts",
+        "line": 1
+      }
+    },
+    {
+      "parent": "publisher.setupQuestion",
+      "id": "content.body",
+      "role": "instruction",
+      "cellId": "publisher.setupQuestion.content.body",
+      "recordId": "st.psy16hync9",
+      "file": "admin-meta.r1.en.json",
+      "text": "Which text should appear in the page body?",
+      "source": {
+        "path": "packages/publisher/src/planning/configuration.ts",
+        "line": 1
+      }
+    },
+    {
+      "parent": "publisher.setupQuestion",
+      "id": "integration.contact-inbox",
+      "role": "instruction",
+      "cellId": "publisher.setupQuestion.integration.contact-inbox",
+      "recordId": "st.6dkc5dy8k0",
+      "file": "admin-meta.r1.en.json",
+      "text": "Where should contact messages go?",
+      "source": {
+        "path": "packages/publisher/src/planning/configuration.ts",
+        "line": 1
+      }
+    },
+    {
+      "parent": "publisher.setupQuestion",
+      "id": "integration.email-delivery-provider",
+      "role": "instruction",
+      "cellId": "publisher.setupQuestion.integration.email-delivery-provider",
+      "recordId": "st.3xb21sensg",
+      "file": "admin-meta.r1.en.json",
+      "text": "Which service should send email?",
+      "source": {
+        "path": "packages/publisher/src/planning/configuration.ts",
+        "line": 1
+      }
+    },
+    {
+      "parent": "publisher.setupQuestion",
+      "id": "integration.demo-destination",
+      "role": "instruction",
+      "cellId": "publisher.setupQuestion.integration.demo-destination",
+      "recordId": "st.5edga4d35y",
+      "file": "admin-meta.r1.en.json",
+      "text": "Where should demo requests go?",
+      "source": {
+        "path": "packages/publisher/src/planning/configuration.ts",
+        "line": 1
+      }
+    },
+    {
+      "parent": "publisher.setupQuestion",
+      "id": "integration.payment-or-contract",
+      "role": "instruction",
+      "cellId": "publisher.setupQuestion.integration.payment-or-contract",
+      "recordId": "st.j3f6szhxap",
+      "file": "admin-meta.r1.en.json",
+      "text": "How should customers pay or accept an agreement?",
+      "source": {
+        "path": "packages/publisher/src/planning/configuration.ts",
+        "line": 1
+      }
+    },
+    {
+      "parent": "publisher.setupQuestion",
+      "id": "dependencies",
+      "role": "instruction",
+      "cellId": "publisher.setupQuestion.dependencies",
+      "recordId": "st.8cwdrs9n18",
+      "file": "admin-meta.r1.en.json",
+      "text": "Which page sections, frames and output formats should this use?",
+      "source": {
+        "path": "packages/publisher/src/planning/configuration.ts",
+        "line": 102
+      }
+    },
+    {
+      "parent": "publisher.setupQuestion",
+      "id": "deploymentSurface",
+      "role": "instruction",
+      "cellId": "publisher.setupQuestion.deploymentSurface",
+      "recordId": "st.f8fv2tzfjx",
+      "file": "admin-meta.r1.en.json",
+      "text": "Where should this page be hosted?",
+      "source": {
+        "path": "packages/publisher/src/planning/configuration.ts",
+        "line": 12
+      }
+    },
+    {
+      "parent": "publisher.setupQuestion",
+      "id": "deliveries.pptx.fidelity",
+      "role": "instruction",
+      "cellId": "publisher.setupQuestion.deliveries.pptx.fidelity",
+      "recordId": "st.n8p6b5sh2t",
+      "file": "admin-meta.r1.en.json",
+      "text": "Should the slides be editable or saved as images?",
+      "source": {
+        "path": "packages/publisher/src/planning/configuration.ts",
+        "line": 1
+      }
+    },
+    {
+      "parent": "publisher.setupQuestion",
+      "id": "deliveries.google-slides.fidelity",
+      "role": "instruction",
+      "cellId": "publisher.setupQuestion.deliveries.google-slides.fidelity",
+      "recordId": "st.n8p6b5sh2t",
+      "file": "admin-meta.r1.en.json",
+      "text": "Should the slides be editable or saved as images?",
+      "source": {
+        "path": "packages/publisher/src/planning/configuration.ts",
+        "line": 1
+      }
+    },
+    {
+      "parent": "publisher.setupQuestion",
+      "id": "binding",
+      "role": "instruction",
+      "cellId": "publisher.setupQuestion.binding",
+      "recordId": "st.jz0kp46hw8",
+      "file": "admin-meta.r1.en.json",
+      "text": "Which page should this item use?",
+      "source": {
+        "path": "packages/publisher/src/planning/configuration.ts",
+        "line": 1
+      }
+    },
+    {
+      "parent": "publisher.setupQuestion",
+      "id": "fills",
+      "role": "instruction",
+      "cellId": "publisher.setupQuestion.fills",
+      "recordId": "st.b74nw4vsef",
+      "file": "admin-meta.r1.en.json",
+      "text": "Which sections should appear in this part of the page?",
+      "source": {
+        "path": "packages/publisher/src/planning/configuration.ts",
+        "line": 1
+      }
+    },
+    {
+      "parent": "publisher.setupQuestion",
+      "id": "states.loading",
+      "role": "instruction",
+      "cellId": "publisher.setupQuestion.states.loading",
+      "recordId": "st.13q0rsfgtj",
+      "file": "admin-meta.r1.en.json",
+      "text": "Does this page need a loading state?",
+      "source": {
+        "path": "packages/publisher/src/planning/configuration.ts",
+        "line": 1
+      }
+    },
+    {
+      "parent": "publisher.setupQuestion",
+      "id": "states.empty",
+      "role": "instruction",
+      "cellId": "publisher.setupQuestion.states.empty",
+      "recordId": "st.v2xb6f88ws",
+      "file": "admin-meta.r1.en.json",
+      "text": "What should this page show when there are no items?",
+      "source": {
+        "path": "packages/publisher/src/planning/configuration.ts",
+        "line": 1
+      }
+    },
+    {
+      "parent": "publisher.setupQuestion",
+      "id": "states.error",
+      "role": "instruction",
+      "cellId": "publisher.setupQuestion.states.error",
+      "recordId": "st.rcvw43qf8e",
+      "file": "admin-meta.r1.en.json",
+      "text": "What should this page show if something goes wrong?",
+      "source": {
+        "path": "packages/publisher/src/planning/configuration.ts",
+        "line": 1
+      }
+    },
+    {
+      "parent": "publisher.setupQuestion",
+      "id": "content",
+      "role": "instruction",
+      "cellId": "publisher.setupQuestion.content",
+      "recordId": "st.x55xntfvma",
+      "file": "admin-meta.r1.en.json",
+      "text": "What content should appear here?",
+      "source": {
+        "path": "packages/publisher/src/planning/configuration.ts",
+        "line": 21
+      }
+    },
+    {
+      "parent": "publisher.setupQuestion",
+      "id": "implementation",
+      "role": "instruction",
+      "cellId": "publisher.setupQuestion.implementation",
+      "recordId": "st.mn78zgpjtk",
+      "file": "admin-meta.r1.en.json",
+      "text": "Which page and content should this item use?",
+      "source": {
+        "path": "packages/publisher/src/planning/configuration.ts",
+        "line": 101
+      }
+    },
+    {
+      "parent": "publisher.setupStatus",
+      "id": "bindingPending",
+      "role": "help",
+      "cellId": "publisher.setupStatus.bindingPending",
+      "recordId": "st.413rxk5xb0",
+      "file": "admin-meta.r1.en.json",
+      "text": "The page connection is not available yet.",
+      "source": {
+        "path": "packages/publisher/src/web/publisher/app/pipeline.ts",
+        "line": 24
+      }
+    },
+    {
+      "parent": "publisher.setupStatus",
+      "id": "subrowPending",
+      "role": "help",
+      "cellId": "publisher.setupStatus.subrowPending",
+      "recordId": "st.4w97z7fd63",
+      "file": "admin-meta.r1.en.json",
+      "text": "The parent page sections are not connected yet.",
+      "source": {
+        "path": "packages/publisher/src/web/publisher/app/pipeline.ts",
+        "line": 26
+      }
+    },
+    {
+      "parent": "publisher.setupStatus",
+      "id": "statesPending",
+      "role": "help",
+      "cellId": "publisher.setupStatus.statesPending",
+      "recordId": "st.k51tfqmc07",
+      "file": "admin-meta.r1.en.json",
+      "text": "Page state checks are not available yet.",
+      "source": {
+        "path": "packages/publisher/src/web/publisher/app/pipeline.ts",
+        "line": 28
+      }
+    },
+    {
+      "parent": "publisher.setupStatus",
+      "id": "noStatesPending",
+      "role": "help",
+      "cellId": "publisher.setupStatus.noStatesPending",
+      "recordId": "st.e1z4srgkre",
+      "file": "admin-meta.r1.en.json",
+      "text": "No page state has been checked yet.",
+      "source": {
+        "path": "packages/publisher/src/web/publisher/app/pipeline.ts",
+        "line": 30
+      }
+    },
+    {
+      "parent": "publisher.setupStatus",
+      "id": "stateScopePending",
+      "role": "help",
+      "cellId": "publisher.setupStatus.stateScopePending",
+      "recordId": "st.0a5vw6jtym",
+      "file": "admin-meta.r1.en.json",
+      "text": "Check the state on the page where it will appear.",
+      "source": {
+        "path": "packages/publisher/src/web/publisher/app/pipeline.ts",
+        "line": 32
+      }
+    },
+    {
+      "parent": "publisher.setupStatus",
+      "id": "readyPending",
+      "role": "help",
+      "cellId": "publisher.setupStatus.readyPending",
+      "recordId": "st.24bsg188ng",
+      "file": "admin-meta.r1.en.json",
+      "text": "Complete the page checks before marking it ready.",
+      "source": {
+        "path": "packages/publisher/src/web/publisher/app/pipeline.ts",
+        "line": 34
+      }
+    },
+    {
+      "parent": "admin.enum",
+      "id": "draft",
+      "role": "label",
+      "cellId": "admin.enum.draft",
+      "recordId": "st.td8tdah4rw",
+      "file": "admin-meta.r1.en.json",
+      "text": "Draft",
+      "source": {
+        "path": "packages/publisher/src/content/vocabulary.ts",
+        "line": 4
+      }
+    },
+    {
+      "parent": "admin.enum",
+      "id": "in-review",
+      "role": "label",
+      "cellId": "admin.enum.in-review",
+      "recordId": "st.gnv660w59z",
+      "file": "admin-meta.r1.en.json",
+      "text": "In review",
+      "source": {
+        "path": "packages/publisher/src/content/vocabulary.ts",
+        "line": 4
+      }
+    },
+    {
+      "parent": "admin.enum",
+      "id": "approved",
+      "role": "label",
+      "cellId": "admin.enum.approved",
+      "recordId": "st.1re7rsx0et",
+      "file": "admin-meta.r1.en.json",
+      "text": "Approved",
+      "source": {
+        "path": "packages/publisher/src/content/vocabulary.ts",
+        "line": 4
+      }
+    },
+    {
+      "parent": "admin.enum",
+      "id": "active",
+      "role": "label",
+      "cellId": "admin.enum.active",
+      "recordId": "st.cw2t0s4dxn",
+      "file": "admin-meta.r1.en.json",
+      "text": "Active",
+      "source": {
+        "path": "packages/publisher/src/content/vocabulary.ts",
+        "line": 4
+      }
+    },
+    {
+      "parent": "admin.enum",
+      "id": "retired",
+      "role": "label",
+      "cellId": "admin.enum.retired",
+      "recordId": "st.dvdvvejry8",
+      "file": "admin-meta.r1.en.json",
+      "text": "Retired",
+      "source": {
+        "path": "packages/publisher/src/content/vocabulary.ts",
+        "line": 4
+      }
+    },
+    {
+      "parent": "admin.enum",
+      "id": "agent-draft",
+      "role": "label",
+      "cellId": "admin.enum.agent-draft",
+      "recordId": "st.cms6t8c04e",
+      "file": "admin-meta.r1.en.json",
+      "text": "New draft",
+      "source": {
+        "path": "packages/publisher/src/content/vocabulary.ts",
+        "line": 5
+      }
+    },
+    {
+      "parent": "admin.enum",
+      "id": "alternative",
+      "role": "label",
+      "cellId": "admin.enum.alternative",
+      "recordId": "st.c9b5hegvga",
+      "file": "admin-meta.r1.en.json",
+      "text": "Alternative version",
+      "source": {
+        "path": "packages/publisher/src/content/vocabulary.ts",
+        "line": 5
+      }
+    },
+    {
+      "parent": "admin.enum",
+      "id": "rewrite",
+      "role": "label",
+      "cellId": "admin.enum.rewrite",
+      "recordId": "st.dbxhagcsxj",
+      "file": "admin-meta.r1.en.json",
+      "text": "Rewritten version",
+      "source": {
+        "path": "packages/publisher/src/content/vocabulary.ts",
+        "line": 5
+      }
+    },
+    {
+      "parent": "admin.enum",
+      "id": "imported",
+      "role": "label",
+      "cellId": "admin.enum.imported",
+      "recordId": "st.7zwg4z848y",
+      "file": "admin-meta.r1.en.json",
+      "text": "Imported version",
+      "source": {
+        "path": "packages/publisher/src/content/vocabulary.ts",
+        "line": 5
+      }
+    },
+    {
+      "parent": "admin.enum",
+      "id": "planned",
+      "role": "label",
+      "cellId": "admin.enum.planned",
+      "recordId": "st.1s2bv820hv",
+      "file": "admin-meta.r1.en.json",
+      "text": "Planned",
+      "source": {
+        "path": "packages/publisher/src/content/vocabulary.ts",
+        "line": 1
+      }
+    },
+    {
+      "parent": "admin.enum",
+      "id": "proposed",
+      "role": "label",
+      "cellId": "admin.enum.proposed",
+      "recordId": "st.vdmbzrp7js",
+      "file": "admin-meta.r1.en.json",
+      "text": "Proposed",
+      "source": {
+        "path": "packages/publisher/src/content/vocabulary.ts",
+        "line": 1
+      }
+    },
+    {
+      "parent": "admin.enum",
+      "id": "configured",
+      "role": "label",
+      "cellId": "admin.enum.configured",
+      "recordId": "st.hcah39v2sh",
+      "file": "admin-meta.r1.en.json",
+      "text": "Set up",
+      "source": {
+        "path": "packages/publisher/src/content/vocabulary.ts",
+        "line": 1
+      }
+    },
+    {
+      "parent": "admin.enum",
+      "id": "unconfigured",
+      "role": "label",
+      "cellId": "admin.enum.unconfigured",
+      "recordId": "st.z647ter7dy",
+      "file": "admin-meta.r1.en.json",
+      "text": "Not set up",
+      "source": {
+        "path": "packages/publisher/src/content/vocabulary.ts",
+        "line": 1
+      }
+    },
+    {
+      "parent": "admin.enum",
+      "id": "ready",
+      "role": "label",
+      "cellId": "admin.enum.ready",
+      "recordId": "st.314cdya5yk",
+      "file": "admin-meta.r1.en.json",
+      "text": "Ready",
+      "source": {
+        "path": "packages/publisher/src/content/vocabulary.ts",
+        "line": 1
+      }
+    },
+    {
+      "parent": "admin.enum",
+      "id": "passed",
+      "role": "label",
+      "cellId": "admin.enum.passed",
+      "recordId": "st.5txbzk0nc6",
+      "file": "admin-meta.r1.en.json",
+      "text": "Passed",
+      "source": {
+        "path": "packages/publisher/src/content/vocabulary.ts",
+        "line": 1
+      }
+    },
+    {
+      "parent": "admin.enum",
+      "id": "failed",
+      "role": "label",
+      "cellId": "admin.enum.failed",
+      "recordId": "st.f7x67k0v9m",
+      "file": "admin-meta.r1.en.json",
+      "text": "Failed",
+      "source": {
+        "path": "packages/publisher/src/content/vocabulary.ts",
+        "line": 1
+      }
+    },
+    {
+      "parent": "admin.enum",
+      "id": "pending",
+      "role": "label",
+      "cellId": "admin.enum.pending",
+      "recordId": "st.jy4p3qspzy",
+      "file": "admin-meta.r1.en.json",
+      "text": "Waiting for checks",
+      "source": {
+        "path": "packages/publisher/src/content/vocabulary.ts",
+        "line": 1
+      }
+    },
+    {
+      "parent": "admin.enum",
+      "id": "unknown",
+      "role": "label",
+      "cellId": "admin.enum.unknown",
+      "recordId": "st.415w33x4g6",
+      "file": "admin-meta.r1.en.json",
+      "text": "Unknown",
+      "source": {
+        "path": "packages/publisher/src/content/vocabulary.ts",
+        "line": 17
+      }
+    },
+    {
+      "parent": "admin.enum",
+      "id": "unassessed",
+      "role": "label",
+      "cellId": "admin.enum.unassessed",
+      "recordId": "st.vm8m28n6pr",
+      "file": "admin-meta.r1.en.json",
+      "text": "Not reviewed",
+      "source": {
+        "path": "packages/publisher/src/content/vocabulary.ts",
+        "line": 1
+      }
+    },
+    {
+      "parent": "admin.enum",
+      "id": "unverified",
+      "role": "label",
+      "cellId": "admin.enum.unverified",
+      "recordId": "st.e67pwscysr",
+      "file": "admin-meta.r1.en.json",
+      "text": "Not verified",
+      "source": {
+        "path": "packages/publisher/src/content/vocabulary.ts",
+        "line": 1
+      }
+    },
+    {
+      "parent": "admin.enum",
+      "id": "concept-only",
+      "role": "label",
+      "cellId": "admin.enum.concept-only",
+      "recordId": "st.et9g6tc9tm",
+      "file": "admin-meta.r1.en.json",
+      "text": "Planned only",
+      "source": {
+        "path": "packages/publisher/src/content/vocabulary.ts",
+        "line": 1
+      }
+    },
+    {
+      "parent": "admin.enum",
+      "id": "concept",
+      "role": "label",
+      "cellId": "admin.enum.concept",
+      "recordId": "st.pg6dhbq725",
+      "file": "admin-meta.r1.en.json",
+      "text": "In planning",
+      "source": {
+        "path": "packages/publisher/src/content/vocabulary.ts",
+        "line": 1
+      }
+    },
+    {
+      "parent": "admin.enum",
+      "id": "built",
+      "role": "label",
+      "cellId": "admin.enum.built",
+      "recordId": "st.bq6gyavrme",
+      "file": "admin-meta.r1.en.json",
+      "text": "Available to configure",
+      "source": {
+        "path": "packages/publisher/src/content/vocabulary.ts",
+        "line": 1
+      }
+    },
+    {
+      "parent": "admin.enum",
+      "id": "available",
+      "role": "label",
+      "cellId": "admin.enum.available",
+      "recordId": "st.k4pb2tx35f",
+      "file": "admin-meta.r1.en.json",
+      "text": "Available",
+      "source": {
+        "path": "packages/publisher/src/content/vocabulary.ts",
+        "line": 1
+      }
+    },
+    {
+      "parent": "admin.enum",
+      "id": "unsupported",
+      "role": "label",
+      "cellId": "admin.enum.unsupported",
+      "recordId": "st.aywqm07cw0",
+      "file": "admin-meta.r1.en.json",
+      "text": "Not supported",
+      "source": {
+        "path": "packages/publisher/src/content/vocabulary.ts",
+        "line": 1
+      }
+    },
+    {
+      "parent": "admin.enum",
+      "id": "unavailable",
+      "role": "label",
+      "cellId": "admin.enum.unavailable",
+      "recordId": "st.gpfj1ermjt",
+      "file": "admin-meta.r1.en.json",
+      "text": "Unavailable",
+      "source": {
+        "path": "packages/publisher/src/content/vocabulary.ts",
+        "line": 1
+      }
+    },
+    {
+      "parent": "admin.enum",
+      "id": "not-chosen",
+      "role": "label",
+      "cellId": "admin.enum.not-chosen",
+      "recordId": "st.kmz1y1qvg0",
+      "file": "admin-meta.r1.en.json",
+      "text": "Not selected",
+      "source": {
+        "path": "packages/publisher/src/content/vocabulary.ts",
+        "line": 1
+      }
+    },
+    {
+      "parent": "admin.enum",
+      "id": "missing",
+      "role": "label",
+      "cellId": "admin.enum.missing",
+      "recordId": "st.8w74rd3d19",
+      "file": "admin-meta.r1.en.json",
+      "text": "Missing",
+      "source": {
+        "path": "packages/publisher/src/content/vocabulary.ts",
+        "line": 1
+      }
+    },
+    {
+      "parent": "admin.enum",
+      "id": "absent",
+      "role": "label",
+      "cellId": "admin.enum.absent",
+      "recordId": "st.3780eazq34",
+      "file": "admin-meta.r1.en.json",
+      "text": "Not added",
+      "source": {
+        "path": "packages/publisher/src/content/vocabulary.ts",
+        "line": 1
+      }
+    },
+    {
+      "parent": "admin.enum",
+      "id": "invalid",
+      "role": "label",
+      "cellId": "admin.enum.invalid",
+      "recordId": "st.6fcm9pag6m",
+      "file": "admin-meta.r1.en.json",
+      "text": "Invalid",
+      "source": {
+        "path": "packages/publisher/src/content/vocabulary.ts",
+        "line": 1
+      }
+    },
+    {
+      "parent": "admin.enum",
+      "id": "error",
+      "role": "label",
+      "cellId": "admin.enum.error",
+      "recordId": "st.wxwxj7g97v",
+      "file": "admin-meta.r1.en.json",
+      "text": "Error",
+      "source": {
+        "path": "packages/publisher/src/content/vocabulary.ts",
+        "line": 1
+      }
+    },
+    {
+      "parent": "admin.enum",
+      "id": "warning",
+      "role": "label",
+      "cellId": "admin.enum.warning",
+      "recordId": "st.y4xznsjmw8",
+      "file": "admin-meta.r1.en.json",
+      "text": "Warning",
+      "source": {
+        "path": "packages/publisher/src/content/vocabulary.ts",
+        "line": 1
+      }
+    },
+    {
+      "parent": "admin.enum",
+      "id": "notice",
+      "role": "label",
+      "cellId": "admin.enum.notice",
+      "recordId": "st.atpxx5vxnv",
+      "file": "admin-meta.r1.en.json",
+      "text": "Notice",
+      "source": {
+        "path": "packages/publisher/src/content/vocabulary.ts",
+        "line": 1
+      }
+    },
+    {
+      "parent": "admin.enum",
+      "id": "stable",
+      "role": "label",
+      "cellId": "admin.enum.stable",
+      "recordId": "st.mq7reh5kyq",
+      "file": "admin-meta.r1.en.json",
+      "text": "Stable",
+      "source": {
+        "path": "packages/publisher/src/content/vocabulary.ts",
+        "line": 1
+      }
+    },
+    {
+      "parent": "admin.enum",
+      "id": "held",
+      "role": "label",
+      "cellId": "admin.enum.held",
+      "recordId": "st.82qydwfp6g",
+      "file": "admin-meta.r1.en.json",
+      "text": "On hold",
+      "source": {
+        "path": "packages/publisher/src/content/vocabulary.ts",
+        "line": 1
+      }
+    },
+    {
+      "parent": "admin.enum",
+      "id": "deprecated",
+      "role": "label",
+      "cellId": "admin.enum.deprecated",
+      "recordId": "st.af23bjpafe",
+      "file": "admin-meta.r1.en.json",
+      "text": "No longer recommended",
+      "source": {
+        "path": "packages/publisher/src/content/vocabulary.ts",
+        "line": 1
+      }
+    },
+    {
+      "parent": "admin.enum",
+      "id": "authored",
+      "role": "label",
+      "cellId": "admin.enum.authored",
+      "recordId": "st.fap9gqyw84",
+      "file": "admin-meta.r1.en.json",
+      "text": "Written here",
+      "source": {
+        "path": "packages/publisher/src/content/vocabulary.ts",
+        "line": 1
+      }
+    },
+    {
+      "parent": "admin.enum",
+      "id": "adopted",
+      "role": "label",
+      "cellId": "admin.enum.adopted",
+      "recordId": "st.j9xpapcpnz",
+      "file": "admin-meta.r1.en.json",
+      "text": "Added from a source",
+      "source": {
+        "path": "packages/publisher/src/content/vocabulary.ts",
+        "line": 1
+      }
+    },
+    {
+      "parent": "admin.enum",
+      "id": "derived",
+      "role": "label",
+      "cellId": "admin.enum.derived",
+      "recordId": "st.q9yb8386kc",
+      "file": "admin-meta.r1.en.json",
+      "text": "Calculated",
+      "source": {
+        "path": "packages/publisher/src/content/vocabulary.ts",
+        "line": 1
+      }
+    },
+    {
+      "parent": "admin.enum",
+      "id": "composed",
+      "role": "label",
+      "cellId": "admin.enum.composed",
+      "recordId": "st.jjw67a22j9",
+      "file": "admin-meta.r1.en.json",
+      "text": "Combined",
+      "source": {
+        "path": "packages/publisher/src/content/vocabulary.ts",
+        "line": 1
+      }
+    },
+    {
+      "parent": "admin.enum",
+      "id": "reference",
+      "role": "label",
+      "cellId": "admin.enum.reference",
+      "recordId": "st.kj4frexvs2",
+      "file": "admin-meta.r1.en.json",
+      "text": "Reference only",
+      "source": {
+        "path": "packages/publisher/src/content/vocabulary.ts",
+        "line": 1
+      }
+    },
+    {
+      "parent": "admin.enum",
+      "id": "implementation",
+      "role": "label",
+      "cellId": "admin.enum.implementation",
+      "recordId": "st.kjsr4bhqjw",
+      "file": "admin-meta.r1.en.json",
+      "text": "Page version",
+      "source": {
+        "path": "packages/publisher/src/content/vocabulary.ts",
+        "line": 1
+      }
+    },
+    {
+      "parent": "admin.enum",
+      "id": "consumer",
+      "role": "label",
+      "cellId": "admin.enum.consumer",
+      "recordId": "st.wbt4xc7wcy",
+      "file": "admin-meta.r1.en.json",
+      "text": "Your library",
+      "source": {
+        "path": "packages/publisher/src/content/vocabulary.ts",
+        "line": 1
+      }
+    },
+    {
+      "parent": "admin.enum",
+      "id": "foundry",
+      "role": "label",
+      "cellId": "admin.enum.foundry",
+      "recordId": "st.bk53k3wgh5",
+      "file": "admin-meta.r1.en.json",
+      "text": "Design library",
+      "source": {
+        "path": "packages/publisher/src/content/vocabulary.ts",
+        "line": 1
+      }
+    },
+    {
+      "parent": "admin.enum",
+      "id": "fixture",
+      "role": "label",
+      "cellId": "admin.enum.fixture",
+      "recordId": "st.tgwyyxspsd",
+      "file": "admin-meta.r1.en.json",
+      "text": "Preview library",
+      "source": {
+        "path": "packages/publisher/src/content/vocabulary.ts",
+        "line": 1
+      }
+    },
+    {
+      "parent": "admin.enum",
+      "id": "recommended or planned",
+      "role": "label",
+      "cellId": "admin.enum.recommended or planned",
+      "recordId": "st.63a9vxm2rv",
+      "file": "admin-meta.r1.en.json",
+      "text": "Suggested setup",
+      "source": {
+        "path": "packages/publisher/src/content/vocabulary.ts",
+        "line": 1
+      }
+    },
+    {
+      "parent": "admin.enum",
+      "id": "needs input",
+      "role": "label",
+      "cellId": "admin.enum.needs input",
+      "recordId": "st.q3n3qeyzhd",
+      "file": "admin-meta.r1.en.json",
+      "text": "Needs information",
+      "source": {
+        "path": "packages/publisher/src/content/vocabulary.ts",
+        "line": 1
+      }
+    },
+    {
+      "parent": "publisher.arrangement",
+      "id": "page",
+      "role": "label",
+      "cellId": "publisher.arrangement.page",
+      "recordId": "st.j4nqxmendv",
+      "file": "admin-meta.r1.en.json",
+      "text": "Page",
+      "source": {
+        "path": "packages/publisher/src/layouts/ids.ts",
+        "line": 3
+      }
+    },
+    {
+      "parent": "publisher.arrangement",
+      "id": "canvas",
+      "role": "label",
+      "cellId": "publisher.arrangement.canvas",
+      "recordId": "st.28h48pafq8",
+      "file": "admin-meta.r1.en.json",
+      "text": "Canvas",
+      "source": {
+        "path": "packages/publisher/src/layouts/ids.ts",
+        "line": 3
+      }
+    },
+    {
+      "parent": "publisher.arrangement",
+      "id": "paged",
+      "role": "label",
+      "cellId": "publisher.arrangement.paged",
+      "recordId": "st.nxzd0f5x5s",
+      "file": "admin-meta.r1.en.json",
+      "text": "Pages in order",
+      "source": {
+        "path": "packages/publisher/src/layouts/ids.ts",
+        "line": 3
+      }
+    },
+    {
+      "parent": "publisher.arrangement",
+      "id": "panes",
+      "role": "label",
+      "cellId": "publisher.arrangement.panes",
+      "recordId": "st.kqevjtbwt9",
+      "file": "admin-meta.r1.en.json",
+      "text": "Panels",
+      "source": {
+        "path": "packages/publisher/src/layouts/ids.ts",
+        "line": 3
+      }
+    },
+    {
+      "parent": "publisher.enum",
+      "id": "content",
+      "role": "label",
+      "cellId": "publisher.enum.content",
+      "recordId": "st.vzm5my6hfm",
+      "file": "admin-meta.r1.en.json",
+      "text": "Content page",
+      "source": {
+        "path": "packages/publisher/src/content/vocabulary.ts",
+        "line": 3
+      }
+    },
+    {
+      "parent": "publisher.enum",
+      "id": "redirect",
+      "role": "label",
+      "cellId": "publisher.enum.redirect",
+      "recordId": "st.p2q8nw39t2",
+      "file": "admin-meta.r1.en.json",
+      "text": "Redirect",
+      "source": {
+        "path": "packages/publisher/src/content/vocabulary.ts",
+        "line": 6
+      }
+    },
+    {
+      "parent": "publisher.enum",
+      "id": "status",
+      "role": "label",
+      "cellId": "publisher.enum.status",
+      "recordId": "st.tnyeckwmr1",
+      "file": "admin-meta.r1.en.json",
+      "text": "Status page",
+      "source": {
+        "path": "packages/publisher/src/content/vocabulary.ts",
+        "line": 6
+      }
+    },
+    {
+      "parent": "publisher.enum",
+      "id": "continues",
+      "role": "label",
+      "cellId": "publisher.enum.continues",
+      "recordId": "st.5n3p05n48v",
+      "file": "admin-meta.r1.en.json",
+      "text": "Continue the topic",
+      "source": {
+        "path": "packages/publisher/src/content/vocabulary.ts",
+        "line": 7
+      }
+    },
+    {
+      "parent": "publisher.enum",
+      "id": "contrasts",
+      "role": "label",
+      "cellId": "publisher.enum.contrasts",
+      "recordId": "st.4yys8tpw6j",
+      "file": "admin-meta.r1.en.json",
+      "text": "Show a contrast",
+      "source": {
+        "path": "packages/publisher/src/content/vocabulary.ts",
+        "line": 7
+      }
+    },
+    {
+      "parent": "publisher.enum",
+      "id": "zooms-in",
+      "role": "label",
+      "cellId": "publisher.enum.zooms-in",
+      "recordId": "st.esv5pv9bfw",
+      "file": "admin-meta.r1.en.json",
+      "text": "Show more detail",
+      "source": {
+        "path": "packages/publisher/src/content/vocabulary.ts",
+        "line": 7
+      }
+    },
+    {
+      "parent": "publisher.enum",
+      "id": "proof",
+      "role": "label",
+      "cellId": "publisher.enum.proof",
+      "recordId": "st.apndfv7brj",
+      "file": "admin-meta.r1.en.json",
+      "text": "Provide evidence",
+      "source": {
+        "path": "packages/publisher/src/content/vocabulary.ts",
+        "line": 7
+      }
+    },
+    {
+      "parent": "publisher.enum",
+      "id": "call-to-action",
+      "role": "label",
+      "cellId": "publisher.enum.call-to-action",
+      "recordId": "st.wp49vt0qsh",
+      "file": "admin-meta.r1.en.json",
+      "text": "Offer a next step",
+      "source": {
+        "path": "packages/publisher/src/content/vocabulary.ts",
+        "line": 7
+      }
+    },
+    {
+      "parent": "publisher.enum",
+      "id": "nav",
+      "role": "label",
+      "cellId": "publisher.enum.nav",
+      "recordId": "st.sr8m7qpv1q",
+      "file": "admin-meta.r1.en.json",
+      "text": "Navigation link",
+      "source": {
+        "path": "packages/publisher/src/content/vocabulary.ts",
+        "line": 8
+      }
+    },
+    {
+      "parent": "publisher.enum",
+      "id": "next",
+      "role": "label",
+      "cellId": "publisher.enum.next",
+      "recordId": "st.6znkbx4gew",
+      "file": "admin-meta.r1.en.json",
+      "text": "Next page link",
+      "source": {
+        "path": "packages/publisher/src/content/vocabulary.ts",
+        "line": 8
+      }
+    },
+    {
+      "parent": "publisher.enum",
+      "id": "cta",
+      "role": "label",
+      "cellId": "publisher.enum.cta",
+      "recordId": "st.tnefja3jb8",
+      "file": "admin-meta.r1.en.json",
+      "text": "Action link",
+      "source": {
+        "path": "packages/publisher/src/content/vocabulary.ts",
+        "line": 8
+      }
+    },
+    {
+      "parent": "publisher.enum",
+      "id": "branch",
+      "role": "label",
+      "cellId": "publisher.enum.branch",
+      "recordId": "st.wkrmcjjc52",
+      "file": "admin-meta.r1.en.json",
+      "text": "Related page link",
+      "source": {
+        "path": "packages/publisher/src/content/vocabulary.ts",
+        "line": 8
+      }
+    },
+    {
+      "parent": "publisher.medium",
+      "id": "screen",
+      "role": "label",
+      "cellId": "publisher.medium.screen",
+      "recordId": "st.aa68kdg396",
+      "file": "admin-meta.r1.en.json",
+      "text": "Web pages",
+      "source": {
+        "path": "packages/publisher/src/formats/contract.ts",
+        "line": 28
+      }
+    },
+    {
+      "parent": "publisher.medium",
+      "id": "email",
+      "role": "label",
+      "cellId": "publisher.medium.email",
+      "recordId": "st.8sje39bdn6",
+      "file": "admin-meta.r1.en.json",
+      "text": "Email messages",
+      "source": {
+        "path": "packages/publisher/src/formats/contract.ts",
+        "line": 4
+      }
+    },
+    {
+      "parent": "publisher.medium",
+      "id": "image",
+      "role": "label",
+      "cellId": "publisher.medium.image",
+      "recordId": "st.pmwvfptth1",
+      "file": "admin-meta.r1.en.json",
+      "text": "Images",
+      "source": {
+        "path": "packages/publisher/src/formats/contract.ts",
+        "line": 4
+      }
+    },
+    {
+      "parent": "publisher.medium",
+      "id": "document",
+      "role": "label",
+      "cellId": "publisher.medium.document",
+      "recordId": "st.2091r9z4bq",
+      "file": "admin-meta.r1.en.json",
+      "text": "Documents",
+      "source": {
+        "path": "packages/publisher/src/formats/contract.ts",
+        "line": 4
+      }
+    },
+    {
+      "parent": "publisher.medium",
+      "id": "video",
+      "role": "label",
+      "cellId": "publisher.medium.video",
+      "recordId": "st.rgakrp0zw4",
+      "file": "admin-meta.r1.en.json",
+      "text": "Videos",
+      "source": {
+        "path": "packages/publisher/src/formats/contract.ts",
+        "line": 4
+      }
+    },
+    {
+      "parent": "publisher.medium",
+      "id": "deck",
+      "role": "label",
+      "cellId": "publisher.medium.deck",
+      "recordId": "st.33cy9hjh1q",
+      "file": "admin-meta.r1.en.json",
+      "text": "Presentations",
+      "source": {
+        "path": "packages/publisher/src/formats/contract.ts",
+        "line": 4
+      }
+    },
+    {
+      "parent": "publisher.channel",
+      "id": "site",
+      "role": "label",
+      "cellId": "publisher.channel.site",
+      "recordId": "st.dr57tvsfc6",
+      "file": "admin-meta.r1.en.json",
+      "text": "Website",
+      "source": {
+        "path": "packages/publisher/src/planning/channel-ids.ts",
+        "line": 2
+      }
+    },
+    {
+      "parent": "publisher.channel",
+      "id": "app",
+      "role": "label",
+      "cellId": "publisher.channel.app",
+      "recordId": "st.gj32snjd4m",
+      "file": "admin-meta.r1.en.json",
+      "text": "Application",
+      "source": {
+        "path": "packages/publisher/src/planning/channel-ids.ts",
+        "line": 2
+      }
+    },
+    {
+      "parent": "publisher.channel",
+      "id": "admin",
+      "role": "label",
+      "cellId": "publisher.channel.admin",
+      "recordId": "st.174rtkeng6",
+      "file": "admin-meta.r1.en.json",
+      "text": "Admin workspace",
+      "source": {
+        "path": "packages/publisher/src/planning/channel-ids.ts",
+        "line": 3
+      }
+    },
+    {
+      "parent": "publisher.channel",
+      "id": "content",
+      "role": "label",
+      "cellId": "publisher.channel.content",
+      "recordId": "st.phh1yva6fp",
+      "file": "admin-meta.r1.en.json",
+      "text": "Content collection",
+      "source": {
+        "path": "packages/publisher/src/planning/channel-ids.ts",
+        "line": 3
+      }
+    },
+    {
+      "parent": "publisher.channel",
+      "id": "messages",
+      "role": "label",
+      "cellId": "publisher.channel.messages",
+      "recordId": "st.ceegez6aff",
+      "file": "admin-meta.r1.en.json",
+      "text": "Messages",
+      "source": {
+        "path": "packages/publisher/src/planning/channel-ids.ts",
+        "line": 4
+      }
+    },
+    {
+      "parent": "publisher.channel",
+      "id": "documents",
+      "role": "label",
+      "cellId": "publisher.channel.documents",
+      "recordId": "st.2091r9z4bq",
+      "file": "admin-meta.r1.en.json",
+      "text": "Documents",
+      "source": {
+        "path": "packages/publisher/src/planning/channel-ids.ts",
+        "line": 4
+      }
+    },
+    {
+      "parent": "publisher.lane",
+      "id": "Landing",
+      "role": "label",
+      "cellId": "publisher.lane.Landing",
+      "recordId": "st.ztwyhhw2ep",
+      "file": "admin-meta.r1.en.json",
+      "text": "Landing pages",
+      "source": {
+        "path": "packages/publisher/src/planning/menu.ts",
+        "line": 9
+      }
+    },
+    {
+      "parent": "publisher.lane",
+      "id": "Showcase",
+      "role": "label",
+      "cellId": "publisher.lane.Showcase",
+      "recordId": "st.5s06sz5gme",
+      "file": "admin-meta.r1.en.json",
+      "text": "Showcase pages",
+      "source": {
+        "path": "packages/publisher/src/planning/menu.ts",
+        "line": 9
+      }
+    },
+    {
+      "parent": "publisher.lane",
+      "id": "Document",
+      "role": "label",
+      "cellId": "publisher.lane.Document",
+      "recordId": "st.qz6r2z33w9",
+      "file": "admin-meta.r1.en.json",
+      "text": "Text pages",
+      "source": {
+        "path": "packages/publisher/src/planning/menu.ts",
+        "line": 9
+      }
+    },
+    {
+      "parent": "publisher.lane",
+      "id": "Contact",
+      "role": "label",
+      "cellId": "publisher.lane.Contact",
+      "recordId": "st.kftgmgprt0",
+      "file": "admin-meta.r1.en.json",
+      "text": "Contact pages",
+      "source": {
+        "path": "packages/publisher/src/planning/menu.ts",
+        "line": 9
+      }
+    },
+    {
+      "parent": "publisher.lane",
+      "id": "Auth",
+      "role": "label",
+      "cellId": "publisher.lane.Auth",
+      "recordId": "st.72sy8s5ye9",
+      "file": "admin-meta.r1.en.json",
+      "text": "Sign-in pages",
+      "source": {
+        "path": "packages/publisher/src/planning/menu.ts",
+        "line": 9
+      }
+    },
+    {
+      "parent": "publisher.lane",
+      "id": "Status",
+      "role": "label",
+      "cellId": "publisher.lane.Status",
+      "recordId": "st.2r5qc3zkkn",
+      "file": "admin-meta.r1.en.json",
+      "text": "Status pages",
+      "source": {
+        "path": "packages/publisher/src/planning/menu.ts",
+        "line": 9
+      }
+    },
+    {
+      "parent": "publisher.lane",
+      "id": "Assets",
+      "role": "label",
+      "cellId": "publisher.lane.Assets",
+      "recordId": "st.dnajr0b50g",
+      "file": "admin-meta.r1.en.json",
+      "text": "Brand assets",
+      "source": {
+        "path": "packages/publisher/src/planning/menu.ts",
+        "line": 9
+      }
+    },
+    {
+      "parent": "publisher.lane",
+      "id": "Email",
+      "role": "label",
+      "cellId": "publisher.lane.Email",
+      "recordId": "st.1x80waa6xp",
+      "file": "admin-meta.r1.en.json",
+      "text": "Emails",
+      "source": {
+        "path": "packages/publisher/src/planning/menu.ts",
+        "line": 9
+      }
+    },
+    {
+      "parent": "publisher.lane",
+      "id": "Image",
+      "role": "label",
+      "cellId": "publisher.lane.Image",
+      "recordId": "st.pmwvfptth1",
+      "file": "admin-meta.r1.en.json",
+      "text": "Images",
+      "source": {
+        "path": "packages/publisher/src/planning/menu.ts",
+        "line": 9
+      }
+    },
+    {
+      "parent": "publisher.lane",
+      "id": "Document media",
+      "role": "label",
+      "cellId": "publisher.lane.Document media",
+      "recordId": "st.35n33c16dt",
+      "file": "admin-meta.r1.en.json",
+      "text": "Printable documents",
+      "source": {
+        "path": "packages/publisher/src/planning/menu.ts",
+        "line": 9
+      }
+    },
+    {
+      "parent": "publisher.lane",
+      "id": "Deck",
+      "role": "label",
+      "cellId": "publisher.lane.Deck",
+      "recordId": "st.33cy9hjh1q",
+      "file": "admin-meta.r1.en.json",
+      "text": "Presentations",
+      "source": {
+        "path": "packages/publisher/src/planning/menu.ts",
+        "line": 9
+      }
+    },
+    {
+      "parent": "publisher.lane",
+      "id": "Demo",
+      "role": "label",
+      "cellId": "publisher.lane.Demo",
+      "recordId": "st.4ah5tfb8yx",
+      "file": "admin-meta.r1.en.json",
+      "text": "Demo requests",
+      "source": {
+        "path": "packages/publisher/src/planning/menu.ts",
+        "line": 9
+      }
+    },
+    {
+      "parent": "publisher.lane",
+      "id": "Commerce",
+      "role": "label",
+      "cellId": "publisher.lane.Commerce",
+      "recordId": "st.f8c3cg97we",
+      "file": "admin-meta.r1.en.json",
+      "text": "Payments",
+      "source": {
+        "path": "packages/publisher/src/planning/menu.ts",
+        "line": 9
+      }
+    },
+    {
+      "parent": "publisher.lane",
+      "id": "Portal",
+      "role": "label",
+      "cellId": "publisher.lane.Portal",
+      "recordId": "st.wc9cyck4c9",
+      "file": "admin-meta.r1.en.json",
+      "text": "Customer pages",
+      "source": {
+        "path": "packages/publisher/src/planning/menu.ts",
+        "line": 9
+      }
+    },
+    {
+      "parent": "publisher.lane",
+      "id": "Dashboard",
+      "role": "label",
+      "cellId": "publisher.lane.Dashboard",
+      "recordId": "st.pxykryf7wv",
+      "file": "admin-meta.r1.en.json",
+      "text": "Dashboards",
+      "source": {
+        "path": "packages/publisher/src/planning/menu.ts",
+        "line": 9
+      }
+    },
+    {
+      "parent": "publisher.lane",
+      "id": "Collection",
+      "role": "label",
+      "cellId": "publisher.lane.Collection",
+      "recordId": "st.rsnhnz7fqs",
+      "file": "admin-meta.r1.en.json",
+      "text": "Item lists",
+      "source": {
+        "path": "packages/publisher/src/planning/menu.ts",
+        "line": 9
+      }
+    },
+    {
+      "parent": "publisher.lane",
+      "id": "Record",
+      "role": "label",
+      "cellId": "publisher.lane.Record",
+      "recordId": "st.efsb6h9dmb",
+      "file": "admin-meta.r1.en.json",
+      "text": "Record pages",
+      "source": {
+        "path": "packages/publisher/src/planning/menu.ts",
+        "line": 9
+      }
+    },
+    {
+      "parent": "publisher.lane",
+      "id": "Settings",
+      "role": "label",
+      "cellId": "publisher.lane.Settings",
+      "recordId": "st.vd03egk3js",
+      "file": "admin-meta.r1.en.json",
+      "text": "Settings pages",
+      "source": {
+        "path": "packages/publisher/src/planning/menu.ts",
+        "line": 9
+      }
+    },
+    {
+      "parent": "publisher.lane",
+      "id": "Studio",
+      "role": "label",
+      "cellId": "publisher.lane.Studio",
+      "recordId": "st.d4jt78d3vz",
+      "file": "admin-meta.r1.en.json",
+      "text": "Studios",
+      "source": {
+        "path": "packages/publisher/src/planning/menu.ts",
+        "line": 9
+      }
+    },
+    {
+      "parent": "publisher.lane",
+      "id": "Video",
+      "role": "label",
+      "cellId": "publisher.lane.Video",
+      "recordId": "st.rgakrp0zw4",
+      "file": "admin-meta.r1.en.json",
+      "text": "Videos",
+      "source": {
+        "path": "packages/publisher/src/planning/menu.ts",
+        "line": 9
+      }
+    },
+    {
+      "parent": "publisher.stage",
+      "id": "Configure",
+      "role": "label",
+      "cellId": "publisher.stage.Configure",
+      "recordId": "st.hcah39v2sh",
+      "file": "admin-meta.r1.en.json",
+      "text": "Set up",
+      "source": {
+        "path": "packages/publisher/src/web/publisher/app/inventory.ts",
+        "line": 6
+      }
+    },
+    {
+      "parent": "publisher.stage",
+      "id": "Frame",
+      "role": "label",
+      "cellId": "publisher.stage.Frame",
+      "recordId": "st.3scggksgrg",
+      "file": "admin-meta.r1.en.json",
+      "text": "Page frame",
+      "source": {
+        "path": "packages/publisher/src/web/publisher/app/inventory.ts",
+        "line": 6
+      }
+    },
+    {
+      "parent": "publisher.stage",
+      "id": "Layout",
+      "role": "label",
+      "cellId": "publisher.stage.Layout",
+      "recordId": "st.aw6a6azky1",
+      "file": "admin-meta.r1.en.json",
+      "text": "Page layout",
+      "source": {
+        "path": "packages/publisher/src/web/publisher/app/inventory.ts",
+        "line": 6
+      }
+    },
+    {
+      "parent": "publisher.stage",
+      "id": "Fills",
+      "role": "label",
+      "cellId": "publisher.stage.Fills",
+      "recordId": "st.zmavzn3xkt",
+      "file": "admin-meta.r1.en.json",
+      "text": "Page sections",
+      "source": {
+        "path": "packages/publisher/src/web/publisher/app/inventory.ts",
+        "line": 6
+      }
+    },
+    {
+      "parent": "publisher.stage",
+      "id": "Content",
+      "role": "label",
+      "cellId": "publisher.stage.Content",
+      "recordId": "st.qge0061dwy",
+      "file": "admin-meta.r1.en.json",
+      "text": "Page content",
+      "source": {
+        "path": "packages/publisher/src/web/publisher/app/inventory.ts",
+        "line": 6
+      }
+    },
+    {
+      "parent": "publisher.stage",
+      "id": "Checks",
+      "role": "label",
+      "cellId": "publisher.stage.Checks",
+      "recordId": "st.bh10jdg8bx",
+      "file": "admin-meta.r1.en.json",
+      "text": "Checks",
+      "source": {
+        "path": "packages/publisher/src/web/publisher/app/inventory.ts",
+        "line": 6
+      }
+    },
+    {
+      "parent": "publisher.stage",
+      "id": "States",
+      "role": "label",
+      "cellId": "publisher.stage.States",
+      "recordId": "st.dx92sswebf",
+      "file": "admin-meta.r1.en.json",
+      "text": "Page states",
+      "source": {
+        "path": "packages/publisher/src/web/publisher/app/inventory.ts",
+        "line": 6
+      }
+    },
+    {
+      "parent": "publisher.stage",
+      "id": "Ready",
+      "role": "label",
+      "cellId": "publisher.stage.Ready",
+      "recordId": "st.314cdya5yk",
+      "file": "admin-meta.r1.en.json",
+      "text": "Ready",
+      "source": {
+        "path": "packages/publisher/src/web/publisher/app/inventory.ts",
+        "line": 6
+      }
+    },
+    {
+      "parent": "publisher.stage",
+      "id": "Export",
+      "role": "label",
+      "cellId": "publisher.stage.Export",
+      "recordId": "st.5jy8qjqk1m",
+      "file": "admin-meta.r1.en.json",
+      "text": "Create files",
+      "source": {
+        "path": "packages/publisher/src/web/publisher/app/inventory.ts",
+        "line": 6
+      }
+    },
+    {
+      "parent": "publisher.stage",
+      "id": "Deploy",
+      "role": "label",
+      "cellId": "publisher.stage.Deploy",
+      "recordId": "st.79tb5peek7",
+      "file": "admin-meta.r1.en.json",
+      "text": "Publish files",
+      "source": {
+        "path": "packages/publisher/src/web/publisher/app/inventory.ts",
+        "line": 6
+      }
+    },
+    {
+      "parent": "publisher.check",
+      "id": "LK1",
+      "role": "label",
+      "cellId": "publisher.check.LK1",
+      "recordId": "st.x20jz1ezkx",
+      "file": "admin-meta.r1.en.json",
+      "text": "Frame choices",
+      "source": {
+        "path": "packages/publisher/src/core/instance-binding.check.ts",
+        "line": 79
+      }
+    },
+    {
+      "parent": "publisher.check",
+      "id": "LK2",
+      "role": "label",
+      "cellId": "publisher.check.LK2",
+      "recordId": "st.g61cy7d98e",
+      "file": "admin-meta.r1.en.json",
+      "text": "Layout setup",
+      "source": {
+        "path": "packages/publisher/src/core/instance-binding.check.ts",
+        "line": 82
+      }
+    },
+    {
+      "parent": "publisher.check",
+      "id": "LK3",
+      "role": "label",
+      "cellId": "publisher.check.LK3",
+      "recordId": "st.gkve97mnkk",
+      "file": "admin-meta.r1.en.json",
+      "text": "Page areas",
+      "source": {
+        "path": "packages/publisher/src/core/instance-binding.check.ts",
+        "line": 88
+      }
+    },
+    {
+      "parent": "publisher.check",
+      "id": "LK4",
+      "role": "label",
+      "cellId": "publisher.check.LK4",
+      "recordId": "st.4prs3qa4ht",
+      "file": "admin-meta.r1.en.json",
+      "text": "Section choices",
+      "source": {
+        "path": "packages/publisher/src/core/instance-binding.check.ts",
+        "line": 133
+      }
+    },
+    {
+      "parent": "publisher.check",
+      "id": "LK5",
+      "role": "label",
+      "cellId": "publisher.check.LK5",
+      "recordId": "st.jr2anjaxab",
+      "file": "admin-meta.r1.en.json",
+      "text": "Section counts",
+      "source": {
+        "path": "packages/publisher/src/core/instance-binding.check.ts",
+        "line": 162
+      }
+    },
+    {
+      "parent": "publisher.check",
+      "id": "LK6",
+      "role": "label",
+      "cellId": "publisher.check.LK6",
+      "recordId": "st.qrjrc4abpc",
+      "file": "admin-meta.r1.en.json",
+      "text": "Section order and size",
+      "source": {
+        "path": "packages/publisher/src/core/instance-binding.check.ts",
+        "line": 134
+      }
+    },
+    {
+      "parent": "publisher.check",
+      "id": "LK7",
+      "role": "label",
+      "cellId": "publisher.check.LK7",
+      "recordId": "st.qn97p7gmhx",
+      "file": "admin-meta.r1.en.json",
+      "text": "Library connections",
+      "source": {
+        "path": "packages/publisher/src/core/instance-binding.check.ts",
+        "line": 75
+      }
+    },
+    {
+      "parent": "publisher.check",
+      "id": "LK8",
+      "role": "label",
+      "cellId": "publisher.check.LK8",
+      "recordId": "st.gyytedz93t",
+      "file": "admin-meta.r1.en.json",
+      "text": "Heading order",
+      "source": {
+        "path": "packages/publisher/src/core/instance-binding.check.ts",
+        "line": 121
+      }
+    },
+    {
+      "parent": "publisher.check",
+      "id": "LK9",
+      "role": "label",
+      "cellId": "publisher.check.LK9",
+      "recordId": "st.pkakhw18j1",
+      "file": "admin-meta.r1.en.json",
+      "text": "Background colors",
+      "source": {
+        "path": "packages/publisher/src/core/instance-binding.check.ts",
+        "line": 136
+      }
+    },
+    {
+      "parent": "publisher.check",
+      "id": "LK10",
+      "role": "label",
+      "cellId": "publisher.check.LK10",
+      "recordId": "st.gda42zp4ss",
+      "file": "admin-meta.r1.en.json",
+      "text": "Required content",
+      "source": {
+        "path": "packages/publisher/src/core/instance-binding.check.ts",
+        "line": 134
+      }
+    },
+    {
+      "parent": "publisher.check",
+      "id": "LK11",
+      "role": "label",
+      "cellId": "publisher.check.LK11",
+      "recordId": "st.kt3h6sprva",
+      "file": "admin-meta.r1.en.json",
+      "text": "Layout source",
+      "source": {
+        "path": "packages/publisher/src/core/instance-binding.check.ts",
+        "line": 188
+      }
+    },
+    {
+      "parent": "publisher.check",
+      "id": "LK12",
+      "role": "label",
+      "cellId": "publisher.check.LK12",
+      "recordId": "st.jdjt1ynfrw",
+      "file": "admin-meta.r1.en.json",
+      "text": "Responsive preview",
+      "source": {
+        "path": "packages/publisher/src/core/instance-binding.check.ts",
+        "line": 21
+      }
+    },
+    {
+      "parent": "publisher.check",
+      "id": "LK13",
+      "role": "label",
+      "cellId": "publisher.check.LK13",
+      "recordId": "st.nssrpn0dx6",
+      "file": "admin-meta.r1.en.json",
+      "text": "Flexible sections",
+      "source": {
+        "path": "packages/publisher/src/core/instance-binding.check.ts",
+        "line": 135
+      }
+    },
+    {
+      "parent": "publisher.check",
+      "id": "LK14",
+      "role": "label",
+      "cellId": "publisher.check.LK14",
+      "recordId": "st.dx92sswebf",
+      "file": "admin-meta.r1.en.json",
+      "text": "Page states",
+      "source": {
+        "path": "packages/publisher/src/core/instance-binding.check.ts",
+        "line": 89
+      }
+    },
+    {
+      "parent": "publisher.check",
+      "id": "LK15",
+      "role": "label",
+      "cellId": "publisher.check.LK15",
+      "recordId": "st.hncy5ah9ke",
+      "file": "admin-meta.r1.en.json",
+      "text": "Page collection",
+      "source": {
+        "path": "packages/publisher/src/core/instance-binding.check.ts",
+        "line": 207
+      }
+    },
+    {
+      "parent": "publisher.check",
+      "id": "LK16",
+      "role": "label",
+      "cellId": "publisher.check.LK16",
+      "recordId": "st.pvxx22sj70",
+      "file": "admin-meta.r1.en.json",
+      "text": "Output compatibility",
+      "source": {
+        "path": "packages/publisher/src/core/instance-binding.check.ts",
+        "line": 95
+      }
+    },
+    {
+      "parent": "publisher.check",
+      "id": "DE2b",
+      "role": "label",
+      "cellId": "publisher.check.DE2b",
+      "recordId": "st.mam17jbx59",
+      "file": "admin-meta.r1.en.json",
+      "text": "Designer page review",
+      "source": {
+        "path": "packages/publisher/src/web/publisher/pipeline.ts",
+        "line": 1
+      }
+    },
+    {
+      "parent": "admin.library",
+      "id": "foundry",
+      "role": "label",
+      "cellId": "admin.library.foundry",
+      "recordId": "st.bk53k3wgh5",
+      "file": "admin-studio.r1.en.json",
+      "text": "Design library",
+      "source": {
+        "path": "packages/publisher/src/web/publisher/__fixtures__/standard-website.ts",
+        "line": 1
+      }
+    },
+    {
+      "parent": "admin.library",
+      "id": "consumer",
+      "role": "label",
+      "cellId": "admin.library.consumer",
+      "recordId": "st.wbt4xc7wcy",
+      "file": "admin-studio.r1.en.json",
+      "text": "Your library",
+      "source": {
+        "path": "packages/publisher/src/web/publisher/__fixtures__/standard-website.ts",
+        "line": 60
+      }
+    },
+    {
+      "parent": "admin.library",
+      "id": "fixture",
+      "role": "label",
+      "cellId": "admin.library.fixture",
+      "recordId": "st.tgwyyxspsd",
+      "file": "admin-studio.r1.en.json",
+      "text": "Preview library",
+      "source": {
+        "path": "packages/publisher/src/web/publisher/__fixtures__/standard-website.ts",
+        "line": 2
+      }
+    },
+    {
+      "parent": "admin.library",
+      "id": "standard-pack-fixture-library",
+      "role": "label",
+      "cellId": "admin.library.standard-pack-fixture-library",
+      "recordId": "st.bjtk9nxqc9",
+      "file": "admin-studio.r1.en.json",
+      "text": "Website preview library",
+      "source": {
+        "path": "packages/publisher/src/web/publisher/__fixtures__/standard-website.ts",
+        "line": 48
+      }
+    },
+    {
+      "parent": "admin.account",
+      "id": "label",
+      "role": "label",
+      "cellId": "admin.account.label",
+      "recordId": "st.5nfgjmm0xx",
+      "file": "admin-meta.r1.en.json",
+      "text": "Account",
+      "source": {
+        "path": "packages/designer/src/frames/app-frame-contract.check.tsx",
+        "line": 8
+      }
+    },
+    {
+      "parent": "publisher.contentKey",
+      "id": "title",
+      "role": "label",
+      "cellId": "publisher.contentKey.title",
+      "recordId": "st.5v29qje8fy",
+      "file": "admin-meta.r1.en.json",
+      "text": "Title",
+      "source": {
+        "path": "packages/publisher/src/content/composition.ts",
+        "line": 53
+      }
+    },
+    {
+      "parent": "publisher.contentKey",
+      "id": "description",
+      "role": "label",
+      "cellId": "publisher.contentKey.description",
+      "recordId": "st.61c3jzqh1d",
+      "file": "admin-meta.r1.en.json",
+      "text": "Description",
+      "source": {
+        "path": "packages/publisher/src/content/composition.ts",
+        "line": 53
+      }
+    },
+    {
+      "parent": "publisher.contentKey",
+      "id": "share-title",
+      "role": "label",
+      "cellId": "publisher.contentKey.share-title",
+      "recordId": "st.asspxtxsr3",
+      "file": "admin-meta.r1.en.json",
+      "text": "Share title",
+      "source": {
+        "path": "packages/publisher/src/content/composition.ts",
+        "line": 53
+      }
+    },
+    {
+      "parent": "publisher.contentKey",
+      "id": "share-text",
+      "role": "label",
+      "cellId": "publisher.contentKey.share-text",
+      "recordId": "st.9bf70w4rjw",
+      "file": "admin-meta.r1.en.json",
+      "text": "Share description",
+      "source": {
+        "path": "packages/publisher/src/content/composition.ts",
+        "line": 53
+      }
+    }
+  ],
+  "revisions": [
+    {
+      "file": "admin-studio.r1.en.json",
+      "recordId": "st.w3ddpdtqay",
+      "cellId": "designer.item.frames.document",
+      "before": "Document",
+      "after": "Document page",
+      "reason": "Name the visible page or region rather than exposing a shell or implementation id; this remains an unapproved draft."
+    },
+    {
+      "file": "admin-studio.r1.en.json",
+      "recordId": "st.njmrezf88j",
+      "cellId": "designer.item.frames.site-shell",
+      "before": "Site shell",
+      "after": "Website page",
+      "reason": "Name the visible page or region rather than exposing a shell or implementation id; this remains an unapproved draft."
+    },
+    {
+      "file": "admin-studio.r1.en.json",
+      "recordId": "st.rtxryd7cfz",
+      "cellId": "designer.item.frames.app-shell",
+      "before": "App shell",
+      "after": "Workspace page",
+      "reason": "Name the visible page or region rather than exposing a shell or implementation id; this remains an unapproved draft."
+    },
+    {
+      "file": "admin-studio.r1.en.json",
+      "recordId": "st.v3ycrdrpmn",
+      "cellId": "designer.item.frames.auth-shell",
+      "before": "Sign-in shell",
+      "after": "Sign-in page",
+      "reason": "Name the visible page or region rather than exposing a shell or implementation id; this remains an unapproved draft."
+    },
+    {
+      "file": "admin-studio.r1.en.json",
+      "recordId": "st.4wj43903kc",
+      "cellId": "designer.item.frames.site-header",
+      "before": "Site header",
+      "after": "Website header",
+      "reason": "Name the visible page or region rather than exposing a shell or implementation id; this remains an unapproved draft."
+    },
+    {
+      "file": "admin-studio.r1.en.json",
+      "recordId": "st.8hvjvvw83e",
+      "cellId": "designer.item.frames.app-header",
+      "before": "App header",
+      "after": "Workspace header",
+      "reason": "Name the visible page or region rather than exposing a shell or implementation id; this remains an unapproved draft."
+    },
+    {
+      "file": "admin-studio.r1.en.json",
+      "recordId": "st.z76k5drqae",
+      "cellId": "designer.item.frames.app-sidebar",
+      "before": "App sidebar",
+      "after": "Workspace sidebar",
+      "reason": "Name the visible page or region rather than exposing a shell or implementation id; this remains an unapproved draft."
+    },
+    {
+      "file": "admin-studio.r1.en.json",
+      "recordId": "st.pqyk75vw6x",
+      "cellId": "designer.item.frames.inspector",
+      "before": "Inspector",
+      "after": "Details panel",
+      "reason": "Name the visible page or region rather than exposing a shell or implementation id; this remains an unapproved draft."
+    },
+    {
+      "file": "admin-studio.r1.en.json",
+      "recordId": "st.b0empz5tp2",
+      "cellId": "designer.item.frames.site-footer",
+      "before": "Site footer",
+      "after": "Website footer",
+      "reason": "Name the visible page or region rather than exposing a shell or implementation id; this remains an unapproved draft."
+    },
+    {
+      "file": "admin-studio.r1.en.json",
+      "recordId": "st.xe1vmezaw2",
+      "cellId": "designer.item.frames.sheet",
+      "before": "Sheet",
+      "after": "Overlay panel",
+      "reason": "Name the visible page or region rather than exposing a shell or implementation id; this remains an unapproved draft."
+    },
+    {
+      "file": "admin-studio.r1.en.json",
+      "recordId": "st.b0jrfbc3my",
+      "cellId": "designer.item.frames.command",
+      "before": "Command menu",
+      "after": "Command menu",
+      "reason": "Name the visible page or region rather than exposing a shell or implementation id; this remains an unapproved draft."
+    },
+    {
+      "file": "admin-studio.r1.en.json",
+      "recordId": "st.hfsb4xz44v",
+      "cellId": "designer.ia.tokens.color-controls",
+      "before": "Controls",
+      "after": "Control colors",
+      "reason": "Disambiguate this group from another group with the same short name on the layer board, without changing its id or placement."
+    },
+    {
+      "file": "admin-studio.r1.en.json",
+      "recordId": "st.9wy8met97b",
+      "cellId": "designer.ia.tokens.interaction-controls",
+      "before": "Controls",
+      "after": "Control sizes",
+      "reason": "Disambiguate this group from another group with the same short name on the layer board, without changing its id or placement."
+    },
+    {
+      "file": "admin-studio.r1.en.json",
+      "recordId": "st.dg3e6jc56v",
+      "cellId": "designer.ia.frames.panels",
+      "before": "Panels",
+      "after": "Page panels",
+      "reason": "Disambiguate this group from another group with the same short name on the layer board, without changing its id or placement."
+    },
+    {
+      "file": "admin-studio.r1.en.json",
+      "recordId": "st.n3jkssxad5",
+      "cellId": "designer.ia.frames.overlay-shells-panels",
+      "before": "Panels",
+      "after": "Overlay panels",
+      "reason": "Disambiguate this group from another group with the same short name on the layer board, without changing its id or placement."
+    }
+  ],
+  "defaults": [
+    "Source inventory covers every registered format/layout/frame and their listed options, six screen sizes, delivery ids, four milestones, plan headers, setup questions, enums, library roles and the account label.",
+    "Three page names reuse existing Writer title records.",
+    "Live CP-47/49–51 correlation waits for the binding/recapture lane; no screenshots or missing consumer ids are fabricated."
+  ]
+}

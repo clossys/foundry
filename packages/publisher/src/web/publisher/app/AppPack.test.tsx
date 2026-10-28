@@ -210,7 +210,7 @@ it("shows explicitly supplied planning questions on a configured App chip and dr
   const request = { slot: "record.primary-action", question: "Which action should open this record?" };
   render(<AppPack inventory={projectAppInventory(genericInventory())} productionSettings={{ "sample.record": settings }} inputRequests={{ "sample.record": [request] }} />);
   const chip = screen.getByRole("button", { name: /Open Sample record .* needs input/ });
-  expect(chip).toHaveTextContent(request.slot);
+  expect(chip).not.toHaveTextContent(request.slot);
   expect(chip).toHaveTextContent(request.question);
   fireEvent.click(chip);
   const detail = screen.getByRole("heading", { name: "Sample record · route details" }).closest("section")!;

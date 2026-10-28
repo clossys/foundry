@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { checkPublisherMenu, configurationInputNeeds, derivePublisherDeliveryState, menuConfiguration, recommendPlanItem, validatePublisherConfiguration } from "./configuration.js";
+import { checkPublisherMenu, configurationInputNeeds, derivePublisherDeliveryState, menuConfiguration, publisherConfigurationDisplay, recommendPlanItem, validatePublisherConfiguration } from "./configuration.js";
 import { withPublisherConfiguration } from "../core/index.js";
 import type { PublisherConfiguration } from "./configuration.js";
 import { createPublisherPlanDraft, validatePublisherPlan } from "./plan.js";
@@ -16,6 +16,30 @@ function withItem(item: PublisherPlanItem): PublisherPlanDraft {
   return { ...plan, milestones: [{ id: "M1", packs: [{ id: "pack.standard-website", items: [item] }] }] };
 }
 const web = (): Extract<PublisherConfiguration, { kind: "web" }> => menuConfiguration("website.home", "Landing") as Extract<PublisherConfiguration, { kind: "web" }>;
+
+describe("configuration display references", () => {
+  it("projects every closed recommendation without changing serialized configuration", () => {
+    for (const menu of PUBLISHER_MENU) for (const row of menu.recommendations) {
+      const before = JSON.stringify(row.configuration);
+      const display = publisherConfigurationDisplay(row.configuration);
+      expect(display.needsInput).toEqual([]);
+      expect(Object.isFrozen(display.deliveries)).toBe(true);
+      if (row.configuration.kind === "web") {
+        expect(display.formatRef).toEqual({ id: "st.w5h0dvynnd" });
+        expect(display.layoutRef).toBeDefined();
+        expect(display.layoutConfigRef).toBeDefined();
+        expect(display.breakpointRefs.every(Boolean)).toBe(true);
+      }
+      expect(JSON.stringify(row.configuration)).toBe(before);
+    }
+  });
+  it("names an unmapped value without converting its machine ID into a label", () => {
+    const display = publisherConfigurationDisplay({ ...web(), layout: { leaf: "layouts.stack", config: "stack.unregistered" } });
+    expect(display.layoutConfigRef).toBeUndefined();
+    expect(display.needsInput).toContainEqual({ path: "layout.config", parent: "publisher.layoutConfig.layouts.stack", id: "stack.unregistered" });
+    expect(Object.isFrozen(display.needsInput[0])).toBe(true);
+  });
+});
 
 describe("closed recommendations and requirements", () => {
   it("gives every offered lane one registered recommendation with honest asset and concept boundaries", () => {

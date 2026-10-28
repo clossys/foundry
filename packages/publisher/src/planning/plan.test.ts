@@ -1,11 +1,52 @@
 import { describe, expect, it } from "vitest";
-import { PUBLISHER_MENU, PUBLISHER_MILESTONES } from "./menu.js";
-import { createPublisherPlanDraft, validatePublisherPlan } from "./plan.js";
+import { PUBLISHER_MENU, PUBLISHER_MILESTONES, publisherMenuDisplay } from "./menu.js";
+import { createPublisherPlanDraft, publisherPlanItemDisplay, publisherPlanNeedDisplay, validatePublisherPlan } from "./plan.js";
 import { projectPlanInstances } from "./change-set.js";
 import type { PublisherPlanDraft } from "./plan.js";
 import { STANDARD_PACK_REGISTRIES } from "../web/publisher/__fixtures__/standard-website.js";
 
 const draft = (): PublisherPlanDraft => ({ schemaVersion: 1, menuVersion: 2, id: "example", version: 1, status: "draft", currentMilestone: "M1", answerIds: ["answer.website"], milestones: [{ id: "M1", packs: [{ id: "pack.standard-website", items: [{ id: "home", menuRef: "website.home", lane: "Landing", answerIds: ["answer.website"], openNeeds: [{ slot: "content", question: "Which content references should be bound?" }], instanceId: "standard.home", format: "web.page.responsive", layout: { leaf: "layouts.stack", config: "stack.landing" }, frame: { leaf: "frames.site-shell", config: "site" } }] }] }] });
+
+describe("planning display references", () => {
+  it("projects every closed menu name, milestone, pack, status and lane as registered refs", () => {
+    const before = JSON.stringify(PUBLISHER_MENU);
+    for (const item of PUBLISHER_MENU) {
+      const display = publisherMenuDisplay(item);
+      expect(display.labelRef).toBeDefined();
+      expect(display.milestoneRef).toBeDefined();
+      expect(display.packRef).toBeDefined();
+      expect(display.statusRef).toBeDefined();
+      expect(display.laneRefs.every(Boolean)).toBe(true);
+      expect(display.requirements.brandAssets.every(Boolean)).toBe(true);
+      expect(display.requirements.content.every(Boolean)).toBe(true);
+      expect(Object.isFrozen(display.laneRefs)).toBe(true);
+      expect(display.needsInput.every(need => need.path.startsWith("needs."))).toBe(true);
+    }
+    expect(JSON.stringify(PUBLISHER_MENU)).toBe(before);
+  });
+  it("keeps plan identities and validation intact while preferring an evidenced route name", () => {
+    const plan = createPublisherPlanDraft(draft(), STANDARD_PACK_REGISTRIES);
+    const item = plan.milestones[0]!.packs[0]!.items[0]!;
+    const before = JSON.stringify(plan);
+    expect(publisherPlanItemDisplay(item)).toMatchObject({ labelRef: { id: "st.9pds3yfrp5" }, needsInput: [] });
+    expect(publisherPlanItemDisplay(item, "/agents/designer").labelRef).toEqual({ id: "st.pb0ynfnh58" });
+    expect(publisherPlanItemDisplay(item, "/agents/writer").labelRef).toEqual({ id: "st.m22sa9p9y4" });
+    expect(publisherPlanItemDisplay(item, "/agents/publisher").labelRef).toEqual({ id: "st.eyyshzcr6r" });
+    const unknown = publisherPlanItemDisplay(item, "/unknown-route");
+    expect(unknown.labelRef).toBeUndefined();
+    expect(unknown.needsInput).toEqual([{ path: "label", parent: "publisher.planPage", id: "/unknown-route" }]);
+    expect(JSON.stringify(plan)).toBe(before);
+    expect(validatePublisherPlan(plan, STANDARD_PACK_REGISTRIES)).toEqual([]);
+  });
+  it("projects registered slot questions separately from persisted host wording", () => {
+    const need = { slot: "brandAssets.logo", question: "Host supplied question" };
+    expect(publisherPlanNeedDisplay(need)).toEqual({ slotLabelRef: { id: "st.dgdbty02r2" }, questionRef: { id: "st.ww0dkpyzrj" }, needsInput: [] });
+    expect(need.question).toBe("Host supplied question");
+    const unknown = publisherPlanNeedDisplay({ slot: "host.custom", question: "Host custom question" });
+    expect(unknown.questionRef).toBeUndefined();
+    expect(unknown.needsInput.map(need => need.path)).toEqual(["slot", "question"]);
+  });
+});
 
 describe("Publisher menu and draft boundaries", () => {
   it("offers a closed immutable milestone ladder, Showcase, assets and honest concepts", () => {
