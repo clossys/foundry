@@ -38,10 +38,10 @@ export function buildPublisherInspector(input: PublisherInspectorInput): Publish
   const text = (key: string): string => {
     const matches = input.copy.filter(field => field.key === key && field.locale === input.locale);
     const field = matches[0];
-    if (matches.length !== 1 || !field || validateCopyFields([field], "copy").length || !field.value.trim()) {
+    if (matches.length !== 1 || !field || validateCopyFields([field], "copy").length || !(field.value ?? "").trim()) {
       need("writer", key, `Supply one nonempty Writer label in ${input.locale}`); return "";
     }
-    return field.value;
+    return field.value ?? "";
   };
   const title = text("inspector.title");
   const slot = input.registry.slots.find(row => row.id === input.slotId);
@@ -65,7 +65,14 @@ export function buildPublisherInspector(input: PublisherInspectorInput): Publish
     ] : []);
     for (const locale of slot?.locales ?? []) {
       try {
-        const copy = resolveCopy(snapshot?.content ?? candidate, locale);
+        const report = resolveCopy(snapshot?.content ?? candidate, locale);
+        const copy = report.copy;
+        for (const finding of report.findings) if (finding.severity === "error") {
+          need("writer", `copy.${candidate.id}.${locale}.${finding.path}`, finding.message);
+        }
+        if (report.findings.length) section("findings", report.findings.map(finding => ({
+          label: `${finding.path} (${finding.rule})`, value: finding.message,
+        })), locale);
         section("copy", Object.entries(copy).flatMap(([section, fields]) => Object.entries(fields).map(([key, value]) => ({ label: `${section}.${key}`, value }))), locale);
       } catch (error) { need("publisher", `copy.${candidate.id}.${locale}`, error instanceof Error ? error.message : "Supply valid locale copy"); }
     }

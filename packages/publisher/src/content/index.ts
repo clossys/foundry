@@ -12,7 +12,7 @@ export type { Need, ReviewCheck, ReviewCopySchema, ReviewFinding, ReviewInput, R
 export { CANDIDATE_STATES, CANDIDATE_ORIGINS, SLOT_KINDS, SECTION_INTENTS, LINK_RELATIONS, isRevisionId } from "./vocabulary.js";
 export type { CandidateState, CandidateOrigin, SlotKind, SectionIntent, LinkRelation, RevisionId } from "./vocabulary.js";
 export { validateComposition, parseComposition, resolveCopy, PAGE_META_KEY } from "./composition.js";
-export type { DesignerAssetRef, CopyField, ResolvedCopy, SectionReference, CompositionSection, Composition, ContentFinding } from "./composition.js";
+export type { DesignerAssetRef, CopyField, WriterCopyField, LegacyCopyField, ResolvedCopy, CopyFinding, ResolveCopyOptions, CopyResolutionReport, ContentWriterContext, SectionReference, CompositionSection, Composition, ContentFinding } from "./composition.js";
 export { isContentJson, isSourceAnswer } from "./json.js";
 export type { ContentJson, ContentJsonObject, SourceAnswer } from "./json.js";
 export type { ContentWorkspace, ContentBrief, ContentOpenQuestion, ContentLink, ContentApproval, CandidateContent, ContentRevision, ContentCandidate, ContentRelease, ContentSlot, ContentRegistry } from "./model.js";

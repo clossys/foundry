@@ -17,7 +17,8 @@ describe("release contract", () => {
     expect(slot).toMatchObject({ l1: "websites", l2: "admin", deployTarget: "product-admin", route: "/agents/sample", locales: ["en", "fr"] });
     expect(candidate).toMatchObject({ state: "active", revision: "r1", approval: { source: "owner", revision: "r1", digest: computeContentDigest(candidate) } });
     expect(review).toEqual(reviewCandidate({ registry: input.registry, candidateId: candidate.id, libraries: reviewInput().libraries, digest: computeContentDigest(candidate), raisedAt: input.at }));
-    expect(review).toEqual({ candidateId: candidate.id, revision: "r1", digest: computeContentDigest(candidate), findings: [], needs: [], checkedAgainst: { libraryVersion: "1", locales: ["en", "fr"] } });
+    expect(review).toEqual({ candidateId: candidate.id, revision: "r1", digest: computeContentDigest(candidate), findings: [], needs: [], copyFindings: expect.any(Array), checkedAgainst: { libraryVersion: "1", locales: ["en", "fr"] } });
+    expect(review.copyFindings?.every(finding => finding.severity === "warning" && finding.rule === "legacy-inline-copy")).toBe(true);
 
     const result: ReleaseResult = prepareContentRelease(input);
     expect(result.ok).toBe(true);

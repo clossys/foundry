@@ -1,4 +1,4 @@
-import type { ContentFinding } from "../composition.js";
+import type { ContentFinding, CopyFinding, ContentWriterContext } from "../composition.js";
 import type { ContentRegistry, ContentSlot } from "../model.js";
 import type { ReviewReport } from "../review/types.js";
 import type { RevisionId } from "../vocabulary.js";
@@ -8,6 +8,8 @@ export interface ReleaseInput {
   readonly registry: ContentRegistry;
   readonly selections: readonly { readonly candidateId: string; readonly review: ReviewReport }[];
   readonly approvedBy: string;
+  /** Finite Writer registries and locale policy; approval time is at. */
+  readonly writer?: ContentWriterContext;
   readonly at: string;
 }
 export interface ReleaseManifest {
@@ -47,5 +49,5 @@ export interface ReleaseBundle {
   readonly handover: HandoverReceipt;
 }
 export type ReleaseResult =
-  | { readonly ok: true; readonly releases: readonly ReleaseBundle[]; readonly findings: readonly [] }
-  | { readonly ok: false; readonly releases: readonly []; readonly findings: readonly ContentFinding[] };
+  | { readonly ok: true; readonly releases: readonly ReleaseBundle[]; readonly findings: readonly []; readonly copyFindings?: readonly CopyFinding[] }
+  | { readonly ok: false; readonly releases: readonly []; readonly findings: readonly ContentFinding[]; readonly copyFindings?: readonly CopyFinding[] };

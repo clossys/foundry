@@ -55,7 +55,8 @@ export function FramedContentPreview({ chrome, rawUrl, locale, frameCopy }: Fram
   }
   let title: string | undefined;
   try {
-    title = resolveCopy({ pageMeta: frameCopy }, locale)[PAGE_META_KEY]?.title;
+    const report = resolveCopy({ pageMeta: frameCopy }, locale);
+    title = report.copy[PAGE_META_KEY]?.title;
   } catch {
     throw new ContentPreviewRefusal("writer-copy-required", "Preview requires Writer title copy for its locale.");
   }

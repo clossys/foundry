@@ -1,9 +1,10 @@
 import { Fragment, createElement } from "react";
+import { createCopyResolver } from "@clossys/writer";
 import type { ReactElement } from "react";
 import { AuthFrame } from "@clossys/designer/frames";
 import { EmptyState, LogoHero, SectionHeader } from "@clossys/designer/blocks/server";
 import { PAGE_META_KEY, resolveCopy, validateCopyFields } from "../content/composition.js";
-import type { CompositionSection, ResolvedCopy } from "../content/composition.js";
+import type { CompositionSection, CopyFinding, CopyResolutionReport, ResolveCopyOptions } from "../content/composition.js";
 import { isContentJson } from "../content/json.js";
 import { validateConsumerLibrarySnapshots } from "../content/library.js";
 import { checkPageMetadata, robotsFor } from "../content/metadata.js";
@@ -36,8 +37,26 @@ export function prepareContentRoute(input: ContentRouteInput): PreparedContentRo
     if (!needs.some(need => need.id === id)) needs.push({ id, kind, target, slotId: slot.id, ref, detail, raisedAt: input.raisedAt });
   };
 
-  const copy = resolveCopy(candidate, locale);
-  const pageCopy = copy[PAGE_META_KEY] ?? {};
+  const copyFindings: CopyFinding[] = [];
+  const recordCopy = (report: CopyResolutionReport): CopyResolutionReport["copy"] => {
+    copyFindings.push(...report.findings);
+    for (const finding of report.findings) if (finding.severity === "error") {
+      add("copy", "writer", finding.path, `Writer copy is required: ${finding.path} (${finding.rule})`);
+    }
+    return report.copy;
+  };
+  const writer = input.writer;
+  const writerValid = writer === undefined || isContentJson(writer) && writer !== null && typeof writer === "object" && !Array.isArray(writer)
+    && Object.keys(writer).every(key => ["registry", "registries", "manifest", "timeZone"].includes(key)) && Object.hasOwn(writer, "registry");
+  if (!writerValid) add("copy", "writer", "writer", "Writer context requires finite registry, registries, manifest, and timeZone values");
+  const copyOptions: ResolveCopyOptions = writerValid && writer !== undefined ? {
+    resolver: createCopyResolver(writer.registry, {
+      ...(writer.registries === undefined ? {} : { registries: writer.registries }),
+      ...(writer.manifest === undefined ? {} : { manifest: writer.manifest }),
+      timeZone: writer.timeZone ?? "UTC", now: new Date(input.raisedAt),
+    }),
+  } : {};
+  const pageCopy = recordCopy(resolveCopy({ pageMeta: candidate.pageMeta }, locale, { ...copyOptions, requirePageMeta: true }))[PAGE_META_KEY] ?? {};
   const canonicalPolicy = slot.meta?.canonical;
   const canonical = typeof canonicalPolicy === "string"
     ? locale === input.registry.workspace.defaultLocale ? canonicalPolicy : undefined
@@ -48,7 +67,7 @@ export function prepareContentRoute(input: ContentRouteInput): PreparedContentRo
     robots: robotsFor(slot),
     ...(canonical === undefined ? {} : { canonical }),
   };
-  for (const finding of checkPageMetadata({ ...slot, locales: [locale] }, { ...candidate, pageMeta: candidate.pageMeta?.filter(field => field.locale === locale) })) {
+  for (const finding of checkPageMetadata({ ...slot, locales: [locale] }, { ...candidate, pageMeta: candidate.pageMeta?.filter(field => field.locale === locale) }, undefined, copyOptions)) {
     add("copy", "writer", finding.path, `Writer page metadata is required: ${finding.path} (${finding.rule})`);
   }
 
@@ -69,7 +88,7 @@ export function prepareContentRoute(input: ContentRouteInput): PreparedContentRo
   const frameCopyFindings = validateCopyFields(frameFields, "frameCopy", ["skipLabel"]);
   for (const finding of frameCopyFindings) add("copy", "writer", finding.path, `Writer frame copy is invalid: ${finding.path} (${finding.rule})`);
   // Frame copy uses the same validated, read-only Writer projection as section copy.
-  const frameCopy = frameCopyFindings.length ? {} : resolveCopy({ composition: { ...composition, sections: [{ key: "$frame", sectionId: frame.frameId, configId: frame.configId, intent: "continues", fields: frameFields }] } }, locale).$frame ?? {};
+  const frameCopy = frameCopyFindings.length ? {} : recordCopy(resolveCopy({ composition: { ...composition, sections: [{ key: "$frame", sectionId: frame.frameId, configId: frame.configId, intent: "continues", fields: frameFields }] } }, locale, copyOptions)).$frame ?? {};
   if (frame.frameId === "frames.auth-shell" && !frameCopy.skipLabel?.trim()) add("copy", "writer", "frame.skipLabel", `Writer frame copy is required for ${locale}: skipLabel`);
 
   const assetsValid = isContentJson(input.assets ?? []) && Array.isArray(input.assets ?? []) && (input.assets ?? []).every(asset =>
@@ -109,7 +128,7 @@ export function prepareContentRoute(input: ContentRouteInput): PreparedContentRo
     else if (section.configId !== "default") add("config", "designer", section.configId, `Section config adapter is unavailable: ${section.sectionId}/${section.configId}`);
 
     // A historical section is projected in isolation; unrelated source sections never replace this route.
-    const sectionCopy: ResolvedCopy = resolveCopy({ composition: { ...composition, sections: [{ ...section, key: occurrence.key }] } }, locale);
+    const sectionCopy = recordCopy(resolveCopy({ composition: { ...composition, sections: [{ ...section, key: occurrence.key }] } }, locale, copyOptions));
     const fields = sectionCopy[occurrence.key] ?? {};
     const allowed = section.sectionId === "sections.logo-hero" ? ["name"] : section.sectionId === "sections.section-header" ? ["heading", "description", "eyebrow"] : ["title", "description"];
     if (supported) for (const field of section.fields) if (!allowed.includes(field.key)) add("copy", "writer", `${occurrence.key}.${field.key}`, `Section copy has no closed adapter: ${section.sectionId}/${field.key}`);
@@ -132,9 +151,9 @@ export function prepareContentRoute(input: ContentRouteInput): PreparedContentRo
     else sectionNodes.push(createElement(EmptyState, { key: occurrence.key, title: fields.title, description: fields.description }));
   }
 
-  if (needs.length) return { ...selection, status: "needs-input", metadata, needs };
+  if (needs.length) return { ...selection, status: "needs-input", metadata, needs, copyFindings };
   const node = createElement(AuthFrame, { skipLabel: frameCopy.skipLabel!, children: sectionNodes });
-  return { ...selection, status: "ready", metadata, needs, node };
+  return { ...selection, status: "ready", metadata, needs, copyFindings, node };
 }
 
 /** Native document metadata surrounds a body composed exclusively by Designer exports. */
@@ -142,7 +161,15 @@ export function ContentRoutePage({ input }: { readonly input: ContentRouteInput 
   const prepared = prepareContentRoute(input);
   if (prepared.status !== "ready" || !prepared.node) throw new ContentRouteNeedsError(prepared.needs);
   const { metadata, candidate, locale } = prepared;
-  const pageCopy = resolveCopy(candidate, locale)[PAGE_META_KEY] ?? {};
+  const writer = input.writer;
+  const pageCopy = resolveCopy({ pageMeta: candidate.pageMeta }, locale, {
+    requirePageMeta: true,
+    ...(writer === undefined ? {} : { resolver: createCopyResolver(writer.registry, {
+      ...(writer.registries === undefined ? {} : { registries: writer.registries }),
+      ...(writer.manifest === undefined ? {} : { manifest: writer.manifest }),
+      timeZone: writer.timeZone ?? "UTC", now: new Date(input.raisedAt),
+    }) }),
+  }).copy[PAGE_META_KEY] ?? {};
   return <Fragment>
     {metadata.title === undefined ? null : <title>{metadata.title}</title>}
     {metadata.description === undefined ? null : <meta name="description" content={metadata.description} />}

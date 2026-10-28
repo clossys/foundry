@@ -26,8 +26,8 @@ describe("consumer locale route contract", () => {
     expect(validateContentRevisionIntegrity(candidate)).toEqual([]);
     expect(checkContentApproval(candidate, "publish")).toEqual([]);
     expect(content.checkPageMetadata(slot, candidate, undefined, options)).toEqual([]);
-    expect(content.resolveCopy(candidate, "en-US").$pageMeta).toEqual({ title: "About our team", description: "Meet our team and learn what we do." });
-    expect(content.resolveCopy(candidate, "fr-CA").$pageMeta).toEqual({ title: "À propos de notre équipe", description: "Rencontrez notre équipe et découvrez nos activités." });
+    expect(content.resolveCopy(candidate, "en-US").copy.$pageMeta).toEqual({ title: "About our team", description: "Meet our team and learn what we do." });
+    expect(content.resolveCopy(candidate, "fr-CA").copy.$pageMeta).toEqual({ title: "À propos de notre équipe", description: "Rencontrez notre équipe et découvrez nos activités." });
     expect(content.outputPathFor({ ...slot, locale: "en-US", defaultLocale: "en-US" })).toBe("public/app/about/page.tsx");
     expect(content.outputPathFor({ ...slot, locale: "fr-CA", defaultLocale: "en-US" })).toBe("public/app/fr-ca/about/page.tsx");
     expect(content.outputPathFor(slot)).toBe("public/app/about/page.tsx");
@@ -77,7 +77,7 @@ describe("consumer locale route contract", () => {
     const missingTitle = { ...candidate, pageMeta: candidate.pageMeta!.filter(field => field.locale !== "fr-CA" || field.key !== "title") };
     const fallback = { ...options, bodyServedLocales: { "en-US": ["en-US"], "fr-CA": ["en-US"] } };
     expect(content.checkPageMetadata(slot, missingTitle, undefined, fallback)).toContainEqual(expect.objectContaining({ path: "content.pageMeta.fr-CA.title", rule: "required-page-metadata" }));
-    expect(content.resolveCopy(missingTitle, "fr-CA").$pageMeta).not.toHaveProperty("title");
+    expect(content.resolveCopy(missingTitle, "fr-CA").copy.$pageMeta).not.toHaveProperty("title");
   });
 
   it("preserves scalar canonical metadata and validates locale maps at the stored boundary", () => {
