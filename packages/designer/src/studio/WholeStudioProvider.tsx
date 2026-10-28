@@ -114,7 +114,7 @@ export const useWholeStudio = (): WholeStudioState | null => useContext(WholeCon
 /** State only: children and the one shared value projection remain mounted through loading/error. */
 export function WholeStudioProvider({ children, ...props }: CompositeStudioProps & { children: ReactNode }) {
   const state = useWholeState(props);
-  return <WholeContext.Provider value={state}><StudioProvider layerState={{ layer: state.layer, setLayer: state.setLayer, phase: state.failed ? "error" : "loading", selected: state.selected, select: state.select }} values={state.values} adapter={state.projection} labels={props.labels} initialSlotId={state.selected ?? props.initialSlotId}>{children}</StudioProvider></WholeContext.Provider>;
+  return <WholeContext.Provider value={state}><StudioProvider copy={props.copy} layerState={{ layer: state.layer, setLayer: state.setLayer, phase: state.failed ? "error" : "loading", selected: state.selected, select: state.select }} values={state.values} adapter={state.projection} labels={props.labels} initialSlotId={state.selected ?? props.initialSlotId}>{children}</StudioProvider></WholeContext.Provider>;
 }
 /** Finite facts from the original shared session. Preview functions, actions and candidate engines stay outside. */
 export function useDesignerLayerBoardProjection(): { readonly projection: DesignerLayerBoardProjection; readonly projectionHash: RuntimeDigest } {

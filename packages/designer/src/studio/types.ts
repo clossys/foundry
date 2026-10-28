@@ -100,6 +100,8 @@ export interface StudioCandidateWorkflow {
   checkCandidates?(slot: string): Promise<StudioCandidateCheckResult>;
 }
 export interface StudioCanvasProps extends DesignerAgentData {
+  /** Host-owned Writer resolution and explicit requested locale. */
+  copy: import("./copy-binding.js").StudioCopyBinding;
   /** @deprecated Ignored: the Studio has no layer tabs; the right rail's Explorer card switches layers. */
   header?: "internal" | "external";
   panelInsets?: StudioPanelInsets; className?: string; candidateWorkflow?: StudioCandidateWorkflow }

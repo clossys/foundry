@@ -13,7 +13,8 @@ import { useOptionalStudioSession } from "../StudioProvider.js";
 import { useWholeStudio } from "../WholeStudioProvider.js";
 import { CompactPreview } from "../previews.js";
 import { Scorecard } from "../Scorecard.js";
-import { routeStudioLabels } from "../route-labels.js";
+import { createRouteStudioLabels } from "../route-labels.js";
+import { readStudioMessage, studioCopyNeed, type StudioCopyBinding } from "../copy-binding.js";
 import type { StudioLabels } from "../types.js";
 import { useStudioUsageData } from "../usage/StudioUsage.js";
 import { ExplorerTree, LayerSelect, useExplorerPlacements } from "../rail/ExplorerTree.js";
@@ -31,6 +32,8 @@ import type { DesignerAgentData, InspectorFill } from "./inspector/types.js";
 export interface DesignerPageProps extends DesignerAgentData {
   readonly data?: SystemCanvasData;
   readonly labels?: StudioLabels;
+  /** The host supplies its locale and Writer resolver; no locale is inferred here. */
+  readonly copy: StudioCopyBinding;
   readonly graph?: UsageGraph;
   readonly renderSpecimen?: (leaf: string) => ReactNode;
   readonly viewSize?: CanvasSize;
@@ -38,9 +41,12 @@ export interface DesignerPageProps extends DesignerAgentData {
   readonly className?: string;
 }
 /** One page, one camera, one rail: no page tabs, dock registration or mutation port. */
-export function DesignerPage({data:supplied,labels:hostLabels,graph:hostGraph,renderSpecimen,viewSize,initialUrl,className,...agent}:DesignerPageProps) {
+export function DesignerPage({data:supplied,labels:hostLabels,copy,graph:hostGraph,renderSpecimen,viewSize,initialUrl,className,...agent}:DesignerPageProps) {
   const session=useOptionalStudioSession(),whole=useWholeStudio(),inherited=useExplorerPlacements();
-  const data=useMemo(()=>supplied??{placements:inherited},[supplied,inherited]),labels=hostLabels??session?.labels??routeStudioLabels;
+  if(!copy||typeof copy.locale!=="string"||!copy.locale||typeof copy.resolver!=="function")studioCopyNeed("studio.copy.binding");
+  const data=useMemo(()=>supplied??{placements:inherited},[supplied,inherited]);
+  const labels=useMemo(()=>hostLabels??session?.labels??createRouteStudioLabels(copy),[hostLabels,session?.labels,copy]);
+  const systemLabels=labels.system??createRouteStudioLabels(copy).system!;
   const layout=useMemo(()=>systemLayout(data.placements),[data.placements]);
   const resolver=useMemo(()=>resolverFromPlacements(data.placements),[data.placements]);
   const index=useMemo(()=>explorerIndex(explorerNodes(data.placements,labels.layers)),[data.placements,labels.layers]);
@@ -89,14 +95,14 @@ export function DesignerPage({data:supplied,labels:hostLabels,graph:hostGraph,re
   const zoomTarget=selected?{layer:resolver.layerOf(selected)!,leaf:selected}:target;
   const map=camera&&row?minimapModel(row.rect,camera.viewport,camera.size):undefined;
   const zoom=(value:number)=>{if(!camera)return;const next:Viewport={...camera.viewport,zoom:Math.min(camera.range.max,Math.max(camera.range.min,value))};handle.current?.setViewport(next);};
-  const checks=session?.summary?<Scorecard summary={session.summary} labels={labels} onClose={()=>{}} onIssue={leaf=>{const layer=resolver.layerOf(leaf);if(layer)navigate({layer,leaf});}}/>:<SemanticContent as="p">{whole?.evaluated?.error??labels.scorecard.target}</SemanticContent>;
+  const checks=session?.summary?<Scorecard copy={copy} summary={session.summary} labels={labels} onClose={()=>{}} onIssue={leaf=>{const layer=resolver.layerOf(leaf);if(layer)navigate({layer,leaf});}}/>:<SemanticContent as="p">{whole?.evaluated?.error?readStudioMessage(copy,"studio.evaluation.error"):labels.scorecard.target}</SemanticContent>;
   return <SemanticContent as="section" data-designer-page="" data-designer-ready={session?.ready ? "" : undefined} aria-label={labels.stageLabel} className={"relative flex h-full min-h-0 min-w-0 "+(className??"")}>
     <SemanticContent as="section" data-designer-region="canvas" aria-label={labels.canvas.label} className="relative min-h-0 min-w-0 flex-1">
-      <SystemCanvas data={data} labels={{label:labels.canvas.label,hint:labels.canvas.hint,breadcrumb:labels.inspector.relation,layers:labels.layers}} studioLabels={labels} selectedLeaf={selected} edges={graph?.edges} onSelect={select} renderSpecimen={specimen} renderThumbnail={specimen} renderStaticThumbnail={agent.renderStaticThumbnail} handleRef={handle} viewSize={viewSize} onViewChange={report}/>
+      <SystemCanvas copy={copy} data={data} labels={{label:labels.canvas.label,hint:labels.canvas.hint,breadcrumb:labels.inspector.relation,layers:labels.layers}} studioLabels={labels} selectedLeaf={selected} edges={graph?.edges} onSelect={select} renderSpecimen={specimen} renderThumbnail={specimen} renderStaticThumbnail={agent.renderStaticThumbnail} handleRef={handle} viewSize={viewSize} onViewChange={report}/>
     </SemanticContent>
-    <StudioRail labels={labels} explorer={<ExplorerTree placements={data.placements} labels={labels} activeLayer={activeLayer} selectedLeaf={selected} onNavigate={navigate} onCloseInspector={close}/>} explorerHeader={<LayerSelect placements={data.placements} labels={labels} activeLayer={activeLayer} onNavigate={navigate}/>}
-      inspector={<SystemInspector {...agent} identity={selected?identityFor(data.placements,selected,fill):undefined} labels={labels} graph={graph} onClose={close} onNavigate={leaf=>{const layer=resolver.layerOf(leaf);if(layer)navigate({layer,leaf});}} canNavigate={leaf=>layout.cells.has(leaf)} specimen={selected?specimen(selected):undefined} findings={profile?.check.findings.filter(f=>f.subject===selected)}/>}
-      map={map&&row&&camera?<CanvasMap label={labels.canvas.minimap} bounds={map.worldBounds} items={row.boards.map(board=>({id:board.id,label:board.label,rect:board.rect}))} viewport={camera.viewport} viewSize={camera.size} onViewportChange={next=>handle.current?.setViewport(next)}/>:<SemanticContent as="p">{labels.loading}</SemanticContent>}
-      zoom={<SemanticContent as="div" className="flex flex-col gap-sm"><SemanticContent as="div" className="flex flex-wrap gap-xs">{SYSTEM_STOPS.map(stop=><Button key={stop} size="sm" variant="ghost" isDisabled={stop!=="system"&&!zoomTarget||stop==="cell"&&!selected} onPress={()=>handle.current?.fit(stop,zoomTarget)}>{(labels.system??routeStudioLabels.system!).stops[stop]}</Button>)}</SemanticContent>{camera?<><CanvasZoom value={camera.viewport.zoom} min={camera.range.min} max={camera.range.max} onChange={zoom} onFit={()=>handle.current?.fit("system")} labels={{group:labels.canvas.zoomLabel,out:labels.canvas.zoomOut,in:labels.canvas.zoomIn,fit:labels.canvas.fit,percent:labels.canvas.zoomLabel}}/><Slider label={labels.canvas.zoomLabel} value={camera.viewport.zoom} minValue={camera.range.min} maxValue={camera.range.max} step={Math.max(Number.EPSILON,(camera.range.max-camera.range.min)/100)} onChange={zoom}/></>:null}</SemanticContent>} checks={checks}/>
+    <StudioRail labels={labels} explorer={<ExplorerTree copy={copy} placements={data.placements} labels={labels} activeLayer={activeLayer} selectedLeaf={selected} onNavigate={navigate} onCloseInspector={close}/>} explorerHeader={<LayerSelect placements={data.placements} labels={labels} activeLayer={activeLayer} onNavigate={navigate}/>}
+      inspector={<SystemInspector {...agent} copy={copy} identity={selected?identityFor(data.placements,selected,fill):undefined} labels={labels} graph={graph} onClose={close} onNavigate={leaf=>{const layer=resolver.layerOf(leaf);if(layer)navigate({layer,leaf});}} canNavigate={leaf=>layout.cells.has(leaf)} specimen={selected?specimen(selected):undefined} findings={profile?.check.findings.filter(f=>f.subject===selected)}/>}
+      map={map&&row&&camera?<CanvasMap label={labels.canvas.minimap} bounds={map.worldBounds} items={row.boards.map(board=>({id:board.id,label:readStudioMessage(copy,`studio.ia.board.${board.id}`),rect:board.rect}))} viewport={camera.viewport} viewSize={camera.size} onViewportChange={next=>handle.current?.setViewport(next)}/>:<SemanticContent as="p">{labels.loading}</SemanticContent>}
+      zoom={<SemanticContent as="div" className="flex flex-col gap-sm"><SemanticContent as="div" className="flex flex-wrap gap-xs">{SYSTEM_STOPS.map(stop=><Button key={stop} size="sm" variant="ghost" isDisabled={stop!=="system"&&!zoomTarget||stop==="cell"&&!selected} onPress={()=>handle.current?.fit(stop,zoomTarget)}>{systemLabels.stops[stop]}</Button>)}</SemanticContent>{camera?<><CanvasZoom value={camera.viewport.zoom} min={camera.range.min} max={camera.range.max} onChange={zoom} onFit={()=>handle.current?.fit("system")} formatValue={labels.canvas.zoom} labels={{group:labels.canvas.zoomLabel,out:labels.canvas.zoomOut,in:labels.canvas.zoomIn,fit:labels.canvas.fit,percent:labels.canvas.zoomLabel}}/><Slider label={labels.canvas.zoomLabel} value={camera.viewport.zoom} minValue={camera.range.min} maxValue={camera.range.max} step={Math.max(Number.EPSILON,(camera.range.max-camera.range.min)/100)} onChange={zoom}/></>:null}</SemanticContent>} checks={checks}/>
   </SemanticContent>;
 }

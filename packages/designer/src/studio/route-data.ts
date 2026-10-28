@@ -28,6 +28,8 @@ export interface DesignerRouteServerData extends NativeRouteFrameData {
   readonly rootFontSizeToken?: string;
 }
 export interface DesignerRoutePageProps extends DesignerAgentData {
+  /** Supplied by the client host; executable copy resolution is never serialized in serverData. */
+  readonly copy: import("./copy-binding.js").StudioCopyBinding;
   readonly serverData: DesignerRouteServerData;
   readonly initialSession: WholeStudioInitialSession | undefined;
 }
