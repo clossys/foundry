@@ -53,6 +53,11 @@
       "react-server": "./dist/web/server.js",
       "import": "./dist/web/index.js"
     },
+    "./web/content-route": {
+      "types": "./dist/web/content-route.d.ts",
+      "react-server": "./dist/web/content-route.js",
+      "import": "./dist/web/content-route.js"
+    },
     "./document": {
       "types": "./dist/document/index.d.ts",
       "import": "./dist/document/index.js"
