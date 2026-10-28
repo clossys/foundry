@@ -26,7 +26,7 @@ function freeze<T>(value: T): T {
   }
   return value;
 }
-const revision = "49f6493737a6b08ffccd80a5a68731ae5aa8c6bd";
+const revision = "f364db3c575382e9b7cf84be45bd892fdc40fa52";
 const measuredAt = "2026-10-28";
 const frame: InstanceBlockBinding["frameBlockRef"] = {
   blockId: "site-frame", role: "frame", medium: "web",
@@ -71,8 +71,8 @@ const sources = {
   "src/web/internal/PageLayout.tsx": "sha256:a9969b13774fb0227f08c1554c5df86fd15db5e3657a4c52d030075a180784e6",
   "src/document/legal.ts": "sha256:3b9b19cb843964875b1f5fd89be78ea9b851a059d2f8a9d904ca84adf9a74ee3",
   "src/document/render.ts": "sha256:2564a403881a2c43f70e9aaffb679878d2351413a556af4c57e0f433016737e0",
-  "../designer/src/frames/index.ts": "sha256:cd98674e18582c273071df5609396815e920f4f6d374ba1f72e97237598b423f",
-  "../designer/src/frames/server.ts": "sha256:8f2a99e645b3c659ce2cc2ffdcfd42219a9e235326372dcf8628603a3df8994d",
+  "../designer/src/frames/index.ts": "sha256:ffd316efb4debc4c9885cc9ebb8aa78610faf14be7ee1709f1d707b6672413a8",
+  "../designer/src/frames/server.ts": "sha256:fc86b6678c7e70a5bb357aed4dd7cf43df0aebcf243bfddc79931885c2159ad4",
   "../designer/src/frames/site-frame/copy-contract.ts": "sha256:03c667e8bdbfd33c8650af569c0e8072ce2751ee4ab0c3cef4d7bf61a325bb13",
   "../designer/src/frames/site-frame/landing/core/content-asset.ts": "sha256:3cac86a74516e1427500dc9bccb85b80b56d213cb6dedd44072e31ef38acb4f3",
   "../designer/src/frames/site-frame/landing/core/content-contract.ts": "sha256:d6c0eb90d4734fcd961fe6438b1114d0686bc42fb7cf4cdbfe87ac625db7b44c",
