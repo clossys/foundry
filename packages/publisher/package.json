@@ -58,6 +58,10 @@
       "react-server": "./dist/web/content-route.js",
       "import": "./dist/web/content-route.js"
     },
+    "./web/publisher-v2": {
+      "types": "./dist/web/publisher-v2/index.d.ts",
+      "import": "./dist/web/publisher-v2/index.js"
+    },
     "./document": {
       "types": "./dist/document/index.d.ts",
       "import": "./dist/document/index.js"
