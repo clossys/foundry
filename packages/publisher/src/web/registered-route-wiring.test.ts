@@ -28,7 +28,7 @@ const nonvisual = [
   '"use client";',
   'import type { ReactNode } from "react";',
   'import { WholeStudioProvider } from "@clossys/designer/studio/state";',
-  'import { useStudioInputs } from "../runtime";',
+  'import { useStudioInputs } from "../runtime.ts";',
   "export function DesignerStudioProvider({ children }: { children: ReactNode }) {",
   "  const inputs = useStudioInputs();",
   "  return <WholeStudioProvider adapter={inputs.adapter} labels={inputs.labels}>{children}</WholeStudioProvider>;",
@@ -93,6 +93,14 @@ describe("WL10 checked registered nonvisual provider from the registered-route c
       at('const n = inputs.node; n.append("Old chrome");'),
       at('const { node } = inputs; node.append("Old chrome");'),
       at('inputs.node.textContent += "Old chrome";'),
+      // Round 2: an inputs or hook-result callback aliased or destructured into a hook-shaped name.
+      at("const useReset = inputs.reset; const ignored = useReset();"),
+      at("const { useReset } = inputs; const ignored = useReset();"),
+      at("const [useReset] = inputs.callbacks; const ignored = useReset();"),
+      at("const studio = useStudioInputs(); const useReset = studio.reset; const ignored = useReset();"),
+      at("const { useReset } = useStudioInputs(); const ignored = useReset();"),
+      at("const ignored = useChrome();"),
+      nonvisual.replace('import { useStudioInputs } from "../runtime.ts";', 'import { useStudioInputs, useStudioCallbacks } from "../runtime.ts";').replace(inputs, "  const callbacks = useStudioCallbacks();\n  const useStudioInputs = callbacks.reset;\n  const inputs = useStudioInputs();"),
     ];
     const proved: boolean[] = [];
     for (const mutating of probes) {
