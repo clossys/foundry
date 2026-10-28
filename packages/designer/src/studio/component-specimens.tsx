@@ -55,6 +55,8 @@ export interface ComponentSpecimenRefusal {
 }
 
 export interface ComponentSpecimenOptions {
+  /** Draw the rest-state specimen alone on the canvas; detailed probes retain all variants by default. */
+  readonly restOnly?: boolean;
   /**
    * The adopted library's modules, keyed by the exact specifier each chosen descriptor names: a package
    * module (`impl.module`, and `<package>/<subpath>` for a propMap pointer such as `./charts#BarChart`)
@@ -125,17 +127,17 @@ function SpecimenSet({ total, unavailable, children }: { readonly total: number;
 }
 
 type SpecimenRow = { readonly member: string; readonly Component: ComponentSpecimenComponent; readonly props: Readonly<Record<string, unknown>>; readonly specifier: string; readonly exportName: string };
-const specimenRows = (binding: ComponentSpecimenBinding): SpecimenRow[] =>
-  [{ member: binding.leaf, Component: binding.Component, props: {}, specifier: binding.specifier, exportName: binding.exportName }, ...binding.members.filter(member => member.drawn)];
+const specimenRows = (binding: ComponentSpecimenBinding, restOnly = false): SpecimenRow[] =>
+  [{ member: binding.leaf, Component: binding.Component, props: {}, specifier: binding.specifier, exportName: binding.exportName }, ...(restOnly ? [] : binding.members.filter(member => member.drawn))];
 
 /**
  * A sample describes the base export; a member bound to another export keeps its label. A row whose export
  * sample data cannot draw (`unavailableOf`) is marked with the reason and never rendered.
  */
 type ProbeApplied = { readonly props: Readonly<Record<string, unknown>>; readonly children?: ReactNode };
-function defaultSpecimen(binding: ComponentSpecimenBinding, sample: ComponentSpecimenSample | undefined, unavailableOf: (row: SpecimenRow) => SpecimenUnavailableReason | undefined, onFail: (name: string) => void, probe: ProbeApplied): ReactNode {
+function defaultSpecimen(binding: ComponentSpecimenBinding, sample: ComponentSpecimenSample | undefined, unavailableOf: (row: SpecimenRow) => SpecimenUnavailableReason | undefined, onFail: (name: string) => void, probe: ProbeApplied, restOnly = false): ReactNode {
   const content = probe.children === undefined ? {} : { children: probe.children };
-  return specimenRows(binding).map(row => { const unavailable = unavailableOf(row); return <div key={row.member} data-component-specimen={row.member}>
+  return specimenRows(binding, restOnly).map(row => { const unavailable = unavailableOf(row); return <div key={row.member} data-component-specimen={row.member}>
     {unavailable ? <span hidden data-specimen-unavailable={unavailable} /> : <SpecimenBoundary name={row.member} onFail={onFail}>{sample && row.Component === binding.Component
       ? (sample.host ?? (node => node))(createElement(row.Component, { ...sample.props, children: sample.children, ...row.props, ...probe.props, ...content }))
       : createElement(row.Component, { children: row.member, ...row.props, ...probe.props, ...content })}</SpecimenBoundary>}
@@ -211,7 +213,7 @@ export function componentSpecimenPreview(options: ComponentSpecimenOptions): Com
     // Where designer samples apply, a row with no sample is declared unavailable: it never falls back to its label.
     const unavailableOf = (row: SpecimenRow) => (samples ? componentSpecimenUnavailableReason(keyOf(row.specifier, row.exportName)) : undefined)
       ?? ((samples || structured) && !(sample && row.Component === binding.Component) ? "needs-sample-content" : undefined);
-    const rows = render ? [] : specimenRows(binding);
+    const rows = render ? [] : specimenRows(binding, options.restOnly);
     const unavailable = rows.map(unavailableOf).filter(reason => reason !== undefined);
     const total = render ? 1 : rows.length - unavailable.length;
     const Provider = options.provider;
@@ -223,7 +225,7 @@ export function componentSpecimenPreview(options: ComponentSpecimenOptions): Com
     // A new selection or library remounts the set, so an earlier failure never outlives the specimens it described.
     return <div data-component-specimens={leaf} data-specimen-source={binding.source} className="flex flex-wrap items-center gap-md" {...probeAttributes}>
       <SpecimenSet key={`${profile.selectionHash}:${binding.specifier}#${binding.exportName}`} total={total} unavailable={unavailable[0]}>{(onFail, onProviderFail) => {
-        const content = render ? <SpecimenBoundary name={leaf} onFail={onFail}>{render(binding)}</SpecimenBoundary> : defaultSpecimen(binding, sample, unavailableOf, onFail, applied);
+        const content = render ? <SpecimenBoundary name={leaf} onFail={onFail}>{render(binding)}</SpecimenBoundary> : defaultSpecimen(binding, sample, unavailableOf, onFail, applied, options.restOnly);
         return Provider ? <SpecimenBoundary name={leaf} onFail={onProviderFail}><Provider>{content}</Provider></SpecimenBoundary> : content;
       }}</SpecimenSet>
     </div>;

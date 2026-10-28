@@ -311,6 +311,7 @@ function sourceSample(key: string, exports: Namespace): ComponentSpecimenSample 
       ] };
     }
     // The composed wrapper calls a render-function child, so it draws its own default content from its naming props alone.
+    case "components/file-trigger/file-trigger.tsx#FileTrigger": return { props: { label: componentSpecimenActions.upload } };
     case "components/date-picker/date-picker.tsx#DatePicker": return { props: { label: s[key].label, triggerLabel: s[key].triggerLabel, defaultValue: s[key].defaultValue } };
     case "components/keyboard/kbd.tsx#Kbd":
     case "components/badge/badge.tsx#Badge":

@@ -49,6 +49,9 @@ export interface SystemLayout {
 export interface SystemMetrics {
   readonly cellWidth: number;
   readonly cellHeight: number;
+  /** Composed shells need their own viewport; absent on synthetic/host geometries. */
+  readonly frameCellWidth?: number;
+  readonly frameCellHeight?: number;
   readonly cellGap: number;
   readonly lineGap: number;
   readonly lineLabelWidth: number;
@@ -62,11 +65,14 @@ const px = (token: string): number => Number.parseFloat(TOKENS[token]!.value);
 /**
  * Default geometry, read from existing tokens. A cell is one specimen card at
  * 100% (the Cell zoom stop): the aside width by the default dock block size.
+ * Composed Frames use the existing desktop width and maximum dock block tokens
+ * so their responsive renderer can show the sidebar beside its content.
  * Dedicated canvas geometry tokens are a recorded NEED; these are stand-ins.
  */
 export function defaultSystemMetrics(): SystemMetrics {
   return {
     cellWidth: px("--ui-layout-aside-w"), cellHeight: px("--ui-layout-dock-default-block"),
+    frameCellWidth: px("--breakpoint-desktop"), frameCellHeight: px("--ui-layout-dock-max-block"),
     cellGap: px("--spacing-lg"), lineGap: px("--spacing-lg"), lineLabelWidth: px("--spacing-6xl"),
     boardPadding: px("--spacing-xl"), boardTitleHeight: px("--spacing-3xl"),
     boardGap: px("--spacing-4xl"), rowGap: px("--spacing-6xl"),
@@ -88,6 +94,8 @@ export function systemLayout(placements: readonly Placement[], metrics: SystemMe
     const placement = placements.find(candidate => candidate.layer === layer);
     if (!placement) continue;
     const rowBoards: SystemBoard[] = [];
+    const cellWidth = layer === "frames" ? m.frameCellWidth ?? m.cellWidth : m.cellWidth;
+    const cellHeight = layer === "frames" ? m.frameCellHeight ?? m.cellHeight : m.cellHeight;
     let x = 0, rowHeight = 0;
     for (const node of placement.nodes) {
       const id = `${layer}/${node.id}`;
@@ -99,19 +107,19 @@ export function systemLayout(placements: readonly Placement[], metrics: SystemMe
         const lineCells = source.leaves.map((leaf, index): SystemCell => {
           if (cells.has(leaf)) throw new TypeError(`Leaf ${leaf} is placed twice on the system canvas`);
           const cell = { leaf, layer, l1: node.id, l2: source.id, board: id, line: lineId,
-            rect: { x: inner.x + m.lineLabelWidth + m.cellGap + index * (m.cellWidth + m.cellGap), y: lineY, width: m.cellWidth, height: m.cellHeight } };
+            rect: { x: inner.x + m.lineLabelWidth + m.cellGap + index * (cellWidth + m.cellGap), y: lineY, width: cellWidth, height: cellHeight } };
           cells.set(leaf, cell);
           return cell;
         });
-        const width = m.lineLabelWidth + lineCells.length * (m.cellWidth + m.cellGap);
+        const width = m.lineLabelWidth + lineCells.length * (cellWidth + m.cellGap);
         longest = Math.max(longest, width);
         const line = { id: lineId, l2: source.id, label: source.label, cells: lineCells,
-          rect: { x: inner.x, y: lineY, width, height: m.cellHeight },
-          labelRect: { x: inner.x, y: lineY, width: m.lineLabelWidth, height: m.cellHeight } };
+          rect: { x: inner.x, y: lineY, width, height: cellHeight },
+          labelRect: { x: inner.x, y: lineY, width: m.lineLabelWidth, height: cellHeight } };
         lines.set(lineId, line); boardLines.push(line);
-        lineY += m.cellHeight + m.lineGap;
+        lineY += cellHeight + m.lineGap;
       }
-      const linesHeight = boardLines.length ? boardLines.length * m.cellHeight + (boardLines.length - 1) * m.lineGap : 0;
+      const linesHeight = boardLines.length ? boardLines.length * cellHeight + (boardLines.length - 1) * m.lineGap : 0;
       const board = { id, layer, l1: node.id, label: node.label, lines: boardLines,
         rect: { x, y, width: longest + m.boardPadding * 2, height: m.boardTitleHeight + linesHeight + m.boardPadding * 2 } };
       boards.set(id, board); rowBoards.push(board);

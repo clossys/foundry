@@ -5,6 +5,7 @@
  * registered renderer, or a sample the fill does not map, yields a reason instead of a stand-in.
  */
 import { Fragment, type ReactNode } from "react";
+import { SemanticContent } from "../components/SemanticContent.js";
 import sectionSlots from "../catalog/slots/sections.json" with { type: "json" };
 import type { CompositeResolved } from "../catalog-core/types.js";
 import { runtimeHash, SECTION_HEADER_CONTENT_KEY, type RuntimeContent, type RuntimeContentRef, type RuntimeFillDescriptor, type RuntimeRenderInput } from "../catalog-core/runtime-ports.js";
@@ -41,6 +42,8 @@ export function surfaceRuntimePreview(entry: SurfacePreviewEntry, options: Surfa
   const leaf = typeof entry.slot === "string" ? entry.slot : "";
   const runtime = Object.hasOwn(surfaceRuntimeRenderers, leaf) ? surfaceRuntimeRenderers[leaf] : undefined;
   if (!runtime) return { reason: `no package runtime renderer for ${leaf || "this fill"}` };
+  // An html/head/body renderer needs an isolated document, not invalid nested document roots in a board cell.
+  if (leaf === "frames.document") return { reason: "frames.document preview requires an isolated document renderer" };
   const kind = leaf.startsWith("frames.") ? "frame" : "section";
   const slots = keys(entry.slotMap ?? entry.slots).sort(), members = keys(entry.members ?? entry.propMap).sort();
   const sample = runtime.sample(specimenDataset), kinds = sectionKinds.get(leaf);
@@ -60,11 +63,23 @@ export function surfaceRuntimePreview(entry: SurfacePreviewEntry, options: Surfa
     const preview = surfaceRuntimePreview({ slot: child, slotMap: Object.fromEntries(Object.keys(childSample).map(slot => [slot, slot])) });
     if ("render" in preview) { nested.push(<Fragment key={child}>{preview.render()}</Fragment>); break; }
   }
+  const frameSlots: Record<string, readonly ReactNode[]> = {};
+  if (kind === "frame" && slots.includes("main") && leaf !== "frames.app-shell") {
+    const child = leaf === "frames.auth-shell" ? "sections.sign-in-form" : "sections.content";
+    const childSample = surfaceRuntimeRenderers[child]?.sample(specimenDataset);
+    if (childSample) {
+      const preview = surfaceRuntimePreview({ slot: child, slotMap: Object.fromEntries(Object.keys(childSample).map(slot => [slot, slot])) });
+      if ("render" in preview) frameSlots.main = [<Fragment key={child}>{preview.render()}</Fragment>];
+    }
+  }
+  const app = specimenDataset.frames.app;
+  if (leaf === "frames.app-shell") frameSlots.main = [<SemanticContent as="section" key="app-main" className="flex flex-col gap-sm"><SemanticContent as="h2">{app.heading}</SemanticContent><SemanticContent as="p">{app.body}</SemanticContent></SemanticContent>];
   const fill = options.fill ?? `preview/${leaf}`, selected = options.members ?? [];
   const descriptor = { kind, library: "preview", fill, leaf, config: null, slots, members, states: ["default"], renderer: { id: surfaceRendererId(leaf) } } as unknown as RuntimeFillDescriptor;
   const input = {
     path: kind === "frame" ? "frame" : "sections.preview.0", fill: descriptor, cell: { theme: "light", state: options.state ?? "default", width: 1280 },
-    selection: { leaf, fill, config: null, members: selected, content: refs }, content, slots: nested.length ? { children: nested } : {}, profile: {} as CompositeResolved,
+    selection: { leaf, fill, config: null, members: selected, content: refs }, content, slots: nested.length ? { children: nested } : frameSlots, profile: {} as CompositeResolved,
+    ...(leaf === "frames.app-shell" ? { pageHeader: { id: "specimen.app-shell", data: { title: app.page }, module: { package: "@clossys/designer/shell", export: "PageHeaderModule" } } } : {}),
   } as unknown as RuntimeRenderInput<ReactNode>;
   // The renderer's own content checks run here, so a refused sample is a reason, never a broken board cell.
   let node: ReactNode;

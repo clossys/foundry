@@ -32,8 +32,9 @@ function fixtureCopy(placements: readonly Placement[]): StudioCopyBinding {
 }
 
 // Default (token) geometry: a cell is 320 x 240 world pixels.
-// In a 400 x 300 view the System stop draws every cell far; the tokens/color Board stop draws them mid.
-// In a 1200 x 800 view a Board stop draws cells near.
+// A4-DE-PREVIEW retains readable captions at the System stop (minimum 0.75)
+// instead of fitting this large world down to far chips. Board navigation and
+// held-tier transitions still apply; viewport culling keeps off-screen boards out.
 const small = { width: 400, height: 300 }, large = { width: 1200, height: 800 };
 let media: { matches: boolean; addEventListener: ReturnType<typeof vi.fn>; removeEventListener: ReturnType<typeof vi.fn> };
 beforeEach(() => {
@@ -53,12 +54,45 @@ function setup(overrides: Partial<SystemCanvasProps> = {}) {
 }
 
 describe("SystemCanvas", () => {
-  it("opens at the System stop with every board as one far chip grid and no per-cell elements", () => {
-    const { container, tiers } = setup();
-    expect(container.querySelectorAll("[data-system-board]")).toHaveLength(6);
-    expect(container.querySelectorAll("svg[data-system-chips]")).toHaveLength(6);
-    expect(container.querySelectorAll("[data-canvas-chip]")).toHaveLength(14);
-    expect(tiers()).toEqual([]);
+  it("renders a real rest thumbnail for a visible composition when no static capture is supplied", () => {
+    media.matches = true;
+    const renderThumbnail = vi.fn((leaf: string) => <span data-rest={leaf}>{leaf}</span>);
+    const { container, navigate } = setup({ viewSize: large, renderThumbnail });
+    navigate({ layer: "sections", l1: "parts" });
+    expect(container.querySelector('[data-system-cell^="sections."] [data-rest]')).not.toBeNull();
+    expect(container.querySelector('[data-system-cell^="sections."] [data-system-thumbnail="pending"]')).toBeNull();
+    navigate({ layer: "frames", l1: "page-shells" });
+    expect(container.querySelector('[data-system-cell="frames.site-shell"] [data-rest="frames.site-shell"]')).not.toBeNull();
+  });
+
+  it("prefers a supplied static thumbnail over the rest-state fallback", () => {
+    media.matches = true;
+    const renderThumbnail = vi.fn((leaf: string) => <span data-rest={leaf}>{leaf}</span>);
+    const renderStaticThumbnail = vi.fn((leaf: string) => <span data-capture={leaf}>{leaf}</span>);
+    const { container, navigate } = setup({ viewSize: large, renderThumbnail, renderStaticThumbnail });
+    navigate({ layer: "frames", l1: "page-shells" });
+    const cell = container.querySelector('[data-system-cell="frames.site-shell"]')!;
+    expect(cell.querySelector('[data-capture="frames.site-shell"]')).not.toBeNull();
+    expect(cell.querySelector("[data-rest]")).toBeNull();
+    expect(cell.querySelector("[data-system-rest-preview]")).toHaveAttribute("inert");
+  });
+
+  it("clamps rail and map viewport requests to the same legible range", () => {
+    media.matches = true;
+    const onViewChange = vi.fn();
+    const { handle } = setup({ onViewChange });
+    act(() => handle.current!.setViewport({ x: 0, y: 0, zoom: 0.01 }));
+    expect(onViewChange.mock.lastCall?.[0].viewport.zoom).toBeGreaterThanOrEqual(0.75);
+    act(() => handle.current!.setViewport({ x: 0, y: 0, zoom: 20 }));
+    expect(onViewChange.mock.lastCall?.[0].viewport.zoom).toBe(1);
+  });
+  it("opens at the System centre with legible specimens and keeps off-screen boards unmounted", () => {
+    const onViewChange = vi.fn();
+    const { container, tiers } = setup({ onViewChange });
+    expect(onViewChange.mock.lastCall?.[0].viewport.zoom).toBe(0.75);
+    expect(container.querySelectorAll("[data-system-board]").length).toBeLessThan(6);
+    expect(tiers().length).toBeGreaterThan(0);
+    expect(tiers().every(([, tier]) => tier === "near" || tier === "mid")).toBe(true);
   });
 
   it("snaps with reduced motion: no transition, the new detail at once", () => {
@@ -67,7 +101,7 @@ describe("SystemCanvas", () => {
     navigate({ layer: "tokens", l1: "color" });
     expect(world).not.toHaveClass("transition-transform");
     expect(world.style.transitionDuration).toBe("0s");
-    expect(tiers()).toContainEqual(["tokens.status-color", "mid"]);
+    expect(tiers()).toContainEqual(["tokens.status-color", "near"]);
   });
 
   it("eases one move with the motion tokens and swaps detail only when the move ends", () => {
@@ -76,19 +110,19 @@ describe("SystemCanvas", () => {
     expect(world).toHaveClass("transition-transform");
     expect(world.style.transitionDuration).toBe("var(--ui-duration-default)");
     expect(world.style.transitionTimingFunction).toBe("var(--ease-decelerate)");
-    expect(tiers()).toEqual([]);
+    expect(tiers()).toContainEqual(["tokens.status-color", "mid"]);
     fireEvent.transitionEnd(world);
     expect(world).not.toHaveClass("transition-transform");
-    expect(tiers()).toContainEqual(["tokens.status-color", "mid"]);
+    expect(tiers()).toContainEqual(["tokens.status-color", "near"]);
   });
 
   it("releases the held detail on a fallback timer when the transition never reports its end", () => {
     vi.useFakeTimers();
     const { navigate, tiers } = setup();
     navigate({ layer: "tokens", l1: "color" });
-    expect(tiers()).toEqual([]);
-    act(() => { vi.advanceTimersByTime(1000); });
     expect(tiers()).toContainEqual(["tokens.status-color", "mid"]);
+    act(() => { vi.advanceTimersByTime(1000); });
+    expect(tiers()).toContainEqual(["tokens.status-color", "near"]);
   });
 
   it("does not move when the target is already on screen at its stop", () => {
@@ -143,11 +177,12 @@ describe("SystemCanvas", () => {
   });
 
   it("dims leaves outside the selection's lit set", () => {
-    const { container } = setup({ selectedLeaf: "tokens.spacing", edges: [{ from: "components.button", to: "tokens.spacing" }] });
-    const chip = (leaf: string) => container.querySelector<SVGElement>(`[data-canvas-chip="${leaf}"]`)!;
-    expect(chip("components.menu").style.opacity).not.toBe("");
-    expect(chip("components.button").style.opacity).toBe("");
-    expect(chip("tokens.spacing").style.opacity).toBe("");
+    media.matches = true;
+    const { container, navigate } = setup({ viewSize: large, selectedLeaf: "components.button", edges: [{ from: "components.button", to: "tokens.spacing" }] });
+    navigate({ layer: "components", l1: "actions" });
+    const cell = (leaf: string) => container.querySelector<HTMLElement>(`[data-system-cell="${leaf}"]`)!;
+    expect(cell("components.menu").style.opacity).not.toBe("");
+    expect(cell("components.button").style.opacity).toBe("");
   });
 
   it("selects a cell from its name", () => {

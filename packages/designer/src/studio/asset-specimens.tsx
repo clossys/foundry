@@ -38,8 +38,8 @@ const FAVICON = specimenDataset.assets.favicon;
 const ICON_SIZES: readonly IconSize[] = ["sm", "md", "lg"];
 
 /** A plate in a fixed-polarity ground, outlined so the ground that matches the page still reads as a plate. */
-function Ground({ ground, children, ...rest }: { ground: SpecimenGround; children: ReactNode; className?: string; "data-layer"?: string; "data-asset-specimen"?: string; "data-app-icon"?: string }): ReactElement {
-  return <div {...rest} data-ground={ground} className={`flex w-max items-center gap-sm rounded-panel border border-line-panel p-sm ${GROUND_CLASSES[ground]}`}>{children}</div>;
+function Ground({ ground, children, className, ...rest }: { ground: SpecimenGround; children: ReactNode; className?: string; "data-layer"?: string; "data-asset-specimen"?: string; "data-app-icon"?: string }): ReactElement {
+  return <div {...rest} data-ground={ground} className={`flex w-max items-center gap-sm rounded-panel border border-line-panel p-sm ${GROUND_CLASSES[ground]} ${className ?? ""}`}>{children}</div>;
 }
 
 /** The maskable safe zone drawn over its artwork: a dashed circle in the secondary ink, in a box that fills the mark it sits on. */
@@ -59,11 +59,11 @@ export function SvgSpecimen({ id, slot, svg }: { id: string; slot: string; svg: 
     </Ground>)}
     <SemanticContent as="span" className={CAPTION}>{[FAVICON.sizes.join(", "), FAVICON.unit].join(" ")}</SemanticContent>
   </div>;
-  if (slot === "assets.app-icon") return <Ground ground="light" data-layer="assets" data-asset-specimen="app-icon" data-app-icon={role}>
-    <span className="relative flex">
-      <Logomark src={src} size="lg" title={id} />
+  if (slot === "assets.app-icon") return <Ground ground="light" data-layer="assets" data-asset-specimen="app-icon" data-app-icon={role} className="max-w-full overflow-auto">
+    {APP_ICON.sizes.map(side => <span key={side} className="relative flex shrink-0">
+      <img src={src} alt="" width={side} height={side} title={[id, side, FAVICON.unit].join(" ")} />
       {role === "maskable" ? <SafeZone /> : null}
-    </span>
+    </span>)}
   </Ground>;
   return <Ground ground={LOGO_GROUND[role] ?? "light"} data-layer="assets" data-asset-specimen="logo">
     <Logomark src={src} size="lg" title={id} />
