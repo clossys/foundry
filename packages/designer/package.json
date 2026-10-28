@@ -105,6 +105,14 @@
       "types": "./dist/catalog-core/server.d.ts",
       "import": "./dist/catalog-core/server.js"
     },
+    "./catalog/node": {
+      "types": "./dist/catalog-core/node.d.ts",
+      "import": "./dist/catalog-core/node.js"
+    },
+    "./catalog/dogfood/node": {
+      "types": "./dist/catalog-core/dogfood-node.d.ts",
+      "import": "./dist/catalog-core/dogfood-node.js"
+    },
     "./studio": {
       "types": "./dist/studio/index.d.ts",
       "import": "./dist/studio/index.js"
