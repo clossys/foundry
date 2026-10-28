@@ -5721,6 +5721,259 @@
       "limits": {
         "maxChars": 40
       }
+    },
+    {
+      "id": "st.cbtsz5319n",
+      "leaf": "strings.errors",
+      "context": "designer.scorecard.finding.C1",
+      "status": "draft",
+      "origin": "foundry-default",
+      "text": "An item does not match its requirements.",
+      "limits": {
+        "maxChars": 160
+      }
+    },
+    {
+      "id": "st.aes5qzpkdd",
+      "leaf": "strings.errors",
+      "context": "designer.scorecard.finding.C2",
+      "status": "draft",
+      "origin": "foundry-default",
+      "text": "An item depends on missing or incompatible items.",
+      "limits": {
+        "maxChars": 160
+      }
+    },
+    {
+      "id": "st.5w402rk7d5",
+      "leaf": "strings.errors",
+      "context": "designer.scorecard.finding.C3",
+      "status": "draft",
+      "origin": "foundry-default",
+      "text": "A standards claim or scale change needs evidence or review.",
+      "limits": {
+        "maxChars": 160
+      }
+    },
+    {
+      "id": "st.99wpsa871b",
+      "leaf": "strings.errors",
+      "context": "designer.scorecard.finding.C4",
+      "status": "draft",
+      "origin": "foundry-default",
+      "text": "A required item or style connection is missing or inconsistent.",
+      "limits": {
+        "maxChars": 160
+      }
+    },
+    {
+      "id": "st.sdw3wywjrh",
+      "leaf": "strings.errors",
+      "context": "designer.scorecard.finding.C5",
+      "status": "draft",
+      "origin": "foundry-default",
+      "text": "An item has competing or outdated implementations.",
+      "limits": {
+        "maxChars": 160
+      }
+    },
+    {
+      "id": "st.tr7gdj8q9e",
+      "leaf": "strings.errors",
+      "context": "designer.scorecard.finding.C6",
+      "status": "draft",
+      "origin": "foundry-default",
+      "text": "A licence or source record is missing or inconsistent.",
+      "limits": {
+        "maxChars": 160
+      }
+    },
+    {
+      "id": "st.p417ky4nht",
+      "leaf": "strings.errors",
+      "context": "designer.scorecard.finding.C7",
+      "status": "draft",
+      "origin": "foundry-default",
+      "text": "An item has not been adopted for this library.",
+      "limits": {
+        "maxChars": 160
+      }
+    },
+    {
+      "id": "st.vqm6a5714m",
+      "leaf": "strings.errors",
+      "context": "designer.scorecard.finding.C8",
+      "status": "draft",
+      "origin": "foundry-default",
+      "text": "An item marked stable needs owner approval.",
+      "limits": {
+        "maxChars": 160
+      }
+    },
+    {
+      "id": "st.b73w7tnx9s",
+      "leaf": "strings.errors",
+      "context": "designer.scorecard.finding.C9",
+      "status": "draft",
+      "origin": "foundry-default",
+      "text": "A colour contrast check failed or could not be measured.",
+      "limits": {
+        "maxChars": 160
+      }
+    },
+    {
+      "id": "st.88vynq5y8d",
+      "leaf": "strings.errors",
+      "context": "designer.scorecard.finding.C10",
+      "status": "draft",
+      "origin": "foundry-default",
+      "text": "An item's source or generated content needs to be verified.",
+      "limits": {
+        "maxChars": 160
+      }
+    },
+    {
+      "id": "st.pbwd51fwvq",
+      "leaf": "strings.errors",
+      "context": "designer.scorecard.finding.A1",
+      "status": "draft",
+      "origin": "foundry-default",
+      "text": "Artwork or fonts need licence and source evidence.",
+      "limits": {
+        "maxChars": 160
+      }
+    },
+    {
+      "id": "st.ctvw7nvy63",
+      "leaf": "strings.errors",
+      "context": "designer.scorecard.finding.A2",
+      "status": "draft",
+      "origin": "foundry-default",
+      "text": "Artwork uses unsupported SVG content.",
+      "limits": {
+        "maxChars": 160
+      }
+    },
+    {
+      "id": "st.4j3fphmym6",
+      "leaf": "strings.errors",
+      "context": "designer.scorecard.finding.A3",
+      "status": "draft",
+      "origin": "foundry-default",
+      "text": "An icon does not match the required shape or stroke.",
+      "limits": {
+        "maxChars": 160
+      }
+    },
+    {
+      "id": "st.rfdm448fr9",
+      "leaf": "strings.errors",
+      "context": "designer.scorecard.finding.A4",
+      "status": "draft",
+      "origin": "foundry-default",
+      "text": "Icon bounds or source consistency need measurement or review.",
+      "limits": {
+        "maxChars": 160
+      }
+    },
+    {
+      "id": "st.y5w1d1tmdy",
+      "leaf": "strings.errors",
+      "context": "designer.scorecard.finding.A5",
+      "status": "draft",
+      "origin": "foundry-default",
+      "text": "Brand artwork contrast failed or needs measurement.",
+      "limits": {
+        "maxChars": 160
+      }
+    },
+    {
+      "id": "st.mb0j7s8r41",
+      "leaf": "strings.errors",
+      "context": "designer.scorecard.finding.A6",
+      "status": "draft",
+      "origin": "foundry-default",
+      "text": "Browser icon colours or legibility at small sizes need review.",
+      "limits": {
+        "maxChars": 160
+      }
+    },
+    {
+      "id": "st.5mx9bfaf49",
+      "leaf": "strings.errors",
+      "context": "designer.scorecard.finding.A7",
+      "status": "draft",
+      "origin": "foundry-default",
+      "text": "A single-colour mark does not meet legibility requirements.",
+      "limits": {
+        "maxChars": 160
+      }
+    },
+    {
+      "id": "st.ev604kwwq2",
+      "leaf": "strings.errors",
+      "context": "designer.scorecard.finding.A8",
+      "status": "draft",
+      "origin": "foundry-default",
+      "text": "An app icon's safe area, background or corners need review.",
+      "limits": {
+        "maxChars": 160
+      }
+    },
+    {
+      "id": "st.65pe6vm6d3",
+      "leaf": "strings.errors",
+      "context": "designer.scorecard.finding.A9",
+      "status": "draft",
+      "origin": "foundry-default",
+      "text": "Icon contrast failed or could not be measured.",
+      "limits": {
+        "maxChars": 160
+      }
+    },
+    {
+      "id": "st.xrk7s9tk31",
+      "leaf": "strings.errors",
+      "context": "designer.scorecard.finding.A10",
+      "status": "draft",
+      "origin": "foundry-default",
+      "text": "An image's framing, description or delivery needs review.",
+      "limits": {
+        "maxChars": 160
+      }
+    },
+    {
+      "id": "st.9am2007c94",
+      "leaf": "strings.errors",
+      "context": "designer.scorecard.finding.A11",
+      "status": "draft",
+      "origin": "foundry-default",
+      "text": "Brand artwork spacing or minimum size needs measurement.",
+      "limits": {
+        "maxChars": 160
+      }
+    },
+    {
+      "id": "st.k5y20z8xgg",
+      "leaf": "strings.errors",
+      "context": "designer.scorecard.finding.A12",
+      "status": "draft",
+      "origin": "foundry-default",
+      "text": "Artwork is incomplete or uses inconsistent sources.",
+      "limits": {
+        "maxChars": 160
+      }
+    },
+    {
+      "id": "st.kd7qz25rm7",
+      "leaf": "strings.errors",
+      "context": "designer.scorecard.finding.R",
+      "status": "draft",
+      "origin": "foundry-default",
+      "text": "This check needs review. Share its details with the maintainer.",
+      "limits": {
+        "maxChars": 160
+      }
     }
   ],
   "reviews": [
@@ -14394,6 +14647,420 @@
       "rationale": "Give this admin value a short, sentence-case name that describes its purpose without exposing a registry key or a ticket code. Keep approval and readiness separate from the display name.",
       "role": "label",
       "budget": 40
+    },
+    {
+      "recordId": "st.cbtsz5319n",
+      "cellId": "designer.scorecard.finding.C1",
+      "severity": "P1",
+      "status": "fixed",
+      "scope": "draft only",
+      "source": {
+        "commit": "eec3b4b79d3c4ef0ca711dc3c4d270a5dea23862",
+        "path": "packages/designer/src/catalog-core/check-guidance.ts",
+        "line": 16,
+        "key": "C1"
+      },
+      "before": "A value, member name, identifier or fill does not match its contract.",
+      "after": "An item does not match its requirements.",
+      "rationale": "Summarize the declared check in plain language for a scorecard finding without inventing subject details, severity, approval or a successful result.",
+      "role": "finding",
+      "budget": 160
+    },
+    {
+      "recordId": "st.aes5qzpkdd",
+      "cellId": "designer.scorecard.finding.C2",
+      "severity": "P1",
+      "status": "fixed",
+      "scope": "draft only",
+      "source": {
+        "commit": "eec3b4b79d3c4ef0ca711dc3c4d270a5dea23862",
+        "path": "packages/designer/src/catalog-core/check-guidance.ts",
+        "line": 17,
+        "key": "C2"
+      },
+      "before": "A dependency cannot be followed safely.",
+      "after": "An item depends on missing or incompatible items.",
+      "rationale": "Summarize the declared check in plain language for a scorecard finding without inventing subject details, severity, approval or a successful result.",
+      "role": "finding",
+      "budget": 160
+    },
+    {
+      "recordId": "st.5w402rk7d5",
+      "cellId": "designer.scorecard.finding.C3",
+      "severity": "P1",
+      "status": "fixed",
+      "scope": "draft only",
+      "source": {
+        "commit": "eec3b4b79d3c4ef0ca711dc3c4d270a5dea23862",
+        "path": "packages/designer/src/catalog-core/check-guidance.ts",
+        "line": 18,
+        "key": "C3"
+      },
+      "before": "A standards claim lacks a valid clause or evidence, or a fixed scale is overridden.",
+      "after": "A standards claim or scale change needs evidence or review.",
+      "rationale": "Summarize the declared check in plain language for a scorecard finding without inventing subject details, severity, approval or a successful result.",
+      "role": "finding",
+      "budget": 160
+    },
+    {
+      "recordId": "st.99wpsa871b",
+      "cellId": "designer.scorecard.finding.C4",
+      "severity": "P1",
+      "status": "fixed",
+      "scope": "draft only",
+      "source": {
+        "commit": "eec3b4b79d3c4ef0ca711dc3c4d270a5dea23862",
+        "path": "packages/designer/src/catalog-core/check-guidance.ts",
+        "line": 19,
+        "key": "C4"
+      },
+      "before": "Required coverage or a CSS binding is missing or inconsistent.",
+      "after": "A required item or style connection is missing or inconsistent.",
+      "rationale": "Summarize the declared check in plain language for a scorecard finding without inventing subject details, severity, approval or a successful result.",
+      "role": "finding",
+      "budget": 160
+    },
+    {
+      "recordId": "st.sdw3wywjrh",
+      "cellId": "designer.scorecard.finding.C5",
+      "severity": "P1",
+      "status": "fixed",
+      "scope": "draft only",
+      "source": {
+        "commit": "eec3b4b79d3c4ef0ca711dc3c4d270a5dea23862",
+        "path": "packages/designer/src/catalog-core/check-guidance.ts",
+        "line": 20,
+        "key": "C5"
+      },
+      "before": "A member does not have one consistent implementation.",
+      "after": "An item has competing or outdated implementations.",
+      "rationale": "Summarize the declared check in plain language for a scorecard finding without inventing subject details, severity, approval or a successful result.",
+      "role": "finding",
+      "budget": 160
+    },
+    {
+      "recordId": "st.tr7gdj8q9e",
+      "cellId": "designer.scorecard.finding.C6",
+      "severity": "P1",
+      "status": "fixed",
+      "scope": "draft only",
+      "source": {
+        "commit": "eec3b4b79d3c4ef0ca711dc3c4d270a5dea23862",
+        "path": "packages/designer/src/catalog-core/check-guidance.ts",
+        "line": 21,
+        "key": "C6"
+      },
+      "before": "A licence or external source receipt is missing or inconsistent.",
+      "after": "A licence or source record is missing or inconsistent.",
+      "rationale": "Summarize the declared check in plain language for a scorecard finding without inventing subject details, severity, approval or a successful result.",
+      "role": "finding",
+      "budget": 160
+    },
+    {
+      "recordId": "st.p417ky4nht",
+      "cellId": "designer.scorecard.finding.C7",
+      "severity": "P1",
+      "status": "fixed",
+      "scope": "draft only",
+      "source": {
+        "commit": "eec3b4b79d3c4ef0ca711dc3c4d270a5dea23862",
+        "path": "packages/designer/src/catalog-core/check-guidance.ts",
+        "line": 22,
+        "key": "C7"
+      },
+      "before": "A fill is not a consumer implementation for this library.",
+      "after": "An item has not been adopted for this library.",
+      "rationale": "Summarize the declared check in plain language for a scorecard finding without inventing subject details, severity, approval or a successful result.",
+      "role": "finding",
+      "budget": 160
+    },
+    {
+      "recordId": "st.vqm6a5714m",
+      "cellId": "designer.scorecard.finding.C8",
+      "severity": "P1",
+      "status": "fixed",
+      "scope": "draft only",
+      "source": {
+        "commit": "eec3b4b79d3c4ef0ca711dc3c4d270a5dea23862",
+        "path": "packages/designer/src/catalog-core/check-guidance.ts",
+        "line": 23,
+        "key": "C8"
+      },
+      "before": "Stable status has no valid owner sign-off.",
+      "after": "An item marked stable needs owner approval.",
+      "rationale": "Summarize the declared check in plain language for a scorecard finding without inventing subject details, severity, approval or a successful result.",
+      "role": "finding",
+      "budget": 160
+    },
+    {
+      "recordId": "st.b73w7tnx9s",
+      "cellId": "designer.scorecard.finding.C9",
+      "severity": "P1",
+      "status": "fixed",
+      "scope": "draft only",
+      "source": {
+        "commit": "eec3b4b79d3c4ef0ca711dc3c4d270a5dea23862",
+        "path": "packages/designer/src/catalog-core/check-guidance.ts",
+        "line": 24,
+        "key": "C9"
+      },
+      "before": "A declared token contrast pair fails or cannot be measured.",
+      "after": "A colour contrast check failed or could not be measured.",
+      "rationale": "Summarize the declared check in plain language for a scorecard finding without inventing subject details, severity, approval or a successful result.",
+      "role": "finding",
+      "budget": 160
+    },
+    {
+      "recordId": "st.88vynq5y8d",
+      "cellId": "designer.scorecard.finding.C10",
+      "severity": "P1",
+      "status": "fixed",
+      "scope": "draft only",
+      "source": {
+        "commit": "eec3b4b79d3c4ef0ca711dc3c4d270a5dea23862",
+        "path": "packages/designer/src/catalog-core/check-guidance.ts",
+        "line": 25,
+        "key": "C10"
+      },
+      "before": "Provenance, materialization or generated selection is inconsistent or stale.",
+      "after": "An item's source or generated content needs to be verified.",
+      "rationale": "Summarize the declared check in plain language for a scorecard finding without inventing subject details, severity, approval or a successful result.",
+      "role": "finding",
+      "budget": 160
+    },
+    {
+      "recordId": "st.pbwd51fwvq",
+      "cellId": "designer.scorecard.finding.A1",
+      "severity": "P1",
+      "status": "fixed",
+      "scope": "draft only",
+      "source": {
+        "commit": "eec3b4b79d3c4ef0ca711dc3c4d270a5dea23862",
+        "path": "packages/designer/src/catalog-core/check-guidance.ts",
+        "line": 26,
+        "key": "A1"
+      },
+      "before": "An asset lacks an acceptable licence and adoption trail, or live text needs font evidence.",
+      "after": "Artwork or fonts need licence and source evidence.",
+      "rationale": "Summarize the declared check in plain language for a scorecard finding without inventing subject details, severity, approval or a successful result.",
+      "role": "finding",
+      "budget": 160
+    },
+    {
+      "recordId": "st.ctvw7nvy63",
+      "cellId": "designer.scorecard.finding.A2",
+      "severity": "P1",
+      "status": "fixed",
+      "scope": "draft only",
+      "source": {
+        "commit": "eec3b4b79d3c4ef0ca711dc3c4d270a5dea23862",
+        "path": "packages/designer/src/catalog-core/check-guidance.ts",
+        "line": 27,
+        "key": "A2"
+      },
+      "before": "An SVG fails the supported closed grammar.",
+      "after": "Artwork uses unsupported SVG content.",
+      "rationale": "Summarize the declared check in plain language for a scorecard finding without inventing subject details, severity, approval or a successful result.",
+      "role": "finding",
+      "budget": 160
+    },
+    {
+      "recordId": "st.4j3fphmym6",
+      "cellId": "designer.scorecard.finding.A3",
+      "severity": "P1",
+      "status": "fixed",
+      "scope": "draft only",
+      "source": {
+        "commit": "eec3b4b79d3c4ef0ca711dc3c4d270a5dea23862",
+        "path": "packages/designer/src/catalog-core/check-guidance.ts",
+        "line": 28,
+        "key": "A3"
+      },
+      "before": "An icon glyph violates its rendering shell contract.",
+      "after": "An icon does not match the required shape or stroke.",
+      "rationale": "Summarize the declared check in plain language for a scorecard finding without inventing subject details, severity, approval or a successful result.",
+      "role": "finding",
+      "budget": 160
+    },
+    {
+      "recordId": "st.rfdm448fr9",
+      "cellId": "designer.scorecard.finding.A4",
+      "severity": "P1",
+      "status": "fixed",
+      "scope": "draft only",
+      "source": {
+        "commit": "eec3b4b79d3c4ef0ca711dc3c4d270a5dea23862",
+        "path": "packages/designer/src/catalog-core/check-guidance.ts",
+        "line": 29,
+        "key": "A4"
+      },
+      "before": "Icon bounds or source consistency need measurement or review.",
+      "after": "Icon bounds or source consistency need measurement or review.",
+      "rationale": "Summarize the declared check in plain language for a scorecard finding without inventing subject details, severity, approval or a successful result.",
+      "role": "finding",
+      "budget": 160
+    },
+    {
+      "recordId": "st.y5w1d1tmdy",
+      "cellId": "designer.scorecard.finding.A5",
+      "severity": "P1",
+      "status": "fixed",
+      "scope": "draft only",
+      "source": {
+        "commit": "eec3b4b79d3c4ef0ca711dc3c4d270a5dea23862",
+        "path": "packages/designer/src/catalog-core/check-guidance.ts",
+        "line": 30,
+        "key": "A5"
+      },
+      "before": "Identity artwork contrast fails or is unmeasured on a required ground.",
+      "after": "Brand artwork contrast failed or needs measurement.",
+      "rationale": "Summarize the declared check in plain language for a scorecard finding without inventing subject details, severity, approval or a successful result.",
+      "role": "finding",
+      "budget": 160
+    },
+    {
+      "recordId": "st.mb0j7s8r41",
+      "cellId": "designer.scorecard.finding.A6",
+      "severity": "P1",
+      "status": "fixed",
+      "scope": "draft only",
+      "source": {
+        "commit": "eec3b4b79d3c4ef0ca711dc3c4d270a5dea23862",
+        "path": "packages/designer/src/catalog-core/check-guidance.ts",
+        "line": 31,
+        "key": "A6"
+      },
+      "before": "Favicon inks are invalid or 16px optical review remains outstanding.",
+      "after": "Browser icon colours or legibility at small sizes need review.",
+      "rationale": "Summarize the declared check in plain language for a scorecard finding without inventing subject details, severity, approval or a successful result.",
+      "role": "finding",
+      "budget": 160
+    },
+    {
+      "recordId": "st.5mx9bfaf49",
+      "cellId": "designer.scorecard.finding.A7",
+      "severity": "P1",
+      "status": "fixed",
+      "scope": "draft only",
+      "source": {
+        "commit": "eec3b4b79d3c4ef0ca711dc3c4d270a5dea23862",
+        "path": "packages/designer/src/catalog-core/check-guidance.ts",
+        "line": 32,
+        "key": "A7"
+      },
+      "before": "The monochrome mark fails single-colour legibility.",
+      "after": "A single-colour mark does not meet legibility requirements.",
+      "rationale": "Summarize the declared check in plain language for a scorecard finding without inventing subject details, severity, approval or a successful result.",
+      "role": "finding",
+      "budget": 160
+    },
+    {
+      "recordId": "st.ev604kwwq2",
+      "cellId": "designer.scorecard.finding.A8",
+      "severity": "P1",
+      "status": "fixed",
+      "scope": "draft only",
+      "source": {
+        "commit": "eec3b4b79d3c4ef0ca711dc3c4d270a5dea23862",
+        "path": "packages/designer/src/catalog-core/check-guidance.ts",
+        "line": 33,
+        "key": "A8"
+      },
+      "before": "App icon safe area, backdrop or corner treatment is invalid or unmeasured.",
+      "after": "An app icon's safe area, background or corners need review.",
+      "rationale": "Summarize the declared check in plain language for a scorecard finding without inventing subject details, severity, approval or a successful result.",
+      "role": "finding",
+      "budget": 160
+    },
+    {
+      "recordId": "st.65pe6vm6d3",
+      "cellId": "designer.scorecard.finding.A9",
+      "severity": "P1",
+      "status": "fixed",
+      "scope": "draft only",
+      "source": {
+        "commit": "eec3b4b79d3c4ef0ca711dc3c4d270a5dea23862",
+        "path": "packages/designer/src/catalog-core/check-guidance.ts",
+        "line": 34,
+        "key": "A9"
+      },
+      "before": "Icon ink contrast fails or cannot be measured.",
+      "after": "Icon contrast failed or could not be measured.",
+      "rationale": "Summarize the declared check in plain language for a scorecard finding without inventing subject details, severity, approval or a successful result.",
+      "role": "finding",
+      "budget": 160
+    },
+    {
+      "recordId": "st.xrk7s9tk31",
+      "cellId": "designer.scorecard.finding.A10",
+      "severity": "P1",
+      "status": "fixed",
+      "scope": "draft only",
+      "source": {
+        "commit": "eec3b4b79d3c4ef0ca711dc3c4d270a5dea23862",
+        "path": "packages/designer/src/catalog-core/check-guidance.ts",
+        "line": 35,
+        "key": "A10"
+      },
+      "before": "Image ratio, content metadata or delivery budget fails or needs review.",
+      "after": "An image's framing, description or delivery needs review.",
+      "rationale": "Summarize the declared check in plain language for a scorecard finding without inventing subject details, severity, approval or a successful result.",
+      "role": "finding",
+      "budget": 160
+    },
+    {
+      "recordId": "st.9am2007c94",
+      "cellId": "designer.scorecard.finding.A11",
+      "severity": "P1",
+      "status": "fixed",
+      "scope": "draft only",
+      "source": {
+        "commit": "eec3b4b79d3c4ef0ca711dc3c4d270a5dea23862",
+        "path": "packages/designer/src/catalog-core/check-guidance.ts",
+        "line": 36,
+        "key": "A11"
+      },
+      "before": "Identity clear space or minimum size fails or is unmeasured.",
+      "after": "Brand artwork spacing or minimum size needs measurement.",
+      "rationale": "Summarize the declared check in plain language for a scorecard finding without inventing subject details, severity, approval or a successful result.",
+      "role": "finding",
+      "budget": 160
+    },
+    {
+      "recordId": "st.k5y20z8xgg",
+      "cellId": "designer.scorecard.finding.A12",
+      "severity": "P1",
+      "status": "fixed",
+      "scope": "draft only",
+      "source": {
+        "commit": "eec3b4b79d3c4ef0ca711dc3c4d270a5dea23862",
+        "path": "packages/designer/src/catalog-core/check-guidance.ts",
+        "line": 37,
+        "key": "A12"
+      },
+      "before": "An asset leaf is incomplete, mixes identity sources or has invalid derivations.",
+      "after": "Artwork is incomplete or uses inconsistent sources.",
+      "rationale": "Summarize the declared check in plain language for a scorecard finding without inventing subject details, severity, approval or a successful result.",
+      "role": "finding",
+      "budget": 160
+    },
+    {
+      "recordId": "st.kd7qz25rm7",
+      "cellId": "designer.scorecard.finding.R",
+      "severity": "P1",
+      "status": "fixed",
+      "scope": "draft only",
+      "source": {
+        "commit": "eec3b4b79d3c4ef0ca711dc3c4d270a5dea23862",
+        "path": "packages/designer/src/catalog-core/check-guidance.ts",
+        "line": 38,
+        "key": "R"
+      },
+      "before": "Reserved finding code; the current engine emits no R finding.",
+      "after": "This check needs review. Share its details with the maintainer.",
+      "rationale": "Summarize the declared check in plain language for a scorecard finding without inventing subject details, severity, approval or a successful result.",
+      "role": "finding",
+      "budget": 160
     }
   ],
   "bindings": [
@@ -17432,6 +18099,144 @@
       "kind": "display-name",
       "parent": "admin.library",
       "value": "standard-pack-fixture-library"
+    },
+    {
+      "cellId": "designer.scorecard.finding.C1",
+      "recordId": "st.cbtsz5319n",
+      "target": "packages/designer/src/studio/Scorecard.tsx",
+      "kind": "finding-summary"
+    },
+    {
+      "cellId": "designer.scorecard.finding.C2",
+      "recordId": "st.aes5qzpkdd",
+      "target": "packages/designer/src/studio/Scorecard.tsx",
+      "kind": "finding-summary"
+    },
+    {
+      "cellId": "designer.scorecard.finding.C3",
+      "recordId": "st.5w402rk7d5",
+      "target": "packages/designer/src/studio/Scorecard.tsx",
+      "kind": "finding-summary"
+    },
+    {
+      "cellId": "designer.scorecard.finding.C4",
+      "recordId": "st.99wpsa871b",
+      "target": "packages/designer/src/studio/Scorecard.tsx",
+      "kind": "finding-summary"
+    },
+    {
+      "cellId": "designer.scorecard.finding.C5",
+      "recordId": "st.sdw3wywjrh",
+      "target": "packages/designer/src/studio/Scorecard.tsx",
+      "kind": "finding-summary"
+    },
+    {
+      "cellId": "designer.scorecard.finding.C6",
+      "recordId": "st.tr7gdj8q9e",
+      "target": "packages/designer/src/studio/Scorecard.tsx",
+      "kind": "finding-summary"
+    },
+    {
+      "cellId": "designer.scorecard.finding.C7",
+      "recordId": "st.p417ky4nht",
+      "target": "packages/designer/src/studio/Scorecard.tsx",
+      "kind": "finding-summary"
+    },
+    {
+      "cellId": "designer.scorecard.finding.C8",
+      "recordId": "st.vqm6a5714m",
+      "target": "packages/designer/src/studio/Scorecard.tsx",
+      "kind": "finding-summary"
+    },
+    {
+      "cellId": "designer.scorecard.finding.C9",
+      "recordId": "st.b73w7tnx9s",
+      "target": "packages/designer/src/studio/Scorecard.tsx",
+      "kind": "finding-summary"
+    },
+    {
+      "cellId": "designer.scorecard.finding.C10",
+      "recordId": "st.88vynq5y8d",
+      "target": "packages/designer/src/studio/Scorecard.tsx",
+      "kind": "finding-summary"
+    },
+    {
+      "cellId": "designer.scorecard.finding.A1",
+      "recordId": "st.pbwd51fwvq",
+      "target": "packages/designer/src/studio/Scorecard.tsx",
+      "kind": "finding-summary"
+    },
+    {
+      "cellId": "designer.scorecard.finding.A2",
+      "recordId": "st.ctvw7nvy63",
+      "target": "packages/designer/src/studio/Scorecard.tsx",
+      "kind": "finding-summary"
+    },
+    {
+      "cellId": "designer.scorecard.finding.A3",
+      "recordId": "st.4j3fphmym6",
+      "target": "packages/designer/src/studio/Scorecard.tsx",
+      "kind": "finding-summary"
+    },
+    {
+      "cellId": "designer.scorecard.finding.A4",
+      "recordId": "st.rfdm448fr9",
+      "target": "packages/designer/src/studio/Scorecard.tsx",
+      "kind": "finding-summary"
+    },
+    {
+      "cellId": "designer.scorecard.finding.A5",
+      "recordId": "st.y5w1d1tmdy",
+      "target": "packages/designer/src/studio/Scorecard.tsx",
+      "kind": "finding-summary"
+    },
+    {
+      "cellId": "designer.scorecard.finding.A6",
+      "recordId": "st.mb0j7s8r41",
+      "target": "packages/designer/src/studio/Scorecard.tsx",
+      "kind": "finding-summary"
+    },
+    {
+      "cellId": "designer.scorecard.finding.A7",
+      "recordId": "st.5mx9bfaf49",
+      "target": "packages/designer/src/studio/Scorecard.tsx",
+      "kind": "finding-summary"
+    },
+    {
+      "cellId": "designer.scorecard.finding.A8",
+      "recordId": "st.ev604kwwq2",
+      "target": "packages/designer/src/studio/Scorecard.tsx",
+      "kind": "finding-summary"
+    },
+    {
+      "cellId": "designer.scorecard.finding.A9",
+      "recordId": "st.65pe6vm6d3",
+      "target": "packages/designer/src/studio/Scorecard.tsx",
+      "kind": "finding-summary"
+    },
+    {
+      "cellId": "designer.scorecard.finding.A10",
+      "recordId": "st.xrk7s9tk31",
+      "target": "packages/designer/src/studio/Scorecard.tsx",
+      "kind": "finding-summary"
+    },
+    {
+      "cellId": "designer.scorecard.finding.A11",
+      "recordId": "st.9am2007c94",
+      "target": "packages/designer/src/studio/Scorecard.tsx",
+      "kind": "finding-summary"
+    },
+    {
+      "cellId": "designer.scorecard.finding.A12",
+      "recordId": "st.k5y20z8xgg",
+      "target": "packages/designer/src/studio/Scorecard.tsx",
+      "kind": "finding-summary"
+    },
+    {
+      "cellId": "designer.scorecard.finding.R",
+      "recordId": "st.kd7qz25rm7",
+      "target": "packages/designer/src/studio/Scorecard.tsx",
+      "kind": "finding-summary"
     }
   ],
   "needs": [
@@ -20713,13 +21518,174 @@
       "severity": "P1",
       "status": "Need",
       "message": "Draft display name only. Bind this exact CopyRef in the value-name adapter; review and activation remain owner work."
+    },
+    {
+      "recordId": "st.cbtsz5319n",
+      "cellId": "designer.scorecard.finding.C1",
+      "severity": "P1",
+      "status": "Need",
+      "message": "Draft finding summary only. Bind this CopyRef for the scorecard message; review and activation remain owner work."
+    },
+    {
+      "recordId": "st.aes5qzpkdd",
+      "cellId": "designer.scorecard.finding.C2",
+      "severity": "P1",
+      "status": "Need",
+      "message": "Draft finding summary only. Bind this CopyRef for the scorecard message; review and activation remain owner work."
+    },
+    {
+      "recordId": "st.5w402rk7d5",
+      "cellId": "designer.scorecard.finding.C3",
+      "severity": "P1",
+      "status": "Need",
+      "message": "Draft finding summary only. Bind this CopyRef for the scorecard message; review and activation remain owner work."
+    },
+    {
+      "recordId": "st.99wpsa871b",
+      "cellId": "designer.scorecard.finding.C4",
+      "severity": "P1",
+      "status": "Need",
+      "message": "Draft finding summary only. Bind this CopyRef for the scorecard message; review and activation remain owner work."
+    },
+    {
+      "recordId": "st.sdw3wywjrh",
+      "cellId": "designer.scorecard.finding.C5",
+      "severity": "P1",
+      "status": "Need",
+      "message": "Draft finding summary only. Bind this CopyRef for the scorecard message; review and activation remain owner work."
+    },
+    {
+      "recordId": "st.tr7gdj8q9e",
+      "cellId": "designer.scorecard.finding.C6",
+      "severity": "P1",
+      "status": "Need",
+      "message": "Draft finding summary only. Bind this CopyRef for the scorecard message; review and activation remain owner work."
+    },
+    {
+      "recordId": "st.p417ky4nht",
+      "cellId": "designer.scorecard.finding.C7",
+      "severity": "P1",
+      "status": "Need",
+      "message": "Draft finding summary only. Bind this CopyRef for the scorecard message; review and activation remain owner work."
+    },
+    {
+      "recordId": "st.vqm6a5714m",
+      "cellId": "designer.scorecard.finding.C8",
+      "severity": "P1",
+      "status": "Need",
+      "message": "Draft finding summary only. Bind this CopyRef for the scorecard message; review and activation remain owner work."
+    },
+    {
+      "recordId": "st.b73w7tnx9s",
+      "cellId": "designer.scorecard.finding.C9",
+      "severity": "P1",
+      "status": "Need",
+      "message": "Draft finding summary only. Bind this CopyRef for the scorecard message; review and activation remain owner work."
+    },
+    {
+      "recordId": "st.88vynq5y8d",
+      "cellId": "designer.scorecard.finding.C10",
+      "severity": "P1",
+      "status": "Need",
+      "message": "Draft finding summary only. Bind this CopyRef for the scorecard message; review and activation remain owner work."
+    },
+    {
+      "recordId": "st.pbwd51fwvq",
+      "cellId": "designer.scorecard.finding.A1",
+      "severity": "P1",
+      "status": "Need",
+      "message": "Draft finding summary only. Bind this CopyRef for the scorecard message; review and activation remain owner work."
+    },
+    {
+      "recordId": "st.ctvw7nvy63",
+      "cellId": "designer.scorecard.finding.A2",
+      "severity": "P1",
+      "status": "Need",
+      "message": "Draft finding summary only. Bind this CopyRef for the scorecard message; review and activation remain owner work."
+    },
+    {
+      "recordId": "st.4j3fphmym6",
+      "cellId": "designer.scorecard.finding.A3",
+      "severity": "P1",
+      "status": "Need",
+      "message": "Draft finding summary only. Bind this CopyRef for the scorecard message; review and activation remain owner work."
+    },
+    {
+      "recordId": "st.rfdm448fr9",
+      "cellId": "designer.scorecard.finding.A4",
+      "severity": "P1",
+      "status": "Need",
+      "message": "Draft finding summary only. Bind this CopyRef for the scorecard message; review and activation remain owner work."
+    },
+    {
+      "recordId": "st.y5w1d1tmdy",
+      "cellId": "designer.scorecard.finding.A5",
+      "severity": "P1",
+      "status": "Need",
+      "message": "Draft finding summary only. Bind this CopyRef for the scorecard message; review and activation remain owner work."
+    },
+    {
+      "recordId": "st.mb0j7s8r41",
+      "cellId": "designer.scorecard.finding.A6",
+      "severity": "P1",
+      "status": "Need",
+      "message": "Draft finding summary only. Bind this CopyRef for the scorecard message; review and activation remain owner work."
+    },
+    {
+      "recordId": "st.5mx9bfaf49",
+      "cellId": "designer.scorecard.finding.A7",
+      "severity": "P1",
+      "status": "Need",
+      "message": "Draft finding summary only. Bind this CopyRef for the scorecard message; review and activation remain owner work."
+    },
+    {
+      "recordId": "st.ev604kwwq2",
+      "cellId": "designer.scorecard.finding.A8",
+      "severity": "P1",
+      "status": "Need",
+      "message": "Draft finding summary only. Bind this CopyRef for the scorecard message; review and activation remain owner work."
+    },
+    {
+      "recordId": "st.65pe6vm6d3",
+      "cellId": "designer.scorecard.finding.A9",
+      "severity": "P1",
+      "status": "Need",
+      "message": "Draft finding summary only. Bind this CopyRef for the scorecard message; review and activation remain owner work."
+    },
+    {
+      "recordId": "st.xrk7s9tk31",
+      "cellId": "designer.scorecard.finding.A10",
+      "severity": "P1",
+      "status": "Need",
+      "message": "Draft finding summary only. Bind this CopyRef for the scorecard message; review and activation remain owner work."
+    },
+    {
+      "recordId": "st.9am2007c94",
+      "cellId": "designer.scorecard.finding.A11",
+      "severity": "P1",
+      "status": "Need",
+      "message": "Draft finding summary only. Bind this CopyRef for the scorecard message; review and activation remain owner work."
+    },
+    {
+      "recordId": "st.k5y20z8xgg",
+      "cellId": "designer.scorecard.finding.A12",
+      "severity": "P1",
+      "status": "Need",
+      "message": "Draft finding summary only. Bind this CopyRef for the scorecard message; review and activation remain owner work."
+    },
+    {
+      "recordId": "st.kd7qz25rm7",
+      "cellId": "designer.scorecard.finding.R",
+      "severity": "P1",
+      "status": "Need",
+      "message": "Draft finding summary only. Bind this CopyRef for the scorecard message; review and activation remain owner work."
     }
   ],
   "coverage": {
     "kind": "planned binding fixture; not rendered-page coverage",
     "productionBound": 0,
-    "proposedBindings": 488,
-    "draftRecords": 424,
+    "proposedBindings": 511,
+    "draftRecords": 488,
     "reusedExistingRecords": 10
   },
   "defaults": [
@@ -20893,6 +21859,46 @@
         "Three app.ops instances are named by their stable admin route paths, never by the shared menu label.",
         "Parent-scoped name uniqueness permits intentional CopyRef reuse across parents.",
         "CP capture is not available in this executor; source-name coverage and board disambiguation are checked here, rendered correlation remains a binding/recapture Need."
+      ]
+    },
+    {
+      "unit": "A4-WR-SCORECARD-COPY",
+      "sourceCommit": "eec3b4b79d3c4ef0ca711dc3c4d270a5dea23862",
+      "recordIds": [
+        "st.cbtsz5319n",
+        "st.aes5qzpkdd",
+        "st.5w402rk7d5",
+        "st.99wpsa871b",
+        "st.sdw3wywjrh",
+        "st.tr7gdj8q9e",
+        "st.p417ky4nht",
+        "st.vqm6a5714m",
+        "st.b73w7tnx9s",
+        "st.88vynq5y8d",
+        "st.pbwd51fwvq",
+        "st.ctvw7nvy63",
+        "st.4j3fphmym6",
+        "st.rfdm448fr9",
+        "st.y5w1d1tmdy",
+        "st.mb0j7s8r41",
+        "st.5mx9bfaf49",
+        "st.ev604kwwq2",
+        "st.65pe6vm6d3",
+        "st.xrk7s9tk31",
+        "st.9am2007c94",
+        "st.k5y20z8xgg",
+        "st.kd7qz25rm7"
+      ],
+      "sourceFiles": {
+        "packages/designer/src/catalog-core/check-guidance.ts": "06d435ca6d405d76eea788b2b3da0c9ff88c5b86897932034763aac8274ec04f",
+        "packages/designer/src/catalog-core/types.ts": "b4df006e39c86086c756df26f47aa47e873e8cf24f6719de303b39093b0827af",
+        "packages/designer/src/catalog-core/check.ts": "afd6b992f95c5a3ff8e1618daccc6ac3c18568a4ab57241b8001fbfe7c7a6c56",
+        "packages/designer/src/studio/Scorecard.tsx": "d724e62002acff7941236a87a23fc8be606cd0768f8a5d9ef9c94eccd00e9ef4"
+      },
+      "revisions": [],
+      "defaults": [
+        "One draft summary per declared Finding code, including the reserved R code; no approval or activation.",
+        "Use existing strings.errors leaves and opaque record IDs. Existing diagnostic variants remain unchanged."
       ]
     }
   ]

@@ -13,6 +13,8 @@ const recordPath = (name: string) => join(packageRoot, `src/catalog/records/admi
 it("packs complete admin copy and resolves every Designer route-label reference through public exports", () => {
   const root = mkdtempSync(join(tmpdir(), "writer-admin-exports-"));
   const before = names.map(name => readFileSync(recordPath(name), "utf8"));
+  // Additive draft records change the envelope size; derive the packed total from its sources.
+  const expectedRecordCount = before.reduce((total, raw) => total + JSON.parse(raw).records.length, 0);
   const labelsPath = resolve(packageRoot, "../designer/src/studio/route-labels.ts");
   const source = ts.createSourceFile(labelsPath, readFileSync(labelsPath, "utf8"), ts.ScriptTarget.Latest, true);
   const refs: string[] = [];
@@ -37,6 +39,7 @@ it("packs complete admin copy and resolves every Designer route-label reference 
     const probe = join(root, "probe.mjs");
     writeFileSync(probe, `
       import assert from "node:assert/strict";
+      const expectedRecordCount = ${expectedRecordCount};
       import studio from "@clossys/writer/admin-studio.en.json" with { type: "json" };
       import voice from "@clossys/writer/admin-voice.en.json" with { type: "json" };
       import meta from "@clossys/writer/admin-meta.en.json" with { type: "json" };
@@ -67,8 +70,8 @@ it("packs complete admin copy and resolves every Designer route-label reference 
       }
       assert.equal(getAdminCopy(), ADMIN_COPY_EN);
       assert.deepEqual(ADMIN_COPY_EN.envelopes, [ADMIN_STUDIO_COPY_EN, ADMIN_VOICE_COPY_EN, ADMIN_META_COPY_EN]);
-      assert.equal(ADMIN_COPY_EN.records.length, 1018);
-      assert.equal(new Set(ADMIN_COPY_EN.records.map(record => record.id)).size, 1018);
+      assert.equal(ADMIN_COPY_EN.records.length, expectedRecordCount);
+      assert.equal(new Set(ADMIN_COPY_EN.records.map(record => record.id)).size, expectedRecordCount);
       for (const value of [ADMIN_COPY_EN, ADMIN_COPY_EN.records, ADMIN_COPY_EN.envelopes]) assert.equal(Object.isFrozen(value), true);
       assert.equal(getAdminCopyRecord("unknown"), undefined);
       for (const id of refs) {
@@ -80,14 +83,14 @@ it("packs complete admin copy and resolves every Designer route-label reference 
       // Equal duplicates collapse regardless of object-property ordering.
       const reordered = Object.fromEntries(Object.entries(voice.records[0]).reverse());
       const repeated = createAdminCopy([studio, voice, meta, { ...voice, records: [reordered] }]);
-      assert.equal(repeated.records.length, 1018);
+      assert.equal(repeated.records.length, expectedRecordCount);
       assert.equal(getAdminCopyRecord(voice.records[0].id, repeated), voice.records[0]);
       assert.equal(Object.isFrozen(voice), false);
       assert.throws(() => createAdminCopy([voice, { ...voice, records: [{ ...voice.records[0], text: "conflicting test copy" }] }]), /Conflicting admin copy record/);
-      console.log(JSON.stringify({ records: 1018, routeRefs: refs.length, publicImports: 7 }));
+      console.log(JSON.stringify({ records: expectedRecordCount, routeRefs: refs.length, publicImports: 7 }));
     `);
     const output = execFileSync(process.execPath, [probe], { cwd: root, encoding: "utf8" });
-    expect(JSON.parse(output)).toEqual({ records: 1018, routeRefs: 149, publicImports: 7 });
+    expect(JSON.parse(output)).toEqual({ records: expectedRecordCount, routeRefs: 149, publicImports: 7 });
     for (const [index, name] of names.entries()) expect(readFileSync(join(installed, `src/catalog/records/admin-${name}.r1.en.json`), "utf8")).toBe(before[index]);
 
     const consumer = join(root, "consumer.ts");
