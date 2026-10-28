@@ -255,6 +255,18 @@ export {
   readPassageRecord,
   validatePassageRecordShape,
 } from "./passage.js";
+
+// Additive library model; the existing resolver and passage contracts stay stable.
+export type {
+  WriterLayer, LeafId, RecordId, LocaleStatus, RecordBase, LexiconRecord,
+  StringRecord, PatternInstance, PassageRef, PassageRecord as WriterPassageRecord,
+  PageNarrative, ChromeNarrative, LongFormNarrative, NarrativeRecord, Block,
+  WriterRecord, WriterManifest, WriterDocument, WriterLocaleContent, WriterLibrary,
+  WriterReceipt, WriterShapeIssue, WriterLoadResult,
+} from "./model/types.js";
+export { validateWriterManifest, validateWriterRecord } from "./model/validate.js";
+export { loadWriterLibrary } from "./loader/index.js";
+export { canonicalWriterJSON, computeWriterReceipt, writeWriterReceipt } from "./digest/index.js";
 export type {
   Passage,
   PassageEntryReference,
