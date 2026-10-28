@@ -1,6 +1,6 @@
 "use client";
 import { useCallback, useId, useMemo, useState, type ReactNode } from "react";
-import { Banner, SemanticContent } from "@clossys/designer/components";
+import { Banner, Button, SemanticContent, Toolbar } from "@clossys/designer/components";
 import { DataTable, DetailView, NoticeList } from "@clossys/designer/blocks";
 import { APP_FRAME_RIGHT_PANEL_CONFIG, ShellCopyProvider, surfaceRuntimeCallbacks, surfaceRendererId } from "@clossys/designer/frames";
 import { SlotModule } from "@clossys/designer/shell";
@@ -87,8 +87,15 @@ function WriterRouteSurface({ checked, copy, selectedRecordId }: { checked: Retu
   return <ShellCopyProvider resolver={shellCopy}><SemanticContent as="span" hidden data-route-display="writer" data-route-authentication="unverified" data-writer-header-copy-ref={title.ref.id} />{renderers[frame.renderer.id]!(input)}</ShellCopyProvider>;
 }
 
+const WRITER_PAGE_SIZE = 50;
+
 function WriterRecords({ copy, selected, onSelect }: { copy: AdminCopy; selected?: string; onSelect: (id?: string) => void }) {
   const id = useId();
+  // Start on the selected record's page; navigation does not discard its inspector.
+  const [requestedPage, setPage] = useState(() => Math.floor(Math.max(0, copy.records.findIndex(row => row.id === selected)) / WRITER_PAGE_SIZE) + 1);
+  const pageCount = Math.max(1, Math.ceil(copy.records.length / WRITER_PAGE_SIZE));
+  const page = Math.min(requestedPage, pageCount);
+  const rows = copy.records.slice((page - 1) * WRITER_PAGE_SIZE, page * WRITER_PAGE_SIZE);
   const read = (key: keyof typeof WRITER_COPY_REFS) => requiredCopy(copy, WRITER_COPY_REFS[key]).text;
   const text = (key: keyof typeof WRITER_COPY_REFS) => <Copy copy={copy} reference={WRITER_COPY_REFS[key]} />;
   const technical = (value: unknown) => <SemanticContent as="code" data-copy-value="technical">{typeof value === "string" ? value : JSON.stringify(value)}</SemanticContent>;
@@ -105,9 +112,14 @@ function WriterRecords({ copy, selected, onSelect }: { copy: AdminCopy; selected
         return text(row.status);
       } },
       { id: "locale", header: text("locale"), cell: () => technical("en") },
-    ]} rows={copy.records} rowKey={row => row.id} selectionMode="single" selectedKeys={record ? [record.id] : []}
+    ]} rows={rows} rowKey={row => row.id} selectionMode="single" selectedKeys={record ? [record.id] : []}
       onSelectionChange={keys => { if (keys !== "all") { const id = keys.values().next().value; onSelect(typeof id === "string" ? id : undefined); } }}
-      messages={{ selectRowLabel: read("select") }} emptyStateTitle={text("empty")} />
+      messages={{ selectRowLabel: read("select") }} emptyStateTitle={text("empty")}
+      footer={<Toolbar aria-label={read("pagination")} variant="bare">
+        <Button variant="ghost" isDisabled={page <= 1} onPress={() => setPage(page - 1)}>{text("previousPage")}</Button>
+        <Copy copy={copy} reference={{ ...WRITER_COPY_REFS.pageSummary, values: { page, pages: pageCount } }} />
+        <Button variant="ghost" isDisabled={page >= pageCount} onPress={() => setPage(page + 1)}>{text("nextPage")}</Button>
+      </Toolbar>} />
     {record && <SlotModule id={`${id}-writer-inspector`} slot="right-panel" label={read("detail")}><DetailView aria-label={read("detail")} title={text("detail")} fields={[
       { label: text("text"), value: <SemanticContent as="span" data-copy-ref={record.id} data-copy-locale="en" data-copy-status={record.status}>{record.text}</SemanticContent>, span: 2 },
       { label: text("bindings"), value: technical(selectedBindings.map(binding => binding.cellId)) },

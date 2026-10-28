@@ -1,0 +1,77 @@
+{
+  "version": 1,
+  "revision": 1,
+  "state": "draft",
+  "locale": "en",
+  "activation": "none",
+  "records": [
+    {
+      "id": "st.84cb7kqs37",
+      "leaf": "strings.field-labels",
+      "context": "admin.writer.route.pagination",
+      "status": "draft",
+      "origin": "authored",
+      "text": "Record pages"
+    },
+    {
+      "id": "st.3x4jygc06q",
+      "leaf": "strings.actions",
+      "context": "admin.writer.route.previousPage",
+      "status": "draft",
+      "origin": "authored",
+      "text": "Previous page"
+    },
+    {
+      "id": "st.8hbhss001b",
+      "leaf": "strings.actions",
+      "context": "admin.writer.route.nextPage",
+      "status": "draft",
+      "origin": "authored",
+      "text": "Next page"
+    },
+    {
+      "id": "st.r05nskpktg",
+      "leaf": "strings.counters",
+      "context": "admin.writer.route.pageSummary",
+      "status": "draft",
+      "origin": "authored",
+      "text": "Page {page, number, integer} of {pages, number, integer}",
+      "args": [
+        {
+          "name": "page",
+          "type": "number"
+        },
+        {
+          "name": "pages",
+          "type": "number"
+        }
+      ]
+    }
+  ],
+  "bindings": [
+    {
+      "cellId": "admin.writer.route.pagination",
+      "recordId": "st.84cb7kqs37",
+      "target": "WriterRoutePage",
+      "kind": "CopyRef"
+    },
+    {
+      "cellId": "admin.writer.route.previousPage",
+      "recordId": "st.3x4jygc06q",
+      "target": "WriterRoutePage",
+      "kind": "CopyRef"
+    },
+    {
+      "cellId": "admin.writer.route.nextPage",
+      "recordId": "st.8hbhss001b",
+      "target": "WriterRoutePage",
+      "kind": "CopyRef"
+    },
+    {
+      "cellId": "admin.writer.route.pageSummary",
+      "recordId": "st.r05nskpktg",
+      "target": "WriterRoutePage",
+      "kind": "CopyRef"
+    }
+  ]
+}

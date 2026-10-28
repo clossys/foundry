@@ -1,4 +1,5 @@
 import source from "./catalog/records/admin-writer.r1.en.json" with { type: "json" };
+import paging from "./catalog/records/admin-writer-paging.r1.en.json" with { type: "json" };
 import { freezeAdminCopy, type DeepReadonly } from "./admin-copy-core.js";
 import type { StringRecord } from "./model/types.js";
 
@@ -12,4 +13,4 @@ export interface AdminRouteCopy {
   readonly records: readonly DeepReadonly<StringRecord>[];
   readonly bindings: readonly { readonly cellId: string; readonly recordId: string; readonly target: string; readonly kind: string }[];
 }
-export const ADMIN_WRITER_COPY_EN: AdminRouteCopy = freezeAdminCopy(source as AdminRouteCopy);
+export const ADMIN_WRITER_COPY_EN: AdminRouteCopy = freezeAdminCopy({ ...source, records: [...source.records, ...paging.records], bindings: [...source.bindings, ...paging.bindings] } as AdminRouteCopy);

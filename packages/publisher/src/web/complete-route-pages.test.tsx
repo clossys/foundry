@@ -189,7 +189,7 @@ it("mounts Writer's selected Sections with real store data, draft CopyRef stamps
     expect(root, leaf).not.toBeNull();
     return root;
   });
-  expect(roots[0]!.querySelectorAll("tbody tr")).toHaveLength(writer.writer.copy.records.length);
+  expect(roots[0]!.querySelectorAll("tbody tr")).toHaveLength(Math.min(50, writer.writer.copy.records.length));
   expect(roots[1]).toHaveTextContent("Copy records");
   expect(roots[1]).toHaveTextContent("WriterRoutePage");
   expect(roots[2]).toHaveTextContent(`${writer.writer.copy.records.length} records`);
@@ -209,6 +209,53 @@ it("mounts Writer's selected Sections with real store data, draft CopyRef stamps
   expect(roots[1]!.querySelector(`[data-copy-ref="${next}"]`)).not.toBeNull();
   expect(JSON.stringify(writer.writer.copy)).toBe(before);
   expect(errors.mock.calls).toEqual([]);
+}, 30000);
+it("pages a thousand Writer records without losing selection or its inspector", async () => {
+  environment();
+  const writer = writerData();
+  const records = [...writer.writer.copy.records];
+  while (records.length < 1000) records.push({ ...records[0]!, id: `st.${records.length.toString(32).padStart(10, "0")}` });
+  const copy = { ...writer.writer.copy, records };
+  const serverData = { ...writer, writer: { copy } };
+  // The initial server render is bounded too, before client interactions.
+  const html = renderToString(<WriterRoutePage serverData={serverData} initialSession={initialSession} />);
+  const parsed = new DOMParser().parseFromString(html, "text/html");
+  expect(parsed.querySelectorAll('[data-ds-leaf="sections.data-table"] tbody tr')).toHaveLength(50);
+  const view = render(<WriterRoutePage serverData={serverData} initialSession={initialSession} />);
+  const table = () => screen.getByRole("grid", { name: "Copy records" });
+  const rows = () => table().querySelectorAll("tbody tr");
+  const user = userEvent.setup();
+  expect(rows()).toHaveLength(50);
+  expect(screen.getByRole("button", { name: "Previous page" })).toBeDisabled();
+  await user.click(screen.getByRole("button", { name: "Next page" }));
+  expect(rows()).toHaveLength(50);
+  expect(within(table()).queryByRole("row", { name: new RegExp(records[0]!.id) })).toBeNull();
+  await user.click(within(table()).getByRole("row", { name: new RegExp(records[50]!.id) }));
+  const detail = () => view.container.querySelector('[data-ds-leaf="sections.record-detail"]');
+  expect(detail()!.querySelector(`[data-copy-ref="${records[50]!.id}"]`)).not.toBeNull();
+  await user.click(screen.getByRole("button", { name: "Previous page" }));
+  expect(rows()).toHaveLength(50);
+  expect(detail()!.querySelector(`[data-copy-ref="${records[50]!.id}"]`)).not.toBeNull();
+  await user.click(screen.getByRole("button", { name: "Next page" }));
+  expect(within(table()).getByRole("row", { name: new RegExp(records[50]!.id) })).toHaveAttribute("aria-selected", "true");
+  expect(view.container.querySelector(`[data-copy-ref="${WRITER_COPY_REFS.pageSummary.id}"]`)).toHaveTextContent("Page 2 of 20");
+  expect(copy.records).toHaveLength(1000);
+}, 30000);
+it("opens the selected record's final page and clamps a shrinking record store", async () => {
+  environment();
+  const writer = writerData();
+  const records = [...writer.writer.copy.records];
+  while (records.length < 103) records.push({ ...records[0]!, id: `st.${records.length.toString(32).padStart(10, "0")}` });
+  const serverData = { ...writer, writer: { copy: { ...writer.writer.copy, records }, selectedRecordId: records[102]!.id } };
+  const view = render(<WriterRoutePage serverData={serverData} initialSession={initialSession} />);
+  expect(screen.getByRole("grid", { name: "Copy records" }).querySelectorAll("tbody tr")).toHaveLength(3);
+  expect(screen.getByRole("button", { name: "Next page" })).toBeDisabled();
+  expect(screen.getByRole("row", { name: new RegExp(records[102]!.id) })).toHaveAttribute("aria-selected", "true");
+  view.rerender(<WriterRoutePage serverData={{ ...serverData, writer: { copy: writer.writer.copy } }} initialSession={initialSession} />);
+  const finalPage = Math.ceil(writer.writer.copy.records.length / 50);
+  expect(screen.getByRole("button", { name: "Next page" })).toBeDisabled();
+  expect(view.container.querySelector(`[data-copy-ref="${WRITER_COPY_REFS.pageSummary.id}"]`)).toHaveTextContent(`Page ${finalPage} of ${finalPage}`);
+  expect(screen.getByRole("grid", { name: "Copy records" }).querySelectorAll("tbody tr")).toHaveLength(writer.writer.copy.records.length - (finalPage - 1) * 50);
 }, 30000);
 it("leases Writer details only into the Frame right-panel after a row is selected", async () => {
   environment();
