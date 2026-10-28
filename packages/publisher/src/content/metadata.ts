@@ -1,3 +1,4 @@
+import { adminPageForRoute } from "./admin-copy.js";
 import { PAGE_META_FIELDS, PAGE_META_KEY, resolveCopy, validateCopyFields } from "./composition.js";
 import type { ContentFinding, ResolveCopyOptions } from "./composition.js";
 import { buildLocaleRoutePlan, localePathFor } from "./hreflang.js";
@@ -15,8 +16,9 @@ export function isCanonicalUrl(value: unknown): value is string {
   } catch { return false; }
 }
 
-/** Explicit policy wins; otherwise auth and non-content slots stay out of indexes. */
+/** Console routes stay private to search; explicit policy governs other slots. */
 export function robotsFor(slot: ContentSlot, tree: ContentTree = CONTENT_TREE): "index" | "noindex" {
+  if (adminPageForRoute(slot.route) !== undefined) return "noindex";
   if (slot.meta?.robots !== undefined) return slot.meta.robots;
   const child = tree.nodes.find(node => node.id === slot.l1)?.children.find(node => node.id === slot.l2);
   return slot.kind !== "content" || slot.l2 === "auth" || child?.frame === "frames.auth-shell" ? "noindex" : "index";

@@ -6,6 +6,7 @@
  * step exists and what it defends against.
  */
 
+import { adminPageForRoute } from "../content/admin-copy.js";
 import type { WebMeta } from "../core/index.js";
 import { serializeJsonLd } from "./internal/jsonLd.js";
 import type { WebHeadMetadata } from "./types.js";
@@ -47,4 +48,22 @@ export function buildWebHeadMetadata(meta: WebMeta): WebHeadMetadata {
   }
 
   return head;
+}
+
+/** Console indexing is fixed policy; a host cannot opt an admin page into search. */
+export const ADMIN_ROBOTS = "noindex, nofollow";
+export function isAdminConsoleRoute(path: string | undefined): boolean {
+  return adminPageForRoute(path) !== undefined;
+}
+/** Native server-entry metadata. Every registered page has a Twitter card. */
+export function registeredRouteHeadMetadata(path: string): { readonly robots?: string; readonly twitter: { readonly card: "summary" } } {
+  return { ...(isAdminConsoleRoute(path) ? { robots: ADMIN_ROBOTS } : {}), twitter: { card: "summary" } };
+}
+/** Response policy data; the consumer's HTTP adapter applies it to the response. */
+export function adminResponseHeaders(path: string | undefined): Readonly<Record<string, string>> {
+  return isAdminConsoleRoute(path) ? { "X-Robots-Tag": ADMIN_ROBOTS } : {};
+}
+/** The host serves this policy as robots.txt; returning data does not prove adoption. */
+export function adminRobotsPolicy(): { readonly rules: readonly { readonly userAgent: string; readonly disallow: readonly string[] }[] } {
+  return { rules: [{ userAgent: "*", disallow: ["/agents/"] }] };
 }

@@ -1,3 +1,5 @@
+import { filterRegisteredFrameRoutes } from "./frame/registered-navigation.js";
+import type { FrameRouteBoundary } from "./frame/registered-navigation.js";
 import { isValidElement } from "react";
 import { Icon } from "@clossys/designer/components/server";
 import type { AppFrameProps } from "@clossys/designer/frames";
@@ -38,7 +40,8 @@ export function bindContentCopy(value: unknown, locale: string, resolver: CopyRe
 }
 
 /** AppFrame's optional English defaults must never fill an authored shell's missing words. */
-export function bindContentAppFrame(value: Readonly<Record<string, unknown>>, locale: string, resolver?: CopyResolver): Omit<AppFrameProps, "children"> {
+export function bindContentAppFrame(value: Readonly<Record<string, unknown>>, locale: string, resolver?: CopyResolver, routes?: FrameRouteBoundary): Omit<AppFrameProps, "children"> {
+  if (routes) value = filterRegisteredFrameRoutes(value, routes);
   const frame = SHELL_COPY_REFS.frame;
   const input = { skipLabel: frame.skip, breadcrumbLabel: frame.breadcrumb, collapsedBreadcrumbLabel: frame.collapsedBreadcrumb,
     pageInfoLabel: frame.pageInfo, pageActionsLabel: frame.pageActions, ...value,
