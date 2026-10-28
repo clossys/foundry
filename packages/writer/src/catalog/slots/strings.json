@@ -1,0 +1,287 @@
+[
+  {
+    "id": "strings.actions",
+    "layer": "strings",
+    "contract": {
+      "kind": "string",
+      "source": "writer",
+      "icu": true,
+      "maxChars": 40,
+      "maxWords": 6
+    },
+    "requires": [],
+    "status": "draft"
+  },
+  {
+    "id": "strings.navigation",
+    "layer": "strings",
+    "contract": {
+      "kind": "string",
+      "source": "writer",
+      "icu": true,
+      "maxChars": 40,
+      "maxWords": 6
+    },
+    "requires": [],
+    "status": "draft"
+  },
+  {
+    "id": "strings.field-labels",
+    "layer": "strings",
+    "contract": {
+      "kind": "string",
+      "source": "writer",
+      "icu": true,
+      "maxChars": 60,
+      "maxWords": 10
+    },
+    "requires": [],
+    "status": "draft"
+  },
+  {
+    "id": "strings.statuses",
+    "layer": "strings",
+    "contract": {
+      "kind": "string",
+      "source": "writer",
+      "icu": true,
+      "maxChars": 80,
+      "maxWords": 12
+    },
+    "requires": [],
+    "status": "draft"
+  },
+  {
+    "id": "strings.counters",
+    "layer": "strings",
+    "contract": {
+      "kind": "string",
+      "source": "writer",
+      "icu": true,
+      "maxChars": 60,
+      "maxWords": 10
+    },
+    "requires": [],
+    "status": "draft"
+  },
+  {
+    "id": "strings.errors",
+    "layer": "strings",
+    "contract": {
+      "kind": "string",
+      "source": "writer",
+      "icu": true,
+      "maxChars": 240,
+      "maxWords": 40
+    },
+    "requires": [],
+    "status": "draft"
+  },
+  {
+    "id": "strings.warnings",
+    "layer": "strings",
+    "contract": {
+      "kind": "string",
+      "source": "writer",
+      "icu": true,
+      "maxChars": 240,
+      "maxWords": 40
+    },
+    "requires": [],
+    "status": "draft"
+  },
+  {
+    "id": "strings.confirmations",
+    "layer": "strings",
+    "contract": {
+      "kind": "string",
+      "source": "writer",
+      "icu": true,
+      "maxChars": 160,
+      "maxWords": 30
+    },
+    "requires": [],
+    "status": "draft"
+  },
+  {
+    "id": "strings.empty",
+    "layer": "strings",
+    "contract": {
+      "kind": "string",
+      "source": "writer",
+      "icu": true,
+      "maxChars": 320,
+      "maxWords": 60
+    },
+    "requires": [],
+    "status": "draft"
+  },
+  {
+    "id": "strings.loading",
+    "layer": "strings",
+    "contract": {
+      "kind": "string",
+      "source": "writer",
+      "icu": true,
+      "maxChars": 80,
+      "maxWords": 12
+    },
+    "requires": [],
+    "status": "draft"
+  },
+  {
+    "id": "strings.names",
+    "layer": "strings",
+    "contract": {
+      "kind": "string",
+      "source": "writer",
+      "icu": true,
+      "maxChars": 100,
+      "maxWords": 16
+    },
+    "requires": [],
+    "status": "draft"
+  },
+  {
+    "id": "strings.taglines",
+    "layer": "strings",
+    "contract": {
+      "kind": "string",
+      "source": "writer",
+      "icu": true,
+      "maxChars": 120,
+      "maxWords": 20
+    },
+    "requires": [],
+    "status": "draft"
+  },
+  {
+    "id": "strings.legal-lines",
+    "layer": "strings",
+    "contract": {
+      "kind": "string",
+      "source": "writer",
+      "icu": true,
+      "maxChars": 1000,
+      "maxWords": 180
+    },
+    "requires": [],
+    "status": "draft"
+  },
+  {
+    "id": "strings.alt-text",
+    "layer": "strings",
+    "contract": {
+      "kind": "string",
+      "source": "writer",
+      "icu": true,
+      "maxChars": 300,
+      "maxWords": 50,
+      "assetRef": {
+        "layer": "assets",
+        "required": true
+      }
+    },
+    "requires": [],
+    "status": "draft"
+  },
+  {
+    "id": "strings.captions",
+    "layer": "strings",
+    "contract": {
+      "kind": "string",
+      "source": "writer",
+      "icu": true,
+      "maxChars": 1000,
+      "maxWords": 180,
+      "assetRef": {
+        "layer": "assets",
+        "required": true
+      }
+    },
+    "requires": [],
+    "status": "draft"
+  },
+  {
+    "id": "strings.transcripts",
+    "layer": "strings",
+    "contract": {
+      "kind": "string",
+      "source": "writer",
+      "icu": true,
+      "maxChars": 30000,
+      "maxWords": 6000,
+      "assetRef": {
+        "layer": "assets",
+        "required": true
+      }
+    },
+    "requires": [],
+    "status": "draft"
+  },
+  {
+    "id": "strings.page-titles",
+    "layer": "strings",
+    "contract": {
+      "kind": "string",
+      "source": "writer",
+      "icu": true,
+      "maxChars": 65,
+      "maxWords": 12
+    },
+    "requires": [],
+    "status": "draft"
+  },
+  {
+    "id": "strings.descriptions",
+    "layer": "strings",
+    "contract": {
+      "kind": "string",
+      "source": "writer",
+      "icu": true,
+      "maxChars": 160,
+      "maxWords": 30
+    },
+    "requires": [],
+    "status": "draft"
+  },
+  {
+    "id": "strings.share-text",
+    "layer": "strings",
+    "contract": {
+      "kind": "string",
+      "source": "writer",
+      "icu": true,
+      "maxChars": 280,
+      "maxWords": 50
+    },
+    "requires": [],
+    "status": "draft"
+  },
+  {
+    "id": "strings.email-subjects",
+    "layer": "strings",
+    "contract": {
+      "kind": "string",
+      "source": "writer",
+      "icu": true,
+      "maxChars": 78,
+      "maxWords": 14
+    },
+    "requires": [],
+    "status": "draft"
+  },
+  {
+    "id": "strings.email-preheaders",
+    "layer": "strings",
+    "contract": {
+      "kind": "string",
+      "source": "writer",
+      "icu": true,
+      "maxChars": 120,
+      "maxWords": 24
+    },
+    "requires": [],
+    "status": "draft"
+  }
+]

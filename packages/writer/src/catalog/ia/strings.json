@@ -1,0 +1,176 @@
+{
+  "layer": "strings",
+  "nodes": [
+    {
+      "id": "interface",
+      "label": "Interface",
+      "children": [
+        {
+          "id": "interface-actions",
+          "label": "Actions",
+          "leaves": [
+            "strings.actions"
+          ]
+        },
+        {
+          "id": "interface-navigation",
+          "label": "Navigation",
+          "leaves": [
+            "strings.navigation"
+          ]
+        },
+        {
+          "id": "interface-field-labels",
+          "label": "Field labels",
+          "leaves": [
+            "strings.field-labels"
+          ]
+        },
+        {
+          "id": "interface-statuses",
+          "label": "Statuses",
+          "leaves": [
+            "strings.statuses"
+          ]
+        },
+        {
+          "id": "interface-counters",
+          "label": "Counters",
+          "leaves": [
+            "strings.counters"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "feedback",
+      "label": "Feedback",
+      "children": [
+        {
+          "id": "feedback-errors",
+          "label": "Errors",
+          "leaves": [
+            "strings.errors"
+          ]
+        },
+        {
+          "id": "feedback-warnings",
+          "label": "Warnings",
+          "leaves": [
+            "strings.warnings"
+          ]
+        },
+        {
+          "id": "feedback-confirmations",
+          "label": "Confirmations",
+          "leaves": [
+            "strings.confirmations"
+          ]
+        },
+        {
+          "id": "feedback-empty",
+          "label": "Empty",
+          "leaves": [
+            "strings.empty"
+          ]
+        },
+        {
+          "id": "feedback-loading",
+          "label": "Loading",
+          "leaves": [
+            "strings.loading"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "identity",
+      "label": "Identity",
+      "children": [
+        {
+          "id": "identity-names",
+          "label": "Names",
+          "leaves": [
+            "strings.names"
+          ]
+        },
+        {
+          "id": "identity-taglines",
+          "label": "Taglines",
+          "leaves": [
+            "strings.taglines"
+          ]
+        },
+        {
+          "id": "identity-legal-lines",
+          "label": "Legal lines",
+          "leaves": [
+            "strings.legal-lines"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "media-text",
+      "label": "Media text",
+      "children": [
+        {
+          "id": "media-text-alt-text",
+          "label": "Alt text",
+          "leaves": [
+            "strings.alt-text"
+          ]
+        },
+        {
+          "id": "media-text-captions",
+          "label": "Captions",
+          "leaves": [
+            "strings.captions"
+          ]
+        },
+        {
+          "id": "media-text-transcripts",
+          "label": "Transcripts",
+          "leaves": [
+            "strings.transcripts"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "metadata",
+      "label": "Metadata",
+      "children": [
+        {
+          "id": "metadata-page-titles",
+          "label": "Page titles",
+          "leaves": [
+            "strings.page-titles"
+          ]
+        },
+        {
+          "id": "metadata-descriptions",
+          "label": "Descriptions",
+          "leaves": [
+            "strings.descriptions"
+          ]
+        },
+        {
+          "id": "metadata-share-text",
+          "label": "Share text",
+          "leaves": [
+            "strings.share-text"
+          ]
+        },
+        {
+          "id": "metadata-email-subject-and-preheader",
+          "label": "Email subject and preheader",
+          "leaves": [
+            "strings.email-subjects",
+            "strings.email-preheaders"
+          ]
+        }
+      ]
+    }
+  ]
+}

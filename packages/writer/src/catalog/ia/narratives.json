@@ -1,0 +1,77 @@
+{
+  "layer": "narratives",
+  "nodes": [
+    {
+      "id": "web",
+      "label": "Web",
+      "children": [
+        {
+          "id": "web-site-and-demo",
+          "label": "Site and demo",
+          "leaves": [
+            "narratives.page-story"
+          ]
+        },
+        {
+          "id": "web-app-and-admin",
+          "label": "App and admin",
+          "leaves": [
+            "narratives.screen"
+          ]
+        },
+        {
+          "id": "web-chrome",
+          "label": "Chrome",
+          "leaves": [
+            "narratives.site-chrome",
+            "narratives.app-chrome"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "documents",
+      "label": "Documents",
+      "children": [
+        {
+          "id": "documents-docs",
+          "label": "Docs",
+          "leaves": [
+            "narratives.article",
+            "narratives.guide",
+            "narratives.release-notes",
+            "narratives.legal-document"
+          ]
+        },
+        {
+          "id": "documents-slides",
+          "label": "Slides",
+          "leaves": [
+            "narratives.deck-script"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "communications",
+      "label": "Communications",
+      "children": [
+        {
+          "id": "communications-messages",
+          "label": "Messages",
+          "leaves": [
+            "narratives.email",
+            "narratives.notification"
+          ]
+        },
+        {
+          "id": "communications-videos",
+          "label": "Videos",
+          "leaves": [
+            "narratives.video-script"
+          ]
+        }
+      ]
+    }
+  ]
+}

@@ -151,6 +151,7 @@ import { liveTreeExists, scanLiveCopyTrees } from "./live-copy-gate.js";
 import { checkPassageComposition, readPassageRecord, type PassageGateResult } from "./passage.js";
 import { mainApprovalStateCommand } from "./approval.js";
 import { mainApproveCommand } from "./approve-cli.js";
+import { mainWriterIA } from "./catalog/ia/cli.js";
 import { readCopyRecord } from "./registry.js";
 import { checkRenderRegistryParity } from "./render-registry-parity.js";
 import { scanCopySourceTree, type ScanResult, type UncheckedItem } from "./scan.js";
@@ -1557,7 +1558,9 @@ function detectMainModule(): boolean {
  */
 if (detectMainModule()) {
   const rawArgs = process.argv.slice(2);
-  if (rawArgs[0] === "addressability") {
+  if (rawArgs[0] === "ia") {
+    process.exitCode = mainWriterIA(rawArgs.slice(1));
+  } else if (rawArgs[0] === "addressability") {
     runAddressabilityCheck(rawArgs.slice(1));
   } else if (rawArgs[0] === "passages") {
     runPassagesCheck(rawArgs.slice(1));

@@ -1,0 +1,4797 @@
+[
+  {
+    "id": "passages.access-matrix",
+    "layer": "passages",
+    "contract": {
+      "kind": "passage",
+      "source": "writer",
+      "sectionId": "sections.access-matrix",
+      "passageSchema": "passages.access-matrix",
+      "copy": {
+        "sourceLocale": "en",
+        "fields": [
+          {
+            "key": "header.eyebrow",
+            "kind": "plain",
+            "required": false,
+            "maxLength": {
+              "en": 120
+            },
+            "dir": "auto"
+          },
+          {
+            "key": "header.heading",
+            "kind": "plain",
+            "required": false,
+            "maxLength": {
+              "en": 160
+            },
+            "dir": "auto"
+          },
+          {
+            "key": "header.description",
+            "kind": "plain",
+            "required": false,
+            "maxLength": {
+              "en": 480
+            },
+            "dir": "auto"
+          },
+          {
+            "key": "roles[].label",
+            "kind": "plain",
+            "required": true,
+            "maxLength": {
+              "en": 120
+            },
+            "dir": "auto"
+          },
+          {
+            "key": "permissions[].label",
+            "kind": "plain",
+            "required": true,
+            "maxLength": {
+              "en": 120
+            },
+            "dir": "auto"
+          },
+          {
+            "key": "permissions[].permissions[].label",
+            "kind": "plain",
+            "required": true,
+            "maxLength": {
+              "en": 120
+            },
+            "dir": "auto"
+          },
+          {
+            "key": "permissions[].permissions[].description",
+            "kind": "plain",
+            "required": false,
+            "maxLength": {
+              "en": 480
+            },
+            "dir": "auto"
+          },
+          {
+            "key": "labels.label",
+            "kind": "plain",
+            "required": false,
+            "maxLength": {
+              "en": 120
+            },
+            "dir": "auto"
+          },
+          {
+            "key": "roles[].lockedReason",
+            "kind": "plain",
+            "required": false,
+            "maxLength": {
+              "en": 160
+            },
+            "dir": "auto"
+          },
+          {
+            "key": "labels.permissionHeader",
+            "kind": "plain",
+            "required": false,
+            "maxLength": {
+              "en": 160
+            },
+            "dir": "auto"
+          },
+          {
+            "key": "labels.cell",
+            "kind": "icu",
+            "required": false,
+            "maxLength": {
+              "en": 160
+            },
+            "dir": "auto"
+          },
+          {
+            "key": "labels.groupAll",
+            "kind": "icu",
+            "required": false,
+            "maxLength": {
+              "en": 160
+            },
+            "dir": "auto"
+          },
+          {
+            "key": "labels.inherited",
+            "kind": "plain",
+            "required": false,
+            "maxLength": {
+              "en": 160
+            },
+            "dir": "auto"
+          },
+          {
+            "key": "labels.locked",
+            "kind": "plain",
+            "required": false,
+            "maxLength": {
+              "en": 160
+            },
+            "dir": "auto"
+          },
+          {
+            "key": "labels.changeSummary",
+            "kind": "icu",
+            "required": false,
+            "maxLength": {
+              "en": 160
+            },
+            "dir": "auto"
+          }
+        ]
+      }
+    },
+    "requires": [],
+    "status": "draft"
+  },
+  {
+    "id": "passages.activity-feed",
+    "layer": "passages",
+    "contract": {
+      "kind": "passage",
+      "source": "writer",
+      "sectionId": "sections.activity-feed",
+      "passageSchema": "passages.activity-feed",
+      "copy": {
+        "sourceLocale": "en",
+        "fields": [
+          {
+            "key": "header.eyebrow",
+            "kind": "plain",
+            "required": false,
+            "maxLength": {
+              "en": 120
+            },
+            "dir": "auto"
+          },
+          {
+            "key": "header.heading",
+            "kind": "plain",
+            "required": false,
+            "maxLength": {
+              "en": 160
+            },
+            "dir": "auto"
+          },
+          {
+            "key": "header.description",
+            "kind": "plain",
+            "required": false,
+            "maxLength": {
+              "en": 480
+            },
+            "dir": "auto"
+          },
+          {
+            "key": "grouping[].label",
+            "kind": "plain",
+            "required": true,
+            "maxLength": {
+              "en": 120
+            },
+            "dir": "auto"
+          },
+          {
+            "key": "filters.links[].label",
+            "kind": "plain",
+            "required": false,
+            "maxLength": {
+              "en": 120
+            },
+            "dir": "auto"
+          },
+          {
+            "key": "labels.label",
+            "kind": "plain",
+            "required": false,
+            "maxLength": {
+              "en": 120
+            },
+            "dir": "auto"
+          },
+          {
+            "key": "states.loading.label",
+            "kind": "plain",
+            "required": true,
+            "maxLength": {
+              "en": 120
+            },
+            "dir": "auto"
+          },
+          {
+            "key": "states.loading.description",
+            "kind": "plain",
+            "required": false,
+            "maxLength": {
+              "en": 480
+            },
+            "dir": "auto"
+          },
+          {
+            "key": "states.empty.label",
+            "kind": "plain",
+            "required": true,
+            "maxLength": {
+              "en": 120
+            },
+            "dir": "auto"
+          },
+          {
+            "key": "states.empty.description",
+            "kind": "plain",
+            "required": false,
+            "maxLength": {
+              "en": 480
+            },
+            "dir": "auto"
+          },
+          {
+            "key": "states.error.label",
+            "kind": "plain",
+            "required": true,
+            "maxLength": {
+              "en": 120
+            },
+            "dir": "auto"
+          },
+          {
+            "key": "states.error.description",
+            "kind": "plain",
+            "required": false,
+            "maxLength": {
+              "en": 480
+            },
+            "dir": "auto"
+          },
+          {
+            "key": "events[].actor.name",
+            "kind": "plain",
+            "required": true,
+            "maxLength": {
+              "en": 160
+            },
+            "dir": "auto"
+          },
+          {
+            "key": "events[].summary",
+            "kind": "rich",
+            "required": true,
+            "maxLength": {
+              "en": 480
+            },
+            "dir": "auto"
+          },
+          {
+            "key": "events[].timeText",
+            "kind": "plain",
+            "required": true,
+            "maxLength": {
+              "en": 160
+            },
+            "dir": "auto"
+          },
+          {
+            "key": "events[].changes[].field",
+            "kind": "plain",
+            "required": true,
+            "maxLength": {
+              "en": 160
+            },
+            "dir": "auto"
+          },
+          {
+            "key": "events[].changes[].from",
+            "kind": "plain",
+            "required": false,
+            "maxLength": {
+              "en": 160
+            },
+            "dir": "auto"
+          },
+          {
+            "key": "events[].changes[].to",
+            "kind": "plain",
+            "required": false,
+            "maxLength": {
+              "en": 160
+            },
+            "dir": "auto"
+          },
+          {
+            "key": "events[].detail",
+            "kind": "rich",
+            "required": false,
+            "maxLength": {
+              "en": 480
+            },
+            "dir": "auto"
+          },
+          {
+            "key": "labels.unread",
+            "kind": "plain",
+            "required": false,
+            "maxLength": {
+              "en": 160
+            },
+            "dir": "auto"
+          },
+          {
+            "key": "labels.changedFrom",
+            "kind": "plain",
+            "required": false,
+            "maxLength": {
+              "en": 160
+            },
+            "dir": "auto"
+          },
+          {
+            "key": "labels.changedTo",
+            "kind": "plain",
+            "required": false,
+            "maxLength": {
+              "en": 160
+            },
+            "dir": "auto"
+          },
+          {
+            "key": "labels.cleared",
+            "kind": "plain",
+            "required": false,
+            "maxLength": {
+              "en": 160
+            },
+            "dir": "auto"
+          }
+        ]
+      }
+    },
+    "requires": [],
+    "status": "draft"
+  },
+  {
+    "id": "passages.article",
+    "layer": "passages",
+    "contract": {
+      "kind": "passage",
+      "source": "writer",
+      "sectionId": "sections.article",
+      "passageSchema": "passages.article",
+      "copy": {
+        "sourceLocale": "en",
+        "fields": [
+          {
+            "key": "header.eyebrow",
+            "kind": "plain",
+            "required": false,
+            "maxLength": {
+              "en": 120
+            },
+            "dir": "auto"
+          },
+          {
+            "key": "header.heading",
+            "kind": "plain",
+            "required": false,
+            "maxLength": {
+              "en": 160
+            },
+            "dir": "auto"
+          },
+          {
+            "key": "header.description",
+            "kind": "plain",
+            "required": false,
+            "maxLength": {
+              "en": 480
+            },
+            "dir": "auto"
+          },
+          {
+            "key": "body[].text",
+            "kind": "plain",
+            "required": true,
+            "maxLength": {
+              "en": 8000
+            },
+            "dir": "auto"
+          },
+          {
+            "key": "body[].items[]",
+            "kind": "plain",
+            "required": false,
+            "maxLength": {
+              "en": 8000
+            },
+            "dir": "auto"
+          },
+          {
+            "key": "toc.label",
+            "kind": "plain",
+            "required": false,
+            "maxLength": {
+              "en": 120
+            },
+            "dir": "auto"
+          },
+          {
+            "key": "toc.items[].label",
+            "kind": "plain",
+            "required": false,
+            "maxLength": {
+              "en": 120
+            },
+            "dir": "auto"
+          }
+        ]
+      }
+    },
+    "requires": [],
+    "status": "draft"
+  },
+  {
+    "id": "passages.audit-log",
+    "layer": "passages",
+    "contract": {
+      "kind": "passage",
+      "source": "writer",
+      "sectionId": "sections.audit-log",
+      "passageSchema": "passages.audit-log",
+      "copy": {
+        "sourceLocale": "en",
+        "fields": [
+          {
+            "key": "header.eyebrow",
+            "kind": "plain",
+            "required": false,
+            "maxLength": {
+              "en": 120
+            },
+            "dir": "auto"
+          },
+          {
+            "key": "header.heading",
+            "kind": "plain",
+            "required": false,
+            "maxLength": {
+              "en": 160
+            },
+            "dir": "auto"
+          },
+          {
+            "key": "header.description",
+            "kind": "plain",
+            "required": false,
+            "maxLength": {
+              "en": 480
+            },
+            "dir": "auto"
+          },
+          {
+            "key": "entries[].actor",
+            "kind": "plain",
+            "required": true,
+            "maxLength": {
+              "en": 120
+            },
+            "dir": "auto"
+          },
+          {
+            "key": "entries[].action",
+            "kind": "plain",
+            "required": true,
+            "maxLength": {
+              "en": 120
+            },
+            "dir": "auto"
+          },
+          {
+            "key": "entries[].target",
+            "kind": "plain",
+            "required": false,
+            "maxLength": {
+              "en": 120
+            },
+            "dir": "auto"
+          },
+          {
+            "key": "filter.search.label",
+            "kind": "plain",
+            "required": false,
+            "maxLength": {
+              "en": 120
+            },
+            "dir": "auto"
+          },
+          {
+            "key": "filter.search.placeholder",
+            "kind": "plain",
+            "required": false,
+            "maxLength": {
+              "en": 120
+            },
+            "dir": "auto"
+          },
+          {
+            "key": "export.label",
+            "kind": "plain",
+            "required": false,
+            "maxLength": {
+              "en": 120
+            },
+            "dir": "auto"
+          },
+          {
+            "key": "labels.time",
+            "kind": "plain",
+            "required": false,
+            "maxLength": {
+              "en": 120
+            },
+            "dir": "auto"
+          },
+          {
+            "key": "labels.actor",
+            "kind": "plain",
+            "required": false,
+            "maxLength": {
+              "en": 120
+            },
+            "dir": "auto"
+          },
+          {
+            "key": "labels.action",
+            "kind": "plain",
+            "required": false,
+            "maxLength": {
+              "en": 120
+            },
+            "dir": "auto"
+          },
+          {
+            "key": "labels.target",
+            "kind": "plain",
+            "required": false,
+            "maxLength": {
+              "en": 120
+            },
+            "dir": "auto"
+          },
+          {
+            "key": "labels.label",
+            "kind": "plain",
+            "required": false,
+            "maxLength": {
+              "en": 120
+            },
+            "dir": "auto"
+          },
+          {
+            "key": "states.loading.label",
+            "kind": "plain",
+            "required": true,
+            "maxLength": {
+              "en": 120
+            },
+            "dir": "auto"
+          },
+          {
+            "key": "states.loading.description",
+            "kind": "plain",
+            "required": false,
+            "maxLength": {
+              "en": 480
+            },
+            "dir": "auto"
+          },
+          {
+            "key": "states.empty.label",
+            "kind": "plain",
+            "required": true,
+            "maxLength": {
+              "en": 120
+            },
+            "dir": "auto"
+          },
+          {
+            "key": "states.empty.description",
+            "kind": "plain",
+            "required": false,
+            "maxLength": {
+              "en": 480
+            },
+            "dir": "auto"
+          },
+          {
+            "key": "states.error.label",
+            "kind": "plain",
+            "required": true,
+            "maxLength": {
+              "en": 120
+            },
+            "dir": "auto"
+          },
+          {
+            "key": "states.error.description",
+            "kind": "plain",
+            "required": false,
+            "maxLength": {
+              "en": 480
+            },
+            "dir": "auto"
+          },
+          {
+            "key": "entries[].timeText",
+            "kind": "plain",
+            "required": true,
+            "maxLength": {
+              "en": 160
+            },
+            "dir": "auto"
+          }
+        ]
+      }
+    },
+    "requires": [],
+    "status": "draft"
+  },
+  {
+    "id": "passages.band",
+    "layer": "passages",
+    "contract": {
+      "kind": "passage",
+      "source": "writer",
+      "sectionId": "sections.band",
+      "passageSchema": "passages.band",
+      "copy": {
+        "sourceLocale": "en",
+        "fields": []
+      }
+    },
+    "requires": [],
+    "status": "draft"
+  },
+  {
+    "id": "passages.call-to-action",
+    "layer": "passages",
+    "contract": {
+      "kind": "passage",
+      "source": "writer",
+      "sectionId": "sections.call-to-action",
+      "passageSchema": "passages.call-to-action",
+      "copy": {
+        "sourceLocale": "en",
+        "fields": [
+          {
+            "key": "header.title",
+            "kind": "plain",
+            "required": true,
+            "maxLength": {
+              "en": 160
+            },
+            "dir": "auto"
+          },
+          {
+            "key": "header.eyebrow",
+            "kind": "plain",
+            "required": false,
+            "maxLength": {
+              "en": 120
+            },
+            "dir": "auto"
+          },
+          {
+            "key": "header.description",
+            "kind": "plain",
+            "required": false,
+            "maxLength": {
+              "en": 480
+            },
+            "dir": "auto"
+          },
+          {
+            "key": "actions.primary.label",
+            "kind": "plain",
+            "required": true,
+            "maxLength": {
+              "en": 120
+            },
+            "dir": "auto"
+          },
+          {
+            "key": "actions.secondary.label",
+            "kind": "plain",
+            "required": false,
+            "maxLength": {
+              "en": 120
+            },
+            "dir": "auto"
+          }
+        ]
+      }
+    },
+    "requires": [],
+    "status": "draft"
+  },
+  {
+    "id": "passages.cards",
+    "layer": "passages",
+    "contract": {
+      "kind": "passage",
+      "source": "writer",
+      "sectionId": "sections.cards",
+      "passageSchema": "passages.cards",
+      "copy": {
+        "sourceLocale": "en",
+        "fields": [
+          {
+            "key": "header.eyebrow",
+            "kind": "plain",
+            "required": false,
+            "maxLength": {
+              "en": 120
+            },
+            "dir": "auto"
+          },
+          {
+            "key": "header.heading",
+            "kind": "plain",
+            "required": false,
+            "maxLength": {
+              "en": 160
+            },
+            "dir": "auto"
+          },
+          {
+            "key": "header.description",
+            "kind": "plain",
+            "required": false,
+            "maxLength": {
+              "en": 480
+            },
+            "dir": "auto"
+          },
+          {
+            "key": "records[].title",
+            "kind": "plain",
+            "required": true,
+            "maxLength": {
+              "en": 160
+            },
+            "dir": "auto"
+          },
+          {
+            "key": "records[].description",
+            "kind": "plain",
+            "required": false,
+            "maxLength": {
+              "en": 480
+            },
+            "dir": "auto"
+          },
+          {
+            "key": "records[].meta",
+            "kind": "plain",
+            "required": false,
+            "maxLength": {
+              "en": 120
+            },
+            "dir": "auto"
+          },
+          {
+            "key": "states.loading.label",
+            "kind": "plain",
+            "required": true,
+            "maxLength": {
+              "en": 120
+            },
+            "dir": "auto"
+          },
+          {
+            "key": "states.loading.description",
+            "kind": "plain",
+            "required": false,
+            "maxLength": {
+              "en": 480
+            },
+            "dir": "auto"
+          },
+          {
+            "key": "states.empty.label",
+            "kind": "plain",
+            "required": true,
+            "maxLength": {
+              "en": 120
+            },
+            "dir": "auto"
+          },
+          {
+            "key": "states.empty.description",
+            "kind": "plain",
+            "required": false,
+            "maxLength": {
+              "en": 480
+            },
+            "dir": "auto"
+          },
+          {
+            "key": "states.error.label",
+            "kind": "plain",
+            "required": true,
+            "maxLength": {
+              "en": 120
+            },
+            "dir": "auto"
+          },
+          {
+            "key": "states.error.description",
+            "kind": "plain",
+            "required": false,
+            "maxLength": {
+              "en": 480
+            },
+            "dir": "auto"
+          },
+          {
+            "key": "records[].badge.label",
+            "kind": "plain",
+            "required": false,
+            "maxLength": {
+              "en": 160
+            },
+            "dir": "auto"
+          }
+        ]
+      }
+    },
+    "requires": [],
+    "status": "draft"
+  },
+  {
+    "id": "passages.chat",
+    "layer": "passages",
+    "contract": {
+      "kind": "passage",
+      "source": "writer",
+      "sectionId": "sections.chat",
+      "passageSchema": "passages.chat",
+      "copy": {
+        "sourceLocale": "en",
+        "fields": [
+          {
+            "key": "header.eyebrow",
+            "kind": "plain",
+            "required": false,
+            "maxLength": {
+              "en": 120
+            },
+            "dir": "auto"
+          },
+          {
+            "key": "header.heading",
+            "kind": "plain",
+            "required": false,
+            "maxLength": {
+              "en": 160
+            },
+            "dir": "auto"
+          },
+          {
+            "key": "header.description",
+            "kind": "plain",
+            "required": false,
+            "maxLength": {
+              "en": 480
+            },
+            "dir": "auto"
+          },
+          {
+            "key": "parts[].content",
+            "kind": "rich",
+            "required": true,
+            "maxLength": {
+              "en": 2400
+            },
+            "dir": "auto"
+          },
+          {
+            "key": "composer.placeholder",
+            "kind": "plain",
+            "required": true,
+            "maxLength": {
+              "en": 120
+            },
+            "dir": "auto"
+          },
+          {
+            "key": "composer.label",
+            "kind": "plain",
+            "required": false,
+            "maxLength": {
+              "en": 120
+            },
+            "dir": "auto"
+          },
+          {
+            "key": "labels.status",
+            "kind": "plain",
+            "required": false,
+            "maxLength": {
+              "en": 120
+            },
+            "dir": "auto"
+          },
+          {
+            "key": "parts[].timestamp",
+            "kind": "plain",
+            "required": false,
+            "maxLength": {
+              "en": 160
+            },
+            "dir": "auto"
+          }
+        ]
+      }
+    },
+    "requires": [],
+    "status": "draft"
+  },
+  {
+    "id": "passages.column-mapper",
+    "layer": "passages",
+    "contract": {
+      "kind": "passage",
+      "source": "writer",
+      "sectionId": "sections.column-mapper",
+      "passageSchema": "passages.column-mapper",
+      "copy": {
+        "sourceLocale": "en",
+        "fields": [
+          {
+            "key": "header.eyebrow",
+            "kind": "plain",
+            "required": false,
+            "maxLength": {
+              "en": 120
+            },
+            "dir": "auto"
+          },
+          {
+            "key": "header.heading",
+            "kind": "plain",
+            "required": false,
+            "maxLength": {
+              "en": 160
+            },
+            "dir": "auto"
+          },
+          {
+            "key": "header.description",
+            "kind": "plain",
+            "required": false,
+            "maxLength": {
+              "en": 480
+            },
+            "dir": "auto"
+          },
+          {
+            "key": "source-columns[].label",
+            "kind": "plain",
+            "required": true,
+            "maxLength": {
+              "en": 120
+            },
+            "dir": "auto"
+          },
+          {
+            "key": "target-fields[].label",
+            "kind": "plain",
+            "required": true,
+            "maxLength": {
+              "en": 120
+            },
+            "dir": "auto"
+          },
+          {
+            "key": "target-fields[].description",
+            "kind": "plain",
+            "required": false,
+            "maxLength": {
+              "en": 480
+            },
+            "dir": "auto"
+          },
+          {
+            "key": "labels.source",
+            "kind": "plain",
+            "required": false,
+            "maxLength": {
+              "en": 120
+            },
+            "dir": "auto"
+          },
+          {
+            "key": "labels.target",
+            "kind": "plain",
+            "required": false,
+            "maxLength": {
+              "en": 120
+            },
+            "dir": "auto"
+          },
+          {
+            "key": "labels.unmapped",
+            "kind": "plain",
+            "required": false,
+            "maxLength": {
+              "en": 120
+            },
+            "dir": "auto"
+          }
+        ]
+      }
+    },
+    "requires": [],
+    "status": "draft"
+  },
+  {
+    "id": "passages.comparison",
+    "layer": "passages",
+    "contract": {
+      "kind": "passage",
+      "source": "writer",
+      "sectionId": "sections.comparison",
+      "passageSchema": "passages.comparison",
+      "copy": {
+        "sourceLocale": "en",
+        "fields": [
+          {
+            "key": "header.eyebrow",
+            "kind": "plain",
+            "required": false,
+            "maxLength": {
+              "en": 120
+            },
+            "dir": "auto"
+          },
+          {
+            "key": "header.heading",
+            "kind": "plain",
+            "required": false,
+            "maxLength": {
+              "en": 160
+            },
+            "dir": "auto"
+          },
+          {
+            "key": "header.description",
+            "kind": "plain",
+            "required": false,
+            "maxLength": {
+              "en": 480
+            },
+            "dir": "auto"
+          },
+          {
+            "key": "columns[].label",
+            "kind": "plain",
+            "required": true,
+            "maxLength": {
+              "en": 120
+            },
+            "dir": "auto"
+          },
+          {
+            "key": "columns[].description",
+            "kind": "plain",
+            "required": false,
+            "maxLength": {
+              "en": 480
+            },
+            "dir": "auto"
+          },
+          {
+            "key": "rows[].label",
+            "kind": "plain",
+            "required": true,
+            "maxLength": {
+              "en": 120
+            },
+            "dir": "auto"
+          },
+          {
+            "key": "rows[].description",
+            "kind": "plain",
+            "required": false,
+            "maxLength": {
+              "en": 480
+            },
+            "dir": "auto"
+          },
+          {
+            "key": "rows[].cells[].text",
+            "kind": "plain",
+            "required": false,
+            "maxLength": {
+              "en": 120
+            },
+            "dir": "auto"
+          },
+          {
+            "key": "highlight.label",
+            "kind": "plain",
+            "required": false,
+            "maxLength": {
+              "en": 120
+            },
+            "dir": "auto"
+          },
+          {
+            "key": "controls[].label",
+            "kind": "plain",
+            "required": false,
+            "maxLength": {
+              "en": 120
+            },
+            "dir": "auto"
+          },
+          {
+            "key": "labels.label",
+            "kind": "plain",
+            "required": false,
+            "maxLength": {
+              "en": 120
+            },
+            "dir": "auto"
+          },
+          {
+            "key": "labels.feature",
+            "kind": "plain",
+            "required": false,
+            "maxLength": {
+              "en": 120
+            },
+            "dir": "auto"
+          },
+          {
+            "key": "rows[].cells[].value",
+            "kind": "plain",
+            "required": false,
+            "maxLength": {
+              "en": 160
+            },
+            "dir": "auto"
+          },
+          {
+            "key": "rows[].cells[].delta",
+            "kind": "plain",
+            "required": false,
+            "maxLength": {
+              "en": 160
+            },
+            "dir": "auto"
+          }
+        ]
+      }
+    },
+    "requires": [],
+    "status": "draft"
+  },
+  {
+    "id": "passages.consent",
+    "layer": "passages",
+    "contract": {
+      "kind": "passage",
+      "source": "writer",
+      "sectionId": "sections.consent",
+      "passageSchema": "passages.consent",
+      "copy": {
+        "sourceLocale": "en",
+        "fields": [
+          {
+            "key": "header.eyebrow",
+            "kind": "plain",
+            "required": false,
+            "maxLength": {
+              "en": 120
+            },
+            "dir": "auto"
+          },
+          {
+            "key": "header.heading",
+            "kind": "plain",
+            "required": false,
+            "maxLength": {
+              "en": 160
+            },
+            "dir": "auto"
+          },
+          {
+            "key": "header.description",
+            "kind": "plain",
+            "required": false,
+            "maxLength": {
+              "en": 480
+            },
+            "dir": "auto"
+          },
+          {
+            "key": "copy.title",
+            "kind": "plain",
+            "required": true,
+            "maxLength": {
+              "en": 160
+            },
+            "dir": "auto"
+          },
+          {
+            "key": "copy.body",
+            "kind": "rich",
+            "required": true,
+            "maxLength": {
+              "en": 2400
+            },
+            "dir": "auto"
+          },
+          {
+            "key": "actions[].label",
+            "kind": "plain",
+            "required": true,
+            "maxLength": {
+              "en": 120
+            },
+            "dir": "auto"
+          },
+          {
+            "key": "policy.label",
+            "kind": "plain",
+            "required": true,
+            "maxLength": {
+              "en": 120
+            },
+            "dir": "auto"
+          }
+        ]
+      }
+    },
+    "requires": [],
+    "status": "draft"
+  },
+  {
+    "id": "passages.content",
+    "layer": "passages",
+    "contract": {
+      "kind": "passage",
+      "source": "writer",
+      "sectionId": "sections.content",
+      "passageSchema": "passages.content",
+      "copy": {
+        "sourceLocale": "en",
+        "fields": [
+          {
+            "key": "header.eyebrow",
+            "kind": "plain",
+            "required": false,
+            "maxLength": {
+              "en": 120
+            },
+            "dir": "auto"
+          },
+          {
+            "key": "header.heading",
+            "kind": "plain",
+            "required": false,
+            "maxLength": {
+              "en": 160
+            },
+            "dir": "auto"
+          },
+          {
+            "key": "header.description",
+            "kind": "plain",
+            "required": false,
+            "maxLength": {
+              "en": 480
+            },
+            "dir": "auto"
+          },
+          {
+            "key": "header.actions[].label",
+            "kind": "plain",
+            "required": false,
+            "maxLength": {
+              "en": 120
+            },
+            "dir": "auto"
+          },
+          {
+            "key": "body[].text",
+            "kind": "plain",
+            "required": true,
+            "maxLength": {
+              "en": 8000
+            },
+            "dir": "auto"
+          },
+          {
+            "key": "body[].items[]",
+            "kind": "plain",
+            "required": false,
+            "maxLength": {
+              "en": 8000
+            },
+            "dir": "auto"
+          },
+          {
+            "key": "media.title",
+            "kind": "plain",
+            "required": false,
+            "maxLength": {
+              "en": 160
+            },
+            "dir": "auto"
+          },
+          {
+            "key": "media.series[].name",
+            "kind": "plain",
+            "required": false,
+            "maxLength": {
+              "en": 160
+            },
+            "dir": "auto"
+          },
+          {
+            "key": "footnote",
+            "kind": "plain",
+            "required": false,
+            "maxLength": {
+              "en": 480
+            },
+            "dir": "auto"
+          }
+        ]
+      }
+    },
+    "requires": [],
+    "status": "draft"
+  },
+  {
+    "id": "passages.data-grid",
+    "layer": "passages",
+    "contract": {
+      "kind": "passage",
+      "source": "writer",
+      "sectionId": "sections.data-grid",
+      "passageSchema": "passages.data-grid",
+      "copy": {
+        "sourceLocale": "en",
+        "fields": [
+          {
+            "key": "header.eyebrow",
+            "kind": "plain",
+            "required": false,
+            "maxLength": {
+              "en": 120
+            },
+            "dir": "auto"
+          },
+          {
+            "key": "header.heading",
+            "kind": "plain",
+            "required": false,
+            "maxLength": {
+              "en": 160
+            },
+            "dir": "auto"
+          },
+          {
+            "key": "header.description",
+            "kind": "plain",
+            "required": false,
+            "maxLength": {
+              "en": 480
+            },
+            "dir": "auto"
+          },
+          {
+            "key": "cells[].label",
+            "kind": "plain",
+            "required": true,
+            "maxLength": {
+              "en": 120
+            },
+            "dir": "auto"
+          },
+          {
+            "key": "rows[].cells[].text",
+            "kind": "plain",
+            "required": false,
+            "maxLength": {
+              "en": 120
+            },
+            "dir": "auto"
+          },
+          {
+            "key": "labels.label",
+            "kind": "plain",
+            "required": false,
+            "maxLength": {
+              "en": 120
+            },
+            "dir": "auto"
+          },
+          {
+            "key": "labels.selection",
+            "kind": "plain",
+            "required": false,
+            "maxLength": {
+              "en": 120
+            },
+            "dir": "auto"
+          },
+          {
+            "key": "labels.sort",
+            "kind": "plain",
+            "required": false,
+            "maxLength": {
+              "en": 120
+            },
+            "dir": "auto"
+          },
+          {
+            "key": "states.loading.label",
+            "kind": "plain",
+            "required": true,
+            "maxLength": {
+              "en": 120
+            },
+            "dir": "auto"
+          },
+          {
+            "key": "states.loading.description",
+            "kind": "plain",
+            "required": false,
+            "maxLength": {
+              "en": 480
+            },
+            "dir": "auto"
+          },
+          {
+            "key": "states.empty.label",
+            "kind": "plain",
+            "required": true,
+            "maxLength": {
+              "en": 120
+            },
+            "dir": "auto"
+          },
+          {
+            "key": "states.empty.description",
+            "kind": "plain",
+            "required": false,
+            "maxLength": {
+              "en": 480
+            },
+            "dir": "auto"
+          },
+          {
+            "key": "states.error.label",
+            "kind": "plain",
+            "required": true,
+            "maxLength": {
+              "en": 120
+            },
+            "dir": "auto"
+          },
+          {
+            "key": "states.error.description",
+            "kind": "plain",
+            "required": false,
+            "maxLength": {
+              "en": 480
+            },
+            "dir": "auto"
+          }
+        ]
+      }
+    },
+    "requires": [],
+    "status": "draft"
+  },
+  {
+    "id": "passages.data-table",
+    "layer": "passages",
+    "contract": {
+      "kind": "passage",
+      "source": "writer",
+      "sectionId": "sections.data-table",
+      "passageSchema": "passages.data-table",
+      "copy": {
+        "sourceLocale": "en",
+        "fields": [
+          {
+            "key": "header.eyebrow",
+            "kind": "plain",
+            "required": false,
+            "maxLength": {
+              "en": 120
+            },
+            "dir": "auto"
+          },
+          {
+            "key": "header.heading",
+            "kind": "plain",
+            "required": false,
+            "maxLength": {
+              "en": 160
+            },
+            "dir": "auto"
+          },
+          {
+            "key": "header.description",
+            "kind": "plain",
+            "required": false,
+            "maxLength": {
+              "en": 480
+            },
+            "dir": "auto"
+          },
+          {
+            "key": "columns[].label",
+            "kind": "plain",
+            "required": true,
+            "maxLength": {
+              "en": 120
+            },
+            "dir": "auto"
+          },
+          {
+            "key": "rows[].cells[].text",
+            "kind": "plain",
+            "required": false,
+            "maxLength": {
+              "en": 120
+            },
+            "dir": "auto"
+          },
+          {
+            "key": "toolbar.search.label",
+            "kind": "plain",
+            "required": false,
+            "maxLength": {
+              "en": 120
+            },
+            "dir": "auto"
+          },
+          {
+            "key": "toolbar.search.placeholder",
+            "kind": "plain",
+            "required": false,
+            "maxLength": {
+              "en": 120
+            },
+            "dir": "auto"
+          },
+          {
+            "key": "toolbar.actions[].label",
+            "kind": "plain",
+            "required": false,
+            "maxLength": {
+              "en": 120
+            },
+            "dir": "auto"
+          },
+          {
+            "key": "pagination.label",
+            "kind": "plain",
+            "required": false,
+            "maxLength": {
+              "en": 120
+            },
+            "dir": "auto"
+          },
+          {
+            "key": "pagination.pageText",
+            "kind": "icu",
+            "required": false,
+            "maxLength": {
+              "en": 120
+            },
+            "dir": "auto"
+          },
+          {
+            "key": "pagination.totalText",
+            "kind": "icu",
+            "required": false,
+            "maxLength": {
+              "en": 120
+            },
+            "dir": "auto"
+          },
+          {
+            "key": "labels.label",
+            "kind": "plain",
+            "required": false,
+            "maxLength": {
+              "en": 120
+            },
+            "dir": "auto"
+          },
+          {
+            "key": "labels.selection",
+            "kind": "plain",
+            "required": false,
+            "maxLength": {
+              "en": 120
+            },
+            "dir": "auto"
+          },
+          {
+            "key": "labels.sort",
+            "kind": "plain",
+            "required": false,
+            "maxLength": {
+              "en": 120
+            },
+            "dir": "auto"
+          },
+          {
+            "key": "states.loading.label",
+            "kind": "plain",
+            "required": true,
+            "maxLength": {
+              "en": 120
+            },
+            "dir": "auto"
+          },
+          {
+            "key": "states.loading.description",
+            "kind": "plain",
+            "required": false,
+            "maxLength": {
+              "en": 480
+            },
+            "dir": "auto"
+          },
+          {
+            "key": "states.empty.label",
+            "kind": "plain",
+            "required": true,
+            "maxLength": {
+              "en": 120
+            },
+            "dir": "auto"
+          },
+          {
+            "key": "states.empty.description",
+            "kind": "plain",
+            "required": false,
+            "maxLength": {
+              "en": 480
+            },
+            "dir": "auto"
+          },
+          {
+            "key": "states.error.label",
+            "kind": "plain",
+            "required": true,
+            "maxLength": {
+              "en": 120
+            },
+            "dir": "auto"
+          },
+          {
+            "key": "states.error.description",
+            "kind": "plain",
+            "required": false,
+            "maxLength": {
+              "en": 480
+            },
+            "dir": "auto"
+          }
+        ]
+      }
+    },
+    "requires": [],
+    "status": "draft"
+  },
+  {
+    "id": "passages.empty-state",
+    "layer": "passages",
+    "contract": {
+      "kind": "passage",
+      "source": "writer",
+      "sectionId": "sections.empty-state",
+      "passageSchema": "passages.empty-state",
+      "copy": {
+        "sourceLocale": "en",
+        "fields": [
+          {
+            "key": "header.eyebrow",
+            "kind": "plain",
+            "required": false,
+            "maxLength": {
+              "en": 120
+            },
+            "dir": "auto"
+          },
+          {
+            "key": "header.heading",
+            "kind": "plain",
+            "required": false,
+            "maxLength": {
+              "en": 160
+            },
+            "dir": "auto"
+          },
+          {
+            "key": "header.description",
+            "kind": "plain",
+            "required": false,
+            "maxLength": {
+              "en": 480
+            },
+            "dir": "auto"
+          },
+          {
+            "key": "actions[].label",
+            "kind": "plain",
+            "required": false,
+            "maxLength": {
+              "en": 120
+            },
+            "dir": "auto"
+          },
+          {
+            "key": "illustration.label",
+            "kind": "plain",
+            "required": false,
+            "maxLength": {
+              "en": 120
+            },
+            "dir": "auto"
+          }
+        ]
+      }
+    },
+    "requires": [],
+    "status": "draft"
+  },
+  {
+    "id": "passages.error-state",
+    "layer": "passages",
+    "contract": {
+      "kind": "passage",
+      "source": "writer",
+      "sectionId": "sections.error-state",
+      "passageSchema": "passages.error-state",
+      "copy": {
+        "sourceLocale": "en",
+        "fields": [
+          {
+            "key": "header.eyebrow",
+            "kind": "plain",
+            "required": false,
+            "maxLength": {
+              "en": 120
+            },
+            "dir": "auto"
+          },
+          {
+            "key": "header.heading",
+            "kind": "plain",
+            "required": false,
+            "maxLength": {
+              "en": 160
+            },
+            "dir": "auto"
+          },
+          {
+            "key": "header.description",
+            "kind": "plain",
+            "required": false,
+            "maxLength": {
+              "en": 480
+            },
+            "dir": "auto"
+          },
+          {
+            "key": "code",
+            "kind": "plain",
+            "required": false,
+            "maxLength": {
+              "en": 120
+            },
+            "dir": "auto"
+          },
+          {
+            "key": "retry.label",
+            "kind": "plain",
+            "required": false,
+            "maxLength": {
+              "en": 120
+            },
+            "dir": "auto"
+          },
+          {
+            "key": "report.label",
+            "kind": "plain",
+            "required": false,
+            "maxLength": {
+              "en": 120
+            },
+            "dir": "auto"
+          }
+        ]
+      }
+    },
+    "requires": [],
+    "status": "draft"
+  },
+  {
+    "id": "passages.explorer",
+    "layer": "passages",
+    "contract": {
+      "kind": "passage",
+      "source": "writer",
+      "sectionId": "sections.explorer",
+      "passageSchema": "passages.explorer",
+      "copy": {
+        "sourceLocale": "en",
+        "fields": [
+          {
+            "key": "header.eyebrow",
+            "kind": "plain",
+            "required": false,
+            "maxLength": {
+              "en": 120
+            },
+            "dir": "auto"
+          },
+          {
+            "key": "header.heading",
+            "kind": "plain",
+            "required": false,
+            "maxLength": {
+              "en": 160
+            },
+            "dir": "auto"
+          },
+          {
+            "key": "header.description",
+            "kind": "plain",
+            "required": false,
+            "maxLength": {
+              "en": 480
+            },
+            "dir": "auto"
+          },
+          {
+            "key": "tree.label",
+            "kind": "plain",
+            "required": true,
+            "maxLength": {
+              "en": 120
+            },
+            "dir": "auto"
+          },
+          {
+            "key": "tree.nodes[].label",
+            "kind": "plain",
+            "required": true,
+            "maxLength": {
+              "en": 120
+            },
+            "dir": "auto"
+          },
+          {
+            "key": "tree.nodes[].description",
+            "kind": "plain",
+            "required": false,
+            "maxLength": {
+              "en": 480
+            },
+            "dir": "auto"
+          },
+          {
+            "key": "list.label",
+            "kind": "plain",
+            "required": true,
+            "maxLength": {
+              "en": 120
+            },
+            "dir": "auto"
+          },
+          {
+            "key": "list.items[].label",
+            "kind": "plain",
+            "required": true,
+            "maxLength": {
+              "en": 120
+            },
+            "dir": "auto"
+          },
+          {
+            "key": "labels.details",
+            "kind": "plain",
+            "required": false,
+            "maxLength": {
+              "en": 120
+            },
+            "dir": "auto"
+          }
+        ]
+      }
+    },
+    "requires": [],
+    "status": "draft"
+  },
+  {
+    "id": "passages.faq",
+    "layer": "passages",
+    "contract": {
+      "kind": "passage",
+      "source": "writer",
+      "sectionId": "sections.faq",
+      "passageSchema": "passages.faq",
+      "copy": {
+        "sourceLocale": "en",
+        "fields": [
+          {
+            "key": "header.eyebrow",
+            "kind": "plain",
+            "required": false,
+            "maxLength": {
+              "en": 120
+            },
+            "dir": "auto"
+          },
+          {
+            "key": "header.heading",
+            "kind": "plain",
+            "required": false,
+            "maxLength": {
+              "en": 160
+            },
+            "dir": "auto"
+          },
+          {
+            "key": "header.description",
+            "kind": "plain",
+            "required": false,
+            "maxLength": {
+              "en": 480
+            },
+            "dir": "auto"
+          },
+          {
+            "key": "items[].question",
+            "kind": "plain",
+            "required": true,
+            "maxLength": {
+              "en": 120
+            },
+            "dir": "auto"
+          },
+          {
+            "key": "items[].answer",
+            "kind": "rich",
+            "required": true,
+            "maxLength": {
+              "en": 2400
+            },
+            "dir": "auto"
+          }
+        ]
+      }
+    },
+    "requires": [],
+    "status": "draft"
+  },
+  {
+    "id": "passages.features",
+    "layer": "passages",
+    "contract": {
+      "kind": "passage",
+      "source": "writer",
+      "sectionId": "sections.features",
+      "passageSchema": "passages.features",
+      "copy": {
+        "sourceLocale": "en",
+        "fields": [
+          {
+            "key": "header.eyebrow",
+            "kind": "plain",
+            "required": false,
+            "maxLength": {
+              "en": 120
+            },
+            "dir": "auto"
+          },
+          {
+            "key": "header.heading",
+            "kind": "plain",
+            "required": false,
+            "maxLength": {
+              "en": 160
+            },
+            "dir": "auto"
+          },
+          {
+            "key": "header.description",
+            "kind": "plain",
+            "required": false,
+            "maxLength": {
+              "en": 480
+            },
+            "dir": "auto"
+          },
+          {
+            "key": "items[].heading",
+            "kind": "plain",
+            "required": true,
+            "maxLength": {
+              "en": 160
+            },
+            "dir": "auto"
+          },
+          {
+            "key": "items[].description",
+            "kind": "plain",
+            "required": false,
+            "maxLength": {
+              "en": 480
+            },
+            "dir": "auto"
+          }
+        ]
+      }
+    },
+    "requires": [],
+    "status": "draft"
+  },
+  {
+    "id": "passages.filter-builder",
+    "layer": "passages",
+    "contract": {
+      "kind": "passage",
+      "source": "writer",
+      "sectionId": "sections.filter-builder",
+      "passageSchema": "passages.filter-builder",
+      "copy": {
+        "sourceLocale": "en",
+        "fields": [
+          {
+            "key": "header.eyebrow",
+            "kind": "plain",
+            "required": false,
+            "maxLength": {
+              "en": 120
+            },
+            "dir": "auto"
+          },
+          {
+            "key": "header.heading",
+            "kind": "plain",
+            "required": false,
+            "maxLength": {
+              "en": 160
+            },
+            "dir": "auto"
+          },
+          {
+            "key": "header.description",
+            "kind": "plain",
+            "required": false,
+            "maxLength": {
+              "en": 480
+            },
+            "dir": "auto"
+          },
+          {
+            "key": "fields[].label",
+            "kind": "plain",
+            "required": true,
+            "maxLength": {
+              "en": 120
+            },
+            "dir": "auto"
+          },
+          {
+            "key": "fields[].options[].label",
+            "kind": "plain",
+            "required": false,
+            "maxLength": {
+              "en": 120
+            },
+            "dir": "auto"
+          },
+          {
+            "key": "operators[].label",
+            "kind": "plain",
+            "required": true,
+            "maxLength": {
+              "en": 120
+            },
+            "dir": "auto"
+          },
+          {
+            "key": "groups[].label",
+            "kind": "plain",
+            "required": false,
+            "maxLength": {
+              "en": 120
+            },
+            "dir": "auto"
+          },
+          {
+            "key": "labels.addRule",
+            "kind": "plain",
+            "required": false,
+            "maxLength": {
+              "en": 120
+            },
+            "dir": "auto"
+          },
+          {
+            "key": "labels.addGroup",
+            "kind": "plain",
+            "required": false,
+            "maxLength": {
+              "en": 120
+            },
+            "dir": "auto"
+          },
+          {
+            "key": "labels.remove",
+            "kind": "plain",
+            "required": false,
+            "maxLength": {
+              "en": 120
+            },
+            "dir": "auto"
+          },
+          {
+            "key": "labels.matchAll",
+            "kind": "plain",
+            "required": false,
+            "maxLength": {
+              "en": 120
+            },
+            "dir": "auto"
+          },
+          {
+            "key": "labels.matchAny",
+            "kind": "plain",
+            "required": false,
+            "maxLength": {
+              "en": 120
+            },
+            "dir": "auto"
+          },
+          {
+            "key": "labels.value",
+            "kind": "plain",
+            "required": false,
+            "maxLength": {
+              "en": 120
+            },
+            "dir": "auto"
+          }
+        ]
+      }
+    },
+    "requires": [],
+    "status": "draft"
+  },
+  {
+    "id": "passages.form",
+    "layer": "passages",
+    "contract": {
+      "kind": "passage",
+      "source": "writer",
+      "sectionId": "sections.form",
+      "passageSchema": "passages.form",
+      "copy": {
+        "sourceLocale": "en",
+        "fields": [
+          {
+            "key": "header.eyebrow",
+            "kind": "plain",
+            "required": false,
+            "maxLength": {
+              "en": 120
+            },
+            "dir": "auto"
+          },
+          {
+            "key": "header.heading",
+            "kind": "plain",
+            "required": false,
+            "maxLength": {
+              "en": 160
+            },
+            "dir": "auto"
+          },
+          {
+            "key": "header.description",
+            "kind": "plain",
+            "required": false,
+            "maxLength": {
+              "en": 480
+            },
+            "dir": "auto"
+          },
+          {
+            "key": "fields[].label",
+            "kind": "plain",
+            "required": true,
+            "maxLength": {
+              "en": 120
+            },
+            "dir": "auto"
+          },
+          {
+            "key": "fields[].description",
+            "kind": "plain",
+            "required": false,
+            "maxLength": {
+              "en": 480
+            },
+            "dir": "auto"
+          },
+          {
+            "key": "fields[].placeholder",
+            "kind": "plain",
+            "required": false,
+            "maxLength": {
+              "en": 120
+            },
+            "dir": "auto"
+          },
+          {
+            "key": "fields[].options[].label",
+            "kind": "plain",
+            "required": false,
+            "maxLength": {
+              "en": 120
+            },
+            "dir": "auto"
+          },
+          {
+            "key": "fields[].error",
+            "kind": "plain",
+            "required": false,
+            "maxLength": {
+              "en": 120
+            },
+            "dir": "auto"
+          },
+          {
+            "key": "submit.label",
+            "kind": "plain",
+            "required": true,
+            "maxLength": {
+              "en": 120
+            },
+            "dir": "auto"
+          },
+          {
+            "key": "error-summary.heading",
+            "kind": "plain",
+            "required": false,
+            "maxLength": {
+              "en": 160
+            },
+            "dir": "auto"
+          },
+          {
+            "key": "error-summary.items[].message",
+            "kind": "plain",
+            "required": false,
+            "maxLength": {
+              "en": 120
+            },
+            "dir": "auto"
+          }
+        ]
+      }
+    },
+    "requires": [],
+    "status": "draft"
+  },
+  {
+    "id": "passages.gallery",
+    "layer": "passages",
+    "contract": {
+      "kind": "passage",
+      "source": "writer",
+      "sectionId": "sections.gallery",
+      "passageSchema": "passages.gallery",
+      "copy": {
+        "sourceLocale": "en",
+        "fields": [
+          {
+            "key": "header.eyebrow",
+            "kind": "plain",
+            "required": false,
+            "maxLength": {
+              "en": 120
+            },
+            "dir": "auto"
+          },
+          {
+            "key": "header.heading",
+            "kind": "plain",
+            "required": false,
+            "maxLength": {
+              "en": 160
+            },
+            "dir": "auto"
+          },
+          {
+            "key": "header.description",
+            "kind": "plain",
+            "required": false,
+            "maxLength": {
+              "en": 480
+            },
+            "dir": "auto"
+          },
+          {
+            "key": "images.label",
+            "kind": "plain",
+            "required": true,
+            "maxLength": {
+              "en": 120
+            },
+            "dir": "auto"
+          },
+          {
+            "key": "images.items[].label",
+            "kind": "plain",
+            "required": true,
+            "maxLength": {
+              "en": 120
+            },
+            "dir": "auto"
+          },
+          {
+            "key": "images.items[].caption",
+            "kind": "plain",
+            "required": false,
+            "maxLength": {
+              "en": 480
+            },
+            "dir": "auto"
+          },
+          {
+            "key": "images.items[].media.title",
+            "kind": "plain",
+            "required": false,
+            "maxLength": {
+              "en": 160
+            },
+            "dir": "auto"
+          }
+        ]
+      }
+    },
+    "requires": [],
+    "status": "draft"
+  },
+  {
+    "id": "passages.hero",
+    "layer": "passages",
+    "contract": {
+      "kind": "passage",
+      "source": "writer",
+      "sectionId": "sections.hero",
+      "passageSchema": "passages.hero",
+      "copy": {
+        "sourceLocale": "en",
+        "fields": [
+          {
+            "key": "header.heading",
+            "kind": "plain",
+            "required": true,
+            "maxLength": {
+              "en": 160
+            },
+            "dir": "auto"
+          },
+          {
+            "key": "header.eyebrow",
+            "kind": "plain",
+            "required": false,
+            "maxLength": {
+              "en": 120
+            },
+            "dir": "auto"
+          },
+          {
+            "key": "header.description",
+            "kind": "plain",
+            "required": false,
+            "maxLength": {
+              "en": 480
+            },
+            "dir": "auto"
+          },
+          {
+            "key": "actions.primary.label",
+            "kind": "plain",
+            "required": false,
+            "maxLength": {
+              "en": 120
+            },
+            "dir": "auto"
+          },
+          {
+            "key": "actions.secondary.label",
+            "kind": "plain",
+            "required": false,
+            "maxLength": {
+              "en": 120
+            },
+            "dir": "auto"
+          },
+          {
+            "key": "media.title",
+            "kind": "plain",
+            "required": false,
+            "maxLength": {
+              "en": 160
+            },
+            "dir": "auto"
+          },
+          {
+            "key": "media.series[].name",
+            "kind": "plain",
+            "required": false,
+            "maxLength": {
+              "en": 160
+            },
+            "dir": "auto"
+          }
+        ]
+      }
+    },
+    "requires": [],
+    "status": "draft"
+  },
+  {
+    "id": "passages.link-index",
+    "layer": "passages",
+    "contract": {
+      "kind": "passage",
+      "source": "writer",
+      "sectionId": "sections.link-index",
+      "passageSchema": "passages.link-index",
+      "copy": {
+        "sourceLocale": "en",
+        "fields": [
+          {
+            "key": "header.eyebrow",
+            "kind": "plain",
+            "required": false,
+            "maxLength": {
+              "en": 120
+            },
+            "dir": "auto"
+          },
+          {
+            "key": "header.heading",
+            "kind": "plain",
+            "required": false,
+            "maxLength": {
+              "en": 160
+            },
+            "dir": "auto"
+          },
+          {
+            "key": "header.description",
+            "kind": "plain",
+            "required": false,
+            "maxLength": {
+              "en": 480
+            },
+            "dir": "auto"
+          },
+          {
+            "key": "links[].title",
+            "kind": "plain",
+            "required": true,
+            "maxLength": {
+              "en": 160
+            },
+            "dir": "auto"
+          },
+          {
+            "key": "links[].description",
+            "kind": "plain",
+            "required": false,
+            "maxLength": {
+              "en": 480
+            },
+            "dir": "auto"
+          },
+          {
+            "key": "links[].label",
+            "kind": "plain",
+            "required": false,
+            "maxLength": {
+              "en": 120
+            },
+            "dir": "auto"
+          },
+          {
+            "key": "links[].badge",
+            "kind": "plain",
+            "required": false,
+            "maxLength": {
+              "en": 120
+            },
+            "dir": "auto"
+          }
+        ]
+      }
+    },
+    "requires": [],
+    "status": "draft"
+  },
+  {
+    "id": "passages.logo-cloud",
+    "layer": "passages",
+    "contract": {
+      "kind": "passage",
+      "source": "writer",
+      "sectionId": "sections.logo-cloud",
+      "passageSchema": "passages.logo-cloud",
+      "copy": {
+        "sourceLocale": "en",
+        "fields": [
+          {
+            "key": "header.eyebrow",
+            "kind": "plain",
+            "required": false,
+            "maxLength": {
+              "en": 120
+            },
+            "dir": "auto"
+          },
+          {
+            "key": "header.heading",
+            "kind": "plain",
+            "required": false,
+            "maxLength": {
+              "en": 160
+            },
+            "dir": "auto"
+          },
+          {
+            "key": "header.description",
+            "kind": "plain",
+            "required": false,
+            "maxLength": {
+              "en": 480
+            },
+            "dir": "auto"
+          },
+          {
+            "key": "logos[].name",
+            "kind": "plain",
+            "required": true,
+            "maxLength": {
+              "en": 160
+            },
+            "dir": "auto"
+          }
+        ]
+      }
+    },
+    "requires": [],
+    "status": "draft"
+  },
+  {
+    "id": "passages.logo-hero",
+    "layer": "passages",
+    "contract": {
+      "kind": "passage",
+      "source": "writer",
+      "sectionId": "sections.logo-hero",
+      "passageSchema": "passages.logo-hero",
+      "copy": {
+        "sourceLocale": "en",
+        "fields": [
+          {
+            "key": "name",
+            "kind": "plain",
+            "required": true,
+            "maxLength": {
+              "en": 160
+            },
+            "dir": "auto"
+          }
+        ]
+      }
+    },
+    "requires": [],
+    "status": "draft"
+  },
+  {
+    "id": "passages.media",
+    "layer": "passages",
+    "contract": {
+      "kind": "passage",
+      "source": "writer",
+      "sectionId": "sections.media",
+      "passageSchema": "passages.media",
+      "copy": {
+        "sourceLocale": "en",
+        "fields": [
+          {
+            "key": "header.eyebrow",
+            "kind": "plain",
+            "required": false,
+            "maxLength": {
+              "en": 120
+            },
+            "dir": "auto"
+          },
+          {
+            "key": "header.heading",
+            "kind": "plain",
+            "required": false,
+            "maxLength": {
+              "en": 160
+            },
+            "dir": "auto"
+          },
+          {
+            "key": "header.description",
+            "kind": "plain",
+            "required": false,
+            "maxLength": {
+              "en": 480
+            },
+            "dir": "auto"
+          },
+          {
+            "key": "figure.caption",
+            "kind": "plain",
+            "required": false,
+            "maxLength": {
+              "en": 480
+            },
+            "dir": "auto"
+          },
+          {
+            "key": "figure.media.title",
+            "kind": "plain",
+            "required": true,
+            "maxLength": {
+              "en": 160
+            },
+            "dir": "auto"
+          },
+          {
+            "key": "figure.media.series[].name",
+            "kind": "plain",
+            "required": false,
+            "maxLength": {
+              "en": 160
+            },
+            "dir": "auto"
+          }
+        ]
+      }
+    },
+    "requires": [],
+    "status": "draft"
+  },
+  {
+    "id": "passages.newsletter",
+    "layer": "passages",
+    "contract": {
+      "kind": "passage",
+      "source": "writer",
+      "sectionId": "sections.newsletter",
+      "passageSchema": "passages.newsletter",
+      "copy": {
+        "sourceLocale": "en",
+        "fields": [
+          {
+            "key": "header.eyebrow",
+            "kind": "plain",
+            "required": false,
+            "maxLength": {
+              "en": 120
+            },
+            "dir": "auto"
+          },
+          {
+            "key": "header.heading",
+            "kind": "plain",
+            "required": false,
+            "maxLength": {
+              "en": 160
+            },
+            "dir": "auto"
+          },
+          {
+            "key": "header.description",
+            "kind": "plain",
+            "required": false,
+            "maxLength": {
+              "en": 480
+            },
+            "dir": "auto"
+          },
+          {
+            "key": "email.label",
+            "kind": "plain",
+            "required": true,
+            "maxLength": {
+              "en": 120
+            },
+            "dir": "auto"
+          },
+          {
+            "key": "email.placeholder",
+            "kind": "plain",
+            "required": false,
+            "maxLength": {
+              "en": 120
+            },
+            "dir": "auto"
+          },
+          {
+            "key": "consent",
+            "kind": "plain",
+            "required": true,
+            "maxLength": {
+              "en": 120
+            },
+            "dir": "auto"
+          },
+          {
+            "key": "submit.label",
+            "kind": "plain",
+            "required": true,
+            "maxLength": {
+              "en": 120
+            },
+            "dir": "auto"
+          },
+          {
+            "key": "submit.pendingLabel",
+            "kind": "plain",
+            "required": true,
+            "maxLength": {
+              "en": 120
+            },
+            "dir": "auto"
+          },
+          {
+            "key": "submit.sentMessage",
+            "kind": "plain",
+            "required": true,
+            "maxLength": {
+              "en": 120
+            },
+            "dir": "auto"
+          },
+          {
+            "key": "submit.failedMessage",
+            "kind": "plain",
+            "required": true,
+            "maxLength": {
+              "en": 120
+            },
+            "dir": "auto"
+          }
+        ]
+      }
+    },
+    "requires": [],
+    "status": "draft"
+  },
+  {
+    "id": "passages.notices",
+    "layer": "passages",
+    "contract": {
+      "kind": "passage",
+      "source": "writer",
+      "sectionId": "sections.notices",
+      "passageSchema": "passages.notices",
+      "copy": {
+        "sourceLocale": "en",
+        "fields": [
+          {
+            "key": "header.eyebrow",
+            "kind": "plain",
+            "required": false,
+            "maxLength": {
+              "en": 120
+            },
+            "dir": "auto"
+          },
+          {
+            "key": "header.heading",
+            "kind": "plain",
+            "required": false,
+            "maxLength": {
+              "en": 160
+            },
+            "dir": "auto"
+          },
+          {
+            "key": "header.description",
+            "kind": "plain",
+            "required": false,
+            "maxLength": {
+              "en": 480
+            },
+            "dir": "auto"
+          },
+          {
+            "key": "notices[].title",
+            "kind": "plain",
+            "required": true,
+            "maxLength": {
+              "en": 160
+            },
+            "dir": "auto"
+          },
+          {
+            "key": "notices[].body",
+            "kind": "rich",
+            "required": false,
+            "maxLength": {
+              "en": 2400
+            },
+            "dir": "auto"
+          },
+          {
+            "key": "notices[].action.label",
+            "kind": "plain",
+            "required": false,
+            "maxLength": {
+              "en": 120
+            },
+            "dir": "auto"
+          },
+          {
+            "key": "notices[].dismissLabel",
+            "kind": "plain",
+            "required": false,
+            "maxLength": {
+              "en": 120
+            },
+            "dir": "auto"
+          }
+        ]
+      }
+    },
+    "requires": [],
+    "status": "draft"
+  },
+  {
+    "id": "passages.page-header",
+    "layer": "passages",
+    "contract": {
+      "kind": "passage",
+      "source": "writer",
+      "sectionId": "sections.page-header",
+      "passageSchema": "passages.page-header",
+      "copy": {
+        "sourceLocale": "en",
+        "fields": [
+          {
+            "key": "header.eyebrow",
+            "kind": "plain",
+            "required": false,
+            "maxLength": {
+              "en": 120
+            },
+            "dir": "auto"
+          },
+          {
+            "key": "header.heading",
+            "kind": "plain",
+            "required": false,
+            "maxLength": {
+              "en": 160
+            },
+            "dir": "auto"
+          },
+          {
+            "key": "header.description",
+            "kind": "plain",
+            "required": false,
+            "maxLength": {
+              "en": 480
+            },
+            "dir": "auto"
+          },
+          {
+            "key": "title",
+            "kind": "plain",
+            "required": true,
+            "maxLength": {
+              "en": 160
+            },
+            "dir": "auto"
+          },
+          {
+            "key": "description",
+            "kind": "plain",
+            "required": false,
+            "maxLength": {
+              "en": 480
+            },
+            "dir": "auto"
+          },
+          {
+            "key": "breadcrumbs.label",
+            "kind": "plain",
+            "required": false,
+            "maxLength": {
+              "en": 120
+            },
+            "dir": "auto"
+          },
+          {
+            "key": "breadcrumbs.items[].label",
+            "kind": "plain",
+            "required": false,
+            "maxLength": {
+              "en": 120
+            },
+            "dir": "auto"
+          },
+          {
+            "key": "actions[].label",
+            "kind": "plain",
+            "required": false,
+            "maxLength": {
+              "en": 120
+            },
+            "dir": "auto"
+          },
+          {
+            "key": "meta[].label",
+            "kind": "plain",
+            "required": false,
+            "maxLength": {
+              "en": 120
+            },
+            "dir": "auto"
+          },
+          {
+            "key": "meta[].value",
+            "kind": "plain",
+            "required": false,
+            "maxLength": {
+              "en": 120
+            },
+            "dir": "auto"
+          }
+        ]
+      }
+    },
+    "requires": [],
+    "status": "draft"
+  },
+  {
+    "id": "passages.pagination",
+    "layer": "passages",
+    "contract": {
+      "kind": "passage",
+      "source": "writer",
+      "sectionId": "sections.pagination",
+      "passageSchema": "passages.pagination",
+      "copy": {
+        "sourceLocale": "en",
+        "fields": [
+          {
+            "key": "page.label",
+            "kind": "plain",
+            "required": false,
+            "maxLength": {
+              "en": 120
+            },
+            "dir": "auto"
+          },
+          {
+            "key": "page.previousLabel",
+            "kind": "plain",
+            "required": false,
+            "maxLength": {
+              "en": 120
+            },
+            "dir": "auto"
+          },
+          {
+            "key": "page.nextLabel",
+            "kind": "plain",
+            "required": false,
+            "maxLength": {
+              "en": 120
+            },
+            "dir": "auto"
+          },
+          {
+            "key": "page.pageText",
+            "kind": "icu",
+            "required": false,
+            "maxLength": {
+              "en": 120
+            },
+            "dir": "auto"
+          },
+          {
+            "key": "total.label",
+            "kind": "plain",
+            "required": false,
+            "maxLength": {
+              "en": 120
+            },
+            "dir": "auto"
+          }
+        ]
+      }
+    },
+    "requires": [],
+    "status": "draft"
+  },
+  {
+    "id": "passages.people",
+    "layer": "passages",
+    "contract": {
+      "kind": "passage",
+      "source": "writer",
+      "sectionId": "sections.people",
+      "passageSchema": "passages.people",
+      "copy": {
+        "sourceLocale": "en",
+        "fields": [
+          {
+            "key": "header.eyebrow",
+            "kind": "plain",
+            "required": false,
+            "maxLength": {
+              "en": 120
+            },
+            "dir": "auto"
+          },
+          {
+            "key": "header.heading",
+            "kind": "plain",
+            "required": false,
+            "maxLength": {
+              "en": 160
+            },
+            "dir": "auto"
+          },
+          {
+            "key": "header.description",
+            "kind": "plain",
+            "required": false,
+            "maxLength": {
+              "en": 480
+            },
+            "dir": "auto"
+          },
+          {
+            "key": "people[].name",
+            "kind": "plain",
+            "required": true,
+            "maxLength": {
+              "en": 160
+            },
+            "dir": "auto"
+          },
+          {
+            "key": "people[].role",
+            "kind": "plain",
+            "required": false,
+            "maxLength": {
+              "en": 120
+            },
+            "dir": "auto"
+          },
+          {
+            "key": "people[].initials",
+            "kind": "plain",
+            "required": true,
+            "maxLength": {
+              "en": 120
+            },
+            "dir": "auto"
+          }
+        ]
+      }
+    },
+    "requires": [],
+    "status": "draft"
+  },
+  {
+    "id": "passages.pricing",
+    "layer": "passages",
+    "contract": {
+      "kind": "passage",
+      "source": "writer",
+      "sectionId": "sections.pricing",
+      "passageSchema": "passages.pricing",
+      "copy": {
+        "sourceLocale": "en",
+        "fields": [
+          {
+            "key": "header.eyebrow",
+            "kind": "plain",
+            "required": false,
+            "maxLength": {
+              "en": 120
+            },
+            "dir": "auto"
+          },
+          {
+            "key": "header.heading",
+            "kind": "plain",
+            "required": false,
+            "maxLength": {
+              "en": 160
+            },
+            "dir": "auto"
+          },
+          {
+            "key": "header.description",
+            "kind": "plain",
+            "required": false,
+            "maxLength": {
+              "en": 480
+            },
+            "dir": "auto"
+          },
+          {
+            "key": "plans[].name",
+            "kind": "plain",
+            "required": true,
+            "maxLength": {
+              "en": 160
+            },
+            "dir": "auto"
+          },
+          {
+            "key": "plans[].price",
+            "kind": "plain",
+            "required": false,
+            "maxLength": {
+              "en": 120
+            },
+            "dir": "auto"
+          },
+          {
+            "key": "plans[].description",
+            "kind": "plain",
+            "required": false,
+            "maxLength": {
+              "en": 480
+            },
+            "dir": "auto"
+          },
+          {
+            "key": "plans[].features[]",
+            "kind": "plain",
+            "required": false,
+            "maxLength": {
+              "en": 120
+            },
+            "dir": "auto"
+          },
+          {
+            "key": "plans[].cta.label",
+            "kind": "plain",
+            "required": true,
+            "maxLength": {
+              "en": 120
+            },
+            "dir": "auto"
+          },
+          {
+            "key": "plans[].badge",
+            "kind": "plain",
+            "required": false,
+            "maxLength": {
+              "en": 120
+            },
+            "dir": "auto"
+          },
+          {
+            "key": "interval",
+            "kind": "plain",
+            "required": false,
+            "maxLength": {
+              "en": 120
+            },
+            "dir": "auto"
+          },
+          {
+            "key": "plans[].priceByInterval[].amount",
+            "kind": "plain",
+            "required": true,
+            "maxLength": {
+              "en": 160
+            },
+            "dir": "auto"
+          },
+          {
+            "key": "plans[].priceByInterval[].priceText",
+            "kind": "plain",
+            "required": true,
+            "maxLength": {
+              "en": 160
+            },
+            "dir": "auto"
+          }
+        ]
+      }
+    },
+    "requires": [],
+    "status": "draft"
+  },
+  {
+    "id": "passages.record-detail",
+    "layer": "passages",
+    "contract": {
+      "kind": "passage",
+      "source": "writer",
+      "sectionId": "sections.record-detail",
+      "passageSchema": "passages.record-detail",
+      "copy": {
+        "sourceLocale": "en",
+        "fields": [
+          {
+            "key": "header.eyebrow",
+            "kind": "plain",
+            "required": false,
+            "maxLength": {
+              "en": 120
+            },
+            "dir": "auto"
+          },
+          {
+            "key": "header.heading",
+            "kind": "plain",
+            "required": false,
+            "maxLength": {
+              "en": 160
+            },
+            "dir": "auto"
+          },
+          {
+            "key": "header.description",
+            "kind": "plain",
+            "required": false,
+            "maxLength": {
+              "en": 480
+            },
+            "dir": "auto"
+          },
+          {
+            "key": "fields[].label",
+            "kind": "plain",
+            "required": true,
+            "maxLength": {
+              "en": 120
+            },
+            "dir": "auto"
+          },
+          {
+            "key": "fields[].value",
+            "kind": "plain",
+            "required": false,
+            "maxLength": {
+              "en": 120
+            },
+            "dir": "auto"
+          },
+          {
+            "key": "groups[].label",
+            "kind": "plain",
+            "required": false,
+            "maxLength": {
+              "en": 120
+            },
+            "dir": "auto"
+          },
+          {
+            "key": "status",
+            "kind": "plain",
+            "required": false,
+            "maxLength": {
+              "en": 120
+            },
+            "dir": "auto"
+          },
+          {
+            "key": "actions[].label",
+            "kind": "plain",
+            "required": false,
+            "maxLength": {
+              "en": 120
+            },
+            "dir": "auto"
+          },
+          {
+            "key": "states.loading.label",
+            "kind": "plain",
+            "required": true,
+            "maxLength": {
+              "en": 120
+            },
+            "dir": "auto"
+          },
+          {
+            "key": "states.loading.description",
+            "kind": "plain",
+            "required": false,
+            "maxLength": {
+              "en": 480
+            },
+            "dir": "auto"
+          },
+          {
+            "key": "states.empty.label",
+            "kind": "plain",
+            "required": true,
+            "maxLength": {
+              "en": 120
+            },
+            "dir": "auto"
+          },
+          {
+            "key": "states.empty.description",
+            "kind": "plain",
+            "required": false,
+            "maxLength": {
+              "en": 480
+            },
+            "dir": "auto"
+          },
+          {
+            "key": "states.error.label",
+            "kind": "plain",
+            "required": true,
+            "maxLength": {
+              "en": 120
+            },
+            "dir": "auto"
+          },
+          {
+            "key": "states.error.description",
+            "kind": "plain",
+            "required": false,
+            "maxLength": {
+              "en": 480
+            },
+            "dir": "auto"
+          },
+          {
+            "key": "labels.title",
+            "kind": "plain",
+            "required": false,
+            "maxLength": {
+              "en": 160
+            },
+            "dir": "auto"
+          }
+        ]
+      }
+    },
+    "requires": [],
+    "status": "draft"
+  },
+  {
+    "id": "passages.resource-list",
+    "layer": "passages",
+    "contract": {
+      "kind": "passage",
+      "source": "writer",
+      "sectionId": "sections.resource-list",
+      "passageSchema": "passages.resource-list",
+      "copy": {
+        "sourceLocale": "en",
+        "fields": [
+          {
+            "key": "header.eyebrow",
+            "kind": "plain",
+            "required": false,
+            "maxLength": {
+              "en": 120
+            },
+            "dir": "auto"
+          },
+          {
+            "key": "header.heading",
+            "kind": "plain",
+            "required": false,
+            "maxLength": {
+              "en": 160
+            },
+            "dir": "auto"
+          },
+          {
+            "key": "header.description",
+            "kind": "plain",
+            "required": false,
+            "maxLength": {
+              "en": 480
+            },
+            "dir": "auto"
+          },
+          {
+            "key": "records[].title",
+            "kind": "plain",
+            "required": true,
+            "maxLength": {
+              "en": 160
+            },
+            "dir": "auto"
+          },
+          {
+            "key": "records[].description",
+            "kind": "plain",
+            "required": false,
+            "maxLength": {
+              "en": 480
+            },
+            "dir": "auto"
+          },
+          {
+            "key": "records[].meta",
+            "kind": "plain",
+            "required": false,
+            "maxLength": {
+              "en": 120
+            },
+            "dir": "auto"
+          },
+          {
+            "key": "toolbar.label",
+            "kind": "plain",
+            "required": false,
+            "maxLength": {
+              "en": 120
+            },
+            "dir": "auto"
+          },
+          {
+            "key": "toolbar.search.label",
+            "kind": "plain",
+            "required": false,
+            "maxLength": {
+              "en": 120
+            },
+            "dir": "auto"
+          },
+          {
+            "key": "toolbar.search.placeholder",
+            "kind": "plain",
+            "required": false,
+            "maxLength": {
+              "en": 120
+            },
+            "dir": "auto"
+          },
+          {
+            "key": "pagination.pageText",
+            "kind": "icu",
+            "required": false,
+            "maxLength": {
+              "en": 120
+            },
+            "dir": "auto"
+          },
+          {
+            "key": "pagination.totalText",
+            "kind": "icu",
+            "required": false,
+            "maxLength": {
+              "en": 120
+            },
+            "dir": "auto"
+          },
+          {
+            "key": "labels.label",
+            "kind": "plain",
+            "required": false,
+            "maxLength": {
+              "en": 120
+            },
+            "dir": "auto"
+          },
+          {
+            "key": "states.loading.label",
+            "kind": "plain",
+            "required": true,
+            "maxLength": {
+              "en": 120
+            },
+            "dir": "auto"
+          },
+          {
+            "key": "states.loading.description",
+            "kind": "plain",
+            "required": false,
+            "maxLength": {
+              "en": 480
+            },
+            "dir": "auto"
+          },
+          {
+            "key": "states.empty.label",
+            "kind": "plain",
+            "required": true,
+            "maxLength": {
+              "en": 120
+            },
+            "dir": "auto"
+          },
+          {
+            "key": "states.empty.description",
+            "kind": "plain",
+            "required": false,
+            "maxLength": {
+              "en": 480
+            },
+            "dir": "auto"
+          },
+          {
+            "key": "states.error.label",
+            "kind": "plain",
+            "required": true,
+            "maxLength": {
+              "en": 120
+            },
+            "dir": "auto"
+          },
+          {
+            "key": "states.error.description",
+            "kind": "plain",
+            "required": false,
+            "maxLength": {
+              "en": 480
+            },
+            "dir": "auto"
+          }
+        ]
+      }
+    },
+    "requires": [],
+    "status": "draft"
+  },
+  {
+    "id": "passages.section-header",
+    "layer": "passages",
+    "contract": {
+      "kind": "passage",
+      "source": "writer",
+      "sectionId": "sections.section-header",
+      "passageSchema": "passages.section-header",
+      "copy": {
+        "sourceLocale": "en",
+        "fields": [
+          {
+            "key": "eyebrow",
+            "kind": "plain",
+            "required": false,
+            "maxLength": {
+              "en": 120
+            },
+            "dir": "auto"
+          },
+          {
+            "key": "heading",
+            "kind": "plain",
+            "required": true,
+            "maxLength": {
+              "en": 160
+            },
+            "dir": "auto"
+          },
+          {
+            "key": "description",
+            "kind": "plain",
+            "required": false,
+            "maxLength": {
+              "en": 480
+            },
+            "dir": "auto"
+          },
+          {
+            "key": "actions[].label",
+            "kind": "plain",
+            "required": false,
+            "maxLength": {
+              "en": 120
+            },
+            "dir": "auto"
+          }
+        ]
+      }
+    },
+    "requires": [],
+    "status": "draft"
+  },
+  {
+    "id": "passages.settings",
+    "layer": "passages",
+    "contract": {
+      "kind": "passage",
+      "source": "writer",
+      "sectionId": "sections.settings",
+      "passageSchema": "passages.settings",
+      "copy": {
+        "sourceLocale": "en",
+        "fields": [
+          {
+            "key": "header.eyebrow",
+            "kind": "plain",
+            "required": false,
+            "maxLength": {
+              "en": 120
+            },
+            "dir": "auto"
+          },
+          {
+            "key": "header.heading",
+            "kind": "plain",
+            "required": false,
+            "maxLength": {
+              "en": 160
+            },
+            "dir": "auto"
+          },
+          {
+            "key": "header.description",
+            "kind": "plain",
+            "required": false,
+            "maxLength": {
+              "en": 480
+            },
+            "dir": "auto"
+          },
+          {
+            "key": "groups[].legend",
+            "kind": "plain",
+            "required": true,
+            "maxLength": {
+              "en": 120
+            },
+            "dir": "auto"
+          },
+          {
+            "key": "groups[].description",
+            "kind": "plain",
+            "required": false,
+            "maxLength": {
+              "en": 480
+            },
+            "dir": "auto"
+          },
+          {
+            "key": "groups[].controls[].label",
+            "kind": "plain",
+            "required": true,
+            "maxLength": {
+              "en": 120
+            },
+            "dir": "auto"
+          },
+          {
+            "key": "groups[].controls[].description",
+            "kind": "plain",
+            "required": false,
+            "maxLength": {
+              "en": 480
+            },
+            "dir": "auto"
+          },
+          {
+            "key": "groups[].controls[].placeholder",
+            "kind": "plain",
+            "required": false,
+            "maxLength": {
+              "en": 120
+            },
+            "dir": "auto"
+          },
+          {
+            "key": "groups[].controls[].options[].label",
+            "kind": "plain",
+            "required": false,
+            "maxLength": {
+              "en": 120
+            },
+            "dir": "auto"
+          },
+          {
+            "key": "save-bar.label",
+            "kind": "plain",
+            "required": false,
+            "maxLength": {
+              "en": 120
+            },
+            "dir": "auto"
+          },
+          {
+            "key": "save-bar.save",
+            "kind": "plain",
+            "required": false,
+            "maxLength": {
+              "en": 120
+            },
+            "dir": "auto"
+          },
+          {
+            "key": "save-bar.discard",
+            "kind": "plain",
+            "required": false,
+            "maxLength": {
+              "en": 120
+            },
+            "dir": "auto"
+          },
+          {
+            "key": "save-bar.unsaved",
+            "kind": "plain",
+            "required": false,
+            "maxLength": {
+              "en": 120
+            },
+            "dir": "auto"
+          }
+        ]
+      }
+    },
+    "requires": [],
+    "status": "draft"
+  },
+  {
+    "id": "passages.stats",
+    "layer": "passages",
+    "contract": {
+      "kind": "passage",
+      "source": "writer",
+      "sectionId": "sections.stats",
+      "passageSchema": "passages.stats",
+      "copy": {
+        "sourceLocale": "en",
+        "fields": [
+          {
+            "key": "header.eyebrow",
+            "kind": "plain",
+            "required": false,
+            "maxLength": {
+              "en": 120
+            },
+            "dir": "auto"
+          },
+          {
+            "key": "header.heading",
+            "kind": "plain",
+            "required": false,
+            "maxLength": {
+              "en": 160
+            },
+            "dir": "auto"
+          },
+          {
+            "key": "header.description",
+            "kind": "plain",
+            "required": false,
+            "maxLength": {
+              "en": 480
+            },
+            "dir": "auto"
+          },
+          {
+            "key": "stats[].label",
+            "kind": "plain",
+            "required": true,
+            "maxLength": {
+              "en": 120
+            },
+            "dir": "auto"
+          },
+          {
+            "key": "stats[].description",
+            "kind": "plain",
+            "required": false,
+            "maxLength": {
+              "en": 480
+            },
+            "dir": "auto"
+          },
+          {
+            "key": "stats[].value",
+            "kind": "plain",
+            "required": true,
+            "maxLength": {
+              "en": 120
+            },
+            "dir": "auto"
+          },
+          {
+            "key": "stats[].delta",
+            "kind": "plain",
+            "required": false,
+            "maxLength": {
+              "en": 120
+            },
+            "dir": "auto"
+          },
+          {
+            "key": "states.loading.label",
+            "kind": "plain",
+            "required": true,
+            "maxLength": {
+              "en": 120
+            },
+            "dir": "auto"
+          },
+          {
+            "key": "states.loading.description",
+            "kind": "plain",
+            "required": false,
+            "maxLength": {
+              "en": 480
+            },
+            "dir": "auto"
+          },
+          {
+            "key": "states.empty.label",
+            "kind": "plain",
+            "required": true,
+            "maxLength": {
+              "en": 120
+            },
+            "dir": "auto"
+          },
+          {
+            "key": "states.empty.description",
+            "kind": "plain",
+            "required": false,
+            "maxLength": {
+              "en": 480
+            },
+            "dir": "auto"
+          },
+          {
+            "key": "states.error.label",
+            "kind": "plain",
+            "required": true,
+            "maxLength": {
+              "en": 120
+            },
+            "dir": "auto"
+          },
+          {
+            "key": "states.error.description",
+            "kind": "plain",
+            "required": false,
+            "maxLength": {
+              "en": 480
+            },
+            "dir": "auto"
+          }
+        ]
+      }
+    },
+    "requires": [],
+    "status": "draft"
+  },
+  {
+    "id": "passages.status-list",
+    "layer": "passages",
+    "contract": {
+      "kind": "passage",
+      "source": "writer",
+      "sectionId": "sections.status-list",
+      "passageSchema": "passages.status-list",
+      "copy": {
+        "sourceLocale": "en",
+        "fields": [
+          {
+            "key": "header.eyebrow",
+            "kind": "plain",
+            "required": false,
+            "maxLength": {
+              "en": 120
+            },
+            "dir": "auto"
+          },
+          {
+            "key": "header.heading",
+            "kind": "plain",
+            "required": false,
+            "maxLength": {
+              "en": 160
+            },
+            "dir": "auto"
+          },
+          {
+            "key": "header.description",
+            "kind": "plain",
+            "required": false,
+            "maxLength": {
+              "en": 480
+            },
+            "dir": "auto"
+          },
+          {
+            "key": "items[].heading",
+            "kind": "plain",
+            "required": false,
+            "maxLength": {
+              "en": 160
+            },
+            "dir": "auto"
+          },
+          {
+            "key": "items[].items[].label",
+            "kind": "plain",
+            "required": true,
+            "maxLength": {
+              "en": 120
+            },
+            "dir": "auto"
+          },
+          {
+            "key": "legend",
+            "kind": "plain",
+            "required": false,
+            "maxLength": {
+              "en": 120
+            },
+            "dir": "auto"
+          },
+          {
+            "key": "labels.available",
+            "kind": "plain",
+            "required": false,
+            "maxLength": {
+              "en": 120
+            },
+            "dir": "auto"
+          },
+          {
+            "key": "labels.partial",
+            "kind": "plain",
+            "required": false,
+            "maxLength": {
+              "en": 120
+            },
+            "dir": "auto"
+          },
+          {
+            "key": "labels.planned",
+            "kind": "plain",
+            "required": false,
+            "maxLength": {
+              "en": 120
+            },
+            "dir": "auto"
+          },
+          {
+            "key": "labels.notOffered",
+            "kind": "plain",
+            "required": false,
+            "maxLength": {
+              "en": 120
+            },
+            "dir": "auto"
+          },
+          {
+            "key": "states.loading.label",
+            "kind": "plain",
+            "required": true,
+            "maxLength": {
+              "en": 120
+            },
+            "dir": "auto"
+          },
+          {
+            "key": "states.loading.description",
+            "kind": "plain",
+            "required": false,
+            "maxLength": {
+              "en": 480
+            },
+            "dir": "auto"
+          },
+          {
+            "key": "states.empty.label",
+            "kind": "plain",
+            "required": true,
+            "maxLength": {
+              "en": 120
+            },
+            "dir": "auto"
+          },
+          {
+            "key": "states.empty.description",
+            "kind": "plain",
+            "required": false,
+            "maxLength": {
+              "en": 480
+            },
+            "dir": "auto"
+          },
+          {
+            "key": "states.error.label",
+            "kind": "plain",
+            "required": true,
+            "maxLength": {
+              "en": 120
+            },
+            "dir": "auto"
+          },
+          {
+            "key": "states.error.description",
+            "kind": "plain",
+            "required": false,
+            "maxLength": {
+              "en": 480
+            },
+            "dir": "auto"
+          },
+          {
+            "key": "items[].label",
+            "kind": "plain",
+            "required": false,
+            "maxLength": {
+              "en": 160
+            },
+            "dir": "auto"
+          },
+          {
+            "key": "items[].detail",
+            "kind": "rich",
+            "required": false,
+            "maxLength": {
+              "en": 480
+            },
+            "dir": "auto"
+          },
+          {
+            "key": "items[].items[].detail",
+            "kind": "rich",
+            "required": false,
+            "maxLength": {
+              "en": 480
+            },
+            "dir": "auto"
+          }
+        ]
+      }
+    },
+    "requires": [],
+    "status": "draft"
+  },
+  {
+    "id": "passages.steps",
+    "layer": "passages",
+    "contract": {
+      "kind": "passage",
+      "source": "writer",
+      "sectionId": "sections.steps",
+      "passageSchema": "passages.steps",
+      "copy": {
+        "sourceLocale": "en",
+        "fields": [
+          {
+            "key": "header.eyebrow",
+            "kind": "plain",
+            "required": false,
+            "maxLength": {
+              "en": 120
+            },
+            "dir": "auto"
+          },
+          {
+            "key": "header.heading",
+            "kind": "plain",
+            "required": false,
+            "maxLength": {
+              "en": 160
+            },
+            "dir": "auto"
+          },
+          {
+            "key": "header.description",
+            "kind": "plain",
+            "required": false,
+            "maxLength": {
+              "en": 480
+            },
+            "dir": "auto"
+          },
+          {
+            "key": "steps[].heading",
+            "kind": "plain",
+            "required": true,
+            "maxLength": {
+              "en": 160
+            },
+            "dir": "auto"
+          },
+          {
+            "key": "steps[].description",
+            "kind": "plain",
+            "required": false,
+            "maxLength": {
+              "en": 480
+            },
+            "dir": "auto"
+          },
+          {
+            "key": "steps[].ordinal",
+            "kind": "plain",
+            "required": false,
+            "maxLength": {
+              "en": 120
+            },
+            "dir": "auto"
+          }
+        ]
+      }
+    },
+    "requires": [],
+    "status": "draft"
+  },
+  {
+    "id": "passages.table-of-contents",
+    "layer": "passages",
+    "contract": {
+      "kind": "passage",
+      "source": "writer",
+      "sectionId": "sections.table-of-contents",
+      "passageSchema": "passages.table-of-contents",
+      "copy": {
+        "sourceLocale": "en",
+        "fields": [
+          {
+            "key": "headings[].label",
+            "kind": "plain",
+            "required": true,
+            "maxLength": {
+              "en": 120
+            },
+            "dir": "auto"
+          },
+          {
+            "key": "labels.label",
+            "kind": "plain",
+            "required": false,
+            "maxLength": {
+              "en": 120
+            },
+            "dir": "auto"
+          }
+        ]
+      }
+    },
+    "requires": [],
+    "status": "draft"
+  },
+  {
+    "id": "passages.task-list",
+    "layer": "passages",
+    "contract": {
+      "kind": "passage",
+      "source": "writer",
+      "sectionId": "sections.task-list",
+      "passageSchema": "passages.task-list",
+      "copy": {
+        "sourceLocale": "en",
+        "fields": [
+          {
+            "key": "header.eyebrow",
+            "kind": "plain",
+            "required": false,
+            "maxLength": {
+              "en": 120
+            },
+            "dir": "auto"
+          },
+          {
+            "key": "header.heading",
+            "kind": "plain",
+            "required": false,
+            "maxLength": {
+              "en": 160
+            },
+            "dir": "auto"
+          },
+          {
+            "key": "header.description",
+            "kind": "plain",
+            "required": false,
+            "maxLength": {
+              "en": 480
+            },
+            "dir": "auto"
+          },
+          {
+            "key": "tasks[].title",
+            "kind": "plain",
+            "required": true,
+            "maxLength": {
+              "en": 160
+            },
+            "dir": "auto"
+          },
+          {
+            "key": "tasks[].description",
+            "kind": "plain",
+            "required": false,
+            "maxLength": {
+              "en": 480
+            },
+            "dir": "auto"
+          },
+          {
+            "key": "tasks[].meta",
+            "kind": "plain",
+            "required": false,
+            "maxLength": {
+              "en": 120
+            },
+            "dir": "auto"
+          },
+          {
+            "key": "labels.label",
+            "kind": "plain",
+            "required": false,
+            "maxLength": {
+              "en": 120
+            },
+            "dir": "auto"
+          },
+          {
+            "key": "labels.progress",
+            "kind": "icu",
+            "required": false,
+            "maxLength": {
+              "en": 120
+            },
+            "dir": "auto"
+          },
+          {
+            "key": "labels.done",
+            "kind": "plain",
+            "required": false,
+            "maxLength": {
+              "en": 120
+            },
+            "dir": "auto"
+          },
+          {
+            "key": "states.loading.label",
+            "kind": "plain",
+            "required": true,
+            "maxLength": {
+              "en": 120
+            },
+            "dir": "auto"
+          },
+          {
+            "key": "states.loading.description",
+            "kind": "plain",
+            "required": false,
+            "maxLength": {
+              "en": 480
+            },
+            "dir": "auto"
+          },
+          {
+            "key": "states.empty.label",
+            "kind": "plain",
+            "required": true,
+            "maxLength": {
+              "en": 120
+            },
+            "dir": "auto"
+          },
+          {
+            "key": "states.empty.description",
+            "kind": "plain",
+            "required": false,
+            "maxLength": {
+              "en": 480
+            },
+            "dir": "auto"
+          },
+          {
+            "key": "states.error.label",
+            "kind": "plain",
+            "required": true,
+            "maxLength": {
+              "en": 120
+            },
+            "dir": "auto"
+          },
+          {
+            "key": "states.error.description",
+            "kind": "plain",
+            "required": false,
+            "maxLength": {
+              "en": 480
+            },
+            "dir": "auto"
+          },
+          {
+            "key": "labels.todo",
+            "kind": "plain",
+            "required": false,
+            "maxLength": {
+              "en": 160
+            },
+            "dir": "auto"
+          },
+          {
+            "key": "labels.in-progress",
+            "kind": "plain",
+            "required": false,
+            "maxLength": {
+              "en": 160
+            },
+            "dir": "auto"
+          },
+          {
+            "key": "labels.blocked",
+            "kind": "plain",
+            "required": false,
+            "maxLength": {
+              "en": 160
+            },
+            "dir": "auto"
+          }
+        ]
+      }
+    },
+    "requires": [],
+    "status": "draft"
+  },
+  {
+    "id": "passages.testimonials",
+    "layer": "passages",
+    "contract": {
+      "kind": "passage",
+      "source": "writer",
+      "sectionId": "sections.testimonials",
+      "passageSchema": "passages.testimonials",
+      "copy": {
+        "sourceLocale": "en",
+        "fields": [
+          {
+            "key": "header.eyebrow",
+            "kind": "plain",
+            "required": false,
+            "maxLength": {
+              "en": 120
+            },
+            "dir": "auto"
+          },
+          {
+            "key": "header.heading",
+            "kind": "plain",
+            "required": false,
+            "maxLength": {
+              "en": 160
+            },
+            "dir": "auto"
+          },
+          {
+            "key": "header.description",
+            "kind": "plain",
+            "required": false,
+            "maxLength": {
+              "en": 480
+            },
+            "dir": "auto"
+          },
+          {
+            "key": "quotes[].quote",
+            "kind": "plain",
+            "required": true,
+            "maxLength": {
+              "en": 2400
+            },
+            "dir": "auto"
+          },
+          {
+            "key": "quotes[].attributorName",
+            "kind": "plain",
+            "required": true,
+            "maxLength": {
+              "en": 120
+            },
+            "dir": "auto"
+          },
+          {
+            "key": "quotes[].attributorRole",
+            "kind": "plain",
+            "required": false,
+            "maxLength": {
+              "en": 120
+            },
+            "dir": "auto"
+          }
+        ]
+      }
+    },
+    "requires": [],
+    "status": "draft"
+  },
+  {
+    "id": "passages.timeline",
+    "layer": "passages",
+    "contract": {
+      "kind": "passage",
+      "source": "writer",
+      "sectionId": "sections.timeline",
+      "passageSchema": "passages.timeline",
+      "copy": {
+        "sourceLocale": "en",
+        "fields": [
+          {
+            "key": "header.eyebrow",
+            "kind": "plain",
+            "required": false,
+            "maxLength": {
+              "en": 120
+            },
+            "dir": "auto"
+          },
+          {
+            "key": "header.heading",
+            "kind": "plain",
+            "required": false,
+            "maxLength": {
+              "en": 160
+            },
+            "dir": "auto"
+          },
+          {
+            "key": "header.description",
+            "kind": "plain",
+            "required": false,
+            "maxLength": {
+              "en": 480
+            },
+            "dir": "auto"
+          },
+          {
+            "key": "events[].heading",
+            "kind": "plain",
+            "required": true,
+            "maxLength": {
+              "en": 160
+            },
+            "dir": "auto"
+          },
+          {
+            "key": "events[].dateText",
+            "kind": "plain",
+            "required": true,
+            "maxLength": {
+              "en": 120
+            },
+            "dir": "auto"
+          },
+          {
+            "key": "events[].description",
+            "kind": "plain",
+            "required": false,
+            "maxLength": {
+              "en": 480
+            },
+            "dir": "auto"
+          }
+        ]
+      }
+    },
+    "requires": [],
+    "status": "draft"
+  },
+  {
+    "id": "passages.usage",
+    "layer": "passages",
+    "contract": {
+      "kind": "passage",
+      "source": "writer",
+      "sectionId": "sections.usage",
+      "passageSchema": "passages.usage",
+      "copy": {
+        "sourceLocale": "en",
+        "fields": [
+          {
+            "key": "header.eyebrow",
+            "kind": "plain",
+            "required": false,
+            "maxLength": {
+              "en": 120
+            },
+            "dir": "auto"
+          },
+          {
+            "key": "header.heading",
+            "kind": "plain",
+            "required": false,
+            "maxLength": {
+              "en": 160
+            },
+            "dir": "auto"
+          },
+          {
+            "key": "header.description",
+            "kind": "plain",
+            "required": false,
+            "maxLength": {
+              "en": 480
+            },
+            "dir": "auto"
+          },
+          {
+            "key": "meters[].label",
+            "kind": "plain",
+            "required": true,
+            "maxLength": {
+              "en": 120
+            },
+            "dir": "auto"
+          },
+          {
+            "key": "meters[].usedText",
+            "kind": "plain",
+            "required": false,
+            "maxLength": {
+              "en": 120
+            },
+            "dir": "auto"
+          },
+          {
+            "key": "meters[].limitText",
+            "kind": "plain",
+            "required": false,
+            "maxLength": {
+              "en": 120
+            },
+            "dir": "auto"
+          },
+          {
+            "key": "meters[].periodText",
+            "kind": "plain",
+            "required": false,
+            "maxLength": {
+              "en": 120
+            },
+            "dir": "auto"
+          },
+          {
+            "key": "labels.label",
+            "kind": "plain",
+            "required": false,
+            "maxLength": {
+              "en": 120
+            },
+            "dir": "auto"
+          },
+          {
+            "key": "states.loading.label",
+            "kind": "plain",
+            "required": true,
+            "maxLength": {
+              "en": 120
+            },
+            "dir": "auto"
+          },
+          {
+            "key": "states.loading.description",
+            "kind": "plain",
+            "required": false,
+            "maxLength": {
+              "en": 480
+            },
+            "dir": "auto"
+          },
+          {
+            "key": "states.empty.label",
+            "kind": "plain",
+            "required": true,
+            "maxLength": {
+              "en": 120
+            },
+            "dir": "auto"
+          },
+          {
+            "key": "states.empty.description",
+            "kind": "plain",
+            "required": false,
+            "maxLength": {
+              "en": 480
+            },
+            "dir": "auto"
+          },
+          {
+            "key": "states.error.label",
+            "kind": "plain",
+            "required": true,
+            "maxLength": {
+              "en": 120
+            },
+            "dir": "auto"
+          },
+          {
+            "key": "states.error.description",
+            "kind": "plain",
+            "required": false,
+            "maxLength": {
+              "en": 480
+            },
+            "dir": "auto"
+          },
+          {
+            "key": "meters[].projectedText",
+            "kind": "plain",
+            "required": false,
+            "maxLength": {
+              "en": 160
+            },
+            "dir": "auto"
+          },
+          {
+            "key": "meters[].thresholds[].message",
+            "kind": "plain",
+            "required": false,
+            "maxLength": {
+              "en": 160
+            },
+            "dir": "auto"
+          }
+        ]
+      }
+    },
+    "requires": [],
+    "status": "draft"
+  },
+  {
+    "id": "passages.wizard",
+    "layer": "passages",
+    "contract": {
+      "kind": "passage",
+      "source": "writer",
+      "sectionId": "sections.wizard",
+      "passageSchema": "passages.wizard",
+      "copy": {
+        "sourceLocale": "en",
+        "fields": [
+          {
+            "key": "header.eyebrow",
+            "kind": "plain",
+            "required": false,
+            "maxLength": {
+              "en": 120
+            },
+            "dir": "auto"
+          },
+          {
+            "key": "header.heading",
+            "kind": "plain",
+            "required": false,
+            "maxLength": {
+              "en": 160
+            },
+            "dir": "auto"
+          },
+          {
+            "key": "header.description",
+            "kind": "plain",
+            "required": false,
+            "maxLength": {
+              "en": 480
+            },
+            "dir": "auto"
+          },
+          {
+            "key": "steps[].label",
+            "kind": "plain",
+            "required": true,
+            "maxLength": {
+              "en": 120
+            },
+            "dir": "auto"
+          },
+          {
+            "key": "progress.label",
+            "kind": "plain",
+            "required": false,
+            "maxLength": {
+              "en": 120
+            },
+            "dir": "auto"
+          },
+          {
+            "key": "back.label",
+            "kind": "plain",
+            "required": false,
+            "maxLength": {
+              "en": 120
+            },
+            "dir": "auto"
+          },
+          {
+            "key": "next.label",
+            "kind": "plain",
+            "required": true,
+            "maxLength": {
+              "en": 120
+            },
+            "dir": "auto"
+          },
+          {
+            "key": "next.finish",
+            "kind": "plain",
+            "required": false,
+            "maxLength": {
+              "en": 120
+            },
+            "dir": "auto"
+          },
+          {
+            "key": "review.label",
+            "kind": "plain",
+            "required": false,
+            "maxLength": {
+              "en": 120
+            },
+            "dir": "auto"
+          }
+        ]
+      }
+    },
+    "requires": [],
+    "status": "draft"
+  }
+]

@@ -1,0 +1,219 @@
+{
+  "layer": "passages",
+  "nodes": [
+    {
+      "id": "parts",
+      "label": "Parts",
+      "children": [
+        {
+          "id": "parts-structure",
+          "label": "Structure",
+          "leaves": [
+            "passages.band",
+            "passages.section-header"
+          ]
+        },
+        {
+          "id": "parts-navigation",
+          "label": "Navigation",
+          "leaves": [
+            "passages.pagination"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "explain",
+      "label": "Explain",
+      "children": [
+        {
+          "id": "explain-introductions",
+          "label": "Introductions",
+          "leaves": [
+            "passages.hero",
+            "passages.logo-hero",
+            "passages.page-header"
+          ]
+        },
+        {
+          "id": "explain-reading",
+          "label": "Reading",
+          "leaves": [
+            "passages.content",
+            "passages.article"
+          ]
+        },
+        {
+          "id": "explain-promotion",
+          "label": "Promotion",
+          "leaves": [
+            "passages.features",
+            "passages.call-to-action"
+          ]
+        },
+        {
+          "id": "explain-social-proof",
+          "label": "Social proof",
+          "leaves": [
+            "passages.testimonials",
+            "passages.logo-cloud",
+            "passages.people"
+          ]
+        },
+        {
+          "id": "explain-media",
+          "label": "Media",
+          "leaves": [
+            "passages.media",
+            "passages.gallery"
+          ]
+        },
+        {
+          "id": "explain-guidance",
+          "label": "Guidance",
+          "leaves": [
+            "passages.faq",
+            "passages.steps",
+            "passages.timeline"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "organize",
+      "label": "Organize",
+      "children": [
+        {
+          "id": "organize-collections",
+          "label": "Collections",
+          "leaves": [
+            "passages.cards",
+            "passages.resource-list",
+            "passages.task-list"
+          ]
+        },
+        {
+          "id": "organize-comparison",
+          "label": "Comparison",
+          "leaves": [
+            "passages.comparison",
+            "passages.pricing"
+          ]
+        },
+        {
+          "id": "organize-summaries",
+          "label": "Summaries",
+          "leaves": [
+            "passages.stats",
+            "passages.status-list",
+            "passages.usage"
+          ]
+        },
+        {
+          "id": "organize-records",
+          "label": "Records",
+          "leaves": [
+            "passages.data-table",
+            "passages.data-grid",
+            "passages.record-detail"
+          ]
+        },
+        {
+          "id": "organize-history",
+          "label": "History",
+          "leaves": [
+            "passages.activity-feed",
+            "passages.audit-log"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "collect",
+      "label": "Collect",
+      "children": [
+        {
+          "id": "collect-forms",
+          "label": "Forms",
+          "leaves": [
+            "passages.form",
+            "passages.newsletter"
+          ]
+        },
+        {
+          "id": "collect-workflows",
+          "label": "Workflows",
+          "leaves": [
+            "passages.wizard"
+          ]
+        },
+        {
+          "id": "collect-preferences",
+          "label": "Preferences",
+          "leaves": [
+            "passages.settings"
+          ]
+        },
+        {
+          "id": "collect-configuration",
+          "label": "Configuration",
+          "leaves": [
+            "passages.column-mapper",
+            "passages.access-matrix"
+          ]
+        },
+        {
+          "id": "collect-conversation",
+          "label": "Conversation",
+          "leaves": [
+            "passages.chat"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "navigate",
+      "label": "Navigate",
+      "children": [
+        {
+          "id": "navigate-indexes",
+          "label": "Indexes",
+          "leaves": [
+            "passages.link-index",
+            "passages.table-of-contents"
+          ]
+        },
+        {
+          "id": "navigate-discovery",
+          "label": "Discovery",
+          "leaves": [
+            "passages.explorer",
+            "passages.filter-builder"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "respond",
+      "label": "Respond",
+      "children": [
+        {
+          "id": "respond-states",
+          "label": "States",
+          "leaves": [
+            "passages.empty-state",
+            "passages.error-state"
+          ]
+        },
+        {
+          "id": "respond-messages",
+          "label": "Messages",
+          "leaves": [
+            "passages.notices",
+            "passages.consent"
+          ]
+        }
+      ]
+    }
+  ]
+}
