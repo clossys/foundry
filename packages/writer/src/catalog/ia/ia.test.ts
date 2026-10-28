@@ -68,19 +68,19 @@ describe("writer-check ia", () => {
     const exit = mainWriterIA(args, { stdout: value => stdout.push(value), stderr: value => stderr.push(value) }, load);
     return { exit, stdout: stdout.join("\n"), stderr: stderr.join("\n") };
   };
-  it("accepts the exact checkpoint arguments and emits tree, contracts, counts and proposed status", () => {
+  it("accepts the exact checkpoint arguments and emits tree, contracts, counts and owner-signed status", () => {
     const result = invoke(["--layers", "lexicon,strings,patterns", "--format", "json"]);
     expect(result.exit).toBe(0);
     expect(result.stderr).toBe("");
     const report = JSON.parse(result.stdout);
     expect(report.layers.map((row: { layer: string }) => row.layer)).toEqual(["lexicon", "strings", "patterns"]);
-    expect(report.layers.every((row: { tree: unknown[]; contracts: unknown[]; freeze: { status: string } }) => row.tree.length > 0 && row.contracts.length > 0 && row.freeze.status === "proposed")).toBe(true);
+    expect(report.layers.every((row: { tree: unknown[]; contracts: unknown[]; freeze: { status: string } }) => row.tree.length > 0 && row.contracts.length > 0 && row.freeze.status === "owner-signed")).toBe(true);
   });
   it("prints the complete tree and contracts by default", () => {
     const result = invoke([]);
     expect(result.exit).toBe(0);
     for (const id of ["lexicon.formality", "strings.actions", "patterns.error-message", "passages.band", "narratives.page-story"]) expect(result.stdout).toContain(id);
-    expect(result.stdout).toContain("proposed");
+    expect(result.stdout).toContain("owner-signed");
     expect(result.stdout).toContain("unfrozen");
     expect(result.stdout).toContain('"source":"writer"');
   });

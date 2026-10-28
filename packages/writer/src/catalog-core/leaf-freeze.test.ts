@@ -76,11 +76,11 @@ describe("independent Writer candidate membership", () => {
   it("keeps passages and narratives unfrozen, even with no placement or slots", () => {
     expect(checkWriterLeafSets([], [], ["passages", "narratives"], { snapshots: [] })).toEqual([]);
   });
-  it("loads only three unsigned proposal files, independently of slots and IA", () => {
+  it("loads only three owner-signed baseline files, independently of slots and IA", () => {
     const snapshots = loadWriterLeafFreezeSnapshots();
     expect(snapshots.map(snapshot => snapshot.layer)).toEqual(["lexicon", "strings", "patterns"]);
     for (const snapshot of snapshots) expect(snapshot).toMatchObject({
-      schemaVersion: 1, scope: "leaf-membership-only", signedHead: null, ownerSignoffComment: null,
+      schemaVersion: 1, scope: "leaf-membership-only", signedHead: "0b06a262bc9447787b9e79393125f1369bfb3470", ownerSignoffComment: "clossys/workspace#45 comment 6460620037",
     });
   });
 });

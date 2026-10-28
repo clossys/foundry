@@ -120,10 +120,10 @@ describe.each(Object.keys(expected) as Layer[])("Writer %s catalog data", (layer
   });
 });
 
-describe("Writer frozen membership proposals", () => {
-  it.each(["lexicon", "strings", "patterns"] as const)("keeps %s explicitly unsigned and membership-only", (layer) => {
+describe("Writer frozen membership baselines", () => {
+  it.each(["lexicon", "strings", "patterns"] as const)("keeps %s owner-signed and membership-only", (layer) => {
     expect(read(`./${layer}.leaf-freeze.json`)).toEqual({
-      schemaVersion: 1, layer, scope: "leaf-membership-only", signedHead: null, ownerSignoffComment: null,
+      schemaVersion: 1, layer, scope: "leaf-membership-only", signedHead: "0b06a262bc9447787b9e79393125f1369bfb3470", ownerSignoffComment: "clossys/workspace#45 comment 6460620037",
       policy: "Proposed membership awaiting owner signature; regrouping not membership", leafIds: expectedIds(layer),
     });
   });
