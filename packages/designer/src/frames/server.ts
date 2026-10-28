@@ -15,3 +15,11 @@ import { lazy } from "react";
 /** The actual client AppFrame stays behind its existing use-client module boundary. */
 export const AppFrame = lazy(async () => ({ default: (await import("./AppFrame.js")).AppFrame }));
 export type { AppFrameProps } from "./app-frame-types.js";
+export { SHELL_COPY_REFS } from "../components/Banner.copy.js";
+export { surfaceRuntimeRenderers, surfaceRuntimePointers, surfaceRuntimeCallbacks, SURFACE_RUNTIME_POINTER, surfaceRendererId } from "../runtime/server-registry.js";
+
+// Publisher imports these client references from the same public Frames entry.
+export const ShellCopyProvider = lazy(async () => ({ default: (await import("../components/Banner.copy-context.js")).ShellCopyProvider }));
+export const FrameStage = lazy(async () => ({ default: (await import("./FrameStage.js")).FrameStage }));
+export { frameSectionRefKey } from "./frame-stage-ref.js";
+export { APP_FRAME_RIGHT_PANEL_CONFIG } from "./right-panel-config.js";
