@@ -326,3 +326,5 @@ export { assertLibraryBoardRecords, assertLibraryBoardCommand } from "./library-
 export type { LibraryBoardRecords, LibraryBoardRow, LibraryBoardCandidate, LibraryBoardCommand, LibraryPreviewIdentity } from "./library-board/model.js";
 export type { LibraryBoardLabels } from "./library-board/types.js";
 export { LIBRARY_BOARD_CONFIG } from "./Matrix.js";
+
+export { LogoHero, type LogoHeroProps } from "./LogoHero.js";

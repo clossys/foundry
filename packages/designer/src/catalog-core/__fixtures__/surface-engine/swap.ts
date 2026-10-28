@@ -45,7 +45,7 @@ export async function swapSurface() {
   const input = adoptedComponentIntegration();
   const packages = await componentsPackageEvidence();
   const evidence = packages.find(row => row.module === COMPONENTS_PACKAGE_MODULE)!;
-  const slot: SectionSlot = { id: SLOT, layer: "sections", requires: [], status: "draft", contract: { kind: "section", root: "section", anatomy: { band: null, header: null }, slots: [], members: { mode: "closed", names: [] }, allowedComposes: ["components.button"], parts: [], allowedReads: { tokens: [], assets: [] }, data: "host-injected", surface: "both" } };
+  const slot: SectionSlot = { id: SLOT, layer: "sections", requires: [], status: "draft", contract: { kind: "section", passageSchema: `passages.${SLOT.slice("sections.".length)}`, copy: { sourceLocale: "en", fields: [] }, root: "section", anatomy: { band: null, header: null }, slots: [], members: { mode: "closed", names: [] }, allowedComposes: ["components.button"], parts: [], allowedReads: { tokens: [], assets: [] }, data: "host-injected", surface: "both" } };
   const upstream = [{ path: "upstream/Form.ts", content: UPSTREAM }, { path: "LICENSE", content: "SYNTHETIC fixture MIT license\n" }];
   const pin = { kind: "local-tree" as const, tree: "b".repeat(40), files: surfaceManifest(upstream) };
   const source = { path: "sections/form/Form.ts", content: UPSTREAM };

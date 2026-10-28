@@ -1,0 +1,55 @@
+{
+  "$extensions": {
+    "com.clossys.fill": {
+      "author": "foundry",
+      "builtOn": [],
+      "conforms": [],
+      "evidence": [],
+      "id": "foundry/sections.logo-hero",
+      "license": "MIT",
+      "mode": "implementation",
+      "originKinds": [
+        "adopted"
+      ],
+      "pin": {
+        "export": "./blocks#LogoHero",
+        "package": "@clossys/designer",
+        "version": "0.12.0"
+      },
+      "relation": "same-contract",
+      "slot": "sections.logo-hero",
+      "source": "foundry",
+      "sourceAddress": "./blocks#LogoHero",
+      "status": "draft",
+      "trust": "foundry"
+    }
+  },
+  "sections": {
+    "logo-hero": {
+      "configs": {},
+      "impl": {
+        "export": "LogoHero",
+        "kind": "package",
+        "module": "@clossys/designer/blocks"
+      },
+      "license": "MIT",
+      "notes": [
+        "Logo-only section using the existing mark asset and its accessible name; no additional authored copy.",
+        "Descriptor only; source imports, token reads, shared anatomy, accessibility, contrast and consumer runtime conformance are unmeasured. Content bindings describe host adaptation points, not type-equivalent converters."
+      ],
+      "parts": [],
+      "pin": {
+        "export": "./blocks#LogoHero",
+        "package": "@clossys/designer",
+        "version": "0.12.0"
+      },
+      "propMap": {},
+      "slot": "sections.logo-hero",
+      "slotMap": {
+        "mark": "./blocks#LogoHero.mark",
+        "name": "./blocks#LogoHero.name"
+      },
+      "source": "foundry"
+    }
+  }
+}

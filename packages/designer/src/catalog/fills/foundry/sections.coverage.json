@@ -509,6 +509,23 @@
       "missingRequiredSlots": [],
       "missingSlots": [],
       "notes": [
+        "Logo-only section using the existing mark asset and its accessible name; no additional authored copy.",
+        "Descriptor only; source imports, token reads, shared anatomy, accessibility, contrast and consumer runtime conformance are unmeasured. Content bindings describe host adaptation points, not type-equivalent converters."
+      ],
+      "slot": "sections.logo-hero",
+      "status": "candidate",
+      "supportedMembers": [],
+      "supportedSlots": [
+        "mark",
+        "name"
+      ],
+      "unresolvedMemberAxes": []
+    },
+    {
+      "missingMembers": [],
+      "missingRequiredSlots": [],
+      "missingSlots": [],
+      "notes": [
         "Host supplies the image node and its src/alt/ratio; caption is a separate prop. Does not validate a structured figure record or bind anatomy.",
         "Descriptor only; source imports, token reads, shared anatomy, accessibility, contrast and consumer runtime conformance are unmeasured. Content bindings describe host adaptation points, not type-equivalent converters."
       ],

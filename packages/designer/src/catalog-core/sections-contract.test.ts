@@ -10,7 +10,7 @@ import type { PlacementNode } from "./types.js";
 // Audit inventory independent of the mutable placement and descriptor documents.
 const families: Record<string, readonly string[]> = {
   parts: ["band", "section-header", "pagination"],
-  explain: ["hero", "page-header", "content", "article", "features", "testimonials", "logo-cloud", "people", "media", "gallery", "faq", "steps", "timeline", "call-to-action"],
+  explain: ["hero", "logo-hero", "page-header", "content", "article", "features", "testimonials", "logo-cloud", "people", "media", "gallery", "faq", "steps", "timeline", "call-to-action"],
   organize: ["cards", "resource-list", "task-list", "comparison", "pricing", "stats", "status-list", "usage", "data-table", "data-grid", "record-detail", "activity-feed", "audit-log"],
   collect: ["form", "newsletter", "wizard", "settings", "column-mapper", "access-matrix", "chat"],
   navigate: ["link-index", "table-of-contents", "explorer", "filter-builder"],
@@ -50,8 +50,9 @@ describe("S2-1 bounded section composition reconciliation", () => {
       for (const component of slot.contract.allowedComposes) expect(component).toMatch(/^components\./);
     }
     // Normalize only the exact admitted renderer metadata and permissions; every other accepted field stays pinned.
-    const invariant = slots.map(slot => {
-      const { substrates: _substrates, substrateTests: _tests, ...base } = slot.contract;
+    const invariant = slots.filter(slot => slot.id !== "sections.logo-hero").map(slot => {
+      const { substrates: _substrates, substrateTests: _tests, copy: _copy, passageSchema: _passage, ...rest } = slot.contract;
+      const base = slot.id === "sections.table-of-contents" ? { ...rest, slots: rest.slots.map(item => item.name === "active-id" ? { ...item, type: "copy" } : item) } : rest;
       const original = slot.id === "sections.comparison" ? { ...base, surface: "site", slots: base.slots.filter(item => item.name !== "controls"), members: { ...base.members, names: [] } } : base;
       if (!Object.hasOwn(reconciledComposes, slot.id.slice("sections.".length))) return { ...slot, contract: original };
       const { allowedComposes: _permissions, ...contract } = original;
@@ -63,12 +64,12 @@ describe("S2-1 bounded section composition reconciliation", () => {
 });
 
 describe("section build IA registry", () => {
-  it("loads exactly the 45 permanent draft ids without claiming a freeze or runtime fill", () => {
+  it("loads exactly the 46 permanent draft ids without claiming a freeze or runtime fill", () => {
     const registry = loadSectionRegistry();
     expect(registry.status).toBe("build-unfrozen");
     expect(registry.slots.map(slot => slot.id)).toEqual(inventory);
-    expect(registry.slots).toHaveLength(45);
-    expect(new Set(registry.slots.map(slot => slot.id)).size).toBe(45);
+    expect(registry.slots).toHaveLength(46);
+    expect(new Set(registry.slots.map(slot => slot.id)).size).toBe(46);
     for (const slot of registry.slots) {
       expect(isValidId("slot", slot.id)).toBe(true);
       expect(slot.layer).toBe("sections");
@@ -84,7 +85,7 @@ describe("section build IA registry", () => {
   it("pins the owner-decided site, app and shared section surfaces", () => {
     const registry = loadSectionRegistry();
     // Site content and visitor communication.
-    const site = ["hero", "features", "testimonials", "logo-cloud", "people", "pricing", "gallery", "timeline", "newsletter", "steps", "article", "table-of-contents", "status-list", "call-to-action", "consent"];
+    const site = ["hero", "logo-hero", "features", "testimonials", "logo-cloud", "people", "pricing", "gallery", "timeline", "newsletter", "steps", "article", "table-of-contents", "status-list", "call-to-action", "consent"];
     // Authenticated records, workflows and operational tools.
     const app = ["access-matrix", "audit-log", "activity-feed", "data-grid", "data-table", "resource-list", "record-detail", "task-list", "column-mapper", "filter-builder", "settings", "chat", "explorer", "usage"];
     // Shared structure, content, input and feedback work on either surface.
@@ -96,7 +97,7 @@ describe("section build IA registry", () => {
     ]);
     expect(Object.keys(expected).sort()).toEqual(inventory);
     expect(Object.fromEntries(registry.slots.map(slot => [slot.id, slot.contract.surface]))).toEqual(expected);
-    expect(Object.fromEntries(["site", "app", "both"].map(surface => [surface, registry.slots.filter(slot => slot.contract.surface === surface).length]))).toEqual({ site: 15, app: 14, both: 16 });
+    expect(Object.fromEntries(["site", "app", "both"].map(surface => [surface, registry.slots.filter(slot => slot.contract.surface === surface).length]))).toEqual({ site: 16, app: 14, both: 16 });
   });
 
   it("declares consent as a site contract with host copy and lower-layer composition", () => {
@@ -149,7 +150,7 @@ describe("section build IA registry", () => {
     for (const slot of registry.slots) {
       const part = families.parts?.map(id).includes(slot.id);
       expect(slot.contract.anatomy.band).toBe(part ? null : id("band"));
-      expect(slot.contract.anatomy.header).toBe(part || slot.id === id("table-of-contents") ? null : id("section-header"));
+      expect(slot.contract.anatomy.header).toBe(part || [id("table-of-contents"), id("logo-hero")].includes(slot.id) ? null : id("section-header"));
       for (const target of Object.values(slot.contract.anatomy)) if (target) expect(slot.contract.parts).toContain(target);
       visit(slot.id, []);
     }
@@ -209,7 +210,7 @@ describe("section build IA registry", () => {
     const registry = loadSectionRegistry();
     (registry.slots as unknown as unknown[]).pop();
     (registry.aliases as unknown as unknown[]).pop();
-    expect(loadSectionRegistry().slots).toHaveLength(45);
+    expect(loadSectionRegistry().slots).toHaveLength(46);
     expect(loadSectionRegistry().aliases).toHaveLength(57);
   });
 });

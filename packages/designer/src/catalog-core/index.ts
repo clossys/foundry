@@ -100,6 +100,7 @@ export * from "./component-registry.js";
 export * from "./ia-placement.js";
 export * from "./leaf-freeze.js";
 export * from "./sections-contract.js";
+export * from "./section-copy.js";
 export type { FrameContract, LandmarkSpec } from "./frames-contract.js";
 export * from "./api.js";
 export * from "./ids.js";

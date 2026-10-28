@@ -199,3 +199,5 @@ export type { ItemData, ItemFigureData, ItemStatusData, ItemProps, ItemBadge, It
 
 export { Lockup } from "./Lockup.js";
 export type { LockupProps } from "./Lockup.js";
+
+export { LogoHero, type LogoHeroProps } from "./LogoHero.js";

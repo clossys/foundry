@@ -10,6 +10,7 @@ import { GROUP_A_CONTENT, GROUP_A_LEAVES, type GroupALeaf } from "./group-a-data
 import { groupBRenderers } from "./group-b.js";
 import { groupBDataset } from "./group-b-dataset.js";
 import { GROUP_C_LEAVES, sectionDatasetC, sectionRenderersC, type GroupCLeaf } from "./group-c.js";
+import { logoHeroRenderer } from "./logo-hero.js";
 import { withLibraryBoard } from "./library-board.js";
 
 type SampleContent = Readonly<Record<string, RuntimeJson>>;
@@ -47,4 +48,4 @@ const groupC = adaptSectionGroup(sectionRenderersC, leaf => {
   return short ? sectionDatasetC[short] : undefined;
 });
 
-export const sectionRenderers = mergeRendererGroups(groupA, groupB, groupC);
+export const sectionRenderers = mergeRendererGroups(groupA, groupB, groupC, { "sections.logo-hero": logoHeroRenderer });

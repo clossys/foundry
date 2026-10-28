@@ -3,12 +3,17 @@ import sectionSlots from "../catalog/slots/sections.json" with { type: "json" };
 import sectionPlacement from "../catalog/ia/sections.json" with { type: "json" };
 import sectionRetired from "../catalog/retired/sections.json" with { type: "json" };
 import { isValidId } from "./ids.js";
+import { sectionCopySchemaFindings } from "./section-copy.js";
+import type { SectionCopySchema } from "./section-copy.js";
 import { assertIAPlacements } from "./ia-placement.js";
 import type { Placement, PlacementNode, Retired, SlotAlias, Status } from "./types.js";
 
 /** A section is a content region placed inside the host's main landmark. */
 export interface SectionContract {
   kind: "section";
+  /** One mechanically paired Writer passage; words remain consumer-owned. */
+  passageSchema: `passages.${string}`;
+  copy: SectionCopySchema;
   /** Each declaration requires a render test; absent means unmeasured support. */
   substrates?: readonly BodySubstrate[];
   /** Named source tests, not evidence that a current consumer run passed. */
@@ -52,6 +57,7 @@ export function sectionRegistryFindings(registry: SectionRegistry): string[] {
     if (!isValidId("slot", slot.id) || !slot.id.startsWith("sections.")) findings.push(`id: invalid section slot ${slot.id}`);
     if (ids.has(slot.id)) findings.push(`id: duplicate section slot ${slot.id}`);
     ids.add(slot.id);
+    findings.push(...sectionCopySchemaFindings(slot));
   }
   if (registry.placement.layer !== "sections") findings.push("placement: expected sections layer");
   const counts = new Map<string, number>();
@@ -93,4 +99,12 @@ export function loadSectionRegistry(): SectionRegistry {
   const findings = sectionRegistryFindings(registry);
   if (findings.length) throw new Error(`section registry: ${findings.join("; ")}`);
   return registry;
+}
+
+/** Public catalog rows for copy inspectors and passage derivation, without UI dependencies. */
+export function sectionCopyCatalog(registry: SectionRegistry = loadSectionRegistry()) {
+  return registry.slots.map(({ id, status, contract }) => ({
+    id, status, passageSchema: contract.passageSchema, sourceLocale: contract.copy.sourceLocale,
+    fields: structuredClone(contract.copy.fields),
+  }));
 }

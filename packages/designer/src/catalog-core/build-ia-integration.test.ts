@@ -7,11 +7,11 @@ import { loadSectionRegistry, loadBuildCatalog, loadCatalog, type SectionContrac
 const nodes = (rows: readonly PlacementNode[]): PlacementNode[] => rows.flatMap(node => "children" in node ? [node, ...nodes(node.children)] : [node]);
 
 describe("combined five-layer build IA", () => {
-  it("exposes all 216 draft build slots alongside the 103 runtime leaves", () => {
+  it("exposes all 217 draft build slots alongside the 103 runtime leaves", () => {
     const build = loadBuildCatalog();
     expect(build.registryStatus).toBe("build-unfrozen");
-    expect(build.slots).toHaveLength(216);
-    expect(Object.fromEntries(["tokens", "assets", "components", "sections", "frames"].map(layer => [layer, build.slots.filter(slot => slot.layer === layer).length]))).toEqual({ tokens: 55, assets: 48, components: 59, sections: 45, frames: 9 });
+    expect(build.slots).toHaveLength(217);
+    expect(Object.fromEntries(["tokens", "assets", "components", "sections", "frames"].map(layer => [layer, build.slots.filter(slot => slot.layer === layer).length]))).toEqual({ tokens: 55, assets: 48, components: 59, sections: 46, frames: 9 });
     expect(build.slots.filter(slot => slot.layer === "sections")).toEqual(loadSectionRegistry().slots);
     expect(build.placements.find(placement => placement.layer === "sections")).toEqual(loadSectionRegistry().placement);
     expect(build.slots.filter(slot => slot.layer === "frames")).toEqual(frameSlots);

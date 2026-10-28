@@ -17,14 +17,14 @@ const imported = () => importFoundrySections({ exports });
 const change = (leaf: string, patch: Partial<(typeof FOUNDRY_SECTION_MAP)[string]>) => ({ ...FOUNDRY_SECTION_MAP, [leaf]: { ...FOUNDRY_SECTION_MAP[leaf]!, ...patch } });
 
 describe("Foundry section package descriptors", () => {
-  it("regenerates exactly 45 descriptors and coverage for all 45 leaves", () => {
+  it("regenerates exactly 46 descriptors and coverage for all 46 leaves", () => {
     const files = generatedFoundrySectionFiles({ exports });
     if (process.env.UPDATE_FOUNDRY_SECTION_FILLS === "1") for (const [name, bytes] of Object.entries(files)) writeFileSync(resolve(directory, name), bytes);
     expect(readdirSync(directory).filter(name => name.startsWith("sections.") && name.endsWith(".json")).sort()).toEqual(Object.keys(files).sort());
     for (const [name, bytes] of Object.entries(files)) expect(readFileSync(resolve(directory, name), "utf8"), name).toBe(bytes);
-    expect(imported().fills).toHaveLength(45);
+    expect(imported().fills).toHaveLength(46);
     expect(imported().coverage.map(row => row.slot)).toEqual(slots.map(slot => slot.id).sort());
-    expect(imported().coverage).toHaveLength(45);
+    expect(imported().coverage).toHaveLength(46);
     expect(generatedFoundrySectionFiles({ exports, slots: [...slots].reverse() })).toEqual(files);
   });
 

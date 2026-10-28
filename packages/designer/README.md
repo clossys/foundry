@@ -191,7 +191,7 @@ and its exception list can only shrink.
   typically by composing one or more components (and/or layout) into something
   with a real job on a page. Shipped blocks include: `AccountMenu`, `PageHeader`, `EmptyState`,
   `DataTable`, `DetailView`, `Pagination`, `UsageMeter`, `Stat`, `Form`, `FieldGroup`,
-  `ConfirmDialog`, `Toolbar`, `NavGrid`, `SectionHeader`, `Hero`, `ContentSection`, `SectionIntro`, `MediaFigure`, `SectionFrame`,
+  `ConfirmDialog`, `Toolbar`, `NavGrid`, `SectionHeader`, `Hero`, `LogoHero`, `ContentSection`, `SectionIntro`, `MediaFigure`, `SectionFrame`,
   `MarketingChapter`, `FeatureGrid`, `Item`, `Items`, `Tree`, `AnatomyCallouts`, `RecordLedger`, `Scene`, `Matrix`,
   `Specimen`, `SpecimenPanel`, `OrderedStepSequence`, `StatusList`, `Faq`,
   `PricingTable`, `Testimonial`, `TableOfContents`, `TestimonialSet`, `LogoCloud`, `PeopleGrid`, `ArticleBody`, `ConsentBanner`, `ErrorState`, `StatGroup`, `RecordCards`, `CallToAction`, `NoticeList`, `Gallery`, `NewsletterBand`, `Panel`, `Drawer`,
@@ -466,7 +466,7 @@ source file's own header for the exact probe and its result). Today that's:
 | Subpath | Server-safe members |
 | --- | --- |
 | `@clossys/designer/components/server` | `NativeAction`, `SemanticContent`, `Logomark`, `Avatar`, `Badge`, `Banner`, `Card`, `Field`, `Icon`, `Meter`, `Skeleton`, `Spinner`, `StatusMark`, `buttonLinkClassName`, `iconButtonClassName`, `iconButtonLinkClassName`, `mergeUiClasses` |
-| `@clossys/designer/blocks/server` | `Lockup`, `AnatomyCallouts`, `ArticleBody`, `Matrix`, `ContentSection`, `CallToAction`, `DetailView`, `EmptyState`, `ErrorState`, `EventItem`, `Faq`, `FeatureGrid`, `FieldGroup`, `Hero`, `Item`, `Items`, `MarketingChapter`, `MediaFigure`, `OrderedStepSequence`, `PageHeader`, `PricingTable`, `RecordLedger`, `Scene`, `SectionFrame`, `SectionHeader`, `SectionIntro`, `Specimen`, `SpecimenPanel`, `Stat`, `StatGroup`, `StatusList`, `TableOfContents`, `TaskList`, `Testimonial`, `TestimonialSet`, `LogoCloud`, `PeopleGrid`, `Tree`, `UsageMeter` |
+| `@clossys/designer/blocks/server` | `Lockup`, `AnatomyCallouts`, `ArticleBody`, `Matrix`, `ContentSection`, `CallToAction`, `DetailView`, `EmptyState`, `ErrorState`, `EventItem`, `Faq`, `FeatureGrid`, `FieldGroup`, `Hero`, `LogoHero`, `Item`, `Items`, `MarketingChapter`, `MediaFigure`, `OrderedStepSequence`, `PageHeader`, `PricingTable`, `RecordLedger`, `Scene`, `SectionFrame`, `SectionHeader`, `SectionIntro`, `Specimen`, `SpecimenPanel`, `Stat`, `StatGroup`, `StatusList`, `TableOfContents`, `TaskList`, `Testimonial`, `TestimonialSet`, `LogoCloud`, `PeopleGrid`, `Tree`, `UsageMeter` |
 | `@clossys/designer/shell/server` | `Shell`, `SiteFooter`, `SiteHeader`, `SkipLink` |
 | `@clossys/designer/charts/server` | `ChartFrame`, `BarChart`, `LineChart` (static), `WaterfallChart`, `RangeChart`, `ScatterChart`, `AreaChart` (static), `Heatmap` (static), `StatusStrip` (static), `Sparkline` |
 | `@clossys/designer/theme/server` | `getThemeInitScript` |
@@ -8314,7 +8314,7 @@ up. They get added here only once something real needs them, as `Calendar`,
 `ToggleButton` and `Slider` were when the catalog's date-picker, toggle-button
 and slider slots needed Foundry implementations.
 
-**Blocks:** shipped blocks include `AccessMatrix`, `ColumnMapper`, `Lockup`, `PageHeader`, `AccountMenu`, `EmptyState`, `DataTable`, `CanvasSurface`, `DetailView`, `Pagination`, `UsageMeter`, `Stat`, `Form`, `FieldGroup`, `ConfirmDialog`, `Toolbar`, `NavGrid`, `SectionHeader`, `Hero`, `ContentSection`, `SectionIntro`, `MediaFigure`, `MarketingChapter`, `FeatureGrid`, `Matrix`, `Specimen`, `SpecimenPanel`, `OrderedStepSequence`, `StatusList`, `Faq`, `PricingTable`, `Testimonial`, `TableOfContents`, `TestimonialSet`, `LogoCloud`, `PeopleGrid`, `ArticleBody`, `SectionFrame`, `ConsentBanner`, `Panel`, `Drawer`, `ResizablePane`, `CommandMenu`, `AppNavigation`, `PageBar`, `Explorer`, `RecordLedger`, `AnatomyCallouts`, `Scene`, `Item`, `Tree`, `Items`, `GroupedTable`, `CatalogWorkspace`, `CatalogBrowser`, `Chat`, `NewsletterBand`, `ResourceList`, `RelationGraph`, `TaskList` and `EventItem`. Current inventory counts come from the shared catalog
+**Blocks:** shipped blocks include `AccessMatrix`, `ColumnMapper`, `Lockup`, `PageHeader`, `AccountMenu`, `EmptyState`, `DataTable`, `CanvasSurface`, `DetailView`, `Pagination`, `UsageMeter`, `Stat`, `Form`, `FieldGroup`, `ConfirmDialog`, `Toolbar`, `NavGrid`, `SectionHeader`, `Hero`, `LogoHero`, `ContentSection`, `SectionIntro`, `MediaFigure`, `MarketingChapter`, `FeatureGrid`, `Matrix`, `Specimen`, `SpecimenPanel`, `OrderedStepSequence`, `StatusList`, `Faq`, `PricingTable`, `Testimonial`, `TableOfContents`, `TestimonialSet`, `LogoCloud`, `PeopleGrid`, `ArticleBody`, `SectionFrame`, `ConsentBanner`, `Panel`, `Drawer`, `ResizablePane`, `CommandMenu`, `AppNavigation`, `PageBar`, `Explorer`, `RecordLedger`, `AnatomyCallouts`, `Scene`, `Item`, `Tree`, `Items`, `GroupedTable`, `CatalogWorkspace`, `CatalogBrowser`, `Chat`, `NewsletterBand`, `ResourceList`, `RelationGraph`, `TaskList` and `EventItem`. Current inventory counts come from the shared catalog
 in the repository check `src/catalog/catalog.coverage.test.ts` (not shipped in the installed package). No
 `FilterBar` block:
 `DataTable`'s own `toolbar` slot (and `Toolbar`'s own `search` slot) are
@@ -10603,3 +10603,42 @@ A `rootFontSizeToken` names the selected profile member declaring the document
 root size in pixels. Without that declaration, rem thresholds stay pending until
 the mounted document provides an actual computed root size. The native view is
 local display; it creates no registered source or Node lifecycle evidence.
+
+### Section copy catalog
+
+`sectionCopyCatalog()` from `@clossys/designer/catalog` lists every section's
+`id`, draft `status`, paired `passageSchema`, `sourceLocale`, and copy `fields`.
+`loadSectionRegistry()` carries the same schema on `contract.copy` and refuses
+malformed schemas. Each `sections.<name>` pairs with `passages.<name>`; the
+structural band has an explicit zero-field schema.
+
+Fields use `{ key, kind, required, maxLength, dir }`. `kind` is `plain`, `rich`
+or `icu`; `maxLength` maps BCP-47 locales to positive Unicode code-point limits.
+The draft catalog declares English (`en`) limits. These are authored layout
+contracts; a declaration does not claim that translated text has been measured
+in a rendered page. Other locales require explicit limits. `dir` is `auto`,
+`ltr` or `rtl`. Dotted keys name content paths and `[]` addresses each collection value (an array item or keyed record). A required field is required when its containing optional region, item
+or state is present. `header` carries shared section-header copy, `labels`
+carries host-supplied chrome names, and `states.<state>` carries messages for
+the section's declared loading, empty and error states. Selection ids, URLs,
+numeric data and artwork sources are outside this authored-copy schema.
+
+The v1 bridge is the exported `CopyField` shape
+`{ key, locale, value, source: "handwritten" }`; `isCopyField()` checks this
+closed shape. Candidate binding, locale coverage and text-length evaluation
+belong to the consumer's content checks. The catalog contains no authored
+consumer text and performs no content migration.
+
+`LogoHero` from `@clossys/designer/blocks` (also `/blocks/server`) is the draft
+`sections.logo-hero` fill, block id `say.logo-hero`. Supply existing artwork as
+`mark` and its accessible `name`. It composes `SectionFrame` and `Logomark`,
+with no visible prose or action. Its registered copy schema contains only
+`name`; the runtime renderer refuses extra content slots. The public-site page
+frame remains `frames.site-shell`, whose registered package fill is Publisher's
+`SiteFrame`; Designer does not claim that renderer.
+
+```tsx
+import { LogoHero } from "@clossys/designer/blocks/server";
+
+<LogoHero mark="/brand/mark.svg" name="Example" />;
+```

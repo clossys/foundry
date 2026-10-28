@@ -42,25 +42,25 @@ const unmapped = [
 ];
 
 describe("legacy block section homes", () => {
-  it("maps exactly 57 legacy addresses to 42 of the 45 section leaves", () => {
-    expect(mapping).toEqual(expected);
-    expect(Object.keys(mapping)).toHaveLength(57);
-    expect(new Set(Object.values(mapping)).size).toBe(42);
+  it("maps 57 legacy addresses and the new logo block to 43 of the 46 section leaves", () => {
+    expect(mapping).toEqual({ ...expected, "say.logo-hero": "sections.logo-hero" });
+    expect(Object.keys(mapping)).toHaveLength(58);
+    expect(new Set(Object.values(mapping)).size).toBe(43);
     const targets = new Set(slots.map(slot => slot.id));
-    expect(targets.size).toBe(45);
+    expect(targets.size).toBe(46);
     for (const target of Object.values(mapping)) expect(targets.has(target), target).toBe(true);
     expect([...targets].filter(target => !Object.values(mapping).includes(target)).sort()).toEqual(["sections.band", "sections.call-to-action", "sections.consent"]);
   });
 
   it("agrees with existing retirement aliases without replacing legacy IDs", () => {
-    expect(mapping).toEqual(Object.fromEntries(retired.map(row => [row.id, row.replacedBy])));
-    expect(BLOCK_ENTRIES).toHaveLength(90);
-    expect(BLOCK_ENTRIES.map(block => block.id).sort()).toEqual([...Object.keys(expected), ...unmapped].sort());
+    expect(mapping).toEqual({ ...Object.fromEntries(retired.map(row => [row.id, row.replacedBy])), "say.logo-hero": "sections.logo-hero" });
+    expect(BLOCK_ENTRIES).toHaveLength(91);
+    expect(BLOCK_ENTRIES.map(block => block.id).sort()).toEqual([...Object.keys(expected), "say.logo-hero", ...unmapped].sort());
   });
 
   it("attaches homes to mapped entries and leaves the other 32 addresses absent", () => {
     const mapped = BLOCK_ENTRIES.filter(block => block.sectionLeaf !== undefined);
-    expect(Object.fromEntries(mapped.map(block => [block.id, block.sectionLeaf]))).toEqual(expected);
+    expect(Object.fromEntries(mapped.map(block => [block.id, block.sectionLeaf]))).toEqual({ ...expected, "say.logo-hero": "sections.logo-hero" });
     expect(BLOCK_ENTRIES.filter(block => block.sectionLeaf === undefined).map(block => block.id).sort()).toEqual([...unmapped].sort());
     for (const block of BLOCK_ENTRIES.filter(block => unmapped.includes(block.id))) expect(block).not.toHaveProperty("sectionLeaf");
   });

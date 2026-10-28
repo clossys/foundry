@@ -807,6 +807,7 @@
       "l2": "explain-introductions",
       "leaves": [
         "sections.hero",
+        "sections.logo-hero",
         "sections.page-header"
       ],
       "offers": [
@@ -814,6 +815,7 @@
           "source": "foundry",
           "leaves": [
             "sections.hero",
+            "sections.logo-hero",
             "sections.page-header"
           ],
           "reason": "no external covers"

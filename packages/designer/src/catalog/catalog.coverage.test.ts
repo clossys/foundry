@@ -205,6 +205,7 @@ const FROZEN_BLOCK_IDS: readonly string[] = [
   "say.hero",
   "say.info-tip",
   "say.lockup",
+  "say.logo-hero",
   "say.media-figure",
   "say.notice-stack",
   "say.page-header",

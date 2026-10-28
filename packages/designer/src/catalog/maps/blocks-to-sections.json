@@ -48,6 +48,7 @@
   "say.empty-state": "sections.empty-state",
   "say.error-state": "sections.error-state",
   "say.hero": "sections.hero",
+  "say.logo-hero": "sections.logo-hero",
   "say.media-figure": "sections.media",
   "say.notice-stack": "sections.notices",
   "say.page-header": "sections.page-header",

@@ -31,6 +31,7 @@
           "label": "Introductions",
           "leaves": [
             "sections.hero",
+            "sections.logo-hero",
             "sections.page-header"
           ]
         },

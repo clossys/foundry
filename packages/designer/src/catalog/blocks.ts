@@ -216,6 +216,7 @@ const sectionLeafByBlock: Readonly<Partial<Record<BlockId, NonNullable<BlockEntr
 export const BLOCK_ENTRIES: readonly BlockEntry[] = [
   // Explain / Headings
   built(HEADINGS, "Hero", { id: "say.hero", label: "Hero" }),
+  built(HEADINGS, "LogoHero", { id: "say.logo-hero", label: "Logo hero", contract: { requiredFields: ["mark", "name"], axes: [], slots: [], configs: [], surface: "marketing", specimen: null, alsoUsedFor: [] } }),
   built(HEADINGS, "PageHeader", {
     id: "say.page-header",
     label: "Page header",
