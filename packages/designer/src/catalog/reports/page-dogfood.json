@@ -1774,7 +1774,7 @@
       "elementId": "src/runtime/sections/library-board.tsx#LibraryBoardSection@3acdf1d07eec",
       "evidence": "Unknown visual import or local component <LibraryBoardSection>; no registered slot resolves.",
       "file": "src/runtime/sections/library-board.tsx",
-      "line": 44,
+      "line": 58,
       "missing": "LibraryBoardSection visual capability",
       "raisedBy": "src/runtime/sections/library-board.tsx#surface",
       "slotId": null,
@@ -1785,7 +1785,7 @@
       "elementId": "src/runtime/sections/library-board.tsx#LibraryBoardSection@3acdf1d07eec",
       "evidence": "unresolved ...: dynamic source cannot establish token-only styling.",
       "file": "src/runtime/sections/library-board.tsx",
-      "line": 44,
+      "line": 58,
       "raisedBy": "src/runtime/sections/library-board.tsx#surface",
       "slotId": null,
       "tag": "LibraryBoardSection"
@@ -2710,7 +2710,7 @@
       "elementId": "src/studio/CanvasModules.tsx#StudioRail@36c10a6b4df0",
       "evidence": "Unknown visual import or local component <StudioRail>; no registered slot resolves.",
       "file": "src/studio/CanvasModules.tsx",
-      "line": 35,
+      "line": 56,
       "missing": "StudioRail visual capability",
       "raisedBy": "src/studio/CanvasModules.tsx#surface",
       "slotId": null,
@@ -2721,7 +2721,7 @@
       "elementId": "src/studio/CanvasModules.tsx#CanvasMap@aeda113c58ac",
       "evidence": "Unknown visual import or local component <CanvasMap>; no registered slot resolves.",
       "file": "src/studio/CanvasModules.tsx",
-      "line": 36,
+      "line": 57,
       "missing": "CanvasMap visual capability",
       "raisedBy": "src/studio/CanvasModules.tsx#surface",
       "slotId": null,
@@ -2732,7 +2732,7 @@
       "elementId": "src/studio/CanvasModules.tsx#CanvasZoom@23322f0e3884",
       "evidence": "Unknown visual import or local component <CanvasZoom>; no registered slot resolves.",
       "file": "src/studio/CanvasModules.tsx",
-      "line": 37,
+      "line": 58,
       "missing": "CanvasZoom visual capability",
       "raisedBy": "src/studio/CanvasModules.tsx#surface",
       "slotId": null,
@@ -8957,6 +8957,10 @@
     {
       "elements": 0,
       "file": "src/catalog-core/runtime-ports.ts"
+    },
+    {
+      "elements": 0,
+      "file": "src/catalog-core/runtime-snapshot-identity.ts"
     },
     {
       "elements": 0,
