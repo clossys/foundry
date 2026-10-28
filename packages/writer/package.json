@@ -261,6 +261,10 @@
     "typecheck": "node scripts/pack-plan-contract.mjs && tsc -p tsconfig.json --noEmit",
     "test": "node scripts/pack-plan-contract.mjs && vitest run"
   },
+  "dependencies": {
+    "retext": "9.0.0",
+    "unified": "11.0.5"
+  },
   "devDependencies": {
     "@types/node": "^26.6.3",
     "typescript": "~6.0.0",

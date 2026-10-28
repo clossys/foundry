@@ -163,6 +163,7 @@ import { checkWriterApproval } from "./checks/approval.js";
 import { checkWriterLength } from "./checks/length.js";
 import { checkWriterICU } from "./checks/icu.js";
 import { checkWriterExpansion, writerPseudoLocale } from "./checks/expansion.js";
+import { checkWriterLint } from "./checks/lint/index.js";
 
 import { readCopyRecord } from "./registry.js";
 import { checkRenderRegistryParity } from "./render-registry-parity.js";
@@ -1625,6 +1626,7 @@ export function mainWriterLibrary(argv: string[]): number {
       ...checkWriterFreeze(library, options), ...checkWriterClosedWorld(library, options), ...checkWriterPurity(library, options),
       ...checkWriterLength(library, options), ...checkWriterICU(library, options), ...checkWriterExpansion(library, options),
       ...checkWriterCoverage(library, options), ...checkWriterApproval(library, options),
+      ...checkWriterLint(library, options),
     ];
     const incomplete = Object.entries(library.locales).flatMap(([locale, content]) => content.documents.map(document => ({
       code: "load", path: `${locale}/${document.path}`, message: "Markdown narrative checks require WR-NARR; this library check is incomplete.", incomplete: true,
