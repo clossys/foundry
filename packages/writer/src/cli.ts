@@ -153,6 +153,7 @@ import { checkPassageComposition, readPassageRecord, type PassageGateResult } fr
 import { mainApprovalStateCommand } from "./approval.js";
 import { mainApproveCommand } from "./approve-cli.js";
 import { mainWriterIA } from "./catalog/ia/cli.js";
+import { mainIACoverage } from "./checks/ia-coverage/cli.js";
 import { loadWriterLibrary } from "./loader/load.js";
 import { canonicalWriterJSON, writeWriterReceipt } from "./digest/index.js";
 import { checkWriterFreeze, type WriterCheckFinding, type WriterCheckOptions, type WriterDesignerEvidence } from "./checks/freeze.js";
@@ -1681,6 +1682,8 @@ if (detectMainModule()) {
     process.exitCode = mainWriterLibrary(rawArgs.slice(1));
   } else if (rawArgs[0] === "ia") {
     process.exitCode = mainWriterIA(rawArgs.slice(1));
+  } else if (rawArgs[0] === "ia-coverage") {
+    process.exitCode = await mainIACoverage(rawArgs.slice(1));
   } else if (rawArgs[0] === "addressability") {
     runAddressabilityCheck(rawArgs.slice(1));
   } else if (rawArgs[0] === "passages") {
