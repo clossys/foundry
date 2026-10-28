@@ -1,5 +1,6 @@
 import type { LayerId } from '../../catalog-core/types.js';
 import type { LibraryColumn, LibraryItemProvenance } from '../../catalog-core/library-roster.js';
+import { runtimeSnapshotCopies } from '../../catalog-core/runtime-snapshot-identity.js';
 import { assertRuntimeSnapshot } from '../../catalog-core/runtime-ports.js';
 import type { CandidatePromptData } from './candidate-prompt.js';
 export interface LibraryPreviewIdentity { readonly leaf: string; readonly source: string; readonly selectionHash: string; readonly sourceHash: string }
@@ -36,8 +37,10 @@ const record = (value: unknown, keys: readonly string[], required: readonly stri
 };
 const text = (value: unknown) => { if (typeof value !== 'string' || !value.trim()) throw new TypeError('Library board identifier required'); };
 export function assertLibraryPreviewIdentity(value: unknown): asserts value is LibraryPreviewIdentity { const row = record(value, ['leaf','source','selectionHash','sourceHash']); for (const field of Object.values(row)) text(field); }
+const validatedBoardSnapshots = new WeakSet<object>();
 /** Closed serializable content records never carry JSX, render callbacks or executable names. */
 export function assertLibraryBoardRecords(value: unknown): asserts value is LibraryBoardRecords {
+  if (value && typeof value === 'object' && validatedBoardSnapshots.has(value)) return;
   assertRuntimeSnapshot(value);
   const top = record(value, ['columns','rows','controls']);
   const columns = record(top.columns, ['version','items']), rows = record(top.rows, ['version','layer','boardId','label','items']), controls = record(top.controls, ['version','mode','canSave','pending']);
@@ -64,6 +67,9 @@ export function assertLibraryBoardRecords(value: unknown): asserts value is Libr
     }
   }
   assertRuntimeSnapshot(top);
+  // Cache only our detached immutable copies, after BOTH descriptor passes and the complete schema check.
+  // Caller-owned objects (including shallow freezes and proxies) always take the full validation path.
+  if (runtimeSnapshotCopies.has(top)) validatedBoardSnapshots.add(top);
 }
 function assertPrompt(value: unknown): void {
   const prompt = record(value, ['consumer','board','slot','variants','guidelines','tokens','siblings','currentCandidate','returnStep'], ['consumer','board','slot','variants','tokens','siblings','returnStep']);

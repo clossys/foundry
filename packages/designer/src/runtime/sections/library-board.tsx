@@ -8,6 +8,8 @@ import type { ReactNode } from "react";
 import { LibraryBoardSection, type LibraryBoardPreviewPort } from "../../blocks/library-board/LibraryBoardSection.js";
 import type { LibraryBoardCommand, LibraryBoardRecords } from "../../blocks/library-board/model.js";
 import type { CandidateWorkflow, LibraryBoardLabels } from "../../blocks/library-board/types.js";
+import { runtimeSnapshotCopies } from "../../catalog-core/runtime-snapshot-identity.js";
+import { runtimeSnapshot } from "../../catalog-core/runtime-ports.js";
 import type { RuntimeRenderInput } from "../../catalog-core/runtime-ports.js";
 import { runtimeValue, type SurfaceRuntimeRenderer } from "../contract.js";
 
@@ -29,6 +31,18 @@ function boardHost(input: RuntimeRenderInput<ReactNode>): LibraryBoardSectionHos
   return host as LibraryBoardSectionHost;
 }
 
+const boardRecordsByContent = new WeakMap<object, LibraryBoardRecords>();
+function boardRecords(input: RuntimeRenderInput<ReactNode>): LibraryBoardRecords {
+  const immutable = runtimeSnapshotCopies.has(input.content);
+  const cached = immutable ? boardRecordsByContent.get(input.content) : undefined;
+  if (cached) return cached;
+  const records = { columns: runtimeValue(input, "columns"), rows: runtimeValue(input, "rows"), controls: runtimeValue(input, "controls") } as unknown as LibraryBoardRecords;
+  if (!immutable) return records;
+  const snapshot = runtimeSnapshot(records);
+  boardRecordsByContent.set(input.content, snapshot);
+  return snapshot;
+}
+
 /** Library-board arrangement first; the grid renderer for everything else. */
 export function withLibraryBoard(grid: SurfaceRuntimeRenderer): SurfaceRuntimeRenderer {
   return input => {
@@ -40,7 +54,7 @@ export function withLibraryBoard(grid: SurfaceRuntimeRenderer): SurfaceRuntimeRe
     if (extra.length) throw new TypeError(`sections.comparison: arrangement.library-board draws only columns, rows and controls; ${extra.join(", ")} has no board prop`);
     const host = boardHost(input);
     // LibraryBoardSection checks the exact record shape (assertLibraryBoardRecords) before it renders anything.
-    const records = { columns: runtimeValue(input, "columns"), rows: runtimeValue(input, "rows"), controls: runtimeValue(input, "controls") } as unknown as LibraryBoardRecords;
+    const records = boardRecords(input);
     return <LibraryBoardSection records={records} labels={host.labels} previews={host.previews} onCommand={host.onCommand} {...(host.workflow ? { workflow: host.workflow } : {})} />;
   };
 }

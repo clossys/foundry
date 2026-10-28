@@ -74,3 +74,34 @@ it("reports the board's two descriptor passes with and without discarded copies"
   console.info("runtime board validation microbenchmark", JSON.stringify({ rows: 59, rounds, copiedMs, validationMs, note: "Diagnostic only; same two descriptor passes, board schema work excluded. No wall-time assertion or browser clearance." }));
   expect(input.rows.items).toHaveLength(59);
 });
+
+
+it("deep-validates each detached board snapshot identity once", () => {
+  const first = runtimeSnapshot(records()), second = runtimeSnapshot(records());
+  const descriptors = vi.spyOn(Object, "getOwnPropertyDescriptors");
+  let initialVisits = 0, repeatVisits = 0, secondVisits = 0;
+  try {
+    assertLibraryBoardRecords(first);
+    initialVisits = descriptors.mock.calls.length;
+    descriptors.mockClear();
+    for (let render = 0; render < 4; render++) assertLibraryBoardRecords(first);
+    repeatVisits = descriptors.mock.calls.length;
+    descriptors.mockClear();
+    assertLibraryBoardRecords(second);
+    secondVisits = descriptors.mock.calls.length;
+  } finally { descriptors.mockRestore(); }
+  expect(initialVisits).toBeGreaterThan(2);
+  expect(repeatVisits).toBe(0);
+  expect(secondVisits).toBe(initialVisits);
+});
+
+it("never caches mutable, shallow-frozen or proxy board clearance", () => {
+  for (const wrap of [(value: LibraryBoardRecords) => value, Object.freeze, (value: LibraryBoardRecords) => new Proxy(value, {})]) {
+    const input = wrap(records());
+    assertLibraryBoardRecords(input);
+    Object.assign(input.rows.items[0]!.prompt.tokens[0]!, { callback() {} });
+    expect(() => assertLibraryBoardRecords(input)).toThrow("runtime: plain finite snapshot required");
+  }
+  const invalid = runtimeSnapshot({ ...records(), controls: { ...records().controls, mode: "other" } });
+  for (let attempt = 0; attempt < 2; attempt++) expect(() => assertLibraryBoardRecords(invalid)).toThrow("Unsupported library board record version or mode");
+});
