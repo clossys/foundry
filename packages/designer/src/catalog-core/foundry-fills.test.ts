@@ -31,7 +31,8 @@ describe('Foundry token fill documents', () => {
   it('loads the offered token cells and labelled baselines without changing registry bindings', () => {
     const offered = offeredFoundryFills(historical, slots);
     for (const source of ['foundry', 'foundry-baseline']) {
-      const expected = offered.filter(fill => fill.$extensions['com.clossys.fill'].source === source).map(fill => fill.$extensions['com.clossys.fill'].slot + '.json').sort();
+      const expressive = source === 'foundry' ? ['tokens.animation.json', 'tokens.gradient.json'] : [];
+      const expected = [...offered.filter(fill => fill.$extensions['com.clossys.fill'].source === source).map(fill => fill.$extensions['com.clossys.fill'].slot + '.json'), ...expressive].sort();
       expect(readdirSync(resolve(here, '../catalog/fills', source)).filter(file => file.startsWith('tokens.')).sort()).toEqual(expected);
     }
     const catalog = tokenCatalog(loadCatalog());
@@ -39,6 +40,6 @@ describe('Foundry token fill documents', () => {
     expect(catalog.standards.map(standard => standard.id).sort()).toEqual(['apg', 'dtcg', 'tailwind-v4-theme', 'wcag-2.2', 'web-app-manifest']);
     expect(catalog.placements).toEqual([tokenPlacement]); expect(catalog.retired).toEqual([]);
     expect(catalog.sources).toContainEqual({ id: 'foundry', kind: 'base', author: 'foundry', license: 'MIT' });
-    expect(catalog.fills.filter(fill => fill.$extensions['com.clossys.fill'].source === 'foundry')).toHaveLength(38);
+    expect(catalog.fills.filter(fill => fill.$extensions['com.clossys.fill'].source === 'foundry')).toHaveLength(40);
   });
 });

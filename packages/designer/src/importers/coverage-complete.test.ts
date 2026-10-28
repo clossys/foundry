@@ -28,10 +28,10 @@ const catalog = tokenCatalog(loadCatalog());
 const library = completedTokenLibrary(catalog, source, '2026-10-23');
 
 describe('signed token coverage decisions', () => {
-  it('offers 36 Foundry leaves, two retained subsets and three noncompeting baselines', () => {
+  it('offers 40 Foundry leaves including expressive defaults and three noncompeting baselines', () => {
     const foundry = catalog.fills.filter(fill => fill.$extensions['com.clossys.fill'].source === 'foundry');
     const baseline = catalog.fills.filter(fill => fill.$extensions['com.clossys.fill'].source === 'foundry-baseline');
-    expect(foundry).toHaveLength(38); expect(baseline).toHaveLength(3);
+    expect(foundry).toHaveLength(40); expect(baseline).toHaveLength(3);
     expect(baseline.every(fill => fill.$extensions['com.clossys.fill'].baseline)).toBe(true);
     expect(catalog.sources.find(source => source.id === 'foundry-baseline')).toMatchObject({ baseline: true, author: 'foundry', license: 'MIT' });
     for (const leaf of RETIRED_FOUNDRY_TOKEN_LEAVES) expect(foundry.some(fill => fill.$extensions['com.clossys.fill'].slot === `tokens.${leaf}`)).toBe(false);
@@ -66,10 +66,10 @@ describe('signed token coverage decisions', () => {
     const focus = flatten(prepared.find(fill => fill.$extensions['com.clossys.fill'].slot === 'tokens.focus-color')!);
     expect(focus['tokens.focus-color.default']!.$value).toBe('{tokens.accent-color.default}');
   });
-  it('reports 55/55 candidate leaves with per-source provided members separately from consumer truth', () => {
+  it('reports 56/56 candidate leaves with per-source provided members separately from consumer truth', () => {
     const report = leafCoverage(catalog.slots, catalog.fills);
-    expect(report.kind).toBe('candidate-availability'); expect(report.leaves).toHaveLength(55); expect(report.unionFilledLeaves).toBe(55); expect(report.uncoveredLeaves).toEqual([]);
-    expect(report.totals.foundry?.filledLeaves).toBe(38); expect(report.totals['foundry-baseline']?.filledLeaves).toBe(3);
+    expect(report.kind).toBe('candidate-availability'); expect(report.leaves).toHaveLength(56); expect(report.unionFilledLeaves).toBe(56); expect(report.uncoveredLeaves).toEqual([]);
+    expect(report.totals.foundry?.filledLeaves).toBe(40); expect(report.totals['foundry-baseline']?.filledLeaves).toBe(3);
     expect(report.leaves.every(leaf => Object.values(leaf.providedMembers).some(members => members.length > 0))).toBe(true);
     expect(read('token-leaf-coverage.json')).toBe(JSON.stringify(JSON.parse(read('token-leaf-coverage.json')), null, 2) + '\n');
     expect(resolve({ catalog, library: { source, fills: [] } }).members).toEqual({});

@@ -41,6 +41,13 @@
           "unit": "px",
           "value": 4
         }
+      },
+      "reveal": {
+        "$type": "dimension",
+        "$value": {
+          "unit": "px",
+          "value": 24
+        }
       }
     }
   }

@@ -15,4 +15,18 @@ describe("assets.pattern recipes", () => {
     for (const bad of [{ ...PATTERN_RECIPES.dots, shape: "lines" }, { ...PATTERN_RECIPES.dots, ink: "#cccccc" }, { ...PATTERN_RECIPES.dots, weight: "1px" }, { ...PATTERN_RECIPES.dots, tile: undefined }, null, []]) expect(isPatternRecipe(bad, "dots")).toBe(false);
     expect(isPatternRecipe({ ...PATTERN_RECIPES.dots, shape: "hatch" }, "hatch")).toBe(false);
   });
+  it("renders distinct granular, noise and contour patterns from the same token inputs", () => {
+    const images = new Set(Object.values(PATTERN_RECIPES).map(recipe => patternBackground(recipe, 1.5).backgroundImage));
+    expect(images.size).toBe(6);
+    for (const name of ["grain", "noise", "topo"] as const) {
+      const recipe = PATTERN_RECIPES[name], background = patternBackground(recipe, 1.5);
+      expect(isPatternRecipe(recipe, name)).toBe(true);
+      expect(background.backgroundImage).toContain(`var(${recipe.ink})`);
+      expect(background.backgroundImage).toContain(`var(${recipe.weight})`);
+      expect(background.backgroundSize).toBe(`calc(var(${recipe.tile}) * 1.5) calc(var(${recipe.tile}) * 1.5)`);
+    }
+    expect(patternBackground(PATTERN_RECIPES.grain).backgroundImage).toContain("radial-gradient(ellipse");
+    expect(patternBackground(PATTERN_RECIPES.noise).backgroundImage).toContain("radial-gradient(circle");
+    expect(patternBackground(PATTERN_RECIPES.topo).backgroundImage).toContain("repeating-radial-gradient");
+  });
 });

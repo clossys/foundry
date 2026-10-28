@@ -522,7 +522,7 @@
       ]
     },
     {
-      "members": 3,
+      "members": 6,
       "originKinds": [
         "adopted"
       ],
@@ -566,13 +566,14 @@
       ]
     },
     {
-      "members": 4,
+      "members": 10,
       "originKinds": [
         "adopted"
       ],
       "rules": [],
       "slot": "tokens.animation",
       "sources": [
+        "foundry",
         "tailwind-default"
       ]
     },
@@ -777,7 +778,7 @@
       ]
     },
     {
-      "members": 4,
+      "members": 5,
       "originKinds": [
         "adopted"
       ],
@@ -788,7 +789,7 @@
       ]
     },
     {
-      "members": 3,
+      "members": 4,
       "originKinds": [
         "adopted"
       ],
@@ -903,6 +904,17 @@
       ]
     },
     {
+      "members": 4,
+      "originKinds": [
+        "adopted"
+      ],
+      "rules": [],
+      "slot": "tokens.gradient",
+      "sources": [
+        "foundry"
+      ]
+    },
+    {
       "members": 1,
       "originKinds": [
         "adopted"
@@ -914,7 +926,7 @@
       ]
     },
     {
-      "members": 4,
+      "members": 5,
       "originKinds": [
         "adopted"
       ],
@@ -1026,7 +1038,7 @@
       ]
     },
     {
-      "members": 1,
+      "members": 2,
       "originKinds": [
         "adopted"
       ],
@@ -1158,7 +1170,7 @@
       ]
     }
   ],
-  "served": 103,
-  "slots": 103,
-  "tokenLeaves": 55
+  "served": 104,
+  "slots": 104,
+  "tokenLeaves": 56
 }

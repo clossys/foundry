@@ -60,7 +60,7 @@ describe("owner-signed leaf membership", () => {
     });
     it(`${layer}: allows regrouping, reordering, labels and metadata changes`, () => {
       const value = input();
-      const ids = fixture.layer === "components" ? [...fixture.freeze.leafIds, "components.semantic-content", "components.native-action"] : fixture.layer === "assets" ? [...fixture.freeze.leafIds, ...assetAmendments.addedLeafIds] : [...fixture.freeze.leafIds, ...tokenAmendments.addedLeaves.map(row => row.id)];
+      const ids = fixture.layer === "components" ? [...fixture.freeze.leafIds, "components.semantic-content", "components.native-action"] : fixture.layer === "assets" ? [...fixture.freeze.leafIds, ...assetAmendments.addedLeafIds] : [...fixture.freeze.leafIds, ...tokenAmendments.addedLeaves.map(row => row.id), ...tokenAmendments.pending.addedLeafIds];
       value.ia.nodes = [{ id: "new-domain", label: "New domain", children: [{ id: "new-family", label: "New family", leaves: [...ids].reverse() }] }];
       value.slots.reverse();
       Object.assign(value.slots[0]!, { description: "Metadata remains separate" });
@@ -92,7 +92,7 @@ describe("owner-signed leaf membership", () => {
       }
       expect(fixture.slots).toEqual(beforeSlots);
       expect(fixture.ia).toEqual(beforeIA);
-      expect(loadBuildCatalog().slots).toHaveLength(225);
+      expect(loadBuildCatalog().slots).toHaveLength(226);
     });
   }
 
@@ -116,7 +116,9 @@ describe("owner-signed leaf membership", () => {
 describe("owner-signed Media leaf amendment", () => {
   const added = ["assets.image", "assets.pattern", "assets.video"];
   it("adds exactly image, video and pattern to the unchanged 45 signed IDs: 48 leaves, 0 removals", () => {
-    expect(assetAmendments).toEqual({ schemaVersion: 1, layer: "assets", baseSignedHead: assetFreeze.signedHead, status: "owner-signed", ownerSignoffComment: "6408363557", receiptComment: "6404876885", addedLeafIds: added });
+    const { pending, ...signedAmendment } = assetAmendments;
+    expect(signedAmendment).toEqual({ schemaVersion: 1, layer: "assets", baseSignedHead: assetFreeze.signedHead, status: "owner-signed", ownerSignoffComment: "6408363557", receiptComment: "6404876885", addedLeafIds: added });
+    expect(pending).toEqual({ status: "pending-owner-ratification", source: "workspace#45 A131/A132 AUTO-DECIDED 2026-10-28", memberChanges: [{ id: "assets.pattern", addedMembers: ["grain", "noise", "topo"] }] });
     expect(assetFreeze.leafIds).toHaveLength(45);
     expect(sha256([...assetFreeze.leafIds].sort().join("\n"))).toBe("dc3c75b4dee91fb500da9548a147fa0bf530215764b58df7a9ec12b2a966ae54");
     const ids = assetSlots.map(slot => slot.id).sort();
@@ -138,16 +140,16 @@ describe("owner-signed Media leaf amendment", () => {
 describe("owner-signed token leaf amendment", () => {
   const signed = "OWNER 2026-10-26T18:03Z ledger #44";
   const added = ["tokens.container-width", "tokens.animation"];
-  it("adds exactly the two signed leaves to the unchanged 53 signed IDs: 55 leaves, 0 removals", () => {
+  it("retains two signed additions and one pending leaf above the unchanged 53 signed IDs: 56 leaves, 0 removals", () => {
     expect(tokenAmendments).toMatchObject({ schemaVersion: 1, layer: "tokens", baseSignedHead: tokenFreeze.signedHead, status: "owner-signed" });
     expect(tokenAmendments.addedLeaves).toEqual(added.map(id => expect.objectContaining({ id, signed })));
     expect(tokenAmendments.recorded).toEqual([expect.objectContaining({ id: "tokens.scrim-color", change: "none", signed })]);
     expect(tokenFreeze.leafIds).toHaveLength(53);
     expect(sha256([...tokenFreeze.leafIds].sort().join("\n"))).toBe("4def8821fd3a0304e559e73830eec4664ab69f3f841661e8cc7656d1aaef9e19");
     const ids = tokenSlots.map(slot => slot.id);
-    expect(ids).toHaveLength(55);
+    expect(ids).toHaveLength(56);
     expect(tokenFreeze.leafIds.filter(id => !ids.includes(id))).toEqual([]);
-    expect(ids.filter(id => !tokenFreeze.leafIds.includes(id)).sort()).toEqual([...added].sort());
+    expect(ids.filter(id => !tokenFreeze.leafIds.includes(id)).sort()).toEqual([...added, ...tokenAmendments.pending.addedLeafIds].sort());
     expect(checkFrozenLeafSets([tokenIA as Placement], tokenSlots, ["tokens"])).toEqual([]);
   });
   it("refuses a third unsigned token leaf and a missing signed addition", () => {

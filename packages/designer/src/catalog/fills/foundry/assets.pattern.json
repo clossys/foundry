@@ -11,7 +11,7 @@
       "pin": {
         "export": "PATTERN_RECIPES",
         "file": "src/tokens/pattern.ts",
-        "sha256": "6029c0e429cbad931fc38faa33481e1719c115fec9ae26a3d66249648613a292"
+        "sha256": "5cde189c7941f787042b61fe3ac9575b9d34918fa0d20d3f7740548d10aa5852"
       },
       "reads": {
         "assets": [],
@@ -40,6 +40,15 @@
           "weight": "--ui-border-hairline"
         }
       },
+      "grain": {
+        "$type": "rules",
+        "$value": {
+          "ink": "--color-line-strong",
+          "shape": "grain",
+          "tile": "--spacing-xl",
+          "weight": "--ui-border-hairline"
+        }
+      },
       "grid": {
         "$type": "rules",
         "$value": {
@@ -54,6 +63,24 @@
         "$value": {
           "ink": "--color-line-strong",
           "shape": "lines",
+          "tile": "--spacing-xl",
+          "weight": "--ui-border-hairline"
+        }
+      },
+      "noise": {
+        "$type": "rules",
+        "$value": {
+          "ink": "--color-line-strong",
+          "shape": "noise",
+          "tile": "--spacing-xl",
+          "weight": "--ui-border-hairline"
+        }
+      },
+      "topo": {
+        "$type": "rules",
+        "$value": {
+          "ink": "--color-line-strong",
+          "shape": "topo",
           "tile": "--spacing-xl",
           "weight": "--ui-border-hairline"
         }

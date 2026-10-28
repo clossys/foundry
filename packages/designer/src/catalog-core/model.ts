@@ -1,4 +1,5 @@
 import type { CellType, DtcgToken, DtcgValue, FillDoc, Mode, Slot } from "./types.js";
+import { gradientColorAlias, gradientStops, isFluidDimension } from "../tokens/expressive.js";
 
 export const compare = (a: string, b: string): number => a < b ? -1 : a > b ? 1 : 0;
 export const metaOf = (fill: FillDoc) => fill.$extensions["com.clossys.fill"];
@@ -57,6 +58,9 @@ export function references(token: DtcgToken): string[] {
   for (const mode of ["light", "dark"] as const) {
     const value = modeValue(token, mode); const alias = aliasOf(value);
     if (alias) result.add(alias);
+    if (token.$type === "gradient" && gradientStops(value)) for (const stop of value) {
+      const target = gradientColorAlias(stop.color); if (target) result.add(target);
+    }
     assetReferences(value).forEach(ref => result.add(ref));
   }
   return [...result].sort(compare);
@@ -64,7 +68,7 @@ export function references(token: DtcgToken): string[] {
 const generics = new Set("serif sans-serif monospace cursive fantasy system-ui ui-sans-serif ui-serif ui-monospace ui-rounded emoji math fangsong".split(" "));
 export function cssText(type: CellType, value: DtcgValue, token?: DtcgToken, useRaw = true): string {
   const raw = token?.$extensions?.["com.clossys.css"]?.raw;
-  if (useRaw && raw !== undefined) return raw;
+  if (useRaw && raw !== undefined && type !== "gradient") return raw;
   if (typeof value === "string" && type !== "fontFamily") return value;
   if (type === "fontFamily") return (Array.isArray(value) ? value : [value]).map(name => {
     const text = String(name); return generics.has(text) || text.startsWith("-") ? text : JSON.stringify(text);
@@ -72,6 +76,7 @@ export function cssText(type: CellType, value: DtcgValue, token?: DtcgToken, use
   if (type === "number" || type === "fontWeight") return String(value) + (token?.$extensions?.["com.clossys.unit"] === "em" ? "em" : "");
   if ((type === "dimension" || type === "duration") && object(value)) return String(value.value) + String(value.unit);
   if (type === "cubicBezier" && Array.isArray(value)) return `cubic-bezier(${value.join(", ")})`;
+  if (type === "gradient" && Array.isArray(value)) return `linear-gradient(180deg, ${value.map(stop => object(stop) ? `${cssText("color", stop.color as DtcgValue)} ${Number(stop.position) * 100}%` : String(stop)).join(", ")})`;
   if (type === "color" && object(value)) {
     if (typeof value.hex === "string") return value.hex;
     const components = Array.isArray(value.components) ? value.components.join(" ") : "";
@@ -86,6 +91,8 @@ export function cssText(type: CellType, value: DtcgValue, token?: DtcgToken, use
   return typeof value === "string" ? value : JSON.stringify(value);
 }
 export function malformed(type: CellType, value: DtcgValue, raw?: string): boolean {
+  if (type === "gradient" && raw !== undefined) return true;
+  if (type === "dimension" && (typeof value === "string" && /^clamp/i.test(value.trim()) || raw !== undefined && /^clamp/i.test(raw.trim()))) return !isFluidDimension(value) || raw !== undefined && !isFluidDimension(raw);
   if (aliasOf(value)) return false;
   if (raw !== undefined && typeof value === "string") return false;
   const number = (v: unknown): v is number => typeof v === "number" && Number.isFinite(v);
@@ -97,6 +104,7 @@ export function malformed(type: CellType, value: DtcgValue, raw?: string): boole
   if (type === "cubicBezier") return !Array.isArray(value) || value.length !== 4 || !value.every(number) || Number(value[0]) < 0 || Number(value[0]) > 1 || Number(value[2]) < 0 || Number(value[2]) > 1;
   if (type === "color") return !object(value) || !["srgb", "srgb-linear", "display-p3", "a98-rgb", "prophoto-rgb", "rec2020", "lab", "oklab", "lch", "oklch", "hsl", "hwb", "xyz-d50", "xyz-d65"].includes(String(value.colorSpace)) || !Array.isArray(value.components) || value.components.length !== 3 || !value.components.every(number) || value.alpha !== undefined && (!number(value.alpha) || value.alpha < 0 || value.alpha > 1) || value.hex !== undefined && (typeof value.hex !== "string" || !/^#[a-fA-F0-9]{6}(?:[a-fA-F0-9]{2})?$/.test(value.hex));
   if (type === "shadow") return !(Array.isArray(value) ? value.length > 0 && value.every(v => !malformed(type, v)) : object(value) && dim(value.offsetX) && dim(value.offsetY) && dim(value.blur) && dim(value.spread) && !malformed("color", value.color as DtcgValue));
+  if (type === "gradient") return !gradientStops(value) || value.some(stop => !gradientColorAlias(stop.color) && malformed("color", stop.color));
   if (type === "svg") return typeof value !== "string";
   if (type === "glyph") return !Array.isArray(value);
   if (type === "raster") return !object(value);

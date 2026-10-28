@@ -1,6 +1,7 @@
 import { CatalogError } from "./api.js";
 import { stableStringify } from "./stable.js";
-import { aliasOf, compare, cssText, flatten, leafOf, metaOf, modeValue, references, relativeOf } from "./model.js";
+import { aliasOf, compare, cssText, flatten, leafOf, malformed, metaOf, modeValue, references, relativeOf } from "./model.js";
+import { gradientColorAlias, gradientRoleColor, gradientStops } from "../tokens/expressive.js";
 import type { CatalogData, DtcgToken, DtcgValue, FillDoc, Finding, LibraryData, Mode, Resolved, ResolvedMember, Slot } from "./types.js";
 
 export interface EngineInput { catalog: CatalogData; library: LibraryData }
@@ -60,6 +61,20 @@ function resolveSelection(input: EngineInput, { chosen, notices }: { chosen: Rec
       const finalEntry = chosen[target.final];
       const emit = finalEntry?.slot.contract.kind === "token" ? finalEntry.slot.contract.emit?.[relativeOf(target.final)] : undefined;
       return { value: target.value, css: emit ? `var(${emit}, ${cssText(chosen[target.final]!.token.$type, target.value, chosen[target.final]!.token, actualMode === "light" || modeValue(chosen[target.final]!.token, "dark") === chosen[target.final]!.token.$value)})` : target.css, final: target.final, alias };
+    }
+    if (token.$type === "gradient" && gradientStops(value)) {
+      const stops: { color: DtcgValue; position: number }[] = [], cssStops: { color: string; position: number }[] = [];
+      for (const stop of value) {
+        const ref = gradientColorAlias(stop.color), source = ref ? chosen[ref] : undefined;
+        const target = ref ? deref(ref, mode, [...stack, id]) : undefined;
+        if (ref && (!target || source?.token.$type !== "color" || source.slot.contract.kind !== "token" || source.slot.contract.tier !== "role" || chosen[target.final]?.token.$type !== "color")) return undefined;
+        const color = target ? gradientRoleColor(target.value) : stop.color;
+        if (color === undefined || malformed("color", color)) return undefined;
+        stops.push({ color, position: stop.position });
+        const property = source?.slot.contract.kind === "token" && ref ? source.slot.contract.emit?.[relativeOf(ref)] : undefined;
+        cssStops.push({ color: target ? property ? `var(${property}, ${target.css})` : target.css : cssText("color", stop.color), position: stop.position });
+      }
+      return { value: stops, css: cssText("gradient", cssStops), final: id };
     }
     return { value, css: cssText(token.$type, value, token, actualMode === "light" || token.$extensions?.["com.clossys.modes"]?.dark === undefined), final: id };
   };

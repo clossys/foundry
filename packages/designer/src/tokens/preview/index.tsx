@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState, version, type CSSProperties, type ReactNode } from "react";
 import { NativeAction } from "../../components/NativeAction.js";
+import { SemanticContent } from "../../components/SemanticContent.js";
 import { TOKENS } from "../tokens.js";
 import { TOKEN_GUIDANCE } from "../guidance.js";
 import { assertPeerVersion } from "../../internal/peer-version.js";
@@ -36,15 +37,18 @@ export function TokenValuePreview({ id, member, sampleText, lightLabel, darkLabe
   for (const mode of ["light", "dark"] as const) {
     const css = member.css[mode], value = member.value[mode];
     if (mode === "dark" && css === undefined && value === undefined) continue;
-    if (typeof css !== "string" || !css.trim() || value === undefined || unsafeText(css) || malformed(member.$type, value, css) || !checkedPreviewCss(member.$type, css)) throw new TypeError("TokenValuePreview requires safe checked light/dark values");
+    if (typeof css !== "string" || !css.trim() || value === undefined || unsafeText(css) || malformed(member.$type, value, member.$type === "gradient" ? undefined : css) || !checkedPreviewCss(member.$type, css)) throw new TypeError("TokenValuePreview requires safe checked light/dark values");
   }
   const light = member.css.light, dark = member.css.dark ?? light;
-  if (member.$type === "color" && !compact) return <span data-token-value-preview={id} className="inline-flex items-center gap-sm"><span data-preview-kind="swatch" aria-hidden="true" className="inline-block shrink-0 border border-line-strong" style={{ inlineSize: "calc(var(--spacing-xl) + var(--spacing-lg))", blockSize: "calc(var(--spacing-xl) + var(--spacing-lg))", background: light }} /><code>{light}</code></span>;
-  if (member.$type === "color") return <span data-token-value-preview={id} data-studio-color-swatch={compact ? "" : undefined} className="inline-flex size-xl shrink-0 overflow-hidden border border-line-base">
+  const swatch = member.$type === "color" || member.$type === "gradient";
+  if (swatch && !compact) return <span data-token-value-preview={id} className="inline-flex items-center gap-sm"><span data-preview-kind="swatch" aria-hidden="true" className="inline-block shrink-0 border border-line-strong" style={{ inlineSize: "calc(var(--spacing-xl) + var(--spacing-lg))", blockSize: "calc(var(--spacing-xl) + var(--spacing-lg))", background: light }} /><code>{light}</code></span>;
+  if (swatch) return <span data-token-value-preview={id} data-studio-color-swatch={compact ? "" : undefined} className="inline-flex size-xl shrink-0 overflow-hidden border border-line-base">
     <span role="img" aria-label={`${lightLabel} ${light}`} className="h-full w-1/2" style={{ background: light }} />
     <span role="img" aria-label={`${darkLabel} ${dark}`} className="h-full w-1/2" style={{ background: dark }} />
   </span>;
   if (member.$type === "fontFamily") return <span data-token-value-preview={id} data-preview-kind="font" style={{ fontFamily: light }}>{sampleText}</span>;
+  if (member.slot === "tokens.display-face" && name === "optical-size") return <SemanticContent as="span" data-token-value-preview={id} data-preview-kind="font" data-specimen-target="" className="text-body-l"
+    style={{ "--studio-specimen-value": light, fontVariationSettings: '"opsz" var(--studio-specimen-value)' } as CSSProperties}>{sampleText}</SemanticContent>;
   if (member.$type === "dimension") return <span data-token-value-preview={id} className="grid gap-xs"><span aria-hidden="true" data-preview-kind="ruler" className="block max-w-full bg-accent" style={{ blockSize: "var(--spacing-sm)", inlineSize: light }} /><code>{light}</code></span>;
   return <code data-token-value-preview={id} data-preview-kind="text">{light}</code>;
 }

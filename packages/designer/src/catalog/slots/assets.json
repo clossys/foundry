@@ -148,7 +148,10 @@
         "names": [
           "dots",
           "lines",
-          "grid"
+          "grid",
+          "grain",
+          "noise",
+          "topo"
         ]
       },
       "modes": [

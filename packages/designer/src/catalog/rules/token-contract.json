@@ -1575,6 +1575,19 @@
     },
     "tokens.display-face": {
       "members": {
+        "optical-size": {
+          "kind": "extension",
+          "target": "--font-display-optical-size",
+          "status": "dead",
+          "decision": "extension",
+          "default": {
+            "from": "foundry/tokens.display-face",
+            "token": {
+              "$type": "number",
+              "$value": 72
+            }
+          }
+        },
         "scale-x": {
           "kind": "extension",
           "target": "--font-display-scale-x",
@@ -1651,6 +1664,19 @@
     },
     "tokens.display-size": {
       "members": {
+        "2xl": {
+          "kind": "extension",
+          "target": "--text-display-2xl",
+          "status": "dead",
+          "decision": "extension",
+          "default": {
+            "from": "foundry/tokens.display-size",
+            "token": {
+              "$type": "dimension",
+              "$value": "clamp(4.5rem, 10vw, 8rem)"
+            }
+          }
+        },
         "l": {
           "kind": "extension",
           "target": "--text-display-l",
@@ -1987,6 +2013,19 @@
     },
     "tokens.heading-size": {
       "members": {
+        "2xl": {
+          "kind": "extension",
+          "target": "--text-heading-2xl",
+          "status": "dead",
+          "decision": "extension",
+          "default": {
+            "from": "foundry/tokens.heading-size",
+            "token": {
+              "$type": "dimension",
+              "$value": "clamp(3rem, 6vw, 5rem)"
+            }
+          }
+        },
         "h0": {
           "kind": "extension",
           "target": "--text-heading-0",
@@ -2540,6 +2579,22 @@
               "$value": {
                 "unit": "px",
                 "value": 4
+              }
+            }
+          }
+        },
+        "reveal": {
+          "kind": "extension",
+          "target": "--ui-motion-shift-reveal",
+          "status": "dead",
+          "decision": "extension",
+          "default": {
+            "from": "foundry/tokens.shift-distance",
+            "token": {
+              "$type": "dimension",
+              "$value": {
+                "unit": "px",
+                "value": 24
               }
             }
           }
@@ -3416,6 +3471,264 @@
           "accordion-up",
           "caret-blink"
         ]
+      },
+      "members": {
+        "count": {
+          "kind": "extension",
+          "target": "--animate-count",
+          "status": "dead",
+          "decision": "extension",
+          "default": {
+            "from": "foundry/tokens.animation",
+            "token": {
+              "$extensions": {
+                "com.clossys.css": {
+                  "raw": "count 1200ms cubic-bezier(0, 0, 0.2, 1) both"
+                }
+              },
+              "$type": "duration",
+              "$value": "count 1200ms cubic-bezier(0, 0, 0.2, 1) both"
+            }
+          }
+        },
+        "marquee": {
+          "kind": "extension",
+          "target": "--animate-marquee",
+          "status": "dead",
+          "decision": "extension",
+          "default": {
+            "from": "foundry/tokens.animation",
+            "token": {
+              "$extensions": {
+                "com.clossys.css": {
+                  "raw": "marquee 20000ms linear infinite"
+                }
+              },
+              "$type": "duration",
+              "$value": "marquee 20000ms linear infinite"
+            }
+          }
+        },
+        "reveal": {
+          "kind": "extension",
+          "target": "--animate-reveal",
+          "status": "dead",
+          "decision": "extension",
+          "default": {
+            "from": "foundry/tokens.animation",
+            "token": {
+              "$extensions": {
+                "com.clossys.css": {
+                  "raw": "reveal 600ms cubic-bezier(0, 0, 0.2, 1) both"
+                }
+              },
+              "$type": "duration",
+              "$value": "reveal 600ms cubic-bezier(0, 0, 0.2, 1) both"
+            }
+          }
+        },
+        "scroll-reveal": {
+          "kind": "extension",
+          "target": "--animate-scroll-reveal",
+          "status": "dead",
+          "decision": "extension",
+          "default": {
+            "from": "foundry/tokens.animation",
+            "token": {
+              "$extensions": {
+                "com.clossys.css": {
+                  "raw": "reveal 600ms cubic-bezier(0, 0, 0.2, 1) both"
+                }
+              },
+              "$type": "duration",
+              "$value": "reveal 600ms cubic-bezier(0, 0, 0.2, 1) both"
+            }
+          }
+        },
+        "scroll-sticky": {
+          "kind": "extension",
+          "target": "--animate-scroll-sticky",
+          "status": "dead",
+          "decision": "extension",
+          "default": {
+            "from": "foundry/tokens.animation",
+            "token": {
+              "$extensions": {
+                "com.clossys.css": {
+                  "raw": "scroll-sticky 1000ms linear both"
+                }
+              },
+              "$type": "duration",
+              "$value": "scroll-sticky 1000ms linear both"
+            }
+          }
+        },
+        "stagger": {
+          "kind": "extension",
+          "target": "--animate-stagger",
+          "status": "dead",
+          "decision": "extension",
+          "default": {
+            "from": "foundry/tokens.animation",
+            "token": {
+              "$extensions": {
+                "com.clossys.css": {
+                  "raw": "reveal 600ms cubic-bezier(0, 0, 0.2, 1) both"
+                }
+              },
+              "$type": "duration",
+              "$value": "reveal 600ms cubic-bezier(0, 0, 0.2, 1) both"
+            }
+          }
+        }
+      }
+    },
+    "tokens.gradient": {
+      "members": {
+        "border-shine": {
+          "kind": "extension",
+          "target": "--gradient-border-shine",
+          "status": "dead",
+          "decision": "extension",
+          "default": {
+            "from": "foundry/tokens.gradient",
+            "token": {
+              "$extensions": {
+                "com.clossys.modes": {
+                  "dark": [
+                    {
+                      "color": "{tokens.border-color.strong}",
+                      "position": 0
+                    },
+                    {
+                      "color": "{tokens.border-color.base}",
+                      "position": 1
+                    }
+                  ]
+                }
+              },
+              "$type": "gradient",
+              "$value": [
+                {
+                  "color": "{tokens.border-color.base}",
+                  "position": 0
+                },
+                {
+                  "color": "{tokens.border-color.strong}",
+                  "position": 1
+                }
+              ]
+            }
+          }
+        },
+        "glow": {
+          "kind": "extension",
+          "target": "--gradient-glow",
+          "status": "dead",
+          "decision": "extension",
+          "default": {
+            "from": "foundry/tokens.gradient",
+            "token": {
+              "$extensions": {
+                "com.clossys.modes": {
+                  "dark": [
+                    {
+                      "color": "{tokens.accent-color.default}",
+                      "position": 0
+                    },
+                    {
+                      "color": "{tokens.accent-color.tint}",
+                      "position": 1
+                    }
+                  ]
+                }
+              },
+              "$type": "gradient",
+              "$value": [
+                {
+                  "color": "{tokens.accent-color.tint}",
+                  "position": 0
+                },
+                {
+                  "color": "{tokens.accent-color.default}",
+                  "position": 1
+                }
+              ]
+            }
+          }
+        },
+        "media-scrim": {
+          "kind": "extension",
+          "target": "--gradient-media-scrim",
+          "status": "dead",
+          "decision": "extension",
+          "default": {
+            "from": "foundry/tokens.gradient",
+            "token": {
+              "$extensions": {
+                "com.clossys.modes": {
+                  "dark": [
+                    {
+                      "color": "{tokens.surface-color.glass-inverse}",
+                      "position": 0
+                    },
+                    {
+                      "color": "{tokens.surface-color.inverse}",
+                      "position": 1
+                    }
+                  ]
+                }
+              },
+              "$type": "gradient",
+              "$value": [
+                {
+                  "color": "{tokens.surface-color.glass}",
+                  "position": 0
+                },
+                {
+                  "color": "{tokens.surface-color.inverse}",
+                  "position": 1
+                }
+              ]
+            }
+          }
+        },
+        "wash": {
+          "kind": "extension",
+          "target": "--gradient-wash",
+          "status": "dead",
+          "decision": "extension",
+          "default": {
+            "from": "foundry/tokens.gradient",
+            "token": {
+              "$extensions": {
+                "com.clossys.modes": {
+                  "dark": [
+                    {
+                      "color": "{tokens.surface-color.sunken}",
+                      "position": 0
+                    },
+                    {
+                      "color": "{tokens.surface-color.base}",
+                      "position": 1
+                    }
+                  ]
+                }
+              },
+              "$type": "gradient",
+              "$value": [
+                {
+                  "color": "{tokens.surface-color.base}",
+                  "position": 0
+                },
+                {
+                  "color": "{tokens.surface-color.raised}",
+                  "position": 1
+                }
+              ]
+            }
+          }
+        }
       }
     }
   },

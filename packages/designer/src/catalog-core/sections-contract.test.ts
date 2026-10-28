@@ -19,6 +19,13 @@ const families: Record<string, readonly string[]> = {
 const id = (leaf: string) => `sections.${leaf}`;
 const waveOneIds = ["account-summary", "boundary-message", "error-message", "legal-prose", "logo-mark", "sign-in-form"].map(id);
 const isWaveOne = (slot: { id: string }) => waveOneIds.includes(slot.id);
+// The expressive amendment adds only these two reads; retain every earlier field pin.
+const withoutExpressiveMotionReads = (slots: SectionRegistry["slots"]): SectionRegistry["slots"] => slots.map(slot => ({
+  ...slot, contract: { ...slot.contract, allowedReads: {
+    ...slot.contract.allowedReads,
+    tokens: slot.contract.allowedReads.tokens.filter(read => read !== "tokens.animation" && read !== "tokens.shift-distance"),
+  } },
+}));
 const inventory = Object.values(families).flat().map(id).sort();
 const leaves = (nodes: readonly PlacementNode[]): string[] => nodes.flatMap(node => "leaves" in node ? [...node.leaves] : leaves(node.children));
 const changedPlacement = (mutate: (leaves: string[]) => string[]): SectionRegistry => {
@@ -46,7 +53,7 @@ describe("S2-1 bounded section composition reconciliation", () => {
   });
 
   it("preserves every other accepted contract field and limits parts to the three locked parts", () => {
-    const slots = loadSectionRegistry().slots;
+    const slots = withoutExpressiveMotionReads(loadSectionRegistry().slots);
     for (const slot of slots) {
       for (const part of slot.contract.parts) expect(families.parts!.map(id)).toContain(part);
       for (const component of slot.contract.allowedComposes) expect(component).toMatch(/^components\./);
@@ -65,7 +72,7 @@ describe("S2-1 bounded section composition reconciliation", () => {
   });
 
   it("preserves all 46 base rows exactly and pins the six new draft contracts separately", () => {
-    const slots = loadSectionRegistry().slots;
+    const slots = withoutExpressiveMotionReads(loadSectionRegistry().slots);
     const original = slots.filter(slot => !isWaveOne(slot));
     expect(original).toHaveLength(46);
     // JSON.stringify hash measured from the full rows at da8a1f97; no Git dependency during tests.

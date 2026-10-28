@@ -30,6 +30,10 @@
   },
   "tokens": {
     "heading-size": {
+      "2xl": {
+        "$type": "dimension",
+        "$value": "clamp(3rem, 6vw, 5rem)"
+      },
       "h0": {
         "$extensions": {
           "com.clossys.css": {
