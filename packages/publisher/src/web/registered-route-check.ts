@@ -21,7 +21,7 @@ import type { PublisherPlanVersion } from "../planning/change-set.js";
 import { projectRouteRegistry, routeProviderMount, routeServerLoader, routeSourcePath } from "../core/route-registry.js";
 import type { RouteProviderMount, RouteRegistry, RouteSourceExport } from "../core/route-registry.js";
 import { emitRegisteredRouteAdapter, emitRegisteredRoutePage, emitRegisteredRouteRegistryModule, registeredRouteRegistryPlacement } from "./registered-route-source.js";
-export { emitRegisteredRouteAdapter, emitRegisteredRoutePage, emitRegisteredRouteRegistryModule, registeredRouteRegistryPlacement } from "./registered-route-source.js";
+export { emitCompleteRoutePage, emitRegisteredRouteAdapter, emitRegisteredRoutePage, emitRegisteredRouteRegistryModule, registeredRouteRegistryPlacement } from "./registered-route-source.js";
 import { isCurrentRegisteredRouteSourceEvidence, recordRegisteredRouteSourceEvidence, registeredRouteSourceBootstrap } from "../core/route-source-evidence.js";
 import type { RegisteredRouteSourceBootstrap, RegisteredRouteSourceEvidence } from "../core/route-source-evidence.js";
 import { beginRegisteredRouteNodeTransaction, issueRegisteredRouteNodeCurrent } from "../core/route-node-current.js";
@@ -471,3 +471,5 @@ export async function prepareRegisteredNodeRoute(input: RegisteredRouteCheckInpu
 }
 
 export { registeredFlowLayoutSource } from "./registered-route-flow-source.js";
+
+export type { CompleteRoutePageSource } from "./registered-route-source.js";

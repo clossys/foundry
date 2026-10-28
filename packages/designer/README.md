@@ -10587,3 +10587,19 @@ separate `sourceRecordPin` describes the source record: for `shadcn@aria`, that
 is the neutral token theme, not a component implementation pin. Item evidence
 never falls back to that theme pin. Token proposals remain Custom only, with
 the pinned Tailwind baseline available through `tokenBaseline`.
+
+### Complete native Designer route
+
+`DesignerRoutePage` from `@clossys/designer/studio/route` accepts only
+`serverData` and `initialSession`. Create finite data with
+`designerRouteServerData` from `@clossys/designer/studio/route/server` and the
+original checked session with `createWholeStudioInitialSession` from
+`@clossys/designer/studio/queries`. The component owns the original read-only
+Studio, provider, camera and navigation. Supply the committed snapshot, finite
+catalog, selected manifest/frame, content records and an explicit display cell.
+Executable surface rules need a package implementation before transport.
+
+A `rootFontSizeToken` names the selected profile member declaring the document
+root size in pixels. Without that declaration, rem thresholds stay pending until
+the mounted document provides an actual computed root size. The native view is
+local display; it creates no registered source or Node lifecycle evidence.

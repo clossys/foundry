@@ -38,3 +38,8 @@ export function RegisteredRouteProjectionPage({ projection, routeId, useRuntime,
 
 export { registeredFlowRuntimeInputs } from "./registered-route-layout.js";
 export type { RegisteredFlowRuntimeInputs } from "./registered-route-layout.js";
+
+export { PublisherRoutePage } from "./publisher/PublisherRoutePage.js";
+export type { PublisherRouteServerData, PublisherRoutePageProps } from "./publisher/PublisherRoutePage.js";
+export { DesignerRoutePage } from "@clossys/designer/studio/route";
+export type { DesignerRouteServerData, DesignerRoutePageProps } from "@clossys/designer/studio/route";

@@ -128,6 +128,14 @@
     "./frames": {
       "types": "./dist/frames/index.d.ts",
       "import": "./dist/frames/index.js"
+    },
+    "./studio/route": {
+      "types": "./dist/studio/route.d.ts",
+      "import": "./dist/studio/route.js"
+    },
+    "./studio/route/server": {
+      "types": "./dist/studio/route-server.d.ts",
+      "import": "./dist/studio/route-server.js"
     }
   },
   "bin": {

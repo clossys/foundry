@@ -7278,3 +7278,21 @@ including Publisher Layout source. The Node API's optional `styling` input
 joins the exact selected engine/manifest and actually reached CSS files;
 missing inputs and unresolved utilities remain findings or pending evidence.
 Source checks do not establish browser qualification or actual adoption.
+
+### Complete native routes
+
+`@clossys/publisher/web/registered-route` exports `DesignerRoutePage` and
+`PublisherRoutePage`, each accepting only `serverData` and `initialSession`.
+Designer owns its original provider and controller inside Designer; Publisher
+owns its original workspace and local channel state. Publisher data adds finite
+instances, fill/content facts, registries, draft/inventory and optional route
+projection to the shared Designer route data. Missing sessions stay pending and
+mismatched sessions or selected frames are refused.
+
+`emitCompleteRoutePage` from `@clossys/publisher/web/registered-route-check`
+accepts `{ kind: "designer" | "publisher", file, loader: { file, export } }`.
+It emits an async server page that awaits the loader and forwards its
+`{ serverData, initialSession }` result to the public complete component.
+Consumers do not implement a runtime hook or pass a controller. Existing
+registered route emitters, exact initial Node bootstrap checks and qualification
+remain separate and unchanged; later native interaction is local display only.

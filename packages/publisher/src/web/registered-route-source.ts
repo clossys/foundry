@@ -93,3 +93,27 @@ export function emitRegisteredRouteAdapter(route: RouteRegistration): string {
     "}", "",
   ].join("\n");
 }
+
+export interface CompleteRoutePageSource {
+  readonly kind: "designer" | "publisher";
+  readonly file: string;
+  readonly loader: RouteSourceExport;
+}
+/** A complete native view owns its client controller. The server route only loads
+ * finite data and forwards the two public props. This source is display output;
+ * it does not replace registered source or Node qualification evidence. */
+export function emitCompleteRoutePage(input: CompleteRoutePageSource): string {
+  if (!input || (input.kind !== "designer" && input.kind !== "publisher")) throw new Error("Complete Designer or Publisher route kind required");
+  if (!routeSourcePath(input.file) || !input.file.endsWith(".tsx")) throw new Error("Consumer-relative TSX route file required");
+  if (!input.loader || !routeSourcePath(input.loader.file) || !/^[A-Za-z_$][\w$]*$/.test(input.loader.export)) throw new Error("Consumer-relative typed loader export required");
+  if (input.file === input.loader.file || !/\.(?:ts|tsx)$/.test(input.loader.file) || input.loader.file.endsWith(".d.ts")) throw new Error("Separate typed loader module required");
+  const component = input.kind === "designer" ? "DesignerRoutePage" : "PublisherRoutePage";
+  return [
+    `import { ${component} } from "@clossys/publisher/web/registered-route";`,
+    named(input.loader, input.file, "loadRouteData"),
+    "export default async function CompletePage() {",
+    "  const data = await loadRouteData();",
+    `  return <${component} serverData={data.serverData} initialSession={data.initialSession} />;`,
+    "}", "",
+  ].join("\n");
+}
