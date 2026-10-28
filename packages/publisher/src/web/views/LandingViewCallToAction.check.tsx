@@ -1,5 +1,5 @@
 /** Compile-only API assertions; test files are excluded from the package typecheck. */
-import type { LandingViewCallToAction, LandingViewProps } from "./LandingView.js";
+import type { LandingViewCallToAction, LandingViewProps } from "@clossys/designer/frames";
 
 interface ExtendedClose extends LandingViewCallToAction { label: string }
 export const extended: ExtendedClose = { heading: "Close", action: <a href="/start">Start</a>, label: "Close" };

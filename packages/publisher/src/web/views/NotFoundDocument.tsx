@@ -1,6 +1,6 @@
 import type { ReactElement, ReactNode } from "react";
-import { SiteFrame } from "../frame/SiteFrame.js";
-import type { SiteFrameInput } from "../frame/types.js";
+import { SiteFrame } from "@clossys/designer/frames";
+import type { SiteFrameInput } from "@clossys/designer/frames";
 import type { GlobalErrorDocumentHeadProps } from "./GlobalErrorDocument.js";
 import { StatusView } from "./StatusView.js";
 import type { StatusViewProps } from "./StatusView.js";

@@ -26,12 +26,12 @@ const base: SiteShellInput = {
 };
 
 // Exercise the real private boundary's server and browser selections in the full frame.
-vi.doMock("#publisher-frame-navigation", () => ({ SiteNavDisclosure: ServerNavigation }));
+vi.doMock("#designer-frame-navigation", () => ({ SiteNavDisclosure: ServerNavigation }));
 const { SiteFrame: ServerFrame } = await import("./SiteFrame.js");
-vi.doUnmock("#publisher-frame-navigation");
+vi.doUnmock("#designer-frame-navigation");
 vi.resetModules();
 const { SiteFrame: ClientFrame } = await import("./SiteFrame.js");
-afterEach(() => { vi.doUnmock("#publisher-frame-navigation"); vi.restoreAllMocks(); });
+afterEach(() => { vi.doUnmock("#designer-frame-navigation"); vi.restoreAllMocks(); });
 
 function tree(shell: SiteShellInput, server = false) {
   const Frame = server ? ServerFrame : ClientFrame;

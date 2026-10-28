@@ -20,15 +20,15 @@ const shell: SiteShellInput = {
 };
 const resolveCopy: CopyResolver = ref => ({ ref, text: ref.id, recordId: ref.id, revision: "1", locale: "en", source: { kind: "consumer", reference: "fixture" }, entryId: ref.id });
 const resolveAsset = () => ({ type: "image", src: "/mark.svg", width: 48, height: 48, alt: "Mark" });
-afterEach(() => { vi.doUnmock("#publisher-frame-navigation"); vi.restoreAllMocks(); });
+afterEach(() => { vi.doUnmock("#designer-frame-navigation"); vi.restoreAllMocks(); });
 
 it("hydrates server navigation through the real default frame boundary with pointer and keyboard interaction", async () => {
   // Model the private binding's server condition while retaining the complete frame tree.
   vi.resetModules();
-  vi.doMock("#publisher-frame-navigation", () => ({ SiteNavDisclosure: ServerNavigation }));
+  vi.doMock("#designer-frame-navigation", () => ({ SiteNavDisclosure: ServerNavigation }));
   const { SiteFrame: ServerFrame } = await import("./SiteFrame.js");
   const server = renderToString(<ServerFrame shell={shell} resolveCopy={resolveCopy} resolveAsset={resolveAsset}><p>content</p></ServerFrame>);
-  vi.doUnmock("#publisher-frame-navigation");
+  vi.doUnmock("#designer-frame-navigation");
   vi.resetModules();
   const { SiteFrame: ClientFrame } = await import("./SiteFrame.js");
   const tree = <ClientFrame shell={shell} resolveCopy={resolveCopy} resolveAsset={resolveAsset}><p>content</p></ClientFrame>;

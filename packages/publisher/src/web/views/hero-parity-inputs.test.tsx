@@ -8,8 +8,8 @@ import { afterEach, describe, expect, it } from "vitest";
 import type { CopyResolver } from "@clossys/writer";
 import { resolveSectionedViewDocument, validateSectionedViewDocument } from "../../core/sectioned-view.js";
 import type { ResolvedSectionedViewDocument, SectionedViewDocument, SectionedViewGround } from "../../core/sectioned-view.js";
-import { LandingView } from "./LandingView.js";
-import { LandingView as ServerLandingView } from "./LandingView.server.js";
+import { LandingView } from "@clossys/designer/frames";
+import { ServerLandingView as ServerLandingView } from "@clossys/designer/frames";
 import { SectionedView } from "./SectionedView.js";
 import { SectionedView as ServerSectionedView } from "./SectionedView.server.js";
 

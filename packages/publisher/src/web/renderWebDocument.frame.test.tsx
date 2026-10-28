@@ -9,7 +9,7 @@ import { createWebRenderer } from "./internal/createWebRenderer.js";
 import { getWebTemplate } from "./internal/webTemplates.js";
 import { renderWebDocument } from "./renderWebDocument.js";
 import type { RenderWebOptions } from "./types.js";
-import type { SiteFrameInput } from "./frame/types.js";
+import type { SiteFrameInput } from "@clossys/designer/frames";
 
 const frame: SiteFrameInput = {
   shell: {

@@ -3,8 +3,8 @@ import { describe, expect, it } from "vitest";
 import { renderToStaticMarkup } from "react-dom/server";
 import { checkSectionVariety, resolveSectionedViewDocument, validateSectionedViewDocument } from "../../core/sectioned-view.js";
 import type { SectionedViewDocument, SectionedViewHeroSection, ResolvedSectionedViewDocument } from "../../core/sectioned-view.js";
-import { LandingView } from "./LandingView.js";
-import type { LandingViewProps } from "./LandingView.js";
+import { LandingView } from "@clossys/designer/frames";
+import type { LandingViewProps } from "@clossys/designer/frames";
 
 const hero: SectionedViewHeroSection = { id: "hero", kind: "hero", ground: "inverse", heading: { id: "sample.heading" }, description: { id: "sample.description" } };
 const authored = (extra: Record<string, unknown> = {}): SectionedViewDocument => ({ id: "sample", sections: [{ ...hero, ...extra } as SectionedViewHeroSection] });

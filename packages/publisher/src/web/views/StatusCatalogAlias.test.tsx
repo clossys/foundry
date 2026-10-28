@@ -6,8 +6,8 @@ import { describe, expect, it, vi } from "vitest";
 import { resolveSectionedViewDocument, validateSectionedViewDocument, type SectionedViewDocument, type SectionedViewStatusItem, type SectionedViewStatusListSection } from "../../core/sectioned-view.js";
 import { SectionedView } from "./SectionedView.js";
 import { SectionedView as ServerSectionedView } from "./SectionedView.server.js";
-import { LandingView } from "./LandingView.js";
-import { LandingView as ServerLandingView } from "./LandingView.server.js";
+import { LandingView } from "@clossys/designer/frames";
+import { ServerLandingView as ServerLandingView } from "@clossys/designer/frames";
 
 const words = { heading: "Capability reference", detail: "A bounded explanation", available: "Available", partial: "Partial", planned: "Planned", off: "Not offered", ...Object.fromEntries(Array.from({ length: 9 }, (_, i) => [`item${i}`, `Capability ${i}`])), group0: "First group", group1: "Second group", group2: "Third group" };
 const ref = (key: string) => ({ id: `status-catalog.${key}` });

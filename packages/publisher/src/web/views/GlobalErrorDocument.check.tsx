@@ -6,7 +6,7 @@
  * runtime.
  */
 import type { CopyResolver } from "@clossys/writer";
-import type { SiteShellInput } from "../frame/types.js";
+import type { SiteShellInput } from "@clossys/designer/frames";
 import type { AssetResolver } from "../types.js";
 import { GlobalErrorDocument } from "./GlobalErrorDocument.js";
 

@@ -9,9 +9,9 @@ import * as webServer from "../server.js";
 import * as frameIndex from "./index.js";
 import { SITE_MAIN_ID, SiteFrame, siteShellFor } from "./index.js";
 import type { SiteFrameConfig, SiteShellInput } from "./index.js";
-import { LandingView } from "#publisher-web-views";
-import { LandingView as ServerLandingView } from "../views/LandingView.server.js";
-import type { LandingViewProps } from "../views/LandingViewContent.js";
+import { LandingView } from "@clossys/designer/frames";
+import { ServerLandingView } from "@clossys/designer/frames";
+import type { LandingViewProps } from "../../../../designer/src/frames/site-frame/landing/web/views/LandingViewContent.js";
 import type { ResolvedSectionedViewDocument } from "../../core/sectioned-view.js";
 
 const COPY: Readonly<Record<string, string>> = {

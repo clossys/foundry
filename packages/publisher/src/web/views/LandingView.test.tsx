@@ -5,10 +5,10 @@ import { readFileSync } from "node:fs";
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
 import type { ResolvedSectionedViewDocument } from "../../core/sectioned-view.js";
-import { LandingView } from "./LandingView.js";
+import { LandingView } from "@clossys/designer/frames";
 import { RenderError } from "../../internal/errors.js";
 import { planLandingViewGrounds } from "./landingViewGrounds.js";
-import type { LandingViewProps } from "./LandingView.js";
+import type { LandingViewProps } from "@clossys/designer/frames";
 import * as webEntry from "../index.js";
 import * as webServerEntry from "../server.js";
 

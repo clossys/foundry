@@ -9,8 +9,8 @@ import { cleanup, fireEvent, render, screen, within } from "@testing-library/rea
 import { afterEach, describe, expect, it, vi } from "vitest";
 import ts from "typescript";
 import type { CopyResolver } from "@clossys/writer";
-import { SITE_MAIN_ID, SiteFrame, siteShellFor } from "../frame/index.js";
-import type { SiteFrameConfig } from "../frame/index.js";
+import { SITE_MAIN_ID, SiteFrame, siteShellFor } from "@clossys/designer/frames";
+import type { SiteFrameConfig } from "@clossys/designer/frames";
 import { CardlessPageLayout, PageLayout } from "../internal/PageLayout.js";
 import * as web from "../index.js";
 import * as client from "../client.js";

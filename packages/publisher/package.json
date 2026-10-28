@@ -146,11 +146,6 @@
     }
   },
   "imports": {
-    "#publisher-frame-navigation": {
-      "types": "./dist/web/frame/NavDisclosure.client.d.ts",
-      "react-server": "./dist/web/frame/NavDisclosure.server.js",
-      "default": "./dist/web/frame/NavDisclosure.client.js"
-    },
     "#publisher-web-views": {
       "types": "./dist/web/views/index.d.ts",
       "react-server": "./dist/web/views/server.js",

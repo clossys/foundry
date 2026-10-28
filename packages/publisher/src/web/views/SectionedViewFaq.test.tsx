@@ -8,8 +8,8 @@ import { renderToStaticMarkup } from "react-dom/server";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { resolveSectionedViewDocument, validateSectionedViewDocument, type SectionedViewDocument } from "../../core/sectioned-view.js";
 import { previewCopyResolver, previewSectionedDocument } from "../../preview/fixture-documents.js";
-import { LandingView } from "./LandingView.js";
-import { LandingView as ServerLandingView } from "./LandingView.server.js";
+import { LandingView } from "@clossys/designer/frames";
+import { ServerLandingView as ServerLandingView } from "@clossys/designer/frames";
 import { SectionedView } from "./SectionedView.js";
 import { SectionedView as ServerSectionedView } from "./SectionedView.server.js";
 

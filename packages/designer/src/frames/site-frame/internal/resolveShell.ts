@@ -1,7 +1,7 @@
-import type { CopyRef, CopyResolver } from "@clossys/writer";
+import type { CopyRef, CopyResolver } from "../copy-contract.js";
 import type { IconNode } from "@clossys/designer/components/server";
-import { isRenderImageAsset } from "../../../internal/assets.js";
-import type { AssetResolver } from "../../types.js";
+import { isRenderImageAsset } from "../landing/internal/assets.js";
+import type { AssetResolver } from "../landing/web/types.js";
 import type { SiteFramePresentationConfig } from "../site-frame-contract.js";
 import { FOOTER_ICON_LIMIT, FOOTER_LINK_LIMIT, HEADER_LINK_LIMIT, HEADER_ACTION_VARIANTS, SITE_FRAME_NAV_DEFAULTS, SiteFooterContractError, normalizeSiteFrameActions, normalizeSiteFrameConfig } from "../site-frame-contract.js";
 import { SITE_CHROME_GROUNDS } from "../types.js";
