@@ -1,4 +1,4 @@
-import { createRef } from "react";
+import { createRef, Profiler } from "react";
 import { act, fireEvent, render, screen } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { SystemCanvas, type SystemCanvasHandle, type SystemCanvasProps } from "./SystemCanvas.js";
@@ -194,4 +194,54 @@ describe("SystemCanvas", () => {
     fireEvent.click(screen.getByRole("button", { name: "tokens.accent-color" }));
     expect(onSelect).toHaveBeenCalledWith("tokens.accent-color");
   });
+});
+
+it("mounts the measured SystemCanvas without ref loops and ignores unchanged resize notifications", () => {
+  let width = 400, height = 300;
+  vi.spyOn(HTMLElement.prototype, "clientWidth", "get").mockImplementation(function (this: HTMLElement) {
+    return this.hasAttribute("data-canvas-surface") ? width : 0;
+  });
+  vi.spyOn(HTMLElement.prototype, "clientHeight", "get").mockImplementation(function (this: HTMLElement) {
+    return this.hasAttribute("data-canvas-surface") ? height : 0;
+  });
+  const observers: TestResizeObserver[] = [];
+  class TestResizeObserver {
+    element?: Element;
+    disconnect = vi.fn();
+    constructor(readonly notify: () => void) { observers.push(this); }
+    observe(element: Element) { this.element = element; }
+  }
+  vi.stubGlobal("ResizeObserver", TestResizeObserver);
+  const onViewChange = vi.fn();
+  const props: SystemCanvasProps = { copy: fixtureCopy(testPlacements), data: { placements: testPlacements }, labels: testLabels, onViewChange };
+  let commits = 0;
+  const canvas = (selectedLeaf?: string) => <Profiler id="measured-canvas" onRender={() => { commits++; }}>
+    <SystemCanvas {...props} selectedLeaf={selectedLeaf} />
+  </Profiler>;
+  const result = render(canvas());
+  const surface = result.container.querySelector("[data-canvas-surface]")!;
+  expect(surface).not.toBeNull();
+  expect(onViewChange.mock.lastCall?.[0].size).toEqual({ width, height });
+  const active = observers.filter(observer => observer.element === surface);
+  expect(active.length).toBeGreaterThan(0);
+  const notify = () => act(() => { active.forEach(observer => observer.notify()); });
+  // Include the observer's initial delivery before measuring idle behaviour.
+  notify();
+  const idleCommits = commits;
+  for (let index = 0; index < 3; index++) notify();
+  expect(commits).toBe(idleCommits);
+
+  result.rerender(canvas("tokens.spacing"));
+  expect(observers).toHaveLength(active.length);
+  expect(active.every(observer => observer.disconnect.mock.calls.length === 0)).toBe(true);
+  width = 640; notify();
+  expect(onViewChange.mock.lastCall?.[0].size).toEqual({ width: 640, height: 300 });
+  height = 480; notify();
+  expect(onViewChange.mock.lastCall?.[0].size).toEqual({ width: 640, height: 480 });
+  notify();
+  const resizedCommits = commits;
+  notify();
+  expect(commits).toBe(resizedCommits);
+  result.unmount();
+  for (const observer of active) expect(observer.disconnect).toHaveBeenCalledOnce();
 });

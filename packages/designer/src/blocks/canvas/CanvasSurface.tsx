@@ -151,6 +151,14 @@ export function CanvasSurface(props: CanvasSurfaceProps) {
   clamp(viewport, minZoom, maxZoom);
   const surfaceRef = useRef<HTMLDivElement>(null);
   const worldRef = useRef<HTMLDivElement>(null);
+  const surface = useCallback((element: HTMLDivElement | null) => {
+    surfaceRef.current = element;
+    onSurfaceElement?.(element);
+  }, [onSurfaceElement]);
+  const world = useCallback((element: HTMLDivElement | null) => {
+    worldRef.current = element;
+    onWorldElement?.(element);
+  }, [onWorldElement]);
   const panelRefs = useRef(new Map<string, HTMLDivElement>());
   const previousPanels = useRef(new Map<string, boolean>());
   const previousOverlayLayout = useRef<"wide" | "compact" | "narrow">("wide");
@@ -253,7 +261,8 @@ export function CanvasSurface(props: CanvasSurfaceProps) {
     if (!node) return;
     const measure = () => {
       const bounds = node.getBoundingClientRect();
-      setMeasured({ width: Math.max(1, node.clientWidth || bounds.width), height: Math.max(1, node.clientHeight || bounds.height) });
+      const width = Math.max(1, node.clientWidth || bounds.width), height = Math.max(1, node.clientHeight || bounds.height);
+      setMeasured(current => current?.width === width && current?.height === height ? current : { width, height });
     };
     measure();
     const observer = typeof ResizeObserver === "undefined" ? null : new ResizeObserver(measure);
@@ -470,7 +479,7 @@ export function CanvasSurface(props: CanvasSurfaceProps) {
     cancel();
   };
 
-  return <div ref={element => { surfaceRef.current = element; onSurfaceElement?.(element); }} role="region" aria-label={label} aria-describedby={instructionId}
+  return <div ref={surface} role="region" aria-label={label} aria-describedby={instructionId}
     data-canvas-surface="" data-canvas-layout={contentLayout}
     onScroll={event => { if (!flowing && event.target === event.currentTarget) neutralizeScroll(); }}
     tabIndex={items.length ? -1 : 0} onKeyDown={keydown} onPointerDown={pointerdown} onPointerMove={pointermove}
@@ -486,7 +495,7 @@ export function CanvasSurface(props: CanvasSurfaceProps) {
     /* Named inline-style exception: the camera-relative pattern layer (recipe from assets.pattern, offset by pan, scaled by zoom). */
     style={{ ...(grid && !flowing ? { ...patternBackground(gridPattern ?? PATTERN_RECIPES[grid === "dots" ? "dots" : "grid"], viewport.zoom), backgroundPosition: `${viewport.x}px ${viewport.y}px`, "--canvas-grid-zoom": viewport.zoom } : {}), ...style, touchAction: flowing ? "auto" : "none", overflow: flowing ? contentScroll === "document" ? "visible" : "auto" : "hidden", ...(viewSize ? { width: viewSize.width, height: flowing && contentScroll === "document" ? "auto" : viewSize.height, boxSizing: "content-box" } : {}) }}>
     <p id={instructionId} className="sr-only">{instructionText}</p>
-    <div ref={element => { worldRef.current = element; onWorldElement?.(element); }} data-canvas-world="" dir="ltr" className={cx(flowing ? "relative" : "absolute inset-0", worldClassName, (fitting || moving) && !reducedMotion && "transition-transform motion-reduce:transition-none")}
+    <div ref={world} data-canvas-world="" dir="ltr" className={cx(flowing ? "relative" : "absolute inset-0", worldClassName, (fitting || moving) && !reducedMotion && "transition-transform motion-reduce:transition-none")}
       onTransitionEnd={event => { if (event.target !== event.currentTarget) return; setFitting(false); onViewportTransitionEnd?.(); }}
       style={{ transformOrigin: "0 0", transform: flowing ? undefined : `translate(${viewport.x}px, ${viewport.y}px) scale(${viewport.zoom})`,
         transitionDuration: reducedMotion ? "0s" : moving ? viewportTransition.duration : fitting ? "var(--ui-duration-fast, 120ms)" : "0s",

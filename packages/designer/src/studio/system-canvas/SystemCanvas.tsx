@@ -115,7 +115,12 @@ function useMeasured(explicit: CanvasSize | undefined): [CanvasSize | undefined,
   const onElement = useCallback((element: HTMLDivElement | null) => {
     observer.current?.disconnect(); observer.current = null;
     if (!element || explicit) return;
-    const measure = () => { if (element.clientWidth > 0 && element.clientHeight > 0) setMeasured({ width: element.clientWidth, height: element.clientHeight }); };
+    const measure = () => {
+      const width = element.clientWidth, height = element.clientHeight;
+      if (width > 0 && height > 0) {
+        setMeasured(current => current?.width === width && current?.height === height ? current : { width, height });
+      }
+    };
     measure();
     if (typeof ResizeObserver !== "undefined") { observer.current = new ResizeObserver(measure); observer.current.observe(element); }
   }, [explicit]);
