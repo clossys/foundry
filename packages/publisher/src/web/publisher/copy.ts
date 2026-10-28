@@ -100,6 +100,9 @@ export const PUBLISHER_COPY_REFS = {
     "id": "st.fthc7d02hd"
   }
 } as const;
+/** Existing admin metadata record; separate from the 32 voice-packet references. */
+export const PUBLISHER_PAGE_DESCRIPTION_REF: PublisherCopyRef = { id: "st.2tw3ay17tc" };
+
 export function publisherCopy(resolver: PublisherCopyResolver | undefined, reference: PublisherCopyRef): string {
   if (!resolver) throw new TypeError("Publisher copy requires a host resolver");
   const request = { ...reference, ...(reference.values === undefined ? {} : { values: { ...reference.values } }) };

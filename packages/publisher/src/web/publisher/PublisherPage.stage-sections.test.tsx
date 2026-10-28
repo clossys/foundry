@@ -79,7 +79,7 @@ it("renders only registered section copy on the empty and populated stage, with 
 it("opens selected item details only in the frame inspector, then restores focus on close", async () => {
   const page = mount({ planStore: await acceptedExampleStore() }, publisherCopyFixtureResolver);
   const stage = page.container.querySelector("[data-publisher-stage]")!;
-  const open = within(stage as HTMLElement).getAllByRole("button", { name: "Home" })[0]!;
+  const open = within(stage as HTMLElement).getAllByRole("button", { name: "Set up" })[0]!;
   open.focus(); fireEvent.click(open);
   const detail = screen.getByRole("region", { name: "Home" });
   expect(detail.closest('[data-application-frame-panel="pane"]')).not.toBeNull();
@@ -158,7 +158,7 @@ it("detects an item.id rendered by a real page action (projection mutation)", as
 it("keeps source identities on Configure commands and leaves whole-page preview checks pending", async () => {
   const store = await acceptedExampleStore(), onChange = vi.fn();
   const page = mount({ planStore: store, onProductionSettingsChange: onChange }, publisherCopyFixtureResolver);
-  fireEvent.click(within(page.container.querySelector("[data-publisher-stage]")! as HTMLElement).getAllByRole("button", { name: "Home" })[0]!);
+  fireEvent.click(within(page.container.querySelector("[data-publisher-stage]")! as HTMLElement).getAllByRole("button", { name: "Set up" })[0]!);
   const inspector = page.container.querySelector('[data-application-frame-panel="pane"]')!;
   fireEvent.click(within(inspector as HTMLElement).getByRole("button", { name: "Apply configuration" }));
   expect(onChange).toHaveBeenCalledWith(expect.objectContaining({ instances: expect.objectContaining({ "standard.home": expect.objectContaining({ format: "web.page.responsive" }) }) }));
