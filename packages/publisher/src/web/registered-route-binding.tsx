@@ -7,7 +7,7 @@ import type { ConsumerInstanceLibrary, FlowInstanceBinding, InstanceRegistries }
 import { instanceBodyFindings } from "../core/instance-body.js";
 import { flowStageStyleSheet } from "../core/flow-stage.js";
 import { registeredRouteBrandLink } from "../core/route-registry.js";
-import type { RouteRegistration, RouteRegistry } from "../core/route-registry.js";
+import type { LegacyRouteRegistration as RouteRegistration, LegacyRouteRegistry as RouteRegistry } from "../core/route-registry.js";
 import { currentRouteRuntimeMaterialization, deriveRouteRuntimeBinding, resolveSelectedRouteRuntimeBinding, selectedRouteRuntimeManifest } from "../core/route-runtime.js";
 import { materializeRegisteredDesignerRoute } from "./registered-route-query.js";
 import type { RegisteredDesignerQuery } from "./registered-route-query.js";

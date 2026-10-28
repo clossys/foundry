@@ -5,7 +5,9 @@ import { ShellCopyProvider, surfaceRuntimeCallbacks, surfaceRendererId } from "@
 import { checkConsumerRuntimePorts, runtimeHash } from "@clossys/designer/catalog";
 import type { RuntimeContentRef, RuntimeRenderInput } from "@clossys/designer/catalog";
 import { checkedDesignerRouteData, routeBreakpointPixels, routeBreakpointsReady } from "@clossys/designer/studio/route/server";
-import type { DesignerRouteServerData, DesignerRoutePageProps } from "@clossys/designer/studio/route";
+import type { DesignerRoutePageProps } from "@clossys/designer/studio/route";
+import { withCompleteRouteNavigation } from "../complete-route-navigation.js";
+import type { CompleteRouteServerData } from "../complete-route-navigation.js";
 import { PublisherPage } from "./PublisherPage.js";
 import type { PublisherPageProps } from "./PublisherPage.js";
 import { publisherChannelFromHref } from "./publisher-channels.js";
@@ -13,7 +15,7 @@ import type { PublisherChannelId } from "./publisher-channels.js";
 import type { ConsumerInstanceFill, ConsumerInstanceLibrary, FlowInstanceBinding, InstanceRegistries } from "../../core/instance-binding.js";
 import type { ContentRef } from "../../core/instance-binding.js";
 
-export interface PublisherRouteServerData extends DesignerRouteServerData {
+export interface PublisherRouteServerData extends CompleteRouteServerData {
   readonly publisher: {
     readonly instances: readonly FlowInstanceBinding[];
     readonly fills: readonly ConsumerInstanceFill[];
@@ -43,7 +45,7 @@ export function PublisherRoutePage({ serverData, initialSession, copyResolver }:
   const checked = useMemo(() => {
     if (!initialSession) return { status: "pending" as const };
     try {
-      const value = checkedDesignerRouteData(serverData, initialSession);
+      const value = checkedDesignerRouteData(withCompleteRouteNavigation(serverData), initialSession);
       if (serverData.publisher.fills.some(fill => fill.library !== value.profile.consumer)) throw new TypeError("Publisher fill belongs to a different consumer");
       return { status: "ready" as const, value };
     } catch { return { status: "refused" as const }; }

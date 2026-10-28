@@ -1,6 +1,6 @@
 import { runtimeHash, runtimeSnapshot, runtimeSourceFindings } from "@clossys/designer/catalog";
 import type { RuntimeBodyQueryBinding } from "@clossys/designer/catalog";
-import type { RouteRegistration, RouteRegistry } from "./route-registry.js";
+import type { LegacyRouteRegistration as RouteRegistration, LegacyRouteRegistry as RouteRegistry } from "./route-registry.js";
 /** Display data only. This tag conveys no source, runtime or lifecycle clearance. */
 export interface PlainRegisteredRouteProjection {
   readonly kind: "publisher.route-projection";

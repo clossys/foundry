@@ -1,3 +1,5 @@
+import { isCompleteRouteKind, routeSourcePath } from "../core/route-identities.js";
+import type { CompleteRouteKind, RouteSourceExport, RouteRegistration } from "../core/route-registry.js";
 import type { InstanceRegistries } from "../core/instance-binding.js";
 import type { CopyRef } from "@clossys/writer";
 import { publisherValueRef } from "../web/publisher/value-names.js";
@@ -9,6 +11,15 @@ import type { LayoutId } from "../layouts/ids.js";
 import { MILESTONE_IDS, PUBLISHER_MENU, PUBLISHER_MENU_VERSION, PUBLISHER_PACKS } from "./menu.js";
 import type { MilestoneId, PublisherDisplayNeed, PublisherPlanLane, PublisherPlanPackId } from "./menu.js";
 
+/** Public plan/command input for a native admin page; appRouteId supplies its registry identity. */
+export interface PublisherCompleteRoutePlan {
+  readonly kind: CompleteRouteKind;
+  readonly path: string;
+  readonly title: string;
+  readonly brand: RouteRegistration["brand"];
+  readonly entry: RouteSourceExport;
+  readonly loader: RouteSourceExport;
+}
 export interface PublisherPlanNeed { readonly slot: string; readonly question: string }
 export interface PublisherPlanItem {
   readonly id: string;
@@ -22,6 +33,7 @@ export interface PublisherPlanItem {
   /** References existing host records; a plan never fabricates an implementation. */
   readonly instanceId?: string;
   readonly appRouteId?: string;
+  readonly completeRoute?: PublisherCompleteRoutePlan;
   readonly assetId?: string;
   readonly format?: FormatId;
   readonly layout?: { readonly leaf: LayoutId; readonly config: string };
@@ -83,6 +95,7 @@ export function validatePublisherPlan(plan: PublisherPlanDraft, registries: Inst
     if (!unique(plan.answerIds) || !plan.answerIds.every(text)) add("answerIds", "Answer identities must be unique and nonempty");
     if (!unique(plan.milestones.map(m => m.id)) || !plan.milestones.some(m => m.id === plan.currentMilestone)) add("milestones", "Current milestone must occur once in the plan");
     const ids: string[] = [];
+    const completePaths = new Set<string>();
     for (const milestone of plan.milestones) {
       if (!fields(milestone, ["id", "packs"]) || !(MILESTONE_IDS as readonly string[]).includes(milestone.id) || !unique(milestone.packs.map(p => p.id))) add("milestones", "Unknown milestone or duplicate pack");
       for (const pack of milestone.packs) {
@@ -90,7 +103,7 @@ export function validatePublisherPlan(plan: PublisherPlanDraft, registries: Inst
         for (const item of pack.items) {
           const path = `items.${item.id}`;
           ids.push(item.id);
-          if (!text(item.id) || !fields(item, ["id", "menuRef", "lane", "answerIds", "openNeeds", "instanceId", "appRouteId", "assetId", "format", "layout", "frame", "recommendation", "configuration", "overrides"])) add(path, "Unknown item fields or identity");
+          if (!text(item.id) || !fields(item, ["id", "menuRef", "lane", "answerIds", "openNeeds", "instanceId", "appRouteId", "assetId", "format", "layout", "frame", "recommendation", "configuration", "overrides", "completeRoute"])) add(path, "Unknown item fields or identity");
           const menu = PUBLISHER_MENU.find(entry => entry.id === item.menuRef);
           if (!menu) { add(path, "Unknown menu reference"); continue; }
           if (menu.pack !== pack.id || menu.milestone !== milestone.id && menu.id !== "app.ops") add(path, "Menu placement disagrees with milestone or pack");
@@ -101,6 +114,17 @@ export function validatePublisherPlan(plan: PublisherPlanDraft, registries: Inst
           if ([item.instanceId, item.appRouteId, item.assetId].filter(value => value !== undefined).length > 1 || [item.instanceId, item.appRouteId, item.assetId].some(value => value !== undefined && !text(value))) add(path, "Expected at most one nonempty host reference");
           if (menu.status === "concept-only" && (item.instanceId || item.appRouteId || item.assetId)) add(path, "Concept-only items cannot reference production records");
           if (item.instanceId && menu.kind !== "page" || item.appRouteId && menu.kind !== "app-route" || item.assetId && menu.kind !== "asset") add(path, "Host reference disagrees with menu kind");
+          if (item.completeRoute !== undefined) {
+            const c = item.completeRoute;
+            if (completePaths.has(c.path)) add(path, "Complete route paths must be unique");
+            completePaths.add(c.path);
+            const ref = (value: RouteSourceExport) => !!value && fields(value, ["file", "export"]) && routeSourcePath(value.file) && /^[A-Za-z_$][\w$]*$/.test(value.export);
+            if (!c || !fields(c, ["kind", "path", "title", "brand", "entry", "loader"]) || !isCompleteRouteKind(c.kind) || !item.appRouteId || menu.kind !== "app-route" || !text(c.title)
+              || !/^\/(?:[^/?#\\]+\/?)*$/.test(c.path) || c.path.includes("//") || c.path.includes("%") || c.path !== (c.path.replace(/\/$/, "") || "/") || c.path.split("/").some(part => part === "." || part === "..")
+              || !c.brand || !fields(c.brand, ["homeRouteId", "label"]) || !text(c.brand.homeRouteId) || !text(c.brand.label)
+              || !ref(c.entry) || c.entry.export !== "default" || !c.entry.file.endsWith(".tsx") || !ref(c.loader) || !/\.[jt]sx?$/.test(c.loader.file) || c.loader.file.endsWith(".d.ts") || c.entry.file === c.loader.file)
+              add(path, "Complete route requires a known kind, appRouteId, canonical path/title/brand, TSX entry and separate typed loader");
+          }
           if (item.layout) {
             if (!fields(item.layout, ["leaf", "config"])) add(path, "Unknown layout fields");
             try { getEffectiveLayoutContract(registries.layouts.find(leaf => leaf.id === item.layout!.leaf)!, item.layout.config); }

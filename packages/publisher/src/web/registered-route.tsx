@@ -4,7 +4,7 @@ import { plainRouteProjectionRegistry } from "../core/route-projection.js";
 import type { PlainRegisteredRouteProjection } from "../core/route-projection.js";
 import { prepareRegisteredRouteProjection } from "./registered-route-binding.js";
 import type { RegisteredRoutePageProps, RegisteredRouteRuntime, RegisteredRouteRuntimeHook, RegisteredRouteHeaderActions } from "./registered-route-binding.js";
-import type { RouteRegistration } from "../core/route-registry.js";
+import type { LegacyRouteRegistration as RouteRegistration } from "../core/route-registry.js";
 export { prepareRegisteredRoute, prepareRegisteredRouteFromNode, prepareRegisteredRouteProjection } from "./registered-route-binding.js";
 export type { PreparedRegisteredRoute, RegisteredRoutePageProps, RegisteredRouteRuntime, RegisteredRouteRuntimeHook, RegisteredRouteHeaderActions, PlainRegisteredRouteProjection } from "./registered-route-binding.js";
 export type { RegisteredRouteSerializable, RegisteredRouteServerData } from "../core/route-server-data.js";
@@ -41,7 +41,10 @@ export type { RegisteredFlowRuntimeInputs } from "./registered-route-layout.js";
 
 export { PublisherRoutePage } from "./publisher/PublisherRoutePage.js";
 export type { PublisherRouteServerData, PublisherRoutePageProps } from "./publisher/PublisherRoutePage.js";
-export { DesignerRoutePage } from "@clossys/designer/studio/route";
-export type { DesignerRouteServerData, DesignerRoutePageProps } from "@clossys/designer/studio/route";
+export { DesignerRoutePage } from "./DesignerRoutePage.js";
+export type { DesignerRouteServerData, DesignerRoutePageProps } from "./DesignerRoutePage.js";
 export { WriterRoutePage } from "./writer/WriterRoutePage.js";
 export type { WriterRouteServerData, WriterRoutePageProps } from "./writer/WriterRoutePage.js";
+
+export { projectRegisteredRouteNavigation, withCompleteRouteNavigation } from "./complete-route-navigation.js";
+export type { CompleteRouteServerData, CompleteRouteNavigation } from "./complete-route-navigation.js";

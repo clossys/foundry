@@ -7294,7 +7294,8 @@ Source checks do not establish browser qualification or actual adoption.
 ### Complete native routes
 
 `@clossys/publisher/web/registered-route` exports `DesignerRoutePage` and
-`PublisherRoutePage`, each accepting only `serverData` and `initialSession`.
+`PublisherRoutePage` and `WriterRoutePage`, sharing `serverData` and `initialSession`.
+Designer retains its required client `copy` binding; Publisher accepts its host copy resolver.
 Designer owns its original provider and controller inside Designer; Publisher
 owns its original workspace and local channel state. Publisher data adds finite
 instances, fill/content facts, registries, draft/inventory and optional route
@@ -7302,9 +7303,53 @@ projection to the shared Designer route data. Missing sessions stay pending and
 mismatched sessions or selected frames are refused.
 
 `emitCompleteRoutePage` from `@clossys/publisher/web/registered-route-check`
-accepts `{ kind: "designer" | "publisher", file, loader: { file, export } }`.
+accepts `{ kind: "designer" | "writer" | "publisher", file, loader: { file, export } }`.
 It emits an async server page that awaits the loader and forwards its
 `{ serverData, initialSession }` result to the public complete component.
 Consumers do not implement a runtime hook or pass a controller. Existing
 registered route emitters, exact initial Node bootstrap checks and qualification
 remain separate and unchanged; later native interaction is local display only.
+
+#### Complete routes in plans and registry navigation
+
+The public plan item field is `completeRoute`. Set it alongside the existing
+`appRouteId` (registry route identity); the item's `id` remains `planItemId`:
+
+```ts
+const item = {
+  id: "app.writer", menuRef: "app.ops", lane: "Studio",
+  appRouteId: "agent.writer", answerIds: ["answer.agents"], openNeeds: [],
+  completeRoute: {
+    kind: "writer", path: "/agents/writer", title: "Writer",
+    brand: { homeRouteId: "agent.designer", label: "Workspace" },
+    entry: { file: "src/app/agents/writer/page.tsx", export: "default" },
+    loader: { file: "src/data/writer.ts", export: "loadWriter" },
+  },
+};
+```
+
+`kind` is `"designer" | "writer" | "publisher"`. The normal
+`PublisherPlanStore.propose` / `apply` command path validates and retains this
+field. `projectPlanCompleteRoutes(plan, registries, consumer)` from
+`@clossys/publisher/core` produces admin registry entries with
+`composition.complete: { kind }` and the registered data loader. It requires
+real consumer paths and a declared home route; it invents no legacy binding,
+source or runtime hook. Include all referenced complete home entries in the plan.
+To show only Designer, Writer and Publisher, give those three plan items
+`completeRoute` and pass the resulting registry to `routeNavigation` on all three
+pages. The projection emits only items with `completeRoute`; leave Instances
+without that field and omit any old Instances entry from the supplied registry.
+`emitRegisteredRouteAdapter(entry)` emits each complete server page and
+`emitRegisteredRouteRegistryModule(registry)` emits its typed registry module.
+These operations establish planned display output, never built/reviewed clearance.
+
+Each loader supplies `serverData.routeNavigation = { registry, routeId }`, using
+the same registry on Designer, Writer and Publisher. The public complete pages
+apply `withCompleteRouteNavigation` from
+`@clossys/publisher/web/registered-route`. Its one shared projection uses admin
+routes' IDs, titles and paths, and marks the current route in `sidebar.activeId`.
+It replaces only the selected sidebar content's `tree` and `activeId`, preserving
+brand/account fields and content references while recomputing the content hash.
+Designer renders that data through its unchanged app-shell contract. Missing,
+foreign, ambiguous or stale sidebar data is refused. Existing loaders without
+`routeNavigation` keep their current content.

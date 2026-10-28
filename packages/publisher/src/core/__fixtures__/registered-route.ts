@@ -1,8 +1,8 @@
 import { STANDARD_PACK_REGISTRIES } from "../../web/publisher/__fixtures__/standard-website.js";
 import type { InstanceRegistries } from "../instance-binding.js";
-import type { RouteRegistration } from "../route-registry.js";
+import type { RouteRegistration, LegacyRouteRegistration } from "../route-registry.js";
 import type { PublisherPlanDraft } from "../../planning/plan.js";
-export const syntheticRoute = (id = "example.tools"): RouteRegistration => ({
+export const syntheticRoute = (id = "example.tools"): LegacyRouteRegistration => ({
   routeId: id, title: "Tools", path: `/tools/${id.split(".").at(-1)}`, channel: "admin", brand: { homeRouteId: id, label: "Example workspace" }, planItemId: `app.${id}`,
   entry: { file: `app/tools/${id.split(".").at(-1)}/page.tsx`, export: "default" },
   composition: {

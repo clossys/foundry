@@ -6,7 +6,7 @@ import { sha256 } from "../planning/digest.js";
 import type { RouteRuntimeMaterialization } from "./route-runtime.js";
 import { deriveRouteRuntimeBinding } from "./route-runtime.js";
 import { routeCompositionDigest, registeredRouteBrandLink } from "./route-registry.js";
-import type { RouteRegistration, RouteRegistry } from "./route-registry.js";
+import type { LegacyRouteRegistration as RouteRegistration, RouteRegistry } from "./route-registry.js";
 import { isCurrentRegisteredRouteSourceEvidence } from "./route-source-evidence.js";
 import type { RegisteredRouteSourceEvidence } from "./route-source-evidence.js";
 import { registeredRouteNodeCurrentSnapshot } from "./route-node-current.js";
