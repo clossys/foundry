@@ -27,7 +27,7 @@ describe("surface runtime registry", () => {
     }
     expect(() => surfaceRuntimeCallbacks(["sections.not-a-leaf"])).toThrow(/no package renderer/);
   });
-  it("covers every Sections leaf and every Frames leaf except the publisher-owned site shell", () => {
+  it("covers every Sections leaf and every Designer-owned Frames leaf", () => {
     const ids = (rows: readonly { id: string }[]) => rows.map(row => row.id).sort();
     expect(Object.keys(sectionRenderers).sort()).toEqual(ids(sectionSlots as readonly { id: string }[]));
     expect(Object.keys(sectionRenderers)).toHaveLength(46);

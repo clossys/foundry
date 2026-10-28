@@ -7,7 +7,7 @@ import { cleanup, render } from "@testing-library/react";
 import { afterEach, expect, it } from "vitest";
 import type { CopyResolver } from "@clossys/writer";
 import type { ResolvedSectionedViewDocument } from "./landing/core/sectioned-view.js";
-import { LandingView } from "./landing/web/views/LandingView.js";
+import { LandingView } from "@clossys/designer/frames";
 import { SiteFrame } from "./SiteFrame.js";
 import type { SiteShellInput } from "./types.js";
 import { resolveShell } from "./internal/resolveShell.js";

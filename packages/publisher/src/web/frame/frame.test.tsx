@@ -20,11 +20,11 @@ import { CaptureView } from "../views/CaptureView.js";
 import { DocumentView } from "../views/DocumentView.js";
 import { ErrorView } from "../views/ErrorView.js";
 import { StatusView } from "../views/StatusView.js";
-import { LandingView } from "../../../../designer/src/frames/site-frame/landing/web/views/LandingView.js";
-import { SITE_MAIN_ID, SITE_SURFACE_KINDS, SiteFrame, siteShellFor } from "../../../../designer/src/frames/site-frame/index.js";
-import type { SiteFrameConfig, SiteShellInput } from "../../../../designer/src/frames/site-frame/index.js";
-import { resolveShell } from "../../../../designer/src/frames/site-frame/internal/resolveShell.js";
-import { FOOTER_ICON_LIMIT, FOOTER_LINK_LIMIT, SiteFooterContractError } from "../../../../designer/src/frames/site-frame/site-frame-contract.js";
+import { LandingView } from "@clossys/designer/frames";
+import { SITE_MAIN_ID, SITE_SURFACE_KINDS, SiteFrame, siteShellFor } from "./index.js";
+import type { SiteFrameConfig, SiteShellInput } from "./index.js";
+import { resolveShell } from "../../../../designer/dist/frames/site-frame/internal/resolveShell.js";
+import { FOOTER_ICON_LIMIT, FOOTER_LINK_LIMIT, SiteFooterContractError } from "../../../../designer/dist/frames/site-frame/site-frame-contract.js";
 
 afterEach(cleanup);
 

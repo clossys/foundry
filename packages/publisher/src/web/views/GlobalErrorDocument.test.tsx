@@ -18,7 +18,7 @@ import * as server from "../../../dist/web/server.js";
 import type { StatusViewProps } from "./StatusView.js";
 import type { GlobalErrorDocumentErrorViewProps, GlobalErrorDocumentFramedProps, GlobalErrorDocumentProps } from "./GlobalErrorDocument.js";
 
-const ALLOWED_IMPORTS = ["react", "../frame/SiteFrame.js", "../frame/types.js", "./ErrorView.js", "./StatusView.js", "./statusDocument.js"];
+const ALLOWED_IMPORTS = ["react", "@clossys/designer/frames", "./ErrorView.js", "./StatusView.js", "./statusDocument.js"];
 
 /** Every module specifier named by an `import` statement or an `export ... from` re-export. */
 const MODULE_SPECIFIER =
@@ -247,7 +247,7 @@ describe("GlobalErrorDocument", () => {
 
     it("imports only react, the frame, the status view, the deprecated error view and the shared status document head", () => {
       expect(moduleSpecifiers(source)).toEqual(
-        expect.arrayContaining(["../frame/SiteFrame.js", "./StatusView.js", "./ErrorView.js", "./statusDocument.js"]),
+        expect.arrayContaining(["@clossys/designer/frames", "./StatusView.js", "./ErrorView.js", "./statusDocument.js"]),
       );
       for (const specifier of moduleSpecifiers(source)) {
         expect(ALLOWED_IMPORTS).toContain(specifier);

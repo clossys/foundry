@@ -6,11 +6,11 @@ import type { CopyRef, CopyResolver } from "@clossys/writer";
 import { AuthView } from "../views/AuthView.js";
 import * as webIndex from "../index.js";
 import * as webServer from "../server.js";
-import * as frameIndex from "../../../../designer/src/frames/site-frame/index.js";
-import { SITE_MAIN_ID, SiteFrame, siteShellFor } from "../../../../designer/src/frames/site-frame/index.js";
-import type { SiteFrameConfig, SiteShellInput } from "../../../../designer/src/frames/site-frame/index.js";
-import { LandingView } from "../../../../designer/src/frames/site-frame/landing/web/views/LandingView.js";
-import { LandingView as ServerLandingView } from "../../../../designer/src/frames/site-frame/landing/web/views/LandingView.server.js";
+import * as frameIndex from "./index.js";
+import { SITE_MAIN_ID, SiteFrame, siteShellFor } from "./index.js";
+import type { SiteFrameConfig, SiteShellInput } from "./index.js";
+import { LandingView } from "@clossys/designer/frames";
+import { ServerLandingView } from "@clossys/designer/frames";
 import type { LandingViewProps } from "../../../../designer/src/frames/site-frame/landing/web/views/LandingViewContent.js";
 import type { ResolvedSectionedViewDocument } from "../../core/sectioned-view.js";
 

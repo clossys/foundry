@@ -35,7 +35,7 @@ describe("designer Frame runtime renderers", () => {
   it("cover every designer-owned Frames leaf, including site-shell", () => {
     const designerLeaves = (slots as readonly { id: string }[]).map(slot => slot.id).filter(id => FOUNDRY_FRAME_MAP[id.slice("frames.".length)]!.package === "@clossys/designer");
     expect(Object.keys(frameRenderers).sort()).toEqual(designerLeaves.sort());
-    expect(designerLeaves).toHaveLength(9);
+    expect(designerLeaves).toHaveLength(slots.length);
     expect(frameRenderers["frames.site-shell"]).toBeDefined();
   });
 

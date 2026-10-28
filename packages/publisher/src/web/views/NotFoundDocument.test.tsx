@@ -18,7 +18,7 @@ import * as ordinary from "../../../dist/web/index.js";
 import * as server from "../../../dist/web/server.js";
 import * as client from "../../../dist/web/client.js";
 
-const ALLOWED_IMPORTS = ["react", "../frame/SiteFrame.js", "../frame/types.js", "./GlobalErrorDocument.js", "./StatusView.js", "./statusDocument.js"];
+const ALLOWED_IMPORTS = ["react", "@clossys/designer/frames", "./GlobalErrorDocument.js", "./StatusView.js", "./statusDocument.js"];
 
 /** Every module specifier named by an `import` statement or an `export ... from` re-export. */
 const MODULE_SPECIFIER =
@@ -162,7 +162,7 @@ describe("NotFoundDocument", () => {
 
     it("imports only react, the frame, the status view and the shared status document head", () => {
       const specifiers = [...source.matchAll(MODULE_SPECIFIER)].map((m) => m[1] as string);
-      expect(specifiers).toEqual(expect.arrayContaining(["../frame/SiteFrame.js", "./StatusView.js", "./statusDocument.js"]));
+      expect(specifiers).toEqual(expect.arrayContaining(["@clossys/designer/frames", "./StatusView.js", "./statusDocument.js"]));
       for (const specifier of specifiers) expect(ALLOWED_IMPORTS).toContain(specifier);
       expect(source).not.toMatch(/\brequire\(|import\(/);
     });
