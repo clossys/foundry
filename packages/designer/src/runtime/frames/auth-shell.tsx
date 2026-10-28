@@ -16,6 +16,6 @@ export const authShellRenderer: SurfaceRendererEntry = {
     for (const slot of Object.keys(input.slots)) if (slot !== "main") read.fail(`${slot} slot has no mapped prop`);
     const children = Children.toArray(input.slots.main);
     if (!children.length) read.fail("main slot is required");
-    return <AuthFrame skipLabel={read.required(runtimeValue(input, "skip-link"), "skip-link")}>{children}</AuthFrame>;
+    return <AuthFrame locale={input.locale} skipLabel={read.required(runtimeValue(input, "skip-link"), "skip-link")}>{children}</AuthFrame>;
   },
 };

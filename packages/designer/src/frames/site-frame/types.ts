@@ -154,6 +154,8 @@ export interface SiteFrameInput {
 }
 
 export interface SiteFrameProps extends SiteFrameInput {
+  /** Canonical page locale supplied by the host through Writer. */
+  locale?: string;
   /** Host-owned toast viewport, mounted after the footer and outside main. */
   readonly toasts?: ReactNode;
   /** Flat semantic presentation overrides; content remains in shell bindings. */

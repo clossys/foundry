@@ -59,7 +59,7 @@ function copyTable() {
 }
 
 /** `SiteFrame` props for one runtime input: shell data, its resolvers, presentation from members, main and toasts. */
-export function siteShellProps(input: Pick<RuntimeRenderInput<ReactNode>, "content" | "selection" | "slots" | "host">): SiteFrameProps {
+export function siteShellProps(input: Pick<RuntimeRenderInput<ReactNode>, "content" | "selection" | "slots" | "host" | "locale">): SiteFrameProps {
   for (const key of Object.keys(input.content)) if (!(CONTENT as readonly string[]).includes(key)) fail(`${key} content has no mapped prop`);
   let presentation: SiteFramePresentationConfig = {};
   for (const member of input.selection.members) presentation = { ...presentation, ...(MEMBERS[member] ?? fail(`${member} member has no mapped prop`)) };
@@ -149,7 +149,7 @@ export function siteShellProps(input: Pick<RuntimeRenderInput<ReactNode>, "conte
   };
   const main = input.slots.main ?? [];
   // One node goes in directly so SiteFrame can still recognise a hero-only LandingView scene.
-  return { shell, presentation, resolveCopy, resolveAsset, children: main.length === 1 ? main[0] : main, ...(input.host?.toasts === undefined ? {} : { toasts: input.host.toasts }) };
+  return { ...(input.locale === undefined ? {} : { locale: input.locale }), shell, presentation, resolveCopy, resolveAsset, children: main.length === 1 ? main[0] : main, ...(input.host?.toasts === undefined ? {} : { toasts: input.host.toasts }) };
 }
 
 export function renderSiteShell(input: RuntimeRenderInput<ReactNode>): ReactNode {

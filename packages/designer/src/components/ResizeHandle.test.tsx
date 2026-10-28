@@ -1,3 +1,4 @@
+import { I18nProvider } from "react-aria-components";
 import { act, useState } from "react";
 import { hydrateRoot } from "react-dom/client";
 import { renderToString } from "react-dom/server";
@@ -102,9 +103,9 @@ describe("ResizeHandle", () => {
     expect(changed).toHaveBeenLastCalledWith(100);
   });
 
-  it("inherits RTL from its ancestor and ignores a second pointer during a drag", async () => {
+  it("inherits RTL from its locale context and ignores a second pointer during a drag", async () => {
     const changed = vi.fn();
-    render(<div dir="rtl"><ResizeHandle {...bounds} value={100} onChange={changed} /></div>);
+    render(<I18nProvider locale="ar"><div dir="ltr"><ResizeHandle {...bounds} value={100} onChange={changed} /></div></I18nProvider>);
     const handle = screen.getByRole("separator");
     Object.assign(handle, { setPointerCapture: vi.fn(), releasePointerCapture: vi.fn(), hasPointerCapture: () => true });
     fireEvent.keyDown(handle, { key: "ArrowRight" });

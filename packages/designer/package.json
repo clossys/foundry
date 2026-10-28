@@ -420,6 +420,11 @@
     "recharts": "3.8.0"
   },
   "imports": {
+    "#designer-frame-i18n": {
+      "types": "./dist/runtime/frames/i18n.client.d.ts",
+      "react-server": "./dist/runtime/frames/i18n.server.js",
+      "default": "./dist/runtime/frames/i18n.client.js"
+    },
     "#designer-frame-navigation": {
       "types": "./dist/frames/site-frame/NavDisclosure.client.d.ts",
       "react-server": "./dist/frames/site-frame/NavDisclosure.server.js",

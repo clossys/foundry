@@ -1,7 +1,8 @@
 "use client";
+import { ShellI18nProvider } from "#designer-frame-i18n";
 
 import { useCallback, useEffect, useId, useLayoutEffect, useRef, useState, type CSSProperties } from "react";
-import { ModalContext, PopoverContext } from "react-aria-components";
+import { ModalContext, PopoverContext, useLocale } from "react-aria-components";
 import { Button, Icon, Logomark, Menu, Tooltip } from "../components/index.js";
 import { Layers, List, Search } from "../icons/index.js";
 import { AccountMenu, AppNavigation, PageBar, CommandMenu, Drawer, ResizablePane, useCommandMenuShortcut, type DrawerProps } from "../blocks/index.js";
@@ -12,7 +13,7 @@ import { FrameDock } from "./FrameDock.js";
 import { SkipLink } from "../shell/SkipLink.js";
 import { ToasterFrameInsetProvider, type ToasterFrameInset } from "../shell/Toaster.js";
 import { FrameNoticeProvider } from "./frame-notices.js";
-import { APP_FRAME_ALWAYS_NARROW, APP_FRAME_ALWAYS_WIDE, APP_FRAME_LAYOUT, APP_FRAME_NAVIGATION_SIZE, APP_FRAME_PANEL_SIZE, APP_FRAME_PANEL_WIDTH_VAR, APP_FRAME_WIDE_QUERY, appFrameMainId, appFramePanels, appFrameCorner, appFrameDirection } from "./app-frame-layout.js";
+import { APP_FRAME_ALWAYS_NARROW, APP_FRAME_ALWAYS_WIDE, APP_FRAME_LAYOUT, APP_FRAME_NAVIGATION_SIZE, APP_FRAME_PANEL_SIZE, APP_FRAME_PANEL_WIDTH_VAR, APP_FRAME_WIDE_QUERY, appFrameMainId, appFramePanels, appFrameCorner } from "./app-frame-layout.js";
 import type { AppFrameAccount, AppFrameProps } from "./app-frame-types.js";
 import { dsAttrs } from "../catalog-core/provenance-attrs.js";
 
@@ -56,9 +57,11 @@ function SignedOutMenu({ sections, signedOutLabel, onRoute, markSrc }: Omit<AppF
   </Menu>;
 }
 
-function FrameContent({ brand, navigation, account: { avatar = "initials", ...account }, commands, children, toasts, rightPanel, theme, themeControl, footerLayout = "inline", fill = "host", dir, onNavigate, layout: shellLayout = "standard", stage: stageInset = "contained", notices, dock, headerPosition, headerSurface, context, root, page, workspaces, breadcrumbLabel, collapsedBreadcrumbLabel, pageInfoLabel, pageActionsLabel,
+function FrameContent({ brand, navigation, account: { avatar = "initials", ...account }, commands, children, toasts, rightPanel, theme, themeControl, footerLayout = "inline", fill = "host", dir: suppliedDir, onNavigate, layout: shellLayout = "standard", stage: stageInset = "contained", notices, dock, headerPosition, headerSurface, context, root, page, workspaces, breadcrumbLabel, collapsedBreadcrumbLabel, pageInfoLabel, pageActionsLabel,
   /** @default "Skip to content" */
   skipLabel = "Skip to content", mainId }: AppFrameProps) {
+  const { direction: contextDirection, locale } = useLocale();
+  const dir = suppliedDir ?? contextDirection;
   // The page header is leased by PageHeaderModule only; the frame takes no header prop.
   const resolvedHeader = useFramePageHeader();
   assertAppFrameBrand(brand);
@@ -97,7 +100,7 @@ function FrameContent({ brand, navigation, account: { avatar = "initials", ...ac
     if (!narrow || !panelOpen) { setPanelCloseButtonStyle(undefined); return; }
     const measure = () => {
       const opener = frame.current?.querySelector<HTMLElement>('[data-application-frame-panel="trigger"]');
-      if (opener) setPanelCloseButtonStyle(appFrameCorner(opener));
+      if (opener) setPanelCloseButtonStyle(appFrameCorner(opener, dir));
     };
     measure(); window.addEventListener("resize", measure);
     return () => window.removeEventListener("resize", measure);
@@ -197,7 +200,7 @@ function FrameContent({ brand, navigation, account: { avatar = "initials", ...ac
     if (!hasToasts || !element) return;
     // Toasts portal to the document; anchoring them to the stage corner keeps them clear of the header and dock.
     const measure = () => {
-      const rect = element.getBoundingClientRect(), direction = appFrameDirection(element);
+      const rect = element.getBoundingClientRect(), direction = dir;
       const next = { blockEnd: Math.max(0, window.innerHeight - rect.bottom), inlineEnd: Math.max(0, direction === "rtl" ? rect.left : window.innerWidth - rect.right), direction };
       setToastInset(previous => previous?.blockEnd === next.blockEnd && previous.inlineEnd === next.inlineEnd && previous.direction === next.direction ? previous : next);
     };
@@ -245,7 +248,7 @@ function FrameContent({ brand, navigation, account: { avatar = "initials", ...ac
     labels={{ breadcrumb: breadcrumbLabel ?? "Breadcrumb", collapsedBreadcrumb: collapsedBreadcrumbLabel ?? "More breadcrumb levels", pageInfo: pageInfoLabel ?? "Page information",
       pageActions: pageActionsLabel ?? "More page actions" }} />;
   return <ModalContext.Provider value={{ style: { direction: dir } }}><PopoverContext.Provider value={{ style: { direction: dir } }}>
-    <div ref={frame} dir={dir} data-application-frame="" data-application-frame-layout={shellLayout} data-application-frame-stage={stageInset} data-application-frame-fill={fill} {...FRAME_STAMP} className={"relative flex min-h-0 min-w-0 flex-col overflow-hidden bg-surface-base text-body text-ink-primary " + ROOT_FILL[fill]}>
+    <div ref={frame} lang={locale} dir={dir} data-application-frame="" data-application-frame-layout={shellLayout} data-application-frame-stage={stageInset} data-application-frame-fill={fill} {...FRAME_STAMP} className={"relative flex min-h-0 min-w-0 flex-col overflow-hidden bg-surface-base text-body text-ink-primary " + ROOT_FILL[fill]}>
       <SkipLink targetId={target}>{skipLabel}</SkipLink>
       <span aria-hidden="true" className="absolute size-0 overflow-hidden"><span ref={sidebarProbe} className="block" style={{ inlineSize: APP_FRAME_LAYOUT.sidebar }} /></span>
       <div className="flex min-h-0 min-w-0 flex-1">
@@ -284,5 +287,5 @@ function FrameContent({ brand, navigation, account: { avatar = "initials", ...ac
 
 /** Host-resolved application chrome; the host owns routes, account actions and main-free route content. */
 export function AppFrame(props: AppFrameProps) {
-  return <ThemeProvider storageKey={props.theme?.storageKey} defaultPreference={props.theme?.defaultPreference} preference={props.theme?.preference} onPreferenceChange={props.theme?.onPreferenceChange}><FrameSlotProvider><FrameNoticeProvider><FrameContent {...props} /></FrameNoticeProvider></FrameSlotProvider></ThemeProvider>;
+  return <ShellI18nProvider locale={props.locale}><ThemeProvider storageKey={props.theme?.storageKey} defaultPreference={props.theme?.defaultPreference} preference={props.theme?.preference} onPreferenceChange={props.theme?.onPreferenceChange}><FrameSlotProvider><FrameNoticeProvider><FrameContent {...props} /></FrameNoticeProvider></FrameSlotProvider></ThemeProvider></ShellI18nProvider>;
 }

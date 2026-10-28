@@ -1,3 +1,4 @@
+import { ShellI18nProvider, ShellLocaleRoot } from "#designer-frame-i18n";
 import { isValidElement, type ReactElement, type ReactNode } from "react";
 import { Icon } from "@clossys/designer/components/server";
 import { Brandmark, SiteFooter, SiteHeader } from "@clossys/designer/shell/server";
@@ -100,7 +101,7 @@ function LinkList({ links, className }: { readonly links: readonly ResolvedSiteL
  * Server-safe: no hooks. Skip-link focus, header-ground observation and
  * navigation disclosure use the existing client islands and resolved data.
  */
-export function SiteFrame({ shell, presentation, resolveCopy, resolveAsset, children, toasts }: SiteFrameProps): ReactElement {
+export function SiteFrame({ shell, presentation, resolveCopy, resolveAsset, children, toasts, locale }: SiteFrameProps): ReactElement {
   const resolved = resolveShell(shell, resolveCopy, resolveAsset, presentation);
   const { brand, footer } = resolved;
   if (footer?.placement === "overlay") assertOverlayScene(children, resolved.header.surface);
@@ -144,7 +145,7 @@ export function SiteFrame({ shell, presentation, resolveCopy, resolveAsset, chil
   ) : null;
 
   return (
-    <div data-frame-root="" className={`flex min-h-dvh flex-col${footer?.placement === "overlay" ? " relative" : ""}`} {...FRAME_STAMP}>
+    <ShellI18nProvider locale={locale}><ShellLocaleRoot><div data-frame-root="" className={`flex min-h-dvh flex-col${footer?.placement === "overlay" ? " relative" : ""}`} {...FRAME_STAMP}>
       <SiteSkipLink targetId={SITE_MAIN_ID} label={resolved.skipLink} followHeaderGround={resolved.header.surface === "glass"} />
       <SiteHeader
         surface={resolved.header.surface}
@@ -169,6 +170,6 @@ export function SiteFrame({ shell, presentation, resolveCopy, resolveAsset, chil
         </div>
       ) : footerContent}
       {toasts}
-    </div>
+    </div></ShellLocaleRoot></ShellI18nProvider>
   );
 }

@@ -47,16 +47,9 @@ export function appFramePanels(available: number, wide: boolean, sidebar: number
   };
 }
 
-/** Resolve computed direction, with the document attribute fallback needed by non-painting DOM hosts. */
-export function appFrameDirection(element: HTMLElement): "ltr" | "rtl" {
-  const direction = getComputedStyle(element).direction;
-  return direction === "rtl" || (!direction && element.closest<HTMLElement>("[dir]")?.dir === "rtl") ? "rtl" : "ltr";
-}
-
 /** Position the existing modal close over the actual opener, including an embedded frame offset. */
-export function appFrameCorner(element: HTMLElement) {
+export function appFrameCorner(element: HTMLElement, direction: "ltr" | "rtl") {
   const rect = element.getBoundingClientRect();
-  const direction = appFrameDirection(element);
   return { position: "fixed" as const, direction, insetBlockStart: rect.top,
     insetInlineStart: direction === "rtl" ? `calc(100% - ${rect.right}px)` : rect.left, insetInlineEnd: "auto" as const };
 }
