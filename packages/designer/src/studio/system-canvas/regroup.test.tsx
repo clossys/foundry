@@ -7,6 +7,30 @@ import { centreOn } from "./stops.js";
 import { systemLayout } from "./layout.js";
 import { identityFor } from "./inspector/model.js";
 import { normaliseStudioUrl, resolverFromPlacements } from "./url.js";
+import type { StudioCopyBinding, StudioCopyRef } from "../copy-binding.js";
+
+// Synthetic host messages retain this interaction fixture's existing labels.
+// They are test data, not Writer records or a production fallback.
+function fixtureCopy(placements: readonly Placement[]): StudioCopyBinding {
+  const messages: Record<string, StudioCopyRef> = {};
+  const text = new Map<string, string>();
+  const add = (cell: string, value: string) => {
+    const id = `fixture.message-${text.size}`;
+    messages[cell] = { id }; text.set(id, value);
+  };
+  const layout = systemLayout(placements);
+  for (const board of layout.boards.values()) add(`studio.ia.board.${board.id}`, board.label);
+  for (const line of layout.lines.values()) add(`studio.ia.line.${line.id}`, line.label);
+  for (const cell of layout.cells.values()) {
+    add(`studio.ia.item.${cell.leaf}`, cell.leaf);
+  }
+  return { ...studioTestCopy, messages, resolver(ref) {
+    const value = text.get(ref.id);
+    return value === undefined ? studioTestCopy.resolver(ref)
+      : { ref, text: value, servedLocale: ref.locale, chain: [ref.locale!] };
+  } };
+}
+
 it("regroups a Sections leaf without changing its identity, fill, URL, frozen membership or any leaf id",()=>{
  const build=loadBuildCatalog(), before=build.placements, after=structuredClone(before) as Placement[];
  const leaves:(PlacementNode & {leaves:string[]})[]=[];
@@ -43,7 +67,7 @@ it("keeps the mounted cell keyed by leaf when its L2 changes",()=>{
  if(!("leaves" in from)||!("leaves" in to))throw new Error("Expected L2");
  from.leaves=from.leaves.filter(id=>id!=="sections.pagination");to.leaves=[...to.leaves,"sections.pagination"];
  const handle=createRef<SystemCanvasHandle>();
- const page=(placements:readonly Placement[])=><SystemCanvas copy={studioTestCopy} data={{placements}} labels={testLabels} viewSize={{width:1200,height:800}} handleRef={handle} renderStaticThumbnail={leaf=><span data-stable-probe={leaf}/>}/>;
+ const page=(placements:readonly Placement[])=><SystemCanvas copy={fixtureCopy(placements)} data={{placements}} labels={testLabels} viewSize={{width:1200,height:800}} handleRef={handle} renderStaticThumbnail={leaf=><span data-stable-probe={leaf}/>}/>;
  const view=render(page(before));act(()=>handle.current!.fit("cell",{layer:"sections",leaf:"sections.pagination"}));
  const cell=view.container.querySelector('[data-system-cell="sections.pagination"]');expect(cell).not.toBeNull();
  const probe=cell!.querySelector("[data-stable-probe]");expect(probe).not.toBeNull();

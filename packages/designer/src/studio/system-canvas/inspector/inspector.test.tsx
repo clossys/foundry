@@ -6,12 +6,41 @@ import { DesignerPage } from "../DesignerPage.js";
 import { testPlacements } from "../__fixtures__/system.js";
 import { createRouteStudioLabels } from "../../route-labels.js";
 import { studioTestCopy } from "../../__fixtures__/copy.js";
+import type { Placement } from "../../../catalog-core/index.js";
+import type { StudioCopyBinding, StudioCopyRef } from "../../copy-binding.js";
+import { systemLayout } from "../layout.js";
+import { identityFor } from "./model.js";
+
+// Synthetic host messages retain this interaction fixture's existing labels.
+// They are test data, not Writer records or a production fallback.
+function fixtureCopy(placements: readonly Placement[]): StudioCopyBinding {
+  const messages: Record<string, StudioCopyRef> = {};
+  const text = new Map<string, string>();
+  const add = (cell: string, value: string) => {
+    const id = `fixture.message-${text.size}`;
+    messages[cell] = { id }; text.set(id, value);
+  };
+  const layout = systemLayout(placements);
+  for (const board of layout.boards.values()) add(`studio.ia.board.${board.id}`, board.label);
+  for (const line of layout.lines.values()) add(`studio.ia.line.${line.id}`, line.label);
+  for (const cell of layout.cells.values()) {
+    add(`studio.ia.item.${cell.leaf}`, cell.leaf);
+    add(`studio.inspector.path.${cell.leaf}`, identityFor(placements, cell.leaf).path.join(" › "));
+  }
+  return { ...studioTestCopy, messages, resolver(ref) {
+    const value = text.get(ref.id);
+    return value === undefined ? studioTestCopy.resolver(ref)
+      : { ref, text: value, servedLocale: ref.locale, chain: [ref.locale!] };
+  } };
+}
+
+const inspectorCopy = fixtureCopy(testPlacements);
 const routeStudioLabels=createRouteStudioLabels(studioTestCopy);
 const graph = buildUsageGraph({ inventory: { tokens:["tokens.accent-color"], components:["components.button","components.menu"], sections:["sections.band"], frames:["frames.site-shell"] }, selection:{},
   runtime:[{from:"components.button",to:"tokens.accent-color",kind:"reads",route:"example",selector:"button"},{from:"sections.band",to:"components.button",kind:"composes",route:"example",selector:"button"},{from:"frames.site-shell",to:"sections.band",kind:"hosts",route:"example",selector:"section"},{from:"components.menu",to:"tokens.accent-color",kind:"reads",route:"example",selector:"button"}] });
 afterEach(()=>{cleanup();localStorage.clear();window.history.replaceState(null,"","/");vi.unstubAllGlobals();});
 function setup(extra: Partial<React.ComponentProps<typeof DesignerPage>> = {}) {
-  return render(<DesignerPage data={{placements:testPlacements}} copy={studioTestCopy} labels={{...routeStudioLabels, howToChange:"Ask the coding agent"}} graph={graph} initialUrl={{search:"?node=components.button",hash:""}} viewSize={{width:1200,height:800}} {...extra}/>);
+  return render(<DesignerPage data={{placements:testPlacements}} copy={inspectorCopy} labels={{...routeStudioLabels, howToChange:"Ask the coding agent"}} graph={graph} initialUrl={{search:"?node=components.button",hash:""}} viewSize={{width:1200,height:800}} {...extra}/>);
 }
 it("lights exactly self plus separate uses/usedBy closures, never a sibling sharing a dependency",()=>{
   const view=setup();expect(view.container.querySelector("[data-system-canvas]")).toHaveAttribute("data-system-lit","components.button frames.site-shell sections.band tokens.accent-color");

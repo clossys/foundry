@@ -8,7 +8,7 @@ import { CanvasZoom } from "./CanvasZoom.js";
 afterEach(cleanup);
 const labels = { group: "Zoom", out: "Zoom out", in: "Zoom in", fit: "Fit", percent: "Zoom level" };
 const setup = (value: number, onChange = vi.fn(), onFit = vi.fn()) =>
-  render(<CanvasZoom value={value} min={0.12} max={2} labels={labels} onChange={onChange} onFit={onFit} />);
+  render(<CanvasZoom value={value} min={0.12} max={2} labels={labels} formatValue={value => `${Math.round(value)}%`} onChange={onChange} onFit={onFit} />);
 
 it("zoom steps are square small icon buttons drawn with Minus and Plus glyphs, not text characters", () => {
   setup(0.5);

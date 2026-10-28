@@ -5,6 +5,32 @@ import { SystemCanvas, type SystemCanvasHandle, type SystemCanvasProps } from ".
 import { testLabels, testPlacements } from "./__fixtures__/system.js";
 import { studioTestCopy } from "../__fixtures__/copy.js";
 
+import type { Placement } from "../../catalog-core/index.js";
+import type { StudioCopyBinding, StudioCopyRef } from "../copy-binding.js";
+import { systemLayout } from "./layout.js";
+
+// Synthetic host messages retain this interaction fixture's existing labels.
+// They are test data, not Writer records or a production fallback.
+function fixtureCopy(placements: readonly Placement[]): StudioCopyBinding {
+  const messages: Record<string, StudioCopyRef> = {};
+  const text = new Map<string, string>();
+  const add = (cell: string, value: string) => {
+    const id = `fixture.message-${text.size}`;
+    messages[cell] = { id }; text.set(id, value);
+  };
+  const layout = systemLayout(placements);
+  for (const board of layout.boards.values()) add(`studio.ia.board.${board.id}`, board.label);
+  for (const line of layout.lines.values()) add(`studio.ia.line.${line.id}`, line.label);
+  for (const cell of layout.cells.values()) {
+    add(`studio.ia.item.${cell.leaf}`, cell.leaf);
+  }
+  return { ...studioTestCopy, messages, resolver(ref) {
+    const value = text.get(ref.id);
+    return value === undefined ? studioTestCopy.resolver(ref)
+      : { ref, text: value, servedLocale: ref.locale, chain: [ref.locale!] };
+  } };
+}
+
 // Default (token) geometry: a cell is 320 x 240 world pixels.
 // In a 400 x 300 view the System stop draws every cell far; the tokens/color Board stop draws them mid.
 // In a 1200 x 800 view a Board stop draws cells near.
@@ -18,7 +44,7 @@ afterEach(() => { vi.useRealTimers(); vi.restoreAllMocks(); vi.unstubAllGlobals(
 
 function setup(overrides: Partial<SystemCanvasProps> = {}) {
   const handle = createRef<SystemCanvasHandle>();
-  const props: SystemCanvasProps = { copy: studioTestCopy, data: { placements: testPlacements }, labels: testLabels, viewSize: small, handleRef: handle, ...overrides };
+  const props: SystemCanvasProps = { copy: fixtureCopy(testPlacements), data: { placements: testPlacements }, labels: testLabels, viewSize: small, handleRef: handle, ...overrides };
   const result = render(<SystemCanvas {...props} />);
   const world = result.container.querySelector<HTMLElement>("[data-canvas-world]")!;
   const navigate = (target: Parameters<SystemCanvasHandle["navigateTo"]>[0]) => act(() => handle.current!.navigateTo(target));

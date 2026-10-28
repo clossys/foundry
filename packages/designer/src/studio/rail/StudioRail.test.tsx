@@ -19,6 +19,7 @@ import { studioTestCopy } from "../__fixtures__/copy.js";
 import { systemLayout } from "../system-canvas/layout.js";
 import { identityFor } from "../system-canvas/inspector/model.js";
 import type { StudioCopyBinding, StudioCopyRef } from "../copy-binding.js";
+import { loadBuildCatalog } from "../../catalog-core/index.js";
 
 afterEach(() => { cleanup(); try { localStorage.clear(); } catch { /* jsdom always has storage */ } window.history.replaceState(null, "", "/"); vi.restoreAllMocks(); vi.unstubAllGlobals(); });
 
@@ -32,12 +33,16 @@ function addFixtureMessage(cell: string, value: string) {
   const id = `fixture.rail.message-${fixtureText.size}`;
   fixtureMessages[cell] = { id }; fixtureText.set(id, value);
 }
-const fixtureLayout = systemLayout(smallCatalog.placements);
+// WholeStudioProvider uses build contracts for its composite graph; bind those
+// display names as well as the legacy value-only fixture names.
+for (const placements of [loadBuildCatalog().placements, smallCatalog.placements]) {
+const fixtureLayout = systemLayout(placements);
 for (const board of fixtureLayout.boards.values()) addFixtureMessage(`studio.ia.board.${board.id}`, board.label);
 for (const line of fixtureLayout.lines.values()) addFixtureMessage(`studio.ia.line.${line.id}`, line.label);
 for (const cell of fixtureLayout.cells.values()) {
   addFixtureMessage(`studio.ia.item.${cell.leaf}`, cell.leaf);
-  addFixtureMessage(`studio.inspector.path.${cell.leaf}`, identityFor(smallCatalog.placements, cell.leaf).path.join(" › "));
+  addFixtureMessage(`studio.inspector.path.${cell.leaf}`, identityFor(placements, cell.leaf).path.join(" › "));
+}
 }
 addFixtureMessage("designer.scorecard.resolved-count", "fixture-count");
 for (let number = 1; number <= 10; number++) {
