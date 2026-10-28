@@ -44,7 +44,7 @@ function SignedOutMenu({ sections, signedOutLabel, onRoute, markSrc, theme, cont
   if (!populated.length && theme === undefined && controls == null) return <div className="flex min-w-0 items-center frame-account-row"><Logomark src={markSrc} size="sm" /><span className="min-w-0 truncate">{signedOutLabel}</span></div>;
   const itemKey = (section: string, entry: string) => JSON.stringify([section, entry]);
   const trigger = <Button variant="ghost" className={CONTROL + " w-full justify-start whitespace-normal text-start"}><Logomark src={markSrc} size="sm" /><span className="min-w-0 break-words">{signedOutLabel}</span></Button>;
-  const content = (close?: () => void) => <>{populated.map(section => <Menu.Section key={section.id} heading={section.label} aria-label={section.label ?? signedOutLabel}
+  const content = (close?: () => void) => <>{theme !== undefined && <AppFrameThemeSection {...theme} />}{populated.map(section => <Menu.Section key={section.id} heading={section.label} aria-label={section.label ?? signedOutLabel}
       selectionMode={section.kind === "preferences" ? "multiple" : "none"}
       selectedKeys={section.kind === "preferences" ? section.entries.filter(entry => entry.checked).map(entry => itemKey(section.id, entry.id)) : undefined}
       shouldCloseOnSelect={section.kind === "preferences" ? false : undefined}
@@ -57,8 +57,8 @@ function SignedOutMenu({ sections, signedOutLabel, onRoute, markSrc, theme, cont
       {section.entries.map(entry => <Menu.Item key={entry.id} id={itemKey(section.id, entry.id)} textValue={entry.label} isDisabled={entry.isDisabled}
         isDestructive={entry.kind === "destructive"} href={entry.kind === "link" ? entry.href : undefined}
         onAction={entry.kind === "preference" ? undefined : () => { if (entry.kind === "link") onRoute?.(entry); else entry.onAction(); close?.(); }}>{entry.label}</Menu.Item>)}
-    </Menu.Section>)}{theme !== undefined && <AppFrameThemeSection {...theme} />}</>;
-  return <Menu trigger={trigger} controls={controls} controlsLabel={signedOutLabel}>{content()}</Menu>;
+    </Menu.Section>)}</>;
+  return <Menu trigger={trigger} popoverClassName="mb-lg" controls={controls} controlsLabel={signedOutLabel}>{content()}</Menu>;
 }
 
 function FrameContent({ brand, navigation, account: { avatar = "initials", ...account }, commands, children, toasts, rightPanel, theme, themeControl, footerLayout = "inline", fill = "host", dir: suppliedDir, onNavigate, layout: shellLayout = "standard", stage: stageInset = "contained", notices, dock, headerPosition, headerSurface, context, root, page, workspaces, breadcrumbLabel, collapsedBreadcrumbLabel, pageInfoLabel, pageActionsLabel,

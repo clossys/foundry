@@ -1,4 +1,5 @@
 import type { HTMLAttributes } from "react";
+import { SECTION_CONTENT_STYLE } from "./internal/section-content-gutter.js";
 import { cx } from "../components/internal/cx.js";
 import { Stat, type StatProps } from "./Stat.js";
 import { dsAttrs } from "../catalog-core/provenance-attrs.js";
@@ -14,14 +15,14 @@ export interface StatGroupProps extends Omit<HTMLAttributes<HTMLUListElement>, "
   /** The measurements, in reading order. Each renders one `Stat`. */
   items: readonly StatGroupItem[];
   /**
-   * `grid` wraps into equal columns (one, then two, then four); `row` keeps
+   * `grid` wraps into equal columns (two, then four); `row` keeps
    * one line that wraps only when it runs out of room. @default "grid"
    */
   layout?: StatGroupLayout;
 }
 
 const LAYOUT_CLASSES: Record<StatGroupLayout, string> = {
-  grid: "grid grid-cols-1 gap-lg tablet:grid-cols-2 desktop:grid-cols-4",
+  grid: "grid grid-cols-2 gap-lg desktop:grid-cols-4",
   row: "flex flex-wrap gap-xl",
 };
 
@@ -31,11 +32,11 @@ const LAYOUT_CLASSES: Record<StatGroupLayout, string> = {
  * item is a whole `Stat` (label, value, optional trend and description), so a
  * group never invents a second metric anatomy. Data is host-injected.
  */
-export function StatGroup({ items, layout = "grid", className, ...rest }: StatGroupProps) {
+export function StatGroup({ items, layout = "grid", className, style, ...rest }: StatGroupProps) {
   return (
-    <ul {...SECTION_STAMP} {...rest} role="list" data-layout={layout} className={cx(LAYOUT_CLASSES[layout], className)}>
+    <ul {...SECTION_STAMP} {...rest} role="list" data-layout={layout} className={cx("min-w-0 list-none", LAYOUT_CLASSES[layout], className)} style={{ ...SECTION_CONTENT_STYLE, ...style }}>
       {items.map(({ id, ...stat }) => (
-        <li key={id} className="min-w-0">
+        <li key={id} className="min-w-0 border-b border-line-base py-sm">
           <Stat {...stat} />
         </li>
       ))}

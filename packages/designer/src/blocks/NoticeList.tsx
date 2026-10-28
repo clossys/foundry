@@ -1,5 +1,6 @@
 import type { HTMLAttributes, ReactNode } from "react";
 import { Banner, type BannerVariant } from "../components/Banner.js";
+import { SECTION_CONTENT_STYLE } from "./internal/section-content-gutter.js";
 import { cx } from "../components/internal/cx.js";
 import { dsAttrs } from "../catalog-core/provenance-attrs.js";
 /** Section root provenance (D1): the selected Foundry fill this block is. */
@@ -36,10 +37,10 @@ export interface NoticeListProps extends Omit<HTMLAttributes<HTMLElement>, "chil
  * owns no queue, timer or storage: the host supplies the notices, decides
  * their order and removes one when `onDismiss` reports it.
  */
-export function NoticeList({ notices, label, onDismiss, dismissLabel, className, ...rest }: NoticeListProps) {
+export function NoticeList({ notices, label, onDismiss, dismissLabel, className, style, ...rest }: NoticeListProps) {
   return (
-    <section {...SECTION_STAMP} {...rest} aria-label={label} className={cx("flex flex-col", className)}>
-      <ul role="list" className="flex flex-col gap-sm">
+    <section {...SECTION_STAMP} {...rest} aria-label={label} className={cx("flex min-w-0 flex-col", className)} style={{ ...SECTION_CONTENT_STYLE, ...style }}>
+      <ul role="list" className="m-0 flex list-none flex-col gap-sm p-0">
         {notices.map(notice => (
           <li key={notice.id}>
             <Banner

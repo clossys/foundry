@@ -6,6 +6,7 @@ import { GridList } from "../components/GridList.js";
 import { IconButton } from "../components/IconButton.js";
 import { Menu } from "../components/Menu.js";
 import { Skeleton } from "../components/Skeleton.js";
+import { SECTION_CONTENT_STYLE } from "./internal/section-content-gutter.js";
 import { cx } from "../components/internal/cx.js";
 import { UI_LAYOUT_TAP_TARGET } from "../components/internal/ui-vars.js";
 import { ChevronDown } from "../icons/ChevronDown.js";
@@ -70,17 +71,14 @@ function ResourceListActions({ item, label }: { item: ResourceListItem; label: s
     </Menu.Item>
   ));
   return <div className="flex shrink-0 items-center gap-sm">
-    <div className="hidden items-center gap-sm tablet:flex">
+    <div className="flex flex-wrap items-center gap-sm">
       {actions.slice(0, 2).map((action, index) => <span key={action.id} className="inline-flex">
         <Button variant="quiet" size="sm" trailingIcon={null} className="border-0 bg-transparent" isDisabled={disabled(action)} onPress={action.onAction}
           aria-describedby={reasonId(action, index, "inline")}>{action.label}</Button>
         {reasonId(action, index, "inline") && <span id={reasonId(action, index, "inline")} className="sr-only">{action.disabledReason}</span>}
       </span>)}
     </div>
-    <Menu trigger={<IconButton icon={ChevronDown} label={label} className="tablet:hidden" />}>
-      {menuItems(actions, "compact")}
-    </Menu>
-    {actions.length > 2 && <Menu trigger={<IconButton icon={ChevronDown} label={label} className="hidden tablet:inline-flex" />}>
+    {actions.length > 2 && <Menu trigger={<IconButton icon={ChevronDown} label={label} />}>
       {menuItems(actions.slice(2), "wide")}
     </Menu>}
   </div>;
@@ -95,7 +93,7 @@ function ResourceListActions({ item, label }: { item: ResourceListItem; label: s
 export function ResourceList({
   "aria-label": ariaLabel, items, selectionMode = "none", selectedKeys, onSelectionChange,
   selectRowLabel, onAction, actionsLabel, isLoading = false, loadingLabel, loadingRowCount = 5,
-  emptyState, error, toolbar, bulkBar, footer, className, ...rest
+  emptyState, error, toolbar, bulkBar, footer, className, style, ...rest
 }: ResourceListProps) {
   const [internalKeys, setInternalKeys] = useState<"all" | Set<string>>(new Set());
   if (!ariaLabel?.trim()) {
@@ -113,13 +111,13 @@ export function ResourceList({
   const selection = selectedKeys ?? internalKeys;
   const hasSelection = selectionMode === "multiple" && items.some(item =>
     !item.isDisabled && (selection === "all" || selection.has(item.id)));
-  return <section {...SECTION_STAMP} {...rest} aria-label={ariaLabel} className={cx("flex min-w-0 flex-col gap-md", className)}>
+  return <section {...SECTION_STAMP} {...rest} aria-label={ariaLabel} className={cx("flex min-w-0 flex-col gap-md", className)} style={{ ...SECTION_CONTENT_STYLE, ...style }}>
     {toolbar}
     {hasSelection ? bulkBar : null}
     {error != null && error !== false ? error : isLoading ? <div>
       <span role="status" className="sr-only">{loadingLabel}</span>
       <div aria-hidden="true">
-        {Array.from({ length: loadingRowCount }, (_, index) => <div key={index} className="flex items-center px-md py-sm" style={{ minBlockSize: UI_LAYOUT_TAP_TARGET }}><Skeleton /></div>)}
+        {Array.from({ length: loadingRowCount }, (_, index) => <div key={index} className="flex items-center px-0 py-sm" style={{ minBlockSize: UI_LAYOUT_TAP_TARGET }}><Skeleton /></div>)}
       </div>
     </div> : items.length === 0 ? <EmptyState {...emptyState} /> : <GridList aria-label={ariaLabel} items={items} selectionMode={selectionMode}
       selectedKeys={selection === "all" ? "all" : new Set(selection)}
@@ -129,7 +127,7 @@ export function ResourceList({
         onSelectionChange?.(next);
       }} onAction={onAction ? key => onAction(String(key)) : undefined}
       renderEmptyState={() => <EmptyState {...emptyState} />}>
-      {item => <GridList.Item id={item.id} textValue={item.textValue} href={item.href} isDisabled={item.isDisabled}>
+      {item => <GridList.Item className="px-0" id={item.id} textValue={item.textValue} href={item.href} isDisabled={item.isDisabled}>
         {selectionMode === "multiple" && <GridList.SelectionCheckbox aria-label={selectRowLabel!(item.textValue)} />}
         {item.media && <div className="size-10 shrink-0">{item.media}</div>}
         <div className="min-w-0 flex-1">

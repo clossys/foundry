@@ -60,6 +60,7 @@ export function AccountMenu({ actor, sections, contextLabel, triggerLabel, colla
     {entry.label}
   </Menu.Item>);
   const content = (close?: () => void) => <>
+    {menuContent}
     {populated.map((section, index) => index > 0 && !section.label?.trim()
       ? <Fragment key={section.id}><Menu.Separator />{entriesFor(section, close)}</Fragment>
       : <Menu.Section key={section.id}
@@ -82,10 +83,9 @@ export function AccountMenu({ actor, sections, contextLabel, triggerLabel, colla
       } : undefined}>
       {entriesFor(section, close)}
     </Menu.Section>)}
-    {menuContent}
   </>;
   const menuTrigger = collapsed ? <Tooltip trigger={trigger} delay={0}>{label}</Tooltip> : trigger;
   const onOpenChange = (open: boolean) => { if (!open) onClose?.(); };
-  return <Menu className="min-w-0" popoverClassName="box-border max-w-full" trigger={menuTrigger}
+  return <Menu className="min-w-0" popoverClassName="box-border max-w-full mb-lg" trigger={menuTrigger}
     controls={controls} controlsLabel={actor.name} onOpenChange={onOpenChange}>{content()}</Menu>;
 }

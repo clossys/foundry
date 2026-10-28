@@ -1247,6 +1247,9 @@
   .mt-xs {
     margin-top: var(--spacing-xs, 4px);
   }
+  .mb-lg {
+    margin-bottom: var(--spacing-lg, 16px);
+  }
   .mb-md {
     margin-bottom: var(--spacing-md, 12px);
   }
@@ -2790,6 +2793,9 @@
   .p-xs {
     padding: var(--spacing-xs, 4px);
   }
+  .px-0 {
+    padding-inline: 0px;
+  }
   .px-0\.5 {
     padding-inline: calc(var(--spacing, 0.25rem) * 0.5);
   }
@@ -4080,9 +4086,6 @@
     }
     .tablet\:hidden {
       display: none;
-    }
-    .tablet\:inline-flex {
-      display: inline-flex;
     }
     .tablet\:table {
       display: table;
