@@ -11,7 +11,7 @@ const ROUTE = "generated/example.tools.tsx";
 const PROVIDER = "providers/designer.tsx";
 const SPECIFIER = "../providers/designer.tsx";
 const PROVIDER_BYTES = "SYNTHETIC provider bytes the Publisher check classified nonvisual";
-const ASSEMBLY = [{ module: "@clossys/publisher/web/registered-route", export: "RegisteredRoutePage" }] as const;
+const ASSEMBLY = [{ module: "@clossys/publisher/web/registered-route", export: "RegisteredRoutePage" }, { module: "@clossys/publisher/web/registered-route", export: "RegisteredServerDataRoutePage" }] as const;
 const ENTRY = '<RegisteredRoutePage registry={registry} routeId="example.tools" useRuntime={useRuntime} />';
 const IMPORT = `import { DesignerStudioProvider as RegisteredProvider } from "${SPECIFIER}";`;
 const page = (body = `<RegisteredProvider>${ENTRY}</RegisteredProvider>`, providerImport = IMPORT): string => [
@@ -61,6 +61,23 @@ describe("WL10 checked registered nonvisual provider", () => {
     const actions = page(`<RegisteredProvider>${ENTRY.replace(" />", " renderActions={renderActions} />")}</RegisteredProvider>`)
       .replace(IMPORT, `import { headerActions as renderActions } from "../actions.ts";\n${IMPORT}`);
     expect(wl10(actions, [claim(actions)])).toEqual([]);
+  });
+
+  it("admits only the typed loader-data provider mount", () => {
+    const loaded = page().replaceAll("RegisteredRoutePage", "RegisteredServerDataRoutePage")
+      .replace(IMPORT, 'import type { RegisteredRouteServerData } from "@clossys/publisher/web/registered-route";\nimport type { loadTools as RegisteredLoader } from "../server/tools.ts";\n' + IMPORT)
+      .replace('RegisteredPage()', 'RegisteredPage({ data }: { readonly data: RegisteredRouteServerData<typeof RegisteredLoader> })')
+      .replace('<RegisteredProvider>', '<RegisteredProvider data={data}>')
+      .replace('useRuntime={useRuntime}', 'data={data} useRuntime={useRuntime}');
+    expect(wl10(loaded, [claim(loaded)])).toEqual([]);
+    for (const changed of [
+      loaded.replace('data={data}>', 'data={other}>'),
+      loaded.replace('data={data}>', 'data={data} theme="dark">'),
+      loaded.replace('data={data} useRuntime', 'data={other} useRuntime'),
+      loaded.replace('data={data} useRuntime', 'useRuntime'),
+      loaded.replace('RegisteredRouteServerData<typeof RegisteredLoader>', 'unknown'),
+      loaded.replace('import type { loadTools as RegisteredLoader }', 'import { loadTools as RegisteredLoader }'),
+    ]) expect(wrapperReported(wl10(changed, [claim(changed)])), changed).toBe(true);
   });
 
   it("a custom visual wrapper still fails, with or without provider evidence", () => {

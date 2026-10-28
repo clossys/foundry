@@ -233,8 +233,8 @@ function importsLocal(code: string, local: string, module: string, exportName: s
 
 /** WL10 admission for one checked provider claim on one route module: the Publisher proof for
  * these exact route bytes, the proved provider identity as the route imports it, and the exact
- * emitted mount (the provider, with no props, wraps the assembly entry alone as the default
- * export's whole return). Any other shape is refused, never partly admitted. */
+ * emitted mount (the provider wraps the assembly entry alone as the default export's
+ * whole return, receiving only typed loader data when registered). Any other shape is refused, never partly admitted. */
 function checkedProviderMount(route: { path: string; content: string }, claim: unknown, assembly: WiringRoutes["assembly"]): { admitted: string } | { refused: string } {
   if (!record(claim, ["route", "module", "export", "proof"]) || !text(claim.route) || !text(claim.module) || !text(claim.export) || !(claim.export === "default" || new RegExp(`^${IDENT}$`).test(claim.export)))
     return { refused: "evidence is not { route, module, export, proof }" };
@@ -263,14 +263,23 @@ function checkedProviderMount(route: { path: string; content: string }, claim: u
   // Used only by the mount: its import binding, its opening tag and its closing tag.
   if ((bare.match(new RegExp(`(?<![\\w$])${name}(?![\\w$])`, "g")) ?? []).length !== 3) return { refused: `${local} is used outside its one mount` };
   // The exact emitted module: an optional "use client" directive and imports, then only the default
-  // export, whose whole body returns <Provider> (no props) around the one assembly entry.
+  // export, whose whole body returns the provider around the one assembly entry.
   const leadingImport = /^\s*import\b[^;"'`]*?(["'])[^"'\n]+\1\s*;?/;
   let rest = code.replace(/^\s*(["'])use client\1\s*;?/, "");
   while (leadingImport.test(rest)) rest = rest.replace(leadingImport, "");
   const entry = `<(${IDENT})(?:\\s+${IDENT}=(?:\\{\\s*${IDENT}\\s*\\}|"[^"\\n]*"))*\\s*\\/>`;
-  const shape = new RegExp(`^\\s*export\\s+default\\s+function(?:\\s+${IDENT})?\\s*\\(\\s*\\)\\s*\\{\\s*return\\s*<${name}>${entry}<\\/${name}>\\s*;?\\s*\\}\\s*$`).exec(rest);
-  if (!shape) return { refused: `the module is not imports plus a default export whose whole return is ${local}, with no props, around one assembly entry (no siblings, nesting or other code)` };
+  const plain = new RegExp(`^\\s*export\\s+default\\s+function(?:\\s+${IDENT})?\\s*\\(\\s*\\)\\s*\\{\\s*return\\s*<${name}>${entry}<\\/${name}>\\s*;?\\s*\\}\\s*$`).exec(rest);
+  // The loader variant is the emitter's one typed data parameter, passed unchanged
+  // to both the proved provider and the server-data assembly entry.
+  const loaded = new RegExp(`^\\s*export\\s+default\\s+function(?:\\s+${IDENT})?\\s*\\(\\s*\\{\\s*data\\s*\\}\\s*:\\s*\\{\\s*readonly\\s+data\\s*:\\s*RegisteredRouteServerData<typeof RegisteredLoader>\\s*\\}\\s*\\)\\s*\\{\\s*return\\s*<${name} data=\\{data\\}>${entry}<\\/${name}>\\s*;?\\s*\\}\\s*$`).exec(rest);
+  const shape = plain ?? loaded;
+  if (!shape) return { refused: `the module is not the exact emitted provider mount around one assembly entry` };
   const tag = shape[1]!;
+  if (loaded && (!importsLocal(code, tag, "@clossys/publisher/web/registered-route", "RegisteredServerDataRoutePage")
+    || !new RegExp(`<${escapeRegExp(tag)}[^>]*\\sdata=\\{data\\}`).test(rest)
+    || !/import\s+type\s*\{\s*RegisteredRouteServerData\s*\}\s*from\s*["']@clossys\/publisher\/web\/registered-route["']/.test(code)
+    || !/import\s+type\s+(?:RegisteredLoader|\{\s*[A-Za-z_$][\w$]*\s+as\s+RegisteredLoader\s*\})\s+from\s*["'][^"'\n]+["']/.test(code)))
+    return { refused: "the provider data mount is not bound to the typed server-data assembly" };
   if (!assembly.some(row => importsLocal(code, tag, row.module, row.export))) return { refused: `<${tag}> inside ${local} is not the runtime assembly entry` };
   return { admitted: `${route.path}:${claim.module}#${claim.export}` };
 }

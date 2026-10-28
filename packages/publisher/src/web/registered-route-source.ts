@@ -31,13 +31,13 @@ export function registeredRouteRegistryPlacement(file: unknown, module: unknown)
 }
 /** Imported JSON widens `version: 1` and every literal union to primitives. This
  * deterministic, self-contained module states the registry as one literal checked
- * against the page prop type with `satisfies` (no cast) and imports nothing from
- * outside the source tree. The checker requires its exact bytes for the JSON it reads. */
+ * with the page prop type annotation (no cast). Heterogeneous fill keys do not
+ * infer optional undefined properties. It imports nothing outside the source tree. The checker requires its exact bytes for the JSON it reads. */
 export function emitRegisteredRouteRegistryModule(registry: RouteRegistry): string {
   if (!registry || registry.version !== 1 || typeof registry.consumer !== "string" || !Array.isArray(registry.routes)) throw new Error("Version 1 route registry required");
   return [
     'import type { RegisteredRoutePageProps } from "@clossys/publisher/web/registered-route";',
-    `const registry = ${JSON.stringify(registry, null, 2)} satisfies RegisteredRoutePageProps["registry"];`,
+    `const registry: RegisteredRoutePageProps["registry"] = ${JSON.stringify(registry, null, 2)};`,
     "export default registry;", "",
   ].join("\n");
 }
@@ -66,7 +66,7 @@ export function emitRegisteredRoutePage(registryModule: string, route: RouteRegi
     ...(route.composition.header.actions ? [named(route.composition.header.actions, file, "renderActions")] : []),
     ...(provider ? [named(provider.source, file, "RegisteredProvider")] : []),
     loader ? "export default function RegisteredPage({ data }: { readonly data: RegisteredRouteServerData<typeof RegisteredLoader> }) {" : "export default function RegisteredPage() {",
-    `  return ${provider ? `<RegisteredProvider>${page}</RegisteredProvider>` : page};`,
+    `  return ${provider ? `<RegisteredProvider${loader ? " data={data}" : ""}>${page}</RegisteredProvider>` : page};`,
     "}", "",
   ].join("\n");
 }

@@ -77,7 +77,7 @@ describe("generated consumers typecheck through the literal-safe registry bindin
     const files = consumer([placed("example.tools"), designer()], { "src/publisher/providers/designer.tsx": provider });
     // No consumer-side cast or weakened type anywhere in generated output.
     for (const [file, text] of Object.entries(files)) if (!file.endsWith(".json")) expect(text, file).not.toMatch(/\bas\s+(?:unknown|any|const|RouteRegistry\b)|<RouteRegistry>|:\s*any\b|@ts-(?:ignore|expect-error|nocheck)/);
-    expect(files[MODULE]).toContain('satisfies RegisteredRoutePageProps["registry"];');
+    expect(files[MODULE]).toContain('const registry: RegisteredRoutePageProps["registry"] =');
     // No JSON under src; each generated page imports the typed registry and nothing outside src.
     expect(Object.keys(files).filter(file => file.startsWith("src/") && file.endsWith(".json"))).toEqual([]);
     for (const page of ["src/publisher/generated/example.tools.tsx", "src/publisher/generated/example.designer.tsx"]) {
@@ -89,11 +89,24 @@ describe("generated consumers typecheck through the literal-safe registry bindin
     expect(typecheck(files)).toEqual([]);
   }, 60_000);
 
+  it("heterogeneous section fills typecheck in the actual generated consumer", () => {
+    const first = placed("example.first"), second = placed("example.second");
+    const firstFill = Object.values(first.composition.binding.fills)[0]!;
+    first.composition.binding.fills = { "sections.first": firstFill };
+    second.composition.binding.fills = { "sections.second": firstFill };
+    const files = consumer([first, second]);
+    expect(typecheck(files)).toEqual([]);
+    // Control: satisfies preserves an inferred union with undefined-valued absent
+    // fill keys, which cannot satisfy the public Record<string, SectionFill[]>.
+    const inferred = { ...files, [MODULE]: files[MODULE]!.replace('const registry: RegisteredRoutePageProps["registry"] =', 'const registry =').replace(/;\nexport default/, ' satisfies RegisteredRoutePageProps["registry"];\nexport default') };
+    expect(typecheck(inferred).some(message => message.includes("TS2322"))).toBe(true);
+  }, 60_000);
+
   it("the typed registry is exact, deterministic, self-contained generation and refuses a non-version-1 registry", () => {
     const registry: RouteRegistry = { version: 1, consumer: "example", routes: [placed("example.tools")] };
     const text = emitRegisteredRouteRegistryModule(registry);
     expect(text).toBe(emitRegisteredRouteRegistryModule(structuredClone(registry)));
-    expect(text).toBe(['import type { RegisteredRoutePageProps } from "@clossys/publisher/web/registered-route";', `const registry = ${JSON.stringify(registry, null, 2)} satisfies RegisteredRoutePageProps["registry"];`, "export default registry;", ""].join("\n"));
+    expect(text).toBe(['import type { RegisteredRoutePageProps } from "@clossys/publisher/web/registered-route";', `const registry: RegisteredRoutePageProps["registry"] = ${JSON.stringify(registry, null, 2)};`, "export default registry;", ""].join("\n"));
     // The only import is the type-only package import: nothing relative, no JSON.
     expect([...text.matchAll(/^import\b.*$/gm)].map(match => match[0])).toEqual(['import type { RegisteredRoutePageProps } from "@clossys/publisher/web/registered-route";']);
     expect(() => emitRegisteredRouteRegistryModule({ ...registry, version: 2 } as unknown as RouteRegistry)).toThrow("Version 1 route registry required");

@@ -1,5 +1,6 @@
 /** @vitest-environment jsdom */
 import "@testing-library/jest-dom/vitest";
+import type { ReactNode } from "react";
 import { act, cleanup, render, screen } from "@testing-library/react";
 import { afterAll, afterEach, beforeAll, expect, it, vi } from "vitest";
 import * as fs from "node:fs/promises";
@@ -30,7 +31,20 @@ it("materializes original provider checked records from the read-only committed 
   let current!: { whole: NonNullable<ReturnType<typeof useWholeStudio>>; values: ReturnType<typeof useStudioSession>; projected: ReturnType<typeof useDesignerLayerBoardProjection> };
   function Probe() { current = { whole: useWholeStudio()!, values: useStudioSession(), projected: useDesignerLayerBoardProjection() }; return <output>{current.projected.projection.phase}</output>; }
   const wholeLabels = { ...labels, whole: { signoff: "Signoff", proposed: "Proposed", contract: "Contract", contentSlots: "Slots", configurations: "Configurations", unresolved: "Unresolved", unassessed: "Unassessed" } };
-  render(<WholeStudioProvider adapter={adapter} labels={wholeLabels} initialSlotId="assets.icon-close"><Probe /></WholeStudioProvider>);
+  const data = { library: engine.library, componentOptions: engine.componentOptions, surfaceOptions: engine.surfaceOptions };
+  type StudioData = typeof data;
+  const seen: StudioData[] = [];
+  function useStudioInputs(received: typeof data) {
+    seen.push(received);
+    return { adapter: { ...adapter, load: async () => received }, labels: wholeLabels };
+  }
+  function RegisteredProvider({ children, data }: { children: ReactNode; data: StudioData }) {
+    const inputs = useStudioInputs(data);
+    return <WholeStudioProvider adapter={inputs.adapter} labels={inputs.labels} initialSlotId="assets.icon-close">{children}</WholeStudioProvider>;
+  }
+  render(<RegisteredProvider data={data}><Probe /></RegisteredProvider>);
+  expect(seen.length).toBeGreaterThan(0);
+  expect(seen.every(received => received === data)).toBe(true);
   await screen.findByText("ready");
   act(() => current.values.requestRow("assets.icon-close"));
   const prepared = current.values.boards.map(board => {

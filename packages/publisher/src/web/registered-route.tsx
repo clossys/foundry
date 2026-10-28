@@ -20,7 +20,8 @@ export function RegisteredRoutePage({ registry, routeId, useRuntime, renderActio
 }
 /** The emitted client page for a route with a registered server loader. `data` is the
  * loader's serializable result, received as a prop from the emitted server page; it
- * reaches only the registered runtime hook. It never becomes a registry, receipt or
+ * reaches the registered runtime hook. The emitted outer registered provider also
+ * receives the same data before this page reads provider state. It never becomes a registry, receipt or
  * evidence by itself: source evidence still has to be minted through
  * materializeRegisteredRouteSourceEvidence. */
 export function RegisteredServerDataRoutePage<Data>({ registry, routeId, data, useRuntime, renderActions }: Omit<RegisteredRoutePageProps, "useRuntime"> & { readonly data: Data; readonly useRuntime: (route: RouteRegistration, data: Data) => RegisteredRouteRuntime }) {

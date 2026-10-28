@@ -6,6 +6,8 @@ import ts from "typescript";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { checkRegisteredRoutes, documentOnlyLayout, redirectOnlyRoute } from "./registered-route-check.js";
 import { emitRegisteredRouteAdapter, emitRegisteredRoutePage, emitRegisteredRouteRegistryModule } from "./registered-route-source.js";
+import { registeredRouteWiringRoutes } from "./registered-route-wiring.js";
+import { checkWiring } from "@clossys/designer/catalog";
 import { syntheticPlan, syntheticRoute, SYNTHETIC_ROUTE_REGISTRIES } from "../core/__fixtures__/registered-route.js";
 import type { RouteRegistration } from "../core/route-registry.js";
 
@@ -70,6 +72,36 @@ describe("registered nonvisual provider ownership seam (synthetic fixtures; no r
     expect(result.dogfood?.consumerBoundary.sourceImports[`${route.composition.source.file}:../providers/designer.tsx`]).toBe(PROVIDER_FILE);
     expect(result.ok).toBe(false); expect(result.runtime).toBe("pending");
   });
+
+  it("loader data reaches the registered provider hook and its proved WL10 mount only", async () => {
+    const route = designerRoute();
+    Object.assign(route.composition, { loader: { file: "server/tools.ts", export: "loadTools" } });
+    const withData = nonvisual.replace('import type { ReactNode }', 'import type { StudioData } from "../runtime.ts";\nimport type { ReactNode }')
+      .replace('{ children }: { children: ReactNode }', '{ children, data }: { children: ReactNode; data: StudioData }')
+      .replace('useStudioInputs()', 'useStudioInputs(data)');
+    await setup(route, withData);
+    await write("server/tools.ts", 'export async function loadTools() { return { library: "SYNTHETIC" }; }\n');
+    const page = emitRegisteredRoutePage("routes.ts", route);
+    expect(page).toContain('<RegisteredProvider data={data}><RegisteredServerDataRoutePage');
+    expect((await check(route)).findings).toEqual([]);
+    const wiring = await registeredRouteWiringRoutes({ root, contract: contract(), plan: syntheticPlan([route]), registries: SYNTHETIC_ROUTE_REGISTRIES });
+    expect(wiring.refused).toEqual([]);
+    expect(checkWiring({ sources: [], routes: wiring.routes }).findings.filter(row => row.code === "WL10")).toEqual([]);
+    for (const source of [
+      withData.replace('useStudioInputs(data)', 'useStudioInputs(data, data)'),
+      withData.replace('useStudioInputs(data)', 'useStudioInputs(data.adapter)'),
+      withData.replace('useStudioInputs(data)', 'useStudioInputs(() => data)'),
+      withData.replace('{ children, data }', '{ children, data, theme }'),
+      withData.replace('data: StudioData }', 'data: StudioData; theme: string }'),
+      withData.replace('  const inputs =', '  data = null; const inputs ='),
+    ]) {
+      await write(PROVIDER_FILE, source);
+      expect(providerRefused((await check(route)).findings), source).toBe(true);
+    }
+    const plain = designerRoute();
+    await setup(plain, withData);
+    expect(providerRefused((await check(plain)).findings)).toBe(true);
+  }, SCAN_TIMEOUT);
 
   it("(b) an unregistered provider layout stays RR2, including an exact nonvisual provider mount", async () => {
     const route = await setup(designerRoute(undefined));

@@ -10,7 +10,7 @@ import type { RegisteredRouteCheckInput } from "./registered-route-check.js";
 import { emitRegisteredRoutePage } from "./registered-route-source.js";
 
 /** The runtime assembly entry every emitted registered-route page renders. */
-export const REGISTERED_ROUTE_WIRING_ASSEMBLY: WiringRoutes["assembly"] = Object.freeze([Object.freeze({ module: "@clossys/publisher/web/registered-route", export: "RegisteredRoutePage" })]);
+export const REGISTERED_ROUTE_WIRING_ASSEMBLY: WiringRoutes["assembly"] = Object.freeze([Object.freeze({ module: "@clossys/publisher/web/registered-route", export: "RegisteredRoutePage" }), Object.freeze({ module: "@clossys/publisher/web/registered-route", export: "RegisteredServerDataRoutePage" })]);
 const sha = (text: string): `sha256:${string}` => `sha256:${createHash("sha256").update(text).digest("hex")}`;
 /** The same read discipline as the registered-route check: consumer-relative, no symlink, regular UTF-8 file. */
 async function readSource(root: string, path: string): Promise<string> {

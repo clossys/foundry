@@ -127,11 +127,11 @@ function relativeSpecifierFile(from: string, specifier: string): string | undefi
  * - every name (import, export function, `children`, body binding) is bound once, so
  *   no hook is ever shadowed or rebound;
  * - the one function's body is only `const` bindings, each initialized either by a
- *   no-argument call whose callee is one of those hook imports, or by a member read
- *   rooted at an earlier body binding; so nothing read from inputs, from a hook result,
+ *   registered hook call (with no argument, or only `data` for a loader route),
+ *   or by a member read rooted at an earlier body binding; so nothing read from inputs, from a hook result,
  *   from a global or from another import is ever called;
  * - each mounted prop is a literal or a member read rooted at a body binding. */
-function nonvisualRouteProvider(source: string, file: string, runtime: string | undefined, mount: RouteProviderMount, known: { readonly module: string; readonly component: string; readonly props: readonly string[] }): boolean {
+function nonvisualRouteProvider(source: string, file: string, runtime: string | undefined, mount: RouteProviderMount, known: { readonly module: string; readonly component: string; readonly props: readonly string[] }, hasLoader = false): boolean {
   const id = "[A-Za-z_$][\\w$]*", component = escapeRegExp(known.component);
   const module = source.replace(/^\s*["']use client["'];?/, "");
   // An escape makes source text differ from the name it spells: `chil\u0064ren` is
@@ -168,7 +168,7 @@ function nonvisualRouteProvider(source: string, file: string, runtime: string | 
   // table: a value import is the registered component or a registered runtime hook.
   const quoted = `(?:"[^"\\n]*"|'[^'\\n]*')`, hookName = /^use[A-Z][\w$]*$/;
   const declaration = new RegExp(`\\s*import\\s+(type\\s+)?(?:(${id})|\\*\\s*as\\s+(${id})|\\{([^{}]*)\\})\\s*from\\s*(${quoted})\\s*;`, "y");
-  const taken = new Set<string>(["children"]), hooks = new Set<string>();
+  const taken = new Set<string>(hasLoader ? ["children", "data"] : ["children"]), hooks = new Set<string>();
   const bind = (name: string) => { if (taken.has(name)) return false; taken.add(name); return true; };
   let at = 0;
   for (let match = declaration.exec(module); match; declaration.lastIndex = at, match = declaration.exec(module)) {
@@ -190,7 +190,12 @@ function nonvisualRouteProvider(source: string, file: string, runtime: string | 
   const rest = module.slice(at);
   if (!/^\s*export\s/.test(rest)) return false;
   const head = mount.source.export === "default" ? `export\\s+default\\s+function(?:\\s+(${id}))?` : `export\\s+function\\s+(${escapeRegExp(mount.source.export)})`;
-  const shape = new RegExp(`^\\s*${head}\\s*\\(\\s*\\{\\s*children\\s*\\}\\s*(?::\\s*\\{\\s*children\\s*:\\s*(?:React\\.)?ReactNode\\s*;?\\s*\\})?\\s*\\)\\s*\\{([\\s\\S]*?)(return\\s*<${component}((?:\\s+${id}=(?:\\{[^{}]*\\}|"[^"\\n]*"))*)\\s*>\\s*\\{children\\}\\s*<\\/${component}\\s*>\\s*;?)\\s*\\}\\s*$`).exec(rest);
+  // Loader data is the only additional provider input; a named type keeps its
+  // consumer-owned payload contract explicit without opening arbitrary props.
+  const parameters = hasLoader
+    ? `\\{\\s*children\\s*,\\s*data\\s*\\}\\s*:\\s*\\{\\s*(?:readonly\\s+)?children\\s*:\\s*(?:React\\.)?ReactNode\\s*;\\s*(?:readonly\\s+)?data\\s*:\\s*${id}\\s*;?\\s*\\}`
+    : `\\{\\s*children\\s*\\}\\s*(?::\\s*\\{\\s*children\\s*:\\s*(?:React\\.)?ReactNode\\s*;?\\s*\\})?`;
+  const shape = new RegExp(`^\\s*${head}\\s*\\(\\s*${parameters}\\s*\\)\\s*\\{([\\s\\S]*?)(return\\s*<${component}((?:\\s+${id}=(?:\\{[^{}]*\\}|"[^"\\n]*"))*)\\s*>\\s*\\{children\\}\\s*<\\/${component}\\s*>\\s*;?)\\s*\\}\\s*$`).exec(rest);
   if (!shape) return false;
   const [, exported, body, mountText, attributes] = shape;
   if (exported !== undefined && !bind(exported)) return false;
@@ -199,13 +204,14 @@ function nonvisualRouteProvider(source: string, file: string, runtime: string | 
   // (plain, compound, logical, `++`/`--`) or deletes from a value reached through its
   // inputs, by alias, destructuring or a nested function. Each binding is a new name or
   // a flat object/array pattern of new names, initialized by exactly one of:
-  // - a call with no argument (so no callback, nested function or effect) whose callee
+  // - a call with no argument, or only the loader data (no callback or effect), whose callee
   //   is a registered hook import, by its own name, never rebound;
   // - a member read (`a`, `a.b`, `a["b"]`) rooted at a name an earlier statement bound.
   // A callee or root read from inputs, a hook result, a global or any other import is
   // refused, and so is every other statement or expression.
   const pattern = `(?:${id}|\\{\\s*${id}(?:\\s*,\\s*${id})*\\s*,?\\s*\\}|\\[\\s*${id}(?:\\s*,\\s*${id})*\\s*,?\\s*\\])`;
-  const statement = new RegExp(`\\s*const\\s+(${pattern})\\s*=\\s*(${id})(\\s*\\(\\s*\\)|(?:\\s*\\.\\s*${id}|\\s*\\[\\s*${quoted}\\s*\\])*)\\s*;`, "y");
+  const argument = hasLoader ? "(?:data)?" : "";
+  const statement = new RegExp(`\\s*const\\s+(${pattern})\\s*=\\s*(${id})(\\s*\\(\\s*${argument}\\s*\\)|(?:\\s*\\.\\s*${id}|\\s*\\[\\s*${quoted}\\s*\\])*)\\s*;`, "y");
   const bound = new Set<string>();
   for (at = 0; /\S/.test(body!.slice(at));) {
     statement.lastIndex = at;
@@ -337,7 +343,7 @@ async function checkRegisteredRoutesInternal(input: RegisteredRouteCheckInput) {
     try {
       if (Object.keys(contract.sources).some(key => key === known.module || key.endsWith("/") && known.module.startsWith(key))) throw new Error("Original provider module cannot be remapped");
       const runtime = route.composition.runtime?.file;
-      if (!nonvisualRouteProvider(await read(root, file!), file!, typeof runtime === "string" && routeSourcePath(runtime) ? runtime : undefined, route.composition.provider!, known)) throw new Error("Provider renders or mounts more than the registered original provider");
+      if (!nonvisualRouteProvider(await read(root, file!), file!, typeof runtime === "string" && routeSourcePath(runtime) ? runtime : undefined, route.composition.provider!, known, routeServerLoader(route) !== undefined)) throw new Error("Provider renders or mounts more than the registered original provider");
       classifications.push({ file: file!, kind: "provider" });
     } catch (error) { findings.push({ code: "RR2", file: String(file), message: `Registered provider is not the exact nonvisual original-provider mount: ${(error as Error).message}` }); }
   }

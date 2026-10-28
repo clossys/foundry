@@ -198,10 +198,15 @@ function typecheck(files: Record<string, string>): string[] {
     return `${where} TS${diagnostic.code}: ${ts.flattenDiagnosticMessageText(diagnostic.messageText, "\n")}`;
   });
 }
-function placed(loaderText: string, runtimeData = "{ readonly count: number; readonly label: string }"): Record<string, string> {
+function placed(loaderText: string, runtimeData = "{ readonly count: number; readonly label: string }", providerData?: string): Record<string, string> {
   const base = syntheticRoute(), route: RouteRegistration = { ...base, entry: { file: "src/app/tools/tools/page.tsx", export: "default" }, composition: { ...base.composition, source: { file: "src/publisher/generated/example.tools.tsx", export: "default" }, runtime: { file: "src/publisher/runtime/routes.ts", export: "useRuntime" }, loader: { file: "src/publisher/server/tools.ts", export: "loadTools" } } };
+  if (providerData) {
+    Object.assign(route.composition.binding, { body: { ...route.composition.binding.body, source: { kind: "derived", query: { id: "designer.layer-boards", version: 1 } } } });
+    Object.assign(route.composition, { provider: { id: "designer.whole-studio", source: { file: "src/publisher/providers/designer.tsx", export: "DesignerStudioProvider" } } });
+  }
   const registry = { version: 1 as const, consumer: "example", routes: [route] };
   return {
+    ...(providerData ? { "src/publisher/providers/designer.tsx": `import type { ReactNode } from "react";\nexport function DesignerStudioProvider({children, data}: {children: ReactNode; data: ${providerData}}) {\n  return <>{children}{data ? null : null}</>;\n}\n` } : {}),
     "src/publisher/routes.ts": emitRegisteredRouteRegistryModule(registry),
     [route.composition.source.file]: emitRegisteredRoutePage("src/publisher/routes.ts", route),
     [route.entry.file]: emitRegisteredRouteAdapter(route),
@@ -214,6 +219,14 @@ describe("registered server data types (synthetic data; no runtime clearance)", 
     const files = placed(loaderModule);
     for (const [file, text] of Object.entries(files)) expect(text, file).not.toMatch(/\bas\s+(?:unknown|any)\b|:\s*any\b|@ts-(?:ignore|expect-error|nocheck)/);
     expect(typecheck(files)).toEqual([]);
+  }, SCAN_TIMEOUT);
+
+  it("the emitted provider receives the exact loader result type and rejects an incompatible provider data type", () => {
+    const matching = placed(loaderModule, "{ readonly count: number; readonly label: string }", "{ readonly count: number; readonly label: string }");
+    expect(matching["src/publisher/generated/example.tools.tsx"]).toContain('<RegisteredProvider data={data}>');
+    expect(typecheck(matching)).toEqual([]);
+    const mismatched = typecheck(placed(loaderModule, "unknown", "{ readonly count: string }"));
+    expect(mismatched.some(line => line.startsWith("src/publisher/generated/example.tools.tsx:") && line.includes("TS2322")), mismatched.join("\n")).toBe(true);
   }, SCAN_TIMEOUT);
 
   it("a non-serializable loader result or a mismatched runtime data type fails the typecheck", () => {
