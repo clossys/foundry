@@ -1,3 +1,4 @@
+import { writerLabel } from "./copy.js";
 import { validateCopyFields } from "../composition.js";
 import type { ContentCandidate, ContentSlot } from "../model.js";
 import { computeStageReport } from "../stage-engine.js";
@@ -50,12 +51,12 @@ export function buildPublisherBoard(input: PublisherBoardInput): PublisherBoardM
   const text = (key: string): string => {
     const matches = copyForLocale.get(key) ?? [];
     const field = matches[0];
-    if (matches.length !== 1 || invalidCopy.has(JSON.stringify([input.locale, key]))
-      || field?.source !== "writer" || typeof field.value !== "string" || !field.value.trim()) {
+    const value = matches.length === 1 && !invalidCopy.has(JSON.stringify([input.locale, key])) ? writerLabel(field, input.locale, input.copyResolver) : undefined;
+    if (value === undefined) {
       need("writer", key, `Supply one nonempty Writer value for ${key} in locale ${input.locale}`);
       return "";
     }
-    return field.value;
+    return value;
   };
   const labels: PublisherBoardModel["labels"] = {
     title: text("board.title"), canvas: text("board.canvas"), instructions: text("board.instructions"), empty: text("board.empty"),

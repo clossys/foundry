@@ -34,10 +34,12 @@ export interface PublisherRouteServerData extends DesignerRouteServerData {
 export interface PublisherRoutePageProps {
   readonly serverData: PublisherRouteServerData;
   readonly initialSession: DesignerRoutePageProps["initialSession"];
+  /** Live host callback; never part of the serialized server data. */
+  readonly copyResolver?: PublisherPageProps["copyResolver"];
 }
 /** Complete local Publisher workspace. Server facts create local read-only
  * lookup ports; no controller, callback, receipt or publication authority crosses. */
-export function PublisherRoutePage({ serverData, initialSession }: PublisherRoutePageProps) {
+export function PublisherRoutePage({ serverData, initialSession, copyResolver }: PublisherRoutePageProps) {
   const checked = useMemo(() => {
     if (!initialSession) return { status: "pending" as const };
     try {
@@ -48,9 +50,9 @@ export function PublisherRoutePage({ serverData, initialSession }: PublisherRout
   }, [serverData, initialSession]);
   if (checked.status === "pending") return <Banner>Loading Publisher session</Banner>;
   if (checked.status === "refused") return <Banner variant="danger">Publisher initial data does not match its session</Banner>;
-  return <PublisherRouteSurface serverData={serverData} checked={checked.value} />;
+  return <PublisherRouteSurface serverData={serverData} checked={checked.value} copyResolver={copyResolver} />;
 }
-function PublisherRouteSurface({ serverData, checked }: { serverData: PublisherRouteServerData; checked: ReturnType<typeof checkedDesignerRouteData> }) {
+function PublisherRouteSurface({ serverData, checked, copyResolver }: { serverData: PublisherRouteServerData; checked: ReturnType<typeof checkedDesignerRouteData>; copyResolver?: PublisherPageProps["copyResolver"] }) {
   const { profile, contracts } = checked, data = checked.data, workspace = serverData.publisher;
   const deterministic = useMemo(() => routeBreakpointPixels(profile, data.rootFontSizeToken), [profile, data.rootFontSizeToken]);
   const [measured, setMeasured] = useState<{ profile: typeof profile; values: Readonly<Record<string, number>> }>();
@@ -90,7 +92,7 @@ function PublisherRouteSurface({ serverData, checked }: { serverData: PublisherR
     if (!row || row.hash !== runtimeHash(row.value)) return <Banner variant="danger">Selected Publisher frame content unavailable</Banner>;
     content[slot] = row;
   }
-  const body = <PublisherPage key="publisher" {...workspace} library={library} breakpointValues={values} activeChannel={channel} />;
+  const body = <PublisherPage key="publisher" copyResolver={copyResolver} {...workspace} library={library} breakpointValues={values} activeChannel={channel} />;
   const input: RuntimeRenderInput<ReactNode> = { path: "frame", fill: frame, selection: data.frame, content, slots: { main: [body] }, profile, cell: data.cell, host: ports.frameHost };
   return <div data-route-display="publisher" data-route-authentication="unverified" className="absolute inset-0 min-h-0 min-w-0" style={Object.fromEntries(Object.entries(values).map(([id, px]) => [`--breakpoint-${id.slice("tokens.breakpoint.".length)}`, `${px}px`])) as CSSProperties}>{renderers[frame.renderer.id]!(input)}</div>;
 }

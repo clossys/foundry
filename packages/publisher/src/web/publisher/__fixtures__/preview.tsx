@@ -1,3 +1,4 @@
+import { publisherCopyFixtureResolver } from "./writer-copy.js";
 import { useMemo, useState } from "react";
 import { createRoot } from "react-dom/client";
 import type { LayoutRendererSource } from "../../../core/instance-binding.js";
@@ -54,7 +55,7 @@ function Preview({ messages }: PreviewProps) {
   <div className="mb-lg rounded border border-status-warning p-md"><p>Fixture library · static: {STANDARD_PACK_FIXTURE.staticQualification}</p><p>Placeholder ContentRefs only. Frames and sections are fixture projections; F5/S4 runtime qualification and LK12 rendered evidence remain pending.</p></div>
   <div className="mb-lg flex flex-wrap gap-md rounded border border-status-warning p-md"><p>{proposalDescription}</p><button type="button" className="rounded border border-line-base p-sm" onClick={proposeM1}>{m1Label}</button>{__PUBLISHER_APP_INVENTORY__ && <button type="button" className="rounded border border-line-base p-sm" onClick={() => setDraft(createAppExampleDraft(__PUBLISHER_APP_INVENTORY__, (store.current?.version ?? 0) + 1))}>{appLabel}</button>}<button type="button" className="rounded border border-line-base p-sm" onClick={() => setDraft(createDeliveryExampleDraft((store.current?.version ?? 0) + 1))}>{deliveryLabel}</button><button type="button" className="rounded border border-line-base p-sm" onClick={() => setDraft(createEmptyExampleDraft((store.current?.version ?? 0) + 1))}>{emptyLabel}</button></div>
   <label className="mb-lg block rounded border border-status-warning p-md"><input type="checkbox" checked={missingReference} onChange={event => setMissingReference(event.target.checked)} /> {removeContentLabel}</label>
-  <PublisherPage deploymentSurfaceIds={["fixture.web-preview", "fixture.web-live"]} planStore={store} draftPlan={draft} onApplyPlan={() => true} instances={instances} library={library} registries={STANDARD_PACK_REGISTRIES} compiler={fixtureCompiler}
+  <PublisherPage copyResolver={publisherCopyFixtureResolver} deploymentSurfaceIds={["fixture.web-preview", "fixture.web-live"]} planStore={store} draftPlan={draft} onApplyPlan={() => true} instances={instances} library={library} registries={STANDARD_PACK_REGISTRIES} compiler={fixtureCompiler}
     appInventory={__PUBLISHER_APP_INVENTORY__ ?? undefined} breakpointValues={FIXTURE_BREAKPOINTS} designerHref="https://github.com/clossys/foundry/tree/main/packages/designer" fixtureLibrary />
 </main>;
 }

@@ -1,4 +1,5 @@
-import { resolveCopy, validateCopyFields, type CopyField } from "../composition.js";
+import { writerLabel, type PublisherBoardCopyResolver } from "./copy.js";
+import { resolveCopy, type CopyField } from "../composition.js";
 import type { ContentRegistry } from "../model.js";
 import type { ReviewReport } from "../review/types.js";
 import type { PublisherBoardNeed } from "./types.js";
@@ -15,6 +16,7 @@ export interface PublisherInspectorInput {
   readonly slotId: string;
   readonly locale: string;
   readonly copy: readonly CopyField[];
+  readonly copyResolver?: PublisherBoardCopyResolver;
   readonly reviews?: readonly ReviewReport[];
   readonly releases?: readonly InspectorRelease[];
 }
@@ -38,10 +40,11 @@ export function buildPublisherInspector(input: PublisherInspectorInput): Publish
   const text = (key: string): string => {
     const matches = input.copy.filter(field => field.key === key && field.locale === input.locale);
     const field = matches[0];
-    if (matches.length !== 1 || !field || validateCopyFields([field], "copy").length || !(field.value ?? "").trim()) {
+    const value = matches.length === 1 ? writerLabel(field, input.locale, input.copyResolver) : undefined;
+    if (value === undefined) {
       need("writer", key, `Supply one nonempty Writer label in ${input.locale}`); return "";
     }
-    return field.value ?? "";
+    return value;
   };
   const title = text("inspector.title");
   const slot = input.registry.slots.find(row => row.id === input.slotId);
@@ -65,7 +68,7 @@ export function buildPublisherInspector(input: PublisherInspectorInput): Publish
     ] : []);
     for (const locale of slot?.locales ?? []) {
       try {
-        const report = resolveCopy(snapshot?.content ?? candidate, locale);
+        const report = resolveCopy(snapshot?.content ?? candidate, locale, { resolver: input.copyResolver });
         const copy = report.copy;
         for (const finding of report.findings) if (finding.severity === "error") {
           need("writer", `copy.${candidate.id}.${locale}.${finding.path}`, finding.message);

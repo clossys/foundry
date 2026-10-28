@@ -1,3 +1,4 @@
+import type { PublisherBoardCopyResolver } from "./copy.js";
 import type { CopyField } from "../composition.js";
 import type { ContentRegistry } from "../model.js";
 import type { CandidateStageEvidence, StageKey, StageReport } from "../stage-engine.js";
@@ -13,6 +14,8 @@ export interface PublisherBoardInput {
   readonly registry: ContentRegistry;
   readonly locale: string;
   readonly copy: readonly CopyField[];
+  /** Host-configured Writer callback; required for ref-only copy fields. */
+  readonly copyResolver?: PublisherBoardCopyResolver;
   readonly tree?: ContentTree;
   readonly evidence?: readonly CandidateStageEvidence[];
 }

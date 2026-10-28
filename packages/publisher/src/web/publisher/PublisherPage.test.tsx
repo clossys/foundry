@@ -1,4 +1,5 @@
 // @vitest-environment jsdom
+import { publisherCopyFixtureResolver } from "./__fixtures__/writer-copy.js";
 import "@testing-library/jest-dom/vitest";
 import { cleanup, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
@@ -29,7 +30,7 @@ function Host({ delegate, ...inputs }: PublisherPageProps & { delegate?: (href: 
     header={{ title: "Fallback" }} onNavigate={href => {
     const next = publisherChannelFromHref(href);
     if (next) setChannel(next); else delegate?.(href);
-  }}><PublisherPage {...inputs} activeChannel={channel} /></AppFrame>;
+  }}><PublisherPage copyResolver={publisherCopyFixtureResolver} {...inputs} activeChannel={channel} /></AppFrame>;
 }
 
 // Row 668 (REAL, hand-styled raw li): each milestone step is a Foundry Card inside a bare list item.

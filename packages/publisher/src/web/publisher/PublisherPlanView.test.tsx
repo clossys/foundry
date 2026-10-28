@@ -1,3 +1,4 @@
+import { publisherCopyFixtureResolver } from "./__fixtures__/writer-copy.js";
 // @vitest-environment jsdom
 import "@testing-library/jest-dom/vitest";
 import { cleanup, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
@@ -11,7 +12,7 @@ import { genericInventory } from "./app/__fixtures__/generic.js";
 const props = { instances: STANDARD_PACK_INSTANCES, library: createStandardPackLibrary({}), registries: STANDARD_PACK_REGISTRIES, breakpointValues: {}, designerHref: "/designer" };
 afterEach(cleanup);
 it("starts with Plan, no forced website and exact pack empty state before Align", () => {
-  render(<PublisherPage {...props} />);
+  render(<PublisherPage {...props} copyResolver={publisherCopyFixtureResolver} />);
   expect(screen.getByRole("tab", { name: "Plan" })).toHaveAttribute("aria-selected", "true");
   expect(screen.getByText("Tell Publisher your milestones")).toBeVisible();
   expect(screen.getByRole("region", { name: "Publisher menu" })).toBeVisible();
@@ -23,7 +24,7 @@ it("starts with Plan, no forced website and exact pack empty state before Align"
 });
 it("aligns a suggested M1 via the adapter, renders Showcase and preserves aligned items during later drafts", async () => {
   const store = new PublisherPlanStore(STANDARD_PACK_REGISTRIES), apply = vi.fn(() => true), draft = createM1ExampleDraft();
-  const { rerender } = render(<PublisherPage {...props} planStore={store} draftPlan={draft} onApplyPlan={apply} />);
+  const { rerender } = render(<PublisherPage {...props} copyResolver={publisherCopyFixtureResolver} planStore={store} draftPlan={draft} onApplyPlan={apply} />);
   expect(screen.getByRole("region", { name: "Proposed plan" })).toHaveTextContent("example.first-impression");
   fireEvent.click(screen.getByRole("tab", { name: "Standard website" }));
   expect(screen.queryByRole("button", { name: /Open Home/ })).toBeNull();
@@ -41,7 +42,7 @@ it("aligns a suggested M1 via the adapter, renders Showcase and preserves aligne
   fireEvent.click(screen.getByRole("button", { name: /Expand Showcase/ }));
   expect(within(screen.getByRole("table", { name: "Showcase items" })).getByText("stack.index")).toBeVisible();
   const nextDraft = { ...draft, version: 2, milestones: [{ id: "M1" as const, packs: [] }] };
-  rerender(<PublisherPage {...props} planStore={store} draftPlan={nextDraft} onApplyPlan={apply} />);
+  rerender(<PublisherPage {...props} copyResolver={publisherCopyFixtureResolver} planStore={store} draftPlan={nextDraft} onApplyPlan={apply} />);
   expect(screen.getAllByRole("button", { name: /Open .* · to do/ })).toHaveLength(8);
   fireEvent.click(screen.getByRole("tab", { name: "Plan" }));
   expect(screen.getByText("Draft version 2")).toBeVisible();
@@ -54,9 +55,9 @@ it("aligns a suggested M1 via the adapter, renders Showcase and preserves aligne
 });
 it("requires the explicit host callback and keeps a refused draft out of production", async () => {
   const store = new PublisherPlanStore(STANDARD_PACK_REGISTRIES), draft = createM1ExampleDraft();
-  const { rerender } = render(<PublisherPage {...props} planStore={store} draftPlan={draft} />);
+  const { rerender } = render(<PublisherPage {...props} copyResolver={publisherCopyFixtureResolver} planStore={store} draftPlan={draft} />);
   expect(screen.getByRole("button", { name: "Align plan" })).toBeDisabled();
-  rerender(<PublisherPage {...props} planStore={store} draftPlan={draft} onApplyPlan={() => false} />);
+  rerender(<PublisherPage {...props} copyResolver={publisherCopyFixtureResolver} planStore={store} draftPlan={draft} onApplyPlan={() => false} />);
   fireEvent.click(screen.getByRole("button", { name: "Align plan" }));
   expect(await screen.findByRole("alert")).toHaveTextContent("Host refused");
   fireEvent.click(screen.getByRole("tab", { name: "Standard website" }));
@@ -64,7 +65,7 @@ it("requires the explicit host callback and keeps a refused draft out of product
 });
 it("aligns an independent inventory App plan with parent record tabs and no website enrollment", async () => {
   const inventory = projectAppInventory(genericInventory()), store = new PublisherPlanStore(STANDARD_PACK_REGISTRIES), draft = createAppExampleDraft(inventory);
-  render(<PublisherPage {...props} appInventory={inventory} planStore={store} draftPlan={draft} onApplyPlan={() => true} />);
+  render(<PublisherPage {...props} copyResolver={publisherCopyFixtureResolver} appInventory={inventory} planStore={store} draftPlan={draft} onApplyPlan={() => true} />);
   const proposed = screen.getByRole("region", { name: "Proposed plan" });
   expect(within(proposed).getByText("app.sample.record")).toBeVisible();
   expect(within(proposed).getByText("sample.record")).toBeVisible();
@@ -87,7 +88,7 @@ it("aligns an independent inventory App plan with parent record tabs and no webs
 it("shows aligned concepts outside the current milestone without creating a renderer", async () => {
   const store = new PublisherPlanStore(STANDARD_PACK_REGISTRIES);
   const draft = { ...createM1ExampleDraft(), milestones: [{ id: "M1" as const, packs: [] }, { id: "M2" as const, packs: [{ id: "pack.conversation" as const, items: [{ id: "email", menuRef: "conversation.email", lane: "Email" as const, format: "email.html" as const, answerIds: ["example.first-impression"], openNeeds: [] }] }] }] };
-  render(<PublisherPage {...props} planStore={store} draftPlan={draft} onApplyPlan={() => true} />);
+  render(<PublisherPage {...props} copyResolver={publisherCopyFixtureResolver} planStore={store} draftPlan={draft} onApplyPlan={() => true} />);
   fireEvent.click(screen.getByRole("button", { name: "Align plan" }));
   await waitFor(() => expect(store.current?.version).toBe(1));
   fireEvent.click(screen.getByRole("tab", { name: "Conversation" }));
@@ -100,7 +101,7 @@ it("shows aligned concepts outside the current milestone without creating a rend
 
 it("uses host Plan and Configure messages without changing alignment or production choices", async () => {
   const store = new PublisherPlanStore(STANDARD_PACK_REGISTRIES), apply = vi.fn(() => true);
-  render(<PublisherPage {...props} planStore={store} draftPlan={createM1ExampleDraft()} onApplyPlan={apply}
+  render(<PublisherPage {...props} copyResolver={publisherCopyFixtureResolver} planStore={store} draftPlan={createM1ExampleDraft()} onApplyPlan={apply}
     planMessages={{ planLabel: "Publication plan", proposalLabel: "Suggested scope", alignLabel: "Accept scope" }}
     messages={{ openItemLabel: (label, state) => `Inspect ${label} · ${state}` }}
     productionMessages={{ heading: "Build settings", applyLabel: "Use settings", resetLabel: "Clear settings" }} />);
@@ -123,7 +124,7 @@ it("uses host Plan and Configure messages without changing alignment or producti
 
 it("forwards host App decision messages and keeps the heading reference connected", async () => {
   const inventory = projectAppInventory(genericInventory(), [{ id: "sample.pending", label: "Sample pending", lane: "Record" }]), store = new PublisherPlanStore(STANDARD_PACK_REGISTRIES);
-  render(<PublisherPage {...props} appInventory={inventory} planStore={store} draftPlan={createAppExampleDraft(inventory)} onApplyPlan={() => true}
+  render(<PublisherPage {...props} copyResolver={publisherCopyFixtureResolver} appInventory={inventory} planStore={store} draftPlan={createAppExampleDraft(inventory)} onApplyPlan={() => true}
     appMessages={{ decisionLabel: "· undecided page", openDecisionLabel: label => `Inspect decision ${label}`, closeDecisionLabel: "Close decision" }} />);
   fireEvent.click(screen.getByRole("button", { name: "Align plan" }));
   await waitFor(() => expect(store.current?.version).toBe(1));
@@ -137,7 +138,7 @@ it("forwards host App decision messages and keeps the heading reference connecte
 
 it("edits and resets recommendations before Align, records explicit overrides, and keeps production Apply outside history", async () => {
   const store = new PublisherPlanStore(STANDARD_PACK_REGISTRIES), apply = vi.fn(() => true), draft = createM1ExampleDraft();
-  render(<PublisherPage {...props} planStore={store} draftPlan={draft} onApplyPlan={apply} deploymentSurfaceIds={["fixture.web-preview"]} />);
+  render(<PublisherPage {...props} copyResolver={publisherCopyFixtureResolver} planStore={store} draftPlan={draft} onApplyPlan={apply} deploymentSurfaceIds={["fixture.web-preview"]} />);
   const summary = screen.getByText("Configure recommendation · standard.home");
   fireEvent.click(summary);
   const editor = summary.closest("details")!;
@@ -178,7 +179,7 @@ it("edits and resets recommendations before Align, records explicit overrides, a
 it("requires explicit editable or flat slide delivery before Align and never creates concept renderers", async () => {
   const { createDeliveryExampleDraft } = await import("./__fixtures__/example-plan.js");
   const store = new PublisherPlanStore(STANDARD_PACK_REGISTRIES);
-  render(<PublisherPage {...props} planStore={store} draftPlan={createDeliveryExampleDraft()} onApplyPlan={() => true} />);
+  render(<PublisherPage {...props} copyResolver={publisherCopyFixtureResolver} planStore={store} draftPlan={createDeliveryExampleDraft()} onApplyPlan={() => true} />);
   const summary = screen.getByText("Configure recommendation · conversation.deck");
   fireEvent.click(summary);
   const editor = summary.closest("details")!;
@@ -201,7 +202,7 @@ it("requires explicit editable or flat slide delivery before Align and never cre
 
 it("forwards host delivery and requirement messages while retaining registered selections", () => {
   const store = new PublisherPlanStore(STANDARD_PACK_REGISTRIES);
-  render(<PublisherPage {...props} planStore={store} draftPlan={createM1ExampleDraft()} onApplyPlan={() => true}
+  render(<PublisherPage {...props} copyResolver={publisherCopyFixtureResolver} planStore={store} draftPlan={createM1ExampleDraft()} onApplyPlan={() => true}
     requirementMessages={{ deploymentQuestion: "Select the fixture handoff surface" }}
     productionMessages={{ deliveryLabel: "Handoff choices", deploymentSurfaceLabel: "Host surface", recommendationLabel: "Suggested by answers" }} />);
   expect(screen.getAllByText("Select the fixture handoff surface")).toHaveLength(8);
@@ -218,7 +219,7 @@ it("binds brand roster references and Formats to the supplied host data", async 
   const boundDraft = { ...draft, milestones: draft.milestones.map(milestone => ({ ...milestone, packs: milestone.packs.map(pack => ({ ...pack, items: pack.items.map(item => item.id === "assets.brand" ? { ...item, assetId: "fixture.brand" } : item) })) })) };
   const registries = { ...STANDARD_PACK_REGISTRIES, formats: STANDARD_PACK_REGISTRIES.formats.map(format => ({ ...format, label: `Host ${format.label}` })) };
   const store = new PublisherPlanStore(registries);
-  render(<PublisherPage {...props} registries={registries} planStore={store} draftPlan={boundDraft} onApplyPlan={() => true} brandAssets={{ "fixture.brand": [] }} />);
+  render(<PublisherPage {...props} copyResolver={publisherCopyFixtureResolver} registries={registries} planStore={store} draftPlan={boundDraft} onApplyPlan={() => true} brandAssets={{ "fixture.brand": [] }} />);
   fireEvent.click(screen.getByRole("button", { name: "Align plan" }));
   await waitFor(() => expect(store.current?.version).toBe(1));
   fireEvent.click(screen.getByRole("tab", { name: "Brand assets" }));

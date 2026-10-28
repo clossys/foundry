@@ -8,6 +8,7 @@ import { PageBar } from "@clossys/designer/blocks";
 import { FrameSlotProvider } from "@clossys/designer/shell";
 import { installFrameTestEnvironment } from "./__fixtures__/frame-test-environment.js";
 import { PublisherPage } from "./PublisherPage.js";
+import { publisherCopyFixtureResolver } from "./__fixtures__/writer-copy.js";
 import { acceptedExampleStore } from "./__fixtures__/example-plan.js";
 import { AppPack } from "./app/AppPack.js";
 import { appBindingFixture } from "./app/__fixtures__/binding.js";
@@ -62,7 +63,7 @@ function repeatedPendingFixture() {
 it("preserves repeated pending evidence in the channel item detail", async () => {
   const f = repeatedPendingFixture();
   vi.spyOn(pipeline, "derivePackPipeline").mockReturnValue(f.result);
-  render(<FrameSlotProvider><PageBar root={{ label: "Workspace" }} labels={{ breadcrumb: "Trail", collapsedBreadcrumb: "Trail", pageInfo: "Info", pageActions: "Actions" }} /><PublisherPage instances={[f.binding]} library={f.library} registries={f.registries}
+  render(<FrameSlotProvider><PageBar root={{ label: "Workspace" }} labels={{ breadcrumb: "Trail", collapsedBreadcrumb: "Trail", pageInfo: "Info", pageActions: "Actions" }} /><PublisherPage copyResolver={publisherCopyFixtureResolver} instances={[f.binding]} library={f.library} registries={f.registries}
     productionSettings={{ instances: f.settings }} planStore={await acceptedExampleStore(f.registries)}
     breakpointValues={FIXTURE_BREAKPOINTS} designerHref="/designer" /></FrameSlotProvider>);
   fireEvent.click(screen.getByRole("button", { name: /^Open Home/ }));

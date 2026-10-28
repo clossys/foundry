@@ -4,6 +4,7 @@ import { act, cleanup, render, screen, within } from "@testing-library/react";
 import { renderToString } from "react-dom/server";
 import { afterEach, beforeAll, expect, it, vi } from "vitest";
 import { readFile } from "node:fs/promises";
+import { publisherCopyFixtureResolver } from "./publisher/__fixtures__/writer-copy.js";
 import { DesignerRoutePage, PublisherRoutePage } from "@clossys/publisher/web/registered-route";
 import { emitCompleteRoutePage } from "./registered-route-source.js";
 import { createWholeStudioInitialSession } from "@clossys/designer/studio/queries";
@@ -86,7 +87,7 @@ it("mounts Publisher with original workspace heading and actual channel content"
   environment();
   const publisher: PublisherRouteServerData = { ...data, publisher: realPublisher ?? { instances: [], fills: [], registries: FIXTURE_INSTANCE_REGISTRIES, designerHref: "/designer", draftPlan: createM1ExampleDraft() } };
   const errors = vi.spyOn(console, "error");
-  const view = render(<Consumer.PublisherConsumer serverData={publisher} initialSession={initialSession} />);
+  const view = render(<Consumer.PublisherConsumer serverData={publisher} initialSession={initialSession} copyResolver={publisherCopyFixtureResolver} />);
   await act(async () => {});
   expect(view.container.querySelector('[data-route-display="publisher"]')).toHaveAttribute("data-route-authentication", "unverified");
   expect(screen.getAllByRole("heading", { level: 1 }).map(node => node.textContent)).toEqual(["Publisher"]);
