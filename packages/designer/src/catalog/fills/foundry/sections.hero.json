@@ -16,12 +16,16 @@
         "package": "@clossys/designer",
         "version": "0.12.0"
       },
-      "relation": "same-contract",
+      "relation": "subset",
       "slot": "sections.hero",
       "source": "foundry",
       "sourceAddress": "./blocks#Hero",
       "status": "draft",
-      "trust": "foundry"
+      "trust": "foundry",
+      "unmapped": [
+        "ground.base",
+        "ground.inverse"
+      ]
     }
   },
   "sections": {

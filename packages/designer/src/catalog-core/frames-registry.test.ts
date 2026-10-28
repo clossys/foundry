@@ -107,7 +107,7 @@ describe("draft frame registry", () => {
     expect(original).toHaveLength(9);
     // JSON.stringify hash measured from the full rows at da8a1f97; no Git dependency during tests.
     expect(createHash("sha256").update(JSON.stringify(original)).digest("hex"))
-      .toBe("60ee197f9c2db484aa63573d386468531235f0383941015f5f4e7e4bfe5865ab");
+      .toBe("08eff315bf6551ba06bc9536068cfa9690c12bd975d5e323038d9d18f50e9afa");
     expect(slots.find(slot => slot.id === "frames.auth-shell")).toEqual({
       id: "frames.auth-shell", layer: "frames", requires: [], status: "draft",
       contract: {

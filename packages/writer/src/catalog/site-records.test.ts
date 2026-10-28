@@ -1,10 +1,12 @@
 import { readFileSync } from "node:fs";
+import { dirname, resolve } from "node:path";
+import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
 import { validateWriterRecord } from "../model/validate.js";
 import { resolveWriterRefText } from "../checks/approval.js";
 import type { WriterRecord } from "../model/types.js";
 
-const read = (name: string) => JSON.parse(readFileSync(new URL(name, import.meta.url), "utf8"));
+const read = (name: string) => JSON.parse(readFileSync(resolve(dirname(fileURLToPath(import.meta.url)), name), "utf8"));
 describe("draft site Writer records", () => {
   it("validates every opaque record, semantic alias and passage reference without inventing approval", () => {
     const data = read("./records/site.en.json");

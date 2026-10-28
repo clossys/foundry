@@ -16,12 +16,15 @@
         "package": "@clossys/designer",
         "version": "0.12.0"
       },
-      "relation": "same-contract",
+      "relation": "subset",
       "slot": "sections.notices",
       "source": "foundry",
       "sourceAddress": "./blocks#NoticeList",
       "status": "draft",
-      "trust": "foundry"
+      "trust": "foundry",
+      "unmapped": [
+        "legal.draft"
+      ]
     }
   },
   "sections": {

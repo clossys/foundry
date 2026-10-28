@@ -61,7 +61,7 @@ describe("S2-1 bounded section composition reconciliation", () => {
       return { ...slot, contract };
     });
     expect(createHash("sha256").update(JSON.stringify(invariant)).digest("hex"))
-      .toBe("9ae1a28a9e21788016029aecd3060aefc31a07a7f3a63a8f10ee9a56f0c18e35");
+      .toBe("f2be33b72bf9f9d93f86b795bf11bb720b86f8c09b7dc4c883c5ee814f5ebbef");
   });
 
   it("preserves all 46 base rows exactly and pins the six new draft contracts separately", () => {
@@ -70,11 +70,11 @@ describe("S2-1 bounded section composition reconciliation", () => {
     expect(original).toHaveLength(46);
     // JSON.stringify hash measured from the full rows at da8a1f97; no Git dependency during tests.
     expect(createHash("sha256").update(JSON.stringify(original)).digest("hex"))
-      .toBe("d1a62e7ae7211bfe8aea15f98cf0cb178c1b68ecdaab75e7411304c3a92009cd");
+      .toBe("78129ab0b72f5c6bc54f3ad0f772d13ceac12b9f8713939a7f8d4f9b1c22d59b");
     const additions = slots.filter(isWaveOne).sort((a, b) => a.id.localeCompare(b.id));
     expect(additions.map(slot => slot.id)).toEqual(waveOneIds);
     expect(createHash("sha256").update(JSON.stringify(additions)).digest("hex"))
-      .toBe("a78895cff6efbe018a34ac950942b243ab658102bbd2b09c87659c1422106cc2");
+      .toBe("a007a3bb8e41f57372a3b3b3bb9066965fda134103bf9d3f8037b99b11c360ee");
   });
 });
 

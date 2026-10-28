@@ -16,12 +16,16 @@
         "package": "@clossys/designer",
         "version": "0.12.0"
       },
-      "relation": "same-contract",
+      "relation": "subset",
       "slot": "sections.legal-prose",
       "source": "foundry",
       "sourceAddress": "./blocks#ContentSection",
       "status": "draft",
-      "trust": "foundry"
+      "trust": "foundry",
+      "unmapped": [
+        "legal.privacy",
+        "legal.terms"
+      ]
     }
   },
   "sections": {

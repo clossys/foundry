@@ -1,11 +1,13 @@
 import { readFileSync } from "node:fs";
+import { dirname, resolve } from "node:path";
+import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
 import { loadSectionRegistry, sectionRegistryFindings } from "../catalog-core/sections-contract.js";
 import { createCopyResolver, computeCopyFingerprint, COPY_FINGERPRINT_ALGORITHM } from "../../../writer/src/index.js";
 import { resolveCopy } from "../../../publisher/src/content/composition.js";
 import type { CopyRegistry, CopyRegistryEntry } from "../../../writer/src/types.js";
 
-const json = (path: string) => JSON.parse(readFileSync(new URL(path, import.meta.url), "utf8"));
+const json = (path: string) => JSON.parse(readFileSync(resolve(dirname(fileURLToPath(import.meta.url)), path), "utf8"));
 describe("site reconstruction configs", () => {
   it("registers every config on an existing leaf and preserves its copy schema", () => {
     const registry = loadSectionRegistry();

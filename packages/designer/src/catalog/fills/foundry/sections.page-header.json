@@ -25,7 +25,8 @@
       "unmapped": [
         "slot.meta",
         "config.record",
-        "config.standard"
+        "config.standard",
+        "contact.header"
       ]
     }
   },
