@@ -1,0 +1,76 @@
+{
+  "$extensions": {
+    "com.clossys.fill": {
+      "author": "consumer",
+      "builtOn": [],
+      "conforms": [],
+      "evidence": [],
+      "id": "example/assets.mark",
+      "license": "UNLICENSED",
+      "mode": "implementation",
+      "originKinds": [
+        "authored",
+        "derived"
+      ],
+      "reads": {
+        "assets": [
+          "assets.mark"
+        ],
+        "tokens": [
+          "tokens.text-color"
+        ]
+      },
+      "relation": "same-contract",
+      "slot": "assets.mark",
+      "source": "example",
+      "sourceAddress": "fills/assets.mark.json",
+      "status": "draft",
+      "trust": "consumer"
+    }
+  },
+  "assets": {
+    "mark": {
+      "mono": {
+        "$extensions": {
+          "com.clossys.origin": {
+            "inputs": [
+              "assets.mark.positive",
+              "tokens.text-color.on-inverse"
+            ],
+            "inputsHash": "b44ae6b7e3a1022b6509e420a931580956dc7a4f97b0423e6338cc09c164a3cb",
+            "kind": "derived",
+            "rule": "identity-mark@1"
+          }
+        },
+        "$type": "svg",
+        "$value": "<svg aria-label=\"Example\" xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 48 48\" aria-hidden=\"true\" color=\"currentColor\" data-clear-space=\"0.2\"><circle cx=\"24\" cy=\"24\" r=\"22\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" /><text x=\"24\" y=\"30\" text-anchor=\"middle\" font-family=\"-apple-system, &quot;BlinkMacSystemFont&quot;, &quot;Segoe UI&quot;, &quot;Roboto&quot;, &quot;Helvetica Neue&quot;, &quot;Noto Sans&quot;, &quot;Arial&quot;, sans-serif, &quot;Apple Color Emoji&quot;, &quot;Segoe UI Emoji&quot;, &quot;Segoe UI Symbol&quot;, &quot;Noto Color Emoji&quot;\" font-size=\"18\" font-weight=\"600\" fill=\"currentColor\">EX</text></svg>"
+      },
+      "positive": {
+        "$extensions": {
+          "com.clossys.origin": {
+            "kind": "authored",
+            "license": "UNLICENSED",
+            "note": "Consumer identity seed; live text; font outlining unknown; family sans-serif"
+          }
+        },
+        "$type": "svg",
+        "$value": "<svg aria-label=\"Example\" xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 48 48\" aria-hidden=\"true\" color=\"oklch(0.2178 0 0)\" data-clear-space=\"0.2\"><circle cx=\"24\" cy=\"24\" r=\"22\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" /><text x=\"24\" y=\"30\" text-anchor=\"middle\" font-family=\"-apple-system, &quot;BlinkMacSystemFont&quot;, &quot;Segoe UI&quot;, &quot;Roboto&quot;, &quot;Helvetica Neue&quot;, &quot;Noto Sans&quot;, &quot;Arial&quot;, sans-serif, &quot;Apple Color Emoji&quot;, &quot;Segoe UI Emoji&quot;, &quot;Segoe UI Symbol&quot;, &quot;Noto Color Emoji&quot;\" font-size=\"18\" font-weight=\"600\" fill=\"currentColor\">EX</text></svg>"
+      },
+      "reversed": {
+        "$extensions": {
+          "com.clossys.origin": {
+            "inputs": [
+              "assets.mark.positive",
+              "tokens.text-color.on-inverse"
+            ],
+            "inputsHash": "b44ae6b7e3a1022b6509e420a931580956dc7a4f97b0423e6338cc09c164a3cb",
+            "kind": "derived",
+            "rule": "identity-mark@1"
+          }
+        },
+        "$type": "svg",
+        "$value": "<svg aria-label=\"Example\" xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 48 48\" aria-hidden=\"true\" color=\"oklch(0.9702 0 0)\" data-clear-space=\"0.2\"><circle cx=\"24\" cy=\"24\" r=\"22\" fill=\"none\" stroke=\"oklch(0.9702 0 0)\" stroke-width=\"2\" /><text x=\"24\" y=\"30\" text-anchor=\"middle\" font-family=\"-apple-system, &quot;BlinkMacSystemFont&quot;, &quot;Segoe UI&quot;, &quot;Roboto&quot;, &quot;Helvetica Neue&quot;, &quot;Noto Sans&quot;, &quot;Arial&quot;, sans-serif, &quot;Apple Color Emoji&quot;, &quot;Segoe UI Emoji&quot;, &quot;Segoe UI Symbol&quot;, &quot;Noto Color Emoji&quot;\" font-size=\"18\" font-weight=\"600\" fill=\"oklch(0.9702 0 0)\">EX</text></svg>"
+      }
+    }
+  }
+}

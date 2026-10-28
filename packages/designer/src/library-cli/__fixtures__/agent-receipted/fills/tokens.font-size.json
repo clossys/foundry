@@ -1,0 +1,431 @@
+{
+  "$extensions": {
+    "com.clossys.fill": {
+      "author": "third-party",
+      "builtOn": [],
+      "conforms": [
+        "dtcg#format",
+        "dtcg#alias"
+      ],
+      "evidence": [
+        {
+          "check": "C1",
+          "clause": "dtcg#format"
+        },
+        {
+          "check": "C2",
+          "clause": "dtcg#alias"
+        }
+      ],
+      "id": "example/tokens.font-size",
+      "license": "MIT",
+      "mode": "implementation",
+      "originKinds": [
+        "adopted"
+      ],
+      "pin": {
+        "file": "theme.css",
+        "package": "tailwindcss",
+        "sha256": "443d7af364200f8ec8352dc78e39485a118a1840d498c97967bf0ae402b39167",
+        "version": "4.3.3"
+      },
+      "relation": "subset",
+      "slot": "tokens.font-size",
+      "source": "example",
+      "sourceAddress": "tailwindcss/theme.css",
+      "status": "draft",
+      "trust": "pinned-upstream",
+      "unmapped": [
+        "--aspect-video",
+        "--color-black",
+        "--color-white",
+        "--default-font-family",
+        "--default-font-feature-settings",
+        "--default-font-variation-settings",
+        "--default-mono-font-family",
+        "--default-mono-font-feature-settings",
+        "--default-mono-font-variation-settings",
+        "--default-transition-duration",
+        "--default-transition-timing-function",
+        "--drop-shadow",
+        "--drop-shadow-2xl",
+        "--drop-shadow-lg",
+        "--drop-shadow-md",
+        "--drop-shadow-sm",
+        "--drop-shadow-xl",
+        "--drop-shadow-xs",
+        "--font-serif",
+        "--inset-shadow-2xs",
+        "--inset-shadow-sm",
+        "--inset-shadow-xs",
+        "--max-width-prose",
+        "--perspective-distant",
+        "--perspective-dramatic",
+        "--perspective-midrange",
+        "--perspective-near",
+        "--perspective-normal",
+        "--radius",
+        "--text-shadow-2xs",
+        "--text-shadow-lg",
+        "--text-shadow-md",
+        "--text-shadow-sm",
+        "--text-shadow-xs"
+      ]
+    }
+  },
+  "tokens": {
+    "font-size": {
+      "2xl": {
+        "$extensions": {
+          "com.clossys.css": {
+            "raw": "1.5rem"
+          },
+          "com.clossys.origin": {
+            "adoptedAt": "2026-10-27",
+            "fill": "tailwind-default/tokens.font-size",
+            "kind": "adopted",
+            "license": "MIT",
+            "member": "tokens.font-size.2xl",
+            "pin": {
+              "file": "theme.css",
+              "package": "tailwindcss",
+              "sha256": "443d7af364200f8ec8352dc78e39485a118a1840d498c97967bf0ae402b39167",
+              "version": "4.3.3"
+            },
+            "sha256": "e94c461df054ca40d08834147cc494091c34268794c7600405e18fe5df049804",
+            "source": "tailwind-default"
+          }
+        },
+        "$type": "dimension",
+        "$value": {
+          "unit": "rem",
+          "value": 1.5
+        }
+      },
+      "3xl": {
+        "$extensions": {
+          "com.clossys.css": {
+            "raw": "1.875rem"
+          },
+          "com.clossys.origin": {
+            "adoptedAt": "2026-10-27",
+            "fill": "tailwind-default/tokens.font-size",
+            "kind": "adopted",
+            "license": "MIT",
+            "member": "tokens.font-size.3xl",
+            "pin": {
+              "file": "theme.css",
+              "package": "tailwindcss",
+              "sha256": "443d7af364200f8ec8352dc78e39485a118a1840d498c97967bf0ae402b39167",
+              "version": "4.3.3"
+            },
+            "sha256": "41ecddc5685fe59ad85f2e8a14a5cfc4606ee4863c7e2780920efede84bf6aec",
+            "source": "tailwind-default"
+          }
+        },
+        "$type": "dimension",
+        "$value": {
+          "unit": "rem",
+          "value": 1.875
+        }
+      },
+      "4xl": {
+        "$extensions": {
+          "com.clossys.css": {
+            "raw": "2.25rem"
+          },
+          "com.clossys.origin": {
+            "adoptedAt": "2026-10-27",
+            "fill": "tailwind-default/tokens.font-size",
+            "kind": "adopted",
+            "license": "MIT",
+            "member": "tokens.font-size.4xl",
+            "pin": {
+              "file": "theme.css",
+              "package": "tailwindcss",
+              "sha256": "443d7af364200f8ec8352dc78e39485a118a1840d498c97967bf0ae402b39167",
+              "version": "4.3.3"
+            },
+            "sha256": "f39bcdee9e285fa18002e9c402099b9a71bb2702713e58b8d57193a9be2aae03",
+            "source": "tailwind-default"
+          }
+        },
+        "$type": "dimension",
+        "$value": {
+          "unit": "rem",
+          "value": 2.25
+        }
+      },
+      "5xl": {
+        "$extensions": {
+          "com.clossys.css": {
+            "raw": "3rem"
+          },
+          "com.clossys.origin": {
+            "adoptedAt": "2026-10-27",
+            "fill": "tailwind-default/tokens.font-size",
+            "kind": "adopted",
+            "license": "MIT",
+            "member": "tokens.font-size.5xl",
+            "pin": {
+              "file": "theme.css",
+              "package": "tailwindcss",
+              "sha256": "443d7af364200f8ec8352dc78e39485a118a1840d498c97967bf0ae402b39167",
+              "version": "4.3.3"
+            },
+            "sha256": "69fdf909d976e28e362bca708b002731c35945b77bd1771a4f7feecc47c47df0",
+            "source": "tailwind-default"
+          }
+        },
+        "$type": "dimension",
+        "$value": {
+          "unit": "rem",
+          "value": 3
+        }
+      },
+      "6xl": {
+        "$extensions": {
+          "com.clossys.css": {
+            "raw": "3.75rem"
+          },
+          "com.clossys.origin": {
+            "adoptedAt": "2026-10-27",
+            "fill": "tailwind-default/tokens.font-size",
+            "kind": "adopted",
+            "license": "MIT",
+            "member": "tokens.font-size.6xl",
+            "pin": {
+              "file": "theme.css",
+              "package": "tailwindcss",
+              "sha256": "443d7af364200f8ec8352dc78e39485a118a1840d498c97967bf0ae402b39167",
+              "version": "4.3.3"
+            },
+            "sha256": "32b92b9072c122ea589826589c19390792359ac1833599e731cee4899580e849",
+            "source": "tailwind-default"
+          }
+        },
+        "$type": "dimension",
+        "$value": {
+          "unit": "rem",
+          "value": 3.75
+        }
+      },
+      "7xl": {
+        "$extensions": {
+          "com.clossys.css": {
+            "raw": "4.5rem"
+          },
+          "com.clossys.origin": {
+            "adoptedAt": "2026-10-27",
+            "fill": "tailwind-default/tokens.font-size",
+            "kind": "adopted",
+            "license": "MIT",
+            "member": "tokens.font-size.7xl",
+            "pin": {
+              "file": "theme.css",
+              "package": "tailwindcss",
+              "sha256": "443d7af364200f8ec8352dc78e39485a118a1840d498c97967bf0ae402b39167",
+              "version": "4.3.3"
+            },
+            "sha256": "2080b26b9e7438f3957a3173dee294b2bab9de0acb042c68d2ee13670c5172e9",
+            "source": "tailwind-default"
+          }
+        },
+        "$type": "dimension",
+        "$value": {
+          "unit": "rem",
+          "value": 4.5
+        }
+      },
+      "8xl": {
+        "$extensions": {
+          "com.clossys.css": {
+            "raw": "6rem"
+          },
+          "com.clossys.origin": {
+            "adoptedAt": "2026-10-27",
+            "fill": "tailwind-default/tokens.font-size",
+            "kind": "adopted",
+            "license": "MIT",
+            "member": "tokens.font-size.8xl",
+            "pin": {
+              "file": "theme.css",
+              "package": "tailwindcss",
+              "sha256": "443d7af364200f8ec8352dc78e39485a118a1840d498c97967bf0ae402b39167",
+              "version": "4.3.3"
+            },
+            "sha256": "2403f80ad7b3c32f0d8f4feca5e2179095d3ea806c77007ff754f5ed35fc5024",
+            "source": "tailwind-default"
+          }
+        },
+        "$type": "dimension",
+        "$value": {
+          "unit": "rem",
+          "value": 6
+        }
+      },
+      "9xl": {
+        "$extensions": {
+          "com.clossys.css": {
+            "raw": "8rem"
+          },
+          "com.clossys.origin": {
+            "adoptedAt": "2026-10-27",
+            "fill": "tailwind-default/tokens.font-size",
+            "kind": "adopted",
+            "license": "MIT",
+            "member": "tokens.font-size.9xl",
+            "pin": {
+              "file": "theme.css",
+              "package": "tailwindcss",
+              "sha256": "443d7af364200f8ec8352dc78e39485a118a1840d498c97967bf0ae402b39167",
+              "version": "4.3.3"
+            },
+            "sha256": "182a0efe385d11ca981b95295b44a6d13769279e55b27f01ab9e92a41bcdb7ab",
+            "source": "tailwind-default"
+          }
+        },
+        "$type": "dimension",
+        "$value": {
+          "unit": "rem",
+          "value": 8
+        }
+      },
+      "base": {
+        "$extensions": {
+          "com.clossys.css": {
+            "raw": "1rem"
+          },
+          "com.clossys.origin": {
+            "adoptedAt": "2026-10-27",
+            "fill": "tailwind-default/tokens.font-size",
+            "kind": "adopted",
+            "license": "MIT",
+            "member": "tokens.font-size.base",
+            "pin": {
+              "file": "theme.css",
+              "package": "tailwindcss",
+              "sha256": "443d7af364200f8ec8352dc78e39485a118a1840d498c97967bf0ae402b39167",
+              "version": "4.3.3"
+            },
+            "sha256": "008990a088052ebd9b87ab2b58f9b8775bc419490ed505695edfb8516def9b2d",
+            "source": "tailwind-default"
+          }
+        },
+        "$type": "dimension",
+        "$value": {
+          "unit": "rem",
+          "value": 1
+        }
+      },
+      "lg": {
+        "$extensions": {
+          "com.clossys.css": {
+            "raw": "1.125rem"
+          },
+          "com.clossys.origin": {
+            "adoptedAt": "2026-10-27",
+            "fill": "tailwind-default/tokens.font-size",
+            "kind": "adopted",
+            "license": "MIT",
+            "member": "tokens.font-size.lg",
+            "pin": {
+              "file": "theme.css",
+              "package": "tailwindcss",
+              "sha256": "443d7af364200f8ec8352dc78e39485a118a1840d498c97967bf0ae402b39167",
+              "version": "4.3.3"
+            },
+            "sha256": "8f44e04b411bb6b3d2744f75f4c5d45bfadfd5970f12ff772889d7e8446e12ea",
+            "source": "tailwind-default"
+          }
+        },
+        "$type": "dimension",
+        "$value": {
+          "unit": "rem",
+          "value": 1.125
+        }
+      },
+      "sm": {
+        "$extensions": {
+          "com.clossys.css": {
+            "raw": "0.875rem"
+          },
+          "com.clossys.origin": {
+            "adoptedAt": "2026-10-27",
+            "fill": "tailwind-default/tokens.font-size",
+            "kind": "adopted",
+            "license": "MIT",
+            "member": "tokens.font-size.sm",
+            "pin": {
+              "file": "theme.css",
+              "package": "tailwindcss",
+              "sha256": "443d7af364200f8ec8352dc78e39485a118a1840d498c97967bf0ae402b39167",
+              "version": "4.3.3"
+            },
+            "sha256": "e201cc78eab0bb70590d0d79105c650236a0b79badba43a0aeda4c92efad3270",
+            "source": "tailwind-default"
+          }
+        },
+        "$type": "dimension",
+        "$value": {
+          "unit": "rem",
+          "value": 0.875
+        }
+      },
+      "xl": {
+        "$extensions": {
+          "com.clossys.css": {
+            "raw": "1.25rem"
+          },
+          "com.clossys.origin": {
+            "adoptedAt": "2026-10-27",
+            "fill": "tailwind-default/tokens.font-size",
+            "kind": "adopted",
+            "license": "MIT",
+            "member": "tokens.font-size.xl",
+            "pin": {
+              "file": "theme.css",
+              "package": "tailwindcss",
+              "sha256": "443d7af364200f8ec8352dc78e39485a118a1840d498c97967bf0ae402b39167",
+              "version": "4.3.3"
+            },
+            "sha256": "8c0c70da53bbb20d46a47253472ccb98259f7a80b29dec7a88d65bd34f5e72a1",
+            "source": "tailwind-default"
+          }
+        },
+        "$type": "dimension",
+        "$value": {
+          "unit": "rem",
+          "value": 1.25
+        }
+      },
+      "xs": {
+        "$extensions": {
+          "com.clossys.css": {
+            "raw": "0.75rem"
+          },
+          "com.clossys.origin": {
+            "adoptedAt": "2026-10-27",
+            "fill": "tailwind-default/tokens.font-size",
+            "kind": "adopted",
+            "license": "MIT",
+            "member": "tokens.font-size.xs",
+            "pin": {
+              "file": "theme.css",
+              "package": "tailwindcss",
+              "sha256": "443d7af364200f8ec8352dc78e39485a118a1840d498c97967bf0ae402b39167",
+              "version": "4.3.3"
+            },
+            "sha256": "ad228dc23e76171098220192a091bc396e45ddb7f97e5f3f2120b820ca478615",
+            "source": "tailwind-default"
+          }
+        },
+        "$type": "dimension",
+        "$value": {
+          "unit": "rem",
+          "value": 0.75
+        }
+      }
+    }
+  }
+}

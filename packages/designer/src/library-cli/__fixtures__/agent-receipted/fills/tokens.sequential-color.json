@@ -1,0 +1,306 @@
+{
+  "$extensions": {
+    "com.clossys.fill": {
+      "author": "third-party",
+      "builtOn": [],
+      "conforms": [
+        "dtcg#format",
+        "dtcg#alias",
+        "wcag-2.2#1.4.3"
+      ],
+      "derivation": {
+        "from": "dtcg#alias",
+        "rule": "blue.100..700 copied as typed role values for both modes"
+      },
+      "evidence": [
+        {
+          "check": "C1",
+          "clause": "dtcg#format"
+        },
+        {
+          "check": "C2",
+          "clause": "dtcg#alias"
+        },
+        {
+          "check": "C9",
+          "clause": "wcag-2.2#1.4.3"
+        }
+      ],
+      "id": "example/tokens.sequential-color",
+      "license": "MIT",
+      "mode": "implementation",
+      "originKinds": [
+        "adopted"
+      ],
+      "pin": {
+        "file": "theme.css",
+        "package": "tailwindcss",
+        "sha256": "443d7af364200f8ec8352dc78e39485a118a1840d498c97967bf0ae402b39167",
+        "version": "4.3.3"
+      },
+      "relation": "derived",
+      "slot": "tokens.sequential-color",
+      "source": "example",
+      "sourceAddress": "tailwindcss/theme.css",
+      "status": "draft",
+      "trust": "pinned-upstream",
+      "unmapped": [
+        "--aspect-video",
+        "--color-black",
+        "--color-white",
+        "--default-font-family",
+        "--default-font-feature-settings",
+        "--default-font-variation-settings",
+        "--default-mono-font-family",
+        "--default-mono-font-feature-settings",
+        "--default-mono-font-variation-settings",
+        "--default-transition-duration",
+        "--default-transition-timing-function",
+        "--drop-shadow",
+        "--drop-shadow-2xl",
+        "--drop-shadow-lg",
+        "--drop-shadow-md",
+        "--drop-shadow-sm",
+        "--drop-shadow-xl",
+        "--drop-shadow-xs",
+        "--font-serif",
+        "--inset-shadow-2xs",
+        "--inset-shadow-sm",
+        "--inset-shadow-xs",
+        "--max-width-prose",
+        "--perspective-distant",
+        "--perspective-dramatic",
+        "--perspective-midrange",
+        "--perspective-near",
+        "--perspective-normal",
+        "--radius",
+        "--text-shadow-2xs",
+        "--text-shadow-lg",
+        "--text-shadow-md",
+        "--text-shadow-sm",
+        "--text-shadow-xs"
+      ]
+    }
+  },
+  "tokens": {
+    "sequential-color": {
+      "100": {
+        "$extensions": {
+          "com.clossys.css": {
+            "raw": "oklch(0.932 0.032 255.585)"
+          },
+          "com.clossys.origin": {
+            "adoptedAt": "2026-10-27",
+            "fill": "tailwind-default/tokens.sequential-color",
+            "kind": "adopted",
+            "license": "MIT",
+            "member": "tokens.sequential-color.100",
+            "pin": {
+              "file": "theme.css",
+              "package": "tailwindcss",
+              "sha256": "443d7af364200f8ec8352dc78e39485a118a1840d498c97967bf0ae402b39167",
+              "version": "4.3.3"
+            },
+            "sha256": "a54de3f5c51c745dbd504d809c477c105c2f2e2bb1c12b7620803e7b4980094e",
+            "source": "tailwind-default"
+          }
+        },
+        "$type": "color",
+        "$value": {
+          "colorSpace": "oklch",
+          "components": [
+            0.932,
+            0.032,
+            255.585
+          ]
+        }
+      },
+      "200": {
+        "$extensions": {
+          "com.clossys.css": {
+            "raw": "oklch(0.882 0.059 254.128)"
+          },
+          "com.clossys.origin": {
+            "adoptedAt": "2026-10-27",
+            "fill": "tailwind-default/tokens.sequential-color",
+            "kind": "adopted",
+            "license": "MIT",
+            "member": "tokens.sequential-color.200",
+            "pin": {
+              "file": "theme.css",
+              "package": "tailwindcss",
+              "sha256": "443d7af364200f8ec8352dc78e39485a118a1840d498c97967bf0ae402b39167",
+              "version": "4.3.3"
+            },
+            "sha256": "9c79786af5ab95e23a6c69a41b70cd537816a05dd2895d5f2500a261bc261310",
+            "source": "tailwind-default"
+          }
+        },
+        "$type": "color",
+        "$value": {
+          "colorSpace": "oklch",
+          "components": [
+            0.882,
+            0.059,
+            254.128
+          ]
+        }
+      },
+      "300": {
+        "$extensions": {
+          "com.clossys.css": {
+            "raw": "oklch(0.809 0.105 251.813)"
+          },
+          "com.clossys.origin": {
+            "adoptedAt": "2026-10-27",
+            "fill": "tailwind-default/tokens.sequential-color",
+            "kind": "adopted",
+            "license": "MIT",
+            "member": "tokens.sequential-color.300",
+            "pin": {
+              "file": "theme.css",
+              "package": "tailwindcss",
+              "sha256": "443d7af364200f8ec8352dc78e39485a118a1840d498c97967bf0ae402b39167",
+              "version": "4.3.3"
+            },
+            "sha256": "c0fe385ebc67e0fd9de529eef33d8a01c705cb5f8f03d60503432ba7f4d02e98",
+            "source": "tailwind-default"
+          }
+        },
+        "$type": "color",
+        "$value": {
+          "colorSpace": "oklch",
+          "components": [
+            0.809,
+            0.105,
+            251.813
+          ]
+        }
+      },
+      "400": {
+        "$extensions": {
+          "com.clossys.css": {
+            "raw": "oklch(0.7070000000000001 0.165 254.624)"
+          },
+          "com.clossys.origin": {
+            "adoptedAt": "2026-10-27",
+            "fill": "tailwind-default/tokens.sequential-color",
+            "kind": "adopted",
+            "license": "MIT",
+            "member": "tokens.sequential-color.400",
+            "pin": {
+              "file": "theme.css",
+              "package": "tailwindcss",
+              "sha256": "443d7af364200f8ec8352dc78e39485a118a1840d498c97967bf0ae402b39167",
+              "version": "4.3.3"
+            },
+            "sha256": "bbf4d067f1e97e8f89b166834722f4173a4eab5153ef3e06721c9db5e318deb5",
+            "source": "tailwind-default"
+          }
+        },
+        "$type": "color",
+        "$value": {
+          "colorSpace": "oklch",
+          "components": [
+            0.7070000000000001,
+            0.165,
+            254.624
+          ]
+        }
+      },
+      "500": {
+        "$extensions": {
+          "com.clossys.css": {
+            "raw": "oklch(0.623 0.214 259.815)"
+          },
+          "com.clossys.origin": {
+            "adoptedAt": "2026-10-27",
+            "fill": "tailwind-default/tokens.sequential-color",
+            "kind": "adopted",
+            "license": "MIT",
+            "member": "tokens.sequential-color.500",
+            "pin": {
+              "file": "theme.css",
+              "package": "tailwindcss",
+              "sha256": "443d7af364200f8ec8352dc78e39485a118a1840d498c97967bf0ae402b39167",
+              "version": "4.3.3"
+            },
+            "sha256": "79be4c6d8d30d0b97fdf307220871f08f3808269bd8c39fe28beaf309d15c7eb",
+            "source": "tailwind-default"
+          }
+        },
+        "$type": "color",
+        "$value": {
+          "colorSpace": "oklch",
+          "components": [
+            0.623,
+            0.214,
+            259.815
+          ]
+        }
+      },
+      "600": {
+        "$extensions": {
+          "com.clossys.css": {
+            "raw": "oklch(0.546 0.245 262.881)"
+          },
+          "com.clossys.origin": {
+            "adoptedAt": "2026-10-27",
+            "fill": "tailwind-default/tokens.sequential-color",
+            "kind": "adopted",
+            "license": "MIT",
+            "member": "tokens.sequential-color.600",
+            "pin": {
+              "file": "theme.css",
+              "package": "tailwindcss",
+              "sha256": "443d7af364200f8ec8352dc78e39485a118a1840d498c97967bf0ae402b39167",
+              "version": "4.3.3"
+            },
+            "sha256": "2c241d2e5043bc4b8bfb16625f7dc131507f89ecbfe09269b70bc8025c259627",
+            "source": "tailwind-default"
+          }
+        },
+        "$type": "color",
+        "$value": {
+          "colorSpace": "oklch",
+          "components": [
+            0.546,
+            0.245,
+            262.881
+          ]
+        }
+      },
+      "700": {
+        "$extensions": {
+          "com.clossys.css": {
+            "raw": "oklch(0.488 0.243 264.376)"
+          },
+          "com.clossys.origin": {
+            "adoptedAt": "2026-10-27",
+            "fill": "tailwind-default/tokens.sequential-color",
+            "kind": "adopted",
+            "license": "MIT",
+            "member": "tokens.sequential-color.700",
+            "pin": {
+              "file": "theme.css",
+              "package": "tailwindcss",
+              "sha256": "443d7af364200f8ec8352dc78e39485a118a1840d498c97967bf0ae402b39167",
+              "version": "4.3.3"
+            },
+            "sha256": "a99b3d84c38210a8a8a0f623d666f7b3b6ded40a5307e9a786bed12f391779fe",
+            "source": "tailwind-default"
+          }
+        },
+        "$type": "color",
+        "$value": {
+          "colorSpace": "oklch",
+          "components": [
+            0.488,
+            0.243,
+            264.376
+          ]
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,65 @@
+{
+  "$extensions": {
+    "com.clossys.fill": {
+      "author": "third-party",
+      "builtOn": [],
+      "conforms": [],
+      "evidence": [],
+      "id": "example/assets.icon-chevron-right",
+      "license": "ISC",
+      "mode": "implementation",
+      "originKinds": [
+        "adopted"
+      ],
+      "pin": {
+        "file": "src/icons/ChevronRight.ts",
+        "package": "lucide-react",
+        "sha256": "99e246ee2ef8a9b85999607d97a1152fbe6bf374f68c29c19ffa46ad7a502fb6",
+        "version": "1.23.0"
+      },
+      "reads": {
+        "assets": [],
+        "tokens": []
+      },
+      "relation": "same-contract",
+      "slot": "assets.icon-chevron-right",
+      "source": "example",
+      "sourceAddress": "lucide-react@1.23.0/dist/esm/icons/chevron-right.js",
+      "status": "draft",
+      "trust": "pinned-upstream"
+    }
+  },
+  "assets": {
+    "icon-chevron-right": {
+      "default": {
+        "$extensions": {
+          "com.clossys.origin": {
+            "adoptedAt": "2026-10-27",
+            "fill": "lucide/assets.icon-chevron-right",
+            "kind": "adopted",
+            "license": "ISC",
+            "member": "assets.icon-chevron-right.default",
+            "pin": {
+              "file": "src/icons/ChevronRight.ts",
+              "package": "lucide-react",
+              "sha256": "99e246ee2ef8a9b85999607d97a1152fbe6bf374f68c29c19ffa46ad7a502fb6",
+              "version": "1.23.0"
+            },
+            "sha256": "6cf474b764da370b47c84154f8f4c1cd895ec930c99d002771c0e6eb5831f265",
+            "source": "lucide"
+          }
+        },
+        "$type": "glyph",
+        "$value": [
+          [
+            "path",
+            {
+              "d": "m9 18 6-6-6-6",
+              "key": "mthhwq"
+            }
+          ]
+        ]
+      }
+    }
+  }
+}

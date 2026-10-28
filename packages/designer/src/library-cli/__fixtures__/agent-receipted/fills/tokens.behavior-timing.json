@@ -1,0 +1,164 @@
+{
+  "$extensions": {
+    "com.clossys.fill": {
+      "author": "foundry",
+      "builtOn": [],
+      "conforms": [
+        "dtcg#format",
+        "dtcg#alias"
+      ],
+      "evidence": [
+        {
+          "check": "C1",
+          "clause": "dtcg#format"
+        },
+        {
+          "check": "C2",
+          "clause": "dtcg#alias"
+        }
+      ],
+      "id": "example/tokens.behavior-timing",
+      "license": "MIT",
+      "mode": "implementation",
+      "originKinds": [
+        "adopted"
+      ],
+      "relation": "same-contract",
+      "slot": "tokens.behavior-timing",
+      "source": "example",
+      "sourceAddress": "styles/tokens.css",
+      "status": "draft",
+      "trust": "foundry"
+    }
+  },
+  "tokens": {
+    "behavior-timing": {
+      "confirm-hold": {
+        "$extensions": {
+          "com.clossys.css": {
+            "raw": "2000ms"
+          },
+          "com.clossys.origin": {
+            "adoptedAt": "2026-10-27",
+            "fill": "foundry/tokens.behavior-timing",
+            "kind": "adopted",
+            "license": "MIT",
+            "member": "tokens.behavior-timing.confirm-hold",
+            "sha256": "f96d6ee886e6b5ceb14e2d2100f7a26402288dee302292d09f6129bfcf49bde5",
+            "source": "foundry"
+          }
+        },
+        "$type": "duration",
+        "$value": {
+          "unit": "ms",
+          "value": 2000
+        }
+      },
+      "loading-delay": {
+        "$extensions": {
+          "com.clossys.css": {
+            "raw": "150ms"
+          },
+          "com.clossys.origin": {
+            "adoptedAt": "2026-10-27",
+            "fill": "foundry/tokens.behavior-timing",
+            "kind": "adopted",
+            "license": "MIT",
+            "member": "tokens.behavior-timing.loading-delay",
+            "sha256": "634811c603931221b81a69dc4cf305f144c1754411ff136dbfd17b1472cfe720",
+            "source": "foundry"
+          }
+        },
+        "$type": "duration",
+        "$value": {
+          "unit": "ms",
+          "value": 150
+        }
+      },
+      "loading-long": {
+        "$extensions": {
+          "com.clossys.css": {
+            "raw": "10000ms"
+          },
+          "com.clossys.origin": {
+            "adoptedAt": "2026-10-27",
+            "fill": "foundry/tokens.behavior-timing",
+            "kind": "adopted",
+            "license": "MIT",
+            "member": "tokens.behavior-timing.loading-long",
+            "sha256": "cd43e70c7423d9955967195a5e278de127957f73c4904513ceaae918e2005cbb",
+            "source": "foundry"
+          }
+        },
+        "$type": "duration",
+        "$value": {
+          "unit": "ms",
+          "value": 10000
+        }
+      },
+      "loading-min": {
+        "$extensions": {
+          "com.clossys.css": {
+            "raw": "400ms"
+          },
+          "com.clossys.origin": {
+            "adoptedAt": "2026-10-27",
+            "fill": "foundry/tokens.behavior-timing",
+            "kind": "adopted",
+            "license": "MIT",
+            "member": "tokens.behavior-timing.loading-min",
+            "sha256": "74130467585f8f3d85bc036e72aa1b6202e93f9eac39a78daa61484dc090b4cc",
+            "source": "foundry"
+          }
+        },
+        "$type": "duration",
+        "$value": {
+          "unit": "ms",
+          "value": 400
+        }
+      },
+      "tooltip-close": {
+        "$extensions": {
+          "com.clossys.css": {
+            "raw": "300ms"
+          },
+          "com.clossys.origin": {
+            "adoptedAt": "2026-10-27",
+            "fill": "foundry/tokens.behavior-timing",
+            "kind": "adopted",
+            "license": "MIT",
+            "member": "tokens.behavior-timing.tooltip-close",
+            "sha256": "fc13b158e46b0673f276a041e206b3b3c2fd402162556fa67311440e3d7a0ed9",
+            "source": "foundry"
+          }
+        },
+        "$type": "duration",
+        "$value": {
+          "unit": "ms",
+          "value": 300
+        }
+      },
+      "tooltip-delay": {
+        "$extensions": {
+          "com.clossys.css": {
+            "raw": "500ms"
+          },
+          "com.clossys.origin": {
+            "adoptedAt": "2026-10-27",
+            "fill": "foundry/tokens.behavior-timing",
+            "kind": "adopted",
+            "license": "MIT",
+            "member": "tokens.behavior-timing.tooltip-delay",
+            "sha256": "e2e67c5d2e28242ebec263713f446cccddb48e1e51c31c52ee21a912ec172dcb",
+            "source": "foundry"
+          }
+        },
+        "$type": "duration",
+        "$value": {
+          "unit": "ms",
+          "value": 500
+        }
+      }
+    }
+  }
+}

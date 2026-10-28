@@ -1,0 +1,72 @@
+{
+  "$extensions": {
+    "com.clossys.fill": {
+      "author": "third-party",
+      "builtOn": [],
+      "conforms": [],
+      "evidence": [],
+      "id": "example/assets.icon-security",
+      "license": "ISC",
+      "mode": "implementation",
+      "originKinds": [
+        "adopted"
+      ],
+      "pin": {
+        "file": "src/icons/ShieldCheck.ts",
+        "package": "lucide-react",
+        "sha256": "17dd064d3a3c7cd9ab4d006dcea05d9127f5b248d13c164cf0dde2a7d24091a4",
+        "version": "1.24.0"
+      },
+      "reads": {
+        "assets": [],
+        "tokens": []
+      },
+      "relation": "same-contract",
+      "slot": "assets.icon-security",
+      "source": "example",
+      "sourceAddress": "lucide-react@1.24.0/dist/esm/icons/shield-check.js",
+      "status": "draft",
+      "trust": "pinned-upstream"
+    }
+  },
+  "assets": {
+    "icon-security": {
+      "default": {
+        "$extensions": {
+          "com.clossys.origin": {
+            "adoptedAt": "2026-10-27",
+            "fill": "lucide/assets.icon-security",
+            "kind": "adopted",
+            "license": "ISC",
+            "member": "assets.icon-security.default",
+            "pin": {
+              "file": "src/icons/ShieldCheck.ts",
+              "package": "lucide-react",
+              "sha256": "17dd064d3a3c7cd9ab4d006dcea05d9127f5b248d13c164cf0dde2a7d24091a4",
+              "version": "1.24.0"
+            },
+            "sha256": "9e6a71ba9d2e76a2d9a249f5039e6ad05b72dd330c91fc441b98ff5e1ed23a2b",
+            "source": "lucide"
+          }
+        },
+        "$type": "glyph",
+        "$value": [
+          [
+            "path",
+            {
+              "d": "M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z",
+              "key": "oel41y"
+            }
+          ],
+          [
+            "path",
+            {
+              "d": "m9 12 2 2 4-4",
+              "key": "dzmm74"
+            }
+          ]
+        ]
+      }
+    }
+  }
+}

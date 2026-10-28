@@ -1,0 +1,283 @@
+{
+  "$extensions": {
+    "com.clossys.fill": {
+      "author": "foundry",
+      "builtOn": [],
+      "conforms": [
+        "dtcg#format",
+        "dtcg#alias",
+        "wcag-2.2#1.4.3"
+      ],
+      "evidence": [
+        {
+          "check": "C1",
+          "clause": "dtcg#format"
+        },
+        {
+          "check": "C2",
+          "clause": "dtcg#alias"
+        },
+        {
+          "check": "C9",
+          "clause": "wcag-2.2#1.4.3"
+        }
+      ],
+      "id": "example/tokens.text-color",
+      "license": "MIT",
+      "mode": "implementation",
+      "originKinds": [
+        "adopted"
+      ],
+      "relation": "same-contract",
+      "slot": "tokens.text-color",
+      "source": "example",
+      "sourceAddress": "styles/tokens.css",
+      "status": "draft",
+      "trust": "foundry"
+    }
+  },
+  "tokens": {
+    "text-color": {
+      "link": {
+        "$extensions": {
+          "com.clossys.css": {
+            "raw": "oklch(0.36 0 0)"
+          },
+          "com.clossys.modes": {
+            "dark": {
+              "colorSpace": "oklch",
+              "components": [
+                0.86,
+                0,
+                0
+              ]
+            }
+          },
+          "com.clossys.origin": {
+            "adoptedAt": "2026-10-27",
+            "fill": "foundry/tokens.text-color",
+            "kind": "adopted",
+            "license": "MIT",
+            "member": "tokens.text-color.link",
+            "sha256": "f507e532f89f9cca63b8f3a9e95b71f7eba137807e1fa1348ccf2f7d0bc4713c",
+            "source": "foundry"
+          }
+        },
+        "$type": "color",
+        "$value": {
+          "colorSpace": "oklch",
+          "components": [
+            0.36,
+            0,
+            0
+          ]
+        }
+      },
+      "muted": {
+        "$extensions": {
+          "com.clossys.css": {
+            "raw": "oklch(0.54 0 0)"
+          },
+          "com.clossys.modes": {
+            "dark": {
+              "colorSpace": "oklch",
+              "components": [
+                0.7763,
+                0,
+                0
+              ]
+            }
+          },
+          "com.clossys.origin": {
+            "adoptedAt": "2026-10-27",
+            "fill": "foundry/tokens.text-color",
+            "kind": "adopted",
+            "license": "MIT",
+            "member": "tokens.text-color.muted",
+            "sha256": "37620536950686a11972afeb663c1a3d289aff3ddd0425bb0486a1498ad8254d",
+            "source": "foundry"
+          }
+        },
+        "$type": "color",
+        "$value": {
+          "colorSpace": "oklch",
+          "components": [
+            0.54,
+            0,
+            0
+          ]
+        }
+      },
+      "on-accent": {
+        "$extensions": {
+          "com.clossys.origin": {
+            "adoptedAt": "2026-10-27",
+            "fill": "foundry/tokens.text-color",
+            "kind": "adopted",
+            "license": "MIT",
+            "member": "tokens.text-color.on-accent",
+            "sha256": "78624d78834827c1ab9093e46cb5fffb7d69e9c30f6d87354e947de1365cf31d",
+            "source": "foundry"
+          }
+        },
+        "$type": "color",
+        "$value": "{tokens.text-color.on-inverse}"
+      },
+      "on-action": {
+        "$extensions": {
+          "com.clossys.origin": {
+            "adoptedAt": "2026-10-27",
+            "fill": "foundry/tokens.text-color",
+            "kind": "adopted",
+            "license": "MIT",
+            "member": "tokens.text-color.on-action",
+            "sha256": "78624d78834827c1ab9093e46cb5fffb7d69e9c30f6d87354e947de1365cf31d",
+            "source": "foundry"
+          }
+        },
+        "$type": "color",
+        "$value": "{tokens.text-color.on-inverse}"
+      },
+      "on-inverse": {
+        "$extensions": {
+          "com.clossys.css": {
+            "raw": "oklch(0.9702 0 0)"
+          },
+          "com.clossys.modes": {
+            "dark": {
+              "colorSpace": "oklch",
+              "components": [
+                0.2178,
+                0,
+                0
+              ]
+            }
+          },
+          "com.clossys.origin": {
+            "adoptedAt": "2026-10-27",
+            "fill": "foundry/tokens.text-color",
+            "kind": "adopted",
+            "license": "MIT",
+            "member": "tokens.text-color.on-inverse",
+            "sha256": "7caccb945bdf4c505cafbc7af02271bf3f4df5b31afbe4c125ff76349ddcc7d5",
+            "source": "foundry"
+          }
+        },
+        "$type": "color",
+        "$value": {
+          "colorSpace": "oklch",
+          "components": [
+            0.9702,
+            0,
+            0
+          ]
+        }
+      },
+      "on-inverse-muted": {
+        "$extensions": {
+          "com.clossys.css": {
+            "raw": "oklch(0.7763 0 0)"
+          },
+          "com.clossys.modes": {
+            "dark": {
+              "colorSpace": "oklch",
+              "components": [
+                0.42,
+                0,
+                0
+              ]
+            }
+          },
+          "com.clossys.origin": {
+            "adoptedAt": "2026-10-27",
+            "fill": "foundry/tokens.text-color",
+            "kind": "adopted",
+            "license": "MIT",
+            "member": "tokens.text-color.on-inverse-muted",
+            "sha256": "d0d47ea97edbbc0337b901e800e8c1ec75984ce5897015ea12474bd85d027045",
+            "source": "foundry"
+          }
+        },
+        "$type": "color",
+        "$value": {
+          "colorSpace": "oklch",
+          "components": [
+            0.7763,
+            0,
+            0
+          ]
+        }
+      },
+      "primary": {
+        "$extensions": {
+          "com.clossys.css": {
+            "raw": "oklch(0.2178 0 0)"
+          },
+          "com.clossys.modes": {
+            "dark": {
+              "colorSpace": "oklch",
+              "components": [
+                0.97,
+                0,
+                0
+              ]
+            }
+          },
+          "com.clossys.origin": {
+            "adoptedAt": "2026-10-27",
+            "fill": "foundry/tokens.text-color",
+            "kind": "adopted",
+            "license": "MIT",
+            "member": "tokens.text-color.primary",
+            "sha256": "4d6676310e1f5cfbd395c7c98c39f4181d54d79d12e05cfcdd8d5100c0886c6c",
+            "source": "foundry"
+          }
+        },
+        "$type": "color",
+        "$value": {
+          "colorSpace": "oklch",
+          "components": [
+            0.2178,
+            0,
+            0
+          ]
+        }
+      },
+      "secondary": {
+        "$extensions": {
+          "com.clossys.css": {
+            "raw": "oklch(0.36 0 0)"
+          },
+          "com.clossys.modes": {
+            "dark": {
+              "colorSpace": "oklch",
+              "components": [
+                0.82,
+                0,
+                0
+              ]
+            }
+          },
+          "com.clossys.origin": {
+            "adoptedAt": "2026-10-27",
+            "fill": "foundry/tokens.text-color",
+            "kind": "adopted",
+            "license": "MIT",
+            "member": "tokens.text-color.secondary",
+            "sha256": "e3698fb788c32f906600ee4724eb97baa51e42ee87b53d59bd4282ae4b1a5b8d",
+            "source": "foundry"
+          }
+        },
+        "$type": "color",
+        "$value": {
+          "colorSpace": "oklch",
+          "components": [
+            0.36,
+            0,
+            0
+          ]
+        }
+      }
+    }
+  }
+}

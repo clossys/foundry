@@ -45,6 +45,7 @@ Keep one `clossys-designer` skill; do not copy its procedures into a consumer
 repository or the operator's skill tree.
 
 - [Choose a library fill](library-choose.md): availability and choice boundary.
+- [Agent library commands](library-commands.md): dry runs, stamped writes and capture caches. Read the installed companion at `node_modules/@clossys/designer/skill/library-commands.md`.
 - [Check the library](library-check.md): checks and plain-language findings.
 - [Emit library files](library-emit.md): regeneration, drift and notices.
 - [Review in Studio](library-studio.md): availability and owner review boundary.
@@ -52,7 +53,7 @@ repository or the operator's skill tree.
 The consumer library is the only input to resolve and emit. Never resolve
 straight from a catalog fill or invent a value to make an emission pass. The
 chooser never authors values: authored values come from the consumer. Send a
-chooser ChangeSet to the Studio basket; never auto-save it. Run
+chooser ChangeSet through an explicit agent command; preview with `designer-library reselect` or `designer-library generate-starter` before an instructed `--write`. Run
 `designer-library apply --root library --changeset changeset.json` only on the
 human's explicit instruction in this session. Persist rationale and human
 overrides with the review record; a recommendation is not permission to apply.

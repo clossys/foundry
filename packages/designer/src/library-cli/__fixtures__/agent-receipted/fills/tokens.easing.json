@@ -1,0 +1,229 @@
+{
+  "$extensions": {
+    "com.clossys.fill": {
+      "author": "foundry",
+      "builtOn": [],
+      "conforms": [
+        "dtcg#format",
+        "dtcg#alias"
+      ],
+      "evidence": [
+        {
+          "check": "C1",
+          "clause": "dtcg#format"
+        },
+        {
+          "check": "C2",
+          "clause": "dtcg#alias"
+        }
+      ],
+      "id": "example/tokens.easing",
+      "license": "MIT",
+      "mode": "implementation",
+      "originKinds": [
+        "adopted"
+      ],
+      "relation": "subset",
+      "slot": "tokens.easing",
+      "source": "example",
+      "sourceAddress": "styles/tokens.css",
+      "status": "draft",
+      "trust": "foundry"
+    }
+  },
+  "tokens": {
+    "easing": {
+      "accelerate": {
+        "$extensions": {
+          "com.clossys.css": {
+            "raw": "cubic-bezier(0.4, 0, 1, 1)"
+          },
+          "com.clossys.origin": {
+            "adoptedAt": "2026-10-27",
+            "fill": "tailwind-default/tokens.easing",
+            "kind": "adopted",
+            "license": "MIT",
+            "member": "tokens.easing.accelerate",
+            "pin": {
+              "file": "theme.css",
+              "package": "tailwindcss",
+              "sha256": "443d7af364200f8ec8352dc78e39485a118a1840d498c97967bf0ae402b39167",
+              "version": "4.3.3"
+            },
+            "sha256": "4682fe6c4c75873d35206d193452c9e6144a34fd8277828eecb5b03d34a1ed41",
+            "source": "tailwind-default"
+          }
+        },
+        "$type": "cubicBezier",
+        "$value": [
+          0.4,
+          0,
+          1,
+          1
+        ]
+      },
+      "bounce": {
+        "$extensions": {
+          "com.clossys.css": {
+            "raw": "cubic-bezier(.2, .8, .2, 1)"
+          },
+          "com.clossys.origin": {
+            "adoptedAt": "2026-10-27",
+            "fill": "foundry/tokens.easing",
+            "kind": "adopted",
+            "license": "MIT",
+            "member": "tokens.easing.bounce",
+            "sha256": "e09ac76beb3776adfd15137dccca0489d214ec2a60f79b3396b0bb98d63df132",
+            "source": "foundry"
+          }
+        },
+        "$type": "cubicBezier",
+        "$value": [
+          0.2,
+          0.8,
+          0.2,
+          1
+        ]
+      },
+      "decelerate": {
+        "$extensions": {
+          "com.clossys.css": {
+            "raw": "cubic-bezier(0, 0, 0.2, 1)"
+          },
+          "com.clossys.origin": {
+            "adoptedAt": "2026-10-27",
+            "fill": "tailwind-default/tokens.easing",
+            "kind": "adopted",
+            "license": "MIT",
+            "member": "tokens.easing.decelerate",
+            "pin": {
+              "file": "theme.css",
+              "package": "tailwindcss",
+              "sha256": "443d7af364200f8ec8352dc78e39485a118a1840d498c97967bf0ae402b39167",
+              "version": "4.3.3"
+            },
+            "sha256": "aa46ecfae260ff04d5e7e7f701543b8c6c0d2738589238fc785f924eff1dc1e1",
+            "source": "tailwind-default"
+          }
+        },
+        "$type": "cubicBezier",
+        "$value": [
+          0,
+          0,
+          0.2,
+          1
+        ]
+      },
+      "default": {
+        "$extensions": {
+          "com.clossys.css": {
+            "raw": "cubic-bezier(.2, 0, 0, 1)"
+          },
+          "com.clossys.origin": {
+            "adoptedAt": "2026-10-27",
+            "fill": "foundry/tokens.easing",
+            "kind": "adopted",
+            "license": "MIT",
+            "member": "tokens.easing.default",
+            "sha256": "d60f06e9507601a532e815a7f1169a86709d2f0c7faa88780e0408fafb2e522d",
+            "source": "foundry"
+          }
+        },
+        "$type": "cubicBezier",
+        "$value": [
+          0.2,
+          0,
+          0,
+          1
+        ]
+      },
+      "in": {
+        "$extensions": {
+          "com.clossys.css": {
+            "raw": "cubic-bezier(0.4, 0, 1, 1)"
+          },
+          "com.clossys.origin": {
+            "adoptedAt": "2026-10-27",
+            "fill": "tailwind-default/tokens.easing",
+            "kind": "adopted",
+            "license": "MIT",
+            "member": "tokens.easing.in",
+            "pin": {
+              "file": "theme.css",
+              "package": "tailwindcss",
+              "sha256": "443d7af364200f8ec8352dc78e39485a118a1840d498c97967bf0ae402b39167",
+              "version": "4.3.3"
+            },
+            "sha256": "4682fe6c4c75873d35206d193452c9e6144a34fd8277828eecb5b03d34a1ed41",
+            "source": "tailwind-default"
+          }
+        },
+        "$type": "cubicBezier",
+        "$value": [
+          0.4,
+          0,
+          1,
+          1
+        ]
+      },
+      "in-out": {
+        "$extensions": {
+          "com.clossys.css": {
+            "raw": "cubic-bezier(0.4, 0, 0.2, 1)"
+          },
+          "com.clossys.origin": {
+            "adoptedAt": "2026-10-27",
+            "fill": "tailwind-default/tokens.easing",
+            "kind": "adopted",
+            "license": "MIT",
+            "member": "tokens.easing.in-out",
+            "pin": {
+              "file": "theme.css",
+              "package": "tailwindcss",
+              "sha256": "443d7af364200f8ec8352dc78e39485a118a1840d498c97967bf0ae402b39167",
+              "version": "4.3.3"
+            },
+            "sha256": "040779d511dcd0589e1660db2518e30faabb93d3d15e32636b786aa0e3e80c4c",
+            "source": "tailwind-default"
+          }
+        },
+        "$type": "cubicBezier",
+        "$value": [
+          0.4,
+          0,
+          0.2,
+          1
+        ]
+      },
+      "out": {
+        "$extensions": {
+          "com.clossys.css": {
+            "raw": "cubic-bezier(0, 0, 0.2, 1)"
+          },
+          "com.clossys.origin": {
+            "adoptedAt": "2026-10-27",
+            "fill": "tailwind-default/tokens.easing",
+            "kind": "adopted",
+            "license": "MIT",
+            "member": "tokens.easing.out",
+            "pin": {
+              "file": "theme.css",
+              "package": "tailwindcss",
+              "sha256": "443d7af364200f8ec8352dc78e39485a118a1840d498c97967bf0ae402b39167",
+              "version": "4.3.3"
+            },
+            "sha256": "aa46ecfae260ff04d5e7e7f701543b8c6c0d2738589238fc785f924eff1dc1e1",
+            "source": "tailwind-default"
+          }
+        },
+        "$type": "cubicBezier",
+        "$value": [
+          0,
+          0,
+          0.2,
+          1
+        ]
+      }
+    }
+  }
+}

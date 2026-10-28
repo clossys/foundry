@@ -1,0 +1,206 @@
+{
+  "$extensions": {
+    "com.clossys.fill": {
+      "author": "foundry",
+      "builtOn": [],
+      "conforms": [
+        "dtcg#format",
+        "dtcg#alias"
+      ],
+      "evidence": [
+        {
+          "check": "C1",
+          "clause": "dtcg#format"
+        },
+        {
+          "check": "C2",
+          "clause": "dtcg#alias"
+        }
+      ],
+      "id": "example/tokens.control-size",
+      "license": "MIT",
+      "mode": "implementation",
+      "originKinds": [
+        "adopted"
+      ],
+      "relation": "same-contract",
+      "slot": "tokens.control-size",
+      "source": "example",
+      "sourceAddress": "styles/tokens.css",
+      "status": "draft",
+      "trust": "foundry"
+    }
+  },
+  "tokens": {
+    "control-size": {
+      "h-lg": {
+        "$extensions": {
+          "com.clossys.css": {
+            "raw": "36px"
+          },
+          "com.clossys.origin": {
+            "adoptedAt": "2026-10-27",
+            "fill": "foundry/tokens.control-size",
+            "kind": "adopted",
+            "license": "MIT",
+            "member": "tokens.control-size.h-lg",
+            "sha256": "12e0ae34202a8b6e3fc881dca6da5081705e8e5dc450d45047eb8fc9da4ece03",
+            "source": "foundry"
+          }
+        },
+        "$type": "dimension",
+        "$value": {
+          "unit": "px",
+          "value": 36
+        }
+      },
+      "h-md": {
+        "$extensions": {
+          "com.clossys.css": {
+            "raw": "32px"
+          },
+          "com.clossys.origin": {
+            "adoptedAt": "2026-10-27",
+            "fill": "foundry/tokens.control-size",
+            "kind": "adopted",
+            "license": "MIT",
+            "member": "tokens.control-size.h-md",
+            "sha256": "b61a20c5c5519c593154052406554fcc1fab2b7ff53f9106b74692117604b3ed",
+            "source": "foundry"
+          }
+        },
+        "$type": "dimension",
+        "$value": {
+          "unit": "px",
+          "value": 32
+        }
+      },
+      "h-sm": {
+        "$extensions": {
+          "com.clossys.css": {
+            "raw": "28px"
+          },
+          "com.clossys.origin": {
+            "adoptedAt": "2026-10-27",
+            "fill": "foundry/tokens.control-size",
+            "kind": "adopted",
+            "license": "MIT",
+            "member": "tokens.control-size.h-sm",
+            "sha256": "e8bc8f375bd8f1b450d493d77b6736c8b53d8e4599a32214c18d4f0c5f73f13e",
+            "source": "foundry"
+          }
+        },
+        "$type": "dimension",
+        "$value": {
+          "unit": "px",
+          "value": 28
+        }
+      },
+      "mark": {
+        "$extensions": {
+          "com.clossys.css": {
+            "raw": "16px"
+          },
+          "com.clossys.origin": {
+            "adoptedAt": "2026-10-27",
+            "fill": "foundry/tokens.control-size",
+            "kind": "adopted",
+            "license": "MIT",
+            "member": "tokens.control-size.mark",
+            "sha256": "68280d160f8547bc3fadd71ae26923d6d6ce815b58d457d81f97ae028effba12",
+            "source": "foundry"
+          }
+        },
+        "$type": "dimension",
+        "$value": {
+          "unit": "px",
+          "value": 16
+        }
+      },
+      "row-h": {
+        "$extensions": {
+          "com.clossys.css": {
+            "raw": "36px"
+          },
+          "com.clossys.origin": {
+            "adoptedAt": "2026-10-27",
+            "fill": "foundry/tokens.control-size",
+            "kind": "adopted",
+            "license": "MIT",
+            "member": "tokens.control-size.row-h",
+            "sha256": "12e0ae34202a8b6e3fc881dca6da5081705e8e5dc450d45047eb8fc9da4ece03",
+            "source": "foundry"
+          }
+        },
+        "$type": "dimension",
+        "$value": {
+          "unit": "px",
+          "value": 36
+        }
+      },
+      "switch-h": {
+        "$extensions": {
+          "com.clossys.css": {
+            "raw": "20px"
+          },
+          "com.clossys.origin": {
+            "adoptedAt": "2026-10-27",
+            "fill": "foundry/tokens.control-size",
+            "kind": "adopted",
+            "license": "MIT",
+            "member": "tokens.control-size.switch-h",
+            "sha256": "564385335a49185027971f44c7888fcdc0f2a33b51df7b450686c46683d235f8",
+            "source": "foundry"
+          }
+        },
+        "$type": "dimension",
+        "$value": {
+          "unit": "px",
+          "value": 20
+        }
+      },
+      "switch-thumb": {
+        "$extensions": {
+          "com.clossys.css": {
+            "raw": "14px"
+          },
+          "com.clossys.origin": {
+            "adoptedAt": "2026-10-27",
+            "fill": "foundry/tokens.control-size",
+            "kind": "adopted",
+            "license": "MIT",
+            "member": "tokens.control-size.switch-thumb",
+            "sha256": "c2f8cbe42263cb56ad91b58604dfa648c01607e5617a622dd79f0b7bed5e288a",
+            "source": "foundry"
+          }
+        },
+        "$type": "dimension",
+        "$value": {
+          "unit": "px",
+          "value": 14
+        }
+      },
+      "switch-w": {
+        "$extensions": {
+          "com.clossys.css": {
+            "raw": "36px"
+          },
+          "com.clossys.origin": {
+            "adoptedAt": "2026-10-27",
+            "fill": "foundry/tokens.control-size",
+            "kind": "adopted",
+            "license": "MIT",
+            "member": "tokens.control-size.switch-w",
+            "sha256": "12e0ae34202a8b6e3fc881dca6da5081705e8e5dc450d45047eb8fc9da4ece03",
+            "source": "foundry"
+          }
+        },
+        "$type": "dimension",
+        "$value": {
+          "unit": "px",
+          "value": 36
+        }
+      }
+    }
+  }
+}

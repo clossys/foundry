@@ -1,0 +1,123 @@
+{
+  "$extensions": {
+    "com.clossys.fill": {
+      "author": "third-party",
+      "builtOn": [],
+      "conforms": [],
+      "evidence": [],
+      "id": "example/assets.icon-theme-light",
+      "license": "ISC",
+      "mode": "implementation",
+      "originKinds": [
+        "adopted"
+      ],
+      "pin": {
+        "file": "src/icons/Sun.ts",
+        "package": "lucide-react",
+        "sha256": "8667df53d290ac14195b44a8a39a1b88e0bda24fb236637c1f30b6fea19a1a2f",
+        "version": "1.23.0"
+      },
+      "reads": {
+        "assets": [],
+        "tokens": []
+      },
+      "relation": "same-contract",
+      "slot": "assets.icon-theme-light",
+      "source": "example",
+      "sourceAddress": "lucide-react@1.23.0/dist/esm/icons/sun.js",
+      "status": "draft",
+      "trust": "pinned-upstream"
+    }
+  },
+  "assets": {
+    "icon-theme-light": {
+      "default": {
+        "$extensions": {
+          "com.clossys.origin": {
+            "adoptedAt": "2026-10-27",
+            "fill": "lucide/assets.icon-theme-light",
+            "kind": "adopted",
+            "license": "ISC",
+            "member": "assets.icon-theme-light.default",
+            "pin": {
+              "file": "src/icons/Sun.ts",
+              "package": "lucide-react",
+              "sha256": "8667df53d290ac14195b44a8a39a1b88e0bda24fb236637c1f30b6fea19a1a2f",
+              "version": "1.23.0"
+            },
+            "sha256": "fb9391b10809af23d9fe979b0f07b0878610bae946c7bf092abc9750a3978161",
+            "source": "lucide"
+          }
+        },
+        "$type": "glyph",
+        "$value": [
+          [
+            "circle",
+            {
+              "cx": "12",
+              "cy": "12",
+              "key": "4exip2",
+              "r": "4"
+            }
+          ],
+          [
+            "path",
+            {
+              "d": "M12 2v2",
+              "key": "tus03m"
+            }
+          ],
+          [
+            "path",
+            {
+              "d": "M12 20v2",
+              "key": "1lh1kg"
+            }
+          ],
+          [
+            "path",
+            {
+              "d": "m4.93 4.93 1.41 1.41",
+              "key": "149t6j"
+            }
+          ],
+          [
+            "path",
+            {
+              "d": "m17.66 17.66 1.41 1.41",
+              "key": "ptbguv"
+            }
+          ],
+          [
+            "path",
+            {
+              "d": "M2 12h2",
+              "key": "1t8f8n"
+            }
+          ],
+          [
+            "path",
+            {
+              "d": "M20 12h2",
+              "key": "1q8mjw"
+            }
+          ],
+          [
+            "path",
+            {
+              "d": "m6.34 17.66-1.41 1.41",
+              "key": "1m8zz5"
+            }
+          ],
+          [
+            "path",
+            {
+              "d": "m19.07 4.93-1.41 1.41",
+              "key": "1shlcs"
+            }
+          ]
+        ]
+      }
+    }
+  }
+}
