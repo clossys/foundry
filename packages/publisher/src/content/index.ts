@@ -1,11 +1,13 @@
 /** Provider-neutral stored content. Library Review and publishing run separately. */
-export { CONTENT_TAXONOMY, isContentPlacement, createSlotId, isSlotId } from "./taxonomy.js";
-export type { ContentL1, ContentL2, ContentPlacement, SlotId } from "./taxonomy.js";
+export { CONTENT_TREE, CONTENT_TAXONOMY, loadContentTree, isContentL1, isContentL2, isContentPlacement, createSlotId, isSlotId } from "./taxonomy.js";
+export type { ContentTree, ContentTreeNode, ContentTreeChild, ContentL1, ContentL2, ContentPlacement, SlotId } from "./taxonomy.js";
+export { checkSlotLeafFreeze } from "./leaf-freeze.js";
+export { robotsFor, outputPathFor, checkPageMetadata } from "./metadata.js";
 export { CONTENT_STAGES, STAGE_STATUSES, rollUpStageStatuses } from "./stages.js";
 export type { ContentStage, StageStatus, CandidateStages } from "./stages.js";
 export { CANDIDATE_STATES, CANDIDATE_ORIGINS, SLOT_KINDS, SECTION_INTENTS, LINK_RELATIONS, isRevisionId } from "./vocabulary.js";
 export type { CandidateState, CandidateOrigin, SlotKind, SectionIntent, LinkRelation, RevisionId } from "./vocabulary.js";
-export { validateComposition, parseComposition, resolveCopy } from "./composition.js";
+export { validateComposition, parseComposition, resolveCopy, PAGE_META_KEY } from "./composition.js";
 export type { DesignerAssetRef, CopyField, ResolvedCopy, SectionReference, CompositionSection, Composition, ContentFinding } from "./composition.js";
 export { isContentJson, isSourceAnswer } from "./json.js";
 export type { ContentJson, ContentJsonObject, SourceAnswer } from "./json.js";

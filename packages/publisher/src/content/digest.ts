@@ -7,6 +7,8 @@ export function candidateRevisionContent(value: CandidateContent): CandidateCont
   return {
     name: value.name, brief: value.brief,
     ...(value.composition === undefined ? {} : { composition: value.composition }),
+    ...(value.pageMeta === undefined ? {} : { pageMeta: value.pageMeta }),
+    ...(value.pageMetaAssets === undefined ? {} : { pageMetaAssets: value.pageMetaAssets }),
     ...(value.redirectTarget === undefined ? {} : { redirectTarget: value.redirectTarget }),
     links: value.links, typeSettings: value.typeSettings, openQuestions: value.openQuestions,
   };

@@ -54,11 +54,18 @@ describe("consumer content store", () => {
     ]);
     const english = JSON.parse(await fs.readFile(join(root, "en", candidate.slotId, candidate.id, "r1.copy.json"), "utf8"));
     expect(english).toEqual([
+      { key: "title", locale: "en", value: "Sample page", source: "writer" },
+      { key: "description", locale: "en", value: "Sample description", source: "writer" },
       { key: "heading", locale: "en", value: "Sample", source: "writer" },
       { key: "heading", locale: "en", value: "Sample", source: "writer" },
     ]);
     const metadata = JSON.parse(await fs.readFile(join(root, directory, "candidate.json"), "utf8"));
     expect(metadata).not.toHaveProperty("history"); expect(metadata).not.toHaveProperty("composition");
+    expect(metadata).not.toHaveProperty("pageMeta");
+    expect(structure.content.pageMeta).toEqual([
+      { key: "title", locale: "en", source: "writer" },
+      { key: "description", locale: "en", source: "writer" },
+    ]);
     expect((await loadContentStore(root, options)).registry).toEqual(registry);
   });
   it("appends revisions and updates workflow metadata while preserving old bytes", async () => {

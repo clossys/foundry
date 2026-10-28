@@ -1,12 +1,16 @@
-import { validateComposition } from "./composition.js";
+import { PAGE_META_FIELDS, validateComposition, validateCopyFields } from "./composition.js";
 import type { ContentFinding } from "./composition.js";
 import { isContentJson, isSourceAnswer } from "./json.js";
 import type { ContentCandidate, ContentRegistry, ContentSlot } from "./model.js";
-import { isContentPlacement, isSlotId } from "./taxonomy.js";
+import { CONTENT_TREE, isContentPlacement, isSlotId } from "./taxonomy.js";
+import type { ContentTree } from "./taxonomy.js";
+import { isCanonicalUrl } from "./metadata.js";
 import { CANDIDATE_ORIGINS, CANDIDATE_STATES, LINK_RELATIONS, SLOT_KINDS, isContentLocale, isRevisionId } from "./vocabulary.js";
 
 class Checks {
   findings: ContentFinding[] = [];
+  readonly tree: ContentTree;
+  constructor(tree: ContentTree = CONTENT_TREE) { this.tree = tree; }
   add(path: string, rule: string): void { this.findings.push({ path, rule, message: `Invalid ${rule}` }); }
   object(v: unknown, path: string): v is Record<string, unknown> {
     if (!v || typeof v !== "object" || Array.isArray(v) || ![null, Object.prototype].includes(Object.getPrototypeOf(v))) {
@@ -54,6 +58,14 @@ class Checks {
     this.brief(v.brief, `${path}.brief`);
     if (v.composition !== undefined) this.findings.push(...validateComposition(v.composition).map(f => ({ ...f, path: `${path}.${f.path}` })));
     if (v.redirectTarget !== undefined) this.text(v.redirectTarget, `${path}.redirectTarget`);
+    if (v.pageMeta !== undefined) this.findings.push(...validateCopyFields(v.pageMeta, `${path}.pageMeta`, PAGE_META_FIELDS));
+    if (v.pageMetaAssets !== undefined && this.object(v.pageMetaAssets, `${path}.pageMetaAssets`)) {
+      for (const [key, asset] of Object.entries(v.pageMetaAssets)) {
+        const p = `${path}.pageMetaAssets.${key}`;
+        if (!["og-image", "icon"].includes(key)) this.add(p, "unknown-field");
+        if (typeof asset !== "string" || !/^assets\.[a-zA-Z0-9_-]+(?:\.[a-zA-Z0-9_-]+)*$/.test(asset)) this.add(p, "designer-asset-id");
+      }
+    }
     if ((v.composition === undefined) === (v.redirectTarget === undefined)) this.add(path, "composition-or-redirect");
     this.jsonObject(v.typeSettings, `${path}.typeSettings`);
     if (this.array(v.openQuestions, `${path}.openQuestions`)) v.openQuestions.forEach((question, i) => {
@@ -112,7 +124,7 @@ class Checks {
     this.strings(v.aliases, `${path}.aliases`);
     if (Array.isArray(v.aliases) && new Set(v.aliases).size !== v.aliases.length) this.add(`${path}.aliases`, "duplicate-alias");
     this.locales(v.locales, `${path}.locales`);
-    if (!isContentPlacement(v.l1, v.l2)) this.add(path, "placement");
+    if (!isContentPlacement(v.l1, v.l2, this.tree)) this.add(path, "placement");
     for (const key of ["name"]) this.text(v[key], `${path}.${key}`);
     if (this.object(v.position, `${path}.position`)) {
       this.text(v.position.name, `${path}.position.name`);
@@ -121,6 +133,12 @@ class Checks {
     this.enum(v.kind, SLOT_KINDS, `${path}.kind`);
     if (typeof v.devOnly !== "boolean") this.add(`${path}.devOnly`, "dev-only");
     for (const key of ["route", "deployTarget", "destination", "activeCandidateId"]) if (v[key] !== undefined) this.text(v[key], `${path}.${key}`);
+    for (const key of ["outputPath", "fileName"]) if (Object.hasOwn(v, key)) this.add(`${path}.${key}`, "derived-output-path");
+    if (v.meta !== undefined && this.object(v.meta, `${path}.meta`)) {
+      for (const key of Object.keys(v.meta)) if (!["robots", "canonical"].includes(key)) this.add(`${path}.meta.${key}`, "unknown-field");
+      if (v.meta.robots !== undefined) this.enum(v.meta.robots, ["index", "noindex"], `${path}.meta.robots`);
+      if (v.meta.canonical !== undefined && !isCanonicalUrl(v.meta.canonical)) this.add(`${path}.meta.canonical`, "canonical-url");
+    }
     if (v.dynamicParams !== undefined) this.jsonObject(v.dynamicParams, `${path}.dynamicParams`);
     this.strings(v.tags, `${path}.tags`);
     this.date(v.createdAt, `${path}.createdAt`);
@@ -162,16 +180,16 @@ export function validateCandidateContent(value: unknown): readonly ContentFindin
 export function validateContentCandidate(value: unknown): readonly ContentFinding[] {
   const checks = new Checks(); checks.candidate(value, "candidate"); return checks.findings;
 }
-export function validateContentSlot(value: unknown): readonly ContentFinding[] {
-  const checks = new Checks(); checks.slot(value, "slot"); return checks.findings;
+export function validateContentSlot(value: unknown, tree: ContentTree = CONTENT_TREE): readonly ContentFinding[] {
+  const checks = new Checks(tree); checks.slot(value, "slot"); return checks.findings;
 }
 export function validateContentWorkspace(value: unknown): readonly ContentFinding[] {
   const checks = new Checks(); checks.workspace(value, "workspace"); return checks.findings;
 }
 
 /** Structural and registry joins only; this does not grant approval or publishing readiness. */
-export function validateContentRegistry(value: unknown): readonly ContentFinding[] {
-  const checks = new Checks();
+export function validateContentRegistry(value: unknown, tree: ContentTree = CONTENT_TREE): readonly ContentFinding[] {
+  const checks = new Checks(tree);
   if (!checks.object(value, "registry")) return checks.findings;
   checks.workspace(value.workspace, "registry.workspace");
   const slotsValid = checks.array(value.slots, "registry.slots");
@@ -219,8 +237,8 @@ export function validateContentRegistry(value: unknown): readonly ContentFinding
   return checks.findings;
 }
 
-export function parseContentRegistry(value: unknown): ContentRegistry {
-  const findings = validateContentRegistry(value);
+export function parseContentRegistry(value: unknown, tree: ContentTree = CONTENT_TREE): ContentRegistry {
+  const findings = validateContentRegistry(value, tree);
   if (findings.length) throw new TypeError(findings.map(f => `${f.path}: ${f.rule}`).join("; "));
   return value as ContentRegistry;
 }

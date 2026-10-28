@@ -1,23 +1,76 @@
-/** The closed content hierarchy, in presentation order. */
-export const CONTENT_TAXONOMY = Object.freeze({
-  websites: Object.freeze(["site", "admin", "auth", "app", "demo"] as const),
-  documents: Object.freeze(["docs"] as const),
-  presentations: Object.freeze(["decks"] as const),
-  videos: Object.freeze(["clips"] as const),
-  messages: Object.freeze(["email"] as const),
-  social: Object.freeze(["posts"] as const),
-});
+import treeData from "./tree.json" with { type: "json" };
 
-export type ContentL1 = keyof typeof CONTENT_TAXONOMY;
-export type ContentL2 = (typeof CONTENT_TAXONOMY)[ContentL1][number];
-export type ContentPlacement = {
-  [L in ContentL1]: { readonly l1: L; readonly l2: (typeof CONTENT_TAXONOMY)[L][number] }
-}[ContentL1];
+export interface ContentTreeChild {
+  readonly id: string;
+  readonly label: string;
+  readonly frame?: string;
+}
+export interface ContentTreeNode {
+  readonly id: string;
+  readonly label: string;
+  readonly children: readonly ContentTreeChild[];
+}
+export interface ContentTree {
+  readonly schemaVersion: 1;
+  readonly nodes: readonly ContentTreeNode[];
+}
 
-export function isContentPlacement(l1: unknown, l2: unknown): boolean {
-  return typeof l1 === "string" && Object.hasOwn(CONTENT_TAXONOMY, l1)
-    && typeof l2 === "string"
-    && (CONTENT_TAXONOMY[l1 as ContentL1] as readonly string[]).includes(l2);
+const record = (value: unknown): value is Record<string, unknown> =>
+  value !== null && typeof value === "object" && !Array.isArray(value);
+const text = (value: unknown): value is string => typeof value === "string" && value.trim().length > 0;
+function assertFields(value: Record<string, unknown>, allowed: readonly string[], path: string): void {
+  if (Object.keys(value).some(key => !allowed.includes(key))) throw new Error(`Invalid content tree at ${path}: unknown field`);
+}
+
+/** Validate editable placement data and return an immutable copy in presentation order. */
+export function loadContentTree(input: unknown = treeData): ContentTree {
+  if (!record(input) || input.schemaVersion !== 1 || !Array.isArray(input.nodes)) {
+    throw new Error("Invalid content tree: expected schemaVersion 1 and nodes");
+  }
+  assertFields(input, ["schemaVersion", "nodes"], "tree");
+  const groupIds = new Set<string>();
+  const nodes = input.nodes.map((node: unknown, index: number): ContentTreeNode => {
+    const path = `nodes[${index}]`;
+    if (!record(node) || !text(node.id) || !text(node.label) || !Array.isArray(node.children)) {
+      throw new Error(`Invalid content tree at ${path}: expected id, label and children`);
+    }
+    assertFields(node, ["id", "label", "children"], path);
+    if (groupIds.has(node.id)) throw new Error(`Invalid content tree at ${path}: duplicate group id`);
+    groupIds.add(node.id);
+    const childIds = new Set<string>();
+    const children = node.children.map((child: unknown, childIndex: number): ContentTreeChild => {
+      const childPath = `${path}.children[${childIndex}]`;
+      if (!record(child) || !text(child.id) || !text(child.label) || (child.frame !== undefined && !text(child.frame))) {
+        throw new Error(`Invalid content tree at ${childPath}: expected id, label and optional frame`);
+      }
+      assertFields(child, ["id", "label", "frame"], childPath);
+      if (childIds.has(child.id)) throw new Error(`Invalid content tree at ${childPath}: duplicate child id`);
+      childIds.add(child.id);
+      return Object.freeze({ id: child.id, label: child.label, ...(child.frame === undefined ? {} : { frame: child.frame }) });
+    });
+    return Object.freeze({ id: node.id, label: node.label, children: Object.freeze(children) });
+  });
+  return Object.freeze({ schemaVersion: 1, nodes: Object.freeze(nodes) });
+}
+
+export const CONTENT_TREE = loadContentTree();
+/** Compatibility view derived from the editable tree. */
+export const CONTENT_TAXONOMY: Readonly<Record<string, readonly string[]>> = Object.freeze(
+  Object.fromEntries(CONTENT_TREE.nodes.map(node => [node.id, Object.freeze(node.children.map(child => child.id))])),
+);
+export type ContentL1 = string;
+export type ContentL2 = string;
+export type ContentPlacement = { readonly l1: string; readonly l2: string };
+
+export function isContentL1(value: unknown, tree: ContentTree = CONTENT_TREE): value is ContentL1 {
+  return typeof value === "string" && tree.nodes.some(node => node.id === value);
+}
+export function isContentL2(l1: unknown, value: unknown, tree: ContentTree = CONTENT_TREE): value is ContentL2 {
+  return typeof l1 === "string" && typeof value === "string"
+    && tree.nodes.some(node => node.id === l1 && node.children.some(child => child.id === value));
+}
+export function isContentPlacement(l1: unknown, l2: unknown, tree: ContentTree = CONTENT_TREE): boolean {
+  return isContentL2(l1, l2, tree);
 }
 
 export type SlotId = `sl_${string}`;

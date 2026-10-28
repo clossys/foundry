@@ -1,4 +1,4 @@
-import type { Composition } from "./composition.js";
+import type { Composition, CopyField } from "./composition.js";
 import type { ContentJson, ContentJsonObject, SourceAnswer } from "./json.js";
 import type { ContentPlacement, SlotId } from "./taxonomy.js";
 import type { CandidateOrigin, CandidateState, LinkRelation, RevisionId, SlotKind } from "./vocabulary.js";
@@ -46,6 +46,8 @@ export interface CandidateContent {
   readonly brief: ContentBrief;
   readonly composition?: Composition;
   readonly redirectTarget?: string;
+  readonly pageMeta?: readonly CopyField[];
+  readonly pageMetaAssets?: { readonly "og-image"?: string; readonly icon?: string };
   readonly links: readonly ContentLink[];
   readonly typeSettings: ContentJsonObject;
   readonly openQuestions: readonly ContentOpenQuestion[];
@@ -85,6 +87,7 @@ export type ContentSlot = ContentPlacement & {
   readonly route?: string;
   readonly deployTarget?: string;
   readonly destination?: string;
+  readonly meta?: { readonly robots?: "index" | "noindex"; readonly canonical?: string };
   readonly dynamicParams?: ContentJsonObject;
   readonly devOnly: boolean;
   readonly tags: readonly string[];

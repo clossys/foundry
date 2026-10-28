@@ -37,6 +37,33 @@ export interface ContentFinding {
   readonly message: string;
 }
 
+export const PAGE_META_KEY = "$pageMeta";
+export const PAGE_META_FIELDS = ["title", "description", "share-title", "share-text"] as const;
+
+/** Validate Writer copy identities and values without requiring draft completeness. */
+export function validateCopyFields(value: unknown, path: string, allowedKeys?: readonly string[]): readonly ContentFinding[] {
+  const findings: ContentFinding[] = [];
+  const issue = (at: string, rule: string) => findings.push({ path: at, rule, message: `Invalid ${rule}` });
+  if (!Array.isArray(value)) { issue(path, "array"); return findings; }
+  const copyKeys = new Set<string>();
+  value.forEach((field: unknown, i) => {
+    const fieldPath = `${path}[${i}]`;
+    if (!field || typeof field !== "object" || Array.isArray(field)) { issue(fieldPath, "object"); return; }
+    const record = field as Record<string, unknown>;
+    for (const key of Object.keys(record)) if (!["key", "locale", "value", "source"].includes(key)) issue(`${fieldPath}.${key}`, "unknown-field");
+    if (typeof record.key !== "string" || !record.key.trim()) issue(`${fieldPath}.key`, "nonempty-string");
+    if (allowedKeys && (typeof record.key !== "string" || !allowedKeys.includes(record.key))) issue(`${fieldPath}.key`, "copy-key");
+    // Empty draft text is represented honestly; required-field Review decides completeness.
+    if (typeof record.value !== "string") issue(`${fieldPath}.value`, "string");
+    if (record.source !== "writer") issue(`${fieldPath}.source`, "writer-source");
+    if (!isContentLocale(record.locale)) issue(`${fieldPath}.locale`, "locale");
+    const identity = JSON.stringify([record.locale, record.key]);
+    if (copyKeys.has(identity)) issue(fieldPath, "duplicate-copy-key");
+    copyKeys.add(identity);
+  });
+  return findings;
+}
+
 /** Structural checks only. Registered-library resolution belongs to Review. */
 export function validateComposition(value: unknown): readonly ContentFinding[] {
   const findings: ContentFinding[] = [];
@@ -65,6 +92,7 @@ export function validateComposition(value: unknown): readonly ContentFinding[] {
       if (!object(section, path, ["key", "sectionId", "configId", "intent", "fields", "assets", "ref"])) return;
       for (const key of ["key", "sectionId", "configId"]) text(section[key], `${path}.${key}`);
       if (typeof section.key === "string") {
+        if (section.key === PAGE_META_KEY) issue(`${path}.key`, "reserved-section-key");
         if (keys.has(section.key)) issue(`${path}.key`, "duplicate-section-key");
         keys.add(section.key);
       }
@@ -74,19 +102,7 @@ export function validateComposition(value: unknown): readonly ContentFinding[] {
         text(section.ref.sectionKey, `${path}.ref.sectionKey`);
         if (!isRevisionId(section.ref.revision)) issue(`${path}.ref.revision`, "pinned-revision");
       }
-      const copyKeys = new Set<string>();
-      if (array(section.fields, `${path}.fields`)) section.fields.forEach((field, j) => {
-        const fieldPath = `${path}.fields[${j}]`;
-        if (!object(field, fieldPath, ["key", "locale", "value", "source"])) return;
-        text(field.key, `${fieldPath}.key`);
-        // Empty draft text is represented honestly; required-field Review decides completeness.
-        if (typeof field.value !== "string") issue(`${fieldPath}.value`, "string");
-        if (field.source !== "writer") issue(`${fieldPath}.source`, "writer-source");
-        if (!isContentLocale(field.locale)) issue(`${fieldPath}.locale`, "locale");
-        const identity = JSON.stringify([field.locale, field.key]);
-        if (copyKeys.has(identity)) issue(fieldPath, "duplicate-copy-key");
-        copyKeys.add(identity);
-      });
+      findings.push(...validateCopyFields(section.fields, `${path}.fields`));
       if (section.assets !== undefined && array(section.assets, `${path}.assets`)) section.assets.forEach((asset, k) => {
         const assetPath = `${path}.assets[${k}]`;
         if (object(asset, assetPath, ["assetId", "libraryVersion"])) {
@@ -108,11 +124,16 @@ export function parseComposition(value: unknown): Composition {
 export type ResolvedCopy = Readonly<Record<string, Readonly<Record<string, string>>>>;
 
 /** Select Writer values for exactly one locale; Review owns missing-copy findings. */
-export function resolveCopy(candidate: Pick<CandidateContent, "composition">, locale: string): ResolvedCopy {
+export function resolveCopy(candidate: Pick<CandidateContent, "composition"> & Partial<Pick<CandidateContent, "pageMeta">>, locale: string): ResolvedCopy {
   if (!isContentLocale(locale)) throw new TypeError("Copy resolution requires a locale");
-  if (!candidate.composition) return {};
-  const composition = parseComposition(candidate.composition);
-  return Object.fromEntries(composition.sections.map(section => [section.key,
+  const composition = candidate.composition === undefined ? undefined : parseComposition(candidate.composition);
+  const sections: [string, Readonly<Record<string, string>>][] = (composition?.sections ?? []).map(section => [section.key,
     Object.fromEntries(section.fields.filter(field => field.locale === locale).map(field => [field.key, field.value])),
-  ]));
+  ]);
+  if (candidate.pageMeta !== undefined) {
+    const findings = validateCopyFields(candidate.pageMeta, "pageMeta", PAGE_META_FIELDS);
+    if (findings.length) throw new TypeError(findings.map(f => `${f.path}: ${f.rule}`).join("; "));
+    sections.push([PAGE_META_KEY, Object.fromEntries(candidate.pageMeta.filter(field => field.locale === locale).map(field => [field.key, field.value]))]);
+  }
+  return Object.fromEntries(sections);
 }
