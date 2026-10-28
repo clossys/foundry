@@ -1,3 +1,5 @@
+import type { CSSProperties } from "react";
+import { UI_ALPHA_DISABLED, UI_FOCUS_OFFSET, UI_OUTLINE_FOCUS, UI_OUTLINE_FOCUS_INVERSE } from "./internal/ui-vars.js";
 import type { ButtonSize, ButtonVariant } from "./Button.js";
 
 /**
@@ -34,7 +36,7 @@ const TONAL_GROUND_CLASSES: Record<ControlGround, string> = {
 /*
  * `quiet` (T4) is a chevron text button: no fill, no edge and no inline
  * padding, so it aligns to the text edge. `quiet-action` (a `theme.css`
- * utility) pads the block to the 44px tap target and nudges the trailing
+ * utility) retains the 44px hit area around its token-height box and nudges the trailing
  * icon toward the inline end on hover, never under reduced motion; hover
  * also underlines the label. Its ink is `--color-control-quiet` on a light
  * ground and the on-inverse ink on the inverse plate.
@@ -43,9 +45,9 @@ const QUIET_BASE =
   "inline-flex items-center gap-xs rounded-control font-body quiet-action underline-offset-4 hover:underline transition-colors motion-reduce:transition-none outline-none disabled:cursor-not-allowed";
 
 const QUIET_SIZE_CLASSES: Record<ButtonSize, string> = {
-  sm: "text-body-s",
-  md: "text-body",
-  lg: "text-body-l",
+  sm: "control-h-sm text-body-s",
+  md: "control-h-md text-body",
+  lg: "control-h-lg text-body-l",
 };
 
 const QUIET_GROUND_CLASSES: Record<ControlGround, string> = {
@@ -117,8 +119,8 @@ export function buttonLinkClassName(variant: ButtonVariant, size: ButtonSize, gr
 /** The grounds a round icon link is drawn for. Kept as a name for `ControlGround`. */
 export type IconButtonLinkGround = ControlGround;
 
-/** An icon-only control's box: `md` is the 44px tap target, `sm` a 28px box (`--ui-control-h-sm`) with a 44px hit area. */
-export type IconButtonSize = "sm" | "md";
+/** The visual size of an icon control on the shared sm/md/lg control-height scale. */
+export type IconButtonSize = "sm" | "md" | "lg";
 
 /** An icon-only control's outline: `circle` on the pill radius, `square` on the control radius. */
 export type IconButtonShape = "circle" | "square";
@@ -126,7 +128,7 @@ export type IconButtonShape = "circle" | "square";
 export interface IconButtonClassOptions {
   /** @default "md" */
   size?: IconButtonSize;
-  /** @default "circle" */
+  /** @default "square" */
   shape?: IconButtonShape;
   /** @default "base" */
   ground?: ControlGround;
@@ -146,6 +148,7 @@ const ICON_BASE =
 const ICON_SIZE_CLASSES: Record<IconButtonSize, string> = {
   md: "icon-control-md",
   sm: "icon-control-sm",
+  lg: "control-h-lg",
 };
 
 const ICON_SHAPE_CLASSES: Record<IconButtonShape, string> = {
@@ -157,16 +160,16 @@ const ICON_SHAPE_CLASSES: Record<IconButtonShape, string> = {
  * Per ground: rest surface, edge and ink; hover lifts the edge and shifts the
  * surface; pressed takes the ground's strongest edge; selected
  * (`aria-pressed` or `aria-expanded`) fills with the ground's opposite. The
- * focus outline is the package-standard accent outline over a halo in the
- * control's own surface, so the ring reads where it overlaps a ground of the
- * other tone. A disabled control takes no hover.
+ * focus indicator is one package-standard offset accent outline. Native
+ * components add the shared state layer and disabled tokens through
+ * `controlStateStyle`; there is no second focus halo.
  */
 const ICON_GROUND_CLASSES: Record<ControlGround, string> = {
-  base: "bg-surface-raised text-ink-primary border-line-base hover:bg-control-tonal-hover hover:border-line-strong active:bg-surface-sunken active:border-ink-primary aria-pressed:bg-surface-inverse aria-pressed:text-ink-on-inverse aria-pressed:border-surface-inverse aria-expanded:bg-surface-inverse aria-expanded:text-ink-on-inverse aria-expanded:border-surface-inverse focus-visible:ring-2 focus-visible:ring-surface-raised",
+  base: "bg-surface-raised text-ink-primary border-line-base hover:bg-control-tonal-hover hover:border-line-strong active:bg-surface-sunken active:border-ink-primary aria-pressed:bg-surface-inverse aria-pressed:text-ink-on-inverse aria-pressed:border-surface-inverse aria-expanded:bg-surface-inverse aria-expanded:text-ink-on-inverse aria-expanded:border-surface-inverse",
   sunken:
-    "bg-surface-raised text-ink-primary border-line-base hover:bg-control-tonal-hover hover:border-line-strong active:bg-surface-base active:border-ink-primary aria-pressed:bg-surface-inverse aria-pressed:text-ink-on-inverse aria-pressed:border-surface-inverse aria-expanded:bg-surface-inverse aria-expanded:text-ink-on-inverse aria-expanded:border-surface-inverse focus-visible:ring-2 focus-visible:ring-surface-raised",
+    "bg-surface-raised text-ink-primary border-line-base hover:bg-control-tonal-hover hover:border-line-strong active:bg-surface-base active:border-ink-primary aria-pressed:bg-surface-inverse aria-pressed:text-ink-on-inverse aria-pressed:border-surface-inverse aria-expanded:bg-surface-inverse aria-expanded:text-ink-on-inverse aria-expanded:border-surface-inverse",
   inverse:
-    "bg-surface-inverse-raised text-ink-on-inverse border-line-on-inverse hover:bg-surface-inverse hover:border-ink-on-inverse-muted active:bg-surface-inverse active:border-ink-on-inverse aria-pressed:bg-surface-raised aria-pressed:text-ink-primary aria-pressed:border-surface-raised aria-expanded:bg-surface-raised aria-expanded:text-ink-primary aria-expanded:border-surface-raised focus-visible:ring-2 focus-visible:ring-surface-inverse-raised",
+    "bg-surface-inverse-raised text-ink-on-inverse border-line-on-inverse hover:bg-surface-inverse hover:border-ink-on-inverse-muted active:bg-surface-inverse active:border-ink-on-inverse aria-pressed:bg-surface-raised aria-pressed:text-ink-primary aria-pressed:border-surface-raised aria-expanded:bg-surface-raised aria-expanded:text-ink-primary aria-expanded:border-surface-raised",
 };
 
 const ICON_DISABLED_CLASSES = "disabled:pointer-events-none aria-disabled:pointer-events-none";
@@ -180,7 +183,7 @@ const ICON_DISABLED_CLASSES = "disabled:pointer-events-none aria-disabled:pointe
  * this class string ships no copy. `IconButton` is the React component that
  * applies it to a button and requires the name.
  */
-export function iconButtonClassName({ size = "md", shape = "circle", ground = "base" }: IconButtonClassOptions = {}): string {
+export function iconButtonClassName({ size = "md", shape = "square", ground = "base" }: IconButtonClassOptions = {}): string {
   return [ICON_BASE, ICON_SIZE_CLASSES[size], ICON_SHAPE_CLASSES[shape], ICON_GROUND_CLASSES[ground], ICON_DISABLED_CLASSES, LINK_FOCUS_CLASSES].join(" ");
 }
 
@@ -191,4 +194,32 @@ export function iconButtonClassName({ size = "md", shape = "circle", ground = "b
  */
 export function iconButtonLinkClassName(ground: IconButtonLinkGround = "base"): string {
   return iconButtonClassName({ size: "md", shape: "circle", ground });
+}
+
+/** Token-bound geometry; visual height is independent of line height and padding. */
+export function controlSizeStyle(size: ButtonSize = "md"): CSSProperties {
+  return { boxSizing: "border-box", paddingBlock: 0, blockSize: `var(--ui-control-h-${size})`, minBlockSize: `var(--ui-control-h-${size})` };
+}
+
+/**
+ * A state layer paints over the existing fill, including a selected fill. The
+ * two alpha roles are deliberately independent; neither changes label opacity.
+ * Inline state styles also work for consumers of the precompiled stylesheet.
+ */
+export function controlStateStyle(
+  state: { isHovered?: boolean; isPressed?: boolean; isFocusVisible?: boolean; isDisabled?: boolean },
+  { ground = "base", dimDisabled = true }: { ground?: ControlGround; dimDisabled?: boolean } = {},
+): CSSProperties {
+  const alpha = state.isPressed ? "--ui-state-pressed-alpha" : state.isHovered ? "--ui-state-hover-alpha" : undefined;
+  // currentColor follows the control's token-bound selected/inverse ink too.
+  const layer = `color-mix(in srgb, currentColor calc(var(${alpha}) * 100%), transparent)`;
+  return {
+    backgroundImage: !state.isDisabled && alpha ? `linear-gradient(${layer}, ${layer})` : undefined,
+    color: state.isDisabled ? "var(--color-ink-muted)" : undefined,
+    backgroundColor: state.isDisabled ? "var(--color-control-tonal)" : undefined,
+    borderColor: state.isDisabled ? "var(--color-line-base)" : undefined,
+    opacity: state.isDisabled && dimDisabled ? UI_ALPHA_DISABLED : undefined,
+    outline: state.isFocusVisible ? (ground === "inverse" ? UI_OUTLINE_FOCUS_INVERSE : UI_OUTLINE_FOCUS) : undefined,
+    outlineOffset: state.isFocusVisible ? UI_FOCUS_OFFSET : undefined,
+  };
 }

@@ -357,12 +357,19 @@ describe("CommandMenu visual pass (VF-1 shell-12/13)", () => {
     expect(active).not.toHaveClass("underline");
     const rest = screen.getAllByRole("option").filter((option) => option !== active);
     for (const option of rest) expect(option).toHaveClass("border-s-transparent", "no-underline");
-    expect(input).toHaveClass("outline-hidden");
+    expect(input).toHaveClass("outline-none");
   });
 
-  it("draws the search field's token ring whenever it holds focus, not only on keyboard focus", async () => {
+  it("draws one offset token outline on keyboard focus and none on pointer focus", async () => {
     const { input } = await open();
+    await userEvent.click(input);
     expect(input).toHaveFocus();
-    expect(input.style.boxShadow).toContain("--color-accent");
+    expect(input.style.outline).toBe("");
+    expect(input.style.boxShadow).toBe("");
+    await userEvent.tab();
+    await userEvent.tab({ shift: true });
+    expect(input).toHaveFocus();
+    expect(input.style.outline).toContain("--color-focus-ring");
+    expect(input.style.outlineOffset).toContain("--ui-focus-offset");
   });
 });

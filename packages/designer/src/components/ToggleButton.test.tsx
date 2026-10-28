@@ -94,7 +94,7 @@ describe("Foundry ToggleButton", () => {
     await user.tab();
     expect(button).toHaveFocus();
     expect(button).toHaveAttribute("data-focus-visible", "true");
-    expect(button.style.outline).toContain("var(--color-focus-ring)");
+    expect(button.style.outline).toContain("--color-focus-ring");
   });
 
   it("variants and sizes give the Button's distinct looks; hover is the Button's hover state", () => {
@@ -110,7 +110,7 @@ describe("Foundry ToggleButton", () => {
     rerender(<ToggleButton size="lg">X</ToggleButton>);
     expect(classes(screen.getByRole("button"))).toContain("text-body-l");
     rerender(<ToggleButton variant="secondary">X</ToggleButton>);
-    expect(classes(screen.getByRole("button"))).toContain("hover:bg-surface-sunken");
+    expect(classes(screen.getByRole("button"))).toContain("hover:bg-control-tonal-hover");
   });
 
   it("a selected quiet toggle keeps its underline, never a fill", () => {

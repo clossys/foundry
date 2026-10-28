@@ -1,4 +1,4 @@
-import type { ReactNode } from "react";
+import { useState, type ReactNode } from "react";
 import {
   FieldError,
   Input,
@@ -9,9 +9,9 @@ import {
   type ValidationResult,
 } from "react-aria-components";
 import { cx } from "./internal/cx.js";
-import { UI_ALPHA_DISABLED, UI_RING_FOCUS } from "./internal/ui-vars.js";
+import { controlSizeStyle, controlStateStyle } from "./button-classes.js";
 
-const SIZE_CLASSES = { sm: "h-sm", md: "h-md", lg: "h-lg" } as const;
+const SIZE_CLASSES = { sm: "control-h-sm", md: "control-h-md", lg: "control-h-lg" } as const;
 
 export interface TextFieldProps extends Omit<AriaTextFieldProps, "children"> {
   /**
@@ -59,22 +59,28 @@ export function TextField({
   inputClassName,
   ...rest
 }: TextFieldProps) {
+  const [pressed, setPressed] = useState(false);
   return (
     <AriaTextField {...rest} className={cx("flex flex-col gap-xs", className)}>
       {label != null ? <Label className="text-body-s text-ink-secondary font-body">{label}</Label> : null}
       <Input
         placeholder={placeholder}
+        onPointerDown={() => setPressed(true)}
+        onPointerUp={() => setPressed(false)}
+        onPointerCancel={() => setPressed(false)}
+        onPointerLeave={() => setPressed(false)}
+        onBlur={() => setPressed(false)}
         className={(renderProps) =>
           cx(
-            "rounded-control border bg-surface-raised px-md py-sm text-body text-ink-primary outline-hidden",
+            "rounded-control border bg-surface-raised px-md text-body text-ink-primary placeholder:text-ink-muted outline-none",
             SIZE_CLASSES[size],
             renderProps.isInvalid ? "border-status-danger" : "border-line-control",
             inputClassName,
           )
         }
         style={(renderProps) => ({
-          opacity: renderProps.isDisabled ? UI_ALPHA_DISABLED : undefined,
-          boxShadow: renderProps.isFocused ? UI_RING_FOCUS : undefined,
+          ...controlSizeStyle(size),
+          ...controlStateStyle({ ...renderProps, isPressed: pressed }),
         })}
       />
       {description ? (

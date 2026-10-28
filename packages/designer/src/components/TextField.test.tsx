@@ -61,7 +61,7 @@ describe("TextField", () => {
   const user = userEvent.setup();
   render(<TextField label="Name" size={size} />);
   const input = screen.getByRole("textbox", {name: "Name"});
-  expect(input).toHaveClass(`h-${size}`);
+  expect(input).toHaveClass(`control-h-${size}`);
   await user.type(input, "Ada");
   expect(input).toHaveValue("Ada");
  });

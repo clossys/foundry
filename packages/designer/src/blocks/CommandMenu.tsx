@@ -7,7 +7,7 @@ import { SearchField } from "../components/SearchField.js";
 import { Tooltip } from "../components/Tooltip.js";
 import { IconButton } from "../components/IconButton.js";
 import { Icon } from "../components/Icon.js";
-import { UI_ALPHA_DISABLED } from "../components/internal/ui-vars.js";
+import { controlStateStyle } from "../components/button-classes.js";
 import { X } from "../icons/X.js";
 import type { CommandMenuProps, CommandMenuShortcutOptions } from "./command-menu-types.js";
 
@@ -60,8 +60,10 @@ export function CommandMenu({
   const id = useId();
   const input = useRef<HTMLInputElement | null>(null);
   const options = useRef(new Map<string, HTMLAnchorElement>());
+  const [hoveredId, setHoveredId] = useState<string | null>(null);
+  const [pressedId, setPressedId] = useState<string | null>(null);
   const [activeId, setActiveId] = useState<string | null>(null);
-  useEffect(() => { setActiveId(null); }, [isOpen, query]);
+  useEffect(() => { setActiveId(null); setHoveredId(null); setPressedId(null); }, [isOpen, query]);
   const configureInput = useCallback((element: Element | null) => {
     input.current = element instanceof HTMLInputElement ? element : null;
     // SearchField exposes its exact input through this public context ref.
@@ -111,7 +113,7 @@ export function CommandMenu({
       <div dir={dir} className="flex min-h-0 min-w-0 flex-col gap-md" onKeyDownCapture={keydown}>
         <div className="flex items-start justify-between gap-md">
           <Dialog.Heading>{heading}</Dialog.Heading>
-          <Tooltip trigger={<IconButton label={closeLabel} icon={X} size="sm" onPress={() => onOpenChange(false)} />}>{closeLabel}</Tooltip>
+          <Tooltip trigger={<IconButton label={closeLabel} icon={X} size="sm" shape="square" onPress={() => onOpenChange(false)} />}>{closeLabel}</Tooltip>
         </div>
         <FieldInputContext.Provider value={{
           ref: configureInput, "aria-controls": `${id}-results`, "aria-autocomplete": "list",
@@ -128,19 +130,24 @@ export function CommandMenu({
                   href={item.disabled ? undefined : item.href} tabIndex={-1}
                   ref={element => { if (element) options.current.set(item.id, element); else options.current.delete(item.id); }}
                   onMouseDown={event => event.preventDefault()}
-                  onPointerMove={() => { if (!item.disabled) setActiveId(item.id); }}
+                  onPointerMove={() => { if (!item.disabled) { setActiveId(item.id); setHoveredId(item.id); } }}
+                  onPointerEnter={() => { if (!item.disabled) setHoveredId(item.id); }}
+                  onPointerLeave={() => { setHoveredId(null); setPressedId(null); }}
+                  onPointerDown={() => { if (!item.disabled) setPressedId(item.id); }}
+                  onPointerUp={() => setPressedId(null)}
+                  onPointerCancel={() => setPressedId(null)}
                   onClick={event => {
                     if (item.disabled) { event.preventDefault(); return; }
                     item.onAction?.();
                     onOpenChange(false);
                   }}
                   className={`flex min-w-0 items-center gap-sm rounded-control border-s-2 px-sm py-sm text-body text-ink-primary no-underline ${active?.id === item.id ? "border-s-accent bg-accent-tint forced-colors:border-current" : "border-s-transparent"}`}
-                  style={{ opacity: item.disabled ? UI_ALPHA_DISABLED : undefined }}
+                  style={controlStateStyle({ isDisabled: item.disabled, isHovered: hoveredId === item.id, isPressed: pressedId === item.id })}
                 >
                   {item.icon ? <Icon glyph={item.icon} decorative size="sm" /> : null}
                   <span className="min-w-0 flex-1 break-words">
                     <span className="block">{item.label}</span>
-                    {item.description ? <span className="block text-body-s text-ink-secondary">{item.description}</span> : null}
+                    {item.description && item.description.trim().toLocaleLowerCase() !== group.label.trim().toLocaleLowerCase() ? <span className="block text-body-s text-ink-secondary">{item.description}</span> : null}
                   </span>
                   {item.shortcutHint ? <span className="shrink-0 text-caption text-ink-muted">{item.shortcutHint}</span> : null}
                 </a>

@@ -14,6 +14,7 @@ import {
 } from "react-aria-components";
 import { Icon } from "./Icon.js";
 import { useGlyph } from "./glyph-context.js";
+import { controlStateStyle } from "./button-classes.js";
 import { cx } from "./internal/cx.js";
 import { UI_ELEVATION_FLOATING, UI_Z_POPOVER } from "./internal/ui-vars.js";
 
@@ -174,13 +175,14 @@ export interface MenuItemProps extends Omit<AriaMenuItemProps, "className"> {
   className?: string;
 }
 
-function MenuItem({ children, isDestructive = false, className, textValue, ...rest }: MenuItemProps) {
+function MenuItem({ children, isDestructive = false, className, textValue, style, ...rest }: MenuItemProps) {
   const checkGlyph = useGlyph("assets.icon-check");
   return (
     <AriaMenuItem
       {...rest}
       // The render function below hides string children from the collection,
       // so typeahead keeps its text explicitly.
+      style={state => ({ ...controlStateStyle(state), ...(typeof style === "function" ? style(state) : style) })}
       textValue={textValue ?? (typeof children === "string" ? children : undefined)}
       className={(renderProps) =>
         cx(

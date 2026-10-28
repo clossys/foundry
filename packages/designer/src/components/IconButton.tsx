@@ -1,3 +1,4 @@
+import { useState } from "react";
 import {
   Button as AriaButton,
   type ButtonProps as AriaButtonProps,
@@ -5,13 +6,14 @@ import {
 import type { IconNode } from "../icons/types.js";
 import {
   iconButtonClassName,
+  controlSizeStyle,
+  controlStateStyle,
   type ControlGround,
   type IconButtonShape,
   type IconButtonSize,
 } from "./button-classes.js";
 import { Icon } from "./Icon.js";
 import { cx } from "./internal/cx.js";
-import { UI_ALPHA_DISABLED } from "./internal/ui-vars.js";
 
 export interface IconButtonProps extends Omit<AriaButtonProps, "children" | "aria-label" | "aria-labelledby"> {
   /**
@@ -22,9 +24,9 @@ export interface IconButtonProps extends Omit<AriaButtonProps, "children" | "ari
   label: string;
   /** The glyph, as `@clossys/designer/icons` data. Rendered decorative; `label` names the control. */
   icon: IconNode;
-  /** `md` is a 44px box; `sm` a 28px box (`--ui-control-h-sm`) with a 44px hit area. @default "md" */
+  /** Square token-bound box: sm 28px, md 32px, lg 36px. @default "md" */
   size?: IconButtonSize;
-  /** `circle` (pill radius) or `square` (control radius). @default "circle" */
+  /** `circle` (pill radius) or `square` (control radius). @default "square" */
   shape?: IconButtonShape;
   /** The ground the control sits on. @default "base" */
   ground?: ControlGround;
@@ -41,8 +43,8 @@ export interface IconButtonProps extends Omit<AriaButtonProps, "children" | "ari
  *
  * `className` is merged with `tailwind-merge`, so a conflicting consumer
  * class wins; `style` is merged after this component's disabled opacity.
- * `size`, `shape` and `ground` pass through as given: `iconButtonClassName`
- * owns their defaults, so the component and the class string cannot drift.
+ * `shape` and `ground` pass through to `iconButtonClassName`; the visual box
+ * reads the control-height token for `size` on both axes.
  */
 export function IconButton({
   label,
@@ -52,12 +54,17 @@ export function IconButton({
   ground,
   className,
   style,
+  onPressStart,
+  onPressEnd,
   ...rest
 }: IconButtonProps) {
+  const [pressed, setPressed] = useState(false);
   return (
     <AriaButton
       {...rest}
       aria-label={label}
+      onPressStart={event => { setPressed(true); onPressStart?.(event); }}
+      onPressEnd={event => { setPressed(false); onPressEnd?.(event); }}
       className={(renderProps) =>
         cx(
           iconButtonClassName({ size, shape, ground }),
@@ -65,7 +72,9 @@ export function IconButton({
         )
       }
       style={(renderProps) => ({
-        opacity: renderProps.isDisabled ? UI_ALPHA_DISABLED : undefined,
+        ...controlSizeStyle(size),
+        inlineSize: `var(--ui-control-h-${size ?? "md"})`,
+        ...controlStateStyle({ ...renderProps, isPressed: pressed }, { ground }),
         ...(typeof style === "function" ? style(renderProps) : style),
       })}
     >

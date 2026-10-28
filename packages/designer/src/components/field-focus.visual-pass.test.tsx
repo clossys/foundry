@@ -7,19 +7,31 @@ import { TextField } from "./TextField.js";
 
 /*
  * Visual pass (VF-1, shell-01): a text entry never shows the browser's own
- * focus outline; focus by pointer or keyboard draws the package focus ring
- * (the `--ui-ring-focus` box shadow on the accent) instead.
+ * focus outline; TextField and SearchField draw one offset
+ * token outline for keyboard focus. Textarea retains its separate focus contract.
  */
 describe("text entry focus (VF-1 shell-01)", () => {
   it.each([
     ["TextField", () => render(<TextField label="Name" />), "textbox"],
-    ["Textarea", () => render(<Textarea label="Notes" />), "textbox"],
     ["SearchField", () => render(<SearchField label="Search" />), "searchbox"],
-  ] as const)("%s hides the browser outline and rings on pointer focus", async (_name, mount, role) => {
+  ] as const)("%s uses one keyboard outline and no pointer ring", async (_name, mount, role) => {
     mount();
     const field = screen.getByRole(role);
-    expect(field).toHaveClass("outline-hidden");
+    expect(field).toHaveClass("outline-none");
+    await userEvent.click(field);
     expect(field.style.boxShadow).toBe("");
+    expect(field.style.outline).toBe("");
+    await userEvent.tab();
+    await userEvent.tab({ shift: true });
+    expect(field).toHaveFocus();
+    expect(field.style.outline).toContain("--color-focus-ring");
+    expect(field.style.outlineOffset).toContain("--ui-focus-offset");
+    expect(field.style.boxShadow).toBe("");
+  });
+  it("Textarea retains its pointer ring", async () => {
+    render(<Textarea label="Notes" />);
+    const field = screen.getByRole("textbox");
+    expect(field).toHaveClass("outline-hidden");
     await userEvent.click(field);
     expect(field.style.boxShadow).toContain("--ui-ring-focus");
   });

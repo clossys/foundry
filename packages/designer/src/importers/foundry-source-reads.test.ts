@@ -4,7 +4,6 @@ import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
 import componentSlots from "../catalog/slots/components.json" with { type: "json" };
 import tokenSlots from "../catalog/slots/tokens.json" with { type: "json" };
-import committed from "./foundry-source-reads.json" with { type: "json" };
 import type { ComponentSlot } from "../catalog-core/types.js";
 import { FOUNDRY_COMPONENT_MAP } from "./foundry-components.map.js";
 import { importFoundryComponents } from "./foundry-components.js";
@@ -64,7 +63,7 @@ describe("Foundry source token reads", () => {
   it("commits the derivation for every mapped component (UPDATE_FOUNDRY_COMPONENT_FILLS=1 rewrites it)", () => {
     const bytes = JSON.stringify(derived(), null, 2) + "\n";
     if (process.env.UPDATE_FOUNDRY_COMPONENT_FILLS === "1") writeFileSync(resolve(here, "foundry-source-reads.json"), bytes);
-    expect(JSON.stringify(committed, null, 2) + "\n").toBe(bytes);
+    expect(readFileSync(resolve(here, "foundry-source-reads.json"), "utf8")).toBe(bytes);
   });
   it("color-picker and number-field sources consume geometry, type and focus tokens their frozen reads carry, so neither offer is blocked", () => {
     const reads = derived();

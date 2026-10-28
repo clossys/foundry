@@ -1,6 +1,6 @@
 import { Icon } from "./Icon.js";
 import { useGlyph } from "./glyph-context.js";
-import type { ReactNode } from "react";
+import { useState, type ReactNode } from "react";
 import {
   Button as AriaButton,
   FieldError,
@@ -12,7 +12,7 @@ import {
   type ValidationResult,
 } from "react-aria-components";
 import { cx } from "./internal/cx.js";
-import { UI_ALPHA_DISABLED, UI_RING_FOCUS } from "./internal/ui-vars.js";
+import { controlSizeStyle, controlStateStyle, iconButtonClassName } from "./button-classes.js";
 
 export interface SearchFieldProps extends Omit<AriaSearchFieldProps, "children"> {
   /**
@@ -70,27 +70,37 @@ export function SearchField({
   inputClassName,
   ...rest
 }: SearchFieldProps) {
+  const [pressed, setPressed] = useState(false);
   const closeGlyph = useGlyph("assets.icon-close");
   return (
     <AriaSearchField {...rest} className={cx("flex flex-col gap-xs", className)}>
       {({ isEmpty, isDisabled, isInvalid }) => (
         <>
+          <style href="designer-native-search" precedence="default">{`input[data-designer-search]::-webkit-search-cancel-button, input[data-designer-search]::-webkit-search-decoration { -webkit-appearance: none; appearance: none; }`}</style>
           <Label className="text-body-s text-ink-secondary font-body">{label}</Label>
           <div className="relative flex items-center">
             <Input
               placeholder={placeholder}
+              data-designer-search=""
+              onPointerDown={() => setPressed(true)}
+              onPointerUp={() => setPressed(false)}
+              onPointerCancel={() => setPressed(false)}
+              onPointerLeave={() => setPressed(false)}
+              onBlur={() => setPressed(false)}
               className={cx(
-                "control-h-md w-full rounded-control border bg-surface-raised ps-md pe-2xl text-body text-ink-primary outline-hidden",
+                "control-h-md w-full rounded-control border bg-surface-raised ps-md pe-2xl text-body text-ink-primary placeholder:text-ink-muted outline-none",
                 isInvalid ? "border-status-danger" : "border-line-control",
                 inputClassName,
               )}
               style={(renderProps) => ({
-                opacity: isDisabled ? UI_ALPHA_DISABLED : undefined,
-                boxShadow: renderProps.isFocused ? UI_RING_FOCUS : undefined,
+                ...controlSizeStyle("md"),
+                ...controlStateStyle({ ...renderProps, isDisabled, isPressed: pressed }),
+                appearance: "none",
               })}
             />
             {!isEmpty ? (
-              <AriaButton className="absolute end-sm shrink-0 text-ink-muted outline-none">
+              <AriaButton className={cx(iconButtonClassName({ size: "sm", shape: "square" }), "absolute end-sm")}
+                style={state => ({ ...controlSizeStyle("sm"), inlineSize: "var(--ui-control-h-sm)", ...controlStateStyle(state) })}>
                 <Icon glyph={closeGlyph} decorative size="sm" />
               </AriaButton>
             ) : null}
