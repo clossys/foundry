@@ -29,7 +29,7 @@ function pinnedInput(): ShadcnComponentInput {
     styles: { path: "apps/v4/registry/styles/style-nova.css", content: read("style-nova.css") }, notice: { path: "LICENSE.md", content: read("LICENSE.md") } };
 }
 
-/** Fixed-pattern atoms in the source every shadcn@aria fill ships. */
+/** Fixed-pattern components in the source every shadcn@aria fill ships. */
 function fixedHits(): string[] {
   const result = importShadcnAriaComponents(pinnedInput());
   const filled = new Set(result.fills.map(doc => Object.values(doc.components)[0]!.item));
