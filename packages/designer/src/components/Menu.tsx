@@ -1,4 +1,4 @@
-import { Fragment, isValidElement, type ReactNode, type HTMLAttributes } from "react";
+import { useRef, Fragment, isValidElement, type ReactNode, type HTMLAttributes } from "react";
 import {
   Menu as AriaMenu,
   MenuItem as AriaMenuItem,
@@ -111,11 +111,26 @@ function MenuRoot({
   defaultSelectedKeys,
   onSelectionChange,
   onAction,
+  onOpenChange,
   ...rest
 }: MenuProps) {
+  const returnFocus = useRef<HTMLElement | null>(null);
+  const changeOpen = (open: boolean) => {
+    if (open) returnFocus.current = document.activeElement instanceof HTMLElement ? document.activeElement : null;
+    onOpenChange?.(open);
+    if (!open) {
+      const target = returnFocus.current;
+      // Wait until the popup's focus scope has unmounted. Restoring in a layout
+      // effect is still inside that scope; waiting for its animation frame leaves
+      // a gap where a second Escape targets the body instead of a parent drawer.
+      queueMicrotask(() => {
+        if (target?.isConnected && target.ownerDocument.activeElement === target.ownerDocument.body) target.focus({ preventScroll: true });
+      });
+    }
+  };
   if (controls != null) {
     if (!controlsLabel?.trim()) throw new TypeError("Menu: controls require a non-empty controlsLabel.");
-    return <ControlPopover {...rest} trigger={trigger} aria-label={controlsLabel} className={popoverClassName}>
+    return <ControlPopover {...rest} onOpenChange={changeOpen} trigger={trigger} aria-label={controlsLabel} className={popoverClassName}>
       {({ close }) => <><AriaMenu className={cx("flex flex-col outline-none", className)}
         selectionMode={selectionMode} selectedKeys={selectedKeys} defaultSelectedKeys={defaultSelectedKeys}
         onSelectionChange={onSelectionChange} onAction={onAction} onClose={close} aria-label={controlsLabel}>
@@ -124,7 +139,7 @@ function MenuRoot({
     </ControlPopover>;
   }
   return (
-    <MenuTrigger {...rest} trigger={triggerAction}>
+    <MenuTrigger {...rest} onOpenChange={changeOpen} trigger={triggerAction}>
       {trigger}
       <Popover
         className={cx(
