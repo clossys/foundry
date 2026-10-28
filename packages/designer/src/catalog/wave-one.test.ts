@@ -1,7 +1,8 @@
 /** Wave-one catalog joins; the older token/component/block inventories keep their own coverage tests. */
 import { readFileSync } from "node:fs";
-import { resolve } from "node:path";
-import { describe, expect, it } from "vitest";
+import { dirname, resolve } from "node:path";
+import { fileURLToPath } from "node:url";
+import { describe, expect, it, vi } from "vitest";
 import { loadBuildCatalog } from "../catalog-core/index.js";
 import { sectionCopyCatalog, loadSectionRegistry, sectionRegistryFindings } from "../catalog-core/sections-contract.js";
 import { generatedFoundryFrameFiles, importFoundryFrames } from "../importers/foundry-frames.js";
@@ -15,7 +16,10 @@ const leaves = (value: unknown): string[] => {
   if (!value || typeof value !== "object") return [];
   return Object.entries(value).flatMap(([key, child]) => key === "leaves" ? child as string[] : leaves(child));
 };
-const json = (file: string) => JSON.parse(readFileSync(new URL(file, import.meta.url), "utf8"));
+// Anchor the module directory once; lazy import.meta resolution may consult a mocked cwd in test hosts.
+const catalogDirectory = dirname(fileURLToPath(import.meta.url));
+const committedFill = (id: string) => readFileSync(resolve(catalogDirectory, "fills/foundry", `${id}.json`), "utf8");
+const json = (file: string) => JSON.parse(readFileSync(resolve(catalogDirectory, file), "utf8"));
 
 describe("wave-one Section and Frame catalog joins", () => {
   it("places each new leaf once in its registered IA and preserves the existing logo-hero contract", () => {
@@ -66,10 +70,21 @@ describe("wave-one Section and Frame catalog joins", () => {
       expect(coverage.missingRequiredSlots, id).toEqual([]);
       const bytes = generated[`${id}.json`];
       expect(bytes, id).toBeDefined();
-      expect(readFileSync(resolve(process.cwd(), "src/catalog/fills/foundry", `${id}.json`), "utf8"), id).toBe(bytes);
+      expect(committedFill(id), id).toBe(bytes);
       expect(surfaceRuntimeRenderers[id]?.leaf, id).toBe(id);
       expect(surfaceRuntimePointers()[id], id).toEqual({ module: "@clossys/designer/frames", export: "surfaceRuntimeRenderers" });
       expect(surfaceRuntimeCallbacks([id])[surfaceRendererId(id)], id).toBe(surfaceRuntimeRenderers[id]!.render);
     }
   });
+
+  it("reads committed fills relative to this module regardless of the caller cwd", () => {
+    const before = committedFill(FRAME);
+    const cwd = vi.spyOn(process, "cwd").mockReturnValue("/");
+    try {
+      expect(committedFill(FRAME)).toBe(before);
+      expect(JSON.parse(committedFill(FRAME)).$extensions["com.clossys.fill"].slot).toBe(FRAME);
+      expect(cwd).not.toHaveBeenCalled();
+    } finally { cwd.mockRestore(); }
+  });
+
 });

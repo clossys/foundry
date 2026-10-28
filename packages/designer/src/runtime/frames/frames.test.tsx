@@ -75,7 +75,7 @@ describe("designer Frame runtime renderers", () => {
     };
     const dataset = new Set(strings(specimenDataset));
     const records: Record<string, keyof typeof F> = {
-      "frames.document": "document",
+      "frames.document": "document", "frames.auth-shell": "app",
       "frames.app-shell": "app", "frames.app-header": "appHeader", "frames.app-sidebar": "appSidebar", "frames.inspector": "inspector",
       "frames.sheet": "sheet", "frames.site-header": "siteHeader", "frames.site-footer": "siteFooter", "frames.command": "command",
     };
@@ -83,9 +83,17 @@ describe("designer Frame runtime renderers", () => {
     for (const [leaf, record] of Object.entries(records)) {
       const sample = strings(surfaceRuntimeRenderers[leaf]!.sample(specimenDataset)), own = new Set(strings(F[record]));
       expect(sample.filter(value => !dataset.has(value)), leaf).toEqual([]);
-      // Bound to its own frames record, not merely to some other part of the dataset.
-      expect(sample.filter(value => own.has(value)).length, leaf).toBeGreaterThanOrEqual(2);
+      // AuthFrame has one authored string slot (skip-link); main is a host node, not JSON sample copy.
+      if (leaf === "frames.auth-shell") expect(sample).toEqual([F.app.skipLabel]);
+      // Other frames remain bound to at least two strings from their own record.
+      else expect(sample.filter(value => own.has(value)).length, leaf).toBeGreaterThanOrEqual(2);
     }
+  });
+
+  it("binds the authentication sample to the supplied dataset's only authored string slot", () => {
+    const dataset = { ...specimenDataset, frames: { ...F, app: { ...F.app, skipLabel: "Go to the authentication form" } } };
+    expect(frameRenderers["frames.auth-shell"]!.sample(dataset)).toEqual({ "skip-link": dataset.frames.app.skipLabel });
+    expect(frameRenderers["frames.auth-shell"]!.sample(specimenDataset)).toEqual({ "skip-link": F.app.skipLabel });
   });
 
   it("swapping selected members visibly changes the rendered Frame", () => {
