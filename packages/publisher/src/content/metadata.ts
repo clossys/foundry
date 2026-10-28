@@ -1,5 +1,7 @@
 import { PAGE_META_FIELDS, validateCopyFields } from "./composition.js";
 import type { ContentFinding } from "./composition.js";
+import { buildLocaleRoutePlan, localePathFor } from "./hreflang.js";
+import type { LocaleRouteOptions } from "./hreflang.js";
 import type { CandidateContent, ContentSlot } from "./model.js";
 import { CONTENT_TREE } from "./taxonomy.js";
 import type { ContentTree } from "./taxonomy.js";
@@ -20,12 +22,20 @@ export function robotsFor(slot: ContentSlot, tree: ContentTree = CONTENT_TREE): 
   return slot.kind !== "content" || slot.l2 === "auth" || child?.frame === "frames.auth-shell" ? "noindex" : "index";
 }
 
+export type OutputPathInput = Pick<ContentSlot, "route" | "deployTarget"> & {
+  readonly locale?: string;
+  readonly defaultLocale?: string;
+};
+
 /** Logical output only; encode every user-selected segment before filesystem use. */
-export function outputPathFor(slot: Pick<ContentSlot, "route" | "deployTarget">): string {
-  const { route, deployTarget } = slot;
+export function outputPathFor(slot: OutputPathInput): string {
+  const { deployTarget, locale, defaultLocale } = slot;
+  let { route } = slot;
   if (typeof deployTarget !== "string" || !deployTarget.trim()) throw new TypeError("Output requires a deploy target");
+  if ((locale === undefined) !== (defaultLocale === undefined)) throw new TypeError("Output locale and default locale must be provided together");
   if (typeof route !== "string" || !route.startsWith("/") || /[?#\\]/.test(route)
     || route.includes("//") || (route !== "/" && route.endsWith("/"))) throw new TypeError("Output requires a canonical absolute route path");
+  if (locale !== undefined && defaultLocale !== undefined) route = localePathFor(route, locale, defaultLocale);
   const segments = route === "/" ? [] : route.slice(1).split("/");
   if (segments.some(segment => {
     try { return [".", ".."].includes(decodeURIComponent(segment)); }
@@ -36,9 +46,13 @@ export function outputPathFor(slot: Pick<ContentSlot, "route" | "deployTarget">)
 }
 
 /** Readiness checks stay separate so legacy snapshots and incomplete drafts remain readable. */
-export function checkPageMetadata(slot: ContentSlot, candidate: CandidateContent, tree: ContentTree = CONTENT_TREE): ContentFinding[] {
+export function checkPageMetadata(slot: ContentSlot, candidate: CandidateContent, tree: ContentTree = CONTENT_TREE, localeOptions?: LocaleRouteOptions): ContentFinding[] {
   const findings: ContentFinding[] = [...validateCopyFields(candidate.pageMeta ?? [], "content.pageMeta", PAGE_META_FIELDS)];
-  if (findings.length) return findings;
+  const appendLocaleFindings = (): ContentFinding[] => {
+    if (localeOptions !== undefined) findings.push(...buildLocaleRoutePlan(slot, localeOptions).findings);
+    return findings;
+  };
+  if (findings.length) return appendLocaleFindings();
   const add = (path: string, rule: string) => findings.push({ path, rule, message: `Invalid ${rule}` });
   const fields = candidate.pageMeta ?? [];
   const keys = new Set(["title"]);
@@ -52,5 +66,5 @@ export function checkPageMetadata(slot: ContentSlot, candidate: CandidateContent
       if (!field || !field.value.trim()) add(`content.pageMeta.${locale}.${key}`, "required-page-metadata");
     }
   }
-  return findings;
+  return appendLocaleFindings();
 }

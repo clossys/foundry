@@ -28,3 +28,5 @@ if (isPublisherContentEntry()) {
   console.log(JSON.stringify(result));
   process.exitCode = result.exitCode;
 }
+export { localePathFor, buildLocaleRoutePlan, buildSitemapAlternates } from "./hreflang.js";
+export type { PublisherLocaleManifest, LocaleRouteOptions, LocaleRouteFinding, HreflangAlternate, LocalePageMetadata, LocaleRoutePlan, SitemapLocaleEntry } from "./hreflang.js";
