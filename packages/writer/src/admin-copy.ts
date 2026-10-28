@@ -3,6 +3,8 @@ import { ADMIN_STUDIO_COPY_EN, type AdminStudioCopy, type AdminStudioCopyRecord 
 import { ADMIN_VOICE_COPY_EN, type AdminVoiceCopy, type AdminVoiceCopyRecord } from "./admin-voice.js";
 import { ADMIN_META_COPY_EN, type AdminMetaCopy, type AdminMetaCopyRecord } from "./admin-meta.js";
 import { ADMIN_WRITER_COPY_EN, type AdminRouteCopy } from "./admin-route-copy.js";
+import { ADMIN_CHAT_COPY_EN } from "./admin-chat.js";
+export { ADMIN_CHAT_COPY_EN } from "./admin-chat.js";
 import { IntlMessageFormat } from "intl-messageformat";
 export { ADMIN_WRITER_COPY_EN } from "./admin-route-copy.js";
 export type { AdminRouteCopy } from "./admin-route-copy.js";
@@ -39,7 +41,7 @@ export function createAdminCopy(envelopes: readonly AdminCopyEnvelope[]): AdminC
   return Object.freeze({ envelopes: Object.freeze([...envelopes]), records: Object.freeze([...records.values()]) });
 }
 
-export const ADMIN_COPY_EN: AdminCopy = createAdminCopy([ADMIN_STUDIO_COPY_EN, ADMIN_VOICE_COPY_EN, ADMIN_META_COPY_EN, ADMIN_WRITER_COPY_EN]);
+export const ADMIN_COPY_EN: AdminCopy = createAdminCopy([ADMIN_STUDIO_COPY_EN, ADMIN_VOICE_COPY_EN, ADMIN_META_COPY_EN, ADMIN_WRITER_COPY_EN, ADMIN_CHAT_COPY_EN]);
 
 /** Read the complete source without manufacturing approval or activation evidence. */
 export function getAdminCopy(): AdminCopy {
