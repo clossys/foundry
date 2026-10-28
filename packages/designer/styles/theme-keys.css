@@ -1158,10 +1158,15 @@
   from { opacity: 0; transform: translateX(calc(-1 * var(--ui-motion-shift, 4px))); }
   to { opacity: 1; transform: translateX(0); }
 }
+@keyframes sheet-slide-rtl {
+  from { opacity: 0; transform: translateX(var(--ui-motion-shift, 4px)); }
+  to { opacity: 1; transform: translateX(0); }
+}
 @media (prefers-reduced-motion: reduce) {
   @keyframes overlay-pop { from { opacity: 0; } to { opacity: 1; } }
   @keyframes overlay-zoom { from { opacity: 0; } to { opacity: 1; } }
   @keyframes sheet-slide { from { opacity: 0; } to { opacity: 1; } }
+  @keyframes sheet-slide-rtl { from { opacity: 0; } to { opacity: 1; } }
 }
 @utility overlay-motion-pop {
   &[data-entering] { animation: overlay-pop var(--ui-duration-overlay, 120ms) var(--ease-enter, cubic-bezier(0, 0, .2, 1)) both; }
@@ -1366,8 +1371,12 @@
 [data-drawer-placement="start"], [data-drawer-placement="end"] {
   animation: sheet-slide var(--ui-duration-default) var(--ease-enter) both;
 }
+[data-drawer-placement="start"]:dir(rtl), [data-drawer-placement="end"]:dir(rtl) {
+  animation-name: sheet-slide-rtl;
+}
 @media (prefers-reduced-motion: reduce) {
   .frame-docked-panel { transition: none; }
-  [data-drawer-placement="start"], [data-drawer-placement="end"] { animation: none; }
+  [data-drawer-placement="start"], [data-drawer-placement="end"],
+  [data-drawer-placement="start"]:dir(rtl), [data-drawer-placement="end"]:dir(rtl) { animation: none; }
 }
 }

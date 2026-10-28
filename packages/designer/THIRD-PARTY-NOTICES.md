@@ -121,6 +121,11 @@ The adopted toggle modules derive from shadcn/ui commit
 Their design reads are rewritten onto the selected token contract; refs and
 render props continue to the React Aria primitives.
 
+Local divergence from the C15 source snapshot (`0d04b4c23`), approved by
+owner decision D7: Toggle and ToggleGroup use logical icon padding, inline
+corner radii and inline borders for right-to-left rendering. Vertical block
+edges, React Aria behavior and the upstream attribution remain unchanged.
+
 MIT License
 
 Copyright (c) 2023 shadcn

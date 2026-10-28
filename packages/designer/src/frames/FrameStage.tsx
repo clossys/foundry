@@ -142,7 +142,7 @@ export function FrameStage<Section extends FrameStageSectionRef>(props: FrameSta
         {order.map(id => {
           const board = body.boards.find(board => board.id === id)!;
           const selected = sectionNodes[frameSectionRefKey(board.section)]!, position = ready?.positions.find(item => item.id === board.id);
-          return <div key={board.id} role="listitem" data-frame-stage-board={board.id} className={flowing ? 'relative max-w-full' : 'absolute'} style={flowing || !position ? undefined : { left: position.x, top: position.y }}>
+          return <div key={board.id} role="listitem" data-frame-stage-board={board.id} className={flowing ? 'relative max-w-full' : 'absolute'} style={flowing || !position ? undefined : { insetInlineStart: position.x, top: position.y }}>
             <section aria-label={selected.label} tabIndex={board.id === (active ?? order[0]) ? 0 : -1}
               ref={node => { if (node) elements.current.set(board.id, node); else elements.current.delete(board.id); }}
               onFocus={event => {
