@@ -49,14 +49,14 @@ describe("frames.app-shell runtime renderer", () => {
 
   it("swapping the selected layout and stage members visibly changes the rendered shell", () => {
     const { unmount } = render(<>{entry.render(input({ members: ["layout.standard", "stage.contained", "theme.light"] }))}</>);
-    const standard = { layout: shell().dataset.applicationFrameLayout, stage: shell().dataset.applicationFrameStage, main: main().className, nav: document.querySelector('[data-application-frame-region="navigation"]')!.getAttribute("data-open"), html: document.body.innerHTML };
+    const standard = { layout: shell().dataset.applicationFrameLayout, stage: shell().dataset.applicationFrameStage, inset: document.querySelector<HTMLElement>('[data-application-frame-region="stage"]')!.classList.contains("frame-main-inset"), nav: document.querySelector('[data-application-frame-region="navigation"]')!.getAttribute("data-open"), html: document.body.innerHTML };
     unmount();
     render(<>{entry.render(input({ members: ["layout.immersive", "stage.full", "theme.light"] }))}</>);
     expect(standard).toMatchObject({ layout: "standard", stage: "contained", nav: "true" });
-    expect(standard.main.split(" ")).toContain("frame-main-inset");
+    expect(standard.inset).toBe(true);
     expect(shell().dataset.applicationFrameLayout).toBe("immersive");
     expect(shell().dataset.applicationFrameStage).toBe("full");
-    expect(main().className.split(" ")).not.toContain("frame-main-inset");
+    expect(document.querySelector<HTMLElement>('[data-application-frame-region="stage"]')!).not.toHaveClass("frame-main-inset");
     expect(document.querySelector('[data-application-frame-region="navigation"]')).toHaveAttribute("data-open", "false");
     expect(document.body.innerHTML).not.toBe(standard.html);
   });

@@ -41,6 +41,11 @@ afterEach(() => {
   document.documentElement.style.removeProperty("color-scheme");
   window.history.replaceState(null, "", "/");
 });
+// JSDOM supplies no layout; these two cases exercise the intrinsic collapse rule.
+function measureNarrowHeader() {
+  vi.spyOn(HTMLElement.prototype, "clientWidth", "get").mockImplementation(function () { return this.matches('[data-application-frame-region="bar"] > div') ? 250 : 0; });
+  vi.spyOn(HTMLElement.prototype, "scrollWidth", "get").mockImplementation(function () { return this.matches('[data-application-frame-region="bar-actions"]') ? 300 : this.matches("h1") ? 200 : 0; });
+}
 function resize(matches: boolean) { act(() => { viewport = matches ? 1280 : 375; for (const listener of listeners) listener(); }); }
 function fixture(): AppFrameProps {
   return {
@@ -296,7 +301,7 @@ describe("AppFrame floating stage", () => {
   });
 
   it.each(["navigation", "panel"] as const)("a: exposes an expanded corner close control inside the narrow %s modal", async side => {
-    setViewport(375); const user = userEvent.setup(); render(<AppFrame {...stageFixture()} />);
+    setViewport(375); measureNarrowHeader(); const user = userEvent.setup(); render(<AppFrame {...stageFixture()} />);
     const openLabel = side === "navigation" ? "Open navigation" : "Open panel";
     const closeLabel = side === "navigation" ? "Close navigation" : "Close panel";
     const trigger = screen.getByRole("button", { name: openLabel });
@@ -387,12 +392,12 @@ describe("AppFrame floating stage", () => {
     expect(stage.style.maxInlineSize).toBe("");
   });
 
-  it("d: reserves the sticky, unboxed raised bar above the independently scrolling stage", () => {
+  it("d: reserves the in-flow, unboxed raised bar above the independently scrolling stage", () => {
     const supported = vi.fn(() => true);
     vi.stubGlobal("CSS", Object.assign(Object.create(globalThis.CSS ?? null), { supports: supported }));
     const view = render(<AppFrame {...stageFixture()} />);
     const bar = screen.getByRole("banner");
-    expect(bar).toHaveStyle({ position: "sticky" }); expect(region("header")).toContainElement(bar);
+    expect(bar).toHaveStyle({ position: "relative" }); expect(region("header")).toContainElement(bar);
     expect(region("stage")).not.toContainElement(bar);
     expect(screen.getByRole("main")).toHaveClass("overflow-auto");
     // The frame default is the solid raised step, never the inset glass box, even where blur is supported.
@@ -416,7 +421,7 @@ describe("AppFrame floating stage", () => {
   });
 
   it("e: retains ancestor sibling destinations in the collapsed narrow breadcrumb", async () => {
-    setViewport(375); const user = userEvent.setup(); render(<AppFrame {...stageFixture()} />);
+    setViewport(375); measureNarrowHeader(); const user = userEvent.setup(); render(<AppFrame {...stageFixture()} />);
     await user.click(screen.getByRole("button", { name: "More breadcrumb levels" }));
     expect(await screen.findByRole("menuitem", { name: "Projects" })).toHaveAttribute("href", "#projects");
     expect(screen.getByRole("menuitem", { name: "Library" })).toHaveAttribute("href", "#library");
@@ -468,7 +473,7 @@ describe("AppFrame floating stage", () => {
   it("g: keeps one primary action and narrow secondary overflow", async () => {
     const user = userEvent.setup(); const props = stageFixture(); render(<AppFrame {...props} />);
     await user.click(screen.getByRole("button", { name: "Save changes" })); expect(props.page.actions[0]!.onAction).toHaveBeenCalledOnce();
-    setViewport(375);
+    measureNarrowHeader(); setViewport(375); act(() => window.dispatchEvent(new Event("resize")));
     await user.click(screen.getByRole("button", { name: "More page actions" }));
     await user.click(await screen.findByRole("menuitem", { name: "Export project" })); expect(props.page.actions[1]!.onAction).toHaveBeenCalledOnce();
     expect(screen.queryByRole("button", { name: /Use .* width/ })).toBeNull();
