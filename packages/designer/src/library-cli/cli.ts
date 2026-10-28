@@ -231,6 +231,7 @@ async function libraryUsageGraphInputs(root: string, catalog: ReturnType<typeof 
 
 /** Testable CLI entry point; importing this module never writes to a consumer library. */
 export async function main(argv: string[], io: LibraryCliIO = defaultIO): Promise<number> {
+  if (argv[0] === "ia-coverage") return (await import("../catalog/ia/check-coverage/cli.js")).main(argv.slice(1), io);
   if (argv.length === 1 && ["--help", "-h"].includes(argv[0]!)) { io.out(USAGE); return 0; }
   try {
     const args = parseArgs(argv);
