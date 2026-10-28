@@ -12,7 +12,7 @@ import { object, optionalText, readSectionContent, required, SectionContentError
 
 const LEAF = "sections.sign-in-form";
 const STAMP = dsAttrs("sections", LEAF, "foundry/sections.sign-in-form");
-export const signInFormInputs = { slots: ["header", "providers", "credentials", "verification", "actions", "error"], members: [] } as const;
+export const signInFormInputs = { slots: ["header", "providers", "credentials", "verification", "actions", "error"], members: ["sign-in.password", "sign-in.provider", "sign-in.verify"] } as const;
 type Phase = "credentials" | "code";
 type ValueKey = "identifier" | "password" | "code";
 /** Delivered through the existing ConsumerRuntimePorts.sectionHosts[leaf] port. */

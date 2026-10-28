@@ -854,7 +854,11 @@
       "unresolvedMemberAxes": []
     },
     {
-      "missingMembers": [],
+      "missingMembers": [
+        "sign-in.password",
+        "sign-in.provider",
+        "sign-in.verify"
+      ],
       "missingRequiredSlots": [],
       "missingSlots": [],
       "notes": [
@@ -867,7 +871,7 @@
         "Descriptor only; source imports, token reads, shared anatomy, accessibility, contrast and consumer runtime conformance are unmeasured. Content bindings describe host adaptation points, not type-equivalent converters."
       ],
       "slot": "sections.sign-in-form",
-      "status": "candidate",
+      "status": "subset",
       "supportedMembers": [],
       "supportedSlots": [
         "actions",

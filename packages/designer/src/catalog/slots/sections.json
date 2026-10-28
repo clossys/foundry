@@ -6408,7 +6408,11 @@
       ],
       "members": {
         "mode": "closed",
-        "names": []
+        "names": [
+          "sign-in.password",
+          "sign-in.provider",
+          "sign-in.verify"
+        ]
       },
       "allowedComposes": [
         "components.text-field",
