@@ -930,14 +930,15 @@ describe("compiled DataTable saved-view public contract", () => {
   }, 30_000);
 });
 
-it("exports PageBar from the public root and blocks barrels with all seven public types", async () => {
+it("exports PageBar from the public root and blocks barrels with retained public types", async () => {
   const blocks = await import("./blocks/index.js");
   const root = await import("./index.js");
   expect((blocks as any).PageBar).toBeTypeOf("function");
   expect((root as any).PageBar).toBe((blocks as any).PageBar);
   for (const file of ["src/blocks/index.ts", "src/index.ts"]) {
     const source = readFileSync(join(packageRoot, file), "utf8");
-    for (const name of ["PageBarProps", "PageBarPage", "PageBarCrumb", "PageBarAction", "PageBarDestination", "PageBarLabels", "PageBarWidth"]) expect(source).toContain(name);
+    for (const name of ["PageBarProps", "PageBarPage", "PageBarCrumb", "PageBarAction", "PageBarDestination", "PageBarLabels"]) expect(source).toContain(name);
+    expect(source).not.toContain("PageBarWidth");
   }
 });
 

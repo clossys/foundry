@@ -92,7 +92,7 @@ describe("owner-signed leaf membership", () => {
       }
       expect(fixture.slots).toEqual(beforeSlots);
       expect(fixture.ia).toEqual(beforeIA);
-      expect(loadBuildCatalog().slots).toHaveLength(216);
+      expect(loadBuildCatalog().slots).toHaveLength(224);
     });
   }
 
