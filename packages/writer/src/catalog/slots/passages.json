@@ -152,6 +152,95 @@
     "status": "draft"
   },
   {
+    "id": "passages.account-summary",
+    "layer": "passages",
+    "contract": {
+      "kind": "passage",
+      "source": "writer",
+      "sectionId": "sections.account-summary",
+      "passageSchema": "passages.account-summary",
+      "copy": {
+        "sourceLocale": "en",
+        "fields": [
+          {
+            "key": "heading",
+            "kind": "plain",
+            "required": true,
+            "maxLength": {
+              "en": 160
+            },
+            "dir": "auto"
+          },
+          {
+            "key": "identity.name",
+            "kind": "plain",
+            "required": true,
+            "maxLength": {
+              "en": 160
+            },
+            "dir": "auto"
+          },
+          {
+            "key": "identity.nameLabel",
+            "kind": "plain",
+            "required": true,
+            "maxLength": {
+              "en": 120
+            },
+            "dir": "auto"
+          },
+          {
+            "key": "identity.email",
+            "kind": "plain",
+            "required": true,
+            "maxLength": {
+              "en": 320
+            },
+            "dir": "auto"
+          },
+          {
+            "key": "identity.emailLabel",
+            "kind": "plain",
+            "required": true,
+            "maxLength": {
+              "en": 120
+            },
+            "dir": "auto"
+          },
+          {
+            "key": "rows[].label",
+            "kind": "plain",
+            "required": true,
+            "maxLength": {
+              "en": 120
+            },
+            "dir": "auto"
+          },
+          {
+            "key": "rows[].value",
+            "kind": "plain",
+            "required": true,
+            "maxLength": {
+              "en": 1000
+            },
+            "dir": "auto"
+          },
+          {
+            "key": "actions[].label",
+            "kind": "plain",
+            "required": true,
+            "maxLength": {
+              "en": 160
+            },
+            "dir": "auto"
+          }
+        ]
+      }
+    },
+    "requires": [],
+    "status": "draft"
+  },
+  {
     "id": "passages.activity-feed",
     "layer": "passages",
     "contract": {
@@ -672,6 +761,68 @@
       "copy": {
         "sourceLocale": "en",
         "fields": []
+      }
+    },
+    "requires": [],
+    "status": "draft"
+  },
+  {
+    "id": "passages.boundary-message",
+    "layer": "passages",
+    "contract": {
+      "kind": "passage",
+      "source": "writer",
+      "sectionId": "sections.boundary-message",
+      "passageSchema": "passages.boundary-message",
+      "copy": {
+        "sourceLocale": "en",
+        "fields": [
+          {
+            "key": "status",
+            "kind": "plain",
+            "required": true,
+            "maxLength": {
+              "en": 80
+            },
+            "dir": "auto"
+          },
+          {
+            "key": "title",
+            "kind": "plain",
+            "required": true,
+            "maxLength": {
+              "en": 160
+            },
+            "dir": "auto"
+          },
+          {
+            "key": "description",
+            "kind": "plain",
+            "required": true,
+            "maxLength": {
+              "en": 480
+            },
+            "dir": "auto"
+          },
+          {
+            "key": "actions[].label",
+            "kind": "plain",
+            "required": true,
+            "maxLength": {
+              "en": 120
+            },
+            "dir": "auto"
+          },
+          {
+            "key": "notes",
+            "kind": "plain",
+            "required": false,
+            "maxLength": {
+              "en": 480
+            },
+            "dir": "auto"
+          }
+        ]
       }
     },
     "requires": [],
@@ -1784,6 +1935,68 @@
     "status": "draft"
   },
   {
+    "id": "passages.error-message",
+    "layer": "passages",
+    "contract": {
+      "kind": "passage",
+      "source": "writer",
+      "sectionId": "sections.error-message",
+      "passageSchema": "passages.error-message",
+      "copy": {
+        "sourceLocale": "en",
+        "fields": [
+          {
+            "key": "status",
+            "kind": "plain",
+            "required": true,
+            "maxLength": {
+              "en": 80
+            },
+            "dir": "auto"
+          },
+          {
+            "key": "title",
+            "kind": "plain",
+            "required": true,
+            "maxLength": {
+              "en": 160
+            },
+            "dir": "auto"
+          },
+          {
+            "key": "description",
+            "kind": "plain",
+            "required": true,
+            "maxLength": {
+              "en": 480
+            },
+            "dir": "auto"
+          },
+          {
+            "key": "actions[].label",
+            "kind": "plain",
+            "required": true,
+            "maxLength": {
+              "en": 120
+            },
+            "dir": "auto"
+          },
+          {
+            "key": "reference",
+            "kind": "plain",
+            "required": false,
+            "maxLength": {
+              "en": 160
+            },
+            "dir": "auto"
+          }
+        ]
+      }
+    },
+    "requires": [],
+    "status": "draft"
+  },
+  {
     "id": "passages.error-state",
     "layer": "passages",
     "contract": {
@@ -2487,6 +2700,59 @@
     "status": "draft"
   },
   {
+    "id": "passages.legal-prose",
+    "layer": "passages",
+    "contract": {
+      "kind": "passage",
+      "source": "writer",
+      "sectionId": "sections.legal-prose",
+      "passageSchema": "passages.legal-prose",
+      "copy": {
+        "sourceLocale": "en",
+        "fields": [
+          {
+            "key": "heading",
+            "kind": "plain",
+            "required": true,
+            "maxLength": {
+              "en": 160
+            },
+            "dir": "auto"
+          },
+          {
+            "key": "revision.label",
+            "kind": "plain",
+            "required": true,
+            "maxLength": {
+              "en": 120
+            },
+            "dir": "auto"
+          },
+          {
+            "key": "revision.value",
+            "kind": "plain",
+            "required": true,
+            "maxLength": {
+              "en": 160
+            },
+            "dir": "auto"
+          },
+          {
+            "key": "body",
+            "kind": "rich",
+            "required": true,
+            "maxLength": {
+              "en": 48000
+            },
+            "dir": "auto"
+          }
+        ]
+      }
+    },
+    "requires": [],
+    "status": "draft"
+  },
+  {
     "id": "passages.link-index",
     "layer": "passages",
     "contract": {
@@ -2640,6 +2906,22 @@
             "dir": "auto"
           }
         ]
+      }
+    },
+    "requires": [],
+    "status": "draft"
+  },
+  {
+    "id": "passages.logo-mark",
+    "layer": "passages",
+    "contract": {
+      "kind": "passage",
+      "source": "writer",
+      "sectionId": "sections.logo-mark",
+      "passageSchema": "passages.logo-mark",
+      "copy": {
+        "sourceLocale": "en",
+        "fields": []
       }
     },
     "requires": [],
@@ -3777,6 +4059,203 @@
             "required": false,
             "maxLength": {
               "en": 120
+            },
+            "dir": "auto"
+          }
+        ]
+      }
+    },
+    "requires": [],
+    "status": "draft"
+  },
+  {
+    "id": "passages.sign-in-form",
+    "layer": "passages",
+    "contract": {
+      "kind": "passage",
+      "source": "writer",
+      "sectionId": "sections.sign-in-form",
+      "passageSchema": "passages.sign-in-form",
+      "copy": {
+        "sourceLocale": "en",
+        "fields": [
+          {
+            "key": "header.heading",
+            "kind": "plain",
+            "required": true,
+            "maxLength": {
+              "en": 160
+            },
+            "dir": "auto"
+          },
+          {
+            "key": "header.description",
+            "kind": "plain",
+            "required": false,
+            "maxLength": {
+              "en": 480
+            },
+            "dir": "auto"
+          },
+          {
+            "key": "providers[].label",
+            "kind": "plain",
+            "required": true,
+            "maxLength": {
+              "en": 120
+            },
+            "dir": "auto"
+          },
+          {
+            "key": "credentials.identifierLabel",
+            "kind": "plain",
+            "required": true,
+            "maxLength": {
+              "en": 120
+            },
+            "dir": "auto"
+          },
+          {
+            "key": "credentials.identifierPlaceholder",
+            "kind": "plain",
+            "required": false,
+            "maxLength": {
+              "en": 120
+            },
+            "dir": "auto"
+          },
+          {
+            "key": "credentials.passwordLabel",
+            "kind": "plain",
+            "required": true,
+            "maxLength": {
+              "en": 120
+            },
+            "dir": "auto"
+          },
+          {
+            "key": "credentials.passwordPlaceholder",
+            "kind": "plain",
+            "required": false,
+            "maxLength": {
+              "en": 120
+            },
+            "dir": "auto"
+          },
+          {
+            "key": "verification.codeLabel",
+            "kind": "plain",
+            "required": true,
+            "maxLength": {
+              "en": 120
+            },
+            "dir": "auto"
+          },
+          {
+            "key": "verification.description",
+            "kind": "plain",
+            "required": false,
+            "maxLength": {
+              "en": 480
+            },
+            "dir": "auto"
+          },
+          {
+            "key": "verification.placeholder",
+            "kind": "plain",
+            "required": false,
+            "maxLength": {
+              "en": 120
+            },
+            "dir": "auto"
+          },
+          {
+            "key": "actions.submit",
+            "kind": "plain",
+            "required": true,
+            "maxLength": {
+              "en": 120
+            },
+            "dir": "auto"
+          },
+          {
+            "key": "actions.verify",
+            "kind": "plain",
+            "required": true,
+            "maxLength": {
+              "en": 120
+            },
+            "dir": "auto"
+          },
+          {
+            "key": "actions.pending",
+            "kind": "plain",
+            "required": true,
+            "maxLength": {
+              "en": 120
+            },
+            "dir": "auto"
+          },
+          {
+            "key": "actions.back",
+            "kind": "plain",
+            "required": true,
+            "maxLength": {
+              "en": 120
+            },
+            "dir": "auto"
+          },
+          {
+            "key": "actions.resend",
+            "kind": "plain",
+            "required": true,
+            "maxLength": {
+              "en": 120
+            },
+            "dir": "auto"
+          },
+          {
+            "key": "actions.divider",
+            "kind": "plain",
+            "required": true,
+            "maxLength": {
+              "en": 160
+            },
+            "dir": "auto"
+          },
+          {
+            "key": "error.message",
+            "kind": "plain",
+            "required": false,
+            "maxLength": {
+              "en": 480
+            },
+            "dir": "auto"
+          },
+          {
+            "key": "error.identifier",
+            "kind": "plain",
+            "required": false,
+            "maxLength": {
+              "en": 240
+            },
+            "dir": "auto"
+          },
+          {
+            "key": "error.password",
+            "kind": "plain",
+            "required": false,
+            "maxLength": {
+              "en": 240
+            },
+            "dir": "auto"
+          },
+          {
+            "key": "error.code",
+            "kind": "plain",
+            "required": false,
+            "maxLength": {
+              "en": 240
             },
             "dir": "auto"
           }
