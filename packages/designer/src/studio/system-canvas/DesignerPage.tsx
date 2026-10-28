@@ -7,15 +7,19 @@ import { CanvasMap } from "../../components/CanvasMap.js";
 import { CanvasZoom } from "../../components/CanvasZoom.js";
 import { Slider } from "../../components/Slider.js";
 import { SemanticContent } from "../../components/SemanticContent.js";
-import type { LayerId, Placement } from "../../catalog-core/index.js";
+import { ShellCopyProvider } from "../../components/Banner.copy-context.js";
+import type { BuildCatalogData, CompositeEngineInput, CompositeResolved, LayerId, Placement } from "../../catalog-core/index.js";
+import { planSurfaceDefaults, type SurfaceDefaultCandidateDocument, type SurfaceDefaultsInput } from "../../catalog-core/surface-defaults.js";
 import type { UsageGraph } from "../../catalog-core/usage-graph.js";
 import { useOptionalStudioSession } from "../StudioProvider.js";
 import { useWholeStudio } from "../WholeStudioProvider.js";
 import { CompactPreview } from "../previews.js";
 import { Scorecard } from "../Scorecard.js";
 import { createRouteStudioLabels } from "../route-labels.js";
-import { readStudioMessage, studioCopyNeed, type StudioCopyBinding } from "../copy-binding.js";
-import type { StudioLabels } from "../types.js";
+import { readStudioCopy, readStudioMessage, studioCopyNeed, type StudioCopyBinding } from "../copy-binding.js";
+import type { CompositeStudioSnapshot, StudioLabels } from "../types.js";
+import { adoptedPackagePreview, plannedSurfacePreview } from "../library-board-adapter.js";
+import { planSurfacePreviews, type PlannedSurfacePreviews } from "../planned-surface-previews.js";
 import { useStudioUsageData } from "../usage/StudioUsage.js";
 import { ExplorerTree, LayerSelect, useExplorerPlacements } from "../rail/ExplorerTree.js";
 import { explorerIndex, explorerNodes } from "../rail/explorer-tree.js";
@@ -40,6 +44,29 @@ export interface DesignerPageProps extends DesignerAgentData {
   readonly initialUrl?: StudioUrl;
   readonly className?: string;
 }
+
+/** Preview-only defaults: the catalog's eligible package compositions, never a library mutation or approval. */
+export function designerSurfacePreviews(input: CompositeEngineInput, contracts: BuildCatalogData, hosted?: CompositeStudioSnapshot["plannedPreviews"]): PlannedSurfacePreviews {
+  const slots = contracts.slots.filter(slot => slot.layer === "sections" || slot.layer === "frames") as SurfaceDefaultsInput["catalog"]["slots"];
+  const fills = (input.catalog.surfaces?.fills ?? []) as unknown as readonly SurfaceDefaultCandidateDocument[];
+  const plan = planSurfaceDefaults({ catalog: { slots, fills }, slots: slots.map(slot => slot.id), preference: ["foundry"] });
+  const defaults = planSurfacePreviews({ plan, fills });
+  const previews = { ...defaults.previews, ...hosted?.previews };
+  return { previews, sampleState: hosted?.sampleState ?? defaults.sampleState,
+    unrenderable: [...defaults.unrenderable, ...plan.rows.filter(row => row.status === "not-chosen").map(row => ({ slot: row.slot, reason: row.reasons.join("; ") }))]
+      .filter(row => !Object.hasOwn(previews, row.slot)),
+  };
+}
+
+/** A selected surface always resolves its actual descriptor; another source's planned row is never substituted. */
+export function designerSurfacePreview(leaf: string, profile: CompositeResolved | undefined, planned: PlannedSurfacePreviews | undefined): { node: ReactNode; state: string } | undefined {
+  if (profile?.surfaces?.fills[leaf as `sections.${string}`]) {
+    const actual = planned ? { ...planned, previews: Object.fromEntries(Object.entries(planned.previews).filter(([id]) => id !== leaf)) } : undefined;
+    return adoptedPackagePreview(leaf, profile, actual);
+  }
+  return plannedSurfacePreview(planned, leaf);
+}
+
 /** One page, one camera, one rail: no page tabs, dock registration or mutation port. */
 export function DesignerPage({data:supplied,labels:hostLabels,copy,graph:hostGraph,renderSpecimen,viewSize,initialUrl,className,...agent}:DesignerPageProps) {
   const session=useOptionalStudioSession(),whole=useWholeStudio(),inherited=useExplorerPlacements();
@@ -84,13 +111,26 @@ export function DesignerPage({data:supplied,labels:hostLabels,copy,graph:hostGra
   useEffect(()=>{let active=true;const escape=(event:KeyboardEvent)=>{if(event.key==="Escape")queueMicrotask(()=>{if(active&&!event.defaultPrevented)close();});};document.addEventListener("keydown",escape,true);return()=>{active=false;document.removeEventListener("keydown",escape,true);};},[close]);
   const report=useCallback((next:SystemCanvasView)=>setCamera(current=>current&&current.viewport.x===next.viewport.x&&current.viewport.y===next.viewport.y&&current.viewport.zoom===next.viewport.zoom&&current.size.width===next.size.width&&current.size.height===next.size.height&&current.layer===next.layer&&current.board===next.board&&current.line===next.line&&current.range.min===next.range.min&&current.range.max===next.range.max?current:next),[]);
   const profile=whole?.evaluated?.value?.profile;
+  const surfaces=useMemo(()=>whole?.input?designerSurfacePreviews(whole.input,whole.contracts,whole.snapshot?.plannedPreviews):whole?.snapshot?.plannedPreviews,[whole?.input,whole?.contracts,whole?.snapshot?.plannedPreviews]);
+  const shellCopy=useMemo(()=>(ref:Parameters<typeof readStudioCopy>[1])=>({ref,text:readStudioCopy(copy,ref,ref.values)}),[copy]);
   const candidate=session?.rows.flatMap(row=>row.candidates).find(candidate=>candidate.fill.slot===selected&&(candidate.selected||candidate.inUseByDefault));
   const documents=whole?.input?[...whole.input.catalog.components.fills,...whole.input.library.components.fills,...(whole.input.catalog.surfaces?.fills??[]),...(whole.input.library.surfaces?.fills??[])]:[];
   const selectedSource=selected?profile?.components.components[selected]?.descriptor.source??Object.values(profile?.surfaces?.fills??{}).find(fill=>fill.document.$extensions["com.clossys.fill"].slot===selected)?.document.$extensions["com.clossys.fill"].source:undefined;
   const meta=documents.find(doc=>doc.$extensions["com.clossys.fill"].slot===selected&&doc.$extensions["com.clossys.fill"].source===selectedSource)?.$extensions["com.clossys.fill"]??candidate?.fill;
   const slot=whole?.contracts.slots.find(slot=>slot.id===selected)??session?.catalog.slots.find(slot=>slot.id===selected);
   const fill:InspectorFill={source:meta?.source,pin:meta?.pin,origin:meta?.mode==="derived"?"derived":meta?.author==="consumer"?"authored":meta?"adopted":undefined,status:slot?.status,constituents:meta?.builtOn,root:slot?.contract.kind==="component"?slot.contract.root:undefined};
-  const specimen=(leaf:string):ReactNode=>renderSpecimen?.(leaf)??(profile?whole?.snapshot?.preview?.(leaf,profile):undefined)??(session?.rows.flatMap(row=>row.candidates).find(c=>c.fill.slot===leaf&&(c.selected||c.inUseByDefault)) ? <CompactPreview candidate={session.rows.flatMap(row=>row.candidates).find(c=>c.fill.slot===leaf&&(c.selected||c.inUseByDefault))!} labels={labels}/>:null);
+  const specimen=(leaf:string):ReactNode=>{
+    let node=renderSpecimen?.(leaf)??(profile?whole?.snapshot?.preview?.(leaf,profile):undefined);
+    if(node==null&&(leaf.startsWith("sections.")||leaf.startsWith("frames."))){
+      const surface=designerSurfacePreview(leaf,profile,surfaces);
+      const adopted=Boolean(profile?.surfaces?.fills[leaf as `sections.${string}`]);
+      node=surface?<SemanticContent as="div" data-surface-preview={leaf} data-preview-state={adopted?"selected":"planned"} className={leaf.startsWith("frames.")?"h-full min-h-0 min-w-0":"min-w-0"}>
+        {!adopted&&labels.plannedPreview?<SemanticContent as="p" className="text-caption text-ink-secondary">{labels.plannedPreview}</SemanticContent>:null}{surface.node}
+      </SemanticContent>:<SemanticContent as="div" data-preview-gap={leaf} data-preview-reason={surfaces?.unrenderable.find(row=>row.slot===leaf)?.reason??(adopted?"selected surface has no supported runtime preview":undefined)} className="flex min-h-0 flex-col gap-sm rounded-control border border-line-base p-md"><SemanticContent as="p">{adopted?labels.previewUnavailable:labels.noFill}</SemanticContent></SemanticContent>;
+    }
+    if(node==null){const value=session?.rows.flatMap(row=>row.candidates).find(c=>c.fill.slot===leaf&&(c.selected||c.inUseByDefault));if(value)node=<CompactPreview candidate={value} labels={labels}/>;}
+    return node==null?null:<ShellCopyProvider resolver={shellCopy}>{node}</ShellCopyProvider>;
+  };
   const row=layout.rows.find(row=>row.layer===activeLayer);
   const zoomTarget=selected?{layer:resolver.layerOf(selected)!,leaf:selected}:target;
   const map=camera&&row?minimapModel(row.rect,camera.viewport,camera.size):undefined;

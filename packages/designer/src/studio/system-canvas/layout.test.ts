@@ -1,3 +1,4 @@
+import { TOKENS } from "../../tokens/tokens.js";
 import { describe, expect, it } from "vitest";
 import { SYSTEM_LAYER_ORDER, defaultSystemMetrics, systemLayout } from "./layout.js";
 import { testMetrics, testPlacements } from "./__fixtures__/system.js";
@@ -57,6 +58,15 @@ describe("system layout model", () => {
   it("refuses a leaf placed twice", () => {
     const twice = [{ layer: "tokens" as const, nodes: [{ id: "a", label: "A", children: [{ id: "b", label: "B", leaves: ["tokens.x", "tokens.x"] }] }] }];
     expect(() => systemLayout(twice, testMetrics)).toThrow(TypeError);
+  });
+
+  it("gives composed frame specimens a desktop viewport instead of collapsing their sidebar into a 320px card", () => {
+    const real = systemLayout(testPlacements);
+    const frame = [...real.cells.values()].find(cell => cell.layer === "frames")!;
+    const component = [...real.cells.values()].find(cell => cell.layer === "components")!;
+    expect(frame.rect.width).toBe(Number.parseFloat(TOKENS["--breakpoint-desktop"]!.value));
+    expect(frame.rect.height).toBe(Number.parseFloat(TOKENS["--ui-layout-dock-max-block"]!.value));
+    expect(component.rect.width).toBe(Number.parseFloat(TOKENS["--ui-layout-aside-w"]!.value));
   });
 
   it("reads its default geometry from tokens", () => {

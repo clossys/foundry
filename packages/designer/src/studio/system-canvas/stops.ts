@@ -1,4 +1,5 @@
 import { fitTo, type CanvasRect, type CanvasSize, type Viewport } from "../../blocks/canvas/models.js";
+import { legibleZoomFloor } from "../useCanvasWorld.js";
 import type { SystemLayout } from "./layout.js";
 
 /** The four zoom stops (Designer D5g), widest first. */
@@ -8,13 +9,13 @@ export const SYSTEM_STOPS: readonly SystemStop[] = ["system", "layer", "board", 
 export interface ZoomRange { readonly min: number; readonly max: number }
 
 /**
- * Free zoom runs from the System stop (the whole system fitted, the minimum)
- * to the Cell stop (100%, the maximum). A system that fits at more than 100%
- * pins both ends at 100%.
+ * Every layer shares the same fit rule: fit the target, retain legible specimen
+ * text, and never exceed 100%. Large systems remain pannable at their minimum
+ * instead of shrinking every specimen into unreadable text.
  */
 export function systemZoomRange(layout: SystemLayout, viewSize: CanvasSize, padding: number): ZoomRange {
   const fit = fitTo(layout.bounds, viewSize, padding).zoom;
-  return { min: Math.min(fit, 1), max: 1 };
+  return { min: Math.min(1, Math.max(legibleZoomFloor(), fit)), max: 1 };
 }
 
 export function clampZoom(range: ZoomRange, zoom: number): number {
@@ -39,7 +40,7 @@ export function stopViewport(stop: SystemStop, rect: CanvasRect, viewSize: Canva
   return centreOn(rect, viewSize, stopZoom(stop, rect, viewSize, padding, range));
 }
 
-/** The opening viewport: the whole system at the System stop. */
+/** The opening viewport: the system centre at the shared legible fit stop. */
 export function systemStop(layout: SystemLayout, viewSize: CanvasSize, padding: number): Viewport {
   return stopViewport("system", layout.bounds, viewSize, padding, systemZoomRange(layout, viewSize, padding));
 }
