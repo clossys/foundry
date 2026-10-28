@@ -16,6 +16,8 @@ import { TOKENS } from "../../tokens/tokens.js";
 import type { Candidate } from "../model.js";
 import { CompactPreview } from "../previews.js";
 import type { StudioLabels } from "../types.js";
+import { readStudioMessage, studioCopyNeed, type StudioCopyBinding } from "../copy-binding.js";
+import { StudioDataValue } from "../data-value.js";
 import { viewRect, visibleBoards } from "../visible-rows.js";
 import { trailAt } from "./breadcrumb.js";
 import { litSet, type UsageEdge } from "./graph.js";
@@ -63,6 +65,7 @@ export interface SystemCanvasHandle {
 
 export interface SystemCanvasView { readonly viewport: Viewport; readonly size: CanvasSize; readonly range: ZoomRange; readonly layer?: LayerId; readonly board?: string; readonly line?: string }
 export interface SystemCanvasProps {
+  readonly copy: StudioCopyBinding;
   renderStaticThumbnail?: (leaf: string) => ReactNode;
   onViewChange?: (view: SystemCanvasView) => void;
   data: SystemCanvasData;
@@ -127,7 +130,8 @@ function useMeasured(explicit: CanvasSize | undefined): [CanvasSize | undefined,
  * through `navigateTo`, as one eased camera move whose detail swap waits for
  * the move to end.
  */
-export function SystemCanvas({ data, labels, edges = [], selectedLeaf, onSelect, renderSpecimen, renderThumbnail, renderStaticThumbnail, onViewChange, studioLabels, handleRef, viewSize, metrics, className }: SystemCanvasProps) {
+export function SystemCanvas({ copy, data, labels, edges = [], selectedLeaf, onSelect, renderSpecimen, renderThumbnail, renderStaticThumbnail, onViewChange, studioLabels, handleRef, viewSize, metrics, className }: SystemCanvasProps) {
+  if (!copy || typeof copy.locale !== "string" || !copy.locale || typeof copy.resolver !== "function") studioCopyNeed("studio.copy.binding");
   const layout = useMemo(() => systemLayout(data.placements, metrics), [data.placements, metrics]);
   const [size, onSurfaceElement] = useMeasured(viewSize);
   const padding = px("--spacing-xl");
@@ -212,7 +216,7 @@ export function SystemCanvas({ data, labels, edges = [], selectedLeaf, onSelect,
     const cells = entry.lines.flatMap(line => line.cells);
     const far = cells.filter(cell => renderedTier(cell.leaf, tiers, live) === "far");
     return [<CanvasPlaced key={entry.id} rect={entry.rect} data-system-board={entry.id} className="rounded-control border border-line-base bg-surface-base">
-      <h3 className={cx(CANVAS_COUNTER_SCALED_TITLE, "truncate px-sm text-body-s font-body text-ink-primary")}>{entry.label}</h3>
+      <h3 className={cx(CANVAS_COUNTER_SCALED_TITLE, "truncate px-sm text-body-s font-body text-ink-primary")}>{readStudioMessage(copy,`studio.ia.board.${entry.id}`)}</h3>
     </CanvasPlaced>, far.length ? <CanvasChipGrid key={`${entry.id}#chips`} rect={entry.rect} data-system-chips={entry.id}
       chips={far.map(cell => ({ id: cell.leaf, rect: cell.rect, tone: data.cells?.[cell.leaf]?.tone ?? "neutral", dimmed: dim(cell.leaf) }))} /> : null];
   };
@@ -220,27 +224,27 @@ export function SystemCanvas({ data, labels, edges = [], selectedLeaf, onSelect,
     const visible = line.cells.filter(cell => renderedTier(cell.leaf, tiers, live) !== "far");
     if (!visible.length) return [];
     return [<CanvasPlaced key={line.id} rect={line.labelRect} data-system-line={line.id} className="flex items-center overflow-hidden">
-      <span className={cx(CANVAS_COUNTER_SCALED_TITLE, "truncate text-caption text-ink-secondary")}>{line.label}</span>
+      <span className={cx(CANVAS_COUNTER_SCALED_TITLE, "truncate text-caption text-ink-secondary")}>{readStudioMessage(copy,`studio.ia.line.${line.id}`)}</span>
     </CanvasPlaced>, ...visible.map(cell => {
       const tier = renderedTier(cell.leaf, tiers, live), info = data.cells?.[cell.leaf];
       return <CanvasPlaced key={cell.leaf} rect={cell.rect} dimmed={dim(cell.leaf)} data-system-cell={cell.leaf} data-system-tier={tier}
         data-selected={cell.leaf === selectedLeaf ? "" : undefined}
         className={cx("flex flex-col gap-xs overflow-hidden rounded-control border bg-surface-raised p-xs", cell.leaf === selectedLeaf ? "border-accent" : "border-line-base")}>
         <div className="flex min-w-0 items-center justify-between gap-xs">
-          <Button variant="ghost" size="sm" className={cx(CANVAS_COUNTER_SCALED_TITLE, "min-w-0 truncate")} onPress={() => onSelect?.(cell.leaf)}>{info?.label ?? cell.leaf}</Button>
-          {info?.source ? <Badge variant={info.tone ?? "neutral"}>{info.source}</Badge> : null}
+          <Button variant="ghost" size="sm" className={cx(CANVAS_COUNTER_SCALED_TITLE, "min-w-0 truncate")} onPress={() => onSelect?.(cell.leaf)}>{readStudioMessage(copy,`studio.ia.item.${cell.leaf}`)}</Button>
+          {info?.source ? <Badge variant={info.tone ?? "neutral"}><StudioDataValue kind="source" value={info.source}/></Badge> : null}
         </div>
         {cellBody(cell, tier)}
       </CanvasPlaced>;
     })];
   });
 
-  const crumbs = trail.layer ? [labels.layers[trail.layer], trail.board?.label, trail.line?.label].filter((crumb): crumb is string => crumb !== undefined) : [];
+  const crumbs = trail.layer ? [labels.layers[trail.layer], trail.board?readStudioMessage(copy,`studio.ia.board.${trail.board.id}`):undefined, trail.line?readStudioMessage(copy,`studio.ia.line.${trail.line.id}`):undefined].filter((crumb): crumb is string => crumb !== undefined) : [];
 
   return <div className={cx("relative h-full min-h-0", className)} data-system-canvas="" data-system-lit={[...lit].sort().join(" ")}>
     <CanvasLod zoom={viewport.zoom}>
       <CanvasSurface aria-label={labels.label} instructionText={labels.hint} viewport={viewport} onViewportChange={changeViewport}
-        selection={[]} onSelectionChange={() => {}} worldBounds={layout.bounds} items={[]} edgeItems={[...layout.cells.values()].map(cell => ({id:cell.leaf,label:cell.leaf,rect:cell.rect}))} edges={edges.filter(edge => layout.cells.has(edge.from) && layout.cells.has(edge.to) && (!selectedLeaf || lit.has(edge.from) && lit.has(edge.to))).map((edge,index) => ({...edge,id:edge.from+":"+edge.to+":"+index}))} itemInteraction="content" grid="dots"
+        selection={[]} onSelectionChange={() => {}} worldBounds={layout.bounds} items={[]} edgeItems={[...layout.cells.values()].map(cell => ({id:cell.leaf,label:readStudioMessage(copy,`studio.ia.item.${cell.leaf}`),rect:cell.rect}))} edges={edges.filter(edge => layout.cells.has(edge.from) && layout.cells.has(edge.to) && (!selectedLeaf || lit.has(edge.from) && lit.has(edge.to))).map((edge,index) => ({...edge,id:edge.from+":"+edge.to+":"+index}))} itemInteraction="content" grid="dots"
         {...(range ? { minZoom: range.min, maxZoom: range.max } : {})} fitPadding={padding} {...(viewSize ? { viewSize } : {})}
         {...(held && !reduced ? { viewportTransition: MOVE } : {})} onViewportTransitionEnd={endMove} onSurfaceElement={onSurfaceElement}
         className="absolute inset-0 rounded-none border-0 bg-surface-raised">

@@ -3,6 +3,7 @@ import { act, fireEvent, render, screen } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { SystemCanvas, type SystemCanvasHandle, type SystemCanvasProps } from "./SystemCanvas.js";
 import { testLabels, testPlacements } from "./__fixtures__/system.js";
+import { studioTestCopy } from "../__fixtures__/copy.js";
 
 // Default (token) geometry: a cell is 320 x 240 world pixels.
 // In a 400 x 300 view the System stop draws every cell far; the tokens/color Board stop draws them mid.
@@ -17,7 +18,7 @@ afterEach(() => { vi.useRealTimers(); vi.restoreAllMocks(); vi.unstubAllGlobals(
 
 function setup(overrides: Partial<SystemCanvasProps> = {}) {
   const handle = createRef<SystemCanvasHandle>();
-  const props: SystemCanvasProps = { data: { placements: testPlacements }, labels: testLabels, viewSize: small, handleRef: handle, ...overrides };
+  const props: SystemCanvasProps = { copy: studioTestCopy, data: { placements: testPlacements }, labels: testLabels, viewSize: small, handleRef: handle, ...overrides };
   const result = render(<SystemCanvas {...props} />);
   const world = result.container.querySelector<HTMLElement>("[data-canvas-world]")!;
   const navigate = (target: Parameters<SystemCanvasHandle["navigateTo"]>[0]) => act(() => handle.current!.navigateTo(target));
