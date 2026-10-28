@@ -42,11 +42,11 @@ describe("StatGroup", () => {
   it("switches between the grid and row layouts", () => {
     const { rerender } = render(<StatGroup items={items} />);
     expect(screen.getByRole("list")).toHaveAttribute("data-layout", "grid");
-    expect(screen.getByRole("list").className).toContain("grid-cols-1");
+    expect(screen.getByRole("list").className).toContain("grid-cols-2");
     rerender(<StatGroup items={items} layout="row" />);
     expect(screen.getByRole("list")).toHaveAttribute("data-layout", "row");
     expect(screen.getByRole("list").className).toContain("flex-wrap");
-    expect(screen.getByRole("list").className).not.toContain("grid-cols-1");
+    expect(screen.getByRole("list").className).not.toContain("grid-cols-2");
   });
 });
 
