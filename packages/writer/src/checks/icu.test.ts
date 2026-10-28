@@ -62,7 +62,7 @@ describe("WR8 ICU validation", () => {
     const common = { context: "Copy", status: "draft", origin: "authored" } as const;
     const records: WriterRecord[] = [
       { ...common, id: "pt.0123456789", leaf: "patterns.headline-subhead", parts: { headline: { text: "Hello {name}" } } },
-      { ...common, id: "nr.0123456789", leaf: "narratives.article", title: "Article", frame: { frameId: "article" }, blocks: [{ type: "paragraph", designer: { id: "components.prose", configId: "body" }, children: [{ type: "paragraph", designer: { id: "components.prose", configId: "body" }, text: "Broken }" }] }] },
+      { ...common, id: "nr.0123456789", leaf: "narratives.article", title: "Article", frame: { frameId: "article" }, blocks: [{ type: "paragraph", designer: { id: "components.prose", configId: "body" }, children: [{ type: "paragraph", designer: { id: "components.prose", configId: "body" }, text: "Broken {" }] }] },
       { ...common, id: "lx.0123456789", leaf: "lexicon.claims", kind: "claim", strategistClaimKey: "claim", requiresCitation: true, phrasings: ["{value, number}"] },
     ];
     const findings = checkWriterICU(library(records));
