@@ -1,0 +1,1955 @@
+{
+  "version": 1,
+  "revision": 1,
+  "state": "draft",
+  "locale": "en",
+  "activation": "none",
+  "aliases": {
+    "pagination.previousPageLabel": "st.96qkp2bzpm",
+    "pagination.nextPageLabel": "st.kb8ve83tjp",
+    "pagination.noResultsLabel": "st.axqwnya2y0",
+    "pagination.pageSizeLabel": "st.bhhba11w6f",
+    "pagination.ariaLabel": "st.3hp3yvppbm",
+    "pagination.rangeSummaryMessage": "st.pzmpksy76x",
+    "pagination.pageSummaryMessage": "st.vxwx1e3xwq",
+    "gallery.close": "st.pr813ca841",
+    "gallery.enlarge": "st.68c25e9geb",
+    "navShell.triggerLabel": "st.7hvz5ycgs2",
+    "navShell.closeLabel": "st.189vppdn78",
+    "dataTable.viewOptionsLabel": "st.hx82ezae27",
+    "dataTable.closeViewOptionsLabel": "st.n8n5g5eec7",
+    "dataTable.viewModeLabel": "st.04cy19mm31",
+    "dataTable.densityLabel": "st.cavrdkkw8y",
+    "dataTable.groupSectionLabel": "st.458cnrztwt",
+    "dataTable.sortSectionLabel": "st.1d29404hzv",
+    "dataTable.filterSectionLabel": "st.3dsrke1smz",
+    "dataTable.columnsSectionLabel": "st.mpfdxtqtez",
+    "dataTable.pivotSectionLabel": "st.e2ptq1jp2a",
+    "dataTable.ascendingLabel": "st.x67h6m7rpb",
+    "dataTable.descendingLabel": "st.deksy8e7g5",
+    "dataTable.flatModeLabel": "st.a6y094jqne",
+    "dataTable.groupedModeLabel": "st.r2g0nvj41m",
+    "dataTable.pivotModeLabel": "st.zg44pbkg7t",
+    "dataTable.comfortableDensityLabel": "st.2yrpaf84xw",
+    "dataTable.compactDensityLabel": "st.drv8cwaan0",
+    "dataTable.pivotMeasuresLabel": "st.e6jenmr7fd",
+    "dataTable.activeRulesLabel": "st.p31vnyyb35",
+    "dataTable.invalidRangeLabel": "st.vhhj90xz1s",
+    "dataTable.dateHintLabel": "st.1btvkkz4hc",
+    "dataTable.noFacetValuesLabel": "st.5cdardkjc4",
+    "dataTable.containsLabel": "st.66j86dac8m",
+    "dataTable.equalsLabel": "st.a8ph330trr",
+    "dataTable.anyTagsLabel": "st.22acpftg3n",
+    "dataTable.allTagsLabel": "st.y6hhq23hwz",
+    "dataTable.noTagsLabel": "st.3xkvn2erq4",
+    "dataTable.pivotEmptyLabel": "st.0nf3j2fk1c",
+    "dataTable.pivotRowsHeaderLabel": "st.6zfhwybg0n",
+    "dataTable.selectAllLabel": "st.wp1ysvjgbx",
+    "dataTable.selectRowLabel": "st.g7rk8a88h1",
+    "dataTable.groupByMessage": "st.3s5pa52xpx",
+    "dataTable.groupOrderMessage": "st.emb1bnhnyx",
+    "dataTable.moveGroupMessage": "st.59p16abj2r",
+    "dataTable.sortDirectionMessage": "st.a9amg0808p",
+    "dataTable.moveSortMessage": "st.9xs0cpmy45",
+    "dataTable.removeSortMessage": "st.01tw051yyp",
+    "dataTable.addSortMessage": "st.xw7scyfmdn",
+    "dataTable.removeFilterMessage": "st.vg7e6qma4y",
+    "dataTable.addFilterMessage": "st.v2rdp9rtnp",
+    "dataTable.showColumnMessage": "st.n9tmrmgkh1",
+    "dataTable.moveColumnMessage": "st.e65p9m8crh",
+    "dataTable.pivotDimensionMessage": "st.e53ff9hnhy",
+    "dataTable.pivotOrderMessage": "st.jw1pp3edc2",
+    "dataTable.movePivotMessage": "st.10mnfn3we4",
+    "dataTable.removeGroupMessage": "st.ca6sak0aa5",
+    "dataTable.groupChipMessage": "st.7p0373hd3w",
+    "dataTable.sortChipMessage": "st.phdtmee34k",
+    "dataTable.filterChipMessage": "st.m3ss721amh",
+    "dataTable.minimumMessage": "st.qjpgzp0kah",
+    "dataTable.maximumMessage": "st.kzpx4eayzf",
+    "dataTable.applyRangeMessage": "st.tmsnvdk2vm",
+    "dataTable.comparisonMessage": "st.skp2vk3868",
+    "dataTable.filterValueMessage": "st.wyrzdmksv5",
+    "dataTable.matchingMessage": "st.8qh55343cb",
+    "dataTable.booleanFilterMessage": "st.4jy38t3bd9",
+    "dataTable.facetValueMessage": "st.2dvg1g5avb",
+    "dataTable.groupToggleMessage": "st.z6cvcn5vhs",
+    "dataTable.groupPathMessage": "st.j1mhm3nd5t",
+    "dataTable.aggregateMessage": "st.n22gdj6d6b",
+    "dataTable.pivotAxisMessage": "st.k05nwrgw7r",
+    "dataTable.pivotColumnMessage": "st.s6gadcwrm6",
+    "dataTable.pivotValueMessage": "st.e1gm61n448",
+    "dataTable.emptyStateTitle": "st.asj8g1mcjn",
+    "dataTable.value.empty": "st.ss1zqxdm6m",
+    "dataTable.value.emptySet": "st.fye7jydza7",
+    "dataTable.filter.none": "st.44sw1hna16",
+    "dataTable.filter.contains": "st.5dqzeh0xy0",
+    "dataTable.filter.equals": "st.xkxv10vkzx",
+    "dataTable.filter.notEquals": "st.nvye5sgtnf",
+    "dataTable.filter.startsWith": "st.tvxq9c8zq1",
+    "dataTable.filter.endsWith": "st.s4a08q5c9n",
+    "dataTable.filter.empty": "st.cvhs9dsqww",
+    "dataTable.filter.notEmpty": "st.dk1yn9bx08",
+    "dataTable.filter.any": "st.33mpwkxf56",
+    "dataTable.filter.all": "st.afszhazse3",
+    "dataTable.filter.noneOp": "st.121cqyn9t7",
+    "dataTable.filter.in": "st.jhyrh4bfqm",
+    "dataTable.filter.notIn": "st.s0a9j4spyc",
+    "dataTable.filter.true": "st.6fwkcwynsz",
+    "dataTable.filter.false": "st.nb5d1cqq3h",
+    "dataTable.filter.and": "st.s7k1zh7w80",
+    "dataTable.filter.or": "st.zv9f5e1fkc",
+    "dataTable.filter.group": "st.rxp8wf493n",
+    "dataTable.filter.text": "st.mcrzk1ss71",
+    "dataTable.filter.range": "st.yn3r8djw5m",
+    "dataTable.filter.tags": "st.1ky86469dw",
+    "merge.logo-hero.name": "st.dchvjhvyep",
+    "merge.record-detail.header.heading": "st.dvhz031m2x",
+    "merge.record-detail.fields.label": "st.78q8q8f05t",
+    "merge.record-detail.fields.value": "st.ttdxhv7jpb",
+    "merge.error-state.header.heading": "st.gdzc1rc0sk",
+    "merge.error-state.header.description": "st.hd21vyfgk0",
+    "merge.error-state.retry.label": "st.rx282jkj3q",
+    "merge.error-state.report.label": "st.ye9ybmcxmq"
+  },
+  "records": [
+    {
+      "id": "st.96qkp2bzpm",
+      "leaf": "strings.field-labels",
+      "context": "admin.writer.sections.pagination.previousPageLabel",
+      "status": "draft",
+      "origin": "authored",
+      "text": "Previous page"
+    },
+    {
+      "id": "st.kb8ve83tjp",
+      "leaf": "strings.field-labels",
+      "context": "admin.writer.sections.pagination.nextPageLabel",
+      "status": "draft",
+      "origin": "authored",
+      "text": "Next page"
+    },
+    {
+      "id": "st.axqwnya2y0",
+      "leaf": "strings.field-labels",
+      "context": "admin.writer.sections.pagination.noResultsLabel",
+      "status": "draft",
+      "origin": "authored",
+      "text": "No results"
+    },
+    {
+      "id": "st.bhhba11w6f",
+      "leaf": "strings.field-labels",
+      "context": "admin.writer.sections.pagination.pageSizeLabel",
+      "status": "draft",
+      "origin": "authored",
+      "text": "Rows per page"
+    },
+    {
+      "id": "st.3hp3yvppbm",
+      "leaf": "strings.field-labels",
+      "context": "admin.writer.sections.pagination.ariaLabel",
+      "status": "draft",
+      "origin": "authored",
+      "text": "Pagination"
+    },
+    {
+      "id": "st.pzmpksy76x",
+      "leaf": "strings.field-labels",
+      "context": "admin.writer.sections.pagination.rangeSummaryMessage",
+      "status": "draft",
+      "origin": "authored",
+      "text": "Showing {start, number, integer}–{end, number, integer} of {total, number, integer}",
+      "args": [
+        {
+          "name": "start",
+          "type": "number"
+        },
+        {
+          "name": "end",
+          "type": "number"
+        },
+        {
+          "name": "total",
+          "type": "number"
+        }
+      ]
+    },
+    {
+      "id": "st.vxwx1e3xwq",
+      "leaf": "strings.field-labels",
+      "context": "admin.writer.sections.pagination.pageSummaryMessage",
+      "status": "draft",
+      "origin": "authored",
+      "text": "Page {page, number, integer} of {pageCount, number, integer}",
+      "args": [
+        {
+          "name": "page",
+          "type": "number"
+        },
+        {
+          "name": "pageCount",
+          "type": "number"
+        }
+      ]
+    },
+    {
+      "id": "st.pr813ca841",
+      "leaf": "strings.field-labels",
+      "context": "admin.writer.sections.gallery.close",
+      "status": "draft",
+      "origin": "authored",
+      "text": "Close"
+    },
+    {
+      "id": "st.68c25e9geb",
+      "leaf": "strings.field-labels",
+      "context": "admin.writer.sections.gallery.enlarge",
+      "status": "draft",
+      "origin": "authored",
+      "text": "Enlarge {label}",
+      "args": [
+        {
+          "name": "label",
+          "type": "string"
+        }
+      ]
+    },
+    {
+      "id": "st.7hvz5ycgs2",
+      "leaf": "strings.field-labels",
+      "context": "admin.writer.sections.navShell.triggerLabel",
+      "status": "draft",
+      "origin": "authored",
+      "text": "Menu"
+    },
+    {
+      "id": "st.189vppdn78",
+      "leaf": "strings.field-labels",
+      "context": "admin.writer.sections.navShell.closeLabel",
+      "status": "draft",
+      "origin": "authored",
+      "text": "Close menu"
+    },
+    {
+      "id": "st.hx82ezae27",
+      "leaf": "strings.field-labels",
+      "context": "admin.writer.sections.dataTable.viewOptionsLabel",
+      "status": "draft",
+      "origin": "authored",
+      "text": "View options"
+    },
+    {
+      "id": "st.n8n5g5eec7",
+      "leaf": "strings.field-labels",
+      "context": "admin.writer.sections.dataTable.closeViewOptionsLabel",
+      "status": "draft",
+      "origin": "authored",
+      "text": "Close view options"
+    },
+    {
+      "id": "st.04cy19mm31",
+      "leaf": "strings.field-labels",
+      "context": "admin.writer.sections.dataTable.viewModeLabel",
+      "status": "draft",
+      "origin": "authored",
+      "text": "View mode"
+    },
+    {
+      "id": "st.cavrdkkw8y",
+      "leaf": "strings.field-labels",
+      "context": "admin.writer.sections.dataTable.densityLabel",
+      "status": "draft",
+      "origin": "authored",
+      "text": "Density"
+    },
+    {
+      "id": "st.458cnrztwt",
+      "leaf": "strings.field-labels",
+      "context": "admin.writer.sections.dataTable.groupSectionLabel",
+      "status": "draft",
+      "origin": "authored",
+      "text": "Group"
+    },
+    {
+      "id": "st.1d29404hzv",
+      "leaf": "strings.field-labels",
+      "context": "admin.writer.sections.dataTable.sortSectionLabel",
+      "status": "draft",
+      "origin": "authored",
+      "text": "Sort"
+    },
+    {
+      "id": "st.3dsrke1smz",
+      "leaf": "strings.field-labels",
+      "context": "admin.writer.sections.dataTable.filterSectionLabel",
+      "status": "draft",
+      "origin": "authored",
+      "text": "Filter"
+    },
+    {
+      "id": "st.mpfdxtqtez",
+      "leaf": "strings.field-labels",
+      "context": "admin.writer.sections.dataTable.columnsSectionLabel",
+      "status": "draft",
+      "origin": "authored",
+      "text": "Columns"
+    },
+    {
+      "id": "st.e2ptq1jp2a",
+      "leaf": "strings.field-labels",
+      "context": "admin.writer.sections.dataTable.pivotSectionLabel",
+      "status": "draft",
+      "origin": "authored",
+      "text": "Pivot"
+    },
+    {
+      "id": "st.x67h6m7rpb",
+      "leaf": "strings.field-labels",
+      "context": "admin.writer.sections.dataTable.ascendingLabel",
+      "status": "draft",
+      "origin": "authored",
+      "text": "Ascending"
+    },
+    {
+      "id": "st.deksy8e7g5",
+      "leaf": "strings.field-labels",
+      "context": "admin.writer.sections.dataTable.descendingLabel",
+      "status": "draft",
+      "origin": "authored",
+      "text": "Descending"
+    },
+    {
+      "id": "st.a6y094jqne",
+      "leaf": "strings.field-labels",
+      "context": "admin.writer.sections.dataTable.flatModeLabel",
+      "status": "draft",
+      "origin": "authored",
+      "text": "Flat"
+    },
+    {
+      "id": "st.r2g0nvj41m",
+      "leaf": "strings.field-labels",
+      "context": "admin.writer.sections.dataTable.groupedModeLabel",
+      "status": "draft",
+      "origin": "authored",
+      "text": "Grouped"
+    },
+    {
+      "id": "st.zg44pbkg7t",
+      "leaf": "strings.field-labels",
+      "context": "admin.writer.sections.dataTable.pivotModeLabel",
+      "status": "draft",
+      "origin": "authored",
+      "text": "Pivot"
+    },
+    {
+      "id": "st.2yrpaf84xw",
+      "leaf": "strings.field-labels",
+      "context": "admin.writer.sections.dataTable.comfortableDensityLabel",
+      "status": "draft",
+      "origin": "authored",
+      "text": "Comfortable"
+    },
+    {
+      "id": "st.drv8cwaan0",
+      "leaf": "strings.field-labels",
+      "context": "admin.writer.sections.dataTable.compactDensityLabel",
+      "status": "draft",
+      "origin": "authored",
+      "text": "Compact"
+    },
+    {
+      "id": "st.e6jenmr7fd",
+      "leaf": "strings.field-labels",
+      "context": "admin.writer.sections.dataTable.pivotMeasuresLabel",
+      "status": "draft",
+      "origin": "authored",
+      "text": "Define measures in the table model to configure a pivot."
+    },
+    {
+      "id": "st.p31vnyyb35",
+      "leaf": "strings.field-labels",
+      "context": "admin.writer.sections.dataTable.activeRulesLabel",
+      "status": "draft",
+      "origin": "authored",
+      "text": "Active view rules"
+    },
+    {
+      "id": "st.vhhj90xz1s",
+      "leaf": "strings.field-labels",
+      "context": "admin.writer.sections.dataTable.invalidRangeLabel",
+      "status": "draft",
+      "origin": "authored",
+      "text": "Enter valid bounds with minimum no greater than maximum."
+    },
+    {
+      "id": "st.1btvkkz4hc",
+      "leaf": "strings.field-labels",
+      "context": "admin.writer.sections.dataTable.dateHintLabel",
+      "status": "draft",
+      "origin": "authored",
+      "text": "UTC: YYYY-MM-DD or a canonical ISO timestamp."
+    },
+    {
+      "id": "st.5cdardkjc4",
+      "leaf": "strings.field-labels",
+      "context": "admin.writer.sections.dataTable.noFacetValuesLabel",
+      "status": "draft",
+      "origin": "authored",
+      "text": "No values in the current data."
+    },
+    {
+      "id": "st.66j86dac8m",
+      "leaf": "strings.field-labels",
+      "context": "admin.writer.sections.dataTable.containsLabel",
+      "status": "draft",
+      "origin": "authored",
+      "text": "Contains"
+    },
+    {
+      "id": "st.a8ph330trr",
+      "leaf": "strings.field-labels",
+      "context": "admin.writer.sections.dataTable.equalsLabel",
+      "status": "draft",
+      "origin": "authored",
+      "text": "Equals"
+    },
+    {
+      "id": "st.22acpftg3n",
+      "leaf": "strings.field-labels",
+      "context": "admin.writer.sections.dataTable.anyTagsLabel",
+      "status": "draft",
+      "origin": "authored",
+      "text": "Any"
+    },
+    {
+      "id": "st.y6hhq23hwz",
+      "leaf": "strings.field-labels",
+      "context": "admin.writer.sections.dataTable.allTagsLabel",
+      "status": "draft",
+      "origin": "authored",
+      "text": "All"
+    },
+    {
+      "id": "st.3xkvn2erq4",
+      "leaf": "strings.field-labels",
+      "context": "admin.writer.sections.dataTable.noTagsLabel",
+      "status": "draft",
+      "origin": "authored",
+      "text": "None"
+    },
+    {
+      "id": "st.0nf3j2fk1c",
+      "leaf": "strings.field-labels",
+      "context": "admin.writer.sections.dataTable.pivotEmptyLabel",
+      "status": "draft",
+      "origin": "authored",
+      "text": "Configure pivot dimensions and measures"
+    },
+    {
+      "id": "st.6zfhwybg0n",
+      "leaf": "strings.field-labels",
+      "context": "admin.writer.sections.dataTable.pivotRowsHeaderLabel",
+      "status": "draft",
+      "origin": "authored",
+      "text": "Rows"
+    },
+    {
+      "id": "st.wp1ysvjgbx",
+      "leaf": "strings.field-labels",
+      "context": "admin.writer.sections.dataTable.selectAllLabel",
+      "status": "draft",
+      "origin": "authored",
+      "text": "Select all rows"
+    },
+    {
+      "id": "st.g7rk8a88h1",
+      "leaf": "strings.field-labels",
+      "context": "admin.writer.sections.dataTable.selectRowLabel",
+      "status": "draft",
+      "origin": "authored",
+      "text": "Select row"
+    },
+    {
+      "id": "st.3s5pa52xpx",
+      "leaf": "strings.field-labels",
+      "context": "admin.writer.sections.dataTable.groupByMessage",
+      "status": "draft",
+      "origin": "authored",
+      "text": "Group by {column}",
+      "args": [
+        {
+          "name": "column",
+          "type": "string"
+        }
+      ]
+    },
+    {
+      "id": "st.emb1bnhnyx",
+      "leaf": "strings.field-labels",
+      "context": "admin.writer.sections.dataTable.groupOrderMessage",
+      "status": "draft",
+      "origin": "authored",
+      "text": "Group {column} order",
+      "args": [
+        {
+          "name": "column",
+          "type": "string"
+        }
+      ]
+    },
+    {
+      "id": "st.59p16abj2r",
+      "leaf": "strings.field-labels",
+      "context": "admin.writer.sections.dataTable.moveGroupMessage",
+      "status": "draft",
+      "origin": "authored",
+      "text": "Move group {column} earlier",
+      "args": [
+        {
+          "name": "column",
+          "type": "string"
+        }
+      ]
+    },
+    {
+      "id": "st.a9amg0808p",
+      "leaf": "strings.field-labels",
+      "context": "admin.writer.sections.dataTable.sortDirectionMessage",
+      "status": "draft",
+      "origin": "authored",
+      "text": "Sort {column} direction",
+      "args": [
+        {
+          "name": "column",
+          "type": "string"
+        }
+      ]
+    },
+    {
+      "id": "st.9xs0cpmy45",
+      "leaf": "strings.field-labels",
+      "context": "admin.writer.sections.dataTable.moveSortMessage",
+      "status": "draft",
+      "origin": "authored",
+      "text": "Move sort {column} earlier",
+      "args": [
+        {
+          "name": "column",
+          "type": "string"
+        }
+      ]
+    },
+    {
+      "id": "st.01tw051yyp",
+      "leaf": "strings.field-labels",
+      "context": "admin.writer.sections.dataTable.removeSortMessage",
+      "status": "draft",
+      "origin": "authored",
+      "text": "Remove sort {column}",
+      "args": [
+        {
+          "name": "column",
+          "type": "string"
+        }
+      ]
+    },
+    {
+      "id": "st.xw7scyfmdn",
+      "leaf": "strings.field-labels",
+      "context": "admin.writer.sections.dataTable.addSortMessage",
+      "status": "draft",
+      "origin": "authored",
+      "text": "Add sort {column}",
+      "args": [
+        {
+          "name": "column",
+          "type": "string"
+        }
+      ]
+    },
+    {
+      "id": "st.vg7e6qma4y",
+      "leaf": "strings.field-labels",
+      "context": "admin.writer.sections.dataTable.removeFilterMessage",
+      "status": "draft",
+      "origin": "authored",
+      "text": "Remove filter {filter}",
+      "args": [
+        {
+          "name": "filter",
+          "type": "string"
+        }
+      ]
+    },
+    {
+      "id": "st.v2rdp9rtnp",
+      "leaf": "strings.field-labels",
+      "context": "admin.writer.sections.dataTable.addFilterMessage",
+      "status": "draft",
+      "origin": "authored",
+      "text": "Add filter {column}",
+      "args": [
+        {
+          "name": "column",
+          "type": "string"
+        }
+      ]
+    },
+    {
+      "id": "st.n9tmrmgkh1",
+      "leaf": "strings.field-labels",
+      "context": "admin.writer.sections.dataTable.showColumnMessage",
+      "status": "draft",
+      "origin": "authored",
+      "text": "Show {column}",
+      "args": [
+        {
+          "name": "column",
+          "type": "string"
+        }
+      ]
+    },
+    {
+      "id": "st.e65p9m8crh",
+      "leaf": "strings.field-labels",
+      "context": "admin.writer.sections.dataTable.moveColumnMessage",
+      "status": "draft",
+      "origin": "authored",
+      "text": "Move column {column} earlier",
+      "args": [
+        {
+          "name": "column",
+          "type": "string"
+        }
+      ]
+    },
+    {
+      "id": "st.e53ff9hnhy",
+      "leaf": "strings.field-labels",
+      "context": "admin.writer.sections.dataTable.pivotDimensionMessage",
+      "status": "draft",
+      "origin": "authored",
+      "text": "Pivot {axis, select, rows {rows} other {columns}} {column}",
+      "args": [
+        {
+          "name": "axis",
+          "type": "select"
+        },
+        {
+          "name": "column",
+          "type": "string"
+        }
+      ]
+    },
+    {
+      "id": "st.jw1pp3edc2",
+      "leaf": "strings.field-labels",
+      "context": "admin.writer.sections.dataTable.pivotOrderMessage",
+      "status": "draft",
+      "origin": "authored",
+      "text": "Pivot {axis, select, rows {rows} other {columns}} {column} order",
+      "args": [
+        {
+          "name": "axis",
+          "type": "select"
+        },
+        {
+          "name": "column",
+          "type": "string"
+        }
+      ]
+    },
+    {
+      "id": "st.10mnfn3we4",
+      "leaf": "strings.field-labels",
+      "context": "admin.writer.sections.dataTable.movePivotMessage",
+      "status": "draft",
+      "origin": "authored",
+      "text": "Move pivot {axis, select, rows {rows} other {columns}} {column} earlier",
+      "args": [
+        {
+          "name": "axis",
+          "type": "select"
+        },
+        {
+          "name": "column",
+          "type": "string"
+        }
+      ]
+    },
+    {
+      "id": "st.ca6sak0aa5",
+      "leaf": "strings.field-labels",
+      "context": "admin.writer.sections.dataTable.removeGroupMessage",
+      "status": "draft",
+      "origin": "authored",
+      "text": "Remove group {column}",
+      "args": [
+        {
+          "name": "column",
+          "type": "string"
+        }
+      ]
+    },
+    {
+      "id": "st.7p0373hd3w",
+      "leaf": "strings.field-labels",
+      "context": "admin.writer.sections.dataTable.groupChipMessage",
+      "status": "draft",
+      "origin": "authored",
+      "text": "Group: {column}",
+      "args": [
+        {
+          "name": "column",
+          "type": "string"
+        }
+      ]
+    },
+    {
+      "id": "st.phdtmee34k",
+      "leaf": "strings.field-labels",
+      "context": "admin.writer.sections.dataTable.sortChipMessage",
+      "status": "draft",
+      "origin": "authored",
+      "text": "Sort: {column} {direction, select, ascending {ascending} other {descending}}",
+      "args": [
+        {
+          "name": "column",
+          "type": "string"
+        },
+        {
+          "name": "direction",
+          "type": "select"
+        }
+      ]
+    },
+    {
+      "id": "st.m3ss721amh",
+      "leaf": "strings.field-labels",
+      "context": "admin.writer.sections.dataTable.filterChipMessage",
+      "status": "draft",
+      "origin": "authored",
+      "text": "Filter: {filter}",
+      "args": [
+        {
+          "name": "filter",
+          "type": "string"
+        }
+      ]
+    },
+    {
+      "id": "st.qjpgzp0kah",
+      "leaf": "strings.field-labels",
+      "context": "admin.writer.sections.dataTable.minimumMessage",
+      "status": "draft",
+      "origin": "authored",
+      "text": "Minimum {column}",
+      "args": [
+        {
+          "name": "column",
+          "type": "string"
+        }
+      ]
+    },
+    {
+      "id": "st.kzpx4eayzf",
+      "leaf": "strings.field-labels",
+      "context": "admin.writer.sections.dataTable.maximumMessage",
+      "status": "draft",
+      "origin": "authored",
+      "text": "Maximum {column}",
+      "args": [
+        {
+          "name": "column",
+          "type": "string"
+        }
+      ]
+    },
+    {
+      "id": "st.tmsnvdk2vm",
+      "leaf": "strings.field-labels",
+      "context": "admin.writer.sections.dataTable.applyRangeMessage",
+      "status": "draft",
+      "origin": "authored",
+      "text": "Apply {column} range",
+      "args": [
+        {
+          "name": "column",
+          "type": "string"
+        }
+      ]
+    },
+    {
+      "id": "st.skp2vk3868",
+      "leaf": "strings.field-labels",
+      "context": "admin.writer.sections.dataTable.comparisonMessage",
+      "status": "draft",
+      "origin": "authored",
+      "text": "{column} comparison",
+      "args": [
+        {
+          "name": "column",
+          "type": "string"
+        }
+      ]
+    },
+    {
+      "id": "st.wyrzdmksv5",
+      "leaf": "strings.field-labels",
+      "context": "admin.writer.sections.dataTable.filterValueMessage",
+      "status": "draft",
+      "origin": "authored",
+      "text": "{column} value",
+      "args": [
+        {
+          "name": "column",
+          "type": "string"
+        }
+      ]
+    },
+    {
+      "id": "st.8qh55343cb",
+      "leaf": "strings.field-labels",
+      "context": "admin.writer.sections.dataTable.matchingMessage",
+      "status": "draft",
+      "origin": "authored",
+      "text": "{column} matching",
+      "args": [
+        {
+          "name": "column",
+          "type": "string"
+        }
+      ]
+    },
+    {
+      "id": "st.4jy38t3bd9",
+      "leaf": "strings.field-labels",
+      "context": "admin.writer.sections.dataTable.booleanFilterMessage",
+      "status": "draft",
+      "origin": "authored",
+      "text": "{column} is true",
+      "args": [
+        {
+          "name": "column",
+          "type": "string"
+        }
+      ]
+    },
+    {
+      "id": "st.2dvg1g5avb",
+      "leaf": "strings.field-labels",
+      "context": "admin.writer.sections.dataTable.facetValueMessage",
+      "status": "draft",
+      "origin": "authored",
+      "text": "{column}: {value}",
+      "args": [
+        {
+          "name": "column",
+          "type": "string"
+        },
+        {
+          "name": "value",
+          "type": "string"
+        }
+      ]
+    },
+    {
+      "id": "st.z6cvcn5vhs",
+      "leaf": "strings.field-labels",
+      "context": "admin.writer.sections.dataTable.groupToggleMessage",
+      "status": "draft",
+      "origin": "authored",
+      "text": "{expanded, select, true {Collapse} other {Expand}} group {path}",
+      "args": [
+        {
+          "name": "expanded",
+          "type": "select"
+        },
+        {
+          "name": "path",
+          "type": "string"
+        }
+      ]
+    },
+    {
+      "id": "st.j1mhm3nd5t",
+      "leaf": "strings.field-labels",
+      "context": "admin.writer.sections.dataTable.groupPathMessage",
+      "status": "draft",
+      "origin": "authored",
+      "text": "{path}",
+      "args": [
+        {
+          "name": "path",
+          "type": "string"
+        }
+      ]
+    },
+    {
+      "id": "st.n22gdj6d6b",
+      "leaf": "strings.field-labels",
+      "context": "admin.writer.sections.dataTable.aggregateMessage",
+      "status": "draft",
+      "origin": "authored",
+      "text": "{id}: {value}",
+      "args": [
+        {
+          "name": "id",
+          "type": "string"
+        },
+        {
+          "name": "value",
+          "type": "string"
+        }
+      ]
+    },
+    {
+      "id": "st.k05nwrgw7r",
+      "leaf": "strings.field-labels",
+      "context": "admin.writer.sections.dataTable.pivotAxisMessage",
+      "status": "draft",
+      "origin": "authored",
+      "text": "{kind, select, total {Total} subtotal {Subtotal {path}} other {{path}}}",
+      "args": [
+        {
+          "name": "kind",
+          "type": "select"
+        },
+        {
+          "name": "path",
+          "type": "string"
+        }
+      ]
+    },
+    {
+      "id": "st.s6gadcwrm6",
+      "leaf": "strings.field-labels",
+      "context": "admin.writer.sections.dataTable.pivotColumnMessage",
+      "status": "draft",
+      "origin": "authored",
+      "text": "{axis} · {measure}",
+      "args": [
+        {
+          "name": "axis",
+          "type": "string"
+        },
+        {
+          "name": "measure",
+          "type": "string"
+        }
+      ]
+    },
+    {
+      "id": "st.e1gm61n448",
+      "leaf": "strings.field-labels",
+      "context": "admin.writer.sections.dataTable.pivotValueMessage",
+      "status": "draft",
+      "origin": "authored",
+      "text": "{empty, select, true {—} other {{value}}}",
+      "args": [
+        {
+          "name": "empty",
+          "type": "select"
+        },
+        {
+          "name": "value",
+          "type": "string"
+        }
+      ]
+    },
+    {
+      "id": "st.asj8g1mcjn",
+      "leaf": "strings.field-labels",
+      "context": "admin.writer.sections.dataTable.emptyStateTitle",
+      "status": "draft",
+      "origin": "authored",
+      "text": "No results"
+    },
+    {
+      "id": "st.ss1zqxdm6m",
+      "leaf": "strings.field-labels",
+      "context": "admin.writer.sections.dataTable.value.empty",
+      "status": "draft",
+      "origin": "authored",
+      "text": "(empty)"
+    },
+    {
+      "id": "st.fye7jydza7",
+      "leaf": "strings.field-labels",
+      "context": "admin.writer.sections.dataTable.value.emptySet",
+      "status": "draft",
+      "origin": "authored",
+      "text": "(empty set)"
+    },
+    {
+      "id": "st.44sw1hna16",
+      "leaf": "strings.field-labels",
+      "context": "admin.writer.sections.dataTable.filter.none",
+      "status": "draft",
+      "origin": "authored",
+      "text": "(none)"
+    },
+    {
+      "id": "st.5dqzeh0xy0",
+      "leaf": "strings.field-labels",
+      "context": "admin.writer.sections.dataTable.filter.contains",
+      "status": "draft",
+      "origin": "authored",
+      "text": "contains"
+    },
+    {
+      "id": "st.xkxv10vkzx",
+      "leaf": "strings.field-labels",
+      "context": "admin.writer.sections.dataTable.filter.equals",
+      "status": "draft",
+      "origin": "authored",
+      "text": "equals"
+    },
+    {
+      "id": "st.nvye5sgtnf",
+      "leaf": "strings.field-labels",
+      "context": "admin.writer.sections.dataTable.filter.notEquals",
+      "status": "draft",
+      "origin": "authored",
+      "text": "not equals"
+    },
+    {
+      "id": "st.tvxq9c8zq1",
+      "leaf": "strings.field-labels",
+      "context": "admin.writer.sections.dataTable.filter.startsWith",
+      "status": "draft",
+      "origin": "authored",
+      "text": "starts with"
+    },
+    {
+      "id": "st.s4a08q5c9n",
+      "leaf": "strings.field-labels",
+      "context": "admin.writer.sections.dataTable.filter.endsWith",
+      "status": "draft",
+      "origin": "authored",
+      "text": "ends with"
+    },
+    {
+      "id": "st.cvhs9dsqww",
+      "leaf": "strings.field-labels",
+      "context": "admin.writer.sections.dataTable.filter.empty",
+      "status": "draft",
+      "origin": "authored",
+      "text": "empty"
+    },
+    {
+      "id": "st.dk1yn9bx08",
+      "leaf": "strings.field-labels",
+      "context": "admin.writer.sections.dataTable.filter.notEmpty",
+      "status": "draft",
+      "origin": "authored",
+      "text": "not empty"
+    },
+    {
+      "id": "st.33mpwkxf56",
+      "leaf": "strings.field-labels",
+      "context": "admin.writer.sections.dataTable.filter.any",
+      "status": "draft",
+      "origin": "authored",
+      "text": "any"
+    },
+    {
+      "id": "st.afszhazse3",
+      "leaf": "strings.field-labels",
+      "context": "admin.writer.sections.dataTable.filter.all",
+      "status": "draft",
+      "origin": "authored",
+      "text": "all"
+    },
+    {
+      "id": "st.121cqyn9t7",
+      "leaf": "strings.field-labels",
+      "context": "admin.writer.sections.dataTable.filter.noneOp",
+      "status": "draft",
+      "origin": "authored",
+      "text": "none"
+    },
+    {
+      "id": "st.jhyrh4bfqm",
+      "leaf": "strings.field-labels",
+      "context": "admin.writer.sections.dataTable.filter.in",
+      "status": "draft",
+      "origin": "authored",
+      "text": "in"
+    },
+    {
+      "id": "st.s0a9j4spyc",
+      "leaf": "strings.field-labels",
+      "context": "admin.writer.sections.dataTable.filter.notIn",
+      "status": "draft",
+      "origin": "authored",
+      "text": "not in"
+    },
+    {
+      "id": "st.6fwkcwynsz",
+      "leaf": "strings.field-labels",
+      "context": "admin.writer.sections.dataTable.filter.true",
+      "status": "draft",
+      "origin": "authored",
+      "text": "true"
+    },
+    {
+      "id": "st.nb5d1cqq3h",
+      "leaf": "strings.field-labels",
+      "context": "admin.writer.sections.dataTable.filter.false",
+      "status": "draft",
+      "origin": "authored",
+      "text": "false"
+    },
+    {
+      "id": "st.s7k1zh7w80",
+      "leaf": "strings.field-labels",
+      "context": "admin.writer.sections.dataTable.filter.and",
+      "status": "draft",
+      "origin": "authored",
+      "text": "and"
+    },
+    {
+      "id": "st.zv9f5e1fkc",
+      "leaf": "strings.field-labels",
+      "context": "admin.writer.sections.dataTable.filter.or",
+      "status": "draft",
+      "origin": "authored",
+      "text": "or"
+    },
+    {
+      "id": "st.rxp8wf493n",
+      "leaf": "strings.field-labels",
+      "context": "admin.writer.sections.dataTable.filter.group",
+      "status": "draft",
+      "origin": "authored",
+      "text": "{operation} ({count, number, integer})",
+      "args": [
+        {
+          "name": "operation",
+          "type": "string"
+        },
+        {
+          "name": "count",
+          "type": "number"
+        }
+      ]
+    },
+    {
+      "id": "st.mcrzk1ss71",
+      "leaf": "strings.field-labels",
+      "context": "admin.writer.sections.dataTable.filter.text",
+      "status": "draft",
+      "origin": "authored",
+      "text": "{operation} “{value}”",
+      "args": [
+        {
+          "name": "operation",
+          "type": "string"
+        },
+        {
+          "name": "value",
+          "type": "string"
+        }
+      ]
+    },
+    {
+      "id": "st.yn3r8djw5m",
+      "leaf": "strings.field-labels",
+      "context": "admin.writer.sections.dataTable.filter.range",
+      "status": "draft",
+      "origin": "authored",
+      "text": "{minimum} – {maximum}",
+      "args": [
+        {
+          "name": "minimum",
+          "type": "string"
+        },
+        {
+          "name": "maximum",
+          "type": "string"
+        }
+      ]
+    },
+    {
+      "id": "st.1ky86469dw",
+      "leaf": "strings.field-labels",
+      "context": "admin.writer.sections.dataTable.filter.tags",
+      "status": "draft",
+      "origin": "authored",
+      "text": "{operation}: {values}",
+      "args": [
+        {
+          "name": "operation",
+          "type": "string"
+        },
+        {
+          "name": "values",
+          "type": "string"
+        }
+      ]
+    },
+    {
+      "id": "st.dchvjhvyep",
+      "leaf": "strings.field-labels",
+      "context": "admin.writer.sections.merge.logo-hero.name",
+      "status": "draft",
+      "origin": "authored",
+      "text": "Brand mark"
+    },
+    {
+      "id": "st.dvhz031m2x",
+      "leaf": "strings.field-labels",
+      "context": "admin.writer.sections.merge.record-detail.header.heading",
+      "status": "draft",
+      "origin": "authored",
+      "text": "Account"
+    },
+    {
+      "id": "st.78q8q8f05t",
+      "leaf": "strings.field-labels",
+      "context": "admin.writer.sections.merge.record-detail.fields.label",
+      "status": "draft",
+      "origin": "authored",
+      "text": "Account name"
+    },
+    {
+      "id": "st.ttdxhv7jpb",
+      "leaf": "strings.field-labels",
+      "context": "admin.writer.sections.merge.record-detail.fields.value",
+      "status": "draft",
+      "origin": "authored",
+      "text": "Example account"
+    },
+    {
+      "id": "st.gdzc1rc0sk",
+      "leaf": "strings.field-labels",
+      "context": "admin.writer.sections.merge.error-state.header.heading",
+      "status": "draft",
+      "origin": "authored",
+      "text": "Something went wrong"
+    },
+    {
+      "id": "st.hd21vyfgk0",
+      "leaf": "strings.field-labels",
+      "context": "admin.writer.sections.merge.error-state.header.description",
+      "status": "draft",
+      "origin": "authored",
+      "text": "Try again. If the problem continues, contact support."
+    },
+    {
+      "id": "st.rx282jkj3q",
+      "leaf": "strings.field-labels",
+      "context": "admin.writer.sections.merge.error-state.retry.label",
+      "status": "draft",
+      "origin": "authored",
+      "text": "Try again"
+    },
+    {
+      "id": "st.ye9ybmcxmq",
+      "leaf": "strings.field-labels",
+      "context": "admin.writer.sections.merge.error-state.report.label",
+      "status": "draft",
+      "origin": "authored",
+      "text": "Report a problem"
+    },
+    {
+      "id": "ps.jrbpz6zcs1",
+      "leaf": "passages.logo-hero",
+      "context": "SU-9W draft logo-mark into logo-hero",
+      "status": "draft",
+      "origin": "authored",
+      "schema": "passages.logo-hero",
+      "schemaDigest": "5ca531b1533debc43208a4aa3697b79f9f6830672fad7dd46b5e5c2a8aaecfe3",
+      "fields": {
+        "name": {
+          "ref": "string",
+          "id": "st.dchvjhvyep"
+        }
+      }
+    },
+    {
+      "id": "ps.avyhjvd2xr",
+      "leaf": "passages.record-detail",
+      "context": "SU-9W draft account-summary into record-detail",
+      "status": "draft",
+      "origin": "authored",
+      "schema": "passages.record-detail",
+      "schemaDigest": "698e7960910172f88c5089d29e3f950d772ff610fab50fa7ded746da4265672c",
+      "fields": {
+        "header.heading": {
+          "ref": "string",
+          "id": "st.dvhz031m2x"
+        },
+        "fields[].label": {
+          "ref": "string",
+          "id": "st.78q8q8f05t"
+        },
+        "fields[].value": {
+          "ref": "string",
+          "id": "st.ttdxhv7jpb"
+        }
+      }
+    },
+    {
+      "id": "ps.gz9k8g8sw7",
+      "leaf": "passages.error-state",
+      "context": "SU-9W draft error-message into error-state",
+      "status": "draft",
+      "origin": "authored",
+      "schema": "passages.error-state",
+      "schemaDigest": "5a1153ac50a43d8fb11e8a8baf922f5bff73d3c15769a28a1c0e067d38b29db3",
+      "fields": {
+        "header.heading": {
+          "ref": "string",
+          "id": "st.gdzc1rc0sk"
+        },
+        "header.description": {
+          "ref": "string",
+          "id": "st.hd21vyfgk0"
+        },
+        "retry.label": {
+          "ref": "string",
+          "id": "st.rx282jkj3q"
+        },
+        "report.label": {
+          "ref": "string",
+          "id": "st.ye9ybmcxmq"
+        }
+      }
+    }
+  ],
+  "bindings": [
+    {
+      "cellId": "admin.writer.sections.pagination.previousPageLabel",
+      "recordId": "st.96qkp2bzpm",
+      "target": "Pagination",
+      "kind": "CopyRef"
+    },
+    {
+      "cellId": "admin.writer.sections.pagination.nextPageLabel",
+      "recordId": "st.kb8ve83tjp",
+      "target": "Pagination",
+      "kind": "CopyRef"
+    },
+    {
+      "cellId": "admin.writer.sections.pagination.noResultsLabel",
+      "recordId": "st.axqwnya2y0",
+      "target": "Pagination",
+      "kind": "CopyRef"
+    },
+    {
+      "cellId": "admin.writer.sections.pagination.pageSizeLabel",
+      "recordId": "st.bhhba11w6f",
+      "target": "Pagination",
+      "kind": "CopyRef"
+    },
+    {
+      "cellId": "admin.writer.sections.pagination.ariaLabel",
+      "recordId": "st.3hp3yvppbm",
+      "target": "Pagination",
+      "kind": "CopyRef"
+    },
+    {
+      "cellId": "admin.writer.sections.pagination.rangeSummaryMessage",
+      "recordId": "st.pzmpksy76x",
+      "target": "Pagination",
+      "kind": "CopyRef"
+    },
+    {
+      "cellId": "admin.writer.sections.pagination.pageSummaryMessage",
+      "recordId": "st.vxwx1e3xwq",
+      "target": "Pagination",
+      "kind": "CopyRef"
+    },
+    {
+      "cellId": "admin.writer.sections.gallery.close",
+      "recordId": "st.pr813ca841",
+      "target": "Gallery",
+      "kind": "CopyRef"
+    },
+    {
+      "cellId": "admin.writer.sections.gallery.enlarge",
+      "recordId": "st.68c25e9geb",
+      "target": "Gallery",
+      "kind": "CopyRef"
+    },
+    {
+      "cellId": "admin.writer.sections.navShell.triggerLabel",
+      "recordId": "st.7hvz5ycgs2",
+      "target": "NavShell",
+      "kind": "CopyRef"
+    },
+    {
+      "cellId": "admin.writer.sections.navShell.closeLabel",
+      "recordId": "st.189vppdn78",
+      "target": "NavShell",
+      "kind": "CopyRef"
+    },
+    {
+      "cellId": "admin.writer.sections.dataTable.viewOptionsLabel",
+      "recordId": "st.hx82ezae27",
+      "target": "DataTable",
+      "kind": "CopyRef"
+    },
+    {
+      "cellId": "admin.writer.sections.dataTable.closeViewOptionsLabel",
+      "recordId": "st.n8n5g5eec7",
+      "target": "DataTable",
+      "kind": "CopyRef"
+    },
+    {
+      "cellId": "admin.writer.sections.dataTable.viewModeLabel",
+      "recordId": "st.04cy19mm31",
+      "target": "DataTable",
+      "kind": "CopyRef"
+    },
+    {
+      "cellId": "admin.writer.sections.dataTable.densityLabel",
+      "recordId": "st.cavrdkkw8y",
+      "target": "DataTable",
+      "kind": "CopyRef"
+    },
+    {
+      "cellId": "admin.writer.sections.dataTable.groupSectionLabel",
+      "recordId": "st.458cnrztwt",
+      "target": "DataTable",
+      "kind": "CopyRef"
+    },
+    {
+      "cellId": "admin.writer.sections.dataTable.sortSectionLabel",
+      "recordId": "st.1d29404hzv",
+      "target": "DataTable",
+      "kind": "CopyRef"
+    },
+    {
+      "cellId": "admin.writer.sections.dataTable.filterSectionLabel",
+      "recordId": "st.3dsrke1smz",
+      "target": "DataTable",
+      "kind": "CopyRef"
+    },
+    {
+      "cellId": "admin.writer.sections.dataTable.columnsSectionLabel",
+      "recordId": "st.mpfdxtqtez",
+      "target": "DataTable",
+      "kind": "CopyRef"
+    },
+    {
+      "cellId": "admin.writer.sections.dataTable.pivotSectionLabel",
+      "recordId": "st.e2ptq1jp2a",
+      "target": "DataTable",
+      "kind": "CopyRef"
+    },
+    {
+      "cellId": "admin.writer.sections.dataTable.ascendingLabel",
+      "recordId": "st.x67h6m7rpb",
+      "target": "DataTable",
+      "kind": "CopyRef"
+    },
+    {
+      "cellId": "admin.writer.sections.dataTable.descendingLabel",
+      "recordId": "st.deksy8e7g5",
+      "target": "DataTable",
+      "kind": "CopyRef"
+    },
+    {
+      "cellId": "admin.writer.sections.dataTable.flatModeLabel",
+      "recordId": "st.a6y094jqne",
+      "target": "DataTable",
+      "kind": "CopyRef"
+    },
+    {
+      "cellId": "admin.writer.sections.dataTable.groupedModeLabel",
+      "recordId": "st.r2g0nvj41m",
+      "target": "DataTable",
+      "kind": "CopyRef"
+    },
+    {
+      "cellId": "admin.writer.sections.dataTable.pivotModeLabel",
+      "recordId": "st.zg44pbkg7t",
+      "target": "DataTable",
+      "kind": "CopyRef"
+    },
+    {
+      "cellId": "admin.writer.sections.dataTable.comfortableDensityLabel",
+      "recordId": "st.2yrpaf84xw",
+      "target": "DataTable",
+      "kind": "CopyRef"
+    },
+    {
+      "cellId": "admin.writer.sections.dataTable.compactDensityLabel",
+      "recordId": "st.drv8cwaan0",
+      "target": "DataTable",
+      "kind": "CopyRef"
+    },
+    {
+      "cellId": "admin.writer.sections.dataTable.pivotMeasuresLabel",
+      "recordId": "st.e6jenmr7fd",
+      "target": "DataTable",
+      "kind": "CopyRef"
+    },
+    {
+      "cellId": "admin.writer.sections.dataTable.activeRulesLabel",
+      "recordId": "st.p31vnyyb35",
+      "target": "DataTable",
+      "kind": "CopyRef"
+    },
+    {
+      "cellId": "admin.writer.sections.dataTable.invalidRangeLabel",
+      "recordId": "st.vhhj90xz1s",
+      "target": "DataTable",
+      "kind": "CopyRef"
+    },
+    {
+      "cellId": "admin.writer.sections.dataTable.dateHintLabel",
+      "recordId": "st.1btvkkz4hc",
+      "target": "DataTable",
+      "kind": "CopyRef"
+    },
+    {
+      "cellId": "admin.writer.sections.dataTable.noFacetValuesLabel",
+      "recordId": "st.5cdardkjc4",
+      "target": "DataTable",
+      "kind": "CopyRef"
+    },
+    {
+      "cellId": "admin.writer.sections.dataTable.containsLabel",
+      "recordId": "st.66j86dac8m",
+      "target": "DataTable",
+      "kind": "CopyRef"
+    },
+    {
+      "cellId": "admin.writer.sections.dataTable.equalsLabel",
+      "recordId": "st.a8ph330trr",
+      "target": "DataTable",
+      "kind": "CopyRef"
+    },
+    {
+      "cellId": "admin.writer.sections.dataTable.anyTagsLabel",
+      "recordId": "st.22acpftg3n",
+      "target": "DataTable",
+      "kind": "CopyRef"
+    },
+    {
+      "cellId": "admin.writer.sections.dataTable.allTagsLabel",
+      "recordId": "st.y6hhq23hwz",
+      "target": "DataTable",
+      "kind": "CopyRef"
+    },
+    {
+      "cellId": "admin.writer.sections.dataTable.noTagsLabel",
+      "recordId": "st.3xkvn2erq4",
+      "target": "DataTable",
+      "kind": "CopyRef"
+    },
+    {
+      "cellId": "admin.writer.sections.dataTable.pivotEmptyLabel",
+      "recordId": "st.0nf3j2fk1c",
+      "target": "DataTable",
+      "kind": "CopyRef"
+    },
+    {
+      "cellId": "admin.writer.sections.dataTable.pivotRowsHeaderLabel",
+      "recordId": "st.6zfhwybg0n",
+      "target": "DataTable",
+      "kind": "CopyRef"
+    },
+    {
+      "cellId": "admin.writer.sections.dataTable.selectAllLabel",
+      "recordId": "st.wp1ysvjgbx",
+      "target": "DataTable",
+      "kind": "CopyRef"
+    },
+    {
+      "cellId": "admin.writer.sections.dataTable.selectRowLabel",
+      "recordId": "st.g7rk8a88h1",
+      "target": "DataTable",
+      "kind": "CopyRef"
+    },
+    {
+      "cellId": "admin.writer.sections.dataTable.groupByMessage",
+      "recordId": "st.3s5pa52xpx",
+      "target": "DataTable",
+      "kind": "CopyRef"
+    },
+    {
+      "cellId": "admin.writer.sections.dataTable.groupOrderMessage",
+      "recordId": "st.emb1bnhnyx",
+      "target": "DataTable",
+      "kind": "CopyRef"
+    },
+    {
+      "cellId": "admin.writer.sections.dataTable.moveGroupMessage",
+      "recordId": "st.59p16abj2r",
+      "target": "DataTable",
+      "kind": "CopyRef"
+    },
+    {
+      "cellId": "admin.writer.sections.dataTable.sortDirectionMessage",
+      "recordId": "st.a9amg0808p",
+      "target": "DataTable",
+      "kind": "CopyRef"
+    },
+    {
+      "cellId": "admin.writer.sections.dataTable.moveSortMessage",
+      "recordId": "st.9xs0cpmy45",
+      "target": "DataTable",
+      "kind": "CopyRef"
+    },
+    {
+      "cellId": "admin.writer.sections.dataTable.removeSortMessage",
+      "recordId": "st.01tw051yyp",
+      "target": "DataTable",
+      "kind": "CopyRef"
+    },
+    {
+      "cellId": "admin.writer.sections.dataTable.addSortMessage",
+      "recordId": "st.xw7scyfmdn",
+      "target": "DataTable",
+      "kind": "CopyRef"
+    },
+    {
+      "cellId": "admin.writer.sections.dataTable.removeFilterMessage",
+      "recordId": "st.vg7e6qma4y",
+      "target": "DataTable",
+      "kind": "CopyRef"
+    },
+    {
+      "cellId": "admin.writer.sections.dataTable.addFilterMessage",
+      "recordId": "st.v2rdp9rtnp",
+      "target": "DataTable",
+      "kind": "CopyRef"
+    },
+    {
+      "cellId": "admin.writer.sections.dataTable.showColumnMessage",
+      "recordId": "st.n9tmrmgkh1",
+      "target": "DataTable",
+      "kind": "CopyRef"
+    },
+    {
+      "cellId": "admin.writer.sections.dataTable.moveColumnMessage",
+      "recordId": "st.e65p9m8crh",
+      "target": "DataTable",
+      "kind": "CopyRef"
+    },
+    {
+      "cellId": "admin.writer.sections.dataTable.pivotDimensionMessage",
+      "recordId": "st.e53ff9hnhy",
+      "target": "DataTable",
+      "kind": "CopyRef"
+    },
+    {
+      "cellId": "admin.writer.sections.dataTable.pivotOrderMessage",
+      "recordId": "st.jw1pp3edc2",
+      "target": "DataTable",
+      "kind": "CopyRef"
+    },
+    {
+      "cellId": "admin.writer.sections.dataTable.movePivotMessage",
+      "recordId": "st.10mnfn3we4",
+      "target": "DataTable",
+      "kind": "CopyRef"
+    },
+    {
+      "cellId": "admin.writer.sections.dataTable.removeGroupMessage",
+      "recordId": "st.ca6sak0aa5",
+      "target": "DataTable",
+      "kind": "CopyRef"
+    },
+    {
+      "cellId": "admin.writer.sections.dataTable.groupChipMessage",
+      "recordId": "st.7p0373hd3w",
+      "target": "DataTable",
+      "kind": "CopyRef"
+    },
+    {
+      "cellId": "admin.writer.sections.dataTable.sortChipMessage",
+      "recordId": "st.phdtmee34k",
+      "target": "DataTable",
+      "kind": "CopyRef"
+    },
+    {
+      "cellId": "admin.writer.sections.dataTable.filterChipMessage",
+      "recordId": "st.m3ss721amh",
+      "target": "DataTable",
+      "kind": "CopyRef"
+    },
+    {
+      "cellId": "admin.writer.sections.dataTable.minimumMessage",
+      "recordId": "st.qjpgzp0kah",
+      "target": "DataTable",
+      "kind": "CopyRef"
+    },
+    {
+      "cellId": "admin.writer.sections.dataTable.maximumMessage",
+      "recordId": "st.kzpx4eayzf",
+      "target": "DataTable",
+      "kind": "CopyRef"
+    },
+    {
+      "cellId": "admin.writer.sections.dataTable.applyRangeMessage",
+      "recordId": "st.tmsnvdk2vm",
+      "target": "DataTable",
+      "kind": "CopyRef"
+    },
+    {
+      "cellId": "admin.writer.sections.dataTable.comparisonMessage",
+      "recordId": "st.skp2vk3868",
+      "target": "DataTable",
+      "kind": "CopyRef"
+    },
+    {
+      "cellId": "admin.writer.sections.dataTable.filterValueMessage",
+      "recordId": "st.wyrzdmksv5",
+      "target": "DataTable",
+      "kind": "CopyRef"
+    },
+    {
+      "cellId": "admin.writer.sections.dataTable.matchingMessage",
+      "recordId": "st.8qh55343cb",
+      "target": "DataTable",
+      "kind": "CopyRef"
+    },
+    {
+      "cellId": "admin.writer.sections.dataTable.booleanFilterMessage",
+      "recordId": "st.4jy38t3bd9",
+      "target": "DataTable",
+      "kind": "CopyRef"
+    },
+    {
+      "cellId": "admin.writer.sections.dataTable.facetValueMessage",
+      "recordId": "st.2dvg1g5avb",
+      "target": "DataTable",
+      "kind": "CopyRef"
+    },
+    {
+      "cellId": "admin.writer.sections.dataTable.groupToggleMessage",
+      "recordId": "st.z6cvcn5vhs",
+      "target": "DataTable",
+      "kind": "CopyRef"
+    },
+    {
+      "cellId": "admin.writer.sections.dataTable.groupPathMessage",
+      "recordId": "st.j1mhm3nd5t",
+      "target": "DataTable",
+      "kind": "CopyRef"
+    },
+    {
+      "cellId": "admin.writer.sections.dataTable.aggregateMessage",
+      "recordId": "st.n22gdj6d6b",
+      "target": "DataTable",
+      "kind": "CopyRef"
+    },
+    {
+      "cellId": "admin.writer.sections.dataTable.pivotAxisMessage",
+      "recordId": "st.k05nwrgw7r",
+      "target": "DataTable",
+      "kind": "CopyRef"
+    },
+    {
+      "cellId": "admin.writer.sections.dataTable.pivotColumnMessage",
+      "recordId": "st.s6gadcwrm6",
+      "target": "DataTable",
+      "kind": "CopyRef"
+    },
+    {
+      "cellId": "admin.writer.sections.dataTable.pivotValueMessage",
+      "recordId": "st.e1gm61n448",
+      "target": "DataTable",
+      "kind": "CopyRef"
+    },
+    {
+      "cellId": "admin.writer.sections.dataTable.emptyStateTitle",
+      "recordId": "st.asj8g1mcjn",
+      "target": "DataTable",
+      "kind": "CopyRef"
+    },
+    {
+      "cellId": "admin.writer.sections.dataTable.value.empty",
+      "recordId": "st.ss1zqxdm6m",
+      "target": "DataTable",
+      "kind": "CopyRef"
+    },
+    {
+      "cellId": "admin.writer.sections.dataTable.value.emptySet",
+      "recordId": "st.fye7jydza7",
+      "target": "DataTable",
+      "kind": "CopyRef"
+    },
+    {
+      "cellId": "admin.writer.sections.dataTable.filter.none",
+      "recordId": "st.44sw1hna16",
+      "target": "DataTable",
+      "kind": "CopyRef"
+    },
+    {
+      "cellId": "admin.writer.sections.dataTable.filter.contains",
+      "recordId": "st.5dqzeh0xy0",
+      "target": "DataTable",
+      "kind": "CopyRef"
+    },
+    {
+      "cellId": "admin.writer.sections.dataTable.filter.equals",
+      "recordId": "st.xkxv10vkzx",
+      "target": "DataTable",
+      "kind": "CopyRef"
+    },
+    {
+      "cellId": "admin.writer.sections.dataTable.filter.notEquals",
+      "recordId": "st.nvye5sgtnf",
+      "target": "DataTable",
+      "kind": "CopyRef"
+    },
+    {
+      "cellId": "admin.writer.sections.dataTable.filter.startsWith",
+      "recordId": "st.tvxq9c8zq1",
+      "target": "DataTable",
+      "kind": "CopyRef"
+    },
+    {
+      "cellId": "admin.writer.sections.dataTable.filter.endsWith",
+      "recordId": "st.s4a08q5c9n",
+      "target": "DataTable",
+      "kind": "CopyRef"
+    },
+    {
+      "cellId": "admin.writer.sections.dataTable.filter.empty",
+      "recordId": "st.cvhs9dsqww",
+      "target": "DataTable",
+      "kind": "CopyRef"
+    },
+    {
+      "cellId": "admin.writer.sections.dataTable.filter.notEmpty",
+      "recordId": "st.dk1yn9bx08",
+      "target": "DataTable",
+      "kind": "CopyRef"
+    },
+    {
+      "cellId": "admin.writer.sections.dataTable.filter.any",
+      "recordId": "st.33mpwkxf56",
+      "target": "DataTable",
+      "kind": "CopyRef"
+    },
+    {
+      "cellId": "admin.writer.sections.dataTable.filter.all",
+      "recordId": "st.afszhazse3",
+      "target": "DataTable",
+      "kind": "CopyRef"
+    },
+    {
+      "cellId": "admin.writer.sections.dataTable.filter.noneOp",
+      "recordId": "st.121cqyn9t7",
+      "target": "DataTable",
+      "kind": "CopyRef"
+    },
+    {
+      "cellId": "admin.writer.sections.dataTable.filter.in",
+      "recordId": "st.jhyrh4bfqm",
+      "target": "DataTable",
+      "kind": "CopyRef"
+    },
+    {
+      "cellId": "admin.writer.sections.dataTable.filter.notIn",
+      "recordId": "st.s0a9j4spyc",
+      "target": "DataTable",
+      "kind": "CopyRef"
+    },
+    {
+      "cellId": "admin.writer.sections.dataTable.filter.true",
+      "recordId": "st.6fwkcwynsz",
+      "target": "DataTable",
+      "kind": "CopyRef"
+    },
+    {
+      "cellId": "admin.writer.sections.dataTable.filter.false",
+      "recordId": "st.nb5d1cqq3h",
+      "target": "DataTable",
+      "kind": "CopyRef"
+    },
+    {
+      "cellId": "admin.writer.sections.dataTable.filter.and",
+      "recordId": "st.s7k1zh7w80",
+      "target": "DataTable",
+      "kind": "CopyRef"
+    },
+    {
+      "cellId": "admin.writer.sections.dataTable.filter.or",
+      "recordId": "st.zv9f5e1fkc",
+      "target": "DataTable",
+      "kind": "CopyRef"
+    },
+    {
+      "cellId": "admin.writer.sections.dataTable.filter.group",
+      "recordId": "st.rxp8wf493n",
+      "target": "DataTable",
+      "kind": "CopyRef"
+    },
+    {
+      "cellId": "admin.writer.sections.dataTable.filter.text",
+      "recordId": "st.mcrzk1ss71",
+      "target": "DataTable",
+      "kind": "CopyRef"
+    },
+    {
+      "cellId": "admin.writer.sections.dataTable.filter.range",
+      "recordId": "st.yn3r8djw5m",
+      "target": "DataTable",
+      "kind": "CopyRef"
+    },
+    {
+      "cellId": "admin.writer.sections.dataTable.filter.tags",
+      "recordId": "st.1ky86469dw",
+      "target": "DataTable",
+      "kind": "CopyRef"
+    },
+    {
+      "cellId": "admin.writer.sections.merge.logo-hero.name",
+      "recordId": "st.dchvjhvyep",
+      "target": "sections.logo-hero",
+      "kind": "CopyRef"
+    },
+    {
+      "cellId": "admin.writer.sections.merge.record-detail.header.heading",
+      "recordId": "st.dvhz031m2x",
+      "target": "sections.record-detail",
+      "kind": "CopyRef"
+    },
+    {
+      "cellId": "admin.writer.sections.merge.record-detail.fields.label",
+      "recordId": "st.78q8q8f05t",
+      "target": "sections.record-detail",
+      "kind": "CopyRef"
+    },
+    {
+      "cellId": "admin.writer.sections.merge.record-detail.fields.value",
+      "recordId": "st.ttdxhv7jpb",
+      "target": "sections.record-detail",
+      "kind": "CopyRef"
+    },
+    {
+      "cellId": "admin.writer.sections.merge.error-state.header.heading",
+      "recordId": "st.gdzc1rc0sk",
+      "target": "sections.error-state",
+      "kind": "CopyRef"
+    },
+    {
+      "cellId": "admin.writer.sections.merge.error-state.header.description",
+      "recordId": "st.hd21vyfgk0",
+      "target": "sections.error-state",
+      "kind": "CopyRef"
+    },
+    {
+      "cellId": "admin.writer.sections.merge.error-state.retry.label",
+      "recordId": "st.rx282jkj3q",
+      "target": "sections.error-state",
+      "kind": "CopyRef"
+    },
+    {
+      "cellId": "admin.writer.sections.merge.error-state.report.label",
+      "recordId": "st.ye9ybmcxmq",
+      "target": "sections.error-state",
+      "kind": "CopyRef"
+    }
+  ]
+}
