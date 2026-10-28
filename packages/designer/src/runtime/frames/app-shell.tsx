@@ -27,7 +27,7 @@ function accountSections(rows: readonly Json[], host: Host): AccountMenuSection[
       if (entry.kind === "preference") return { ...common, kind: "preference" as const, checked: entry.checked === true, onCheckedChange: (checked: boolean) => host?.onAccountPreference?.(entryId, checked) };
       if (entry.kind === "action" || entry.kind === "destructive") return { ...common, kind: entry.kind, onAction: () => host?.onAccountAction?.(entryId) };
       throw new TypeError(`frames.app-shell: account entry ${entryId} has an unknown kind`);
-    });
+    }).filter(entry => entry.kind === "link" || (entry.kind === "preference" ? typeof host?.onAccountPreference === "function" : typeof host?.onAccountAction === "function"));
     return (section.kind === "preferences" ? { id, label: required(section.label, `account section ${id} label`), kind: "preferences", entries } : { id, ...(label ? { label } : {}), entries }) as AccountMenuSection;
   });
 }
@@ -44,7 +44,7 @@ export function appShellProps(input: Pick<RuntimeRenderInput<ReactNode>, "conten
   const panel = host?.panels?.inspector;
   return {
     ...(input.locale === undefined ? {} : { locale: input.locale }),
-    brand: { markSrc: required(brand.markSrc, "sidebar.brand.markSrc"), ...(name ? { navigationMark: { label: name } } : {}) },
+    brand: { markSrc: required(brand.markSrc, "sidebar.brand.markSrc"), ...(brand.reversedMarkSrc === undefined ? {} : { reversedMarkSrc: required(brand.reversedMarkSrc, "sidebar.brand.reversedMarkSrc") }), ...(name ? { navigationMark: { label: name } } : {}) },
     navigation: { tree: navigationTree(records(sidebar.tree), host, "sidebar.tree"), ...(text(sidebar.label) ? { label: text(sidebar.label) } : {}), ...(text(sidebar.activeId) ? { activeId: text(sidebar.activeId) } : {}) },
     account: {
       ...(actor ? { actor: { name: required(actor.name, "account.actor.name"), ...(text(actor.secondaryText) ? { secondaryText: text(actor.secondaryText) } : {}) } } : {}),

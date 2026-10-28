@@ -9,6 +9,8 @@ import { SHELL_COPY_REFS } from "../components/Banner.copy.js";
 import { NavigationTree, NavigationTreeItem, NavigationTreeItemContent } from "../components/NavigationTree.js";
 import { Tooltip } from "../components/Tooltip.js";
 import { cx } from "../components/internal/cx.js";
+import { FileText } from "../icons/FileText.js";
+import { Folder } from "../icons/Folder.js";
 import { ChevronDown } from "../icons/ChevronDown.js";
 import { ChevronLeft } from "../icons/ChevronLeft.js";
 import { ChevronRight } from "../icons/ChevronRight.js";
@@ -194,11 +196,11 @@ export function AppNavigation({ onNavigate, fullViewport = false, retainMounted 
 
   const destination = (node: AppNavigationNode, parentId?: string) => {
     const current = node.id === active;
-    const className = cx(CONTROL, "control-h-md flex-1 border-s-2", current ? CURRENT : "border-s-transparent");
-    const content = <><span aria-hidden="true" className="flex shrink-0 items-center justify-center" style={ICON_SLOT}>{node.icon == null ? node.label.slice(0, 1) : smallIcon(node.icon)}</span>
+    const className = cx(CONTROL, "control-h-md flex-1", current ? CURRENT : "border-s-transparent");
+    const content = <><span aria-hidden="true" className="flex shrink-0 items-center justify-center" style={ICON_SLOT}>{node.icon == null || typeof node.icon === "string" || typeof node.icon === "number" ? <Icon glyph={node.children?.length ? Folder : FileText} decorative size="sm" /> : smallIcon(node.icon)}</span>
       <span className="min-w-0 truncate">{node.label}</span></>;
     const shared = { "data-application-navigation-control": "", "data-navigation-node-id": node.id, "data-parent-id": parentId,
-      "aria-current": current ? "page" as const : undefined, className };
+      "aria-current": current ? "page" as const : undefined, style: { borderInlineStartWidth: "var(--ui-border-rule)" }, className };
     return node.href !== undefined ? <Link {...shared} variant="muted" href={node.href} onClick={event => frameLinkNavigation(event, onNavigate)}>{content}</Link> :
       <Button {...shared} variant="ghost" onPress={() => { node.onAction?.(); if (narrow) changeOpen(false); }}>{content}</Button>;
   };

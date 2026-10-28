@@ -2007,9 +2007,6 @@
   .frame-brand-gap {
     gap: var(--spacing-sm, 8px);
   }
-  .frame-footer-gap {
-    gap: var(--spacing-xs, 4px);
-  }
   .frame-main-gap {
     gap: var(--spacing-lg, 16px);
   }

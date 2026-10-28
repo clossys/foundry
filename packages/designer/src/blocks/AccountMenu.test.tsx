@@ -208,7 +208,7 @@ it("omits empty sections alongside populated sections", async () => {
   render(<AccountMenu {...configured} sections={[{ id: "empty", label: "Empty", entries: [] }, ...configured.sections]} />);
   await open();
   expect(screen.queryByText("Empty")).not.toBeInTheDocument();
-  expect(screen.getAllByRole("menuitem")).toHaveLength(4);
+  expect(screen.getAllByRole("menuitem")).toHaveLength(3);
   expect(screen.getAllByRole("menuitemcheckbox")).toHaveLength(1);
 });
 
@@ -334,4 +334,15 @@ it.each([{ name: "", label: "Settings" }, { name: " ", label: "Settings" }, { na
 it.each(["", " "])("keeps an actor-derived collapsed name for blank triggerLabel %j", triggerLabel => {
   render(<AccountMenu {...props()} collapsed triggerLabel={triggerLabel} />);
   expect(trigger()).toHaveAccessibleName(actor.name);
+});
+
+it("keeps the full actor label and omits explicitly disabled menu items", async () => {
+  render(<AccountMenu {...props()} />);
+  const name = within(trigger()).getByText(actor.name);
+  expect(name).not.toHaveClass("truncate");
+  expect(name).toHaveClass("whitespace-normal", "break-words");
+  expect(trigger()).toHaveClass("w-full", "whitespace-normal");
+  await open();
+  expect(screen.queryByRole("menuitem", { name: "Unavailable" })).toBeNull();
+  expect(screen.getByRole("menuitem", { name: "Settings" })).toBeInTheDocument();
 });

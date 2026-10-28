@@ -79,114 +79,91 @@ describe("AppFrame composition", () => {
     expect(main).toHaveFocus();
   });
 
-  // The theme control is three explicit radio options (System, Light, Dark) since 0d04b4c23,
-  // per the sidebar spec D3 (icon-only single-select ToggleGroup); it no longer cycles.
-  it("selects all three preferences, stamps the whole document, and restores persisted state", async () => {
+  const openAccount = async () => {
+    await userEvent.click(screen.getByRole("button", { name: "Sam River" }));
+  };
+
+  it("selects all three account-menu preferences, stamps the document and restores persisted state", async () => {
     const props = fixture(); props.theme = { storageKey: "atlas-theme", defaultPreference: "system" };
     const view = render(<AppFrame {...props} />);
-    expect(screen.getByRole("radio", { name: "System" })).toBeChecked();
+    expect(screen.queryByRole("menuitemradio")).toBeNull();
+    await openAccount();
+    expect(screen.getByRole("menuitemradio", { name: "System" })).toHaveAttribute("aria-checked", "true");
     for (const [label, next] of [["Light", "light"], ["Dark", "dark"], ["System", "system"]]) {
-      await userEvent.click(screen.getByRole("radio", { name: label }));
-      expect(screen.getByRole("radio", { name: label })).toBeChecked();
+      await userEvent.click(screen.getByRole("menuitemradio", { name: label }));
+      expect(screen.getByRole("menuitemradio", { name: label })).toHaveAttribute("aria-checked", "true");
       expect(localStorage.getItem("atlas-theme")).toBe(next);
       if (next === "system") expect(document.documentElement).not.toHaveAttribute("data-theme");
       else expect(document.documentElement).toHaveAttribute("data-theme", next);
     }
-    await userEvent.click(screen.getByRole("radio", { name: "Light" }));
+    await userEvent.click(screen.getByRole("menuitemradio", { name: "Light" }));
     view.unmount(); render(<AppFrame {...props} />);
-    await waitFor(() => expect(screen.getByRole("radio", { name: "Light" })).toBeChecked());
+    await openAccount();
+    expect(screen.getByRole("menuitemradio", { name: "Light" })).toHaveAttribute("aria-checked", "true");
   });
 
-  it.each([true, false])("keeps one named default theme slot in the navigation footer keyboard order when wide=%s", async matches => {
+  it.each([true, false])("reveals theme choices only from the full-width account trigger when wide=%s", async matches => {
     wide.matches = matches;
     render(<AppFrame {...fixture()} />);
     if (!matches) await userEvent.click(screen.getByRole("button", { name: "Open navigation" }));
     const footer = document.querySelector('[data-application-navigation-region="footer"]')!;
-    const slot = footer.querySelector('[data-application-frame-slot="theme-control"]');
-    const toggle = screen.getByRole("radiogroup", { name: "Theme" });
-    expect(document.querySelectorAll('[data-application-frame-slot="theme-control"]')).toHaveLength(1);
-    expect(slot).toContainElement(toggle);
-    expect(screen.getAllByRole("radiogroup", { name: "Theme", hidden: true })).toHaveLength(1);
-    screen.getByRole("button", { name: "Sam River" }).focus();
-    await userEvent.tab();
-    expect(within(toggle).getByRole("radio", { name: "System" })).toHaveFocus();
-    expect(screen.getByRole("banner", { hidden: true })).not.toContainElement(toggle);
+    expect(footer.querySelector('[role="radiogroup"]')).toBeNull();
+    expect(screen.queryByRole("menuitemradio")).toBeNull();
+    const actor = screen.getByRole("button", { name: "Sam River" });
+    expect(footer).toContainElement(actor);
+    expect(actor).toHaveTextContent("Sam River");
+    await openAccount();
+    expect(screen.getAllByRole("menuitemradio")).toHaveLength(3);
+    await userEvent.keyboard("{Escape}");
+    await waitFor(() => expect(actor).toHaveFocus());
   });
 
-  it("replaces the default with a host control inside the existing persistent provider", async () => {
-    const props = fixture();
-    props.themeControl = <ThemeToggle aria-label="Host theme preference" />;
+  it("keeps a host theme control in an accessible account popup with the persistent provider", async () => {
+    const props = fixture(); props.themeControl = <ThemeToggle aria-label="Host theme preference" />;
     const view = render(<AppFrame {...props} />);
-    const control = screen.getByRole("radiogroup", { name: "Host theme preference" });
-    expect(screen.queryByRole("radiogroup", { name: "Theme" })).not.toBeInTheDocument();
-    expect(document.querySelector('[data-application-navigation-region="footer"]')).toContainElement(control);
-    screen.getByRole("button", { name: "Sam River" }).focus();
+    expect(screen.queryByRole("radiogroup")).toBeNull();
+    await openAccount();
+    const popup = screen.getByRole("dialog", { name: "Sam River" });
+    const control = within(popup).getByRole("radiogroup", { name: "Host theme preference" });
+    expect(screen.queryByRole("menuitemradio")).toBeNull();
+    screen.getByRole("menuitem", { name: "Profile" }).focus();
     await userEvent.tab();
     expect(within(control).getByRole("radio", { name: "System" })).toHaveFocus();
-    await userEvent.keyboard("{ArrowRight}{Enter}");
+    await userEvent.click(within(control).getByRole("radio", { name: "Light" }));
     expect(localStorage.getItem("ui-theme")).toBe("light");
-    expect(document.documentElement).toHaveAttribute("data-theme", "light");
-    view.unmount();
-    render(<AppFrame {...props} />);
-    expect(document.documentElement).toHaveAttribute("data-theme", "light");
+    view.unmount(); render(<AppFrame {...props} />); await openAccount();
     const restored = screen.getByRole("radiogroup", { name: "Host theme preference" });
     await userEvent.click(within(restored).getByRole("radio", { name: "Dark" }));
     expect(localStorage.getItem("ui-theme")).toBe("dark");
     await userEvent.click(within(restored).getByRole("radio", { name: "System" }));
-    expect(localStorage.getItem("ui-theme")).toBe("system");
     expect(document.documentElement).not.toHaveAttribute("data-theme");
   });
 
-  it.each([true, false])("omits an explicit null theme slot from navigation focus order when wide=%s", async matches => {
+  it.each([true, false])("omits an explicit null theme control when wide=%s", async matches => {
     wide.matches = matches;
     render(<AppFrame {...fixture()} themeControl={null} />);
     if (!matches) await userEvent.click(screen.getByRole("button", { name: "Open navigation" }));
-    expect(document.querySelector('[data-application-frame-slot="theme-control"]')).toBeNull();
-    expect(screen.queryByRole("radiogroup", { name: "Theme", hidden: true })).not.toBeInTheDocument();
-    expect(screen.queryByRole("radio", { hidden: true })).not.toBeInTheDocument();
-    const account = screen.getByRole("button", { name: "Sam River" });
-    expect(document.querySelector('[data-application-navigation-region="footer"]')).toContainElement(account);
-    account.focus();
-    expect(account).toHaveFocus();
-  });
-
-  it("moves the sole theme control into the narrow navigation drawer with the account", async () => {
-    wide.matches = false;
-    render(<AppFrame {...fixture()} />);
-    expect(screen.queryByRole("radiogroup", { name: "Theme" })).not.toBeInTheDocument();
-    await userEvent.click(screen.getByRole("button", { name: "Open navigation" }));
-    const drawer = await screen.findByRole("dialog", { name: "Workspace navigation" });
-    const toggle = within(drawer).getByRole("radiogroup", { name: "Theme" });
-    expect(screen.getAllByRole("radiogroup", { name: "Theme", hidden: true })).toEqual([toggle]);
-    expect(drawer.querySelector('[data-application-navigation-region="footer"]')).toContainElement(toggle);
-    await userEvent.click(within(toggle).getByRole("radio", { name: "Light" }));
-    expect(document.documentElement).toHaveAttribute("data-theme", "light");
-    await userEvent.keyboard("{Escape}");
-    await waitFor(() => expect(screen.getByRole("button", { name: "Open navigation" })).toHaveFocus());
+    await openAccount();
+    expect(screen.queryByRole("menuitemradio")).toBeNull();
+    expect(screen.queryByRole("radiogroup")).toBeNull();
+    expect(screen.getByRole("menuitem", { name: "Profile" })).toBeInTheDocument();
   });
 
   it.each(["light", "dark", "system"])("hydrates stable server chrome with a persisted %s preference", async preference => {
-    const props = fixture();
-    localStorage.setItem("ui-theme", "light");
+    const props = fixture(); localStorage.setItem("ui-theme", "light");
     const markup = renderToString(<AppFrame {...props} />);
     localStorage.setItem("ui-theme", preference);
     expect(renderToString(<AppFrame {...props} />)).toBe(markup);
-    const container = document.createElement("div");
-    container.innerHTML = markup;
-    document.body.append(container);
-    const recoverable = vi.fn();
-    let root: ReturnType<typeof hydrateRoot> | undefined;
+    const container = document.createElement("div"); container.innerHTML = markup; document.body.append(container);
+    const recoverable = vi.fn(); let root: ReturnType<typeof hydrateRoot> | undefined;
     try {
       await act(async () => { root = hydrateRoot(container, <AppFrame {...props} />, { onRecoverableError: recoverable }); });
-      await waitFor(() => expect(within(container).getByRole("radio", { name: preference[0]!.toUpperCase() + preference.slice(1) })).toBeChecked());
+      await userEvent.click(within(container).getByRole("button", { name: "Sam River" }));
+      await waitFor(() => expect(screen.getByRole("menuitemradio", { name: preference[0]!.toUpperCase() + preference.slice(1) })).toHaveAttribute("aria-checked", "true"));
       expect(recoverable).not.toHaveBeenCalled();
-      expect(container.querySelector('[data-application-navigation-region="footer"]')).toContainElement(container.querySelector('[data-application-frame-slot="theme-control"]'));
       if (preference === "system") expect(document.documentElement).not.toHaveAttribute("data-theme");
       else expect(document.documentElement).toHaveAttribute("data-theme", preference);
-    } finally {
-      await act(async () => root?.unmount());
-      container.remove();
-    }
+    } finally { await act(async () => root?.unmount()); container.remove(); }
   });
 
   it("opens real search, filters host commands, executes selection, closes and restores its button", async () => {
@@ -571,15 +548,24 @@ describe("AppFrame composition", () => {
     render(<AppFrame {...props} />);
     expect(screen.queryByRole("separator")).not.toBeInTheDocument();
     expect(screen.queryByRole("button", { name: "Open panel" })).not.toBeInTheDocument();
-    // Since 0d04b4c23 the labels name the three radios and toggleLabel is each option's tooltip copy.
-    expect(screen.getByRole("radio", { name: "Night" })).toBeChecked();
-    screen.getByRole("button", { name: "Sam River" }).focus();
-    await userEvent.tab();
-    expect(screen.getByRole("radio", { name: "Automatic" })).toHaveFocus();
-    expect(await screen.findByRole("tooltip")).toHaveTextContent("Night to Automatic");
-    await userEvent.keyboard("{Enter}");
-    expect(screen.getByRole("radio", { name: "Automatic" })).toBeChecked();
+    await openAccount();
+    expect(screen.getByRole("menuitemradio", { name: "Night" })).toHaveAttribute("aria-checked", "true");
+    await userEvent.click(screen.getByRole("menuitemradio", { name: "Automatic" }));
+    expect(screen.getByRole("menuitemradio", { name: "Automatic" })).toHaveAttribute("aria-checked", "true");
     expect(screen.getByText("Chosen system")).toBeInTheDocument();
     expect(localStorage.getItem("custom-theme")).toBe("system");
   });
+});
+
+it("uses the supplied reversed mark in dark mode and the positive mark in light mode", async () => {
+  const props = fixture(); props.brand = { markSrc: "/positive.svg", reversedMarkSrc: "/reversed.svg", navigationMark: { label: "Workspace" } };
+  props.theme = { defaultPreference: "dark" };
+  render(<AppFrame {...props} />);
+  const brand = document.querySelector('[data-application-navigation-region="header"] img')!;
+  expect(brand).toHaveAttribute("src", "/reversed.svg");
+  await userEvent.click(screen.getByRole("button", { name: "Sam River" }));
+  await userEvent.click(screen.getByRole("menuitemradio", { name: "Light" }));
+  expect(brand).toHaveAttribute("src", "/positive.svg");
+  await userEvent.click(screen.getByRole("menuitemradio", { name: "Dark" }));
+  expect(brand).toHaveAttribute("src", "/reversed.svg");
 });

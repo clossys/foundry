@@ -12,6 +12,8 @@ export interface AppFrameBrandNavigationMark {
 /** Host mark. By default it appears only as the profile Avatar image; the header bar never carries brand text or a link. */
 export interface AppFrameBrand {
   markSrc: string;
+  /** Supplied reversed mark used when the resolved theme is dark. Omitted keeps markSrc. */
+  reversedMarkSrc?: string;
   /** Also renders the mark with this name at the navigation top. Omitted: no navigation brand row. */
   navigationMark?: AppFrameBrandNavigationMark;
 }
@@ -24,7 +26,7 @@ export type AppFrameLayout = "standard" | "immersive";
 /** Main stage inset: contained (padded) or full (edge to edge). */
 export type AppFrameStage = "contained" | "full";
 
-/** Navigation footer arrangement: one row (account beside the theme control), or the theme control on its own row above a full-width account row. */
+/** Navigation footer arrangement; the account popup contains its theme control in either layout. */
 export type AppFrameFooterLayout = "inline" | "stacked";
 
 export interface AppFrameAccount {
@@ -111,7 +113,7 @@ export interface AppFrameProps {
   toasts?: ReactNode;
   rightPanel?: AppFrameRightPanel;
   theme?: Omit<ThemeProviderProps, "children"> & Pick<ThemeToggleProps, "preferenceLabels" | "toggleLabel" | "preferenceAnnouncement">;
-  /** Navigation-footer theme control; undefined uses ThemeToggle, null omits the slot. */
+  /** Account-popup theme control; undefined uses native single-selection menu items, null omits the control. */
   themeControl?: ReactNode;
   /** @default "inline" */
   footerLayout?: AppFrameFooterLayout;

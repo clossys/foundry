@@ -111,3 +111,16 @@ describe("frames.app-shell runtime renderer", () => {
     await waitFor(() => expect(document.querySelector('[data-application-frame-region="header"]')).toHaveTextContent("Leased title"));
   });
 });
+
+it("passes the reversed mark and lists only account actions with a live host callback", () => {
+  const content = entry.sample(specimenDataset) as Record<string, Record<string, RuntimeJson>>;
+  const sidebar = { ...content.sidebar!, brand: { markSrc: "/positive.svg", reversedMarkSrc: "/reversed.svg" }, account: { signedOutLabel: "Sign in", sections: [
+    { id: "commands", entries: [{ id: "profile", kind: "link", label: "Profile", href: "#profile" }, { id: "settings", kind: "action", label: "Settings" }, { id: "out", kind: "destructive", label: "Sign out" }] },
+    { id: "preferences", kind: "preferences", label: "Preferences", entries: [{ id: "compact", kind: "preference", label: "Compact", checked: true }] },
+  ] } };
+  const read = (host?: RuntimeFrameHost<ReactNode>) => appShellProps(input({ content: { ...content, sidebar }, host }));
+  expect(read().brand).toMatchObject({ markSrc: "/positive.svg", reversedMarkSrc: "/reversed.svg" });
+  expect(read().account.sections.flatMap(section => section.entries.map(entry => entry.id))).toEqual(["profile"]);
+  expect(read({ onAccountAction() {} }).account.sections.flatMap(section => section.entries.map(entry => entry.id))).toEqual(["profile", "settings", "out"]);
+  expect(read({ onAccountPreference() {} }).account.sections.flatMap(section => section.entries.map(entry => entry.id))).toEqual(["profile", "compact"]);
+});
