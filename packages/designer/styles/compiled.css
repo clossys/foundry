@@ -184,6 +184,16 @@
     transform: translateX(0);
   }
 }
+@keyframes sheet-slide-rtl {
+  from {
+    opacity: 0;
+    transform: translateX(var(--ui-motion-shift, 4px));
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
 @media (prefers-reduced-motion: reduce) {
   @keyframes overlay-pop {
     from {
@@ -202,6 +212,14 @@
     }
   }
   @keyframes sheet-slide {
+    from {
+      opacity: 0;
+    }
+    to {
+      opacity: 1;
+    }
+  }
+  @keyframes sheet-slide-rtl {
     from {
       opacity: 0;
     }
@@ -325,11 +343,14 @@
   [data-drawer-placement="start"], [data-drawer-placement="end"] {
     animation: sheet-slide var(--ui-duration-default) var(--ease-enter) both;
   }
+  [data-drawer-placement="start"]:dir(rtl), [data-drawer-placement="end"]:dir(rtl) {
+    animation-name: sheet-slide-rtl;
+  }
   @media (prefers-reduced-motion: reduce) {
     .frame-docked-panel {
       transition: none;
     }
-    [data-drawer-placement="start"], [data-drawer-placement="end"] {
+    [data-drawer-placement="start"], [data-drawer-placement="end"], [data-drawer-placement="start"]:dir(rtl), [data-drawer-placement="end"]:dir(rtl) {
       animation: none;
     }
   }
@@ -1511,9 +1532,6 @@
   .h-lg {
     height: var(--spacing-lg, 16px);
   }
-  .h-max {
-    height: max-content;
-  }
   .h-md {
     height: var(--spacing-md, 12px);
   }
@@ -1549,6 +1567,9 @@
   }
   .min-h-dvh {
     min-height: 100dvh;
+  }
+  .min-h-screen {
+    min-height: 100vh;
   }
   .canvas-domain-rail {
     width: var(--ui-layout-sidebar-rail-w);
@@ -1742,9 +1763,6 @@
     font-stretch: var(--font-display-stretch, 100%);
     letter-spacing: var(--tracking-tight, -0.02em);
     transform: scaleX(var(--font-display-scale-x, 1));
-  }
-  .transform {
-    transform: var(--tw-rotate-x,) var(--tw-rotate-y,) var(--tw-rotate-z,) var(--tw-skew-x,) var(--tw-skew-y,);
   }
   .transform-none {
     transform: none;
@@ -2672,9 +2690,6 @@
   .p-2xl {
     padding: var(--spacing-2xl, 32px);
   }
-  .p-3xl {
-    padding: var(--spacing-3xl, 48px);
-  }
   .p-frame-panel {
     padding: var(--spacing-sm, 8px);
   }
@@ -3022,6 +3037,9 @@
   .underline-offset-4 {
     text-underline-offset: 4px;
   }
+  .opacity-0 {
+    opacity: 0%;
+  }
   .ring-1 {
     --tw-ring-shadow: var(--tw-ring-inset,) 0 0 0 calc(1px + var(--tw-ring-offset-width, 0px)) var(--tw-ring-color, currentcolor);
     box-shadow: var(--tw-inset-shadow, 0 0 #0000), var(--tw-inset-ring-shadow, 0 0 #0000), var(--tw-ring-offset-shadow, 0 0 #0000), var(--tw-ring-shadow, 0 0 #0000), var(--tw-shadow, 0 0 #0000);
@@ -3121,6 +3139,11 @@
     @media (prefers-reduced-motion: reduce) {
       transition-duration: 0s;
     }
+  }
+  .transition-\[inset-inline-start\] {
+    transition-property: inset-inline-start;
+    transition-timing-function: var(--tw-ease, var(--ease-default, cubic-bezier(.2, 0, 0, 1)));
+    transition-duration: var(--tw-duration, var(--ui-duration-fast, 120ms));
   }
   .transition-\[width\] {
     transition-property: width;
@@ -4489,26 +4512,6 @@
   inherits: false;
   initial-value: 0;
 }
-@property --tw-rotate-x {
-  syntax: "*";
-  inherits: false;
-}
-@property --tw-rotate-y {
-  syntax: "*";
-  inherits: false;
-}
-@property --tw-rotate-z {
-  syntax: "*";
-  inherits: false;
-}
-@property --tw-skew-x {
-  syntax: "*";
-  inherits: false;
-}
-@property --tw-skew-y {
-  syntax: "*";
-  inherits: false;
-}
 @property --tw-space-y-reverse {
   syntax: "*";
   inherits: false;
@@ -4754,11 +4757,6 @@
     *, ::before, ::after, ::backdrop {
       --tw-border-spacing-x: 0;
       --tw-border-spacing-y: 0;
-      --tw-rotate-x: initial;
-      --tw-rotate-y: initial;
-      --tw-rotate-z: initial;
-      --tw-skew-x: initial;
-      --tw-skew-y: initial;
       --tw-space-y-reverse: 0;
       --tw-divide-y-reverse: 0;
       --tw-border-style: solid;
