@@ -40,7 +40,7 @@ const useWideRail = (): boolean => useSyncExternalStore(subscribeWide, wideNow, 
 function RailCard({ id, title, expanded, onExpandedChange, header, children }: { id: RailCardId; title: string; expanded: boolean; onExpandedChange(expanded: boolean): void; header?: ReactNode; children: ReactNode }) {
   return <Card variant="outline" data-studio-rail-card={id} className="flex min-w-0 flex-wrap items-center gap-xs p-sm">
     <Disclosure.Row title={<span className="min-w-0 truncate">{title}</span>} isExpanded={expanded} onExpandedChange={onExpandedChange} className="contents"
-      triggerClassName="order-first flex min-w-0 flex-1 items-center justify-between gap-xs text-start text-body-s font-semibold text-ink-primary focus-visible:outline-solid focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
+      triggerClassName="order-first flex min-w-0 flex-1 items-center justify-between gap-xs text-start text-body-s font-semibold text-ink-primary focus-ring"
       chevronClassName="shrink-0 text-ink-muted" chevronOpenClassName="rotate-180" panelClassName="order-last min-w-0 basis-full">
       {children}
     </Disclosure.Row>

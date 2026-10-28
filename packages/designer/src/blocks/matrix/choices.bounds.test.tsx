@@ -94,7 +94,8 @@ it("reads the bound from one named utility pinned to the shared preset, with no 
   const cell = read("../../studio/CandidateCell.tsx");
   expect(cell).toMatch(/LIBRARY_COLUMN_BOUND\s*=\s*"library-column-bound"/);
   expect(cell).not.toMatch(/\bstyle=/);
-  // The utility's one pixel value is the frame right panel preset's maximum, in the source keys and the shipped CSS.
-  expect(read("../../../styles/theme-keys.css")).toContain(`@utility library-column-bound { max-inline-size: ${APP_FRAME_RIGHT_PANEL_CONFIG.max}px; }`);
-  expect(read("../../../styles/compiled.css")).toMatch(new RegExp(`\\.library-column-bound \\{\\s*max-inline-size: ${APP_FRAME_RIGHT_PANEL_CONFIG.max}px;`));
+  // The live bound reads the region-width role; its fallback remains the shared preset's maximum.
+  const bound = `var(--ui-layout-inspector-max-w, ${APP_FRAME_RIGHT_PANEL_CONFIG.max}px)`;
+  expect(read("../../../styles/theme-keys.css")).toContain(`@utility library-column-bound { max-inline-size: ${bound}; }`);
+  expect(read("../../../styles/compiled.css")).toContain(`max-inline-size: ${bound};`);
 });

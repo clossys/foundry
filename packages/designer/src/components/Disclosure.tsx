@@ -59,7 +59,7 @@ function DisclosureRoot({ title, children, className, triggerClassName, panelCla
             className={cx(
               "flex w-full items-center gap-sm rounded-default py-sm text-start text-body",
               triggerClassName ?? "text-ink-primary",
-              "outline-none disabled:cursor-not-allowed",
+              "focus-ring disabled:cursor-not-allowed",
             )}
           >
             <span

@@ -415,6 +415,9 @@
   .\@container {
     container-type: inline-size;
   }
+  .pointer-events-auto {
+    pointer-events: auto;
+  }
   .pointer-events-none {
     pointer-events: none;
   }
@@ -817,6 +820,27 @@
           outline: 2px solid Highlight;
           outline-offset: 2px;
         }
+      }
+    }
+  }
+  .scroll-cue {
+    position: absolute;
+    top: 0;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    @supports (animation-timeline: scroll()) {
+      position: fixed;
+      top: auto;
+      bottom: calc(env(safe-area-inset-bottom, 0px) + var(--spacing-xl, 24px));
+      transform: translateX(-50%);
+      animation-name: scroll-cue-out;
+      animation-duration: auto;
+      animation-timing-function: linear;
+      animation-fill-mode: both;
+      animation-timeline: scroll(root block);
+      animation-range: 0 calc(var(--ui-layout-tap-target, 44px) * 3);
+      @media (prefers-reduced-motion: reduce) {
+        animation-timing-function: steps(1, jump-end);
       }
     }
   }
@@ -1496,6 +1520,9 @@
   .canvas-map-rail-height {
     height: var(--ui-layout-sidebar-rail-w);
   }
+  .h-0 {
+    height: 0px;
+  }
   .h-2 {
     height: calc(var(--spacing, 0.25rem) * 2);
   }
@@ -1821,6 +1848,12 @@
   }
   .resize-y {
     resize: vertical;
+  }
+  .scroll-mt-0 {
+    scroll-margin-top: 0px;
+  }
+  .scroll-mt-4xl {
+    scroll-margin-top: var(--spacing-4xl, 64px);
   }
   .list-decimal {
     list-style-type: decimal;
@@ -2742,6 +2775,9 @@
   .py-5xl {
     padding-block: var(--spacing-5xl, 96px);
   }
+  .py-6xl {
+    padding-block: var(--spacing-6xl, 128px);
+  }
   .py-lg {
     padding-block: var(--spacing-lg, 16px);
   }
@@ -2790,6 +2826,9 @@
   .pt-0 {
     padding-top: 0px;
   }
+  .pt-6xl {
+    padding-top: var(--spacing-6xl, 128px);
+  }
   .pt-lg {
     padding-top: var(--spacing-lg, 16px);
   }
@@ -2804,6 +2843,9 @@
   }
   .pb-2xl {
     padding-bottom: var(--spacing-2xl, 32px);
+  }
+  .pb-3xl {
+    padding-bottom: var(--spacing-3xl, 48px);
   }
   .pb-lg {
     padding-bottom: var(--spacing-lg, 16px);
@@ -3017,6 +3059,10 @@
   }
   .uppercase {
     text-transform: uppercase;
+  }
+  .ordinal {
+    --tw-ordinal: ordinal;
+    font-variant-numeric: var(--tw-ordinal,) var(--tw-slashed-zero,) var(--tw-numeric-figure,) var(--tw-numeric-spacing,) var(--tw-numeric-fraction,);
   }
   .tabular-nums {
     --tw-numeric-spacing: tabular-nums;
@@ -3245,7 +3291,7 @@
     inline-size: 0;
   }
   .library-column-bound {
-    max-inline-size: 420px;
+    max-inline-size: var(--ui-layout-inspector-max-w, 420px);
   }
   .ring-inset {
     --tw-ring-inset: inset;
@@ -3817,8 +3863,14 @@
     .tablet\:justify-between {
       justify-content: space-between;
     }
+    .tablet\:justify-center {
+      justify-content: center;
+    }
     .tablet\:justify-end {
       justify-content: flex-end;
+    }
+    .tablet\:justify-start {
+      justify-content: flex-start;
     }
     .tablet\:gap-lg {
       gap: var(--spacing-lg, 16px);
@@ -4060,6 +4112,9 @@
     .tablet-lg\:rotate-0 {
       rotate: 0deg;
     }
+    .tablet-lg\:scroll-mt-5xl {
+      scroll-margin-top: var(--spacing-5xl, 96px);
+    }
     .tablet-lg\:anatomy-columns {
       grid-template-columns: minmax(0, 8fr) minmax(0, 4fr);
     }
@@ -4172,11 +4227,23 @@
     .tablet-lg\:px-md {
       padding-inline: var(--spacing-md, 12px);
     }
+    .tablet-lg\:py-4xl {
+      padding-block: var(--spacing-4xl, 64px);
+    }
+    .tablet-lg\:py-5xl {
+      padding-block: var(--spacing-5xl, 96px);
+    }
+    .tablet-lg\:py-6xl {
+      padding-block: var(--spacing-6xl, 128px);
+    }
     .tablet-lg\:py-lg {
       padding-block: var(--spacing-lg, 16px);
     }
     .tablet-lg\:ps-0 {
       padding-inline-start: 0px;
+    }
+    .tablet-lg\:pb-4xl {
+      padding-bottom: var(--spacing-4xl, 64px);
     }
     .tablet-lg\:text-display-m {
       font-size: var(--text-display-m, 44px);
