@@ -1,3 +1,4 @@
+import { ADMIN_ROBOTS, isAdminConsoleRoute } from "./headMetadata.js";
 import { ADMIN_PAGE_COPY_REFS, adminPageForRoute, adminNavigationCopy } from "../content/admin-copy.js";
 import { createContentPreviewProvenance } from "./preview/provenance.js";
 import { bindContentAppFrame, ContentCopyBindingError } from "./content-route-copy.js";
@@ -13,11 +14,12 @@ import type { CompositionSection, CopyFinding, CopyResolutionReport, ResolveCopy
 import { isContentJson } from "../content/json.js";
 import { validateConsumerLibrarySnapshots } from "../content/library.js";
 import { checkPageMetadata, robotsFor } from "../content/metadata.js";
-import { buildLocaleRoutePlan } from "../content/hreflang.js";
+import { buildLocaleRoutePlan, localePathFor } from "../content/hreflang.js";
 import { formatPageTitle } from "./siteMetadata.js";
 import { selectContentRoute } from "./content-route-binding.js";
 import type { ContentRouteInput, ContentRouteMetadata, ContentRouteNeed, PreparedContentRoute } from "./content-route-types.js";
 
+export { adminRobotsPolicy } from "./headMetadata.js";
 export { bindContentRoute } from "./content-route-binding.js";
 export type * from "./content-route-types.js";
 export { resolveContentRouteRequest } from "./content-route-request.js";
@@ -150,7 +152,12 @@ export function prepareContentRoute(input: ContentRouteInput): PreparedContentRo
         ...(pageRefs ? { page: { title: pageRefs.title, description: pageRefs.description, ...suppliedPage } } : {}),
         ...(Array.isArray(navigation?.tree) ? { navigation: { ...navigation, tree: adminNavigationCopy(navigation.tree) } } : {}) };
 
-      appFrame = bindContentAppFrame(chrome, locale, copyOptions.resolver);
+      appFrame = bindContentAppFrame(chrome, locale, copyOptions.resolver, {
+        registeredPaths: input.registry.slots.flatMap(registered => registered.route === undefined || registered.deployTarget !== slot.deployTarget ? []
+          : registered.locales.map(tag => localePathFor(registered.route!, tag, input.registry.workspace.defaultLocale))),
+        report: finding => copyFindings.push({ path: finding.path, rule: finding.rule, severity: "warning", locale,
+          message: `Dropped unregistered route: ${finding.href}` }),
+      });
     }
     catch (error) {
       const layout = error instanceof ContentCopyBindingError && error.rule === "designer-owned-layout";
@@ -248,10 +255,11 @@ export function ContentRoutePage({ input }: { readonly input: ContentRouteInput 
   const prepared = prepareContentRoute(input);
   if (prepared.status !== "ready" || !prepared.node) throw new ContentRouteNeedsError(prepared.needs);
   const { metadata, candidate, locale } = prepared;
+  const robots = isAdminConsoleRoute(prepared.slot.route) ? ADMIN_ROBOTS : metadata.robots;
   if (input.publishing !== undefined) return <DocumentFrame
     lang={metadata.lang!} dir={metadata.dir!} variant="page" title={metadata.title!}
     icon={candidate.pageMetaAssets?.icon === undefined ? undefined : { href: candidate.pageMetaAssets.icon }}
-    meta={[{ name: "description", content: metadata.description! }, { name: "robots", content: metadata.robots }]}
+    meta={[{ name: "description", content: metadata.description! }, { name: "robots", content: robots }, { name: "twitter:card", content: "summary" }]}
     links={[
       { rel: "canonical", href: metadata.canonical! },
       ...(metadata.alternates ?? []).map(alternate => ({ rel: "alternate" as const, href: alternate.href, hrefLang: alternate.hreflang })),
@@ -275,7 +283,8 @@ export function ContentRoutePage({ input }: { readonly input: ContentRouteInput 
   return <Fragment>
     {metadata.title === undefined ? null : <title>{metadata.title}</title>}
     {metadata.description === undefined ? null : <meta name="description" content={metadata.description} />}
-    <meta name="robots" content={metadata.robots} />
+    <meta name="robots" content={robots} />
+    <meta name="twitter:card" content="summary" />
     {metadata.canonical === undefined ? null : <link rel="canonical" href={metadata.canonical} />}
     {pageCopy["share-title"] === undefined ? null : <meta property="og:title" content={pageCopy["share-title"]} />}
     {pageCopy["share-text"] === undefined ? null : <meta property="og:description" content={pageCopy["share-text"]} />}

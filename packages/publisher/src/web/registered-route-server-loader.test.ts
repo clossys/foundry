@@ -37,13 +37,15 @@ const SERVER_PAGE = [
   'import { registeredRouteServerData } from "@clossys/publisher/core";',
   'import { loadTools as registeredLoader } from "../../../server/tools.ts";',
   'import RegisteredPage from "../../../generated/example.tools.tsx";',
+  'const metadata = {"twitter":{"card":"summary"}};',
+  "export { metadata };",
   "export default async function RegisteredServerPage() {",
   "  return <RegisteredPage data={registeredRouteServerData(await registeredLoader())} />;",
   "}", "",
 ].join("\n");
 
 describe("registered server data loader (synthetic fixtures; no runtime clearance)", () => {
-  it("emits one server page passing typed loader data to the client page; routes without a loader keep exact bytes", () => {
+  it("emits one server page passing typed loader data to the client page; routes without a loader retain their client page", () => {
     const route = loaded();
     expect(emitRegisteredRouteAdapter(route)).toBe(SERVER_PAGE);
     expect(emitRegisteredRoutePage("routes.ts", route)).toBe([
@@ -60,9 +62,9 @@ describe("registered server data loader (synthetic fixtures; no runtime clearanc
     const fallback = loaded({ file: "server/tools.ts", export: "default" });
     expect(emitRegisteredRouteAdapter(fallback).split("\n")[1]).toBe('import registeredLoader from "../../../server/tools.ts";');
     expect(emitRegisteredRoutePage("routes.ts", fallback)).toContain('import type RegisteredLoader from "../server/tools.ts";');
-    // A route without a loader: exactly the prior adapter and page bytes.
+    // Server metadata is additive; the emitted client page retains its prior bytes.
     const plain = syntheticRoute();
-    expect(emitRegisteredRouteAdapter(plain)).toBe('export { default } from "../../../generated/example.tools.tsx";\n');
+    expect(emitRegisteredRouteAdapter(plain)).toBe('const metadata = {"twitter":{"card":"summary"}};\nexport { metadata };\nexport { default } from "../../../generated/example.tools.tsx";\n');
     expect(emitRegisteredRoutePage("routes.ts", plain)).toBe([
       '"use client";', 'import registry from "../routes.ts";', 'import { RegisteredRoutePage } from "@clossys/publisher/web/registered-route";', 'import { useRuntime as useRuntime } from "../runtime.ts";',
       "export default function RegisteredPage() {", '  return <RegisteredRoutePage registry={registry} routeId="example.tools" useRuntime={useRuntime} />;', "}", "",

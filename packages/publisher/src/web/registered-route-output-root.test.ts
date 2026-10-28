@@ -128,7 +128,7 @@ describe("registered route output root is registration data (synthetic fixtures;
     // Moving the whole output root moves no relative import: the emitted page is the same bytes.
     expect(emitRegisteredRoutePage(MODULE, nested)).toBe(emitRegisteredRoutePage("publisher/routes.ts", flat));
     expect(emitRegisteredRouteAdapter(nested)).toBe(emitRegisteredRouteAdapter(flat));
-    expect(emitRegisteredRouteAdapter(flat)).toBe('export { default } from "../../../publisher/generated/example.tools.tsx";\n');
+    expect(emitRegisteredRouteAdapter(flat)).toBe('const metadata = {"twitter":{"card":"summary"}};\nexport { metadata };\nexport { default } from "../../../publisher/generated/example.tools.tsx";\n');
     // The synthetic default placement is unchanged by any output-root data.
     expect(emitRegisteredRoutePage("routes.ts", syntheticRoute())).toBe(emitRegisteredRoutePage("routes.ts", structuredClone(syntheticRoute())));
   });

@@ -1,3 +1,4 @@
+import { adminResponseHeaders } from "./headMetadata.js";
 import { localePathFor } from "../content/hreflang.js";
 import { isContentJson } from "../content/json.js";
 import type { ContentRegistry } from "../content/model.js";
@@ -14,10 +15,10 @@ export interface ContentRouteRequestInput {
   readonly missingLocale?: "not-found" | "redirect-default";
 }
 
-export type ContentRouteRequestResult =
+export type ContentRouteRequestResult = (
   | { readonly kind: "content"; readonly status: 200; readonly path: string; readonly selection: ContentRouteSelection }
   | { readonly kind: "redirect"; readonly status: 307 | 308; readonly location: string; readonly reason: "canonical-path" | "locale-fallback" }
-  | { readonly kind: "not-found"; readonly status: 404; readonly locale: string };
+  | { readonly kind: "not-found"; readonly status: 404; readonly locale: string }) & { readonly headers?: Readonly<Record<string, string>> };
 
 /** Match authored path case and omit trailing slashes; never rewrite content locale in place. */
 export function resolveContentRouteRequest(input: ContentRouteRequestInput): ContentRouteRequestResult {
@@ -47,9 +48,11 @@ export function resolveContentRouteRequest(input: ContentRouteRequestInput): Con
   const match = matches[0];
   if (match) {
     const selection = selectContentRoute(registry, match.slot.id, match.locale);
+    const headers = adminResponseHeaders(match.slot.route);
+    const response = Object.keys(headers).length ? { headers } : {};
     return pathname === match.path
-      ? { kind: "content", status: 200, path: match.path, selection }
-      : { kind: "redirect", status: 308, location: match.path, reason: "canonical-path" };
+      ? { kind: "content", status: 200, path: match.path, selection, ...response }
+      : { kind: "redirect", status: 308, location: match.path, reason: "canonical-path", ...response };
   }
   const segments = normalized.slice(1).split("/");
   const locale = registry.workspace.locales.find(tag => same(tag, segments[0]!));
@@ -62,7 +65,8 @@ export function resolveContentRouteRequest(input: ContentRouteRequestInput): Con
   if (locale === primary || input.missingLocale === "redirect-default") {
     // Validate the target's active immutable content before promising a redirect to it.
     selectContentRoute(registry, fallback.slot.id, primary);
-    return { kind: "redirect", status: locale === primary ? 308 : 307, location: fallback.path,
+    const headers = adminResponseHeaders(fallback.slot.route);
+    return { ...(Object.keys(headers).length ? { headers } : {}), kind: "redirect", status: locale === primary ? 308 : 307, location: fallback.path,
       reason: locale === primary ? "canonical-path" : "locale-fallback" };
   }
   return missing(locale);

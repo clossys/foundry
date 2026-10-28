@@ -131,6 +131,8 @@ it("emits only a server loader and the two complete component props", () => {
     expect(source).toBe([
       `import { ${component} } from "@clossys/publisher/web/registered-route";`,
       'import { loadData as loadRouteData } from "../data.ts";',
+      'const metadata = {"robots":"noindex, nofollow","twitter":{"card":"summary"}};',
+      "export { metadata };",
       "export default async function CompletePage() {",
       "  const data = await loadRouteData();",
       `  return <${component} serverData={data.serverData} initialSession={data.initialSession} />;`,

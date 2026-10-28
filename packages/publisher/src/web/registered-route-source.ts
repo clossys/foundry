@@ -1,3 +1,4 @@
+import { registeredRouteHeadMetadata } from "./headMetadata.js";
 import { routeProviderMount, routeServerLoader, routeSourcePath } from "../core/route-registry.js";
 import type { RouteRegistration, RouteRegistry, RouteSourceExport } from "../core/route-registry.js";
 function modulePath(from: string, to: string): string {
@@ -74,20 +75,22 @@ function typeOnly(ref: RouteSourceExport, from: string, local: string): string {
   const module = JSON.stringify(modulePath(from, ref.file));
   return ref.export === "default" ? `import type ${local} from ${module};` : `import type { ${ref.export} as ${local} } from ${module};`;
 }
-/** The route entry. Without a registered loader it re-exports the emitted page
- * unchanged. With one, it is the one server page: it imports exactly the registered
+/** The route entry exports native head metadata and re-exports the emitted page
+ * without a loader. With one, it is the one server page: it imports exactly the registered
  * loader, awaits it with no arguments and passes the checked serializable result as
  * the emitted client page's only prop. No other import, call or fetch is emitted. */
 export function emitRegisteredRouteAdapter(route: RouteRegistration): string {
   if (route.entry.export !== "default") throw new Error("Next page entries require the default export");
   if (route.entry.file === route.composition.source.file) throw new Error("A direct emitted page needs no adapter");
-  if (!("loader" in route.composition)) return `export { default } from ${JSON.stringify(modulePath(route.entry.file, route.composition.source.file))};\n`;
+  const metadata = `const metadata = ${JSON.stringify(registeredRouteHeadMetadata(route.path))};\nexport { metadata };`;
+  if (!("loader" in route.composition)) return `${metadata}\nexport { default } from ${JSON.stringify(modulePath(route.entry.file, route.composition.source.file))};\n`;
   const loader = routeServerLoader(route);
   if (!loader) throw new Error("Registered server data loader required");
   return [
     'import { registeredRouteServerData } from "@clossys/publisher/core";',
     named(loader, route.entry.file, "registeredLoader"),
     `import RegisteredPage from ${JSON.stringify(modulePath(route.entry.file, route.composition.source.file))};`,
+    metadata,
     "export default async function RegisteredServerPage() {",
     "  return <RegisteredPage data={registeredRouteServerData(await registeredLoader())} />;",
     "}", "",
@@ -111,6 +114,7 @@ export function emitCompleteRoutePage(input: CompleteRoutePageSource): string {
   return [
     `import { ${component} } from "@clossys/publisher/web/registered-route";`,
     named(input.loader, input.file, "loadRouteData"),
+    `const metadata = ${JSON.stringify(registeredRouteHeadMetadata(`/agents/${input.kind}`))};\nexport { metadata };`,
     "export default async function CompletePage() {",
     "  const data = await loadRouteData();",
     `  return <${component} serverData={data.serverData} initialSession={data.initialSession} />;`,
