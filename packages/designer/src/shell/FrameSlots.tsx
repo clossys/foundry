@@ -1,6 +1,6 @@
 "use client";
 
-import { createContext, useCallback, useContext, useLayoutEffect, useMemo, useRef, useState, type ReactNode } from "react";
+import { Children, Fragment, isValidElement, createContext, useCallback, useContext, useLayoutEffect, useMemo, useRef, useState, type ReactNode } from "react";
 
 import { createPortal } from "react-dom";
 
@@ -16,11 +16,12 @@ export interface FrameSlotModule {
 }
 export type { FramePageHeaderDestination, FramePageHeaderNav, FramePageHeaderActions, FramePageHeader } from "../frame-page-header.js";
 import type { FramePageHeader, FramePageHeaderNav } from "../frame-page-header.js";
+type HeaderDeclaration = { id: string; header: FramePageHeader };
 type HeaderData = { id: string; title: string; nav?: FramePageHeaderNav; hasActions: boolean };
 type HeaderLease = HeaderData & { owner: symbol };
 type HeaderHost = { id: string; node: HTMLElement; compact: boolean };
 type Lease = FrameSlotModule & { owner: symbol };
-const Slots = createContext<{ header: HeaderLease | null; headerHost: HeaderHost | null; registerHeader: (header: HeaderData, owner: symbol) => () => void; mountHeader: (id: string, node: HTMLElement | null) => void; compactHeader: (id: string, compact: boolean) => void; modules: readonly Lease[]; hosts: ReadonlyMap<string, HTMLElement>; mount: (id: string, host: HTMLElement | null) => void; register: (module: FrameSlotModule, owner: symbol) => () => void } | null>(null);
+const Slots = createContext<{ initialHeader: HeaderDeclaration | undefined; header: HeaderLease | null; headerHost: HeaderHost | null; registerHeader: (header: HeaderData, owner: symbol) => () => void; mountHeader: (id: string, node: HTMLElement | null) => void; compactHeader: (id: string, compact: boolean) => void; modules: readonly Lease[]; hosts: ReadonlyMap<string, HTMLElement>; mount: (id: string, host: HTMLElement | null) => void; register: (module: FrameSlotModule, owner: symbol) => () => void } | null>(null);
 
 function useRequiredFrameSlots() {
   const context = useContext(Slots);
@@ -29,7 +30,7 @@ function useRequiredFrameSlots() {
 }
 
 /** Page modules declare content; the frame alone chooses its geometry and responsive presentation. */
-export function FrameSlotProvider({ children }: { children: ReactNode }) {
+export function FrameSlotProvider({ children, initialHeader }: { children: ReactNode; initialHeader?: HeaderDeclaration }) {
   const [header, setHeader] = useState<HeaderLease | null>(null);
   const [headerHost, setHeaderHost] = useState<HeaderHost | null>(null);
   const registerHeader = useCallback((data: HeaderData, owner: symbol) => {
@@ -59,7 +60,7 @@ export function FrameSlotProvider({ children }: { children: ReactNode }) {
     });
     return () => setModules(previous => previous.filter(item => item.owner !== owner));
   }, []);
-  const value = useMemo(() => ({ modules, hosts, mount, register, header, headerHost, registerHeader, mountHeader, compactHeader }), [modules, hosts, mount, register, header, headerHost, registerHeader, mountHeader, compactHeader]);
+  const value = useMemo(() => ({ initialHeader, modules, hosts, mount, register, header, headerHost, registerHeader, mountHeader, compactHeader }), [initialHeader, modules, hosts, mount, register, header, headerHost, registerHeader, mountHeader, compactHeader]);
   return <Slots.Provider value={value}>{children}</Slots.Provider>;
 }
 
@@ -108,8 +109,23 @@ function PageHeaderActionsOutlet({ id, compact }: { id: string; compact: boolean
   return <div ref={ref} className="contents" data-frame-header-module={id} />;
 }
 export function useFramePageHeader(fallback?: FramePageHeader): FramePageHeader | undefined {
-  const { header, modules } = useRequiredFrameSlots();
+  const { header, modules, initialHeader } = useRequiredFrameSlots();
   const leased = useMemo<FramePageHeader | undefined>(() => header ? { title: header.title, nav: header.nav, actions: header.hasActions ? { render: ({ compact }) => <PageHeaderActionsOutlet id={header.id} compact={compact} /> } : undefined } : undefined, [header]);
   if (modules.some(module => module.slot.startsWith("header-"))) throw new TypeError("Frame page headers require PageHeaderModule rather than raw header slots.");
-  return leased ?? fallback;
+  return leased ?? initialHeader?.header ?? fallback;
+}
+
+/** Read only explicit page declarations (including fragments); never execute a route component. */
+export function framePageHeaderDeclaration(children: ReactNode): HeaderDeclaration | undefined {
+  let declaration: HeaderDeclaration | undefined;
+  const visit = (nodes: ReactNode) => Children.forEach(nodes, child => {
+    if (!isValidElement<{ id: string; header: FramePageHeader; children?: ReactNode }>(child)) return;
+    if (child.type === Fragment) { visit(child.props.children); return; }
+    if (child.type !== PageHeaderModule) return;
+    if (declaration) throw new TypeError("Frame page header already leased.");
+    if (!child.props.id.trim() || !child.props.header.title.trim()) throw new TypeError("PageHeaderModule requires a nonempty id and title.");
+    declaration = { id: child.props.id, header: child.props.header };
+  });
+  visit(children);
+  return declaration;
 }
