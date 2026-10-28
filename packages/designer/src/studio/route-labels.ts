@@ -1,5 +1,5 @@
 import type { CompositeStudioLabels } from "./types.js";
-import { readStudioCopy, studioCopyNeed, type StudioCopyBinding } from "./copy-binding.js";
+import { readStudioCopy, readStudioMessage, type StudioCopyBinding } from "./copy-binding.js";
 import { createStudioUsageLabels } from "./usage/copy-labels.js";
 
 /** Resolve chrome through the host's Writer resolver. No copy or locale is inferred here. */
@@ -89,7 +89,7 @@ export function createRouteStudioLabels(binding: StudioCopyBinding): CompositeSt
         provenance: copy({ id: "st.e18a866a4k" }),
         coverage: copy({ id: "st.mrjspetnty" }),
       },
-      supported: codes => codes.length ? studioCopyNeed("designer.scorecard.supported") : "",
+      supported: codes => codes.map(code => readStudioMessage(binding, `designer.check.${code}`)).join(" "),
     },
     matrix: {
       label: copy({ id: "st.3v6rrw12tp" }),

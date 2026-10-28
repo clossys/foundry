@@ -55,7 +55,7 @@ function BreadcrumbRoot({
 }: BreadcrumbProps) {
   return (
     <nav aria-label={ariaLabel}>
-      <AriaBreadcrumbs {...rest} className={cx("flex list-none items-center gap-xs", className)}>
+      <AriaBreadcrumbs {...rest} aria-label={ariaLabel} className={cx("flex list-none items-center gap-xs", className)}>
         {children}
       </AriaBreadcrumbs>
     </nav>

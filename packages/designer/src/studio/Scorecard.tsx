@@ -5,7 +5,7 @@ import { Button } from "../components/Button.js";
 import { Table } from "../components/Table.js";
 import type { MatrixSummary } from "./matrix-model.js";
 import type { StudioLabels } from "./types.js";
-import { readStudioMessage, type StudioCopyBinding } from "./copy-binding.js";
+import { readStudioFinding, readStudioMessage, type StudioCopyBinding } from "./copy-binding.js";
 import { StudioDataValue } from "./data-value.js";
 
 /** Measured evidence only; targets deliberately have no counts. */
@@ -21,10 +21,10 @@ export function Scorecard({ summary, labels, copy, onClose, onIssue }: { summary
       <Table.Header><Table.Column id="category" isRowHeader>{text.title}</Table.Column><Table.Column id="checks">{text.checks}</Table.Column></Table.Header>
       <Table.Body>{summary.categories.map(category => <Table.Row key={category.id} id={category.id}>
         <Table.Cell>{text.categories[category.id]}</Table.Cell>
-        <Table.Cell>{category.supported ? <>{text.counts(category.errors ?? 0, category.notices ?? 0)} <small><StudioDataValue kind="identifier" value={category.codes.join(", ")} /></small></> : text.target}</Table.Cell>
+        <Table.Cell>{category.supported ? <>{text.counts(category.errors ?? 0, category.notices ?? 0)} <small>{text.supported(category.codes)}</small> <StudioDataValue kind="identifier" value={category.codes.join(", ")} /></> : text.target}</Table.Cell>
       </Table.Row>)}</Table.Body>
     </Table>
     <h3 className="text-body">{text.issues}</h3>
-    {summary.issues.length ? <ul>{summary.issues.map(({ finding, slotId }, index) => <li key={`${finding.code}:${finding.subject}:${index}`}><Button variant="ghost" size="sm" isDisabled={slotId === undefined} onPress={() => { if (slotId) onIssue(slotId); }}>{readStudioMessage(copy, `designer.scorecard.finding.${finding.code}`)}</Button></li>)}</ul> : <p>{text.noIssues}</p>}
+    {summary.issues.length ? <ul>{summary.issues.map(({ finding, slotId }, index) => <li key={`${finding.code}:${finding.subject}:${index}`}><Button variant="ghost" size="sm" isDisabled={slotId === undefined} onPress={() => { if (slotId) onIssue(slotId); }}>{readStudioFinding(copy, finding, `designer.scorecard.finding.${finding.code}`)}</Button></li>)}</ul> : <p>{text.noIssues}</p>}
   </section>;
 }

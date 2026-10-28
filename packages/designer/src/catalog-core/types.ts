@@ -8,7 +8,9 @@ export type Mode = "light" | "dark";
 export type Status = "draft" | "stable";
 export type Signoff = { by: "owner"; date: string; ref: string };
 export type CheckCode = "C1" | "C2" | "C3" | "C4" | "C5" | "C6" | "C7" | "C8" | "C9" | "C10";
-export interface Finding { code: CheckCode | `A${1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 | 11 | 12}` | "R"; rule: string; severity: "error" | "notice" | "warning"; subject: string; message: string }
+/** Optional presentation metadata. Check decisions and diagnostic text stay unchanged. */
+export interface FindingCopyRef { readonly id: string; readonly values?: Readonly<Record<string, string | number | boolean>> }
+export interface Finding { code: CheckCode | `A${1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 | 11 | 12}` | "R"; rule: string; severity: "error" | "notice" | "warning"; subject: string; message: string; readonly copy?: FindingCopyRef }
 
 /** JSON value as it appears in a DTCG `$value` (typed object, array, number, string). */
 export type DtcgValue = string | number | boolean | null | readonly DtcgValue[] | { readonly [key: string]: DtcgValue };

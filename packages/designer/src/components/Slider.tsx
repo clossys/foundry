@@ -1,5 +1,5 @@
 "use client";
-import { forwardRef, type ForwardedRef, type ReactElement, type ReactNode, type RefAttributes } from "react";
+import { Children, cloneElement, forwardRef, isValidElement, type ForwardedRef, type ReactElement, type ReactNode, type RefAttributes } from "react";
 import {
   Label,
   Slider as AriaSlider,
@@ -24,6 +24,8 @@ export interface SliderProps<T extends SliderValue = SliderValue> extends Omit<A
   thumbLabels?: readonly string[];
   /** Shows the formatted value (or range) next to the label. Defaults to true. */
   showValue?: boolean;
+  /** Host-owned visible and spoken copy for each numeric value. */
+  formatValue?: (value: number, index: number) => string;
   /** Merged onto the outer wrapper. */
   className?: string;
 }
@@ -51,8 +53,24 @@ function thumbCount(value: SliderValue | undefined): number {
   return Array.isArray(value) ? value.length : 1;
 }
 
+/** Use the peer's render port to change only spoken copy, retaining its native input and handlers. */
+function withSpokenValue(children: ReactNode, text: string): ReactNode {
+  let inputs = 0;
+  const visit = (nodes: ReactNode): ReactNode => Children.map(nodes, child => {
+    if (!isValidElement<{ children?: ReactNode; type?: string; "aria-valuetext"?: string }>(child)) return child;
+    if (child.type === "input" && child.props.type === "range") {
+      inputs++;
+      return cloneElement(child, { "aria-valuetext": text });
+    }
+    return child.props.children === undefined ? child : cloneElement(child, { children: visit(child.props.children) });
+  });
+  const result = visit(children);
+  if (inputs !== 1) throw new TypeError("Slider.formatValue.input");
+  return result;
+}
+
 function SliderImpl<T extends SliderValue>(
-  { label, thumbLabels, showValue = true, className, orientation = "horizontal", ...props }: SliderProps<T>,
+  { label, thumbLabels, showValue = true, formatValue, className, orientation = "horizontal", ...props }: SliderProps<T>,
   ref: ForwardedRef<HTMLDivElement>,
 ) {
   const count = thumbCount(props.value ?? props.defaultValue);
@@ -71,7 +89,7 @@ function SliderImpl<T extends SliderValue>(
         <>
           <div className="flex items-center justify-between gap-sm">
             <Label className="text-body-s text-ink-secondary font-body">{label}</Label>
-            {showValue ? <SliderOutput className="text-body-s text-ink-muted tabular-nums font-body" /> : null}
+            {showValue ? <SliderOutput className="text-body-s text-ink-muted tabular-nums font-body">{formatValue ? state.values.map(formatValue).join(" ") : undefined}</SliderOutput> : null}
           </div>
           <SliderTrack data-part="slider-track" className={axis.track}>
             <div data-part="slider-rail" className={cx(axis.rail, RAIL)}>
@@ -83,6 +101,7 @@ function SliderImpl<T extends SliderValue>(
                 index={index}
                 data-part="slider-thumb"
                 aria-label={count > 1 ? thumbLabels![index] : undefined}
+                render={formatValue ? props => <div {...props}>{withSpokenValue(props.children, formatValue(state.values[index]!, index))}</div> : undefined}
                 className={cx(THUMB, axis.thumb)}
               />
             ))}
