@@ -1,6 +1,8 @@
 import type { CSSProperties, HTMLAttributes } from "react";
 import { Button } from "../components/Button.js";
 import { Select } from "../components/Select.js";
+import { Icon } from "../components/Icon.js";
+import { useGlyph } from "../components/glyph-context.js";
 import { cx } from "../components/internal/cx.js";
 import { dsAttrs } from "../catalog-core/provenance-attrs.js";
 /** Section root provenance (D1): the selected Foundry fill this block is. */
@@ -130,6 +132,8 @@ export function Pagination({
   "aria-label": ariaLabel = "Pagination",
   ...rest
 }: PaginationProps) {
+  const previousGlyph = useGlyph("assets.icon-chevron-left");
+  const nextGlyph = useGlyph("assets.icon-chevron-right");
   const clampedCount = Math.max(pageCount, 0);
   const items = clampedCount > 0 ? buildPageItems(page, clampedCount, siblingCount) : [];
   const isFirstPage = page <= 1;
@@ -157,7 +161,7 @@ export function Pagination({
               )
             : pageSummaryMessage(page, clampedCount)}
       </p>
-      <div className="flex items-center gap-xs">
+      <div className="flex min-w-0 flex-wrap items-center gap-xs">
         <Button
           variant="ghost"
           size="sm"
@@ -165,7 +169,7 @@ export function Pagination({
           isDisabled={isFirstPage}
           onPress={() => onPageChange(page - 1)}
         >
-          ‹
+          <Icon glyph={previousGlyph} decorative size="sm" />
         </Button>
         {items.map((item, index) =>
           item === "ellipsis" ? (
@@ -191,7 +195,7 @@ export function Pagination({
           isDisabled={isLastPage}
           onPress={() => onPageChange(page + 1)}
         >
-          ›
+          <Icon glyph={nextGlyph} decorative size="sm" />
         </Button>
       </div>
       {showPageSizeSelector ? (

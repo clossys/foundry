@@ -18,6 +18,8 @@ import {
   type TableProps as AriaTableProps,
 } from "react-aria-components";
 import { Checkbox } from "./Checkbox.js";
+import { Icon } from "./Icon.js";
+import { useGlyph } from "./glyph-context.js";
 import { cx } from "./internal/cx.js";
 import { UI_RING_FOCUS } from "./internal/ui-vars.js";
 
@@ -107,6 +109,8 @@ export interface TableColumnProps extends Omit<AriaColumnProps, "className" | "s
  * reflects `sortDirection` from that same render state.
  */
 function TableColumn({ children, className, style, allowsResizing = false, resizerLabel, ...rest }: TableColumnProps) {
+  const ascendingGlyph = useGlyph("assets.icon-chevron-up");
+  const descendingGlyph = useGlyph("assets.icon-chevron-down");
   return (
     <AriaColumn
       {...rest}
@@ -127,12 +131,9 @@ function TableColumn({ children, className, style, allowsResizing = false, resiz
         <span className="inline-flex items-center gap-xs">
           {children}
           {renderProps.allowsSorting ? (
-            <span aria-hidden="true" className="text-ink-muted">
-              {renderProps.sortDirection === "ascending"
-                ? "▲"
-                : renderProps.sortDirection === "descending"
-                  ? "▼"
-                  : "↕"}
+            <span aria-hidden="true" className="inline-flex shrink-0 text-ink-muted">
+              <Icon glyph={renderProps.sortDirection === "descending" ? descendingGlyph : ascendingGlyph} decorative size="sm" />
+              {!renderProps.sortDirection ? <Icon glyph={descendingGlyph} decorative size="sm" /> : null}
             </span>
           ) : null}
           {allowsResizing ? <TableColumnResizer aria-label={resizerLabel} /> : null}
