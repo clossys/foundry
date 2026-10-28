@@ -1,0 +1,333 @@
+{
+  "version": 1,
+  "revision": 1,
+  "state": "draft",
+  "locale": "en",
+  "terms": [
+    {
+      "concept": "Registered catalog leaf",
+      "preferred": "Item",
+      "avoid": [
+        "leaf"
+      ],
+      "note": "Permanent technical IDs stay in data; show a supplied human name in the console."
+    },
+    {
+      "concept": "Selectable implementation or candidate",
+      "preferred": "Version",
+      "avoid": [
+        "fill",
+        "candidate"
+      ],
+      "note": "Keep a source version distinct from an immutable revision; do not imply approval."
+    },
+    {
+      "concept": "Governing specification",
+      "preferred": "Requirements",
+      "avoid": [
+        "contract"
+      ],
+      "note": "Requirements describes what the item must satisfy."
+    },
+    {
+      "concept": "Selectable configuration member",
+      "preferred": "Option",
+      "avoid": [
+        "member"
+      ],
+      "note": "Configuration remains available for an actual group of options."
+    },
+    {
+      "concept": "Visual example",
+      "preferred": "Preview",
+      "avoid": [
+        "specimen"
+      ],
+      "note": "An available preview is not verification or publication."
+    },
+    {
+      "concept": "User-owned content collection",
+      "preferred": "Library",
+      "avoid": [
+        "consumer library"
+      ],
+      "note": "Do not expose ownership qualifiers used only by the package model."
+    },
+    {
+      "concept": "Incoming usage",
+      "preferred": "Used by",
+      "avoid": [
+        "used where"
+      ],
+      "note": "Names the items that use the selected item."
+    },
+    {
+      "concept": "Outgoing usage",
+      "preferred": "Uses",
+      "avoid": [
+        "reads",
+        "dependencies"
+      ],
+      "note": "Use Contains for composition and Hosts for the distinct hosting relationship."
+    },
+    {
+      "concept": "Check problems",
+      "preferred": "Issues",
+      "avoid": [
+        "findings"
+      ],
+      "note": "Error and warning retain their specific severities; notice remains informational."
+    },
+    {
+      "concept": "Visual or publishing verification",
+      "preferred": "Checks",
+      "avoid": [
+        "runtime evidence",
+        "production evidence"
+      ],
+      "note": "Live observation names evidence origin and does not mean the checks passed."
+    },
+    {
+      "concept": "Source package revision",
+      "preferred": "Source version",
+      "avoid": [
+        "pin"
+      ],
+      "note": "Do not display raw package pin JSON."
+    },
+    {
+      "concept": "Appearance preference",
+      "preferred": "Theme",
+      "avoid": [
+        "appearance"
+      ],
+      "note": "Keep System, Light and Dark as the three preference labels."
+    },
+    {
+      "concept": "Page-side tools",
+      "preferred": "Page tools",
+      "avoid": [
+        "page modules"
+      ],
+      "note": "Use Show/Hide for visibility and Resize for the handle."
+    },
+    {
+      "concept": "Planning action",
+      "preferred": "Apply plan",
+      "avoid": [
+        "align plan"
+      ],
+      "note": "Applying a plan never grants owner approval or publishing clearance."
+    },
+    {
+      "concept": "Origin of an item",
+      "preferred": "Source history",
+      "avoid": [
+        "provenance"
+      ],
+      "note": "Keep origin separate from verification status."
+    },
+    {
+      "concept": "Agreement between design choices",
+      "preferred": "Consistency",
+      "avoid": [
+        "coherence"
+      ],
+      "note": "Use one plain name for this check category."
+    }
+  ],
+  "budgets": {
+    "button": 24,
+    "label": 40,
+    "heading": 60,
+    "navigation": 40,
+    "accessible-label": 60,
+    "status": 80,
+    "announcement": 80,
+    "counter": 60,
+    "help": 160,
+    "instruction": 120,
+    "empty": 120,
+    "empty-title": 60,
+    "empty-body": 160,
+    "error": 160
+  },
+  "voice": {
+    "case": "sentence case",
+    "verbs": "plain, direct actions",
+    "errors": "what happened, then a supported next step",
+    "approval": "Drafts never approve, activate or publish copy."
+  },
+  "lexiconRecords": [
+    {
+      "id": "lx.r92aw2skmc",
+      "leaf": "lexicon.avoid-terms",
+      "context": "Admin console copy standards",
+      "status": "draft",
+      "origin": "foundry-default",
+      "kind": "term",
+      "term": "leaf",
+      "forms": [],
+      "termStatus": "avoid",
+      "alternative": "item",
+      "reason": "Use the shared plain-language terminology in admin copy."
+    },
+    {
+      "id": "lx.4ga221ta6a",
+      "leaf": "lexicon.avoid-terms",
+      "context": "Admin console copy standards",
+      "status": "draft",
+      "origin": "foundry-default",
+      "kind": "term",
+      "term": "consumer library",
+      "forms": [],
+      "termStatus": "avoid",
+      "alternative": "library",
+      "reason": "Use the shared plain-language terminology in admin copy."
+    },
+    {
+      "id": "lx.wecea63ea7",
+      "leaf": "lexicon.avoid-terms",
+      "context": "Admin console copy standards",
+      "status": "draft",
+      "origin": "foundry-default",
+      "kind": "term",
+      "term": "runtime",
+      "forms": [],
+      "termStatus": "avoid",
+      "alternative": "checks",
+      "reason": "Use the shared plain-language terminology in admin copy."
+    },
+    {
+      "id": "lx.2h8nt8ap6m",
+      "leaf": "lexicon.avoid-terms",
+      "context": "Admin console copy standards",
+      "status": "draft",
+      "origin": "foundry-default",
+      "kind": "term",
+      "term": "specimen",
+      "forms": [],
+      "termStatus": "avoid",
+      "alternative": "preview",
+      "reason": "Use the shared plain-language terminology in admin copy."
+    },
+    {
+      "id": "lx.v2jrkjp59j",
+      "leaf": "lexicon.avoid-terms",
+      "context": "Admin console copy standards",
+      "status": "draft",
+      "origin": "foundry-default",
+      "kind": "term",
+      "term": "pin",
+      "forms": [],
+      "termStatus": "avoid",
+      "alternative": "source version",
+      "reason": "Use the shared plain-language terminology in admin copy."
+    },
+    {
+      "id": "lx.0nfqha4h64",
+      "leaf": "lexicon.avoid-terms",
+      "context": "Admin console copy standards",
+      "status": "draft",
+      "origin": "foundry-default",
+      "kind": "term",
+      "term": "provenance",
+      "forms": [],
+      "termStatus": "avoid",
+      "alternative": "source history",
+      "reason": "Use the shared plain-language terminology in admin copy."
+    },
+    {
+      "id": "lx.km52hftzr9",
+      "leaf": "lexicon.avoid-terms",
+      "context": "Admin console copy standards",
+      "status": "draft",
+      "origin": "foundry-default",
+      "kind": "term",
+      "term": "coherence",
+      "forms": [],
+      "termStatus": "avoid",
+      "alternative": "consistency",
+      "reason": "Use the shared plain-language terminology in admin copy."
+    },
+    {
+      "id": "lx.epfs2100gq",
+      "leaf": "lexicon.avoid-terms",
+      "context": "Admin console copy standards",
+      "status": "draft",
+      "origin": "foundry-default",
+      "kind": "term",
+      "term": "candidate",
+      "forms": [],
+      "termStatus": "avoid",
+      "alternative": "version",
+      "reason": "Use the shared plain-language terminology in admin copy."
+    },
+    {
+      "id": "lx.e85h46adsx",
+      "leaf": "lexicon.avoid-terms",
+      "context": "Admin console copy standards",
+      "status": "draft",
+      "origin": "foundry-default",
+      "kind": "term",
+      "term": "findings",
+      "forms": [],
+      "termStatus": "avoid",
+      "alternative": "issues",
+      "reason": "Use the shared plain-language terminology in admin copy."
+    },
+    {
+      "id": "lx.0cvec9w9fg",
+      "leaf": "lexicon.avoid-terms",
+      "context": "Admin console copy standards",
+      "status": "draft",
+      "origin": "foundry-default",
+      "kind": "term",
+      "term": "utilize",
+      "forms": [],
+      "termStatus": "avoid",
+      "alternative": "use",
+      "reason": "Use the shared plain-language terminology in admin copy."
+    },
+    {
+      "id": "lx.xq64t0yaz4",
+      "leaf": "lexicon.avoid-terms",
+      "context": "Admin console copy standards",
+      "status": "draft",
+      "origin": "foundry-default",
+      "kind": "term",
+      "term": "leverage",
+      "forms": [],
+      "termStatus": "avoid",
+      "alternative": "use",
+      "reason": "Use the shared plain-language terminology in admin copy."
+    },
+    {
+      "id": "lx.gna589d121",
+      "leaf": "lexicon.avoid-terms",
+      "context": "Admin console copy standards",
+      "status": "draft",
+      "origin": "foundry-default",
+      "kind": "term",
+      "term": "signoff",
+      "forms": [],
+      "termStatus": "avoid",
+      "alternative": "approval",
+      "reason": "Use the shared plain-language terminology in admin copy."
+    },
+    {
+      "id": "lx.7m8dpy6dvg",
+      "leaf": "lexicon.avoid-patterns",
+      "context": "Admin console copy standards",
+      "status": "draft",
+      "origin": "foundry-default",
+      "kind": "pattern-rule",
+      "pattern": {
+        "source": "(frames|sections|passages|tokens)\\.[a-z]",
+        "flags": "i"
+      },
+      "severity": "error",
+      "reason": "Keep internal catalog namespaces out of visible wording."
+    }
+  ]
+}
