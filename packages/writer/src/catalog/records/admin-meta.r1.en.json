@@ -1,0 +1,1742 @@
+{
+  "version": 1,
+  "revision": 1,
+  "state": "draft",
+  "locale": "en",
+  "sourceCommit": "cf91e48ecf01ebc20c00b1e00c2fe887acd537ae",
+  "scope": [
+    "Metadata and shell states for the three admin pages",
+    "Preview status and action binding proposals"
+  ],
+  "activation": "none",
+  "sourceFiles": {
+    "packages/writer/src/catalog/records/admin-voice.r1.en.json": "36b3955087f05be4345d6681b4ab969ca102ae15727679865667543a4398ba2c",
+    "packages/publisher/src/web/publisher/publisher-sections.ts": "997ba2ba303fb779b500238a69fb5125e5808d19050b9f664a3d71e508bd91ab",
+    "packages/publisher/src/web/publisher/ProductionSettingsForm.tsx": "b37ce94713d9c1bcc7acb5da6437b162fa9078728cfd932c7e99dd722f31b5e8"
+  },
+  "records": [
+    {
+      "id": "st.pb0ynfnh58",
+      "leaf": "strings.page-titles",
+      "context": "admin.designer.title",
+      "status": "draft",
+      "origin": "foundry-default",
+      "text": "Designer",
+      "limits": {
+        "maxChars": 60
+      }
+    },
+    {
+      "id": "st.abbasfn5h4",
+      "leaf": "strings.descriptions",
+      "context": "admin.designer.description",
+      "status": "draft",
+      "origin": "foundry-default",
+      "text": "Explore the design system, inspect items and review their checks.",
+      "limits": {
+        "maxChars": 160
+      }
+    },
+    {
+      "id": "st.5yv263ckjd",
+      "leaf": "strings.page-titles",
+      "context": "admin.designer.shareTitle",
+      "status": "draft",
+      "origin": "foundry-default",
+      "text": "Designer",
+      "limits": {
+        "maxChars": 60
+      }
+    },
+    {
+      "id": "st.j1mx26pxmq",
+      "leaf": "strings.descriptions",
+      "context": "admin.designer.shareDescription",
+      "status": "draft",
+      "origin": "foundry-default",
+      "text": "Explore the design system, inspect items and review their checks.",
+      "limits": {
+        "maxChars": 160
+      }
+    },
+    {
+      "id": "st.2zj7yrtkfr",
+      "leaf": "strings.navigation",
+      "context": "admin.designer.navLabel",
+      "status": "draft",
+      "origin": "foundry-default",
+      "text": "Designer",
+      "limits": {
+        "maxChars": 40
+      }
+    },
+    {
+      "id": "st.gektt1cpd5",
+      "leaf": "strings.empty",
+      "context": "admin.designer.emptyTitle",
+      "status": "draft",
+      "origin": "foundry-default",
+      "text": "No items to show",
+      "limits": {
+        "maxChars": 60
+      }
+    },
+    {
+      "id": "st.x3kx4se08v",
+      "leaf": "strings.empty",
+      "context": "admin.designer.emptyBody",
+      "status": "draft",
+      "origin": "foundry-default",
+      "text": "Ask an agent to add items to this library.",
+      "limits": {
+        "maxChars": 160
+      }
+    },
+    {
+      "id": "st.bv0w7n8mff",
+      "leaf": "strings.loading",
+      "context": "admin.designer.loading",
+      "status": "draft",
+      "origin": "foundry-default",
+      "text": "Loading Designer",
+      "limits": {
+        "maxChars": 80
+      }
+    },
+    {
+      "id": "st.wy8ct74qzy",
+      "leaf": "strings.errors",
+      "context": "admin.designer.error",
+      "status": "draft",
+      "origin": "foundry-default",
+      "text": "Could not load Designer. Try again.",
+      "limits": {
+        "maxChars": 160
+      }
+    },
+    {
+      "id": "st.m22sa9p9y4",
+      "leaf": "strings.page-titles",
+      "context": "admin.writer.title",
+      "status": "draft",
+      "origin": "foundry-default",
+      "text": "Writer",
+      "limits": {
+        "maxChars": 60
+      }
+    },
+    {
+      "id": "st.t5tp2ba7qy",
+      "leaf": "strings.descriptions",
+      "context": "admin.writer.description",
+      "status": "draft",
+      "origin": "foundry-default",
+      "text": "Review copy, its source history and the checks it needs.",
+      "limits": {
+        "maxChars": 160
+      }
+    },
+    {
+      "id": "st.phazcjdjs5",
+      "leaf": "strings.page-titles",
+      "context": "admin.writer.shareTitle",
+      "status": "draft",
+      "origin": "foundry-default",
+      "text": "Writer",
+      "limits": {
+        "maxChars": 60
+      }
+    },
+    {
+      "id": "st.6zznbwptfh",
+      "leaf": "strings.descriptions",
+      "context": "admin.writer.shareDescription",
+      "status": "draft",
+      "origin": "foundry-default",
+      "text": "Review copy, its source history and the checks it needs.",
+      "limits": {
+        "maxChars": 160
+      }
+    },
+    {
+      "id": "st.zz066nxnmh",
+      "leaf": "strings.navigation",
+      "context": "admin.writer.navLabel",
+      "status": "draft",
+      "origin": "foundry-default",
+      "text": "Writer",
+      "limits": {
+        "maxChars": 40
+      }
+    },
+    {
+      "id": "st.r648rbcnbt",
+      "leaf": "strings.empty",
+      "context": "admin.writer.emptyTitle",
+      "status": "draft",
+      "origin": "foundry-default",
+      "text": "No copy to show",
+      "limits": {
+        "maxChars": 60
+      }
+    },
+    {
+      "id": "st.w1dranhtaw",
+      "leaf": "strings.empty",
+      "context": "admin.writer.emptyBody",
+      "status": "draft",
+      "origin": "foundry-default",
+      "text": "Ask an agent to add copy to this library.",
+      "limits": {
+        "maxChars": 160
+      }
+    },
+    {
+      "id": "st.pamfagh18a",
+      "leaf": "strings.loading",
+      "context": "admin.writer.loading",
+      "status": "draft",
+      "origin": "foundry-default",
+      "text": "Loading Writer",
+      "limits": {
+        "maxChars": 80
+      }
+    },
+    {
+      "id": "st.bzrfh5kjwv",
+      "leaf": "strings.errors",
+      "context": "admin.writer.error",
+      "status": "draft",
+      "origin": "foundry-default",
+      "text": "Could not load Writer. Try again.",
+      "limits": {
+        "maxChars": 160
+      }
+    },
+    {
+      "id": "st.eyyshzcr6r",
+      "leaf": "strings.page-titles",
+      "context": "admin.publisher.title",
+      "status": "draft",
+      "origin": "foundry-default",
+      "text": "Publisher",
+      "limits": {
+        "maxChars": 60
+      }
+    },
+    {
+      "id": "st.2tw3ay17tc",
+      "leaf": "strings.descriptions",
+      "context": "admin.publisher.description",
+      "status": "draft",
+      "origin": "foundry-default",
+      "text": "Review the admin pages and their publishing checks.",
+      "limits": {
+        "maxChars": 160
+      }
+    },
+    {
+      "id": "st.cy7122qr1d",
+      "leaf": "strings.page-titles",
+      "context": "admin.publisher.shareTitle",
+      "status": "draft",
+      "origin": "foundry-default",
+      "text": "Publisher",
+      "limits": {
+        "maxChars": 60
+      }
+    },
+    {
+      "id": "st.q0ettsmqf0",
+      "leaf": "strings.descriptions",
+      "context": "admin.publisher.shareDescription",
+      "status": "draft",
+      "origin": "foundry-default",
+      "text": "Review the admin pages and their publishing checks.",
+      "limits": {
+        "maxChars": 160
+      }
+    },
+    {
+      "id": "st.yvc0ka3n3h",
+      "leaf": "strings.navigation",
+      "context": "admin.publisher.navLabel",
+      "status": "draft",
+      "origin": "foundry-default",
+      "text": "Publisher",
+      "limits": {
+        "maxChars": 40
+      }
+    },
+    {
+      "id": "st.ap41gferrr",
+      "leaf": "strings.empty",
+      "context": "admin.publisher.emptyTitle",
+      "status": "draft",
+      "origin": "foundry-default",
+      "text": "No pages to show",
+      "limits": {
+        "maxChars": 60
+      }
+    },
+    {
+      "id": "st.pd41k4cmnq",
+      "leaf": "strings.empty",
+      "context": "admin.publisher.emptyBody",
+      "status": "draft",
+      "origin": "foundry-default",
+      "text": "Ask an agent to register the admin pages.",
+      "limits": {
+        "maxChars": 160
+      }
+    },
+    {
+      "id": "st.ksvqw472ah",
+      "leaf": "strings.loading",
+      "context": "admin.publisher.loading",
+      "status": "draft",
+      "origin": "foundry-default",
+      "text": "Loading Publisher",
+      "limits": {
+        "maxChars": 80
+      }
+    },
+    {
+      "id": "st.w9ardczd81",
+      "leaf": "strings.errors",
+      "context": "admin.publisher.error",
+      "status": "draft",
+      "origin": "foundry-default",
+      "text": "Could not load Publisher. Try again.",
+      "limits": {
+        "maxChars": 160
+      }
+    },
+    {
+      "id": "st.d46qwyc7ny",
+      "leaf": "strings.loading",
+      "context": "preview.status.loading",
+      "status": "draft",
+      "origin": "foundry-default",
+      "text": "Loading preview",
+      "limits": {
+        "maxChars": 80
+      }
+    },
+    {
+      "id": "st.p6xrz78fy1",
+      "leaf": "strings.statuses",
+      "context": "preview.status.ready",
+      "status": "draft",
+      "origin": "foundry-default",
+      "text": "Preview ready",
+      "limits": {
+        "maxChars": 80
+      }
+    },
+    {
+      "id": "st.bab0vedgft",
+      "leaf": "strings.errors",
+      "context": "preview.status.error",
+      "status": "draft",
+      "origin": "foundry-default",
+      "text": "Could not load the preview. Try again.",
+      "limits": {
+        "maxChars": 160
+      }
+    },
+    {
+      "id": "st.416enp5f70",
+      "leaf": "strings.actions",
+      "context": "preview.actions.open",
+      "status": "draft",
+      "origin": "foundry-default",
+      "text": "Open preview",
+      "limits": {
+        "maxChars": 24
+      }
+    },
+    {
+      "id": "st.wy9ewfp8ey",
+      "leaf": "strings.actions",
+      "context": "preview.actions.refresh",
+      "status": "draft",
+      "origin": "foundry-default",
+      "text": "Refresh preview",
+      "limits": {
+        "maxChars": 24
+      }
+    },
+    {
+      "id": "st.9a3gdn01wa",
+      "leaf": "strings.actions",
+      "context": "admin.actions.retry",
+      "status": "draft",
+      "origin": "foundry-default",
+      "text": "Try again",
+      "limits": {
+        "maxChars": 24
+      }
+    },
+    {
+      "id": "st.nn9hx2k38z",
+      "leaf": "strings.actions",
+      "context": "admin.actions.reload",
+      "status": "draft",
+      "origin": "foundry-default",
+      "text": "Reload page",
+      "limits": {
+        "maxChars": 24
+      }
+    },
+    {
+      "id": "st.m5cjnqycs1",
+      "leaf": "strings.actions",
+      "context": "publisher.actions.openItem",
+      "status": "draft",
+      "origin": "foundry-default",
+      "text": "Open item",
+      "limits": {
+        "maxChars": 24
+      }
+    },
+    {
+      "id": "st.395e86hx98",
+      "leaf": "strings.actions",
+      "context": "publisher.actions.closeFormat",
+      "status": "draft",
+      "origin": "foundry-default",
+      "text": "Close format",
+      "limits": {
+        "maxChars": 24
+      }
+    },
+    {
+      "id": "st.m3amxv9z2z",
+      "leaf": "strings.navigation",
+      "context": "publisher.actions.openFormatOwner",
+      "status": "draft",
+      "origin": "foundry-default",
+      "text": "Open format owner",
+      "limits": {
+        "maxChars": 40
+      }
+    },
+    {
+      "id": "st.hn3e9zszwd",
+      "leaf": "strings.actions",
+      "context": "publisher.actions.applyConfiguration",
+      "status": "draft",
+      "origin": "foundry-default",
+      "text": "Apply setup",
+      "limits": {
+        "maxChars": 24
+      }
+    },
+    {
+      "id": "st.3z2sp782kb",
+      "leaf": "strings.actions",
+      "context": "publisher.actions.resetConfiguration",
+      "status": "draft",
+      "origin": "foundry-default",
+      "text": "Reset setup",
+      "limits": {
+        "maxChars": 24
+      }
+    }
+  ],
+  "reviews": [
+    {
+      "recordId": "st.pb0ynfnh58",
+      "cellId": "admin.designer.title",
+      "severity": "P1",
+      "status": "fixed",
+      "scope": "draft only",
+      "source": {
+        "commit": "cf91e48ecf01ebc20c00b1e00c2fe887acd537ae",
+        "path": "packages/writer/src/catalog/records/admin-voice.r1.en.json",
+        "line": 6127,
+        "key": "admin.designer.title"
+      },
+      "before": "<missing Writer record>",
+      "after": "Designer",
+      "rationale": "Name the Designer page or its current state plainly. Keep page and share metadata aligned; do not imply an item is approved, a preview verified or a page published.",
+      "role": "heading",
+      "budget": 60
+    },
+    {
+      "recordId": "st.abbasfn5h4",
+      "cellId": "admin.designer.description",
+      "severity": "P1",
+      "status": "fixed",
+      "scope": "draft only",
+      "source": {
+        "commit": "cf91e48ecf01ebc20c00b1e00c2fe887acd537ae",
+        "path": "packages/writer/src/catalog/records/admin-voice.r1.en.json",
+        "line": 6127,
+        "key": "admin.designer.description"
+      },
+      "before": "<missing Writer record>",
+      "after": "Explore the design system, inspect items and review their checks.",
+      "rationale": "Name the Designer page or its current state plainly. Keep page and share metadata aligned; do not imply an item is approved, a preview verified or a page published.",
+      "role": "help",
+      "budget": 160
+    },
+    {
+      "recordId": "st.5yv263ckjd",
+      "cellId": "admin.designer.shareTitle",
+      "severity": "P1",
+      "status": "fixed",
+      "scope": "draft only",
+      "source": {
+        "commit": "cf91e48ecf01ebc20c00b1e00c2fe887acd537ae",
+        "path": "packages/writer/src/catalog/records/admin-voice.r1.en.json",
+        "line": 6127,
+        "key": "admin.designer.shareTitle"
+      },
+      "before": "<missing Writer record>",
+      "after": "Designer",
+      "rationale": "Name the Designer page or its current state plainly. Keep page and share metadata aligned; do not imply an item is approved, a preview verified or a page published.",
+      "role": "heading",
+      "budget": 60
+    },
+    {
+      "recordId": "st.j1mx26pxmq",
+      "cellId": "admin.designer.shareDescription",
+      "severity": "P1",
+      "status": "fixed",
+      "scope": "draft only",
+      "source": {
+        "commit": "cf91e48ecf01ebc20c00b1e00c2fe887acd537ae",
+        "path": "packages/writer/src/catalog/records/admin-voice.r1.en.json",
+        "line": 6127,
+        "key": "admin.designer.shareDescription"
+      },
+      "before": "<missing Writer record>",
+      "after": "Explore the design system, inspect items and review their checks.",
+      "rationale": "Name the Designer page or its current state plainly. Keep page and share metadata aligned; do not imply an item is approved, a preview verified or a page published.",
+      "role": "help",
+      "budget": 160
+    },
+    {
+      "recordId": "st.2zj7yrtkfr",
+      "cellId": "admin.designer.navLabel",
+      "severity": "P1",
+      "status": "fixed",
+      "scope": "draft only",
+      "source": {
+        "commit": "cf91e48ecf01ebc20c00b1e00c2fe887acd537ae",
+        "path": "packages/writer/src/catalog/records/admin-voice.r1.en.json",
+        "line": 6127,
+        "key": "admin.designer.navLabel"
+      },
+      "before": "<missing Writer record>",
+      "after": "Designer",
+      "rationale": "Name the Designer page or its current state plainly. Keep page and share metadata aligned; do not imply an item is approved, a preview verified or a page published.",
+      "role": "navigation",
+      "budget": 40
+    },
+    {
+      "recordId": "st.gektt1cpd5",
+      "cellId": "admin.designer.emptyTitle",
+      "severity": "P1",
+      "status": "fixed",
+      "scope": "draft only",
+      "source": {
+        "commit": "cf91e48ecf01ebc20c00b1e00c2fe887acd537ae",
+        "path": "packages/writer/src/catalog/records/admin-voice.r1.en.json",
+        "line": 6127,
+        "key": "admin.designer.emptyTitle"
+      },
+      "before": "<missing Writer record>",
+      "after": "No items to show",
+      "rationale": "Name the Designer page or its current state plainly. Keep page and share metadata aligned; do not imply an item is approved, a preview verified or a page published.",
+      "role": "empty-title",
+      "budget": 60
+    },
+    {
+      "recordId": "st.x3kx4se08v",
+      "cellId": "admin.designer.emptyBody",
+      "severity": "P1",
+      "status": "fixed",
+      "scope": "draft only",
+      "source": {
+        "commit": "cf91e48ecf01ebc20c00b1e00c2fe887acd537ae",
+        "path": "packages/writer/src/catalog/records/admin-voice.r1.en.json",
+        "line": 6127,
+        "key": "admin.designer.emptyBody"
+      },
+      "before": "<missing Writer record>",
+      "after": "Ask an agent to add items to this library.",
+      "rationale": "Name the Designer page or its current state plainly. Keep page and share metadata aligned; do not imply an item is approved, a preview verified or a page published.",
+      "role": "empty-body",
+      "budget": 160
+    },
+    {
+      "recordId": "st.bv0w7n8mff",
+      "cellId": "admin.designer.loading",
+      "severity": "P1",
+      "status": "fixed",
+      "scope": "draft only",
+      "source": {
+        "commit": "cf91e48ecf01ebc20c00b1e00c2fe887acd537ae",
+        "path": "packages/writer/src/catalog/records/admin-voice.r1.en.json",
+        "line": 6127,
+        "key": "admin.designer.loading"
+      },
+      "before": "<missing Writer record>",
+      "after": "Loading Designer",
+      "rationale": "Name the Designer page or its current state plainly. Keep page and share metadata aligned; do not imply an item is approved, a preview verified or a page published.",
+      "role": "status",
+      "budget": 80
+    },
+    {
+      "recordId": "st.wy8ct74qzy",
+      "cellId": "admin.designer.error",
+      "severity": "P1",
+      "status": "fixed",
+      "scope": "draft only",
+      "source": {
+        "commit": "cf91e48ecf01ebc20c00b1e00c2fe887acd537ae",
+        "path": "packages/writer/src/catalog/records/admin-voice.r1.en.json",
+        "line": 6127,
+        "key": "admin.designer.error"
+      },
+      "before": "<missing Writer record>",
+      "after": "Could not load Designer. Try again.",
+      "rationale": "Name the Designer page or its current state plainly. Keep page and share metadata aligned; do not imply an item is approved, a preview verified or a page published.",
+      "role": "error",
+      "budget": 160
+    },
+    {
+      "recordId": "st.m22sa9p9y4",
+      "cellId": "admin.writer.title",
+      "severity": "P1",
+      "status": "fixed",
+      "scope": "draft only",
+      "source": {
+        "commit": "cf91e48ecf01ebc20c00b1e00c2fe887acd537ae",
+        "path": "packages/writer/src/catalog/records/admin-voice.r1.en.json",
+        "line": 6127,
+        "key": "admin.writer.title"
+      },
+      "before": "<missing Writer record>",
+      "after": "Writer",
+      "rationale": "Name the Writer page or its current state plainly. Keep page and share metadata aligned; do not imply an item is approved, a preview verified or a page published.",
+      "role": "heading",
+      "budget": 60
+    },
+    {
+      "recordId": "st.t5tp2ba7qy",
+      "cellId": "admin.writer.description",
+      "severity": "P1",
+      "status": "fixed",
+      "scope": "draft only",
+      "source": {
+        "commit": "cf91e48ecf01ebc20c00b1e00c2fe887acd537ae",
+        "path": "packages/writer/src/catalog/records/admin-voice.r1.en.json",
+        "line": 6127,
+        "key": "admin.writer.description"
+      },
+      "before": "<missing Writer record>",
+      "after": "Review copy, its source history and the checks it needs.",
+      "rationale": "Name the Writer page or its current state plainly. Keep page and share metadata aligned; do not imply an item is approved, a preview verified or a page published.",
+      "role": "help",
+      "budget": 160
+    },
+    {
+      "recordId": "st.phazcjdjs5",
+      "cellId": "admin.writer.shareTitle",
+      "severity": "P1",
+      "status": "fixed",
+      "scope": "draft only",
+      "source": {
+        "commit": "cf91e48ecf01ebc20c00b1e00c2fe887acd537ae",
+        "path": "packages/writer/src/catalog/records/admin-voice.r1.en.json",
+        "line": 6127,
+        "key": "admin.writer.shareTitle"
+      },
+      "before": "<missing Writer record>",
+      "after": "Writer",
+      "rationale": "Name the Writer page or its current state plainly. Keep page and share metadata aligned; do not imply an item is approved, a preview verified or a page published.",
+      "role": "heading",
+      "budget": 60
+    },
+    {
+      "recordId": "st.6zznbwptfh",
+      "cellId": "admin.writer.shareDescription",
+      "severity": "P1",
+      "status": "fixed",
+      "scope": "draft only",
+      "source": {
+        "commit": "cf91e48ecf01ebc20c00b1e00c2fe887acd537ae",
+        "path": "packages/writer/src/catalog/records/admin-voice.r1.en.json",
+        "line": 6127,
+        "key": "admin.writer.shareDescription"
+      },
+      "before": "<missing Writer record>",
+      "after": "Review copy, its source history and the checks it needs.",
+      "rationale": "Name the Writer page or its current state plainly. Keep page and share metadata aligned; do not imply an item is approved, a preview verified or a page published.",
+      "role": "help",
+      "budget": 160
+    },
+    {
+      "recordId": "st.zz066nxnmh",
+      "cellId": "admin.writer.navLabel",
+      "severity": "P1",
+      "status": "fixed",
+      "scope": "draft only",
+      "source": {
+        "commit": "cf91e48ecf01ebc20c00b1e00c2fe887acd537ae",
+        "path": "packages/writer/src/catalog/records/admin-voice.r1.en.json",
+        "line": 6127,
+        "key": "admin.writer.navLabel"
+      },
+      "before": "<missing Writer record>",
+      "after": "Writer",
+      "rationale": "Name the Writer page or its current state plainly. Keep page and share metadata aligned; do not imply an item is approved, a preview verified or a page published.",
+      "role": "navigation",
+      "budget": 40
+    },
+    {
+      "recordId": "st.r648rbcnbt",
+      "cellId": "admin.writer.emptyTitle",
+      "severity": "P1",
+      "status": "fixed",
+      "scope": "draft only",
+      "source": {
+        "commit": "cf91e48ecf01ebc20c00b1e00c2fe887acd537ae",
+        "path": "packages/writer/src/catalog/records/admin-voice.r1.en.json",
+        "line": 6127,
+        "key": "admin.writer.emptyTitle"
+      },
+      "before": "<missing Writer record>",
+      "after": "No copy to show",
+      "rationale": "Name the Writer page or its current state plainly. Keep page and share metadata aligned; do not imply an item is approved, a preview verified or a page published.",
+      "role": "empty-title",
+      "budget": 60
+    },
+    {
+      "recordId": "st.w1dranhtaw",
+      "cellId": "admin.writer.emptyBody",
+      "severity": "P1",
+      "status": "fixed",
+      "scope": "draft only",
+      "source": {
+        "commit": "cf91e48ecf01ebc20c00b1e00c2fe887acd537ae",
+        "path": "packages/writer/src/catalog/records/admin-voice.r1.en.json",
+        "line": 6127,
+        "key": "admin.writer.emptyBody"
+      },
+      "before": "<missing Writer record>",
+      "after": "Ask an agent to add copy to this library.",
+      "rationale": "Name the Writer page or its current state plainly. Keep page and share metadata aligned; do not imply an item is approved, a preview verified or a page published.",
+      "role": "empty-body",
+      "budget": 160
+    },
+    {
+      "recordId": "st.pamfagh18a",
+      "cellId": "admin.writer.loading",
+      "severity": "P1",
+      "status": "fixed",
+      "scope": "draft only",
+      "source": {
+        "commit": "cf91e48ecf01ebc20c00b1e00c2fe887acd537ae",
+        "path": "packages/writer/src/catalog/records/admin-voice.r1.en.json",
+        "line": 6127,
+        "key": "admin.writer.loading"
+      },
+      "before": "<missing Writer record>",
+      "after": "Loading Writer",
+      "rationale": "Name the Writer page or its current state plainly. Keep page and share metadata aligned; do not imply an item is approved, a preview verified or a page published.",
+      "role": "status",
+      "budget": 80
+    },
+    {
+      "recordId": "st.bzrfh5kjwv",
+      "cellId": "admin.writer.error",
+      "severity": "P1",
+      "status": "fixed",
+      "scope": "draft only",
+      "source": {
+        "commit": "cf91e48ecf01ebc20c00b1e00c2fe887acd537ae",
+        "path": "packages/writer/src/catalog/records/admin-voice.r1.en.json",
+        "line": 6127,
+        "key": "admin.writer.error"
+      },
+      "before": "<missing Writer record>",
+      "after": "Could not load Writer. Try again.",
+      "rationale": "Name the Writer page or its current state plainly. Keep page and share metadata aligned; do not imply an item is approved, a preview verified or a page published.",
+      "role": "error",
+      "budget": 160
+    },
+    {
+      "recordId": "st.eyyshzcr6r",
+      "cellId": "admin.publisher.title",
+      "severity": "P1",
+      "status": "fixed",
+      "scope": "draft only",
+      "source": {
+        "commit": "cf91e48ecf01ebc20c00b1e00c2fe887acd537ae",
+        "path": "packages/writer/src/catalog/records/admin-voice.r1.en.json",
+        "line": 6127,
+        "key": "admin.publisher.title"
+      },
+      "before": "<missing Writer record>",
+      "after": "Publisher",
+      "rationale": "Name the Publisher page or its current state plainly. Keep page and share metadata aligned; do not imply an item is approved, a preview verified or a page published.",
+      "role": "heading",
+      "budget": 60
+    },
+    {
+      "recordId": "st.2tw3ay17tc",
+      "cellId": "admin.publisher.description",
+      "severity": "P1",
+      "status": "fixed",
+      "scope": "draft only",
+      "source": {
+        "commit": "cf91e48ecf01ebc20c00b1e00c2fe887acd537ae",
+        "path": "packages/writer/src/catalog/records/admin-voice.r1.en.json",
+        "line": 6127,
+        "key": "admin.publisher.description"
+      },
+      "before": "<missing Writer record>",
+      "after": "Review the admin pages and their publishing checks.",
+      "rationale": "Name the Publisher page or its current state plainly. Keep page and share metadata aligned; do not imply an item is approved, a preview verified or a page published.",
+      "role": "help",
+      "budget": 160
+    },
+    {
+      "recordId": "st.cy7122qr1d",
+      "cellId": "admin.publisher.shareTitle",
+      "severity": "P1",
+      "status": "fixed",
+      "scope": "draft only",
+      "source": {
+        "commit": "cf91e48ecf01ebc20c00b1e00c2fe887acd537ae",
+        "path": "packages/writer/src/catalog/records/admin-voice.r1.en.json",
+        "line": 6127,
+        "key": "admin.publisher.shareTitle"
+      },
+      "before": "<missing Writer record>",
+      "after": "Publisher",
+      "rationale": "Name the Publisher page or its current state plainly. Keep page and share metadata aligned; do not imply an item is approved, a preview verified or a page published.",
+      "role": "heading",
+      "budget": 60
+    },
+    {
+      "recordId": "st.q0ettsmqf0",
+      "cellId": "admin.publisher.shareDescription",
+      "severity": "P1",
+      "status": "fixed",
+      "scope": "draft only",
+      "source": {
+        "commit": "cf91e48ecf01ebc20c00b1e00c2fe887acd537ae",
+        "path": "packages/writer/src/catalog/records/admin-voice.r1.en.json",
+        "line": 6127,
+        "key": "admin.publisher.shareDescription"
+      },
+      "before": "<missing Writer record>",
+      "after": "Review the admin pages and their publishing checks.",
+      "rationale": "Name the Publisher page or its current state plainly. Keep page and share metadata aligned; do not imply an item is approved, a preview verified or a page published.",
+      "role": "help",
+      "budget": 160
+    },
+    {
+      "recordId": "st.yvc0ka3n3h",
+      "cellId": "admin.publisher.navLabel",
+      "severity": "P1",
+      "status": "fixed",
+      "scope": "draft only",
+      "source": {
+        "commit": "cf91e48ecf01ebc20c00b1e00c2fe887acd537ae",
+        "path": "packages/writer/src/catalog/records/admin-voice.r1.en.json",
+        "line": 6127,
+        "key": "admin.publisher.navLabel"
+      },
+      "before": "<missing Writer record>",
+      "after": "Publisher",
+      "rationale": "Name the Publisher page or its current state plainly. Keep page and share metadata aligned; do not imply an item is approved, a preview verified or a page published.",
+      "role": "navigation",
+      "budget": 40
+    },
+    {
+      "recordId": "st.ap41gferrr",
+      "cellId": "admin.publisher.emptyTitle",
+      "severity": "P1",
+      "status": "fixed",
+      "scope": "draft only",
+      "source": {
+        "commit": "cf91e48ecf01ebc20c00b1e00c2fe887acd537ae",
+        "path": "packages/writer/src/catalog/records/admin-voice.r1.en.json",
+        "line": 6127,
+        "key": "admin.publisher.emptyTitle"
+      },
+      "before": "<missing Writer record>",
+      "after": "No pages to show",
+      "rationale": "Name the Publisher page or its current state plainly. Keep page and share metadata aligned; do not imply an item is approved, a preview verified or a page published.",
+      "role": "empty-title",
+      "budget": 60
+    },
+    {
+      "recordId": "st.pd41k4cmnq",
+      "cellId": "admin.publisher.emptyBody",
+      "severity": "P1",
+      "status": "fixed",
+      "scope": "draft only",
+      "source": {
+        "commit": "cf91e48ecf01ebc20c00b1e00c2fe887acd537ae",
+        "path": "packages/writer/src/catalog/records/admin-voice.r1.en.json",
+        "line": 6127,
+        "key": "admin.publisher.emptyBody"
+      },
+      "before": "<missing Writer record>",
+      "after": "Ask an agent to register the admin pages.",
+      "rationale": "Name the Publisher page or its current state plainly. Keep page and share metadata aligned; do not imply an item is approved, a preview verified or a page published.",
+      "role": "empty-body",
+      "budget": 160
+    },
+    {
+      "recordId": "st.ksvqw472ah",
+      "cellId": "admin.publisher.loading",
+      "severity": "P1",
+      "status": "fixed",
+      "scope": "draft only",
+      "source": {
+        "commit": "cf91e48ecf01ebc20c00b1e00c2fe887acd537ae",
+        "path": "packages/writer/src/catalog/records/admin-voice.r1.en.json",
+        "line": 6127,
+        "key": "admin.publisher.loading"
+      },
+      "before": "<missing Writer record>",
+      "after": "Loading Publisher",
+      "rationale": "Name the Publisher page or its current state plainly. Keep page and share metadata aligned; do not imply an item is approved, a preview verified or a page published.",
+      "role": "status",
+      "budget": 80
+    },
+    {
+      "recordId": "st.w9ardczd81",
+      "cellId": "admin.publisher.error",
+      "severity": "P1",
+      "status": "fixed",
+      "scope": "draft only",
+      "source": {
+        "commit": "cf91e48ecf01ebc20c00b1e00c2fe887acd537ae",
+        "path": "packages/writer/src/catalog/records/admin-voice.r1.en.json",
+        "line": 6127,
+        "key": "admin.publisher.error"
+      },
+      "before": "<missing Writer record>",
+      "after": "Could not load Publisher. Try again.",
+      "rationale": "Name the Publisher page or its current state plainly. Keep page and share metadata aligned; do not imply an item is approved, a preview verified or a page published.",
+      "role": "error",
+      "budget": 160
+    },
+    {
+      "recordId": "st.d46qwyc7ny",
+      "cellId": "preview.status.loading",
+      "severity": "P1",
+      "status": "fixed",
+      "scope": "draft only",
+      "source": {
+        "commit": "cf91e48ecf01ebc20c00b1e00c2fe887acd537ae",
+        "path": "packages/writer/src/catalog/records/admin-voice.r1.en.json",
+        "line": 6127,
+        "key": "preview.status.loading"
+      },
+      "before": "<missing Writer record>",
+      "after": "Loading preview",
+      "rationale": "Supply a proposed default for the missing preview or shell-action field. Ready describes a render only; it never stands for approval, publication or passed checks.",
+      "role": "status",
+      "budget": 80
+    },
+    {
+      "recordId": "st.p6xrz78fy1",
+      "cellId": "preview.status.ready",
+      "severity": "P1",
+      "status": "fixed",
+      "scope": "draft only",
+      "source": {
+        "commit": "cf91e48ecf01ebc20c00b1e00c2fe887acd537ae",
+        "path": "packages/writer/src/catalog/records/admin-voice.r1.en.json",
+        "line": 6127,
+        "key": "preview.status.ready"
+      },
+      "before": "<missing Writer record>",
+      "after": "Preview ready",
+      "rationale": "Supply a proposed default for the missing preview or shell-action field. Ready describes a render only; it never stands for approval, publication or passed checks.",
+      "role": "status",
+      "budget": 80
+    },
+    {
+      "recordId": "st.bab0vedgft",
+      "cellId": "preview.status.error",
+      "severity": "P1",
+      "status": "fixed",
+      "scope": "draft only",
+      "source": {
+        "commit": "cf91e48ecf01ebc20c00b1e00c2fe887acd537ae",
+        "path": "packages/writer/src/catalog/records/admin-voice.r1.en.json",
+        "line": 6127,
+        "key": "preview.status.error"
+      },
+      "before": "<missing Writer record>",
+      "after": "Could not load the preview. Try again.",
+      "rationale": "Supply a proposed default for the missing preview or shell-action field. Ready describes a render only; it never stands for approval, publication or passed checks.",
+      "role": "error",
+      "budget": 160
+    },
+    {
+      "recordId": "st.416enp5f70",
+      "cellId": "preview.actions.open",
+      "severity": "P1",
+      "status": "fixed",
+      "scope": "draft only",
+      "source": {
+        "commit": "cf91e48ecf01ebc20c00b1e00c2fe887acd537ae",
+        "path": "packages/writer/src/catalog/records/admin-voice.r1.en.json",
+        "line": 6127,
+        "key": "preview.actions.open"
+      },
+      "before": "<missing Writer record>",
+      "after": "Open preview",
+      "rationale": "Supply a proposed default for the missing preview or shell-action field. Ready describes a render only; it never stands for approval, publication or passed checks.",
+      "role": "button",
+      "budget": 24
+    },
+    {
+      "recordId": "st.wy9ewfp8ey",
+      "cellId": "preview.actions.refresh",
+      "severity": "P1",
+      "status": "fixed",
+      "scope": "draft only",
+      "source": {
+        "commit": "cf91e48ecf01ebc20c00b1e00c2fe887acd537ae",
+        "path": "packages/writer/src/catalog/records/admin-voice.r1.en.json",
+        "line": 6127,
+        "key": "preview.actions.refresh"
+      },
+      "before": "<missing Writer record>",
+      "after": "Refresh preview",
+      "rationale": "Supply a proposed default for the missing preview or shell-action field. Ready describes a render only; it never stands for approval, publication or passed checks.",
+      "role": "button",
+      "budget": 24
+    },
+    {
+      "recordId": "st.9a3gdn01wa",
+      "cellId": "admin.actions.retry",
+      "severity": "P1",
+      "status": "fixed",
+      "scope": "draft only",
+      "source": {
+        "commit": "cf91e48ecf01ebc20c00b1e00c2fe887acd537ae",
+        "path": "packages/writer/src/catalog/records/admin-voice.r1.en.json",
+        "line": 6127,
+        "key": "admin.actions.retry"
+      },
+      "before": "<missing Writer record>",
+      "after": "Try again",
+      "rationale": "Supply a proposed default for the missing preview or shell-action field. Ready describes a render only; it never stands for approval, publication or passed checks.",
+      "role": "button",
+      "budget": 24
+    },
+    {
+      "recordId": "st.nn9hx2k38z",
+      "cellId": "admin.actions.reload",
+      "severity": "P1",
+      "status": "fixed",
+      "scope": "draft only",
+      "source": {
+        "commit": "cf91e48ecf01ebc20c00b1e00c2fe887acd537ae",
+        "path": "packages/writer/src/catalog/records/admin-voice.r1.en.json",
+        "line": 6127,
+        "key": "admin.actions.reload"
+      },
+      "before": "<missing Writer record>",
+      "after": "Reload page",
+      "rationale": "Supply a proposed default for the missing preview or shell-action field. Ready describes a render only; it never stands for approval, publication or passed checks.",
+      "role": "button",
+      "budget": 24
+    },
+    {
+      "recordId": "st.m5cjnqycs1",
+      "cellId": "publisher.actions.openItem",
+      "severity": "P1",
+      "status": "fixed",
+      "scope": "draft only",
+      "source": {
+        "commit": "cf91e48ecf01ebc20c00b1e00c2fe887acd537ae",
+        "path": "packages/publisher/src/web/publisher/publisher-sections.ts",
+        "line": 107,
+        "key": "publisher.actions.openItem"
+      },
+      "before": "Open item",
+      "after": "Open item",
+      "rationale": "Give the existing console action an addressable draft label. Keep its destination or close behavior unchanged; the later host binder must supply this CopyRef.",
+      "role": "button",
+      "budget": 24
+    },
+    {
+      "recordId": "st.395e86hx98",
+      "cellId": "publisher.actions.closeFormat",
+      "severity": "P1",
+      "status": "fixed",
+      "scope": "draft only",
+      "source": {
+        "commit": "cf91e48ecf01ebc20c00b1e00c2fe887acd537ae",
+        "path": "packages/publisher/src/web/publisher/publisher-sections.ts",
+        "line": 134,
+        "key": "publisher.actions.closeFormat"
+      },
+      "before": "Close output format",
+      "after": "Close format",
+      "rationale": "Give the existing console action an addressable draft label. Keep its destination or close behavior unchanged; the later host binder must supply this CopyRef.",
+      "role": "button",
+      "budget": 24
+    },
+    {
+      "recordId": "st.m3amxv9z2z",
+      "cellId": "publisher.actions.openFormatOwner",
+      "severity": "P1",
+      "status": "fixed",
+      "scope": "draft only",
+      "source": {
+        "commit": "cf91e48ecf01ebc20c00b1e00c2fe887acd537ae",
+        "path": "packages/publisher/src/web/publisher/publisher-sections.ts",
+        "line": 134,
+        "key": "publisher.actions.openFormatOwner"
+      },
+      "before": "Open format owner",
+      "after": "Open format owner",
+      "rationale": "Give the existing console action an addressable draft label. Keep its destination or close behavior unchanged; the later host binder must supply this CopyRef.",
+      "role": "navigation",
+      "budget": 40
+    },
+    {
+      "recordId": "st.hn3e9zszwd",
+      "cellId": "publisher.actions.applyConfiguration",
+      "severity": "P1",
+      "status": "fixed",
+      "scope": "draft only",
+      "source": {
+        "commit": "cf91e48ecf01ebc20c00b1e00c2fe887acd537ae",
+        "path": "packages/publisher/src/web/publisher/ProductionSettingsForm.tsx",
+        "line": 115,
+        "key": "publisher.actions.applyConfiguration"
+      },
+      "before": "Apply configuration",
+      "after": "Apply setup",
+      "rationale": "Name the existing setup action concisely and leave room for pseudo-locale expansion. This draft does not change the form behavior or authorize applying a plan.",
+      "role": "button",
+      "budget": 24
+    },
+    {
+      "recordId": "st.3z2sp782kb",
+      "cellId": "publisher.actions.resetConfiguration",
+      "severity": "P1",
+      "status": "fixed",
+      "scope": "draft only",
+      "source": {
+        "commit": "cf91e48ecf01ebc20c00b1e00c2fe887acd537ae",
+        "path": "packages/publisher/src/web/publisher/ProductionSettingsForm.tsx",
+        "line": 117,
+        "key": "publisher.actions.resetConfiguration"
+      },
+      "before": "Reset configuration",
+      "after": "Reset setup",
+      "rationale": "Name the existing setup action concisely and leave room for pseudo-locale expansion. This draft does not change the form behavior or authorize applying a plan.",
+      "role": "button",
+      "budget": 24
+    }
+  ],
+  "bindings": [
+    {
+      "cellId": "admin.designer.title",
+      "recordId": "st.pb0ynfnh58",
+      "target": "/agents/designer",
+      "kind": "metadata"
+    },
+    {
+      "cellId": "admin.designer.description",
+      "recordId": "st.abbasfn5h4",
+      "target": "/agents/designer",
+      "kind": "metadata"
+    },
+    {
+      "cellId": "admin.designer.shareTitle",
+      "recordId": "st.5yv263ckjd",
+      "target": "/agents/designer",
+      "kind": "metadata"
+    },
+    {
+      "cellId": "admin.designer.shareDescription",
+      "recordId": "st.j1mx26pxmq",
+      "target": "/agents/designer",
+      "kind": "metadata"
+    },
+    {
+      "cellId": "admin.designer.navLabel",
+      "recordId": "st.2zj7yrtkfr",
+      "target": "/agents/designer",
+      "kind": "navigation"
+    },
+    {
+      "cellId": "admin.designer.emptyTitle",
+      "recordId": "st.gektt1cpd5",
+      "target": "/agents/designer",
+      "kind": "shell-state"
+    },
+    {
+      "cellId": "admin.designer.emptyBody",
+      "recordId": "st.x3kx4se08v",
+      "target": "/agents/designer",
+      "kind": "shell-state"
+    },
+    {
+      "cellId": "admin.designer.loading",
+      "recordId": "st.bv0w7n8mff",
+      "target": "/agents/designer",
+      "kind": "shell-state"
+    },
+    {
+      "cellId": "admin.designer.error",
+      "recordId": "st.wy8ct74qzy",
+      "target": "/agents/designer",
+      "kind": "shell-state"
+    },
+    {
+      "cellId": "admin.writer.title",
+      "recordId": "st.m22sa9p9y4",
+      "target": "/agents/writer",
+      "kind": "metadata"
+    },
+    {
+      "cellId": "admin.writer.description",
+      "recordId": "st.t5tp2ba7qy",
+      "target": "/agents/writer",
+      "kind": "metadata"
+    },
+    {
+      "cellId": "admin.writer.shareTitle",
+      "recordId": "st.phazcjdjs5",
+      "target": "/agents/writer",
+      "kind": "metadata"
+    },
+    {
+      "cellId": "admin.writer.shareDescription",
+      "recordId": "st.6zznbwptfh",
+      "target": "/agents/writer",
+      "kind": "metadata"
+    },
+    {
+      "cellId": "admin.writer.navLabel",
+      "recordId": "st.zz066nxnmh",
+      "target": "/agents/writer",
+      "kind": "navigation"
+    },
+    {
+      "cellId": "admin.writer.emptyTitle",
+      "recordId": "st.r648rbcnbt",
+      "target": "/agents/writer",
+      "kind": "shell-state"
+    },
+    {
+      "cellId": "admin.writer.emptyBody",
+      "recordId": "st.w1dranhtaw",
+      "target": "/agents/writer",
+      "kind": "shell-state"
+    },
+    {
+      "cellId": "admin.writer.loading",
+      "recordId": "st.pamfagh18a",
+      "target": "/agents/writer",
+      "kind": "shell-state"
+    },
+    {
+      "cellId": "admin.writer.error",
+      "recordId": "st.bzrfh5kjwv",
+      "target": "/agents/writer",
+      "kind": "shell-state"
+    },
+    {
+      "cellId": "admin.publisher.title",
+      "recordId": "st.eyyshzcr6r",
+      "target": "/agents/publisher",
+      "kind": "metadata"
+    },
+    {
+      "cellId": "admin.publisher.description",
+      "recordId": "st.2tw3ay17tc",
+      "target": "/agents/publisher",
+      "kind": "metadata"
+    },
+    {
+      "cellId": "admin.publisher.shareTitle",
+      "recordId": "st.cy7122qr1d",
+      "target": "/agents/publisher",
+      "kind": "metadata"
+    },
+    {
+      "cellId": "admin.publisher.shareDescription",
+      "recordId": "st.q0ettsmqf0",
+      "target": "/agents/publisher",
+      "kind": "metadata"
+    },
+    {
+      "cellId": "admin.publisher.navLabel",
+      "recordId": "st.yvc0ka3n3h",
+      "target": "/agents/publisher",
+      "kind": "navigation"
+    },
+    {
+      "cellId": "admin.publisher.emptyTitle",
+      "recordId": "st.ap41gferrr",
+      "target": "/agents/publisher",
+      "kind": "shell-state"
+    },
+    {
+      "cellId": "admin.publisher.emptyBody",
+      "recordId": "st.pd41k4cmnq",
+      "target": "/agents/publisher",
+      "kind": "shell-state"
+    },
+    {
+      "cellId": "admin.publisher.loading",
+      "recordId": "st.ksvqw472ah",
+      "target": "/agents/publisher",
+      "kind": "shell-state"
+    },
+    {
+      "cellId": "admin.publisher.error",
+      "recordId": "st.w9ardczd81",
+      "target": "/agents/publisher",
+      "kind": "shell-state"
+    },
+    {
+      "cellId": "preview.status.loading",
+      "recordId": "st.d46qwyc7ny",
+      "target": "PreviewStatus host binding (source absent at base)",
+      "kind": "preview-proposal"
+    },
+    {
+      "cellId": "preview.status.ready",
+      "recordId": "st.p6xrz78fy1",
+      "target": "PreviewStatus host binding (source absent at base)",
+      "kind": "preview-proposal"
+    },
+    {
+      "cellId": "preview.status.error",
+      "recordId": "st.bab0vedgft",
+      "target": "PreviewStatus host binding (source absent at base)",
+      "kind": "preview-proposal"
+    },
+    {
+      "cellId": "preview.actions.open",
+      "recordId": "st.416enp5f70",
+      "target": "PreviewStatus host binding (source absent at base)",
+      "kind": "preview-proposal"
+    },
+    {
+      "cellId": "preview.actions.refresh",
+      "recordId": "st.wy9ewfp8ey",
+      "target": "PreviewStatus host binding (source absent at base)",
+      "kind": "preview-proposal"
+    },
+    {
+      "cellId": "admin.actions.retry",
+      "recordId": "st.9a3gdn01wa",
+      "target": "PreviewStatus host binding (source absent at base)",
+      "kind": "preview-proposal"
+    },
+    {
+      "cellId": "admin.actions.reload",
+      "recordId": "st.nn9hx2k38z",
+      "target": "PreviewStatus host binding (source absent at base)",
+      "kind": "preview-proposal"
+    },
+    {
+      "cellId": "preview.status.unavailable",
+      "recordId": "st.z5cgvzw0ca",
+      "target": "PreviewStatus host binding (source absent at base)",
+      "kind": "label"
+    },
+    {
+      "cellId": "preview.status.unsupported",
+      "recordId": "st.9s1q0wnyey",
+      "target": "PreviewStatus host binding (source absent at base)",
+      "kind": "label"
+    },
+    {
+      "cellId": "admin.actions.copy",
+      "recordId": "st.nq1kmmfacm",
+      "target": "console action binding",
+      "kind": "label"
+    },
+    {
+      "cellId": "admin.actions.close",
+      "recordId": "st.jrxtfy1c6j",
+      "target": "console action binding",
+      "kind": "label"
+    },
+    {
+      "cellId": "publisher.actions.closeItem",
+      "recordId": "st.fck5fxw34e",
+      "target": "packages/publisher/src/web/publisher/publisher-sections.ts",
+      "kind": "label"
+    },
+    {
+      "cellId": "publisher.actions.inspectFormat",
+      "recordId": "st.0xv50r43am",
+      "target": "packages/publisher/src/web/publisher/publisher-sections.ts",
+      "kind": "label"
+    },
+    {
+      "cellId": "publisher.actions.commerce",
+      "recordId": "st.htywy6hbk2",
+      "target": "packages/publisher/src/web/publisher/publisher-sections.ts",
+      "kind": "label"
+    },
+    {
+      "cellId": "publisher.actions.openItem",
+      "recordId": "st.m5cjnqycs1",
+      "target": "packages/publisher/src/web/publisher/publisher-sections.ts",
+      "kind": "console-action"
+    },
+    {
+      "cellId": "publisher.actions.closeFormat",
+      "recordId": "st.395e86hx98",
+      "target": "packages/publisher/src/web/publisher/publisher-sections.ts",
+      "kind": "console-action"
+    },
+    {
+      "cellId": "publisher.actions.openFormatOwner",
+      "recordId": "st.m3amxv9z2z",
+      "target": "packages/publisher/src/web/publisher/publisher-sections.ts",
+      "kind": "console-action"
+    },
+    {
+      "cellId": "publisher.actions.applyConfiguration",
+      "recordId": "st.hn3e9zszwd",
+      "target": "packages/publisher/src/web/publisher/ProductionSettingsForm.tsx",
+      "kind": "console-action"
+    },
+    {
+      "cellId": "publisher.actions.resetConfiguration",
+      "recordId": "st.3z2sp782kb",
+      "target": "packages/publisher/src/web/publisher/ProductionSettingsForm.tsx",
+      "kind": "console-action"
+    }
+  ],
+  "needs": [
+    {
+      "recordId": "st.pb0ynfnh58",
+      "cellId": "admin.designer.title",
+      "severity": "P0",
+      "status": "Need",
+      "message": "Draft only: validate and bind this CopyRef in a later host unit; do not activate or replace a missing binding with English."
+    },
+    {
+      "recordId": "st.abbasfn5h4",
+      "cellId": "admin.designer.description",
+      "severity": "P0",
+      "status": "Need",
+      "message": "Draft only: validate and bind this CopyRef in a later host unit; do not activate or replace a missing binding with English."
+    },
+    {
+      "recordId": "st.5yv263ckjd",
+      "cellId": "admin.designer.shareTitle",
+      "severity": "P0",
+      "status": "Need",
+      "message": "Draft only: validate and bind this CopyRef in a later host unit; do not activate or replace a missing binding with English."
+    },
+    {
+      "recordId": "st.j1mx26pxmq",
+      "cellId": "admin.designer.shareDescription",
+      "severity": "P0",
+      "status": "Need",
+      "message": "Draft only: validate and bind this CopyRef in a later host unit; do not activate or replace a missing binding with English."
+    },
+    {
+      "recordId": "st.2zj7yrtkfr",
+      "cellId": "admin.designer.navLabel",
+      "severity": "P0",
+      "status": "Need",
+      "message": "Draft only: validate and bind this CopyRef in a later host unit; do not activate or replace a missing binding with English."
+    },
+    {
+      "recordId": "st.gektt1cpd5",
+      "cellId": "admin.designer.emptyTitle",
+      "severity": "P0",
+      "status": "Need",
+      "message": "Draft only: validate and bind this CopyRef in a later host unit; do not activate or replace a missing binding with English."
+    },
+    {
+      "recordId": "st.x3kx4se08v",
+      "cellId": "admin.designer.emptyBody",
+      "severity": "P0",
+      "status": "Need",
+      "message": "Draft only: validate and bind this CopyRef in a later host unit; do not activate or replace a missing binding with English."
+    },
+    {
+      "recordId": "st.bv0w7n8mff",
+      "cellId": "admin.designer.loading",
+      "severity": "P0",
+      "status": "Need",
+      "message": "Draft only: validate and bind this CopyRef in a later host unit; do not activate or replace a missing binding with English."
+    },
+    {
+      "recordId": "st.wy8ct74qzy",
+      "cellId": "admin.designer.error",
+      "severity": "P0",
+      "status": "Need",
+      "message": "Draft only: validate and bind this CopyRef in a later host unit; do not activate or replace a missing binding with English."
+    },
+    {
+      "recordId": "st.m22sa9p9y4",
+      "cellId": "admin.writer.title",
+      "severity": "P0",
+      "status": "Need",
+      "message": "Draft only: validate and bind this CopyRef in a later host unit; do not activate or replace a missing binding with English."
+    },
+    {
+      "recordId": "st.t5tp2ba7qy",
+      "cellId": "admin.writer.description",
+      "severity": "P0",
+      "status": "Need",
+      "message": "Draft only: validate and bind this CopyRef in a later host unit; do not activate or replace a missing binding with English."
+    },
+    {
+      "recordId": "st.phazcjdjs5",
+      "cellId": "admin.writer.shareTitle",
+      "severity": "P0",
+      "status": "Need",
+      "message": "Draft only: validate and bind this CopyRef in a later host unit; do not activate or replace a missing binding with English."
+    },
+    {
+      "recordId": "st.6zznbwptfh",
+      "cellId": "admin.writer.shareDescription",
+      "severity": "P0",
+      "status": "Need",
+      "message": "Draft only: validate and bind this CopyRef in a later host unit; do not activate or replace a missing binding with English."
+    },
+    {
+      "recordId": "st.zz066nxnmh",
+      "cellId": "admin.writer.navLabel",
+      "severity": "P0",
+      "status": "Need",
+      "message": "Draft only: validate and bind this CopyRef in a later host unit; do not activate or replace a missing binding with English."
+    },
+    {
+      "recordId": "st.r648rbcnbt",
+      "cellId": "admin.writer.emptyTitle",
+      "severity": "P0",
+      "status": "Need",
+      "message": "Draft only: validate and bind this CopyRef in a later host unit; do not activate or replace a missing binding with English."
+    },
+    {
+      "recordId": "st.w1dranhtaw",
+      "cellId": "admin.writer.emptyBody",
+      "severity": "P0",
+      "status": "Need",
+      "message": "Draft only: validate and bind this CopyRef in a later host unit; do not activate or replace a missing binding with English."
+    },
+    {
+      "recordId": "st.pamfagh18a",
+      "cellId": "admin.writer.loading",
+      "severity": "P0",
+      "status": "Need",
+      "message": "Draft only: validate and bind this CopyRef in a later host unit; do not activate or replace a missing binding with English."
+    },
+    {
+      "recordId": "st.bzrfh5kjwv",
+      "cellId": "admin.writer.error",
+      "severity": "P0",
+      "status": "Need",
+      "message": "Draft only: validate and bind this CopyRef in a later host unit; do not activate or replace a missing binding with English."
+    },
+    {
+      "recordId": "st.eyyshzcr6r",
+      "cellId": "admin.publisher.title",
+      "severity": "P0",
+      "status": "Need",
+      "message": "Draft only: validate and bind this CopyRef in a later host unit; do not activate or replace a missing binding with English."
+    },
+    {
+      "recordId": "st.2tw3ay17tc",
+      "cellId": "admin.publisher.description",
+      "severity": "P0",
+      "status": "Need",
+      "message": "Draft only: validate and bind this CopyRef in a later host unit; do not activate or replace a missing binding with English."
+    },
+    {
+      "recordId": "st.cy7122qr1d",
+      "cellId": "admin.publisher.shareTitle",
+      "severity": "P0",
+      "status": "Need",
+      "message": "Draft only: validate and bind this CopyRef in a later host unit; do not activate or replace a missing binding with English."
+    },
+    {
+      "recordId": "st.q0ettsmqf0",
+      "cellId": "admin.publisher.shareDescription",
+      "severity": "P0",
+      "status": "Need",
+      "message": "Draft only: validate and bind this CopyRef in a later host unit; do not activate or replace a missing binding with English."
+    },
+    {
+      "recordId": "st.yvc0ka3n3h",
+      "cellId": "admin.publisher.navLabel",
+      "severity": "P0",
+      "status": "Need",
+      "message": "Draft only: validate and bind this CopyRef in a later host unit; do not activate or replace a missing binding with English."
+    },
+    {
+      "recordId": "st.ap41gferrr",
+      "cellId": "admin.publisher.emptyTitle",
+      "severity": "P0",
+      "status": "Need",
+      "message": "Draft only: validate and bind this CopyRef in a later host unit; do not activate or replace a missing binding with English."
+    },
+    {
+      "recordId": "st.pd41k4cmnq",
+      "cellId": "admin.publisher.emptyBody",
+      "severity": "P0",
+      "status": "Need",
+      "message": "Draft only: validate and bind this CopyRef in a later host unit; do not activate or replace a missing binding with English."
+    },
+    {
+      "recordId": "st.ksvqw472ah",
+      "cellId": "admin.publisher.loading",
+      "severity": "P0",
+      "status": "Need",
+      "message": "Draft only: validate and bind this CopyRef in a later host unit; do not activate or replace a missing binding with English."
+    },
+    {
+      "recordId": "st.w9ardczd81",
+      "cellId": "admin.publisher.error",
+      "severity": "P0",
+      "status": "Need",
+      "message": "Draft only: validate and bind this CopyRef in a later host unit; do not activate or replace a missing binding with English."
+    },
+    {
+      "recordId": "st.d46qwyc7ny",
+      "cellId": "preview.status.loading",
+      "severity": "P0",
+      "status": "Need",
+      "message": "Draft only: validate and bind this CopyRef in a later host unit; do not activate or replace a missing binding with English."
+    },
+    {
+      "recordId": "st.p6xrz78fy1",
+      "cellId": "preview.status.ready",
+      "severity": "P0",
+      "status": "Need",
+      "message": "Draft only: validate and bind this CopyRef in a later host unit; do not activate or replace a missing binding with English."
+    },
+    {
+      "recordId": "st.bab0vedgft",
+      "cellId": "preview.status.error",
+      "severity": "P0",
+      "status": "Need",
+      "message": "Draft only: validate and bind this CopyRef in a later host unit; do not activate or replace a missing binding with English."
+    },
+    {
+      "recordId": "st.416enp5f70",
+      "cellId": "preview.actions.open",
+      "severity": "P0",
+      "status": "Need",
+      "message": "Draft only: validate and bind this CopyRef in a later host unit; do not activate or replace a missing binding with English."
+    },
+    {
+      "recordId": "st.wy9ewfp8ey",
+      "cellId": "preview.actions.refresh",
+      "severity": "P0",
+      "status": "Need",
+      "message": "Draft only: validate and bind this CopyRef in a later host unit; do not activate or replace a missing binding with English."
+    },
+    {
+      "recordId": "st.9a3gdn01wa",
+      "cellId": "admin.actions.retry",
+      "severity": "P0",
+      "status": "Need",
+      "message": "Draft only: validate and bind this CopyRef in a later host unit; do not activate or replace a missing binding with English."
+    },
+    {
+      "recordId": "st.nn9hx2k38z",
+      "cellId": "admin.actions.reload",
+      "severity": "P0",
+      "status": "Need",
+      "message": "Draft only: validate and bind this CopyRef in a later host unit; do not activate or replace a missing binding with English."
+    },
+    {
+      "recordId": "st.m5cjnqycs1",
+      "cellId": "publisher.actions.openItem",
+      "severity": "P0",
+      "status": "Need",
+      "message": "Draft only: validate and bind this CopyRef in a later host unit; do not activate or replace a missing binding with English."
+    },
+    {
+      "recordId": "st.395e86hx98",
+      "cellId": "publisher.actions.closeFormat",
+      "severity": "P0",
+      "status": "Need",
+      "message": "Draft only: validate and bind this CopyRef in a later host unit; do not activate or replace a missing binding with English."
+    },
+    {
+      "recordId": "st.m3amxv9z2z",
+      "cellId": "publisher.actions.openFormatOwner",
+      "severity": "P0",
+      "status": "Need",
+      "message": "Draft only: validate and bind this CopyRef in a later host unit; do not activate or replace a missing binding with English."
+    },
+    {
+      "recordId": "st.hn3e9zszwd",
+      "cellId": "publisher.actions.applyConfiguration",
+      "severity": "P0",
+      "status": "Need",
+      "message": "Draft only: validate and bind this CopyRef in a later host unit; do not activate or replace a missing binding with English."
+    },
+    {
+      "recordId": "st.3z2sp782kb",
+      "cellId": "publisher.actions.resetConfiguration",
+      "severity": "P0",
+      "status": "Need",
+      "message": "Draft only: validate and bind this CopyRef in a later host unit; do not activate or replace a missing binding with English."
+    },
+    {
+      "cellId": "WR-META.PREVIEW-STATUS-SOURCE",
+      "severity": "P1",
+      "status": "Need",
+      "message": "No PreviewStatus implementation or public status union exists in this base. Aliases are draft proposals; the later binder must identify the actual host fields and reuse the unavailable/unsupported records."
+    },
+    {
+      "cellId": "WR-META.WRITER-CONSOLE-SOURCE",
+      "severity": "P1",
+      "status": "Need",
+      "message": "The Writer admin console source is absent at this base. Draft metadata and shell states are not evidence of a page implementation or activated binding."
+    },
+    {
+      "cellId": "WR-META.DRAFT-AUTHORING-COMMAND",
+      "severity": "P1",
+      "status": "Need",
+      "message": "No existing package command authors this draft envelope. Source drafts were explicitly assigned; command-produced consumer materialization, review and approval remain separate work."
+    },
+    {
+      "cellId": "WR-META.ADMIN-HEAD-BINDING",
+      "severity": "P1",
+      "status": "Need",
+      "message": "Bind page title, description, share title, share description and navigation label through Writer CopyRefs in the host for each of the three admin routes; metadata remains unbound."
+    }
+  ],
+  "coverage": {
+    "kind": "planned binding fixture; not rendered-page coverage",
+    "productionBound": 0,
+    "proposedBindings": 46,
+    "draftRecords": 39,
+    "reusedExistingRecords": 7
+  },
+  "defaults": [
+    "New source catalog drafts are explicitly authorized; no existing Writer wording, approval or activation is changed.",
+    "No draft-authoring package command exists at this base. Use the existing Writer checks; CLI materialization and later host binding remain Needs.",
+    "Review aliases identify proposed bindings, not permanent catalog leaves or added UI APIs.",
+    "Raw identifiers, hashes, check codes and JSON are technical data; data arguments cannot contain untranslated prose."
+  ]
+}
