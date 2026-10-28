@@ -16,12 +16,17 @@
         "package": "@clossys/designer",
         "version": "0.12.0"
       },
-      "relation": "same-contract",
+      "relation": "subset",
       "slot": "sections.sign-in-form",
       "source": "foundry",
       "sourceAddress": "./blocks#Form",
       "status": "draft",
-      "trust": "foundry"
+      "trust": "foundry",
+      "unmapped": [
+        "sign-in.password",
+        "sign-in.provider",
+        "sign-in.verify"
+      ]
     }
   },
   "sections": {

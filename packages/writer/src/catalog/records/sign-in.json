@@ -1,0 +1,1605 @@
+{
+  "version": 1,
+  "locales": {
+    "en": {
+      "records": [
+        {
+          "id": "st.hwhxwcp8va",
+          "leaf": "strings.actions",
+          "context": "Generic sign-in copy: providers[].label",
+          "status": "draft",
+          "origin": "foundry-default",
+          "text": "Continue with work SSO"
+        },
+        {
+          "id": "st.xdab0zvrxe",
+          "leaf": "strings.field-labels",
+          "context": "Generic sign-in copy: credentials.identifierLabel",
+          "status": "draft",
+          "origin": "foundry-default",
+          "text": "Email or username"
+        },
+        {
+          "id": "st.jkwc3bf7a1",
+          "leaf": "strings.field-labels",
+          "context": "Generic sign-in copy: credentials.identifierPlaceholder",
+          "status": "draft",
+          "origin": "foundry-default",
+          "text": "Your email or username"
+        },
+        {
+          "id": "st.5mwk6kw75a",
+          "leaf": "strings.field-labels",
+          "context": "Generic sign-in copy: credentials.passwordLabel",
+          "status": "draft",
+          "origin": "foundry-default",
+          "text": "Password"
+        },
+        {
+          "id": "st.r2zee73zbp",
+          "leaf": "strings.field-labels",
+          "context": "Generic sign-in copy: credentials.passwordPlaceholder",
+          "status": "draft",
+          "origin": "foundry-default",
+          "text": "Your password"
+        },
+        {
+          "id": "st.5rdfk8ec0a",
+          "leaf": "strings.field-labels",
+          "context": "Generic sign-in copy: verification.codeLabel",
+          "status": "draft",
+          "origin": "foundry-default",
+          "text": "Verification code"
+        },
+        {
+          "id": "st.r0hc0s0q2f",
+          "leaf": "strings.descriptions",
+          "context": "Generic sign-in copy: verification.description",
+          "status": "draft",
+          "origin": "foundry-default",
+          "text": "Enter the code from your sign-in method."
+        },
+        {
+          "id": "st.bsg41z478g",
+          "leaf": "strings.field-labels",
+          "context": "Generic sign-in copy: verification.placeholder",
+          "status": "draft",
+          "origin": "foundry-default",
+          "text": "Your verification code"
+        },
+        {
+          "id": "st.f5ce2skzxv",
+          "leaf": "strings.actions",
+          "context": "Generic sign-in copy: actions.submit",
+          "status": "draft",
+          "origin": "foundry-default",
+          "text": "Sign in"
+        },
+        {
+          "id": "st.mgd5wr0fbg",
+          "leaf": "strings.actions",
+          "context": "Generic sign-in copy: actions.verify",
+          "status": "draft",
+          "origin": "foundry-default",
+          "text": "Verify code"
+        },
+        {
+          "id": "st.n7ccqemr5s",
+          "leaf": "strings.actions",
+          "context": "Generic sign-in copy: actions.pending",
+          "status": "draft",
+          "origin": "foundry-default",
+          "text": "Please wait"
+        },
+        {
+          "id": "st.an5ekdr18g",
+          "leaf": "strings.actions",
+          "context": "Generic sign-in copy: actions.back",
+          "status": "draft",
+          "origin": "foundry-default",
+          "text": "Back"
+        },
+        {
+          "id": "st.vfnx8ws1ey",
+          "leaf": "strings.actions",
+          "context": "Generic sign-in copy: actions.resend",
+          "status": "draft",
+          "origin": "foundry-default",
+          "text": "Resend code"
+        },
+        {
+          "id": "st.68chnvkp9n",
+          "leaf": "strings.actions",
+          "context": "Generic sign-in copy: actions.divider",
+          "status": "draft",
+          "origin": "foundry-default",
+          "text": "Or use your credentials"
+        },
+        {
+          "id": "st.2swwt6xbat",
+          "leaf": "strings.errors",
+          "context": "Generic sign-in copy: error.message",
+          "status": "draft",
+          "origin": "foundry-default",
+          "text": "Sign-in could not continue. Try again."
+        },
+        {
+          "id": "st.n2hcsyy75c",
+          "leaf": "strings.errors",
+          "context": "Generic sign-in copy: error.identifier",
+          "status": "draft",
+          "origin": "foundry-default",
+          "text": "Check your email or username."
+        },
+        {
+          "id": "st.jdjpkh8v5c",
+          "leaf": "strings.errors",
+          "context": "Generic sign-in copy: error.password",
+          "status": "draft",
+          "origin": "foundry-default",
+          "text": "Check your password."
+        },
+        {
+          "id": "st.fzrwmkdh7t",
+          "leaf": "strings.errors",
+          "context": "Generic sign-in copy: error.code",
+          "status": "draft",
+          "origin": "foundry-default",
+          "text": "Check your verification code."
+        },
+        {
+          "id": "st.95zeepaj3s",
+          "leaf": "strings.page-titles",
+          "context": "Generic sign-in copy: header.heading",
+          "status": "draft",
+          "origin": "foundry-default",
+          "text": "Sign in"
+        },
+        {
+          "id": "st.ssn178aszz",
+          "leaf": "strings.descriptions",
+          "context": "Generic sign-in copy: header.description",
+          "status": "draft",
+          "origin": "foundry-default",
+          "text": "Continue with your sign-in details."
+        },
+        {
+          "id": "ps.9t7hjr28jw",
+          "leaf": "passages.sign-in-form",
+          "context": "Generic sign-in presentation: password",
+          "status": "draft",
+          "origin": "foundry-default",
+          "schema": "passages.sign-in-form",
+          "schemaDigest": "78c42d48736aeff4f94737dbc6323fff5f4da491ed5a42683fb7c43df5b92ede",
+          "fields": {
+            "header.heading": {
+              "ref": "string",
+              "id": "st.95zeepaj3s"
+            },
+            "header.description": {
+              "ref": "string",
+              "id": "st.ssn178aszz"
+            },
+            "providers[].label": {
+              "ref": "string",
+              "id": "st.hwhxwcp8va"
+            },
+            "credentials.identifierLabel": {
+              "ref": "string",
+              "id": "st.xdab0zvrxe"
+            },
+            "credentials.identifierPlaceholder": {
+              "ref": "string",
+              "id": "st.jkwc3bf7a1"
+            },
+            "credentials.passwordLabel": {
+              "ref": "string",
+              "id": "st.5mwk6kw75a"
+            },
+            "credentials.passwordPlaceholder": {
+              "ref": "string",
+              "id": "st.r2zee73zbp"
+            },
+            "verification.codeLabel": {
+              "ref": "string",
+              "id": "st.5rdfk8ec0a"
+            },
+            "verification.description": {
+              "ref": "string",
+              "id": "st.r0hc0s0q2f"
+            },
+            "verification.placeholder": {
+              "ref": "string",
+              "id": "st.bsg41z478g"
+            },
+            "actions.submit": {
+              "ref": "string",
+              "id": "st.f5ce2skzxv"
+            },
+            "actions.verify": {
+              "ref": "string",
+              "id": "st.mgd5wr0fbg"
+            },
+            "actions.pending": {
+              "ref": "string",
+              "id": "st.n7ccqemr5s"
+            },
+            "actions.back": {
+              "ref": "string",
+              "id": "st.an5ekdr18g"
+            },
+            "actions.resend": {
+              "ref": "string",
+              "id": "st.vfnx8ws1ey"
+            },
+            "actions.divider": {
+              "ref": "string",
+              "id": "st.68chnvkp9n"
+            },
+            "error.message": {
+              "ref": "string",
+              "id": "st.2swwt6xbat"
+            },
+            "error.identifier": {
+              "ref": "string",
+              "id": "st.n2hcsyy75c"
+            },
+            "error.password": {
+              "ref": "string",
+              "id": "st.jdjpkh8v5c"
+            },
+            "error.code": {
+              "ref": "string",
+              "id": "st.fzrwmkdh7t"
+            }
+          }
+        },
+        {
+          "id": "st.v6kx8tqt94",
+          "leaf": "strings.page-titles",
+          "context": "Generic sign-in copy: header.heading",
+          "status": "draft",
+          "origin": "foundry-default",
+          "text": "Choose a sign-in method"
+        },
+        {
+          "id": "st.j0ry9djty1",
+          "leaf": "strings.descriptions",
+          "context": "Generic sign-in copy: header.description",
+          "status": "draft",
+          "origin": "foundry-default",
+          "text": "Continue using your work sign-in method."
+        },
+        {
+          "id": "ps.y7kr1epj81",
+          "leaf": "passages.sign-in-form",
+          "context": "Generic sign-in presentation: provider",
+          "status": "draft",
+          "origin": "foundry-default",
+          "schema": "passages.sign-in-form",
+          "schemaDigest": "78c42d48736aeff4f94737dbc6323fff5f4da491ed5a42683fb7c43df5b92ede",
+          "fields": {
+            "header.heading": {
+              "ref": "string",
+              "id": "st.v6kx8tqt94"
+            },
+            "header.description": {
+              "ref": "string",
+              "id": "st.j0ry9djty1"
+            },
+            "providers[].label": {
+              "ref": "string",
+              "id": "st.hwhxwcp8va"
+            },
+            "credentials.identifierLabel": {
+              "ref": "string",
+              "id": "st.xdab0zvrxe"
+            },
+            "credentials.identifierPlaceholder": {
+              "ref": "string",
+              "id": "st.jkwc3bf7a1"
+            },
+            "credentials.passwordLabel": {
+              "ref": "string",
+              "id": "st.5mwk6kw75a"
+            },
+            "credentials.passwordPlaceholder": {
+              "ref": "string",
+              "id": "st.r2zee73zbp"
+            },
+            "verification.codeLabel": {
+              "ref": "string",
+              "id": "st.5rdfk8ec0a"
+            },
+            "verification.description": {
+              "ref": "string",
+              "id": "st.r0hc0s0q2f"
+            },
+            "verification.placeholder": {
+              "ref": "string",
+              "id": "st.bsg41z478g"
+            },
+            "actions.submit": {
+              "ref": "string",
+              "id": "st.f5ce2skzxv"
+            },
+            "actions.verify": {
+              "ref": "string",
+              "id": "st.mgd5wr0fbg"
+            },
+            "actions.pending": {
+              "ref": "string",
+              "id": "st.n7ccqemr5s"
+            },
+            "actions.back": {
+              "ref": "string",
+              "id": "st.an5ekdr18g"
+            },
+            "actions.resend": {
+              "ref": "string",
+              "id": "st.vfnx8ws1ey"
+            },
+            "actions.divider": {
+              "ref": "string",
+              "id": "st.68chnvkp9n"
+            },
+            "error.message": {
+              "ref": "string",
+              "id": "st.2swwt6xbat"
+            },
+            "error.identifier": {
+              "ref": "string",
+              "id": "st.n2hcsyy75c"
+            },
+            "error.password": {
+              "ref": "string",
+              "id": "st.jdjpkh8v5c"
+            },
+            "error.code": {
+              "ref": "string",
+              "id": "st.fzrwmkdh7t"
+            }
+          }
+        },
+        {
+          "id": "st.ad06zwacrc",
+          "leaf": "strings.page-titles",
+          "context": "Generic sign-in copy: header.heading",
+          "status": "draft",
+          "origin": "foundry-default",
+          "text": "Verify your sign-in"
+        },
+        {
+          "id": "st.zv90y3hjbj",
+          "leaf": "strings.descriptions",
+          "context": "Generic sign-in copy: header.description",
+          "status": "draft",
+          "origin": "foundry-default",
+          "text": "Enter your verification code to continue."
+        },
+        {
+          "id": "ps.f9s1dvfhgq",
+          "leaf": "passages.sign-in-form",
+          "context": "Generic sign-in presentation: verify",
+          "status": "draft",
+          "origin": "foundry-default",
+          "schema": "passages.sign-in-form",
+          "schemaDigest": "78c42d48736aeff4f94737dbc6323fff5f4da491ed5a42683fb7c43df5b92ede",
+          "fields": {
+            "header.heading": {
+              "ref": "string",
+              "id": "st.ad06zwacrc"
+            },
+            "header.description": {
+              "ref": "string",
+              "id": "st.zv90y3hjbj"
+            },
+            "providers[].label": {
+              "ref": "string",
+              "id": "st.hwhxwcp8va"
+            },
+            "credentials.identifierLabel": {
+              "ref": "string",
+              "id": "st.xdab0zvrxe"
+            },
+            "credentials.identifierPlaceholder": {
+              "ref": "string",
+              "id": "st.jkwc3bf7a1"
+            },
+            "credentials.passwordLabel": {
+              "ref": "string",
+              "id": "st.5mwk6kw75a"
+            },
+            "credentials.passwordPlaceholder": {
+              "ref": "string",
+              "id": "st.r2zee73zbp"
+            },
+            "verification.codeLabel": {
+              "ref": "string",
+              "id": "st.5rdfk8ec0a"
+            },
+            "verification.description": {
+              "ref": "string",
+              "id": "st.r0hc0s0q2f"
+            },
+            "verification.placeholder": {
+              "ref": "string",
+              "id": "st.bsg41z478g"
+            },
+            "actions.submit": {
+              "ref": "string",
+              "id": "st.f5ce2skzxv"
+            },
+            "actions.verify": {
+              "ref": "string",
+              "id": "st.mgd5wr0fbg"
+            },
+            "actions.pending": {
+              "ref": "string",
+              "id": "st.n7ccqemr5s"
+            },
+            "actions.back": {
+              "ref": "string",
+              "id": "st.an5ekdr18g"
+            },
+            "actions.resend": {
+              "ref": "string",
+              "id": "st.vfnx8ws1ey"
+            },
+            "actions.divider": {
+              "ref": "string",
+              "id": "st.68chnvkp9n"
+            },
+            "error.message": {
+              "ref": "string",
+              "id": "st.2swwt6xbat"
+            },
+            "error.identifier": {
+              "ref": "string",
+              "id": "st.n2hcsyy75c"
+            },
+            "error.password": {
+              "ref": "string",
+              "id": "st.jdjpkh8v5c"
+            },
+            "error.code": {
+              "ref": "string",
+              "id": "st.fzrwmkdh7t"
+            }
+          }
+        },
+        {
+          "id": "st.adahn5wqfc",
+          "leaf": "strings.navigation",
+          "context": "Authentication shell skip link",
+          "status": "draft",
+          "origin": "foundry-default",
+          "text": "Skip to main content"
+        },
+        {
+          "id": "st.k8ex60hhyq",
+          "leaf": "strings.errors",
+          "context": "Generic sign-in notice: identifier-required",
+          "status": "draft",
+          "origin": "foundry-default",
+          "text": "Enter your email."
+        },
+        {
+          "id": "st.gwa2av1dav",
+          "leaf": "strings.errors",
+          "context": "Generic sign-in notice: password-required",
+          "status": "draft",
+          "origin": "foundry-default",
+          "text": "Enter your password."
+        },
+        {
+          "id": "st.5309trf5mg",
+          "leaf": "strings.errors",
+          "context": "Generic sign-in notice: code-required",
+          "status": "draft",
+          "origin": "foundry-default",
+          "text": "Enter the code."
+        },
+        {
+          "id": "st.vasejrmzb7",
+          "leaf": "strings.errors",
+          "context": "Generic sign-in notice: identifier-not-found",
+          "status": "draft",
+          "origin": "foundry-default",
+          "text": "No account matches that email. Check it and try again."
+        },
+        {
+          "id": "st.wc5nvwqfa2",
+          "leaf": "strings.errors",
+          "context": "Generic sign-in notice: identifier-neutral",
+          "status": "draft",
+          "origin": "foundry-default",
+          "text": "Sign-in could not continue. Check your details and try again."
+        },
+        {
+          "id": "st.6qagkrjjnm",
+          "leaf": "strings.errors",
+          "context": "Generic sign-in notice: password-invalid",
+          "status": "draft",
+          "origin": "foundry-default",
+          "text": "That password is not right. Try again."
+        },
+        {
+          "id": "st.ck6fkjvv94",
+          "leaf": "strings.errors",
+          "context": "Generic sign-in notice: code-invalid",
+          "status": "draft",
+          "origin": "foundry-default",
+          "text": "That code is not right or has expired. Try again."
+        },
+        {
+          "id": "st.scr0ajmss1",
+          "leaf": "strings.errors",
+          "context": "Generic sign-in notice: rate-limited",
+          "status": "draft",
+          "origin": "foundry-default",
+          "text": "Too many attempts. Wait a few minutes, then try again."
+        },
+        {
+          "id": "st.y1hckfqphw",
+          "leaf": "strings.errors",
+          "context": "Generic sign-in notice: locked",
+          "status": "draft",
+          "origin": "foundry-default",
+          "text": "This account is temporarily locked after too many attempts. Try again later."
+        },
+        {
+          "id": "st.zy4zzz8bn9",
+          "leaf": "strings.errors",
+          "context": "Generic sign-in notice: network",
+          "status": "draft",
+          "origin": "foundry-default",
+          "text": "The connection could not be completed. Check your connection and try again."
+        },
+        {
+          "id": "st.v3508ndjd1",
+          "leaf": "strings.errors",
+          "context": "Generic sign-in notice: unavailable",
+          "status": "draft",
+          "origin": "foundry-default",
+          "text": "Sign-in is not available right now. Try again in a few minutes."
+        }
+      ],
+      "bindings": {
+        "ps.sign-in.password": {
+          "passageId": "ps.9t7hjr28jw",
+          "fields": {
+            "header.heading": {
+              "id": "st.95zeepaj3s"
+            },
+            "header.description": {
+              "id": "st.ssn178aszz"
+            },
+            "providers[].label": {
+              "id": "st.hwhxwcp8va"
+            },
+            "credentials.identifierLabel": {
+              "id": "st.xdab0zvrxe"
+            },
+            "credentials.identifierPlaceholder": {
+              "id": "st.jkwc3bf7a1"
+            },
+            "credentials.passwordLabel": {
+              "id": "st.5mwk6kw75a"
+            },
+            "credentials.passwordPlaceholder": {
+              "id": "st.r2zee73zbp"
+            },
+            "verification.codeLabel": {
+              "id": "st.5rdfk8ec0a"
+            },
+            "verification.description": {
+              "id": "st.r0hc0s0q2f"
+            },
+            "verification.placeholder": {
+              "id": "st.bsg41z478g"
+            },
+            "actions.submit": {
+              "id": "st.f5ce2skzxv"
+            },
+            "actions.verify": {
+              "id": "st.mgd5wr0fbg"
+            },
+            "actions.pending": {
+              "id": "st.n7ccqemr5s"
+            },
+            "actions.back": {
+              "id": "st.an5ekdr18g"
+            },
+            "actions.resend": {
+              "id": "st.vfnx8ws1ey"
+            },
+            "actions.divider": {
+              "id": "st.68chnvkp9n"
+            },
+            "error.message": {
+              "id": "st.2swwt6xbat"
+            },
+            "error.identifier": {
+              "id": "st.n2hcsyy75c"
+            },
+            "error.password": {
+              "id": "st.jdjpkh8v5c"
+            },
+            "error.code": {
+              "id": "st.fzrwmkdh7t"
+            }
+          }
+        },
+        "ps.sign-in.provider": {
+          "passageId": "ps.y7kr1epj81",
+          "fields": {
+            "header.heading": {
+              "id": "st.v6kx8tqt94"
+            },
+            "header.description": {
+              "id": "st.j0ry9djty1"
+            },
+            "providers[].label": {
+              "id": "st.hwhxwcp8va"
+            },
+            "credentials.identifierLabel": {
+              "id": "st.xdab0zvrxe"
+            },
+            "credentials.identifierPlaceholder": {
+              "id": "st.jkwc3bf7a1"
+            },
+            "credentials.passwordLabel": {
+              "id": "st.5mwk6kw75a"
+            },
+            "credentials.passwordPlaceholder": {
+              "id": "st.r2zee73zbp"
+            },
+            "verification.codeLabel": {
+              "id": "st.5rdfk8ec0a"
+            },
+            "verification.description": {
+              "id": "st.r0hc0s0q2f"
+            },
+            "verification.placeholder": {
+              "id": "st.bsg41z478g"
+            },
+            "actions.submit": {
+              "id": "st.f5ce2skzxv"
+            },
+            "actions.verify": {
+              "id": "st.mgd5wr0fbg"
+            },
+            "actions.pending": {
+              "id": "st.n7ccqemr5s"
+            },
+            "actions.back": {
+              "id": "st.an5ekdr18g"
+            },
+            "actions.resend": {
+              "id": "st.vfnx8ws1ey"
+            },
+            "actions.divider": {
+              "id": "st.68chnvkp9n"
+            },
+            "error.message": {
+              "id": "st.2swwt6xbat"
+            },
+            "error.identifier": {
+              "id": "st.n2hcsyy75c"
+            },
+            "error.password": {
+              "id": "st.jdjpkh8v5c"
+            },
+            "error.code": {
+              "id": "st.fzrwmkdh7t"
+            }
+          }
+        },
+        "ps.sign-in.verify": {
+          "passageId": "ps.f9s1dvfhgq",
+          "fields": {
+            "header.heading": {
+              "id": "st.ad06zwacrc"
+            },
+            "header.description": {
+              "id": "st.zv90y3hjbj"
+            },
+            "providers[].label": {
+              "id": "st.hwhxwcp8va"
+            },
+            "credentials.identifierLabel": {
+              "id": "st.xdab0zvrxe"
+            },
+            "credentials.identifierPlaceholder": {
+              "id": "st.jkwc3bf7a1"
+            },
+            "credentials.passwordLabel": {
+              "id": "st.5mwk6kw75a"
+            },
+            "credentials.passwordPlaceholder": {
+              "id": "st.r2zee73zbp"
+            },
+            "verification.codeLabel": {
+              "id": "st.5rdfk8ec0a"
+            },
+            "verification.description": {
+              "id": "st.r0hc0s0q2f"
+            },
+            "verification.placeholder": {
+              "id": "st.bsg41z478g"
+            },
+            "actions.submit": {
+              "id": "st.f5ce2skzxv"
+            },
+            "actions.verify": {
+              "id": "st.mgd5wr0fbg"
+            },
+            "actions.pending": {
+              "id": "st.n7ccqemr5s"
+            },
+            "actions.back": {
+              "id": "st.an5ekdr18g"
+            },
+            "actions.resend": {
+              "id": "st.vfnx8ws1ey"
+            },
+            "actions.divider": {
+              "id": "st.68chnvkp9n"
+            },
+            "error.message": {
+              "id": "st.2swwt6xbat"
+            },
+            "error.identifier": {
+              "id": "st.n2hcsyy75c"
+            },
+            "error.password": {
+              "id": "st.jdjpkh8v5c"
+            },
+            "error.code": {
+              "id": "st.fzrwmkdh7t"
+            }
+          }
+        }
+      },
+      "skipLink": {
+        "id": "st.adahn5wqfc"
+      },
+      "notices": {
+        "st.auth.error.identifier-required": {
+          "id": "st.k8ex60hhyq"
+        },
+        "st.auth.error.password-required": {
+          "id": "st.gwa2av1dav"
+        },
+        "st.auth.error.code-required": {
+          "id": "st.5309trf5mg"
+        },
+        "st.auth.error.identifier-not-found": {
+          "id": "st.vasejrmzb7"
+        },
+        "st.auth.error.identifier-neutral": {
+          "id": "st.wc5nvwqfa2"
+        },
+        "st.auth.error.password-invalid": {
+          "id": "st.6qagkrjjnm"
+        },
+        "st.auth.error.code-invalid": {
+          "id": "st.ck6fkjvv94"
+        },
+        "st.auth.error.rate-limited": {
+          "id": "st.scr0ajmss1"
+        },
+        "st.auth.error.locked": {
+          "id": "st.y1hckfqphw"
+        },
+        "st.auth.error.network": {
+          "id": "st.zy4zzz8bn9"
+        },
+        "st.auth.error.unavailable": {
+          "id": "st.v3508ndjd1"
+        }
+      }
+    },
+    "ar": {
+      "records": [
+        {
+          "id": "st.hwhxwcp8va",
+          "leaf": "strings.actions",
+          "context": "Generic sign-in copy: providers[].label",
+          "status": "draft",
+          "origin": "foundry-default",
+          "text": "المتابعة باستخدام تسجيل الدخول الموحد للعمل"
+        },
+        {
+          "id": "st.xdab0zvrxe",
+          "leaf": "strings.field-labels",
+          "context": "Generic sign-in copy: credentials.identifierLabel",
+          "status": "draft",
+          "origin": "foundry-default",
+          "text": "البريد الإلكتروني أو اسم المستخدم"
+        },
+        {
+          "id": "st.jkwc3bf7a1",
+          "leaf": "strings.field-labels",
+          "context": "Generic sign-in copy: credentials.identifierPlaceholder",
+          "status": "draft",
+          "origin": "foundry-default",
+          "text": "بريدك الإلكتروني أو اسم المستخدم"
+        },
+        {
+          "id": "st.5mwk6kw75a",
+          "leaf": "strings.field-labels",
+          "context": "Generic sign-in copy: credentials.passwordLabel",
+          "status": "draft",
+          "origin": "foundry-default",
+          "text": "كلمة المرور"
+        },
+        {
+          "id": "st.r2zee73zbp",
+          "leaf": "strings.field-labels",
+          "context": "Generic sign-in copy: credentials.passwordPlaceholder",
+          "status": "draft",
+          "origin": "foundry-default",
+          "text": "كلمة المرور الخاصة بك"
+        },
+        {
+          "id": "st.5rdfk8ec0a",
+          "leaf": "strings.field-labels",
+          "context": "Generic sign-in copy: verification.codeLabel",
+          "status": "draft",
+          "origin": "foundry-default",
+          "text": "رمز التحقق"
+        },
+        {
+          "id": "st.r0hc0s0q2f",
+          "leaf": "strings.descriptions",
+          "context": "Generic sign-in copy: verification.description",
+          "status": "draft",
+          "origin": "foundry-default",
+          "text": "أدخل الرمز الذي تلقيته من وسيلة تسجيل الدخول."
+        },
+        {
+          "id": "st.bsg41z478g",
+          "leaf": "strings.field-labels",
+          "context": "Generic sign-in copy: verification.placeholder",
+          "status": "draft",
+          "origin": "foundry-default",
+          "text": "رمز التحقق الخاص بك"
+        },
+        {
+          "id": "st.f5ce2skzxv",
+          "leaf": "strings.actions",
+          "context": "Generic sign-in copy: actions.submit",
+          "status": "draft",
+          "origin": "foundry-default",
+          "text": "تسجيل الدخول"
+        },
+        {
+          "id": "st.mgd5wr0fbg",
+          "leaf": "strings.actions",
+          "context": "Generic sign-in copy: actions.verify",
+          "status": "draft",
+          "origin": "foundry-default",
+          "text": "التحقق من الرمز"
+        },
+        {
+          "id": "st.n7ccqemr5s",
+          "leaf": "strings.actions",
+          "context": "Generic sign-in copy: actions.pending",
+          "status": "draft",
+          "origin": "foundry-default",
+          "text": "يرجى الانتظار"
+        },
+        {
+          "id": "st.an5ekdr18g",
+          "leaf": "strings.actions",
+          "context": "Generic sign-in copy: actions.back",
+          "status": "draft",
+          "origin": "foundry-default",
+          "text": "رجوع"
+        },
+        {
+          "id": "st.vfnx8ws1ey",
+          "leaf": "strings.actions",
+          "context": "Generic sign-in copy: actions.resend",
+          "status": "draft",
+          "origin": "foundry-default",
+          "text": "إعادة إرسال الرمز"
+        },
+        {
+          "id": "st.68chnvkp9n",
+          "leaf": "strings.actions",
+          "context": "Generic sign-in copy: actions.divider",
+          "status": "draft",
+          "origin": "foundry-default",
+          "text": "أو استخدم بيانات تسجيل الدخول"
+        },
+        {
+          "id": "st.2swwt6xbat",
+          "leaf": "strings.errors",
+          "context": "Generic sign-in copy: error.message",
+          "status": "draft",
+          "origin": "foundry-default",
+          "text": "تعذر متابعة تسجيل الدخول. حاول مرة أخرى."
+        },
+        {
+          "id": "st.n2hcsyy75c",
+          "leaf": "strings.errors",
+          "context": "Generic sign-in copy: error.identifier",
+          "status": "draft",
+          "origin": "foundry-default",
+          "text": "تحقق من بريدك الإلكتروني أو اسم المستخدم."
+        },
+        {
+          "id": "st.jdjpkh8v5c",
+          "leaf": "strings.errors",
+          "context": "Generic sign-in copy: error.password",
+          "status": "draft",
+          "origin": "foundry-default",
+          "text": "تحقق من كلمة المرور."
+        },
+        {
+          "id": "st.fzrwmkdh7t",
+          "leaf": "strings.errors",
+          "context": "Generic sign-in copy: error.code",
+          "status": "draft",
+          "origin": "foundry-default",
+          "text": "تحقق من رمز التحقق."
+        },
+        {
+          "id": "st.95zeepaj3s",
+          "leaf": "strings.page-titles",
+          "context": "Generic sign-in copy: header.heading",
+          "status": "draft",
+          "origin": "foundry-default",
+          "text": "تسجيل الدخول"
+        },
+        {
+          "id": "st.ssn178aszz",
+          "leaf": "strings.descriptions",
+          "context": "Generic sign-in copy: header.description",
+          "status": "draft",
+          "origin": "foundry-default",
+          "text": "تابع باستخدام بيانات تسجيل الدخول."
+        },
+        {
+          "id": "ps.9t7hjr28jw",
+          "leaf": "passages.sign-in-form",
+          "context": "Generic sign-in presentation: password",
+          "status": "draft",
+          "origin": "foundry-default",
+          "schema": "passages.sign-in-form",
+          "schemaDigest": "78c42d48736aeff4f94737dbc6323fff5f4da491ed5a42683fb7c43df5b92ede",
+          "fields": {
+            "header.heading": {
+              "ref": "string",
+              "id": "st.95zeepaj3s"
+            },
+            "header.description": {
+              "ref": "string",
+              "id": "st.ssn178aszz"
+            },
+            "providers[].label": {
+              "ref": "string",
+              "id": "st.hwhxwcp8va"
+            },
+            "credentials.identifierLabel": {
+              "ref": "string",
+              "id": "st.xdab0zvrxe"
+            },
+            "credentials.identifierPlaceholder": {
+              "ref": "string",
+              "id": "st.jkwc3bf7a1"
+            },
+            "credentials.passwordLabel": {
+              "ref": "string",
+              "id": "st.5mwk6kw75a"
+            },
+            "credentials.passwordPlaceholder": {
+              "ref": "string",
+              "id": "st.r2zee73zbp"
+            },
+            "verification.codeLabel": {
+              "ref": "string",
+              "id": "st.5rdfk8ec0a"
+            },
+            "verification.description": {
+              "ref": "string",
+              "id": "st.r0hc0s0q2f"
+            },
+            "verification.placeholder": {
+              "ref": "string",
+              "id": "st.bsg41z478g"
+            },
+            "actions.submit": {
+              "ref": "string",
+              "id": "st.f5ce2skzxv"
+            },
+            "actions.verify": {
+              "ref": "string",
+              "id": "st.mgd5wr0fbg"
+            },
+            "actions.pending": {
+              "ref": "string",
+              "id": "st.n7ccqemr5s"
+            },
+            "actions.back": {
+              "ref": "string",
+              "id": "st.an5ekdr18g"
+            },
+            "actions.resend": {
+              "ref": "string",
+              "id": "st.vfnx8ws1ey"
+            },
+            "actions.divider": {
+              "ref": "string",
+              "id": "st.68chnvkp9n"
+            },
+            "error.message": {
+              "ref": "string",
+              "id": "st.2swwt6xbat"
+            },
+            "error.identifier": {
+              "ref": "string",
+              "id": "st.n2hcsyy75c"
+            },
+            "error.password": {
+              "ref": "string",
+              "id": "st.jdjpkh8v5c"
+            },
+            "error.code": {
+              "ref": "string",
+              "id": "st.fzrwmkdh7t"
+            }
+          }
+        },
+        {
+          "id": "st.v6kx8tqt94",
+          "leaf": "strings.page-titles",
+          "context": "Generic sign-in copy: header.heading",
+          "status": "draft",
+          "origin": "foundry-default",
+          "text": "اختر وسيلة تسجيل الدخول"
+        },
+        {
+          "id": "st.j0ry9djty1",
+          "leaf": "strings.descriptions",
+          "context": "Generic sign-in copy: header.description",
+          "status": "draft",
+          "origin": "foundry-default",
+          "text": "تابع باستخدام وسيلة تسجيل الدخول للعمل."
+        },
+        {
+          "id": "ps.y7kr1epj81",
+          "leaf": "passages.sign-in-form",
+          "context": "Generic sign-in presentation: provider",
+          "status": "draft",
+          "origin": "foundry-default",
+          "schema": "passages.sign-in-form",
+          "schemaDigest": "78c42d48736aeff4f94737dbc6323fff5f4da491ed5a42683fb7c43df5b92ede",
+          "fields": {
+            "header.heading": {
+              "ref": "string",
+              "id": "st.v6kx8tqt94"
+            },
+            "header.description": {
+              "ref": "string",
+              "id": "st.j0ry9djty1"
+            },
+            "providers[].label": {
+              "ref": "string",
+              "id": "st.hwhxwcp8va"
+            },
+            "credentials.identifierLabel": {
+              "ref": "string",
+              "id": "st.xdab0zvrxe"
+            },
+            "credentials.identifierPlaceholder": {
+              "ref": "string",
+              "id": "st.jkwc3bf7a1"
+            },
+            "credentials.passwordLabel": {
+              "ref": "string",
+              "id": "st.5mwk6kw75a"
+            },
+            "credentials.passwordPlaceholder": {
+              "ref": "string",
+              "id": "st.r2zee73zbp"
+            },
+            "verification.codeLabel": {
+              "ref": "string",
+              "id": "st.5rdfk8ec0a"
+            },
+            "verification.description": {
+              "ref": "string",
+              "id": "st.r0hc0s0q2f"
+            },
+            "verification.placeholder": {
+              "ref": "string",
+              "id": "st.bsg41z478g"
+            },
+            "actions.submit": {
+              "ref": "string",
+              "id": "st.f5ce2skzxv"
+            },
+            "actions.verify": {
+              "ref": "string",
+              "id": "st.mgd5wr0fbg"
+            },
+            "actions.pending": {
+              "ref": "string",
+              "id": "st.n7ccqemr5s"
+            },
+            "actions.back": {
+              "ref": "string",
+              "id": "st.an5ekdr18g"
+            },
+            "actions.resend": {
+              "ref": "string",
+              "id": "st.vfnx8ws1ey"
+            },
+            "actions.divider": {
+              "ref": "string",
+              "id": "st.68chnvkp9n"
+            },
+            "error.message": {
+              "ref": "string",
+              "id": "st.2swwt6xbat"
+            },
+            "error.identifier": {
+              "ref": "string",
+              "id": "st.n2hcsyy75c"
+            },
+            "error.password": {
+              "ref": "string",
+              "id": "st.jdjpkh8v5c"
+            },
+            "error.code": {
+              "ref": "string",
+              "id": "st.fzrwmkdh7t"
+            }
+          }
+        },
+        {
+          "id": "st.ad06zwacrc",
+          "leaf": "strings.page-titles",
+          "context": "Generic sign-in copy: header.heading",
+          "status": "draft",
+          "origin": "foundry-default",
+          "text": "تحقق من تسجيل الدخول"
+        },
+        {
+          "id": "st.zv90y3hjbj",
+          "leaf": "strings.descriptions",
+          "context": "Generic sign-in copy: header.description",
+          "status": "draft",
+          "origin": "foundry-default",
+          "text": "أدخل رمز التحقق للمتابعة."
+        },
+        {
+          "id": "ps.f9s1dvfhgq",
+          "leaf": "passages.sign-in-form",
+          "context": "Generic sign-in presentation: verify",
+          "status": "draft",
+          "origin": "foundry-default",
+          "schema": "passages.sign-in-form",
+          "schemaDigest": "78c42d48736aeff4f94737dbc6323fff5f4da491ed5a42683fb7c43df5b92ede",
+          "fields": {
+            "header.heading": {
+              "ref": "string",
+              "id": "st.ad06zwacrc"
+            },
+            "header.description": {
+              "ref": "string",
+              "id": "st.zv90y3hjbj"
+            },
+            "providers[].label": {
+              "ref": "string",
+              "id": "st.hwhxwcp8va"
+            },
+            "credentials.identifierLabel": {
+              "ref": "string",
+              "id": "st.xdab0zvrxe"
+            },
+            "credentials.identifierPlaceholder": {
+              "ref": "string",
+              "id": "st.jkwc3bf7a1"
+            },
+            "credentials.passwordLabel": {
+              "ref": "string",
+              "id": "st.5mwk6kw75a"
+            },
+            "credentials.passwordPlaceholder": {
+              "ref": "string",
+              "id": "st.r2zee73zbp"
+            },
+            "verification.codeLabel": {
+              "ref": "string",
+              "id": "st.5rdfk8ec0a"
+            },
+            "verification.description": {
+              "ref": "string",
+              "id": "st.r0hc0s0q2f"
+            },
+            "verification.placeholder": {
+              "ref": "string",
+              "id": "st.bsg41z478g"
+            },
+            "actions.submit": {
+              "ref": "string",
+              "id": "st.f5ce2skzxv"
+            },
+            "actions.verify": {
+              "ref": "string",
+              "id": "st.mgd5wr0fbg"
+            },
+            "actions.pending": {
+              "ref": "string",
+              "id": "st.n7ccqemr5s"
+            },
+            "actions.back": {
+              "ref": "string",
+              "id": "st.an5ekdr18g"
+            },
+            "actions.resend": {
+              "ref": "string",
+              "id": "st.vfnx8ws1ey"
+            },
+            "actions.divider": {
+              "ref": "string",
+              "id": "st.68chnvkp9n"
+            },
+            "error.message": {
+              "ref": "string",
+              "id": "st.2swwt6xbat"
+            },
+            "error.identifier": {
+              "ref": "string",
+              "id": "st.n2hcsyy75c"
+            },
+            "error.password": {
+              "ref": "string",
+              "id": "st.jdjpkh8v5c"
+            },
+            "error.code": {
+              "ref": "string",
+              "id": "st.fzrwmkdh7t"
+            }
+          }
+        },
+        {
+          "id": "st.adahn5wqfc",
+          "leaf": "strings.navigation",
+          "context": "Authentication shell skip link",
+          "status": "draft",
+          "origin": "foundry-default",
+          "text": "تخطي إلى المحتوى الرئيسي"
+        },
+        {
+          "id": "st.k8ex60hhyq",
+          "leaf": "strings.errors",
+          "context": "Generic sign-in notice: identifier-required",
+          "status": "draft",
+          "origin": "foundry-default",
+          "text": "أدخل بريدك الإلكتروني."
+        },
+        {
+          "id": "st.gwa2av1dav",
+          "leaf": "strings.errors",
+          "context": "Generic sign-in notice: password-required",
+          "status": "draft",
+          "origin": "foundry-default",
+          "text": "أدخل كلمة المرور."
+        },
+        {
+          "id": "st.5309trf5mg",
+          "leaf": "strings.errors",
+          "context": "Generic sign-in notice: code-required",
+          "status": "draft",
+          "origin": "foundry-default",
+          "text": "أدخل الرمز."
+        },
+        {
+          "id": "st.vasejrmzb7",
+          "leaf": "strings.errors",
+          "context": "Generic sign-in notice: identifier-not-found",
+          "status": "draft",
+          "origin": "foundry-default",
+          "text": "لا يوجد حساب يطابق هذا البريد الإلكتروني. تحقق منه وحاول مرة أخرى."
+        },
+        {
+          "id": "st.wc5nvwqfa2",
+          "leaf": "strings.errors",
+          "context": "Generic sign-in notice: identifier-neutral",
+          "status": "draft",
+          "origin": "foundry-default",
+          "text": "تعذر متابعة تسجيل الدخول. تحقق من بياناتك وحاول مرة أخرى."
+        },
+        {
+          "id": "st.6qagkrjjnm",
+          "leaf": "strings.errors",
+          "context": "Generic sign-in notice: password-invalid",
+          "status": "draft",
+          "origin": "foundry-default",
+          "text": "كلمة المرور غير صحيحة. حاول مرة أخرى."
+        },
+        {
+          "id": "st.ck6fkjvv94",
+          "leaf": "strings.errors",
+          "context": "Generic sign-in notice: code-invalid",
+          "status": "draft",
+          "origin": "foundry-default",
+          "text": "الرمز غير صحيح أو انتهت صلاحيته. حاول مرة أخرى."
+        },
+        {
+          "id": "st.scr0ajmss1",
+          "leaf": "strings.errors",
+          "context": "Generic sign-in notice: rate-limited",
+          "status": "draft",
+          "origin": "foundry-default",
+          "text": "هناك محاولات كثيرة. انتظر بضع دقائق ثم حاول مرة أخرى."
+        },
+        {
+          "id": "st.y1hckfqphw",
+          "leaf": "strings.errors",
+          "context": "Generic sign-in notice: locked",
+          "status": "draft",
+          "origin": "foundry-default",
+          "text": "تم قفل هذا الحساب مؤقتًا بعد محاولات كثيرة. حاول مرة أخرى لاحقًا."
+        },
+        {
+          "id": "st.zy4zzz8bn9",
+          "leaf": "strings.errors",
+          "context": "Generic sign-in notice: network",
+          "status": "draft",
+          "origin": "foundry-default",
+          "text": "تعذر إكمال الاتصال. تحقق من اتصالك وحاول مرة أخرى."
+        },
+        {
+          "id": "st.v3508ndjd1",
+          "leaf": "strings.errors",
+          "context": "Generic sign-in notice: unavailable",
+          "status": "draft",
+          "origin": "foundry-default",
+          "text": "تسجيل الدخول غير متاح حاليًا. حاول مرة أخرى بعد بضع دقائق."
+        }
+      ],
+      "bindings": {
+        "ps.sign-in.password": {
+          "passageId": "ps.9t7hjr28jw",
+          "fields": {
+            "header.heading": {
+              "id": "st.95zeepaj3s"
+            },
+            "header.description": {
+              "id": "st.ssn178aszz"
+            },
+            "providers[].label": {
+              "id": "st.hwhxwcp8va"
+            },
+            "credentials.identifierLabel": {
+              "id": "st.xdab0zvrxe"
+            },
+            "credentials.identifierPlaceholder": {
+              "id": "st.jkwc3bf7a1"
+            },
+            "credentials.passwordLabel": {
+              "id": "st.5mwk6kw75a"
+            },
+            "credentials.passwordPlaceholder": {
+              "id": "st.r2zee73zbp"
+            },
+            "verification.codeLabel": {
+              "id": "st.5rdfk8ec0a"
+            },
+            "verification.description": {
+              "id": "st.r0hc0s0q2f"
+            },
+            "verification.placeholder": {
+              "id": "st.bsg41z478g"
+            },
+            "actions.submit": {
+              "id": "st.f5ce2skzxv"
+            },
+            "actions.verify": {
+              "id": "st.mgd5wr0fbg"
+            },
+            "actions.pending": {
+              "id": "st.n7ccqemr5s"
+            },
+            "actions.back": {
+              "id": "st.an5ekdr18g"
+            },
+            "actions.resend": {
+              "id": "st.vfnx8ws1ey"
+            },
+            "actions.divider": {
+              "id": "st.68chnvkp9n"
+            },
+            "error.message": {
+              "id": "st.2swwt6xbat"
+            },
+            "error.identifier": {
+              "id": "st.n2hcsyy75c"
+            },
+            "error.password": {
+              "id": "st.jdjpkh8v5c"
+            },
+            "error.code": {
+              "id": "st.fzrwmkdh7t"
+            }
+          }
+        },
+        "ps.sign-in.provider": {
+          "passageId": "ps.y7kr1epj81",
+          "fields": {
+            "header.heading": {
+              "id": "st.v6kx8tqt94"
+            },
+            "header.description": {
+              "id": "st.j0ry9djty1"
+            },
+            "providers[].label": {
+              "id": "st.hwhxwcp8va"
+            },
+            "credentials.identifierLabel": {
+              "id": "st.xdab0zvrxe"
+            },
+            "credentials.identifierPlaceholder": {
+              "id": "st.jkwc3bf7a1"
+            },
+            "credentials.passwordLabel": {
+              "id": "st.5mwk6kw75a"
+            },
+            "credentials.passwordPlaceholder": {
+              "id": "st.r2zee73zbp"
+            },
+            "verification.codeLabel": {
+              "id": "st.5rdfk8ec0a"
+            },
+            "verification.description": {
+              "id": "st.r0hc0s0q2f"
+            },
+            "verification.placeholder": {
+              "id": "st.bsg41z478g"
+            },
+            "actions.submit": {
+              "id": "st.f5ce2skzxv"
+            },
+            "actions.verify": {
+              "id": "st.mgd5wr0fbg"
+            },
+            "actions.pending": {
+              "id": "st.n7ccqemr5s"
+            },
+            "actions.back": {
+              "id": "st.an5ekdr18g"
+            },
+            "actions.resend": {
+              "id": "st.vfnx8ws1ey"
+            },
+            "actions.divider": {
+              "id": "st.68chnvkp9n"
+            },
+            "error.message": {
+              "id": "st.2swwt6xbat"
+            },
+            "error.identifier": {
+              "id": "st.n2hcsyy75c"
+            },
+            "error.password": {
+              "id": "st.jdjpkh8v5c"
+            },
+            "error.code": {
+              "id": "st.fzrwmkdh7t"
+            }
+          }
+        },
+        "ps.sign-in.verify": {
+          "passageId": "ps.f9s1dvfhgq",
+          "fields": {
+            "header.heading": {
+              "id": "st.ad06zwacrc"
+            },
+            "header.description": {
+              "id": "st.zv90y3hjbj"
+            },
+            "providers[].label": {
+              "id": "st.hwhxwcp8va"
+            },
+            "credentials.identifierLabel": {
+              "id": "st.xdab0zvrxe"
+            },
+            "credentials.identifierPlaceholder": {
+              "id": "st.jkwc3bf7a1"
+            },
+            "credentials.passwordLabel": {
+              "id": "st.5mwk6kw75a"
+            },
+            "credentials.passwordPlaceholder": {
+              "id": "st.r2zee73zbp"
+            },
+            "verification.codeLabel": {
+              "id": "st.5rdfk8ec0a"
+            },
+            "verification.description": {
+              "id": "st.r0hc0s0q2f"
+            },
+            "verification.placeholder": {
+              "id": "st.bsg41z478g"
+            },
+            "actions.submit": {
+              "id": "st.f5ce2skzxv"
+            },
+            "actions.verify": {
+              "id": "st.mgd5wr0fbg"
+            },
+            "actions.pending": {
+              "id": "st.n7ccqemr5s"
+            },
+            "actions.back": {
+              "id": "st.an5ekdr18g"
+            },
+            "actions.resend": {
+              "id": "st.vfnx8ws1ey"
+            },
+            "actions.divider": {
+              "id": "st.68chnvkp9n"
+            },
+            "error.message": {
+              "id": "st.2swwt6xbat"
+            },
+            "error.identifier": {
+              "id": "st.n2hcsyy75c"
+            },
+            "error.password": {
+              "id": "st.jdjpkh8v5c"
+            },
+            "error.code": {
+              "id": "st.fzrwmkdh7t"
+            }
+          }
+        }
+      },
+      "skipLink": {
+        "id": "st.adahn5wqfc"
+      },
+      "notices": {
+        "st.auth.error.identifier-required": {
+          "id": "st.k8ex60hhyq"
+        },
+        "st.auth.error.password-required": {
+          "id": "st.gwa2av1dav"
+        },
+        "st.auth.error.code-required": {
+          "id": "st.5309trf5mg"
+        },
+        "st.auth.error.identifier-not-found": {
+          "id": "st.vasejrmzb7"
+        },
+        "st.auth.error.identifier-neutral": {
+          "id": "st.wc5nvwqfa2"
+        },
+        "st.auth.error.password-invalid": {
+          "id": "st.6qagkrjjnm"
+        },
+        "st.auth.error.code-invalid": {
+          "id": "st.ck6fkjvv94"
+        },
+        "st.auth.error.rate-limited": {
+          "id": "st.scr0ajmss1"
+        },
+        "st.auth.error.locked": {
+          "id": "st.y1hckfqphw"
+        },
+        "st.auth.error.network": {
+          "id": "st.zy4zzz8bn9"
+        },
+        "st.auth.error.unavailable": {
+          "id": "st.v3508ndjd1"
+        }
+      }
+    }
+  }
+}

@@ -71,7 +71,14 @@ describe("S2-1 bounded section composition reconciliation", () => {
     // JSON.stringify hash measured from the full rows at da8a1f97; no Git dependency during tests.
     expect(createHash("sha256").update(JSON.stringify(original)).digest("hex"))
       .toBe("d1a62e7ae7211bfe8aea15f98cf0cb178c1b68ecdaab75e7411304c3a92009cd");
-    const additions = slots.filter(isWaveOne).sort((a, b) => a.id.localeCompare(b.id));
+    // Preserve the original contracts while allowing the three copy-only sign-in
+    // configurations covered by sections/sign-in-copy.test.tsx.
+    const signInConfigs = ["sign-in.password", "sign-in.provider", "sign-in.verify"];
+    const additions = slots.filter(isWaveOne).map(slot => slot.id === "sections.sign-in-form" ? {
+      ...slot, contract: { ...slot.contract, members: {
+        ...slot.contract.members, names: slot.contract.members.names.filter(name => !signInConfigs.includes(name)),
+      } },
+    } : slot).sort((a, b) => a.id.localeCompare(b.id));
     expect(additions.map(slot => slot.id)).toEqual(waveOneIds);
     expect(createHash("sha256").update(JSON.stringify(additions)).digest("hex"))
       .toBe("a78895cff6efbe018a34ac950942b243ab658102bbd2b09c87659c1422106cc2");
