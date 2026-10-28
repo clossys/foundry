@@ -1154,13 +1154,15 @@
     {
       "l2": "page-shells-documents",
       "leaves": [
-        "frames.site-shell"
+        "frames.site-shell",
+        "frames.document"
       ],
       "offers": [
         {
           "source": "foundry",
           "leaves": [
-            "frames.site-shell"
+            "frames.site-shell",
+            "frames.document"
           ],
           "reason": "no external covers"
         }

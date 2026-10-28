@@ -75,6 +75,7 @@ describe("designer Frame runtime renderers", () => {
     };
     const dataset = new Set(strings(specimenDataset));
     const records: Record<string, keyof typeof F> = {
+      "frames.document": "document",
       "frames.app-shell": "app", "frames.app-header": "appHeader", "frames.app-sidebar": "appSidebar", "frames.inspector": "inspector",
       "frames.sheet": "sheet", "frames.site-header": "siteHeader", "frames.site-footer": "siteFooter", "frames.command": "command",
     };

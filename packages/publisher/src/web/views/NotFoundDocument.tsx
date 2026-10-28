@@ -50,9 +50,9 @@ export function NotFoundDocument(props: NotFoundDocumentProps): ReactElement {
   if (legacy.reference != null) {
     throw new Error("NotFoundDocument: reference is for an error diagnostic; an unmatched address has none.");
   }
-  const { lang, documentTitle, icon, htmlClassName, stylesheets, shell, resolveCopy, resolveAsset, status, subtitle, action, notes, routes } = props;
+  const { lang, localeManifest, documentTitle, icon, htmlClassName, stylesheets, shell, resolveCopy, resolveAsset, status, subtitle, action, notes, routes } = props;
   return (
-    <StatusDocument component="NotFoundDocument" head={{ lang, documentTitle, icon, htmlClassName, stylesheets }} framed>
+    <StatusDocument component="NotFoundDocument" head={{ lang, localeManifest, documentTitle, icon, htmlClassName, stylesheets }} framed>
       <SiteFrame shell={shell} resolveCopy={resolveCopy} resolveAsset={resolveAsset}>
         <StatusView status={status} subtitle={subtitle} action={action} notes={notes} routes={routes} />
       </SiteFrame>

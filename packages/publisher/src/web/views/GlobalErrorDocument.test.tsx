@@ -73,6 +73,7 @@ const shell: SiteShellInput = {
 
 const head = {
   lang: "en",
+  localeManifest: { locales: [{ tag: "en", dir: "ltr" as const, state: "active" as const }] },
   documentTitle: { page: "Something went wrong", brand: "Example Studio" },
   icon: { href: "/icon.svg", type: "image/svg+xml" },
 };
@@ -238,6 +239,7 @@ describe("GlobalErrorDocument", () => {
       expect(root.hasAttribute("lang")).toBe(false);
       expect(root.hasAttribute("icon")).toBe(false);
       expect(root.hasAttribute("documenttitle")).toBe(false);
+      expect(root.hasAttribute("localemanifest")).toBe(false);
       expect(root.className).not.toContain("font-sans");
     });
   });
@@ -402,7 +404,7 @@ describe("README global-error example", () => {
     throw new Error(`Unexpected README example import: ${specifier}`);
   };
   // Run the actual documented component with the shared frame fixture, so its guard is tested rather than duplicated.
-  new Function("require", "exports", "frame", compiled.outputText)(requireExample, exports, { shell, resolveCopy, resolveAsset });
+  new Function("require", "exports", "frame", "localeManifest", compiled.outputText)(requireExample, exports, { shell, resolveCopy, resolveAsset }, head.localeManifest);
 
   it("renders an empty digest without a reference or an exception", () => {
     const error = Object.assign(new Error("fixture"), { digest: "" });

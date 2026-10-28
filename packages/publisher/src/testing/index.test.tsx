@@ -59,6 +59,7 @@ const notFound = (): ReactElement => (
 const globalError = (): ReactElement => (
   <GlobalErrorDocument
     lang="en"
+    localeManifest={{ locales: [{ tag: "en", dir: "ltr", state: "active" }] }}
     documentTitle={{ page: "Something went wrong", brand: "Example Studio" }}
     icon={{ href: "/icon.svg", type: "image/svg+xml" }}
     status={500}
@@ -150,6 +151,7 @@ describe("conforming surfaces", () => {
         render: () => (
           <GlobalErrorDocument
             lang="en"
+            localeManifest={{ locales: [{ tag: "en", dir: "ltr", state: "active" }] }}
             documentTitle={{ page: "Something went wrong", brand: "Example Studio" }}
             icon={{ href: "/icon.svg", type: "image/svg+xml" }}
             shell={shell}

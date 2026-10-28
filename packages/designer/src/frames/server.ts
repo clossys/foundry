@@ -8,6 +8,8 @@ export { RenderError, type RenderErrorReason } from "./site-frame/landing/intern
 export { AuthFrame } from "./AuthFrame.js";
 export type { AuthFrameProps } from "./AuthFrame.js";
 export { siteShellProps, renderSiteShell, siteShellRuntimeRenderer, siteShellRuntimeRenderers, siteShellRuntimePointers, siteShellRuntimeCallbacks, SITE_SHELL_RUNTIME_POINTER } from "../runtime/frames/site-shell.js";
+export { DocumentFrame, documentRenderer, renderDocument, FRAME_CRITICAL_STYLE_ATTRIBUTE } from "../runtime/frames/document.js";
+export type { DocumentFrameProps } from "../runtime/frames/document.js";
 
 import { lazy } from "react";
 /** The actual client AppFrame stays behind its existing use-client module boundary. */

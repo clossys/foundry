@@ -1,5 +1,53 @@
 [
   {
+    "id": "frames.document",
+    "layer": "frames",
+    "contract": {
+      "kind": "frame",
+      "root": "html",
+      "landmarks": [],
+      "slots": [
+        {
+          "id": "head",
+          "required": true,
+          "accepts": "host-node"
+        },
+        {
+          "id": "critical-css",
+          "required": false,
+          "accepts": "host-node"
+        },
+        {
+          "id": "body",
+          "required": true,
+          "accepts": "host-node"
+        }
+      ],
+      "members": {
+        "mode": "closed",
+        "names": [
+          "variant.page",
+          "variant.status"
+        ]
+      },
+      "statePorts": [],
+      "rendering": "server",
+      "breakpoints": [],
+      "layers": [],
+      "allowedReads": {
+        "tokens": [],
+        "assets": []
+      },
+      "composes": [
+        "frames.site-shell",
+        "frames.app-shell",
+        "frames.auth-shell"
+      ]
+    },
+    "requires": [],
+    "status": "draft"
+  },
+  {
     "id": "frames.site-shell",
     "layer": "frames",
     "contract": {

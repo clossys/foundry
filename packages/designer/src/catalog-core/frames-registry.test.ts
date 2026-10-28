@@ -19,7 +19,7 @@ interface FrameSlot {
 }
 const slots = slotData as unknown as readonly FrameSlot[];
 const placement = placementData as unknown as Placement;
-const expected = ["site-shell", "app-shell", "auth-shell", "site-header", "app-header", "app-sidebar", "inspector", "site-footer", "sheet", "command"];
+const expected = ["document", "site-shell", "app-shell", "auth-shell", "site-header", "app-header", "app-sidebar", "inspector", "site-footer", "sheet", "command"];
 const byId = (id: string): FrameContract => {
   const found = slots.find(slot => slot.id === `frames.${id}`);
   if (!found) throw new Error(`Missing frame ${id}`);
@@ -80,7 +80,7 @@ describe("draft frame registry", () => {
     expect(byId("app-header").layers).toEqual(["tokens.z-index.sticky"]);
   });
 
-  it("contains exactly the ten independent, unfrozen leaves", () => {
+  it("contains exactly the eleven independent, unfrozen leaves", () => {
     expect(slots.map(slot => slot.id)).toEqual(expected.map(id => `frames.${id}`));
     for (const slot of slots) {
       expect(SLOT_ID.test(slot.id)).toBe(true);
@@ -103,7 +103,7 @@ describe("draft frame registry", () => {
   });
 
   it("preserves the original nine frame rows exactly and registers the standalone auth shell", () => {
-    const original = slots.filter(slot => slot.id !== "frames.auth-shell");
+    const original = slots.filter(slot => slot.id !== "frames.auth-shell" && slot.id !== "frames.document");
     expect(original).toHaveLength(9);
     // JSON.stringify hash measured from the full rows at da8a1f97; no Git dependency during tests.
     expect(createHash("sha256").update(JSON.stringify(original)).digest("hex"))
@@ -169,8 +169,8 @@ describe("draft frame registry", () => {
   });
 
   it("records roots, server boundaries and ordered shell landmarks", () => {
-    expect(slots.map(slot => slot.contract.root)).toEqual(["div", "div", "div", "header", "header", "nav", "aside", "footer", "dialog", "dialog"]);
-    expect(slots.filter(slot => slot.contract.rendering === "server").map(slot => slot.id)).toEqual(["frames.site-shell", "frames.auth-shell", "frames.site-header", "frames.site-footer"]);
+    expect(slots.map(slot => slot.contract.root)).toEqual(["html", "div", "div", "div", "header", "header", "nav", "aside", "footer", "dialog", "dialog"]);
+    expect(slots.filter(slot => slot.contract.rendering === "server").map(slot => slot.id)).toEqual(["frames.document", "frames.site-shell", "frames.auth-shell", "frames.site-header", "frames.site-footer"]);
     expect(byId("site-shell").landmarks.map(item => item.role)).toEqual(["banner", "main", "contentinfo", "region"]);
     expect(byId("app-shell").landmarks.map(item => item.role)).toEqual(["banner", "navigation", "main", "complementary", "region"]);
     for (const { contract } of slots) for (const landmark of contract.landmarks) {

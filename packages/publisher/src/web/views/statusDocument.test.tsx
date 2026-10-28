@@ -45,6 +45,7 @@ const shell: SiteShellInput = {
 
 const head = {
   lang: "en",
+  localeManifest: { locales: [{ tag: "en", dir: "ltr" as const, state: "active" as const }] },
   documentTitle: { page: "Something went wrong", brand: "Example Studio" },
   icon: { href: "/icon.svg", type: "image/svg+xml" },
 };
