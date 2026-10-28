@@ -83,9 +83,9 @@ describe("system-canvas copy hand-roll", () => {
   it("names the missing IA display-name binding rather than rendering raw graph names", () => {
     const labels = createRouteStudioLabels(binding);
     expect(() => render(<SystemCanvas copy={binding} data={{ placements: [{ layer: "components", nodes: [
-      { id: "actions", label: "Actions", children: [{ id: "buttons", label: "Buttons", leaves: ["components.button"] }] },
+      { id: "actions", label: "Actions", children: [{ id: "buttons", label: "Buttons", leaves: ["components.fixture-missing"] }] },
     ] }] }} labels={{ label: labels.canvas.label, hint: labels.canvas.hint, breadcrumb: labels.inspector.relation, layers: labels.layers }} />))
-      .toThrow("studio.ia.item.components.button");
+      .toThrow("studio.ia.item.components.fixture-missing");
   });
 
   it("names missing inspector path and finding messages without inventing a message record", () => {
