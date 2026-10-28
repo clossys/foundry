@@ -5,7 +5,7 @@ import type { WriterLayer } from "./index.js";
 const base = (prefix = "st", leaf = "strings.button-label") => ({
   id: `${prefix}.0123456789`, leaf, context: "Example", status: "draft", origin: "authored",
 });
-const manifest = () => ({ consumer: "example", defaultLocale: "en", locales: [{ tag: "en", dir: "ltr", state: "active" }], fallback: {}, strategist: { path: "strategy" }, leafFreeze: { lexicon: "a", strings: "b", patterns: "c", passages: "d", narratives: "e" } });
+const manifest = () => ({ consumer: "example", messageSyntax: "icu-mf1", defaultLocale: "en", locales: [{ tag: "en", dir: "ltr", state: "active" }], fallback: {}, strategist: { path: "strategy" }, leafFreeze: { lexicon: "a", strings: "b", patterns: "c", passages: "d", narratives: "e" } });
 
 describe("Writer WR1 shapes", () => {
   it("accepts a manifest without verifying freeze signatures or fallback resolution", () => {
@@ -15,6 +15,50 @@ describe("Writer WR1 shapes", () => {
     const value = manifest();
     expect(validateWriterManifest({ ...value, strategist: { path: "x", extra: true } }, "writer.json")).toContainEqual(expect.objectContaining({ code: "WR1", path: "writer.json.strategist.extra" }));
     expect(validateWriterManifest({ ...value, defaultLocale: "fr", locales: [...value.locales, { tag: "EN", dir: "ltr", state: "active" }, { tag: "bad_tag", dir: "ltr", state: "active" }] }).length).toBeGreaterThanOrEqual(3);
+  });
+  it("requires the ICU MessageFormat 1 syntax contract", () => {
+    const { messageSyntax: _messageSyntax, ...missingSyntax } = manifest();
+    expect(validateWriterManifest(missingSyntax)).toContainEqual({ code: "WR1", path: "writer.json.messageSyntax", message: "Required field" });
+    for (const messageSyntax of ["icu-mf2", "plain", null]) {
+      expect(validateWriterManifest({ ...manifest(), messageSyntax })).toContainEqual(expect.objectContaining({ code: "WR1", path: "writer.json.messageSyntax" }));
+    }
+  });
+  it("names noncanonical locale findings in every manifest locale position", () => {
+    const value = {
+      ...manifest(), defaultLocale: "en-us", locales: [{ tag: "en-us", dir: "ltr", state: "active" }],
+      fallback: { "en-us": ["en-gb"] },
+    };
+    const issues = validateWriterManifest(value);
+    for (const path of ["writer.json.defaultLocale", "writer.json.locales[0].tag", "writer.json.fallback.en-us", "writer.json.fallback.en-us[0]"]) {
+      expect(issues).toContainEqual(expect.objectContaining({ code: "WR1", path, message: expect.stringMatching(/^non-canonical-locale:/) }));
+    }
+  });
+  it("names invalid locales in every manifest locale position", () => {
+    const value = {
+      ...manifest(), defaultLocale: "bad_tag", locales: [{ tag: "bad_tag", dir: "ltr", state: "active" }],
+      fallback: { bad_tag: ["bad_tag"] },
+    };
+    const issues = validateWriterManifest(value);
+    for (const path of ["writer.json.defaultLocale", "writer.json.locales[0].tag", "writer.json.fallback.bad_tag", "writer.json.fallback.bad_tag[0]"]) {
+      expect(issues).toContainEqual(expect.objectContaining({ code: "WR1", path, message: expect.stringMatching(/^locale:/) }));
+    }
+  });
+  it("accepts canonical locales and explicit pseudo locale states", () => {
+    expect(validateWriterManifest({
+      ...manifest(), defaultLocale: "en-US",
+      locales: [{ tag: "en-US", dir: "ltr", state: "active" }, { tag: "en-XA", dir: "ltr", state: "pseudo" }, { tag: "ar-XB", dir: "rtl", state: "pseudo" }],
+      fallback: { "en-XA": ["en-US"], "ar-XB": ["en-US"] },
+    })).toEqual([]);
+  });
+  it("names an Arabic direction mismatch when Intl provides text direction", () => {
+    const locale = new Intl.Locale("ar") as Intl.Locale & { getTextInfo?: () => { direction: string }; textInfo?: { direction: string } };
+    const direction = typeof locale.getTextInfo === "function" ? locale.getTextInfo().direction : locale.textInfo?.direction;
+    const issues = validateWriterManifest({ ...manifest(), defaultLocale: "ar", locales: [{ tag: "ar", dir: "ltr", state: "active" }] });
+    if (direction === "rtl") {
+      expect(issues).toContainEqual({ code: "WR1", path: "writer.json.locales[0].dir", message: "locale-direction: Expected rtl for ar" });
+    } else {
+      expect(issues).toEqual([]);
+    }
   });
   it("validates IDs and the expected layer independently", () => {
     expect(validateWriterRecord({ ...base(), text: "{bad ICU" }, "strings")).toEqual([]);

@@ -1,3 +1,5 @@
+import { canonicalLocale } from "@clossys/writer/locale";
+
 /** Runtime vocabularies shared by stored content and structural validators. */
 export const CANDIDATE_STATES = Object.freeze(["draft", "in-review", "approved", "active", "retired"] as const);
 export const CANDIDATE_ORIGINS = Object.freeze(["agent-draft", "alternative", "rewrite", "imported"] as const);
@@ -16,11 +18,11 @@ export function isRevisionId(value: unknown): value is RevisionId {
   return typeof value === "string" && /^r[1-9][0-9]*$/.test(value);
 }
 
-/** Validate a locale tag without rewriting the stored selection. */
+/** Stored locale keys use the shared canonical Writer spelling. */
 export function isContentLocale(value: unknown): value is string {
   if (typeof value !== "string" || !value) return false;
   try {
-    return Intl.getCanonicalLocales(value).length === 1;
+    return canonicalLocale(value) === value;
   } catch {
     return false;
   }

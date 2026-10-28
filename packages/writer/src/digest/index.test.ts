@@ -11,7 +11,7 @@ const record = (id: WriterRecord["id"], status: "draft" | "approved" | "retired"
 });
 const library = (): WriterLibrary => ({
   manifest: {
-    consumer: "example", defaultLocale: "en", locales: [
+    consumer: "example", messageSyntax: "icu-mf1", defaultLocale: "en", locales: [
       { tag: "en", dir: "ltr", state: "active" }, { tag: "fr", dir: "ltr", state: "planned" },
     ], fallback: { fr: ["en"] }, strategist: { path: "../strategist" },
     leafFreeze: { lexicon: "one", strings: "two", patterns: "three", passages: "four", narratives: "five" },

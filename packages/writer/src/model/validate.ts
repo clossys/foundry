@@ -1,5 +1,6 @@
 import { isValidWriterLeafId, WRITER_LAYERS, type WriterLayer } from "../catalog-core/ids.js";
 import { loadWriterCatalog } from "../catalog/ia/index.js";
+import { canonicalLocale, intlDirectionFor } from "../locale.js";
 import type { WriterShapeIssue } from "./types.js";
 
 type Obj = Record<string, unknown>;
@@ -33,8 +34,10 @@ class Shape {
   id(prefix?: string): Check { return (v, p) => { if (typeof v !== "string" || RECORD_ID.exec(v)?.[0] !== v || (prefix !== undefined && !v.startsWith(`${prefix}.`))) this.issue(p, `Expected a ${prefix ?? "Writer"} record ID with ten lowercase Crockford characters`); }; }
   leaf(layer?: WriterLayer): Check { return (v, p) => { if (!isValidWriterLeafId(v) || (layer !== undefined && !v.startsWith(`${layer}.`))) this.issue(p, `Expected a ${layer ?? "Writer"} leaf ID`); }; }
   locale: Check = (v, p) => {
-    if (typeof v !== "string" || /^[a-zA-Z]{2,8}(?:-[a-zA-Z0-9]{1,8})*$/.exec(v)?.[0] !== v) { this.issue(p, "Expected a BCP 47 locale tag"); return; }
-    try { Intl.getCanonicalLocales(v); } catch { this.issue(p, "Expected a BCP 47 locale tag"); }
+    try {
+      const canonical = canonicalLocale(v);
+      if (canonical !== v) this.issue(p, `non-canonical-locale: Expected ${canonical}`);
+    } catch { this.issue(p, "locale: Expected a BCP 47 locale tag"); }
   };
   asset(): Check { return this.fields({ assetId: this.string, libraryVersion: this.string }); }
   common(layer: WriterLayer): Record<string, Check> {
@@ -65,8 +68,8 @@ class Shape {
 export function validateWriterManifest(value: unknown, path = "writer.json"): WriterShapeIssue[] {
   const s = new Shape();
   s.obj(value, path, {
-    consumer: s.string, defaultLocale: s.locale,
-    locales: s.array(s.fields({ tag: s.locale, dir: s.one("ltr", "rtl"), state: s.one("active", "planned") })),
+    consumer: s.string, messageSyntax: s.one("icu-mf1"), defaultLocale: s.locale,
+    locales: s.array(s.fields({ tag: s.locale, dir: s.one("ltr", "rtl"), state: s.one("active", "planned", "pseudo") })),
     fallback: (v, p) => { if (!object(v)) { s.issue(p, "Expected a fallback map"); return; } for (const [tag, fallbacks] of Object.entries(v)) { s.locale(tag, `${p}.${tag}`); s.array(s.locale)(fallbacks, `${p}.${tag}`); } },
     strategist: s.fields({ path: s.string }), leafFreeze: s.fields(Object.fromEntries(WRITER_LAYERS.map(layer => [layer, s.string]))),
   });
@@ -77,6 +80,14 @@ export function validateWriterManifest(value: unknown, path = "writer.json"): Wr
       const tag = locale.tag.toLowerCase();
       if (tags.has(tag)) s.issue(`${path}.locales[${i}].tag`, "Locale tags must be unique");
       tags.add(tag);
+      let canonical: string;
+      try { canonical = canonicalLocale(locale.tag); } catch { return; }
+      if (canonical === locale.tag) {
+        const direction = intlDirectionFor(locale.tag);
+        if (direction !== undefined && (locale.dir === "ltr" || locale.dir === "rtl") && locale.dir !== direction) {
+          s.issue(`${path}.locales[${i}].dir`, `locale-direction: Expected ${direction} for ${locale.tag}`);
+        }
+      }
     });
     if (typeof value.defaultLocale === "string" && !tags.has(value.defaultLocale.toLowerCase())) s.issue(`${path}.defaultLocale`, "Default locale must be declared in locales");
   }

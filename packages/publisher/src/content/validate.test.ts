@@ -42,9 +42,12 @@ describe("content records", () => {
     value.slots[0].locales = ["fr-CA"];
     expect(validateContentRegistry(value)).toEqual([]);
     value.workspace.defaultLocale = "en-us";
+    expect(validateContentRegistry(value).some(f => f.rule === "non-canonical-locale")).toBe(true);
     expect(validateContentRegistry(value).some(f => f.rule === "default-locale-membership")).toBe(true);
     value.workspace.defaultLocale = "en-US";
     value.slots[0].locales = ["fr-ca"];
+    expect(validateContentRegistry(value).some(f => f.rule === "non-canonical-locale")).toBe(true);
+    value.slots[0].locales = ["de"];
     expect(validateContentRegistry(value).some(f => f.rule === "workspace-locale")).toBe(true);
   });
   it.each(["builder", "messenger", "influencer"])("accepts %s destinations", kind => {

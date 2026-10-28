@@ -76,7 +76,8 @@ describe("exact-locale Writer copy resolution", () => {
     expect(resolveCopy({ composition }, "en")).toEqual({ intro: { title: "" } });
     expect(resolveCopy({ composition }, "en-US")).toEqual({ intro: {} });
     composition.sections[0]!.fields[0]!.locale = "en-US";
-    expect(resolveCopy({ composition }, "en-us")).toEqual({ intro: {} });
+    expect(() => resolveCopy({ composition }, "en-us")).toThrow(TypeError);
+    expect(resolveCopy({ composition }, "en-GB")).toEqual({ intro: {} });
     expect(resolveCopy({}, "en")).toEqual({});
   });
   it("treats prototype-shaped keys as ordinary own data", () => {
@@ -107,7 +108,8 @@ describe("page metadata Writer copy", () => {
     expect(resolveCopy(candidate, "en")).toEqual({ intro: { title: "Sample title" }, [PAGE_META_KEY]: { title: "Page title", description: "" } });
     expect(resolveCopy(candidate, "fr")).toEqual({ intro: {}, [PAGE_META_KEY]: { title: "Titre de page" } });
     expect(resolveCopy(candidate, "en-US")).toEqual({ intro: {}, [PAGE_META_KEY]: { "share-text": "Share" } });
-    expect(resolveCopy(candidate, "en-us")).toEqual({ intro: {}, [PAGE_META_KEY]: {} });
+    expect(() => resolveCopy(candidate, "en-us")).toThrow(TypeError);
+    expect(resolveCopy(candidate, "en-GB")).toEqual({ intro: {}, [PAGE_META_KEY]: {} });
     expect(resolveCopy(candidate, "de")).toEqual({ intro: {}, [PAGE_META_KEY]: {} });
     expect(candidate).toEqual(before);
   });

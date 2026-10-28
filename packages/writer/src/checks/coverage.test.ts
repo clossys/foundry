@@ -11,7 +11,7 @@ function library(): WriterLibrary {
   const records: WriterRecord[] = [sourceString(), sourcePattern()];
   const translated: WriterRecord[] = records.map(record => ({ ...record, translation: { sourceFingerprint: writerRecordFingerprint(record, records), fingerprintAlgorithm: COPY_FINGERPRINT_ALGORITHM, translatedAt: "2026-01-01T00:00:00Z" } }));
   const files = [{ path: "strings/common.json", recordIds: [records[0]!.id] }, { path: "patterns/common.json", recordIds: [records[1]!.id] }];
-  return { manifest: { consumer: "example", defaultLocale: "en", locales: [{ tag: "en", dir: "ltr", state: "active" }, { tag: "fr", dir: "ltr", state: "active" }], fallback: { fr: ["en"] }, strategist: { path: "strategy" }, leafFreeze: { lexicon: "a", strings: "b", patterns: "c", passages: "d", narratives: "e" } }, locales: { en: { records, documents: [], files: structuredClone(files) }, fr: { records: translated, documents: [], files: structuredClone(files) } } };
+  return { manifest: { consumer: "example", messageSyntax: "icu-mf1", defaultLocale: "en", locales: [{ tag: "en", dir: "ltr", state: "active" }, { tag: "fr", dir: "ltr", state: "active" }], fallback: { fr: ["en"] }, strategist: { path: "strategy" }, leafFreeze: { lexicon: "a", strings: "b", patterns: "c", passages: "d", narratives: "e" } }, locales: { en: { records, documents: [], files: structuredClone(files) }, fr: { records: translated, documents: [], files: structuredClone(files) } } };
 }
 
 describe("Writer WR10 declared locale coverage", () => {
