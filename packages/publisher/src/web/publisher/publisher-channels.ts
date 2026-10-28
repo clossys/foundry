@@ -1,3 +1,4 @@
+import { routeInstanceBinding } from "../../core/route-identities.js";
 import { PUBLISHER_MENU } from "../../planning/menu.js";
 import type { MilestoneId, PublisherMenuItem } from "../../planning/menu.js";
 import type { PublisherPlanDraft, PublisherPlanItem } from "../../planning/plan.js";
@@ -114,7 +115,7 @@ export function projectPublisherChannelProcess(rows: readonly PublisherChannelIt
       const stageNames = row.item.appRouteId ? APP_STAGES : PUBLISH_STAGES;
       const stages: readonly PublisherProcessStage[] = row.route ? stageNames.map(name => ({ name, status: "pending", reasons: row.route!.pending })) : entry ? entry.stages.map(stage => ({ ...stage, status: configured ? stage.status : "pending", reasons: configured ? stage.reasons : ["Waiting for parent Configure"] })) : web ? web.stages.map(stage => ({ name: stage.name, status: configured ? stage.status : "pending", reasons: configured ? [...stage.findings.map(finding => `${finding.code} ${finding.path}: ${finding.message}`), ...stage.pending] : ["Waiting for Configure"] })) : stageNames.map(name => ({ name, status: "pending", reasons: [row.menu.status === "concept-only" ? "Concept only · renderer unavailable" : "Adopted source binding unavailable"] }));
       const state = !input.aligned ? "proposed" : row.route ? "needs input" : row.channel === "admin" ? "needs input" : entry?.state ?? web?.state ?? (row.menu.status === "concept-only" ? "planned" : "needs input");
-      const binding = row.route?.registration.composition.binding ?? entry?.pipeline?.binding ?? web?.binding;
+      const binding = routeInstanceBinding(row.route?.registration) ?? entry?.pipeline?.binding ?? web?.binding;
       const column = !configured ? "Configure" : stages.find(stage => !["Ready", "Export", "Deploy"].includes(stage.name) && stage.status !== "passed")?.name ?? "Ready";
       items.push({ id: child ? `${row.item.id}/route/${entry!.route.id}` : row.item.id, row,
         label: row.route?.registration.title ?? entry?.route.label ?? web?.binding.label ?? row.menu.label,

@@ -4,7 +4,7 @@ import { join, resolve } from "node:path";
 import { createHash } from "node:crypto";
 import type { WiringCheckedProvider, WiringRoutes } from "@clossys/designer/catalog";
 import { routeProviderMount, routeSourcePath } from "../core/route-registry.js";
-import type { RouteRegistry } from "../core/route-registry.js";
+import type { LegacyRouteRegistry as RouteRegistry } from "../core/route-registry.js";
 import { checkRegisteredRoutes, parseRegisteredRouteContract } from "./registered-route-check.js";
 import type { RegisteredRouteCheckInput } from "./registered-route-check.js";
 import { emitRegisteredRoutePage } from "./registered-route-source.js";

@@ -13,7 +13,7 @@ import { Component, type ReactNode } from "react";
 import { EmptyState } from "@clossys/designer/blocks";
 import type { RuntimeCell } from "@clossys/designer/catalog";
 import type { InstanceBinding } from "../../core/instance-binding.js";
-import type { RouteRegistration, RouteRegistry } from "../../core/route-registry.js";
+import type { LegacyRouteRegistration as RouteRegistration, LegacyRouteRegistry as RouteRegistry } from "../../core/route-registry.js";
 import type { PreparedRegisteredRoute } from "../registered-route-binding.js";
 import { PreviewViewport } from "../layouts/preview/PreviewViewport.js";
 

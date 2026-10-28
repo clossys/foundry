@@ -1,7 +1,7 @@
 import type { CompositeEngineInput, RuntimeAssemblyIdentity } from "@clossys/designer/catalog";
 import { libraryHash, resolve, runtimeHash } from "@clossys/designer/catalog";
 import { routeCompositionDigest, routeRegistryDigest } from "./route-registry.js";
-import type { RouteRegistration, RouteRegistry } from "./route-registry.js";
+import type { LegacyRouteRegistration as RouteRegistration, RouteRegistry } from "./route-registry.js";
 import { currentRouteRuntimeMaterialization } from "./route-runtime.js";
 import type { RouteRuntimeMaterialization } from "./route-runtime.js";
 export interface RegisteredRouteSourceEvidence { readonly routeId: string; readonly registry: `sha256:${string}`; readonly composition: `sha256:${string}`; readonly identity: Extract<RuntimeAssemblyIdentity, { kind: "git" }>; readonly files: Readonly<Record<string, `sha256:${string}`>>; readonly planDigest?: string; readonly materialization?: string; readonly styling?: { readonly profile: string; readonly manifest: string; readonly css: Readonly<Record<string, `sha256:${string}`>> }; }

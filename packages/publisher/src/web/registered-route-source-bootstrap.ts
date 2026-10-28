@@ -1,6 +1,6 @@
 import { rematerializeRegisteredRouteSourceEvidence } from "../core/route-source-evidence.js";
 import type { RegisteredRouteSourceRematerialization } from "../core/route-source-evidence.js";
-import type { RouteRegistry } from "../core/route-registry.js";
+import type { LegacyRouteRegistry as RouteRegistry } from "../core/route-registry.js";
 import type { RouteRuntimeMaterialization } from "../core/route-runtime.js";
 import { materializeRegisteredDesignerRoute } from "./registered-route-query.js";
 import type { RegisteredRouteRuntime } from "./registered-route-binding.js";

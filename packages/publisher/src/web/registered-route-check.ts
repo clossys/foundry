@@ -19,7 +19,7 @@ import type { InstanceRegistries } from "../core/instance-binding.js";
 import type { PublisherPlanDraft } from "../planning/plan.js";
 import type { PublisherPlanVersion } from "../planning/change-set.js";
 import { projectRouteRegistry, routeProviderMount, routeServerLoader, routeSourcePath } from "../core/route-registry.js";
-import type { RouteProviderMount, RouteRegistry, RouteSourceExport } from "../core/route-registry.js";
+import type { RouteProviderMount, LegacyRouteRegistry as RouteRegistry, RouteSourceExport } from "../core/route-registry.js";
 import { emitRegisteredRouteAdapter, emitRegisteredRoutePage, emitRegisteredRouteRegistryModule, registeredRouteRegistryPlacement } from "./registered-route-source.js";
 export { emitCompleteRoutePage, emitRegisteredRouteAdapter, emitRegisteredRoutePage, emitRegisteredRouteRegistryModule, registeredRouteRegistryPlacement } from "./registered-route-source.js";
 import { isCurrentRegisteredRouteSourceEvidence, recordRegisteredRouteSourceEvidence, registeredRouteSourceBootstrap } from "../core/route-source-evidence.js";

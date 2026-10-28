@@ -1,3 +1,4 @@
+import { completeRouteKind, routeInstanceBinding } from "../../core/route-identities.js";
 import type { InstanceBinding, InstanceRegistries } from '../../core/instance-binding.js';
 import type { PublisherPlanDraft } from '../../planning/plan.js';
 import type { PublisherPlanVersion } from '../../planning/change-set.js';
@@ -65,13 +66,13 @@ export function projectPublisherSections(input: PublisherSectionsInput): readonl
   const registered = (row: PublisherChannelItem) => row.route;
   const exactRegistration = (row: PublisherChannelItem) => {
     if (!row.route) return true;
-    const { registration, owner, findings } = row.route, binding = registration.composition.binding;
+    const { registration, owner, findings } = row.route, binding = routeInstanceBinding(registration);
     const owners = planOwners.filter(owner => owner.item === row.item && owner.packId === row.packId && owner.milestone === row.milestone);
     return owners.length === 1 && row.route.item === row.item && registration.planItemId === row.item.id && registration.routeId === row.item.appRouteId
       && registration.channel === row.channel && owner?.packId === row.packId && owner.milestone === row.milestone
-      && binding.path === registration.path && binding.packIds.includes(row.packId) && !findings.length
+      && !findings.length && (!binding ? completeRouteKind(registration) !== undefined : binding.path === registration.path && binding.packIds.includes(row.packId)
       && (!row.item.frame || row.item.frame.leaf === binding.frame.leaf && row.item.frame.config === binding.frame.config)
-      && (!row.item.layout || row.item.layout.leaf === binding.layout?.leaf && row.item.layout.config === binding.layout?.config);
+      && (!row.item.layout || row.item.layout.leaf === binding.layout?.leaf && row.item.layout.config === binding.layout?.config));
   };
   const webItem = (row: PublisherChannelItem) => row.route ? undefined : input.webItems.find(item => item.binding.instanceId === row.item.instanceId);
   const appItem = (row: PublisherChannelItem) => row.route ? undefined : input.appItems.find(item => item.route.id === row.item.appRouteId);
@@ -91,12 +92,12 @@ export function projectPublisherSections(input: PublisherSectionsInput): readonl
   out.push(table('P1', `${active.label} milestones`, ['milestone','label','count','alignment'], PUBLISHER_MILESTONES.map(milestone => ({ id: milestone.id, cells: { milestone: action(milestone.id, { kind: 'select-milestone', milestoneId: milestone.id }), label: text(milestone.label), count: text(eligibleRows.filter(row => row.milestone === milestone.id).length), alignment: text(`${input.plan?.status ?? 'draft'} v${input.plan?.version ?? 0}`) } })), { selectedId: input.plan?.currentMilestone }));
   out.push(table('P2', `${active.label} delivery items`, ['item','lane','parent','host-ref','output-format','state','first-blocker', ...process.stages, 'export','deploy','pack','milestone'], processItems.filter(item => !input.commerceOnly || item.row.facets.includes('commerce')).map(item => {
     const row = item.row, config = configuration(row), delivery = derivePublisherDeliveryState(config, input.registries);
-    return { id: item.id, cells: { item: action(item.label, { kind: 'select-item', itemId: item.id }), lane: text(row.item.lane), parent: text(item.parentSubrowId ?? item.parentId), 'host-ref': text(item.path ?? row.item.instanceId ?? row.item.appRouteId), 'output-format': text(row.route?.registration.composition.binding.format ?? (config && 'format' in config ? config.format : undefined)), state: text(item.state), 'first-blocker': text(item.column), ...Object.fromEntries(item.stages.map(stage => [stage.name, text(`${stage.status}${stage.reasons.length ? ` · ${stage.reasons.join('; ')}` : ''}`)])), export: text(delivery.export), deploy: text(delivery.deploy), pack: text(row.route?.owner?.packId ?? row.packId), milestone: text(row.route?.owner?.milestone ?? row.milestone) } };
+    return { id: item.id, cells: { item: action(item.label, { kind: 'select-item', itemId: item.id }), lane: text(row.item.lane), parent: text(item.parentSubrowId ?? item.parentId), 'host-ref': text(item.path ?? row.item.instanceId ?? row.item.appRouteId), 'output-format': text(routeInstanceBinding(row.route?.registration)?.format ?? (config && 'format' in config ? config.format : undefined)), state: text(item.state), 'first-blocker': text(item.column), ...Object.fromEntries(item.stages.map(stage => [stage.name, text(`${stage.status}${stage.reasons.length ? ` · ${stage.reasons.join('; ')}` : ''}`)])), export: text(delivery.export), deploy: text(delivery.deploy), pack: text(row.route?.owner?.packId ?? row.packId), milestone: text(row.route?.owner?.milestone ?? row.milestone) } };
   }), { grouping: 'lane', selectedId: input.selectedItemId, toolbar: active.items.some(row => row.facets.includes('commerce')) ? [action('Commerce', { kind: 'toggle-commerce' })] : [] }));
   const selectedProcess = processItems.find(item => item.id === input.selectedItemId);
   const selected = selectedProcess?.row;
   if (selected) {
-    const registration = selected.route, registeredBinding = exactRegistration(selected) ? registration?.registration.composition.binding : undefined;
+    const registration = selected.route, registeredBinding = exactRegistration(selected) ? routeInstanceBinding(registration?.registration) : undefined;
     const sourceRoute = selectedProcess?.app?.route ?? route(selected), web = selectedProcess?.web ?? webItem(selected), app = selectedProcess?.app ?? appItem(selected), pipeline = web ?? app?.pipeline;
     const settings = input.settings[registeredBinding?.instanceId ?? selected.item.instanceId ?? sourceRoute?.parentRecordRoute ?? sourceRoute?.id ?? ''];
     const config = configuration(selected), format = input.registries.formats.find(format => config && 'format' in config && format.id === config.format);

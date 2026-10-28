@@ -1,6 +1,6 @@
 import type { InstanceBinding, InstanceRegistries } from "../core/instance-binding.js";
 import { projectRouteRegistry } from "../core/route-registry.js";
-import type { RouteRegistration, RouteRegistry } from "../core/route-registry.js";
+import type { LegacyRouteRegistration as RouteRegistration, LegacyRouteRegistry as RouteRegistry } from "../core/route-registry.js";
 import { createPublisherPlanDraft } from "../planning/plan.js";
 import type { PublisherPlanDraft } from "../planning/plan.js";
 import { PublisherPlanStore } from "../planning/change-set.js";

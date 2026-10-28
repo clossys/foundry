@@ -7,8 +7,8 @@ import { readFile } from "node:fs/promises";
 import { publisherCopyFixtureResolver } from "./publisher/__fixtures__/writer-copy.js";
 import userEvent from "@testing-library/user-event";
 import { DesignerRoutePage, PublisherRoutePage, WriterRoutePage, type WriterRouteServerData } from "@clossys/publisher/web/registered-route";
-import { SHELL_COPY_REFS } from "@clossys/designer/frames";
-import { getAdminCopy, type AdminCopy } from "@clossys/writer/admin-copy";
+import { ShellCopyProvider, SHELL_COPY_REFS } from "@clossys/designer/frames";
+import { getAdminCopy, resolveAdminCopyRef, type AdminCopy } from "@clossys/writer/admin-copy";
 import { WRITER_COPY_REFS } from "./writer/copy.js";
 import { emitCompleteRoutePage } from "./registered-route-source.js";
 import { createWholeStudioInitialSession } from "@clossys/designer/studio/queries";
@@ -240,4 +240,75 @@ it("refuses Writer's unselected Sections, foreign sessions, executable data and 
   expect(view.container.querySelector('[data-route-display="writer"]')).toBeNull(); cleanup();
   const missing = { ...writer, writer: { copy: { ...writer.writer.copy, records: writer.writer.copy.records.filter(record => record.id !== WRITER_COPY_REFS.records.id) } } };
   expect(() => renderToString(<WriterRoutePage serverData={missing} initialSession={initialSession} />)).toThrow(`Writer copy Need: ${WRITER_COPY_REFS.records.id}`);
+});
+
+// Registry-backed complete pages share Publisher's data projection; the original
+// Designer frame consumes exactly its supported sidebar tree/activeId fields.
+it.each(["designer", "writer", "publisher"] as const)("carries the complete registry nav through the %s page's original frame", async kind => {
+  environment();
+  const { completeRoutes } = await import("../core/__fixtures__/complete-routes.js");
+  const registry = { ...completeRoutes(), consumer: data.snapshot.library.source.id };
+  const routeNavigation = { registry, routeId: `example.${kind}` };
+  const resolver = (ref: Parameters<typeof resolveAdminCopyRef>[0]) => {
+    const value = resolveAdminCopyRef(ref) ?? publisherCopyFixtureResolver(ref);
+    return value && { ...value, ref };
+  };
+  // Later Writer metadata owns finding references that the original Designer
+  // binding deliberately asks its host to supply through messages.
+  const messages = Object.fromEntries(getAdminCopy().records.filter(record => record.context.startsWith("designer.")).map(record => [record.context, { id: record.id }]));
+  const serverData = { ...data, routeNavigation };
+  const view = kind === "designer"
+    ? render(<ShellCopyProvider resolver={resolver}><DesignerRoutePage serverData={serverData} initialSession={initialSession} copy={{ locale: "en", resolver, messages }} /></ShellCopyProvider>)
+    : kind === "writer" ? render(<WriterRoutePage serverData={{ ...writerData(), routeNavigation }} initialSession={initialSession} />)
+    : render(<PublisherRoutePage serverData={{ ...serverData, publisher: realPublisher ?? { instances: [], fills: [], registries: FIXTURE_INSTANCE_REGISTRIES, designerHref: "/designer", draftPlan: createM1ExampleDraft() } }} initialSession={initialSession} copyResolver={resolver} />);
+  await act(async () => {});
+  const nav = view.container.querySelector("[data-application-navigation]") ?? screen.getAllByRole("navigation").find(node => within(node).queryByRole("link", { name: "Writer", exact: true }));
+  expect(nav).toBeTruthy();
+  for (const name of ["Designer", "Writer", "Publisher"]) expect(within(nav as HTMLElement).getByRole("link", { name, exact: true })).toHaveAttribute("href", `/agents/${name.toLowerCase()}`);
+  expect(within(nav as HTMLElement).getByRole("link", { name: kind[0]!.toUpperCase() + kind.slice(1), exact: true })).toHaveAttribute("aria-current", "page");
+}, 120000);
+
+it("preserves non-nav content, reference identity and current hashes when projecting a sidebar", async () => {
+  const { completeRoutes } = await import("../core/__fixtures__/complete-routes.js");
+  const { withCompleteRouteNavigation, projectRegisteredRouteNavigation } = await import("./complete-route-navigation.js");
+  const registry = { ...completeRoutes(), consumer: data.snapshot.library.source.id };
+  const input = { ...data, routeNavigation: { registry, routeId: "example.writer" } };
+  const before = JSON.stringify(input), projected = withCompleteRouteNavigation(input);
+  const reference = projected.frame.content.sidebar!;
+  const sidebar = projected.contents.find(row => runtimeHash(row.reference) === runtimeHash(reference))!;
+  const previous = input.contents.find(row => runtimeHash(row.reference) === runtimeHash(reference))!;
+  expect(sidebar.reference).toBe(previous.reference);
+  expect(sidebar.value).toEqual({ ...(previous.value as object), ...projectRegisteredRouteNavigation(input.routeNavigation) });
+  expect(sidebar.hash).toBe(runtimeHash(sidebar.value));
+  expect(JSON.stringify(input)).toBe(before);
+  expect(projected.contents.filter(row => row !== sidebar)).toEqual(input.contents.filter(row => row !== previous));
+  expect(() => withCompleteRouteNavigation({ ...input, routeNavigation: { registry: { ...registry, consumer: "foreign" }, routeId: "example.writer" } })).toThrow("different consumer");
+  expect(() => withCompleteRouteNavigation({ ...input, contents: input.contents.map(row => row === previous ? { ...row, hash: "sha256:stale" as const } : row) })).toThrow("Exact current sidebar");
+});
+
+it("requires unique absolute complete paths and resolves each in the projected sidebar tree", async () => {
+  const { completeRoutes } = await import("../core/__fixtures__/complete-routes.js");
+  const { syntheticPlan, SYNTHETIC_ROUTE_REGISTRIES } = await import("../core/__fixtures__/registered-route.js");
+  const { projectPlanCompleteRoutes } = await import("../planning/complete-routes.js");
+  const { withCompleteRouteNavigation, projectRegisteredRouteNavigation } = await import("./complete-route-navigation.js");
+  const source = completeRoutes(), draft = syntheticPlan(source.routes);
+  const plan = { ...draft, milestones: draft.milestones.map(m => ({ ...m, packs: m.packs.map(p => ({ ...p, items: p.items.map((item, i) => {
+    const route = source.routes[i]!;
+    return { ...item, completeRoute: { kind: route.composition.complete.kind, path: route.path, title: route.title, brand: route.brand, entry: route.entry, loader: route.composition.loader! } };
+  }) })) })) };
+  const registry = projectPlanCompleteRoutes(plan, SYNTHETIC_ROUTE_REGISTRIES, data.snapshot.library.source.id);
+  for (const route of registry.routes) {
+    expect(route.path).toMatch(/^\//);
+    const projected = withCompleteRouteNavigation({ ...data, routeNavigation: { registry, routeId: route.routeId } });
+    const sidebar = projected.contents.find(row => runtimeHash(row.reference) === runtimeHash(projected.frame.content.sidebar!))!;
+    expect(sidebar.value).toMatchObject({ activeId: route.routeId, tree: registry.routes.map(row => ({ id: row.routeId, label: row.title, href: row.path })) });
+  }
+  expect(new Set(registry.routes.map(route => route.path)).size).toBe(registry.routes.length);
+  for (const path of ["agents/writer", source.routes[0]!.path]) {
+    const changed = structuredClone(plan);
+    Object.assign(changed.milestones[0]!.packs[0]!.items[1]!.completeRoute, { path });
+    expect(() => projectPlanCompleteRoutes(changed, SYNTHETIC_ROUTE_REGISTRIES, registry.consumer)).toThrow();
+    const invalidRegistry = { ...registry, routes: registry.routes.map((route, i) => i === 1 ? { ...route, path } : route) };
+    expect(() => projectRegisteredRouteNavigation({ registry: invalidRegistry, routeId: "example.writer" })).toThrow("Unique valid admin routes");
+  }
 });

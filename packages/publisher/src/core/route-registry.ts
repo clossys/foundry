@@ -9,10 +9,14 @@ import type { PublisherChannelId } from "../planning/channel-ids.js";
 import { PUBLISHER_CHANNELS } from "../planning/channel-ids.js";
 import { createPublisherPlanDraft } from "../planning/plan.js";
 import { canonicalPlanJson, sha256 } from "../planning/digest.js";
+import { completeRouteKind, isLegacyRouteRegistration, registeredRouteBrandLink, routeSourcePath } from "./route-identities.js";
+import type { CompleteRouteKind } from "./route-identities.js";
+export { COMPLETE_ROUTE_KINDS, completeRouteKind, isCompleteRouteKind, isLegacyRouteRegistration, registeredRouteBrandLink, routeInstanceBinding, routeSourcePath } from "./route-identities.js";
+export type { CompleteRouteKind } from "./route-identities.js";
 
 /** Public source identity. Relative to the adopting consumer, never an executable callback. */
 export interface RouteSourceExport { readonly file: string; readonly export: string }
-export interface RouteRegistration {
+export interface LegacyRouteRegistration {
   readonly routeId: string;
   readonly path: string;
   readonly title: string;
@@ -42,6 +46,15 @@ export interface RouteRegistration {
     readonly loader?: RouteSourceExport;
   };
 }
+/** Complete native pages have no fabricated instance binding or runtime hook. */
+export interface CompleteRouteRegistration extends Omit<LegacyRouteRegistration, "composition"> {
+  readonly composition: {
+    readonly complete: { readonly kind: CompleteRouteKind };
+    /** Required only when emitting its executable server page. */
+    readonly loader?: RouteSourceExport;
+  };
+}
+export type RouteRegistration = LegacyRouteRegistration | CompleteRouteRegistration;
 /** Closed set of original providers a registered route may mount. Data only:
  * the checker admits a provider module only as this exact nonvisual mount. */
 export const ROUTE_PROVIDER_MOUNTS = {
@@ -54,13 +67,14 @@ export const ROUTE_PROVIDER_MOUNTS = {
 } as const satisfies Readonly<Record<string, { readonly module: string; readonly component: string; readonly props: readonly string[]; readonly body: { readonly id: string; readonly version: number } }>>;
 export type RouteProviderId = keyof typeof ROUTE_PROVIDER_MOUNTS;
 export interface RouteProviderMount { readonly id: RouteProviderId; readonly source: RouteSourceExport }
-export interface RouteRegistry { readonly version: 1; readonly consumer: string; readonly routes: readonly RouteRegistration[] }
+export interface RouteRegistry<R extends RouteRegistration = RouteRegistration> { readonly version: 1; readonly consumer: string; readonly routes: readonly R[] }
+export type LegacyRouteRegistry = RouteRegistry<LegacyRouteRegistration>;
 export interface RouteRegistryFinding { readonly routeId: string; readonly path: string; readonly message: string }
 export interface RegisteredRouteRow {
   readonly registration: RouteRegistration;
   readonly item?: PublisherPlanItem;
   readonly owner?: { readonly packId: string; readonly milestone: string; readonly answerIds: readonly string[] };
-  readonly frame: InstanceBinding["frame"];
+  readonly frame?: InstanceBinding["frame"];
   readonly substrate?: NonNullable<InstanceBinding["body"]>["kind"];
   readonly body?: InstanceBinding["body"];
   readonly sections: readonly { readonly path: string; readonly fill: InstanceBinding["fills"][string][number] }[];
@@ -71,10 +85,9 @@ export interface RegisteredRouteRow {
 export interface RouteRegistryProjection { readonly rows: readonly RegisteredRouteRow[]; readonly findings: readonly RouteRegistryFinding[] }
 const text = (v: unknown): v is string => typeof v === "string" && v.trim().length > 0;
 const only = (v: object, keys: readonly string[]) => Object.keys(v).every(k => keys.includes(k));
-export const routeSourcePath = (v: string): boolean => text(v) && !v.includes("\\") && !v.startsWith("/") && !v.split("/").some(p => !p || p === "." || p === "..");
 function source(v: RouteSourceExport): boolean { return !!v && only(v, ["file", "export"]) && routeSourcePath(v.file) && /^[A-Za-z_$][\w$]*$/.test(v.export); }
 /** The registered provider mount, or undefined when absent or invalid for this route. */
-export function routeProviderMount(route: RouteRegistration): (typeof ROUTE_PROVIDER_MOUNTS)[RouteProviderId] | undefined {
+export function routeProviderMount(route: LegacyRouteRegistration): (typeof ROUTE_PROVIDER_MOUNTS)[RouteProviderId] | undefined {
   const c = route?.composition, p: unknown = c?.provider;
   if (!p || typeof p !== "object" || Array.isArray(p) || !only(p, ["id", "source"])) return undefined;
   const { id, source: ref } = p as RouteProviderMount;
@@ -90,7 +103,7 @@ const NEXT_SPECIAL_FILE = /(?:^|\/)(?:page|layout|template|route|default|loading
 /** The registered server data loader, or undefined when absent or invalid for this route.
  * It needs a separate default-export entry (the emitted server page) and its own module:
  * never the entry, page, runtime, action or provider module, nor a Next special file. */
-export function routeServerLoader(route: RouteRegistration): RouteSourceExport | undefined {
+export function routeServerLoader(route: LegacyRouteRegistration): RouteSourceExport | undefined {
   const c = route?.composition, loader: unknown = c?.loader;
   if (!loader || typeof loader !== "object" || Array.isArray(loader) || !source(loader as RouteSourceExport)) return undefined;
   const ref = loader as RouteSourceExport;
@@ -135,6 +148,17 @@ export function projectRouteRegistry(registry: RouteRegistry, plan: PublisherPla
       if (paths.has(normalized)) add(route.routeId, "path", "Duplicate route path"); paths.add(normalized);
       if (!source(route.entry)) add(route.routeId, "entry", "Consumer-relative entry export required");
       const entry = canonicalPlanJson(route.entry); if (entries.has(entry)) add(route.routeId, "entry", "Duplicate executable entry"); entries.add(entry);
+      const matches = owners.filter(row => row.item.id === route.planItemId);
+      if (matches.length !== 1 || matches[0]!.item.appRouteId !== route.routeId || owners.filter(row => row.item.appRouteId === route.routeId).length !== 1) add(route.routeId, "planItemId", "Route must join exactly one unchanged plan item/appRouteId");
+      const owner = matches.length === 1 ? matches[0] : undefined;
+      if (!isLegacyRouteRegistration(route)) {
+        const c = route.composition;
+        if (!only(c, ["complete", "loader"]) || !completeRouteKind(route)) add(route.routeId, "composition.complete", "Known complete route kind required");
+        if (c.loader !== undefined && (!source(c.loader) || c.loader.file === route.entry.file || NEXT_SPECIAL_FILE.test(c.loader.file) || !/\.[jt]sx?$/.test(c.loader.file) || c.loader.file.endsWith(".d.ts"))) add(route.routeId, "composition.loader", "Separate typed complete route data loader required");
+        if (owner?.item.completeRoute && (owner.item.completeRoute.kind !== completeRouteKind(route) || owner.item.completeRoute.path !== route.path || owner.item.completeRoute.title !== route.title || canonicalPlanJson(owner.item.completeRoute.entry) !== canonicalPlanJson(route.entry) || canonicalPlanJson(owner.item.completeRoute.brand) !== canonicalPlanJson(route.brand) || canonicalPlanJson(owner.item.completeRoute.loader) !== canonicalPlanJson(c.loader))) add(route.routeId, "composition.complete", "Complete route differs from its plan item");
+        return { registration: route, item: owner?.item, owner: owner ? { packId: owner.packId, milestone: owner.milestone, answerIds: owner.item.answerIds } : undefined, sections: [], status: "planned" as const,
+          pending: [...(!validPlan ? ["Valid Publisher plan unavailable"] : []), ...(!aligned ? ["Exact plan alignment pending"] : []), ...(owner?.item.openNeeds.map(n => `${n.slot}: ${n.question}`) ?? []), "Complete native page runtime and exact artifact review evidence pending"], findings: findings.slice(at) };
+      }
       const c = route.composition, b = c.binding;
       for (const message of instanceBodyFindings(b, registries)) add(route.routeId, "composition.binding.body", message);
       if (!only(c, ["binding", "source", "runtime", "header", "provider", "loader"]) || !source(c.source) || !source(c.runtime)) add(route.routeId, "composition", "Canonical composition source required");
@@ -146,9 +170,6 @@ export function projectRouteRegistry(registry: RouteRegistry, plan: PublisherPla
       const nav = c.header.data.nav;
       if (nav && (!only(nav, ["label", "items", "activeId"]) || !text(nav.label) || !Array.isArray(nav.items) || !nav.items.length || nav.items.some((item: { id: string; label: string; href: string }) => !only(item, ["id", "label", "href"]) || !text(item.id) || !text(item.label) || !text(item.href)) || new Set(nav.items.map((item: { id: string }) => item.id)).size !== nav.items.length || !nav.items.some((item: { id: string; label: string; href: string }) => item.id === nav.activeId))) add(route.routeId, "composition.header.data.nav", "Header navigation must identify one active unique destination");
       if (headers.has(c.header.id)) add(route.routeId, "composition.header.id", "Duplicate header lease identity"); headers.add(c.header.id);
-      const matches = owners.filter(row => row.item.id === route.planItemId);
-      if (matches.length !== 1 || matches[0]!.item.appRouteId !== route.routeId || owners.filter(row => row.item.appRouteId === route.routeId).length !== 1) add(route.routeId, "planItemId", "Route must join exactly one unchanged plan item/appRouteId");
-      const owner = matches.length === 1 ? matches[0] : undefined;
       if (owner && (!b.packIds.includes(owner.packId) || owner.item.frame && (owner.item.frame.leaf !== b.frame.leaf || owner.item.frame.config !== b.frame.config) || owner.item.layout && (owner.item.layout.leaf !== b.layout?.leaf || owner.item.layout.config !== b.layout?.config))) add(route.routeId, "composition.binding", "Binding disagrees with plan owner/frame/layout");
       const sections = [...Object.entries(b.fills).flatMap(([slot, fills]) => fills.map((fill, index) => ({ path: `fills.${slot}.${index}`, fill }))), ...Object.entries(b.frame.slotFills ?? {}).map(([slot, fill]) => ({ path: `frame.slotFills.${slot}`, fill }))];
       const pending = [...(!validPlan ? ["Valid Publisher plan unavailable"] : []), ...(!aligned ? ["Exact plan alignment pending"] : []), ...(owner?.item.openNeeds.map(n => `${n.slot}: ${n.question}`) ?? []), "Exact selected consumer runtime assembly pending", "Deterministic generated entry/source closure pending", "Real Frame/provider and whole-instance runtime evidence pending", "Exact artifact review evidence pending"];
@@ -156,7 +177,7 @@ export function projectRouteRegistry(registry: RouteRegistry, plan: PublisherPla
       const status = validPlan && aligned && owner && !owner.item.openNeeds.length && findings.length === at && artifact?.source.planDigest === (plan as PublisherPlanVersion)?.digest ? registeredRouteLifecycleStatus(registry, route, artifact, currentByRoute[route.routeId]) : "planned";
       const stillPending = status === "planned" ? pending : status === "built" ? ["Exact artifact review evidence pending"] : [];
       return { registration: route, item: owner?.item, owner: owner ? { packId: owner.packId, milestone: owner.milestone, answerIds: owner.item.answerIds } : undefined, frame: b.frame, substrate: b.body?.kind, body: b.body, sections, status, pending: stillPending, findings: findings.slice(at) };
-    } catch { add(route?.routeId ?? "", "composition", "Malformed route composition"); return { registration: route, frame: route?.composition?.binding?.frame, sections: [], status: "planned" as const, pending: ["Valid route composition required"], findings: findings.slice(at) }; }
+    } catch { add(route?.routeId ?? "", "composition", "Malformed route composition"); return { registration: route, frame: route && isLegacyRouteRegistration(route) ? route.composition.binding?.frame : undefined, sections: [], status: "planned" as const, pending: ["Valid route composition required"], findings: findings.slice(at) }; }
   });
   return { rows, findings };
 }
@@ -167,21 +188,12 @@ export function registeredRouteFrameFinding(projection: RouteRegistryProjection 
   const rows = projection?.rows.filter(row => row.registration.routeId === routeId) ?? [];
   if (rows.length !== 1) return "Exact registered route composition is unavailable";
   if (!binding) return "Adopted route binding is unavailable";
-  const expected = rows[0]!.registration.composition.binding;
+  const registered = rows[0]!.registration;
+  if (!isLegacyRouteRegistration(registered)) return "Complete native route has no legacy instance binding";
+  const expected = registered.composition.binding;
   if (binding.instanceId !== expected.instanceId || binding.path !== expected.path || binding.frame.leaf !== expected.frame.leaf || binding.frame.config !== expected.frame.config) return "Supplied route binding differs from its registered Frame composition";
   if (rows[0]!.findings.length) return "Registered route composition has unresolved findings";
   return undefined;
-}
-
-/** Reordering rows never changes a declared home destination. */
-export function registeredRouteBrandLink(registry: RouteRegistry, route: RouteRegistration): { readonly href: string; readonly label: string } | undefined {
-  const brand = route.brand;
-  if (!brand || !only(brand, ["homeRouteId", "label"]) || !text(brand.homeRouteId) || !text(brand.label)) return undefined;
-  const home = registry.routes.filter(row => row.routeId === brand.homeRouteId);
-  if (home.length !== 1) return undefined;
-  const target = home[0]!;
-  if (!text(target.path) || !/^\/(?:[^/?#\\]+\/?)*$/.test(target.path) || target.path.includes("//") || target.path.includes("%") || target.path.split("/").some(part => part === "." || part === "..") || target.path !== (target.path.replace(/\/$/, "") || "/") || target.composition?.binding?.context?.consumer !== registry.consumer || target.composition.binding.path !== target.path) return undefined;
-  return { href: home[0]!.path, label: brand.label };
 }
 
 export function routeRegistryDigest(registry: RouteRegistry): `sha256:${string}` { return `sha256:${sha256(canonicalPlanJson(registry))}`; }

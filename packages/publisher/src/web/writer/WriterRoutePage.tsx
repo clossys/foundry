@@ -7,12 +7,14 @@ import { SlotModule } from "@clossys/designer/shell";
 import { checkConsumerRuntimePorts, runtimeHash } from "@clossys/designer/catalog";
 import type { RuntimeContentRef, RuntimeRenderInput } from "@clossys/designer/catalog";
 import { checkedDesignerRouteData } from "@clossys/designer/studio/route/server";
-import type { DesignerRouteServerData, DesignerRoutePageProps } from "@clossys/designer/studio/route";
+import type { DesignerRoutePageProps } from "@clossys/designer/studio/route";
+import { withCompleteRouteNavigation } from "../complete-route-navigation.js";
+import type { CompleteRouteServerData } from "../complete-route-navigation.js";
 import { resolveAdminCopyRef, type AdminCopy, type AdminCopyRef } from "@clossys/writer/admin-copy";
 import { registeredRouteServerData } from "../../core/route-server-data.js";
 import { WRITER_COPY_REFS } from "./copy.js";
 
-export interface WriterRouteServerData extends DesignerRouteServerData {
+export interface WriterRouteServerData extends CompleteRouteServerData {
   readonly writer: { readonly copy: AdminCopy; readonly selectedRecordId?: string };
 }
 export interface WriterRoutePageProps {
@@ -36,7 +38,7 @@ export function WriterRoutePage({ serverData, initialSession }: WriterRoutePageP
   const checked = useMemo(() => {
     if (!initialSession) return undefined;
     try {
-      const finite = registeredRouteServerData(serverData);
+      const finite = registeredRouteServerData(withCompleteRouteNavigation(serverData));
       if (finite.writer.copy.envelopes.some(envelope => envelope.locale !== "en")) throw new TypeError("Writer English store required");
       return checkedDesignerRouteData(finite, initialSession);
     }
