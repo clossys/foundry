@@ -28,12 +28,14 @@ const nonvisual = [
   '"use client";',
   'import type { ReactNode } from "react";',
   'import { WholeStudioProvider } from "@clossys/designer/studio/state";',
-  'import { useStudioInputs } from "../runtime";',
+  'import { useStudioInputs } from "../runtime.ts";',
   "export function DesignerStudioProvider({ children }: { children: ReactNode }) {",
   "  const inputs = useStudioInputs();",
   "  return <WholeStudioProvider adapter={inputs.adapter} labels={inputs.labels}>{children}</WholeStudioProvider>;",
   "}", "",
 ].join("\n");
+/** The same fixture reading its inputs through a second registered runtime hook. */
+const withPair = (source: string) => source.replace('import { useStudioInputs } from "../runtime.ts";', 'import { useStudioInputPair } from "../runtime.ts";');
 const contract = () => ({ version: 2 as const, registry: { file: "routes.json", export: "default" as const, module: "routes.ts" }, sources: {} as Record<string, string>, routeRoots: [{ directory: "app", basePath: "/" }] });
 async function setup(route = designerRoute(), provider = nonvisual) {
   await write("routes.json", JSON.stringify({ version: 1, consumer: "example", routes: [route] })); await write("routes.ts", emitRegisteredRouteRegistryModule({ version: 1, consumer: "example", routes: [route] }));
@@ -244,7 +246,7 @@ describe("registered nonvisual provider ownership seam (synthetic fixtures; no r
     // A plain literal key and array destructuring stay admitted.
     for (const source of [
       nonvisual.replace(inputs, `${inputs}\n  const adapter = inputs["adapter"];`).replace("adapter={inputs.adapter}", "adapter={adapter}"),
-      nonvisual.replace(inputs, "  const [inputs] = useStudioInputPair();"),
+      withPair(nonvisual.replace(inputs, "  const [inputs] = useStudioInputPair();")),
     ]) expect(providerRefused((await check(await setup(designerRoute(), source))).findings), source).toBe(false);
   }, SCAN_TIMEOUT);
 
@@ -316,7 +318,65 @@ describe("registered nonvisual provider ownership seam (synthetic fixtures; no r
       nonvisual,
       nonvisual.replace(inputs, `${inputs}\n  const { adapter, labels } = inputs;`).replace("adapter={inputs.adapter} labels={inputs.labels}", "adapter={adapter} labels={labels}"),
       nonvisual.replace(inputs, `${inputs}\n  const studio = inputs.studio;\n  const adapter = studio["adapter"];`).replace("adapter={inputs.adapter}", "adapter={adapter}"),
-      nonvisual.replace(inputs, "  const [inputs] = useStudioInputPair();"),
+      withPair(nonvisual.replace(inputs, "  const [inputs] = useStudioInputPair();")),
+    ]) expect(providerRefused((await check(await setup(designerRoute(), source))).findings), source).toBe(false);
+  }, SCAN_TIMEOUT);
+
+  it("(l) only a named hook import from the registered runtime module, never rebound, is callable; nothing derived from it is", async () => {
+    const inputs = "  const inputs = useStudioInputs();", at = (line: string) => nonvisual.replace(inputs, `${inputs}\n  ${line}`);
+    const runtimeImport = 'import { useStudioInputs } from "../runtime.ts";';
+    const imports = (line: string) => nonvisual.replace(runtimeImport, line);
+    const probes = [
+      // The round-2 findings: an inputs callback aliased or destructured into a hook-shaped name.
+      at("const useReset = inputs.reset; const ignored = useReset();"),
+      at("const { useReset } = inputs; const ignored = useReset();"),
+      at("const [useReset] = inputs.callbacks; const ignored = useReset();"),
+      // A callback read straight from a hook result, by alias or destructuring.
+      at("const studio = useStudioInputs(); const useReset = studio.reset; const ignored = useReset();"),
+      at("const { useReset } = useStudioInputs(); const ignored = useReset();"),
+      at("const [useReset] = useStudioInputs(); const ignored = useReset();"),
+      // The allowlisted import itself, aliased to another name before the call.
+      at("const useAlias = useStudioInputs; const ignored = useAlias();"),
+      // A hook-shaped callee bound by no import at all: a global, or a local function.
+      at("const ignored = useChrome();"),
+      nonvisual.replace("export function", "function useChrome() { return null; }\nexport function").replace(inputs, `${inputs}\n  const ignored = useChrome();`),
+      // A hook imported from anywhere but the registered runtime module, or not as a plain named value.
+      imports(`${runtimeImport}\nimport { useChrome } from "./chrome";`).replace(inputs, `${inputs}\n  const ignored = useChrome();`),
+      imports(`${runtimeImport}\nimport { useChrome } from "@clossys/designer/studio/state";`).replace(inputs, `${inputs}\n  const ignored = useChrome();`),
+      imports(`${runtimeImport}\nimport type { useChrome } from "../runtime.ts";`).replace(inputs, `${inputs}\n  const ignored = useChrome();`),
+      imports(`${runtimeImport}\nimport useChrome from "../runtime.ts";`).replace(inputs, `${inputs}\n  const ignored = useChrome();`),
+      imports(`${runtimeImport}\nimport * as runtime from "../runtime.ts";`).replace(inputs, `${inputs}\n  const useChrome = runtime.useChrome; const ignored = useChrome();`),
+      imports(`${runtimeImport}\nimport { reset as useReset } from "../runtime.ts";`).replace(inputs, `${inputs}\n  const ignored = useReset();`),
+      // An extensionless or differently spelled specifier is resolver-order dependent, so not the registered module.
+      imports('import { useStudioInputs } from "../runtime";'),
+      imports('import { useStudioInputs } from "../runtime.js";'),
+      imports('import { useStudioInputs } from "./../runtime.ts";'),
+      // A side-effect or value import of any other module.
+      imports(`${runtimeImport}\nimport "./chrome";`),
+      imports(`${runtimeImport}\nimport { chrome } from "./chrome";`),
+      // The allowlisted hook name shadowed by a body binding before it is called.
+      imports('import { useStudioInputs, useStudioCallbacks } from "../runtime.ts";').replace(inputs, "  const callbacks = useStudioCallbacks();\n  const useStudioInputs = callbacks.reset;\n  const inputs = useStudioInputs();"),
+      // A body name bound twice, or reusing an import or the export name.
+      at("const inputs = useStudioInputs();"),
+      at("const DesignerStudioProvider = inputs.chrome;"),
+      at("const ReactNode = inputs.chrome;"),
+      // A read rooted anywhere but an earlier body binding: a global, an import or a later name.
+      at("const node = location.chrome;"),
+      at("const node = useStudioInputs.chrome;"),
+      nonvisual.replace(inputs, `  const early = inputs.adapter;\n${inputs}`),
+      // A mounted prop rooted anywhere but a body binding.
+      nonvisual.replace("adapter={inputs.adapter}", "adapter={useStudioInputs}"),
+      nonvisual.replace("adapter={inputs.adapter}", "adapter={location.adapter}"),
+    ];
+    const refused: boolean[] = [];
+    for (const source of probes) refused.push(providerRefused((await check(await setup(designerRoute(), source))).findings));
+    expect(refused, `refused per probe: ${refused}`).toEqual(probes.map(() => true));
+    // Admitted: the exact fixture, several registered hooks, an aliased hook import, and reads chained through body bindings.
+    for (const source of [
+      nonvisual,
+      imports('import { useStudioInputs, useStudioLabels } from "../runtime.ts";').replace(inputs, `${inputs}\n  const labels = useStudioLabels();`).replace("labels={inputs.labels}", "labels={labels}"),
+      imports('import { useStudioInputs as useInputs } from "../runtime.ts";').replace("useStudioInputs();", "useInputs();"),
+      nonvisual.replace(inputs, `${inputs}\n  const studio = inputs;\n  const { adapter } = studio;\n  const [first] = inputs.items;`).replace("adapter={inputs.adapter}", "adapter={adapter}"),
     ]) expect(providerRefused((await check(await setup(designerRoute(), source))).findings), source).toBe(false);
   }, SCAN_TIMEOUT);
 });

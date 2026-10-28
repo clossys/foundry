@@ -101,10 +101,37 @@ export function documentOnlyLayout(source: string): boolean {
   return /^\s*export\s+default\s+function\s+[A-Za-z_$][\w$]*\(\s*\{\s*children\s*\}\s*(?::\s*\{\s*children\s*:\s*(?:React\.)?ReactNode\s*;?\s*\})?\s*\)\s*\{\s*return\s*(?:children|\(?\s*<html(?:\s+lang=["'][a-zA-Z-]+["'])?>\s*<body>\s*\{children\}\s*<\/body>\s*<\/html>\s*\)?)\s*;?\s*\}\s*$/.test(prefix);
 }
 const escapeRegExp = (value: string) => value.replace(/[.*+?^${}()|[\]\\/]/g, "\\$&");
+/** The exact consumer-relative file a relative specifier names from `from`, or
+ * undefined. No extension or index is inferred: an extensionless specifier resolves
+ * by resolver order (a sibling `.js` or `.tsx` can win), so it names no one file. */
+function relativeSpecifierFile(from: string, specifier: string): string | undefined {
+  if (!/^\.\.?\//.test(specifier)) return undefined;
+  const parts = from.split("/"); parts.pop();
+  for (const part of specifier.split("/")) {
+    if (part === "..") { if (!parts.length) return undefined; parts.pop(); }
+    else if (part === "." || !part) return undefined;
+    else parts.push(part);
+  }
+  return parts.join("/");
+}
 /** Recognize the one closed nonvisual provider module a registration names: its
  * single export returns exactly the registered original provider around children,
- * with allowlisted plain prop values, and the module renders no markup anywhere. */
-function nonvisualRouteProvider(source: string, mount: RouteProviderMount, known: { readonly module: string; readonly component: string; readonly props: readonly string[] }): boolean {
+ * with allowlisted plain prop values, and the module renders no markup anywhere.
+ *
+ * Threat model: no code path in the module can reach a function value that did not
+ * come from an allowlisted import. The module is parsed as a closed grammar with a
+ * binding table, never matched as a set of refused patterns:
+ * - value imports are exactly the registered component from its registered module and
+ *   plain named hooks (`use*`, also as imported) from the route's registered runtime
+ *   module by its exact path; any other import is type-only, so erased;
+ * - every name (import, export function, `children`, body binding) is bound once, so
+ *   no hook is ever shadowed or rebound;
+ * - the one function's body is only `const` bindings, each initialized either by a
+ *   no-argument call whose callee is one of those hook imports, or by a member read
+ *   rooted at an earlier body binding; so nothing read from inputs, from a hook result,
+ *   from a global or from another import is ever called;
+ * - each mounted prop is a literal or a member read rooted at a body binding. */
+function nonvisualRouteProvider(source: string, file: string, runtime: string | undefined, mount: RouteProviderMount, known: { readonly module: string; readonly component: string; readonly props: readonly string[] }): boolean {
   const id = "[A-Za-z_$][\\w$]*", component = escapeRegExp(known.component);
   const module = source.replace(/^\s*["']use client["'];?/, "");
   // An escape makes source text differ from the name it spells: `chil\u0064ren` is
@@ -137,27 +164,63 @@ function nonvisualRouteProvider(source: string, mount: RouteProviderMount, known
   if ((module.match(/(?<![\w$])export(?![\w$])/g) ?? []).length !== 1) return false;
   // The module grammar is an allowlist, not a list of refused operations: import
   // declarations, then the one exported function, whose body (below) only binds reads.
-  // No module-level statement runs anywhere else.
-  const quoted = `(?:"[^"\\n]*"|'[^'\\n]*')`, named = `${id}(?:\\s+as\\s+${id})?`;
-  const importDeclaration = `import\\s+(?:type\\s+)?(?:${id}|\\*\\s*as\\s+${id}|\\{\\s*${named}(?:\\s*,\\s*${named})*\\s*,?\\s*\\})\\s*from\\s*${quoted}\\s*;`;
-  if (!new RegExp(`^\\s*(?:${importDeclaration}\\s*)*export\\s`).test(module)) return false;
-  const head =mount.source.export === "default" ? `export\\s+default\\s+function(?:\\s+${id})?` : `export\\s+function\\s+${escapeRegExp(mount.source.export)}`;
-  const shape = new RegExp(`${head}\\s*\\(\\s*\\{\\s*children\\s*\\}\\s*(?::\\s*\\{\\s*children\\s*:\\s*(?:React\\.)?ReactNode\\s*;?\\s*\\})?\\s*\\)\\s*\\{([\\s\\S]*?)(return\\s*<${component}((?:\\s+${id}=(?:\\{[^{}]*\\}|"[^"\\n]*"))*)\\s*>\\s*\\{children\\}\\s*<\\/${component}\\s*>\\s*;?)\\s*\\}\\s*$`).exec(module);
+  // No module-level statement runs anywhere else. Each import is read into the binding
+  // table: a value import is the registered component or a registered runtime hook.
+  const quoted = `(?:"[^"\\n]*"|'[^'\\n]*')`, hookName = /^use[A-Z][\w$]*$/;
+  const declaration = new RegExp(`\\s*import\\s+(type\\s+)?(?:(${id})|\\*\\s*as\\s+(${id})|\\{([^{}]*)\\})\\s*from\\s*(${quoted})\\s*;`, "y");
+  const taken = new Set<string>(["children"]), hooks = new Set<string>();
+  const bind = (name: string) => { if (taken.has(name)) return false; taken.add(name); return true; };
+  let at = 0;
+  for (let match = declaration.exec(module); match; declaration.lastIndex = at, match = declaration.exec(module)) {
+    at = declaration.lastIndex;
+    const [, typeOnly, defaultName, namespace, list, specifier] = match;
+    const elements = list === undefined ? [] : list.split(",").map(part => part.trim());
+    if (list !== undefined && elements.at(-1) === "") elements.pop();
+    const names = elements.map(part => new RegExp(`^(${id})(?:\\s+as\\s+(${id}))?$`).exec(part));
+    if (names.some(name => !name) || list !== undefined && !names.length) return false;
+    const locals = [defaultName, namespace, ...names.map(name => name![2] ?? name![1])].filter((name): name is string => name !== undefined);
+    if (!locals.every(bind)) return false;
+    if (typeOnly) continue;
+    const from = specifier!.slice(1, -1);
+    if (from === known.module && names.length === 1 && !names[0]![2] && names[0]![1] === known.component) continue;
+    // Hooks only from the route's registered runtime module, by its exact path.
+    if (list === undefined || runtime === undefined || relativeSpecifierFile(file, from) !== runtime) return false;
+    for (const name of names) { if (!hookName.test(name![1]!) || !hookName.test(name![2] ?? name![1]!)) return false; hooks.add(name![2] ?? name![1]!); }
+  }
+  const rest = module.slice(at);
+  if (!/^\s*export\s/.test(rest)) return false;
+  const head = mount.source.export === "default" ? `export\\s+default\\s+function(?:\\s+(${id}))?` : `export\\s+function\\s+(${escapeRegExp(mount.source.export)})`;
+  const shape = new RegExp(`^\\s*${head}\\s*\\(\\s*\\{\\s*children\\s*\\}\\s*(?::\\s*\\{\\s*children\\s*:\\s*(?:React\\.)?ReactNode\\s*;?\\s*\\})?\\s*\\)\\s*\\{([\\s\\S]*?)(return\\s*<${component}((?:\\s+${id}=(?:\\{[^{}]*\\}|"[^"\\n]*"))*)\\s*>\\s*\\{children\\}\\s*<\\/${component}\\s*>\\s*;?)\\s*\\}\\s*$`).exec(rest);
   if (!shape) return false;
-  const [, body, mountText, attributes] = shape;
+  const [, exported, body, mountText, attributes] = shape;
+  if (exported !== undefined && !bind(exported)) return false;
   if (/(?<![\w$])(?:return|children)(?![\w$])/.test(body!)) return false;
-  // The body is only `const` bindings of reads, so nothing in it calls a method on,
-  // assigns to (plain, compound, logical, `++`/`--`) or deletes from a value reached
-  // through its inputs, by alias, destructuring or a nested function: each binding is a
-  // name or a flat object/array pattern of names, initialized by a hook call with no
-  // argument (no callback, so no nested function and no effect) or by a member read
-  // (`a.b`, `a["b"]`). Every other statement or expression is refused.
+  // The body is only `const` bindings, so nothing in it calls a method on, assigns to
+  // (plain, compound, logical, `++`/`--`) or deletes from a value reached through its
+  // inputs, by alias, destructuring or a nested function. Each binding is a new name or
+  // a flat object/array pattern of new names, initialized by exactly one of:
+  // - a call with no argument (so no callback, nested function or effect) whose callee
+  //   is a registered hook import, by its own name, never rebound;
+  // - a member read (`a`, `a.b`, `a["b"]`) rooted at a name an earlier statement bound.
+  // A callee or root read from inputs, a hook result, a global or any other import is
+  // refused, and so is every other statement or expression.
   const pattern = `(?:${id}|\\{\\s*${id}(?:\\s*,\\s*${id})*\\s*,?\\s*\\}|\\[\\s*${id}(?:\\s*,\\s*${id})*\\s*,?\\s*\\])`;
-  const read = `${id}(?:\\s*\\.\\s*${id}|\\s*\\[\\s*${quoted}\\s*\\])*`, hook = `use[A-Z][\\w$]*\\s*\\(\\s*\\)`;
-  if (!new RegExp(`^\\s*(?:const\\s+${pattern}\\s*=\\s*(?:${hook}|${read})\\s*;\\s*)*$`).test(body!)) return false;
+  const statement = new RegExp(`\\s*const\\s+(${pattern})\\s*=\\s*(${id})(\\s*\\(\\s*\\)|(?:\\s*\\.\\s*${id}|\\s*\\[\\s*${quoted}\\s*\\])*)\\s*;`, "y");
+  const bound = new Set<string>();
+  for (at = 0; /\S/.test(body!.slice(at));) {
+    statement.lastIndex = at;
+    const match = statement.exec(body!);
+    if (!match) return false;
+    const [, binding, root, access] = match;
+    if (!(/^\s*\(/.test(access!) ? hooks.has(root!) : bound.has(root!))) return false;
+    for (const [name] of binding!.matchAll(new RegExp(id, "g"))) { if (!bind(name)) return false; bound.add(name); }
+    at = statement.lastIndex;
+  }
   for (const [, name, value] of attributes!.matchAll(new RegExp(`(${id})=(\\{[^{}]*\\}|"[^"\\n]*")`, "g"))) {
     if (!known.props.includes(name!)) return false;
-    if (value!.startsWith("{") && !new RegExp(`^\\{\\s*(?:${id}(?:\\.${id})*|true|false|"[^"\\n]*")\\s*\\}$`).test(value!)) return false;
+    if (!value!.startsWith("{")) continue;
+    const prop = new RegExp(`^\\{\\s*(?:true|false|"[^"\\n]*"|(${id})(?:\\.${id})*)\\s*\\}$`).exec(value!);
+    if (!prop || prop[1] !== undefined && !bound.has(prop[1])) return false;
   }
   // Outside the one mount, the module contains no JSX at all.
   return !/<\s*[A-Za-z/>]/.test(module.replace(mountText!, ""));
@@ -273,7 +336,8 @@ async function checkRegisteredRoutesInternal(input: RegisteredRouteCheckInput) {
     if (!known) continue; // RR1 already refuses the registration.
     try {
       if (Object.keys(contract.sources).some(key => key === known.module || key.endsWith("/") && known.module.startsWith(key))) throw new Error("Original provider module cannot be remapped");
-      if (!nonvisualRouteProvider(await read(root, file!), route.composition.provider!, known)) throw new Error("Provider renders or mounts more than the registered original provider");
+      const runtime = route.composition.runtime?.file;
+      if (!nonvisualRouteProvider(await read(root, file!), file!, typeof runtime === "string" && routeSourcePath(runtime) ? runtime : undefined, route.composition.provider!, known)) throw new Error("Provider renders or mounts more than the registered original provider");
       classifications.push({ file: file!, kind: "provider" });
     } catch (error) { findings.push({ code: "RR2", file: String(file), message: `Registered provider is not the exact nonvisual original-provider mount: ${(error as Error).message}` }); }
   }
