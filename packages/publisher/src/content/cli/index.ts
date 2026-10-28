@@ -10,6 +10,7 @@ export const PUBLISHER_CONTENT_USAGE = "node <publisher>/dist/content/node.js <s
 
 /** JSON files are data only: no executable config, shell, credentials or deploy adapter. */
 export async function mainPublisherContent(argv: readonly string[]): Promise<PublisherCommandResult> {
+  if (argv[0] === "ia-coverage") return (await import("../../checks/ia-coverage/cli.js")).mainIACoverage(argv.slice(1));
   if (argv.length === 1 && (argv[0] === "--help" || argv[0] === "-h")) return { exitCode: 0, findings: [], data: { usage: PUBLISHER_CONTENT_USAGE } };
   try {
     const command = argv[0];
