@@ -98,7 +98,7 @@ export function emitRegisteredRouteAdapter(route: RouteRegistration): string {
 }
 
 export interface CompleteRoutePageSource {
-  readonly kind: "designer" | "publisher";
+  readonly kind: "designer" | "publisher" | "writer";
   readonly file: string;
   readonly loader: RouteSourceExport;
 }
@@ -106,11 +106,11 @@ export interface CompleteRoutePageSource {
  * finite data and forwards the two public props. This source is display output;
  * it does not replace registered source or Node qualification evidence. */
 export function emitCompleteRoutePage(input: CompleteRoutePageSource): string {
-  if (!input || (input.kind !== "designer" && input.kind !== "publisher")) throw new Error("Complete Designer or Publisher route kind required");
+  if (!input || !["designer", "publisher", "writer"].includes(input.kind)) throw new Error("Complete Designer, Publisher or Writer route kind required");
   if (!routeSourcePath(input.file) || !input.file.endsWith(".tsx")) throw new Error("Consumer-relative TSX route file required");
   if (!input.loader || !routeSourcePath(input.loader.file) || !/^[A-Za-z_$][\w$]*$/.test(input.loader.export)) throw new Error("Consumer-relative typed loader export required");
   if (input.file === input.loader.file || !/\.(?:ts|tsx)$/.test(input.loader.file) || input.loader.file.endsWith(".d.ts")) throw new Error("Separate typed loader module required");
-  const component = input.kind === "designer" ? "DesignerRoutePage" : "PublisherRoutePage";
+  const component = input.kind === "designer" ? "DesignerRoutePage" : input.kind === "writer" ? "WriterRoutePage" : "PublisherRoutePage";
   return [
     `import { ${component} } from "@clossys/publisher/web/registered-route";`,
     named(input.loader, input.file, "loadRouteData"),

@@ -2,9 +2,13 @@
 import { ADMIN_STUDIO_COPY_EN, type AdminStudioCopy, type AdminStudioCopyRecord } from "./admin-studio.js";
 import { ADMIN_VOICE_COPY_EN, type AdminVoiceCopy, type AdminVoiceCopyRecord } from "./admin-voice.js";
 import { ADMIN_META_COPY_EN, type AdminMetaCopy, type AdminMetaCopyRecord } from "./admin-meta.js";
+import { ADMIN_WRITER_COPY_EN, type AdminRouteCopy } from "./admin-route-copy.js";
+import { IntlMessageFormat } from "intl-messageformat";
+export { ADMIN_WRITER_COPY_EN } from "./admin-route-copy.js";
+export type { AdminRouteCopy } from "./admin-route-copy.js";
 
-export type AdminCopyEnvelope = AdminStudioCopy | AdminVoiceCopy | AdminMetaCopy;
-export type AdminCopyRecord = AdminStudioCopyRecord | AdminVoiceCopyRecord | AdminMetaCopyRecord;
+export type AdminCopyEnvelope = AdminStudioCopy | AdminVoiceCopy | AdminMetaCopy | AdminRouteCopy;
+export type AdminCopyRecord = AdminStudioCopyRecord | AdminVoiceCopyRecord | AdminMetaCopyRecord | AdminRouteCopy["records"][number];
 
 /** Original envelopes retain their evidence; records are addressed once per id. */
 export interface AdminCopy {
@@ -35,7 +39,7 @@ export function createAdminCopy(envelopes: readonly AdminCopyEnvelope[]): AdminC
   return Object.freeze({ envelopes: Object.freeze([...envelopes]), records: Object.freeze([...records.values()]) });
 }
 
-export const ADMIN_COPY_EN: AdminCopy = createAdminCopy([ADMIN_STUDIO_COPY_EN, ADMIN_VOICE_COPY_EN, ADMIN_META_COPY_EN]);
+export const ADMIN_COPY_EN: AdminCopy = createAdminCopy([ADMIN_STUDIO_COPY_EN, ADMIN_VOICE_COPY_EN, ADMIN_META_COPY_EN, ADMIN_WRITER_COPY_EN]);
 
 /** Read the complete source without manufacturing approval or activation evidence. */
 export function getAdminCopy(): AdminCopy {
@@ -45,4 +49,22 @@ export function getAdminCopy(): AdminCopy {
 /** Unknown ids have no fallback; the host owns Writer binding and presentation. */
 export function getAdminCopyRecord(id: string, copy: AdminCopy = ADMIN_COPY_EN): AdminCopyRecord | undefined {
   return copy.records.find(record => record.id === id);
+}
+
+export interface AdminCopyRef {
+  readonly id: string;
+  readonly locale?: string;
+  readonly values?: Readonly<Record<string, string | number | boolean>>;
+}
+/** Explicit draft-review display, separate from approved production resolution.
+ * Missing records, unsupported locales and invalid ICU arguments remain Needs. */
+export function resolveAdminCopyRef(ref: AdminCopyRef, copy: AdminCopy = ADMIN_COPY_EN) {
+  if (ref.locale !== undefined && ref.locale !== "en") return undefined;
+  const record = getAdminCopyRecord(ref.id, copy);
+  if (!record || record.status === "retired") return undefined;
+  try {
+    const formatted = new IntlMessageFormat(record.text, "en").format(ref.values);
+    if (typeof formatted !== "string" || !formatted.trim()) return undefined;
+    return { ref: { ...ref, locale: "en" }, text: formatted, servedLocale: "en" as const, status: record.status, activation: "none" as const };
+  } catch { return undefined; }
 }

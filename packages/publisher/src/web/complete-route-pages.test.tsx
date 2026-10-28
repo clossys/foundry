@@ -5,7 +5,11 @@ import { renderToString } from "react-dom/server";
 import { afterEach, beforeAll, expect, it, vi } from "vitest";
 import { readFile } from "node:fs/promises";
 import { publisherCopyFixtureResolver } from "./publisher/__fixtures__/writer-copy.js";
-import { DesignerRoutePage, PublisherRoutePage } from "@clossys/publisher/web/registered-route";
+import userEvent from "@testing-library/user-event";
+import { DesignerRoutePage, PublisherRoutePage, WriterRoutePage, type WriterRouteServerData } from "@clossys/publisher/web/registered-route";
+import { SHELL_COPY_REFS } from "@clossys/designer/frames";
+import { getAdminCopy, type AdminCopy } from "@clossys/writer/admin-copy";
+import { WRITER_COPY_REFS } from "./writer/copy.js";
 import { emitCompleteRoutePage } from "./registered-route-source.js";
 import { createWholeStudioInitialSession } from "@clossys/designer/studio/queries";
 import { designerRouteServerData, routeBreakpointPixels } from "@clossys/designer/studio/route/server";
@@ -38,7 +42,8 @@ beforeAll(async () => {
   const packages: SurfacePackageEvidence[] = [...fixture.packages.filter(row => !modules.some(module => module.module === row.module)), ...modules];
   const snapshot = { library: fixture.library, surfaceOptions: { ...fixture.options, packages } };
   const engine = { catalog: fixture.catalog, ...snapshot };
-  const planned = planSurfaceRuntime({ engine, packages, leaves: ["frames.app-shell"], renderers: { "frames.app-shell": { module: "@clossys/designer/frames", export: "surfaceRuntimeRenderers" } } });
+  const leaves = ["frames.app-shell", "sections.data-table", "sections.record-detail", "sections.notices"];
+  const planned = planSurfaceRuntime({ engine, packages, leaves, renderers: Object.fromEntries(leaves.map(leaf => [leaf, { module: "@clossys/designer/frames", export: "surfaceRuntimeRenderers" }])) });
   expect(planned.gaps).toEqual([]);
   const frame = planned.manifest.fills[0]!;
   const values: Record<string, RuntimeJson> = {
@@ -125,8 +130,8 @@ it("changes the active original Designer layer after mount without replacing its
 }, 30000);
 
 it("emits only a server loader and the two complete component props", () => {
-  for (const kind of ["designer", "publisher"] as const) {
-    const component = kind === "designer" ? "DesignerRoutePage" : "PublisherRoutePage";
+  for (const kind of ["designer", "publisher", "writer"] as const) {
+    const component = kind === "designer" ? "DesignerRoutePage" : kind === "writer" ? "WriterRoutePage" : "PublisherRoutePage";
     const source = emitCompleteRoutePage({ kind, file: "src/app/page.tsx", loader: { file: "src/data.ts", export: "loadData" } });
     expect(source).toBe([
       `import { ${component} } from "@clossys/publisher/web/registered-route";`,
@@ -162,4 +167,77 @@ it("refuses a tampered Publisher frame before rendering its workspace", () => {
     expect(screen.getByRole("alert")).toHaveTextContent("initial data does not match");
     expect(screen.queryByRole("region", { name: "Publisher workspace" })).toBeNull(); cleanup();
   }
+});
+
+function writerData(): WriterRouteServerData {
+  const source = getAdminCopy();
+  const ids = new Set([...JSON.stringify(SHELL_COPY_REFS).matchAll(/st\.[a-z0-9]{10}/g)].map(match => match[0]));
+  for (const ref of Object.values(WRITER_COPY_REFS)) ids.add(ref.id);
+  const copy: AdminCopy = { envelopes: source.envelopes, records: source.records.filter(record => ids.has(record.id)) };
+  return { ...data, writer: { copy, selectedRecordId: WRITER_COPY_REFS.records.id } };
+}
+it("mounts Writer's selected Sections with real store data, draft CopyRef stamps and no unstamped body literals", async () => {
+  environment();
+  const writer = writerData(), before = JSON.stringify(writer.writer.copy);
+  const errors = vi.spyOn(console, "error");
+  const view = render(<WriterRoutePage serverData={writer} initialSession={initialSession} />);
+  await act(async () => {});
+  expect(view.container.querySelector('[data-route-display="writer"]')).toHaveAttribute("data-route-authentication", "unverified");
+  expect(screen.getByRole("heading", { level: 1, name: "Writer", exact: true })).toBeVisible();
+  const roots = ["sections.data-table", "sections.record-detail", "sections.notices"].map(leaf => {
+    const root = view.container.querySelector(`[data-ds-leaf="${leaf}"]`)!;
+    expect(root, leaf).not.toBeNull();
+    return root;
+  });
+  expect(roots[0]!.querySelectorAll("tbody tr")).toHaveLength(writer.writer.copy.records.length);
+  expect(roots[1]).toHaveTextContent("Copy records");
+  expect(roots[1]).toHaveTextContent("WriterRoutePage");
+  expect(roots[2]).toHaveTextContent(`${writer.writer.copy.records.length} records`);
+  const unwrapped: string[] = [];
+  for (const root of roots) {
+    const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT);
+    while (walker.nextNode()) {
+      const node = walker.currentNode;
+      if (node.textContent?.trim() && !node.parentElement?.closest("style, script, [data-copy-ref], [data-copy-value=technical]")) unwrapped.push(node.textContent);
+    }
+  }
+  expect(unwrapped).toEqual([]);
+  expect(view.container.querySelectorAll('[data-copy-ref][data-copy-locale="en"][data-copy-status="draft"]').length).toBeGreaterThan(10);
+  const next = WRITER_COPY_REFS.detail.id;
+  await userEvent.setup().click(within(roots[0] as HTMLElement).getByRole("row", { name: new RegExp(next) }));
+  await act(async () => {});
+  expect(roots[1]!.querySelector(`[data-copy-ref="${next}"]`)).not.toBeNull();
+  expect(JSON.stringify(writer.writer.copy)).toBe(before);
+  expect(errors.mock.calls).toEqual([]);
+}, 30000);
+it("leases Writer details only into the Frame right-panel after a row is selected", async () => {
+  environment();
+  const writer = writerData();
+  const view = render(<WriterRoutePage serverData={{ ...writer, writer: { copy: writer.writer.copy } }} initialSession={initialSession} />);
+  await act(async () => {});
+  expect(view.container.querySelector('[data-frame-module$="-writer-inspector"]')).toBeNull();
+  expect(view.container.querySelector('[data-ds-leaf="sections.record-detail"]')).toBeNull();
+  const table = screen.getByRole("grid", { name: "Copy records" });
+  await userEvent.setup().click(within(table).getByRole("row", { name: new RegExp(WRITER_COPY_REFS.records.id) }));
+  await act(async () => {});
+  const lease = view.container.querySelector('[data-frame-module$="-writer-inspector"]');
+  expect(lease).not.toBeNull();
+  expect(lease!.querySelector('[data-ds-leaf="sections.record-detail"]')).not.toBeNull();
+  expect(lease!.closest('[data-application-frame-panel="pane"]')).not.toBeNull();
+  expect(view.container.querySelector('main [data-ds-leaf="sections.record-detail"]')).toBeNull();
+}, 30000);
+it("refuses Writer's unselected Sections, foreign sessions, executable data and missing copy", () => {
+  environment();
+  const writer = writerData();
+  for (const serverData of [
+    { ...writer, manifest: { ...writer.manifest, fills: writer.manifest.fills.filter(fill => fill.leaf !== "sections.notices") } },
+    { ...writer, writer: { ...writer.writer, execute: () => undefined } },
+  ]) {
+    const view = render(<WriterRoutePage serverData={serverData} initialSession={initialSession} />);
+    expect(view.container.querySelector('[data-route-display="writer"]')).toBeNull(); cleanup();
+  }
+  const view = render(<WriterRoutePage serverData={writer} initialSession={{ ...initialSession, snapshotHash: "sha256:invalid" }} />);
+  expect(view.container.querySelector('[data-route-display="writer"]')).toBeNull(); cleanup();
+  const missing = { ...writer, writer: { copy: { ...writer.writer.copy, records: writer.writer.copy.records.filter(record => record.id !== WRITER_COPY_REFS.records.id) } } };
+  expect(() => renderToString(<WriterRoutePage serverData={missing} initialSession={initialSession} />)).toThrow(`Writer copy Need: ${WRITER_COPY_REFS.records.id}`);
 });

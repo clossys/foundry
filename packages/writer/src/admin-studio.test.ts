@@ -1,5 +1,5 @@
 import { execFileSync } from "node:child_process";
-import { mkdtempSync, mkdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { mkdtempSync, mkdirSync, readFileSync, rmSync, symlinkSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -7,7 +7,7 @@ import ts from "typescript";
 import { expect, it } from "vitest";
 
 const packageRoot = fileURLToPath(new URL("..", import.meta.url));
-const names = ["studio", "voice", "meta"] as const;
+const names = ["studio", "voice", "meta", "writer"] as const;
 const recordPath = (name: string) => join(packageRoot, `src/catalog/records/admin-${name}.r1.en.json`);
 
 it("packs complete admin copy and resolves every Designer route-label reference through public exports", () => {
@@ -34,6 +34,8 @@ it("packs complete admin copy and resolves every Designer route-label reference 
     const installed = join(root, "node_modules/@clossys/writer");
     mkdirSync(installed, { recursive: true });
     execFileSync("tar", ["-xzf", join(root, packed[0].filename), "-C", installed, "--strip-components=1"]);
+    // The public display resolver uses Writer's already-declared ICU runtime.
+    symlinkSync(resolve(packageRoot, "../../node_modules/intl-messageformat"), join(root, "node_modules/intl-messageformat"), "dir");
     writeFileSync(join(root, "package.json"), JSON.stringify({ private: true, type: "module" }));
     writeFileSync(join(root, "refs.json"), JSON.stringify(refs));
     const probe = join(root, "probe.mjs");
@@ -47,7 +49,7 @@ it("packs complete admin copy and resolves every Designer route-label reference 
       import { ADMIN_STUDIO_COPY_EN, getAdminStudioCopyRecord } from "@clossys/writer/admin-studio";
       import { ADMIN_VOICE_COPY_EN, getAdminVoiceCopyRecord } from "@clossys/writer/admin-voice";
       import { ADMIN_META_COPY_EN, getAdminMetaCopyRecord } from "@clossys/writer/admin-meta";
-      import { ADMIN_COPY_EN, createAdminCopy, getAdminCopy, getAdminCopyRecord } from "@clossys/writer/admin-copy";
+      import { ADMIN_COPY_EN, ADMIN_WRITER_COPY_EN, createAdminCopy, getAdminCopy, getAdminCopyRecord } from "@clossys/writer/admin-copy";
       for (const [raw, catalog, getRecord] of [
         [studio, ADMIN_STUDIO_COPY_EN, getAdminStudioCopyRecord],
         [voice, ADMIN_VOICE_COPY_EN, getAdminVoiceCopyRecord],
@@ -69,7 +71,7 @@ it("packs complete admin copy and resolves every Designer route-label reference 
         assert.equal(getRecord("unknown"), undefined);
       }
       assert.equal(getAdminCopy(), ADMIN_COPY_EN);
-      assert.deepEqual(ADMIN_COPY_EN.envelopes, [ADMIN_STUDIO_COPY_EN, ADMIN_VOICE_COPY_EN, ADMIN_META_COPY_EN]);
+      assert.deepEqual(ADMIN_COPY_EN.envelopes, [ADMIN_STUDIO_COPY_EN, ADMIN_VOICE_COPY_EN, ADMIN_META_COPY_EN, ADMIN_WRITER_COPY_EN]);
       assert.equal(ADMIN_COPY_EN.records.length, expectedRecordCount);
       assert.equal(new Set(ADMIN_COPY_EN.records.map(record => record.id)).size, expectedRecordCount);
       for (const value of [ADMIN_COPY_EN, ADMIN_COPY_EN.records, ADMIN_COPY_EN.envelopes]) assert.equal(Object.isFrozen(value), true);
@@ -82,7 +84,7 @@ it("packs complete admin copy and resolves every Designer route-label reference 
       }
       // Equal duplicates collapse regardless of object-property ordering.
       const reordered = Object.fromEntries(Object.entries(voice.records[0]).reverse());
-      const repeated = createAdminCopy([studio, voice, meta, { ...voice, records: [reordered] }]);
+      const repeated = createAdminCopy([studio, voice, meta, ADMIN_WRITER_COPY_EN, { ...voice, records: [reordered] }]);
       assert.equal(repeated.records.length, expectedRecordCount);
       assert.equal(getAdminCopyRecord(voice.records[0].id, repeated), voice.records[0]);
       assert.equal(Object.isFrozen(voice), false);

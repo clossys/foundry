@@ -1676,9 +1676,13 @@ function detectMainModule(): boolean {
  * above — their branches assign `process.exitCode` directly, with no
  * try/catch wrapper of their own to add.
  */
+import { mainAdminCopyDraft } from "./admin-copy-draft-cli.js";
+
 if (detectMainModule()) {
   const rawArgs = process.argv.slice(2);
-  if (rawArgs[0] === "library") {
+  if (rawArgs[0] === "admin-copy-draft") {
+    process.exitCode = mainAdminCopyDraft(rawArgs.slice(1));
+  } else if (rawArgs[0] === "library") {
     process.exitCode = mainWriterLibrary(rawArgs.slice(1));
   } else if (rawArgs[0] === "ia") {
     process.exitCode = mainWriterIA(rawArgs.slice(1));

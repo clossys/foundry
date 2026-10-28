@@ -43,3 +43,5 @@ export { PublisherRoutePage } from "./publisher/PublisherRoutePage.js";
 export type { PublisherRouteServerData, PublisherRoutePageProps } from "./publisher/PublisherRoutePage.js";
 export { DesignerRoutePage } from "@clossys/designer/studio/route";
 export type { DesignerRouteServerData, DesignerRoutePageProps } from "@clossys/designer/studio/route";
+export { WriterRoutePage } from "./writer/WriterRoutePage.js";
+export type { WriterRouteServerData, WriterRoutePageProps } from "./writer/WriterRoutePage.js";
