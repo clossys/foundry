@@ -5,6 +5,7 @@ import { Icon, type IconNode, type IconSize } from "../components/Icon.js";
 import { Logomark } from "../components/Logomark.js";
 import { SemanticContent } from "../components/SemanticContent.js";
 import { RatioFixture } from "./ratio-fixture.js";
+import { useOptionalTheme } from "../theme/ThemeProvider.js";
 import { specimenDataset } from "./specimen-dataset.js";
 import { specimenOverride } from "../tokens/preview/specimens.js";
 import { MediaFigure } from "../blocks/MediaFigure.js";
@@ -39,7 +40,7 @@ const ICON_SIZES: readonly IconSize[] = ["sm", "md", "lg"];
 
 /** A plate in a fixed-polarity ground, outlined so the ground that matches the page still reads as a plate. */
 function Ground({ ground, children, className, ...rest }: { ground: SpecimenGround; children: ReactNode; className?: string; "data-layer"?: string; "data-asset-specimen"?: string; "data-app-icon"?: string }): ReactElement {
-  return <div {...rest} data-ground={ground} className={`flex w-max items-center gap-sm rounded-panel border border-line-panel p-sm ${GROUND_CLASSES[ground]} ${className ?? ""}`}>{children}</div>;
+  return <div {...rest} data-ground={ground} className={`flex w-max max-w-full flex-wrap items-center gap-sm rounded-panel border border-line-panel p-sm ${GROUND_CLASSES[ground]} ${className ?? ""}`}>{children}</div>;
 }
 
 /** The maskable safe zone drawn over its artwork: a dashed circle in the secondary ink, in a box that fills the mark it sits on. */
@@ -94,28 +95,29 @@ export function ratioOf(value: unknown): { width: number; height: number } | und
 }
 
 /** The media classes every image and video specimen shares: one framed figure, the media at one height and its own aspect. */
-const MEDIA = "block h-4xl w-auto";
+const MEDIA = "block h-4xl max-w-full w-auto";
 /** A checked image resource as the image it is, framed, at its intrinsic aspect, with its alt policy and kind facet. */
 export function ImageSpecimen({ image }: { image: ImageResource }): ReactElement {
-  return <MediaFigure data-layer="assets" data-asset-specimen="image" framed className="w-max" caption={<SemanticContent as="span" className={CAPTION}>{image.kind}</SemanticContent>}>
+  return <MediaFigure data-layer="assets" data-asset-specimen="image" framed className="w-max max-w-full" caption={<SemanticContent as="span" className={CAPTION}>{image.kind}</SemanticContent>}>
     <img src={image.src} alt={image.decorative === true ? "" : image.alt} width={image.width} height={image.height} className={MEDIA} />
   </MediaFigure>;
 }
 /** A checked video resource as a player the viewer starts: controls, metadata only, never autoplay, captions attached. */
 export function VideoSpecimen({ video }: { video: VideoResource }): ReactElement {
-  return <MediaFigure data-layer="assets" data-asset-specimen="video" framed className="w-max" caption={<SemanticContent as="span" className={CAPTION}>{video.width}×{video.height}</SemanticContent>}>
+  return <MediaFigure data-layer="assets" data-asset-specimen="video" framed className="w-max max-w-full" caption={<SemanticContent as="span" className={CAPTION}>{video.width}×{video.height}</SemanticContent>}>
     <video controls preload="metadata" poster={video.poster} width={video.width} height={video.height} className={MEDIA}>
       <source src={video.src} type={video.mediaType} />
       {video.captions ? <track kind="captions" src={video.captions.src} srcLang={video.captions.srclang} label={video.captions.label} default /> : null}
     </video>
   </MediaFigure>;
 }
-/** A pattern recipe painted at its real tile size on the light reference ground, named by its shape. */
+/** A pattern recipe painted at its real tile size on the theme reference ground, named by its shape. */
 export function PatternSpecimen({ recipe }: { recipe: PatternRecipe }): ReactElement {
+  const theme = useOptionalTheme()?.resolvedTheme ?? "light";
   const { backgroundImage, backgroundSize } = patternBackground(recipe);
-  return <div data-layer="assets" data-asset-specimen="pattern" className="flex w-max flex-col items-start gap-xs"
+  return <div data-layer="assets" data-asset-specimen="pattern" data-specimen-theme={theme} className="flex w-max flex-col items-start gap-xs"
     {...specimenOverride("asset-under-review", { "--studio-pattern-image": backgroundImage, "--studio-pattern-size": backgroundSize })}>
-    <Ground ground="light"><span aria-hidden data-pattern-tile="" className="block size-3xl bg-(image:--studio-pattern-image) bg-size-(--studio-pattern-size)" /></Ground>
+    <Ground ground={theme}><span aria-hidden data-pattern-tile="" className="block size-3xl bg-(image:--studio-pattern-image) bg-size-(--studio-pattern-size)" /></Ground>
     <SemanticContent as="span" className={CAPTION}>{recipe.shape}</SemanticContent>
   </div>;
 }
