@@ -16,6 +16,7 @@ export function reviewInput(): Fixture {
   const slot = registry.slots[0]!;
   slot.locales = ["en", "fr"]; slot.route = "/home"; slot.deployTarget = "public";
   const candidate = registry.candidates[0]!;
+  candidate.pageMeta = [...(candidate.pageMeta ?? []), field("title", "fr", "Page exemple"), field("description", "fr", "Description exemple")];
   candidate.composition!.frame.frameId = "frames.site-shell";
   candidate.composition!.sections[0]!.fields = [field("title", "en", "Sample"), field("title", "fr", "Exemple")];
   const libraries: ReviewLibrarySnapshot[] = [{

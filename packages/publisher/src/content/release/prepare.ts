@@ -1,6 +1,7 @@
 import { createHash } from "node:crypto";
+import { createCopyResolver } from "@clossys/writer";
 import { checkContentActivation, checkContentApproval } from "../approval.js";
-import { resolveCopy, type CompositionSection, type ContentFinding, type CopyField } from "../composition.js";
+import { resolveCopy, type CompositionSection, type ContentFinding, type CopyField, type CopyFinding, type ResolveCopyOptions } from "../composition.js";
 import { computeContentDigest } from "../digest.js";
 import { isContentJson } from "../json.js";
 import type { ContentCandidate, ContentRegistry, ContentSlot } from "../model.js";
@@ -26,8 +27,9 @@ export function computeReleaseDigest(manifest: Omit<ReleaseManifest, "digest">):
 }
 
 /** Resolve exact historical occurrences before checking each locale's copy keys. */
-function checkCopyLocales(registry: ContentRegistry, candidate: ContentCandidate, slot: ContentSlot, path: string): ContentFinding[] {
+function checkCopyLocales(registry: ContentRegistry, candidate: ContentCandidate, slot: ContentSlot, path: string, options: ResolveCopyOptions): { findings: ContentFinding[]; copyFindings: CopyFinding[] } {
   const findings: ContentFinding[] = [];
+  const copyFindings: CopyFinding[] = [];
   const add = (at: string, message: string) => findings.push({ path: at, rule: "release-copy-locale", message });
   const fields = (values: readonly CopyField[], at: string) => {
     values.forEach((field, index) => {
@@ -51,12 +53,20 @@ function checkCopyLocales(registry: ContentRegistry, candidate: ContentCandidate
     if (target) resolved.push({ ...target, key: section.key });
   });
   if (candidate.pageMeta) fields(candidate.pageMeta, `${path}.pageMeta`);
-  if (findings.length) return findings;
+  if (findings.length) return { findings, copyFindings };
   const content = {
     ...(candidate.composition ? { composition: { ...candidate.composition, sections: resolved } } : {}),
     ...(candidate.pageMeta === undefined ? {} : { pageMeta: candidate.pageMeta }),
   };
-  const copies = slot.locales.map(locale => ({ locale, copy: resolveCopy(content, locale) }));
+  const copies = slot.locales.map(locale => {
+    const report = resolveCopy(content, locale, { ...options, requirePageMeta: slot.kind !== "redirect" });
+    for (const finding of report.findings) {
+      const located = { ...finding, path: `${path}.${finding.path}` };
+      copyFindings.push(located);
+      if (finding.severity === "error") findings.push(located);
+    }
+    return { locale, copy: report.copy };
+  });
   const sections = new Set(copies.flatMap(row => Object.keys(row.copy)));
   for (const key of sections) {
     const keys = new Set(copies.flatMap(row => Object.keys(row.copy[key] ?? {})));
@@ -66,14 +76,15 @@ function checkCopyLocales(registry: ContentRegistry, candidate: ContentCandidate
       }
     }
   }
-  return findings;
+  return { findings, copyFindings };
 }
 
 /** Prepare immutable local artifacts only; selection never asserts receiver observation. */
 export function prepareContentRelease(input: ReleaseInput, numbers: Readonly<Record<string, number>> = {}): ReleaseResult {
   const findings: ContentFinding[] = [];
+  const copyFindings: CopyFinding[] = [];
   const add = (path: string, rule: string, message: string) => findings.push({ path, rule, message });
-  const fail = (): ReleaseResult => ({ ok: false, releases: [], findings });
+  const fail = (): ReleaseResult => ({ ok: false, releases: [], findings, copyFindings });
   if (!object(input)) {
     add("input", "release-input", "Release preparation requires an explicit input record"); return fail();
   }
@@ -86,6 +97,19 @@ export function prepareContentRelease(input: ReleaseInput, numbers: Readonly<Rec
   findings.push(...checkContentActivation(input.registry));
   if (findings.length) return fail();
   const registry = input.registry;
+  const writer = input.writer;
+  if (writer !== undefined && (!isContentJson(writer) || !object(writer)
+    || !Object.keys(writer).every(key => ["registry", "registries", "manifest", "timeZone"].includes(key)) || !Object.hasOwn(writer, "registry"))) {
+    add("input.writer", "release-writer-context", "Writer context requires finite registry, registries, manifest, and timeZone values");
+    return fail();
+  }
+  const copyOptions: ResolveCopyOptions = writer === undefined ? {} : {
+    resolver: createCopyResolver(writer.registry, {
+      ...(writer.registries === undefined ? {} : { registries: writer.registries }),
+      ...(writer.manifest === undefined ? {} : { manifest: writer.manifest }),
+      timeZone: writer.timeZone ?? "UTC", now: new Date(input.at),
+    }),
+  };
   const seen = new Set<string>();
   type Selected = { candidate: ContentCandidate; slot: ContentSlot; digest: string; receiver: HandoverReceipt["receiver"] };
   const groups = new Map<string, Selected[]>();
@@ -114,7 +138,9 @@ export function prepareContentRelease(input: ReleaseInput, numbers: Readonly<Rec
       || !Array.isArray(review.needs) || review.needs.length !== 0) {
       add(`${path}.review`, "release-review", `Candidate ${candidate.id} requires a matching, complete, finding-free Review report for every declared locale`);
     }
-    findings.push(...checkCopyLocales(registry, candidate, slot, `${path}.candidate`));
+    const copyReport = checkCopyLocales(registry, candidate, slot, `${path}.candidate`, copyOptions);
+    findings.push(...copyReport.findings);
+    copyFindings.push(...copyReport.copyFindings);
     const target = slot.deployTarget;
     if (!target || !/^[a-zA-Z0-9_-]+$/.test(target) || registry.workspace.deployTargets.filter(row => row.id === target).length !== 1) {
       add(path, "release-target", `Slot ${slot.id} requires one declared deploy target with a safe target id`);
@@ -150,5 +176,5 @@ export function prepareContentRelease(input: ReleaseInput, numbers: Readonly<Rec
       handover: { targetId, releaseN: n, receiver: selected[0]!.receiver, matches: false, status: "pending", observedAt: null },
     };
   });
-  return { ok: true, releases, findings: [] };
+  return { ok: true, releases, findings: [], copyFindings };
 }

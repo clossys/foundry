@@ -41,7 +41,7 @@ describe("content route v2 selection and deterministic source", () => {
     expect(() => bindContentRoute(input, route)).not.toThrow();
     const original = input.registry.candidates[0]!;
     const drifts = [
-      { ...original, pageMeta: original.pageMeta!.map(field => field.key === "title" ? { ...field, value: "Unsnapshotted title" } : field) },
+      { ...original, pageMeta: original.pageMeta!.map(field => field.key === "title" && field.ref === undefined ? { ...field, value: "Unsnapshotted title" } : field) },
       { ...original, pageMetaAssets: { ...original.pageMetaAssets, "og-image": "assets.changed" } },
     ];
     for (const candidate of drifts) {
@@ -59,7 +59,7 @@ describe("content route v2 selection and deterministic source", () => {
     const reorderedComposition = {
       libraryVersion: composition.libraryVersion,
       sections: composition.sections.map(section => ({
-        fields: section.fields.map(field => ({ source: field.source, value: field.value, locale: field.locale, key: field.key })),
+        fields: section.fields.map(field => field.ref === undefined ? { source: field.source, value: field.value, locale: field.locale, key: field.key } : { source: field.source, ref: field.ref, locale: field.locale, key: field.key }),
         intent: section.intent, configId: section.configId, sectionId: section.sectionId, key: section.key,
       })),
       frame: { configId: composition.frame.configId, frameId: composition.frame.frameId },
