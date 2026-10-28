@@ -28,6 +28,7 @@ interface Envelope {
   needs: { recordId?: string; cellId: string; severity: string; status: string; message: string }[];
   bindings: { cellId: string; recordId: string; target: string; kind: string }[];
   coverage: { kind: string; productionBound: number; proposedBindings: number };
+  sourceBatches?: { unit: string; sourceCommit: string; recordIds: string[]; sourceFiles: Record<string, string> }[];
 }
 const root = new URL("../../../../../", import.meta.url);
 const read = (path: string) => readFileSync(new URL(path, root), "utf8");
@@ -78,7 +79,8 @@ for (const file of files) describe(file, () => {
       expect(review).toBeDefined(); expect(review.after).toBe(record.text);
       expect(review.rationale.length).toBeGreaterThan(25); expect(review.before.length).toBeGreaterThan(0);
       expect(review.scope).toBe("draft only"); expect(review.budget).toBe(record.limits?.maxChars);
-      expect(review.source.commit).toBe(envelope.sourceCommit);
+      const batch = envelope.sourceBatches?.find(batch => batch.recordIds.includes(record.id));
+      expect(review.source.commit).toBe(batch?.sourceCommit ?? envelope.sourceCommit);
       expect(review.source.line).toBeGreaterThan(0);
       expect(review.source.line).toBeLessThanOrEqual(read(review.source.path).split("\n").length);
       expect(envelope.needs).toContainEqual(expect.objectContaining({ recordId: record.id, status: "Need" }));
@@ -100,7 +102,7 @@ for (const file of files) describe(file, () => {
   });
 
   it("hand-rolls its planned fields through a pseudo resolver with zero unwrapped text", () => {
-    const envelope = draft(file), known = new Set([...voice.records, ...envelope.records].map(record => record.id));
+    const envelope = draft(file), known = new Set([...voice.records, ...files.flatMap(file => draft(file).records)].map(record => record.id));
     const calls: string[] = [];
     const pseudo = (id: string) => { if (!known.has(id)) throw new Error(`Need: missing Writer record ${id}`); calls.push(id); return `[[${id}]]`; };
     expect(envelope.bindings.length).toBeGreaterThanOrEqual(envelope.records.length);
@@ -164,7 +166,21 @@ it("supplies a resolved-count formatter, each supported check name and each chec
   const visit = (node: ts.Node): void => {
     if (ts.isCallExpression(node) && ts.isIdentifier(node.expression) && node.expression.text === "add"
       && node.arguments.length >= 4 && ts.isStringLiteral(node.arguments[0]!) && /^C\d+$/.test(node.arguments[0]!.text)) {
-      const message = node.arguments[3]!;
+      // Binding metadata wraps the same diagnostic expression; it does not rewrite it.
+      const diagnostic = node.arguments[3]!;
+      const message = ts.isObjectLiteralExpression(diagnostic)
+        ? diagnostic.properties.find((property): property is ts.PropertyAssignment => ts.isPropertyAssignment(property)
+          && ts.isIdentifier(property.name) && property.name.text === "message")!.initializer
+        : diagnostic;
+      if (ts.isObjectLiteralExpression(diagnostic)) {
+        const copy = diagnostic.properties.find((property): property is ts.PropertyAssignment => ts.isPropertyAssignment(property)
+          && ts.isIdentifier(property.name) && property.name.text === "copy")!;
+        const reference = (copy.initializer as ts.ObjectLiteralExpression).properties.find((property): property is ts.PropertyAssignment =>
+          ts.isPropertyAssignment(property) && ts.isIdentifier(property.name) && property.name.text === "id")!;
+        const index = messages.length;
+        const proposed = envelope.reviews.filter(row => row.cellId.startsWith("designer.finding."));
+        expect((reference.initializer as ts.StringLiteral).text).toBe(proposed[index]!.recordId);
+      }
       messages.push({ code: node.arguments[0]!.text, line: source.getLineAndCharacterOfPosition(message.getStart()).line + 1,
         expression: message.getText(source) });
     }

@@ -329,7 +329,7 @@
       "context": "designer.ia.tokens.color-controls",
       "status": "draft",
       "origin": "foundry-default",
-      "text": "Controls",
+      "text": "Control colors",
       "limits": {
         "maxChars": 60
       }
@@ -560,7 +560,7 @@
       "context": "designer.ia.tokens.interaction-controls",
       "status": "draft",
       "origin": "foundry-default",
-      "text": "Controls",
+      "text": "Control sizes",
       "limits": {
         "maxChars": 60
       }
@@ -3849,7 +3849,7 @@
       "context": "designer.ia.frames.panels",
       "status": "draft",
       "origin": "foundry-default",
-      "text": "Panels",
+      "text": "Page panels",
       "limits": {
         "maxChars": 60
       }
@@ -3882,7 +3882,7 @@
       "context": "designer.ia.frames.overlay-shells-panels",
       "status": "draft",
       "origin": "foundry-default",
-      "text": "Panels",
+      "text": "Overlay panels",
       "limits": {
         "maxChars": 60
       }
@@ -3904,7 +3904,7 @@
       "context": "designer.item.frames.document",
       "status": "draft",
       "origin": "foundry-default",
-      "text": "Document",
+      "text": "Document page",
       "limits": {
         "maxChars": 60
       }
@@ -3915,7 +3915,7 @@
       "context": "designer.item.frames.site-shell",
       "status": "draft",
       "origin": "foundry-default",
-      "text": "Site shell",
+      "text": "Website page",
       "limits": {
         "maxChars": 60
       }
@@ -3926,7 +3926,7 @@
       "context": "designer.item.frames.app-shell",
       "status": "draft",
       "origin": "foundry-default",
-      "text": "App shell",
+      "text": "Workspace page",
       "limits": {
         "maxChars": 60
       }
@@ -3937,7 +3937,7 @@
       "context": "designer.item.frames.auth-shell",
       "status": "draft",
       "origin": "foundry-default",
-      "text": "Sign-in shell",
+      "text": "Sign-in page",
       "limits": {
         "maxChars": 60
       }
@@ -3948,7 +3948,7 @@
       "context": "designer.item.frames.site-header",
       "status": "draft",
       "origin": "foundry-default",
-      "text": "Site header",
+      "text": "Website header",
       "limits": {
         "maxChars": 60
       }
@@ -3959,7 +3959,7 @@
       "context": "designer.item.frames.app-header",
       "status": "draft",
       "origin": "foundry-default",
-      "text": "App header",
+      "text": "Workspace header",
       "limits": {
         "maxChars": 60
       }
@@ -3970,7 +3970,7 @@
       "context": "designer.item.frames.app-sidebar",
       "status": "draft",
       "origin": "foundry-default",
-      "text": "App sidebar",
+      "text": "Workspace sidebar",
       "limits": {
         "maxChars": 60
       }
@@ -3981,7 +3981,7 @@
       "context": "designer.item.frames.inspector",
       "status": "draft",
       "origin": "foundry-default",
-      "text": "Inspector",
+      "text": "Details panel",
       "limits": {
         "maxChars": 60
       }
@@ -3992,7 +3992,7 @@
       "context": "designer.item.frames.site-footer",
       "status": "draft",
       "origin": "foundry-default",
-      "text": "Site footer",
+      "text": "Website footer",
       "limits": {
         "maxChars": 60
       }
@@ -4003,7 +4003,7 @@
       "context": "designer.item.frames.sheet",
       "status": "draft",
       "origin": "foundry-default",
-      "text": "Sheet",
+      "text": "Overlay panel",
       "limits": {
         "maxChars": 60
       }
@@ -5270,6 +5270,457 @@
       "limits": {
         "maxChars": 160
       }
+    },
+    {
+      "id": "st.dczaaf9s2z",
+      "leaf": "strings.names",
+      "context": "designer.frameOption.frames.document.variant.page",
+      "status": "draft",
+      "origin": "foundry-default",
+      "text": "Page document",
+      "limits": {
+        "maxChars": 40
+      }
+    },
+    {
+      "id": "st.zjekh6j231",
+      "leaf": "strings.names",
+      "context": "designer.frameOption.frames.document.variant.status",
+      "status": "draft",
+      "origin": "foundry-default",
+      "text": "Status document",
+      "limits": {
+        "maxChars": 40
+      }
+    },
+    {
+      "id": "st.w1wk8f1k2h",
+      "leaf": "strings.names",
+      "context": "designer.frameOption.frames.site-shell.chrome.full",
+      "status": "draft",
+      "origin": "foundry-default",
+      "text": "Full navigation",
+      "limits": {
+        "maxChars": 40
+      }
+    },
+    {
+      "id": "st.gsj3d5c23w",
+      "leaf": "strings.names",
+      "context": "designer.frameOption.frames.site-shell.chrome.minimal",
+      "status": "draft",
+      "origin": "foundry-default",
+      "text": "Minimal navigation",
+      "limits": {
+        "maxChars": 40
+      }
+    },
+    {
+      "id": "st.yrw1mmhyjw",
+      "leaf": "strings.names",
+      "context": "designer.frameOption.frames.site-shell.footer-placement.flow",
+      "status": "draft",
+      "origin": "foundry-default",
+      "text": "Footer after content",
+      "limits": {
+        "maxChars": 40
+      }
+    },
+    {
+      "id": "st.gmqgncyggg",
+      "leaf": "strings.names",
+      "context": "designer.frameOption.frames.site-shell.footer-placement.overlay",
+      "status": "draft",
+      "origin": "foundry-default",
+      "text": "Footer over content",
+      "limits": {
+        "maxChars": 40
+      }
+    },
+    {
+      "id": "st.nnjvve8cas",
+      "leaf": "strings.names",
+      "context": "designer.frameOption.frames.site-shell.header-placement.overlay",
+      "status": "draft",
+      "origin": "foundry-default",
+      "text": "Header over content",
+      "limits": {
+        "maxChars": 40
+      }
+    },
+    {
+      "id": "st.r2760v8zm7",
+      "leaf": "strings.names",
+      "context": "designer.frameOption.frames.app-shell.layout.standard",
+      "status": "draft",
+      "origin": "foundry-default",
+      "text": "Standard layout",
+      "limits": {
+        "maxChars": 40
+      }
+    },
+    {
+      "id": "st.ksa5w8z32s",
+      "leaf": "strings.names",
+      "context": "designer.frameOption.frames.app-shell.layout.immersive",
+      "status": "draft",
+      "origin": "foundry-default",
+      "text": "Immersive layout",
+      "limits": {
+        "maxChars": 40
+      }
+    },
+    {
+      "id": "st.ez6mw87z9r",
+      "leaf": "strings.names",
+      "context": "designer.frameOption.frames.app-shell.stage.contained",
+      "status": "draft",
+      "origin": "foundry-default",
+      "text": "Contained canvas",
+      "limits": {
+        "maxChars": 40
+      }
+    },
+    {
+      "id": "st.wfc3z4rp03",
+      "leaf": "strings.names",
+      "context": "designer.frameOption.frames.app-shell.stage.full",
+      "status": "draft",
+      "origin": "foundry-default",
+      "text": "Full canvas",
+      "limits": {
+        "maxChars": 40
+      }
+    },
+    {
+      "id": "st.2a77nn406k",
+      "leaf": "strings.names",
+      "context": "designer.frameOption.frames.app-shell.theme.system",
+      "status": "draft",
+      "origin": "foundry-default",
+      "text": "System theme",
+      "limits": {
+        "maxChars": 40
+      }
+    },
+    {
+      "id": "st.96npq8j00n",
+      "leaf": "strings.names",
+      "context": "designer.frameOption.frames.app-shell.theme.light",
+      "status": "draft",
+      "origin": "foundry-default",
+      "text": "Light theme",
+      "limits": {
+        "maxChars": 40
+      }
+    },
+    {
+      "id": "st.476jt5vjet",
+      "leaf": "strings.names",
+      "context": "designer.frameOption.frames.app-shell.theme.dark",
+      "status": "draft",
+      "origin": "foundry-default",
+      "text": "Dark theme",
+      "limits": {
+        "maxChars": 40
+      }
+    },
+    {
+      "id": "st.rfdpnk1f7n",
+      "leaf": "strings.names",
+      "context": "designer.frameOption.frames.site-header.surface.solid",
+      "status": "draft",
+      "origin": "foundry-default",
+      "text": "Solid background",
+      "limits": {
+        "maxChars": 40
+      }
+    },
+    {
+      "id": "st.srzp5yepxy",
+      "leaf": "strings.names",
+      "context": "designer.frameOption.frames.site-header.surface.transparent",
+      "status": "draft",
+      "origin": "foundry-default",
+      "text": "Clear background",
+      "limits": {
+        "maxChars": 40
+      }
+    },
+    {
+      "id": "st.5ccwgqgt2n",
+      "leaf": "strings.names",
+      "context": "designer.frameOption.frames.site-header.surface.glass",
+      "status": "draft",
+      "origin": "foundry-default",
+      "text": "Blurred background",
+      "limits": {
+        "maxChars": 40
+      }
+    },
+    {
+      "id": "st.gtfwyrz6qw",
+      "leaf": "strings.names",
+      "context": "designer.frameOption.frames.site-header.tone.base",
+      "status": "draft",
+      "origin": "foundry-default",
+      "text": "Standard colors",
+      "limits": {
+        "maxChars": 40
+      }
+    },
+    {
+      "id": "st.2zvh7czj3j",
+      "leaf": "strings.names",
+      "context": "designer.frameOption.frames.site-header.tone.inverse",
+      "status": "draft",
+      "origin": "foundry-default",
+      "text": "Reversed colors",
+      "limits": {
+        "maxChars": 40
+      }
+    },
+    {
+      "id": "st.w5x5x39c1a",
+      "leaf": "strings.names",
+      "context": "designer.frameOption.frames.site-header.nav-placement.leading",
+      "status": "draft",
+      "origin": "foundry-default",
+      "text": "Navigation at start",
+      "limits": {
+        "maxChars": 40
+      }
+    },
+    {
+      "id": "st.16vzn156y6",
+      "leaf": "strings.names",
+      "context": "designer.frameOption.frames.site-header.nav-placement.centered",
+      "status": "draft",
+      "origin": "foundry-default",
+      "text": "Centered navigation",
+      "limits": {
+        "maxChars": 40
+      }
+    },
+    {
+      "id": "st.fjgby5zygk",
+      "leaf": "strings.names",
+      "context": "designer.frameOption.frames.site-header.position.sticky",
+      "status": "draft",
+      "origin": "foundry-default",
+      "text": "Stays in view",
+      "limits": {
+        "maxChars": 40
+      }
+    },
+    {
+      "id": "st.wd9t4rmq3n",
+      "leaf": "strings.names",
+      "context": "designer.frameOption.frames.site-header.position.static",
+      "status": "draft",
+      "origin": "foundry-default",
+      "text": "Scrolls with content",
+      "limits": {
+        "maxChars": 40
+      }
+    },
+    {
+      "id": "st.byrjykzrn2",
+      "leaf": "strings.names",
+      "context": "designer.frameOption.frames.app-header.fallback.opaque",
+      "status": "draft",
+      "origin": "foundry-default",
+      "text": "Solid backup background",
+      "limits": {
+        "maxChars": 40
+      }
+    },
+    {
+      "id": "st.nbpr93wj68",
+      "leaf": "strings.names",
+      "context": "designer.frameOption.frames.app-sidebar.presentation.docked",
+      "status": "draft",
+      "origin": "foundry-default",
+      "text": "Docked panel",
+      "limits": {
+        "maxChars": 40
+      }
+    },
+    {
+      "id": "st.qew1g2x6ms",
+      "leaf": "strings.names",
+      "context": "designer.frameOption.frames.app-sidebar.presentation.collapsed",
+      "status": "draft",
+      "origin": "foundry-default",
+      "text": "Collapsed panel",
+      "limits": {
+        "maxChars": 40
+      }
+    },
+    {
+      "id": "st.njcj3qqb0e",
+      "leaf": "strings.names",
+      "context": "designer.frameOption.frames.app-sidebar.presentation.overlay",
+      "status": "draft",
+      "origin": "foundry-default",
+      "text": "Overlay panel",
+      "limits": {
+        "maxChars": 40
+      }
+    },
+    {
+      "id": "st.y072bfqj65",
+      "leaf": "strings.names",
+      "context": "designer.frameOption.frames.site-footer.ground.base",
+      "status": "draft",
+      "origin": "foundry-default",
+      "text": "Standard background",
+      "limits": {
+        "maxChars": 40
+      }
+    },
+    {
+      "id": "st.jq17fy257c",
+      "leaf": "strings.names",
+      "context": "designer.frameOption.frames.site-footer.ground.inverse",
+      "status": "draft",
+      "origin": "foundry-default",
+      "text": "Reversed background",
+      "limits": {
+        "maxChars": 40
+      }
+    },
+    {
+      "id": "st.5fvjdv1ds7",
+      "leaf": "strings.names",
+      "context": "designer.frameOption.frames.site-footer.rule.on",
+      "status": "draft",
+      "origin": "foundry-default",
+      "text": "Show divider",
+      "limits": {
+        "maxChars": 40
+      }
+    },
+    {
+      "id": "st.ne0180h530",
+      "leaf": "strings.names",
+      "context": "designer.frameOption.frames.site-footer.rule.off",
+      "status": "draft",
+      "origin": "foundry-default",
+      "text": "Hide divider",
+      "limits": {
+        "maxChars": 40
+      }
+    },
+    {
+      "id": "st.742pveh5bs",
+      "leaf": "strings.names",
+      "context": "designer.frameOption.frames.site-footer.overlay.on",
+      "status": "draft",
+      "origin": "foundry-default",
+      "text": "Over content",
+      "limits": {
+        "maxChars": 40
+      }
+    },
+    {
+      "id": "st.v7t7c2pr8y",
+      "leaf": "strings.names",
+      "context": "designer.frameOption.frames.site-footer.overlay.off",
+      "status": "draft",
+      "origin": "foundry-default",
+      "text": "After content",
+      "limits": {
+        "maxChars": 40
+      }
+    },
+    {
+      "id": "st.rd1wks5c2n",
+      "leaf": "strings.names",
+      "context": "designer.frameOption.frames.sheet.placement.start",
+      "status": "draft",
+      "origin": "foundry-default",
+      "text": "At start",
+      "limits": {
+        "maxChars": 40
+      }
+    },
+    {
+      "id": "st.q8zq27jzn6",
+      "leaf": "strings.names",
+      "context": "designer.frameOption.frames.sheet.placement.end",
+      "status": "draft",
+      "origin": "foundry-default",
+      "text": "At end",
+      "limits": {
+        "maxChars": 40
+      }
+    },
+    {
+      "id": "st.npk8a246pf",
+      "leaf": "strings.names",
+      "context": "designer.frameOption.frames.sheet.placement.bottom",
+      "status": "draft",
+      "origin": "foundry-default",
+      "text": "At bottom",
+      "limits": {
+        "maxChars": 40
+      }
+    },
+    {
+      "id": "st.bqn0rgkke1",
+      "leaf": "strings.names",
+      "context": "designer.frameOption.frames.sheet.wide.dismiss",
+      "status": "draft",
+      "origin": "foundry-default",
+      "text": "Hide on wide screens",
+      "limits": {
+        "maxChars": 40
+      }
+    },
+    {
+      "id": "st.g0stjcdq45",
+      "leaf": "strings.names",
+      "context": "designer.frameOption.frames.sheet.wide.sheet",
+      "status": "draft",
+      "origin": "foundry-default",
+      "text": "Panel on wide screens",
+      "limits": {
+        "maxChars": 40
+      }
+    },
+    {
+      "id": "st.1gh330mabf",
+      "leaf": "strings.names",
+      "context": "designer.frameOption.frames.command.shortcut.on",
+      "status": "draft",
+      "origin": "foundry-default",
+      "text": "Keyboard shortcut on",
+      "limits": {
+        "maxChars": 40
+      }
+    },
+    {
+      "id": "st.f99jjh9znb",
+      "leaf": "strings.names",
+      "context": "designer.frameOption.frames.command.shortcut.off",
+      "status": "draft",
+      "origin": "foundry-default",
+      "text": "Keyboard shortcut off",
+      "limits": {
+        "maxChars": 40
+      }
+    },
+    {
+      "id": "st.bjtk9nxqc9",
+      "leaf": "strings.names",
+      "context": "admin.library.standard-pack-fixture-library",
+      "status": "draft",
+      "origin": "foundry-default",
+      "text": "Website preview library",
+      "limits": {
+        "maxChars": 40
+      }
     }
   ],
   "reviews": [
@@ -5758,8 +6209,8 @@
         "key": "designer.ia.tokens.color-controls"
       },
       "before": "Controls",
-      "after": "Controls",
-      "rationale": "Give the tokens Explorer group color-controls a Writer-owned display name matching the declared IA label. Grouping and permanent item IDs are unchanged.",
+      "after": "Control colors",
+      "rationale": "Give the tokens Explorer group color-controls a Writer-owned display name matching the declared IA label. Grouping and permanent item IDs are unchanged. Naming revision: Disambiguate this group from another group with the same short name on the layer board, without changing its id or placement.",
       "role": "label",
       "budget": 60
     },
@@ -6136,8 +6587,8 @@
         "key": "designer.ia.tokens.interaction-controls"
       },
       "before": "Controls",
-      "after": "Controls",
-      "rationale": "Give the tokens Explorer group interaction-controls a Writer-owned display name matching the declared IA label. Grouping and permanent item IDs are unchanged.",
+      "after": "Control sizes",
+      "rationale": "Give the tokens Explorer group interaction-controls a Writer-owned display name matching the declared IA label. Grouping and permanent item IDs are unchanged. Naming revision: Disambiguate this group from another group with the same short name on the layer board, without changing its id or placement.",
       "role": "label",
       "budget": 60
     },
@@ -11518,8 +11969,8 @@
         "key": "designer.ia.frames.panels"
       },
       "before": "Panels",
-      "after": "Panels",
-      "rationale": "Give the frames Explorer group panels a Writer-owned display name matching the declared IA label. Grouping and permanent item IDs are unchanged.",
+      "after": "Page panels",
+      "rationale": "Give the frames Explorer group panels a Writer-owned display name matching the declared IA label. Grouping and permanent item IDs are unchanged. Naming revision: Disambiguate this group from another group with the same short name on the layer board, without changing its id or placement.",
       "role": "label",
       "budget": 60
     },
@@ -11572,8 +12023,8 @@
         "key": "designer.ia.frames.overlay-shells-panels"
       },
       "before": "Panels",
-      "after": "Panels",
-      "rationale": "Give the frames Explorer group overlay-shells-panels a Writer-owned display name matching the declared IA label. Grouping and permanent item IDs are unchanged.",
+      "after": "Overlay panels",
+      "rationale": "Give the frames Explorer group overlay-shells-panels a Writer-owned display name matching the declared IA label. Grouping and permanent item IDs are unchanged. Naming revision: Disambiguate this group from another group with the same short name on the layer board, without changing its id or placement.",
       "role": "label",
       "budget": 60
     },
@@ -11608,8 +12059,8 @@
         "key": "designer.item.frames.document"
       },
       "before": "frames.document",
-      "after": "Document",
-      "rationale": "Name frames.document for Explorer, graph and Inspector links without exposing the technical ID as prose. This draft adds no item and grants no approval.",
+      "after": "Document page",
+      "rationale": "Name frames.document for Explorer, graph and Inspector links without exposing the technical ID as prose. This draft adds no item and grants no approval. Naming revision: Name the visible page or region rather than exposing a shell or implementation id; this remains an unapproved draft.",
       "role": "label",
       "budget": 60
     },
@@ -11626,8 +12077,8 @@
         "key": "designer.item.frames.site-shell"
       },
       "before": "frames.site-shell",
-      "after": "Site shell",
-      "rationale": "Name frames.site-shell for Explorer, graph and Inspector links without exposing the technical ID as prose. This draft adds no item and grants no approval.",
+      "after": "Website page",
+      "rationale": "Name frames.site-shell for Explorer, graph and Inspector links without exposing the technical ID as prose. This draft adds no item and grants no approval. Naming revision: Name the visible page or region rather than exposing a shell or implementation id; this remains an unapproved draft.",
       "role": "label",
       "budget": 60
     },
@@ -11644,8 +12095,8 @@
         "key": "designer.item.frames.app-shell"
       },
       "before": "frames.app-shell",
-      "after": "App shell",
-      "rationale": "Name frames.app-shell for Explorer, graph and Inspector links without exposing the technical ID as prose. This draft adds no item and grants no approval.",
+      "after": "Workspace page",
+      "rationale": "Name frames.app-shell for Explorer, graph and Inspector links without exposing the technical ID as prose. This draft adds no item and grants no approval. Naming revision: Name the visible page or region rather than exposing a shell or implementation id; this remains an unapproved draft.",
       "role": "label",
       "budget": 60
     },
@@ -11662,8 +12113,8 @@
         "key": "designer.item.frames.auth-shell"
       },
       "before": "frames.auth-shell",
-      "after": "Sign-in shell",
-      "rationale": "Name frames.auth-shell for Explorer, graph and Inspector links without exposing the technical ID as prose. This draft adds no item and grants no approval.",
+      "after": "Sign-in page",
+      "rationale": "Name frames.auth-shell for Explorer, graph and Inspector links without exposing the technical ID as prose. This draft adds no item and grants no approval. Naming revision: Name the visible page or region rather than exposing a shell or implementation id; this remains an unapproved draft.",
       "role": "label",
       "budget": 60
     },
@@ -11680,8 +12131,8 @@
         "key": "designer.item.frames.site-header"
       },
       "before": "frames.site-header",
-      "after": "Site header",
-      "rationale": "Name frames.site-header for Explorer, graph and Inspector links without exposing the technical ID as prose. This draft adds no item and grants no approval.",
+      "after": "Website header",
+      "rationale": "Name frames.site-header for Explorer, graph and Inspector links without exposing the technical ID as prose. This draft adds no item and grants no approval. Naming revision: Name the visible page or region rather than exposing a shell or implementation id; this remains an unapproved draft.",
       "role": "label",
       "budget": 60
     },
@@ -11698,8 +12149,8 @@
         "key": "designer.item.frames.app-header"
       },
       "before": "frames.app-header",
-      "after": "App header",
-      "rationale": "Name frames.app-header for Explorer, graph and Inspector links without exposing the technical ID as prose. This draft adds no item and grants no approval.",
+      "after": "Workspace header",
+      "rationale": "Name frames.app-header for Explorer, graph and Inspector links without exposing the technical ID as prose. This draft adds no item and grants no approval. Naming revision: Name the visible page or region rather than exposing a shell or implementation id; this remains an unapproved draft.",
       "role": "label",
       "budget": 60
     },
@@ -11716,8 +12167,8 @@
         "key": "designer.item.frames.app-sidebar"
       },
       "before": "frames.app-sidebar",
-      "after": "App sidebar",
-      "rationale": "Name frames.app-sidebar for Explorer, graph and Inspector links without exposing the technical ID as prose. This draft adds no item and grants no approval.",
+      "after": "Workspace sidebar",
+      "rationale": "Name frames.app-sidebar for Explorer, graph and Inspector links without exposing the technical ID as prose. This draft adds no item and grants no approval. Naming revision: Name the visible page or region rather than exposing a shell or implementation id; this remains an unapproved draft.",
       "role": "label",
       "budget": 60
     },
@@ -11734,8 +12185,8 @@
         "key": "designer.item.frames.inspector"
       },
       "before": "frames.inspector",
-      "after": "Inspector",
-      "rationale": "Name frames.inspector for Explorer, graph and Inspector links without exposing the technical ID as prose. This draft adds no item and grants no approval.",
+      "after": "Details panel",
+      "rationale": "Name frames.inspector for Explorer, graph and Inspector links without exposing the technical ID as prose. This draft adds no item and grants no approval. Naming revision: Name the visible page or region rather than exposing a shell or implementation id; this remains an unapproved draft.",
       "role": "label",
       "budget": 60
     },
@@ -11752,8 +12203,8 @@
         "key": "designer.item.frames.site-footer"
       },
       "before": "frames.site-footer",
-      "after": "Site footer",
-      "rationale": "Name frames.site-footer for Explorer, graph and Inspector links without exposing the technical ID as prose. This draft adds no item and grants no approval.",
+      "after": "Website footer",
+      "rationale": "Name frames.site-footer for Explorer, graph and Inspector links without exposing the technical ID as prose. This draft adds no item and grants no approval. Naming revision: Name the visible page or region rather than exposing a shell or implementation id; this remains an unapproved draft.",
       "role": "label",
       "budget": 60
     },
@@ -11770,8 +12221,8 @@
         "key": "designer.item.frames.sheet"
       },
       "before": "frames.sheet",
-      "after": "Sheet",
-      "rationale": "Name frames.sheet for Explorer, graph and Inspector links without exposing the technical ID as prose. This draft adds no item and grants no approval.",
+      "after": "Overlay panel",
+      "rationale": "Name frames.sheet for Explorer, graph and Inspector links without exposing the technical ID as prose. This draft adds no item and grants no approval. Naming revision: Name the visible page or region rather than exposing a shell or implementation id; this remains an unapproved draft.",
       "role": "label",
       "budget": 60
     },
@@ -11789,7 +12240,7 @@
       },
       "before": "frames.command",
       "after": "Command menu",
-      "rationale": "Name frames.command for Explorer, graph and Inspector links without exposing the technical ID as prose. This draft adds no item and grants no approval.",
+      "rationale": "Name frames.command for Explorer, graph and Inspector links without exposing the technical ID as prose. This draft adds no item and grants no approval. Naming revision: Name the visible page or region rather than exposing a shell or implementation id; this remains an unapproved draft.",
       "role": "label",
       "budget": 60
     },
@@ -13205,6 +13656,744 @@
         "mode": "mode (data enum)"
       },
       "sourceExpression": "`contrast: ${pair.foreground} on ${pair.background} cannot be measured in ${mode}`"
+    },
+    {
+      "recordId": "st.dczaaf9s2z",
+      "cellId": "designer.frameOption.frames.document.variant.page",
+      "severity": "P1",
+      "status": "fixed",
+      "scope": "draft only",
+      "source": {
+        "commit": "a1f5b0a6fd80f9ffc57220ef5609c4a9041b1e19",
+        "path": "packages/designer/src/catalog/slots/frames.json",
+        "line": 29,
+        "key": "variant.page"
+      },
+      "before": "variant.page",
+      "after": "Page document",
+      "rationale": "Give this admin value a short, sentence-case name that describes its purpose without exposing a registry key or a ticket code. Keep approval and readiness separate from the display name.",
+      "role": "label",
+      "budget": 40
+    },
+    {
+      "recordId": "st.zjekh6j231",
+      "cellId": "designer.frameOption.frames.document.variant.status",
+      "severity": "P1",
+      "status": "fixed",
+      "scope": "draft only",
+      "source": {
+        "commit": "a1f5b0a6fd80f9ffc57220ef5609c4a9041b1e19",
+        "path": "packages/designer/src/catalog/slots/frames.json",
+        "line": 30,
+        "key": "variant.status"
+      },
+      "before": "variant.status",
+      "after": "Status document",
+      "rationale": "Give this admin value a short, sentence-case name that describes its purpose without exposing a registry key or a ticket code. Keep approval and readiness separate from the display name.",
+      "role": "label",
+      "budget": 40
+    },
+    {
+      "recordId": "st.w1wk8f1k2h",
+      "cellId": "designer.frameOption.frames.site-shell.chrome.full",
+      "severity": "P1",
+      "status": "fixed",
+      "scope": "draft only",
+      "source": {
+        "commit": "a1f5b0a6fd80f9ffc57220ef5609c4a9041b1e19",
+        "path": "packages/designer/src/catalog/slots/frames.json",
+        "line": 124,
+        "key": "chrome.full"
+      },
+      "before": "chrome.full",
+      "after": "Full navigation",
+      "rationale": "Give this admin value a short, sentence-case name that describes its purpose without exposing a registry key or a ticket code. Keep approval and readiness separate from the display name.",
+      "role": "label",
+      "budget": 40
+    },
+    {
+      "recordId": "st.gsj3d5c23w",
+      "cellId": "designer.frameOption.frames.site-shell.chrome.minimal",
+      "severity": "P1",
+      "status": "fixed",
+      "scope": "draft only",
+      "source": {
+        "commit": "a1f5b0a6fd80f9ffc57220ef5609c4a9041b1e19",
+        "path": "packages/designer/src/catalog/slots/frames.json",
+        "line": 125,
+        "key": "chrome.minimal"
+      },
+      "before": "chrome.minimal",
+      "after": "Minimal navigation",
+      "rationale": "Give this admin value a short, sentence-case name that describes its purpose without exposing a registry key or a ticket code. Keep approval and readiness separate from the display name.",
+      "role": "label",
+      "budget": 40
+    },
+    {
+      "recordId": "st.yrw1mmhyjw",
+      "cellId": "designer.frameOption.frames.site-shell.footer-placement.flow",
+      "severity": "P1",
+      "status": "fixed",
+      "scope": "draft only",
+      "source": {
+        "commit": "a1f5b0a6fd80f9ffc57220ef5609c4a9041b1e19",
+        "path": "packages/designer/src/catalog/slots/frames.json",
+        "line": 126,
+        "key": "footer-placement.flow"
+      },
+      "before": "footer-placement.flow",
+      "after": "Footer after content",
+      "rationale": "Give this admin value a short, sentence-case name that describes its purpose without exposing a registry key or a ticket code. Keep approval and readiness separate from the display name.",
+      "role": "label",
+      "budget": 40
+    },
+    {
+      "recordId": "st.gmqgncyggg",
+      "cellId": "designer.frameOption.frames.site-shell.footer-placement.overlay",
+      "severity": "P1",
+      "status": "fixed",
+      "scope": "draft only",
+      "source": {
+        "commit": "a1f5b0a6fd80f9ffc57220ef5609c4a9041b1e19",
+        "path": "packages/designer/src/catalog/slots/frames.json",
+        "line": 127,
+        "key": "footer-placement.overlay"
+      },
+      "before": "footer-placement.overlay",
+      "after": "Footer over content",
+      "rationale": "Give this admin value a short, sentence-case name that describes its purpose without exposing a registry key or a ticket code. Keep approval and readiness separate from the display name.",
+      "role": "label",
+      "budget": 40
+    },
+    {
+      "recordId": "st.nnjvve8cas",
+      "cellId": "designer.frameOption.frames.site-shell.header-placement.overlay",
+      "severity": "P1",
+      "status": "fixed",
+      "scope": "draft only",
+      "source": {
+        "commit": "a1f5b0a6fd80f9ffc57220ef5609c4a9041b1e19",
+        "path": "packages/designer/src/catalog/slots/frames.json",
+        "line": 128,
+        "key": "header-placement.overlay"
+      },
+      "before": "header-placement.overlay",
+      "after": "Header over content",
+      "rationale": "Give this admin value a short, sentence-case name that describes its purpose without exposing a registry key or a ticket code. Keep approval and readiness separate from the display name.",
+      "role": "label",
+      "budget": 40
+    },
+    {
+      "recordId": "st.r2760v8zm7",
+      "cellId": "designer.frameOption.frames.app-shell.layout.standard",
+      "severity": "P1",
+      "status": "fixed",
+      "scope": "draft only",
+      "source": {
+        "commit": "a1f5b0a6fd80f9ffc57220ef5609c4a9041b1e19",
+        "path": "packages/designer/src/catalog/slots/frames.json",
+        "line": 253,
+        "key": "layout.standard"
+      },
+      "before": "layout.standard",
+      "after": "Standard layout",
+      "rationale": "Give this admin value a short, sentence-case name that describes its purpose without exposing a registry key or a ticket code. Keep approval and readiness separate from the display name.",
+      "role": "label",
+      "budget": 40
+    },
+    {
+      "recordId": "st.ksa5w8z32s",
+      "cellId": "designer.frameOption.frames.app-shell.layout.immersive",
+      "severity": "P1",
+      "status": "fixed",
+      "scope": "draft only",
+      "source": {
+        "commit": "a1f5b0a6fd80f9ffc57220ef5609c4a9041b1e19",
+        "path": "packages/designer/src/catalog/slots/frames.json",
+        "line": 254,
+        "key": "layout.immersive"
+      },
+      "before": "layout.immersive",
+      "after": "Immersive layout",
+      "rationale": "Give this admin value a short, sentence-case name that describes its purpose without exposing a registry key or a ticket code. Keep approval and readiness separate from the display name.",
+      "role": "label",
+      "budget": 40
+    },
+    {
+      "recordId": "st.ez6mw87z9r",
+      "cellId": "designer.frameOption.frames.app-shell.stage.contained",
+      "severity": "P1",
+      "status": "fixed",
+      "scope": "draft only",
+      "source": {
+        "commit": "a1f5b0a6fd80f9ffc57220ef5609c4a9041b1e19",
+        "path": "packages/designer/src/catalog/slots/frames.json",
+        "line": 255,
+        "key": "stage.contained"
+      },
+      "before": "stage.contained",
+      "after": "Contained canvas",
+      "rationale": "Give this admin value a short, sentence-case name that describes its purpose without exposing a registry key or a ticket code. Keep approval and readiness separate from the display name.",
+      "role": "label",
+      "budget": 40
+    },
+    {
+      "recordId": "st.wfc3z4rp03",
+      "cellId": "designer.frameOption.frames.app-shell.stage.full",
+      "severity": "P1",
+      "status": "fixed",
+      "scope": "draft only",
+      "source": {
+        "commit": "a1f5b0a6fd80f9ffc57220ef5609c4a9041b1e19",
+        "path": "packages/designer/src/catalog/slots/frames.json",
+        "line": 256,
+        "key": "stage.full"
+      },
+      "before": "stage.full",
+      "after": "Full canvas",
+      "rationale": "Give this admin value a short, sentence-case name that describes its purpose without exposing a registry key or a ticket code. Keep approval and readiness separate from the display name.",
+      "role": "label",
+      "budget": 40
+    },
+    {
+      "recordId": "st.2a77nn406k",
+      "cellId": "designer.frameOption.frames.app-shell.theme.system",
+      "severity": "P1",
+      "status": "fixed",
+      "scope": "draft only",
+      "source": {
+        "commit": "a1f5b0a6fd80f9ffc57220ef5609c4a9041b1e19",
+        "path": "packages/designer/src/catalog/slots/frames.json",
+        "line": 257,
+        "key": "theme.system"
+      },
+      "before": "theme.system",
+      "after": "System theme",
+      "rationale": "Give this admin value a short, sentence-case name that describes its purpose without exposing a registry key or a ticket code. Keep approval and readiness separate from the display name.",
+      "role": "label",
+      "budget": 40
+    },
+    {
+      "recordId": "st.96npq8j00n",
+      "cellId": "designer.frameOption.frames.app-shell.theme.light",
+      "severity": "P1",
+      "status": "fixed",
+      "scope": "draft only",
+      "source": {
+        "commit": "a1f5b0a6fd80f9ffc57220ef5609c4a9041b1e19",
+        "path": "packages/designer/src/catalog/slots/frames.json",
+        "line": 258,
+        "key": "theme.light"
+      },
+      "before": "theme.light",
+      "after": "Light theme",
+      "rationale": "Give this admin value a short, sentence-case name that describes its purpose without exposing a registry key or a ticket code. Keep approval and readiness separate from the display name.",
+      "role": "label",
+      "budget": 40
+    },
+    {
+      "recordId": "st.476jt5vjet",
+      "cellId": "designer.frameOption.frames.app-shell.theme.dark",
+      "severity": "P1",
+      "status": "fixed",
+      "scope": "draft only",
+      "source": {
+        "commit": "a1f5b0a6fd80f9ffc57220ef5609c4a9041b1e19",
+        "path": "packages/designer/src/catalog/slots/frames.json",
+        "line": 259,
+        "key": "theme.dark"
+      },
+      "before": "theme.dark",
+      "after": "Dark theme",
+      "rationale": "Give this admin value a short, sentence-case name that describes its purpose without exposing a registry key or a ticket code. Keep approval and readiness separate from the display name.",
+      "role": "label",
+      "budget": 40
+    },
+    {
+      "recordId": "st.rfdpnk1f7n",
+      "cellId": "designer.frameOption.frames.site-header.surface.solid",
+      "severity": "P1",
+      "status": "fixed",
+      "scope": "draft only",
+      "source": {
+        "commit": "a1f5b0a6fd80f9ffc57220ef5609c4a9041b1e19",
+        "path": "packages/designer/src/catalog/slots/frames.json",
+        "line": 448,
+        "key": "surface.solid"
+      },
+      "before": "surface.solid",
+      "after": "Solid background",
+      "rationale": "Give this admin value a short, sentence-case name that describes its purpose without exposing a registry key or a ticket code. Keep approval and readiness separate from the display name.",
+      "role": "label",
+      "budget": 40
+    },
+    {
+      "recordId": "st.srzp5yepxy",
+      "cellId": "designer.frameOption.frames.site-header.surface.transparent",
+      "severity": "P1",
+      "status": "fixed",
+      "scope": "draft only",
+      "source": {
+        "commit": "a1f5b0a6fd80f9ffc57220ef5609c4a9041b1e19",
+        "path": "packages/designer/src/catalog/slots/frames.json",
+        "line": 449,
+        "key": "surface.transparent"
+      },
+      "before": "surface.transparent",
+      "after": "Clear background",
+      "rationale": "Give this admin value a short, sentence-case name that describes its purpose without exposing a registry key or a ticket code. Keep approval and readiness separate from the display name.",
+      "role": "label",
+      "budget": 40
+    },
+    {
+      "recordId": "st.5ccwgqgt2n",
+      "cellId": "designer.frameOption.frames.site-header.surface.glass",
+      "severity": "P1",
+      "status": "fixed",
+      "scope": "draft only",
+      "source": {
+        "commit": "a1f5b0a6fd80f9ffc57220ef5609c4a9041b1e19",
+        "path": "packages/designer/src/catalog/slots/frames.json",
+        "line": 450,
+        "key": "surface.glass"
+      },
+      "before": "surface.glass",
+      "after": "Blurred background",
+      "rationale": "Give this admin value a short, sentence-case name that describes its purpose without exposing a registry key or a ticket code. Keep approval and readiness separate from the display name.",
+      "role": "label",
+      "budget": 40
+    },
+    {
+      "recordId": "st.gtfwyrz6qw",
+      "cellId": "designer.frameOption.frames.site-header.tone.base",
+      "severity": "P1",
+      "status": "fixed",
+      "scope": "draft only",
+      "source": {
+        "commit": "a1f5b0a6fd80f9ffc57220ef5609c4a9041b1e19",
+        "path": "packages/designer/src/catalog/slots/frames.json",
+        "line": 451,
+        "key": "tone.base"
+      },
+      "before": "tone.base",
+      "after": "Standard colors",
+      "rationale": "Give this admin value a short, sentence-case name that describes its purpose without exposing a registry key or a ticket code. Keep approval and readiness separate from the display name.",
+      "role": "label",
+      "budget": 40
+    },
+    {
+      "recordId": "st.2zvh7czj3j",
+      "cellId": "designer.frameOption.frames.site-header.tone.inverse",
+      "severity": "P1",
+      "status": "fixed",
+      "scope": "draft only",
+      "source": {
+        "commit": "a1f5b0a6fd80f9ffc57220ef5609c4a9041b1e19",
+        "path": "packages/designer/src/catalog/slots/frames.json",
+        "line": 452,
+        "key": "tone.inverse"
+      },
+      "before": "tone.inverse",
+      "after": "Reversed colors",
+      "rationale": "Give this admin value a short, sentence-case name that describes its purpose without exposing a registry key or a ticket code. Keep approval and readiness separate from the display name.",
+      "role": "label",
+      "budget": 40
+    },
+    {
+      "recordId": "st.w5x5x39c1a",
+      "cellId": "designer.frameOption.frames.site-header.nav-placement.leading",
+      "severity": "P1",
+      "status": "fixed",
+      "scope": "draft only",
+      "source": {
+        "commit": "a1f5b0a6fd80f9ffc57220ef5609c4a9041b1e19",
+        "path": "packages/designer/src/catalog/slots/frames.json",
+        "line": 453,
+        "key": "nav-placement.leading"
+      },
+      "before": "nav-placement.leading",
+      "after": "Navigation at start",
+      "rationale": "Give this admin value a short, sentence-case name that describes its purpose without exposing a registry key or a ticket code. Keep approval and readiness separate from the display name.",
+      "role": "label",
+      "budget": 40
+    },
+    {
+      "recordId": "st.16vzn156y6",
+      "cellId": "designer.frameOption.frames.site-header.nav-placement.centered",
+      "severity": "P1",
+      "status": "fixed",
+      "scope": "draft only",
+      "source": {
+        "commit": "a1f5b0a6fd80f9ffc57220ef5609c4a9041b1e19",
+        "path": "packages/designer/src/catalog/slots/frames.json",
+        "line": 454,
+        "key": "nav-placement.centered"
+      },
+      "before": "nav-placement.centered",
+      "after": "Centered navigation",
+      "rationale": "Give this admin value a short, sentence-case name that describes its purpose without exposing a registry key or a ticket code. Keep approval and readiness separate from the display name.",
+      "role": "label",
+      "budget": 40
+    },
+    {
+      "recordId": "st.fjgby5zygk",
+      "cellId": "designer.frameOption.frames.site-header.position.sticky",
+      "severity": "P1",
+      "status": "fixed",
+      "scope": "draft only",
+      "source": {
+        "commit": "a1f5b0a6fd80f9ffc57220ef5609c4a9041b1e19",
+        "path": "packages/designer/src/catalog/slots/frames.json",
+        "line": 455,
+        "key": "position.sticky"
+      },
+      "before": "position.sticky",
+      "after": "Stays in view",
+      "rationale": "Give this admin value a short, sentence-case name that describes its purpose without exposing a registry key or a ticket code. Keep approval and readiness separate from the display name.",
+      "role": "label",
+      "budget": 40
+    },
+    {
+      "recordId": "st.wd9t4rmq3n",
+      "cellId": "designer.frameOption.frames.site-header.position.static",
+      "severity": "P1",
+      "status": "fixed",
+      "scope": "draft only",
+      "source": {
+        "commit": "a1f5b0a6fd80f9ffc57220ef5609c4a9041b1e19",
+        "path": "packages/designer/src/catalog/slots/frames.json",
+        "line": 456,
+        "key": "position.static"
+      },
+      "before": "position.static",
+      "after": "Scrolls with content",
+      "rationale": "Give this admin value a short, sentence-case name that describes its purpose without exposing a registry key or a ticket code. Keep approval and readiness separate from the display name.",
+      "role": "label",
+      "budget": 40
+    },
+    {
+      "recordId": "st.byrjykzrn2",
+      "cellId": "designer.frameOption.frames.app-header.fallback.opaque",
+      "severity": "P1",
+      "status": "fixed",
+      "scope": "draft only",
+      "source": {
+        "commit": "a1f5b0a6fd80f9ffc57220ef5609c4a9041b1e19",
+        "path": "packages/designer/src/catalog/slots/frames.json",
+        "line": 537,
+        "key": "fallback.opaque"
+      },
+      "before": "fallback.opaque",
+      "after": "Solid backup background",
+      "rationale": "Give this admin value a short, sentence-case name that describes its purpose without exposing a registry key or a ticket code. Keep approval and readiness separate from the display name.",
+      "role": "label",
+      "budget": 40
+    },
+    {
+      "recordId": "st.nbpr93wj68",
+      "cellId": "designer.frameOption.frames.app-sidebar.presentation.docked",
+      "severity": "P1",
+      "status": "fixed",
+      "scope": "draft only",
+      "source": {
+        "commit": "a1f5b0a6fd80f9ffc57220ef5609c4a9041b1e19",
+        "path": "packages/designer/src/catalog/slots/frames.json",
+        "line": 616,
+        "key": "presentation.docked"
+      },
+      "before": "presentation.docked",
+      "after": "Docked panel",
+      "rationale": "Give this admin value a short, sentence-case name that describes its purpose without exposing a registry key or a ticket code. Keep approval and readiness separate from the display name.",
+      "role": "label",
+      "budget": 40
+    },
+    {
+      "recordId": "st.qew1g2x6ms",
+      "cellId": "designer.frameOption.frames.app-sidebar.presentation.collapsed",
+      "severity": "P1",
+      "status": "fixed",
+      "scope": "draft only",
+      "source": {
+        "commit": "a1f5b0a6fd80f9ffc57220ef5609c4a9041b1e19",
+        "path": "packages/designer/src/catalog/slots/frames.json",
+        "line": 617,
+        "key": "presentation.collapsed"
+      },
+      "before": "presentation.collapsed",
+      "after": "Collapsed panel",
+      "rationale": "Give this admin value a short, sentence-case name that describes its purpose without exposing a registry key or a ticket code. Keep approval and readiness separate from the display name.",
+      "role": "label",
+      "budget": 40
+    },
+    {
+      "recordId": "st.njcj3qqb0e",
+      "cellId": "designer.frameOption.frames.app-sidebar.presentation.overlay",
+      "severity": "P1",
+      "status": "fixed",
+      "scope": "draft only",
+      "source": {
+        "commit": "a1f5b0a6fd80f9ffc57220ef5609c4a9041b1e19",
+        "path": "packages/designer/src/catalog/slots/frames.json",
+        "line": 618,
+        "key": "presentation.overlay"
+      },
+      "before": "presentation.overlay",
+      "after": "Overlay panel",
+      "rationale": "Give this admin value a short, sentence-case name that describes its purpose without exposing a registry key or a ticket code. Keep approval and readiness separate from the display name.",
+      "role": "label",
+      "budget": 40
+    },
+    {
+      "recordId": "st.y072bfqj65",
+      "cellId": "designer.frameOption.frames.site-footer.ground.base",
+      "severity": "P1",
+      "status": "fixed",
+      "scope": "draft only",
+      "source": {
+        "commit": "a1f5b0a6fd80f9ffc57220ef5609c4a9041b1e19",
+        "path": "packages/designer/src/catalog/slots/frames.json",
+        "line": 800,
+        "key": "ground.base"
+      },
+      "before": "ground.base",
+      "after": "Standard background",
+      "rationale": "Give this admin value a short, sentence-case name that describes its purpose without exposing a registry key or a ticket code. Keep approval and readiness separate from the display name.",
+      "role": "label",
+      "budget": 40
+    },
+    {
+      "recordId": "st.jq17fy257c",
+      "cellId": "designer.frameOption.frames.site-footer.ground.inverse",
+      "severity": "P1",
+      "status": "fixed",
+      "scope": "draft only",
+      "source": {
+        "commit": "a1f5b0a6fd80f9ffc57220ef5609c4a9041b1e19",
+        "path": "packages/designer/src/catalog/slots/frames.json",
+        "line": 801,
+        "key": "ground.inverse"
+      },
+      "before": "ground.inverse",
+      "after": "Reversed background",
+      "rationale": "Give this admin value a short, sentence-case name that describes its purpose without exposing a registry key or a ticket code. Keep approval and readiness separate from the display name.",
+      "role": "label",
+      "budget": 40
+    },
+    {
+      "recordId": "st.5fvjdv1ds7",
+      "cellId": "designer.frameOption.frames.site-footer.rule.on",
+      "severity": "P1",
+      "status": "fixed",
+      "scope": "draft only",
+      "source": {
+        "commit": "a1f5b0a6fd80f9ffc57220ef5609c4a9041b1e19",
+        "path": "packages/designer/src/catalog/slots/frames.json",
+        "line": 802,
+        "key": "rule.on"
+      },
+      "before": "rule.on",
+      "after": "Show divider",
+      "rationale": "Give this admin value a short, sentence-case name that describes its purpose without exposing a registry key or a ticket code. Keep approval and readiness separate from the display name.",
+      "role": "label",
+      "budget": 40
+    },
+    {
+      "recordId": "st.ne0180h530",
+      "cellId": "designer.frameOption.frames.site-footer.rule.off",
+      "severity": "P1",
+      "status": "fixed",
+      "scope": "draft only",
+      "source": {
+        "commit": "a1f5b0a6fd80f9ffc57220ef5609c4a9041b1e19",
+        "path": "packages/designer/src/catalog/slots/frames.json",
+        "line": 803,
+        "key": "rule.off"
+      },
+      "before": "rule.off",
+      "after": "Hide divider",
+      "rationale": "Give this admin value a short, sentence-case name that describes its purpose without exposing a registry key or a ticket code. Keep approval and readiness separate from the display name.",
+      "role": "label",
+      "budget": 40
+    },
+    {
+      "recordId": "st.742pveh5bs",
+      "cellId": "designer.frameOption.frames.site-footer.overlay.on",
+      "severity": "P1",
+      "status": "fixed",
+      "scope": "draft only",
+      "source": {
+        "commit": "a1f5b0a6fd80f9ffc57220ef5609c4a9041b1e19",
+        "path": "packages/designer/src/catalog/slots/frames.json",
+        "line": 804,
+        "key": "overlay.on"
+      },
+      "before": "overlay.on",
+      "after": "Over content",
+      "rationale": "Give this admin value a short, sentence-case name that describes its purpose without exposing a registry key or a ticket code. Keep approval and readiness separate from the display name.",
+      "role": "label",
+      "budget": 40
+    },
+    {
+      "recordId": "st.v7t7c2pr8y",
+      "cellId": "designer.frameOption.frames.site-footer.overlay.off",
+      "severity": "P1",
+      "status": "fixed",
+      "scope": "draft only",
+      "source": {
+        "commit": "a1f5b0a6fd80f9ffc57220ef5609c4a9041b1e19",
+        "path": "packages/designer/src/catalog/slots/frames.json",
+        "line": 805,
+        "key": "overlay.off"
+      },
+      "before": "overlay.off",
+      "after": "After content",
+      "rationale": "Give this admin value a short, sentence-case name that describes its purpose without exposing a registry key or a ticket code. Keep approval and readiness separate from the display name.",
+      "role": "label",
+      "budget": 40
+    },
+    {
+      "recordId": "st.rd1wks5c2n",
+      "cellId": "designer.frameOption.frames.sheet.placement.start",
+      "severity": "P1",
+      "status": "fixed",
+      "scope": "draft only",
+      "source": {
+        "commit": "a1f5b0a6fd80f9ffc57220ef5609c4a9041b1e19",
+        "path": "packages/designer/src/catalog/slots/frames.json",
+        "line": 873,
+        "key": "placement.start"
+      },
+      "before": "placement.start",
+      "after": "At start",
+      "rationale": "Give this admin value a short, sentence-case name that describes its purpose without exposing a registry key or a ticket code. Keep approval and readiness separate from the display name.",
+      "role": "label",
+      "budget": 40
+    },
+    {
+      "recordId": "st.q8zq27jzn6",
+      "cellId": "designer.frameOption.frames.sheet.placement.end",
+      "severity": "P1",
+      "status": "fixed",
+      "scope": "draft only",
+      "source": {
+        "commit": "a1f5b0a6fd80f9ffc57220ef5609c4a9041b1e19",
+        "path": "packages/designer/src/catalog/slots/frames.json",
+        "line": 874,
+        "key": "placement.end"
+      },
+      "before": "placement.end",
+      "after": "At end",
+      "rationale": "Give this admin value a short, sentence-case name that describes its purpose without exposing a registry key or a ticket code. Keep approval and readiness separate from the display name.",
+      "role": "label",
+      "budget": 40
+    },
+    {
+      "recordId": "st.npk8a246pf",
+      "cellId": "designer.frameOption.frames.sheet.placement.bottom",
+      "severity": "P1",
+      "status": "fixed",
+      "scope": "draft only",
+      "source": {
+        "commit": "a1f5b0a6fd80f9ffc57220ef5609c4a9041b1e19",
+        "path": "packages/designer/src/catalog/slots/frames.json",
+        "line": 875,
+        "key": "placement.bottom"
+      },
+      "before": "placement.bottom",
+      "after": "At bottom",
+      "rationale": "Give this admin value a short, sentence-case name that describes its purpose without exposing a registry key or a ticket code. Keep approval and readiness separate from the display name.",
+      "role": "label",
+      "budget": 40
+    },
+    {
+      "recordId": "st.bqn0rgkke1",
+      "cellId": "designer.frameOption.frames.sheet.wide.dismiss",
+      "severity": "P1",
+      "status": "fixed",
+      "scope": "draft only",
+      "source": {
+        "commit": "a1f5b0a6fd80f9ffc57220ef5609c4a9041b1e19",
+        "path": "packages/designer/src/catalog/slots/frames.json",
+        "line": 876,
+        "key": "wide.dismiss"
+      },
+      "before": "wide.dismiss",
+      "after": "Hide on wide screens",
+      "rationale": "Give this admin value a short, sentence-case name that describes its purpose without exposing a registry key or a ticket code. Keep approval and readiness separate from the display name.",
+      "role": "label",
+      "budget": 40
+    },
+    {
+      "recordId": "st.g0stjcdq45",
+      "cellId": "designer.frameOption.frames.sheet.wide.sheet",
+      "severity": "P1",
+      "status": "fixed",
+      "scope": "draft only",
+      "source": {
+        "commit": "a1f5b0a6fd80f9ffc57220ef5609c4a9041b1e19",
+        "path": "packages/designer/src/catalog/slots/frames.json",
+        "line": 877,
+        "key": "wide.sheet"
+      },
+      "before": "wide.sheet",
+      "after": "Panel on wide screens",
+      "rationale": "Give this admin value a short, sentence-case name that describes its purpose without exposing a registry key or a ticket code. Keep approval and readiness separate from the display name.",
+      "role": "label",
+      "budget": 40
+    },
+    {
+      "recordId": "st.1gh330mabf",
+      "cellId": "designer.frameOption.frames.command.shortcut.on",
+      "severity": "P1",
+      "status": "fixed",
+      "scope": "draft only",
+      "source": {
+        "commit": "a1f5b0a6fd80f9ffc57220ef5609c4a9041b1e19",
+        "path": "packages/designer/src/catalog/slots/frames.json",
+        "line": 951,
+        "key": "shortcut.on"
+      },
+      "before": "shortcut.on",
+      "after": "Keyboard shortcut on",
+      "rationale": "Give this admin value a short, sentence-case name that describes its purpose without exposing a registry key or a ticket code. Keep approval and readiness separate from the display name.",
+      "role": "label",
+      "budget": 40
+    },
+    {
+      "recordId": "st.f99jjh9znb",
+      "cellId": "designer.frameOption.frames.command.shortcut.off",
+      "severity": "P1",
+      "status": "fixed",
+      "scope": "draft only",
+      "source": {
+        "commit": "a1f5b0a6fd80f9ffc57220ef5609c4a9041b1e19",
+        "path": "packages/designer/src/catalog/slots/frames.json",
+        "line": 952,
+        "key": "shortcut.off"
+      },
+      "before": "shortcut.off",
+      "after": "Keyboard shortcut off",
+      "rationale": "Give this admin value a short, sentence-case name that describes its purpose without exposing a registry key or a ticket code. Keep approval and readiness separate from the display name.",
+      "role": "label",
+      "budget": 40
+    },
+    {
+      "recordId": "st.bjtk9nxqc9",
+      "cellId": "admin.library.standard-pack-fixture-library",
+      "severity": "P1",
+      "status": "fixed",
+      "scope": "draft only",
+      "source": {
+        "commit": "a1f5b0a6fd80f9ffc57220ef5609c4a9041b1e19",
+        "path": "packages/publisher/src/web/publisher/__fixtures__/standard-website.ts",
+        "line": 48,
+        "key": "standard-pack-fixture-library"
+      },
+      "before": "standard-pack-fixture-library",
+      "after": "Website preview library",
+      "rationale": "Give this admin value a short, sentence-case name that describes its purpose without exposing a registry key or a ticket code. Keep approval and readiness separate from the display name.",
+      "role": "label",
+      "budget": 40
     }
   ],
   "bindings": [
@@ -15811,6 +17000,438 @@
       "recordId": "st.73wzm8xe3s",
       "target": "packages/designer/src/catalog-core/check.ts",
       "kind": "finding"
+    },
+    {
+      "cellId": "designer.boardName.designer.ia.tokens.color-controls",
+      "recordId": "st.hfsb4xz44v",
+      "target": "packages/designer/src/catalog/ia/tokens.json",
+      "kind": "display-name",
+      "parent": "designer.boardName",
+      "value": "designer.ia.tokens.color-controls"
+    },
+    {
+      "cellId": "designer.boardName.designer.ia.tokens.interaction-controls",
+      "recordId": "st.9wy8met97b",
+      "target": "packages/designer/src/catalog/ia/tokens.json",
+      "kind": "display-name",
+      "parent": "designer.boardName",
+      "value": "designer.ia.tokens.interaction-controls"
+    },
+    {
+      "cellId": "designer.boardName.designer.ia.frames.panels",
+      "recordId": "st.dg3e6jc56v",
+      "target": "packages/designer/src/catalog/ia/frames.json",
+      "kind": "display-name",
+      "parent": "designer.boardName",
+      "value": "designer.ia.frames.panels"
+    },
+    {
+      "cellId": "designer.boardName.designer.ia.frames.overlay-shells-panels",
+      "recordId": "st.n3jkssxad5",
+      "target": "packages/designer/src/catalog/ia/frames.json",
+      "kind": "display-name",
+      "parent": "designer.boardName",
+      "value": "designer.ia.frames.overlay-shells-panels"
+    },
+    {
+      "cellId": "designer.frameOption.frames.document.variant.page",
+      "recordId": "st.dczaaf9s2z",
+      "target": "packages/designer/src/catalog/slots/frames.json",
+      "kind": "display-name",
+      "parent": "designer.frameOption.frames.document",
+      "value": "variant.page"
+    },
+    {
+      "cellId": "designer.frameOption.frames.document.variant.status",
+      "recordId": "st.zjekh6j231",
+      "target": "packages/designer/src/catalog/slots/frames.json",
+      "kind": "display-name",
+      "parent": "designer.frameOption.frames.document",
+      "value": "variant.status"
+    },
+    {
+      "cellId": "designer.frameOption.frames.site-shell.chrome.full",
+      "recordId": "st.w1wk8f1k2h",
+      "target": "packages/designer/src/catalog/slots/frames.json",
+      "kind": "display-name",
+      "parent": "designer.frameOption.frames.site-shell",
+      "value": "chrome.full"
+    },
+    {
+      "cellId": "designer.frameOption.frames.site-shell.chrome.minimal",
+      "recordId": "st.gsj3d5c23w",
+      "target": "packages/designer/src/catalog/slots/frames.json",
+      "kind": "display-name",
+      "parent": "designer.frameOption.frames.site-shell",
+      "value": "chrome.minimal"
+    },
+    {
+      "cellId": "designer.frameOption.frames.site-shell.footer-placement.flow",
+      "recordId": "st.yrw1mmhyjw",
+      "target": "packages/designer/src/catalog/slots/frames.json",
+      "kind": "display-name",
+      "parent": "designer.frameOption.frames.site-shell",
+      "value": "footer-placement.flow"
+    },
+    {
+      "cellId": "designer.frameOption.frames.site-shell.footer-placement.overlay",
+      "recordId": "st.gmqgncyggg",
+      "target": "packages/designer/src/catalog/slots/frames.json",
+      "kind": "display-name",
+      "parent": "designer.frameOption.frames.site-shell",
+      "value": "footer-placement.overlay"
+    },
+    {
+      "cellId": "designer.frameOption.frames.site-shell.header-placement.overlay",
+      "recordId": "st.nnjvve8cas",
+      "target": "packages/designer/src/catalog/slots/frames.json",
+      "kind": "display-name",
+      "parent": "designer.frameOption.frames.site-shell",
+      "value": "header-placement.overlay"
+    },
+    {
+      "cellId": "designer.frameOption.frames.app-shell.layout.standard",
+      "recordId": "st.r2760v8zm7",
+      "target": "packages/designer/src/catalog/slots/frames.json",
+      "kind": "display-name",
+      "parent": "designer.frameOption.frames.app-shell",
+      "value": "layout.standard"
+    },
+    {
+      "cellId": "designer.frameOption.frames.app-shell.layout.immersive",
+      "recordId": "st.ksa5w8z32s",
+      "target": "packages/designer/src/catalog/slots/frames.json",
+      "kind": "display-name",
+      "parent": "designer.frameOption.frames.app-shell",
+      "value": "layout.immersive"
+    },
+    {
+      "cellId": "designer.frameOption.frames.app-shell.stage.contained",
+      "recordId": "st.ez6mw87z9r",
+      "target": "packages/designer/src/catalog/slots/frames.json",
+      "kind": "display-name",
+      "parent": "designer.frameOption.frames.app-shell",
+      "value": "stage.contained"
+    },
+    {
+      "cellId": "designer.frameOption.frames.app-shell.stage.full",
+      "recordId": "st.wfc3z4rp03",
+      "target": "packages/designer/src/catalog/slots/frames.json",
+      "kind": "display-name",
+      "parent": "designer.frameOption.frames.app-shell",
+      "value": "stage.full"
+    },
+    {
+      "cellId": "designer.frameOption.frames.app-shell.theme.system",
+      "recordId": "st.2a77nn406k",
+      "target": "packages/designer/src/catalog/slots/frames.json",
+      "kind": "display-name",
+      "parent": "designer.frameOption.frames.app-shell",
+      "value": "theme.system"
+    },
+    {
+      "cellId": "designer.frameOption.frames.app-shell.theme.light",
+      "recordId": "st.96npq8j00n",
+      "target": "packages/designer/src/catalog/slots/frames.json",
+      "kind": "display-name",
+      "parent": "designer.frameOption.frames.app-shell",
+      "value": "theme.light"
+    },
+    {
+      "cellId": "designer.frameOption.frames.app-shell.theme.dark",
+      "recordId": "st.476jt5vjet",
+      "target": "packages/designer/src/catalog/slots/frames.json",
+      "kind": "display-name",
+      "parent": "designer.frameOption.frames.app-shell",
+      "value": "theme.dark"
+    },
+    {
+      "cellId": "designer.frameOption.frames.site-header.surface.solid",
+      "recordId": "st.rfdpnk1f7n",
+      "target": "packages/designer/src/catalog/slots/frames.json",
+      "kind": "display-name",
+      "parent": "designer.frameOption.frames.site-header",
+      "value": "surface.solid"
+    },
+    {
+      "cellId": "designer.frameOption.frames.site-header.surface.transparent",
+      "recordId": "st.srzp5yepxy",
+      "target": "packages/designer/src/catalog/slots/frames.json",
+      "kind": "display-name",
+      "parent": "designer.frameOption.frames.site-header",
+      "value": "surface.transparent"
+    },
+    {
+      "cellId": "designer.frameOption.frames.site-header.surface.glass",
+      "recordId": "st.5ccwgqgt2n",
+      "target": "packages/designer/src/catalog/slots/frames.json",
+      "kind": "display-name",
+      "parent": "designer.frameOption.frames.site-header",
+      "value": "surface.glass"
+    },
+    {
+      "cellId": "designer.frameOption.frames.site-header.tone.base",
+      "recordId": "st.gtfwyrz6qw",
+      "target": "packages/designer/src/catalog/slots/frames.json",
+      "kind": "display-name",
+      "parent": "designer.frameOption.frames.site-header",
+      "value": "tone.base"
+    },
+    {
+      "cellId": "designer.frameOption.frames.site-header.tone.inverse",
+      "recordId": "st.2zvh7czj3j",
+      "target": "packages/designer/src/catalog/slots/frames.json",
+      "kind": "display-name",
+      "parent": "designer.frameOption.frames.site-header",
+      "value": "tone.inverse"
+    },
+    {
+      "cellId": "designer.frameOption.frames.site-header.nav-placement.leading",
+      "recordId": "st.w5x5x39c1a",
+      "target": "packages/designer/src/catalog/slots/frames.json",
+      "kind": "display-name",
+      "parent": "designer.frameOption.frames.site-header",
+      "value": "nav-placement.leading"
+    },
+    {
+      "cellId": "designer.frameOption.frames.site-header.nav-placement.centered",
+      "recordId": "st.16vzn156y6",
+      "target": "packages/designer/src/catalog/slots/frames.json",
+      "kind": "display-name",
+      "parent": "designer.frameOption.frames.site-header",
+      "value": "nav-placement.centered"
+    },
+    {
+      "cellId": "designer.frameOption.frames.site-header.position.sticky",
+      "recordId": "st.fjgby5zygk",
+      "target": "packages/designer/src/catalog/slots/frames.json",
+      "kind": "display-name",
+      "parent": "designer.frameOption.frames.site-header",
+      "value": "position.sticky"
+    },
+    {
+      "cellId": "designer.frameOption.frames.site-header.position.static",
+      "recordId": "st.wd9t4rmq3n",
+      "target": "packages/designer/src/catalog/slots/frames.json",
+      "kind": "display-name",
+      "parent": "designer.frameOption.frames.site-header",
+      "value": "position.static"
+    },
+    {
+      "cellId": "designer.frameOption.frames.app-header.surface.glass",
+      "recordId": "st.5ccwgqgt2n",
+      "target": "packages/designer/src/catalog/slots/frames.json",
+      "kind": "display-name",
+      "parent": "designer.frameOption.frames.app-header",
+      "value": "surface.glass"
+    },
+    {
+      "cellId": "designer.frameOption.frames.app-header.fallback.opaque",
+      "recordId": "st.byrjykzrn2",
+      "target": "packages/designer/src/catalog/slots/frames.json",
+      "kind": "display-name",
+      "parent": "designer.frameOption.frames.app-header",
+      "value": "fallback.opaque"
+    },
+    {
+      "cellId": "designer.frameOption.frames.app-header.position.sticky",
+      "recordId": "st.fjgby5zygk",
+      "target": "packages/designer/src/catalog/slots/frames.json",
+      "kind": "display-name",
+      "parent": "designer.frameOption.frames.app-header",
+      "value": "position.sticky"
+    },
+    {
+      "cellId": "designer.frameOption.frames.app-header.position.static",
+      "recordId": "st.wd9t4rmq3n",
+      "target": "packages/designer/src/catalog/slots/frames.json",
+      "kind": "display-name",
+      "parent": "designer.frameOption.frames.app-header",
+      "value": "position.static"
+    },
+    {
+      "cellId": "designer.frameOption.frames.app-sidebar.presentation.docked",
+      "recordId": "st.nbpr93wj68",
+      "target": "packages/designer/src/catalog/slots/frames.json",
+      "kind": "display-name",
+      "parent": "designer.frameOption.frames.app-sidebar",
+      "value": "presentation.docked"
+    },
+    {
+      "cellId": "designer.frameOption.frames.app-sidebar.presentation.collapsed",
+      "recordId": "st.qew1g2x6ms",
+      "target": "packages/designer/src/catalog/slots/frames.json",
+      "kind": "display-name",
+      "parent": "designer.frameOption.frames.app-sidebar",
+      "value": "presentation.collapsed"
+    },
+    {
+      "cellId": "designer.frameOption.frames.app-sidebar.presentation.overlay",
+      "recordId": "st.njcj3qqb0e",
+      "target": "packages/designer/src/catalog/slots/frames.json",
+      "kind": "display-name",
+      "parent": "designer.frameOption.frames.app-sidebar",
+      "value": "presentation.overlay"
+    },
+    {
+      "cellId": "designer.frameOption.frames.inspector.presentation.docked",
+      "recordId": "st.nbpr93wj68",
+      "target": "packages/designer/src/catalog/slots/frames.json",
+      "kind": "display-name",
+      "parent": "designer.frameOption.frames.inspector",
+      "value": "presentation.docked"
+    },
+    {
+      "cellId": "designer.frameOption.frames.inspector.presentation.collapsed",
+      "recordId": "st.qew1g2x6ms",
+      "target": "packages/designer/src/catalog/slots/frames.json",
+      "kind": "display-name",
+      "parent": "designer.frameOption.frames.inspector",
+      "value": "presentation.collapsed"
+    },
+    {
+      "cellId": "designer.frameOption.frames.inspector.presentation.overlay",
+      "recordId": "st.njcj3qqb0e",
+      "target": "packages/designer/src/catalog/slots/frames.json",
+      "kind": "display-name",
+      "parent": "designer.frameOption.frames.inspector",
+      "value": "presentation.overlay"
+    },
+    {
+      "cellId": "designer.frameOption.frames.site-footer.ground.base",
+      "recordId": "st.y072bfqj65",
+      "target": "packages/designer/src/catalog/slots/frames.json",
+      "kind": "display-name",
+      "parent": "designer.frameOption.frames.site-footer",
+      "value": "ground.base"
+    },
+    {
+      "cellId": "designer.frameOption.frames.site-footer.ground.inverse",
+      "recordId": "st.jq17fy257c",
+      "target": "packages/designer/src/catalog/slots/frames.json",
+      "kind": "display-name",
+      "parent": "designer.frameOption.frames.site-footer",
+      "value": "ground.inverse"
+    },
+    {
+      "cellId": "designer.frameOption.frames.site-footer.rule.on",
+      "recordId": "st.5fvjdv1ds7",
+      "target": "packages/designer/src/catalog/slots/frames.json",
+      "kind": "display-name",
+      "parent": "designer.frameOption.frames.site-footer",
+      "value": "rule.on"
+    },
+    {
+      "cellId": "designer.frameOption.frames.site-footer.rule.off",
+      "recordId": "st.ne0180h530",
+      "target": "packages/designer/src/catalog/slots/frames.json",
+      "kind": "display-name",
+      "parent": "designer.frameOption.frames.site-footer",
+      "value": "rule.off"
+    },
+    {
+      "cellId": "designer.frameOption.frames.site-footer.overlay.on",
+      "recordId": "st.742pveh5bs",
+      "target": "packages/designer/src/catalog/slots/frames.json",
+      "kind": "display-name",
+      "parent": "designer.frameOption.frames.site-footer",
+      "value": "overlay.on"
+    },
+    {
+      "cellId": "designer.frameOption.frames.site-footer.overlay.off",
+      "recordId": "st.v7t7c2pr8y",
+      "target": "packages/designer/src/catalog/slots/frames.json",
+      "kind": "display-name",
+      "parent": "designer.frameOption.frames.site-footer",
+      "value": "overlay.off"
+    },
+    {
+      "cellId": "designer.frameOption.frames.sheet.placement.start",
+      "recordId": "st.rd1wks5c2n",
+      "target": "packages/designer/src/catalog/slots/frames.json",
+      "kind": "display-name",
+      "parent": "designer.frameOption.frames.sheet",
+      "value": "placement.start"
+    },
+    {
+      "cellId": "designer.frameOption.frames.sheet.placement.end",
+      "recordId": "st.q8zq27jzn6",
+      "target": "packages/designer/src/catalog/slots/frames.json",
+      "kind": "display-name",
+      "parent": "designer.frameOption.frames.sheet",
+      "value": "placement.end"
+    },
+    {
+      "cellId": "designer.frameOption.frames.sheet.placement.bottom",
+      "recordId": "st.npk8a246pf",
+      "target": "packages/designer/src/catalog/slots/frames.json",
+      "kind": "display-name",
+      "parent": "designer.frameOption.frames.sheet",
+      "value": "placement.bottom"
+    },
+    {
+      "cellId": "designer.frameOption.frames.sheet.wide.dismiss",
+      "recordId": "st.bqn0rgkke1",
+      "target": "packages/designer/src/catalog/slots/frames.json",
+      "kind": "display-name",
+      "parent": "designer.frameOption.frames.sheet",
+      "value": "wide.dismiss"
+    },
+    {
+      "cellId": "designer.frameOption.frames.sheet.wide.sheet",
+      "recordId": "st.g0stjcdq45",
+      "target": "packages/designer/src/catalog/slots/frames.json",
+      "kind": "display-name",
+      "parent": "designer.frameOption.frames.sheet",
+      "value": "wide.sheet"
+    },
+    {
+      "cellId": "designer.frameOption.frames.command.shortcut.on",
+      "recordId": "st.1gh330mabf",
+      "target": "packages/designer/src/catalog/slots/frames.json",
+      "kind": "display-name",
+      "parent": "designer.frameOption.frames.command",
+      "value": "shortcut.on"
+    },
+    {
+      "cellId": "designer.frameOption.frames.command.shortcut.off",
+      "recordId": "st.f99jjh9znb",
+      "target": "packages/designer/src/catalog/slots/frames.json",
+      "kind": "display-name",
+      "parent": "designer.frameOption.frames.command",
+      "value": "shortcut.off"
+    },
+    {
+      "cellId": "admin.library.foundry",
+      "recordId": "st.bk53k3wgh5",
+      "target": "packages/publisher/src/web/publisher/__fixtures__/standard-website.ts",
+      "kind": "display-name",
+      "parent": "admin.library",
+      "value": "foundry"
+    },
+    {
+      "cellId": "admin.library.consumer",
+      "recordId": "st.wbt4xc7wcy",
+      "target": "packages/publisher/src/web/publisher/__fixtures__/standard-website.ts",
+      "kind": "display-name",
+      "parent": "admin.library",
+      "value": "consumer"
+    },
+    {
+      "cellId": "admin.library.fixture",
+      "recordId": "st.tgwyyxspsd",
+      "target": "packages/publisher/src/web/publisher/__fixtures__/standard-website.ts",
+      "kind": "display-name",
+      "parent": "admin.library",
+      "value": "fixture"
+    },
+    {
+      "cellId": "admin.library.standard-pack-fixture-library",
+      "recordId": "st.bjtk9nxqc9",
+      "target": "packages/publisher/src/web/publisher/__fixtures__/standard-website.ts",
+      "kind": "display-name",
+      "parent": "admin.library",
+      "value": "standard-pack-fixture-library"
     }
   ],
   "needs": [
@@ -18805,12 +20426,299 @@
       "severity": "P1",
       "status": "Need",
       "message": "This envelope covers all 62 message variants authored in catalog-core/check.ts at the assigned base, not imported check producers or later versions. Imported producers and non-C1–C10 display names need a separate source inventory."
+    },
+    {
+      "recordId": "st.dczaaf9s2z",
+      "cellId": "designer.frameOption.frames.document.variant.page",
+      "severity": "P1",
+      "status": "Need",
+      "message": "Draft display name only. Bind this exact CopyRef in the value-name adapter; review and activation remain owner work."
+    },
+    {
+      "recordId": "st.zjekh6j231",
+      "cellId": "designer.frameOption.frames.document.variant.status",
+      "severity": "P1",
+      "status": "Need",
+      "message": "Draft display name only. Bind this exact CopyRef in the value-name adapter; review and activation remain owner work."
+    },
+    {
+      "recordId": "st.w1wk8f1k2h",
+      "cellId": "designer.frameOption.frames.site-shell.chrome.full",
+      "severity": "P1",
+      "status": "Need",
+      "message": "Draft display name only. Bind this exact CopyRef in the value-name adapter; review and activation remain owner work."
+    },
+    {
+      "recordId": "st.gsj3d5c23w",
+      "cellId": "designer.frameOption.frames.site-shell.chrome.minimal",
+      "severity": "P1",
+      "status": "Need",
+      "message": "Draft display name only. Bind this exact CopyRef in the value-name adapter; review and activation remain owner work."
+    },
+    {
+      "recordId": "st.yrw1mmhyjw",
+      "cellId": "designer.frameOption.frames.site-shell.footer-placement.flow",
+      "severity": "P1",
+      "status": "Need",
+      "message": "Draft display name only. Bind this exact CopyRef in the value-name adapter; review and activation remain owner work."
+    },
+    {
+      "recordId": "st.gmqgncyggg",
+      "cellId": "designer.frameOption.frames.site-shell.footer-placement.overlay",
+      "severity": "P1",
+      "status": "Need",
+      "message": "Draft display name only. Bind this exact CopyRef in the value-name adapter; review and activation remain owner work."
+    },
+    {
+      "recordId": "st.nnjvve8cas",
+      "cellId": "designer.frameOption.frames.site-shell.header-placement.overlay",
+      "severity": "P1",
+      "status": "Need",
+      "message": "Draft display name only. Bind this exact CopyRef in the value-name adapter; review and activation remain owner work."
+    },
+    {
+      "recordId": "st.r2760v8zm7",
+      "cellId": "designer.frameOption.frames.app-shell.layout.standard",
+      "severity": "P1",
+      "status": "Need",
+      "message": "Draft display name only. Bind this exact CopyRef in the value-name adapter; review and activation remain owner work."
+    },
+    {
+      "recordId": "st.ksa5w8z32s",
+      "cellId": "designer.frameOption.frames.app-shell.layout.immersive",
+      "severity": "P1",
+      "status": "Need",
+      "message": "Draft display name only. Bind this exact CopyRef in the value-name adapter; review and activation remain owner work."
+    },
+    {
+      "recordId": "st.ez6mw87z9r",
+      "cellId": "designer.frameOption.frames.app-shell.stage.contained",
+      "severity": "P1",
+      "status": "Need",
+      "message": "Draft display name only. Bind this exact CopyRef in the value-name adapter; review and activation remain owner work."
+    },
+    {
+      "recordId": "st.wfc3z4rp03",
+      "cellId": "designer.frameOption.frames.app-shell.stage.full",
+      "severity": "P1",
+      "status": "Need",
+      "message": "Draft display name only. Bind this exact CopyRef in the value-name adapter; review and activation remain owner work."
+    },
+    {
+      "recordId": "st.2a77nn406k",
+      "cellId": "designer.frameOption.frames.app-shell.theme.system",
+      "severity": "P1",
+      "status": "Need",
+      "message": "Draft display name only. Bind this exact CopyRef in the value-name adapter; review and activation remain owner work."
+    },
+    {
+      "recordId": "st.96npq8j00n",
+      "cellId": "designer.frameOption.frames.app-shell.theme.light",
+      "severity": "P1",
+      "status": "Need",
+      "message": "Draft display name only. Bind this exact CopyRef in the value-name adapter; review and activation remain owner work."
+    },
+    {
+      "recordId": "st.476jt5vjet",
+      "cellId": "designer.frameOption.frames.app-shell.theme.dark",
+      "severity": "P1",
+      "status": "Need",
+      "message": "Draft display name only. Bind this exact CopyRef in the value-name adapter; review and activation remain owner work."
+    },
+    {
+      "recordId": "st.rfdpnk1f7n",
+      "cellId": "designer.frameOption.frames.site-header.surface.solid",
+      "severity": "P1",
+      "status": "Need",
+      "message": "Draft display name only. Bind this exact CopyRef in the value-name adapter; review and activation remain owner work."
+    },
+    {
+      "recordId": "st.srzp5yepxy",
+      "cellId": "designer.frameOption.frames.site-header.surface.transparent",
+      "severity": "P1",
+      "status": "Need",
+      "message": "Draft display name only. Bind this exact CopyRef in the value-name adapter; review and activation remain owner work."
+    },
+    {
+      "recordId": "st.5ccwgqgt2n",
+      "cellId": "designer.frameOption.frames.site-header.surface.glass",
+      "severity": "P1",
+      "status": "Need",
+      "message": "Draft display name only. Bind this exact CopyRef in the value-name adapter; review and activation remain owner work."
+    },
+    {
+      "recordId": "st.gtfwyrz6qw",
+      "cellId": "designer.frameOption.frames.site-header.tone.base",
+      "severity": "P1",
+      "status": "Need",
+      "message": "Draft display name only. Bind this exact CopyRef in the value-name adapter; review and activation remain owner work."
+    },
+    {
+      "recordId": "st.2zvh7czj3j",
+      "cellId": "designer.frameOption.frames.site-header.tone.inverse",
+      "severity": "P1",
+      "status": "Need",
+      "message": "Draft display name only. Bind this exact CopyRef in the value-name adapter; review and activation remain owner work."
+    },
+    {
+      "recordId": "st.w5x5x39c1a",
+      "cellId": "designer.frameOption.frames.site-header.nav-placement.leading",
+      "severity": "P1",
+      "status": "Need",
+      "message": "Draft display name only. Bind this exact CopyRef in the value-name adapter; review and activation remain owner work."
+    },
+    {
+      "recordId": "st.16vzn156y6",
+      "cellId": "designer.frameOption.frames.site-header.nav-placement.centered",
+      "severity": "P1",
+      "status": "Need",
+      "message": "Draft display name only. Bind this exact CopyRef in the value-name adapter; review and activation remain owner work."
+    },
+    {
+      "recordId": "st.fjgby5zygk",
+      "cellId": "designer.frameOption.frames.site-header.position.sticky",
+      "severity": "P1",
+      "status": "Need",
+      "message": "Draft display name only. Bind this exact CopyRef in the value-name adapter; review and activation remain owner work."
+    },
+    {
+      "recordId": "st.wd9t4rmq3n",
+      "cellId": "designer.frameOption.frames.site-header.position.static",
+      "severity": "P1",
+      "status": "Need",
+      "message": "Draft display name only. Bind this exact CopyRef in the value-name adapter; review and activation remain owner work."
+    },
+    {
+      "recordId": "st.byrjykzrn2",
+      "cellId": "designer.frameOption.frames.app-header.fallback.opaque",
+      "severity": "P1",
+      "status": "Need",
+      "message": "Draft display name only. Bind this exact CopyRef in the value-name adapter; review and activation remain owner work."
+    },
+    {
+      "recordId": "st.nbpr93wj68",
+      "cellId": "designer.frameOption.frames.app-sidebar.presentation.docked",
+      "severity": "P1",
+      "status": "Need",
+      "message": "Draft display name only. Bind this exact CopyRef in the value-name adapter; review and activation remain owner work."
+    },
+    {
+      "recordId": "st.qew1g2x6ms",
+      "cellId": "designer.frameOption.frames.app-sidebar.presentation.collapsed",
+      "severity": "P1",
+      "status": "Need",
+      "message": "Draft display name only. Bind this exact CopyRef in the value-name adapter; review and activation remain owner work."
+    },
+    {
+      "recordId": "st.njcj3qqb0e",
+      "cellId": "designer.frameOption.frames.app-sidebar.presentation.overlay",
+      "severity": "P1",
+      "status": "Need",
+      "message": "Draft display name only. Bind this exact CopyRef in the value-name adapter; review and activation remain owner work."
+    },
+    {
+      "recordId": "st.y072bfqj65",
+      "cellId": "designer.frameOption.frames.site-footer.ground.base",
+      "severity": "P1",
+      "status": "Need",
+      "message": "Draft display name only. Bind this exact CopyRef in the value-name adapter; review and activation remain owner work."
+    },
+    {
+      "recordId": "st.jq17fy257c",
+      "cellId": "designer.frameOption.frames.site-footer.ground.inverse",
+      "severity": "P1",
+      "status": "Need",
+      "message": "Draft display name only. Bind this exact CopyRef in the value-name adapter; review and activation remain owner work."
+    },
+    {
+      "recordId": "st.5fvjdv1ds7",
+      "cellId": "designer.frameOption.frames.site-footer.rule.on",
+      "severity": "P1",
+      "status": "Need",
+      "message": "Draft display name only. Bind this exact CopyRef in the value-name adapter; review and activation remain owner work."
+    },
+    {
+      "recordId": "st.ne0180h530",
+      "cellId": "designer.frameOption.frames.site-footer.rule.off",
+      "severity": "P1",
+      "status": "Need",
+      "message": "Draft display name only. Bind this exact CopyRef in the value-name adapter; review and activation remain owner work."
+    },
+    {
+      "recordId": "st.742pveh5bs",
+      "cellId": "designer.frameOption.frames.site-footer.overlay.on",
+      "severity": "P1",
+      "status": "Need",
+      "message": "Draft display name only. Bind this exact CopyRef in the value-name adapter; review and activation remain owner work."
+    },
+    {
+      "recordId": "st.v7t7c2pr8y",
+      "cellId": "designer.frameOption.frames.site-footer.overlay.off",
+      "severity": "P1",
+      "status": "Need",
+      "message": "Draft display name only. Bind this exact CopyRef in the value-name adapter; review and activation remain owner work."
+    },
+    {
+      "recordId": "st.rd1wks5c2n",
+      "cellId": "designer.frameOption.frames.sheet.placement.start",
+      "severity": "P1",
+      "status": "Need",
+      "message": "Draft display name only. Bind this exact CopyRef in the value-name adapter; review and activation remain owner work."
+    },
+    {
+      "recordId": "st.q8zq27jzn6",
+      "cellId": "designer.frameOption.frames.sheet.placement.end",
+      "severity": "P1",
+      "status": "Need",
+      "message": "Draft display name only. Bind this exact CopyRef in the value-name adapter; review and activation remain owner work."
+    },
+    {
+      "recordId": "st.npk8a246pf",
+      "cellId": "designer.frameOption.frames.sheet.placement.bottom",
+      "severity": "P1",
+      "status": "Need",
+      "message": "Draft display name only. Bind this exact CopyRef in the value-name adapter; review and activation remain owner work."
+    },
+    {
+      "recordId": "st.bqn0rgkke1",
+      "cellId": "designer.frameOption.frames.sheet.wide.dismiss",
+      "severity": "P1",
+      "status": "Need",
+      "message": "Draft display name only. Bind this exact CopyRef in the value-name adapter; review and activation remain owner work."
+    },
+    {
+      "recordId": "st.g0stjcdq45",
+      "cellId": "designer.frameOption.frames.sheet.wide.sheet",
+      "severity": "P1",
+      "status": "Need",
+      "message": "Draft display name only. Bind this exact CopyRef in the value-name adapter; review and activation remain owner work."
+    },
+    {
+      "recordId": "st.1gh330mabf",
+      "cellId": "designer.frameOption.frames.command.shortcut.on",
+      "severity": "P1",
+      "status": "Need",
+      "message": "Draft display name only. Bind this exact CopyRef in the value-name adapter; review and activation remain owner work."
+    },
+    {
+      "recordId": "st.f99jjh9znb",
+      "cellId": "designer.frameOption.frames.command.shortcut.off",
+      "severity": "P1",
+      "status": "Need",
+      "message": "Draft display name only. Bind this exact CopyRef in the value-name adapter; review and activation remain owner work."
+    },
+    {
+      "recordId": "st.bjtk9nxqc9",
+      "cellId": "admin.library.standard-pack-fixture-library",
+      "severity": "P1",
+      "status": "Need",
+      "message": "Draft display name only. Bind this exact CopyRef in the value-name adapter; review and activation remain owner work."
     }
   ],
   "coverage": {
     "kind": "planned binding fixture; not rendered-page coverage",
     "productionBound": 0,
-    "proposedBindings": 434,
+    "proposedBindings": 488,
     "draftRecords": 424,
     "reusedExistingRecords": 10
   },
@@ -18819,5 +20727,173 @@
     "No draft-authoring package command exists at this base. Use the existing Writer checks; CLI materialization and later host binding remain Needs.",
     "Review aliases identify proposed bindings, not permanent catalog leaves or added UI APIs.",
     "Raw identifiers, hashes, check codes and JSON are technical data; data arguments cannot contain untranslated prose."
+  ],
+  "sourceBatches": [
+    {
+      "unit": "A4-WR-ADMIN-NAMES",
+      "sourceCommit": "a1f5b0a6fd80f9ffc57220ef5609c4a9041b1e19",
+      "recordIds": [
+        "st.dczaaf9s2z",
+        "st.zjekh6j231",
+        "st.w1wk8f1k2h",
+        "st.gsj3d5c23w",
+        "st.yrw1mmhyjw",
+        "st.gmqgncyggg",
+        "st.nnjvve8cas",
+        "st.r2760v8zm7",
+        "st.ksa5w8z32s",
+        "st.ez6mw87z9r",
+        "st.wfc3z4rp03",
+        "st.2a77nn406k",
+        "st.96npq8j00n",
+        "st.476jt5vjet",
+        "st.rfdpnk1f7n",
+        "st.srzp5yepxy",
+        "st.5ccwgqgt2n",
+        "st.gtfwyrz6qw",
+        "st.2zvh7czj3j",
+        "st.w5x5x39c1a",
+        "st.16vzn156y6",
+        "st.fjgby5zygk",
+        "st.wd9t4rmq3n",
+        "st.byrjykzrn2",
+        "st.nbpr93wj68",
+        "st.qew1g2x6ms",
+        "st.njcj3qqb0e",
+        "st.y072bfqj65",
+        "st.jq17fy257c",
+        "st.5fvjdv1ds7",
+        "st.ne0180h530",
+        "st.742pveh5bs",
+        "st.v7t7c2pr8y",
+        "st.rd1wks5c2n",
+        "st.q8zq27jzn6",
+        "st.npk8a246pf",
+        "st.bqn0rgkke1",
+        "st.g0stjcdq45",
+        "st.1gh330mabf",
+        "st.f99jjh9znb",
+        "st.bjtk9nxqc9"
+      ],
+      "sourceFiles": {
+        "packages/designer/src/catalog/ia/tokens.json": "4c73a75fbcaffe5dbca88f500fa61f409e70784348701e441c6ca8fb2a866569",
+        "packages/designer/src/catalog/ia/frames.json": "a305de6514019a975a0adcd42107b88c047e0134e6feb37f49efffa45be014e8",
+        "packages/designer/src/catalog/slots/frames.json": "87405cb53f09694f962a01574ca26b24e9fca47849a7fa5d67c4fdefe51c4f09",
+        "packages/publisher/src/web/publisher/__fixtures__/standard-website.ts": "40c75828b3f6aee0173b436a09d7655efc78f3bb0ada61fdec0501245edd786a"
+      },
+      "revisions": [
+        {
+          "recordId": "st.w3ddpdtqay",
+          "cellId": "designer.item.frames.document",
+          "before": "Document",
+          "after": "Document page",
+          "reason": "Name the visible page or region rather than exposing a shell or implementation id; this remains an unapproved draft."
+        },
+        {
+          "recordId": "st.njmrezf88j",
+          "cellId": "designer.item.frames.site-shell",
+          "before": "Site shell",
+          "after": "Website page",
+          "reason": "Name the visible page or region rather than exposing a shell or implementation id; this remains an unapproved draft."
+        },
+        {
+          "recordId": "st.rtxryd7cfz",
+          "cellId": "designer.item.frames.app-shell",
+          "before": "App shell",
+          "after": "Workspace page",
+          "reason": "Name the visible page or region rather than exposing a shell or implementation id; this remains an unapproved draft."
+        },
+        {
+          "recordId": "st.v3ycrdrpmn",
+          "cellId": "designer.item.frames.auth-shell",
+          "before": "Sign-in shell",
+          "after": "Sign-in page",
+          "reason": "Name the visible page or region rather than exposing a shell or implementation id; this remains an unapproved draft."
+        },
+        {
+          "recordId": "st.4wj43903kc",
+          "cellId": "designer.item.frames.site-header",
+          "before": "Site header",
+          "after": "Website header",
+          "reason": "Name the visible page or region rather than exposing a shell or implementation id; this remains an unapproved draft."
+        },
+        {
+          "recordId": "st.8hvjvvw83e",
+          "cellId": "designer.item.frames.app-header",
+          "before": "App header",
+          "after": "Workspace header",
+          "reason": "Name the visible page or region rather than exposing a shell or implementation id; this remains an unapproved draft."
+        },
+        {
+          "recordId": "st.z76k5drqae",
+          "cellId": "designer.item.frames.app-sidebar",
+          "before": "App sidebar",
+          "after": "Workspace sidebar",
+          "reason": "Name the visible page or region rather than exposing a shell or implementation id; this remains an unapproved draft."
+        },
+        {
+          "recordId": "st.pqyk75vw6x",
+          "cellId": "designer.item.frames.inspector",
+          "before": "Inspector",
+          "after": "Details panel",
+          "reason": "Name the visible page or region rather than exposing a shell or implementation id; this remains an unapproved draft."
+        },
+        {
+          "recordId": "st.b0empz5tp2",
+          "cellId": "designer.item.frames.site-footer",
+          "before": "Site footer",
+          "after": "Website footer",
+          "reason": "Name the visible page or region rather than exposing a shell or implementation id; this remains an unapproved draft."
+        },
+        {
+          "recordId": "st.xe1vmezaw2",
+          "cellId": "designer.item.frames.sheet",
+          "before": "Sheet",
+          "after": "Overlay panel",
+          "reason": "Name the visible page or region rather than exposing a shell or implementation id; this remains an unapproved draft."
+        },
+        {
+          "recordId": "st.b0jrfbc3my",
+          "cellId": "designer.item.frames.command",
+          "before": "Command menu",
+          "after": "Command menu",
+          "reason": "Name the visible page or region rather than exposing a shell or implementation id; this remains an unapproved draft."
+        },
+        {
+          "recordId": "st.hfsb4xz44v",
+          "cellId": "designer.ia.tokens.color-controls",
+          "before": "Controls",
+          "after": "Control colors",
+          "reason": "Disambiguate this group from another group with the same short name on the layer board, without changing its id or placement."
+        },
+        {
+          "recordId": "st.9wy8met97b",
+          "cellId": "designer.ia.tokens.interaction-controls",
+          "before": "Controls",
+          "after": "Control sizes",
+          "reason": "Disambiguate this group from another group with the same short name on the layer board, without changing its id or placement."
+        },
+        {
+          "recordId": "st.dg3e6jc56v",
+          "cellId": "designer.ia.frames.panels",
+          "before": "Panels",
+          "after": "Page panels",
+          "reason": "Disambiguate this group from another group with the same short name on the layer board, without changing its id or placement."
+        },
+        {
+          "recordId": "st.n3jkssxad5",
+          "cellId": "designer.ia.frames.overlay-shells-panels",
+          "before": "Panels",
+          "after": "Overlay panels",
+          "reason": "Disambiguate this group from another group with the same short name on the layer board, without changing its id or placement."
+        }
+      ],
+      "defaults": [
+        "Draft names only; no approval or activation.",
+        "Three app.ops instances are named by their stable admin route paths, never by the shared menu label.",
+        "Parent-scoped name uniqueness permits intentional CopyRef reuse across parents.",
+        "CP capture is not available in this executor; source-name coverage and board disambiguation are checked here, rendered correlation remains a binding/recapture Need."
+      ]
+    }
   ]
 }
