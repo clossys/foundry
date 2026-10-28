@@ -32,11 +32,11 @@ const F = specimenDataset.frames;
 const draw = (leaf: string, options?: Parameters<typeof input>[1]) => render(<>{surfaceRuntimeRenderers[leaf]!.render(input(leaf, options))}</>);
 
 describe("designer Frame runtime renderers", () => {
-  it("cover every designer-owned Frames leaf; site-shell stays publisher-owned", () => {
+  it("cover every designer-owned Frames leaf, including site-shell", () => {
     const designerLeaves = (slots as readonly { id: string }[]).map(slot => slot.id).filter(id => FOUNDRY_FRAME_MAP[id.slice("frames.".length)]!.package === "@clossys/designer");
     expect(Object.keys(frameRenderers).sort()).toEqual(designerLeaves.sort());
-    expect(designerLeaves).toHaveLength(8);
-    expect(frameRenderers["frames.site-shell"]).toBeUndefined();
+    expect(designerLeaves).toHaveLength(9);
+    expect(frameRenderers["frames.site-shell"]).toBeDefined();
   });
 
   it("renders each leaf's real package export from its sample content", async () => {
@@ -78,7 +78,7 @@ describe("designer Frame runtime renderers", () => {
       "frames.app-shell": "app", "frames.app-header": "appHeader", "frames.app-sidebar": "appSidebar", "frames.inspector": "inspector",
       "frames.sheet": "sheet", "frames.site-header": "siteHeader", "frames.site-footer": "siteFooter", "frames.command": "command",
     };
-    expect(Object.keys(records).sort()).toEqual(Object.keys(frameRenderers).sort());
+    expect(Object.keys(records).sort()).toEqual(Object.keys(frameRenderers).filter(id => id !== "frames.site-shell").sort());
     for (const [leaf, record] of Object.entries(records)) {
       const sample = strings(surfaceRuntimeRenderers[leaf]!.sample(specimenDataset)), own = new Set(strings(F[record]));
       expect(sample.filter(value => !dataset.has(value)), leaf).toEqual([]);

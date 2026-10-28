@@ -135,6 +135,7 @@
     },
     "./frames": {
       "types": "./dist/frames/index.d.ts",
+      "react-server": "./dist/frames/server.js",
       "import": "./dist/frames/index.js"
     },
     "./studio/route": {
@@ -413,5 +414,12 @@
     "class-variance-authority": "0.7.1",
     "css-tree": "3.2.1",
     "recharts": "3.8.0"
+  },
+  "imports": {
+    "#designer-frame-navigation": {
+      "types": "./dist/frames/site-frame/NavDisclosure.client.d.ts",
+      "react-server": "./dist/frames/site-frame/NavDisclosure.server.js",
+      "default": "./dist/frames/site-frame/NavDisclosure.client.js"
+    }
   }
 }

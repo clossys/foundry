@@ -8,7 +8,7 @@ import { TOKENS } from "@clossys/designer/tokens";
 import { Toaster, toast } from "@clossys/designer/shell";
 import { AppFrame } from "@clossys/designer/frames";
 import { SiteFrame } from "./SiteFrame.js";
-import { APP_FRAME_LAYOUT, APP_FRAME_WIDE_QUERY } from "../../../../designer/src/frames/app-frame-layout.js";
+import { APP_FRAME_LAYOUT, APP_FRAME_WIDE_QUERY } from "../app-frame-layout.js";
 import type { AppFrameProps } from "@clossys/designer/frames";
 import type { SiteFrameProps } from "./types.js";
 

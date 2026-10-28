@@ -6,9 +6,9 @@
  */
 import type { CopyResolver } from "@clossys/writer";
 import type { AssetResolver } from "../types.js";
-import { SiteFrame } from "./SiteFrame.js";
-import { siteShellFor } from "./surface.js";
-import type { SiteBrandInput, SiteFrameConfig, SiteIconLinkInput, SiteLinkInput, SiteShellInput } from "./types.js";
+import { SiteFrame } from "@clossys/designer/frames";
+import { siteShellFor } from "@clossys/designer/frames";
+import type { SiteBrandInput, SiteFrameConfig, SiteIconLinkInput, SiteLinkInput, SiteShellInput } from "@clossys/designer/frames";
 
 declare const resolveCopy: CopyResolver;
 declare const resolveAsset: AssetResolver;

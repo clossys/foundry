@@ -18311,13 +18311,13 @@
   "inputs": {
     "components": "sha256:8ff8a601e262162de997c1d374726e0398a8a211a2d42eda55cb8f5a8bad693d",
     "consumption": "sha256:aceb85425a0a72f63e690e861dcf8e9cce36d148977eb57a25871893a904b442",
-    "inventory": "sha256:df06569aa38cd127d81477592d619a46a23e56c57345ab508a251139e0d71042",
+    "inventory": "sha256:37d0248ccec87e3a870bce3d701c4a786dfd67a99b7eac32f05ee36444f40690",
     "pages": "absent",
     "runtime": "absent",
     "selection": "sha256:299453d084e560f26ef2b7a1ee7409d38271a954e01ed8616a311cf5a7c3edb0",
     "surfaces": "sha256:a4410402c79a5c0f66197a7bd10415540911ff113bc675927f189e4f9a42b882"
   },
-  "inputsHash": "sha256:b3bbf7a8afccc45f8c4f5ea0893dc805a666a4266b4d1ea484b2f5a7a786a0ae",
+  "inputsHash": "sha256:cc41f221c284593498650a1e1c81c3d04230803d4ca1d347f3dfc88e40ac198e",
   "nodes": [
     {
       "fill": {
@@ -19247,6 +19247,12 @@
       "scan": "lower-bound"
     },
     {
+      "id": "frames.auth-shell",
+      "layer": "frames",
+      "leaf": "frames.auth-shell",
+      "origin": "inventory"
+    },
+    {
       "fill": {
         "id": "foundry/frames.command",
         "source": "foundry"
@@ -19319,6 +19325,12 @@
       "scan": "lower-bound"
     },
     {
+      "id": "sections.account-summary",
+      "layer": "sections",
+      "leaf": "sections.account-summary",
+      "origin": "inventory"
+    },
+    {
       "id": "sections.activity-feed",
       "layer": "sections",
       "leaf": "sections.activity-feed",
@@ -19351,6 +19363,12 @@
       "leaf": "sections.band",
       "origin": "inventory",
       "scan": "lower-bound"
+    },
+    {
+      "id": "sections.boundary-message",
+      "layer": "sections",
+      "leaf": "sections.boundary-message",
+      "origin": "inventory"
     },
     {
       "id": "sections.call-to-action",
@@ -19443,6 +19461,12 @@
       "scan": "lower-bound"
     },
     {
+      "id": "sections.error-message",
+      "layer": "sections",
+      "leaf": "sections.error-message",
+      "origin": "inventory"
+    },
+    {
       "id": "sections.error-state",
       "layer": "sections",
       "leaf": "sections.error-state",
@@ -19516,6 +19540,12 @@
       "scan": "lower-bound"
     },
     {
+      "id": "sections.legal-prose",
+      "layer": "sections",
+      "leaf": "sections.legal-prose",
+      "origin": "inventory"
+    },
+    {
       "fill": {
         "id": "foundry/sections.link-index",
         "source": "foundry"
@@ -19536,6 +19566,18 @@
       "leaf": "sections.logo-cloud",
       "origin": "inventory",
       "scan": "lower-bound"
+    },
+    {
+      "id": "sections.logo-hero",
+      "layer": "sections",
+      "leaf": "sections.logo-hero",
+      "origin": "inventory"
+    },
+    {
+      "id": "sections.logo-mark",
+      "layer": "sections",
+      "leaf": "sections.logo-mark",
+      "origin": "inventory"
     },
     {
       "fill": {
@@ -19646,6 +19688,12 @@
       "id": "sections.settings",
       "layer": "sections",
       "leaf": "sections.settings",
+      "origin": "inventory"
+    },
+    {
+      "id": "sections.sign-in-form",
+      "layer": "sections",
+      "leaf": "sections.sign-in-form",
       "origin": "inventory"
     },
     {
@@ -20239,9 +20287,9 @@
     "nodes": {
       "assets": 50,
       "components": 59,
-      "frames": 9,
+      "frames": 10,
       "pages": 0,
-      "sections": 45,
+      "sections": 52,
       "tokens": 55
     }
   }

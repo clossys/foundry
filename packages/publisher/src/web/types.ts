@@ -1,6 +1,6 @@
 import type { ReactNode } from "react";
 import type { ComposeDocument, FlowLayoutSpec, ResolvedSurfaceGroup, ResolvedSurfaceNode } from "../core/index.js";
-import type { SiteFrameProps } from "./frame/types.js";
+import type { SiteFrameProps } from "@clossys/designer/frames";
 
 // ---------------------------------------------------------------------------
 // CopyResolver — the copyId seam, resolved

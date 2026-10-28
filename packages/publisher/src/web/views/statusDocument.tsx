@@ -1,5 +1,5 @@
 import type { ReactElement, ReactNode } from "react";
-import { SITE_MAIN_ID } from "../frame/types.js";
+import { SITE_MAIN_ID } from "@clossys/designer/frames";
 import { formatPageTitle } from "../siteMetadata.js";
 import type { GlobalErrorDocumentHeadProps } from "./GlobalErrorDocument.js";
 

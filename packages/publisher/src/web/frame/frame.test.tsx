@@ -20,11 +20,11 @@ import { CaptureView } from "../views/CaptureView.js";
 import { DocumentView } from "../views/DocumentView.js";
 import { ErrorView } from "../views/ErrorView.js";
 import { StatusView } from "../views/StatusView.js";
-import { LandingView } from "#publisher-web-views";
-import { SITE_MAIN_ID, SITE_SURFACE_KINDS, SiteFrame, siteShellFor } from "./index.js";
-import type { SiteFrameConfig, SiteShellInput } from "./index.js";
-import { resolveShell } from "./internal/resolveShell.js";
-import { FOOTER_ICON_LIMIT, FOOTER_LINK_LIMIT, SiteFooterContractError } from "./site-frame-contract.js";
+import { LandingView } from "../../../../designer/src/frames/site-frame/landing/web/views/LandingView.js";
+import { SITE_MAIN_ID, SITE_SURFACE_KINDS, SiteFrame, siteShellFor } from "../../../../designer/src/frames/site-frame/index.js";
+import type { SiteFrameConfig, SiteShellInput } from "../../../../designer/src/frames/site-frame/index.js";
+import { resolveShell } from "../../../../designer/src/frames/site-frame/internal/resolveShell.js";
+import { FOOTER_ICON_LIMIT, FOOTER_LINK_LIMIT, SiteFooterContractError } from "../../../../designer/src/frames/site-frame/site-frame-contract.js";
 
 afterEach(cleanup);
 
@@ -659,6 +659,7 @@ function moduleSpecifiers(source: string): string[] {
   return [...source.matchAll(/(?:\bfrom\s*|\bimport\s*\(?\s*|\brequire\s*\(\s*)["'`]([^"'`]+)["'`]/g)].map((match) => match[1] as string);
 }
 
+const SITE_FRAME_SOURCE = join(import.meta.dirname, "../../../../designer/src/frames/site-frame");
 const FRAME_ALLOWED_IMPORT = /^(react|@clossys\/designer\/[a-z-]+\/server|@clossys\/writer|\.{1,2}\/[A-Za-z./-]+\.js)$/;
 const FRAME_CLIENT_MODULES = [
   "NavDisclosure.boundary.client.tsx",
@@ -667,8 +668,8 @@ const FRAME_CLIENT_MODULES = [
 // AppFrame is an explicit web/client composition; SiteFrame's server rules stay unchanged.
 const FRAME_IMPORT_EXCEPTIONS: Readonly<Record<string, readonly string[]>> = {
   "NavDisclosure.client.tsx": ["@clossys/designer/shell"],
-  "NavDisclosure.boundary.client.tsx": ["#publisher-frame-navigation"],
-  "SiteFrame.tsx": ["#publisher-web-views"],
+  "NavDisclosure.boundary.client.tsx": ["#designer-frame-navigation"],
+  "SiteFrame.tsx": ["@clossys/designer/frames"],
 };
 
 function allowedFrameImport(name: string, specifier: string): boolean {
@@ -677,7 +678,7 @@ function allowedFrameImport(name: string, specifier: string): boolean {
 
 function frameSources(): Array<[string, string]> {
   const files: Array<[string, string]> = [];
-  for (const directory of [import.meta.dirname, join(import.meta.dirname, "internal")]) {
+  for (const directory of [SITE_FRAME_SOURCE, join(SITE_FRAME_SOURCE, "internal")]) {
     for (const name of readdirSync(directory)) {
       if (!/\.tsx?$/.test(name) || /\.(test|check)\.tsx?$/.test(name)) continue;
       files.push([name, readFileSync(join(directory, name), "utf8")]);
@@ -695,7 +696,7 @@ describe("module boundaries", () => {
       if (FRAME_CLIENT_MODULES.includes(name)) expect(source.startsWith('"use client";')).toBe(true);
       else expect(source).not.toMatch(/["']use client["']/);
     }
-    const frameSource = readFileSync(join(import.meta.dirname, "SiteFrame.tsx"), "utf8");
+    const frameSource = readFileSync(join(SITE_FRAME_SOURCE, "SiteFrame.tsx"), "utf8");
     expect(frameSource).not.toMatch(/\buse[A-Z][A-Za-z]*\(/);
   });
 

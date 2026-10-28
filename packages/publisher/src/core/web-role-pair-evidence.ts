@@ -30,7 +30,7 @@ const revision = "91f2160d6420f2e5255e122c53e4977042d96471";
 const measuredAt = "2026-10-21";
 const frame: InstanceBlockBinding["frameBlockRef"] = {
   blockId: "site-frame", role: "frame", medium: "web",
-  adapter: { owner: "@clossys/publisher", subpath: "web", export: "SiteFrame", config: {} },
+  adapter: { owner: "@clossys/designer", subpath: "frames", export: "SiteFrame", config: {} },
   regions: [{ key: "main", required: true, childRoles: ["view"], content: ["document"] }],
   content: ["document"], runtime: ["server"], lifecycle: { requires: [], provides: ["skip-focus"] },
   layout: "flow", web: { main: "sole", skipTarget: "main" }, evidence: { sourceRevision: revision, measuredAt },
@@ -42,7 +42,7 @@ const candidates = [
 ] as const;
 export const WEB_ROLE_PAIR_BINDINGS: readonly InstanceBlockBinding[] = freeze(candidates.map(({ name, config }) => ({
   context: { consumer: "example", brand: "standard", medium: "web" }, frameBlockRef: frame,
-  viewBlockRef: { ...frame, blockId: name, role: "view", adapter: { ...frame.adapter, export: name, config },
+  viewBlockRef: { ...frame, blockId: name, role: "view", adapter: { owner: name === "LandingView" ? "@clossys/designer" : "@clossys/publisher", subpath: name === "LandingView" ? "frames" : "web", export: name, config },
     regions: [{ key: "body", required: true, childRoles: [], content: ["document"] }],
     lifecycle: { requires: [], provides: [] }, web: { main: "none" } },
 })));

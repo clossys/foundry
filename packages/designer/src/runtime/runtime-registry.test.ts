@@ -31,7 +31,7 @@ describe("surface runtime registry", () => {
     const ids = (rows: readonly { id: string }[]) => rows.map(row => row.id).sort();
     expect(Object.keys(sectionRenderers).sort()).toEqual(ids(sectionSlots as readonly { id: string }[]));
     expect(Object.keys(sectionRenderers)).toHaveLength(46);
-    expect(Object.keys(frameRenderers).sort()).toEqual(ids(frameSlots as readonly { id: string }[]).filter(id => id !== "frames.site-shell"));
+    expect(Object.keys(frameRenderers).sort()).toEqual(ids(frameSlots as readonly { id: string }[]));
     expect(Object.keys(frameRenderers)).toHaveLength(8);
   });
   it("ships the registry by name from the frames barrel the pointer names", () => {

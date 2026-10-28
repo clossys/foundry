@@ -53,7 +53,7 @@ export type {
 } from "./document/index.js";
 
 // Frame appearance inputs; the package keeps explicit subpath exports.
-export type { SiteLinkInput, SiteBrandInput, SiteShellInput, SiteFooterInput } from "./web/frame/index.js";
+export type { SiteLinkInput, SiteBrandInput, SiteShellInput, SiteFooterInput } from "@clossys/designer/frames";
 export type { SectionedViewHeroSection } from "./core/sectioned-view.js";
 
 export * from "./layouts/index.js";
