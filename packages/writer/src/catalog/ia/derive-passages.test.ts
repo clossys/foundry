@@ -3,6 +3,11 @@ import { mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { spawnSync } from "node:child_process";
+import { validateWriterRecord } from "../../model/validate.js";
+import { checkWriterICU } from "../../checks/icu.js";
+import { writerPassageSchemaDigest } from "../../checks/closed-world.js";
+import { loadWriterCatalog } from "./index.js";
+import type { WriterLibrary, WriterRecord } from "../../model/types.js";
 // @ts-expect-error — the generator deliberately uses dependency-free JavaScript.
 import { derivePassages, run } from "../../../scripts/derive-passages.mjs";
 
@@ -99,5 +104,113 @@ describe("generator check mode", () => {
   it("checks the repository outputs through the guarded CLI", () => {
     const result = spawnSync(process.execPath, [new URL("../../../scripts/derive-passages.mjs", import.meta.url).pathname, "--check"], { encoding: "utf8" });
     expect(result.status, result.stderr || result.stdout).toBe(0);
+  });
+});
+
+
+// The assigned base precedes the owning Designer cascade. Current catalog
+// equality and the approved projected equality are separate assertions: pending
+// records cannot manufacture a registered schema or a schema digest.
+describe("SU-9W section copy cascade", () => {
+  const read = (path: string): any => JSON.parse(readFileSync(new URL(path, import.meta.url), "utf8"));
+  const copy = read("../records/section-defaults.r1.en.json");
+  const cascade = read("../records/pending/sections-upgrade.r1.en.json");
+  const source = read("../../../../designer/src/catalog/slots/sections.json");
+  const allRecords = [...copy.records, ...cascade.records];
+  const aliases = { ...copy.aliases, ...cascade.aliases };
+  const strings = allRecords.filter((r: WriterRecord) => r.id.startsWith("st."));
+
+  it("pins 52 current live pairs separately from 52 approved projected pairs", () => {
+    const current = loadWriterCatalog().slots.filter(slot => slot.layer === "passages");
+    expect(source).toHaveLength(52);
+    expect(current).toHaveLength(52);
+    expect(new Set(current.map(slot => slot.id)).size).toBe(52);
+    expect(current.map(slot => slot.id).sort()).toEqual(source.map((s: any) => s.contract.passageSchema).sort());
+    expect(cascade.merges.map((m: any) => [m.fromSection, m.toSection])).toEqual([
+      ["sections.logo-mark", "sections.logo-hero"],
+      ["sections.account-summary", "sections.record-detail"],
+      ["sections.error-message", "sections.error-state"],
+    ]);
+    expect(cascade.additions.map((a: any) => a.sectionId)).toEqual([
+      "sections.canvas-lane", "sections.slot-board", "sections.canvas-controls",
+    ]);
+    const projected = new Set(source.map((s: any) => s.id));
+    for (const merge of cascade.merges) {
+      expect(projected.has(merge.toSection)).toBe(true);
+      // Idempotent across the pre-cascade base and the integrated catalog.
+      projected.delete(merge.fromSection);
+    }
+    for (const addition of cascade.additions) {
+      projected.add(addition.sectionId);
+      expect(addition.passageId).toBe(addition.sectionId.replace(/^sections\./, "passages."));
+    }
+    expect(projected.size).toBe(cascade.expectedLivePairs);
+    expect(projected.size).toBe(52);
+    expect(new Set([...projected].map((id: any) => id.replace(/^sections\./, "passages."))).size).toBe(52);
+  });
+
+  it("keeps every authored string and merged passage draft, valid, unique and referentially complete", () => {
+    expect(copy).toMatchObject({ state: "draft", activation: "none", locale: "en" });
+    const ids = allRecords.map((r: WriterRecord) => r.id);
+    expect(new Set(ids).size).toBe(ids.length);
+    expect(new Set(Object.values(aliases)).size).toBe(strings.length);
+    for (const record of allRecords) {
+      expect(record.status).toBe("draft");
+      expect(record).not.toHaveProperty("approval");
+      expect(validateWriterRecord(record, record.id.startsWith("st.") ? "strings" : "passages"), record.context).toEqual([]);
+    }
+    for (const binding of [...copy.bindings, ...cascade.bindings]) expect(ids).toContain(binding.recordId);
+    const library: WriterLibrary = {
+      manifest: { consumer: "section-defaults", messageSyntax: "icu-mf1", defaultLocale: "en", locales: [{ tag: "en", dir: "ltr", state: "active" }], fallback: {}, strategist: { path: "strategy" }, leafFreeze: { lexicon: "", strings: "", patterns: "", passages: "", narratives: "" } },
+      locales: { en: { records: strings, documents: [] } },
+    };
+    expect(checkWriterICU(library)).toEqual([]);
+    for (const merge of cascade.merges) {
+      const record = allRecords.find((r: WriterRecord) => r.id === merge.recordId);
+      expect(record.leaf).toBe(merge.toPassage);
+      expect(record.schema).toBe(merge.toPassage);
+      const slot = loadWriterCatalog().slots.find(s => s.id === record.schema)!;
+      expect(record.schemaDigest).toBe(writerPassageSchemaDigest(slot.contract));
+      for (const ref of Object.values(record.fields) as any[]) expect(ids).toContain(ref.id);
+    }
+  });
+
+  it("covers every DataTable host message and the removed section and site-shell defaults without duplicating chat", () => {
+    const messages = readFileSync(new URL("../../../../designer/src/blocks/data-table/messages.ts", import.meta.url), "utf8");
+    const fields = [...messages.matchAll(/readonly (\w+)\?:/g)].map(m => m[1]);
+    for (const field of fields) expect(aliases).toHaveProperty(`dataTable.${field}`);
+    expect(Object.keys(aliases)).toEqual(expect.arrayContaining([
+      "pagination.previousPageLabel", "pagination.nextPageLabel", "pagination.noResultsLabel",
+      "pagination.rangeSummaryMessage", "pagination.pageSummaryMessage", "pagination.pageSizeLabel", "pagination.ariaLabel",
+      "gallery.close", "gallery.enlarge", "navShell.triggerLabel", "navShell.closeLabel",
+    ]));
+    expect(strings.every((r: any) => !r.context.includes(".chat."))).toBe(true);
+    expect(aliases["navShell.triggerLabel"]).toBeTruthy();
+    expect(strings.find((r: any) => r.id === aliases["navShell.triggerLabel"]).text).toBe("Menu");
+    expect(strings.find((r: any) => r.id === aliases["navShell.closeLabel"]).text).toBe("Close menu");
+  });
+
+  it("keeps unresolved new-leaf intents outside record discovery without inventing schema evidence", () => {
+    expect(cascade).toMatchObject({ state: "draft", activation: "none", integration: "pending-designer-contracts" });
+    expect(cascade.records.length).toBeGreaterThan(0);
+    expect(cascade.records.every((record: WriterRecord) => record.id.startsWith("st."))).toBe(true);
+    const current = loadWriterCatalog();
+    for (const addition of cascade.additions) {
+      // The source leaf may land independently. This intent still has no
+      // current digest and must not be mistaken for a registered record.
+      const landed = current.slots.find(slot => slot.id === addition.passageId);
+      if (landed) expect(landed.contract.sectionId).toBe(addition.sectionId);
+      expect(addition.passageIntent).toMatchObject({ status: "draft", leaf: addition.passageId, schema: addition.passageId });
+      expect(addition.passageIntent.proposedRecordId).toMatch(/^ps\.[0123456789abcdefghjkmnpqrstvwxyz]{10}$/);
+      expect(addition.passageIntent).not.toHaveProperty("id");
+      expect(addition.passageIntent).not.toHaveProperty("schemaDigest");
+      expect(addition.passageIntent).not.toHaveProperty("approval");
+      expect(addition.needs).toContain("Designer copy contract");
+      expect(addition.needs).toContain("current schemaDigest");
+      for (const ref of Object.values(addition.passageIntent.fields) as any[]) {
+        expect(ref.ref).toBe("string");
+        expect(strings.some((r: any) => r.id === ref.id)).toBe(true);
+      }
+    }
   });
 });
