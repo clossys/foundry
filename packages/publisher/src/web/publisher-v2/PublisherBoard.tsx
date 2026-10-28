@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, type ReactNode } from "react";
 import {
   CanvasSurface,
   ContentSection,
@@ -17,7 +17,7 @@ import type { StageKey } from "../../content/stage-engine.js";
 const STAGES: readonly StageKey[] = ["define", "assemble", "review", "approve", "publish"];
 
 /** A read-only projection; camera and selection live only for this mounted view. */
-export function PublisherBoard({ model }: { model: PublisherBoardModel }) {
+export function PublisherBoard({ model, inspector }: { model: PublisherBoardModel; inspector?: { candidateCell: (row: PublisherBoardRow) => ReactNode; render: () => ReactNode } }) {
   const [viewport, setViewport] = useState<Viewport>({ x: 0, y: 0, zoom: 1 });
   const [selection, setSelection] = useState<Selection>([]);
 
@@ -33,7 +33,7 @@ export function PublisherBoard({ model }: { model: PublisherBoardModel }) {
     {
       id: "candidate",
       header: model.labels.candidate,
-      cell: (row) => row.candidateLabel,
+      cell: (row) => inspector ? inspector.candidateCell(row) : row.candidateLabel,
     },
     ...STAGES.map((stage): DataTableColumn<PublisherBoardRow> => ({
       id: stage,
@@ -77,6 +77,7 @@ export function PublisherBoard({ model }: { model: PublisherBoardModel }) {
           </ContentSection>
         ))}
       </CanvasSurface>
+      {inspector?.render()}
     </>
   );
 }
