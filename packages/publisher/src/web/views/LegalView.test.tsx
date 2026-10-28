@@ -12,8 +12,8 @@ import type { LegalDocument, LegalDocumentKind } from "../../document/legal.js";
 import { LegalView } from "./LegalView.js";
 import { CaptureView } from "./CaptureView.js";
 import { DocumentView } from "./DocumentView.js";
-import { SITE_MAIN_ID, SiteFrame } from "../frame/index.js";
-import type { SiteShellInput } from "../frame/index.js";
+import { SITE_MAIN_ID, SiteFrame } from "@clossys/designer/frames";
+import type { SiteShellInput } from "@clossys/designer/frames";
 import type { LegalViewLabels, LegalViewProps } from "./LegalView.js";
 
 vi.mock("@clossys/designer/blocks/server", async (importOriginal) => {

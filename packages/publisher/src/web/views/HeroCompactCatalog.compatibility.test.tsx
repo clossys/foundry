@@ -3,7 +3,7 @@ import { describe, expect, it } from "vitest";
 import { renderToStaticMarkup } from "react-dom/server";
 import { validateSectionedViewDocument, resolveSectionedViewDocument } from "../../core/sectioned-view.js";
 import { heroCompactCatalogDocument, contentCatalogCopyResolver } from "../../preview/fixture-content-catalog.js";
-import { LandingView, type LandingViewProps } from "./LandingView.js";
+import { LandingView, type LandingViewProps } from "@clossys/designer/frames";
 const dom = (props: LandingViewProps) => { const host = document.createElement("div"); host.innerHTML = renderToStaticMarkup(<LandingView {...props} />); return host; };
 describe("compact catalog fixture", () => {
   it("uses generic inverse copy without actions and renders through LandingView", () => {

@@ -1,4 +1,5 @@
-import { cloneElement, isValidElement, useEffect, useId, useRef, useState, type ReactElement, type ReactNode } from "react";
+import { ModalContext, useLocale } from "react-aria-components";
+import { cloneElement, isValidElement, useContext, useEffect, useId, useRef, useState, type ReactElement, type ReactNode } from "react";
 import { createPortal } from "react-dom";
 import { Button } from "../components/Button.js";
 import { Icon } from "../components/Icon.js";
@@ -115,6 +116,12 @@ export function AppNavigation({ onNavigate, fullViewport = false, retainMounted 
   /** @default "Collapse {nodeLabel}" when expanded, "Expand {nodeLabel}" otherwise */
   formatDisclosureLabel = defaultDisclosureLabel,
 }: AppNavigationProps) {
+  const { direction: localeDirection } = useLocale();
+  // AppFrame supplies its explicit direction override through the existing modal context.
+  const modalContext = useContext(ModalContext);
+  const modalStyle = modalContext && "style" in modalContext ? modalContext.style : undefined;
+  const modalDirection = typeof modalStyle === "object" ? modalStyle?.direction : undefined;
+  const direction = modalDirection === "ltr" || modalDirection === "rtl" ? modalDirection : localeDirection;
   const ancestry = getAppNavigationAncestry(tree, { id: activeId, href: activeHref });
   const active = ancestry.at(-1)?.id;
   const ancestor = ancestry.length > 1 ? ancestry[0]?.id : undefined;
@@ -135,13 +142,12 @@ export function AppNavigation({ onNavigate, fullViewport = false, retainMounted 
       const opener = corner.current?.querySelector<HTMLElement>("button, a");
       if (!opener) return;
       const rect = opener.getBoundingClientRect();
-      const computed = getComputedStyle(opener).direction;
-      const rtl = computed === "rtl" || (!computed && opener.closest<HTMLElement>("[dir]")?.dir === "rtl");
+      const rtl = direction === "rtl";
       setCornerMeasurement({ top: rect.top, left: rect.left, right: rect.right, rtl });
     };
     measure(); window.addEventListener("resize", measure);
     return () => window.removeEventListener("resize", measure);
-  }, [narrow, requested, customTrigger, trigger, triggerContainer]);
+  }, [narrow, requested, customTrigger, trigger, triggerContainer, direction]);
   const focusedId = useRef<string | undefined>(undefined);
   const handoff = useRef(false);
   const tooltipRequests = useRef(0);

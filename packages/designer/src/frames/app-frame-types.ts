@@ -65,6 +65,8 @@ type FrameAction = PageBarAction;
 type FramePage = PageBarPage;
 
 export interface AppFrameProps {
+  /** Canonical page locale supplied by the host through Writer. */
+  locale?: string;
   brand: AppFrameBrand;
   /** AppNavigation owns its single responsive navigation drawer. */
   navigation: Omit<AppNavigationProps, "header" | "footer" | "trigger" | "dismissAt">;

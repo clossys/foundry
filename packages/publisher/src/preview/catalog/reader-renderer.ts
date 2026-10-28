@@ -2,8 +2,8 @@ import { resolveDocumentLocale, type DocumentLocaleOptions } from "../render-doc
 import { createElement } from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
 import { resolveSectionedViewDocument, desugarRecipe, SECTIONED_VIEW_ITEM_RECIPES, SECTIONED_VIEW_CONTENT_CONTRACT } from '../../core/index.js';
-import { LandingView } from '../../web/views/LandingView.server.js';
-import type { LandingViewProps } from '../../web/views/LandingView.js';
+import { ServerLandingView as LandingView } from '@clossys/designer/frames';
+import type { LandingViewProps } from '@clossys/designer/frames';
 import { SectionedView } from '../../web/views/SectionedView.server.js';
 import type { ResolvedSectionedViewContentSection, ResolvedSectionedViewDocument } from '../../core/sectioned-view.js';
 import type { ContentCatalogStylesheets } from '../render-content-catalog.js';

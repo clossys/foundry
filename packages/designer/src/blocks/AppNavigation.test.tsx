@@ -81,11 +81,11 @@ describe("AppNavigation", () => {
       return this.getAttribute("aria-label") === "Host corner" ? new DOMRect(left, 27, 44, 44) : original.call(this);
     });
     try {
-      const view = render(<div dir="ltr"><AppNavigation tree={tree} drawerOpen trigger={<button aria-label="Host corner" style={{ direction: "ltr" }} />} /></div>);
+      const view = render(<I18nProvider locale="en"><div dir="rtl"><AppNavigation tree={tree} drawerOpen trigger={<button aria-label="Host corner" style={{ direction: "rtl" }} />} /></div></I18nProvider>);
       const close = await screen.findByRole("button", { name: "Close navigation", expanded: true });
       await waitFor(() => expect(close).toHaveStyle({ insetBlockStart: "27px", insetInlineStart: "35px", direction: "ltr" }));
       left = 621;
-      view.rerender(<div dir="rtl"><AppNavigation tree={tree} drawerOpen trigger={<button aria-label="Host corner" style={{ direction: "rtl" }} />} /></div>);
+      view.rerender(<I18nProvider locale="ar"><div dir="ltr"><AppNavigation tree={tree} drawerOpen trigger={<button aria-label="Host corner" style={{ direction: "ltr" }} />} /></div></I18nProvider>);
       await waitFor(() => expect(close).toHaveStyle({ insetBlockStart: "27px", insetInlineStart: "calc(100% - 665px)", direction: "rtl" }));
     } finally { measured.mockRestore(); }
   });

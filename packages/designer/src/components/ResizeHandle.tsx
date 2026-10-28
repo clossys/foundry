@@ -1,3 +1,4 @@
+import { useLocale } from "react-aria-components";
 import { useRef, type HTMLAttributes, type KeyboardEvent, type PointerEvent } from "react";
 import { cx } from "./internal/cx.js";
 import { UI_BORDER_HAIRLINE, UI_LAYOUT_TAP_TARGET } from "./internal/ui-vars.js";
@@ -15,15 +16,17 @@ export interface ResizeHandleProps extends Omit<HTMLAttributes<HTMLDivElement>, 
   edge?: "start" | "end";
   /** Positive keyboard increment, in the same units as value. @default 1 */
   step?: number;
-  /** Omitted direction follows computed/inherited direction at interaction time. */
+  /** Omitted direction follows the React Aria locale context. */
   dir?: "ltr" | "rtl";
 }
 
 /** Focusable separator with bounded pointer/keyboard resizing; Enter resets, Escape cancels a drag. */
 export function ResizeHandle({
   value, min, max, resetValue, label, onChange,
-  orientation = "vertical", edge = "end", step = 1, dir, className, style, ...rest
+  orientation = "vertical", edge = "end", step = 1, dir: suppliedDir, className, style, ...rest
 }: ResizeHandleProps) {
+  const { direction: contextDirection } = useLocale();
+  const dir = suppliedDir ?? contextDirection;
   const drag = useRef<{ pointer: number; coordinate: number; value: number } | null>(null);
   if (edge !== "start" && edge !== "end") throw new TypeError("ResizeHandle: unknown pane edge.");
   if (![value, min, max, resetValue, step].every(Number.isFinite) || min > max || step <= 0 || typeof label !== "string" || !label.trim() || (orientation !== "vertical" && orientation !== "horizontal")) {
@@ -32,9 +35,8 @@ export function ResizeHandle({
   const clamp = (next: number) => Math.min(max, Math.max(min, next));
   const current = clamp(value);
   const horizontalMovement = orientation === "vertical";
-  const sign = (element: HTMLElement) => {
-    const inherited = getComputedStyle(element).direction || element.closest("[dir]")?.getAttribute("dir");
-    const direction = horizontalMovement && (dir ?? inherited) === "rtl" ? -1 : 1;
+  const sign = () => {
+    const direction = horizontalMovement && dir === "rtl" ? -1 : 1;
     return edge === "start" ? -direction : direction;
   };
   const coordinate = (event: PointerEvent<HTMLDivElement>) => horizontalMovement ? event.clientX : event.clientY;
@@ -56,8 +58,8 @@ export function ResizeHandle({
     if (event.key === "Home") next = min;
     else if (event.key === "End") next = max;
     else if (event.key === "Enter") next = resetValue;
-    else if (event.key === (horizontalMovement ? "ArrowRight" : "ArrowDown")) next = current + step * sign(event.currentTarget);
-    else if (event.key === (horizontalMovement ? "ArrowLeft" : "ArrowUp")) next = current - step * sign(event.currentTarget);
+    else if (event.key === (horizontalMovement ? "ArrowRight" : "ArrowDown")) next = current + step * sign();
+    else if (event.key === (horizontalMovement ? "ArrowLeft" : "ArrowUp")) next = current - step * sign();
     else return;
     event.preventDefault();
     onChange(clamp(next));
@@ -91,7 +93,7 @@ export function ResizeHandle({
       onPointerMove={event => {
         const active = drag.current;
         if (!active || active.pointer !== event.pointerId || !Number.isFinite(coordinate(event))) return;
-        onChange(clamp(active.value + (coordinate(event) - active.coordinate) * sign(event.currentTarget)));
+        onChange(clamp(active.value + (coordinate(event) - active.coordinate) * sign()));
       }}
       onPointerUp={event => { if (drag.current?.pointer === event.pointerId) finish(event.currentTarget, false); }}
       onPointerCancel={event => { if (drag.current?.pointer === event.pointerId) finish(event.currentTarget, true); }}

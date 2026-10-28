@@ -116,6 +116,8 @@ export interface RuntimeContent {
 }
 export interface RuntimeCell { readonly theme: string; readonly state: string; readonly width: number }
 export interface RuntimeRenderInput<Node> {
+  /** Canonical page locale supplied by the host through Writer. */
+  readonly locale?: string;
   readonly path: string;
   readonly fill: RuntimeFillDescriptor;
   readonly selection: RuntimeFillSelection;

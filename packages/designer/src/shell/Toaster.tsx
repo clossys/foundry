@@ -1,3 +1,4 @@
+import { useLocale } from "react-aria-components";
 import { createContext, useContext, type CSSProperties, type ReactNode } from "react";
 import type { QueuedToast, UNSTABLE_ToastQueue as ToastQueue } from "react-aria-components";
 import { Button } from "../components/Button.js";
@@ -116,10 +117,11 @@ export interface ToasterProps {
  * so this override is a normal prop, not a hack.
  */
 export function Toaster({ "aria-label": ariaLabel, className, queue = toastQueue, placement = "viewport" }: ToasterProps) {
+  const { direction } = useLocale();
   const frameInset = useContext(ToasterFrameInsetContext);
   if (placement === "container") {
     return (
-      <ToastRegion queue={queue} placement="container" className={cx("flex flex-col gap-sm", className)}>
+      <ToastRegion style={{ direction }} queue={queue} placement="container" className={cx("flex flex-col gap-sm", className)}>
         {queuedToast => <ToasterItem toast={queuedToast} queue={queue} />}
       </ToastRegion>
     );
@@ -129,7 +131,7 @@ export function Toaster({ "aria-label": ariaLabel, className, queue = toastQueue
       queue={queue}
       aria-label={ariaLabel}
       className={cx("fixed bottom-md end-md flex flex-col gap-sm", className)}
-      style={{ zIndex: UI_Z_TOAST, ...frameInsetStyle(frameInset) }}
+      style={{ direction: frameInset?.direction ?? direction, zIndex: UI_Z_TOAST, ...frameInsetStyle(frameInset) }}
       data-toaster-placement={frameInset ? "frame" : "viewport"}
     >
       {queuedToast => <ToasterItem toast={queuedToast} queue={queue} />}

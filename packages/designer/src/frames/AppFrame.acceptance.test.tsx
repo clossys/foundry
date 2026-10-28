@@ -423,10 +423,10 @@ describe("AppFrame floating stage", () => {
     expect(region("page-info").parentElement?.parentElement).toHaveStyle({ direction: dir });
   });
 
-  it("f: resolves inherited document direction for the portaled information", async () => {
-    const previous = document.documentElement.dir; document.documentElement.dir = "rtl";
+  it("f: resolves page locale direction for the portaled information despite opposite document direction", async () => {
+    const previous = document.documentElement.dir; document.documentElement.dir = "ltr";
     try {
-      const user = userEvent.setup(); render(<AppFrame {...stageFixture()} />);
+      const user = userEvent.setup(); render(<AppFrame {...stageFixture()} locale="ar" />);
       await user.click(screen.getByRole("button", { name: "Page information" }));
       expect(region("page-info").parentElement?.parentElement).toHaveStyle({ direction: "rtl" });
     } finally { document.documentElement.dir = previous; }

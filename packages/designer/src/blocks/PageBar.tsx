@@ -1,4 +1,5 @@
 "use client";
+import { useLocale } from "react-aria-components";
 
 import { useEffect, useRef, useState, type ComponentPropsWithRef, type ReactNode } from "react";
 import { Button } from "../components/Button.js";
@@ -12,7 +13,7 @@ import { Check } from "../icons/Check.js";
 import { Tooltip } from "../components/Tooltip.js";
 import { frameLinkNavigation, type FrameNavigate } from "./frame-navigation.js";
 import { frameHeaderOverflow } from "./frame-header-layout.js";
-import { CONTROL, TAP, PAGE_BAR_LAYOUT, pageBarDirection } from "./page-bar-layout.js";
+import { CONTROL, TAP, PAGE_BAR_LAYOUT } from "./page-bar-layout.js";
 import { resolveFrameHeaderOptions } from "../catalog-core/frame-header-options.js";
 
 export type PageBarDestination = FramePageHeaderDestination;
@@ -128,7 +129,8 @@ export function PageBar({ root, context, page, workspaces, header, onNavigate, l
   const glass = (legacy || surface === "glass") && glassSupported;
   const [infoOpen, setInfoOpen] = useState(false);
   const [barWidth, setBarWidth] = useState<number>();
-  const [direction, setDirection] = useState(dir);
+  const { direction: contextDirection } = useLocale();
+  const direction = dir ?? contextDirection;
   useEffect(() => {
     const reduced = window.matchMedia("(prefers-reduced-transparency: reduce)");
     const forced = window.matchMedia("(forced-colors: active)");
@@ -142,7 +144,6 @@ export function PageBar({ root, context, page, workspaces, header, onNavigate, l
       const rect = bar.current.getBoundingClientRect();
       if (rect.height > 0) onHeightChange?.(rect.height);
       setBarWidth(rect.width || undefined);
-      setDirection(dir ?? pageBarDirection(bar.current));
     };
     measure();
     const observer = typeof ResizeObserver === "function" ? new ResizeObserver(measure) : undefined;

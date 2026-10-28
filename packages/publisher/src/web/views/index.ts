@@ -48,8 +48,6 @@ export { LegalView } from "./LegalView.js";
 export type { LegalViewFramedLabels, LegalViewLabels, LegalViewProps } from "./LegalView.js";
 export { HeroView } from "./HeroView.js";
 export type { HeroViewFooter, HeroViewGround, HeroViewProps } from "./HeroView.js";
-export { LandingView } from "./LandingView.js";
-export type { LandingViewCallToAction, LandingViewHeader, LandingViewProps } from "./LandingView.js";
 export { LANDING_VIEW_CALL_TO_ACTION_GROUND, LANDING_VIEW_CLOSING_GROUND, planLandingViewGrounds } from "./landingViewGrounds.js";
 export type { LandingViewBandGround, LandingViewBandRole, LandingViewGroundPlan, LandingViewGroundRepeat } from "./landingViewGrounds.js";
 export { ContactView } from "./ContactView.js";
@@ -77,3 +75,5 @@ export { IndexView } from "./IndexView.js";
 export type { IndexViewCollection, IndexViewProps, IndexViewRowRoute, IndexViewTable } from "./IndexView.js";
 export { DetailsView } from "./DetailsView.js";
 export type { DetailsViewBlock, DetailsViewLayout, DetailsViewProps, DetailsViewRegion, DetailsViewSection, DetailsViewSectionState, DetailsViewTab } from "./DetailsView.js";
+
+export { LandingView, type LandingViewCallToAction, type LandingViewHeader, type LandingViewProps } from "@clossys/designer/frames"; // removed by CX-2

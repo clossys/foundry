@@ -5,7 +5,7 @@ import { buttonLinkClassName } from "@clossys/designer/components/server";
 import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { resolveSectionedViewDocument } from "../core/sectioned-view.js";
-import { LandingView } from "../web/views/LandingView.server.js";
+import { ServerLandingView as LandingView } from "@clossys/designer/frames";
 import { PREVIEW_UTILITIES_BASENAME } from "./preview-stylesheet.js";
 import { CONTENT_CATALOG_CALL_TO_ACTION, CONTENT_CATALOG_CAPTIONS, contentCatalogCopyResolver, contentCatalogDocument, type ContentCatalogCaption } from "./fixture-content-catalog.js";
 

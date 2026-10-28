@@ -32,7 +32,7 @@ function accountSections(rows: readonly Json[], host: Host): AccountMenuSection[
   });
 }
 /** JSON content plus host port to AppFrame props; throws on content a fill cannot honour. */
-export function appShellProps(input: Pick<RuntimeRenderInput<ReactNode>, "content" | "selection" | "slots" | "host">): AppFrameProps {
+export function appShellProps(input: Pick<RuntimeRenderInput<ReactNode>, "content" | "selection" | "slots" | "host" | "locale">): AppFrameProps {
   only(input, ["skip-link", "sidebar", "command", "inspector"]);
   const host = input.host, sidebar = runtimeRecord(input, "sidebar"), command = runtimeRecord(input, "command"), inspector = runtimeRecord(input, "inspector");
   if (!sidebar) throw new TypeError("frames.app-shell: sidebar content is required");
@@ -43,6 +43,7 @@ export function appShellProps(input: Pick<RuntimeRenderInput<ReactNode>, "conten
   const theme = runtimeMember(input, "theme", "system");
   const panel = host?.panels?.inspector;
   return {
+    ...(input.locale === undefined ? {} : { locale: input.locale }),
     brand: { markSrc: required(brand.markSrc, "sidebar.brand.markSrc"), ...(name ? { navigationMark: { label: name } } : {}) },
     navigation: { tree: navigationTree(records(sidebar.tree), host, "sidebar.tree"), ...(text(sidebar.label) ? { label: text(sidebar.label) } : {}), ...(text(sidebar.activeId) ? { activeId: text(sidebar.activeId) } : {}) },
     account: {

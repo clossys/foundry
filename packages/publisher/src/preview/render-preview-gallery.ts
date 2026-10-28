@@ -14,7 +14,7 @@ import { CollectionView } from "../web/views/CollectionView.js";
 import { IndexView } from "../web/views/IndexView.js";
 import { DetailsView } from "../web/views/DetailsView.js";
 import { DocumentView } from "../web/views/DocumentView.js";
-import { LandingView } from "../web/views/LandingView.server.js";
+import { ServerLandingView as LandingView } from "@clossys/designer/frames";
 import { heroCompactCatalogDocument, contentCatalogCopyResolver } from "./fixture-content-catalog.js";
 import { SectionedView } from "../web/views/SectionedView.server.js";
 import { BrandGuideView } from "../web/views/BrandGuideView.js";
