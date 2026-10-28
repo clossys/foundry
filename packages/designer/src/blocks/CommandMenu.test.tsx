@@ -145,6 +145,21 @@ describe("CommandMenu", () => {
     expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
   });
 
+  it("retains the active command when clicking the already-focused search input", async () => {
+    const { input } = await open();
+    await userEvent.keyboard("{ArrowDown}");
+    const active = input.getAttribute("aria-activedescendant");
+    expect(document.getElementById(active!)).toHaveAccessibleName("Bravo");
+    await userEvent.click(input);
+    expect(input).toHaveFocus();
+    expect(input).toHaveAttribute("aria-activedescendant", active);
+    expect(screen.getByRole("option", { name: "Bravo" })).toHaveAttribute("aria-selected", "true");
+    await userEvent.keyboard("{Enter}");
+    expect(bravo).toHaveBeenCalledOnce();
+    expect(alpha).not.toHaveBeenCalled();
+    expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+  });
+
   it("Enter after filtering runs the filtered item rather than the original first item", async () => {
     const { input } = await open();
     await userEvent.type(input, "brav");

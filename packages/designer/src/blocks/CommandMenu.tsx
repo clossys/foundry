@@ -1,6 +1,6 @@
 import { useShellCopy } from "../components/Banner.copy-context.js";
 import { SHELL_COPY_REFS } from "../components/Banner.copy.js";
-import { useCallback, useContext, useEffect } from "react";
+import { useCallback, useContext, useEffect, type PointerEvent } from "react";
 import { Autocomplete, AutocompleteStateContext, FieldInputContext } from "react-aria-components";
 import { Dialog } from "../components/Dialog.js";
 import { SearchField } from "../components/SearchField.js";
@@ -35,7 +35,14 @@ function CommandSearch({ searchLabel, query, onQueryChange }: { searchLabel: str
     const first = resultsId ? document.getElementById(resultsId)?.querySelector<HTMLElement>('[role="option"]:not([aria-disabled="true"])') : null;
     (active ?? first)?.scrollIntoView?.({ block: "nearest", inline: "nearest", behavior: "instant" });
   }, [state?.focusedNodeId, query, resultsId]);
-  return <FieldInputContext.Provider value={{ ...context, ref: configureInput }}>
+  const inputContext = { ...context, ref: configureInput, onPointerDown: (event: PointerEvent<HTMLElement>) => {
+    // Autocomplete clears virtual focus when returning to search. A click in
+    // the already-focused command input must retain its Enter destination.
+    // The peer supplies this runtime handler but omits it from the context type.
+    const handler = context && "onPointerDown" in context ? context.onPointerDown : undefined;
+    if (event.currentTarget !== document.activeElement && typeof handler === "function") handler(event);
+  } };
+  return <FieldInputContext.Provider value={inputContext}>
     <SearchField label={searchLabel} value={query} onChange={onQueryChange} autoFocus />
   </FieldInputContext.Provider>;
 }

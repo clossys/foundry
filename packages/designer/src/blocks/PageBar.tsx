@@ -234,6 +234,19 @@ export function PageBar({ root, context, page, workspaces, header, onNavigate, l
   </SemanticContent>;
 }
 
+/** The menu peer filters aria-current, so retain its native item and mark it through the label ref. */
+function HeaderMenuLabel({ current, children }: { current: boolean; children: ReactNode }) {
+  const label = useRef<HTMLSpanElement>(null);
+  useEffect(() => {
+    const item = label.current?.closest('[role="menuitem"]');
+    if (!item) return;
+    if (current) item.setAttribute("aria-current", "page");
+    else item.removeAttribute("aria-current");
+    return () => item.removeAttribute("aria-current");
+  }, [current]);
+  return <SemanticContent as="span" ref={label}>{children}</SemanticContent>;
+}
+
 function HeaderSlots({ header, onNavigate, embedded = false }: { header: PageBarHeader; onNavigate?: FrameNavigate; embedded?: boolean }) {
   const root = useRef<HTMLDivElement>(null);
   const nav = useRef<HTMLElement>(null);
@@ -269,8 +282,8 @@ function HeaderSlots({ header, onNavigate, embedded = false }: { header: PageBar
     <SemanticContent as="div" className="w-full min-w-0 justify-self-start" style={embedded ? { gridColumn: 1, gridRow: 1 } : undefined}>
       {overflow.compactNav && header.nav ? <Menu trigger={<Button variant="ghost" className="min-w-0 max-w-full gap-xs" style={TAP}><SemanticContent as="h1" className="m-0 truncate text-body font-semibold">{header.title}{active ? ` / ${active.label}` : ""}</SemanticContent><Icon glyph={ChevronDown} decorative /></Button>}>
         {header.nav.items.map(item => <Menu.Item key={item.id} id={item.id} href={item.href} textValue={item.label}
-          aria-current={item.id === header.nav?.activeId ? "page" : undefined}>
-          {item.id === header.nav?.activeId && <Icon glyph={Check} decorative />}{item.label}
+          onClick={event => frameLinkNavigation(event, onNavigate)}>
+          {item.id === header.nav?.activeId && <Icon glyph={Check} decorative />}<HeaderMenuLabel current={item.id === header.nav?.activeId}>{item.label}</HeaderMenuLabel>
         </Menu.Item>)}
       </Menu> : <Tooltip trigger={<SemanticContent as="h1" ref={title} tabIndex={0} className="m-0 max-w-full truncate text-body font-semibold">{header.title}</SemanticContent>}>{header.title}</Tooltip>}
     </SemanticContent>

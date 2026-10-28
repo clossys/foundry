@@ -1,7 +1,7 @@
 import { readFileSync } from "node:fs";
 import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
-import { act, cleanup, render, screen, waitFor } from "@testing-library/react";
+import { act, cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { FrameSlotProvider } from "../shell/FrameSlots.js";
@@ -34,8 +34,8 @@ const header: PageBarHeader = {
   nav: { label: "Workspace views", activeId: "second", items: [{ id: "first", label: "First", href: "#first" }, { id: "second", label: "Second", href: "#second" }] },
   actions: { render: ({ compact }) => <button data-compact={compact} aria-label="Open context">{compact ? "+" : "Open context"}</button> },
 };
-function Fixture({ onNavigate }: { onNavigate?: (href: string) => Promise<void> }) {
-  return <FrameSlotProvider><PageBar root={{ label: "Root" }} labels={{ breadcrumb: "Trail", collapsedBreadcrumb: "Earlier", pageInfo: "Information", pageActions: "Actions" }} header={header} onNavigate={onNavigate} /></FrameSlotProvider>;
+function Fixture({ onNavigate, pageHeader = header }: { onNavigate?: (href: string) => Promise<void>; pageHeader?: PageBarHeader }) {
+  return <FrameSlotProvider><PageBar root={{ label: "Root" }} labels={{ breadcrumb: "Trail", collapsedBreadcrumb: "Earlier", pageInfo: "Information", pageActions: "Actions" }} header={pageHeader} onNavigate={onNavigate} /></FrameSlotProvider>;
 }
 function measure(width: number) { act(() => { available = width; for (const callback of measurements) callback(); }); }
 describe("page-level header slots", () => {
@@ -76,14 +76,41 @@ describe("page-level header slots", () => {
     await userEvent.click(screen.getByRole("link", { name: "First" }));
     await waitFor(() => expect(navigate).toHaveBeenCalledExactlyOnceWith("#first"));
   });
-  it("retains native menu hrefs and routes an ordinary collapsed-menu link through the host", async () => {
+  it.each(["pointer", "Enter"])("retains native menu hrefs and routes a collapsed-menu link through the host on %s", async how => {
     const navigate = vi.fn().mockResolvedValue(undefined);
     render(<Fixture onNavigate={navigate} />);
     measure(390);
     await userEvent.click(screen.getByRole("button", { name: "Workspace / Second" }));
     const first = screen.getByRole("menuitem", { name: "First" });
+    expect(first.tagName).toBe("A");
     expect(first).toHaveAttribute("href", "#first");
-    await userEvent.click(first);
+    if (how === "Enter") { first.focus(); await userEvent.keyboard("{Enter}"); }
+    else await userEvent.click(first);
     await waitFor(() => expect(navigate).toHaveBeenCalledExactlyOnceWith("#first"));
+  });
+  it("updates the collapsed menu current page and removes the marker on unmount", async () => {
+    const view = render(<Fixture />);
+    measure(390);
+    await userEvent.click(screen.getByRole("button", { name: "Workspace / Second" }));
+    const first = screen.getByRole("menuitem", { name: "First" });
+    const second = screen.getByRole("menuitem", { name: "Second" });
+    expect(second).toHaveAttribute("aria-current", "page");
+    expect(first).not.toHaveAttribute("aria-current");
+    view.rerender(<Fixture pageHeader={{ ...header, nav: { ...header.nav!, activeId: "first" } }} />);
+    expect(first).toHaveAttribute("aria-current", "page");
+    expect(second).not.toHaveAttribute("aria-current");
+    view.unmount();
+    expect(first).not.toHaveAttribute("aria-current");
+  });
+  it("leaves modified collapsed-menu clicks to native navigation", async () => {
+    const navigate = vi.fn().mockResolvedValue(undefined);
+    render(<Fixture onNavigate={navigate} />);
+    measure(390);
+    await userEvent.click(screen.getByRole("button", { name: "Workspace / Second" }));
+    const click = new MouseEvent("click", { bubbles: true, cancelable: true, button: 0, ctrlKey: true });
+    fireEvent(screen.getByRole("menuitem", { name: "First" }), click);
+    expect(click.defaultPrevented).toBe(false);
+    await act(async () => {});
+    expect(navigate).not.toHaveBeenCalled();
   });
 });
