@@ -2,12 +2,21 @@
  * page: strings, finite numbers, booleans, null, undefined, arrays and plain objects
  * with string keys. Functions, symbols, bigints and class instances (whose methods
  * map to never) are not assignable to it. */
-export type RegisteredRouteSerializable<T> =
+type SameType<A, B> = (<T>() => T extends A ? 1 : 2) extends (<T>() => T extends B ? 1 : 2) ? true : false;
+type SeenType<T, Seen extends readonly unknown[]> = Seen extends readonly [infer First, ...infer Rest]
+  ? SameType<T, First> extends true ? true : SeenType<T, Rest>
+  : false;
+/** Stop at an exact recursive type already being checked. Its other fields still
+ * undergo the same function/symbol/class checks; a structural subtype with extra
+ * fields is not a cycle. There is no depth limit or unknown-data escape. */
+type RouteSerializable<T, Seen extends readonly unknown[]> =
   T extends string | number | boolean | null | undefined ? T
   : T extends (...args: never[]) => unknown ? never
-  : T extends readonly unknown[] ? { readonly [K in keyof T]: RegisteredRouteSerializable<T[K]> }
-  : T extends object ? [Extract<keyof T, symbol>] extends [never] ? { readonly [K in keyof T]: RegisteredRouteSerializable<T[K]> } : never
+  : SeenType<T, Seen> extends true ? T
+  : T extends readonly unknown[] ? { readonly [K in keyof T]: RouteSerializable<T[K], [...Seen, T]> }
+  : T extends object ? [Extract<keyof T, symbol>] extends [never] ? { readonly [K in keyof T]: RouteSerializable<T[K], [...Seen, T]> } : never
   : never;
+export type RegisteredRouteSerializable<T> = RouteSerializable<T, []>;
 /** What a registered loader resolves to; the emitted client page's `data` prop type. */
 export type RegisteredRouteServerData<Loader extends () => unknown> = Awaited<ReturnType<Loader>>;
 
