@@ -9,6 +9,7 @@ import { DEFAULT_SLOT_ID, allNodes, emptyChanges, scopeTargets, workingLibrary, 
 import { normaliseWindowLocation, replaceStudioLocation, resolverFromPlacements } from "./system-canvas/url.js";
 import type { StudioNavigateTarget } from "./rail/explorer-tree.js";
 import type { LegacyStudioProps, StudioProviderProps } from "./types.js";
+import { StudioCopyProvider } from "./copy-context.js";
 
 type Phase = { status: "loading" } | { status: "error" } | { status: "ready"; library: LibraryData; base: LibraryData };
 /** The committed consumer values a whole-library host shares with this provider. Read-only: nothing here writes. */
@@ -185,6 +186,6 @@ export function useStudioSession(): StudioSession {
 /** One adapter load and one read-only consumer library, shared by the host header and canvas. */
 export function StudioProvider({ children, values, layerState, ...props }: StudioProviderProps & { values?: StudioCommittedValues; layerState?: StudioLayerState }) {
   const state = useStudioState(props, values, layerState);
-  return <StudioContext.Provider value={state}>{children}</StudioContext.Provider>;
+  return <StudioCopyProvider binding={props.copy}><StudioContext.Provider value={state}>{children}</StudioContext.Provider></StudioCopyProvider>;
 }
 

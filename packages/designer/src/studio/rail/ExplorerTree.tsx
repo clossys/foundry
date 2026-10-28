@@ -3,11 +3,12 @@ import { useEffect, useMemo, useState } from "react";
 import type { LayerId, Placement } from "../../catalog-core/index.js";
 import { SemanticContent } from "../../components/SemanticContent.js";
 import { Select } from "../../components/Select.js";
-import { TreeView } from "../TreeView.js";
+import { TreeView, type TreeViewNode } from "../TreeView.js";
 import { useOptionalStudioSession } from "../StudioProvider.js";
 import { useWholeStudio } from "../WholeStudioProvider.js";
 import type { StudioLabels } from "../types.js";
 import { EXPLORER_LAYER_ORDER, explorerIndex, explorerNodes, type StudioNavigateTarget } from "./explorer-tree.js";
+import { readStudioMessage, type StudioCopyBinding } from "../copy-binding.js";
 
 /** IA only: paths label branches, leaf identity is the opaque catalog id. */
 export function useExplorerPlacements(): readonly Placement[] {
@@ -21,13 +22,22 @@ interface ExplorerProps {
   readonly onCloseInspector?: () => void;
 }
 /** Same tree on every layer. A branch is a camera target, never a filter. */
-export function ExplorerTree(props: ExplorerProps) {
+export function ExplorerTree(props: ExplorerProps & { readonly copy: StudioCopyBinding }) {
   const session = useOptionalStudioSession(), inherited = useExplorerPlacements();
   const placements = props.placements ?? inherited, labels = props.labels ?? session!.labels;
   const layer = props.activeLayer ?? session?.layer, selected = props.selectedLeaf ?? session?.selected;
   const navigate = props.onNavigate ?? session!.onNavigate;
   const expansionLeaf=selected??session?.slotId;
-  const nodes = useMemo(() => explorerNodes(placements, labels.layers, props.query), [placements, labels.layers, props.query]);
+  const nodes = useMemo(() => {
+    const resolveNames = (rows: readonly TreeViewNode[], depth = 0, board = ""): TreeViewNode[] => rows.map(node => {
+      const nextBoard = depth === 1 ? node.id : board;
+      const cell = !node.children?.length ? `studio.ia.item.${node.id}` : depth === 1 ? `studio.ia.board.${node.id}`
+        : `studio.ia.line.${board}/${node.id.slice(node.id.indexOf("/") + 1)}`;
+      return { ...node, label: depth === 0 ? node.label : readStudioMessage(props.copy, cell),
+        ...(node.children ? { children: resolveNames(node.children, depth + 1, nextBoard) } : {}) };
+    });
+    return resolveNames(explorerNodes(placements, labels.layers, props.query));
+  }, [placements, labels.layers, props.query, props.copy]);
   const index = useMemo(() => explorerIndex(nodes), [nodes]);
   const [expanded, setExpanded] = useState<Set<string>>(() => new Set(layer ? [layer] : []));
   useEffect(() => {

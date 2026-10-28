@@ -54,3 +54,9 @@ export type { ComponentSpecimenProbeState } from "./component-specimen-samples.j
 export { DesignerPage } from "./system-canvas/DesignerPage.js";
 export type { DesignerPageProps } from "./system-canvas/DesignerPage.js";
 export type { DesignerHistoryRow } from "./system-canvas/inspector/types.js";
+export { createRouteStudioLabels } from "./route-labels.js";
+export { createStudioUsageLabels } from "./usage/copy-labels.js";
+export { StudioCopyNeedsError, readStudioCopy, readStudioMessage } from "./copy-binding.js";
+export type { StudioCopyBinding, StudioCopyRef, StudioCopyResolver } from "./copy-binding.js";
+export { StudioCopyProvider } from "./copy-context.js";
+export { StudioDataValue } from "./data-value.js";
