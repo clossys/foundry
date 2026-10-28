@@ -9,7 +9,8 @@ report that missing capability when asked to use the chooser.
 The chooser never authors values. Consumer-supplied authored values, registered
 derivation rules and adopted fills must retain their provenance. Preserve the
 rationale, runner-up and human overrides when a choice can be reviewed. A
-chooser ChangeSet belongs in the Studio basket and must never be auto-saved.
+chooser ChangeSet is previewed through the agent commands `designer-library reselect`
+or `designer-library generate-starter`, and is written only with an instructed `--write`.
 Run `designer-library apply --root library --changeset changeset.json` only
 when the human explicitly instructs it in this session; a request for advice
 or a chooser recommendation is not that instruction.

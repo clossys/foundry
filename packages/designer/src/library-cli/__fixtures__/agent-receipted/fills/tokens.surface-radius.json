@@ -1,0 +1,106 @@
+{
+  "$extensions": {
+    "com.clossys.fill": {
+      "author": "foundry",
+      "builtOn": [],
+      "conforms": [
+        "dtcg#format",
+        "dtcg#alias"
+      ],
+      "derivation": {
+        "from": "dtcg#alias",
+        "rule": "materialize only retired-source references from historical Foundry token cells; retain live aliases"
+      },
+      "evidence": [
+        {
+          "check": "C1",
+          "clause": "dtcg#format"
+        },
+        {
+          "check": "C2",
+          "clause": "dtcg#alias"
+        }
+      ],
+      "id": "example/tokens.surface-radius",
+      "license": "MIT",
+      "mode": "implementation",
+      "originKinds": [
+        "adopted"
+      ],
+      "pin": {
+        "file": "historical Foundry token cells",
+        "sha256": "ccc1f47619299450e9461e414fd832c76bb4436ef32355e0e45e28f89c201081"
+      },
+      "relation": "same-contract",
+      "slot": "tokens.surface-radius",
+      "source": "example",
+      "sourceAddress": "styles/tokens.css",
+      "status": "draft",
+      "trust": "foundry"
+    }
+  },
+  "tokens": {
+    "surface-radius": {
+      "default": {
+        "$extensions": {
+          "com.clossys.origin": {
+            "adoptedAt": "2026-10-27",
+            "fill": "foundry/tokens.surface-radius",
+            "kind": "adopted",
+            "license": "MIT",
+            "member": "tokens.surface-radius.default",
+            "pin": {
+              "file": "historical Foundry token cells",
+              "sha256": "ccc1f47619299450e9461e414fd832c76bb4436ef32355e0e45e28f89c201081"
+            },
+            "sha256": "fc1ec6a87a9f975a36f326c02fb13f0595147cd031ea41b2c03eae5c34ad301e",
+            "source": "foundry"
+          }
+        },
+        "$type": "dimension",
+        "$value": {
+          "unit": "px",
+          "value": 3
+        }
+      },
+      "overlay": {
+        "$extensions": {
+          "com.clossys.origin": {
+            "adoptedAt": "2026-10-27",
+            "fill": "foundry/tokens.surface-radius",
+            "kind": "adopted",
+            "license": "MIT",
+            "member": "tokens.surface-radius.overlay",
+            "pin": {
+              "file": "historical Foundry token cells",
+              "sha256": "ccc1f47619299450e9461e414fd832c76bb4436ef32355e0e45e28f89c201081"
+            },
+            "sha256": "bff0f3126aee15815a8b8a19e81084290eb6f172b473d2d29abfe167ad22297b",
+            "source": "foundry"
+          }
+        },
+        "$type": "dimension",
+        "$value": "{tokens.control-radius.default}"
+      },
+      "panel": {
+        "$extensions": {
+          "com.clossys.origin": {
+            "adoptedAt": "2026-10-27",
+            "fill": "foundry/tokens.surface-radius",
+            "kind": "adopted",
+            "license": "MIT",
+            "member": "tokens.surface-radius.panel",
+            "pin": {
+              "file": "historical Foundry token cells",
+              "sha256": "ccc1f47619299450e9461e414fd832c76bb4436ef32355e0e45e28f89c201081"
+            },
+            "sha256": "be7c64652d668107e31d7463d3cd5e87e21667a852a7eb4e5ac85a9fb4ae0ffd",
+            "source": "foundry"
+          }
+        },
+        "$type": "dimension",
+        "$value": "{tokens.surface-radius.default}"
+      }
+    }
+  }
+}

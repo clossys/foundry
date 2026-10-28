@@ -1,0 +1,81 @@
+{
+  "$extensions": {
+    "com.clossys.fill": {
+      "author": "third-party",
+      "builtOn": [],
+      "conforms": [],
+      "evidence": [],
+      "id": "example/assets.icon-website",
+      "license": "ISC",
+      "mode": "implementation",
+      "originKinds": [
+        "adopted"
+      ],
+      "pin": {
+        "file": "src/icons/Globe.ts",
+        "package": "lucide-react",
+        "sha256": "fe5d866c8220c13289d604f83fca685f0cfe8b4bf66c17dbf66dc21ff2dcd8e2",
+        "version": "1.24.0"
+      },
+      "reads": {
+        "assets": [],
+        "tokens": []
+      },
+      "relation": "same-contract",
+      "slot": "assets.icon-website",
+      "source": "example",
+      "sourceAddress": "lucide-react@1.24.0/dist/esm/icons/globe.js",
+      "status": "draft",
+      "trust": "pinned-upstream"
+    }
+  },
+  "assets": {
+    "icon-website": {
+      "default": {
+        "$extensions": {
+          "com.clossys.origin": {
+            "adoptedAt": "2026-10-27",
+            "fill": "lucide/assets.icon-website",
+            "kind": "adopted",
+            "license": "ISC",
+            "member": "assets.icon-website.default",
+            "pin": {
+              "file": "src/icons/Globe.ts",
+              "package": "lucide-react",
+              "sha256": "fe5d866c8220c13289d604f83fca685f0cfe8b4bf66c17dbf66dc21ff2dcd8e2",
+              "version": "1.24.0"
+            },
+            "sha256": "7383856bc2b1c7992ecda0c663373cd3d697f1f3e169d5c754acd0daf60f12df",
+            "source": "lucide"
+          }
+        },
+        "$type": "glyph",
+        "$value": [
+          [
+            "circle",
+            {
+              "cx": "12",
+              "cy": "12",
+              "key": "1mglay",
+              "r": "10"
+            }
+          ],
+          [
+            "path",
+            {
+              "d": "M12 2a14.5 14.5 0 0 0 0 20 14.5 14.5 0 0 0 0-20",
+              "key": "13o1zl"
+            }
+          ],
+          [
+            "path",
+            {
+              "d": "M2 12h20",
+              "key": "9i4pu4"
+            }
+          ]
+        ]
+      }
+    }
+  }
+}

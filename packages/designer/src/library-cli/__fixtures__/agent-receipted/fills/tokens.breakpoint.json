@@ -1,0 +1,317 @@
+{
+  "$extensions": {
+    "com.clossys.fill": {
+      "author": "foundry",
+      "builtOn": [],
+      "conforms": [
+        "dtcg#format",
+        "dtcg#alias"
+      ],
+      "evidence": [
+        {
+          "check": "C1",
+          "clause": "dtcg#format"
+        },
+        {
+          "check": "C2",
+          "clause": "dtcg#alias"
+        }
+      ],
+      "id": "example/tokens.breakpoint",
+      "license": "MIT",
+      "mode": "implementation",
+      "originKinds": [
+        "adopted"
+      ],
+      "relation": "subset",
+      "slot": "tokens.breakpoint",
+      "source": "example",
+      "sourceAddress": "styles/tokens.css",
+      "status": "draft",
+      "trust": "foundry"
+    }
+  },
+  "tokens": {
+    "breakpoint": {
+      "2xl": {
+        "$extensions": {
+          "com.clossys.css": {
+            "raw": "96rem"
+          },
+          "com.clossys.origin": {
+            "adoptedAt": "2026-10-27",
+            "fill": "tailwind-default/tokens.breakpoint",
+            "kind": "adopted",
+            "license": "MIT",
+            "member": "tokens.breakpoint.2xl",
+            "pin": {
+              "file": "theme.css",
+              "package": "tailwindcss",
+              "sha256": "443d7af364200f8ec8352dc78e39485a118a1840d498c97967bf0ae402b39167",
+              "version": "4.3.3"
+            },
+            "sha256": "9214f1d036eee2aad7b55ac25dd27261c460fd9809ff9196a6aa4e125c56d0fe",
+            "source": "tailwind-default"
+          }
+        },
+        "$type": "dimension",
+        "$value": {
+          "unit": "rem",
+          "value": 96
+        }
+      },
+      "desktop": {
+        "$extensions": {
+          "com.clossys.css": {
+            "raw": "80rem"
+          },
+          "com.clossys.origin": {
+            "adoptedAt": "2026-10-27",
+            "fill": "tailwind-default/tokens.breakpoint",
+            "kind": "adopted",
+            "license": "MIT",
+            "member": "tokens.breakpoint.desktop",
+            "pin": {
+              "file": "theme.css",
+              "package": "tailwindcss",
+              "sha256": "443d7af364200f8ec8352dc78e39485a118a1840d498c97967bf0ae402b39167",
+              "version": "4.3.3"
+            },
+            "sha256": "c27c99051fa7e82aa2275aacfe7dd4d429faab3d0e4c066ba2090fd475222ca3",
+            "source": "tailwind-default"
+          }
+        },
+        "$type": "dimension",
+        "$value": {
+          "unit": "rem",
+          "value": 80
+        }
+      },
+      "lg": {
+        "$extensions": {
+          "com.clossys.css": {
+            "raw": "64rem"
+          },
+          "com.clossys.origin": {
+            "adoptedAt": "2026-10-27",
+            "fill": "tailwind-default/tokens.breakpoint",
+            "kind": "adopted",
+            "license": "MIT",
+            "member": "tokens.breakpoint.lg",
+            "pin": {
+              "file": "theme.css",
+              "package": "tailwindcss",
+              "sha256": "443d7af364200f8ec8352dc78e39485a118a1840d498c97967bf0ae402b39167",
+              "version": "4.3.3"
+            },
+            "sha256": "d5ce0a6cf25afc12fefec9aa81f40246794aadcd246a32b9f75ae5bf46ce8111",
+            "source": "tailwind-default"
+          }
+        },
+        "$type": "dimension",
+        "$value": {
+          "unit": "rem",
+          "value": 64
+        }
+      },
+      "md": {
+        "$extensions": {
+          "com.clossys.css": {
+            "raw": "48rem"
+          },
+          "com.clossys.origin": {
+            "adoptedAt": "2026-10-27",
+            "fill": "tailwind-default/tokens.breakpoint",
+            "kind": "adopted",
+            "license": "MIT",
+            "member": "tokens.breakpoint.md",
+            "pin": {
+              "file": "theme.css",
+              "package": "tailwindcss",
+              "sha256": "443d7af364200f8ec8352dc78e39485a118a1840d498c97967bf0ae402b39167",
+              "version": "4.3.3"
+            },
+            "sha256": "8c3b4e92e49410154b85638417cb5f9c002a0c9e39ad38690878854366b7afae",
+            "source": "tailwind-default"
+          }
+        },
+        "$type": "dimension",
+        "$value": {
+          "unit": "rem",
+          "value": 48
+        }
+      },
+      "mobile": {
+        "$extensions": {
+          "com.clossys.css": {
+            "raw": "375px"
+          },
+          "com.clossys.origin": {
+            "adoptedAt": "2026-10-27",
+            "fill": "foundry/tokens.breakpoint",
+            "kind": "adopted",
+            "license": "MIT",
+            "member": "tokens.breakpoint.mobile",
+            "sha256": "d66325c0a92fbe0e30a3887ab383537583eaf66538a7b86583436a62313e18de",
+            "source": "foundry"
+          }
+        },
+        "$type": "dimension",
+        "$value": {
+          "unit": "px",
+          "value": 375
+        }
+      },
+      "mobile-lg": {
+        "$extensions": {
+          "com.clossys.css": {
+            "raw": "480px"
+          },
+          "com.clossys.origin": {
+            "adoptedAt": "2026-10-27",
+            "fill": "foundry/tokens.breakpoint",
+            "kind": "adopted",
+            "license": "MIT",
+            "member": "tokens.breakpoint.mobile-lg",
+            "sha256": "700787b98f297c37d6ea76d7b1131b6e21649b63a368b88eb4a73176edd22b19",
+            "source": "foundry"
+          }
+        },
+        "$type": "dimension",
+        "$value": {
+          "unit": "px",
+          "value": 480
+        }
+      },
+      "sm": {
+        "$extensions": {
+          "com.clossys.css": {
+            "raw": "40rem"
+          },
+          "com.clossys.origin": {
+            "adoptedAt": "2026-10-27",
+            "fill": "tailwind-default/tokens.breakpoint",
+            "kind": "adopted",
+            "license": "MIT",
+            "member": "tokens.breakpoint.sm",
+            "pin": {
+              "file": "theme.css",
+              "package": "tailwindcss",
+              "sha256": "443d7af364200f8ec8352dc78e39485a118a1840d498c97967bf0ae402b39167",
+              "version": "4.3.3"
+            },
+            "sha256": "390f57a8438a87f75a4eb47f4192b206a8f2773426b33258fc68de2fab23590a",
+            "source": "tailwind-default"
+          }
+        },
+        "$type": "dimension",
+        "$value": {
+          "unit": "rem",
+          "value": 40
+        }
+      },
+      "tablet": {
+        "$extensions": {
+          "com.clossys.css": {
+            "raw": "48rem"
+          },
+          "com.clossys.origin": {
+            "adoptedAt": "2026-10-27",
+            "fill": "tailwind-default/tokens.breakpoint",
+            "kind": "adopted",
+            "license": "MIT",
+            "member": "tokens.breakpoint.tablet",
+            "pin": {
+              "file": "theme.css",
+              "package": "tailwindcss",
+              "sha256": "443d7af364200f8ec8352dc78e39485a118a1840d498c97967bf0ae402b39167",
+              "version": "4.3.3"
+            },
+            "sha256": "8c3b4e92e49410154b85638417cb5f9c002a0c9e39ad38690878854366b7afae",
+            "source": "tailwind-default"
+          }
+        },
+        "$type": "dimension",
+        "$value": {
+          "unit": "rem",
+          "value": 48
+        }
+      },
+      "tablet-lg": {
+        "$extensions": {
+          "com.clossys.css": {
+            "raw": "64rem"
+          },
+          "com.clossys.origin": {
+            "adoptedAt": "2026-10-27",
+            "fill": "tailwind-default/tokens.breakpoint",
+            "kind": "adopted",
+            "license": "MIT",
+            "member": "tokens.breakpoint.tablet-lg",
+            "pin": {
+              "file": "theme.css",
+              "package": "tailwindcss",
+              "sha256": "443d7af364200f8ec8352dc78e39485a118a1840d498c97967bf0ae402b39167",
+              "version": "4.3.3"
+            },
+            "sha256": "d5ce0a6cf25afc12fefec9aa81f40246794aadcd246a32b9f75ae5bf46ce8111",
+            "source": "tailwind-default"
+          }
+        },
+        "$type": "dimension",
+        "$value": {
+          "unit": "rem",
+          "value": 64
+        }
+      },
+      "wide": {
+        "$extensions": {
+          "com.clossys.css": {
+            "raw": "1440px"
+          },
+          "com.clossys.origin": {
+            "adoptedAt": "2026-10-27",
+            "fill": "foundry/tokens.breakpoint",
+            "kind": "adopted",
+            "license": "MIT",
+            "member": "tokens.breakpoint.wide",
+            "sha256": "0cecfb8e750d2c43200cdf0899d79a3a57c3ae1a1e85464c864924907ee6f70f",
+            "source": "foundry"
+          }
+        },
+        "$type": "dimension",
+        "$value": {
+          "unit": "px",
+          "value": 1440
+        }
+      },
+      "xl": {
+        "$extensions": {
+          "com.clossys.css": {
+            "raw": "80rem"
+          },
+          "com.clossys.origin": {
+            "adoptedAt": "2026-10-27",
+            "fill": "tailwind-default/tokens.breakpoint",
+            "kind": "adopted",
+            "license": "MIT",
+            "member": "tokens.breakpoint.xl",
+            "pin": {
+              "file": "theme.css",
+              "package": "tailwindcss",
+              "sha256": "443d7af364200f8ec8352dc78e39485a118a1840d498c97967bf0ae402b39167",
+              "version": "4.3.3"
+            },
+            "sha256": "c27c99051fa7e82aa2275aacfe7dd4d429faab3d0e4c066ba2090fd475222ca3",
+            "source": "tailwind-default"
+          }
+        },
+        "$type": "dimension",
+        "$value": {
+          "unit": "rem",
+          "value": 80
+        }
+      }
+    }
+  }
+}

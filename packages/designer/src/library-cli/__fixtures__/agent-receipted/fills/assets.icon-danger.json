@@ -1,0 +1,81 @@
+{
+  "$extensions": {
+    "com.clossys.fill": {
+      "author": "third-party",
+      "builtOn": [],
+      "conforms": [],
+      "evidence": [],
+      "id": "example/assets.icon-danger",
+      "license": "ISC",
+      "mode": "implementation",
+      "originKinds": [
+        "adopted"
+      ],
+      "pin": {
+        "file": "src/icons/XCircle.ts",
+        "package": "lucide-react",
+        "sha256": "3bd98a7d6021773683520cc577f0ee156d7d0bfd81527597cd77f7b1eb7ac263",
+        "version": "1.23.0"
+      },
+      "reads": {
+        "assets": [],
+        "tokens": []
+      },
+      "relation": "same-contract",
+      "slot": "assets.icon-danger",
+      "source": "example",
+      "sourceAddress": "lucide-react@1.23.0/dist/esm/icons/circle-x.js",
+      "status": "draft",
+      "trust": "pinned-upstream"
+    }
+  },
+  "assets": {
+    "icon-danger": {
+      "default": {
+        "$extensions": {
+          "com.clossys.origin": {
+            "adoptedAt": "2026-10-27",
+            "fill": "lucide/assets.icon-danger",
+            "kind": "adopted",
+            "license": "ISC",
+            "member": "assets.icon-danger.default",
+            "pin": {
+              "file": "src/icons/XCircle.ts",
+              "package": "lucide-react",
+              "sha256": "3bd98a7d6021773683520cc577f0ee156d7d0bfd81527597cd77f7b1eb7ac263",
+              "version": "1.23.0"
+            },
+            "sha256": "834d1aa339d70c84c90712c199a6fa8666f812984f9caca338415231acd3fe5d",
+            "source": "lucide"
+          }
+        },
+        "$type": "glyph",
+        "$value": [
+          [
+            "circle",
+            {
+              "cx": "12",
+              "cy": "12",
+              "key": "1mglay",
+              "r": "10"
+            }
+          ],
+          [
+            "path",
+            {
+              "d": "m15 9-6 6",
+              "key": "1uzhvr"
+            }
+          ],
+          [
+            "path",
+            {
+              "d": "m9 9 6 6",
+              "key": "z0biqf"
+            }
+          ]
+        ]
+      }
+    }
+  }
+}

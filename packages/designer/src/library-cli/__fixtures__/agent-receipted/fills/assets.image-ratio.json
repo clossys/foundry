@@ -1,0 +1,44 @@
+{
+  "$extensions": {
+    "com.clossys.fill": {
+      "author": "consumer",
+      "builtOn": [],
+      "conforms": [],
+      "evidence": [],
+      "id": "example/assets.image-ratio",
+      "license": "UNLICENSED",
+      "mode": "implementation",
+      "originKinds": [
+        "authored"
+      ],
+      "reads": {
+        "assets": [],
+        "tokens": []
+      },
+      "relation": "same-contract",
+      "slot": "assets.image-ratio",
+      "source": "example",
+      "sourceAddress": "fills/assets.image-ratio.json",
+      "status": "draft",
+      "trust": "consumer"
+    }
+  },
+  "assets": {
+    "image-ratio": {
+      "landscape": {
+        "$extensions": {
+          "com.clossys.origin": {
+            "kind": "authored",
+            "license": "UNLICENSED",
+            "note": "Consumer editorial brief: Landscape crop for editorial media"
+          }
+        },
+        "$type": "rules",
+        "$value": {
+          "height": 2,
+          "width": 3
+        }
+      }
+    }
+  }
+}

@@ -19,6 +19,10 @@ import { buildSurfaceConsumption } from "../catalog-core/surface-consumption.js"
 import { buildUsageGraph, serializeUsageGraph, type UsageGraphInputs } from "../catalog-core/usage-graph.js";
 import { checkLibrary, checkLibraryReceipt, emitLibrary, isLibraryChangeSet, isCompositeChangeSet, writeCompositeLibrary, writeUsageGraph, LIBRARY_EMIT_TARGETS, LibraryCheckError, LibraryConflictError, LibraryInputError, readLibrary, writeLibrary, readNeeds, writeNeeds, setNeed, NEED_STATUSES, isNeedCandidate } from "./fs-library.js";
 
+import { reselect } from "./reselect.js";
+import { generateStarter } from "./generate-starter.js";
+import { selectStarter } from "./select.js";
+
 const USAGE = `Usage: designer-library <command> --root <consumer-library>
 
 Commands:
@@ -32,6 +36,10 @@ Commands:
   needs set NEED-NNN --status <status> [--candidate <json>] [--closed-by <ref>]
   graph --check|--write                  Derive usage-graph.json from consumption producers, or fail on drift.
   receipt [--base <receipt.json>] [--json]  Fail when library files differ from the last designer write receipt.
+  reselect --leaf <id> --source <source-id> [--write] [--json]  Preview or apply one source.
+  generate-starter --leaf <id> [--write] [--json]  Preview or author an identity starter.
+  select --starter shadcn-base|custom [--write]  Unavailable until the starter engine ships.
+  capture --driver <module> --out <dir> [--leaf <id>]  Capture derived WebP outside the library.
   recommend                              Unavailable until the chooser ships.
 
 Emit targets: css-brand, css-scales, css-fonts, tailwind-theme, notices, component-index, components-consumption, surface-index, surfaces-consumption.
@@ -39,17 +47,17 @@ Composite folders also emit component targets by default; value folders retain a
 --observations supplies package-export evidence ({ "packageExports": { "<module>": ["<Export>"] } });
 it defaults to <root>/component-observations.json when present. Without evidence, package-pointer leaves are refused.
 Every write stamps designer-receipt.json with its command, inputs and content hash; never hand-edit library files.
-Chooser output belongs in the Studio basket; apply requires the human's explicit instruction in this session.
+reselect and generate-starter are dry runs unless --write is supplied; apply requires an explicit changeset.
 Exit codes: 0 = success, 1 = failed verdict or conflict, 2 = usage, invalid input or unavailable.
 `;
-type Command = "status" | "check" | "emit" | "apply" | "recommend" | "dogfood" | "dogfood-consumer" | "needs" | "graph" | "receipt";
-type Args = { base?: string; command: Command; root: string; layer?: string; changeset?: string; json: boolean; drift: boolean; write: boolean; targets?: CompositeEmitTarget[]; paths: string[]; writeNeeds: boolean; status?: string; candidate?: string; closedBy?: string; contract?: string; observations?: string };
+type Command = "reselect" | "generate-starter" | "select" | "capture" | "status" | "check" | "emit" | "apply" | "recommend" | "dogfood" | "dogfood-consumer" | "needs" | "graph" | "receipt";
+type Args = { leaf?: string; source?: string; starter?: string; driver?: string; out?: string; base?: string; command: Command; root: string; layer?: string; changeset?: string; json: boolean; drift: boolean; write: boolean; targets?: CompositeEmitTarget[]; paths: string[]; writeNeeds: boolean; status?: string; candidate?: string; closedBy?: string; contract?: string; observations?: string };
 export interface LibraryCliIO { out(text: string): void; error(text: string): void }
 const defaultIO: LibraryCliIO = { out: text => console.log(text), error: text => console.error(text) };
 
 function parseArgs(argv: string[]): Args {
   const [command, ...flags] = argv;
-  if (!["status", "check", "emit", "apply", "recommend", "dogfood", "dogfood-consumer", "needs", "graph", "receipt"].includes(command ?? "")) throw new LibraryInputError("A known command is required");
+  if (!["reselect", "generate-starter", "select", "capture", "status", "check", "emit", "apply", "recommend", "dogfood", "dogfood-consumer", "needs", "graph", "receipt"].includes(command ?? "")) throw new LibraryInputError("A known command is required");
   const values = new Map<string, string>(), toggles = new Set<string>(), targets: CompositeEmitTarget[] = [], paths: string[] = [];
   for (let i = 0; i < flags.length; i++) {
     const flag = flags[i]!;
@@ -58,7 +66,7 @@ function parseArgs(argv: string[]): Args {
       if (toggles.has(flag)) throw new LibraryInputError(`Duplicate ${flag}`);
       toggles.add(flag); continue;
     }
-    if (!["--root", "--layer", "--changeset", "--target", "--status", "--candidate", "--closed-by", "--contract", "--observations", "--base"].includes(flag)) throw new LibraryInputError(`Unknown option ${flag}`);
+    if (!["--root", "--layer", "--changeset", "--target", "--status", "--candidate", "--closed-by", "--contract", "--observations", "--base", "--leaf", "--source", "--starter", "--driver", "--out"].includes(flag)) throw new LibraryInputError(`Unknown option ${flag}`);
     const value = flags[++i];
     if (!value || value.startsWith("-")) throw new LibraryInputError(`${flag} requires a value`);
     if (flag === "--target") {
@@ -75,9 +83,9 @@ function parseArgs(argv: string[]): Args {
   if (layer && (command !== "check" || !["tokens", "assets", "components", "sections", "frames"].includes(layer))) throw new LibraryInputError("--layer requires check and a known layer");
   if ((command === "apply") !== !!changeset) throw new LibraryInputError("apply requires --changeset; other commands do not accept it");
   if ((toggles.has("--check") && command !== "emit" && command !== "graph") || (targets.length && command !== "emit")) throw new LibraryInputError("--check requires emit or graph; --target requires emit");
-  if (toggles.has("--write") && command !== "graph") throw new LibraryInputError("--write requires graph");
+  if (toggles.has("--write") && !["graph", "reselect", "generate-starter", "select"].includes(command!)) throw new LibraryInputError("--write requires graph, reselect, generate-starter or select");
   if (command === "graph" && toggles.has("--check") === toggles.has("--write")) throw new LibraryInputError("graph requires exactly one of --check or --write");
-  if (toggles.has("--json") && (command === "emit" || command === "recommend" || command === "graph")) throw new LibraryInputError("--json requires status, check or apply");
+  if (toggles.has("--json") && (["emit", "recommend", "graph", "select", "capture"].includes(command!))) throw new LibraryInputError("--json requires status, check or apply");
   if (toggles.has("--write-needs") && command !== "dogfood") throw new LibraryInputError("--write-needs requires dogfood");
   if (values.has("--observations") && !["check", "emit", "apply"].includes(command!)) throw new LibraryInputError("--observations requires check, emit or apply");
   if (values.has("--base") && command !== "receipt") throw new LibraryInputError("--base requires receipt");
@@ -86,7 +94,14 @@ function parseArgs(argv: string[]): Args {
   if (command === "needs" && paths.length && (paths.length !== 2 || paths[0] !== "set")) throw new LibraryInputError("needs accepts only set NEED-NNN");
   if (["--status", "--candidate", "--closed-by"].some(flag => values.has(flag)) && command !== "needs") throw new LibraryInputError("NEED options require needs");
   if (command === "needs" && !paths.length && (values.has("--candidate") || values.has("--closed-by"))) throw new LibraryInputError("candidate and closed-by require needs set");
-  return { base: values.get("--base"), paths, contract: values.get("--contract"), observations: values.get("--observations"), writeNeeds: toggles.has("--write-needs"), status: values.get("--status"), candidate: values.get("--candidate"), closedBy: values.get("--closed-by"), command: command as Command, root, layer, changeset, json: toggles.has("--json"), drift: toggles.has("--check"), write: toggles.has("--write"), ...(targets.length ? { targets } : {}) };
+  for (const [flag, commands] of [["--leaf", ["reselect", "generate-starter", "capture"]], ["--source", ["reselect"]], ["--starter", ["select"]], ["--driver", ["capture"]], ["--out", ["capture"]]] as const) {
+    if (values.has(flag) && !(commands as readonly string[]).includes(command!)) throw new LibraryInputError(`${flag} is not accepted by ${command}`);
+  }
+  if (["reselect", "generate-starter"].includes(command!) && !values.has("--leaf")) throw new LibraryInputError("--leaf is required");
+  if (command === "reselect" && !values.has("--source")) throw new LibraryInputError("--source is required");
+  if (command === "select" && !["shadcn-base", "custom"].includes(values.get("--starter") ?? "")) throw new LibraryInputError("--starter must be shadcn-base or custom");
+  if (command === "capture" && (!values.has("--driver") || !values.has("--out"))) throw new LibraryInputError("capture requires --driver and --out");
+  return { leaf: values.get("--leaf"), source: values.get("--source"), starter: values.get("--starter"), driver: values.get("--driver"), out: values.get("--out"), base: values.get("--base"), paths, contract: values.get("--contract"), observations: values.get("--observations"), writeNeeds: toggles.has("--write-needs"), status: values.get("--status"), candidate: values.get("--candidate"), closedBy: values.get("--closed-by"), command: command as Command, root, layer, changeset, json: toggles.has("--json"), drift: toggles.has("--check"), write: toggles.has("--write"), ...(targets.length ? { targets } : {}) };
 }
 
 /** Filter only findings attributable to the other layer; cross-layer findings stay visible. */
@@ -220,6 +235,12 @@ export async function main(argv: string[], io: LibraryCliIO = defaultIO): Promis
   try {
     const args = parseArgs(argv);
     if (args.command === "recommend") { io.error("recommend unavailable: the chooser has not shipped; no library was changed"); return 2; }
+    if (args.command === "select") return selectStarter();
+    if (args.command === "capture") {
+      const { capture } = await import("./capture.js");
+      const result = await capture({ root: args.root, driver: args.driver!, out: args.out!, leaf: args.leaf });
+      io.out(JSON.stringify(result, null, 2)); return result.ok ? 0 : 1;
+    }
     if (args.command === "receipt") {
       const verdict = await checkLibraryReceipt(args.root, args.base ? { base: JSON.parse(await readRegularText(pathResolve(args.base))) } : {});
       io.out(args.json ? JSON.stringify(verdict) : `${verdict.ok ? "Designer write receipt matches the library" : "Designer write receipt check failed"}; contentHash ${verdict.contentHash}${verdict.findings.map(finding => `\n${finding.code}${finding.path ? ` ${finding.path}` : ""} ${finding.message}`).join("")}`);
@@ -246,6 +267,11 @@ export async function main(argv: string[], io: LibraryCliIO = defaultIO): Promis
     const compositeCatalog = { values: catalog, components: { slots: loadComponentRegistry().slots, fills: bundledComponentFills, rules: loadComponentCompositionRules() }, surfaces: foundrySurfaceCatalog() };
     // Package-pointer leaves are checked against the export inventory of the packages actually installed beside this CLI.
     const surfaceOptions = async (): Promise<SurfaceResolutionOptions> => ({ packages: await readSurfacePackageEvidence(compositeCatalog.surfaces.fills), measurements: [] });
+    if (args.command === "reselect" || args.command === "generate-starter") {
+      const input = { root: args.root, catalog: compositeCatalog, leaf: args.leaf!, write: args.write, componentOptions: await readObservations(args.root), surfaceOptions: await surfaceOptions() };
+      const result = args.command === "reselect" ? await reselect({ ...input, source: args.source! }) : await generateStarter(input);
+      io.out(JSON.stringify(result, null, args.json ? undefined : 2)); return result.verdict.ok ? 0 : 1;
+    }
     if (args.command === "dogfood" || args.command === "dogfood-consumer") {
       const needs = await readNeeds(args.root);
       const consumerSources = args.contract ? await consumerDogfoodSources(args.paths, parseConsumerDogfoodContract(JSON.parse(await readRegularText(pathResolve(args.contract)))), dirname(pathResolve(args.contract))) : undefined;

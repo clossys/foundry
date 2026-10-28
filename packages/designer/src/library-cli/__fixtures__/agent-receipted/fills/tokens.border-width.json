@@ -1,0 +1,96 @@
+{
+  "$extensions": {
+    "com.clossys.fill": {
+      "author": "foundry",
+      "baseline": true,
+      "builtOn": [],
+      "conforms": [
+        "dtcg#format",
+        "dtcg#alias"
+      ],
+      "evidence": [
+        {
+          "check": "C1",
+          "clause": "dtcg#format"
+        },
+        {
+          "check": "C2",
+          "clause": "dtcg#alias"
+        }
+      ],
+      "id": "example/tokens.border-width",
+      "license": "MIT",
+      "mode": "implementation",
+      "originKinds": [
+        "adopted"
+      ],
+      "relation": "same-contract",
+      "slot": "tokens.border-width",
+      "source": "example",
+      "sourceAddress": "styles/tokens.css",
+      "status": "draft",
+      "trust": "foundry"
+    }
+  },
+  "tokens": {
+    "border-width": {
+      "hairline": {
+        "$extensions": {
+          "com.clossys.css": {
+            "raw": "1px"
+          },
+          "com.clossys.origin": {
+            "adoptedAt": "2026-10-27",
+            "fill": "foundry-baseline/tokens.border-width",
+            "kind": "adopted",
+            "license": "MIT",
+            "member": "tokens.border-width.hairline",
+            "sha256": "01d23857f941886a68ab1b8ca4f23f9783b210a74c464d6c6443999143355c5c",
+            "source": "foundry-baseline"
+          }
+        },
+        "$type": "dimension",
+        "$value": {
+          "unit": "px",
+          "value": 1
+        }
+      },
+      "panel": {
+        "$extensions": {
+          "com.clossys.origin": {
+            "adoptedAt": "2026-10-27",
+            "fill": "foundry-baseline/tokens.border-width",
+            "kind": "adopted",
+            "license": "MIT",
+            "member": "tokens.border-width.panel",
+            "sha256": "060349b5686a95f07f4ddb226ac4f874f2a03e27f51a3630c1871585ee9e69e6",
+            "source": "foundry-baseline"
+          }
+        },
+        "$type": "dimension",
+        "$value": "{tokens.border-width.hairline}"
+      },
+      "rule": {
+        "$extensions": {
+          "com.clossys.css": {
+            "raw": "2px"
+          },
+          "com.clossys.origin": {
+            "adoptedAt": "2026-10-27",
+            "fill": "foundry-baseline/tokens.border-width",
+            "kind": "adopted",
+            "license": "MIT",
+            "member": "tokens.border-width.rule",
+            "sha256": "2db56241fd85c578f0c3dcc4468f7e61d4d0881dbcc6ccd6a502dc0555fdbff1",
+            "source": "foundry-baseline"
+          }
+        },
+        "$type": "dimension",
+        "$value": {
+          "unit": "px",
+          "value": 2
+        }
+      }
+    }
+  }
+}

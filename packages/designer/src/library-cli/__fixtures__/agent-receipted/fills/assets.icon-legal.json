@@ -1,0 +1,93 @@
+{
+  "$extensions": {
+    "com.clossys.fill": {
+      "author": "third-party",
+      "builtOn": [],
+      "conforms": [],
+      "evidence": [],
+      "id": "example/assets.icon-legal",
+      "license": "ISC",
+      "mode": "implementation",
+      "originKinds": [
+        "adopted"
+      ],
+      "pin": {
+        "file": "src/icons/Scale.ts",
+        "package": "lucide-react",
+        "sha256": "714f4f993e88b1f58945144d4767f9bec3876e52be5bdac1ae212a7ee5372df6",
+        "version": "1.24.0"
+      },
+      "reads": {
+        "assets": [],
+        "tokens": []
+      },
+      "relation": "same-contract",
+      "slot": "assets.icon-legal",
+      "source": "example",
+      "sourceAddress": "lucide-react@1.24.0/dist/esm/icons/scale.js",
+      "status": "draft",
+      "trust": "pinned-upstream"
+    }
+  },
+  "assets": {
+    "icon-legal": {
+      "default": {
+        "$extensions": {
+          "com.clossys.origin": {
+            "adoptedAt": "2026-10-27",
+            "fill": "lucide/assets.icon-legal",
+            "kind": "adopted",
+            "license": "ISC",
+            "member": "assets.icon-legal.default",
+            "pin": {
+              "file": "src/icons/Scale.ts",
+              "package": "lucide-react",
+              "sha256": "714f4f993e88b1f58945144d4767f9bec3876e52be5bdac1ae212a7ee5372df6",
+              "version": "1.24.0"
+            },
+            "sha256": "4687beb14fce20bee5444dbf99f4b75ae716fd09d60fb8cb87467258f3d597c3",
+            "source": "lucide"
+          }
+        },
+        "$type": "glyph",
+        "$value": [
+          [
+            "path",
+            {
+              "d": "M12 3v18",
+              "key": "108xh3"
+            }
+          ],
+          [
+            "path",
+            {
+              "d": "m19 8 3 8a5 5 0 0 1-6 0zV7",
+              "key": "zcdpyk"
+            }
+          ],
+          [
+            "path",
+            {
+              "d": "M3 7h1a17 17 0 0 0 8-2 17 17 0 0 0 8 2h1",
+              "key": "1yorad"
+            }
+          ],
+          [
+            "path",
+            {
+              "d": "m5 8 3 8a5 5 0 0 1-6 0zV7",
+              "key": "eua70x"
+            }
+          ],
+          [
+            "path",
+            {
+              "d": "M7 21h10",
+              "key": "1b0cd5"
+            }
+          ]
+        ]
+      }
+    }
+  }
+}

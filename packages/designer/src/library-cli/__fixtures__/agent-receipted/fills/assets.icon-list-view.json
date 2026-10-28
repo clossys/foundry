@@ -1,0 +1,100 @@
+{
+  "$extensions": {
+    "com.clossys.fill": {
+      "author": "third-party",
+      "builtOn": [],
+      "conforms": [],
+      "evidence": [],
+      "id": "example/assets.icon-list-view",
+      "license": "ISC",
+      "mode": "implementation",
+      "originKinds": [
+        "adopted"
+      ],
+      "pin": {
+        "file": "src/icons/List.ts",
+        "package": "lucide-react",
+        "sha256": "41a9f16bbf2cea86eb4a8d2039efce4cf87fb58c6ef7a23d120dea45985bd4c2",
+        "version": "1.23.0"
+      },
+      "reads": {
+        "assets": [],
+        "tokens": []
+      },
+      "relation": "same-contract",
+      "slot": "assets.icon-list-view",
+      "source": "example",
+      "sourceAddress": "lucide-react@1.23.0/dist/esm/icons/list.js",
+      "status": "draft",
+      "trust": "pinned-upstream"
+    }
+  },
+  "assets": {
+    "icon-list-view": {
+      "default": {
+        "$extensions": {
+          "com.clossys.origin": {
+            "adoptedAt": "2026-10-27",
+            "fill": "lucide/assets.icon-list-view",
+            "kind": "adopted",
+            "license": "ISC",
+            "member": "assets.icon-list-view.default",
+            "pin": {
+              "file": "src/icons/List.ts",
+              "package": "lucide-react",
+              "sha256": "41a9f16bbf2cea86eb4a8d2039efce4cf87fb58c6ef7a23d120dea45985bd4c2",
+              "version": "1.23.0"
+            },
+            "sha256": "d7fb2e0df4387501ccb354be95a602c5642de656264c396f96db4b0661f11a91",
+            "source": "lucide"
+          }
+        },
+        "$type": "glyph",
+        "$value": [
+          [
+            "path",
+            {
+              "d": "M3 5h.01",
+              "key": "18ugdj"
+            }
+          ],
+          [
+            "path",
+            {
+              "d": "M3 12h.01",
+              "key": "nlz23k"
+            }
+          ],
+          [
+            "path",
+            {
+              "d": "M3 19h.01",
+              "key": "noohij"
+            }
+          ],
+          [
+            "path",
+            {
+              "d": "M8 5h13",
+              "key": "1pao27"
+            }
+          ],
+          [
+            "path",
+            {
+              "d": "M8 12h13",
+              "key": "1za7za"
+            }
+          ],
+          [
+            "path",
+            {
+              "d": "M8 19h13",
+              "key": "m83p4d"
+            }
+          ]
+        ]
+      }
+    }
+  }
+}

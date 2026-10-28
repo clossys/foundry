@@ -1,0 +1,76 @@
+{
+  "$extensions": {
+    "com.clossys.fill": {
+      "author": "third-party",
+      "builtOn": [],
+      "conforms": [],
+      "evidence": [],
+      "id": "example/assets.icon-business",
+      "license": "ISC",
+      "mode": "implementation",
+      "originKinds": [
+        "adopted"
+      ],
+      "pin": {
+        "file": "src/icons/Briefcase.ts",
+        "package": "lucide-react",
+        "sha256": "dab81f836f47fc08fa113053b3f8cbfd1331e3cce6485c42a71cf73311166394",
+        "version": "1.24.0"
+      },
+      "reads": {
+        "assets": [],
+        "tokens": []
+      },
+      "relation": "same-contract",
+      "slot": "assets.icon-business",
+      "source": "example",
+      "sourceAddress": "lucide-react@1.24.0/dist/esm/icons/briefcase.js",
+      "status": "draft",
+      "trust": "pinned-upstream"
+    }
+  },
+  "assets": {
+    "icon-business": {
+      "default": {
+        "$extensions": {
+          "com.clossys.origin": {
+            "adoptedAt": "2026-10-27",
+            "fill": "lucide/assets.icon-business",
+            "kind": "adopted",
+            "license": "ISC",
+            "member": "assets.icon-business.default",
+            "pin": {
+              "file": "src/icons/Briefcase.ts",
+              "package": "lucide-react",
+              "sha256": "dab81f836f47fc08fa113053b3f8cbfd1331e3cce6485c42a71cf73311166394",
+              "version": "1.24.0"
+            },
+            "sha256": "55c089ecbf3d81ee6f0dee934b45dfb7e8f5d0ba6279fef76e12c7142ac86170",
+            "source": "lucide"
+          }
+        },
+        "$type": "glyph",
+        "$value": [
+          [
+            "path",
+            {
+              "d": "M16 20V4a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16",
+              "key": "jecpp"
+            }
+          ],
+          [
+            "rect",
+            {
+              "height": "14",
+              "key": "i6l2r4",
+              "rx": "2",
+              "width": "20",
+              "x": "2",
+              "y": "6"
+            }
+          ]
+        ]
+      }
+    }
+  }
+}
