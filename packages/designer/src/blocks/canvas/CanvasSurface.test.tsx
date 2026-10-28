@@ -679,3 +679,23 @@ describe("canvas pattern layer consumes assets.pattern", () => {
     expect(surface.style.backgroundImage).toBe("");
   });
 });
+
+it("keeps surface and world refs attached across viewport renders and releases them on unmount", () => {
+  const surfaces = vi.fn(), worlds = vi.fn();
+  const result = setup({ onSurfaceElement: surfaces, onWorldElement: worlds });
+  const world = result.container.querySelector("[data-canvas-world]");
+  expect(surfaces.mock.calls).toEqual([[result.surface]]);
+  expect(worlds.mock.calls).toEqual([[world]]);
+  result.rerender(<CanvasSurface {...result.props} viewport={{ x: 12, y: 24, zoom: 1 }} />);
+  expect(surfaces.mock.calls).toEqual([[result.surface]]);
+  expect(worlds.mock.calls).toEqual([[world]]);
+  const nextSurface = vi.fn(), nextWorld = vi.fn();
+  result.rerender(<CanvasSurface {...result.props} onSurfaceElement={nextSurface} onWorldElement={nextWorld} />);
+  expect(nextSurface.mock.calls).toEqual([[result.surface]]);
+  expect(nextWorld.mock.calls).toEqual([[world]]);
+  result.unmount();
+  expect(nextSurface.mock.calls).toEqual([[result.surface], [null]]);
+  expect(nextWorld.mock.calls).toEqual([[world], [null]]);
+  expect(surfaces.mock.calls).toEqual([[result.surface], [null]]);
+  expect(worlds.mock.calls).toEqual([[world], [null]]);
+});
