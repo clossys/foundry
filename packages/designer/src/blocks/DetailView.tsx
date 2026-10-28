@@ -2,6 +2,7 @@ import { SectionHeader } from "./SectionHeader.js";
 import type { CSSProperties, HTMLAttributes, ReactNode } from "react";
 import { cx } from "../components/internal/cx.js";
 import { dsAttrs } from "../catalog-core/provenance-attrs.js";
+import { TOKENS } from "../tokens/tokens.js";
 /** Section root provenance (D1): the selected Foundry fill this block is. */
 const SECTION_STAMP = dsAttrs("sections", "sections.record-detail", "foundry/sections.record-detail");
 
@@ -29,6 +30,8 @@ export interface DetailViewProps extends Omit<HTMLAttributes<HTMLElement>, "titl
   fields: readonly DetailViewField[];
   /** Slot for the record's own actions (edit, delete, ...), rendered at the trailing edge of the title row. */
   actions?: ReactNode;
+  /** Host-composed menu replacing actions in a container narrower than the tablet token. */
+  compactActions?: ReactNode;
   className?: string;
   style?: CSSProperties;
 }
@@ -56,14 +59,18 @@ export interface DetailViewProps extends Omit<HTMLAttributes<HTMLElement>, "titl
  * under sub-headings, a card wrapper, a single column always) composes
  * that directly around this block's own `title`/`fields`/`actions` slots.
  */
-export function DetailView({ title, fields, actions, className, style, ...rest }: DetailViewProps) {
-  const hasHeader = title !== undefined || actions !== undefined;
+export function DetailView({ title, fields, actions, compactActions, className, style, ...rest }: DetailViewProps) {
+  const hasHeader = title !== undefined || actions !== undefined || compactActions !== undefined;
+  const responsiveActions = compactActions !== undefined ? <>
+    <span data-detail-actions-wide="" className="flex flex-wrap items-center gap-sm">{actions}</span>
+    <span data-detail-actions-compact="">{compactActions}</span>
+  </> : actions;
   return (
-    <section {...SECTION_STAMP} {...rest} className={cx("flex flex-col gap-md", className)} style={style}>
+    <section {...SECTION_STAMP} {...rest} data-record-detail="" className={cx("flex min-w-0 max-w-full flex-col gap-md", className)} style={{ containerType: "inline-size", overflowWrap: "anywhere", ...style }}>
       {hasHeader ? (
-        <SectionHeader density="standard" level={2}
+        <SectionHeader data-detail-header="" density="standard" level={2}
           {...(title !== undefined ? { title } : {})}
-          actions={actions !== undefined ? <>{actions}</> : undefined}
+          actions={responsiveActions !== undefined ? <>{responsiveActions}</> : undefined}
         />
       ) : null}
       {/*
@@ -84,6 +91,15 @@ export function DetailView({ title, fields, actions, className, style, ...rest }
           </div>
         ))}
       </dl>
+      <style>{`
+        [data-detail-header] > div > div { min-inline-size: 0; max-inline-size: 100%; }
+        [data-detail-header] > div > div:last-child { flex-wrap: wrap; }
+        [data-detail-actions-compact] { display: none; }
+        @container (width < ${TOKENS["--breakpoint-tablet"]!.value}) {
+          [data-detail-actions-wide] { display: none; }
+          [data-detail-actions-compact] { display: inline-flex; }
+        }
+      `}</style>
     </section>
   );
 }

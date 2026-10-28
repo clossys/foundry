@@ -36,12 +36,6 @@ const WIDE_LAYOUT = {
 const PLATE_CLASSES: Record<SectionGround, string> = {
   base: "bg-surface-sunken", sunken: "bg-surface-raised", inverse: "bg-surface-inverse-raised",
 };
-const TOP_ACCENT_CLASSES: Record<SectionGround, string> = {
-  base: "border-t-accent", sunken: "border-t-accent", inverse: "border-t-accent-on-inverse",
-};
-const START_ACCENT_CLASSES: Record<SectionGround, string> = {
-  base: "border-s-accent", sunken: "border-s-accent", inverse: "border-s-accent-on-inverse",
-};
 const BACKING_CLASSES: Record<SectionGround, string> = {
   base: "", sunken: "", inverse: "bg-surface-raised",
 };
@@ -112,7 +106,7 @@ function CellValue({ cell, ground, emptyLabel, markLabels }: { cell: Cell; groun
     case "figure": {
       const trend = cell.trend ?? "neutral";
       return <span className="inline-flex min-w-0 flex-col items-end gap-xs">
-      <span className="wrap-anywhere text-body-l font-display leading-heading tabular-nums">{cell.value}</span>
+      <span className="wrap-anywhere text-end text-body-l font-display leading-heading tabular-nums">{cell.value}</span>
       {cell.delta !== undefined ? <span className={cx("text-body-s font-body tabular-nums", TREND_TEXT_CLASSES[trend], BACKING_CLASSES[ground])}>{cell.delta}</span> : null}
     </span>;
     }
@@ -129,25 +123,26 @@ export function MatrixGrid(props: GridProps) {
   const layout = columns.length <= 4 ? TABLET_LAYOUT : WIDE_LAYOUT;
   const colors = SECTION_GROUND_CLASSES[ground];
   const Heading = HEADINGS[headingLevel];
+  const figureColumn = (id: string) => rows.some(row => row.cells[id]?.type === "figure");
   const table = <table {...rest} role="table" className={cx(layout.table, colors.surface, colors.primary, className)} style={style}>
     <thead className={layout.head}><tr role="row">
       <td role="cell" aria-hidden="true" />
-      {columns.map(column => <th key={column.id} scope="col" role="columnheader" className={cx("px-md py-lg text-start align-top text-body-s font-body font-medium", featured?.column === column.id ? cx("border-t", TOP_ACCENT_CLASSES[ground]) : undefined)} style={featured?.column === column.id ? { borderBlockStartWidth: UI_BORDER_HAIRLINE } : undefined}>
-        <span className="inline-flex flex-wrap items-center gap-sm">{column.label}{featured?.column === column.id ? <Badge>{featuredLabel}</Badge> : null}</span>
+      {columns.map(column => <th key={column.id} scope="col" role="columnheader" className={cx("px-md py-lg align-top text-body-s font-body font-medium", figureColumn(column.id) ? "text-end tabular-nums" : "text-start")}>
+        <span className={cx("inline-flex flex-wrap items-center gap-sm", figureColumn(column.id) ? "justify-end" : undefined)}>{column.label}{featured?.column === column.id ? <Badge className="shrink-0 whitespace-nowrap">{featuredLabel}</Badge> : null}</span>
       </th>)}
     </tr></thead>
     <tbody className={layout.body}>{rows.map(row => <tr key={row.id} role="row" className={cx(PLATE_CLASSES[ground], layout.row)}>
-      <th scope="row" role="rowheader" className={cx(layout.header, "text-start align-top font-normal", featured?.row === row.id ? cx("border-s ps-md", START_ACCENT_CLASSES[ground]) : undefined)} style={featured?.row === row.id ? { borderInlineStartWidth: UI_BORDER_HAIRLINE } : undefined}>
+      <th scope="row" role="rowheader" className={cx(layout.header, "text-start align-top font-normal")}>
         <Heading className="m-0 text-body-l font-display leading-heading">{row.label}</Heading>
-        {featured?.row === row.id ? <Badge>{featuredLabel}</Badge> : null}
+        {featured?.row === row.id ? <Badge className="shrink-0 whitespace-nowrap">{featuredLabel}</Badge> : null}
         {row.description !== undefined ? <p className={cx("m-0 text-body-s text-pretty", colors.secondary)}>{row.description}</p> : null}
       </th>
       {columns.map(column => {
         const cell = row.cells[column.id]!;
         const highlighted = featured?.column === column.id;
         const figure = cell.type === "figure";
-        return <td key={column.id} role="cell" className={cx(layout.cell, "border-b align-top", colors.border, figure ? "text-end" : "text-start")} style={{ borderBlockEndWidth: UI_BORDER_HAIRLINE }}>
-          <span aria-hidden="true" className={cx(layout.label, "text-body-s font-medium", colors.secondary, highlighted ? cx("border-t", TOP_ACCENT_CLASSES[ground]) : undefined)} style={highlighted ? { borderBlockStartWidth: UI_BORDER_HAIRLINE } : undefined} {...INERT_LABEL_ATTRIBUTES}>{column.label}{highlighted ? <Badge>{featuredLabel}</Badge> : null}</span>
+        return <td key={column.id} role="cell" className={cx(layout.cell, "border-b align-top", colors.border, figure ? "text-end tabular-nums" : "text-start")} style={{ borderBlockEndWidth: UI_BORDER_HAIRLINE }}>
+          <span aria-hidden="true" className={cx(layout.label, "text-body-s font-medium", colors.secondary)} {...INERT_LABEL_ATTRIBUTES}>{column.label}{highlighted ? <Badge className="shrink-0 whitespace-nowrap">{featuredLabel}</Badge> : null}</span>
           <CellValue cell={cell} ground={ground} emptyLabel={emptyLabel} markLabels={markLabels} />
         </td>;
       })}

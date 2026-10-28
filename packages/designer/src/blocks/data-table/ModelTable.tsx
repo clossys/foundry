@@ -2,6 +2,8 @@ import { defaultGroupToggleMessage, defaultGroupPathMessage, defaultAggregateMes
 import type { Key } from "react-aria-components";
 import { TOKENS } from "../../tokens/tokens.js";
 import { Button } from "../../components/Button.js";
+import { Icon } from "../../components/Icon.js";
+import { useGlyph } from "../../components/glyph-context.js";
 import { cx } from "../../components/internal/cx.js";
 import type { DataTableColumn, DataTableProps } from "../DataTable.js";
 import { filterRows, groupRows, type TableGroup } from "../table-model/index.js";
@@ -23,6 +25,8 @@ export function ModelTable<Row>({
   aggregateMessage = defaultAggregateMessage,
   ...props
 }: DataTableProps<Row> & DataTableMessages & { model: DataTableViewModel | DataTableViewModelV1 }) {
+  const expandedGlyph = useGlyph("assets.icon-chevron-down");
+  const collapsedGlyph = useGlyph("assets.icon-chevron-right");
   const { model: inputModel, onModelChange, expandedGroupKeys = "all", onExpandedGroupKeysChange, toolbar, footer } = props;
   const model = parseDataTableViewModel(inputModel);
   if (!onModelChange) throw new TypeError("DataTable with model requires onModelChange.");
@@ -59,7 +63,11 @@ export function ModelTable<Row>({
       if (item.kind === "leaf") return column.cell(item.row);
       return <>
         {column.id === rowHeader ? <span style={{ paddingInlineStart: `calc(${item.group.path.length - 1} * var(--spacing-md, ${TOKENS["--spacing-md"]!.value}))` }}>
-          <Button variant="ghost" isDisabled={!onExpandedGroupKeysChange} aria-expanded={item.open} aria-label={groupToggleMessage(item.group.path, item.open)} onPress={() => toggle(item.group, item.open)}>{item.open ? "▾" : "▸"} {groupPathMessage(item.group.path)}</Button>
+          {onExpandedGroupKeysChange ? <Button variant="ghost" className="text-ink-muted" style={{ whiteSpace: "normal", textAlign: "start" }} aria-expanded={item.open} aria-label={groupToggleMessage(item.group.path, item.open)} onPress={() => toggle(item.group, item.open)}>
+            <Icon glyph={item.open ? expandedGlyph : collapsedGlyph} decorative size="sm" /> {groupPathMessage(item.group.path)}
+          </Button> : <span className="inline-flex items-center gap-xs text-ink-muted" style={{ whiteSpace: "normal" }}>
+            <Icon glyph={item.open ? expandedGlyph : collapsedGlyph} decorative size="sm" /> {groupPathMessage(item.group.path)}
+          </span>}
         </span> : null}
         {column.id === columns[columns.length - 1]!.id ? <span className="inline-flex flex-wrap gap-sm">{Object.entries(item.group.aggregates).map(([id, value]) => <span key={id}>{aggregateMessage(id, value)}</span>)}</span> : null}
       </>;
@@ -70,8 +78,8 @@ export function ModelTable<Row>({
       disabledKeys={display.filter(item => item.kind === "group").map(item => item.key)} selectedKeys={selectedKeys}
       onSelectionChange={next => props.onSelectionChange?.(next === "all" ? "all" : new Set([...next].flatMap(key => keys.has(String(key)) ? [keys.get(String(key))!] : [])))} />;
   } else grid = <FlatGrid {...props} {...props.messages} {...sortProps} data-ds-layer={undefined} data-ds-leaf={undefined} data-ds-fill={undefined} className={undefined} style={undefined} toolbar={undefined} footer={undefined} rows={sorted} columns={columns} density={model.density} />;
-  return <div {...dsPassThrough(props)} className={cx("flex flex-col gap-md", props.className)} style={props.style}>
-    {toolbar ? <div className="flex flex-wrap items-center justify-between gap-md">{toolbar}</div> : null}
+  return <div {...dsPassThrough(props)} className={cx("flex min-w-0 max-w-full flex-col gap-md", props.className)} style={props.style}>
+    {toolbar ? <div data-table-toolbar="" className="flex flex-wrap items-end justify-between gap-md">{toolbar}</div> : null}
     <ViewOptions {...props.messages} messages={props.messages} model={model} change={onModelChange} facets={filtered.facets} labels={labels} />
     {grid}
     {footer ? <div className="flex flex-wrap items-center justify-between gap-md">{footer}</div> : null}
