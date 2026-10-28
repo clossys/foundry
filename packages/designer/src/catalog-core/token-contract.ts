@@ -169,7 +169,7 @@ export function assertCustomDistinct(
 const BRAND_L2 = new Set(["logo-artwork", "app-identity-browser", "app-identity-application"]);
 const ICON_SOURCES = ["lucide", "phosphor"] as const;
 const EXTERNAL_LIMIT = 2;
-const PRESET_LIMIT = 2;
+const PRESET_LIMIT = 7;
 const GAP_REASON = "no external covers";
 
 export interface RosterCheckInput {
@@ -204,7 +204,7 @@ export function checkSourceRoster(input: RosterCheckInput): readonly RosterFindi
     if (!known.has(leaf)) error("R1", leaf, `roster row ${row.l2} names unknown slot ${leaf}`);
   }
 
-  // R2: at most two externals per component L2, at most two token presets, one default.
+  // R2: at most two externals per component L2, the seven shadcn base-color presets, one default.
   for (const row of roster.components) {
     const externals = row.offers.filter(offer => offer.source !== "foundry");
     if (externals.length > EXTERNAL_LIMIT) error("R2", row.l2, `${row.l2} offers ${externals.length} externals (max ${EXTERNAL_LIMIT})`);

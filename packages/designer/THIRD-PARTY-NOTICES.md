@@ -112,6 +112,16 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 
 
+## shadcn/ui theme registry
+
+SPDX-License-Identifier: MIT
+
+The seven base-color preset values and the vendored registry snapshots
+`src/importers/vendor/shadcn-themes.ts.txt` and
+`src/importers/vendor/shadcn-base-colors.ts.txt` derive from shadcn/ui commit
+`96da9cc7f1aa10580a3741664e2a77c721206c00`. The MIT license and shadcn
+copyright notice reproduced below also apply to these registry files and values.
+
 ## shadcn/ui Toggle and ToggleGroup
 
 SPDX-License-Identifier: MIT

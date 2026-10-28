@@ -174,6 +174,10 @@
     "xs": "--text-xs"
   },
   "glyphs": {
+    "AlertTriangleIcon": "assets.icon-warning",
+    "ArrowRight": "assets.icon-arrow-right",
+    "ArrowRightIcon": "assets.icon-arrow-right",
+    "CheckCircleIcon": "assets.icon-success",
     "CheckIcon": "assets.icon-check",
     "ChevronDownIcon": "assets.icon-chevron-down",
     "ChevronLeftIcon": "assets.icon-chevron-left",
@@ -181,11 +185,15 @@
     "ChevronUpIcon": "assets.icon-chevron-up",
     "CircleAlertIcon": "assets.icon-danger",
     "CircleCheckIcon": "assets.icon-success",
+    "ClockIcon": "assets.icon-time",
     "ExternalLinkIcon": "assets.icon-external-link",
+    "FolderIcon": "assets.icon-folder",
     "InfoIcon": "assets.icon-info",
+    "Monitor": "assets.icon-theme-system",
     "SearchIcon": "assets.icon-search",
     "TriangleAlertIcon": "assets.icon-warning",
     "UserIcon": "assets.icon-user",
+    "XCircleIcon": "assets.icon-danger",
     "XIcon": "assets.icon-close"
   },
   "license": "MIT",

@@ -1,5 +1,6 @@
 import { readdirSync, readFileSync } from "node:fs";
 import { createRequire } from "node:module";
+import { execFileSync } from "node:child_process";
 import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
@@ -68,13 +69,16 @@ describe("token contract (shadcn@aria)", () => {
 });
 
 describe("token presets", () => {
-  it("offers shadcn-neutral (default) and shadcn-zinc, each composed with the tailwind-default namespace", () => {
-    expect(sourceRoster.tokens.presets.map(entry => entry.id)).toEqual(["shadcn-neutral", "shadcn-zinc"]);
+  it("offers all seven shadcn base colors, each composed with the tailwind-default namespace", () => {
+    expect(sourceRoster.tokens.presets.map(entry => entry.id)).toEqual(["shadcn-neutral", "shadcn-zinc", "shadcn-stone", "shadcn-mauve", "shadcn-olive", "shadcn-mist", "shadcn-taupe"]);
     expect(preset.id).toBe("shadcn-neutral");
     for (const entry of sourceRoster.tokens.presets) {
       expect(entry.namespace.source).toBe("tailwind-default");
-      expect(entry.theme.pin.commit).toBe(tokenContract.pin.commit);
+      expect(entry.theme.pin.commit).toBe("96da9cc7f1aa10580a3741664e2a77c721206c00");
     }
+  });
+  it("reimports every base-color value and pin from the exact upstream snapshots", () => {
+    expect(execFileSync(process.execPath, [resolve(here, "../../scripts/import-shadcn-presets.mjs"), "--check"], { encoding: "utf8" })).toContain("Verified 7 base-color presets");
   });
   it("neutral is exactly the vendored theme the shadcn@aria token fills came from", () => {
     const vendored = read(resolve(here, "../importers/vendor/shadcn-aria.css"));
@@ -125,7 +129,7 @@ describe("source roster", () => {
 
 describe("mutation proofs", () => {
   const cases: readonly [string, RosterCode, () => Partial<RosterCheckInput>][] = [
-    ["a 3rd preset", "R2", () => ({ roster: mutateRoster(roster => { roster.tokens.presets.push({ ...clone(sourceRoster.tokens.presets[1]!), id: "shadcn-stone" }); }) })],
+    ["an 8th preset", "R2", () => ({ roster: mutateRoster(roster => { roster.tokens.presets.push({ ...clone(sourceRoster.tokens.presets[1]!), id: "shadcn-extra" }); }) })],
     ["a 3rd external on an L2", "R2", () => ({ roster: mutateRoster(roster => { roster.components[0].offers.push({ source: "shadcn-charts", leaves: [] }, { source: "base-ui-x", leaves: [] }); }) })],
     ["drop --ring", "R9", () => ({ contract: mutateContract(contract => { delete contract.leaves["tokens.focus-color"].members.default; }) })],
     ["a dead member without a decision", "R9", () => ({ contract: mutateContract(contract => { delete contract.leaves["tokens.region-width"].members.aside.decision; }) })],
