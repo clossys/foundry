@@ -1,4 +1,5 @@
 "use client";
+import { SemanticContent } from "../components/SemanticContent.js";
 
 import { Children, Fragment, isValidElement, createContext, useCallback, useContext, useLayoutEffect, useMemo, useRef, useState, type ReactNode } from "react";
 
@@ -83,7 +84,7 @@ export function FrameModuleOutlet({ id }: { id: string }) {
   const context = useRequiredFrameSlots();
   const mount = context.mount;
   const ref = useCallback((node: HTMLDivElement | null) => mount(id, node), [mount, id]);
-  return <div ref={ref} className="contents" data-frame-module={id} />;
+  return <SemanticContent as="div" ref={ref} className="contents" data-frame-module={id} />;
 }
 export function FrameSlotOutlet({ slot, children }: { slot: FrameSlotId; children?: ReactNode }) {
   const modules = useFrameSlotModules(slot);
@@ -106,7 +107,7 @@ function PageHeaderActionsOutlet({ id, compact }: { id: string; compact: boolean
   const { mountHeader, compactHeader } = useRequiredFrameSlots();
   const ref = useCallback((node: HTMLDivElement | null) => mountHeader(id, node), [mountHeader, id]);
   useLayoutEffect(() => compactHeader(id, compact), [compactHeader, id, compact]);
-  return <div ref={ref} className="contents" data-frame-header-module={id} />;
+  return <SemanticContent as="div" ref={ref} className="contents" data-frame-header-module={id} />;
 }
 export function useFramePageHeader(fallback?: FramePageHeader): FramePageHeader | undefined {
   const { header, modules, initialHeader } = useRequiredFrameSlots();

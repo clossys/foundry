@@ -22,13 +22,13 @@ describe("actual full-library runtime proof admission", () => {
     expect(result.inventory.components).toBe(0); expect(result.pages).toEqual([]);
     expect(result.findings).toContain("actual component qualification missing: components.semantic-content");
     expect(result.findings).toContain("actual component qualification missing: components.native-action");
-    expect(result.findings.filter(finding => finding.startsWith("actual component qualification missing:"))).toHaveLength(59);
+    expect(result.findings.filter(finding => finding.startsWith("actual component qualification missing:"))).toHaveLength(60);
     expect(result.findings).toContain("actual selected Sections/Frames library portion missing");
   });
   it("uses the actual frozen inventories, never a partial caller contract graph", () => {
     const input = fixture(); input.contracts = loadBuildCatalog();
     const findings = fullLibraryRuntimeFindings(input);
-    expect(findings.filter(finding => finding.startsWith("whole-library component fill"))).toHaveLength(59);
+    expect(findings.filter(finding => finding.startsWith("whole-library component fill"))).toHaveLength(60);
     expect(findings.some(finding => finding.startsWith("whole-library value fill missing"))).toBe(true);
     expect(findings.some(finding => finding.startsWith("full graph contract missing"))).toBe(false);
     const tampered = structuredClone(input.contracts);
@@ -71,7 +71,7 @@ describe("SYNTHETIC selected-page scope; never actual full-library proof", () =>
   it("permits unrelated owned surfaces without changing findings or selected inventory", async () => {
     const input = syntheticSelectedClosure(), before = fullLibraryRuntimeFindings(input);
     expect(before.some(finding => finding.startsWith("selected surface"))).toBe(false);
-    expect(before.filter(finding => finding.startsWith("actual component qualification missing:"))).toHaveLength(59);
+    expect(before.filter(finding => finding.startsWith("actual component qualification missing:"))).toHaveLength(60);
     addSyntheticOtherPage(input);
     expect(input.engine.library.surfaces!.fills).toHaveLength(4);
     expect(fullLibraryRuntimeFindings(input)).toEqual(before);
@@ -81,7 +81,7 @@ describe("SYNTHETIC selected-page scope; never actual full-library proof", () =>
     const result = await runFullLibraryRuntime(input, { descriptor, kind: "synthetic", run: async () => { called = true; throw new Error("unit admission must stop"); } }, { descriptor, render: () => { called = true; return "<div>SYNTHETIC</div>"; } });
     expect(result.status).toBe("pending"); expect(called).toBe(false);
     expect(result.inventory).toMatchObject({ sections: 1, frames: 1 });
-    expect(result.findings.filter(finding => finding.startsWith("actual component qualification missing:"))).toHaveLength(59);
+    expect(result.findings.filter(finding => finding.startsWith("actual component qualification missing:"))).toHaveLength(60);
   });
   it("requires an exact runtime descriptor when an owned other-page fill is selected", () => {
     const input = syntheticSelectedClosure(); addSyntheticOtherPage(input);
@@ -90,7 +90,7 @@ describe("SYNTHETIC selected-page scope; never actual full-library proof", () =>
     const findings = fullLibraryRuntimeFindings(input);
     expect(findings).toContain("selected surface runtime closure missing: sections.other-page");
     expect(findings).not.toContain("selected surface ownership missing or duplicated: sections.other-page");
-    expect(findings.filter(finding => finding.startsWith("actual component qualification missing:"))).toHaveLength(59);
+    expect(findings.filter(finding => finding.startsWith("actual component qualification missing:"))).toHaveLength(60);
   });
   it.each(["missing", "duplicated"] as const)("still refuses %s selected ownership", mode => {
     const input = syntheticSelectedClosure(), section = input.binding.sections.body![0]!;
@@ -98,6 +98,6 @@ describe("SYNTHETIC selected-page scope; never actual full-library proof", () =>
     input.engine.library = { ...input.engine.library, surfaces: { ...surfaces, fills: mode === "missing" ? surfaces.fills.filter(doc => doc !== selected) : [...surfaces.fills, selected] } };
     const findings = fullLibraryRuntimeFindings(input);
     expect(findings).toContain(`selected surface ownership missing or duplicated: ${section.leaf}`);
-    expect(findings.filter(finding => finding.startsWith("actual component qualification missing:"))).toHaveLength(59);
+    expect(findings.filter(finding => finding.startsWith("actual component qualification missing:"))).toHaveLength(60);
   });
 });

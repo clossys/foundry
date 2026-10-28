@@ -1,3 +1,4 @@
+import { SemanticContent } from "../components/SemanticContent.js";
 import { useEffect, useRef, useState, type CSSProperties, type ReactNode } from "react";
 import { Button } from "../components/Button.js";
 import { Dialog, type DialogProps } from "../components/Dialog.js";
@@ -84,13 +85,13 @@ export function Drawer({
           className={cx("h-full min-h-0 flex-1 rounded-none", className)}
           data-drawer-placement={placement} data-drawer-wide={wide} footer={footer}
           header={(
-            <div className="flex items-start justify-between gap-md">
+            <SemanticContent as="div" className="flex items-start justify-between gap-md">
               <Dialog.Heading>{heading}</Dialog.Heading>
               <Button variant="ghost" aria-label={closeLabel} onPress={close} style={closeButtonStyle} aria-expanded={closeButtonStyle ? true : undefined}
                 className="icon-control-md shrink-0 border-0 bg-transparent p-0 focus-visible:outline-solid focus-visible:outline-2 focus-visible:outline-accent">
                 <Icon glyph={X} decorative size="md" />
               </Button>
-            </div>
+            </SemanticContent>
           )}
           onClick={event => {
             const anchor = (event.target as Element).closest("a[href]");

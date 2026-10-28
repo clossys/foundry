@@ -1,6 +1,6 @@
 import { createElement, forwardRef, type ComponentPropsWithoutRef, type ComponentPropsWithRef, type ReactElement } from "react";
 
-const tags = ["article", "aside", "code", "dd", "div", "dl", "dt", "h1", "h2", "h3", "h4", "h5", "h6", "li", "main", "p", "section", "small", "span", "strong", "time", "ul"] as const;
+const tags = ["article", "aside", "code", "dd", "div", "dl", "dt", "h1", "h2", "h3", "h4", "h5", "h6", "header", "nav", "li", "main", "p", "section", "small", "span", "strong", "time", "ul"] as const;
 
 /** Neutral content elements; interactive controls and document roots are separate capabilities. */
 export type SemanticContentTag = typeof tags[number];

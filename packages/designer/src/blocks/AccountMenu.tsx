@@ -44,12 +44,12 @@ export function AccountMenu({ actor, sections, contextLabel, triggerLabel, colla
   const keyFor = (sectionId: string, entryId: string) => JSON.stringify([sectionId, entryId]);
   const trigger = <Button variant="ghost" aria-label={collapsed ? label : actor.name}
     className={collapsed ? "icon-control-md border-0 bg-transparent p-0 forced-colors:focus-visible:outline forced-colors:focus-visible:outline-solid" : "control-h-lg border-0 bg-transparent w-full min-w-0 justify-start gap-sm py-sm whitespace-normal text-start forced-colors:focus-visible:outline forced-colors:focus-visible:outline-solid"}>
-    <span aria-hidden="true" className="shrink-0"><Avatar alt={actor.name} src={actor.image} /></span>
+    <Menu.Text aria-hidden="true" className="shrink-0"><Avatar alt={actor.name} src={actor.image} /></Menu.Text>
     {!collapsed && <>
-      <span className="flex min-w-0 flex-1 flex-col text-start">
-        <span className="break-words whitespace-normal">{actor.name}</span>
-        {contextLabel && <span className="break-words whitespace-normal text-caption text-ink-muted">{contextLabel}</span>}
-      </span>
+      <Menu.Text className="flex min-w-0 flex-1 flex-col text-start">
+        <Menu.Text className="break-words whitespace-normal">{actor.name}</Menu.Text>
+        {contextLabel && <Menu.Text className="break-words whitespace-normal text-caption text-ink-muted">{contextLabel}</Menu.Text>}
+      </Menu.Text>
       <Icon glyph={ChevronUp} decorative size="sm" className="shrink-0" />
     </>}
   </Button>;
@@ -65,13 +65,13 @@ export function AccountMenu({ actor, sections, contextLabel, triggerLabel, colla
       ? <Fragment key={section.id}><Menu.Separator />{entriesFor(section, close)}</Fragment>
       : <Menu.Section key={section.id}
       aria-label={section.label}
-      heading={index === 0 ? <span className="flex min-w-0 flex-col gap-xs"
+      heading={index === 0 ? <Menu.Text className="flex min-w-0 flex-col gap-xs"
         style={{ maxInlineSize: "min(var(--ui-layout-sidebar-w, 256px), calc(100vw - 2 * var(--spacing-2xl, 32px)))" }}>
-        <span className="break-words whitespace-normal">{actor.name}</span>
-        {actor.secondaryText && <span className="truncate">{actor.secondaryText}</span>}
-        {contextLabel && <span className="truncate">{contextLabel}</span>}
-        {section.label && <span className="truncate">{section.label}</span>}
-      </span> : section.label}
+        <Menu.Text className="break-words whitespace-normal">{actor.name}</Menu.Text>
+        {actor.secondaryText && <Menu.Text className="truncate">{actor.secondaryText}</Menu.Text>}
+        {contextLabel && <Menu.Text className="truncate">{contextLabel}</Menu.Text>}
+        {section.label && <Menu.Text className="truncate">{section.label}</Menu.Text>}
+      </Menu.Text> : section.label}
       selectionMode={section.kind === "preferences" ? "multiple" : "none"}
       selectedKeys={section.kind === "preferences" ? section.entries.filter(entry => entry.checked).map(entry => keyFor(section.id, entry.id)) : undefined}
       shouldCloseOnSelect={section.kind === "preferences" ? false : undefined}

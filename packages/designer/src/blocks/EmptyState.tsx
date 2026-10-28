@@ -1,3 +1,4 @@
+import { SemanticContent } from "../components/SemanticContent.js";
 import { SectionHeader } from "./SectionHeader.js";
 import type { HTMLAttributes, ReactNode } from "react";
 import { cx } from "../components/internal/cx.js";
@@ -8,6 +9,8 @@ const SECTION_STAMP = dsAttrs("sections", "sections.empty-state", "foundry/secti
 export interface EmptyStateProps extends Omit<HTMLAttributes<HTMLDivElement>, "title"> {
   /** Slot for an icon or illustration, rendered above the title. */
   icon?: ReactNode;
+  /** Compact message presentation for empty navigation collections. */
+  variant?: "section" | "message";
   /** The only required prop. Rendered as a heading. */
   title: ReactNode;
   /** A line of supporting copy under the title. */
@@ -34,12 +37,14 @@ export interface EmptyStateProps extends Omit<HTMLAttributes<HTMLDivElement>, "t
  */
 export function EmptyState({
   icon,
+  variant = "section",
   title,
   description,
   action,
   className,
   ...rest
 }: EmptyStateProps) {
+  if (variant === "message") return <SemanticContent as="p" {...SECTION_STAMP} {...rest} className={className}>{title}</SemanticContent>;
   return (
     <div
       {...SECTION_STAMP} {...rest}

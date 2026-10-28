@@ -12,6 +12,8 @@ export interface BreadcrumbProps
   /** One or more `Breadcrumb.Item`s, first-to-last (root first, current page last). */
   children: ReactNode;
   className?: string;
+  /** Layout of the navigation landmark, independently from its ordered list. */
+  navClassName?: string;
   /**
    * Accessible name for the surrounding `<nav>` landmark. Several navs on
    * one page (a sidebar nav, this one) need distinct names so assistive
@@ -50,11 +52,12 @@ export interface BreadcrumbProps
 function BreadcrumbRoot({
   children,
   className,
+  navClassName,
   "aria-label": ariaLabel = "Breadcrumb",
   ...rest
 }: BreadcrumbProps) {
   return (
-    <nav aria-label={ariaLabel}>
+    <nav aria-label={ariaLabel} className={navClassName}>
       <AriaBreadcrumbs {...rest} aria-label={ariaLabel} className={cx("flex list-none items-center gap-xs", className)}>
         {children}
       </AriaBreadcrumbs>
@@ -70,7 +73,12 @@ export interface BreadcrumbItemProps {
    * by whether `href` is present.
    */
   href?: string;
-  children: ReactNode;
+  children?: ReactNode;
+  /** Existing composed controls or headings, when this item owns more than a link. */
+  content?: ReactNode;
+  itemClassName?: string;
+  /** Hide the decorative separator for frame trails whose controls provide their own spacing. */
+  separator?: boolean;
   /** Merged onto the rendered link/current-page text. */
   className?: string;
 }
@@ -84,9 +92,10 @@ export interface BreadcrumbItemProps {
  * `<a>` — a screen reader announces "current page", and there's no
  * clickable link to the page already being viewed.
  */
-function BreadcrumbItem({ href, children, className }: BreadcrumbItemProps) {
+function BreadcrumbItem({ href, children, content, className, itemClassName, separator = true }: BreadcrumbItemProps) {
   return (
-    <AriaBreadcrumbItem className="not-last:after:content-['/'] not-last:after:text-ink-muted flex items-center gap-xs">
+    <AriaBreadcrumbItem className={cx(separator && "not-last:after:content-['/'] not-last:after:text-ink-muted flex items-center gap-xs", itemClassName)}>
+      {content !== undefined ? content : (
       <AriaLink
         href={href}
         className={(renderProps) =>
@@ -101,6 +110,7 @@ function BreadcrumbItem({ href, children, className }: BreadcrumbItemProps) {
       >
         {children}
       </AriaLink>
+      )}
     </AriaBreadcrumbItem>
   );
 }

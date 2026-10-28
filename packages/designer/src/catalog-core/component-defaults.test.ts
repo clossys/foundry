@@ -65,7 +65,7 @@ const EXPECTED_DEFAULTS = {
   menu: "foundry", meter: "foundry", "native-action": "foundry", "navigation-tree": "foundry", "number-field": "foundry", popover: "shadcn@aria", "progress-bar": "shadcn@aria", "radio-group": "shadcn@aria",
   "resize-handle": "foundry", "search-field": "foundry", select: "shadcn@aria", "semantic-content": "foundry", separator: "shadcn@aria", skeleton: "shadcn@aria", slider: "shadcn@aria",
   spinner: "foundry", "status-mark": "foundry", switch: "shadcn@aria", table: "foundry", tabs: "shadcn@aria", "tag-group": "foundry", "text-field": "foundry", toast: "foundry", "toggle-button": "shadcn@aria", "toggle-group": "shadcn@aria",
-  toolbar: "foundry", tooltip: "shadcn@aria", tree: "foundry",
+  toolbar: "foundry", tooltip: "shadcn@aria", tree: "foundry", "list-box": "shadcn@aria",
 };
 /** rac-starter is not a selectable component source (owner rule 2026-10-26); Toolbar, TagGroup and Tree are Foundry's since their measured K5 craft comparison passes. */
 const NOT_CHOSEN: string[] = [];
@@ -112,8 +112,8 @@ describe("component default fills", () => {
     const plan = planComponentDefaults(input);
     expect(plan.rows.filter(row => row.source === "rac-starter")).toEqual([]);
     // 52 after vf15 (toolbar unchosen) + toggle-group (vf19) + color-picker and number-field (vf22) + toolbar (vf21) + slider (vf23) + tag-group and tree (vf30) = 59.
-    expect(plan.rows.filter(row => row.status !== "not-chosen")).toHaveLength(59);
-    expect(plan.rows).toHaveLength(59);
+    expect(plan.rows.filter(row => row.status !== "not-chosen")).toHaveLength(60);
+    expect(plan.rows).toHaveLength(60);
     const forced = Object.fromEntries(starterSlots.map(slot => [slot, "rac-starter"]));
     for (const plan of [planComponentDefaults({ ...input, picks: forced }), planComponentDefaults({ ...input, choices: forced })]) {
       for (const slot of starterSlots) {

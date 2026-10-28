@@ -1,3 +1,4 @@
+import { SemanticContent } from "../components/SemanticContent.js";
 import { ModalContext, useLocale } from "react-aria-components";
 import { cloneElement, isValidElement, useContext, useEffect, useId, useRef, useState, type ReactElement, type ReactNode } from "react";
 import { createPortal } from "react-dom";
@@ -16,6 +17,7 @@ import { ChevronLeft } from "../icons/ChevronLeft.js";
 import { ChevronRight } from "../icons/ChevronRight.js";
 import { frameLinkNavigation, type FrameNavigate } from "./frame-navigation.js";
 import { Drawer } from "./Drawer.js";
+import { EmptyState } from "./EmptyState.js";
 import { Panel } from "./Panel.js";
 import { getAppNavigationCloseStyle } from "./app-navigation-layout.js";
 import { getAppNavigationAncestry, type AppNavigationNode } from "./app-navigation-tree.js";
@@ -101,11 +103,11 @@ function CornerTooltip({ trigger, label, requests }: { trigger: ReactNode; label
   };
   useEffect(() => () => cancel(), []);
   useEffect(() => { ++requests.current; cancel(); setOpen(false); }, [label, requests]);
-  return <span className="contents" onBlurCapture={close} onPointerDownCapture={close}
+  return <SemanticContent as="span" className="contents" onBlurCapture={close} onPointerDownCapture={close}
     onPointerOutCapture={event => { if (!event.currentTarget.contains(event.relatedTarget as Node | null)) cancel(); }}
     onKeyDownCapture={event => { if (["Escape", "Enter", " "].includes(event.key)) close(); }}>
     <Tooltip trigger={trigger} delay={0} placement="end" isOpen={open} onOpenChange={change}>{label}</Tooltip>
-  </span>;
+  </SemanticContent>;
 }
 
 /** Host routes and identity arrive as data and slots; one Drawer owns the narrow modal lifecycle. */
@@ -197,8 +199,8 @@ export function AppNavigation({ onNavigate, fullViewport = false, retainMounted 
   const destination = (node: AppNavigationNode, parentId?: string) => {
     const current = node.id === active;
     const className = cx(CONTROL, "control-h-md flex-1", current ? CURRENT : "border-s-transparent");
-    const content = <><span aria-hidden="true" className="flex shrink-0 items-center justify-center" style={ICON_SLOT}>{node.icon == null || typeof node.icon === "string" || typeof node.icon === "number" ? <Icon glyph={node.children?.length ? Folder : FileText} decorative size="sm" /> : smallIcon(node.icon)}</span>
-      <span className="min-w-0 truncate">{node.label}</span></>;
+    const content = <><SemanticContent as="span" aria-hidden="true" className="flex shrink-0 items-center justify-center" style={ICON_SLOT}>{node.icon == null || typeof node.icon === "string" || typeof node.icon === "number" ? <Icon glyph={node.children?.length ? Folder : FileText} decorative size="sm" /> : smallIcon(node.icon)}</SemanticContent>
+      <SemanticContent as="span" className="min-w-0 truncate">{node.label}</SemanticContent></>;
     const shared = { "data-application-navigation-control": "", "data-navigation-node-id": node.id, "data-parent-id": parentId,
       "aria-current": current ? "page" as const : undefined, style: { borderInlineStartWidth: "var(--ui-border-rule)" }, className };
     return node.href !== undefined ? <Link {...shared} variant="muted" href={node.href} onClick={event => frameLinkNavigation(event, onNavigate)}>{content}</Link> :
@@ -211,36 +213,36 @@ export function AppNavigation({ onNavigate, fullViewport = false, retainMounted 
       data-active-ancestor={node.id === ancestor ? "true" : undefined}
       className={cx("min-w-0 rounded-control data-focus-visible:outline-solid data-focus-visible:outline-2 data-focus-visible:outline-accent data-focus-visible:-outline-offset-2", parentId && "ms-md border-s border-line-base ps-sm")}>
       <NavigationTreeItemContent>{({ isExpanded }) =>
-        <div className="flex min-w-0 items-center gap-xs rounded-control">
+        <SemanticContent as="div" className="flex min-w-0 items-center gap-xs rounded-control">
           {(node.href !== undefined || node.onAction) && destination(node, parentId)}
           {children.length > 0 && <Button slot="chevron" variant="ghost"
             className={cx(CONTROL, "shrink-0", node.href || node.onAction ? "icon-control-md justify-center" : "control-h-md flex-1")}
             data-application-navigation-control="" data-navigation-node-id={node.id}
             aria-label={formatDisclosureLabel(node.label, isExpanded)} aria-labelledby="" aria-expanded={isExpanded}>
-            {!node.href && !node.onAction && <span className="min-w-0 flex-1 truncate">{node.label}</span>}
+            {!node.href && !node.onAction && <SemanticContent as="span" className="min-w-0 flex-1 truncate">{node.label}</SemanticContent>}
             <Icon glyph={ChevronDown} decorative size="sm" className={cx(CHEVRON_MOTION, isExpanded && "rotate-180")} />
           </Button>}
-        </div>
+        </SemanticContent>
       }</NavigationTreeItemContent>
       {children.map(child => item(child, node.id))}
     </NavigationTreeItem>;
   };
   const footerRegion = footer !== undefined && footer !== null && footer !== false ?
-    <div data-application-navigation-region="footer" className="min-w-0 shrink-0 border-t border-line-base pt-sm">{footer}</div> : undefined;
-  const links = <nav ref={nav} aria-label={label} className="flex h-full min-h-0 flex-col" onClick={event => frameLinkNavigation(event, onNavigate)}
+    <SemanticContent as="div" data-application-navigation-region="footer" className="min-w-0 shrink-0 border-t border-line-base pt-sm">{footer}</SemanticContent> : undefined;
+  const links = <SemanticContent as="nav" ref={nav} aria-label={label} className="flex h-full min-h-0 flex-col" onClick={event => frameLinkNavigation(event, onNavigate)}
     onFocus={event => { focusedId.current = (event.target as HTMLElement).closest<HTMLElement>("[data-navigation-node-id]")?.dataset.navigationNodeId; }}
     onBlur={event => { if (!event.currentTarget.contains(event.relatedTarget as Node | null)) focusedId.current = undefined; }}>
-    {header !== undefined && header !== null && header !== false && <div data-application-navigation-region="header" className="min-w-0 shrink-0 pb-sm">{header}</div>}
-    <div data-application-navigation-region="links" className="min-h-0 flex-1 overflow-auto">
-      {!tree.length ? <p className="p-sm text-body text-ink-muted">{emptyMessage}</p> :
+    {header !== undefined && header !== null && header !== false && <SemanticContent as="div" data-application-navigation-region="header" className="min-w-0 shrink-0 pb-sm">{header}</SemanticContent>}
+    <SemanticContent as="div" data-application-navigation-region="links" className="min-h-0 flex-1 overflow-auto">
+      {!tree.length ? <EmptyState variant="message" title={emptyMessage} className="p-sm text-body text-ink-muted" /> :
         <NavigationTree aria-label={label} selectedRoute={ancestry.length ? ancestry.at(-1)?.href : activeHref}
           expandedKeys={expanded} onExpandedChange={keys => setExpanded(new Set([...keys].map(String)))}
           className="flex min-w-0 flex-col gap-xs outline-none">
           {tree.map(node => item(node))}
         </NavigationTree>}
-    </div>
+    </SemanticContent>
     {footerRegion}
-  </nav>;
+  </SemanticContent>;
   const changeCollapsed = () => { setCollapsed(!collapsed); onCollapsedChange?.(!collapsed); };
   const wideControl = collapsed
     ? expandLabel === undefined
@@ -253,7 +255,7 @@ export function AppNavigation({ onNavigate, fullViewport = false, retainMounted 
           aria-expanded={true} aria-label={closeLabel} onPress={changeCollapsed}><Icon glyph={ChevronLeft} decorative size="sm" className="rtl:rotate-180" /></Button>
       : <Button variant="ghost" className="icon-control-md shrink-0 border-0 bg-transparent p-0 focus-visible:outline-solid focus-visible:outline-2 focus-visible:outline-accent"
           aria-expanded={true} aria-label={collapseLabel} onPress={changeCollapsed}><Icon glyph={ChevronLeft} decorative size="sm" className="rtl:rotate-180" /></Button>;
-  const measuredControl = <span ref={corner} id={instance + "-trigger"} className="contents">{trigger ?? (narrow
+  const measuredControl = <SemanticContent as="span" ref={corner} id={instance + "-trigger"} className="contents">{trigger ?? (narrow
     ? <Button variant="ghost" className="icon-control-md shrink-0 border-0 bg-transparent p-0 focus-visible:outline-solid focus-visible:outline-2 focus-visible:outline-accent"
         aria-expanded={requested} aria-label={openLabel}><Icon glyph={ChevronRight} decorative size="sm" className="rtl:rotate-180" /></Button>
     : collapsed
@@ -262,10 +264,10 @@ export function AppNavigation({ onNavigate, fullViewport = false, retainMounted 
         : <CornerTooltip trigger={wideControl} label={expandLabel} requests={tooltipRequests} />
       : collapseLabel === undefined
         ? <CornerTooltip trigger={wideControl} label={closeLabel} requests={tooltipRequests} />
-        : <CornerTooltip trigger={wideControl} label={collapseLabel} requests={tooltipRequests} />)}</span>;
+        : <CornerTooltip trigger={wideControl} label={collapseLabel} requests={tooltipRequests} />)}</SemanticContent>;
   const control = triggerContainer ? createPortal(measuredControl, triggerContainer) : measuredControl;
   if (narrow) return <Drawer fullViewport={fullViewport} trigger={control}
-    heading={<span className="sr-only">{label}</span>} closeLabel={closeLabel} closeButtonStyle={getAppNavigationCloseStyle(cornerMeasurement)} navigationKey={route} dismissAt={dismissAt}
+    heading={<SemanticContent as="span" className="sr-only">{label}</SemanticContent>} closeLabel={closeLabel} closeButtonStyle={getAppNavigationCloseStyle(cornerMeasurement)} navigationKey={route} dismissAt={dismissAt}
     isOpen={requested} onOpenChange={changeOpen} className="gap-xs p-sm">{links}</Drawer>;
   return <>{control}{(!collapsed || retainMounted) && <Panel className="h-full min-h-0 shrink-0 gap-xs rounded-none border-0 p-sm"
     style={{ inlineSize: "var(--ui-layout-sidebar-w, 256px)" }}>{links}</Panel>}</>;

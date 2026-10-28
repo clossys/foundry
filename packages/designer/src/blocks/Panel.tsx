@@ -1,3 +1,4 @@
+import { SemanticContent } from "../components/SemanticContent.js";
 import type { ReactNode } from "react";
 import { Card, type CardProps } from "../components/Card.js";
 import { cx } from "../components/internal/cx.js";
@@ -19,11 +20,11 @@ export function Panel({ header, children, footer, className, ...rest }: PanelPro
       className={cx("flex min-h-0 min-w-0 flex-col gap-md", className)}
     >
       {header !== undefined && header !== null && header !== false && (
-        <div data-panel-region="header" className="shrink-0">{header}</div>
+        <SemanticContent as="div" data-panel-region="header" className="shrink-0">{header}</SemanticContent>
       )}
-      <div data-panel-region="content" className="min-h-0 min-w-0 flex-1 overflow-auto">{children}</div>
+      <SemanticContent as="div" data-panel-region="content" className="min-h-0 min-w-0 flex-1 overflow-auto">{children}</SemanticContent>
       {footer !== undefined && footer !== null && footer !== false && (
-        <div data-panel-region="footer" className="shrink-0">{footer}</div>
+        <SemanticContent as="div" data-panel-region="footer" className="shrink-0">{footer}</SemanticContent>
       )}
     </Card>
   );

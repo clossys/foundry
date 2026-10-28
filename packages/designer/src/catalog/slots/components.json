@@ -1181,6 +1181,29 @@
     "status": "draft"
   },
   {
+    "id": "components.list-box",
+    "layer": "components",
+    "contract": {
+      "kind": "component",
+      "root": "rac:ListBox",
+      "members": {
+        "mode": "closed",
+        "names": [
+          "selection",
+          "sections"
+        ]
+      },
+      "props": [],
+      "allowedReads": {
+        "tokens": [],
+        "assets": []
+      },
+      "apg": "listbox"
+    },
+    "requires": [],
+    "status": "draft"
+  },
+  {
     "id": "components.logo",
     "layer": "components",
     "contract": {
@@ -1698,8 +1721,10 @@
           "as.h4",
           "as.h5",
           "as.h6",
+          "as.header",
           "as.li",
           "as.main",
+          "as.nav",
           "as.p",
           "as.section",
           "as.small",

@@ -158,7 +158,7 @@ const errorsFor = (errors: readonly { code: string; subject: string; message: st
 describe("component qualification join (SYNTHETIC fixture library)", () => {
   it("qualifies every registered slot from per-slot browser artifacts bound to the adopted descriptors", () => {
     const { slots, fills, observe, accept } = fixture();
-    expect(slots).toHaveLength(59); expect(fills).toHaveLength(59);
+    expect(slots).toHaveLength(60); expect(fills).toHaveLength(60);
     expect(fills.every(fill => fill.rac?.instance === "react-aria-components" && fill.rac.peer)).toBe(true);
     const observed = observe();
     expect(observed.refused).toEqual([]); expect(observed.unobserved).toEqual([]);
@@ -181,13 +181,13 @@ describe("component qualification join (SYNTHETIC fixture library)", () => {
     const { errors, join, records, result } = dropped.accept(dropped.observe());
     expect(errorsFor(errors, "components.button")).toEqual(["CC3"]);
     expect(result.ok).toBe(false);
-    expect(records).toHaveLength(59);
-    expect(new Set(records.map(record => record.slot)).size).toBe(59);
+    expect(records).toHaveLength(60);
+    expect(new Set(records.map(record => record.slot)).size).toBe(60);
     expect(join).toEqual([]);
     // A forged descriptor on the same library is a join failure for exactly that slot, with its reason.
     const supplied = dropped.artifacts(); supplied["components.button"] = { ...supplied["components.button"]!, descriptorHash: "0".repeat(64) };
     const forged = dropped.accept(dropped.observe({ artifacts: dropped.artifacts() }), undefined, supplied);
-    expect(forged.records).toHaveLength(59);
+    expect(forged.records).toHaveLength(60);
     expect(forged.join).toEqual([{ code: "QUALIFICATION_JOIN", subject: "components.button", reasons: expect.arrayContaining(["Artifact was measured for a different descriptor", "Observation does not carry the artifact's descriptor"]) }]);
   }, 300_000);
 

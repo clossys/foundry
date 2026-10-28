@@ -5,6 +5,7 @@
   "status": "pending-owner-ratification",
   "addedLeafIds": [
     "components.native-action",
-    "components.semantic-content"
+    "components.semantic-content",
+    "components.list-box"
   ]
 }

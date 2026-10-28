@@ -113,7 +113,8 @@
             "components.table",
             "components.grid-list",
             "components.tree",
-            "components.meter"
+            "components.meter",
+            "components.list-box"
           ]
         },
         {

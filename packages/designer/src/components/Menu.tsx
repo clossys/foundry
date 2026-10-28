@@ -14,6 +14,7 @@ import {
 } from "react-aria-components";
 import { Popover as ControlPopover } from "./Popover.js";
 import { Icon } from "./Icon.js";
+import { SemanticContent } from "./SemanticContent.js";
 import { useGlyph } from "./glyph-context.js";
 import { controlStateStyle } from "./button-classes.js";
 import { cx } from "./internal/cx.js";
@@ -275,20 +276,26 @@ type MenuSectionProps = MenuSectionBaseProps & (
 const isBlank = (value: unknown): boolean =>
   value == null || typeof value === "boolean" || (typeof value === "string" && !value.trim());
 
-// Only inspect intrinsic content and fragments; a component's output cannot
-// be verified here. Such headings need the section's explicit aria-label.
+/** Rich menu text can stack labels and supporting copy in triggers, items and group headings. */
+function MenuText(props: HTMLAttributes<HTMLSpanElement>) {
+  return <SemanticContent as="span" {...props} />;
+}
+
+// Menu.Text is a known text container; arbitrary component output still
+// requires the section's explicit aria-label.
 function hasHeadingText(value: ReactNode): boolean {
   if (typeof value === "string") return !!value.trim();
   if (typeof value === "number" || typeof value === "bigint") return true;
   if (Array.isArray(value)) return value.some(hasHeadingText);
   if (!isValidElement<HTMLAttributes<HTMLElement>>(value)) return false;
   if (value.type === Fragment) return hasHeadingText(value.props.children);
-  if (typeof value.type !== "string") return false;
+  const tag = typeof value.type === "string" ? value.type : value.type === MenuText ? "span" : undefined;
+  if (!tag) return false;
   const props = value.props;
   if (props.hidden || props["aria-hidden"] === true || props["aria-hidden"] === "true"
     || props.style?.display === "none" || props.style?.visibility === "hidden"
     || props["aria-labelledby"]
-    || ["script", "style", "template"].includes(value.type)) return false;
+    || ["script", "style", "template"].includes(tag)) return false;
   if (props["aria-label"] !== undefined) return !isBlank(props["aria-label"]);
   return hasHeadingText(props.children);
 }
@@ -310,4 +317,4 @@ function MenuSection({ heading, children, ...rest }: MenuSectionProps) {
   </AriaMenuSection>;
 }
 
-export const Menu = Object.assign(MenuRoot, { Inline: MenuInline, Item: MenuItem, Separator: MenuSeparator, Section: MenuSection });
+export const Menu = Object.assign(MenuRoot, { Inline: MenuInline, Item: MenuItem, Separator: MenuSeparator, Section: MenuSection, Text: MenuText });

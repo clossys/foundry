@@ -230,13 +230,15 @@
         "components.table",
         "components.grid-list",
         "components.tree",
-        "components.meter"
+        "components.meter",
+        "components.list-box"
       ],
       "offers": [
         {
           "source": "shadcn@aria",
           "leaves": [
-            "components.table"
+            "components.table",
+            "components.list-box"
           ]
         },
         {

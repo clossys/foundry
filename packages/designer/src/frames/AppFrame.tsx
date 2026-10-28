@@ -1,4 +1,5 @@
 "use client";
+import { FrameRegion } from "./FrameRegion.js";
 import { ShellI18nProvider } from "#designer-frame-i18n";
 
 import { useCallback, useEffect, useId, useLayoutEffect, useRef, useState, type CSSProperties } from "react";
@@ -41,9 +42,9 @@ const PANEL_GLYPH = "-scale-x-100 rtl:scale-x-100";
 function SignedOutMenu({ sections, signedOutLabel, onRoute, markSrc, theme, controls }: Omit<AppFrameAccount, "avatar"> & { markSrc: string; theme?: React.ComponentProps<typeof AppFrameThemeSection>; controls?: React.ReactNode }) {
   const populated = sections.map(section => ({ ...section, entries: section.entries.filter(entry => !entry.isDisabled) }) as typeof section).filter(section => section.entries.length > 0);
   if (!signedOutLabel.trim()) throw new TypeError("AppFrame: signed-out label must be non-empty.");
-  if (!populated.length && theme === undefined && controls == null) return <div className="flex min-w-0 items-center frame-account-row"><Logomark src={markSrc} size="sm" /><span className="min-w-0 truncate">{signedOutLabel}</span></div>;
+  if (!populated.length && theme === undefined && controls == null) return <FrameRegion as="div" className="flex min-w-0 items-center frame-account-row"><Logomark src={markSrc} size="sm" /><FrameRegion as="span" className="min-w-0 truncate">{signedOutLabel}</FrameRegion></FrameRegion>;
   const itemKey = (section: string, entry: string) => JSON.stringify([section, entry]);
-  const trigger = <Button variant="ghost" className={CONTROL + " w-full justify-start whitespace-normal text-start"}><Logomark src={markSrc} size="sm" /><span className="min-w-0 break-words">{signedOutLabel}</span></Button>;
+  const trigger = <Button variant="ghost" className={CONTROL + " w-full justify-start whitespace-normal text-start"}><Logomark src={markSrc} size="sm" /><FrameRegion as="span" className="min-w-0 break-words">{signedOutLabel}</FrameRegion></Button>;
   const content = (close?: () => void) => <>{theme !== undefined && <AppFrameThemeSection {...theme} />}{populated.map(section => <Menu.Section key={section.id} heading={section.label} aria-label={section.label ?? signedOutLabel}
       selectionMode={section.kind === "preferences" ? "multiple" : "none"}
       selectedKeys={section.kind === "preferences" ? section.entries.filter(entry => entry.checked).map(entry => itemKey(section.id, entry.id)) : undefined}
@@ -221,21 +222,21 @@ function FrameContent({ brand, navigation, account: { avatar = "initials", ...ac
     return () => { observer?.disconnect(); window.removeEventListener("resize", measure); };
   }, [hasToasts, dir]);
   const changeCollapsed = (next: boolean) => { setPanelCollapsed(next); rightPanel?.onCollapsedChange?.(next); };
-  const themeSlot = themeControl == null ? undefined : <div data-application-frame-slot="theme-control" className="shrink-0">{themeControl}</div>;
+  const themeSlot = themeControl == null ? undefined : <FrameRegion as="div" data-application-frame-slot="theme-control" className="shrink-0">{themeControl}</FrameRegion>;
   const accountTheme = themeControl === undefined ? { preferenceLabels: theme?.preferenceLabels, toggleLabel: theme?.toggleLabel, preferenceAnnouncement: theme?.preferenceAnnouncement } : undefined;
   // The full footer track belongs to the actor; theme controls are revealed in the account popup.
   const accountControl = account.actor
     ? <AccountMenu {...account} menuContent={accountTheme && <AppFrameThemeSection {...accountTheme} />} controls={themeSlot} actor={{ ...account.actor, image: avatar === "initials" ? account.actor.image : markSrc }} />
     : <SignedOutMenu {...account} markSrc={markSrc} theme={accountTheme} controls={themeSlot} />;
-  const footer = <div data-application-frame-footer={footerLayout} className="w-full min-w-0">
-    <div data-application-frame-slot="account" className="w-full min-w-0">{accountControl}</div>
-  </div>;
-    const panelTrigger = rightPanel && (narrow ? <div className="contents" onFocusCapture={capturePanelFocus}><ModalContext.Provider value={{ style: { direction: dir } }}><Drawer fullViewport wide="sheet" placement="end" dismissAt={APP_FRAME_WIDE_QUERY}
+  const footer = <FrameRegion as="div" data-application-frame-footer={footerLayout} className="w-full min-w-0">
+    <FrameRegion as="div" data-application-frame-slot="account" className="w-full min-w-0">{accountControl}</FrameRegion>
+  </FrameRegion>;
+    const panelTrigger = rightPanel && (narrow ? <FrameRegion as="div" className="contents" onFocusCapture={capturePanelFocus}><ModalContext.Provider value={{ style: { direction: dir } }}><Drawer fullViewport wide="sheet" placement="end" dismissAt={APP_FRAME_WIDE_QUERY}
     heading={rightPanel.label} closeLabel={closeLabel} closeButtonStyle={panelCloseButtonStyle} navigationKey={navigation.navigationKey}
     isOpen={panelOpen} onOpenChange={next => { setPanelOpen(next); if (next) { setNavDrawerOpen(false); navigation.onDrawerOpenChange?.(false); } }}
     trigger={<Button variant="ghost" className={CONTROL} aria-label={openLabel} aria-expanded={panelOpen} data-application-frame-panel="trigger"><Icon glyph={List} decorative className={PANEL_GLYPH} /></Button>}>
     <FrameSlotOutlet slot="right-panel">{rightPanel.children}</FrameSlotOutlet>
-  </Drawer></ModalContext.Provider></div> : <Button variant="ghost" className={CONTROL} aria-controls={generated + "-panel"} aria-expanded={!collapsed} aria-label={collapsed ? openLabel : closeLabel} data-application-frame-panel="trigger"
+  </Drawer></ModalContext.Provider></FrameRegion> : <Button variant="ghost" className={CONTROL} aria-controls={generated + "-panel"} aria-expanded={!collapsed} aria-label={collapsed ? openLabel : closeLabel} data-application-frame-panel="trigger"
     onPress={() => changeCollapsed(!collapsed)}><Icon glyph={List} decorative className={PANEL_GLYPH} /></Button>);
   const navOpen = layout.navigationOverlay ? navigation.drawerOpen ?? navDrawerOpen : !navCollapsed;
   const changeNav = () => {
@@ -246,49 +247,49 @@ function FrameContent({ brand, navigation, account: { avatar = "initials", ...ac
     data-application-frame-navigation="trigger"
     aria-controls={generated + "-navigation"} aria-label={navOpen ? navigationCloseLabel : navigationOpenLabel} aria-expanded={navOpen} onPress={changeNav}><Icon glyph={List} decorative className={NAVIGATION_GLYPH} /></Button>;
   // The navigation top reserves one tap-sized corner row (the drawer close control sits at its start); a brand row takes that row instead of bare padding.
-  const navigationBrand = <div data-application-frame-slot="brand" className="flex min-w-0 items-center frame-brand-gap"
+  const navigationBrand = <FrameRegion as="div" data-application-frame-slot="brand" className="flex min-w-0 items-center frame-brand-gap"
     style={{ minBlockSize: APP_FRAME_LAYOUT.tap, marginBlockEnd: APP_FRAME_LAYOUT.gutter, paddingInlineStart: layout.navigationOverlay ? `calc(${APP_FRAME_LAYOUT.tap} + ${APP_FRAME_LAYOUT.gap})` : undefined }}>
-    <Logomark src={markSrc} size="sm" />{brand.navigationMark && <span className="min-w-0 truncate text-body text-ink-primary">{brand.navigationMark.label}</span>}
-  </div>;
-  const commandTrigger = <div>{navigationBrand}<Button variant="ghost" className={CONTROL + " w-full justify-start"} onPress={openCommands}><Icon glyph={Search} decorative /><span className="min-w-0 truncate">{triggerLabel}</span></Button></div>;
+    <Logomark src={markSrc} size="sm" />{brand.navigationMark && <FrameRegion as="span" className="min-w-0 truncate text-body text-ink-primary">{brand.navigationMark.label}</FrameRegion>}
+  </FrameRegion>;
+  const commandTrigger = <FrameRegion as="div">{navigationBrand}<Button variant="ghost" className={CONTROL + " w-full justify-start"} onPress={openCommands}><Icon glyph={Search} decorative /><FrameRegion as="span" className="min-w-0 truncate">{triggerLabel}</FrameRegion></Button></FrameRegion>;
   const pageBar = <PageBar position={headerPosition} surface={headerSurface ?? (shellLayout === "immersive" ? "glass" : "solid")} header={resolvedHeader} onNavigate={onNavigate} context={context} root={root} page={page} workspaces={workspaces} narrow={!wide}
     embedded dir={dir}
-    start={<span ref={setNavigationControlHost} className="contents">{!navigationControlHost && <Tooltip trigger={navigationTrigger}>{navOpen ? navigationCloseLabel : navigationOpenLabel}</Tooltip>}</span>}
-    end={rightPanel ? <Tooltip trigger={panelTrigger}>{panelOpen || panelDocked ? closeLabel : openLabel}</Tooltip> : <span aria-hidden="true" className="icon-control-md shrink-0" />}
+    start={<FrameRegion as="span" ref={setNavigationControlHost} className="contents">{!navigationControlHost && <Tooltip trigger={navigationTrigger}>{navOpen ? navigationCloseLabel : navigationOpenLabel}</Tooltip>}</FrameRegion>}
+    end={rightPanel ? <Tooltip trigger={panelTrigger}>{panelOpen || panelDocked ? closeLabel : openLabel}</Tooltip> : <FrameRegion as="span" aria-hidden="true" className="icon-control-md shrink-0" />}
     labels={{ breadcrumb: breadcrumbLabel ?? copy(SHELL_COPY_REFS.frame.breadcrumb), collapsedBreadcrumb: collapsedBreadcrumbLabel ?? copy(SHELL_COPY_REFS.frame.collapsedBreadcrumb), pageInfo: pageInfoLabel ?? copy(SHELL_COPY_REFS.frame.pageInfo),
       pageActions: pageActionsLabel ?? copy(SHELL_COPY_REFS.frame.pageActions) }} />;
   return <ModalContext.Provider value={{ style: { direction: dir } }}><PopoverContext.Provider value={{ style: { direction: dir } }}>
-    <div ref={frame} lang={locale} dir={dir} data-application-frame="" data-application-frame-layout={shellLayout} data-application-frame-stage={stageInset} data-application-frame-fill={fill} {...FRAME_STAMP} className={"relative flex min-h-0 min-w-0 flex-col overflow-hidden bg-surface-base text-body text-ink-primary " + ROOT_FILL[fill]}>
+    <FrameRegion as="div" ref={frame} lang={locale} dir={dir} data-application-frame="" data-application-frame-layout={shellLayout} data-application-frame-stage={stageInset} data-application-frame-fill={fill} {...FRAME_STAMP} className={"relative flex min-h-0 min-w-0 flex-col overflow-hidden bg-surface-base text-body text-ink-primary " + ROOT_FILL[fill]}>
       <SkipLink targetId={target}>{skipLabel}</SkipLink>
-      <span aria-hidden="true" className="absolute size-0 overflow-hidden"><span ref={sidebarProbe} className="block" style={{ inlineSize: APP_FRAME_LAYOUT.sidebar }} /></span>
-      <div className="flex min-h-0 min-w-0 flex-1">
-        <div id={generated + "-navigation"} data-application-frame-region="navigation" data-open={navigationDocked} aria-hidden={!navigationDocked} inert={!navigationDocked && !layout.navigationOverlay} className={"frame-docked-navigation min-h-0 shrink-0 overflow-hidden " + APP_FRAME_NAVIGATION_SIZE[navigationDocked ? "docked" : "closed"]}>
+      <FrameRegion as="span" aria-hidden="true" className="absolute size-0 overflow-hidden"><FrameRegion as="span" ref={sidebarProbe} className="block" style={{ inlineSize: APP_FRAME_LAYOUT.sidebar }} /></FrameRegion>
+      <FrameRegion as="div" className="flex min-h-0 min-w-0 flex-1">
+        <FrameRegion as="div" id={generated + "-navigation"} data-application-frame-region="navigation" data-open={navigationDocked} aria-hidden={!navigationDocked} inert={!navigationDocked && !layout.navigationOverlay} className={"frame-docked-navigation min-h-0 shrink-0 overflow-hidden " + APP_FRAME_NAVIGATION_SIZE[navigationDocked ? "docked" : "closed"]}>
           <FrameSlotOutlet slot="left-sidebar"><AppNavigation {...navigation} fullViewport retainMounted onNavigate={onNavigate} dismissAt={layout.navigationOverlay ? APP_FRAME_ALWAYS_NARROW : APP_FRAME_ALWAYS_WIDE}
             header={commandTrigger} footer={footer} triggerContainer={navigationControlHost} trigger={navigationControlHost ? <Tooltip trigger={navigationTrigger}>{navOpen ? navigationCloseLabel : navigationOpenLabel}</Tooltip> : <></>}
             drawerOpen={navigation.drawerOpen ?? navDrawerOpen} onDrawerOpenChange={next => { setNavDrawerOpen(next); if (next) setPanelOpen(false); navigation.onDrawerOpenChange?.(next); }}
             collapsed={navCollapsed} onCollapsedChange={next => { setNavigationCollapsed(next); navigation.onCollapsedChange?.(next); }} /></FrameSlotOutlet>
-        </div>
-        <div className="flex min-h-0 min-w-0 flex-1 flex-col">
-          <div data-application-frame-region="header" className={HEADER_ROW}>
+        </FrameRegion>
+        <FrameRegion as="div" className="flex min-h-0 min-w-0 flex-1 flex-col">
+          <FrameRegion as="div" data-application-frame-region="header" className={HEADER_ROW}>
             {pageBar}
-          </div>
-          <div ref={stage} data-application-frame-region="stage" data-stage-navigation={layout.navigationOverlay ? "overlay" : "docked"} data-stage-panel={narrow ? "overlay" : "docked"}
+          </FrameRegion>
+          <FrameRegion as="div" ref={stage} data-application-frame-region="stage" data-stage-navigation={layout.navigationOverlay ? "overlay" : "docked"} data-stage-panel={narrow ? "overlay" : "docked"}
             className={"relative isolate min-h-0 min-w-0 flex-1 overflow-hidden" + (stageInset === "full" ? "" : " " + STAGE_INSET)}>
-            <main id={target} tabIndex={-1} className={MAIN + "focus-ring-inset"}>{children}</main>
-          </div>
+            <FrameRegion as="main" id={target} tabIndex={-1} className={MAIN + "focus-ring-inset"}>{children}</FrameRegion>
+          </FrameRegion>
           <FrameDock notices={notices} dock={dock} sheet={!wide} />
-        </div>
-        {rightPanel && <aside id={generated + "-panel"} aria-label={rightPanel.label} data-open={panelDocked} aria-hidden={!panelDocked} inert={!panelDocked}
+        </FrameRegion>
+        {rightPanel && <FrameRegion as="aside" id={generated + "-panel"} aria-label={rightPanel.label} data-open={panelDocked} aria-hidden={!panelDocked} inert={!panelDocked}
           className={"frame-docked-panel h-full min-h-0 shrink-0 overflow-hidden " + APP_FRAME_PANEL_SIZE[panelDocked ? "docked" : "closed"]} style={panelDocked ? { [APP_FRAME_PANEL_WIDTH_VAR]: `${currentPanelWidth}px` } as CSSProperties : undefined}>
           {!narrow && <ResizablePane min={rightPanel.min} max={rightPanel.max} defaultValue={rightPanel.defaultValue}
             value={rightPanel.value ?? width} step={rightPanel.step} label={rightPanel.label} handleLabel={rightPanel.handleLabel}
             onChange={next => { setWidth(next); rightPanel.onChange?.(next); }} onFocusCapture={capturePanelFocus} data-application-frame-panel="pane"
             className="h-full min-h-0 shrink-0 rounded-none border-0 border-s border-line-base p-frame-panel"><FrameSlotOutlet slot="right-panel">{rightPanel.children}</FrameSlotOutlet></ResizablePane>}
-        </aside>}
-      </div>
+        </FrameRegion>}
+      </FrameRegion>
       <CommandMenu {...commandProps} dir={dir} isOpen={commandOpen} onOpenChange={setCommandOpen} query={query} onQueryChange={setQuery} />
       {hasToasts ? <ToasterFrameInsetProvider value={toastInset}>{toasts}</ToasterFrameInsetProvider> : null}
-    </div>
+    </FrameRegion>
   </PopoverContext.Provider></ModalContext.Provider>;
 
 }

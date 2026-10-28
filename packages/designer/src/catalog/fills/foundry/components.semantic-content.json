@@ -65,8 +65,10 @@
         "as.h4",
         "as.h5",
         "as.h6",
+        "as.header",
         "as.li",
         "as.main",
+        "as.nav",
         "as.p",
         "as.section",
         "as.small",
@@ -102,7 +104,9 @@
         "as.span": "./components#SemanticContent.as=span",
         "as.strong": "./components#SemanticContent.as=strong",
         "as.time": "./components#SemanticContent.as=time",
-        "as.ul": "./components#SemanticContent.as=ul"
+        "as.ul": "./components#SemanticContent.as=ul",
+        "as.header": "./components#SemanticContent.as=header",
+        "as.nav": "./components#SemanticContent.as=nav"
       },
       "props": [
         "as"

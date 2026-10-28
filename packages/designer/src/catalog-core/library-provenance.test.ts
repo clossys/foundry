@@ -17,9 +17,9 @@ const columns = () => componentLibraryColumns(catalog.sources, documents, slots,
 
 describe("item-specific library provenance", () => {
   it("projects exactly 26 real drafts across 57 signed slots and one unqualified local draft", () => {
-    expect(slots).toHaveLength(59);
+    expect(slots).toHaveLength(60);
     expect(columns().flatMap(column => column.candidates).some(candidate => candidate.fill.slot === "components.semantic-content")).toBe(false);
-    expect(documents).toHaveLength(26);
+    expect(documents).toHaveLength(27);
     const result = columns();
     expect(result).toHaveLength(1);
     const column = result[0]!;
@@ -27,8 +27,8 @@ describe("item-specific library provenance", () => {
     expect(column.role).toBe("candidate-source");
     expect(column.referenceOnly).toBe(false);
     expect(column.license).toBe("MIT");
-    expect(column.candidates).toHaveLength(26);
-    expect(new Set(column.candidates.map(candidate => candidate.fill.slot)).size).toBe(26);
+    expect(column.candidates).toHaveLength(27);
+    expect(new Set(column.candidates.map(candidate => candidate.fill.slot)).size).toBe(27);
     expect(column.candidates.filter(candidate => candidate.fill.relation === "subset")).toHaveLength(0);
     expect(column.candidates.filter(candidate => candidate.fill.relation === "same-contract")).toHaveLength(26);
     for (const candidate of column.candidates) {

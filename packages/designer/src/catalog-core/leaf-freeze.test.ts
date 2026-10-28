@@ -60,7 +60,7 @@ describe("owner-signed leaf membership", () => {
     });
     it(`${layer}: allows regrouping, reordering, labels and metadata changes`, () => {
       const value = input();
-      const ids = fixture.layer === "components" ? [...fixture.freeze.leafIds, "components.semantic-content", "components.native-action"] : fixture.layer === "assets" ? [...fixture.freeze.leafIds, ...assetAmendments.addedLeafIds] : [...fixture.freeze.leafIds, ...tokenAmendments.addedLeaves.map(row => row.id)];
+      const ids = fixture.layer === "components" ? [...fixture.freeze.leafIds, "components.semantic-content", "components.native-action", "components.list-box"] : fixture.layer === "assets" ? [...fixture.freeze.leafIds, ...assetAmendments.addedLeafIds] : [...fixture.freeze.leafIds, ...tokenAmendments.addedLeaves.map(row => row.id)];
       value.ia.nodes = [{ id: "new-domain", label: "New domain", children: [{ id: "new-family", label: "New family", leaves: [...ids].reverse() }] }];
       value.slots.reverse();
       Object.assign(value.slots[0]!, { description: "Metadata remains separate" });
@@ -92,14 +92,14 @@ describe("owner-signed leaf membership", () => {
       }
       expect(fixture.slots).toEqual(beforeSlots);
       expect(fixture.ia).toEqual(beforeIA);
-      expect(loadBuildCatalog().slots).toHaveLength(225);
+      expect(loadBuildCatalog().slots).toHaveLength(226);
     });
   }
 
   it("requires explicitly offered layers even when both inputs omit one entirely", () => {
     expect(checkFrozenLeafSets([], [], ["components"])).toEqual([
-      expect.objectContaining({ layer: "components", source: "slots", missing: [...componentFreeze.leafIds, "components.semantic-content", "components.native-action"].sort() }),
-      expect.objectContaining({ layer: "components", source: "ia", missing: [...componentFreeze.leafIds, "components.semantic-content", "components.native-action"].sort() }),
+      expect.objectContaining({ layer: "components", source: "slots", missing: [...componentFreeze.leafIds, "components.semantic-content", "components.native-action", "components.list-box"].sort() }),
+      expect.objectContaining({ layer: "components", source: "ia", missing: [...componentFreeze.leafIds, "components.semantic-content", "components.native-action", "components.list-box"].sort() }),
     ]);
   });
   it("keeps Sections/Frames unsigned and build readiness unchanged", () => {
@@ -182,7 +182,7 @@ describe("owner-signed token leaf amendment", () => {
 describe("explicit local component amendment", () => {
   const amendedId = "components.semantic-content";
   it("records an explicit versioned proposal against the unchanged signed baseline", () => {
-    expect(componentAmendments).toEqual({ schemaVersion: 1, layer: "components", baseSignedHead: componentFreeze.signedHead, status: "pending-owner-ratification", addedLeafIds: ["components.native-action", amendedId] });
+    expect(componentAmendments).toEqual({ schemaVersion: 1, layer: "components", baseSignedHead: componentFreeze.signedHead, status: "pending-owner-ratification", addedLeafIds: ["components.native-action", amendedId, "components.list-box"] });
   });
   const inputs = () => ({ ia: structuredClone(componentIA) as Placement, slots: structuredClone(componentSlots) });
   it("accepts only the exact amended leaf alongside the unchanged signed IDs", () => {
