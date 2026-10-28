@@ -2,13 +2,19 @@
 
 import {
   Link as AriaLink,
-  type LinkProps as AriaLinkProps,
 } from "react-aria-components";
 import type { LinkProps, LinkVariant } from "./Link.types.js";
 export type { LinkProps, LinkVariant } from "./Link.types.js";
-import { buttonClassName, controlSizeStyle, controlStateStyle, type ControlGround } from "./button-classes.js";
-import { LINK_BASE, LINK_VARIANT_CLASSES } from "./Link.styles.js";
+import { buttonClassName, controlSizeStyle, controlStateStyle } from "./button-classes.js";
 import { cx } from "./internal/cx.js";
+
+const BASE = "text-body font-body outline-none disabled:cursor-not-allowed";
+
+const VARIANT_CLASSES: Record<LinkVariant, string> = {
+  default: "text-accent-text underline decoration-transparent hover:decoration-current",
+  muted: "text-ink-muted hover:text-ink-secondary",
+  standalone: "text-ink-primary hover:underline",
+};
 
 /**
  * A navigable link. Built on react-aria-components' `Link` for its keyboard
@@ -56,7 +62,7 @@ export function Link({
   const isButtonLook = buttonVariant !== undefined || buttonSize !== undefined;
   const lookClassName = isButtonLook
     ? buttonClassName(buttonVariant ?? "primary", buttonSize ?? "md", ground)
-    : [LINK_BASE, LINK_VARIANT_CLASSES[variant]].join(" ");
+    : [BASE, VARIANT_CLASSES[variant]].join(" ");
   return (
     <AriaLink
       {...rest}

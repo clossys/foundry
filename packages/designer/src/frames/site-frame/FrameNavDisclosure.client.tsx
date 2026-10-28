@@ -45,8 +45,8 @@ function milliseconds(time: string): number {
 
 /**
  * Frame-local composition of the existing shell NavDisclosure behavior with
- * Designer native/semantic primitives; measurement, focus and motion stay shared
- * with that established contract.
+ * Designer native/semantic primitives; measurement, focus and motion retain
+ * that established contract.
  *
  * SiteHeader navigation that becomes a sheet below tablet and an inline row
  * above it. CSS keeps the same links inline when scripting is unavailable.
@@ -283,7 +283,7 @@ export function FrameNavDisclosure({ children, "aria-label": ariaLabel = "Primar
         id={panelId}
         className="nav-disclosure-panel"
         data-expanded={expanded ? "" : undefined}
-        onClick={event => {
+        onClickCapture={event => {
           // Following a link moves on from the menu; focus stays with the
           // destination rather than returning to the toggle.
           if (event.target instanceof Element && event.target.closest("a[href]")) close(false);

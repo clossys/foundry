@@ -33,6 +33,17 @@ describe("Link server entry", () => {
     expect(disabled).not.toHaveAttribute("tabindex");
   });
 
+  it.each([undefined, false, "false", "page"] as const)("matches client current-state markup for aria-current=%s", current => {
+    const props = { href: "#current", "aria-current": current, children: "Current" };
+    const attributes = (html: string) => {
+      const host = document.createElement("div");
+      host.innerHTML = html;
+      return Object.fromEntries([...host.firstElementChild!.attributes].map(attribute => [attribute.name, attribute.value]));
+    };
+    expect(attributes(renderToString(<ServerLink {...props} />)))
+      .toEqual(attributes(renderToString(<ClientLink {...props} />)));
+  });
+
   it("supports the same render functions and button presentation in its initial state", () => {
     const children = vi.fn(({ isDisabled }) => isDisabled ? "Unavailable" : "Open");
     const host = document.createElement("div");

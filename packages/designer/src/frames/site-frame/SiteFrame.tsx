@@ -41,9 +41,9 @@ function assertOverlayScene(children: ReactNode, headerSurface: "solid" | "trans
 }
 
 /**
- * The page frame: skip link, banner, the page's one `<main>`, contentinfo.
+ * The page frame: skip link, banner, the page's one main landmark, contentinfo.
  *
- * The frame owns the single `<main>` (`id` {@link SITE_MAIN_ID},
+ * The frame owns the single main landmark (`id` {@link SITE_MAIN_ID},
  * `tabIndex={-1}`) and the skip link that targets it; the view passed as
  * `children` renders chrome-free and landmark-free inside it. The chrome is
  * Designer's `SiteHeader`, `Brandmark` and `SiteFooter`, mounted from
@@ -102,6 +102,7 @@ export function SiteFrame({ shell, presentation, resolveCopy, resolveAsset, chil
       <SiteSkipLink targetId={SITE_MAIN_ID} label={resolved.skipLink} followHeaderGround={resolved.header.surface === "glass"} />
       <SiteHeader
         surface={resolved.header.surface}
+        position={resolved.header.position}
         tone={resolved.header.tone}
         className={resolved.header.surface === "glass" ? "site-header-ground-aware" : undefined}
         brand={brandmark}

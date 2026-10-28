@@ -73,8 +73,8 @@ it.each([false, true])("renders the mobile header-bar primary as a ghost icon ac
   const container = output(shell, server);
   const action = within(container.querySelector(".site-header-actions") as HTMLElement).getByRole("link", { name: "Start now" });
   expect(action).toHaveAttribute("data-header-primary");
-  expect(action).not.toHaveClass("bg-accent");
-  expect(action).toHaveClass("text-ink-primary", "hover:bg-surface-sunken");
+  expect(action).not.toHaveClass("bg-action");
+  expect(action).toHaveClass("text-ink-primary", "hover:bg-control-tonal-hover");
   expect(action.querySelector("svg")).toHaveAttribute("aria-hidden", "true");
   expect(action.querySelector("svg path")).toHaveAttribute("d", "M4 12h16");
   expect(action.querySelector("span")).toHaveClass("sr-only", "tablet:not-sr-only");
@@ -153,7 +153,7 @@ it.each(["front-door", "admin", "demo"] as const)("keeps the %s brand leading an
     expect(brand).toHaveAttribute("href", "https://example.com/");
     const link = within(header).getByRole("link", { name: kind });
     expect(link).toHaveAttribute("aria-current", "page");
-    expect(link).toHaveClass("hover:bg-surface-sunken");
+    expect(link).toHaveClass("hover:bg-control-tonal-hover");
     expect(link.querySelector("svg")).not.toBeNull();
     expect(header.querySelectorAll("a")).toHaveLength(2);
   }
@@ -253,8 +253,8 @@ it.each([false, true])("puts every full-label action in defined panel order in e
   const mobileActions = panel.querySelector(".site-header-desktop-actions")!;
   expect(mobileActions).not.toBeNull();
   expect([...mobileActions.querySelectorAll("a")].map(link => [link.getAttribute("href"), link.textContent])).toEqual([["/contact", "Contact"], ["/sign-in", "Sign in"], ["/start", "Start now"]]);
-  expect(mobileActions.querySelectorAll("a")[2]).toHaveClass("bg-accent");
-  expect(mobileActions.querySelectorAll("a")[0]).not.toHaveClass("bg-accent");
+  expect(mobileActions.querySelectorAll("a")[2]).toHaveClass("bg-action");
+  expect(mobileActions.querySelectorAll("a")[0]).not.toHaveClass("bg-action");
   expect(mobileActions.querySelectorAll("a")).toHaveLength(3);
   expect(mobileActions).toHaveTextContent("ContactSign inStart now");
   // Optional action icons remain decorative and labels remain accessible.
@@ -361,6 +361,6 @@ it.each([false, true])("gives the ghost mobile action the toggle's inverse ink o
     expect(action).toHaveClass(token);
   }
   expect(action).not.toHaveClass("text-ink-primary");
-  expect(action).not.toHaveClass("hover:bg-surface-sunken");
+  expect(action).not.toHaveClass("hover:bg-control-tonal-hover");
   expect(action).not.toHaveClass("focus-visible:outline-accent");
 });

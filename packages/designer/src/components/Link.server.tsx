@@ -1,6 +1,6 @@
 import { createElement, type ComponentPropsWithoutRef } from "react";
 import type { LinkRenderProps } from "react-aria-components";
-import type { LinkProps } from "./Link.types.js";
+import type { LinkProps } from "./Link.client.js";
 import { buttonClassName, controlSizeStyle, controlStateStyle } from "./button-classes.js";
 import { cx } from "./internal/cx.js";
 import { LINK_BASE, LINK_VARIANT_CLASSES } from "./Link.styles.js";
@@ -21,7 +21,7 @@ export function Link({ variant = "default", buttonVariant, buttonSize, ground = 
   // Interaction/router options belong to the client entry, never DOM attributes.
   for (const [name, value] of Object.entries(rest)) {
     if (name.startsWith("aria-") || name.startsWith("data-")
-      || ["id", "slot", "title", "lang", "dir", "tabIndex", "target", "rel", "download", "ping", "referrerPolicy", "hrefLang", "type", "accessKey", "hidden", "draggable", "spellCheck", "translate", "role"].includes(name)) native[name] = value;
+      || ["id", "slot", "title", "lang", "dir", "tabIndex", "target", "rel", "download", "ping", "referrerPolicy", "hrefLang", "type", "accessKey", "hidden", "inert", "draggable", "spellCheck", "translate", "role"].includes(name)) native[name] = value;
   }
   const props = {
     ...native,

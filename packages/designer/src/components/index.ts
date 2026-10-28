@@ -83,10 +83,10 @@ export type { CardProps, CardVariant, CardGround } from "./Card.js";
 export { Breadcrumb } from "./Breadcrumb.js";
 export type { BreadcrumbProps, BreadcrumbItemProps } from "./Breadcrumb.js";
 
-export { Link } from "./Link.js";
+export { Link } from "./Link.client.js";
 export { buttonLinkClassName, iconButtonClassName, iconButtonLinkClassName } from "./button-classes.js";
 export type { ControlGround, IconButtonClassOptions, IconButtonLinkGround, IconButtonShape, IconButtonSize } from "./button-classes.js";
-export type { LinkProps, LinkVariant } from "./Link.js";
+export type { LinkProps, LinkVariant } from "./Link.client.js";
 
 export { Checkbox } from "./Checkbox.js";
 export type { CheckboxProps, CheckboxGroupProps } from "./Checkbox.js";
