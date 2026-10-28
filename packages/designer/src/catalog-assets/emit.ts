@@ -6,6 +6,23 @@ import { LUCIDE_NOTICES } from './licenses.js';
 export type AssetFile = { path: string; mediaType: string; bytes: Uint8Array };
 export type RasterizeSvg = (svg: string, size: number) => Promise<Uint8Array>;
 const encode=(value:string):Uint8Array=>new TextEncoder().encode(value);
+/** Resolve the vector's closed dark-scheme rule before rasterization (rasterizers do not apply browser media queries). */
+export function faviconForScheme(text:string, scheme:'light'|'dark'):string {
+ inspectSvg(text,{favicon:true});
+ const rule=/<style>@media \(prefers-color-scheme: dark\)\{svg\{color:([^{};]+)(?:;fill:([^{};]+))?\}\}<\/style>/.exec(text);
+ if(scheme!=='light'&&scheme!=='dark')throw new AssetValidationError('invalid favicon scheme');
+ if(scheme==='dark'&&!rule)throw new AssetValidationError('favicon requires a reversed dark variant');
+ let result=text.trim().replace(/<style>[\s\S]*?<\/style>/,'');
+ if(scheme==='dark')result=result.replace(/^<svg\b[^>]*>/,root=>{
+  for(const [name,value] of [['color',rule![1]],['fill',rule![2]]] as const){
+   if(value===undefined)continue;
+   const attribute=new RegExp(`\\b${name}\\s*=\\s*(?:"[^"]*"|'[^']*')`);
+   root=attribute.test(root)?root.replace(attribute,`${name}="${value}"`):root.replace(/>$/,` ${name}="${value}">`);
+  }
+  return root;
+ });
+ inspectSvg(result);return result;
+}
 function svg(profile:Resolved,id:string,favicon=false): string { const member=profile.members[id];if(!member||typeof member.value.light!=='string') throw new AssetValidationError(`missing SVG ${id}`);const text=member.value.light;inspectSvg(text,{favicon});return text; }
 /** Reject truncated or mis-sized PNG responses from the renderer before any file is offered. */
 export function pngDimensions(bytes:Uint8Array): {width:number;height:number} {
@@ -34,15 +51,15 @@ export function emitIdentityFiles(profile:Resolved):AssetFile[]{
  const names: Record<string,string>={'assets.lockup.positive':'lockup-positive.svg','assets.lockup.reversed':'lockup-reversed.svg','assets.mark.positive':'mark-positive.svg','assets.mark.reversed':'mark-reversed.svg','assets.mark.mono':'mark-mono.svg'};
  return Object.entries(names).map(([id,path])=>({path,mediaType:'image/svg+xml',bytes:encode(svg(profile,id))}));
 }
-export async function emitWebIcons(profile:Resolved,input:{name:string;rasterize:RasterizeSvg}):Promise<AssetFile[]> {
+export async function emitWebIcons(profile:Resolved,input:{name:string;rasterize:RasterizeSvg;scheme?:'light'|'dark'}):Promise<AssetFile[]> {
  if(!input.name.trim()||typeof input.rasterize!=='function')throw new AssetValidationError('name and rasterizer required');
- const favicon=svg(profile,'assets.favicon.vector',true),standard=svg(profile,'assets.app-icon.standard'),maskable=svg(profile,'assets.app-icon.maskable');
+ const vector=svg(profile,'assets.favicon.vector',true),favicon=faviconForScheme(vector,input.scheme??'light'),standard=svg(profile,'assets.app-icon.standard'),maskable=svg(profile,'assets.app-icon.maskable');
  const raster=async(text:string,size:number):Promise<Uint8Array>=>{const bytes=await input.rasterize(text,size);const d=pngDimensions(bytes);if(d.width!==size||d.height!==size)throw new AssetValidationError(`rasterizer returned wrong size for ${size}`);return bytes;};
- const small=profile.members['assets.favicon.small'];let png32:Uint8Array;
+ const small=input.scheme==='dark'?undefined:profile.members['assets.favicon.small'];let png32:Uint8Array;
  if(small){const value=small.value.light;if(!value||typeof value!=='object'||Array.isArray(value))throw new AssetValidationError('favicon.small must be a raster object');const raster=value as Record<string,unknown>;if(raster.mediaType!=='image/png'||raster.width!==32||raster.height!==32||typeof raster.data!=='string'||!raster.data||!/^[A-Za-z0-9+/]+=*$/.test(raster.data))throw new AssetValidationError('favicon.small requires PNG base64 data and 32x32 metadata');png32=Uint8Array.from(atob(raster.data),c=>c.charCodeAt(0));const d=pngDimensions(png32);if(d.width!==32||d.height!==32)throw new AssetValidationError('favicon.small must be 32x32');}else png32=await raster(favicon,32);
- const png16=await raster(favicon,16);const output:AssetFile[]=[{path:'favicon.svg',mediaType:'image/svg+xml',bytes:encode(favicon)},{path:'favicon.ico',mediaType:'image/x-icon',bytes:makeIco(png16,png32)},{path:'favicon-32.png',mediaType:'image/png',bytes:png32}];
+ const png16=await raster(favicon,16),png48=await raster(favicon,48);const output:AssetFile[]=[{path:'favicon.svg',mediaType:'image/svg+xml',bytes:encode(input.scheme===undefined?vector:favicon)},{path:'favicon.ico',mediaType:'image/x-icon',bytes:makeIco(png16,png32)},{path:'favicon-16.png',mediaType:'image/png',bytes:png16},{path:'favicon-32.png',mediaType:'image/png',bytes:png32},{path:'favicon-48.png',mediaType:'image/png',bytes:png48}];
  for(const [path,text,size] of [['apple-touch-180.png',maskable,180],['icon-192.png',standard,192],['icon-512.png',standard,512],['maskable-192.png',maskable,192],['maskable-512.png',maskable,512]] as const)output.push({path,mediaType:'image/png',bytes:await raster(text,size)});
- const surface=profile.members['tokens.surface-color.base']?.css.light;if(!surface)throw new AssetValidationError('manifest requires surface base');
+ const surface=profile.members['tokens.surface-color.base']?.css[input.scheme??'light']??profile.members['tokens.surface-color.base']?.css.light;if(!surface)throw new AssetValidationError('manifest requires surface base');
  const manifest={name:input.name,short_name:input.name,display:'standalone',theme_color:surface,background_color:surface,icons:[{src:'icon-192.png',sizes:'192x192',type:'image/png',purpose:'any'},{src:'icon-512.png',sizes:'512x512',type:'image/png',purpose:'any'},{src:'maskable-192.png',sizes:'192x192',type:'image/png',purpose:'maskable'},{src:'maskable-512.png',sizes:'512x512',type:'image/png',purpose:'maskable'}]};
  output.push({path:'site.webmanifest',mediaType:'application/manifest+json',bytes:encode(JSON.stringify(manifest,null,2)+'\n')});return output;
 }

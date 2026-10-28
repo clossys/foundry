@@ -1,0 +1,42 @@
+{
+  "$extensions": {
+    "com.clossys.fill": {
+      "id": "foundry/assets.video",
+      "slot": "assets.video",
+      "source": "foundry",
+      "mode": "implementation",
+      "sourceAddress": "catalog-assets/media.ts",
+      "relation": "same-contract",
+      "builtOn": [],
+      "conforms": [],
+      "evidence": [],
+      "author": "foundry",
+      "trust": "foundry",
+      "license": "MIT",
+      "status": "draft",
+      "reads": {
+        "tokens": [],
+        "assets": []
+      }
+    },
+    "com.clossys.default": {
+      "tier": "Custom",
+      "reason": "no shadcn@aria item"
+    }
+  },
+  "assets": {
+    "video": {
+      "default": {
+        "$type": "rules",
+        "$value": {
+          "src": "data:video/webm;base64,GkXfo59ChoEBQveBAULygQRC84EIQoKEd2VibUKHgQJChYECGFOAZwEAAAAAAAHuEU2bdLpNu4tTq4QVSalmU6yBoU27i1OrhBZUrmtTrIHWTbuMU6uEElTDZ1OsggEkTbuMU6uEHFO7a1OsggHY7AEAAAAAAABZAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAVSalmsCrXsYMPQkBNgIxMYXZmNjEuNy4xMDNXQYxMYXZmNjEuNy4xMDNEiYhAj0AAAAAAABZUrmvJrgEAAAAAAABA14EBc8WIX3TYWJkMy2+cgQAitZyDdW5kiIEAhoVWX1ZQOYOBASPjg4Q7msoA4JGwggFAuoG0moECVbCEVbmBARJUw2dAf3Nzn2PAgGfImUWjh0VOQ09ERVJEh4xMYXZmNjEuNy4xMDNzc9pjwItjxYhfdNhYmQzLb2fIpUWjh0VOQ09ERVJEh5hMYXZjNjEuMTkuMTAxIGxpYnZweC12cDlnyKFFo4hEVVJBVElPTkSHkzAwOjAwOjAxLjAwMDAwMDAwMAAfQ7Z1queBAKOlgQAAgIJJg0IAE/ALNgA4JBwYSgAAMGAAABO4GAACYk8bqOAaABxTu2uRu4+zgQC3iveBAfGCAanwgQM=",
+          "mediaType": "video/webm",
+          "width": 320,
+          "height": 180,
+          "reducedMotion": "poster",
+          "poster": "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAzMjAgMTgwIj48cmVjdCB3aWR0aD0iMzIwIiBoZWlnaHQ9IjE4MCIgZmlsbD0iIzgwODA4MCIvPjwvc3ZnPg=="
+        }
+      }
+    }
+  }
+}

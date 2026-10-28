@@ -1,6 +1,6 @@
 /** @vitest-environment node */
 import { describe, expect, it } from "vitest";
-import { loadCatalogBundles } from "../catalog-bundles.js";
+import { loadCatalogBundles, installedHeadlessLibrary } from "../catalog-bundles.js";
 import { loadCatalog } from "./index.js";
 import { applyLibraryChange, libraryHash, resolve } from "./api.js";
 import { emittedTokenProperties } from "./emit.js";
@@ -72,6 +72,13 @@ const NOT_CHOSEN: string[] = [];
 const reasons = (plan: ReturnType<typeof planComponentDefaults>, leaf: string) => plan.rows.find(row => row.slot === `components.${leaf}`)!.reasons.join(" || ");
 
 describe("component default fills", () => {
+  it('selects the honest Custom SemanticContent default without inventing an upstream item',()=>{
+    const {input,bundles}=setup({slots:['components.semantic-content'],preference:['shadcn@aria','foundry'],installedRac:installedHeadlessLibrary()});
+    const plan=planComponentDefaults(input);
+    expect(plan.rows).toEqual([expect.objectContaining({slot:'components.semantic-content',status:'default',source:'foundry',fill:'foundry/components.semantic-content'})]);
+    const fill=bundles.componentFills.find(doc=>doc.$extensions['com.clossys.fill'].slot==='components.semantic-content')!;
+    expect(fill.$extensions).toHaveProperty(['com.clossys.default'],{tier:'Custom',reason:'no shadcn@aria item'});
+  });
   it("defaults every eligible leaf by preference and owner pick, with a statically clean whole set", () => {
     const { input } = setup();
     const plan = planComponentDefaults(input);

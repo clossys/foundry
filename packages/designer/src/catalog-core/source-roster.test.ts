@@ -2,6 +2,7 @@ import { readdirSync, readFileSync } from "node:fs";
 import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
+import {rosterOffers,rosterRow,sourceRoster} from './token-contract.js';
 
 const catalog = resolve(dirname(fileURLToPath(import.meta.url)), "../catalog");
 interface SlotRow { id: string; layer: string; contract: { members: { mode: string; names?: string[] }; allowedReads: { tokens: string[]; assets: string[] } } }
@@ -15,6 +16,12 @@ const shadcnFills = new Map(readdirSync(resolve(catalog, "fills/shadcn@aria")).f
 const unmapped = (slot: string, fill: FillRow): string[] => (slots.get(slot)!.contract.members.names ?? []).filter(member => !(fill.members ?? []).includes(member) || !(member in (fill.propMap ?? {})));
 
 describe("shadcn-first member contracts", () => {
+  it("offers Custom-owned defaults only for the three existing leaves with no shadcn@aria item",()=>{
+    for(const id of ['assets.image','assets.video','components.semantic-content']){
+      expect(rosterOffers(sourceRoster,id)).toEqual(['foundry','custom']);
+      expect(rosterRow(sourceRoster,id)?.offers).toContainEqual(expect.objectContaining({source:'foundry',reason:'no external covers'}));
+    }
+  });
   it("every slot shadcn@aria holds names only members shadcn@aria ships (no Foundry-only member forces a Foundry pick)", () => {
     const offenders = [...shadcnFills].flatMap(([slot, fill]) => unmapped(slot, fill).map(member => `${slot}.${member}`));
     expect(offenders).toEqual([]);

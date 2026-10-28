@@ -1,0 +1,41 @@
+{
+  "$extensions": {
+    "com.clossys.fill": {
+      "id": "foundry/assets.image",
+      "slot": "assets.image",
+      "source": "foundry",
+      "mode": "implementation",
+      "sourceAddress": "catalog-assets/media.ts",
+      "relation": "same-contract",
+      "builtOn": [],
+      "conforms": [],
+      "evidence": [],
+      "author": "foundry",
+      "trust": "foundry",
+      "license": "MIT",
+      "status": "draft",
+      "reads": {
+        "tokens": [],
+        "assets": []
+      }
+    },
+    "com.clossys.default": {
+      "tier": "Custom",
+      "reason": "no shadcn@aria item"
+    }
+  },
+  "assets": {
+    "image": {
+      "default": {
+        "$type": "rules",
+        "$value": {
+          "kind": "illustration",
+          "src": "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAzMjAgMTgwIj48cmVjdCB3aWR0aD0iMzIwIiBoZWlnaHQ9IjE4MCIgZmlsbD0iIzgwODA4MCIvPjwvc3ZnPg==",
+          "width": 320,
+          "height": 180,
+          "decorative": true
+        }
+      }
+    }
+  }
+}
