@@ -1,6 +1,7 @@
 import { ShellI18nProvider, ShellLocaleRoot } from "#designer-frame-i18n";
 import { isValidElement, type ReactElement, type ReactNode } from "react";
-import { Icon } from "@clossys/designer/components/server";
+import { Link } from "../../components/Link.js";
+import { Icon, SemanticContent } from "@clossys/designer/components/server";
 import { Brandmark, SiteFooter, SiteHeader } from "@clossys/designer/shell/server";
 import { LandingView as RuntimeLandingView } from "@clossys/designer/frames";
 import { LandingView as ServerLandingView } from "./landing/web/views/LandingView.server.js";
@@ -9,7 +10,6 @@ import { RenderError } from "./landing/internal/errors.js";
 import { SiteNavDisclosure } from "./NavDisclosure.boundary.client.js";
 import { SiteSkipLink } from "./SkipLink.boundary.client.js";
 import { resolveShell } from "./internal/resolveShell.js";
-import type { ResolvedSiteIconLink, ResolvedSiteLink } from "./internal/resolveShell.js";
 import { SITE_MAIN_ID } from "./types.js";
 import type { SiteFrameProps } from "./types.js";
 
@@ -17,31 +17,9 @@ import type { SiteFrameProps } from "./types.js";
 // The frames.site-shell provenance stamp (Designer dsAttrs shape), written literally: SiteFrame keeps its server-only import boundary.
 const FRAME_STAMP = { "data-ds-layer": "frames", "data-ds-leaf": "frames.site-shell", "data-ds-fill": "foundry/frames.site-shell" } as const;
 
-const LINK_CLASSES =
-  "inline-flex min-h-[var(--ui-layout-tap-target)] items-center px-xs text-inherit no-underline hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent";
-// An icon-only link has no text to widen it, so it takes the tap target in both axes, icon centred.
-const ICON_LINK_CLASSES = `${LINK_CLASSES} min-w-[var(--ui-layout-tap-target)] justify-center`;
-
-function TextLink({ link }: { readonly link: ResolvedSiteLink }) {
-  return (
-    <a href={link.href} className={LINK_CLASSES}>
-      {link.label}
-    </a>
-  );
-}
-
-function IconLink({ link }: { readonly link: ResolvedSiteIconLink }) {
-  return (
-    <a href={link.href} aria-label={link.label} className={ICON_LINK_CLASSES}>
-      <Icon glyph={link.icon} decorative />
-    </a>
-  );
-}
-
 // The menu toggle's inverse ink, so the ghost mobile action beside it reads on the same plate.
 const MOBILE_ACTION_INVERSE = "text-ink-on-inverse hover:text-ink-on-inverse focus-visible:text-ink-on-inverse hover:bg-control-tonal-inverse-hover focus-visible:outline-ink-on-inverse";
 const ENVIRONMENT_GHOST_CLASS = "site-header-environment-ghost";
-const ICON_LIST_CLASSES = "m-0 flex list-none flex-wrap items-center gap-sm p-0";
 
 function assertOverlayScene(children: ReactNode, headerSurface: "solid" | "transparent" | "glass"): void {
   // Read these live bindings only at render time: the views barrel also exports
@@ -60,31 +38,6 @@ function assertOverlayScene(children: ReactNode, headerSurface: "solid" | "trans
       && props.style === undefined && props.className === undefined) return;
   }
   throw new RenderError("resolution-failed", "shell.footer.placement overlay requires a direct hero-only LandingView with frame fit, no landmark and an overlay header; trailing content, closing content and layout overrides are unsupported.");
-}
-
-function IconLinkList({ links, className }: { readonly links: readonly ResolvedSiteIconLink[]; readonly className: string }) {
-  return (
-    <ul role="list" className={className}>
-      {links.map((link, index) => (
-        <li key={index}>
-          <IconLink link={link} />
-        </li>
-      ))}
-    </ul>
-  );
-}
-
-function LinkList({ links, className }: { readonly links: readonly ResolvedSiteLink[]; readonly className: string }) {
-  return (
-    <ul role="list" className={className}>
-      {links.map((link, index) => (
-        // Keyed by position: two links may share an href and label, and the list never reorders.
-        <li key={index}>
-          <TextLink link={link} />
-        </li>
-      ))}
-    </ul>
-  );
 }
 
 /**
@@ -129,7 +82,7 @@ export function SiteFrame({ shell, presentation, resolveCopy, resolveAsset, chil
       className={footer.placement === "overlay" ? "publisher-frame-footer-overlay pointer-events-auto w-full [margin-block-start:auto] min-w-0 [overflow-wrap:anywhere]" : undefined}
       columns={footer.columns.length ? <>{footer.columns.map((column, columnIndex) => (
         <SiteFooter.Column key={columnIndex} heading={column.heading}>
-          {column.links.map((link, linkIndex) => <a key={linkIndex} href={link.href} rel={/^https?:\/\//i.test(link.href) ? "noopener noreferrer" : undefined} className={LINK_CLASSES}>{link.label}</a>)}
+          {column.links.map((link, linkIndex) => <Link variant="standalone" key={linkIndex} href={link.href} rel={/^https?:\/\//i.test(link.href) ? "noopener noreferrer" : undefined} className="inline-flex min-h-[var(--ui-layout-tap-target)] items-center px-xs text-inherit no-underline hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent">{link.label}</Link>)}
         </SiteFooter.Column>
       ))}</> : undefined}
       secondary={<SiteFooter.Legal
@@ -145,7 +98,7 @@ export function SiteFrame({ shell, presentation, resolveCopy, resolveAsset, chil
   ) : null;
 
   return (
-    <ShellI18nProvider locale={locale}><ShellLocaleRoot><div data-frame-root="" className={`flex min-h-dvh flex-col${footer?.placement === "overlay" ? " relative" : ""}`} {...FRAME_STAMP}>
+    <ShellI18nProvider locale={locale}><ShellLocaleRoot><SemanticContent as="div" data-frame-root="" className={`flex min-h-dvh flex-col${footer?.placement === "overlay" ? " relative" : ""}`} {...FRAME_STAMP}>
       <SiteSkipLink targetId={SITE_MAIN_ID} label={resolved.skipLink} followHeaderGround={resolved.header.surface === "glass"} />
       <SiteHeader
         surface={resolved.header.surface}
@@ -156,20 +109,20 @@ export function SiteFrame({ shell, presentation, resolveCopy, resolveAsset, chil
         navPlacement={resolved.navPlacement}
         actions={actions}
       />
-      <main id={SITE_MAIN_ID} tabIndex={-1} className="flex w-full flex-1 flex-col">
+      <SemanticContent as="main" id={SITE_MAIN_ID} tabIndex={-1} className="flex w-full flex-1 flex-col">
         {children}
-      </main>
+      </SemanticContent>
       {footer?.placement === "overlay" ? (
         // Intrinsic footer height is reserved within the same growing hero scene.
         // No absolute viewport box can cover hero content when copy or links reflow.
-        <div
+        <SemanticContent as="div"
           data-frame-footer-overlay=""
           className="flex flex-col shrink-0 min-w-0 pointer-events-none z-[var(--ui-z-sticky)]"
         >
           {footerContent}
-        </div>
+        </SemanticContent>
       ) : footerContent}
       {toasts}
-    </div></ShellLocaleRoot></ShellI18nProvider>
+    </SemanticContent></ShellLocaleRoot></ShellI18nProvider>
   );
 }

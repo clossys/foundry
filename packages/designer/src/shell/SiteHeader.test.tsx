@@ -257,11 +257,11 @@ describe("SiteHeader", () => {
       expect(label.className.split(" ")).toEqual(["sr-only", "tablet:not-sr-only"]);
     });
 
-    it("marks only the current link with aria-current=true and a non-colour cue", () => {
+    it("marks only the current link with aria-current=page and a non-colour cue", () => {
       renderEnvironments("admin");
       const app = screen.getByRole("link", { name: "App" });
       const admin = screen.getByRole("link", { name: "Admin" });
-      expect(admin).toHaveAttribute("aria-current", "true");
+      expect(admin).toHaveAttribute("aria-current", "page");
       expect(app).not.toHaveAttribute("aria-current");
       expect(admin.style.boxShadow).toContain("inset");
       expect(app.style.boxShadow).toBe("");
@@ -302,7 +302,7 @@ describe("SiteHeader", () => {
     it("ships from the server entry and renders without client code", () => {
       const html = renderToStaticMarkup(<ServerSiteHeader.ActionLink href="/" label="Home" icon={Home} isCurrent />);
       expect(html).toContain('href="/"');
-      expect(html).toContain('aria-current="true"');
+      expect(html).toContain('aria-current="page"');
       expect(html).toContain(">Home</span>");
     });
   });

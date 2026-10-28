@@ -1,20 +1,21 @@
 import { useId, type ReactNode } from "react";
-import { buttonLinkClassName, mergeUiClasses } from "@clossys/designer/components/server";
+import { buttonLinkClassName, mergeUiClasses, NativeAction, SemanticContent } from "@clossys/designer/components/server";
 import type { ResolvedSiteShell } from "./internal/resolveShell.js";
+import { FrameRegion } from "./FrameRegion.js";
 import { NavLinks } from "./NavLinks.js";
 
 const TOGGLE_CLASSES = buttonLinkClassName("ghost", "sm")
   .split(" ")
   .filter(token => !token.includes("transition-"))
-  .join(" ");
+  .join(" ") + " bg-transparent active:bg-surface-sunken transition-none";
 const TAP_TARGET = "var(--ui-layout-tap-target, 44px)";
 
 /** Initial Designer disclosure markup for raw server imports; the client bridge supplies interaction. */
 function ServerNavDisclosure({ label, triggerLabel, children }: { readonly label: string; readonly triggerLabel: string; readonly children: ReactNode }) {
   const panelId = useId();
   return (
-    <nav aria-label={label}>
-      <button
+    <FrameRegion aria-label={label}>
+      <NativeAction
         type="button"
         aria-label={triggerLabel}
         aria-expanded={false}
@@ -22,12 +23,12 @@ function ServerNavDisclosure({ label, triggerLabel, children }: { readonly label
         className={mergeUiClasses(TOGGLE_CLASSES, "nav-disclosure-toggle")}
         style={{ minHeight: TAP_TARGET, minWidth: TAP_TARGET }}
       >
-        <><span className="nav-disclosure-icon" aria-hidden="true"><span /><span /></span></>
-      </button>
-      <div id={panelId} className="nav-disclosure-panel">
+        <><SemanticContent as="span" className="nav-disclosure-icon" aria-hidden="true"><SemanticContent as="span" /><SemanticContent as="span" /></SemanticContent></>
+      </NativeAction>
+      <SemanticContent as="div" id={panelId} className="nav-disclosure-panel">
         {children}
-      </div>
-    </nav>
+      </SemanticContent>
+    </FrameRegion>
   );
 }
 

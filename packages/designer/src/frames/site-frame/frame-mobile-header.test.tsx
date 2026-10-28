@@ -152,7 +152,7 @@ it.each(["front-door", "admin", "demo"] as const)("keeps the %s brand leading an
     const brand = within(header).getByRole("link", { name: "Example home" });
     expect(brand).toHaveAttribute("href", "https://example.com/");
     const link = within(header).getByRole("link", { name: kind });
-    expect(link).toHaveAttribute("aria-current", "true");
+    expect(link).toHaveAttribute("aria-current", "page");
     expect(link).toHaveClass("hover:bg-surface-sunken");
     expect(link.querySelector("svg")).not.toBeNull();
     expect(header.querySelectorAll("a")).toHaveLength(2);
