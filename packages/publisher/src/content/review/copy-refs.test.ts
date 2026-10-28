@@ -72,7 +72,7 @@ describe("Review Writer references", () => {
     const { input, resolver } = referencedInput();
     const fallback: CopyResolver = ref => {
       const resolved = resolver(ref);
-      return resolved && { ...resolved, servedLocale: "de", chain: [ref.locale!, "de"] };
+      return resolved && { ...resolved, locale: "de", servedLocale: "de", chain: [ref.locale!, "de"] };
     };
     const report = reviewCandidate({ ...input, copyResolver: fallback });
     expect(report.findings).toEqual([]);
@@ -81,7 +81,7 @@ describe("Review Writer references", () => {
       { key: "title", locale: "en", source: "writer" as const, ref: { id: "meta.title" } },
       { key: "description", locale: "en", source: "writer" as const, ref: { id: "meta.description" } },
     ] };
-    const metaResolver: CopyResolver = ref => ({ ref, text: "Metadata", recordId: ref.id, entryId: ref.id, revision: "1", locale: ref.locale!, servedLocale: "de", chain: [ref.locale!, "de"], source: { kind: "consumer", reference: "copy-fixture" } });
+    const metaResolver: CopyResolver = ref => ({ ref, text: "Metadata", recordId: ref.id, entryId: ref.id, revision: "1", locale: "de", servedLocale: "de", chain: [ref.locale!, "de"], source: { kind: "consumer", reference: "copy-fixture" } });
     expect(checkPageMetadata({ ...input.registry.slots[0]!, locales: ["en"] }, candidate, undefined, { resolver: metaResolver }).length).toBeGreaterThan(0);
   });
 

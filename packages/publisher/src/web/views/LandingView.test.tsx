@@ -548,7 +548,7 @@ describe("LandingView reviewed action-pair and resolved copy contracts", () => {
     expect(legacy.querySelector("style")).toBeNull();
     const single = dom({ document: PAGE, callToAction: { copy: "hero", actions: [pair[0]!] } });
     expect(single.querySelector("style")).toBeNull();
-    const ordinary = renderToStaticMarkup(<webServerEntry.SectionedView document={page} />);
+    const ordinary = renderToStaticMarkup(<webServerEntry.SectionedView document={{ ...page, resolutions: page.resolutions.map(resolution => ({ ...resolution, servedLocale: resolution.locale, chain: [resolution.locale] })) }} />);
     expect(ordinary).not.toContain("data-landing-action-pair");
     expect(ordinary).not.toContain("<style");
   });

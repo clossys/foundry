@@ -1,3 +1,4 @@
+import type { ContentPreviewProvenance } from "./preview/provenance.js";
 import type { ReactElement } from "react";
 import type { Composition, CopyField, CopyFinding, ContentWriterContext } from "../content/composition.js";
 import type { ContentCandidate, ContentRegistry, ContentSlot } from "../content/model.js";
@@ -42,6 +43,7 @@ export interface PreparedContentRoute extends ContentRouteSelection {
   readonly metadata: ContentRouteMetadata;
   readonly needs: readonly ContentRouteNeed[];
   readonly copyFindings?: readonly CopyFinding[];
+  readonly provenance?: ContentPreviewProvenance;
   readonly node?: ReactElement;
 }
 /** Version 2 is independent of the retiring plan/layout registration contract. */

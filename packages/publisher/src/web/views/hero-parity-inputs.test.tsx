@@ -83,15 +83,21 @@ describe("hero parity authored inputs", () => {
 });
 
 for (const { name, View } of VIEWS) {
+  // Designer's moved LandingView retains its legacy resolution contract; Publisher requires the Writer trace.
+  const resolvedForView = (options: Record<string, unknown> = {}): ResolvedSectionedViewDocument => {
+    const document = resolved(options);
+    return name.includes("SectionedView") ? { ...document, resolutions: document.resolutions.map(entry => ({ ...entry, servedLocale: entry.locale, chain: [entry.locale] })) } : document;
+  };
+
   describe(name, () => {
     it.each(FIELDS)("refuses invalid direct resolved %s without echoing its value", field => {
-      refusal(() => renderToStaticMarkup(<View document={resolved({ [field]: "PAYLOAD-SENTINEL" })} landmark="none" />), field);
+      refusal(() => renderToStaticMarkup(<View document={resolvedForView({ [field]: "PAYLOAD-SENTINEL" })} landmark="none" />), field);
     });
 
     for (const mode of ["ssr", "client"] as const) {
       it(`${mode} keeps omitted and explicit hero defaults byte-identical`, () => {
-        const omitted = output(<View document={resolved()} landmark="none" />, mode);
-        const explicit = output(<View document={resolved(DEFAULTS)} landmark="none" />, mode);
+        const omitted = output(<View document={resolvedForView()} landmark="none" />, mode);
+        const explicit = output(<View document={resolvedForView(DEFAULTS)} landmark="none" />, mode);
         expect(explicit.innerHTML).toBe(omitted.innerHTML);
         const intro = omitted.querySelector<HTMLElement>("[data-section-intro]")!;
         expect(intro.style.maxWidth).toBe("var(--ui-width-prose-max, 48rem)");
@@ -102,7 +108,7 @@ for (const { name, View } of VIEWS) {
       for (const ground of ["base", "sunken", "inverse"] as const satisfies readonly SectionedViewGround[]) {
         for (const size of ["display", "compact"] as const) {
           it(`${mode} forwards muted, wide and display controls on ${ground} ${size} hero`, () => {
-            const root = output(<View document={resolved({ ...OPTED_IN, ground, size })} landmark="none" />, mode);
+            const root = output(<View document={resolvedForView({ ...OPTED_IN, ground, size })} landmark="none" />, mode);
             const intro = root.querySelector<HTMLElement>("[data-section-intro]")!;
             const eyebrow = intro.querySelector("p")!;
             const heading = intro.querySelector("h1")!;

@@ -1,3 +1,4 @@
+import { copyLocaleProvenance } from "../../content/copy-provenance.js";
 import { applyContentGrounds, planContentGrounds } from "../../core/content-ground.js";
 import { projectStatusListItems } from "../../core/status-list-catalog.js";
 import { assertClosedData, assertCanonicalContentSection } from "./SectionedViewCanonical.js";
@@ -253,9 +254,10 @@ export function assertRenderableSectionedViewDocument(document: unknown): assert
   for (let index = 0; index < candidate.resolutions.length; index += 1) {
     if (!Object.hasOwn(candidate.resolutions, index)) throw new Error(`resolutions.${index} is a sparse provenance hole.`);
     const resolution = candidate.resolutions[index];
-    if (!plain(resolution) || !closed(resolution, ["ref", "text", "recordId", "revision", "locale", "source", "entryId", "approval"]) || !nonBlank(resolution.text) || !nonBlank(resolution.recordId) || !nonBlank(resolution.revision) || !nonBlank(resolution.locale) || !nonBlank(resolution.entryId) || !validCopyRef(resolution.ref) || !validResolutionApproval(resolution.approval) || !plain(resolution.source) || !closed(resolution.source, ["kind", "reference"]) || !["consumer", "generated", "imported"].includes(resolution.source.kind as string) || !nonBlank(resolution.source.reference)) {
+    if (!plain(resolution) || !closed(resolution, ["ref", "text", "recordId", "revision", "locale", "servedLocale", "chain", "source", "entryId", "approval"]) || !nonBlank(resolution.text) || !nonBlank(resolution.recordId) || !nonBlank(resolution.revision) || !nonBlank(resolution.locale) || !nonBlank(resolution.entryId) || !validCopyRef(resolution.ref) || !validResolutionApproval(resolution.approval) || !plain(resolution.source) || !closed(resolution.source, ["kind", "reference"]) || !["consumer", "generated", "imported"].includes(resolution.source.kind as string) || !nonBlank(resolution.source.reference)) {
       throw new Error(`resolutions.${index} must be complete CopyResolution provenance.`);
     }
+    copyLocaleProvenance(resolution, `resolutions.${index}`);
   }
   const sectionIds = new Set<string>();
   let heroCount = 0;

@@ -11,7 +11,7 @@ import type { ResolvedSectionedViewSection } from "../../core/sectioned-view.js"
 
 afterEach(cleanup);
 const grounds = ["base", "sunken", "inverse"] as const;
-const resolutions = [{ ref: { id: "headers.copy" }, text: "Metrics", recordId: "headers", revision: "1", locale: "en", source: { kind: "consumer", reference: "fixture" }, entryId: "headers.copy" }];
+const resolutions = [{ ref: { id: "headers.copy" }, text: "Metrics", recordId: "headers", revision: "1", locale: "en", servedLocale: "en", chain: ["en"], source: { kind: "consumer", reference: "fixture" }, entryId: "headers.copy" }];
 function statGrid(copy: { heading?: string; eyebrow?: string; description?: string }, ground: typeof grounds[number] = "base") {
   const section: ResolvedSectionedViewSection = { id: "metrics", kind: "stat-grid", ground, ...copy, items: [{ id: "users", label: "Users", value: "42" }] };
   const [{ node }] = renderSectionedViewSections({ id: "headers", resolutions, sections: [section] }, serverBlocks, {});
