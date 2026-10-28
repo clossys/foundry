@@ -2,6 +2,7 @@
 
 import * as React from "react"
 import { type VariantProps } from "class-variance-authority"
+import { controlSizeStyle, controlStateStyle } from "../button-classes.js"
 import { cn } from "../_parts/utils/index.js"
 import {
   composeRenderProps,
@@ -94,4 +95,16 @@ function ToggleGroupItem({
   )
 }
 
-export { ToggleGroup, ToggleGroupItem }
+/** Local token styling; group selection stays inside the adopted peer. */
+function ControlToggleGroupItem({ style, size, ...props }: React.ComponentPropsWithRef<typeof ToggleGroupItem>) {
+  const context = React.useContext(ToggleGroupContext)
+  const actualSize = context.size || size
+  return <ToggleGroupItem {...props} size={size}
+    style={composeRenderProps(style, (style, state) => ({
+      ...controlSizeStyle(actualSize === "sm" || actualSize === "lg" ? actualSize : "md"),
+      ...controlStateStyle(state),
+      ...style,
+    }))} />
+}
+
+export { ToggleGroup, ControlToggleGroupItem as ToggleGroupItem }

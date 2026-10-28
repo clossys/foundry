@@ -580,6 +580,11 @@
  */
 @utility quiet-action {
   min-block-size: var(--ui-layout-tap-target, 44px);
+  /* Button looks use the control scale; control-h-* retains the larger hit area.
+   * Other quiet anchors keep the tap-target floor above. */
+  &.control-h-sm { min-block-size: var(--ui-control-h-sm, 28px); }
+  &.control-h-md { min-block-size: var(--ui-control-h-md, 32px); }
+  &.control-h-lg { min-block-size: var(--ui-control-h-lg, 36px); }
   &:dir(rtl) > svg:last-child {
     scale: -1 1;
   }

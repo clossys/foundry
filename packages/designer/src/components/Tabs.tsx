@@ -10,7 +10,7 @@ import {
   type TabsProps as AriaTabsProps,
 } from "react-aria-components";
 import { cx } from "./internal/cx.js";
-import { UI_ALPHA_DISABLED, UI_RING_FOCUS } from "./internal/ui-vars.js";
+import { controlSizeStyle, controlStateStyle } from "./button-classes.js";
 
 export type TabsSize = "sm" | "md" | "lg";
 
@@ -101,22 +101,26 @@ function TabsTab({ children, className, style, ...rest }: TabsTabProps) {
       {...rest}
       className={(renderProps) =>
         cx(
-          // Reserve the indicator track in every state to avoid selection jumps.
-          "cursor-default",
-          vertical ? "border-s-2" : "border-b-2",
+          "relative cursor-default",
           TAB_SIZE_CLASSES[size],
           "font-body text-ink-muted outline-none transition-colors motion-reduce:transition-none disabled:cursor-not-allowed",
-          renderProps.isSelected ? "border-accent text-ink-primary" : "border-transparent",
+          renderProps.isSelected ? "text-ink-primary" : "",
           className,
         )
       }
       style={(renderProps) => ({
-        opacity: renderProps.isDisabled ? UI_ALPHA_DISABLED : undefined,
-        boxShadow: renderProps.isFocusVisible ? UI_RING_FOCUS : undefined,
+        ...controlSizeStyle(size),
+        ...controlStateStyle(renderProps),
         ...style,
       })}
     >
-      {children}
+      {({ isSelected }) => <>
+        {children}
+        {isSelected ? <span data-tab-indicator="" aria-hidden="true" className="absolute bg-accent"
+          style={vertical
+            ? { insetInlineStart: 0, insetBlock: 0, inlineSize: "var(--ui-border-rule)" }
+            : { insetInline: 0, insetBlockEnd: 0, blockSize: "var(--ui-border-rule)" }} /> : null}
+      </>}
     </AriaTab>
   );
 }

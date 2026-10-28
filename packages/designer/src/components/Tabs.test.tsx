@@ -28,7 +28,7 @@ describe("Tabs", () => {
     expect(list).toHaveAttribute("aria-orientation", "vertical");
     expect(list.parentElement).toHaveClass("flex-row");
     expect(list).toHaveClass("flex-col", "border-s");
-    expect(screen.getByRole("tab", { name: "Details" })).toHaveClass("border-s-2");
+    expect(screen.getByRole("tab", { name: "Details" }).querySelector("[data-tab-indicator]")).toHaveStyle({ inlineSize: "var(--ui-border-rule)" });
   });
 
   it("keeps the default horizontal list, bottom indicator and root classes", () => {
@@ -37,9 +37,8 @@ describe("Tabs", () => {
     expect(list).toHaveAttribute("aria-orientation", "horizontal");
     expect(list.parentElement?.className).toBe("flex flex-col gap-md");
     expect(list.className).toBe("flex gap-xs border-b border-line-base");
-    expect(screen.getByRole("tab", { name: "Details" }).className).toBe(
-      "cursor-default border-b-2 px-md py-sm text-body-s font-body outline-none transition-colors motion-reduce:transition-none disabled:cursor-not-allowed border-accent text-ink-primary",
-    );
+    expect(screen.getByRole("tab", { name: "Details" })).toHaveClass("relative", "text-ink-primary");
+    expect(screen.getByRole("tab", { name: "Details" }).querySelector("[data-tab-indicator]")).toHaveStyle({ blockSize: "var(--ui-border-rule)" });
   });
 
   it.each(["ltr", "rtl"])("uses a column and start-edge indicators vertically in %s, with native keyboard navigation", async (dir) => {
@@ -53,22 +52,23 @@ describe("Tabs", () => {
     expect(list).toHaveClass("flex-col", "border-s", "border-line-base");
     expect(list).not.toHaveClass("border-b");
     for (const tab of screen.getAllByRole("tab")) {
-      expect(tab).toHaveClass("border-s-2");
+      expect(tab).not.toHaveClass("border-s-2");
       expect(tab).not.toHaveClass("border-b-2");
     }
-    expect(details).toHaveClass("border-accent", "text-ink-primary");
-    expect(settings).toHaveClass("border-transparent");
+    expect(details).toHaveClass("text-ink-primary");
+    expect(details.querySelector("[data-tab-indicator]")).not.toBeNull();
+    expect(settings.querySelector("[data-tab-indicator]")).toBeNull();
     details.focus();
     await user.keyboard("{ArrowDown}");
     expect(settings).toHaveFocus();
     expect(settings).toHaveAttribute("aria-selected", "true");
-    expect(settings).toHaveClass("border-accent");
+    expect(settings.querySelector("[data-tab-indicator]")).not.toBeNull();
     await user.keyboard("{ArrowUp}");
     expect(details).toHaveFocus();
     rerender(<div dir={dir}><BasicTabs orientation="horizontal" /></div>);
     expect(list).toHaveAttribute("aria-orientation", "horizontal");
     expect(list.className).toBe("flex gap-xs border-b border-line-base");
-    expect(details).toHaveClass("border-b-2");
+    expect(details.querySelector("[data-tab-indicator]")).toHaveStyle({ blockSize: "var(--ui-border-rule)" });
     expect(details).not.toHaveClass("border-s-2");
   });
 
@@ -92,7 +92,8 @@ describe("Tabs", () => {
     render(<BasicTabs size="lg" orientation="vertical" />);
     const details = screen.getByRole("tab", { name: "Details" });
     const settings = screen.getByRole("tab", { name: "Settings" });
-    expect(details).toHaveClass("border-s-2", "px-lg", "py-md", "text-body");
+    expect(details).toHaveClass("px-lg", "py-md", "text-body");
+    expect(details.querySelector("[data-tab-indicator]")).toHaveStyle({ inlineSize: "var(--ui-border-rule)" });
     expect(screen.getByRole("tablist")).not.toHaveAttribute("size");
     details.focus();
     await user.keyboard("{ArrowDown}");

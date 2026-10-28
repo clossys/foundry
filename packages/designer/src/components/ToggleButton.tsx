@@ -4,9 +4,8 @@ import {
   type ToggleButtonProps as AriaToggleButtonProps,
 } from "react-aria-components";
 import type { ButtonSize, ButtonVariant } from "./Button.js";
-import { buttonClassName, iconButtonClassName, type ControlGround } from "./button-classes.js";
+import { buttonClassName, iconButtonClassName, controlSizeStyle, controlStateStyle, type ControlGround } from "./button-classes.js";
 import { cx } from "./internal/cx.js";
-import { UI_ALPHA_DISABLED } from "./internal/ui-vars.js";
 
 export type ToggleButtonShape = "text" | "icon-only";
 
@@ -52,7 +51,7 @@ function selectedClassName(variant: ButtonVariant, ground: ControlGround): strin
 
 /** The icon control's own selected fill is the ground's opposite; a toggle binds selected to the action colour instead. */
 const iconToggleClassName = (size: ButtonSize, ground: ControlGround): string =>
-  iconButtonClassName({ size: size === "sm" ? "sm" : "md", shape: "square", ground })
+  iconButtonClassName({ size, shape: "square", ground })
     .split(" ")
     .filter((name) => !name.startsWith("aria-pressed:") && !name.startsWith("aria-expanded:"))
     .join(" ");
@@ -104,9 +103,9 @@ export function ToggleButton({
         )
       }
       style={(renderProps) => ({
-        opacity: renderProps.isDisabled ? UI_ALPHA_DISABLED : undefined,
-        outline: renderProps.isFocusVisible ? `var(--ui-border-focus, 2px) solid var(${ground === "inverse" ? "--color-focus-ring-on-inverse" : "--color-focus-ring"})` : undefined,
-        outlineOffset: renderProps.isFocusVisible ? "var(--ui-focus-offset, 2px)" : undefined,
+        ...controlSizeStyle(size),
+        ...(shape === "icon-only" ? { inlineSize: `var(--ui-control-h-${size})` } : {}),
+        ...controlStateStyle(renderProps, { ground }),
         ...(typeof style === "function" ? style(renderProps) : style),
       })}
     >

@@ -2,6 +2,7 @@
 
 import type { ComponentPropsWithRef } from "react"
 import { cva, type VariantProps } from "class-variance-authority"
+import { controlSizeStyle, controlStateStyle } from "../button-classes.js"
 import { cn } from "../_parts/utils/index.js"
 import {
   composeRenderProps,
@@ -44,4 +45,14 @@ function Toggle({
   )
 }
 
-export { Toggle, toggleVariants }
+/** Local token styling; the adopted peer above owns all interaction. */
+function ControlToggle({ style, size, ...props }: ComponentPropsWithRef<typeof Toggle>) {
+  return <Toggle {...props} size={size}
+    style={composeRenderProps(style, (style, state) => ({
+      ...controlSizeStyle(size === "sm" || size === "lg" ? size : "md"),
+      ...controlStateStyle(state),
+      ...style,
+    }))} />
+}
+
+export { ControlToggle as Toggle, toggleVariants }

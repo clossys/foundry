@@ -1556,17 +1556,8 @@
   .h-full {
     height: 100%;
   }
-  .h-lg {
-    height: var(--spacing-lg, 16px);
-  }
-  .h-md {
-    height: var(--spacing-md, 12px);
-  }
   .h-px {
     height: 1px;
-  }
-  .h-sm {
-    height: var(--spacing-sm, 8px);
   }
   .h-xl {
     height: var(--spacing-xl, 24px);
@@ -1726,6 +1717,15 @@
   }
   .quiet-action {
     min-block-size: var(--ui-layout-tap-target, 44px);
+    &.control-h-sm {
+      min-block-size: var(--ui-control-h-sm, 28px);
+    }
+    &.control-h-md {
+      min-block-size: var(--ui-control-h-md, 32px);
+    }
+    &.control-h-lg {
+      min-block-size: var(--ui-control-h-lg, 36px);
+    }
     &:dir(rtl) > svg:last-child {
       scale: -1 1;
     }
@@ -3317,6 +3317,9 @@
   .group-data-resizing\:bg-accent:is(:where(.group)[data-resizing] *) {
     background-color: var(--color-accent, oklch(0.4748 0 0));
   }
+  .placeholder\:text-ink-muted::placeholder {
+    color: var(--color-ink-muted, oklch(0.5658 0 0));
+  }
   .before\:absolute::before {
     content: var(--tw-content, "");
     position: absolute;
@@ -3531,16 +3534,6 @@
   }
   .focus-visible\:underline:focus-visible {
     text-decoration-line: underline;
-  }
-  .focus-visible\:ring-2:focus-visible {
-    --tw-ring-shadow: var(--tw-ring-inset,) 0 0 0 calc(2px + var(--tw-ring-offset-width, 0px)) var(--tw-ring-color, currentcolor);
-    box-shadow: var(--tw-inset-shadow, 0 0 #0000), var(--tw-inset-ring-shadow, 0 0 #0000), var(--tw-ring-offset-shadow, 0 0 #0000), var(--tw-ring-shadow, 0 0 #0000), var(--tw-shadow, 0 0 #0000);
-  }
-  .focus-visible\:ring-surface-inverse-raised:focus-visible {
-    --tw-ring-color: var(--color-surface-inverse-raised, oklch(0.285 0 0));
-  }
-  .focus-visible\:ring-surface-raised:focus-visible {
-    --tw-ring-color: var(--color-surface-raised, oklch(1 0 0));
   }
   .focus-visible\:outline-2:focus-visible {
     outline-style: var(--tw-outline-style, solid);

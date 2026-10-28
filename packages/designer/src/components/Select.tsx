@@ -1,6 +1,6 @@
 import { Icon } from "./Icon.js";
 import { useGlyph } from "./glyph-context.js";
-import type { ReactNode } from "react";
+import { useState, type ReactNode } from "react";
 import {
   Button as AriaButton,
   FieldError,
@@ -14,11 +14,10 @@ import {
   type SelectProps as AriaSelectProps,
   type ValidationResult,
 } from "react-aria-components";
+import { controlSizeStyle, controlStateStyle } from "./button-classes.js";
 import { cx } from "./internal/cx.js";
 import {
-  UI_ALPHA_DISABLED,
   UI_ELEVATION_FLOATING,
-  UI_RING_FOCUS,
   UI_Z_POPOVER,
 } from "./internal/ui-vars.js";
 
@@ -46,9 +45,9 @@ export type SelectWidth = "full" | "compact";
 // Trigger padding and type step per size, matching Button's size scale; md is
 // the long-standing default look.
 const SIZE_CLASSES: Record<SelectSize, string> = {
-  sm: "px-sm py-xs text-body-s",
-  md: "px-md py-sm text-body",
-  lg: "px-lg py-md text-body-l",
+  sm: "control-h-sm px-sm text-body-s",
+  md: "control-h-md px-md text-body",
+  lg: "control-h-lg px-lg text-body-l",
 };
 
 const WIDTH_CLASSES: Record<SelectWidth, string> = {
@@ -142,6 +141,7 @@ export function Select({
   if (label == null && !rest["aria-label"]?.trim() && !rest["aria-labelledby"]?.trim()) {
     throw new TypeError("Select requires a label, aria-label or aria-labelledby.");
   }
+  const [pressed, setPressed] = useState(false);
   const checkGlyph = useGlyph("assets.icon-check");
   const expandGlyph = useGlyph("assets.icon-chevron-down");
   return (
@@ -155,6 +155,8 @@ export function Select({
       {label != null ? <Label className="text-body-s text-ink-secondary font-body">{label}</Label> : null}
       <AriaButton
         isDisabled={isDisabled}
+        onPressStart={() => setPressed(true)}
+        onPressEnd={() => setPressed(false)}
         className={(renderProps) =>
           cx(
             "flex w-full items-center justify-between gap-sm rounded-control border bg-surface-raised text-ink-primary outline-none disabled:cursor-not-allowed",
@@ -164,11 +166,12 @@ export function Select({
           )
         }
         style={(renderProps) => ({
-          opacity: renderProps.isDisabled ? UI_ALPHA_DISABLED : undefined,
-          boxShadow: renderProps.isFocusVisible ? UI_RING_FOCUS : undefined,
+          ...controlSizeStyle(size),
+          ...controlStateStyle({ ...renderProps, isPressed: pressed }),
+          appearance: "none",
         })}
       >
-        <SelectValue className="truncate">
+        <SelectValue className={({ isPlaceholder }) => cx("truncate", isPlaceholder && "text-ink-muted")}>
           {({ isPlaceholder, selectedText }) =>
             isPlaceholder ? placeholder : selectedText
           }
@@ -194,6 +197,7 @@ export function Select({
               id={option.id}
               isDisabled={option.isDisabled}
               textValue={option.textValue ?? (typeof option.label === "string" ? option.label : undefined)}
+              style={state => controlStateStyle(state)}
               className={(renderProps) =>
                 cx(
                   "flex cursor-default items-center justify-between gap-sm rounded-default px-sm py-xs text-body-s font-body outline-none",

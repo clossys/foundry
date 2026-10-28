@@ -3,9 +3,8 @@ import {
   type LinkProps as AriaLinkProps,
 } from "react-aria-components";
 import type { ButtonSize, ButtonVariant } from "./Button.js";
-import { buttonClassName, type ControlGround } from "./button-classes.js";
+import { buttonClassName, controlSizeStyle, controlStateStyle, type ControlGround } from "./button-classes.js";
 import { cx } from "./internal/cx.js";
-import { UI_ALPHA_DISABLED, UI_FOCUS_OFFSET, UI_OUTLINE_FOCUS, UI_OUTLINE_FOCUS_INVERSE } from "./internal/ui-vars.js";
 
 export type LinkVariant = "default" | "muted" | "standalone";
 
@@ -112,9 +111,8 @@ export function Link({
       // `isFocusVisible`; this one did not, so a keyboard user tabbing
       // through a page had no idea where they were.
       style={(renderProps) => ({
-        opacity: isButtonLook && renderProps.isDisabled ? UI_ALPHA_DISABLED : undefined,
-        outline: renderProps.isFocusVisible ? (isButtonLook && ground === "inverse" ? UI_OUTLINE_FOCUS_INVERSE : UI_OUTLINE_FOCUS) : undefined,
-        outlineOffset: renderProps.isFocusVisible ? UI_FOCUS_OFFSET : undefined,
+        ...(isButtonLook ? controlSizeStyle(buttonSize) : {}),
+        ...controlStateStyle(renderProps, { ground: isButtonLook ? ground : "base", dimDisabled: isButtonLook }),
         ...(typeof style === "function" ? style(renderProps) : style),
       })}
     />

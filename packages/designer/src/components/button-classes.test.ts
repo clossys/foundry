@@ -111,9 +111,9 @@ describe("iconButtonClassName: size x shape x ground", () => {
   const ICON_SIZES: readonly IconButtonSize[] = ["sm", "md"];
   const SHAPES: readonly IconButtonShape[] = ["circle", "square"];
   const REST: Record<ControlGround, readonly string[]> = {
-    base: ["bg-surface-raised", "text-ink-primary", "border-line-base", "hover:bg-control-tonal-hover", "focus-visible:ring-surface-raised"],
-    sunken: ["bg-surface-raised", "text-ink-primary", "border-line-base", "hover:bg-control-tonal-hover", "focus-visible:ring-surface-raised"],
-    inverse: ["bg-surface-inverse-raised", "text-ink-on-inverse", "border-line-on-inverse", "hover:bg-surface-inverse", "focus-visible:ring-surface-inverse-raised"],
+    base: ["bg-surface-raised", "text-ink-primary", "border-line-base", "hover:bg-control-tonal-hover"],
+    sunken: ["bg-surface-raised", "text-ink-primary", "border-line-base", "hover:bg-control-tonal-hover"],
+    inverse: ["bg-surface-inverse-raised", "text-ink-on-inverse", "border-line-on-inverse", "hover:bg-surface-inverse"],
   };
 
   for (const size of ICON_SIZES) {
@@ -134,9 +134,9 @@ describe("iconButtonClassName: size x shape x ground", () => {
     }
   }
 
-  it("defaults to a md circle on base, and iconButtonLinkClassName is that same look per ground", () => {
-    expect(iconButtonClassName()).toBe(iconButtonClassName({ size: "md", shape: "circle", ground: "base" }));
-    expect(iconButtonLinkClassName()).toBe(iconButtonClassName());
+  it("defaults to a md square on base, while iconButtonLinkClassName keeps the circle per ground", () => {
+    expect(iconButtonClassName()).toBe(iconButtonClassName({ size: "md", shape: "square", ground: "base" }));
+    expect(iconButtonLinkClassName()).toBe(iconButtonClassName({ shape: "circle" }));
     for (const ground of GROUNDS) {
       expect(iconButtonLinkClassName(ground)).toBe(iconButtonClassName({ size: "md", shape: "circle", ground }));
     }

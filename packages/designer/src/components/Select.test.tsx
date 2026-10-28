@@ -133,15 +133,15 @@ describe("Select", () => {
   });
 
   it.each([
-    ["sm", "px-sm py-xs text-body-s"],
-    ["md", "px-md py-sm text-body"],
-    ["lg", "px-lg py-md text-body-l"],
+    ["sm", "control-h-sm px-sm text-body-s"],
+    ["md", "control-h-md px-md text-body"],
+    ["lg", "control-h-lg px-lg text-body-l"],
   ] as const)("size=%s sets the trigger's padding and type step", (size, classes) => {
     render(<Select label="Favorite fruit" options={FRUIT_OPTIONS} size={size} />);
     const trigger = screen.getByRole("button", { name: /Favorite fruit/ });
     const own = classes.split(" ");
     expect(trigger).toHaveClass(...own);
-    for (const cls of ["px-sm", "py-xs", "text-body-s", "px-md", "py-sm", "text-body", "px-lg", "py-md", "text-body-l"]) {
+    for (const cls of ["px-sm", "py-xs", "text-body-s", "control-h-md", "px-md", "text-body", "px-lg", "py-md", "text-body-l"]) {
       if (!own.includes(cls)) expect(trigger).not.toHaveClass(cls);
     }
     expect(trigger).not.toHaveAttribute("size");
@@ -149,7 +149,7 @@ describe("Select", () => {
 
   it("defaults to md, the long-standing trigger look", () => {
     render(<Select label="Favorite fruit" options={FRUIT_OPTIONS} />);
-    expect(screen.getByRole("button", { name: /Favorite fruit/ })).toHaveClass("px-md", "py-sm", "text-body");
+    expect(screen.getByRole("button", { name: /Favorite fruit/ })).toHaveClass("control-h-md", "px-md", "text-body");
   });
 
   it("keeps keyboard selection and the invalid border at every size", async () => {
@@ -168,7 +168,7 @@ describe("Select", () => {
   it("lets triggerClassName override the size padding", () => {
     render(<Select label="Favorite fruit" options={FRUIT_OPTIONS} size="lg" triggerClassName="px-sm" />);
     const trigger = screen.getByRole("button", { name: /Favorite fruit/ });
-    expect(trigger).toHaveClass("px-sm", "py-md", "text-body-l");
+    expect(trigger).toHaveClass("control-h-lg", "px-sm", "text-body-l");
     expect(trigger).not.toHaveClass("px-lg");
   });
 
