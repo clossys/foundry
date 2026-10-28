@@ -117,3 +117,6 @@ export function emitCompleteRoutePage(input: CompleteRoutePageSource): string {
     "}", "",
   ].join("\n");
 }
+export { createContentRouteManifest, emitContentRoutePage } from "./content-route-source.js";
+export type { CreateContentRouteManifestInput } from "./content-route-manifest.js";
+export type { ContentRouteManifest, ContentRouteRegistration } from "./content-route-types.js";
