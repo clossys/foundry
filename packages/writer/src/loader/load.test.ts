@@ -8,7 +8,7 @@ import type { CopyRef } from "../types.js";
 import { computeWriterReceipt, writeWriterReceipt } from "../digest/index.js";
 
 const manifest: WriterManifest = {
-  consumer: "example", defaultLocale: "en",
+  consumer: "example", messageSyntax: "icu-mf1", defaultLocale: "en",
   locales: [{ tag: "en", dir: "ltr", state: "active" }, { tag: "fr", dir: "ltr", state: "planned" }],
   fallback: { fr: ["en"] }, strategist: { path: "../strategist" },
   leafFreeze: { lexicon: "1", strings: "1", patterns: "1", passages: "1", narratives: "1" },

@@ -4,7 +4,7 @@ import { checkWriterICU } from "./icu.js";
 
 const string = (text: string, args: StringRecord["args"] = []): StringRecord => ({ id: "st.0123456789", leaf: "strings.actions", context: "Action", status: "draft", origin: "authored", text, args });
 const library = (source: WriterRecord[], targets: Record<string, WriterRecord[]> = {}): WriterLibrary => ({
-  manifest: { consumer: "example", defaultLocale: "en", locales: ["en", ...Object.keys(targets)].map(tag => ({ tag, dir: "ltr", state: "active" })), fallback: {}, strategist: { path: "strategist" }, leafFreeze: { lexicon: "", strings: "", patterns: "", passages: "", narratives: "" } },
+  manifest: { consumer: "example", messageSyntax: "icu-mf1", defaultLocale: "en", locales: ["en", ...Object.keys(targets)].map(tag => ({ tag, dir: "ltr", state: "active" })), fallback: {}, strategist: { path: "strategist" }, leafFreeze: { lexicon: "", strings: "", patterns: "", passages: "", narratives: "" } },
   locales: Object.fromEntries(Object.entries({ en: source, ...targets }).map(([tag, records]) => [tag, { records, documents: [] }])),
 });
 

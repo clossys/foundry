@@ -285,3 +285,4 @@ export type {
   PassageViolation,
   PassageViolationRule,
 } from "./passage.js";
+export { canonicalLocale, fallbackChain, directionFor } from "./locale.js";

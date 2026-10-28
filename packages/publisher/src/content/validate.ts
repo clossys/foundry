@@ -1,3 +1,4 @@
+import { canonicalLocale } from "@clossys/writer/locale";
 import { PAGE_META_FIELDS, validateComposition, validateCopyFields } from "./composition.js";
 import type { ContentFinding } from "./composition.js";
 import { isContentJson, isSourceAnswer } from "./json.js";
@@ -29,8 +30,15 @@ class Checks {
   locales(v: unknown, path: string): void {
     if (!this.array(v, path)) return;
     if (!v.length) this.add(path, "nonempty-locales");
-    v.forEach((entry, i) => { if (!isContentLocale(entry)) this.add(`${path}[${i}]`, "locale"); });
+    v.forEach((entry, i) => this.locale(entry, `${path}[${i}]`));
     if (new Set(v).size !== v.length) this.add(path, "duplicate-locale");
+  }
+  locale(v: unknown, path: string): void {
+    if (isContentLocale(v)) return;
+    try {
+      canonicalLocale(v);
+      this.add(path, "non-canonical-locale");
+    } catch { this.add(path, "locale"); }
   }
   integer(v: unknown, path: string): void {
     if (typeof v !== "number" || !Number.isSafeInteger(v) || v < 1) this.add(path, "positive-integer");
@@ -155,7 +163,7 @@ class Checks {
     if (!this.object(v, path)) return;
     this.text(v.consumerId, `${path}.consumerId`);
     this.locales(v.locales, `${path}.locales`);
-    if (!isContentLocale(v.defaultLocale)) this.add(`${path}.defaultLocale`, "locale");
+    this.locale(v.defaultLocale, `${path}.defaultLocale`);
     if (Array.isArray(v.locales) && !v.locales.includes(v.defaultLocale)) this.add(`${path}.defaultLocale`, "default-locale-membership");
     if (v.currentMilestoneTag !== undefined) this.text(v.currentMilestoneTag, `${path}.currentMilestoneTag`);
     if (this.array(v.deployTargets, `${path}.deployTargets`)) v.deployTargets.forEach((target, i) => {

@@ -308,7 +308,7 @@ describe("stage engine runtime boundary", () => {
       register('data:text/javascript,' + encodeURIComponent(
         "export async function resolve(specifier, context, next) {" +
         "if (specifier.startsWith('node:')) throw new Error('Node builtin reached: ' + specifier);" +
-        "if (specifier.startsWith('./') && specifier.endsWith('.js')) specifier = specifier.slice(0, -3) + '.ts';" +
+        "if ((specifier.startsWith('./') || specifier.startsWith('../')) && specifier.endsWith('.js')) specifier = specifier.slice(0, -3) + '.ts';" +
         "return next(specifier, context); }"
       ));
       const content = await import(${JSON.stringify(target)});

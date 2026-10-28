@@ -64,8 +64,9 @@ export type NarrativeRecord = PageNarrative | ChromeNarrative | LongFormNarrativ
 export type WriterRecord = LexiconRecord | StringRecord | PatternInstance | PassageRecord | NarrativeRecord;
 export interface WriterManifest {
   consumer: string;
+  messageSyntax: "icu-mf1";
   defaultLocale: string;
-  locales: { tag: string; dir: "ltr" | "rtl"; state: "active" | "planned" }[];
+  locales: { tag: string; dir: "ltr" | "rtl"; state: "active" | "planned" | "pseudo" }[];
   fallback: Record<string, string[]>;
   strategist: { path: string };
   leafFreeze: Record<WriterLayer, string>;
