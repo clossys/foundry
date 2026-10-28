@@ -50,13 +50,22 @@ function consumer() {
 }
 
 /** Foundry package source: the module file that declares the pinned export (following re-exports), read from this package's own tree. */
-function packageSource(module: string, name: string): ComponentSourceFile[] | undefined {
+function packageSource(module: string, name: string, condition: "default" | "react-server" = "default"): ComponentSourceFile[] | undefined {
   const dir = { "@clossys/designer/components": "components", "@clossys/designer/charts": "charts", "@clossys/designer/shell": "shell" }[module];
   if (!dir) return undefined;
   const read = (path: string) => existsSync(join(src, path)) ? readFileSync(join(src, path), "utf8") : undefined;
   const direct = `${dir}/${name}.tsx`;
   const candidates = existsSync(join(src, direct)) ? [direct] : readdirSync(join(src, dir)).filter(file => /\.tsx?$/.test(file) && !/\.(?:test|server)\./.test(file)).map(file => `${dir}/${file}`);
-  return exportSource(read, candidates, name);
+  const manifest = JSON.parse(readFileSync(join(src, "..", "package.json"), "utf8")) as { imports: Record<string, Record<string, string>> };
+  const packageImports = Object.fromEntries(Object.entries(manifest.imports).flatMap(([specifier, conditions]) => {
+    const target = conditions[condition] ?? conditions.default;
+    const match = target?.match(/^\.\/dist\/([\w./-]+)\.js$/);
+    if (!match || match[1]!.split("/").some(part => part === "." || part === "..")) return [];
+    const stem = match[1]!;
+    const source = [`${stem}.tsx`, `${stem}.ts`].find(path => read(path) !== undefined);
+    return source ? [[specifier, source]] : [];
+  }));
+  return exportSource(read, candidates, name, new Set(), packageImports);
 }
 
 let cached: ReturnType<typeof build> | undefined;
@@ -95,6 +104,10 @@ describe("exportSource", () => {
     "c/CycleB.ts": 'export { Cycle } from "./CycleA.js"\n',
     "c/Dangling.ts": 'export { Dangling } from "./nowhere.js"\n',
     "c/Bare.ts": 'export { Bare } from "some-package"\n',
+    "c/Conditional.tsx": 'export { Conditional } from "#conditional"\n',
+    "c/v/client.tsx": "export function Conditional() { return null }\n",
+    "c/v/server.tsx": "export function Conditional() { return null }\n",
+    "c/AliasCycle.tsx": 'export { AliasCycle } from "#cycle"\n',
   };
   const read = (path: string) => tree[path];
   it("returns the declaring file for a direct declaration, a local export list and a react-aria passthrough", () => {
@@ -111,6 +124,21 @@ describe("exportSource", () => {
   it("follows a rename and a chain of re-exports across directories", () => {
     expect(exportSource(read, ["c/Renamed.ts"], "Renamed")?.map(file => file.path)).toEqual(["c/v/inner.tsx"]);
     expect(exportSource(read, ["c/Chain.ts"], "Chain")?.map(file => file.path)).toEqual(["d/chain.tsx"]);
+  });
+  it("follows only the declared package-import source for the active runtime condition", () => {
+    for (const condition of ["client", "server"]) {
+      const path = `c/v/${condition}.tsx`;
+      const found = exportSource(read, ["c/Conditional.tsx"], "Conditional", new Set(), { "#conditional": path });
+      expect(found).toEqual([{ path, content: tree[path] }]);
+    }
+  });
+  it("refuses unknown, missing, foreign, traversing and cyclic package-import targets", () => {
+    expect(exportSource(read, ["c/Conditional.tsx"], "Conditional")).toBeUndefined();
+    for (const target of ["c/missing.tsx", "foreign-package", "../d/chain.tsx", "/c/v/server.tsx", "c/../v/server.tsx"]) {
+      expect(exportSource(read, ["c/Conditional.tsx"], "Conditional", new Set(), { "#conditional": target })).toBeUndefined();
+    }
+    expect(exportSource(read, ["c/AliasCycle.tsx"], "AliasCycle", new Set(), { "#cycle": "c/AliasCycle.tsx" })).toBeUndefined();
+    expect(exportSource(read, ["c/Bare.ts"], "Bare", new Set(), { "some-package": "c/v/client.tsx" })).toBeUndefined();
   });
   it("stays unresolved for a name nothing exports, a cycle, a dangling re-export and a bare package", () => {
     expect(exportSource(read, ["c/Shim.ts"], "Absent")).toBeUndefined();
@@ -132,6 +160,18 @@ describe("observeComponentSources on the real catalog", () => {
     const adoptedAffected = AFFECTED.filter(slot => fills.some(fill => fill.slot === slot));
     expect(adoptedAffected.filter(slot => before.has(slot))).toEqual(adoptedAffected);
     expect(adoptedAffected.filter(slot => after.has(slot))).toEqual([]);
+  }, 120_000);
+  it("observes the actual Link entry separately for default and react-server conditions", () => {
+    const { input } = real();
+    for (const [condition, entry] of [["default", "client"], ["react-server", "server"]] as const) {
+      const result = observeComponentSources({ ...input, packageSource: (module, name) => packageSource(module, name, condition) });
+      const link = result.evidence.observations["components.link"]!;
+      expect(result.unobserved).toEqual([]);
+      expect(link.files.map(file => file.path)).toEqual([`components/Link.${entry}.tsx`]);
+      expect(link.sourceHash).toBe(componentSourceHash(link.files));
+      expect(link.root).toBe(condition === "react-server" ? "engine:none" : "rac:Link");
+      expect(link.forwardsRef).toBe(false);
+    }
   }, 120_000);
   it("binds every observation to the inspected bytes and current consumer tokens (no stale-evidence findings)", () => {
     const { input, check } = real();
