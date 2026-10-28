@@ -1,8 +1,11 @@
+import { ADMIN_PAGE_COPY_REFS, adminPageForRoute, adminNavigationCopy } from "../content/admin-copy.js";
 import { createContentPreviewProvenance } from "./preview/provenance.js";
+import { bindContentAppFrame, ContentCopyBindingError } from "./content-route-copy.js";
+import { renderContentSection } from "./content-route-runtime.js";
 import { Fragment, createElement } from "react";
 import { createCopyResolver } from "@clossys/writer";
 import type { ReactElement } from "react";
-import { AuthFrame } from "@clossys/designer/frames";
+import { AppFrame, AuthFrame } from "@clossys/designer/frames";
 import { EmptyState, LogoHero, SectionHeader } from "@clossys/designer/blocks/server";
 import { PAGE_META_KEY, resolveCopy, validateCopyFields } from "../content/composition.js";
 import type { CompositionSection, CopyFinding, CopyResolutionReport, ResolveCopyOptions } from "../content/composition.js";
@@ -52,7 +55,7 @@ export function prepareContentRoute(input: ContentRouteInput): PreparedContentRo
   const writerValid = writer === undefined || isContentJson(writer) && writer !== null && typeof writer === "object" && !Array.isArray(writer)
     && Object.keys(writer).every(key => ["registry", "registries", "manifest", "timeZone"].includes(key)) && Object.hasOwn(writer, "registry");
   if (!writerValid) add("copy", "writer", "writer", "Writer context requires finite registry, registries, manifest, and timeZone values");
-  const copyOptions: ResolveCopyOptions = writerValid && writer !== undefined ? {
+  const copyOptions: ResolveCopyOptions = input.resolveCopy ? { resolver: input.resolveCopy } : writerValid && writer !== undefined ? {
     resolver: createCopyResolver(writer.registry, {
       ...(writer.registries === undefined ? {} : { registries: writer.registries }),
       ...(writer.manifest === undefined ? {} : { manifest: writer.manifest }),
@@ -82,10 +85,26 @@ export function prepareContentRoute(input: ContentRouteInput): PreparedContentRo
   const frameRegistration = library?.frames.find(entry => entry.id === frame.frameId);
   if (!frameRegistration) add("frame", "designer", frame.frameId, `Frame is not registered in the selected consumer library: ${frame.frameId}`);
   else if (!frameRegistration.configIds.includes(frame.configId)) add("config", "designer", frame.configId, `Frame config is not registered: ${frame.frameId}/${frame.configId}`);
-  if (frame.frameId !== "frames.auth-shell") {
-    if (frame.frameId === "frames.app-shell") add("config", "designer", frame.configId, `Frame requires a closed chrome configuration binding: ${frame.frameId}/${frame.configId}`);
-    else add("frame", "designer", frame.frameId, `Designer frame export is unavailable: ${frame.frameId}`);
-  } else if (frame.configId !== "default") add("config", "designer", frame.configId, `Frame config adapter is unavailable: ${frame.frameId}/${frame.configId}`);
+  let appFrame: ReturnType<typeof bindContentAppFrame> | undefined;
+  if (frame.frameId === "frames.app-shell") {
+    if (!input.appFrame) add("config", "designer", frame.configId, "Registered AppFrame copy bindings are required");
+    else try {
+      const admin = adminPageForRoute(slot.route);
+      const pageRefs = admin && ADMIN_PAGE_COPY_REFS[admin];
+      const suppliedPage = input.appFrame.page as Record<string, unknown> | undefined;
+      const navigation = input.appFrame.navigation as Record<string, unknown> | undefined;
+      const chrome = { ...input.appFrame,
+        ...(pageRefs ? { page: { title: pageRefs.title, description: pageRefs.description, ...suppliedPage } } : {}),
+        ...(Array.isArray(navigation?.tree) ? { navigation: { ...navigation, tree: adminNavigationCopy(navigation.tree) } } : {}) };
+
+      appFrame = bindContentAppFrame(chrome, locale, copyOptions.resolver);
+    }
+    catch (error) {
+      const layout = error instanceof ContentCopyBindingError && error.rule === "designer-owned-layout";
+      add(layout ? "config" : "copy", layout ? "designer" : "writer", error instanceof ContentCopyBindingError ? error.path : "appFrame", error instanceof Error ? error.message : "AppFrame copy bindings are required");
+    }
+  } else if (frame.frameId !== "frames.auth-shell") add("frame", "designer", frame.frameId, `Designer frame export is unavailable: ${frame.frameId}`);
+  else if (frame.configId !== "default") add("config", "designer", frame.configId, `Frame config adapter is unavailable: ${frame.frameId}/${frame.configId}`);
 
   const frameFields = input.frameCopy ?? [];
   const frameCopyFindings = validateCopyFields(frameFields, "frameCopy", ["skipLabel"]);
@@ -127,21 +146,32 @@ export function prepareContentRoute(input: ContentRouteInput): PreparedContentRo
     if (!registration) add("section", "designer", section.sectionId, `Section is not registered in the selected consumer library: ${section.sectionId}`);
     else if (!registration.configIds.includes(section.configId)) add("config", "designer", section.configId, `Section config is not registered: ${section.sectionId}/${section.configId}`);
     const supported = ["sections.empty-state", "sections.section-header", "sections.logo-hero"].includes(section.sectionId);
-    if (!supported) add("section", "designer", section.sectionId, `Designer section export adapter is unavailable: ${section.sectionId}`);
-    else if (section.configId !== "default") add("config", "designer", section.configId, `Section config adapter is unavailable: ${section.sectionId}/${section.configId}`);
+    const binding = input.sectionBindings?.[occurrence.key];
+    if (!supported && !binding) add("section", "designer", section.sectionId, `Designer section export adapter is unavailable: ${section.sectionId}`);
+    else if (!binding && section.configId !== "default") add("config", "designer", section.configId, `Section config adapter is unavailable: ${section.sectionId}/${section.configId}`);
 
     // A historical section is projected in isolation; unrelated source sections never replace this route.
     const sectionCopy = recordCopy(resolveCopy({ composition: { ...composition, sections: [{ ...section, key: occurrence.key }] } }, locale, copyOptions), `sections.${occurrence.key}`);
     const fields = sectionCopy[occurrence.key] ?? {};
     const allowed = section.sectionId === "sections.logo-hero" ? ["name"] : section.sectionId === "sections.section-header" ? ["heading", "description", "eyebrow"] : ["title", "description"];
-    if (supported) for (const field of section.fields) if (!allowed.includes(field.key)) add("copy", "writer", `${occurrence.key}.${field.key}`, `Section copy has no closed adapter: ${section.sectionId}/${field.key}`);
+    if (supported && !binding) for (const field of section.fields) if (!allowed.includes(field.key)) add("copy", "writer", `${occurrence.key}.${field.key}`, `Section copy has no closed adapter: ${section.sectionId}/${field.key}`);
     const requiredKey = section.sectionId === "sections.logo-hero" ? "name" : section.sectionId === "sections.section-header" ? "heading" : "title";
-    if (supported && !fields[requiredKey]?.trim()) add("copy", "writer", `${occurrence.key}.${requiredKey}`, `Writer section copy is required for ${locale}: ${occurrence.key}.${requiredKey}`);
+    if (supported && !binding && !fields[requiredKey]?.trim()) add("copy", "writer", `${occurrence.key}.${requiredKey}`, `Writer section copy is required for ${locale}: ${occurrence.key}.${requiredKey}`);
 
     for (const ref of section.assets ?? []) {
       if (ref.libraryVersion !== composition.libraryVersion || !library?.assetIds.includes(ref.assetId)) add("asset", "designer", ref.assetId, `Asset is not registered in the selected consumer library: ${ref.assetId}/${ref.libraryVersion}`);
     }
-    if (section.sectionId !== "sections.logo-hero" && section.assets?.length) add("config", "designer", section.configId, `Section config has no asset adapter: ${section.sectionId}/${section.configId}`);
+    if (!binding && section.sectionId !== "sections.logo-hero" && section.assets?.length) add("config", "designer", section.configId, `Section config has no asset adapter: ${section.sectionId}/${section.configId}`);
+    if (binding && (!registration || !registration.configIds.includes(section.configId))) continue;
+    if (binding) {
+      try { sectionNodes.push(createElement(Fragment, { key: occurrence.key }, renderContentSection(binding, section.sectionId, section.configId, composition.libraryVersion, fields, locale))); }
+      catch (error) {
+        const copy = error instanceof ContentCopyBindingError && (error.rule.startsWith("copy-") || error.rule === "unresolved-native-copy");
+        add(copy ? "copy" : "config", copy ? "writer" : "designer", error instanceof ContentCopyBindingError ? error.path : occurrence.key,
+          error instanceof Error ? error.message : "Registered Designer section input is required");
+      }
+      continue;
+    }
     if (!supported || section.configId !== "default") continue;
     if (section.sectionId === "sections.logo-hero") {
       const refs = section.assets ?? [];
@@ -156,7 +186,7 @@ export function prepareContentRoute(input: ContentRouteInput): PreparedContentRo
 
   if (needs.length) return { ...selection, status: "needs-input", metadata, needs, copyFindings };
   const provenance = createContentPreviewProvenance(selection, copyReports, writer?.manifest);
-  const node = createElement(AuthFrame, { skipLabel: frameCopy.skipLabel!, children: sectionNodes });
+  const node = appFrame ? createElement(AppFrame, { ...appFrame, children: sectionNodes }) : createElement(AuthFrame, { skipLabel: frameCopy.skipLabel!, children: sectionNodes });
   return { ...selection, status: "ready", metadata, needs, copyFindings, provenance, node };
 }
 
@@ -168,7 +198,7 @@ export function ContentRoutePage({ input }: { readonly input: ContentRouteInput 
   const writer = input.writer;
   const pageCopy = resolveCopy({ pageMeta: candidate.pageMeta }, locale, {
     requirePageMeta: true,
-    ...(writer === undefined ? {} : { resolver: createCopyResolver(writer.registry, {
+    ...(input.resolveCopy ? { resolver: input.resolveCopy } : writer === undefined ? {} : { resolver: createCopyResolver(writer.registry, {
       ...(writer.registries === undefined ? {} : { registries: writer.registries }),
       ...(writer.manifest === undefined ? {} : { manifest: writer.manifest }),
       timeZone: writer.timeZone ?? "UTC", now: new Date(input.raisedAt),

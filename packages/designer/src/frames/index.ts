@@ -1,3 +1,4 @@
+export { SHELL_COPY_REFS } from "../components/Banner.copy.js";
 /** Canonical client application Frames; content and actions remain host-owned. */
 export { ShellCopyProvider } from "../components/Banner.copy-context.js";
 export type { ShellCopyRef, ShellCopyResolver } from "../components/Banner.copy.js";

@@ -1,3 +1,5 @@
+import type { CopyResolver } from "@clossys/writer";
+import type { ContentWriterContext } from "../composition.js";
 import type { CompositeCatalogData } from "@clossys/designer/catalog";
 import type { ContentFinding } from "../composition.js";
 import type { ContentRegistry } from "../model.js";
@@ -12,6 +14,8 @@ export interface PublisherCommandInput {
   /** Command-specific JSON; workflow metadata is never accepted as authored content. */
   readonly input: unknown;
   readonly at: string;
+  readonly copyResolver?: CopyResolver;
+  readonly writer?: ContentWriterContext;
 }
 export interface PublisherCommandResult {
   readonly exitCode: 0 | 1 | 2;

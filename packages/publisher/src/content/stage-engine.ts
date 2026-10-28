@@ -36,7 +36,7 @@ export interface StageReport {
 const finding = (path: string, rule: string, message: string): ContentFinding => ({ path, rule, message });
 const result = (status: StageStatus, findings: readonly ContentFinding[] = []): StageResult => ({ status, findings });
 const complete = (value: StageResult): boolean => value.status === "Done" || value.status === "Not applicable";
-const contentKeys: readonly (keyof CandidateContent)[] = ["name", "brief", "composition", "redirectTarget", "links", "typeSettings", "openQuestions"];
+const contentKeys: readonly (keyof CandidateContent)[] = ["name", "brief", "composition", "redirectTarget", "pageMeta", "pageMetaAssets", "links", "typeSettings", "openQuestions"];
 
 /** JSON value equality ignores object insertion order and preserves array order. */
 function sameValue(left: unknown, right: unknown): boolean {

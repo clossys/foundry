@@ -1,4 +1,6 @@
 import type { ContentPreviewProvenance } from "./preview/provenance.js";
+import type { CopyResolver } from "@clossys/writer";
+import type { ContentSectionBinding } from "./content-route-runtime.js";
 import type { ReactElement } from "react";
 import type { Composition, CopyField, CopyFinding, ContentWriterContext } from "../content/composition.js";
 import type { ContentCandidate, ContentRegistry, ContentSlot } from "../content/model.js";
@@ -24,6 +26,11 @@ export interface ContentRouteInput {
   readonly assets?: readonly { readonly assetId: string; readonly libraryVersion: string; readonly src: string }[];
   /** Finite Writer registries and locale policy; approval time is raisedAt. */
   readonly writer?: ContentWriterContext;
+  /** Server-owned Writer port; never persisted as candidate content. */
+  readonly resolveCopy?: CopyResolver;
+  /** AppFrame data: audience strings are CopyRefs, identifiers and callbacks retain their meaning. */
+  readonly appFrame?: Readonly<Record<string, unknown>>;
+  readonly sectionBindings?: Readonly<Record<string, ContentSectionBinding>>;
   readonly raisedAt: string;
 }
 export interface ContentRouteMetadata {
