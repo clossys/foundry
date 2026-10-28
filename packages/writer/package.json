@@ -273,5 +273,9 @@
   "publishConfig": {
     "registry": "https://registry.npmjs.org",
     "access": "public"
+  },
+  "dependencies": {
+    "@formatjs/icu-messageformat-parser": "3.5.22",
+    "intl-messageformat": "12.1.4"
   }
 }

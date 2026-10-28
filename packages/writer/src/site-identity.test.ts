@@ -180,14 +180,13 @@ describe("resolveSiteIdentity", () => {
     });
   });
 
-  it("refuses a locale mismatch on both fields", () => {
+  it("reports the registry default served for both fields after locale fallback", () => {
     const result = resolveSiteIdentity(goodRegistry(), { locale: "fr", now });
-    expect(result.complete).toBe(false);
-    expect(result.identity).toBeUndefined();
-    expect(result.issues).toEqual([
-      expect.objectContaining({ reason: "locale-mismatch", field: "name" }),
-      expect.objectContaining({ reason: "locale-mismatch", field: "tagline" }),
-    ]);
+    expect(result.complete).toBe(true);
+    expect(result.identity).toEqual({ name: NAME_TEXT, tagline: TAGLINE_TEXT });
+    expect(result.issues).toEqual([]);
+    expect(result.resolutions?.name).toMatchObject({ servedLocale: "en", chain: ["en"] });
+    expect(result.resolutions?.tagline).toMatchObject({ servedLocale: "en", chain: ["en"] });
   });
 
   it("refuses an entry that declares placeholders", () => {
