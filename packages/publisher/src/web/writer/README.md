@@ -12,6 +12,10 @@ The host's manifest and selected profile must include `sections.data-table`,
 `sections.record-detail`, and `sections.notices`. The list and coverage notices
 remain in the Frame's vertically scrolling body. A selected record leases its
 detail Section into the Frame's `right-panel`; no selection creates no lease.
+The data-table renders a fixed page of at most 50 records. Its existing footer
+slot holds Designer Toolbar and Button paging controls with Writer draft copy.
+An initial selection opens its page; paging retains the selected record's
+right-panel inspector, including while that row is on another page.
 When the host supplies no inspector configuration, the adapter uses Designer's
 public `APP_FRAME_RIGHT_PANEL_CONFIG` preset. The Frame owns panel geometry and
 its responsive presentation.

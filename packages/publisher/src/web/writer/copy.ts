@@ -1,6 +1,11 @@
 import type { AdminCopyRef } from "@clossys/writer/admin-copy";
 /** Writer-owned draft references, with no inline text fallback. */
 export const WRITER_COPY_REFS = {
+  "pagination": {"id": "st.84cb7kqs37", "locale": "en"},
+  "previousPage": {"id": "st.3x4jygc06q", "locale": "en"},
+  "nextPage": {"id": "st.8hbhss001b", "locale": "en"},
+  "pageSummary": {"id": "st.r05nskpktg", "locale": "en"},
+
   "resize": { "id": "st.1t2qqmrptq", "locale": "en" },
   "records": {
     "id": "st.e093300bfe",
