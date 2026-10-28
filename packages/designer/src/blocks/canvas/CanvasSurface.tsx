@@ -482,15 +482,15 @@ export function CanvasSurface(props: CanvasSurfaceProps) {
         if (event.detail !== 0) { event.preventDefault(); event.stopPropagation(); }
       }
     }}
-    className={cx("relative isolate h-full min-h-0 min-w-0 overflow-hidden rounded-control border border-line-base bg-surface-base text-ink-primary focus-visible:outline-2 focus-visible:outline-accent", className)}
+    className={cx("relative isolate h-full min-h-0 min-w-0 overflow-hidden rounded-control border border-line-base bg-surface-base text-ink-primary focus-ring-inset", className)}
     /* Named inline-style exception: the camera-relative pattern layer (recipe from assets.pattern, offset by pan, scaled by zoom). */
     style={{ ...(grid && !flowing ? { ...patternBackground(gridPattern ?? PATTERN_RECIPES[grid === "dots" ? "dots" : "grid"], viewport.zoom), backgroundPosition: `${viewport.x}px ${viewport.y}px`, "--canvas-grid-zoom": viewport.zoom } : {}), ...style, touchAction: flowing ? "auto" : "none", overflow: flowing ? contentScroll === "document" ? "visible" : "auto" : "hidden", ...(viewSize ? { width: viewSize.width, height: flowing && contentScroll === "document" ? "auto" : viewSize.height, boxSizing: "content-box" } : {}) }}>
     <p id={instructionId} className="sr-only">{instructionText}</p>
     <div ref={element => { worldRef.current = element; onWorldElement?.(element); }} data-canvas-world="" dir="ltr" className={cx(flowing ? "relative" : "absolute inset-0", worldClassName, (fitting || moving) && !reducedMotion && "transition-transform motion-reduce:transition-none")}
       onTransitionEnd={event => { if (event.target !== event.currentTarget) return; setFitting(false); onViewportTransitionEnd?.(); }}
       style={{ transformOrigin: "0 0", transform: flowing ? undefined : `translate(${viewport.x}px, ${viewport.y}px) scale(${viewport.zoom})`,
-        transitionDuration: reducedMotion ? "0s" : moving ? viewportTransition.duration : fitting ? "var(--ui-duration-fast, 160ms)" : "0s",
-        transitionTimingFunction: moving ? viewportTransition.easing : "var(--ease-default, ease)" }}>
+        transitionDuration: reducedMotion ? "0s" : moving ? viewportTransition.duration : fitting ? "var(--ui-duration-fast, 120ms)" : "0s",
+        transitionTimingFunction: moving ? viewportTransition.easing : "var(--ease-default, cubic-bezier(.2, 0, 0, 1))" }}>
       {edges.length ? <svg data-canvas-edges="" aria-hidden="true" focusable="false" className="pointer-events-none absolute text-ink-muted"
         viewBox={`${worldBounds.x} ${worldBounds.y} ${worldBounds.width} ${worldBounds.height}`}
         style={{ left: worldBounds.x, top: worldBounds.y, width: worldBounds.width, height: worldBounds.height }}>
@@ -504,7 +504,7 @@ export function CanvasSurface(props: CanvasSurfaceProps) {
       {items.map(item => itemInteraction === "content" ? <section key={item.id} data-canvas-item={item.id} aria-label={item.label} tabIndex={item.id === roving ? 0 : -1}
         ref={node => { if (node) itemRefs.current.set(item.id, node); else itemRefs.current.delete(item.id); }}
         onFocus={event => { if (event.target === event.currentTarget) focusItem(item); }}
-        className="absolute rounded-control border border-line-base bg-surface-raised text-body-s text-ink-primary focus-visible:outline-2 focus-visible:outline-accent"
+        className="absolute rounded-control border border-line-base bg-surface-raised text-body-s text-ink-primary focus-ring"
         style={{ left: item.rect.x, top: item.rect.y, width: item.rect.width, height: item.rect.height, borderWidth: UI_BORDER_HAIRLINE }}>
         {renderItem ? renderItem(item) : item.label}
       </section> : <button key={item.id} type="button" data-canvas-item={item.id} aria-label={item.label}
@@ -523,7 +523,7 @@ export function CanvasSurface(props: CanvasSurfaceProps) {
             onSelectionChange(event.ctrlKey || event.metaKey ? toggleSelection(selection, item.id) : selectSingle(item.id));
           }
         }}
-        className="absolute rounded-control border border-line-base bg-surface-raised text-body-s text-ink-primary aria-pressed:border-accent focus-visible:outline-2 focus-visible:outline-accent"
+        className="absolute rounded-control border border-line-base bg-surface-raised text-body-s text-ink-primary aria-pressed:border-accent focus-ring"
         style={{ left: item.rect.x, top: item.rect.y, width: item.rect.width, height: item.rect.height, borderWidth: UI_BORDER_HAIRLINE }}>
         {renderItem ? renderItem(item) : item.label}
       </button>)}
@@ -558,7 +558,7 @@ export function CanvasSurface(props: CanvasSurfaceProps) {
     {marquee && <div aria-hidden="true" data-canvas-marquee="" className="pointer-events-none absolute border border-accent bg-accent-tint"
       style={{ left: marquee.x, top: marquee.y, width: marquee.width, height: marquee.height, borderWidth: UI_BORDER_HAIRLINE }} />}
     {minimap && !flowing && <button type="button" data-canvas-minimap="" aria-label={recenterLabel} hidden={collapsedMap} inert={collapsedMap}
-      className={cx("absolute overflow-hidden rounded-control border border-line-base bg-surface-sunken focus-visible:outline-2 focus-visible:outline-accent", itemInteraction === "content" ? "bottom-md start-md" : "bottom-sm start-sm h-24 w-40")}
+      className={cx("absolute overflow-hidden rounded-control border border-line-base bg-surface-sunken focus-ring-inset", itemInteraction === "content" ? "bottom-md start-md" : "bottom-sm start-sm h-24 w-40")}
       style={itemInteraction === "content" ? { inlineSize: "var(--ui-layout-sidebar-w)", maxInlineSize: `calc(100% - ${startInset} - ${endInset})`, aspectRatio: "5 / 3", insetInlineStart: startInset, insetBlockEnd: bottomInset, zIndex: "var(--ui-z-sticky)" } : { zIndex: "var(--ui-z-sticky)" }}
       onClick={event => {
         const bounds = event.currentTarget.getBoundingClientRect();

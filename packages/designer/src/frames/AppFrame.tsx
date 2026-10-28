@@ -29,7 +29,7 @@ const HEADER_ROW = "frame-header-container relative flex min-w-0 shrink-0 items-
 const ROOT_FILL: Record<NonNullable<AppFrameProps["fill"]>, string> = { host: "h-full", viewport: "h-dvh" };
 const MAIN = "flex h-full min-h-0 min-w-0 flex-col frame-main-gap overflow-auto ";
 const MAIN_INSET = "frame-main-inset frame-main-bleed ";
-const CONTROL = "control-h-md inline-flex shrink-0 items-center justify-center rounded-control border-0 bg-transparent px-frame-control text-body text-ink-primary focus-visible:outline-solid focus-visible:outline-2 focus-visible:outline-focus-ring forced-colors:border-current";
+const CONTROL = "control-h-md inline-flex shrink-0 items-center justify-center rounded-control border-0 bg-transparent px-frame-control text-body text-ink-primary focus-ring forced-colors:border-current";
 /** The two edge toggles share one glyph, each facing its own edge: the panel toggle is the navigation toggle's mirror in either direction. */
 const NAVIGATION_GLYPH = "rtl:-scale-x-100";
 const PANEL_GLYPH = "-scale-x-100 rtl:scale-x-100";
@@ -266,7 +266,7 @@ function FrameContent({ brand, navigation, account: { avatar = "initials", ...ac
           </div>
           <div ref={stage} data-application-frame-region="stage" data-stage-navigation={layout.navigationOverlay ? "overlay" : "docked"} data-stage-panel={narrow ? "overlay" : "docked"}
             className="relative isolate min-h-0 min-w-0 flex-1 overflow-hidden">
-            <main id={target} tabIndex={-1} className={MAIN + (stageInset === "full" ? "" : MAIN_INSET) + "focus-visible:outline-solid focus-visible:outline-2 focus-visible:outline-focus-ring"}>{children}</main>
+            <main id={target} tabIndex={-1} className={MAIN + (stageInset === "full" ? "" : MAIN_INSET) + "focus-ring-inset"}>{children}</main>
           </div>
           <FrameDock notices={notices} dock={dock} sheet={!wide} />
         </div>
