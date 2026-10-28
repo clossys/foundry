@@ -1,11 +1,31 @@
 import type { CompositionSection, ContentFinding } from "./composition.js";
 import { computeContentDigest } from "./digest.js";
 import { isContentJson } from "./json.js";
-import type { ContentCandidate, ContentRegistry } from "./model.js";
+import type { ContentApproval, ContentCandidate, ContentRegistry } from "./model.js";
+import type { RevisionId } from "./vocabulary.js";
 import { validateContentRevisionIntegrity } from "./revisions.js";
 import { validateContentRegistry } from "./validate.js";
 
 export type ContentApprovalPurpose = "activation" | "publish";
+
+/** Record supplied owner evidence for these exact bytes; no state transition or release. */
+export function createContentOwnerApproval(value: unknown, evidence: {
+  readonly by: string; readonly at: string; readonly revision: RevisionId; readonly digest: string;
+}): ContentApproval {
+  if (!isContentJson(value)) throw new TypeError("content-json: Approval requires a JSON candidate");
+  const findings = validateContentRevisionIntegrity(value);
+  if (findings.length) throw new TypeError(findings.map(finding => `${finding.path}: ${finding.rule}`).join("; "));
+  if (!evidence || typeof evidence !== "object" || Array.isArray(evidence)
+    || Object.keys(evidence).some(key => !["by", "at", "revision", "digest"].includes(key))
+    || typeof evidence.by !== "string" || !evidence.by.trim() || evidence.by !== evidence.by.trim()
+    || typeof evidence.at !== "string" || !evidence.at.trim() || !Number.isFinite(Date.parse(evidence.at))) {
+    throw new TypeError("approval-evidence: Expected an explicit owner identity and timestamp");
+  }
+  const candidate = value as unknown as ContentCandidate;
+  if (evidence.revision !== candidate.revision) throw new TypeError("approval-revision: Owner evidence must cover the current revision");
+  if (evidence.digest !== computeContentDigest(candidate)) throw new TypeError("approval-digest: Owner evidence must cover the current content digest");
+  return Object.freeze({ source: "owner", by: evidence.by, at: evidence.at, revision: candidate.revision, digest: evidence.digest });
+}
 
 /** Node-only digest-bound approval prerequisite; no stage or publication is performed. */
 export function checkContentApproval(value: unknown, purpose: ContentApprovalPurpose): readonly ContentFinding[] {

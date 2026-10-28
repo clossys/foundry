@@ -6,3 +6,7 @@ export type { ContentApprovalPurpose } from "./approval.js";
 export { loadContentStore, writeContentStore } from "./store/index.js";
 export type { ContentStoreOptions, LoadedContentStore } from "./store/index.js";
 export { readConsumerLibrarySnapshot } from "./store/library.js";
+export { createContentOwnerApproval } from "./approval.js";
+export { prepareContentRelease, computeReleaseDigest } from "./release/prepare.js";
+export { writeContentRelease } from "./store/release.js";
+export type { ReleaseInput, ReleaseManifest, TargetBuildManifest, HandoverReceipt, ReleaseBundle, ReleaseResult } from "./release/types.js";
