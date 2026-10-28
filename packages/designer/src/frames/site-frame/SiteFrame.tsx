@@ -7,7 +7,7 @@ import { LandingView as ServerLandingView } from "./landing/web/views/LandingVie
 import type { LandingViewProps } from "./landing/web/views/LandingViewContent.js";
 import { RenderError } from "./landing/internal/errors.js";
 import { SiteNavDisclosure } from "./NavDisclosure.boundary.client.js";
-import { SiteSkipLink } from "./SkipLink.client.js";
+import { SiteSkipLink } from "./SkipLink.boundary.client.js";
 import { resolveShell } from "./internal/resolveShell.js";
 import type { ResolvedSiteIconLink, ResolvedSiteLink } from "./internal/resolveShell.js";
 import { SITE_MAIN_ID } from "./types.js";

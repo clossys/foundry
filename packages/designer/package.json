@@ -429,6 +429,11 @@
       "types": "./dist/frames/site-frame/NavDisclosure.client.d.ts",
       "react-server": "./dist/frames/site-frame/NavDisclosure.server.js",
       "default": "./dist/frames/site-frame/NavDisclosure.client.js"
+    },
+    "#designer-frame-skip-link": {
+      "types": "./dist/frames/site-frame/SkipLink.client.d.ts",
+      "react-server": "./dist/frames/site-frame/SkipLink.server.js",
+      "default": "./dist/frames/site-frame/SkipLink.client.js"
     }
   }
 }
