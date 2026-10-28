@@ -5,6 +5,8 @@ export { CONTENT_STAGES, STAGE_STATUSES, rollUpStageStatuses } from "./stages.js
 export type { ContentStage, StageStatus, CandidateStages } from "./stages.js";
 export { computeStageReport, canTransitionCandidateState, transitionContentCandidate } from "./stage-engine.js";
 export type { StageKey, StageResult, CandidateStageEvidence, StageReport } from "./stage-engine.js";
+export { reviewCandidate } from "./review/index.js";
+export type { Need, ReviewCheck, ReviewCopySchema, ReviewFinding, ReviewInput, ReviewLibrarySnapshot, ReviewReport, ReviewSectionRegistration } from "./review/index.js";
 export { CANDIDATE_STATES, CANDIDATE_ORIGINS, SLOT_KINDS, SECTION_INTENTS, LINK_RELATIONS, isRevisionId } from "./vocabulary.js";
 export type { CandidateState, CandidateOrigin, SlotKind, SectionIntent, LinkRelation, RevisionId } from "./vocabulary.js";
 export { validateComposition, parseComposition, resolveCopy } from "./composition.js";
