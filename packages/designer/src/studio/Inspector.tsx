@@ -8,6 +8,9 @@ import type { Resolved, Tier } from "../catalog-core/index.js";
 import type { UsageGraph } from "../catalog-core/usage-graph.js";
 import { inspectorModel, type Candidate } from "./model.js";
 import type { StudioLabels } from "./types.js";
+import { readStudioFinding, type StudioCopyBinding } from "./copy-binding.js";
+import { StudioCopyProvider } from "./copy-context.js";
+import { StudioDataValue } from "./data-value.js";
 import { usageModel } from "./usage/model.js";
 import { StudioUsage, useStudioUsageData } from "./usage/StudioUsage.js";
 
@@ -35,7 +38,8 @@ export function InspectorChange({ labels, prompts }: { labels: StudioLabels; pro
  * Read-only: focus changes the definition list, never the selection, and nothing here writes. A role token's Used
  * by, and the Usage area when the host supplies its labels, are read from the usage graph API only (spec C5).
  */
-export function Inspector({ candidate, labels, tier, graph, prompts }: {
+export function Inspector({ candidate, labels, copy, tier, graph, prompts }: {
+  copy: StudioCopyBinding;
   candidate: Candidate; labels: StudioLabels;
   /** Create/Refresh prompt data for this leaf. Omitted: no prompt dialogs. */
   prompts?: InspectorPrompts;
@@ -54,24 +58,24 @@ export function Inspector({ candidate, labels, tier, graph, prompts }: {
     [text.source, model.source], [text.representedLeaf, candidate.fill.slot], [text.mode, model.mode], [text.relation, model.relation], [text.licence, model.license],
     [text.pin, model.pin], [text.trust, candidate.fill.trust], [text.status, model.status], [text.builtOn, model.builtOn.join(", ") || undefined], [text.evidence, model.evidence.join(", ") || undefined],
   ];
-  return <div data-studio-inspector={candidate.source} className="flex min-w-0 flex-col gap-md">
+  return <StudioCopyProvider binding={copy}><div data-studio-inspector={candidate.source} className="flex min-w-0 flex-col gap-md">
     <dl className="flex flex-col gap-xs text-body">
-      {facts.map(([name, value]) => <div key={name} className={row}><dt className="text-ink-secondary">{name}</dt><dd className="min-w-0 break-words text-ink-primary">{value ?? text.none}</dd></div>)}
+      {facts.map(([name, value]) => <div key={name} className={row}><dt className="text-ink-secondary">{name}</dt><dd className="min-w-0 break-words text-ink-primary">{value === undefined ? text.none : <StudioDataValue kind="value" value={value}/>}</dd></div>)}
       <div><dt>{text.members}</dt><dd><dl className="flex flex-col gap-sm">{model.rows.map(entry => {
         const aliases = candidate.members.find(member => member.id === entry.member)?.member.alias;
         return <div key={entry.member}>
-        <dt className="break-words">{entry.member}</dt><dd><dl>
-          <div className={row}><dt>{text.light}</dt><dd>{entry.light}</dd></div>
-          {entry.dark !== undefined ? <div className={row}><dt>{text.dark}</dt><dd>{entry.dark}</dd></div> : null}
-          <div className={row}><dt>{text.via}</dt><dd>{entry.via}</dd></div>
-          <div className={row}><dt>{text.alias} {text.light}</dt><dd>{aliases?.light ?? text.none}</dd></div>
-          {entry.dark !== undefined || aliases?.dark !== undefined ? <div className={row}><dt>{text.alias} {text.dark}</dt><dd>{aliases?.dark ?? text.none}</dd></div> : null}
+        <dt className="break-words">{<StudioDataValue kind="identifier" value={entry.member}/>}</dt><dd><dl>
+          <div className={row}><dt>{text.light}</dt><dd>{<StudioDataValue kind="value" value={entry.light}/>}</dd></div>
+          {entry.dark !== undefined ? <div className={row}><dt>{text.dark}</dt><dd>{<StudioDataValue kind="value" value={entry.dark}/>}</dd></div> : null}
+          <div className={row}><dt>{text.via}</dt><dd>{<StudioDataValue kind="identifier" value={entry.via}/>}</dd></div>
+          <div className={row}><dt>{text.alias} {text.light}</dt><dd>{aliases?.light === undefined ? text.none : <StudioDataValue kind="identifier" value={aliases.light}/>}</dd></div>
+          {entry.dark !== undefined || aliases?.dark !== undefined ? <div className={row}><dt>{text.alias} {text.dark}</dt><dd>{aliases?.dark === undefined ? text.none : <StudioDataValue kind="identifier" value={aliases.dark}/>}</dd></div> : null}
         </dl></dd>
       </div>; })}</dl></dd></div>
-      {tier === "role" ? <div><dt>{text.usedBy}</dt><dd aria-busy={!usage}>{usedBy.length ? <ul>{usedBy.map(id => <li key={id}>{id}</li>)}</ul> : usage ? text.none : null}</dd></div> : null}
-      <div><dt>{text.findings}</dt><dd>{model.findings.length ? <ul>{model.findings.map((finding, index) => <li key={`${finding.code}:${finding.subject}:${index}`}>{finding.message}</li>)}</ul> : text.none}</dd></div>
+      {tier === "role" ? <div><dt>{text.usedBy}</dt><dd aria-busy={!usage}>{usedBy.length ? <ul>{usedBy.map(id => <li key={id}><StudioDataValue kind="identifier" value={id}/></li>)}</ul> : usage ? text.none : null}</dd></div> : null}
+      <div><dt>{text.findings}</dt><dd>{model.findings.length ? <ul>{model.findings.map((finding, index) => <li key={`${finding.code}:${finding.subject}:${index}`}>{readStudioFinding(copy, finding, `studio.inspector.finding.${finding.code}`)}</li>)}</ul> : text.none}</dd></div>
     </dl>
     {labels.usage ? <StudioUsage id={leaf} labels={labels.usage} {...(graph ? { graph } : {})} /> : null}
     <InspectorChange labels={labels} {...(prompts ? { prompts } : {})} />
-  </div>;
+  </div></StudioCopyProvider>;
 }

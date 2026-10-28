@@ -9,7 +9,7 @@ import type { WiringException } from "../../catalog-core/wiring.js";
 import { usageModel, type UsageGroup, type UsageNotLinked, type UsageRow } from "./model.js";
 import { useUsageNavigation, type UsageHistory } from "./useUsageNavigation.js";
 import { useUsageData } from "./committed-graph.js";
-import { readStudioMessage, type StudioCopyBinding } from "../copy-binding.js";
+import { readStudioFinding, type StudioCopyBinding } from "../copy-binding.js";
 import { StudioDataValue } from "../data-value.js";
 
 /** All Usage copy. The panel has no words of its own: everything else it shows is graph data. */
@@ -104,7 +104,7 @@ export function UsagePanel({ id, copy, onNavigate, canNavigate, graph: supplied,
     {!model ? <p role="status" className={DETAIL}>{labels.loading}</p> : <>
       {model.usedNowhere ? <p data-usage-used-nowhere=""><Badge variant="warning">{labels.usedNowhere}</Badge></p> : null}
       {model.notLinked.map(finding => <p key={`${finding.code}\u0000${finding.subject}\u0000${finding.message}`} data-usage-not-linked={finding.code} className="flex flex-wrap items-baseline gap-sm">
-        <Badge variant="danger">{labels.notLinked}</Badge><StudioDataValue kind="identifier" value={finding.code} /><span className={DETAIL}><StudioDataValue kind="identifier" value={finding.subject} /></span><span className={DETAIL}>{readStudioMessage(copy, `studio.usage.finding.${finding.code}`)}</span>
+        <Badge variant="danger">{labels.notLinked}</Badge><StudioDataValue kind="identifier" value={finding.code} /><span className={DETAIL}><StudioDataValue kind="identifier" value={finding.subject} /></span><span className={DETAIL}>{readStudioFinding(copy, finding, `studio.usage.finding.${finding.code}`)}</span>
       </p>)}
       <List title={labels.using} none={labels.none}>{groups(model.using)}</List>
       <List title={labels.usedWhere} none={labels.none}>{groups(model.usedWhere)}</List>

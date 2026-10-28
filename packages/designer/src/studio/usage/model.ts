@@ -25,7 +25,7 @@ export interface UsageRow {
 }
 export interface UsageGroup { readonly layer: UsageLayer; readonly rows: readonly UsageRow[] }
 /** A WL5 provenance finding for this element: shown as a "not linked" row with its code. */
-export interface UsageNotLinked { readonly code: string; readonly subject: string; readonly message: string }
+export interface UsageNotLinked { readonly code: string; readonly subject: string; readonly message: string; readonly copy?: import("../copy-binding.js").StudioCopyRef }
 export interface UsageModel {
   readonly id: string;
   readonly node?: UsageNode;

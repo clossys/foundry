@@ -1,3 +1,5 @@
+import { studioMessageRef } from "./copy-records.js";
+
 /** A presentation-only port supplied by the host's Writer resolver. */
 export interface StudioCopyRef {
   readonly id: string;
@@ -23,9 +25,14 @@ export class StudioCopyNeedsError extends Error {
 export function studioCopyNeed(cellId: string): never { throw new StudioCopyNeedsError(cellId); }
 
 export function readStudioMessage(binding: StudioCopyBinding, cellId: string, values?: Readonly<Record<string, string | number | boolean>>): string {
-  const ref = binding.messages?.[cellId];
+  const ref = binding.messages?.[cellId] ?? studioMessageRef(cellId);
   if (!ref) return studioCopyNeed(cellId);
   return readStudioCopy(binding, ref, values);
+}
+
+/** Producers attach the exact variant and typed data; views never parse diagnostic prose. */
+export function readStudioFinding(binding: StudioCopyBinding, finding: { readonly copy?: StudioCopyRef }, cellId: string): string {
+  return finding.copy ? readStudioCopy(binding, finding.copy) : readStudioMessage(binding, cellId);
 }
 
 /** The resolver retains approval, message formatting and locale policy. No local text fallback exists. */
