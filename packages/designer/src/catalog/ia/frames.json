@@ -18,6 +18,13 @@
           "leaves": [
             "frames.app-shell"
           ]
+        },
+        {
+          "id": "page-shells-authentication",
+          "label": "Authentication",
+          "leaves": [
+            "frames.auth-shell"
+          ]
         }
       ]
     },

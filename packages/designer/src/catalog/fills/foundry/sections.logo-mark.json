@@ -1,0 +1,56 @@
+{
+  "$extensions": {
+    "com.clossys.fill": {
+      "author": "foundry",
+      "builtOn": [],
+      "conforms": [],
+      "evidence": [],
+      "id": "foundry/sections.logo-mark",
+      "license": "MIT",
+      "mode": "implementation",
+      "originKinds": [
+        "adopted"
+      ],
+      "pin": {
+        "export": "./blocks#SectionFrame",
+        "package": "@clossys/designer",
+        "version": "0.12.0"
+      },
+      "relation": "same-contract",
+      "slot": "sections.logo-mark",
+      "source": "foundry",
+      "sourceAddress": "./blocks#SectionFrame",
+      "status": "draft",
+      "trust": "foundry"
+    }
+  },
+  "sections": {
+    "logo-mark": {
+      "configs": {},
+      "impl": {
+        "export": "SectionFrame",
+        "kind": "package",
+        "module": "@clossys/designer/blocks"
+      },
+      "license": "MIT",
+      "notes": [
+        "The public SectionFrame export supplies section framing. The private sections.logo-mark runtime adapter resolves the consumer's assets.mark media record to a Logomark child, with no extra public block export.",
+        "mark maps to children as a host adaptation point, not a type-equivalent media-record prop. Its record carries slot=assets.mark, a declared member (mono, positive or reversed), src and optional asset name metadata. The runtime port has no asset resolver; the consumer must supply the registered member's resolved artwork and list it in assetClosure.",
+        "The section has no copy slots or authored copy fields. Optional asset name metadata labels the image group and is never rendered as visible text. Without metadata the logo remains decorative.",
+        "Descriptor only; source imports, token reads, shared anatomy, accessibility, contrast and consumer runtime conformance are unmeasured. Content bindings describe host adaptation points, not type-equivalent converters."
+      ],
+      "parts": [],
+      "pin": {
+        "export": "./blocks#SectionFrame",
+        "package": "@clossys/designer",
+        "version": "0.12.0"
+      },
+      "propMap": {},
+      "slot": "sections.logo-mark",
+      "slotMap": {
+        "mark": "./blocks#SectionFrame.children"
+      },
+      "source": "foundry"
+    }
+  }
+}

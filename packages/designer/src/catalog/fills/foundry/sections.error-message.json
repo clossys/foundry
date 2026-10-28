@@ -1,0 +1,67 @@
+{
+  "$extensions": {
+    "com.clossys.fill": {
+      "author": "foundry",
+      "builtOn": [],
+      "conforms": [],
+      "evidence": [],
+      "id": "foundry/sections.error-message",
+      "license": "MIT",
+      "mode": "implementation",
+      "originKinds": [
+        "adopted"
+      ],
+      "pin": {
+        "export": "./blocks#ErrorState",
+        "package": "@clossys/designer",
+        "version": "0.12.0"
+      },
+      "relation": "same-contract",
+      "slot": "sections.error-message",
+      "source": "foundry",
+      "sourceAddress": "./blocks#ErrorState",
+      "status": "draft",
+      "trust": "foundry"
+    }
+  },
+  "sections": {
+    "error-message": {
+      "configs": {},
+      "impl": {
+        "export": "ErrorState",
+        "kind": "package",
+        "module": "@clossys/designer/blocks"
+      },
+      "license": "MIT",
+      "notes": [
+        "Public ErrorState is the existing fill anchor only; the private runtime error-message composition owns the separate status h1 and state metadata. The slot/prop pointers are adaptation endpoints, not an assertion that ErrorState alone accepts this section contract.",
+        "Status and title adapt together to a separate h1 status and the existing block h2 title; no new public Blocks export is introduced.",
+        "All visible and accessible copy is consumer authored. Each optional action requires its label when present and exactly one href or action id. Callback ids require sectionHosts[\"sections.error-message\"].onAction; no inert fallback callback is installed.",
+        "not-found maps to ErrorState kind=not-found; error/global-error map to failure. Global errors are content for a host-owned document/frame, not a document or framework error adapter.",
+        "Shared deterministic preview copy comes from specimenDataset.sections.errorState and uses a navigation link, so preview needs no live host.",
+        "Draft descriptor; runtime tests are source declarations, not consumer adoption or release clearance.",
+        "Descriptor only; source imports, token reads, shared anatomy, accessibility, contrast and consumer runtime conformance are unmeasured. Content bindings describe host adaptation points, not type-equivalent converters."
+      ],
+      "parts": [],
+      "pin": {
+        "export": "./blocks#ErrorState",
+        "package": "@clossys/designer",
+        "version": "0.12.0"
+      },
+      "propMap": {
+        "kind.error": "./blocks#ErrorState.kind=failure",
+        "kind.global-error": "./blocks#ErrorState.kind=failure",
+        "kind.not-found": "./blocks#ErrorState.kind=not-found"
+      },
+      "slot": "sections.error-message",
+      "slotMap": {
+        "actions": "./blocks#ErrorState.retry",
+        "description": "./blocks#ErrorState.description",
+        "reference": "./blocks#ErrorState.code",
+        "status": "./blocks#ErrorState.title",
+        "title": "./blocks#ErrorState.title"
+      },
+      "source": "foundry"
+    }
+  }
+}

@@ -62,6 +62,19 @@
       ]
     },
     {
+      "missing": [],
+      "missingRequiredSlots": [],
+      "missingSlots": [],
+      "missingStatePorts": [],
+      "notes": [
+        "Standalone document-scrolling auth/error frame with a centred, form-width single column. Skip-link copy and registered Sections remain host-owned. No authentication behavior is supplied.",
+        "Descriptor only; anatomy, source, accessibility, contrast, layout and rendered conformance are unmeasured."
+      ],
+      "slot": "frames.auth-shell",
+      "status": "candidate",
+      "supported": []
+    },
+    {
       "missing": [
         "shortcut.off",
         "shortcut.on"

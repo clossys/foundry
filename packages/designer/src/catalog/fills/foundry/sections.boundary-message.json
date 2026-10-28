@@ -1,0 +1,68 @@
+{
+  "$extensions": {
+    "com.clossys.fill": {
+      "author": "foundry",
+      "builtOn": [],
+      "conforms": [],
+      "evidence": [],
+      "id": "foundry/sections.boundary-message",
+      "license": "MIT",
+      "mode": "implementation",
+      "originKinds": [
+        "adopted"
+      ],
+      "pin": {
+        "export": "./blocks#EmptyState",
+        "package": "@clossys/designer",
+        "version": "0.12.0"
+      },
+      "relation": "same-contract",
+      "slot": "sections.boundary-message",
+      "source": "foundry",
+      "sourceAddress": "./blocks#EmptyState",
+      "status": "draft",
+      "trust": "foundry"
+    }
+  },
+  "sections": {
+    "boundary-message": {
+      "configs": {},
+      "impl": {
+        "export": "EmptyState",
+        "kind": "package",
+        "module": "@clossys/designer/blocks"
+      },
+      "license": "MIT",
+      "notes": [
+        "Public EmptyState is the existing fill anchor only; the private runtime boundary-message composition owns the separate status h1 and state metadata. The slot/prop pointers are adaptation endpoints, not an assertion that EmptyState alone accepts this section contract.",
+        "Status and title adapt together to a separate h1 status and the existing block h2 title; no new public Blocks export is introduced.",
+        "All visible and accessible copy is consumer authored. Each optional action requires its label when present and exactly one href or action id. Callback ids require sectionHosts[\"sections.boundary-message\"].onAction; no inert fallback callback is installed.",
+        "The four bounded boundary kinds select host state; sign-out-confirm requires exactly two host-authored controls. No auth, sign-out, navigation, or persistence behavior is implemented.",
+        "Shared deterministic preview copy comes from specimenDataset.sections.errorState and uses a navigation link, so preview needs no live host.",
+        "Draft descriptor; runtime tests are source declarations, not consumer adoption or release clearance.",
+        "Descriptor only; source imports, token reads, shared anatomy, accessibility, contrast and consumer runtime conformance are unmeasured. Content bindings describe host adaptation points, not type-equivalent converters."
+      ],
+      "parts": [],
+      "pin": {
+        "export": "./blocks#EmptyState",
+        "package": "@clossys/designer",
+        "version": "0.12.0"
+      },
+      "propMap": {
+        "kind.not-authorized": "./blocks#EmptyState.title",
+        "kind.service-unavailable": "./blocks#EmptyState.title",
+        "kind.sign-in-unavailable": "./blocks#EmptyState.title",
+        "kind.sign-out-confirm": "./blocks#EmptyState.title"
+      },
+      "slot": "sections.boundary-message",
+      "slotMap": {
+        "actions": "./blocks#EmptyState.action",
+        "description": "./blocks#EmptyState.description",
+        "notes": "./blocks#EmptyState.description",
+        "status": "./blocks#EmptyState.title",
+        "title": "./blocks#EmptyState.title"
+      },
+      "source": "foundry"
+    }
+  }
+}
