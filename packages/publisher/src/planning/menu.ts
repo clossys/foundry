@@ -1,4 +1,6 @@
 import { freeze } from "../layouts/resolve.js";
+import type { CopyRef } from "@clossys/writer";
+import { publisherValueRef } from "../web/publisher/value-names.js";
 import { getFormatLeaf } from "../formats/index.js";
 import type { FormatId, PublisherDeliveryChoice } from "../formats/contract.js";
 import type { PublisherConfiguration, PublisherLaneRecommendation, PublisherRequirements } from "./configuration.js";
@@ -34,6 +36,50 @@ export interface PublisherMenuItem {
   readonly needs: MenuNeeds;
   readonly recommendations: readonly PublisherLaneRecommendation[];
   readonly requirements: PublisherRequirements;
+}
+export interface PublisherMenuDisplay {
+  readonly needsInput: readonly PublisherDisplayNeed[];
+  readonly labelRef?: Readonly<CopyRef>;
+  readonly milestoneRef?: Readonly<CopyRef>;
+  readonly packRef?: Readonly<CopyRef>;
+  readonly statusRef?: Readonly<CopyRef>;
+  readonly laneRefs: readonly (Readonly<CopyRef> | undefined)[];
+  readonly needs: {
+    readonly sections: readonly (Readonly<CopyRef> | undefined)[];
+    readonly frames: readonly (Readonly<CopyRef> | undefined)[];
+    readonly formats: readonly (Readonly<CopyRef> | undefined)[];
+  };
+  readonly requirements: {
+    readonly brandAssets: readonly (Readonly<CopyRef> | undefined)[];
+    readonly content: readonly (Readonly<CopyRef> | undefined)[];
+  };
+}
+export interface PublisherDisplayNeed { readonly path: string; readonly parent: string; readonly id: string }
+/** Display references are a separate projection; closed menu identities remain stable. */
+export function publisherMenuDisplay(item: PublisherMenuItem): PublisherMenuDisplay {
+  const needsInput: PublisherDisplayNeed[] = [];
+  const ref = (parent: string, id: string, path: string) => {
+    const value = publisherValueRef(parent, id);
+    if (!value) needsInput.push({ path, parent, id });
+    return value;
+  };
+  return freeze({
+    labelRef: ref("publisher.menuItem", item.id, "label"),
+    milestoneRef: ref("publisher.milestone", item.milestone, "milestone"),
+    packRef: ref("publisher.pack", item.pack, "pack"),
+    statusRef: ref("admin.enum", item.status, "status"),
+    laneRefs: item.lanes.map((lane, index) => ref("publisher.lane", lane, `lanes.${index}`)),
+    needs: {
+      sections: item.needs.sections.map((id, index) => ref("publisher.contentKey", id, `needs.sections.${index}`)),
+      frames: item.needs.frames.map((id, index) => ref("publisher.frame", id, `needs.frames.${index}`)),
+      formats: item.needs.formats.map((id, index) => ref("publisher.format", id, `needs.formats.${index}`)),
+    },
+    requirements: {
+      brandAssets: item.requirements.brandAssets.map((id, index) => ref("publisher.brandAsset", `brandAssets.${id}`, `requirements.brandAssets.${index}`)),
+      content: item.requirements.contentRefs.map((content, index) => ref("publisher.content", `content.${content.slot}`, `requirements.content.${index}`)),
+    },
+    needsInput,
+  });
 }
 const web = { sections: ["Page sections"], frames: ["frames.site-shell"], formats: ["web.page.responsive"] };
 const webConfiguration = (config: string, app = false): PublisherConfiguration => ({ kind: "web", format: "web.page.responsive", frame: { leaf: app ? "frames.app-shell" : "frames.site-shell", ...(!app ? { config: "site" } : {}) }, layout: { leaf: config.startsWith("split.") ? "layouts.split" : config.startsWith("bento.") ? "layouts.bento" : config.startsWith("sidebar-content.") ? "layouts.sidebar-content" : "layouts.stack", config }, media: { size: getFormatLeaf("web.page.responsive")!.size }, deliveries: [{ id: "static-site-bundle" }] });

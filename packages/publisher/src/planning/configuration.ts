@@ -1,10 +1,12 @@
 import type { InstanceRegistries } from "../core/instance-binding.js";
+import type { CopyRef } from "@clossys/writer";
+import { publisherValueRef } from "../web/publisher/value-names.js";
 import type { FormatId, FormatSize, PublisherDeliveryChoice } from "../formats/contract.js";
 import { getEffectiveLayoutContract, freeze } from "../layouts/resolve.js";
 import type { LayoutId } from "../layouts/ids.js";
 import { canonicalPlanJson } from "./digest.js";
 import { PUBLISHER_MENU } from "./menu.js";
-import type { PublisherMenuItem, PublisherPlanLane } from "./menu.js";
+import type { PublisherDisplayNeed, PublisherMenuItem, PublisherPlanLane } from "./menu.js";
 import type { PublisherPlanItem, PublisherPlanNeed } from "./plan.js";
 
 export interface PublisherMediaSettings { readonly size: FormatSize; readonly fps?: number }
@@ -20,6 +22,41 @@ export interface PublisherRequirements {
   /** An outline and reference requirements, never authored audience copy. */
   readonly contentRefs: readonly { readonly slot: string; readonly purpose: string; readonly length: "short" | "medium" | "long"; readonly requiredFacts: readonly string[] }[];
   readonly integrations: readonly string[];
+}
+export interface PublisherConfigurationDisplay {
+  readonly needsInput: readonly PublisherDisplayNeed[];
+  readonly formatRef?: Readonly<CopyRef>;
+  readonly frameRef?: Readonly<CopyRef>;
+  readonly frameConfigRef?: Readonly<CopyRef>;
+  readonly layoutRef?: Readonly<CopyRef>;
+  readonly layoutConfigRef?: Readonly<CopyRef>;
+  readonly mediaKindRef?: Readonly<CopyRef>;
+  readonly mediaUnitRef?: Readonly<CopyRef>;
+  readonly breakpointRefs: readonly (Readonly<CopyRef> | undefined)[];
+  readonly deliveries: readonly { readonly labelRef?: Readonly<CopyRef>; readonly fidelityRef?: Readonly<CopyRef> }[];
+}
+/** Only registered presentation references leave this projection, never substitute ID text. */
+export function publisherConfigurationDisplay(configuration?: PublisherConfiguration): PublisherConfigurationDisplay {
+  const needsInput: PublisherDisplayNeed[] = [];
+  const ref = (parent: string, id: string, path: string) => {
+    const value = publisherValueRef(parent, id);
+    if (!value) needsInput.push({ path, parent, id });
+    return value;
+  };
+  const web = configuration?.kind === "web" ? configuration : undefined;
+  const size = web?.media.size;
+  return freeze({
+    formatRef: configuration && "format" in configuration && configuration.format ? ref("publisher.format", configuration.format, "format") : undefined,
+    frameRef: web ? ref("publisher.frame", web.frame.leaf, "frame.leaf") : undefined,
+    frameConfigRef: web?.frame.config ? ref(`publisher.frameConfig.${web.frame.leaf}`, web.frame.config, "frame.config") : undefined,
+    layoutRef: web ? ref("publisher.layout", web.layout.leaf, "layout.leaf") : undefined,
+    layoutConfigRef: web ? ref(`publisher.layoutConfig.${web.layout.leaf}`, web.layout.config, "layout.config") : undefined,
+    mediaKindRef: size ? ref("publisher.mediaValue", size.kind, "media.size.kind") : undefined,
+    mediaUnitRef: size && "unit" in size ? ref("publisher.mediaValue", size.unit, "media.size.unit") : undefined,
+    breakpointRefs: size && "breakpoints" in size ? size.breakpoints.map((id, index) => ref("publisher.breakpoint", id, `media.size.breakpoints.${index}`)) : [],
+    deliveries: (configuration?.deliveries ?? []).map((delivery, index) => ({ labelRef: ref("publisher.delivery", delivery.id, `deliveries.${index}.id`), fidelityRef: delivery.fidelity ? ref("publisher.slideFidelity", delivery.fidelity, `deliveries.${index}.fidelity`) : undefined })),
+    needsInput,
+  });
 }
 const equal = (a: unknown, b: unknown) => canonicalPlanJson(a) === canonicalPlanJson(b);
 const text = (value: unknown): value is string => typeof value === "string" && value.trim().length > 0;
