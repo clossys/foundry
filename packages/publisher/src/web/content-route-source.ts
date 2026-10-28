@@ -1,6 +1,9 @@
 import { assertContentRouteRegistration } from "./content-route-registration.js";
 import type { ContentRouteRegistration } from "./content-route-types.js";
 
+export { resolveContentRouteRequest } from "./content-route-request.js";
+export type { ContentRouteRequestInput, ContentRouteRequestResult } from "./content-route-request.js";
+
 export { createContentRouteManifest } from "./content-route-manifest.js";
 export type { CreateContentRouteManifestInput } from "./content-route-manifest.js";
 
@@ -22,13 +25,13 @@ function moduleJson(value: unknown): string {
 export function emitContentRoutePage(route: ContentRouteRegistration): string {
   assertContentRouteRegistration(route);
   return [
-    'import { ContentRoutePage, bindContentRoute } from "@clossys/publisher/web/content-route";',
+    'import { ContentRoutePage, bindContentRoute, requireContentRoutePublishing } from "@clossys/publisher/web/content-route";',
     'import type { ContentRouteInput, ContentRouteRegistration } from "@clossys/publisher/web/content-route";',
     `import { ${route.loader.export} as loadContentRoute } from ${moduleJson(modulePath(route.source.file, route.loader.file))};`,
     `const route: ContentRouteRegistration = ${moduleJson(route)};`,
     "export default async function ContentPage() {",
     "  const input: ContentRouteInput = await loadContentRoute();",
-    "  return <ContentRoutePage input={bindContentRoute(input, route)} />;",
+    "  return <ContentRoutePage input={requireContentRoutePublishing(bindContentRoute(input, route))} />;",
     "}", "",
   ].join("\n");
 }

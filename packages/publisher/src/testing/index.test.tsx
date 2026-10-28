@@ -171,8 +171,8 @@ describe("conforming surfaces", () => {
     expect(checkFrontDoor({ surfaces: [] })).toEqual([]);
   });
 
-  it("names the bg-accent token as the primary-action class", () => {
-    expect(PRIMARY_ACTION_CLASS).toBe("bg-accent");
+  it("names the bg-action token as the primary-action class", () => {
+    expect(PRIMARY_ACTION_CLASS).toBe("bg-action");
   });
 
   it("is carried by a primary Designer Button and not by ghost or secondary ones", () => {
@@ -188,6 +188,15 @@ describe("conforming surfaces", () => {
 });
 
 describe("each rule fires", () => {
+  it("preserves exact legacy primary tokens and counts mixed-token controls together", () => {
+    const legacy = () => <main><h1>Missing</h1><a href="/" className="bg-accent">Home</a></main>;
+    expect(rulesFor({ surface: "not-found", render: legacy, title })).toEqual([]);
+    const mixed = () => <main><h1>Missing</h1><a href="/" className="bg-accent">Home</a><button className="bg-action">Retry</button></main>;
+    expect(rulesFor({ surface: "not-found", render: mixed, title })).toContain("one-primary-action");
+    const substring = () => <main><h1>Missing</h1><a href="/" className="bg-accent-hover">Home</a></main>;
+    expect(rulesFor({ surface: "not-found", render: substring, title })).toContain("one-primary-action");
+  });
+
   it.each([
     ["zero forms", <main><h1>Contact</h1><Button>Send</Button></main>, "found 0"],
     ["two forms", <main><h1>Contact</h1><form method="post"><Button>Send</Button></form><form method="post" /></main>, "found 2"],
@@ -255,10 +264,10 @@ describe("each rule fires", () => {
     const withLinkAndRole = (): ReactElement => (
       <main style={{ maxWidth: TOKEN_FORM_MEASURE }}>
         <h1>Sign in</h1>
-        <a href="/x" className="bg-accent">
+        <a href="/x" className="bg-action">
           Go
         </a>
-        <div role="button" className="bg-accent">
+        <div role="button" className="bg-action">
           Also go
         </div>
       </main>
@@ -268,10 +277,10 @@ describe("each rule fires", () => {
     const decorative = (): ReactElement => (
       <main style={{ maxWidth: TOKEN_FORM_MEASURE }}>
         <h1>Sign in</h1>
-        <a href="/x" className="bg-accent">
+        <a href="/x" className="bg-action">
           Go
         </a>
-        <span className="bg-accent" />
+        <span className="bg-action" />
       </main>
     );
     expect(rulesFor({ surface: "sign-in", render: decorative, title })).toEqual([]);
@@ -281,7 +290,7 @@ describe("each rule fires", () => {
     const render = (): ReactElement => (
       <main style={{ maxWidth: TOKEN_FORM_MEASURE }}>
         <h1>Sign in</h1>
-        <button type="button" className="bg-accent-hover">
+        <button type="button" className="bg-action-hover">
           Go
         </button>
       </main>
@@ -293,10 +302,10 @@ describe("each rule fires", () => {
     const noMain = (): ReactElement => (
       <div>
         <h1>Oops</h1>
-        <button type="button" className="bg-accent">
+        <button type="button" className="bg-action">
           Retry
         </button>
-        <button type="button" className="bg-accent">
+        <button type="button" className="bg-action">
           Again
         </button>
       </div>
@@ -306,13 +315,13 @@ describe("each rule fires", () => {
     const outsideMain = (): ReactElement => (
       <div>
         <header>
-          <a href="/" className="bg-accent">
+          <a href="/" className="bg-action">
             Brand
           </a>
         </header>
         <main>
           <h1>Oops</h1>
-          <button type="button" className="bg-accent">
+          <button type="button" className="bg-action">
             Retry
           </button>
         </main>
@@ -337,6 +346,27 @@ describe("each rule fires", () => {
     );
     expect(rulesFor({ surface: "sign-in", render: none, title })).toEqual(["one-h1"]);
     expect(rulesFor({ surface: "sign-in", render: two, title })).toEqual(["one-h1"]);
+  });
+
+  it("form-measure: accepts the exact utility on main or its direct content root", () => {
+    const content = <><h1>Sign in</h1><Button>Go</Button></>;
+    for (const element of [
+      <main className="max-w-[var(--ui-width-form-max,none)]">{content}</main>,
+      <main><section className="max-w-[var(--ui-width-form-max,none)]">{content}</section></main>,
+    ]) {
+      expect(rulesFor({ surface: "sign-in", render: () => element, title })).toEqual([]);
+    }
+  });
+
+  it("form-measure: rejects an unrelated nested utility, a substring, and an inline override", () => {
+    const content = <><h1>Sign in</h1><Button>Go</Button></>;
+    for (const element of [
+      <main><div>{content}<section className="max-w-[var(--ui-width-form-max,none)]" /></div></main>,
+      <main className="hover:max-w-[var(--ui-width-form-max,none)]">{content}</main>,
+      <main className="max-w-[var(--ui-width-form-max,none)]" style={{ maxWidth: "32rem" }}>{content}</main>,
+    ]) {
+      expect(rulesFor({ surface: "sign-in", render: () => element, title })).toEqual(["form-measure"]);
+    }
   });
 
   it("form-measure: a bare main on sign-in, activation and reset", () => {

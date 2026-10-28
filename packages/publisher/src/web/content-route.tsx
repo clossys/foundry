@@ -1,18 +1,23 @@
 import { Fragment, createElement } from "react";
 import { createCopyResolver } from "@clossys/writer";
 import type { ReactElement } from "react";
-import { AuthFrame } from "@clossys/designer/frames";
+import { canonicalLocale, directionFor } from "@clossys/writer/locale";
+import { AuthFrame, DocumentFrame } from "@clossys/designer/frames";
 import { EmptyState, LogoHero, SectionHeader } from "@clossys/designer/blocks/server";
 import { PAGE_META_KEY, resolveCopy, validateCopyFields } from "../content/composition.js";
 import type { CompositionSection, CopyFinding, CopyResolutionReport, ResolveCopyOptions } from "../content/composition.js";
 import { isContentJson } from "../content/json.js";
 import { validateConsumerLibrarySnapshots } from "../content/library.js";
 import { checkPageMetadata, robotsFor } from "../content/metadata.js";
+import { buildLocaleRoutePlan } from "../content/hreflang.js";
+import { formatPageTitle } from "./siteMetadata.js";
 import { selectContentRoute } from "./content-route-binding.js";
 import type { ContentRouteInput, ContentRouteMetadata, ContentRouteNeed, PreparedContentRoute } from "./content-route-types.js";
 
 export { bindContentRoute } from "./content-route-binding.js";
 export type * from "./content-route-types.js";
+export { resolveContentRouteRequest } from "./content-route-request.js";
+export type * from "./content-route-request.js";
 
 /** Missing design or Writer inputs prevent the complete route from rendering. */
 export class ContentRouteNeedsError extends Error {
@@ -23,6 +28,16 @@ export class ContentRouteNeedsError extends Error {
     this.name = "ContentRouteNeedsError";
     this.needs = needs;
   }
+}
+
+/** Emitted routes require publishing evidence; direct preparation remains a read-only preview. */
+export function requireContentRoutePublishing(input: ContentRouteInput): ContentRouteInput {
+  if (input.publishing === undefined) throw new ContentRouteNeedsError([{
+    id: `content-route:${JSON.stringify([input.slotId, input.locale, "publishing"])}`,
+    kind: "config", target: "designer", slotId: input.slotId, ref: "publishing",
+    detail: "Serving content requires publishing document and locale-route evidence", raisedAt: input.raisedAt,
+  }]);
+  return input;
 }
 
 /** Resolve one active content route using closed adapters for actual Designer exports. */
@@ -61,7 +76,7 @@ export function prepareContentRoute(input: ContentRouteInput): PreparedContentRo
   const canonical = typeof canonicalPolicy === "string"
     ? locale === input.registry.workspace.defaultLocale ? canonicalPolicy : undefined
     : canonicalPolicy?.[locale];
-  const metadata: ContentRouteMetadata = {
+  let metadata: ContentRouteMetadata = {
     ...(pageCopy.title === undefined ? {} : { title: pageCopy.title }),
     ...(pageCopy.description === undefined ? {} : { description: pageCopy.description }),
     robots: robotsFor(slot),
@@ -69,6 +84,44 @@ export function prepareContentRoute(input: ContentRouteInput): PreparedContentRo
   };
   for (const finding of checkPageMetadata({ ...slot, locales: [locale] }, { ...candidate, pageMeta: candidate.pageMeta?.filter(field => field.locale === locale) }, undefined, copyOptions)) {
     add("copy", "writer", finding.path, `Writer page metadata is required: ${finding.path} (${finding.rule})`);
+  }
+
+  if (input.publishing !== undefined) {
+    const publishing = input.publishing;
+    if (!isContentJson(publishing) || publishing === null || typeof publishing !== "object" || Array.isArray(publishing)) {
+      add("config", "designer", "publishing", "Publishing requires finite document and locale-route evidence");
+    } else {
+      let nativeMetadataComplete = true;
+      for (const publishedLocale of slot.locales) {
+        const nativeCopy = publishedLocale === locale ? pageCopy
+          : recordCopy(resolveCopy({ pageMeta: candidate.pageMeta }, publishedLocale, { ...copyOptions, requirePageMeta: true }))[PAGE_META_KEY] ?? {};
+        for (const key of ["title", "description"] as const) if (!nativeCopy[key]?.trim()) {
+          nativeMetadataComplete = false;
+          add("copy", "writer", `pageMeta.${publishedLocale}.${key}`, `Publishing requires native Writer ${key} for every served locale: ${publishedLocale}`);
+        }
+      }
+      const plan = buildLocaleRoutePlan(slot, { ...publishing, workspace: input.registry.workspace });
+      for (const finding of plan.findings) if (finding.severity === "error") {
+        add("config", "designer", finding.path, `Publishing locale metadata is required: ${finding.path} (${finding.rule})`);
+      }
+      const page = plan.pages.find(entry => entry.locale === locale);
+      if (!page) add("config", "designer", "publishing.locale", "Publishing requires an active locale page");
+      let title: string | undefined;
+      try { title = formatPageTitle({ page: pageCopy.title!, brand: publishing.brand }); }
+      catch { add("copy", "writer", "publishing.title", "Publishing requires Writer page title and brand text"); }
+      let lang: string | undefined;
+      let dir: "ltr" | "rtl" | undefined;
+      try { lang = canonicalLocale(locale); dir = directionFor(lang, publishing.manifest); }
+      catch { add("config", "writer", "publishing.manifest", "Publishing requires the Writer locale direction manifest"); }
+      metadata = {
+        ...metadata, ...(title === undefined ? {} : { title }),
+        ...(page === undefined ? {} : { canonical: page.canonical, alternates: nativeMetadataComplete ? page.alternates : [] }),
+        ...(lang === undefined ? {} : { lang, openGraphLocale: lang.replaceAll("-", "_") }),
+        ...(dir === undefined ? {} : { dir }),
+        openGraphTitle: pageCopy["share-title"]?.trim() ? pageCopy["share-title"] : title,
+        openGraphDescription: pageCopy["share-text"]?.trim() ? pageCopy["share-text"] : pageCopy.description,
+      };
+    }
   }
 
   const libraryFindings = validateConsumerLibrarySnapshots(input.libraries);
@@ -161,6 +214,21 @@ export function ContentRoutePage({ input }: { readonly input: ContentRouteInput 
   const prepared = prepareContentRoute(input);
   if (prepared.status !== "ready" || !prepared.node) throw new ContentRouteNeedsError(prepared.needs);
   const { metadata, candidate, locale } = prepared;
+  if (input.publishing !== undefined) return <DocumentFrame
+    lang={metadata.lang!} dir={metadata.dir!} variant="page" title={metadata.title!}
+    icon={candidate.pageMetaAssets?.icon === undefined ? undefined : { href: candidate.pageMetaAssets.icon }}
+    meta={[{ name: "description", content: metadata.description! }, { name: "robots", content: metadata.robots }]}
+    links={[
+      { rel: "canonical", href: metadata.canonical! },
+      ...(metadata.alternates ?? []).map(alternate => ({ rel: "alternate" as const, href: alternate.href, hrefLang: alternate.hreflang })),
+    ]}
+  >
+    <meta property="og:title" content={metadata.openGraphTitle} />
+    <meta property="og:description" content={metadata.openGraphDescription} />
+    <meta property="og:locale" content={metadata.openGraphLocale} />
+    {candidate.pageMetaAssets?.["og-image"] === undefined ? null : <meta property="og:image" content={candidate.pageMetaAssets["og-image"]} />}
+    {prepared.node}
+  </DocumentFrame>;
   const writer = input.writer;
   const pageCopy = resolveCopy({ pageMeta: candidate.pageMeta }, locale, {
     requirePageMeta: true,

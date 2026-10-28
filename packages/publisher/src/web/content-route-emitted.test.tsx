@@ -8,10 +8,21 @@ import { promisify } from "node:util";
 import { build } from "esbuild";
 import { expect, it } from "vitest";
 import { createContentRouteManifest, emitContentRoutePage } from "./content-route-source.js";
-import { contentRouteFixture } from "./__fixtures__/content-route.js";
+import { contentRouteFixture, writerField } from "./__fixtures__/content-route.js";
 
 it("compiles and executes the emitted async page against the public isolated package entry", async () => {
-  const input = contentRouteFixture();
+  const legacy = contentRouteFixture({ pageMeta: [writerField("title", "Sign in"), writerField("description", "Continue to your account.")] });
+  const input = {
+    ...legacy,
+    registry: { ...legacy.registry, workspace: { ...legacy.registry.workspace,
+      deployTargets: legacy.registry.workspace.deployTargets.map(target => ({ ...target, origin: "https://example.test" })),
+    } },
+    publishing: {
+      brand: "Example",
+      manifest: { defaultLocale: "en", locales: [{ tag: "en", dir: "ltr" as const, state: "active" as const }], fallback: {} },
+      bodyServedLocales: { en: ["en"] }, existingUrls: ["https://example.test/sign-in"],
+    },
+  };
   const loader = { file: "src/content-loader.ts", export: "loadContentRoute" };
   const route = createContentRouteManifest({ registry: input.registry, locale: input.locale, loader }).routes[0]!;
   const testDirectory = dirname(fileURLToPath(import.meta.url));
@@ -39,7 +50,7 @@ it("compiles and executes the emitted async page against the public isolated pac
     const { stdout: html } = await promisify(execFile)(process.execPath, [runnerFile], { cwd: consumer, encoding: "utf8", timeout: 20_000 });
     expect(html).toContain('data-ds-leaf="frames.auth-shell"');
     expect(html).toContain('data-ds-leaf="sections.empty-state"');
-    expect(html).toContain("<title>Sign in | Example</title>");
+    expect(html).toContain("<title>Sign in · Example</title>");
     expect(html).toContain("Sign in to continue"); expect(html).toContain("Skip to sign-in content");
   } finally {
     await rm(consumer, { recursive: true, force: true });

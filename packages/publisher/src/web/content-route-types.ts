@@ -2,6 +2,7 @@ import type { ReactElement } from "react";
 import type { Composition, CopyField, CopyFinding, ContentWriterContext } from "../content/composition.js";
 import type { ContentCandidate, ContentRegistry, ContentSlot } from "../content/model.js";
 import type { ConsumerLibrarySnapshot } from "../content/library.js";
+import type { LocaleRouteOptions, HreflangAlternate } from "../content/hreflang.js";
 import type { RevisionId } from "../content/vocabulary.js";
 
 export interface ContentRouteNeed {
@@ -12,6 +13,11 @@ export interface ContentRouteNeed {
   readonly ref?: string;
   readonly detail: string;
   readonly raisedAt: string;
+}
+/** Consumer evidence required by an emitted, serving route; omitted only for read-only previews. */
+export interface ContentRoutePublishing extends Omit<LocaleRouteOptions, "workspace"> {
+  /** Writer-resolved brand for the requested locale. */
+  readonly brand: string;
 }
 export interface ContentRouteInput {
   readonly registry: ContentRegistry;
@@ -24,12 +30,19 @@ export interface ContentRouteInput {
   /** Finite Writer registries and locale policy; approval time is raisedAt. */
   readonly writer?: ContentWriterContext;
   readonly raisedAt: string;
+  readonly publishing?: ContentRoutePublishing;
 }
 export interface ContentRouteMetadata {
   readonly title?: string;
   readonly description?: string;
   readonly robots: "index" | "noindex";
   readonly canonical?: string;
+  readonly alternates?: readonly HreflangAlternate[];
+  readonly lang?: string;
+  readonly dir?: "ltr" | "rtl";
+  readonly openGraphTitle?: string;
+  readonly openGraphDescription?: string;
+  readonly openGraphLocale?: string;
 }
 export interface ContentRouteSelection {
   readonly slot: ContentSlot;
