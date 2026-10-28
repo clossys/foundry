@@ -1,8 +1,8 @@
 import { createHash } from "node:crypto";
 import { execFileSync } from "node:child_process";
-import { mkdtempSync, mkdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { mkdtempSync, mkdirSync, readFileSync, rmSync, symlinkSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
-import { join } from "node:path";
+import { join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { expect, it } from "vitest";
 import { CHECK_CODES } from "../../designer/src/catalog-core/check-guidance.js";
@@ -65,6 +65,7 @@ it("resolves every scorecard finding key through both packed public admin export
     const installed = join(root, "node_modules/@clossys/writer");
     mkdirSync(installed, { recursive: true });
     execFileSync("tar", ["-xzf", join(root, packed[0].filename), "-C", installed, "--strip-components=1"]);
+    symlinkSync(resolve(packageRoot, "../../node_modules/intl-messageformat"), join(root, "node_modules/intl-messageformat"), "dir");
     writeFileSync(join(root, "package.json"), JSON.stringify({ private: true, type: "module" }));
     writeFileSync(join(root, "codes.json"), JSON.stringify(CHECK_CODES));
     const probe = join(root, "probe.mjs");

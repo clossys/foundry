@@ -646,6 +646,20 @@ record. It is evaluated on each call and not cached.
 - A narrow grant. A `delegatedCopyApproval` without `scopes` covers every
   entry; the grant is visible only as the missing member.
 
+### `writer-check admin-copy-draft` — create an English admin draft
+
+`writer-check admin-copy-draft <input.json> <new-envelope.json>` accepts an
+explicit `{ "locale": "en", "records": [...] }` input. Records must be distinct,
+unapproved draft Strings with registered leaves, `admin.writer.` contexts and
+valid declared ICU arguments. The command creates a new envelope and never
+overwrites an existing destination. It supplies no approval or activation.
+
+The shipped Writer page drafts join `getAdminCopy()` through the existing
+`@clossys/writer/admin-copy` export. `resolveAdminCopyRef(ref, copy)` formats
+English draft-review text from that supplied store and returns `undefined` for
+missing records, unsupported locales or invalid message arguments. It is separate
+from the approved production resolver.
+
 ### `writer-check approve` — write or revoke a record
 
 ```bash
