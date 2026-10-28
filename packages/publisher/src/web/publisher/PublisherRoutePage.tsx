@@ -1,7 +1,7 @@
 "use client";
 import { useEffect, useMemo, useState, type CSSProperties, type ReactNode } from "react";
 import { Banner } from "@clossys/designer/components";
-import { surfaceRuntimeCallbacks, surfaceRendererId } from "@clossys/designer/frames";
+import { ShellCopyProvider, surfaceRuntimeCallbacks, surfaceRendererId } from "@clossys/designer/frames";
 import { checkConsumerRuntimePorts, runtimeHash } from "@clossys/designer/catalog";
 import type { RuntimeContentRef, RuntimeRenderInput } from "@clossys/designer/catalog";
 import { checkedDesignerRouteData, routeBreakpointPixels, routeBreakpointsReady } from "@clossys/designer/studio/route/server";
@@ -77,7 +77,7 @@ function PublisherRouteSurface({ serverData, checked, copyResolver }: { serverDa
   const contents = useMemo(() => new Map(data.contents.map(row => [runtimeHash(row.reference), row])), [data.contents]);
   const library = useMemo<ConsumerInstanceLibrary>(() => ({ id: profile.consumer, role: "consumer", resolveFill: (leaf, config) => workspace.fills.find(fill => fill.leaf === leaf && fill.config === config), resolveContent: (ref: ContentRef) => contents.has(runtimeHash(ref)) ? ref : undefined }), [profile.consumer, workspace.fills, contents]);
   const renderers = useMemo(() => surfaceRuntimeCallbacks(data.manifest.fills.map(fill => fill.leaf)), [data.manifest]);
-  const ports = useMemo(() => ({ manifest: data.manifest, renderers, resolveContent: (reference: RuntimeContentRef) => contents.get(runtimeHash(reference)), frameHost: { navigate(href: string) {
+  const ports = useMemo(() => ({ manifest: data.manifest, renderers, resolveContent: (reference: RuntimeContentRef) => contents.get(runtimeHash(reference)), frameHost: { panels: { inspector: null as ReactNode }, navigate(href: string) {
     const selected = publisherChannelFromHref(href);
     if (selected) { setChannel(selected); return; }
     window.location.assign(new URL(href, window.location.href).href);
@@ -94,5 +94,5 @@ function PublisherRouteSurface({ serverData, checked, copyResolver }: { serverDa
   }
   const body = <PublisherPage key="publisher" copyResolver={copyResolver} {...workspace} library={library} breakpointValues={values} activeChannel={channel} />;
   const input: RuntimeRenderInput<ReactNode> = { path: "frame", fill: frame, selection: data.frame, content, slots: { main: [body] }, profile, cell: data.cell, host: ports.frameHost };
-  return <div data-route-display="publisher" data-route-authentication="unverified" className="absolute inset-0 min-h-0 min-w-0" style={Object.fromEntries(Object.entries(values).map(([id, px]) => [`--breakpoint-${id.slice("tokens.breakpoint.".length)}`, `${px}px`])) as CSSProperties}>{renderers[frame.renderer.id]!(input)}</div>;
+  return <ShellCopyProvider resolver={copyResolver}><div data-route-display="publisher" data-route-authentication="unverified" className="absolute inset-0 min-h-0 min-w-0" style={Object.fromEntries(Object.entries(values).map(([id, px]) => [`--breakpoint-${id.slice("tokens.breakpoint.".length)}`, `${px}px`])) as CSSProperties}>{renderers[frame.renderer.id]!(input)}</div></ShellCopyProvider>;
 }

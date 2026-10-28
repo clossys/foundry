@@ -1,10 +1,13 @@
 "use client";
-import { Disclosure } from "@clossys/designer/components";
 import { Button } from "@clossys/designer/components";
-import { useState } from "react";
-import { PUBLISHER_MENU, PUBLISHER_MENU_VERSION, PUBLISHER_MILESTONES, PUBLISHER_PACKS } from "../../planning/menu.js";
-import { validatePublisherPlan } from "../../planning/plan.js";
-import { recommendPlanItem, withPublisherConfiguration, configurationInputNeeds, derivePublisherDeliveryState } from "../../planning/configuration.js";
+import { DataTable, DetailView, NoticeList, ResourceList, StatGroup } from "@clossys/designer/blocks";
+import { SlotModule } from "@clossys/designer/shell";
+import { createPublisherValueNames } from "./value-names.js";
+import { publisherCopy, PUBLISHER_COPY_REFS, type PublisherCopyResolver, type PublisherCopyRef } from "./copy.js";
+import { useId, useMemo, useState } from "react";
+import { PUBLISHER_MENU, PUBLISHER_MENU_VERSION, PUBLISHER_MILESTONES, PUBLISHER_PACKS, publisherMenuDisplay } from "../../planning/menu.js";
+import { validatePublisherPlan, publisherPlanItemDisplay, publisherPlanNeedDisplay } from "../../planning/plan.js";
+import { recommendPlanItem, withPublisherConfiguration, configurationInputNeeds, derivePublisherDeliveryState, publisherConfigurationDisplay } from "../../planning/configuration.js";
 import type { PublisherRequirementMessages } from "../../planning/configuration.js";
 import type { PublisherPlanItem } from "../../planning/plan.js";
 import { ConfigurationSummary, configurationFieldLabel, configurationValueLabel, DeliverySettingsFields, InputQuestions, ProductionSettingsForm } from "./ProductionSettingsForm.js";
@@ -52,83 +55,51 @@ export interface PublisherPlanMessages {
   readonly deployLabel: string;
 }
 
-const panel = "grid gap-md rounded border border-line-base bg-surface-raised p-lg";
-export function PublisherPlanView({ store, draft, onApply, messages, productionMessages, deploymentSurfaceIds, requirementMessages, onDraftChange }: { store: PublisherPlanStore; draft?: PublisherPlanDraft; onDraftChange?: (draft: PublisherPlanDraft) => void; onApply?: PublisherPlanApply; messages?: Partial<PublisherPlanMessages>; productionMessages?: Partial<ProductionSettingsFormMessages>; deploymentSurfaceIds?: readonly string[]; requirementMessages?: Partial<PublisherRequirementMessages> }) {
+export function PublisherPlanView({ copyResolver, routePathFor, store, draft, onApply, messages, productionMessages, deploymentSurfaceIds, requirementMessages, onDraftChange }: { copyResolver?: PublisherCopyResolver; routePathFor?: (item: PublisherPlanItem) => string | undefined; store: PublisherPlanStore; draft?: PublisherPlanDraft; onDraftChange?: (draft: PublisherPlanDraft) => void; onApply?: PublisherPlanApply; messages?: Partial<PublisherPlanMessages>; productionMessages?: Partial<ProductionSettingsFormMessages>; deploymentSurfaceIds?: readonly string[]; requirementMessages?: Partial<PublisherRequirementMessages> }) {
+  const [selectedId, setSelectedId] = useState<string>();
   const [pending, setPending] = useState(false), [error, setError] = useState<string>();
-  /** @default 'Plan' */
-  const planLabel = messages?.planLabel ?? 'Plan';
-  /** @default 'Menu → proposed plan → Align → Configure → Ready' */
-  const flowLabel = messages?.flowLabel ?? 'Menu → proposed plan → Align → Configure → Ready';
-  /** @default 'Align records a version through the host apply callback. Plans and menu capabilities do not prove implementation, adoption or rendered readiness.' */
-  const alignmentDescription = messages?.alignmentDescription ?? 'Align records a version through the host apply callback. Plans and menu capabilities do not prove implementation, adoption or rendered readiness.';
-  /** @default 'Tell Publisher your milestones' */
-  const emptyLabel = messages?.emptyLabel ?? 'Tell Publisher your milestones';
-  /** @default 'Aligned version' */
-  const alignedVersionLabel = messages?.alignedVersionLabel ?? 'Aligned version';
-  /** @default 'No aligned plan' */
-  const noAlignedPlanLabel = messages?.noAlignedPlanLabel ?? 'No aligned plan';
-  /** @default 'Aligned plan versions' */
-  const versionsLabel = messages?.versionsLabel ?? 'Aligned plan versions';
-  /** @default 'Version' */
-  const versionLabel = messages?.versionLabel ?? 'Version';
-  /** @default 'aligned' */
-  const alignedLabel = messages?.alignedLabel ?? 'aligned';
-  /** @default 'Proposed plan' */
-  const proposalLabel = messages?.proposalLabel ?? 'Proposed plan';
-  /** @default 'Draft version' */
-  const draftVersionLabel = messages?.draftVersionLabel ?? 'Draft version';
-  /** @default 'Current milestone:' */
-  const currentMilestoneLabel = messages?.currentMilestoneLabel ?? 'Current milestone:';
-  /** @default '. Production tabs continue to show the aligned version.' */
-  const draftDescription = messages?.draftDescription ?? '. Production tabs continue to show the aligned version.';
-  /** @default 'Item:' */
-  const itemLabel = messages?.itemLabel ?? 'Item:';
-  /** @default 'Host reference:' */
-  const hostReferenceLabel = messages?.hostReferenceLabel ?? 'Host reference:';
-  /** @default 'Caused by answers:' */
-  const answersLabel = messages?.answersLabel ?? 'Caused by answers:';
-  /** @default 'Needs input' */
-  const needsInputLabel = messages?.needsInputLabel ?? 'Needs input';
-  /** @default 'Plan findings' */
-  const findingsLabel = messages?.findingsLabel ?? 'Plan findings';
-  /** @default 'Aligning…' */
-  const aligningLabel = messages?.aligningLabel ?? 'Aligning…';
-  /** @default 'Align plan' */
-  const alignLabel = messages?.alignLabel ?? 'Align plan';
-  /** @default 'A host approval/apply callback is required to Align.' */
-  const missingApprovalLabel = messages?.missingApprovalLabel ?? 'A host approval/apply callback is required to Align.';
-  /** @default 'Publisher menu' */
-  const menuLabel = messages?.menuLabel ?? 'Publisher menu';
-  /** @default 'Menu · version' */
-  const menuVersionLabel = messages?.menuVersionLabel ?? 'Menu · version';
-  /** @default 'Built means a mechanism exists. Concept-only offers stay in the plan and have no renderer.' */
-  const capabilityDescription = messages?.capabilityDescription ?? 'Built means a mechanism exists. Concept-only offers stay in the plan and have no renderer.';
-  /** @default 'Sections:' */
-  const sectionsLabel = messages?.sectionsLabel ?? 'Sections:';
-  /** @default 'Frames:' */
-  const framesLabel = messages?.framesLabel ?? 'Frames:';
-  /** @default 'Formats:' */
-  const formatsLabel = messages?.formatsLabel ?? 'Formats:';
-  /** @default 'none' */
-  const noneLabel = messages?.noneLabel ?? 'none';
-  /** @default 'Plan alignment failed' */
-  const alignmentFailedLabel = messages?.alignmentFailedLabel ?? 'Plan alignment failed';
-  /** @default 'Configure recommendation' */
-  const configurationLabel = messages?.configurationLabel ?? 'Configure recommendation';
-  /** @default 'Update proposed configuration' */
-  const updateConfigurationLabel = messages?.updateConfigurationLabel ?? 'Update proposed configuration';
-  /** @default 'Original recommendation' */
-  const recommendationLabel = messages?.recommendationLabel ?? 'Original recommendation';
-  /** @default 'Overrides' */
-  const overridesLabel = messages?.overridesLabel ?? 'Overrides';
-  /** @default 'Requirements' */
-  const requirementsLabel = messages?.requirementsLabel ?? 'Requirements';
-  /** @default 'Recommended deliveries' */
-  const deliveryLabel = messages?.deliveryLabel ?? 'Recommended deliveries';
-  /** @default 'Export' */
-  const exportLabel = messages?.exportLabel ?? 'Export';
-  /** @default 'Deploy' */
-  const deployLabel = messages?.deployLabel ?? 'Deploy';
+  const id = useId();
+  const valueNames = useMemo(() => copyResolver ? createPublisherValueNames(copyResolver) : undefined, [copyResolver]);
+  const resolved = (ref: PublisherCopyRef | undefined) => publisherCopy(copyResolver, ref ?? PUBLISHER_COPY_REFS.needsInput);
+  const name = (parent: string, key: string) => valueNames?.(parent, key) ?? resolved(undefined);
+  const displayRequests = (requests: readonly { readonly slot: string; readonly question: string }[]) => requests.map(request => ({ ...request, question: resolved(publisherPlanNeedDisplay(request).questionRef) }));
+  const planLabel = messages?.planLabel ?? name("publisher.planHeader", "planLabel");
+  const flowLabel = messages?.flowLabel ?? name("publisher.planHeader", "flowLabel");
+  const alignmentDescription = messages?.alignmentDescription ?? name("publisher.planHeader", "alignmentDescription");
+  const emptyLabel = messages?.emptyLabel ?? name("publisher.planHeader", "emptyLabel");
+  const alignedVersionLabel = messages?.alignedVersionLabel ?? name("publisher.planHeader", "alignedVersionLabel");
+  const noAlignedPlanLabel = messages?.noAlignedPlanLabel ?? name("publisher.planHeader", "noAlignedPlanLabel");
+  const versionsLabel = messages?.versionsLabel ?? name("publisher.planHeader", "versionsLabel");
+  const versionLabel = messages?.versionLabel ?? name("publisher.planHeader", "versionLabel");
+  const alignedLabel = messages?.alignedLabel ?? name("publisher.planHeader", "alignedLabel");
+  const proposalLabel = messages?.proposalLabel ?? name("publisher.planHeader", "proposalLabel");
+  const draftVersionLabel = messages?.draftVersionLabel ?? name("publisher.planHeader", "draftVersionLabel");
+  const currentMilestoneLabel = messages?.currentMilestoneLabel ?? name("publisher.planHeader", "currentMilestoneLabel");
+  const draftDescription = messages?.draftDescription ?? name("publisher.planHeader", "draftDescription");
+  const itemLabel = messages?.itemLabel ?? name("publisher.planHeader", "itemLabel");
+  const hostReferenceLabel = messages?.hostReferenceLabel ?? name("publisher.planHeader", "hostReferenceLabel");
+  const answersLabel = messages?.answersLabel ?? name("publisher.planHeader", "answersLabel");
+  const needsInputLabel = messages?.needsInputLabel ?? name("publisher.planHeader", "needsInputLabel");
+  const findingsLabel = messages?.findingsLabel ?? name("publisher.planHeader", "findingsLabel");
+  const aligningLabel = messages?.aligningLabel ?? name("publisher.planHeader", "aligningLabel");
+  const alignLabel = messages?.alignLabel ?? name("publisher.planHeader", "alignLabel");
+  const missingApprovalLabel = messages?.missingApprovalLabel ?? name("publisher.planHeader", "missingApprovalLabel");
+  const menuLabel = messages?.menuLabel ?? name("publisher.planHeader", "menuLabel");
+  const menuVersionLabel = messages?.menuVersionLabel ?? name("publisher.planHeader", "menuVersionLabel");
+  const capabilityDescription = messages?.capabilityDescription ?? name("publisher.planHeader", "capabilityDescription");
+  const sectionsLabel = messages?.sectionsLabel ?? name("publisher.planHeader", "sectionsLabel");
+  const framesLabel = messages?.framesLabel ?? name("publisher.planHeader", "framesLabel");
+  const formatsLabel = messages?.formatsLabel ?? name("publisher.planHeader", "formatsLabel");
+  const noneLabel = messages?.noneLabel ?? name("publisher.planHeader", "noneLabel");
+  const alignmentFailedLabel = messages?.alignmentFailedLabel ?? name("publisher.planHeader", "alignmentFailedLabel");
+  const configurationLabel = messages?.configurationLabel ?? name("publisher.planHeader", "configurationLabel");
+  const updateConfigurationLabel = messages?.updateConfigurationLabel ?? name("publisher.planHeader", "updateConfigurationLabel");
+  const recommendationLabel = messages?.recommendationLabel ?? name("publisher.planHeader", "recommendationLabel");
+  const overridesLabel = messages?.overridesLabel ?? name("publisher.planHeader", "overridesLabel");
+  const requirementsLabel = messages?.requirementsLabel ?? name("publisher.planHeader", "requirementsLabel");
+  const deliveryLabel = messages?.deliveryLabel ?? name("publisher.planHeader", "deliveryLabel");
+  const exportLabel = messages?.exportLabel ?? name("publisher.planHeader", "exportLabel");
+  const deployLabel = messages?.deployLabel ?? name("publisher.planHeader", "deployLabel");
   const [editing, setEditing] = useState<{ readonly source: PublisherPlanDraft; readonly value: PublisherPlanDraft }>();
   const proposal = editing?.source === draft ? editing?.value : draft;
   const updateItem = (item: PublisherPlanItem) => {
@@ -150,42 +121,54 @@ export function PublisherPlanView({ store, draft, onApply, messages, productionM
   /** @default The host apply error, with "Plan alignment failed" as fallback. */
   const errorMessage = error;
   const hasError = Boolean(error);
-  return <div className="grid gap-lg">
-    <header className={panel}><h2>{planLabel}</h2><p>{flowLabel}</p><p>{alignmentDescription}</p>
-      {!draft && !store.current && <p>{emptyLabel}</p>}
-      {store.current ? <p>{alignedVersionLabel} {store.current.version} · {store.current.currentMilestone}</p> : <p>{noAlignedPlanLabel}</p>}
-      {store.versions.length > 0 && <ol aria-label={versionsLabel}>{store.versions.map(version => <li key={version.version}>{versionLabel} {version.version} · {alignedLabel} · {version.currentMilestone}<br /><code className="break-all">{version.digest}</code></li>)}</ol>}
-    </header>
-    {proposal && <section aria-label={proposalLabel} className={panel}><h3>{draftVersionLabel} {proposal.version}</h3><p>{currentMilestoneLabel} {proposal.currentMilestone}{draftDescription}</p>
-      {proposal.milestones.map(m => <div key={m.id}><h4>{m.id} · {PUBLISHER_MILESTONES.find(preset => preset.id === m.id)?.label}</h4>{m.packs.map(pack => <div key={pack.id}><strong>{PUBLISHER_PACKS.find(entry => entry.id === pack.id)?.label}</strong><ul>{pack.items.map(sourceItem => {
-        const item = recommendPlanItem(sourceItem), configuration = item.configuration, state = derivePublisherDeliveryState(configuration, store.registries);
-        const format = configuration && "format" in configuration ? store.registries.formats.find(format => format.id === configuration.format) : undefined;
-        /** @default The host Requirements label followed by the plan item ID. */
-        const requirementsHeading = `${requirementsLabel} · ${item.id}`;
-        /** @default The host Configure recommendation label followed by the plan item ID. */
-        const configurationHeading = `${configurationLabel} · ${item.id}`;
-        return <li key={item.id}>{PUBLISHER_MENU.find(entry => entry.id === item.menuRef)?.label ?? item.menuRef} · {item.lane} · {PUBLISHER_MENU.find(entry => entry.id === item.menuRef)?.status}<p>{itemLabel} <code>{item.id}</code>{(item.instanceId ?? item.appRouteId ?? item.assetId) && <> · {hostReferenceLabel} <code>{item.instanceId ?? item.appRouteId ?? item.assetId}</code></>}</p><p>{answersLabel} {item.answerIds.join(", ")}</p>
-          <div><h5>{recommendationLabel}</h5><ConfigurationSummary configuration={item.recommendation?.configuration} messages={productionMessages} /></div>
-          <div><h5>{overridesLabel}</h5><ul>{item.overrides?.map(override => <li key={override.field}>{configurationFieldLabel(override.field, productionMessages)}: {configurationValueLabel(override.original)} → {configurationValueLabel(override.value)}</li>)}</ul></div>
-          <p>{exportLabel}: {state.export} · {deployLabel}: {state.deploy}</p>
-          <InputQuestions label={requirementsHeading} needsInputLabel={needsInputLabel} requests={[...item.openNeeds, ...configurationInputNeeds(item, requirementMessages)]} />
-          <Disclosure  title={<>{configurationLabel} · {item.id}</>}>{configuration?.kind === "web" ? <ProductionSettingsForm key={`${proposal.id}-${proposal.version}-${item.id}`} initial={configuration} resetTo={item.recommendation?.configuration.kind === "web" ? item.recommendation.configuration : undefined} configured={false} formatIds={["web.page.responsive"]} registries={store.registries} recommendationAnswerIds={item.answerIds} deploymentSurfaceIds={deploymentSurfaceIds} messages={{ ...productionMessages, heading: configurationLabel, applyLabel: updateConfigurationLabel }} onApply={settings => updateItem(withPublisherConfiguration(item, settings.format === "web.page.responsive" ? { kind: "web", format: settings.format, frame: settings.frame, layout: settings.layout, media: settings.media ?? configuration.media, deliveries: settings.deliveries ?? configuration.deliveries, ...(settings.deploymentSurface ? { deploymentSurface: settings.deploymentSurface } : {}) } : { kind: "concept-only", format: settings.format, deliveries: settings.deliveries ?? [] }))} onReset={() => updateItem(withPublisherConfiguration(item, item.recommendation!.configuration))} /> : configuration?.kind === "concept-only" ? <DeliverySettingsFields format={format} choices={configuration.deliveries} onChange={deliveries => updateItem(withPublisherConfiguration(item, { ...configuration, deliveries }))} messages={productionMessages} /> : <InputQuestions label={configurationHeading} needsInputLabel={needsInputLabel} requests={configurationInputNeeds(item, requirementMessages)} />}</Disclosure>
-        </li>;
-      })}</ul></div>)}</div>)}
-      {findings.length > 0 && <ul aria-label={findingsLabel}>{findings.map((finding, index) => <li key={index}>{finding.path}: {finding.message}</li>)}</ul>}
-      <Button type="button" isDisabled={!onApply || pending || findings.length > 0 || proposal.version <= (store.current?.version ?? 0)} onPress={align} className="rounded border border-line-base p-sm disabled:opacity-50 focus-visible:outline">{alignButtonLabel}</Button>
-      {!onApply && <p>{missingApprovalLabel}</p>}{hasError && <p role="alert">{errorMessage}</p>}
-    </section>}
-    <section aria-label={menuLabel} className={panel}><h3>{menuVersionLabel} {PUBLISHER_MENU_VERSION}</h3><p>{capabilityDescription}</p>
-      {PUBLISHER_MILESTONES.map(m => <Disclosure key={m.id} defaultExpanded={m.id === "M1"} title={<>{m.id} · {m.label} · {m.status}</>}><ul className="grid gap-md p-md">{PUBLISHER_MENU.filter(item => item.milestone === m.id).map(item => {
-        /** @default Registered section needs, or "none". */
-        const sections = item.needs.sections.join(", ") || noneLabel;
-        /** @default Registered frame needs, or "none". */
-        const frames = item.needs.frames.join(", ") || noneLabel;
-        /** @default Registered format needs, or "none". */
-        const formats = item.needs.formats.join(", ") || noneLabel;
-        return <li key={item.id}><strong>{item.label}</strong> · {item.status}<p>{PUBLISHER_PACKS.find(pack => pack.id === item.pack)?.label} · {item.lanes.join(", ")}</p><p>{sectionsLabel} {sections} · {framesLabel} {frames} · {formatsLabel} {formats}</p><p>{requirementsLabel}: {[...item.requirements.brandAssets, ...item.requirements.contentRefs.map(ref => `${ref.slot}: ${ref.purpose}`), ...item.requirements.integrations].join(" · ")}</p>{item.recommendations.map(row => <div key={row.lane}><p>{row.lane} · {recommendationLabel} · {deliveryLabel}</p><ConfigurationSummary configuration={row.configuration} messages={productionMessages} /></div>)}</li>;
-      })}</ul></Disclosure>)}
+  const productionCopy = { ...productionMessages, valueNames };
+  const items = proposal?.milestones.flatMap(m => m.packs.flatMap(pack => pack.items)) ?? [];
+  const selected = items.find(item => item.id === selectedId);
+  const itemName = (item: PublisherPlanItem) => {
+    const routePath = routePathFor?.(item);
+    return resolved(publisherPlanItemDisplay(item, routePath && ["/agents/designer", "/agents/writer", "/agents/publisher"].includes(routePath) ? routePath : undefined).labelRef);
+  };
+  const selectedItem = selected && recommendPlanItem(selected);
+  const selectedConfiguration = selectedItem?.configuration;
+  const format = selectedConfiguration && "format" in selectedConfiguration ? store.registries.formats.find(format => format.id === selectedConfiguration.format) : undefined;
+  const configurationFacts = (configuration: Parameters<typeof publisherConfigurationDisplay>[0]) => {
+    const display = publisherConfigurationDisplay(configuration);
+    return <DetailView fields={[
+      { label: formatsLabel, value: resolved(display.formatRef) },
+      ...(configuration?.kind === "web" ? [{ label: framesLabel, value: resolved(display.frameRef) }, { label: configurationLabel, value: <>{resolved(display.layoutRef)} · {resolved(display.layoutConfigRef)}</> }] : []),
+      { label: deliveryLabel, value: display.deliveries.map((delivery, index) => <span key={index}>{resolved(delivery.labelRef)}{delivery.fidelityRef ? <> · {resolved(delivery.fidelityRef)}</> : null}</span>) },
+    ]} />;
+  };
+  return <>
+    <section data-publisher-plan-stage="" className="grid min-w-0 gap-lg">
+      <DetailView title={planLabel} fields={[
+        { label: flowLabel, value: alignmentDescription, span: 2 },
+        { label: alignedVersionLabel, value: store.current ? <>{store.current.version} · {name("publisher.milestone", store.current.currentMilestone)}</> : noAlignedPlanLabel },
+      ]} />
+      <DataTable aria-label={versionsLabel} rows={store.versions} rowKey={version => version.version} columns={[
+        { id: "version", header: versionLabel, isRowHeader: true, cell: version => version.version },
+        { id: "milestone", header: currentMilestoneLabel, cell: version => name("publisher.milestone", version.currentMilestone) },
+      ]} emptyStateTitle={emptyLabel} />
+      {proposal && <>
+        <StatGroup aria-label={proposalLabel} items={proposal.milestones.map(milestone => ({ id: milestone.id, label: name("publisher.milestone", milestone.id), value: milestone.packs.flatMap(pack => pack.items).length }))} />
+        <ResourceList aria-label={proposalLabel} items={items.map(item => ({ id: item.id, textValue: itemName(item), title: itemName(item), description: name("publisher.lane", item.lane), actions: [{ id: "configure", label: configurationLabel, onAction: () => setSelectedId(item.id) }] }))}
+          actionsLabel={name => name} onAction={setSelectedId} emptyState={{ title: emptyLabel, description: draftDescription }}
+          footer={<Button type="button" isDisabled={!onApply || pending || findings.length > 0 || proposal.version <= (store.current?.version ?? 0)} onPress={align}>{alignButtonLabel}</Button>} />
+      </>}
+      {(hasError || !!proposal && !onApply || findings.length > 0) && <NoticeList label={findingsLabel} notices={[
+        ...(proposal && !onApply ? [{ id: "approval", message: missingApprovalLabel }] : []),
+        ...(hasError ? [{ id: "alignment", message: alignmentFailedLabel, tone: "danger" as const }] : []),
+        ...findings.map((finding, index) => ({ id: `finding-${index}`, message: <span data-publisher-plan-finding={finding.message}>{findingsLabel}</span>, tone: "warning" as const })),
+      ]} />}
+      <ResourceList aria-label={menuLabel} items={PUBLISHER_MENU.map(item => { const display = publisherMenuDisplay(item); return { id: item.id, textValue: resolved(display.labelRef), title: resolved(display.labelRef), description: resolved(display.milestoneRef), meta: resolved(display.packRef) }; })} emptyState={{ title: emptyLabel, description: capabilityDescription }} />
     </section>
-  </div>;
+    {selectedItem && <SlotModule id={`${id}-publisher-plan-inspector`} slot="right-panel" label={itemName(selectedItem)}>
+      <DetailView className="[&_strong]:font-medium" data-publisher-display-needs={JSON.stringify(publisherConfigurationDisplay(selectedConfiguration).needsInput)} title={itemName(selectedItem)} actions={<Button variant="ghost" onPress={() => setSelectedId(undefined)}>{publisherCopy(copyResolver, PUBLISHER_COPY_REFS.closeDetails)}</Button>} fields={[
+        { label: recommendationLabel, value: configurationFacts(selectedItem.recommendation?.configuration), span: 2 },
+        { label: overridesLabel, value: selectedItem.overrides?.length ? selectedItem.overrides.map(override => configurationFieldLabel(override.field, productionCopy)).join(", ") : noneLabel },
+        { label: requirementsLabel, value: <InputQuestions valueNames={valueNames} label={requirementsLabel} needsInputLabel={needsInputLabel} requests={displayRequests([...selectedItem.openNeeds, ...configurationInputNeeds(selectedItem, requirementMessages)])} />, span: 2 },
+        { label: configurationLabel, value: selectedConfiguration?.kind === "web" ? <ProductionSettingsForm key={`${proposal!.id}-${proposal!.version}-${selectedItem.id}`} initial={selectedConfiguration} resetTo={selectedItem.recommendation?.configuration.kind === "web" ? selectedItem.recommendation.configuration : undefined} configured={false} formatIds={["web.page.responsive"]} registries={store.registries} recommendationAnswerIds={selectedItem.answerIds} deploymentSurfaceIds={deploymentSurfaceIds} messages={{ ...productionCopy, heading: configurationLabel, applyLabel: updateConfigurationLabel }} onApply={settings => updateItem(withPublisherConfiguration(selectedItem, settings.format === "web.page.responsive" ? { kind: "web", format: settings.format, frame: settings.frame, layout: settings.layout, media: settings.media ?? selectedConfiguration.media, deliveries: settings.deliveries ?? selectedConfiguration.deliveries, ...(settings.deploymentSurface ? { deploymentSurface: settings.deploymentSurface } : {}) } : { kind: "concept-only", format: settings.format, deliveries: settings.deliveries ?? [] }))} onReset={() => updateItem(withPublisherConfiguration(selectedItem, selectedItem.recommendation!.configuration))} /> : selectedConfiguration?.kind === "concept-only" ? <DeliverySettingsFields format={format} choices={selectedConfiguration.deliveries} onChange={deliveries => updateItem(withPublisherConfiguration(selectedItem, { ...selectedConfiguration, deliveries }))} messages={productionCopy} /> : null, span: 2 },
+      ]} />
+    </SlotModule>}
+  </>;
 }
