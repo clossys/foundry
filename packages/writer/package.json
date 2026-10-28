@@ -265,10 +265,6 @@
     "typecheck": "node scripts/pack-plan-contract.mjs && tsc -p tsconfig.json --noEmit",
     "test": "node scripts/pack-plan-contract.mjs && vitest run"
   },
-  "dependencies": {
-    "retext": "9.0.0",
-    "unified": "11.0.5"
-  },
   "devDependencies": {
     "@types/node": "^26.6.3",
     "typescript": "~6.0.0",
@@ -280,6 +276,8 @@
   },
   "dependencies": {
     "@formatjs/icu-messageformat-parser": "3.5.22",
-    "intl-messageformat": "12.1.4"
+    "intl-messageformat": "12.1.4",
+    "retext": "9.0.0",
+    "unified": "11.0.5"
   }
 }

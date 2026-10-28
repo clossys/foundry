@@ -21,7 +21,7 @@ const page = (passages: PageNarrative["passages"] = ["ps.0000000001"]): PageNarr
   ...base, id: "nr.0000000001", leaf: "narratives.page-story", frame: { frameId: "frames.page" }, passages,
 });
 const library = (records: WriterRecord[], locale = "en"): WriterLibrary => ({
-  manifest: { consumer: "example", defaultLocale: locale, locales: [{ tag: locale, dir: "ltr", state: "active" }], fallback: {}, strategist: { path: "strategy" }, leafFreeze: { lexicon: "", strings: "", patterns: "", passages: "", narratives: "" } },
+  manifest: { consumer: "example", messageSyntax: "icu-mf1", defaultLocale: locale, locales: [{ tag: locale, dir: "ltr", state: "active" }], fallback: {}, strategist: { path: "strategy" }, leafFreeze: { lexicon: "", strings: "", patterns: "", passages: "", narratives: "" } },
   locales: { [locale]: { records, documents: [] } },
 });
 const pattern = (source: string): LexiconRecord => ({ ...base, id: "lx.0000000002", leaf: "lexicon.avoid-patterns", kind: "pattern-rule", pattern: { source, flags: "i" }, severity: "warning", reason: "Avoid jargon" });
