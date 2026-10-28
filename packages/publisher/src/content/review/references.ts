@@ -5,8 +5,13 @@ import type { ReviewContext, ReviewLibrarySnapshot, ReviewSectionRegistration, R
 
 const object = (value: unknown): value is Record<string, unknown> => value !== null && typeof value === "object" && !Array.isArray(value);
 const text = (value: unknown): value is string => typeof value === "string" && Boolean(value.trim());
+const canonical = (value: unknown): string => {
+  if (Array.isArray(value)) return `[${value.map(canonical).join(",")}]`;
+  if (object(value)) return `{${Object.keys(value).sort().map(key => `${JSON.stringify(key)}:${canonical(value[key])}`).join(",")}}`;
+  return JSON.stringify(value);
+};
 const sameFields = (a: CompositionSection["fields"], b: CompositionSection["fields"]): boolean => {
-  const rows = (fields: CompositionSection["fields"]) => fields.map(field => JSON.stringify([field.key, field.locale, field.value, field.source])).sort();
+  const rows = (fields: CompositionSection["fields"]) => fields.map(canonical).sort();
   return JSON.stringify(rows(a)) === JSON.stringify(rows(b));
 };
 

@@ -1,4 +1,5 @@
 import { isContentLocale } from "../vocabulary.js";
+import { resolveCopy } from "../composition.js";
 import type { ReviewContext, ReviewCopySchema, ReviewSectionRegistration } from "./types.js";
 
 const object = (value: unknown): value is Record<string, unknown> => !!value && typeof value === "object" && !Array.isArray(value);
@@ -50,6 +51,24 @@ function requiredAddresses(parts: readonly string[], present: readonly (readonly
 /** Review only the resolved pinned occurrences supplied by the closed-world check. */
 export function reviewCopy(context: ReviewContext): void {
   const locales = context.slot.locales;
+  const candidatePath = `registry.candidates[${context.registry.candidates.indexOf(context.candidate)}]`;
+  const content = {
+    ...(context.candidate.composition ? { composition: { ...context.candidate.composition, sections: context.sections.map(row => row.section) } } : {}),
+    ...(context.candidate.pageMeta === undefined ? {} : { pageMeta: context.candidate.pageMeta }),
+  };
+  const copies = new Map(locales.map(locale => {
+    const result = resolveCopy(content, locale, { resolver: context.input.copyResolver, requirePageMeta: context.slot.kind !== "redirect" });
+    for (const finding of result.findings) {
+      const path = finding.path.replace(/^composition\.sections\[(\d+)\]/, (_, index: string) => context.sections[Number(index)]!.path);
+      const mapped = { ...finding, path: path.startsWith("pageMeta") ? `${candidatePath}.${path}` : path };
+      context.copyFinding(mapped);
+      if (finding.severity === "error") {
+        context.add("copy-schema", mapped.path, finding.rule, finding.message);
+        context.need("copy", "writer", JSON.stringify([mapped.path, locale, finding.rule]), finding.message);
+      }
+    }
+    return [locale, result.copy] as const;
+  }));
   const sourceLocale = locales.includes(context.registry.workspace.defaultLocale)
     ? context.registry.workspace.defaultLocale : locales[0];
   for (const { section, path, registration } of context.sections) {
@@ -95,7 +114,10 @@ export function reviewCopy(context: ReviewContext): void {
       localeRows.set(JSON.stringify(parts), row);
       const limit = Object.hasOwn(definition.maxLength, field.locale) ? definition.maxLength[field.locale] : undefined;
       if (limit === undefined) schemaIssue("undeclared-locale-limit", "Designer must declare an exact maximum for this field locale", `${row.path}.locale`);
-      else if ([...field.value].length > limit) context.add("copy-schema", `${row.path}.value`, "max-length", "Copy exceeds its declared locale maximum");
+      else {
+        const value = copies.get(field.locale)?.[section.key]?.[field.key];
+        if (value !== undefined && [...value].length > limit) context.add("copy-schema", row.path, "max-length", "Copy exceeds its declared locale maximum");
+      }
       // ICU parsing belongs to Writer; kind metadata only chooses the declared contract here.
     }
 
@@ -110,7 +132,8 @@ export function reviewCopy(context: ReviewContext): void {
       if (root === "states" && !present.some(actual => actual[0] === root && actual[1] === parts[1])) continue;
       for (const concrete of requiredAddresses(parts, present)) for (const locale of locales) {
         const row = byLocale.get(locale)?.get(JSON.stringify(concrete));
-        if (!row || !row.field.value.trim()) missing("copy-schema", concrete.join("."), locale, "required-copy", "Required Writer copy is missing");
+        const value = row && copies.get(locale)?.[section.key]?.[row.field.key];
+        if (!row || !value?.trim()) missing("copy-schema", concrete.join("."), locale, "required-copy", "Required Writer copy is missing");
       }
     }
     if (sourceLocale === undefined) continue;

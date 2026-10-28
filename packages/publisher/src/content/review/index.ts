@@ -1,4 +1,5 @@
 import { isContentJson } from "../json.js";
+import type { CopyFinding } from "../composition.js";
 import { computeStageReport } from "../stage-engine.js";
 import { validateContentCandidate } from "../validate.js";
 import { isRevisionId } from "../vocabulary.js";
@@ -27,7 +28,7 @@ export function reviewCandidate(input: ReviewInput): ReviewReport {
   const slots = input.registry.slots.filter(row => row?.id === candidate.slotId);
   if (slots.length !== 1 || !Array.isArray(slots[0]!.locales) || !slots[0]!.locales.length) throw new TypeError("Review requires an unambiguous slot with declared locales");
   const slot = slots[0]!;
-  const findings: ReviewFinding[] = [], needs: Need[] = [];
+  const findings: ReviewFinding[] = [], needs: Need[] = [], copyFindings: CopyFinding[] = [];
   const findingKeys = new Set<string>(), needKeys = new Set<string>();
   const context: ReviewContext = {
     input, registry: input.registry, candidate, slot, sections: [],
@@ -35,6 +36,7 @@ export function reviewCandidate(input: ReviewInput): ReviewReport {
       const key = JSON.stringify([check, path, rule, message]);
       if (!findingKeys.has(key)) { findingKeys.add(key); findings.push({ check, path, rule, message }); }
     },
+    copyFinding(finding) { copyFindings.push(finding); },
     need(kind, target, reference, detail) {
       const key = JSON.stringify([candidate.slotId, candidate.id, kind, target, reference]);
       if (!needKeys.has(key)) {
@@ -45,6 +47,7 @@ export function reviewCandidate(input: ReviewInput): ReviewReport {
   };
   const finish = (): ReviewReport => ({
     candidateId: candidate.id, revision: candidate.revision, digest: input.digest, findings, needs,
+    ...(copyFindings.length ? { copyFindings } : {}),
     checkedAgainst: { libraryVersion: typeof candidate.composition?.libraryVersion === "string" ? candidate.composition.libraryVersion : null, locales: [...slot.locales] },
   });
   const shape = validateContentCandidate(candidate);

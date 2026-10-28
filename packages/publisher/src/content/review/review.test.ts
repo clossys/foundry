@@ -10,7 +10,9 @@ describe("candidate Review report", () => {
   it("accepts an actual finite registered revision with exact locale and asset evidence", () => {
     const input = reviewInput(); const before = structuredClone(input);
     expect(validateContentRegistry(input.registry)).toEqual([]);
-    expect(reviewCandidate(input)).toEqual({ candidateId: "sample", revision: "r1", digest: input.digest, findings: [], needs: [], checkedAgainst: { libraryVersion: "1", locales: ["en", "fr"] } });
+    const report = reviewCandidate(input);
+    expect(report).toEqual({ candidateId: "sample", revision: "r1", digest: input.digest, findings: [], needs: [], copyFindings: expect.any(Array), checkedAgainst: { libraryVersion: "1", locales: ["en", "fr"] } });
+    expect(report.copyFindings?.every(finding => finding.severity === "warning" && finding.rule === "legacy-inline-copy")).toBe(true);
     expect(input).toEqual(before);
   });
   it("runs all seven checks despite semantic registry failures", () => {
