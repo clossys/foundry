@@ -1,3 +1,4 @@
+import type { DesignerAgentData } from "./system-canvas/inspector/types.js";
 import type { CanvasFilter } from "./canvas-model.js";
 import type { CSSProperties, ReactNode, Ref } from "react";
 import type { CheckCategory } from "./matrix-model.js";
@@ -20,6 +21,7 @@ export interface StudioAdapter {
 
 /** All chrome copy. The Studio has no English of its own. */
 export interface StudioLabels {
+  system?: { identity: string; fill: string; stack: string; specimen: string; history: string; stops: Record<"system"|"layer"|"board"|"cell",string> };
   board: {
     /** @deprecated Ignored: the board has no edit mode. */ changeSelection?: string; /** @deprecated Ignored: the board has no edit mode. */ done?: string;
     notChosen: string; /** @deprecated Ignored: a not-chosen row offers Ask agent only. */ choose?: string; askAgent: string; /** @deprecated Ignored: the edit-mode Custom column is gone. */ custom?: string; create: string; refresh: string; promptTitle: string; promptInstruction: string; returnStep: string; copy: string; copied: string; copyFailed: string; close: string; checkCandidates: string; checking: string; candidatesUnavailable: string; candidatesFailed: string; pendingSelection: string; noNewCandidates: string; /** @deprecated Ignored: Generate starter is gone; a coding agent authors a starter. */ generateStarter?: string };
@@ -97,7 +99,7 @@ export interface StudioCandidateWorkflow {
   actions?: Omit<import("./StudioActions.js").StudioActionsProps, "promptContext" | "taskPrompt">;
   checkCandidates?(slot: string): Promise<StudioCandidateCheckResult>;
 }
-export interface StudioCanvasProps {
+export interface StudioCanvasProps extends DesignerAgentData {
   /** @deprecated Ignored: the Studio has no layer tabs; the right rail's Explorer card switches layers. */
   header?: "internal" | "external";
   panelInsets?: StudioPanelInsets; className?: string; candidateWorkflow?: StudioCandidateWorkflow }

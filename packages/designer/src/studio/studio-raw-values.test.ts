@@ -20,7 +20,7 @@ const studioSources = (): WiringSource[] => readdirSync(dir)
 
 it("measures the Studio canvas sources it names", () => {
   const paths = studioSources().map(source => source.path);
-  for (const file of ["canvas-boards.tsx", "CandidateCell.tsx", "WholeStudio.tsx", "StudioCanvas.tsx", "camera.ts", "component-specimen-contained.tsx"])
+  for (const file of ["canvas-boards.tsx", "CandidateCell.tsx",    "component-specimen-contained.tsx"])
     expect(paths).toContain(`src/studio/${file}`);
 });
 

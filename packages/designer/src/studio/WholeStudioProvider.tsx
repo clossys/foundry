@@ -6,7 +6,7 @@ import { committedCompositeLibrary } from "../catalog-core/library-components.js
 import { runtimeHash, runtimeSnapshot } from "../catalog-core/runtime-ports.js";
 import type { RuntimeDigest } from "../catalog-core/runtime-ports.js";
 import { StudioProvider, useStudioSession } from "./StudioProvider.js";
-import { normaliseWindowLocation, resolverFromPlacements } from "./layer-navigation.js";
+import { normaliseWindowLocation, resolverFromPlacements } from "./system-canvas/url.js";
 import { evaluateWhole, placedLeaves, resolveWhole, wholeLibraryHash } from "./whole-model.js";
 import type { CompositeStudioAdapter, CompositeStudioProps, CompositeStudioSnapshot, StudioAdapter, StudioCandidateWorkflow } from "./types.js";
 import type { DesignerLayerBoardProjection } from "./designer-layer-boards.js";

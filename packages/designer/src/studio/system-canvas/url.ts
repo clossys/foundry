@@ -1,5 +1,5 @@
-import type { LayerId, Placement } from "../catalog-core/index.js";
-import { buildSlotTree, type SlotTreeNode } from "./model.js";
+import type { LayerId, Placement } from "../../catalog-core/index.js";
+import { buildSlotTree, type SlotTreeNode } from "../model.js";
 
 export const STUDIO_LAYERS: readonly LayerId[] = ["tokens", "assets", "components", "sections", "frames"];
 
@@ -10,13 +10,11 @@ export interface StudioNodeResolver { readonly layers: readonly LayerId[]; layer
 export interface StudioUrl { readonly search: string; readonly hash: string }
 export interface NormalisedStudioUrl extends StudioUrl { readonly location: StudioLocation; readonly changed: boolean }
 
-/** The params and fragment this module owns; every other param and fragment is kept as written. */
+/** The closed URL vocabulary. Unknown query keys reset to the System stop. */
 const OWNED = new Set(["layer", "node", "l1"]);
 const LEGACY_FRAGMENT = /^#studio-layer=(.*)$/;
 
 const decode = (value: string): string => { try { return decodeURIComponent(value.replace(/\+/g, " ")); } catch { return value; } };
-/** The raw `&` segments of a search string that this module does not own, in their original spelling. */
-const otherParams = (search: string): string[] => search.replace(/^\?/, "").split("&").filter(part => part !== "" && !OWNED.has(decode(part.split("=")[0]!)));
 /** Node ids are slot ids or `layer/node` tree ids: keep the slash readable in a shared URL. */
 const encodeNode = (node: string): string => encodeURIComponent(node).replace(/%2F/gi, "/");
 function compose(rest: readonly string[], location: StudioLocation): string {
@@ -30,7 +28,7 @@ function compose(rest: readonly string[], location: StudioLocation): string {
  * The one canonical Studio URL is `?layer=<id>&node=<leaf>`, both optional. Legacy forms normalise into it:
  * the `#studio-layer=X` fragment (the active layer, so it wins over a stale query layer), the D5f `?node=<leaf>`
  * (its layer is derived) and the D5f `?layer=X&l1=Y` (Y becomes the node). A node's own layer wins over a
- * mismatched `layer`. An unknown layer or node drops its param, with no error. Pure.
+ * mismatched `layer`. An unknown layer, node or query key resets to System, with no error. Pure.
  */
 export function normaliseStudioUrl(url: StudioUrl, resolver: StudioNodeResolver): NormalisedStudioUrl {
   const params = new URLSearchParams(url.search);
@@ -42,14 +40,16 @@ export function normaliseStudioUrl(url: StudioUrl, resolver: StudioNodeResolver)
   const node = rawNode && offered(nodeLayer) ? rawNode : undefined;
   const layer = node ? nodeLayer : offered(rawLayer) ? rawLayer : undefined;
   const location: StudioLocation = { ...(layer ? { layer } : {}), ...(node ? { node } : {}) };
-  const search = compose(otherParams(url.search), location);
-  const hash = fragment ? "" : url.hash;
-  return { search, hash, location, changed: search !== url.search || hash !== url.hash };
+  const unknown = [...params.keys()].some(key => !OWNED.has(key)) || (rawLayer !== undefined && !offered(rawLayer)) || (rawNode !== undefined && node === undefined);
+  const canonical = unknown ? {} : location;
+  const search = compose([], canonical);
+  const hash = "";
+  return { search, hash, location: canonical, changed: search !== url.search || hash !== url.hash };
 }
 
-/** The canonical URL for a location: legacy forms are dropped, other params and fragments kept. Pure. */
+/** The canonical URL for a location: legacy forms, foreign params and fragments are dropped. Pure. */
 export function studioUrlFor(url: StudioUrl, location: StudioLocation): StudioUrl {
-  return { search: compose(otherParams(url.search), location), hash: LEGACY_FRAGMENT.test(url.hash) ? "" : url.hash };
+  return { search: compose([], location), hash: "" };
 }
 
 /** A resolver over placements: the explorer's branch ids (`layer/node`) and leaf (slot) ids, in placement order. */

@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 /**
- * DESIGNER-RO part B1: the Designer has no page tabs. A right rail of four collapsible cards (Explorer, Inspector,
+ * DESIGNER-RO part B1: the Designer has no page tabs. A right rail of five collapsible cards (Explorer, Inspector,
  * Canvas map, Zoom) holds the modules that used to register into FrameDock and the AppFrame right panel.
  */
 import { readdirSync, readFileSync, statSync } from "node:fs";
@@ -43,11 +43,11 @@ describe("no page tabs", () => {
 });
 
 describe("right rail of cards", () => {
-  it("renders four collapsible cards in order: Explorer, Inspector, Canvas map, Zoom", async () => {
+  it("renders five collapsible cards in order: Explorer, Inspector, Canvas map, Zoom", async () => {
     render(legacy());
     await studioReady();
     expect(screen.getByRole("complementary", { name: labels.rail.label })).toBeTruthy();
-    expect(railCards().map(card => card.dataset.studioRailCard)).toEqual(["explorer", "inspector", "map", "zoom"]);
+    expect(railCards().map(card => card.dataset.studioRailCard)).toEqual(["explorer", "inspector", "map", "zoom", "checks"]);
     const user = userEvent.setup();
     for (const id of ["explorer", "inspector", "map", "zoom"] as const) {
       const trigger = cardTrigger(id);
@@ -69,7 +69,7 @@ describe("right rail of cards", () => {
     await studioReady();
     expect(railCards()).toEqual([]);
     await user.click(screen.getByRole("button", { name: labels.rail.show }));
-    expect(railCards().length).toBe(4);
+    expect(railCards().length).toBe(5);
     expect(cardTrigger("map").getAttribute("aria-expanded")).toBe("false");
     expect(cardTrigger("explorer").getAttribute("aria-expanded")).toBe("true");
   }, 30_000);
@@ -81,7 +81,7 @@ describe("right rail of cards", () => {
     expect(railCards()).toEqual([]);
     await userEvent.click(screen.getByRole("button", { name: labels.rail.show }));
     const sheet = await screen.findByRole("dialog");
-    expect([...sheet.querySelectorAll<HTMLElement>("[data-studio-rail-card]")].map(card => card.dataset.studioRailCard)).toEqual(["explorer", "inspector", "map", "zoom"]);
+    expect([...sheet.querySelectorAll<HTMLElement>("[data-studio-rail-card]")].map(card => card.dataset.studioRailCard)).toEqual(["explorer", "inspector", "map", "zoom", "checks"]);
   }, 30_000);
 
   it("registers no Designer module into FrameDock or the AppFrame right panel", async () => {

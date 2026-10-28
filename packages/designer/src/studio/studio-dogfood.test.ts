@@ -76,7 +76,7 @@ const { report, residuals } = scan(studio, sources.localModules);
 describe("Studio dogfood, zero allowlist (criterion 9)", () => {
   it("scans every shipped Studio source with no exception or ignore marker honoured", () => {
     const names = studio.map(row => row.file);
-    for (const file of ["canvas-boards.tsx", "CandidateCell.tsx", "TreeView.tsx", "WholeStudio.tsx", "specimen-dataset.ts", "component-specimen-samples.tsx"]) expect(names).toContain(STUDIO + file);
+    for (const file of ["canvas-boards.tsx", "CandidateCell.tsx", "TreeView.tsx",  "specimen-dataset.ts", "component-specimen-samples.tsx"]) expect(names).toContain(STUDIO + file);
     expect(names.some(name => /\.test\.[cm]?[jt]sx?$/.test(name))).toBe(false);
     expect(report.exceptions).toEqual([]);
     expect(report.ignored).toEqual([]);

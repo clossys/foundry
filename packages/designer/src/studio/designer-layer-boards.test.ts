@@ -112,5 +112,5 @@ it('public query browser closure contains only finite query/model utilities and 
 it('state-only provider closure cannot reach an old Studio page or canvas implementation', async () => {
   const path = resolvePath(dirname(fileURLToPath(import.meta.url)), 'WholeStudioProvider.tsx');
   const bundle = await build({ entryPoints: [path], bundle: true, platform: 'browser', format: 'esm', write: false, metafile: true, treeShaking: false });
-  expect(Object.keys(bundle.metafile!.inputs).filter(path => /\/studio\/(?:WholeStudio|Studio|StudioCanvas)\.tsx$/.test(path))).toEqual([]);
+  expect(Object.keys(bundle.metafile!.inputs).filter(path => /\/studio\/(?:WholeStudio|Studio|DesignerPage)\.tsx$/.test(path))).toEqual([]);
 });

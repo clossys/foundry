@@ -1,5 +1,6 @@
 import { libraryHash, loadBuildCatalog, resolve, runtimeHash, runtimeSnapshot } from "../catalog-core/index.js";
 import type { BuildCatalogData, CompositeCatalogData, CompositeResolved, ConsumerRuntimeManifest, RuntimeContent, RuntimeFillSelection, RuntimeCell, SurfaceCatalog } from "../catalog-core/index.js";
+import type { DesignerAgentData } from "./system-canvas/inspector/types.js";
 import type { FramePageHeader } from "../frame-page-header.js";
 import { surfaceRuntimeIdentity } from "../catalog-core/surface-check.js";
 import { checkWholeStudioInitialSession } from "./initial-session.js";
@@ -26,7 +27,7 @@ export interface DesignerRouteServerData extends NativeRouteFrameData {
   /** The selected profile member declaring the document root font size. */
   readonly rootFontSizeToken?: string;
 }
-export interface DesignerRoutePageProps {
+export interface DesignerRoutePageProps extends DesignerAgentData {
   readonly serverData: DesignerRouteServerData;
   readonly initialSession: WholeStudioInitialSession | undefined;
 }
