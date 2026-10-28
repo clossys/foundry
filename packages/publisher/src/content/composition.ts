@@ -1,3 +1,4 @@
+import { copyLocaleProvenance } from "./copy-provenance.js";
 import type { CopyRef, CopyRegistry, CopyResolveOptions, CopyResolver } from "@clossys/writer";
 import type { RevisionId, SectionIntent } from "./vocabulary.js";
 import { isContentLocale, isRevisionId, SECTION_INTENTS } from "./vocabulary.js";
@@ -248,6 +249,11 @@ export function resolveCopy(
         || Array.from({ length: result.chain.length }, (_, index) => Object.hasOwn(result.chain!, index) && isContentLocale(result.chain![index])).some(valid => !valid)
         || new Set(result.chain).size !== result.chain.length || !result.chain.includes(result.servedLocale)) {
         issue(fieldPath, "invalid-copy-resolution", "error", "Writer copy requires text and a canonical locale trace.");
+        return;
+      }
+      try { copyLocaleProvenance(result, fieldPath); }
+      catch {
+        issue(fieldPath, "invalid-copy-resolution", "error", "Writer copy requires a consistent requested and served locale trace.");
         return;
       }
       const trace = { servedLocale: result.servedLocale, chain: [...result.chain] };

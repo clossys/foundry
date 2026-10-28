@@ -9,7 +9,7 @@ import type { ResolvedSectionedViewDocument } from "../../core/sectioned-view.js
 
 const document: ResolvedSectionedViewDocument = {
   id: "acme-home",
-  resolutions: [{ ref: { id: "acme.home" }, text: "Welcome", recordId: "acme", revision: "1", locale: "en", source: { kind: "consumer", reference: "fixture" }, entryId: "acme.home" }],
+  resolutions: [{ ref: { id: "acme.home" }, text: "Welcome", recordId: "acme", revision: "1", locale: "en", servedLocale: "en", chain: ["en"], source: { kind: "consumer", reference: "fixture" }, entryId: "acme.home" }],
   sections: [
     { id: "hero", kind: "hero", ground: "base", heading: "Welcome" },
     { id: "features", kind: "feature-grid", ground: "sunken", heading: "Features", items: [{ id: "first", heading: "First" }] },
@@ -76,7 +76,7 @@ function withoutMigratedSections(markup: string): string {
 
 const LEGACY_DOCUMENT: ResolvedSectionedViewDocument = {
   id: "acme-home",
-  resolutions: [{ ref: { id: "acme.home" }, text: "Welcome", recordId: "acme", revision: "1", locale: "en", source: { kind: "consumer", reference: "fixture" }, entryId: "acme.home" }],
+  resolutions: [{ ref: { id: "acme.home" }, text: "Welcome", recordId: "acme", revision: "1", locale: "en", servedLocale: "en", chain: ["en"], source: { kind: "consumer", reference: "fixture" }, entryId: "acme.home" }],
   sections: [
     { id: "hero", kind: "hero", ground: "base", eyebrow: "New", heading: "Welcome", description: "A fixture hero." },
     { id: "features", kind: "feature-grid", ground: "sunken", heading: "Features", description: "A fixture grid.", items: [{ id: "first", heading: "First", description: "First feature." }, { id: "second", heading: "Second" }] },

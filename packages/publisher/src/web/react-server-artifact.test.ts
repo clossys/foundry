@@ -61,7 +61,7 @@ function runProbe(reactServer: boolean) {
     const sectioned = web.SectionedView({
       document: {
         id: "sectioned-server-proof",
-        resolutions: [{ ref: { id: "sectioned.proof" }, text: "Server-safe sections", recordId: "proof", revision: "1", locale: "en", source: { kind: "consumer", reference: "fixture" }, entryId: "sectioned.proof" }],
+        resolutions: [{ ref: { id: "sectioned.proof" }, text: "Server-safe sections", recordId: "proof", revision: "1", locale: "en", servedLocale: "en", chain: ["en"], source: { kind: "consumer", reference: "fixture" }, entryId: "sectioned.proof" }],
         sections: [
           { id: "hero", kind: "hero", ground: "base", heading: "Server-safe sections" },
           { id: "steps", kind: "ordered-step-sequence", ground: "sunken", heading: "Steps", items: [{ id: "one", ordinal: "1", heading: "Start" }] },

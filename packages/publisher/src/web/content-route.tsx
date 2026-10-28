@@ -1,3 +1,4 @@
+import { createContentPreviewProvenance } from "./preview/provenance.js";
 import { Fragment, createElement } from "react";
 import { createCopyResolver } from "@clossys/writer";
 import type { ReactElement } from "react";
@@ -38,7 +39,9 @@ export function prepareContentRoute(input: ContentRouteInput): PreparedContentRo
   };
 
   const copyFindings: CopyFinding[] = [];
-  const recordCopy = (report: CopyResolutionReport): CopyResolutionReport["copy"] => {
+  const copyReports: { binding: string; report: CopyResolutionReport }[] = [];
+  const recordCopy = (report: CopyResolutionReport, binding: string): CopyResolutionReport["copy"] => {
+    copyReports.push({ binding, report });
     copyFindings.push(...report.findings);
     for (const finding of report.findings) if (finding.severity === "error") {
       add("copy", "writer", finding.path, `Writer copy is required: ${finding.path} (${finding.rule})`);
@@ -56,7 +59,7 @@ export function prepareContentRoute(input: ContentRouteInput): PreparedContentRo
       timeZone: writer.timeZone ?? "UTC", now: new Date(input.raisedAt),
     }),
   } : {};
-  const pageCopy = recordCopy(resolveCopy({ pageMeta: candidate.pageMeta }, locale, { ...copyOptions, requirePageMeta: true }))[PAGE_META_KEY] ?? {};
+  const pageCopy = recordCopy(resolveCopy({ pageMeta: candidate.pageMeta }, locale, { ...copyOptions, requirePageMeta: true }), "pageMeta")[PAGE_META_KEY] ?? {};
   const canonicalPolicy = slot.meta?.canonical;
   const canonical = typeof canonicalPolicy === "string"
     ? locale === input.registry.workspace.defaultLocale ? canonicalPolicy : undefined
@@ -88,7 +91,7 @@ export function prepareContentRoute(input: ContentRouteInput): PreparedContentRo
   const frameCopyFindings = validateCopyFields(frameFields, "frameCopy", ["skipLabel"]);
   for (const finding of frameCopyFindings) add("copy", "writer", finding.path, `Writer frame copy is invalid: ${finding.path} (${finding.rule})`);
   // Frame copy uses the same validated, read-only Writer projection as section copy.
-  const frameCopy = frameCopyFindings.length ? {} : recordCopy(resolveCopy({ composition: { ...composition, sections: [{ key: "$frame", sectionId: frame.frameId, configId: frame.configId, intent: "continues", fields: frameFields }] } }, locale, copyOptions)).$frame ?? {};
+  const frameCopy = frameCopyFindings.length ? {} : recordCopy(resolveCopy({ composition: { ...composition, sections: [{ key: "$frame", sectionId: frame.frameId, configId: frame.configId, intent: "continues", fields: frameFields }] } }, locale, copyOptions), "frameCopy").$frame ?? {};
   if (frame.frameId === "frames.auth-shell" && !frameCopy.skipLabel?.trim()) add("copy", "writer", "frame.skipLabel", `Writer frame copy is required for ${locale}: skipLabel`);
 
   const assetsValid = isContentJson(input.assets ?? []) && Array.isArray(input.assets ?? []) && (input.assets ?? []).every(asset =>
@@ -128,7 +131,7 @@ export function prepareContentRoute(input: ContentRouteInput): PreparedContentRo
     else if (section.configId !== "default") add("config", "designer", section.configId, `Section config adapter is unavailable: ${section.sectionId}/${section.configId}`);
 
     // A historical section is projected in isolation; unrelated source sections never replace this route.
-    const sectionCopy = recordCopy(resolveCopy({ composition: { ...composition, sections: [{ ...section, key: occurrence.key }] } }, locale, copyOptions));
+    const sectionCopy = recordCopy(resolveCopy({ composition: { ...composition, sections: [{ ...section, key: occurrence.key }] } }, locale, copyOptions), `sections.${occurrence.key}`);
     const fields = sectionCopy[occurrence.key] ?? {};
     const allowed = section.sectionId === "sections.logo-hero" ? ["name"] : section.sectionId === "sections.section-header" ? ["heading", "description", "eyebrow"] : ["title", "description"];
     if (supported) for (const field of section.fields) if (!allowed.includes(field.key)) add("copy", "writer", `${occurrence.key}.${field.key}`, `Section copy has no closed adapter: ${section.sectionId}/${field.key}`);
@@ -152,8 +155,9 @@ export function prepareContentRoute(input: ContentRouteInput): PreparedContentRo
   }
 
   if (needs.length) return { ...selection, status: "needs-input", metadata, needs, copyFindings };
+  const provenance = createContentPreviewProvenance(selection, copyReports, writer?.manifest);
   const node = createElement(AuthFrame, { skipLabel: frameCopy.skipLabel!, children: sectionNodes });
-  return { ...selection, status: "ready", metadata, needs, copyFindings, node };
+  return { ...selection, status: "ready", metadata, needs, copyFindings, provenance, node };
 }
 
 /** Native document metadata surrounds a body composed exclusively by Designer exports. */
