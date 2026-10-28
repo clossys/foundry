@@ -100,7 +100,7 @@ export function prepareContentRoute(input: ContentRouteInput): PreparedContentRo
       let nativeMetadataComplete = true;
       for (const publishedLocale of slot.locales) {
         const nativeCopy = publishedLocale === locale ? pageCopy
-          : recordCopy(resolveCopy({ pageMeta: candidate.pageMeta }, publishedLocale, { ...copyOptions, requirePageMeta: true }))[PAGE_META_KEY] ?? {};
+          : recordCopy(resolveCopy({ pageMeta: candidate.pageMeta }, publishedLocale, { ...copyOptions, requirePageMeta: true }), `pageMeta.${publishedLocale}`)[PAGE_META_KEY] ?? {};
         for (const key of ["title", "description"] as const) if (!nativeCopy[key]?.trim()) {
           nativeMetadataComplete = false;
           add("copy", "writer", `pageMeta.${publishedLocale}.${key}`, `Publishing requires native Writer ${key} for every served locale: ${publishedLocale}`);
