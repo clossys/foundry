@@ -12,7 +12,7 @@ export interface SwitchProps extends Omit<AriaSwitchProps, "children"> {
 }
 
 const TRACK_BASE = "flex shrink-0 items-center rounded-pill border transition-colors motion-reduce:transition-none";
-const THUMB_BASE = "rounded-pill bg-surface-raised transition-transform motion-reduce:transition-none";
+const THUMB_BASE = "relative rounded-pill bg-surface-raised transition-[inset-inline-start] motion-reduce:transition-none";
 
 /**
  * A binary on/off toggle. Built on react-aria-components' `Switch` for the
@@ -66,9 +66,9 @@ export function Switch({ children, className, style, ...rest }: SwitchProps) {
               style={{
                 width: "var(--ui-control-switch-thumb)",
                 height: "var(--ui-control-switch-thumb)",
-                transform: renderProps.isSelected
-                  ? "translateX(calc(var(--ui-control-switch-w) - var(--ui-control-switch-thumb) - 6px))"
-                  : "translateX(0px)",
+                insetInlineStart: renderProps.isSelected
+                  ? "calc(var(--ui-control-switch-w) - var(--ui-control-switch-thumb) - 6px)"
+                  : "0px",
               }}
             />
           </span>

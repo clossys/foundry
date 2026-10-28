@@ -1,6 +1,7 @@
 import { createElement, forwardRef } from "react";
 import type { CSSProperties, ReactNode, SVGProps } from "react";
 import type { IconNode } from "../icons/types.js";
+import { cx } from "./internal/cx.js";
 
 export type { IconNode } from "../icons/types.js";
 
@@ -72,6 +73,8 @@ export type IconProps = IconAccessibilityProps &
   IconContentProps & {
     /** @default "md" */
     size?: IconSize;
+    /** Forward the catalog's direction-sensitive artwork flag; custom glyphs default to unmirrored. */
+    mirrorInRtl?: boolean;
     className?: string;
     style?: CSSProperties;
   } & Omit<
@@ -157,7 +160,7 @@ const STROKE_WIDTH_VAR = "var(--ui-icon-stroke, 2)";
  * the same way `Menu`'s `trigger` or `PageHeader`'s `actions` already are.
  */
 export const Icon = forwardRef<SVGSVGElement, IconProps>(function Icon(props, ref) {
-  const { size = "md", className, style, decorative, label, glyph, children, ...rest } = props;
+  const { size = "md", mirrorInRtl = false, className, style, decorative, label, glyph, children, ...rest } = props;
   const dimension = SIZE_VARS[size];
 
   const a11yProps = decorative
@@ -173,7 +176,7 @@ export const Icon = forwardRef<SVGSVGElement, IconProps>(function Icon(props, re
       stroke="currentColor"
       strokeLinecap="round"
       strokeLinejoin="round"
-      className={className}
+      className={cx(mirrorInRtl && "rtl:-scale-x-100", className)}
       style={{
         width: dimension,
         height: dimension,

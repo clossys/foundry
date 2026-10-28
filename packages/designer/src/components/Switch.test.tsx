@@ -3,6 +3,18 @@ import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { Switch } from "./Switch.js";
 
+it("moves the thumb from inline start in RTL while retaining switch interaction and reduced-motion styling", async () => {
+  const user = userEvent.setup();
+  const view = render(<div dir="rtl"><Switch>Direction-aware switch</Switch></div>);
+  const thumb = view.container.querySelector<HTMLElement>('[data-part="switch-thumb"]')!;
+  expect(thumb.closest('[dir="rtl"]')).not.toBeNull();
+  expect(thumb.style.insetInlineStart).toBe("0px"); expect(thumb.style.transform).toBe("");
+  await user.click(screen.getByRole("switch"));
+  expect(thumb.style.insetInlineStart).toBe("calc(var(--ui-control-switch-w) - var(--ui-control-switch-thumb) - 6px)");
+  expect(thumb).toHaveClass("relative", "transition-[inset-inline-start]", "motion-reduce:transition-none");
+  expect(screen.getByRole("switch")).toBeChecked();
+});
+
 describe("Switch", () => {
   it("renders a labeled switch with role='switch'", () => {
     render(<Switch>Email notifications</Switch>);

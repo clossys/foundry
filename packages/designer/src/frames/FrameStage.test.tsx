@@ -33,6 +33,14 @@ function props(): Extract<FrameStageProps<typeof a>, { body: { kind: 'canvas' } 
   sectionNodes: { [frameSectionRefKey(a)]: { label: 'Colors', node: <Editor /> }, [frameSectionRefKey(b)]: { label: 'Spacing', node: <input aria-label="Native input" /> } },
   camera: { viewport: { x: 0, y: 0, zoom: 1 }, onViewportChange: vi.fn(), minZoom: .12, maxZoom: 2, fitPadding: 0 },
 }; }
+it('places RTL stage boards with logical inline insets without changing reading order', () => {
+  const value = props();
+  const view = render(<div dir="rtl"><FrameStage {...value} body={{ ...value.body, arrangement: { kind: 'grid', columns: 2, gap: { x: 12, y: 8 } } }} /></div>);
+  const second = view.container.querySelector<HTMLElement>('[data-frame-stage-board="b"]')!;
+  expect(second.closest('[dir="rtl"]')).not.toBeNull();
+  expect(second.style.insetInlineStart).toBe('312px'); expect(second.style.left).toBe('');
+  expect(screen.getAllByRole('listitem').map(node => node.getAttribute('data-frame-stage-board'))).toEqual(['a', 'b']);
+});
 it('uses one observer for stage and content-sized boards and exact arrangement bounds', () => {
   const view = render(<FrameStage {...props()} />);
   expect(observed).toHaveLength(3);

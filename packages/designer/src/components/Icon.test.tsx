@@ -2,6 +2,20 @@ import { describe, expect, it } from "vitest";
 import { render, screen } from "@testing-library/react";
 import { Icon } from "./Icon.js";
 import * as Glyphs from "../icons/index.js";
+import { ICON_ENTRIES } from "../catalog/icons.js";
+
+it("honours the catalog mirroring flag in RTL without mirroring other glyphs or losing caller classes", () => {
+  for (const entry of ICON_ENTRIES) {
+    const view = render(<div dir="rtl"><Icon glyph={entry.nodes} mirrorInRtl={entry.mirrorInRtl} decorative className="text-ink-primary" /></div>);
+    const svg = view.container.querySelector("svg")!;
+    expect(svg.closest('[dir="rtl"]')).not.toBeNull();
+    expect(svg.classList.contains("rtl:-scale-x-100")).toBe(entry.mirrorInRtl);
+    expect(svg).toHaveClass("text-ink-primary"); expect(svg).not.toHaveAttribute("mirrorInRtl");
+    view.unmount();
+  }
+  const view = render(<div dir="rtl"><Icon glyph={Glyphs.ArrowRight} decorative /></div>);
+  expect(view.container.querySelector("svg")).not.toHaveClass("rtl:-scale-x-100");
+});
 
 const CIRCLE_GLYPH = [["circle", { cx: "12", cy: "12", r: "10" }]] as const;
 

@@ -81,9 +81,9 @@ describe("control glyph bindings", () => {
     expect(track.style.height).toBe("var(--ui-control-switch-h)");
     expect(thumb.style.width).toBe("var(--ui-control-switch-thumb)");
     expect(thumb.style.height).toBe("var(--ui-control-switch-thumb)");
-    expect(thumb.style.transform).toBe("translateX(0px)");
+    expect(thumb.style.insetInlineStart).toBe("0px");
     await user.click(screen.getByRole("switch"));
-    expect(thumb.style.transform).toBe("translateX(calc(var(--ui-control-switch-w) - var(--ui-control-switch-thumb) - 6px))");
+    expect(thumb.style.insetInlineStart).toBe("calc(var(--ui-control-switch-w) - var(--ui-control-switch-thumb) - 6px)");
     expect(screen.getByRole("switch")).toBeChecked();
     await user.click(screen.getByRole("checkbox"));
     expect(screen.getByRole("checkbox")).toBeChecked();
