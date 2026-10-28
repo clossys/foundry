@@ -8,6 +8,7 @@ import { Layers, List, Search } from "../icons/index.js";
 import { AccountMenu, AppNavigation, PageBar, CommandMenu, Drawer, ResizablePane, useCommandMenuShortcut, type DrawerProps } from "../blocks/index.js";
 import { ThemeProvider, ThemeToggle } from "../theme/index.js";
 import { FrameSlotProvider, FrameSlotOutlet, useFramePageHeader } from "../shell/index.js";
+import { framePageHeaderDeclaration } from "../shell/FrameSlots.js";
 import { assertAppFrameBrand } from "./AppFrameBrand.js";
 import { FrameDock } from "./FrameDock.js";
 import { SkipLink } from "../shell/SkipLink.js";
@@ -26,11 +27,11 @@ const FRAME_STAMP = dsAttrs("frames", "frames.app-shell", "foundry/frames.app-sh
  * Header row and stage main classes live here, above every template literal: the compiled-CSS
  * class scan pairs backticks file-wide, so a class literal inside the JSX below can be skipped.
  */
-const HEADER_ROW = "frame-header-container relative flex min-w-0 shrink-0 items-center frame-header-row";
+const HEADER_ROW = "frame-header-container relative flex min-w-0 shrink-0 items-center";
 /** Root block size per `fill`: the host's definite height, or the dynamic viewport with no host glue. */
 const ROOT_FILL: Record<NonNullable<AppFrameProps["fill"]>, string> = { host: "h-full", viewport: "h-dvh" };
-const MAIN = "flex h-full min-h-0 min-w-0 flex-col frame-main-gap overflow-auto ";
-const MAIN_INSET = "frame-main-inset frame-main-bleed ";
+const STAGE_INSET = "frame-main-inset";
+const MAIN = "flex h-full min-h-0 min-w-0 flex-col frame-main-gap frame-main-bleed overflow-auto ";
 const CONTROL = "control-h-md inline-flex shrink-0 items-center justify-center rounded-control border-0 bg-transparent px-frame-control text-body text-ink-primary focus-ring forced-colors:border-current";
 /** The two edge toggles share one glyph, each facing its own edge: the panel toggle is the navigation toggle's mirror in either direction. */
 const NAVIGATION_GLYPH = "rtl:-scale-x-100";
@@ -251,7 +252,9 @@ function FrameContent({ brand, navigation, account: { avatar = "initials", ...ac
   </div>;
   const commandTrigger = <div>{navigationBrand}<Button variant="ghost" className={CONTROL + " w-full justify-start"} onPress={openCommands}><Icon glyph={Search} decorative /><span className="min-w-0 truncate">{triggerLabel}</span></Button></div>;
   const pageBar = <PageBar position={headerPosition} surface={headerSurface ?? (shellLayout === "immersive" ? "glass" : "solid")} header={resolvedHeader} onNavigate={onNavigate} context={context} root={root} page={page} workspaces={workspaces} narrow={!wide}
-    reserveStart={false} reserveEnd={false} dir={dir}
+    embedded dir={dir}
+    start={<span ref={setNavigationControlHost} className="contents">{!navigationControlHost && <Tooltip trigger={navigationTrigger}>{navOpen ? navigationCloseLabel : navigationOpenLabel}</Tooltip>}</span>}
+    end={rightPanel ? <Tooltip trigger={panelTrigger}>{panelOpen || panelDocked ? closeLabel : openLabel}</Tooltip> : <span aria-hidden="true" className="icon-control-md shrink-0" />}
     labels={{ breadcrumb: breadcrumbLabel ?? copy(SHELL_COPY_REFS.frame.breadcrumb), collapsedBreadcrumb: collapsedBreadcrumbLabel ?? copy(SHELL_COPY_REFS.frame.collapsedBreadcrumb), pageInfo: pageInfoLabel ?? copy(SHELL_COPY_REFS.frame.pageInfo),
       pageActions: pageActionsLabel ?? copy(SHELL_COPY_REFS.frame.pageActions) }} />;
   return <ModalContext.Provider value={{ style: { direction: dir } }}><PopoverContext.Provider value={{ style: { direction: dir } }}>
@@ -267,13 +270,11 @@ function FrameContent({ brand, navigation, account: { avatar = "initials", ...ac
         </div>
         <div className="flex min-h-0 min-w-0 flex-1 flex-col">
           <div data-application-frame-region="header" className={HEADER_ROW}>
-            <span ref={setNavigationControlHost} className="contents">{!navigationControlHost && <Tooltip trigger={navigationTrigger}>{navOpen ? navigationCloseLabel : navigationOpenLabel}</Tooltip>}</span>
-            <div className="min-w-0 flex-1">{pageBar}</div>
-            {rightPanel ? <Tooltip trigger={panelTrigger}>{panelOpen || panelDocked ? closeLabel : openLabel}</Tooltip> : <span aria-hidden="true" className="icon-control-md shrink-0" />}
+            {pageBar}
           </div>
           <div ref={stage} data-application-frame-region="stage" data-stage-navigation={layout.navigationOverlay ? "overlay" : "docked"} data-stage-panel={narrow ? "overlay" : "docked"}
-            className="relative isolate min-h-0 min-w-0 flex-1 overflow-hidden">
-            <main id={target} tabIndex={-1} className={MAIN + (stageInset === "full" ? "" : MAIN_INSET) + "focus-ring-inset"}>{children}</main>
+            className={"relative isolate min-h-0 min-w-0 flex-1 overflow-hidden" + (stageInset === "full" ? "" : " " + STAGE_INSET)}>
+            <main id={target} tabIndex={-1} className={MAIN + "focus-ring-inset"}>{children}</main>
           </div>
           <FrameDock notices={notices} dock={dock} sheet={!wide} />
         </div>
@@ -294,5 +295,5 @@ function FrameContent({ brand, navigation, account: { avatar = "initials", ...ac
 
 /** Host-resolved application chrome; the host owns routes, account actions and main-free route content. */
 export function AppFrame(props: AppFrameProps) {
-  return <ShellCopyProvider resolver={props.copyResolver}><ShellI18nProvider locale={props.locale}><ThemeProvider storageKey={props.theme?.storageKey} defaultPreference={props.theme?.defaultPreference} preference={props.theme?.preference} onPreferenceChange={props.theme?.onPreferenceChange}><FrameSlotProvider><FrameNoticeProvider><FrameContent {...props} /></FrameNoticeProvider></FrameSlotProvider></ThemeProvider></ShellI18nProvider></ShellCopyProvider>;
+  return <ShellCopyProvider resolver={props.copyResolver}><ShellI18nProvider locale={props.locale}><ThemeProvider storageKey={props.theme?.storageKey} defaultPreference={props.theme?.defaultPreference} preference={props.theme?.preference} onPreferenceChange={props.theme?.onPreferenceChange}><FrameSlotProvider initialHeader={framePageHeaderDeclaration(props.children)}><FrameNoticeProvider><FrameContent {...props} /></FrameNoticeProvider></FrameSlotProvider></ThemeProvider></ShellI18nProvider></ShellCopyProvider>;
 }

@@ -57,25 +57,25 @@ describe("Publisher frame header member forwarding", () => {
     expect(SITE_FRAME_CONTRACT.required).not.toContain("sticky-header");
     expect(SITE_FRAME_CONTRACT.constituents.Header.config).toContain("headerPosition");
   });
-  it("forwards AppFrame solid sticky and static, preserving legacy omissions", () => {
-    expect(bar()).toContain("position:sticky");
-    expect(bar()).toContain("rounded-control");
+  it("keeps AppFrame solid headers in reserved flow for omitted, sticky and static positions", () => {
+    expect(bar()).toContain("position:relative");
+    expect(bar()).not.toContain("rounded-control");
     const sticky = bar({ headerPosition: "sticky", headerSurface: "solid" });
-    expect(sticky).toContain("position:sticky");
+    expect(sticky).toContain("position:relative");
     expect(sticky).toContain("border-bottom-width:var(--ui-border-hairline, 1px)");
     const flow = bar({ headerPosition: "static", headerSurface: "solid" });
-    expect(flow).toContain("position:static");
+    expect(flow).toContain("position:relative");
     expect(flow).not.toContain("--ui-z-sticky");
   });
   it("keeps the explicit static header in reserved flow without a sticky layer", () => {
     const html = renderToStaticMarkup(<AppFrame {...app} headerPosition="static" headerSurface="solid" />);
-    expect(bar({ headerPosition: "static", headerSurface: "solid" })).toContain("position:static");
-    expect(html).not.toContain("--ui-z-sticky");
+    expect(bar({ headerPosition: "static", headerSurface: "solid" })).toContain("position:relative");
+    expect(bar({ headerPosition: "static", headerSurface: "solid" })).not.toContain("--ui-z-sticky");
     expect(html).toContain('data-application-frame-region="header"');
     expect(html).toContain('data-application-frame-region="stage"');
   });
-  it("forwards AppFrame glass as fixed and refuses static glass", () => {
-    expect(bar({ headerPosition: "sticky", headerSurface: "glass" })).toContain("position:fixed");
+  it("keeps AppFrame glass in reserved flow and refuses static glass", () => {
+    expect(bar({ headerPosition: "sticky", headerSurface: "glass" })).toContain("position:relative");
     expect(() => bar({ headerPosition: "static", headerSurface: "glass" })).toThrow();
   });
 });

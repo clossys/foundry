@@ -16,6 +16,10 @@ import { frameHeaderOverflow } from "./frame-header-layout.js";
 import { CONTROL, TAP, PAGE_BAR_LAYOUT } from "./page-bar-layout.js";
 import { resolveFrameHeaderOptions } from "../catalog-core/frame-header-options.js";
 
+const EMBEDDED_HEADER = "frame-header-row";
+const GLASS_SURFACE = "bg-surface-glass";
+const RAISED_SURFACE = "bg-surface-raised";
+
 export type PageBarDestination = FramePageHeaderDestination;
 export interface PageBarCrumb {
   id: string;
@@ -51,6 +55,10 @@ export type PageBarHeaderNav = FramePageHeaderNav;
 export type PageBarHeaderActions = FramePageHeaderActions;
 export type PageBarHeader = FramePageHeader;
 export interface PageBarProps {
+  /** Frame-owned chrome remains in the stage track, including glass surfaces. */
+  embedded?: boolean;
+  start?: ReactNode;
+  end?: ReactNode;
   /** Omission keeps the floating sticky bar. Explicit solid/transparent uses a full-width bar; solid adds a hairline. */
   surface?: "solid" | "transparent" | "glass";
   /** Static stays in document flow and reads no sticky layer. Glass is fixed and refuses static. */
@@ -120,11 +128,18 @@ function PageTrail({ root, title, breadcrumb = [], workspaces, narrow,
 }
 
 /** Page header and metadata composition. The frame owns stage sizing. */
-export function PageBar({ root, context, page, workspaces, header, onNavigate, labels, narrow = false, reserveStart = false, reserveEnd = false, onHeightChange, dir, position, surface }: PageBarProps) {
-  const headerPosition = resolveFrameHeaderOptions("frames.app-header", { position, surface }).position;
-  const legacy = surface === undefined && position === undefined;
+export function PageBar({ root, context, page, workspaces, header, onNavigate, labels, embedded = false, start, end, narrow: suppliedNarrow = false, reserveStart = false, reserveEnd = false, onHeightChange, dir, position, surface }: PageBarProps) {
+  const resolvedPosition = resolveFrameHeaderOptions("frames.app-header", { position, surface }).position;
+  const headerPosition = embedded ? "relative" : resolvedPosition;
+  const legacy = !embedded && surface === undefined && position === undefined;
   const { pageInfo: pageInfoLabel, pageActions: pageActionsLabel } = labels;
   const bar = useRef<HTMLElement>(null);
+  const body = useRef<HTMLDivElement>(null);
+  const legacyActions = useRef<HTMLDivElement>(null);
+  const legacyIntrinsic = useRef({ nav: 0, actions: 0 });
+  const [frameCompact, setFrameCompact] = useState(false);
+  const narrow = embedded ? frameCompact : suppliedNarrow;
+
   const [glassSupported, setGlass] = useState(false);
   const glass = (legacy || surface === "glass") && glassSupported;
   const [infoOpen, setInfoOpen] = useState(false);
@@ -151,24 +166,38 @@ export function PageBar({ root, context, page, workspaces, header, onNavigate, l
     window.addEventListener("resize", measure);
     return () => { observer?.disconnect(); window.removeEventListener("resize", measure); };
   }, [dir, onHeightChange, page, context, narrow, infoOpen, header]);
+  useEffect(() => {
+    if (!embedded || header || !page) return;
+    const measure = () => {
+      const root = body.current, actions = legacyActions.current;
+      if (!root || !actions || !root.clientWidth) return;
+      const nav = root.querySelector("nav");
+      const gap = Number.parseFloat(getComputedStyle(root).columnGap) || 0;
+      if (!frameCompact) {
+        legacyIntrinsic.current.actions = actions.scrollWidth;
+        const items = [...(nav?.querySelector("ol")?.children ?? [])];
+        legacyIntrinsic.current.nav = items.reduce((sum, item) => {
+          const heading = item.querySelector("h1");
+          if (!heading) return sum + item.getBoundingClientRect().width;
+          const range = document.createRange(); range.selectNodeContents(heading);
+          return sum + (typeof range.getBoundingClientRect === "function" ? range.getBoundingClientRect().width : heading.scrollWidth);
+        }, Math.max(0, items.length - 1) * gap);
+      }
+      const other = [...root.children].filter(node => node !== nav && node !== actions).reduce((sum, node) => sum + node.getBoundingClientRect().width + gap, 0);
+      const size = legacyIntrinsic.current;
+      const next = frameHeaderOverflow(root.clientWidth - other, 0, size.nav, size.actions, actions.scrollWidth, gap);
+      setFrameCompact(next.compactActions || next.compactNav);
+    };
+    measure();
+    const observer = typeof ResizeObserver === "function" ? new ResizeObserver(measure) : undefined;
+    if (body.current) observer?.observe(body.current);
+    if (legacyActions.current) observer?.observe(legacyActions.current);
+    window.addEventListener("resize", measure);
+    return () => { observer?.disconnect(); window.removeEventListener("resize", measure); };
+  }, [embedded, header, page, frameCompact]);
   const primary = page?.actions?.find(action => action.primary);
   const information = page && [page.status, page.description, page.updatedAt, page.meta, page.scope].some(value => value !== undefined && value !== null && value !== false);
-  return <header onClick={event => frameLinkNavigation(event, onNavigate)} ref={bar} data-application-frame-region="bar" className={legacy
-      ? "relative flex min-w-0 flex-wrap items-center gap-xs rounded-control border border-line-base p-sm text-ink-primary " + (glass ? "bg-surface-glass" : "bg-surface-raised")
-      : "relative flex min-w-0 flex-wrap items-center gap-xs p-sm text-ink-primary "
-        + (surface === "transparent" ? "" : "border-b border-line-base ")
-        + (surface === "transparent" ? "" : glass ? "bg-surface-glass" : "bg-surface-raised")}
-    style={{ position: headerPosition,
-      ...(headerPosition === "sticky" ? { insetBlockStart: legacy ? PAGE_BAR_LAYOUT.gutter : 0 }
-        : headerPosition === "fixed" ? { insetBlockStart: 0, insetInline: 0 } : {}),
-      ...(legacy ? { marginBlockStart: PAGE_BAR_LAYOUT.gutter, marginInline: PAGE_BAR_LAYOUT.gutter }
-        : surface === "transparent" ? {} : { borderBottomWidth: PAGE_BAR_LAYOUT.hairline }),
-      paddingInlineStart: reserveStart ? `calc(${PAGE_BAR_LAYOUT.tap} + ${PAGE_BAR_LAYOUT.gap})` : PAGE_BAR_LAYOUT.gap,
-      paddingInlineEnd: reserveEnd ? `calc(${PAGE_BAR_LAYOUT.tap} + ${PAGE_BAR_LAYOUT.gap})` : PAGE_BAR_LAYOUT.gap,
-      backdropFilter: glass ? PAGE_BAR_LAYOUT.blur : "none", WebkitBackdropFilter: glass ? PAGE_BAR_LAYOUT.blur : "none",
-      ...(headerPosition === "sticky" ? { zIndex: PAGE_BAR_LAYOUT.barLayer }
-        : headerPosition === "fixed" ? { zIndex: "var(--ui-z-shell, 20)" } : {}) }}>
-    {header ? <HeaderSlots header={header} onNavigate={onNavigate} /> : <>
+  const content = header ? <HeaderSlots header={header} onNavigate={onNavigate} embedded={embedded} /> : <>
     {context === undefined || context === null ? null : <div data-application-frame-slot="context" className="min-w-0 max-w-full">{context}</div>}
     {page && <PageTrail root={root} title={page.title} breadcrumb={page.breadcrumb} workspaces={workspaces} narrow={narrow} labels={labels} />}
     {information && <Popover anchorRef={bar} className="text-body text-ink-primary" aria-label={pageInfoLabel} placement="bottom start" offset={0} isOpen={infoOpen} onOpenChange={setInfoOpen}
@@ -178,17 +207,33 @@ export function PageBar({ root, context, page, workspaces, header, onNavigate, l
         <div>{page?.status}</div><div>{page?.description}</div><div>{page?.updatedAt}</div><div>{page?.meta}</div><div>{page?.scope}</div>
       </div>
     </Popover>}
-    <div data-application-frame-region="bar-actions" className="ms-auto flex min-w-0 items-center justify-end gap-xs" style={{ flexBasis: narrow ? "100%" : undefined }}>
+    <div ref={legacyActions} data-application-frame-region="bar-actions" className={"ms-auto flex min-w-0 items-center justify-end gap-xs" + (embedded ? " shrink-0" : "")} style={{ flexBasis: narrow && !embedded ? "100%" : undefined }}>
       {page?.actions?.map(action => (!narrow || action === primary) && <PageAction key={action.id} {...action} primary={action === primary} />)}
       {narrow && page?.actions?.some(action => action !== primary) && <Menu trigger={<Button variant="ghost" className={CONTROL} style={TAP} aria-label={pageActionsLabel}><Icon glyph={ChevronDown} decorative /></Button>}>
         {page.actions.filter(action => action !== primary).map(action => <Menu.Item key={action.id} id={action.id} href={action.href} isDisabled={action.isDisabled} onAction={action.onAction}>{action.label}</Menu.Item>)}
       </Menu>}
     </div>
-    </>}
+    </>;
+  return <header onClick={event => frameLinkNavigation(event, onNavigate)} ref={bar} data-application-frame-region="bar" className={legacy
+      ? "relative flex min-w-0 flex-wrap items-center gap-xs rounded-control border border-line-base p-sm text-ink-primary " + (glass ? GLASS_SURFACE : RAISED_SURFACE)
+      : "relative flex min-w-0 flex-wrap items-center gap-xs p-sm text-ink-primary "
+        + (surface === "transparent" ? "" : "border-b border-line-base ")
+        + (surface === "transparent" ? "" : glass ? GLASS_SURFACE : RAISED_SURFACE) + (embedded ? " " + EMBEDDED_HEADER : "")}
+    style={{ position: headerPosition, inlineSize: embedded ? "100%" : undefined, flexWrap: embedded ? "nowrap" : undefined,
+      ...(headerPosition === "sticky" ? { insetBlockStart: legacy ? PAGE_BAR_LAYOUT.gutter : 0 }
+        : headerPosition === "fixed" ? { insetBlockStart: 0, insetInline: 0 } : {}),
+      ...(legacy ? { marginBlockStart: PAGE_BAR_LAYOUT.gutter, marginInline: PAGE_BAR_LAYOUT.gutter }
+        : surface === "transparent" ? {} : { borderBottomWidth: PAGE_BAR_LAYOUT.hairline }),
+      paddingInlineStart: reserveStart ? `calc(${PAGE_BAR_LAYOUT.tap} + ${PAGE_BAR_LAYOUT.gap})` : PAGE_BAR_LAYOUT.gap,
+      paddingInlineEnd: reserveEnd ? `calc(${PAGE_BAR_LAYOUT.tap} + ${PAGE_BAR_LAYOUT.gap})` : PAGE_BAR_LAYOUT.gap,
+      backdropFilter: glass ? PAGE_BAR_LAYOUT.blur : "none", WebkitBackdropFilter: glass ? PAGE_BAR_LAYOUT.blur : "none",
+      ...(headerPosition === "sticky" ? { zIndex: PAGE_BAR_LAYOUT.barLayer }
+        : headerPosition === "fixed" ? { zIndex: "var(--ui-z-shell, 20)" } : {}) }}>
+    {embedded ? <>{start}<div ref={body} className="flex min-w-0 flex-1 items-center gap-xs">{content}</div>{end}</> : content}
   </header>;
 }
 
-function HeaderSlots({ header, onNavigate }: { header: PageBarHeader; onNavigate?: FrameNavigate }) {
+function HeaderSlots({ header, onNavigate, embedded = false }: { header: PageBarHeader; onNavigate?: FrameNavigate; embedded?: boolean }) {
   const root = useRef<HTMLDivElement>(null);
   const nav = useRef<HTMLElement>(null);
   const title = useRef<HTMLHeadingElement>(null);
@@ -199,7 +244,7 @@ function HeaderSlots({ header, onNavigate }: { header: PageBarHeader; onNavigate
     const measure = () => {
       if (!root.current) return;
       const size = intrinsic.current;
-      size.nav = nav.current?.scrollWidth ?? 0;
+      if (!embedded || !overflow.compactNav) size.nav = nav.current?.scrollWidth ?? 0;
       if (!overflow.compactNav) size.title = title.current?.scrollWidth ?? 0;
       if (overflow.compactActions) size.compactActions = actions.current?.scrollWidth ?? 0;
       else size.actions = actions.current?.scrollWidth ?? 0;
@@ -219,8 +264,8 @@ function HeaderSlots({ header, onNavigate }: { header: PageBarHeader; onNavigate
   }, [header, overflow.compactActions, overflow.compactNav]);
   const active = header.nav?.items.find(item => item.id === header.nav?.activeId);
   return <div ref={root} data-frame-header-overflow={overflow.compactNav ? "navigation" : overflow.compactActions ? "actions" : "none"}
-    className="frame-header-grid relative grid w-full min-w-0 items-center gap-xs">
-    <div className="w-full min-w-0 justify-self-start">
+    className="frame-header-grid relative grid w-full min-w-0 items-center gap-xs" style={embedded ? { rowGap: 0 } : undefined}>
+    <div className="w-full min-w-0 justify-self-start" style={embedded ? { gridColumn: 1, gridRow: 1 } : undefined}>
       {overflow.compactNav && header.nav ? <Menu trigger={<Button variant="ghost" className="min-w-0 max-w-full gap-xs" style={TAP}><h1 className="m-0 truncate text-body font-semibold">{header.title}{active ? ` / ${active.label}` : ""}</h1><Icon glyph={ChevronDown} decorative /></Button>}>
         {header.nav.items.map(item => <Menu.Item key={item.id} id={item.id} href={item.href} textValue={item.label}
           render={props => {
@@ -233,13 +278,14 @@ function HeaderSlots({ header, onNavigate }: { header: PageBarHeader; onNavigate
       </Menu> : <Tooltip trigger={<h1 ref={title} tabIndex={0} className="m-0 max-w-full truncate text-body font-semibold">{header.title}</h1>}>{header.title}</Tooltip>}
     </div>
     <nav ref={nav} aria-label={header.nav?.label} aria-hidden={overflow.compactNav || undefined} inert={overflow.compactNav}
-      className={(overflow.compactNav ? "invisible pointer-events-none absolute " : "") + "flex w-max min-w-0 items-center justify-center gap-xs"}>
+      className={(overflow.compactNav ? (embedded ? "invisible pointer-events-none " : "invisible pointer-events-none absolute ") : "") + "flex w-max min-w-0 items-center justify-center gap-xs"}
+      style={embedded && overflow.compactNav ? { gridColumn: "1 / -1", gridRow: 2, blockSize: 0, inlineSize: 0, overflow: "hidden" } : undefined}>
       {header.nav?.items.map(item => {
         const selected = item.id === header.nav?.activeId;
         return <Link key={item.id} href={item.href} onClick={event => frameLinkNavigation(event, onNavigate)} aria-current={selected ? "page" : undefined} data-selected={selected || undefined} buttonVariant="ghost"
           className={"whitespace-nowrap border-b-2 " + (selected ? "border-accent text-ink-primary" : "border-transparent")} style={TAP}>{item.label}</Link>;
       })}
     </nav>
-    <div ref={actions} className="flex min-w-0 items-center justify-self-end" data-frame-header-actions="">{header.actions?.render({ compact: overflow.compactActions })}</div>
+    <div ref={actions} style={embedded ? { gridColumn: "-2 / -1", gridRow: 1 } : undefined} className="flex min-w-0 items-center justify-self-end" data-frame-header-actions="">{header.actions?.render({ compact: overflow.compactActions })}</div>
   </div>;
 }
