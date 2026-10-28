@@ -1,8 +1,8 @@
 "use client";
-import { createPublisherValueNames } from "./value-names.js";
-import { publisherCopy, PUBLISHER_COPY_REFS, type PublisherCopyResolver, type PublisherCopyRef } from "./copy.js";
-import { Button, Link, Select } from "@clossys/designer/components";
-import { DataTable, DetailView, EmptyState, NoticeList, ResourceList, StatGroup } from "@clossys/designer/blocks";
+import { createPublisherValueNames, publisherValueRef } from "./value-names.js";
+import { publisherCopy, PUBLISHER_COPY_REFS, PUBLISHER_PAGE_DESCRIPTION_REF, type PublisherCopyResolver, type PublisherCopyRef } from "./copy.js";
+import { Badge, Button, Link, Select } from "@clossys/designer/components";
+import { DataTable, DetailView, EmptyState, NoticeList, PageHeader, ResourceList, StatGroup } from "@clossys/designer/blocks";
 import { SlotModule, PageHeaderModule } from "@clossys/designer/shell";
 import { useCallback, useEffect, useId, useMemo, useRef, useState, useSyncExternalStore } from "react";
 import type { ReactNode } from "react";
@@ -112,6 +112,11 @@ export interface PublisherPageProps extends Omit<PublisherInstancesViewProps, "p
 }
 
 
+/** Resolved text keeps its exact Writer identity on its direct DOM parent. */
+function PublisherCopyText({ resolver, reference }: { resolver?: PublisherCopyResolver; reference: PublisherCopyRef }) {
+  return <span data-copy-ref={reference.id}>{publisherCopy(resolver, reference)}</span>;
+}
+
 /** Channel-first workspace. All check evidence still comes from the original bindings. */
 export function PublisherPage({ copyResolver, lanes: _lanes, planStore, draftPlan, onApplyPlan, formatsPanel, itemAssembly, assemblyOwnerHref, appInventory, registeredRoutes, registeredRouteProjection, appPageBindings, appSubrowBindings, appPipelineMessages, brandAssets, brandAssetMessages: _assetMessages, productionSettings, onProductionSettingsChange, appInputRequests, fixtureLibrary = false, messages, planMessages, appMessages, productionMessages, checkMessages, deploymentSurfaceIds, requirementMessages, routeChannels, activeChannel, channelHref, ...inputs }: PublisherPageProps) {
   const id = useId();
@@ -122,6 +127,10 @@ export function PublisherPage({ copyResolver, lanes: _lanes, planStore, draftPla
   const displayRequests = (requests: readonly { readonly slot: string; readonly question: string }[]) => requests.map(request => ({ ...request, question: resolved(publisherPlanNeedDisplay(request).questionRef) }));
   const stateName = (state: string) => state === "to do" ? copy("toDo") : name("admin.enum", state);
   const copy = useCallback((key: keyof typeof PUBLISHER_COPY_REFS) => publisherCopy(copyResolver, PUBLISHER_COPY_REFS[key]), [copyResolver]);
+  const text = (reference: PublisherCopyRef | undefined) => <PublisherCopyText resolver={copyResolver} reference={reference ?? PUBLISHER_COPY_REFS.needsInput} />;
+  const copyText = (key: keyof typeof PUBLISHER_COPY_REFS) => text(PUBLISHER_COPY_REFS[key]);
+  const nameText = (parent: string, key: string) => text(publisherValueRef(parent, key));
+  const stateText = (state: string) => state === "to do" ? copyText("toDo") : nameText("admin.enum", state);
   const [localStore] = useState(() => new PublisherPlanStore(inputs.registries));
   const store = planStore ?? localStore;
   const versions = useSyncExternalStore(store.subscribe, store.snapshot, store.snapshot);
@@ -161,10 +170,11 @@ export function PublisherPage({ copyResolver, lanes: _lanes, planStore, draftPla
   const process = projectPublisherChannelProcess(active?.items ?? [], { aligned: !!aligned, webItems: pipeline.items, appItems: appPipeline?.items ?? [] });
   const selectedProcess = process.lanes.flatMap(lane => lane.items).find(item => item.id === selection);
   const selectedRow = selectedProcess?.row;
-  const label = (row: PublisherChannelItem) => {
+  const labelRef = (row: PublisherChannelItem) => {
     const routePath = row.route?.registration.path ?? appInventory?.routes.find(route => route.id === row.item.appRouteId)?.path;
-    return resolved(publisherPlanItemDisplay(row.item, routePath && ["/agents/designer", "/agents/writer", "/agents/publisher"].includes(routePath) ? routePath : undefined).labelRef);
+    return publisherPlanItemDisplay(row.item, routePath && ["/agents/designer", "/agents/writer", "/agents/publisher"].includes(routePath) ? routePath : undefined).labelRef;
   };
+  const label = (row: PublisherChannelItem) => resolved(labelRef(row));
   const focusDetail = useCallback((node: HTMLDivElement | null) => { detail.current = node; node?.focus(); }, [selection]);
   const configuration = (row: PublisherChannelItem): PublisherConfiguration | undefined => {
     const chosen = row.item.instanceId ? settings.instances?.[row.item.instanceId] : row.item.appRouteId ? settings.appPages?.[row.item.appRouteId] : undefined;
@@ -205,8 +215,8 @@ export function PublisherPage({ copyResolver, lanes: _lanes, planStore, draftPla
   }, [draftPlan, onApplyPlan, aligning, store, copy]);
   const header = useMemo(() => ({
     title: copy("title"),
-    nav: channels.length ? { label: copy("channels"), items: channels.map(channel => ({ id: channel.id, label: name("publisher.channel", channel.id), href: channelHref?.(channel.id) ?? `#publisher-channel=${channel.id}` })), activeId: active?.id ?? "" } : undefined,
-    actions: { render: ({ compact }: { compact: boolean }) => <Button type="button" aria-label={planMessages?.alignLabel ?? copy("apply")} isDisabled={!draftPlan || !onApplyPlan || aligning} onPress={() => { void align(); }}>{aligning ? copy("applying") : compact ? copy("applyCompact") : planMessages?.alignLabel ?? copy("apply")}</Button> },
+    nav: channels.length > 1 ? { label: copy("channels"), items: channels.map(channel => ({ id: channel.id, label: name("publisher.channel", channel.id), href: channelHref?.(channel.id) ?? `#publisher-channel=${channel.id}` })), activeId: active?.id ?? "" } : undefined,
+    actions: { render: ({ compact }: { compact: boolean }) => <Button type="button" aria-label={planMessages?.alignLabel ?? copy("apply")} isDisabled={!draftPlan || !onApplyPlan || aligning} onPress={() => { void align(); }}>{aligning ? copyText("applying") : compact ? copyText("applyCompact") : planMessages?.alignLabel ?? copyText("apply")}</Button> },
   }), [channels, active?.id, channelHref, draftPlan, onApplyPlan, aligning, align, planMessages?.alignLabel, copy, valueNames]);
   if (channels.length > 1 && activeChannel === undefined) throw new TypeError("Publisher delivery channels require activeChannel bound through Frame onNavigate.");
   const closeItem = () => {
@@ -216,8 +226,8 @@ export function PublisherPage({ copyResolver, lanes: _lanes, planStore, draftPla
   const visibleItems = process.lanes.flatMap(lane => lane.items).filter(item => !commerceOnly || item.row.facets.includes("commerce"));
   const selectedLabel = selectedRow ? label(selectedRow) : undefined;
   const notices = [
-    ...(alignmentError ? [{ id: "alignment", tone: "danger" as const, message: <span data-publisher-source-error={alignmentError}>{copy("applyFailure")}</span> }] : []),
-    ...(registryProjection?.findings.map((finding, index) => ({ id: `route-${index}`, tone: "warning" as const, message: <span data-publisher-source-finding={finding.message}>{copy("projectionFailure")}</span> })) ?? []),
+    ...(alignmentError ? [{ id: "alignment", tone: "danger" as const, message: <span data-publisher-source-error={alignmentError}>{copyText("applyFailure")}</span> }] : []),
+    ...(registryProjection?.findings.map((finding, index) => ({ id: `route-${index}`, tone: "warning" as const, message: <span data-publisher-source-finding={finding.message}>{copyText("projectionFailure")}</span> })) ?? []),
   ];
   const reasonText = (reason: string) => {
     if (reason === "Adopted source binding unavailable") return name("publisher.setupStatus", "bindingPending");
@@ -225,7 +235,7 @@ export function PublisherPage({ copyResolver, lanes: _lanes, planStore, draftPla
     if (reason.includes("Concept only")) return copy("plannedDescription");
     if (reason.includes("Waiting for Configure") || reason.startsWith("to do:")) return copy("unconfiguredDescription");
     const code = reason.match(/\b(?:LK\d+|DE2b)\b/)?.[0];
-    if (code || /\b(?:frames|layouts|pack|tokens|stack|split|bento)\.[\w.-]+/.test(reason)) return <>{code ? <>{name("publisher.check", code)} · </> : null}{copy("unconfiguredDescription")}</>;
+    if (code || /\b(?:frames|layouts|pack|tokens|stack|split|bento)\.[\w.-]+/.test(reason)) return <>{code ? <>{name("publisher.check", code)} · </> : null}{copyText("unconfiguredDescription")}</>;
     return reason;
   };
   const configurationPanel = selectedRow && <>
@@ -233,7 +243,7 @@ export function PublisherPage({ copyResolver, lanes: _lanes, planStore, draftPla
       <p>{aligned ? copy("plannedDescription") : copy("alignBeforeConfigure")}</p>
       <ConfigurationSummary configuration={chosenConfiguration} messages={productionCopy} />
       {chosenConfiguration?.kind === "concept-only" && <>
-        <Select label={copy("outputFormat")} selectedKey={chosenFormatId ?? null} options={inputs.registries.formats.filter(format => selectedRow.channel === "messages" ? format.id === "email.html" : selectedRow.channel === "documents" ? !format.id.startsWith("web.") && format.id !== "email.html" : format.id === "web.page.responsive").map(format => ({ id: format.id, label: name("publisher.format", format.id) }))} onSelectionChange={key => { if (key) setPlannedConfigurations(current => ({ ...current, [selectedRow.item.id]: { kind: "concept-only", format: String(key) as FormatId, deliveries: [] } })); }} />
+        <Select label={copyText("outputFormat")} selectedKey={chosenFormatId ?? null} options={inputs.registries.formats.filter(format => selectedRow.channel === "messages" ? format.id === "email.html" : selectedRow.channel === "documents" ? !format.id.startsWith("web.") && format.id !== "email.html" : format.id === "web.page.responsive").map(format => ({ id: format.id, label: name("publisher.format", format.id) }))} onSelectionChange={key => { if (key) setPlannedConfigurations(current => ({ ...current, [selectedRow.item.id]: { kind: "concept-only", format: String(key) as FormatId, deliveries: [] } })); }} />
         <DeliverySettingsFields format={chosenFormat} choices={chosenConfiguration.deliveries} onChange={deliveries => setPlannedConfigurations(current => ({ ...current, [selectedRow.item.id]: { ...chosenConfiguration, deliveries } }))} messages={productionCopy} />
       </>}
     </>}
@@ -242,39 +252,40 @@ export function PublisherPage({ copyResolver, lanes: _lanes, planStore, draftPla
   return <>
     <PageHeaderModule id={`${id}-publisher-header`} header={header} />
     <section aria-label={copy("workspace")} data-publisher-stage="" className="grid min-w-0 gap-lg text-ink-primary">
+      <PageHeader title={copyText("title")} description={text(PUBLISHER_PAGE_DESCRIPTION_REF)} />
       {notices.length > 0 && <NoticeList label={copy("routeFindings")} notices={notices} />}
-      {!active ? <EmptyState title={messages?.emptyLabel ?? copy("emptyTitle")} description={copy("emptyDescription")} /> : <>
-        <StatGroup aria-label={name("publisher.planHeader", "currentMilestoneLabel")} items={PUBLISHER_MILESTONES.map(milestone => ({ id: milestone.id, label: name("publisher.milestone", milestone.id), value: active.items.filter(row => row.milestone === milestone.id).length }))} />
-        <NoticeList label={copy("workspace")} notices={[{ id: "alignment-state", message: aligned ? <>{messages?.alignedVersionLabel ?? copy("alignedVersion")} {aligned.version}</> : copy("proposedDescription") }]} />
-        <ResourceList aria-label={name("publisher.channel", active.id)} items={visibleItems.map(item => ({ id: item.id, textValue: label(item.row), title: label(item.row),
-          description: <>{stateName(item.state)} · {name("publisher.stage", item.column)}</>, meta: item.path,
-          actions: [{ id: "inspect", label: messages?.openItemLabel?.(label(item.row), stateName(item.state)) ?? label(item.row), onAction: () => { opener.current = document.activeElement instanceof HTMLElement ? document.activeElement : null; setSelection(item.id); setShowFormats(false); } }],
-        }))} actionsLabel={name => name} onAction={itemId => { opener.current = document.activeElement instanceof HTMLElement ? document.activeElement : null; setSelection(itemId); }} emptyState={{ title: messages?.emptyLabel ?? copy("emptyTitle"), description: copy("emptyDescription") }}
-          toolbar={active.items.some(row => row.facets.includes("commerce")) ? <Button variant="secondary" type="button" aria-pressed={commerceOnly} onPress={() => setCommerceOnly(value => !value)}>{copy("commerce")}</Button> : undefined} />
+      {!active ? <EmptyState title={messages?.emptyLabel ?? copyText("emptyTitle")} description={copyText("emptyDescription")} /> : <>
+        <StatGroup aria-label={name("publisher.planHeader", "currentMilestoneLabel")} items={PUBLISHER_MILESTONES.map(milestone => ({ id: milestone.id, label: nameText("publisher.milestone", milestone.id), value: active.items.filter(row => row.milestone === milestone.id).length }))} />
+        <NoticeList label={copy("workspace")} notices={[{ id: "alignment-state", message: aligned ? <>{messages?.alignedVersionLabel ?? copyText("alignedVersion")} {aligned.version}</> : copyText("proposedDescription") }]} />
+        <ResourceList aria-label={name("publisher.channel", active.id)} items={visibleItems.map(item => ({ id: item.id, textValue: label(item.row), title: <span data-publisher-item-title="">{text(labelRef(item.row))}</span>,
+          status: <Badge role="status">{stateText(item.state)}</Badge>, meta: item.path,
+          description: <Button variant="quiet" size="sm" type="button" aria-label={messages?.openItemLabel?.(label(item.row), stateName(item.state))} onPress={() => { opener.current = document.activeElement instanceof HTMLElement ? document.activeElement : null; setSelection(item.id); setShowFormats(false); }}>{messages?.openItemLabel?.(label(item.row), stateName(item.state)) ?? nameText("publisher.stage", item.column)}</Button>,
+        }))} onAction={itemId => { opener.current = document.activeElement instanceof HTMLElement ? document.activeElement : null; setSelection(itemId); }} emptyState={{ title: messages?.emptyLabel ?? copyText("emptyTitle"), description: copyText("emptyDescription") }}
+          toolbar={active.items.some(row => row.facets.includes("commerce")) ? <Button variant="secondary" type="button" aria-pressed={commerceOnly} onPress={() => setCommerceOnly(value => !value)}>{copyText("commerce")}</Button> : undefined} />
       </>}
     </section>
     {selectedRow && <SlotModule id={`${id}-publisher-inspector`} slot="right-panel" label={selectedLabel!}>
       <div ref={focusDetail} tabIndex={-1} role="region" aria-label={selectedLabel} data-publisher-display-needs={JSON.stringify([...(selectedMenuDisplay?.needsInput ?? []), ...chosenDisplay.needsInput])} className="grid min-w-0 gap-lg outline-none [&_strong]:font-medium">
-        <DetailView title={selectedLabel} actions={<Button variant="ghost" type="button" onPress={closeItem}>{copy("closeDetails")}</Button>} fields={[
+        <DetailView title={selectedLabel} actions={<Button variant="ghost" type="button" onPress={closeItem}>{copyText("closeDetails")}</Button>} fields={[
           { label: copy("configure"), value: configurationPanel, span: 2 },
-          { label: copy("assetRequirements"), value: <ul>{selectedRow.menu.requirements.brandAssets.map((role, index) => <li key={role}>{resolved(selectedMenuDisplay?.requirements.brandAssets[index])} · {brandAssets && Object.values(brandAssets).some(entries => entries.some(entry => role === "favicon" ? entry.role.startsWith("favicon-") : role === "share-image" ? ["open-graph", "twitter-image"].includes(entry.role) : role === "app-icons" ? ["apple-touch-180", "maskable-192", "maskable-512"].includes(entry.role) : false)) ? copy("assetPending") : copy("assetMissing")}</li>)}</ul>, span: 2 },
+          { label: copy("assetRequirements"), value: <ul>{selectedRow.menu.requirements.brandAssets.map((role, index) => <li key={role}>{text(selectedMenuDisplay?.requirements.brandAssets[index])} · {brandAssets && Object.values(brandAssets).some(entries => entries.some(entry => role === "favicon" ? entry.role.startsWith("favicon-") : role === "share-image" ? ["open-graph", "twitter-image"].includes(entry.role) : role === "app-icons" ? ["apple-touch-180", "maskable-192", "maskable-512"].includes(entry.role) : false)) ? copy("assetPending") : copy("assetMissing")}</li>)}</ul>, span: 2 },
         ]} />
         <DataTable aria-label={copy("evidence")} rows={selectedProcess?.stages ?? []} rowKey={stage => stage.name} columns={[
-          { id: "stage", header: copy("evidence"), isRowHeader: true, cell: stage => name("publisher.stage", stage.name) },
-          { id: "status", header: copy("needsInput"), cell: stage => stateName(stage.status) },
+          { id: "stage", header: copy("evidence"), isRowHeader: true, cell: stage => nameText("publisher.stage", stage.name) },
+          { id: "status", header: copy("needsInput"), cell: stage => stateText(stage.status) },
           { id: "reasons", header: copy("sourceFindings"), cell: stage => <ul>{stage.reasons.map((reason, index) => <li key={index} data-publisher-source-reason={reason}>{reasonText(reason)}</li>)}</ul> },
         ]} />
         {selectedPipeline?.configured && <DataTable aria-label={checkMessages?.tableLabel ?? copy("publishEvidence")} rows={selectedPipeline.checks} rowKey={check => check.code} columns={[
-          { id: "check", header: checkMessages?.codeLabel ?? copy("evidence"), isRowHeader: true, cell: check => <span data-publisher-check={check.code}>{name("publisher.check", check.code)}</span> },
-          { id: "status", header: checkMessages?.statusLabel ?? copy("needsInput"), cell: check => stateName(check.status) },
+          { id: "check", header: checkMessages?.codeLabel ?? copy("evidence"), isRowHeader: true, cell: check => <span data-publisher-check={check.code}>{nameText("publisher.check", check.code)}</span> },
+          { id: "status", header: checkMessages?.statusLabel ?? copy("needsInput"), cell: check => stateText(check.status) },
           { id: "findings", header: checkMessages?.findingsLabel ?? copy("sourceFindings"), cell: check => check.findings.length },
         ]} />}
         <DetailView fields={[{ label: copy("outputFormat"), value: <>
-          <Button variant="secondary" type="button" onPress={() => { if (showFormats) setShowFormats(false); else openBoundFormat(); }} aria-expanded={showFormats}>{copy("inspectFormat")}</Button>
+          <Button variant="secondary" type="button" onPress={() => { if (showFormats) setShowFormats(false); else openBoundFormat(); }} aria-expanded={showFormats}>{copyText("inspectFormat")}</Button>
           {showFormats && (formatsPanel ?? <DetailView fields={[
-            { label: copy("outputFormat"), value: resolved(chosenDisplay.formatRef) },
-            ...(chosenConfiguration?.kind === "web" ? [{ label: messages?.framesLabel ?? name("publisher.planHeader", "framesLabel"), value: resolved(chosenDisplay.frameRef) }, { label: name("publisher.contentKey", "layout"), value: <>{resolved(chosenDisplay.layoutRef)} · {resolved(chosenDisplay.layoutConfigRef)}</> }] : []),
-            { label: name("publisher.contentKey", "deliveries"), value: chosenDisplay.deliveries.map((delivery, index) => <span key={index}>{resolved(delivery.labelRef)}{delivery.fidelityRef ? <> · {resolved(delivery.fidelityRef)}</> : null}</span>) },
+            { label: copy("outputFormat"), value: text(chosenDisplay.formatRef) },
+            ...(chosenConfiguration?.kind === "web" ? [{ label: messages?.framesLabel ?? name("publisher.planHeader", "framesLabel"), value: text(chosenDisplay.frameRef) }, { label: name("publisher.contentKey", "layout"), value: <>{text(chosenDisplay.layoutRef)} · {text(chosenDisplay.layoutConfigRef)}</> }] : []),
+            { label: name("publisher.contentKey", "deliveries"), value: chosenDisplay.deliveries.map((delivery, index) => <span key={index}>{text(delivery.labelRef)}{delivery.fidelityRef ? <> · {text(delivery.fidelityRef)}</> : null}</span>) },
           ]} />)}
         </> }]} />
         {selectedRow.route && <DetailView fields={[{ label: copy("routeEvidence"), value: <Link href={selectedRow.route.registration.path}>{selectedLabel}</Link> }]} />}
