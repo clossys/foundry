@@ -469,3 +469,5 @@ export async function prepareRegisteredNodeRoute(input: RegisteredRouteCheckInpu
     return { ...prepared, projection, current, ...nodeRouteSourceBootstrap(checked.registry, route, source, input.runtime.assembly.engine, prepared.materialization) };
   } catch { return { status: "refused" as const, findings: ["Exact current Node source/query/assembly transaction unavailable"] }; }
 }
+
+export { registeredFlowLayoutSource } from "./registered-route-flow-source.js";

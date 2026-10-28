@@ -1,10 +1,10 @@
 import type { ReactNode } from "react";
-import { runtimeHash, runtimeSourceFindings } from "@clossys/designer/catalog";
-import type { RuntimeLayoutPort, RuntimeRendererDescriptor, CompositeResolved, RuntimeCell } from "@clossys/designer/catalog";
-import { sha256 } from "../planning/digest.js";
-import type { ConsumerInstanceLibrary, FlowInstanceBinding, LayoutRendererSource } from "../core/instance-binding.js";
-import { registeredLayoutSourcePin } from "../core/layout-fill-source.js";
-import { planFlowStage } from "../core/flow-stage.js";
+import { resolve, runtimeHash, runtimeSnapshot, runtimeSourceFindings } from "@clossys/designer/catalog";
+import type { RuntimeLayoutPort, RuntimeRendererDescriptor, CompositeResolved, CompositeEngineInput, RuntimeCell } from "@clossys/designer/catalog";
+import type { ConsumerInstanceFill, ConsumerInstanceLibrary, FlowInstanceBinding } from "../core/instance-binding.js";
+import { registeredLayoutSourceMatches } from "../core/layout-fill-source.js";
+export { registeredLayoutSourceMatches } from "../core/layout-fill-source.js";
+import { flowStageStyleSheet, planFlowStage } from "../core/flow-stage.js";
 import { getEffectiveLayoutContract } from "../layouts/resolve.js";
 import { Stack } from "./layouts/Stack.js";
 import { Split } from "./layouts/Split.js";
@@ -13,11 +13,6 @@ import { Bento } from "./layouts/Bento.js";
 import type { LayoutProps } from "./layouts/preview/structure.js";
 import type { BreakpointValues } from "../core/flow-stage.js";
 
-/** Source pins bind these executable implementations; they never choose a Layout. */
-export function registeredLayoutSourceMatches(leaf: string, source: LayoutRendererSource): boolean {
-  const pin = registeredLayoutSourcePin(leaf);
-  return !!pin && source.entry === pin.entry && Object.keys(source.files).sort().join(",") === Object.keys(pin.files).sort().join(",") && Object.entries(pin.files).every(([file, hash]) => `sha256:${sha256(source.files[file]!)}` === hash);
-}
 export function registeredRouteBreakpointValues(profile: CompositeResolved, measured: Readonly<Record<string, number>>): BreakpointValues {
   return Object.fromEntries(Object.entries(profile.values.members).filter(([id]) => id.startsWith("tokens.breakpoint.")).map(([id, member]) => {
     const value = member.value.light;
@@ -49,4 +44,27 @@ export function bindRegisteredFlowLayout(binding: FlowInstanceBinding, library: 
       return <div data-layout-stage="flow">{content}</div>;
     },
   };
+}
+
+export interface RegisteredFlowRuntimeInputs {
+  readonly css: readonly { readonly id: "publisher-flow-stage.css"; readonly contents: string }[];
+  readonly layoutRenderer: RuntimeRendererDescriptor;
+  /** Description of the explicitly requested authored Layout. The host must
+   * deliberately associate it with its consumer library; no adoption is inferred. */
+  readonly fill: ConsumerInstanceFill;
+}
+/** Produce the existing checked flow inputs for exactly binding.layout. No source
+ * rule is copied, no library is mutated, and no alternate Layout is chosen. The
+ * route binder still checks the host's selected fill and all assembly inputs. */
+export function registeredFlowRuntimeInputs(input: { readonly binding: FlowInstanceBinding; readonly engine: CompositeEngineInput; readonly layoutRenderer: RuntimeRendererDescriptor; readonly states: readonly string[]; readonly breakpointPixels?: Readonly<Record<string, number>> }): RegisteredFlowRuntimeInputs {
+  const { binding, engine, layoutRenderer } = input;
+  if (binding.body?.kind !== "flow" || !binding.layout || !binding.context.consumer || !input.states.length || input.states.some(state => typeof state !== "string" || !state)) throw new TypeError("Explicit selected flow Layout and states required");
+  const profile = resolve(engine);
+  if (binding.context.consumer !== profile.consumer) throw new TypeError("Flow Layout consumer differs from the current engine");
+  if (runtimeSourceFindings(layoutRenderer).length || !registeredLayoutSourceMatches(binding.layout.leaf, layoutRenderer.source)) throw new TypeError("Current authored Layout source pins required");
+  const fill: ConsumerInstanceFill = runtimeSnapshot({ library: binding.context.consumer, leaf: binding.layout.leaf, ...(binding.layout.config !== undefined ? { config: binding.layout.config } : {}), headings: [], states: input.states, renderer: { entry: layoutRenderer.source.entry, files: layoutRenderer.source.files } });
+  const library: ConsumerInstanceLibrary = { id: binding.context.consumer, role: "consumer", resolveFill: (leaf, config) => leaf === fill.leaf && config === fill.config ? fill : undefined, resolveContent: () => undefined };
+  const pixels = registeredRouteBreakpointValues(profile, input.breakpointPixels ?? {}) as Readonly<Record<string, number>>;
+  if (!bindRegisteredFlowLayout(binding, library, layoutRenderer, pixels)) throw new TypeError("Exact selected public flow Layout source/configuration or breakpoints unavailable");
+  return runtimeSnapshot({ css: [{ id: "publisher-flow-stage.css" as const, contents: flowStageStyleSheet(profile, binding.layout.leaf, binding.layout.config, binding.layout.members) }], layoutRenderer, fill });
 }

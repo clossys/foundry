@@ -36,3 +36,5 @@ export function RegisteredRouteProjectionPage({ projection, routeId, useRuntime,
   return result.assembly.render(runtime.cell);
 }
 
+export { registeredFlowRuntimeInputs } from "./registered-route-layout.js";
+export type { RegisteredFlowRuntimeInputs } from "./registered-route-layout.js";

@@ -229,7 +229,7 @@ export { PUBLISHER_CHANNELS } from "../planning/channel-ids.js";
 export type { PublisherChannelId } from "../planning/channel-ids.js";
 export { projectRouteRegistry, routeServerLoader, registeredRoutesForChannel, registeredRouteBrandLink, routeRegistryDigest, routeCompositionDigest, registeredRouteFrameFinding } from "./route-registry.js";
 export type { RouteSourceExport, RouteRegistration, RouteRegistry, RouteRegistryFinding, RegisteredRouteRow, RouteRegistryProjection } from "./route-registry.js";
-export type { InstanceBinding, FlowInstanceBinding, CanvasInstanceBinding, InstanceBindingBase, InstanceSectionRef, SectionFill, InstanceRegistries, ConsumerInstanceLibrary } from "./instance-binding.js";
+export type { InstanceBinding, FlowInstanceBinding, CanvasInstanceBinding, InstanceBindingBase, InstanceSectionRef, SectionFill, InstanceRegistries, ConsumerInstanceLibrary, ConsumerInstanceFill, LayoutRendererSource } from "./instance-binding.js";
 export { instanceBodyFill, instanceBodyFindings } from "./instance-body.js";
 
 export { deriveRouteRuntimeBinding } from "./route-runtime.js";
