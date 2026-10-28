@@ -13,6 +13,7 @@ import type { DesignerLayerBoardProjection } from "./designer-layer-boards.js";
 import type { DesignerLayerBoardsInput } from "./designer-layer-boards.js";
 import { prepareValueLibraryBoard, prepareCompositeLibraryBoard, type PreparedBoardPreviews } from "./prepared-library-boards.js";
 import type { LibraryBoardRecords } from "../blocks/library-board/model.js";
+import { checkWholeStudioInitialSession } from "./initial-session.js";
 const LAYERS: readonly LayerId[] = ["tokens", "assets", "components", "sections", "frames"];
 const VALUE_LAYERS: ReadonlySet<LayerId> = new Set(["tokens", "assets"]);
 /** The host adapter as the read-only Designer sees it: catalog, contracts and load. Its save is never reachable. */
@@ -21,12 +22,16 @@ export type CompositeStudioReadAdapter = Pick<CompositeStudioAdapter, "kind" | "
  * Read-only whole-library state: one host load, the committed snapshot and its evaluation. It holds no edit
  * session, so it exposes no edit, undo, redo, retry or flush, and never calls the host adapter's save.
  */
-function useWholeState({ adapter: host, labels, initialSlotId }: CompositeStudioProps) {
+function useWholeState({ adapter: host, labels, initialSlotId, initialSession }: CompositeStudioProps) {
   const adapter = useMemo<CompositeStudioReadAdapter>(() => ({ kind: host.kind, catalog: host.catalog, ...(host.contracts ? { contracts: host.contracts } : {}), load: () => host.load() }), [host]);
-  const [snapshot, setSnapshot] = useState<CompositeStudioSnapshot>();
-  const sessionIdentity = useMemo(() => globalThis.crypto.randomUUID(), [snapshot]);
-  const [failed, setFailed] = useState(false);
   const contracts = useMemo(() => adapter.contracts ?? loadBuildCatalog(), [adapter.contracts]);
+  const adopted = useMemo(() => initialSession === undefined ? undefined : checkWholeStudioInitialSession(initialSession, adapter.catalog, contracts), [initialSession, adapter.catalog, contracts]);
+  const [loaded, setLoaded] = useState(() => ({ adopted, snapshot: adopted?.snapshot as CompositeStudioSnapshot | undefined, failed: false }));
+  // A new handoff is visible atomically: never pair its id with the preceding snapshot
+  // for the render before the loading effect runs.
+  const snapshot: CompositeStudioSnapshot | undefined = loaded.adopted === adopted ? loaded.snapshot : adopted?.snapshot;
+  const failed = loaded.adopted === adopted && loaded.failed;
+  const sessionIdentity = useMemo(() => adopted?.id ?? globalThis.crypto.randomUUID(), [adopted, snapshot]);
   // Every leaf the explorer lists: the value catalog's tokens and assets, the contracts' other layers.
   const resolver = useMemo(() => {
     const values = adapter.catalog.values.placements.filter(placement => VALUE_LAYERS.has(placement.layer));
@@ -43,10 +48,14 @@ function useWholeState({ adapter: host, labels, initialSlotId }: CompositeStudio
   const [score, setScore] = useState(false);
   const snapshotRef = useRef(snapshot); snapshotRef.current = snapshot;
   useEffect(() => {
-    let active = true; setSnapshot(undefined); setFailed(false);
-    adapter.load().then(value => { if (active) setSnapshot(value); }, () => { if (active) setFailed(true); });
+    let active = true; setLoaded({ adopted, snapshot: adopted?.snapshot, failed: false });
+    adapter.load().then(value => {
+      if (!active) return;
+      try { if (adopted) checkWholeStudioInitialSession(adopted, adapter.catalog, contracts, value); setLoaded({ adopted, snapshot: value, failed: false }); }
+      catch { setLoaded({ adopted, snapshot: undefined, failed: true }); }
+    }, () => { if (active) setLoaded({ adopted, snapshot: undefined, failed: true }); });
     return () => { active = false; };
-  }, [adapter]);
+  }, [adapter, adopted, contracts]);
   // The committed change set: no pending operation, only the host's bundles.
   const changes = useMemo<CompositeChangeSet | undefined>(() => snapshot ? { baseHash: libraryHash(snapshot.library), changes: [], ...(snapshot.bundles ? { bundles: snapshot.bundles } : {}), ...(snapshot.surfaceBundles ? { surfaceBundles: snapshot.surfaceBundles } : {}) } : undefined, [snapshot]);
   // With no pending operation the working library is the committed one: no change set is applied. Its closing

@@ -1,6 +1,8 @@
 /** @vitest-environment jsdom */
 import "@testing-library/jest-dom/vitest";
-import type { ReactNode } from "react";
+import { Component, type ReactNode } from "react";
+import { RegisteredRoutePage } from "./registered-route.js";
+import type { RegisteredRouteRuntime } from "./registered-route-binding.js";
 import { act, cleanup, render, screen } from "@testing-library/react";
 import { afterAll, afterEach, beforeAll, expect, it, vi } from "vitest";
 import * as fs from "node:fs/promises";
@@ -8,11 +10,16 @@ import { join } from "node:path";
 import { tmpdir } from "node:os";
 import { libraryHash, loadBuildCatalog, runtimeHash, type PlacementNode } from "@clossys/designer/catalog";
 import { WholeStudioProvider, useWholeStudio, useStudioSession, useDesignerLayerBoardProjection, valueLibraryBoardRecords, valueLibraryBoardPreviews } from "@clossys/designer/studio";
-import { DESIGNER_LAYER_BOARDS_QUERY } from "@clossys/designer/studio/queries";
+import { createWholeStudioInitialSession, DESIGNER_LAYER_BOARDS_QUERY } from "@clossys/designer/studio/queries";
 import { labels } from "../../../designer/dist/studio/__fixtures__/studio.js";
 import { compileRegisteredRouteFixture, type CompiledRegisteredRoute } from "./__fixtures__/registered-route-runtime.js";
 import { syntheticRoute, SYNTHETIC_ROUTE_REGISTRIES } from "../core/__fixtures__/registered-route.js";
 import { materializeRegisteredDesignerRoute } from "./registered-route-query.js";
+class RouteGateBoundary extends Component<{ children: ReactNode }, { error?: string }> {
+  state: { error?: string } = {};
+  static getDerivedStateFromError(error: Error) { return { error: error.message }; }
+  render() { return this.state.error ? <output data-testid="route-gate-finding">{this.state.error}</output> : this.props.children; }
+}
 let temporary: string, compiled: CompiledRegisteredRoute;
 beforeAll(async () => { temporary = await fs.realpath(await fs.mkdtemp(join(tmpdir(), "SYNTHETIC-provider-join-"))); compiled = await compileRegisteredRouteFixture(temporary); }, 30000);
 afterAll(async () => { await fs.rm(temporary, { recursive: true, force: true }); });
@@ -31,20 +38,28 @@ it("materializes original provider checked records from the read-only committed 
   let current!: { whole: NonNullable<ReturnType<typeof useWholeStudio>>; values: ReturnType<typeof useStudioSession>; projected: ReturnType<typeof useDesignerLayerBoardProjection> };
   function Probe() { current = { whole: useWholeStudio()!, values: useStudioSession(), projected: useDesignerLayerBoardProjection() }; return <output>{current.projected.projection.phase}</output>; }
   const wholeLabels = { ...labels, whole: { signoff: "Signoff", proposed: "Proposed", contract: "Contract", contentSlots: "Slots", configurations: "Configurations", unresolved: "Unresolved", unassessed: "Unassessed" } };
-  const data = { library: engine.library, componentOptions: engine.componentOptions, surfaceOptions: engine.surfaceOptions };
+  const snapshot = { library: engine.library, componentOptions: engine.componentOptions, surfaceOptions: engine.surfaceOptions };
+  const initialSession = createWholeStudioInitialSession({ id: "SYNTHETIC-server-committed-session", snapshot, catalog: engine.catalog });
+  const data = JSON.parse(JSON.stringify({ ...snapshot, initialSession })) as typeof snapshot & { initialSession: typeof initialSession };
   type StudioData = typeof data;
   const seen: StudioData[] = [];
   function useStudioInputs(received: typeof data) {
     seen.push(received);
-    return { adapter: { ...adapter, load: async () => received }, labels: wholeLabels };
+    return { adapter: { ...adapter, load: async () => received }, labels: wholeLabels, initialSession: received.initialSession };
   }
   function RegisteredProvider({ children, data }: { children: ReactNode; data: StudioData }) {
     const inputs = useStudioInputs(data);
-    return <WholeStudioProvider adapter={inputs.adapter} labels={inputs.labels} initialSlotId="assets.icon-close">{children}</WholeStudioProvider>;
+    return <WholeStudioProvider adapter={inputs.adapter} labels={inputs.labels} initialSession={inputs.initialSession} initialSlotId="assets.icon-close">{children}</WholeStudioProvider>;
   }
-  render(<RegisteredProvider data={data}><Probe /></RegisteredProvider>);
+  const view = render(<RegisteredProvider data={data}><Probe /></RegisteredProvider>);
   expect(seen.length).toBeGreaterThan(0);
   expect(seen.every(received => received === data)).toBe(true);
+  // The actual original provider is ready before its asynchronous local load.
+  expect(current.projected.projection.phase).toBe("ready");
+  const initialProjectionHash = current.projected.projectionHash;
+  expect(current.projected.projection.session.id).toBe(initialSession.id);
+  await act(async () => {});
+  expect(current.projected.projectionHash).toBe(initialProjectionHash);
   await screen.findByText("ready");
   act(() => current.values.requestRow("assets.icon-close"));
   const prepared = current.values.boards.map(board => {
@@ -67,6 +82,12 @@ it("materializes original provider checked records from the read-only committed 
   const result = materializeRegisteredDesignerRoute(binding, current.whole.input!, registries, library, query);
   expect(result.status, JSON.stringify(result)).toBe("materialized");
   if (result.status !== "materialized") return;
+  const serverQuery = JSON.parse(JSON.stringify(query)) as typeof query;
+  const serverResult = materializeRegisteredDesignerRoute(binding, engine, registries, library, serverQuery);
+  expect(serverResult.status).toBe("materialized");
+  if (serverResult.status !== "materialized") return;
+  expect(serverResult.materialization.digest).toBe(result.materialization.digest);
+  expect(serverResult.materialization.facts).toEqual(result.materialization.facts);
   expect(result.materialization.binding.body!.kind === "canvas" && result.materialization.binding.body!.boards.map(board => board.id)).toEqual(projection.boards.map(board => board.id));
   expect(result.contents.filter(content => content.reference.ref.endsWith("/rows")).map(content => content.value)).toEqual(prepared.map(value => value.records.rows));
   const owner = prepared.find(value => value.records.rows.items.some(row => row.candidates.some(candidate => candidate.usable && candidate.previewIdentity)));
@@ -76,6 +97,16 @@ it("materializes original provider checked records from the read-only committed 
   expect(owner!.previews.render({ ...identity, selectionHash: runtimeHash("stale") })).toBeUndefined();
   expect(result.materialization.binding.fills["sections.comparison"]).toHaveLength(projection.boards.length);
   expect(document.querySelector("[data-studio-canvas]")).toBeNull();
+  // Exercise the public mounted route through the real original-provider check.
+  // No source proof or Stage is fabricated: reaching the existing source refusal
+  // proves the callback-bearing catalog no longer fails JSON hashing first.
+  const route = { ...syntheticRoute(), composition: { ...syntheticRoute().composition, binding } };
+  const registry = { version: 1 as const, consumer: projection.consumer!, routes: [route] };
+  const runtime = { assembly: { engine: current.whole.input!, ports: {} }, instanceLibrary: library, registries, cell: {}, designerQuery: query } as unknown as RegisteredRouteRuntime;
+  vi.spyOn(console, "error").mockImplementation(() => {});
+  view.rerender(<RegisteredProvider data={data}><Probe /><RouteGateBoundary><RegisteredRoutePage registry={registry} routeId={route.routeId} useRuntime={() => runtime} /></RouteGateBoundary></RegisteredProvider>);
+  expect(screen.getByTestId("route-gate-finding")).toHaveTextContent("Current reached original provider/query source materialization evidence unavailable");
+
   // The read-only Designer holds no edit session: no edit, nothing blocks a layer move, the committed identity stays put.
   const before = projection.session, sessionIdentity = current.whole.sessionIdentity;
   expect("session" in current.whole).toBe(false); expect("edit" in current.whole).toBe(false);

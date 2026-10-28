@@ -151,6 +151,8 @@ export interface CompositeStudioLabels extends StudioLabels {
   whole: { signoff: string; proposed: string; contract: string; contentSlots: string; configurations: string; unresolved: string; unassessed: string };
 }
 export interface CompositeStudioProps extends StudioCanvasProps {
+  /** Checked finite initial snapshot/session from the server-safe studio/queries API. */
+  initialSession?: import("./initial-session.js").WholeStudioInitialSession;
   /** @deprecated Ignored: the Designer holds no unsaved edits. */
   sessionRef?: Ref<StudioSessionControls>;
   adapter: CompositeStudioAdapter;

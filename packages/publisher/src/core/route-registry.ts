@@ -48,7 +48,7 @@ export const ROUTE_PROVIDER_MOUNTS = {
   "designer.whole-studio": {
     module: "@clossys/designer/studio/state",
     component: "WholeStudioProvider",
-    props: ["adapter", "labels", "initialSlotId", "livePreview", "sessionRef"],
+    props: ["adapter", "labels", "initialSlotId", "livePreview", "sessionRef", "initialSession"],
     body: { id: "designer.layer-boards", version: 1 },
   },
 } as const satisfies Readonly<Record<string, { readonly module: string; readonly component: string; readonly props: readonly string[]; readonly body: { readonly id: string; readonly version: number } }>>;

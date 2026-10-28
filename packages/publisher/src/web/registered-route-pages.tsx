@@ -1,5 +1,6 @@
 "use client";
 import { useWholeStudio, useDesignerLayerBoardProjection } from "@clossys/designer/studio/state";
+import { wholeStudioCatalogHash } from "@clossys/designer/studio/queries";
 import { libraryHash, resolve, runtimeHash } from "@clossys/designer/catalog";
 import { prepareRegisteredRoute } from "./registered-route-binding.js";
 import type { PreparedRegisteredRoute, RegisteredRoutePageProps } from "./registered-route-binding.js";
@@ -18,7 +19,7 @@ export function DesignerRegisteredRoutePage({ registry, routeId, useRuntime, ren
   const route = registry.routes.find(route => route.routeId === routeId)!;
   const runtime = useRuntime(route), query = runtime.designerQuery;
   if (!whole || !query || runtimeHash(query.input.projection) !== actual.projectionHash) throw new Error("Registered route pending: actual original Designer provider projection differs");
-  if (!whole.input || libraryHash(whole.input.library) !== libraryHash(runtime.assembly.engine.library) || runtimeHash(whole.input.catalog) !== runtimeHash(runtime.assembly.engine.catalog) || resolve(whole.input).selectionHash !== resolve(runtime.assembly.engine).selectionHash) throw new Error("Registered route pending: current original Designer engine/selection unavailable");
+  if (!whole.input || libraryHash(whole.input.library) !== libraryHash(runtime.assembly.engine.library) || wholeStudioCatalogHash(whole.input.catalog) !== wholeStudioCatalogHash(runtime.assembly.engine.catalog) || resolve(whole.input).selectionHash !== resolve(runtime.assembly.engine).selectionHash) throw new Error("Registered route pending: current original Designer engine/selection unavailable");
   liveDesignerQueries.set(query, actual.projectionHash);
   let result: PreparedRegisteredRoute;
   try { result = prepareRegisteredRoute(registry, routeId, runtime, renderActions); }

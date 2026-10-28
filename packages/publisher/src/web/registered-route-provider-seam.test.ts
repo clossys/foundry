@@ -78,7 +78,8 @@ describe("registered nonvisual provider ownership seam (synthetic fixtures; no r
     Object.assign(route.composition, { loader: { file: "server/tools.ts", export: "loadTools" } });
     const withData = nonvisual.replace('import type { ReactNode }', 'import type { StudioData } from "../runtime.ts";\nimport type { ReactNode }')
       .replace('{ children }: { children: ReactNode }', '{ children, data }: { children: ReactNode; data: StudioData }')
-      .replace('useStudioInputs()', 'useStudioInputs(data)');
+      .replace('useStudioInputs()', 'useStudioInputs(data)')
+      .replace('labels={inputs.labels}', 'labels={inputs.labels} initialSession={inputs.initialSession}');
     await setup(route, withData);
     await write("server/tools.ts", 'export async function loadTools() { return { library: "SYNTHETIC" }; }\n');
     const page = emitRegisteredRoutePage("routes.ts", route);

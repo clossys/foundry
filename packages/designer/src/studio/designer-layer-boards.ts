@@ -138,3 +138,6 @@ export function deriveDesignerLayerBoardsV1(value: DesignerLayerBoardsInput): De
   });
   return materialize({ body: { kind: 'canvas', source: { kind: 'derived', query: DESIGNER_LAYER_BOARDS_QUERY }, boards, arrangement: input.arrangement, collapseBelow: 'tokens.breakpoint.tablet' }, fills: { 'sections.comparison': fills }, content });
 }
+
+export { createWholeStudioInitialSession, checkWholeStudioInitialSession, wholeStudioCatalogHash } from './initial-session.js';
+export type { WholeStudioInitialSession, WholeStudioInitialSnapshot } from './initial-session.js';
