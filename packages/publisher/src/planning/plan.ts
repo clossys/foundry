@@ -1,11 +1,13 @@
 import type { InstanceRegistries } from "../core/instance-binding.js";
+import type { CopyRef } from "@clossys/writer";
+import { publisherValueRef } from "../web/publisher/value-names.js";
 import { getEffectiveLayoutContract, freeze } from "../layouts/resolve.js";
 import type { FormatId } from "../formats/contract.js";
 import { recommendPlanItem, validateItemRecommendation } from "./configuration.js";
 import type { PublisherConfiguration, PublisherRecommendation, PublisherConfigurationOverride } from "./configuration.js";
 import type { LayoutId } from "../layouts/ids.js";
 import { MILESTONE_IDS, PUBLISHER_MENU, PUBLISHER_MENU_VERSION, PUBLISHER_PACKS } from "./menu.js";
-import type { MilestoneId, PublisherPlanLane, PublisherPlanPackId } from "./menu.js";
+import type { MilestoneId, PublisherDisplayNeed, PublisherPlanLane, PublisherPlanPackId } from "./menu.js";
 
 export interface PublisherPlanNeed { readonly slot: string; readonly question: string }
 export interface PublisherPlanItem {
@@ -38,6 +40,37 @@ export interface PublisherPlanDraft {
   readonly milestones: readonly PublisherPlanMilestone[];
 }
 export interface PublisherPlanFinding { readonly path: string; readonly message: string }
+export interface PublisherPlanItemDisplay {
+  readonly labelRef?: Readonly<CopyRef>;
+  readonly laneRef?: Readonly<CopyRef>;
+  readonly needsInput: readonly PublisherDisplayNeed[];
+}
+/** Route paths are host-supplied evidence; opaque item and route identities are never prettified. */
+export function publisherPlanItemDisplay(item: PublisherPlanItem, routePath?: string): PublisherPlanItemDisplay {
+  const parent = routePath === undefined ? "publisher.menuItem" : "publisher.planPage";
+  const id = routePath ?? item.menuRef;
+  const labelRef = publisherValueRef(parent, id);
+  const laneRef = publisherValueRef("publisher.lane", item.lane);
+  return freeze({ labelRef, laneRef, needsInput: [
+    ...(!labelRef ? [{ path: "label", parent, id }] : []),
+    ...(!laneRef ? [{ path: "lane", parent: "publisher.lane", id: item.lane }] : []),
+  ] });
+}
+export interface PublisherPlanNeedDisplay {
+  readonly slotLabelRef?: Readonly<CopyRef>;
+  readonly questionRef?: Readonly<CopyRef>;
+  readonly needsInput: readonly PublisherDisplayNeed[];
+}
+/** Authored question strings remain plan evidence; display uses a registered slot question. */
+export function publisherPlanNeedDisplay(need: PublisherPlanNeed): PublisherPlanNeedDisplay {
+  const parent = need.slot.startsWith("brandAssets.") ? "publisher.brandAsset" : need.slot.startsWith("content.") ? "publisher.content" : "publisher.contentKey";
+  const slotLabelRef = publisherValueRef(parent, need.slot);
+  const questionRef = publisherValueRef("publisher.setupQuestion", need.slot);
+  return freeze({ slotLabelRef, questionRef, needsInput: [
+    ...(!slotLabelRef ? [{ path: "slot", parent, id: need.slot }] : []),
+    ...(!questionRef ? [{ path: "question", parent: "publisher.setupQuestion", id: need.slot }] : []),
+  ] });
+}
 const text = (value: unknown): value is string => typeof value === "string" && value.trim().length > 0;
 const unique = (values: readonly unknown[]) => new Set(values).size === values.length;
 const fields = (value: object, allowed: readonly string[]) => Object.keys(value).every(key => allowed.includes(key));
