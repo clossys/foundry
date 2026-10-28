@@ -5,5 +5,5 @@ export interface StudioDataValueProps {
 }
 export function StudioDataValue({ kind, value }: StudioDataValueProps) {
   const text = value === undefined || value === null ? "" : typeof value === "object" ? JSON.stringify(value) : String(value);
-  return <span data-studio-data-value="" data-studio-data-kind={kind}>{text}</span>;
+  return <span data-studio-data-value="" data-studio-data-kind={kind} className={kind === "hash" || kind === "command" || kind === "json" ? "min-w-0 wrap-anywhere font-mono" : "min-w-0 wrap-anywhere"}>{text}</span>;
 }

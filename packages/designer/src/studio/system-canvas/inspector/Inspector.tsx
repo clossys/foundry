@@ -1,5 +1,6 @@
 "use client";
 import { useRef, useState, type ReactNode } from "react";
+import { EmptyState } from "../../../blocks/EmptyState.js";
 import { Button } from "../../../components/Button.js";
 import { SemanticContent } from "../../../components/SemanticContent.js";
 import type { UsageGraph } from "../../../catalog-core/usage-graph.js";
@@ -20,7 +21,7 @@ export interface SystemInspectorProps extends DesignerAgentData {
 export function SystemInspector({identity,labels,copy,graph,onNavigate,onClose,canNavigate,specimen,findings=[],changeCommandFor,writeHistory,decisions}:SystemInspectorProps) {
   if(!copy||typeof copy.locale!=="string"||!copy.locale||typeof copy.resolver!=="function")studioCopyNeed("studio.copy.binding");
   const history=useRef({stack:[] as string[]}),[copyState,setCopyState]=useState<"idle"|"copied"|"failed">("idle");
-  if(!identity)return <SemanticContent as="section" data-studio-panel="inspector" aria-label={labels.inspectorLabel}><SemanticContent as="p">{labels.rail.inspectorEmpty}</SemanticContent></SemanticContent>;
+  if(!identity)return <SemanticContent as="section" data-studio-panel="inspector" aria-label={labels.inspectorLabel}><EmptyState title={labels.rail.inspectorEmpty} className="min-w-0 wrap-anywhere"/></SemanticContent>;
   const command=changeCommandFor?.(identity.id),change=command ?? labels.howToChange;
   const text=labels.system??createRouteStudioLabels(copy).system!;
   const rows=writeHistory?.(identity.id) ?? [],fill=identity.fill,reason=decisions?.[identity.id]?.reason;
@@ -36,20 +37,20 @@ export function SystemInspector({identity,labels,copy,graph,onNavigate,onClose,c
   ];
   const fillFacts: readonly (readonly [string,ReactNode])[]=[
     [labels.inspector.source,fill.source===undefined?labels.inspector.none:<StudioDataValue kind="source" value={fill.source}/>],
-    [labels.inspector.pin,fill.pin===undefined?labels.inspector.none:<StudioDataValue kind="json" value={fill.pin}/>],
+    [labels.inspector.pin,fill.pin===undefined?labels.inspector.none:<StudioDataValue kind="hash" value={fill.pin}/>],
     [field("origin"),fill.origin===undefined?labels.inspector.none:<StudioDataValue kind="status" value={fill.origin}/>],
   ];
-  return <SemanticContent as="section" aria-label={labels.inspectorLabel} data-studio-panel="inspector" data-selected-leaf={identity.id} className="flex min-w-0 flex-col gap-md">
+  return <SemanticContent as="section" aria-label={labels.inspectorLabel} data-studio-panel="inspector" data-selected-leaf={identity.id} className="flex min-w-0 flex-col gap-md wrap-anywhere">
     <Button variant="ghost" size="sm" onPress={onClose}>{labels.canvas.inspectorClose}</Button>
     <SemanticContent as="section" data-inspector-part="identity">
       <SemanticContent as="h2" className="text-body font-semibold"><StudioDataValue kind="identifier" value={identity.id}/></SemanticContent>
-      <SemanticContent as="dl">{facts.map(([name,value])=><SemanticContent as="div" key={name}><SemanticContent as="dt">{name}</SemanticContent><SemanticContent as="dd">{value}</SemanticContent></SemanticContent>)}</SemanticContent>
+      <SemanticContent as="dl">{facts.map(([name,value])=><SemanticContent as="div" key={name}><SemanticContent as="dt" className="text-ink-muted">{name}</SemanticContent><SemanticContent as="dd" className="min-w-0 wrap-anywhere">{value}</SemanticContent></SemanticContent>)}</SemanticContent>
     </SemanticContent>
     <SemanticContent as="section" data-inspector-part="fill"><SemanticContent as="h3">{text.fill}</SemanticContent>
-      <SemanticContent as="dl">{fillFacts.map(([name,value])=><SemanticContent as="div" key={name}><SemanticContent as="dt">{name}</SemanticContent><SemanticContent as="dd">{value??labels.inspector.none}</SemanticContent></SemanticContent>)}</SemanticContent>
-      {reason ? <SemanticContent as="dl"><SemanticContent as="dt">{field("reason")}</SemanticContent><SemanticContent as="dd">{reasonRef ? readStudioCopy(copy, reasonRef) : readStudioMessage(copy,`studio.inspector.reason.${identity.id}`)}</SemanticContent></SemanticContent>:null}
+      <SemanticContent as="dl">{fillFacts.map(([name,value])=><SemanticContent as="div" key={name}><SemanticContent as="dt" className="text-ink-muted">{name}</SemanticContent><SemanticContent as="dd" className="min-w-0 wrap-anywhere">{value??labels.inspector.none}</SemanticContent></SemanticContent>)}</SemanticContent>
+      {reason ? <SemanticContent as="dl"><SemanticContent as="dt" className="text-ink-muted">{field("reason")}</SemanticContent><SemanticContent as="dd" className="min-w-0 wrap-anywhere">{reasonRef ? readStudioCopy(copy, reasonRef) : readStudioMessage(copy,`studio.inspector.reason.${identity.id}`)}</SemanticContent></SemanticContent>:null}
     </SemanticContent>
-    <SemanticContent as="section" data-inspector-part="stack"><SemanticContent as="h3">{text.stack}</SemanticContent><SemanticContent as="dl"><SemanticContent as="dt">{field("root")}</SemanticContent><SemanticContent as="dd">{fill.root===undefined?labels.inspector.none:<StudioDataValue kind="identifier" value={fill.root}/>}</SemanticContent></SemanticContent><SemanticContent as="ul">{fill.constituents?.map(id=><SemanticContent as="li" key={id}><StudioDataValue kind="identifier" value={id}/></SemanticContent>)}</SemanticContent></SemanticContent>
+    <SemanticContent as="section" data-inspector-part="stack"><SemanticContent as="h3">{text.stack}</SemanticContent><SemanticContent as="dl"><SemanticContent as="dt" className="text-ink-muted">{field("root")}</SemanticContent><SemanticContent as="dd" className="min-w-0 wrap-anywhere">{fill.root===undefined?labels.inspector.none:<StudioDataValue kind="identifier" value={fill.root}/>}</SemanticContent></SemanticContent><SemanticContent as="ul">{fill.constituents?.map(id=><SemanticContent as="li" key={id}><StudioDataValue kind="identifier" value={id}/></SemanticContent>)}</SemanticContent></SemanticContent>
     <SemanticContent as="section" data-inspector-part="dependencies"><SemanticContent as="section" data-inspector-part="connections">
       <UsagePanel copy={copy} id={identity.id} graph={graph} labels={labels.usage??createStudioUsageLabels(copy)} onNavigate={onNavigate} canNavigate={canNavigate} history={history.current}/>
     </SemanticContent></SemanticContent>
@@ -60,7 +61,7 @@ export function SystemInspector({identity,labels,copy,graph,onNavigate,onClose,c
       ["historyCommand", <StudioDataValue kind="command" value={row.command}/>],
       ["historyContentHash", <StudioDataValue kind="hash" value={row.contentHash}/>],
       ["historyInputs", <StudioDataValue kind="json" value={row.inputs}/>],
-    ] as const).map(([name, value]) => <SemanticContent as="div" key={name}><SemanticContent as="dt">{field(name)}</SemanticContent><SemanticContent as="dd">{value}</SemanticContent></SemanticContent>)}</SemanticContent></SemanticContent>)}</SemanticContent>:<SemanticContent as="p">{labels.inspector.none}</SemanticContent>}</SemanticContent>
+    ] as const).map(([name, value]) => <SemanticContent as="div" key={name}><SemanticContent as="dt" className="text-ink-muted">{field(name)}</SemanticContent><SemanticContent as="dd" className="min-w-0 wrap-anywhere">{value}</SemanticContent></SemanticContent>)}</SemanticContent></SemanticContent>)}</SemanticContent>:<SemanticContent as="p">{labels.inspector.none}</SemanticContent>}</SemanticContent>
     {change?<SemanticContent as="div" className="flex flex-col gap-xs" data-inspector-change=""><SemanticContent as="code">{command!==undefined?<StudioDataValue kind="command" value={command}/>:change}</SemanticContent><Button size="sm" onPress={async()=>{try{if(!navigator.clipboard)throw new Error("Clipboard unavailable");await navigator.clipboard.writeText(change);setCopyState("copied");}catch{setCopyState("failed");}}}>{labels.board.copy}</Button><SemanticContent as="span" role="status">{copyState==="copied"?labels.board.copied:copyState==="failed"?labels.board.copyFailed:null}</SemanticContent></SemanticContent>:null}
   </SemanticContent>;
 }

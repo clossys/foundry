@@ -26,7 +26,7 @@ export interface InspectorPrompts { readonly create: CandidatePromptData; readon
 export function InspectorChange({ labels, prompts }: { labels: StudioLabels; prompts?: InspectorPrompts }): ReactElement | null {
   if (!labels.howToChange && !prompts) return null;
   return <div data-studio-inspector-change="" className="flex min-w-0 flex-col gap-sm">
-    {labels.howToChange ? <p className="text-body text-ink-secondary">{labels.howToChange}</p> : null}
+    {labels.howToChange ? <p className="min-w-0 wrap-anywhere text-body text-ink-muted">{labels.howToChange}</p> : null}
     {prompts ? <div className="flex flex-wrap gap-sm">
       <CandidatePromptDialog trigger={<Button variant="ghost" size="sm">{labels.board.create}</Button>} data={prompts.create} labels={labels} {...(prompts.workflow ? { workflow: prompts.workflow } : {})} />
       {prompts.refresh ? <CandidatePromptDialog trigger={<Button variant="ghost" size="sm">{labels.board.refresh}</Button>} data={prompts.refresh} labels={labels} {...(prompts.workflow ? { workflow: prompts.workflow } : {})} /> : null}
@@ -60,20 +60,20 @@ export function Inspector({ candidate, labels, copy, tier, graph, prompts }: {
   ];
   return <StudioCopyProvider binding={copy}><div data-studio-inspector={candidate.source} className="flex min-w-0 flex-col gap-md">
     <dl className="flex flex-col gap-xs text-body">
-      {facts.map(([name, value]) => <div key={name} className={row}><dt className="text-ink-secondary">{name}</dt><dd className="min-w-0 break-words text-ink-primary">{value === undefined ? text.none : <StudioDataValue kind="value" value={value}/>}</dd></div>)}
-      <div><dt>{text.members}</dt><dd><dl className="flex flex-col gap-sm">{model.rows.map(entry => {
+      {facts.map(([name, value]) => <div key={name} className={row}><dt className="text-ink-muted wrap-anywhere">{name}</dt><dd className="min-w-0 break-words text-ink-primary">{value === undefined ? text.none : <StudioDataValue kind={name === text.pin ? "hash" : "value"} value={value}/>}</dd></div>)}
+      <div><dt className="text-ink-muted wrap-anywhere">{text.members}</dt><dd className="min-w-0 wrap-anywhere"><dl className="flex flex-col gap-sm">{model.rows.map(entry => {
         const aliases = candidate.members.find(member => member.id === entry.member)?.member.alias;
         return <div key={entry.member}>
-        <dt className="break-words">{<StudioDataValue kind="identifier" value={entry.member}/>}</dt><dd><dl>
-          <div className={row}><dt>{text.light}</dt><dd>{<StudioDataValue kind="value" value={entry.light}/>}</dd></div>
-          {entry.dark !== undefined ? <div className={row}><dt>{text.dark}</dt><dd>{<StudioDataValue kind="value" value={entry.dark}/>}</dd></div> : null}
-          <div className={row}><dt>{text.via}</dt><dd>{<StudioDataValue kind="identifier" value={entry.via}/>}</dd></div>
-          <div className={row}><dt>{text.alias} {text.light}</dt><dd>{aliases?.light === undefined ? text.none : <StudioDataValue kind="identifier" value={aliases.light}/>}</dd></div>
-          {entry.dark !== undefined || aliases?.dark !== undefined ? <div className={row}><dt>{text.alias} {text.dark}</dt><dd>{aliases?.dark === undefined ? text.none : <StudioDataValue kind="identifier" value={aliases.dark}/>}</dd></div> : null}
+        <dt className="text-ink-muted wrap-anywhere">{<StudioDataValue kind="identifier" value={entry.member}/>}</dt><dd className="min-w-0 wrap-anywhere"><dl>
+          <div className={row}><dt className="text-ink-muted wrap-anywhere">{text.light}</dt><dd className="min-w-0 wrap-anywhere">{<StudioDataValue kind="value" value={entry.light}/>}</dd></div>
+          {entry.dark !== undefined ? <div className={row}><dt className="text-ink-muted wrap-anywhere">{text.dark}</dt><dd className="min-w-0 wrap-anywhere">{<StudioDataValue kind="value" value={entry.dark}/>}</dd></div> : null}
+          <div className={row}><dt className="text-ink-muted wrap-anywhere">{text.via}</dt><dd className="min-w-0 wrap-anywhere">{<StudioDataValue kind="identifier" value={entry.via}/>}</dd></div>
+          <div className={row}><dt className="text-ink-muted wrap-anywhere">{text.alias} {text.light}</dt><dd className="min-w-0 wrap-anywhere">{aliases?.light === undefined ? text.none : <StudioDataValue kind="identifier" value={aliases.light}/>}</dd></div>
+          {entry.dark !== undefined || aliases?.dark !== undefined ? <div className={row}><dt className="text-ink-muted wrap-anywhere">{text.alias} {text.dark}</dt><dd className="min-w-0 wrap-anywhere">{aliases?.dark === undefined ? text.none : <StudioDataValue kind="identifier" value={aliases.dark}/>}</dd></div> : null}
         </dl></dd>
       </div>; })}</dl></dd></div>
-      {tier === "role" ? <div><dt>{text.usedBy}</dt><dd aria-busy={!usage}>{usedBy.length ? <ul>{usedBy.map(id => <li key={id}><StudioDataValue kind="identifier" value={id}/></li>)}</ul> : usage ? text.none : null}</dd></div> : null}
-      <div><dt>{text.findings}</dt><dd>{model.findings.length ? <ul>{model.findings.map((finding, index) => <li key={`${finding.code}:${finding.subject}:${index}`}>{readStudioFinding(copy, finding, `studio.inspector.finding.${finding.code}`)}</li>)}</ul> : text.none}</dd></div>
+      {tier === "role" ? <div><dt className="text-ink-muted wrap-anywhere">{text.usedBy}</dt><dd aria-busy={!usage}>{usedBy.length ? <ul>{usedBy.map(id => <li key={id}><StudioDataValue kind="identifier" value={id}/></li>)}</ul> : usage ? text.none : null}</dd></div> : null}
+      <div><dt className="text-ink-muted wrap-anywhere">{text.findings}</dt><dd className="min-w-0 wrap-anywhere">{model.findings.length ? <ul>{model.findings.map((finding, index) => <li key={`${finding.code}:${finding.subject}:${index}`}>{readStudioFinding(copy, finding, `studio.inspector.finding.${finding.code}`)}</li>)}</ul> : text.none}</dd></div>
     </dl>
     {labels.usage ? <StudioUsage id={leaf} labels={labels.usage} {...(graph ? { graph } : {})} /> : null}
     <InspectorChange labels={labels} {...(prompts ? { prompts } : {})} />

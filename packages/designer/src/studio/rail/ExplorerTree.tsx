@@ -2,6 +2,7 @@
 import { useEffect, useMemo, useState } from "react";
 import type { LayerId, Placement } from "../../catalog-core/index.js";
 import { SemanticContent } from "../../components/SemanticContent.js";
+import { EmptyState } from "../../blocks/EmptyState.js";
 import { Select } from "../../components/Select.js";
 import { TreeView, type TreeViewNode } from "../TreeView.js";
 import { useOptionalStudioSession } from "../StudioProvider.js";
@@ -51,9 +52,9 @@ export function ExplorerTree(props: ExplorerProps & { readonly copy: StudioCopyB
       if (props.onCloseInspector) props.onCloseInspector();
       else session?.select(undefined);
     }
-  }}><TreeView nodes={nodes} aria-label={labels.treeLabel} currentId={selected} expandedIds={expanded}
+  }}>{nodes.length === 0 ? <EmptyState title={labels.canvas.noCandidatesInBoard} className="min-w-0 wrap-anywhere"/> : <TreeView nodes={nodes} aria-label={labels.treeLabel} currentId={selected} expandedIds={expanded}
     onNavigate={id => { const entry=index.get(id); if(entry) navigate(entry.target); }}
-    onExpandedChange={next => { const changed=[...new Set([...expanded,...next])].filter(id=>expanded.has(id)!==next.has(id)); setExpanded(next); const entry=changed.length===1 ? index.get(changed[0]!) : undefined; if(entry)navigate(entry.target); }} /></SemanticContent>;
+    onExpandedChange={next => { const changed=[...new Set([...expanded,...next])].filter(id=>expanded.has(id)!==next.has(id)); setExpanded(next); const entry=changed.length===1 ? index.get(changed[0]!) : undefined; if(entry)navigate(entry.target); }} />}</SemanticContent>;
 }
 export function LayerSelect(props: ExplorerProps = {}) {
   const session=useOptionalStudioSession(), inherited=useExplorerPlacements();

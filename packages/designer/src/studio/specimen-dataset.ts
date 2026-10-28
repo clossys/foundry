@@ -115,8 +115,8 @@ const orderRows = people.map((person, index) => {
  */
 const brandName = "Northwind";
 const preset = defaultPreset(sourceRoster);
-const presetInk = (slot: string, member: string): string => {
-  const value = presetValues(tokenContract, preset, slot)[member]?.light;
+const presetInk = (slot: string, member: string, theme: "light" | "dark" = "light"): string => {
+  const value = presetValues(tokenContract, preset, slot)[member]?.[theme];
   if (value === undefined) throw new TypeError(`the default preset has no ${slot}.${member}`);
   return value;
 };
@@ -124,9 +124,9 @@ const presetInk = (slot: string, member: string): string => {
  * A preset colour in the form React Aria's colour parser reads: the token's own `oklch()` value, encoded as
  * sRGB hex. The colour picker's swatches are the default preset's first categorical chart colours.
  */
-const presetSwatch = (slot: string, member: string): string => {
+const presetSwatch = (slot: string, member: string, theme: "light" | "dark" = "light"): string => {
   const encode = (linear: number) => Math.round(255 * (linear <= 0.0031308 ? 12.92 * linear : 1.055 * linear ** (1 / 2.4) - 0.055));
-  return `#${oklchToLinearSRGB(parseOklch(presetInk(slot, member))).map(channel => encode(channel).toString(16).padStart(2, "0")).join("")}`;
+  return `#${oklchToLinearSRGB(parseOklch(presetInk(slot, member, theme))).map(channel => encode(channel).toString(16).padStart(2, "0")).join("")}`;
 };
 const chartSwatches = ["1", "2", "3"].map(member => presetSwatch("tokens.categorical-color", member));
 const brandMark = identityStarterSeeds({ name: brandName }, {
@@ -693,3 +693,26 @@ export const specimenDataset = {
 } as const;
 
 export type SpecimenDataset = typeof specimenDataset;
+
+/** Fixed preset values per theme; changing the Studio theme never mutates a shared specimen. */
+export const specimenThemeValues = Object.fromEntries((["light", "dark"] as const).map(theme => [theme, {
+  ink: presetInk("tokens.text-color", "primary", theme),
+  surface: presetInk("tokens.surface-color", "base", theme),
+  accent: presetInk("tokens.accent-color", "default", theme),
+  swatches: ["1", "2", "3"].map(member => presetSwatch("tokens.categorical-color", member, theme)),
+}])) as Record<"light" | "dark", { ink: string; surface: string; accent: string; swatches: string[] }>;
+
+/** Reproducible interaction fixtures share the same dates, people and labels in both themes. */
+export const specimenStateFixtures = {
+  default: specimenDataset,
+  empty: { ...specimenDataset, people: [], avatars: [], table: { ...specimenDataset.table, rows: [] } },
+  disabled: { ...specimenDataset, isDisabled: true },
+  loading: { ...specimenDataset, isLoading: true },
+  error: { ...specimenDataset, error: specimenDataset.sections.states.error },
+  long: { ...specimenDataset, heading: specimenDataset.sections.states.longTitle },
+} as const;
+export function specimenDatasetFor(theme: "light" | "dark") {
+  const values = specimenThemeValues[theme];
+  return { ...specimenDataset, theme, themeValues: values,
+    color: { ...specimenDataset.color, defaultValue: values.swatches[0]!, swatches: values.swatches } };
+}

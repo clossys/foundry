@@ -40,7 +40,7 @@ function indexNodes(nodes: readonly TreeViewNode[], into = new Map<string, TreeV
 // Rows depend only on the immutable nodes; selection, expansion and handlers stay on the native Tree.
 const Rows = memo(function Rows({ nodes }: { nodes: readonly TreeViewNode[] }) {
   return nodes.map(node => <Tree.Node key={node.id} id={node.id} textValue={node.label}
-    label={<span className="min-w-0 truncate">{node.label}</span>} expandLabel={node.label}>
+    label={<span title={node.label} data-tree-label="" className="min-w-0 flex-1 truncate">{node.label}</span>} expandLabel={node.label}>
     {node.children ? <Rows nodes={node.children} /> : null}
   </Tree.Node>);
 });
