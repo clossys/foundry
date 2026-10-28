@@ -1,0 +1,63 @@
+{
+  "sourceCommit": "9966f3d283471a39ad4f2fb27c72225c58e2780b",
+  "scope": [
+    "AppFrame",
+    "frames.document",
+    "/agents/designer",
+    "/agents/writer",
+    "/agents/publisher"
+  ],
+  "adminCoverage": false,
+  "findings": [
+    {
+      "cellId": "S-WR-MECH-AppFrame",
+      "priority": "P0",
+      "state": "Need",
+      "package": "designer",
+      "source": "packages/designer/src/runtime/frames/app-shell.tsx",
+      "line": 35,
+      "kind": "missing-writer-binding",
+      "detail": "appShellProps maps host RuntimeContent JSON slots skip-link, sidebar, command and inspector into AppFrame props at lines 35-78; account labels come from sidebar.account and command labels from command. This mapping does not resolve Writer references. AppFrame.tsx additionally supplies inline skip/navigation defaults at lines 62 and 69-70 and PageBar label defaults at lines 248-249. No authoritative admin Writer records or binding from those records to these props were found."
+    },
+    {
+      "cellId": "S-WR-MECH-frames.document",
+      "priority": "P0",
+      "state": "Need",
+      "package": "designer",
+      "source": "packages/designer/src/runtime/frames/document.tsx",
+      "line": 161,
+      "kind": "missing-writer-binding",
+      "detail": "The renderer reads host head JSON and requires its lang, dir and title at lines 161-162, then passes them to DocumentFrame at line 169. catalog/slots/frames.json lines 3-24 declares head and body as host-node slots. The title is host-provided text; this renderer has no concrete Writer reference resolution or admin title record binding."
+    },
+    {
+      "cellId": "S-WR-MECH-DesignerStudio",
+      "priority": "P0",
+      "state": "Need",
+      "package": "designer",
+      "source": "packages/designer/src/studio/DesignerRoutePage.tsx",
+      "line": 33,
+      "kind": "missing-writer-binding",
+      "detail": "DesignerRoutePage imports routeStudioLabels at line 11 and passes it directly to WholeStudioProvider at line 33. studio/route-labels.ts lines 3-17 defines this package-owned English label and formatter object inline. Route contents separately resolve host RuntimeContent by hash at lines 29-31. No admin Writer corpus or Writer references supplying routeStudioLabels were found."
+    },
+    {
+      "cellId": "S-WR-MECH-PublisherConsole",
+      "priority": "P0",
+      "state": "Need",
+      "package": "publisher",
+      "source": "packages/publisher/src/web/publisher/PublisherPage.tsx",
+      "line": 86,
+      "kind": "missing-writer-binding",
+      "detail": "PublisherPage accepts optional plain message overrides at lines 45-90 and renders inline fallback labels and prose, including lines 208-239. PublisherRoutePage.tsx resolves host frame contents by hash at lines 75-92 and spreads its workspace into PublisherPage at line 93; its PublisherRouteServerData.publisher fields at lines 16-32 do not supply the message override objects. No concrete admin Writer records or Writer reference binding for the console messages were found."
+    },
+    {
+      "cellId": "S-WR-MECH-WriterConsole",
+      "priority": "P0",
+      "state": "Need",
+      "package": "writer",
+      "source": "packages/writer/src/catalog/records",
+      "line": null,
+      "kind": "missing-writer-corpus",
+      "detail": "The catalog records directory contains site.en.json and sign-in.json plus the sign-in test. site.en.json contains marketing-site aliases; sign-in.json contains generic authentication records. Neither supplies an admin Writer console corpus. No TSX console implementation or concrete /agents/writer registration and Writer bindings were found in the Writer package. The /agents/writer scope entry is the requested audit target, not an observed registered route."
+    }
+  ]
+}

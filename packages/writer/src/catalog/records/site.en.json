@@ -101,6 +101,7 @@
     "nr.legal.terms": "nr.0000000032"
   },
   "records": [
+    {"id": "st.0000000033", "leaf": "strings.legal-lines", "context": "Generic draft site starter", "status": "draft", "origin": "authored", "text": "Updated {date, date, long}", "args": [{"name": "date", "type": "date"}]},
     {"id": "st.0000000001", "leaf": "strings.field-labels", "context": "Generic draft site starter", "status": "draft", "origin": "authored", "text": "Welcome"},
     {"id": "st.0000000002", "leaf": "strings.field-labels", "context": "Generic draft site starter", "status": "draft", "origin": "authored", "text": "Overview"},
     {"id": "st.0000000003", "leaf": "strings.field-labels", "context": "Generic draft site starter", "status": "draft", "origin": "authored", "text": "Read more about this example."},
@@ -196,7 +197,7 @@
     {"id": "st.000000002x", "leaf": "strings.field-labels", "context": "Generic draft site starter", "status": "draft", "origin": "authored", "text": "Enter a valid email address."},
     {"id": "st.000000002y", "leaf": "strings.field-labels", "context": "Generic draft site starter", "status": "draft", "origin": "authored", "text": "Your message could not be sent. Try again later."},
     {"id": "st.000000002z", "leaf": "strings.field-labels", "context": "Generic draft site starter", "status": "draft", "origin": "authored", "text": "{date, date, long}", "args": [{"name": "date", "type": "date"}]},
-    {"id": "pt.0000000030", "leaf": "patterns.section-title", "context": "Generic draft site starter", "status": "draft", "origin": "authored", "parts": {"title": {"text": "Updated {date, date, long}"}}},
+    {"id": "pt.0000000030", "leaf": "patterns.section-title", "context": "Generic draft site starter", "status": "draft", "origin": "authored", "parts": {"title": {"ref": {"kind": "string", "id": "st.0000000033"}}}},
     {"id": "nr.0000000031", "leaf": "narratives.legal-document", "context": "Generic draft site starter", "status": "draft", "origin": "authored", "title": "st.000000001e", "frame": {"frameId": "frames.site-shell"}, "blocks": [{"type": "paragraph", "designer": {"id": "sections.legal-prose", "configId": "legal.privacy"}, "text": "This is a draft for review. It does not describe a live service or provide legal advice."}]},
     {"id": "nr.0000000032", "leaf": "narratives.legal-document", "context": "Generic draft site starter", "status": "draft", "origin": "authored", "title": "st.000000001k", "frame": {"frameId": "frames.site-shell"}, "blocks": [{"type": "paragraph", "designer": {"id": "sections.legal-prose", "configId": "legal.terms"}, "text": "This is a draft for review. It does not describe a live service or provide legal advice."}]}
   ]
