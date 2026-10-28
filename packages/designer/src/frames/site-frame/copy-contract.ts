@@ -38,4 +38,3 @@ export interface CopyResolution {
 
 /** Resolver shape for callers that need rendered audience text. */
 export type CopyResolver = (ref: CopyRef) => CopyResolution | undefined;
-

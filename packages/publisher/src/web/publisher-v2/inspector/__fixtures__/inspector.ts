@@ -14,7 +14,11 @@ export function inspectorFixture(): PublisherInspectorInput {
     candidates: base.candidates.map(candidate => {
       if (candidate.slotId !== old) return candidate;
       const composition = { ...candidate.composition!, sections: candidate.composition!.sections.map(section => ({ ...section, fields: [...section.fields, { key: "heading", locale: "fr", source: "writer" as const, value: "Bonjour" }] })) };
-      const content = { ...candidate, composition };
+      const pageMeta: CopyField[] = [...(candidate.pageMeta ?? []),
+        { key: "title", locale: "fr", source: "writer", value: "Bonjour" },
+        { key: "description", locale: "fr", source: "writer", value: "Découvrez cette page." },
+      ];
+      const content = { ...candidate, composition, pageMeta };
       const snapshot = createContentRevision(content, candidate.revision, candidate.updatedAt);
       return { ...content, slotId, history: [...candidate.history.filter(row => row.revision !== candidate.revision), snapshot] };
     }),
