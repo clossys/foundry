@@ -1,5 +1,5 @@
 import type { IconNode } from "@clossys/designer/components/server";
-import { SITE_CHROME_GROUNDS } from "../internal/viewChromeGround.js";
+import { SITE_CHROME_GROUNDS } from "./viewChromeGround.js";
 /** Finite, serializable presentation vocabulary shared by SiteFrame and its metadata. */
 export const HEADER_LINK_LIMIT = 5;
 export const HEADER_ACTION_LIMIT = 3;

@@ -5,8 +5,8 @@ import { describe, expect, it } from "vitest";
 import { checkSectionVariety, resolveSectionedViewDocument, validateSectionedViewDocument, type SectionedViewDocument } from "../../core/sectioned-view.js";
 import { SectionedView } from "./SectionedView.js";
 import { SectionedView as ServerSectionedView } from "./SectionedView.server.js";
-import { LandingView } from "./LandingView.js";
-import { LandingView as ServerLandingView } from "./LandingView.server.js";
+import { LandingView } from "@clossys/designer/frames";
+import { ServerLandingView as ServerLandingView } from "@clossys/designer/frames";
 import { CATALOG_FIXTURES, catalogCopyResolver } from "../../preview/catalog/index.js";
 import { buildCatalogFunctionPages } from "../../preview/render-content-catalog.js";
 

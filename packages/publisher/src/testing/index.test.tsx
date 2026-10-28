@@ -11,8 +11,8 @@ import { CaptureView } from "../web/views/CaptureView.js";
 import { BoundaryView } from "../web/views/BoundaryView.js";
 import { GlobalErrorDocument } from "../web/views/GlobalErrorDocument.js";
 import { StatusView } from "../web/views/StatusView.js";
-import { SiteFrame } from "../web/frame/SiteFrame.js";
-import type { SiteShellInput } from "../web/frame/types.js";
+import { SiteFrame } from "@clossys/designer/frames";
+import type { SiteShellInput } from "@clossys/designer/frames";
 import type { CopyResolver } from "@clossys/writer";
 import {
   PRIMARY_ACTION_CLASS,

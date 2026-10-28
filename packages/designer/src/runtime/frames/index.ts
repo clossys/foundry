@@ -8,9 +8,11 @@ import { commandRenderer } from "./command.js";
 import { inspectorRenderer } from "./inspector.js";
 import { sheetRenderer } from "./sheet.js";
 import { siteFooterRenderer } from "./site-footer.js";
+import { siteShellRuntimeRenderer } from "./site-shell.js";
 import { siteHeaderRenderer } from "./site-header.js";
 
 export const frameRenderers: SurfaceRendererGroup = mergeRendererGroups({
+  "frames.site-shell": siteShellRuntimeRenderer,
   "frames.auth-shell": authShellRenderer,
   "frames.app-shell": appShellRenderer,
   "frames.site-header": siteHeaderRenderer,

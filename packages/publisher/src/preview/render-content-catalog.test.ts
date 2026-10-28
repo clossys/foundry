@@ -3,7 +3,7 @@ import "@testing-library/jest-dom/vitest";
 import { JSDOM } from "jsdom";
 import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
-import { LandingView } from "../web/views/LandingView.server.js";
+import { ServerLandingView as LandingView } from "@clossys/designer/frames";
 import { SectionedView } from "../web/views/SectionedView.server.js";
 import { previewSectionedDocument, previewCopyResolver } from "./fixture-documents.js";
 import { renderPreviewGalleryEntries } from "./render-preview-gallery.js";

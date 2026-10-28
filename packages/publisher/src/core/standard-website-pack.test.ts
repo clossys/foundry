@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import * as core from "./index.js";
 import * as web from "../web/index.js";
-import { SITE_SURFACE_KINDS } from "../web/frame/surface.js";
+import { SITE_SURFACE_KINDS } from "@clossys/designer/frames";
 
 describe("Standard website Pack", () => {
   it("validates all eight explicit bindings and checks real exports for the Pack's used Frames and Views", () => {

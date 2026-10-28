@@ -3,7 +3,7 @@
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
 import type { ResolvedSectionedViewAction, ResolvedSectionedViewDocument } from "../../core/sectioned-view.js";
-import { LandingView } from "./LandingView.js";
+import { LandingView } from "@clossys/designer/frames";
 import { SectionedView } from "./SectionedView.js";
 
 const resolutions: ResolvedSectionedViewDocument["resolutions"] = [{ ref: { id: "page.heading" }, text: "Begin here", recordId: "page", revision: "1", locale: "en", source: { kind: "consumer", reference: "fixture" }, entryId: "page.heading" }];

@@ -39,17 +39,17 @@ function scan(html: string) {
   return scanProvenance({ html: page(html), route: { id: "site", binding: { frame: { leaf: LEAF }, frameSlots: {}, sections: { body: [{ leaf: "sections.content" }] } } as never }, selection });
 }
 
-describe("frames.site-shell publisher runtime renderer", () => {
-  it("is one publisher-owned registry entry addressed by the shared renderer id", () => {
+describe("frames.site-shell Designer runtime renderer", () => {
+  it("is one Designer-owned registry entry addressed by the shared renderer id", () => {
     expect(Object.keys(siteShellRuntimeRenderers)).toEqual([LEAF]);
     expect(Object.isFrozen(siteShellRuntimeRenderers)).toBe(true);
     expect(entry.leaf).toBe(LEAF);
-    expect(SITE_SHELL_RUNTIME_POINTER).toEqual({ module: "@clossys/publisher/web", export: "siteShellRuntimeRenderers" });
+    expect(SITE_SHELL_RUNTIME_POINTER).toEqual({ module: "@clossys/designer/frames", export: "surfaceRuntimeRenderers" });
     expect(siteShellRuntimePointers()).toEqual({ [LEAF]: SITE_SHELL_RUNTIME_POINTER });
     expect(Object.keys(siteShellRuntimeCallbacks())).toEqual([surfaceRendererId(LEAF)]);
     expect(siteShellRuntimeCallbacks()[surfaceRendererId(LEAF)]).toBe(entry.render);
-    // Designer never claims the leaf; the publisher pointer plugs in beside its registry.
-    expect(surfaceRuntimePointers()[LEAF]).toBeUndefined();
+    // Designer owns the leaf; the compatibility pointer addresses the same registry.
+    expect(surfaceRuntimePointers()[LEAF]).toEqual(SITE_SHELL_RUNTIME_POINTER);
     for (const name of ["SITE_SHELL_RUNTIME_POINTER", "siteShellRuntimeRenderers", "siteShellRuntimePointers", "siteShellRuntimeCallbacks"]) {
       expect(Object.keys(webIndex)).toContain(name);
       expect(Object.keys(webServer)).toContain(name);
@@ -143,24 +143,25 @@ describe("frames.site-shell publisher runtime renderer", () => {
       plan = planSurfaceRuntime({ engine, packages, renderers: { ...surfaceRuntimePointers(), ...siteShellRuntimePointers() }, leaves: [LEAF] });
     }, 180_000);
 
-    it("plans frames.site-shell through the publisher registry with installed artifact evidence", () => {
-      const publisher = packages.find(row => row.module === "@clossys/publisher/web");
-      expect(publisher?.values).toContain("siteShellRuntimeRenderers");
+    it("plans frames.site-shell through the Designer registry with installed artifact evidence", () => {
+      const designer = packages.find(row => row.module === "@clossys/designer/frames");
+      expect(designer?.values).toContain("surfaceRuntimeRenderers");
       expect(plan.gaps).toEqual([]);
       const frame = plan.manifest.fills.find(fill => fill.leaf === LEAF)!;
       expect(frame.kind).toBe("frame");
       expect(frame.renderer.id).toBe(surfaceRendererId(LEAF));
-      expect(Object.values(frame.renderer.source.files)).toEqual([`import { siteShellRuntimeRenderers } from "@clossys/publisher/web";\nexport default siteShellRuntimeRenderers["frames.site-shell"].render;\n`]);
+      expect(Object.values(frame.renderer.source.files)).toEqual([`import { surfaceRuntimeRenderers } from "@clossys/designer/frames";\nexport default surfaceRuntimeRenderers["frames.site-shell"].render;\n`]);
       expect(frame.headerModule?.export).toBe("PageHeaderModule");
       expect(frame.stageModule?.export).toBe("FrameStage");
       expect([...frame.members].sort()).toEqual(["footer-placement.flow", "footer-placement.overlay"]);
       expect(plan.origins[frame.fill]).toBe(`foundry/${LEAF}`);
     });
 
-    it("without the publisher pointer the leaf is a named gap, never an invented renderer", () => {
-      const designerOnly = planSurfaceRuntime({ engine, packages, renderers: surfaceRuntimePointers(), leaves: [LEAF] });
-      expect(designerOnly.gaps).toEqual([{ leaf: LEAF, reason: "no package-owned renderer" }]);
-      expect(designerOnly.manifest.fills).toEqual([]);
+    it("without the Designer site-shell pointer the leaf is a named gap, never an invented renderer", () => {
+      const renderers = Object.fromEntries(Object.entries(surfaceRuntimePointers()).filter(([leaf]) => leaf !== LEAF));
+      const withoutSiteShell = planSurfaceRuntime({ engine, packages, renderers, leaves: [LEAF] });
+      expect(withoutSiteShell.gaps).toEqual([{ leaf: LEAF, reason: "no package-owned renderer" }]);
+      expect(withoutSiteShell.manifest.fills).toEqual([]);
     });
 
     it("the route's Stage-wrapped main renders through the callback the descriptor id names", () => {

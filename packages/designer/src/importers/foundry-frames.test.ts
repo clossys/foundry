@@ -98,7 +98,7 @@ describe("Foundry frame descriptors", () => {
     expect(rows.get("frames.app-header")!.status).toBe("candidate");
     const pageBar = readFileSync(resolve(here, "../blocks/PageBar.tsx"), "utf8");
     expect(pageBar).toContain('surface?: "solid" | "transparent" | "glass"');
-    expect(readFileSync(resolve(here, "../../../publisher/src/web/frame/types.ts"), "utf8")).toContain("readonly toasts?: ReactNode");
+    expect(readFileSync(resolve(here, "../../../designer/src/frames/site-frame/types.ts"), "utf8")).toContain("readonly toasts?: ReactNode");
   });
 
   it("keeps no descriptor note claiming a member or slot unmapped that is mapped", () => {

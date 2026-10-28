@@ -1,10 +1,10 @@
 import { isValidElement, type ReactElement, type ReactNode } from "react";
 import { Icon } from "@clossys/designer/components/server";
 import { Brandmark, SiteFooter, SiteHeader } from "@clossys/designer/shell/server";
-import { LandingView as RuntimeLandingView } from "#publisher-web-views";
-import { LandingView as ServerLandingView } from "../views/LandingView.server.js";
-import type { LandingViewProps } from "../views/LandingViewContent.js";
-import { RenderError } from "../../internal/errors.js";
+import { LandingView as RuntimeLandingView } from "@clossys/designer/frames";
+import { LandingView as ServerLandingView } from "./landing/web/views/LandingView.server.js";
+import type { LandingViewProps } from "./landing/web/views/LandingViewContent.js";
+import { RenderError } from "./landing/internal/errors.js";
 import { SiteNavDisclosure } from "./NavDisclosure.boundary.client.js";
 import { SiteSkipLink } from "./SkipLink.client.js";
 import { resolveShell } from "./internal/resolveShell.js";

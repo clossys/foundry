@@ -1,0 +1,336 @@
+/**
+ * The asset-resolution companion to `internal/tokens.ts`/`internal/
+ * typography.ts` — the shared foundation every channel this package ships
+ * (`./web`, `./email`, `./print`, `./image`, `./slides`) needs now that
+ * `@clossys/publisher/core` 0.3.0 added `SlotBinding.assetId` and
+ * `@clossys/publisher/media` exists to register what an `assetId` actually
+ * points AT. Built once here, rather than reinvented (and re-drifted) five
+ * times — the exact reasoning `@clossys/publisher/core`'s own
+ * `resolve-assets.ts` gives for shipping `resolveAssets` at all: "issue
+ * #43 — a rule every renderer must independently remember is a rule one of
+ * them will forget." This module is where that rule lives for THIS
+ * package's five renderers.
+ *
+ * WHAT THIS MODULE ADDS ON TOP OF `resolveAssets` ITSELF
+ * -----------------------------------------------------------
+ * `@clossys/publisher/core`'s `resolveAssets` deliberately stops one step
+ * short of what a renderer needs: its `AssetLookup` returns `unknown` (see
+ * that file's own doc comment, "why this function does not know what an
+ * asset looks like" — `surface/core` has zero dependency on
+ * `@clossys/publisher/media`, not even for a type), so `AssetResolveResult
+ * .assets[].asset` is `unknown` too. A renderer that just assumed a shape
+ * (`(asset as any).src`) and rendered it would be exactly the "silent
+ * fallback" failure this whole package refuses everywhere else. So this
+ * module's whole job is: validate `unknown` into a real, paintable shape
+ * (`RenderAsset`, below) at the one place every channel already has to
+ * trust a caller-supplied function's return value, and report anything
+ * that doesn't fit that shape as its own, named failure (`invalid`) —
+ * never silently coerced, never silently dropped.
+ *
+ * `RenderAsset` IS NOT AN IMPORT OF `@clossys/publisher/media`'S `AssetEntry`
+ * -----------------------------------------------------------------------------
+ * `RenderAsset` below is structurally identical to `@clossys/
+ * media`'s `AssetEntry` (same discriminated `type: "image" | "video"`
+ * shape, same field names) — deliberately, since a real `AssetLookup` in
+ * practice wraps exactly that package's registry — but this package does
+ * not import `@clossys/publisher/media` to get it. Same "opaque seam,
+ * not a code import" reasoning `@clossys/publisher/core`'s own
+ * `resolve-assets.ts` gives for `AssetLookup` itself: `@clossys/
+ * surface` works whether or not `@clossys/publisher/media` is even
+ * installed, and a caller with a completely different `assetId -> asset`
+ * source (a CMS, a CDN manifest, a hand-rolled map in a test) only needs to
+ * return something with the right fields — never that package's own type.
+ * This is also why `RenderAsset` carries only the fields a renderer
+ * actually paints and not `@clossys/publisher/media`'s own
+ * `licence`/`credit` — those are registry/review metadata, not rendering
+ * inputs, and reading them here would blur that this package never needs
+ * them. `type` IS carried here — unlike `licence`/`credit`, a renderer
+ * genuinely needs to know which of the two shapes it is looking at before
+ * it can paint anything at all, which is exactly why v2 (issue #177) adds
+ * the identical discriminated extension to this contract, in parallel with
+ * `@clossys/publisher/media`'s own — see `RenderImageAsset`/
+ * `RenderVideoAsset` below.
+ *
+ * ALT IS REQUIRED HERE FOR THE IDENTICAL REASON IT IS REQUIRED ON `AssetEntry`
+ * -------------------------------------------------------------------------------
+ * `@clossys/publisher/media`'s own `AssetEntryBase.alt` doc comment:
+ * "there is no later point in this pipeline where alt text can be
+ * recovered from a URL and two integers." This module is that later
+ * point, and it holds the identical line: a resolved asset with a missing
+ * or whitespace-only `alt` is `invalid`, exactly like one with no `src`/
+ * `sources` at all — never rendered, never silently given an empty
+ * `alt=""`.
+ *
+ * VIDEO'S OWN ACCESSIBILITY BAR IS ENFORCED HERE TOO — NOT ONLY AT SCHEMA TIME
+ * -------------------------------------------------------------------------------
+ * `@clossys/publisher/media`'s `schema.ts` refuses a `VideoAssetEntry`
+ * with neither `captions` nor `transcript` before it can ever be
+ * registered. But `RenderAsset` is NOT an import of `AssetEntry` (see
+ * above) — a hand-rolled `AssetLookup` (a CMS, a CDN manifest, a test
+ * double) can hand this module a video-shaped value that never passed
+ * through that schema at all. `isRenderVideoAsset` holds the identical
+ * caption-or-transcript and `reducedMotion` bars independently, for the
+ * same "never a plausible-looking wrong value" reason `alt` already is:
+ * this is the one place every channel actually trusts a resolved asset's
+ * shape, so it is also the one place that trust has to be earned in full,
+ * regardless of what did or didn't validate the value upstream.
+ *
+ * URL SCHEME CHECKING — EVERY `src`/`poster` THIS MODULE VALIDATES IS
+ * SCHEME-CHECKED, NEVER STRING-MATCHED
+ * -------------------------------------------------------------------------------
+ * A `RenderAsset`'s `src`/`sources[].src`/`poster` values flow directly
+ * into a renderer's `src`/`poster` HTML attribute (`./web`'s `<img>`/
+ * `<source>`/`<video>`, and every non-web channel's own `<img>`/`<image>`
+ * fallback). `isAllowedAssetUrl` below applies the same disciplined check
+ * `../document/validate.ts` already established for `DocumentInline`
+ * "link" hrefs: parse with `new URL`, compare `.protocol` against a closed
+ * allowlist, never a prefix/substring string match — reproduced locally
+ * here (not imported) for the same reason `../document/validate.ts`
+ * itself reproduces `packages/auth/src/redirect.ts`'s scheme check rather
+ * than importing it: this package does not and should not depend on
+ * `document`'s validator just for one shared helper, and each subpath's
+ * own small, local copy is cheaper than a cross-subpath dependency for a
+ * handful of lines. The allowlist here is deliberately NARROWER than
+ * `document`'s own (`https:`/`http:` only — no `mailto:`, which makes no
+ * sense for an image/video source): an asset `src` is never a prose link a
+ * reader clicks, so there is no reason to accept a scheme document's own
+ * link validator accepts for that different purpose.
+ *
+ * A value that does not parse as an absolute URL at all (throws inside
+ * `new URL`) is treated as the "a path a consumer's own build resolves"
+ * case `@clossys/publisher/media`'s `ImageAssetEntry.src` doc
+ * comment has always explicitly allowed, since v1 — a bundler-relative
+ * import path (`"./hero.png"`, `"assets/hero.png"`) has no scheme to
+ * check and is accepted unchanged, exactly as it always has been. This is
+ * intentionally NOT the same acceptance rule `../document/validate.ts`
+ * uses for prose links (which rejects a path-relative href outright,
+ * because a document can be mounted at more than one route) — an asset
+ * `src` has no such "mounted at more than one route" ambiguity; it is
+ * resolved once, by the consumer's own build, the same way it always has
+ * been. What IS rejected, the same way `../document/validate.ts` rejects
+ * it: a `"//host/path"` PROTOCOL-RELATIVE value — it reads as same-site
+ * and is not, resolving to whatever host follows the `//`, and unlike a
+ * genuinely relative build path, it unambiguously LOOKS like an attempt at
+ * an absolute URL, so it is held to that bar rather than let through as
+ * "just a path." A rejected value is never silently dropped: it makes the
+ * whole asset `invalid`, exactly like a missing `alt`.
+ */
+
+
+// ─────────────────────────────────────────────────────────────────────────
+// RenderAsset — the discriminated shape every channel actually paints from
+// ─────────────────────────────────────────────────────────────────────────
+
+/** One additional resolution/format for a `RenderImageAsset` — see `@clossys/publisher/media`'s `ImageSource`, which this mirrors structurally without importing it (see this file's own top comment). */
+export interface RenderImageSource {
+  src: string;
+  width: number;
+  format?: string;
+}
+
+/**
+ * What every channel needs to paint an image — `type: "image"` plus the
+ * same `src`/`width`/`height`/`alt`/`mimeType` shape this module has
+ * always exposed, plus the new, optional `sources` for responsive
+ * `<picture>`/`srcset` output. `width`/`height` are the asset's own
+ * INTRINSIC pixel dimensions (never a slot's `Frame`) — `./web`/`./email`
+ * emit them directly as the caller's layout-shift-avoiding intrinsic size;
+ * `./print`/`./image`/`./slides` additionally compare them against a
+ * slot's frame for the aspect-ratio warning (see `./image`'s
+ * `renderSlots.ts`).
+ */
+export interface RenderImageAsset {
+  type: "image";
+  src: string;
+  width: number;
+  height: number;
+  alt: string;
+  mimeType?: string;
+  /** Optional. Only `./web` reads this — see `renderWebDocument.ts`'s own doc comment, "Responsive images." Every other channel ignores it entirely (an explicit non-goal — see the package README). */
+  sources?: RenderImageSource[];
+}
+
+/** One playable `<source>` for a `RenderVideoAsset` — see `@clossys/publisher/media`'s `VideoSource`. */
+export interface RenderVideoSource {
+  src: string;
+  mimeType: string;
+}
+
+/** One `<track kind="captions">` for a `RenderVideoAsset` — see `@clossys/publisher/media`'s `VideoCaption`. */
+export interface RenderVideoCaption {
+  src: string;
+  srclang: string;
+  label: string;
+}
+
+/**
+ * What `./web` needs to paint a `<video>` — see this file's own top
+ * comment, "Video's own accessibility bar is enforced here too," for why
+ * `captions`/`transcript`/`reducedMotion` are checked by
+ * {@link isRenderVideoAsset} even though `@clossys/publisher/media`'s
+ * `schema.ts` already checks the identical thing at registry time. Every
+ * non-web channel never sees this shape directly — see
+ * `toStaticRenderAsset`, below, for how each of them instead reduces a
+ * `RenderVideoAsset` to its `poster`.
+ */
+export interface RenderVideoAsset {
+  type: "video";
+  sources: RenderVideoSource[];
+  width: number;
+  height: number;
+  alt: string;
+  mimeType?: string;
+  poster?: string;
+  captions?: RenderVideoCaption[];
+  transcript?: string;
+  reducedMotion: "pause" | "no-autoplay" | "static-poster";
+  autoplay?: boolean;
+  loop?: boolean;
+  muted?: boolean;
+}
+
+/** Either shape a resolved `assetId` binding can now produce — discriminated by `type`, mirroring `@clossys/publisher/media`'s own `AssetEntry` union without importing it (see this file's own top comment). */
+export type RenderAsset = RenderImageAsset | RenderVideoAsset;
+
+function isFinitePositive(value: unknown): value is number {
+  return typeof value === "number" && Number.isFinite(value) && value > 0;
+}
+
+function isNonEmptyString(value: unknown): value is string {
+  return typeof value === "string" && value.length > 0;
+}
+
+function isNonWhitespaceString(value: unknown): value is string {
+  return typeof value === "string" && value.trim().length > 0;
+}
+
+// ─────────────────────────────────────────────────────────────────────────
+// URL scheme checking — see this file's own top comment
+// ─────────────────────────────────────────────────────────────────────────
+
+/** Closed allowlist for a `RenderAsset`'s `src`/`poster` values — see this file's own top comment for why this is narrower than `../document/validate.ts`'s own link allowlist. */
+const ALLOWED_ASSET_URL_SCHEMES = ["https:", "http:"] as const;
+
+/**
+ * `true` when `src` is safe to emit into a `src`/`poster` HTML attribute —
+ * see this file's own top comment for the full rule. Never a prefix/
+ * substring string match: every absolute-URL-shaped value is parsed with
+ * `new URL` and checked against {@link ALLOWED_ASSET_URL_SCHEMES}; a value
+ * that does not parse as an absolute URL at all is treated as a
+ * consumer-build-resolved relative path (accepted, unchanged from this
+ * package's v1 behavior) UNLESS it is protocol-relative (`"//host/path"`),
+ * which is rejected outright — see this file's own top comment for why
+ * that one shape is held to the absolute-URL bar despite not parsing as
+ * one on its own.
+ */
+export function isAllowedAssetUrl(src: string): boolean {
+  if (src.startsWith("//")) return false;
+  let url: URL | undefined;
+  try {
+    url = new URL(src);
+  } catch {
+    return true; // Not an absolute URL at all — a build-resolved relative path; see this file's own top comment.
+  }
+  return (ALLOWED_ASSET_URL_SCHEMES as readonly string[]).includes(url.protocol);
+}
+
+// ─────────────────────────────────────────────────────────────────────────
+// isRenderImageAsset / isRenderVideoAsset / isRenderAsset
+// ─────────────────────────────────────────────────────────────────────────
+
+function isRenderImageSource(value: unknown): value is RenderImageSource {
+  if (typeof value !== "object" || value === null) return false;
+  const candidate = value as Record<string, unknown>;
+  if (!isNonEmptyString(candidate.src) || !isAllowedAssetUrl(candidate.src)) return false;
+  if (!isFinitePositive(candidate.width)) return false;
+  if (candidate.format !== undefined && typeof candidate.format !== "string") return false;
+  return true;
+}
+
+/**
+ * Structural validation of `unknown` into a real `RenderImageAsset` —
+ * hand-rolled `typeof`/shape checks, no schema library, the same
+ * discipline `@clossys/publisher/media`'s own `schema.ts` holds to.
+ * Every field is checked independently so a single malformed field (a
+ * `width` of `0`, a blank `alt`, a `javascript:` `src`) is exactly as
+ * fatal as a completely wrong-shaped value — there is no "close enough"
+ * here, the same "never a plausible-looking wrong value" bar
+ * `internal/tokens.ts` holds for color.
+ */
+export function isRenderImageAsset(value: unknown): value is RenderImageAsset {
+  if (typeof value !== "object" || value === null) return false;
+  const candidate = value as Record<string, unknown>;
+  if (candidate.type !== "image") return false;
+  if (!isNonEmptyString(candidate.src) || !isAllowedAssetUrl(candidate.src)) return false;
+  if (!isFinitePositive(candidate.width)) return false;
+  if (!isFinitePositive(candidate.height)) return false;
+  if (!isNonWhitespaceString(candidate.alt)) return false;
+  if (candidate.mimeType !== undefined && typeof candidate.mimeType !== "string") return false;
+  if (candidate.sources !== undefined) {
+    if (!Array.isArray(candidate.sources)) return false;
+    if (!candidate.sources.every(isRenderImageSource)) return false;
+  }
+  return true;
+}
+
+function isRenderVideoSource(value: unknown): value is RenderVideoSource {
+  if (typeof value !== "object" || value === null) return false;
+  const candidate = value as Record<string, unknown>;
+  if (!isNonEmptyString(candidate.src) || !isAllowedAssetUrl(candidate.src)) return false;
+  if (!isNonEmptyString(candidate.mimeType)) return false;
+  return true;
+}
+
+function isRenderVideoCaption(value: unknown): value is RenderVideoCaption {
+  if (typeof value !== "object" || value === null) return false;
+  const candidate = value as Record<string, unknown>;
+  if (!isNonEmptyString(candidate.src) || !isAllowedAssetUrl(candidate.src)) return false;
+  if (!isNonEmptyString(candidate.srclang)) return false;
+  if (!isNonEmptyString(candidate.label)) return false;
+  return true;
+}
+
+const REDUCED_MOTION_VALUES = new Set(["pause", "no-autoplay", "static-poster"]);
+
+/**
+ * Structural validation of `unknown` into a real `RenderVideoAsset` — the
+ * video counterpart to {@link isRenderImageAsset}. See this file's own top
+ * comment, "Video's own accessibility bar is enforced here too," for why
+ * `captions`/`transcript`/`reducedMotion` are real checks here, not merely
+ * assumed to have already happened upstream.
+ */
+export function isRenderVideoAsset(value: unknown): value is RenderVideoAsset {
+  if (typeof value !== "object" || value === null) return false;
+  const candidate = value as Record<string, unknown>;
+  if (candidate.type !== "video") return false;
+  if (!Array.isArray(candidate.sources) || candidate.sources.length === 0) return false;
+  if (!candidate.sources.every(isRenderVideoSource)) return false;
+  if (!isFinitePositive(candidate.width)) return false;
+  if (!isFinitePositive(candidate.height)) return false;
+  if (!isNonWhitespaceString(candidate.alt)) return false;
+  if (candidate.mimeType !== undefined && typeof candidate.mimeType !== "string") return false;
+
+  if (candidate.poster !== undefined) {
+    if (!isNonEmptyString(candidate.poster) || !isAllowedAssetUrl(candidate.poster)) return false;
+  }
+
+  const hasCaptions = Array.isArray(candidate.captions) && candidate.captions.length > 0 && candidate.captions.every(isRenderVideoCaption);
+  if (candidate.captions !== undefined && !hasCaptions) return false; // present but malformed/empty is fatal, not "treat as absent"
+  const hasTranscript = candidate.transcript !== undefined && isNonWhitespaceString(candidate.transcript);
+  if (candidate.transcript !== undefined && !hasTranscript) return false;
+  if (!hasCaptions && !hasTranscript) return false;
+
+  if (typeof candidate.reducedMotion !== "string" || !REDUCED_MOTION_VALUES.has(candidate.reducedMotion)) return false;
+  if (candidate.reducedMotion === "static-poster" && candidate.poster === undefined) return false;
+
+  if (candidate.autoplay !== undefined && typeof candidate.autoplay !== "boolean") return false;
+  if (candidate.loop !== undefined && typeof candidate.loop !== "boolean") return false;
+  if (candidate.muted !== undefined && typeof candidate.muted !== "boolean") return false;
+
+  return true;
+}
+
+/** `true` for a value that is either a well-formed `RenderImageAsset` or a well-formed `RenderVideoAsset` — the discriminated replacement for this module's pre-v2 `isRenderAsset`. Every existing caller (`resolveDocumentAssets`, every channel's own asset loop) keeps working unchanged: this function's NAME and CONTRACT ("is this a real, paintable asset") are identical, only its internals now dispatch on `type`. */
+export function isRenderAsset(value: unknown): value is RenderAsset {
+  return isRenderImageAsset(value) || isRenderVideoAsset(value);
+}

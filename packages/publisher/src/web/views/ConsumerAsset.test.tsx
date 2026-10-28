@@ -5,8 +5,8 @@ import { buildAssetElement } from "../buildAssetElement.js";
 
 import { createCopyResolver, type CopyRegistry } from "@clossys/writer";
 import { resolveSectionedViewDocument, validateSectionedViewDocument, type SectionedViewDocument } from "../../core/sectioned-view.js";
-import { LandingView } from "./LandingView.js";
-import { LandingView as ServerLandingView } from "./LandingView.server.js";
+import { LandingView } from "@clossys/designer/frames";
+import { ServerLandingView as ServerLandingView } from "@clossys/designer/frames";
 import { SectionedView } from "./SectionedView.js";
 import { SectionedView as ServerSectionedView } from "./SectionedView.server.js";
 

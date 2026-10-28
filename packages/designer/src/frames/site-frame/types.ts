@@ -1,9 +1,9 @@
 import type { SiteFramePresentationConfig } from "./site-frame-contract.js";
 import type { ReactNode } from "react";
-import type { CopyRef, CopyResolver } from "@clossys/writer";
+import type { CopyRef, CopyResolver } from "./copy-contract.js";
 import type { IconNode } from "@clossys/designer/components/server";
-import type { AssetResolver } from "../types.js";
-import type { SiteChromeGround } from "../internal/viewChromeGround.js";
+import type { AssetResolver } from "./landing/web/types.js";
+import type { SiteChromeGround } from "./viewChromeGround.js";
 
 /**
  * The fixed `id` of the one `<main>` a `SiteFrame` renders, and the target of
@@ -72,8 +72,8 @@ export interface SiteEnvironmentLinkInput {
   readonly isCurrent?: boolean;
 }
 
-export { SITE_CHROME_GROUNDS } from "../internal/viewChromeGround.js";
-export type { SiteChromeGround } from "../internal/viewChromeGround.js";
+export { SITE_CHROME_GROUNDS } from "./viewChromeGround.js";
+export type { SiteChromeGround } from "./viewChromeGround.js";
 
 /**
  * The footer: optional headed columns, ungrouped links and social profiles, then the legal row.
