@@ -3,7 +3,7 @@ import { renderToStaticMarkup } from "react-dom/server";
 import { formatPageTitle } from "../web/siteMetadata.js";
 
 /** The class token Designer's primary `Button` carries and the one-primary-action rule looks for. */
-export const PRIMARY_ACTION_CLASS = "bg-accent";
+export const PRIMARY_ACTION_CLASS = "bg-action";
 
 /** A front-door surface a consumer renders and asks this kit to check. */
 export type FrontDoorSurface =
@@ -50,6 +50,7 @@ export interface FrontDoorFinding {
 }
 
 const FORM_MEASURE = "var(--ui-width-form-max, none)";
+const FORM_MEASURE_CLASS = "max-w-[var(--ui-width-form-max,none)]";
 const FORM_SURFACES: readonly FrontDoorSurface[] = ["sign-in", "activation", "reset"];
 
 function requireDomParser(): typeof DOMParser {
@@ -66,11 +67,17 @@ function describeError(error: unknown): string {
   return error instanceof Error ? error.message : String(error);
 }
 
-/** The controls the one-primary-action rule counts: a button, a link or a `[role=button]` carrying the primary class token. */
+/** Count current and legacy primary controls while existing consumers migrate their token. */
 function primaryActions(scope: ParentNode): Element[] {
   return [...scope.querySelectorAll('button, a, [role="button"]')].filter((element) =>
-    element.classList.contains(PRIMARY_ACTION_CLASS),
+    element.classList.contains(PRIMARY_ACTION_CLASS) || element.classList.contains("bg-accent"),
   );
+}
+
+function hasFormMeasure(element: Element): boolean {
+  const inlineMeasure = (element as HTMLElement).style?.maxWidth;
+  // An inline declaration overrides the utility class, including a wrong measure.
+  return inlineMeasure ? inlineMeasure === FORM_MEASURE : element.classList.contains(FORM_MEASURE_CLASS);
 }
 
 function checkSurface(parser: typeof DOMParser, entry: FrontDoorSurfaceCase): FrontDoorFinding[] {
@@ -88,11 +95,11 @@ function checkSurface(parser: typeof DOMParser, entry: FrontDoorSurfaceCase): Fr
   if (FORM_SURFACES.includes(surface)) {
     const main = doc.querySelector("main");
     if (!main) add("form-measure", "expected a <main> carrying the form measure, found none");
-    // The legacy page puts the measure on its own `<main>`; a view inside
+    // The legacy page puts the measure utility on its own `<main>`; a view inside
     // `SiteFrame` puts it on its content root, a direct child of the frame's `<main>`.
     else if (
-      main.style.maxWidth !== FORM_MEASURE &&
-      ![...main.children].some((child) => (child as HTMLElement).style?.maxWidth === FORM_MEASURE)
+      !hasFormMeasure(main) &&
+      ![...main.children].some(hasFormMeasure)
     ) {
       add("form-measure", `expected <main> to carry max-width:${FORM_MEASURE}, found "${main.style.maxWidth}"`);
     }

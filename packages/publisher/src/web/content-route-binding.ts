@@ -1,3 +1,4 @@
+import { localePathFor } from "../content/hreflang.js";
 import { isContentJson } from "../content/json.js";
 import { outputPathFor } from "../content/metadata.js";
 import type { CandidateContent, ContentRegistry } from "../content/model.js";
@@ -36,7 +37,7 @@ export function selectContentRoute(registry: ContentRegistry, slotId: string, lo
     throw new TypeError("Active content must equal its current immutable revision snapshot");
   }
   let outputPath: string;
-  try { outputPath = outputPathFor(slot); }
+  try { outputPath = outputPathFor({ ...slot, locale, defaultLocale: parsed.workspace.defaultLocale }); }
   catch { throw new TypeError("A canonical routed slot and deploy target are required"); }
   return { slot, candidate, locale, outputPath };
 }
@@ -47,7 +48,7 @@ export function bindContentRoute(input: ContentRouteInput, route: ContentRouteRe
   if (!input || input.slotId !== route.slotId || input.locale !== route.locale) throw new TypeError("Loader identity differs from the emitted route");
   const { slot, candidate, outputPath } = selectContentRoute(input.registry, input.slotId, input.locale);
   if (candidate.id !== route.candidateId || candidate.revision !== route.revision
-    || candidate.history.at(-1)!.digest !== route.digest || slot.route !== route.path
+    || candidate.history.at(-1)!.digest !== route.digest || localePathFor(slot.route!, input.locale, input.registry.workspace.defaultLocale) !== route.path
     || outputPath !== route.outputPath || canonical(candidate.composition) !== canonical(route.composition)) {
     throw new TypeError("Loaded active content differs from the emitted revision");
   }
