@@ -7,6 +7,7 @@
  */
 
 import { describe, expect, it } from "vitest";
+import type { WriterManifest } from "@clossys/writer";
 import type { ComposeDocument, LayoutSpec } from "../core/index.js";
 import { RenderError } from "../internal/errors.js";
 import { renderEmailDocument } from "./renderEmailDocument.js";
@@ -14,6 +15,55 @@ import { renderEmailDocument } from "./renderEmailDocument.js";
 const SINGLE_SLOT_LAYOUT: LayoutSpec = {
   slots: [{ key: "a", element: "body", frame: { x: 0, y: 0, w: 1, h: 1 }, required: true }],
 };
+
+describe("document locale", () => {
+  const doc: ComposeDocument = {
+    id: "localized-email",
+    channel: "email",
+    template: "T",
+    meta: { channel: "email", subject: "Subject", preheader: "Preview" },
+    bindings: [{ slot: "a", value: "Body" }],
+  };
+  const manifest: Pick<WriterManifest, "defaultLocale" | "locales"> = {
+    defaultLocale: "ar",
+    locales: [
+      { tag: "en", dir: "ltr", state: "active" },
+      { tag: "ar", dir: "rtl", state: "active" },
+      { tag: "ar-XB", dir: "rtl", state: "pseudo" },
+    ],
+  };
+
+  it("keeps English as the default for existing callers", () => {
+    const result = renderEmailDocument(doc);
+    expect(result.html).toContain('<html lang="en" dir="ltr" xmlns="http://www.w3.org/1999/xhtml"');
+    expect(renderEmailDocument(doc, { locale: "en" })).toEqual(result);
+  });
+
+  it.each([
+    ["en", "en", "ltr"],
+    ["ar", "ar", "rtl"],
+    ["AR-xb", "ar-XB", "rtl"],
+  ])("renders %s using Writer's canonical tag and declared direction", (locale, canonical, dir) => {
+    const baseline = renderEmailDocument(doc);
+    const result = renderEmailDocument(doc, { locale, manifest });
+    expect(result).toEqual({
+      ...baseline,
+      html: baseline.html.replace('<html lang="en" dir="ltr"', `<html lang="${canonical}" dir="${dir}"`),
+    });
+  });
+
+  it("uses the supplied manifest default and treats its direction as authoritative", () => {
+    expect(renderEmailDocument(doc, { manifest }).html).toContain('<html lang="ar" dir="rtl"');
+    expect(renderEmailDocument(doc, {
+      manifest: { defaultLocale: "en", locales: [{ tag: "en", dir: "rtl", state: "active" }] },
+    }).html).toContain('<html lang="en" dir="rtl"');
+  });
+
+  it("requires a declaration for a requested locale", () => {
+    expect(() => renderEmailDocument(doc, { locale: "ar" })).toThrow(RangeError);
+    expect(() => renderEmailDocument(doc, { locale: "fr", manifest })).toThrow(RangeError);
+  });
+});
 
 describe("refusal: wrong-channel", () => {
   it("throws RenderError('wrong-channel') for a non-email document", () => {

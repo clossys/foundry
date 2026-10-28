@@ -1,5 +1,6 @@
 import { materialsPrintStylesheet } from "./printStylesheet.js";
 import type { MaterialsIndexEntry } from "./types.js";
+import { resolveDocumentLocale, type DocumentLocaleOptions } from "../preview/render-document-locale.js";
 
 const ESCAPE_RE = /[&<>"']/g;
 const ESCAPE_MAP: Record<string, string> = { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" };
@@ -17,7 +18,8 @@ function escapeAttribute(value: string): string {
  * this function — a caller controls display order (typically: overviews
  * before decks, newest version first).
  */
-export function renderMaterialsIndexHtml(entries: readonly MaterialsIndexEntry[]): string {
+export function renderMaterialsIndexHtml(entries: readonly MaterialsIndexEntry[], options: DocumentLocaleOptions = {}): string {
+  const { locale, dir } = resolveDocumentLocale(options);
   const rows = entries
     .map((entry) => {
       const lastPublished = entry.lastPublishedAt ? new Date(entry.lastPublishedAt).toISOString() : "never published";
@@ -33,7 +35,7 @@ export function renderMaterialsIndexHtml(entries: readonly MaterialsIndexEntry[]
     .join("\n");
 
   return `<!doctype html>
-<html lang="en">
+<html lang="${escapeAttribute(locale)}" dir="${escapeAttribute(dir)}">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">

@@ -1,3 +1,4 @@
+import { resolveDocumentLocale, type DocumentLocaleOptions } from "./render-document-locale.js";
 import { buildFunctionalCatalogIndex } from "./catalog/reader-renderer.js";
 export { buildCatalogFunctionPages } from "./catalog/reader-renderer.js";
 import { buttonLinkClassName } from "@clossys/designer/components/server";
@@ -176,7 +177,8 @@ const CHROME_STYLE = `
  * stylesheet, then the brand file when given), the chrome header, and the
  * LandingView root with one chrome caption before each band.
  */
-export function buildHistoricalContentCatalogHtml(stylesheets: ContentCatalogStylesheets = DEFAULT_CONTENT_CATALOG_STYLESHEETS): string {
+export function buildHistoricalContentCatalogHtml(stylesheets: ContentCatalogStylesheets = DEFAULT_CONTENT_CATALOG_STYLESHEETS, options: DocumentLocaleOptions = {}): string {
+  const { locale, dir } = resolveDocumentLocale(options);
   const render = renderContentCatalog();
   const links = [stylesheets.designerTokens, stylesheets.utilities, ...(stylesheets.brand === null ? [] : [stylesheets.brand])]
     .map((href) => `  <link rel="stylesheet" href="${escapeHtml(href)}" />`)
@@ -185,7 +187,7 @@ export function buildHistoricalContentCatalogHtml(stylesheets: ContentCatalogSty
   const captions = render.bands.map((band) => band.caption);
 
   return `<!DOCTYPE html>
-<html lang="en" data-brand-bound>
+<html lang="${locale}" dir="${dir}" data-brand-bound>
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
@@ -211,6 +213,6 @@ ${render.rootClose}
 }
 
 /** Function index for the nested catalog pages. */
-export function buildContentCatalogHtml(stylesheets: ContentCatalogStylesheets = DEFAULT_CONTENT_CATALOG_STYLESHEETS): string {
-  return buildFunctionalCatalogIndex(stylesheets);
+export function buildContentCatalogHtml(stylesheets: ContentCatalogStylesheets = DEFAULT_CONTENT_CATALOG_STYLESHEETS, options: DocumentLocaleOptions = {}): string {
+  return buildFunctionalCatalogIndex(stylesheets, options);
 }

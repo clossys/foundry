@@ -1,7 +1,8 @@
 import type { RenderSlidesResult } from "../slides/index.js";
 import { materialsPrintStylesheet } from "./printStylesheet.js";
+import { resolveDocumentLocale, type DocumentLocaleOptions } from "../preview/render-document-locale.js";
 
-export interface RenderPitchDeckHtmlOptions {
+export interface RenderPitchDeckHtmlOptions extends DocumentLocaleOptions {
   /** Deck title, shown in `<title>` and as an offscreen heading for screen readers. */
   title: string;
   /** Optional audience label, shown in the deck chrome (e.g. "Investor"). */
@@ -27,6 +28,7 @@ function escapeHtml(value: string): string {
  * `result.slides`' own order — never re-sorted.
  */
 export function renderPitchDeckHtml(result: RenderSlidesResult, options: RenderPitchDeckHtmlOptions): string {
+  const { locale, dir } = resolveDocumentLocale(options);
   const title = escapeHtml(options.title);
   const audienceLabel = options.audience ? ` — ${escapeHtml(options.audience)}` : "";
   const slidesMarkup = result.slides
@@ -37,7 +39,7 @@ export function renderPitchDeckHtml(result: RenderSlidesResult, options: RenderP
     .join("\n");
 
   return `<!doctype html>
-<html lang="en">
+<html lang="${escapeHtml(locale)}" dir="${escapeHtml(dir)}">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
