@@ -195,6 +195,147 @@
     "status": "draft"
   },
   {
+    "id": "sections.account-summary",
+    "layer": "sections",
+    "contract": {
+      "kind": "section",
+      "root": "section",
+      "anatomy": {
+        "band": "sections.band",
+        "header": null
+      },
+      "slots": [
+        {
+          "name": "heading",
+          "type": "copy",
+          "required": true
+        },
+        {
+          "name": "identity",
+          "type": "region",
+          "required": true
+        },
+        {
+          "name": "rows",
+          "type": "records",
+          "required": false
+        },
+        {
+          "name": "actions",
+          "type": "action",
+          "required": false
+        }
+      ],
+      "members": {
+        "mode": "closed",
+        "names": []
+      },
+      "allowedComposes": [
+        "components.avatar",
+        "components.link",
+        "components.semantic-content"
+      ],
+      "parts": [
+        "sections.band"
+      ],
+      "allowedReads": {
+        "tokens": [
+          "tokens.spacing",
+          "tokens.gutter",
+          "tokens.content-size",
+          "tokens.region-width",
+          "tokens.breakpoint",
+          "tokens.surface-color",
+          "tokens.body-size",
+          "tokens.line-height"
+        ],
+        "assets": []
+      },
+      "data": "host-injected",
+      "surface": "app",
+      "passageSchema": "passages.account-summary",
+      "copy": {
+        "sourceLocale": "en",
+        "fields": [
+          {
+            "key": "heading",
+            "kind": "plain",
+            "required": true,
+            "maxLength": {
+              "en": 160
+            },
+            "dir": "auto"
+          },
+          {
+            "key": "identity.name",
+            "kind": "plain",
+            "required": true,
+            "maxLength": {
+              "en": 160
+            },
+            "dir": "auto"
+          },
+          {
+            "key": "identity.nameLabel",
+            "kind": "plain",
+            "required": true,
+            "maxLength": {
+              "en": 120
+            },
+            "dir": "auto"
+          },
+          {
+            "key": "identity.email",
+            "kind": "plain",
+            "required": true,
+            "maxLength": {
+              "en": 320
+            },
+            "dir": "auto"
+          },
+          {
+            "key": "identity.emailLabel",
+            "kind": "plain",
+            "required": true,
+            "maxLength": {
+              "en": 120
+            },
+            "dir": "auto"
+          },
+          {
+            "key": "rows[].label",
+            "kind": "plain",
+            "required": true,
+            "maxLength": {
+              "en": 120
+            },
+            "dir": "auto"
+          },
+          {
+            "key": "rows[].value",
+            "kind": "plain",
+            "required": true,
+            "maxLength": {
+              "en": 1000
+            },
+            "dir": "auto"
+          },
+          {
+            "key": "actions[].label",
+            "kind": "plain",
+            "required": true,
+            "maxLength": {
+              "en": 160
+            },
+            "dir": "auto"
+          }
+        ]
+      }
+    },
+    "requires": [],
+    "status": "draft"
+  },
+  {
     "id": "sections.activity-feed",
     "layer": "sections",
     "contract": {
@@ -894,6 +1035,127 @@
       "copy": {
         "sourceLocale": "en",
         "fields": []
+      }
+    },
+    "requires": [],
+    "status": "draft"
+  },
+  {
+    "id": "sections.boundary-message",
+    "layer": "sections",
+    "contract": {
+      "kind": "section",
+      "root": "section",
+      "anatomy": {
+        "band": null,
+        "header": null
+      },
+      "slots": [
+        {
+          "name": "status",
+          "type": "copy",
+          "required": true
+        },
+        {
+          "name": "title",
+          "type": "copy",
+          "required": true
+        },
+        {
+          "name": "description",
+          "type": "copy",
+          "required": true
+        },
+        {
+          "name": "actions",
+          "type": "action",
+          "required": false,
+          "max": 2
+        },
+        {
+          "name": "notes",
+          "type": "copy",
+          "required": false
+        }
+      ],
+      "members": {
+        "mode": "closed",
+        "names": [
+          "kind.sign-in-unavailable",
+          "kind.not-authorized",
+          "kind.service-unavailable",
+          "kind.sign-out-confirm"
+        ]
+      },
+      "allowedComposes": [
+        "components.button",
+        "components.link",
+        "components.semantic-content"
+      ],
+      "parts": [],
+      "allowedReads": {
+        "tokens": [
+          "tokens.spacing",
+          "tokens.content-size",
+          "tokens.body-size",
+          "tokens.line-height",
+          "tokens.text-color",
+          "tokens.surface-color"
+        ],
+        "assets": []
+      },
+      "data": "host-injected",
+      "surface": "app",
+      "passageSchema": "passages.boundary-message",
+      "copy": {
+        "sourceLocale": "en",
+        "fields": [
+          {
+            "key": "status",
+            "kind": "plain",
+            "required": true,
+            "maxLength": {
+              "en": 80
+            },
+            "dir": "auto"
+          },
+          {
+            "key": "title",
+            "kind": "plain",
+            "required": true,
+            "maxLength": {
+              "en": 160
+            },
+            "dir": "auto"
+          },
+          {
+            "key": "description",
+            "kind": "plain",
+            "required": true,
+            "maxLength": {
+              "en": 480
+            },
+            "dir": "auto"
+          },
+          {
+            "key": "actions[].label",
+            "kind": "plain",
+            "required": true,
+            "maxLength": {
+              "en": 120
+            },
+            "dir": "auto"
+          },
+          {
+            "key": "notes",
+            "kind": "plain",
+            "required": false,
+            "maxLength": {
+              "en": 480
+            },
+            "dir": "auto"
+          }
+        ]
       }
     },
     "requires": [],
@@ -2572,6 +2834,126 @@
     "status": "draft"
   },
   {
+    "id": "sections.error-message",
+    "layer": "sections",
+    "contract": {
+      "kind": "section",
+      "root": "section",
+      "anatomy": {
+        "band": null,
+        "header": null
+      },
+      "slots": [
+        {
+          "name": "status",
+          "type": "copy",
+          "required": true
+        },
+        {
+          "name": "title",
+          "type": "copy",
+          "required": true
+        },
+        {
+          "name": "description",
+          "type": "copy",
+          "required": true
+        },
+        {
+          "name": "actions",
+          "type": "action",
+          "required": false,
+          "max": 1
+        },
+        {
+          "name": "reference",
+          "type": "copy",
+          "required": false
+        }
+      ],
+      "members": {
+        "mode": "closed",
+        "names": [
+          "kind.not-found",
+          "kind.error",
+          "kind.global-error"
+        ]
+      },
+      "allowedComposes": [
+        "components.button",
+        "components.link",
+        "components.semantic-content"
+      ],
+      "parts": [],
+      "allowedReads": {
+        "tokens": [
+          "tokens.spacing",
+          "tokens.content-size",
+          "tokens.body-size",
+          "tokens.line-height",
+          "tokens.text-color",
+          "tokens.surface-color"
+        ],
+        "assets": []
+      },
+      "data": "host-injected",
+      "surface": "both",
+      "passageSchema": "passages.error-message",
+      "copy": {
+        "sourceLocale": "en",
+        "fields": [
+          {
+            "key": "status",
+            "kind": "plain",
+            "required": true,
+            "maxLength": {
+              "en": 80
+            },
+            "dir": "auto"
+          },
+          {
+            "key": "title",
+            "kind": "plain",
+            "required": true,
+            "maxLength": {
+              "en": 160
+            },
+            "dir": "auto"
+          },
+          {
+            "key": "description",
+            "kind": "plain",
+            "required": true,
+            "maxLength": {
+              "en": 480
+            },
+            "dir": "auto"
+          },
+          {
+            "key": "actions[].label",
+            "kind": "plain",
+            "required": true,
+            "maxLength": {
+              "en": 120
+            },
+            "dir": "auto"
+          },
+          {
+            "key": "reference",
+            "kind": "plain",
+            "required": false,
+            "maxLength": {
+              "en": 160
+            },
+            "dir": "auto"
+          }
+        ]
+      }
+    },
+    "requires": [],
+    "status": "draft"
+  },
+  {
     "id": "sections.error-state",
     "layer": "sections",
     "contract": {
@@ -3665,6 +4047,104 @@
     "status": "draft"
   },
   {
+    "id": "sections.legal-prose",
+    "layer": "sections",
+    "contract": {
+      "kind": "section",
+      "root": "div",
+      "anatomy": {
+        "band": "sections.band",
+        "header": null
+      },
+      "slots": [
+        {
+          "name": "heading",
+          "type": "copy",
+          "required": true
+        },
+        {
+          "name": "revision",
+          "type": "region",
+          "required": false
+        },
+        {
+          "name": "body",
+          "type": "region",
+          "required": true
+        }
+      ],
+      "members": {
+        "mode": "closed",
+        "names": []
+      },
+      "allowedComposes": [
+        "components.semantic-content"
+      ],
+      "parts": [
+        "sections.band"
+      ],
+      "allowedReads": {
+        "tokens": [
+          "tokens.spacing",
+          "tokens.gutter",
+          "tokens.content-size",
+          "tokens.region-width",
+          "tokens.breakpoint",
+          "tokens.surface-color",
+          "tokens.body-size",
+          "tokens.line-height"
+        ],
+        "assets": []
+      },
+      "data": "host-injected",
+      "surface": "site",
+      "passageSchema": "passages.legal-prose",
+      "copy": {
+        "sourceLocale": "en",
+        "fields": [
+          {
+            "key": "heading",
+            "kind": "plain",
+            "required": true,
+            "maxLength": {
+              "en": 160
+            },
+            "dir": "auto"
+          },
+          {
+            "key": "revision.label",
+            "kind": "plain",
+            "required": true,
+            "maxLength": {
+              "en": 120
+            },
+            "dir": "auto"
+          },
+          {
+            "key": "revision.value",
+            "kind": "plain",
+            "required": true,
+            "maxLength": {
+              "en": 160
+            },
+            "dir": "auto"
+          },
+          {
+            "key": "body",
+            "kind": "rich",
+            "required": true,
+            "maxLength": {
+              "en": 48000
+            },
+            "dir": "auto"
+          }
+        ]
+      }
+    },
+    "requires": [],
+    "status": "draft"
+  },
+  {
     "id": "sections.link-index",
     "layer": "sections",
     "contract": {
@@ -3946,6 +4426,58 @@
             "dir": "auto"
           }
         ]
+      }
+    },
+    "requires": [],
+    "status": "draft"
+  },
+  {
+    "id": "sections.logo-mark",
+    "layer": "sections",
+    "contract": {
+      "kind": "section",
+      "root": "section",
+      "anatomy": {
+        "band": "sections.band",
+        "header": null
+      },
+      "slots": [
+        {
+          "name": "mark",
+          "type": "media",
+          "required": true
+        }
+      ],
+      "members": {
+        "mode": "closed",
+        "names": []
+      },
+      "allowedComposes": [
+        "components.logo"
+      ],
+      "parts": [
+        "sections.band"
+      ],
+      "allowedReads": {
+        "tokens": [
+          "tokens.spacing",
+          "tokens.gutter",
+          "tokens.content-size",
+          "tokens.region-width",
+          "tokens.breakpoint",
+          "tokens.surface-color",
+          "tokens.display-size"
+        ],
+        "assets": [
+          "assets.mark"
+        ]
+      },
+      "data": "host-injected",
+      "surface": "site",
+      "passageSchema": "passages.logo-mark",
+      "copy": {
+        "sourceLocale": "en",
+        "fields": []
       }
     },
     "requires": [],
@@ -5641,6 +6173,261 @@
           }
         ]
       }
+    },
+    "requires": [],
+    "status": "draft"
+  },
+  {
+    "id": "sections.sign-in-form",
+    "layer": "sections",
+    "contract": {
+      "kind": "section",
+      "passageSchema": "passages.sign-in-form",
+      "copy": {
+        "sourceLocale": "en",
+        "fields": [
+          {
+            "key": "header.heading",
+            "kind": "plain",
+            "required": true,
+            "maxLength": {
+              "en": 160
+            },
+            "dir": "auto"
+          },
+          {
+            "key": "header.description",
+            "kind": "plain",
+            "required": false,
+            "maxLength": {
+              "en": 480
+            },
+            "dir": "auto"
+          },
+          {
+            "key": "providers[].label",
+            "kind": "plain",
+            "required": true,
+            "maxLength": {
+              "en": 120
+            },
+            "dir": "auto"
+          },
+          {
+            "key": "credentials.identifierLabel",
+            "kind": "plain",
+            "required": true,
+            "maxLength": {
+              "en": 120
+            },
+            "dir": "auto"
+          },
+          {
+            "key": "credentials.identifierPlaceholder",
+            "kind": "plain",
+            "required": false,
+            "maxLength": {
+              "en": 120
+            },
+            "dir": "auto"
+          },
+          {
+            "key": "credentials.passwordLabel",
+            "kind": "plain",
+            "required": true,
+            "maxLength": {
+              "en": 120
+            },
+            "dir": "auto"
+          },
+          {
+            "key": "credentials.passwordPlaceholder",
+            "kind": "plain",
+            "required": false,
+            "maxLength": {
+              "en": 120
+            },
+            "dir": "auto"
+          },
+          {
+            "key": "verification.codeLabel",
+            "kind": "plain",
+            "required": true,
+            "maxLength": {
+              "en": 120
+            },
+            "dir": "auto"
+          },
+          {
+            "key": "verification.description",
+            "kind": "plain",
+            "required": false,
+            "maxLength": {
+              "en": 480
+            },
+            "dir": "auto"
+          },
+          {
+            "key": "verification.placeholder",
+            "kind": "plain",
+            "required": false,
+            "maxLength": {
+              "en": 120
+            },
+            "dir": "auto"
+          },
+          {
+            "key": "actions.submit",
+            "kind": "plain",
+            "required": true,
+            "maxLength": {
+              "en": 120
+            },
+            "dir": "auto"
+          },
+          {
+            "key": "actions.verify",
+            "kind": "plain",
+            "required": true,
+            "maxLength": {
+              "en": 120
+            },
+            "dir": "auto"
+          },
+          {
+            "key": "actions.pending",
+            "kind": "plain",
+            "required": true,
+            "maxLength": {
+              "en": 120
+            },
+            "dir": "auto"
+          },
+          {
+            "key": "actions.back",
+            "kind": "plain",
+            "required": true,
+            "maxLength": {
+              "en": 120
+            },
+            "dir": "auto"
+          },
+          {
+            "key": "actions.resend",
+            "kind": "plain",
+            "required": true,
+            "maxLength": {
+              "en": 120
+            },
+            "dir": "auto"
+          },
+          {
+            "key": "actions.divider",
+            "kind": "plain",
+            "required": true,
+            "maxLength": {
+              "en": 160
+            },
+            "dir": "auto"
+          },
+          {
+            "key": "error.message",
+            "kind": "plain",
+            "required": false,
+            "maxLength": {
+              "en": 480
+            },
+            "dir": "auto"
+          },
+          {
+            "key": "error.identifier",
+            "kind": "plain",
+            "required": false,
+            "maxLength": {
+              "en": 240
+            },
+            "dir": "auto"
+          },
+          {
+            "key": "error.password",
+            "kind": "plain",
+            "required": false,
+            "maxLength": {
+              "en": 240
+            },
+            "dir": "auto"
+          },
+          {
+            "key": "error.code",
+            "kind": "plain",
+            "required": false,
+            "maxLength": {
+              "en": 240
+            },
+            "dir": "auto"
+          }
+        ]
+      },
+      "root": "div",
+      "anatomy": {
+        "band": null,
+        "header": null
+      },
+      "slots": [
+        {
+          "name": "header",
+          "type": "copy",
+          "required": true
+        },
+        {
+          "name": "providers",
+          "type": "records",
+          "required": false,
+          "max": 4
+        },
+        {
+          "name": "credentials",
+          "type": "copy",
+          "required": true
+        },
+        {
+          "name": "verification",
+          "type": "copy",
+          "required": true
+        },
+        {
+          "name": "actions",
+          "type": "action",
+          "required": true
+        },
+        {
+          "name": "error",
+          "type": "copy",
+          "required": false
+        }
+      ],
+      "members": {
+        "mode": "closed",
+        "names": []
+      },
+      "allowedComposes": [
+        "components.text-field",
+        "components.button"
+      ],
+      "parts": [],
+      "allowedReads": {
+        "tokens": [
+          "tokens.spacing",
+          "tokens.gutter",
+          "tokens.content-size",
+          "tokens.region-width",
+          "tokens.breakpoint",
+          "tokens.surface-color"
+        ],
+        "assets": []
+      },
+      "data": "host-injected",
+      "surface": "app"
     },
     "requires": [],
     "status": "draft"

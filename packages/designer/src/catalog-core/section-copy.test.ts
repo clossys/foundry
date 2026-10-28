@@ -12,7 +12,7 @@ const findings = (patch: (contract: any) => void, id?: string) => sectionRegistr
 describe("registered section copy", () => {
   it("lists every registered section and its unique mechanically paired passage through the public catalog API", () => {
     const registry = loadSectionRegistry(), rows = sectionCopyCatalog(registry);
-    expect(rows).toHaveLength(46);
+    expect(rows).toHaveLength(52);
     expect(rows.map(row => row.id)).toEqual(registry.slots.map(slot => slot.id));
     expect(new Set(rows.map(row => row.passageSchema)).size).toBe(rows.length);
     for (const row of rows) {
@@ -25,7 +25,7 @@ describe("registered section copy", () => {
         expect(field.dir).toBe("auto");
       }
     }
-    expect(rows.filter(row => !row.fields.length).map(row => row.id)).toEqual(["sections.band"]);
+    expect(rows.filter(row => !row.fields.length).map(row => row.id).sort()).toEqual(["sections.band", "sections.logo-mark"]);
     expect(rows.find(row => row.id === "sections.logo-hero")!.fields.map(field => field.key)).toEqual(["name"]);
     (rows[0]!.fields as unknown[]).pop();
     expect(sectionCopyCatalog()[0]!.fields).toEqual(registry.slots[0]!.contract.copy.fields);

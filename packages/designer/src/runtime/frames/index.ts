@@ -1,5 +1,6 @@
 /** Frame renderer registry: one package-owned runtime renderer per designer Frames leaf. */
 import { mergeRendererGroups, type SurfaceRendererGroup } from "../contract.js";
+import { authShellRenderer } from "./auth-shell.js";
 import { appHeaderRenderer } from "./app-header.js";
 import { appShellRenderer } from "./app-shell.js";
 import { appSidebarRenderer } from "./app-sidebar.js";
@@ -10,6 +11,7 @@ import { siteFooterRenderer } from "./site-footer.js";
 import { siteHeaderRenderer } from "./site-header.js";
 
 export const frameRenderers: SurfaceRendererGroup = mergeRendererGroups({
+  "frames.auth-shell": authShellRenderer,
   "frames.app-shell": appShellRenderer,
   "frames.site-header": siteHeaderRenderer,
   "frames.app-header": appHeaderRenderer,

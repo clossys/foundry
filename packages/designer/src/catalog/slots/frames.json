@@ -296,6 +296,67 @@
     "status": "draft"
   },
   {
+    "id": "frames.auth-shell",
+    "layer": "frames",
+    "contract": {
+      "kind": "frame",
+      "stage": {
+        "accepts": [
+          "flow"
+        ],
+        "scroll": "document"
+      },
+      "root": "div",
+      "landmarks": [
+        {
+          "slot": "main",
+          "role": "main",
+          "topLevel": true,
+          "nameRequired": false,
+          "id": "main-content",
+          "tabIndex": -1
+        }
+      ],
+      "slots": [
+        {
+          "id": "skip-link",
+          "required": true,
+          "accepts": "host-node"
+        },
+        {
+          "id": "main",
+          "required": true,
+          "accepts": "view"
+        }
+      ],
+      "members": {
+        "mode": "closed",
+        "names": []
+      },
+      "statePorts": [],
+      "rendering": "server",
+      "breakpoints": [],
+      "layers": [
+        "tokens.z-index.skip-link"
+      ],
+      "allowedReads": {
+        "tokens": [
+          "tokens.spacing",
+          "tokens.gutter",
+          "tokens.container-width",
+          "tokens.surface-color",
+          "tokens.text-color",
+          "tokens.z-index"
+        ],
+        "assets": []
+      },
+      "composes": [],
+      "skipTarget": "main-content"
+    },
+    "requires": [],
+    "status": "draft"
+  },
+  {
     "id": "frames.site-header",
     "layer": "frames",
     "contract": {

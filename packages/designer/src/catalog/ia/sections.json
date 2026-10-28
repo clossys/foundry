@@ -32,7 +32,8 @@
           "leaves": [
             "sections.hero",
             "sections.logo-hero",
-            "sections.page-header"
+            "sections.page-header",
+            "sections.logo-mark"
           ]
         },
         {
@@ -40,7 +41,8 @@
           "label": "Reading",
           "leaves": [
             "sections.content",
-            "sections.article"
+            "sections.article",
+            "sections.legal-prose"
           ]
         },
         {
@@ -106,7 +108,8 @@
           "leaves": [
             "sections.stats",
             "sections.status-list",
-            "sections.usage"
+            "sections.usage",
+            "sections.account-summary"
           ]
         },
         {
@@ -168,6 +171,13 @@
           "leaves": [
             "sections.chat"
           ]
+        },
+        {
+          "id": "collect-inputs",
+          "label": "Inputs",
+          "leaves": [
+            "sections.sign-in-form"
+          ]
         }
       ]
     },
@@ -202,7 +212,9 @@
           "label": "States",
           "leaves": [
             "sections.empty-state",
-            "sections.error-state"
+            "sections.error-state",
+            "sections.boundary-message",
+            "sections.error-message"
           ]
         },
         {

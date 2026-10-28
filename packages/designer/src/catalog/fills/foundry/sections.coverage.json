@@ -22,6 +22,28 @@
       "missingRequiredSlots": [],
       "missingSlots": [],
       "notes": [
+        "Private runtime composes existing DetailView with Avatar and the default registered Aria Link. heading binds to title; identity {name,nameLabel,email,emailLabel,avatar?} becomes two labelled fields; rows append label/value fields. identity and rows share fields through explicit adaptation, not two direct prop assignments.",
+        "The host owns names, email, field labels/values and optional navigation actions. Optional avatar is a host-provided local or HTTP(S) image source. The renderer supports identity-only content and optional empty row/action lists.",
+        "Actions are ordinary navigation links with consumer-provided label and local path, fragment or HTTP(S) href. No callbacks, auth SDK, Clerk UserProfile, session, network, sign-up, invite or reset behavior is implemented.",
+        "Requires an external Designer SectionFrame inside an app Frame. Text uses dir=auto and is escaped. The default name-derived Avatar fallback comes from the existing component. No new public block or theme allowlist entry; source checks and consumer qualification remain separate.",
+        "Descriptor only; source imports, token reads, shared anatomy, accessibility, contrast and consumer runtime conformance are unmeasured. Content bindings describe host adaptation points, not type-equivalent converters."
+      ],
+      "slot": "sections.account-summary",
+      "status": "candidate",
+      "supportedMembers": [],
+      "supportedSlots": [
+        "actions",
+        "heading",
+        "identity",
+        "rows"
+      ],
+      "unresolvedMemberAxes": []
+    },
+    {
+      "missingMembers": [],
+      "missingRequiredSlots": [],
+      "missingSlots": [],
+      "notes": [
         "Each event renders through EventItem; host supplies labels and emptyState. Groups name event ids and every event must sit in exactly one group. Root is section; header and band are external.",
         "Descriptor only; source imports, token reads, shared anatomy, accessibility, contrast and consumer runtime conformance are unmeasured. Content bindings describe host adaptation points, not type-equivalent converters."
       ],
@@ -93,6 +115,36 @@
       "unresolvedMemberAxes": [
         "rhythm"
       ]
+    },
+    {
+      "missingMembers": [],
+      "missingRequiredSlots": [],
+      "missingSlots": [],
+      "notes": [
+        "Public EmptyState is the existing fill anchor only; the private runtime boundary-message composition owns the separate status h1 and state metadata. The slot/prop pointers are adaptation endpoints, not an assertion that EmptyState alone accepts this section contract.",
+        "Status and title adapt together to a separate h1 status and the existing block h2 title; no new public Blocks export is introduced.",
+        "All visible and accessible copy is consumer authored. Each optional action requires its label when present and exactly one href or action id. Callback ids require sectionHosts[\"sections.boundary-message\"].onAction; no inert fallback callback is installed.",
+        "The four bounded boundary kinds select host state; sign-out-confirm requires exactly two host-authored controls. No auth, sign-out, navigation, or persistence behavior is implemented.",
+        "Shared deterministic preview copy comes from specimenDataset.sections.errorState and uses a navigation link, so preview needs no live host.",
+        "Draft descriptor; runtime tests are source declarations, not consumer adoption or release clearance.",
+        "Descriptor only; source imports, token reads, shared anatomy, accessibility, contrast and consumer runtime conformance are unmeasured. Content bindings describe host adaptation points, not type-equivalent converters."
+      ],
+      "slot": "sections.boundary-message",
+      "status": "candidate",
+      "supportedMembers": [
+        "kind.not-authorized",
+        "kind.service-unavailable",
+        "kind.sign-in-unavailable",
+        "kind.sign-out-confirm"
+      ],
+      "supportedSlots": [
+        "actions",
+        "description",
+        "notes",
+        "status",
+        "title"
+      ],
+      "unresolvedMemberAxes": []
     },
     {
       "missingMembers": [],
@@ -305,6 +357,35 @@
       "missingRequiredSlots": [],
       "missingSlots": [],
       "notes": [
+        "Public ErrorState is the existing fill anchor only; the private runtime error-message composition owns the separate status h1 and state metadata. The slot/prop pointers are adaptation endpoints, not an assertion that ErrorState alone accepts this section contract.",
+        "Status and title adapt together to a separate h1 status and the existing block h2 title; no new public Blocks export is introduced.",
+        "All visible and accessible copy is consumer authored. Each optional action requires its label when present and exactly one href or action id. Callback ids require sectionHosts[\"sections.error-message\"].onAction; no inert fallback callback is installed.",
+        "not-found maps to ErrorState kind=not-found; error/global-error map to failure. Global errors are content for a host-owned document/frame, not a document or framework error adapter.",
+        "Shared deterministic preview copy comes from specimenDataset.sections.errorState and uses a navigation link, so preview needs no live host.",
+        "Draft descriptor; runtime tests are source declarations, not consumer adoption or release clearance.",
+        "Descriptor only; source imports, token reads, shared anatomy, accessibility, contrast and consumer runtime conformance are unmeasured. Content bindings describe host adaptation points, not type-equivalent converters."
+      ],
+      "slot": "sections.error-message",
+      "status": "candidate",
+      "supportedMembers": [
+        "kind.error",
+        "kind.global-error",
+        "kind.not-found"
+      ],
+      "supportedSlots": [
+        "actions",
+        "description",
+        "reference",
+        "status",
+        "title"
+      ],
+      "unresolvedMemberAxes": []
+    },
+    {
+      "missingMembers": [],
+      "missingRequiredSlots": [],
+      "missingSlots": [],
+      "notes": [
         "Kind is host data rendered as data-error-kind; title and description copy stay host-authored. Not a live region: the host moves focus or announces the replacement.",
         "Descriptor only; source imports, token reads, shared anatomy, accessibility, contrast and consumer runtime conformance are unmeasured. Content bindings describe host adaptation points, not type-equivalent converters."
       ],
@@ -460,6 +541,27 @@
       "unresolvedMemberAxes": []
     },
     {
+      "missingMembers": [],
+      "missingRequiredSlots": [],
+      "missingSlots": [],
+      "notes": [
+        "Private runtime composes existing ContentSection plus ArticleBody; ContentSection is the public fill pointer. heading binds to heading; revision {label,value} adapts to description; body typed paragraph/heading/list records adapt to ArticleBody children within ContentSection children. These bindings are adaptation points, not direct JSON prop equivalence.",
+        "The host owns the legal heading, revision label/value and every policy section. A short placeholder is supported while final Writer-authored policy text remains host-owned. The renderer supplies no policy wording beyond isolated specimen preview content.",
+        "Body accepts only paragraph/heading text and lists of text; React escapes text. Unknown node kinds and fields, arbitrary HTML and undeclared inputs are refused. Paragraph/list nodes use dir=auto and body headings render as h3 below the host heading at h2.",
+        "Requires an external Designer SectionFrame; the surrounding page must use a Designer Frame. No legal route, data fetching or document ownership is introduced. Source checks and consumer runtime qualification remain separate.",
+        "Descriptor only; source imports, token reads, shared anatomy, accessibility, contrast and consumer runtime conformance are unmeasured. Content bindings describe host adaptation points, not type-equivalent converters."
+      ],
+      "slot": "sections.legal-prose",
+      "status": "candidate",
+      "supportedMembers": [],
+      "supportedSlots": [
+        "body",
+        "heading",
+        "revision"
+      ],
+      "unresolvedMemberAxes": []
+    },
+    {
       "missingMembers": [
         "layout.grid",
         "layout.list"
@@ -518,6 +620,24 @@
       "supportedSlots": [
         "mark",
         "name"
+      ],
+      "unresolvedMemberAxes": []
+    },
+    {
+      "missingMembers": [],
+      "missingRequiredSlots": [],
+      "missingSlots": [],
+      "notes": [
+        "The public SectionFrame export supplies section framing. The private sections.logo-mark runtime adapter resolves the consumer's assets.mark media record to a Logomark child, with no extra public block export.",
+        "mark maps to children as a host adaptation point, not a type-equivalent media-record prop. Its record carries slot=assets.mark, a declared member (mono, positive or reversed), src and optional asset name metadata. The runtime port has no asset resolver; the consumer must supply the registered member's resolved artwork and list it in assetClosure.",
+        "The section has no copy slots or authored copy fields. Optional asset name metadata labels the image group and is never rendered as visible text. Without metadata the logo remains decorative.",
+        "Descriptor only; source imports, token reads, shared anatomy, accessibility, contrast and consumer runtime conformance are unmeasured. Content bindings describe host adaptation points, not type-equivalent converters."
+      ],
+      "slot": "sections.logo-mark",
+      "status": "candidate",
+      "supportedMembers": [],
+      "supportedSlots": [
+        "mark"
       ],
       "unresolvedMemberAxes": []
     },
@@ -730,6 +850,32 @@
         "dirty",
         "groups",
         "save-bar"
+      ],
+      "unresolvedMemberAxes": []
+    },
+    {
+      "missingMembers": [],
+      "missingRequiredSlots": [],
+      "missingSlots": [],
+      "notes": [
+        "Private sections.sign-in-form renderer composes public Form, ContentSection, TextField and Button. There is no public sign-in Block export.",
+        "Mapping identifies Form adaptation regions, not type-equivalent SignInForm props. Header.heading is rendered by the surrounding ContentSection heading and aria-labelledby on Form; providers, credential fields and verification fields are composed children.",
+        "Provider labels and every input/action/error string are host-authored passage content. Sensitive controlled values never enter runtime JSON content. Existing ConsumerRuntimePorts.sectionHosts carries phase, values, pending, onValueChange and onSubmit, plus onProvider/onBack/onResend for visible actions.",
+        "Credentials and code are bounded host-selected UI phases only. Provider actions delegate ids; form submission delegates the current phase. No authentication, auth-provider import, redirect, session check, completed state, account creation, invitation, or reset behavior is claimed.",
+        "Without a Section host the sample renders disabled controls. Pending blocks repeated submission and value changes. The host performs validation and authenticates; errors remain host-supplied copy.",
+        "Descriptor only; package fill coverage does not prove consumer runtime conformance.",
+        "Descriptor only; source imports, token reads, shared anatomy, accessibility, contrast and consumer runtime conformance are unmeasured. Content bindings describe host adaptation points, not type-equivalent converters."
+      ],
+      "slot": "sections.sign-in-form",
+      "status": "candidate",
+      "supportedMembers": [],
+      "supportedSlots": [
+        "actions",
+        "credentials",
+        "error",
+        "header",
+        "providers",
+        "verification"
       ],
       "unresolvedMemberAxes": []
     },

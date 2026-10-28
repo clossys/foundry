@@ -1,0 +1,64 @@
+{
+  "$extensions": {
+    "com.clossys.fill": {
+      "author": "foundry",
+      "builtOn": [],
+      "conforms": [],
+      "evidence": [],
+      "id": "foundry/sections.sign-in-form",
+      "license": "MIT",
+      "mode": "implementation",
+      "originKinds": [
+        "adopted"
+      ],
+      "pin": {
+        "export": "./blocks#Form",
+        "package": "@clossys/designer",
+        "version": "0.12.0"
+      },
+      "relation": "same-contract",
+      "slot": "sections.sign-in-form",
+      "source": "foundry",
+      "sourceAddress": "./blocks#Form",
+      "status": "draft",
+      "trust": "foundry"
+    }
+  },
+  "sections": {
+    "sign-in-form": {
+      "configs": {},
+      "impl": {
+        "export": "Form",
+        "kind": "package",
+        "module": "@clossys/designer/blocks"
+      },
+      "license": "MIT",
+      "notes": [
+        "Private sections.sign-in-form renderer composes public Form, ContentSection, TextField and Button. There is no public sign-in Block export.",
+        "Mapping identifies Form adaptation regions, not type-equivalent SignInForm props. Header.heading is rendered by the surrounding ContentSection heading and aria-labelledby on Form; providers, credential fields and verification fields are composed children.",
+        "Provider labels and every input/action/error string are host-authored passage content. Sensitive controlled values never enter runtime JSON content. Existing ConsumerRuntimePorts.sectionHosts carries phase, values, pending, onValueChange and onSubmit, plus onProvider/onBack/onResend for visible actions.",
+        "Credentials and code are bounded host-selected UI phases only. Provider actions delegate ids; form submission delegates the current phase. No authentication, auth-provider import, redirect, session check, completed state, account creation, invitation, or reset behavior is claimed.",
+        "Without a Section host the sample renders disabled controls. Pending blocks repeated submission and value changes. The host performs validation and authenticates; errors remain host-supplied copy.",
+        "Descriptor only; package fill coverage does not prove consumer runtime conformance.",
+        "Descriptor only; source imports, token reads, shared anatomy, accessibility, contrast and consumer runtime conformance are unmeasured. Content bindings describe host adaptation points, not type-equivalent converters."
+      ],
+      "parts": [],
+      "pin": {
+        "export": "./blocks#Form",
+        "package": "@clossys/designer",
+        "version": "0.12.0"
+      },
+      "propMap": {},
+      "slot": "sections.sign-in-form",
+      "slotMap": {
+        "actions": "./blocks#Form.actions",
+        "credentials": "./blocks#Form.children",
+        "error": "./blocks#Form.submitError",
+        "header": "./blocks#Form.heading",
+        "providers": "./blocks#Form.children",
+        "verification": "./blocks#Form.children"
+      },
+      "source": "foundry"
+    }
+  }
+}

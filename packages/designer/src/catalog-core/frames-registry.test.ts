@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { createHash } from "node:crypto";
 import placementData from "../catalog/ia/frames.json" with { type: "json" };
 import globalRetired from "../catalog/retired.json" with { type: "json" };
 import aliases from "../catalog/retired/frames.json" with { type: "json" };
@@ -18,7 +19,7 @@ interface FrameSlot {
 }
 const slots = slotData as unknown as readonly FrameSlot[];
 const placement = placementData as unknown as Placement;
-const expected = ["site-shell", "app-shell", "site-header", "app-header", "app-sidebar", "inspector", "site-footer", "sheet", "command"];
+const expected = ["site-shell", "app-shell", "auth-shell", "site-header", "app-header", "app-sidebar", "inspector", "site-footer", "sheet", "command"];
 const byId = (id: string): FrameContract => {
   const found = slots.find(slot => slot.id === `frames.${id}`);
   if (!found) throw new Error(`Missing frame ${id}`);
@@ -79,7 +80,7 @@ describe("draft frame registry", () => {
     expect(byId("app-header").layers).toEqual(["tokens.z-index.sticky"]);
   });
 
-  it("contains exactly the nine independent, unfrozen leaves", () => {
+  it("contains exactly the ten independent, unfrozen leaves", () => {
     expect(slots.map(slot => slot.id)).toEqual(expected.map(id => `frames.${id}`));
     for (const slot of slots) {
       expect(SLOT_ID.test(slot.id)).toBe(true);
@@ -94,11 +95,34 @@ describe("draft frame registry", () => {
     }
   });
 
-  it("places each leaf once under three groups and eight families", () => {
+  it("places each leaf once under three groups and nine families", () => {
     expect(placement.layer).toBe("frames");
     expect(placement.nodes.map(node => node.id)).toEqual(["page-shells", "regions", "overlay-shells"]);
     expect(placementData.nodes[1]?.children?.map(node => node.id)).toEqual(["headers", "navigation", "panels", "footers"]);
     expect(placementFindings(placement, slots.map(slot => slot.id))).toEqual([]);
+  });
+
+  it("preserves the original nine frame rows exactly and registers the standalone auth shell", () => {
+    const original = slots.filter(slot => slot.id !== "frames.auth-shell");
+    expect(original).toHaveLength(9);
+    // JSON.stringify hash measured from the full rows at da8a1f97; no Git dependency during tests.
+    expect(createHash("sha256").update(JSON.stringify(original)).digest("hex"))
+      .toBe("60ee197f9c2db484aa63573d386468531235f0383941015f5f4e7e4bfe5865ab");
+    expect(slots.find(slot => slot.id === "frames.auth-shell")).toEqual({
+      id: "frames.auth-shell", layer: "frames", requires: [], status: "draft",
+      contract: {
+        kind: "frame", stage: { accepts: ["flow"], scroll: "document" }, root: "div",
+        landmarks: [{ slot: "main", role: "main", topLevel: true, nameRequired: false, id: "main-content", tabIndex: -1 }],
+        slots: [{ id: "skip-link", required: true, accepts: "host-node" }, { id: "main", required: true, accepts: "view" }],
+        members: { mode: "closed", names: [] }, statePorts: [], rendering: "server", breakpoints: [],
+        layers: ["tokens.z-index.skip-link"],
+        allowedReads: { tokens: ["tokens.spacing", "tokens.gutter", "tokens.container-width", "tokens.surface-color", "tokens.text-color", "tokens.z-index"], assets: [] },
+        composes: [], skipTarget: "main-content",
+      },
+    });
+    expect(placementData.nodes[0]?.children?.find(node => node.id === "page-shells-authentication")).toEqual({
+      id: "page-shells-authentication", label: "Authentication", leaves: ["frames.auth-shell"],
+    });
   });
 
   it("detects a duplicate placement even when every leaf is still present", () => {
@@ -145,8 +169,8 @@ describe("draft frame registry", () => {
   });
 
   it("records roots, server boundaries and ordered shell landmarks", () => {
-    expect(slots.map(slot => slot.contract.root)).toEqual(["div", "div", "header", "header", "nav", "aside", "footer", "dialog", "dialog"]);
-    expect(slots.filter(slot => slot.contract.rendering === "server").map(slot => slot.id)).toEqual(["frames.site-shell", "frames.site-header", "frames.site-footer"]);
+    expect(slots.map(slot => slot.contract.root)).toEqual(["div", "div", "div", "header", "header", "nav", "aside", "footer", "dialog", "dialog"]);
+    expect(slots.filter(slot => slot.contract.rendering === "server").map(slot => slot.id)).toEqual(["frames.site-shell", "frames.auth-shell", "frames.site-header", "frames.site-footer"]);
     expect(byId("site-shell").landmarks.map(item => item.role)).toEqual(["banner", "main", "contentinfo", "region"]);
     expect(byId("app-shell").landmarks.map(item => item.role)).toEqual(["banner", "navigation", "main", "complementary", "region"]);
     for (const { contract } of slots) for (const landmark of contract.landmarks) {

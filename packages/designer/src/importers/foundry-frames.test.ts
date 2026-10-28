@@ -33,14 +33,14 @@ describe("Foundry frame descriptors", () => {
     }
   });
 
-  it("accounts for exactly nine leaves and regenerates committed bytes", () => {
+  it("accounts for exactly ten leaves and regenerates committed bytes", () => {
     const files = generatedFoundryFrameFiles({ exports });
     if (process.env.UPDATE_FOUNDRY_FRAME_FILLS === "1") for (const [name, bytes] of Object.entries(files)) writeFileSync(resolve(directory, name), bytes);
     expect(readdirSync(directory).filter(name => /^frames\..*\.json$/.test(name)).sort()).toEqual(Object.keys(files).sort());
     for (const [name, bytes] of Object.entries(files)) expect(readFileSync(resolve(directory, name), "utf8"), name).toBe(bytes);
     expect(result().coverage.map(row => row.slot)).toEqual(slots.map(slot => slot.id).sort());
-    expect(result().coverage).toHaveLength(9);
-    expect(result().fills).toHaveLength(9);
+    expect(result().coverage).toHaveLength(10);
+    expect(result().fills).toHaveLength(10);
     expect(generatedFoundryFrameFiles({ slots: [...slots].reverse() as unknown as readonly FrameSlot[], exports })).toEqual(files);
   });
   it("pins independently available public exports at actual manifest versions", () => {

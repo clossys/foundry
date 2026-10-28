@@ -18,3 +18,6 @@ export type { SurfaceRendererEntry, SurfaceRendererGroup, SurfaceRuntimeRenderer
 
 export { useFrameNotice } from "./frame-notices.js";
 export type { FrameNoticeApi } from "./frame-notices.js";
+
+export { AuthFrame } from "./AuthFrame.js";
+export type { AuthFrameProps } from "./AuthFrame.js";
