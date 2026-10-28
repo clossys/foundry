@@ -178,6 +178,7 @@ export { IndexView, DetailsView } from "./views/index.js";
 export type { IndexViewCollection, IndexViewProps, IndexViewRowRoute, IndexViewTable, DetailsViewBlock, DetailsViewLayout, DetailsViewProps, DetailsViewRegion, DetailsViewSection, DetailsViewSectionState, DetailsViewTab } from "./views/index.js";
 
 export { PublisherPage } from "./publisher/PublisherPage.js";
+export { PublisherBoard, buildPublisherBoard } from "./publisher-v2/index.js";
 export type { PublisherPageProps } from "./publisher/PublisherPage.js";
 export type { AssemblyOwner, AssemblyOwnerTarget, AssemblyOwnerHref } from "./publisher/assembly/assembly.js";
 export type { PublisherLane, PublisherPipelineItem, PublishStageEvidence, PublishStage, PublishStageStatus } from "./publisher/pipeline.js";
