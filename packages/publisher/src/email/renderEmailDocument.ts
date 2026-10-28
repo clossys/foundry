@@ -263,6 +263,8 @@ export function renderEmailDocument(doc: ComposeDocument, options: RenderEmailOp
     preheader: meta.preheader,
     entries: ordered,
     palette,
+    ...(options.locale !== undefined ? { locale: options.locale } : {}),
+    ...(options.manifest !== undefined ? { manifest: options.manifest } : {}),
   });
   const text = buildPlainText(ordered);
 

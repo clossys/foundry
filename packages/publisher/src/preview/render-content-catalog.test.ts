@@ -308,7 +308,7 @@ describe("content catalog page", () => {
     const withBrand = buildContentCatalogHtml({ designerTokens: "t.css", utilities: "c.css", brand: "../brand/brand.css" });
     const hrefs = [...withBrand.matchAll(/<link rel="stylesheet" href="([^"]+)"/g)].map((match) => match[1]);
     expect(hrefs).toEqual(["t.css", "c.css", "../brand/brand.css"]);
-    expect(withBrand).toContain('<html lang="en" data-brand-bound>');
+    expect(withBrand).toContain('<html lang="en" dir="ltr" data-brand-bound>');
 
     const withoutBrand = buildContentCatalogHtml({ designerTokens: "t.css", utilities: "c.css", brand: null });
     expect([...withoutBrand.matchAll(/<link rel="stylesheet" href="([^"]+)"/g)].map((match) => match[1])).toEqual(["t.css", "c.css"]);

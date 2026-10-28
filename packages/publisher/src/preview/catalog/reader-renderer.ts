@@ -1,3 +1,4 @@
+import { resolveDocumentLocale, type DocumentLocaleOptions } from "../render-document-locale.js";
 import { createElement } from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
 import { resolveSectionedViewDocument, desugarRecipe, SECTIONED_VIEW_ITEM_RECIPES, SECTIONED_VIEW_CONTENT_CONTRACT } from '../../core/index.js';
@@ -265,16 +266,17 @@ export const READER_PAGES: readonly CatalogPage[] = [
 ];
 const escape = (text: string): string => text.replaceAll('&', '&amp;').replaceAll('<', '&lt;').replaceAll('>', '&gt;').replaceAll('"', '&quot;');
 const chrome = `body{margin:0;background:var(--color-surface-base, oklch(0.9702 0 0));color:var(--color-ink-primary, oklch(0.2178 0 0));font-family:var(--font-body, ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif);font-size:var(--text-body-s, 13px);line-height:1.5}.catalog-nav,.catalog-note{padding:var(--spacing-xl, 24px);background:var(--color-surface-sunken, oklch(0.9401 0 0));overflow-wrap:break-word}.catalog-nav h1{font-size:var(--text-h2, 18px)}.catalog-nav ul,.catalog-config-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,var(--ui-width-prose-max, 48rem)),1fr));gap:var(--spacing-lg, 16px);padding:0;list-style:none}.catalog-function-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,calc(var(--ui-width-prose-max, 48rem)/2)),1fr));gap:var(--spacing-lg, 16px);margin:0;padding:var(--spacing-xl, 24px);list-style:none}.catalog-function-grid>li{padding:var(--spacing-lg, 16px);border:var(--ui-border-hairline, 1px) solid var(--color-line-base, oklch(0.8761 0 0));background:var(--color-surface-base, oklch(0.9702 0 0))}.catalog-compact-nav{display:flex;flex-wrap:wrap;gap:var(--spacing-sm, 8px)}.catalog-nav a,.catalog-note a{color:inherit}.catalog-function-grid>li>a,[data-published-kind]>a,[data-catalog-axis-reference]{text-decoration-line:underline}.catalog-note{overflow-wrap:break-word}.catalog-chip{display:inline-block;font-family:var(--font-mono, ui-monospace, "SF Mono", Menlo, Consolas, monospace);font-size:var(--text-caption, 12px);border:var(--ui-border-hairline, 1px) solid var(--color-line-base, oklch(0.8761 0 0));padding:var(--spacing-xs, 4px) var(--spacing-sm, 8px);margin:var(--spacing-xs, 4px)}.catalog-example>div{min-width:0}:is([data-catalog-native],[data-config-native])>div:not([data-landing-view])>[data-content-section]{padding-inline:var(--ui-width-page-padding-x, clamp(16px, 4vw, 48px))}.catalog-config-grid{margin:var(--spacing-xl, 24px)}.catalog-config-cell{min-width:0;border:var(--ui-border-hairline, 1px) solid var(--color-line-base, oklch(0.8761 0 0))}.catalog-config-cell>header{padding:var(--spacing-md, 12px)}.catalog-config-cell [data-content-section]{padding-block:var(--spacing-xl, 24px)}.catalog-config-cell [data-landing-hero]{min-height:0!important}.catalog-table-wrap{overflow-x:auto}.catalog-table{min-width:var(--ui-width-content-max, 64rem)}.catalog-note table{width:100%;border-collapse:collapse}.catalog-note th,.catalog-note td{text-align:start;vertical-align:top;padding:var(--spacing-sm, 8px);border-block-end:var(--ui-border-hairline, 1px) solid var(--color-line-base, oklch(0.8761 0 0))}.catalog-published{font-family:var(--font-mono, ui-monospace, "SF Mono", Menlo, Consolas, monospace);font-size:var(--text-caption, 12px)}`;
-function page(title: string, body: string, sheets: ContentCatalogStylesheets): string {
+function page(title: string, body: string, sheets: ContentCatalogStylesheets, options: DocumentLocaleOptions = {}): string {
+    const { locale, dir } = resolveDocumentLocale(options);
     const links = [sheets.designerTokens, sheets.utilities, ...(sheets.brand === null ? [] : [sheets.brand])].map(h => `<link rel="stylesheet" href="${escape(h)}" />`).join('\n');
-    return `<!DOCTYPE html><html lang="en" data-brand-bound><head><meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" /><title>${escape(title === 'Content catalog' ? title : `${title} — Content catalog`)}</title>${links}<style>${chrome}</style></head><body>${body}</body></html>\n`;
+    return `<!DOCTYPE html><html lang="${locale}" dir="${dir}" data-brand-bound><head><meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" /><title>${escape(title === 'Content catalog' ? title : `${title} — Content catalog`)}</title>${links}<style>${chrome}</style></head><body>${body}</body></html>\n`;
 }
 function nav(current?: string): string {
     if (current !== undefined)
         return `<nav aria-label="Catalog functions" class="catalog-compact-nav">${READER_PAGES.map(p => `<a href="${p.id}.html"${p.id === current ? ' aria-current="page"' : ''}>${p.label}</a>`).join(' · ')}</nav>`;
     return `<nav aria-label="Catalog functions"><ul role="list" class="catalog-function-grid">${READER_PAGES.map(p => `<li data-catalog-function="${p.id}"><a href="catalog/${p.id}.html">${p.label}</a><p>${p.purpose}</p>${p.axes.map(axis => `<span class="catalog-chip" data-catalog-axis="${axis.name}">${axis.name.replaceAll('-', ' ')}</span>`).join('')}</li>`).join('')}</ul></nav>`;
 }
-export function buildFunctionalCatalogIndex(sheets: ContentCatalogStylesheets): string { return page('Content catalog', `<header class="catalog-nav"><h1>Content catalog</h1><p>What does the reader need to do with this information? Choose its reader job, then a recipe and configuration.</p></header><main id="catalog-page">${nav()}</main>`, sheets); }
+export function buildFunctionalCatalogIndex(sheets: ContentCatalogStylesheets, options: DocumentLocaleOptions = {}): string { return page('Content catalog', `<header class="catalog-nav"><h1>Content catalog</h1><p>What does the reader need to do with this information? Choose its reader job, then a recipe and configuration.</p></header><main id="catalog-page">${nav()}</main>`, sheets, options); }
 function closeProps(section: ResolvedSectionedViewContentSection): NonNullable<LandingViewProps['callToAction']> {
     const actions = (section.actions ?? []).map(action => {
         if (action.emphasis === 'tertiary')
@@ -461,7 +463,7 @@ function recipeTable(): string {
     }).join("");
     return `<div class="catalog-table-wrap" role="region" aria-label="Recipe reference" tabindex="0"><table class="catalog-table"><thead><tr><th>Recipe</th><th>Fixed axes</th><th>Defaults</th><th>Free axes</th><th>Compatible slots</th><th>Published alias</th></tr></thead><tbody>${rows}<tr data-catalog-recipe="comparison"><th><a href="compare.html#example-matrix-points">comparison</a></th><td>two sides</td><td>—</td><td>primary form, featured</td><td>points or visual, optional description lead</td><td>—</td></tr><tr data-catalog-recipe="prose"><th><a href="explain.html#example-recipes-prose">prose</a></th><td>ordered paragraphs</td><td>—</td><td>—</td><td>text or link spans; 1–8 paragraphs, at most 24 spans, 6 links and 1,200 characters each</td><td>—</td></tr></tbody></table></div>`;
 }
-export function buildCatalogFunctionPages(sheets: ContentCatalogStylesheets): Array<{
+export function buildCatalogFunctionPages(sheets: ContentCatalogStylesheets, options: DocumentLocaleOptions = {}): Array<{
     file: string;
     content: string;
 }> {
@@ -489,6 +491,6 @@ export function buildCatalogFunctionPages(sheets: ContentCatalogStylesheets): Ar
         const aliases = OTHER_KIND_LINKS.filter(link => published[link.kind] === label);
         if (aliases.length)
             body += `<section class="catalog-note"><h2>Published kinds</h2><ul>${aliases.map(link => `<li data-published-kind="${link.kind}"><a href="${link.href}">${link.kind}</a></li>`).join('')}</ul></section>`;
-        return { file: `catalog/${definition.id}.html`, content: page(label, `${header}<main id="catalog-page">${body}</main>`, nested) };
+        return { file: `catalog/${definition.id}.html`, content: page(label, `${header}<main id="catalog-page">${body}</main>`, nested, options) };
     });
 }

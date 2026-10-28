@@ -23,6 +23,8 @@
 
 import type { ElementKind, StyleBinding } from "../../core/index.js";
 import type { StaticRenderAsset } from "../../internal/assets.js";
+import { resolveDocumentLocale } from "../../preview/render-document-locale.js";
+import type { DocumentLocaleOptions } from "../../preview/render-document-locale.js";
 import { buildHiddenPreheaderContent, escapeHtml } from "./escapeHtml.js";
 import type { EmailPalette } from "./styles.js";
 import { readEmailToken, tdStyleForElement } from "./styles.js";
@@ -43,7 +45,7 @@ export interface EmailDocumentEntry {
   asset?: StaticRenderAsset;
 }
 
-export interface BuildEmailHtmlInput {
+export interface BuildEmailHtmlInput extends DocumentLocaleOptions {
   subject: string;
   preheader: string;
   entries: readonly EmailDocumentEntry[];
@@ -110,6 +112,7 @@ function buildRow(entry: EmailDocumentEntry, palette: EmailPalette): string {
  */
 export function buildEmailHtml(input: BuildEmailHtmlInput): string {
   const { subject, preheader, entries, palette } = input;
+  const { locale, dir } = resolveDocumentLocale(input);
 
   const bodyBg = readEmailToken(palette, "--color-surface-base");
   const cardBg = readEmailToken(palette, "--color-surface-raised");
@@ -118,7 +121,7 @@ export function buildEmailHtml(input: BuildEmailHtmlInput): string {
 
   return (
     "<!doctype html>" +
-    '<html lang="en" xmlns="http://www.w3.org/1999/xhtml" xmlns:v="urn:schemas-microsoft-com:vml" xmlns:o="urn:schemas-microsoft-com:office:office">' +
+    `<html lang="${escapeHtml(locale)}" dir="${dir}" xmlns="http://www.w3.org/1999/xhtml" xmlns:v="urn:schemas-microsoft-com:vml" xmlns:o="urn:schemas-microsoft-com:office:office">` +
     "<head>" +
     '<meta charset="utf-8">' +
     '<meta name="viewport" content="width=device-width, initial-scale=1">' +
