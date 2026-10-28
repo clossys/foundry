@@ -1,13 +1,16 @@
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
 import type { CopyResolver } from "@clossys/writer";
-import { AppFrame } from "@clossys/designer/frames";
+import { AppFrame as ShellFixtureAppFrame } from "@clossys/designer/frames";
 import type { AppFrameProps } from "@clossys/designer/frames";
 import { SiteFrame } from "./SiteFrame.js";
 import { resolveShell } from "./internal/resolveShell.js";
 import { normalizeSiteFrameConfig, SITE_FRAME_CONTRACT } from "./site-frame-contract.js";
 import type { SiteFramePresentationConfig } from "./site-frame-contract.js";
 import type { SiteShellInput } from "./types.js";
+import { withShellCopy } from "../__fixtures__/shell-copy.js";
+const AppFrame = withShellCopy(ShellFixtureAppFrame, true);
+
 
 const copy: CopyResolver = value => ({ ref: value, text: value.id, recordId: "fixture", entryId: value.id,
   revision: "1", locale: "en", source: { kind: "consumer", reference: "fixture" } });

@@ -6,10 +6,15 @@ import { hydrateRoot } from "react-dom/client";
 import { renderToString } from "react-dom/server";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { Button, Dialog } from "../components/index.js";
-import { ThemeToggle } from "../theme/index.js";
+import { ThemeToggle as ShellFixtureThemeToggle } from "../theme/index.js";
 import { APP_FRAME_WIDE_QUERY } from "./app-frame-layout.js";
-import { AppFrame } from "./AppFrame.js";
+import { AppFrame as ShellFixtureAppFrame } from "./AppFrame.js";
 import type { AppFrameProps } from "./app-frame-types.js";
+import { withShellCopy } from "./__fixtures__/shell-copy.js";
+const ThemeToggle = withShellCopy(ShellFixtureThemeToggle);
+const AppFrame = withShellCopy(ShellFixtureAppFrame, true);
+
+
 
 let wide: { matches: boolean; listeners: Set<() => void> };
 beforeEach(() => {

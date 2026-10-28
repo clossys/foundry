@@ -15,6 +15,8 @@ import { ToasterFrameInsetProvider, type ToasterFrameInset } from "../shell/Toas
 import { FrameNoticeProvider } from "./frame-notices.js";
 import { APP_FRAME_ALWAYS_NARROW, APP_FRAME_ALWAYS_WIDE, APP_FRAME_LAYOUT, APP_FRAME_NAVIGATION_SIZE, APP_FRAME_PANEL_SIZE, APP_FRAME_PANEL_WIDTH_VAR, APP_FRAME_WIDE_QUERY, appFrameMainId, appFramePanels, appFrameCorner } from "./app-frame-layout.js";
 import type { AppFrameAccount, AppFrameProps } from "./app-frame-types.js";
+import { ShellCopyProvider, useShellCopy } from "../components/Banner.copy-context.js";
+import { SHELL_COPY_REFS } from "../components/Banner.copy.js";
 import { dsAttrs } from "../catalog-core/provenance-attrs.js";
 
 /** DOM provenance (WIRE-3 D1): this frame root stamps its leaf and fill. */
@@ -59,16 +61,20 @@ function SignedOutMenu({ sections, signedOutLabel, onRoute, markSrc }: Omit<AppF
 
 function FrameContent({ brand, navigation, account: { avatar = "initials", ...account }, commands, children, toasts, rightPanel, theme, themeControl, footerLayout = "inline", fill = "host", dir: suppliedDir, onNavigate, layout: shellLayout = "standard", stage: stageInset = "contained", notices, dock, headerPosition, headerSurface, context, root, page, workspaces, breadcrumbLabel, collapsedBreadcrumbLabel, pageInfoLabel, pageActionsLabel,
   /** @default "Skip to content" */
-  skipLabel = "Skip to content", mainId }: AppFrameProps) {
+  skipLabel: suppliedSkipLabel, mainId }: AppFrameProps) {
   const { direction: contextDirection, locale } = useLocale();
   const dir = suppliedDir ?? contextDirection;
+  const copy = useShellCopy();
+  const skipLabel = suppliedSkipLabel ?? copy(SHELL_COPY_REFS.frame.skip);
   // The page header is leased by PageHeaderModule only; the frame takes no header prop.
   const resolvedHeader = useFramePageHeader();
   assertAppFrameBrand(brand);
   const {
-    /** @default "Open navigation" */ openLabel: navigationOpenLabel = "Open navigation",
-    /** @default "Close navigation" */ closeLabel: navigationCloseLabel = "Close navigation",
+    /** @default "Open navigation" */ openLabel: suppliedNavigationOpenLabel,
+    /** @default "Close navigation" */ closeLabel: suppliedNavigationCloseLabel,
   } = navigation;
+  const navigationOpenLabel = suppliedNavigationOpenLabel ?? copy(SHELL_COPY_REFS.frame.navigationOpen);
+  const navigationCloseLabel = suppliedNavigationCloseLabel ?? copy(SHELL_COPY_REFS.frame.navigationClose);
   const generated = useId();
   const target = appFrameMainId(mainId, generated);
   const [commandOpen, setCommandOpen] = useState(false);
@@ -92,7 +98,8 @@ function FrameContent({ brand, navigation, account: { avatar = "initials", ...ac
   const [navigationCollapsed, setNavigationCollapsed] = useState(navigation.defaultCollapsed ?? shellLayout === "immersive");
   const collapsed = rightPanel?.collapsed ?? panelCollapsed;
   const navCollapsed = navigation.collapsed ?? navigationCollapsed;
-  const { openLabel = "Open panel", closeLabel = "Close panel" } = rightPanel ?? {};
+  const openLabel = rightPanel ? rightPanel.openLabel ?? copy(SHELL_COPY_REFS.frame.panelOpen) : "";
+  const closeLabel = rightPanel ? rightPanel.closeLabel ?? copy(SHELL_COPY_REFS.frame.panelClose) : "";
   const frame = useRef<HTMLDivElement>(null);
   const [navigationControlHost, setNavigationControlHost] = useState<HTMLSpanElement | null>(null);
   const [panelCloseButtonStyle, setPanelCloseButtonStyle] = useState<DrawerProps["closeButtonStyle"]>();
@@ -245,8 +252,8 @@ function FrameContent({ brand, navigation, account: { avatar = "initials", ...ac
   const commandTrigger = <div>{navigationBrand}<Button variant="ghost" className={CONTROL + " w-full justify-start"} onPress={openCommands}><Icon glyph={Search} decorative /><span className="min-w-0 truncate">{triggerLabel}</span></Button></div>;
   const pageBar = <PageBar position={headerPosition} surface={headerSurface ?? (shellLayout === "immersive" ? "glass" : "solid")} header={resolvedHeader} onNavigate={onNavigate} context={context} root={root} page={page} workspaces={workspaces} narrow={!wide}
     reserveStart={false} reserveEnd={false} dir={dir}
-    labels={{ breadcrumb: breadcrumbLabel ?? "Breadcrumb", collapsedBreadcrumb: collapsedBreadcrumbLabel ?? "More breadcrumb levels", pageInfo: pageInfoLabel ?? "Page information",
-      pageActions: pageActionsLabel ?? "More page actions" }} />;
+    labels={{ breadcrumb: breadcrumbLabel ?? copy(SHELL_COPY_REFS.frame.breadcrumb), collapsedBreadcrumb: collapsedBreadcrumbLabel ?? copy(SHELL_COPY_REFS.frame.collapsedBreadcrumb), pageInfo: pageInfoLabel ?? copy(SHELL_COPY_REFS.frame.pageInfo),
+      pageActions: pageActionsLabel ?? copy(SHELL_COPY_REFS.frame.pageActions) }} />;
   return <ModalContext.Provider value={{ style: { direction: dir } }}><PopoverContext.Provider value={{ style: { direction: dir } }}>
     <div ref={frame} lang={locale} dir={dir} data-application-frame="" data-application-frame-layout={shellLayout} data-application-frame-stage={stageInset} data-application-frame-fill={fill} {...FRAME_STAMP} className={"relative flex min-h-0 min-w-0 flex-col overflow-hidden bg-surface-base text-body text-ink-primary " + ROOT_FILL[fill]}>
       <SkipLink targetId={target}>{skipLabel}</SkipLink>
@@ -287,5 +294,5 @@ function FrameContent({ brand, navigation, account: { avatar = "initials", ...ac
 
 /** Host-resolved application chrome; the host owns routes, account actions and main-free route content. */
 export function AppFrame(props: AppFrameProps) {
-  return <ShellI18nProvider locale={props.locale}><ThemeProvider storageKey={props.theme?.storageKey} defaultPreference={props.theme?.defaultPreference} preference={props.theme?.preference} onPreferenceChange={props.theme?.onPreferenceChange}><FrameSlotProvider><FrameNoticeProvider><FrameContent {...props} /></FrameNoticeProvider></FrameSlotProvider></ThemeProvider></ShellI18nProvider>;
+  return <ShellCopyProvider resolver={props.copyResolver}><ShellI18nProvider locale={props.locale}><ThemeProvider storageKey={props.theme?.storageKey} defaultPreference={props.theme?.defaultPreference} preference={props.theme?.preference} onPreferenceChange={props.theme?.onPreferenceChange}><FrameSlotProvider><FrameNoticeProvider><FrameContent {...props} /></FrameNoticeProvider></FrameSlotProvider></ThemeProvider></ShellI18nProvider></ShellCopyProvider>;
 }

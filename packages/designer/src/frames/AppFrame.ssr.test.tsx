@@ -7,8 +7,12 @@ import { afterEach, expect, it, vi } from "vitest";
 import { within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { APP_FRAME_WIDE_QUERY } from "./app-frame-layout.js";
-import { AppFrame } from "./AppFrame.js";
+import { AppFrame as ShellFixtureAppFrame } from "./AppFrame.js";
 import type { AppFrameProps } from "./app-frame-types.js";
+import { withShellCopy } from "./__fixtures__/shell-copy.js";
+const AppFrame = withShellCopy(ShellFixtureAppFrame, true);
+
+
 
 afterEach(() => { vi.unstubAllGlobals(); localStorage.clear(); document.documentElement.removeAttribute("data-theme"); });
 

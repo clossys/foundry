@@ -6,11 +6,14 @@ import userEvent from "@testing-library/user-event";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { TOKENS } from "@clossys/designer/tokens";
 import { Toaster, toast } from "@clossys/designer/shell";
-import { AppFrame } from "@clossys/designer/frames";
+import { AppFrame as ShellFixtureAppFrame } from "@clossys/designer/frames";
 import { SiteFrame } from "./SiteFrame.js";
 import { APP_FRAME_LAYOUT, APP_FRAME_WIDE_QUERY } from "../app-frame-layout.js";
 import type { AppFrameProps } from "@clossys/designer/frames";
 import type { SiteFrameProps } from "./types.js";
+import { withShellCopy } from "../__fixtures__/shell-copy.js";
+const AppFrame = withShellCopy(ShellFixtureAppFrame, true);
+
 
 let viewport: number;
 let listeners: Set<() => void>;

@@ -5,9 +5,13 @@ import userEvent from "@testing-library/user-event";
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
 import { SlotModule } from "../shell/index.js";
 import { TOKENS } from "../tokens/index.js";
-import { AppFrame } from "./AppFrame.js";
+import { AppFrame as ShellFixtureAppFrame } from "./AppFrame.js";
 import { APP_FRAME_WIDE_QUERY } from "./app-frame-layout.js";
 import type { AppFrameProps } from "./app-frame-types.js";
+import { withShellCopy } from "./__fixtures__/shell-copy.js";
+const AppFrame = withShellCopy(ShellFixtureAppFrame, true);
+
+
 
 let viewport = 1440;
 const listeners = new Set<() => void>();

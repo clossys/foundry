@@ -1,3 +1,5 @@
+import { useShellCopy } from "../components/Banner.copy-context.js";
+import { SHELL_COPY_REFS } from "../components/Banner.copy.js";
 import { useCallback, useEffect, useId, useRef, useState, type KeyboardEvent, type ReactNode } from "react";
 import { FieldInputContext } from "react-aria-components";
 import { Dialog } from "../components/Dialog.js";
@@ -9,9 +11,6 @@ import { UI_ALPHA_DISABLED } from "../components/internal/ui-vars.js";
 import { X } from "../icons/X.js";
 import type { CommandMenuProps, CommandMenuShortcutOptions } from "./command-menu-types.js";
 
-function defaultResultCountMessage(count: number): string {
-  return String(count) + " results";
-}
 
 function CommandMenuGroupRegion({ label, children }: { label: string; children: ReactNode }) {
   const headingId = useId();
@@ -53,9 +52,11 @@ export function useCommandMenuShortcut({ onOpen, enabled = true }: CommandMenuSh
 export function CommandMenu({
   heading, searchLabel, closeLabel, emptyMessage, groups, isOpen, onOpenChange,
   query, onQueryChange, filter, dir,
-  /** @default `${count} results` */
-  resultCountMessage = defaultResultCountMessage,
+  /** Writer owns the omitted formatter's plural selection. */
+  resultCountMessage: suppliedResultCountMessage,
 }: CommandMenuProps) {
+  const copy = useShellCopy();
+  const resultCountMessage = suppliedResultCountMessage ?? ((count: number) => copy(SHELL_COPY_REFS.commands.results, { count }));
   const id = useId();
   const input = useRef<HTMLInputElement | null>(null);
   const options = useRef(new Map<string, HTMLAnchorElement>());

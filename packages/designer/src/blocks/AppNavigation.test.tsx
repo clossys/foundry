@@ -5,11 +5,15 @@ import { act } from "react";
 import { fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { AppNavigation } from "./AppNavigation.js";
+import { AppNavigation as ShellFixtureAppNavigation } from "./AppNavigation.js";
 import { Icon } from "../components/Icon.js";
 import { ChevronDown } from "../icons/ChevronDown.js";
 import { getAppNavigationCloseStyle } from "./app-navigation-layout.js";
 import type { AppNavigationNode } from "./app-navigation-tree.js";
+import { withShellCopy } from "../frames/__fixtures__/shell-copy.js";
+const AppNavigation = withShellCopy(ShellFixtureAppNavigation);
+
+
 
 const action = vi.fn();
 const tree: readonly AppNavigationNode[] = [

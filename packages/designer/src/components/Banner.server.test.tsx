@@ -4,7 +4,11 @@ import { fileURLToPath } from "node:url";
 import { describe, expect, it, vi } from "vitest";
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { Banner } from "./Banner.server.js";
+import { Banner as ShellFixtureBanner } from "./Banner.server.js";
+import { withShellCopy } from "../frames/__fixtures__/shell-copy.js";
+const Banner = withShellCopy(ShellFixtureBanner, true);
+
+
 
 const here = dirname(fileURLToPath(import.meta.url));
 

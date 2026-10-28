@@ -3,6 +3,8 @@ import { useGlyph } from "./glyph-context.js";
 import type { CSSProperties, HTMLAttributes, ReactNode } from "react";
 import { Button } from "react-aria-components";
 import { BANNER_DISMISS_CLASSES, bannerClassName, bannerStyle } from "./Banner.server.js";
+import { useShellCopy } from "./Banner.copy-context.js";
+import { SHELL_COPY_REFS, type ShellCopyResolver } from "./Banner.copy.js";
 
 export type BannerVariant = "info" | "success" | "warning" | "danger";
 /** `compact` tightens the padding and gap and caps the inline size at the notice measure token (`--ui-width-notice-max`). */
@@ -25,8 +27,10 @@ export interface BannerProps extends Omit<HTMLAttributes<HTMLDivElement>, "role"
    * Omit this prop entirely for a banner with no dismiss control at all.
    */
   onDismiss?: () => void;
-  /** Accessible label for the dismiss button. @default "Dismiss" */
+  /** Accessible dismiss label; omitted means resolve the shell's Writer reference. */
   dismissLabel?: string;
+  /** Host-configured Writer resolver; otherwise inherited from ShellCopyProvider. */
+  copyResolver?: ShellCopyResolver;
   /** `compact` is a bounded notice: tighter spacing tokens and a notice-measure inline-size cap. @default "default" */
   density?: BannerDensity;
   /** Merged onto the outer region's inline style. */
@@ -70,12 +74,14 @@ export function Banner({
   variant = "info",
   children,
   onDismiss,
-  dismissLabel = "Dismiss",
+  dismissLabel,
+  copyResolver,
   density = "default",
   className,
   style,
   ...rest
 }: BannerProps) {
+  const copy = useShellCopy(copyResolver);
   const closeGlyph = useGlyph("assets.icon-close");
   const isAssertive = variant === "danger";
   return (
@@ -88,7 +94,7 @@ export function Banner({
     >
       <div className="flex-1">{children}</div>
       {onDismiss ? (
-        <Button onPress={onDismiss} aria-label={dismissLabel} className={BANNER_DISMISS_CLASSES}>
+        <Button onPress={onDismiss} aria-label={dismissLabel ?? copy(SHELL_COPY_REFS.banner.dismiss)} className={BANNER_DISMISS_CLASSES}>
           <Icon glyph={closeGlyph} decorative size="sm" />
         </Button>
       ) : null}

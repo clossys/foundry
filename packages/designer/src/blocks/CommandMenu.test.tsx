@@ -6,8 +6,12 @@ import { Dialog } from "../components/Dialog.js";
 import { Button } from "../components/Button.js";
 import { X } from "../icons/X.js";
 import * as blocks from "./index.js";
+import { withShellCopy } from "../frames/__fixtures__/shell-copy.js";
 
-const CommandMenu = (blocks as any).CommandMenu ?? (() => null);
+
+
+
+const CommandMenu = withShellCopy((blocks as any).CommandMenu ?? (() => null));
 const useCommandMenuShortcut = (blocks as any).useCommandMenuShortcut ?? (() => {});
 const alpha = vi.fn();
 const bravo = vi.fn();

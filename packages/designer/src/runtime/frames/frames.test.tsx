@@ -11,6 +11,8 @@ import { specimenDataset } from "../../studio/specimen-dataset.js";
 import { FOUNDRY_FRAME_MAP } from "../../importers/foundry-frames.map.js";
 import { surfaceRuntimeRenderers } from "../index.js";
 import { frameRenderers } from "./index.js";
+import { ShellCopyProvider } from "../../components/Banner.copy-context.js";
+import { shellCopyFixtureResolver } from "../../frames/__fixtures__/shell-copy.js";
 import { appHeaderProps } from "./app-header.js";
 
 beforeEach(() => {
@@ -29,7 +31,7 @@ function input(leaf: string, options: { members?: string[]; host?: RuntimeFrameH
   } as unknown as RuntimeRenderInput<ReactNode>;
 }
 const F = specimenDataset.frames;
-const draw = (leaf: string, options?: Parameters<typeof input>[1]) => render(<>{surfaceRuntimeRenderers[leaf]!.render(input(leaf, options))}</>);
+const draw = (leaf: string, options?: Parameters<typeof input>[1]) => render(<ShellCopyProvider resolver={shellCopyFixtureResolver}>{surfaceRuntimeRenderers[leaf]!.render(input(leaf, options))}</ShellCopyProvider>);
 
 describe("designer Frame runtime renderers", () => {
   it("cover every designer-owned Frames leaf, including site-shell", () => {

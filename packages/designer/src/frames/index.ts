@@ -1,4 +1,6 @@
 /** Canonical client application Frames; content and actions remain host-owned. */
+export { ShellCopyProvider } from "../components/Banner.copy-context.js";
+export type { ShellCopyRef, ShellCopyResolver } from "../components/Banner.copy.js";
 export { AppFrame } from "./AppFrame.js";
 export type { AppFrameProps, AppFrameBrand, AppFrameBrandNavigationMark, AppFrameAccount, AppFrameAccountAvatar, AppFrameFooterLayout, AppFrameRightPanel, AppFrameLayout, AppFrameStage, AppFrameNotice, AppFrameDock } from "./app-frame-types.js";
 export { APP_FRAME_CONTRACT, APP_FRAME_CONFIG_SCHEMA } from "./app-frame-contract.js";

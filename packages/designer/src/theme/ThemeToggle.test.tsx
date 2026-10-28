@@ -4,7 +4,11 @@ import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { ToggleGroup, ToggleGroupItem } from "../components/ToggleGroup.js";
 import { DEFAULT_STORAGE_KEY, ThemeProvider } from "./ThemeProvider.js";
-import { ThemeToggle, type ThemeToggleProps } from "./ThemeToggle.js";
+import { ThemeToggle as ShellFixtureThemeToggle, type ThemeToggleProps } from "./ThemeToggle.js";
+import { withShellCopy } from "../frames/__fixtures__/shell-copy.js";
+const ThemeToggle = withShellCopy(ShellFixtureThemeToggle);
+
+
 
 function installMatchMediaMock(initialMatches = false) {
   const mql = {

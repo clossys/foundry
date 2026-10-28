@@ -9,6 +9,8 @@ import { canonicalLocale, directionFor, type WriterManifest } from "@clossys/wri
 import { ResizeHandle } from "../../components/ResizeHandle.js";
 import type { RuntimeJson, RuntimeRenderInput } from "../../catalog-core/runtime-ports.js";
 import { specimenDataset } from "../../studio/specimen-dataset.js";
+import { ShellCopyProvider } from "../../components/Banner.copy-context.js";
+import { shellCopyFixtureResolver } from "../../frames/__fixtures__/shell-copy.js";
 import { appShellRenderer } from "./app-shell.js";
 import { authShellRenderer } from "./auth-shell.js";
 import { siteShellRuntimeRenderer } from "./site-shell.js";
@@ -20,7 +22,7 @@ const manifest: Pick<WriterManifest, "locales"> = { locales: [
   { tag: "en-XA", dir: "ltr", state: "pseudo" },
   { tag: "ar-XB", dir: "rtl", state: "pseudo" },
 ] };
-const entries = [siteShellRuntimeRenderer, appShellRenderer, authShellRenderer];
+const entries = [siteShellRuntimeRenderer, appShellRenderer, authShellRenderer].map(entry => ({ ...entry, render: (input: RuntimeRenderInput<ReactNode>) => <ShellCopyProvider resolver={shellCopyFixtureResolver}>{entry.render(input)}</ShellCopyProvider> }));
 function Probe() {
   const { locale, direction } = useLocale();
   return <span data-testid="locale-probe" data-locale={locale} data-direction={direction} />;

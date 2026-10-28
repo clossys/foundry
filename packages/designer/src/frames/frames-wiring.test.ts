@@ -5,12 +5,15 @@ import { renderToString } from "react-dom/server";
 import { describe, expect, it } from "vitest";
 import { checkWiring, foundryWiringExceptions, type WiringFinding, type WiringInput } from "../catalog-core/wiring.js";
 import { DS_ATTR } from "../catalog-core/provenance-attrs.js";
-import { AppFrame } from "./AppFrame.js";
+import { AppFrame as ShellFixtureAppFrame } from "./AppFrame.js";
 import { InspectorFrame } from "./InspectorFrame.js";
 import { APP_FRAME_RIGHT_PANEL_CONFIG } from "./right-panel-config.js";
 import type { AppFrameProps } from "./app-frame-types.js";
 import { SiteFooter } from "../shell/SiteFooter.js";
 import { SiteHeader } from "../shell/SiteHeader.js";
+import { withShellCopy } from "./__fixtures__/shell-copy.js";
+const AppFrame = withShellCopy(ShellFixtureAppFrame, true);
+
 
 /**
  * WIRE-4: the frame layer composes components. `checkWiring` runs over every

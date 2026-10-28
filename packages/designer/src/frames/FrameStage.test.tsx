@@ -8,9 +8,13 @@ import type { RuntimeLayoutPort } from '../catalog-core/runtime-assembly.js';
 import { standardM1FixtureEngine } from '../catalog-core/__fixtures__/standard-m1-runtime.js';
 import { createPortal } from 'react-dom';
 import userEvent from '@testing-library/user-event';
-import { AppFrame } from './AppFrame.js';
+import { AppFrame as ShellFixtureAppFrame } from './AppFrame.js';
 import { afterEach, beforeEach, expect, it, vi } from 'vitest';
 import { FrameStage, frameSectionRefKey, type FrameStageProps } from './FrameStage.js';
+import { withShellCopy } from "./__fixtures__/shell-copy.js";
+const AppFrame = withShellCopy(ShellFixtureAppFrame, true);
+
+
 let width = 1200;
 let resize: () => void;
 const observed: Element[] = [];

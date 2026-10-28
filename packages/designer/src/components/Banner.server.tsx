@@ -4,6 +4,7 @@ import { UI_WIDTH_NOTICE_MAX } from "./internal/ui-vars.js";
 import { Icon } from "./Icon.js";
 import { X } from "../icons/X.js";
 import type { BannerDensity, BannerProps, BannerVariant } from "./Banner.js";
+import { resolveShellCopy, SHELL_COPY_REFS } from "./Banner.copy.js";
 
 export const VARIANT_CLASSES: Record<BannerVariant, string> = {
   info: "border-status-info bg-status-info-tint text-status-info-text",
@@ -36,9 +37,9 @@ export function bannerStyle(density: BannerDensity, style: CSSProperties | undef
   return density === "compact" ? { maxInlineSize: UI_WIDTH_NOTICE_MAX, ...style } : style;
 }
 
-/** The client `BannerProps`, restating the one default this file applies. */
+/** The client props, with an explicit resolver for server-safe dismissal copy. */
 interface ServerBannerProps extends BannerProps {
-  /** @default "Dismiss" */
+  /** Omitted means use copyResolver to resolve the shell's Writer reference. */
   dismissLabel?: string;
 }
 
@@ -57,7 +58,8 @@ export function Banner({
   variant = "info",
   children,
   onDismiss,
-  dismissLabel = "Dismiss",
+  dismissLabel,
+  copyResolver,
   density = "default",
   className,
   style,
@@ -74,7 +76,7 @@ export function Banner({
     >
       <div className="flex-1">{children}</div>
       {onDismiss ? (
-        <button type="button" onClick={onDismiss} aria-label={dismissLabel} className={BANNER_DISMISS_CLASSES}>
+        <button type="button" onClick={onDismiss} aria-label={dismissLabel ?? resolveShellCopy(copyResolver, SHELL_COPY_REFS.banner.dismiss)} className={BANNER_DISMISS_CLASSES}>
           <Icon glyph={X} decorative size="sm" />
         </button>
       ) : null}

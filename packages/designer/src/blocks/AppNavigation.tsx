@@ -4,6 +4,8 @@ import { createPortal } from "react-dom";
 import { Button } from "../components/Button.js";
 import { Icon } from "../components/Icon.js";
 import { Link } from "../components/Link.js";
+import { useShellCopy } from "../components/Banner.copy-context.js";
+import { SHELL_COPY_REFS } from "../components/Banner.copy.js";
 import { NavigationTree, NavigationTreeItem, NavigationTreeItemContent } from "../components/NavigationTree.js";
 import { Tooltip } from "../components/Tooltip.js";
 import { cx } from "../components/internal/cx.js";
@@ -25,7 +27,7 @@ export interface AppNavigationProps {
   retainMounted?: boolean;
   activeId?: string;
   activeHref?: string;
-  /** @default "Navigation" */
+  /** Omitted means resolve the navigation name through the host Writer seam. */
   label?: string;
   /** Host controls before the destination list; no title row is synthesized. */
   header?: ReactNode;
@@ -34,7 +36,7 @@ export interface AppNavigationProps {
   trigger?: ReactNode;
   /** Optional DOM host for the complete measured control, retaining its dialog context and ref. */
   triggerContainer?: Element | null;
-  /** @default "No destinations available" */
+  /** Omitted means resolve the empty-state Writer reference. Host-owned reason/action remains separate. */
   emptyMessage?: ReactNode;
   collapsed?: boolean;
   defaultCollapsed?: boolean;
@@ -52,13 +54,10 @@ export interface AppNavigationProps {
   expandLabel?: string;
   /** Optional legacy label alias for the wide close control. */
   collapseLabel?: string;
-  /** @default "Collapse {nodeLabel}" when expanded, "Expand {nodeLabel}" otherwise */
+  /** Omitted means pass the host node name to Writer's disclosure reference. */
   formatDisclosureLabel?: (nodeLabel: string, expanded: boolean) => string;
 }
 
-function defaultDisclosureLabel(nodeLabel: string, expanded: boolean): string {
-  return (expanded ? "Collapse " : "Expand ") + nodeLabel;
-}
 
 /** The disclosure chevron turns on the theme's default transition duration (bound to --ui-duration-fast) and snaps under reduced motion. */
 const CHEVRON_MOTION = "transition-transform motion-reduce:transition-none";
@@ -109,13 +108,19 @@ function CornerTooltip({ trigger, label, requests }: { trigger: ReactNode; label
 
 /** Host routes and identity arrive as data and slots; one Drawer owns the narrow modal lifecycle. */
 export function AppNavigation({ onNavigate, fullViewport = false, retainMounted = false,
-  tree, activeId, activeHref, label = "Navigation", header, footer, trigger, triggerContainer, emptyMessage = "No destinations available",
+  tree, activeId, activeHref, label: suppliedLabel, header, footer, trigger, triggerContainer, emptyMessage: suppliedEmptyMessage,
   collapsed: suppliedCollapsed, defaultCollapsed = false, onCollapsedChange,
   drawerOpen, onDrawerOpenChange, navigationKey, dismissAt = "(min-width: 768px)",
-  openLabel = "Open navigation", closeLabel = "Close navigation", expandLabel, collapseLabel,
-  /** @default "Collapse {nodeLabel}" when expanded, "Expand {nodeLabel}" otherwise */
-  formatDisclosureLabel = defaultDisclosureLabel,
+  openLabel: suppliedOpenLabel, closeLabel: suppliedCloseLabel, expandLabel, collapseLabel,
+  /** Writer owns the omitted formatter's wording and interpolation. */
+  formatDisclosureLabel: suppliedDisclosureLabel,
 }: AppNavigationProps) {
+  const copy = useShellCopy();
+  const label = suppliedLabel ?? copy(SHELL_COPY_REFS.navigation.label);
+  const emptyMessage = suppliedEmptyMessage ?? copy(SHELL_COPY_REFS.navigation.empty);
+  const openLabel = suppliedOpenLabel ?? copy(SHELL_COPY_REFS.frame.navigationOpen);
+  const closeLabel = suppliedCloseLabel ?? copy(SHELL_COPY_REFS.frame.navigationClose);
+  const formatDisclosureLabel = suppliedDisclosureLabel ?? ((nodeLabel: string, expanded: boolean) => copy(expanded ? SHELL_COPY_REFS.navigation.collapse : SHELL_COPY_REFS.navigation.expand, { name: nodeLabel }));
   const { direction: localeDirection } = useLocale();
   // AppFrame supplies its explicit direction override through the existing modal context.
   const modalContext = useContext(ModalContext);
