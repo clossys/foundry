@@ -14,6 +14,9 @@
  */
 import type { ReactNode } from "react";
 import type { SurfaceDefaultCandidateDocument, SurfaceDefaultsPlan } from "../catalog-core/surface-defaults.js";
+import { stableStringify } from "../catalog-core/stable.js";
+import { importFoundryFrames } from "../importers/foundry-frames.js";
+import { importFoundrySections } from "../importers/foundry-sections.js";
 import { AccessMatrix } from "../blocks/AccessMatrix.js";
 import { ActivityFeed } from "../blocks/ActivityFeed.js";
 import { AuditLog } from "../blocks/AuditLog.js";
@@ -183,6 +186,15 @@ export interface PlannedSurfacePreviewsInput {
 
 type PackageImpl = { kind?: unknown; module?: unknown; export?: unknown };
 type SurfacePointerDocument = Pick<SurfaceDefaultCandidateDocument, "sections" | "frames">;
+const runtimeMapping = (entry: unknown): string => {
+  const row = entry as Record<string, unknown>;
+  return stableStringify(Object.fromEntries(["impl", "slotMap", "slots", "propMap", "members", "configs", "statePorts"].map(key => [key, row[key]])));
+};
+// The existing package importers remain the mapping authority. This index contains no separate choices or registry.
+const packageRuntimeMappings = new Map([...importFoundrySections().fills, ...importFoundryFrames().fills].map(doc => {
+  const entry = Object.values({ ...("sections" in doc ? doc.sections : {}), ...("frames" in doc ? doc.frames : {}) })[0]!;
+  return [entry.slot, runtimeMapping(entry)] as const;
+}));
 
 /**
  * The preview for one package-pointer surface document, planned or adopted: the real export its single entry
@@ -196,10 +208,16 @@ export function packageSurfacePreview(doc: SurfacePointerDocument, samples: Surf
   const hosted = Object.hasOwn(samples, pointer) ? samples[pointer] : undefined;
   if (hosted) return { pointer, render: hosted, state: "default" };
   if (!impl.module.startsWith(DESIGNER_PACKAGE)) return { reason: `${pointer} is not a designer export; the designer does not render it` };
+  const leaf = (entries[0] as SurfacePreviewEntry).slot;
+  const canonical = typeof leaf === "string" ? packageRuntimeMappings.get(leaf) : undefined;
+  // Dispatch by leaf is valid only for the precise package pointer and mapping the renderer implements.
+  // Consumer provenance stamps do not affect the rendered implementation; altered targets do.
+  try {
+    if (canonical === undefined || runtimeMapping(entries[0]) !== canonical) return { reason: `${pointer} mapping does not match the package runtime for ${typeof leaf === "string" ? leaf : "this fill"}` };
+  } catch { return { reason: `${pointer} has an unsupported runtime mapping` }; }
   const stated = state === "default" || !Object.hasOwn(STATE_SAMPLES, pointer) ? undefined : STATE_SAMPLES[pointer]![state];
   // A leaf with a package runtime renderer previews through it, from the specimen dataset: the same renderer
   // the consumer runtime draws. Only an export's own non-default state samples still render beside it.
-  const leaf = (entries[0] as SurfacePreviewEntry).slot;
   if (!stated && typeof leaf === "string" && Object.hasOwn(surfaceRuntimeRenderers, leaf)) {
     const runtime = surfaceRuntimePreview(entries[0] as SurfacePreviewEntry);
     return "reason" in runtime ? runtime : { pointer, render: runtime.render, state: "default" };

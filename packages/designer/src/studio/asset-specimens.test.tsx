@@ -88,6 +88,18 @@ describe("icon specimen", () => {
 });
 
 describe("app-icon specimen", () => {
+  it("renders the emitted app-icon sizes using the real artwork, with one maskable overlay per size", () => {
+    for (const role of ["standard", "maskable"]) {
+      const specimen = show("assets.app-icon", role);
+      expect(specimen).toHaveClass("max-w-full", "overflow-auto");
+      expect([...specimen.querySelectorAll("img")].map(image => [image.getAttribute("width"), image.getAttribute("height")])).toEqual([["192", "192"], ["512", "512"]]);
+      for (const image of specimen.querySelectorAll("img")) {
+        expect(image.getAttribute("src")).toBe(uri);
+        expect(image.hasAttribute("style")).toBe(false);
+      }
+      expect(specimen.querySelectorAll("[data-safe-zone]")).toHaveLength(role === "maskable" ? 2 : 0);
+    }
+  });
   it("overlays the maskable icon's safe zone: a circle at 80 percent of the side, the ratio the identity badge keeps its symbol inside", () => {
     const specimen = show("assets.app-icon", "maskable");
     const zone = specimen.querySelector<SVGElement>("[data-safe-zone]");
@@ -110,6 +122,7 @@ describe("app-icon specimen", () => {
     const specimen = show("assets.app-icon", "standard");
     expect(specimen.getAttribute("data-asset-specimen")).toBe("app-icon");
     expect(specimen.querySelector("[data-safe-zone]")).toBeNull();
-    expect(specimen.querySelectorAll("img")).toHaveLength(1);
+    // A4-DE-PREVIEW draws both existing emitted app-icon sizes, not one logo-sized surrogate.
+    expect(specimen.querySelectorAll("img")).toHaveLength(2);
   });
 });

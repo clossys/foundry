@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
 import type { CanvasSurfaceActions } from "../blocks/canvas/CanvasSurface.js";
 import { TOKENS } from "../tokens/tokens.js";
-import { CANVAS_LOD_TEXT } from "../blocks/canvas/CanvasLod.js";
+import { CANVAS_LEGIBLE_TEXT_PX } from "../blocks/canvas/CanvasLod.js";
 import type { Viewport } from "../blocks/canvas/models.js";
 
 /**
@@ -43,10 +43,9 @@ export function revealDelta(stage: Pick<DOMRect, "left" | "top" | "right" | "bot
   return { x: axis(target.left, target.right, stage.left, stage.right), y: axis(target.top, target.bottom, stage.top, stage.bottom) };
 }
 
-/** Smallest zoom at which the least detailed tier still paints its text at the caption size. */
+/** Shared fit floor: even rest-state specimen captions retain the canvas's minimum readable text size. */
 export function legibleZoomFloor(): number {
-  const px = (token: string) => Number.parseFloat(TOKENS[token]!.value);
-  return px("--text-caption") / px(CANVAS_LOD_TEXT.overview);
+  return Math.min(1, CANVAS_LEGIBLE_TEXT_PX / Number.parseFloat(TOKENS["--text-caption"]!.value));
 }
 
 /**

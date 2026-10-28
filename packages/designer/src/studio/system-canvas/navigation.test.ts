@@ -2,18 +2,35 @@ import { describe, expect, it } from "vitest";
 import { systemLayout } from "./layout.js";
 import { planNavigation } from "./navigation.js";
 import { trailAt } from "./breadcrumb.js";
-import { centreOn, clampZoom, stopZoom, systemStop, systemZoomRange } from "./stops.js";
+import { centreOn, clampZoom, stopZoom, stopViewport, systemZoomRange } from "./stops.js";
+import { CANVAS_LEGIBLE_TEXT_PX } from "../../blocks/canvas/CanvasLod.js";
+import { TOKENS } from "../../tokens/tokens.js";
+import { legibleZoomFloor } from "../useCanvasWorld.js";
 import { testMetrics, testPlacements } from "./__fixtures__/system.js";
 
 // World (test metrics): bounds 360 x 755; tokens row y 660 h 95; tokens/color board 180 x 95;
 // its palettes line at (5, 720) 170 x 30; tokens.status-color at (85, 720) 40 x 30.
 const layout = systemLayout(testPlacements, testMetrics);
 const view = { width: 120, height: 100 }, padding = 15;
-const range = systemZoomRange(layout, view, padding);
-const system = systemStop(layout, view, padding);
+// Navigation geometry remains covered with the original synthetic unconstrained
+// range. Production now clamps the shared fit to readable captions (A4-DE-PREVIEW),
+// pinned independently below instead of changing these camera-math expectations.
+const range = { min: 70 / 755, max: 1 };
+const system = stopViewport("system", layout.bounds, view, padding, range);
 
 describe("system canvas zoom stops", () => {
-  it("builds the four stops from fitTo: System (min), Layer, Board, Cell (100%, max)", () => {
+  it("uses one caption-derived legibility floor for every layer at a 1440px viewport", () => {
+    const realLayout = systemLayout(testPlacements);
+    const screen = { width: 1440, height: 900 };
+    const range = systemZoomRange(realLayout, screen, padding);
+    const caption = Number.parseFloat(TOKENS["--text-caption"]!.value);
+    expect(legibleZoomFloor()).toBeCloseTo(0.75);
+    expect(range.min).toBeGreaterThanOrEqual(legibleZoomFloor());
+    for (const row of realLayout.rows) {
+      expect(stopZoom("layer", row.rect, screen, padding, range) * caption, row.layer).toBeGreaterThanOrEqual(CANVAS_LEGIBLE_TEXT_PX);
+    }
+  });
+  it("fits the four stops inside an explicit synthetic navigation range", () => {
     expect(range.min).toBeCloseTo(70 / 755, 6);
     expect(range.max).toBe(1);
     expect(system.zoom).toBeCloseTo(70 / 755, 6);

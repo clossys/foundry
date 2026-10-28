@@ -175,7 +175,7 @@ const assetSamples = {
   /** The CSS sizes a favicon is drawn at: the tab strip, a high-density tab or bookmark, and a shortcut tile. */
   favicon: { sizes: [16, 32, 48], unit: "px" },
   /** A maskable icon's guaranteed safe zone: a circle of 80 percent of its side, in a 100-unit view box. */
-  appIcon: { safeZoneShare: 0.8, viewBox: 100, dash: "3 2" },
+  appIcon: { sizes: [192, 512], safeZoneShare: 0.8, viewBox: 100, dash: "3 2" },
   /** The image an image-ratio specimen crops: a sun and four ridges from its own fixed seed. */
   ratioFixture: {
     seed: 0x5eed,

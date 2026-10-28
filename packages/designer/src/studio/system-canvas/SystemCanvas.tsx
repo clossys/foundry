@@ -24,7 +24,7 @@ import { litSet, type UsageEdge } from "./graph.js";
 import { systemLayout, type SystemBoard, type SystemCell, type SystemMetrics } from "./layout.js";
 import { cellTiers, liveCells, mountsLive, renderedTier } from "./lod.js";
 import { planNavigation, type SystemTarget } from "./navigation.js";
-import { systemStop, systemZoomRange, stopViewport, type SystemStop, type ZoomRange } from "./stops.js";
+import { clampZoom, systemStop, systemZoomRange, stopViewport, type SystemStop, type ZoomRange } from "./stops.js";
 
 /** Host-supplied words; the canvas renders no copy of its own. */
 export interface SystemCanvasLabels {
@@ -76,7 +76,7 @@ export interface SystemCanvasProps {
   onSelect?: (leaf: string) => void;
   /** A live specimen for a near cell inside the budget. Never called for Sections or Frames. */
   renderSpecimen?: (leaf: string) => ReactNode;
-  /** A Tokens or Assets mid-tier thumbnail; the compact specimen of `cells[leaf].candidate` otherwise. */
+  /** A rest-state thumbnail for any layer; Tokens and Assets may use their compact candidate specimen. */
   renderThumbnail?: (leaf: string) => ReactNode;
   /** Labels for the existing compact specimens. */
   studioLabels?: StudioLabels;
@@ -155,7 +155,10 @@ export function SystemCanvas({ copy, data, labels, edges = [], selectedLeaf, onS
     clearTimeout(ringTimer.current);
     setRing(plan.focus);
     ringTimer.current = setTimeout(() => setRing(undefined), ms(RING_TOKEN));
-    if (!plan.move) return;
+    const current = viewportRef.current;
+    // A legibility-clamped board may exceed the stage: it cannot be wholly
+    // revealed, but asking for its already-centred stop still moves nothing.
+    if (!plan.move || (current.x === plan.viewport.x && current.y === plan.viewport.y && current.zoom === plan.viewport.zoom)) return;
     clearTimeout(moveTimer.current);
     if (reduced) { setHeld(undefined); setPose(plan.viewport); return; }
     // Read now: the updater runs during the next render, after the ref already holds the target.
@@ -166,7 +169,7 @@ export function SystemCanvas({ copy, data, labels, edges = [], selectedLeaf, onS
     const fallback = ms(MOVE_TOKEN) * 2;
     moveTimer.current = setTimeout(endMove, fallback);
   }, [endMove, layout, onSelect, padding, range, reduced, size]);
-  useImperativeHandle(handleRef, () => ({ navigateTo, setViewport: next => { endMove(); setPose(next); }, fit: (stop, target) => {
+  useImperativeHandle(handleRef, () => ({ navigateTo, setViewport: next => { endMove(); setPose({ ...next, zoom: range ? clampZoom(range, next.zoom) : next.zoom }); }, fit: (stop, target) => {
     if (!size || !range) return;
     const cell = target?.leaf ? layout.cells.get(target.leaf) : undefined;
     const board = cell ? layout.boards.get(cell.board) : target?.l1 ? layout.boards.get(target.layer + "/" + target.l1) : undefined;
@@ -207,8 +210,13 @@ export function SystemCanvas({ copy, data, labels, edges = [], selectedLeaf, onS
       const thumbnail = renderThumbnail?.(cell.leaf) ?? (info?.candidate && studioLabels ? <CompactPreview candidate={info.candidate} labels={studioLabels} /> : null);
       if (thumbnail) return thumbnail;
     }
-    if (!THUMBNAIL_LAYERS.has(cell.layer) && renderStaticThumbnail) return renderStaticThumbnail(cell.leaf);
-    // No host capture: retain the explicit pending skeleton.
+    if (!THUMBNAIL_LAYERS.has(cell.layer)) {
+      const thumbnail = renderStaticThumbnail?.(cell.leaf) ?? renderThumbnail?.(cell.leaf);
+      // Rest previews remain inert: navigation and other interactive canvas
+      // specimens cannot steal focus or expand the live interaction budget.
+      if (thumbnail != null) return <div inert data-system-rest-preview="" className="min-h-0 flex-1 overflow-hidden">{thumbnail}</div>;
+    }
+    // No implementation or capture: retain the explicit pending skeleton.
     return <Skeleton shape="block" data-system-thumbnail="pending" className="min-h-0 flex-1" />;
   };
 
