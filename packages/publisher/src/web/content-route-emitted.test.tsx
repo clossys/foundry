@@ -29,6 +29,9 @@ it("compiles and executes the emitted async page against the public isolated pac
     const result = await build({
       entryPoints: [pageFile], absWorkingDir: consumer, outfile: bundleFile,
       bundle: true, write: true, metafile: true, platform: "node", format: "esm", jsx: "automatic", target: "node22",
+      // AppFrame's transitive CommonJS modules resolve external React through
+      // Node's native loader when this smoke bundle executes as ESM.
+      banner: { js: 'import { createRequire } from "node:module"; const require = createRequire(import.meta.url);' },
       external: ["react", "react/*", "react-dom", "react-dom/*"],
     });
     expect(Object.keys(result.metafile!.inputs).some(file => file.replaceAll("\\", "/").endsWith("/publisher/dist/web/content-route.js"))).toBe(true);

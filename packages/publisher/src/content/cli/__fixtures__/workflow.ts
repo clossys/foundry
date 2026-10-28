@@ -14,9 +14,9 @@ export const at = "2026-10-28T10:00:00Z";
 /** Consumer-owned package leaves, read through Designer's public filesystem API.
  * No rendered-conformance or release evidence is invented by this fixture.
  */
-export async function designerFixture(root: string): Promise<{ catalog: CompositeCatalogData; version: string }> {
+export async function designerFixture(root: string, frameId = "frames.site-shell"): Promise<{ catalog: CompositeCatalogData; version: string }> {
   const section = loadSectionRegistry().slots.find(slot => slot.id === "sections.section-header")!;
-  const frame = loadBuildCatalog().slots.find((slot): slot is FrameSlot => slot.id === "frames.site-shell" && slot.layer === "frames")!;
+  const frame = loadBuildCatalog().slots.find((slot): slot is FrameSlot => slot.id === frameId && slot.layer === "frames")!;
   const candidates = [
     ...importFoundryFrames().fills.filter(doc => doc.$extensions["com.clossys.fill"].slot === frame.id),
     ...importFoundrySections().fills.filter(doc => doc.$extensions["com.clossys.fill"].slot === section.id),

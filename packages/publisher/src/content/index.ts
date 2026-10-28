@@ -23,3 +23,6 @@ export type { ReleaseInput, ReleaseManifest, TargetBuildManifest, HandoverReceip
 export { localePathFor, buildLocaleRoutePlan, buildSitemapAlternates } from "./hreflang.js";
 export type { PublisherLocaleManifest, LocaleRouteOptions, LocaleRouteFinding, HreflangAlternate, LocalePageMetadata, LocaleRoutePlan, SitemapLocaleEntry } from "./hreflang.js";
 export type { OutputPathInput } from "./metadata.js";
+
+export { ADMIN_PAGE_COPY_REFS, adminPageMeta, adminPageForRoute } from "./admin-copy.js";
+export type { AdminPageName } from "./admin-copy.js";

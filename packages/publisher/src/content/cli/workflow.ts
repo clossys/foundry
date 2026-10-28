@@ -1,3 +1,4 @@
+import { createCopyResolver } from "@clossys/writer";
 import { createHash } from "node:crypto";
 import { isDeepStrictEqual } from "node:util";
 import { checkContentActivation, checkContentApproval, createContentOwnerApproval } from "../approval.js";
@@ -83,7 +84,8 @@ function reviewEvidence(candidate: ContentCandidate, report: ReviewReport): Cand
   return {
     candidateId: candidate.id, revision: candidate.revision, digest: computeContentDigest(candidate),
     words: stageResult(words), visuals: stageResult(structural), assembly: stageResult(structural), review: stageResult(report.findings),
-    approval: stageResult(checkContentApproval(candidate, "activation")),
+    approval: candidate.approval ? stageResult(checkContentApproval(candidate, "activation"))
+      : { status: "Waiting", findings: [finding("candidate.approval", "approval-required", "Record current revision approval")] },
   };
 }
 async function previousReviewFindings(root: string, candidate: ContentCandidate, fresh: ReviewReport, libraries: readonly ReviewLibrarySnapshot[]): Promise<ContentFinding[]> {
@@ -164,7 +166,17 @@ export async function executePublisherCommand(request: PublisherCommandInput): P
       await writeContentStore(request.root, next);
       return success({ candidate: nextCandidate });
     }
-    const report = reviewCandidate({ registry, candidateId: candidate.id, libraries, digest: computeContentDigest(candidate), raisedAt: request.at });
+    const writer = request.writer;
+    if (writer !== undefined && (!isContentJson(writer) || !object(writer) || !object(writer.registry)
+      || Object.keys(writer).some(key => !["registry", "registries", "manifest", "timeZone"].includes(key)))) {
+      return failure([finding("writer", "writer-context", "Supply a finite Writer registry context")]);
+    }
+    const copyResolver = request.copyResolver ?? (writer === undefined ? undefined : createCopyResolver(writer.registry, {
+      ...(writer.registries === undefined ? {} : { registries: writer.registries }),
+      ...(writer.manifest === undefined ? {} : { manifest: writer.manifest }),
+      timeZone: writer.timeZone ?? "UTC", now: new Date(request.at),
+    }));
+    const report = reviewCandidate({ registry, candidateId: candidate.id, libraries, digest: computeContentDigest(candidate), raisedAt: request.at, copyResolver });
     let evidence = reviewEvidence(candidate, report);
     let stages = computeStageReport(candidate, evidence);
     if (request.command === "review") {
