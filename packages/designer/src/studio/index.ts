@@ -16,6 +16,16 @@ assertPeerVersion({
 });
 
 export { Studio } from "./Studio.js";
+// Generic boards share the canvas implementation without requiring Studio state.
+export {
+  CanvasSurface, CanvasLod, CanvasLodLayers, useCanvasLodTier, canvasLodTier,
+  CANVAS_LOD_TIERS, CANVAS_LOD_TEXT, CANVAS_LEGIBLE_TEXT_PX,
+  CANVAS_ZOOM_VAR, CANVAS_COUNTER_SCALED_TITLE,
+} from "./canvas.js";
+export type {
+  CanvasSurfaceProps, CanvasSurfaceActions, CanvasOverlayInsets, CanvasOverlay, CanvasEdge,
+  CanvasPoint, CanvasSize, CanvasRect, CanvasItem, Viewport, Selection, CanvasLodTier,
+} from "./canvas.js";
 export { StudioProvider } from "./StudioProvider.js";
 export { useStudioSession, useOptionalStudioSession } from "./StudioProvider.js";
 export { WholeStudioProvider, useWholeStudio, useDesignerLayerBoardProjection } from "./WholeStudioProvider.js";
