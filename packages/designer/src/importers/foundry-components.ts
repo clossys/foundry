@@ -99,7 +99,7 @@ export function importFoundryComponents(input: FoundryComponentImportInput = {})
       sourceAddress: pin.export, relation: missing.length ? "subset" : "same-contract", builtOn: composes,
       conforms: [], evidence: [], author: "foundry", trust: "foundry", license: "MIT", pin, status: "draft",
       ...(missing.length ? { unmapped: missing } : {}),
-    } }, components: { [leaf]: descriptor } });
+    }, ...(leaf === "semantic-content" ? { "com.clossys.default": { tier: "Custom", reason: "no shadcn@aria item" } } : {}) }, components: { [leaf]: descriptor } });
     coverage.push({ slot: slot.id, status: blockers.length ? "blocked" : missing.length ? "subset" : "candidate", supported, missing,
       notes: [...(mapping.notes ?? []), ...blockers.map(blocker => blocker.message),
         ...(omitted.length ? [`Frozen reads omit source-consumed ${omitted.join(", ")}; the contract's allowedReads must widen before this is enforced.`] : []), "Descriptor only; source, accessibility, contrast and consumer runtime conformance are unmeasured."] });

@@ -56,7 +56,7 @@ export function identityStarterChange(catalog: CatalogData, library: LibraryData
  const name=brandName(library); const t=starterTokens(resolve({catalog,library})); const seeds=identityStarterSeeds({name},t);
  const lockup=normalizeGenerated(seeds.lockup), mark=normalizeGenerated(seeds.mark);
  const members: Record<string,string> = slot==='assets.lockup' ? {positive:lockup,reversed:reversedLockup(lockup,t.onInverse)}
-  : slot==='assets.mark' ? {positive:mark,reversed:reversedMark(mark,t.onInverse),mono:recolour(mark,'currentColor')}
+  : slot==='assets.mark' ? {positive:mark,reversed:reversedMark(mark,t.onInverse),mono:monoGlyph(mark)}
   : slot==='assets.favicon' ? {vector:identityPlateSvg(mark,t.ink,t.onInverse,true)}
   : {standard:badge(mark,t.ink,t.onInverse,false),maskable:badge(mark,t.ink,t.onInverse,true)};
  for(const svg of Object.values(members)) inspectSvg(svg,{favicon:slot==='assets.favicon'});
@@ -83,6 +83,18 @@ function wordmarkWidth(name:string):number {
  * vanish on a ground of that tone (1.00:1). Any other mark is recoloured flat.
  */
 function reversedMark(svg:string,onInverse:string):string { return recolour(svg,onInverse); }
+/** A recognised two-tone mark's foreground is the mono glyph, without its backing plate.
+ * recolorSvg emits validated layers in paint order; only its generated foreground layer is extracted.
+ * Arbitrary single-tone artwork retains the existing safe recolouring path.
+ */
+function monoGlyph(svg:string):string {
+ const mono=recolour(svg,'currentColor');
+ const foreground=/<g mask="url\(#recolor-[a-f0-9]+-b\)">([\s\S]*)<\/g><\/svg>$/.exec(mono);
+ if(!foreground) return mono;
+ const root=/^\s*<svg\b[^>]*>/.exec(mono)![0];
+ const glyph=root+foreground[1]+'</svg>'; inspectSvg(glyph); return glyph;
+}
+
 /**
  * Reversed lockup: the nested mark is reversed as {@link reversedMark} does and the
  * rest (the wordmark) is recoloured flat. A lockup without exactly one nested mark
@@ -116,7 +128,7 @@ export function instantiateIdentityRuleFromResolved(profile: Resolved, id: Ident
  if(id==='identity-lockup@1') { const seed=string(profile,'assets.lockup.positive'); inspectSvg(seed); put('reversed',reversedLockup(seed,ink(profile,'tokens.text-color.on-inverse'))); }
  else {
   const seed=string(profile,'assets.mark.positive'); inspectSvg(seed);
-  if(id==='identity-mark@1') { put('reversed',reversedMark(seed,ink(profile,'tokens.text-color.on-inverse'))); put('mono',recolour(seed,'currentColor')); }
+  if(id==='identity-mark@1') { put('reversed',reversedMark(seed,ink(profile,'tokens.text-color.on-inverse'))); put('mono',monoGlyph(seed)); }
   if(id==='identity-favicon@1') put('vector',identityPlateSvg(seed,ink(profile,'tokens.text-color.primary'),ink(profile,'tokens.text-color.on-inverse'),true));
   if(id==='identity-app-icon@1') { const bg=ink(profile,'tokens.text-color.primary'),fg=ink(profile,'tokens.text-color.on-inverse'); put('standard',badge(seed,bg,fg,false));put('maskable',badge(seed,bg,fg,true)); }
  }

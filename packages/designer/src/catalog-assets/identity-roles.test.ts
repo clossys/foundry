@@ -9,6 +9,7 @@ import {withAssetCatalog} from './catalog.js';
 import {createConsumerIdentitySeeds,deriveIdentity,checkIdentityDerivations} from './identity.js';
 import {inspectSvg} from './svg.js';
 import {checkAssetProfile} from './check.js';
+import {emitWebIcons,faviconForScheme} from './emit.js';
 
 /*
  * Identity roles from a plate-and-star mark whose star paint is inherited from its group,
@@ -43,14 +44,49 @@ const nearer=(p:Pixel,a:string,b:string)=>{const d=(h:string)=>[1,3,5].reduce((s
 const STAR={x:50,y:30},PLATE={x:12,y:50},CORNER={x:1,y:1};
 
 describe('identity roles derived from a group-painted two-tone mark',()=>{
- it('mono knocks the star out of the plate in one currentColor paint',async()=>{
+ it('mono isolates the foreground glyph in currentColor without the positive backing plate',async()=>{
   const mono=members()('assets.mark.mono');
   const paints=[...mono.replace(/<mask[\s\S]*?<\/mask>/g,'').matchAll(/\b(?:fill|stroke|color)="([^"]+)"/g)].map(m=>m[1]);
   expect(new Set(paints)).toEqual(new Set(['currentColor']));
   const px=await raster(mono,100);
-  expect(px(PLATE.x,PLATE.y)[3]).toBe(255);
-  expect(px(STAR.x,STAR.y)[3]).toBe(0);
+  expect(mono).not.toBe(members()('assets.mark.positive'));
+  expect(px(PLATE.x,PLATE.y)[3]).toBe(0);
+  expect(px(STAR.x,STAR.y)[3]).toBe(255);
   expect(px(CORNER.x,CORNER.y)[3]).toBe(0);
+  for(const paint of [INK,ON_INVERSE]){
+   const themed=await raster(mono.replace('<svg ',`<svg color="${paint}" `),100);
+   expect(hex(themed(STAR.x,STAR.y))).toBe(paint);
+   expect(themed(PLATE.x,PLATE.y)[3]).toBe(0);
+  }
+ });
+ it('rasterizes the resolved reversed favicon on dark at 16, 32 and 48 without relying on media-query support',async()=>{
+  const library=deriveIdentity(catalog,createConsumerIdentitySeeds(catalog,base(),{name:'Example',suppliedSvg:MARK,fontLicence:{family:'sans-serif',outlining:'unknown'}}));
+  const profile=resolve({catalog,library});
+  for(const scheme of ['light','dark'] as const){
+   const files=await emitWebIcons(profile,{name:'Example',scheme,rasterize:async(svg,size)=>new Uint8Array(await sharp(Buffer.from(svg)).resize(size,size).png().toBuffer())});
+   const vector=new TextDecoder().decode(files.find(file=>file.path==='favicon.svg')!.bytes);
+   expect(vector).toBe(faviconForScheme(profile.members['assets.favicon.vector']!.value.light as string,scheme));
+   expect(vector).not.toContain('<style>');
+   for(const size of [16,32,48]){
+    const file=files.find(file=>file.path===`favicon-${size}.png`)!;
+    const {data,info}=await sharp(file.bytes).ensureAlpha().raw().toBuffer({resolveWithObject:true});
+    expect([info.width,info.height]).toEqual([size,size]);
+    const sample=(point:{x:number;y:number}):Pixel=>{const offset=(Math.round(point.y*size/100)*size+Math.round(point.x*size/100))*4;return [...data.slice(offset,offset+4)] as Pixel;};
+    expect(nearer(sample(PLATE),INK,ON_INVERSE),`${scheme}/${size} plate`).toBe(scheme==='dark'?ON_INVERSE:INK);
+    expect(nearer(sample(STAR),INK,ON_INVERSE),`${scheme}/${size} glyph`).toBe(scheme==='dark'?INK:ON_INVERSE);
+    expect(data[3]).toBe(0);
+   }
+  }
+ });
+ it('refuses a requested dark raster when the SVG has no reversed variant',()=>{
+  expect(()=>faviconForScheme(MARK,'dark')).toThrow('reversed dark variant');
+ });
+ it('resolves valid authored favicon root quotes and whitespace before rasterization',()=>{
+  const favicon="  <svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='currentColor'><style>@media (prefers-color-scheme: dark){svg{color:#ffffff}}</style><rect width='16' height='16'/></svg>  ";
+  const resolved=faviconForScheme(favicon,'dark');
+  expect(resolved).toContain('color="#ffffff"');
+  expect(resolved).toContain("fill='currentColor'");
+  expect(()=>inspectSvg(resolved)).not.toThrow();
  });
  it('reversed paints the inverse plate with the star cut through to the ground, never plate-on-plate',async()=>{
   const px=await raster(members()('assets.mark.reversed'),100);
@@ -164,13 +200,13 @@ describe('identity roles derived from the product-shaped consumer kit',()=>{
   expect(at(PLATE)).toBe(K.onInverse.toLowerCase());
   expect(at(STAR)).toBe(K.inverse.toLowerCase());
  });
- it('mono is one currentColor paint with the star knocked out, never a solid block',async()=>{
+ it('mono isolates the foreground from the positive plate in one currentColor paint',async()=>{
   const mono=get('assets.mark.mono');
   expect(new Set([...mono.replace(/<mask[\s\S]*?<\/mask>/g,'').matchAll(/\b(?:fill|stroke|color)="([^"]+)"/g)].map(m=>m[1]))).toEqual(new Set(['currentColor']));
   expect(checkAssetProfile(catalog,library).find(f=>f.code==='A7')?.verdict).toBe('satisfied');
   const px=await on(mono.replace('<svg ','<svg color="#000000" '),'#ffffff',100);
-  expect(px(PLATE.x,PLATE.y)).toBe('#000000');
-  expect(px(STAR.x,STAR.y)).toBe('#ffffff');
+  expect(px(PLATE.x,PLATE.y)).toBe('#ffffff');
+  expect(px(STAR.x,STAR.y)).toBe('#000000');
  });
  it('favicon and app icons keep the star in the opposite ink of their plate',async()=>{
   const favicon=await on(get('assets.favicon.vector'),'#ffffff',100);

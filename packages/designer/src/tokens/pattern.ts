@@ -15,8 +15,8 @@ export interface PatternRecipe {
   /** Custom property holding the tile edge length. */
   readonly tile: string;
 }
-export const PATTERN_TOKEN_READS = Object.freeze(["tokens.border-color.base", "tokens.border-width.hairline", "tokens.spacing.xl"] as const);
-const SHARED = { ink: "--color-line-base", weight: "--ui-border-hairline", tile: "--spacing-xl" } as const;
+export const PATTERN_TOKEN_READS = Object.freeze(["tokens.border-color.strong", "tokens.border-width.hairline", "tokens.spacing.xl"] as const);
+const SHARED = { ink: "--color-line-strong", weight: "--ui-border-hairline", tile: "--spacing-xl" } as const;
 export const PATTERN_RECIPES: Readonly<Record<PatternName, PatternRecipe>> = Object.freeze({
   dots: Object.freeze({ shape: "dots", ...SHARED }),
   lines: Object.freeze({ shape: "lines", ...SHARED }),

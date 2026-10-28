@@ -358,7 +358,15 @@
       "leaves": [
         "components.semantic-content"
       ],
-      "offers": []
+      "offers": [
+        {
+          "source": "foundry",
+          "leaves": [
+            "components.semantic-content"
+          ],
+          "reason": "no external covers"
+        }
+      ]
     },
     {
       "l2": "feedback-messages",
@@ -752,7 +760,16 @@
         "assets.image",
         "assets.video"
       ],
-      "offers": []
+      "offers": [
+        {
+          "source": "foundry",
+          "leaves": [
+            "assets.image",
+            "assets.video"
+          ],
+          "reason": "no external covers"
+        }
+      ]
     },
     {
       "l2": "imagery-patterns",
