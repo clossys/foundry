@@ -18,7 +18,7 @@ export interface BackdropModuleInstance {
   destroy(): void;
 }
 export interface BackdropRuntimeModule {
-  mount(element: HTMLElement, options: { paused: boolean; signal: AbortSignal }): BackdropModuleInstance | Promise<BackdropModuleInstance>;
+  mount(element: HTMLElement, options: { paused: boolean; signal: AbortSignal; onError(): void }): BackdropModuleInstance | Promise<BackdropModuleInstance>;
 }
 /** Import functions are provided by the consumer's static module registry, never constructed from an untrusted string. */
 export type BackdropModuleLoaders = Readonly<Record<string, () => Promise<BackdropRuntimeModule>>>;

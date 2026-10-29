@@ -3089,11 +3089,13 @@
     "consumption": {
       "scanStatus": "lower-bound",
       "scannedComposes": [
+        "components.button",
         "components.semantic-content"
       ],
       "scannedReads": {
         "assets": [],
         "components": [
+          "components.button",
           "components.semantic-content"
         ],
         "tokens": [
@@ -3117,7 +3119,7 @@
       "sourceFiles": [
         {
           "path": "packages/designer/src/backdrop/BackdropHost.tsx",
-          "sha256": "2d7a389439f15e23a1a72b39fbc73aa662161b6ec1e9da19ad2deb946b57d671"
+          "sha256": "e11adcc513e2e11f0aea2a421c7c33eb5540b4d39cfb158ff097631c83d7cc26"
         },
         {
           "path": "packages/designer/src/backdrop/consumer-art.ts",
@@ -3129,11 +3131,15 @@
         },
         {
           "path": "packages/designer/src/backdrop/runtime-module.ts",
-          "sha256": "981119aff825c249a5c48a1f34c981f1d86b0145507314b6637b951ebd7f847a"
+          "sha256": "e81815ee82187dd887b5a323c2f3b9f796b8803d6d50afaffe467ca64dd5000b"
+        },
+        {
+          "path": "packages/designer/src/backdrop/VideoBackdrop.tsx",
+          "sha256": "e481860584a01206d71324a3ab90100638b5bfe301ab3cebc2c71598865083e1"
         },
         {
           "path": "packages/designer/src/blocks/Hero.tsx",
-          "sha256": "88ae55b1b9532c52c8a3e43183ebe5c493db43fdf75daaf56ba8d54de095cc52"
+          "sha256": "e78ab409d9d8b77452769d80914e404f2cb64da8956aae184178c1e79c3b3aa4"
         },
         {
           "path": "packages/designer/src/blocks/hero/HeroIntro.tsx",
@@ -3150,6 +3156,10 @@
         {
           "path": "packages/designer/src/blocks/section-ground.ts",
           "sha256": "a519649f96cb339f1128fc385e68d67b6af063ed492ac2c285f09c1740c98679"
+        },
+        {
+          "path": "packages/designer/src/catalog-assets/media.ts",
+          "sha256": "518af66b317c4dcca79c99e33098a942430522f024c2c6416cb9ca817aa49313"
         },
         {
           "path": "packages/designer/src/catalog-core/provenance-attrs.ts",

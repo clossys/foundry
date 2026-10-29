@@ -56,7 +56,7 @@ export function BackdropHost({ resource, modules, scrim = "light" }: BackdropHos
       if (!load) { fail(); return; }
       Promise.resolve().then(load).then(module => {
         if (abort.signal.aborted || motionReduced || ticket !== generation) return undefined;
-        return module.mount(target, { paused: !visible, signal: abort.signal });
+        return module.mount(target, { paused: !visible, signal: abort.signal, onError: fail });
       }).then(created => {
         if (!created) return;
         if (abort.signal.aborted || motionReduced || ticket !== generation) { if (typeof created.destroy === "function") created.destroy(); return; }
