@@ -91,8 +91,10 @@ async function load(root: string, options: CellCompileOptions = {}) {
   const active = await readActive(root), tree = await readJson(root, "tree.json"), cells = new Map(active.map(cell => [cell.id, cell]));
   if (!Array.isArray(tree.meta?.publications) || !Array.isArray(tree.tree)) error("tree.json", "Publisher publications and tree are required");
   const maps: ContentMap[] = [], findings: CellCompileFinding[] = [], routePacks: { id: string; pack: JsonObject }[] = [];
+  const publications = new Set<string>(), compiledCells = new Set<string>();
   for (const pub of tree.meta.publications as Publication[]) {
     publicationId(pub.id); if (!object(pub.entryIds) || !object(pub.entryMeta) || !Array.isArray(pub.entryOrder)) error("tree.json", "Expected migration identities and pass-through headers");
+    if (publications.has(pub.id)) error(pub.id, "Duplicate publication identity"); publications.add(pub.id);
     const top = tree.tree.find((node: GenericTreeNode) => node.id === pub.id); if (!top) error(pub.id, "Publication tree missing");
     const entries: ContentMapEntry[] = [], routes = new Map<string, JsonObject>();
     const walk = (node: JsonObject, parentId?: string, order = 0) => {
@@ -105,6 +107,7 @@ async function load(root: string, options: CellCompileOptions = {}) {
       (node.cells ?? []).forEach((id: string, index: number) => {
         const cell = cells.get(id); if (!cell) return;
         const entryId = pub.entryIds[id]; if (typeof entryId !== "string") error(id, "Missing stable source entry identity");
+        if (compiledCells.has(id)) error(id, "Cell belongs to more than one publication"); compiledCells.add(id);
         const parsed = parsePage(cell, entryId, parent, index, pub.entryMeta[id] ?? {}); entries.push(parsed.entry);
         if (parsed.route) routes.set(entryId, parsed.route);
       });
@@ -123,6 +126,7 @@ async function load(root: string, options: CellCompileOptions = {}) {
       routePacks.push({ id: pub.id, pack: { ...pub.routePack, routes: compiledRoutes } });
     }
   }
+  for (const cell of active) if (!compiledCells.has(cell.id)) error(cell.id, "Active cell is not placed in a declared publication");
   for (const cell of active) for (const value of cell.document.fields.links as string[]) {
     const ref = parseLinkRef(value); if (!ref) error(cell.path, "Invalid cell link");
     const agent = ref.agent ?? "publisher", otherRoot = options.agentRoots?.[agent] ?? (agent === "publisher" ? root : join(dirname(resolve(root)), agent));

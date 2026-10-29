@@ -2,6 +2,8 @@ import { afterEach, expect, it } from "vitest";
 import { mkdtemp, mkdir, readFile, readdir, rm, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 import { tmpdir } from "node:os";
+import { fileURLToPath } from "node:url";
+import { build } from "esbuild";
 import { contentMapFromCells, contentMapToCells, compileContentMaps, routePackToCells } from "./cells.js";
 import { checkContentMap, projectBreadcrumbs, projectCommands, projectNavigation, projectOutline, projectRoutes, projectSitemap, projectToc } from "./index.js";
 import type { ContentMap } from "./index.js";
@@ -28,6 +30,24 @@ async function cellBytes(path: string) {
   }
   return result;
 }
+
+it("keeps pure content-map projections browser-bundleable while authoring is a Node-only public subpath", async () => {
+  const cwd = fileURLToPath(new URL("../../", import.meta.url));
+  const bundled = await build({
+    absWorkingDir: cwd, stdin: { contents: 'import * as map from "@clossys/publisher/content-map"; export { map };', resolveDir: cwd },
+    bundle: true, write: false, platform: "browser", format: "esm", metafile: true,
+  });
+  expect(Object.keys(bundled.metafile!.inputs).some(path => /(?:content-map\/cells|cell-format\/store)\./.test(path))).toBe(false);
+  expect(bundled.outputFiles[0]!.text).not.toMatch(/(?:node:fs|node:path)/);
+  await expect(build({
+    absWorkingDir: cwd, stdin: { contents: 'import { compileContentMaps } from "@clossys/publisher/content-map/cells"; export { compileContentMaps };', resolveDir: cwd },
+    bundle: true, write: false, platform: "browser", format: "esm", logLevel: "silent",
+  })).rejects.toThrow();
+  const node = await import("@clossys/publisher/content-map/cells");
+  expect(node.compileContentMaps).toBeTypeOf("function");
+  expect(node.contentMapFromCells).toBeTypeOf("function");
+  expect(node.contentMapToCells).toBeTypeOf("function");
+});
 function findGroup(nodes: any[], id: string): any {
   for (const node of nodes) {
     if (node.id === id) return node;
@@ -125,6 +145,19 @@ it("rejects group entries authored as page cells instead of tree nodes", async (
   const file = join(path, "cells/page.designer/v1.md");
   await writeFile(file, (await readFile(file, "utf8")).replace(/^kind: page$/m, "kind: group"));
   await expect(contentMapFromCells(path, map.publicationId)).rejects.toThrow(/(?:kind|group)/i);
+});
+
+it("refuses undeclared publication placements and duplicate publication identities before changing outputs", async () => {
+  const path = await root(), map = adminContentMap();
+  await contentMapToCells(map, path);
+  const original = await treeAt(path), output = join(path, "content-map", `${map.publicationId}.json`);
+  const before = await readFile(output, "utf8");
+  await writeTree(path, { ...original, meta: { ...original.meta, publications: [] } });
+  await expect(compileContentMaps(path)).rejects.toThrow(/active cell.*declared publication/i);
+  expect(await readFile(output, "utf8")).toBe(before);
+  await writeTree(path, { ...original, meta: { ...original.meta, publications: [...original.meta.publications, ...original.meta.publications] } });
+  await expect(compileContentMaps(path)).rejects.toThrow(/duplicate publication/i);
+  expect(await readFile(output, "utf8")).toBe(before);
 });
 
 it("rejects authored order metadata so regrouping remains the only order source", async () => {
