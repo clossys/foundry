@@ -421,7 +421,8 @@
     "class-variance-authority": "0.7.1",
     "clsx": "2.1.1",
     "css-tree": "3.2.1",
-    "recharts": "3.8.0"
+    "recharts": "3.8.0",
+    "@clossys/strategist": "0.6.0"
   },
   "imports": {
     "#designer-frame-i18n": {
