@@ -27,17 +27,21 @@
   "sections": {
     "error-state": {
       "composes": [
+        "components.semantic-content",
         "sections.section-header"
       ],
       "configs": {},
       "consumption": {
         "scanStatus": "lower-bound",
         "scannedComposes": [
+          "components.semantic-content",
           "sections.section-header"
         ],
         "scannedReads": {
           "assets": [],
-          "components": [],
+          "components": [
+            "components.semantic-content"
+          ],
           "tokens": [
             "tokens.spacing"
           ]
@@ -45,7 +49,7 @@
         "sourceFiles": [
           {
             "path": "packages/designer/src/blocks/ErrorState.tsx",
-            "sha256": "b3f578db6333c8ded31184f56a86c64236aa103343c44f39f6a6491987a8470a"
+            "sha256": "7e216d93d7c31d30b66cc7c606f8b7d215bf8fc91aefdbabc0d684cfa0d4a89f"
           },
           {
             "path": "packages/designer/src/catalog-core/provenance-attrs.ts",

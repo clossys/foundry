@@ -1,5 +1,6 @@
 import type { HTMLAttributes, ReactNode } from "react";
 import { Banner, type BannerVariant } from "../components/Banner.js";
+import { SemanticContent } from "../components/SemanticContent.js";
 import { SECTION_CONTENT_STYLE } from "./internal/section-content-gutter.js";
 import { cx } from "../components/internal/cx.js";
 import { dsAttrs } from "../catalog-core/provenance-attrs.js";
@@ -27,7 +28,7 @@ export interface NoticeListProps extends Omit<HTMLAttributes<HTMLElement>, "chil
   label: string;
   /** Called with a notice's id when its dismiss control is pressed. The host removes it. */
   onDismiss?: (id: string) => void;
-  /** Accessible label for each dismiss control. @default "Dismiss" */
+  /** Accessible label for each dismiss control; omitted means resolve Banner's shell CopyRef. */
   dismissLabel?: string;
 }
 
@@ -39,24 +40,24 @@ export interface NoticeListProps extends Omit<HTMLAttributes<HTMLElement>, "chil
  */
 export function NoticeList({ notices, label, onDismiss, dismissLabel, className, style, ...rest }: NoticeListProps) {
   return (
-    <section {...SECTION_STAMP} {...rest} aria-label={label} className={cx("flex min-w-0 flex-col", className)} style={{ ...SECTION_CONTENT_STYLE, ...style }}>
-      <ul role="list" className="m-0 flex list-none flex-col gap-sm p-0">
+    <SemanticContent as="section" {...SECTION_STAMP} {...rest} aria-label={label} className={cx("flex min-w-0 flex-col", className)} style={{ ...SECTION_CONTENT_STYLE, ...style }}>
+      <SemanticContent as="ul" role="list" className="m-0 flex list-none flex-col gap-sm p-0">
         {notices.map(notice => (
-          <li key={notice.id}>
+          <SemanticContent as="li" key={notice.id}>
             <Banner
               variant={notice.tone ?? "info"}
               dismissLabel={dismissLabel}
               onDismiss={onDismiss && notice.dismissible !== false ? () => onDismiss(notice.id) : undefined}
             >
-              <span className="flex flex-wrap items-baseline gap-x-sm gap-y-xs">
-                {notice.title ? <strong className="font-medium">{notice.title}</strong> : null}
-                <span>{notice.message}</span>
+              <SemanticContent as="span" className="flex flex-wrap items-baseline gap-x-sm gap-y-xs">
+                {notice.title ? <SemanticContent as="strong" className="font-medium">{notice.title}</SemanticContent> : null}
+                <SemanticContent as="span">{notice.message}</SemanticContent>
                 {notice.action ?? null}
-              </span>
+              </SemanticContent>
             </Banner>
-          </li>
+          </SemanticContent>
         ))}
-      </ul>
-    </section>
+      </SemanticContent>
+    </SemanticContent>
   );
 }
