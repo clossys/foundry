@@ -4226,17 +4226,20 @@ about it, more than any function signature below:
 
 Concretely:
 
-- **This package does not depend on `@clossys/strategist`.** Every fact
-  a `PublicationEntry` cites is a plain, opaque `factRef` string — the same
-  seam `@clossys/writer/voice`'s `Claim.factRef`,
-  `@clossys/writer`'s `CopyEntry.factRef`, and
-  `@clossys/strategist`'s own `Market.factRefs`/`Audience.factRefs`
-  already use one layer up. `@clossys/strategist` is not in this package's
-  `dependencies`, and nothing in `src/` imports it. Resolving a `factRef`
-  against a real fact registry — reading `@clossys/strategist`'s
-  `readStrategy` bundle
-  and reducing it to `{ [fact.key]: fact.value }` — is a caller's job,
-  happening in code this package has no visibility into.
+- **The record subpath reads caller-supplied evidence values.** A
+  `PublicationEntry` still cites opaque `factRef` strings. Strategy findings
+  live in `findings/<id>.md`; the caller reads their `value` fields and builds
+  `{ [finding.id]: finding.value }` for `checkLedgerDrift`. The record library
+  performs no strategy I/O. For launch readiness, open the strategy root with
+  `openStrategy(root, { contracts })` and call `getBrief("publisher.launch")`.
+  The Publisher-owned `strategy-brief.json` (also exported as
+  `@clossys/publisher/strategy-brief.json`) requires `focus.reach.channel`
+  and `focus.offer.included`, with `execution.roadmap.release` optional.
+  A missing brief blocks pack review; a stale brief carries a visible flag.
+  Output-manifest `StrategyProvenance` is `{ contract, refs: [{ cell,
+  version }], fingerprint }`, copied from the compiled brief. Legacy
+  `{strategyId, revision, records}` provenance is refused with a migration
+  diagnostic by `validateStrategyProvenance` and `createOutputManifest`.
 - **`checkLedgerDrift` has no opinion about whether an outcome is good.** There is no
   `score`, `threshold`, or `verdict` field on `PublicationEntry`, and no
   function here computes one. `checkLedgerDrift` answers exactly one
@@ -4276,9 +4279,9 @@ ledger = appendEntry(ledger, entry); // returns a NEW, deep-frozen ledger
 
 ```ts
 import { checkLedgerDrift } from "@clossys/publisher/record";
-// readStrategy comes from @clossys/strategist — the caller's job, not this package's
+// Strategy findings are read by the caller; this pure record API receives their current values.
 
-const currentValues = { "active-customers": 5000 }; // read from the caller's own facts.json, not from this package
+const currentValues = { "active-customers": 5000 }; // read from findings/active-customers.md by the caller
 
 const report = checkLedgerDrift(ledger, currentValues);
 if (!report.ok) {
@@ -5225,6 +5228,32 @@ Three further usage requirements, not numbered in the specification:
   is not allowed, because a visitor who cannot see the notice cannot
   withdraw. Copy that lacks only `privacyLinkLabel` omits the policy link.
 
+## Site identity
+
+The `@clossys/publisher/content/node` server subpath owns
+`clossys/publisher/site-identity.json`: the legal entity, brand casing,
+domains, canonical origin, contact addresses and tagline copy IDs. Seed the
+name from `identity.naming.name`; keep the record and all consumer content in
+the consumer repository. The site template reads this path and
+`clossys/strategist/briefs/publisher.launch.json` with no legacy file fallback.
+
+`readSiteIdentity(publisherRoot)` validates the record and reports `ok`,
+`missing` or `invalid`. `validateSiteIdentity` validates unknown data;
+`checkSiteIdentityDrift(files, identity, { copyEntries })` performs the former
+brand-facts drift check, with the same findings and indeterminate behavior.
+The existing `brand-facts:ignore` comment marker retains its meaning.
+`copyEntriesFromRegistry` and `resolveBrandTaglines` resolve tagline IDs
+through approved Writer entries. The server entry uses Node builtins and
+refuses browser bundling; the drift function itself is pure.
+
+Exports: `SITE_IDENTITY_FILE`, `readSiteIdentity`, `validateSiteIdentity`,
+`checkSiteIdentityDrift`, `copyEntriesFromRegistry`, `resolveBrandTaglines`;
+types `SiteIdentity`, `SiteIdentityRead`, `SiteIdentityReadIssue`,
+`SiteIdentitySurface`, `SiteIdentityDriftKind`, `SiteIdentityDriftFinding`,
+`SiteIdentityDriftOptions`, `SiteIdentityDriftState`, `SiteIdentityDriftResult`,
+`BrandIdentity`, `BrandLegalEntity`, `BrandTagline`, `CopyEntryLike` and
+`ResolvedTagline`.
+
 ## API
 
 
@@ -5234,7 +5263,7 @@ Three further usage requirements, not numbered in the specification:
   Not `publisher-media-check` or `publisher-record-check`.
 - `core`: `CHANNELS`, `ELEMENT_KINDS`, `validateComposeDocument`,
   `validateSurfaceDocument`, `isSurfaceRepeatingSlotBinding`,
-  `createOutputManifest`,
+  `createOutputManifest`, `validateStrategyProvenance`,
   `collectCopyProvenance`, `createResolvedOutputManifest`,
   `resolveSurfaceDocument`, `validateSectionedViewDocument`,
   `resolveSectionedViewDocument`, `checkSectionVariety`, `CONTENT_ICON_NAMES`,
