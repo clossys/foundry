@@ -16,7 +16,8 @@
 // package and fails ONLY when a field a package DOES declare is malformed --
 // wrong shape, an unmapped bin, a path that escapes the package directory or
 // (for `outputs`/`feeds`) does not sit under the role's own
-// `clossys/<role>/` folder, a declared-but-missing shipped file, or (for
+// `clossys/agents/<agent>/` folder for agents or `clossys/<role>/` for other
+// roles, a declared-but-missing shipped file, or (for
 // `solves`) a missing field, an out-of-enum `evidence` value, or a
 // malformed `problem` id. Absence of `intake`, `outputs`, `status`, `fit`,
 // `solves`, `needs`, or `feeds` is never a failure here and is always
@@ -94,6 +95,19 @@ function isSafeRelativePath(value) {
 }
 
 const roleShortName = (role) => role.split("/").pop();
+
+/** Agent roles use agent folders; other roles retain their role folder. */
+function roleOutputPrefix(role) {
+  const name = roleShortName(role);
+  switch (name) {
+    case "strategist": return "clossys/agents/director/";
+    case "designer":
+    case "writer":
+    case "publisher": return `clossys/agents/${name}/`;
+    default: return `clossys/${name}/`;
+  }
+}
+
 
 /**
  * Validates a `{ bin, invocation }` declaration (shared shape of `assessment`
@@ -180,7 +194,7 @@ export function evaluatePackageFramework(activeRoles, manifestsByName, options =
       }
     }
 
-    // outputs: a non-empty array of paths, all under clossys/<role>/.
+    // outputs: a non-empty array of paths under the role's output prefix.
     if (foundry.outputs === undefined) {
       row.outputs = "absent";
       if (enforce && required.has(role) === false) findings.push({ rule: "required-outputs-absent", role, message: "foundry.outputs must declare this role's owned output paths" });
@@ -188,7 +202,7 @@ export function evaluatePackageFramework(activeRoles, manifestsByName, options =
       row.outputs = "malformed";
       findings.push({ rule: "invalid-outputs-declaration", role, message: "foundry.outputs must be a non-empty array of path strings" });
     } else {
-      const expectedPrefix = `clossys/${roleShortName(role)}/`;
+      const expectedPrefix = roleOutputPrefix(role);
       const outside = foundry.outputs.filter((path) => !isSafeRelativePath(path) || !path.startsWith(expectedPrefix));
       if (outside.length > 0) {
         row.outputs = "malformed";
@@ -283,7 +297,7 @@ export function evaluatePackageFramework(activeRoles, manifestsByName, options =
       needsByRole.set(role, foundry.needs);
     }
 
-    // feeds: artifacts this role produces for other roles, under its own clossys/<role>/ folder.
+    // feeds: artifacts this role produces for other roles, under its output prefix.
     if (foundry.feeds === undefined) {
       row.feeds = "absent";
       if (enforce && required.has(role) === false) findings.push({ rule: "required-feeds-absent", role, message: "foundry.feeds must declare artifacts this role produces (may be an empty array)" });
@@ -291,7 +305,7 @@ export function evaluatePackageFramework(activeRoles, manifestsByName, options =
       row.feeds = "malformed";
       findings.push({ rule: "invalid-feeds-declaration", role, message: "foundry.feeds must be an array of { artifact, path } (may be empty)" });
     } else {
-      const expectedPrefix = `clossys/${roleShortName(role)}/`;
+      const expectedPrefix = roleOutputPrefix(role);
       const outside = foundry.feeds.filter((item) => !isSafeRelativePath(item.path) || !item.path.startsWith(expectedPrefix));
       if (outside.length > 0) {
         row.feeds = "malformed";

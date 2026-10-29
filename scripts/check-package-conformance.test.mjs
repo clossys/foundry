@@ -140,6 +140,35 @@ test("layout is malformed (a gap, reported once by the Stage A gate) when a decl
   assert.equal(result.findings.filter((f) => f.rule === "output-path-outside-role-folder").length, 1);
 });
 
+test("agent layout is declared for new prefixes and malformed when any declared path uses an old prefix", (t) => {
+  const root = makeTempRoot(t);
+  for (const [name, folder] of [["strategist", "director"], ["designer", "designer"], ["writer", "writer"], ["publisher", "publisher"]]) {
+    const role = `@scope/${name}`;
+    const path = `clossys/agents/${folder}/report.json`;
+    const foundry = { outputs: [path], feeds: [{ artifact: "report", path }], capabilities: [{ outputs: [path] }] };
+    const layout = (declarations) => evaluateConformance(root, [descriptor({ role, manifest: manifest({ name: role, foundry: declarations }) })]).table[0].layout;
+    assert.equal(layout(foundry), "declared", name);
+    const legacy = `clossys/${name}/report.json`;
+    for (const mixed of [
+      { ...foundry, outputs: [path, legacy] },
+      { ...foundry, feeds: [{ artifact: "report", path: legacy }] },
+      { ...foundry, capabilities: [{ outputs: [path, legacy] }] },
+    ]) assert.equal(layout(mixed), "malformed", `${name}: ${JSON.stringify(mixed)}`);
+    if (name === "strategist") assert.equal(layout({ outputs: ["clossys/agents/strategist/report.json"] }), "malformed");
+  }
+});
+
+test("non-agent layout keeps the role folder prefix", (t) => {
+  const root = makeTempRoot(t);
+  const role = "@scope/controller";
+  for (const [prefix, expected] of [["clossys/controller/", "declared"], ["clossys/agents/controller/", "malformed"]]) {
+    const path = `${prefix}report.json`;
+    const foundry = { outputs: [path], feeds: [{ artifact: "report", path }], capabilities: [{ outputs: [path] }] };
+    const result = evaluateConformance(root, [descriptor({ role, manifest: manifest({ name: role, foundry }) })]);
+    assert.equal(result.table[0].layout, expected, prefix);
+  }
+});
+
 // --- #1384: item 2 is graded on real emission through the canonical
 // constructor, never on a hand-written sample.
 

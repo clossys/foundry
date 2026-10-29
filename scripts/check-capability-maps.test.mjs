@@ -82,6 +82,32 @@ test("validateCapabilityShape rejects an output path outside the role's own fold
   assert.ok(findings.some((f) => f.rule === "capability-output-outside-role-folder"));
 });
 
+test("agent capability outputs require the mapped agent prefix and reject old or mixed prefixes", () => {
+  for (const [name, folder] of [["strategist", "director"], ["designer", "designer"], ["writer", "writer"], ["publisher", "publisher"]]) {
+    const role = `@scope/${name}`;
+    const current = `clossys/agents/${folder}/report.json`;
+    const legacy = `clossys/${name}/report.json`;
+    for (const [outputs, expected] of [[[current], []], [[legacy], ["capability-output-outside-role-folder"]], [[current, legacy], ["capability-output-outside-role-folder"]]]) {
+      const findings = validateCapabilityShape(capability({ outputs }), role);
+      assert.deepEqual(findings.map((finding) => finding.rule), expected, `${role}: ${outputs}`);
+      for (const finding of findings) assert.ok(finding.message.includes(`clossys/agents/${folder}/`));
+    }
+    const result = evaluateCapabilityMaps([role], manifests([{ name: role, foundry: { capabilities: [capability({ outputs: [current] })] } }]));
+    assert.deepEqual(result.findings, []);
+    assert.equal(result.table[0].capabilities, "declared");
+  }
+});
+
+test("strategist capability outputs use director and reject the strategist agent folder", () => {
+  assert.deepEqual(validateCapabilityShape(capability({ outputs: ["clossys/agents/director/report.json"] }), "@scope/strategist"), []);
+  assert.deepEqual(validateCapabilityShape(capability({ outputs: ["clossys/agents/strategist/report.json"] }), "@scope/strategist").map((finding) => finding.rule), ["capability-output-outside-role-folder"]);
+});
+
+test("non-agent capability outputs retain the role prefix", () => {
+  assert.deepEqual(validateCapabilityShape(capability({ outputs: ["clossys/controller/report.json"] }), "@scope/controller"), []);
+  assert.deepEqual(validateCapabilityShape(capability({ outputs: ["clossys/agents/controller/report.json"] }), "@scope/controller").map((finding) => finding.rule), ["capability-output-outside-role-folder"]);
+});
+
 test("validateCapabilityShape accepts every declared maturity and rejects businessLifecycleStage outside the fixed vocabulary", () => {
   for (const maturity of CAPABILITY_MATURITIES) {
     const proofCase = maturity === "planned" ? null : "case-1";

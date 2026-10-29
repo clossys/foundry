@@ -168,14 +168,14 @@
       "invocation": "single-json-input"
     },
     "outputs": [
-      "clossys/designer/brand.css",
-      "clossys/designer/type-record.json"
+      "clossys/agents/designer/brand.css",
+      "clossys/agents/designer/type-record.json"
     ],
     "fit": "fit-signal-declarations.json",
     "feeds": [
       {
         "artifact": "token-contract-and-brand-overlay-binding",
-        "path": "clossys/designer/brand.css"
+        "path": "clossys/agents/designer/brand.css"
       }
     ],
     "needs": [
@@ -206,7 +206,7 @@
           }
         ],
         "outputs": [
-          "clossys/designer/brand.css"
+          "clossys/agents/designer/brand.css"
         ],
         "proofCase": "brand-binding-clean",
         "maturity": "built",
@@ -219,7 +219,7 @@
         "worldClass": "No shipped surface bypasses the token contract with a raw color, size, or spacing value \u2014 every design value traces to a token.",
         "inputs": [],
         "outputs": [
-          "clossys/designer/.generated/token-purity-report.json"
+          "clossys/agents/designer/.generated/token-purity-report.json"
         ],
         "proofCase": "token-purity-clean",
         "maturity": "built",
@@ -232,7 +232,7 @@
         "worldClass": "Every interface surface is composed from the shared component and block library \u2014 never a bespoke, ungoverned element built outside it. Today `designer-environment-check surface` proves one slice of this: `surface-ladder-clean` passes a route composed only from Designer components and blocks, and `surface-ladder-violated` fails a route that imports a second library's `components`, `tokens`, or `theme` entrypoint (`@scope/pkg/components|tokens|theme`) beside a Designer primitive (`surface:dual-primitive-stack`). It does not catch a second library imported any other way (a package root such as `@example/legacy-ui`, a `/controls` path, or an unscoped path), a bespoke element hand-built from plain HTML, or a surface that uses no Designer component at all, and no bin checks that every surface uses the shared library. So this capability is `partial`. It shares the surface-ladder case group with `structure-and-fold-conformance`.",
         "inputs": [],
         "outputs": [
-          "clossys/designer/.generated/component-conformance-report.json"
+          "clossys/agents/designer/.generated/component-conformance-report.json"
         ],
         "proofCase": "surface-ladder-clean",
         "maturity": "partial",
@@ -245,7 +245,7 @@
         "worldClass": "Every foreground/background token pairing in use passes its declared WCAG contrast ratio \u2014 checked, never assumed.",
         "inputs": [],
         "outputs": [
-          "clossys/designer/.generated/contrast-report.json"
+          "clossys/agents/designer/.generated/contrast-report.json"
         ],
         "proofCase": "contrast-clean",
         "maturity": "built",
@@ -258,7 +258,7 @@
         "worldClass": "Every surface is operable by keyboard, exposes correct semantics, and reads correctly to a screen reader \u2014 contrast is one axis of accessibility, not the whole of it.",
         "inputs": [],
         "outputs": [
-          "clossys/designer/.generated/accessibility-report.json"
+          "clossys/agents/designer/.generated/accessibility-report.json"
         ],
         "proofCase": null,
         "maturity": "planned",
@@ -271,7 +271,7 @@
         "worldClass": "Every surface's type usage resolves to one governed type-record scale \u2014 never a one-off font-size picked per component; the brand kit and #1210's mark generation both read this record.",
         "inputs": [],
         "outputs": [
-          "clossys/designer/type-record.json"
+          "clossys/agents/designer/type-record.json"
         ],
         "proofCase": "type-record-clean",
         "maturity": "built",
@@ -284,7 +284,7 @@
         "worldClass": "Every route/surface mount composes exactly one visual primitive stack -- never a mix of design systems assembled under one mount (`surface-ladder.ts`, issues #1055/#1060) -- and its hero renders within its declared fold and hero-CSS contract, checked, never eyeballed per page. Checked today by three bins, each with its own qualification case group: `designer-environment-check surface` (surface-ladder), `designer-fold-check` (fold), and `designer-hero-css-check` (hero-css); `proofCase` names the fold group.",
         "inputs": [],
         "outputs": [
-          "clossys/designer/.generated/structure-report.json"
+          "clossys/agents/designer/.generated/structure-report.json"
         ],
         "proofCase": "fold-clean",
         "maturity": "built",
@@ -302,7 +302,7 @@
           }
         ],
         "outputs": [
-          "clossys/designer/brand-kit.json"
+          "clossys/agents/designer/brand-kit.json"
         ],
         "proofCase": null,
         "maturity": "planned",
@@ -324,7 +324,7 @@
           }
         ],
         "outputs": [
-          "clossys/designer/assets/marks.json"
+          "clossys/agents/designer/assets/marks.json"
         ],
         "proofCase": null,
         "maturity": "planned",
