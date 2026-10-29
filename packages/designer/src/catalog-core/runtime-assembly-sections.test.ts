@@ -87,6 +87,14 @@ describe("Section content channels", () => {
     expect(prepareRuntimeAssembly(assembly({ body: select => [select("sections.band", { content: header() })], values: { "header:empty": { heading: "Band" } } }))).toMatchObject({ status: "refused", findings: [expect.stringContaining("unknown content slot")] });
   });
 
+  it("validates the data-table heading metadata used by native scroll page records", () => {
+    const metadata = { heading: "Inputs", count: 0, level: 4, id: "components--controls--inputs" };
+    const run = (value: RuntimeJson) => assembly({ body: select => [select("sections.data-table", { content: header("header:table") })], values: { "header:table": value } });
+    expect(prepareRuntimeAssembly(run(metadata)).status).toBe("ready");
+    for (const invalid of [{ ...metadata, level: 1 }, { ...metadata, level: 7 }, { ...metadata, count: -1 }, { ...metadata, count: {} }, { ...metadata, id: "bad anchor" }, { ...metadata, body: "foreign" }]) expect(prepareRuntimeAssembly(run(invalid)).status).toBe("refused");
+    expect(prepareRuntimeAssembly(assembly({ body: select => [select("sections.empty-state", { content: header("header:foreign") })], values: { "header:foreign": metadata } })).status).toBe("refused");
+  });
+
   it("nests Sections inside the band their contracts name, in reading order", () => {
     const seen: RuntimeRenderInput<string>[] = [];
     const html = drawn(assembly({ seen, body: select => [select("sections.band", { members: [], children: [select("sections.faq"), select("sections.empty-state")] })] }));

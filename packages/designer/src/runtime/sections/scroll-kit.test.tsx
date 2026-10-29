@@ -74,3 +74,11 @@ it("uses disclosures for three levels and marks the observed active heading", as
   disclosure.focus(); await userEvent.keyboard(" "); expect(disclosure.getAttribute("aria-expanded")).toBe("true");
   vi.unstubAllGlobals();
 });
+
+it("keeps two action controls and places further commands inside the existing Menu", async () => {
+  const value = input("sections.section-header", { heading: "Components", actions: [{ id: "pin", label: "Pin" }, { id: "more", label: "More", items: [{ id: "copy", label: "Copy" }, { id: "open", label: "Open" }, { id: "inspect", label: "Inspect" }] }] });
+  render(renderSectionHeader(value));
+  await userEvent.click(screen.getByRole("button", { name: "More" }));
+  expect(screen.getAllByRole("menuitem")).toHaveLength(3);
+  expect(() => renderSectionHeader(input("sections.section-header", { heading: "Invalid", actions: [{ label: "One" }, { label: "Two" }, { label: "Three" }] }))).toThrow(/at most 2/);
+});

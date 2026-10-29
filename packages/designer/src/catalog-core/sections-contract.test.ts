@@ -39,7 +39,7 @@ const reconciledComposes: Record<string, readonly string[]> = {
   comparison: ["table", "status-mark", "badge", "card", "icon", "radio-group", "tooltip", "button", "dialog", "menu", "link"],
   form: ["form", "field", "text-field", "button", "banner", "checkbox", "combo-box", "select"],
   "record-detail": ["card", "tabs", "badge", "skeleton", "button", "link", "disclosure"],
-  "data-table": ["table", "toolbar", "checkbox", "menu", "button", "dialog", "icon", "popover", "select", "text-field"],
+  "data-table": ["table", "toolbar", "checkbox", "menu", "button", "dialog", "icon", "popover", "select", "text-field", "badge", "status-mark", "tooltip", "link", "skeleton"],
   "link-index": ["link", "card", "icon", "badge", "button", "status-mark"],
   newsletter: ["text-field", "button", "icon"],
   "table-of-contents": ["link", "disclosure"],
@@ -58,7 +58,7 @@ describe("S2-1 bounded section composition reconciliation", () => {
       for (const part of slot.contract.parts) expect(families.parts!.map(id)).toContain(part);
       for (const component of slot.contract.allowedComposes) expect(component).toMatch(/^components\./);
     }
-    // Normalize only the exact admitted renderer metadata and permissions; every other accepted field stays pinned.
+    // SCROLL-1 A158/A159/A161: stats, TOC label, typed table cells and native band header are the exact new contract delta; keep existing normalization and unrelated pins unchanged.
     const invariant = slots.filter(slot => !isWaveOne(slot) && slot.id !== "sections.logo-hero").map(slot => {
       const { substrates: _substrates, substrateTests: _tests, copy: _copy, passageSchema: _passage, ...rest } = slot.contract;
       const base = slot.id === "sections.table-of-contents" ? { ...rest, slots: rest.slots.map(item => item.name === "active-id" ? { ...item, type: "copy" } : item) } : rest;
@@ -68,16 +68,16 @@ describe("S2-1 bounded section composition reconciliation", () => {
       return { ...slot, contract };
     });
     expect(createHash("sha256").update(JSON.stringify(invariant)).digest("hex"))
-      .toBe("f2be33b72bf9f9d93f86b795bf11bb720b86f8c09b7dc4c883c5ee814f5ebbef");
+      .toBe("84bd4fafa1e157ef1a7092bb3360decb1b502e93e780a989e6b39b545cf27721");
   });
 
   it("preserves all 46 base rows exactly and pins the six new draft contracts separately", () => {
     const slots = withoutExpressiveMotionReads(loadSectionRegistry().slots);
     const original = slots.filter(slot => !isWaveOne(slot));
     expect(original).toHaveLength(46);
-    // JSON.stringify hash measured from the full rows at da8a1f97; no Git dependency during tests.
+    // SCROLL-1 A158/A159/A161 updates only section-header, table-of-contents and data-table; all 46 rows remain pinned, with no field projected out.
     expect(createHash("sha256").update(JSON.stringify(original)).digest("hex"))
-      .toBe("78129ab0b72f5c6bc54f3ad0f772d13ceac12b9f8713939a7f8d4f9b1c22d59b");
+      .toBe("4d59000a56e5d89cf1281a80800c8e78931edb850ba157182b6e7d130989de1e");
     // Preserve the original contracts while allowing the three copy-only sign-in
     // configurations covered by sections/sign-in-copy.test.tsx.
     const signInConfigs = ["sign-in.password", "sign-in.provider", "sign-in.verify"];
@@ -109,6 +109,15 @@ describe("section build IA registry", () => {
       expect(slot.contract.data).toBe("host-injected");
     }
     expect(sectionRegistryFindings(registry)).toEqual([]);
+  });
+
+  it("pins scroll header stats, native band placement and the supplied outline label", () => {
+    const rows = new Map(loadSectionRegistry().slots.map(slot => [slot.id, slot.contract]));
+    expect(rows.get(id("section-header"))?.anatomy).toEqual({ band: id("band"), header: null });
+    expect(rows.get(id("section-header"))?.parts).toEqual([id("band")]);
+    expect(rows.get(id("section-header"))?.slots.find(slot => slot.name === "stats")).toEqual({ name: "stats", type: "records", required: false });
+    expect(rows.get(id("section-header"))?.slots.find(slot => slot.name === "actions")?.max).toBe(2);
+    expect(rows.get(id("table-of-contents"))?.slots.find(slot => slot.name === "label")).toEqual({ name: "label", type: "copy", required: false });
   });
 
   it("pins the owner-decided site, app and shared section surfaces", () => {
@@ -178,7 +187,7 @@ describe("section build IA registry", () => {
     };
     for (const slot of registry.slots) {
       const part = families.parts?.map(id).includes(slot.id);
-      expect(slot.contract.anatomy.band).toBe(part || ["sign-in-form", "boundary-message", "error-message"].map(id).includes(slot.id) ? null : id("band"));
+      expect(slot.contract.anatomy.band).toBe(slot.id !== id("section-header") && (part || ["sign-in-form", "boundary-message", "error-message"].map(id).includes(slot.id)) ? null : id("band"));
       expect(slot.contract.anatomy.header).toBe(part || isWaveOne(slot) || [id("table-of-contents"), id("logo-hero")].includes(slot.id) ? null : id("section-header"));
       for (const target of Object.values(slot.contract.anatomy)) if (target) expect(slot.contract.parts).toContain(target);
       visit(slot.id, []);

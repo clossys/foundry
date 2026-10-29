@@ -6014,7 +6014,8 @@
         {
           "name": "actions",
           "type": "action",
-          "required": false
+          "required": false,
+          "max": 2
         },
         {
           "name": "stats",
@@ -6039,7 +6040,9 @@
         "components.status-mark",
         "components.menu"
       ],
-      "parts": [],
+      "parts": [
+        "sections.band"
+      ],
       "allowedReads": {
         "tokens": [
           "tokens.spacing",
