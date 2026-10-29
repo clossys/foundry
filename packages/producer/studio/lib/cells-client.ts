@@ -1,23 +1,26 @@
 import { isAgent, type Agent } from './agents';
 
-export interface CellSummary { id: string; title: string; parent?: string; version?: number; status?: string; fields?: Record<string, unknown> }
-export interface AgentCells { agent: Agent; cells: CellSummary[]; tree: unknown; state?: string; error?: string }
+export interface CellSummary { id: string; title: string; parent?: string; version?: number; status?: 'draft' | 'active' | 'retired'; path?: string; fields?: Record<string, unknown> }
+export interface AgentCells { agent: Agent; cells: CellSummary[]; tree?: Record<string, unknown>; state: 'ready' | 'missing' | 'error'; error?: string }
 export interface CellDetail extends CellSummary { agent: Agent; content: string }
 
 function object(value: unknown): value is Record<string, unknown> { return typeof value === 'object' && value !== null && !Array.isArray(value); }
+
+function summary(value: unknown): CellSummary {
+  if (!object(value) || typeof value.id !== 'string' || !value.id || !Number.isSafeInteger(value.version) || Number(value.version) < 1 || !['draft', 'active', 'retired'].includes(String(value.status)) || typeof value.path !== 'string' || !object(value.fields)) throw new Error('A cell in the response is invalid.');
+  return { id: value.id, title: typeof value.fields.title === 'string' && value.fields.title ? value.fields.title : value.id, version: Number(value.version), status: value.status as 'draft' | 'active' | 'retired', path: value.path, fields: value.fields };
+}
+
 
 /** This adapter accepts Producer's HTTP response only; it never reads cell files. */
 export function parseCellsResponse(value: unknown): AgentCells[] {
   if (!object(value) || !Array.isArray(value.agents)) throw new Error('The cell index response is invalid.');
   return value.agents.map((entry: unknown) => {
-    if (!object(entry) || typeof entry.agent !== 'string' || !isAgent(entry.agent) || !Array.isArray(entry.cells)) throw new Error('The agent cell index is invalid.');
-    const cells = entry.cells.map((cell: unknown) => {
-      if (!object(cell) || typeof cell.id !== 'string' || !cell.id || cell.parent !== undefined && typeof cell.parent !== 'string') throw new Error('A cell in the index is invalid.');
-      return { id: cell.id, title: typeof cell.title === 'string' && cell.title ? cell.title : cell.id, ...(typeof cell.parent === 'string' ? { parent: cell.parent } : {}), ...(typeof cell.version === 'number' ? { version: cell.version } : {}), ...(typeof cell.status === 'string' ? { status: cell.status } : {}), ...(object(cell.fields) ? { fields: cell.fields } : {}) };
-    });
+    if (!object(entry) || typeof entry.agent !== 'string' || !isAgent(entry.agent) || !['ready', 'missing', 'error'].includes(String(entry.state)) || !Array.isArray(entry.cells) || entry.tree !== undefined && !object(entry.tree)) throw new Error('The agent cell index is invalid.');
+    const cells = entry.cells.map(summary);
     if (new Set(cells.map(cell => cell.id)).size !== cells.length) throw new Error('The cell index contains duplicate IDs.');
-    const error = typeof entry.error === 'string' ? entry.error : object(entry.error) && typeof entry.error.message === 'string' ? entry.error.message : entry.state === 'error' && typeof entry.message === 'string' ? entry.message : undefined;
-    return { agent: entry.agent, cells, tree: entry.tree, ...(typeof entry.state === 'string' ? { state: entry.state } : {}), ...(error ? { error } : {}) };
+    const error = entry.state === 'error' ? typeof entry.message === 'string' ? entry.message : 'Producer could not read this agent’s cells.' : undefined;
+    return { agent: entry.agent, cells, tree: entry.tree as Record<string, unknown> | undefined, state: entry.state as AgentCells['state'], ...(error ? { error } : {}) };
   });
 }
 
@@ -25,11 +28,7 @@ export function parseCellResponse(value: unknown, agent: Agent, id: string): Cel
   if (!object(value) || value.agent !== agent || value.state !== 'ready' || !object(value.cell)) throw new Error('The selected cell response is invalid.');
   const cell = value.cell;
   if (cell.id !== id || typeof cell.source !== 'string') throw new Error('The selected cell response is invalid.');
-  return { agent, id, title: typeof cell.title === 'string' && cell.title ? cell.title : id, content: cell.source,
-    ...(typeof cell.version === 'number' ? { version: cell.version } : {}),
-    ...(typeof cell.status === 'string' ? { status: cell.status } : {}),
-    ...(object(cell.fields) ? { fields: cell.fields } : {}),
-  };
+  return { ...summary(cell), agent, content: cell.source };
 }
 
 async function request(path: string, signal: AbortSignal): Promise<unknown> {

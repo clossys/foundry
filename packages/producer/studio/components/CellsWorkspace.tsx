@@ -21,7 +21,7 @@ function AgentTree({ index, selected }: { index: AgentCells; selected?: string }
   let nodes: CellNode[];
   try { nodes = cellHierarchy(index.cells, index.tree); } catch { return <EmptyState title="Cell tree unavailable" description="Producer returned an invalid cell hierarchy." role="alert" />; }
   return <ContentSection heading={AGENT_LABELS[index.agent]} headingLevel={2} description={index.state && index.state !== 'ready' ? `Cell index: ${index.state}` : undefined}>
-    {index.error ? <EmptyState title="Cells unavailable" description={index.error} role="alert" /> : nodes.length ? <nav className="studio-cell-tree" aria-label={`${AGENT_LABELS[index.agent]} cells`}><CellTree nodes={nodes} agent={index.agent} selected={selected} /></nav> : <EmptyState title="No cells yet" description={`No ${AGENT_LABELS[index.agent]} cells were found in this repository.`} />}
+    {index.error ? <EmptyState title="Cells unavailable" description={index.error} role="alert" /> : index.cells.length ? <nav className="studio-cell-tree" aria-label={`${AGENT_LABELS[index.agent]} cells`}><CellTree nodes={nodes} agent={index.agent} selected={selected} /></nav> : <EmptyState title="No cells yet" description={`No ${AGENT_LABELS[index.agent]} cells were found in this repository.`} />}
   </ContentSection>;
 }
 
@@ -68,7 +68,7 @@ export function CellsWorkspace({ agent }: { agent?: Agent }) {
         <div>{visible.map(item => <AgentTree key={item.agent} index={item} selected={selectedAgent === item.agent ? selectedId : undefined} />)}</div>
         <div>
           {!selectedId ? <EmptyState title="Choose a cell" description="Select a cell from the tree to read its content." /> : !selectedAgent ? <EmptyState role="alert" title="Choose an agent" description="The selected cell needs an agent from this repository." /> : detail.state === 'loading' || detail.state === 'ready' && (detail.value.agent !== selectedAgent || detail.value.id !== selectedId) ? <EmptyState role="status" title="Loading cell…" /> : detail.state === 'error' ? <EmptyState role="alert" title="Cell could not be loaded" description={detail.message} /> : <>
-            <DetailView title={selectedCell?.title ?? selectedId} fields={[{ label: 'Agent', value: AGENT_LABELS[detail.value.agent] }, { label: 'Cell', value: detail.value.id }, ...(detail.value.status ? [{ label: 'Status', value: detail.value.status }] : []), ...(detail.value.version !== undefined ? [{ label: 'Version', value: String(detail.value.version) }] : [])]} />
+            <DetailView title={selectedCell?.title ?? selectedId} fields={[{ label: 'Agent', value: AGENT_LABELS[detail.value.agent] }, { label: 'Cell', value: detail.value.id }, ...(detail.value.status ? [{ label: 'Status', value: detail.value.status }] : []), ...(detail.value.version !== undefined ? [{ label: 'Version', value: String(detail.value.version) }] : []), ...(detail.value.path ? [{ label: 'Source', value: detail.value.path }] : [])]} />
             <ArticleBody aria-label="Cell content"><div className="studio-cell-source">{detail.value.content || 'This cell has no content.'}</div></ArticleBody>
           </>}
         </div>
