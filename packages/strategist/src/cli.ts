@@ -1,63 +1,10 @@
 #!/usr/bin/env node
 /**
- * `strategist-check` — the CLI for `checkFactsTraceability`. Presentation
- * only: parse argv, read the strategy directory, walk the scan directory,
- * run the pure gate, print a report, pick an exit code. All real work
- * happens in `reader.ts`, `scan.ts`, and `facts-gate.ts`.
- *
- * A second subcommand, `brand-coverage`, wires `checkBrandCoverage`
- * (`./brand-derivation.ts`) in with the identical shape: parse argv, load
- * two JSON files, run the pure check, print a report, pick an exit code
- * from the same 0/1/2 contract — see `runBrandCoverage`'s own doc comment
- * below. This mirrors `@example/copy`'s `copy-check
- * voice-derivation-coverage` subcommand exactly. `main()` dispatches to it
- * only when `argv[0]` is exactly `"brand-coverage"`; any other first
- * argument (including every existing caller's real `strategy-dir` path)
- * falls through to the original, unchanged behavior below — this addition
- * is purely additive to the argv contract, checked BEFORE the existing
- * `parseArgs` call so no pre-existing test needs to change.
- *
- * Exit codes — a contract a consumer's CI depends on, matching this
- * repository's `foundry-check` convention (`@example/gates`):
- *
- *   0 — ran cleanly, facts.json loaded, at least one file scanned, zero findings.
- *   1 — ran cleanly, at least one finding (an untraced claim or a citation to a fact key that does not exist).
- *   2 — could not run: bad input, facts.json missing/unreadable/invalid, the
- *       scan matched zero files, an unreadable directory during the walk, or
- *       an unexpected exception. Kept strictly distinct from 1 — a gate
- *       that reports "clean" after failing to run is worse than no gate at
- *       all. This is the explicit third state this gate is built around:
- *       "could not check" must never be reported as a pass.
- *
- * `brand-coverage` uses the same three-state contract, projected onto
- * `checkBrandCoverage`'s own result: `0` both directions hold on non-empty
- * lists, `1` a real coverage gap in either direction, `2` indeterminate —
- * either input list empty, or a file missing/unreadable/unparseable/
- * invalid. See `runBrandCoverage` below for the exact mapping.
- *
- * A third subcommand, `direction`, wires `checkDirectionCoverage` AND
- * `checkDirectionCurrency` (`./direction-invalidation.ts`) in with the
- * identical shape again: parse argv, load two JSON files, run both pure
- * checks, print a combined report, pick a single exit code from the same
- * 0/1/2 contract — see `runDirection`'s own doc comment below. Dispatched
- * only when `argv[0]` is exactly `"direction"`, checked BEFORE the
- * existing `parseArgs` call and alongside the `brand-coverage` check —
- * every other first argument, including `brand-coverage` itself and any
- * real `strategy-dir` path, still falls through unchanged.
- *
- * `brand-facts` wires `checkBrandFactsDrift` (`./brand-facts-drift.ts`) in
- * with `apply`'s shape: strategy-dir resolved the same way, the scan walked
- * with the same flags, plus `--copy-registry` (defaulting to
- * `<cwd>/clossys/writer/copy-registry.json` when that file exists). Its own
- * default extensions are prose/markup/data only. The check's "indeterminate"
- * state — nothing scanned, or taglines recorded with no copy registry to
- * resolve them — maps to `2`, never `0`; see `runBrandFacts` below.
- *
- * `wont-claim` wires `checkWontClaimDrift` (`./wont-claim-drift.ts`) in with
- * `brand-facts`'s shape: the record is `strategy-brief.json` (never the
- * engagement brief), the scan is walked with the same flags and default
- * extensions, and a missing or invalid record, zero files scanned, or an
- * "indeterminate" check maps to `2`, never `0`; see `runWontClaim` below.
+ * CLI presentation for grounding, strategy records and surface checks.
+ * The default and ground modes read dated findings; wont-claim selects the
+ * active Proof and Voice using tree.json. Legacy explicit modes remain until
+ * their scheduled removal. Exit 0 means clean, 1 means findings, and 2 means
+ * input or scan coverage was insufficient to run the check.
  */
 
 import { existsSync, readdirSync, readFileSync, realpathSync, statSync } from "node:fs";
@@ -82,10 +29,12 @@ import {
 import { checkFactsTraceability, type FactsGateResult } from "./facts-gate.js";
 import { checkStrategyHandoff, strategyDirectoryUnreadable } from "./handoff.js";
 import { checkStrategyApply } from "./markers-gate.js";
-import { readStrategyBrief } from "./strategy-brief.js";
+import { readGroundRoot } from "./ground/read.js";
+import { readStrategyRoot } from "./store.js";
+import type { GroundEvidence } from "./fact-index.js";
 import { readStrategyDirectory } from "./facts-dir.js";
-import { readStrategy, type StrategyBundle } from "./reader.js";
-import { validateDirectionEntities, type DirectionEntity, type Fact } from "./schema.js";
+import { readStrategy } from "./reader.js";
+import { validateDirectionEntities, type DirectionEntity } from "./schema.js";
 import { DEFAULT_SKIP_DIRS, scanStrategyDirectory } from "./scan.js";
 import {
   CURRENT_STRATEGY_DIR_SEGMENTS,
@@ -94,7 +43,8 @@ import {
 } from "./strategy-dir-default.js";
 import { checkWontClaimDrift, type WontClaimResult } from "./wont-claim-drift.js";
 
-const USAGE = `Usage: strategist-check <strategy-dir> [scan-dir] [options]
+const USAGE = `Usage: strategist-check ground [<strategy-dir>] <scan-dir> [options]
+   or: strategist-check <strategy-dir> <scan-dir> [options]
    or: strategist-check brand-coverage <derivations-file> [<brandable-slots-file>]
    or: strategist-check direction <direction-entities-file> <reviewed-against-file>
    or: strategist-check handoff <strategy-dir>
@@ -102,18 +52,20 @@ const USAGE = `Usage: strategist-check <strategy-dir> [scan-dir] [options]
    or: strategist-check brand-facts <strategy-dir> <scan-dir> [options]
    or: strategist-check wont-claim <strategy-dir> <scan-dir> [options]
 
-  strategy-dir   Directory containing facts.json (and the rest of the strategy bundle). Optional — omit it and this command reads ./clossys/strategist by default (or the retired ./strategy directory when clossys/strategist does not exist yet, still read in this release, with a notice; its removal will be announced beforehand in this package's CHANGELOG; both existing at once is refused as indeterminate).
+  strategy-dir   Directory containing findings/*.md. Defaults to ./clossys/strategist; --root overrides it.
   scan-dir       Directory to scan for prose/copy claims. Defaults to the current working directory.
 
 Options:
+  --root <dir>        Strategy root (ground and wont-claim).
+  --json              Print the result as JSON (ground and wont-claim).
   --help              Print this message and exit 0.
-  --facts-dir <dir>   Read facts from a directory tree of per-fact JSON leaves (each leaf a JSON array of Fact — not nested group-object domain files) instead of the strategy directory's flat facts.json. Walks subdirectories; every file under <dir> must be accounted for (_schema.json meta leaves are skipped). Mutually exclusive with flat facts.json in strategy-dir — exit 2 when both are supplied.
+  --facts-dir <dir>   Read facts from a directory tree of per-fact JSON leaves (each leaf a JSON array of Fact — not nested group-object domain files) instead of Markdown findings (legacy explicit input). Walks subdirectories; every file under <dir> must be accounted for (_schema.json meta leaves are skipped). Mutually exclusive with flat facts.json in strategy-dir — exit 2 when both are supplied.
   --extensions <ext>  File extension to scan (repeatable; include the leading dot, e.g. --extensions .md). When none are given, the default set is .md, .mdx, .ts, .tsx, .js, and .jsx.
   --skip-dirs <name>  Directory name to skip during the walk (repeatable). Each name is added to the built-in skip list (node_modules, .git, dist, build, coverage); supplying --skip-dirs does not replace those defaults, so node_modules is never walked accidentally.
   --exclude <glob>    Repo-relative path glob to omit from the scan (repeatable), e.g. **/*.test.ts or **/fixtures/**. Directory-name skips use --skip-dirs instead; --exclude is for file-path patterns tests and fixtures need.
   --surfaces <path>   (apply only) Designer-facing surface file that must cite surface-target constraints (repeatable).
 
-Exit codes: 0 = clean, 1 = at least one finding, 2 = could not run (bad input, missing/invalid facts.json, nothing matched to scan, or an unreadable directory).
+Exit codes: 0 = clean, 1 = at least one finding, 2 = could not run (bad input, missing/invalid findings, nothing matched to scan, or an unreadable directory).
 
 Run "strategist-check brand-coverage --help", "strategist-check direction --help", "strategist-check handoff --help", "strategist-check apply --help", "strategist-check brand-facts --help", or "strategist-check wont-claim --help" for those subcommands' own usage.
 `;
@@ -191,7 +143,7 @@ Exit codes: 0 = clean, 1 = drift (at least one scanned surface conflicts with th
 
 const WONT_CLAIM_USAGE = `Usage: strategist-check wont-claim <strategy-dir> <scan-dir> [options]
 
-  strategy-dir   Directory containing strategy-brief.json (the won't-claim record — not the engagement brief).
+  strategy-dir   Directory containing tree.json and the active Proof and Voice cells. Defaults to ./clossys/strategist; --root overrides it.
   scan-dir       Directory to scan for surfaces that make a claim the record says must never be made.
 
 Options:
@@ -200,9 +152,9 @@ Options:
   --skip-dirs <name>       Directory name to skip during the walk (repeatable), added to the built-in skip list.
   --exclude <glob>         Repo-relative path glob to omit (repeatable).
 
-Default extensions are .md, .mdx, .txt, .html, .htm, .json, .yml and .yaml; code files opt in through --extensions. A line carrying wont-claim:ignore inside a comment is listed and not checked. Entries with no matchPhrases are listed as not mechanically checked and never change the result.
+Default extensions are .md, .mdx, .txt, .html, .htm, .json, .yml and .yaml; code files opt in through --extensions. Quoted Never-claim: phrases from active Proof and Never: phrases from active Voice are checked; unquoted labels are listed as unchecked. A comment with wont-claim:ignore is recorded and not checked. --root overrides the strategy directory; --json prints the result as JSON.
 
-Exit codes: 0 = clean, 1 = hit (at least one scanned surface makes a recorded claim), 2 = could not run (strategy-brief.json missing/unreadable/invalid, no files scanned, an over-long line, an unreadable directory, or bad arguments).
+Exit codes: 0 = clean, 1 = hit (at least one scanned surface makes a recorded claim), 2 = could not run (tree or active cells missing/unreadable/invalid, no files scanned, an over-long line, an unreadable directory, or bad arguments).
 `;
 
 /** Exported for `cli.test.ts` — anything wrong with the arguments themselves always maps to exit code 2, never 1. */
@@ -326,6 +278,36 @@ export function parseArgs(argv: string[]): ParsedArgs {
   return { strategyDir, scanDir, factsDir, extensions, skipDirs, excludeGlobs, help };
 }
 
+
+function isWithinRoot(file: string, root: string): boolean {
+  const path = relative(root, file);
+  return path === "" || (path !== ".." && !path.startsWith(`..${sep}`) && !path.startsWith(sep));
+}
+
+function parseGroundArgs(argv: string[]): ParsedArgs & { json: boolean } {
+  const rest: string[] = []; let root: string | undefined; let json = false;
+  for (let i = 0; i < argv.length; i++) {
+    const arg = argv[i]!;
+    if (arg === "--json") { json = true; continue; }
+    if (arg === "--root" || arg.startsWith("--root=")) {
+      const value = arg === "--root" ? argv[++i] : arg.slice(7);
+      if (!value || value.startsWith("-")) throw new CliInputError("--root requires a directory");
+      if (root !== undefined) throw new CliInputError("--root may be given only once");
+      root = value; continue;
+    }
+    rest.push(arg);
+  }
+  const args = parseArgs(rest);
+  if (root !== undefined) {
+    if (args.scanDir !== undefined) throw new CliInputError("--root accepts only the scan-dir positional");
+    args.scanDir = args.strategyDir; args.strategyDir = root;
+  } else if (args.strategyDir !== undefined && args.scanDir === undefined) {
+    args.scanDir = args.strategyDir; args.strategyDir = undefined;
+  }
+  args.strategyDir ??= join(process.cwd(), ...CURRENT_STRATEGY_DIR_SEGMENTS);
+  return { ...args, json };
+}
+
 function requireDirectory(label: string, path: string): void {
   if (!existsSync(path)) throw new CliInputError(`${label} "${path}" does not exist`);
   let stat;
@@ -394,27 +376,16 @@ function resolveStrategyDirArgument(explicit: string | undefined): { dir: string
   return { dir: resolved.dir };
 }
 
-/**
- * The facts half of a strategy bundle, as `main()` consumes it: either the
- * full `readStrategy` bundle (flat facts.json) or the facts-only directory
- * read (`--facts-dir`), normalized to the two things the gate needs. The
- * union issue shape keeps the CLI's reporting and fail-closed mapping
- * identical across both modes.
- */
-type LoadedFacts =
-  | { mode: "bundle"; bundle: StrategyBundle; facts: Fact[]; issues: Array<{ file: string; reason: string; detail: string }> }
-  | { mode: "facts-dir"; facts: Fact[]; issues: Array<{ file: string; reason: string; detail: string }> };
+/** Grounding reads findings; the explicit legacy --facts-dir mode remains available. */
+type LoadedFacts = {
+  mode: "findings" | "facts-dir"; facts: GroundEvidence[];
+  issues: Array<{ file: string; reason: string; detail: string }>;
+};
 
-/**
- * Loads facts for the gate in exactly one of the two mutually exclusive
- * modes. A directory with a failing leaf is recorded, never thrown —
- * `main()` maps those issues to exit code 2 below, the same fail-closed
- * route a bad flat facts.json takes.
- */
 function readStrategyFacts(strategyDir: string, factsDir: string | undefined): LoadedFacts {
   if (factsDir === undefined) {
-    const bundle = readStrategy(strategyDir);
-    return { mode: "bundle", bundle, facts: bundle.facts, issues: bundle.issues };
+    const read = readGroundRoot(strategyDir);
+    return { mode: "findings", facts: read.model.findings, issues: read.issues.map(detail => ({ file: "findings/", reason: "invalid-findings", detail })) };
   }
   const result = readStrategyDirectory({ files: readDirectoryFiles(factsDir) });
   return { mode: "facts-dir", facts: result.facts, issues: result.issues };
@@ -1155,7 +1126,7 @@ function runBrandFacts(argv: string[]): number {
 }
 
 // ---------------------------------------------------------------------
-// wont-claim — strategy-brief.json vs surfaces. Same shape as `brand-facts`
+// wont-claim — active Proof and Voice vs surfaces. Same shape as `brand-facts`
 // above, without a copy registry.
 // ---------------------------------------------------------------------
 
@@ -1166,7 +1137,7 @@ function printWontClaimReport(result: WontClaimResult): void {
     for (const ig of result.ignored) console.log(`  ${ig.file}:${ig.line}  ${ig.snippet}`);
   }
   if (result.unchecked.length > 0) {
-    console.log(`${result.unchecked.length} entr${result.unchecked.length === 1 ? "y" : "ies"} with no matchPhrases, not mechanically checked: ${result.unchecked.join(", ")}`);
+    console.log(`${result.unchecked.length} entr${result.unchecked.length === 1 ? "y" : "ies"} with no quoted phrases, not mechanically checked: ${result.unchecked.join(", ")}`);
   }
   if (result.findings.length > 0) {
     console.log(`\n${result.findings.length} finding(s):`);
@@ -1190,7 +1161,7 @@ function printWontClaimReport(result: WontClaimResult): void {
  * that did run.
  */
 function runWontClaim(argv: string[]): number {
-  const args = parseArgs(argv);
+  const args = parseGroundArgs(argv);
   if (args.help) {
     console.log(WONT_CLAIM_USAGE);
     return 0;
@@ -1204,16 +1175,10 @@ function runWontClaim(argv: string[]): number {
   requireDirectory("strategy-dir", strategyDir);
   requireDirectory("scan-dir", scanDir);
 
-  console.log(`Strategy directory: ${strategyDir}`);
-  console.log(`Scan directory: ${scanDir}`);
+  if (!args.json) console.log(`Strategy directory: ${strategyDir}`);
+  if (!args.json) console.log(`Scan directory: ${scanDir}`);
 
-  const read = readStrategyBrief(strategyDir);
-  if (read.status !== "ok") {
-    const detail = read.status === "missing" ? read.detail : `${read.issue.reason}: ${read.issue.detail}`;
-    console.error(`\nStrategy brief could not be loaded (${detail}).`);
-    console.error("Refusing to report a pass with no trustworthy strategy-brief.json to check surfaces against.");
-    return 2;
-  }
+  const model = readStrategyRoot(strategyDir);
 
   const scanOptions: { extensions: string[]; skipDirs?: string[]; excludeGlobs?: string[] } = {
     extensions: args.extensions.length > 0 ? args.extensions : BRAND_FACTS_DEFAULT_EXTENSIONS,
@@ -1222,8 +1187,10 @@ function runWontClaim(argv: string[]): number {
   if (args.excludeGlobs.length > 0) scanOptions.excludeGlobs = args.excludeGlobs;
   const files = scanStrategyDirectory(scanDir, scanOptions); // throws (fail-closed) on an unreadable directory — caught by run()
 
-  const result = checkWontClaimDrift(files, read.brief);
-  printWontClaimReport(result);
+  const surfaces = files.filter(file => !isWithinRoot(resolve(scanDir, file.path), strategyDir));
+  const result = checkWontClaimDrift(surfaces, model);
+  if (args.json) console.log(JSON.stringify(result));
+  else printWontClaimReport(result);
   if (result.state === "indeterminate") {
     console.error("Refusing to report a pass for a check that could not run in full.");
     return 2;
@@ -1240,13 +1207,6 @@ function runWontClaim(argv: string[]): number {
  * `process.argv`.
  */
 export function main(argv: string[]): number {
-  // Subcommand dispatch: only `argv[0] === "brand-coverage"` or
-  // `argv[0] === "direction"` exactly diverts to the second/third
-  // subcommand — see this file's top-of-file doc comment. Every other
-  // first argument, including any real `strategy-dir` path an existing
-  // caller already passes, falls straight through to the original
-  // behavior below, unchanged. Checked BEFORE `parseArgs` so no
-  // pre-existing argv shape can be reinterpreted.
   if (argv[0] === "brand-coverage") {
     return runBrandCoverage(argv.slice(1));
   }
@@ -1266,7 +1226,7 @@ export function main(argv: string[]): number {
     return runWontClaim(argv.slice(1));
   }
 
-  const args = parseArgs(argv);
+  const args = parseGroundArgs(argv[0] === "ground" ? argv.slice(1) : argv);
   if (args.help) {
     console.log(USAGE);
     return 0;
@@ -1297,36 +1257,30 @@ export function main(argv: string[]): number {
     }
   }
 
-  console.log(`Strategy directory: ${strategyDir}`);
-  if (factsDir !== undefined) {
+  if (!args.json) console.log(`Strategy directory: ${strategyDir}`);
+  if (factsDir !== undefined && !args.json) {
     console.log(`Facts directory: ${factsDir} (flat facts.json not used)`);
   }
-  console.log(`Scan directory: ${scanDir}`);
+  if (!args.json) console.log(`Scan directory: ${scanDir}`);
 
   const loaded = readStrategyFacts(strategyDir, factsDir);
   const issues = loaded.issues;
-  if (issues.length > 0 && loaded.mode === "bundle") {
+  if (!args.json && issues.length > 0 && loaded.mode === "findings") {
     console.log(`\n${issues.length} strategy file issue(s):`);
     for (const issue of issues) {
       console.log(`  [${issue.reason}] ${issue.file}: ${issue.detail}`);
     }
-  } else if (issues.length > 0) {
+  } else if (!args.json && issues.length > 0) {
     console.log(`\n${issues.length} facts directory issue(s):`);
     for (const issue of issues) {
       console.log(`  [${issue.reason}] ${issue.file}: ${issue.detail}`);
     }
   }
 
-  // The gate has exactly one trustworthy ground truth, whichever mode
-  // supplied it. Any issue at all in --facts-dir mode is fail-closed —
-  // there is no notion of optional files there, so a refused leaf (bad
-  // JSON, schema violation, a non-JSON file, an empty directory) is never
-  // reported as a clean pass. Flat mode keeps its narrower rule: only a
-  // facts.json issue blocks; an issue on some OTHER optional strategy file
-  // (mission.json, roadmap.json, ...) does not, because the facts gate
-  // only ever needs facts.
-  const factsIssue = loaded.mode === "bundle" ? issues.find((i) => i.file === "facts.json") : issues[0];
+  // Any registry issue makes grounding indeterminate.
+  const factsIssue = issues[0];
   if (factsIssue) {
+    if (args.json) return printGroundIndeterminate(issues.map(issue => `[${issue.reason}] ${issue.file}: ${issue.detail}`));
     console.error(`\nFacts could not be loaded (${factsIssue.reason}: ${factsIssue.detail}).`);
     console.error("Refusing to report a pass with no trustworthy facts to check prose against.");
     return 2;
@@ -1350,15 +1304,28 @@ export function main(argv: string[]): number {
   // never silently pass: "nothing to scan" is not the same thing as "scanned
   // everything, found nothing wrong" — see the package README.
   if (files.length === 0) {
+    if (args.json) return printGroundIndeterminate([`No files matched under "${scanDir}" — nothing was scanned.`]);
     console.error(`\nNo files matched under "${scanDir}" — nothing was scanned.`);
     console.error("Refusing to report a pass for a scan that checked nothing.");
     return 2;
   }
 
-  const result = checkFactsTraceability(files, facts);
-  printReport(result);
+  const surfaces = files.filter(file => !isWithinRoot(resolve(scanDir, file.path), strategyDir));
+  if (!surfaces.length) {
+    if (args.json) return printGroundIndeterminate(["No surface files scanned outside the strategy root."]);
+    console.error("No surface files scanned outside the strategy root."); return 2;
+  }
+  const result = checkFactsTraceability(surfaces, facts);
+  if (args.json) console.log(JSON.stringify(result));
+  else printReport(result);
 
   return result.findings.length > 0 ? 1 : 0;
+}
+
+/** Grounding failures still produce one machine-readable result under --json. */
+function printGroundIndeterminate(indeterminateReasons: string[]): 2 {
+  console.log(JSON.stringify({ state: "indeterminate", findings: [], ignored: [], filesScanned: 0, claimsScanned: 0, indeterminateReasons }));
+  return 2;
 }
 
 function run(): void {

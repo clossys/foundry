@@ -5,6 +5,7 @@ import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { CliInputError, main, parseArgs } from "./cli.js";
+import { stageFinding, stageWontClaimCells } from "./ground/fixtures.js";
 
 // Hermetic: every test operates on its own pair of `mkdtemp` directories
 // (strategy + scan), removed afterward, and calls the exported `main(argv)`
@@ -102,81 +103,36 @@ describe("main — argument handling", () => {
   });
 });
 
-describe("main — default strategy-dir resolution (legacy fallback, #1171)", () => {
-  let cwd: string;
-  let originalCwd: string;
-
-  beforeEach(() => {
-    cwd = mkdtempSync(join(tmpdir(), "strategy-cli-default-cwd-"));
-    originalCwd = process.cwd();
+describe("main — default ground root", () => {
+  it("uses clossys/strategist and does not fall back to the retired strategy root", () => {
+    const cwd = mkdtempSync(join(tmpdir(), "strategy-cli-cwd-")); const original = process.cwd();
     process.chdir(cwd);
-    // A benign scan target so the default scan-dir (also `cwd`) matches at
-    // least one file — nothing here exercises the facts gate itself.
-    writeFileSync(join(cwd, "notes.md"), "Nothing claim-shaped here.");
-  });
-
-  afterEach(() => {
-    process.chdir(originalCwd);
-    rmSync(cwd, { recursive: true, force: true });
-  });
-
-  it("reads clossys/strategist silently when only it exists (no legacy notice)", () => {
-    mkdirSync(join(cwd, "clossys", "strategist"), { recursive: true });
-    writeFileSync(join(cwd, "clossys", "strategist", "facts.json"), JSON.stringify([validFact]));
-
-    expect(main([])).toBe(0);
-    const logs = vi.mocked(console.log).mock.calls.map((call) => String(call[0]));
-    expect(logs.some((line) => line.includes("retired"))).toBe(false);
-  });
-
-  it("falls back to the retired strategy/ directory, with a notice, when clossys/strategist does not exist", () => {
-    mkdirSync(join(cwd, "strategy"), { recursive: true });
-    writeFileSync(join(cwd, "strategy", "facts.json"), JSON.stringify([validFact]));
-
-    expect(main([])).toBe(0);
-    const logs = vi.mocked(console.log).mock.calls.map((call) => String(call[0]));
-    expect(logs.some((line) => line.includes("retired") && line.includes("strategy") && line.includes("clossys/strategist"))).toBe(
-      true,
-    );
-  });
-
-  it("is indeterminate (exit 2), never a silent pick, when both clossys/strategist and strategy exist", () => {
-    mkdirSync(join(cwd, "clossys", "strategist"), { recursive: true });
-    writeFileSync(join(cwd, "clossys", "strategist", "facts.json"), JSON.stringify([validFact]));
-    mkdirSync(join(cwd, "strategy"), { recursive: true });
-    writeFileSync(join(cwd, "strategy", "facts.json"), JSON.stringify([validFact]));
-
-    expect(main([])).toBe(2);
-    const errors = vi.mocked(console.error).mock.calls.map((call) => String(call[0]));
-    expect(errors.some((line) => line.includes("Both") && line.includes("strategy") && line.includes("clossys/strategist"))).toBe(
-      true,
-    );
-  });
-
-  it("an explicit strategy-dir argument skips resolution entirely, even when both directories exist", () => {
-    mkdirSync(join(cwd, "clossys", "strategist"), { recursive: true });
-    writeFileSync(join(cwd, "clossys", "strategist", "facts.json"), JSON.stringify([validFact]));
-    mkdirSync(join(cwd, "strategy"), { recursive: true });
-    writeFileSync(join(cwd, "strategy", "facts.json"), JSON.stringify([validFact]));
-
-    expect(main([join(cwd, "clossys", "strategist"), cwd])).toBe(0);
+    try {
+      writeFileSync(join(cwd, "page.md"), "4,200 customers");
+      mkdirSync(join(cwd, "strategy")); stageFinding(join(cwd, "strategy"));
+      expect(() => main([])).toThrow(CliInputError);
+      mkdirSync(join(cwd, "clossys/strategist"), { recursive: true }); stageFinding(join(cwd, "clossys/strategist"));
+      // The old root is ordinary scan content; limit the scan to the page.
+      expect(main(["--exclude", "strategy/**"])).toBe(0);
+    } finally { process.chdir(original); rmSync(cwd, { recursive: true, force: true }); }
   });
 });
 
 describe("main — the third state: could not run", () => {
-  it("returns 2 when facts.json is missing (fail closed, never a silent pass)", () => {
+  it("returns 2 when findings are missing (fail closed, never a silent pass)", () => {
     writeFileSync(join(scanDir, "about.md"), "Nothing claim-shaped here.");
     expect(main([strategyDir, scanDir])).toBe(2);
   });
 
-  it("returns 2 when facts.json is invalid", () => {
-    writeFileSync(join(strategyDir, "facts.json"), "{ not json");
+  it("returns 2 when a finding is invalid", () => {
+    mkdirSync(join(strategyDir, "findings"));
+    writeFileSync(join(strategyDir, "findings/broken.md"), "not frontmatter");
     writeFileSync(join(scanDir, "about.md"), "Nothing claim-shaped here.");
     expect(main([strategyDir, scanDir])).toBe(2);
   });
 
   it("returns 2 when zero files match the scan (never reported as a clean pass)", () => {
-    writeFileSync(join(strategyDir, "facts.json"), JSON.stringify([validFact]));
+    stageFinding(strategyDir);
     writeFileSync(join(scanDir, "data.json"), "{}"); // .json is not a scanned extension
     expect(main([strategyDir, scanDir])).toBe(2);
   });
@@ -184,32 +140,32 @@ describe("main — the third state: could not run", () => {
 
 describe("main — real runs", () => {
   it("returns 0 on a clean pass", () => {
-    writeFileSync(join(strategyDir, "facts.json"), JSON.stringify([validFact]));
+    stageFinding(strategyDir);
     writeFileSync(join(scanDir, "about.md"), "We now serve 4,200 customers.");
     expect(main([strategyDir, scanDir])).toBe(0);
   });
 
   it("returns 1 when a finding is present", () => {
-    writeFileSync(join(strategyDir, "facts.json"), JSON.stringify([validFact]));
+    stageFinding(strategyDir);
     writeFileSync(join(scanDir, "about.md"), "We now serve 9,999 customers.");
     expect(main([strategyDir, scanDir])).toBe(1);
   });
 
   it("an issue on an OPTIONAL strategy file does not block the facts gate", () => {
-    writeFileSync(join(strategyDir, "facts.json"), JSON.stringify([validFact]));
+    stageFinding(strategyDir);
     writeFileSync(join(strategyDir, "roadmap.json"), JSON.stringify([{ id: "x" }])); // invalid, but not facts.json
     writeFileSync(join(scanDir, "about.md"), "We now serve 4,200 customers.");
     expect(main([strategyDir, scanDir])).toBe(0);
   });
 
   it("honors --extensions to limit scanned file types", () => {
-    writeFileSync(join(strategyDir, "facts.json"), JSON.stringify([validFact]));
+    stageFinding(strategyDir);
     writeFileSync(join(scanDir, "about.md"), "We now serve 4,200 customers.");
     expect(main([strategyDir, scanDir, "--extensions", ".txt"])).toBe(2);
   });
 
   it("still skips node_modules when --skip-dirs adds extra names", () => {
-    writeFileSync(join(strategyDir, "facts.json"), JSON.stringify([validFact]));
+    stageFinding(strategyDir);
     writeFileSync(join(scanDir, "about.md"), "We now serve 4,200 customers.");
     const nested = join(scanDir, "node_modules", "pkg");
     mkdirSync(nested, { recursive: true });
@@ -218,7 +174,7 @@ describe("main — real runs", () => {
   });
 
   it("honors --exclude to omit test paths from the scan", () => {
-    writeFileSync(join(strategyDir, "facts.json"), JSON.stringify([validFact]));
+    stageFinding(strategyDir);
     writeFileSync(join(scanDir, "about.md"), "We now serve 4,200 customers.");
     mkdirSync(join(scanDir, "src"), { recursive: true });
     writeFileSync(join(scanDir, "src", "widget.test.ts"), "We now serve 9,999 customers.");
@@ -645,8 +601,8 @@ describe("direct-path reachability — the real compiled dist/cli.js", () => {
   // existing facts-check behavior must run completely unchanged through
   // the real compiled entrypoint — proving `argv[0] === "brand-coverage"`
   // dispatch (not a basename check) is what gates the new subcommand.
-  it("node dist/cli.js <strategy-dir> [scan-dir] with NO subcommand still runs the existing facts check unchanged", () => {
-    writeFileSync(join(strategyDir, "facts.json"), JSON.stringify([validFact]));
+  it("node dist/cli.js <strategy-dir> [scan-dir] with NO subcommand runs ground over findings", () => {
+    stageFinding(strategyDir);
     writeFileSync(join(scanDir, "about.md"), "We now serve 4,200 customers.");
 
     const clean = runCli([strategyDir, scanDir]);
@@ -830,8 +786,8 @@ describe("main — --facts-dir — real runs", () => {
   });
 
   it("combined directory output equals the flat equivalent: same scan, same verdict either way", () => {
-    // Flat mode.
-    writeFileSync(join(strategyDir, "facts.json"), JSON.stringify([validFact]));
+    // Finding mode.
+    stageFinding(strategyDir);
     writeFileSync(join(scanDir, "about.md"), "We now serve 4,200 customers.");
     const flatClean = main([strategyDir, scanDir]);
     writeFileSync(join(scanDir, "about.md"), "We now serve 9,999 customers.");
@@ -840,7 +796,7 @@ describe("main — --facts-dir — real runs", () => {
     // Directory mode over the same registry, re-laid-out into one leaf.
     // The flat file must go first — the two sources are mutually
     // exclusive, which is exactly what the refusal tests above prove.
-    rmSync(join(strategyDir, "facts.json"));
+    rmSync(join(strategyDir, "findings"), { recursive: true });
     writeFactsLeaf("customers.json", [validFact]);
     writeFileSync(join(scanDir, "about.md"), "We now serve 4,200 customers.");
     const dirClean = main([strategyDir, scanDir, "--facts-dir", factsDir]);
@@ -1158,7 +1114,7 @@ const WONT_CLAIM_RECORD = {
 };
 
 function stageWontClaim(page: string): void {
-  writeFileSync(join(strategyDir, "strategy-brief.json"), JSON.stringify(WONT_CLAIM_RECORD));
+  stageWontClaimCells(strategyDir);
   writeFileSync(join(scanDir, "page.md"), page);
 }
 
@@ -1181,22 +1137,18 @@ describe("main — wont-claim", () => {
 
     writeFileSync(join(scanDir, "page.md"), "Enjoy Guaranteed Results today.");
     expect(main(["wont-claim", strategyDir, scanDir])).toBe(1);
-    expect(loggedLines("log").some((line) => line.startsWith("  [guaranteed-outcomes] page.md:1"))).toBe(true);
+    expect(loggedLines("log").some((line) => line.includes("page.md:1"))).toBe(true);
 
-    // The record lives in the scanned tree too: it is never a finding source.
     writeFileSync(join(scanDir, "page.md"), "Fine.");
-    writeFileSync(join(scanDir, "strategy-brief.json"), JSON.stringify(WONT_CLAIM_RECORD));
-    expect(main(["wont-claim", strategyDir, scanDir])).toBe(0);
-
-    rmSync(join(strategyDir, "strategy-brief.json"));
+    expect(main(["wont-claim", strategyDir, strategyDir])).toBe(2); // evidence is not a surface
+    rmSync(join(strategyDir, "tree.json"));
     expect(main(["wont-claim", strategyDir, scanDir])).toBe(2);
 
-    writeFileSync(join(strategyDir, "strategy-brief.json"), JSON.stringify({ wontClaim: [{ id: "Bad Id", statement: "x" }] }));
+    writeFileSync(join(strategyDir, "tree.json"), "invalid JSON");
     expect(main(["wont-claim", strategyDir, scanDir])).toBe(2);
 
-    writeFileSync(join(strategyDir, "strategy-brief.json"), JSON.stringify(WONT_CLAIM_RECORD));
+    stageWontClaimCells(strategyDir);
     rmSync(join(scanDir, "page.md"));
-    rmSync(join(scanDir, "strategy-brief.json"));
     expect(main(["wont-claim", strategyDir, scanDir])).toBe(2);
   });
 

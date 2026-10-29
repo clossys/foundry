@@ -29,7 +29,8 @@
  * made in any other words is not detected.
  */
 
-import { MAX_LINE_CHARS } from "./brand-facts-drift.js";
+import type { StrategyModel } from "./format/types.js";
+const MAX_LINE_CHARS = 16384;
 import type { ScannedFile } from "./facts-gate.js";
 import { STRATEGY_BRIEF_FILE, type StrategyBrief } from "./strategy-brief.js";
 
@@ -82,7 +83,10 @@ function isBriefRecord(path: string): boolean {
   return segments[segments.length - 1] === STRATEGY_BRIEF_FILE;
 }
 
-export function checkWontClaimDrift(files: readonly ScannedFile[], brief: StrategyBrief): WontClaimResult {
+/** Retains the pure legacy brief input until ST-12 removes the 0.6 model. */
+export function checkWontClaimDrift(files: readonly ScannedFile[], source: StrategyModel | StrategyBrief): WontClaimResult {
+  const selected = "cells" in source ? activeWontClaim(source) : { entries: source.wontClaim, issues: [] as string[] };
+  const brief = { wontClaim: selected.entries };
   const findings: WontClaimFinding[] = [];
   const ignored: WontClaimResult["ignored"] = [];
   const longLineReasons: string[] = [];
@@ -93,7 +97,7 @@ export function checkWontClaimDrift(files: readonly ScannedFile[], brief: Strate
   );
   const unchecked = brief.wontClaim.filter((entry) => (entry.matchPhrases ?? []).length === 0).map((entry) => entry.id);
 
-  const scanned = files.filter((file) => !isBriefRecord(file.path));
+  const scanned = "cells" in source ? files : files.filter((file) => !isBriefRecord(file.path));
   for (const file of scanned) {
     const lines = file.content.split("\n");
     for (let i = 0; i < lines.length; i++) {
@@ -123,7 +127,7 @@ export function checkWontClaimDrift(files: readonly ScannedFile[], brief: Strate
             file: file.path,
             line: lineNo,
             found,
-            message: `"${found}" makes a claim the strategy brief says it will not make (${entry.id}).`,
+            message: `"${found}" makes a claim the active strategy says it will not make (${entry.id}).`,
           });
           break; // one finding per id per line
         }
@@ -131,7 +135,7 @@ export function checkWontClaimDrift(files: readonly ScannedFile[], brief: Strate
     }
   }
 
-  const indeterminateReasons: string[] = [...longLineReasons];
+  const indeterminateReasons: string[] = [...selected.issues, ...longLineReasons];
   if (longLines > longLineReasons.length) {
     indeterminateReasons.push(`${longLines - longLineReasons.length} more line(s) over the ${MAX_LINE_CHARS} character limit were not checked`);
   }
@@ -139,4 +143,34 @@ export function checkWontClaimDrift(files: readonly ScannedFile[], brief: Strate
 
   const state: WontClaimState = indeterminateReasons.length > 0 ? "indeterminate" : findings.length > 0 ? "hit" : "clean";
   return { state, findings, ignored, unchecked, filesScanned: scanned.length, indeterminateReasons };
+}
+
+
+/** Only Direction labels in the tree-selected active Proof and Voice govern copy. */
+function activeWontClaim(model: StrategyModel): { entries: StrategyBrief["wontClaim"]; issues: string[] } {
+  const entries: StrategyBrief["wontClaim"] = []; const issues: string[] = [];
+  const sources = [["advantage.proposition.proof", "Never-claim"], ["identity.verbal.voice", "Never"]] as const;
+  for (const issue of model.issues) {
+    if (issue.path === "." || issue.path === "tree.json" || sources.some(([id]) => issue.path === `cells/${id}` || issue.path === `cells/${id}/v${model.tree?.active[id]}.md`)) {
+      issues.push(`${issue.path}:${issue.line}: ${issue.message}`);
+    }
+  }
+  if (!model.tree) issues.push("tree.json: no valid active pointers");
+  for (const [id, key] of sources) {
+    const version = model.tree?.active[id];
+    const cells = model.cells.filter(c => c.id === id && c.version === version);
+    const cell = cells[0];
+    if (version == null || cells.length !== 1 || cell?.status !== "active") {
+      issues.push(`${id}: active cell is missing or disagrees with tree.json`); continue;
+    }
+    const bullets = cell.direction.filter(b => b.key === key);
+    if (!bullets.length) issues.push(`${cell.path}: missing ${key}: label`);
+    for (const bullet of bullets) {
+      // Delimiters sit outside words; apostrophes inside words belong to the phrase.
+      const phrases = [...bullet.text.matchAll(/(?<![\p{L}\p{N}_])(?:"((?:[^"\\]|\\.)+)"|“([^”]+)”|'((?:[^'\n]|(?<=[\p{L}\p{N}_])'(?=[\p{L}\p{N}_]))+)'|‘((?:[^’\n]|(?<=[\p{L}\p{N}_])’(?=[\p{L}\p{N}_]))+)’)(?![\p{L}\p{N}_])/gu)]
+        .map(m => (m[1] ?? m[2] ?? m[3] ?? m[4] ?? "").trim()).filter(Boolean);
+      entries.push({ id: `${id}@${version}#${bullet.line}`, statement: bullet.text, matchPhrases: phrases });
+    }
+  }
+  return { entries, issues };
 }
