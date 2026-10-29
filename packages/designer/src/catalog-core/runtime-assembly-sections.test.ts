@@ -2,16 +2,32 @@
 /** Section content channels in runtime assembly: anatomy header copy, band children and per-leaf Section hosts. */
 import { beforeAll, describe, expect, it } from "vitest";
 import { packageSurfaceLibrary, type PackageSurfaceLibrary } from "../library-cli/__fixtures__/package-surface-library.js";
-import { libraryHash, resolve } from "./api.js";
+import { emit, libraryHash, resolve } from "./api.js";
 import { loadBuildCatalog } from "./index.js";
 import { prepareRuntimeAssembly, type RuntimeAssemblyInput, type RuntimeFillSelection } from "./runtime-assembly.js";
-import { checkConsumerRuntimePorts, runtimeHash, SECTION_HEADER_CONTENT_KEY, type RuntimeContentRef, type RuntimeFillDescriptor, type RuntimeJson, type RuntimeRenderInput, type RuntimeRendererDescriptor } from "./runtime-ports.js";
+import { checkConsumerRuntimePorts, runtimeHash, SECTION_HEADER_CONTENT_KEY, type RuntimeComponentIndex, type RuntimeContentRef, type RuntimeFillDescriptor, type RuntimeJson, type RuntimeRenderInput, type RuntimeRendererDescriptor } from "./runtime-ports.js";
 import { surfaceRuntimeIdentity } from "./surface-check.js";
 import { surfaceEntryOf } from "./surface-library.js";
 import type { CompositeEngineInput } from "./types.js";
+import { importFoundryComponents } from "../importers/foundry-components.js";
+import { selectedPackageClosure, selectedPackageComponentOptions } from "./__fixtures__/surface-engine/selected-package-closure.js";
+import { selectedRuntime } from "../importers/__fixtures__/selected-runtime.js";
 
-let fixture: PackageSurfaceLibrary, engine: CompositeEngineInput;
-beforeAll(async () => { fixture = await packageSurfaceLibrary(); engine = { catalog: fixture.catalog, library: fixture.library, surfaceOptions: fixture.options }; }, 120_000);
+let fixture: PackageSurfaceLibrary, engine: CompositeEngineInput, components: RuntimeComponentIndex;
+beforeAll(async () => {
+  fixture = await packageSurfaceLibrary();
+  const catalog = { ...fixture.catalog, components: { ...fixture.catalog.components, fills: importFoundryComponents().fills } };
+  const { library: closure } = selectedPackageClosure(catalog);
+  engine = { catalog, library: { ...fixture.library, values: closure.values, components: closure.components }, componentOptions: selectedPackageComponentOptions(), surfaceOptions: fixture.options };
+  expect(engine.library.source).toEqual(fixture.library.source);
+  expect(engine.library.surfaces).toBe(fixture.library.surfaces);
+  const profile = resolve(engine);
+  const files = emit(profile, ["component-index", "components-consumption"]);
+  const consumption = JSON.parse(files.find(file => file.path === "components-consumption.json")!.contents);
+  expect(consumption.consumer).toBe(profile.consumer);
+  expect(consumption.selectionHash).toBe(profile.selectionHash);
+  components = selectedRuntime(files.map(file => ({ path: file.path, content: file.contents }))).load("component-index.ts");
+}, 120_000);
 
 const FRAME = "frames.site-shell";
 function packageRenderer(leaf: string, module: string): RuntimeRendererDescriptor {
@@ -57,7 +73,7 @@ function assembly({ body, values = {}, sectionHosts, seen = [] }: Options): Runt
   return {
     identity: { kind: "artifact", name: "section channels", sha256: runtimeHash(fixture.packages) }, engine, contracts,
     ports: {
-      components: {},
+      components,
       manifest: { version: 1, consumer: engine.library.source.id, libraryHash: libraryHash(engine.library) as `sha256:${string}`, selectionHash: profile.selectionHash as `sha256:${string}`, fills, assetClosure: { complete: true, ids: [] } },
       renderers: Object.fromEntries(fills.map(fill => [fill.renderer.id, render])),
       resolveContent: (reference: RuntimeContentRef) => { const value = Object.hasOwn(values, reference.ref) ? values[reference.ref]! : reference.ref; return { reference, value, hash: runtimeHash(value) }; },
