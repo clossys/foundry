@@ -283,7 +283,8 @@
     "prepublishOnly": "node ../../scripts/check-name-collision.mjs . && npm run build",
     "typecheck": "node scripts/pack-plan-contract.mjs && tsc -p tsconfig.json --noEmit",
     "test": "node scripts/pack-plan-contract.mjs && vitest run",
-    "check:records": "node scripts/check-record-drift.mjs"
+    "check:records": "node scripts/check-record-drift.mjs",
+    "check:cells": "vitest run src/cells/cells.test.ts"
   },
   "devDependencies": {
     "@types/node": "^26.6.3",
@@ -298,6 +299,7 @@
     "@formatjs/icu-messageformat-parser": "3.5.22",
     "intl-messageformat": "12.1.4",
     "retext": "9.0.0",
-    "unified": "11.0.5"
+    "unified": "11.0.5",
+    "@clossys/strategist": "^0.6.0"
   }
 }
