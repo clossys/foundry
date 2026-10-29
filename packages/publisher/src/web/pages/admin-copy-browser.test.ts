@@ -27,4 +27,7 @@ it("bundles the public admin-copy client seam without Writer root or the server 
   await expect(bundle('export { prepareAdminPageCopyEnvelopes } from "@clossys/publisher/web/registered-route-check";')).rejects.toMatchObject({
     errors: [expect.objectContaining({ text: expect.stringContaining("No matching export") })],
   });
+  await expect(bundle('export { prepareStrategyPage, prepareStrategyPageRegistry } from "@clossys/publisher/web/registered-route-check";')).rejects.toMatchObject({
+    errors: expect.arrayContaining([expect.objectContaining({ text: expect.stringContaining("No matching export") })]),
+  });
 });

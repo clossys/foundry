@@ -1,0 +1,235 @@
+[
+  {
+    "version": 1,
+    "id": "strategy",
+    "entryId": "example.strategy",
+    "namespace": "example.strategy",
+    "title": {
+      "id": "st.00727006eb"
+    },
+    "levels": {
+      "l0": {
+        "verb": "normalize",
+        "header": {
+          "section": "sections.section-header",
+          "config": "level-3",
+          "members": {
+            "align": "start",
+            "density": "compact"
+          }
+        },
+        "empty": {
+          "section": "sections.empty-state",
+          "members": {
+            "kind": "empty",
+            "scope": "region"
+          }
+        }
+      },
+      "l1": {
+        "verb": "unlock",
+        "band": {
+          "section": "sections.band",
+          "members": {
+            "ground": "sunken",
+            "measure": "wide"
+          }
+        },
+        "header": {
+          "section": "sections.section-header",
+          "config": "level-3",
+          "members": {
+            "align": "start",
+            "density": "compact"
+          }
+        },
+        "key": "id"
+      },
+      "l2": {
+        "verb": "cohere",
+        "table": {
+          "section": "sections.data-table"
+        },
+        "key": "id"
+      },
+      "l3": {
+        "verb": "create",
+        "key": "id"
+      }
+    },
+    "columns": [
+      {
+        "key": "cell",
+        "kind": "text",
+        "label": {
+          "id": "st.f9deac40b6"
+        }
+      },
+      {
+        "key": "latestVersion",
+        "kind": "text",
+        "label": {
+          "id": "st.bf26cc191e"
+        }
+      },
+      {
+        "key": "activeVersion",
+        "kind": "text",
+        "label": {
+          "id": "st.143d267bad"
+        }
+      },
+      {
+        "key": "latestStatus",
+        "kind": "text",
+        "label": {
+          "id": "st.8589e2f1ba"
+        }
+      },
+      {
+        "key": "active",
+        "kind": "text",
+        "label": {
+          "id": "st.78a94f0ffc"
+        }
+      },
+      {
+        "key": "fresh",
+        "kind": "text",
+        "label": {
+          "id": "st.41ad201055"
+        }
+      }
+    ],
+    "copy": {
+      "outline": {
+        "id": "st.53fe57e5da"
+      },
+      "count": {
+        "id": "st.80adfe3461"
+      },
+      "itemHeading": {
+        "id": "st.0aa7b72084"
+      },
+      "itemActionsLabel": {
+        "id": "st.f1b7358596"
+      },
+      "table": {
+        "label": {
+          "id": "st.9779593939"
+        },
+        "emptyTitle": {
+          "id": "st.44c026af5a"
+        },
+        "emptyDescription": {
+          "id": "st.d021b506b8"
+        },
+        "paginationLabel": {
+          "id": "st.a42c0167fc"
+        },
+        "summary": {
+          "id": "st.0702121bdf"
+        }
+      },
+      "chat": {
+        "label": {
+          "id": "st.e1bfed2ca4"
+        },
+        "placeholder": {
+          "id": "st.4d350bf1fe"
+        },
+        "labels": {
+          "logLabel": {
+            "id": "st.9f03c39530"
+          },
+          "userLabel": {
+            "id": "st.3035434060"
+          },
+          "assistantLabel": {
+            "id": "st.3bbae5518f"
+          },
+          "actionGroupLabel": {
+            "id": "st.ac12656477"
+          },
+          "copyMessageLabel": {
+            "id": "st.7cc80aeefd"
+          },
+          "regenerateLabel": {
+            "id": "st.ae0891e786"
+          },
+          "helpfulLabel": {
+            "id": "st.00df8b3b38"
+          },
+          "unhelpfulLabel": {
+            "id": "st.6eb1925d8e"
+          },
+          "emptyLabel": {
+            "id": "st.2f00028312"
+          },
+          "jumpLabel": {
+            "id": "st.d2cf021ae5"
+          },
+          "streamingLabel": {
+            "id": "st.523598e5b7"
+          },
+          "errorLabel": {
+            "id": "st.5c2f8cc0f9"
+          },
+          "retryLabel": {
+            "id": "st.d5345f7b42"
+          },
+          "composerLabel": {
+            "id": "st.6efe57fe80"
+          },
+          "stopLabel": {
+            "id": "st.500f7f8cdd"
+          },
+          "sendLabel": {
+            "id": "st.8982ea66ed"
+          },
+          "copyCodeLabel": {
+            "id": "st.cbf238c891"
+          },
+          "copiedLabel": {
+            "id": "st.d7228d9f32"
+          },
+          "copyUnavailableLabel": {
+            "id": "st.0e9afa3dbd"
+          }
+        }
+      }
+    },
+    "item": {
+      "entryId": "example.strategy.item",
+      "sections": [
+        {
+          "id": "strategy-body",
+          "label": {
+            "id": "st.7c6cc0b029"
+          },
+          "estimate": 200,
+          "fill": {
+            "section": "sections.band",
+            "members": {
+              "ground": "transparent",
+              "measure": "prose"
+            },
+            "content": {},
+            "children": [
+              {
+                "section": "sections.article",
+                "content": {
+                  "body": {
+                    "kind": "region",
+                    "ref": "example.strategy/item/body"
+                  }
+                }
+              }
+            ]
+          }
+        }
+      ]
+    },
+    "pageModule": null
+  }
+]

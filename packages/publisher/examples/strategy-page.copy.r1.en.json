@@ -1,0 +1,1137 @@
+{
+  "version": 1,
+  "revision": 1,
+  "state": "draft",
+  "locale": "en",
+  "activation": "none",
+  "records": [
+    {
+      "id": "st.7addb77db2",
+      "leaf": "strings.common",
+      "context": "foundry.example.strategy.scopeSummary",
+      "status": "draft",
+      "origin": "authored",
+      "text": "Scope: {scope}. Active: {active, number}/{total, number}. Fresh: {fresh, number}/{total, number}.",
+      "args": [
+        {
+          "name": "scope",
+          "type": "string"
+        },
+        {
+          "name": "active",
+          "type": "number"
+        },
+        {
+          "name": "total",
+          "type": "number"
+        },
+        {
+          "name": "fresh",
+          "type": "number"
+        }
+      ]
+    },
+    {
+      "id": "st.b3f621675b",
+      "leaf": "strings.common",
+      "context": "foundry.example.strategy.levelsSummary",
+      "status": "draft",
+      "origin": "authored",
+      "text": "L0 clean: {clean}. Coherent L2: {coherent, number}. Unlocked L1: {unlocked, number}.",
+      "args": [
+        {
+          "name": "clean",
+          "type": "string"
+        },
+        {
+          "name": "coherent",
+          "type": "number"
+        },
+        {
+          "name": "unlocked",
+          "type": "number"
+        }
+      ]
+    },
+    {
+      "id": "st.adce65454d",
+      "leaf": "strings.common",
+      "context": "foundry.example.strategy.storylineSummary",
+      "status": "draft",
+      "origin": "authored",
+      "text": "Storyline: {critic}. Clean: {clean}. Next unlock: {nextUnlock}.",
+      "args": [
+        {
+          "name": "critic",
+          "type": "string"
+        },
+        {
+          "name": "clean",
+          "type": "string"
+        },
+        {
+          "name": "nextUnlock",
+          "type": "string"
+        }
+      ]
+    },
+    {
+      "id": "st.adbbb3632d",
+      "leaf": "strings.common",
+      "context": "foundry.example.strategy.l1Summary",
+      "status": "draft",
+      "origin": "authored",
+      "text": "{id}: {state}.",
+      "args": [
+        {
+          "name": "id",
+          "type": "string"
+        },
+        {
+          "name": "state",
+          "type": "string"
+        }
+      ]
+    },
+    {
+      "id": "st.2f04c36288",
+      "leaf": "strings.common",
+      "context": "foundry.example.strategy.l2Summary",
+      "status": "draft",
+      "origin": "authored",
+      "text": "{id}: {state}.",
+      "args": [
+        {
+          "name": "id",
+          "type": "string"
+        },
+        {
+          "name": "state",
+          "type": "string"
+        }
+      ]
+    },
+    {
+      "id": "st.f754731524",
+      "leaf": "strings.common",
+      "context": "foundry.example.strategy.briefSummary",
+      "status": "draft",
+      "origin": "authored",
+      "text": "{contract}: {state}. Missing: {missing, number}. Stale: {stale, number}.",
+      "args": [
+        {
+          "name": "contract",
+          "type": "string"
+        },
+        {
+          "name": "state",
+          "type": "string"
+        },
+        {
+          "name": "missing",
+          "type": "number"
+        },
+        {
+          "name": "stale",
+          "type": "number"
+        }
+      ]
+    },
+    {
+      "id": "st.2fba56881d",
+      "leaf": "strings.common",
+      "context": "foundry.example.strategy.metadataSummary",
+      "status": "draft",
+      "origin": "authored",
+      "text": "Version: {version, number}. File status: {status}. Active pointer: {pointer}. Canonical active: {active}. Fresh: {fresh}.",
+      "args": [
+        {
+          "name": "version",
+          "type": "number"
+        },
+        {
+          "name": "status",
+          "type": "string"
+        },
+        {
+          "name": "pointer",
+          "type": "string"
+        },
+        {
+          "name": "active",
+          "type": "string"
+        },
+        {
+          "name": "fresh",
+          "type": "string"
+        }
+      ]
+    },
+    {
+      "id": "st.ea79776585",
+      "leaf": "strings.common",
+      "context": "foundry.example.strategy.valueTrue",
+      "status": "draft",
+      "origin": "authored",
+      "text": "true"
+    },
+    {
+      "id": "st.13d50729ad",
+      "leaf": "strings.common",
+      "context": "foundry.example.strategy.valueFalse",
+      "status": "draft",
+      "origin": "authored",
+      "text": "false"
+    },
+    {
+      "id": "st.286b62a1b3",
+      "leaf": "strings.common",
+      "context": "foundry.example.strategy.valueDraft",
+      "status": "draft",
+      "origin": "authored",
+      "text": "draft"
+    },
+    {
+      "id": "st.276b786f31",
+      "leaf": "strings.common",
+      "context": "foundry.example.strategy.valueActive",
+      "status": "draft",
+      "origin": "authored",
+      "text": "active"
+    },
+    {
+      "id": "st.11ce2b700d",
+      "leaf": "strings.common",
+      "context": "foundry.example.strategy.valueRetired",
+      "status": "draft",
+      "origin": "authored",
+      "text": "retired"
+    },
+    {
+      "id": "st.8da850eace",
+      "leaf": "strings.common",
+      "context": "foundry.example.strategy.valueMissing",
+      "status": "draft",
+      "origin": "authored",
+      "text": "missing"
+    },
+    {
+      "id": "st.489c36af04",
+      "leaf": "strings.common",
+      "context": "foundry.example.strategy.valueReady",
+      "status": "draft",
+      "origin": "authored",
+      "text": "ready"
+    },
+    {
+      "id": "st.03d763d126",
+      "leaf": "strings.common",
+      "context": "foundry.example.strategy.valueStale",
+      "status": "draft",
+      "origin": "authored",
+      "text": "stale"
+    },
+    {
+      "id": "st.2ef2e24cdb",
+      "leaf": "strings.common",
+      "context": "foundry.example.strategy.valueNotJudged",
+      "status": "draft",
+      "origin": "authored",
+      "text": "not judged"
+    },
+    {
+      "id": "st.4ac9b6f678",
+      "leaf": "strings.common",
+      "context": "foundry.example.strategy.valuePass",
+      "status": "draft",
+      "origin": "authored",
+      "text": "pass"
+    },
+    {
+      "id": "st.fc8a26ee74",
+      "leaf": "strings.common",
+      "context": "foundry.example.strategy.valueFail",
+      "status": "draft",
+      "origin": "authored",
+      "text": "fail"
+    },
+    {
+      "id": "st.29922b22c0",
+      "leaf": "strings.common",
+      "context": "foundry.example.strategy.valueUnlocked",
+      "status": "draft",
+      "origin": "authored",
+      "text": "unlocked"
+    },
+    {
+      "id": "st.d46655edad",
+      "leaf": "strings.common",
+      "context": "foundry.example.strategy.valueLocked",
+      "status": "draft",
+      "origin": "authored",
+      "text": "locked"
+    },
+    {
+      "id": "st.659995bb7c",
+      "leaf": "strings.common",
+      "context": "foundry.example.strategy.valueCoherent",
+      "status": "draft",
+      "origin": "authored",
+      "text": "coherent"
+    },
+    {
+      "id": "st.43d0566a4f",
+      "leaf": "strings.common",
+      "context": "foundry.example.strategy.valueNotCoherent",
+      "status": "draft",
+      "origin": "authored",
+      "text": "not coherent"
+    },
+    {
+      "id": "st.013996b3b5",
+      "leaf": "strings.common",
+      "context": "foundry.example.strategy.valueCore",
+      "status": "draft",
+      "origin": "authored",
+      "text": "core"
+    },
+    {
+      "id": "st.19d6b2fe9e",
+      "leaf": "strings.common",
+      "context": "foundry.example.strategy.valueFull",
+      "status": "draft",
+      "origin": "authored",
+      "text": "full"
+    },
+    {
+      "id": "st.61bac879e5",
+      "leaf": "strings.common",
+      "context": "foundry.example.strategy.valueNone",
+      "status": "draft",
+      "origin": "authored",
+      "text": "none"
+    },
+    {
+      "id": "st.f2108de634",
+      "leaf": "strings.common",
+      "context": "foundry.example.strategy.previous",
+      "status": "draft",
+      "origin": "authored",
+      "text": "Previous strategy page"
+    },
+    {
+      "id": "st.f402f1ccca",
+      "leaf": "strings.common",
+      "context": "foundry.example.strategy.next",
+      "status": "draft",
+      "origin": "authored",
+      "text": "Next strategy page"
+    },
+    {
+      "id": "st.57482f21b8",
+      "leaf": "strings.common",
+      "context": "foundry.example.strategy.skipLink",
+      "status": "draft",
+      "origin": "authored",
+      "text": "Skip to strategy content"
+    },
+    {
+      "id": "st.00727006eb",
+      "leaf": "strings.common",
+      "context": "foundry.example.strategy.title",
+      "status": "draft",
+      "origin": "authored",
+      "text": "Strategy"
+    },
+    {
+      "id": "st.5a7c260c75",
+      "leaf": "strings.common",
+      "context": "foundry.example.strategy.direction",
+      "status": "draft",
+      "origin": "authored",
+      "text": "Direction"
+    },
+    {
+      "id": "st.fc9e78326b",
+      "leaf": "strings.common",
+      "context": "foundry.example.strategy.because",
+      "status": "draft",
+      "origin": "authored",
+      "text": "Because"
+    },
+    {
+      "id": "st.f8e9c21981",
+      "leaf": "strings.common",
+      "context": "foundry.example.strategy.watch",
+      "status": "draft",
+      "origin": "authored",
+      "text": "Watch"
+    },
+    {
+      "id": "st.7c6cc0b029",
+      "leaf": "strings.common",
+      "context": "foundry.example.strategy.status",
+      "status": "draft",
+      "origin": "authored",
+      "text": "Strategy status"
+    },
+    {
+      "id": "st.3b86e765c7",
+      "leaf": "strings.common",
+      "context": "foundry.example.strategy.missing",
+      "status": "draft",
+      "origin": "authored",
+      "text": "This strategy cell has no readable version."
+    },
+    {
+      "id": "st.b1abdd571a",
+      "leaf": "strings.common",
+      "context": "foundry.example.strategy.empty",
+      "status": "draft",
+      "origin": "authored",
+      "text": "This region has no authored bullets."
+    },
+    {
+      "id": "st.f9deac40b6",
+      "leaf": "strings.common",
+      "context": "foundry.example.strategy.cell",
+      "status": "draft",
+      "origin": "authored",
+      "text": "Strategy cell"
+    },
+    {
+      "id": "st.bf26cc191e",
+      "leaf": "strings.common",
+      "context": "foundry.example.strategy.latestVersion",
+      "status": "draft",
+      "origin": "authored",
+      "text": "Latest version"
+    },
+    {
+      "id": "st.143d267bad",
+      "leaf": "strings.common",
+      "context": "foundry.example.strategy.activeVersion",
+      "status": "draft",
+      "origin": "authored",
+      "text": "Pointer version"
+    },
+    {
+      "id": "st.8589e2f1ba",
+      "leaf": "strings.common",
+      "context": "foundry.example.strategy.latestStatus",
+      "status": "draft",
+      "origin": "authored",
+      "text": "Latest file status"
+    },
+    {
+      "id": "st.78a94f0ffc",
+      "leaf": "strings.common",
+      "context": "foundry.example.strategy.active",
+      "status": "draft",
+      "origin": "authored",
+      "text": "Canonical active"
+    },
+    {
+      "id": "st.41ad201055",
+      "leaf": "strings.common",
+      "context": "foundry.example.strategy.fresh",
+      "status": "draft",
+      "origin": "authored",
+      "text": "Fresh"
+    },
+    {
+      "id": "st.53fe57e5da",
+      "leaf": "strings.common",
+      "context": "foundry.example.strategy.outline",
+      "status": "draft",
+      "origin": "authored",
+      "text": "Strategy outline"
+    },
+    {
+      "id": "st.80adfe3461",
+      "leaf": "strings.common",
+      "context": "foundry.example.strategy.count",
+      "status": "draft",
+      "origin": "authored",
+      "text": "{count, number} strategy cells",
+      "args": [
+        {
+          "name": "count",
+          "type": "number"
+        }
+      ]
+    },
+    {
+      "id": "st.0aa7b72084",
+      "leaf": "strings.common",
+      "context": "foundry.example.strategy.itemHeading",
+      "status": "draft",
+      "origin": "authored",
+      "text": "{name}",
+      "args": [
+        {
+          "name": "name",
+          "type": "string"
+        }
+      ]
+    },
+    {
+      "id": "st.f1b7358596",
+      "leaf": "strings.common",
+      "context": "foundry.example.strategy.itemActionsLabel",
+      "status": "draft",
+      "origin": "authored",
+      "text": "Strategy cell actions"
+    },
+    {
+      "id": "st.9779593939",
+      "leaf": "strings.common",
+      "context": "foundry.example.strategy.tableLabel",
+      "status": "draft",
+      "origin": "authored",
+      "text": "Strategy catalogue"
+    },
+    {
+      "id": "st.44c026af5a",
+      "leaf": "strings.common",
+      "context": "foundry.example.strategy.emptyTitle",
+      "status": "draft",
+      "origin": "authored",
+      "text": "No strategy cells in this view"
+    },
+    {
+      "id": "st.d021b506b8",
+      "leaf": "strings.common",
+      "context": "foundry.example.strategy.emptyDescription",
+      "status": "draft",
+      "origin": "authored",
+      "text": "Choose another strategy scope to inspect its catalogue."
+    },
+    {
+      "id": "st.a42c0167fc",
+      "leaf": "strings.common",
+      "context": "foundry.example.strategy.paginationLabel",
+      "status": "draft",
+      "origin": "authored",
+      "text": "Strategy catalogue pages"
+    },
+    {
+      "id": "st.0702121bdf",
+      "leaf": "strings.common",
+      "context": "foundry.example.strategy.summary",
+      "status": "draft",
+      "origin": "authored",
+      "text": "{start, number}–{end, number} of {total, number} strategy cells",
+      "args": [
+        {
+          "name": "start",
+          "type": "number"
+        },
+        {
+          "name": "end",
+          "type": "number"
+        },
+        {
+          "name": "total",
+          "type": "number"
+        }
+      ]
+    },
+    {
+      "id": "st.e1bfed2ca4",
+      "leaf": "strings.common",
+      "context": "foundry.example.strategy.chatLabel",
+      "status": "draft",
+      "origin": "authored",
+      "text": "Strategy conversation"
+    },
+    {
+      "id": "st.4d350bf1fe",
+      "leaf": "strings.common",
+      "context": "foundry.example.strategy.chatPlaceholder",
+      "status": "draft",
+      "origin": "authored",
+      "text": "Ask about the selected strategy cell"
+    },
+    {
+      "id": "st.9f03c39530",
+      "leaf": "strings.common",
+      "context": "foundry.example.strategy.logLabel",
+      "status": "draft",
+      "origin": "authored",
+      "text": "Strategy conversation history"
+    },
+    {
+      "id": "st.3035434060",
+      "leaf": "strings.common",
+      "context": "foundry.example.strategy.userLabel",
+      "status": "draft",
+      "origin": "authored",
+      "text": "Strategy reader"
+    },
+    {
+      "id": "st.3bbae5518f",
+      "leaf": "strings.common",
+      "context": "foundry.example.strategy.assistantLabel",
+      "status": "draft",
+      "origin": "authored",
+      "text": "Strategy assistant"
+    },
+    {
+      "id": "st.ac12656477",
+      "leaf": "strings.common",
+      "context": "foundry.example.strategy.actionGroupLabel",
+      "status": "draft",
+      "origin": "authored",
+      "text": "Strategy message actions"
+    },
+    {
+      "id": "st.7cc80aeefd",
+      "leaf": "strings.common",
+      "context": "foundry.example.strategy.copyMessageLabel",
+      "status": "draft",
+      "origin": "authored",
+      "text": "Copy strategy message"
+    },
+    {
+      "id": "st.ae0891e786",
+      "leaf": "strings.common",
+      "context": "foundry.example.strategy.regenerateLabel",
+      "status": "draft",
+      "origin": "authored",
+      "text": "Regenerate strategy reply"
+    },
+    {
+      "id": "st.00df8b3b38",
+      "leaf": "strings.common",
+      "context": "foundry.example.strategy.helpfulLabel",
+      "status": "draft",
+      "origin": "authored",
+      "text": "Helpful strategy reply"
+    },
+    {
+      "id": "st.6eb1925d8e",
+      "leaf": "strings.common",
+      "context": "foundry.example.strategy.unhelpfulLabel",
+      "status": "draft",
+      "origin": "authored",
+      "text": "Unhelpful strategy reply"
+    },
+    {
+      "id": "st.2f00028312",
+      "leaf": "strings.common",
+      "context": "foundry.example.strategy.emptyLabel",
+      "status": "draft",
+      "origin": "authored",
+      "text": "No strategy conversation yet"
+    },
+    {
+      "id": "st.d2cf021ae5",
+      "leaf": "strings.common",
+      "context": "foundry.example.strategy.jumpLabel",
+      "status": "draft",
+      "origin": "authored",
+      "text": "Jump to latest strategy reply"
+    },
+    {
+      "id": "st.523598e5b7",
+      "leaf": "strings.common",
+      "context": "foundry.example.strategy.streamingLabel",
+      "status": "draft",
+      "origin": "authored",
+      "text": "Writing strategy reply"
+    },
+    {
+      "id": "st.5c2f8cc0f9",
+      "leaf": "strings.common",
+      "context": "foundry.example.strategy.errorLabel",
+      "status": "draft",
+      "origin": "authored",
+      "text": "Strategy reply unavailable"
+    },
+    {
+      "id": "st.d5345f7b42",
+      "leaf": "strings.common",
+      "context": "foundry.example.strategy.retryLabel",
+      "status": "draft",
+      "origin": "authored",
+      "text": "Retry strategy reply"
+    },
+    {
+      "id": "st.6efe57fe80",
+      "leaf": "strings.common",
+      "context": "foundry.example.strategy.composerLabel",
+      "status": "draft",
+      "origin": "authored",
+      "text": "Strategy message"
+    },
+    {
+      "id": "st.500f7f8cdd",
+      "leaf": "strings.common",
+      "context": "foundry.example.strategy.stopLabel",
+      "status": "draft",
+      "origin": "authored",
+      "text": "Stop strategy reply"
+    },
+    {
+      "id": "st.8982ea66ed",
+      "leaf": "strings.common",
+      "context": "foundry.example.strategy.sendLabel",
+      "status": "draft",
+      "origin": "authored",
+      "text": "Send strategy message"
+    },
+    {
+      "id": "st.cbf238c891",
+      "leaf": "strings.common",
+      "context": "foundry.example.strategy.copyCodeLabel",
+      "status": "draft",
+      "origin": "authored",
+      "text": "Copy strategy example"
+    },
+    {
+      "id": "st.d7228d9f32",
+      "leaf": "strings.common",
+      "context": "foundry.example.strategy.copiedLabel",
+      "status": "draft",
+      "origin": "authored",
+      "text": "Strategy example copied"
+    },
+    {
+      "id": "st.0e9afa3dbd",
+      "leaf": "strings.common",
+      "context": "foundry.example.strategy.copyUnavailableLabel",
+      "status": "draft",
+      "origin": "authored",
+      "text": "Strategy example cannot be copied"
+    }
+  ],
+  "bindings": [
+    {
+      "cellId": "foundry.example.strategy.scopeSummary",
+      "recordId": "st.7addb77db2",
+      "target": "sections.article/body",
+      "kind": "CopyRef"
+    },
+    {
+      "cellId": "foundry.example.strategy.levelsSummary",
+      "recordId": "st.b3f621675b",
+      "target": "sections.article/body",
+      "kind": "CopyRef"
+    },
+    {
+      "cellId": "foundry.example.strategy.storylineSummary",
+      "recordId": "st.adce65454d",
+      "target": "sections.article/body",
+      "kind": "CopyRef"
+    },
+    {
+      "cellId": "foundry.example.strategy.l1Summary",
+      "recordId": "st.adbbb3632d",
+      "target": "sections.article/body",
+      "kind": "CopyRef"
+    },
+    {
+      "cellId": "foundry.example.strategy.l2Summary",
+      "recordId": "st.2f04c36288",
+      "target": "sections.article/body",
+      "kind": "CopyRef"
+    },
+    {
+      "cellId": "foundry.example.strategy.briefSummary",
+      "recordId": "st.f754731524",
+      "target": "sections.article/body",
+      "kind": "CopyRef"
+    },
+    {
+      "cellId": "foundry.example.strategy.metadataSummary",
+      "recordId": "st.2fba56881d",
+      "target": "sections.article/body",
+      "kind": "CopyRef"
+    },
+    {
+      "cellId": "foundry.example.strategy.valueTrue",
+      "recordId": "st.ea79776585",
+      "target": "sections.data-table/rows",
+      "kind": "CopyRef"
+    },
+    {
+      "cellId": "foundry.example.strategy.valueFalse",
+      "recordId": "st.13d50729ad",
+      "target": "sections.data-table/rows",
+      "kind": "CopyRef"
+    },
+    {
+      "cellId": "foundry.example.strategy.valueDraft",
+      "recordId": "st.286b62a1b3",
+      "target": "sections.data-table/rows",
+      "kind": "CopyRef"
+    },
+    {
+      "cellId": "foundry.example.strategy.valueActive",
+      "recordId": "st.276b786f31",
+      "target": "sections.data-table/rows",
+      "kind": "CopyRef"
+    },
+    {
+      "cellId": "foundry.example.strategy.valueRetired",
+      "recordId": "st.11ce2b700d",
+      "target": "sections.data-table/rows",
+      "kind": "CopyRef"
+    },
+    {
+      "cellId": "foundry.example.strategy.valueMissing",
+      "recordId": "st.8da850eace",
+      "target": "sections.data-table/rows",
+      "kind": "CopyRef"
+    },
+    {
+      "cellId": "foundry.example.strategy.valueReady",
+      "recordId": "st.489c36af04",
+      "target": "sections.article/body",
+      "kind": "CopyRef"
+    },
+    {
+      "cellId": "foundry.example.strategy.valueStale",
+      "recordId": "st.03d763d126",
+      "target": "sections.article/body",
+      "kind": "CopyRef"
+    },
+    {
+      "cellId": "foundry.example.strategy.valueNotJudged",
+      "recordId": "st.2ef2e24cdb",
+      "target": "sections.article/body",
+      "kind": "CopyRef"
+    },
+    {
+      "cellId": "foundry.example.strategy.valuePass",
+      "recordId": "st.4ac9b6f678",
+      "target": "sections.article/body",
+      "kind": "CopyRef"
+    },
+    {
+      "cellId": "foundry.example.strategy.valueFail",
+      "recordId": "st.fc8a26ee74",
+      "target": "sections.article/body",
+      "kind": "CopyRef"
+    },
+    {
+      "cellId": "foundry.example.strategy.valueUnlocked",
+      "recordId": "st.29922b22c0",
+      "target": "sections.article/body",
+      "kind": "CopyRef"
+    },
+    {
+      "cellId": "foundry.example.strategy.valueLocked",
+      "recordId": "st.d46655edad",
+      "target": "sections.article/body",
+      "kind": "CopyRef"
+    },
+    {
+      "cellId": "foundry.example.strategy.valueCoherent",
+      "recordId": "st.659995bb7c",
+      "target": "sections.article/body",
+      "kind": "CopyRef"
+    },
+    {
+      "cellId": "foundry.example.strategy.valueNotCoherent",
+      "recordId": "st.43d0566a4f",
+      "target": "sections.article/body",
+      "kind": "CopyRef"
+    },
+    {
+      "cellId": "foundry.example.strategy.valueCore",
+      "recordId": "st.013996b3b5",
+      "target": "sections.article/body",
+      "kind": "CopyRef"
+    },
+    {
+      "cellId": "foundry.example.strategy.valueFull",
+      "recordId": "st.19d6b2fe9e",
+      "target": "sections.article/body",
+      "kind": "CopyRef"
+    },
+    {
+      "cellId": "foundry.example.strategy.valueNone",
+      "recordId": "st.61bac879e5",
+      "target": "sections.article/body",
+      "kind": "CopyRef"
+    },
+    {
+      "cellId": "foundry.example.strategy.previous",
+      "recordId": "st.f2108de634",
+      "target": "sections.data-table/pagination",
+      "kind": "CopyRef"
+    },
+    {
+      "cellId": "foundry.example.strategy.next",
+      "recordId": "st.f402f1ccca",
+      "target": "sections.data-table/pagination",
+      "kind": "CopyRef"
+    },
+    {
+      "cellId": "foundry.example.strategy.skipLink",
+      "recordId": "st.57482f21b8",
+      "target": "frames.app-shell/skip-link",
+      "kind": "CopyRef"
+    },
+    {
+      "cellId": "foundry.example.strategy.title",
+      "recordId": "st.00727006eb",
+      "target": "frames.app-shell/header",
+      "kind": "CopyRef"
+    },
+    {
+      "cellId": "foundry.example.strategy.direction",
+      "recordId": "st.5a7c260c75",
+      "target": "sections.article/body",
+      "kind": "CopyRef"
+    },
+    {
+      "cellId": "foundry.example.strategy.because",
+      "recordId": "st.fc9e78326b",
+      "target": "sections.article/body",
+      "kind": "CopyRef"
+    },
+    {
+      "cellId": "foundry.example.strategy.watch",
+      "recordId": "st.f8e9c21981",
+      "target": "sections.article/body",
+      "kind": "CopyRef"
+    },
+    {
+      "cellId": "foundry.example.strategy.status",
+      "recordId": "st.7c6cc0b029",
+      "target": "sections.article/body",
+      "kind": "CopyRef"
+    },
+    {
+      "cellId": "foundry.example.strategy.missing",
+      "recordId": "st.3b86e765c7",
+      "target": "sections.article/body",
+      "kind": "CopyRef"
+    },
+    {
+      "cellId": "foundry.example.strategy.empty",
+      "recordId": "st.b1abdd571a",
+      "target": "sections.article/body",
+      "kind": "CopyRef"
+    },
+    {
+      "cellId": "foundry.example.strategy.cell",
+      "recordId": "st.f9deac40b6",
+      "target": "sections.data-table/columns",
+      "kind": "CopyRef"
+    },
+    {
+      "cellId": "foundry.example.strategy.latestVersion",
+      "recordId": "st.bf26cc191e",
+      "target": "sections.data-table/columns",
+      "kind": "CopyRef"
+    },
+    {
+      "cellId": "foundry.example.strategy.activeVersion",
+      "recordId": "st.143d267bad",
+      "target": "sections.data-table/columns",
+      "kind": "CopyRef"
+    },
+    {
+      "cellId": "foundry.example.strategy.latestStatus",
+      "recordId": "st.8589e2f1ba",
+      "target": "sections.data-table/columns",
+      "kind": "CopyRef"
+    },
+    {
+      "cellId": "foundry.example.strategy.active",
+      "recordId": "st.78a94f0ffc",
+      "target": "sections.data-table/columns",
+      "kind": "CopyRef"
+    },
+    {
+      "cellId": "foundry.example.strategy.fresh",
+      "recordId": "st.41ad201055",
+      "target": "sections.data-table/columns",
+      "kind": "CopyRef"
+    },
+    {
+      "cellId": "foundry.example.strategy.outline",
+      "recordId": "st.53fe57e5da",
+      "target": "sections.table-of-contents/label",
+      "kind": "CopyRef"
+    },
+    {
+      "cellId": "foundry.example.strategy.count",
+      "recordId": "st.80adfe3461",
+      "target": "sections.section-header/stats",
+      "kind": "CopyRef"
+    },
+    {
+      "cellId": "foundry.example.strategy.itemHeading",
+      "recordId": "st.0aa7b72084",
+      "target": "sections.record-detail/title",
+      "kind": "CopyRef"
+    },
+    {
+      "cellId": "foundry.example.strategy.itemActionsLabel",
+      "recordId": "st.f1b7358596",
+      "target": "sections.record-detail/actions-label",
+      "kind": "CopyRef"
+    },
+    {
+      "cellId": "foundry.example.strategy.tableLabel",
+      "recordId": "st.9779593939",
+      "target": "sections.data-table/label",
+      "kind": "CopyRef"
+    },
+    {
+      "cellId": "foundry.example.strategy.emptyTitle",
+      "recordId": "st.44c026af5a",
+      "target": "sections.data-table/empty-title",
+      "kind": "CopyRef"
+    },
+    {
+      "cellId": "foundry.example.strategy.emptyDescription",
+      "recordId": "st.d021b506b8",
+      "target": "sections.data-table/empty-description",
+      "kind": "CopyRef"
+    },
+    {
+      "cellId": "foundry.example.strategy.paginationLabel",
+      "recordId": "st.a42c0167fc",
+      "target": "sections.data-table/pagination-label",
+      "kind": "CopyRef"
+    },
+    {
+      "cellId": "foundry.example.strategy.summary",
+      "recordId": "st.0702121bdf",
+      "target": "sections.data-table/summary",
+      "kind": "CopyRef"
+    },
+    {
+      "cellId": "foundry.example.strategy.chatLabel",
+      "recordId": "st.e1bfed2ca4",
+      "target": "sections.chat/label",
+      "kind": "CopyRef"
+    },
+    {
+      "cellId": "foundry.example.strategy.chatPlaceholder",
+      "recordId": "st.4d350bf1fe",
+      "target": "sections.chat/placeholder",
+      "kind": "CopyRef"
+    },
+    {
+      "cellId": "foundry.example.strategy.logLabel",
+      "recordId": "st.9f03c39530",
+      "target": "sections.chat/logLabel",
+      "kind": "CopyRef"
+    },
+    {
+      "cellId": "foundry.example.strategy.userLabel",
+      "recordId": "st.3035434060",
+      "target": "sections.chat/userLabel",
+      "kind": "CopyRef"
+    },
+    {
+      "cellId": "foundry.example.strategy.assistantLabel",
+      "recordId": "st.3bbae5518f",
+      "target": "sections.chat/assistantLabel",
+      "kind": "CopyRef"
+    },
+    {
+      "cellId": "foundry.example.strategy.actionGroupLabel",
+      "recordId": "st.ac12656477",
+      "target": "sections.chat/actionGroupLabel",
+      "kind": "CopyRef"
+    },
+    {
+      "cellId": "foundry.example.strategy.copyMessageLabel",
+      "recordId": "st.7cc80aeefd",
+      "target": "sections.chat/copyMessageLabel",
+      "kind": "CopyRef"
+    },
+    {
+      "cellId": "foundry.example.strategy.regenerateLabel",
+      "recordId": "st.ae0891e786",
+      "target": "sections.chat/regenerateLabel",
+      "kind": "CopyRef"
+    },
+    {
+      "cellId": "foundry.example.strategy.helpfulLabel",
+      "recordId": "st.00df8b3b38",
+      "target": "sections.chat/helpfulLabel",
+      "kind": "CopyRef"
+    },
+    {
+      "cellId": "foundry.example.strategy.unhelpfulLabel",
+      "recordId": "st.6eb1925d8e",
+      "target": "sections.chat/unhelpfulLabel",
+      "kind": "CopyRef"
+    },
+    {
+      "cellId": "foundry.example.strategy.emptyLabel",
+      "recordId": "st.2f00028312",
+      "target": "sections.chat/emptyLabel",
+      "kind": "CopyRef"
+    },
+    {
+      "cellId": "foundry.example.strategy.jumpLabel",
+      "recordId": "st.d2cf021ae5",
+      "target": "sections.chat/jumpLabel",
+      "kind": "CopyRef"
+    },
+    {
+      "cellId": "foundry.example.strategy.streamingLabel",
+      "recordId": "st.523598e5b7",
+      "target": "sections.chat/streamingLabel",
+      "kind": "CopyRef"
+    },
+    {
+      "cellId": "foundry.example.strategy.errorLabel",
+      "recordId": "st.5c2f8cc0f9",
+      "target": "sections.chat/errorLabel",
+      "kind": "CopyRef"
+    },
+    {
+      "cellId": "foundry.example.strategy.retryLabel",
+      "recordId": "st.d5345f7b42",
+      "target": "sections.chat/retryLabel",
+      "kind": "CopyRef"
+    },
+    {
+      "cellId": "foundry.example.strategy.composerLabel",
+      "recordId": "st.6efe57fe80",
+      "target": "sections.chat/composerLabel",
+      "kind": "CopyRef"
+    },
+    {
+      "cellId": "foundry.example.strategy.stopLabel",
+      "recordId": "st.500f7f8cdd",
+      "target": "sections.chat/stopLabel",
+      "kind": "CopyRef"
+    },
+    {
+      "cellId": "foundry.example.strategy.sendLabel",
+      "recordId": "st.8982ea66ed",
+      "target": "sections.chat/sendLabel",
+      "kind": "CopyRef"
+    },
+    {
+      "cellId": "foundry.example.strategy.copyCodeLabel",
+      "recordId": "st.cbf238c891",
+      "target": "sections.chat/copyCodeLabel",
+      "kind": "CopyRef"
+    },
+    {
+      "cellId": "foundry.example.strategy.copiedLabel",
+      "recordId": "st.d7228d9f32",
+      "target": "sections.chat/copiedLabel",
+      "kind": "CopyRef"
+    },
+    {
+      "cellId": "foundry.example.strategy.copyUnavailableLabel",
+      "recordId": "st.0e9afa3dbd",
+      "target": "sections.chat/copyUnavailableLabel",
+      "kind": "CopyRef"
+    }
+  ]
+}

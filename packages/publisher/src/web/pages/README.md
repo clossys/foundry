@@ -11,6 +11,134 @@ data; another publication can supply different identities, columns and item
 sections. The browser entry contains the existing selected route binder and
 session helpers without the retired hand-built page exports.
 
+## Strategy catalogue example
+
+[`strategy-pages.config.json`](../../../examples/strategy-pages.config.json) is
+a Foundry package example of a strategy list and cell detail. It uses the existing
+consumer configuration path: one selected `frames.app-shell`, native section
+headers, bands and table, and a `sections.article` detail inside a prose band.
+Its explicit `pageModule: null` makes no Admin table-of-contents claim. The
+configuration supplies no named page component or body callback.
+
+The server entry `@clossys/publisher/web/registered-route-check` exports
+`prepareStrategyPage`, `prepareStrategyPageRegistry` and their input/result
+types. Browser imports of that server entry refuse; the client/admin-pages
+entries do not import strategy preparation or the Writer server validator.
+
+`prepareStrategyPage` accepts an injected, synchronous `StrategyPageReader`.
+The consumer opens the actual ST2 snapshot with `openStrategy(root, { contracts })`.
+The fixture uses the real installed `designer.identity`, `writer.messaging` and
+`publisher.launch` contracts. Publisher introduces no Strategist filesystem
+runtime dependency. Reopen the handle to observe changed drafts or pointers.
+Pass the actual `readStrategyRoot(root).issues` when the host reads a local root;
+an unreadable root must not be presented as an empty catalogue.
+
+The result preserves canonical status, findings, L0/L1/L2, counts, next unlock,
+storyline `not judged`, and native brief state/fingerprints. Latest file, pointer
+version and canonical active/fresh status are distinct. It does not infer MVS or
+completion from `status()`. A readable empty root still has catalogue rows. A
+selected cell outside the requested scope refuses rather than claiming its
+pointer is missing. Synchronous reads introduce no artificial loading lifecycle,
+backend search, bulk operation or pagination API.
+
+The owned draft UI envelope is
+[`strategy-page.copy.r1.en.json`](../../../examples/strategy-page.copy.r1.en.json).
+Fixed labels, status vocabulary and metadata/count templates live there. Template
+arguments carry numeric values, resolved Writer vocabulary and technical ids;
+strategy prose is never an interpolation argument. Full strategy bullets and
+finding messages become proposed `strings.common` draft records through the
+existing Writer validation and resolver. The consumer supplies
+`recordIdForContext` and its actual `ownedRecords`; there is no Writer mint API.
+Ids are stable canonical `st.*` proposals, collision checked against that set,
+the UI envelopes and this projection. A known id can be reused only for its exact
+owned context/leaf; another owner's record or a UI source cannot be shadowed.
+Advance `source.revision` when authoring a
+new source envelope. No approval or activation is manufactured.
+
+Each complete bullet keeps its optional `key + ': '`, original text, terminal
+citation prose, parsed refs and physical line. Citations are not appended again.
+The adapter encodes literal ICU syntax and checks exact resolved-text roundtrips.
+The existing `strings.common` bound is 320 Unicode code points and 60 locale
+words of display text. Overlimit fields yield source-located, non-renderable
+`copy-limit` findings; they are not shortened or divided to fit. Native Writer
+WR7/WR8 tests also check the emitted records. Record fields retain Writer's
+closed schema; source and copy evidence is separate metadata.
+
+The `status: "prepared"` result describes prepared data. It supplies frozen
+`rows`, `body`, `selectedTitle`, a checked
+Writer `copy`, its proposed envelope, and source provenance. `cellFingerprint`
+hashes the parsed cell; it is not a source-byte hash. Exact transitive source-byte
+fingerprints remain the actual native `Brief.fingerprint` values. Provenance
+also records source revision, envelope hash, Writer binding/source proof and the
+stable snapshot digest.
+
+Store both data snapshots in each proposed canonical route candidate before
+creating its immutable Publisher revision:
+
+```ts
+const typeSettings = {
+  consumerPage: compositionSnapshot,
+  strategyPage: page.sourceSnapshot,
+};
+```
+
+`compositionSnapshot` is the existing `ConsumerPageCompositionSnapshot` with the
+consumer's actual publication, map, configuration, manifest and source exports.
+The list and detail candidates must own identical composition and strategy source
+snapshots. Supply their actual `{ routeId, slotId, candidateId, revision, digest }`
+selections:
+
+```ts
+const bound = prepareStrategyPageRegistry({ registry, locale: "en", selections, page });
+// Existing consumer loaders carry page.rows and page.body through the checked
+// copy seam; existing native sessions and runtime ports prepare each route.
+const result = prepareConsumerPageRoute(bound, routeId, runtime);
+```
+
+The source pins cover the strategy snapshot, exact Writer envelope bytes and
+native brief fingerprints. Missing, crossed or stale selections refuse. These
+checks bind a package preview; they grant no publication approval or consumer
+adoption.
+
+### Reproduce the native list and detail proof
+
+After cloud bootstrap/check, build Strategist declarations before the repository
+build (Writer's new strategy contract types need them):
+
+```sh
+npm run build --workspace=packages/strategist
+npm run build
+STRATEGY_PAGE_PREVIEW_DIR=/tmp/strategy-page-preview \
+  npm test --workspace=packages/publisher -- \
+  src/web/pages/consumer-page-content.test.tsx \
+  -t "renders actual ST2 strategy"
+```
+
+The existing test path opens the actual ST2 example root, resolves Writer drafts,
+constructs exact candidate revisions, adopts the native component dependency
+closure through Designer's existing API, and requires a ready native assembly
+before rendering list and detail. The expected-positive assertion remains active.
+On the measured package baseline it is **BLOCKED**: the all-surface fixture's
+27 component runtime observations are absent. Independent selected-closure
+inspection also found at least 19 declared components needing observations;
+narrowing the fixture does not provide that evidence. No observation or ready
+receipt is synthesized. No full-page HTML is written for a pending route.
+
+After genuine matching observation evidence satisfies native preparation, the
+test can save `strategy-list.html`,
+`strategy-detail.html` and `strategy-provenance.json` in the requested scratch
+directory. HTML uses existing token/preview CSS and the single selected native
+frame. The adjacent strategy tests cover partial/missing/error states, literal
+roundtrips, limits, ownership and source crossings; the browser test preserves
+the server-entry refusal.
+
+This proof uses local fixture slot/candidate identities and synthetic flow
+substrate declarations/measurements. It does not supply the missing component
+runtime observations or claim an adopted Admin route. A consumer must still
+register its actual source modules, native library and publication, select its
+canonical slot/candidate revisions, supply its loaders/runtime evidence, and
+adopt the resulting route. No live consumer URL is implied by this example.
+
 ## Prepare Writer envelopes on the server
 
 Import `prepareAdminPageCopyEnvelopes` from

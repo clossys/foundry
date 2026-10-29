@@ -476,3 +476,5 @@ export type { CompleteRoutePageSource } from "./registered-route-source.js";
 export { prepareAdminPageCopyEnvelopes } from "./pages/admin-copy-source.js";
 export { consumerPageContentSelection, prepareConsumerPageRegistry, prepareConsumerPageRoute } from "./pages/consumer-page-content.js";
 export type { ConsumerPageCompositionSnapshot, ConsumerPageContentIdentity, ConsumerPageContentInput, PreparedConsumerPageRegistry } from "./pages/consumer-page-content.js";
+export { prepareStrategyPage, prepareStrategyPageRegistry, STRATEGY_PAGE_TEXT_LIMITS } from "./pages/strategy-page.js";
+export type { StrategyPageInput, StrategyPageReader, StrategyPageResult, PreparedStrategyPage, StrategyPageContentSnapshot, StrategyPageFinding, StrategyPageFieldProof, StrategyPageLabels, StrategyPageSnapshot } from "./pages/strategy-page.js";
