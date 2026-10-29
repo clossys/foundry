@@ -346,7 +346,30 @@
     "strings.admin.ia.designer.frames.footers": "st.5s6q38afeg",
     "strings.admin.ia.designer.frames.overlay-shells": "st.qzhekwkxke",
     "strings.admin.ia.designer.frames.overlay-shells-panels": "st.n3jkssxad5",
-    "strings.admin.ia.designer.frames.overlay-shells-commands": "st.yq46yb2vxy"
+    "strings.admin.ia.designer.frames.overlay-shells-commands": "st.yq46yb2vxy",
+    "strings.admin.item.actionsLabel": "st.619a8b5bc8",
+    "strings.admin.table.label": "st.338b4d8c7d",
+    "strings.admin.chat.label": "st.07sw5kbkv3",
+    "strings.admin.chat.placeholder": "st.fc3agfvrnf",
+    "strings.admin.chat.logLabel": "st.3rzjxf85sq",
+    "strings.admin.chat.userLabel": "st.xrvgr6p58x",
+    "strings.admin.chat.assistantLabel": "st.sb5bppdkt9",
+    "strings.admin.chat.actionGroupLabel": "st.t71aa6apr3",
+    "strings.admin.chat.copyMessageLabel": "st.4595ddrg2m",
+    "strings.admin.chat.regenerateLabel": "st.xjb3p6k1p5",
+    "strings.admin.chat.helpfulLabel": "st.7wn44evfba",
+    "strings.admin.chat.unhelpfulLabel": "st.5tq01vj19c",
+    "strings.admin.chat.emptyLabel": "st.t1y82nqbbb",
+    "strings.admin.chat.jumpLabel": "st.wberbetb2b",
+    "strings.admin.chat.streamingLabel": "st.xfpr8ffe76",
+    "strings.admin.chat.errorLabel": "st.ky9m3xpq8k",
+    "strings.admin.chat.retryLabel": "st.bf77hw24ag",
+    "strings.admin.chat.composerLabel": "st.ega0nrxc5v",
+    "strings.admin.chat.stopLabel": "st.kwep5pc442",
+    "strings.admin.chat.sendLabel": "st.7raxswq7j0",
+    "strings.admin.chat.copyCodeLabel": "st.m3kz564zjf",
+    "strings.admin.chat.copiedLabel": "st.eg6faz5z7e",
+    "strings.admin.chat.copyUnavailableLabel": "st.rrjbhez8qb"
   },
   "records": [
     {
@@ -2254,6 +2277,22 @@
       "status": "draft",
       "origin": "authored",
       "text": "Posts"
+    },
+    {
+      "id": "st.619a8b5bc8",
+      "leaf": "strings.actions",
+      "context": "strings.admin.item.actionsLabel",
+      "status": "draft",
+      "origin": "authored",
+      "text": "Item actions"
+    },
+    {
+      "id": "st.338b4d8c7d",
+      "leaf": "strings.field-labels",
+      "context": "strings.admin.table.label",
+      "status": "draft",
+      "origin": "authored",
+      "text": "Records"
     }
   ],
   "bindings": [
@@ -4296,6 +4335,144 @@
       "recordId": "st.yq46yb2vxy",
       "target": "sections.data-table.header",
       "kind": "CopyRef"
+    },
+    {
+      "cellId": "strings.admin.item.actionsLabel",
+      "recordId": "st.619a8b5bc8",
+      "target": "sections.record-detail.actionsLabel",
+      "kind": "CopyRef"
+    },
+    {
+      "cellId": "strings.admin.table.label",
+      "recordId": "st.338b4d8c7d",
+      "target": "sections.data-table.label",
+      "kind": "CopyRef"
+    },
+    {
+      "cellId": "strings.admin.chat.label",
+      "recordId": "st.07sw5kbkv3",
+      "target": "sections.chat.label",
+      "kind": "CopyRef"
+    },
+    {
+      "cellId": "strings.admin.chat.placeholder",
+      "recordId": "st.fc3agfvrnf",
+      "target": "sections.chat.placeholder",
+      "kind": "CopyRef"
+    },
+    {
+      "cellId": "strings.admin.chat.logLabel",
+      "recordId": "st.3rzjxf85sq",
+      "target": "sections.chat.labels.logLabel",
+      "kind": "CopyRef"
+    },
+    {
+      "cellId": "strings.admin.chat.userLabel",
+      "recordId": "st.xrvgr6p58x",
+      "target": "sections.chat.labels.userLabel",
+      "kind": "CopyRef"
+    },
+    {
+      "cellId": "strings.admin.chat.assistantLabel",
+      "recordId": "st.sb5bppdkt9",
+      "target": "sections.chat.labels.assistantLabel",
+      "kind": "CopyRef"
+    },
+    {
+      "cellId": "strings.admin.chat.actionGroupLabel",
+      "recordId": "st.t71aa6apr3",
+      "target": "sections.chat.labels.actionGroupLabel",
+      "kind": "CopyRef"
+    },
+    {
+      "cellId": "strings.admin.chat.copyMessageLabel",
+      "recordId": "st.4595ddrg2m",
+      "target": "sections.chat.labels.copyMessageLabel",
+      "kind": "CopyRef"
+    },
+    {
+      "cellId": "strings.admin.chat.regenerateLabel",
+      "recordId": "st.xjb3p6k1p5",
+      "target": "sections.chat.labels.regenerateLabel",
+      "kind": "CopyRef"
+    },
+    {
+      "cellId": "strings.admin.chat.helpfulLabel",
+      "recordId": "st.7wn44evfba",
+      "target": "sections.chat.labels.helpfulLabel",
+      "kind": "CopyRef"
+    },
+    {
+      "cellId": "strings.admin.chat.unhelpfulLabel",
+      "recordId": "st.5tq01vj19c",
+      "target": "sections.chat.labels.unhelpfulLabel",
+      "kind": "CopyRef"
+    },
+    {
+      "cellId": "strings.admin.chat.emptyLabel",
+      "recordId": "st.t1y82nqbbb",
+      "target": "sections.chat.labels.emptyLabel",
+      "kind": "CopyRef"
+    },
+    {
+      "cellId": "strings.admin.chat.jumpLabel",
+      "recordId": "st.wberbetb2b",
+      "target": "sections.chat.labels.jumpLabel",
+      "kind": "CopyRef"
+    },
+    {
+      "cellId": "strings.admin.chat.streamingLabel",
+      "recordId": "st.xfpr8ffe76",
+      "target": "sections.chat.labels.streamingLabel",
+      "kind": "CopyRef"
+    },
+    {
+      "cellId": "strings.admin.chat.errorLabel",
+      "recordId": "st.ky9m3xpq8k",
+      "target": "sections.chat.labels.errorLabel",
+      "kind": "CopyRef"
+    },
+    {
+      "cellId": "strings.admin.chat.retryLabel",
+      "recordId": "st.bf77hw24ag",
+      "target": "sections.chat.labels.retryLabel",
+      "kind": "CopyRef"
+    },
+    {
+      "cellId": "strings.admin.chat.composerLabel",
+      "recordId": "st.ega0nrxc5v",
+      "target": "sections.chat.labels.composerLabel",
+      "kind": "CopyRef"
+    },
+    {
+      "cellId": "strings.admin.chat.stopLabel",
+      "recordId": "st.kwep5pc442",
+      "target": "sections.chat.labels.stopLabel",
+      "kind": "CopyRef"
+    },
+    {
+      "cellId": "strings.admin.chat.sendLabel",
+      "recordId": "st.7raxswq7j0",
+      "target": "sections.chat.labels.sendLabel",
+      "kind": "CopyRef"
+    },
+    {
+      "cellId": "strings.admin.chat.copyCodeLabel",
+      "recordId": "st.m3kz564zjf",
+      "target": "sections.chat.labels.copyCodeLabel",
+      "kind": "CopyRef"
+    },
+    {
+      "cellId": "strings.admin.chat.copiedLabel",
+      "recordId": "st.eg6faz5z7e",
+      "target": "sections.chat.labels.copiedLabel",
+      "kind": "CopyRef"
+    },
+    {
+      "cellId": "strings.admin.chat.copyUnavailableLabel",
+      "recordId": "st.rrjbhez8qb",
+      "target": "sections.chat.labels.copyUnavailableLabel",
+      "kind": "CopyRef"
     }
   ],
   "coverage": {
@@ -4883,6 +5060,111 @@
       "recordId": "st.yq46yb2vxy",
       "source": "admin-studio.r1.en.json",
       "sourceContext": "designer.ia.frames.overlay-shells-commands"
+    },
+    {
+      "recordId": "st.07sw5kbkv3",
+      "source": "admin-chat.r1.en.json",
+      "sourceContext": "admin.writer.chat.header.title"
+    },
+    {
+      "recordId": "st.fc3agfvrnf",
+      "source": "admin-chat.r1.en.json",
+      "sourceContext": "admin.writer.chat.composer.placeholder"
+    },
+    {
+      "recordId": "st.3rzjxf85sq",
+      "source": "admin-chat.r1.en.json",
+      "sourceContext": "admin.writer.chat.conversation.log"
+    },
+    {
+      "recordId": "st.xrvgr6p58x",
+      "source": "admin-chat.r1.en.json",
+      "sourceContext": "admin.writer.chat.conversation.user"
+    },
+    {
+      "recordId": "st.sb5bppdkt9",
+      "source": "admin-chat.r1.en.json",
+      "sourceContext": "admin.writer.chat.conversation.assistant"
+    },
+    {
+      "recordId": "st.t71aa6apr3",
+      "source": "admin-chat.r1.en.json",
+      "sourceContext": "admin.writer.chat.message.actions"
+    },
+    {
+      "recordId": "st.4595ddrg2m",
+      "source": "admin-chat.r1.en.json",
+      "sourceContext": "admin.writer.chat.message.copy"
+    },
+    {
+      "recordId": "st.xjb3p6k1p5",
+      "source": "admin-chat.r1.en.json",
+      "sourceContext": "admin.writer.chat.message.regenerate"
+    },
+    {
+      "recordId": "st.7wn44evfba",
+      "source": "admin-chat.r1.en.json",
+      "sourceContext": "admin.writer.chat.message.helpful"
+    },
+    {
+      "recordId": "st.5tq01vj19c",
+      "source": "admin-chat.r1.en.json",
+      "sourceContext": "admin.writer.chat.message.unhelpful"
+    },
+    {
+      "recordId": "st.t1y82nqbbb",
+      "source": "admin-chat.r1.en.json",
+      "sourceContext": "admin.writer.chat.conversation.empty"
+    },
+    {
+      "recordId": "st.wberbetb2b",
+      "source": "admin-chat.r1.en.json",
+      "sourceContext": "admin.writer.chat.conversation.jump"
+    },
+    {
+      "recordId": "st.xfpr8ffe76",
+      "source": "admin-chat.r1.en.json",
+      "sourceContext": "admin.writer.chat.state.streaming"
+    },
+    {
+      "recordId": "st.ky9m3xpq8k",
+      "source": "admin-chat.r1.en.json",
+      "sourceContext": "admin.writer.chat.state.error"
+    },
+    {
+      "recordId": "st.bf77hw24ag",
+      "source": "admin-chat.r1.en.json",
+      "sourceContext": "admin.writer.chat.state.retry"
+    },
+    {
+      "recordId": "st.ega0nrxc5v",
+      "source": "admin-chat.r1.en.json",
+      "sourceContext": "admin.writer.chat.composer.label"
+    },
+    {
+      "recordId": "st.kwep5pc442",
+      "source": "admin-chat.r1.en.json",
+      "sourceContext": "admin.writer.chat.composer.stop"
+    },
+    {
+      "recordId": "st.7raxswq7j0",
+      "source": "admin-chat.r1.en.json",
+      "sourceContext": "admin.writer.chat.composer.send"
+    },
+    {
+      "recordId": "st.m3kz564zjf",
+      "source": "admin-chat.r1.en.json",
+      "sourceContext": "admin.writer.chat.code.copy"
+    },
+    {
+      "recordId": "st.eg6faz5z7e",
+      "source": "admin-chat.r1.en.json",
+      "sourceContext": "admin.writer.chat.code.copied"
+    },
+    {
+      "recordId": "st.rrjbhez8qb",
+      "source": "admin-chat.r1.en.json",
+      "sourceContext": "admin.writer.chat.code.copyUnavailable"
     }
   ]
 }
