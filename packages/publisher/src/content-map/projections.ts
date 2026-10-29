@@ -2,7 +2,9 @@ import { isCompleteRouteKind, isLegacyRouteRegistration, routeSourcePath } from 
 import type { RouteRegistration, RouteSourceExport } from "../core/route-registry.js";
 import { PUBLISHER_CHANNELS } from "../planning/channel-ids.js";
 import { checkedContentMap, contentMapPath } from "./check.js";
-import type { ContentMap, ContentMapBreadcrumb, ContentMapCommand, ContentMapCommandGroup, ContentMapEntry, ContentMapNavigation, ContentMapNavigationNode, ContentMapRouteOptions, ContentMapRoutes, ContentMapSitemapEntry, ContentMapSitemapOptions } from "./contract.js";
+import { projectPageOutline } from "../content/taxonomy.js";
+import type { PageOutlineHeading } from "../content/taxonomy.js";
+import type { ContentMap, ContentMapBreadcrumb, ContentMapCommand, ContentMapCommandGroup, ContentMapEntry, ContentMapNavigation, ContentMapNavigationNode, ContentMapOutlineNode, ContentMapTocEntry, ContentMapRouteOptions, ContentMapRoutes, ContentMapSitemapEntry, ContentMapSitemapOptions } from "./contract.js";
 
 const text = (value: unknown): value is string => typeof value === "string" && value.length > 0 && value.trim() === value;
 const equal = (left: unknown, right: unknown): boolean => JSON.stringify(left) === JSON.stringify(right);
@@ -120,7 +122,26 @@ export function projectRoutes(map: ContentMap, options: ContentMapRouteOptions):
   if (new Set(routes.map(route => route.entry.file)).size !== routes.length) throw new TypeError("Each page requires its own registered executable entry");
   return { version: 1, consumer: options.consumer, routes };
 }
-/** Registered deck data is not evidence that an outline renderer exists. */
-export function projectOutline(_map: ContentMap<"deck.16x9">): never { throw new TypeError("deck.16x9 outline is concept-only"); }
-/** Registered paper data is not evidence that a TOC renderer exists. */
-export function projectToc(_map: ContentMap<"document.pdf-a4">): never { throw new TypeError("document.pdf-a4 TOC is concept-only"); }
+/** Finite data for web, deck and document consumers. This is an outline, not an
+ * exporter: only the manifest's actual Section placements produce page anchors. */
+export function projectOutline(map: ContentMap): readonly ContentMapOutlineNode[] {
+  checkedContentMap(map);
+  const heading = (entry: ContentMapEntry, value: PageOutlineHeading): ContentMapOutlineNode => ({
+    id: `${entry.id}#${value.id}`, label: value.label, href: `${contentMapPath(entry)}#${value.id}`,
+    ...(value.children?.length ? { children: value.children.map(child => heading(entry, child)) } : {}),
+  });
+  const visit = (parentId?: string): ContentMapOutlineNode[] => ordered(map, parentId).map(entry => {
+    const headings = entry.manifest ? projectPageOutline({ fills: entry.constructs! }, entry.manifest).headings.map(value => heading(entry, value)) : [];
+    const children = [...headings, ...visit(entry.id)];
+    return { id: entry.id, label: entry.title, ...(entry.kind !== "group" ? { href: contentMapPath(entry) } : {}), ...(children.length ? { children } : {}) };
+  });
+  return visit();
+}
+/** Depth-first table of contents from exactly the same map and page anchors.
+ * Page numbers remain the responsibility of the document renderer. */
+export function projectToc(map: ContentMap): readonly ContentMapTocEntry[] {
+  const visit = (nodes: readonly ContentMapOutlineNode[], level: number): ContentMapTocEntry[] => nodes.flatMap(({ children, ...node }) => [
+    { ...node, level }, ...visit(children ?? [], level + 1),
+  ]);
+  return visit(projectOutline(map), 1);
+}

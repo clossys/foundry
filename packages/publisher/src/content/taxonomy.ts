@@ -87,7 +87,7 @@ export interface RegisteredPageOutline {
 }
 /** Project only the page record's supplied placements and the same loader
  * manifest used by chunks/search/hash navigation. It never changes route IA. */
-export function projectPageOutline(page: InstanceBinding | RegionPageBinding, manifest: RegisteredPageManifest): RegisteredPageOutline {
+export function projectPageOutline(page: Pick<InstanceBinding, "fills"> | RegionPageBinding, manifest: RegisteredPageManifest): RegisteredPageOutline {
   if (!record(manifest) || !Array.isArray(manifest.l0) || Object.keys(manifest).some(key => key !== "l0")) throw new TypeError("A page loader manifest is required");
   const fills: Readonly<Record<string, readonly SectionFill[] | undefined>> = "regions" in page ? { main: page.regions.main, "page-module": page.regions["page-module"] } : page.fills;
   const anchors: string[] = [], targets: Record<string, PageOutlineTarget> = Object.create(null);

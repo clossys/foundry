@@ -1,10 +1,25 @@
 import { FORMAT_IDS } from "../formats/contract.js";
+import { isRegisteredContentRef } from "../core/instance-binding.js";
+import { projectPageOutline } from "../content/taxonomy.js";
 import { CONTENT_MAP_MAX_DEPTH } from "./contract.js";
 import type { ContentMap, ContentMapEntry, ContentMapFinding, ContentMapFindingCode } from "./contract.js";
 
 const text = (value: unknown): value is string => typeof value === "string" && value.trim().length > 0 && value.trim() === value;
 const record = (value: unknown): value is Record<string, unknown> => value !== null && typeof value === "object" && !Array.isArray(value);
 const fields = (value: object, keys: readonly string[]) => Object.keys(value).every(key => keys.includes(key));
+/** Data-shape checks only. Actual Section/config/content identities are checked
+ * against the consumer library by the existing registered-page pipeline. */
+function construct(value: unknown, depth = 0): boolean {
+  if (!record(value) || depth > 8 || !fields(value, ["section", "config", "members", "span", "content", "repeat", "children"])
+    || typeof value.section !== "string" || !/^sections\.[a-z][a-z0-9-]*$/.test(value.section)
+    || value.config !== undefined && !text(value.config)
+    || value.members !== undefined && (!record(value.members) || !Object.entries(value.members).every(([key, member]) => text(key) && text(member)))
+    || value.span !== undefined && !["1x1", "2x1", "1x2", "2x2"].includes(value.span as string)
+    || !record(value.content) || !Object.entries(value.content).every(([key, ref]) => text(key) && isRegisteredContentRef(ref))) return false;
+  if (value.repeat !== undefined && (!record(value.repeat) || !fields(value.repeat, ["over", "key"]) || !text(value.repeat.key)
+    || !isRegisteredContentRef(value.repeat.over) || value.repeat.over.kind !== "records")) return false;
+  return value.children === undefined || Array.isArray(value.children) && value.children.length > 0 && value.children.every(child => construct(child, depth + 1));
+}
 function canonicalPagePath(path: string): boolean {
   return /^\/(?:[^/?#\\]+\/?)*$/.test(path) && !path.includes("//") && !path.includes("%")
     && !path.split("/").some(part => part === "." || part === "..") && path === (path.replace(/\/$/, "") || "/");
@@ -37,13 +52,14 @@ export function checkContentMap(input: unknown): readonly ContentMapFinding[] {
   if (!(FORMAT_IDS as readonly unknown[]).includes(input.format)) add("format", "format", "Unknown content-map format");
   const entries = input.entries as ContentMapEntry[], byId = new Map<string, ContentMapEntry>();
   const ids = new Set<string>(), paths = new Set<string>();
+  const headingIds: { id: string; path: string; entryId: string }[] = [];
   for (const [index, entry] of entries.entries()) {
     const at = `entries.${index}`;
     if (!record(entry)) { add("contract", at, "Plain content entry required"); continue; }
     const source = entry.source;
     const planSource = record(source) && fields(source, ["planItemId"]) && text(source.planItemId);
     const frameSource = record(source) && fields(source, ["frameId", "sectionIds"]) && text(source.frameId) && Array.isArray(source.sectionIds) && source.sectionIds.every(text) && new Set(source.sectionIds).size === source.sectionIds.length;
-    if (!fields(entry, ["id", "parentId", "order", "title", "path", "slug", "kind", "pin", "source", "icon", "description", "keywords"]) || !text(entry.id) || !text(entry.title) || !Number.isSafeInteger(entry.order) || entry.order < 0
+    if (!fields(entry, ["id", "parentId", "order", "title", "path", "slug", "kind", "pin", "source", "icon", "description", "keywords", "manifest", "constructs"]) || !text(entry.id) || !text(entry.title) || !Number.isSafeInteger(entry.order) || entry.order < 0
       || !["page", "slide", "section", "group"].includes(entry.kind) || (entry.parentId !== undefined && !text(entry.parentId)) || (!planSource && !frameSource)
       || (entry.path === undefined) === (entry.slug === undefined) || !(text(entry.path) || text(entry.slug))
       || (entry.icon !== undefined && !text(entry.icon)) || (entry.description !== undefined && !text(entry.description)) || (entry.keywords !== undefined && (!Array.isArray(entry.keywords) || !entry.keywords.every(text)))) add("contract", at, "Invalid entry identity, content reference or metadata", entry.id);
@@ -55,6 +71,18 @@ export function checkContentMap(input: unknown): readonly ContentMapFinding[] {
     if (input.format === "web.page.responsive" && (typeof path !== "string" || !path.startsWith("/") || path.startsWith("//") || path.includes("\\") || /[\u0000-\u0020]/.test(path)
       || (entry.kind === "page" && !canonicalPagePath(path)))) add("web-path", at, "Web targets must stay local; pages require canonical registered paths", entry.id);
     if (entry.pin !== undefined && (!record(entry.pin) || !fields(entry.pin, ["nav", "group"]) || entry.pin.nav !== true || !["page", "group", "section"].includes(entry.kind) || !text(entry.id) || (entry.pin.group !== undefined && !text(entry.pin.group)))) add("pin", `${at}.pin`, "Only an existing page, group or section can be pinned", entry.id);
+    if (entry.manifest !== undefined || entry.constructs !== undefined) {
+      try {
+        if (!record(entry.constructs) || !Object.entries(entry.constructs).every(([slot, fills]) => text(slot) && Array.isArray(fills) && fills.every(fill => construct(fill)))) throw new TypeError("Slot-addressed Section constructs are required");
+        const outline = projectPageOutline({ fills: entry.constructs }, entry.manifest!);
+        for (const anchor of outline.anchors) headingIds.push({ id: `${entry.id}#${anchor}`, path: `${at}.manifest`, entryId: entry.id });
+      } catch {
+        add("contract", `${at}.manifest`, "A manifest must address valid Section constructs and unique page anchors", entry.id);
+      }
+    }
+  }
+  for (const heading of headingIds) {
+    if (ids.has(heading.id)) add("duplicate-id", heading.path, "Generated heading identity collides with an entry identity", heading.entryId);
   }
   const maximum = typeof input.format === "string" && Object.hasOwn(CONTENT_MAP_MAX_DEPTH, input.format)
     ? CONTENT_MAP_MAX_DEPTH[input.format as keyof typeof CONTENT_MAP_MAX_DEPTH] : undefined;
