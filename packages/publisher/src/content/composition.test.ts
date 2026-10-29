@@ -64,6 +64,23 @@ describe("Designer composition shape", () => {
 });
 
 describe("exact-locale Writer copy resolution", () => {
+  it.each(["writer", "handwritten"] as const)("rejects %s inline body and metadata in strict admin resolution without projecting their text", source => {
+    const composition = parseComposition(fixture());
+    const candidate = { composition: { ...composition, sections: [{ ...composition.sections[0]!,
+      fields: [{ key: "title", locale: "en", source, value: "Inline body" }] }] },
+      pageMeta: [{ key: "title", locale: "en", source, value: "Inline metadata" }] };
+    const before = structuredClone(candidate);
+    const report = resolveCopyReport(candidate, "en", { requireWriterCopy: true, requirePageMeta: true });
+    expect(report.complete).toBe(false);
+    expect(report.resolutions).toEqual([]);
+    expect(report.copy).toEqual({ intro: {}, [PAGE_META_KEY]: {} });
+    expect(report.findings.filter(finding => finding.rule === "legacy-inline-copy")).toEqual([
+      expect.objectContaining({ path: "composition.sections[0].fields[0]", severity: "error" }),
+      expect.objectContaining({ path: "pageMeta[0]", severity: "error" }),
+    ]);
+    expect(candidate).toEqual(before);
+  });
+
   it("isolates section keys and locales without changing the candidate", () => {
     const composition = fixture();
     composition.sections[0]!.fields.push({ key: "title", locale: "fr", value: "Titre", source: "writer" });

@@ -4,7 +4,7 @@ import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
 import { ContentRouteNeedsError, ContentRoutePage, prepareContentRoute, requireContentRoutePublishing } from "./content-route.js";
 import type { ContentRouteInput } from "./content-route-types.js";
-import { contentRouteContent, contentRouteFixture, withRouteContent, writerField } from "./__fixtures__/content-route.js";
+import { contentRouteContent, contentRouteFixture, withRouteContent, writerField, withApprovedRouteCopy } from "./__fixtures__/content-route.js";
 
 const locales = ["en", "fr", "ar"] as const;
 const copy = {
@@ -22,7 +22,7 @@ function publishingFixture(locale: typeof locales[number] = "en"): ContentRouteI
     pageMeta: locales.flatMap(tag => [writerField("title", copy[tag].title, tag), writerField("description", copy[tag].description, tag)]),
     composition: { ...content.composition!, sections: [{ ...content.composition!.sections[0]!, fields: locales.map(tag => writerField("title", copy[tag].body, tag)) }] },
   });
-  return {
+  return withApprovedRouteCopy({
     ...input, locale,
     registry: {
       ...input.registry,
@@ -36,7 +36,7 @@ function publishingFixture(locale: typeof locales[number] = "en"): ContentRouteI
       bodyServedLocales: { en: ["en"], fr: ["fr"], ar: ["ar"] },
       existingUrls: urls,
     },
-  };
+  });
 }
 const render = (input: ContentRouteInput) => renderToStaticMarkup(<ContentRoutePage input={requireContentRoutePublishing(input)} />);
 
@@ -47,6 +47,12 @@ describe("content route publishing document", () => {
     const prepared = prepareContentRoute(input);
     expect(prepared.status).toBe("ready");
     expect(prepared.needs).toEqual([]);
+    expect(prepared.provenance).toMatchObject({ requestedLocale: locale, inline: [] });
+    expect(prepared.provenance!.copy).toHaveLength(4);
+    expect(prepared.provenance!.copy.map(entry => entry.binding)).toEqual(["pageMeta", "pageMeta", "frameCopy", "sections.message"]);
+    for (const entry of prepared.provenance!.copy) {
+      expect(entry).toMatchObject({ requestedLocale: locale, servedLocale: locale, chain: locale === "en" ? ["en"] : [locale, "en"] });
+    }
     const html = render(input);
     const title = `${copy[locale].title} · ${copy[locale].brand}`;
     expect(html).toContain('data-ds-leaf="frames.document"');
@@ -71,7 +77,7 @@ describe("content route publishing document", () => {
   it("uses native Writer sharing copy when supplied", () => {
     const input = publishingFixture("fr");
     const content = input.registry.candidates[0]!.history.at(-1)!.content;
-    const shared = withRouteContent(input, { ...content, pageMeta: [...content.pageMeta!, writerField("share-title", "Espace partagé", "fr"), writerField("share-text", "Description de partage.", "fr")] });
+    const shared = withApprovedRouteCopy(withRouteContent(input, { ...content, pageMeta: [...content.pageMeta!, writerField("share-title", "Espace partagé", "fr"), writerField("share-text", "Description de partage.", "fr")] }));
     const html = render(shared);
     expect(html).toContain('property="og:title" content="Espace partagé"');
     expect(html).toContain('property="og:description" content="Description de partage."');
@@ -118,6 +124,22 @@ describe("content route publishing document", () => {
     expect(prepared.needs).toContainEqual(expect.objectContaining({ target: "writer", ref: "pageMeta.fr.description" }));
     expect(prepared.metadata.alternates).toEqual([]);
     expect(() => render(missingFrench)).toThrow(ContentRouteNeedsError);
+  });
+
+  it("retains Writer errors in unselected locale metadata even when its required title and description resolve", () => {
+    const input = publishingFixture("en");
+    const content = input.registry.candidates[0]!.history.at(-1)!.content;
+    const invalidFrench = withRouteContent(input, { ...content, pageMeta: [...content.pageMeta!, {
+      key: "share-title", locale: "fr", source: "writer", ref: { id: "missing.french.share-title" },
+    }] });
+    const prepared = prepareContentRoute(invalidFrench);
+    expect(prepared.status).toBe("needs-input");
+    expect(prepared.node).toBeUndefined();
+    expect(prepared.provenance).toBeUndefined();
+    expect(prepared.copyFindings).toContainEqual(expect.objectContaining({ rule: "unresolved-copy", severity: "error", locale: "fr" }));
+    expect(prepared.needs).toContainEqual(expect.objectContaining({ kind: "copy", target: "writer", ref: `pageMeta[${content.pageMeta!.length}]`, detail: expect.stringContaining("unresolved-copy") }));
+    expect(prepared.needs.some(need => need.ref === "pageMeta.fr.title" || need.ref === "pageMeta.fr.description")).toBe(false);
+    expect(() => render(invalidFrench)).toThrow(ContentRouteNeedsError);
   });
 
   it.each([null, "invalid", [], {}, { manifest: null }, { manifest: { locales: null } }])("returns named Needs for malformed publishing context %j", publishing => {

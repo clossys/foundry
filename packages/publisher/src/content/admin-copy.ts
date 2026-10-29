@@ -1,5 +1,6 @@
 import type { CopyRef } from "@clossys/writer";
 import type { CopyField } from "./composition.js";
+import type { ContentSlot, ContentWorkspace } from "./model.js";
 
 /** Permanent WR-META references; approval and locale coverage belong to the host resolver. */
 export const ADMIN_PAGE_COPY_REFS = {
@@ -36,6 +37,14 @@ export function adminPageMeta(page: AdminPageName, locale: string): CopyField[] 
 
 export function adminPageForRoute(route: string | undefined): AdminPageName | undefined {
   return (["designer", "writer", "publisher"] as const).find(page => route === `/agents/${page}`);
+}
+
+/** Admin placement and app ownership also cover home, account, and admin sign-in routes. */
+export function isAdminContentRoute(slot: Pick<ContentSlot, "l1" | "l2" | "route" | "deployTarget">,
+  workspace: Pick<ContentWorkspace, "deployTargets">): boolean {
+  return slot.l1 === "websites" && slot.l2 === "admin"
+    || adminPageForRoute(slot.route) !== undefined
+    || workspace.deployTargets.some(target => target.id === slot.deployTarget && target.app === "admin");
 }
 
 /** Add only missing words to existing links; destination/order and explicit host bindings stay owned by the host. */
