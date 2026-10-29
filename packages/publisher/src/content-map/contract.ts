@@ -12,14 +12,13 @@ export type ContentMapConstructs = Readonly<Record<string, readonly SectionFill[
 
 export type ContentMapSource = { readonly planItemId: string; readonly frameId?: never; readonly sectionIds?: never }
   | { readonly planItemId?: never; readonly frameId: string; readonly sectionIds: readonly string[] };
+export interface ContentMapIndexing { readonly mode: "index" | "noindex"; readonly reason?: string }
 export type ContentMapEntry = {
   readonly id: string;
   readonly parentId?: string;
   readonly order: number;
   readonly title: string;
   readonly kind: "page" | "slide" | "section" | "group";
-  /** Consumer-owned composition config identity; only page entries use it. */
-  readonly pageConfig?: string;
   /** Groups and sections are pinnable as well as pages. A named group must be
    * an ancestor group, and pinned descendants require pinned ancestors. */
   readonly pin?: { readonly nav: true; readonly group?: string };
@@ -32,7 +31,27 @@ export type ContentMapEntry = {
   readonly icon?: string;
   readonly description?: string;
   readonly keywords?: readonly string[];
-} & ({ readonly path: string; readonly slug?: never } | { readonly slug: string; readonly path?: never });
+  readonly indexing?: ContentMapIndexing;
+  /** Consumer-supplied ISO date or timestamp; no implicit build-time clock. */
+  readonly lastModified?: string;
+} & ({ readonly path: string; readonly slug?: never } | { readonly slug: string; readonly path?: never })
+  /** A present config narrows sourced entries without admitting external nodes. */
+  & ({ readonly pageConfig: string } | { readonly pageConfig?: never });
+/** A local redirect identity and an external navigation destination, never an
+ * executable page source. Sourced entry contracts retain their required source. */
+export type ContentMapExternalEntry = Omit<ContentMapEntry, "kind" | "source" | "path" | "slug" | "pageConfig" | "manifest" | "constructs"> & {
+  readonly kind: "external";
+  readonly path: string;
+  readonly href: string;
+  readonly source?: never;
+  readonly slug?: never;
+  readonly pageConfig?: never;
+  readonly manifest?: never;
+  readonly constructs?: never;
+};
+export type ContentMapNode = ContentMapEntry | ContentMapExternalEntry;
+export interface ContentMapRedirectDeclaration { readonly from: string; readonly to: string; readonly permanent: boolean }
+export interface ContentMapRedirect { readonly source: string; readonly destination: string; readonly permanent: boolean }
 export interface ContentMapAction {
   readonly id: string;
   readonly label: string;
@@ -44,10 +63,11 @@ export interface ContentMap<F extends FormatId = FormatId> {
   readonly version: 1;
   readonly publicationId: string;
   readonly format: F;
-  readonly entries: readonly ContentMapEntry[];
+  readonly entries: readonly ContentMapNode[];
   readonly actions?: readonly ContentMapAction[];
+  readonly redirects?: readonly ContentMapRedirectDeclaration[];
 }
-export type ContentMapFindingCode = "contract" | "format" | "duplicate-id" | "duplicate-path" | "missing-parent" | "cycle" | "orphan" | "pin" | "web-path" | "depth" | "action-id";
+export type ContentMapFindingCode = "contract" | "format" | "duplicate-id" | "duplicate-path" | "missing-parent" | "cycle" | "orphan" | "pin" | "web-path" | "depth" | "action-id" | "redirect";
 export interface ContentMapFinding {
   readonly severity: "P0";
   readonly code: ContentMapFindingCode;
@@ -62,6 +82,7 @@ export interface ContentMapNavigationNode {
   readonly id: string;
   readonly label: string;
   readonly href?: string;
+  readonly external?: true;
   readonly icon?: string;
   readonly children?: readonly ContentMapNavigationNode[];
 }
@@ -85,7 +106,8 @@ export interface ContentMapOutlineNode extends ContentMapBreadcrumb {
 }
 /** Depth is structural; no rendered page or slide number is fabricated. */
 export interface ContentMapTocEntry extends ContentMapBreadcrumb { readonly level: number }
-export interface ContentMapSitemapEntry { readonly url: string }
+export interface ContentMapSitemapEntry { readonly url: string; readonly lastModified?: string }
+export interface ContentMapStaticParams { readonly slug: string[] }
 export interface ContentMapCompleteRoute {
   readonly kind: CompleteRouteMetadataKind;
   readonly entry: RouteSourceExport;
