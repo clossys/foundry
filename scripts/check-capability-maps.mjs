@@ -149,6 +149,19 @@ function isSafeRelativePath(value) {
 }
 const roleShortName = (role) => role.split("/").pop();
 
+/** Agent roles use agent folders; other roles retain their role folder. */
+function roleOutputPrefix(role) {
+  const name = roleShortName(role);
+  switch (name) {
+    case "strategist": return "clossys/agents/director/";
+    case "designer":
+    case "writer":
+    case "publisher": return `clossys/agents/${name}/`;
+    default: return `clossys/${name}/`;
+  }
+}
+
+
 function isCapabilityInputEntry(value) {
   return isRecord(value) && isText(value.producerRole) && isText(value.artifact);
 }
@@ -173,7 +186,7 @@ export function validateCapabilityShape(capability, role, knownProofCaseIds) {
   if (!Array.isArray(capability.inputs) || !capability.inputs.every(isCapabilityInputEntry)) {
     fail("invalid-capability-inputs", `capability "${capability.id}" inputs must be an array of { producerRole, artifact } (may be empty)`);
   }
-  const expectedPrefix = `clossys/${roleShortName(role)}/`;
+  const expectedPrefix = roleOutputPrefix(role);
   if (!isNonEmptyArray(capability.outputs) || !capability.outputs.every((path) => typeof path === "string")) {
     fail("invalid-capability-outputs", `capability "${capability.id}" outputs must be a non-empty array of path strings`);
   } else {

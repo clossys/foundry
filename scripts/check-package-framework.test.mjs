@@ -108,6 +108,49 @@ test("an outputs path escaping the repository is a finding", () => {
   assert.deepEqual(result.findings.map((f) => f.rule), ["output-path-outside-role-folder"]);
 });
 
+const AGENT_FOLDERS = [["strategist", "director"], ["designer", "designer"], ["writer", "writer"], ["publisher", "publisher"]];
+
+test("agent outputs and feeds require the agent folder prefix", () => {
+  for (const [name, folder] of AGENT_FOLDERS) {
+    const role = `@scope/${name}`;
+    for (const [prefix, rules] of [
+      [`clossys/agents/${folder}/`, []],
+      [`clossys/${name}/`, ["output-path-outside-role-folder", "feeds-path-outside-role-folder"]],
+    ]) {
+      const path = `${prefix}report.json`;
+      const result = evaluatePackageFramework([role], manifests([{ name: role, foundry: { outputs: [path], feeds: [{ artifact: "report", path }] } }]));
+      assert.deepEqual(result.findings.map((finding) => finding.rule), rules, `${role}: ${prefix}`);
+      assert.equal(result.table[0].outputs, rules.length === 0 ? "declared" : "malformed");
+      assert.equal(result.table[0].feeds, rules.length === 0 ? "declared" : "malformed");
+      for (const finding of result.findings) assert.ok(finding.message.includes(`clossys/agents/${folder}/`));
+    }
+  }
+});
+
+test("strategist uses the director agent folder and rejects the strategist agent folder", () => {
+  const role = "@scope/strategist";
+  for (const [folder, rules] of [
+    ["director", []],
+    ["strategist", ["output-path-outside-role-folder", "feeds-path-outside-role-folder"]],
+  ]) {
+    const path = `clossys/agents/${folder}/direction.json`;
+    const result = evaluatePackageFramework([role], manifests([{ name: role, foundry: { outputs: [path], feeds: [{ artifact: "direction", path }] } }]));
+    assert.deepEqual(result.findings.map((finding) => finding.rule), rules, folder);
+  }
+});
+
+test("non-agent outputs and feeds keep the role folder prefix", () => {
+  const role = "@scope/controller";
+  for (const [prefix, rules] of [
+    ["clossys/controller/", []],
+    ["clossys/agents/controller/", ["output-path-outside-role-folder", "feeds-path-outside-role-folder"]],
+  ]) {
+    const path = `${prefix}report.json`;
+    const result = evaluatePackageFramework([role], manifests([{ name: role, foundry: { outputs: [path], feeds: [{ artifact: "report", path }] } }]));
+    assert.deepEqual(result.findings.map((finding) => finding.rule), rules, prefix);
+  }
+});
+
 test("a status declaration with an unmapped bin is a finding", () => {
   const result = evaluatePackageFramework(["@scope/alpha"], manifests([{ name: "@scope/alpha", bin: {}, foundry: { status: { bin: "alpha-status", invocation: "single-json-input" } } }]));
   assert.deepEqual(result.findings.map((f) => f.rule), ["undeclared-status-bin"]);
@@ -352,16 +395,16 @@ test("#1382: the Customer/Publisher keep loop is a role-level cycle but not a ca
     } },
     { name: "@clossys/publisher", foundry: {
       needs: [{ producerRole: "@clossys/customer", artifact: "keep-verdict" }, { producerRole: "@clossys/writer", artifact: "copy-registry" }],
-      feeds: [{ artifact: "surface-documents", path: "clossys/publisher/surfaces.json" }],
+      feeds: [{ artifact: "surface-documents", path: "clossys/agents/publisher/surfaces.json" }],
       capabilities: [
-        capability("surface-documents", [{ producerRole: "@clossys/writer", artifact: "copy-registry" }], ["clossys/publisher/surfaces.json"]),
-        capability("sealing-and-the-publication-record", [{ producerRole: "@clossys/customer", artifact: "keep-verdict" }], ["clossys/publisher/record.json"]),
+        capability("surface-documents", [{ producerRole: "@clossys/writer", artifact: "copy-registry" }], ["clossys/agents/publisher/surfaces.json"]),
+        capability("sealing-and-the-publication-record", [{ producerRole: "@clossys/customer", artifact: "keep-verdict" }], ["clossys/agents/publisher/record.json"]),
       ],
     } },
     { name: "@clossys/writer", foundry: {
       needs: [],
-      feeds: [{ artifact: "copy-registry", path: "clossys/writer/copy.json" }],
-      capabilities: [capability("copy-registry", [], ["clossys/writer/copy.json"])],
+      feeds: [{ artifact: "copy-registry", path: "clossys/agents/writer/copy.json" }],
+      capabilities: [capability("copy-registry", [], ["clossys/agents/writer/copy.json"])],
     } },
   ]), { enforce: true });
   assert.deepEqual(result.findings.filter((f) => f.rule === "needs-graph-cycle" || f.rule === "unmatched-need"), []);

@@ -79,7 +79,7 @@
           }
         ],
         "outputs": [
-          "clossys/writer/voice.json"
+          "clossys/agents/writer/voice.json"
         ],
         "proofCase": "voice-derivation-violated",
         "maturity": "partial",
@@ -92,7 +92,7 @@
         "worldClass": "Every registry entry is schema-valid, has a unique id, and every declared placeholder is present in its own text — registry validity only; whether a component actually USES the registry by id is addressability's own question.",
         "inputs": [],
         "outputs": [
-          "clossys/writer/copy-registry.json"
+          "clossys/agents/writer/copy-registry.json"
         ],
         "proofCase": "registry-placeholder-missing",
         "maturity": "built",
@@ -110,7 +110,7 @@
           }
         ],
         "outputs": [
-          "clossys/writer/.generated/copy-coverage-report.json"
+          "clossys/agents/writer/.generated/copy-coverage-report.json"
         ],
         "proofCase": "copy-clean",
         "maturity": "built",
@@ -128,7 +128,7 @@
           }
         ],
         "outputs": [
-          "clossys/writer/.generated/claim-citations-report.json"
+          "clossys/agents/writer/.generated/claim-citations-report.json"
         ],
         "proofCase": "live-magnitude-unmarked",
         "maturity": "partial",
@@ -141,7 +141,7 @@
         "worldClass": "Shipped copy never drifts silently from its registry source, and the above-the-fold word budget is enforced, not eyeballed.",
         "inputs": [],
         "outputs": [
-          "clossys/writer/.generated/live-copy-report.json"
+          "clossys/agents/writer/.generated/live-copy-report.json"
         ],
         "proofCase": "live-fold-wallpaper",
         "maturity": "partial",
@@ -154,7 +154,7 @@
         "worldClass": "A rename is always cheap: renaming a piece of copy means editing one registry entry, never hunting every component that typed the sentence — #1208's site template reads copy by id on this guarantee.",
         "inputs": [],
         "outputs": [
-          "clossys/writer/.generated/addressability-report.json"
+          "clossys/agents/writer/.generated/addressability-report.json"
         ],
         "proofCase": "addressability-violated",
         "maturity": "built",
@@ -167,7 +167,7 @@
         "worldClass": "Every target locale covers what the source locale covers, with no orphaned or stale translation — governance over WHICH locales are covered, not runtime translation itself.",
         "inputs": [],
         "outputs": [
-          "clossys/writer/.generated/locale-coverage-report.json"
+          "clossys/agents/writer/.generated/locale-coverage-report.json"
         ],
         "proofCase": "locale-coverage-missing",
         "maturity": "built",
@@ -185,7 +185,7 @@
           }
         ],
         "outputs": [
-          "clossys/writer/.generated/voice-conformance-report.json"
+          "clossys/agents/writer/.generated/voice-conformance-report.json"
         ],
         "proofCase": "live-claim-unsupported",
         "maturity": "partial",
@@ -203,7 +203,7 @@
           }
         ],
         "outputs": [
-          "clossys/writer/messaging-kit.json"
+          "clossys/agents/writer/messaging-kit.json"
         ],
         "proofCase": null,
         "maturity": "planned",
@@ -216,7 +216,7 @@
         "worldClass": "Placeholder privacy-notice and terms text is drafted in the brand's voice from the facts Keeper supplies (what data is held, why, and for how long), never from assumption, and each page is labelled clearly as not legal advice pending review by counsel (#1213). Legal work beyond placeholders is out of scope for this role.",
         "inputs": [],
         "outputs": [
-          "clossys/writer/policy-placeholders.json"
+          "clossys/agents/writer/policy-placeholders.json"
         ],
         "proofCase": null,
         "maturity": "planned",
@@ -225,13 +225,13 @@
       }
     ],
     "outputs": [
-      "clossys/writer/copy-registry.json",
-      "clossys/writer/voice.json"
+      "clossys/agents/writer/copy-registry.json",
+      "clossys/agents/writer/voice.json"
     ],
     "feeds": [
       {
         "artifact": "copy-registry",
-        "path": "clossys/writer/copy-registry.json"
+        "path": "clossys/agents/writer/copy-registry.json"
       }
     ],
     "needs": [

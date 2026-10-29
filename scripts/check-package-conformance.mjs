@@ -35,7 +35,8 @@
 //      (#1381; see NOT_APPLICABLE_TO_PRODUCER below);
 //   4. the skill's loop section is generated from the loop matrix
 //      (docs/contracts/loop-matrix.json, issue #1197);
-//   5. the clossys/<role>/ layout is used (docs/contracts/consumer-layout.json),
+//   5. agent paths use clossys/agents/<agent>/ and other roles use clossys/<role>/
+//      (docs/contracts/consumer-layout.json),
 //      graded on the paths the package's own manifest declares (#1381);
 //   6. the duplicated conversation block is removed, in favour of the
 //      #1182 shared contract (docs/contracts/conversation-contract.md);
@@ -103,6 +104,19 @@ const GAP_KEYS = ["manifestBlock", "outputEnvelope", "lifecycleWords", "loopSect
 function isRecord(value) { return typeof value === "object" && value !== null && !Array.isArray(value); }
 function isText(value) { return typeof value === "string" && value.trim() !== ""; }
 const roleShortName = (role) => role.split("/").pop();
+
+/** Agent roles use agent folders; other roles retain their role folder. */
+function roleOutputPrefix(role) {
+  const name = roleShortName(role);
+  switch (name) {
+    case "strategist": return "clossys/agents/director/";
+    case "designer":
+    case "writer":
+    case "publisher": return `clossys/agents/${name}/`;
+    default: return `clossys/${name}/`;
+  }
+}
+
 
 function readJson(path) { return JSON.parse(readFileSync(path, "utf8")); }
 
@@ -389,11 +403,12 @@ export const NOT_APPLICABLE_TO_PRODUCER = Object.freeze({
 });
 
 /**
- * Check 5: the clossys/<role>/ layout is used -- graded on what the PACKAGE
+ * Check 5: the role's output prefix is used -- graded on what the PACKAGE
  * declares it will write (issue #1381's decision), not on whether this
  * repository happens to have a clossys/<role>/ folder of its own. Every
  * path the manifest declares (`outputs`, `feeds[].path`,
- * `capabilities[].outputs`) must sit under clossys/<role>/. `declared` when
+ * `capabilities[].outputs`) must sit under clossys/agents/<agent>/ for agents
+ * (strategist uses director), or clossys/<role>/ for other roles. `declared` when
  * at least one path is declared and all of them do; `absent` when none is
  * declared; `malformed` otherwise (the misplaced path itself is already a
  * finding from the Stage A gates composed above, so it is not reported
@@ -406,7 +421,7 @@ function layoutGap(role, manifest) {
   if (Array.isArray(foundry.feeds)) for (const item of foundry.feeds) paths.push(isRecord(item) ? item.path : item);
   if (Array.isArray(foundry.capabilities)) for (const item of foundry.capabilities) if (isRecord(item) && Array.isArray(item.outputs)) paths.push(...item.outputs);
   if (paths.length === 0) return { status: "absent" };
-  const prefix = `clossys/${roleShortName(role)}/`;
+  const prefix = roleOutputPrefix(role);
   const inside = paths.every((path) => isText(path) && path.startsWith(prefix) && !path.split("/").includes(".."));
   return { status: inside ? "declared" : "malformed" };
 }
