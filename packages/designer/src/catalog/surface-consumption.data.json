@@ -1755,7 +1755,8 @@
     "consumption": {
       "scanStatus": "lower-bound",
       "scannedComposes": [
-        "components.icon"
+        "components.icon",
+        "sections.empty-state"
       ],
       "scannedReads": {
         "assets": [],
@@ -1805,12 +1806,6 @@
         }
       ],
       "unresolved": [
-        {
-          "code": "DF5",
-          "evidence": "ambiguous slot ownership ./EmptyState.js#EmptyState: sections.boundary-message, sections.empty-state",
-          "file": "packages/designer/src/blocks/ActivityFeed.tsx",
-          "line": 3
-        },
         {
           "code": "DF5",
           "evidence": "unregistered asset import ../icons/ArrowRight.js#ArrowRight",
@@ -4586,7 +4581,8 @@
         "components.button",
         "components.grid-list",
         "components.menu",
-        "components.skeleton"
+        "components.skeleton",
+        "sections.empty-state"
       ],
       "scannedReads": {
         "assets": [],
@@ -4636,12 +4632,6 @@
           "evidence": "unregistered asset import ../icons/ChevronDown.js#ChevronDown",
           "file": "packages/designer/src/blocks/ResourceList.tsx",
           "line": 12
-        },
-        {
-          "code": "DF5",
-          "evidence": "ambiguous slot ownership ./EmptyState.js#EmptyState: sections.boundary-message, sections.empty-state",
-          "file": "packages/designer/src/blocks/ResourceList.tsx",
-          "line": 13
         },
         {
           "code": "DF2",
@@ -5331,7 +5321,8 @@
       "scanStatus": "lower-bound",
       "scannedComposes": [
         "components.meter",
-        "components.status-mark"
+        "components.status-mark",
+        "sections.empty-state"
       ],
       "scannedReads": {
         "assets": [],
@@ -5365,12 +5356,6 @@
         }
       ],
       "unresolved": [
-        {
-          "code": "DF5",
-          "evidence": "ambiguous slot ownership ./EmptyState.js#EmptyState: sections.boundary-message, sections.empty-state",
-          "file": "packages/designer/src/blocks/UsageSummary.tsx",
-          "line": 3
-        },
         {
           "code": "DF2",
           "evidence": "unresolved injected runtime inventory ../../tokens/tokens.js#TOKENS",

@@ -51,7 +51,7 @@ export function createConsumerPageRecords(config: ConsumerPageConfig, options: C
   const main: SectionFill[] = [], title = options.copy(config.title);
   if (options.entry.id !== config.entryId || options.entry.pageConfig !== config.id || options.entry.title !== title) throw new TypeError("Consumer page config identity/title differs from its content-map entry");
   if (!!config.item !== !!options.itemEntry || config.item && (options.itemEntry!.id !== config.item.entryId || options.itemEntry!.pageConfig !== config.id)) throw new TypeError("Consumer item config differs from its content-map entry");
-  const module: SectionFill = { section: "sections.table-of-contents", content: { headings: consumerPageRef(kind, "outline"), "active-id": consumerPageRef(kind, "active-id"), label: { kind: "copy", ref: config.copy.outline.id } } };
+  const module: SectionFill | null = config.pageModule === undefined ? { section: "sections.table-of-contents", content: { headings: consumerPageRef(kind, "outline"), "active-id": consumerPageRef(kind, "active-id"), label: { kind: "copy", ref: config.copy.outline.id } } } : config.pageModule;
   const manifest: RegisteredPageManifest = { l0: options.manifest.l0.map(l0 => {
     const index = main.length;
     main.push({ ...config.levels.l0.header, content: { heading: consumerPageRef(kind, `${l0.id}/heading`, "copy"), stats: consumerPageRef(kind, `${l0.id}/stats`) } });
@@ -96,7 +96,7 @@ export function createConsumerPageRecords(config: ConsumerPageConfig, options: C
       entry: sources.entry,
       composition: { source: sources.source, runtime: runtimeSource,
         header: { id: `header.${routeId}`, data: { title: routeTitle } },
-        binding: { instanceId: routeId, label: routeTitle, path, publicationId: options.publicationId, regions: { main: item ? itemMain : main, "page-module": [module], inspector: consumerPageRef(kind, item ? "item/context" : "context") } },
+        binding: { instanceId: routeId, label: routeTitle, path, publicationId: options.publicationId, regions: { main: item ? itemMain : main, ...(module ? {"page-module":[runtimeSnapshot(module)]} : {}), inspector: consumerPageRef(kind, item ? "item/context" : "context") } },
       } };
   };
   const list = route(false), item = config.item ? route(true) : undefined, query = consumerPageRef(kind, "search") as ContentRef & { kind: "records" };

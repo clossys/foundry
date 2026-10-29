@@ -1,5 +1,5 @@
 "use client";
-import { useEffect, useRef, useSyncExternalStore } from "react";
+import { useEffect, useMemo, useRef, useSyncExternalStore } from "react";
 import { useWholeStudio, useDesignerLayerBoardProjection } from "@clossys/designer/studio/state";
 import { wholeStudioCatalogHash } from "@clossys/designer/studio/queries";
 import { libraryHash, resolve, runtimeHash } from "@clossys/designer/catalog";
@@ -10,6 +10,8 @@ import { isRegionPageRouteRegistration } from "../core/route-identities.js";
 import { normalizeRegionPageRoute } from "../core/route-identities.js";
 import type { RegionPageRouteRegistry } from "../core/route-registry.js";
 import type { RegisteredRouteRuntime } from "./registered-route-binding.js";
+import { RegisteredPublicationOutlet } from "./registered-publication-outlet.js";
+import { registeredPublicationSnapshot } from "./registered-route-query.js";
 const noSubscribe = () => () => {};
 const zeroRevision = () => 0;
 export function RegisteredRoutePage({ registry, routeId, useRuntime, renderActions, publication }: RegisteredRoutePageProps) {
@@ -24,7 +26,7 @@ export function StaticRegisteredRoutePage({ registry, routeId, useRuntime, rende
   const runtime: RegisteredRouteRuntime = useRuntime(route);
   let failure: unknown;
   const page = runtime?.page, publication = suppliedPublication ?? page?.options.publication;
-  useSyncExternalStore(page?.subscribe ?? noSubscribe, page?.revision ?? zeroRevision, zeroRevision);
+  const revision = useSyncExternalStore(page?.subscribe ?? noSubscribe, page?.revision ?? zeroRevision, zeroRevision);
   const published = useRef<string | undefined>(undefined);
   useEffect(() => { page?.activate(); return () => { page?.deactivate(); }; }, [page, routeId]);
   useEffect(() => { if (page) void (runtime.itemPath === undefined ? page.start() : page.loadItem(runtime.itemPath)).catch(() => {}); }, [page, routeId, runtime.itemPath]);
@@ -39,6 +41,15 @@ export function StaticRegisteredRoutePage({ registry, routeId, useRuntime, rende
   const status = failure !== undefined || result?.status === "refused" ? "error" : result?.routeState?.main ?? (result?.status === "ready" || result?.status === "stream" ? "ready" : result?.status === "pending" ? "loading" : "error");
   const navigating = failure !== undefined || result?.status === "refused" ? false : result?.routeState?.navigating ?? status === "loading";
   const identity = `${routeId}:${status}:${navigating}:${result?.regionHash ?? (result?.status === "ready" ? result.assembly.snapshot.hash : status)}`;
+  const initial = useMemo(() => {
+    if (!publication) return undefined;
+    if (regions) return registeredPublicationSnapshot(regions, { main: status, navigating }, page?.commandGroups());
+    const previous = publication.getSnapshot();
+    // A refused/pending route still owns the same shell. Retain already selected
+    // regions while the frame displays its route state; do not remount chat.
+    return previous ? Object.freeze({ ...previous, routeId, state: Object.freeze({ main: status, navigating }) })
+      : registeredPublicationSnapshot({ routeId, trail: {}, regions: {} }, { main: status, navigating }, page?.commandGroups());
+  }, [publication, identity, revision]);
   useEffect(() => {
     if (!publication) return;
     publication.activate(routeId);
@@ -47,7 +58,7 @@ export function StaticRegisteredRoutePage({ registry, routeId, useRuntime, rende
     if (regions && (status === "ready" || result?.status === "stream")) publication.setPage(regions, page);
     publication.setState({ main: status, navigating }, page);
   }, [publication, routeId, identity, status, navigating]);
-  if (publication) return null;
+  if (publication) return initial && publication.Frame ? <RegisteredPublicationOutlet publication={publication} initial={initial} /> : null;
   if (failure !== undefined) throw failure;
   if (result?.status !== "ready") throw new Error(`Registered route ${result?.status ?? "refused"}: ${result && "findings" in result ? result.findings.join("; ") : "Runtime unavailable"}`);
   return node;

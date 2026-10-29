@@ -19,12 +19,13 @@ override, and no GitHub credential of any kind.
 
 ## Shared component selection
 
-`COMPONENT_GUIDANCE`, `COMPONENT_API_FACTS`, `COMPONENT_DISPLAY_TREE` and `COMPONENT_COMPARISON` are additive data
+`COMPONENT_GUIDANCE`, `COMPONENT_API_FACTS` and `COMPONENT_COMPARISON` are additive data
 exports from `@clossys/designer/components`. The barrel remains client-only. Read
 the packed [component selection guide](skill/components-guide.md) for purpose, use and
 avoidance, alternatives, content, anatomy, block composition, accessibility,
 medium evidence, represented configurations and partial token dependencies.
-Display groups, families and canonical leaves come directly from `catalog/ia/components.json`.
+`COMPONENT_DISPLAY_TREE`, `ComponentDisplayTree`, `resolveComponentId` and `componentSelection`
+come from `@clossys/designer/catalog`. Display groups, families and canonical leaves come directly from `catalog/ia/components.json`.
 Groups and families are navigation; only leaves are selectable. `resolveComponentId` maps
 legacy IDs such as `act.link` to their registered leaf; `componentSelection` accepts
 canonical IDs and pinned legacy IDs. Legacy guidance without a registered leaf stays
@@ -81,7 +82,7 @@ function findComparison(componentId: string) {
 The public types are `ComponentGuidance`, `ComponentApiFacts`, `ComponentDisplayTree`, `ComponentComparison`,
 `ComponentMedium`, `ComponentMediumState`, `ComponentScalar`, `ComponentEvidence`,
 `ComponentOptionGuidance`, `ComponentCondition`, `ComponentConstraint`, `ComponentWebImplementation` and
-`ComponentMediumGuidance`. Import these from the same existing components entry point.
+`ComponentMediumGuidance`. Import guidance types from the components entry point and `ComponentDisplayTree` from the catalog entry point.
 The installed guide is at `node_modules/@clossys/designer/skill/components-guide.md`;
 the launcher copies the selection essentials from `skill/SKILL.md`, not that
 companion file. Consumers should reference the shared records.

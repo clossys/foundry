@@ -13,6 +13,8 @@ export interface ConsumerPageConfig {
   readonly entryId: string;
   readonly namespace: string;
   readonly title: AdminPageCopyRef;
+  /** Explicit native module, or no module. Omission is unbound-preview compatibility only. */
+  readonly pageModule?: SectionFill | null;
   readonly levels: {
     readonly l0: { readonly verb: "normalize"; readonly header: ConsumerPageSectionStyle; readonly empty?: ConsumerPageSectionStyle };
     readonly l1: { readonly verb: "unlock"; readonly band: ConsumerPageSectionStyle; readonly header: ConsumerPageSectionStyle; readonly key: string };
@@ -55,9 +57,10 @@ function fill(value: unknown, depth = 0): boolean {
 /** Page composition is plain consumer data. Native library validation still
  * decides whether its selected leaves/configs/members and slots can execute. */
 export function checkConsumerPageConfig(value: unknown): readonly string[] {
-  if (!plain(value) || !object(value) || !fields(value, ["version", "id", "entryId", "namespace", "title", "levels", "columns", "copy", "item"]) || value.version !== 1
+  if (!plain(value) || !object(value) || !fields(value, ["version", "id", "entryId", "namespace", "title", "pageModule", "levels", "columns", "copy", "item"]) || value.version !== 1
     || ![value.id, value.entryId, value.namespace].every(text) || !copyRef(value.title)) return ["A versioned consumer page config with Writer title reference is required"];
   const errors: string[] = [], levels = value.levels;
+  if (value.pageModule !== undefined && value.pageModule !== null && !fill(value.pageModule)) errors.push("Page module requires a native SectionFill or explicit null");
   if (!object(levels) || !fields(levels, ["l0", "l1", "l2", "l3"])) errors.push("Four page levels are required");
   else {
     const { l0, l1, l2, l3 } = levels;

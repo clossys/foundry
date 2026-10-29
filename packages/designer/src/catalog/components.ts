@@ -705,9 +705,6 @@ export const COMPONENT_EXPORT_EXCLUSIONS: Readonly<Record<string, string>> = {
   COMPONENT_GUIDANCE: "Guidance data for the admin; not a component.",
   COMPONENT_API_FACTS: "Guidance data for the admin; not a component.",
   COMPONENT_COMPARISON: "Guidance data for the admin; not a component.",
-  COMPONENT_DISPLAY_TREE: "Authoritative IA navigation; not a component.",
-  resolveComponentId: "Compatibility address resolver; not a component.",
-  componentSelection: "Guidance selection by canonical address or alias; not a component.",
   ChartFrame: "Chart internals: parks with the chart set and is not a leaf.",
 };
 
