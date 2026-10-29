@@ -240,11 +240,11 @@
 @source inline("assets.icon-institution assets.icon-integration assets.icon-layers assets.icon-legal");
 @source inline("assets.icon-list-view assets.icon-locked assets.icon-organization assets.icon-package");
 @source inline("assets.icon-panel-left assets.icon-payment assets.icon-receipt assets.icon-search");
-@source inline("assets.icon-security assets.icon-settings assets.icon-success assets.icon-team");
-@source inline("assets.icon-theme-dark assets.icon-theme-light assets.icon-theme-system assets.icon-time");
-@source inline("assets.icon-user assets.icon-warning assets.icon-website assets.lockup assets.mark assets.pattern");
-@source inline("assets: assign assignCategoricalColor assignPorts assignee assigneePath assignees assignees:");
-@source inline("assistant associated association association.missing association.missing.length");
+@source inline("assets.icon-security assets.icon-set.glyph. assets.icon-settings assets.icon-success");
+@source inline("assets.icon-team assets.icon-theme-dark assets.icon-theme-light assets.icon-theme-system");
+@source inline("assets.icon-time assets.icon-user assets.icon-warning assets.icon-website assets.lockup assets.mark");
+@source inline("assets.pattern assets: assign assignCategoricalColor assignPorts assignee assigneePath assignees");
+@source inline("assignees: assistant associated association association.missing association.missing.length");
 @source inline("association.sourceHashes association: associations. async async/owned at at. at: attached attached.");
 @source inline("attempts attributeFilter: attributes attributes: attributorName attributorName: attributorRole");
 @source inline("attributorRole: audio audit auditLog: auditLogExport: auditor auditorSource author author: authored");

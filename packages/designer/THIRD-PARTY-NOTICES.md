@@ -166,3 +166,12 @@ The draft Aria rail additions use the official Aria source at commit
 `96da9cc7f1aa10580a3741664e2a77c721206c00`, under the shadcn MIT notice
 above. Individual fill descriptors retain the upstream addresses, file hashes,
 and the generated source license notice.
+
+## Feature icon set
+
+The draft `assets.icon-set` contains 48 feature glyphs copied from the published
+`lucide-react` 1.23.0 package (ISC). They are generated as separate `Feature*`
+data modules so existing semantic glyph artwork and pins remain unchanged.
+The set is decorative when rendered through `components.icon`. The generator
+omits explicit `currentColor` fill on upstream half-unit dot circles so the
+existing icon shell owns paint; coordinates and paths remain unchanged.

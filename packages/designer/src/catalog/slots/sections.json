@@ -1367,7 +1367,9 @@
           "tokens.caption-size",
           "tokens.text-color"
         ],
-        "assets": []
+        "assets": [
+          "assets.icon-set"
+        ]
       },
       "data": "host-injected",
       "surface": "both",
@@ -3570,7 +3572,8 @@
           "tokens.typeface"
         ],
         "assets": [
-          "assets.icon-*"
+          "assets.icon-*",
+          "assets.icon-set"
         ]
       },
       "data": "host-injected",
@@ -6892,7 +6895,9 @@
           "tokens.text-color",
           "tokens.typeface"
         ],
-        "assets": []
+        "assets": [
+          "assets.icon-set"
+        ]
       },
       "data": "host-injected",
       "surface": "both",
