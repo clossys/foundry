@@ -54,7 +54,7 @@ describe("IA1 exact three levels and IA2 unmixed nodes", () => {
         expect(() => loadBuildCatalog()).toThrow("IA1");
         if (layer === "tokens" || layer === "assets") expect(() => loadCatalog()).toThrow("IA1");
       } finally { Object.assign(input, { nodes: original }); }
-      expect(loadBuildCatalog().slots).toHaveLength(233);
+      expect(loadBuildCatalog().slots).toHaveLength(234);
     });
   }
 
@@ -140,6 +140,6 @@ describe("owner-signed IA moves (ledger #44, 2026-10-26)", () => {
       (assets as WithReferences).crossReferences!.push({ node: "imagery", leaves: ["tokens.icon-stroke"] });
       expect(() => loadCatalog()).toThrow("cross-referenced 2 times");
     } finally { Object.assign(assets, { crossReferences: original }); }
-    expect(loadBuildCatalog().slots).toHaveLength(233);
+    expect(loadBuildCatalog().slots).toHaveLength(234);
   });
 });

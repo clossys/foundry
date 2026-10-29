@@ -1,5 +1,5 @@
 {
-  "base": "0aa842cfb27009c9413d006339576216f9f788bd",
+  "base": "c4b97dda54e0ca934a9a06e686c4bc0d5caeb5bd",
   "slots": [
     {
       "layer": "tokens",
@@ -36,6 +36,7 @@
         "tokens.focus-shadow",
         "tokens.font-size",
         "tokens.font-weight",
+        "tokens.gradient",
         "tokens.gutter",
         "tokens.heading-size",
         "tokens.icon-size",
@@ -60,7 +61,7 @@
         "tokens.typeface",
         "tokens.z-index"
       ],
-      "rowsSha256": "e8217b07490a48380c130e599ff0834d99fa0fe04c3d49bccf7ce1195629c08a"
+      "rowsSha256": "e834e355a32468246ac816f091ef359aea81f6b0a21544c851bbb3e27f084dca"
     },
     {
       "layer": "assets",
@@ -114,7 +115,7 @@
         "assets.icon-layers",
         "assets.icon-integration"
       ],
-      "rowsSha256": "09ee4eb890b7cf29c2a0a850141ff181befebcaf8f2523d1e349c0c97eeaa53e"
+      "rowsSha256": "41f9ad32abd16b6a2b1f213dbe75aa720443b92c40673cf6dd65e9f21ca224bc"
     },
     {
       "layer": "components",
@@ -237,7 +238,7 @@
         "sections.usage",
         "sections.wizard"
       ],
-      "rowsSha256": "6021e97ea62f5486b44d998c18a24d52100f82e4284cb1bbd5cceec7bfca7435"
+      "rowsSha256": "ddcee55b59d59342feb252eb5d0a5d57e200b2666ea941b727cf61f5fdc8801a"
     },
     {
       "layer": "frames",
