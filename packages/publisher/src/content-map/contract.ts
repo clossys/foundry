@@ -18,6 +18,8 @@ export type ContentMapEntry = {
   readonly order: number;
   readonly title: string;
   readonly kind: "page" | "slide" | "section" | "group";
+  /** Consumer-owned composition config identity; only page entries use it. */
+  readonly pageConfig?: string;
   /** Groups and sections are pinnable as well as pages. A named group must be
    * an ancestor group, and pinned descendants require pinned ancestors. */
   readonly pin?: { readonly nav: true; readonly group?: string };

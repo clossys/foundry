@@ -20,6 +20,8 @@ it("bundles the public admin-copy client seam without Writer root or the server 
   expect(inputs.some(path => /web\/registered-route-pages\.js$/.test(path))).toBe(true);
   expect(inputs.some(path => /controller\/dist\/review\//.test(path))).toBe(false);
   expect(inputs.some(path => /writer\/dist\/index\.js$|web\/pages\/admin-copy-source\.js$/.test(path))).toBe(false);
+  const emitted = Object.values(result.metafile!.outputs).flatMap(output => Object.entries(output.inputs).filter(([, value]) => value.bytesInOutput > 0).map(([path]) => path));
+  expect(emitted.some(path => /examples\/|web\/pages\/(?:designer|writer|publisher)\.page\.js$|web\/(?:DesignerRoutePage|writer\/WriterRoutePage|publisher\/PublisherRoutePage)\.js$|designer\/dist\/frames\/site-frame\/landing\//.test(path))).toBe(false);
   const guarded = await bundle('import "@clossys/publisher/web/registered-route-check";');
   expect(Object.keys(guarded.metafile!.inputs).filter(path => path !== "admin-copy-consumer.mjs")).toEqual([expect.stringMatching(/refuse-registered-route-browser\.js$/)]);
   await expect(bundle('export { prepareAdminPageCopyEnvelopes } from "@clossys/publisher/web/registered-route-check";')).rejects.toMatchObject({

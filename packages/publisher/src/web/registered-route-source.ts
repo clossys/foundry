@@ -108,24 +108,10 @@ export interface CompleteRoutePageSource {
   readonly file: string;
   readonly loader: RouteSourceExport;
 }
-/** A complete native view owns its client controller. The server route only loads
- * finite data and forwards the two public props. This source is display output;
- * it does not replace registered source or Node qualification evidence. */
-export function emitCompleteRoutePage(input: CompleteRoutePageSource): string {
-  if (!input || !isCompleteRouteKind(input.kind)) throw new Error("Complete Designer, Publisher or Writer route kind required");
-  if (!routeSourcePath(input.file) || !input.file.endsWith(".tsx")) throw new Error("Consumer-relative TSX route file required");
-  if (!input.loader || !routeSourcePath(input.loader.file) || !/^[A-Za-z_$][\w$]*$/.test(input.loader.export)) throw new Error("Consumer-relative typed loader export required");
-  if (input.file === input.loader.file || !/\.(?:ts|tsx)$/.test(input.loader.file) || input.loader.file.endsWith(".d.ts")) throw new Error("Separate typed loader module required");
-  const component = input.kind === "designer" ? "DesignerRoutePage" : input.kind === "writer" ? "WriterRoutePage" : "PublisherRoutePage";
-  return [
-    `import { ${component} } from "@clossys/publisher/web/registered-route";`,
-    named(input.loader, input.file, "loadRouteData"),
-    `const metadata = ${JSON.stringify(registeredRouteHeadMetadata(`/agents/${input.kind}`))};\nexport { metadata };`,
-    "export default async function CompletePage() {",
-    "  const data = await loadRouteData();",
-    `  return <${component} serverData={data.serverData} initialSession={data.initialSession} />;`,
-    "}", "",
-  ].join("\n");
+/** Retired page-kind emission cannot name a deleted public component. A consumer
+ * supplies a checked page config and emits its registered region route instead. */
+export function emitCompleteRoutePage(_input: CompleteRoutePageSource): never {
+  throw new TypeError("Complete route page kinds are retired; supply a consumer page config and registered region source");
 }
 export { createContentRouteManifest, emitContentRoutePage } from "./content-route-source.js";
 export type { CreateContentRouteManifestInput } from "./content-route-manifest.js";

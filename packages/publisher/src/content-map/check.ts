@@ -59,7 +59,7 @@ export function checkContentMap(input: unknown): readonly ContentMapFinding[] {
     const source = entry.source;
     const planSource = record(source) && fields(source, ["planItemId"]) && text(source.planItemId);
     const frameSource = record(source) && fields(source, ["frameId", "sectionIds"]) && text(source.frameId) && Array.isArray(source.sectionIds) && source.sectionIds.every(text) && new Set(source.sectionIds).size === source.sectionIds.length;
-    if (!fields(entry, ["id", "parentId", "order", "title", "path", "slug", "kind", "pin", "source", "icon", "description", "keywords", "manifest", "constructs"]) || !text(entry.id) || !text(entry.title) || !Number.isSafeInteger(entry.order) || entry.order < 0
+    if (!fields(entry, ["id", "parentId", "order", "title", "path", "slug", "kind", "pin", "source", "icon", "description", "keywords", "manifest", "constructs", "pageConfig"]) || !text(entry.id) || !text(entry.title) || !Number.isSafeInteger(entry.order) || entry.order < 0
       || !["page", "slide", "section", "group"].includes(entry.kind) || (entry.parentId !== undefined && !text(entry.parentId)) || (!planSource && !frameSource)
       || (entry.path === undefined) === (entry.slug === undefined) || !(text(entry.path) || text(entry.slug))
       || (entry.icon !== undefined && !text(entry.icon)) || (entry.description !== undefined && !text(entry.description)) || (entry.keywords !== undefined && (!Array.isArray(entry.keywords) || !entry.keywords.every(text)))) add("contract", at, "Invalid entry identity, content reference or metadata", entry.id);
@@ -70,6 +70,7 @@ export function checkContentMap(input: unknown): readonly ContentMapFinding[] {
     if (path !== undefined) paths.add(path);
     if (input.format === "web.page.responsive" && (typeof path !== "string" || !path.startsWith("/") || path.startsWith("//") || path.includes("\\") || /[\u0000-\u0020]/.test(path)
       || (entry.kind === "page" && !canonicalPagePath(path)))) add("web-path", at, "Web targets must stay local; pages require canonical registered paths", entry.id);
+    if (entry.pageConfig !== undefined && (entry.kind !== "page" || !text(entry.pageConfig))) add("contract", `${at}.pageConfig`, "Only pages may reference a nonempty consumer config", entry.id);
     if (entry.pin !== undefined && (!record(entry.pin) || !fields(entry.pin, ["nav", "group"]) || entry.pin.nav !== true || !["page", "group", "section"].includes(entry.kind) || !text(entry.id) || (entry.pin.group !== undefined && !text(entry.pin.group)))) add("pin", `${at}.pin`, "Only an existing page, group or section can be pinned", entry.id);
     if (entry.manifest !== undefined || entry.constructs !== undefined) {
       try {

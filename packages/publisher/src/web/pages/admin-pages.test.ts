@@ -1,10 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { pages as source, adminCopyFixture } from "./__fixtures__/copy.mjs";
 import { readFileSync } from "node:fs";
-import { createAdminPageRegistry, adminPageRef, adminPageStaticContent, ADMIN_PAGE_COPY_REFS } from "./index.js";
-import { createDesignerPageRecords } from "./designer.page.js";
-import { createWriterPageRecords } from "./writer.page.js";
-import { createPublisherPageRecords } from "./publisher.page.js";
+import { createAdminPageRegistry, adminPageRef, adminPageStaticContent, ADMIN_PAGE_COPY_REFS, createDesignerPageRecords, createWriterPageRecords, createPublisherPageRecords } from "./__fixtures__/consumer-pages.mjs";
 import { projectPageOutline } from "../../content/taxonomy.js";
 import { normalizeRegionPageRoute } from "../../core/route-registry.js";
 
@@ -61,7 +58,7 @@ describe("native scroll admin page records", () => {
     expect(JSON.stringify(records)).not.toContain("English-store");
   });
   it("has no imports from frozen paths or retired route bodies", () => {
-    for (const file of ["index.ts", "admin-page.ts", "designer.page.ts", "writer.page.ts", "publisher.page.ts"]) {
+    for (const file of ["index.ts", "admin-page.ts", "consumer-page-contract.ts"]) {
       const source = readFileSync(new URL(file, import.meta.url), "utf8");
       expect(source).not.toMatch(/(?:from|import\s*\()[^\n]*(?:blocks\/canvas|CanvasMap|CanvasZoom|studio\/(?:canvas|useCanvasWorld|CanvasDomain|canvas-boards|canvas-model|visible-rows|system-canvas)|PublisherBoard|ItemAssemblyView|LeafCell|DesignerRoutePage|WriterRoutePage|PublisherRoutePage|PublisherPage)/);
     }

@@ -4,10 +4,10 @@ import { canonicalPlanJson, sha256 } from "../planning/digest.js";
 
 /** Finite route identities shared by server validation and browser navigation.
  * This module never imports runtime lifecycle/evidence or Node implementations. */
-export const COMPLETE_ROUTE_KINDS = ["designer", "writer", "publisher"] as const;
-export type CompleteRouteKind = (typeof COMPLETE_ROUTE_KINDS)[number];
+/** Legacy plan data can still be read; new pages use consumer configs. */
+export type CompleteRouteKind = "designer" | "writer" | "publisher";
 export function isCompleteRouteKind(value: unknown): value is CompleteRouteKind {
-  return COMPLETE_ROUTE_KINDS.some(kind => kind === value);
+  return value === "designer" || value === "writer" || value === "publisher";
 }
 const text = (v: unknown): v is string => typeof v === "string" && v.trim().length > 0;
 const only = (v: object, keys: readonly string[]) => Object.keys(v).every(k => keys.includes(k));

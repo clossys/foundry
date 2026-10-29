@@ -1,11 +1,15 @@
-# Scroll admin page records
+# Consumer page configurations
 
-The six canonical list/item routes use `composition.binding`. Import their
-builders, client copy helpers and `RegisteredRoutePage` from
-`@clossys/publisher/web/admin-pages`. This client entry includes the selected
-route binder and session helpers without the legacy page barrel. Existing
-`@clossys/publisher/web/registered-route` exports remain compatibility APIs;
-new adoption uses `web/admin-pages` for its browser imports.
+The consumer owns page composition as data. Publisher turns checked page
+configurations, content-map entries and loader manifests into native
+`composition.binding` records. Import `createConsumerPageRegistry`, copy helpers
+and `RegisteredRoutePage` from `@clossys/publisher/web/admin-pages`.
+
+There is no three-page kind enum or named Designer/Writer/Publisher page
+factory. The admin publication supplies its three configurations in consumer
+data; another publication can supply different identities, columns and item
+sections. The browser entry contains the existing selected route binder and
+session helpers without the retired hand-built page exports.
 
 ## Prepare Writer envelopes on the server
 
@@ -51,65 +55,129 @@ is the required input to all builders. An arbitrary string callback is refused.
 `copy.resolve({ id, locale?, values? })` also returns the canonical `st.*`
 recordId, revision, locale, status, envelope hashes and declared binding cellId
 as provenance. Semantic aliases remain the binding cellIds; recordIds address
-their Writer records. This is explicit draft-preview resolution, with
-activation `none`.
+their Writer records. The helper requests Writer's explicit `preview` target
+and retains draft status and activation `none`. Preserve the draft marker when
+presenting preview copy. Production resolution uses Writer's approval policy;
+this helper does not promote drafts or manufacture approval.
+
+`copyPreview` on the returned page registry is derived from the resolved Writer
+provenance: `{ target: "preview", draft: boolean }`. Keep
+`data-copy-target="preview"` and, when `draft` is true,
+`data-copy-status="draft"` on the consumer's existing frame root. A resolved
+preview is not a production approval or a publication clearance.
 
 English ICU uses Writer's formatter. The two genuine Arabic literal records
 can be addressed with `locale: "ar"`; there is no English fallback. Non-English
 ICU and missing/retired records refuse. No second message formatter is supplied.
 
-## Build the six records
+## Define composition and map references
 
-`createAdminPageRegistry({ publication, copy, manifests, sources?, itemL0?, itemTitles? })`
-returns `{ registry, pages, manifests, publicationHosts, copyProvenance }`.
-The individual factories are `createDesignerPageRecords`,
-`createWriterPageRecords` and `createPublisherPageRecords`.
+A `ConsumerPageConfig` is serializable data with `version`, `id`, `entryId`,
+`namespace`, a Writer-ref `title`, `levels`, `columns`, `copy` bindings and an
+optional `item`. The repository example is
+[`examples/admin-pages.config.json`](../../../examples/admin-pages.config.json).
+Publisher does not import these example configurations at runtime. Keep the
+publication's actual configurations in the consumer.
 
+The four levels declare semantic verbs and existing selected section styles:
+
+| Level | Verb | Consumer composition |
+| --- | --- | --- |
+| L0 | `normalize` | `header` and optional `empty` section |
+| L1 | `unlock` | `band`, `header` and repeat `key` |
+| L2 | `cohere` | `table` and repeat `key` |
+| L3 | `create` | row `key` |
+
+These verb ids describe the levels; displayed labels still resolve through
+Writer. A style supplies the existing section leaf, optional config and member
+selection. `columns` supplies each key, kind and Writer-ref label. `copy`
+supplies the outline/count, item, table and chat Writer refs. An optional
+`item` names its map entry and supplies ordered sections as
+`{ id, label, estimate, fill }`, where `fill` is native `SectionFill` data.
+There are no page-body callbacks or consumer-authored JSX in this model.
+
+Each list map entry has `kind: "page"` and `pageConfig: config.id`, and its id
+matches `config.entryId`. If `config.item` exists, the item entry has the same
+`pageConfig` reference and the id in `config.item.entryId`. Map entries own
+paths and `source.planItemId`; configuration ids are not route paths.
+`pageConfig` is refused on non-page entries. Missing, duplicate and orphaned
+configurations, mismatched identities or titles, and missing source modules
+are refused before route construction. A map title must equal the Writer
+resolution of the corresponding configuration title or current item title.
+
+## Build a consumer registry
+
+`createConsumerPageRegistry({ publication, channel, map, configs, copy, manifests,
+sources, brand?, itemL0?, itemTitles? })` returns
+`{ registry, pages, map, manifests, publicationHosts, copyProvenance, copyPreview }`.
+The returned `map` enriches route-only entries with the native page's placement-backed
+manifest and Section constructs. Use it for navigation, outline, ToC, commands and
+sitemap projections. Supplied map manifests and constructs must match the generated
+native page, including counts, Writer labels and placements; conflicts are refused.
 `publication` supplies the selected frame, layout, mainSlot and
-`context.consumer`. Mount its Designer frame once. Each `pages[kind]` contains
-`list`, `item`, `manifest`, `itemManifest`, `query`, `staticContent`,
-`createSession` and `copyProvenance`.
+`context.consumer`; its id and format must agree with the map. Mount its
+Designer frame once. Supply a valid `PublisherChannelId` explicitly: the admin
+uses `admin`, while the inventory example below uses `site`. Channel selection
+does not depend on configuration names.
 
-Skeletons use
-`{ l0: [{ id, label: { id: writerAlias }, count, estimate, partition?, l1: [...] }] }`.
-Every L1/L2 label is also an `AdminPageCopyRef`, not a resolved string.
-`itemTitles[kind]` (or an individual factory's `itemTitle`) is a Writer ref for
-the actual item name. Live item sessions require it. It names the frame trail,
-record detail and selected outline entry. `itemL0[kind]` selects the concrete
-item's L0 while the route remains `/agents/<kind>/[l0]/[id]`.
+`manifests`, `sources`, `itemL0` and `itemTitles` are keyed by configuration id.
+Each `pages[config.id]` contains `list`, optional `item`, `manifest`, optional
+`itemManifest`, `query`, `staticContent`, `createSession`, `levels` and
+`copyProvenance`. A loader skeleton is
+`{ l0: [{ id, label: { id: writerAlias }, count, estimate, partition?, l1: [...] }] }`;
+L1/L2 labels are also Writer refs.
 
-Supply the consumer's actual entry/source/runtime modules through `sources`.
-Default source identities are examples, not installed modules or qualification
-evidence.
+For every configured route, supply actual consumer module identities through
+`sources[config.id]`: `list: { entry, source }`, optional
+`item: { entry, source }`, and `runtime`. `brand`, when provided, is
+`{ homeRouteId, label: WriterRef }`; otherwise the first configuration supplies
+the home entry and Writer-ref label.
 
-In the client runtime, supply the consumer's selected publication and real
-manifests, source modules, router navigation and loaders. A list-page setup is:
+For example, consumer configuration and map data can be joined in a client
+runtime as follows. The sample names describe consumer-owned imports and
+values, not modules installed by Publisher:
 
 ```ts
-import { createAdminPageCopy, createAdminPageRegistry } from
+import { createAdminPageCopy, createConsumerPageRegistry } from
   "@clossys/publisher/web/admin-pages";
 
 const copy = createAdminPageCopy({ locale: "en", envelopes });
-const admin = createAdminPageRegistry({
+const publication = createConsumerPageRegistry({
   publication: selectedPublication,
+  channel: "site",
+  map: contentMap,
+  configs: pageConfigs,
   copy,
   manifests,
   sources,
 });
-const writer = admin.pages.writer.createSession({
+const inventory = publication.pages.inventory.createSession({
   publication: publicationSession,
   navigation,
-  loaders: writerLoaders,
+  loaders: inventoryLoaders,
 });
 ```
 
 Here `envelopes` is the server result above. `selectedPublication` and
-`publicationSession` describe the same selected, persistent frame. Use
-`admin.registry` and routeId `admin.writer` with `RegisteredRoutePage`; supply
-the returned `writer` bundle through the selected runtime as described below.
-For an item page, build with the current `itemL0` and Writer-ref `itemTitles`,
-then pass `item: true` and `itemPath` to `createSession`. Rebuild that binding
-when the concrete item parameters or its Writer title change.
+`publicationSession` describe the same selected, persistent frame. The
+consumer supplies a configuration whose id is `inventory` and whose entry is
+linked from `contentMap`. Use `publication.registry` and that entry's id with
+`RegisteredRoutePage`; supply the returned session bundle through the selected
+runtime as described below.
+
+For an item route, `itemTitles[config.id]` is a Writer ref for the actual item
+name and `itemL0[config.id]` selects its concrete L0. Live item sessions require
+the item title. It names the frame trail, detail title and selected outline
+entry; the item map entry's title must agree. Then pass `item: true` and the
+concrete `itemPath` to `createSession`. Rebuild the binding when concrete item
+parameters, map title or Writer title change. The route path comes from the map.
+
+To migrate the admin's three pages, move their compositions and columns into
+consumer configuration data, add each map entry's `pageConfig` reference, key
+the existing manifest/source maps by config id, and replace
+`createAdminPageRegistry` or the named factories with
+`createConsumerPageRegistry`. Keep the same selected publication, router,
+Writer envelopes and loader/session boundary.
 
 ## Bind data before it enters the page cache
 
@@ -121,8 +189,9 @@ Raw display strings refuse. Structural ids, refs, hrefs and numbers remain data;
 links, locales, dates or chat-message content. Technical markers cannot replace
 a heading or label.
 
-`adminPageRef(kind, name, type?)` constructs
-`{ kind: type ?? "records", ref: "admin.<kind>/<name>" }`. Loader content records
+`consumerPageRef(namespace, name, type?)` constructs
+`{ kind: type ?? "records", ref: "<namespace>/<name>" }`. Use the namespace from
+the consumer configuration. Loader content records
 carry static refs and `hash: runtimeHash(value)` over their input value:
 
 - `chunk({l0,l1?})` returns an L1 band records ref
@@ -149,7 +218,7 @@ loader use. Content created with another copy source cannot supply item fields.
 
 ## Connect the selected runtime and persistent host
 
-Call `pages[kind].createSession({ publication, navigation, loaders, ... })`,
+Call `pages[config.id].createSession({ publication, navigation, loaders, ... })`,
 with `item: true` and a concrete `itemPath` for an item route. The returned
 bundle contains:
 
@@ -166,17 +235,39 @@ available before any lazy chunk is requested. `partition: "l1"` splits large
 L0s per band. Data-table selection and hash navigation remain registered-session
 ports.
 
-The section hosts supply `recordDetail` only to record-detail, and
-`tableCopy`/`paginationSummary` only to data-table. The detail title and fields
+The section hosts use the configuration's Writer refs to supply `recordDetail`
+only to record-detail, and `tableCopy`/`paginationSummary`/`formatCopyMessage`
+only to data-table.
+The detail title and fields
 come from the current Writer-bound item. Empty-table copy and the complete
 pagination summary come from Writer records.
 
-At the publication host's one-time `bind`, use
+`paginationSummary` is serializable data, not a callback:
+`{ key: "pagination.totalText", writerId, locale, message, values }`.
+Its raw ICU message and canonical id come from the genuine bound Writer record.
+The section supplies its live `start`, `end`, `total`, `page`, `pageCount` and
+`pages`, preserving other authored arguments. `formatCopyMessage` verifies the
+message identity and delegates to Writer's explicit preview resolver; Publisher
+does not parse ICU or carry a second formatter. Obsolete callback summaries and
+forged message text refuse.
+
+Use one shared chat binding set across the publication's configurations;
+conflicting chat copy references are refused. At
+the publication host's one-time `bind`, use
 `publicationHosts["sections.chat"]` for the shared inspector renderer. It
 supplies both root labels and all 19 Chat labels, including code-copy states.
 Pages replace inspector context, not the Chat mount or its thread. Missing
 required native copy ports refuse; no specimen dataset or English component
 defaults are used by these selected renderers.
+
+## Structured documents
+
+Publisher also owns `SectionedViewDocument`, its validation and
+`resolveSectionedViewDocument` through `@clossys/publisher/core`. Prepare
+structured documents through that server-side composition entry and import
+its types where needed. Consumer documents use Writer CopyRefs rather than
+the Designer landing document model. Resolution still requires a Writer
+resolver and does not provide page copy or approval defaults.
 
 The consumer still supplies the selected library, manifests, CSS, source
 closure, frame adapter and live loader data. Publisher tests use real Writer
