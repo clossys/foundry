@@ -60,9 +60,9 @@
 @source inline("DialogSmall DialogTitle DialogTrigger Differs Direction Disclosure Disclosure.Group DisclosureGroup");
 @source inline("DisclosurePanel Dispatch Display Docs Document Documents Done Drag Draw Drawer DrawerProps Drawing");
 @source inline("Drawn DropdownMenuItem DropdownMenuTrigger E-mail EDGE_CAP EEXIST EMAIL EMBEDDED_HEADER ES2022");
-@source inline("ESNext EV Each Editor Edits Email Emil EmptyDescription EmptyHeader EmptyState EmptyTitle End Engine");
-@source inline("Engineering Enter Enter: Equals Error ErrorState Errors Escape Escape: Event EventItem Every Exact");
-@source inline("Exact-property Example Expand Expected Explicit Explorer Export FA FAQ_ROW_CLASSES");
+@source inline("ESNext EV Each Editor Editorial Edits Email Emil EmptyDescription EmptyHeader EmptyState EmptyTitle");
+@source inline("End Engine Engineering Enter Enter: Equals Error ErrorState Errors Escape Escape: Event EventItem");
+@source inline("Every Exact Exact-property Example Expand Expected Explicit Explorer Export FA FAQ_ROW_CLASSES");
 @source inline("FAQ_ROW_CLASSES.list FAVICON FIELDS_COLUMNS FONT_STYLE FRAGMENT_ID Fabrikam False Faq Faq.tsx");
 @source inline("FeatureGrid Feb February Fern Field Field.server.tsx FieldError FieldGroup FieldRenderProps Fields");
 @source inline("FileList FileText FileTrigger Fill FillMeta Filter FilterBuilder Find Finding Finish Finite First");
@@ -130,7 +130,7 @@
 @source inline("Reopen Replaced Replay Reports Request Required Research Reserve Resets ResizablePane ResizablePane:");
 @source inline("Resize ResizeHandle ResizeHandle: ResizeObserver Resolve ResolveText Resolved ResolvedComponent");
 @source inline("ResolvedMember ResolvedMeter ResourceList Respect Response Responsive Retain Retained Retry Returns");
-@source inline("Reuses Revenue Review Ridges Ring Root Rotated Route Row Row-shaped Rows RuntimeContent[]");
+@source inline("Reuses Revenue Review Ridges Ring Role Root Rotated Route Row Row-shaped Rows RuntimeContent[]");
 @source inline("RuntimeDigest Russo SAFETY SAMPLES.playLabel SAMPLES[pointer] SAMPLE_MARK SCAN");
 @source inline("SECTIONED_VIEW_CONTENT_CONTRACT.counts.matrix SECTIONED_VIEW_ITEM_RECIPES:");
 @source inline("SECTIONED_VIEW_ITEM_RECIPES[block.recipe] SET SHAPES SHEET SHOWN SITE_FRAME_CONFIG_SCHEMA");
@@ -243,9 +243,9 @@
 @source inline("assets.icon-panel-left assets.icon-payment assets.icon-receipt assets.icon-search");
 @source inline("assets.icon-security assets.icon-settings assets.icon-success assets.icon-team");
 @source inline("assets.icon-theme-dark assets.icon-theme-light assets.icon-theme-system assets.icon-time");
-@source inline("assets.icon-user assets.icon-warning assets.icon-website assets.lockup assets.mark assets.pattern");
-@source inline("assets: assign assignCategoricalColor assignPorts assignee assigneePath assignees assignees:");
-@source inline("assistant associated association association.missing association.missing.length");
+@source inline("assets.icon-user assets.icon-warning assets.icon-website assets.image assets.lockup assets.mark");
+@source inline("assets.pattern assets: assign assignCategoricalColor assignPorts assignee assigneePath assignees");
+@source inline("assignees: assistant associated association association.missing association.missing.length");
 @source inline("association.sourceHashes association: associations. async async/owned at at. at: attached attached.");
 @source inline("attempts attributeFilter: attributes attributes: attributorName attributorName: attributorRole");
 @source inline("attributorRole: audio audit auditLog: auditLogExport: auditor auditorSource author author: authored");
@@ -310,7 +310,7 @@
 @source inline("canvas.search canvas.zoom canvas.zoomIn canvas.zoomLabel canvas.zoomOut canvasLodTier canvasSize");
 @source inline("canvaszoomrequest cap capacity. caption caption: captions captions. capture captureOwner");
 @source inline("captureOwner.current captured card card. card: cardCount: cardH cards cards: carefully carries carry");
-@source inline("cascade cascade. case case-insensitively caseFirst catalog catalog-browser-any");
+@source inline("cascade cascade. case case-insensitively case-study caseFirst catalog catalog-browser-any");
 @source inline("catalog-browser-group: catalog/reports/usage-graph.json catalog/rules/source-roster.json catalog:");
 @source inline("catalogs catalogs: catch categorical categories categories: category category.bandwidth category:");
 @source inline("categoryColumnLabel categoryKey: cdp cdp: ceiling cell cell. cell.kind cell.leaf cell.reason cell:");
@@ -990,7 +990,7 @@
 @source inline("popover-arrow-rotate popover-content popover-description popover-header popover-title");
 @source inline("popover-trigger popover: popstate port port. port: portFor portOf portal portals ports position");
 @source inline("position: position[item] positional positioned positioned-isolated-stage positions positive");
-@source inline("positive. post posts pre-paint precedence precise precompiled preds: preference");
+@source inline("positive. post post-featured posts pre-paint precedence precise precompiled preds: preference");
 @source inline("preferenceAnnouncement preferenceLabels preferences preferences. preferred prefers-color-scheme");
 @source inline("prefix prefix-N prefixRef prefixRef.current prepared prepared.consumer prepared.libraryHash");
 @source inline("prepared.selectionHash prepared: present presentation presentations. presents preserves preserving");
@@ -1027,9 +1027,9 @@
 @source inline("react-aria-components react-aria-components-aware react-aria-components-supplied");
 @source inline("react-aria-components/package.json react-aria-components@1.20.0 react-dom react-jsx react-server");
 @source inline("react/no-array-index-key read read-only read. read: readStoredPreference readable reader readiness");
-@source inline("reading reading/tabbing readme: readonly readout reads reads: ready ready. real reason reason.");
-@source inline("reason: reasonId reasonRef reasoning reasons reasons: rebuilding receipt receipt.path receives");
-@source inline("recent recessive recipe recipe. recipe: record record. record.rows.label record.rows.layer");
+@source inline("reading reading-time reading/tabbing readme: readonly readout reads reads: ready ready. real reason");
+@source inline("reason. reason: reasonId reasonRef reasoning reasons reasons: rebuilding receipt receipt.path");
+@source inline("receives recent recessive recipe recipe. recipe: record record. record.rows.label record.rows.layer");
 @source inline("recordCards: recordPath recordPath: record[key] recorded records records. records: rect rect.height");
 @source inline("rect.width rect: rectangles recursive: redesign redo reduced reducedMotion reducedMotionMessage");
 @source inline("redundantly ref ref. ref: refer reference reference.kind reference.ref referenceOnly referenced");

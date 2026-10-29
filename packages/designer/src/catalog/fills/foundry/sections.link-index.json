@@ -35,9 +35,13 @@
         "components.button",
         "components.card",
         "components.icon",
-        "components.status-mark"
+        "components.semantic-content",
+        "components.status-mark",
+        "sections.section-header"
       ],
-      "configs": {},
+      "configs": {
+        "roles": "config=roles"
+      },
       "consumption": {
         "scanStatus": "lower-bound",
         "scannedComposes": [
@@ -45,7 +49,9 @@
           "components.button",
           "components.card",
           "components.icon",
-          "components.status-mark"
+          "components.semantic-content",
+          "components.status-mark",
+          "sections.section-header"
         ],
         "scannedReads": {
           "assets": [],
@@ -54,6 +60,7 @@
             "components.button",
             "components.card",
             "components.icon",
+            "components.semantic-content",
             "components.status-mark"
           ],
           "tokens": [
@@ -105,7 +112,7 @@
           },
           {
             "path": "packages/designer/src/blocks/NavGrid.tsx",
-            "sha256": "92778b22b5145fc6db539e8761df2da02a821eb805fd8558f2cfb1add8dd2944"
+            "sha256": "cc53423a4379cb8cea14a1664b32cd851b9c70a8bad9db002c8b4d3df08acd3a"
           },
           {
             "path": "packages/designer/src/blocks/section-ground.ts",
@@ -134,6 +141,12 @@
         ],
         "unresolved": [
           {
+            "code": "DF2",
+            "evidence": "unresolved source export ../components/Link.js#Link",
+            "file": "packages/designer/src/blocks/NavGrid.tsx",
+            "line": 6
+          },
+          {
             "code": "DF5",
             "evidence": "unregistered asset import ../icons/ChevronRight.js#ChevronRight",
             "file": "packages/designer/src/blocks/stretched-link.tsx",
@@ -160,7 +173,7 @@
       },
       "license": "MIT",
       "notes": [
-        "CompatNavGrid renders fixed linked/action cards; list and plain-grid modes are absent. No generic Items recipe configuration is invented.",
+        "Roles renders a list of destination links with Writer-owned titles, descriptions and labelled details. The default remains linked/action cards; generic list and grid members remain unmapped.",
         "Source-only import and token-read measurements are lower bounds; shared anatomy, accessibility, contrast and consumer runtime conformance remain unmeasured. Content bindings describe host adaptation points, not type-equivalent converters."
       ],
       "parts": [],

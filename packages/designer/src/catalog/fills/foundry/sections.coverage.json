@@ -172,7 +172,7 @@
       "missingRequiredSlots": [],
       "missingSlots": [],
       "notes": [
-        "Each record renders a Foundry Card (outline) with the title as its single Link and an optional Badge. Loading, empty and error states stay host-owned around the list.",
+        "Editorial records support post, post-featured and case-study configurations, resolved assets.image resources and Writer-authored metadata. Post-featured uses a full-width list; state handling stays host-owned. Dates use the page locale.",
         "Source-only import and token-read measurements are lower bounds; shared anatomy, accessibility, contrast and consumer runtime conformance remain unmeasured. Content bindings describe host adaptation points, not type-equivalent converters."
       ],
       "slot": "sections.cards",
@@ -560,7 +560,7 @@
       "missingRequiredSlots": [],
       "missingSlots": [],
       "notes": [
-        "CompatNavGrid renders fixed linked/action cards; list and plain-grid modes are absent. No generic Items recipe configuration is invented.",
+        "Roles renders a list of destination links with Writer-owned titles, descriptions and labelled details. The default remains linked/action cards; generic list and grid members remain unmapped.",
         "Source-only import and token-read measurements are lower bounds; shared anatomy, accessibility, contrast and consumer runtime conformance remain unmeasured. Content bindings describe host adaptation points, not type-equivalent converters."
       ],
       "slot": "sections.link-index",
@@ -693,11 +693,9 @@
         "contact.header"
       ],
       "missingRequiredSlots": [],
-      "missingSlots": [
-        "meta"
-      ],
+      "missingSlots": [],
       "notes": [
-        "No record/standard config or meta API. Source composes the shared SectionHeader at level 1 for its real h1 and preserves the public breadcrumb, title, description and actions inputs.",
+        "Article metadata carries Writer-authored author, date labels, reading time and tags; case-study metadata adds summary and labelled outcome statistics. Date values use Intl.DateTimeFormat with the page locale. Source retains the real h1 and existing breadcrumb/actions slots; legacy standard/record members remain unmapped.",
         "Source-only import and token-read measurements are lower bounds; shared anatomy, accessibility, contrast and consumer runtime conformance remain unmeasured. Content bindings describe host adaptation points, not type-equivalent converters."
       ],
       "slot": "sections.page-header",
@@ -707,6 +705,7 @@
         "actions",
         "breadcrumbs",
         "description",
+        "meta",
         "title"
       ],
       "unresolvedMemberAxes": []

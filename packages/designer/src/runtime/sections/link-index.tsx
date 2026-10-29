@@ -15,6 +15,8 @@ export const linkIndexInputs: SectionInputs = { slots: ["links"], members: ["lay
 
 export const renderLinkIndex: SectionRenderer = input => {
   refuseUnmapped(input, linkIndexInputs);
+  const config = input.selection.config;
+  if (config !== null && config !== "roles") throw new TypeError(`${LEAF}: unsupported configuration ${config}`);
   const items = recordsOf(LEAF, "links", requireSlot(input, LEAF, "links")).map((row, index): NavGridItem => {
     const id = stringField(row, "id"), title = stringField(row, "title") ?? stringField(row, "label");
     if (!id || !title) throw new TypeError(`${LEAF}: link ${index} needs an id and a title`);
@@ -22,9 +24,15 @@ export const renderLinkIndex: SectionRenderer = input => {
     const glyph = glyphName ? GLYPHS[glyphName] : undefined;
     if (glyphName && !glyph) throw new TypeError(`${LEAF}: link ${id} names no registered glyph (${glyphName})`);
     const icon = glyph ? <Icon glyph={glyph} decorative /> : undefined;
-    const base = { id, title, ...(description ? { description } : {}), ...(icon ? { icon } : {}) };
+    const details = recordsOf(LEAF, "links.details", row.details).map((detail, detailIndex) => {
+      const label = stringField(detail, "label"), value = stringField(detail, "value");
+      if (!label || !value) throw new TypeError(`${LEAF}: role detail requires Writer label and value`);
+      return { id: stringField(detail, "id") ?? `${id}-${detailIndex}`, label, value };
+    });
+    if (config === "roles" && !href) throw new TypeError(`${LEAF}: role ${id} requires a destination`);
+    const base = { id, title, ...(description ? { description } : {}), ...(icon ? { icon } : {}), details };
     return href ? { ...base, href } : { ...base, onSelect: noop };
   });
   const { heading } = anatomyOf(input);
-  return <NavGrid heading={heading} items={items} />;
+  return <NavGrid heading={heading} items={items} config={config ?? undefined} />;
 };
