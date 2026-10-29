@@ -1,6 +1,8 @@
 import { Chat } from "../../blocks/chat/Chat.js";
 import type { ComponentProps } from "react";
-import { anatomyOf, noop, recordsOf, refuseUnmapped, requireSlot, stringField, type SectionInputs, type SectionRenderer } from "./group-c-content.js";
+import { noop, recordsOf, refuseUnmapped, requireSlot, stringField, type SectionInputs, type SectionRenderer } from "./group-c-content.js";
+
+import { chatCopyOf } from "./copy-ports.js";
 
 const LEAF = "sections.chat";
 type ChatMessage = ComponentProps<typeof Chat>["messages"][number];
@@ -18,6 +20,7 @@ export const chatInputs: SectionInputs = {
 
 export const renderChat: SectionRenderer = input => {
   refuseUnmapped(input, chatInputs);
+  const copy = chatCopyOf(input);
   const messages = recordsOf(LEAF, "parts", requireSlot(input, LEAF, "parts")).map((row, index): ChatMessage => {
     const kind = stringField(row, "kind") ?? "message";
     if (kind !== "message") throw new TypeError(`${LEAF}: part ${index} is a ${kind} part; Chat renders message parts only (NEED)`);
@@ -25,18 +28,16 @@ export const renderChat: SectionRenderer = input => {
     if (!id || content === undefined || !role || !(ROLES as readonly string[]).includes(role)) throw new TypeError(`${LEAF}: part ${index} needs an id, a user or assistant role and content`);
     return { id, role: role as ChatMessage["role"], content, ...(timestamp ? { timestamp } : {}) };
   });
-  const composer = requireSlot(input, LEAF, "composer");
-  const composerLabel = stringField(composer, "label"), placeholder = stringField(composer, "placeholder");
-  const { heading: label } = anatomyOf(input);
+  requireSlot(input, LEAF, "composer");
   const status = input.cell.state === "error" ? "error" : input.cell.state === "loading" ? "streaming" : "idle";
   return (
     <Chat
       messages={messages}
       status={status}
       onSend={noop}
-      label={label}
-      placeholder={placeholder}
-      labels={composerLabel ? { composerLabel } : undefined}
+      label={copy.label}
+      placeholder={copy.placeholder}
+      labels={copy.labels}
     />
   );
 };

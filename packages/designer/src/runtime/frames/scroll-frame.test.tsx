@@ -5,6 +5,7 @@ import userEvent from "@testing-library/user-event";
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
 import type { RuntimeFrameHost, RuntimeJson, RuntimeRenderInput } from "../../catalog-core/runtime-ports.js";
 import { appShellRenderer } from "./app-shell.js";
+import { copyPortsFor } from "../sections/__fixtures__/copy-ports.js";
 import { renderSectionHeader } from "../sections/section-header.js";
 import { renderDataTable } from "../sections/data-table.js";
 import { renderBandSection } from "../sections/band.js";
@@ -80,7 +81,7 @@ it.each([["not-found", "Missing"], ["forbidden", "No access"]] as const)("keeps 
 });
 
 it("composes the page h1 above L0 h2, band h3 and table h4", () => {
-  const section = (leaf: string, values: Record<string, unknown>, config: string | null = null) => ({ fill: { leaf, slots: Object.keys(values), members: ["ground.sunken"] }, selection: { leaf, config, members: [] }, content: Object.fromEntries(Object.entries(values).map(([key, value]) => [key, { value }])), slots: {}, cell: { state: "default" } }) as unknown as RuntimeRenderInput<ReactNode>;
+  const section = (leaf: string, values: Record<string, unknown>, config: string | null = null) => ({ sectionHost: copyPortsFor(leaf), fill: { leaf, slots: Object.keys(values), members: ["ground.sunken"] }, selection: { leaf, config, members: [] }, content: Object.fromEntries(Object.entries(values).map(([key, value]) => [key, { value }])), slots: {}, cell: { state: "default" } }) as unknown as RuntimeRenderInput<ReactNode>;
   const top = renderSectionHeader(section("sections.section-header", { heading: { text: "Components", id: "components" } }));
   const title = renderSectionHeader(section("sections.section-header", { heading: "Controls" }, "level-3"));
   const table = renderDataTable(section("sections.data-table", { header: { heading: "Inputs", level: 4, count: "1" }, columns: [{ id: "name", label: "Name" }], rows: [{ id: "field", name: "Field" }] }));

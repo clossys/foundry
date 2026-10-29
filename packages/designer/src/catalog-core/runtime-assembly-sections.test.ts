@@ -44,9 +44,12 @@ function assembly({ body, values = {}, sectionHosts, seen = [] }: Options): Runt
   const leaves = new Set<string>([FRAME]);
   const visit = (rows: readonly RuntimeFillSelection[]) => { for (const row of rows) { leaves.add(row.leaf); visit(row.children ?? []); } };
   visit(sections);
+  const selectedConfigs = new Map<string, RuntimeFillSelection["config"]>();
+  const configs = (rows: readonly RuntimeFillSelection[]) => { for (const row of rows) { selectedConfigs.set(row.leaf, row.config); configs(row.children ?? []); } };
+  configs(sections);
   const fills: RuntimeFillDescriptor[] = [...leaves].map(leaf => {
     const row = profile.surfaces!.fills[leaf]!, entry = surfaceEntryOf(row.document) as unknown as { slotMap?: object; slots?: object; members?: string[]; propMap: object; impl: { module: string } };
-    return { kind: leaf.startsWith("frames.") ? "frame" : "section", leaf: leaf as `sections.${string}`, fill: fillId(leaf), library: engine.library.source.id, config: null, slots: Object.keys(entry.slotMap ?? entry.slots!), members: entry.members ?? Object.keys(entry.propMap), states: ["default"], surface: surfaceRuntimeIdentity(row), renderer: packageRenderer(leaf, entry.impl.module) };
+    return { kind: leaf.startsWith("frames.") ? "frame" : "section", leaf: leaf as `sections.${string}`, fill: fillId(leaf), library: engine.library.source.id, config: selectedConfigs.get(leaf) ?? null, slots: Object.keys(entry.slotMap ?? entry.slots!), members: entry.members ?? Object.keys(entry.propMap), states: ["default"], surface: surfaceRuntimeIdentity(row), renderer: packageRenderer(leaf, entry.impl.module) };
   });
   const frame = fills.find(fill => fill.leaf === FRAME)!;
   // Each renderer records its input and prints its leaf with any nested slot nodes, so composition is visible.
@@ -107,7 +110,7 @@ describe("Section content channels", () => {
   });
 
   it("admits the native band header followed by its data-table without weakening the child gate", () => {
-    const html = drawn(assembly({ body: select => [select("sections.band", { children: [select("sections.section-header"), select("sections.data-table")] })] }));
+    const html = drawn(assembly({ body: select => [select("sections.band", { children: [select("sections.section-header", { config: "default" }), select("sections.data-table")] })] }));
     expect(html).toContain("sections.band[children:sections.section-header,sections.data-table]");
     const invalid = prepareRuntimeAssembly(assembly({ body: select => [select("sections.data-table", { children: [select("sections.section-header")] })] }));
     expect(invalid).toMatchObject({ status: "refused", findings: [expect.stringContaining("does not take sections.data-table as its band")] });

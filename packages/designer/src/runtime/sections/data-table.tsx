@@ -11,7 +11,7 @@ import { entryOf, recordsOf, stateOf, type GroupBSection, type SectionRenderInpu
 import type { TableColumnKind } from "../../blocks/table-model/index.js";
 import { TableFill, type ColumnRecord, type DimensionRecord, type RowRecord, type SortRecord } from "./group-b-table.js";
 import { isObject } from "./group-c-content.js";
-import { specimenDataset } from "../../studio/specimen-dataset.js";
+import { tableCopyOf } from "./copy-ports.js";
 
 const RECORDS_PER_PAGE = 100;
 const COLLAPSED_RECORDS = 10;
@@ -22,6 +22,7 @@ export interface PaginationSummaryInput { readonly start: number; readonly end: 
 interface ScrollColumn extends Omit<ColumnRecord, "kind"> { readonly key?: string; readonly kind?: TableColumnKind | "badge" | "status" | "preview" | "list" }
 
 function ScrollDataTable({ input }: { input: SectionRenderInput }) {
+  const copy = tableCopyOf(input);
   const selection = entryOf<readonly SelectionRecord[]>(input, "selection"), toolbar = entryOf<FieldRegionContent>(input, "toolbar");
   const pagination = entryOf<ScrollPagination>(input, "pagination"), header = entryOf<ScrollHeader>(input, "header");
   const rawColumns = recordsOf<ScrollColumn>(input, "columns");
@@ -79,8 +80,8 @@ function ScrollDataTable({ input }: { input: SectionRenderInput }) {
         ? <Pagination aria-label={pagination.label} page={activePage} pageCount={count} totalItems={rows.length} pageSize={RECORDS_PER_PAGE}
             previousPageLabel={pagination.previous} nextPageLabel={pagination.next} noResultsLabel={pagination.noResults}
             rangeSummaryMessage={rangeSummaryMessage} onPageChange={setPage} /> : undefined
-    : pagination && !scroll ? <PaginationRegion content={pagination} label={specimenDataset.sections.dataTable.paginationLabel} /> : undefined;
-  return <TableFill label={header?.heading ?? specimenDataset.sections.dataTable.label} columns={columns} rows={visible}
+    : pagination && !scroll ? <PaginationRegion content={pagination} label={copy.paginationLabel} /> : undefined;
+  return <TableFill label={header?.heading ?? copy.label} emptyTitle={copy.emptyTitle} emptyDescription={copy.emptyDescription} columns={columns} rows={visible}
     sort={recordsOf<SortRecord>(input, "sort")} selected={selection ? selection.map(row => row.id) : undefined}
     singleSelection={scroll} onSelectionChange={typeof input.sectionHost?.onSelectionChange === "function" ? input.sectionHost.onSelectionChange as (ids: readonly string[]) => void : undefined}
     grouping={recordsOf<DimensionRecord>(input, "grouping")}
