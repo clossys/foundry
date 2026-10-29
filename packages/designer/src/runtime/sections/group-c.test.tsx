@@ -43,7 +43,7 @@ const COMPONENT_MODULE: Record<string, string> = {
   avatar: "Avatar", badge: "Badge", banner: "Banner", breadcrumbs: "Breadcrumb", button: "Button", card: "Card", checkbox: "Checkbox",
   "combo-box": "ComboBox", disclosure: "Disclosure", field: "Field", "file-trigger": "FileTrigger", form: "Form", icon: "Icon", link: "Link",
   "progress-bar": "ProgressBar", select: "Select", spinner: "Spinner", "status-mark": "StatusMark", switch: "Switch", tabs: "Tabs",
-  "text-field": "TextField", toast: "Toast", tooltip: "Tooltip",
+  "text-field": "TextField", menu: "Menu", toast: "Toast", tooltip: "Tooltip",
 };
 const VISUAL_MODULE = /(?:^|\/)(?:components|blocks|sections|frames|shell|icons|charts)(?:\/|\.|$)/;
 

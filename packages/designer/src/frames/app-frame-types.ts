@@ -68,6 +68,16 @@ type FrameAction = PageBarAction;
 type FramePage = PageBarPage;
 
 export interface AppFrameProps {
+  /** Publication region updates preserve this Frame instance. */
+  headerTrail?: readonly PageBarCrumb[];
+  headerActions?: readonly PageBarAction[];
+  pageModule?: ReactNode;
+  pageModuleLabel?: string;
+  main?: ReactNode;
+  inspectorContext?: ReactNode;
+  state?: import("../catalog-core/runtime-ports.js").RuntimeFrameState;
+  stateViews?: Partial<Record<"loading" | "error" | "not-found" | "forbidden", ReactNode>>;
+  progress?: ReactNode;
   /** Host-configured Writer resolver; inherited from ShellCopyProvider when omitted. No locale or approval is inferred. */
   copyResolver?: ShellCopyResolver;
   /** Canonical page locale supplied by the host through Writer. */
@@ -78,6 +88,7 @@ export interface AppFrameProps {
   account: AppFrameAccount;
   commands: Omit<CommandMenuProps, "isOpen" | "onOpenChange" | "query" | "onQueryChange" | "dir"> & {
     triggerLabel: string;
+    onQueryChange?: (query: string) => void;
     /** @default true */
     shortcutEnabled?: boolean;
   };

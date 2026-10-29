@@ -117,7 +117,11 @@
       ]
     },
     {
-      "missingMembers": [],
+      "missingMembers": [
+        "status.construction",
+        "status.not-found",
+        "status.unavailable"
+      ],
       "missingRequiredSlots": [],
       "missingSlots": [],
       "notes": [
@@ -130,7 +134,7 @@
         "Descriptor only; source imports, token reads, shared anatomy, accessibility, contrast and consumer runtime conformance are unmeasured. Content bindings describe host adaptation points, not type-equivalent converters."
       ],
       "slot": "sections.boundary-message",
-      "status": "candidate",
+      "status": "subset",
       "supportedMembers": [
         "kind.not-authorized",
         "kind.service-unavailable",
@@ -353,7 +357,9 @@
       "unresolvedMemberAxes": []
     },
     {
-      "missingMembers": [],
+      "missingMembers": [
+        "error.global"
+      ],
       "missingRequiredSlots": [],
       "missingSlots": [],
       "notes": [
@@ -366,7 +372,7 @@
         "Descriptor only; source imports, token reads, shared anatomy, accessibility, contrast and consumer runtime conformance are unmeasured. Content bindings describe host adaptation points, not type-equivalent converters."
       ],
       "slot": "sections.error-message",
-      "status": "candidate",
+      "status": "subset",
       "supportedMembers": [
         "kind.error",
         "kind.global-error",
@@ -423,7 +429,9 @@
       "unresolvedMemberAxes": []
     },
     {
-      "missingMembers": [],
+      "missingMembers": [
+        "about.faq"
+      ],
       "missingRequiredSlots": [],
       "missingSlots": [],
       "notes": [
@@ -431,7 +439,7 @@
         "Descriptor only; source imports, token reads, shared anatomy, accessibility, contrast and consumer runtime conformance are unmeasured. Content bindings describe host adaptation points, not type-equivalent converters."
       ],
       "slot": "sections.faq",
-      "status": "candidate",
+      "status": "subset",
       "supportedMembers": [
         "layout.list",
         "layout.two-column"
@@ -442,7 +450,9 @@
       "unresolvedMemberAxes": []
     },
     {
-      "missingMembers": [],
+      "missingMembers": [
+        "about.features"
+      ],
       "missingRequiredSlots": [],
       "missingSlots": [],
       "notes": [
@@ -450,7 +460,7 @@
         "Descriptor only; source imports, token reads, shared anatomy, accessibility, contrast and consumer runtime conformance are unmeasured. Content bindings describe host adaptation points, not type-equivalent converters."
       ],
       "slot": "sections.features",
-      "status": "candidate",
+      "status": "subset",
       "supportedMembers": [
         "layout.grid",
         "layout.list",
@@ -480,7 +490,9 @@
       "unresolvedMemberAxes": []
     },
     {
-      "missingMembers": [],
+      "missingMembers": [
+        "form.contact"
+      ],
       "missingRequiredSlots": [],
       "missingSlots": [],
       "notes": [
@@ -488,7 +500,7 @@
         "Descriptor only; source imports, token reads, shared anatomy, accessibility, contrast and consumer runtime conformance are unmeasured. Content bindings describe host adaptation points, not type-equivalent converters."
       ],
       "slot": "sections.form",
-      "status": "candidate",
+      "status": "subset",
       "supportedMembers": [],
       "supportedSlots": [
         "error-summary",
@@ -517,7 +529,10 @@
       "unresolvedMemberAxes": []
     },
     {
-      "missingMembers": [],
+      "missingMembers": [
+        "ground.base",
+        "ground.inverse"
+      ],
       "missingRequiredSlots": [],
       "missingSlots": [],
       "notes": [
@@ -525,7 +540,7 @@
         "Descriptor only; source imports, token reads, shared anatomy, accessibility, contrast and consumer runtime conformance are unmeasured. Content bindings describe host adaptation points, not type-equivalent converters."
       ],
       "slot": "sections.hero",
-      "status": "candidate",
+      "status": "subset",
       "supportedMembers": [
         "layout.editorial",
         "layout.split",
@@ -541,7 +556,10 @@
       "unresolvedMemberAxes": []
     },
     {
-      "missingMembers": [],
+      "missingMembers": [
+        "legal.privacy",
+        "legal.terms"
+      ],
       "missingRequiredSlots": [],
       "missingSlots": [],
       "notes": [
@@ -552,7 +570,7 @@
         "Descriptor only; source imports, token reads, shared anatomy, accessibility, contrast and consumer runtime conformance are unmeasured. Content bindings describe host adaptation points, not type-equivalent converters."
       ],
       "slot": "sections.legal-prose",
-      "status": "candidate",
+      "status": "subset",
       "supportedMembers": [],
       "supportedSlots": [
         "body",
@@ -607,7 +625,9 @@
       "unresolvedMemberAxes": []
     },
     {
-      "missingMembers": [],
+      "missingMembers": [
+        "brand.named"
+      ],
       "missingRequiredSlots": [],
       "missingSlots": [],
       "notes": [
@@ -615,7 +635,7 @@
         "Descriptor only; source imports, token reads, shared anatomy, accessibility, contrast and consumer runtime conformance are unmeasured. Content bindings describe host adaptation points, not type-equivalent converters."
       ],
       "slot": "sections.logo-hero",
-      "status": "candidate",
+      "status": "subset",
       "supportedMembers": [],
       "supportedSlots": [
         "mark",
@@ -676,7 +696,9 @@
       "unresolvedMemberAxes": []
     },
     {
-      "missingMembers": [],
+      "missingMembers": [
+        "legal.draft"
+      ],
       "missingRequiredSlots": [],
       "missingSlots": [],
       "notes": [
@@ -684,7 +706,7 @@
         "Descriptor only; source imports, token reads, shared anatomy, accessibility, contrast and consumer runtime conformance are unmeasured. Content bindings describe host adaptation points, not type-equivalent converters."
       ],
       "slot": "sections.notices",
-      "status": "candidate",
+      "status": "subset",
       "supportedMembers": [],
       "supportedSlots": [
         "notices"
@@ -694,7 +716,8 @@
     {
       "missingMembers": [
         "config.record",
-        "config.standard"
+        "config.standard",
+        "contact.header"
       ],
       "missingRequiredSlots": [],
       "missingSlots": [
@@ -831,7 +854,8 @@
         "actions",
         "description",
         "eyebrow",
-        "heading"
+        "heading",
+        "stats"
       ],
       "unresolvedMemberAxes": []
     },
@@ -953,7 +977,8 @@
       "supportedMembers": [],
       "supportedSlots": [
         "active-id",
-        "headings"
+        "headings",
+        "label"
       ],
       "unresolvedMemberAxes": []
     },

@@ -2519,7 +2519,12 @@
         "components.icon",
         "components.popover",
         "components.select",
-        "components.text-field"
+        "components.text-field",
+        "components.badge",
+        "components.status-mark",
+        "components.tooltip",
+        "components.link",
+        "components.skeleton"
       ],
       "parts": [
         "sections.band",
@@ -5987,7 +5992,7 @@
       "kind": "section",
       "root": "header",
       "anatomy": {
-        "band": null,
+        "band": "sections.band",
         "header": null
       },
       "slots": [
@@ -6009,8 +6014,12 @@
         {
           "name": "actions",
           "type": "action",
-          "required": false,
-          "max": 2
+          "required": false
+        },
+        {
+          "name": "stats",
+          "type": "records",
+          "required": false
         }
       ],
       "members": {
@@ -6025,7 +6034,10 @@
       },
       "allowedComposes": [
         "components.button",
-        "components.link"
+        "components.link",
+        "components.badge",
+        "components.status-mark",
+        "components.menu"
       ],
       "parts": [],
       "allowedReads": {
@@ -7089,6 +7101,11 @@
           "name": "active-id",
           "type": "records",
           "required": false
+        },
+        {
+          "name": "label",
+          "type": "copy",
+          "required": false
         }
       ],
       "members": {
@@ -7132,6 +7149,15 @@
           },
           {
             "key": "labels.label",
+            "kind": "plain",
+            "required": false,
+            "maxLength": {
+              "en": 120
+            },
+            "dir": "auto"
+          },
+          {
+            "key": "label",
             "kind": "plain",
             "required": false,
             "maxLength": {

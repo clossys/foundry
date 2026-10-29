@@ -150,7 +150,15 @@ export type RuntimeThemePreference = "system" | "light" | "dark";
  * two: JSON content (the fill's host-node slots, resolved through RuntimeContent) and
  * this behaviour port. Functions and nodes never travel as RuntimeJson; assembly
  * delivers this port to the exact selected Frame renderer only, never a Section. */
+export interface RuntimeFrameState {
+  readonly navigating: boolean;
+  readonly main: "ready" | "loading" | "error" | "not-found" | "forbidden";
+}
 export interface RuntimeFrameHost<Node> {
+  /** Publication navigation updates these values without replacing its selected Frame. */
+  readonly state?: RuntimeFrameState;
+  /** Real query events; async search never runs inside the render-time filter. */
+  onCommandQueryChange?(query: string): void;
   /** Performs one in-frame navigation (nav tree, account links, command hrefs, breadcrumb). */
   navigate(href: string): void | Promise<void>;
   /** Pending-save guard awaited before every navigate; `false` keeps the current page. */
@@ -184,7 +192,7 @@ export interface RuntimeFrameNotice<Node> {
   readonly action?: { readonly label: string; readonly onAction: () => void };
   readonly dismissible?: boolean;
 }
-export const RUNTIME_FRAME_HOST_KEYS = Object.freeze(["navigate", "beforeNavigate", "onCommand", "onAccountAction", "onAccountPreference", "commandFilter", "icons", "themeControl", "theme", "panels", "toasts", "notices"] as const);
+export const RUNTIME_FRAME_HOST_KEYS = Object.freeze(["state", "onCommandQueryChange", "navigate", "beforeNavigate", "onCommand", "onAccountAction", "onAccountPreference", "commandFilter", "icons", "themeControl", "theme", "panels", "toasts", "notices"] as const);
 /** Shape check only: the port carries behaviour, so it is never snapshotted or hashed. */
 export function runtimeFrameHostFindings(host: unknown): string[] {
   if (host === undefined) return [];
@@ -192,9 +200,13 @@ export function runtimeFrameHostFindings(host: unknown): string[] {
   const value = host as Record<string, unknown>, findings: string[] = [];
   if (Object.keys(value).some(key => !(RUNTIME_FRAME_HOST_KEYS as readonly string[]).includes(key))) findings.push("frame host port carries an unknown key");
   if (typeof value.navigate !== "function") findings.push("frame host navigate is required");
-  for (const key of ["beforeNavigate", "onCommand", "onAccountAction", "onAccountPreference", "commandFilter"] as const) if (value[key] !== undefined && typeof value[key] !== "function") findings.push(`frame host ${key} must be a function`);
+  for (const key of ["onCommandQueryChange", "beforeNavigate", "onCommand", "onAccountAction", "onAccountPreference", "commandFilter"] as const) if (value[key] !== undefined && typeof value[key] !== "function") findings.push(`frame host ${key} must be a function`);
   for (const key of ["icons", "panels", "theme"] as const) if (value[key] !== undefined && (!value[key] || typeof value[key] !== "object" || Array.isArray(value[key]))) findings.push(`frame host ${key} must be a record`);
   if (value.notices !== undefined && !Array.isArray(value.notices)) findings.push("frame host notices must be a list");
+  if (value.state !== undefined) {
+    const state = value.state as Record<string, unknown> | null;
+    if (!state || typeof state !== "object" || Array.isArray(state) || Object.keys(state).some(key => key !== "navigating" && key !== "main") || typeof state.navigating !== "boolean" || !["ready", "loading", "error", "not-found", "forbidden"].includes(String(state.main))) findings.push("frame state port is invalid");
+  }
   const theme = value.theme as Record<string, unknown> | undefined;
   if (theme && (theme.preference !== undefined && !["system", "light", "dark"].includes(theme.preference as string) || theme.onPreferenceChange !== undefined && typeof theme.onPreferenceChange !== "function")) findings.push("frame host theme port is invalid");
   return findings;

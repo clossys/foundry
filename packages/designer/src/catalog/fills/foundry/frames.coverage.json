@@ -21,16 +21,14 @@
     {
       "missing": [],
       "missingRequiredSlots": [],
-      "missingSlots": [
-        "progress"
-      ],
+      "missingSlots": [],
       "missingStatePorts": [],
       "notes": [
-        "Canonical Designer Frames owns AppFrame. layout=immersive floats a glass header over the stage and opens with the navigation collapsed; stage=full drops the main inset. The header slot is the app-header context region; the page header itself is leased through PageHeaderModule, never a frame prop. The width port is the resizable inspector (rightPanel) width in pixels; the sidebar width is fixed. The theme port is a controlled preference passed through to ThemeProvider; without it the provider owns and stores the preference. Command state is internally owned; no progress slot is exposed.",
+        "Canonical Designer Frames owns AppFrame. layout=immersive floats a glass header over the stage and opens with the navigation collapsed; stage=full drops the main inset. The header slot is the app-header context region; the page header itself is leased through PageHeaderModule, never a frame prop. The width port is the resizable inspector (rightPanel) width in pixels; the sidebar width is fixed. The theme port is a controlled preference passed through to ThemeProvider; without it the provider owns and stores the preference. Command state is internally owned and query events notify the host. The optional page-module is a persistent page outline region. Progress renders at the top edge during state.navigating; state.main selects the ready content or a consumer-resolved loading/error view without replacing chrome.",
         "Descriptor only; anatomy, source, accessibility, contrast, layout and rendered conformance are unmeasured."
       ],
       "slot": "frames.app-shell",
-      "status": "subset",
+      "status": "candidate",
       "supported": [
         "layout.immersive",
         "layout.standard",
@@ -193,7 +191,8 @@
     {
       "missing": [
         "chrome.full",
-        "chrome.minimal"
+        "chrome.minimal",
+        "header-placement.overlay"
       ],
       "missingRequiredSlots": [],
       "missingSlots": [

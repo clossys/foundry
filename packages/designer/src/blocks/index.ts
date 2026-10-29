@@ -328,3 +328,6 @@ export type { LibraryBoardLabels } from "./library-board/types.js";
 export { LIBRARY_BOARD_CONFIG } from "./Matrix.js";
 
 export { LogoHero, type LogoHeroProps } from "./LogoHero.js";
+
+export { ChunkHost, CHUNK_ROOT_MARGIN, type ScrollChunk, type ChunkHostProps, type ChunkHostHandle } from "./chunk-host/ChunkHost.js";
+export { useHeadingScrollSpy, HEADING_ROOT_MARGIN, type HeadingScrollSpyOptions } from "./TableOfContents.scroll-spy.js";
