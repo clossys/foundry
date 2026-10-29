@@ -2078,7 +2078,8 @@
         "components.button",
         "components.link",
         "components.card",
-        "components.icon"
+        "components.icon",
+        "components.semantic-content"
       ],
       "parts": [
         "sections.band",
@@ -4429,7 +4430,8 @@
         "components.icon",
         "components.badge",
         "components.button",
-        "components.status-mark"
+        "components.status-mark",
+        "components.semantic-content"
       ],
       "parts": [
         "sections.band",
@@ -7060,7 +7062,8 @@
         ]
       },
       "allowedComposes": [
-        "components.status-mark"
+        "components.status-mark",
+        "components.semantic-content"
       ],
       "parts": [
         "sections.band",
