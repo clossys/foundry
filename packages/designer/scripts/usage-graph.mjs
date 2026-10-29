@@ -27,26 +27,83 @@ if (!["--check", "--write"].includes(mode) || extra.length) {
   const { loadCatalog } = await import(pathToFileURL(resolve(src, "catalog-core/index.ts")).href);
   const { consumptionReport } = await import(pathToFileURL(resolve(src, "catalog-core/relationships.ts")).href);
   const { buildUsageGraph, serializeUsageGraph } = await import(pathToFileURL(resolve(src, "catalog-core/usage-graph.ts")).href);
+  const { resolve: resolveValues } = await import(pathToFileURL(resolve(src, "catalog-core/resolve.ts")).href);
+  const { emittedTokenProperties } = await import(pathToFileURL(resolve(src, "catalog-core/emit.ts")).href);
+  const { loadCatalogBundles, installedHeadlessLibrary } = await import(pathToFileURL(resolve(src, "catalog-bundles.ts")).href);
+  const { loadComponentRegistry } = await import(pathToFileURL(resolve(src, "catalog-core/component-registry.ts")).href);
+  const { loadComponentCompositionRules } = await import(pathToFileURL(resolve(src, "catalog-core/component-compositions.ts")).href);
+  const { componentOf } = await import(pathToFileURL(resolve(src, "catalog-core/resolve-components.ts")).href);
+  const { planComponentDefaults, DEFAULT_COMPONENT_PREFERENCE, DEFAULT_COMPONENT_PICKS, DEFAULT_COMPONENT_FALLBACK } = await import(pathToFileURL(resolve(src, "catalog-core/component-defaults.ts")).href);
   const json = path => JSON.parse(readFileSync(resolve(src, path), "utf8"));
   const components = json("catalog/reports/components-consumption.json"), surfaces = json("catalog/reports/sections-frames-consumption.json");
   const inventory = Object.fromEntries(["tokens", "assets", "components", "sections", "frames"].map(layer => [layer, json(`catalog/slots/${layer}.json`).map(slot => slot.id).sort()]));
-  // Foundry's own selection basis: the foundry fill for a leaf when one exists, else its foundry-baseline fill.
+  // Resolve the package's value consumer before asking the production component
+  // planner for defaults. Generic scale/asset offers fill gaps in Foundry values.
+  // These are report inputs, never consumer-library mutations or approvals.
   const catalog = loadCatalog(), meta = fill => fill.$extensions["com.clossys.fill"];
-  const candidates = new Set([...catalog.fills.map(fill => meta(fill).id), ...components.fills.map(fill => fill.id), ...surfaces.fills.map(fill => fill.id)]);
-  const selection = Object.fromEntries(Object.values(inventory).flat().flatMap(leaf => {
-    const fill = [`foundry/${leaf}`, `foundry-baseline/${leaf}`].find(id => candidates.has(id));
-    return fill ? [[leaf, fill]] : [];
-  }));
-  const selected = new Set(Object.values(selection));
-  const library = { source: { id: "foundry", kind: "base", author: "foundry", license: JSON.parse(readFileSync(resolve(root, "package.json"), "utf8")).license }, fills: catalog.fills.filter(fill => selected.has(meta(fill).id)) };
+  const valueFills = catalog.slots.flatMap(slot => {
+    const offers = catalog.fills.filter(fill => meta(fill).slot === slot.id && meta(fill).mode !== "reference");
+    const fill = ["foundry", "tailwind-default"].flatMap(source => offers.filter(fill => meta(fill).source === source))[0] ?? offers[0];
+    return fill ? [fill] : [];
+  });
+  const library = { source: { id: "default-plan", kind: "base", author: "foundry", license: JSON.parse(readFileSync(resolve(root, "package.json"), "utf8")).license }, fills: valueFills };
+  const profile = resolveValues({ catalog, library });
+  const literal = (id, mode) => {
+    let member = profile.members[id];
+    while (member.alias[mode] ?? member.alias.light) member = profile.members[member.alias[mode] ?? member.alias.light];
+    return member.css[mode] ?? member.css.light;
+  };
+  const tokens = Object.fromEntries([...emittedTokenProperties(profile)].map(([id, output]) => [id, { property: output.property, light: literal(id, "light"), ...(profile.members[id].value.dark === undefined ? {} : { dark: literal(id, "dark") }) }]));
+  const assets = [...new Set(Object.values(profile.members).filter(member => member.slot.startsWith("assets.")).map(member => member.slot))].sort();
+  const bundles = loadCatalogBundles(), registry = loadComponentRegistry(), rules = loadComponentCompositionRules();
+  const plan = planComponentDefaults({
+    catalog: { slots: registry.slots, fills: bundles.componentFills, rules },
+    slots: registry.slots.map(slot => slot.id), tokens, assets,
+    installedRac: installedHeadlessLibrary(), bundles: bundles.sourceBundles,
+    preference: DEFAULT_COMPONENT_PREFERENCE, picks: DEFAULT_COMPONENT_PICKS, fallback: DEFAULT_COMPONENT_FALLBACK,
+  });
+  const selection = Object.fromEntries([
+    ...valueFills.map(fill => [meta(fill).slot, meta(fill).id]),
+    ...plan.rows.flatMap(row => {
+      if (row.fill) return [[row.slot, row.fill]];
+      const rule = rules.find(rule => rule.id === row.rule);
+      return rule ? [[row.slot, `${rule.template.source}/${row.slot}`]] : [];
+    }),
+    ...[...inventory.sections, ...inventory.frames].flatMap(leaf => {
+      const fill = surfaces.fills.find(fill => fill.id === `foundry/${leaf}`);
+      return fill ? [[leaf, fill.id]] : [];
+    }),
+  ]);
+  // Source reports retain measured/scanned evidence. Declared reads and
+  // compositions come only from current selected descriptors, including rules.
+  const componentFills = structuredClone(components.fills);
+  const reverseComposes = Object.fromEntries(Object.entries(components.reverseComposes).map(([slot, parents]) => [slot,
+    Array.isArray(parents) ? { declared: [...parents] } : structuredClone(parents)]));
+  const selectedComponents = [
+    ...bundles.componentFills.map(doc => ({ id: meta(doc).id, fill: componentOf(doc) })),
+    ...rules.map(rule => ({ id: `${rule.template.source}/${rule.slot}`, fill: rule.template })),
+  ].filter(row => selection[row.fill.slot] === row.id);
+  const selectedIds = new Set(selectedComponents.map(row => row.id));
+  for (const parents of Object.values(reverseComposes)) {
+    parents.declared = (parents.declared ?? []).filter(parent => !selectedIds.has(parent));
+  }
+  for (const { id, fill } of selectedComponents) {
+    let row = componentFills.find(row => row.id === id);
+    if (!row) { row = { id, slot: fill.slot }; componentFills.push(row); }
+    row.declaredReads = Object.fromEntries(["tokens", "assets"].map(layer => [layer, [...new Set(fill.reads[layer])].sort()]));
+    for (const target of new Set([...fill.composes, ...fill.reads.components])) {
+      const parents = reverseComposes[target] ??= {};
+      parents.declared = [...new Set([...parents.declared ?? [], id])].sort();
+    }
+  }
   const graph = buildUsageGraph({
     inventory, selection,
     consumption: { leaves: consumptionReport({ catalog, library }).leaves },
-    components: { fills: components.fills, reverseComposes: components.reverseComposes },
+    components: { fills: componentFills, reverseComposes },
     surfaces: { fills: surfaces.fills, reverseComposes: surfaces.reverseComposes },
     // Routes are registered by the product's route registry, not this package; runtime DOM evidence is not yet captured.
   });
-  const output = serializeUsageGraph(graph, { basis: "foundry-source-first", scope: "Foundry catalog leaves; no product routes or runtime capture. Freshness only, not a conformance clearance." });
+  const output = serializeUsageGraph(graph, { basis: "shadcn@aria-default-plan", scope: "Catalog default plan over package values; Foundry surfaces; no product routes or runtime capture. Freshness only, not a conformance clearance." });
   const path = resolve(src, "catalog/reports/usage-graph.json");
   if (mode === "--write") { mkdirSync(dirname(path), { recursive: true }); writeFileSync(path, output); }
   else if (!existsSync(path) || readFileSync(path, "utf8") !== output) { console.error("usage-graph report is stale; run node scripts/usage-graph.mjs --write"); process.exitCode = 1; }
