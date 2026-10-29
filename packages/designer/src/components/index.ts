@@ -183,13 +183,13 @@ export type { MeterProps, MeterTone, MeterDirection, MeterEmphasis } from "./Met
 /** Merge token-aware Tailwind class names with last-argument precedence. */
 export { cx as mergeUiClasses } from "./internal/cx.js";
 
-export { COMPONENT_GUIDANCE, COMPONENT_API_FACTS, COMPONENT_DISPLAY_GROUPS, COMPONENT_COMPARISON } from "./guidance/internal/data.js";
+export { COMPONENT_GUIDANCE, COMPONENT_API_FACTS, COMPONENT_COMPARISON } from "./guidance/internal/data.js";
 export { ResizeHandle } from "./ResizeHandle.js";
 export type { ResizeHandleProps } from "./ResizeHandle.js";
 export type {
   ComponentMedium, ComponentMediumState, ComponentScalar, ComponentEvidence, ComponentOptionGuidance,
   ComponentCondition, ComponentConstraint, ComponentWebImplementation, ComponentMediumGuidance, ComponentGuidance,
-  ComponentApiFacts, ComponentDisplayGroup, ComponentComparison,
+  ComponentApiFacts, ComponentComparison,
 } from "./guidance/internal/data.js";
 
 export { Logomark } from "./Logomark.js";
@@ -240,3 +240,8 @@ export { Empty, EmptyHeader, EmptyTitle, EmptyDescription, EmptyContent, EmptyMe
 export { Item, ItemMedia, ItemContent, ItemActions, ItemGroup, ItemSeparator, ItemTitle, ItemDescription, ItemHeader, ItemFooter } from "./item/index.js";
 export { ScrollArea } from "./scroll-area/index.js";
 export { DropdownMenuTrigger, DropdownMenu, DropdownMenuGroup, DropdownMenuLabel, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuShortcut, DropdownMenuSub, DropdownMenuSubTrigger, DropdownMenuSubContent } from "./dropdown-menu/index.js";
+
+export { COMPONENT_DISPLAY_TREE } from "../catalog/display.js";
+export { resolveComponentId } from "../catalog/component-aliases.js";
+export { componentSelection } from "./guidance/selection.js";
+export type { ComponentDisplayTree } from "../catalog/display.js";

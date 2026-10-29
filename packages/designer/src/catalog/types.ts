@@ -318,24 +318,10 @@ export type IconEntry = CatalogLeafBase &
 // Components
 // ---------------------------------------------------------------------------
 
-/** 4 L1, 17 L2. */
-export type ComponentGroupMap = {
-  interaction:
-    | "actions"
-    | "navigation"
-    | "text-entry"
-    | "choice"
-    | "number-and-range"
-    | "date-and-time"
-    | "color"
-    | "files"
-    | "form-wiring";
-  content: "data-display" | "text" | "imagery" | "charts";
-  feedback: "messages" | "progress-and-loading";
-  containment: "structure" | "overlays";
-}
+/** Group types follow the registered IA rather than a second authored topology. */
+export type ComponentGroupMap = Record<(typeof import("./ia/components.json"))["nodes"][number]["id"], (typeof import("./ia/components.json"))["nodes"][number]["children"][number]["id"]>;
 export type ComponentL1 = keyof ComponentGroupMap;
-export type ComponentPlacement = Placement<ComponentGroupMap>;
+export type ComponentPlacement = import("./display.js").DisplayPlacement;
 
 /** Component ids keep their existing `<verb>.<name>` shape, for example `act.button`. */
 export type ComponentId = `${string}.${string}`;
@@ -445,16 +431,10 @@ export type ComponentEntry = CatalogLeafBase &
 // Blocks
 // ---------------------------------------------------------------------------
 
-/** L1 is the block's function; L2 its family. 5 L1, 33 L2. */
-export type BlockGroupMap = {
-  explain: "headings" | "sections" | "capabilities" | "evidence" | "media" | "reading" | "sequence" | "brand" | "specimens";
-  organize: "collection" | "comparison" | "offers" | "metrics" | "records" | "activity" | "containers";
-  collect: "forms" | "fields" | "import" | "settings" | "access" | "conversation";
-  navigate: "destinations" | "app-navigation" | "hierarchy" | "in-page" | "actions" | "paging" | "filtering";
-  respond: "states" | "decisions" | "notices" | "notifications";
-}
+/** Legacy block display follows the section IA. */
+export type BlockGroupMap = Record<(typeof import("./ia/sections.json"))["nodes"][number]["id"], (typeof import("./ia/sections.json"))["nodes"][number]["children"][number]["id"]>;
 export type BlockL1 = keyof BlockGroupMap;
-export type BlockPlacement = Placement<BlockGroupMap>;
+export type BlockPlacement = import("./display.js").DisplayPlacement;
 
 /** Block ids keep their `<shape>.<name>` prefix, which records data shape, not placement. */
 export type BlockId = `${"say" | "items" | "matrix" | "prose" | "form"}.${string}`;

@@ -8,7 +8,7 @@ disable-model-invocation: true
 <!-- component-selection:start -->
 ### Component selection
 
-Use `COMPONENT_GUIDANCE`, `COMPONENT_API_FACTS`, `COMPONENT_DISPLAY_GROUPS` and `COMPONENT_COMPARISON` from `@clossys/designer/components`. The barrel remains client-only. Import safety (`RENDER_ENVIRONMENT`) is not medium support.
+Use `COMPONENT_GUIDANCE`, `COMPONENT_API_FACTS`, `COMPONENT_DISPLAY_TREE` and `COMPONENT_COMPARISON` from `@clossys/designer/components`. The barrel remains client-only. Import safety (`RENDER_ENVIRONMENT`) is not medium support.
 Read the installed companion at `node_modules/@clossys/designer/skill/components-guide.md`; the launcher does not copy that file.
 `COMPONENT_COMPARISON` declares finite columns and optional rows with at most 24 cells. Its `constraints` references the original rules; `constraintPolicy: "skip-violations"` skips only `requires`, `exclusive` and `paired` violations with complete authored inputs. Applicability (`effective-when`), ignored-option, `derived` and `data` rules never skip cells.
 Display Group > Family > Component: four groups, ten families, with nine charts among the established leaves. Only leaves are selectable; preserve legacy IDs including act.link and reveal.tabs.

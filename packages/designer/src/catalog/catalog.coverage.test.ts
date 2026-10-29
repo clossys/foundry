@@ -443,8 +443,8 @@ describe("component catalog coverage", () => {
 
   it("parks exactly the charts", () => {
     for (const entry of COMPONENT_ENTRIES) {
-      expect(entry.status === "parked", entry.id).toBe(entry.l2 === "charts");
-      expect(entry.disposition === "park", entry.id).toBe(entry.l2 === "charts");
+      expect(entry.status === "parked", entry.id).toBe(entry.l2?.startsWith("charts-") ?? false);
+      expect(entry.disposition === "park", entry.id).toBe(entry.l2?.startsWith("charts-") ?? false);
     }
   });
 });

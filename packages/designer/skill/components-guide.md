@@ -1427,6 +1427,6 @@ Token dependency coverage: partial. Representative consumed dependencies only; t
 
 ## Maintain the shared contract
 
-Read `COMPONENT_GUIDANCE` for curated selection semantics and medium evidence, `COMPONENT_API_FACTS` for checked facts, `COMPONENT_DISPLAY_GROUPS` for placement, and `COMPONENT_COMPARISON` for finite comparison axes. `ComponentGuidance`, `ComponentApiFacts`, `ComponentDisplayGroup` and `ComponentComparison` describe their shapes; the README lists supporting types. Consumers reference these records rather than copying guidance.
+Read `COMPONENT_GUIDANCE` for curated selection semantics and medium evidence, `COMPONENT_API_FACTS` for checked facts, `COMPONENT_DISPLAY_TREE` for placement, and `COMPONENT_COMPARISON` for finite comparison axes. `ComponentGuidance`, `ComponentApiFacts`, `ComponentDisplayTree` and `ComponentComparison` describe their shapes; the README lists supporting types. Consumers reference these records rather than copying guidance.
 
 Regenerate with `node scripts/generate-component-docs.mjs`; check freshness with `node scripts/check-component-docs.mjs`. These are repository-only commands and do not ship in the installed package. The checker compares this whole guide and the skill selection section byte for byte using source, without installed dist or timestamps.

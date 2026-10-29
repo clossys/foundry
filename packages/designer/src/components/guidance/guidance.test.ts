@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import componentIA from "../../catalog/ia/components.json" with { type: "json" };
 import { readFileSync } from "node:fs";
 import { execFileSync } from "node:child_process";
 import { dirname, join } from "node:path";
@@ -13,11 +14,11 @@ const root = join(dirname(fileURLToPath(import.meta.url)), "../../..");
 const additions = components as unknown as {
   COMPONENT_GUIDANCE?: Record<string, any>;
   COMPONENT_API_FACTS?: Record<string, any>;
-  COMPONENT_DISPLAY_GROUPS?: readonly any[];
+  COMPONENT_DISPLAY_TREE?: readonly any[];
 };
 const guidance = () => additions.COMPONENT_GUIDANCE ?? {};
 const facts = () => additions.COMPONENT_API_FACTS ?? {};
-const groups = () => additions.COMPONENT_DISPLAY_GROUPS ?? [];
+const groups = () => additions.COMPONENT_DISPLAY_TREE ?? [];
 const exportedComponents = (layer: string) => {
   const path = join(root, `src/${layer}/index.ts`);
   const source = ts.createSourceFile(path, readFileSync(path, "utf8"), ts.ScriptTarget.ES2022, true);
@@ -26,12 +27,7 @@ const exportedComponents = (layer: string) => {
     return statement.exportClause.elements.filter(item => !item.isTypeOnly && /^[A-Z][a-zA-Z]+$/.test(item.name.text) && item.name.text !== "ChartFrame").map(item => item.name.text);
   });
 };
-const expectedPartition = [
-  ["Interaction", ["Actions", ["Button", "IconButton", "Menu"]], ["Navigation", ["Link", "Breadcrumb", "Tabs"]], ["Inputs", ["TextField", "Textarea", "SearchField", "DateField", "Select", "ComboBox", "Checkbox", "Switch", "RadioGroup", "FileTrigger", "Field", "ResizeHandle"]]],
-  ["Content", ["Data display", ["Badge", "Chip", "Meter", "Table", "GridList"]], ["Imagery", ["Avatar", "Icon", "Logomark"]], ["Charts", ["BarChart", "LineChart", "Sparkline", "WaterfallChart", "RangeChart", "ScatterChart", "AreaChart", "Heatmap", "StatusStrip"]]],
-  ["Feedback", ["Messages", ["Banner", "StatusMark"]], ["Progress and loading", ["ProgressBar", "Spinner", "Skeleton"]]],
-  ["Containment", ["Structure", ["Card", "Separator", "Disclosure"]], ["Overlays", ["Dialog", "Popover", "Tooltip"]]],
-];
+
 
 const literal = (node: ts.Expression): string | number | boolean | undefined => {
   if (ts.isStringLiteral(node) || ts.isNumericLiteral(node)) return ts.isNumericLiteral(node) ? Number(node.text) : node.text;
@@ -90,18 +86,12 @@ describe("shared component guidance", () => {
     }
   });
 
-  it("pins four display groups, ten families and forty-six unique selectable leaves", () => {
-    expect(additions.COMPONENT_DISPLAY_GROUPS).toBeDefined();
-    expect(groups().map(group => [group.label, ...group.families.map((family: any) => [family.label, family.components.map((id: string) => facts()[id]?.exportName)])])).toEqual(expectedPartition);
-    const leaves = groups().flatMap(group => group.families.flatMap((family: any) => family.components));
-    expect(groups().flatMap(group => group.families)).toHaveLength(10);
-    expect(leaves).toHaveLength(46);
-    expect(new Set(leaves).size).toBe(46);
-    expect([...leaves].sort()).toEqual(Object.keys(guidance()).sort());
-    expect(new Set(groups().map(group => group.id)).size).toBe(4);
-    const families = groups().flatMap(group => group.families);
-    expect(new Set(families.map(family => family.id)).size).toBe(10);
-    expect([...groups(), ...families].every(item => /^[a-z]+(?:-[a-z]+)*$/.test(item.id))).toBe(true);
+  it("uses canonical IA navigation alongside pinned legacy selection metadata", () => {
+    expect(groups()).toEqual(componentIA.nodes);
+    const leaves = groups().flatMap(group => group.children.flatMap((family: any) => family.leaves));
+    expect(new Set(leaves).size).toBe(leaves.length);
+    expect(components.componentSelection("components.button")?.facts).toBe(facts()["act.button"]);
+    expect(components.componentSelection("act.icon-button")?.facts).toBe(facts()["act.icon-button"]);
   });
 
   it("gives each component meaningful stable semantics separate from web implementation", () => {

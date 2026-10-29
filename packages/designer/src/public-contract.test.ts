@@ -312,7 +312,17 @@ describe("compiled component guidance public contract", () => {
     const entry = join(packageRoot, "dist/components/index.js");
     const script = `import * as components from ${JSON.stringify(entry)}; process.stdout.write(JSON.stringify(Object.keys(components).filter(key => /^COMPONENT_/.test(key)).sort()));`;
     const keys = JSON.parse(execFileSync(process.execPath, ["--input-type=module", "-e", script], { encoding: "utf8", cwd: packageRoot }));
-    expect(keys).toEqual(["COMPONENT_API_FACTS", "COMPONENT_COMPARISON", "COMPONENT_DISPLAY_GROUPS", "COMPONENT_GUIDANCE"]);
+    expect(keys).toEqual(["COMPONENT_API_FACTS", "COMPONENT_COMPARISON", "COMPONENT_DISPLAY_TREE", "COMPONENT_GUIDANCE"]);
+  });
+  it("resolves canonical IA selection through the compiled public components entry", () => {
+    const entry = join(packageRoot, "dist/components/index.js");
+    const script = `
+      import { COMPONENT_DISPLAY_TREE, componentSelection, resolveComponentId } from ${JSON.stringify(entry)};
+      const leaves = COMPONENT_DISPLAY_TREE.flatMap(group => group.children.flatMap(family => family.leaves));
+      const alias = componentSelection("act.button"), canonical = componentSelection("components.button");
+      process.stdout.write(JSON.stringify({ registered: leaves.includes(resolveComponentId("act.button")), same: alias.guidance === canonical.guidance, exportName: canonical.facts.exportName }));
+    `;
+    expect(JSON.parse(execFileSync(process.execPath, ["--input-type=module", "-e", script], { encoding: "utf8", cwd: packageRoot }))).toEqual({ registered: true, same: true, exportName: "Button" });
   });
   it("pins compiled comparison keys to the finite public API facts", () => {
     const entry = join(packageRoot, "dist/components/index.js");

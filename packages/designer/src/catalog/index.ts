@@ -6,8 +6,8 @@ export type * from "./types.js";
 export { TOKEN_CATALOG, TOKEN_ENTRIES, TOKEN_EXCLUSIONS, TOKEN_GROUPS } from "./tokens.js";
 export { ASSET_CATALOG, ASSET_ENTRIES, ASSET_GROUPS } from "./assets.js";
 export { ICON_CATALOG, ICON_ENTRIES, ICON_GROUPS } from "./icons.js";
-export { COMPONENT_CATALOG, COMPONENT_ENTRIES, COMPONENT_EXPORT_EXCLUSIONS, COMPONENT_GROUPS } from "./components.js";
-export { BLOCK_CATALOG, BLOCK_ENTRIES, BLOCK_EXPORT_EXCLUSIONS, BLOCK_GROUPS } from "./blocks.js";
+export { COMPONENT_CATALOG, COMPONENT_ENTRIES, COMPONENT_EXPORT_EXCLUSIONS } from "./components.js";
+export { BLOCK_CATALOG, BLOCK_ENTRIES, BLOCK_EXPORT_EXCLUSIONS } from "./blocks.js";
 
 import { ASSET_CATALOG } from "./assets.js";
 import { COMPONENT_CATALOG } from "./components.js";
