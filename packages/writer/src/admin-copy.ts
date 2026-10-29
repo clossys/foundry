@@ -58,6 +58,35 @@ export interface AdminCopyRef {
   readonly locale?: string;
   readonly values?: Readonly<Record<string, string | number | boolean>>;
 }
+
+export interface AdminItemNameBinding {
+  readonly cellId: string;
+  readonly recordId: string;
+  readonly target: string;
+  readonly kind: "item-name";
+}
+
+const designerItemNames = new Map(ADMIN_STUDIO_COPY_EN.records.filter(record =>
+  record.leaf === "strings.names" && record.context.startsWith("designer.item.")
+).map(record => [record.id, record]));
+
+/** Authenticate an item name against the shipped Writer source binding.
+ * A context-shaped string alone grants no authority to name a Designer item. */
+export function getAdminItemNameBinding(id: string, copy: AdminCopy = ADMIN_COPY_EN): AdminItemNameBinding | undefined {
+  const canonicalRecord = designerItemNames.get(id);
+  const record = getAdminCopyRecord(id, copy);
+  if (!canonicalRecord || !record || record.leaf !== canonicalRecord.leaf || record.context !== canonicalRecord.context) return undefined;
+  const canonicalBindings = ADMIN_STUDIO_COPY_EN.bindings.filter(binding => binding.recordId === id);
+  const canonicalBinding = canonicalBindings[0];
+  if (canonicalBindings.length !== 1 || !canonicalBinding || canonicalBinding.kind !== "item-name" || canonicalBinding.cellId !== canonicalRecord.context) return undefined;
+  const envelopes = copy.envelopes.filter(envelope => envelope.records.some(row => row.id === id));
+  if (!envelopes.length || envelopes.some(envelope => {
+    if (!("bindings" in envelope)) return true;
+    const bindings = envelope.bindings.filter(binding => binding.recordId === id);
+    return bindings.length !== 1 || !bindings.every(binding => binding.kind === canonicalBinding.kind && binding.cellId === canonicalBinding.cellId && binding.target === canonicalBinding.target);
+  })) return undefined;
+  return { ...canonicalBinding, kind: "item-name" };
+}
 /** Admin resolution shares the production approval policy; drafts require explicit preview. */
 export type AdminCopyResolveOptions = Pick<CopyResolveOptions, "target" | "now" | "timeZone" | "approvalPlan" | "acceptDelegateInProduction">;
 
@@ -68,6 +97,7 @@ export function resolveAdminCopyRef(ref: AdminCopyRef, copy: AdminCopy = ADMIN_C
   const record = getAdminCopyRecord(ref.id, copy);
   const envelope = copy.envelopes.find(envelope => envelope.records.some(row => row.id === ref.id));
   if (!record || !envelope || envelope.locale !== "en") return undefined;
+  if ((designerItemNames.has(ref.id) || record.context.startsWith("designer.item.")) && !getAdminItemNameBinding(ref.id, copy)) return undefined;
   const resolve = createCopyResolver({
     id: "admin-copy",
     locale: envelope.locale,

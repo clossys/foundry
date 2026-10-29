@@ -3,6 +3,12 @@ import type { CompleteRouteKind } from "../core/route-identities.js";
 import type { RouteRegistration, RouteRegistry, RouteSourceExport } from "../core/route-registry.js";
 import type { PublisherPlanItem } from "../planning/plan.js";
 import type { PublisherChannelId } from "../planning/channel-ids.js";
+import type { SectionFill } from "../core/instance-binding.js";
+import type { RegisteredPageManifest } from "../content/taxonomy.js";
+
+/** The same slot-addressed Section fills used by page bindings. Library and
+ * content-registry resolution still belongs to the registered-page checks. */
+export type ContentMapConstructs = Readonly<Record<string, readonly SectionFill[]>>;
 
 export type ContentMapSource = { readonly planItemId: string; readonly frameId?: never; readonly sectionIds?: never }
   | { readonly planItemId?: never; readonly frameId: string; readonly sectionIds: readonly string[] };
@@ -12,10 +18,16 @@ export type ContentMapEntry = {
   readonly order: number;
   readonly title: string;
   readonly kind: "page" | "slide" | "section" | "group";
+  /** Consumer-owned composition config identity; only page entries use it. */
+  readonly pageConfig?: string;
   /** Groups and sections are pinnable as well as pages. A named group must be
    * an ancestor group, and pinned descendants require pinned ancestors. */
   readonly pin?: { readonly nav: true; readonly group?: string };
   readonly source: ContentMapSource;
+  /** Optional together for compatibility with route-only maps. Manifest
+   * placements address these constructs, never a second hand-built outline. */
+  readonly manifest?: RegisteredPageManifest;
+  readonly constructs?: ContentMapConstructs;
   /** Host icon identity, resolved by the existing frame host port. */
   readonly icon?: string;
   readonly description?: string;
@@ -65,6 +77,14 @@ export type ContentMapCommand = {
 } & ({ readonly href: string; readonly action?: never } | { readonly href?: never; readonly action: string });
 export interface ContentMapCommandGroup { readonly id: string; readonly label: string; readonly items: readonly ContentMapCommand[] }
 export interface ContentMapBreadcrumb { readonly id: string; readonly label: string; readonly href?: string }
+/** Ordered publication topology with placement-backed in-page headings. Heading
+ * identities are entry ID + "#" + page anchor; validation refuses collisions
+ * with entry identities. Hrefs retain the page's real anchors. */
+export interface ContentMapOutlineNode extends ContentMapBreadcrumb {
+  readonly children?: readonly ContentMapOutlineNode[];
+}
+/** Depth is structural; no rendered page or slide number is fabricated. */
+export interface ContentMapTocEntry extends ContentMapBreadcrumb { readonly level: number }
 export interface ContentMapSitemapEntry { readonly url: string }
 export interface ContentMapCompleteRoute {
   readonly kind: CompleteRouteKind;

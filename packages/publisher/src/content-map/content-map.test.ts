@@ -116,10 +116,6 @@ it("projects breadcrumb and public-only sitemap goldens", () => {
     { url: "https://example.com/agents/designer" }, { url: "https://example.com/agents/writer" }, { url: "https://example.com/agents/publisher" },
   ]);
 });
-it("refuses deck outline and PDF TOC as typed concept-only stubs", () => {
-  expect(() => projectOutline({ ...adminContentMap(), format: "deck.16x9", entries: [] })).toThrow(/concept-only/);
-  expect(() => projectToc({ ...adminContentMap(), format: "document.pdf-a4", entries: [] })).toThrow(/concept-only/);
-});
 it("keeps projection outputs deterministic and map data immutable", () => {
   const map = adminContentMap(), before = JSON.stringify(map), shuffled = { ...map, entries: [...map.entries].reverse() };
   expect(projectNavigation(shuffled, "writer")).toEqual(projectNavigation(map, "writer"));

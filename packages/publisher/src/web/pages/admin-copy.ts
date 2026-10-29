@@ -1,4 +1,4 @@
-import { createAdminCopy, getAdminCopyRecord, resolveAdminCopyRef } from "@clossys/writer/admin-copy";
+import { createAdminCopy, getAdminCopyRecord, getAdminItemNameBinding, resolveAdminCopyRef } from "@clossys/writer/admin-copy";
 import type { AdminCopyRef, AdminRouteCopy } from "@clossys/writer/admin-copy";
 import type { StringRecord } from "@clossys/writer";
 import { runtimeHash, runtimeSnapshot } from "@clossys/designer/catalog";
@@ -29,8 +29,11 @@ export interface AdminPageCopy {
   (ref: string | AdminPageCopyRef, values?: AdminPageCopyRef["values"]): string;
   readonly [copyBrand]: true;
   readonly locale: string;
+  readonly target: "preview";
   resolve(ref: AdminPageCopyRef): ResolvedAdminPageCopy;
   provenance(): readonly ResolvedAdminPageCopy[];
+  previewState(): { readonly target: "preview"; readonly draft: boolean };
+  message(ref: AdminPageCopyRef, previewValues: Readonly<Record<string, string | number>>): { readonly writerId: string; readonly locale: string; readonly message: string; readonly values: Readonly<Record<string, string | number>>; format(values: Readonly<Record<string, string | number>>): string };
 }
 const sources = new WeakSet<object>();
 const contentProofs = new WeakMap<object, Map<string, string>>();
@@ -76,24 +79,44 @@ export function createAdminPageCopy(input: { readonly locale: string; readonly e
     if (aliases.length > 1) throw new TypeError("Writer alias is declared more than once");
     const aliasOwner = aliases[0], recordId = aliasOwner?.aliases[reference.id] ?? reference.id;
     const declarations = aliasOwner?.externalRecords.filter(row => row.recordId === recordId) ?? [];
+    const canonicalItemBinding = getAdminItemNameBinding(recordId);
+    const itemBinding = !aliasOwner && canonicalItemBinding ? getAdminItemNameBinding(recordId, store) : undefined;
     const matches = envelopes.flatMap(envelope => {
       const record = envelope.records.find(row => row.id === recordId);
       if (!record || aliasOwner && aliasOwner !== envelope && !declarations.some(row => row.source === envelope.source && row.sourceContext === record.context)) return [];
       const bindingOwner = aliasOwner ?? envelope;
-      const binding = bindingOwner.bindings.find(row => row.recordId === recordId && row.kind === "CopyRef" && row.cellId === (aliasOwner ? reference.id : record.context));
+      const binding = bindingOwner.bindings.find(row => row.recordId === recordId && (
+        !canonicalItemBinding && !record.context.startsWith("designer.item.") && row.kind === "CopyRef" && row.cellId === (aliasOwner ? reference.id : record.context)
+        || itemBinding && row.kind === itemBinding.kind && row.cellId === itemBinding.cellId && row.target === itemBinding.target
+      ));
       return binding ? [{ envelope, record, binding, bindingOwner }] : [];
     });
     if (matches.length !== 1) throw new TypeError(`Writer CopyRef requires one bound record: ${reference.id}`);
     const { envelope, record, binding, bindingOwner } = matches[0]!;
     const ref = { ...reference, id: record.id, locale };
-    const result = resolveAdminCopyRef(ref, store);
+    const result = resolveAdminCopyRef(ref, store, { target: "preview" });
     const literal = !result && locale !== "en" && Object.keys(ref.values ?? {}).length === 0 && !record.args?.length && !/[{}]/.test(record.text) ? getAdminCopyRecord(record.id, store) : undefined;
     if (record.status === "retired" || result && result.servedLocale !== locale || !result && !literal) throw new TypeError(`Writer refused CopyRef or ICU arguments: ${reference.id}`);
     const resolved = runtimeSnapshot({ ref, text: result?.text ?? record.text, provenance: { cellId: binding.cellId, recordId: record.id, revision: envelope.revision, locale, status: record.status, activation: "none", mode: result ? "writer-icu-preview" as const : "writer-literal-preview" as const, envelopeHash: envelope.hash, bindingSource: bindingOwner.source, bindingEnvelopeHash: bindingOwner.hash, recordSource: envelope.source } });
     resolutions.push(resolved); return resolved;
   };
+  const message: AdminPageCopy["message"] = (ref, previewValues) => {
+    const locale = ref.locale ?? input.locale, envelopes = all.filter(envelope => envelope.locale === locale), store = stores.get(locale);
+    const aliases = envelopes.filter(envelope => Object.hasOwn(envelope.aliases, ref.id));
+    if (!store || aliases.length > 1) throw new TypeError("Writer message reference is ambiguous or has no locale source");
+    const recordId = aliases[0]?.aliases[ref.id] ?? ref.id, record = getAdminCopyRecord(recordId, store);
+    if (!record || Object.values(ref.values ?? {}).some(value => typeof value !== "string" && typeof value !== "number")) throw new TypeError("Writer message requires its genuine source and serializable ICU values");
+    const runtimeKeys = new Set(Object.keys(previewValues)), argumentsDeclared = new Set("args" in record ? record.args?.map(argument => argument.name) ?? [] : []);
+    // Native paging supplies all of its state fields. Only declared arguments
+    // enter Writer's strict resolver; unrelated authored args remain checked.
+    const valuesForWriter = (values: Readonly<Record<string, string | number>>) => Object.fromEntries(Object.entries(values).filter(([key]) => !runtimeKeys.has(key) || argumentsDeclared.has(key)));
+    const resolved = resolve({ ...ref, values: valuesForWriter({ ...ref.values as Readonly<Record<string, string | number>>, ...previewValues }) });
+    if (resolved.provenance.recordId !== record.id) throw new TypeError("Writer message source differs from its checked binding");
+    return { writerId: record.id, locale: resolved.provenance.locale, message: record.text, values: runtimeSnapshot(ref.values ?? {}) as Readonly<Record<string, string | number>>,
+      format: values => resolve({ ...ref, locale: resolved.provenance.locale, values: valuesForWriter(values) }).text };
+  };
   const copy = Object.assign((ref: string | AdminPageCopyRef, values?: AdminPageCopyRef["values"]) => resolve(typeof ref === "string" ? { id: ref, ...(values ? { values } : {}) } : ref).text,
-    { locale: input.locale, resolve, provenance: () => Object.freeze([...resolutions]) }) as AdminPageCopy;
+    { locale: input.locale, target: "preview" as const, resolve, message, provenance: () => Object.freeze([...resolutions]), previewState: () => Object.freeze({ target: "preview" as const, draft: resolutions.some(value => value.provenance.status === "draft") }) }) as AdminPageCopy;
   sources.add(copy); contentProofs.set(copy, new Map()); return Object.freeze(copy);
 }
 export function writerCopy(ref: AdminPageCopyRef): RuntimeJson { return { $copy: { id: ref.id, ...(ref.locale === undefined ? {} : { locale: ref.locale }), ...(ref.values === undefined ? {} : { values: ref.values }) } }; }

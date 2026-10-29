@@ -12,7 +12,7 @@ import { createPublisherPlanDraft } from "../planning/plan.js";
 import { canonicalPlanJson, sha256 } from "../planning/digest.js";
 import { completeRouteKind, isLegacyRouteRegistration, isRegionPageRouteRegistration, registeredRouteBrandLink, routeSourcePath, normalizeRegionPageRoute } from "./route-identities.js";
 import type { CompleteRouteKind } from "./route-identities.js";
-export { COMPLETE_ROUTE_KINDS, completeRouteKind, isCompleteRouteKind, isLegacyRouteRegistration, isRegionPageRouteRegistration, registeredRouteBrandLink, routeInstanceBinding, routeSourcePath, normalizeRegionPageRoute, routeCompositionDigest, routeRegistryDigest } from "./route-identities.js";
+export { completeRouteKind, isCompleteRouteKind, isLegacyRouteRegistration, isRegionPageRouteRegistration, registeredRouteBrandLink, routeInstanceBinding, routeSourcePath, normalizeRegionPageRoute, routeCompositionDigest, routeRegistryDigest } from "./route-identities.js";
 export type { CompleteRouteKind } from "./route-identities.js";
 
 /** Public source identity. Relative to the adopting consumer, never an executable callback. */

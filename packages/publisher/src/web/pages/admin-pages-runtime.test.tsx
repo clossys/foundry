@@ -8,7 +8,8 @@ import type { RuntimeContent, RuntimeJson } from "@clossys/designer/catalog";
 import { readSurfacePackageEvidence } from "@clossys/designer/catalog/server";
 import { surfaceRuntimeRenderers } from "@clossys/designer/frames";
 import { packageSurfaceLibrary } from "../../../../designer/dist/library-cli/__fixtures__/package-surface-library.js";
-import { createAdminPageRegistry, adminPageRef, adminPageStaticContent, adminPageContent, writerCopy, type AdminPageSkeleton } from "./index.js";
+import { createAdminPageRegistry, adminPageRef, adminPageStaticContent, configs, fixtureSources } from "./__fixtures__/consumer-pages.mjs";
+import { adminPageContent, writerCopy, createConsumerPageRegistry, consumerPageRef, type ConsumerPageConfig, type ConsumerPageSkeleton as AdminPageSkeleton } from "./index.js";
 import { adminCopyFixture } from "./__fixtures__/copy.mjs";
 import { createRegisteredPublicationSession } from "../registered-route-query.js";
 import { prepareRegisteredRoute } from "../registered-route-binding.js";
@@ -27,11 +28,13 @@ beforeAll(async () => {
 }, 120_000);
 const skeleton = { l0: [{ id: "strings", label: {id:"strings.admin.group.writer.strings"}, count: 1, estimate: 300, l1: [] }] };
 const content = (reference: RuntimeContent["reference"], value: RuntimeJson): RuntimeContent => ({ reference, value, hash: runtimeHash(value) });
-function setup(skeleton: AdminPageSkeleton = { l0: [{ id: "strings", label: {id:"strings.admin.group.writer.strings"}, count: 1, estimate: 300, l1: [] }] }) {
+function setup(skeleton: AdminPageSkeleton = { l0: [{ id: "strings", label: {id:"strings.admin.group.writer.strings"}, count: 1, estimate: 300, l1: [] }] }, custom?: ConsumerPageConfig) {
   const engine = { catalog: fixture.catalog, library: fixture.library, surfaceOptions: { ...fixture.options, packages: [...fixture.packages.filter(row => !packages.some(owned => owned.module === row.module)), ...packages] } };
   const profile = resolve(engine), copy = adminCopyFixture();
   const publication = { id: "admin", mainSlot: "body", frame: { leaf: "frames.app-shell" as const, content: { "skip-link": { kind: "copy" as const, ref: "admin.frame/skip-link" } } }, layout: { leaf: "layouts.stack" as const, config: "stack.workspace" }, format: "web.page.responsive" as const, surface: "app" as const, context: { consumer: profile.consumer, medium: "web" as const }, packIds: ["pack.admin"] };
-  const { registry, pages, publicationHosts } = createAdminPageRegistry({ publication, copy, manifests: { designer: skeleton, writer: skeleton, publisher: skeleton }, itemTitles: { designer: {id:"strings.admin.page.designer"}, writer: {id:"strings.admin.page.writer"}, publisher: {id:"strings.admin.page.publisher"} } });
+  const { registry, pages, publicationHosts } = custom
+    ? createConsumerPageRegistry({ publication, channel: "app", copy, configs: [custom], manifests: { [custom.id]: skeleton }, sources: { [custom.id]: fixtureSources(custom.id) }, map: { version: 1, publicationId: publication.id, format: "web.page.responsive", entries: [{ id: custom.entryId, title: copy(custom.title), path: "/catalog/inventory", kind: "page", order: 0, source: { planItemId: "app.inventory" }, pageConfig: custom.id }] } })
+    : createAdminPageRegistry({ publication, copy, manifests: { designer: skeleton, writer: skeleton, publisher: skeleton }, itemTitles: { designer: {id:"strings.admin.page.designer"}, writer: {id:"strings.admin.page.writer"}, publisher: {id:"strings.admin.page.publisher"} } });
   // Real adopted renderer sources; SYNTHETIC flow declarations do not qualify the catalog's substrate coverage.
   const leaves = ["frames.app-shell", "sections.section-header", "sections.band", "sections.data-table", "sections.record-detail", "sections.table-of-contents", "sections.chat"];
   const plan = planSurfaceRuntime({ engine, packages: engine.surfaceOptions.packages, leaves, renderers: Object.fromEntries(leaves.map(leaf => [leaf, { module: "@clossys/designer/frames", export: "surfaceRuntimeRenderers" }])) });
@@ -60,18 +63,34 @@ function setup(skeleton: AdminPageSkeleton = { l0: [{ id: "strings", label: {id:
   return { registry, pages, runtime, session, host, values, copy, publicationHosts };
 }
 describe("six native admin records through prepareRegisteredRoute (fixture declarations)", () => {
+  it("refuses a consumer config member absent from the selected native header", () => {
+    const config = structuredClone(configs[1]); delete config.item;
+    Object.assign(config, { id: "inventory", entryId: "catalog.inventory", namespace: "inventory.records" });
+    config.levels.l0.header.members.align = "unselected-consumer-member";
+    const f = setup(skeleton, config), pair = f.pages.inventory;
+    const bundle = pair.createSession({ publication: f.session, loaders: { chunk: async () => [], search: async () => [], item: async () => undefined }, navigation: { hash: () => "", scroll: vi.fn(), focus: vi.fn(), replaceState: vi.fn() } });
+    bundle.page.activate();
+    const result = prepareRegisteredRoute(f.registry, pair.list.routeId, { ...f.runtime, page: bundle.page, assembly: { ...f.runtime.assembly, ports: { ...f.runtime.assembly.ports, resolveContent: reference => bundle.resolveContent(reference) ?? f.values.get(reference.ref), sectionHosts: bundle.sectionHosts() } } });
+    expect(result.status).toBe("refused");
+    expect(result.findings.join(" ")).toMatch(/member/i);
+  });
   it("loads a band on demand, resolves two native card repeats, and renders h2/h3/h4 with consumer rows", async () => {
-    const f = setup({ l0: [{ id: "strings", label: {id:"strings.admin.group.writer.strings"}, count: 4, estimate: 80, partition: "l1", l1: [{ id: "names", label: {id:"strings.admin.ia.writer.strings.identity-names"}, count: 4, estimate: 400, l2: ["primary", "secondary"].map(id => ({ id, label: {id:id === "primary" ? "strings.admin.column.key" : "strings.admin.column.text"}, count: 2, estimate: 200 })) }] }] });
-    const pair = f.pages.writer, route = pair.list;
+    const inventory = structuredClone(configs[1]); delete inventory.item;
+    Object.assign(inventory, { id: "inventory", entryId: "catalog.inventory", namespace: "inventory.records", columns: [{ key: "text", kind: "text", label: { id: "strings.admin.column.text" } }] });
+    for (const custom of [undefined, inventory]) {
+    const f = setup({ l0: [{ id: "strings", label: {id:"strings.admin.group.writer.strings"}, count: 4, estimate: 80, partition: "l1", l1: [{ id: "names", label: {id:"strings.admin.ia.writer.strings.identity-names"}, count: 4, estimate: 400, l2: ["primary", "secondary"].map(id => ({ id, label: {id:id === "primary" ? "strings.admin.column.key" : "strings.admin.column.text"}, count: 2, estimate: 200 })) }] }] }, custom);
+    const pair = f.pages[custom?.id ?? "writer"], route = pair.list;
+    const namespace = custom?.namespace ?? "admin.writer";
+    if (custom) expect(route.routeId).toBe("catalog.inventory");
     const ref = (name: string, kind: RuntimeContent["reference"]["kind"] = "records") => ({ kind, ref: `fixture.writer/${name}` });
     const data: RuntimeContent[] = [
-      content(adminPageRef("writer", "strings/names/band"), [{ id: "names", references: {
-        "admin.writer/band.heading": ref("band.heading", "copy"), "admin.writer/band.stats": ref("band.stats"), "admin.writer/cards": ref("cards"),
+      content(consumerPageRef(namespace, "strings/names/band"), [{ id: "names", references: {
+        [`${namespace}/band.heading`]: ref("band.heading", "copy"), [`${namespace}/band.stats`]: ref("band.stats"), [`${namespace}/cards`]: ref("cards"),
       } }]),
       content(ref("band.heading", "copy"), { text: writerCopy({id:"strings.admin.ia.writer.strings.identity-names"}), id: "strings--names" }),
       content(ref("band.stats"), [{ id: "count", label: writerCopy({id:"strings.admin.stats.total",values:{count:4}}) }]),
       content(ref("cards"), ["primary", "secondary"].map(id => ({ id, references: {
-        "admin.writer/card.header": ref(`${id}/header`, "copy"), "admin.writer/card.rows": ref(`${id}/rows`), "admin.writer/card.pagination": ref(`${id}/pagination`, "region"),
+        [`${namespace}/card.header`]: ref(`${id}/header`, "copy"), [`${namespace}/card.rows`]: ref(`${id}/rows`), [`${namespace}/card.pagination`]: ref(`${id}/pagination`, "region"),
       } }))),
       ...["primary", "secondary"].flatMap(id => [
         content(ref(`${id}/header`, "copy"), { heading: writerCopy({id:id === "primary" ? "strings.admin.column.key" : "strings.admin.column.text"}), id:`strings--names--${id}`, level:4, count:2 }),
@@ -96,6 +115,7 @@ describe("six native admin records through prepareRegisteredRoute (fixture decla
     expect(html).toMatch(/<h2[^>]*[^]*Strings[^]*<h3[^>]*[^]*Names[^]*<h4[^>]*[^]*Key[^]*<h4[^>]*[^]*Text/);
     expect(html).toContain("الكاتب");
     expect(html).toContain("النص");
+    }
   }, 120_000);
   it("prepares and renders every list and item through the selected existing Section renderers", async () => {
     const f = setup();

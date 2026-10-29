@@ -78,9 +78,8 @@ describe("admin route head and registered navigation conformance", () => {
     }
   });
 
-  it.each(["designer", "publisher"] as const)("the complete %s entry carries native metadata", kind => {
-    expect(metadataFrom(emitCompleteRoutePage({ kind, file: `app/agents/${kind}/page.tsx`, loader: { file: "server/load.ts", export: "loadRoute" } })))
-      .toMatchObject({ robots: "noindex, nofollow", twitter: { card: "summary" } });
+  it.each(["designer", "publisher"] as const)("the retired complete %s entry requires consumer-owned composition", kind => {
+    expect(() => emitCompleteRoutePage({ kind, file: `app/agents/${kind}/page.tsx`, loader: { file: "server/load.ts", export: "loadRoute" } })).toThrow(/consumer page config/);
   });
 
   it.each(paths)("%s returns the response header on both content and canonical redirects", path => {
