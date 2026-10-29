@@ -222,18 +222,19 @@ export function createRegisteredPageSession(input: RegisteredPageSessionOptions)
       const key = contentReferenceKey(reference), current = contents.get(key); return current ? { status: "ready", content: current } : { status: "pending", ...(itemReferences.has(key) ? { owned: true as const } : {}) };
     },
     async request(reference) {
+      const generation = navigationSequence;
       if (!isRegisteredContentRef(reference) || !reference.lazy) throw new TypeError("Only a declared lazy chunk reference can be requested");
       session.read(reference);
       try { await session.requestChunk(reference.lazy.args); if (session.read(reference).status !== "ready") throw new TypeError("Chunk omitted its requested content reference"); }
-      catch (error) { fail(error); }
+      catch (error) { if (generation === navigationSequence && currentPage()) return fail(error); throw error; }
     },
     requestChunk(args) {
-      validArgs(args); const key = JSON.stringify([args.l0, args.l1 ?? null]);
+      validArgs(args); const key = JSON.stringify([args.l0, args.l1 ?? null]), generation = navigationSequence;
       const existing = requests.get(key); if (existing) return existing;
       chunkStates.set(key, "pending"); publish();
       const promise = (async () => {
         try { const data = await options.loaders.chunk({ ...args }); if (!Array.isArray(data)) throw new TypeError("Chunk loader must return content records"); for (const current of data) save(current, key); chunkStates.set(key, "ready"); publish(); }
-        catch (error) { chunkStates.set(key, "error"); publish(); return fail(error); }
+        catch (error) { chunkStates.set(key, "error"); publish(); if (generation === navigationSequence && currentPage()) return fail(error); throw error; }
       })();
       requests.set(key, promise); return promise;
     },
@@ -306,7 +307,7 @@ export function createRegisteredPageSession(input: RegisteredPageSessionOptions)
       activeAnchor = anchor;
       if (history) (options.navigation.pushState ?? options.navigation.replaceState)(`#${anchor}`);
       options.navigation.focus(anchor); state({ main: "ready", navigating: false }); publish();
-    } catch (error) { if (request === navigationSequence && currentPage()) fail(error); }
+    } catch (error) { if (request === navigationSequence && currentPage()) return fail(error); throw error; }
   }
   return Object.freeze(session);
 }

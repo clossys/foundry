@@ -341,6 +341,18 @@ describe("consumed registered scroll-page capabilities", () => {
     expect(input.navigation.pushState).not.toHaveBeenCalled();
     await expect(session.navigate("#unknown")).rejects.toThrow();
   });
+  it("keeps a newer hash navigation ready when an older demanded chunk rejects, while rejecting the old callers", async () => {
+    const input = options(); let rejectOld!: (reason: Error) => void;
+    input.loaders.chunk = vi.fn(({ l1 }: { l0: string; l1?: string }) => l1 ? new Promise<never[]>((_resolve, reject) => { rejectOld = reject; }) : Promise.resolve([])) as never;
+    const page = createRegisteredPageSession(input), old = page.navigate("#records--names"), oldFailure = expect(old).rejects.toThrow("SYNTHETIC old chunk");
+    const demand = page.request({ kind: "records", ref: "old-rows", lazy: { loader: "chunk", args: { l0: "records", l1: "names" } } }), demandFailure = expect(demand).rejects.toThrow("SYNTHETIC old chunk");
+    await page.navigate("#records");
+    rejectOld(new Error("SYNTHETIC old chunk")); await Promise.all([oldFailure, demandFailure]);
+    expect(page.frameState()).toEqual({ main: "ready", navigating: false });
+    expect(page.activeAnchor()).toBe("records");
+    expect(input.navigation.focus.mock.calls).toEqual([["records"]]);
+    expect(page.chunkStatus({ l0: "records", l1: "names" })).toBe("error");
+  });
   it("groups actual search-loader hits by L0 and exposes frame command content, including empty results", async () => {
     const input = options(); input.loaders.search = vi.fn(async () => [{ l0: "records", anchor: "records--names", label: "Names", kind: "band" }]);
     const session = createRegisteredPageSession(input);
