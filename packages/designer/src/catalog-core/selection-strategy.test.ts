@@ -70,6 +70,16 @@ describe("Designer selection brief provenance", () => {
     expect(validateSelectionStrategy(f.library.strategy)).toMatchObject({ state: "unavailable", findings: [expect.objectContaining({ message: expect.stringContaining("unavailable") })] });
     expect(validateSelectionStrategy(f.library.strategy, f.reader())).toMatchObject({ state: "ready", findings: [] });
   });
+  it("rejects a ready SDK brief misrouted under another contract", () => {
+    const f = fixture(); const actual = f.reader();
+    const reader: SelectionStrategyReader = {
+      getCell: actual.getCell, isStale: actual.isStale,
+      getBrief: id => ({ ...actual.getBrief(id), contract: "writer.messaging" }),
+    };
+    expect(validateSelectionStrategy(f.library.strategy, reader)).toMatchObject({
+      state: "invalid", findings: [expect.objectContaining({ severity: "error", message: expect.stringContaining("contract") })],
+    });
+  });
   it("checks composite selections and refreshes reader findings across cached resolutions", () => {
     const f = fixture();
     const input = { catalog: { values: catalog, components: { slots: [], fills: [] } }, library: { source, values: f.library, components: { fills: [], files: [] } }, strategy: f.reader() };

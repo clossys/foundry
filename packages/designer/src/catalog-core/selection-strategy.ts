@@ -52,6 +52,9 @@ export function validateSelectionStrategy(value: unknown, reader?: SelectionStra
     return { state: "unavailable", findings };
   }
   const brief = reader.getBrief("designer.identity");
+  if (brief.contract !== "designer.identity") {
+    add("reader returned a brief for a different contract"); return { state: "invalid", findings };
+  }
   if (brief.state === "missing") add(`missing required cells: ${brief.missing.join(", ")}`);
   for (const ref of refs) {
     if (!reader.getCell(ref.cell, ref.version)) add(`dangling ref ${token(ref)}`, "error", token(ref));
