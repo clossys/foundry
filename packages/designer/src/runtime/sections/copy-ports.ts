@@ -352,6 +352,9 @@ export interface WriterSectionCopyPorts {
     readonly "figure.caption"?: string;
     readonly "figure.media.title": string;
     readonly "figure.media.series[].name"?: string;
+    readonly "figure.chromeLabel"?: string;
+    readonly "callouts.label"?: string;
+    readonly "callouts.items[].body"?: string;
   };
   readonly "sections.newsletter": {
     readonly "header.eyebrow"?: string;

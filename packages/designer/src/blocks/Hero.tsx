@@ -1,6 +1,13 @@
 import type { CSSProperties, HTMLAttributes, ReactNode } from "react";
 import { cx } from "../components/internal/cx.js";
-import { SectionIntro, type SectionIntroProps } from "./SectionIntro.js";
+import type { SectionIntroProps } from "./SectionIntro.js";
+import { HeroIntro } from "./hero/HeroIntro.js";
+import { StillBackdrop, type HeroBackdropScrim } from "./hero/StillBackdrop.js";
+import type { StillBackdropArt } from "../backdrop/consumer-art.js";
+import { BackdropHost } from "../backdrop/BackdropHost.js";
+import type { BackdropModuleLoaders, RuntimeBackdropResource } from "../backdrop/runtime-module.js";
+import { VideoBackdrop, type VideoBackdropResource } from "../backdrop/VideoBackdrop.js";
+export type { HeroBackdropScrim } from "./hero/StillBackdrop.js";
 import { SECTION_GROUND_CLASSES, type SectionGround } from "./section-ground.js";
 import { dsAttrs } from "../catalog-core/provenance-attrs.js";
 /** Section root provenance (D1): the selected Foundry fill this block is. */
@@ -12,7 +19,7 @@ export type HeroHeadingLevel = 1 | 2;
 export type HeroAlign = "start" | "center";
 
 /** Layout composition when `media` is present — media presence is not a layout. */
-export type HeroComposition = "editorial" | "split";
+export type HeroComposition = "editorial" | "split" | "full-bleed";
 
 export interface HeroProps extends HTMLAttributes<HTMLElement> {
   /** Small label above the heading ("New", a category name). */
@@ -38,6 +45,12 @@ export interface HeroProps extends HTMLAttributes<HTMLElement> {
    * Passing `media` does not choose a layout — set `composition` explicitly.
    */
   media?: ReactNode;
+  /** Checked decorative still art behind the message. The same static source serves reduced motion. */
+  backdrop?: StillBackdropArt | RuntimeBackdropResource | VideoBackdropResource;
+  /** Consumer static import registry for runtime artwork. Missing keys keep the poster. */
+  backdropModules?: BackdropModuleLoaders;
+  /** Scalar protection over the media-scrim gradient. @default "light" */
+  backdropScrim?: HeroBackdropScrim;
   /**
    * Named layout when `media` is set. `editorial` stacks art in document
    * order (default for public marketing). `split` is the opt-in two-column
@@ -93,6 +106,9 @@ export function Hero({
   description,
   actions,
   media,
+  backdrop,
+  backdropModules,
+  backdropScrim = "light",
   composition = "editorial",
   headingLevel = 1,
   size = "display",
@@ -107,7 +123,8 @@ export function Hero({
   const centred = align === "center";
 
   const content = (
-    <SectionIntro
+    <HeroIntro
+      backdropInk={Boolean(backdrop)}
       emphasis={size === "compact" ? "section" : "display"}
       headingLevel={headingLevel}
       align={align}
@@ -127,6 +144,8 @@ export function Hero({
       {...SECTION_STAMP} {...rest}
       className={cx(
         colors.surface,
+        backdrop ? "relative isolate overflow-hidden" : undefined,
+        composition === "full-bleed" ? "w-full" : undefined,
         splitLayout
           ? "grid grid-cols-1 items-center gap-xl tablet:grid-cols-2"
           : "flex flex-col gap-xl",
@@ -134,8 +153,14 @@ export function Hero({
       )}
       style={style}
     >
-      {content}
-      {media ? <div className={cx("w-full", splitLayout ? "" : "max-w-display", centred && !splitLayout ? "mx-auto" : "")}>{media}</div> : null}
+      {backdrop ? ("kind" in backdrop && backdrop.kind === "module"
+        ? <BackdropHost resource={backdrop} modules={backdropModules ?? EMPTY_BACKDROP_MODULES} scrim={backdropScrim} />
+        : "kind" in backdrop && backdrop.kind === "video" ? <VideoBackdrop resource={backdrop} scrim={backdropScrim} />
+        : <StillBackdrop art={backdrop as StillBackdropArt} scrim={backdropScrim} />) : null}
+      {backdrop ? <div className="relative">{content}</div> : content}
+      {media ? <div className={cx("w-full", backdrop ? "relative" : "", splitLayout ? "" : "max-w-display", centred && !splitLayout ? "mx-auto" : "")}>{media}</div> : null}
     </section>
   );
 }
+
+const EMPTY_BACKDROP_MODULES: BackdropModuleLoaders = Object.freeze({});

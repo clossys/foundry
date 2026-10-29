@@ -529,20 +529,23 @@
       "unresolvedMemberAxes": []
     },
     {
-      "missingMembers": [
-        "ground.base",
-        "ground.inverse"
-      ],
+      "missingMembers": [],
       "missingRequiredSlots": [],
       "missingSlots": [],
       "notes": [
-        "Header is a built-in SectionIntro region keyed by the required heading, with eyebrow and description as supporting props; it is not a replaceable section-header node. Source composes SectionIntro; headingLevel permits h1.",
+        "Header is a built-in SemanticContent intro keyed by the required heading, with eyebrow and description as supporting props; headingLevel permits h1.",
+        "Backdrop accepts the existing checked decorative lazy ConsumerArtContract, limited to static raster or token-painted SVG. Light and strong treatments render the media-scrim gradient below four or five scalar scrim passes. Static art is unchanged under reduced motion; source bytes remain consumer-declared, not fetched or measured.",
         "Source-only import and token-read measurements are lower bounds; shared anatomy, accessibility, contrast and consumer runtime conformance remain unmeasured. Content bindings describe host adaptation points, not type-equivalent converters."
       ],
       "slot": "sections.hero",
-      "status": "subset",
+      "status": "candidate",
       "supportedMembers": [
+        "backdrop.scrim.light",
+        "backdrop.scrim.strong",
+        "ground.base",
+        "ground.inverse",
         "layout.editorial",
+        "layout.full-bleed",
         "layout.split",
         "size.compact",
         "size.default",
@@ -550,6 +553,7 @@
       ],
       "supportedSlots": [
         "actions",
+        "backdrop",
         "header",
         "media"
       ],
@@ -666,13 +670,20 @@
       "missingRequiredSlots": [],
       "missingSlots": [],
       "notes": [
-        "Host supplies the image node and its src/alt/ratio; caption is a separate prop. Does not validate a structured figure record or bind anatomy.",
+        "The figure-to-children pointer is an adaptation point. The private sections.media runtime adapts figure.media={kind:image,resource:ImageResource} to the public image prop, optional figure.ratio to a canonical image-ratio member, figure.caption to caption and figure.chromeLabel to the browser-only chromeLabel. Existing registered chart and mark content remains supported as children.",
+        "The closed chrome members select browser, device or bare; bare is the default. Chrome is token-drawn around the existing media renderer and does not change its intrinsic image ratio. Optional callouts maps to {label,items:[{id,body}]} with a nonempty host-authored list label and item bodies and unique nonempty item ids.",
+        "The host supplies all visible and accessible copy through the Writer passage contract. This package descriptor does not bind shared anatomy or prove consumer runtime conformance.",
         "Source-only import and token-read measurements are lower bounds; shared anatomy, accessibility, contrast and consumer runtime conformance remain unmeasured. Content bindings describe host adaptation points, not type-equivalent converters."
       ],
       "slot": "sections.media",
       "status": "candidate",
-      "supportedMembers": [],
+      "supportedMembers": [
+        "chrome.bare",
+        "chrome.browser",
+        "chrome.device"
+      ],
       "supportedSlots": [
+        "callouts",
         "figure"
       ],
       "unresolvedMemberAxes": []
@@ -724,7 +735,7 @@
         "meta"
       ],
       "notes": [
-        "No record/standard config or meta API. Source renders its own h1 rather than shared section-header anatomy.",
+        "No record/standard config or meta API. Source composes the shared SectionHeader at level 1 for its real h1 and preserves the public breadcrumb, title, description and actions inputs.",
         "Source-only import and token-read measurements are lower bounds; shared anatomy, accessibility, contrast and consumer runtime conformance remain unmeasured. Content bindings describe host adaptation points, not type-equivalent converters."
       ],
       "slot": "sections.page-header",

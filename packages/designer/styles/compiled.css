@@ -1569,6 +1569,9 @@
   .h-xl {
     height: var(--spacing-xl, 24px);
   }
+  .h-xs {
+    height: var(--spacing-xs, 4px);
+  }
   .max-h-6xl {
     max-height: var(--spacing-6xl, 128px);
   }
@@ -1636,6 +1639,9 @@
   .w-full {
     width: 100%;
   }
+  .w-lg {
+    width: var(--spacing-lg, 16px);
+  }
   .w-max {
     width: max-content;
   }
@@ -1647,6 +1653,9 @@
   }
   .w-sm {
     width: var(--spacing-sm, 8px);
+  }
+  .w-xs {
+    width: var(--spacing-xs, 4px);
   }
   .filter-match-width {
     max-width: var(--ui-layout-aside-w, 320px);
@@ -2085,6 +2094,9 @@
   }
   :where(.divide-line-base > :not(:last-child)) {
     border-color: var(--color-line-base, oklch(0.8761 0 0));
+  }
+  .self-center {
+    align-self: center;
   }
   .self-end {
     align-self: flex-end;
