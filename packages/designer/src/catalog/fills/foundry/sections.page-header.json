@@ -23,7 +23,6 @@
       "status": "draft",
       "trust": "foundry",
       "unmapped": [
-        "slot.meta",
         "config.record",
         "config.standard",
         "contact.header"
@@ -32,26 +31,44 @@
   },
   "sections": {
     "page-header": {
-      "composes": [],
-      "configs": {},
+      "composes": [
+        "components.badge",
+        "components.semantic-content",
+        "sections.section-header"
+      ],
+      "configs": {
+        "article": "config=article",
+        "case-study": "config=case-study"
+      },
       "consumption": {
         "scanStatus": "lower-bound",
-        "scannedComposes": [],
+        "scannedComposes": [
+          "components.badge",
+          "components.semantic-content",
+          "sections.section-header"
+        ],
         "scannedReads": {
           "assets": [],
-          "components": [],
+          "components": [
+            "components.badge",
+            "components.semantic-content"
+          ],
           "tokens": [
             "tokens.body-size",
+            "tokens.caption-size",
             "tokens.heading-size",
             "tokens.spacing",
-            "tokens.text-color",
-            "tokens.typeface"
+            "tokens.text-color"
           ]
         },
         "sourceFiles": [
           {
             "path": "packages/designer/src/blocks/PageHeader.tsx",
-            "sha256": "1de9e7d5110c1c2903b7ad89290a926915476487aec0d2b5060c5f16c9366e65"
+            "sha256": "fa45b7ba156dd40c49ecc8c425d27b39ec1722f398454f23ecb6be0e9fb033e4"
+          },
+          {
+            "path": "packages/designer/src/blocks/PageHeaderMetadata.tsx",
+            "sha256": "ac1814117a6c72746aa942c0a91565cf33c794dd55a80feb24649b01608d9138"
           },
           {
             "path": "packages/designer/src/catalog-core/provenance-attrs.ts",
@@ -63,6 +80,12 @@
           }
         ],
         "unresolved": [
+          {
+            "code": "DF2",
+            "evidence": "unresolved source export ../components/Link.js#Link",
+            "file": "packages/designer/src/blocks/PageHeaderMetadata.tsx",
+            "line": 4
+          },
           {
             "code": "DF2",
             "evidence": "unresolved injected runtime inventory ../../tokens/tokens.js#TOKENS",
@@ -84,7 +107,7 @@
       },
       "license": "MIT",
       "notes": [
-        "No record/standard config or meta API. Source renders its own h1 rather than shared section-header anatomy.",
+        "Article metadata carries Writer-authored author, date labels, reading time and tags; case-study metadata adds summary and labelled outcome statistics. Date values use Intl.DateTimeFormat with the page locale. Source retains the real h1 and existing breadcrumb/actions slots; legacy standard/record members remain unmapped.",
         "Source-only import and token-read measurements are lower bounds; shared anatomy, accessibility, contrast and consumer runtime conformance remain unmeasured. Content bindings describe host adaptation points, not type-equivalent converters."
       ],
       "parts": [],
@@ -98,10 +121,10 @@
         "assets": [],
         "tokens": [
           "tokens.body-size",
+          "tokens.caption-size",
           "tokens.heading-size",
           "tokens.spacing",
-          "tokens.text-color",
-          "tokens.typeface"
+          "tokens.text-color"
         ]
       },
       "slot": "sections.page-header",
@@ -109,6 +132,7 @@
         "actions": "./blocks#PageHeader.actions",
         "breadcrumbs": "./blocks#PageHeader.breadcrumb",
         "description": "./blocks#PageHeader.description",
+        "meta": "./blocks#PageHeader.meta",
         "title": "./blocks#PageHeader.title"
       },
       "source": "foundry"

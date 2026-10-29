@@ -28,32 +28,48 @@
     "cards": {
       "composes": [
         "components.badge",
-        "components.card"
+        "components.card",
+        "components.semantic-content",
+        "sections.media"
       ],
-      "configs": {},
+      "configs": {
+        "case-study": "config=case-study",
+        "post": "config=post",
+        "post-featured": "config=post-featured"
+      },
       "consumption": {
         "scanStatus": "lower-bound",
         "scannedComposes": [
           "components.badge",
-          "components.card"
+          "components.card",
+          "components.semantic-content",
+          "sections.media"
         ],
         "scannedReads": {
-          "assets": [],
+          "assets": [
+            "assets.image"
+          ],
           "components": [
             "components.badge",
-            "components.card"
+            "components.card",
+            "components.semantic-content"
           ],
           "tokens": [
             "tokens.body-size",
             "tokens.caption-size",
+            "tokens.heading-size",
             "tokens.spacing",
             "tokens.text-color"
           ]
         },
         "sourceFiles": [
           {
+            "path": "packages/designer/src/blocks/PageHeaderMetadata.tsx",
+            "sha256": "ac1814117a6c72746aa942c0a91565cf33c794dd55a80feb24649b01608d9138"
+          },
+          {
             "path": "packages/designer/src/blocks/RecordCards.tsx",
-            "sha256": "59e8212000d2b2e1ac6a62a5d1f0b237e3e4540fb625a519c99456069ff46567"
+            "sha256": "d13da3dfd3cd69fe68ecb6842faa48161697c1d3fad81375b18d2a7b39014b1d"
           },
           {
             "path": "packages/designer/src/catalog-core/provenance-attrs.ts",
@@ -65,6 +81,12 @@
           }
         ],
         "unresolved": [
+          {
+            "code": "DF2",
+            "evidence": "unresolved source export ../components/Link.js#Link",
+            "file": "packages/designer/src/blocks/PageHeaderMetadata.tsx",
+            "line": 4
+          },
           {
             "code": "DF2",
             "evidence": "unresolved source export ../components/Link.js#Link",
@@ -92,7 +114,7 @@
       },
       "license": "MIT",
       "notes": [
-        "Each record renders a Foundry Card (outline) with the title as its single Link and an optional Badge. Loading, empty and error states stay host-owned around the list.",
+        "Editorial records support post, post-featured and case-study configurations, resolved assets.image resources and Writer-authored metadata. Post-featured uses a full-width list; state handling stays host-owned. Dates use the page locale.",
         "Source-only import and token-read measurements are lower bounds; shared anatomy, accessibility, contrast and consumer runtime conformance remain unmeasured. Content bindings describe host adaptation points, not type-equivalent converters."
       ],
       "parts": [],
@@ -106,10 +128,13 @@
         "layout.list": "./blocks#RecordCards.layout=list"
       },
       "reads": {
-        "assets": [],
+        "assets": [
+          "assets.image"
+        ],
         "tokens": [
           "tokens.body-size",
           "tokens.caption-size",
+          "tokens.heading-size",
           "tokens.spacing",
           "tokens.text-color"
         ]

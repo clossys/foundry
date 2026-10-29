@@ -44,7 +44,7 @@ const COMPONENT_MODULE: Record<string, string> = {
   avatar: "Avatar", badge: "Badge", banner: "Banner", breadcrumbs: "Breadcrumb", button: "Button", card: "Card", checkbox: "Checkbox",
   "combo-box": "ComboBox", disclosure: "Disclosure", field: "Field", "file-trigger": "FileTrigger", form: "Form", icon: "Icon", link: "Link",
   "progress-bar": "ProgressBar", select: "Select", spinner: "Spinner", "status-mark": "StatusMark", switch: "Switch", tabs: "Tabs",
-  "text-field": "TextField", menu: "Menu", toast: "Toast", tooltip: "Tooltip",
+  "text-field": "TextField", menu: "Menu", toast: "Toast", tooltip: "Tooltip", "semantic-content": "SemanticContent",
 };
 const VISUAL_MODULE = /(?:^|\/)(?:components|blocks|sections|frames|shell|icons|charts)(?:\/|\.|$)/;
 
@@ -53,6 +53,7 @@ function allowedModules(leaf: GroupCLeaf): Set<string> {
   const contract = contracts.get(`sections.${leaf}`)!;
   const modules = new Set([BLOCK_MODULE[leaf]]);
   for (const id of contract.allowedComposes) {
+    if (id === "sections.media" && leaf === "cards") { modules.add("../../blocks/MediaFigure.js"); continue; }
     const name = id.replace(/^components\./, "");
     expect(COMPONENT_MODULE[name], `${leaf}: ${id} has a component module`).toBeDefined();
     modules.add(`../../components/${COMPONENT_MODULE[name]}.js`);
@@ -273,7 +274,7 @@ describe("group-c members, refusals and optional slots", () => {
   it("refuses a missing required slot, an unmapped slot or member, and two members on one axis", () => {
     const { records: _records, ...withoutRecords } = sectionDatasetC.cards(specimenDataset);
     expect(() => renderLeaf("cards", inputFor("cards", withoutRecords))).toThrow(/required content slot "records"/);
-    expect(() => renderLeaf("page-header", inputFor("page-header", { ...sectionDatasetC["page-header"](specimenDataset), meta: { items: [] } }))).toThrow(/"meta" has no API/);
+    expect(() => renderLeaf("page-header", inputFor("page-header", { ...sectionDatasetC["page-header"](specimenDataset), meta: { author: {} } }))).toThrow(/requires name/);
     expect(() => renderLeaf("link-index", datasetInput("link-index", ["layout.list"]))).toThrow(/"layout.list" has no API/);
     expect(() => renderLeaf("cards", datasetInput("cards", ["layout.grid", "layout.list"]))).toThrow(/one axis twice/);
   });

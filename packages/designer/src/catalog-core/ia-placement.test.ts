@@ -10,7 +10,7 @@ type CrossReference = { node: string; leaves: string[] };
 type WithReferences = Placement & { crossReferences?: CrossReference[] };
 
 const fixtures = [tokens, assets, components, sections, frames];
-const counts = { tokens: [7, 21, 56], assets: [4, 10, 49], components: [6, 27, 66], sections: [6, 23, 52], frames: [3, 9, 11] };
+const counts = { tokens: [7, 21, 56], assets: [4, 10, 49], components: [6, 27, 66], sections: [6, 23, 51], frames: [3, 9, 11] };
 const leafIds = (tree: Placement): string[] => tree.nodes.flatMap(group => "children" in group ? group.children.flatMap(family => "leaves" in family ? family.leaves : []) : []);
 
 describe("IA1 exact three levels and IA2 unmixed nodes", () => {
@@ -54,7 +54,7 @@ describe("IA1 exact three levels and IA2 unmixed nodes", () => {
         expect(() => loadBuildCatalog()).toThrow("IA1");
         if (layer === "tokens" || layer === "assets") expect(() => loadCatalog()).toThrow("IA1");
       } finally { Object.assign(input, { nodes: original }); }
-      expect(loadBuildCatalog().slots).toHaveLength(234);
+      expect(loadBuildCatalog().slots).toHaveLength(233);
     });
   }
 
@@ -140,6 +140,6 @@ describe("owner-signed IA moves (ledger #44, 2026-10-26)", () => {
       (assets as WithReferences).crossReferences!.push({ node: "imagery", leaves: ["tokens.icon-stroke"] });
       expect(() => loadCatalog()).toThrow("cross-referenced 2 times");
     } finally { Object.assign(assets, { crossReferences: original }); }
-    expect(loadBuildCatalog().slots).toHaveLength(234);
+    expect(loadBuildCatalog().slots).toHaveLength(233);
   });
 });

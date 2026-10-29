@@ -1,4 +1,5 @@
 import type { CSSProperties, HTMLAttributes, ReactNode } from "react";
+import { SemanticContent } from "../components/SemanticContent.js";
 import { cx } from "../components/internal/cx.js";
 import {
   SECTION_FRAME_DATA_ATTR,
@@ -60,13 +61,13 @@ export function SectionFrame({
   const colors = ground === "transparent" ? TRANSPARENT_GROUND : SECTION_GROUND_CLASSES[ground];
 
   return (
-    <section
+    <SemanticContent as="section"
       {...SECTION_STAMP} {...rest}
       {...{ [SECTION_FRAME_DATA_ATTR]: "" }}
       className={cx(colors.surface, colors.primary, "py-lg", className)}
       style={style}
     >
-      <div
+      <SemanticContent as="div"
         className="mx-auto flex w-full flex-col gap-lg"
         style={{
           maxWidth: SECTION_MEASURE_MAX[measure],
@@ -74,7 +75,7 @@ export function SectionFrame({
         }}
       >
         {children}
-      </div>
-    </section>
+      </SemanticContent>
+    </SemanticContent>
   );
 }

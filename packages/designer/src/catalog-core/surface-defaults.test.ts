@@ -26,7 +26,7 @@ const reasons = (plan: ReturnType<typeof planSurfaceDefaults>, slot: string) => 
 const SECTION_DEFAULTS = ["access-matrix", "activity-feed", "article", "audit-log", "band", "call-to-action", "cards", "chat", "column-mapper", "comparison",
   "consent", "content", "data-grid", "data-table", "empty-state", "error-state", "explorer", "faq", "features", "filter-builder", "form", "gallery", "hero",
   "link-index", "logo-cloud", "media", "newsletter", "notices", "page-header", "pagination", "people", "pricing", "record-detail", "resource-list",
-  "account-summary", "boundary-message", "error-message", "legal-prose", "logo-hero", "logo-mark", "sign-in-form",
+  "account-summary", "boundary-message", "legal-prose", "logo-hero", "logo-mark", "sign-in-form",
   "section-header", "settings", "stats", "status-list", "steps", "table-of-contents", "task-list", "testimonials", "timeline", "usage", "wizard"].map(leaf => `sections.${leaf}`);
 /** Every Foundry candidate now maps its required content slots; none is ineligible. */
 const SECTION_INELIGIBLE: Readonly<Record<string, readonly string[]>> = {};
@@ -39,11 +39,11 @@ describe("surface default fills", () => {
     const input = setup();
     const plan = planSurfaceDefaults(input);
     expect(plan.rows.map(row => row.slot)).toEqual(input.slots);
-    expect(input.slots.filter(slot => slot.startsWith("sections.")).length).toBe(52);
+    expect(input.slots.filter(slot => slot.startsWith("sections.")).length).toBe(51);
     expect(input.slots.filter(slot => slot.startsWith("frames.")).length).toBe(11);
     const expected = Object.fromEntries(input.slots.map(slot => [slot, [...SECTION_DEFAULTS, ...FRAME_DEFAULTS].includes(slot) ? "foundry" : "-"]));
     expect(ledger(plan)).toEqual(expected);
-    expect(Object.values(ledger(plan)).filter(value => value !== "-")).toHaveLength(63);
+    expect(Object.values(ledger(plan)).filter(value => value !== "-")).toHaveLength(62);
     expect(plan.findings).toEqual([]);
     expect(plan.rows.find(row => row.slot === "frames.site-header")).toEqual({ slot: "frames.site-header", status: "default", basis: "preference", source: "foundry", fill: "foundry/frames.site-header", reasons: [] });
   });

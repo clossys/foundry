@@ -6,6 +6,7 @@ import { loadSectionRegistry, sectionRegistryFindings } from "../catalog-core/se
 import { createCopyResolver, computeCopyFingerprint, COPY_FINGERPRINT_ALGORITHM } from "../../../writer/src/index.js";
 import { resolveCopy } from "../../../publisher/src/content/composition.js";
 import type { CopyRegistry, CopyRegistryEntry } from "../../../writer/src/types.js";
+import { writerPassageSchemaDigest } from "../../../writer/src/checks/closed-world.js";
 
 const json = (path: string) => JSON.parse(readFileSync(resolve(dirname(fileURLToPath(import.meta.url)), path), "utf8"));
 describe("site reconstruction configs", () => {
@@ -14,6 +15,24 @@ describe("site reconstruction configs", () => {
     expect(sectionRegistryFindings(registry)).toEqual([]);
     const rows = json("../../../writer/src/catalog/__fixtures__/site-bindings.json");
     for (const row of rows) {
+      if (row.sectionId === "sections.error-message") {
+        expect(registry.aliases).toContainEqual({ id: row.sectionId, target: "sections.error-state" });
+        expect(registry.slots.some(leaf => leaf.id === row.sectionId)).toBe(false);
+        const data = json("../../../writer/src/catalog/records/site.en.json");
+        const passage = data.records.find((record: { id: string }) => record.id === data.aliases[row.passageAlias]);
+        const leaf = registry.slots.find(leaf => leaf.id === "sections.error-state")!;
+        expect(passage).toMatchObject({ id: "ps.000000002q", leaf: "passages.error-state", schema: "passages.error-state", status: "draft" });
+        expect(leaf.contract.members.names).toContain("kind.failure");
+        const keys = { status: "code", title: "header.heading", description: "header.description", "actions[].label": "retry.label", reference: "report.label" } as const;
+        expect(row.fields.map((field: { key: string }) => field.key).sort()).toEqual(Object.keys(keys).sort());
+        const expected = Object.fromEntries(Object.entries(keys).map(([old, current]) => [current, { ref: "string", id: data.aliases[`${row.passageAlias}.${old.replace("[]", ".item")}`] }]));
+        expect(passage.fields).toEqual(expected);
+        for (const key of Object.values(keys)) expect(leaf.contract.copy.fields.some(field => field.key === key), key).toBe(true);
+        const schema = json("../../../writer/src/catalog/slots/passages.json").find((slot: { id: string }) => slot.id === passage.schema)!;
+        expect(schema.contract.copy).toEqual(leaf.contract.copy);
+        expect(passage.schemaDigest).toBe(writerPassageSchemaDigest(schema.contract));
+        continue;
+      }
       const leaf = registry.slots.find(leaf => leaf.id === row.sectionId)!;
       expect(leaf, row.sectionId).toBeDefined();
       expect(row.configId).toMatch(/^[a-z][a-z0-9-]*\.[a-z][a-z0-9-]*$/);
