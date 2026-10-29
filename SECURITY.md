@@ -29,10 +29,9 @@ forward; there are no long-term support branches.
 | `check-public-safety` | Required check on every pull request |
 | `check-name-collision` | Required before every publish — see below |
 | `conversation-safety` (issues, comments, pull request descriptions) | Runs after the text is already posted — labels a finding and fails the check, never echoing the matched text and never commenting. Detects; does not prevent. See below |
-| `conversation-safety-sweep` | Daily on a schedule, and on demand. Re-scans already-posted conversation text against the denylist CI holds **now**, because the event-driven gate above judged each item once, against the denylist snapshot of the moment it was posted, and nothing ever re-asks. Labels findings; posts no comment, same as the gate above. See below |
 | `check-commit-messages` | Required check on every pull request. Scans commit message text against the same identity denylist — a surface neither the tree scan nor the tarball scan has ever read. See below |
 | `check-merge-policy` | Weekly on a schedule. Compares the merge methods the forge offers for the default branch against `governance/merge-policy.json` and fails on drift. Observes; it cannot apply the declaration, because merge methods live in GitHub's settings store rather than in this tree. See below |
-| `check-package-visibility` | Daily on a schedule, with no credential in either direction it checks -- every request, declared-package reads and the scope roster read alike, is anonymous. A scoped npm package defaults to restricted access unless published with `--access public`; this gate fails when a declared package is not anonymously installable right now (it deliberately does not try to tell "never published" apart from "private" -- both are the same failure of this repository's invariant that every declared package is already public) AND when a package live under the scope is not accounted for by the declaration. See the script's own header for both directions and issue #844 for the one piece (a deprecated-package retention cross-check) cut as a separate scope decision. Detects; there is no API to fix it. See [scripts/check-package-visibility.mjs](scripts/check-package-visibility.mjs) and [docs/PUBLISHING.md](docs/PUBLISHING.md#public-access-and-parity) |
+| `probe:package-visibility` | Run on demand with `npm run probe:package-visibility`; never runs in CI. No credential is used in either direction it checks -- every request, declared-package reads and the scope roster read alike, is anonymous. A scoped npm package defaults to restricted access unless published with `--access public`; this gate fails when a declared package is not anonymously installable right now (it deliberately does not try to tell "never published" apart from "private" -- both are the same failure of this repository's invariant that every declared package is already public) AND when a package live under the scope is not accounted for by the declaration. See the script's own header for both directions and issue #844 for the one piece (a deprecated-package retention cross-check) cut as a separate scope decision. Detects; there is no API to fix it. See [scripts/check-package-visibility.mjs](scripts/check-package-visibility.mjs) and [docs/PUBLISHING.md](docs/PUBLISHING.md#public-access-and-parity) |
 
 ## The publish-safety gate
 
@@ -259,8 +258,9 @@ denylist with read-only scopes; a separate label job holds the write scopes
 and neither checks out code nor sees the denylist. A finding on review text
 shows as the label on the pull request and a failed run on the default
 branch. A pull request can edit its own copy of the relay and so stop its
-own review events being relayed; that gains it no credential, and the
-scheduled sweep below still reads that text.
+own review events being relayed; that gains it no credential. Re-scan that
+text on demand with `npm run check:conversation -- --all --require-denylist`
+as described below.
 
 **This is detection, not prevention, and the workflow says so in its own
 header.** The text is public, and GitHub has already emailed it to every
@@ -275,7 +275,7 @@ every issue and pull request template
 running `scripts/check-conversation-safety.mjs` by hand against a draft
 before it goes anywhere near the GitHub API.
 
-### Why a scheduled sweep exists alongside it
+### Why on-demand re-scanning is needed
 
 The event-driven gate scans each item exactly once, at the instant it is
 posted, against whatever denylist CI holds at that instant. The denylist is
@@ -299,18 +299,12 @@ history shows bot- and human-authored comments triggering runs alike. The
 missed items and the caught ones differ by *which term matched*, not by who
 wrote them.
 
-`.github/workflows/conversation-safety-sweep.yml` closes that by re-asking
-on a cadence: daily over a rolling window, and on demand via
-`workflow_dispatch` (blank `since` sweeps the entire surface — the run that
-belongs immediately after a denylist change). The same silence it breaks
-also covers text posted before the event workflow existed, a run that was
-cancelled or expired, and an event GitHub never delivered. It labels and,
-deliberately, never comments, for the same reason the event gate does not.
-
-The scheduled window is bounded rather than exhaustive because `--all`
-issues several API calls per issue and pull request, and `GITHUB_TOKEN` is
-rate-limited per repository per hour; a sweep that reliably cannot finish is
-a sweep nobody trusts. The workflow's own header carries the full reasoning.
+After a denylist change, re-scan all conversation text on demand with
+`npm run check:conversation -- --all --require-denylist` using the current
+denylist. This also covers text posted before the event workflow existed,
+a run that was cancelled or expired, and an event GitHub never delivered.
+The command reports findings; remediation must not echo matched text in a
+public comment.
 
 ## The commit-message gate
 

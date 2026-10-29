@@ -62,7 +62,7 @@
 // chain for every contributor who is not the repository owner, or teach them to
 // ignore it. It runs on its own schedule in .github/workflows/merge-policy.yml,
 // where the precondition is actually met -- the same reasoning that keeps
-// check:conversation and check:package-visibility out of `check`.
+// check:conversation and probe:package-visibility out of `check`.
 //
 // NO HARDCODED REPOSITORY IDENTITY
 // --------------------------------

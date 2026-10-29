@@ -843,12 +843,9 @@ try {
         location: item ? describeItem(item) : f.rel,
         // The issue/PR number this finding belongs to, as a NUMBER, so a
         // caller can act on it without regex-parsing `location`'s prose.
-        // conversation-safety-sweep.yml needs exactly this to know which
-        // issues/PRs to label; recovering "#123" from a human-readable
-        // sentence would make that workflow silently stop labeling the day
-        // describeItem()'s wording changes — and a sweep that labels nothing
-        // is indistinguishable, from the outside, from a sweep that found
-        // nothing. Null in draft mode, which has no issue/PR identity yet.
+        // On-demand re-scan callers need this to identify issues/PRs without
+        // parsing a human-readable sentence whose wording may change.
+        // Null in draft mode, which has no issue/PR identity yet.
         number: item?.number ?? null,
         url: item?.url ?? null,
         // Deliberately no `text` / matched-string field here — see the file
