@@ -6,7 +6,8 @@ import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { createAdminCopy, type AdminCopyEnvelope } from "../admin-copy.js";
 import { validateWriterRecord } from "../model/validate.js";
 import { compileWriterCells } from "./compile.js";
-import { resolveWriterCellRoot } from "./cli.js";
+import { propose, readActive } from "@clossys/strategist/cell-format";
+import { resolveWriterCellRoot, runCellsCli } from "./cli.js";
 import { migrateWriterCells } from "./migrate.js";
 import { parseWriterCell, serializeWriterCell } from "./parse.js";
 
@@ -226,6 +227,44 @@ describe("Writer section cells against the pinned source inventory", () => {
   });
 });
 
+describe("Writer activation CLI profile validation", () => {
+  it.each(["unknown frontmatter", "malformed body"])("rejects a shared-valid draft with %s without changing durable state", async defect => {
+    const root = await temporaryRoot();
+    const output = await temporaryRoot();
+    await migrateWriterCells(fixturePath, root, { date: "2026-10-29" });
+    const before = await compileWriterCells(root, output);
+    const draft = await propose(root, "sample.auth");
+    const invalid = defect === "unknown frontmatter"
+      ? draft.source.replace("links: []", "links: []\nunexpected: value")
+      : draft.source.replace("## en", "## ar");
+    await writeFile(join(root, draft.path), invalid);
+    const treeBytes = await readFile(join(root, "tree.json"), "utf8");
+    const versions = await cellBytes(root);
+    await expect(runCellsCli(["activate", "sample.auth@2", "--root", root, "--out", output, "--confirm", "msg:writer-session#U1"])).rejects.toThrow(/unknown|locale|section/i);
+    expect(await readFile(join(root, "tree.json"), "utf8")).toBe(treeBytes);
+    expect(await cellBytes(root)).toEqual(versions);
+    expect((await readActive(root, "sample.auth"))!.version).toBe(1);
+    expect((await compileWriterCells(root, output, { check: true })).files).toEqual(before.files);
+  });
+
+  it("activates a valid Writer draft and compiles its edited text", async () => {
+    const root = await temporaryRoot();
+    const output = await temporaryRoot();
+    await migrateWriterCells(fixturePath, root, { date: "2026-10-29" });
+    const draft = await propose(root, "sample.auth");
+    const cell = parseWriterCell(draft.source, draft.path);
+    cell.records[0]!.record.text = "Confirmed replacement";
+    await writeFile(join(root, draft.path), serializeWriterCell(cell));
+    await runCellsCli(["activate", "sample.auth@2", "--root", root, "--out", output, "--confirm", "msg:writer-session#U1"]);
+    expect((await json(join(root, "tree.json"))).active["sample.auth"]).toBe(2);
+    const active = (await readActive(root, "sample.auth"))!;
+    expect(parseWriterCell(active.source, active.path)).toMatchObject({ version: 2, status: "active", confirmed: "msg:writer-session#U1" });
+    expect(parseWriterCell(await readFile(join(root, "cells/sample.auth/v1.md"), "utf8")).status).toBe("retired");
+    expect((await json(join(output, "generic-envelope.json"))).records[0].text).toBe("Confirmed replacement");
+    await expect(compileWriterCells(root, output, { check: true })).resolves.toBeDefined();
+  });
+});
+
 describe("generic record grammar and metadata round-trip", () => {
   it("rejects absolute and traversal paths in generated manifest entries", async () => {
     const root = await temporaryRoot();
@@ -254,6 +293,33 @@ describe("generic record grammar and metadata round-trip", () => {
       await expect(migrateWriterCells(from, root)).rejects.toThrow(/symlink/i);
       expect(await readdir(root)).toEqual([]);
     }
+  });
+
+  it.each([
+    ["cells", "directory", false],
+    ["cells/zzz.auth", "directory", false],
+    ["cells/zzz.auth/v1.md", "file", false],
+    ["cells/zzz.auth/v1.md", "file", true],
+    ["tree.json", "file", true],
+    ["compile.json", "file", false],
+    ["compile.json", "file", true],
+  ] as const)("preflights migration target symlink %s (%s, dangling=%s) before any writes", async (path, kind, dangling) => {
+    const from = await temporaryRoot();
+    const root = await temporaryRoot();
+    const outside = await temporaryRoot();
+    const record = { id: "st.0000000001", context: "sample.auth.title", leaf: "strings.page-titles", text: "Original" };
+    await writeFile(join(from, "envelope.json"), canonical({ locale: "en", records: [record, { ...record, id: "st.0000000002", context: "zzz.auth.title" }] }));
+    const sentinel = join(outside, "sentinel.md");
+    await writeFile(sentinel, "Outside bytes must survive\n");
+    const target = kind === "directory" ? outside : join(outside, dangling ? "missing.md" : "sentinel.md");
+    await mkdir(join(root, path, ".."), { recursive: true });
+    await symlink(target, join(root, path));
+    const before = await readdir(outside);
+    await expect(migrateWriterCells(from, root)).rejects.toThrow(/symlink/i);
+    expect(await readFile(sentinel, "utf8")).toBe("Outside bytes must survive\n");
+    expect(await readdir(outside)).toEqual(before);
+    await expect(readFile(join(root, "cells", "sample.auth", "v1.md"))).rejects.toMatchObject({ code: "ENOENT" });
+    if (path !== "tree.json") await expect(readFile(join(root, "tree.json"))).rejects.toMatchObject({ code: "ENOENT" });
   });
 
   it("refuses an output directory symlink that redirects a nested source outside the destination", async () => {

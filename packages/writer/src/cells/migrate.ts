@@ -57,6 +57,7 @@ export async function migrateWriterCells(from: string, to: string, options: {dat
   if (!isoDate(date)) throw new Error('Invalid migration date');
   await assertNoSymlinkPath(from);
   await assertNoSymlinkPath(to);
+  await assertNoSymlinkPath(join(to,'tree.json'));
   try { await stat(join(to,'tree.json')); throw new Error('Migration target already contains tree.json'); }
   catch (error) { if ((error as NodeJS.ErrnoException).code !== 'ENOENT') throw error; }
   const cells = new Map<string, WriterCell>();
@@ -138,6 +139,11 @@ export async function migrateWriterCells(from: string, to: string, options: {dat
     } else manifest.passthrough.push({path:input.path,value});
   }
   if (!cells.size) throw new Error('No Writer records found');
+  // Validate the whole destination before the first mkdir/write, including links
+  // on later cells or dangling control files, so rejection leaves no partial import.
+  for (const path of [...cells.keys()].map(id=>cellPath(id,1)).concat(['tree.json','compile.json'])) {
+    await assertNoSymlinkPath(join(to,path));
+  }
   const groups = new Map<string,Map<string,string[]>>();
   for (const [id,cell] of cells) {
     const surface=surfaces.get(id)!; let family=groups.get(surface); if(!family){family=new Map();groups.set(surface,family);}

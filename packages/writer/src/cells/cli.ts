@@ -3,6 +3,7 @@ import { dirname, join, resolve } from 'node:path';
 import { activate, propose } from '@clossys/strategist/cell-format';
 import { compileWriterCells } from './compile.js';
 import { migrateWriterCells } from './migrate.js';
+import { parseWriterCell } from './parse.js';
 
 /** Resolve the nearest repository boundary; explicit roots are resolved from cwd. */
 export function resolveWriterCellRoot(cwd: string = process.cwd(), override?: string): string {
@@ -30,7 +31,11 @@ export async function runCellsCli(args: string[] = process.argv.slice(2)): Promi
   } else if(verb==='propose'){
     if(refs.length!==1)throw new Error('propose requires one cell id');console.log(await propose(root,refs[0]!));
   } else if(verb==='activate'){
-    if(!values['--confirm']||!refs.length)throw new Error('activate requires refs and --confirm');await activate(root,refs,{confirm:values['--confirm']});await compileWriterCells(root,values['--out']??join(root,'.generated','records'));
+    if(!values['--confirm']||!refs.length)throw new Error('activate requires refs and --confirm');
+    await activate(root,refs,{confirm:values['--confirm'],beforeActivate:({cells})=>{
+      for(const cell of cells)parseWriterCell(cell.source,cell.path);
+    }});
+    await compileWriterCells(root,values['--out']??join(root,'.generated','records'));
   } else throw new Error('Usage: cells migrate|compile|check|propose|activate [--root <cell-root>] [--out <output>]');
 }
 // This compiled entry is included in the installed package's dist/ directory.
