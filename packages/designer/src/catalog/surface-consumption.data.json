@@ -3540,8 +3540,28 @@
           "sha256": "33e9c7bd8700ff201b8ba138ca4f10dd7de910a23d260019e676470b918cceb5"
         },
         {
+          "path": "packages/designer/src/blocks/media/ChromeBare.tsx",
+          "sha256": "c9651f6147711c00009bb0208d81315177cdf0edc6a6dda2a169c341d1f29794"
+        },
+        {
+          "path": "packages/designer/src/blocks/media/ChromeBrowser.tsx",
+          "sha256": "85f2eae855dbf7e2ab6492bea4e13b7b5aa71d8515559d400b05c76c6086f3c3"
+        },
+        {
+          "path": "packages/designer/src/blocks/media/ChromeCallouts.tsx",
+          "sha256": "83898d98b2facbea38f89d3b59611a24e705fed6b6404e83a41952ddcd05d48a"
+        },
+        {
+          "path": "packages/designer/src/blocks/media/ChromeDevice.tsx",
+          "sha256": "aa3a3e3df3e34d4c28b688b9cea395aa6aa8f5cebfd83d7f7d7b55ceadb0f466"
+        },
+        {
+          "path": "packages/designer/src/blocks/media/ChromeSpecimen.tsx",
+          "sha256": "08ad08860d397382dc9003117e65231900ec3b2c7aa85acf4c1899ff77f36eda"
+        },
+        {
           "path": "packages/designer/src/blocks/MediaFigure.tsx",
-          "sha256": "eb81c1c0323f43252e6146a5a7c189330a1d7cc7c23e22dc376f9b4e7c010a04"
+          "sha256": "4d9bd04e778d8bfd06b45614e6d91e1bc32474bd01a1534f4140d4d16ccd4448"
         },
         {
           "path": "packages/designer/src/blocks/section-ground.ts",

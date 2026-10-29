@@ -6,6 +6,8 @@ import { dsAttrs } from "../catalog-core/provenance-attrs.js";
 import { isImageResource, type ImageResource } from "../catalog-assets/media.js";
 import { IMAGE_RATIOS } from "../importers/image-ratio.js";
 import { SemanticContent } from "../components/SemanticContent.js";
+import { ChromeSpecimen, type MediaFigureChrome } from "./media/ChromeSpecimen.js";
+import { ChromeCallouts, type ChromeCalloutsProps } from "./media/ChromeCallouts.js";
 /** Section root provenance (D1): the selected Foundry fill this block is. */
 const SECTION_STAMP = dsAttrs("sections", "sections.media", "foundry/sections.media");
 
@@ -40,6 +42,12 @@ export interface MediaFigureProps extends HTMLAttributes<HTMLElement> {
   ratio?: keyof typeof IMAGE_RATIOS;
   /** A caption under the media, rendered as the `<figcaption>`. */
   caption?: ReactNode;
+  /** Static token-drawn chrome around the media box. @default "bare" */
+  chrome?: MediaFigureChrome;
+  /** Optional browser title, already resolved from the caller's copy. */
+  chromeLabel?: ReactNode;
+  /** An optional named list of caller-resolved annotations below the figure. */
+  callouts?: ChromeCalloutsProps;
   /** @default "column" */
   measure?: MediaFigureMeasure;
   /**
@@ -69,6 +77,9 @@ export function MediaFigure({
   image,
   ratio,
   caption,
+  chrome = "bare",
+  chromeLabel,
+  callouts,
   measure = "column",
   framed = false,
   ground = "base",
@@ -100,13 +111,16 @@ export function MediaFigure({
       className={cx("m-0 flex w-full flex-col gap-sm", className)}
       style={contained ? { maxWidth: SECTION_MEASURE_MAX.content, ...style } : style}
     >
-      <SemanticContent as="div" className={framed ? cx("w-full overflow-hidden rounded-control border", colors.border) : image === undefined ? "w-full" : "w-full overflow-hidden"}
-        style={{ aspectRatio: crop ? `${crop.width} / ${crop.height}` : undefined,
-          backgroundColor: image?.placeholder?.kind === "color" ? image.placeholder.value : undefined,
-          backgroundImage: image?.placeholder?.kind === "blur" ? `url(${JSON.stringify(image.placeholder.value)})` : undefined,
-          backgroundSize: image?.placeholder?.kind === "blur" ? "cover" : undefined }}>
-        {resource}
-      </SemanticContent>
+      <ChromeSpecimen chrome={chrome} label={chromeLabel} ground={ground}>
+        <SemanticContent as="div" className={framed ? cx("w-full overflow-hidden rounded-control border", colors.border) : image === undefined ? "w-full" : "w-full overflow-hidden"}
+          style={{ aspectRatio: crop ? `${crop.width} / ${crop.height}` : undefined,
+            backgroundColor: image?.placeholder?.kind === "color" ? image.placeholder.value : undefined,
+            backgroundImage: image?.placeholder?.kind === "blur" ? `url(${JSON.stringify(image.placeholder.value)})` : undefined,
+            backgroundSize: image?.placeholder?.kind === "blur" ? "cover" : undefined }}>
+          {resource}
+        </SemanticContent>
+      </ChromeSpecimen>
+      {callouts ? <ChromeCallouts {...callouts} ground={ground} /> : null}
       {caption ? <SemanticContent as="figcaption" className={cx("text-caption", colors.muted)}>{caption}</SemanticContent> : null}
     </SemanticContent>
   );

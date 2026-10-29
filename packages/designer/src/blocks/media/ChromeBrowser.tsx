@@ -19,7 +19,7 @@ export function ChromeBrowser({ children, label, ground = "base", className, ...
     <SemanticContent
       {...rest}
       as="div"
-      data-screenshot-chrome=""
+      data-screenshot-chrome="browser"
       className={cx("min-w-0 w-full overflow-hidden rounded-control border", colors.border, className)}
     >
       <SemanticContent
@@ -34,7 +34,7 @@ export function ChromeBrowser({ children, label, ground = "base", className, ...
           ))}
         </SemanticContent>
         {label !== undefined && label !== null && label !== false ? (
-          <SemanticContent as="div" className="min-w-0 flex-1 truncate text-caption">{label}</SemanticContent>
+          <SemanticContent as="div" dir="auto" className="min-w-0 flex-1 truncate text-caption">{label}</SemanticContent>
         ) : null}
       </SemanticContent>
       <SemanticContent as="div" data-screenshot-chrome-content="" className="min-w-0 w-full overflow-hidden">

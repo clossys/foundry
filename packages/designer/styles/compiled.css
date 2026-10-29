@@ -1639,6 +1639,9 @@
   .w-full {
     width: 100%;
   }
+  .w-lg {
+    width: var(--spacing-lg, 16px);
+  }
   .w-max {
     width: max-content;
   }
@@ -2091,6 +2094,9 @@
   }
   :where(.divide-line-base > :not(:last-child)) {
     border-color: var(--color-line-base, oklch(0.8761 0 0));
+  }
+  .self-center {
+    align-self: center;
   }
   .self-end {
     align-self: flex-end;

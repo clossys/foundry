@@ -14,7 +14,7 @@ export function ChromeCallouts({ label, items, ground = "base" }: ChromeCallouts
   if (!label.trim()) throw new TypeError("ChromeCallouts requires a non-empty accessible name");
   if (items.length === 0) return null;
   return (
-    <SemanticContent as="ul" aria-label={label} className={cx("m-0 flex flex-col gap-sm ps-lg text-caption", SECTION_GROUND_CLASSES[ground].secondary)}>
+    <SemanticContent as="ul" dir="auto" aria-label={label} className={cx("m-0 flex flex-col gap-sm ps-lg text-caption", SECTION_GROUND_CLASSES[ground].secondary)}>
       {items.map(item => <SemanticContent as="li" key={item.id}>{item.body}</SemanticContent>)}
     </SemanticContent>
   );
