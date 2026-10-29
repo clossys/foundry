@@ -46,7 +46,10 @@ describe("MR-7b trust composition", () => {
 
   it("retains caller copy and the link-index heading", () => {
     const { container } = render(<NavGrid heading="Resources" items={[{ id: "r", title: "Reference", href: "/reference" }]} />);
-    expect(container.querySelector("h2")?.textContent).toBe("Resources");
+    const root = container.firstElementChild!;
+    const heading = root.querySelector(":scope > h2");
+    expect(heading?.textContent).toBe("Resources");
+    expect(heading?.className).toBe("text-h2 font-display text-ink-primary");
     expect(container.querySelector('a[href="/reference"]')?.textContent).toContain("Reference");
   });
 });

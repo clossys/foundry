@@ -4,7 +4,6 @@ import { SemanticContent } from "../components/SemanticContent.js";
 import { Link } from "../components/Link.client.js";
 import { ItemRenderer } from "./items/render.js";
 import { renderNavItems } from "./items/ItemsStatic.js";
-import { SectionHeader } from "./SectionHeader.js";
 import { cx } from "../components/internal/cx.js";
 import { UI_LAYOUT_TAP_TARGET } from "../components/internal/ui-vars.js";
 import { assertNoNestedInteractive, cardLinkContainerClassName, hasInteractiveContent } from "./stretched-link.js";
@@ -66,7 +65,7 @@ export function NavGrid({ heading, items, className, style }: NavGridProps) {
   const icons = items.filter(item => Boolean(item.icon)).length;
   const useLinkedItems = linked && items.length >= 2 && items.length <= 6 && (icons === 0 || icons === items.length) && !items.some(item => hasInteractiveContent([item.description]));
   return <SemanticContent as="div" {...SECTION_STAMP} className={cx("flex flex-col gap-md", className)} style={style}>
-    {heading ? <SectionHeader level={2} density="standard" title={heading} /> : null}
+    {heading ? <SemanticContent as="h2" className="text-h2 font-display text-ink-primary">{heading}</SemanticContent> : null}
     {useLinkedItems ? renderNavItems(items.map(item => ({ id: item.id, heading: item.title, description: item.description, icon: item.icon, href: item.href }))) : (
       <SemanticContent as="div" className="grid grid-cols-1 gap-md tablet:grid-cols-2 desktop:grid-cols-3">
         {items.map(item => item.href !== undefined ? <LinkedCard key={item.id} item={item} /> : (
