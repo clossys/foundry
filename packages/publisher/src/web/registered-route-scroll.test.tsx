@@ -116,6 +116,49 @@ function options() {
 }
 
 describe("consumed registered scroll-page capabilities", () => {
+  it("admits the emitted component index through closed route ports into selected renderers", () => {
+    const f = liveFixture(), components = f.runtime.assembly.ports.components;
+    const result = prepareRegisteredRoute(f.registry, f.route.routeId, f.runtime, () => null);
+    expect(result.status, JSON.stringify(result)).toBe("ready");
+    if (result.status !== "ready") return;
+    expect(result.input!.ports.components).toBe(components);
+    result.assembly.render(f.runtime.cell);
+    for (const renderer of [f.sectionRenderer, f.frameRenderer]) {
+      expect(renderer).toHaveBeenCalled();
+      const delivered = renderer.mock.calls[0]![0].components;
+      expect(delivered).toEqual(components);
+      expect(Object.isFrozen(delivered)).toBe(true);
+    }
+  });
+  it("retains component index validation after admitting the typed port", () => {
+    const f = liveFixture();
+    for (const components of [undefined, null, [], () => null, "not an index"]) {
+      const runtime = { ...f.runtime, assembly: { ...f.runtime.assembly, ports: { ...f.runtime.assembly.ports, components } } };
+      const result = prepareRegisteredRoute(f.registry, f.route.routeId, runtime as never, () => null);
+      expect(result.status).toBe("refused");
+      expect(result.findings.join(" ")).toContain("consumer component index is required");
+    }
+    expect(f.sectionRenderer).not.toHaveBeenCalled();
+    expect(f.frameRenderer).not.toHaveBeenCalled();
+  });
+  it("keeps unknown page and body escapes closed beside the typed component port", () => {
+    const f = liveFixture(), callback = vi.fn(() => null);
+    for (const escape of [{ body: "host body" }, { renderBody: callback }, { renderStage: callback }, { sectionNodes: {} }, { pageNode: "host page" }]) {
+      const variants = [
+        { ...f.runtime, ...escape },
+        { ...f.runtime, assembly: { ...f.runtime.assembly, ...escape } },
+        { ...f.runtime, assembly: { ...f.runtime.assembly, ports: { ...f.runtime.assembly.ports, ...escape } } },
+      ];
+      for (const runtime of variants) {
+        const result = prepareRegisteredRoute(f.registry, f.route.routeId, runtime as never, () => null);
+        expect(result.status).toBe("refused");
+        expect(result.findings).toEqual(["Host runtime contains an unknown page/body escape"]);
+      }
+    }
+    expect(callback).not.toHaveBeenCalled();
+    expect(f.sectionRenderer).not.toHaveBeenCalled();
+    expect(f.frameRenderer).not.toHaveBeenCalled();
+  });
   it("server-renders the initially selected main regions with a supplied persistent publication", () => {
     const f = regionFixture(), prepared = prepareRegisteredRoute(f.registry, f.route.routeId, f.runtime, () => null);
     expect(prepared.status).toBe("stream");
