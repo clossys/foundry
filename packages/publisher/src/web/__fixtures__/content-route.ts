@@ -2,6 +2,8 @@ import type { CandidateContent, ContentCandidate } from "../../content/model.js"
 import type { CopyField } from "../../content/composition.js";
 import { createContentRevision } from "../../content/revisions.js";
 import type { ContentRouteInput } from "../content-route-types.js";
+import { COPY_FINGERPRINT_ALGORITHM, computeCopyFingerprint } from "@clossys/writer";
+import type { CopyRegistry } from "@clossys/writer";
 
 export const CONTENT_ROUTE_AT = "2026-01-01T00:00:00Z";
 export const CONTENT_ROUTE_SLOT = "sl_aaaaaaaaaa";
@@ -35,4 +37,42 @@ export function contentRouteFixture(overrides: Partial<CandidateContent> = {}): 
 /** Replace content through the real immutable revision constructor. */
 export function withRouteContent(input: ContentRouteInput, content: CandidateContent): ContentRouteInput {
   return { ...input, registry: { ...input.registry, candidates: input.registry.candidates.map(candidate => candidate.id === "sign-in" ? contentRouteCandidate(content) : candidate) } };
+}
+
+/** Migrate synthetic inline fixture text to actual fingerprint-approved Writer registries. */
+export function withApprovedRouteCopy(input: ContentRouteInput): ContentRouteInput {
+  const registries = new Map<string, CopyRegistry>([input.writer?.registry, ...input.writer?.registries ?? []]
+    .filter((registry): registry is CopyRegistry => registry !== undefined).map(registry => [registry.locale, structuredClone(registry)]));
+  const refs = new Map<string, string>();
+  const fields = (values: readonly CopyField[]): readonly CopyField[] => values.map(field => {
+    if (field.ref !== undefined) return field;
+    const identity = JSON.stringify([field.key, field.locale, field.value]);
+    let id = refs.get(identity);
+    if (id === undefined) {
+      id = `route.fixture.${refs.size}`;
+      // A second migration can extend an already bound fixture without reusing its ids.
+      while ([...registries.values()].some(registry => registry.entries.some(entry => entry.id === id))) id += ".next";
+      refs.set(identity, id);
+      const registry = registries.get(field.locale) ?? { id: `route-fixture-${field.locale}`, locale: field.locale, revision: "r1",
+        source: { kind: "consumer" as const, reference: "fixtures/content-route" }, entries: [] };
+      registries.set(field.locale, { ...registry, entries: [...registry.entries, {
+        id, text: field.value, context: "Synthetic content route copy", placeholders: [], status: "approved",
+        approval: { approvedBy: "owner", approvedAt: input.raisedAt, textFingerprint: computeCopyFingerprint(field.value), fingerprintAlgorithm: COPY_FINGERPRINT_ALGORITHM },
+      }] });
+    }
+    return { key: field.key, locale: field.locale, source: "writer", ref: { id } };
+  });
+  const content = <T extends CandidateContent>(value: T): T => ({ ...value,
+    ...(value.pageMeta === undefined ? {} : { pageMeta: fields(value.pageMeta) }),
+    ...(value.composition === undefined ? {} : { composition: { ...value.composition,
+      sections: value.composition.sections.map(section => ({ ...section, fields: fields(section.fields) })) } }),
+  });
+  const candidates = input.registry.candidates.map(candidate => ({ ...content(candidate),
+    history: candidate.history.map(snapshot => createContentRevision(content(snapshot.content), snapshot.revision, snapshot.createdAt)),
+  }));
+  const frameCopy = input.frameCopy === undefined ? undefined : fields(input.frameCopy);
+  const [registry, ...others] = registries.values();
+  if (!registry) throw new TypeError("Fixture migration requires copy fields");
+  return { ...input, registry: { ...input.registry, candidates }, frameCopy,
+    writer: { ...input.writer, registry, registries: others } };
 }

@@ -24,7 +24,7 @@ import { computeStageReport } from "../content/stage-engine.js";
 import { ContentRoutePage, prepareContentRoute } from "./content-route.js";
 import { ADMIN_PAGE_COPY_REFS, adminPageMeta } from "../content/admin-copy.js";
 import { bindContentAppFrame } from "./content-route-copy.js";
-import { contentRouteContent, contentRouteCandidate, contentRouteFixture } from "./__fixtures__/content-route.js";
+import { contentRouteContent, contentRouteCandidate, contentRouteFixture, withApprovedRouteCopy } from "./__fixtures__/content-route.js";
 
 const roots: string[] = [];
 afterEach(async () => { await Promise.all(roots.splice(0).map(root => rm(root, { recursive: true, force: true }))); });
@@ -152,7 +152,7 @@ describe("active admin candidate AppFrame adapter", () => {
     expect(computeStageReport(candidate).stages.define.status).toBe("Done");
     const drift = { ...candidate, pageMeta: [{ ...candidate.pageMeta![0]!, ref: ref("different") }] };
     expect(computeStageReport(drift).stages.define.findings.some(finding => finding.rule === "snapshot-content")).toBe(true);
-    const ready = { ...input, registry: { ...input.registry, candidates: [candidate], slots: input.registry.slots.map(slot => ({ ...slot, l2: "admin" as const })) }, appFrame: shell(), resolveCopy: pseudo,
+    const ready = { ...input, frameCopy: withApprovedRouteCopy(input).frameCopy, registry: { ...input.registry, candidates: [candidate], slots: input.registry.slots.map(slot => ({ ...slot, l2: "admin" as const })) }, appFrame: shell(), resolveCopy: pseudo,
       libraries: input.libraries.map(library => ({ ...library, frames: [{ id: "frames.app-shell", configIds: ["default"] }] })) };
     expect(noUnwrappedText(renderToStaticMarkup(<ContentRoutePage input={ready} />))).toBeGreaterThan(0);
   });
