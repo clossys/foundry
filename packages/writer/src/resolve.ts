@@ -389,6 +389,7 @@ export function resolveCopyRef(
     source: validRegistry.source,
     entryId: entry.id,
   };
+  if (entry.status === "draft") resolution.status = "draft";
   // Only set when the entry actually carries a record — an approved entry
   // with no record resolves exactly as it did before this field existed,
   // with no `approval` key on the resolution at all.
