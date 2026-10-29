@@ -1,5 +1,5 @@
 import { afterEach, expect, it, vi } from "vitest";
-import { existsSync, linkSync, mkdirSync, mkdtempSync, readFileSync, renameSync, rmSync, symlinkSync, writeFileSync } from "node:fs";
+import { existsSync, linkSync, lstatSync, mkdirSync, mkdtempSync, readFileSync, readlinkSync, renameSync, rmSync, symlinkSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
 import { compileBrief } from "../brief.js";
@@ -159,29 +159,84 @@ it("defaults the root and scans JSON by default; index --help is available", () 
   finally { process.chdir(cwd); }
 });
 
-it("does not re-index its generated citations file when scanning the root", () => {
-  const { root } = fixture(); put(root, "copy.md", marker(1));
+it("keeps real marker and recursive JSON sources stable across safe builds and checks", () => {
+  const { root, surfaces } = fixture(); put(surfaces, "copy.md", marker(1)); put(surfaces, "manifest.json", JSON.stringify({ nested: [ref] }));
   vi.spyOn(console, "log").mockImplementation(() => {});
-  expect(invoke(root, "--scan", root)).toBe(0); const first = output();
-  expect(invoke(root, "--scan", root)).toBe(0); expect(output().fingerprint).toBe(first.fingerprint);
-  expect(output().entries).toEqual(first.entries);
-});
-
-it.each(["directory-link", "file-link", "hard-link"])("does not re-index generated citations through %s aliases", kind => {
-  const { root, project } = fixture(); put(root, "copy.md", marker(1)); put(root, "manifest.json", JSON.stringify({ nested: [ref] }));
-  vi.spyOn(console, "log").mockImplementation(() => {});
-  expect(invoke(root, "--scan", root)).toBe(0);
-  let scan = root;
-  if (kind === "directory-link") { scan = join(project, "root-alias"); symlinkSync(root, scan); }
-  else if (kind === "file-link") symlinkSync(join(root, "citations.json"), join(root, "generated-alias.json"));
-  else linkSync(join(root, "citations.json"), join(root, "generated-alias.json"));
-  expect(invoke(root, "--scan", scan)).toBe(0); const first = output();
+  expect(invoke(root, "--scan", surfaces)).toBe(0); const first = output();
   expect(first.entries).toHaveLength(2);
   expect(first.entries.map((entry: { by: { kind: string } }) => entry.by.kind).sort()).toEqual(["json", "marker"]);
-  expect(invoke(root, "--scan", scan)).toBe(0); expect(output().entries).toEqual(first.entries); expect(output().fingerprint).toBe(first.fingerprint);
+  expect(invoke(root, "--scan", surfaces)).toBe(0); expect(output().fingerprint).toBe(first.fingerprint);
+  expect(output().entries).toEqual(first.entries);
   const bytes = readFileSync(join(root, "citations.json"), "utf8");
-  expect(invoke(root, "--check", "--scan", scan)).toBe(0); expect(output().fingerprint).toBe(first.fingerprint);
+  expect(invoke(root, "--check", "--scan", surfaces)).toBe(0); expect(output().fingerprint).toBe(first.fingerprint);
   expect(readFileSync(join(root, "citations.json"), "utf8")).toBe(bytes);
+});
+
+it.each(["absent", "existing", "directory-link", "nested-directory-link", "root-link"])("refuses output inside scanned surfaces with a %s target", kind => {
+  const { root, surfaces, project } = fixture(); put(root, "copy.md", marker(99));
+  vi.spyOn(console, "log").mockImplementation(() => {});
+  if (kind !== "absent") expect(invoke(root)).toBe(0);
+  let scan = root;
+  let commandRoot = root;
+  if (kind === "directory-link") { scan = join(project, "root-alias"); symlinkSync(root, scan); }
+  if (kind === "nested-directory-link") { scan = surfaces; symlinkSync(root, join(surfaces, "root-alias")); }
+  if (kind === "root-link") { commandRoot = join(project, "root-alias"); symlinkSync(root, commandRoot); }
+  const before = kind === "absent" ? undefined : readFileSync(join(root, "citations.json"), "utf8");
+  for (const mode of [["--check"], []]) {
+    expect(invoke(commandRoot, ...mode, "--scan", scan)).toBe(1);
+    expect(output().error).toMatch(/^CitationIndexTargetError: .*inside a scanned surface/);
+    expect(readFileSync(join(root, "copy.md"), "utf8")).toBe(marker(99));
+    if (before === undefined) expect(existsSync(join(root, "citations.json"))).toBe(false);
+    else expect(readFileSync(join(root, "citations.json"), "utf8")).toBe(before);
+  }
+});
+
+it.each(["file-link", "hard-link"])("refuses generated output with %s scan aliases without dropping sources", kind => {
+  const { root, surfaces } = fixture(); put(surfaces, "copy.md", marker(99));
+  vi.spyOn(console, "log").mockImplementation(() => {});
+  expect(invoke(root)).toBe(0);
+  if (kind === "file-link") symlinkSync(join(root, "citations.json"), join(surfaces, "generated-alias.json"));
+  else linkSync(join(root, "citations.json"), join(surfaces, "generated-alias.json"));
+  const bytes = readFileSync(join(root, "citations.json"), "utf8");
+  for (const mode of [["--check"], []]) {
+    expect(invoke(root, ...mode, "--scan", surfaces)).toBe(1);
+    expect(output().error).toMatch(/^CitationIndexTargetError:/);
+    expect(readFileSync(join(root, "citations.json"), "utf8")).toBe(bytes);
+    expect(readFileSync(join(surfaces, "copy.md"), "utf8")).toBe(marker(99));
+  }
+  rmSync(join(surfaces, "generated-alias.json"));
+  expect(invoke(root, "--check", "--scan", surfaces)).toBe(1); expect(output().dangling).toHaveLength(1);
+});
+
+it.each(["symlink", "hardlink"])("refuses the exact dangling-source output %s before check suppression or write damage", kind => {
+  const { root, surfaces } = fixture(); const source = join(surfaces, "copy.md"); const target = join(root, "citations.json");
+  const bytes = "<!--strategy:focus.segment.core@99-->\n"; put(surfaces, "copy.md", bytes);
+  vi.spyOn(console, "log").mockImplementation(() => {});
+  expect(invoke(root, "--check", "--scan", surfaces)).toBe(1);
+  expect(output().dangling[0].ref).toEqual({ cell: "focus.segment.core", version: 99 });
+  if (kind === "symlink") symlinkSync(source, target); else linkSync(source, target);
+  for (const mode of [["--check"], []]) {
+    expect(invoke(root, ...mode, "--scan", surfaces)).toBe(1);
+    expect(output().error).toMatch(/^CitationIndexTargetError:/);
+    expect(readFileSync(source, "utf8")).toBe(bytes);
+    expect(readFileSync(target, "utf8")).toBe(bytes);
+  }
+  rmSync(target);
+  expect(invoke(root, "--check", "--scan", surfaces)).toBe(1); expect(output().dangling).toHaveLength(1);
+});
+
+it("refuses a dangling output symlink in JSON and human output without creating its target", () => {
+  const { root, surfaces, project } = fixture(); const source = join(project, "missing.json"); const target = join(root, "citations.json");
+  symlinkSync(source, target);
+  vi.spyOn(console, "log").mockImplementation(() => {}); vi.spyOn(console, "error").mockImplementation(() => {});
+  for (const mode of [["--check"], []]) {
+    expect(invoke(root, ...mode, "--scan", surfaces)).toBe(1);
+    expect(output().error).toMatch(/^CitationIndexTargetError: .*symlink/);
+    expect(main(["index", "--root", root, ...mode, "--scan", surfaces])).toBe(1);
+    expect(vi.mocked(console.error).mock.calls.at(-1)?.[0]).toMatch(/CitationIndexTargetError: .*symlink/);
+    expect(lstatSync(target).isSymbolicLink()).toBe(true); expect(readlinkSync(target)).toBe(source);
+    expect(existsSync(source)).toBe(false);
+  }
 });
 
 it.each([["--root"], ["--scan"], ["--unknown"], ["--check", "surprise"], ["--root", "one", "--root", "two"]])("rejects invalid index arguments %j", (...args: string[]) => {
