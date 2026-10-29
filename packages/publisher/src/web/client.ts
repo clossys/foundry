@@ -34,8 +34,6 @@ export type { IndexViewCollection, IndexViewProps, IndexViewRowRoute, IndexViewT
 export { DetailsView } from "./views/DetailsView.js";
 export type { DetailsViewBlock, DetailsViewLayout, DetailsViewProps, DetailsViewRegion, DetailsViewSection, DetailsViewSectionState, DetailsViewTab } from "./views/DetailsView.js";
 
-export { PublisherPage } from "./publisher/PublisherPage.js";
-export type { PublisherPageProps, PublisherPageMessages } from "./publisher/PublisherPage.js";
 export type { PublisherLane, PublisherPipelineItem, PublishStageEvidence, PublishStage, PublishStageStatus } from "./publisher/pipeline.js";
 
 export { PublisherFormatsView } from "./formats/PublisherFormatsView.js";
