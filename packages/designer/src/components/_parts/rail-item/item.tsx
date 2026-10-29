@@ -1,8 +1,7 @@
 "use client"
 
 import * as React from "react"
-import { cva, type VariantProps } from "class-variance-authority"
-import { cn } from "../../_parts/rail-utils/index.js"
+import { cn, classNames, type ClassValue, type VariantProps } from "../../_parts/rail-utils/index.js"
 import { Link as LinkPrimitive, type LinkProps } from "react-aria-components"
 
 import { Separator } from "../../_parts/rail-separator/index.js"
@@ -35,31 +34,29 @@ function ItemSeparator({
   )
 }
 
-const itemVariants = cva(
-  "[a]:hover:bg-(--color-surface-sunken) rounded-(--radius-control) border-(length:--ui-border-hairline) text-(length:--text-sm) group/item flex w-full flex-wrap items-center transition-colors duration-(--ui-duration-default) ease-(--ease-default) duration-(--ui-duration-fast) focus-visible:outline-solid focus-visible:outline-(length:--ui-border-focus) focus-visible:outline-offset-(--ui-focus-offset) focus-visible:outline-(--color-focus-ring) focus-visible:border-(--color-focus-ring) focus-visible:outline-solid focus-visible:outline-(length:--ui-border-focus) focus-visible:outline-offset-(--ui-focus-offset) focus-visible:outline-(--color-focus-ring) focus-visible:outline-solid focus-visible:outline-(length:--ui-border-focus) focus-visible:outline-offset-(--ui-focus-offset) focus-visible:outline-(--color-focus-ring) [a]:transition-colors [a]:duration-(--ui-duration-default) [a]:ease-(--ease-default)",
-  {
-    variants: {
-      variant: {
-        default: "border-transparent",
-        outline: "border-(--color-line-base)",
-        muted: "bg-(--color-surface-sunken)/50 border-transparent",
-      },
-      size: {
-        default: "gap-(--spacing-md) px-(--spacing-md) py-(--spacing-md)",
-        sm: "gap-(--spacing-md) px-(--spacing-md) py-(--spacing-md)",
-        xs: "gap-(--spacing-sm) px-(--spacing-md) py-(--spacing-sm) in-data-[slot=dropdown-menu-content]:p-0",
-      },
-    },
-    defaultVariants: {
-      variant: "default",
-      size: "default",
-    },
-  }
-)
+const itemVariants_DEFINITION = {"base":"[a]:hover:bg-(--color-surface-sunken) rounded-(--radius-control) border-(length:--ui-border-hairline) text-(length:--text-sm) group/item flex w-full flex-wrap items-center motion-safe:transition-colors motion-reduce:transition-none motion-reduce:animate-none motion-reduce:duration-0 motion-safe:duration-(--ui-duration-default) ease-(--ease-default) motion-safe:duration-(--ui-duration-fast) focus-visible:outline-solid focus-visible:outline-(length:--ui-border-focus) focus-visible:outline-offset-(--ui-focus-offset) focus-visible:outline-(--color-focus-ring) focus-visible:border-(--color-focus-ring) [a]:motion-safe:transition-colors [a]:motion-safe:duration-(--ui-duration-default) [a]:ease-(--ease-default)","variants":{"variant":{"default":"border-transparent","outline":"border-(--color-line-base)","muted":"bg-(--color-surface-sunken)/50 border-transparent"},"size":{"default":"gap-(--spacing-md) px-(--spacing-md) py-(--spacing-md)","sm":"gap-(--spacing-md) px-(--spacing-md) py-(--spacing-md)","xs":"gap-(--spacing-sm) px-(--spacing-md) py-(--spacing-sm) in-data-[slot=dropdown-menu-content]:p-0"}},"defaultVariants":{"variant":"default","size":"default"}}
+function itemVariants(props: { "variant"?: "default" | "outline" | "muted" | null; "size"?: "default" | "sm" | "xs" | null; class?: ClassValue; className?: ClassValue } = {}) {
+  props ??= {}
+  const definition = itemVariants_DEFINITION
+  const key = (value: unknown) => typeof value === "boolean" ? String(value) : value === 0 ? "0" : value
+  const supplied = Object.fromEntries(Object.entries(props).filter(([, value]) => value !== undefined))
+  const values: { [axis: string]: unknown } = { ...definition.defaultVariants, ...supplied }
+  const selected = Object.entries(definition.variants).map(([axis, choices]) => {
+    if ((props as { [axis: string]: unknown })[axis] === null) return null
+    const value = key((props as { [axis: string]: unknown })[axis]) || key((definition.defaultVariants as { [axis: string]: unknown })[axis])
+    return (choices as { [value: string]: ClassValue })[String(value)]
+  })
+  const compound = (([]) as { [key: string]: unknown }[]).flatMap(({ class: value, className, ...conditions }) =>
+    Object.entries(conditions).every(([axis, expected]) => Array.isArray(expected) ? expected.includes(values[axis]) : values[axis] === expected)
+      ? [value as ClassValue, className as ClassValue] : [])
+  return classNames(definition.base, selected, compound, props.class, props.className)
+}
 
 function Item({
   className,
+  /** @default "default" */
   variant = "default",
+  /** @default "default" */
   size = "default",
   ...props
 }: Omit<LinkProps, "children"> &
@@ -77,24 +74,27 @@ function Item({
   )
 }
 
-const itemMediaVariants = cva(
-  "gap-(--spacing-sm) group-has-data-[slot=item-description]/item:translate-y-(--spacing-xs) group-has-data-[slot=item-description]/item:self-start flex shrink-0 items-center justify-center [&_svg]:pointer-events-none",
-  {
-    variants: {
-      variant: {
-        default: "bg-transparent",
-        icon: "[&_svg:not([class*='size-'])]:size-(--spacing-lg)",
-        image: "size-(--spacing-2xl) overflow-hidden rounded-(--radius-control) group-data-[size=sm]/item:size-(--spacing-2xl) group-data-[size=xs]/item:size-(--spacing-xl) [&_img]:size-full [&_img]:object-cover",
-      },
-    },
-    defaultVariants: {
-      variant: "default",
-    },
-  }
-)
+const itemMediaVariants_DEFINITION = {"base":"gap-(--spacing-sm) group-has-data-[slot=item-description]/item:translate-y-(--spacing-xs) group-has-data-[slot=item-description]/item:self-start flex shrink-0 items-center justify-center [&_svg]:pointer-events-none","variants":{"variant":{"default":"bg-transparent","icon":"[&_svg:not([class*='size-'])]:size-(--spacing-lg)","image":"size-(--spacing-2xl) overflow-hidden rounded-(--radius-control) group-data-[size=sm]/item:size-(--spacing-2xl) group-data-[size=xs]/item:size-(--spacing-xl) [&_img]:size-full [&_img]:object-cover"}},"defaultVariants":{"variant":"default"}}
+function itemMediaVariants(props: { "variant"?: "default" | "icon" | "image" | null; class?: ClassValue; className?: ClassValue } = {}) {
+  props ??= {}
+  const definition = itemMediaVariants_DEFINITION
+  const key = (value: unknown) => typeof value === "boolean" ? String(value) : value === 0 ? "0" : value
+  const supplied = Object.fromEntries(Object.entries(props).filter(([, value]) => value !== undefined))
+  const values: { [axis: string]: unknown } = { ...definition.defaultVariants, ...supplied }
+  const selected = Object.entries(definition.variants).map(([axis, choices]) => {
+    if ((props as { [axis: string]: unknown })[axis] === null) return null
+    const value = key((props as { [axis: string]: unknown })[axis]) || key((definition.defaultVariants as { [axis: string]: unknown })[axis])
+    return (choices as { [value: string]: ClassValue })[String(value)]
+  })
+  const compound = (([]) as { [key: string]: unknown }[]).flatMap(({ class: value, className, ...conditions }) =>
+    Object.entries(conditions).every(([axis, expected]) => Array.isArray(expected) ? expected.includes(values[axis]) : values[axis] === expected)
+      ? [value as ClassValue, className as ClassValue] : [])
+  return classNames(definition.base, selected, compound, props.class, props.className)
+}
 
 function ItemMedia({
   className,
+  /** @default "default" */
   variant = "default",
   ...props
 }: React.ComponentProps<"div"> & VariantProps<typeof itemMediaVariants>) {
@@ -139,7 +139,7 @@ function ItemDescription({ className, ...props }: React.ComponentProps<"p">) {
     <p
       data-slot="item-description"
       className={cn(
-        "text-(--color-ink-muted) text-left text-(length:--text-sm) leading-(--leading-normal) group-data-[size=xs]/item:text-(length:--text-xs) line-clamp-2 font-(weight:--font-weight-normal) [&>a]:underline [&>a]:underline-offset-(--spacing-lg) [&>a:hover]:text-(--color-action)",
+        "text-(--color-ink-muted) text-start text-(length:--text-sm) leading-(--leading-heading) group-data-[size=xs]/item:text-(length:--text-xs) line-clamp-2 font-(weight:--font-weight-normal) [&>a]:underline [&>a]:underline-offset-(--spacing-lg) [&>a:hover]:text-(--color-action)",
         className
       )}
       {...props}

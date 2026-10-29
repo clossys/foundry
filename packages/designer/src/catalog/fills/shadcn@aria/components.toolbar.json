@@ -98,25 +98,20 @@
           "license": "Apache-2.0"
         },
         {
-          "name": "class-variance-authority",
-          "version": "0.7.1",
-          "license": "Apache-2.0"
-        },
-        {
-          "name": "clsx",
-          "version": "2.1.1",
+          "name": "@clossys/designer",
+          "version": "0.12.0",
           "license": "MIT"
         },
         {
-          "name": "tailwind-merge",
-          "version": "3.7.0",
+          "name": "@clossys/designer",
+          "version": "0.12.0",
           "license": "MIT"
         }
       ],
       "outputSha256": [
         {
           "path": "components/_parts/rail-u1-button-group/button-group.tsx",
-          "sha256": "a748aa702affd0aad69e8993d0df5eaddb0f9857e3844fbcb229469e5a446169"
+          "sha256": "fb41ab1004934f76a945b21fa839d888ae0a8aee64d665249bb8338aa43d6022"
         },
         {
           "path": "components/_parts/rail-u1-button-group/index.ts",
@@ -128,11 +123,19 @@
         },
         {
           "path": "components/_parts/rail-u1-separator/separator.tsx",
-          "sha256": "c6975438e06c8ec581fb0e43ac820148efd133ae156f1cd2773598454f9760bd"
+          "sha256": "e5e91311a531c490e0f3eb2d9f624d0e110aa8f70480fe0e8a8edcb3a8f14121"
         },
         {
-          "path": "components/_parts/rail-u1-utils/index.ts",
-          "sha256": "d3753f708b15cc1ec47bc3136827134b702e2069eebdb0ddefb1806b95d7c1d9"
+          "path": "components/_parts/rail-utils/copy.ts",
+          "sha256": "c9bc1359e38859ac1cf6ebb87bcb01d140bf07e2e95917124f8733ba688463cf"
+        },
+        {
+          "path": "components/_parts/rail-utils/index.ts",
+          "sha256": "57e883f2e7b51c430a154a1103873d0296e039c9e7b821cfe5922fe99a41b59d"
+        },
+        {
+          "path": "components/_parts/rail-utils/types.ts",
+          "sha256": "172cf78fbee5b9460adb881ea80fa76a5c7e9b98f168d9db15c001575653f5cb"
         },
         {
           "path": "components/toolbar/toolbar.tsx",

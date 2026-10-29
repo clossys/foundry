@@ -30,6 +30,7 @@
   },
   {
     "id": "components.navigation-tree",
-    "target": "components.sidebar"
+    "target": "components.sidebar",
+    "retainsSlot": true
   }
 ]

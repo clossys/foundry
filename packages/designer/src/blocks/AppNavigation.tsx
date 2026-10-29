@@ -1,4 +1,4 @@
-import { ModalContext, useLocale, NavigationTree, NavigationTreeItem, NavigationTreeItemContent } from "react-aria-components";
+import { ModalContext, useLocale } from "react-aria-components";
 import { cloneElement, isValidElement, useContext, useEffect, useId, useRef, useState, type ReactElement, type ReactNode } from "react";
 import { createPortal } from "react-dom";
 import { Button } from "../components/Button.js";
@@ -6,6 +6,7 @@ import { Icon } from "../components/Icon.js";
 import { Link } from "../components/Link.js";
 import { useShellCopy } from "../components/Banner.copy-context.js";
 import { SHELL_COPY_REFS } from "../components/Banner.copy.js";
+import { NavigationTree, NavigationTreeItem, NavigationTreeItemContent } from "../components/NavigationTree.js";
 import { Tooltip } from "../components/Tooltip.js";
 import { cx } from "../components/internal/cx.js";
 import { FileText } from "../icons/FileText.js";

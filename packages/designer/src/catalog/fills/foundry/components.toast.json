@@ -86,7 +86,17 @@
         "components": [
           "components.button"
         ],
-        "tokens": []
+        "tokens": [
+          "tokens.border-color",
+          "tokens.border-width",
+          "tokens.control-radius",
+          "tokens.font-size",
+          "tokens.spacing",
+          "tokens.surface-color",
+          "tokens.text-color",
+          "tokens.typeface",
+          "tokens.z-index"
+        ]
       },
       "root": "rac:UNSTABLE_Toast",
       "slot": "components.toast",

@@ -552,9 +552,7 @@
       "status": "candidate",
       "supported": [
         "part.clear",
-        "part.submit",
-        "state.empty",
-        "state.filled"
+        "part.submit"
       ]
     },
     {
@@ -703,9 +701,7 @@
       "supported": [
         "line.multiline",
         "line.single-line",
-        "size.lg",
         "size.md",
-        "size.sm",
         "state.disabled",
         "state.invalid",
         "state.read-only"
@@ -715,7 +711,7 @@
       "missing": [],
       "notes": [
         "Toaster is the region; tone, timeout and authored action dispatch through shell toast.",
-        "Frozen reads omit source-consumed tokens.body-size, tokens.control-radius, tokens.elevation, tokens.spacing, tokens.status-color, tokens.text-color, tokens.typeface, tokens.z-index; the contract's allowedReads must widen before this is enforced.",
+        "Frozen reads omit source-consumed tokens.body-size, tokens.elevation, tokens.status-color; the contract's allowedReads must widen before this is enforced.",
         "Descriptor only; source, accessibility, contrast and consumer runtime conformance are unmeasured."
       ],
       "slot": "components.toast",

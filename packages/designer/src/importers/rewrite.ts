@@ -1403,7 +1403,8 @@ function rewriteSource(input: RewriteInput): RewriteResult {
     }));
     // A lexical quoted-string walk avoids changing import specifiers and handles
     // escaped quotes in Tailwind's arbitrary selectors without evaluating code.
-    content = content.replace(/"(?:\\.|[^"\\])*"|'(?:\\.|[^'\\])*'/g, (quoted, offset: number) => {
+    content = content.replace(/\/\/[^\r\n]*|\/\*[\s\S]*?\*\/|"(?:\\.|[^"\\])*"|'(?:\\.|[^'\\])*'/g, (quoted, offset: number) => {
+      if (quoted.startsWith("/")) return quoted;
       activeTiming = functionTiming.find(scope => offset >= scope.start && offset < scope.end)?.keys;
       const inner = quoted.slice(1, -1);
       if (!/(?:\bcn-|\b(?:bg|text|border|ring|rounded|h|w|size|p[trblxy]?|m[trblxy]?|gap|font|leading|duration|shadow|animate|fade|zoom|slide|outline|opacity|z|transition|ease|origin|translate-[xy])-|\b(?:border|transition)(?:\s|$))/.test(inner) || /^\.\.?\//.test(inner)) return quoted;

@@ -43,7 +43,12 @@ export function componentRegistryFindings(registry: ComponentRegistry): string[]
   const aliasIds = new Set<string>();
   for (const alias of registry.aliases) {
     if (!isValidId("slot", alias.id) || !alias.id.startsWith("components.")) findings.push(`alias: invalid id ${alias.id}`);
-    if (ids.has(alias.id) || aliasIds.has(alias.id)) findings.push(`alias: duplicate id ${alias.id}`);
+    // Explicit retained identities keep historical contracts and fill references intact.
+    // Ordinary aliases still cannot collide with a slot, and alias rows are always unique.
+    if ((alias.retainsSlot !== true && ids.has(alias.id)) || aliasIds.has(alias.id)) findings.push(`alias: duplicate id ${alias.id}`);
+    if (alias.retainsSlot !== undefined && alias.retainsSlot !== true) findings.push(`alias: invalid retained mode ${alias.id}`);
+    if (alias.retainsSlot === true && (!ids.has(alias.id) || alias.memberMap !== undefined)) findings.push(`alias: invalid retained slot ${alias.id}`);
+    if (alias.id === alias.target || registry.aliases.some(row => row.id === alias.target)) findings.push(`alias: target must be canonical ${alias.target}`);
     aliasIds.add(alias.id);
     if (!ids.has(alias.target)) findings.push(`alias: unknown target ${alias.target}`);
     const contract = registry.slots.find(slot => slot.id === alias.target)?.contract;

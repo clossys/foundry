@@ -14,6 +14,7 @@ import bindings from "./rail-token-bindings.json" with { type: "json" };
 import { emittedTokenProperties } from "../catalog-core/emit.js";
 import { completedCatalogLibrary } from "../catalog-core/__fixtures__/completed-catalog-library.js";
 import { loadCatalog, resolve } from "../catalog-core/index.js";
+import { rewriteShadcnAria } from "./rewrite.js";
 import { adaptRailClasses } from "./rail-classes.js";
 import { generateCompiledCss } from "../compiled-css/generate.js";
 import * as cssTree from "css-tree";
@@ -36,7 +37,7 @@ describe("generated Aria rail adaptation contract", () => {
       expect(file.content).toContain(`/** @default ${JSON.stringify(row.value)} */`);
     }
     expect(generated.copy.map(row => row.key)).toEqual(["command.title", "command.description", "command.search", "sheet.close", "sidebar.title", "sidebar.description", "sidebar.toggle"]);
-    expect(generated.host).toHaveLength(1);
+    expect(generated.host).toHaveLength(2);
     const host = generated.host[0]!;
     expect(host.consumerImport).toBe('import { mergeUiClasses as cx } from "@clossys/designer/components"');
     expect(createHash("sha256").update(readFileSync(join(import.meta.dirname, "..", host.source))).digest("hex")).toBe(host.sourceSha256);
@@ -146,4 +147,14 @@ describe("generated Aria rail adaptation contract", () => {
     expect(result.css).toContain("data-variant=inset");
     expect(result.css).toContain("data-state=collapsed");
   });
+});
+
+it("preserves comments with apostrophes while rewriting adjacent class literals", () => {
+  const code = `// The peer's outline-none handler remains intact.
+export const view = <div className="ml-2">{left ? "text-left" : "text-right"}</div>;
+`;
+  const result = rewriteShadcnAria({ item: "grid-list", leaf: "grid-list", files: [{path:"components/grid-list/grid-list.tsx",content:code}], styles:"", leafByItem:{}, transformVersion:2 });
+  expect(result.files[0]!.content).toContain("// The peer's outline-none handler remains intact.\nexport const view");
+  expect(result.files[0]!.content).toContain('"text-start" : "text-end"');
+  expect((ts.createSourceFile("result.tsx", result.files[0]!.content, ts.ScriptTarget.Latest, true, ts.ScriptKind.TSX) as unknown as {parseDiagnostics:unknown[]}).parseDiagnostics).toEqual([]);
 });

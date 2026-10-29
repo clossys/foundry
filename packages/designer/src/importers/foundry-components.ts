@@ -71,7 +71,8 @@ export function importFoundryComponents(input: FoundryComponentImportInput = {})
       }
     }
     const composes = sorted(mapping.composes ?? []);
-    const tokenReads = sorted(slot.contract.allowedReads.tokens);
+    // A second source may widen a slot contract without adding reads to this fixed package implementation.
+    const tokenReads = sorted(mapping.tokens ?? slot.contract.allowedReads.tokens);
     // Frozen reads are checked against what the component's own source consumes (foundry-source-reads.json).
     // An omission is recorded, not yet enforced: the fix is widening the slot contract's allowedReads.
     const omitted = sorted((sourceReads[leaf] ?? []).filter(read => !tokenReads.includes(read)));

@@ -1,5 +1,5 @@
 
-export const INPUT_COPY_REFS = { searchClear: { id: "st.kcathn07y7" }, numberIncrement: { id: "st.46j4bj35p9" }, numberDecrement: { id: "st.vc888ap8qn" }, tagRemove: { id: "st.cxp8286800" } } as const;
+export const INPUT_COPY_REFS = { searchClear: { id: "st.kcathn07y7" }, tagRemove: { id: "st.cxp8286800" } } as const;
 type Ref = { id: string; values?: Readonly<Record<string, string | number | boolean>> };
 export type InputCopyResolver = (ref: Ref) => { ref: Ref; text: string } | undefined;
 export function inputCopy(copy: InputCopyResolver | undefined, key: keyof typeof INPUT_COPY_REFS, explicit?: string, values?: Ref["values"]): string {

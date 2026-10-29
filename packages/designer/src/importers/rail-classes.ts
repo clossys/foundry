@@ -12,7 +12,8 @@ function split(value: string): [string, string] {
 }
 
 export function adaptRailClasses(source: string, sidebar = false): string {
-  return source.replace(/"(?:\\.|[^"\\])*"|'(?:\\.|[^'\\])*'/g, quoted => {
+  return source.replace(/\/\/[^\r\n]*|\/\*[\s\S]*?\*\/|"(?:\\.|[^"\\])*"|'(?:\\.|[^'\\])*'/g, quoted => {
+    if (quoted.startsWith("/")) return quoted;
     const text = quoted.slice(1, -1);
     if (!/\s|^(?:group|peer)$|(?:^|:)(?:(?:group|peer)-data-\[|-?(?:[mp][lr]|left|right)-|text-(?:left|right)|border-[lr]|rounded-[tb]?[lr]|animate-|transition|duration-)/.test(text) || /^\.\.?\//.test(text)) return quoted;
     const values = text.split(/\s+/).flatMap(value => {

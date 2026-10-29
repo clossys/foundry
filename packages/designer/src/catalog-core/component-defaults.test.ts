@@ -57,16 +57,74 @@ function setup(overrides: Partial<ComponentDefaultsInput> = {}, order?: readonly
 }
 const ledger = (rows: ReturnType<typeof planComponentDefaults>["rows"]) => Object.fromEntries(rows.map(row => [row.slot.slice(11), row.status === "not-chosen" ? "-" : row.source ?? row.rule!]));
 
+// New scale-bound controls make the full legacy universe coherent through Foundry; consumed source closure is tested independently.
 const EXPECTED_DEFAULTS = {
-  sidebar: "shadcn@aria", command: "shadcn@aria", sheet: "shadcn@aria", empty: "shadcn@aria", item: "shadcn@aria", "scroll-area": "shadcn@aria", "dropdown-menu": "shadcn@aria",
-  avatar: "shadcn@aria", badge: "shadcn@aria", banner: "shadcn@aria", breadcrumbs: "shadcn@aria", button: "foundry", calendar: "shadcn@aria", card: "foundry",
-  "chart-area": "foundry", "chart-bar": "foundry", "chart-heatmap": "foundry", "chart-line": "foundry", "chart-range": "foundry",
-  "chart-scatter": "foundry", "chart-sparkline": "foundry", "chart-status-strip": "foundry", "chart-waterfall": "foundry", checkbox: "shadcn@aria", "color-picker": "foundry", "combo-box": "shadcn@aria",
-  "date-field": "foundry", "date-picker": "compose:date-picker@1", dialog: "shadcn@aria", disclosure: "shadcn@aria", field: "foundry", "grid-list": "shadcn@aria", "file-trigger": "compose:file-trigger@1", form: "foundry", icon: "foundry", keyboard: "shadcn@aria", link: "foundry", logo: "foundry",
-  menu: "foundry", meter: "foundry", "native-action": "foundry", "number-field": "foundry", popover: "shadcn@aria", "progress-bar": "shadcn@aria", "radio-group": "shadcn@aria",
-  "resize-handle": "foundry", "search-field": "foundry", select: "shadcn@aria", "semantic-content": "foundry", separator: "shadcn@aria", skeleton: "shadcn@aria", slider: "shadcn@aria",
-  spinner: "foundry", "status-mark": "shadcn@aria", switch: "shadcn@aria", table: "foundry", tabs: "shadcn@aria", "tag-group": "foundry", "text-field": "foundry", toast: "shadcn@aria", "toggle-button": "shadcn@aria", "toggle-group": "shadcn@aria",
-  toolbar: "foundry", tooltip: "shadcn@aria", tree: "foundry",
+  "avatar": "shadcn@aria",
+  "badge": "shadcn@aria",
+  "banner": "shadcn@aria",
+  "breadcrumbs": "shadcn@aria",
+  "button": "foundry",
+  "calendar": "shadcn@aria",
+  "card": "foundry",
+  "chart-area": "foundry",
+  "chart-bar": "foundry",
+  "chart-heatmap": "foundry",
+  "chart-line": "foundry",
+  "chart-range": "foundry",
+  "chart-scatter": "foundry",
+  "chart-sparkline": "foundry",
+  "chart-status-strip": "foundry",
+  "chart-waterfall": "foundry",
+  "checkbox": "foundry",
+  "color-picker": "foundry",
+  "combo-box": "foundry",
+  "date-field": "foundry",
+  "date-picker": "compose:date-picker@1",
+  "dialog": "shadcn@aria",
+  "disclosure": "shadcn@aria",
+  "field": "foundry",
+  "file-trigger": "compose:file-trigger@1",
+  "form": "foundry",
+  "grid-list": "shadcn@aria",
+  "icon": "foundry",
+  "keyboard": "shadcn@aria",
+  "link": "shadcn@aria",
+  "logo": "foundry",
+  "menu": "foundry",
+  "meter": "foundry",
+  "native-action": "compose:native-action@1",
+  "navigation-tree": "foundry",
+  "number-field": "foundry",
+  "popover": "shadcn@aria",
+  "progress-bar": "shadcn@aria",
+  "radio-group": "foundry",
+  "resize-handle": "foundry",
+  "search-field": "foundry",
+  "select": "foundry",
+  "semantic-content": "foundry",
+  "separator": "shadcn@aria",
+  "skeleton": "shadcn@aria",
+  "slider": "foundry",
+  "spinner": "foundry",
+  "status-mark": "shadcn@aria",
+  "switch": "foundry",
+  "table": "foundry",
+  "tabs": "shadcn@aria",
+  "tag-group": "foundry",
+  "text-field": "foundry",
+  "toast": "shadcn@aria",
+  "toggle-button": "shadcn@aria",
+  "toggle-group": "foundry",
+  "toolbar": "shadcn@aria",
+  "tooltip": "shadcn@aria",
+  "tree": "foundry",
+  "sidebar": "shadcn@aria",
+  "command": "shadcn@aria",
+  "sheet": "shadcn@aria",
+  "empty": "shadcn@aria",
+  "item": "shadcn@aria",
+  "scroll-area": "shadcn@aria",
+  "dropdown-menu": "shadcn@aria"
 };
 /** rac-starter is not a selectable component source (owner rule 2026-10-26); Toolbar, TagGroup and Tree are Foundry's since their measured K5 craft comparison passes. */
 const NOT_CHOSEN: string[] = [];
@@ -100,11 +158,11 @@ describe("component default fills", () => {
     }
     // Column resizing and Checkbox.Group are both mapped, so the owner-picked Foundry table now resolves.
     expect(plan.rows.find(row => row.slot === "components.table")).toMatchObject({ status: "default", basis: "owner-pick", source: "foundry", fill: "foundry/components.table", reasons: [] });
-    // With K11 at 0 a mixed controls group is coherent, so the slider takes the preferred shadcn@aria fill.
-    expect(plan.rows.find(row => row.slot === "components.slider")).toMatchObject({ status: "default", source: "shadcn@aria", fill: "shadcn@aria/components.slider" });
+    // The expanded input offers expose a typography mismatch, so the complete legacy controls set stays coherent through Foundry.
+    expect(plan.rows.find(row => row.slot === "components.slider")).toMatchObject({ status: "default", source: "foundry", fill: "foundry/components.slider" });
     expect(plan.rows.find(row => row.slot === "components.date-picker")).toMatchObject({ status: "default", basis: "rule", rule: "compose:date-picker@1", reasons: [] });
     for (const leaf of ["tag-group", "tree"]) expect(plan.rows.find(row => row.slot === `components.${leaf}`), leaf).toMatchObject({ status: "default", basis: "preference", source: "foundry", fill: `foundry/components.${leaf}`, reasons: [] });
-    expect(plan.rows.find(row => row.slot === "components.toolbar")).toMatchObject({ status: "default", basis: "preference", source: "foundry", fill: "foundry/components.toolbar", reasons: [] });
+    expect(plan.rows.find(row => row.slot === "components.toolbar")).toMatchObject({ status: "default", basis: "preference", source: "shadcn@aria", fill: "shadcn@aria/components.toolbar", reasons: [] });
   });
   it("never offers or defaults a rac-starter fill, whether preferred, owner-picked or chosen (real catalog)", () => {
     const { input } = setup();
@@ -113,8 +171,8 @@ describe("component default fills", () => {
     const plan = planComponentDefaults(input);
     expect(plan.rows.filter(row => row.source === "rac-starter")).toEqual([]);
     // 52 after vf15 (toolbar unchosen) + toggle-group (vf19) + color-picker and number-field (vf22) + toolbar (vf21) + slider (vf23) + tag-group and tree (vf30) = 59.
-    expect(plan.rows.filter(row => row.status !== "not-chosen")).toHaveLength(65);
-    expect(plan.rows).toHaveLength(65);
+    expect(plan.rows.filter(row => row.status !== "not-chosen")).toHaveLength(66); // The permanent navigation-tree slot remains registered beside its explicit canonical alias.
+    expect(plan.rows).toHaveLength(66); // The permanent navigation-tree slot remains registered beside its explicit canonical alias.
     const forced = Object.fromEntries(starterSlots.map(slot => [slot, "rac-starter"]));
     for (const plan of [planComponentDefaults({ ...input, picks: forced }), planComponentDefaults({ ...input, choices: forced })]) {
       for (const slot of starterSlots) {
@@ -154,8 +212,8 @@ describe("component default fills", () => {
     const { input } = setup();
     const plan = planComponentDefaults(input);
     expect(plan.rows.find(row => row.slot === "components.disclosure")).toMatchObject({ status: "default", basis: "preference", source: "shadcn@aria", fill: "shadcn@aria/components.disclosure" });
-    expect(plan.rows.find(row => row.slot === "components.checkbox")).toMatchObject({ status: "default", basis: "preference", source: "shadcn@aria", fill: "shadcn@aria/components.checkbox" });
-    expect(plan.rows.find(row => row.slot === "components.grid-list")).toMatchObject({ status: "default", basis: "preference", source: "foundry", fill: "foundry/components.grid-list" });
+    expect(plan.rows.find(row => row.slot === "components.checkbox")).toMatchObject({ status: "default", basis: "preference", source: "foundry", fill: "foundry/components.checkbox" });
+    expect(plan.rows.find(row => row.slot === "components.grid-list")).toMatchObject({ status: "default", basis: "preference", source: "shadcn@aria", fill: "shadcn@aria/components.grid-list" });
     const order = plan.decisions.map(row => row.slot);
     expect(order.indexOf("components.checkbox")).toBeLessThan(order.indexOf("components.grid-list"));
     expect(plan.findings).toEqual([]);
@@ -164,7 +222,7 @@ describe("component default fills", () => {
     const { input } = setup();
     const plan = planComponentDefaults(input);
     expect(plan.rows.find(row => row.slot === "components.tabs")).toMatchObject({ status: "default", basis: "preference", source: "shadcn@aria", fill: "shadcn@aria/components.tabs", reasons: [] });
-    expect(plan.rows.find(row => row.slot === "components.select")).toMatchObject({ status: "default", basis: "preference", source: "shadcn@aria", fill: "shadcn@aria/components.select", reasons: [] });
+    expect(plan.rows.find(row => row.slot === "components.select")).toMatchObject({ status: "default", basis: "preference", source: "foundry", fill: "foundry/components.select", reasons: [] });
     expect(plan.findings).toEqual([]);
   });
   it("fills a listed leaf from the fallback source when its owner pick is ineligible, keeping why", () => {
@@ -278,9 +336,9 @@ describe("component default fills", () => {
     const { input } = setup({ choices: { "components.slider": "shadcn@aria" } });
     const plan = planComponentDefaults(input);
     expect(plan.rows.find(row => row.slot === "components.slider")).toMatchObject({ status: "chosen", source: "shadcn@aria" });
-    // The checker accepts this mixed controls set (K11 0), so the group is not forced to one source.
-    expect(plan.rows.find(row => row.slot === "components.date-field")).toMatchObject({ status: "default", source: "foundry" });
-    expect(reasons(plan, "date-field")).not.toContain("controls coherence");
+    // Scale-bound retained input offers require one source; the parked date field has no shadcn implementation.
+    expect(plan.rows.find(row => row.slot === "components.date-field")).toMatchObject({ status: "not-chosen" });
+    expect(reasons(plan, "date-field")).toContain("controls coherence");
     // field is a label/description/error wrapper, not a controls-group member, so the group's lead does not constrain it.
     expect(reasons(plan, "field")).not.toContain("controls coherence");
     expect(plan.findings).toEqual([]);

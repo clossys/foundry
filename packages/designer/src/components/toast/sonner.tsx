@@ -1,7 +1,7 @@
 import { useLocale } from "react-aria-components";
 import { createContext, useContext, type CSSProperties, type ReactNode } from "react";
 import type { QueuedToast, UNSTABLE_ToastQueue as ToastQueue } from "react-aria-components";
-import { Button } from "../button/index.js";
+import { Button } from "../Button.js";
 import { Icon } from "../icon/index.js";
 import { toastClasses } from "../_parts/rail-sonner/index.js";
 import { useFeedbackCopy, FEEDBACK_COPY_REFS, type FeedbackCopyResolver } from "../_parts/rail-feedback-copy/index.js";

@@ -46,7 +46,7 @@ describe("offline catalog candidate bundle", () => {
 
   it("ships pinned upstream, rewritten output and notices while keeping blocked bytes out of adoption bundles", () => {
     const bundle = loadCatalogBundles();
-    expect(bundle.sourceCandidates.filter(candidate => candidate.fill.startsWith("shadcn@aria/"))).toHaveLength(33);
+    expect(bundle.sourceCandidates.filter(candidate => candidate.fill.startsWith("shadcn@aria/"))).toHaveLength(42); // Nine consumed U1/U2 source offers extend the original 33.
     expect(bundle.sourceCandidates.filter(candidate => candidate.fill.startsWith("rac-starter/"))).toHaveLength(7);
     expect(bundle.sourceCandidates.some(candidate => candidate.status === "blocked")).toBe(true);
     expect(bundle.sourceBundles).toHaveLength(bundle.sourceCandidates.filter(candidate => candidate.status === "ready").length);

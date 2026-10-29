@@ -57,7 +57,8 @@ describe("Foundry component package descriptors", () => {
     expect(baselineRows(imported().coverage)).toEqual([...baselineRows(storedCoverage), ...newSourceSlots.map(slot => ({
       slot, status: "unavailable", supported: [], missing: [], notes: ["No package implementation is available."],
     }))].sort((a, b) => a.slot.localeCompare(b.slot)));
-    expect(loadComponentCompositionRules().map(rule => rule.slot)).toEqual(["components.date-picker", "components.file-trigger"]);
+    // NativeAction is retained; parked form/date proposals add no new production rules.
+    expect(loadComponentCompositionRules().map(rule => rule.slot)).toEqual(["components.date-picker", "components.native-action", "components.file-trigger"]);
   });
 
   it("pins real primary and member-dispatched package exports without copied source", () => {
@@ -187,6 +188,7 @@ it("stores the exact pending NativeAction draft with real exports, native states
   expect(fill.members).toEqual(["appearance.primary", "ground.base", "size.md", "state.disabled", "state.focus-visible", "state.hover", "state.pressed"]);
   expect(fill.deps.map(dep => dep.name)).toEqual(["react", "tailwind-merge"]);
   expect(fill.reads.assets).toEqual([]); expect(fill.reads.components).toEqual([]);
+  // The unchanged Foundry implementation retains its actual reads when shadcn widens the shared slot contract.
   expect(fill.reads.tokens).toEqual(["tokens.action-color", "tokens.body-size", "tokens.control-radius", "tokens.duration", "tokens.easing", "tokens.focus-color", "tokens.focus-outline", "tokens.spacing", "tokens.state-opacity", "tokens.text-color", "tokens.typeface"]);
   expect(doc.$extensions["com.clossys.fill"]).toMatchObject({ status: "draft", conforms: [], evidence: [] });
   const files = generatedFoundryComponentFiles({ exports });
@@ -196,4 +198,14 @@ it("stores the exact pending NativeAction draft with real exports, native states
   const profile = checkComponentProfile({ slots, fills: [fill], observations: {}, tokens: {}, assets: [], installedRac: { version: "1.21.1", instance: "consumer" } });
   expect(profile.ok).toBe(false);
   expect(profile.findings).toContainEqual(expect.objectContaining({ subject: fill.slot, code: "K5", message: "Source and runtime observations are unavailable" }));
+});
+
+it("keeps the fixed NativeAction declaration independent of other offers' allowedReads", () => {
+  const extended=structuredClone(slots);
+  extended.find(slot=>slot.id==="components.native-action")!.contract.allowedReads.tokens.push("tokens.elevation");
+  const before=importFoundryComponents({exports}).fills.find(doc=>doc.components["native-action"])!.components["native-action"]!;
+  const after=importFoundryComponents({exports,slots:extended}).fills.find(doc=>doc.components["native-action"])!.components["native-action"]!;
+  expect(after.reads).toEqual(before.reads);
+  const sourceReads=JSON.parse(readFileSync(resolve(here,"foundry-source-reads.json"),"utf8"))["native-action"];
+  expect(sourceReads.every((id:string)=>after.reads.tokens.includes(id))).toBe(true);
 });

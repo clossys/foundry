@@ -1,25 +1,25 @@
 import type * as React from "react"
-import { cva, type VariantProps } from "class-variance-authority"
-import { cn } from "../../_parts/rail-u1-utils/index.js"
+import { cn, classNames, type ClassValue, type VariantProps } from "../../_parts/rail-utils/index.js"
 
 import { Separator } from "../../_parts/rail-u1-separator/index.js"
 
-const buttonGroupVariants = cva(
-  "has-[>[data-slot=button-group]]:gap-(--spacing-sm) has-[select[aria-hidden=true]:last-child]:[&>[data-slot=select-trigger]:last-of-type]:rounded-e-(--radius-control) flex w-fit items-stretch *:focus-visible:relative *:focus-visible:z-(--ui-z-sticky) [&>[data-slot=select-trigger]:not([class*='w-'])]:w-fit [&>input]:flex-1",
-  {
-    variants: {
-      orientation: {
-        horizontal:
-          "[&>[data-slot]:not(:has(~[data-slot]))]:rounded-e-(--radius-control)! **:data-slot:rounded-e-none [&_[data-slot]~[data-slot]]:rounded-s-none [&_[data-slot]~[data-slot]]:border-s-0",
-        vertical:
-          "[&>[data-slot]:not(:has(~[data-slot]))]:rounded-b-(--radius-control)! flex-col **:data-slot:rounded-b-none [&_[data-slot]~[data-slot]]:rounded-t-none [&_[data-slot]~[data-slot]]:border-t-0",
-      },
-    },
-    defaultVariants: {
-      orientation: "horizontal",
-    },
-  }
-)
+const buttonGroupVariants_DEFINITION = {"base":"has-[>[data-slot=button-group]]:gap-(--spacing-sm) has-[select[aria-hidden=true]:last-child]:[&>[data-slot=select-trigger]:last-of-type]:rounded-e-(--radius-control) flex w-fit items-stretch *:focus-visible:relative *:focus-visible:z-(--ui-z-sticky) [&>[data-slot=select-trigger]:not([class*='w-'])]:w-fit [&>input]:flex-1","variants":{"orientation":{"horizontal":"[&>[data-slot]:not(:has(~[data-slot]))]:rounded-e-(--radius-control)! **:data-slot:rounded-e-none [&_[data-slot]~[data-slot]]:rounded-s-none [&_[data-slot]~[data-slot]]:border-s-0","vertical":"[&>[data-slot]:not(:has(~[data-slot]))]:rounded-b-(--radius-control)! flex-col **:data-slot:rounded-b-none [&_[data-slot]~[data-slot]]:rounded-t-none [&_[data-slot]~[data-slot]]:border-t-0"}},"defaultVariants":{"orientation":"horizontal"}}
+function buttonGroupVariants(props: { "orientation"?: "horizontal" | "vertical" | null; class?: ClassValue; className?: ClassValue } = {}) {
+  props ??= {}
+  const definition = buttonGroupVariants_DEFINITION
+  const key = (value: unknown) => typeof value === "boolean" ? String(value) : value === 0 ? "0" : value
+  const supplied = Object.fromEntries(Object.entries(props).filter(([, value]) => value !== undefined))
+  const values: { [axis: string]: unknown } = { ...definition.defaultVariants, ...supplied }
+  const selected = Object.entries(definition.variants).map(([axis, choices]) => {
+    if ((props as { [axis: string]: unknown })[axis] === null) return null
+    const value = key((props as { [axis: string]: unknown })[axis]) || key((definition.defaultVariants as { [axis: string]: unknown })[axis])
+    return (choices as { [value: string]: ClassValue })[String(value)]
+  })
+  const compound = (([]) as { [key: string]: unknown }[]).flatMap(({ class: value, className, ...conditions }) =>
+    Object.entries(conditions).every(([axis, expected]) => Array.isArray(expected) ? expected.includes(values[axis]) : values[axis] === expected)
+      ? [value as ClassValue, className as ClassValue] : [])
+  return classNames(definition.base, selected, compound, props.class, props.className)
+}
 
 function ButtonGroup({
   className,
@@ -71,6 +71,7 @@ function ButtonGroupText({
 
 function ButtonGroupSeparator({
   className,
+  /** @default "vertical" */
   orientation = "vertical",
   ...props
 }: React.ComponentProps<typeof Separator>) {

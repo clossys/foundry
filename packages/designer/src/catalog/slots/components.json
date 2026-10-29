@@ -795,18 +795,7 @@
           "tokens.surface-color",
           "tokens.text-color",
           "tokens.typeface",
-          "tokens.control-size",
-          "tokens.action-color",
-          "tokens.border-width",
-          "tokens.control-color",
-          "tokens.duration",
-          "tokens.easing",
-          "tokens.elevation",
-          "tokens.focus-color",
-          "tokens.focus-outline",
-          "tokens.font-size",
-          "tokens.font-weight",
-          "tokens.line-height"
+          "tokens.control-size"
         ],
         "assets": []
       }
@@ -959,17 +948,7 @@
           "tokens.state-opacity",
           "tokens.status-color",
           "tokens.text-color",
-          "tokens.typeface",
-          "tokens.action-color",
-          "tokens.border-color",
-          "tokens.border-width",
-          "tokens.control-radius",
-          "tokens.focus-color",
-          "tokens.focus-outline",
-          "tokens.font-size",
-          "tokens.font-weight",
-          "tokens.line-height",
-          "tokens.surface-color"
+          "tokens.typeface"
         ],
         "assets": []
       }
@@ -1016,20 +995,7 @@
       "props": [],
       "allowedReads": {
         "tokens": [
-          "tokens.spacing",
-          "tokens.action-color",
-          "tokens.border-color",
-          "tokens.border-width",
-          "tokens.control-radius",
-          "tokens.focus-color",
-          "tokens.focus-outline",
-          "tokens.font-size",
-          "tokens.font-weight",
-          "tokens.line-height",
-          "tokens.state-opacity",
-          "tokens.status-color",
-          "tokens.surface-color",
-          "tokens.text-color"
+          "tokens.spacing"
         ],
         "assets": []
       }
@@ -1412,6 +1378,41 @@
     "status": "draft"
   },
   {
+    "id": "components.navigation-tree",
+    "layer": "components",
+    "contract": {
+      "kind": "component",
+      "root": "rac:NavigationTree",
+      "members": {
+        "mode": "closed",
+        "names": [
+          "expand",
+          "current"
+        ]
+      },
+      "props": [],
+      "allowedReads": {
+        "tokens": [
+          "tokens.accent-color",
+          "tokens.body-size",
+          "tokens.border-color",
+          "tokens.focus-shadow",
+          "tokens.spacing",
+          "tokens.state-opacity",
+          "tokens.surface-color",
+          "tokens.text-color",
+          "tokens.touch-target"
+        ],
+        "assets": [
+          "assets.icon-chevron-right"
+        ]
+      },
+      "apg": "treeview"
+    },
+    "requires": [],
+    "status": "draft"
+  },
+  {
     "id": "components.number-field",
     "layer": "components",
     "contract": {
@@ -1441,19 +1442,7 @@
           "tokens.surface-color",
           "tokens.text-color",
           "tokens.touch-target",
-          "tokens.typeface",
-          "tokens.action-color",
-          "tokens.border-width",
-          "tokens.control-color",
-          "tokens.duration",
-          "tokens.easing",
-          "tokens.elevation",
-          "tokens.focus-color",
-          "tokens.focus-outline",
-          "tokens.font-size",
-          "tokens.font-weight",
-          "tokens.radius",
-          "tokens.line-height"
+          "tokens.typeface"
         ],
         "assets": [
           "assets.icon-chevron-up",

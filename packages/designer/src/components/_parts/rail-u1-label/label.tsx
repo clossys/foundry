@@ -1,7 +1,7 @@
 "use client"
 
 import * as React from "react"
-import { cn } from "../../_parts/rail-u1-utils/index.js"
+import { cn } from "../../_parts/rail-utils/index.js"
 import {
   LabelContext,
   Label as LabelPrimitive,

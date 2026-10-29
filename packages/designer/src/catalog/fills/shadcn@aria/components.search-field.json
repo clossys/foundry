@@ -135,25 +135,20 @@
           "license": "Apache-2.0"
         },
         {
-          "name": "class-variance-authority",
-          "version": "0.7.1",
-          "license": "Apache-2.0"
-        },
-        {
-          "name": "clsx",
-          "version": "2.1.1",
+          "name": "@clossys/designer",
+          "version": "0.12.0",
           "license": "MIT"
         },
         {
-          "name": "tailwind-merge",
-          "version": "3.7.0",
+          "name": "@clossys/designer",
+          "version": "0.12.0",
           "license": "MIT"
         }
       ],
       "outputSha256": [
         {
           "path": "components/_parts/rail-u1-button/button.tsx",
-          "sha256": "76ee9cfca6a880eb301fee3469efca70448b1e7bc81c511e9ed742774628bd94"
+          "sha256": "599cc0e8705180e233b0816ae371a1cfebb68a21404f613ba2c676e73cac2368"
         },
         {
           "path": "components/_parts/rail-u1-button/index.ts",
@@ -161,11 +156,7 @@
         },
         {
           "path": "components/_parts/rail-u1-copy/index.ts",
-          "sha256": "a3b223466ea3c4bcfc09a486fd02d9849110d13fcfcd3a5ac0d3f8294cfbdb5e"
-        },
-        {
-          "path": "components/_parts/rail-u1-input-classes/index.ts",
-          "sha256": "946b642583ab7a98f69e960e7b6966087a517cb57ccdd7743aa3750a45efaff4"
+          "sha256": "795c6cfd2406793911c17a0e2e172b3690a598c7b5ea6c1a43e17b42ada063aa"
         },
         {
           "path": "components/_parts/rail-u1-input-group/index.ts",
@@ -173,7 +164,7 @@
         },
         {
           "path": "components/_parts/rail-u1-input-group/input-group.tsx",
-          "sha256": "db18fc4a57dd976b3919ea0db82c66766f4d171e18ca6eb279a4d6b7426159ca"
+          "sha256": "6268711e12e7bdcd3c06a9590c802ba3206e52a835100c84a6ac37afe9d50687"
         },
         {
           "path": "components/_parts/rail-u1-input/index.ts",
@@ -181,7 +172,7 @@
         },
         {
           "path": "components/_parts/rail-u1-input/input.tsx",
-          "sha256": "cddce033d8a2138ad4c23c580ff388607d5264b413a7cbf1986bf50d4384df1f"
+          "sha256": "f8a3ae3c7185e067e7b6745ec15142a77f135602c2d4d7d3db218100464d3aea"
         },
         {
           "path": "components/_parts/rail-u1-label/index.ts",
@@ -189,7 +180,7 @@
         },
         {
           "path": "components/_parts/rail-u1-label/label.tsx",
-          "sha256": "fbe641fdc65e10d3733a120b80134edf300329a81d097b74a827a00ae466c24f"
+          "sha256": "3b8f8355110b8aa8549b47cac39610f8abd00fa1d1948661b5bbbe9314d748d0"
         },
         {
           "path": "components/_parts/rail-u1-textarea/index.ts",
@@ -197,15 +188,23 @@
         },
         {
           "path": "components/_parts/rail-u1-textarea/textarea.tsx",
-          "sha256": "624682e9798f7ec1456a68e2888c01e4adc837dcb8de4309a93f2f672b52f259"
+          "sha256": "c05332918881bde77d2e5b65f3cdac02e07c48aa488ce24149c379a864d33499"
         },
         {
-          "path": "components/_parts/rail-u1-utils/index.ts",
-          "sha256": "d3753f708b15cc1ec47bc3136827134b702e2069eebdb0ddefb1806b95d7c1d9"
+          "path": "components/_parts/rail-utils/copy.ts",
+          "sha256": "c9bc1359e38859ac1cf6ebb87bcb01d140bf07e2e95917124f8733ba688463cf"
+        },
+        {
+          "path": "components/_parts/rail-utils/index.ts",
+          "sha256": "57e883f2e7b51c430a154a1103873d0296e039c9e7b821cfe5922fe99a41b59d"
+        },
+        {
+          "path": "components/_parts/rail-utils/types.ts",
+          "sha256": "172cf78fbee5b9460adb881ea80fa76a5c7e9b98f168d9db15c001575653f5cb"
         },
         {
           "path": "components/search-field/search-field.tsx",
-          "sha256": "db93a28df708123ee5efd0bb4e404b508a4534abd3ea1c75c23140237f33c319"
+          "sha256": "7093d424f5d96ac77ce0b35cbb13693d9c5c8a5f62260e0c0b7e1054e99b2813"
         },
         {
           "path": "notices/SHADCN-ARIA-INPUTS.md",

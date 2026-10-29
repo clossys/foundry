@@ -80,9 +80,21 @@
         "assets": [],
         "components": [],
         "tokens": [
+          "tokens.accent-color",
+          "tokens.action-color",
           "tokens.body-size",
+          "tokens.border-color",
+          "tokens.border-width",
+          "tokens.control-color",
+          "tokens.duration",
+          "tokens.easing",
+          "tokens.focus-color",
+          "tokens.focus-outline",
+          "tokens.font-size",
+          "tokens.font-weight",
           "tokens.spacing",
           "tokens.status-color",
+          "tokens.surface-color",
           "tokens.text-color",
           "tokens.typeface"
         ]

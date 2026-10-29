@@ -46,10 +46,10 @@ describe("combined five-layer build IA", () => {
     expect(build.retiredByLayer.frames).toHaveLength(4);
     expect(build.retiredByLayer.sections).toEqual(loadSectionRegistry().retired);
     expect(build.retiredByLayer.sections).toHaveLength(57);
-    expect(build.aliases).toHaveLength(66);
-    expect(new Set(build.aliases.map(alias => alias.id)).size).toBe(66);
+    expect(build.aliases.filter(alias => !alias.retainsSlot)).toHaveLength(66);
+    expect(new Set(build.aliases.map(alias => alias.id)).size).toBe(build.aliases.length);
     const ids = new Set(build.slots.map(slot => slot.id));
-    expect(build.aliases.every(alias => ids.has(alias.target) && !ids.has(alias.id))).toBe(true);
+    expect(build.aliases.every(alias => ids.has(alias.target) && (alias.retainsSlot ? ids.has(alias.id) : !ids.has(alias.id)))).toBe(true);
     const frame = build.slots.find(slot => slot.layer === "frames")!;
     frame.id = "frames.changed";
     const mapping = build.retiredByLayer.frames![0]!;

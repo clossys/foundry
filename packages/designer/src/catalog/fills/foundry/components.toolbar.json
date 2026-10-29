@@ -77,7 +77,13 @@
         "components": [],
         "tokens": [
           "tokens.border-color",
-          "tokens.spacing"
+          "tokens.border-width",
+          "tokens.control-radius",
+          "tokens.font-size",
+          "tokens.font-weight",
+          "tokens.spacing",
+          "tokens.surface-color",
+          "tokens.z-index"
         ]
       },
       "root": "rac:Toolbar",

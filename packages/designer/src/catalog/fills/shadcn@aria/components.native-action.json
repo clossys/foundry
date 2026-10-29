@@ -124,29 +124,32 @@
           "license": "MIT"
         },
         {
-          "name": "class-variance-authority",
-          "version": "0.7.1",
-          "license": "Apache-2.0"
-        },
-        {
-          "name": "clsx",
-          "version": "2.1.1",
+          "name": "@clossys/designer",
+          "version": "0.12.0",
           "license": "MIT"
         },
         {
-          "name": "tailwind-merge",
-          "version": "3.7.0",
+          "name": "@clossys/designer",
+          "version": "0.12.0",
           "license": "MIT"
         }
       ],
       "outputSha256": [
         {
           "path": "components/native-action/button-variants.tsx",
-          "sha256": "e8bb274aaf844d2b91c7ae43ad34f2fc0f5bf5c722dbe74ece8dd026ce8698c5"
+          "sha256": "745f8090eeeb5edd084991fa5be253fee954853102d1cfc3002f47ca4fbf7cb0"
+        },
+        {
+          "path": "components/native-action/classes.ts",
+          "sha256": "506d56cb825046a837f31beb3287bf43fbb79edbd7716db5f3562a0945b8f8e3"
         },
         {
           "path": "components/native-action/native-action.tsx",
-          "sha256": "1244eab3d5ccc9da89faa75d8c08d7b7739d1365f19fda24ab6fef16e40cff2b"
+          "sha256": "5363ce3cd5a0699fbddd00bf4f05d2767f9d958e21cf892cd03e2425fd1ce3a4"
+        },
+        {
+          "path": "components/native-action/types.ts",
+          "sha256": "172cf78fbee5b9460adb881ea80fa76a5c7e9b98f168d9db15c001575653f5cb"
         },
         {
           "path": "notices/native-action.md",

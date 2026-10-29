@@ -50,9 +50,7 @@
       "members": [
         "line.multiline",
         "line.single-line",
-        "size.lg",
         "size.md",
-        "size.sm",
         "state.disabled",
         "state.invalid",
         "state.read-only"
@@ -65,9 +63,7 @@
       "propMap": {
         "line.multiline": "./components#Textarea",
         "line.single-line": "./components#TextField",
-        "size.lg": "./components#TextField.size=lg",
         "size.md": "./components#TextField.size=md",
-        "size.sm": "./components#TextField.size=sm",
         "state.disabled": "./components#TextField.isDisabled",
         "state.invalid": "./components#TextField.isInvalid",
         "state.read-only": "./components#TextField.isReadOnly"
@@ -96,10 +92,18 @@
           "tokens.accent-color",
           "tokens.body-size",
           "tokens.border-color",
+          "tokens.border-width",
           "tokens.caption-size",
           "tokens.control-radius",
           "tokens.control-size",
+          "tokens.duration",
+          "tokens.easing",
+          "tokens.focus-color",
+          "tokens.focus-outline",
           "tokens.focus-shadow",
+          "tokens.font-size",
+          "tokens.font-weight",
+          "tokens.line-height",
           "tokens.spacing",
           "tokens.state-opacity",
           "tokens.status-color",

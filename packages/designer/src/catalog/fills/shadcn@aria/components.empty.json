@@ -108,6 +108,11 @@
           "license": "MIT"
         },
         {
+          "name": "@clossys/designer",
+          "version": "0.12.0",
+          "license": "MIT"
+        },
+        {
           "name": "react",
           "version": "19.3.0",
           "license": "MIT"

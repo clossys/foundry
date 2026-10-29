@@ -1,3 +1,4 @@
+import adaptations from "./vendor/shadcn-aria-rail.adapters.json" with { type: "json" };
 import templates from "./feedback-rail.sources.json" with { type: "json" };
 import slots from "../catalog/slots/components.json" with { type: "json" };
 import adapter from "../catalog/adapters/shadcn@aria.json" with { type: "json" };
@@ -35,7 +36,7 @@ export function importFeedbackRail(data: {commit:string; files:readonly {item:st
       const upstream=byItem.get(name)!;
       if(!upstream) throw new Error(`feedback-rail: missing pinned ${name}`);
       if(name==="badge" || name==="item") {
-        const part=rewrite(name,name,`components/_parts/rail-${name}/${name}.tsx`,upstream.content);
+        const part=rewrite(name,name,`components/_parts/rail-${name}/${name}.tsx`,adaptations.files.find(file => file.item === name)!.content);
         if(name==="item") part[0]!.content+="\nexport { itemVariants };\n";
         if(!/import\s+(?:\*\s+as\s+React|type\s+\*\s+as\s+React)/.test(part[0]!.content) && /\bReact\./.test(part[0]!.content)) part[0]!.content='import type * as React from "react"\n'+part[0]!.content;
         files.push(...part,{path:`components/_parts/rail-${name}/index.ts`,content:`export { ${name==="badge"?"Badge":"Item"} } from "./${name}";\n`});
@@ -53,8 +54,9 @@ export function importFeedbackRail(data: {commit:string; files:readonly {item:st
     const entryPath=`components/${profile.leaf}/${profile.item}.tsx`;
     files.push(...rewrite(profile.item,profile.leaf,entryPath,extensionless(entry)));
     for(const [path,content] of Object.entries(templates.parts)) if(profile.item==="sonner") files.push({path,content:extensionless(content)});
-    const utils='import { clsx, type ClassValue } from "clsx"\nimport { twMerge } from "tailwind-merge"\nexport function cn(...inputs: ClassValue[]) { return twMerge(clsx(inputs)) }\n';
-    files.push({path:"components/_parts/rail-utils/index.ts",content:utils});
+    files.push({path:"components/_parts/rail-utils/index.ts",content:adaptations.utility},
+      {path:"components/_parts/rail-utils/types.ts",content:adaptations.utilityTypes},
+      {path:"components/_parts/rail-utils/copy.ts",content:adaptations.copySource});
     const notice="notices/SHADCN-ARIA-RAIL.md";
     files.push({path:notice,content:`# Third-party notice\n\nSource: ${adapter.pin.url}\nCommit: ${data.commit}\nTransform: ${transform}\n\n${license.content}`});
     const unique=[...new Map(files.map(file=>[file.path,file])).values()].sort((a,b)=>a.path.localeCompare(b.path));
@@ -63,7 +65,7 @@ export function importFeedbackRail(data: {commit:string; files:readonly {item:st
     const descriptor={slot:`components.${profile.leaf}`,source,root:contract.root,members:Object.keys(profile.members),props:[],propMap:profile.members,
       reads:{tokens:sorted(tokens),assets:sorted(assets),components:sorted(components)},composes:sorted(components),impl:{kind:"source",entry:entryPath,export:profile.export},license:"MIT",
       pin:{url:adapter.pin.url,commit:data.commit,files:pinned.map(({path,sha256})=>({path,sha256}))},notice,transform,item:profile.item,
-      deps:[{name:"react",version:"19.3.0",license:"MIT"},{name:"react-aria-components",version:"1.21.1",license:"Apache-2.0"},{name:"class-variance-authority",version:"0.7.1",license:"Apache-2.0"},{name:"clsx",version:"2.1.1",license:"MIT"},{name:"tailwind-merge",version:"3.7.0",license:"MIT"}],
+      deps:[{name:"react",version:"19.3.0",license:"MIT"},{name:"react-aria-components",version:"1.21.1",license:"Apache-2.0"},...adaptations.host.map(row => row.dependency)],
       parts:profile.parts.map(item=>({item})),outputSha256:unique.map(({path,content})=>({path,sha256:sha256(content)})),blockers:issues,rac:{instance:"react-aria-components",range:"^1.21.1",peer:false}};
     const original=byItem.get(profile.upstream[0])!;
     const document={$extensions:{"com.clossys.fill":{id:`${source}/components.${profile.leaf}`,slot:`components.${profile.leaf}`,source,mode:"implementation",sourceAddress:`${adapter.pin.url}/blob/${data.commit}/${original.path}`,relation:"same-contract",builtOn:sorted(components),conforms:[],evidence:[],author:"third-party",trust:"pinned-upstream",license:"MIT",status:"draft",pin:{url:adapter.pin.url,commit:data.commit,sha256:original.sha256},unmapped:[]}},components:{[profile.leaf]:descriptor}} as unknown as ComponentCandidateDocument;

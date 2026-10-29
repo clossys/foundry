@@ -1,7 +1,7 @@
 {
   "version": 1,
   "upstreamCommit": "96da9cc7f1aa10580a3741664e2a77c721206c00",
-  "upstreamDataSha256": "0d0ed34d0397bab7fdb57676a355fddc35da1b12bc5cd0c0f110e33d2a21d85c",
+  "upstreamDataSha256": "01c0872dd45e999a174e3c10c02fbf9556292f584694b56f7389393dc4f392a8",
   "registeredSlots": [
     "components.command",
     "components.dropdown-menu",
@@ -68,8 +68,12 @@
           "value": "default",
           "slots": [
             "components.command",
+            "components.link",
+            "components.native-action",
+            "components.search-field",
             "components.sheet",
-            "components.sidebar"
+            "components.sidebar",
+            "components.tag-group"
           ]
         },
         {
@@ -78,8 +82,12 @@
           "value": "default",
           "slots": [
             "components.command",
+            "components.link",
+            "components.native-action",
+            "components.search-field",
             "components.sheet",
-            "components.sidebar"
+            "components.sidebar",
+            "components.tag-group"
           ]
         },
         {
@@ -88,8 +96,12 @@
           "value": "default",
           "slots": [
             "components.command",
+            "components.link",
+            "components.native-action",
+            "components.search-field",
             "components.sheet",
-            "components.sidebar"
+            "components.sidebar",
+            "components.tag-group"
           ]
         },
         {
@@ -98,8 +110,12 @@
           "value": "default",
           "slots": [
             "components.command",
+            "components.link",
+            "components.native-action",
+            "components.search-field",
             "components.sheet",
-            "components.sidebar"
+            "components.sidebar",
+            "components.tag-group"
           ]
         }
       ],
@@ -336,7 +352,8 @@
           "prop": "align",
           "value": "inline-start",
           "slots": [
-            "components.command"
+            "components.command",
+            "components.search-field"
           ]
         },
         {
@@ -344,7 +361,8 @@
           "prop": "type",
           "value": "button",
           "slots": [
-            "components.command"
+            "components.command",
+            "components.search-field"
           ]
         },
         {
@@ -352,7 +370,8 @@
           "prop": "variant",
           "value": "ghost",
           "slots": [
-            "components.command"
+            "components.command",
+            "components.search-field"
           ]
         },
         {
@@ -360,7 +379,8 @@
           "prop": "size",
           "value": "xs",
           "slots": [
-            "components.command"
+            "components.command",
+            "components.search-field"
           ]
         }
       ],
@@ -414,6 +434,7 @@
           "prop": "variant",
           "value": "default",
           "slots": [
+            "components.grid-list",
             "components.item"
           ]
         },
@@ -422,6 +443,7 @@
           "prop": "size",
           "value": "default",
           "slots": [
+            "components.grid-list",
             "components.item"
           ]
         },
@@ -430,6 +452,7 @@
           "prop": "variant",
           "value": "default",
           "slots": [
+            "components.grid-list",
             "components.item"
           ]
         }
@@ -496,8 +519,10 @@
           "prop": "orientation",
           "value": "horizontal",
           "slots": [
+            "components.grid-list",
             "components.item",
-            "components.sidebar"
+            "components.sidebar",
+            "components.toolbar"
           ]
         }
       ],
@@ -744,6 +769,95 @@
         }
       ],
       "variants": []
+    },
+    {
+      "item": "badge",
+      "path": "apps/v4/registry/bases/aria/ui/badge.tsx",
+      "inputSha256": "7771524b64abcdf8dd0d1a0dad02ae5dd78b6865ec69be6d19ff204e73302c64",
+      "content": "import { cn, classNames, type ClassValue, type VariantProps } from \"cn\"\n\nconst badgeVariants_DEFINITION = {\"base\":\"cn-badge group/badge inline-flex w-fit shrink-0 items-center justify-center overflow-hidden whitespace-nowrap focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 aria-invalid:border-destructive aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 [&>svg]:pointer-events-none\",\"variants\":{\"variant\":{\"default\":\"cn-badge-variant-default\",\"secondary\":\"cn-badge-variant-secondary\",\"destructive\":\"cn-badge-variant-destructive\",\"outline\":\"cn-badge-variant-outline\",\"ghost\":\"cn-badge-variant-ghost\",\"link\":\"cn-badge-variant-link\"}},\"defaultVariants\":{\"variant\":\"default\"}}\nfunction badgeVariants(props: { \"variant\"?: \"default\" | \"secondary\" | \"destructive\" | \"outline\" | \"ghost\" | \"link\" | null; class?: ClassValue; className?: ClassValue } = {}) {\n  props ??= {}\n  const definition = badgeVariants_DEFINITION\n  const key = (value: unknown) => typeof value === \"boolean\" ? String(value) : value === 0 ? \"0\" : value\n  const supplied = Object.fromEntries(Object.entries(props).filter(([, value]) => value !== undefined))\n  const values: { [axis: string]: unknown } = { ...definition.defaultVariants, ...supplied }\n  const selected = Object.entries(definition.variants).map(([axis, choices]) => {\n    if ((props as { [axis: string]: unknown })[axis] === null) return null\n    const value = key((props as { [axis: string]: unknown })[axis]) || key((definition.defaultVariants as { [axis: string]: unknown })[axis])\n    return (choices as { [value: string]: ClassValue })[String(value)]\n  })\n  const compound = (([]) as { [key: string]: unknown }[]).flatMap(({ class: value, className, ...conditions }) =>\n    Object.entries(conditions).every(([axis, expected]) => Array.isArray(expected) ? expected.includes(values[axis]) : values[axis] === expected)\n      ? [value as ClassValue, className as ClassValue] : [])\n  return classNames(definition.base, selected, compound, props.class, props.className)\n}\n\nfunction Badge({\n  className,\n  /** @default \"default\" */\n  variant = \"default\",\n  ...props\n}: React.ComponentProps<\"span\"> &\n  VariantProps<typeof badgeVariants>) {\n  return (\n    <span\n      data-slot=\"badge\"\n      data-variant={variant}\n      className={cn(badgeVariants({ variant }), className)}\n      {...props}\n    />\n  )\n}\n\nexport { Badge, badgeVariants }\n",
+      "defaults": [
+        {
+          "function": "Badge",
+          "prop": "variant",
+          "value": "default",
+          "slots": [
+            "components.status-mark",
+            "components.tag-group"
+          ]
+        }
+      ],
+      "variants": [
+        {
+          "item": "badge",
+          "name": "badgeVariants",
+          "base": "cn-badge group/badge inline-flex w-fit shrink-0 items-center justify-center overflow-hidden whitespace-nowrap focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 aria-invalid:border-destructive aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 [&>svg]:pointer-events-none",
+          "config": {
+            "variants": {
+              "variant": {
+                "default": "cn-badge-variant-default",
+                "secondary": "cn-badge-variant-secondary",
+                "destructive": "cn-badge-variant-destructive",
+                "outline": "cn-badge-variant-outline",
+                "ghost": "cn-badge-variant-ghost",
+                "link": "cn-badge-variant-link"
+              }
+            },
+            "defaultVariants": {
+              "variant": "default"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "item": "button-group",
+      "path": "apps/v4/registry/bases/aria/ui/button-group.tsx",
+      "inputSha256": "0eea05ae4be99ebf25b026b41a09490cd00947b12b74f00147fa9a13d52f39b6",
+      "content": "import { cn, classNames, type ClassValue, type VariantProps } from \"cn\"\n\nimport { Separator } from \"@/registry/bases/aria/ui/separator\"\n\nconst buttonGroupVariants_DEFINITION = {\"base\":\"cn-button-group flex w-fit items-stretch *:focus-visible:relative *:focus-visible:z-10 [&>[data-slot=select-trigger]:not([class*='w-'])]:w-fit [&>input]:flex-1\",\"variants\":{\"orientation\":{\"horizontal\":\"cn-button-group-orientation-horizontal **:data-slot:rounded-r-none [&_[data-slot]~[data-slot]]:rounded-l-none [&_[data-slot]~[data-slot]]:border-l-0\",\"vertical\":\"cn-button-group-orientation-vertical flex-col **:data-slot:rounded-b-none [&_[data-slot]~[data-slot]]:rounded-t-none [&_[data-slot]~[data-slot]]:border-t-0\"}},\"defaultVariants\":{\"orientation\":\"horizontal\"}}\nfunction buttonGroupVariants(props: { \"orientation\"?: \"horizontal\" | \"vertical\" | null; class?: ClassValue; className?: ClassValue } = {}) {\n  props ??= {}\n  const definition = buttonGroupVariants_DEFINITION\n  const key = (value: unknown) => typeof value === \"boolean\" ? String(value) : value === 0 ? \"0\" : value\n  const supplied = Object.fromEntries(Object.entries(props).filter(([, value]) => value !== undefined))\n  const values: { [axis: string]: unknown } = { ...definition.defaultVariants, ...supplied }\n  const selected = Object.entries(definition.variants).map(([axis, choices]) => {\n    if ((props as { [axis: string]: unknown })[axis] === null) return null\n    const value = key((props as { [axis: string]: unknown })[axis]) || key((definition.defaultVariants as { [axis: string]: unknown })[axis])\n    return (choices as { [value: string]: ClassValue })[String(value)]\n  })\n  const compound = (([]) as { [key: string]: unknown }[]).flatMap(({ class: value, className, ...conditions }) =>\n    Object.entries(conditions).every(([axis, expected]) => Array.isArray(expected) ? expected.includes(values[axis]) : values[axis] === expected)\n      ? [value as ClassValue, className as ClassValue] : [])\n  return classNames(definition.base, selected, compound, props.class, props.className)\n}\n\nfunction ButtonGroup({\n  className,\n  orientation,\n  ...props\n}: React.ComponentProps<\"div\"> & VariantProps<typeof buttonGroupVariants>) {\n  return (\n    <div\n      role=\"group\"\n      data-slot=\"button-group\"\n      data-orientation={orientation}\n      className={cn(buttonGroupVariants({ orientation }), className)}\n      {...props}\n    />\n  )\n}\n\nfunction ButtonGroupText({\n  className,\n  render,\n  ...props\n}: React.ComponentProps<\"div\"> & {\n  render?: (props: React.HTMLAttributes<HTMLElement>) => React.ReactNode\n}) {\n  if (render) {\n    const renderProps = {\n      \"data-slot\": \"button-group-text\",\n      className: cn(\n        \"cn-button-group-text flex items-center [&_svg]:pointer-events-none\",\n        className\n      ),\n      ...props,\n    }\n\n    return render(renderProps)\n  }\n\n  return (\n    <div\n      data-slot=\"button-group-text\"\n      className={cn(\n        \"cn-button-group-text flex items-center [&_svg]:pointer-events-none\",\n        className\n      )}\n      {...props}\n    />\n  )\n}\n\nfunction ButtonGroupSeparator({\n  className,\n  /** @default \"vertical\" */\n  orientation = \"vertical\",\n  ...props\n}: React.ComponentProps<typeof Separator>) {\n  return (\n    <Separator\n      data-slot=\"button-group-separator\"\n      orientation={orientation}\n      className={cn(\n        \"cn-button-group-separator relative self-stretch data-horizontal:mx-px data-horizontal:w-auto data-vertical:my-px data-vertical:h-auto\",\n        className\n      )}\n      {...props}\n    />\n  )\n}\n\nexport {\n  ButtonGroup,\n  ButtonGroupSeparator,\n  ButtonGroupText,\n  buttonGroupVariants,\n}\n",
+      "defaults": [
+        {
+          "function": "ButtonGroupSeparator",
+          "prop": "orientation",
+          "value": "vertical",
+          "slots": [
+            "components.toolbar"
+          ]
+        }
+      ],
+      "variants": [
+        {
+          "item": "button-group",
+          "name": "buttonGroupVariants",
+          "base": "cn-button-group flex w-fit items-stretch *:focus-visible:relative *:focus-visible:z-10 [&>[data-slot=select-trigger]:not([class*='w-'])]:w-fit [&>input]:flex-1",
+          "config": {
+            "variants": {
+              "orientation": {
+                "horizontal": "cn-button-group-orientation-horizontal **:data-slot:rounded-r-none [&_[data-slot]~[data-slot]]:rounded-l-none [&_[data-slot]~[data-slot]]:border-l-0",
+                "vertical": "cn-button-group-orientation-vertical flex-col **:data-slot:rounded-b-none [&_[data-slot]~[data-slot]]:rounded-t-none [&_[data-slot]~[data-slot]]:border-t-0"
+              }
+            },
+            "defaultVariants": {
+              "orientation": "horizontal"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "item": "label",
+      "path": "apps/v4/registry/bases/aria/ui/label.tsx",
+      "inputSha256": "165c4ae2584ec47e5d64107cc8fd6d20d707ed4e24098d0dae67bfd43f6cd5aa",
+      "content": "\"use client\"\n\nimport * as React from \"react\"\nimport { cn } from \"cn\"\nimport {\n  LabelContext,\n  Label as LabelPrimitive,\n  type LabelProps,\n} from \"react-aria-components\"\n\nfunction Label({ className, htmlFor, slot, ...props }: LabelProps) {\n  const label = (\n    <LabelPrimitive\n      data-slot=\"label\"\n      className={cn(\n        \"cn-label cn-label-aria flex items-center select-none group-data-[disabled=true]:pointer-events-none peer-disabled:cursor-not-allowed\",\n        className\n      )}\n      {...props}\n      htmlFor={htmlFor}\n      slot={slot}\n    />\n  )\n\n  if (htmlFor && slot === undefined) {\n    return <LabelContext.Provider value={null}>{label}</LabelContext.Provider>\n  }\n\n  return label\n}\n\nexport { Label }\n",
+      "defaults": [],
+      "variants": []
+    },
+    {
+      "item": "sonner",
+      "path": "apps/v4/registry/bases/aria/ui/sonner.tsx",
+      "inputSha256": "d5178ce4c7834d3f46d261698395b498b8f45fef29975585df7e26cb43aa3cc7",
+      "content": "\"use client\"\n\nimport { useTheme } from \"next-themes\"\nimport { Toaster as Sonner, type ToasterProps } from \"sonner\"\n\nimport { IconPlaceholder } from \"@/app/(create)/components/icon-placeholder\"\n\nconst Toaster = ({ ...props }: ToasterProps) => {\n  const { theme = \"system\" } = useTheme()\n\n  return (\n    <Sonner\n      theme={theme as ToasterProps[\"theme\"]}\n      className=\"toaster group\"\n      icons={{\n        success: (\n          <IconPlaceholder\n            lucide=\"CircleCheckIcon\"\n            tabler=\"IconCircleCheck\"\n            hugeicons=\"CheckmarkCircle02Icon\"\n            phosphor=\"CheckCircleIcon\"\n            remixicon=\"RiCheckboxCircleLine\"\n            className=\"size-4\"\n          />\n        ),\n        info: (\n          <IconPlaceholder\n            lucide=\"InfoIcon\"\n            tabler=\"IconInfoCircle\"\n            hugeicons=\"InformationCircleIcon\"\n            phosphor=\"InfoIcon\"\n            remixicon=\"RiInformationLine\"\n            className=\"size-4\"\n          />\n        ),\n        warning: (\n          <IconPlaceholder\n            lucide=\"TriangleAlertIcon\"\n            tabler=\"IconAlertTriangle\"\n            hugeicons=\"Alert02Icon\"\n            phosphor=\"WarningIcon\"\n            remixicon=\"RiErrorWarningLine\"\n            className=\"size-4\"\n          />\n        ),\n        error: (\n          <IconPlaceholder\n            lucide=\"OctagonXIcon\"\n            tabler=\"IconAlertOctagon\"\n            hugeicons=\"MultiplicationSignCircleIcon\"\n            phosphor=\"XCircleIcon\"\n            remixicon=\"RiCloseCircleLine\"\n            className=\"size-4\"\n          />\n        ),\n        loading: (\n          <IconPlaceholder\n            lucide=\"Loader2Icon\"\n            tabler=\"IconLoader\"\n            hugeicons=\"Loading03Icon\"\n            phosphor=\"SpinnerIcon\"\n            remixicon=\"RiLoaderLine\"\n            className=\"size-4 animate-spin\"\n          />\n        ),\n      }}\n      style={\n        {\n          \"--normal-bg\": \"var(--popover)\",\n          \"--normal-text\": \"var(--popover-foreground)\",\n          \"--normal-border\": \"var(--border)\",\n          \"--border-radius\": \"var(--radius)\",\n        } as React.CSSProperties\n      }\n      toastOptions={{\n        classNames: {\n          toast: \"cn-toast\",\n        },\n      }}\n      {...props}\n    />\n  )\n}\n\nexport { Toaster }\n",
+      "defaults": [],
+      "variants": []
     }
   ],
   "host": [
@@ -751,6 +865,18 @@
       "file": "components/_parts/rail-utils/index.ts",
       "consumerImport": "import { mergeUiClasses as cx } from \"@clossys/designer/components\"",
       "packageImport": "import { cx } from \"../../internal/cx\"",
+      "source": "components/internal/cx.ts",
+      "sourceSha256": "0a7524b0340fec42e1abb216013a353e950aa738d9ba0f2ebdedd5293337bab3",
+      "dependency": {
+        "name": "@clossys/designer",
+        "version": "0.12.0",
+        "license": "MIT"
+      }
+    },
+    {
+      "file": "components/native-action/native-action.tsx",
+      "consumerImport": "import { mergeUiClasses as cx } from \"@clossys/designer/components/server\"",
+      "packageImport": "import { cx } from \"../internal/cx\"",
       "source": "components/internal/cx.ts",
       "sourceSha256": "0a7524b0340fec42e1abb216013a353e950aa738d9ba0f2ebdedd5293337bab3",
       "dependency": {

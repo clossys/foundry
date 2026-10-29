@@ -12,6 +12,11 @@ const hash = text => createHash("sha256").update(text).digest("hex");
 const read = path => readFileSync(resolve(packageRoot, path), "utf8");
 const packageIdentity = JSON.parse(read("package.json"));
 const leaves = ["command", "dropdown-menu", "empty", "item", "scroll-area", "sheet", "sidebar"];
+const extraRoots = {
+  "text-field": ["input", "textarea", "label"], "search-field": ["input-group", "input", "label", "button"],
+  "tag-group": ["badge", "button"], toolbar: ["button-group"], link: ["button"], "native-action": ["button"],
+  toast: ["sonner"], "status-mark": ["badge"], "grid-list": ["item"],
+};
 const displayDefaults = new Set(["title", "description"]);
 const copyKeys = ["command.title", "command.description", "command.search", "sheet.close", "sidebar.title", "sidebar.description", "sidebar.toggle"];
 
@@ -114,6 +119,10 @@ export function adaptFile(file) {
   }
   for (const edit of edits.sort((a, b) => b.start - a.start)) source = source.slice(0, edit.start) + edit.text + source.slice(edit.end);
   source = source.replace(/^import\s*\{[^}]*\}\s*from "class-variance-authority"\s*\n/gm, "");
+  // Retained Badge consumers use its span seat; the unused render callback is not part of their contract.
+  if (file.item === "badge") source = source.replace("  render,\n", "")
+    .replace(/ & \{\n    render\?:[^\n]*\n  \}/, "")
+    .replace(/  if \(render\) \{[\s\S]*?\n  \}\n\n/, "");
   const ports = { command: ["CommandDialog", "CommandInput"], dialog: ["Dialog", "DialogFooter"], sheet: ["Sheet"], sidebar: ["Sidebar", "SidebarTrigger", "SidebarRail"] }[file.item] ?? [];
   if (ports.length) source = addCopyPort(source, ports);
   if (file.item === "command") {
@@ -152,7 +161,7 @@ export function generateRailAdapters() {
     if (binding.length !== 1) throw new Error(`Writer binding missing: ${context}`);
     return { key, ref: { id: rows[0].id } };
   });
-  const files = input.files.filter(file => !["style", "license", "use-mobile", "kbd"].includes(file.item)).map(adaptFile);
+  let files = input.files.filter(file => !["style", "license", "use-mobile", "kbd"].includes(file.item)).map(adaptFile);
   const byItem = new Map(input.files.map(file => [file.item, file]));
   const owners = new Map(files.map(file => [file.item, []]));
   for (const leaf of leaves) {
@@ -165,11 +174,22 @@ export function generateRailAdapters() {
     };
     visit(leaf);
   }
+  for (const [leaf, roots] of Object.entries(extraRoots)) {
+    const seen = new Set();
+    const visit = item => {
+      if (seen.has(item)) return;
+      seen.add(item); owners.get(item)?.push(`components.${leaf}`);
+      for (const match of byItem.get(item).content.matchAll(/from\s*"@\/registry\/bases\/aria\/ui\/([a-z-]+)"/g)) visit(match[1]);
+    };
+    roots.forEach(visit);
+  }
+  files = files.filter(file => owners.get(file.item)?.length);
   for (const file of files) for (const row of file.defaults) {
     row.slots = [...new Set(owners.get(file.item))].sort();
     if (!row.slots.length || row.slots.some(slot => !slots.has(slot))) throw new Error(`Unregistered default owner: ${file.item}.${row.function}.${row.prop}`);
   }
   const host = [{ file: "components/_parts/rail-utils/index.ts", consumerImport: `import { mergeUiClasses as cx } from "${packageIdentity.name}/components"`, packageImport: 'import { cx } from "../../internal/cx"', source: "components/internal/cx.ts", sourceSha256: hash(read("src/components/internal/cx.ts")), dependency: { name: packageIdentity.name, version: packageIdentity.version, license: packageIdentity.license } }];
+  host.push({ file: "components/native-action/native-action.tsx", consumerImport: `import { mergeUiClasses as cx } from "${packageIdentity.name}/components/server"`, packageImport: 'import { cx } from "../internal/cx"', source: "components/internal/cx.ts", sourceSha256: hash(read("src/components/internal/cx.ts")), dependency: { name: packageIdentity.name, version: packageIdentity.version, license: packageIdentity.license } });
   const refs = `export const RAIL_COPY_REFS = ${JSON.stringify(Object.fromEntries(copy.map(row => [row.key, row.ref])), null, 2)} as const\n`;
   return { version: 1, upstreamCommit: input.commit, upstreamDataSha256: hash(read("src/importers/vendor/shadcn-aria-rail.data.json")), registeredSlots: leaves.map(leaf => `components.${leaf}`), copy, files, host, utility: utilitySource, copySource: refs, utilityTypes: 'interface CopyRef { readonly id: string; readonly locale?: string; readonly values?: Readonly<Record<string, string | number | boolean>> }\ntype CopyResolver = (ref: CopyRef) => { readonly ref: CopyRef; readonly text: string } | undefined\ntype ClassValue = string | number | boolean | null | undefined | object | ClassValue[]\ntype VariantProps<T extends (...args: any[]) => unknown> = Omit<NonNullable<Parameters<T>[0]>, "class" | "className">\nexport { type CopyRef, type CopyResolver, type ClassValue, type VariantProps }\n' };
 }
@@ -196,6 +216,12 @@ if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.ur
       const path = resolve(packageRoot, "src", file.path);
       mkdirSync(dirname(path), { recursive: true });
       writeFileSync(path, module.railPackageFile(file).content);
+    }
+    const native = imported.sourceBundles.find(bundle => bundle.slot === "components.native-action");
+    if (native) {
+      const path = resolve(packageRoot, "src/catalog/rules/components.native-action.json");
+      const rule = JSON.parse(readFileSync(path, "utf8"));
+      writeFileSync(path, JSON.stringify({ ...rule, files: native.files }, null, 2) + "\n");
     }
     console.log(`Emitted ${imported.files.length} adapted source/support files with zero rewrite blockers.`);
   }

@@ -85,7 +85,8 @@ describe("pinned shadcn aria component import", () => {
   it("regenerates every committed descriptor and coverage byte", () => {
     const files = generatedShadcnComponentFiles(pinnedInput());
     const destination = resolve(import.meta.dirname, "../catalog/fills/shadcn@aria");
-    expect([...Object.keys(files), "components.command.json", "components.dropdown-menu.json", "components.empty.json", "components.item.json", "components.scroll-area.json", "components.sheet.json", "components.sidebar.json"].sort()).toEqual(readdirSync(destination).sort());
+    // Full join: nine retained source offers extend the immutable original generator inventory.
+    expect([...Object.keys(files), "components.command.json", "components.dropdown-menu.json", "components.empty.json", "components.item.json", "components.scroll-area.json", "components.sheet.json", "components.sidebar.json", ...["text-field", "search-field", "tag-group", "toolbar", "link", "native-action", "toast", "status-mark", "grid-list"].map(leaf => `components.${leaf}.json`)].sort()).toEqual(readdirSync(destination).sort());
     for (const [name, bytes] of Object.entries(files)) expect(readFileSync(resolve(destination, name), "utf8"), name).toBe(bytes);
   });
   it("classifies every inspected item at the immutable commit with no unknown runtime result", () => {

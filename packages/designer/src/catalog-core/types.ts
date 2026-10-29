@@ -168,7 +168,11 @@ export interface CatalogData {
 export type ComponentSlot = Slot<ComponentContract> & { layer: "components" };
 export type FrameSlot = Slot<FrameContract> & { layer: "frames" };
 export type CatalogSlot = Slot<SlotContract>;
-export interface SlotAlias { id: string; target: string; memberMap?: Readonly<Record<string, string>> }
+export interface SlotAlias {
+  id: string; target: string; memberMap?: Readonly<Record<string, string>>;
+  /** Preserve a historical registered slot and its contracts/fills; new symbolic references use target. */
+  retainsSlot?: true;
+}
 export interface BuildCatalogData extends Omit<CatalogData, "slots"> {
   slots: readonly CatalogSlot[];
   aliases: readonly SlotAlias[];

@@ -7,7 +7,7 @@ import {
   type GridListProps as AriaGridListProps,
   type GridListItemProps as AriaGridListItemProps,
 } from "react-aria-components";
-import { Checkbox } from "../checkbox/index.js";
+import { Checkbox } from "../Checkbox.js";
 import { itemVariants } from "../_parts/rail-item/item.js";
 import { cn as cx } from "../_parts/rail-utils/index.js";
 
@@ -42,6 +42,8 @@ function GridListRoot<T extends object>({ className, layout = "stack", ...rest }
       className={cx("w-full min-w-0 focus-visible:outline-solid focus-visible:outline-(length:--ui-border-focus) focus-visible:outline-offset-(--ui-focus-offset) focus-visible:outline-(--color-focus-ring)", layout === "grid" ? "grid grid-cols-2 gap-(--spacing-md)" : "flex flex-col", className)} />
   </GridListActionContext.Provider>;
 }
+
+const selectedItemClasses = (isSelected: boolean) => itemVariants({ variant: isSelected ? "muted" : "outline" });
 
 function GridListItem({ className, render, ...rest }: GridListItemProps) {
   const rootAction = useContext(GridListActionContext);
@@ -82,7 +84,7 @@ function GridListItem({ className, render, ...rest }: GridListItemProps) {
       };
       return render ? render(adaptedProps, state) : <div {...adaptedProps} />;
     }}
-    className={state => cx(itemVariants({variant: state.isSelected ? "muted" : "outline"}), className)} />;
+    className={state => cx(selectedItemClasses(state.isSelected), className)} />;
 }
 
 function GridListSelectionCheckbox({ "aria-label": ariaLabel }: GridListSelectionCheckboxProps) {

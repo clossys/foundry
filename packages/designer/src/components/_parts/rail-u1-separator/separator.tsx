@@ -1,11 +1,12 @@
 import type * as React from "react"
 "use client"
 
-import { cn } from "../../_parts/rail-u1-utils/index.js"
+import { cn } from "../../_parts/rail-utils/index.js"
 import { Separator as SeparatorPrimitive } from "react-aria-components"
 
 function Separator({
   className,
+  /** @default "horizontal" */
   orientation = "horizontal",
   ...props
 }: React.ComponentProps<typeof SeparatorPrimitive>) {
