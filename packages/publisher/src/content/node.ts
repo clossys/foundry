@@ -34,3 +34,7 @@ export type { PublisherLocaleManifest, LocaleRouteOptions, LocaleRouteFinding, H
 
 export { compilePublication, publicationLibraryPins, publicationLayoutPin } from "./release/publication.js";
 export type { PublicationSnapshot, PublicationConfigPin, PublicationCopyPin, PublicationWriter, PublicationProducts, CompiledPublication, ReleasedPublication } from "./release/publication.js";
+
+/** Publisher-owned site identity records and surface drift checks (Node only). */
+export { SITE_IDENTITY_FILE, readSiteIdentity, validateSiteIdentity, copyEntriesFromRegistry, resolveBrandTaglines, checkSiteIdentityDrift } from "../site-identity/index.js";
+export type { SiteIdentity, SiteIdentityRead, SiteIdentityReadIssue, BrandIdentity, BrandLegalEntity, BrandTagline, CopyEntryLike, ResolvedTagline, SiteIdentityDriftKind, SiteIdentityDriftFinding, SiteIdentityDriftOptions, SiteIdentityDriftState, SiteIdentityDriftResult, SiteIdentitySurface } from "../site-identity/index.js";

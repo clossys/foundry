@@ -22,7 +22,7 @@ import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
-import { describe, expect, it, vi } from "vitest";
+import { afterAll, describe, expect, it, vi } from "vitest";
 import { createCopyResolver, parseCopyRegistry } from "@clossys/writer";
 import type { PackManifest } from "./pack/types.js";
 import { PackReviewView } from "./web/views/PackReviewView.js";
@@ -39,6 +39,7 @@ import {
   resolvePackReviewPage,
   resolvePackReviewSections,
 } from "../templates/site/app/pack-review.js";
+import { launchRoot, launchBrief } from "../test-fixtures/publisher-launch.js";
 import { readPackReviewFile } from "../templates/site/app/pack-review-files.js";
 import { packReviewAvailable, packReviewHref, siteSitemap } from "../templates/site/app/site-wiring.js";
 import type { SiteTarget } from "../templates/site/app/site-wiring.js";
@@ -180,9 +181,10 @@ describe("app/pack/page.tsx source shape", () => {
     expect(unavailable).toBeGreaterThan(-1);
     expect(sections).toBeGreaterThan(unavailable);
     expect(body.slice(sections)).toMatch(/^resolvePackReviewSections\(\{\s*env: process\.env,/);
-    for (const loader of ["loadStrategyContract", "loadEngagementBrief", "loadVoiceRecord", "loadBrandDeclarations"]) {
+    for (const loader of ["loadStrategyBrief", "loadEngagementBrief", "loadVoiceRecord", "loadBrandDeclarations"]) {
       expect(body.slice(sections), loader).toMatch(new RegExp(`\\b${loader},`));
     }
+    expect(body).toContain('if (sections.strategyState === "missing")');
     expect(body).toMatch(/resolveCopy: createPackReviewCopyResolver\(\),/);
     expect(body).toMatch(/exports: model\.exports,/);
     for (const name of ["strategy", "brandKit", "voice"]) expect(body).toMatch(new RegExp(`${name}=\\{sections\\.${name}\\}`));
@@ -191,7 +193,7 @@ describe("app/pack/page.tsx source shape", () => {
   it("reads each pack-review record only through site-records", TIMEOUT, () => {
     expect(page).not.toMatch(/contract\.json|brief\.json|voice\.json|brand\.css|readBrandCss/);
     const files = ["site-copy.ts", "site-wiring.ts", "pack-review.ts", "pack-review-copy.ts", "pack-review-files.ts", "pack/page.tsx", "pack/export/route.ts"];
-    for (const needle of ['"strategist", "contract.json"', '"brief.json"', '"writer", "voice.json"', '"designer", "brand.css"']) {
+    for (const needle of ['"strategist", "briefs", "publisher.launch.json"', '"brief.json"', '"writer", "voice.json"', '"designer", "brand.css"']) {
       expect(code(readFileSync(join(APP_DIR, "site-records.ts"), "utf8")), needle).toContain(needle);
       for (const file of files) expect(code(readFileSync(join(APP_DIR, file), "utf8")), `${file} ${needle}`).not.toContain(needle);
     }
@@ -213,7 +215,9 @@ describe("app/pack/page.tsx source shape", () => {
 
   it("keeps the model module free of next, records and the environment", TIMEOUT, () => {
     const model = code(readTemplate("app/pack-review.ts"));
-    expect(model).not.toMatch(/from\s+["']next(\/|["'])|node:fs|process\.env|site-records|\.json/);
+    const packageContract = 'import launchContract from "@clossys/publisher/strategy-brief.json" with { type: "json" };';
+    expect(model).toContain(packageContract);
+    expect(model.replace(packageContract, "")).not.toMatch(/from\s+["']next(\/|["'])|node:fs|process\.env|site-records|\.json/);
   });
 });
 
@@ -782,30 +786,9 @@ describe("app/pack/export/route.ts source shape", () => {
 
 // ------------------------------------------------------- the record sections, run
 
-const PROVENANCE = { source: "fictional-register", recordedAt: "2026-09-01" };
-
-const CONTRACT = {
-  id: "example-strategy",
-  revision: "1.0.0",
-  provenance: PROVENANCE,
-  records: [
-    { kind: "product", id: "example", revision: "1.0.0", provenance: PROVENANCE, name: "Example", summary: "A fictional product summary for the review." },
-    { kind: "evidence", id: "pilot-notes", revision: "1.0.0", provenance: PROVENANCE, productId: "example", evidenceKind: "observed-fact", statement: "Fictional pilot readers finished the first step." },
-    {
-      kind: "claim",
-      id: "approved-claim",
-      revision: "1.0.0",
-      provenance: PROVENANCE,
-      productId: "example",
-      claimKey: "approved-claim",
-      assertion: "A fictional approved claim.",
-      status: "approved",
-      evidenceIds: ["pilot-notes"],
-      approval: { approvedBy: "fictional-review", approvedAt: "2026-09-02" },
-    },
-    { kind: "claim", id: "open-claim", revision: "1.0.0", provenance: PROVENANCE, productId: "example", claimKey: "open-claim", assertion: "A fictional claim still to approve.", status: "hypothesis" },
-  ],
-};
+const STRATEGY_ROOT = launchRoot();
+const CONTRACT = launchBrief(STRATEGY_ROOT);
+afterAll(() => rmSync(STRATEGY_ROOT, { recursive: true, force: true }));
 
 const BRIEF = {
   schemaVersion: 1,
@@ -870,7 +853,7 @@ const SECTION_MANIFEST: PackManifest = {
 const SECTION_TEXT = packReviewText(createCopyResolver(PACK_REVIEW_COPY, { target: "preview" }));
 
 interface SectionLoaders {
-  loadStrategyContract: () => unknown;
+  loadStrategyBrief: () => unknown;
   loadEngagementBrief: () => unknown;
   loadVoiceRecord: () => unknown;
   loadBrandDeclarations: () => Readonly<Record<string, string>>;
@@ -882,7 +865,7 @@ const absent = (): never => {
 
 function presentLoaders(): SectionLoaders {
   return {
-    loadStrategyContract: vi.fn(() => structuredClone(CONTRACT)),
+    loadStrategyBrief: vi.fn(() => structuredClone(CONTRACT)),
     loadEngagementBrief: vi.fn(() => structuredClone(BRIEF)),
     loadVoiceRecord: vi.fn(() => structuredClone(VOICE_RECORD)),
     loadBrandDeclarations: vi.fn(() => DECLARATIONS),
@@ -890,15 +873,16 @@ function presentLoaders(): SectionLoaders {
 }
 
 function absentLoaders(): SectionLoaders {
-  return { loadStrategyContract: vi.fn(absent), loadEngagementBrief: vi.fn(absent), loadVoiceRecord: vi.fn(absent), loadBrandDeclarations: vi.fn(absent) };
+  return { loadStrategyBrief: vi.fn(absent), loadEngagementBrief: vi.fn(absent), loadVoiceRecord: vi.fn(absent), loadBrandDeclarations: vi.fn(absent) };
 }
 
-function sectionsFor(loaders: SectionLoaders, over: { env?: Record<string, string | undefined>; copy?: Readonly<Record<string, string>>; taglineCopyId?: string } = {}) {
+function sectionsFor(loaders: SectionLoaders, over: { env?: Record<string, string | undefined>; copy?: Readonly<Record<string, string>>; taglineCopyId?: string; strategyRoot?: string } = {}) {
   const review = resolvePackReviewPage({ env: INSIDE, routes: ROUTES, states: STATES, loadManifest: () => SECTION_MANIFEST });
   if (review.kind !== "review") throw new Error("expected a review");
   const copy = over.copy ?? COPY;
   return resolvePackReviewSections({
     env: over.env ?? INSIDE,
+    strategyRoot: over.strategyRoot ?? STRATEGY_ROOT,
     ...loaders,
     resolveCopy: createMapResolver(copy),
     copyIds: Object.keys(copy),
@@ -919,7 +903,7 @@ describe("resolvePackReviewSections", () => {
 
   it("returns no section when every record is absent and no copy resolves, so a fresh repository still renders", TIMEOUT, () => {
     const sections = sectionsFor(absentLoaders(), { copy: {} });
-    expect(sections).toEqual({});
+    expect(sections).toEqual({ strategyState: "missing" });
     const html = renderToStaticMarkup(
       createElement(PackReviewView, {
         brand: "Example Studio",
@@ -931,7 +915,7 @@ describe("resolvePackReviewSections", () => {
         labels: SECTION_TEXT.labels,
       }),
     );
-    expect(html).toContain("No Strategist contract and no engagement brief context are recorded yet.");
+    expect(html).toContain("The publisher.launch strategy brief is missing. Activate the required launch cells and compile the brief.");
     expect(html).toContain("No brand file is recorded yet.");
     expect(html).toContain("No voice record and no reusable copy are recorded yet.");
     expect(html).not.toContain("private");
@@ -940,28 +924,27 @@ describe("resolvePackReviewSections", () => {
   it("treats a record its owner's check refuses as absent, and carries nothing from it", TIMEOUT, () => {
     const sections = sectionsFor(
       {
-        loadStrategyContract: () => ({ ...CONTRACT, revision: "hostile-marker" }),
+        loadStrategyBrief: () => ({ ...CONTRACT, contract: "hostile-marker" }),
         loadEngagementBrief: () => ({ ...BRIEF, hostile: "hostile-marker" }),
         loadVoiceRecord: () => ({ ...VOICE_RECORD, rules: "hostile-marker" }),
         loadBrandDeclarations: absent,
       },
       { copy: {} },
     );
-    expect(sections).toEqual({});
+    expect(sections).toEqual({ strategyState: "missing" });
   });
 
-  it("builds the strategy brief from the Strategist contract and the engagement brief's context", TIMEOUT, () => {
+  it("builds the strategy brief from current launch cells and the engagement brief's context", TIMEOUT, () => {
     const { strategy } = sectionsFor(presentLoaders());
     expect(strategy).toEqual({
-      source: "Read from the Strategist contract.",
-      summary: "A fictional product summary for the review.",
+      source: "Read from the publisher.launch strategy brief.",
+      summary: "A fictional product summary for the review. Not large factories.",
       context: [
         { name: "Business", value: "product-or-service" },
         { name: "Product", value: "software" },
         { name: "Audience", value: "businesses" },
       ],
       openQuestions: [
-        "Claim to approve: A fictional claim still to approve.",
         "What stage is the business at?",
         "What should this engagement achieve first?",
         "What constraints should the team work within?",
@@ -971,21 +954,41 @@ describe("resolvePackReviewSections", () => {
     expect(JSON.stringify(strategy)).not.toContain("A fictional problem.");
   });
 
-  it("falls back to the engagement brief's context when there is no Strategist contract", TIMEOUT, () => {
-    const { strategy } = sectionsFor({ ...presentLoaders(), loadStrategyContract: absent });
-    expect(strategy?.source).toBe("Read from the engagement brief's context. There is no Strategist contract yet.");
-    expect(strategy?.summary).toBeUndefined();
-    expect(strategy?.context.map((fact) => fact.name)).toEqual(["Business", "Product", "Audience"]);
-    expect(strategy?.openQuestions).toEqual(["What stage is the business at?", "What should this engagement achieve first?", "What constraints should the team work within?"]);
+  it("blocks the strategy section without a written Publisher launch brief, even with engagement context", TIMEOUT, () => {
+    const sections = sectionsFor({ ...presentLoaders(), loadStrategyBrief: absent });
+    expect(sections.strategy).toBeUndefined();
+    expect(sections.strategyState).toBe("missing");
   });
 
-  it("reads the contract alone when the brief is absent or carries no context", TIMEOUT, () => {
+  it("blocks on missing cells and keeps stale compiled briefs visibly stale", TIMEOUT, () => {
+    const root = launchRoot(false);
+    try {
+      expect(sectionsFor(presentLoaders(), { strategyRoot: root }).strategyState).toBe("missing");
+      expect(sectionsFor(presentLoaders(), { strategyRoot: root }).strategy).toBeUndefined();
+    } finally { rmSync(root, { recursive: true, force: true }); }
+    mkdirSync(join(STRATEGY_ROOT, "briefs"), { recursive: true });
+    const prior = join(STRATEGY_ROOT, "briefs", "publisher.launch.json");
+    try {
+      writeFileSync(prior, JSON.stringify({ ...CONTRACT, fingerprint: "old" }));
+      const sections = sectionsFor(presentLoaders());
+      expect(sections.strategyState).toBe("stale");
+      expect(sections.strategy?.openQuestions).toContain("This strategy brief is stale. Review its cell references before proceeding.");
+    } finally { rmSync(prior); }
+  });
+
+  it("flags a loaded brief with a superseded fingerprint visibly stale", TIMEOUT, () => {
+    const sections = sectionsFor({ ...presentLoaders(), loadStrategyBrief: () => ({ ...CONTRACT, fingerprint: "superseded" }) });
+    expect(sections.strategyState).toBe("stale");
+    expect(sections.strategy?.openQuestions).toContain("This strategy brief is stale. Review its cell references before proceeding.");
+  });
+
+  it("reads the launch brief when engagement context is absent", TIMEOUT, () => {
     const { context: _dropped, ...withoutContext } = BRIEF;
     for (const loadEngagementBrief of [absent, () => withoutContext]) {
       const { strategy } = sectionsFor({ ...presentLoaders(), loadEngagementBrief });
-      expect(strategy?.source).toBe("Read from the Strategist contract.");
+      expect(strategy?.source).toBe("Read from the publisher.launch strategy brief.");
       expect(strategy?.context).toEqual([]);
-      expect(strategy?.openQuestions).toEqual(["Claim to approve: A fictional claim still to approve."]);
+      expect(strategy?.openQuestions).toEqual([]);
     }
   });
 
@@ -1087,7 +1090,7 @@ describe("resolvePackReviewSections", () => {
       "Pitch",
       "Boilerplate",
       "FAQ",
-      "A fictional product summary for the review.",
+      "A fictional product summary for the review. Not large factories.",
       "A fictional answer.",
     ]) {
       expect(html, words).toContain(words);
@@ -1104,7 +1107,7 @@ describe("the record-section loaders in site-records", () => {
   it("reads each record at request time from the repository's clossys directory, and imports none of them", TIMEOUT, () => {
     expect(records).toMatch(/resolve\(process\.cwd\(\), "\.\.", "\.\.", "clossys", \.\.\.segments\)/);
     for (const [name, path] of [
-      ["loadStrategyContract", '"strategist", "contract.json"'],
+      ["loadStrategyBrief", '"strategist", "briefs", "publisher.launch.json"'],
       ["loadEngagementBrief", '"brief.json"'],
       ["loadVoiceRecord", '"writer", "voice.json"'],
     ]) {

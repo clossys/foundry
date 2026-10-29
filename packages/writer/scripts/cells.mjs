@@ -1,0 +1,3 @@
+#!/usr/bin/env node
+import { runCellsCli } from '../dist/cells/cli.js';
+runCellsCli().catch(error=>{console.error(error instanceof Error?error.message:String(error));process.exitCode=1;});

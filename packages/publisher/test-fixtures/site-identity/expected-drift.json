@@ -1,0 +1,213 @@
+{
+  "clean": {
+    "state": "clean",
+    "findings": [],
+    "ignored": [
+      {
+        "file": "clean/copy/home.md",
+        "line": 10,
+        "snippet": "Founded as Lumenfold Studio LLC. <!-- brand-facts:ignore -->"
+      }
+    ],
+    "filesScanned": 4,
+    "indeterminateReasons": []
+  },
+  "conflict-brand-casing": {
+    "state": "drift",
+    "findings": [
+      {
+        "kind": "brand-casing",
+        "file": "conflict-brand-casing/copy/home.md",
+        "line": 7,
+        "found": "LumenFold",
+        "expected": "Lumenfold",
+        "message": "brand-casing drift: found \"LumenFold\" but the recorded brand name is \"Lumenfold\" (wordmark \"LUMENFOLD\")."
+      }
+    ],
+    "ignored": [
+      {
+        "file": "conflict-brand-casing/copy/home.md",
+        "line": 10,
+        "snippet": "Founded as Lumenfold Studio LLC. <!-- brand-facts:ignore -->"
+      }
+    ],
+    "filesScanned": 4,
+    "indeterminateReasons": []
+  },
+  "conflict-canonical-origin": {
+    "state": "drift",
+    "findings": [
+      {
+        "kind": "canonical-origin",
+        "file": "conflict-canonical-origin/footer.html",
+        "line": 4,
+        "found": "http://lumenfold.example",
+        "expected": "https://lumenfold.example",
+        "message": "canonical-origin drift: found \"http://lumenfold.example\" but the recorded canonical origin is \"https://lumenfold.example\"."
+      }
+    ],
+    "ignored": [
+      {
+        "file": "conflict-canonical-origin/copy/home.md",
+        "line": 10,
+        "snippet": "Founded as Lumenfold Studio LLC. <!-- brand-facts:ignore -->"
+      }
+    ],
+    "filesScanned": 4,
+    "indeterminateReasons": []
+  },
+  "conflict-contact-email": {
+    "state": "drift",
+    "findings": [
+      {
+        "kind": "contact-email",
+        "file": "conflict-contact-email/legal/terms.md",
+        "line": 6,
+        "found": "support@lumenfold.example",
+        "expected": "hello@lumenfold.example",
+        "message": "contact-email drift: found \"support@lumenfold.example\" but the recorded contact address is \"hello@lumenfold.example\" and the record owns no such address."
+      }
+    ],
+    "ignored": [
+      {
+        "file": "conflict-contact-email/copy/home.md",
+        "line": 10,
+        "snippet": "Founded as Lumenfold Studio LLC. <!-- brand-facts:ignore -->"
+      }
+    ],
+    "filesScanned": 4,
+    "indeterminateReasons": []
+  },
+  "conflict-domain": {
+    "state": "drift",
+    "findings": [
+      {
+        "kind": "domain",
+        "file": "conflict-domain/site.json",
+        "line": 9,
+        "found": "lumenfold.shop.example",
+        "expected": "lumenfold.example, www.lumenfold.example",
+        "message": "domain drift: found \"lumenfold.shop.example\", which carries the brand name but is not a recorded domain (lumenfold.example, www.lumenfold.example)."
+      }
+    ],
+    "ignored": [
+      {
+        "file": "conflict-domain/copy/home.md",
+        "line": 10,
+        "snippet": "Founded as Lumenfold Studio LLC. <!-- brand-facts:ignore -->"
+      }
+    ],
+    "filesScanned": 4,
+    "indeterminateReasons": []
+  },
+  "conflict-incorporation": {
+    "state": "drift",
+    "findings": [
+      {
+        "kind": "incorporation",
+        "file": "conflict-incorporation/footer.html",
+        "line": 2,
+        "found": "Lumenfold Labs Inc.",
+        "expected": "not incorporated (legal name \"Lumenfold Labs\")",
+        "message": "incorporation drift: \"Lumenfold Labs Inc.\" presents a company suffix, but the record says the legal entity \"Lumenfold Labs\" is not incorporated."
+      }
+    ],
+    "ignored": [
+      {
+        "file": "conflict-incorporation/copy/home.md",
+        "line": 10,
+        "snippet": "Founded as Lumenfold Studio LLC. <!-- brand-facts:ignore -->"
+      }
+    ],
+    "filesScanned": 4,
+    "indeterminateReasons": []
+  },
+  "conflict-jurisdiction": {
+    "state": "drift",
+    "findings": [
+      {
+        "kind": "jurisdiction",
+        "file": "conflict-jurisdiction/legal/terms.md",
+        "line": 4,
+        "found": "Nevada",
+        "expected": "Delaware",
+        "message": "jurisdiction drift: found \"Nevada\" but the recorded jurisdiction is \"Delaware\"."
+      }
+    ],
+    "ignored": [
+      {
+        "file": "conflict-jurisdiction/copy/home.md",
+        "line": 10,
+        "snippet": "Founded as Lumenfold Studio LLC. <!-- brand-facts:ignore -->"
+      }
+    ],
+    "filesScanned": 4,
+    "indeterminateReasons": []
+  },
+  "conflict-legal-name": {
+    "state": "drift",
+    "findings": [
+      {
+        "kind": "legal-name",
+        "file": "conflict-legal-name/legal/terms.md",
+        "line": 3,
+        "found": "Lumenfold Labs LLC",
+        "expected": "Lumenfold Labs Inc.",
+        "message": "legal-name drift: found \"Lumenfold Labs LLC\" but the recorded legal name is \"Lumenfold Labs Inc.\"."
+      }
+    ],
+    "ignored": [
+      {
+        "file": "conflict-legal-name/copy/home.md",
+        "line": 10,
+        "snippet": "Founded as Lumenfold Studio LLC. <!-- brand-facts:ignore -->"
+      }
+    ],
+    "filesScanned": 4,
+    "indeterminateReasons": []
+  },
+  "conflict-tagline": {
+    "state": "drift",
+    "findings": [
+      {
+        "kind": "tagline",
+        "file": "conflict-tagline/site.json",
+        "line": 10,
+        "found": "Light work for long weeks.",
+        "expected": "\"Light work for heavy weeks.\"",
+        "message": "tagline drift: found \"Light work for long weeks.\" but the approved tagline is \"Light work for heavy weeks.\"."
+      }
+    ],
+    "ignored": [
+      {
+        "file": "conflict-tagline/copy/home.md",
+        "line": 10,
+        "snippet": "Founded as Lumenfold Studio LLC. <!-- brand-facts:ignore -->"
+      }
+    ],
+    "filesScanned": 4,
+    "indeterminateReasons": []
+  },
+  "tagline-unresolved": {
+    "state": "drift",
+    "findings": [
+      {
+        "kind": "tagline-unresolved",
+        "file": "site-identity.json",
+        "line": 0,
+        "found": "brand.tagline-retired",
+        "expected": "an approved Writer copy-registry entry",
+        "message": "tagline-unresolved: the record's tagline copyId \"brand.tagline-retired\" does not resolve to an approved Writer copy-registry entry."
+      }
+    ],
+    "ignored": [
+      {
+        "file": "tagline-unresolved/copy/home.md",
+        "line": 9,
+        "snippet": "Founded as Lumenfold Studio LLC. <!-- brand-facts:ignore -->"
+      }
+    ],
+    "filesScanned": 4,
+    "indeterminateReasons": []
+  }
+}

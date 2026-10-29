@@ -161,12 +161,11 @@ describe("OutputManifest", () => {
   it("copies artifact records so publication owns no renderer state", () => {
     const artifacts = [{ id: "page", path: "site/account/sign-in.html", mediaType: "text/html", role: "page" }];
     const manifest = createOutputManifest("account.sign-in", "web", artifacts, {
-      strategyId: "product",
-      revision: "2026-08-11",
-      records: [{ kind: "fact", id: "product.category", revision: "1" }],
+      contract: "publisher.launch",
+      refs: [{ cell: "focus.reach.channel", version: 1 }],
       fingerprint: "sha256:example",
     });
     artifacts[0]!.path = "changed.html";
-    expect(manifest).toEqual({ surfaceId: "account.sign-in", channel: "web", artifacts: [{ id: "page", path: "site/account/sign-in.html", mediaType: "text/html", role: "page" }], provenance: { strategyId: "product", revision: "2026-08-11", records: [{ kind: "fact", id: "product.category", revision: "1" }], fingerprint: "sha256:example" } });
+    expect(manifest).toEqual({ surfaceId: "account.sign-in", channel: "web", artifacts: [{ id: "page", path: "site/account/sign-in.html", mediaType: "text/html", role: "page" }], provenance: { contract: "publisher.launch", refs: [{ cell: "focus.reach.channel", version: 1 }], fingerprint: "sha256:example" } });
   });
 });

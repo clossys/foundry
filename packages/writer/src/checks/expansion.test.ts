@@ -5,7 +5,7 @@ import { checkWriterExpansion, writerPseudoLocale } from "./expansion.js";
 
 const string = (text: string, extra: Partial<StringRecord> = {}): StringRecord => ({ id: "st.0000000001", leaf: "strings.actions", context: "Example", status: "draft", origin: "authored", text, ...extra });
 const library = (records: WriterRecord[], dir: "ltr" | "rtl" = "ltr"): WriterLibrary => ({
-  manifest: { consumer: "example", messageSyntax: "icu-mf1", defaultLocale: "en", locales: [{ tag: "en", dir, state: "active" }], fallback: {}, strategist: { path: "strategy" }, leafFreeze: { lexicon: "", strings: "", patterns: "", passages: "", narratives: "" } },
+  manifest: { consumer: "example", messageSyntax: "icu-mf1", defaultLocale: "en", locales: [{ tag: "en", dir, state: "active" }], fallback: {}, strategy: { root: "strategy", contract: "writer.messaging" }, leafFreeze: { lexicon: "", strings: "", patterns: "", passages: "", narratives: "" } },
   locales: { en: { records, documents: [] } },
 });
 const expansion = (value: Record<string, unknown>): LexiconRecord => ({ id: "lx.0000000001", leaf: "lexicon.expansion", context: "Example", status: "draft", origin: "authored", kind: "format", format: "expansion", value });

@@ -1,3 +1,4 @@
+import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 import { PUBLISHER_SURFACES_DIR, validateSurfaceOwnership } from "./ownership.js";
 
@@ -45,5 +46,30 @@ describe("validateSurfaceOwnership", () => {
       { path: "clossys/designer/brand.css", owner: "designer" },
     ]);
     expect(a).toEqual({ exitCode: 0, findings: [] });
+  });
+});
+
+describe("surface directory migration", () => {
+  it("matches the accepted consumer layout contract", () => {
+    const contract = JSON.parse(readFileSync(new URL("../../../../docs/contracts/consumer-layout.json", import.meta.url), "utf8"));
+    const surface = contract.folders.find((entry: { path: string }) => entry.path.endsWith("/publisher/surfaces"));
+    expect(PUBLISHER_SURFACES_DIR).toBe(`${surface.path}/`);
+  });
+  it("accepts and reports legacy-prefix claims for reading", () => {
+    const path = "clossys/publisher/surfaces/home.json";
+    expect(validateSurfaceOwnership([{ path, owner: "publisher" }]))
+      .toMatchObject({ exitCode: 0, findings: [], legacyPaths: [path], notices: [expect.stringContaining("read-only")] });
+    const notices = validateSurfaceOwnership([{ path, owner: "publisher" }]).notices?.join(" ");
+    expect(notices).toContain("clossys/publisher/surfaces/");
+    expect(notices).toContain(PUBLISHER_SURFACES_DIR);
+    expect(validateSurfaceOwnership([{ path, owner: "designer" }]).exitCode).toBe(1);
+  });
+  it("refuses claims from both current and legacy surface directories", () => {
+    expect(validateSurfaceOwnership([
+      { path: `${PUBLISHER_SURFACES_DIR}new.json`, owner: "publisher" },
+      { path: "clossys/publisher/surfaces/old.json", owner: "publisher" },
+    ])).toMatchObject({ exitCode: 1, findings: expect.arrayContaining([
+      expect.objectContaining({ rule: "surface-directory-indeterminate" }),
+    ]) });
   });
 });

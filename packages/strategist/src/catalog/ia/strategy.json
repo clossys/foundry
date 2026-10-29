@@ -1,0 +1,279 @@
+{
+  "schemaVersion": 1,
+  "nodes": [
+    {
+      "id": "context",
+      "name": "Context",
+      "question": "What is true outside and inside the company today?",
+      "children": [
+        {
+          "id": "context.market",
+          "name": "Market",
+          "leaves": [
+            "context.market.size",
+            "context.market.trend"
+          ]
+        },
+        {
+          "id": "context.customer",
+          "name": "Customer",
+          "leaves": [
+            "context.customer.need",
+            "context.customer.buying"
+          ]
+        },
+        {
+          "id": "context.competition",
+          "name": "Competition",
+          "leaves": [
+            "context.competition.alternative",
+            "context.competition.gap"
+          ]
+        },
+        {
+          "id": "context.company",
+          "name": "Company",
+          "leaves": [
+            "context.company.strength",
+            "context.company.constraint"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "aspiration",
+      "name": "Aspiration",
+      "question": "Why do we exist and where are we going?",
+      "children": [
+        {
+          "id": "aspiration.purpose",
+          "name": "Purpose",
+          "leaves": [
+            "aspiration.purpose.mission",
+            "aspiration.purpose.vision"
+          ]
+        },
+        {
+          "id": "aspiration.culture",
+          "name": "Culture",
+          "leaves": [
+            "aspiration.culture.belief",
+            "aspiration.culture.behavior"
+          ]
+        },
+        {
+          "id": "aspiration.goal",
+          "name": "Goal",
+          "leaves": [
+            "aspiration.goal.long-term",
+            "aspiration.goal.annual"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "focus",
+      "name": "Focus",
+      "question": "Where do we play, for whom, with what?",
+      "children": [
+        {
+          "id": "focus.category",
+          "name": "Category",
+          "leaves": [
+            "focus.category.definition",
+            "focus.category.stance"
+          ]
+        },
+        {
+          "id": "focus.segment",
+          "name": "Segment",
+          "leaves": [
+            "focus.segment.core",
+            "focus.segment.next"
+          ]
+        },
+        {
+          "id": "focus.offer",
+          "name": "Offer",
+          "leaves": [
+            "focus.offer.included",
+            "focus.offer.excluded"
+          ]
+        },
+        {
+          "id": "focus.reach",
+          "name": "Reach",
+          "leaves": [
+            "focus.reach.geography",
+            "focus.reach.channel"
+          ]
+        },
+        {
+          "id": "focus.lifecycle",
+          "name": "Lifecycle",
+          "leaves": [
+            "focus.lifecycle.acquisition",
+            "focus.lifecycle.retention"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "advantage",
+      "name": "Advantage",
+      "question": "Why do we win and how do we earn?",
+      "children": [
+        {
+          "id": "advantage.proposition",
+          "name": "Proposition",
+          "leaves": [
+            "advantage.proposition.promise",
+            "advantage.proposition.proof"
+          ]
+        },
+        {
+          "id": "advantage.defensibility",
+          "name": "Defensibility",
+          "leaves": [
+            "advantage.defensibility.differentiator",
+            "advantage.defensibility.moat"
+          ]
+        },
+        {
+          "id": "advantage.model",
+          "name": "Model",
+          "leaves": [
+            "advantage.model.pricing",
+            "advantage.model.margin"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "identity",
+      "name": "Identity",
+      "question": "How are we recognised, named, heard and seen?",
+      "children": [
+        {
+          "id": "identity.brand",
+          "name": "Brand",
+          "leaves": [
+            "identity.brand.essence",
+            "identity.brand.personality"
+          ]
+        },
+        {
+          "id": "identity.naming",
+          "name": "Naming",
+          "leaves": [
+            "identity.naming.name",
+            "identity.naming.architecture"
+          ]
+        },
+        {
+          "id": "identity.verbal",
+          "name": "Verbal",
+          "leaves": [
+            "identity.verbal.narrative",
+            "identity.verbal.voice"
+          ]
+        },
+        {
+          "id": "identity.visual",
+          "name": "Visual",
+          "leaves": [
+            "identity.visual.style",
+            "identity.visual.imagery"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "capability",
+      "name": "Capability",
+      "question": "What must we be able to do, and with what resources?",
+      "children": [
+        {
+          "id": "capability.competency",
+          "name": "Competency",
+          "leaves": [
+            "capability.competency.critical",
+            "capability.competency.gap"
+          ]
+        },
+        {
+          "id": "capability.sourcing",
+          "name": "Sourcing",
+          "leaves": [
+            "capability.sourcing.build",
+            "capability.sourcing.partner",
+            "capability.sourcing.acquire"
+          ]
+        },
+        {
+          "id": "capability.operation",
+          "name": "Operation",
+          "leaves": [
+            "capability.operation.delivery",
+            "capability.operation.technology"
+          ]
+        },
+        {
+          "id": "capability.team",
+          "name": "Team",
+          "leaves": [
+            "capability.team.role",
+            "capability.team.structure"
+          ]
+        },
+        {
+          "id": "capability.resource",
+          "name": "Resource",
+          "leaves": [
+            "capability.resource.funding",
+            "capability.resource.allocation"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "execution",
+      "name": "Execution",
+      "question": "What do we do now, how do we measure it, and what could stop us?",
+      "children": [
+        {
+          "id": "execution.priority",
+          "name": "Priority",
+          "leaves": [
+            "execution.priority.bet",
+            "execution.priority.parked"
+          ]
+        },
+        {
+          "id": "execution.roadmap",
+          "name": "Roadmap",
+          "leaves": [
+            "execution.roadmap.milestone",
+            "execution.roadmap.release"
+          ]
+        },
+        {
+          "id": "execution.measure",
+          "name": "Measure",
+          "leaves": [
+            "execution.measure.north-star",
+            "execution.measure.driver"
+          ]
+        },
+        {
+          "id": "execution.risk",
+          "name": "Risk",
+          "leaves": [
+            "execution.risk.threat",
+            "execution.risk.mitigation"
+          ]
+        }
+      ]
+    }
+  ]
+}

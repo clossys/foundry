@@ -1,0 +1,14 @@
+{
+  "id": "writer.messaging",
+  "schemaVersion": 1,
+  "owner": "@clossys/writer",
+  "requires": [
+    "identity.verbal.narrative",
+    "identity.verbal.voice",
+    "advantage.proposition.promise",
+    "advantage.proposition.proof",
+    "focus.segment.core",
+    "context.customer.need"
+  ],
+  "optional": []
+}

@@ -197,7 +197,7 @@ async function readCompositeUnlocked(root: string, catalog: CompositeCatalogData
   if(record(metadata)&&metadata.surfaces!==undefined&&new TextDecoder("utf-8",{fatal:true}).decode(await regularFile(containedPath(root,"metadata.json")))!==stableStringify(metadata))throw new LibraryInputError("Noncanonical opted-in metadata");
   if (!record(source) || source.kind !== "consumer" || source.author !== "consumer" || typeof source.id !== "string" || typeof source.license !== "string"
     || !record(metadata) || !exactKeys(metadata, ["format", "values", "components", "files"], ["adoptedAt", "surfaces"]) || metadata.format !== "composite-v1"
-    || !record(metadata.values) || !exactKeys(metadata.values, [], ["complete", "baseline", "rubricVersion", "strategy", "direction", "rationale"])
+    || !record(metadata.values) || !exactKeys(metadata.values, [], ["complete", "baseline", "rubricVersion", "strategy", "rationale"])
     || !record(metadata.components) || !exactKeys(metadata.components, [], ["selection"]) || !Array.isArray(metadata.files) || !metadata.files.every(name => typeof name === "string")) throw new LibraryInputError("Invalid composite metadata");
   const valueIds = new Set(catalog.values.slots.map(slot => slot.id)), componentIds = new Set(catalog.components.slots.map(slot => slot.id));
   const fills: LibraryData["fills"][number][] = [], components: ComponentDocument[] = [], surfaces: SurfaceDocument[]=[];
@@ -243,7 +243,7 @@ async function readUnlocked(root: string, catalog: CatalogData): Promise<Library
   await readNeedsUnlocked(root);
   const parse = async (name: string): Promise<unknown> => JSON.parse(new TextDecoder("utf-8", { fatal: true }).decode(await regularFile(containedPath(root, name))));
   const source = await parse("source.json"), metadata = await parse("metadata.json"), selection = await parse("selection.json");
-  if (!record(source) || source.kind !== "consumer" || source.author !== "consumer" || typeof source.id !== "string" || typeof source.license !== "string" || !record(metadata) || !exactKeys(metadata, [], ["complete", "baseline", "adoptedAt", "rubricVersion", "strategy", "direction", "rationale"])) throw new LibraryInputError("Invalid library metadata");
+  if (!record(source) || source.kind !== "consumer" || source.author !== "consumer" || typeof source.id !== "string" || typeof source.license !== "string" || !record(metadata) || !exactKeys(metadata, [], ["complete", "baseline", "adoptedAt", "rubricVersion", "strategy", "rationale"])) throw new LibraryInputError("Invalid library metadata");
   const allowed = new Set(catalog.slots.map(slot => `${slot.id}.json`));
   const entries = await fs.readdir(join(root, "fills"));
   const fills = [];
@@ -490,4 +490,17 @@ async function projectionOwnership(root:string,previousFiles:ReadonlyMap<string,
   for(const paths of [previous,next]){if(new Set(paths).size!==paths.length)throw new LibraryInputError("Duplicate projection ownership");for(const name of paths)containedPath(root,name);}
   const present=await evidenceFiles(root);for(const name of next)if(!previousFiles.has(name)){const path=containedPath(root,name);let exists=false;try{await fs.lstat(path);exists=true;}catch(error){if((error as NodeJS.ErrnoException).code!=="ENOENT"&&(error as NodeJS.ErrnoException).code!=="ENOTDIR")throw error;}if(exists||[...present].some(file=>path.startsWith(file+sep)))throw new LibraryInputError("Managed surface output collides with unowned host file");}
   return {previous,next};
+}
+
+/** Compile cells into an isolated projection and reuse the existing drift-checked reader. */
+export function readLibraryFromCells(cellRoot: string, catalog: CatalogData): Promise<LibraryData>;
+export function readLibraryFromCells(cellRoot: string, catalog: CompositeCatalogData): Promise<CompositeLibraryData>;
+export async function readLibraryFromCells(cellRoot: string, catalog: CatalogData | CompositeCatalogData): Promise<LibraryData | CompositeLibraryData> {
+  const { tmpdir } = await import("node:os");
+  const { compileLibraryCells } = await import("./cells.js");
+  const temporary = await fs.mkdtemp(join(tmpdir(), "designer-cell-library-"));
+  try {
+    await compileLibraryCells(cellRoot, temporary, { catalog });
+    return await readLibrary(temporary, catalog as CompositeCatalogData);
+  } finally { await fs.rm(temporary, { recursive: true, force: true }); }
 }

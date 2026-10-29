@@ -287,3 +287,6 @@ export type {
   PassageViolationRule,
 } from "./passage.js";
 export { canonicalLocale, fallbackChain, directionFor } from "./locale.js";
+
+export { checkWriterRecordDrift } from "./checks/record-drift.js";
+export type { WriterRecordSource, WriterRecordDriftFinding } from "./checks/record-drift.js";

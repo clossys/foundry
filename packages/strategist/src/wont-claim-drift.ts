@@ -1,37 +1,13 @@
-/**
- * `checkWontClaimDrift` — does any surface make a claim the strategy brief
- * says it must never make? Pure: takes already-read `ScannedFile[]` and an
- * already-validated `StrategyBrief` (`strategy-brief.ts`); does no I/O and
- * never throws.
- *
- * W1  A phrase matches literally, case-insensitively, on word boundaries.
- *     Each phrase is regex-escaped before it becomes a pattern (runs of
- *     whitespace in it match any whitespace run), so a phrase is never a
- *     pattern and there is no user regex. "unguaranteed results" is not a
- *     hit for "guaranteed results".
- * W2  A hit is a finding (file, line, id), one per id per line. A line
- *     carrying `wont-claim:ignore` inside a comment opener (`<!--`, `/*`,
- *     `{/*`, `//`, or `#` as the first non-blank character of the line) is
- *     listed in `ignored` and not checked. Recorded, never silent.
- * W3  An entry with no `matchPhrases` is listed in `unchecked` — recorded,
- *     but nothing can mechanically check it — and never changes the state.
- * W4  Fails closed, like `brand-facts-drift.ts`: zero files checked is
- *     "indeterminate", never "clean", and a line over `MAX_LINE_CHARS` is
- *     not checked at all — it makes the result "indeterminate", naming
- *     file:line. The cap is applied before the ignore marker, so a line that
- *     was not read is neither clean nor an override. Indeterminate wins over
- *     a hit; findings are still returned.
- * W5  `strategy-brief.json` itself is never a finding source: it lists the
- *     very phrases being searched for. A file with that name is skipped, and
- *     is not counted as scanned.
- *
- * Detection is lexical: it finds the phrases the record lists, and a claim
- * made in any other words is not detected.
+/** Checks quoted prohibitions from the active Proof and Voice cells.
+ * Matching is literal, case-insensitive and bounded by words. Comment ignore
+ * markers are recorded. Zero files, invalid active sources and overlong lines
+ * are indeterminate; indeterminate wins over hits. Unquoted bullets remain
+ * explicitly unchecked. This pure checker performs no filesystem reads.
  */
 
-import { MAX_LINE_CHARS } from "./brand-facts-drift.js";
+import type { StrategyModel } from "./format/types.js";
+const MAX_LINE_CHARS = 16384;
 import type { ScannedFile } from "./facts-gate.js";
-import { STRATEGY_BRIEF_FILE, type StrategyBrief } from "./strategy-brief.js";
 
 export interface WontClaimFinding {
   id: string;
@@ -51,7 +27,7 @@ export interface WontClaimResult {
   ignored: { file: string; line: number; snippet: string }[];
   /** Ids of entries with no `matchPhrases`: recorded, not mechanically checked (W3). */
   unchecked: string[];
-  /** Files actually checked; `strategy-brief.json` is not counted (W5). */
+  /** Files actually checked. */
   filesScanned: number;
   /** Non-empty exactly when `state` is "indeterminate". */
   indeterminateReasons: string[];
@@ -77,12 +53,10 @@ function snippetOf(text: string, max = 120): string {
   return trimmed.length > max ? `${trimmed.slice(0, max)}…` : trimmed;
 }
 
-function isBriefRecord(path: string): boolean {
-  const segments = path.split(/[\\/]/);
-  return segments[segments.length - 1] === STRATEGY_BRIEF_FILE;
-}
-
-export function checkWontClaimDrift(files: readonly ScannedFile[], brief: StrategyBrief): WontClaimResult {
+/** Checks the active Proof and Voice prohibitions. */
+export function checkWontClaimDrift(files: readonly ScannedFile[], source: StrategyModel): WontClaimResult {
+  const selected = activeWontClaim(source);
+  const brief = { wontClaim: selected.entries };
   const findings: WontClaimFinding[] = [];
   const ignored: WontClaimResult["ignored"] = [];
   const longLineReasons: string[] = [];
@@ -93,7 +67,7 @@ export function checkWontClaimDrift(files: readonly ScannedFile[], brief: Strate
   );
   const unchecked = brief.wontClaim.filter((entry) => (entry.matchPhrases ?? []).length === 0).map((entry) => entry.id);
 
-  const scanned = files.filter((file) => !isBriefRecord(file.path));
+  const scanned = files;
   for (const file of scanned) {
     const lines = file.content.split("\n");
     for (let i = 0; i < lines.length; i++) {
@@ -123,7 +97,7 @@ export function checkWontClaimDrift(files: readonly ScannedFile[], brief: Strate
             file: file.path,
             line: lineNo,
             found,
-            message: `"${found}" makes a claim the strategy brief says it will not make (${entry.id}).`,
+            message: `"${found}" makes a claim the active strategy says it will not make (${entry.id}).`,
           });
           break; // one finding per id per line
         }
@@ -131,7 +105,7 @@ export function checkWontClaimDrift(files: readonly ScannedFile[], brief: Strate
     }
   }
 
-  const indeterminateReasons: string[] = [...longLineReasons];
+  const indeterminateReasons: string[] = [...selected.issues, ...longLineReasons];
   if (longLines > longLineReasons.length) {
     indeterminateReasons.push(`${longLines - longLineReasons.length} more line(s) over the ${MAX_LINE_CHARS} character limit were not checked`);
   }
@@ -139,4 +113,34 @@ export function checkWontClaimDrift(files: readonly ScannedFile[], brief: Strate
 
   const state: WontClaimState = indeterminateReasons.length > 0 ? "indeterminate" : findings.length > 0 ? "hit" : "clean";
   return { state, findings, ignored, unchecked, filesScanned: scanned.length, indeterminateReasons };
+}
+
+
+/** Only Direction labels in the tree-selected active Proof and Voice govern copy. */
+function activeWontClaim(model: StrategyModel): { entries: { id: string; statement: string; matchPhrases: string[] }[]; issues: string[] } {
+  const entries: { id: string; statement: string; matchPhrases: string[] }[] = []; const issues: string[] = [];
+  const sources = [["advantage.proposition.proof", "Never-claim"], ["identity.verbal.voice", "Never"]] as const;
+  for (const issue of model.issues) {
+    if (issue.path === "." || issue.path === "tree.json" || sources.some(([id]) => issue.path === `cells/${id}` || issue.path === `cells/${id}/v${model.tree?.active[id]}.md`)) {
+      issues.push(`${issue.path}:${issue.line}: ${issue.message}`);
+    }
+  }
+  if (!model.tree) issues.push("tree.json: no valid active pointers");
+  for (const [id, key] of sources) {
+    const version = model.tree?.active[id];
+    const cells = model.cells.filter(c => c.id === id && c.version === version);
+    const cell = cells[0];
+    if (version == null || cells.length !== 1 || cell?.status !== "active") {
+      issues.push(`${id}: active cell is missing or disagrees with tree.json`); continue;
+    }
+    const bullets = cell.direction.filter(b => b.key === key);
+    if (!bullets.length) issues.push(`${cell.path}: missing ${key}: label`);
+    for (const bullet of bullets) {
+      // Delimiters sit outside words; apostrophes inside words belong to the phrase.
+      const phrases = [...bullet.text.matchAll(/(?<![\p{L}\p{N}_])(?:"((?:[^"\\]|\\.)+)"|“([^”]+)”|'((?:[^'\n]|(?<=[\p{L}\p{N}_])'(?=[\p{L}\p{N}_]))+)'|‘((?:[^’\n]|(?<=[\p{L}\p{N}_])’(?=[\p{L}\p{N}_]))+)’)(?![\p{L}\p{N}_])/gu)]
+        .map(m => (m[1] ?? m[2] ?? m[3] ?? m[4] ?? "").trim()).filter(Boolean);
+      entries.push({ id: `${id}@${version}#${bullet.line}`, statement: bullet.text, matchPhrases: phrases });
+    }
+  }
+  return { entries, issues };
 }

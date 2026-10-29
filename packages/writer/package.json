@@ -58,7 +58,8 @@
     "fit-signals.json",
     "README.md",
     "LICENSE",
-    "skill"
+    "skill",
+    "strategy-brief.json"
   ],
   "sideEffects": false,
   "foundry": {
@@ -74,7 +75,7 @@
         "inputs": [
           {
             "producerRole": "@clossys/strategist",
-            "artifact": "brand-derivation"
+            "artifact": "strategy-brief"
           }
         ],
         "outputs": [
@@ -123,7 +124,7 @@
         "inputs": [
           {
             "producerRole": "@clossys/strategist",
-            "artifact": "claims"
+            "artifact": "strategy-brief"
           }
         ],
         "outputs": [
@@ -198,7 +199,7 @@
         "inputs": [
           {
             "producerRole": "@clossys/strategist",
-            "artifact": "positioning"
+            "artifact": "strategy-brief"
           }
         ],
         "outputs": [
@@ -236,11 +237,7 @@
     "needs": [
       {
         "producerRole": "@clossys/strategist",
-        "artifact": "brand-derivation"
-      },
-      {
-        "producerRole": "@clossys/strategist",
-        "artifact": "claims"
+        "artifact": "strategy-brief"
       }
     ],
     "solves": [
@@ -283,7 +280,8 @@
     "prepublishOnly": "node ../../scripts/check-name-collision.mjs . && npm run build",
     "typecheck": "node scripts/pack-plan-contract.mjs && tsc -p tsconfig.json --noEmit",
     "test": "node scripts/pack-plan-contract.mjs && vitest run",
-    "check:records": "node scripts/check-record-drift.mjs"
+    "check:records": "node scripts/check-record-drift.mjs",
+    "check:cells": "vitest run src/cells/cells.test.ts"
   },
   "devDependencies": {
     "@types/node": "^26.6.3",
@@ -295,6 +293,7 @@
     "access": "public"
   },
   "dependencies": {
+    "@clossys/strategist": "^0.6.0",
     "@formatjs/icu-messageformat-parser": "3.5.22",
     "intl-messageformat": "12.1.4",
     "retext": "9.0.0",

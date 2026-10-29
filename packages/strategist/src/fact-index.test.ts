@@ -1,23 +1,25 @@
 import { describe, expect, it } from "vitest";
 import { buildFactIndex, isTracedSurfaceForm } from "./fact-index.js";
-import type { Fact } from "./schema.js";
+import type { Finding } from "./format/types.js";
 
-const numberFact: Fact = {
-  key: "active-customers",
-  label: "Active customers",
+const numberFact: Finding = {
+  id: "active-customers",
+
   value: 4200,
   unit: "customers",
   source: "billing-export-2026-06",
-  lastUpdatedAt: "2026-06-30",
+  observed: "2026-06-30",
+  by: "researcher", bullets: [], path: "findings/fictional.md",
   aliases: ["4,200", "4.2K"],
 };
 
-const moneyFact: Fact = {
-  key: "annual-revenue",
-  label: "Annual revenue",
-  value: { amount: 4200000, currency: "USD" },
+const moneyFact: Finding = {
+  id: "annual-revenue",
+
+  value: 4200000, unit: "USD",
   source: "audited-statement-2026",
-  lastUpdatedAt: "2026-06-30",
+  observed: "2026-06-30",
+  by: "researcher", bullets: [], path: "findings/fictional.md",
   aliases: ["$4.2M"],
 };
 
@@ -37,7 +39,7 @@ describe("buildFactIndex", () => {
     expect(isTracedSurfaceForm(index, "4.3K")).toBe(false); // a nearby but different number is NOT traced
   });
 
-  it("indexes a Money fact's amount and 'amount currency' form, plus its declared aliases", () => {
+  it("indexes a finding with a currency unit's amount and 'amount currency' form, plus its declared aliases", () => {
     const index = buildFactIndex([moneyFact]);
     expect(isTracedSurfaceForm(index, "4200000")).toBe(true);
     expect(isTracedSurfaceForm(index, "4200000 USD")).toBe(true);
@@ -52,8 +54,8 @@ describe("buildFactIndex", () => {
   });
 
   it("maps a surface form shared by two facts to both keys", () => {
-    const a: Fact = { ...numberFact, key: "fact-a", aliases: ["100"] };
-    const b: Fact = { ...numberFact, key: "fact-b", value: 1, aliases: ["100"] };
+    const a: Finding = { ...numberFact, id: "fact-a", aliases: ["100"] };
+    const b: Finding = { ...numberFact, id: "fact-b", value: 1, aliases: ["100"] };
     const index = buildFactIndex([a, b]);
     expect(index.bySurfaceForm.get("100")).toEqual(["fact-a", "fact-b"]);
   });

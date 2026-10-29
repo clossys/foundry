@@ -4,7 +4,7 @@ import { checkWriterICU } from "./icu.js";
 
 const string = (text: string, args: StringRecord["args"] = []): StringRecord => ({ id: "st.0123456789", leaf: "strings.actions", context: "Action", status: "draft", origin: "authored", text, args });
 const library = (source: WriterRecord[], targets: Record<string, WriterRecord[]> = {}): WriterLibrary => ({
-  manifest: { consumer: "example", messageSyntax: "icu-mf1", defaultLocale: "en", locales: ["en", ...Object.keys(targets)].map(tag => ({ tag, dir: "ltr", state: "active" })), fallback: {}, strategist: { path: "strategist" }, leafFreeze: { lexicon: "", strings: "", patterns: "", passages: "", narratives: "" } },
+  manifest: { consumer: "example", messageSyntax: "icu-mf1", defaultLocale: "en", locales: ["en", ...Object.keys(targets)].map(tag => ({ tag, dir: "ltr", state: "active" })), fallback: {}, strategy: { root: "strategist", contract: "writer.messaging" }, leafFreeze: { lexicon: "", strings: "", patterns: "", passages: "", narratives: "" } },
   locales: Object.fromEntries(Object.entries({ en: source, ...targets }).map(([tag, records]) => [tag, { records, documents: [] }])),
 });
 
@@ -63,7 +63,7 @@ describe("WR8 ICU validation", () => {
     const records: WriterRecord[] = [
       { ...common, id: "pt.0123456789", leaf: "patterns.headline-subhead", parts: { headline: { text: "Hello {name}" } } },
       { ...common, id: "nr.0123456789", leaf: "narratives.article", title: "Article", frame: { frameId: "article" }, blocks: [{ type: "paragraph", designer: { id: "components.prose", configId: "body" }, children: [{ type: "paragraph", designer: { id: "components.prose", configId: "body" }, text: "Broken {" }] }] },
-      { ...common, id: "lx.0123456789", leaf: "lexicon.claims", kind: "claim", strategistClaimKey: "claim", requiresCitation: true, phrasings: ["{value, number}"] },
+      { ...common, id: "lx.0123456789", leaf: "lexicon.claims", kind: "claim", strategy: { cell: "advantage.proposition.proof", version: 1 }, requiresCitation: true, phrasings: ["{value, number}"] },
     ];
     const findings = checkWriterICU(library(records));
     expect(findings).toEqual(expect.arrayContaining([

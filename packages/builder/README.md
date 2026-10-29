@@ -835,8 +835,8 @@ const result = checkDeploymentBranchBindings({ manifest, branchBindings });
 `branch` is a **plain string**. It names a branch that a repository's own
 profile — a different package's contract entirely — declares, and this
 package does not import that package to resolve it. That is the same seam
-`@clossys/strategist`'s `BrandDerivation` already uses for token slots and
-voice rules, and for the same reason: one package declares the topology, this
+`@clossys/strategist`'s `validateBriefContract` uses for a consumer's
+plain-string owner, and for the same reason: one package declares the topology, this
 one declares which environment consumes it, and the repository that depends
 on both is the one place the two names can actually be compared.
 

@@ -10,3 +10,5 @@ export type { ContentMap, ContentMapEntry, ContentMapSource, ContentMapAction, C
 export { CONTENT_MAP_MAX_DEPTH } from "./contract.js";
 export { checkContentMap } from "./check.js";
 export { projectRoutes, projectNavigation, projectCommands, projectBreadcrumbs, projectSitemap, projectOutline, projectToc } from "./projections.js";
+
+export type { CellCompileOptions, CellCompileFinding } from "./cells.js";

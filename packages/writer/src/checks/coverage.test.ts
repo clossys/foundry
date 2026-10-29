@@ -11,7 +11,7 @@ function library(): WriterLibrary {
   const records: WriterRecord[] = [sourceString(), sourcePattern()];
   const translated: WriterRecord[] = records.map(record => ({ ...record, translation: { sourceFingerprint: writerRecordFingerprint(record, records), fingerprintAlgorithm: COPY_FINGERPRINT_ALGORITHM, translatedAt: "2026-01-01T00:00:00Z" } }));
   const files = [{ path: "strings/common.json", recordIds: [records[0]!.id] }, { path: "patterns/common.json", recordIds: [records[1]!.id] }];
-  return { manifest: { consumer: "example", messageSyntax: "icu-mf1", defaultLocale: "en", locales: [{ tag: "en", dir: "ltr", state: "active" }, { tag: "fr", dir: "ltr", state: "active" }], fallback: { fr: ["en"] }, strategist: { path: "strategy" }, leafFreeze: { lexicon: "a", strings: "b", patterns: "c", passages: "d", narratives: "e" } }, locales: { en: { records, documents: [], files: structuredClone(files) }, fr: { records: translated, documents: [], files: structuredClone(files) } } };
+  return { manifest: { consumer: "example", messageSyntax: "icu-mf1", defaultLocale: "en", locales: [{ tag: "en", dir: "ltr", state: "active" }, { tag: "fr", dir: "ltr", state: "active" }], fallback: { fr: ["en"] }, strategy: { root: "strategy", contract: "writer.messaging" }, leafFreeze: { lexicon: "a", strings: "b", patterns: "c", passages: "d", narratives: "e" } }, locales: { en: { records, documents: [], files: structuredClone(files) }, fr: { records: translated, documents: [], files: structuredClone(files) } } };
 }
 
 describe("Writer WR10 declared locale coverage", () => {
@@ -55,7 +55,7 @@ describe("Writer WR10 declared locale coverage", () => {
     value.locales.fr!.records[0]!.leaf = "strings.heading";
     expect(checkWriterCoverage(value)).toContainEqual(expect.objectContaining({ recordId: "st.0123456789", field: "leaf", severity: "error" }));
     const source: LexiconRecord = { ...base("lx.0123456789", "lexicon.preferred-terms"), kind: "term", term: "Example", forms: [], termStatus: "preferred", reason: "Clear" };
-    const translated: LexiconRecord = { ...base(source.id, source.leaf), kind: "claim", strategistClaimKey: "example", phrasings: ["Example"], requiresCitation: true, translation: { sourceFingerprint: writerRecordFingerprint(source, [source]), fingerprintAlgorithm: COPY_FINGERPRINT_ALGORITHM, translatedAt: "2026-01-01T00:00:00Z" } };
+    const translated: LexiconRecord = { ...base(source.id, source.leaf), kind: "claim", strategy: { cell: "advantage.proposition.proof", version: 1 }, phrasings: ["Example"], requiresCitation: true, translation: { sourceFingerprint: writerRecordFingerprint(source, [source]), fingerprintAlgorithm: COPY_FINGERPRINT_ALGORITHM, translatedAt: "2026-01-01T00:00:00Z" } };
     value.locales.en!.records.push(source);
     value.locales.fr!.records.push(translated);
     expect(checkWriterCoverage(value)).toContainEqual(expect.objectContaining({ recordId: source.id, field: "kind", severity: "error" }));

@@ -438,9 +438,8 @@ export interface OutputArtifact {
  * equivalent. Kept local and structural so surface never depends on strategy.
  */
 export interface StrategyProvenance {
-  strategyId: string;
-  revision: string;
-  records: Array<{ kind: string; id: string; revision: string }>;
+  contract: string;
+  refs: Array<{ cell: string; version: number }>;
   fingerprint: string;
 }
 

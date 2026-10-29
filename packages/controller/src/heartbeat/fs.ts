@@ -1,6 +1,6 @@
 /**
- * The I/O half of the heartbeat (issue #1221): reads every
- * `clossys/<role>/loop.json` under a repository root, validates each one
+ * The I/O half of the heartbeat (issue #1221): reads agent and
+ * non-agent role `loop.json` files under a repository root, validates each one
  * with `../loop/state.js`'s `isValidLoopState` (skipping and reporting an
  * unreadable/invalid file as a finding rather than throwing), and can
  * write the rendered digest -- the decisions file named by this module's
@@ -11,6 +11,7 @@
  */
 import { existsSync, mkdirSync, readFileSync, readdirSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
+import { roleFolderPrefix } from "../loop/artifacts.js";
 import { isValidLoopState } from "../loop/state.js";
 import type { LoopState } from "../loop/types.js";
 import { computeHeartbeat, renderDigest } from "./digest.js";
@@ -28,7 +29,7 @@ export interface LoadedLoopStates {
 }
 
 /**
- * Reads every `clossys/<role>/loop.json` under `repoRoot`. A role
+ * Reads agent and non-agent role `loop.json` files under `repoRoot`. A role
  * directory with no `loop.json` is silently skipped -- it has not
  * adopted the loop engine yet, which is not itself a heartbeat finding.
  * A `loop.json` that exists but fails to parse or validate is reported
@@ -40,11 +41,20 @@ export function loadLoopStates(repoRoot: string): LoadedLoopStates {
   const unreadable: UnreadableLoopState[] = [];
   if (!existsSync(clossysDir)) return { roles: Object.freeze(roles), unreadable: Object.freeze(unreadable) };
 
-  for (const entry of readdirSync(clossysDir, { withFileTypes: true }).sort((a, b) => a.name.localeCompare(b.name))) {
-    if (!entry.isDirectory() || entry.name === ".state") continue;
-    const loopPath = join(clossysDir, entry.name, "loop.json");
+  const entries = readdirSync(clossysDir, { withFileTypes: true });
+  const names = entries
+    .filter((entry) => entry.isDirectory() && entry.name !== ".state" && entry.name !== "agents" && roleFolderPrefix(entry.name) === `clossys/${entry.name}/`)
+    .map((entry) => entry.name);
+  const agentsDir = join(clossysDir, "agents");
+  if (entries.some((entry) => entry.name === "agents" && entry.isDirectory())) {
+    names.push(...readdirSync(agentsDir, { withFileTypes: true })
+      .filter((entry) => entry.isDirectory() && roleFolderPrefix(entry.name) === `clossys/agents/${entry.name}/`)
+      .map((entry) => entry.name));
+  }
+  for (const name of names.sort((a, b) => a.localeCompare(b))) {
+    const relPath = `${roleFolderPrefix(name)}loop.json`;
+    const loopPath = join(repoRoot, relPath);
     if (!existsSync(loopPath)) continue;
-    const relPath = `clossys/${entry.name}/loop.json`;
     let parsed: unknown;
     try {
       parsed = JSON.parse(readFileSync(loopPath, "utf8"));
@@ -56,7 +66,7 @@ export function loadLoopStates(repoRoot: string): LoadedLoopStates {
       unreadable.push({ path: relPath, reason: "does not validate as a well-formed loop.json document" });
       continue;
     }
-    roles[entry.name] = parsed;
+    roles[name] = parsed;
   }
   return { roles: Object.freeze(roles), unreadable: Object.freeze(unreadable) };
 }

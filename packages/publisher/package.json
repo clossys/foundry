@@ -40,6 +40,10 @@
       "types": "./dist/content-map/index.d.ts",
       "import": "./dist/content-map/index.js"
     },
+    "./content-map/cells": {
+      "types": "./dist/content-map/cells.d.ts",
+      "node": "./dist/content-map/cells.js"
+    },
     "./core": {
       "types": "./dist/core/index.d.ts",
       "import": "./dist/core/index.js"
@@ -159,7 +163,8 @@
     "./content/node": {
       "types": "./dist/content/node.d.ts",
       "import": "./dist/content/node.js"
-    }
+    },
+    "./strategy-brief.json": "./strategy-brief.json"
   },
   "imports": {
     "#publisher-web-views": {
@@ -442,7 +447,8 @@
     "skill",
     "styles",
     "templates",
-    "fit-signals.json"
+    "fit-signals.json",
+    "strategy-brief.json"
   ],
   "scripts": {
     "build": "tsc -p tsconfig.json",
@@ -455,7 +461,9 @@
   "dependencies": {
     "@clossys/writer": "^0.6.0",
     "@clossys/designer": "^0.12.0",
-    "@clossys/controller": "^0.10.0"
+    "@clossys/controller": "^0.10.0",
+    "@clossys/strategist": "0.6.0",
+    "typescript": "~6.0.0"
   },
   "peerDependencies": {
     "@internationalized/date": "^3.12.2",

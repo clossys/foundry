@@ -37,7 +37,7 @@ const draft = (name: string): Envelope => JSON.parse(readFileSync(new URL(name, 
 const files = ["admin-meta.r1.en.json", "admin-studio.r1.en.json"] as const;
 const library = (records: WriterRecord[]): WriterLibrary => ({
   manifest: { consumer: "admin-meta-draft-review", messageSyntax: "icu-mf1", defaultLocale: "en",
-    locales: [{ tag: "en", dir: "ltr", state: "active" }], fallback: {}, strategist: { path: "strategy" },
+    locales: [{ tag: "en", dir: "ltr", state: "active" }], fallback: {}, strategy: { root: "strategy", contract: "writer.messaging" },
     leafFreeze: { lexicon: "", strings: "", patterns: "", passages: "", narratives: "" } },
   locales: { en: { records: [...terminology.lexiconRecords as WriterRecord[], ...records], documents: [] } },
 });

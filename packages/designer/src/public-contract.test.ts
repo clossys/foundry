@@ -448,7 +448,7 @@ describe("public UI contract", () => {
   });
 
   it("keeps token-only use free of component runtime installation", () => {
-    expect(packageJson.dependencies).toEqual({ "class-variance-authority": "0.7.1", "css-tree": "3.2.1" });
+    expect(packageJson.dependencies).toEqual({ "class-variance-authority": "0.7.1", "css-tree": "3.2.1", "@clossys/strategist": "0.6.0" });
 
     for (const dependency of ["@internationalized/date", "react", "react-dom", "react-aria-components", "tailwind-merge", "tailwindcss"]) {
       expect(packageJson.peerDependencies[dependency]).toBeDefined();

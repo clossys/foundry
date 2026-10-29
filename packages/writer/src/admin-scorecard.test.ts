@@ -44,7 +44,7 @@ it("supplies draft scorecard copy for the authoritative Designer finding codes",
 it("passes Writer schema, lint, message, length and expansion checks for scorecard drafts", () => {
   const content: WriterLibrary = { manifest: {
     consumer: "scorecard-draft-review", messageSyntax: "icu-mf1", defaultLocale: "en", locales: [{ tag: "en", dir: "ltr", state: "active" }],
-    fallback: {}, strategist: { path: "strategy" }, leafFreeze: { lexicon: "", strings: "", patterns: "", passages: "", narratives: "" },
+    fallback: {}, strategy: { root: "strategy", contract: "writer.messaging" }, leafFreeze: { lexicon: "", strings: "", patterns: "", passages: "", narratives: "" },
   }, locales: { en: { records: [...terminology.lexiconRecords as WriterRecord[], ...records as unknown as StringRecord[]], documents: [] } } };
   expect(records.length).toBe(CHECK_CODES.length);
   const batch = ADMIN_STUDIO_COPY_EN.sourceBatches.find(batch => batch.unit === "A4-WR-SCORECARD-COPY")!;

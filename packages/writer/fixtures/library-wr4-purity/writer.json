@@ -15,8 +15,9 @@
     }
   ],
   "fallback": {},
-  "strategist": {
-    "path": "strategy"
+  "strategy": {
+    "root": "strategy",
+    "contract": "writer.messaging"
   },
   "leafFreeze": {
     "lexicon": "",
