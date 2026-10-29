@@ -3449,7 +3449,8 @@
           "tokens.typeface"
         ],
         "assets": [
-          "assets.icon-*"
+          "assets.icon-*",
+          "assets.image"
         ]
       },
       "data": "host-injected",
@@ -4098,7 +4099,8 @@
           "tokens.scrim-color"
         ],
         "assets": [
-          "assets.image-ratio"
+          "assets.image-ratio",
+          "assets.image"
         ]
       },
       "data": "host-injected",
@@ -4485,7 +4487,8 @@
           "tokens.touch-target"
         ],
         "assets": [
-          "assets.image-ratio"
+          "assets.image-ratio",
+          "assets.image"
         ]
       },
       "data": "host-injected",
@@ -4685,7 +4688,9 @@
         "mode": "closed",
         "names": []
       },
-      "allowedComposes": [],
+      "allowedComposes": [
+        "components.semantic-content"
+      ],
       "parts": [
         "sections.band",
         "sections.section-header"
@@ -4708,7 +4713,8 @@
           "tokens.text-color"
         ],
         "assets": [
-          "assets.image-ratio"
+          "assets.image-ratio",
+          "assets.image"
         ]
       },
       "data": "host-injected",
@@ -5437,7 +5443,9 @@
           "tokens.text-color",
           "tokens.touch-target"
         ],
-        "assets": []
+        "assets": [
+          "assets.image"
+        ]
       },
       "data": "host-injected",
       "surface": "site",
@@ -7702,7 +7710,9 @@
           "tokens.text-color",
           "tokens.typeface"
         ],
-        "assets": []
+        "assets": [
+          "assets.image"
+        ]
       },
       "data": "host-injected",
       "surface": "site",
