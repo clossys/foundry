@@ -104,7 +104,19 @@
     "st.proof.logo-cloud.pause": "st.1j3x9h41a6",
     "st.proof.logo-cloud.resume": "st.1cvwsa0mga",
     "st.proof.testimonials.previous": "st.vn3r0qxsm9",
-    "st.proof.testimonials.next": "st.9pyzxqprj7"
+    "st.proof.testimonials.next": "st.9pyzxqprj7",
+    "st.proof.name": "st.3y0w9dmapy",
+    "st.proof.logo-cloud.heading": "st.r289d9d8b1",
+    "st.proof.testimonials.heading": "st.xfjha18s2t",
+    "st.proof.stats.heading": "st.38b8dev999",
+    "st.proof.quote.1": "st.snev4fbc9p",
+    "st.proof.quote.2": "st.3bjr60jsdx",
+    "st.proof.quote.3": "st.rzx63yjapt",
+    "st.proof.stats.label": "st.a41h651e8c",
+    "st.proof.stats.value": "st.ad8ejnc3gw",
+    "ps.proof.logo-cloud": "ps.j06e4me8kd",
+    "ps.proof.testimonials": "ps.yjw7rk384e",
+    "ps.proof.stats": "ps.0wqmevrv7f"
   },
   "records": [
     {
@@ -944,6 +956,193 @@
       "status": "draft",
       "origin": "authored",
       "text": "Next quote"
+    },
+    {
+      "id": "st.3y0w9dmapy",
+      "leaf": "strings.names",
+      "context": "Generic proof-section preview fixture",
+      "status": "draft",
+      "origin": "authored",
+      "text": "Example Co."
+    },
+    {
+      "id": "st.r289d9d8b1",
+      "leaf": "strings.page-titles",
+      "context": "Generic proof-section preview fixture",
+      "status": "draft",
+      "origin": "authored",
+      "text": "Logo cloud"
+    },
+    {
+      "id": "st.xfjha18s2t",
+      "leaf": "strings.page-titles",
+      "context": "Generic proof-section preview fixture",
+      "status": "draft",
+      "origin": "authored",
+      "text": "Testimonials"
+    },
+    {
+      "id": "st.38b8dev999",
+      "leaf": "strings.page-titles",
+      "context": "Generic proof-section preview fixture",
+      "status": "draft",
+      "origin": "authored",
+      "text": "Stats"
+    },
+    {
+      "id": "st.snev4fbc9p",
+      "leaf": "strings.descriptions",
+      "context": "Generic proof-section preview fixture",
+      "status": "draft",
+      "origin": "authored",
+      "text": "Clear building blocks keep our work consistent."
+    },
+    {
+      "id": "st.3bjr60jsdx",
+      "leaf": "strings.descriptions",
+      "context": "Generic proof-section preview fixture",
+      "status": "draft",
+      "origin": "authored",
+      "text": "The same foundation makes each page easier to assemble."
+    },
+    {
+      "id": "st.rzx63yjapt",
+      "leaf": "strings.descriptions",
+      "context": "Generic proof-section preview fixture",
+      "status": "draft",
+      "origin": "authored",
+      "text": "Shared patterns make the details easier to maintain."
+    },
+    {
+      "id": "st.a41h651e8c",
+      "leaf": "strings.field-labels",
+      "context": "Generic proof-section preview fixture",
+      "status": "draft",
+      "origin": "authored",
+      "text": "Completed tasks"
+    },
+    {
+      "id": "st.ad8ejnc3gw",
+      "leaf": "strings.counters",
+      "context": "Generic proof-section preview fixture",
+      "status": "draft",
+      "origin": "authored",
+      "text": "1,200"
+    },
+    {
+      "id": "ps.j06e4me8kd",
+      "leaf": "passages.logo-cloud",
+      "context": "Generic proof-section preview fixture",
+      "status": "draft",
+      "origin": "authored",
+      "schema": "passages.logo-cloud",
+      "schemaDigest": "5422183b6b5c75f388fe99cee5373f8a8680a399d8d626e40ef2e5643d62820b",
+      "fields": {
+        "header.heading": {
+          "ref": "string",
+          "id": "st.r289d9d8b1"
+        },
+        "logos[].name": [
+          {
+            "ref": "string",
+            "id": "st.3y0w9dmapy"
+          },
+          {
+            "ref": "string",
+            "id": "st.3y0w9dmapy"
+          },
+          {
+            "ref": "string",
+            "id": "st.3y0w9dmapy"
+          }
+        ],
+        "controls.pause": {
+          "ref": "string",
+          "id": "st.1j3x9h41a6"
+        },
+        "controls.resume": {
+          "ref": "string",
+          "id": "st.1cvwsa0mga"
+        }
+      }
+    },
+    {
+      "id": "ps.yjw7rk384e",
+      "leaf": "passages.testimonials",
+      "context": "Generic proof-section preview fixture",
+      "status": "draft",
+      "origin": "authored",
+      "schema": "passages.testimonials",
+      "schemaDigest": "b0b542cab1a96464d32f7e345e7e81966e5308d59a29990237462d303b043d26",
+      "fields": {
+        "header.heading": {
+          "ref": "string",
+          "id": "st.xfjha18s2t"
+        },
+        "quotes[].quote": [
+          {
+            "ref": "string",
+            "id": "st.snev4fbc9p"
+          },
+          {
+            "ref": "string",
+            "id": "st.3bjr60jsdx"
+          },
+          {
+            "ref": "string",
+            "id": "st.rzx63yjapt"
+          }
+        ],
+        "quotes[].attributorName": [
+          {
+            "ref": "string",
+            "id": "st.3y0w9dmapy"
+          },
+          {
+            "ref": "string",
+            "id": "st.3y0w9dmapy"
+          },
+          {
+            "ref": "string",
+            "id": "st.3y0w9dmapy"
+          }
+        ],
+        "controls.previous": {
+          "ref": "string",
+          "id": "st.vn3r0qxsm9"
+        },
+        "controls.next": {
+          "ref": "string",
+          "id": "st.9pyzxqprj7"
+        }
+      }
+    },
+    {
+      "id": "ps.0wqmevrv7f",
+      "leaf": "passages.stats",
+      "context": "Generic proof-section preview fixture",
+      "status": "draft",
+      "origin": "authored",
+      "schema": "passages.stats",
+      "schemaDigest": "c2b28fd938a4875e530b554978c0ab3cc679b647938db2084141e389d0d04546",
+      "fields": {
+        "header.heading": {
+          "ref": "string",
+          "id": "st.38b8dev999"
+        },
+        "stats[].label": [
+          {
+            "ref": "string",
+            "id": "st.a41h651e8c"
+          }
+        ],
+        "stats[].value": [
+          {
+            "ref": "string",
+            "id": "st.ad8ejnc3gw"
+          }
+        ]
+      }
     }
   ],
   "externalRecords": [
