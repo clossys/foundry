@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * Foundry's real strategist facts subject: clossys/strategist/facts.json
+ * Foundry's real strategist facts subject: clossys/agents/strategist/findings/
  * checked against docs/PUBLISHING.md only. Invokes the compiled strategist
  * CLI by dist path so package-evidence can count a packages/strategist/dist
  * site.
@@ -41,7 +41,7 @@ const excludeGlobs = ["contracts/**", "changelogs/**", ...otherRootMarkdown];
 // The strategist CLI argv this gate runs, relative to `cwd` (the repository
 // root in real use; a fixture root in scripts/check-strategist-subject.test.mjs).
 export function strategistSubjectArgs(cli = strategistCli) {
-  return [cli, "clossys/strategist", scanRoot, "--extensions", ".md", ...excludeGlobs.flatMap((glob) => ["--exclude", glob])];
+  return [cli, "clossys/agents/strategist", scanRoot, "--extensions", ".md", ...excludeGlobs.flatMap((glob) => ["--exclude", glob])];
 }
 
 if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {

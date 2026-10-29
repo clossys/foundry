@@ -70,9 +70,11 @@ Catalog validator rules (`validateCatalog`), each with its own rule id:
 
 ### 1.3 Consumer root
 
-The default root is `clossys/strategist/`. That keeps `docs/contracts/consumer-layout.json` and every `foundry.feeds` path valid.
+The centralized layout below supersedes earlier root examples in this draft. Historical before-state paths in the integration inventory remain references to the prior implementation.
 
-A consumer can name another root with `--root <dir>`, or with the `root` option of `openStrategy`. The Clossys product interview uses `--root strategist` (**DEFAULT**: no auto-discovery and no legacy dual-path fallback).
+The default root is `<repo root>/clossys/agents/strategist/` (A207). CLI defaults find the repository root from nested working directories; outside a repository they use the working directory. Manifest feeds use `clossys/agents/strategist/`. The shared consumer-layout contract is coordinated by its own owner.
+
+A consumer can name another root with `--root <dir>`, or with the `root` option of `openStrategy`. The product interview writes to `<repo root>/clossys/agents/strategist/`. Relative explicit roots resolve from the working directory. There is no legacy fallback or automatic migration.
 
 ```
 <root>/
@@ -296,7 +298,7 @@ Brief contracts are owned by the consuming packages. Each ships `strategy-brief.
 
 The strategist package never imports a consumer package. The dependency direction is consumers → strategist.
 
-### 1.11 CLI `strategist-check` (exit 0 clean or ready, 1 findings or not ready, 2 could not run; `--json` everywhere; `--root` defaults to `clossys/strategist`)
+### 1.11 CLI `strategist-check` (exit 0 clean or ready, 1 findings or not ready, 2 could not run; `--json` everywhere; `--root` defaults to `<repo root>/clossys/agents/strategist`)
 
 | Subcommand | Does | Writes |
 |---|---|---|
@@ -461,8 +463,8 @@ CLI 0.6 modes:
 | `packages/designer/package.json` needs plus 3 capability inputs | `brand-derivation` | `strategy-brief` | ST-11 |
 | `packages/writer/package.json` needs plus 3 capability inputs | `brand-derivation`, `claims`, `positioning` | `strategy-brief` | ST-11 |
 | `packages/customer/package.json` needs plus 1 capability input | `audience-understanding` | `strategy-brief` | ST-11 |
-| `packages/publisher/package.json` needs plus 1 capability input | `strategy-brief` | unchanged id; the path becomes `clossys/strategist/briefs/index.json` | ST-11 |
-| `packages/strategist/package.json` `foundry.feeds` (7) / `outputs` (11) / `capabilities` (14) | the 0.6 files | feeds: `strategy-map` → `clossys/strategist/tree.json` and `strategy-brief` → `clossys/strategist/briefs/index.json`. outputs: tree.json, cells/, sessions/, findings/, requests/, briefs/, citations.json. Capabilities: `strategy-map`, `strategy-brief`, `cell-quality`, `coherence`, `completion`, `citation-index`, `grounding`, `wont-claim`, `strategy-loop` (each with `proofCase: null` while `maturity` is below qualified) | ST-11 |
+| `packages/publisher/package.json` needs plus 1 capability input | `strategy-brief` | unchanged id; the path becomes `clossys/agents/strategist/briefs/index.json` | ST-11 |
+| `packages/strategist/package.json` `foundry.feeds` (7) / `outputs` (11) / `capabilities` (14) | the 0.6 files | feeds: `strategy-map` → `clossys/agents/strategist/tree.json` and `strategy-brief` → `clossys/agents/strategist/briefs/index.json`. outputs: tree.json, cells/, sessions/, findings/, requests/, briefs/, citations.json. Capabilities: `strategy-map`, `strategy-brief`, `cell-quality`, `coherence`, `completion`, `citation-index`, `grounding`, `wont-claim`, `strategy-loop` (each with `proofCase: null` while `maturity` is below qualified) | ST-11 |
 | Designer library `selection.json` `strategy`/`direction` fields | null in consumers | `strategy` = the `designer.identity` brief fingerprint plus refs; `direction` is removed | TI-D |
 | `packages/controller/contracts/role-loop-archetypes.json`:278 | strategist jobQuestion; metric "strategy traceability rate" | unchanged (the metric and bin are kept) | none |
 | `packages/controller/src/onboarding/selection.ts`:15 `DIRECTION_ROLE` | role name only | unchanged | none |
@@ -471,7 +473,7 @@ CLI 0.6 modes:
 | `packages/builder/README.md`:838, `builder/src/deployment/branch-binding.ts`:19 | comments cite `BrandDerivation` as precedent | Comment-only rewording to cite `validateBriefContract` | TI-X |
 | bouncer, butler, giver, keeper `src/validation.ts` header comments | cite strategist `validation.ts` | unchanged (kept) | none |
 | `evals/scenarios/single-role-strategist-only.json`, `single-role-designer-pulls-strategist.json` | resolve via the feeds above | expectations re-pointed to `strategy-brief` in the same commit as the rename | ST-11 |
-| `clossys/strategist/facts.json` (foundry's own subject, one fact) | facts mode | `clossys/strategist/findings/publishable-package-count.md`. `scripts/check-strategist-subject.mjs` stays **byte-identical**, because the bare positional form is ground mode | ST-7 |
+| `clossys/strategist/facts.json` (foundry's own subject, one fact) | facts mode | `clossys/agents/strategist/findings/publishable-package-count.md`. A207 mechanically retargets the subject wrapper root and fixture path; the engine, scan extensions, exclusions and finding bytes stay unchanged | ST-7 |
 | `scripts/check-package-skills.mjs` strategist rules | regexes on the skill text | **No edit.** The v2 skill satisfies every existing rule truthfully: pre-auth bar, `prove 3 only`, `never treat gate-green as keep`, `stops at 3 is a defect`, `necessary, not sufficient`, `do-not language`, `not keep`, the 0.6 file names in its migration section, `strategist-check handoff` and `clossys-customer`. `name: clossys-strategist` and `disable-model-invocation: true` are kept | ST-8 |
 | `docs/contracts/consumer-layout.json` | `clossys/strategist` owned by strategist | unchanged | none |
 
@@ -667,7 +669,7 @@ Two scopes apply to every unit unless the unit says otherwise:
   - `packages/strategist/src/ground/**`
   - `facts-gate.ts`, `fact-index.ts`, `facts-dir.ts`, `scan.ts`, `wont-claim-drift.ts`
   - `cli.ts` (the default mode, `ground`, `wont-claim`)
-  - `clossys/strategist/findings/publishable-package-count.md` (new)
+  - `clossys/agents/strategist/findings/publishable-package-count.md` (A207 target)
   - `clossys/strategist/facts.json` (delete)
 - Tests first:
   - grounding traces a numeric claim to a finding's `value` and `aliases`;
@@ -676,8 +678,8 @@ Two scopes apply to every unit unless the unit says otherwise:
   - the bare positional form equals `ground`.
 - Done when:
   - package test and build exit 0;
-  - `npm run check:strategist-subject` exits 0 with `scripts/check-strategist-subject.mjs` unchanged (`git diff --exit-code scripts/` exits 0).
-- Must not: edit any `scripts/` file.
+  - `npm run check:strategist-subject` exits 0; A207 permits the subject wrapper and its fixture test to retarget the root mechanically, preserving the scan scope and engine.
+- Must not: change the subject engine, extensions or exclusions; A207 permits only its mechanical root retarget and fixture path.
 
 **ST-8 Skill v2 and role prompts** (high, copy)
 - Allowed:
@@ -797,7 +799,7 @@ Two scopes apply to every unit unless the unit says otherwise:
 |---|---|---|
 | R1 | Gate-review volume. ST-3, ST-5, ST-6 and ST-7 are gate-class, needing two blind passes plus a fresh final each | Keep them disjoint and small. ST-4, ST-9 and ST-10 are mid. Batch review where heads are ready together |
 | R2 | ST-11 must be atomic. A half rename breaks `check:capability-maps` and the composition evals | One commit, all five packages. Tests are recorded first |
-| R3 | Root divergence: the package default is `clossys/strategist/`, product uses `strategist/`, and controller discovery reads the manifest paths | `--root` everywhere. Product decides later whether to move. No dual-path fallback |
+| R3 | Root divergence from nested working directories | A207 centralizes the default and product interview under `<repo root>/clossys/agents/strategist/`; explicit `--root` keeps the selected folder. No legacy fallback |
 | R4 | Heuristic false positives in Q5 and Q6 annoy users | Heuristics are flags only. The mid checker judges, and only its `fail` blocks. The lexicon is short and versioned |
 | R5 | Hand-written files drift from the parser | The template is parsed by `parseCell` in a test (ST-8). The skill tells hand-mode sessions to run `strategist-check check` when installed |
 | R6 | YAML-subset parsing without dependencies | Flow lists and scalars only. Anything else is a hard parse error naming the line |
@@ -805,13 +807,13 @@ Two scopes apply to every unit unless the unit says otherwise:
 | R8 | The brand-facts move ripples into publisher's site template and README | It is isolated in TI-P with drift-equivalence tests |
 | R9 | Freeze versus breaking change: in-tree 0.6.0 changes shape without a bump, so packed-consumer pins and npm 0.6.0 diverge | Changesets record the break. No consumer adopts until the owner lifts the freeze. Product hand mode needs no package code |
 | R10 | The integration line diverges from `codex/integrate-scroll-preview` | Units merge mechanical default-branch integrations only. Rebase cadence is set by the planner |
-| R11 | Privacy: interview content must never enter foundry | Fixtures and evals are fictional. Product content lives in product `strategist/`. `check:neutrality` and `check:foreign-references` run in every unit |
+| R11 | Privacy: interview content must never enter foundry | Fixtures and evals are fictional. Product content lives under its repository-root `clossys/agents/strategist/`. `check:neutrality` and `check:foreign-references` run in every unit |
 | R12 | Interview fatigue: 57 cells is a lot | MVS first (24 cells). The skill drafts from hypotheses, so the user mostly confirms or corrects. Batch confirm. The rest are in the extended pass |
 | R13 | Whether `check-package-skills.mjs` counts as a "scanner" | Moot: no edit is planned. The v2 skill satisfies the current rules truthfully |
 
 ## 5. Defaults decided here (no blocking questions)
 
-1. The package default root is `clossys/strategist/`. Product passes `--root strategist`.
+1. The package default and product interview root are `<repo root>/clossys/agents/strategist/` (A207). Explicit `--root` selects another folder.
 2. There is a `confirmed:` frontmatter key, plus a listed-batch playback S line, as the activation proof.
 3. Frontmatter `cites` equals the union of Because refs.
 4. Activation may rewrite only the `status` line of retired siblings.

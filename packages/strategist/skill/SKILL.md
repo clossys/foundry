@@ -22,7 +22,7 @@ You do not write copy, pick colours or type, build pages, or publish. Those role
 
 ## 2. Files (work today by hand; the CLI is optional)
 
-The **root** is the consumer's strategy folder. It defaults to `clossys/strategist/`; a consumer may name another folder, and you use the one it names. You write only inside the root.
+The **root** is the consumer's strategy folder. It defaults to `<repo root>/clossys/agents/strategist/`, including when the conversation starts from a nested working directory such as `apps/admin`. Resolve the repository root before the first write; never create a second strategy under the nested directory. Outside a repository, use `clossys/agents/strategist/` under the working directory. A consumer may name another folder or pass `--root`; use that exact folder, resolving relative explicit paths from the working directory without appending the default layout. Never fall back to a legacy folder or migrate files automatically. You write only inside the selected root.
 
 ```
 <root>/tree.json                  archetype, core set, optional grouping, active pointers
@@ -138,7 +138,7 @@ A link counts only when both cells are in scope.
 1. Read what the consumer already has: its repository docs, an engagement brief, earlier strategy files, anything the user points to.
    - Turn sourced facts into findings.
    - Do not draft cells yet.
-2. Create `tree.json` with your archetype hypothesis and `active: {}`. Open `sessions/<today>-1.md`.
+2. Create `<root>/tree.json` with your archetype hypothesis and `active: {}`. Open `<root>/sessions/<today>-1.md`. With no user-selected override, these are `<repo root>/clossys/agents/strategist/tree.json` and `<repo root>/clossys/agents/strategist/sessions/<today>-1.md`. Findings and draft cells from this interview also stay under that root. Creating the tree or starting the interview never activates cells; activation still needs the user's exact listed confirmation (§8).
 3. Say, in three or four lines:
    - what you will do ("turn our conversation into a strategy you confirm piece by piece");
    - how long the minimum takes (the 24 core cells, usually two or three sessions);
@@ -151,7 +151,7 @@ A link counts only when both cells are in scope.
 3. Name what changed since last time: new findings, tripwires and requests from other roles.
 4. Ask the highest-value question. Open requests from other roles usually come first.
 
-**Upgrading a 0.6 root.** A root may still hold the 0.6 record files: `facts.json`, `audiences.json`, `markets.json`, `positioning.json`, `claims.json`, `constraints.json`, `brand.json`, `direction.json`, `brand-facts.json`, `strategy-brief.json`, `mission.json` and `roadmap.json`.
+**User-requested upgrade of a 0.6 root.** Only when the user asks to upgrade, use the selected root or source files the user explicitly identifies. Do not discover a legacy folder as a fallback, move it, or migrate it automatically. A selected root may still hold the 0.6 record files: `facts.json`, `audiences.json`, `markets.json`, `positioning.json`, `claims.json`, `constraints.json`, `brand.json`, `direction.json`, `brand-facts.json`, `strategy-brief.json`, `mission.json` and `roadmap.json`.
 - Read them as seed material. Facts become findings; everything else becomes hypotheses you put to the user.
 - Never copy them into cells unconfirmed, and never edit them.
 - Map them like this:
@@ -464,6 +464,8 @@ In hand mode, one session plays strategist, synthesizer and checker. Use a fresh
 
 If `node_modules/@clossys/strategist` is present, or its bins are on PATH, use the exact pinned version and read `package.json` `bin` for the real command names. Confirm that the installed CLI supports the cell subcommands before using this table. An earlier 0.6 installation still uses its legacy commands; use hand mode for cells until the cell commands are available. Cell commands take `--root <dir>` and `--json`. Exit codes: 0 clean or ready, 1 findings or not ready, 2 could not run.
 
+Pass the selected root explicitly to helpers and CLI commands as `--root <root>`. For the default, use the resolved `<repo root>/clossys/agents/strategist` path so changing the working directory cannot redirect writes. An explicit user-selected root keeps its supplied location. CLI commands without `--root` use the default described in §2, with no legacy fallback or automatic migration.
+
 | Command | Does |
 |---|---|
 | `strategist-check status` | Progress line and levels |
@@ -474,8 +476,8 @@ If `node_modules/@clossys/strategist` is present, or its bins are on PATH, use t
 | `strategist-check handoff <contract>` | Answers ready, missing or stale for one role |
 | `strategist-check index --check` | Finds surfaces that cite old or unknown versions |
 | `strategist-check review` | Turns fired Watch tripwires and stale cascades into requests |
-| `strategist-check ground <root> <scan-dir>` | Fails on numbers and superlatives on surfaces that no finding backs |
-| `strategist-check wont-claim <root> <scan-dir>` | Fails on surfaces that use a quoted Never-claim or Voice Never phrase |
+| `strategist-check ground --root <root> <scan-dir>` | Fails on numbers and superlatives on surfaces that no finding backs |
+| `strategist-check wont-claim --root <root> <scan-dir>` | Fails on surfaces that use a quoted Never-claim or Voice Never phrase |
 
 Without the CLI, run §10 by hand. The file formats are the same either way.
 

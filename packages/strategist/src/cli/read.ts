@@ -1,4 +1,5 @@
 import { existsSync } from "node:fs";
+import { resolveStrategyRoot } from "../strategy-dir-default.js";
 const ALIASES: Record<string, ReadCommand> = { "cell-quality": "check", coherence: "cohere", completion: "complete" };
 /** Read-only argv and presentation layer; checks remain in the read/check APIs. */
 export const READ_COMMANDS = ["status", "cell", "check", "cohere", "complete", "brief", "handoff"] as const;
@@ -27,7 +28,7 @@ Usage: strategist-check status [--scope core|full]
        strategist-check handoff <contract>
 Aliases: cell-quality = check, coherence = cohere, completion = complete.
 Quality, coherence and completion commands save their returned report under <root>/reports/.
-All read commands accept --root <dir> (default clossys/strategist), --json and --help.
+All read commands accept --root <dir> (default <repo root>/clossys/agents/strategist), --json and --help.
 brief --write saves the brief and briefs/index.json; --request opens a missing-input request.
 brief and handoff without these flags do not write.`;
 const part = "[a-z]+(?:-[a-z]+)*";
@@ -38,7 +39,7 @@ const group = new RegExp(`^${part}\\.${part}$`);
 export function parseReadArgs(argv: string[]): ReadArgs {
   const command = ALIASES[argv[0] ?? ""] ?? argv[0] as ReadCommand;
   if (!READ_COMMANDS.includes(command)) throw new Error("Unknown read command");
-  const args: ReadArgs = { command, root: "clossys/strategist", json: false, help: false, targets: [], scope: "core", level: "mvs" };
+  const args: ReadArgs = { command, root: resolveStrategyRoot(), json: false, help: false, targets: [], scope: "core", level: "mvs" };
   const seen = new Set<string>();
   for (let i = 1; i < argv.length; i++) {
     const token = argv[i]!;

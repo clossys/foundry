@@ -1,4 +1,4 @@
-import { resolve } from "node:path";
+import { resolveStrategyRoot } from "../strategy-dir-default.js";
 import { activate, createRequest, listRequests, propose, resolveRequest, type NewRequest } from "./index.js";
 
 const commands = new Set(["propose", "activate", "request"]);
@@ -7,7 +7,7 @@ const help = `Usage: strategist-check propose <id> [--from N] [--option A] [--re
        strategist-check request new --raised-by <role> --kind <kind> --cells <id,…> --detail <text>
        strategist-check request list
        strategist-check request resolve <REQ-NNNN> --ref <id>@N --confirm msg:<session>#U<n>
-Options: --root <dir> (default clossys/strategist), --json, --help`;
+Options: --root <dir> (default <repo root>/clossys/agents/strategist), --json, --help`;
 
 /** Return undefined for another unit's command; all write flags are closed and explicit. */
 export function runWriteCli(argv: string[]): number | undefined {
@@ -29,7 +29,7 @@ export function runWriteCli(argv: string[]): number | undefined {
         flags.set(arg, value);
       } else positional.push(arg);
     }
-    const root = resolve(flags.get("--root") ?? "clossys/strategist");
+    const root = resolveStrategyRoot(flags.get("--root"));
     const required = (flag: string) => { const value = flags.get(flag); if (!value) throw new Error(`Required option ${flag}`); return value; };
     const split = (value: string) => value.split(",").map(v => v.trim());
     if (command === "propose") {

@@ -4,7 +4,7 @@ import { runReviewCli, REVIEW_USAGE } from "./cli/review.js";
 import { runCitationIndex } from "./citations/cli.js";
 import { runWriteCli } from "./write/cli.js";
 import { existsSync, realpathSync, statSync } from "node:fs";
-import { join, relative, resolve, sep } from "node:path";
+import { relative, resolve, sep } from "node:path";
 import { fileURLToPath } from "node:url";
 import { checkGrounding, type FactsGateResult } from "./facts-gate.js";
 import { readGroundRoot } from "./ground/read.js";
@@ -15,12 +15,13 @@ import { executeBriefCommand } from "./cli/brief.js";
 import { executeChecksCommand } from "./cli/checks.js";
 import { isReadCommand, READ_USAGE, runReadCommand } from "./cli/read.js";
 import { persistReport } from "./cli/reports.js";
+import { resolveStrategyRoot } from "./strategy-dir-default.js";
 
 const USAGE = `Usage: strategist-check ground [<strategy-dir>] <scan-dir> [options]
    or: strategist-check <strategy-dir> <scan-dir> [options]
    or: strategist-check wont-claim <strategy-dir> <scan-dir> [options]
 
-The strategy root defaults to ./clossys/strategist; --root overrides it.
+The strategy root defaults to <repo root>/clossys/agents/strategist (cwd outside a repository); --root overrides it.
 --json prints the result as JSON. --help prints usage.
 --extensions <ext>, --skip-dirs <name>, and --exclude <glob> are repeatable scan options.
 Grounding reads findings/*.md. Exit codes: 0 clean, 1 findings, 2 could not run.
@@ -31,7 +32,7 @@ ${REVIEW_USAGE}
 
 const WONT_CLAIM_USAGE = `Usage: strategist-check wont-claim <strategy-dir> <scan-dir> [options]
 
-  strategy-dir   Directory containing tree.json and the active Proof and Voice cells. Defaults to ./clossys/strategist; --root overrides it.
+  strategy-dir   Directory containing tree.json and the active Proof and Voice cells. Defaults to <repo root>/clossys/agents/strategist (cwd outside a repository); --root overrides it.
   scan-dir       Directory to scan for surfaces that make a claim the record says must never be made.
 
 Options:
@@ -175,7 +176,7 @@ function parseGroundArgs(argv: string[]): ParsedArgs & { json: boolean } {
   } else if (args.strategyDir !== undefined && args.scanDir === undefined) {
     args.scanDir = args.strategyDir; args.strategyDir = undefined;
   }
-  args.strategyDir ??= join(process.cwd(), "clossys", "strategist");
+  args.strategyDir ??= resolveStrategyRoot();
   return { ...args, json };
 }
 
@@ -191,7 +192,7 @@ function requireDirectory(label: string, path: string): void {
 }
 
 function resolveStrategyDirArgument(explicit: string | undefined): { dir: string } {
-  return { dir: resolve(explicit ?? join(process.cwd(), "clossys", "strategist")) };
+  return { dir: resolveStrategyRoot(explicit) };
 }
 
 function readStrategyFacts(strategyDir: string) {

@@ -155,7 +155,7 @@ it("defaults the root and scans JSON by default; index --help is available", () 
   expect(invoke(root, "--check", "--scan", surfaces)).toBe(0); expect(output().entries).toHaveLength(1);
   expect(main(["index", "--help"])).toBe(0);
   const cwd = process.cwd();
-  try { process.chdir(project); mkdirSync(join(project, "clossys")); renameSync(root, join(project, "clossys/strategist")); expect(main(["index", "--check", "--json"])).toBe(0); }
+  try { process.chdir(project); mkdirSync(join(project, "clossys/agents"), { recursive: true }); renameSync(root, join(project, "clossys/agents/strategist")); expect(main(["index", "--check", "--json"])).toBe(0); }
   finally { process.chdir(cwd); }
 });
 

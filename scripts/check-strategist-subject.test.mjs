@@ -19,8 +19,8 @@ const CLAIM = "This is the only way to release a package.\n";
 function withFixture(docs, fn) {
   const root = mkdtempSync(join(tmpdir(), "strategist-subject-"));
   try {
-    mkdirSync(join(root, "clossys", "strategist"), { recursive: true });
-    cpSync(join(repoRoot, "clossys", "strategist", "findings"), join(root, "clossys", "strategist", "findings"), { recursive: true });
+    mkdirSync(join(root, "clossys", "agents", "strategist"), { recursive: true });
+    cpSync(join(repoRoot, "clossys", "agents", "strategist", "findings"), join(root, "clossys", "agents", "strategist", "findings"), { recursive: true });
     for (const [path, text] of Object.entries(docs)) {
       mkdirSync(dirname(join(root, "docs", path)), { recursive: true });
       writeFileSync(join(root, "docs", path), text);

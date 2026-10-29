@@ -37,27 +37,27 @@
       "invocation": "single-json-input"
     },
     "outputs": [
-      "clossys/strategist/tree.json",
-      "clossys/strategist/cells/",
-      "clossys/strategist/sessions/",
-      "clossys/strategist/findings/",
-      "clossys/strategist/requests/",
-      "clossys/strategist/briefs/",
-      "clossys/strategist/citations.json",
-      "clossys/strategist/reports/cell-quality.json",
-      "clossys/strategist/reports/coherence.json",
-      "clossys/strategist/reports/completion.json",
-      "clossys/strategist/reports/wont-claim.json"
+      "clossys/agents/strategist/tree.json",
+      "clossys/agents/strategist/cells/",
+      "clossys/agents/strategist/sessions/",
+      "clossys/agents/strategist/findings/",
+      "clossys/agents/strategist/requests/",
+      "clossys/agents/strategist/briefs/",
+      "clossys/agents/strategist/citations.json",
+      "clossys/agents/strategist/reports/cell-quality.json",
+      "clossys/agents/strategist/reports/coherence.json",
+      "clossys/agents/strategist/reports/completion.json",
+      "clossys/agents/strategist/reports/wont-claim.json"
     ],
     "fit": "fit-signals.json",
     "feeds": [
       {
         "artifact": "strategy-map",
-        "path": "clossys/strategist/tree.json"
+        "path": "clossys/agents/strategist/tree.json"
       },
       {
         "artifact": "strategy-brief",
-        "path": "clossys/strategist/briefs/index.json"
+        "path": "clossys/agents/strategist/briefs/index.json"
       }
     ],
     "needs": [],
@@ -78,9 +78,9 @@
         "worldClass": "One versioned cell tree records strategy choices, source citations and user confirmations; active pointers identify the current decisions.",
         "inputs": [],
         "outputs": [
-          "clossys/strategist/tree.json",
-          "clossys/strategist/cells/",
-          "clossys/strategist/sessions/"
+          "clossys/agents/strategist/tree.json",
+          "clossys/agents/strategist/cells/",
+          "clossys/agents/strategist/sessions/"
         ],
         "proofCase": null,
         "maturity": "planned",
@@ -93,8 +93,8 @@
         "worldClass": "Consumer-owned contracts compile to ready, missing or stale briefs with pinned cell versions and stable fingerprints.",
         "inputs": [],
         "outputs": [
-          "clossys/strategist/briefs/",
-          "clossys/strategist/briefs/index.json"
+          "clossys/agents/strategist/briefs/",
+          "clossys/agents/strategist/briefs/index.json"
         ],
         "proofCase": null,
         "maturity": "planned",
@@ -107,7 +107,7 @@
         "worldClass": "Q1–Q7 report hard findings and judge questions before a proposed cell can activate.",
         "inputs": [],
         "outputs": [
-          "clossys/strategist/reports/cell-quality.json"
+          "clossys/agents/strategist/reports/cell-quality.json"
         ],
         "proofCase": null,
         "maturity": "planned",
@@ -120,7 +120,7 @@
         "worldClass": "C1–C4 report missing links, stale citations, contradictions and storyline gaps without changing active cells.",
         "inputs": [],
         "outputs": [
-          "clossys/strategist/reports/coherence.json"
+          "clossys/agents/strategist/reports/coherence.json"
         ],
         "proofCase": null,
         "maturity": "planned",
@@ -133,7 +133,7 @@
         "worldClass": "Completion reports L3, L2, L1, L0, MVS and Complete from scoped evidence without claiming an unearned level.",
         "inputs": [],
         "outputs": [
-          "clossys/strategist/reports/completion.json"
+          "clossys/agents/strategist/reports/completion.json"
         ],
         "proofCase": null,
         "maturity": "planned",
@@ -146,7 +146,7 @@
         "worldClass": "A central citation index traces briefs, surface markers and structured cell references, reporting stale, dangling and fingerprint drift.",
         "inputs": [],
         "outputs": [
-          "clossys/strategist/citations.json"
+          "clossys/agents/strategist/citations.json"
         ],
         "proofCase": null,
         "maturity": "planned",
@@ -159,7 +159,7 @@
         "worldClass": "Findings record observed evidence with values and aliases so grounding can report untraced claims.",
         "inputs": [],
         "outputs": [
-          "clossys/strategist/findings/"
+          "clossys/agents/strategist/findings/"
         ],
         "proofCase": null,
         "maturity": "planned",
@@ -172,7 +172,7 @@
         "worldClass": "The active Proof Never-claim and Voice Never bullets govern quoted phrases checked on downstream surfaces.",
         "inputs": [],
         "outputs": [
-          "clossys/strategist/reports/wont-claim.json"
+          "clossys/agents/strategist/reports/wont-claim.json"
         ],
         "proofCase": null,
         "maturity": "planned",
@@ -185,7 +185,7 @@
         "worldClass": "Review opens deduplicated requests from Watch tripwires, due reviews and stale cascades without activating or editing a strategy cell.",
         "inputs": [],
         "outputs": [
-          "clossys/strategist/requests/"
+          "clossys/agents/strategist/requests/"
         ],
         "proofCase": null,
         "maturity": "planned",

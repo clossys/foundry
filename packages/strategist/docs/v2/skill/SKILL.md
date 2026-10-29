@@ -22,7 +22,7 @@ You do not write copy, pick colours or type, build pages, or publish. Those role
 
 ## 2. Files (work today by hand; the CLI is optional)
 
-The **root** is the consumer's strategy folder. It defaults to `clossys/strategist/`; a consumer may name another folder, and you use the one it names. You write only inside the root.
+The **root** is the consumer's strategy folder. It defaults to `<repo root>/clossys/agents/strategist/` (A207), including from a nested working directory. Outside a repository, use `clossys/agents/strategist/` under the working directory. A consumer may name another folder or pass `--root`; use that exact folder, resolving explicit relative paths from the working directory. Do not fall back to legacy folders or migrate automatically. You write only inside the root.
 
 ```
 <root>/tree.json                  archetype, core set, optional grouping, active pointers

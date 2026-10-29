@@ -1,5 +1,5 @@
 import { execFileSync } from "node:child_process";
-import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -74,7 +74,7 @@ describe("main — argument handling", () => {
     expect(main(["--help"])).toBe(0);
   });
 
-  it("throws CliInputError when strategy-dir is omitted and neither the default clossys/strategist nor the retired strategy directory exists", () => {
+  it("throws CliInputError when the default clossys/agents/strategist directory is missing", () => {
     const cwd = mkdtempSync(join(tmpdir(), "strategy-cli-cwd-"));
     const originalCwd = process.cwd();
     process.chdir(cwd);
@@ -96,17 +96,74 @@ describe("main — argument handling", () => {
 });
 
 describe("main — default ground root", () => {
-  it("uses clossys/strategist and does not fall back to the retired strategy root", () => {
+  it("uses clossys/agents/strategist and does not fall back to old strategy roots", () => {
     const cwd = mkdtempSync(join(tmpdir(), "strategy-cli-cwd-")); const original = process.cwd();
     process.chdir(cwd);
     try {
       writeFileSync(join(cwd, "page.md"), "4,200 customers");
       mkdirSync(join(cwd, "strategy")); stageFinding(join(cwd, "strategy"));
-      expect(() => main([])).toThrow(CliInputError);
       mkdirSync(join(cwd, "clossys/strategist"), { recursive: true }); stageFinding(join(cwd, "clossys/strategist"));
-      // The old root is ordinary scan content; limit the scan to the page.
-      expect(main(["--exclude", "strategy/**"])).toBe(0);
+      expect(() => main([])).toThrow(CliInputError);
+      expect(existsSync(join(cwd, "clossys/agents/strategist"))).toBe(false);
+      mkdirSync(join(cwd, "clossys/agents/strategist"), { recursive: true }); stageFinding(join(cwd, "clossys/agents/strategist"));
+      // Old roots are ordinary scan content; limit the scan to the page.
+      expect(main(["--exclude", "strategy/**", "--exclude", "clossys/strategist/**"])).toBe(0);
     } finally { process.chdir(original); rmSync(cwd, { recursive: true, force: true }); }
+  });
+
+  it.each(["directory", "worktree-file"])("finds the default from nested cwd with a .git %s", marker => {
+    const repo = mkdtempSync(join(tmpdir(), "strategy-cli-repo-"));
+    const original = process.cwd();
+    const cwd = join(repo, "packages", "app");
+    const root = join(repo, "clossys", "agents", "strategist");
+    mkdirSync(cwd, { recursive: true });
+    if (marker === "directory") mkdirSync(join(repo, ".git"));
+    else writeFileSync(join(repo, ".git"), "gitdir: ../metadata/worktrees/app\n");
+    stageFinding(root);
+    writeFileSync(join(cwd, "page.md"), "We serve 4,200 customers.");
+    process.chdir(cwd);
+    try {
+      expect(main(["ground", "."])).toBe(0);
+      expect(loggedLines("log")).toContain(`Strategy directory: ${root}`);
+      expect(loggedLines("log")).toContain(`Scan directory: ${cwd}`);
+      expect(existsSync(join(cwd, "clossys"))).toBe(false);
+    } finally { process.chdir(original); rmSync(repo, { recursive: true, force: true }); }
+  });
+
+  it("keeps explicit --root and positional roots relative to nested cwd", () => {
+    const repo = mkdtempSync(join(tmpdir(), "strategy-cli-repo-"));
+    const original = process.cwd();
+    const cwd = join(repo, "packages", "app");
+    const explicitRoot = join(cwd, "custom-root");
+    mkdirSync(cwd, { recursive: true });
+    mkdirSync(join(repo, ".git"));
+    stageFinding(explicitRoot);
+    writeFileSync(join(cwd, "page.md"), "We serve 4,200 customers.");
+    process.chdir(cwd);
+    try {
+      expect(main(["ground", "--root", "custom-root", "."])).toBe(0);
+      expect(main(["ground", "--root=custom-root", "."])).toBe(0);
+      expect(main(["custom-root", "."])).toBe(0);
+      expect(loggedLines("log").filter(line => line === `Strategy directory: ${explicitRoot}`)).toHaveLength(3);
+    } finally { process.chdir(original); rmSync(repo, { recursive: true, force: true }); }
+  });
+
+  it("uses the repository default for wont-claim from nested cwd", () => {
+    const repo = mkdtempSync(join(tmpdir(), "strategy-cli-repo-"));
+    const original = process.cwd();
+    const cwd = join(repo, "packages", "app");
+    const root = join(repo, "clossys", "agents", "strategist");
+    mkdirSync(cwd, { recursive: true });
+    mkdirSync(join(repo, ".git"));
+    mkdirSync(root, { recursive: true });
+    stageWontClaimCells(root);
+    writeFileSync(join(cwd, "page.md"), "A calm page.");
+    process.chdir(cwd);
+    try {
+      expect(main(["wont-claim", "."])).toBe(0);
+      expect(existsSync(join(root, "reports", "wont-claim.json"))).toBe(true);
+      expect(existsSync(join(cwd, "clossys"))).toBe(false);
+    } finally { process.chdir(original); rmSync(repo, { recursive: true, force: true }); }
   });
 });
 
@@ -256,7 +313,7 @@ describe("main — wont-claim", () => {
   });
 
   it("refuses bad arguments with a CliInputError", { timeout: 8_000 }, () => {
-    expect(() => main(["wont-claim", strategyDir])).toThrow(CliInputError);
+    expect(() => main(["wont-claim"])).toThrow(CliInputError);
     expect(() => main(["wont-claim", strategyDir, scanDir, "--bogus"])).toThrow(CliInputError);
     expect(() => main(["wont-claim", strategyDir, scanDir, "--facts-dir", factsDir])).toThrow(CliInputError);
   });

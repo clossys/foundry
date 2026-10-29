@@ -5,11 +5,12 @@ import { discoverBriefContracts, readBriefRootFile } from "../brief-contracts.js
 import { DEFAULT_SKIP_DIRS, scanStrategyDirectory, type ScanOptions } from "../scan.js";
 import { readStrategyRoot } from "../store.js";
 import { buildCitationIndex } from "./index.js";
+import { resolveStrategyRoot } from "../strategy-dir-default.js";
 
 const USAGE = `Usage: strategist-check index [--root <dir>] [--check] [--scan <dir>…] [--json]
 
 Build citations.json, or check current sources without writing with --check.
-The root defaults to clossys/strategist. Briefs are read from briefs/*.json.
+The root defaults to <repo root>/clossys/agents/strategist. Briefs are read from briefs/*.json.
 Scan sources include strategy:<cell>@<version> markers and JSON {cell, version} objects.
 --scan is repeatable. --extensions, --skip-dirs and --exclude are repeatable;
 skip directory names are added to node_modules, .git, dist, build and coverage.
@@ -72,7 +73,7 @@ function readBriefs(root: string): { path: string; brief: Brief }[] {
 export function runCitationIndex(argv: string[]): number {
   let json = false;
   try {
-    let root = resolve("clossys/strategist"); let check = false; let explicitRoot = false;
+    let root = resolveStrategyRoot(); let check = false; let explicitRoot = false;
     const dirs: string[] = []; const extensions: string[] = []; const skipDirs: string[] = []; const excludeGlobs: string[] = [];
     for (let i = 0; i < argv.length; i++) {
       const arg = argv[i]!;

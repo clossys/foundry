@@ -21,7 +21,9 @@ one versioned Markdown file. The default archetype starts with 24 core
 cells; product-saas, services and marketplace add their own core cells.
 
 The consumer owns the content under its chosen root (default
-`clossys/strategist/`):
+`<repo root>/clossys/agents/strategist/`). Starting an interview creates the
+tree and session log there, including when the working directory is nested
+inside the repository. All writes stay inside the selected strategy root:
 
 ```text
 tree.json                    archetype, grouping overrides, active pointers
@@ -60,7 +62,8 @@ and judgments establish; mechanical gate success alone is not keep.
 ```ts
 import { openStrategy, formatRef } from "@clossys/strategist";
 
-const strategy = openStrategy("clossys/strategist");
+// Run from the repository root; the API uses the supplied folder.
+const strategy = openStrategy("clossys/agents/strategist");
 const cell = strategy.getActive("focus.segment.core");
 if (cell) console.log(formatRef({ kind: "cell", ref: { cell: cell.id, version: cell.version } }));
 const brief = strategy.getBrief("writer.messaging");
@@ -73,19 +76,20 @@ if (brief.state === "stale") console.warn(brief.stale);
 ## CLI
 
 ```bash
-strategist-check status --root clossys/strategist --json
-strategist-check check --root clossys/strategist
-strategist-check cohere --root clossys/strategist
-strategist-check complete --level mvs --root clossys/strategist
-strategist-check handoff writer.messaging --root clossys/strategist
-strategist-check brief writer.messaging --write --request --root clossys/strategist
-strategist-check index --check --root clossys/strategist --scan src
-strategist-check review --root clossys/strategist
-strategist-check ground --root clossys/strategist src --json
-strategist-check wont-claim --root clossys/strategist src --json
+# Explicit relative roots in these examples are run from the repository root.
+strategist-check status --root clossys/agents/strategist --json
+strategist-check check --root clossys/agents/strategist
+strategist-check cohere --root clossys/agents/strategist
+strategist-check complete --level mvs --root clossys/agents/strategist
+strategist-check handoff writer.messaging --root clossys/agents/strategist
+strategist-check brief writer.messaging --write --request --root clossys/agents/strategist
+strategist-check index --check --root clossys/agents/strategist --scan src
+strategist-check review --root clossys/agents/strategist
+strategist-check ground --root clossys/agents/strategist src --json
+strategist-check wont-claim --root clossys/agents/strategist src --json
 ```
 
-The default root is `clossys/strategist`; `--root` selects another root. The bare positional form `strategist-check <root> <scan-dir>` is ground mode. There is no legacy root fallback. Exit codes are 0 clean or ready, 1 findings or not ready, and 2 could not run. The `cell <id> --verb create|cohere|unlock|normalize` command exposes the corresponding quality or completion checks.
+The default root is `<repo root>/clossys/agents/strategist`, even from a nested working directory. Outside a repository, it is `clossys/agents/strategist` under the working directory. `--root` selects the exact supplied folder; relative explicit roots resolve from the working directory, without appending the default layout. The bare positional form `strategist-check <root> <scan-dir>` is ground mode and also preserves the supplied root. There is no legacy root fallback or automatic migration. Exit codes are 0 clean or ready, 1 findings or not ready, and 2 could not run. The `cell <id> --verb create|cohere|unlock|normalize` command exposes the corresponding quality or completion checks.
 
 `propose <id> [--from N] [--option A]` creates a draft. `activate <cell-ref>[,<cell-ref>...] --confirm <user-message-ref>` requires the exact listed user confirmation. `request new|list|resolve` manages requests. The write API exposes `propose`, `activate`, `createRequest`, `listRequests` and `resolveRequest`. Activation preserves active and retired bodies and checks the entire confirmation batch before mutation. There is no force flag.
 

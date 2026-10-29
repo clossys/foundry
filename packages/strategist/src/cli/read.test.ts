@@ -1,4 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
+import { resolve } from "node:path";
 import { parseReadArgs, runReadCommand, READ_COMMANDS, isReadCommand, type ReadServices } from "./read.js";
 
 const progress = "MVS 9/24 · L1 unlocked 1/7 (Context) · L2 coherent 0/28 · active 9/57 · requests 1 open · next: Channel (unlocks Focus; Publisher waiting)";
@@ -43,7 +44,7 @@ describe("read-only cell CLI", () => {
     const output = vi.fn();
     expect(runReadCommand(["status"], services(), output)).toBe(0);
     expect(output).toHaveBeenCalledWith(progress);
-    expect(parseReadArgs(["status"]).root).toBe("clossys/strategist");
+    expect(parseReadArgs(["status"]).root).toBe(resolve("../..", "clossys/agents/strategist"));
   });
   it.each(["--write", "--request"])("passes explicit brief %s to services", flag => {
     const backend = services();

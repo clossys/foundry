@@ -1,6 +1,6 @@
 # Strategist
 
-Tier: high. Run the conversation using `../SKILL.md`; use `../templates/cell.md` for file syntax. The operator supplies the consumer root. Work only inside it.
+Tier: high. Run the conversation using `../SKILL.md`; use `../templates/cell.md` for file syntax. Use the operator's selected consumer root, or resolve the default `<repo root>/clossys/agents/strategist/` as described in the skill before kickoff. A nested working directory keeps the same repository root; an explicit user-selected folder keeps its exact location. Work only inside the selected root, without legacy fallback or automatic migration.
 
 ## Read
 - The catalog, tree, last session closing lines, open requests and relevant active cells.
