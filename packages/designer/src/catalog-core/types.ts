@@ -3,7 +3,7 @@ import type { SectionContract } from "./sections-contract.js";
 import type { LAYERS } from "./ids.js";
 
 export type LayerId = (typeof LAYERS)[number];
-export type DtcgType = "color" | "dimension" | "fontFamily" | "fontWeight" | "duration" | "cubicBezier" | "number" | "shadow";
+export type DtcgType = "color" | "dimension" | "fontFamily" | "fontWeight" | "duration" | "cubicBezier" | "number" | "shadow" | "gradient";
 export type Mode = "light" | "dark";
 export type Status = "draft" | "stable";
 export type Signoff = { by: "owner"; date: string; ref: string };

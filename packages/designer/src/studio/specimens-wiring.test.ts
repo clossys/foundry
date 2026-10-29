@@ -253,7 +253,7 @@ describe("specimen role and reason-coded overrides", () => {
     unmount();
     expect(cells.length).toBeGreaterThan(20);
     expect(faults).toEqual([]);
-    expect([...kinds].sort()).toEqual(["blur", "density", "focus", "icon", "layer-fan", "motion", "opacity", "radius", "ruler", "shadow", "text-metric"]);
+    expect([...kinds].sort()).toEqual(["blur", "density", "focus", "gradient", "icon", "layer-fan", "motion", "opacity", "radius", "ruler", "shadow", "text-metric"]);
   }, 60_000);
 
   it("draws token sample text from the dataset when the host gives none", () => {

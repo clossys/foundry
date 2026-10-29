@@ -5974,6 +5974,17 @@
       "limits": {
         "maxChars": 160
       }
+    },
+    {
+      "id": "st.tbfa7dx2cf",
+      "leaf": "strings.names",
+      "context": "designer.item.tokens.gradient",
+      "status": "draft",
+      "origin": "foundry-default",
+      "text": "Gradient",
+      "limits": {
+        "maxChars": 60
+      }
     }
   ],
   "reviews": [

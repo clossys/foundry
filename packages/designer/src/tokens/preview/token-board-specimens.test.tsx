@@ -85,8 +85,8 @@ it("shows resolved values with the alias as a name, never a var() string (studio
 
 it("sorts scale members by ordinal, then by value (studio-04)", () => {
   expect(keysOf("tokens.font-size")).toEqual(["xs", "sm", "base", "lg", "xl", "2xl", "3xl", "4xl", "5xl", "6xl", "7xl", "8xl", "9xl"]);
-  expect(keysOf("tokens.display-size")).toEqual(["m", "l", "xl"]);
-  expect(keysOf("tokens.heading-size")).toEqual(["h0", "h1", "h2", "h3"]);
+  expect(keysOf("tokens.display-size")).toEqual(["m", "l", "xl", "2xl"]);
+  expect(keysOf("tokens.heading-size")).toEqual(["2xl", "h0", "h1", "h2", "h3"]);
   expect(keysOf("tokens.spacing")).toEqual(["xs", "sm", "md", "lg", "xl", "2xl", "3xl", "4xl", "5xl", "6xl"]);
   const ramp = keysOf("tokens.color-ramp");
   expect(ramp.slice(0, 11)).toEqual(["50", "100", "200", "300", "400", "500", "600", "700", "800", "900", "950"].map(step => `amber.${step}`));

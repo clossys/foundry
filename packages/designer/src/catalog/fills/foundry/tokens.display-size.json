@@ -30,6 +30,10 @@
   },
   "tokens": {
     "display-size": {
+      "2xl": {
+        "$type": "dimension",
+        "$value": "clamp(4.5rem, 10vw, 8rem)"
+      },
       "l": {
         "$extensions": {
           "com.clossys.css": {

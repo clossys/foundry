@@ -1,4 +1,6 @@
 import type { ResolvedMember } from "../../catalog-core/types.js";
+import { lexer } from "css-tree";
+import { resolveTokenReferences } from "./member-order.js";
 
 const NUMBER = String.raw`[+-]?(?:\d*\.)?\d+`;
 /** Colour functions a shadow may carry, plus the reference and arithmetic forms the catalog authors. */
@@ -19,6 +21,11 @@ function balanced(css: string): boolean {
  */
 export function checkedPreviewCss(type: ResolvedMember["$type"], input: string): boolean {
   const css = input.trim();
+  if (type === "gradient") {
+    if (!/^linear-gradient\(/i.test(css)) return false;
+    const resolved = resolveTokenReferences(css);
+    return !/\bvar\s*\(/i.test(resolved) && lexer.matchType("gradient", resolved).error === null;
+  }
   const reference = /^var\((--[a-zA-Z][\w-]*),\s*([\s\S]+)\)$/.exec(css);
   if (reference) return checkedPreviewCss(type, reference[2]!);
   if (type === "color") return /^(?:#[a-f\d]{3,8}|transparent|currentColor|(?:rgb|rgba|hsl|hsla|hwb|oklch|oklab|lab|lch)\([\deE.%+\-\s,/]+\)|color\((?:srgb|srgb-linear|display-p3|a98-rgb|prophoto-rgb|rec2020|xyz-d50|xyz-d65) [\deE.%+\-\s/]+\))$/i.test(css);

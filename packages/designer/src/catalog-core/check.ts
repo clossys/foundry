@@ -6,6 +6,7 @@ import { contrastRatio } from "../tokens/color.js";
 import { parseFill } from "./cell.js";
 import { idFinding, isValidId, LAYERS } from "./ids.js";
 import { aliasOf, assetReferences, compare, flatten, leafOf, malformed, metaOf, modeValue, references, relativeOf, unsafeText } from "./model.js";
+import { gradientColorAlias, gradientStops } from "../tokens/expressive.js";
 import { resolveForCheck, type EngineInput } from "./resolve.js";
 import { createDerivationInputsHasher, generateSelection, originOf, tokenContent } from "./library.js";
 import { sha256 } from "./digest.js";
@@ -175,7 +176,8 @@ export function check(input: EngineInput & { resolved?: Resolved; fileExists?: (
         if (!templated && malformed(token.$type, value, raw)) add("C1", "contract", meta.id, { message: `contract: ${meta.id} member ${member} has a malformed ${token.$type} value`, copy: { id: "st.5q540w8na4", values: { option: (member ?? ""), type: (token.$type ?? "") } } });
         if (slot.contract.kind === "token" && !aliasOf(value)) {
           const strings = (v: unknown): string[] => typeof v === "string" ? [v] : Array.isArray(v) ? v.flatMap(strings) : v !== null && typeof v === "object" ? Object.values(v).flatMap(strings) : [];
-          const unsafe = [typeof value === "string" && mode === "dark" ? value : raw ?? "", ...strings(value)].map(unsafeText).find(Boolean);
+          const inspected = token.$type === "gradient" && gradientStops(value) ? value.map(stop => gradientColorAlias(stop.color) ? { ...stop, color: null } : stop) : value;
+          const unsafe = [typeof value === "string" && mode === "dark" ? value : raw ?? "", ...strings(inspected)].map(unsafeText).find(Boolean);
           if (unsafe) add("C1", "contract", meta.id, { message: `contract: ${meta.id} member ${member} has unsafe CSS text (${unsafe})`, copy: { id: "st.p660j51er5", values: { option: (member ?? "") } } });
         }
       }

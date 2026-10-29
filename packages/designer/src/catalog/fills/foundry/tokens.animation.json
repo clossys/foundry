@@ -1,0 +1,89 @@
+{
+  "$extensions": {
+    "com.clossys.fill": {
+      "author": "foundry",
+      "builtOn": [],
+      "conforms": [
+        "dtcg#format",
+        "dtcg#alias"
+      ],
+      "evidence": [
+        {
+          "check": "C1",
+          "clause": "dtcg#format"
+        },
+        {
+          "check": "C2",
+          "clause": "dtcg#alias"
+        }
+      ],
+      "id": "foundry/tokens.animation",
+      "license": "MIT",
+      "mode": "implementation",
+      "relation": "same-contract",
+      "slot": "tokens.animation",
+      "source": "foundry",
+      "sourceAddress": "src/catalog/fills/foundry/tokens.animation.json",
+      "status": "draft",
+      "trust": "foundry"
+    }
+  },
+  "tokens": {
+    "animation": {
+      "count": {
+        "$extensions": {
+          "com.clossys.css": {
+            "raw": "count 1200ms cubic-bezier(0, 0, 0.2, 1) both"
+          }
+        },
+        "$type": "duration",
+        "$value": "count 1200ms cubic-bezier(0, 0, 0.2, 1) both"
+      },
+      "marquee": {
+        "$extensions": {
+          "com.clossys.css": {
+            "raw": "marquee 20000ms linear infinite"
+          }
+        },
+        "$type": "duration",
+        "$value": "marquee 20000ms linear infinite"
+      },
+      "reveal": {
+        "$extensions": {
+          "com.clossys.css": {
+            "raw": "reveal 600ms cubic-bezier(0, 0, 0.2, 1) both"
+          }
+        },
+        "$type": "duration",
+        "$value": "reveal 600ms cubic-bezier(0, 0, 0.2, 1) both"
+      },
+      "scroll-reveal": {
+        "$extensions": {
+          "com.clossys.css": {
+            "raw": "reveal 600ms cubic-bezier(0, 0, 0.2, 1) both"
+          }
+        },
+        "$type": "duration",
+        "$value": "reveal 600ms cubic-bezier(0, 0, 0.2, 1) both"
+      },
+      "scroll-sticky": {
+        "$extensions": {
+          "com.clossys.css": {
+            "raw": "scroll-sticky 1000ms linear both"
+          }
+        },
+        "$type": "duration",
+        "$value": "scroll-sticky 1000ms linear both"
+      },
+      "stagger": {
+        "$extensions": {
+          "com.clossys.css": {
+            "raw": "reveal 600ms cubic-bezier(0, 0, 0.2, 1) both"
+          }
+        },
+        "$type": "duration",
+        "$value": "reveal 600ms cubic-bezier(0, 0, 0.2, 1) both"
+      }
+    }
+  }
+}

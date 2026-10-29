@@ -2,13 +2,13 @@
   "counts": {
     "assetEdges": 4,
     "assets": 48,
-    "members": 655,
+    "members": 672,
     "orphanEdges": 0,
-    "resolvedMembers": 654,
-    "tokenEdges": 24,
-    "tokens": 55,
+    "resolvedMembers": 671,
+    "tokenEdges": 27,
+    "tokens": 56,
     "unusedAssets": 46,
-    "unusedTokens": 43
+    "unusedTokens": 44
   },
   "leaves": [
     {
@@ -405,9 +405,9 @@
       "assets": [],
       "consumedBy": [],
       "id": "assets.pattern",
-      "resolved": 3,
+      "resolved": 6,
       "tokens": [],
-      "total": 3
+      "total": 6
     },
     {
       "assets": [],
@@ -421,7 +421,8 @@
       "assets": [],
       "consumedBy": [
         "tokens.focus-color",
-        "tokens.focus-shadow"
+        "tokens.focus-shadow",
+        "tokens.gradient"
       ],
       "id": "tokens.accent-color",
       "resolved": 5,
@@ -440,9 +441,9 @@
       "assets": [],
       "consumedBy": [],
       "id": "tokens.animation",
-      "resolved": 4,
+      "resolved": 10,
       "tokens": [],
-      "total": 4
+      "total": 10
     },
     {
       "assets": [],
@@ -474,7 +475,8 @@
         "tokens.border-color",
         "tokens.chart-color",
         "tokens.diverging-color",
-        "tokens.elevation"
+        "tokens.elevation",
+        "tokens.gradient"
       ],
       "id": "tokens.border-color",
       "resolved": 6,
@@ -615,17 +617,17 @@
       "assets": [],
       "consumedBy": [],
       "id": "tokens.display-face",
-      "resolved": 4,
+      "resolved": 5,
       "tokens": [],
-      "total": 4
+      "total": 5
     },
     {
       "assets": [],
       "consumedBy": [],
       "id": "tokens.display-size",
-      "resolved": 3,
+      "resolved": 4,
       "tokens": [],
-      "total": 3
+      "total": 4
     },
     {
       "assets": [],
@@ -719,6 +721,18 @@
     {
       "assets": [],
       "consumedBy": [],
+      "id": "tokens.gradient",
+      "resolved": 4,
+      "tokens": [
+        "tokens.accent-color",
+        "tokens.border-color",
+        "tokens.surface-color"
+      ],
+      "total": 4
+    },
+    {
+      "assets": [],
+      "consumedBy": [],
       "id": "tokens.gutter",
       "resolved": 1,
       "tokens": [],
@@ -728,9 +742,9 @@
       "assets": [],
       "consumedBy": [],
       "id": "tokens.heading-size",
-      "resolved": 4,
+      "resolved": 5,
       "tokens": [],
-      "total": 4
+      "total": 5
     },
     {
       "assets": [],
@@ -808,9 +822,9 @@
       "assets": [],
       "consumedBy": [],
       "id": "tokens.shift-distance",
-      "resolved": 1,
+      "resolved": 2,
       "tokens": [],
-      "total": 1
+      "total": 2
     },
     {
       "assets": [],
@@ -840,6 +854,7 @@
       "assets": [],
       "consumedBy": [
         "tokens.chart-color",
+        "tokens.gradient",
         "tokens.surface-color"
       ],
       "id": "tokens.surface-color",

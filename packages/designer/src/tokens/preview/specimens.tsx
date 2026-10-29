@@ -10,6 +10,7 @@ import type { ResolvedMember } from "../../catalog-core/types.js";
 import { TOKENS } from "../tokens.js";
 import { checkedPreviewCss } from "./checked-css.js";
 import { displayTokenValue } from "./member-order.js";
+import { TokenValuePreview } from "./index.js";
 import { specimenDataset } from "../../studio/specimen-dataset.js";
 
 /**
@@ -21,9 +22,10 @@ import { specimenDataset } from "../../studio/specimen-dataset.js";
  * may override the text and the play label. A part that reads its own token (the Icon's size and
  * stroke) takes the member through that token, overridden on the same root.
  */
-export type TokenSpecimenKind = "motion" | "radius" | "shadow" | "blur" | "text-metric" | "ruler" | "density" | "focus" | "layer-fan" | "icon" | "opacity";
+export type TokenSpecimenKind = "motion" | "radius" | "shadow" | "blur" | "text-metric" | "ruler" | "density" | "focus" | "layer-fan" | "icon" | "opacity" | "gradient";
 
 export const TOKEN_LEAF_SPECIMENS: Readonly<Record<string, TokenSpecimenKind>> = Object.freeze({
+  "tokens.gradient": "gradient",
   "tokens.duration": "motion",
   "tokens.transition-duration": "motion",
   "tokens.behavior-timing": "motion",
@@ -73,6 +75,7 @@ export const TOKEN_LEAF_SPECIMENS: Readonly<Record<string, TokenSpecimenKind>> =
  * clips at its maximum, so its content can never push a cell past the bound.
  */
 export const TOKEN_SPECIMEN_WIDTHS: Readonly<Record<TokenSpecimenKind, { readonly min: number; readonly max: number; readonly className: string }>> = Object.freeze({
+  gradient: { min: 52, max: 128, className: "min-w-(--ui-control-h-lg) max-w-(--spacing-6xl)" },
   motion: { min: 128, max: 256, className: "min-w-(--spacing-6xl) max-w-(--ui-layout-sidebar-w)" },
   radius: { min: 52, max: 128, className: "min-w-(--ui-control-h-lg) max-w-(--spacing-6xl)" },
   shadow: { min: 52, max: 128, className: "min-w-(--ui-control-h-lg) max-w-(--spacing-6xl)" },
@@ -274,6 +277,7 @@ export function TokenLeafSpecimen({ id, member, sampleText = SAMPLES.sampleText,
   if (!kind) return null;
   const key = id.slice(member.slot.length + 1);
   switch (kind) {
+    case "gradient": return frame(kind, css, <TokenValuePreview id={id} member={member} sampleText={sampleText} lightLabel="" darkLabel="" compact />);
     case "motion": {
       const role = member.slot === "tokens.animation" ? "animation" : member.$type === "cubicBezier" ? "easing" : "duration";
       const curve = role === "easing" ? cubicBezierPoints(css) : undefined;
@@ -291,6 +295,7 @@ export function TokenLeafSpecimen({ id, member, sampleText = SAMPLES.sampleText,
       <span aria-hidden="true" data-specimen-target="" className="absolute inset-y-0 end-0 block w-1/2 border-s border-line-base bg-surface-glass backdrop-blur-(--studio-specimen-value)" />
     </Card>);
     case "text-metric": {
+      if (member.slot === "tokens.display-face" && key === "optical-size") return frame(kind, css, <TokenValuePreview id={id} member={member} sampleText={sampleText} lightLabel="" darkLabel="" />);
       // No utility reads a font-style value, so the style member picks the keyword's own utility.
       const metric = fontStyleMember(member) ? join("text-body-l", css.trim() === "normal" ? "not-italic" : "italic") : TEXT_METRIC[`${member.slot}.${key}`] ?? TEXT_METRIC[member.slot];
       const sample = TEXT_SIZE_LEAVES.has(member.slot) ? sampleText.trim().split(/\s+/)[0] ?? sampleText : sampleText;

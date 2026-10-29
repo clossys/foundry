@@ -43,7 +43,9 @@
           "tokens.content-size",
           "tokens.region-width",
           "tokens.breakpoint",
-          "tokens.surface-color"
+          "tokens.surface-color",
+          "tokens.animation",
+          "tokens.shift-distance"
         ],
         "assets": []
       },
@@ -247,7 +249,9 @@
           "tokens.breakpoint",
           "tokens.surface-color",
           "tokens.body-size",
-          "tokens.line-height"
+          "tokens.line-height",
+          "tokens.animation",
+          "tokens.shift-distance"
         ],
         "assets": []
       },
@@ -382,7 +386,9 @@
           "tokens.content-size",
           "tokens.region-width",
           "tokens.breakpoint",
-          "tokens.surface-color"
+          "tokens.surface-color",
+          "tokens.animation",
+          "tokens.shift-distance"
         ],
         "assets": []
       },
@@ -654,7 +660,9 @@
           "tokens.surface-color",
           "tokens.body-size",
           "tokens.line-height",
-          "tokens.code-size"
+          "tokens.code-size",
+          "tokens.animation",
+          "tokens.shift-distance"
         ],
         "assets": []
       },
@@ -780,7 +788,9 @@
           "tokens.content-size",
           "tokens.region-width",
           "tokens.breakpoint",
-          "tokens.surface-color"
+          "tokens.surface-color",
+          "tokens.animation",
+          "tokens.shift-distance"
         ],
         "assets": []
       },
@@ -1022,7 +1032,9 @@
           "tokens.content-size",
           "tokens.region-width",
           "tokens.breakpoint",
-          "tokens.surface-color"
+          "tokens.surface-color",
+          "tokens.animation",
+          "tokens.shift-distance"
         ],
         "assets": []
       },
@@ -1103,7 +1115,9 @@
           "tokens.body-size",
           "tokens.line-height",
           "tokens.text-color",
-          "tokens.surface-color"
+          "tokens.surface-color",
+          "tokens.animation",
+          "tokens.shift-distance"
         ],
         "assets": []
       },
@@ -1206,7 +1220,9 @@
           "tokens.content-size",
           "tokens.region-width",
           "tokens.breakpoint",
-          "tokens.surface-color"
+          "tokens.surface-color",
+          "tokens.animation",
+          "tokens.shift-distance"
         ],
         "assets": []
       },
@@ -1309,7 +1325,9 @@
           "tokens.breakpoint",
           "tokens.surface-color",
           "tokens.surface-radius",
-          "tokens.elevation"
+          "tokens.elevation",
+          "tokens.animation",
+          "tokens.shift-distance"
         ],
         "assets": []
       },
@@ -1500,7 +1518,9 @@
           "tokens.content-size",
           "tokens.region-width",
           "tokens.breakpoint",
-          "tokens.surface-color"
+          "tokens.surface-color",
+          "tokens.animation",
+          "tokens.shift-distance"
         ],
         "assets": []
       },
@@ -1635,7 +1655,9 @@
           "tokens.content-size",
           "tokens.region-width",
           "tokens.breakpoint",
-          "tokens.surface-color"
+          "tokens.surface-color",
+          "tokens.animation",
+          "tokens.shift-distance"
         ],
         "assets": []
       },
@@ -1795,7 +1817,9 @@
           "tokens.region-width",
           "tokens.breakpoint",
           "tokens.surface-color",
-          "tokens.status-color"
+          "tokens.status-color",
+          "tokens.animation",
+          "tokens.shift-distance"
         ],
         "assets": []
       },
@@ -2003,7 +2027,9 @@
           "tokens.region-width",
           "tokens.breakpoint",
           "tokens.surface-color",
-          "tokens.status-color"
+          "tokens.status-color",
+          "tokens.animation",
+          "tokens.shift-distance"
         ],
         "assets": []
       },
@@ -2136,7 +2162,9 @@
           "tokens.content-size",
           "tokens.region-width",
           "tokens.breakpoint",
-          "tokens.surface-color"
+          "tokens.surface-color",
+          "tokens.animation",
+          "tokens.shift-distance"
         ],
         "assets": []
       },
@@ -2281,7 +2309,9 @@
           "tokens.region-width",
           "tokens.breakpoint",
           "tokens.surface-color",
-          "tokens.density"
+          "tokens.density",
+          "tokens.animation",
+          "tokens.shift-distance"
         ],
         "assets": []
       },
@@ -2505,7 +2535,9 @@
           "tokens.breakpoint",
           "tokens.surface-color",
           "tokens.density",
-          "tokens.control-size"
+          "tokens.control-size",
+          "tokens.animation",
+          "tokens.shift-distance"
         ],
         "assets": []
       },
@@ -2765,7 +2797,9 @@
           "tokens.content-size",
           "tokens.region-width",
           "tokens.breakpoint",
-          "tokens.surface-color"
+          "tokens.surface-color",
+          "tokens.animation",
+          "tokens.shift-distance"
         ],
         "assets": []
       },
@@ -2896,7 +2930,9 @@
           "tokens.body-size",
           "tokens.line-height",
           "tokens.text-color",
-          "tokens.surface-color"
+          "tokens.surface-color",
+          "tokens.animation",
+          "tokens.shift-distance"
         ],
         "assets": []
       },
@@ -3008,7 +3044,9 @@
           "tokens.content-size",
           "tokens.region-width",
           "tokens.breakpoint",
-          "tokens.surface-color"
+          "tokens.surface-color",
+          "tokens.animation",
+          "tokens.shift-distance"
         ],
         "assets": []
       },
@@ -3136,7 +3174,9 @@
           "tokens.content-size",
           "tokens.region-width",
           "tokens.breakpoint",
-          "tokens.surface-color"
+          "tokens.surface-color",
+          "tokens.animation",
+          "tokens.shift-distance"
         ],
         "assets": []
       },
@@ -3272,7 +3312,9 @@
           "tokens.content-size",
           "tokens.region-width",
           "tokens.breakpoint",
-          "tokens.surface-color"
+          "tokens.surface-color",
+          "tokens.animation",
+          "tokens.shift-distance"
         ],
         "assets": []
       },
@@ -3375,7 +3417,9 @@
           "tokens.content-size",
           "tokens.region-width",
           "tokens.breakpoint",
-          "tokens.surface-color"
+          "tokens.surface-color",
+          "tokens.animation",
+          "tokens.shift-distance"
         ],
         "assets": [
           "assets.icon-*"
@@ -3487,7 +3531,9 @@
           "tokens.content-size",
           "tokens.region-width",
           "tokens.breakpoint",
-          "tokens.surface-color"
+          "tokens.surface-color",
+          "tokens.animation",
+          "tokens.shift-distance"
         ],
         "assets": []
       },
@@ -3674,7 +3720,9 @@
           "tokens.content-size",
           "tokens.region-width",
           "tokens.breakpoint",
-          "tokens.surface-color"
+          "tokens.surface-color",
+          "tokens.animation",
+          "tokens.shift-distance"
         ],
         "assets": []
       },
@@ -3838,7 +3886,9 @@
           "tokens.content-size",
           "tokens.region-width",
           "tokens.breakpoint",
-          "tokens.surface-color"
+          "tokens.surface-color",
+          "tokens.animation",
+          "tokens.shift-distance"
         ],
         "assets": [
           "assets.image-ratio"
@@ -3975,7 +4025,9 @@
           "tokens.region-width",
           "tokens.breakpoint",
           "tokens.surface-color",
-          "tokens.display-size"
+          "tokens.display-size",
+          "tokens.animation",
+          "tokens.shift-distance"
         ],
         "assets": [
           "assets.image-ratio"
@@ -4105,7 +4157,9 @@
           "tokens.breakpoint",
           "tokens.surface-color",
           "tokens.body-size",
-          "tokens.line-height"
+          "tokens.line-height",
+          "tokens.animation",
+          "tokens.shift-distance"
         ],
         "assets": []
       },
@@ -4201,7 +4255,9 @@
           "tokens.content-size",
           "tokens.region-width",
           "tokens.breakpoint",
-          "tokens.surface-color"
+          "tokens.surface-color",
+          "tokens.animation",
+          "tokens.shift-distance"
         ],
         "assets": []
       },
@@ -4323,7 +4379,9 @@
           "tokens.content-size",
           "tokens.region-width",
           "tokens.breakpoint",
-          "tokens.surface-color"
+          "tokens.surface-color",
+          "tokens.animation",
+          "tokens.shift-distance"
         ],
         "assets": [
           "assets.image-ratio"
@@ -4419,7 +4477,9 @@
           "tokens.region-width",
           "tokens.breakpoint",
           "tokens.surface-color",
-          "tokens.display-size"
+          "tokens.display-size",
+          "tokens.animation",
+          "tokens.shift-distance"
         ],
         "assets": [
           "assets.mark"
@@ -4481,7 +4541,9 @@
           "tokens.region-width",
           "tokens.breakpoint",
           "tokens.surface-color",
-          "tokens.display-size"
+          "tokens.display-size",
+          "tokens.animation",
+          "tokens.shift-distance"
         ],
         "assets": [
           "assets.mark"
@@ -4532,7 +4594,9 @@
           "tokens.region-width",
           "tokens.breakpoint",
           "tokens.surface-color",
-          "tokens.surface-radius"
+          "tokens.surface-radius",
+          "tokens.animation",
+          "tokens.shift-distance"
         ],
         "assets": [
           "assets.image-ratio"
@@ -4651,7 +4715,9 @@
           "tokens.content-size",
           "tokens.region-width",
           "tokens.breakpoint",
-          "tokens.surface-color"
+          "tokens.surface-color",
+          "tokens.animation",
+          "tokens.shift-distance"
         ],
         "assets": []
       },
@@ -4795,7 +4861,9 @@
           "tokens.region-width",
           "tokens.breakpoint",
           "tokens.surface-color",
-          "tokens.status-color"
+          "tokens.status-color",
+          "tokens.animation",
+          "tokens.shift-distance"
         ],
         "assets": []
       },
@@ -4948,7 +5016,9 @@
           "tokens.region-width",
           "tokens.breakpoint",
           "tokens.surface-color",
-          "tokens.heading-size"
+          "tokens.heading-size",
+          "tokens.animation",
+          "tokens.shift-distance"
         ],
         "assets": []
       },
@@ -5097,7 +5167,9 @@
           "tokens.content-size",
           "tokens.region-width",
           "tokens.breakpoint",
-          "tokens.surface-color"
+          "tokens.surface-color",
+          "tokens.animation",
+          "tokens.shift-distance"
         ],
         "assets": [
           "assets.icon-*"
@@ -5197,7 +5269,9 @@
           "tokens.content-size",
           "tokens.region-width",
           "tokens.breakpoint",
-          "tokens.surface-color"
+          "tokens.surface-color",
+          "tokens.animation",
+          "tokens.shift-distance"
         ],
         "assets": []
       },
@@ -5315,7 +5389,9 @@
           "tokens.content-size",
           "tokens.region-width",
           "tokens.breakpoint",
-          "tokens.surface-color"
+          "tokens.surface-color",
+          "tokens.animation",
+          "tokens.shift-distance"
         ],
         "assets": []
       },
@@ -5496,7 +5572,9 @@
           "tokens.content-size",
           "tokens.region-width",
           "tokens.breakpoint",
-          "tokens.surface-color"
+          "tokens.surface-color",
+          "tokens.animation",
+          "tokens.shift-distance"
         ],
         "assets": []
       },
@@ -5717,7 +5795,9 @@
           "tokens.region-width",
           "tokens.breakpoint",
           "tokens.surface-color",
-          "tokens.density"
+          "tokens.density",
+          "tokens.animation",
+          "tokens.shift-distance"
         ],
         "assets": []
       },
@@ -5961,7 +6041,9 @@
           "tokens.display-face",
           "tokens.body-size",
           "tokens.text-color",
-          "tokens.accent-color"
+          "tokens.accent-color",
+          "tokens.animation",
+          "tokens.shift-distance"
         ],
         "assets": []
       },
@@ -6062,7 +6144,9 @@
           "tokens.content-size",
           "tokens.region-width",
           "tokens.breakpoint",
-          "tokens.surface-color"
+          "tokens.surface-color",
+          "tokens.animation",
+          "tokens.shift-distance"
         ],
         "assets": []
       },
@@ -6444,7 +6528,9 @@
           "tokens.content-size",
           "tokens.region-width",
           "tokens.breakpoint",
-          "tokens.surface-color"
+          "tokens.surface-color",
+          "tokens.animation",
+          "tokens.shift-distance"
         ],
         "assets": []
       },
@@ -6494,7 +6580,9 @@
           "tokens.region-width",
           "tokens.breakpoint",
           "tokens.surface-color",
-          "tokens.status-color"
+          "tokens.status-color",
+          "tokens.animation",
+          "tokens.shift-distance"
         ],
         "assets": []
       },
@@ -6678,7 +6766,9 @@
           "tokens.region-width",
           "tokens.breakpoint",
           "tokens.surface-color",
-          "tokens.status-color"
+          "tokens.status-color",
+          "tokens.animation",
+          "tokens.shift-distance"
         ],
         "assets": [
           "assets.icon-*"
@@ -6907,7 +6997,9 @@
           "tokens.content-size",
           "tokens.region-width",
           "tokens.breakpoint",
-          "tokens.surface-color"
+          "tokens.surface-color",
+          "tokens.animation",
+          "tokens.shift-distance"
         ],
         "assets": []
       },
@@ -7017,7 +7109,9 @@
           "tokens.content-size",
           "tokens.region-width",
           "tokens.breakpoint",
-          "tokens.surface-color"
+          "tokens.surface-color",
+          "tokens.animation",
+          "tokens.shift-distance"
         ],
         "assets": []
       },
@@ -7090,7 +7184,9 @@
           "tokens.content-size",
           "tokens.region-width",
           "tokens.breakpoint",
-          "tokens.surface-color"
+          "tokens.surface-color",
+          "tokens.animation",
+          "tokens.shift-distance"
         ],
         "assets": []
       },
@@ -7312,7 +7408,9 @@
           "tokens.content-size",
           "tokens.region-width",
           "tokens.breakpoint",
-          "tokens.surface-color"
+          "tokens.surface-color",
+          "tokens.animation",
+          "tokens.shift-distance"
         ],
         "assets": []
       },
@@ -7417,7 +7515,9 @@
           "tokens.content-size",
           "tokens.region-width",
           "tokens.breakpoint",
-          "tokens.surface-color"
+          "tokens.surface-color",
+          "tokens.animation",
+          "tokens.shift-distance"
         ],
         "assets": []
       },
@@ -7524,7 +7624,9 @@
           "tokens.region-width",
           "tokens.breakpoint",
           "tokens.surface-color",
-          "tokens.status-color"
+          "tokens.status-color",
+          "tokens.animation",
+          "tokens.shift-distance"
         ],
         "assets": []
       },
@@ -7746,7 +7848,9 @@
           "tokens.content-size",
           "tokens.region-width",
           "tokens.breakpoint",
-          "tokens.surface-color"
+          "tokens.surface-color",
+          "tokens.animation",
+          "tokens.shift-distance"
         ],
         "assets": []
       },

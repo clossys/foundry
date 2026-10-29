@@ -9,5 +9,19 @@
     "assets.image",
     "assets.pattern",
     "assets.video"
-  ]
+  ],
+  "pending": {
+    "status": "pending-owner-ratification",
+    "source": "workspace#45 A131/A132 AUTO-DECIDED 2026-10-28",
+    "memberChanges": [
+      {
+        "id": "assets.pattern",
+        "addedMembers": [
+          "grain",
+          "noise",
+          "topo"
+        ]
+      }
+    ]
+  }
 }

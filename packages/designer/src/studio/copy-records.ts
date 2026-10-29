@@ -57,6 +57,7 @@ export const STUDIO_MESSAGE_REFS: Readonly<Record<string, { readonly id: string 
   "designer.item.tokens.accent-color": { id: "st.gcf87s42d5" },
   "designer.item.tokens.action-color": { id: "st.beasvww4hg" },
   "designer.item.tokens.animation": { id: "st.0fhwa1a37h" },
+  "designer.item.tokens.gradient": { id: "st.tbfa7dx2cf" },
   "designer.item.tokens.behavior-timing": { id: "st.kmgj493hek" },
   "designer.item.tokens.blur": { id: "st.p1f829hhcg" },
   "designer.item.tokens.body-size": { id: "st.gx1mz6ra5r" },

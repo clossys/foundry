@@ -24,6 +24,7 @@ import { labels } from "./__fixtures__/studio.js";
  * The px numbers are the shipped token values, recorded so a change to either side is visible here.
  */
 const D3_DEFAULTS: Record<TokenSpecimenKind, { min: number; max: number }> = {
+  gradient: { min: 52, max: 128 },
   motion: { min: 128, max: 256 },
   radius: { min: 52, max: 128 },
   shadow: { min: 52, max: 128 },

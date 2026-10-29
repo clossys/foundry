@@ -30,6 +30,10 @@
   },
   "tokens": {
     "display-face": {
+      "optical-size": {
+        "$type": "number",
+        "$value": 72
+      },
       "scale-x": {
         "$extensions": {
           "com.clossys.css": {
