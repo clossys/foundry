@@ -10,7 +10,7 @@ import { checkComponentProfile, componentSourceHash, componentTokensHash } from 
 import { validateInstalledComponentRule } from "./component-rule-validation.js";
 import { sha256 } from "./digest.js";
 
-const direct = ["components.calendar", "components.date-field", "components.popover"];
+const direct = ["components.button", "components.calendar", "components.date-field", "components.popover"];
 const RELATIVE_SPECIFIER = /\b(?:from|import)\s*["'](\.\.?\/[^"']*)["']/g;
 describe("composition rule templates", () => {
   it("emit no relative module specifier with a file extension", () => {
@@ -41,20 +41,20 @@ describe("composition rule templates", () => {
 describe("production date-picker composition", () => {
   it("registers one fresh materialized source template with exact direct inputs", () => {
     const rules = loadComponentCompositionRules();
-    expect(rules.map(rule => rule.id)).toEqual(["compose:date-picker@1", "compose:file-trigger@1"]);
-    expect(rules[0]).toMatchObject({ id: "compose:date-picker@1", kind: "compose", slot: "components.date-picker", inputs: direct });
+    expect(rules.map(rule => rule.id)).toEqual(["compose:date-picker@2", "compose:form@1", "compose:native-action@1", "compose:file-trigger@1"]);
+    expect(rules[0]).toMatchObject({ id: "compose:date-picker@2", kind: "compose", slot: "components.date-picker", inputs: direct });
     expect(rules[0]!.template.impl).toEqual({ kind: "source", entry: "components/date-picker/date-picker.tsx", export: "DatePicker" });
     expect(rules[0]!.template).not.toHaveProperty("origin");
-    expect(rules[0]!.template.reads).toEqual({ tokens: [], assets: ["assets.icon-date"], components: direct });
+    expect(rules[0]!.template.reads).toEqual({ tokens: [], assets: [], components: direct });
     expect(rules[0]!.files.map(file => file.path).sort()).toEqual(["components/date-picker/date-picker.tsx", "notices/date-picker.md"]);
     rules[0]!.template.props = [];
     expect(loadComponentCompositionRules()[0]!.template.props).toContain("triggerLabel");
   });
   it("installs the real rule with consumer ownership, exact provenance and unchanged inputs", () => {
     const { catalog, library } = productionCompositionFixture(); const before = structuredClone(library);
-    const output = applyComponentLibraryChange(catalog, library, { baseHash: componentLibraryHash(library), changes: [{ op: "compose", slot: "components.date-picker", rule: "compose:date-picker@1" }] });
+    const output = applyComponentLibraryChange(catalog, library, { baseHash: componentLibraryHash(library), changes: [{ op: "compose", slot: "components.date-picker", rule: "compose:date-picker@2" }] });
     const installed = output.fills.find(doc => componentOf(doc).slot === "components.date-picker")!;
-    expect(installed.components["date-picker"]!.origin).toEqual({ kind: "composed", rule: "compose:date-picker@1", reads: direct, inputsHash: componentInputsHash(library, direct) });
+    expect(installed.components["date-picker"]!.origin).toEqual({ kind: "composed", rule: "compose:date-picker@2", reads: direct, inputsHash: componentInputsHash(library, direct) });
     expect(installed.$extensions["com.clossys.fill"]).toMatchObject({ source: "consumer", builtOn: direct, originKinds: ["composed"], conforms: [], evidence: [] });
     expect(library).toEqual(before);
     const candidate = { $extensions: { "com.clossys.fill": { ...installed.$extensions["com.clossys.fill"], source: "foundry" } }, components: { "date-picker": { ...catalog.rules![0]!.template } } };
@@ -82,7 +82,7 @@ describe("production date-picker composition", () => {
   });
   it("K8 accepts exact registered source provenance only in its current consumer context", () => {
     const { catalog, library } = productionCompositionFixture();
-    const installed = applyComponentLibraryChange(catalog, library, { baseHash: componentLibraryHash(library), changes: [{ op: "compose", slot: "components.date-picker", rule: "compose:date-picker@1" }] });
+    const installed = applyComponentLibraryChange(catalog, library, { baseHash: componentLibraryHash(library), changes: [{ op: "compose", slot: "components.date-picker", rule: "compose:date-picker@2" }] });
     const check = (context = { rules: catalog.rules!, library: installed }) => checkComponentProfile({
       slots: catalog.slots, fills: installed.fills.map(componentOf), observations: {}, tokens: {}, assets: ["assets.icon-date"], installedRac: { version: "", instance: "" }, compositions: context,
     }).findings.filter(finding => finding.subject === "components.date-picker" && finding.code === "K8");
@@ -96,18 +96,18 @@ describe("production date-picker composition", () => {
 
   it("rejects unreceipted owned bytes, missing notices and foreign rule output", () => {
     const { catalog, library } = productionCompositionFixture();
-    const installed = applyComponentLibraryChange(catalog, library, { baseHash: componentLibraryHash(library), changes: [{ op: "compose", slot: "components.date-picker", rule: "compose:date-picker@1" }] });
+    const installed = applyComponentLibraryChange(catalog, library, { baseHash: componentLibraryHash(library), changes: [{ op: "compose", slot: "components.date-picker", rule: "compose:date-picker@2" }] });
     const picker = componentOf(installed.fills.find(doc => componentOf(doc).slot === "components.date-picker")!);
     const extra = { ...installed, files: [...installed.files, { path: "components/date-picker/extra.tsx", content: "export const copied = true;" }] };
     expect(() => validateInstalledComponentRule(picker, { rules: catalog.rules!, library: extra })).toThrow(/unreceipted/);
     const missing = { ...installed, files: installed.files.filter(file => file.path !== "notices/date-picker.md") };
     expect(() => validateInstalledComponentRule(picker, { rules: catalog.rules!, library: missing })).toThrow(/hash|notice/);
     const foreign = structuredClone(catalog); foreign.rules![0]!.files[0]!.path = "components/calendar/copied.tsx";
-    expect(() => applyComponentLibraryChange(foreign, library, { baseHash: componentLibraryHash(library), changes: [{ op: "compose", slot: "components.date-picker", rule: "compose:date-picker@1" }] })).toThrow();
+    expect(() => applyComponentLibraryChange(foreign, library, { baseHash: componentLibraryHash(library), changes: [{ op: "compose", slot: "components.date-picker", rule: "compose:date-picker@2" }] })).toThrow();
   });
   it("delegates focus only to an observed fresh direct child's matching member", () => {
     const { catalog, library } = productionCompositionFixture();
-    const installed = applyComponentLibraryChange(catalog, library, { baseHash: componentLibraryHash(library), changes: [{ op: "compose", slot: "components.date-picker", rule: "compose:date-picker@1" }] });
+    const installed = applyComponentLibraryChange(catalog, library, { baseHash: componentLibraryHash(library), changes: [{ op: "compose", slot: "components.date-picker", rule: "compose:date-picker@2" }] });
     const tokens = { "tokens.focus-ring.default": { property: "--ring", light: "black" } };
     const measurement = { state: "default", mode: "light" as const, ground: "base", roles: ["group"], keyboard: ["ArrowUp", "ArrowDown", "Escape"], axeViolations: [], focusTokens: [], focusOwner: "components.date-field", forcedColors: { foreground: "CanvasText", background: "Canvas" }, target: { width: 24, height: 24 }, contrast: [] };
     const files = loadComponentCompositionRules()[0]!.files;

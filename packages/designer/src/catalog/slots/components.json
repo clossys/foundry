@@ -795,7 +795,18 @@
           "tokens.surface-color",
           "tokens.text-color",
           "tokens.typeface",
-          "tokens.control-size"
+          "tokens.control-size",
+          "tokens.action-color",
+          "tokens.border-width",
+          "tokens.control-color",
+          "tokens.duration",
+          "tokens.easing",
+          "tokens.elevation",
+          "tokens.focus-color",
+          "tokens.focus-outline",
+          "tokens.font-size",
+          "tokens.font-weight",
+          "tokens.line-height"
         ],
         "assets": []
       }
@@ -948,7 +959,17 @@
           "tokens.state-opacity",
           "tokens.status-color",
           "tokens.text-color",
-          "tokens.typeface"
+          "tokens.typeface",
+          "tokens.action-color",
+          "tokens.border-color",
+          "tokens.border-width",
+          "tokens.control-radius",
+          "tokens.focus-color",
+          "tokens.focus-outline",
+          "tokens.font-size",
+          "tokens.font-weight",
+          "tokens.line-height",
+          "tokens.surface-color"
         ],
         "assets": []
       }
@@ -995,7 +1016,20 @@
       "props": [],
       "allowedReads": {
         "tokens": [
-          "tokens.spacing"
+          "tokens.spacing",
+          "tokens.action-color",
+          "tokens.border-color",
+          "tokens.border-width",
+          "tokens.control-radius",
+          "tokens.focus-color",
+          "tokens.focus-outline",
+          "tokens.font-size",
+          "tokens.font-weight",
+          "tokens.line-height",
+          "tokens.state-opacity",
+          "tokens.status-color",
+          "tokens.surface-color",
+          "tokens.text-color"
         ],
         "assets": []
       }
@@ -1171,7 +1205,13 @@
           "tokens.status-color",
           "tokens.surface-color",
           "tokens.text-color",
-          "tokens.typeface"
+          "tokens.typeface",
+          "tokens.border-width",
+          "tokens.caption-size",
+          "tokens.control-size",
+          "tokens.duration",
+          "tokens.font-size",
+          "tokens.font-weight"
         ],
         "assets": []
       },
@@ -1342,7 +1382,17 @@
           "tokens.spacing",
           "tokens.state-opacity",
           "tokens.text-color",
-          "tokens.typeface"
+          "tokens.typeface",
+          "tokens.accent-color",
+          "tokens.border-color",
+          "tokens.border-width",
+          "tokens.control-color",
+          "tokens.control-size",
+          "tokens.font-size",
+          "tokens.font-weight",
+          "tokens.status-color",
+          "tokens.surface-color",
+          "tokens.caption-size"
         ],
         "assets": []
       },
@@ -1416,7 +1466,19 @@
           "tokens.surface-color",
           "tokens.text-color",
           "tokens.touch-target",
-          "tokens.typeface"
+          "tokens.typeface",
+          "tokens.action-color",
+          "tokens.border-width",
+          "tokens.control-color",
+          "tokens.duration",
+          "tokens.easing",
+          "tokens.elevation",
+          "tokens.focus-color",
+          "tokens.focus-outline",
+          "tokens.font-size",
+          "tokens.font-weight",
+          "tokens.radius",
+          "tokens.line-height"
         ],
         "assets": [
           "assets.icon-chevron-up",
@@ -1583,9 +1645,7 @@
         "mode": "closed",
         "names": [
           "part.clear",
-          "part.submit",
-          "state.empty",
-          "state.filled"
+          "part.submit"
         ]
       },
       "props": [],
@@ -1603,7 +1663,19 @@
           "tokens.surface-color",
           "tokens.text-color",
           "tokens.typeface",
-          "tokens.control-size"
+          "tokens.control-size",
+          "tokens.action-color",
+          "tokens.border-width",
+          "tokens.control-color",
+          "tokens.duration",
+          "tokens.easing",
+          "tokens.elevation",
+          "tokens.focus-color",
+          "tokens.focus-outline",
+          "tokens.font-size",
+          "tokens.font-weight",
+          "tokens.radius",
+          "tokens.line-height"
         ],
         "assets": [
           "assets.icon-search",
@@ -2024,7 +2096,17 @@
           "tokens.state-opacity",
           "tokens.surface-color",
           "tokens.text-color",
-          "tokens.typeface"
+          "tokens.typeface",
+          "tokens.action-color",
+          "tokens.border-color",
+          "tokens.border-width",
+          "tokens.control-color",
+          "tokens.control-radius",
+          "tokens.duration",
+          "tokens.easing",
+          "tokens.font-size",
+          "tokens.font-weight",
+          "tokens.status-color"
         ],
         "assets": [
           "assets.icon-close"
@@ -2048,9 +2130,7 @@
           "state.invalid",
           "state.disabled",
           "state.read-only",
-          "size.sm",
-          "size.md",
-          "size.lg"
+          "size.md"
         ]
       },
       "props": [],
@@ -2068,7 +2148,15 @@
           "tokens.status-color",
           "tokens.surface-color",
           "tokens.text-color",
-          "tokens.typeface"
+          "tokens.typeface",
+          "tokens.border-width",
+          "tokens.duration",
+          "tokens.easing",
+          "tokens.focus-color",
+          "tokens.focus-outline",
+          "tokens.font-size",
+          "tokens.font-weight",
+          "tokens.line-height"
         ],
         "assets": []
       }
@@ -2228,7 +2316,13 @@
       "allowedReads": {
         "tokens": [
           "tokens.spacing",
-          "tokens.border-color"
+          "tokens.border-color",
+          "tokens.border-width",
+          "tokens.control-radius",
+          "tokens.font-size",
+          "tokens.font-weight",
+          "tokens.surface-color",
+          "tokens.z-index"
         ],
         "assets": []
       },

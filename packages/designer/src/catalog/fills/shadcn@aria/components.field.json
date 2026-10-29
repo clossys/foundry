@@ -1,0 +1,196 @@
+{
+  "$extensions": {
+    "com.clossys.fill": {
+      "id": "shadcn@aria/components.field",
+      "slot": "components.field",
+      "source": "shadcn@aria",
+      "mode": "implementation",
+      "sourceAddress": "https://github.com/shadcn-ui/ui/blob/96da9cc7f1aa10580a3741664e2a77c721206c00/apps/v4/registry/bases/aria/ui/field.tsx",
+      "relation": "same-contract",
+      "builtOn": [],
+      "conforms": [],
+      "evidence": [],
+      "author": "third-party",
+      "trust": "pinned-upstream",
+      "license": "MIT",
+      "status": "draft",
+      "pin": {
+        "url": "https://github.com/shadcn-ui/ui",
+        "commit": "96da9cc7f1aa10580a3741664e2a77c721206c00",
+        "sha256": "1019104c41eaef8ffae109e2ece95be87a7a637e3a9bac049d7a9fb54bfb7275"
+      },
+      "unmapped": []
+    }
+  },
+  "components": {
+    "field": {
+      "slot": "components.field",
+      "source": "shadcn@aria",
+      "root": "rac:Label+Text+FieldError",
+      "members": [
+        "part.label",
+        "part.description",
+        "part.error",
+        "state.required",
+        "state.invalid",
+        "state.disabled"
+      ],
+      "props": [],
+      "propMap": {
+        "part.label": "Field.label",
+        "part.description": "Field.description",
+        "part.error": "Field.errorMessage",
+        "state.required": "Field.isRequired=true",
+        "state.invalid": "Field.isInvalid=true",
+        "state.disabled": "Field.isDisabled=true"
+      },
+      "reads": {
+        "tokens": [
+          "tokens.action-color.default",
+          "tokens.border-color.base",
+          "tokens.border-width.hairline",
+          "tokens.control-radius.default",
+          "tokens.focus-color.default",
+          "tokens.focus-outline.offset",
+          "tokens.focus-outline.width",
+          "tokens.font-size.base",
+          "tokens.font-size.sm",
+          "tokens.font-weight.medium",
+          "tokens.font-weight.normal",
+          "tokens.line-height.heading",
+          "tokens.line-height.normal",
+          "tokens.line-height.snug",
+          "tokens.spacing.lg",
+          "tokens.spacing.md",
+          "tokens.spacing.sm",
+          "tokens.spacing.xl",
+          "tokens.spacing.xs",
+          "tokens.state-opacity.disabled",
+          "tokens.status-color.danger",
+          "tokens.surface-color.base",
+          "tokens.surface-color.sunken",
+          "tokens.text-color.muted"
+        ],
+        "assets": [],
+        "components": []
+      },
+      "composes": [],
+      "impl": {
+        "kind": "source",
+        "entry": "components/field/field.tsx",
+        "export": "Field"
+      },
+      "secondaryExports": [
+        {
+          "name": "FieldGroup",
+          "export": "FieldGroup"
+        },
+        {
+          "name": "FieldSet",
+          "export": "FieldSet"
+        }
+      ],
+      "license": "MIT",
+      "pin": {
+        "url": "https://github.com/shadcn-ui/ui",
+        "commit": "96da9cc7f1aa10580a3741664e2a77c721206c00",
+        "files": [
+          {
+            "path": "apps/v4/registry/bases/aria/ui/field.tsx",
+            "sha256": "1019104c41eaef8ffae109e2ece95be87a7a637e3a9bac049d7a9fb54bfb7275"
+          },
+          {
+            "path": "apps/v4/registry/bases/aria/ui/label.tsx",
+            "sha256": "165c4ae2584ec47e5d64107cc8fd6d20d707ed4e24098d0dae67bfd43f6cd5aa"
+          },
+          {
+            "path": "apps/v4/registry/bases/aria/ui/separator.tsx",
+            "sha256": "482ee8e50eaf1095fb6874ac18d430704820d2444a3944e1f93f7ab99e39a793"
+          },
+          {
+            "path": "apps/v4/registry/styles/style-nova.css",
+            "sha256": "fd9803ec398290c306b377a46a769cad0c7ff024bf6a626993c113cacc20f16e"
+          },
+          {
+            "path": "LICENSE.md",
+            "sha256": "1564074e13439397221ffd522e2e504d56561994a23d371aa5e3ad43e4f5423f"
+          }
+        ]
+      },
+      "notice": "notices/SHADCN-ARIA-INPUTS.md",
+      "transform": "shadcn-aria-rewrite@2",
+      "item": "field",
+      "deps": [
+        {
+          "name": "react",
+          "version": "19.3.0",
+          "license": "MIT"
+        },
+        {
+          "name": "react-aria-components",
+          "version": "1.21.1",
+          "license": "Apache-2.0"
+        },
+        {
+          "name": "class-variance-authority",
+          "version": "0.7.1",
+          "license": "Apache-2.0"
+        },
+        {
+          "name": "clsx",
+          "version": "2.1.1",
+          "license": "MIT"
+        },
+        {
+          "name": "tailwind-merge",
+          "version": "3.7.0",
+          "license": "MIT"
+        }
+      ],
+      "outputSha256": [
+        {
+          "path": "components/_parts/rail-u1-field/field.tsx",
+          "sha256": "e62191598e5c9ae61c4b31de0bcb2241a39fc2414ee634547ca6c1cfe75dcf4e"
+        },
+        {
+          "path": "components/_parts/rail-u1-field/index.ts",
+          "sha256": "e641c4a165084efb0fe4b4a59a5bb4bc405e9f84049c4a3b22a1c3d137613591"
+        },
+        {
+          "path": "components/_parts/rail-u1-label/index.ts",
+          "sha256": "33926d1dcb1f7d8b6a761c1ad7d318188d08a4e37ee783cd82bfc153401265a0"
+        },
+        {
+          "path": "components/_parts/rail-u1-label/label.tsx",
+          "sha256": "fbe641fdc65e10d3733a120b80134edf300329a81d097b74a827a00ae466c24f"
+        },
+        {
+          "path": "components/_parts/rail-u1-separator/index.ts",
+          "sha256": "8264757f8090a5d2c133573ec0a6c92c69ce83de3db4ffd17ae23bf2e26ead6f"
+        },
+        {
+          "path": "components/_parts/rail-u1-separator/separator.tsx",
+          "sha256": "c6975438e06c8ec581fb0e43ac820148efd133ae156f1cd2773598454f9760bd"
+        },
+        {
+          "path": "components/_parts/rail-u1-utils/index.ts",
+          "sha256": "d3753f708b15cc1ec47bc3136827134b702e2069eebdb0ddefb1806b95d7c1d9"
+        },
+        {
+          "path": "components/field/field.tsx",
+          "sha256": "153fe2aa79b8a926fa80400f8fe2cddeaf9344e0334393b8e8ee9169b8a4a881"
+        },
+        {
+          "path": "notices/SHADCN-ARIA-INPUTS.md",
+          "sha256": "0622dbb67cbca61b6c160be781485d59b3b51a49cdf5bae0132e17a0ecbfe42c"
+        }
+      ],
+      "blockers": [],
+      "rac": {
+        "instance": "react-aria-components",
+        "range": "^1.21.1",
+        "peer": false
+      }
+    }
+  }
+}

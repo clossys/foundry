@@ -1,20 +1,21 @@
 {
-  "files": [
-    {
-      "content": "import { forwardRef, type ReactElement, type ReactNode, type Ref, type RefAttributes } from \"react\";\nimport {\n  DatePicker as AriaDatePicker,\n  DateRangePicker as AriaDateRangePicker,\n  Group, Dialog, Label, Text, FieldError,\n  type DateValue, type DatePickerProps as AriaDatePickerProps,\n  type DateRangePickerProps as AriaDateRangePickerProps,\n  type DatePickerRenderProps, type DateRangePickerRenderProps, type ValidationResult,\n} from \"react-aria-components\";\nimport { Icon } from \"@clossys/designer/components\";\nimport { glyphs } from \"../../adapters/glyphs\";\nimport { DateField } from \"../date-field/index\";\nimport { Popover } from \"../popover/index\";\nimport { Calendar } from \"../calendar/index\";\n\ntype Content<State> = (state: State & { defaultChildren: ReactNode }) => ReactNode;\ntype Naming = {\n  label: ReactNode;\n  triggerLabel: string;\n  description?: ReactNode;\n  errorMessage?: ReactNode | ((validation: ValidationResult) => ReactNode);\n};\nexport interface DatePickerProps<T extends DateValue = DateValue>\n  extends Omit<AriaDatePickerProps<T>, \"children\">, Naming {\n  children?: Content<DatePickerRenderProps>;\n}\nexport interface DateRangePickerProps<T extends DateValue = DateValue>\n  extends Omit<AriaDateRangePickerProps<T>, \"children\">, Naming {\n  startLabel: ReactNode;\n  endLabel: ReactNode;\n  children?: Content<DateRangePickerRenderProps>;\n}\n\nexport const DatePicker = forwardRef(function DatePicker<T extends DateValue>(\n  { label, triggerLabel, description, errorMessage, children, ...props }: DatePickerProps<T>,\n  ref: Ref<HTMLDivElement>,\n) {\n  const content = <>\n    <Label>{label}</Label>\n    <Group className=\"flex items-center\">\n      <DateField label={null} pickerTrigger={{ label: triggerLabel, children: <Icon glyph={glyphs[\"assets.icon-date\"]} decorative /> }} />\n    </Group>\n    {description ? <Text slot=\"description\">{description}</Text> : null}\n    <FieldError>{errorMessage}</FieldError>\n    <Popover><Dialog><Calendar selection=\"single\" /></Dialog></Popover>\n  </>;\n  return <AriaDatePicker {...props} ref={ref}>{state => children ? children({ ...state, defaultChildren: content }) : content}</AriaDatePicker>;\n}) as <T extends DateValue = DateValue>(props: DatePickerProps<T> & RefAttributes<HTMLDivElement>) => ReactElement;\n\nexport const DateRangePicker = forwardRef(function DateRangePicker<T extends DateValue>(\n  { label, startLabel, endLabel, triggerLabel, description, errorMessage, children, ...props }: DateRangePickerProps<T>,\n  ref: Ref<HTMLDivElement>,\n) {\n  const content = <>\n    <Label>{label}</Label>\n    <Group className=\"flex items-center\">\n      <DateField label={startLabel} slot=\"start\" />\n      <DateField label={endLabel} slot=\"end\" pickerTrigger={{ label: triggerLabel, children: <Icon glyph={glyphs[\"assets.icon-date\"]} decorative /> }} />\n    </Group>\n    {description ? <Text slot=\"description\">{description}</Text> : null}\n    <FieldError>{errorMessage}</FieldError>\n    <Popover><Dialog><Calendar selection=\"range\" /></Dialog></Popover>\n  </>;\n  return <AriaDateRangePicker {...props} ref={ref}>{state => children ? children({ ...state, defaultChildren: content }) : content}</AriaDateRangePicker>;\n}) as <T extends DateValue = DateValue>(props: DateRangePickerProps<T> & RefAttributes<HTMLDivElement>) => ReactElement;\n",
-      "path": "components/date-picker/date-picker.tsx"
-    },
-    {
-      "content": "# Date picker composition\n\nCopyright contributors. Licensed under the MIT License.\n\nOwned wiring of the selected date field, popover and calendar. Their dependency notices remain separate.\n",
-      "path": "notices/date-picker.md"
-    }
-  ],
-  "id": "compose:date-picker@1",
+  "id": "compose:date-picker@2",
+  "kind": "compose",
+  "slot": "components.date-picker",
   "inputs": [
+    "components.button",
     "components.calendar",
     "components.date-field",
     "components.popover"
   ],
-  "kind": "compose",
-  "slot": "components.date-picker"
+  "files": [
+    {
+      "path": "components/date-picker/date-picker.tsx",
+      "content": "import { type ComponentProps, type ReactNode } from \"react\";\nimport { DatePicker as Root, DateRangePicker as RangeRoot, Group, Label, Text, FieldError, Dialog } from \"react-aria-components\";\nimport { DateField } from \"../date-field/index\";\nimport { Button } from \"../button/index\";\nimport { Calendar } from \"../calendar/index\";\nimport { Popover } from \"../popover/index\";\ntype Naming = { label: ReactNode; triggerLabel: string; description?: ReactNode; errorMessage?: ReactNode };\nexport function DatePicker({ label, triggerLabel, description, errorMessage, ...props }: Omit<ComponentProps<typeof Root>, \"children\"> & Naming) {\n return <Root {...props}><Label>{label}</Label><Group><DateField label={null} pickerContext /><Button aria-label={triggerLabel}>{triggerLabel}</Button></Group>{description ? <Text slot=\"description\">{description}</Text> : null}<FieldError>{errorMessage}</FieldError><Popover><Dialog><Calendar selection=\"single\" /></Dialog></Popover></Root>;\n}\nexport function DateRangePicker({ label, startLabel, endLabel, triggerLabel, description, errorMessage, ...props }: Omit<ComponentProps<typeof RangeRoot>, \"children\"> & Naming & { startLabel: ReactNode; endLabel: ReactNode }) {\n return <RangeRoot {...props}><Label>{label}</Label><Group><DateField slot=\"start\" label={startLabel} pickerContext /><DateField slot=\"end\" label={endLabel} pickerContext /><Button aria-label={triggerLabel}>{triggerLabel}</Button></Group>{description ? <Text slot=\"description\">{description}</Text> : null}<FieldError>{errorMessage}</FieldError><Popover><Dialog><Calendar selection=\"range\" /></Dialog></Popover></RangeRoot>;\n}\n"
+    },
+    {
+      "path": "notices/date-picker.md",
+      "content": "# Date picker composition\n\nCopyright contributors. Licensed under the MIT License.\n\nOwned wiring of the selected date field, button, popover and calendar. Their dependency notices remain separate.\n"
+    }
+  ]
 }
