@@ -999,7 +999,7 @@ export const CONTENT_CATALOG_CALL_TO_ACTION = {
   actionHref: "#catalog-hero",
 } as const;
 
-const closingCopy = (field: "eyebrow" | "heading" | "description" | "actionLabel"): CopyRef => ({ id: `catalog.preview.close.${field}` });
+const closingCopy = (field: "eyebrow" | "heading" | "description" | "actionLabel"): CopyRef => ({ id: `catalog.preview.close.${field === "actionLabel" ? "action.label" : field}` });
 const closingCopyResolver = createCopyResolver({
   id: "publisher-content-catalog-preview-close", locale: "en", revision: "1",
   source: { kind: "consumer", reference: "packages/publisher/src/preview/fixture-content-catalog.ts" },

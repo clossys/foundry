@@ -61,7 +61,7 @@ describe("functional content catalog", () => {
       writeFileSync(brand, buildMinimalBrandCssFromTokens({ TOKENS }));
       writePreviewGallery({ brandCssPath: brand, outputDir: join(dir, "out") });
       const recipes = new JSDOM(readFileSync(join(dir, "out/catalog/overview.html"), "utf8")).window.document;
-      const composition = recipes.querySelector("[data-catalog-composition] [data-landing-view]");
+      const composition = recipes.querySelector("[data-catalog-composition] > div");
       expect(composition).not.toBeNull();
       expect(composition?.querySelectorAll(":scope > section")).toHaveLength(6);
       expect(composition?.querySelector('[data-template="approval-chain"]')).not.toBeNull();
@@ -164,7 +164,7 @@ describe("retained contract configuration reference data", () => {
       for (const [axis, value] of Object.entries(SECTIONED_VIEW_ITEM_RECIPES[recipe].fixed)) expect(row.querySelector("[data-recipe-fixed]")?.textContent).toContain(`${axis}=${value}`);
       for (const [axis, value] of Object.entries(SECTIONED_VIEW_ITEM_RECIPES[recipe].defaults ?? {})) expect(row.querySelector("[data-recipe-defaults]")?.textContent).toContain(`${axis}=${value}`);
     }
-    const composition = overview.querySelector("[data-catalog-composition] [data-landing-view]")!;
+    const composition = overview.querySelector("[data-catalog-composition] > div")!;
     const authored = Object.values(CATALOG_COMPOSITIONS)[0]!;
     const bands = [...composition.querySelectorAll(":scope > section")];
     expect(bands).toHaveLength(6);

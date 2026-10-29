@@ -26,6 +26,7 @@ describe("checked native preview documents after Landing retirement", () => {
     expect(result.document.sections).toHaveLength(27);
     expect(closing.every(resolution => resolution.approval === undefined)).toBe(true);
     expect(closing).toHaveLength(4);
+    expect(closing.map(resolution => resolution.ref.id)).toContain("catalog.preview.close.action.label");
     expect(closing.every(resolution => resolution.status === "draft")).toBe(true);
     const html = renderContentCatalogMarkup();
     for (const text of [CONTENT_CATALOG_CALL_TO_ACTION.eyebrow, CONTENT_CATALOG_CALL_TO_ACTION.heading, CONTENT_CATALOG_CALL_TO_ACTION.description, CONTENT_CATALOG_CALL_TO_ACTION.actionLabel]) expect(html).toContain(text);
@@ -51,8 +52,8 @@ describe("checked native preview documents after Landing retirement", () => {
       import { SectionedView } from "@clossys/publisher/web";
       import { createCopyResolver } from "@clossys/writer";
       import { resolveSectionedViewDocument } from "@clossys/publisher/core";
-      const ref = id => ({ id });
-      const entries = [{ id: "heading", text: "Host heading" }, { id: "questions", text: "Questions" }, ...[1, 2, 3, 4].flatMap(id => [{ id: "q" + id, text: "Question " + id }, { id: "a" + id, text: "Answer " + id }])].map(entry => ({ ...entry, context: "Preview render proof", status: "draft" }));
+      const ref = id => ({ id: "preview." + id });
+      const entries = [{ id: "heading", text: "Host heading" }, { id: "questions", text: "Questions" }, ...[1, 2, 3, 4].flatMap(id => [{ id: "q" + id, text: "Question " + id }, { id: "a" + id, text: "Answer " + id }])].map(entry => ({ ...entry, id: ref(entry.id).id, context: "Preview render proof", status: "draft" }));
       const resolver = createCopyResolver({ id: "preview-render-proof", locale: "en", revision: "1", source: { kind: "consumer", reference: "preview-test" }, entries }, { target: "preview" });
       const document = resolveSectionedViewDocument({ id: "preview", sections: [{ id: "hero", kind: "hero", ground: "inverse", heading: ref("heading") }, { id: "faq", kind: "faq", heading: ref("questions"), ground: "base", items: [1, 2, 3, 4].map(id => ({ id: "q" + id, question: ref("q" + id), answer: ref("a" + id) })) }] }, resolver);
       const tags = [];

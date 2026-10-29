@@ -66,7 +66,9 @@ describe("content catalog fixture", () => {
     const planned = planContentGrounds([resolved], { callToAction: true });
     expect(new Set(planned.bands.map(band => band.ground))).toEqual(new Set(["base", "sunken", "inverse"]));
     const rendered = new JSDOM(renderContentCatalogMarkup()).window.document;
-    expect(new Set([...rendered.querySelectorAll("[data-ground]")].map(band => band.getAttribute("data-ground")))).toEqual(new Set(["base", "sunken", "inverse"]));
+    const nativeBands = [...rendered.querySelectorAll("main > section")];
+    expect(nativeBands).toHaveLength(contentCatalogPreviewDocument.sections.length);
+    expect(new Set(nativeBands.map(band => band.classList.contains("bg-surface-inverse") ? "inverse" : band.classList.contains("bg-surface-sunken") ? "sunken" : "base"))).toEqual(new Set(["base", "sunken", "inverse"]));
   });
 
   it("keeps actions where they belong: header-only bands and split text columns, never a stacked band with a block or media, and nothing after them", () => {

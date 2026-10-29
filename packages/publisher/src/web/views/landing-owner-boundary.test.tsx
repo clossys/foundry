@@ -21,7 +21,10 @@ describe("Publisher landing renderer ownership", () => {
     const entries = await Promise.all([import("@clossys/publisher/web"), import("@clossys/publisher/web/client"), import("./server.js")]);
     for (const entry of entries) {
       expect(entry).not.toHaveProperty("LandingView");
-      expect(entry).toHaveProperty("SectionedView");
+
     }
+    expect(entries[0]).toHaveProperty("SectionedView");
+    expect(entries[1]).not.toHaveProperty("SectionedView");
+    expect(entries[2]).toHaveProperty("SectionedView");
   });
 });

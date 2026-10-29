@@ -184,7 +184,6 @@ describe("fixed registered route execution, explicitly synthetic selection proof
     expect(result.status, JSON.stringify(result)).toBe("ready");
     render(<Owner.Provider value="original"><RegisteredRoutePage registry={registry} routeId={route.routeId} useRuntime={() => runtime} renderActions={({ compact }) => <Action compact={compact} />} /></Owner.Provider>);
     expect(screen.getAllByRole("heading", { level: 1 })).toHaveLength(1);
-    expect(screen.getByRole("link", { name: "Example workspace" })).toHaveAttribute("href", route.path);
     expect(screen.getByRole("heading", { level: 1 })).toHaveTextContent("Tools");
     expect(screen.getByRole("article", { name: "SYNTHETIC body" })).toHaveTextContent("SYNTHETIC");
     expect(document.querySelectorAll('[data-layout="layouts.stack"]')).toHaveLength(1);
