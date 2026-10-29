@@ -79,7 +79,7 @@
         },
         {
           "path": "components/menu/dropdown-menu.tsx",
-          "sha256": "17a0f0f4f3fb3e8bb02e9eefb9620a55dae1a2ce0ded40f0a618f0849c028fd2"
+          "sha256": "50576ee433f56e4cadd39e033a10a40647babcb616ecddc050fe49143870daa6"
         },
         {
           "path": "notices/THIRD-PARTY.md",
@@ -146,7 +146,7 @@
           "tokens.font-size.sm",
           "tokens.font-size.xs",
           "tokens.font-weight.medium",
-          "tokens.letter-spacing.widest",
+          "tokens.letter-spacing.label",
           "tokens.shift-distance.default",
           "tokens.spacing.2xl",
           "tokens.spacing.5xl",

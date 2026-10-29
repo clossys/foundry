@@ -332,6 +332,22 @@ function sourceSample(key: string, exports: Namespace): ComponentSpecimenSample 
       const { label, items, defaultSelectedKeys } = s[key];
       return { props: { "aria-label": label, defaultSelectedKeys }, children: items.map(item => <Item key={item.id} id={item.id}>{item.label}</Item>) };
     }
+    case "components/chart-scatter/chart-scatter.tsx#ChartScatter": {
+      const sample = s[key];
+      return { props: { data: sample.points.map(point => ({ x: point.x, value: point.y })), categoryKey: "x", series: [{ key: "value", label: sample.y.label }], initialDimension: sample.frame, isAnimationActive: false } };
+    }
+    case "components/chart-range/chart-range.tsx#ChartRange": {
+      const sample = s[key];
+      return { props: { data: sample.rows.map(row => ({ category: row.label, value: [row.from, row.to] })), categoryKey: "category", series: [{ key: "value", label: sample.title }], initialDimension: sample.frame, isAnimationActive: false } };
+    }
+    case "components/chart-waterfall/chart-waterfall.tsx#ChartWaterfall": {
+      const sample = s[key];
+      return { props: { data: [sample.start, ...sample.steps].map(row => ({ category: row.label, value: row.value })), categoryKey: "category", series: [{ key: "value", label: sample.title }], initialDimension: sample.frame, isAnimationActive: false } };
+    }
+    case "components/chart-sparkline/chart-sparkline.tsx#ChartSparkline": {
+      const sample = s[key];
+      return { props: { data: sample.values.map((value, index) => ({ index, value })), categoryKey: "index", series: [{ key: "value", label: sample.title }], initialDimension: sample.frame, isAnimationActive: false } };
+    }
     // shadcn-charts take Recharts rows: one per category, one field per series, drawn as a static picture.
     case "components/chart-area/chart-area.tsx#ChartArea":
     case "components/chart-bar/chart-bar.tsx#ChartBar":

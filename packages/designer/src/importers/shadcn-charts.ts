@@ -1,5 +1,5 @@
 /**
- * shadcn charts importer: the core chart leaves (bar, line, area) on Recharts.
+ * shadcn charts importer: seven chart leaves on Recharts.
  *
  * Input is the pinned upstream `chart.tsx` (ChartContainer, ChartTooltip,
  * ChartLegend and friends) kept byte-exact under `vendor/shadcn-charts/`.
@@ -18,9 +18,7 @@
  * Regenerate the committed fills with the focused test:
  *   UPDATE_SHADCN_CHART_FILLS=1 npx vitest run src/importers/shadcn-charts.test.tsx
  */
-import { readFileSync } from "node:fs";
-import { dirname, resolve } from "node:path";
-import { fileURLToPath } from "node:url";
+import pinnedInput from "./vendor/shadcn-charts/input.json" with { type: "json" };
 import adapter from "../catalog/adapters/shadcn@aria.json" with { type: "json" };
 import componentSlots from "../catalog/slots/components.json" with { type: "json" };
 import type { ComponentSlot, FillMeta } from "../catalog-core/types.js";
@@ -64,6 +62,7 @@ export const SHADCN_CHART_CHROME = Object.freeze({
 const ALIAS_IMPORT = 'import { cn } from "cn"';
 const ALIAS_TARGET = 'import { cn } from "../_parts/utils/index"';
 const UTILS = 'import { clsx, type ClassValue } from "clsx"\nimport { twMerge } from "tailwind-merge"\nexport function cn(...inputs: ClassValue[]) { return twMerge(clsx(inputs)) }\n';
+const NOTICE_PATH = "notices/SHADCN-CHARTS.md";
 const READS = ["tokens.border-color", "tokens.categorical-color", "tokens.chart-color", "tokens.surface-color", "tokens.text-color"];
 const DEPS = [
   { name: "react", version: "19.2.3", license: "MIT" },
@@ -72,52 +71,81 @@ const DEPS = [
   { name: "tailwind-merge", version: "3.3.1", license: "MIT" },
 ];
 
-interface ChartLeaf { leaf: string; exportName: string; chart: string; mark: string; markProps: string; chartProps: string }
+interface ChartLeaf { leaf: string; exportName: string; chart: string; mark: string; markProps: string; chartProps: string; kind?: "scatter" | "range" | "waterfall" | "sparkline" }
 const LEAVES: readonly ChartLeaf[] = [
   { leaf: "chart-bar", exportName: "ChartBar", chart: "BarChart", mark: "Bar", chartProps: "", markProps: "fill={color} radius={4}" },
   { leaf: "chart-line", exportName: "ChartLine", chart: "LineChart", mark: "Line", chartProps: " margin={{ left: 12, right: 12 }}", markProps: 'type="monotone" stroke={color} strokeWidth={2} dot={false}' },
   { leaf: "chart-area", exportName: "ChartArea", chart: "AreaChart", mark: "Area", chartProps: " margin={{ left: 12, right: 12 }}", markProps: 'type="natural" fill={color} fillOpacity={0.4} stroke={color} stackId="series"' },
+  { leaf: "chart-scatter", exportName: "ChartScatter", chart: "ScatterChart", mark: "Scatter", chartProps: "", markProps: 'fill={color}', kind: "scatter" },
+  { leaf: "chart-range", exportName: "ChartRange", chart: "AreaChart", mark: "Area", chartProps: "", markProps: 'type="linear" fill={color} fillOpacity={0.4} stroke={color}', kind: "range" },
+  { leaf: "chart-waterfall", exportName: "ChartWaterfall", chart: "BarChart", mark: "Bar", chartProps: ' stackOffset="none"', markProps: 'fill={color}', kind: "waterfall" },
+  { leaf: "chart-sparkline", exportName: "ChartSparkline", chart: "LineChart", mark: "Line", chartProps: "", markProps: 'type="monotone" stroke={color} strokeWidth={2} dot={false}', kind: "sparkline" },
 ];
 
-/** Member pointers name the composed upstream export that carries each member. */
+/** Optional chrome remains available on the compact sparkline; its default is a bare Line. */
 const memberMap = (leaf: ChartLeaf): Record<string, string> => ({
-  axes: `${leaf.exportName}.categoryKey: Recharts XAxis + CartesianGrid in ChartContainer`,
-  legend: `${leaf.exportName}: ChartLegend content=ChartLegendContent`,
+  axes: `${leaf.exportName}.showAxes: Recharts XAxis + CartesianGrid in ChartContainer`,
+  legend: `${leaf.exportName}.showLegend: ChartLegend content=ChartLegendContent`,
   series: `${leaf.exportName}.series: Recharts ${leaf.mark} per ChartConfig key`,
-  tooltip: `${leaf.exportName}: ChartTooltip content=ChartTooltipContent`,
+  tooltip: `${leaf.exportName}.showTooltip: ChartTooltip content=ChartTooltipContent`,
 });
 
 function composition(leaf: ChartLeaf): string {
+  const scatter = leaf.kind === "scatter", waterfall = leaf.kind === "waterfall";
+  const chrome = leaf.kind !== "sparkline";
+  const mark = scatter
+    ? `<Scatter key={item.key} name={item.label} data={data.map(row => ({ [categoryKey]: row[categoryKey], value: row[item.key] }))} fill={color} isAnimationActive={isAnimationActive} />`
+    : waterfall
+      ? `<React.Fragment key={item.key}>
+            <Bar dataKey={row => row.steps[item.key].offset} stackId={item.key} fill="transparent" legendType="none" tooltipType="none" isAnimationActive={false} />
+            <Bar dataKey={row => row.steps[item.key].size} name={item.key} stackId={item.key} fill={color} isAnimationActive={isAnimationActive} />
+          </React.Fragment>`
+      : `<${leaf.mark} key={item.key} dataKey={item.key} ${leaf.markProps} isAnimationActive={isAnimationActive} />`;
   return `"use client"
 
-import { ${leaf.mark}, ${leaf.chart}, CartesianGrid, XAxis } from "recharts"
+${waterfall ? 'import * as React from "react"\n' : ''}import { ${leaf.mark}, ${leaf.chart}, CartesianGrid, XAxis${scatter || waterfall ? ", YAxis" : ""} } from "recharts"
 import { type ChartConfig, ChartContainer, ChartLegend, ChartLegendContent, ChartTooltip, ChartTooltipContent } from "../chart/chart"
 
 export interface ${leaf.exportName}Series { key: string; label: string }
 export interface ${leaf.exportName}Props {
-  data: Record<string, string | number>[]
+  data: Record<string, string | number${leaf.kind === "range" ? " | [number, number]" : ""}>[]
   categoryKey: string
   series: readonly ${leaf.exportName}Series[]
   initialDimension?: { width: number; height: number }
   isAnimationActive?: boolean
+  showAxes?: boolean
+  showLegend?: boolean
+  showTooltip?: boolean
   className?: string
 }
 
 const SERIES_COLORS = ${JSON.stringify(SHADCN_CHART_SERIES_COLORS)} as const
-
-export function ${leaf.exportName}({ data, categoryKey, series, initialDimension, isAnimationActive = true, className }: ${leaf.exportName}Props) {
+${waterfall ? `
+/** Floating bars use a transparent stack below the magnitude; negative deltas lower the next total. */
+export function createWaterfallData(data: ChartWaterfallProps["data"], series: readonly ChartWaterfallSeries[]) {
+  const totals = new Map(series.map(item => [item.key, 0]))
+  return data.map(source => ({ source, steps: Object.fromEntries(series.map(item => {
+    const previous = totals.get(item.key)!
+    const delta = Number(source[item.key])
+    const next = previous + delta
+    totals.set(item.key, next)
+    return [item.key, { offset: Math.min(previous, next), size: Math.abs(delta), delta }]
+  })) }))
+}
+` : ''}
+export function ${leaf.exportName}({ data, categoryKey, series, initialDimension, isAnimationActive = ${leaf.kind ? "false" : "true"}, showAxes = ${chrome}, showLegend = ${chrome}, showTooltip = ${chrome}, className }: ${leaf.exportName}Props) {
   if (series.length > SERIES_COLORS.length) throw new Error("${leaf.exportName}: at most " + SERIES_COLORS.length + " series; fold the tail before rendering")
   const config: ChartConfig = Object.fromEntries(series.map((item, index) => [item.key, { label: item.label, color: SERIES_COLORS[index]! }]))
-  return (
+${waterfall ? '  const chartData = createWaterfallData(data, series)\n' : ''}  return (
     <ChartContainer config={config} className={className} {...(initialDimension ? { initialDimension } : {})}>
-      <${leaf.chart} accessibilityLayer data={data}${leaf.chartProps}>
-        <CartesianGrid vertical={false} stroke="${SHADCN_CHART_CHROME.grid}" />
-        <XAxis dataKey={categoryKey} tickLine={false} axisLine={false} tickMargin={8} stroke="${SHADCN_CHART_CHROME.axis}" tick={{ fill: "${SHADCN_CHART_CHROME.axisLabel}" }} />
-        <ChartTooltip content={<ChartTooltipContent />} />
-        <ChartLegend content={<ChartLegendContent />} />
+      <${leaf.chart} accessibilityLayer${scatter ? "" : ` data={${waterfall ? "chartData" : "data"}}`}${leaf.chartProps}>
+        {showAxes && <CartesianGrid vertical={false} stroke="${SHADCN_CHART_CHROME.grid}" />}
+        {showAxes && <XAxis dataKey={${waterfall ? "row => row.source[categoryKey]" : "categoryKey"}}${scatter ? ' type="number" domain={["auto", "auto"]}' : ''} tickLine={false} axisLine={false} tickMargin={8} stroke="${SHADCN_CHART_CHROME.axis}" tick={{ fill: "${SHADCN_CHART_CHROME.axisLabel}" }} />}
+${scatter || waterfall ? `        <YAxis ${scatter ? 'dataKey="value" ' : ''}type="number" domain={["auto", "auto"]} hide={!showAxes} tickLine={false} axisLine={false} stroke="${SHADCN_CHART_CHROME.axis}" tick={{ fill: "${SHADCN_CHART_CHROME.axisLabel}" }} />\n` : ''}        {showTooltip && <ChartTooltip${waterfall ? " shared={false}" : ""} content={<ChartTooltipContent${waterfall ? ' formatter={(value, name, item) => <span>{config[String(name)]?.label}: {item.payload.steps[String(name)]?.delta ?? value}</span>}' : ''} />} />}
+        {showLegend && <ChartLegend content={<ChartLegendContent />} />}
         {series.map(item => {
           const color = \`var(--color-\${item.key})\`
-          return <${leaf.mark} key={item.key} dataKey={item.key} ${leaf.markProps} isAnimationActive={isAnimationActive} />
+          return ${mark}
         })}
       </${leaf.chart}>
     </ChartContainer>
@@ -143,7 +171,7 @@ export function importShadcnCharts(input: ShadcnChartsInput): ShadcnChartsImport
   verifyShadcnChartSource(input.chart); verifyShadcnChartSource(input.notice);
   const slots = new Map((input.slots ?? componentSlots as unknown as ComponentSlot[]).map(slot => [slot.id, slot]));
   const chart = { path: "components/chart/chart.tsx", content: resolveChartAlias(input.chart.content) };
-  const notice = { path: adapter.notice, content: `# Third-party notice\n\nSource: ${SHADCN_CHARTS_PIN.url}\nCommit: ${SHADCN_CHARTS_PIN.commit}\nTransform: ${SHADCN_CHARTS_TRANSFORM}\n\n${input.notice.content}` };
+  const notice = { path: NOTICE_PATH, content: `# Third-party notice\n\nSource: ${SHADCN_CHARTS_PIN.url}\nCommit: ${SHADCN_CHARTS_PIN.commit}\nTransform: ${SHADCN_CHARTS_TRANSFORM}\n\n${input.notice.content}` };
   const utils = { path: "components/_parts/utils/index.ts", content: UTILS };
   const fills: ShadcnChartFillDoc[] = [], rewrites: Record<string, ShadcnChartRewrite> = {};
   for (const leaf of LEAVES) {
@@ -167,10 +195,10 @@ export function importShadcnCharts(input: ShadcnChartsInput): ShadcnChartsImport
         unmapped: required.filter(member => !members.includes(member)),
       } as FillMeta },
       components: { [leaf.leaf]: {
-        slot: slot.id, source: SHADCN_CHARTS_SOURCE, root: slot.contract.root, members, props: ["categoryKey", "className", "data", "initialDimension", "isAnimationActive", "series"], propMap,
+        slot: slot.id, source: SHADCN_CHARTS_SOURCE, root: slot.contract.root, members, props: ["categoryKey", "className", "data", "initialDimension", "isAnimationActive", "series", "showAxes", "showLegend", "showTooltip"], propMap,
         reads: { tokens: READS, assets: [], components: [] }, composes: [],
         impl: { kind: "source", entry: entry.path, export: leaf.exportName },
-        license: "MIT", pin, notice: adapter.notice, transform: SHADCN_CHARTS_TRANSFORM, item: "chart",
+        license: "MIT", pin, notice: NOTICE_PATH, transform: SHADCN_CHARTS_TRANSFORM, item: "chart",
         deps: DEPS, parts: [{ item: "utils" }], rendering: "client", outputSha256, blockers: [],
       } },
     });
@@ -190,12 +218,7 @@ export function generatedShadcnChartFiles(input: ShadcnChartsInput): Readonly<Re
   return Object.fromEntries(importShadcnCharts(input).fills.map(fill => [`${fill.$extensions["com.clossys.fill"].slot}.json`, stableStringify(fill)]));
 }
 
-const here = dirname(fileURLToPath(import.meta.url));
-/** The vendored pin: upstream chart.tsx byte-exact and the shadcn licence. */
+/** The vendored pin, bundled for offline consumers; hashes are verified before import. */
 export function pinnedShadcnChartsInput(): ShadcnChartsInput {
-  return {
-    chart: { path: SHADCN_CHARTS_PIN.path, content: readFileSync(resolve(here, "vendor/shadcn-charts/chart.tsx.txt"), "utf8") },
-    notice: { path: SHADCN_CHARTS_PIN.notice.path, content: readFileSync(resolve(here, "vendor/shadcn-LICENSE.md"), "utf8") },
-  };
+  return structuredClone(pinnedInput);
 }
-export const SHADCN_CHART_FILLS_DIR = resolve(here, "../catalog/fills", SHADCN_CHARTS_SOURCE);

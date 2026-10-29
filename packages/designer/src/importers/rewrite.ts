@@ -287,11 +287,11 @@ const selectedBindings: Readonly<Record<string, Readonly<Record<string, { output
   },
   "card": {
     "leading-snug": {
-      "output": "leading-(--leading-snug)",
+      "output": "leading-(--leading-heading)",
       "tokens": [
-        "tokens.line-height.snug"
+        "tokens.line-height.heading"
       ],
-      "note": "Preserve adopted Tailwind snug value 1.375; expose its existing member through an explicit emit mapping."
+      "note": "Bind compact card heading typography to the existing consumer heading line-height token."
     },
     "ring-1": {
       "output": "ring-(length:--ui-border-hairline)",
@@ -457,11 +457,11 @@ const selectedBindings: Readonly<Record<string, Readonly<Record<string, { output
       "note": "Preserve decorative ring rendering, exact width and variants; never relabel as focus clearance."
     },
     "tracking-widest": {
-      "output": "tracking-(--tracking-widest)",
+      "output": "tracking-(--tracking-label)",
       "tokens": [
-        "tokens.letter-spacing.widest"
+        "tokens.letter-spacing.label"
       ],
-      "note": "Preserve adopted Tailwind widest 0.1em; expose existing member through explicit emit."
+      "note": "Bind menu shortcut label tracking to the existing consumer label letter-spacing token."
     }
   },
   "popover": {

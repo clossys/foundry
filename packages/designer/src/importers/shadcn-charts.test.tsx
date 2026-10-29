@@ -9,9 +9,10 @@ import type { ComponentSlot } from "../catalog-core/types.js";
 import { TOKENS } from "../tokens/tokens.js";
 import {
   generatedShadcnChartFiles, importShadcnCharts, materializeShadcnChart, pinnedShadcnChartsInput, resolveChartAlias,
-  SHADCN_CHART_FILLS_DIR, SHADCN_CHARTS_PIN, verifyShadcnChartSource, type ChartSourceFile,
+  SHADCN_CHARTS_PIN, verifyShadcnChartSource, type ChartSourceFile,
 } from "./shadcn-charts.js";
 
+const SHADCN_CHART_FILLS_DIR = resolve(import.meta.dirname, "../catalog/fills/shadcn-charts");
 const requireFromHere = createRequire(import.meta.url);
 const HEX = /#[0-9a-fA-F]{3,8}\b/;
 interface IaNode { id: string; leaves?: string[]; children?: IaNode[] }
@@ -20,6 +21,7 @@ const find = (nodes: readonly IaNode[], id: string): IaNode | undefined => {
   return undefined;
 };
 const coreLeaves = find((ia as unknown as { nodes: IaNode[] }).nodes, "charts-core")!.leaves!;
+const chartLeaves = [...coreLeaves, "components.chart-scatter", "components.chart-range", "components.chart-waterfall", "components.chart-sparkline"];
 const slotById = new Map((slots as unknown as ComponentSlot[]).map(slot => [slot.id, slot]));
 
 if (process.env.UPDATE_SHADCN_CHART_FILLS === "1") {
@@ -58,6 +60,8 @@ describe("shadcn charts source (charts-core on Recharts)", () => {
 
   it("keeps the vendored upstream chart.tsx byte-exact and rejects tampering", () => {
     const input = pinnedShadcnChartsInput();
+    expect(input.chart.content).toBe(readFileSync(resolve(import.meta.dirname, "vendor/shadcn-charts/chart.tsx.txt"), "utf8"));
+    expect(input.notice.content).toBe(readFileSync(resolve(import.meta.dirname, "vendor/shadcn-LICENSE.md"), "utf8"));
     expect(() => verifyShadcnChartSource(input.chart)).not.toThrow();
     expect(() => importShadcnCharts({ ...input, chart: { ...input.chart, content: input.chart.content + " " } })).toThrow(/sha256 mismatch/);
     expect(() => importShadcnCharts({ ...input, notice: { ...input.notice, content: input.notice.content + " " } })).toThrow(/sha256 mismatch/);
@@ -72,7 +76,7 @@ describe("shadcn charts source (charts-core on Recharts)", () => {
     const generated = generatedShadcnChartFiles(pinnedShadcnChartsInput());
     const result = importShadcnCharts(pinnedShadcnChartsInput());
     expect(readdirSync(SHADCN_CHART_FILLS_DIR).sort()).toEqual(Object.keys(generated).sort());
-    for (const slotId of coreLeaves) {
+    for (const slotId of chartLeaves) {
       const slot = slotById.get(slotId)!;
       const required = slot.contract.members.mode === "closed" ? slot.contract.members.names : [];
       expect(required.length).toBeGreaterThan(0);
@@ -95,7 +99,7 @@ describe("shadcn charts source (charts-core on Recharts)", () => {
     const result = importShadcnCharts(pinnedShadcnChartsInput());
     const importer = readFileSync(resolve(import.meta.dirname, "shadcn-charts.ts"), "utf8");
     expect(importer).not.toMatch(HEX);
-    for (const leaf of ["chart-bar", "chart-line", "chart-area"]) {
+    for (const leaf of ["chart-bar", "chart-line", "chart-area", "chart-scatter", "chart-range", "chart-waterfall", "chart-sparkline"]) {
       const code = materializeShadcnChart(result, leaf).find(file => file.path === `components/${leaf}/${leaf}.tsx`)!.content;
       expect(code, leaf).not.toMatch(HEX);
       for (const n of [1, 2, 3, 4, 5]) expect(code).toContain(`var(--chart-${n}, var(--color-chart-categorical-${n}))`);
@@ -108,7 +112,7 @@ describe("shadcn charts source (charts-core on Recharts)", () => {
     }
   });
 
-  it.each(["chart-bar", "chart-line", "chart-area"])("%s renders an <svg> with series marks on the client", async leaf => {
+  it.each(["chart-bar", "chart-line", "chart-area", "chart-scatter", "chart-range", "chart-waterfall", "chart-sparkline"])("%s renders an <svg> with series marks on the client", async leaf => {
     (globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true;
     const React = requireFromHere("react") as typeof import("react");
     const { createRoot } = requireFromHere("react-dom/client") as typeof import("react-dom/client");
@@ -119,18 +123,64 @@ describe("shadcn charts source (charts-core on Recharts)", () => {
     const host = document.createElement("div");
     document.body.append(host);
     const root = createRoot(host);
-    const data = [{ month: "Jan", desktop: 186, mobile: 80 }, { month: "Feb", desktop: 305, mobile: 200 }, { month: "Mar", desktop: 237, mobile: 120 }];
+    const data = leaf === "chart-scatter"
+      ? [{ month: -2, desktop: 8, mobile: 3 }, { month: 1, desktop: 5, mobile: 7 }, { month: 9, desktop: 12, mobile: 4 }]
+      : leaf === "chart-range"
+        ? [{ month: "Jan", desktop: [2, 7], mobile: [1, 5] }, { month: "Feb", desktop: [4, 8], mobile: [3, 9] }, { month: "Mar", desktop: [3, 6], mobile: [2, 8] }]
+        : [{ month: "Jan", desktop: 186, mobile: 80 }, { month: "Feb", desktop: 305, mobile: 200 }, { month: "Mar", desktop: 237, mobile: 120 }];
     await React.act(async () => {
       root.render(React.createElement(Chart, { data, categoryKey: "month", series: [{ key: "desktop", label: "Desktop" }, { key: "mobile", label: "Mobile" }], initialDimension: { width: 320, height: 200 }, isAnimationActive: false }));
     });
     await React.act(async () => { await new Promise(done => setTimeout(done, 20)); });
     const svg = host.querySelector("svg.recharts-surface");
     expect(svg, leaf).not.toBeNull();
-    const marks = { "chart-bar": ".recharts-bar-rectangle", "chart-line": ".recharts-line-curve", "chart-area": ".recharts-area-area" }[leaf]!;
+    const marks = { "chart-bar": ".recharts-bar-rectangle", "chart-line": ".recharts-line-curve", "chart-area": ".recharts-area-area", "chart-scatter": ".recharts-scatter-symbol", "chart-range": ".recharts-area-area", "chart-waterfall": ".recharts-bar-rectangle", "chart-sparkline": ".recharts-line-curve" }[leaf]!;
     expect(svg!.querySelectorAll(marks).length, leaf).toBeGreaterThanOrEqual(2);
+    if (leaf === "chart-sparkline") {
+      expect(svg!.querySelector(".recharts-cartesian-grid")).toBeNull();
+      expect(host.querySelector(".recharts-legend-wrapper")).toBeNull();
+      await React.act(async () => root.render(React.createElement(Chart, { data, categoryKey: "month", series: [{ key: "desktop", label: "Desktop" }], initialDimension: { width: 320, height: 200 }, isAnimationActive: false, showAxes: true, showLegend: true, showTooltip: true })));
+      expect(host.querySelector(".recharts-cartesian-grid")).not.toBeNull();
+      expect(host.querySelector(".recharts-legend-wrapper")).not.toBeNull();
+    }
     expect(host.querySelector("[data-slot=chart] style")?.textContent).toContain("--color-desktop: var(--chart-1, var(--color-chart-categorical-1));");
     await React.act(async () => root.unmount());
     host.remove();
     expect(dirname(SHADCN_CHART_FILLS_DIR)).toMatch(/catalog\/fills$/);
+  });
+
+  it("draws floating waterfall ranges below and across zero and exposes signed deltas", async () => {
+    (globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true;
+    const React = requireFromHere("react") as typeof import("react");
+    const { createRoot } = requireFromHere("react-dom/client") as typeof import("react-dom/client");
+    const files = materializeShadcnChart(importShadcnCharts(pinnedShadcnChartsInput()), "chart-waterfall");
+    const { ChartWaterfall } = await load(files, "components/chart-waterfall/chart-waterfall.tsx");
+    const host = document.createElement("div"); document.body.append(host);
+    const root = createRoot(host);
+    try {
+      await React.act(async () => root.render(React.createElement(ChartWaterfall as React.ComponentType<Record<string, unknown>>, {
+        data: [-10, 5, 12, -20].map((change, index) => ({ stage: String(index), change })),
+        categoryKey: "stage", series: [{ key: "change", label: "Change" }],
+        initialDimension: { width: 500, height: 300 }, isAnimationActive: false,
+      })));
+      const ticks = [...host.querySelectorAll(".recharts-yAxis .recharts-cartesian-axis-tick-value")].map(tick => ({ value: Number(tick.textContent), y: Number(tick.getAttribute("y")) }));
+      expect(ticks.length).toBeGreaterThanOrEqual(2);
+      const a = ticks[0]!, b = ticks[1]!;
+      const yAt = (value: number) => a.y + (value - a.value) * (b.y - a.y) / (b.value - a.value);
+      const bars = [...host.querySelectorAll('.recharts-bar-rectangle path[fill="var(--color-change)"]')];
+      expect(bars).toHaveLength(4);
+      const ranges = [[-10, 0], [-10, -5], [-5, 7], [-13, 7]];
+      for (const [index, bar] of bars.entries()) {
+        const [low, high] = ranges[index]!;
+        const y = Number(bar.getAttribute("y")), height = Number(bar.getAttribute("height"));
+        expect(y, `bar ${index} upper bound`).toBeCloseTo(yAt(high!), 3);
+        expect(y + height, `bar ${index} lower bound`).toBeCloseTo(yAt(low!), 3);
+      }
+      await React.act(async () => bars[0]!.dispatchEvent(new MouseEvent("mouseover", { bubbles: true })));
+      expect(host.querySelector(".cn-chart-tooltip")?.textContent).toContain("-10");
+      expect(host.querySelector(".recharts-legend-wrapper")?.textContent).toBe("Change");
+    } finally {
+      await React.act(async () => root.unmount()); host.remove();
+    }
   });
 });

@@ -184,7 +184,7 @@ export { importFoundryComponents } from "../importers/foundry-components.js";
 export type { FoundryComponentImportInput, FoundryComponentImport, FoundryComponentCoverage, FoundryComponentFillDoc } from "../importers/foundry-components.js";
 
 export { loadComponentCompositionRules } from "./component-compositions.js";
-export { planComponentDefaults } from "./component-defaults.js";
+export { planComponentDefaults, DEFAULT_COMPONENT_PREFERENCE, DEFAULT_COMPONENT_PICKS, DEFAULT_COMPONENT_FALLBACK } from "./component-defaults.js";
 export { observeComponentSources } from "./component-observations.js";
 export { joinComponentQualification } from "./component-qualification.js";
 export type { ComponentQualificationJoinInput, ComponentQualificationJoinRecord, ComponentQualificationJoin } from "./component-qualification.js";

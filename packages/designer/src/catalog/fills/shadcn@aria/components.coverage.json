@@ -297,7 +297,7 @@
         },
         {
           "file": "apps/v4/registry/bases/aria/ui/dropdown-menu.tsx",
-          "message": "Restyled source: Preserve adopted Tailwind widest 0.1em; expose existing member through explicit emit.",
+          "message": "Restyled source: Bind menu shortcut label tracking to the existing consumer label letter-spacing token.",
           "value": "tracking-widest"
         }
       ],
@@ -376,7 +376,7 @@
         },
         {
           "file": "apps/v4/registry/bases/aria/ui/context-menu.tsx",
-          "message": "Restyled source: Preserve adopted Tailwind widest 0.1em; expose existing member through explicit emit.",
+          "message": "Restyled source: Bind menu shortcut label tracking to the existing consumer label letter-spacing token.",
           "value": "tracking-widest"
         }
       ],
@@ -1448,7 +1448,7 @@
         },
         {
           "file": "apps/v4/registry/bases/aria/ui/card.tsx",
-          "message": "Restyled source: Preserve adopted Tailwind snug value 1.375; expose its existing member through an explicit emit mapping.",
+          "message": "Restyled source: Bind compact card heading typography to the existing consumer heading line-height token.",
           "value": "leading-snug"
         },
         {

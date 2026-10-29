@@ -4,8 +4,9 @@ import headlessPackage from "react-aria-components/package.json" with { type: "j
 import { RAC_PACKAGE, type ComponentCheckInput } from "./catalog-core/check-components.js";
 import type { FillDoc } from "./catalog-core/types.js";
 import type { ComponentCandidateDocument, ComponentFile } from "./catalog-core/resolve-components.js";
-import { componentDescriptorHash } from "./catalog-core/resolve-components.js";
+import { componentDescriptorHash, componentOf } from "./catalog-core/resolve-components.js";
 import type { SourceBundle } from "./catalog-core/changeset-components.js";
+import { importShadcnCharts, materializeShadcnChart, pinnedShadcnChartsInput } from "./importers/shadcn-charts.js";
 import { importShadcnAriaRail } from "./importers/shadcn-aria-rail.js";
 import { importLucide } from "./importers/lucide.js";
 import { importFoundryComponents } from "./importers/foundry-components.js";
@@ -32,12 +33,24 @@ export function loadCatalogBundles() {
   const shadcn = importShadcnAriaComponents(input);
   const foundry = importFoundryComponents();
   const rail = importShadcnAriaRail();
+  const chartInput = pinnedShadcnChartsInput();
+  const charts = importShadcnCharts(chartInput);
+  const chartDocs = charts.fills as unknown as readonly ComponentCandidateDocument[];
   // Kbd has byte-identical upstream source and reuses the existing keyboard adoption.
   const newRail = (row: { slot: string }) => row.slot !== "components.keyboard";
   const starter = importRacStarter(structuredClone(starterData) as RacStarterInput);
   const upstream = new Map([...input.items.flatMap(item => item.files), input.styles, input.notice].map(file => [file.path, file]));
   const sourceCandidates: SourceCandidateBytes[] = [];
   const sourceBundles: SourceBundle[] = [];
+  for (const doc of chartDocs) {
+    const fill = componentOf(doc);
+    const descriptorHash = componentDescriptorHash(fill);
+    const outputFiles = materializeShadcnChart(charts, fill.slot.slice("components.".length));
+    const upstreamFiles = [chartInput.chart, chartInput.notice];
+    sourceCandidates.push({ fill: doc.$extensions["com.clossys.fill"].id, slot: fill.slot, descriptorHash,
+      status: "ready", transform: fill.transform!, upstreamFiles, outputFiles, blockers: [] });
+    sourceBundles.push({ slot: fill.slot, descriptorHash, transform: fill.transform!, upstream: upstreamFiles, files: outputFiles, blockers: [] });
+  }
   for (const doc of shadcn.fills) {
     const fill = Object.values(doc.components)[0]!;
     const rewrite = shadcn.rewrites[fill.item]!;
@@ -63,7 +76,7 @@ export function loadCatalogBundles() {
   return structuredClone({
     package: data.package,
     valueFills: [...data.valueFiles.map(file => file.document), ...importLucide().filter(doc => doc.$extensions["com.clossys.fill"].slot === "assets.icon-panel-left")] as unknown as FillDoc[],
-    componentFills: [...foundry.fills, ...shadcn.fills, ...starter.fills, ...rail.fills.filter(doc => newRail(doc.$extensions["com.clossys.fill"]))] as readonly ComponentCandidateDocument[],
+    componentFills: [...foundry.fills, ...shadcn.fills, ...starter.fills, ...chartDocs, ...rail.fills.filter(doc => newRail(doc.$extensions["com.clossys.fill"]))] as readonly ComponentCandidateDocument[],
     foundryCoverage: foundry.coverage,
     sourceCandidates: [...sourceCandidates, ...starter.candidates, ...rail.candidates.filter(newRail)],
     sourceBundles: [...sourceBundles, ...starter.sourceBundles, ...rail.sourceBundles.filter(newRail)],
