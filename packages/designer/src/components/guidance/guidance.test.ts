@@ -6,6 +6,7 @@ import { dirname, join } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
 import ts from "typescript";
 import * as components from "../index.js";
+import * as catalog from "../../catalog-core/index.js";
 import { TOKENS } from "../../tokens/tokens.js";
 import { RENDER_ENVIRONMENT } from "../../render-environment.js";
 
@@ -14,11 +15,10 @@ const root = join(dirname(fileURLToPath(import.meta.url)), "../../..");
 const additions = components as unknown as {
   COMPONENT_GUIDANCE?: Record<string, any>;
   COMPONENT_API_FACTS?: Record<string, any>;
-  COMPONENT_DISPLAY_TREE?: readonly any[];
 };
 const guidance = () => additions.COMPONENT_GUIDANCE ?? {};
 const facts = () => additions.COMPONENT_API_FACTS ?? {};
-const groups = () => additions.COMPONENT_DISPLAY_TREE ?? [];
+const groups = () => catalog.COMPONENT_DISPLAY_TREE;
 const exportedComponents = (layer: string) => {
   const path = join(root, `src/${layer}/index.ts`);
   const source = ts.createSourceFile(path, readFileSync(path, "utf8"), ts.ScriptTarget.ES2022, true);
@@ -90,8 +90,8 @@ describe("shared component guidance", () => {
     expect(groups()).toEqual(componentIA.nodes);
     const leaves = groups().flatMap(group => group.children.flatMap((family: any) => family.leaves));
     expect(new Set(leaves).size).toBe(leaves.length);
-    expect(components.componentSelection("components.button")?.facts).toBe(facts()["act.button"]);
-    expect(components.componentSelection("act.icon-button")?.facts).toBe(facts()["act.icon-button"]);
+    expect(catalog.componentSelection("components.button")?.facts).toBe(facts()["act.button"]);
+    expect(catalog.componentSelection("act.icon-button")?.facts).toBe(facts()["act.icon-button"]);
   });
 
   it("gives each component meaningful stable semantics separate from web implementation", () => {

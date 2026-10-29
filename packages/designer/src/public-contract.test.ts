@@ -308,21 +308,37 @@ describe("graph-model public contract", () => {
 });
 
 describe("compiled component guidance public contract", () => {
-  it("intentionally exports the four component metadata records from the existing client components barrel", () => {
+  it("keeps the three legacy metadata records in the foundational components barrel", () => {
     const entry = join(packageRoot, "dist/components/index.js");
     const script = `import * as components from ${JSON.stringify(entry)}; process.stdout.write(JSON.stringify(Object.keys(components).filter(key => /^COMPONENT_/.test(key)).sort()));`;
     const keys = JSON.parse(execFileSync(process.execPath, ["--input-type=module", "-e", script], { encoding: "utf8", cwd: packageRoot }));
-    expect(keys).toEqual(["COMPONENT_API_FACTS", "COMPONENT_COMPARISON", "COMPONENT_DISPLAY_TREE", "COMPONENT_GUIDANCE"]);
+    expect(keys).toEqual(["COMPONENT_API_FACTS", "COMPONENT_COMPARISON", "COMPONENT_GUIDANCE"]);
   });
-  it("resolves canonical IA selection through the compiled public components entry", () => {
-    const entry = join(packageRoot, "dist/components/index.js");
+  it("resolves IA navigation and all action aliases through the compiled public catalog entry", () => {
+    const entry = "@clossys/designer/catalog";
     const script = `
       import { COMPONENT_DISPLAY_TREE, componentSelection, resolveComponentId } from ${JSON.stringify(entry)};
       const leaves = COMPONENT_DISPLAY_TREE.flatMap(group => group.children.flatMap(family => family.leaves));
+      const actions = ["act.native-action", "act.button", "act.icon-button", "act.menu", "act.toolbar", "act.toggle-button", "act.link", "act.breadcrumb", "act.navigation-tree"];
       const alias = componentSelection("act.button"), canonical = componentSelection("components.button");
-      process.stdout.write(JSON.stringify({ registered: leaves.includes(resolveComponentId("act.button")), same: alias.guidance === canonical.guidance, exportName: canonical.facts.exportName }));
+      process.stdout.write(JSON.stringify({ registered: leaves.includes(resolveComponentId("act.button")), actionCount: actions.length, allActionsRegistered: actions.every(alias => leaves.includes(resolveComponentId(alias))), same: alias.guidance === canonical.guidance, exportName: canonical.facts.exportName }));
     `;
-    expect(JSON.parse(execFileSync(process.execPath, ["--input-type=module", "-e", script], { encoding: "utf8", cwd: packageRoot }))).toEqual({ registered: true, same: true, exportName: "Button" });
+    expect(JSON.parse(execFileSync(process.execPath, ["--input-type=module", "-e", script], { encoding: "utf8", cwd: packageRoot }))).toEqual({ registered: true, actionCount: 9, allActionsRegistered: true, same: true, exportName: "Button" });
+  });
+  it("types the compiled catalog navigation and selection API through the public catalog subpath", () => {
+    const filename = join(packageRoot, "catalog-selection-consumer.check.ts");
+    const consumer = `
+      import { COMPONENT_DISPLAY_TREE, componentSelection, resolveComponentId, type ComponentDisplayTree } from "@clossys/designer/catalog";
+      const tree: ComponentDisplayTree = COMPONENT_DISPLAY_TREE;
+      const id: string = resolveComponentId("act.button");
+      const selection = componentSelection(id);
+      const name: string | undefined = selection?.facts?.exportName;
+    `;
+    const options = { strict: true, noEmit: true, skipLibCheck: true, target: ts.ScriptTarget.ES2022, module: ts.ModuleKind.ESNext, moduleResolution: ts.ModuleResolutionKind.Bundler };
+    const host = ts.createCompilerHost(options);
+    const original = host.getSourceFile.bind(host);
+    host.getSourceFile = (path, language, error, fresh) => path === filename ? ts.createSourceFile(path, consumer, language, true) : original(path, language, error, fresh);
+    expect(ts.getPreEmitDiagnostics(ts.createProgram([filename], options, host)).map(diagnostic => ts.flattenDiagnosticMessageText(diagnostic.messageText, "\n"))).toEqual([]);
   });
   it("pins compiled comparison keys to the finite public API facts", () => {
     const entry = join(packageRoot, "dist/components/index.js");

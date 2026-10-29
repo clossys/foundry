@@ -1,6 +1,6 @@
-import { COMPONENT_ALIASES, resolveComponentId } from "../../catalog/component-aliases.js";
-import type { ComponentComparison } from "./internal/data.js";
-import { COMPONENT_GUIDANCE, COMPONENT_API_FACTS, COMPONENT_COMPARISON } from "./internal/data.js";
+import { COMPONENT_ALIASES, resolveComponentId } from "./component-aliases.js";
+import type { ComponentComparison } from "../components/guidance/internal/data.js";
+import { COMPONENT_GUIDANCE, COMPONENT_API_FACTS, COMPONENT_COMPARISON } from "../components/guidance/internal/data.js";
 
 /** Pinned aliases retain their specific guidance; canonical selection uses the first matching record. */
 export function componentSelection(id: string) {
