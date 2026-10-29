@@ -45,7 +45,7 @@ import { projectNavigation } from "../../content-map/projections.js";
 import { contentMapPath } from "../../content-map/check.js";
 import type { ContentMap, ContentMapNavigationNode } from "../../content-map/contract.js";
 import type { CopyRef, CopyResolver } from "@clossys/writer";
-import type { SiteShellInput, SiteFooterInput } from "@clossys/designer/frames";
+import type { SiteShellInput, SiteFooterInput, SiteLinkInput } from "@clossys/designer/frames";
 
 /** Identity selections only: destinations and words always come from the map. */
 export interface SiteShellNavigationOptions {
@@ -59,7 +59,7 @@ export interface SiteShellNavigationOptions {
   readonly footerGroupIds: readonly string[];
   /** One projected group becomes the image profile column; bindings contain asset identities only. */
   readonly social?: { readonly groupId: string; readonly imageAssetIds: Readonly<Record<string, string>> };
-  readonly actions?: readonly { readonly actionId: string; readonly targetEntryId: string; readonly emphasis?: "primary" | "secondary" | "ghost" }[];
+  readonly actions?: readonly { readonly actionId: string; readonly targetEntryId: string; readonly emphasis?: "primary" | "secondary" | "ghost"; readonly icon?: SiteLinkInput["icon"] }[];
   /** Actual host Writer references, keyed by map identity; never synthesized. */
   readonly entryCopyRefs: Readonly<Record<string, CopyRef>>;
   readonly actionCopyRefs?: Readonly<Record<string, CopyRef>>;
@@ -138,7 +138,8 @@ export function projectSiteShellNavigation(map: ContentMap, options: SiteShellNa
   unique(selections.map(binding => binding.actionId));
   const actionBindings: { actionId: string; targetEntryId: string; intent: string }[] = [];
   const actions = selections.map(binding => {
-    if (Object.keys(binding).some(key => !["actionId", "targetEntryId", "emphasis"].includes(key))) throw new TypeError("Action bindings accept identities and emphasis only");
+    if (Object.keys(binding).some(key => !["actionId", "targetEntryId", "emphasis", "icon"].includes(key))) throw new TypeError("Action bindings accept identities and action presentation only");
+    if (binding.emphasis === "primary" && (!Array.isArray(binding.icon) || binding.icon.length === 0)) throw new TypeError("A primary site action requires a supplied consumer icon binding");
     const candidates = (map.actions ?? []).filter(action => action.id === binding.actionId);
     const targets = map.entries.filter(entry => entry.id === binding.targetEntryId);
     if (candidates.length !== 1 || targets.length !== 1) throw new TypeError("An unambiguous map action and target are required");
@@ -151,7 +152,7 @@ export function projectSiteShellNavigation(map: ContentMap, options: SiteShellNa
     if (!targetHref) throw new TypeError("A site action requires a canonical map destination");
     if (!action.intent.trim()) throw new TypeError("A declared map action intent is required");
     actionBindings.push({ actionId: action.id, targetEntryId: target.id, intent: action.intent });
-    return { href: targetHref, label: copy(options.actionCopyRefs?.[action.id], action.label), ...(binding.emphasis === undefined ? {} : { emphasis: binding.emphasis }) };
+    return { href: targetHref, label: copy(options.actionCopyRefs?.[action.id], action.label), ...(binding.emphasis === undefined ? {} : { emphasis: binding.emphasis }), ...(binding.icon === undefined ? {} : { icon: binding.icon }) };
   });
   return { nav, actions, columns, ...(social === undefined ? {} : { social }), actionBindings };
 }

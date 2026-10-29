@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { ArrowRight } from "@clossys/designer/icons";
 import type { CopyRef, CopyResolver } from "@clossys/writer";
 import type { ContentMap } from "../../content-map/contract.js";
 import { filterRegisteredFrameRoutes, projectSiteShellNavigation, type SiteShellNavigationOptions } from "./registered-navigation.js";
@@ -18,7 +19,7 @@ const map: ContentMap = {
   ],
   actions: [{ id: "demo", label: words.demo, group: "company", intent: "request-demo" }],
 };
-const options = (): SiteShellNavigationOptions => ({ activeId: "home", header: { label: refs.navigation, entryIds: ["home"] }, footerGroupIds: ["company", "legal"], entryCopyRefs: refs, actionCopyRefs: refs, resolveCopy, actions: [{ actionId: "demo", targetEntryId: "contact", emphasis: "primary" }] });
+const options = (): SiteShellNavigationOptions => ({ activeId: "home", header: { label: refs.navigation, entryIds: ["home"] }, footerGroupIds: ["company", "legal"], entryCopyRefs: refs, actionCopyRefs: refs, resolveCopy, actions: [{ actionId: "demo", targetEntryId: "contact", emphasis: "primary", icon: ArrowRight }] });
 
 describe("MR9 canonical content-map bridge", () => {
   it("uses ordered canonical group children, preserves headings without href, and returns original Writer refs", () => {
@@ -30,7 +31,7 @@ describe("MR9 canonical content-map bridge", () => {
   });
   it("binds action label and intent from the map and destination from its selected actual entry", () => {
     const value = projectSiteShellNavigation(map, options());
-    expect(value.actions).toEqual([{ href: "/contact", label: refs.demo, emphasis: "primary" }]);
+    expect(value.actions).toEqual([{ href: "/contact", label: refs.demo, emphasis: "primary", icon: ArrowRight }]);
     expect(value.actionBindings).toEqual([{ actionId: "demo", targetEntryId: "contact", intent: "request-demo" }]);
     const changed = structuredClone(map);
     (changed.entries.find(entry => entry.id === "contact") as { path: string }).path = "/reach-us";
@@ -41,8 +42,13 @@ describe("MR9 canonical content-map bridge", () => {
     delete (unpinned.entries.find(entry => entry.id === "contact") as { pin?: unknown }).pin;
     const value = projectSiteShellNavigation(unpinned, options());
     expect(value.columns[0]!.links.map(link => link.href)).toEqual(["/about"]);
-    expect(value.actions).toEqual([{ href: "/contact", label: refs.demo, emphasis: "primary" }]);
+    expect(value.actions).toEqual([{ href: "/contact", label: refs.demo, emphasis: "primary", icon: ArrowRight }]);
     expect(value.actionBindings[0]!.intent).toBe("request-demo");
+  });
+  it("forwards the supplied existing action icon while requiring it for primary presentation", () => {
+    const value = projectSiteShellNavigation(map, options());
+    expect(value.actions[0]!.icon).toBe(ArrowRight);
+    expect(() => projectSiteShellNavigation(map, { ...options(), actions: [{ actionId: "demo", targetEntryId: "contact", emphasis: "primary" }] })).toThrow(/consumer icon binding/);
   });
   it("refuses missing refs, mismatched record text and untraced resolutions", () => {
     expect(() => projectSiteShellNavigation(map, { ...options(), entryCopyRefs: {} })).toThrow(/Writer/);
