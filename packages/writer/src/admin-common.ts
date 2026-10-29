@@ -14,6 +14,10 @@ type CommonCopy = Omit<typeof source, "records" | "externalRecords" | "bindings"
  * owner, original usage and retained Studio binding all identify that item. */
 export const COMMON_STUDIO_ITEM_NAMES = freezeAdminCopy(studio.externalRecords.filter(declaration =>
   declaration.source === "common-labels.r1.en.json" && declaration.sourceContext.startsWith("designer.item.")
+).filter(declaration =>
+  // Merged names can retain several Studio identities. They are not eligible
+  // for item-name authority; never select one of their bindings arbitrarily.
+  studio.bindings.filter(binding => binding.recordId === declaration.recordId).length <= 1
 ).map(declaration => {
   const records = source.records.filter(record => record.id === declaration.recordId);
   const record = records[0];

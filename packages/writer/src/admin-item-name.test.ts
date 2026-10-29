@@ -56,6 +56,15 @@ describe("strict Designer item-name resolution", () => {
 });
 
 describe("shared names retain canonical Studio authority", () => {
+  it("keeps the merged Form name unauthenticated without blocking unambiguous names", () => {
+    const id = "st.17r7xa6wg9";
+    expect(ADMIN_COMMON_COPY_EN.records.find(record => record.id === id)).toMatchObject({ text: "Form", context: "designer.item.sections.form" });
+    expect(ADMIN_STUDIO_COPY_EN.bindings.filter(binding => binding.recordId === id)).toHaveLength(3);
+    expect(ADMIN_COMMON_COPY_EN.bindings.filter(binding => binding.recordId === id)).toEqual([]);
+    expect(getAdminItemNameBinding(id)).toBeUndefined();
+    expect(resolveAdminCopyRef({ id }, undefined, preview)).toBeUndefined();
+    expect(resolveAdminCopyRef({ id })).toBeUndefined();
+  });
   for (const [id, cellId, text] of [
     ["st.v1cbgc4kr2", "strings.admin.column.item", "Item"],
     ["st.s13b3hwkta", "strings.admin.pagination.label", "Pagination"],
