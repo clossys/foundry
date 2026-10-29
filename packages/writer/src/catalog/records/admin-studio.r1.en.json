@@ -4886,6 +4886,17 @@
       "limits": {
         "maxChars": 120
       }
+    },
+    {
+      "id": "st.7mpayr0009",
+      "leaf": "strings.names",
+      "context": "designer.item.components.media-player",
+      "status": "draft",
+      "origin": "authored",
+      "text": "Video player",
+      "limits": {
+        "maxChars": 60
+      }
     }
   ],
   "reviews": [
@@ -14243,6 +14254,24 @@
       "rationale": "Author a Writer-owned draft for the adopted rail component cascade; the proposed binding neither mounts a consumer nor grants approval.",
       "role": "interface copy",
       "budget": 120
+    },
+    {
+      "recordId": "st.7mpayr0009",
+      "cellId": "designer.item.components.media-player",
+      "severity": "P1",
+      "status": "fixed",
+      "scope": "draft only",
+      "source": {
+        "commit": "7d6ffb38acab524cc24b2a3efae83e164746fc2d",
+        "path": "packages/designer/src/components/media-player/media-player.tsx",
+        "line": 158,
+        "key": "designer.item.components.media-player"
+      },
+      "before": "MediaPlayer",
+      "after": "Video player",
+      "rationale": "Name the draft inline video component for Explorer and Inspector navigation. This wording grants no production approval.",
+      "role": "label",
+      "budget": 60
     }
   ],
   "bindings": [
@@ -17515,6 +17544,12 @@
       "recordId": "st.qbaewx3e0y",
       "target": "packages/designer/src/components/sidebar/sidebar.tsx",
       "kind": "CopyRef"
+    },
+    {
+      "cellId": "designer.item.components.media-player",
+      "recordId": "st.7mpayr0009",
+      "target": "packages/designer/src/catalog/slots/components.json",
+      "kind": "item-name"
     }
   ],
   "needs": [
@@ -21062,13 +21097,20 @@
       "severity": "P1",
       "status": "Need",
       "message": "Bind through the Designer copy resolver and obtain owner approval before production use."
+    },
+    {
+      "recordId": "st.7mpayr0009",
+      "cellId": "designer.item.components.media-player",
+      "severity": "P1",
+      "status": "Need",
+      "message": "Bind through the Designer copy resolver and obtain owner approval before production use."
     }
   ],
   "coverage": {
     "kind": "planned binding fixture; not rendered-page coverage",
     "productionBound": 0,
-    "proposedBindings": 526,
-    "draftRecords": 504,
+    "proposedBindings": 527,
+    "draftRecords": 505,
     "reusedExistingRecords": 10
   },
   "defaults": [
@@ -21310,6 +21352,17 @@
         "packages/designer/src/components/command/command.tsx": "20741da3036eecc09284d23c41e4682219d132a625ed9914abfd4f10e801a533",
         "packages/designer/src/components/sheet/sheet.tsx": "4e5d2c0dd27e78cb3c5701ee9709887ebc3a1250aa2de17302a6e7e7073ffd4b",
         "packages/designer/src/components/sidebar/sidebar.tsx": "7ec2e98ce85ea6bfd30386f7f115fb8bd6bf30b82b954a2ead2642c2ff624682"
+      },
+      "revisions": []
+    },
+    {
+      "unit": "MEDIA-PLAYER-LABEL",
+      "sourceCommit": "7d6ffb38acab524cc24b2a3efae83e164746fc2d",
+      "recordIds": [
+        "st.7mpayr0009"
+      ],
+      "sourceFiles": {
+        "packages/designer/src/components/media-player/media-player.tsx": "51801952c0ac5afeebf3522551a1298d8c8babc8b11e26bd574d1d4537733b0b"
       },
       "revisions": []
     }

@@ -4,10 +4,10 @@
       "author": "foundry",
       "builtOn": [
         "components.button",
-        "components.toggle-button",
-        "components.slider",
         "components.icon",
-        "components.semantic-content"
+        "components.semantic-content",
+        "components.slider",
+        "components.toggle-button"
       ],
       "conforms": [],
       "evidence": [],
@@ -31,16 +31,21 @@
     "media-player": {
       "composes": [
         "components.button",
-        "components.toggle-button",
-        "components.slider",
         "components.icon",
-        "components.semantic-content"
+        "components.semantic-content",
+        "components.slider",
+        "components.toggle-button"
       ],
       "deps": [
         {
           "license": "MIT",
           "name": "react",
           "version": ">=18"
+        },
+        {
+          "license": "MIT",
+          "name": "tailwind-merge",
+          "version": "^3.7.0"
         },
         {
           "license": "Apache-2.0",
@@ -68,15 +73,15 @@
         "controls.minimal": "./components#MediaPlayer.controls=minimal"
       },
       "props": [
-        "video",
-        "poster",
-        "passage",
-        "captions",
-        "muted",
         "autoplay",
-        "loop",
+        "captions",
+        "className",
         "controls",
-        "className"
+        "loop",
+        "muted",
+        "passage",
+        "poster",
+        "video"
       ],
       "rac": {
         "instance": "react-aria-components",
@@ -85,24 +90,25 @@
       },
       "reads": {
         "assets": [
+          "assets.icon-chevron-right",
           "assets.image",
-          "assets.video",
-          "assets.icon-chevron-right"
+          "assets.video"
         ],
         "components": [
           "components.button",
-          "components.toggle-button",
-          "components.slider",
           "components.icon",
-          "components.semantic-content"
+          "components.semantic-content",
+          "components.slider",
+          "components.toggle-button"
         ],
         "tokens": [
-          "tokens.radius",
-          "tokens.surface-color",
-          "tokens.text-color",
-          "tokens.spacing",
           "tokens.focus-color",
-          "tokens.focus-outline"
+          "tokens.focus-outline",
+          "tokens.radius",
+          "tokens.spacing",
+          "tokens.surface-color",
+          "tokens.surface-radius",
+          "tokens.text-color"
         ]
       },
       "root": "presentational",

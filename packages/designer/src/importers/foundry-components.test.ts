@@ -10,6 +10,9 @@ import { loadComponentCompositionRules } from "../catalog-core/component-composi
 import { FOUNDRY_COMPONENT_MAP } from "./foundry-components.map.js";
 import type { FoundryComponentMapping, FoundryComponentSubpath } from "./foundry-components.map.js";
 import { generatedFoundryComponentFiles, importFoundryComponents } from "./foundry-components.js";
+import { loadCatalogBundles } from "../catalog-bundles.js";
+import { applyComponentLibraryChange } from "../catalog-core/changeset-components.js";
+import { componentLibraryHash, componentOf, type ComponentLibrary } from "../catalog-core/resolve-components.js";
 
 const here = dirname(fileURLToPath(import.meta.url));
 const fillsDirectory = resolve(here, "../catalog/fills/foundry");
@@ -24,7 +27,7 @@ const imported = () => importFoundryComponents({ exports });
 // I1 retains no blocked candidates in its dynamic bundle: color-picker and number-field left it once their
 // source-derived reads proved covered (no K11); toolbar, tag-group and tree pass their measured K5 craft comparison.
 const dynamicBlockedLeaves: string[] = [];
-const storedMappings = Object.fromEntries(Object.entries(FOUNDRY_COMPONENT_MAP).filter(([leaf]) => !dynamicBlockedLeaves.includes(leaf) && !["semantic-content", "native-action"].includes(leaf)));
+const storedMappings = Object.fromEntries(Object.entries(FOUNDRY_COMPONENT_MAP).filter(([leaf]) => !dynamicBlockedLeaves.includes(leaf) && !["semantic-content", "native-action", "media-player"].includes(leaf)));
 const changedMap = (leaf: string, change: Partial<FoundryComponentMapping>) => ({ ...FOUNDRY_COMPONENT_MAP, [leaf]: { ...FOUNDRY_COMPONENT_MAP[leaf]!, ...change } });
 
 describe("Foundry component package descriptors", () => {
@@ -33,14 +36,14 @@ describe("Foundry component package descriptors", () => {
     // Explicit local regeneration writes only this generator's enumerated component artifacts.
     if (process.env.UPDATE_FOUNDRY_COMPONENT_FILLS === "1") for (const [name, bytes] of Object.entries(files)) writeFileSync(resolve(fillsDirectory, name), bytes);
     const committed = readdirSync(fillsDirectory).filter(name => name.startsWith("components.") && name.endsWith(".json")).sort();
-    expect(committed).toEqual([...Object.keys(files), ...loadComponentCompositionRules().filter(rule => rule.template.source === "foundry").map(rule => `${rule.slot}.json`), "components.native-action.json", "components.semantic-content.json"].sort());
+    expect(committed).toEqual([...Object.keys(files), ...loadComponentCompositionRules().filter(rule => rule.template.source === "foundry").map(rule => `${rule.slot}.json`), "components.native-action.json", "components.semantic-content.json", "components.media-player.json"].sort());
     for (const [name, bytes] of Object.entries(files)) expect(readFileSync(resolve(fillsDirectory, name), "utf8"), name).toBe(bytes);
     expect(imported().coverage.map(row => row.slot)).toEqual(slots.map(slot => slot.id).sort());
-    expect(imported().coverage).toHaveLength(66);
+    expect(imported().coverage).toHaveLength(67);
     expect(signedSlots).toHaveLength(57);
     expect(importFoundryComponents({ exports, mappings: storedMappings, slots: signedSlots }).fills).toHaveLength(55);
-    expect(imported().fills).toHaveLength(57);
-    expect(imported().fills.filter(doc => !["components.semantic-content", "components.native-action"].includes(doc.$extensions["com.clossys.fill"].slot))).toHaveLength(55);
+    expect(imported().fills).toHaveLength(58);
+    expect(imported().fills.filter(doc => !["components.semantic-content", "components.native-action", "components.media-player"].includes(doc.$extensions["com.clossys.fill"].slot))).toHaveLength(55);
     const blocked = imported().fills.filter(doc => Object.values(doc.components)[0]!.blockers?.length);
     expect(blocked.map(doc => doc.$extensions["com.clossys.fill"].id)).toEqual(dynamicBlockedLeaves.map(leaf => `foundry/components.${leaf}`));
     for (const doc of blocked) {
@@ -52,7 +55,7 @@ describe("Foundry component package descriptors", () => {
       expect(imported().coverage.find(row => row.slot === meta.slot)!.status).toBe("blocked");
     }
     const storedCoverage = importFoundryComponents({ exports, mappings: storedMappings, slots: signedSlots }).coverage;
-    const baselineRows = (rows: typeof storedCoverage) => rows.filter(row => !["components.semantic-content", "components.native-action"].includes(row.slot) && !dynamicBlockedLeaves.some(leaf => row.slot === `components.${leaf}`));
+    const baselineRows = (rows: typeof storedCoverage) => rows.filter(row => !["components.semantic-content", "components.native-action", "components.media-player"].includes(row.slot) && !dynamicBlockedLeaves.some(leaf => row.slot === `components.${leaf}`));
     const newSourceSlots = ["command", "dropdown-menu", "empty", "item", "scroll-area", "sheet", "sidebar"].map(leaf => `components.${leaf}`);
     expect(baselineRows(imported().coverage)).toEqual([...baselineRows(storedCoverage), ...newSourceSlots.map(slot => ({
       slot, status: "unavailable", supported: [], missing: [], notes: ["No package implementation is available."],
@@ -196,4 +199,38 @@ it("stores the exact pending NativeAction draft with real exports, native states
   const profile = checkComponentProfile({ slots, fills: [fill], observations: {}, tokens: {}, assets: [], installedRac: { version: "1.21.1", instance: "consumer" } });
   expect(profile.ok).toBe(false);
   expect(profile.findings).toContainEqual(expect.objectContaining({ subject: fill.slot, code: "K5", message: "Source and runtime observations are unavailable" }));
+});
+
+
+it("loads and adopts the MediaPlayer draft from the real catalog bundle with its complete component closure", () => {
+  const bundles = loadCatalogBundles();
+  const doc = bundles.componentFills.find(doc => doc.$extensions["com.clossys.fill"].slot === "components.media-player")!;
+  expect(doc).toBeDefined();
+  expect(doc.$extensions["com.clossys.fill"]).toMatchObject({ status: "draft", conforms: [], evidence: [] });
+  const fill = componentOf(doc);
+  expect(fill.impl).toEqual({ kind: "package", module: "@clossys/designer/components", export: "MediaPlayer" });
+  expect(fill.propMap).toEqual({ "controls.full": "./components#MediaPlayer.controls=full", "controls.minimal": "./components#MediaPlayer.controls=minimal" });
+  expect(bundles.foundryCoverage.find(row => row.slot === fill.slot)).toMatchObject({ status: "candidate", missing: [], supported: ["controls.full", "controls.minimal"] });
+  expect(() => importFoundryComponents({ exports: { ...exports, components: exports.components.filter(name => name !== "MediaPlayer") } })).toThrow("unavailable package export");
+
+  const candidates = new Map(bundles.componentFills.filter(doc => doc.$extensions["com.clossys.fill"].source === "foundry").map(doc => [doc.$extensions["com.clossys.fill"].slot, doc]));
+  const ordered: string[] = [];
+  const visited = new Set<string>();
+  const visit = (slot: string) => {
+    if (visited.has(slot)) return;
+    visited.add(slot);
+    const candidate = candidates.get(slot);
+    expect(candidate, slot).toBeDefined();
+    const component = componentOf(candidate!);
+    for (const dependency of [...component.composes, ...component.reads.components]) visit(dependency);
+    ordered.push(slot);
+  };
+  visit(fill.slot);
+  const empty: ComponentLibrary = { source: { id: "example-player", kind: "consumer", author: "Example Co.", license: "MIT" }, adoptedAt: "2026-10-29", fills: [], files: [] };
+  const library = applyComponentLibraryChange({ slots, fills: bundles.componentFills }, empty, { baseHash: componentLibraryHash(empty), changes: ordered.map(slot => ({ op: "adopt", slot, source: "foundry" })) });
+  expect(library.selection?.slots.find(row => row.slot === fill.slot)).toEqual({ slot: fill.slot, originKinds: ["adopted"], sources: ["foundry"] });
+  expect(componentOf(library.fills.find(doc => doc.components["media-player"])!).impl).toEqual(fill.impl);
+  expect(library.files).toEqual([]);
+  const generated = generatedFoundryComponentFiles({ exports })["components.media-player.json"]!;
+  expect(readFileSync(resolve(fillsDirectory, "components.media-player.json"), "utf8")).toBe(generated);
 });

@@ -2642,6 +2642,7 @@
       "allowedReads": {
         "tokens": [
           "tokens.radius",
+          "tokens.surface-radius",
           "tokens.surface-color",
           "tokens.text-color",
           "tokens.spacing",
