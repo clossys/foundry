@@ -32,26 +32,27 @@
   },
   "sections": {
     "page-header": {
-      "composes": [],
+      "composes": [
+        "sections.section-header"
+      ],
       "configs": {},
       "consumption": {
         "scanStatus": "lower-bound",
-        "scannedComposes": [],
+        "scannedComposes": [
+          "sections.section-header"
+        ],
         "scannedReads": {
           "assets": [],
           "components": [],
           "tokens": [
-            "tokens.body-size",
             "tokens.heading-size",
-            "tokens.spacing",
-            "tokens.text-color",
-            "tokens.typeface"
+            "tokens.spacing"
           ]
         },
         "sourceFiles": [
           {
             "path": "packages/designer/src/blocks/PageHeader.tsx",
-            "sha256": "1de9e7d5110c1c2903b7ad89290a926915476487aec0d2b5060c5f16c9366e65"
+            "sha256": "d5a151e863db5c1295a23f52fad2065693cdca675789b539302790c13d423358"
           },
           {
             "path": "packages/designer/src/catalog-core/provenance-attrs.ts",
@@ -84,7 +85,7 @@
       },
       "license": "MIT",
       "notes": [
-        "No record/standard config or meta API. Source renders its own h1 rather than shared section-header anatomy.",
+        "No record/standard config or meta API. Source composes the shared SectionHeader at level 1 for its real h1 and preserves the public breadcrumb, title, description and actions inputs.",
         "Source-only import and token-read measurements are lower bounds; shared anatomy, accessibility, contrast and consumer runtime conformance remain unmeasured. Content bindings describe host adaptation points, not type-equivalent converters."
       ],
       "parts": [],
@@ -97,11 +98,8 @@
       "reads": {
         "assets": [],
         "tokens": [
-          "tokens.body-size",
           "tokens.heading-size",
-          "tokens.spacing",
-          "tokens.text-color",
-          "tokens.typeface"
+          "tokens.spacing"
         ]
       },
       "slot": "sections.page-header",

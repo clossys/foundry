@@ -42,12 +42,12 @@ describe("surface refresh contract diff and descriptor retention", () => {
     expect(changed.breaking).toBe(false);
     expect(surfaceContractDiff(frame, frame)).toEqual({ fromHash: surfacePackageDescriptorHash(frame), toHash: surfacePackageDescriptorHash(frame), added: { members: [], slots: [], statePorts: [] }, removed: { members: [], slots: [], statePorts: [] }, breaking: false });
   });
-  it("retains all 63 current upstream descriptors and the exact original app-shell after candidates advance", () => {
+  it("retains all 62 current upstream descriptors and the exact original app-shell after candidates advance", () => {
     const surfaces = structuredClone(foundrySurfaceCatalog());
     const current = [...surfaces.fills];
     surfaces.fills = [];
     const catalog = { surfaces } as CompositeCatalogData;
-    expect(current).toHaveLength(63);
+    expect(current).toHaveLength(62);
     for (const doc of current) {
       const entry = surfaceEntryOf(doc) as SurfacePackageEntry, meta = doc.$extensions["com.clossys.fill"];
       const identity = { source: meta.source, fill: meta.id, pin: meta.pin!, license: meta.license, descriptorHash: surfacePackageDescriptorHash(entry) };

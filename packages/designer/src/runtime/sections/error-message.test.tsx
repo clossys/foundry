@@ -20,7 +20,9 @@ function input(content = values, members: readonly string[] = ["kind.not-found"]
 describe("private error-message section", () => {
   it("renders a public or admin 404 with one primary recovery link and no frame landmarks", () => {
     const { container } = render(<>{errorMessageRenderer.render(input())}</>);
-    expect(screen.getByRole("heading", { level: 1, name: "404" })).toHaveAttribute("dir", "auto");
+    expect(screen.getByText("404")).toHaveAttribute("dir", "auto");
+    expect(screen.getByText("404").closest('[data-ds-leaf="sections.error-state"]')).toBeInTheDocument();
+    expect(screen.getByText("404").tagName).not.toBe("H1");
     expect(screen.getByRole("heading", { level: 2, name: "Page not found" })).toBeInTheDocument();
     expect(screen.getByRole("link", { name: "Go home" })).toHaveAttribute("href", "/");
     expect(container.querySelector('[data-ds-leaf="sections.error-message"]')).toHaveAttribute("data-message-kind", "not-found");

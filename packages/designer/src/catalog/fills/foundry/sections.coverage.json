@@ -97,7 +97,7 @@
       "missingRequiredSlots": [],
       "missingSlots": [],
       "notes": [
-        "SectionFrame alone widens its ground with transparent (no surface, inherited ink); block grounds stay the closed SectionGround. Rhythm is fixed in source, with no specified contract member values.",
+        "SectionFrame alone widens its ground with transparent (no surface, inherited ink); block grounds stay the closed SectionGround. Wash reads tokens.gradient.wash; texture reads assets.pattern. Fluid heading properties are scoped to the section; global token defaults remain fixed. Reveal is opt-in and uses the shared reduced-motion policy. Rhythm is fixed in source, with no specified contract member values.",
         "Source-only import and token-read measurements are lower bounds; shared anatomy, accessibility, contrast and consumer runtime conformance remain unmeasured. Content bindings describe host adaptation points, not type-equivalent converters."
       ],
       "slot": "sections.band",
@@ -107,9 +107,15 @@
         "ground.inverse",
         "ground.sunken",
         "ground.transparent",
+        "ground.wash",
         "measure.content",
         "measure.prose",
-        "measure.wide"
+        "measure.wide",
+        "reveal.false",
+        "reveal.true",
+        "texture.grain",
+        "texture.noise",
+        "texture.topo"
       ],
       "supportedSlots": [],
       "unresolvedMemberAxes": [
@@ -160,7 +166,15 @@
       ],
       "slot": "sections.call-to-action",
       "status": "candidate",
-      "supportedMembers": [],
+      "supportedMembers": [
+        "ground.base",
+        "ground.inverse",
+        "ground.sunken",
+        "ground.wash",
+        "texture.grain",
+        "texture.noise",
+        "texture.topo"
+      ],
       "supportedSlots": [
         "actions",
         "header"
@@ -344,7 +358,7 @@
       "missingRequiredSlots": [],
       "missingSlots": [],
       "notes": [
-        "Host supplies required title. No kind or scope API; source hand-renders its h2 and padding.",
+        "Host supplies required title. The shared SectionHeader owns the title and description; neutral content uses SemanticContent. No kind or scope API.",
         "Source-only import and token-read measurements are lower bounds; shared anatomy, accessibility, contrast and consumer runtime conformance remain unmeasured. Content bindings describe host adaptation points, not type-equivalent converters."
       ],
       "slot": "sections.empty-state",
@@ -353,37 +367,6 @@
       "supportedSlots": [
         "actions",
         "illustration"
-      ],
-      "unresolvedMemberAxes": []
-    },
-    {
-      "missingMembers": [
-        "error.global"
-      ],
-      "missingRequiredSlots": [],
-      "missingSlots": [],
-      "notes": [
-        "Public ErrorState is the existing fill anchor only; the private runtime error-message composition owns the separate status h1 and state metadata. The slot/prop pointers are adaptation endpoints, not an assertion that ErrorState alone accepts this section contract.",
-        "Status and title adapt together to a separate h1 status and the existing block h2 title; no new public Blocks export is introduced.",
-        "All visible and accessible copy is consumer authored. Each optional action requires its label when present and exactly one href or action id. Callback ids require sectionHosts[\"sections.error-message\"].onAction; no inert fallback callback is installed.",
-        "not-found maps to ErrorState kind=not-found; error/global-error map to failure. Global errors are content for a host-owned document/frame, not a document or framework error adapter.",
-        "Shared deterministic preview copy comes from specimenDataset.sections.errorState and uses a navigation link, so preview needs no live host.",
-        "Draft descriptor; runtime tests are source declarations, not consumer adoption or release clearance.",
-        "Source-only import and token-read measurements are lower bounds; shared anatomy, accessibility, contrast and consumer runtime conformance remain unmeasured. Content bindings describe host adaptation points, not type-equivalent converters."
-      ],
-      "slot": "sections.error-message",
-      "status": "subset",
-      "supportedMembers": [
-        "kind.error",
-        "kind.global-error",
-        "kind.not-found"
-      ],
-      "supportedSlots": [
-        "actions",
-        "description",
-        "reference",
-        "status",
-        "title"
       ],
       "unresolvedMemberAxes": []
     },
@@ -456,17 +439,22 @@
       "missingRequiredSlots": [],
       "missingSlots": [],
       "notes": [
-        "The layout prop selects the column grid, a one-per-row list with the icon beside the copy, or the heading region beside a two-column grid from desktop. Items have icon, heading and description but no per-item link prop.",
+        "The layout prop selects grid, list, split, bento, tabs, alternating or scroll. Bento delegates ordered 12-unit spans and the 2-6 item bound to the existing Items engine. Tabs delegates keyboard and panel semantics to components.tabs without autoplay; its authored header heading names the list. Alternating media uses logical grid columns and stacks below tablet. Scroll enhances a complete static list only when JavaScript, scroll-driven animation support and no reduced-motion preference are present; token animation timings, the shared section reveal and local sticky keyframes drive sticky media and stepped copy. Optional item.figure uses an existing image resource through sections.media; copy is supplied through the existing Writer header and item fields.",
         "Source-only import and token-read measurements are lower bounds; shared anatomy, accessibility, contrast and consumer runtime conformance remain unmeasured. Content bindings describe host adaptation points, not type-equivalent converters."
       ],
       "slot": "sections.features",
       "status": "subset",
       "supportedMembers": [
+        "layout.alternating",
+        "layout.bento",
         "layout.grid",
         "layout.list",
-        "layout.split"
+        "layout.scroll",
+        "layout.split",
+        "layout.tabs"
       ],
       "supportedSlots": [
+        "header",
         "items"
       ],
       "unresolvedMemberAxes": []
@@ -529,20 +517,23 @@
       "unresolvedMemberAxes": []
     },
     {
-      "missingMembers": [
-        "ground.base",
-        "ground.inverse"
-      ],
+      "missingMembers": [],
       "missingRequiredSlots": [],
       "missingSlots": [],
       "notes": [
-        "Header is a built-in SectionIntro region keyed by the required heading, with eyebrow and description as supporting props; it is not a replaceable section-header node. Source composes SectionIntro; headingLevel permits h1.",
+        "Header is a built-in SemanticContent intro keyed by the required heading, with eyebrow and description as supporting props; headingLevel permits h1.",
+        "Backdrop accepts the existing checked decorative lazy ConsumerArtContract, limited to static raster or token-painted SVG. Light and strong treatments render the media-scrim gradient below four or five scalar scrim passes. Static art is unchanged under reduced motion; source bytes remain consumer-declared, not fetched or measured.",
         "Source-only import and token-read measurements are lower bounds; shared anatomy, accessibility, contrast and consumer runtime conformance remain unmeasured. Content bindings describe host adaptation points, not type-equivalent converters."
       ],
       "slot": "sections.hero",
-      "status": "subset",
+      "status": "candidate",
       "supportedMembers": [
+        "backdrop.scrim.light",
+        "backdrop.scrim.strong",
+        "ground.base",
+        "ground.inverse",
         "layout.editorial",
+        "layout.full-bleed",
         "layout.split",
         "size.compact",
         "size.default",
@@ -550,6 +541,7 @@
       ],
       "supportedSlots": [
         "actions",
+        "backdrop",
         "header",
         "media"
       ],
@@ -666,13 +658,20 @@
       "missingRequiredSlots": [],
       "missingSlots": [],
       "notes": [
-        "Host supplies the image node and its src/alt/ratio; caption is a separate prop. Does not validate a structured figure record or bind anatomy.",
+        "The figure-to-children pointer is an adaptation point. The private sections.media runtime adapts figure.media={kind:image,resource:ImageResource} to the public image prop, optional figure.ratio to a canonical image-ratio member, figure.caption to caption and figure.chromeLabel to the browser-only chromeLabel. Existing registered chart and mark content remains supported as children.",
+        "The closed chrome members select browser, device or bare; bare is the default. Chrome is token-drawn around the existing media renderer and does not change its intrinsic image ratio. Optional callouts maps to {label,items:[{id,body}]} with a nonempty host-authored list label and item bodies and unique nonempty item ids.",
+        "The host supplies all visible and accessible copy through the Writer passage contract. This package descriptor does not bind shared anatomy or prove consumer runtime conformance.",
         "Source-only import and token-read measurements are lower bounds; shared anatomy, accessibility, contrast and consumer runtime conformance remain unmeasured. Content bindings describe host adaptation points, not type-equivalent converters."
       ],
       "slot": "sections.media",
       "status": "candidate",
-      "supportedMembers": [],
+      "supportedMembers": [
+        "chrome.bare",
+        "chrome.browser",
+        "chrome.device"
+      ],
       "supportedSlots": [
+        "callouts",
         "figure"
       ],
       "unresolvedMemberAxes": []
@@ -724,7 +723,7 @@
         "meta"
       ],
       "notes": [
-        "No record/standard config or meta API. Source renders its own h1 rather than shared section-header anatomy.",
+        "No record/standard config or meta API. Source composes the shared SectionHeader at level 1 for its real h1 and preserves the public breadcrumb, title, description and actions inputs.",
         "Source-only import and token-read measurements are lower bounds; shared anatomy, accessibility, contrast and consumer runtime conformance remain unmeasured. Content bindings describe host adaptation points, not type-equivalent converters."
       ],
       "slot": "sections.page-header",
@@ -746,7 +745,7 @@
       "missingRequiredSlots": [],
       "missingSlots": [],
       "notes": [
-        "Host supplies pageCount and onPageChange. Only numbered pages exist; load-more and cursor modes are absent. Default visible messages remain in source.",
+        "Host supplies pageCount and onPageChange. Only numbered pages exist; load-more and cursor modes are absent. Omitted labels and summary messages resolve the existing Writer pagination CopyRefs through the configured host resolver; no English fallback is shipped.",
         "Source-only import and token-read measurements are lower bounds; shared anatomy, accessibility, contrast and consumer runtime conformance remain unmeasured. Content bindings describe host adaptation points, not type-equivalent converters."
       ],
       "slot": "sections.pagination",
