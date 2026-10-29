@@ -167,9 +167,14 @@ L0s per band. Data-table selection and hash navigation remain registered-session
 ports.
 
 The section hosts supply `recordDetail` only to record-detail, and
-`tableCopy`/`paginationSummary` only to data-table. The detail title and fields
+`tableCopy`/`paginationSummary`/`formatCopyMessage` only to data-table. The detail title and fields
 come from the current Writer-bound item. Empty-table copy and the complete
-pagination summary come from Writer records.
+pagination summary come from Writer records. `paginationSummary` is serializable
+message data (`key`, `writerId`, `locale`, raw `message`, `values`); the native
+table replaces its paging values and calls the separate `formatCopyMessage`
+port. That port verifies the bound message identity and delegates live values
+to Writer's strict ICU resolver. Old callback summaries must migrate to these
+ports. Existing page factories, route paths and loader bindings stay compatible.
 
 At the publication host's one-time `bind`, use
 `publicationHosts["sections.chat"]` for the shared inspector renderer. It

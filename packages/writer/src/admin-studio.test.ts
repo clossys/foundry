@@ -34,8 +34,12 @@ it("packs complete admin copy and resolves every Designer route-label reference 
     const installed = join(root, "node_modules/@clossys/writer");
     mkdirSync(installed, { recursive: true });
     execFileSync("tar", ["-xzf", join(root, packed[0].filename), "-C", installed, "--strip-components=1"]);
-    // The public display resolver uses Writer's already-declared ICU runtime.
-    symlinkSync(resolve(packageRoot, "../../node_modules/intl-messageformat"), join(root, "node_modules/intl-messageformat"), "dir");
+    // Mirror the declared runtime dependencies that an ordinary npm install provides.
+    const { dependencies } = JSON.parse(readFileSync(join(installed, "package.json"), "utf8"));
+    for (const dependency of Object.keys(dependencies)) {
+      mkdirSync(join(root, "node_modules", dependency, ".."), { recursive: true });
+      symlinkSync(resolve(packageRoot, "../../node_modules", dependency), join(root, "node_modules", dependency), "dir");
+    }
     writeFileSync(join(root, "package.json"), JSON.stringify({ private: true, type: "module" }));
     writeFileSync(join(root, "refs.json"), JSON.stringify(refs));
     const probe = join(root, "probe.mjs");

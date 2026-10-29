@@ -5,7 +5,7 @@ import { ADMIN_META_COPY_EN, type AdminMetaCopy, type AdminMetaCopyRecord } from
 import { ADMIN_WRITER_COPY_EN, type AdminRouteCopy } from "./admin-route-copy.js";
 import { ADMIN_CHAT_COPY_EN } from "./admin-chat.js";
 export { ADMIN_CHAT_COPY_EN } from "./admin-chat.js";
-import { IntlMessageFormat } from "intl-messageformat";
+import { createCopyResolver, type CopyResolveOptions } from "./resolve.js";
 export { ADMIN_WRITER_COPY_EN } from "./admin-route-copy.js";
 export type { AdminRouteCopy } from "./admin-route-copy.js";
 
@@ -58,15 +58,54 @@ export interface AdminCopyRef {
   readonly locale?: string;
   readonly values?: Readonly<Record<string, string | number | boolean>>;
 }
-/** Explicit draft-review display, separate from approved production resolution.
- * Missing records, unsupported locales and invalid ICU arguments remain Needs. */
-export function resolveAdminCopyRef(ref: AdminCopyRef, copy: AdminCopy = ADMIN_COPY_EN) {
+
+export interface AdminItemNameBinding {
+  readonly cellId: string;
+  readonly recordId: string;
+  readonly target: string;
+  readonly kind: "item-name";
+}
+
+const designerItemNames = new Map(ADMIN_STUDIO_COPY_EN.records.filter(record =>
+  record.leaf === "strings.names" && record.context.startsWith("designer.item.")
+).map(record => [record.id, record]));
+
+/** Authenticate an item name against the shipped Writer source binding.
+ * A context-shaped string alone grants no authority to name a Designer item. */
+export function getAdminItemNameBinding(id: string, copy: AdminCopy = ADMIN_COPY_EN): AdminItemNameBinding | undefined {
+  const canonicalRecord = designerItemNames.get(id);
+  const record = getAdminCopyRecord(id, copy);
+  if (!canonicalRecord || !record || record.leaf !== canonicalRecord.leaf || record.context !== canonicalRecord.context) return undefined;
+  const canonicalBindings = ADMIN_STUDIO_COPY_EN.bindings.filter(binding => binding.recordId === id);
+  const canonicalBinding = canonicalBindings[0];
+  if (canonicalBindings.length !== 1 || !canonicalBinding || canonicalBinding.kind !== "item-name" || canonicalBinding.cellId !== canonicalRecord.context) return undefined;
+  const envelopes = copy.envelopes.filter(envelope => envelope.records.some(row => row.id === id));
+  if (!envelopes.length || envelopes.some(envelope => {
+    if (!("bindings" in envelope)) return true;
+    const bindings = envelope.bindings.filter(binding => binding.recordId === id);
+    return bindings.length !== 1 || !bindings.every(binding => binding.kind === canonicalBinding.kind && binding.cellId === canonicalBinding.cellId && binding.target === canonicalBinding.target);
+  })) return undefined;
+  return { ...canonicalBinding, kind: "item-name" };
+}
+/** Admin resolution shares the production approval policy; drafts require explicit preview. */
+export type AdminCopyResolveOptions = Pick<CopyResolveOptions, "target" | "now" | "timeZone" | "approvalPlan" | "acceptDelegateInProduction">;
+
+/** Missing records, unsupported locales and invalid ICU arguments remain Needs.
+ * Omitted options retain the shared resolver's safe production default. */
+export function resolveAdminCopyRef(ref: AdminCopyRef, copy: AdminCopy = ADMIN_COPY_EN, options: AdminCopyResolveOptions = {}) {
   if (ref.locale !== undefined && ref.locale !== "en") return undefined;
   const record = getAdminCopyRecord(ref.id, copy);
-  if (!record || record.status === "retired") return undefined;
-  try {
-    const formatted = new IntlMessageFormat(record.text, "en").format(ref.values);
-    if (typeof formatted !== "string" || !formatted.trim()) return undefined;
-    return { ref: { ...ref, locale: "en" }, text: formatted, servedLocale: "en" as const, status: record.status, activation: "none" as const };
-  } catch { return undefined; }
+  const envelope = copy.envelopes.find(envelope => envelope.records.some(row => row.id === ref.id));
+  if (!record || !envelope || envelope.locale !== "en") return undefined;
+  if ((designerItemNames.has(ref.id) || record.context.startsWith("designer.item.")) && !getAdminItemNameBinding(ref.id, copy)) return undefined;
+  const resolve = createCopyResolver({
+    id: "admin-copy",
+    locale: envelope.locale,
+    revision: String(envelope.revision),
+    source: { kind: "generated", reference: "writer/admin-copy" },
+    entries: [{ ...record, placeholders: "args" in record ? record.args?.map(arg => arg.name) : undefined }],
+  }, { ...options, target: options.target ?? "production" });
+  const resolution = resolve({ ...ref, locale: "en" });
+  if (!resolution || !resolution.text.trim()) return undefined;
+  return { ...resolution, servedLocale: "en" as const, status: record.status, activation: "none" as const };
 }

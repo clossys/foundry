@@ -334,6 +334,8 @@ export interface CopyResolution {
   chain?: CopyLocale[];
   source: CopySource;
   entryId: CopyEntryId;
+  /** Lifecycle marker on built-in preview drafts; approved results retain their legacy shape. */
+  status?: CopyEntryStatus;
   /** Present only when the resolved entry carries an approval record. */
   approval?: CopyResolutionApproval;
 }

@@ -1,14 +1,11 @@
 import { describe, expect, it } from "vitest";
-import { pages as source, adminCopyFixture } from "./__fixtures__/copy.mjs";
+import { pages as source, copyEnvelopes } from "./__fixtures__/copy.mjs";
 import { readFileSync } from "node:fs";
-import { createAdminPageRegistry, adminPageRef, adminPageStaticContent, ADMIN_PAGE_COPY_REFS } from "./index.js";
-import { createDesignerPageRecords } from "./designer.page.js";
-import { createWriterPageRecords } from "./writer.page.js";
-import { createPublisherPageRecords } from "./publisher.page.js";
+import { createAdminPageCopy, createAdminPageRegistry, adminPageRef, adminPageStaticContent, ADMIN_PAGE_COPY_REFS, createDesignerPageRecords, createWriterPageRecords, createPublisherPageRecords } from "@clossys/publisher/web/admin-pages";
 import { projectPageOutline } from "../../content/taxonomy.js";
 import { normalizeRegionPageRoute } from "../../core/route-registry.js";
 
-const copy = adminCopyFixture();
+const copy = createAdminPageCopy({ locale: "en", envelopes: copyEnvelopes() });
 const skeleton = { l0: [{ id: "strings", label: {id: "strings.admin.group.writer.strings"}, count: 2, estimate: 300, partition: "l1" as const, l1: [{ id: "names", label: {id: "strings.admin.ia.writer.strings.identity-names"}, count: 2, estimate: 250, l2: [{ id: "primary", label: {id: "strings.admin.item.details"}, count: 2, estimate: 200 }] }] }] };
 const publication = { id: "admin", mainSlot: "body", frame: { leaf: "frames.app-shell" as const }, layout: { leaf: "layouts.stack" as const, config: "stack.workspace" }, format: "web.page.responsive" as const, surface: "app" as const, context: { consumer: "example", medium: "web" as const }, packIds: ["pack.admin"] };
 

@@ -24,7 +24,7 @@ export interface WriterRoutePageProps {
 const SECTIONS = ["sections.data-table", "sections.record-detail", "sections.notices"] as const;
 /** Copy absence is an explicit Need, never an inline replacement sentence. */
 function requiredCopy(copy: AdminCopy, ref: AdminCopyRef) {
-  const result = resolveAdminCopyRef(ref, copy);
+  const result = resolveAdminCopyRef(ref, copy, { target: "preview" });
   if (!result) throw new TypeError(`Writer copy Need: ${ref.id}`);
   return result;
 }
@@ -53,7 +53,7 @@ function WriterRouteSurface({ checked, copy, selectedRecordId }: { checked: Retu
   const { data, profile, contracts } = checked;
   const [selected, setSelected] = useState(selectedRecordId);
   const shellCopy = useCallback((reference: AdminCopyRef) => {
-    const value = resolveAdminCopyRef(reference, copy);
+    const value = resolveAdminCopyRef(reference, copy, { target: "preview" });
     return value && { ref: reference, text: value.text };
   }, [copy]);
   const contents = useMemo(() => new Map(data.contents.map(row => [runtimeHash(row.reference), row])), [data.contents]);

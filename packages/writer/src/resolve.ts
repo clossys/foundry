@@ -8,7 +8,8 @@
  * those inputs so `@example/surface` can place them in its output
  * manifest without knowing how a consumer stores copy.
  *
- * Target policy: an owner-approved entry resolves on both `"preview"` and
+ * Target policy: a draft entry resolves only on explicit `"preview"`.
+ * An owner-approved entry resolves on both `"preview"` and
  * `"production"` (the default target). A delegate-approved entry resolves
  * freely on `"preview"`, but on `"production"` is refused
  * (`delegate-approval-refused`) unless the caller opts in with
@@ -33,7 +34,7 @@ import { canonicalLocale, fallbackChain } from "./locale.js";
 import { parseIcuMessage } from "./icu/parse.js";
 import type { IcuParseResult } from "./icu/parse.js";
 import type { WriterManifest } from "./model/types.js";
-import { isApprovalExpired, isApprovalStale, isEntryInDelegateScope } from "./approval.js";
+import { isApprovalExpired, isApprovalStale, isEntryInDelegateScope } from "./approval-policy.js";
 import { isPlanBytes, planDelegateCopyAuthority } from "./plan-authority.js";
 import type { PlanDelegateCopyRefusal } from "./plan-authority.js";
 
@@ -255,7 +256,7 @@ export function resolveCopyRef(
     return failure("unknown-copy-id", `CopyRef "${validRef.id}" is absent from the available fallback chain.`, validRef.id);
   }
 
-  if (entry.status !== "approved") {
+  if (entry.status !== "approved" && !(target === "preview" && entry.status === "draft")) {
     return {
       issues: [
         {
@@ -388,6 +389,7 @@ export function resolveCopyRef(
     source: validRegistry.source,
     entryId: entry.id,
   };
+  if (entry.status === "draft") resolution.status = "draft";
   // Only set when the entry actually carries a record — an approved entry
   // with no record resolves exactly as it did before this field existed,
   // with no `approval` key on the resolution at all.
