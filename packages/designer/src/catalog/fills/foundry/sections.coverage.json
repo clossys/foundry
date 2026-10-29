@@ -344,7 +344,7 @@
       "missingRequiredSlots": [],
       "missingSlots": [],
       "notes": [
-        "Host supplies required title. No kind or scope API; source hand-renders its h2 and padding.",
+        "Host supplies required title. The shared SectionHeader owns the title and description; neutral content uses SemanticContent. No kind or scope API.",
         "Source-only import and token-read measurements are lower bounds; shared anatomy, accessibility, contrast and consumer runtime conformance remain unmeasured. Content bindings describe host adaptation points, not type-equivalent converters."
       ],
       "slot": "sections.empty-state",
@@ -353,37 +353,6 @@
       "supportedSlots": [
         "actions",
         "illustration"
-      ],
-      "unresolvedMemberAxes": []
-    },
-    {
-      "missingMembers": [
-        "error.global"
-      ],
-      "missingRequiredSlots": [],
-      "missingSlots": [],
-      "notes": [
-        "Public ErrorState is the existing fill anchor only; the private runtime error-message composition owns the separate status h1 and state metadata. The slot/prop pointers are adaptation endpoints, not an assertion that ErrorState alone accepts this section contract.",
-        "Status and title adapt together to a separate h1 status and the existing block h2 title; no new public Blocks export is introduced.",
-        "All visible and accessible copy is consumer authored. Each optional action requires its label when present and exactly one href or action id. Callback ids require sectionHosts[\"sections.error-message\"].onAction; no inert fallback callback is installed.",
-        "not-found maps to ErrorState kind=not-found; error/global-error map to failure. Global errors are content for a host-owned document/frame, not a document or framework error adapter.",
-        "Shared deterministic preview copy comes from specimenDataset.sections.errorState and uses a navigation link, so preview needs no live host.",
-        "Draft descriptor; runtime tests are source declarations, not consumer adoption or release clearance.",
-        "Source-only import and token-read measurements are lower bounds; shared anatomy, accessibility, contrast and consumer runtime conformance remain unmeasured. Content bindings describe host adaptation points, not type-equivalent converters."
-      ],
-      "slot": "sections.error-message",
-      "status": "subset",
-      "supportedMembers": [
-        "kind.error",
-        "kind.global-error",
-        "kind.not-found"
-      ],
-      "supportedSlots": [
-        "actions",
-        "description",
-        "reference",
-        "status",
-        "title"
       ],
       "unresolvedMemberAxes": []
     },
@@ -750,7 +719,7 @@
       "missingRequiredSlots": [],
       "missingSlots": [],
       "notes": [
-        "Host supplies pageCount and onPageChange. Only numbered pages exist; load-more and cursor modes are absent. Default visible messages remain in source.",
+        "Host supplies pageCount and onPageChange. Only numbered pages exist; load-more and cursor modes are absent. Omitted labels and summary messages resolve the existing Writer pagination CopyRefs through the configured host resolver; no English fallback is shipped.",
         "Source-only import and token-read measurements are lower bounds; shared anatomy, accessibility, contrast and consumer runtime conformance remain unmeasured. Content bindings describe host adaptation points, not type-equivalent converters."
       ],
       "slot": "sections.pagination",

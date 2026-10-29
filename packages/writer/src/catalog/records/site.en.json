@@ -740,37 +740,6 @@
       "text": "Support reference"
     },
     {
-      "id": "ps.000000002q",
-      "leaf": "passages.error-message",
-      "context": "Generic draft site starter",
-      "status": "draft",
-      "origin": "authored",
-      "schema": "passages.error-message",
-      "schemaDigest": "1ca926cc90f6bc267a731c5f06683129c4a762ed9bc9a4cfeb2fa9d7394fc446",
-      "fields": {
-        "status": {
-          "ref": "string",
-          "id": "st.wxwxj7g97v"
-        },
-        "title": {
-          "ref": "string",
-          "id": "st.gdzc1rc0sk"
-        },
-        "description": {
-          "ref": "string",
-          "id": "st.0000000028"
-        },
-        "actions[].label": {
-          "ref": "string",
-          "id": "st.000000001a"
-        },
-        "reference": {
-          "ref": "string",
-          "id": "st.000000002p"
-        }
-      }
-    },
-    {
       "id": "ps.000000002r",
       "leaf": "passages.band",
       "context": "Generic draft site starter",

@@ -1,5 +1,6 @@
 import { SectionHeader } from "./SectionHeader.js";
 import type { HTMLAttributes, ReactNode } from "react";
+import { SemanticContent } from "../components/SemanticContent.js";
 import { cx } from "../components/internal/cx.js";
 import { dsAttrs } from "../catalog-core/provenance-attrs.js";
 /** Section root provenance (D1): the selected Foundry fill this block is. */
@@ -41,16 +42,16 @@ export function EmptyState({
   ...rest
 }: EmptyStateProps) {
   return (
-    <div
+    <SemanticContent as="div"
       {...SECTION_STAMP} {...rest}
       className={cx(
         "flex flex-col justify-center gap-sm p-2xl text-center",
         className,
       )}
     >
-      {icon ? <div className="text-ink-muted">{icon}</div> : null}
+      {icon ? <SemanticContent as="div" className="text-ink-muted">{icon}</SemanticContent> : null}
       <SectionHeader density="standard" align="center" level={2} title={title} description={description} />
-      {action ? <div className="mt-sm">{action}</div> : null}
-    </div>
+      {action ? <SemanticContent as="div" className="mt-sm">{action}</SemanticContent> : null}
+    </SemanticContent>
   );
 }

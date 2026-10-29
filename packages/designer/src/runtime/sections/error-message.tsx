@@ -12,7 +12,7 @@ export const errorMessageInputs = {
   members: KINDS.map(kind => `kind.${kind}`),
 };
 
-/** A host-framed error, including global errors. Receives authored reference copy, never an Error. */
+/** Named retired-id adapter. All status copy renders inside the registered ErrorState anatomy. */
 export const errorMessageRenderer: SurfaceRendererEntry = {
   leaf: LEAF,
   sample: dataset => ({
@@ -31,8 +31,7 @@ export const errorMessageRenderer: SurfaceRendererEntry = {
     const host = messageHost(input, content), [action] = messageActions(content, host, 1);
     return (
       <SemanticContent as="section" {...dsAttrs("sections", LEAF, `foundry/${LEAF}`)} aria-label={title} data-message-kind={kind} aria-busy={host.pending} className="flex flex-col gap-sm text-center">
-        <SemanticContent as="h1" dir="auto" className="text-display-l font-display text-ink-primary">{status}</SemanticContent>
-        <ErrorState kind={kind === "not-found" ? "not-found" : "failure"} title={<SemanticContent as="span" dir="auto">{title}</SemanticContent>} description={<SemanticContent as="span" dir="auto">{description}</SemanticContent>} code={reference === undefined ? undefined : <SemanticContent as="span" dir="auto">{reference}</SemanticContent>} retry={action} />
+        <ErrorState kind={kind === "not-found" ? "not-found" : "failure"} title={<SemanticContent as="span" dir="auto">{title}</SemanticContent>} description={<SemanticContent as="span" dir="auto">{description}</SemanticContent>} code={<><SemanticContent as="span" dir="auto">{status}</SemanticContent>{reference === undefined ? null : <SemanticContent as="span" dir="auto">{reference}</SemanticContent>}</>} retry={action} />
       </SemanticContent>
     );
   },
