@@ -1,4 +1,3 @@
-import { LoaderCircle } from "../icons/LoaderCircle.js";
 import { PanelLeft } from "../icons/PanelLeft.js";
 import type { FillDoc, Source } from "../catalog-core/types.js";
 import type { IconNode } from "../icons/types.js";
@@ -44,7 +43,7 @@ import { Scale } from "../icons/Scale.js";
 import { Box } from "../icons/Box.js";
 import { Layers } from "../icons/Layers.js";
 import { Plug } from "../icons/Plug.js";
-const nodes: Record<string,IconNode> = {LoaderCircle,PanelLeft,ChevronDown,ChevronUp,ChevronLeft,ChevronRight,ArrowRight,ExternalLink,Home,Search,X,Check,Settings,List,Grid3x3,Sun,Moon,Monitor,CheckCircle,AlertTriangle,XCircle,Info,User,Users,Building2,Globe,Landmark,BookOpen,FileText,FileCheck,Folder,Calendar,Clock,CreditCard,Receipt,Briefcase,ShieldCheck,Lock,Scale,Box,Layers,Plug};
+const nodes: Record<string,IconNode> = {PanelLeft,ChevronDown,ChevronUp,ChevronLeft,ChevronRight,ArrowRight,ExternalLink,Home,Search,X,Check,Settings,List,Grid3x3,Sun,Moon,Monitor,CheckCircle,AlertTriangle,XCircle,Info,User,Users,Building2,Globe,Landmark,BookOpen,FileText,FileCheck,Folder,Calendar,Clock,CreditCard,Receipt,Briefcase,ShieldCheck,Lock,Scale,Box,Layers,Plug};
 export const LUCIDE_SOURCE: Source = source as Source;
 /** Exact vendored path nodes, including upstream keys. No artwork is redrawn. */
 export function importLucide(): FillDoc[] {

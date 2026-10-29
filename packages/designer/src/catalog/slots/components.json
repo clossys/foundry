@@ -1800,12 +1800,9 @@
       "props": [],
       "allowedReads": {
         "tokens": [
-          "tokens.text-color",
-          "tokens.animation"
+          "tokens.text-color"
         ],
-        "assets": [
-          "assets.icon-loader"
-        ]
+        "assets": []
       }
     },
     "requires": [],

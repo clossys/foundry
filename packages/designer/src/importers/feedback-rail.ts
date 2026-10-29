@@ -8,7 +8,6 @@ import { rewriteShadcnAria, type RewriteResult, type SourceFile } from "./rewrit
 
 const source = "shadcn@aria", transform = "shadcn-aria-rewrite@2";
 const profiles = [
-  {item:"spinner", leaf:"spinner", export:"Spinner", upstream:["spinner"], parts:[], members:{"size.sm":"Spinner.size=sm","size.md":"Spinner.size=md","size.lg":"Spinner.size=lg"}},
   {item:"sonner", leaf:"toast", export:"Toaster", upstream:["sonner"], parts:["rail-feedback-copy","rail-toast-primitives","rail-toast-queue"], members:{"tone.success":"Toaster","tone.warning":"Toaster","tone.danger":"Toaster","tone.info":"Toaster",action:"Toaster",timeout:"Toaster"}},
   {item:"status-mark", leaf:"status-mark", export:"StatusMark", upstream:["badge"], parts:["rail-badge"], members:{"tone.success":"StatusMark.tone=success","tone.warning":"StatusMark.tone=warning","tone.danger":"StatusMark.tone=danger","tone.info":"StatusMark.tone=info","tone.neutral":"StatusMark.tone=neutral"}},
   {item:"grid-list", leaf:"grid-list", export:"GridList", upstream:["item"], parts:["rail-item"], members:{"layout.list":"GridList.layout=stack","layout.grid":"GridList.layout=grid",selection:"GridList"}},
@@ -48,15 +47,12 @@ export function importFeedbackRail(data: {commit:string; files:readonly {item:st
       tokens.add("tokens.z-index.toast");
     }
     let entry=templates.entries[profile.item];
-    if(profile.item==="spinner") {tokens.add("tokens.animation.spin");assets.add("assets.icon-loader");components.add("components.icon");}
     if(profile.item==="status-mark" || profile.item==="sonner") {for(const name of ["success","warning","danger","info"]) assets.add(`assets.icon-${name}`);components.add("components.icon");}
     if(profile.item==="grid-list") components.add("components.checkbox");
     if(profile.item==="sonner") components.add("components.button");
     const entryPath=`components/${profile.leaf}/${profile.item}.tsx`;
-    // Upstream's spin token and Icon size are delegated explicitly rather than remapping its size utility to spacing.
-    if(profile.item==="spinner") files.push({path:entryPath,content:entry});
-    else files.push(...rewrite(profile.item,profile.leaf,entryPath,extensionless(entry)));
-    for(const [path,content] of Object.entries(templates.parts)) if(profile.item==="sonner" || profile.item==="spinner" && path.includes("rail-feedback-copy")) files.push({path,content:extensionless(content)});
+    files.push(...rewrite(profile.item,profile.leaf,entryPath,extensionless(entry)));
+    for(const [path,content] of Object.entries(templates.parts)) if(profile.item==="sonner") files.push({path,content:extensionless(content)});
     const utils='import { clsx, type ClassValue } from "clsx"\nimport { twMerge } from "tailwind-merge"\nexport function cn(...inputs: ClassValue[]) { return twMerge(clsx(inputs)) }\n';
     files.push({path:"components/_parts/rail-utils/index.ts",content:utils});
     const notice="notices/SHADCN-ARIA-RAIL.md";

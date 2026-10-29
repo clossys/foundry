@@ -65,7 +65,7 @@ const EXPECTED_DEFAULTS = {
   "date-field": "foundry", "date-picker": "compose:date-picker@1", dialog: "shadcn@aria", disclosure: "shadcn@aria", field: "foundry", "grid-list": "shadcn@aria", "file-trigger": "compose:file-trigger@1", form: "foundry", icon: "foundry", keyboard: "shadcn@aria", link: "foundry", logo: "foundry",
   menu: "foundry", meter: "foundry", "native-action": "foundry", "number-field": "foundry", popover: "shadcn@aria", "progress-bar": "shadcn@aria", "radio-group": "shadcn@aria",
   "resize-handle": "foundry", "search-field": "foundry", select: "shadcn@aria", "semantic-content": "foundry", separator: "shadcn@aria", skeleton: "shadcn@aria", slider: "shadcn@aria",
-  spinner: "shadcn@aria", "status-mark": "shadcn@aria", switch: "shadcn@aria", table: "foundry", tabs: "shadcn@aria", "tag-group": "foundry", "text-field": "foundry", toast: "shadcn@aria", "toggle-button": "shadcn@aria", "toggle-group": "shadcn@aria",
+  spinner: "foundry", "status-mark": "shadcn@aria", switch: "shadcn@aria", table: "foundry", tabs: "shadcn@aria", "tag-group": "foundry", "text-field": "foundry", toast: "shadcn@aria", "toggle-button": "shadcn@aria", "toggle-group": "shadcn@aria",
   toolbar: "foundry", tooltip: "shadcn@aria", tree: "foundry",
 };
 /** rac-starter is not a selectable component source (owner rule 2026-10-26); Toolbar, TagGroup and Tree are Foundry's since their measured K5 craft comparison passes. */

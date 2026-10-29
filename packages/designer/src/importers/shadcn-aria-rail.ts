@@ -8,7 +8,7 @@ import type { SourceBundle } from "../catalog-core/changeset-components.js";
 import { rewriteShadcnAria, type SourceFile } from "./rewrite.js";
 
 /** Current official Aria source additions; existing v1 fills keep their authenticated pin. */
-export const SHADCN_ARIA_RAIL_ITEMS = ["sidebar", "command", "sheet", "empty", "item", "scroll-area", "dropdown-menu", "kbd", "spinner", "sonner"] as const;
+export const SHADCN_ARIA_RAIL_ITEMS = ["sidebar", "command", "sheet", "empty", "item", "scroll-area", "dropdown-menu", "kbd", "sonner"] as const;
 const leafOf = (item: string): string => item === "kbd" ? "keyboard" : item;
 const exportsOf = (code: string): string[] => [...code.matchAll(/export\s*\{([^}]+)\}/g)].flatMap(match => match[1]!.split(",").map(x => x.trim()).filter(x => x && !x.startsWith("type ")));
 const dependencies = (code: string): string[] => [...code.matchAll(/from\s*"@\/registry\/bases\/aria\/ui\/([a-z-]+)"/g)].map(match => match[1]!);
@@ -26,7 +26,7 @@ export function importShadcnAriaRail() {
   const candidates = [];
   const rewrites: Record<string, ReturnType<typeof rewriteShadcnAria>> = {};
   for (const item of SHADCN_ARIA_RAIL_ITEMS) {
-    if (item === "spinner" || item === "sonner") continue;
+    if (item === "sonner") continue;
     const leaf = leafOf(item), slot = `components.${leaf}`, original = byItem.get(item)!;
     const closure = new Set<string>();
     const visit = (name: string): void => {

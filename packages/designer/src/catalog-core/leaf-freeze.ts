@@ -38,13 +38,6 @@ if (assetAmendments.schemaVersion !== 1 || assetAmendments.layer !== "assets" ||
     assetAmendments.addedLeafIds.some(id => !id.startsWith("assets.") || assets.leafIds.includes(id))) {
   throw new Error("LEAF_FREEZE: invalid explicit asset amendment");
 }
-// Each later owner-signed addition carries its own ratification; Media's signature stays separate.
-const signedAssetAdditions = assetAmendments.signedAdditions;
-if (!Array.isArray(signedAssetAdditions) || signedAssetAdditions.length !== 1 ||
-    signedAssetAdditions[0]?.id !== "assets.icon-loader" ||
-    signedAssetAdditions[0]?.ownerSignoffComment !== "6483104271" || signedAssetAdditions[0]?.status !== "owner-ratified") {
-  throw new Error("LEAF_FREEZE: invalid signed loading glyph amendment");
-}
 // Draft icon additions do not inherit the separate Media signature.
 if (draftAssetAmendments.schemaVersion !== 1 || draftAssetAmendments.layer !== "assets" ||
     draftAssetAmendments.baseSignedHead !== assets.signedHead || draftAssetAmendments.status !== "pending-owner-ratification" ||
@@ -82,7 +75,7 @@ function signedAliasConversions(): readonly string[] {
 // Copy signed IDs plus the explicit versioned additions once, never current slots or IA.
 const baseline: Readonly<Record<FrozenLeafLayer, ReadonlySet<string>>> = {
   tokens: new Set([...tokens.leafIds, ...tokenAddedIds]),
-  assets: new Set([...assets.leafIds, ...assetAmendments.addedLeafIds, ...signedAssetAdditions.map(row => row.id), ...draftAssetAmendments.addedLeafIds]),
+  assets: new Set([...assets.leafIds, ...assetAmendments.addedLeafIds, ...draftAssetAmendments.addedLeafIds]),
   components: new Set([...components.leafIds, ...componentAmendments.addedLeafIds]),
 };
 const leaves = (nodes: readonly PlacementNode[]): string[] => nodes.flatMap(node => "leaves" in node ? node.leaves : leaves(node.children));

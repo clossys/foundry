@@ -25,7 +25,6 @@ export { Info } from "./Info.js";
 export { Landmark } from "./Landmark.js";
 export { Layers } from "./Layers.js";
 export { List } from "./List.js";
-export { LoaderCircle } from "./LoaderCircle.js";
 export { Lock } from "./Lock.js";
 export { Monitor } from "./Monitor.js";
 export { Moon } from "./Moon.js";

@@ -16,5 +16,5 @@ export function useFeedbackCopy(explicit?: FeedbackCopyResolver) {
   };
 }
 export const FEEDBACK_COPY_REFS = {
-  spinnerLoading: {id: "st.mek92m1y2n"}, toastClose: {id: "st.5t6kmpqx5k"}, toastAction: {id: "st.kq4avsz26w"},
+  toastClose: {id: "st.5t6kmpqx5k"}, toastAction: {id: "st.kq4avsz26w"},
 } as const;

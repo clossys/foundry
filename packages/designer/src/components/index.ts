@@ -162,7 +162,7 @@ export type { SearchFieldProps } from "./SearchField.js";
 export { FileTrigger } from "./FileTrigger.js";
 export type { FileTriggerProps } from "./FileTrigger.js";
 
-export { Disclosure, Disclosure as Collapsible } from "./Disclosure.js";
+export { Disclosure } from "./Disclosure.js";
 export type { DisclosureProps, DisclosureGroupProps } from "./Disclosure.js";
 
 export { ProgressBar } from "./ProgressBar.js";

@@ -9,12 +9,5 @@
     "assets.image",
     "assets.pattern",
     "assets.video"
-  ],
-  "signedAdditions": [
-    {
-      "id": "assets.icon-loader",
-      "ownerSignoffComment": "6483104271",
-      "status": "owner-ratified"
-    }
   ]
 }
