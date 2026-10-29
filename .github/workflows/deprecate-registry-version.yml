@@ -189,8 +189,7 @@ jobs:
       # the script not to need it would make that line false the moment the
       # secret exists: setup-node's .npmrc would attach the token to the
       # dry-run's own packument read. The credential is absent from this step's
-      # environment entirely, and `env -u` (this repository's existing idiom,
-      # see public-npm-aggregate-canary-v2.yml) strips anything a runner or
+      # environment entirely, and `env -u` strips anything a runner or
       # action may have set, so the claim is structural rather than trusted.
       - name: Resolve and report the exact notice (dry run, no credential)
         if: ${{ inputs.dry_run }}

@@ -104,12 +104,6 @@ export const GATED_SCRIPT_PROSE_INPUTS = {
 
   // ---- Dependency-free structural/governance gates: NOT prose ------------
   "node:scripts/check-package-identity-transition.mjs": { prose: false, reason: "reads governance/package-identity-transition.json and package manifests only" },
-  "node:scripts/check-public-npm-aggregate-canary.mjs": { prose: false, reason: "reads the public npm registry and governance/** records, not docs/ or .changesets/" },
-  "node:scripts/check-public-npm-aggregate-closures.mjs": { prose: false, reason: "same class as check-public-npm-aggregate-canary.mjs" },
-  "node:scripts/check-public-npm-aggregate-transcripts.mjs": { prose: false, reason: "same class as check-public-npm-aggregate-canary.mjs" },
-  "node:scripts/lib/public-npm-aggregate-canary.test.mjs": { prose: false, reason: "unit tests for the canary script above, fixture-only" },
-  "node:scripts/check-public-npm-aggregate-canary-v2.mjs": { prose: false, reason: "same class as check-public-npm-aggregate-canary.mjs" },
-  "node:scripts/lib/public-npm-aggregate-canary-v2.test.mjs": { prose: false, reason: "unit tests for the v2 canary script, fixture-only" },
   "node:scripts/check-release-cleanup-inventory.mjs": { prose: false, reason: "reads governance/** release-cleanup records only" },
   "node:scripts/set-scope.mjs": { prose: false, reason: "writes package-scope.json and derived manifest fields, reads no docs/ or .changesets/ path" },
   "node:scripts/set-registry.mjs": { prose: false, reason: "writes registry fields into package manifests only" },

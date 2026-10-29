@@ -5510,12 +5510,9 @@ try {
     // refuses it.
     //
     // The real gap #335 measured is that a scan is a judgement against the
-    // denylist OF THE MOMENT IT RAN, and nothing ever re-asks. That is closed
-    // by .github/workflows/conversation-safety-sweep.yml, whose shape the
-    // cases further below pin — and which needs `number` as DATA to know what
-    // to label. Recovering it by regex from `location`'s prose would break
-    // silently the day that wording changes, and a sweep that labels nothing
-    // is indistinguishable from a sweep that found nothing.
+    // denylist OF THE MOMENT IT RAN. An on-demand re-scan after a denylist
+    // change needs `number` as DATA to identify findings without parsing
+    // `location` prose, whose wording may change.
     {
       const ghFixtureDir = join(work, "gh-bot-author-fixture");
       mkdirSync(ghFixtureDir, { recursive: true });
@@ -5766,73 +5763,7 @@ try {
       );
     }
 
-    // ---- #335, second half: THE SWEEP MUST EXIST, BE SCHEDULED, AND NEVER
-    // COMMENT.
-    //
-    // conversation-safety.yml scans text when it is posted, against the
-    // denylist snapshot CI holds at that instant. A pull_request_review run
-    // also fetches that review's inline comments, and a later
-    // pull_request_review_comment for the same comment may scan it again;
-    // that second scan is acceptable. When a term is added to the real denylist and the
-    // PUBLIC_SAFETY_DENYLIST_B64 secret has not yet been refreshed, that gate
-    // returns a correct, FULL-mode PASS for the question it was asked — and
-    // nothing ever asks again, because the event is gone. The same silence
-    // covers a run that was cancelled, an event that predates the workflow,
-    // and an event GitHub never delivered.
-    //
-    // conversation-safety-sweep.yml is the only thing in this repository that
-    // re-asks. These assertions are deliberately shape assertions on the
-    // workflow file: its value is entirely in RUNNING ON A CADENCE, and a
-    // sweep whose `schedule:` is quietly dropped still passes every scanner
-    // test in this file while never running again.
-    {
-      const sweepPath = join(repoRoot, ".github", "workflows", "conversation-safety-sweep.yml");
-      const exists = existsSync(sweepPath);
-      check(
-        "#335: a scheduled conversation-surface sweep workflow exists (the event gate alone can never re-scan under a newer denylist)",
-        exists,
-        `expected ${sweepPath} to exist`,
-      );
-      if (exists) {
-        const sweep = readFileSync(sweepPath, "utf8");
-        check(
-          "the sweep runs on a schedule — an on-demand-only sweep is one nobody runs",
-          /^\s*schedule:\s*$/m.test(sweep) && /^\s*-\s*cron:\s*["']/m.test(sweep),
-          "no `schedule:` with a `- cron:` entry found in conversation-safety-sweep.yml",
-        );
-        check(
-          "the sweep is also dispatchable on demand, for the deliberate full pass after a denylist change",
-          /^\s*workflow_dispatch:/m.test(sweep),
-          "no `workflow_dispatch:` trigger found in conversation-safety-sweep.yml",
-        );
-        check(
-          "the sweep invokes check-conversation-safety.mjs in --all mode",
-          /check-conversation-safety\.mjs --all/.test(sweep),
-          "conversation-safety-sweep.yml does not run the scanner in --all mode",
-        );
-        check(
-          "the sweep refuses to degrade to PARTIAL — a sweep that skips identity checks is the exact false clearance being fixed",
-          /--require-denylist/.test(sweep),
-          "conversation-safety-sweep.yml does not pass --require-denylist",
-        );
-        check(
-          "the sweep labels its findings",
-          /addLabels/.test(sweep),
-          "conversation-safety-sweep.yml never calls addLabels — a finding nobody is told about is not a finding",
-        );
-        // The load-bearing negative. On a public repository an automated
-        // "private identity detected here" reply is itself a public signal,
-        // and points a reader at the edit history where the original text
-        // still sits — see conversation-safety.yml's own note. This sweep
-        // speaks about text that has been public for weeks, so it applies
-        // with more force here, not less.
-        check(
-          "the sweep NEVER posts a comment — labeling is the whole remediation channel, deliberately",
-          !/createComment|create_comment|gh (issue|pr) comment/.test(sweep),
-          "conversation-safety-sweep.yml appears to post a comment; on a public repository that broadcasts the very finding it is meant to contain",
-        );
-      }
-    }
+
   }
 
   // ------------------------------------------- check-foreign-references

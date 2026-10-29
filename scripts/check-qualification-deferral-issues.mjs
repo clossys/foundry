@@ -29,8 +29,8 @@
 // and customer@0.1.0 -> #833, writer@0.3.14 -> #1063) — a standing exemption
 // wearing a countdown's clothes, undetectable by reading a file that had
 // grown to 59 entries. This script only detects that; it deliberately does
-// not remove any entry (see .github/workflows/qualification-deferral-sweep.yml
-// and the #1136 pull request for the three known findings on this tree).
+// not remove any entry (see the #1136 pull request for the three known
+// findings on this tree).
 //
 // WHY THIS IS A SEPARATE SCRIPT, NOT A NEW CHECK INSIDE
 // check-qualification-record-required.mjs
@@ -42,23 +42,17 @@
 // discipline elsewhere in this repository). Resolving an issue's live state
 // needs the GitHub API and a token, which that job does not have and should
 // not be given just for this. This script is the "networked companion" #1136
-// asks for, run separately in a lane that already holds one — the same
-// reason check:conversation, check:package-visibility, check:merge-policy,
-// and check:registry-parity all stay out of `check:gates` and `check` and
-// run in their own scheduled workflow instead (see their own headers).
+// asks for, run on demand with `npm run probe:qualification-deferral-issues`.
+// Like probe:package-visibility, this networked probe stays out of
+// `check:gates` and `check` and never runs in CI.
 //
-// WHY THIS IS A SCHEDULED SWEEP, NOT ONLY A PULL-REQUEST CHECK
-// ---------------------------------------------------------------
+// WHY THIS NEEDS AN ON-DEMAND RE-CHECK
+// -----------------------------------
 // A deferral's cited issue can close days or weeks after the pull request
 // that added the deferral has already merged with every check green — an
-// event-time check cannot re-ask a question whose answer changed later. This
-// is the structurally identical reason
-// .github/workflows/conversation-safety-sweep.yml exists as a companion to
-// conversation-safety.yml's event gate (see that workflow's own header): the
-// only way to catch drift that happens after the triggering event is to
-// re-ask on a cadence. This script is that re-ask for the deferral file's
-// issue half; .github/workflows/qualification-deferral-sweep.yml is the
-// cadence that calls it.
+// event-time check cannot re-ask a question whose answer changed later.
+// Run on demand with `npm run probe:qualification-deferral-issues` to
+// re-check the issue half against the live forge.
 //
 // DERIVED FROM THE FILE, NEVER A LITERAL LIST (#907)
 // -----------------------------------------------------

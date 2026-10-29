@@ -122,11 +122,6 @@ const publisherExports = [
  * plays no part in it. Everywhere else `refuses` is an invalid outcome. A
  * failure that happens only when a peer is omitted is not a by-design
  * refusal: it stays `rejects`, and it must name the omitted peer.
- *
- * `governance/public-npm-aggregate-canary.json` carries rows of the same shape
- * and is NOT the file to edit -- it is frozen measurement of already-published
- * tarballs, and it stopped asking anything of this tree in #533. See
- * `validateAggregateCanary`'s header in `public-npm-aggregate-canary.mjs`.
  */
 export const OPTIONAL_PEER_POLICY = {
   "@clossys/bouncer": {
