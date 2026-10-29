@@ -882,6 +882,97 @@
           "text": "This is a draft for review. It does not describe a live service or provide legal advice."
         }
       ]
+    },
+    {
+      "id": "st.7mpayr0001",
+      "leaf": "strings.field-labels",
+      "context": "Inline media player title",
+      "status": "draft",
+      "origin": "authored",
+      "text": "Example Co. overview"
+    },
+    {
+      "id": "st.7mpayr0002",
+      "leaf": "strings.field-labels",
+      "context": "Inline media player play",
+      "status": "draft",
+      "origin": "authored",
+      "text": "Play video"
+    },
+    {
+      "id": "st.7mpayr0003",
+      "leaf": "strings.field-labels",
+      "context": "Inline media player pause",
+      "status": "draft",
+      "origin": "authored",
+      "text": "Pause video"
+    },
+    {
+      "id": "st.7mpayr0004",
+      "leaf": "strings.field-labels",
+      "context": "Inline media player mute",
+      "status": "draft",
+      "origin": "authored",
+      "text": "Mute sound"
+    },
+    {
+      "id": "st.7mpayr0005",
+      "leaf": "strings.field-labels",
+      "context": "Inline media player seek",
+      "status": "draft",
+      "origin": "authored",
+      "text": "Playback position"
+    },
+    {
+      "id": "st.7mpayr0006",
+      "leaf": "strings.field-labels",
+      "context": "Inline media player captions",
+      "status": "draft",
+      "origin": "authored",
+      "text": "Captions"
+    },
+    {
+      "id": "st.7mpayr0007",
+      "leaf": "strings.field-labels",
+      "context": "Inline media player error.title",
+      "status": "draft",
+      "origin": "authored",
+      "text": "Video unavailable"
+    },
+    {
+      "id": "st.7mpayr0008",
+      "leaf": "strings.field-labels",
+      "context": "Inline media player error.description",
+      "status": "draft",
+      "origin": "authored",
+      "text": "Try playing this video again later."
+    },
+    {
+      "id": "ps.7mpayr0001",
+      "leaf": "passages.error-message",
+      "context": "Inline media player playback error",
+      "status": "draft",
+      "origin": "authored",
+      "schema": "passages.error-message",
+      "schemaDigest": "1ca926cc90f6bc267a731c5f06683129c4a762ed9bc9a4cfeb2fa9d7394fc446",
+      "fields": {
+        "status": {
+          "ref": "string",
+          "id": "st.wxwxj7g97v"
+        },
+        "title": {
+          "ref": "string",
+          "id": "st.7mpayr0007"
+        },
+        "description": {
+          "ref": "string",
+          "id": "st.7mpayr0008"
+        },
+        "actions[].label": {
+          "ref": "string",
+          "id": "st.7mpayr0002"
+        }
+      }
     }
   ],
   "externalRecords": [
