@@ -3,7 +3,7 @@ import { useEffect, useMemo, useState, type CSSProperties, type ReactNode } from
 import { Banner } from "@clossys/designer/components";
 import { ShellCopyProvider, surfaceRuntimeCallbacks, surfaceRendererId } from "@clossys/designer/frames";
 import { checkConsumerRuntimePorts, runtimeHash } from "@clossys/designer/catalog";
-import type { RuntimeContentRef, RuntimeRenderInput } from "@clossys/designer/catalog";
+import type { ConsumerRuntimePorts, RuntimeContentRef, RuntimeRenderInput } from "@clossys/designer/catalog";
 import { checkedDesignerRouteData, routeBreakpointPixels, routeBreakpointsReady } from "@clossys/designer/studio/route/server";
 import type { DesignerRoutePageProps } from "@clossys/designer/studio/route";
 import { withCompleteRouteNavigation } from "../complete-route-navigation.js";
@@ -34,6 +34,8 @@ export interface PublisherRouteServerData extends CompleteRouteServerData {
   };
 }
 export interface PublisherRoutePageProps {
+  /** Live exports from this consumer library's emitted component-index; never serialized. */
+  readonly components: ConsumerRuntimePorts<ReactNode>["components"];
   readonly serverData: PublisherRouteServerData;
   readonly initialSession: DesignerRoutePageProps["initialSession"];
   /** Live host callback; never part of the serialized server data. */
@@ -41,7 +43,7 @@ export interface PublisherRoutePageProps {
 }
 /** Complete local Publisher workspace. Server facts create local read-only
  * lookup ports; no controller, callback, receipt or publication authority crosses. */
-export function PublisherRoutePage({ serverData, initialSession, copyResolver }: PublisherRoutePageProps) {
+export function PublisherRoutePage({ serverData, initialSession, copyResolver, components }: PublisherRoutePageProps) {
   const checked = useMemo(() => {
     if (!initialSession) return { status: "pending" as const };
     try {
@@ -52,9 +54,9 @@ export function PublisherRoutePage({ serverData, initialSession, copyResolver }:
   }, [serverData, initialSession]);
   if (checked.status === "pending") return <Banner>Loading Publisher session</Banner>;
   if (checked.status === "refused") return <Banner variant="danger">Publisher initial data does not match its session</Banner>;
-  return <PublisherRouteSurface serverData={serverData} checked={checked.value} copyResolver={copyResolver} />;
+  return <PublisherRouteSurface components={components} serverData={serverData} checked={checked.value} copyResolver={copyResolver} />;
 }
-function PublisherRouteSurface({ serverData, checked, copyResolver }: { serverData: PublisherRouteServerData; checked: ReturnType<typeof checkedDesignerRouteData>; copyResolver?: PublisherPageProps["copyResolver"] }) {
+function PublisherRouteSurface({ serverData, checked, copyResolver, components }: { components: ConsumerRuntimePorts<ReactNode>["components"]; serverData: PublisherRouteServerData; checked: ReturnType<typeof checkedDesignerRouteData>; copyResolver?: PublisherPageProps["copyResolver"] }) {
   const { profile, contracts } = checked, data = checked.data, workspace = serverData.publisher;
   const deterministic = useMemo(() => routeBreakpointPixels(profile, data.rootFontSizeToken), [profile, data.rootFontSizeToken]);
   const [measured, setMeasured] = useState<{ profile: typeof profile; values: Readonly<Record<string, number>> }>();
@@ -79,11 +81,11 @@ function PublisherRouteSurface({ serverData, checked, copyResolver }: { serverDa
   const contents = useMemo(() => new Map(data.contents.map(row => [runtimeHash(row.reference), row])), [data.contents]);
   const library = useMemo<ConsumerInstanceLibrary>(() => ({ id: profile.consumer, role: "consumer", resolveFill: (leaf, config) => workspace.fills.find(fill => fill.leaf === leaf && fill.config === config), resolveContent: (ref: ContentRef) => contents.has(runtimeHash(ref)) ? ref : undefined }), [profile.consumer, workspace.fills, contents]);
   const renderers = useMemo(() => surfaceRuntimeCallbacks(data.manifest.fills.map(fill => fill.leaf)), [data.manifest]);
-  const ports = useMemo(() => ({ manifest: data.manifest, renderers, resolveContent: (reference: RuntimeContentRef) => contents.get(runtimeHash(reference)), frameHost: { panels: { inspector: null as ReactNode }, navigate(href: string) {
+  const ports = useMemo<ConsumerRuntimePorts<ReactNode>>(() => ({ components, manifest: data.manifest, renderers, resolveContent: (reference: RuntimeContentRef) => contents.get(runtimeHash(reference)), frameHost: { panels: { inspector: null as ReactNode }, navigate(href: string) {
     const selected = publisherChannelFromHref(href);
     if (selected) { setChannel(selected); return; }
     window.location.assign(new URL(href, window.location.href).href);
-  } } }), [data.manifest, renderers, contents]);
+  } } }), [components, data.manifest, renderers, contents]);
   if (!routeBreakpointsReady(profile, values)) return <Banner>Measuring Publisher breakpoints</Banner>;
   const frame = data.manifest.fills.find(fill => fill.leaf === data.frame.leaf && fill.fill === data.frame.fill && fill.config === data.frame.config && fill.library === profile.consumer);
   const selected = profile.surfaces?.fills[data.frame.leaf];
@@ -95,6 +97,6 @@ function PublisherRouteSurface({ serverData, checked, copyResolver }: { serverDa
     content[slot] = row;
   }
   const body = <PublisherPage key="publisher" copyResolver={copyResolver} {...workspace} library={library} breakpointValues={values} activeChannel={channel} />;
-  const input: RuntimeRenderInput<ReactNode> = { path: "frame", fill: frame, selection: data.frame, content, slots: { main: [body] }, profile, cell: data.cell, host: ports.frameHost };
+  const input: RuntimeRenderInput<ReactNode> = { components: ports.components, path: "frame", fill: frame, selection: data.frame, content, slots: { main: [body] }, profile, cell: data.cell, host: ports.frameHost };
   return <ShellCopyProvider resolver={copyResolver}><div data-route-display="publisher" data-route-authentication="unverified" className="absolute inset-0 min-h-0 min-w-0" style={Object.fromEntries(Object.entries(values).map(([id, px]) => [`--breakpoint-${id.slice("tokens.breakpoint.".length)}`, `${px}px`])) as CSSProperties}>{renderers[frame.renderer.id]!(input)}</div></ShellCopyProvider>;
 }
