@@ -297,7 +297,7 @@ it.each(["designer", "writer", "publisher"] as const)("carries the complete regi
   const registry = { ...completeRoutes(), consumer: data.snapshot.library.source.id };
   const routeNavigation = { registry, routeId: `example.${kind}` };
   const resolver = (ref: Parameters<typeof resolveAdminCopyRef>[0]) => {
-    const value = resolveAdminCopyRef(ref) ?? publisherCopyFixtureResolver(ref);
+    const value = resolveAdminCopyRef(ref, undefined, { target: "preview" }) ?? publisherCopyFixtureResolver(ref);
     return value && { ...value, ref };
   };
   // Later Writer metadata owns finding references that the original Designer
