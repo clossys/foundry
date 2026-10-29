@@ -274,3 +274,56 @@ closure, frame adapter and live loader data. Publisher tests use real Writer
 records and selected renderers with explicit fixture flow declarations. They
 do not qualify a consumer's installed catalog, library refresh, 4503 adoption
 or the full A108 landing check.
+
+## Checked consumer composition and content ownership
+
+The browser `createConsumerPageRegistry` factory constructs unbound preview
+records. It does not establish Publisher slot or candidate ownership.
+
+The server entry `@clossys/publisher/web/registered-route-check` exports
+`prepareConsumerPageRegistry` and `prepareConsumerPageRoute`. Store a version-1
+`ConsumerPageCompositionSnapshot` in each selected candidate's
+`typeSettings.consumerPage`. Its data is the existing registry options without
+the runtime `copy` function: publication, map, configs, taxonomy manifests,
+source references and optional item/brand bindings. Every selected route must
+own the same snapshot bytes. These bytes participate in the existing candidate
+revision digest; there is no separate approval or revision lifecycle.
+
+Use `consumerPageContentSelection(snapshot, routeId, copy)` to obtain the
+canonical frame and ordered Section identities for the existing candidate
+Composition. The legacy Composition identity format names its base config
+`default`; an omitted native config stays omitted in the actual native binding.
+Do not turn this compatibility identity into a named native config.
+
+Pass the content registry, locale, Writer-backed copy and exact
+`{routeId,slotId,candidateId,revision,digest}` selections to
+`prepareConsumerPageRegistry`. It consumes the current active candidates'
+stored data, checks their actual immutable digests and exact route/slot closure,
+and derives the native registry from those bytes. Missing or foreign identities,
+unsnapshotted edits and different composition data refuse. Returned identity and
+composition data is frozen. `prepareConsumerPageRoute` checks the live selection
+again, requires the selected native library version and then runs the existing
+native preparation gates. A copied object or a caller-provided ownership flag
+cannot replace that checked boundary. Assembly identity is not release approval.
+
+A checked config must explicitly choose `pageModule`: a native `SectionFill`,
+or `null` for no page module. The unbound factory alone retains its historical
+TOC default when the property is omitted. A selected module's complete fill and
+references remain part of the candidate revision; native contract and source
+checks still decide whether it can render.
+
+The current app-shell TOC composition has a separate label-contract limitation:
+its renderer requires page-module label content while the selected native
+contract supplies a Section slot. This unit neither injects undeclared content
+nor changes that contract. An explicit no-module composition can render the
+real selected frame; it is not proof that the existing Admin TOC composition or
+persistent frame delivery works. Persistent SSR belongs to its separate runtime
+work. Actual consumer migration, checked source/slot/candidate evidence for all
+routes, and live adoption are still consumer responsibilities.
+
+The native manifest also requires one descriptor per adopted fill identity.
+Different named configurations of the same adopted leaf cannot currently be
+combined in one assembly by duplicating that identity. Consumer choices remain
+subject to this native gate. The acceptance fixture deliberately selects one
+registered header configuration for both taxonomy levels; it does not qualify
+the existing Admin combination of several header configs.
