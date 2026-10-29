@@ -931,6 +931,10 @@ function rewriteSource(input: RewriteInput): RewriteResult {
         tokens.add("tokens.focus-outline.width"); tokens.add("tokens.focus-outline.offset"); tokens.add("tokens.focus-color.default");
         return focusOutline("focus-visible:", "--color-focus-ring");
       }
+      if (input.item === "field" && base === "leading-normal") return bindV2("tokens.line-height.normal", "leading-(--leading-normal)");
+      if ((input.item === "field" || input.item === "label") && base === "leading-snug") return bindV2("tokens.line-height.snug", "leading-(--leading-snug)");
+      if (input.item === "label" && base === "leading-none") return bindV2("tokens.line-height.heading", "leading-(--leading-heading)");
+      if (input.item === "button-group" && /^border-[lst]-0$/.test(base)) return value;
       const bindings: Record<string, [string, string]> = {
         "tracking-tight": ["tokens.letter-spacing.meta", "tracking-(--tracking-meta)"],
         "tracking-widest": ["tokens.letter-spacing.label", "tracking-(--tracking-label)"],

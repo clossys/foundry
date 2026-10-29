@@ -1,0 +1,135 @@
+{
+  "$extensions": {
+    "com.clossys.fill": {
+      "author": "foundry",
+      "builtOn": [
+        "components.button",
+        "components.calendar",
+        "components.date-field",
+        "components.popover"
+      ],
+      "conforms": [],
+      "evidence": [],
+      "id": "shadcn@aria/components.date-picker",
+      "license": "MIT",
+      "mode": "implementation",
+      "originKinds": [
+        "composed"
+      ],
+      "relation": "same-contract",
+      "slot": "components.date-picker",
+      "source": "shadcn@aria",
+      "sourceAddress": "rules/components.date-picker.json#compose:date-picker@2",
+      "status": "draft",
+      "trust": "foundry"
+    }
+  },
+  "components": {
+    "date-picker": {
+      "composes": [
+        "components.button",
+        "components.calendar",
+        "components.date-field",
+        "components.popover"
+      ],
+      "deps": [
+        {
+          "license": "MIT",
+          "name": "react",
+          "version": ">=18"
+        },
+        {
+          "license": "Apache-2.0",
+          "name": "react-aria-components",
+          "version": "^1.19.0"
+        }
+      ],
+      "impl": {
+        "entry": "components/date-picker/date-picker.tsx",
+        "export": "DatePicker",
+        "kind": "source"
+      },
+      "license": "MIT",
+      "members": [
+        "selection.single",
+        "selection.range"
+      ],
+      "notice": "notices/date-picker.md",
+      "outputSha256": [
+        {
+          "path": "components/date-picker/date-picker.tsx",
+          "sha256": "7ad649d639366e3b6879ae223bdb2ffd437076f397baf1921c3255fd7a36b11a"
+        },
+        {
+          "path": "notices/date-picker.md",
+          "sha256": "5e06e429982502e6d145fd6c19c2d06dbb2ff3efe2061a7e5b36fd10acfa4072"
+        }
+      ],
+      "propMap": {
+        "selection.single": "DatePicker",
+        "selection.range": "DateRangePicker"
+      },
+      "props": [
+        "label",
+        "triggerLabel",
+        "description",
+        "errorMessage",
+        "children",
+        "startLabel",
+        "endLabel",
+        "id",
+        "className",
+        "style",
+        "aria-label",
+        "aria-labelledby",
+        "aria-describedby",
+        "value",
+        "defaultValue",
+        "onChange",
+        "validate",
+        "validationBehavior",
+        "isInvalid",
+        "isDisabled",
+        "isReadOnly",
+        "isRequired",
+        "granularity",
+        "minValue",
+        "maxValue",
+        "placeholderValue",
+        "hideTimeZone",
+        "hourCycle",
+        "shouldForceLeadingZeros",
+        "isOpen",
+        "defaultOpen",
+        "onOpenChange",
+        "onFocus",
+        "onBlur",
+        "onFocusChange",
+        "onKeyDown",
+        "onKeyUp",
+        "autoFocus",
+        "name",
+        "form"
+      ],
+      "reads": {
+        "tokens": [],
+        "assets": [],
+        "components": [
+          "components.button",
+          "components.calendar",
+          "components.date-field",
+          "components.popover"
+        ]
+      },
+      "root": "rac:DatePicker",
+      "slot": "components.date-picker",
+      "source": "shadcn@aria",
+      "secondaryExports": [
+        {
+          "name": "DateRangePicker",
+          "export": "DateRangePicker"
+        }
+      ]
+    }
+  }
+}

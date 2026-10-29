@@ -1,0 +1,132 @@
+{
+  "$extensions": {
+    "com.clossys.fill": {
+      "id": "shadcn@aria/components.form",
+      "slot": "components.form",
+      "source": "shadcn@aria",
+      "mode": "implementation",
+      "sourceAddress": "https://github.com/shadcn-ui/ui/blob/96da9cc7f1aa10580a3741664e2a77c721206c00/apps/v4/registry/bases/aria/ui/field.tsx",
+      "relation": "same-contract",
+      "builtOn": [],
+      "conforms": [],
+      "evidence": [],
+      "author": "third-party",
+      "trust": "pinned-upstream",
+      "license": "MIT",
+      "status": "draft",
+      "pin": {
+        "url": "https://github.com/shadcn-ui/ui",
+        "commit": "96da9cc7f1aa10580a3741664e2a77c721206c00",
+        "sha256": "1019104c41eaef8ffae109e2ece95be87a7a637e3a9bac049d7a9fb54bfb7275"
+      },
+      "unmapped": [],
+      "originKinds": [
+        "composed"
+      ]
+    }
+  },
+  "components": {
+    "form": {
+      "slot": "components.form",
+      "source": "shadcn@aria",
+      "root": "rac:Form",
+      "members": [
+        "validation.native",
+        "validation.aria"
+      ],
+      "props": [],
+      "propMap": {
+        "validation.native": "Form.validationBehavior=native",
+        "validation.aria": "Form.validationBehavior=aria"
+      },
+      "reads": {
+        "tokens": [],
+        "assets": [],
+        "components": [
+          "components.field"
+        ]
+      },
+      "composes": [
+        "components.field"
+      ],
+      "impl": {
+        "kind": "source",
+        "entry": "components/form/form.tsx",
+        "export": "Form"
+      },
+      "license": "MIT",
+      "pin": {
+        "url": "https://github.com/shadcn-ui/ui",
+        "commit": "96da9cc7f1aa10580a3741664e2a77c721206c00",
+        "files": [
+          {
+            "path": "apps/v4/registry/bases/aria/ui/field.tsx",
+            "sha256": "1019104c41eaef8ffae109e2ece95be87a7a637e3a9bac049d7a9fb54bfb7275"
+          },
+          {
+            "path": "apps/v4/registry/bases/aria/ui/label.tsx",
+            "sha256": "165c4ae2584ec47e5d64107cc8fd6d20d707ed4e24098d0dae67bfd43f6cd5aa"
+          },
+          {
+            "path": "apps/v4/registry/bases/aria/ui/separator.tsx",
+            "sha256": "482ee8e50eaf1095fb6874ac18d430704820d2444a3944e1f93f7ab99e39a793"
+          },
+          {
+            "path": "apps/v4/registry/styles/style-nova.css",
+            "sha256": "fd9803ec398290c306b377a46a769cad0c7ff024bf6a626993c113cacc20f16e"
+          },
+          {
+            "path": "LICENSE.md",
+            "sha256": "1564074e13439397221ffd522e2e504d56561994a23d371aa5e3ad43e4f5423f"
+          }
+        ]
+      },
+      "notice": "notices/form.md",
+      "transform": "shadcn-aria-rewrite@2",
+      "item": "form",
+      "deps": [
+        {
+          "name": "react",
+          "version": "19.3.0",
+          "license": "MIT"
+        },
+        {
+          "name": "react-aria-components",
+          "version": "1.21.1",
+          "license": "Apache-2.0"
+        },
+        {
+          "name": "class-variance-authority",
+          "version": "0.7.1",
+          "license": "Apache-2.0"
+        },
+        {
+          "name": "clsx",
+          "version": "2.1.1",
+          "license": "MIT"
+        },
+        {
+          "name": "tailwind-merge",
+          "version": "3.7.0",
+          "license": "MIT"
+        }
+      ],
+      "outputSha256": [
+        {
+          "path": "components/form/form.tsx",
+          "sha256": "dbc2d262f341dda75424c7db92b278e186589ddd6f88423b2c7b473f797ccecb"
+        },
+        {
+          "path": "notices/form.md",
+          "sha256": "0622dbb67cbca61b6c160be781485d59b3b51a49cdf5bae0132e17a0ecbfe42c"
+        }
+      ],
+      "blockers": [],
+      "rac": {
+        "instance": "react-aria-components",
+        "range": "^1.21.1",
+        "peer": false
+      }
+    }
+  }
+}

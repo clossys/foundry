@@ -1,0 +1,18 @@
+{
+  "id": "compose:form@1",
+  "kind": "compose",
+  "slot": "components.form",
+  "inputs": [
+    "components.field"
+  ],
+  "files": [
+    {
+      "path": "components/form/form.tsx",
+      "content": "import { type ComponentProps } from \"react\";\nimport { Form as Root } from \"react-aria-components\";\nimport { FieldGroup, FieldSet } from \"../field/index\";\nexport function Form({ children, ...props }: ComponentProps<typeof Root>) {\n return <Root {...props}><FieldSet><FieldGroup>{children}</FieldGroup></FieldSet></Root>;\n}\n"
+    },
+    {
+      "path": "notices/form.md",
+      "content": "# Third-party notice\n\nSource: https://github.com/shadcn-ui/ui\nCommit: 96da9cc7f1aa10580a3741664e2a77c721206c00\nTransform: shadcn-aria-rewrite@2\n\nMIT License\n\nCopyright (c) 2023 shadcn\n\nPermission is hereby granted, free of charge, to any person obtaining a copy\nof this software and associated documentation files (the \"Software\"), to deal\nin the Software without restriction, including without limitation the rights\nto use, copy, modify, merge, publish, distribute, sublicense, and/or sell\ncopies of the Software, and to permit persons to whom the Software is\nfurnished to do so, subject to the following conditions:\n\nThe above copyright notice and this permission notice shall be included in all\ncopies or substantial portions of the Software.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR\nIMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,\nFITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE\nAUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER\nLIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,\nOUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE\nSOFTWARE.\n"
+    }
+  ]
+}

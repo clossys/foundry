@@ -30,6 +30,19 @@ interface Token { text: string; quoted?: true }
  * or component qualification; unknown output still uses the bounded parser.
  */
 const selectedFunctionSources: Readonly<Record<string, { sha256: string; functions: readonly string[] }>> = {
+  "components/field/field.tsx": {
+    sha256: "153fe2aa79b8a926fa80400f8fe2cddeaf9344e0334393b8e8ee9169b8a4a881",
+    functions: ["Field","FieldGroup","FieldSet"],
+  },
+  "components/date-field/date-field.tsx": {
+    sha256: "151662155d65727ad390522a54688530c0b79191ad7f406857dd3199b6e1f3f9",
+    functions: ["DateField","TimeField"],
+  },
+  "components/date-picker/date-picker.tsx": {
+    sha256: "7ad649d639366e3b6879ae223bdb2ffd437076f397baf1921c3255fd7a36b11a",
+    functions: ["DatePicker","DateRangePicker"],
+  },
+
   "components/sidebar/sidebar.tsx": {
     sha256: "50e6d8e099bfdd64393ea6141fe84a89ce580b77756d8773f9c1be8130f2339f",
     functions: ["Sidebar", "SidebarContent", "SidebarFooter", "SidebarGroup", "SidebarGroupAction", "SidebarGroupContent", "SidebarGroupLabel", "SidebarHeader", "SidebarInput", "SidebarInset", "SidebarMenu", "SidebarMenuAction", "SidebarMenuBadge", "SidebarMenuButton", "SidebarMenuItem", "SidebarMenuSkeleton", "SidebarMenuSub", "SidebarMenuSubButton", "SidebarMenuSubItem", "SidebarProvider", "SidebarRail", "SidebarSeparator", "SidebarTrigger"],

@@ -1,0 +1,159 @@
+{
+  "$extensions": {
+    "com.clossys.fill": {
+      "id": "shadcn@aria/components.native-action",
+      "slot": "components.native-action",
+      "source": "shadcn@aria",
+      "mode": "implementation",
+      "sourceAddress": "https://github.com/shadcn-ui/ui/blob/96da9cc7f1aa10580a3741664e2a77c721206c00/apps/v4/registry/bases/aria/ui/button.tsx",
+      "relation": "same-contract",
+      "builtOn": [],
+      "conforms": [],
+      "evidence": [],
+      "author": "third-party",
+      "trust": "pinned-upstream",
+      "license": "MIT",
+      "status": "draft",
+      "pin": {
+        "url": "https://github.com/shadcn-ui/ui",
+        "commit": "96da9cc7f1aa10580a3741664e2a77c721206c00",
+        "sha256": "8bcff6f70522e6e6cb0ff67f050830ea1a93596403d2d9b035f3b543c7a42e2c"
+      },
+      "unmapped": [],
+      "originKinds": [
+        "composed"
+      ]
+    }
+  },
+  "components": {
+    "native-action": {
+      "slot": "components.native-action",
+      "source": "shadcn@aria",
+      "root": "engine:none",
+      "members": [
+        "appearance.primary",
+        "size.md",
+        "ground.base",
+        "state.hover",
+        "state.pressed",
+        "state.focus-visible",
+        "state.disabled"
+      ],
+      "props": [],
+      "propMap": {
+        "appearance.primary": "NativeAction",
+        "size.md": "NativeAction",
+        "ground.base": "NativeAction",
+        "state.hover": "NativeAction:hovered",
+        "state.pressed": "NativeAction:pressed",
+        "state.focus-visible": "NativeAction:focus-visible",
+        "state.disabled": "NativeAction.disabled=true"
+      },
+      "reads": {
+        "tokens": [
+          "tokens.accent-color.text",
+          "tokens.action-color.default",
+          "tokens.border-color.base",
+          "tokens.border-color.strong",
+          "tokens.border-width.hairline",
+          "tokens.caption-size.default",
+          "tokens.control-color.tonal",
+          "tokens.control-radius.default",
+          "tokens.control-size.h-lg",
+          "tokens.control-size.h-md",
+          "tokens.control-size.h-sm",
+          "tokens.duration.default",
+          "tokens.easing.default",
+          "tokens.focus-color.default",
+          "tokens.focus-outline.offset",
+          "tokens.focus-outline.width",
+          "tokens.font-size.sm",
+          "tokens.font-size.xs",
+          "tokens.font-weight.medium",
+          "tokens.spacing.lg",
+          "tokens.spacing.md",
+          "tokens.spacing.sm",
+          "tokens.spacing.xl",
+          "tokens.spacing.xs",
+          "tokens.state-opacity.disabled",
+          "tokens.status-color.danger",
+          "tokens.surface-color.base",
+          "tokens.surface-color.sunken",
+          "tokens.text-color.on-action",
+          "tokens.text-color.primary"
+        ],
+        "assets": [],
+        "components": [
+          "components.button"
+        ]
+      },
+      "composes": [
+        "components.button"
+      ],
+      "impl": {
+        "kind": "source",
+        "entry": "components/native-action/native-action.tsx",
+        "export": "NativeAction"
+      },
+      "license": "MIT",
+      "pin": {
+        "url": "https://github.com/shadcn-ui/ui",
+        "commit": "96da9cc7f1aa10580a3741664e2a77c721206c00",
+        "files": [
+          {
+            "path": "apps/v4/registry/bases/aria/ui/button.tsx",
+            "sha256": "8bcff6f70522e6e6cb0ff67f050830ea1a93596403d2d9b035f3b543c7a42e2c"
+          },
+          {
+            "path": "apps/v4/registry/styles/style-nova.css",
+            "sha256": "fd9803ec398290c306b377a46a769cad0c7ff024bf6a626993c113cacc20f16e"
+          },
+          {
+            "path": "LICENSE.md",
+            "sha256": "1564074e13439397221ffd522e2e504d56561994a23d371aa5e3ad43e4f5423f"
+          }
+        ]
+      },
+      "notice": "notices/native-action.md",
+      "transform": "shadcn-aria-rewrite@2",
+      "item": "native-action",
+      "deps": [
+        {
+          "name": "react",
+          "version": "19.3.0",
+          "license": "MIT"
+        },
+        {
+          "name": "class-variance-authority",
+          "version": "0.7.1",
+          "license": "Apache-2.0"
+        },
+        {
+          "name": "clsx",
+          "version": "2.1.1",
+          "license": "MIT"
+        },
+        {
+          "name": "tailwind-merge",
+          "version": "3.7.0",
+          "license": "MIT"
+        }
+      ],
+      "outputSha256": [
+        {
+          "path": "components/native-action/button-variants.tsx",
+          "sha256": "e8bb274aaf844d2b91c7ae43ad34f2fc0f5bf5c722dbe74ece8dd026ce8698c5"
+        },
+        {
+          "path": "components/native-action/native-action.tsx",
+          "sha256": "1244eab3d5ccc9da89faa75d8c08d7b7739d1365f19fda24ab6fef16e40cff2b"
+        },
+        {
+          "path": "notices/native-action.md",
+          "sha256": "0622dbb67cbca61b6c160be781485d59b3b51a49cdf5bae0132e17a0ecbfe42c"
+        }
+      ],
+      "blockers": []
+    }
+  }
+}

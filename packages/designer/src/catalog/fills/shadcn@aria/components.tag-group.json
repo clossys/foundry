@@ -1,0 +1,181 @@
+{
+  "$extensions": {
+    "com.clossys.fill": {
+      "id": "shadcn@aria/components.tag-group",
+      "slot": "components.tag-group",
+      "source": "shadcn@aria",
+      "mode": "implementation",
+      "sourceAddress": "https://github.com/shadcn-ui/ui/blob/96da9cc7f1aa10580a3741664e2a77c721206c00/apps/v4/registry/bases/aria/ui/badge.tsx",
+      "relation": "same-contract",
+      "builtOn": [],
+      "conforms": [],
+      "evidence": [],
+      "author": "third-party",
+      "trust": "pinned-upstream",
+      "license": "MIT",
+      "status": "draft",
+      "pin": {
+        "url": "https://github.com/shadcn-ui/ui",
+        "commit": "96da9cc7f1aa10580a3741664e2a77c721206c00",
+        "sha256": "7771524b64abcdf8dd0d1a0dad02ae5dd78b6865ec69be6d19ff204e73302c64"
+      },
+      "unmapped": []
+    }
+  },
+  "components": {
+    "tag-group": {
+      "slot": "components.tag-group",
+      "source": "shadcn@aria",
+      "root": "rac:TagGroup",
+      "members": [
+        "removable",
+        "selection.none",
+        "selection.single",
+        "selection.multiple"
+      ],
+      "props": [],
+      "propMap": {
+        "removable": "TagGroup.removable=true",
+        "selection.none": "TagGroup.selectionMode=none",
+        "selection.single": "TagGroup.selectionMode=single",
+        "selection.multiple": "TagGroup.selectionMode=multiple"
+      },
+      "reads": {
+        "tokens": [
+          "tokens.accent-color.text",
+          "tokens.action-color.default",
+          "tokens.border-color.base",
+          "tokens.border-color.strong",
+          "tokens.border-width.hairline",
+          "tokens.caption-size.default",
+          "tokens.control-color.tonal",
+          "tokens.control-radius.default",
+          "tokens.control-size.h-lg",
+          "tokens.control-size.h-md",
+          "tokens.control-size.h-sm",
+          "tokens.duration.default",
+          "tokens.easing.default",
+          "tokens.focus-color.default",
+          "tokens.focus-outline.offset",
+          "tokens.focus-outline.width",
+          "tokens.font-size.sm",
+          "tokens.font-size.xs",
+          "tokens.font-weight.medium",
+          "tokens.spacing.lg",
+          "tokens.spacing.md",
+          "tokens.spacing.sm",
+          "tokens.spacing.xl",
+          "tokens.spacing.xs",
+          "tokens.state-opacity.disabled",
+          "tokens.status-color.danger",
+          "tokens.surface-color.base",
+          "tokens.surface-color.sunken",
+          "tokens.text-color.muted",
+          "tokens.text-color.on-action",
+          "tokens.text-color.primary"
+        ],
+        "assets": [],
+        "components": []
+      },
+      "composes": [],
+      "impl": {
+        "kind": "source",
+        "entry": "components/tag-group/tag-group.tsx",
+        "export": "TagGroup"
+      },
+      "license": "MIT",
+      "pin": {
+        "url": "https://github.com/shadcn-ui/ui",
+        "commit": "96da9cc7f1aa10580a3741664e2a77c721206c00",
+        "files": [
+          {
+            "path": "apps/v4/registry/bases/aria/ui/badge.tsx",
+            "sha256": "7771524b64abcdf8dd0d1a0dad02ae5dd78b6865ec69be6d19ff204e73302c64"
+          },
+          {
+            "path": "apps/v4/registry/bases/aria/ui/button.tsx",
+            "sha256": "8bcff6f70522e6e6cb0ff67f050830ea1a93596403d2d9b035f3b543c7a42e2c"
+          },
+          {
+            "path": "apps/v4/registry/styles/style-nova.css",
+            "sha256": "fd9803ec398290c306b377a46a769cad0c7ff024bf6a626993c113cacc20f16e"
+          },
+          {
+            "path": "LICENSE.md",
+            "sha256": "1564074e13439397221ffd522e2e504d56561994a23d371aa5e3ad43e4f5423f"
+          }
+        ]
+      },
+      "notice": "notices/SHADCN-ARIA-INPUTS.md",
+      "transform": "shadcn-aria-rewrite@2",
+      "item": "tag-group",
+      "deps": [
+        {
+          "name": "react",
+          "version": "19.3.0",
+          "license": "MIT"
+        },
+        {
+          "name": "react-aria-components",
+          "version": "1.21.1",
+          "license": "Apache-2.0"
+        },
+        {
+          "name": "class-variance-authority",
+          "version": "0.7.1",
+          "license": "Apache-2.0"
+        },
+        {
+          "name": "clsx",
+          "version": "2.1.1",
+          "license": "MIT"
+        },
+        {
+          "name": "tailwind-merge",
+          "version": "3.7.0",
+          "license": "MIT"
+        }
+      ],
+      "outputSha256": [
+        {
+          "path": "components/_parts/rail-u1-badge/badge.tsx",
+          "sha256": "dc823199ca303a60e6516398c373c1cd7ffba2279dee459a5aba97f5dedadda9"
+        },
+        {
+          "path": "components/_parts/rail-u1-badge/index.ts",
+          "sha256": "0f1dd2d9653fc50b50e49749f80fc7e680382c40e54eef4c46eefcd93a1e83d5"
+        },
+        {
+          "path": "components/_parts/rail-u1-button/button.tsx",
+          "sha256": "76ee9cfca6a880eb301fee3469efca70448b1e7bc81c511e9ed742774628bd94"
+        },
+        {
+          "path": "components/_parts/rail-u1-button/index.ts",
+          "sha256": "7a049afa00ae6977d11e5ee582dc12eecaec524cd1fcc955bc48602161a5a46d"
+        },
+        {
+          "path": "components/_parts/rail-u1-copy/index.ts",
+          "sha256": "a3b223466ea3c4bcfc09a486fd02d9849110d13fcfcd3a5ac0d3f8294cfbdb5e"
+        },
+        {
+          "path": "components/_parts/rail-u1-utils/index.ts",
+          "sha256": "d3753f708b15cc1ec47bc3136827134b702e2069eebdb0ddefb1806b95d7c1d9"
+        },
+        {
+          "path": "components/tag-group/tag-group.tsx",
+          "sha256": "fb039d357aec57c773874bbe11a9e8636c17e2b1bf2071e7404174085d4d0d82"
+        },
+        {
+          "path": "notices/SHADCN-ARIA-INPUTS.md",
+          "sha256": "0622dbb67cbca61b6c160be781485d59b3b51a49cdf5bae0132e17a0ecbfe42c"
+        }
+      ],
+      "blockers": [],
+      "rac": {
+        "instance": "react-aria-components",
+        "range": "^1.21.1",
+        "peer": false
+      }
+    }
+  }
+}
