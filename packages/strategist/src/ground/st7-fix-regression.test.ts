@@ -5,7 +5,6 @@ import { afterEach, beforeEach, expect, it, vi } from "vitest";
 import { main } from "../cli.js";
 import { buildFactIndex, isTracedSurfaceForm, type FactIndex } from "../fact-index.js";
 import type { Finding } from "../format/types.js";
-import type { Fact } from "../schema.js";
 import { readStrategyRoot } from "../store.js";
 import { checkWontClaimDrift } from "../wont-claim-drift.js";
 import { stageCell, stageFinding, stageWontClaimCells } from "./fixtures.js";
@@ -90,18 +89,10 @@ it.each(["missing-findings", "malformed-findings", "partial-findings", "empty-sc
   },
 );
 
-it("preserves legacy Fact-only lookup types and infers Finding lookup types", () => {
-  const fact: Fact = { key: "customers", label: "Customers", value: 42, source: "count.csv", lastUpdatedAt: "2026-10-29" };
-  const inferred = buildFactIndex([fact]);
-  // These assignments are compile assertions, checked by the focused tsc invocation.
-  const legacy: FactIndex = inferred;
-  const key: string | undefined = inferred.byKey.get("customers")?.key;
-  const label: string | undefined = legacy.byKey.get("customers")?.label;
-  expect([key, label]).toEqual(["customers", "Customers"]);
-  expect(inferred.byKey.get("missing")).toBeUndefined();
+it("infers Finding lookup types and uses Finding as the default", () => {
   stageFinding(root);
   const findings: Finding[] = readStrategyRoot(root).findings;
-  const findingIndex = buildFactIndex(findings);
+  const findingIndex: FactIndex = buildFactIndex(findings);
   const finding: Finding | undefined = findingIndex.byKey.get("active-customers");
   const id: string | undefined = findingIndex.byKey.get("active-customers")?.id;
   expect(finding).toBe(findings[0]);

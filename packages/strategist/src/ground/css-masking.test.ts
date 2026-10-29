@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { blankCssDeclPercents } from "./css-decl-percent.js";
-import { checkFactsTraceability } from "./facts-gate.js";
+import { blankCssDeclPercents } from "../facts-gate.js";
+import { checkGrounding } from "../facts-gate.js";
 
 // The regex below is the version from #1680, kept here verbatim as the oracle.
 // `blankCssDeclPercents` must return exactly what this replace returns.
@@ -132,8 +132,8 @@ describe("blankCssDeclPercents stays fast on adversarial lines", () => {
       expect(ms).toBeLessThan(BUDGET_MS);
     });
 
-    it(`${name}: through checkFactsTraceability`, () => {
-      const { result, ms } = best(() => checkFactsTraceability([{ path: "card.css", content: text }], []));
+    it(`${name}: through checkGrounding`, () => {
+      const { result, ms } = best(() => checkGrounding([{ path: "card.css", content: text }], []));
       expect(result.claimsScanned).toBe(0);
       expect(ms).toBeLessThan(BUDGET_MS);
     });

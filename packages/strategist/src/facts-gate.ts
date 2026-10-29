@@ -1,42 +1,10 @@
-/**
- * `checkFactsTraceability` — the gate that makes the schema in `schema.ts`
- * worth having. Pure: takes already-read file contents and an already-built
- * `FactIndex` (see `fact-index.ts`), does no I/O of its own, and never
- * throws on any input shape — the same discipline `evaluateCatalog` holds
- * to in `@example/catalog`. `scanStrategyDirectory` (see `scan.ts`)
- * is the I/O half that gathers `ScannedFile[]` from a real directory.
- *
- * THE RULE, in one sentence: a currency amount, percentage, multiplier, or
- * large/labelled count, and a small closed set of absolute/superlative
- * phrases ("the only", "the first", "the largest", ...), must either
- * literally match a registered fact's value or alias, or be annotated with
- * a `fact:<key>` comment citing a real entry in `facts.json` on the same
- * line — anything else is reported as untraced.
- *
- * WHAT THIS DELIBERATELY DOES NOT CATCH, and why:
- *
- *   - Bare small numbers with no currency/percent/multiplier/grouping/unit
- *     word ("Step 3", "React 18", a port number, a heading numeral). The
- *     alternative — flagging every digit — was rejected explicitly: a gate
- *     that fires on every digit in every sentence gets disabled, and a
- *     disabled gate protects nothing. This gate would rather miss a genuine
- *     but oddly-phrased claim than train its own consumers to ignore it.
- *   - Free-form named claims ("our biggest customer is Acme Corp") that
- *     aren't shaped like one of the closed superlative phrases below. Open-
- *     ended named-entity recognition is a different, much harder problem
- *     (and a much noisier one) than this gate takes on; the superlative
- *     list instead targets the specific, high-risk phrasing pattern where
- *     an absolute claim is made WITHOUT necessarily naming a number at all
- *     ("the only platform that...", "the fastest-growing..."). A named
- *     claim that isn't phrased this way is out of scope, full stop — see
- *     the package README's "Non-goals" section.
- *   - Anything inside a fenced code block or inline code span, or an
- *     `http(s)://` URL. Numbers there are code, not claims about the
- *     product.
+/** Grounding scans numeric and superlative claims against findings.
+ * Numeric detection, citation matching, ignores and CSS masking retain their
+ * established behavior. Finding values, units and aliases provide evidence.
  */
 
-import { blankCssDeclPercents } from "./css-decl-percent.js";
-import { buildFactIndex, isTracedSurfaceForm, type FactIndex, type GroundEvidence } from "./fact-index.js";
+import { buildFactIndex, isTracedSurfaceForm, type FactIndex } from "./fact-index.js";
+import type { Finding } from "./format/types.js";
 
 export interface ScannedFile {
   /** A stable label for this file in reported findings — typically a repo-relative path. Never interpreted as a real filesystem path by this function. */
@@ -187,17 +155,17 @@ function blankStyleLiteralRegions(text: string): string {
 
 /**
  * Scans `files` for claim-shaped prose and evaluates each claim against
- * `facts`. Never throws: a `Fact[]` that is empty is valid input (every
+ * `facts`. Never throws: a finding registry that is empty is valid input (every
  * claim in `files` will simply be untraced), and any file content — however
  * malformed — is scanned as plain text with no assumption about its shape.
  */
-export function checkFactsTraceability(
+export function checkGrounding(
   files: ScannedFile[],
-  facts: readonly GroundEvidence[],
+  facts: readonly Finding[],
   options: FactsGateOptions = {},
 ): FactsGateResult {
   const scanStyleLiterals = options.scanStyleLiterals === true;
-  const index: FactIndex<GroundEvidence> = buildFactIndex(facts);
+  const index: FactIndex<Finding> = buildFactIndex(facts);
   const findings: FactsGateFinding[] = [];
   const ignored: FactsGateIgnored[] = [];
   let claimsScanned = 0;
@@ -276,4 +244,133 @@ export function checkFactsTraceability(
   }
 
   return { findings, ignored, filesScanned: files.length, claimsScanned };
+}
+
+// Blanks declaration-shaped `prop: ... N%` regions, where a trailing `%` is a
+// CSS dimension and not a claim.
+//
+// It returns exactly what this replace returns, with each match overwritten by
+// spaces of the same length:
+//
+//   /\b[\w-]+\s*:\s*[^;`"'}\n]*(?<!\d)(?<!\d\.)\d+(?:\.\d+)*\s*%/g
+//
+// (the regex from #1680, which the package's tests keep as an oracle). The
+// regex took quadratic time on a line with many declaration starts, because
+// each start rescanned its whole segment. This is one forward pass over
+// precomputed tables instead:
+//
+// - A match starts at the first word character of a `[\w-]+` run that is
+//   followed by optional whitespace and a `:`.
+// - Its middle cannot cross `;`, a backtick, `"`, `'`, `}` or a newline.
+// - Its tail is a number (digits, then any number of `.digits` groups) that
+//   starts at a number's first digit, then optional whitespace, then `%`. So
+//   `a: 3% 50%` blanks through `50%`, `x: 1.2.3%` blanks, and `grid: 1fr 2 50%`
+//   blanks.
+// - The match ends at the last such tail before the segment ends. The tail is
+//   found by table lookup, not by trying each position.
+
+const CH_DOT = 46;
+const CH_COLON = 58;
+const CH_PERCENT = 37;
+
+function isDigit(c: number): boolean {
+  return c >= 48 && c <= 57;
+}
+
+function isNameChar(c: number): boolean {
+  return isWordChar(c) || c === 45;
+}
+
+function isWordChar(c: number): boolean {
+  return isDigit(c) || (c >= 65 && c <= 90) || (c >= 97 && c <= 122) || c === 95;
+}
+
+/** The characters the middle of a match cannot contain: `;` `` ` `` `"` `'` `}` and a newline. */
+function isSegmentEnd(c: number): boolean {
+  return c === 59 || c === 96 || c === 34 || c === 39 || c === 125 || c === 10;
+}
+
+/** The characters `\s` matches. */
+function isSpace(c: number): boolean {
+  return (
+    c === 32 ||
+    (c >= 9 && c <= 13) ||
+    c === 0xa0 ||
+    c === 0x1680 ||
+    (c >= 0x2000 && c <= 0x200a) ||
+    c === 0x2028 ||
+    c === 0x2029 ||
+    c === 0x202f ||
+    c === 0x205f ||
+    c === 0x3000 ||
+    c === 0xfeff
+  );
+}
+
+export function blankCssDeclPercents(text: string): string {
+  if (!text.includes("%")) return text;
+  const n = text.length;
+
+  // tailEnd[p] is the index just past the `%` when a valid tail starts at p,
+  // else 0. lastTail[i] is the largest valid tail start below i, else -1.
+  // segmentEnd[i] is the first segment-ending character at or after i, else n.
+  const tailEnd = new Int32Array(n);
+  const lastTail = new Int32Array(n + 1);
+  const segmentEnd = new Int32Array(n + 1);
+
+  lastTail[0] = -1;
+  for (let p = 0; p < n; p++) {
+    lastTail[p + 1] = lastTail[p] as number;
+    if (!isDigit(text.charCodeAt(p))) continue;
+    // Only a number's first digit starts a tail: not after a digit, and not
+    // after `digit.` (the later groups of `1.2.3`). Each number is walked once.
+    if (p >= 1 && isDigit(text.charCodeAt(p - 1))) continue;
+    if (p >= 2 && text.charCodeAt(p - 1) === CH_DOT && isDigit(text.charCodeAt(p - 2))) continue;
+    let j = p;
+    while (j < n && isDigit(text.charCodeAt(j))) j++;
+    while (j + 1 < n && text.charCodeAt(j) === CH_DOT && isDigit(text.charCodeAt(j + 1))) {
+      j++;
+      while (j < n && isDigit(text.charCodeAt(j))) j++;
+    }
+    while (j < n && isSpace(text.charCodeAt(j))) j++;
+    if (j < n && text.charCodeAt(j) === CH_PERCENT) {
+      tailEnd[p] = j + 1;
+      lastTail[p + 1] = p;
+    }
+  }
+
+  segmentEnd[n] = n;
+  for (let i = n - 1; i >= 0; i--) {
+    segmentEnd[i] = isSegmentEnd(text.charCodeAt(i)) ? i : (segmentEnd[i + 1] as number);
+  }
+
+  let out = "";
+  let copied = 0;
+  let pos = 0;
+  while (pos < n) {
+    while (pos < n && !isNameChar(text.charCodeAt(pos))) pos++;
+    if (pos >= n) break;
+    const runStart = pos;
+    while (pos < n && isNameChar(text.charCodeAt(pos))) pos++;
+    const runEnd = pos;
+
+    let colon = runEnd;
+    while (colon < n && isSpace(text.charCodeAt(colon))) colon++;
+    if (colon >= n || text.charCodeAt(colon) !== CH_COLON) continue;
+
+    let start = runStart;
+    while (start < runEnd && !isWordChar(text.charCodeAt(start))) start++;
+    if (start === runEnd) continue;
+
+    let valueStart = colon + 1;
+    while (valueStart < n && isSpace(text.charCodeAt(valueStart))) valueStart++;
+    const tail = lastTail[segmentEnd[valueStart] as number] as number;
+    if (tail <= colon) continue;
+
+    const end = tailEnd[tail] as number;
+    out += text.slice(copied, start) + " ".repeat(end - start);
+    copied = end;
+    pos = end;
+  }
+  return copied === 0 ? text : out + text.slice(copied);
 }

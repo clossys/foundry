@@ -3,7 +3,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
 import { main } from "../cli.js";
-import { checkFactsTraceability } from "../facts-gate.js";
+import { checkGrounding } from "../facts-gate.js";
 import { readFindings } from "../facts-dir.js";
 import { parseFinding } from "../format/finding.js";
 import { readStrategyRoot } from "../store.js";
@@ -18,15 +18,15 @@ afterEach(() => { rmSync(root, { recursive: true, force: true }); rmSync(scan, {
 it("traces a finding's scalar value, unit form and declared aliases; refuses a nearby untraced number", () => {
   const parsed = parseFinding(findingFixture("customers", 42, ["4,200"]));
   if (!parsed.ok) throw new Error(JSON.stringify(parsed.issues));
-  expect(checkFactsTraceability([{ path: "page.md", content: "42 customers; 4,200 customers; 17 customers." }], [parsed.value]).findings).toEqual([
+  expect(checkGrounding([{ path: "page.md", content: "42 customers; 4,200 customers; 17 customers." }], [parsed.value]).findings).toEqual([
     expect.objectContaining({ rule: "untraced-numeric-claim", snippet: expect.stringContaining("17 customers") }),
   ]);
-  expect(checkFactsTraceability([{ path: "page.md", content: "20%" }], [{ ...parsed.value, value: "20%", aliases: [] }]).findings).toEqual([]);
+  expect(checkGrounding([{ path: "page.md", content: "20%" }], [{ ...parsed.value, value: "20%", aliases: [] }]).findings).toEqual([]);
 });
 it("validates finding citations, with no value required", () => {
   stageFinding(root); const model = readStrategyRoot(root);
-  expect(checkFactsTraceability([{ path: "page.md", content: "the only tool <!-- finding:active-customers -->" }], model.findings).findings).toEqual([]);
-  expect(checkFactsTraceability([{ path: "page.md", content: "the only tool <!-- finding:missing -->" }], model.findings).findings.length).toBeGreaterThan(0);
+  expect(checkGrounding([{ path: "page.md", content: "the only tool <!-- finding:active-customers -->" }], model.findings).findings).toEqual([]);
+  expect(checkGrounding([{ path: "page.md", content: "the only tool <!-- finding:missing -->" }], model.findings).findings.length).toBeGreaterThan(0);
 });
 it("the bare positional form equals ground, and --root supports a single scan positional", () => {
   stageFinding(root); writeFileSync(join(scan, "page.md"), "4,200 customers");
