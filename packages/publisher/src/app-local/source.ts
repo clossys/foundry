@@ -6,6 +6,7 @@ import { fileURLToPath } from "node:url";
 import type { CompositeLibraryData } from "@clossys/designer/catalog";
 import { loadCatalogBundles } from "@clossys/designer/catalog-bundles";
 import type { SourceImport, SourceModule, SourceRequest, SourceResolution } from "@clossys/designer/components/source-closure";
+import { mergeSourceDependencyRanges } from "@clossys/designer/components/source-closure";
 import { appLocalHash } from "./format.js";
 
 const syntax = (source: SourceModule) => ts.createSourceFile(source.path, source.content, ts.ScriptTarget.Latest, true, source.path.endsWith(".tsx") ? ts.ScriptKind.TSX : ts.ScriptKind.TS);
@@ -258,8 +259,9 @@ export function appLocalSourceResolver(library: CompositeLibraryData, appRoot: s
       return { kind: "source", module: packageTarget({ absolute: pkg.root, root: pkg.root, manifest: pkg.manifest }, target, names) };
     }
     const name = packageName(specifier), origin = importer ? origins.get(importer.path) : undefined, manifest = origin?.manifest;
-    const version = manifest?.dependencies?.[name] ?? manifest?.peerDependencies?.[name] ?? manifest?.optionalDependencies?.[name] ?? dependencies[name];
-    if (typeof version !== "string") throw new Error(`Undeclared third-party source dependency: ${name}`);
+    const declared = manifest?.dependencies?.[name] ?? manifest?.peerDependencies?.[name] ?? manifest?.optionalDependencies?.[name] ?? dependencies[name];
+    if (typeof declared !== "string") throw new Error(`Undeclared third-party source dependency: ${name}`);
+    const version = dependencies[name] === undefined ? mergeSourceDependencyRanges(undefined, declared) : mergeSourceDependencyRanges(declared, dependencies[name]!);
     return { kind: "dependency", name, version };
   }
   return resolveModule;

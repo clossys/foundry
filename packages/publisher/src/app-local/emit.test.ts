@@ -85,7 +85,7 @@ it("emits real selected source, active copy, theme and publication data entirely
   expect(parseGeneratedText(emitted.files["site/app/page.tsx"]!).body).toContain("await loadContentRoute()");
   expect(parseGeneratedText(emitted.files["copy/en.ts"]!).body).toContain("Continue");
   expect(parseGeneratedText(emitted.files["theme.css"]!).body).toContain("--");
-  expect(parseAppLocalJson(emitted.files["dependencies.json"]!)).toMatchObject({ "react-aria-components": "^1.19.0" });
+  expect(parseAppLocalJson(emitted.files["dependencies.json"]!)).toMatchObject({ react: "19.3.0", "react-aria-components": "1.21.1", "tailwind-merge": "^3.7.0" });
   for (const body of Object.values(emitted.files)) expect(body).not.toContain("@clossys/");
   const manifest = parseAppLocalJson(emitted.files[".manifest.json"]!) as Record<string, string>;
   expect(Object.keys(manifest).sort()).toEqual(Object.keys(emitted.files).filter(path => path !== ".manifest.json").sort());

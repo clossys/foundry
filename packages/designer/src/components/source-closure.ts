@@ -9,6 +9,8 @@ import type { CatalogData, CompositeCatalogData, CompositeEngineInput, Composite
 import { parseLibraryCell } from "../library-cli/cells.js";
 import { libraryFiles } from "../library-cli/fs-library.js";
 import { readSurfacePackageEvidence } from "../library-cli/surface-package-evidence.js";
+import { mergeSourceDependencyRanges } from "./dependency-ranges.js";
+export { mergeSourceDependencyRanges } from "./dependency-ranges.js";
 
 export interface SourceModule {
   path: string;
@@ -94,8 +96,8 @@ export function collectSourceClosure(options: SourceClosureOptions): SourceClosu
     if (!/^(?:@[a-z0-9][a-z0-9-]*\/)?[a-z0-9][a-z0-9._-]*$/.test(resolution.name) || resolution.name.includes("@clossys")) throw new Error("Firstparty packages must resolve to source");
     if (!resolution.version.trim() || /^(?:https?:|git|file:|link:|workspace:|catalog:)/i.test(resolution.version)) throw new Error("Dependency must preserve a manifest version range");
     const previous = dependencies.get(resolution.name);
-    if (previous !== undefined && previous !== resolution.version) throw new Error(`Dependency range conflict for ${resolution.name}`);
-    dependencies.set(resolution.name, resolution.version);
+    try { dependencies.set(resolution.name, mergeSourceDependencyRanges(previous, resolution.version)); }
+    catch { throw new Error(`Dependency range conflict for ${resolution.name}`); }
   };
   const visit = (module: SourceModule): void => {
     assertSelected(module);

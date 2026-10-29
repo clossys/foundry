@@ -1,7 +1,7 @@
 import { readFile } from "node:fs/promises";
 import { dirname, isAbsolute, join, relative, resolve, sep } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
-import { collectSourceClosure, readActiveSourceLibrary } from "@clossys/designer/components/source-closure";
+import { collectSourceClosure, mergeSourceDependencyRanges, readActiveSourceLibrary } from "@clossys/designer/components/source-closure";
 import { emit, resolve as resolveValues, loadCatalog, loadComponentRegistry, loadComponentCompositionRules, loadSectionRegistry, loadBuildCatalog, importFoundryFrames, importFoundrySections, loadFoundrySurfaceHistory } from "@clossys/designer/catalog";
 import type { CompositeCatalogData, CompositeLibraryData, FrameSlot } from "@clossys/designer/catalog";
 import { loadCatalogBundles } from "@clossys/designer/catalog-bundles";
@@ -63,8 +63,7 @@ export async function emitAppLocal(options: EmitAppLocalOptions): Promise<AppLoc
   const app = JSON.parse(await readFile(join(appDir, "package.json"), "utf8"));
   const ranges: Record<string, string> = {};
   for (const document of library.components.fills) for (const fill of Object.values(document.components)) for (const dependency of fill.deps) if (!dependency.registryItem) {
-    if (ranges[dependency.name] !== undefined && ranges[dependency.name] !== dependency.version) throw new Error("Selected component dependency ranges conflict");
-    ranges[dependency.name] = dependency.version;
+    ranges[dependency.name] = mergeSourceDependencyRanges(ranges[dependency.name], dependency.version);
   }
   const appRanges = { ...app.dependencies, ...app.devDependencies, ...app.peerDependencies, ...app.optionalDependencies } as Record<string, string>;
   const additionalEntries: SourceModule[] = [
@@ -85,7 +84,9 @@ export async function emitAppLocal(options: EmitAppLocalOptions): Promise<AppLoc
   const valueLibrary = { source: library.source, ...library.values };
   const styles = emit(resolveValues({ catalog: catalog.values, library: valueLibrary }), ["css-brand", "css-scales", "css-fonts"]);
   additionalEntries.push({ path: "theme.css", content: styles.map(file => file.contents).join("\n") });
-  const sourceResolver = appLocalSourceResolver(library, appDir, { ...appRanges, ...ranges });
+  const sourceRanges = { ...appRanges, ...ranges };
+  for (const name of Object.keys(ranges)) if (appRanges[name] !== undefined) sourceRanges[name] = mergeSourceDependencyRanges(ranges[name], appRanges[name]!);
+  const sourceResolver = appLocalSourceResolver(library, appDir, sourceRanges);
   const selected = new Set(library.components.fills.flatMap(document => Object.values(document.components).map(fill => fill.slot)));
   const closure = collectSourceClosure({ library, additionalEntries, analyze: analyzeAppLocalSource, resolve: request => {
     const result = sourceResolver(request);
