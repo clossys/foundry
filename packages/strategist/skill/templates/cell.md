@@ -47,6 +47,7 @@ Rules:
   - Activation sets `status: active` and adds `confirmed: msg:<session>#U<n>`. That U line must answer an S line that listed this `id@N`.
   - After activation the file never changes again, except that retiring it rewrites only the `status` line.
   - A change is always a new version.
+- **Links (optional):** add `links: [designer:frames.app-shell@1, writer:admin.writer@3]` for cross-agent cell references, or use `<cell-id>@<N>` for a same-agent link. Shared link ids contain two or three lowercase kebab segments; `N` is a positive safe integer. Links do not replace Because citations. Omit the field to preserve the existing format, or use `links: []` explicitly. Cross-agent resolution belongs to the consuming agent.
 - **Never:**
   - prose paragraphs;
   - hex colours or font pairings in `identity.visual.*`;
