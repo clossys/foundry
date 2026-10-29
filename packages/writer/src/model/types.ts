@@ -1,3 +1,4 @@
+import type { CellRef } from "@clossys/strategist";
 import type { CopyApproval, CopyTranslationProvenance } from "../types.js";
 import type { WriterLayer } from "../catalog-core/ids.js";
 
@@ -19,7 +20,7 @@ export type LexiconRecord = RecordBase & (
   | { kind: "voice-rule"; rule: "formality" | "warmth" | "energy" | "person" | "mood" | "sentence-length" | "reading-level"; value: string | number; forbidden?: string[] }
   | { kind: "term"; term: string; forms: string[]; casing?: string; termStatus: "brand" | "preferred" | "avoid"; alternative?: string; reason: string; pronunciation?: string; channel?: string }
   | { kind: "pattern-rule"; pattern: { source: string; flags?: string }; severity: "error" | "warning" | "advisory"; reason: string; alternative?: string }
-  | { kind: "claim"; strategistClaimKey: string; phrasings: string[]; requiresCitation: true }
+  | { kind: "claim"; strategy: CellRef; phrasings: string[]; requiresCitation: true }
   | { kind: "format"; format: "number" | "plural" | "date" | "time" | "currency" | "unit" | "capitalization" | "punctuation" | "direction" | "expansion"; value: Record<string, unknown> }
 );
 export interface StringRecord extends RecordBase {
@@ -68,7 +69,7 @@ export interface WriterManifest {
   defaultLocale: string;
   locales: { tag: string; dir: "ltr" | "rtl"; state: "active" | "planned" | "pseudo" }[];
   fallback: Record<string, string[]>;
-  strategist: { path: string };
+  strategy: { root: string; contract: "writer.messaging" };
   leafFreeze: Record<WriterLayer, string>;
 }
 /** Markdown remains source data until the narrative parser interprets it. */

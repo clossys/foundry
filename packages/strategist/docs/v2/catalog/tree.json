@@ -1,0 +1,2884 @@
+{
+  "schemaVersion": 1,
+  "catalog": "@clossys/strategist#strategy-v1",
+  "status": "DRAFT 2026-10-28 (strategist-v2 design; not shipped)",
+  "notes": [
+    "Leaf ids are permanent (l1.l2.l3 kebab). L1 and L2 grouping is data and may be regrouped without renaming a cell.",
+    "Only L3 cells hold documents. L0 (storyline), L1 and L2 are derived, read-only views.",
+    "Node names never contain '&' or the word 'or'.",
+    "core.default is the 24-cell star set. Each archetype is default plus its extras.",
+    "feeds is an informative index computed from installed brief contracts. The shipped catalog does not store it; contracts are owned by the consuming packages (DEFAULT).",
+    "links are the C1 required citations: the downstream cell's Because must cite the active version of each listed upstream cell, when both cells are in scope."
+  ],
+  "counts": {
+    "l1": 7,
+    "l2": 28,
+    "l3": 57,
+    "core": {
+      "default": 24,
+      "product-saas": 27,
+      "services": 27,
+      "marketplace": 29
+    }
+  },
+  "functions": [
+    "product",
+    "gtm",
+    "brand",
+    "people",
+    "ops",
+    "tech",
+    "finance",
+    "corp-dev"
+  ],
+  "archetypes": {
+    "default": {
+      "label": "Default",
+      "extras": []
+    },
+    "product-saas": {
+      "label": "Product / SaaS",
+      "extras": [
+        "focus.lifecycle.retention",
+        "capability.operation.technology",
+        "execution.measure.driver"
+      ]
+    },
+    "services": {
+      "label": "Services",
+      "extras": [
+        "capability.team.role",
+        "capability.competency.critical",
+        "advantage.model.margin"
+      ]
+    },
+    "marketplace": {
+      "label": "Marketplace",
+      "extras": [
+        "focus.segment.next",
+        "focus.lifecycle.retention",
+        "advantage.defensibility.moat",
+        "execution.measure.driver",
+        "context.customer.buying"
+      ],
+      "note": "focus.segment.next holds the other side of the market"
+    }
+  },
+  "tree": [
+    {
+      "id": "context",
+      "name": "Context",
+      "question": "What is true outside and inside the company today?",
+      "children": [
+        {
+          "id": "context.market",
+          "name": "Market",
+          "cells": [
+            "context.market.size",
+            "context.market.trend"
+          ]
+        },
+        {
+          "id": "context.customer",
+          "name": "Customer",
+          "cells": [
+            "context.customer.need",
+            "context.customer.buying"
+          ]
+        },
+        {
+          "id": "context.competition",
+          "name": "Competition",
+          "cells": [
+            "context.competition.alternative",
+            "context.competition.gap"
+          ]
+        },
+        {
+          "id": "context.company",
+          "name": "Company",
+          "cells": [
+            "context.company.strength",
+            "context.company.constraint"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "aspiration",
+      "name": "Aspiration",
+      "question": "Why do we exist and where are we going?",
+      "children": [
+        {
+          "id": "aspiration.purpose",
+          "name": "Purpose",
+          "cells": [
+            "aspiration.purpose.mission",
+            "aspiration.purpose.vision"
+          ]
+        },
+        {
+          "id": "aspiration.culture",
+          "name": "Culture",
+          "cells": [
+            "aspiration.culture.belief",
+            "aspiration.culture.behavior"
+          ]
+        },
+        {
+          "id": "aspiration.goal",
+          "name": "Goal",
+          "cells": [
+            "aspiration.goal.long-term",
+            "aspiration.goal.annual"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "focus",
+      "name": "Focus",
+      "question": "Where do we play, for whom, with what?",
+      "children": [
+        {
+          "id": "focus.category",
+          "name": "Category",
+          "cells": [
+            "focus.category.definition",
+            "focus.category.stance"
+          ]
+        },
+        {
+          "id": "focus.segment",
+          "name": "Segment",
+          "cells": [
+            "focus.segment.core",
+            "focus.segment.next"
+          ]
+        },
+        {
+          "id": "focus.offer",
+          "name": "Offer",
+          "cells": [
+            "focus.offer.included",
+            "focus.offer.excluded"
+          ]
+        },
+        {
+          "id": "focus.reach",
+          "name": "Reach",
+          "cells": [
+            "focus.reach.geography",
+            "focus.reach.channel"
+          ]
+        },
+        {
+          "id": "focus.lifecycle",
+          "name": "Lifecycle",
+          "cells": [
+            "focus.lifecycle.acquisition",
+            "focus.lifecycle.retention"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "advantage",
+      "name": "Advantage",
+      "question": "Why do we win and how do we earn?",
+      "children": [
+        {
+          "id": "advantage.proposition",
+          "name": "Proposition",
+          "cells": [
+            "advantage.proposition.promise",
+            "advantage.proposition.proof"
+          ]
+        },
+        {
+          "id": "advantage.defensibility",
+          "name": "Defensibility",
+          "cells": [
+            "advantage.defensibility.differentiator",
+            "advantage.defensibility.moat"
+          ]
+        },
+        {
+          "id": "advantage.model",
+          "name": "Model",
+          "cells": [
+            "advantage.model.pricing",
+            "advantage.model.margin"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "identity",
+      "name": "Identity",
+      "question": "How are we recognised, named, heard and seen?",
+      "children": [
+        {
+          "id": "identity.brand",
+          "name": "Brand",
+          "cells": [
+            "identity.brand.essence",
+            "identity.brand.personality"
+          ]
+        },
+        {
+          "id": "identity.naming",
+          "name": "Naming",
+          "cells": [
+            "identity.naming.name",
+            "identity.naming.architecture"
+          ]
+        },
+        {
+          "id": "identity.verbal",
+          "name": "Verbal",
+          "cells": [
+            "identity.verbal.narrative",
+            "identity.verbal.voice"
+          ]
+        },
+        {
+          "id": "identity.visual",
+          "name": "Visual",
+          "cells": [
+            "identity.visual.style",
+            "identity.visual.imagery"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "capability",
+      "name": "Capability",
+      "question": "What must we be able to do, and with what resources?",
+      "children": [
+        {
+          "id": "capability.competency",
+          "name": "Competency",
+          "cells": [
+            "capability.competency.critical",
+            "capability.competency.gap"
+          ]
+        },
+        {
+          "id": "capability.sourcing",
+          "name": "Sourcing",
+          "cells": [
+            "capability.sourcing.build",
+            "capability.sourcing.partner",
+            "capability.sourcing.acquire"
+          ]
+        },
+        {
+          "id": "capability.operation",
+          "name": "Operation",
+          "cells": [
+            "capability.operation.delivery",
+            "capability.operation.technology"
+          ]
+        },
+        {
+          "id": "capability.team",
+          "name": "Team",
+          "cells": [
+            "capability.team.role",
+            "capability.team.structure"
+          ]
+        },
+        {
+          "id": "capability.resource",
+          "name": "Resource",
+          "cells": [
+            "capability.resource.funding",
+            "capability.resource.allocation"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "execution",
+      "name": "Execution",
+      "question": "What do we do now, how do we measure it, and what could stop us?",
+      "children": [
+        {
+          "id": "execution.priority",
+          "name": "Priority",
+          "cells": [
+            "execution.priority.bet",
+            "execution.priority.parked"
+          ]
+        },
+        {
+          "id": "execution.roadmap",
+          "name": "Roadmap",
+          "cells": [
+            "execution.roadmap.milestone",
+            "execution.roadmap.release"
+          ]
+        },
+        {
+          "id": "execution.measure",
+          "name": "Measure",
+          "cells": [
+            "execution.measure.north-star",
+            "execution.measure.driver"
+          ]
+        },
+        {
+          "id": "execution.risk",
+          "name": "Risk",
+          "cells": [
+            "execution.risk.threat",
+            "execution.risk.mitigation"
+          ]
+        }
+      ]
+    }
+  ],
+  "cells": [
+    {
+      "id": "context.market.size",
+      "names": {
+        "l1": "Context",
+        "l2": "Market",
+        "l3": "Size",
+        "display": "Context / Market / Size"
+      },
+      "question": "How big is the reachable market, counted in a unit you can check?",
+      "mustContain": [
+        {
+          "key": "Unit",
+          "hint": "what is counted: buyers, seats or spend"
+        },
+        {
+          "key": "Reachable",
+          "hint": "the number you can reach inside the horizon"
+        },
+        {
+          "key": "Method",
+          "hint": "how the number was derived, with its source"
+        }
+      ],
+      "functions": [
+        "gtm",
+        "finance",
+        "corp-dev"
+      ],
+      "feeds": [],
+      "links": [],
+      "linkedBy": [],
+      "storyline": false,
+      "core": {
+        "default": false,
+        "product-saas": false,
+        "services": false,
+        "marketplace": false
+      }
+    },
+    {
+      "id": "context.market.trend",
+      "names": {
+        "l1": "Context",
+        "l2": "Market",
+        "l3": "Trend",
+        "display": "Context / Market / Trend"
+      },
+      "question": "Which shift in the market makes now the right moment?",
+      "mustContain": [
+        {
+          "key": "Shift",
+          "hint": "the change, named concretely"
+        },
+        {
+          "key": "Effect",
+          "hint": "what it does to the need or the alternative"
+        },
+        {
+          "key": "Timing",
+          "hint": "when it bites, dated"
+        }
+      ],
+      "functions": [
+        "product",
+        "gtm",
+        "corp-dev"
+      ],
+      "feeds": [],
+      "links": [],
+      "linkedBy": [],
+      "storyline": false,
+      "core": {
+        "default": false,
+        "product-saas": false,
+        "services": false,
+        "marketplace": false
+      }
+    },
+    {
+      "id": "context.customer.need",
+      "names": {
+        "l1": "Context",
+        "l2": "Customer",
+        "l3": "Need",
+        "display": "Context / Customer / Need"
+      },
+      "question": "What job is the core customer trying to get done, and what hurts today?",
+      "mustContain": [
+        {
+          "key": "Job",
+          "hint": "the job in the customer's words"
+        },
+        {
+          "key": "Pain",
+          "hint": "what goes wrong today, observable"
+        },
+        {
+          "key": "Trigger",
+          "hint": "the event that makes them look for help now"
+        }
+      ],
+      "functions": [
+        "product",
+        "gtm",
+        "brand"
+      ],
+      "feeds": [
+        {
+          "contract": "writer.messaging",
+          "need": "required"
+        },
+        {
+          "contract": "customer.persona",
+          "need": "required"
+        }
+      ],
+      "links": [],
+      "linkedBy": [
+        "advantage.proposition.promise"
+      ],
+      "storyline": true,
+      "core": {
+        "default": true,
+        "product-saas": true,
+        "services": true,
+        "marketplace": true
+      }
+    },
+    {
+      "id": "context.customer.buying",
+      "names": {
+        "l1": "Context",
+        "l2": "Customer",
+        "l3": "Buying",
+        "display": "Context / Customer / Buying"
+      },
+      "question": "Who decides, how do they buy, and from which budget?",
+      "mustContain": [
+        {
+          "key": "Decider",
+          "hint": "the role that says yes"
+        },
+        {
+          "key": "Process",
+          "hint": "the steps from interest to payment"
+        },
+        {
+          "key": "Budget",
+          "hint": "the budget line the money comes from"
+        }
+      ],
+      "functions": [
+        "gtm",
+        "finance"
+      ],
+      "feeds": [
+        {
+          "contract": "customer.persona",
+          "need": "optional"
+        }
+      ],
+      "links": [],
+      "linkedBy": [],
+      "storyline": false,
+      "core": {
+        "default": false,
+        "product-saas": false,
+        "services": false,
+        "marketplace": true
+      }
+    },
+    {
+      "id": "context.competition.alternative",
+      "names": {
+        "l1": "Context",
+        "l2": "Competition",
+        "l3": "Alternative",
+        "display": "Context / Competition / Alternative"
+      },
+      "question": "What does the customer use today instead of us, and why does it appeal?",
+      "mustContain": [
+        {
+          "key": "Default",
+          "hint": "the named alternative, doing nothing included"
+        },
+        {
+          "key": "Appeal",
+          "hint": "why it is good enough for them"
+        },
+        {
+          "key": "Switching",
+          "hint": "what leaving it costs them"
+        }
+      ],
+      "functions": [
+        "product",
+        "gtm"
+      ],
+      "feeds": [
+        {
+          "contract": "customer.persona",
+          "need": "optional"
+        }
+      ],
+      "links": [],
+      "linkedBy": [],
+      "storyline": false,
+      "core": {
+        "default": true,
+        "product-saas": true,
+        "services": true,
+        "marketplace": true
+      }
+    },
+    {
+      "id": "context.competition.gap",
+      "names": {
+        "l1": "Context",
+        "l2": "Competition",
+        "l3": "Gap",
+        "display": "Context / Competition / Gap"
+      },
+      "question": "What do current alternatives leave unsolved, and why is it still open?",
+      "mustContain": [
+        {
+          "key": "Gap",
+          "hint": "the unsolved part, specific"
+        },
+        {
+          "key": "Evidence",
+          "hint": "a finding or user message showing it"
+        },
+        {
+          "key": "Why-open",
+          "hint": "why nobody has closed it"
+        }
+      ],
+      "functions": [
+        "product",
+        "gtm",
+        "corp-dev"
+      ],
+      "feeds": [],
+      "links": [],
+      "linkedBy": [],
+      "storyline": false,
+      "core": {
+        "default": false,
+        "product-saas": false,
+        "services": false,
+        "marketplace": false
+      }
+    },
+    {
+      "id": "context.company.strength",
+      "names": {
+        "l1": "Context",
+        "l2": "Company",
+        "l3": "Strength",
+        "display": "Context / Company / Strength"
+      },
+      "question": "What can we do today that is hard for others to copy?",
+      "mustContain": [
+        {
+          "key": "Edge",
+          "hint": "the strength, specific"
+        },
+        {
+          "key": "Evidence",
+          "hint": "proof that we have it"
+        },
+        {
+          "key": "Rarity",
+          "hint": "who else has it, and why few do"
+        }
+      ],
+      "functions": [
+        "product",
+        "ops",
+        "corp-dev"
+      ],
+      "feeds": [],
+      "links": [],
+      "linkedBy": [],
+      "storyline": false,
+      "core": {
+        "default": false,
+        "product-saas": false,
+        "services": false,
+        "marketplace": false
+      }
+    },
+    {
+      "id": "context.company.constraint",
+      "names": {
+        "l1": "Context",
+        "l2": "Company",
+        "l3": "Constraint",
+        "display": "Context / Company / Constraint"
+      },
+      "question": "Which limits shape every choice we make?",
+      "mustContain": [
+        {
+          "key": "Limit",
+          "hint": "the limit, named"
+        },
+        {
+          "key": "Bound",
+          "hint": "the number or rule that bounds it"
+        },
+        {
+          "key": "Effect",
+          "hint": "which choices it rules out"
+        }
+      ],
+      "functions": [
+        "ops",
+        "finance",
+        "people"
+      ],
+      "feeds": [],
+      "links": [],
+      "linkedBy": [],
+      "storyline": false,
+      "core": {
+        "default": false,
+        "product-saas": false,
+        "services": false,
+        "marketplace": false
+      }
+    },
+    {
+      "id": "aspiration.purpose.mission",
+      "names": {
+        "l1": "Aspiration",
+        "l2": "Purpose",
+        "l3": "Mission",
+        "display": "Aspiration / Purpose / Mission"
+      },
+      "question": "What do we do, for whom, and why does it matter?",
+      "mustContain": [
+        {
+          "key": "Do",
+          "hint": "what we do, as a verb phrase"
+        },
+        {
+          "key": "For",
+          "hint": "who it is for"
+        },
+        {
+          "key": "Why",
+          "hint": "why it matters to them"
+        }
+      ],
+      "functions": [
+        "brand",
+        "people"
+      ],
+      "feeds": [],
+      "links": [],
+      "linkedBy": [],
+      "storyline": true,
+      "core": {
+        "default": true,
+        "product-saas": true,
+        "services": true,
+        "marketplace": true
+      }
+    },
+    {
+      "id": "aspiration.purpose.vision",
+      "names": {
+        "l1": "Aspiration",
+        "l2": "Purpose",
+        "l3": "Vision",
+        "display": "Aspiration / Purpose / Vision"
+      },
+      "question": "What does the world look like when we have succeeded, and by when?",
+      "mustContain": [
+        {
+          "key": "Picture",
+          "hint": "the future state, concrete"
+        },
+        {
+          "key": "Horizon",
+          "hint": "the year it describes"
+        },
+        {
+          "key": "Role",
+          "hint": "our part in that picture"
+        }
+      ],
+      "functions": [
+        "brand",
+        "people",
+        "corp-dev"
+      ],
+      "feeds": [],
+      "links": [],
+      "linkedBy": [],
+      "storyline": false,
+      "core": {
+        "default": true,
+        "product-saas": true,
+        "services": true,
+        "marketplace": true
+      }
+    },
+    {
+      "id": "aspiration.culture.belief",
+      "names": {
+        "l1": "Aspiration",
+        "l2": "Culture",
+        "l3": "Belief",
+        "display": "Aspiration / Culture / Belief"
+      },
+      "question": "Which beliefs guide us even when they cost something?",
+      "mustContain": [
+        {
+          "key": "Belief",
+          "hint": "the belief, as a sentence"
+        },
+        {
+          "key": "Contrast",
+          "hint": "what others believe instead"
+        },
+        {
+          "key": "Cost",
+          "hint": "what holding it costs us"
+        }
+      ],
+      "functions": [
+        "people",
+        "brand"
+      ],
+      "feeds": [],
+      "links": [],
+      "linkedBy": [],
+      "storyline": false,
+      "core": {
+        "default": false,
+        "product-saas": false,
+        "services": false,
+        "marketplace": false
+      }
+    },
+    {
+      "id": "aspiration.culture.behavior",
+      "names": {
+        "l1": "Aspiration",
+        "l2": "Culture",
+        "l3": "Behavior",
+        "display": "Aspiration / Culture / Behavior"
+      },
+      "question": "Which behaviors do we expect, and which do we refuse?",
+      "mustContain": [
+        {
+          "key": "Do",
+          "hint": "expected behavior"
+        },
+        {
+          "key": "Refuse",
+          "hint": "behavior we refuse"
+        },
+        {
+          "key": "Signal",
+          "hint": "how you can tell it is happening"
+        }
+      ],
+      "functions": [
+        "people",
+        "ops"
+      ],
+      "feeds": [],
+      "links": [],
+      "linkedBy": [],
+      "storyline": false,
+      "core": {
+        "default": false,
+        "product-saas": false,
+        "services": false,
+        "marketplace": false
+      }
+    },
+    {
+      "id": "aspiration.goal.long-term",
+      "names": {
+        "l1": "Aspiration",
+        "l2": "Goal",
+        "l3": "Long-term",
+        "display": "Aspiration / Goal / Long-term"
+      },
+      "question": "What measurable position do we aim to hold, and by when?",
+      "mustContain": [
+        {
+          "key": "Target",
+          "hint": "the position, with a number"
+        },
+        {
+          "key": "Date",
+          "hint": "the date it is due"
+        },
+        {
+          "key": "Scope",
+          "hint": "what the target covers and excludes"
+        }
+      ],
+      "functions": [
+        "finance",
+        "corp-dev",
+        "product"
+      ],
+      "feeds": [],
+      "links": [],
+      "linkedBy": [
+        "execution.measure.north-star"
+      ],
+      "storyline": false,
+      "core": {
+        "default": true,
+        "product-saas": true,
+        "services": true,
+        "marketplace": true
+      }
+    },
+    {
+      "id": "aspiration.goal.annual",
+      "names": {
+        "l1": "Aspiration",
+        "l2": "Goal",
+        "l3": "Annual",
+        "display": "Aspiration / Goal / Annual"
+      },
+      "question": "What must be true at the end of this year to stay on the long-term path?",
+      "mustContain": [
+        {
+          "key": "Target",
+          "hint": "the year-end target, with a number"
+        },
+        {
+          "key": "Date",
+          "hint": "the year-end date"
+        },
+        {
+          "key": "Path",
+          "hint": "how it steps toward the long-term target"
+        }
+      ],
+      "functions": [
+        "finance",
+        "ops",
+        "product"
+      ],
+      "feeds": [],
+      "links": [],
+      "linkedBy": [],
+      "storyline": false,
+      "core": {
+        "default": false,
+        "product-saas": false,
+        "services": false,
+        "marketplace": false
+      }
+    },
+    {
+      "id": "focus.category.definition",
+      "names": {
+        "l1": "Focus",
+        "l2": "Category",
+        "l3": "Definition",
+        "display": "Focus / Category / Definition"
+      },
+      "question": "Which category do we tell buyers we belong to?",
+      "mustContain": [
+        {
+          "key": "Category",
+          "hint": "the category name"
+        },
+        {
+          "key": "Frame",
+          "hint": "how buyers already understand it"
+        },
+        {
+          "key": "Adjacent",
+          "hint": "the categories we get confused with"
+        }
+      ],
+      "functions": [
+        "gtm",
+        "brand",
+        "product"
+      ],
+      "feeds": [],
+      "links": [],
+      "linkedBy": [],
+      "storyline": false,
+      "core": {
+        "default": true,
+        "product-saas": true,
+        "services": true,
+        "marketplace": true
+      }
+    },
+    {
+      "id": "focus.category.stance",
+      "names": {
+        "l1": "Focus",
+        "l2": "Category",
+        "l3": "Stance",
+        "display": "Focus / Category / Stance"
+      },
+      "question": "What do we stand against inside that category?",
+      "mustContain": [
+        {
+          "key": "Stance",
+          "hint": "our position, as a sentence"
+        },
+        {
+          "key": "Against",
+          "hint": "the practice we oppose"
+        },
+        {
+          "key": "Risk",
+          "hint": "what the stance could cost"
+        }
+      ],
+      "functions": [
+        "brand",
+        "gtm"
+      ],
+      "feeds": [],
+      "links": [],
+      "linkedBy": [],
+      "storyline": false,
+      "core": {
+        "default": false,
+        "product-saas": false,
+        "services": false,
+        "marketplace": false
+      }
+    },
+    {
+      "id": "focus.segment.core",
+      "names": {
+        "l1": "Focus",
+        "l2": "Segment",
+        "l3": "Core",
+        "display": "Focus / Segment / Core"
+      },
+      "question": "Who exactly do we serve first, and who do we turn away?",
+      "mustContain": [
+        {
+          "key": "Who",
+          "hint": "the segment, specific enough to find"
+        },
+        {
+          "key": "Situation",
+          "hint": "the situation they are in"
+        },
+        {
+          "key": "Not",
+          "hint": "who we turn away"
+        }
+      ],
+      "functions": [
+        "gtm",
+        "product"
+      ],
+      "feeds": [
+        {
+          "contract": "writer.messaging",
+          "need": "required"
+        },
+        {
+          "contract": "customer.persona",
+          "need": "required"
+        }
+      ],
+      "links": [],
+      "linkedBy": [
+        "focus.reach.channel"
+      ],
+      "storyline": true,
+      "core": {
+        "default": true,
+        "product-saas": true,
+        "services": true,
+        "marketplace": true
+      }
+    },
+    {
+      "id": "focus.segment.next",
+      "names": {
+        "l1": "Focus",
+        "l2": "Segment",
+        "l3": "Next",
+        "display": "Focus / Segment / Next"
+      },
+      "question": "Which segment comes next, and what triggers the move?",
+      "mustContain": [
+        {
+          "key": "Who",
+          "hint": "the next segment"
+        },
+        {
+          "key": "Trigger",
+          "hint": "the evidence that starts the move"
+        },
+        {
+          "key": "Change",
+          "hint": "what we must change to serve them"
+        }
+      ],
+      "functions": [
+        "gtm",
+        "product",
+        "corp-dev"
+      ],
+      "feeds": [],
+      "links": [],
+      "linkedBy": [],
+      "storyline": false,
+      "core": {
+        "default": false,
+        "product-saas": false,
+        "services": false,
+        "marketplace": true
+      }
+    },
+    {
+      "id": "focus.offer.included",
+      "names": {
+        "l1": "Focus",
+        "l2": "Offer",
+        "l3": "Included",
+        "display": "Focus / Offer / Included"
+      },
+      "question": "What exactly do customers get, and what outcome does it produce?",
+      "mustContain": [
+        {
+          "key": "Offer",
+          "hint": "what they get, itemised"
+        },
+        {
+          "key": "Outcome",
+          "hint": "the result it produces"
+        },
+        {
+          "key": "Form",
+          "hint": "product, service or both, and how it is delivered"
+        }
+      ],
+      "functions": [
+        "product",
+        "gtm"
+      ],
+      "feeds": [
+        {
+          "contract": "publisher.launch",
+          "need": "required"
+        }
+      ],
+      "links": [],
+      "linkedBy": [],
+      "storyline": false,
+      "core": {
+        "default": true,
+        "product-saas": true,
+        "services": true,
+        "marketplace": true
+      }
+    },
+    {
+      "id": "focus.offer.excluded",
+      "names": {
+        "l1": "Focus",
+        "l2": "Offer",
+        "l3": "Excluded",
+        "display": "Focus / Offer / Excluded"
+      },
+      "question": "What do we deliberately not offer, and where do we send people who want it?",
+      "mustContain": [
+        {
+          "key": "Not",
+          "hint": "what we do not offer"
+        },
+        {
+          "key": "Why",
+          "hint": "why we leave it out"
+        },
+        {
+          "key": "Redirect",
+          "hint": "where we send people who want it"
+        }
+      ],
+      "functions": [
+        "product",
+        "gtm"
+      ],
+      "feeds": [],
+      "links": [],
+      "linkedBy": [],
+      "storyline": false,
+      "core": {
+        "default": true,
+        "product-saas": true,
+        "services": true,
+        "marketplace": true
+      }
+    },
+    {
+      "id": "focus.reach.geography",
+      "names": {
+        "l1": "Focus",
+        "l2": "Reach",
+        "l3": "Geography",
+        "display": "Focus / Reach / Geography"
+      },
+      "question": "Where do we sell first, and where not yet?",
+      "mustContain": [
+        {
+          "key": "Where",
+          "hint": "the first markets"
+        },
+        {
+          "key": "Not-yet",
+          "hint": "places we do not serve yet"
+        },
+        {
+          "key": "Why",
+          "hint": "why this order"
+        }
+      ],
+      "functions": [
+        "gtm",
+        "ops"
+      ],
+      "feeds": [],
+      "links": [],
+      "linkedBy": [],
+      "storyline": false,
+      "core": {
+        "default": false,
+        "product-saas": false,
+        "services": false,
+        "marketplace": false
+      }
+    },
+    {
+      "id": "focus.reach.channel",
+      "names": {
+        "l1": "Focus",
+        "l2": "Reach",
+        "l3": "Channel",
+        "display": "Focus / Reach / Channel"
+      },
+      "question": "Through which channels does the core segment find and buy from us?",
+      "mustContain": [
+        {
+          "key": "Primary",
+          "hint": "the main channel"
+        },
+        {
+          "key": "Secondary",
+          "hint": "the supporting channel"
+        },
+        {
+          "key": "Not",
+          "hint": "channels we do not use"
+        }
+      ],
+      "functions": [
+        "gtm"
+      ],
+      "feeds": [
+        {
+          "contract": "publisher.launch",
+          "need": "required"
+        }
+      ],
+      "links": [
+        {
+          "cites": "focus.segment.core",
+          "label": "Core-Channel"
+        }
+      ],
+      "linkedBy": [
+        "focus.lifecycle.acquisition"
+      ],
+      "storyline": false,
+      "core": {
+        "default": true,
+        "product-saas": true,
+        "services": true,
+        "marketplace": true
+      }
+    },
+    {
+      "id": "focus.lifecycle.acquisition",
+      "names": {
+        "l1": "Focus",
+        "l2": "Lifecycle",
+        "l3": "Acquisition",
+        "display": "Focus / Lifecycle / Acquisition"
+      },
+      "question": "How does a stranger become a customer, and at what cost?",
+      "mustContain": [
+        {
+          "key": "Path",
+          "hint": "the steps from stranger to customer"
+        },
+        {
+          "key": "Hook",
+          "hint": "what pulls them in"
+        },
+        {
+          "key": "Cost",
+          "hint": "the acquisition cost or effort, estimated"
+        }
+      ],
+      "functions": [
+        "gtm",
+        "finance"
+      ],
+      "feeds": [],
+      "links": [
+        {
+          "cites": "focus.reach.channel",
+          "label": "Channel-Acquisition"
+        }
+      ],
+      "linkedBy": [
+        "execution.roadmap.release"
+      ],
+      "storyline": false,
+      "core": {
+        "default": true,
+        "product-saas": true,
+        "services": true,
+        "marketplace": true
+      }
+    },
+    {
+      "id": "focus.lifecycle.retention",
+      "names": {
+        "l1": "Focus",
+        "l2": "Lifecycle",
+        "l3": "Retention",
+        "display": "Focus / Lifecycle / Retention"
+      },
+      "question": "Why do customers stay and grow with us?",
+      "mustContain": [
+        {
+          "key": "Reason",
+          "hint": "why they stay"
+        },
+        {
+          "key": "Moment",
+          "hint": "when they decide to stay"
+        },
+        {
+          "key": "Expansion",
+          "hint": "how the account grows"
+        }
+      ],
+      "functions": [
+        "product",
+        "gtm",
+        "finance"
+      ],
+      "feeds": [],
+      "links": [],
+      "linkedBy": [],
+      "storyline": false,
+      "core": {
+        "default": false,
+        "product-saas": true,
+        "services": false,
+        "marketplace": true
+      }
+    },
+    {
+      "id": "advantage.proposition.promise",
+      "names": {
+        "l1": "Advantage",
+        "l2": "Proposition",
+        "l3": "Promise",
+        "display": "Advantage / Proposition / Promise"
+      },
+      "question": "What do we promise the core segment that the alternative does not deliver?",
+      "mustContain": [
+        {
+          "key": "Promise",
+          "hint": "the promise, one sentence"
+        },
+        {
+          "key": "For",
+          "hint": "the segment it is made to"
+        },
+        {
+          "key": "Versus",
+          "hint": "the alternative it beats"
+        }
+      ],
+      "functions": [
+        "brand",
+        "gtm",
+        "product"
+      ],
+      "feeds": [
+        {
+          "contract": "writer.messaging",
+          "need": "required"
+        }
+      ],
+      "links": [
+        {
+          "cites": "context.customer.need",
+          "label": "Need-Promise"
+        }
+      ],
+      "linkedBy": [
+        "advantage.defensibility.differentiator"
+      ],
+      "storyline": true,
+      "core": {
+        "default": true,
+        "product-saas": true,
+        "services": true,
+        "marketplace": true
+      }
+    },
+    {
+      "id": "advantage.proposition.proof",
+      "names": {
+        "l1": "Advantage",
+        "l2": "Proposition",
+        "l3": "Proof",
+        "display": "Advantage / Proposition / Proof"
+      },
+      "question": "What evidence backs the promise, what is still missing, and what must we never claim?",
+      "mustContain": [
+        {
+          "key": "Proof",
+          "hint": "evidence we hold today"
+        },
+        {
+          "key": "Gap",
+          "hint": "evidence still missing"
+        },
+        {
+          "key": "Never-claim",
+          "hint": "claims we must never make, quoted"
+        }
+      ],
+      "functions": [
+        "brand",
+        "gtm"
+      ],
+      "feeds": [
+        {
+          "contract": "writer.messaging",
+          "need": "required"
+        }
+      ],
+      "links": [],
+      "linkedBy": [],
+      "storyline": false,
+      "core": {
+        "default": true,
+        "product-saas": true,
+        "services": true,
+        "marketplace": true
+      }
+    },
+    {
+      "id": "advantage.defensibility.differentiator",
+      "names": {
+        "l1": "Advantage",
+        "l2": "Defensibility",
+        "l3": "Differentiator",
+        "display": "Advantage / Defensibility / Differentiator"
+      },
+      "question": "What makes our way different, and why is it hard to copy?",
+      "mustContain": [
+        {
+          "key": "Difference",
+          "hint": "how we work differently"
+        },
+        {
+          "key": "Versus",
+          "hint": "who we differ from"
+        },
+        {
+          "key": "Why-hard",
+          "hint": "why it is hard to copy"
+        }
+      ],
+      "functions": [
+        "product",
+        "gtm",
+        "corp-dev"
+      ],
+      "feeds": [],
+      "links": [
+        {
+          "cites": "advantage.proposition.promise",
+          "label": "Promise-Differentiator"
+        }
+      ],
+      "linkedBy": [
+        "advantage.model.pricing"
+      ],
+      "storyline": false,
+      "core": {
+        "default": true,
+        "product-saas": true,
+        "services": true,
+        "marketplace": true
+      }
+    },
+    {
+      "id": "advantage.defensibility.moat",
+      "names": {
+        "l1": "Advantage",
+        "l2": "Defensibility",
+        "l3": "Moat",
+        "display": "Advantage / Defensibility / Moat"
+      },
+      "question": "What advantage compounds over time, and by what mechanism?",
+      "mustContain": [
+        {
+          "key": "Moat",
+          "hint": "the compounding advantage"
+        },
+        {
+          "key": "Mechanism",
+          "hint": "how it compounds"
+        },
+        {
+          "key": "Milestone",
+          "hint": "the point where it starts to hold"
+        }
+      ],
+      "functions": [
+        "corp-dev",
+        "product",
+        "tech"
+      ],
+      "feeds": [],
+      "links": [],
+      "linkedBy": [],
+      "storyline": false,
+      "core": {
+        "default": false,
+        "product-saas": false,
+        "services": false,
+        "marketplace": true
+      }
+    },
+    {
+      "id": "advantage.model.pricing",
+      "names": {
+        "l1": "Advantage",
+        "l2": "Model",
+        "l3": "Pricing",
+        "display": "Advantage / Model / Pricing"
+      },
+      "question": "What do we charge for, how much, and against which anchor?",
+      "mustContain": [
+        {
+          "key": "Metric",
+          "hint": "the unit we charge for"
+        },
+        {
+          "key": "Price",
+          "hint": "the price, or the range being tested"
+        },
+        {
+          "key": "Anchor",
+          "hint": "what the buyer compares the price to"
+        }
+      ],
+      "functions": [
+        "finance",
+        "gtm"
+      ],
+      "feeds": [],
+      "links": [
+        {
+          "cites": "advantage.defensibility.differentiator",
+          "label": "Differentiator-Pricing"
+        }
+      ],
+      "linkedBy": [],
+      "storyline": false,
+      "core": {
+        "default": true,
+        "product-saas": true,
+        "services": true,
+        "marketplace": true
+      }
+    },
+    {
+      "id": "advantage.model.margin",
+      "names": {
+        "l1": "Advantage",
+        "l2": "Model",
+        "l3": "Margin",
+        "display": "Advantage / Model / Margin"
+      },
+      "question": "What does one unit earn, and which lever moves it?",
+      "mustContain": [
+        {
+          "key": "Unit",
+          "hint": "the unit of economics"
+        },
+        {
+          "key": "Target",
+          "hint": "the target margin"
+        },
+        {
+          "key": "Lever",
+          "hint": "the lever that moves it most"
+        }
+      ],
+      "functions": [
+        "finance",
+        "ops"
+      ],
+      "feeds": [],
+      "links": [],
+      "linkedBy": [],
+      "storyline": false,
+      "core": {
+        "default": false,
+        "product-saas": false,
+        "services": true,
+        "marketplace": false
+      }
+    },
+    {
+      "id": "identity.brand.essence",
+      "names": {
+        "l1": "Identity",
+        "l2": "Brand",
+        "l3": "Essence",
+        "display": "Identity / Brand / Essence"
+      },
+      "question": "What single idea should people remember us by?",
+      "mustContain": [
+        {
+          "key": "Essence",
+          "hint": "the idea, in a few words"
+        },
+        {
+          "key": "Meaning",
+          "hint": "what it means in practice"
+        },
+        {
+          "key": "Not",
+          "hint": "what it does not mean"
+        }
+      ],
+      "functions": [
+        "brand"
+      ],
+      "feeds": [
+        {
+          "contract": "designer.identity",
+          "need": "required"
+        }
+      ],
+      "links": [],
+      "linkedBy": [
+        "identity.verbal.voice",
+        "identity.visual.style"
+      ],
+      "storyline": true,
+      "core": {
+        "default": true,
+        "product-saas": true,
+        "services": true,
+        "marketplace": true
+      }
+    },
+    {
+      "id": "identity.brand.personality",
+      "names": {
+        "l1": "Identity",
+        "l2": "Brand",
+        "l3": "Personality",
+        "display": "Identity / Brand / Personality"
+      },
+      "question": "How would people describe us as a person, and what are we not?",
+      "mustContain": [
+        {
+          "key": "Traits",
+          "hint": "three to five traits"
+        },
+        {
+          "key": "Not",
+          "hint": "traits we avoid"
+        },
+        {
+          "key": "Example",
+          "hint": "one behavior that shows the traits"
+        }
+      ],
+      "functions": [
+        "brand"
+      ],
+      "feeds": [
+        {
+          "contract": "designer.identity",
+          "need": "required"
+        }
+      ],
+      "links": [],
+      "linkedBy": [],
+      "storyline": false,
+      "core": {
+        "default": true,
+        "product-saas": true,
+        "services": true,
+        "marketplace": true
+      }
+    },
+    {
+      "id": "identity.naming.name",
+      "names": {
+        "l1": "Identity",
+        "l2": "Naming",
+        "l3": "Name",
+        "display": "Identity / Naming / Name"
+      },
+      "question": "What are we called, how is it written, and what does it mean?",
+      "mustContain": [
+        {
+          "key": "Name",
+          "hint": "the public name"
+        },
+        {
+          "key": "Casing",
+          "hint": "exact casing and forms"
+        },
+        {
+          "key": "Meaning",
+          "hint": "what the name means or stands for"
+        }
+      ],
+      "functions": [
+        "brand"
+      ],
+      "feeds": [],
+      "links": [],
+      "linkedBy": [],
+      "storyline": false,
+      "core": {
+        "default": true,
+        "product-saas": true,
+        "services": true,
+        "marketplace": true
+      }
+    },
+    {
+      "id": "identity.naming.architecture",
+      "names": {
+        "l1": "Identity",
+        "l2": "Naming",
+        "l3": "Architecture",
+        "display": "Identity / Naming / Architecture"
+      },
+      "question": "How are products, plans and features named against the master name?",
+      "mustContain": [
+        {
+          "key": "Model",
+          "hint": "branded house, house of brands or endorsed"
+        },
+        {
+          "key": "Rule",
+          "hint": "the naming rule"
+        },
+        {
+          "key": "Example",
+          "hint": "one worked name"
+        }
+      ],
+      "functions": [
+        "brand",
+        "product"
+      ],
+      "feeds": [],
+      "links": [],
+      "linkedBy": [],
+      "storyline": false,
+      "core": {
+        "default": false,
+        "product-saas": false,
+        "services": false,
+        "marketplace": false
+      }
+    },
+    {
+      "id": "identity.verbal.narrative",
+      "names": {
+        "l1": "Identity",
+        "l2": "Verbal",
+        "l3": "Narrative",
+        "display": "Identity / Verbal / Narrative"
+      },
+      "question": "What change in the world do we describe, what is at stake, and what is our way through?",
+      "mustContain": [
+        {
+          "key": "Change",
+          "hint": "the change in the world"
+        },
+        {
+          "key": "Stakes",
+          "hint": "what happens to people who ignore it"
+        },
+        {
+          "key": "Way",
+          "hint": "our way through"
+        }
+      ],
+      "functions": [
+        "brand",
+        "gtm"
+      ],
+      "feeds": [
+        {
+          "contract": "writer.messaging",
+          "need": "required"
+        }
+      ],
+      "links": [],
+      "linkedBy": [],
+      "storyline": false,
+      "core": {
+        "default": true,
+        "product-saas": true,
+        "services": true,
+        "marketplace": true
+      }
+    },
+    {
+      "id": "identity.verbal.voice",
+      "names": {
+        "l1": "Identity",
+        "l2": "Verbal",
+        "l3": "Voice",
+        "display": "Identity / Verbal / Voice"
+      },
+      "question": "How do we sound, and which words do we never use?",
+      "mustContain": [
+        {
+          "key": "Sound",
+          "hint": "how we sound"
+        },
+        {
+          "key": "Do",
+          "hint": "writing habits we keep"
+        },
+        {
+          "key": "Never",
+          "hint": "words and moves we never use, quoted"
+        }
+      ],
+      "functions": [
+        "brand"
+      ],
+      "feeds": [
+        {
+          "contract": "writer.messaging",
+          "need": "required"
+        }
+      ],
+      "links": [
+        {
+          "cites": "identity.brand.essence",
+          "label": "Essence-Voice"
+        }
+      ],
+      "linkedBy": [
+        "identity.visual.style"
+      ],
+      "storyline": false,
+      "core": {
+        "default": true,
+        "product-saas": true,
+        "services": true,
+        "marketplace": true
+      }
+    },
+    {
+      "id": "identity.visual.style",
+      "names": {
+        "l1": "Identity",
+        "l2": "Visual",
+        "l3": "Style",
+        "display": "Identity / Visual / Style"
+      },
+      "question": "What should our look feel like, what is its signature, and what do we avoid?",
+      "mustContain": [
+        {
+          "key": "Feel",
+          "hint": "the feeling, in words"
+        },
+        {
+          "key": "Signature",
+          "hint": "the one recognisable move"
+        },
+        {
+          "key": "Avoid",
+          "hint": "looks we avoid"
+        }
+      ],
+      "functions": [
+        "brand",
+        "product"
+      ],
+      "feeds": [
+        {
+          "contract": "designer.identity",
+          "need": "required"
+        }
+      ],
+      "links": [
+        {
+          "cites": "identity.verbal.voice",
+          "label": "Voice-Style"
+        },
+        {
+          "cites": "identity.brand.essence",
+          "label": "Essence-Style"
+        }
+      ],
+      "linkedBy": [],
+      "storyline": false,
+      "core": {
+        "default": true,
+        "product-saas": true,
+        "services": true,
+        "marketplace": true
+      }
+    },
+    {
+      "id": "identity.visual.imagery",
+      "names": {
+        "l1": "Identity",
+        "l2": "Visual",
+        "l3": "Imagery",
+        "display": "Identity / Visual / Imagery"
+      },
+      "question": "Which images do we use, which never, and where do they come from?",
+      "mustContain": [
+        {
+          "key": "Use",
+          "hint": "image types we use"
+        },
+        {
+          "key": "Never",
+          "hint": "image types we never use"
+        },
+        {
+          "key": "Source",
+          "hint": "where images come from"
+        }
+      ],
+      "functions": [
+        "brand"
+      ],
+      "feeds": [
+        {
+          "contract": "designer.identity",
+          "need": "optional"
+        }
+      ],
+      "links": [],
+      "linkedBy": [],
+      "storyline": false,
+      "core": {
+        "default": false,
+        "product-saas": false,
+        "services": false,
+        "marketplace": false
+      }
+    },
+    {
+      "id": "capability.competency.critical",
+      "names": {
+        "l1": "Capability",
+        "l2": "Competency",
+        "l3": "Critical",
+        "display": "Capability / Competency / Critical"
+      },
+      "question": "Which capabilities must be world class for the strategy to work?",
+      "mustContain": [
+        {
+          "key": "Capability",
+          "hint": "the capability"
+        },
+        {
+          "key": "Why",
+          "hint": "which choice depends on it"
+        },
+        {
+          "key": "Bar",
+          "hint": "the bar it must clear, testable"
+        }
+      ],
+      "functions": [
+        "people",
+        "ops",
+        "tech"
+      ],
+      "feeds": [],
+      "links": [],
+      "linkedBy": [],
+      "storyline": false,
+      "core": {
+        "default": false,
+        "product-saas": false,
+        "services": true,
+        "marketplace": false
+      }
+    },
+    {
+      "id": "capability.competency.gap",
+      "names": {
+        "l1": "Capability",
+        "l2": "Competency",
+        "l3": "Gap",
+        "display": "Capability / Competency / Gap"
+      },
+      "question": "Which critical capability is missing, how big is the gap, and when do we close it?",
+      "mustContain": [
+        {
+          "key": "Gap",
+          "hint": "the missing capability"
+        },
+        {
+          "key": "Size",
+          "hint": "how far we are from the bar"
+        },
+        {
+          "key": "Close-by",
+          "hint": "the date and route to close it"
+        }
+      ],
+      "functions": [
+        "people",
+        "ops"
+      ],
+      "feeds": [],
+      "links": [],
+      "linkedBy": [],
+      "storyline": false,
+      "core": {
+        "default": false,
+        "product-saas": false,
+        "services": false,
+        "marketplace": false
+      }
+    },
+    {
+      "id": "capability.sourcing.build",
+      "names": {
+        "l1": "Capability",
+        "l2": "Sourcing",
+        "l3": "Build",
+        "display": "Capability / Sourcing / Build"
+      },
+      "question": "What do we build ourselves, and why?",
+      "mustContain": [
+        {
+          "key": "Build",
+          "hint": "what we build"
+        },
+        {
+          "key": "Why",
+          "hint": "why we build it rather than buy it"
+        },
+        {
+          "key": "Cost",
+          "hint": "what building costs"
+        }
+      ],
+      "functions": [
+        "tech",
+        "ops",
+        "finance"
+      ],
+      "feeds": [],
+      "links": [],
+      "linkedBy": [],
+      "storyline": false,
+      "core": {
+        "default": false,
+        "product-saas": false,
+        "services": false,
+        "marketplace": false
+      }
+    },
+    {
+      "id": "capability.sourcing.partner",
+      "names": {
+        "l1": "Capability",
+        "l2": "Sourcing",
+        "l3": "Partner",
+        "display": "Capability / Sourcing / Partner"
+      },
+      "question": "Who do we rely on, what do they give us, and what is the risk?",
+      "mustContain": [
+        {
+          "key": "Partner",
+          "hint": "the partner or supplier"
+        },
+        {
+          "key": "Gives",
+          "hint": "what they give us"
+        },
+        {
+          "key": "Risk",
+          "hint": "what happens if they change terms"
+        }
+      ],
+      "functions": [
+        "ops",
+        "corp-dev",
+        "tech"
+      ],
+      "feeds": [],
+      "links": [],
+      "linkedBy": [],
+      "storyline": false,
+      "core": {
+        "default": false,
+        "product-saas": false,
+        "services": false,
+        "marketplace": false
+      }
+    },
+    {
+      "id": "capability.sourcing.acquire",
+      "names": {
+        "l1": "Capability",
+        "l2": "Sourcing",
+        "l3": "Acquire",
+        "display": "Capability / Sourcing / Acquire"
+      },
+      "question": "Would we buy a capability, what would trigger it, and what is the limit?",
+      "mustContain": [
+        {
+          "key": "Target",
+          "hint": "what we would buy"
+        },
+        {
+          "key": "Trigger",
+          "hint": "the condition that starts it"
+        },
+        {
+          "key": "Limit",
+          "hint": "the price or scope limit"
+        }
+      ],
+      "functions": [
+        "corp-dev",
+        "finance"
+      ],
+      "feeds": [],
+      "links": [],
+      "linkedBy": [],
+      "storyline": false,
+      "core": {
+        "default": false,
+        "product-saas": false,
+        "services": false,
+        "marketplace": false
+      }
+    },
+    {
+      "id": "capability.operation.delivery",
+      "names": {
+        "l1": "Capability",
+        "l2": "Operation",
+        "l3": "Delivery",
+        "display": "Capability / Operation / Delivery"
+      },
+      "question": "How do we deliver the offer, to what standard, and who owns it?",
+      "mustContain": [
+        {
+          "key": "Steps",
+          "hint": "the delivery steps"
+        },
+        {
+          "key": "Standard",
+          "hint": "the quality bar, testable"
+        },
+        {
+          "key": "Owner",
+          "hint": "who owns delivery"
+        }
+      ],
+      "functions": [
+        "ops",
+        "product"
+      ],
+      "feeds": [],
+      "links": [],
+      "linkedBy": [],
+      "storyline": true,
+      "core": {
+        "default": true,
+        "product-saas": true,
+        "services": true,
+        "marketplace": true
+      }
+    },
+    {
+      "id": "capability.operation.technology",
+      "names": {
+        "l1": "Capability",
+        "l2": "Operation",
+        "l3": "Technology",
+        "display": "Capability / Operation / Technology"
+      },
+      "question": "Which technology is strategic, and which is commodity?",
+      "mustContain": [
+        {
+          "key": "Strategic",
+          "hint": "technology we own and invest in"
+        },
+        {
+          "key": "Commodity",
+          "hint": "technology we rent"
+        },
+        {
+          "key": "Rule",
+          "hint": "how we decide between them"
+        }
+      ],
+      "functions": [
+        "tech",
+        "ops"
+      ],
+      "feeds": [],
+      "links": [],
+      "linkedBy": [],
+      "storyline": false,
+      "core": {
+        "default": false,
+        "product-saas": true,
+        "services": false,
+        "marketplace": false
+      }
+    },
+    {
+      "id": "capability.team.role",
+      "names": {
+        "l1": "Capability",
+        "l2": "Team",
+        "l3": "Role",
+        "display": "Capability / Team / Role"
+      },
+      "question": "Which roles exist, who holds them, and who do we hire next?",
+      "mustContain": [
+        {
+          "key": "Roles",
+          "hint": "the roles"
+        },
+        {
+          "key": "Who",
+          "hint": "who holds each role"
+        },
+        {
+          "key": "Next-hire",
+          "hint": "the next role to fill, and when"
+        }
+      ],
+      "functions": [
+        "people"
+      ],
+      "feeds": [],
+      "links": [],
+      "linkedBy": [],
+      "storyline": false,
+      "core": {
+        "default": false,
+        "product-saas": false,
+        "services": true,
+        "marketplace": false
+      }
+    },
+    {
+      "id": "capability.team.structure",
+      "names": {
+        "l1": "Capability",
+        "l2": "Team",
+        "l3": "Structure",
+        "display": "Capability / Team / Structure"
+      },
+      "question": "How is the team shaped, who decides what, and on what rhythm?",
+      "mustContain": [
+        {
+          "key": "Shape",
+          "hint": "the team shape"
+        },
+        {
+          "key": "Decides",
+          "hint": "who decides what"
+        },
+        {
+          "key": "Rhythm",
+          "hint": "the operating cadence"
+        }
+      ],
+      "functions": [
+        "people",
+        "ops"
+      ],
+      "feeds": [],
+      "links": [],
+      "linkedBy": [],
+      "storyline": false,
+      "core": {
+        "default": false,
+        "product-saas": false,
+        "services": false,
+        "marketplace": false
+      }
+    },
+    {
+      "id": "capability.resource.funding",
+      "names": {
+        "l1": "Capability",
+        "l2": "Resource",
+        "l3": "Funding",
+        "display": "Capability / Resource / Funding"
+      },
+      "question": "How is the company funded, how long does it last, and what comes next?",
+      "mustContain": [
+        {
+          "key": "Source",
+          "hint": "where the money comes from"
+        },
+        {
+          "key": "Runway",
+          "hint": "months of runway"
+        },
+        {
+          "key": "Next",
+          "hint": "the next funding step and its trigger"
+        }
+      ],
+      "functions": [
+        "finance",
+        "corp-dev"
+      ],
+      "feeds": [],
+      "links": [],
+      "linkedBy": [],
+      "storyline": false,
+      "core": {
+        "default": false,
+        "product-saas": false,
+        "services": false,
+        "marketplace": false
+      }
+    },
+    {
+      "id": "capability.resource.allocation",
+      "names": {
+        "l1": "Capability",
+        "l2": "Resource",
+        "l3": "Allocation",
+        "display": "Capability / Resource / Allocation"
+      },
+      "question": "How do we split time and money across the bets?",
+      "mustContain": [
+        {
+          "key": "Split",
+          "hint": "the split, in percentages"
+        },
+        {
+          "key": "Rule",
+          "hint": "the rule that sets it"
+        },
+        {
+          "key": "Reserve",
+          "hint": "what is held back"
+        }
+      ],
+      "functions": [
+        "finance",
+        "ops"
+      ],
+      "feeds": [],
+      "links": [
+        {
+          "cites": "execution.priority.bet",
+          "label": "Bet-Allocation"
+        }
+      ],
+      "linkedBy": [],
+      "storyline": false,
+      "core": {
+        "default": false,
+        "product-saas": false,
+        "services": false,
+        "marketplace": false
+      }
+    },
+    {
+      "id": "execution.priority.bet",
+      "names": {
+        "l1": "Execution",
+        "l2": "Priority",
+        "l3": "Bet",
+        "display": "Execution / Priority / Bet"
+      },
+      "question": "What is the one bet we are making now, what should it produce, and when do we kill it?",
+      "mustContain": [
+        {
+          "key": "Bet",
+          "hint": "the bet"
+        },
+        {
+          "key": "Outcome",
+          "hint": "the outcome it must produce"
+        },
+        {
+          "key": "Kill",
+          "hint": "the condition that ends it"
+        }
+      ],
+      "functions": [
+        "product",
+        "ops",
+        "finance"
+      ],
+      "feeds": [
+        {
+          "contract": "planner.priorities",
+          "need": "required"
+        }
+      ],
+      "links": [],
+      "linkedBy": [
+        "capability.resource.allocation"
+      ],
+      "storyline": true,
+      "core": {
+        "default": true,
+        "product-saas": true,
+        "services": true,
+        "marketplace": true
+      }
+    },
+    {
+      "id": "execution.priority.parked",
+      "names": {
+        "l1": "Execution",
+        "l2": "Priority",
+        "l3": "Parked",
+        "display": "Execution / Priority / Parked"
+      },
+      "question": "What are we deliberately not doing now, and when do we look again?",
+      "mustContain": [
+        {
+          "key": "Parked",
+          "hint": "what is parked"
+        },
+        {
+          "key": "Why",
+          "hint": "why it waits"
+        },
+        {
+          "key": "Revisit",
+          "hint": "when or on what signal we look again"
+        }
+      ],
+      "functions": [
+        "product",
+        "ops"
+      ],
+      "feeds": [
+        {
+          "contract": "planner.priorities",
+          "need": "optional"
+        }
+      ],
+      "links": [],
+      "linkedBy": [],
+      "storyline": false,
+      "core": {
+        "default": false,
+        "product-saas": false,
+        "services": false,
+        "marketplace": false
+      }
+    },
+    {
+      "id": "execution.roadmap.milestone",
+      "names": {
+        "l1": "Execution",
+        "l2": "Roadmap",
+        "l3": "Milestone",
+        "display": "Execution / Roadmap / Milestone"
+      },
+      "question": "Which milestones mark progress, by when, and with what evidence?",
+      "mustContain": [
+        {
+          "key": "Milestone",
+          "hint": "the milestone"
+        },
+        {
+          "key": "Date",
+          "hint": "the due date"
+        },
+        {
+          "key": "Evidence",
+          "hint": "what proves it is reached"
+        }
+      ],
+      "functions": [
+        "product",
+        "ops"
+      ],
+      "feeds": [],
+      "links": [],
+      "linkedBy": [],
+      "storyline": false,
+      "core": {
+        "default": false,
+        "product-saas": false,
+        "services": false,
+        "marketplace": false
+      }
+    },
+    {
+      "id": "execution.roadmap.release",
+      "names": {
+        "l1": "Execution",
+        "l2": "Roadmap",
+        "l3": "Release",
+        "display": "Execution / Roadmap / Release"
+      },
+      "question": "What do we release next, to whom, and through which channel?",
+      "mustContain": [
+        {
+          "key": "Release",
+          "hint": "what ships"
+        },
+        {
+          "key": "Audience",
+          "hint": "who gets it"
+        },
+        {
+          "key": "Channel",
+          "hint": "where it is released"
+        }
+      ],
+      "functions": [
+        "product",
+        "gtm"
+      ],
+      "feeds": [
+        {
+          "contract": "publisher.launch",
+          "need": "optional"
+        }
+      ],
+      "links": [
+        {
+          "cites": "focus.lifecycle.acquisition",
+          "label": "Acquisition-Release"
+        }
+      ],
+      "linkedBy": [],
+      "storyline": false,
+      "core": {
+        "default": false,
+        "product-saas": false,
+        "services": false,
+        "marketplace": false
+      }
+    },
+    {
+      "id": "execution.measure.north-star",
+      "names": {
+        "l1": "Execution",
+        "l2": "Measure",
+        "l3": "North star",
+        "display": "Execution / Measure / North star"
+      },
+      "question": "Which one number shows we deliver value, and what is the target?",
+      "mustContain": [
+        {
+          "key": "Metric",
+          "hint": "the metric, defined"
+        },
+        {
+          "key": "Target",
+          "hint": "the target and date"
+        },
+        {
+          "key": "Why",
+          "hint": "why it tracks customer value"
+        }
+      ],
+      "functions": [
+        "product",
+        "finance"
+      ],
+      "feeds": [
+        {
+          "contract": "planner.priorities",
+          "need": "required"
+        }
+      ],
+      "links": [
+        {
+          "cites": "aspiration.goal.long-term",
+          "label": "Long-term-North star"
+        }
+      ],
+      "linkedBy": [],
+      "storyline": false,
+      "core": {
+        "default": true,
+        "product-saas": true,
+        "services": true,
+        "marketplace": true
+      }
+    },
+    {
+      "id": "execution.measure.driver",
+      "names": {
+        "l1": "Execution",
+        "l2": "Measure",
+        "l3": "Driver",
+        "display": "Execution / Measure / Driver"
+      },
+      "question": "Which inputs move the north star, with which targets and owners?",
+      "mustContain": [
+        {
+          "key": "Drivers",
+          "hint": "the input metrics"
+        },
+        {
+          "key": "Targets",
+          "hint": "a target for each"
+        },
+        {
+          "key": "Owner",
+          "hint": "who owns each"
+        }
+      ],
+      "functions": [
+        "product",
+        "ops",
+        "gtm"
+      ],
+      "feeds": [
+        {
+          "contract": "planner.priorities",
+          "need": "optional"
+        }
+      ],
+      "links": [],
+      "linkedBy": [],
+      "storyline": false,
+      "core": {
+        "default": false,
+        "product-saas": true,
+        "services": false,
+        "marketplace": true
+      }
+    },
+    {
+      "id": "execution.risk.threat",
+      "names": {
+        "l1": "Execution",
+        "l2": "Risk",
+        "l3": "Threat",
+        "display": "Execution / Risk / Threat"
+      },
+      "question": "What could kill the strategy, how likely is it, and how bad would it be?",
+      "mustContain": [
+        {
+          "key": "Threat",
+          "hint": "the threat"
+        },
+        {
+          "key": "Likelihood",
+          "hint": "low, medium or high, with a reason"
+        },
+        {
+          "key": "Impact",
+          "hint": "what it would break"
+        }
+      ],
+      "functions": [
+        "ops",
+        "finance",
+        "corp-dev"
+      ],
+      "feeds": [],
+      "links": [],
+      "linkedBy": [],
+      "storyline": false,
+      "core": {
+        "default": false,
+        "product-saas": false,
+        "services": false,
+        "marketplace": false
+      }
+    },
+    {
+      "id": "execution.risk.mitigation",
+      "names": {
+        "l1": "Execution",
+        "l2": "Risk",
+        "l3": "Mitigation",
+        "display": "Execution / Risk / Mitigation"
+      },
+      "question": "What do we do about each top threat, and who owns it?",
+      "mustContain": [
+        {
+          "key": "Threat",
+          "hint": "the threat it answers"
+        },
+        {
+          "key": "Action",
+          "hint": "the mitigating action"
+        },
+        {
+          "key": "Owner",
+          "hint": "who owns it"
+        }
+      ],
+      "functions": [
+        "ops"
+      ],
+      "feeds": [],
+      "links": [],
+      "linkedBy": [],
+      "storyline": false,
+      "core": {
+        "default": false,
+        "product-saas": false,
+        "services": false,
+        "marketplace": false
+      }
+    }
+  ],
+  "coherence": {
+    "links": [
+      {
+        "downstream": "advantage.proposition.promise",
+        "upstream": "context.customer.need",
+        "label": "Need-Promise"
+      },
+      {
+        "downstream": "advantage.defensibility.differentiator",
+        "upstream": "advantage.proposition.promise",
+        "label": "Promise-Differentiator"
+      },
+      {
+        "downstream": "advantage.model.pricing",
+        "upstream": "advantage.defensibility.differentiator",
+        "label": "Differentiator-Pricing"
+      },
+      {
+        "downstream": "focus.reach.channel",
+        "upstream": "focus.segment.core",
+        "label": "Core-Channel"
+      },
+      {
+        "downstream": "focus.lifecycle.acquisition",
+        "upstream": "focus.reach.channel",
+        "label": "Channel-Acquisition"
+      },
+      {
+        "downstream": "execution.roadmap.release",
+        "upstream": "focus.lifecycle.acquisition",
+        "label": "Acquisition-Release"
+      },
+      {
+        "downstream": "identity.verbal.voice",
+        "upstream": "identity.brand.essence",
+        "label": "Essence-Voice"
+      },
+      {
+        "downstream": "identity.visual.style",
+        "upstream": "identity.verbal.voice",
+        "label": "Voice-Style"
+      },
+      {
+        "downstream": "identity.visual.style",
+        "upstream": "identity.brand.essence",
+        "label": "Essence-Style"
+      },
+      {
+        "downstream": "execution.measure.north-star",
+        "upstream": "aspiration.goal.long-term",
+        "label": "Long-term-North star"
+      },
+      {
+        "downstream": "capability.resource.allocation",
+        "upstream": "execution.priority.bet",
+        "label": "Bet-Allocation"
+      }
+    ],
+    "contradictions": [
+      {
+        "id": "X1",
+        "a": "focus.offer.included",
+        "b": "focus.offer.excluded",
+        "rule": "no item appears in both Offer and Not",
+        "kind": "script"
+      },
+      {
+        "id": "X2",
+        "a": "execution.priority.bet",
+        "b": "execution.priority.parked",
+        "rule": "the Bet is not Parked",
+        "kind": "script"
+      },
+      {
+        "id": "X3",
+        "a": "focus.segment.core",
+        "b": "focus.segment.next",
+        "rule": "Next is not the Core segment restated",
+        "kind": "judge"
+      },
+      {
+        "id": "X4",
+        "a": "identity.verbal.voice",
+        "b": [
+          "identity.verbal.narrative",
+          "advantage.proposition.promise"
+        ],
+        "rule": "no quoted Never word appears in Narrative or Promise",
+        "kind": "script"
+      },
+      {
+        "id": "X5",
+        "a": "advantage.proposition.proof",
+        "b": [
+          "advantage.proposition.promise",
+          "identity.verbal.narrative"
+        ],
+        "rule": "no quoted Never-claim phrase appears in Promise or Narrative",
+        "kind": "script"
+      },
+      {
+        "id": "X6",
+        "a": "aspiration.goal.annual",
+        "b": "aspiration.goal.long-term",
+        "rule": "Annual Date is on or before Long-term Date",
+        "kind": "script"
+      },
+      {
+        "id": "X7",
+        "a": "capability.resource.allocation",
+        "b": "execution.priority.bet",
+        "rule": "the largest Split share goes to the active Bet",
+        "kind": "judge"
+      }
+    ],
+    "storyline": [
+      "context.customer.need",
+      "aspiration.purpose.mission",
+      "focus.segment.core",
+      "advantage.proposition.promise",
+      "identity.brand.essence",
+      "capability.operation.delivery",
+      "execution.priority.bet"
+    ]
+  },
+  "contracts": {
+    "designer.identity": {
+      "owner": "@clossys/designer",
+      "requires": [
+        "identity.brand.essence",
+        "identity.brand.personality",
+        "identity.visual.style"
+      ],
+      "optional": [
+        "identity.visual.imagery"
+      ]
+    },
+    "writer.messaging": {
+      "owner": "@clossys/writer",
+      "requires": [
+        "identity.verbal.narrative",
+        "identity.verbal.voice",
+        "advantage.proposition.promise",
+        "advantage.proposition.proof",
+        "focus.segment.core",
+        "context.customer.need"
+      ],
+      "optional": []
+    },
+    "publisher.launch": {
+      "owner": "@clossys/publisher",
+      "requires": [
+        "focus.reach.channel",
+        "focus.offer.included"
+      ],
+      "optional": [
+        "execution.roadmap.release"
+      ]
+    },
+    "customer.persona": {
+      "owner": "@clossys/customer",
+      "requires": [
+        "focus.segment.core",
+        "context.customer.need"
+      ],
+      "optional": [
+        "context.customer.buying",
+        "context.competition.alternative"
+      ]
+    },
+    "planner.priorities": {
+      "owner": "program planner (outside this package)",
+      "requires": [
+        "execution.priority.bet",
+        "execution.measure.north-star"
+      ],
+      "optional": [
+        "execution.priority.parked",
+        "execution.measure.driver"
+      ]
+    }
+  }
+}

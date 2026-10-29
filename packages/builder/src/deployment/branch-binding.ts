@@ -16,12 +16,11 @@
  * declares. This package does not import that package to resolve it, and
  * must not start.
  *
- * This is the same discipline `@clossys/strategist`'s `BrandDerivation`
- * already uses: it names token slots (`"--color-accent-primary"`) and voice
- * rules by plain string and never imports a token or a voice package, and
- * `checkBrandCoverage` takes the brandable-slot list as an argument
- * precisely because -- in that package's own words -- the caller is the one
- * place the seam can be closed for real. The same shape applies here. One
+ * This is the same discipline `@clossys/strategist`'s `validateBriefContract`
+ * uses: a consuming package declares its brief's owner as a plain string,
+ * and the validator checks the contract without importing that package.
+ * The caller supplies the contract where the two packages meet.
+ * The same shape applies here. One
  * package declares the topology; this one declares which environment
  * consumes it; the repository that depends on both is where the two names
  * are compared against each other. A typed import in either direction would

@@ -1,0 +1,32 @@
+{
+  "banned": [
+    "best-in-class",
+    "world-class",
+    "seamless",
+    "cutting-edge",
+    "innovative",
+    "solutions",
+    "customer-centric",
+    "high quality",
+    "everyone",
+    "all businesses",
+    "etc."
+  ],
+  "tradeOffMarkers": [
+    "over",
+    "not",
+    "instead of",
+    "rather than",
+    "never",
+    "only",
+    "no"
+  ],
+  "negativeKeys": [
+    "Not",
+    "Never",
+    "Avoid",
+    "Refuse",
+    "Not-yet",
+    "Kill"
+  ]
+}

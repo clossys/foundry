@@ -33,7 +33,7 @@ const read = (path: string) => readFileSync(new URL(path, root), "utf8");
 const normalize = (text: string) => text.normalize("NFKC").toLocaleLowerCase("en").replace(/[^\p{L}\p{N}]+/gu, " ").trim();
 const library = (records: WriterRecord[]): WriterLibrary => ({ manifest: {
   consumer: "admin-name-draft-review", messageSyntax: "icu-mf1", defaultLocale: "en", locales: [{ tag: "en", dir: "ltr", state: "active" }],
-  fallback: {}, strategist: { path: "strategy" }, leafFreeze: { lexicon: "", strings: "", patterns: "", passages: "", narratives: "" },
+  fallback: {}, strategy: { root: "strategy", contract: "writer.messaging" }, leafFreeze: { lexicon: "", strings: "", patterns: "", passages: "", narratives: "" },
 }, locales: { en: { records: [...terminology.lexiconRecords as WriterRecord[], ...records], documents: [] } } });
 const binding = (parent: string, id: string) => inventory.entries.find(entry => entry.parent === parent && entry.id === id)!;
 

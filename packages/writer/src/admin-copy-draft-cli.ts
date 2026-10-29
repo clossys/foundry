@@ -20,7 +20,7 @@ export function mainAdminCopyDraft(argv: string[], io = { stdout: console.log, s
         || !row.context.startsWith("admin.writer.") || ids.has(row.id) || contexts.has(row.context)) throw new Error("Distinct unapproved admin.writer draft strings required");
       ids.add(row.id); contexts.add(row.context);
     }
-    if (checkWriterICU({ manifest: { consumer: "admin-copy-draft", messageSyntax: "icu-mf1", defaultLocale: "en", locales: [{ tag: "en", dir: "ltr", state: "active" }], fallback: {}, strategist: { path: "strategy" }, leafFreeze: { lexicon: "", strings: "", patterns: "", passages: "", narratives: "" } }, locales: { en: { records, documents: [] } } }).length) throw new Error("Valid declared English ICU arguments required");
+    if (checkWriterICU({ manifest: { consumer: "admin-copy-draft", messageSyntax: "icu-mf1", defaultLocale: "en", locales: [{ tag: "en", dir: "ltr", state: "active" }], fallback: {}, strategy: { root: "strategy", contract: "writer.messaging" }, leafFreeze: { lexicon: "", strings: "", patterns: "", passages: "", narratives: "" } }, locales: { en: { records, documents: [] } } }).length) throw new Error("Valid declared English ICU arguments required");
     const envelope = { version: 1, revision: 1, state: "draft", locale: "en", activation: "none", records,
       bindings: records.map(row => ({ cellId: row.context, recordId: row.id, target: "WriterRoutePage", kind: "CopyRef" })) };
     // Never replace a source envelope or follow an existing destination symlink.

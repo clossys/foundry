@@ -21,7 +21,7 @@ const allRecords = () => sources().flatMap(source => source.envelope.records);
 const library = (records: StringRecord[], ar?: Envelope): WriterLibrary => ({
   manifest: { consumer: "admin-pages-fixture", messageSyntax: "icu-mf1", defaultLocale: "en",
     locales: [{ tag: "en", dir: "ltr", state: "active" }, ...(ar ? [{ tag: "ar", dir: "rtl", state: "active" } as const] : [])],
-    fallback: {}, strategist: { path: "strategy" }, leafFreeze: { lexicon: "", strings: "", patterns: "", passages: "", narratives: "" } },
+    fallback: {}, strategy: { root: "strategy", contract: "writer.messaging" }, leafFreeze: { lexicon: "", strings: "", patterns: "", passages: "", narratives: "" } },
   locales: { en: { records, documents: [] }, ...(ar ? { ar: { records: ar.records, documents: [] } } : {}) },
 });
 

@@ -5,7 +5,7 @@ import { checkWriterLength, measureWriterText, writerTextFields } from "./length
 
 const string = (text: string, extra: Partial<StringRecord> = {}): StringRecord => ({ id: "st.0000000001", leaf: "strings.actions", context: "Example", status: "draft", origin: "authored", text, ...extra });
 const library = (records: WriterRecord[], targets: Record<string, WriterRecord[]> = {}): WriterLibrary => ({
-  manifest: { consumer: "example", messageSyntax: "icu-mf1", defaultLocale: "en", locales: ["en", ...Object.keys(targets)].map(tag => ({ tag, dir: "ltr", state: "active" })), fallback: {}, strategist: { path: "strategy" }, leafFreeze: { lexicon: "", strings: "", patterns: "", passages: "", narratives: "" } },
+  manifest: { consumer: "example", messageSyntax: "icu-mf1", defaultLocale: "en", locales: ["en", ...Object.keys(targets)].map(tag => ({ tag, dir: "ltr", state: "active" })), fallback: {}, strategy: { root: "strategy", contract: "writer.messaging" }, leafFreeze: { lexicon: "", strings: "", patterns: "", passages: "", narratives: "" } },
   locales: Object.fromEntries(Object.entries({ en: records, ...targets }).map(([tag, values]) => [tag, { records: values, documents: [] }])),
 });
 

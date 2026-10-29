@@ -29,9 +29,10 @@ const ENTRIES: ReadonlyArray<readonly [id: string, text: string, context: string
   ["front-door.pack-review.description", "The pack's strategy brief, brand kit, voice and copy, then this site's pages, forced states and exports, read from the repository's records.", "pack review page: line under the heading"],
   ["front-door.pack-review-surface.label", "Review", "pack review page: surface badge in the page banner"],
   ["front-door.pack-review-strategy.label", "Strategy brief", "pack review page: heading of the strategy brief section"],
-  ["front-door.pack-review-strategy-empty.notice", "No Strategist contract and no engagement brief context are recorded yet.", "pack review page: the strategy brief section when neither record is present"],
-  ["front-door.pack-review-strategy-contract.notice", "Read from the Strategist contract.", "pack review page: strategy brief source, the Strategist contract"],
-  ["front-door.pack-review-strategy-brief.notice", "Read from the engagement brief's context. There is no Strategist contract yet.", "pack review page: strategy brief source, the engagement brief alone"],
+  ["front-door.pack-review-strategy-empty.notice", "The publisher.launch strategy brief is missing. Activate the required launch cells and compile the brief.", "pack review page: the strategy brief section when required launch cells or its written brief are missing"],
+  ["front-door.pack-review-strategy-contract.notice", "Read from the publisher.launch strategy brief.", "pack review page: strategy brief source, the Publisher launch contract"],
+  ["front-door.pack-review-strategy-brief.notice", "Context read from the engagement brief.", "pack review page: strategy brief source, the engagement brief alone"],
+  ["front-door.pack-review-strategy-stale.notice", "This strategy brief is stale. Review its cell references before proceeding.", "pack review page: visible stale strategy brief flag"],
   ["front-door.pack-review-strategy-summary.label", "Summary", "pack review page: strategy brief, the product summary"],
   ["front-door.pack-review-strategy-context.label", "Context from the owner", "pack review page: strategy brief, the engagement context already answered"],
   ["front-door.pack-review-strategy-questions.label", "Open questions for the owner", "pack review page: strategy brief, what the owner still has to decide"],
@@ -121,7 +122,7 @@ export const PACK_REVIEW_COPY: CopyRegistry = {
 /** The words `resolvePackReviewSections` places beside the records' own words. */
 export interface PackReviewSectionText {
   /** The line naming the strategy brief's source. */
-  strategySource: { contract: string; brief: string };
+  strategySource: { contract: string; brief: string; stale: string };
   /** Leads each claim the Strategist contract still marks as a hypothesis. */
   hypothesis: string;
   /** Each engagement-context field's name, and the question shown while it is unanswered. */
@@ -218,6 +219,7 @@ export function packReviewText(resolve: CopyResolver): PackReviewText {
       strategySource: {
         contract: text("front-door.pack-review-strategy-contract.notice"),
         brief: text("front-door.pack-review-strategy-brief.notice"),
+        stale: text("front-door.pack-review-strategy-stale.notice"),
       },
       hypothesis: text("front-door.pack-review-strategy-hypothesis.label"),
       contextFields: {

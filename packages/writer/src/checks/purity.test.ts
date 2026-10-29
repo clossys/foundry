@@ -9,7 +9,7 @@ const passage = (): PassageRecord => ({ ...base, id: "ps.0000000001", leaf: "pas
   body: [{ ref: "term", id: "lx.0000000001" }, { ref: "pattern", id: "pt.0000000001", part: "headline" }],
 } });
 const library = (records: readonly unknown[]): WriterLibrary => ({
-  manifest: { consumer: "example", messageSyntax: "icu-mf1", defaultLocale: "en", locales: [{ tag: "en", dir: "ltr", state: "active" }], fallback: {}, strategist: { path: "strategy" },
+  manifest: { consumer: "example", messageSyntax: "icu-mf1", defaultLocale: "en", locales: [{ tag: "en", dir: "ltr", state: "active" }], fallback: {}, strategy: { root: "strategy", contract: "writer.messaging" },
     leafFreeze: { lexicon: "", strings: "", patterns: "", passages: "", narratives: "" } },
   locales: { en: { records: records as WriterRecord[], documents: [] } },
 });

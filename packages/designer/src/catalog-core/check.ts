@@ -11,6 +11,7 @@ import { resolveForCheck, type EngineInput } from "./resolve.js";
 import { createDerivationInputsHasher, generateSelection, originOf, tokenContent } from "./library.js";
 import { sha256 } from "./digest.js";
 import { stableStringify } from "./stable.js";
+import { validateSelectionStrategy, type SelectionStrategyReader } from "./selection-strategy.js";
 import { registeredRule, matchesRuleInputs } from "./rules.js";
 import { checkAssetProfileWithContext } from "../catalog-assets/check.js";
 import { checkIdentityDerivationsWithContext } from "../catalog-assets/identity.js";
@@ -18,7 +19,7 @@ import type { CheckResult } from "./api.js";
 import type { CheckCode, DtcgToken, FillDoc, Finding, Resolved, Slot } from "./types.js";
 
 const LICENSES = new Set(["MIT", "Apache-2.0", "BSD-2-Clause", "BSD-3-Clause", "ISC", "OFL-1.1", "CC0-1.0"]);
-export function check(input: EngineInput & { resolved?: Resolved; fileExists?: (path: string) => boolean }): CheckResult {
+export function check(input: EngineInput & { resolved?: Resolved; fileExists?: (path: string) => boolean; strategy?: SelectionStrategyReader }): CheckResult {
   const { resolved: fresh, chosen, fills, flattened } = resolveForCheck(input);
   const tokensOf = (fill: FillDoc): Record<string, DtcgToken> => {
     let tokens = flattened.get(fill);
@@ -195,7 +196,11 @@ export function check(input: EngineInput & { resolved?: Resolved; fileExists?: (
     if (source.kind === "external" && (!source.pin || Object.keys(source.pin).length === 0)) add("C6", "pin", source.id, { message: `pin: external source ${source.id} has no pin`, copy: { id: "st.t578r688wz", values: { source: (source.id ?? "") } } });
   }
   for (const [key, count] of grouped) if (count > 1) { const [source, slot] = key.split("/"); add("C5", "uniqueness", key, { message: `uniqueness: source ${source} has ${count} fills for slot ${slot}`, copy: { id: "st.yzfg6d7a3p", values: { source: (source ?? ""), count: (count ?? ""), item: (slot ?? "") } } }); }
-  if (input.library.selection && stableStringify(input.library.selection) !== stableStringify(generateSelection(input.library))) add("C10", "provenance", input.library.source.id, { message: "provenance: generated selection differs from consumer fills and rationale", copy: { id: "st.mwtyf6mxz8" } });
+  const legacyDirection = Object.hasOwn(input.library, "direction") || (input.library.selection && Object.hasOwn(input.library.selection, "direction"));
+  const strategyResult = input.library.strategy != null || input.strategy ? validateSelectionStrategy(input.library.strategy, input.strategy) : undefined;
+  if (legacyDirection) findings.push({ code: "C10", rule: "strategy", subject: input.library.source.id, severity: "error", message: "strategy: direction was removed; cite the designer.identity brief" });
+  if (strategyResult) findings.push(...strategyResult.findings);
+  if (!legacyDirection && strategyResult?.state !== "invalid" && input.library.selection && stableStringify(input.library.selection) !== stableStringify(generateSelection(input.library))) add("C10", "provenance", input.library.source.id, { message: "provenance: generated selection differs from consumer fills and rationale", copy: { id: "st.mwtyf6mxz8" } });
   const graph = new Map<string, string[]>();
   for (const [member, entry] of Object.entries(chosen)) {
     const targets = new Set(readsOf(entry.token)); const meta = metaOf(entry.fill);

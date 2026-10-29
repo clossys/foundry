@@ -1,20 +1,23 @@
 /**
  * `readJsonFile` — read, parse, and validate one JSON record file, reporting
- * failure as a `StrategyReadIssue` instead of throwing. Shared by
- * `readStrategy` (`reader.ts`) and `readBrandFacts` (`brand-facts.ts`) so the
- * three failure reasons — unreadable, unparseable, invalid-schema — mean the
- * same thing in both.
+ * failure as a typed read issue instead of throwing. Failures distinguish
+ * unreadable files, unparseable JSON and invalid schema data.
  */
 
 import { readFileSync } from "node:fs";
-import type { StrategyReadIssue } from "./reader.js";
 import { summarizeIssues, type Validator } from "./validation.js";
+
+interface JsonFileIssue {
+  file: string;
+  reason: "unreadable" | "unparseable" | "invalid-schema";
+  detail: string;
+}
 
 export function readJsonFile<T>(
   path: string,
   relLabel: string,
   validate: Validator<T>,
-): { ok: true; value: T } | { ok: false; issue: StrategyReadIssue } {
+): { ok: true; value: T } | { ok: false; issue: JsonFileIssue } {
   let raw: string;
   try {
     raw = readFileSync(path, "utf8");

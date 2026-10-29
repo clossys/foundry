@@ -42,7 +42,7 @@ const library: WriterLibrary = {
   manifest: {
     consumer: "passage-catalog-coverage-test", messageSyntax: "icu-mf1", defaultLocale: "en",
     locales: Object.keys(locales).map(tag => ({ tag, dir: tag === "ar" ? "rtl" : "ltr", state: "active" })),
-    fallback: {}, strategist: { path: "synthetic/passage-catalog-coverage" },
+    fallback: {}, strategy: { root: "synthetic/passage-catalog-coverage", contract: "writer.messaging" },
     leafFreeze: { lexicon: "", strings: "", patterns: "", passages: "", narratives: "" },
   },
   locales,

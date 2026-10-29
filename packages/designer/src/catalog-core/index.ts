@@ -97,6 +97,8 @@ import { assertFrozenLeafSets } from "./leaf-freeze.js";
 import { withAssetCatalog } from "../catalog-assets/catalog.js";
 import type { BuildCatalogData, CatalogData, FillDoc, FrameSlot, Placement, Retired, Slot, Source, Standard, CatalogRule } from "./types.js";
 export * from "./types.js";
+export { validateSelectionStrategy } from "./selection-strategy.js";
+export type { SelectionCellRef, SelectionStrategy, SelectionStrategyReader, SelectionStrategyResult } from "./selection-strategy.js";
 export * from "./library-roster.js";
 export * from "./component-registry.js";
 export * from "./ia-placement.js";
