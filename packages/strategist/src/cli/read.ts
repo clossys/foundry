@@ -12,6 +12,8 @@ export interface ReadArgs {
   scope: "core" | "full";
   level: "mvs" | "l0" | "full";
   verb?: "create" | "cohere" | "unlock" | "normalize";
+  write?: boolean;
+  request?: boolean;
 }
 export interface ReadResult { code: 0 | 1 | 2; data: unknown; text: string[] }
 export interface ReadServices { execute(args: ReadArgs): ReadResult }
@@ -21,12 +23,13 @@ Usage: strategist-check status [--scope core|full]
        strategist-check check [<id>[@N]...]
        strategist-check cohere [<l2-id>...]
        strategist-check complete [--level mvs|l0|full]
-       strategist-check brief <contract>
+       strategist-check brief <contract> [--write] [--request]
        strategist-check handoff <contract>
 Aliases: cell-quality = check, coherence = cohere, completion = complete.
 Quality, coherence and completion commands save their returned report under <root>/reports/.
 All read commands accept --root <dir> (default clossys/strategist), --json and --help.
-brief --write and --request require the write path and are unavailable here.`;
+brief --write saves the brief and briefs/index.json; --request opens a missing-input request.
+brief and handoff without these flags do not write.`;
 const part = "[a-z]+(?:-[a-z]+)*";
 const leaf = new RegExp(`^${part}\\.${part}\\.${part}$`);
 const pinned = new RegExp(`^${part}\\.${part}\\.${part}(?:@[1-9][0-9]*)?$`);
@@ -41,6 +44,12 @@ export function parseReadArgs(argv: string[]): ReadArgs {
     const token = argv[i]!;
     if (token === "--help" || token === "-h") { args.help = true; continue; }
     if (token === "--json") { args.json = true; continue; }
+    if (token === "--write" || token === "--request") {
+      if (command !== "brief" || seen.has(token)) throw new Error(`${token} requires brief and may be given only once`);
+      seen.add(token);
+      if (token === "--write") args.write = true; else args.request = true;
+      continue;
+    }
     if (["--root", "--scope", "--level", "--verb"].includes(token)) {
       if (seen.has(token)) throw new Error(`Repeated option ${token}`);
       seen.add(token);

@@ -1,13 +1,16 @@
 import { openStrategy } from "../api.js";
 import { readStrategyRoot } from "../store.js";
+import { compileAndPersistBrief } from "../write/brief.js";
 import type { ReadArgs, ReadResult } from "./read.js";
 
-/** Read-only brief adapter shared by brief and contract handoff. */
+/** Brief and handoff share presentation; only explicit brief flags can write. */
 export function executeBriefCommand(args: ReadArgs): ReadResult {
   if (args.command !== "brief" && args.command !== "handoff") throw new Error("Expected a brief or handoff command");
   const model = readStrategyRoot(args.root);
   if (model.issues.length) throw new Error(model.issues.map(issue => `${issue.path}:${issue.line}: ${issue.message}`).join("; "));
-  const brief = openStrategy(args.root).getBrief(args.targets[0]!);
+  const brief = args.command === "brief" && (args.write || args.request)
+    ? compileAndPersistBrief(args.root, args.targets[0]!, { write: args.write, request: args.request })
+    : openStrategy(args.root).getBrief(args.targets[0]!);
   return {
     code: brief.state === "ready" ? 0 : 1,
     data: brief,

@@ -45,10 +45,15 @@ describe("read-only cell CLI", () => {
     expect(output).toHaveBeenCalledWith(progress);
     expect(parseReadArgs(["status"]).root).toBe("clossys/strategist");
   });
-  it.each(["--write", "--request"])("rejects brief %s before calling services", flag => {
+  it.each(["--write", "--request"])("passes explicit brief %s to services", flag => {
     const backend = services();
-    expect(runReadCommand(["brief", "writer.messaging", flag, "--json"], backend, vi.fn())).toBe(2);
-    expect(backend.execute).not.toHaveBeenCalled();
+    expect(runReadCommand(["brief", "writer.messaging", flag, "--json"], backend, vi.fn())).toBe(0);
+    expect(backend.execute).toHaveBeenCalledWith(expect.objectContaining({ [flag.slice(2)]: true }));
+  });
+  it.each(["--write", "--request"])("restricts %s to brief and refuses duplicates", flag => {
+    expect(() => parseReadArgs(["handoff", "writer.messaging", flag])).toThrow();
+    expect(() => parseReadArgs(["status", flag])).toThrow();
+    expect(() => parseReadArgs(["brief", "writer.messaging", flag, flag])).toThrow();
   });
   it.each([
     ["status", "--scope", "other"], ["complete", "--level", "other"], ["status", "--root"],

@@ -89,6 +89,8 @@ The default root is `clossys/strategist`; `--root` selects another root. The bar
 
 `propose <id> [--from N] [--option A]` creates a draft. `activate <cell-ref>[,<cell-ref>...] --confirm <user-message-ref>` requires the exact listed user confirmation. `request new|list|resolve` manages requests. The write API exposes `propose`, `activate`, `createRequest`, `listRequests` and `resolveRequest`. Activation preserves active and retired bodies and checks the entire confirmation batch before mutation. There is no force flag.
 
+`brief <contract> --write` saves `briefs/<contract>.json` and updates `briefs/index.json` with each written contract's state, refs and fingerprint. `--request` opens a missing-input request attributed to the contract owner; repeating it reuses an open or drafted request for the same contract and missing cells. The flags work separately or together. Without them, `brief` and `handoff` only read. A valid missing or stale brief exits 1; invalid arguments, unknown contracts and unreadable inputs exit 2. After compiling installed contracts, run `index` to write `citations.json`.
+
 `buildCitationIndex` indexes cell markers, structured JSON references and compiled briefs. `review` evaluates active Watch rules, dated findings and citation drift, creating deduplicated requests through the request writer. It never activates a choice. A malformed or unreadable root remains an error.
 
 ## Grounding and prohibited claims
