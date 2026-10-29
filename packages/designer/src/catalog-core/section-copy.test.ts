@@ -12,7 +12,10 @@ const findings = (patch: (contract: any) => void, id?: string) => sectionRegistr
 describe("registered section copy", () => {
   it("lists every registered section and its unique mechanically paired passage through the public catalog API", () => {
     const registry = loadSectionRegistry(), rows = sectionCopyCatalog(registry);
-    expect(rows).toHaveLength(52);
+    expect(rows).toHaveLength(51);
+    expect(registry.aliases).toContainEqual({ id: "sections.error-message", target: "sections.error-state" });
+    expect(rows.some(row => row.id === "sections.error-message")).toBe(false);
+    expect(rows.find(row => row.id === "sections.error-state")?.passageSchema).toBe("passages.error-state");
     expect(rows.map(row => row.id)).toEqual(registry.slots.map(slot => slot.id));
     expect(new Set(rows.map(row => row.passageSchema)).size).toBe(rows.length);
     for (const row of rows) {

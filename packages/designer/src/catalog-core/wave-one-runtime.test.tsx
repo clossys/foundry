@@ -14,8 +14,9 @@ import { surfaceRendererId, surfaceRuntimeCallbacks, surfaceRuntimePointers, sur
 import { packageSurfaceLibrary } from "../../dist/library-cli/__fixtures__/package-surface-library.js";
 import { packageBarrelExports } from "../../dist/library-cli/surface-package-evidence.js";
 import { specimenDataset } from "../../dist/studio/specimen-dataset.js";
+import { SECTION_HEADER_CONTENT_KEY } from "../../dist/catalog-core/runtime-ports.js";
 
-const FRAME = "frames.auth-shell", LOGO = "sections.logo-mark", SIGN_IN = "sections.sign-in-form", ERROR = "sections.error-message";
+const FRAME = "frames.auth-shell", LOGO = "sections.logo-mark", SIGN_IN = "sections.sign-in-form", ERROR = "sections.error-state";
 const WAVE_ONE = [FRAME, LOGO, SIGN_IN, "sections.boundary-message", ERROR, "sections.legal-prose", "sections.account-summary"];
 // jsdom is an installed test peer without declarations; keep its parser port explicit.
 const { JSDOM } = createRequire(import.meta.url)("jsdom") as { JSDOM: new (html: string) => { window: { document: Document } } };
@@ -47,7 +48,7 @@ function assembly(sectionLeaves: readonly string[], overrides: Readonly<Record<s
     if (contract.kind !== "frame" && contract.kind !== "section") throw new Error(`No surface contract for ${leaf}`);
     const sample = { ...surfaceRuntimeRenderers[leaf]!.sample(specimenDataset), ...(leaf === LOGO ? { mark: { slot: mark.slot, member: "reversed", src: markSrc } } : {}), ...overrides[leaf] };
     const content = Object.fromEntries(Object.entries(sample).map(([slot, value]) => {
-      const kind = contract.kind === "section" ? contract.slots.find(row => row.name === slot)!.type : "region";
+      const kind = contract.kind === "section" ? leaf === ERROR && slot === SECTION_HEADER_CONTENT_KEY ? "copy" : contract.slots.find(row => row.name === slot)!.type : "region";
       const reference = { kind, ref: `content:${leaf}:${slot}` } as RuntimeContentRef;
       values.set(reference.ref, value);
       return [slot, reference];
@@ -112,6 +113,8 @@ function draw(sectionLeaves: readonly string[], overrides: Parameters<typeof ass
 
 describe("wave-one installed package → consumer library → runtime assembly → SSR", () => {
   it("plans all seven registered leaves from installed artifact evidence and actual package callbacks", () => {
+    expect(loadBuildCatalog().aliases).toContainEqual({ id: "sections.error-message", target: ERROR });
+    expect(loadBuildCatalog().slots.some(slot => slot.id === "sections.error-message")).toBe(false);
     const plan = planSurfaceRuntime({ engine, packages, renderers: surfaceRuntimePointers(), leaves: WAVE_ONE });
     expect(plan.gaps).toEqual([]);
     expect(plan.manifest.fills.map(fill => fill.leaf)).toEqual(WAVE_ONE);
@@ -166,7 +169,9 @@ describe("wave-one installed package → consumer library → runtime assembly �
   it("composes a standalone authored error through the same AuthFrame and provenance oracle", () => {
     const { main } = draw([ERROR]);
     const section = main.querySelector(`[data-ds-leaf="${ERROR}"]`)!;
-    expect(section.querySelector("h1")!.textContent).toBe(specimenDataset.sections.errorState.code);
+    expect(section.querySelector("h2")!.textContent).toBe(specimenDataset.sections.errorState.title);
+    expect(section.querySelector("h1")).toBeNull();
+    expect(section.querySelector('[data-ds-leaf="sections.section-header"]')!.textContent).toContain(specimenDataset.sections.errorState.code);
     expect(section.textContent).toContain(specimenDataset.sections.errorState.title);
     expect(section.querySelector(`a[href="${specimenDataset.sections.errorState.report.href}"]`)!.textContent).toBe(specimenDataset.sections.errorState.report.label);
   });

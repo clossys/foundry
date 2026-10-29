@@ -122,11 +122,11 @@ describe("SU-9W section copy cascade", () => {
   const aliases = { ...copy.aliases, ...cascade.aliases };
   const strings = allRecords.filter((r: WriterRecord) => r.id.startsWith("st."));
 
-  it("pins 52 current live pairs separately from 52 approved projected pairs", () => {
+  it("pins 51 current live pairs separately from 52 approved projected pairs", () => {
     const current = loadWriterCatalog().slots.filter(slot => slot.layer === "passages");
-    expect(source).toHaveLength(52);
-    expect(current).toHaveLength(52);
-    expect(new Set(current.map(slot => slot.id)).size).toBe(52);
+    expect(source).toHaveLength(51);
+    expect(current).toHaveLength(51);
+    expect(new Set(current.map(slot => slot.id)).size).toBe(51);
     expect(current.map(slot => slot.id).sort()).toEqual(source.map((s: any) => s.contract.passageSchema).sort());
     expect(cascade.merges.map((m: any) => [m.fromSection, m.toSection])).toEqual([
       ["sections.logo-mark", "sections.logo-hero"],
