@@ -104,6 +104,7 @@ export function staticContentReference(reference: ContentRef): ContentRef {
 /** Schema view only: retain each declared placement once and remove additive
  * data instructions before the unchanged static body/Section validator. */
 export function registeredBindingTemplate(binding: InstanceBinding): InstanceBinding {
+  if (binding.frame.content !== undefined && (!contentRecord(binding.frame.content) || Object.entries(binding.frame.content).some(([name, reference]) => !contentText(name) || !isRegisteredContentRef(reference)))) throw new TypeError("Frame content must contain only named typed consumer references");
   if (binding.body?.kind === "canvas" && Object.values(binding.frame.content ?? {}).some(reference => reference.lazy)) throw new TypeError("Scroll page data is flow-only");
   const refs = (values: Readonly<Record<string, ContentRef>>) => Object.fromEntries(Object.entries(values).map(([slot, reference]) => [slot, staticContentReference(reference)]));
   const seen = new Set<SectionFill>();
