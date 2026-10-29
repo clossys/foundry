@@ -16,15 +16,12 @@
         "package": "@clossys/designer",
         "version": "0.12.0"
       },
-      "relation": "subset",
+      "relation": "same-contract",
       "slot": "sections.logo-hero",
       "source": "foundry",
       "sourceAddress": "./blocks#LogoHero",
       "status": "draft",
-      "trust": "foundry",
-      "unmapped": [
-        "brand.named"
-      ]
+      "trust": "foundry"
     }
   },
   "sections": {
@@ -48,7 +45,7 @@
         "sourceFiles": [
           {
             "path": "packages/designer/src/blocks/LogoHero.tsx",
-            "sha256": "c4d81259bccc7648c61e9846b2c5a25f9b03c23d9fd23c7ce5bd5dc07b2f4d4c"
+            "sha256": "32baf5844ddcee9a4a6fa968740e62a8389d7a8fe4a4d6031f6af1f31728bcd7"
           },
           {
             "path": "packages/designer/src/catalog-core/provenance-attrs.ts",
@@ -80,7 +77,10 @@
         "package": "@clossys/designer",
         "version": "0.12.0"
       },
-      "propMap": {},
+      "propMap": {
+        "brand.mark-only": "./blocks#LogoHero.member=brand.mark-only",
+        "brand.named": "./blocks#LogoHero.member=brand.named"
+      },
       "reads": {
         "assets": [],
         "tokens": []

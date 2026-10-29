@@ -286,6 +286,7 @@
         "layout.stacked"
       ],
       "supportedSlots": [
+        "aside",
         "body",
         "footnote",
         "header",
@@ -598,9 +599,7 @@
       "unresolvedMemberAxes": []
     },
     {
-      "missingMembers": [
-        "brand.named"
-      ],
+      "missingMembers": [],
       "missingRequiredSlots": [],
       "missingSlots": [],
       "notes": [
@@ -608,8 +607,11 @@
         "Source-only import and token-read measurements are lower bounds; shared anatomy, accessibility, contrast and consumer runtime conformance remain unmeasured. Content bindings describe host adaptation points, not type-equivalent converters."
       ],
       "slot": "sections.logo-hero",
-      "status": "subset",
-      "supportedMembers": [],
+      "status": "candidate",
+      "supportedMembers": [
+        "brand.mark-only",
+        "brand.named"
+      ],
       "supportedSlots": [
         "mark",
         "name"

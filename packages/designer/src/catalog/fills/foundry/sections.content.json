@@ -26,14 +26,20 @@
   },
   "sections": {
     "content": {
-      "composes": [],
+      "composes": [
+        "components.semantic-content"
+      ],
       "configs": {},
       "consumption": {
         "scanStatus": "lower-bound",
-        "scannedComposes": [],
+        "scannedComposes": [
+          "components.semantic-content"
+        ],
         "scannedReads": {
           "assets": [],
-          "components": [],
+          "components": [
+            "components.semantic-content"
+          ],
           "tokens": [
             "tokens.accent-color",
             "tokens.body-size",
@@ -55,7 +61,7 @@
         "sourceFiles": [
           {
             "path": "packages/designer/src/blocks/ContentSection.tsx",
-            "sha256": "1a8d3f0cd0835a9842eef51f303bff1a3adfbea4ee9de6297f2de0ae5532006b"
+            "sha256": "0bc53396320e0d118f33a7b49699f1d91741f12f7e3cc31833ee6966699535ff"
           },
           {
             "path": "packages/designer/src/blocks/internal/block-vars.ts",
@@ -67,7 +73,7 @@
           },
           {
             "path": "packages/designer/src/blocks/SectionIntro.tsx",
-            "sha256": "3a0884248430fe5bd0317576e09067c45d01fc75472e966050b01a694f77f54d"
+            "sha256": "68bddd1ff6ac3183d13a397915e5b21e19567110d0c1d014c953dfb138f423dd"
           },
           {
             "path": "packages/designer/src/catalog-core/provenance-attrs.ts",
@@ -140,6 +146,7 @@
       },
       "slot": "sections.content",
       "slotMap": {
+        "aside": "./blocks#ContentSection.aside",
         "body": "./blocks#ContentSection.children",
         "footnote": "./blocks#ContentSection.footnote",
         "header": "./blocks#ContentSection.heading,eyebrow,description,actions",
