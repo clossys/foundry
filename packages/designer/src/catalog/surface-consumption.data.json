@@ -3158,44 +3158,26 @@
   "sections.legal-prose": {
     "consumption": {
       "scanStatus": "lower-bound",
-      "scannedComposes": [],
+      "scannedComposes": [
+        "components.semantic-content",
+        "sections.article",
+        "sections.section-header"
+      ],
       "scannedReads": {
         "assets": [],
-        "components": [],
+        "components": [
+          "components.semantic-content"
+        ],
         "tokens": [
-          "tokens.accent-color",
           "tokens.body-size",
-          "tokens.border-color",
-          "tokens.border-width",
-          "tokens.caption-size",
-          "tokens.content-size",
-          "tokens.display-size",
-          "tokens.heading-size",
-          "tokens.letter-spacing",
-          "tokens.line-height",
           "tokens.spacing",
-          "tokens.status-color",
-          "tokens.surface-color",
-          "tokens.text-color",
-          "tokens.typeface"
+          "tokens.text-color"
         ]
       },
       "sourceFiles": [
         {
-          "path": "packages/designer/src/blocks/ContentSection.tsx",
-          "sha256": "1a8d3f0cd0835a9842eef51f303bff1a3adfbea4ee9de6297f2de0ae5532006b"
-        },
-        {
-          "path": "packages/designer/src/blocks/internal/block-vars.ts",
-          "sha256": "33e9c7bd8700ff201b8ba138ca4f10dd7de910a23d260019e676470b918cceb5"
-        },
-        {
-          "path": "packages/designer/src/blocks/section-ground.ts",
-          "sha256": "a519649f96cb339f1128fc385e68d67b6af063ed492ac2c285f09c1740c98679"
-        },
-        {
-          "path": "packages/designer/src/blocks/SectionIntro.tsx",
-          "sha256": "3a0884248430fe5bd0317576e09067c45d01fc75472e966050b01a694f77f54d"
+          "path": "packages/designer/src/blocks/LegalProse.tsx",
+          "sha256": "89a8d7871721dbb7db052c2b52f86a85423d68fb6499e406bbab8a3577096dd7"
         },
         {
           "path": "packages/designer/src/catalog-core/provenance-attrs.ts",
@@ -3204,10 +3186,6 @@
         {
           "path": "packages/designer/src/components/internal/cx.ts",
           "sha256": "0a7524b0340fec42e1abb216013a353e950aa738d9ba0f2ebdedd5293337bab3"
-        },
-        {
-          "path": "packages/designer/src/components/internal/ui-vars.ts",
-          "sha256": "8455ed770c61ec15597b5ead597563135ed088b609dc11b2cd7ed8b873371701"
         }
       ],
       "unresolved": [
@@ -3226,7 +3204,7 @@
       ]
     },
     "pin": {
-      "export": "./blocks#ContentSection",
+      "export": "./blocks#LegalProse",
       "package": "@clossys/designer",
       "version": "0.12.0"
     }
@@ -4473,11 +4451,14 @@
     "consumption": {
       "scanStatus": "lower-bound",
       "scannedComposes": [
+        "components.semantic-content",
         "sections.section-header"
       ],
       "scannedReads": {
         "assets": [],
-        "components": [],
+        "components": [
+          "components.semantic-content"
+        ],
         "tokens": [
           "tokens.accent-color",
           "tokens.body-size",
@@ -4494,7 +4475,7 @@
       "sourceFiles": [
         {
           "path": "packages/designer/src/blocks/OrderedStepSequence.tsx",
-          "sha256": "ae4278b3bffeca61badf0cd72340595a13565e4f1443d212d1dd4dd9692113e7"
+          "sha256": "938aa49497a81d308afe81cab3af970f47ab4f0359af7433a5299dd837931ddd"
         },
         {
           "path": "packages/designer/src/blocks/section-ground.ts",

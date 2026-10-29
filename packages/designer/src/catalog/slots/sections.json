@@ -4322,6 +4322,10 @@
       "allowedComposes": [
         "components.semantic-content"
       ],
+      "composes": [
+        "sections.article",
+        "sections.section-header"
+      ],
       "parts": [
         "sections.band"
       ],
@@ -7299,7 +7303,8 @@
         "names": []
       },
       "allowedComposes": [
-        "components.status-mark"
+        "components.status-mark",
+        "components.semantic-content"
       ],
       "parts": [
         "sections.band",

@@ -563,9 +563,9 @@
       "missingRequiredSlots": [],
       "missingSlots": [],
       "notes": [
-        "Private runtime composes existing ContentSection plus ArticleBody; ContentSection is the public fill pointer. heading binds to heading; revision {label,value} adapts to description; body typed paragraph/heading/list records adapt to ArticleBody children within ContentSection children. These bindings are adaptation points, not direct JSON prop equivalence.",
-        "The host owns the legal heading, revision label/value and every policy section. A short placeholder is supported while final Writer-authored policy text remains host-owned. The renderer supplies no policy wording beyond isolated specimen preview content.",
-        "Body accepts only paragraph/heading text and lists of text; React escapes text. Unknown node kinds and fields, arbitrary HTML and undeclared inputs are refused. Paragraph/list nodes use dir=auto and body headings render as h3 below the host heading at h2.",
+        "Public LegalProse composes ArticleBody, SectionHeader and SemanticContent. heading binds to heading; revision {label,value,dateTime?} binds to revision; typed body records adapt to ArticleBody children. These are host adaptation points, not direct JSON prop equivalence.",
+        "The host owns the legal heading, revision label/value and every policy section. Optional revision.dateTime is valid YYYY-MM-DD calendar metadata, separate from existing Writer-authored display copy; authored dates render through time while legacy label/value revisions retain their display.",
+        "The registered runtime accepts paragraph/heading text and lists of text; React escapes text. Unknown node kinds and fields, arbitrary HTML and undeclared inputs are refused. Paragraph/list nodes use dir=auto and body headings render as h3 below the default h2 legal heading.",
         "Requires an external Designer SectionFrame; the surrounding page must use a Designer Frame. No legal route, data fetching or document ownership is introduced. Source checks and consumer runtime qualification remain separate.",
         "Source-only import and token-read measurements are lower bounds; shared anatomy, accessibility, contrast and consumer runtime conformance remain unmeasured. Content bindings describe host adaptation points, not type-equivalent converters."
       ],

@@ -1,4 +1,5 @@
 import { SectionHeader } from "./SectionHeader.js";
+import { SemanticContent } from "../components/SemanticContent.js";
 import type { CSSProperties, HTMLAttributes, ReactNode } from "react";
 import { cx } from "../components/internal/cx.js";
 import { SECTION_GROUND_CLASSES, type SectionGround } from "./section-ground.js";
@@ -69,16 +70,16 @@ export function OrderedStepSequence({ eyebrow, heading, description, items, head
           const last = index === items.length - 1;
           const text = (
             <div data-step-text="" className={cx("flex min-w-0 flex-col gap-sm", last ? undefined : LAYOUT_CLASSES.gap)}>
-              {item.label ? <p className={cx("text-body-s font-medium uppercase tracking-label", colors.secondary)}>{item.label}</p> : null}
-              <ItemHeadingTag className={cx("text-body-l font-body font-medium", colors.primary)}>{item.heading}</ItemHeadingTag>
-              {item.description ? <p className={cx("text-body text-pretty", colors.secondary)}>{item.description}</p> : null}
+              {item.label ? <SemanticContent as="p" className={cx("text-body-s font-medium uppercase tracking-label", colors.secondary)}>{item.label}</SemanticContent> : null}
+              <SemanticContent as={ItemHeadingTag} className={cx("text-body-l font-body font-medium", colors.primary)}>{item.heading}</SemanticContent>
+              {item.description ? <SemanticContent as="p" className={cx("text-body text-pretty", colors.secondary)}>{item.description}</SemanticContent> : null}
             </div>
           );
           return (
             <li key={item.id} className={LAYOUT_CLASSES.item}>
               <div className={LAYOUT_CLASSES.marker}>
-                <span className={cx("flex size-2xl shrink-0 items-center justify-center rounded-pill text-body font-body font-medium tabular-nums", lines.ordinal)}>{item.ordinal}</span>
-                {last ? null : <span aria-hidden="true" data-step-connector="" className={cx(LAYOUT_CLASSES.connector, lines.line)} />}
+                <SemanticContent as="span" className={cx("flex size-2xl shrink-0 items-center justify-center rounded-pill text-body font-body font-medium tabular-nums", lines.ordinal)}>{item.ordinal}</SemanticContent>
+                {last ? null : <SemanticContent as="span" aria-hidden="true" data-step-connector="" className={cx(LAYOUT_CLASSES.connector, lines.line)} />}
               </div>
               {text}
             </li>
