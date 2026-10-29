@@ -34,9 +34,10 @@
 import { createElement, type CSSProperties, type ReactElement } from "react";
 import { BADGE_INSET_SHARE, BADGE_RADIUS_SHARE } from "@clossys/designer/shell/server";
 import { LOCKUP_GAP_RATIO, LOCKUP_WORDMARK_SIZE_RATIO } from "@clossys/designer/tokens";
+import { IMAGE_RATIOS } from "@clossys/designer/catalog";
+import { OG_SHARE_CARD_SPEC } from "../templates/channelSpecs.js";
 import { RenderError } from "../internal/errors.js";
 import { buildFlatTokenMap, resolveColorRole } from "../image/engine.js";
-import { OG_SHARE_CARD_SPEC } from "../templates/channelSpecs.js";
 import type { SiteShareCard } from "./siteMetadata.js";
 
 export type ShareCardErrorReason =
@@ -296,6 +297,7 @@ export function buildShareCard(input: ShareCardInput): ShareCard {
         justifyContent: "center",
         width: widthPx,
         height: heightPx,
+        aspectRatio: `${IMAGE_RATIOS.share.width} / ${IMAGE_RATIOS.share.height}`,
         padding: PADDING_PX,
         boxSizing: "border-box",
         backgroundColor: background,
@@ -558,6 +560,7 @@ export function buildBrandShareCard(input: BrandShareCardInput): ShareCard {
         justifyContent: "space-between",
         width: widthPx,
         height: heightPx,
+        aspectRatio: `${IMAGE_RATIOS.share.width} / ${IMAGE_RATIOS.share.height}`,
         padding: PADDING_PX,
         boxSizing: "border-box",
         backgroundColor: background,

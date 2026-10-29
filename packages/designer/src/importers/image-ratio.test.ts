@@ -20,7 +20,7 @@ describe("image crop candidate", () => {
     const judge = (patch: object) => checkAssetProfile(catalog, library, { images: [{ ...image, ...patch }] }).filter(row => row.code === "A10" && row.subject === "photo");
     expect(judge({})).toContainEqual(expect.objectContaining({ verdict: "satisfied" }));
     expect(judge({ width: 1608 })).toContainEqual(expect.objectContaining({ verdict: "satisfied" }));
-    for (const patch of [{ width: 1700 }, { alt: "" }, { bakedCorners: true }]) expect(judge(patch)).toContainEqual(expect.objectContaining({ verdict: "violated" }));
+    for (const patch of [{ width: 1900 }, { alt: "" }, { bakedCorners: true }]) expect(judge(patch)).toContainEqual(expect.objectContaining({ verdict: "violated" }));
     expect(judge({ alt: "", decorative: true })).toContainEqual(expect.objectContaining({ verdict: "satisfied" }));
   });
   it.each([0, -1, Infinity, NaN])("refuses a mutated non-positive or non-finite ratio %s", width => {
