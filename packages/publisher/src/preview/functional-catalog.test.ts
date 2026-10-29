@@ -11,6 +11,8 @@ import { previewSectionedDocument, previewCopyResolver } from "./fixture-documen
 import { buildContentCatalogHtml, buildCatalogFunctionPages } from "./render-content-catalog.js";
 import { buildMinimalBrandCssFromTokens, buildPreviewGalleryHtml, renderPreviewGalleryEntries, writePreviewGallery } from "./render-preview-gallery.js";
 
+const catalogDom = (html: string) => new JSDOM(html, { url: "https://example.test/" });
+
 const functions = ["overview", "introduce", "show", "explain", "index-function", "sequence", "compare", "frame", "parts"];
 function filesAt(root: string, prefix = ""): string[] {
   return readdirSync(join(root, prefix), { withFileTypes: true }).flatMap(entry => entry.isDirectory() ? filesAt(root, `${prefix}${entry.name}/`) : [`${prefix}${entry.name}`]);
@@ -18,7 +20,7 @@ function filesAt(root: string, prefix = ""): string[] {
 
 describe("functional content catalog", () => {
   it("links the reader jobs and shared references with purposes and axis chips", () => {
-    const document = new JSDOM(buildContentCatalogHtml()).window.document;
+    const document = catalogDom(buildContentCatalogHtml()).window.document;
     const entries = [...document.querySelectorAll("[data-catalog-function]")];
     expect(entries.map(entry => entry.getAttribute("data-catalog-function"))).toEqual(functions);
     for (const entry of entries) {
@@ -40,12 +42,12 @@ describe("functional content catalog", () => {
       expect(new Set(result.writtenFiles).size).toBe(result.writtenFiles.length);
       expect(result.writtenFiles[0]).toBe("gallery.html");
       expect(result.writtenFiles.at(-1)).toBe("index.html");
-      const launch = new JSDOM(readFileSync(result.indexPath, "utf8")).window.document;
+      const launch = catalogDom(readFileSync(result.indexPath, "utf8")).window.document;
       for (const fn of functions) {
         const file = `catalog/${fn}.html`;
         expect(result.writtenFiles).toContain(file);
         expect(launch.querySelector(`a[href="${file}"]`)).not.toBeNull();
-        const document = new JSDOM(readFileSync(join(out, file), "utf8")).window.document;
+        const document = catalogDom(readFileSync(join(out, file), "utf8")).window.document;
         expect(document.querySelector('a[href="../content-catalog.html"]')).not.toBeNull();
         const sheets = [...document.querySelectorAll('link[rel="stylesheet"]')].map(link => link.getAttribute("href"));
         expect(sheets).toEqual(["../designer-tokens.css", "../publisher-preview.css", "../brand.css"]);
@@ -60,14 +62,14 @@ describe("functional content catalog", () => {
       const brand = join(dir, "input.css");
       writeFileSync(brand, buildMinimalBrandCssFromTokens({ TOKENS }));
       writePreviewGallery({ brandCssPath: brand, outputDir: join(dir, "out") });
-      const recipes = new JSDOM(readFileSync(join(dir, "out/catalog/overview.html"), "utf8")).window.document;
+      const recipes = catalogDom(readFileSync(join(dir, "out/catalog/overview.html"), "utf8")).window.document;
       const composition = recipes.querySelector("[data-catalog-composition] > div");
       expect(composition).not.toBeNull();
-      expect(composition?.querySelectorAll(":scope > section")).toHaveLength(6);
+      expect(composition?.querySelectorAll(":scope > section, :scope > [data-content-section]")).toHaveLength(6);
       expect(composition?.querySelector('[data-template="approval-chain"]')).not.toBeNull();
-      const aliases = functions.flatMap(fn => [...new JSDOM(readFileSync(join(dir, `out/catalog/${fn}.html`), "utf8")).window.document.querySelectorAll("[data-published-kind]")]);
+      const aliases = functions.flatMap(fn => [...catalogDom(readFileSync(join(dir, `out/catalog/${fn}.html`), "utf8")).window.document.querySelectorAll("[data-published-kind]")]);
       expect(new Set(aliases.map(entry => entry.getAttribute("data-published-kind")))).toEqual(new Set(["hero", "feature-grid", "faq", "ordered-step-sequence", "status-list", "stat-grid", "pricing", "testimonial", "stat"]));
-      const gallery = new JSDOM(readFileSync(join(dir, "out/gallery.html"), "utf8")).window.document;
+      const gallery = catalogDom(readFileSync(join(dir, "out/gallery.html"), "utf8")).window.document;
       for (const entry of aliases) {
         const link = entry.querySelector("a")!;
         const kind = link.parentElement!.getAttribute("data-published-kind")!;
@@ -138,8 +140,8 @@ describe("retained contract configuration reference data", () => {
   it("resolves emitted reader links and retains recipe defaults, slots and real composition", () => {
     const sheets = { designerTokens: "designer-tokens.css", utilities: "publisher-preview.css", brand: null };
     const pages = [{ file: "content-catalog.html", content: buildContentCatalogHtml(sheets) }, ...buildCatalogFunctionPages(sheets)];
-    const byFile = new Map(pages.map(page => [page.file, new JSDOM(page.content).window.document]));
-    byFile.set("gallery.html", new JSDOM(buildPreviewGalleryHtml(renderPreviewGalleryEntries())).window.document);
+    const byFile = new Map(pages.map(page => [page.file, catalogDom(page.content).window.document]));
+    byFile.set("gallery.html", catalogDom(buildPreviewGalleryHtml(renderPreviewGalleryEntries())).window.document);
     let exampleCount = 0;
     for (const page of pages) {
       const document = byFile.get(page.file)!;
@@ -166,7 +168,7 @@ describe("retained contract configuration reference data", () => {
     }
     const composition = overview.querySelector("[data-catalog-composition] > div")!;
     const authored = Object.values(CATALOG_COMPOSITIONS)[0]!;
-    const bands = [...composition.querySelectorAll(":scope > section")];
+    const bands = [...composition.querySelectorAll(":scope > section, :scope > [data-content-section]")];
     expect(bands).toHaveLength(6);
     bands.forEach((band, index) => expect(band.id.endsWith(`:${authored.sections[index]!.id}`) || band.querySelector(`[id$=":${authored.sections[index]!.id}"]`) !== null).toBe(true));
     expect(authored.sections[0]?.kind).toBe("hero");
@@ -228,7 +230,7 @@ describe("catalog copy and rendered additions", () => {
     const badges = byId("items-badge-meta");
     const section = resolveSectionedViewDocument({ id: "badges", sections: [badges.section] }, catalogCopyResolver).sections[0]!;
     if (section.kind !== "content-section" || section.block?.type !== "items") throw new Error("Expected items");
-    const root = new JSDOM(renderCatalogFixture(badges)).window.document;
+    const root = catalogDom(renderCatalogFixture(badges)).window.document;
     const rows = [...root.querySelectorAll("[data-item-meta]")];
     expect(rows.length).toBe(6);
     rows.forEach((row, index) => { const item = section.block!.type === "items" ? section.block.items[index]! : undefined; if (item?.badge) expect(row.textContent).toContain(item.badge.label); if (item?.meta !== undefined) expect(row.textContent).toContain(item.meta); });
@@ -237,13 +239,17 @@ describe("catalog copy and rendered additions", () => {
     if (resolved.kind !== "content-section" || resolved.media?.type !== "specimen") throw new Error("Expected panel");
     const previous = resolved.media.panel.parts.find(part => part.type === "meter" && part.previous !== undefined);
     if (previous?.type !== "meter") throw new Error("Expected prior measurement");
-    const document = new JSDOM(renderCatalogFixture(meter)).window.document;
+    const document = catalogDom(renderCatalogFixture(meter)).window.document;
     expect(document.querySelector('[data-part="previous"]')).not.toBeNull(); expect(document.body.textContent).toContain(previous.previousText); expect(document.body.textContent).toContain(previous.valueText);
     const lanes = byId("items-two-lane-list");
-    const laneRoot = new JSDOM(renderCatalogFixture(lanes)).window.document;
+    const laneRoot = catalogDom(renderCatalogFixture(lanes)).window.document;
     expect(new Set([...laneRoot.querySelectorAll("li[data-lane]")].map(node => node.getAttribute("data-lane")))).toEqual(new Set(["sender", "reviewer"]));
-    const close = new JSDOM(renderCatalogFixture(byId("say-close"))).window.document;
-    expect(close.body.children.length).toBe(1); expect(close.body.firstElementChild?.tagName).toBe("SECTION"); expect(close.querySelectorAll("h2")).toHaveLength(1);
+    const close = catalogDom(renderCatalogFixture(byId("say-close"))).window.document;
+    expect(close.body.children.length).toBe(1);
+    expect(close.body.firstElementChild?.tagName).toBe("DIV");
+    expect(close.body.firstElementChild?.children).toHaveLength(1);
+    expect(close.body.firstElementChild?.firstElementChild?.getAttribute("data-content-section")).toBe("");
+    expect(close.querySelectorAll("h2")).toHaveLength(1);
   });
 });
 
@@ -271,7 +277,7 @@ describe("validated catalog ground presentation", () => {
   });
   it.each(["base", "sunken", "inverse"] as const)("renders the retained %s descriptor through the actual native view", ground => {
     const fixture = CATALOG_FIXTURES.find(entry => entry.id === `frame-ground-${ground}`)!;
-    const native = new JSDOM(renderCatalogFixture(fixture)).window.document.querySelector("[data-content-section]")!;
+    const native = catalogDom(renderCatalogFixture(fixture)).window.document.querySelector("[data-content-section]")!;
     expect(native).not.toBeNull();
     if (ground === "base") {
       expect(native.classList.contains("bg-surface-sunken")).toBe(false);

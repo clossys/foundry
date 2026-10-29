@@ -13,6 +13,8 @@ import type { ResolvedSectionedViewContentSection, ResolvedSectionedViewSpecimen
 import { CONTENT_CATALOG_CALL_TO_ACTION, CONTENT_CATALOG_CAPTIONS, contentCatalogCopyResolver, contentCatalogDocument, contentCatalogPreviewCopyResolver, contentCatalogPreviewDocument } from "./fixture-content-catalog.js";
 import { buildHistoricalContentCatalogHtml as buildContentCatalogHtml, renderContentCatalog, renderContentCatalogMarkup } from "./render-content-catalog.js";
 
+const catalogDom = (html: string) => new JSDOM(html, { url: "https://example.test/" });
+
 const contentSections = contentCatalogDocument.sections.filter((section): section is SectionedViewContentSection => section.kind === "content-section");
 const resolved = resolveSectionedViewDocument(contentCatalogDocument, contentCatalogCopyResolver);
 const resolvedContent = resolved.sections.filter((section): section is ResolvedSectionedViewContentSection => section.kind === "content-section");
@@ -35,7 +37,7 @@ describe("content catalog fixture", () => {
       expect(section.block.groups.map((group) => group.items.length)).toEqual(section.id.endsWith("4") ? [2, 2, 2, 2] : [2, 2, 2]);
       expect(new Set(section.block.groups.flatMap((group) => group.items)).size).toBe(section.id.endsWith("4") ? 8 : 6);
     }
-    const dom = new JSDOM(renderContentCatalogMarkup()).window.document;
+    const dom = catalogDom(renderContentCatalogMarkup()).window.document;
     expect(dom.querySelector("#catalog-topics-groups-4 [data-items]")?.getAttribute("data-columns")).toBe("2");
     expect(dom.querySelectorAll("#catalog-topics-groups-3 [role=group][aria-labelledby]")).toHaveLength(3);
     expect(dom.querySelectorAll("#catalog-topics-groups-4 h3")).toHaveLength(8);
@@ -65,8 +67,8 @@ describe("content catalog fixture", () => {
     expect(matrices.some(block => block.sides.every(side => side.points?.length === 4 && side.visual === undefined))).toBe(true);
     const planned = planContentGrounds([resolved], { callToAction: true });
     expect(new Set(planned.bands.map(band => band.ground))).toEqual(new Set(["base", "sunken", "inverse"]));
-    const rendered = new JSDOM(renderContentCatalogMarkup()).window.document;
-    const nativeBands = [...rendered.querySelectorAll("main > section")];
+    const rendered = catalogDom(renderContentCatalogMarkup()).window.document;
+    const nativeBands = [...rendered.querySelectorAll("main > section, main > [data-content-section]")];
     expect(nativeBands).toHaveLength(contentCatalogPreviewDocument.sections.length);
     expect(new Set(nativeBands.map(band => band.classList.contains("bg-surface-inverse") ? "inverse" : band.classList.contains("bg-surface-sunken") ? "sunken" : "base"))).toEqual(new Set(["base", "sunken", "inverse"]));
   });
@@ -89,7 +91,7 @@ describe("content catalog fixture", () => {
   it("retains the highlighted after side on both matrices", () => {
     const matrices = resolvedContent.filter(section => section.block?.type === "matrix");
     expect(matrices).toHaveLength(2);
-    const root = new JSDOM(renderContentCatalogMarkup()).window.document;
+    const root = catalogDom(renderContentCatalogMarkup()).window.document;
     for (const section of matrices) {
       expect(section.block?.type === "matrix" && section.block.featured).toBe("after");
       const sides = root.querySelectorAll(`#${section.id} [data-matrix-side]`);expect(sides).toHaveLength(2);expect(sides[1]!.querySelector("[data-featured]")?.getAttribute("data-featured")).toBe("true");
@@ -113,7 +115,7 @@ describe("content catalog fixture", () => {
     expect(hrefs("catalog-cards-text").every((href) => href === undefined)).toBe(true);
     expect(hrefs("catalog-topics-two").every((href) => href === undefined)).toBe(true);
 
-    const dom = new JSDOM(buildContentCatalogHtml()).window.document;
+    const dom = catalogDom(buildContentCatalogHtml()).window.document;
     for (const id of ["catalog-features-plate", "catalog-topics-linked", "catalog-cards-visual"]) {
       const band = dom.getElementById(id);
       const links = [...(band?.querySelectorAll("[data-item-heading] > a[href]") ?? [])];
@@ -138,7 +140,7 @@ describe("content catalog fixture", () => {
   });
 
   it("shows the two lane tracks with exact actor joins and terminal semantics", () => {
-    const dom = new JSDOM(renderContentCatalogMarkup()).window.document;
+    const dom = catalogDom(renderContentCatalogMarkup()).window.document;
     const visual = dom.getElementById("catalog-steps-lanes-visual")!;
     const plain = dom.getElementById("catalog-steps-lanes-plain")!;
     expect([...visual.querySelectorAll("li[data-lane]")].map((li) => li.getAttribute("data-lane"))).toEqual(["a", "b", "a"]);
@@ -238,9 +240,28 @@ describe("content catalog page", () => {
     const markup = renderContentCatalogMarkup();
     const native = resolveSectionedViewDocument(contentCatalogPreviewDocument, contentCatalogPreviewCopyResolver);
     expect(markup).toBe(renderToStaticMarkup(createElement(SectionedView, { document: native })));
-    const dom = new JSDOM(html).window.document;
+    const dom = catalogDom(html).window.document;
     for (const caption of dom.querySelectorAll("[data-catalog-chrome=caption]")) caption.remove();
-    expect(dom.querySelector("main")?.outerHTML).toBe(new JSDOM(markup).window.document.querySelector("main")?.outerHTML);
+    // Caption siblings change React's tree-position useId stems for Items groups.
+    // Canonicalize only those generated IDs and their labelledby references;
+    // every other byte, including authored IDs, stays in the exact comparison.
+    const groupIds = (main: Element): string => {
+      const clone = main.cloneNode(true) as Element;
+      const ids = new Map<string, string>();
+      for (const node of clone.querySelectorAll("[id]")) {
+        if (!/^_R_[0-9a-z]+_-items-group-\d+$/.test(node.id)) continue;
+        expect(ids.has(node.id)).toBe(false);
+        ids.set(node.id, `react-items-group-${ids.size}`);
+      }
+      for (const node of clone.querySelectorAll("[aria-labelledby]")) {
+        const references = node.getAttribute("aria-labelledby")!.split(/\s+/);
+        for (const id of references) expect([...clone.querySelectorAll("[id]")].some(target => target.id === id), id).toBe(true);
+        node.setAttribute("aria-labelledby", references.map(id => ids.get(id) ?? id).join(" "));
+      }
+      for (const node of clone.querySelectorAll("[id]")) node.id = ids.get(node.id) ?? node.id;
+      return clone.outerHTML;
+    };
+    expect(groupIds(dom.querySelector("main")!)).toBe(groupIds(catalogDom(markup).window.document.querySelector("main")!));
     for (const band of renderContentCatalog().bands) expect(band.markup).not.toContain("data-catalog-chrome");
   });
 
@@ -252,7 +273,7 @@ describe("content catalog page", () => {
     expect(entry!.markup.replace(annotations, "")).toBe(renderToStaticMarkup(createElement(SectionedView, {
       document: resolveSectionedViewDocument(previewSectionedDocument, previewCopyResolver),
     })));
-    const dom = new JSDOM(entry!.markup).window.document;
+    const dom = catalogDom(entry!.markup).window.document;
     expect(dom.querySelectorAll("#faq [data-items] details summary")).toHaveLength(4);
     expect(dom.querySelectorAll("[data-rac]")).toHaveLength(0);
     const details = dom.querySelector("details");
@@ -262,7 +283,7 @@ describe("content catalog page", () => {
   });
 
   it("keeps static catalog disclosures usable without hydration", () => {
-    const dom = new JSDOM(buildContentCatalogHtml()).window.document;
+    const dom = catalogDom(buildContentCatalogHtml()).window.document;
     const faq = dom.querySelector("#catalog-faq");
     expect(faq).not.toBeNull();
     expect(faq?.querySelectorAll("details")).toHaveLength(6);
@@ -277,7 +298,7 @@ describe("content catalog page", () => {
   });
 
   it("captions every band in the chrome, outside the product markup", () => {
-    const dom = new JSDOM(buildContentCatalogHtml()).window.document;
+    const dom = catalogDom(buildContentCatalogHtml()).window.document;
     const main = dom.querySelector(`main[aria-label="${contentCatalogPreviewDocument.id}"]`);
     expect(main).not.toBeNull();
     const children = [...(main?.children ?? [])];

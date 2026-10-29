@@ -1,3 +1,4 @@
+import { JSDOM } from "jsdom";
 import { execFileSync } from "node:child_process";
 import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
@@ -29,7 +30,8 @@ describe("checked native preview documents after Landing retirement", () => {
     expect(closing.map(resolution => resolution.ref.id)).toContain("catalog.preview.close.action.label");
     expect(closing.every(resolution => resolution.status === "draft")).toBe(true);
     const html = renderContentCatalogMarkup();
-    for (const text of [CONTENT_CATALOG_CALL_TO_ACTION.eyebrow, CONTENT_CATALOG_CALL_TO_ACTION.heading, CONTENT_CATALOG_CALL_TO_ACTION.description, CONTENT_CATALOG_CALL_TO_ACTION.actionLabel]) expect(html).toContain(text);
+    const textContent = new JSDOM(html, { url: "https://example.test/" }).window.document.body.textContent;
+    for (const text of [CONTENT_CATALOG_CALL_TO_ACTION.eyebrow, CONTENT_CATALOG_CALL_TO_ACTION.heading, CONTENT_CATALOG_CALL_TO_ACTION.description, CONTENT_CATALOG_CALL_TO_ACTION.actionLabel]) expect(textContent).toContain(text);
     expect(html).not.toContain("data-landing-view");
     expect(html).toContain('id="catalog-close"');
   });
