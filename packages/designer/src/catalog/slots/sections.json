@@ -1237,7 +1237,8 @@
       },
       "allowedComposes": [
         "components.button",
-        "components.link"
+        "components.link",
+        "components.semantic-content"
       ],
       "parts": [
         "sections.band",
@@ -3543,7 +3544,8 @@
       "allowedComposes": [
         "components.card",
         "components.icon",
-        "components.link"
+        "components.link",
+        "components.semantic-content"
       ],
       "parts": [
         "sections.band",
@@ -4582,7 +4584,8 @@
         ]
       },
       "allowedComposes": [
-        "components.link"
+        "components.link",
+        "components.semantic-content"
       ],
       "parts": [
         "sections.band",
@@ -4806,7 +4809,9 @@
         "mode": "closed",
         "names": []
       },
-      "allowedComposes": [],
+      "allowedComposes": [
+        "components.semantic-content"
+      ],
       "parts": [
         "sections.band",
         "sections.section-header"
@@ -5503,7 +5508,8 @@
         "components.avatar",
         "components.card",
         "components.link",
-        "components.icon"
+        "components.icon",
+        "components.semantic-content"
       ],
       "parts": [
         "sections.band",
@@ -7769,7 +7775,8 @@
       },
       "allowedComposes": [
         "components.avatar",
-        "components.card"
+        "components.card",
+        "components.semantic-content"
       ],
       "parts": [
         "sections.band",

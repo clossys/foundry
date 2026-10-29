@@ -1,3 +1,4 @@
+import { SemanticContent } from "../components/SemanticContent.js";
 import type { CSSProperties, HTMLAttributes, ReactNode } from "react";
 import { cx } from "../components/internal/cx.js";
 import { SECTION_MEASURE_MAX } from "./internal/block-vars.js";
@@ -61,7 +62,7 @@ export function MediaFigure({
       className={cx("m-0 flex w-full flex-col gap-sm", className)}
       style={contained ? { maxWidth: SECTION_MEASURE_MAX.content, ...style } : style}
     >
-      <div className={framed ? cx("w-full overflow-hidden rounded-control border", colors.border) : "w-full"}>{children}</div>
+      <SemanticContent as="div" className={framed ? cx("w-full overflow-hidden rounded-control border", colors.border) : "w-full"}>{children}</SemanticContent>
       {caption ? <figcaption className={cx("text-caption", colors.muted)}>{caption}</figcaption> : null}
     </figure>
   );

@@ -27,7 +27,8 @@
   "sections": {
     "people": {
       "composes": [
-        "components.icon"
+        "components.icon",
+        "components.semantic-content"
       ],
       "configs": {},
       "consumption": {
@@ -57,7 +58,7 @@
         "sourceFiles": [
           {
             "path": "packages/designer/src/blocks/PeopleGrid.tsx",
-            "sha256": "237b2bb1e2dc637b1ac474cc34a3cfd7bde65bf293b929b70acddf2f7c8b715d"
+            "sha256": "cb44863c7b61ef29d0f592899f7aa88c9dbf7e6601f4c190aa0ce34326e16899"
           },
           {
             "path": "packages/designer/src/blocks/section-ground.ts",
@@ -113,7 +114,8 @@
       "license": "MIT",
       "notes": [
         "People have portrait, initials and one href, not an arbitrary links array. Root is ul; header and band are external.",
-        "Source-only import and token-read measurements are lower bounds; shared anatomy, accessibility, contrast and consumer runtime conformance remain unmeasured. Content bindings describe host adaptation points, not type-equivalent converters."
+        "Source-only import and token-read measurements are lower bounds; shared anatomy, accessibility, contrast and consumer runtime conformance remain unmeasured. Content bindings describe host adaptation points, not type-equivalent converters.",
+        "Neutral list, item and copy elements compose components.semantic-content; authored content, host attributes and collection geometry are preserved."
       ],
       "parts": [],
       "pin": {

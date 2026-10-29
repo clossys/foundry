@@ -31,19 +31,22 @@
     "features": {
       "composes": [
         "components.icon",
-        "sections.section-header"
+        "sections.section-header",
+        "components.semantic-content"
       ],
       "configs": {},
       "consumption": {
         "scanStatus": "lower-bound",
         "scannedComposes": [
           "components.icon",
+          "components.semantic-content",
           "sections.section-header"
         ],
         "scannedReads": {
           "assets": [],
           "components": [
-            "components.icon"
+            "components.icon",
+            "components.semantic-content"
           ],
           "tokens": [
             "tokens.accent-color",
@@ -70,7 +73,7 @@
           },
           {
             "path": "packages/designer/src/blocks/items/compat-features.tsx",
-            "sha256": "b255890cd5e475b51eef47b4e403e9148dd2b3f622fda67f4a814adaa0d831b3"
+            "sha256": "c89160205a2e2db71824a6f13c11e27882b7c34cad00516619f9ff8e86e6848e"
           },
           {
             "path": "packages/designer/src/blocks/section-ground.ts",
@@ -83,6 +86,10 @@
           {
             "path": "packages/designer/src/catalog-core/provenance-attrs.ts",
             "sha256": "8f2a725224764fc1d7cd7ec94f2f569cad02117251bf6c2a668c8a1b51e7c443"
+          },
+          {
+            "path": "packages/designer/src/components/SemanticContent.tsx",
+            "sha256": "467894426d4a6b83ed26e34564fd0a4c61aa6a2a58358ebd0226a0312164471b"
           },
           {
             "path": "packages/designer/src/components/internal/cx.ts",
