@@ -4,6 +4,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { readStrategyRoot } from "../store.js";
+import { activate } from "../write/index.js";
 
 const fixture = fileURLToPath(new URL("../../test-fixtures/strategy-v2/example/", import.meta.url));
 const temps: string[] = [];
@@ -11,6 +12,30 @@ afterEach(() => { for (const path of temps.splice(0)) rmSync(path, { recursive: 
 function copy() { const path = mkdtempSync(join(tmpdir(), "strategy-format-")); temps.push(path); cpSync(fixture, path, { recursive: true }); return path; }
 
 describe("root reader", () => {
+  it("reads shared optional fields while preserving the authored source bytes", () => {
+    const root = copy();
+    const path = "cells/focus.segment.core/v2.md";
+    const bytes = readFileSync(join(root, path), "utf8").replace("functions: [gtm, product]", "functions: [gtm, product]\nlinks: [designer:frames.app-shell@1, writer:admin.writer@3]");
+    writeFileSync(join(root, path), bytes);
+    const treePath = join(root, "tree.json");
+    writeFileSync(treePath, JSON.stringify({ ...JSON.parse(readFileSync(treePath, "utf8")), retired: [] }));
+    const model = readStrategyRoot(root);
+    expect(model.issues).toEqual([]);
+    expect(model.cells[0]!.links).toEqual(["designer:frames.app-shell@1", "writer:admin.writer@3"]);
+    expect(model.tree!.retired).toEqual([]);
+    expect(model.files[path]).toBe(bytes);
+    expect(readFileSync(join(root, path), "utf8")).toBe(bytes);
+  });
+  it("continues refusing migration confirmation for Strategist activation without changing files", () => {
+    const root = copy();
+    const path = join(root, "cells/focus.segment.core/v2.md");
+    writeFileSync(path, readFileSync(path, "utf8").replace("status: active", "status: draft"));
+    const treeBefore = readFileSync(join(root, "tree.json"), "utf8");
+    const cellBefore = readFileSync(path, "utf8");
+    expect(() => activate(root, ["focus.segment.core@2"], { confirm: "migration:2026-10-29" })).toThrow(/user confirmation/);
+    expect(readFileSync(join(root, "tree.json"), "utf8")).toBe(treeBefore);
+    expect(readFileSync(path, "utf8")).toBe(cellBefore);
+  });
   it("reads typed documents and exact bytes without treating missing referenced records as syntax errors", () => {
     const model = readStrategyRoot(fixture);
     expect(model.issues).toEqual([]);

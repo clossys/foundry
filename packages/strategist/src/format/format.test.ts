@@ -14,6 +14,65 @@ const catalog = loadCatalog();
 const tree = () => ({ schemaVersion: 1, catalog: "@clossys/strategist#strategy-v1", archetype: "default", core: "archetype", active: {} });
 
 describe("cell format", () => {
+  it("round-trips optional same-agent and cross-agent links", () => {
+    const links = ["focus.segment.core@2", "strategist:identity.visual.palette@2", "designer:frames.app-shell@1", "writer:admin.writer@3", "publisher:page.home@1"];
+    const text = example.replace("functions: [gtm, product]", `functions: [gtm, product]\nlinks: [${links.join(", ")}]`);
+    const parsed = parseCell(text);
+    expect(parsed).toMatchObject({ ok: true, value: { links } });
+    if (parsed.ok) expect(serializeCell(parsed.value)).toBe(text);
+  });
+  it("preserves omitted links and explicit empty links separately", () => {
+    for (const text of [example, example.replace("functions: [gtm, product]", "functions: [gtm, product]\nlinks: []")]) {
+      const parsed = parseCell(text);
+      expect(parsed.ok).toBe(true);
+      if (parsed.ok) expect(serializeCell(parsed.value)).toBe(text);
+    }
+  });
+  it.each([
+    "designer:frames.app-shell@0", "writer:admin.writer@01", "publisher:page.home@9007199254740992",
+    "designer:frames.app-shell", "designer:frames.app-shell@1.5", "designer:Frames.app-shell@1",
+    "designer:../outside@1", "designer:one@1", "writer:one.two.three.four@1", "msg:2026-10-29-1#U2",
+    "designer:frames.app-shell@1 trailing", "designer:frames.app-shell@1:extra",
+  ])("rejects invalid shared link %j at its field line", link => {
+    const text = example.replace("functions: [gtm, product]", `functions: [gtm, product]\nlinks: [${link}]`);
+    const parsed = parseCell(text);
+    expect(parsed.ok).toBe(false);
+    if (!parsed.ok) expect(parsed.issues).toContainEqual(expect.objectContaining({ path: "links", line: 9 }));
+  });
+  it.each(["null", "false", "[1]", "designer:frames.app-shell@1"])("requires links to be a string flow list: %s", value => {
+    expect(parseCell(example.replace("functions: [gtm, product]", `functions: [gtm, product]\nlinks: ${value}`)).ok).toBe(false);
+  });
+  it.each(["designer:frames.app-shell@1\n", "designer:frames.app-shell@1\r", " designer:frames.app-shell@1", "designer:frames.app-shell@1 "])("rejects whitespace inside quoted link %j", link => {
+    const parsed = parseCell(example.replace("functions: [gtm, product]", `functions: [gtm, product]\nlinks: [${JSON.stringify(link)}]`));
+    expect(parsed.ok).toBe(false);
+    if (!parsed.ok) expect(parsed.issues).toContainEqual(expect.objectContaining({ path: "links", line: 9 }));
+  });
+  it("keeps all 57 catalog leaf templates without links byte-compatible", () => {
+    expect(catalog.cells).toHaveLength(57);
+    for (const { id } of catalog.cells) {
+      const text = example.replace("id: focus.segment.core", `id: ${id}`);
+      const parsed = parseCell(text);
+      expect(parsed.ok, id).toBe(true);
+      if (parsed.ok) expect(serializeCell(parsed.value), id).toBe(text);
+    }
+  });
+  it("keeps the existing published worked templates byte-compatible", () => {
+    for (const path of ["../../skill/templates/cell.md", "../../docs/v2/templates/cell.md"]) {
+      const template = readFileSync(new URL(path, import.meta.url), "utf8");
+      const worked = [...template.matchAll(/```markdown\n(---\nid: focus\.segment\.core\n[\s\S]*?)```/g)];
+      expect(worked, path).toHaveLength(1);
+      for (const match of worked) {
+        const parsed = parseCell(match[1]!);
+        expect(parsed.ok, path).toBe(true);
+        if (parsed.ok) expect(serializeCell(parsed.value), path).toBe(match[1]);
+      }
+    }
+  });
+  it("preserves the frozen three-segment Strategist id grammar", () => {
+    for (const id of ["focus.segment", "focus.segment.core.extra", "focus.segment.core2"]) {
+      expect(parseCell(example.replace("id: focus.segment.core", `id: ${id}`)).ok).toBe(false);
+    }
+  });
   it("round-trips the complete worked template byte for byte, with labels and refs", () => {
     const parsed = parseCell(example, "cells/focus.segment.core/v2.md");
     expect(parsed.ok).toBe(true);
@@ -98,6 +157,18 @@ describe("sessions, findings and requests", () => {
 });
 
 describe("consumer tree", () => {
+  it("accepts optional empty retired ids without adding a field to existing trees", () => {
+    const original = tree();
+    expect(validateTree(original)).toEqual({ ok: true, value: original });
+    expect(original).not.toHaveProperty("retired");
+    expect(validateTree({ ...original, retired: [] })).toEqual({ ok: true, value: { ...original, retired: [] } });
+  });
+  it.each([null, "", {}, [1], ["not-a-cell"], ["focus.segment.unknown"], ["focus.segment.core"], ["focus.segment.core", "focus.segment.core"]])("rejects invalid retired list %j", retired => {
+    expect(validateTree({ ...tree(), retired }).ok).toBe(false);
+  });
+  it("keeps unknown tree keys as errors", () => {
+    expect(validateTree({ ...tree(), retired: [], metadata: {} }).ok).toBe(false);
+  });
   const grouping = () => catalog.ia.nodes.map(node => ({ id: node.id, name: node.name, children: node.children.map(child => ({ id: child.id, name: child.name, cells: [...child.leaves] })) }));
   it("uses catalog grouping when omitted, and permits regrouping without renaming leaves", () => {
     expect(validateTree(tree(), catalog).ok).toBe(true);

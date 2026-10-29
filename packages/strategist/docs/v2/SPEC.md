@@ -137,6 +137,9 @@ Frontmatter. The format is a YAML subset: `key: scalar` and `key: [a, b]` flow l
 - `id`, `version`, `status` (`draft` | `active` | `retired`), `updated` (ISO date), `cites[]`, `feeds[]` and `functions[]` are the owner's set and are required.
 - `confirmed` (**DEFAULT**) is required when `status: active`. It is a `msg:` ref to the user line that confirmed the cell.
 - `note` is optional. It records why this version differs from the previous one.
+- `links` is an optional flow list of shared cell references: `[<agent>:]<cell-id>@<N>`. Shared link ids have two or three lowercase kebab segments (digits after the first letter are allowed); versions are positive safe integers without leading zeroes. For example, `designer:frames.app-shell@1` and `writer:admin.writer@3`. These links are parsed as references, with cross-agent resolution left to the consuming agent. A missing field stays absent when serialised; an explicit `links: []` stays present. Strategist cell ids retain their frozen three-segment grammar.
+
+Shared-contract alignment currently accepts an optional empty `retired: []` on the consumer tree. Nonempty retired-id lists are refused because permanent catalog-id retirement is not implemented by the Strategist write path. Migration confirmation parsing and the CELL-0 parser import remain pending; Strategist still requires the existing `msg:` confirmation and user playback checks for activation.
 
 Body. Exactly three sections, in this order: `## Direction`, `## Because`, `## Watch`. Every line is a `- ` bullet; there is no prose.
 - **Direction.** Between 2 and 6 bullets. Each must-contain key appears as a leading `Key:` label on one bullet. Extra bullets may be unlabelled.

@@ -17,6 +17,8 @@ export interface Bullet {
 export interface Cell {
   id: CellId; version: number; status: "draft" | "active" | "retired"; updated: string;
   cites: Ref[]; feeds: string[]; functions: string[]; confirmed?: Ref; note?: string;
+  /** Optional shared cell links; absence preserves the existing document shape. */
+  links?: string[];
   direction: Bullet[]; because: Bullet[]; watch: Bullet[]; path: string;
 }
 export interface FormatIssue extends ValidationIssue { line: number }
@@ -28,6 +30,8 @@ export interface StrategyTreeNode {
 export interface StrategyTree {
   schemaVersion: 1; catalog: string; archetype: string; core: "archetype" | CellId[];
   tree?: StrategyTreeNode[]; active: Record<CellId, number | null>;
+  /** Reserved shared-contract field; only an empty list is supported. */
+  retired?: [];
 }
 export interface SessionLine {
   id: string; role: "user" | "strategist"; text: string; line: number; refs: Ref[];

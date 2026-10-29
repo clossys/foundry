@@ -9,7 +9,8 @@ export function validateTree(value: unknown, catalog: StrategyCatalog = loadCata
   const issues: FormatIssue[] = []; const add = (path: string, message: string) => issues.push({ path, line: 1, message });
   if (!isPlainObject(value)) return { ok: false, issues: [{ path: "tree", line: 1, message: "Expected a tree object" }] };
   const known = new Set(catalog.cells.map(c => c.id));
-  for (const key of Object.keys(value)) if (!["schemaVersion", "catalog", "archetype", "core", "tree", "active"].includes(key)) add(key, "Unknown tree field");
+  for (const key of Object.keys(value)) if (!["schemaVersion", "catalog", "archetype", "core", "tree", "active", "retired"].includes(key)) add(key, "Unknown tree field");
+  if (value.retired !== undefined && (!Array.isArray(value.retired) || value.retired.length !== 0)) add("retired", "Expected an empty retired list; retiring catalog ids is not supported");
   if (value.schemaVersion !== 1) add("schemaVersion", "Expected schemaVersion 1");
   if (value.catalog !== "@clossys/strategist#strategy-v1") add("catalog", "Unknown catalog identifier");
   if (value.archetype !== "default" && (typeof value.archetype !== "string" || !Object.hasOwn(catalog.archetypes.extras, value.archetype))) add("archetype", "Unknown archetype");
