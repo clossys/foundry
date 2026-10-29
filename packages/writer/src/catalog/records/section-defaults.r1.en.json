@@ -118,7 +118,7 @@
       "context": "admin.writer.sections.pagination.rangeSummaryMessage",
       "status": "draft",
       "origin": "authored",
-      "text": "Showing {start, number, integer}–{end, number, integer} of {total, number, integer}",
+      "text": "Showing {start, number, integer}\u2013{end, number, integer} of {total, number, integer}",
       "args": [
         {
           "name": "start",
@@ -816,7 +816,7 @@
       "context": "admin.writer.sections.dataTable.pivotColumnMessage",
       "status": "draft",
       "origin": "authored",
-      "text": "{axis} · {measure}",
+      "text": "{axis} \u00b7 {measure}",
       "args": [
         {
           "name": "axis",
@@ -834,7 +834,7 @@
       "context": "admin.writer.sections.dataTable.pivotValueMessage",
       "status": "draft",
       "origin": "authored",
-      "text": "{empty, select, true {—} other {{value}}}",
+      "text": "{empty, select, true {\u2014} other {{value}}}",
       "args": [
         {
           "name": "empty",
@@ -1022,7 +1022,7 @@
       "context": "admin.writer.sections.dataTable.filter.text",
       "status": "draft",
       "origin": "authored",
-      "text": "{operation} “{value}”",
+      "text": "{operation} \u201c{value}\u201d",
       "args": [
         {
           "name": "operation",
@@ -1040,7 +1040,7 @@
       "context": "admin.writer.sections.dataTable.filter.range",
       "status": "draft",
       "origin": "authored",
-      "text": "{minimum} – {maximum}",
+      "text": "{minimum} \u2013 {maximum}",
       "args": [
         {
           "name": "minimum",
@@ -1172,6 +1172,45 @@
         "report.label": {
           "ref": "string",
           "id": "st.ye9ybmcxmq"
+        }
+      }
+    },
+    {
+      "id": "ps.mr1pages01",
+      "leaf": "passages.pagination",
+      "context": "Draft pagination labels and summaries",
+      "status": "draft",
+      "origin": "authored",
+      "schema": "passages.pagination",
+      "schemaDigest": "5728f4a6cd8cd3b5f3640e20b9791548093a6c29a78b52e57cd794d67f70ee33",
+      "fields": {
+        "page.label": {
+          "ref": "string",
+          "id": "st.s13b3hwkta"
+        },
+        "page.previousLabel": {
+          "ref": "string",
+          "id": "st.96qkp2bzpm"
+        },
+        "page.nextLabel": {
+          "ref": "string",
+          "id": "st.kb8ve83tjp"
+        },
+        "page.pageText": {
+          "ref": "string",
+          "id": "st.vxwx1e3xwq"
+        },
+        "page.noResultsLabel": {
+          "ref": "string",
+          "id": "st.asj8g1mcjn"
+        },
+        "page.pageSizeLabel": {
+          "ref": "string",
+          "id": "st.bhhba11w6f"
+        },
+        "total.rangeText": {
+          "ref": "string",
+          "id": "st.pzmpksy76x"
         }
       }
     }

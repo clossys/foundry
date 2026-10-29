@@ -11,6 +11,7 @@ import { surfaceRuntimeCallbacks, surfaceRuntimePointers, surfaceRuntimeRenderer
 
 const FRAME = "frames.auth-shell";
 const SECTIONS = ["sections.logo-mark", "sections.sign-in-form", "sections.boundary-message", "sections.error-message", "sections.legal-prose", "sections.account-summary"];
+const currentSections = SECTIONS.map(id => id === "sections.error-message" ? "sections.error-state" : id);
 const leaves = (value: unknown): string[] => {
   if (Array.isArray(value)) return value.flatMap(leaves);
   if (!value || typeof value !== "object") return [];
@@ -25,8 +26,10 @@ describe("wave-one Section and Frame catalog joins", () => {
   it("places each new leaf once in its registered IA and preserves the existing logo-hero contract", () => {
     const sections = loadSectionRegistry(), frames = loadBuildCatalog().slots.filter(slot => slot.layer === "frames");
     expect(sectionRegistryFindings(sections)).toEqual([]);
+    expect(sections.aliases).toContainEqual({ id: "sections.error-message", target: "sections.error-state" });
+    expect(sections.slots.some(slot => slot.id === "sections.error-message")).toBe(false);
     const sectionIA = leaves(json("./ia/sections.json")), frameIA = leaves(json("./ia/frames.json"));
-    for (const id of SECTIONS) {
+    for (const id of currentSections) {
       expect(sections.slots.filter(slot => slot.id === id), id).toHaveLength(1);
       expect(sectionIA.filter(leaf => leaf === id), id).toHaveLength(1);
     }
@@ -39,7 +42,7 @@ describe("wave-one Section and Frame catalog joins", () => {
 
   it("pairs every new Section with its DG1 passage schema and gives logo-mark zero authored copy", () => {
     const registry = loadSectionRegistry(), rows = sectionCopyCatalog(registry);
-    for (const id of SECTIONS) {
+    for (const id of currentSections) {
       const row = rows.find(candidate => candidate.id === id)!;
       expect(row, id).toBeDefined();
       expect(row.passageSchema, id).toBe(`passages.${id.slice("sections.".length)}`);
@@ -62,7 +65,7 @@ describe("wave-one Section and Frame catalog joins", () => {
   it("joins real Foundry descriptors, committed fills and the package runtime registry for all seven leaves", () => {
     const sectionImport = importFoundrySections(), frameImport = importFoundryFrames();
     const generated = { ...generatedFoundrySectionFiles(), ...generatedFoundryFrameFiles() };
-    for (const id of [FRAME, ...SECTIONS]) {
+    for (const id of [FRAME, ...currentSections]) {
       const imported = (id === FRAME ? frameImport : sectionImport).fills.filter(fill => fill.$extensions["com.clossys.fill"].slot === id);
       expect(imported, id).toHaveLength(1);
       const coverage = (id === FRAME ? frameImport : sectionImport).coverage.find(row => row.slot === id)!;
