@@ -1,5 +1,7 @@
-import { isCompleteRouteKind, isLegacyRouteRegistration, routeSourcePath } from "../core/route-identities.js";
-import type { RouteRegistration, RouteSourceExport } from "../core/route-registry.js";
+import { isLegacyRouteRegistration, routeSourcePath } from "../core/route-identities.js";
+import { isCompleteRouteMetadataKind } from "./complete-route-metadata.js";
+import type { CompleteRouteMetadata } from "./complete-route-metadata.js";
+import type { AnyRouteRegistration, RouteRegistration, RouteSourceExport } from "../core/route-registry.js";
 import { PUBLISHER_CHANNELS } from "../planning/channel-ids.js";
 import { checkedContentMap, contentMapPath } from "./check.js";
 import { projectPageOutline } from "../content/taxonomy.js";
@@ -85,7 +87,7 @@ function sourceExport(value: RouteSourceExport): boolean {
   return !!value && Object.keys(value).every(key => ["file", "export"].includes(key)) && routeSourcePath(value.file) && /^[A-Za-z_$][\w$]*$/.test(value.export);
 }
 const NEXT_FILE = /(?:^|\/)(?:page|layout|template|route|default|loading|error|global-error|not-found|middleware|instrumentation)\.[cm]?[jt]sx?$/;
-function registered(mapEntry: ContentMapEntry, options: ContentMapRouteOptions): RouteRegistration {
+function registered(mapEntry: ContentMapEntry, options: ContentMapRouteOptions): AnyRouteRegistration | CompleteRouteMetadata {
   const matches = (options.registrations ?? []).filter(route => {
     if (mapEntry.source.planItemId !== undefined) return route.planItemId === mapEntry.source.planItemId;
     if (!isLegacyRouteRegistration(route)) return false;
@@ -99,8 +101,9 @@ function registered(mapEntry: ContentMapEntry, options: ContentMapRouteOptions):
     || (isLegacyRouteRegistration(route) && (route.composition.binding.path !== route.path || route.composition.binding.context.consumer !== options.consumer))) throw new TypeError(`Registered source disagrees with content map: ${mapEntry.id}`);
   return structuredClone(route);
 }
-/** Canonical content lives in the map. Source metadata supplies only the native
- * kind and real registered module exports; no consumer page body is authored.
+/** Pure publication metadata only, never executable registration. Content lives
+ * in the map; source metadata supplies kind and registered module identities.
+ * Historical projection bytes remain readable without authorizing a page.
  * Existing completeRoute plan fields are compatibility input only, and must
  * agree exactly with map identity/title/path/brand before they can project. */
 export function projectRoutes(map: ContentMap, options: ContentMapRouteOptions): ContentMapRoutes {
@@ -115,7 +118,7 @@ export function projectRoutes(map: ContentMap, options: ContentMapRouteOptions):
     const plan = plans[0], complete = source ?? plan?.completeRoute;
     if (!complete) return registered(entry, options);
     if (plan && (plan.appRouteId !== entry.id || plan.completeRoute!.title !== entry.title || plan.completeRoute!.path !== contentMapPath(entry) || !sameBrand(plan.completeRoute!.brand, options.brand))) throw new TypeError(`Plan completeRoute disagrees with content map: ${entry.id}`);
-    if (!isCompleteRouteKind(complete.kind) || !sourceExport(complete.entry) || complete.entry.export !== "default" || !complete.entry.file.endsWith(".tsx") || !sourceExport(complete.loader)
+    if (!isCompleteRouteMetadataKind(complete.kind) || !sourceExport(complete.entry) || complete.entry.export !== "default" || !complete.entry.file.endsWith(".tsx") || !sourceExport(complete.loader)
       || !/\.[jt]sx?$/.test(complete.loader.file) || complete.loader.file.endsWith(".d.ts") || NEXT_FILE.test(complete.loader.file) || complete.entry.file === complete.loader.file) throw new TypeError(`Registered complete route exports required: ${entry.id}`);
     return { routeId: entry.id, planItemId: id!, path: contentMapPath(entry), title: entry.title, channel: options.channel, brand: { ...options.brand }, entry: { ...complete.entry }, composition: { complete: { kind: complete.kind }, loader: { ...complete.loader } } };
   });

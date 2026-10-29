@@ -1,6 +1,6 @@
 import type { FormatId } from "../formats/contract.js";
-import type { CompleteRouteKind } from "../core/route-identities.js";
-import type { RouteRegistration, RouteRegistry, RouteSourceExport } from "../core/route-registry.js";
+import type { CompleteRouteMetadataKind, CompleteRouteMetadata } from "./complete-route-metadata.js";
+import type { RouteRegistration, AnyRouteRegistration, RouteSourceExport } from "../core/route-registry.js";
 import type { PublisherPlanItem } from "../planning/plan.js";
 import type { PublisherChannelId } from "../planning/channel-ids.js";
 import type { SectionFill } from "../core/instance-binding.js";
@@ -87,7 +87,7 @@ export interface ContentMapOutlineNode extends ContentMapBreadcrumb {
 export interface ContentMapTocEntry extends ContentMapBreadcrumb { readonly level: number }
 export interface ContentMapSitemapEntry { readonly url: string }
 export interface ContentMapCompleteRoute {
-  readonly kind: CompleteRouteKind;
+  readonly kind: CompleteRouteMetadataKind;
   readonly entry: RouteSourceExport;
   readonly loader: RouteSourceExport;
 }
@@ -95,14 +95,19 @@ export interface ContentMapRouteOptions {
   readonly consumer: string;
   readonly channel: PublisherChannelId;
   readonly brand: RouteRegistration["brand"];
-  /** Source metadata has no duplicated content title, path or navigation order. */
+  /** Historical source metadata only; executable route registration refuses complete descriptors. */
   readonly completeRoutes?: Readonly<Record<string, ContentMapCompleteRoute>>;
-  /** Compatibility for existing plan commands. Their route identity/title/path
+  /** Read-only compatibility for historical plan data. Its route identity/title/path
    * must agree with the map; disagreements are refused, never silently copied. */
   readonly planItems?: readonly Pick<PublisherPlanItem, "id" | "appRouteId" | "completeRoute">[];
   /** Actual registered assemblies for frame/section sources or legacy plans.
    * No projection fabricates an instance binding or source implementation. */
-  readonly registrations?: readonly RouteRegistration[];
+  readonly registrations?: readonly AnyRouteRegistration[];
 }
-export type ContentMapRoutes = RouteRegistry;
+/** Publication topology, including historical metadata. This is not an executable route registry. */
+export interface ContentMapRoutes {
+  readonly version: 1;
+  readonly consumer: string;
+  readonly routes: readonly (AnyRouteRegistration | CompleteRouteMetadata)[];
+}
 export interface ContentMapSitemapOptions { readonly channel: PublisherChannelId; readonly origin: string }

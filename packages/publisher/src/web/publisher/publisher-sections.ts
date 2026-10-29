@@ -1,4 +1,4 @@
-import { completeRouteKind, routeInstanceBinding } from "../../core/route-identities.js";
+import { isRegionPageRouteRegistration, routeInstanceBinding } from "../../core/route-identities.js";
 import type { InstanceBinding, InstanceRegistries } from '../../core/instance-binding.js';
 import type { PublisherPlanDraft } from '../../planning/plan.js';
 import type { PublisherPlanVersion } from '../../planning/change-set.js';
@@ -70,7 +70,7 @@ export function projectPublisherSections(input: PublisherSectionsInput): readonl
     const owners = planOwners.filter(owner => owner.item === row.item && owner.packId === row.packId && owner.milestone === row.milestone);
     return owners.length === 1 && row.route.item === row.item && registration.planItemId === row.item.id && registration.routeId === row.item.appRouteId
       && registration.channel === row.channel && owner?.packId === row.packId && owner.milestone === row.milestone
-      && !findings.length && (!binding ? completeRouteKind(registration) !== undefined : binding.path === registration.path && binding.packIds.includes(row.packId)
+      && !findings.length && (!binding ? isRegionPageRouteRegistration(registration) : binding.path === registration.path && binding.packIds.includes(row.packId)
       && (!row.item.frame || row.item.frame.leaf === binding.frame.leaf && row.item.frame.config === binding.frame.config)
       && (!row.item.layout || row.item.layout.leaf === binding.layout?.leaf && row.item.layout.config === binding.layout?.config));
   };

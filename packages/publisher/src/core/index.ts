@@ -218,7 +218,7 @@ export { STANDARD_WEBSITE_INSTANCES, STANDARD_WEBSITE_PACK } from "./standard-we
 export { PUBLISHER_MENU_VERSION, PUBLISHER_MENU, PUBLISHER_MILESTONES, PUBLISHER_PACKS, PUBLISHER_LANES } from "../planning/menu.js";
 export type { MilestoneId, PublisherMenuItem, PublisherPlanLane, PublisherPlanPackId, MenuNeeds } from "../planning/menu.js";
 export { createPublisherPlanDraft, validatePublisherPlan } from "../planning/plan.js";
-export type { PublisherCompleteRoutePlan, PublisherPlanDraft, PublisherPlanMilestone, PublisherPlanPack, PublisherPlanItem, PublisherPlanNeed, PublisherPlanFinding } from "../planning/plan.js";
+export type { PublisherPlanDraft, PublisherPlanMilestone, PublisherPlanPack, PublisherPlanItem, PublisherPlanNeed, PublisherPlanFinding } from "../planning/plan.js";
 export { PublisherPlanStore, alignedPlanItems, projectPlanInstances } from "../planning/change-set.js";
 export type { PublisherPlanVersion, PublisherPlanChangeSet, PublisherPlanApply, AlignedPlanItem } from "../planning/change-set.js";
 
@@ -227,8 +227,8 @@ export type { PublisherConfiguration, PublisherMediaSettings, PublisherLaneRecom
 
 export { PUBLISHER_CHANNELS } from "../planning/channel-ids.js";
 export type { PublisherChannelId } from "../planning/channel-ids.js";
-export { completeRouteKind, isCompleteRouteKind, isLegacyRouteRegistration, projectRouteRegistry, routeServerLoader, registeredRoutesForChannel, registeredRouteBrandLink, routeRegistryDigest, routeCompositionDigest, registeredRouteFrameFinding } from "./route-registry.js";
-export type { CompleteRouteKind, CompleteRouteRegistration, LegacyRouteRegistration, LegacyRouteRegistry, RegionPageRouteRegistration, RegionPageRouteRegistry, AnyRouteRegistration, RouteSourceExport, RouteRegistration, RouteRegistry, RouteRegistryFinding, RegisteredRouteRow, RouteRegistryProjection } from "./route-registry.js";
+export { isLegacyRouteRegistration, projectRouteRegistry, routeServerLoader, registeredRoutesForChannel, registeredRouteBrandLink, routeRegistryDigest, routeCompositionDigest, registeredRouteFrameFinding } from "./route-registry.js";
+export type { LegacyRouteRegistration, LegacyRouteRegistry, RegionPageRouteRegistration, RegionPageRouteRegistry, AnyRouteRegistration, RouteSourceExport, RouteRegistration, RouteRegistry, RouteRegistryFinding, RegisteredRouteRow, RouteRegistryProjection } from "./route-registry.js";
 export type { InstanceBinding, FlowInstanceBinding, CanvasInstanceBinding, InstanceBindingBase, InstanceSectionRef, SectionPlacement, SectionFill, ContentRef, PublicationBinding, RegionPageBinding, InstanceRegistries, ConsumerInstanceLibrary, ConsumerInstanceFill, LayoutRendererSource } from "./instance-binding.js";
 export { instanceBodyFill, instanceBodyFindings } from "./instance-body.js";
 
@@ -240,5 +240,3 @@ export type { RegisteredRouteLifecycleEvidence, RegisteredRouteLifecycleResult, 
 export type { RegisteredRouteSourceEvidence } from "./route-source-evidence.js";
 export { registeredRouteServerData } from "./route-server-data.js";
 export type { RegisteredRouteSerializable, RegisteredRouteServerData } from "./route-server-data.js";
-
-export { projectPlanCompleteRoutes } from "../planning/complete-routes.js";
