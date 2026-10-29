@@ -32,12 +32,17 @@
         "scanStatus": "lower-bound",
         "scannedComposes": [],
         "scannedReads": {
-          "assets": [],
+          "assets": [
+            "assets.pattern"
+          ],
           "components": [],
           "tokens": [
             "tokens.border-color",
+            "tokens.border-width",
             "tokens.content-size",
+            "tokens.display-size",
             "tokens.gutter",
+            "tokens.heading-size",
             "tokens.spacing",
             "tokens.status-color",
             "tokens.surface-color",
@@ -55,7 +60,7 @@
           },
           {
             "path": "packages/designer/src/blocks/SectionFrame.tsx",
-            "sha256": "4e707067e1c81a759537a66ca80681307ea195cdb020982d4a189bc7fa711d8c"
+            "sha256": "9295e26f836782a3bbdafd5b0ae33a56b6e3d9a69a6facf003fb45cffca320dc"
           },
           {
             "path": "packages/designer/src/catalog-core/provenance-attrs.ts",
@@ -64,9 +69,23 @@
           {
             "path": "packages/designer/src/components/internal/cx.ts",
             "sha256": "0a7524b0340fec42e1abb216013a353e950aa738d9ba0f2ebdedd5293337bab3"
+          },
+          {
+            "path": "packages/designer/src/styles/section-reveal.tsx",
+            "sha256": "4a6f7b05d5a83e6e8a369fecc3378e7bb563446c24860bbfe049a1fc6c41401b"
+          },
+          {
+            "path": "packages/designer/src/tokens/pattern.ts",
+            "sha256": "086eedb4d51373c9f84ba1e0b5310e0041792aebf14c964300fc669a7b028a38"
           }
         ],
         "unresolved": [
+          {
+            "code": "DF2",
+            "evidence": "unresolved injected runtime inventory ../tokens/tokens.js#TOKENS",
+            "file": "packages/designer/src/blocks/SectionFrame.tsx",
+            "line": 2
+          },
           {
             "code": "DF2",
             "evidence": "unresolved injected runtime inventory ../../tokens/tokens.js#TOKENS",
@@ -101,11 +120,16 @@
       },
       "propMap": {},
       "reads": {
-        "assets": [],
+        "assets": [
+          "assets.pattern"
+        ],
         "tokens": [
           "tokens.border-color",
+          "tokens.border-width",
           "tokens.content-size",
+          "tokens.display-size",
           "tokens.gutter",
+          "tokens.heading-size",
           "tokens.spacing",
           "tokens.status-color",
           "tokens.surface-color",

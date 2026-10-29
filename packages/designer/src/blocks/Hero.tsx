@@ -1,4 +1,5 @@
 import type { CSSProperties, HTMLAttributes, ReactNode } from "react";
+import { sectionTreatment } from "./SectionFrame.js";
 import { cx } from "../components/internal/cx.js";
 import type { SectionIntroProps } from "./SectionIntro.js";
 import { HeroIntro } from "./hero/HeroIntro.js";
@@ -145,7 +146,7 @@ export function Hero({
           : "flex flex-col gap-xl",
         className,
       )}
-      style={style}
+      style={{ ...sectionTreatment(ground), ...style }}
     >
       {backdrop ? <StillBackdrop art={backdrop} scrim={backdropScrim} /> : null}
       {backdrop ? <div className="relative">{content}</div> : content}

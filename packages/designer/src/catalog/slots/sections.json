@@ -1043,6 +1043,12 @@
           "ground.sunken",
           "ground.inverse",
           "ground.transparent",
+          "ground.wash",
+          "texture.grain",
+          "texture.noise",
+          "texture.topo",
+          "reveal.true",
+          "reveal.false",
           "measure.prose",
           "measure.content",
           "measure.wide"
@@ -1052,19 +1058,25 @@
       "parts": [],
       "allowedReads": {
         "tokens": [
+          "tokens.display-size",
+          "tokens.heading-size",
+          "tokens.border-width",
           "tokens.spacing",
           "tokens.gutter",
           "tokens.content-size",
           "tokens.region-width",
           "tokens.breakpoint",
           "tokens.surface-color",
+          "tokens.gradient",
           "tokens.animation",
           "tokens.shift-distance",
           "tokens.border-color",
           "tokens.status-color",
           "tokens.text-color"
         ],
-        "assets": []
+        "assets": [
+          "assets.pattern"
+        ]
       },
       "data": "host-injected",
       "surface": "both",
@@ -1233,7 +1245,15 @@
       ],
       "members": {
         "mode": "closed",
-        "names": []
+        "names": [
+          "ground.base",
+          "ground.sunken",
+          "ground.inverse",
+          "ground.wash",
+          "texture.grain",
+          "texture.noise",
+          "texture.topo"
+        ]
       },
       "allowedComposes": [
         "components.button",
@@ -1246,12 +1266,16 @@
       ],
       "allowedReads": {
         "tokens": [
+          "tokens.display-size",
+          "tokens.heading-size",
+          "tokens.border-width",
           "tokens.spacing",
           "tokens.gutter",
           "tokens.content-size",
           "tokens.region-width",
           "tokens.breakpoint",
           "tokens.surface-color",
+          "tokens.gradient",
           "tokens.animation",
           "tokens.shift-distance",
           "tokens.border-color",
@@ -1260,7 +1284,9 @@
           "tokens.surface-radius",
           "tokens.text-color"
         ],
-        "assets": []
+        "assets": [
+          "assets.pattern"
+        ]
       },
       "data": "host-injected",
       "surface": "site",
@@ -4198,6 +4224,7 @@
       ],
       "allowedReads": {
         "tokens": [
+          "tokens.border-width",
           "tokens.spacing",
           "tokens.gutter",
           "tokens.content-size",

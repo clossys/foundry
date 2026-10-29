@@ -31,8 +31,8 @@
     "features": {
       "composes": [
         "components.icon",
-        "sections.section-header",
-        "components.semantic-content"
+        "components.semantic-content",
+        "sections.section-header"
       ],
       "configs": {},
       "consumption": {
@@ -86,10 +86,6 @@
           {
             "path": "packages/designer/src/catalog-core/provenance-attrs.ts",
             "sha256": "8f2a725224764fc1d7cd7ec94f2f569cad02117251bf6c2a668c8a1b51e7c443"
-          },
-          {
-            "path": "packages/designer/src/components/SemanticContent.tsx",
-            "sha256": "467894426d4a6b83ed26e34564fd0a4c61aa6a2a58358ebd0226a0312164471b"
           },
           {
             "path": "packages/designer/src/components/internal/cx.ts",

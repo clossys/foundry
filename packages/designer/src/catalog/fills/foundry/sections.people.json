@@ -34,12 +34,14 @@
       "consumption": {
         "scanStatus": "lower-bound",
         "scannedComposes": [
-          "components.icon"
+          "components.icon",
+          "components.semantic-content"
         ],
         "scannedReads": {
           "assets": [],
           "components": [
-            "components.icon"
+            "components.icon",
+            "components.semantic-content"
           ],
           "tokens": [
             "tokens.accent-color",
@@ -114,8 +116,7 @@
       "license": "MIT",
       "notes": [
         "People have portrait, initials and one href, not an arbitrary links array. Root is ul; header and band are external.",
-        "Source-only import and token-read measurements are lower bounds; shared anatomy, accessibility, contrast and consumer runtime conformance remain unmeasured. Content bindings describe host adaptation points, not type-equivalent converters.",
-        "Neutral list, item and copy elements compose components.semantic-content; authored content, host attributes and collection geometry are preserved."
+        "Source-only import and token-read measurements are lower bounds; shared anatomy, accessibility, contrast and consumer runtime conformance remain unmeasured. Content bindings describe host adaptation points, not type-equivalent converters."
       ],
       "parts": [],
       "pin": {

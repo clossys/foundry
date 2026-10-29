@@ -97,7 +97,7 @@
       "missingRequiredSlots": [],
       "missingSlots": [],
       "notes": [
-        "SectionFrame alone widens its ground with transparent (no surface, inherited ink); block grounds stay the closed SectionGround. Rhythm is fixed in source, with no specified contract member values.",
+        "SectionFrame alone widens its ground with transparent (no surface, inherited ink); block grounds stay the closed SectionGround. Wash reads tokens.gradient.wash; texture reads assets.pattern. Fluid heading properties are scoped to the section; global token defaults remain fixed. Reveal is opt-in and uses the shared reduced-motion policy. Rhythm is fixed in source, with no specified contract member values.",
         "Source-only import and token-read measurements are lower bounds; shared anatomy, accessibility, contrast and consumer runtime conformance remain unmeasured. Content bindings describe host adaptation points, not type-equivalent converters."
       ],
       "slot": "sections.band",
@@ -107,9 +107,15 @@
         "ground.inverse",
         "ground.sunken",
         "ground.transparent",
+        "ground.wash",
         "measure.content",
         "measure.prose",
-        "measure.wide"
+        "measure.wide",
+        "reveal.false",
+        "reveal.true",
+        "texture.grain",
+        "texture.noise",
+        "texture.topo"
       ],
       "supportedSlots": [],
       "unresolvedMemberAxes": [
@@ -160,7 +166,15 @@
       ],
       "slot": "sections.call-to-action",
       "status": "candidate",
-      "supportedMembers": [],
+      "supportedMembers": [
+        "ground.base",
+        "ground.inverse",
+        "ground.sunken",
+        "ground.wash",
+        "texture.grain",
+        "texture.noise",
+        "texture.topo"
+      ],
       "supportedSlots": [
         "actions",
         "header"

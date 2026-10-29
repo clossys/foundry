@@ -54,6 +54,10 @@
         },
         "sourceFiles": [
           {
+            "path": "packages/designer/src/blocks/section-ground.ts",
+            "sha256": "a519649f96cb339f1128fc385e68d67b6af063ed492ac2c285f09c1740c98679"
+          },
+          {
             "path": "packages/designer/src/blocks/Testimonial.server.tsx",
             "sha256": "b781ec297f690e3d0cfc482d0815bdd6bd248800ce3bfc740669cbaf619e0d07"
           },
@@ -62,16 +66,8 @@
             "sha256": "949fd4c6e6eda5a1e8210148c998be83254ff59a56292b1b3ad398d0adfcc5f9"
           },
           {
-            "path": "packages/designer/src/blocks/section-ground.ts",
-            "sha256": "a519649f96cb339f1128fc385e68d67b6af063ed492ac2c285f09c1740c98679"
-          },
-          {
             "path": "packages/designer/src/catalog-core/provenance-attrs.ts",
             "sha256": "8f2a725224764fc1d7cd7ec94f2f569cad02117251bf6c2a668c8a1b51e7c443"
-          },
-          {
-            "path": "packages/designer/src/components/SemanticContent.tsx",
-            "sha256": "467894426d4a6b83ed26e34564fd0a4c61aa6a2a58358ebd0226a0312164471b"
           },
           {
             "path": "packages/designer/src/components/internal/cx.ts",

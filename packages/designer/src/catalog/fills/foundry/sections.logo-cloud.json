@@ -27,25 +27,37 @@
   "sections": {
     "logo-cloud": {
       "composes": [
-        "components.link",
         "components.semantic-content"
       ],
       "configs": {},
       "consumption": {
         "scanStatus": "lower-bound",
-        "scannedComposes": [],
+        "scannedComposes": [
+          "components.semantic-content"
+        ],
         "scannedReads": {
           "assets": [],
-          "components": [],
+          "components": [
+            "components.semantic-content"
+          ],
           "tokens": [
             "tokens.accent-color",
+            "tokens.action-color",
+            "tokens.body-size",
             "tokens.border-color",
+            "tokens.control-color",
             "tokens.control-radius",
+            "tokens.duration",
+            "tokens.easing",
+            "tokens.focus-color",
+            "tokens.focus-outline",
             "tokens.spacing",
+            "tokens.state-opacity",
             "tokens.status-color",
             "tokens.surface-color",
             "tokens.text-color",
-            "tokens.touch-target"
+            "tokens.touch-target",
+            "tokens.typeface"
           ]
         },
         "sourceFiles": [
@@ -62,12 +74,24 @@
             "sha256": "8f2a725224764fc1d7cd7ec94f2f569cad02117251bf6c2a668c8a1b51e7c443"
           },
           {
+            "path": "packages/designer/src/components/button-classes.ts",
+            "sha256": "b8ebd6d815a52769cd0e02ca091f4c81d81e31f9558e1df767bfcf07dcc5f2a6"
+          },
+          {
             "path": "packages/designer/src/components/internal/cx.ts",
             "sha256": "0a7524b0340fec42e1abb216013a353e950aa738d9ba0f2ebdedd5293337bab3"
           },
           {
             "path": "packages/designer/src/components/internal/ui-vars.ts",
             "sha256": "8455ed770c61ec15597b5ead597563135ed088b609dc11b2cd7ed8b873371701"
+          },
+          {
+            "path": "packages/designer/src/components/Link.server.tsx",
+            "sha256": "716f8c4a4057c2d78fe87465080a8c874c83c7788e4d7da8fd26692146d0ad7b"
+          },
+          {
+            "path": "packages/designer/src/components/Link.styles.ts",
+            "sha256": "d8467b36dc0716227896837f1aecf9f3e44c0fdb42c63ba359f3420249f77328"
           }
         ],
         "unresolved": [
@@ -93,8 +117,7 @@
       "license": "MIT",
       "notes": [
         "Source checks allowed items.length values and tone; logos are host React nodes. The source root is ul, with no band/header wrapper.",
-        "Source-only import and token-read measurements are lower bounds; shared anatomy, accessibility, contrast and consumer runtime conformance remain unmeasured. Content bindings describe host adaptation points, not type-equivalent converters.",
-        "Neutral list, item and copy elements compose components.semantic-content; authored content, host attributes and collection geometry are preserved."
+        "Source-only import and token-read measurements are lower bounds; shared anatomy, accessibility, contrast and consumer runtime conformance remain unmeasured. Content bindings describe host adaptation points, not type-equivalent converters."
       ],
       "parts": [],
       "pin": {
@@ -115,13 +138,22 @@
         "assets": [],
         "tokens": [
           "tokens.accent-color",
+          "tokens.action-color",
+          "tokens.body-size",
           "tokens.border-color",
+          "tokens.control-color",
           "tokens.control-radius",
+          "tokens.duration",
+          "tokens.easing",
+          "tokens.focus-color",
+          "tokens.focus-outline",
           "tokens.spacing",
+          "tokens.state-opacity",
           "tokens.status-color",
           "tokens.surface-color",
           "tokens.text-color",
-          "tokens.touch-target"
+          "tokens.touch-target",
+          "tokens.typeface"
         ]
       },
       "slot": "sections.logo-cloud",
