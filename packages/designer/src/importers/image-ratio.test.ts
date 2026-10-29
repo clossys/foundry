@@ -10,6 +10,12 @@ const catalog = { ...loadCatalog(), fills: [...loadCatalog().fills.filter(fill =
 const empty: LibraryData = { source: { id: "example", kind: "consumer", author: "consumer", license: "MIT", extends: "foundry" }, fills: [], adoptedAt: "2026-10-24" };
 const adopted = () => applyLibraryChange(catalog, empty, { baseHash: libraryHash(empty), changes: [{ op: "adopt", slot: "assets.image-ratio", source: "foundry" }] });
 describe("image crop candidate", () => {
+  it("offers exact cinema and share presets on the existing image-ratio leaf", () => {
+    const fill = importImageRatios()[0]!;
+    const ratios = (fill.assets as Record<string, Record<string, { $value: unknown }>>)["image-ratio"]!;
+    expect(ratios.cinema!.$value).toEqual({ width: 21, height: 9 });
+    expect(ratios.share!.$value).toEqual({ width: 191, height: 100 });
+  });
   it("regenerates the exact descriptor without making upstream or conformance claims", () => {
     expect(readFileSync(new URL("../catalog/fills/foundry/assets.image-ratio.json", import.meta.url), "utf8")).toBe(stableStringify(importImageRatios()[0]));
     expect(importImageRatios()[0]!.$extensions["com.clossys.fill"]).toMatchObject({ author: "foundry", conforms: [], evidence: [] });

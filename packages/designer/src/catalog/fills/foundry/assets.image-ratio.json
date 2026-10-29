@@ -46,8 +46,8 @@
       "share": {
         "$type": "rules",
         "$value": {
-          "height": 630,
-          "width": 1200
+          "height": 100,
+          "width": 191
         }
       },
       "square": {

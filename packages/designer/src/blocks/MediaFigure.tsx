@@ -9,6 +9,21 @@ import { SemanticContent } from "../components/SemanticContent.js";
 /** Section root provenance (D1): the selected Foundry fill this block is. */
 const SECTION_STAMP = dsAttrs("sections", "sections.media", "foundry/sections.media");
 
+/** Only adjacent candidates with the same crop can share a source element. */
+function pictureSources(sources: ImageResource["sources"]) {
+  const groups: { media: string; srcSet: string; width: number; height: number }[] = [];
+  for (const source of sources ?? []) {
+    const previous = groups.at(-1);
+    const candidate = `${source.src} ${source.width}w`;
+    if (previous?.media === source.media && previous.width * source.height === source.width * previous.height) {
+      previous.srcSet += `, ${candidate}`;
+    } else {
+      groups.push({ media: source.media, srcSet: candidate, width: source.width, height: source.height });
+    }
+  }
+  return groups;
+}
+
 /**
  * How wide the figure runs inside its section's column: the whole column, or
  * the content measure (`--ui-width-content-max`), wider than prose but
@@ -73,8 +88,8 @@ export function MediaFigure({
     objectPosition: image?.focal ? `${image.focal.x * 100}% ${image.focal.y * 100}%` : undefined,
   };
   const resource = image === undefined ? children : (
-    <SemanticContent as="picture">
-      {image.sources?.map((source, index) => <SemanticContent as="source" key={index} srcSet={`${source.src} ${source.width}w`} width={source.width} height={source.height} media={source.media} sizes={image.sizes} />)}
+    <SemanticContent as="picture" style={{ display: "block", width: "100%", height: "100%" }}>
+      {pictureSources(image.sources).map((source, index) => <SemanticContent as="source" key={index} srcSet={source.srcSet} width={source.width} height={source.height} media={source.media} sizes={image.sizes} />)}
       <SemanticContent as="img" src={image.src} width={image.width} height={image.height} alt={image.decorative ? "" : image.alt} sizes={image.sizes} style={imageStyle} />
     </SemanticContent>
   );
@@ -85,7 +100,7 @@ export function MediaFigure({
       className={cx("m-0 flex w-full flex-col gap-sm", className)}
       style={contained ? { maxWidth: SECTION_MEASURE_MAX.content, ...style } : style}
     >
-      <SemanticContent as="div" className={framed ? cx("w-full overflow-hidden rounded-control border", colors.border) : "w-full overflow-hidden"}
+      <SemanticContent as="div" className={framed ? cx("w-full overflow-hidden rounded-control border", colors.border) : image === undefined ? "w-full" : "w-full overflow-hidden"}
         style={{ aspectRatio: crop ? `${crop.width} / ${crop.height}` : undefined,
           backgroundColor: image?.placeholder?.kind === "color" ? image.placeholder.value : undefined,
           backgroundImage: image?.placeholder?.kind === "blur" ? `url(${JSON.stringify(image.placeholder.value)})` : undefined,

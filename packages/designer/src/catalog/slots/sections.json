@@ -4797,7 +4797,9 @@
         "mode": "closed",
         "names": []
       },
-      "allowedComposes": [],
+      "allowedComposes": [
+        "components.semantic-content"
+      ],
       "parts": [
         "sections.band",
         "sections.section-header"

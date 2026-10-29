@@ -4,6 +4,7 @@ const size=(v:unknown)=>typeof v==='number'&&Number.isFinite(v)&&v>0;
 const object=(v:unknown):v is Record<string,unknown>=>!!v&&typeof v==='object'&&!Array.isArray(v);
 /** Explicit playback policy when the viewer prefers reduced motion: show the poster frame, or start paused. */
 export const VIDEO_REDUCED_MOTION=Object.freeze(['poster','paused'] as const);
+/** A picture candidate with intrinsic whole-pixel dimensions for HTML and srcset. */
 export interface ImageSource { media: string; src: string; width: number; height: number }
 export interface ImageResource {
  kind: 'photo'|'illustration'|'share'; src: string; width: number; height: number;
@@ -19,9 +20,10 @@ export interface ImageResource {
 export interface VideoResource{src:string;mediaType:string;width:number;height:number;reducedMotion:typeof VIDEO_REDUCED_MOTION[number];poster?:string;captions?:{src:string;srclang:string;label:string}}
 export function isImageResource(v:unknown):v is ImageResource {
  const coordinate=(n:unknown)=>typeof n==='number'&&Number.isFinite(n)&&n>=0&&n<=1;
+ const pixels=(n:unknown)=>size(n)&&Number.isInteger(n);
  return object(v)&&['photo','illustration','share'].includes(v.kind as string)&&text(v.src)&&size(v.width)&&size(v.height)
   &&(text(v.alt)||v.decorative===true)
-  &&(v.sources===undefined||Array.isArray(v.sources)&&v.sources.length>0&&v.sources.every(s=>object(s)&&text(s.media)&&text(s.src)&&size(s.width)&&size(s.height)))
+  &&(v.sources===undefined||Array.isArray(v.sources)&&v.sources.length>0&&v.sources.every(s=>object(s)&&text(s.media)&&text(s.src)&&pixels(s.width)&&pixels(s.height)))
   &&(v.sizes===undefined||text(v.sizes))
   &&(v.focal===undefined||object(v.focal)&&coordinate(v.focal.x)&&coordinate(v.focal.y))
   &&(v.placeholder===undefined||object(v.placeholder)&&(v.placeholder.kind==='color'||v.placeholder.kind==='blur')&&text(v.placeholder.value));

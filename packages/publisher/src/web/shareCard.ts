@@ -243,6 +243,12 @@ function requireMark(value: unknown): ShareCardMark | undefined {
 const PADDING_PX = 96;
 const ACCENT_RULE: CSSProperties = { display: "flex", width: 96, height: 8, marginTop: 40, marginBottom: 40 };
 
+// The canonical crop is a preferred ratio; explicit channel pixels remain
+// authoritative. The share member's 1.91:1 is not exactly 1200:630.
+function shareAspectRatio(): string {
+  return `${IMAGE_RATIOS.share.width} / ${IMAGE_RATIOS.share.height}`;
+}
+
 export function buildShareCard(input: ShareCardInput): ShareCard {
   if (!isRecord(input)) throw new ShareCardError("invalid-input");
 
@@ -297,7 +303,7 @@ export function buildShareCard(input: ShareCardInput): ShareCard {
         justifyContent: "center",
         width: widthPx,
         height: heightPx,
-        aspectRatio: `${IMAGE_RATIOS.share.width} / ${IMAGE_RATIOS.share.height}`,
+        aspectRatio: shareAspectRatio(),
         padding: PADDING_PX,
         boxSizing: "border-box",
         backgroundColor: background,
@@ -560,7 +566,7 @@ export function buildBrandShareCard(input: BrandShareCardInput): ShareCard {
         justifyContent: "space-between",
         width: widthPx,
         height: heightPx,
-        aspectRatio: `${IMAGE_RATIOS.share.width} / ${IMAGE_RATIOS.share.height}`,
+        aspectRatio: shareAspectRatio(),
         padding: PADDING_PX,
         boxSizing: "border-box",
         backgroundColor: background,
