@@ -1,3 +1,4 @@
+import { standaloneComponents } from "../selected-components/standalone.js";
 "use client";
 import { useMemo, type CSSProperties } from "react";
 import { Banner } from "../components/Banner.js";
@@ -31,7 +32,7 @@ function CheckedDesignerRoute({ checked, initialSession, agent, copy }: { copy: 
   const { data, catalog, contracts } = checked;
   const adapter = useMemo(() => {
     const content = new Map(data.contents.map(row => [runtimeHash(row.reference), row]));
-    const runtime = { manifest: data.manifest, renderers: surfaceRuntimeCallbacks(data.manifest.fills.map(fill => fill.leaf)), resolveContent: (ref: import("../catalog-core/index.js").RuntimeContentRef) => content.get(runtimeHash(ref)), frameHost: { navigate: nativeRouteNavigate } };
+    const runtime = { components: standaloneComponents, manifest: data.manifest, renderers: surfaceRuntimeCallbacks(data.manifest.fills.map(fill => fill.leaf)), resolveContent: (ref: import("../catalog-core/index.js").RuntimeContentRef) => content.get(runtimeHash(ref)), frameHost: { navigate: nativeRouteNavigate } };
     return { kind: "composite" as const, catalog, contracts, load: async () => ({ ...data.snapshot, runtime, preview: defaultComponentPreviews.preview }) };
   }, [data, catalog, contracts]);
   const labels = useMemo(() => createRouteStudioLabels(copy), [copy]);

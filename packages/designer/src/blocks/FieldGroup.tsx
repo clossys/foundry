@@ -1,5 +1,5 @@
 import { useId, type CSSProperties, type FieldsetHTMLAttributes, type ReactNode } from "react";
-import { cx } from "../components/internal/cx.js";
+import { cx } from "../selected-components/internal/cx.js";
 
 export type FieldGroupLayout = "single" | "multi";
 

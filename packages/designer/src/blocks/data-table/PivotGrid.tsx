@@ -1,5 +1,5 @@
 import { defaultPivotAxisMessage, defaultPivotColumnMessage, defaultPivotValueMessage, type DataTableMessages } from "./messages.js";
-import { Table } from "../../components/Table.js";
+import { Table } from "../../selected-components/Table.js";
 import { SectionHeader } from "../SectionHeader.js";
 import { pivotRows, type TablePivotAxis } from "../table-model/index.js";
 import type { DataTableViewModel } from "./view-model.js";

@@ -1,5 +1,7 @@
 /** Runtime-only server facade; Studio preview samples belong to the client registry. */
 import { createElement, lazy } from "react";
+import { renderWithSelectedComponents } from "#designer-component-selection";
+import { requireComponentIndex } from "../selected-components/validate.js";
 import frameSlots from "../catalog/slots/frames.json" with { type: "json" };
 import sectionSlots from "../catalog/slots/sections.json" with { type: "json" };
 import { surfaceRendererId, SURFACE_RUNTIME_POINTER, type SurfaceRendererEntry, type SurfaceRuntimeLeaf } from "./contract.js";
@@ -24,9 +26,9 @@ const serverFrames: Readonly<Record<string, ServerSurfaceRendererEntry>> = {
 // Inputs cross that reference intact. Hosts must obey ordinary RSC serialization
 // rules; this facade does not turn server-origin callbacks into client functions.
 export const surfaceRuntimeRenderers: Readonly<Record<string, ServerSurfaceRendererEntry>> = Object.freeze(Object.fromEntries(
-  [...frameSlots, ...sectionSlots].map(({ id: leaf }): [string, ServerSurfaceRendererEntry] => [leaf, serverFrames[leaf] ?? {
+  [...frameSlots, ...sectionSlots].map(({ id: leaf }): [string, ServerSurfaceRendererEntry] => [leaf, {
     leaf: leaf as SurfaceRuntimeLeaf,
-    render: input => createElement(ClientSurfaceRuntime, { leaf, input }),
+    render: input => serverFrames[leaf] ? renderWithSelectedComponents(leaf, input, serverFrames[leaf]!.render) : createElement(ClientSurfaceRuntime, { leaf, input }),
   }]),
 ));
 
@@ -39,7 +41,10 @@ export function surfaceRuntimeCallbacks(leaves: readonly string[] = Object.keys(
   for (const leaf of leaves) {
     const entry = surfaceRuntimeRenderers[leaf];
     if (!entry) throw new TypeError(`surface runtime: no package renderer for ${leaf}`);
-    callbacks[surfaceRendererId(leaf)] = entry.render;
+    callbacks[surfaceRendererId(leaf)] = input => {
+      requireComponentIndex(input.components);
+      return entry.render(input);
+    };
   }
   return callbacks;
 }

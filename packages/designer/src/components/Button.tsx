@@ -3,13 +3,10 @@ import {
   Button as AriaButton,
   type ButtonProps as AriaButtonProps,
 } from "react-aria-components";
-import { useGlyph } from "./glyph-context.js";
-import type { IconNode } from "../icons/types.js";
 import { buttonClassName, controlStateStyle, type ControlGround } from "./button-classes.js";
-import { Icon } from "./Icon.js";
 import { cx } from "./internal/cx.js";
 
-export type ButtonVariant = "primary" | "secondary" | "ghost" | "danger" | "outline" | "tonal" | "quiet";
+export type ButtonVariant = "primary" | "secondary" | "ghost" | "danger" | "outline";
 export type ButtonSize = "sm" | "md" | "lg";
 
 export interface ButtonProps extends AriaButtonProps {
@@ -18,27 +15,18 @@ export interface ButtonProps extends AriaButtonProps {
    * `secondary` is a bordered lower-emphasis action; `ghost` has no fill
    * or border until hovered; `danger` marks a destructive action;
    * `outline` is a page's secondary call to action: no fill, a hairline
-   * inset edge in the surrounding ink, the same box as `primary`;
-   * `tonal` is a tertiary call to action: a neutral tonal fill, no edge;
-   * `quiet` is a chevron text button: no box, a trailing icon, a 44px tap
-   * block, underlined on hover.
+   * inset edge in the surrounding ink, the same box as `primary`.
    * @default "primary"
    */
   variant?: ButtonVariant;
   /** @default "md" */
   size?: ButtonSize;
   /**
-   * The ground the button sits on. The primary, tonal and quiet looks change with it
+   * The ground the button sits on. The primary look changes with it
    * (the inverse plate takes the on-inverse ink and fill).
    * @default "base"
    */
   ground?: ControlGround;
-  /**
-   * `quiet` only: the trailing icon, decorative, after the label. Defaults
-   * to `ChevronRight` from this package's icon set; `null` renders none.
-   * Ignored by every other variant.
-   */
-  trailingIcon?: IconNode | null;
   /** Explains an unavailable action to assistive technology when isDisabled is set. */
   disabledReason?: string;
   /** Optional description supplied directly by the host. */
@@ -76,7 +64,6 @@ function ButtonControl({
   variant = "primary",
   size = "md",
   ground = "base",
-  trailingIcon,
   disabledReason,
   "aria-description": ariaDescription,
   "aria-describedby": ariaDescribedBy,
@@ -91,8 +78,6 @@ function ButtonControl({
 }: ButtonProps & { descriptionId?: string }) {
   const description = isDisabled ? (disabledReason ?? ariaDescription) : ariaDescription;
   const [pressed, setPressed] = useState(false);
-  const defaultTrailing = useGlyph("assets.icon-chevron-right");
-  const trailing = variant === "quiet" ? (trailingIcon === undefined ? defaultTrailing : trailingIcon) : null;
   return (
     <AriaButton
       {...rest}
@@ -111,11 +96,10 @@ function ButtonControl({
         ...(typeof style === "function" ? style(renderProps) : style),
       })}
     >
-      {trailing === null && !description
+      {!description
         ? (typeof children === "function" ? renderProps => truncatable(children(renderProps)) : truncatable(children))
         : renderProps => <>
             {truncatable(typeof children === "function" ? children(renderProps) : children)}
-            {trailing ? <Icon glyph={trailing} decorative size="sm" /> : null}
             {description ? <span id={descriptionId} hidden>{description}</span> : null}
           </>}
     </AriaButton>

@@ -1,6 +1,6 @@
 import { useId, type Key, type ReactNode } from "react";
-import { Card } from "../components/Card.js";
-import { cx } from "../components/internal/cx.js";
+import { Card } from "../selected-components/Card.js";
+import { cx } from "../selected-components/internal/cx.js";
 
 export interface GroupedTableColumn<Row> {
   /** Unique within its group; the row-header ID has its own namespace. */

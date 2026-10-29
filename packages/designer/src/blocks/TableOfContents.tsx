@@ -1,7 +1,7 @@
 import { useHeadingScrollSpy } from "./TableOfContents.scroll-spy.js";
 import type { CSSProperties, ReactNode } from "react";
-import { Disclosure } from "../components/Disclosure.js";
-import { cx } from "../components/internal/cx.js";
+import { Disclosure } from "../selected-components/Disclosure.js";
+import { cx } from "../selected-components/internal/cx.js";
 import {
   renderTableOfContentsInlineNav,
   renderTableOfContentsSidebar,

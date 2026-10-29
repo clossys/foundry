@@ -1,7 +1,7 @@
 import { ErrorState } from "../../blocks/ErrorState.js";
 import type { ErrorStateKind } from "../../blocks/ErrorState.js";
-import { Button } from "../../components/Button.js";
-import { Link } from "../../components/Link.js";
+import { Button } from "../../selected-components/Button.js";
+import { Link } from "../../selected-components/Link.js";
 import { actionsOf, anatomyOf, memberOf, noop, refuseUnmapped, requiredAnatomy, slotValue, textOf, type SectionInputs, type SectionRenderer } from "./group-c-content.js";
 
 const LEAF = "sections.error-state";

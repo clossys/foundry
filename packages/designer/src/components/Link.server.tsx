@@ -1,7 +1,7 @@
 import { createElement, type ComponentPropsWithoutRef } from "react";
 import type { LinkRenderProps } from "react-aria-components";
 import type { LinkProps } from "./Link.client.js";
-import { buttonClassName, controlSizeStyle, controlStateStyle } from "./button-classes.js";
+import { buttonLookClassName, controlSizeStyle, controlStateStyle } from "./button-classes.js";
 import { cx } from "./internal/cx.js";
 import { LINK_BASE, LINK_VARIANT_CLASSES } from "./Link.styles.js";
 
@@ -33,7 +33,7 @@ export function Link({ variant = "default", buttonVariant, buttonSize, ground = 
     "data-react-aria-pressable": true,
     "data-current": state.isCurrent || undefined,
     "data-disabled": isDisabled || undefined,
-    className: cx(button ? buttonClassName(buttonVariant ?? "primary", buttonSize ?? "md", ground)
+    className: cx(button ? buttonLookClassName(buttonVariant ?? "primary", buttonSize ?? "md", ground)
       : [LINK_BASE, LINK_VARIANT_CLASSES[variant]].join(" "),
     typeof className === "function" ? className({ ...state, defaultClassName: "react-aria-Link" }) : className),
     style: { ...(button ? controlSizeStyle(buttonSize) : {}),

@@ -1,12 +1,12 @@
 import { useCallback, useEffect, useId, useImperativeHandle, useLayoutEffect, useRef, useState, type CSSProperties, type KeyboardEvent, type PointerEvent, type ReactNode, type Ref } from "react";
-import { Icon } from "../../components/Icon.js";
+import { Icon } from "../../selected-components/Icon.js";
 import { List } from "../../icons/List.js";
 import { Info } from "../../icons/Info.js";
 import { X } from "../../icons/X.js";
-import { Button } from "../../components/Button.js";
-import { cx } from "../../components/internal/cx.js";
+import { Button } from "../../selected-components/Button.js";
+import { cx } from "../../selected-components/internal/cx.js";
 import { PATTERN_RECIPES, patternBackground, type PatternRecipe } from "../../tokens/pattern.js";
-import { UI_BORDER_HAIRLINE, UI_ELEVATION_FLOATING } from "../../components/internal/ui-vars.js";
+import { UI_BORDER_HAIRLINE, UI_ELEVATION_FLOATING } from "../../selected-components/internal/ui-vars.js";
 import {
   clamp, clearSelection, fitTo, minimapModel, navigate, panBy, selectMarquee, selectRange,
   selectSingle, toggleSelection, toWorld, validateCanvasItems, zoomAt, wheelZoomFactor, gestureZoomFactor, CANVAS_ZOOM_REQUEST_EVENT,

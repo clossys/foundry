@@ -1,8 +1,8 @@
 import type { HTMLAttributes, ReactNode } from "react";
-import { Badge, type BadgeVariant } from "../components/Badge.js";
-import { Card } from "../components/Card.js";
-import { Link } from "../components/Link.js";
-import { cx } from "../components/internal/cx.js";
+import { Badge, type BadgeVariant } from "../selected-components/Badge.js";
+import { Card } from "../selected-components/Card.js";
+import { Link } from "../selected-components/Link.js";
+import { cx } from "../selected-components/internal/cx.js";
 import { dsAttrs } from "../catalog-core/provenance-attrs.js";
 /** Section root provenance (D1): the selected Foundry fill this block is. */
 const SECTION_STAMP = dsAttrs("sections", "sections.cards", "foundry/sections.cards");

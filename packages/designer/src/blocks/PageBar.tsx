@@ -2,16 +2,16 @@
 import { useLocale } from "react-aria-components";
 
 import { useEffect, useRef, useState, type ComponentPropsWithRef, type ReactNode } from "react";
-import { Button } from "../components/Button.js";
-import { ToggleButton } from "../components/ToggleButton.js";
-import { Icon } from "../components/Icon.js";
-import { Link } from "../components/Link.js";
-import { Menu } from "../components/Menu.js";
-import { Popover } from "../components/Popover.js";
+import { Button } from "../selected-components/Button.js";
+import { ToggleButton } from "../selected-components/ToggleButton.js";
+import { Icon } from "../selected-components/Icon.js";
+import { Link } from "../selected-components/Link.js";
+import { Menu } from "../selected-components/Menu.js";
+import { Popover } from "../selected-components/Popover.js";
 import { ChevronDown } from "../icons/ChevronDown.js";
 import type { FramePageHeader, FramePageHeaderNav, FramePageHeaderActions, FramePageHeaderDestination } from "../frame-page-header.js";
 import { Check } from "../icons/Check.js";
-import { Tooltip } from "../components/Tooltip.js";
+import { Tooltip } from "../selected-components/Tooltip.js";
 import { frameLinkNavigation, type FrameNavigate } from "./frame-navigation.js";
 import { frameHeaderOverflow } from "./frame-header-layout.js";
 import { CONTROL, TAP, PAGE_BAR_LAYOUT } from "./page-bar-layout.js";

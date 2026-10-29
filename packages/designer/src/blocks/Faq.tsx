@@ -1,6 +1,6 @@
 import { SectionHeader } from "./SectionHeader.js";
 import type { CSSProperties, HTMLAttributes, ReactNode } from "react";
-import { cx } from "../components/internal/cx.js";
+import { cx } from "../selected-components/internal/cx.js";
 import { FAQ_ANSWER_STYLE, FAQ_ROW_CLASSES, faqColumns, faqLists } from "./Faq.server.js";
 import { disclosureRow } from "./internal/disclosure-row.js";
 import { SECTION_GROUND_CLASSES, type SectionGround } from "./section-ground.js";

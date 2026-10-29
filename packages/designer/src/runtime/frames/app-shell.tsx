@@ -7,8 +7,8 @@
 import { Children, type ReactNode } from "react";
 import type { AccountMenuSection } from "../../blocks/account-menu-types.js";
 import type { RuntimeRenderInput } from "../../catalog-core/runtime-ports.js";
-import { ProgressBar } from "../../components/ProgressBar.js";
-import { Skeleton } from "../../components/Skeleton.js";
+import { ProgressBar } from "../../selected-components/ProgressBar.js";
+import { Skeleton } from "../../selected-components/Skeleton.js";
 import { ErrorState } from "../../blocks/ErrorState.js";
 import { appHeaderActions } from "./app-header.js";
 import { AppFrame } from "../../frames/AppFrame.js";

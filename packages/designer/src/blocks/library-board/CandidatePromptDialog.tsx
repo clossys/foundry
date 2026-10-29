@@ -1,7 +1,7 @@
 "use client";
 import { useState, type ReactNode } from "react";
-import { Button } from "../../components/Button.js";
-import { Dialog } from "../../components/Dialog.js";
+import { Button } from "../../selected-components/Button.js";
+import { Dialog } from "../../selected-components/Dialog.js";
 import { OpenWithActions } from "./OpenWithActions.js";
 import { candidatePrompt, type CandidatePromptData } from "./candidate-prompt.js";
 import type { LayerId } from "../../catalog-core/index.js";

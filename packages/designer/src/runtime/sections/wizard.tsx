@@ -1,6 +1,6 @@
 import { FormWizard } from "../../blocks/FormWizard.js";
 import type { FormWizardStep } from "../../blocks/FormWizard.js";
-import { ProgressBar } from "../../components/ProgressBar.js";
+import { ProgressBar } from "../../selected-components/ProgressBar.js";
 import { actionsOf, isObject, noop, recordsOf, refuseUnmapped, requiredAnatomy, requireSlot, slotValue, stringField, type SectionInputs, type SectionRenderer } from "./group-c-content.js";
 
 const LEAF = "sections.wizard";

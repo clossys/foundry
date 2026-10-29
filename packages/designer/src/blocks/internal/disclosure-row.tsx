@@ -1,5 +1,5 @@
-import { Disclosure } from "../../components/Disclosure.js";
-import { cx } from "../../components/internal/cx.js";
+import { Disclosure } from "../../selected-components/Disclosure.js";
+import { cx } from "../../selected-components/internal/cx.js";
 import type { DisclosureRowOptions } from "./disclosure-row-types.js";
 
 /** Called directly so extracting a FAQ row preserves its component and id tree. */

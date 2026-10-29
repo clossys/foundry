@@ -1,5 +1,5 @@
 import { SectionHeader } from "./SectionHeader.js";
-import { cx } from "../components/internal/cx.js";
+import { cx } from "../selected-components/internal/cx.js";
 import type { ReactNode } from "react";
 import type { FaqLayout, FaqProps } from "./Faq.js";
 import { SECTION_MEASURE_MAX } from "./internal/block-vars.js";

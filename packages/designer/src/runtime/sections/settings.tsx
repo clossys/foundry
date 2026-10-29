@@ -1,8 +1,8 @@
 import { SettingsSection } from "../../blocks/SettingsSection.js";
 import type { SettingsSectionGroup } from "../../blocks/SettingsSection.js";
-import { Button } from "../../components/Button.js";
-import { Select } from "../../components/Select.js";
-import { Switch } from "../../components/Switch.js";
+import { Button } from "../../selected-components/Button.js";
+import { Select } from "../../selected-components/Select.js";
+import { Switch } from "../../selected-components/Switch.js";
 import { anatomyOf, noop, recordsOf, refuseUnmapped, requiredAnatomy, requireSlot, slotValue, stringField, textOf, type RuntimeObject, type SectionInputs, type SectionRenderer } from "./group-c-content.js";
 
 const LEAF = "sections.settings";

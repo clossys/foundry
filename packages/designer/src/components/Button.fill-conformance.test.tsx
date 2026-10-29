@@ -86,12 +86,12 @@ describe("control fill conformance", () => {
   });
 
   it.each(["sm", "md", "lg"] as const)("%s uses the control-height token, including square icon controls", size => {
-    render(<><Button size={size}>Action</Button><Button variant="quiet" size={size}>Quiet action</Button><TextField label="Field" size={size}/><Select label="Choice" size={size} options={options}/><IconButton size={size} icon={X} label="Icon"/></>);
-    for (const control of [screen.getByRole("button", { name: "Action" }), screen.getByRole("button", { name: "Quiet action" }), screen.getByRole("textbox"), screen.getByRole("button", { name: /Choice/ }), screen.getByRole("button", { name: "Icon" })]) {
+    render(<><Button size={size}>Action</Button><Button variant="ghost" size={size}>Ghost action</Button><TextField label="Field" size={size}/><Select label="Choice" size={size} options={options}/><IconButton size={size} icon={X} label="Icon"/></>);
+    for (const control of [screen.getByRole("button", { name: "Action" }), screen.getByRole("button", { name: "Ghost action" }), screen.getByRole("textbox"), screen.getByRole("button", { name: /Choice/ }), screen.getByRole("button", { name: "Icon" })]) {
       if (control.style.blockSize) expect(control.style.blockSize).toContain(`--ui-control-h-${size}`);
       else expect(control).toHaveClass(`control-h-${size}`);
     }
-    const quiet = screen.getByRole("button", { name: "Quiet action" });
+    const quiet = screen.getByRole("button", { name: "Ghost action" });
     expect(quiet.style.blockSize).toBe("");
     expect(quiet.style.minBlockSize).toBe("");
     const compiled = readFileSync(resolve(import.meta.dirname, "../../styles/compiled.css"), "utf8");

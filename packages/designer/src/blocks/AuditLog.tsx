@@ -1,5 +1,5 @@
 import type { ReactNode } from "react";
-import { cx } from "../components/internal/cx.js";
+import { cx } from "../selected-components/internal/cx.js";
 import { DataTable, type DataTableColumn } from "./DataTable.js";
 import { dsAttrs } from "../catalog-core/provenance-attrs.js";
 /** Section root provenance (D1): the selected Foundry fill this block is. */

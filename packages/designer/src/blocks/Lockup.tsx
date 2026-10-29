@@ -1,6 +1,6 @@
 import type { CSSProperties } from "react";
-import { Logomark, type LogomarkProps } from "../components/Logomark.js";
-import { cx } from "../components/internal/cx.js";
+import { Logomark, type LogomarkProps } from "../selected-components/Logomark.js";
+import { cx } from "../selected-components/internal/cx.js";
 import {
   UI_BRANDMARK_GAP_SM, UI_BRANDMARK_GAP_MD, UI_BRANDMARK_GAP_LG,
   UI_BRANDMARK_HEIGHT_SM, UI_BRANDMARK_HEIGHT_MD, UI_BRANDMARK_HEIGHT_LG,

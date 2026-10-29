@@ -1,3 +1,4 @@
+import { standaloneComponents } from "../selected-components/standalone.js";
 "use client";
 import { Fragment, useEffect, useMemo, useState, type ReactNode } from "react";
 import { Banner } from "../components/Banner.js";
@@ -46,7 +47,7 @@ export function useNativeRouteBreakpoints(profile: CompositeResolved, rootFontSi
 export function NativeRouteFrame({ data, profile, contracts, children, header }: { readonly data: NativeRouteFrameData; readonly profile: CompositeResolved; readonly contracts: BuildCatalogData; readonly children: ReactNode; readonly header?: NativeRouteFrameData["header"] }) {
   const renderers = useMemo(() => surfaceRuntimeCallbacks(data.manifest.fills.map(fill => fill.leaf)), [data.manifest]);
   const content = useMemo(() => new Map(data.contents.map(row => [runtimeHash(row.reference), row])), [data.contents]);
-  const ports = useMemo(() => ({ manifest: data.manifest, renderers, resolveContent: (ref: import("../catalog-core/index.js").RuntimeContentRef) => content.get(runtimeHash(ref)), frameHost: { navigate: nativeRouteNavigate } }), [data.manifest, renderers, content]);
+  const ports = useMemo(() => ({ components: standaloneComponents, manifest: data.manifest, renderers, resolveContent: (ref: import("../catalog-core/index.js").RuntimeContentRef) => content.get(runtimeHash(ref)), frameHost: { navigate: nativeRouteNavigate } }), [data.manifest, renderers, content]);
   const checked = checkConsumerRuntimePorts(ports, contracts, { consumer: profile.consumer, libraryHash: data.manifest.libraryHash, selectionHash: profile.selectionHash as `sha256:${string}` });
   const selected = profile.surfaces?.fills[data.frame.leaf], descriptor = data.manifest.fills.find(fill => fill.leaf === data.frame.leaf && fill.fill === data.frame.fill && fill.config === data.frame.config && fill.library === profile.consumer);
   if (checked.status !== "valid" || !selected || !descriptor || selected.document.$extensions["com.clossys.fill"].id !== data.frame.fill || descriptor.kind !== "frame" || runtimeHash(descriptor.surface) !== runtimeHash(surfaceRuntimeIdentity(selected)) || descriptor.renderer.id !== surfaceRendererId(descriptor.leaf) || !descriptor.headerModule || runtimeSourceFindings(descriptor.headerModule.renderer).length || data.frame.members.some(member => !descriptor.members.includes(member))) return <Banner variant="danger">Selected route frame unavailable</Banner>;
@@ -57,6 +58,6 @@ export function NativeRouteFrame({ data, profile, contracts, children, header }:
     resolved[slot] = value;
   }
   const lease = header ?? data.header;
-  const input: RuntimeRenderInput<ReactNode> = { path: "frame", fill: descriptor, selection: data.frame, content: resolved, slots: { main: [<Fragment key="studio">{children}</Fragment>] }, profile, cell: data.cell, host: ports.frameHost, pageHeader: { ...lease, module: descriptor.headerModule } };
+  const input: RuntimeRenderInput<ReactNode> = { components: ports.components, path: "frame", fill: descriptor, selection: data.frame, content: resolved, slots: { main: [<Fragment key="studio">{children}</Fragment>] }, profile, cell: data.cell, host: ports.frameHost, pageHeader: { ...lease, module: descriptor.headerModule } };
   return <>{renderers[descriptor.renderer.id]!(input)}</>;
 }

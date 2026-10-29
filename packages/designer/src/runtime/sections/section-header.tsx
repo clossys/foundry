@@ -1,9 +1,9 @@
 import { SectionHeader } from "../../blocks/SectionHeader.js";
-import { Badge } from "../../components/Badge.js";
-import { StatusMark, type StatusMarkTone } from "../../components/StatusMark.js";
-import { Menu } from "../../components/Menu.js";
-import { Button } from "../../components/Button.js";
-import { Link } from "../../components/Link.js";
+import { Badge } from "../../selected-components/Badge.js";
+import { StatusMark, type StatusMarkTone } from "../../selected-components/StatusMark.js";
+import { Menu } from "../../selected-components/Menu.js";
+import { Button } from "../../selected-components/Button.js";
+import { Link } from "../../selected-components/Link.js";
 import { actionsOf, memberOf, noop, refuseUnmapped, requiredText, recordsOf, stringField, isObject, slotValue, textOf, type SectionInputs, type SectionRenderer } from "./group-c-content.js";
 
 const LEAF = "sections.section-header";

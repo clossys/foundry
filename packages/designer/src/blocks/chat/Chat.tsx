@@ -1,9 +1,9 @@
 import { useLayoutEffect, useRef, useState, type KeyboardEvent, type ReactNode } from "react";
-import { Avatar } from "../../components/Avatar.js";
-import { Button } from "../../components/Button.js";
-import { IconButton } from "../../components/IconButton.js";
-import { Textarea } from "../../components/Textarea.js";
-import { Tooltip } from "../../components/Tooltip.js";
+import { Avatar } from "../../selected-components/Avatar.js";
+import { Button } from "../../selected-components/Button.js";
+import { IconButton } from "../../selected-components/IconButton.js";
+import { Textarea } from "../../selected-components/Textarea.js";
+import { Tooltip } from "../../selected-components/Tooltip.js";
 import { ArrowRight } from "../../icons/ArrowRight.js";
 import { ChevronUp } from "../../icons/ChevronUp.js";
 import { ChevronDown } from "../../icons/ChevronDown.js";

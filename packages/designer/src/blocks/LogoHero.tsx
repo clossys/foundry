@@ -1,4 +1,4 @@
-import { Logomark } from "../components/Logomark.js";
+import { Logomark } from "../selected-components/Logomark.js";
 import { dsAttrs } from "../catalog-core/provenance-attrs.js";
 import { SectionFrame } from "./SectionFrame.js";
 

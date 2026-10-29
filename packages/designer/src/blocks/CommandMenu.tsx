@@ -1,13 +1,13 @@
-import { useShellCopy } from "../components/Banner.copy-context.js";
-import { SHELL_COPY_REFS } from "../components/Banner.copy.js";
+import { useShellCopy } from "../selected-components/Banner.copy-context.js";
+import { SHELL_COPY_REFS } from "../selected-components/Banner.copy.js";
 import { useCallback, useEffect, useId, useRef, useState, type KeyboardEvent, type ReactNode } from "react";
 import { FieldInputContext } from "react-aria-components";
-import { Dialog } from "../components/Dialog.js";
-import { SearchField } from "../components/SearchField.js";
-import { Tooltip } from "../components/Tooltip.js";
-import { IconButton } from "../components/IconButton.js";
-import { Icon } from "../components/Icon.js";
-import { controlStateStyle } from "../components/button-classes.js";
+import { Dialog } from "../selected-components/Dialog.js";
+import { SearchField } from "../selected-components/SearchField.js";
+import { Tooltip } from "../selected-components/Tooltip.js";
+import { IconButton } from "../selected-components/IconButton.js";
+import { Icon } from "../selected-components/Icon.js";
+import { controlStateStyle } from "../selected-components/button-classes.js";
 import { X } from "../icons/X.js";
 import type { CommandMenuProps, CommandMenuShortcutOptions } from "./command-menu-types.js";
 

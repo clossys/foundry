@@ -12,7 +12,7 @@ export type ControlGround = "base" | "sunken" | "inverse";
 const BASE =
   "inline-flex max-w-full items-center justify-center gap-sm whitespace-nowrap rounded-control text-body font-body transition-colors motion-reduce:transition-none outline-none disabled:cursor-not-allowed";
 
-const VARIANT_CLASSES: Record<Exclude<ButtonVariant, "tonal" | "quiet">, string> = {
+const VARIANT_CLASSES: Record<ButtonVariant, string> = {
   primary: "bg-action text-ink-on-action hover:bg-action-hover data-pressed:bg-action-pressed",
   secondary: "bg-surface-raised text-ink-primary border border-line-control hover:bg-control-tonal-hover",
   ghost: "text-ink-primary hover:bg-control-tonal-hover",
@@ -90,7 +90,16 @@ const SIZE_CLASSES: Record<ButtonSize, string> = {
  * copying it. `ground` (default `"base"`) only changes `tonal` and `quiet`;
  * every other variant reads the same on every ground.
  */
+export type ControlAppearanceVariant = ButtonVariant | "tonal" | "quiet";
+
+/** Button accepts only treatments declared by its component contract. */
 export function buttonClassName(variant: ButtonVariant, size: ButtonSize, ground: ControlGround = "base"): string {
+  if (!Object.hasOwn(VARIANT_CLASSES, variant)) throw new TypeError(`Button: unsupported variant ${variant}`);
+  return buttonLookClassName(variant, size, ground);
+}
+
+/** Links and toggles keep their separately supported tonal and quiet treatments. */
+export function buttonLookClassName(variant: ControlAppearanceVariant, size: ButtonSize, ground: ControlGround = "base"): string {
   if (variant === "primary" && ground === "inverse") return [BASE, SIZE_CLASSES[size], "bg-action-on-inverse text-ink-primary hover:bg-action-on-inverse-hover"].join(" ");
   if (variant === "quiet") return [QUIET_BASE, QUIET_SIZE_CLASSES[size], QUIET_GROUND_CLASSES[ground]].join(" ");
   if (variant === "tonal") return [BASE, SIZE_CLASSES[size], TONAL_GROUND_CLASSES[ground]].join(" ");
@@ -109,8 +118,8 @@ const LINK_FOCUS_CLASSES = "focus-visible:outline-2 focus-visible:outline-offset
  * A `quiet` link carries its own trailing icon: put a decorative
  * `ChevronRight` `Icon` last inside the link.
  */
-export function buttonLinkClassName(variant: ButtonVariant, size: ButtonSize, ground: ControlGround = "base"): string {
-  const look = buttonClassName(variant, size, ground)
+export function buttonLinkClassName(variant: ControlAppearanceVariant, size: ButtonSize, ground: ControlGround = "base"): string {
+  const look = buttonLookClassName(variant, size, ground)
     .split(" ")
     .filter((token) => token !== "outline-none" && token !== "disabled:cursor-not-allowed");
   return [...look, LINK_FOCUS_CLASSES].join(" ");

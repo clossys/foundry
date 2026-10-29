@@ -1,10 +1,10 @@
 import { useState } from "react";
-import { Menu } from "../components/Menu.js";
-import { Icon } from "../components/Icon.js";
+import { Menu } from "../selected-components/Menu.js";
+import { Icon } from "../selected-components/Icon.js";
 import { useTheme, type ThemePreference } from "../theme/ThemeProvider.js";
 import type { ThemeToggleProps } from "../theme/ThemeToggle.js";
-import { useShellCopy } from "../components/Banner.copy-context.js";
-import { SHELL_COPY_REFS } from "../components/Banner.copy.js";
+import { useShellCopy } from "../selected-components/Banner.copy-context.js";
+import { SHELL_COPY_REFS } from "../selected-components/Banner.copy.js";
 import { Monitor } from "../icons/Monitor.js";
 import { Moon } from "../icons/Moon.js";
 import { Sun } from "../icons/Sun.js";

@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Badge } from "../../components/Badge.js";
+import { Badge } from "../../selected-components/Badge.js";
 import { Explorer } from "../Explorer.js";
 import type { CatalogWorkspaceItem } from "./types.js";
 import type { catalogIndex } from "./model.js";

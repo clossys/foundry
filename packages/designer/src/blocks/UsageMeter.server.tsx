@@ -1,6 +1,6 @@
-import { Meter } from "../components/Meter.server.js";
-import { StatusMark } from "../components/StatusMark.js";
-import { cx } from "../components/internal/cx.js";
+import { Meter } from "../selected-components/Meter.server.js";
+import { StatusMark } from "../selected-components/StatusMark.js";
+import { cx } from "../selected-components/internal/cx.js";
 import type { UsageMeterProps, UsageMeterThreshold } from "./UsageMeter.js";
 
 /**

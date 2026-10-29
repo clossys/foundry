@@ -1,14 +1,14 @@
 "use client";
 
 import { useId, useState, type HTMLAttributes, type ReactNode } from "react";
-import { Button } from "../components/Button.js";
-import { GridList } from "../components/GridList.js";
-import { IconButton } from "../components/IconButton.js";
-import { Menu } from "../components/Menu.js";
-import { Skeleton } from "../components/Skeleton.js";
+import { Button } from "../selected-components/Button.js";
+import { GridList } from "../selected-components/GridList.js";
+import { IconButton } from "../selected-components/IconButton.js";
+import { Menu } from "../selected-components/Menu.js";
+import { Skeleton } from "../selected-components/Skeleton.js";
 import { SECTION_CONTENT_STYLE } from "./internal/section-content-gutter.js";
-import { cx } from "../components/internal/cx.js";
-import { UI_LAYOUT_TAP_TARGET } from "../components/internal/ui-vars.js";
+import { cx } from "../selected-components/internal/cx.js";
+import { UI_LAYOUT_TAP_TARGET } from "../selected-components/internal/ui-vars.js";
 import { ChevronDown } from "../icons/ChevronDown.js";
 import { EmptyState, type EmptyStateProps } from "./EmptyState.js";
 import { dsAttrs } from "../catalog-core/provenance-attrs.js";
@@ -73,7 +73,7 @@ function ResourceListActions({ item, label }: { item: ResourceListItem; label: s
   return <div className="flex shrink-0 items-center gap-sm">
     <div className="flex flex-wrap items-center gap-sm">
       {actions.slice(0, 2).map((action, index) => <span key={action.id} className="inline-flex">
-        <Button variant="quiet" size="sm" trailingIcon={null} className="border-0 bg-transparent" isDisabled={disabled(action)} onPress={action.onAction}
+        <Button variant="ghost" size="sm" className="border-0 bg-transparent" isDisabled={disabled(action)} onPress={action.onAction}
           aria-describedby={reasonId(action, index, "inline")}>{action.label}</Button>
         {reasonId(action, index, "inline") && <span id={reasonId(action, index, "inline")} className="sr-only">{action.disabledReason}</span>}
       </span>)}

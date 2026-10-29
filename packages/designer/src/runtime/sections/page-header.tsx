@@ -1,6 +1,6 @@
 import { PageHeader } from "../../blocks/PageHeader.js";
-import { Breadcrumb } from "../../components/Breadcrumb.js";
-import { Button } from "../../components/Button.js";
+import { Breadcrumb } from "../../selected-components/Breadcrumb.js";
+import { Button } from "../../selected-components/Button.js";
 import { actionsOf, noop, recordsOf, refuseUnmapped, requiredText, slotValue, stringField, textOf, type SectionInputs, type SectionRenderer } from "./group-c-content.js";
 
 const LEAF = "sections.page-header";

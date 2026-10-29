@@ -1,5 +1,5 @@
 import type { CSSProperties, ReactNode } from "react";
-import { Button } from "../components/Button.js";
+import { Button } from "../selected-components/Button.js";
 import { CompatNavGrid } from "./items/compat-nav.js";
 import { dsAttrs } from "../catalog-core/provenance-attrs.js";
 /** Section root provenance (D1): the selected Foundry fill this block is. */

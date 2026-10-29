@@ -360,7 +360,8 @@
     "generate:icons": "node scripts/generate-icons.mjs",
     "generate:compiled-css": "npm run build && node dist/compiled-css/cli.js --write",
     "check:compiled-css": "npm run build && node dist/compiled-css/cli.js --check",
-    "check:designer-receipt": "npm run build && node dist/library-cli/cli.js receipt"
+    "check:designer-receipt": "npm run build && node dist/library-cli/cli.js receipt",
+    "check:component-imports": "npm run build && node scripts/check-component-imports.mjs"
   },
   "peerDependencies": {
     "@internationalized/date": "^3.12.2",
@@ -439,6 +440,11 @@
       "types": "./dist/components/Link.client.d.ts",
       "react-server": "./dist/components/Link.server.js",
       "default": "./dist/components/Link.client.js"
+    },
+    "#designer-component-selection": {
+      "types": "./src/selected-components/context.tsx",
+      "react-server": "./dist/selected-components/context.server.js",
+      "default": "./dist/selected-components/context.js"
     }
   }
 }

@@ -1,6 +1,6 @@
 import type { ReactNode } from "react";
-import { Button } from "../../components/Button.js";
-import { Link } from "../../components/Link.js";
+import { Button } from "../../selected-components/Button.js";
+import { Link } from "../../selected-components/Link.js";
 import type { RuntimeRenderInput, RuntimeJson } from "../../catalog-core/runtime-ports.js";
 import { object, SectionContentError, text, type SectionContent } from "./group-a-content.js";
 

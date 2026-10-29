@@ -1,7 +1,7 @@
 import type { CSSProperties } from "react";
-import { Icon } from "../../components/Icon.js";
-import { cx } from "../../components/internal/cx.js";
-import { UI_BORDER_HAIRLINE } from "../../components/internal/ui-vars.js";
+import { Icon } from "../../selected-components/Icon.js";
+import { cx } from "../../selected-components/internal/cx.js";
+import { UI_BORDER_HAIRLINE } from "../../selected-components/internal/ui-vars.js";
 import { ArrowRight } from "../../icons/ArrowRight.js";
 import { SECTION_GROUND_CLASSES } from "../section-ground.js";
 import { hasContent } from "./policies.js";

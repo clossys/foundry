@@ -1,5 +1,5 @@
-import { Link } from "../../components/Link.js";
-import { SemanticContent } from "../../components/SemanticContent.js";
+import { Link } from "../../selected-components/Link.js";
+import { SemanticContent } from "../../selected-components/SemanticContent.js";
 import { SiteHeader } from "@clossys/designer/shell/server";
 import type { ResolvedSiteLink, ResolvedSiteShell } from "./internal/resolveShell.js";
 

@@ -6,11 +6,10 @@
  * renderer's declared inputs, or a value of the wrong shape. Nothing here renders markup of its own.
  */
 import type { ReactNode } from "react";
-import { BarChart } from "../../charts/BarChart.js";
-import { LineChart } from "../../charts/LineChart.js";
-import { Link } from "../../components/Link.js";
-import { Logomark } from "../../components/Logomark.js";
-import { SemanticContent } from "../../components/SemanticContent.js";
+import { BarChart, LineChart } from "../../selected-components/charts.js";
+import { Link } from "../../selected-components/Link.js";
+import { Logomark } from "../../selected-components/Logomark.js";
+import { SemanticContent } from "../../selected-components/SemanticContent.js";
 import type { RuntimeJson, RuntimeRenderInput } from "../../catalog-core/runtime-ports.js";
 
 export type SectionRenderInput = RuntimeRenderInput<ReactNode>;

@@ -1,11 +1,11 @@
 import { useState, type ReactNode } from "react";
 import { SectionHeader, type SectionHeaderLevel } from "../../blocks/SectionHeader.js";
 import { Pagination } from "../../blocks/Pagination.js";
-import { Badge } from "../../components/Badge.js";
-import { Button } from "../../components/Button.js";
-import { Link } from "../../components/Link.js";
-import { StatusMark, type StatusMarkTone } from "../../components/StatusMark.js";
-import { Tooltip } from "../../components/Tooltip.js";
+import { Badge } from "../../selected-components/Badge.js";
+import { Button } from "../../selected-components/Button.js";
+import { Link } from "../../selected-components/Link.js";
+import { StatusMark, type StatusMarkTone } from "../../selected-components/StatusMark.js";
+import { Tooltip } from "../../selected-components/Tooltip.js";
 import { FieldRegion, PaginationRegion, type FieldRegionContent, type PaginationRegionContent } from "./group-b-parts.js";
 import { entryOf, recordsOf, stateOf, type GroupBSection, type SectionRenderInput, type SelectionRecord } from "./group-b-support.js";
 import type { TableColumnKind } from "../../blocks/table-model/index.js";

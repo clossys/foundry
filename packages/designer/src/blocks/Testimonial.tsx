@@ -1,5 +1,5 @@
 import type { CSSProperties, HTMLAttributes, ReactNode } from "react";
-import { Avatar } from "../components/Avatar.js";
+import { Avatar } from "../selected-components/Avatar.js";
 import { renderTestimonial } from "./Testimonial.server.js";
 
 export interface TestimonialBaseProps extends Omit<HTMLAttributes<HTMLElement>, "children"> {

@@ -1,9 +1,9 @@
 import { useId } from "react";
-import { Button } from "../components/Button.js";
-import { Checkbox } from "../components/Checkbox.js";
-import { Icon } from "../components/Icon.js";
-import { Tooltip } from "../components/Tooltip.js";
-import { cx } from "../components/internal/cx.js";
+import { Button } from "../selected-components/Button.js";
+import { Checkbox } from "../selected-components/Checkbox.js";
+import { Icon } from "../selected-components/Icon.js";
+import { Tooltip } from "../selected-components/Tooltip.js";
+import { cx } from "../selected-components/internal/cx.js";
 import { Lock } from "../icons/Lock.js";
 import { accessCell, assertAccessMatrix } from "./access-matrix/validate.js";
 import { accessSummary, useDebouncedSummary } from "./access-matrix/summary.js";

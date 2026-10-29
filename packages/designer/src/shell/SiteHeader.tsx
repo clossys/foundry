@@ -1,8 +1,8 @@
 import { Children, Fragment, cloneElement, isValidElement, type AnchorHTMLAttributes, type HTMLAttributes, type ReactElement, type ReactNode } from "react";
 import { Brandmark, type BrandmarkProps } from "./Brandmark.js";
-import { buttonLinkClassName } from "../components/button-classes.js";
-import { Icon, type IconNode } from "../components/Icon.js";
-import { cx } from "../components/internal/cx.js";
+import { buttonLinkClassName } from "../selected-components/button-classes.js";
+import { Icon, type IconNode } from "../selected-components/Icon.js";
+import { cx } from "../selected-components/internal/cx.js";
 import { SHELL_GROUND_CLASSES } from "./internal/shell-ground.js";
 import { UI_BORDER_HAIRLINE, UI_LAYOUT_TAP_TARGET, UI_Z_SHELL } from "./internal/shell-vars.js";
 import { resolveFrameHeaderOptions } from "../catalog-core/frame-header-options.js";

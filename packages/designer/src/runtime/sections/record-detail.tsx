@@ -1,7 +1,7 @@
 import { DetailView } from "../../blocks/DetailView.js";
-import { Badge } from "../../components/Badge.js";
-import { Button } from "../../components/Button.js";
-import { Menu } from "../../components/Menu.js";
+import { Badge } from "../../selected-components/Badge.js";
+import { Button } from "../../selected-components/Button.js";
+import { Menu } from "../../selected-components/Menu.js";
 import { ActionPart, type ActionContent } from "./group-b-parts.js";
 import { entryOf, type GroupBSection, type SectionRenderInput } from "./group-b-support.js";
 import { recordDetailCopyOf } from "./copy-ports.js";

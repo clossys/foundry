@@ -1,6 +1,6 @@
 import { Fragment, type CSSProperties, type HTMLAttributes, type ReactNode } from "react";
-import { cx } from "../../components/internal/cx.js";
-import { UI_BORDER_PANEL } from "../../components/internal/ui-vars.js";
+import { cx } from "../../selected-components/internal/cx.js";
+import { UI_BORDER_PANEL } from "../../selected-components/internal/ui-vars.js";
 import { SpecimenPanel, type SpecimenPanelItem } from "./SpecimenPanel.js";
 
 /** How a specimen arranges its panels. `single` holds exactly one; the others hold two or three. */
