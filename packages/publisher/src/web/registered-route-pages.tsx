@@ -20,7 +20,8 @@ export function StaticRegisteredRoutePage({ registry, routeId, useRuntime, rende
   const page = runtime?.page, publication = suppliedPublication ?? page?.options.publication;
   useSyncExternalStore(page?.subscribe ?? noSubscribe, page?.revision ?? zeroRevision, zeroRevision);
   const published = useRef<string | undefined>(undefined);
-  useEffect(() => { page?.activate(); void page?.start().catch(() => {}); return () => { page?.deactivate(); }; }, [page, routeId]);
+  useEffect(() => { page?.activate(); return () => { page?.deactivate(); }; }, [page, routeId]);
+  useEffect(() => { if (page) void (runtime.itemPath === undefined ? page.start() : page.loadItem(runtime.itemPath)).catch(() => {}); }, [page, routeId, runtime.itemPath]);
   let result: PreparedRegisteredPage | undefined, node: import("react").ReactNode, regions: ReturnType<NonNullable<PreparedRegisteredPage["renderRegions"]>> | undefined;
   try {
     if (runtime && failure === undefined) {

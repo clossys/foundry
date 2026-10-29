@@ -33,6 +33,8 @@ export interface RegisteredRouteRuntime {
   readonly designerQuery?: RegisteredDesignerQuery;
   readonly headerActions?: { readonly renderer: RuntimeRendererDescriptor; readonly state: RuntimeJson };
   readonly page?: RegisteredPageSession;
+  /** Concrete client-router path for the registered /[l0]/[id] template. */
+  readonly itemPath?: string;
 }
 export type RegisteredRouteRuntimeHook = (route: RouteRegistration) => RegisteredRouteRuntime;
 export type RegisteredRouteHeaderActions = (options: { readonly compact: boolean }) => ReactNode;
@@ -73,16 +75,18 @@ function prepareRegionStream(registry: RegionPageRouteRegistry, route: RouteRegi
   if (normalized.status === "refused") return normalized;
   const targets = Object.values(page.outline.targets), chunks: { id: string; result: PreparedStaticRoute }[] = [];
   const descriptors: RegisteredPageChunk[] = [];
-  for (const l0 of page.options.manifest.l0) {
+  const chunkId = (l0: string, l1?: string) => page.options.manifest.l0.find(row => row.id === l0)?.partition === "l1" && l1 ? `${l0}--${l1}` : l0;
+  const partitions = page.options.manifest.l0.flatMap(l0 => [{ id: l0.id, estimate: l0.estimate, args: { l0: l0.id } }, ...(l0.partition === "l1" ? l0.l1.map(l1 => ({ id: `${l0.id}--${l1.id}`, estimate: l1.estimate, args: { l0: l0.id, l1: l1.id } })) : [])]);
+  for (const chunk of partitions) {
     let result: PreparedStaticRoute = { status: "pending", findings: ["Chunk data has not been requested"] };
     if (normalized.status === "ready") {
       const values = normalized.binding.fills[slot] ?? [], chosen: number[] = [];
       for (const [index] of values.entries()) {
         const prefix = `sections.${slot}.${index}`, scopes = Object.entries(normalized.scopes).filter(([path]) => path === prefix || path.startsWith(`${prefix}.children.`)).map(([, scope]) => scope);
-        const owners = new Set(scopes.flatMap(scope => targets.filter(target => samePlacement(target.section, scope, slot)).map(target => target.l0)));
-        for (const scope of scopes) if (scope.l0) owners.add(scope.l0);
+        const owners = new Set(scopes.flatMap(scope => targets.filter(target => samePlacement(target.section, scope, slot)).map(target => chunkId(target.l0, target.l1))));
+        for (const scope of scopes) if (scope.l0) owners.add(chunkId(scope.l0, scope.l1));
         if (owners.size !== 1) return { status: "refused", findings: ["Every stream Section must belong to exactly one manifest L0 chunk"] };
-        if (owners.has(l0.id)) chosen.push(index);
+        if (owners.has(chunk.id)) chosen.push(index);
       }
       const scoped: Record<string, RepeatedSectionScope> = {}, keys: Record<string, string> = {}, lazy: Record<string, ContentRef> = {};
       chosen.forEach((original, index) => {
@@ -95,18 +99,20 @@ function prepareRegionStream(registry: RegionPageRouteRegistry, route: RouteRegi
       const visit = (fill: SectionFill) => { for (const reference of Object.values(fill.content)) { const current = normalized.lazy[contentReferenceKey(reference)]; if (current) lazy[contentReferenceKey(reference)] = current; } fill.children?.forEach(visit); };
       fills.forEach(visit); Object.values(normalized.binding.frame.slotFills ?? {}).forEach(visit);
       let missing = Object.values(lazy).some(reference => read(reference) === undefined);
-      const authored = (fill: SectionFill) => { for (const reference of [...Object.values(fill.content), ...(fill.repeat ? [fill.repeat.over] : [])]) if (reference.lazy?.args.l0 === l0.id && !read(reference)) missing = true; fill.children?.forEach(authored); };
+      const authored = (fill: SectionFill) => { for (const reference of [...Object.values(fill.content), ...(fill.repeat ? [fill.repeat.over] : [])]) if (reference.lazy && chunkId(reference.lazy.args.l0, reference.lazy.args.l1) === chunk.id && !read(reference)) missing = true; fill.children?.forEach(authored); };
       Object.values(binding.fills).flat().forEach(authored);
       if (!missing && fills.length) {
         const chunkBinding: FlowInstanceBinding = { ...normalized.binding, layout: registry.publication!.layout, fills: { [slot]: fills }, body: { kind: "flow", source: { kind: "static" }, sections: fills.map((_, index) => ({ slot, index })) } };
         const chunkRoute = { ...route, composition: { ...route.composition, binding: chunkBinding } };
-        result = prepareRoute({ ...registry, routes: [chunkRoute] }, route.routeId, runtime, renderActions, undefined, { ...normalized, binding: chunkBinding, scopes: scoped, keys, lazy });
+        const routes = registry.routes.map(row => row.routeId === route.routeId ? chunkRoute : normalizeRegionPageRoute(registry, row));
+        result = prepareRoute({ ...registry, routes }, route.routeId, runtime, renderActions, undefined, { ...normalized, binding: chunkBinding, scopes: scoped, keys, lazy });
       }
     }
-    chunks.push({ id: l0.id, result });
+    chunks.push({ id: chunk.id, result });
     const selected = result.status === "ready" ? result : undefined;
-    descriptors.push({ id: l0.id, estimate: l0.estimate, status: selected ? "ready" : result.status === "refused" ? "error" : page.chunkStatus({ l0: l0.id }),
-      load: () => page.requestChunk({ l0: l0.id }), ...(selected ? { content: selected.renderRegions!(runtime.cell).regions.main ?? [] } : {}) });
+    const requested = page.chunkStatus(chunk.args);
+    descriptors.push({ id: chunk.id, estimate: chunk.estimate, status: selected ? "ready" : result.status === "refused" ? "error" : requested === "ready" ? "pending" : requested,
+      load: () => page.requestChunk(chunk.args), ...(selected ? { content: selected.renderRegions!(runtime.cell).regions.main ?? [] } : {}) });
   }
   const failed = chunks.find(chunk => chunk.result.status === "refused");
   if (failed && "findings" in failed.result) return failed.result;
@@ -133,7 +139,8 @@ function prepareRoute(registry: RouteRegistry, routeId: string, runtime: Registe
     const route = routes[0]!; let binding = route.composition.binding;
     const brand = registeredRouteBrandLink(registry, route);
     if (!brand) return { status: "refused", findings: ["Exact registered brand home link is unavailable"] };
-    if (!runtime || !only(runtime, ["assembly", "instanceLibrary", "registries", "layoutRenderer", "cell", "headerActions", "designerQuery", "source", "page"]) || !only(runtime.assembly, ["identity", "engine", "contracts", "ports", "themes", "states", "breakpointPixels", "breakpointBasis", "css", "assets", "runner", "stage", "stageMeasurements", "query"]) || !only(runtime.assembly.ports, ["manifest", "renderers", "resolveContent", "frameOrder", "stageActions", "frameHost", "sectionHosts"])) return { status: "refused", findings: ["Host runtime contains an unknown page/body escape"] };
+    if (!runtime || !only(runtime, ["assembly", "instanceLibrary", "registries", "layoutRenderer", "cell", "headerActions", "designerQuery", "source", "page", "itemPath"]) || !only(runtime.assembly, ["identity", "engine", "contracts", "ports", "themes", "states", "breakpointPixels", "breakpointBasis", "css", "assets", "runner", "stage", "stageMeasurements", "query"]) || !only(runtime.assembly.ports, ["manifest", "renderers", "resolveContent", "frameOrder", "stageActions", "frameHost", "sectionHosts"])) return { status: "refused", findings: ["Host runtime contains an unknown page/body escape"] };
+    if (runtime.itemPath !== undefined && (!route.path.endsWith("/[l0]/[id]") || typeof runtime.itemPath !== "string")) return { status: "refused", findings: ["Concrete item path requires its registered item route"] };
     let materialization: RouteRuntimeMaterialization | undefined;
     let assembly = runtime.assembly;
     if (binding.body?.source.kind === "derived" && display?.token !== plainDisplay) {

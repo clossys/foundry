@@ -75,7 +75,7 @@ export interface PageManifestNode {
 }
 export interface PageManifestL2 extends PageManifestNode {}
 export interface PageManifestL1 extends PageManifestNode { readonly l2: readonly PageManifestL2[] }
-export interface PageManifestL0 extends PageManifestNode { readonly l1: readonly PageManifestL1[] }
+export interface PageManifestL0 extends PageManifestNode { readonly l1: readonly PageManifestL1[]; readonly partition?: "l1" }
 export interface RegisteredPageManifest { readonly l0: readonly PageManifestL0[] }
 export interface PageOutlineHeading { readonly id: string; readonly label: string; readonly level: 2 | 3 | 4; readonly children?: readonly PageOutlineHeading[] }
 export interface PageOutlineTarget { readonly l0: string; readonly l1?: string; readonly l2?: string; readonly section: PageOutlinePlacement }
@@ -110,7 +110,8 @@ export function projectPageOutline(page: InstanceBinding | RegionPageBinding, ma
     return { id, label: value.label, level };
   };
   const headings = manifest.l0.map(l0 => {
-    node(l0, ["id", "label", "count", "estimate", "section", "l1"]);
+    node(l0, ["id", "label", "count", "estimate", "section", "l1", "partition"]);
+    if (l0.partition !== undefined && l0.partition !== "l1") throw new TypeError("Unknown manifest chunk partition");
     if (!Array.isArray(l0.l1)) throw new TypeError("L0 manifest node requires L1 bands");
     const root = add([l0.id], l0, { l0: l0.id, section: l0.section }, 2), items = [{ id: root.id, label: root.label, href: `#${root.id}` }];
     const children = l0.l1.map((l1: PageManifestL1) => {

@@ -178,10 +178,10 @@ export function createRegisteredPageSession(input: RegisteredPageSessionOptions)
   const currentPage = () => active && (options.publication?.isCurrent(options.routeId ?? page.instanceId, session) ?? true);
   const state = (value: RegisteredFrameRouteState) => { if (currentPage() && runtimeHash(frameState ?? null) !== runtimeHash(value)) { frameState = Object.freeze({ ...value }); options.publication?.setState(value, session); publish(); } };
   const fail = (error: unknown): never => { state({ main: "error", navigating: false }); throw error; };
-  const save = (current: RuntimeContent, owner: string) => {
+  const save = (current: RuntimeContent, owner: string, replaceItem = false) => {
     if (!isRegisteredContentRef(current.reference) || current.reference.lazy || current.hash !== runtimeHash(current.value)) throw new TypeError("Chunk returned stale or invalid content");
     const key = contentReferenceKey(current.reference), previous = contents.get(key);
-    if (owner !== "query" && previous && owners.get(key) !== owner && runtimeHash(previous) !== runtimeHash(current)) throw new TypeError("Chunk content belongs to another scope");
+    if (owner !== "query" && previous && owners.get(key) !== owner && !(replaceItem && owner.startsWith("item:") && owners.get(key)?.startsWith("item:")) && runtimeHash(previous) !== runtimeHash(current)) throw new TypeError("Chunk content belongs to another scope");
     contents.set(key, runtimeSnapshot(current)); owners.set(key, owner);
   };
   const validArgs = (args: { readonly l0: string; readonly l1?: string }) => {
@@ -266,7 +266,7 @@ export function createRegisteredPageSession(input: RegisteredPageSessionOptions)
         if (item === undefined) { if (request === navigationSequence) state({ main: "not-found", navigating: false }); return { status: "not-found", code: 404 }; }
         if (!item || !Array.isArray(item.content) || item.record === undefined) throw new TypeError("Item loader must return its actual record and content bindings");
         const current = runtimeSnapshot(item.record);
-        if (request === navigationSequence && currentPage()) { for (const value of item.content) save(value, `item:${params.l0}/${params.id}`); state({ main: "ready", navigating: false }); publish(); }
+        if (request === navigationSequence && currentPage()) { for (const value of item.content) save(value, `item:${params.l0}/${params.id}`, true); state({ main: "ready", navigating: false }); publish(); }
         return { status: "ready", code: 200, ...params, record: current };
       } catch (error) { if (request === navigationSequence && currentPage()) return fail(error); throw error; }
     },

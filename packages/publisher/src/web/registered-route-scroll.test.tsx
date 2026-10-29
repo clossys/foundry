@@ -7,6 +7,7 @@ import { tmpdir } from "node:os";
 import { createRequire } from "node:module";
 import { normalizeRepeatedSections } from "../core/instance-binding.js";
 import type { InstanceBinding } from "../core/instance-binding.js";
+import type { RegionPageRouteRegistration, RegionPageRouteRegistry } from "../core/route-registry.js";
 import { createRegisteredPageSession, createRegisteredPublicationSession } from "./registered-route-query.js";
 import { projectPageOutline } from "../content/taxonomy.js";
 import { syntheticRoute } from "../core/__fixtures__/registered-route.js";
@@ -24,6 +25,11 @@ beforeAll(async () => {
   const base = await compileRegisteredRouteFixture(temporary), engine = base.input, table = syntheticSurface({ leaf: "data-table" });
   for (const key of ["slots", "fills", "transforms", "materializations"] as const) engine.catalog.surfaces![key] = [...engine.catalog.surfaces![key], ...table.input.catalog.surfaces![key]] as never;
   engine.library = applyLibraryChange(engine.catalog, engine.library, { baseHash: libraryHash(engine.library), changes: [{ portion: "surfaces", change: { op: "adopt", slot: table.bundle.slot, source: "synthetic" } }], surfaceBundles: [table.bundle] }, { componentOptions: engine.componentOptions, surfaceOptions: engine.surfaceOptions! });
+  const { surfaceOf } = createRequire(import.meta.url)("../../../designer/dist/catalog-core/surface-library.js") as typeof import("../../../designer/dist/catalog-core/surface-library.js");
+  const selected = Object.values(resolve(engine).surfaces!.fills).find(row => surfaceOf(row.document).slot === "sections.data-table")!, { origin: _origin, ...fill } = surfaceOf(selected.document);
+  const files = engine.library.surfaces!.files.filter(file => fill.outputSha256.some(owned => owned.path === file.path));
+  engine.library = applyLibraryChange(engine.catalog, engine.library, { baseHash: libraryHash(engine.library), changes: [{ portion: "surfaces", change: { op: "author", slot: fill.slot, fill: { ...fill, slotMap: { rows: { export: "DataTable", path: ["rows"] } } } as never, files } }] }, { componentOptions: engine.componentOptions, surfaceOptions: engine.surfaceOptions! });
+  Object.assign(engine.catalog.surfaces!.slots.find(slot => slot.id === "sections.data-table")!.contract, { slots: [{ name: "rows", type: "records", required: true }] });
   const { saveSurfaceLibrary, compileSurfaceLibrary } = createRequire(import.meta.url)("../../../designer/dist/library-cli/__fixtures__/surface-library.js") as typeof import("../../../designer/dist/library-cli/__fixtures__/surface-library.js");
   await saveSurfaceLibrary(temporary, engine); compiled = await compileSurfaceLibrary(temporary, engine);
 }, 60_000);
@@ -33,20 +39,34 @@ afterAll(async () => { cleanup(); await rm(temporary, { recursive: true, force: 
 function liveFixture(table = false) {
   const f = syntheticRegisteredRoute(compiled), section = table ? f.fills.find(fill => fill.leaf === "sections.data-table")! : f.content;
   const body = { kind: "flow" as const, source: { kind: "static" as const }, sections: [{ slot: "body", index: 0 }] };
-  Object.assign(f.route.composition.binding, { fills: { body: [{ section: section.leaf, content: {} }] }, body });
+  Object.assign(f.route.composition.binding, { fills: { body: [{ section: section.leaf, content: table ? { rows: { kind: "records", ref: "rows" } } : {} }] }, body });
+  if (table) Object.assign(f.route.composition.binding, { layout: { leaf: "layouts.stack", config: "stack.workspace" } });
+  const configuration = table ? "stack.workspace" : "stack.focus";
   const sectionRenderer = vi.fn(() => null), frameRenderer = vi.fn((input: any) => input.slots.main);
-  const registries = { ...f.registries, sections: [...f.registries.sections, { id: "sections.data-table" as const, status: "draft" as const, contract: { surface: "both" as const, configs: [], slots: [], substrates: ["flow" as const], substrateTests: [{ substrate: "flow" as const, file: "SYNTHETIC.tsx", name: "SYNTHETIC port delivery" }] } }] };
+  const registries = { ...f.registries, sections: [...f.registries.sections, { id: "sections.data-table" as const, status: "draft" as const, contract: { surface: "both" as const, configs: [], slots: [{ name: "rows", type: "records" as const, required: true }], substrates: ["flow" as const], substrateTests: [{ substrate: "flow" as const, file: "SYNTHETIC.tsx", name: "SYNTHETIC port delivery" }] } }] };
   const runtime: RegisteredRouteRuntime = {
     assembly: { identity: { kind: "artifact", name: "SYNTHETIC scroll binding", sha256: runtimeHash(compiled.compiled) }, engine: f.engine,
       contracts: { ...loadBuildCatalog(), slots: f.engine.catalog.surfaces!.slots.map(slot => ({ ...slot, contract: slot.contract.kind === "frame" ? { ...slot.contract, stage: { accepts: ["flow"] as const, scroll: "region" as const } } : { ...slot.contract, substrates: ["flow"] as const, substrateTests: [{ substrate: "flow" as const, file: "SYNTHETIC.tsx", name: "SYNTHETIC port delivery" }] } })) },
-      ports: { manifest: f.manifest, renderers: { [f.content.renderer.id]: sectionRenderer, [section.renderer.id]: sectionRenderer, [f.frame.renderer.id]: frameRenderer }, resolveContent: () => undefined, frameHost: { navigate: vi.fn() } },
-      themes: ["light"], states: ["default"], css: [{ id: "publisher-flow-stage.css", contents: flowStageStyleSheet(f.profile, "layouts.stack", "stack.focus") }], assets: [],
+      ports: { manifest: f.manifest, renderers: { [f.content.renderer.id]: sectionRenderer, [section.renderer.id]: sectionRenderer, [f.frame.renderer.id]: frameRenderer }, resolveContent: reference => reference.ref === "rows" ? content({ kind: "records", ref: "rows" }, [{ id: "one" }]) : undefined, frameHost: { navigate: vi.fn() } },
+      themes: ["light"], states: ["default"], css: [{ id: "publisher-flow-stage.css", contents: flowStageStyleSheet(f.profile, "layouts.stack", configuration) }], assets: [],
       stageMeasurements: { renderer: { id: "Stack", source: f.layoutSource, sourceHash: runtimeHash(f.layoutSource) }, environment: { kind: "SYNTHETIC width basis" }, cells: runtimeAssemblyCells(resolve(f.engine), ["light"], ["default"]).map(cell => ({ cell, width: cell.width - 80 })) } },
-    instanceLibrary: { id: f.consumer, role: "consumer", resolveFill: (leaf, config) => leaf === "layouts.stack" && config === "stack.focus" ? { library: f.consumer, leaf, config, headings: [], states: ["default"], renderer: f.source } : undefined, resolveContent: reference => reference },
+    instanceLibrary: { id: f.consumer, role: "consumer", resolveFill: (leaf, config) => leaf === "layouts.stack" && config === configuration ? { library: f.consumer, leaf, config, headings: [], states: ["default"], renderer: f.source } : undefined, resolveContent: reference => reference },
     registries, layoutRenderer: { id: "Stack", source: f.layoutSource, sourceHash: runtimeHash(f.layoutSource) }, cell: { theme: "light", state: "default", width: 320 },
     headerActions: { renderer: { id: "SYNTHETIC Actions", source: f.actionSource, sourceHash: runtimeHash(f.actionSource) }, state: { revision: 1 } },
   };
   return { ...f, runtime, sectionRenderer, frameRenderer };
+}
+function regionFixture(count = 2) {
+  const f = liveFixture(true), template = f.route.composition.binding;
+  const host = { bind: vi.fn(), setRegions: vi.fn(), setState: vi.fn(), setCommands: vi.fn(), setChunks: vi.fn() };
+  const publication = createRegisteredPublicationSession({ id: "scroll", mainSlot: "body", frame: template.frame, layout: template.layout!, format: template.format, surface: template.surface, context: template.context, packIds: template.packIds }, host);
+  const fills = Array.from({ length: count }, () => structuredClone(template.fills.body![0]!));
+  const route: RegionPageRouteRegistration = { ...f.route, composition: { ...f.route.composition, binding: { instanceId: template.instanceId, label: template.label, path: f.route.path, publicationId: "scroll", regions: { main: fills } } } };
+  const registry: RegionPageRouteRegistry = { version: 1, consumer: f.consumer, publication: publication.publication, routes: [route] };
+  const half = Math.ceil(count / 2), nodes = ["first", "second"].map((id, group) => ({ id, label: id, count: group ? count - half : half, estimate: 200, section: { slot: "main", index: group ? half : 0 }, l1: Array.from({ length: group ? count - half : half }, (_, index) => ({ id: `band${index}`, label: `Band ${index}`, count: 1, estimate: 20, section: { slot: "main", index: index + (group ? half : 0) }, l2: [] })) }));
+  const input = { ...options(), page: route.composition.binding, path: route.path, routeId: route.routeId, manifest: { l0: nodes }, publication };
+  const page = createRegisteredPageSession(input); f.runtime.page = page;
+  return { ...f, route, registry, host, publication, input, page };
 }
 
 const manifest = () => ({ l0: [
@@ -65,6 +85,136 @@ function options() {
 }
 
 describe("consumed registered scroll-page capabilities", () => {
+  it("prepares a >24 Section stream as two independently valid selected Layout assemblies", () => {
+    const f = regionFixture(26), result = prepareRegisteredRoute(f.registry, f.route.routeId, f.runtime, () => null);
+    expect(result.status, JSON.stringify(result)).toBe("stream"); if (result.status !== "stream") return;
+    expect(result.chunks.map(chunk => chunk.result.status)).toEqual(["ready", "ready"]);
+    expect(result.chunks.map(chunk => chunk.result.input?.binding.sections.body?.length)).toEqual([13, 13]);
+    expect("assembly" in result).toBe(false);
+    f.publication.activate(f.route.routeId); f.publication.setPage(result.renderRegions!(f.runtime.cell), f.page);
+    expect(f.host.setChunks.mock.calls[0]![0].map(chunk => chunk.status)).toEqual(["ready", "ready"]);
+    expect(f.host.setRegions.mock.calls[0]![0]).not.toHaveProperty("main");
+    expect(f.sectionRenderer).toHaveBeenCalled();
+  });
+  it("normalizes repeat and lazy records through prepareRegisteredRoute before delivering real selected Section inputs", async () => {
+    const f = liveFixture(true), binding = f.route.composition.binding, over = { kind: "records" as const, ref: "bands" };
+    const reference = (l0: string) => ({ kind: "records" as const, ref: `rows/${l0}`, lazy: { loader: "chunk" as const, args: { l0 } } });
+    const rows = [{ id: "a", content: { rows: reference("a") } }, { id: "b", content: { rows: reference("b") } }];
+    binding.fills = { body: [{ ...binding.fills.body![0]!, repeat: { over, key: "id" } }] };
+    f.runtime.assembly.ports.resolveContent = ref => ref.ref === "bands" ? content(over, rows) : undefined;
+    const input = { ...options(), page: binding, path: f.route.path, manifest: { l0: rows.map(row => ({ id: row.id, label: row.id, count: 1, estimate: 20, section: { slot: "body", index: 0, key: row.id }, l1: [] })) } };
+    input.loaders.chunk = vi.fn(async ({ l0 }) => [content({ kind: "records", ref: `rows/${l0}` }, [{ id: "same", l0 }])]) as never;
+    input.loaders.item = vi.fn(async (l0, id) => ({ record: { l0, id }, content: [] })) as never;
+    const page = createRegisteredPageSession(input); f.runtime.page = page;
+    expect(prepareRegisteredRoute(f.registry, f.route.routeId, f.runtime, () => null).status).toBe("pending");
+    expect(input.loaders.chunk).not.toHaveBeenCalled();
+    await page.request(reference("a")); await page.request(reference("b"));
+    const result = prepareRegisteredRoute(f.registry, f.route.routeId, f.runtime, () => null);
+    expect(result.status, JSON.stringify(result)).toBe("ready"); if (result.status !== "ready") return;
+    result.assembly.render(f.runtime.cell);
+    const inputs = f.sectionRenderer.mock.calls.map(call => call[0] as any);
+    expect(inputs.map(input => input.content.rows.value[0].l0)).toEqual(["a", "b"]);
+    expect(result.input!.binding.sections.body!.map(fill => fill.content.rows)).toEqual([{ kind: "records", ref: "rows/a" }, { kind: "records", ref: "rows/b" }]);
+    await inputs[0]!.sectionHost.onSelectionChange(["same"]); await inputs[1]!.sectionHost.onSelectionChange(["same"]);
+    expect(input.chat.pin.mock.calls.map(([context]) => context.l0)).toEqual(["a", "b"]);
+  });
+  it("publishes demand-ready chunks before asynchronous hash scrolling, and projects loader errors and item 404 through the frame", async () => {
+    const f = regionFixture(), refs = ["first", "second"].map(l0 => ({ kind: "records" as const, ref: `rows/${l0}`, lazy: { loader: "chunk" as const, args: { l0 } } }));
+    const raw = f.route.composition.binding;
+    Object.assign(raw, { regions: { main: refs.map(rows => ({ section: "sections.data-table", content: { rows } })) } });
+    let releaseScroll!: () => void;
+    const input = { ...f.input, page: raw, navigation: { ...f.input.navigation, scroll: vi.fn(() => new Promise<void>(resolve => { releaseScroll = resolve; })) }, loaders: { ...f.input.loaders,
+      chunk: vi.fn(async ({ l0 }: { l0: string }) => { if (l0 === "second") throw new Error("SYNTHETIC chunk failure"); return [content({ kind: "records", ref: `rows/${l0}` }, [{ id: "one" }])]; }) } };
+    const page = createRegisteredPageSession(input); f.runtime.page = page;
+    const view = render(<RegisteredRoutePage registry={f.registry} routeId={f.route.routeId} useRuntime={() => f.runtime} renderActions={() => null} />);
+    expect(f.host.setChunks.mock.calls.at(-1)![0].map(chunk => chunk.status)).toEqual(["unrequested", "unrequested"]);
+    expect(input.loaders.chunk).not.toHaveBeenCalled();
+    let moving!: Promise<void>;
+    await act(async () => { moving = page.navigate("#first"); await Promise.resolve(); await Promise.resolve(); });
+    expect(f.host.setState.mock.calls.some(([state]) => state.main === "loading" && state.navigating)).toBe(true);
+    expect(f.host.setChunks.mock.calls.at(-1)![0][0]!.status).toBe("ready");
+    expect(f.host.setState.mock.calls.at(-1)![0]).toEqual({ main: "ready", navigating: true });
+    expect(input.navigation.focus).not.toHaveBeenCalled();
+    await act(async () => { releaseScroll(); await moving; });
+    expect(input.navigation.focus).toHaveBeenCalledWith("first");
+    await act(async () => { await expect(page.requestChunk({ l0: "second" })).rejects.toThrow("SYNTHETIC chunk failure"); });
+    expect(f.host.setState.mock.calls.at(-1)![0]).toEqual({ main: "error", navigating: false });
+    await act(async () => { expect(await page.loadItem(`${f.route.path}/first/unknown`)).toMatchObject({ code: 404 }); });
+    expect(f.host.setState.mock.calls.at(-1)![0]).toEqual({ main: "not-found", navigating: false });
+    view.unmount();
+  });
+  it("requests only the explicitly partitioned L1 chunk for its anchor", async () => {
+    const f = regionFixture(3), raw = f.route.composition.binding;
+    const rows = [undefined, "names", "values"].map(l1 => ({ kind: "records" as const, ref: `strings/${l1 ?? "header"}`, lazy: { loader: "chunk" as const, args: { l0: "strings", ...(l1 ? { l1 } : {}) } } }));
+    Object.assign(raw, { regions: { main: rows.map(rows => ({ section: "sections.data-table", content: { rows } })) } });
+    const input = { ...f.input, page: raw, manifest: { l0: [{ id: "strings", label: "Strings", count: 1198, estimate: 40, partition: "l1" as const, section: { slot: "main", index: 0 }, l1: ["names", "values"].map((id, index) => ({ id, label: id, count: 599, estimate: 400, section: { slot: "main", index: index + 1 }, l2: [] })) }] }, loaders: { ...f.input.loaders, chunk: vi.fn(async ({ l0, l1 }: { l0: string; l1?: string }) => [content({ kind: "records", ref: `${l0}/${l1 ?? "header"}` }, [{ id: "one" }])]) } };
+    const page = createRegisteredPageSession(input); f.runtime.page = page;
+    const before = prepareRegisteredRoute(f.registry, f.route.routeId, f.runtime, () => null);
+    expect(before.status).toBe("stream");
+    await page.navigate("#strings--names");
+    expect(input.loaders.chunk.mock.calls).toEqual([[{ l0: "strings", l1: "names" }]]);
+    const result = prepareRegisteredRoute(f.registry, f.route.routeId, f.runtime, () => null);
+    expect(result.status).toBe("stream"); if (result.status !== "stream") return;
+    expect(result.chunks.map(chunk => [chunk.id, chunk.result.status])).toEqual([["strings", "pending"], ["strings--names", "ready"], ["strings--values", "pending"]]);
+    await page.navigate("#strings");
+    expect(input.loaders.chunk.mock.calls[1]).toEqual([{ l0: "strings" }]);
+  });
+  it("refuses same-identity sessions with different page data or a different selected publication", () => {
+    const f = regionFixture(), foreign = structuredClone(f.input.page);
+    Object.assign(foreign, { regions: { main: [] } });
+    f.runtime.page = createRegisteredPageSession({ ...f.input, page: foreign, manifest: { l0: [] } });
+    expect(prepareRegisteredRoute(f.registry, f.route.routeId, f.runtime, () => null).status).toBe("refused");
+    const other = createRegisteredPublicationSession({ ...f.publication.publication, id: "foreign" }, { bind: vi.fn(), setRegions: vi.fn(), setState: vi.fn(), setCommands: vi.fn(), setChunks: vi.fn() });
+    f.runtime.page = createRegisteredPageSession({ ...f.input, publication: other });
+    expect(prepareRegisteredRoute(f.registry, f.route.routeId, f.runtime, () => null).status).toBe("refused");
+  });
+  it("keeps one frame and command port across two registered pages, drops stale results, and recovers after no hits without replacing main", async () => {
+    const f = regionFixture(), second: RegionPageRouteRegistration = structuredClone(f.route);
+    Object.assign(second, { routeId: "second.page", path: "/agents/second" });
+    Object.assign(second.composition.binding, { instanceId: "second.page", path: second.path });
+    const registry = { ...f.registry, routes: [f.route, second] };
+    let oldResult!: (hits: never[]) => void;
+    const firstInput = { ...f.input, loaders: { ...f.input.loaders, search: vi.fn(() => new Promise<never[]>(resolve => { oldResult = resolve; })) } };
+    const secondInput = { ...f.input, routeId: second.routeId, path: second.path, page: second.composition.binding,
+      loaders: { ...f.input.loaders, search: vi.fn(async (query: string) => query === "none" ? [] : [{ l0: "second", anchor: "second", label: query, kind: "record" }]) } };
+    const firstPage = createRegisteredPageSession(firstInput), secondPage = createRegisteredPageSession(secondInput);
+    const firstRuntime = { ...f.runtime, page: firstPage }, secondRuntime = { ...f.runtime, page: secondPage };
+    const useRuntime = (route: { routeId: string }) => route.routeId === f.route.routeId ? firstRuntime : secondRuntime;
+    const view = render(<RegisteredRoutePage registry={registry} routeId={f.route.routeId} useRuntime={useRuntime} renderActions={() => null} />);
+    const ports = f.host.bind.mock.calls[0]![1];
+    await act(async () => { ports.onCommandQueryChange("old"); });
+    view.rerender(<RegisteredRoutePage registry={registry} routeId={second.routeId} useRuntime={useRuntime} renderActions={() => null} />);
+    const mainUpdates = f.host.setChunks.mock.calls.length, regionUpdates = f.host.setRegions.mock.calls.length;
+    await act(async () => { ports.onCommandQueryChange("none"); });
+    expect(f.host.setCommands.mock.calls.at(-1)![0]).toEqual([]);
+    await act(async () => { oldResult([{ l0: "first", anchor: "first", label: "old", kind: "record" }] as never[]); await Promise.resolve(); ports.onCommandQueryChange("again"); await Promise.resolve(); });
+    expect(secondInput.loaders.search.mock.calls.map(([query]) => query)).toEqual(["none", "again"]);
+    expect(f.host.setCommands.mock.calls.at(-1)![0][0]!.items[0]!.label).toBe("again");
+    expect(f.host.setChunks).toHaveBeenCalledTimes(mainUpdates); expect(f.host.setRegions).toHaveBeenCalledTimes(regionUpdates);
+    expect(f.host.bind).toHaveBeenCalledTimes(1); expect(f.host.bind.mock.calls[0]![1]).toBe(ports);
+    const states = f.host.setState.mock.calls.length;
+    f.publication.setState({ main: "error", navigating: false }, firstPage);
+    expect(f.host.setState).toHaveBeenCalledTimes(states);
+    view.unmount();
+  });
+  it("replaces native item template refs on concrete param changes in one registered route, ignoring a late prior item", async () => {
+    const f = regionFixture(), raw = f.route.composition.binding, pattern = `${f.route.path}/[l0]/[id]`;
+    Object.assign(f.route, { path: pattern }); Object.assign(raw, { path: pattern });
+    let late!: (item: any) => void;
+    const input = { ...f.input, page: raw, path: pattern, loaders: { ...f.input.loaders,
+      item: vi.fn(async (_l0: string, id: string) => id === "late" ? new Promise(resolve => { late = resolve; }) : { record: { id }, content: [content({ kind: "records", ref: "rows" }, [{ id }])] }) } };
+    const page = createRegisteredPageSession(input as never), runtime = { ...f.runtime, page, itemPath: `${f.route.path.replace("/[l0]/[id]", "")}/first/a` };
+    const view = render(<RegisteredRoutePage registry={f.registry} routeId={f.route.routeId} useRuntime={() => runtime} renderActions={() => null} />);
+    await act(async () => { await Promise.resolve(); });
+    expect(page.read({ kind: "records", ref: "rows" })).toMatchObject({ status: "ready", content: { value: [{ id: "a" }] } });
+    const pending = page.loadItem(runtime.itemPath.replace("/a", "/late"));
+    runtime.itemPath = runtime.itemPath.replace("/a", "/b");
+    view.rerender(<RegisteredRoutePage registry={f.registry} routeId={f.route.routeId} useRuntime={() => runtime} renderActions={() => null} />);
+    await act(async () => { await Promise.resolve(); late({ record: { id: "late" }, content: [content({ kind: "records", ref: "rows" }, [{ id: "late" }])] }); await pending; });
+    expect(page.read({ kind: "records", ref: "rows" })).toMatchObject({ status: "ready", content: { value: [{ id: "b" }] } });
+    expect(input.loaders.item.mock.calls.map(([, id]) => id)).toEqual(["a", "late", "b"]);
+    view.unmount();
+  });
   it("expands distinct consumer-owned repeat records and remaps every body reference, leaving static fills unchanged", () => {
     const page = binding(), over = { kind: "records" as const, ref: "bands" };
     const original = structuredClone(page.fills.body![0]!);
@@ -169,6 +319,7 @@ describe("consumed registered scroll-page capabilities", () => {
     const template = binding(), host = { bind: vi.fn(), setRegions: vi.fn(), setState: vi.fn(), setCommands: vi.fn(), setChunks: vi.fn() };
     const publication = createRegisteredPublicationSession({ id: "example", mainSlot: "body", frame: template.frame, layout: template.layout!, format: template.format, surface: template.surface, context: template.context, packIds: template.packIds }, host);
     publication.setPage({ routeId: "one", trail: { title: "One" }, regions: { main: [] } });
+    publication.activate("two");
     publication.setPage({ routeId: "two", trail: { title: "Two" }, regions: { main: [] } });
     expect(host.bind).toHaveBeenCalledTimes(1); expect(host.setRegions).toHaveBeenCalledTimes(2);
     publication.setState({ main: "loading", navigating: true }); publication.setState({ main: "error", navigating: false }); publication.setState({ main: "not-found", navigating: false });
