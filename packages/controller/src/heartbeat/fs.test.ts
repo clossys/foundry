@@ -1,4 +1,4 @@
-import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, symlinkSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
@@ -70,5 +70,39 @@ describe("computeHeartbeatForRepo / writeHeartbeatDigest", () => {
     const written = readFileSync(join(root, path), "utf8");
     expect(written).toContain("Decisions waiting for you");
     expect(written).toContain("Nothing is waiting on you right now.");
+  });
+});
+
+
+describe("agent loop layout", () => {
+  it("skips an agents container that is a file or symbolic link", () => {
+    write("clossys/agents", "not a directory");
+    expect(loadLoopStates(root)).toEqual({ roles: {}, unreadable: [] });
+    rmSync(join(root, "clossys/agents"));
+    write("elsewhere/writer/loop.json", { ...VALID_STATE, role: "writer" });
+    symlinkSync(join(root, "elsewhere"), join(root, "clossys/agents"), "dir");
+    expect(loadLoopStates(root)).toEqual({ roles: {}, unreadable: [] });
+  });
+
+  it("loads all four nested agents alongside unchanged non-agent roles, ignoring legacy and unknown nested paths", () => {
+    for (const agent of ["director", "designer", "writer", "publisher"]) {
+      write(`clossys/agents/${agent}/loop.json`, { ...VALID_STATE, role: agent });
+      write(`clossys/${agent}/loop.json`, "legacy must be ignored");
+    }
+    write("clossys/advisor/loop.json", VALID_STATE);
+    write("clossys/strategist/loop.json", { ...VALID_STATE, role: "strategist" });
+    write("clossys/agents/loop.json", "container must be ignored");
+    write("clossys/agents/unknown/loop.json", VALID_STATE);
+    write("clossys/.state/studio/loop.json", VALID_STATE);
+    expect(loadLoopStates(root)).toEqual({
+      roles: Object.fromEntries(["advisor", "designer", "director", "publisher", "strategist", "writer"].map((role) => [role, { ...VALID_STATE, role }])),
+      unreadable: [],
+    });
+  });
+
+  it.each(["director", "designer", "writer", "publisher"])("reports the nested path for invalid %s state", (agent) => {
+    const path = `clossys/agents/${agent}/loop.json`;
+    write(path, "{ invalid");
+    expect(loadLoopStates(root)).toMatchObject({ roles: {}, unreadable: [{ path, reason: expect.stringContaining("could not parse JSON") }] });
   });
 });
