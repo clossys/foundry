@@ -666,13 +666,20 @@
       "missingRequiredSlots": [],
       "missingSlots": [],
       "notes": [
-        "Host supplies the image node and its src/alt/ratio; caption is a separate prop. Does not validate a structured figure record or bind anatomy.",
+        "The figure-to-children pointer is an adaptation point. The private sections.media runtime adapts figure.media={kind:image,resource:ImageResource} to the public image prop, optional figure.ratio to a canonical image-ratio member, figure.caption to caption and figure.chromeLabel to the browser-only chromeLabel. Existing registered chart and mark content remains supported as children.",
+        "The closed chrome members select browser, device or bare; bare is the default. Chrome is token-drawn around the existing media renderer and does not change its intrinsic image ratio. Optional callouts maps to {label,items:[{id,body}]} with a nonempty host-authored list label and item bodies and unique nonempty item ids.",
+        "The host supplies all visible and accessible copy through the Writer passage contract. This package descriptor does not bind shared anatomy or prove consumer runtime conformance.",
         "Source-only import and token-read measurements are lower bounds; shared anatomy, accessibility, contrast and consumer runtime conformance remain unmeasured. Content bindings describe host adaptation points, not type-equivalent converters."
       ],
       "slot": "sections.media",
       "status": "candidate",
-      "supportedMembers": [],
+      "supportedMembers": [
+        "chrome.bare",
+        "chrome.browser",
+        "chrome.device"
+      ],
       "supportedSlots": [
+        "callouts",
         "figure"
       ],
       "unresolvedMemberAxes": []
