@@ -3,7 +3,7 @@
   "layer": "lexicon",
   "scope": "leaf-membership-only",
   "signedHead": "0b06a262bc9447787b9e79393125f1369bfb3470",
-  "ownerSignoffComment": "clossys/workspace#45 comment 6460620037",
+  "ownerSignoffComment": "owner sign-off 2026-10-28",
   "policy": "Proposed membership awaiting owner signature; regrouping not membership",
   "leafIds": [
     "lexicon.avoid-patterns",

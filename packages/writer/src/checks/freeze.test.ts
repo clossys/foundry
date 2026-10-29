@@ -35,7 +35,7 @@ describe("WR2 Writer leaf membership", () => {
     expect(JSON.stringify({ value, catalog, snapshots, amendments })).toBe(before);
     expect(snapshots.map(({ layer, signedHead, ownerSignoffComment }) => ({ layer, signedHead, ownerSignoffComment }))).toEqual(
       ["lexicon", "strings", "patterns"].map(layer => ({
-        layer, signedHead: "0b06a262bc9447787b9e79393125f1369bfb3470", ownerSignoffComment: "clossys/workspace#45 comment 6460620037",
+        layer, signedHead: "0b06a262bc9447787b9e79393125f1369bfb3470", ownerSignoffComment: "owner sign-off 2026-10-28",
       })),
     );
     for (const snapshot of snapshots) value.manifest.leafFreeze[snapshot.layer] = snapshot.signedHead!;

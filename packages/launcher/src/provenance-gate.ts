@@ -26,8 +26,8 @@
 // first publication blocks the apply: fail closed. Nothing here fetches,
 // repairs or retries.
 //
-// The RFC and the snapshot contract are in the public repository, not shipped
-// in this package: docs/rfcs/apply-approved-plan.md and
+// See README: Materializing and verifying a change set. The snapshot contract
+// is in the public repository, not shipped in this package:
 // docs/contracts/registry-snapshot.json.
 
 import { lstat, realpath, stat } from "node:fs/promises";

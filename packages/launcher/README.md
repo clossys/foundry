@@ -1191,10 +1191,7 @@ not part of this command.
 change set into that repository's local clone on the branch the set names,
 including the installed-state ledger. `launcher-apply-plan verify --repo <id>`
 re-reads the clone and reports whether the working tree still matches the
-set. Both commands are step 3 in
-[`docs/rfcs/apply-approved-plan.md`](../../docs/rfcs/apply-approved-plan.md)
-(section 11); a successful verify corresponds to the `materialized` row in
-section 4.4 of that RFC.
+set. A successful verify confirms that the change set is materialized.
 
 ### What authorizes a write
 

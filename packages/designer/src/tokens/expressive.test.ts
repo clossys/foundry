@@ -137,7 +137,7 @@ describe("pending expressive leaf amendment", () => {
   it("preserves original signatures and records exactly the new draft leaf as pending", () => {
     expect(tokenAmendments.status).toBe("owner-signed");
     expect(tokenAmendments.addedLeaves.map(row => row.id)).toEqual(["tokens.container-width", "tokens.animation"]);
-    expect(tokenAmendments.pending).toMatchObject({ status: "pending-owner-ratification", source: "workspace#45 A131/A132 AUTO-DECIDED 2026-10-28", addedLeafIds: ["tokens.gradient"] });
+    expect(tokenAmendments.pending).toMatchObject({ status: "pending-owner-ratification", source: "owner-approved amendment 2026-10-28", addedLeafIds: ["tokens.gradient"] });
   });
   it.each(["source", "status", "extra", "duplicate", "missing"])("refuses a changed pending %s", async edit => {
     const value = structuredClone(tokenAmendments);

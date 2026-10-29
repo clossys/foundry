@@ -1,6 +1,6 @@
 import { canonicalDigest } from "./plan-digest.js";
 // Whether the apply planner may trust a repository's installed-state ledger
-// (issue #1178; docs/rfcs/apply-approved-plan.md §12.1, §12.2 and §12.8), and
+// (issue #1178; README: Materializing and verifying a change set), and
 // the one compare-and-swap table for a whole file. A ledger is a claim anyone
 // with write access could have edited (TRUST in installed-ledger.json, in the
 // public repository, not shipped in this package): it is trusted only when
