@@ -3,3 +3,5 @@ export type { AdminPageKind, AdminPageNode, AdminPageSkeleton, AdminPageRecordOp
 export { createDesignerPageRecords } from "./designer.page.js";
 export { createWriterPageRecords } from "./writer.page.js";
 export { createPublisherPageRecords } from "./publisher.page.js";
+export { createAdminPageCopy, writerCopy, adminTechnicalData, resolveAdminPageValue, adminPageContent, bindAdminPageLoaders } from "./admin-copy.js";
+export type { AdminPageCopy, AdminPageCopyRef, AdminPageCopyDocument, AdminPageCopyEnvelope, AdminPageCopyProof, ResolvedAdminPageCopy, AdminPageLoaders } from "./admin-copy.js";
