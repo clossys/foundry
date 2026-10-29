@@ -261,7 +261,7 @@ export type { ValidationIssue, ValidationResult, Validator } from "./validation.
 
 export { loadCatalog, validateCatalog } from "./catalog.js";
 export { openStrategy } from "./api.js";
-export type { Strategy, StatusReport } from "./api.js";
+export type { Strategy, StrategyInventoryReport } from "./api.js";
 export { compileBrief } from "./brief.js";
 export type { Brief, BriefCell } from "./brief.js";
 export { validateBriefContract, discoverBriefContracts } from "./brief-contracts.js";

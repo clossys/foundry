@@ -4,7 +4,12 @@ import { blocks } from './types.js';
 import { activeCell, fresh, scopeIds } from './shared.js';
 import { checkCell } from './quality.js';
 import { checkCoherence } from './coherence.js';
-export function strategyStatus(model: StrategyModel, scope: Scope = 'full', options: CheckOptions = {}): StatusReport {
+/** Canonical quality, coherence and completion status for the selected scope. */
+export function strategyStatus(model: StrategyModel, selection?: { scope?: Scope }, options?: CheckOptions): StatusReport;
+/** @deprecated Pass { scope } instead of a positional scope. */
+export function strategyStatus(model: StrategyModel, scope: Scope, options?: CheckOptions): StatusReport;
+export function strategyStatus(model: StrategyModel, selection: { scope?: Scope } | Scope = {}, options: CheckOptions = {}): StatusReport {
+  const scope = typeof selection === 'string' ? selection : selection.scope ?? 'full';
   const ids = scopeIds(model, scope), selected = new Set(ids), core = new Set(scopeIds(model, 'core'));
   const cells = ids.map(id => {
     const cell = activeCell(model, id);
@@ -33,6 +38,6 @@ export function strategyStatus(model: StrategyModel, scope: Scope = 'full', opti
 }
 /** Exact completion, including an independent archetype-core MVS calculation. */
 export function completion(model: StrategyModel, options: CheckOptions = {}): CompletionReport {
-  const full = strategyStatus(model, 'full', options), core = strategyStatus(model, 'core', options);
+  const full = strategyStatus(model, { scope: 'full' }, options), core = strategyStatus(model, { scope: 'core' }, options);
   return { ...full, core, mvs: core.l0Clean && core.cells.every(cell => cell.active && cell.fresh) && !core.findings.some(finding => ['C1', 'C2', 'C3'].includes(finding.rule) && (blocks(finding) || (finding.severity === 'judge' && finding.verdict !== 'pass'))), complete: full.l0Clean && full.cells.every(cell => cell.active && cell.fresh) && full.l2.every(group => group.coherent) };
 }

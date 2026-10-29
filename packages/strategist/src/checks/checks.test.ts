@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { loadCatalog } from '../catalog.js';
+import { openStrategy } from '../api.js';
 import { checkCell, checkCoherence, completion, strategyStatus } from './index.js';
 import type { Cell, Ref } from '../format/types.js';
 import type { StrategyModel } from '../format/types.js';
@@ -358,8 +359,10 @@ describe('completion boundaries and pure reports', () => {
 
 it('public strategyStatus delegates scope without requiring the read API', () => {
   const model = fixture();
-  const full = strategyStatus(model, 'full', judgePass);
-  const core = strategyStatus(model, 'core', judgePass);
+  const full = strategyStatus(model, { scope: 'full' }, judgePass);
+  const core = strategyStatus(model, { scope: 'core' }, judgePass);
+  expect(strategyStatus(model, 'full', judgePass)).toEqual(full);
+  expect(strategyStatus(model, 'core', judgePass)).toEqual(core);
   expect(full.counts.total).toBe(57);
   expect(core.counts.total).toBe(24);
   expect(core.l0Clean).toBe(true);
@@ -386,11 +389,24 @@ it('actual root reader feeds completion and catches an unlisted confirm', () => 
     const read = readStrategyRoot(root);
     expect(read.issues).toEqual([]);
     expect(completion(read, judgePass).complete).toBe(true);
+    const strategy = openStrategy(root);
+    for (const scope of ['core', 'full'] as const) {
+      const status = strategy.status({ scope }, judgePass);
+      expect(status).toEqual(strategyStatus(read, { scope }, judgePass));
+      expect(status.counts.total).toBe(scope === 'full' ? 57 : 24);
+      expect(status.counts.active).toBe(status.counts.total);
+      expect(status.counts.coherentL2).toBe(28);
+      expect(status.counts.unlockedL1).toBe(7);
+      expect(status.l0Clean).toBe(true);
+    }
+    expect(strategy.status()).toEqual(strategyStatus(read, { scope: 'core' }));
     write('sessions/2026-10-29-1.md', '- S1: Playback for confirm: advantage.proposition.promise@1\n- U2: Yes.\n');
     const unlisted = readStrategyRoot(root);
     expect(unlisted.issues).toEqual([]);
     expect(checkCell(get(unlisted), { model:unlisted }).some(f => f.rule === 'Q7' && f.severity === 'hard')).toBe(true);
     expect(completion(unlisted, judgePass).mvs).toBe(false);
+    expect(openStrategy(root).status({ scope: 'core' }, judgePass).l0Clean).toBe(false);
+    expect(strategy.status({ scope: 'core' }, judgePass).l0Clean).toBe(true);
   } finally {
     rmSync(root, { recursive:true, force:true });
   }

@@ -2,9 +2,10 @@ import { compileBrief, type Brief } from "./brief.js";
 import { discoverBriefContracts, mergeBriefContracts, type BriefContract } from "./brief-contracts.js";
 import type { Cell, CellId, CellRef, StrategyRootIssue } from "./format/types.js";
 import { readStrategyRoot } from "./store.js";
+import { strategyStatus, type CheckOptions, type StatusReport } from "./checks/index.js";
 
 /** Structural inventory only: quality, coherence and completion are separate checks. */
-export interface StatusReport {
+export interface StrategyInventoryReport {
   scope: "core" | "full"; archetype: string; cells: number;
   active: CellRef[]; missing: CellId[]; stale: CellRef[]; issues: StrategyRootIssue[];
 }
@@ -13,7 +14,7 @@ export interface Strategy {
   getActive(id: CellId): Cell | undefined;
   getBrief(contractId: string): Brief;
   isStale(ref: CellRef): boolean;
-  status(options?: { scope?: "core" | "full" }): StatusReport;
+  status(options?: { scope?: "core" | "full" }, checks?: CheckOptions): StatusReport;
 }
 
 /** Opens one read-only snapshot; reopen after activation to observe pointer changes. */
@@ -21,6 +22,15 @@ export function openStrategy(root: string, options: { contracts?: BriefContract[
   const model = readStrategyRoot(root);
   const archetype = options.archetype ?? model.tree?.archetype ?? "default";
   if (archetype !== "default" && !Object.hasOwn(model.catalog.archetypes.extras, archetype)) throw new Error("Unknown strategy archetype");
+  // An explicit archetype changes only core selection; persisted custom cores win.
+  const statusModel = options.archetype === undefined ? model : {
+    ...model,
+    tree: model.tree ? { ...model.tree, archetype } : undefined,
+    catalog: model.tree ? model.catalog : { ...model.catalog, archetypes: {
+      ...model.catalog.archetypes,
+      default: [...new Set([...model.catalog.archetypes.default, ...(model.catalog.archetypes.extras[archetype] ?? [])])],
+    } },
+  };
   const discovered = discoverBriefContracts(root, model.catalog);
   const merged = mergeBriefContracts([...discovered.contracts, ...(options.contracts ?? [])], model.catalog);
   const issues = [...discovered.issues, ...merged.issues];
@@ -43,16 +53,8 @@ export function openStrategy(root: string, options: { contracts?: BriefContract[
       if (!contract) throw new Error(`Unknown brief contract: ${contractId}`);
       return compileBrief(model, contract);
     },
-    status({ scope = "core" } = {}) {
-      const ids = [...new Set(scope === "full" ? model.catalog.cells.map(cell => cell.id) : Array.isArray(model.tree?.core) ? model.tree.core : [...model.catalog.archetypes.default, ...(model.catalog.archetypes.extras[archetype] ?? [])])].sort();
-      const active: CellRef[] = []; const missing: CellId[] = []; const stale = new Map<string, CellRef>();
-      for (const id of ids) {
-        const cell = getActive(id);
-        if (!cell || cell.status !== "active") { missing.push(id); continue; }
-        active.push({ cell: id, version: cell.version });
-        for (const ref of cell.cites) if (ref.kind === "cell" && isStale(ref.ref)) stale.set(`${ref.ref.cell}@${ref.ref.version}`, ref.ref);
-      }
-      return { scope, archetype, cells: ids.length, active, missing, stale: [...stale.values()].sort((a, b) => a.cell.localeCompare(b.cell) || a.version - b.version), issues: structuredClone(model.issues) };
+    status({ scope = "core" } = {}, checks = {}) {
+      return strategyStatus(statusModel, { scope }, { contracts: merged.contracts, ...checks });
     },
   };
 }
