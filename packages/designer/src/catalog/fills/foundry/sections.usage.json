@@ -26,7 +26,69 @@
   },
   "sections": {
     "usage": {
+      "composes": [
+        "components.meter",
+        "components.status-mark"
+      ],
       "configs": {},
+      "consumption": {
+        "scanStatus": "lower-bound",
+        "scannedComposes": [
+          "components.meter",
+          "components.status-mark"
+        ],
+        "scannedReads": {
+          "assets": [],
+          "components": [
+            "components.meter",
+            "components.status-mark"
+          ],
+          "tokens": [
+            "tokens.body-size",
+            "tokens.spacing",
+            "tokens.text-color",
+            "tokens.typeface"
+          ]
+        },
+        "sourceFiles": [
+          {
+            "path": "packages/designer/src/blocks/UsageMeter.tsx",
+            "sha256": "9b9bdc80878a10a9645a968a23617b171fd1dc6147eaf9492d30fa68193bc56a"
+          },
+          {
+            "path": "packages/designer/src/blocks/UsageSummary.tsx",
+            "sha256": "93d12c7fa7b485edde0af489e6a83078f371572e39a32d7085c394c952cccf30"
+          },
+          {
+            "path": "packages/designer/src/catalog-core/provenance-attrs.ts",
+            "sha256": "8f2a725224764fc1d7cd7ec94f2f569cad02117251bf6c2a668c8a1b51e7c443"
+          },
+          {
+            "path": "packages/designer/src/components/internal/cx.ts",
+            "sha256": "0a7524b0340fec42e1abb216013a353e950aa738d9ba0f2ebdedd5293337bab3"
+          }
+        ],
+        "unresolved": [
+          {
+            "code": "DF5",
+            "evidence": "ambiguous slot ownership ./EmptyState.js#EmptyState: sections.boundary-message, sections.empty-state",
+            "file": "packages/designer/src/blocks/UsageSummary.tsx",
+            "line": 3
+          },
+          {
+            "code": "DF2",
+            "evidence": "unresolved injected runtime inventory ../../tokens/tokens.js#TOKENS",
+            "file": "packages/designer/src/components/internal/cx.ts",
+            "line": 2
+          },
+          {
+            "code": "DF2",
+            "evidence": "unresolved dynamic import; runtime source is not inferred",
+            "file": "packages/designer/src/components/internal/cx.ts",
+            "line": 80
+          }
+        ]
+      },
       "impl": {
         "export": "UsageSummary",
         "kind": "package",
@@ -35,7 +97,7 @@
       "license": "MIT",
       "notes": [
         "Each meter record renders through UsageMeter (host-formatted used, limit and period text, optional thresholds). Root is section; an empty list requires emptyState.",
-        "Descriptor only; source imports, token reads, shared anatomy, accessibility, contrast and consumer runtime conformance are unmeasured. Content bindings describe host adaptation points, not type-equivalent converters."
+        "Source-only import and token-read measurements are lower bounds; shared anatomy, accessibility, contrast and consumer runtime conformance remain unmeasured. Content bindings describe host adaptation points, not type-equivalent converters."
       ],
       "parts": [],
       "pin": {
@@ -44,6 +106,15 @@
         "version": "0.12.0"
       },
       "propMap": {},
+      "reads": {
+        "assets": [],
+        "tokens": [
+          "tokens.body-size",
+          "tokens.spacing",
+          "tokens.text-color",
+          "tokens.typeface"
+        ]
+      },
       "slot": "sections.usage",
       "slotMap": {
         "meters": "./blocks#UsageSummary.meters"

@@ -2,6 +2,7 @@
 import type { DtcgValue, FillMeta, FrameSlot, CompositeCatalogData, CompositeLibraryData, CompositeResolved, CompositeEngineInput } from "./types.js";
 import type { SectionSlot } from "./sections-contract.js";
 import type { RuntimeSourceClosure, RuntimeRendererDescriptor } from "./runtime-ports.js";
+import type { SurfaceConsumptionMeasurement } from "./surface-consumption.js";
 export type SurfaceSlot = `sections.${string}` | `frames.${string}`;
 export interface SurfaceFile {
     path: string;
@@ -188,6 +189,9 @@ export interface SurfacePackagePin {
 }
 /** A package-pointer descriptor exactly as the Foundry importers emit it; it carries no source bytes. */
 export interface SurfacePackageSectionEntry {
+    reads?: { tokens: readonly string[]; assets: readonly string[] };
+    composes?: readonly string[];
+    consumption?: SurfaceConsumptionMeasurement;
     slot: `sections.${string}`;
     source: string;
     slotMap: Readonly<Record<string, string>>;
@@ -200,6 +204,9 @@ export interface SurfacePackageSectionEntry {
     notes: readonly string[];
 }
 export interface SurfacePackageFrameEntry {
+    reads?: { tokens: readonly string[]; assets: readonly string[] };
+    composes?: readonly string[];
+    consumption?: SurfaceConsumptionMeasurement;
     slot: `frames.${string}`;
     members: readonly string[];
     propMap: Readonly<Record<string, string>>;

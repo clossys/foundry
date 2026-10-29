@@ -26,7 +26,95 @@
   },
   "sections": {
     "activity-feed": {
+      "composes": [
+        "components.icon"
+      ],
       "configs": {},
+      "consumption": {
+        "scanStatus": "lower-bound",
+        "scannedComposes": [
+          "components.icon"
+        ],
+        "scannedReads": {
+          "assets": [],
+          "components": [
+            "components.icon"
+          ],
+          "tokens": [
+            "tokens.accent-color",
+            "tokens.body-size",
+            "tokens.border-color",
+            "tokens.caption-size",
+            "tokens.radius",
+            "tokens.spacing",
+            "tokens.surface-color",
+            "tokens.text-color",
+            "tokens.typeface"
+          ]
+        },
+        "sourceFiles": [
+          {
+            "path": "packages/designer/src/blocks/ActivityFeed.tsx",
+            "sha256": "b39e426ebf5ffe748c31edddc1faf31e2c748d713c44fb28ca057997fde5012b"
+          },
+          {
+            "path": "packages/designer/src/blocks/EventItem.tsx",
+            "sha256": "ccfd86797c47b55e4be6cc2d87718c28e47b3bb9b73bf681613dcc0a5138adf8"
+          },
+          {
+            "path": "packages/designer/src/catalog-core/provenance-attrs.ts",
+            "sha256": "8f2a725224764fc1d7cd7ec94f2f569cad02117251bf6c2a668c8a1b51e7c443"
+          },
+          {
+            "path": "packages/designer/src/components/Avatar.server.tsx",
+            "sha256": "ab46302d1b6d63c4e1380433f6c37035677e1f10e28fe2b234322216d2901c04"
+          },
+          {
+            "path": "packages/designer/src/components/internal/cx.ts",
+            "sha256": "0a7524b0340fec42e1abb216013a353e950aa738d9ba0f2ebdedd5293337bab3"
+          },
+          {
+            "path": "packages/designer/src/icons/ArrowRight.ts",
+            "sha256": "bb43905ab80409bed61222fce503e06df8489bafe2c4c2dff98a0f625e4c6d31"
+          },
+          {
+            "path": "packages/designer/src/icons/Settings.ts",
+            "sha256": "3eccf9da3ebd4c7db312a650d60d41d0ce2fa5489086df235573934bbc0710a3"
+          }
+        ],
+        "unresolved": [
+          {
+            "code": "DF5",
+            "evidence": "ambiguous slot ownership ./EmptyState.js#EmptyState: sections.boundary-message, sections.empty-state",
+            "file": "packages/designer/src/blocks/ActivityFeed.tsx",
+            "line": 3
+          },
+          {
+            "code": "DF5",
+            "evidence": "unregistered asset import ../icons/ArrowRight.js#ArrowRight",
+            "file": "packages/designer/src/blocks/EventItem.tsx",
+            "line": 5
+          },
+          {
+            "code": "DF5",
+            "evidence": "unregistered asset import ../icons/Settings.js#Settings",
+            "file": "packages/designer/src/blocks/EventItem.tsx",
+            "line": 6
+          },
+          {
+            "code": "DF2",
+            "evidence": "unresolved injected runtime inventory ../../tokens/tokens.js#TOKENS",
+            "file": "packages/designer/src/components/internal/cx.ts",
+            "line": 2
+          },
+          {
+            "code": "DF2",
+            "evidence": "unresolved dynamic import; runtime source is not inferred",
+            "file": "packages/designer/src/components/internal/cx.ts",
+            "line": 80
+          }
+        ]
+      },
       "impl": {
         "export": "ActivityFeed",
         "kind": "package",
@@ -35,7 +123,7 @@
       "license": "MIT",
       "notes": [
         "Each event renders through EventItem; host supplies labels and emptyState. Groups name event ids and every event must sit in exactly one group. Root is section; header and band are external.",
-        "Descriptor only; source imports, token reads, shared anatomy, accessibility, contrast and consumer runtime conformance are unmeasured. Content bindings describe host adaptation points, not type-equivalent converters."
+        "Source-only import and token-read measurements are lower bounds; shared anatomy, accessibility, contrast and consumer runtime conformance remain unmeasured. Content bindings describe host adaptation points, not type-equivalent converters."
       ],
       "parts": [],
       "pin": {
@@ -44,6 +132,20 @@
         "version": "0.12.0"
       },
       "propMap": {},
+      "reads": {
+        "assets": [],
+        "tokens": [
+          "tokens.accent-color",
+          "tokens.body-size",
+          "tokens.border-color",
+          "tokens.caption-size",
+          "tokens.radius",
+          "tokens.spacing",
+          "tokens.surface-color",
+          "tokens.text-color",
+          "tokens.typeface"
+        ]
+      },
       "slot": "sections.activity-feed",
       "slotMap": {
         "events": "./blocks#ActivityFeed.events",

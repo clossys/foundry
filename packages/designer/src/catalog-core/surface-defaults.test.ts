@@ -11,6 +11,7 @@ import { loadComponentRegistry } from "./component-registry.js";
 import { applyLibraryChange, libraryHash } from "./api.js";
 import { planSurfaceDefaults, type SurfaceDefaultCandidateDocument, type SurfaceDefaultsInput } from "./surface-defaults.js";
 import type { CompositeCatalogData, CompositeLibraryData, FrameSlot } from "./types.js";
+import { syntheticSurface } from "./__fixtures__/surface-engine/synthetic.js";
 
 /** The real catalog: every Sections and Frames contract and every Foundry surface candidate. */
 function setup(overrides: Partial<SurfaceDefaultsInput> = {}) {
@@ -25,11 +26,12 @@ const reasons = (plan: ReturnType<typeof planSurfaceDefaults>, slot: string) => 
 const SECTION_DEFAULTS = ["access-matrix", "activity-feed", "article", "audit-log", "band", "call-to-action", "cards", "chat", "column-mapper", "comparison",
   "consent", "content", "data-grid", "data-table", "empty-state", "error-state", "explorer", "faq", "features", "filter-builder", "form", "gallery", "hero",
   "link-index", "logo-cloud", "media", "newsletter", "notices", "page-header", "pagination", "people", "pricing", "record-detail", "resource-list",
+  "account-summary", "boundary-message", "error-message", "legal-prose", "logo-hero", "logo-mark", "sign-in-form",
   "section-header", "settings", "stats", "status-list", "steps", "table-of-contents", "task-list", "testimonials", "timeline", "usage", "wizard"].map(leaf => `sections.${leaf}`);
 /** Every Foundry candidate now maps its required content slots; none is ineligible. */
 const SECTION_INELIGIBLE: Readonly<Record<string, readonly string[]>> = {};
 const SECTION_NO_CANDIDATE: string[] = [];
-const FRAME_DEFAULTS = ["app-header", "app-shell", "app-sidebar", "command", "inspector", "sheet", "site-footer", "site-header", "site-shell"].map(leaf => `frames.${leaf}`);
+const FRAME_DEFAULTS = ["app-header", "app-shell", "app-sidebar", "auth-shell", "document", "command", "inspector", "sheet", "site-footer", "site-header", "site-shell"].map(leaf => `frames.${leaf}`);
 const FRAME_NOT_CHOSEN: string[] = [];
 
 describe("surface default fills", () => {
@@ -37,11 +39,11 @@ describe("surface default fills", () => {
     const input = setup();
     const plan = planSurfaceDefaults(input);
     expect(plan.rows.map(row => row.slot)).toEqual(input.slots);
-    expect(input.slots.filter(slot => slot.startsWith("sections.")).length).toBe(45);
-    expect(input.slots.filter(slot => slot.startsWith("frames.")).length).toBe(9);
+    expect(input.slots.filter(slot => slot.startsWith("sections.")).length).toBe(52);
+    expect(input.slots.filter(slot => slot.startsWith("frames.")).length).toBe(11);
     const expected = Object.fromEntries(input.slots.map(slot => [slot, [...SECTION_DEFAULTS, ...FRAME_DEFAULTS].includes(slot) ? "foundry" : "-"]));
     expect(ledger(plan)).toEqual(expected);
-    expect(Object.values(ledger(plan)).filter(value => value !== "-")).toHaveLength(54);
+    expect(Object.values(ledger(plan)).filter(value => value !== "-")).toHaveLength(63);
     expect(plan.findings).toEqual([]);
     expect(plan.rows.find(row => row.slot === "frames.site-header")).toEqual({ slot: "frames.site-header", status: "default", basis: "preference", source: "foundry", fill: "foundry/frames.site-header", reasons: [] });
   });
@@ -119,11 +121,14 @@ describe("surface default fills", () => {
 
   it("reports a cross-kind primary-name collision in the selected set", () => {
     const input = setup();
-    const frame = input.catalog.slots.find(slot => slot.id === "frames.sheet")!;
-    const form = { ...structuredClone(frame), id: "frames.form" } as FrameSlot;
-    const doc = structuredClone(input.catalog.fills.find(row => row.$extensions["com.clossys.fill"].slot === "frames.sheet")!);
-    doc.$extensions["com.clossys.fill"] = { ...doc.$extensions["com.clossys.fill"], id: "foundry/frames.form", slot: "frames.form" };
-    doc.frames = { form: { ...Object.values(doc.frames!)[0]!, slot: "frames.form" } };
+    // A real source-candidate shape exercises the primary collision without
+    // relabeling a package snapshot as an unauthenticated new package identity.
+    const fixture = syntheticSurface({ layer: "frames", leaf: "form" });
+    const form = fixture.input.catalog.surfaces!.slots[0]! as FrameSlot;
+    const doc = structuredClone(fixture.input.catalog.surfaces!.fills[0]!) as unknown as SurfaceDefaultCandidateDocument;
+    doc.$extensions["com.clossys.fill"].source = "foundry";
+    doc.$extensions["com.clossys.fill"].id = "foundry/frames.form";
+    (doc.frames!.form as unknown as { source: string }).source = "foundry";
     const plan = planSurfaceDefaults({ ...input, catalog: { slots: [...input.catalog.slots, form], fills: [...input.catalog.fills, doc] }, slots: [...input.slots, "frames.form"] });
     expect(plan.findings).toEqual([{ code: "S1", rule: "surfaces", severity: "error", subject: "frames.form", message: "cross-kind primary collision" }]);
   });

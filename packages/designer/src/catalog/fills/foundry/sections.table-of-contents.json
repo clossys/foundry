@@ -26,7 +26,80 @@
   },
   "sections": {
     "table-of-contents": {
+      "composes": [
+        "components.disclosure"
+      ],
       "configs": {},
+      "consumption": {
+        "scanStatus": "lower-bound",
+        "scannedComposes": [
+          "components.disclosure"
+        ],
+        "scannedReads": {
+          "assets": [],
+          "components": [
+            "components.disclosure"
+          ],
+          "tokens": [
+            "tokens.accent-color",
+            "tokens.body-size",
+            "tokens.border-color",
+            "tokens.border-width",
+            "tokens.brandmark-size",
+            "tokens.caption-size",
+            "tokens.radius",
+            "tokens.spacing",
+            "tokens.surface-radius",
+            "tokens.text-color",
+            "tokens.touch-target",
+            "tokens.z-index"
+          ]
+        },
+        "sourceFiles": [
+          {
+            "path": "packages/designer/src/blocks/TableOfContents.scroll-spy.ts",
+            "sha256": "3aa48106b768d662099c123984284a360dc7b0d723b64c0bfdc01025f41806b0"
+          },
+          {
+            "path": "packages/designer/src/blocks/TableOfContents.server.tsx",
+            "sha256": "51a29ef9c85bb767f265cf93ffc643859490ff3e0313b06ec938cba0b8c414aa"
+          },
+          {
+            "path": "packages/designer/src/blocks/TableOfContents.tsx",
+            "sha256": "5cd58fba526b50fc117d5188a94ca9a0c65c9746f763cb63a15b7b39949cbfb6"
+          },
+          {
+            "path": "packages/designer/src/catalog-core/provenance-attrs.ts",
+            "sha256": "8f2a725224764fc1d7cd7ec94f2f569cad02117251bf6c2a668c8a1b51e7c443"
+          },
+          {
+            "path": "packages/designer/src/components/internal/cx.ts",
+            "sha256": "0a7524b0340fec42e1abb216013a353e950aa738d9ba0f2ebdedd5293337bab3"
+          },
+          {
+            "path": "packages/designer/src/components/internal/ui-vars.ts",
+            "sha256": "8455ed770c61ec15597b5ead597563135ed088b609dc11b2cd7ed8b873371701"
+          },
+          {
+            "path": "packages/designer/src/internal/brandmark.ts",
+            "sha256": "8373e807f383bdf12d9f325223df75316b99ea60fa3d2e020991b283eb24c16a"
+          }
+        ],
+        "unresolved": [
+          {
+            "code": "DF2",
+            "evidence": "unresolved injected runtime inventory ../../tokens/tokens.js#TOKENS",
+            "file": "packages/designer/src/components/internal/cx.ts",
+            "line": 2
+          },
+          {
+            "code": "DF2",
+            "evidence": "unresolved dynamic import; runtime source is not inferred",
+            "file": "packages/designer/src/components/internal/cx.ts",
+            "line": 80
+          }
+        ]
+      },
       "impl": {
         "export": "TableOfContents",
         "kind": "package",
@@ -35,7 +108,7 @@
       "license": "MIT",
       "notes": [
         "Host supplies label. Items are heading ids/labels; optional scroll tracking is source behavior, not a conformance observation.",
-        "Descriptor only; source imports, token reads, shared anatomy, accessibility, contrast and consumer runtime conformance are unmeasured. Content bindings describe host adaptation points, not type-equivalent converters."
+        "Source-only import and token-read measurements are lower bounds; shared anatomy, accessibility, contrast and consumer runtime conformance remain unmeasured. Content bindings describe host adaptation points, not type-equivalent converters."
       ],
       "parts": [],
       "pin": {
@@ -44,6 +117,23 @@
         "version": "0.12.0"
       },
       "propMap": {},
+      "reads": {
+        "assets": [],
+        "tokens": [
+          "tokens.accent-color",
+          "tokens.body-size",
+          "tokens.border-color",
+          "tokens.border-width",
+          "tokens.brandmark-size",
+          "tokens.caption-size",
+          "tokens.radius",
+          "tokens.spacing",
+          "tokens.surface-radius",
+          "tokens.text-color",
+          "tokens.touch-target",
+          "tokens.z-index"
+        ]
+      },
       "slot": "sections.table-of-contents",
       "slotMap": {
         "active-id": "./blocks#TableOfContents.currentId",

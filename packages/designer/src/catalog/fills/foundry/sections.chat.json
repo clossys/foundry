@@ -31,7 +31,106 @@
   },
   "sections": {
     "chat": {
+      "composes": [
+        "components.avatar",
+        "components.button",
+        "components.text-field",
+        "components.tooltip"
+      ],
       "configs": {},
+      "consumption": {
+        "scanStatus": "lower-bound",
+        "scannedComposes": [
+          "components.avatar",
+          "components.button",
+          "components.text-field",
+          "components.tooltip"
+        ],
+        "scannedReads": {
+          "assets": [],
+          "components": [
+            "components.avatar",
+            "components.button",
+            "components.text-field",
+            "components.tooltip"
+          ],
+          "tokens": [
+            "tokens.body-size",
+            "tokens.border-color",
+            "tokens.caption-size",
+            "tokens.code-size",
+            "tokens.control-radius",
+            "tokens.density",
+            "tokens.radius",
+            "tokens.spacing",
+            "tokens.surface-color",
+            "tokens.text-color",
+            "tokens.typeface"
+          ]
+        },
+        "sourceFiles": [
+          {
+            "path": "packages/designer/src/blocks/chat/Chat.tsx",
+            "sha256": "6be3533f1cff810a96567fab3756e616164748f465386008f1b6848852df27a3"
+          },
+          {
+            "path": "packages/designer/src/blocks/chat/content.tsx",
+            "sha256": "6488cafd39cbeb9641ed1bed1407ed0ec8ab96199a2a152586eda4aced018d51"
+          },
+          {
+            "path": "packages/designer/src/catalog-core/provenance-attrs.ts",
+            "sha256": "8f2a725224764fc1d7cd7ec94f2f569cad02117251bf6c2a668c8a1b51e7c443"
+          },
+          {
+            "path": "packages/designer/src/icons/ArrowRight.ts",
+            "sha256": "bb43905ab80409bed61222fce503e06df8489bafe2c4c2dff98a0f625e4c6d31"
+          },
+          {
+            "path": "packages/designer/src/icons/ChevronDown.ts",
+            "sha256": "a0d467a8eb0067662f31c16000987a0dfbc2d2b71fbe5b99d0dd5586dd823294"
+          },
+          {
+            "path": "packages/designer/src/icons/ChevronUp.ts",
+            "sha256": "c36ddd23fcd3e3fa1a9d33723e69dafab41f96ed318c591daf1767534d973d55"
+          },
+          {
+            "path": "packages/designer/src/icons/FileText.ts",
+            "sha256": "64a84d19799a4300dafca2175cc2ef9da054708f92a2fa18e7c95a40b39ab59f"
+          }
+        ],
+        "unresolved": [
+          {
+            "code": "DF5",
+            "evidence": "unregistered asset import ../../icons/ArrowRight.js#ArrowRight",
+            "file": "packages/designer/src/blocks/chat/Chat.tsx",
+            "line": 7
+          },
+          {
+            "code": "DF5",
+            "evidence": "unregistered asset import ../../icons/ChevronUp.js#ChevronUp",
+            "file": "packages/designer/src/blocks/chat/Chat.tsx",
+            "line": 8
+          },
+          {
+            "code": "DF5",
+            "evidence": "unregistered asset import ../../icons/ChevronDown.js#ChevronDown",
+            "file": "packages/designer/src/blocks/chat/Chat.tsx",
+            "line": 9
+          },
+          {
+            "code": "DF5",
+            "evidence": "unregistered asset import ../../icons/FileText.js#FileText",
+            "file": "packages/designer/src/blocks/chat/Chat.tsx",
+            "line": 10
+          },
+          {
+            "code": "DF2",
+            "evidence": "unresolved source export ../../components/Link.js#Link",
+            "file": "packages/designer/src/blocks/chat/content.tsx",
+            "line": 3
+          }
+        ]
+      },
       "impl": {
         "export": "Chat",
         "kind": "package",
@@ -40,7 +139,7 @@
       "license": "MIT",
       "notes": [
         "Messages cover only the message subset of the parts union. Composer is a built-in region (Textarea and Send button) that the host adapts through onSend and composerLabel; it is not replaceable by a host node. Host supplies status. English fallback labels and direct glyph imports remain; no attachment, trace or questionnaire API.",
-        "Descriptor only; source imports, token reads, shared anatomy, accessibility, contrast and consumer runtime conformance are unmeasured. Content bindings describe host adaptation points, not type-equivalent converters."
+        "Source-only import and token-read measurements are lower bounds; shared anatomy, accessibility, contrast and consumer runtime conformance remain unmeasured. Content bindings describe host adaptation points, not type-equivalent converters."
       ],
       "parts": [],
       "pin": {
@@ -52,6 +151,22 @@
         "part.bubble": "./blocks#Chat.messages[role]",
         "part.message": "./blocks#Chat.messages",
         "part.scroller": "./blocks#Chat.messages[scroll]"
+      },
+      "reads": {
+        "assets": [],
+        "tokens": [
+          "tokens.body-size",
+          "tokens.border-color",
+          "tokens.caption-size",
+          "tokens.code-size",
+          "tokens.control-radius",
+          "tokens.density",
+          "tokens.radius",
+          "tokens.spacing",
+          "tokens.surface-color",
+          "tokens.text-color",
+          "tokens.typeface"
+        ]
       },
       "slot": "sections.chat",
       "slotMap": {

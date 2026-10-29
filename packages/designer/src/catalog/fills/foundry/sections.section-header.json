@@ -26,6 +26,7 @@
   },
   "sections": {
     "section-header": {
+      "composes": [],
       "configs": {
         "default": "level=2",
         "level-2": "level=2",
@@ -33,6 +34,61 @@
         "level-4": "level=4",
         "level-5": "level=5",
         "level-6": "level=6"
+      },
+      "consumption": {
+        "scanStatus": "lower-bound",
+        "scannedComposes": [],
+        "scannedReads": {
+          "assets": [],
+          "components": [],
+          "tokens": [
+            "tokens.accent-color",
+            "tokens.body-size",
+            "tokens.border-color",
+            "tokens.caption-size",
+            "tokens.display-size",
+            "tokens.heading-size",
+            "tokens.letter-spacing",
+            "tokens.line-height",
+            "tokens.spacing",
+            "tokens.status-color",
+            "tokens.surface-color",
+            "tokens.text-color",
+            "tokens.typeface"
+          ]
+        },
+        "sourceFiles": [
+          {
+            "path": "packages/designer/src/blocks/section-ground.ts",
+            "sha256": "a519649f96cb339f1128fc385e68d67b6af063ed492ac2c285f09c1740c98679"
+          },
+          {
+            "path": "packages/designer/src/blocks/SectionHeader.tsx",
+            "sha256": "c1454ec45bd95dd72439b13b82b28457fb80eeacfff64d67f06d876d5fad2b15"
+          },
+          {
+            "path": "packages/designer/src/catalog-core/provenance-attrs.ts",
+            "sha256": "8f2a725224764fc1d7cd7ec94f2f569cad02117251bf6c2a668c8a1b51e7c443"
+          },
+          {
+            "path": "packages/designer/src/components/internal/cx.ts",
+            "sha256": "0a7524b0340fec42e1abb216013a353e950aa738d9ba0f2ebdedd5293337bab3"
+          }
+        ],
+        "unresolved": [
+          {
+            "code": "DF2",
+            "evidence": "unresolved injected runtime inventory ../../tokens/tokens.js#TOKENS",
+            "file": "packages/designer/src/components/internal/cx.ts",
+            "line": 2
+          },
+          {
+            "code": "DF2",
+            "evidence": "unresolved dynamic import; runtime source is not inferred",
+            "file": "packages/designer/src/components/internal/cx.ts",
+            "line": 80
+          }
+        ]
       },
       "impl": {
         "export": "SectionHeader",
@@ -42,7 +98,7 @@
       "license": "MIT",
       "notes": [
         "Heading level is configurable via level; id is inherited HTML input. align and density map to the block's own props; the block enforces no two-action maximum.",
-        "Descriptor only; source imports, token reads, shared anatomy, accessibility, contrast and consumer runtime conformance are unmeasured. Content bindings describe host adaptation points, not type-equivalent converters."
+        "Source-only import and token-read measurements are lower bounds; shared anatomy, accessibility, contrast and consumer runtime conformance remain unmeasured. Content bindings describe host adaptation points, not type-equivalent converters."
       ],
       "parts": [],
       "pin": {
@@ -56,6 +112,24 @@
         "density.compact": "./blocks#SectionHeader.density=compact",
         "density.display": "./blocks#SectionHeader.density=display",
         "density.standard": "./blocks#SectionHeader.density=standard"
+      },
+      "reads": {
+        "assets": [],
+        "tokens": [
+          "tokens.accent-color",
+          "tokens.body-size",
+          "tokens.border-color",
+          "tokens.caption-size",
+          "tokens.display-size",
+          "tokens.heading-size",
+          "tokens.letter-spacing",
+          "tokens.line-height",
+          "tokens.spacing",
+          "tokens.status-color",
+          "tokens.surface-color",
+          "tokens.text-color",
+          "tokens.typeface"
+        ]
       },
       "slot": "sections.section-header",
       "slotMap": {

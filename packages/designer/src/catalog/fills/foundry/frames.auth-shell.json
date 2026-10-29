@@ -23,6 +23,69 @@
   },
   "frames": {
     "auth-shell": {
+      "composes": [
+        "components.semantic-content"
+      ],
+      "consumption": {
+        "scanStatus": "lower-bound",
+        "scannedComposes": [
+          "components.semantic-content"
+        ],
+        "scannedReads": {
+          "assets": [],
+          "components": [
+            "components.semantic-content"
+          ],
+          "tokens": [
+            "tokens.accent-color",
+            "tokens.body-size",
+            "tokens.content-size",
+            "tokens.control-radius",
+            "tokens.gutter",
+            "tokens.spacing",
+            "tokens.surface-color",
+            "tokens.text-color"
+          ]
+        },
+        "sourceFiles": [
+          {
+            "path": "packages/designer/src/catalog-core/provenance-attrs.ts",
+            "sha256": "8f2a725224764fc1d7cd7ec94f2f569cad02117251bf6c2a668c8a1b51e7c443"
+          },
+          {
+            "path": "packages/designer/src/components/internal/cx.ts",
+            "sha256": "0a7524b0340fec42e1abb216013a353e950aa738d9ba0f2ebdedd5293337bab3"
+          },
+          {
+            "path": "packages/designer/src/frames/AuthFrame.tsx",
+            "sha256": "607437d63bbf84a1ac784828d3e95a29ec4934cf4dc1b7dfd0952ecb54613f4e"
+          },
+          {
+            "path": "packages/designer/src/shell/SkipLink.tsx",
+            "sha256": "940d32dea44bdbde6f2ef1f5470f539425e34586f96f90750e34e17ffc82f20c"
+          }
+        ],
+        "unresolved": [
+          {
+            "code": "DF2",
+            "evidence": "unresolved injected runtime inventory ../../tokens/tokens.js#TOKENS",
+            "file": "packages/designer/src/components/internal/cx.ts",
+            "line": 2
+          },
+          {
+            "code": "DF2",
+            "evidence": "unresolved dynamic import; runtime source is not inferred",
+            "file": "packages/designer/src/components/internal/cx.ts",
+            "line": 80
+          },
+          {
+            "code": "DF2",
+            "evidence": "unresolved injected runtime inventory ./internal/shell-vars.js#UI_Z_SKIP_LINK",
+            "file": "packages/designer/src/shell/SkipLink.tsx",
+            "line": 3
+          }
+        ]
+      },
       "impl": {
         "export": "AuthFrame",
         "kind": "package",
@@ -30,6 +93,19 @@
       },
       "members": [],
       "propMap": {},
+      "reads": {
+        "assets": [],
+        "tokens": [
+          "tokens.accent-color",
+          "tokens.body-size",
+          "tokens.content-size",
+          "tokens.control-radius",
+          "tokens.gutter",
+          "tokens.spacing",
+          "tokens.surface-color",
+          "tokens.text-color"
+        ]
+      },
       "slot": "frames.auth-shell",
       "slots": {
         "main": "children",

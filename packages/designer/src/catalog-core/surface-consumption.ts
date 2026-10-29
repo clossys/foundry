@@ -18,6 +18,16 @@ export interface SurfaceConsumptionInput {
   sourceScans: SurfaceConsumptionScan[]; themeCss: string;
 }
 export interface SurfaceConsumptionFinding { code: DogfoodCode; fill: string; file: string; line: number; evidence: string }
+/** Portable source-only lower bound, independent of a descriptor's declared fields. */
+export interface SurfaceConsumptionMeasurement {
+  scanStatus: "lower-bound" | "unavailable";
+  /** Original source file byte hashes, before reachable-declaration selection. */
+  sourceFiles: readonly { path: string; sha256: string }[];
+  scannedReads: ConsumptionReads;
+  scannedComposes: readonly string[];
+  /** Retained unknown source edges; a lower bound does not qualify runtime behavior. */
+  unresolved?: readonly { file: string; line: number; evidence: string; code?: DogfoodCode }[];
+}
 const sorted = (items: readonly string[]): string[] => [...new Set(items)].sort();
 const reads = (value: Partial<ConsumptionReads>): ConsumptionReads => ({ tokens: sorted(value.tokens ?? []), assets: sorted(value.assets ?? []), components: sorted(value.components ?? []) });
 

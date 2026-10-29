@@ -23,6 +23,109 @@
   },
   "frames": {
     "app-header": {
+      "composes": [
+        "components.button",
+        "components.icon",
+        "components.menu",
+        "components.popover",
+        "components.toggle-button",
+        "components.tooltip"
+      ],
+      "consumption": {
+        "scanStatus": "lower-bound",
+        "scannedComposes": [
+          "components.button",
+          "components.icon",
+          "components.menu",
+          "components.popover",
+          "components.toggle-button",
+          "components.tooltip"
+        ],
+        "scannedReads": {
+          "assets": [],
+          "components": [
+            "components.button",
+            "components.icon",
+            "components.menu",
+            "components.popover",
+            "components.toggle-button",
+            "components.tooltip"
+          ],
+          "tokens": [
+            "tokens.accent-color",
+            "tokens.blur",
+            "tokens.body-size",
+            "tokens.border-color",
+            "tokens.border-width",
+            "tokens.control-radius",
+            "tokens.spacing",
+            "tokens.surface-color",
+            "tokens.text-color",
+            "tokens.touch-target",
+            "tokens.z-index"
+          ]
+        },
+        "sourceFiles": [
+          {
+            "path": "packages/designer/src/blocks/frame-header-layout.ts",
+            "sha256": "30f6f578ba60d142b3cf6aebe98151e24f36a490fc857f57ae44642513ef5761"
+          },
+          {
+            "path": "packages/designer/src/blocks/frame-navigation.ts",
+            "sha256": "fd8e4f554ec87389b5c411e2624e2ccac29222eddd9e75ee7993962b071e40e9"
+          },
+          {
+            "path": "packages/designer/src/blocks/page-bar-layout.ts",
+            "sha256": "43f39d1272e7e324abc53b987f8dfffa48161907e186e6c930f2ac1fbc6606df"
+          },
+          {
+            "path": "packages/designer/src/blocks/PageBar.tsx",
+            "sha256": "e660980f7f08780c4e579af41090275a9abd1222f0b877de9d5dee5ff4e2c951"
+          },
+          {
+            "path": "packages/designer/src/catalog-core/frame-header-options.ts",
+            "sha256": "22434fadf5f294cc28bba10e8d92891d5d43a20b8ec323b039aa21adaa96d474"
+          },
+          {
+            "path": "packages/designer/src/components/internal/ui-vars.ts",
+            "sha256": "8455ed770c61ec15597b5ead597563135ed088b609dc11b2cd7ed8b873371701"
+          },
+          {
+            "path": "packages/designer/src/icons/Check.ts",
+            "sha256": "df7a0d203c39a358aba4b6cf7a9380e34352d38efe0947c0d30c0485ad509159"
+          },
+          {
+            "path": "packages/designer/src/icons/ChevronDown.ts",
+            "sha256": "a0d467a8eb0067662f31c16000987a0dfbc2d2b71fbe5b99d0dd5586dd823294"
+          }
+        ],
+        "unresolved": [
+          {
+            "code": "DF2",
+            "evidence": "unresolved injected runtime inventory ../tokens/tokens.js#TOKENS",
+            "file": "packages/designer/src/blocks/page-bar-layout.ts",
+            "line": 1
+          },
+          {
+            "code": "DF2",
+            "evidence": "unresolved source export ../components/Link.js#Link",
+            "file": "packages/designer/src/blocks/PageBar.tsx",
+            "line": 8
+          },
+          {
+            "code": "DF5",
+            "evidence": "unregistered asset import ../icons/ChevronDown.js#ChevronDown",
+            "file": "packages/designer/src/blocks/PageBar.tsx",
+            "line": 11
+          },
+          {
+            "code": "DF5",
+            "evidence": "unregistered asset import ../icons/Check.js#Check",
+            "file": "packages/designer/src/blocks/PageBar.tsx",
+            "line": 13
+          }
+        ]
+      },
       "impl": {
         "export": "PageBar",
         "kind": "package",
@@ -39,6 +142,22 @@
         "position.static": "position=static",
         "position.sticky": "position=sticky",
         "surface.glass": "surface=glass"
+      },
+      "reads": {
+        "assets": [],
+        "tokens": [
+          "tokens.accent-color",
+          "tokens.blur",
+          "tokens.body-size",
+          "tokens.border-color",
+          "tokens.border-width",
+          "tokens.control-radius",
+          "tokens.spacing",
+          "tokens.surface-color",
+          "tokens.text-color",
+          "tokens.touch-target",
+          "tokens.z-index"
+        ]
       },
       "slot": "frames.app-header",
       "slots": {

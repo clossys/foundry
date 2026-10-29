@@ -33,7 +33,52 @@
   },
   "sections": {
     "empty-state": {
+      "composes": [
+        "sections.section-header"
+      ],
       "configs": {},
+      "consumption": {
+        "scanStatus": "lower-bound",
+        "scannedComposes": [
+          "sections.section-header"
+        ],
+        "scannedReads": {
+          "assets": [],
+          "components": [],
+          "tokens": [
+            "tokens.spacing",
+            "tokens.text-color"
+          ]
+        },
+        "sourceFiles": [
+          {
+            "path": "packages/designer/src/blocks/EmptyState.tsx",
+            "sha256": "b3aa11d547e9f389ea3034704b3234a26e1460915c317d5338b791129dcabf4d"
+          },
+          {
+            "path": "packages/designer/src/catalog-core/provenance-attrs.ts",
+            "sha256": "8f2a725224764fc1d7cd7ec94f2f569cad02117251bf6c2a668c8a1b51e7c443"
+          },
+          {
+            "path": "packages/designer/src/components/internal/cx.ts",
+            "sha256": "0a7524b0340fec42e1abb216013a353e950aa738d9ba0f2ebdedd5293337bab3"
+          }
+        ],
+        "unresolved": [
+          {
+            "code": "DF2",
+            "evidence": "unresolved injected runtime inventory ../../tokens/tokens.js#TOKENS",
+            "file": "packages/designer/src/components/internal/cx.ts",
+            "line": 2
+          },
+          {
+            "code": "DF2",
+            "evidence": "unresolved dynamic import; runtime source is not inferred",
+            "file": "packages/designer/src/components/internal/cx.ts",
+            "line": 80
+          }
+        ]
+      },
       "impl": {
         "export": "EmptyState",
         "kind": "package",
@@ -42,7 +87,7 @@
       "license": "MIT",
       "notes": [
         "Host supplies required title. No kind or scope API; source hand-renders its h2 and padding.",
-        "Descriptor only; source imports, token reads, shared anatomy, accessibility, contrast and consumer runtime conformance are unmeasured. Content bindings describe host adaptation points, not type-equivalent converters."
+        "Source-only import and token-read measurements are lower bounds; shared anatomy, accessibility, contrast and consumer runtime conformance remain unmeasured. Content bindings describe host adaptation points, not type-equivalent converters."
       ],
       "parts": [],
       "pin": {
@@ -51,6 +96,13 @@
         "version": "0.12.0"
       },
       "propMap": {},
+      "reads": {
+        "assets": [],
+        "tokens": [
+          "tokens.spacing",
+          "tokens.text-color"
+        ]
+      },
       "slot": "sections.empty-state",
       "slotMap": {
         "actions": "./blocks#EmptyState.action",

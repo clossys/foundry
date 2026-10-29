@@ -30,7 +30,70 @@
   },
   "sections": {
     "pagination": {
+      "composes": [
+        "components.button",
+        "components.icon",
+        "components.select"
+      ],
       "configs": {},
+      "consumption": {
+        "scanStatus": "lower-bound",
+        "scannedComposes": [
+          "components.button",
+          "components.icon",
+          "components.select"
+        ],
+        "scannedReads": {
+          "assets": [
+            "assets.icon-chevron-left",
+            "assets.icon-chevron-right"
+          ],
+          "components": [
+            "components.button",
+            "components.icon",
+            "components.select"
+          ],
+          "tokens": [
+            "tokens.body-size",
+            "tokens.spacing",
+            "tokens.text-color"
+          ]
+        },
+        "sourceFiles": [
+          {
+            "path": "packages/designer/src/blocks/Pagination.tsx",
+            "sha256": "88dbddf4a5168b8fdd40288d8df72187a334110d16b3c4434e1ded6881e2a6fe"
+          },
+          {
+            "path": "packages/designer/src/catalog-core/provenance-attrs.ts",
+            "sha256": "8f2a725224764fc1d7cd7ec94f2f569cad02117251bf6c2a668c8a1b51e7c443"
+          },
+          {
+            "path": "packages/designer/src/components/internal/cx.ts",
+            "sha256": "0a7524b0340fec42e1abb216013a353e950aa738d9ba0f2ebdedd5293337bab3"
+          }
+        ],
+        "unresolved": [
+          {
+            "code": "DF2",
+            "evidence": "unresolved injected runtime inventory ../components/glyph-context.js#useGlyph",
+            "file": "packages/designer/src/blocks/Pagination.tsx",
+            "line": 5
+          },
+          {
+            "code": "DF2",
+            "evidence": "unresolved injected runtime inventory ../../tokens/tokens.js#TOKENS",
+            "file": "packages/designer/src/components/internal/cx.ts",
+            "line": 2
+          },
+          {
+            "code": "DF2",
+            "evidence": "unresolved dynamic import; runtime source is not inferred",
+            "file": "packages/designer/src/components/internal/cx.ts",
+            "line": 80
+          }
+        ]
+      },
       "impl": {
         "export": "Pagination",
         "kind": "package",
@@ -39,7 +102,7 @@
       "license": "MIT",
       "notes": [
         "Host supplies pageCount and onPageChange. Only numbered pages exist; load-more and cursor modes are absent. Default visible messages remain in source.",
-        "Descriptor only; source imports, token reads, shared anatomy, accessibility, contrast and consumer runtime conformance are unmeasured. Content bindings describe host adaptation points, not type-equivalent converters."
+        "Source-only import and token-read measurements are lower bounds; shared anatomy, accessibility, contrast and consumer runtime conformance remain unmeasured. Content bindings describe host adaptation points, not type-equivalent converters."
       ],
       "parts": [],
       "pin": {
@@ -49,6 +112,17 @@
       },
       "propMap": {
         "mode.pages": "./blocks#Pagination.page"
+      },
+      "reads": {
+        "assets": [
+          "assets.icon-chevron-left",
+          "assets.icon-chevron-right"
+        ],
+        "tokens": [
+          "tokens.body-size",
+          "tokens.spacing",
+          "tokens.text-color"
+        ]
       },
       "slot": "sections.pagination",
       "slotMap": {

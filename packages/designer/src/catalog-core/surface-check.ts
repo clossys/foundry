@@ -6,7 +6,7 @@ import { buildSurfaceConsumption } from "./surface-consumption.js";
 import { emit as emitValues } from "./emit.js";
 import { stableStringify } from "./stable.js";
 import type { CompositeEngineInput, CompositeResolved } from "./types.js";
-import { contractFindings } from "./surface-defaults.js";
+import { contractFindings, surfaceConsumptionFindings } from "./surface-defaults.js";
 import type { SurfaceFinding, SurfaceResolved, SurfaceResolvedFill, SurfaceRuntimeIdentity, SurfaceCandidate, SurfaceResolutionOptions } from "./surface-types.js";
 export function surfaceRuntimeIdentity(row: SurfaceResolvedFill): SurfaceRuntimeIdentity { return { version: 1, descriptorHash: row.descriptorHash, outputHash: row.outputHash, apiHash: row.apiHash, inputsHash: row.inputsHash }; }
 export function surfaceMeasurementFindings(fill: SurfaceCandidate, row: SurfaceResolvedFill, bound: ReturnType<typeof bindSurfaceSource>, options: SurfaceResolutionOptions): string[] {
@@ -60,7 +60,7 @@ export function resolveSurfaces(input: CompositeEngineInput, profile: CompositeR
             if (!slot)
                 add("S1", entry.slot, "authored contract missing");
             else
-                for (const message of contractFindings(slot, entry as Parameters<typeof contractFindings>[1]))
+                for (const message of contractFindings(slot, entry as Parameters<typeof contractFindings>[1], origin.pin))
                     add(/^S[1-8]/.test(message) ? message.slice(0, 2) as SurfaceFinding["code"] : "S5", entry.slot, message.replace(/^S[1-8] /, ""));
             const evidence = options.packages.filter(row => row.module === entry.impl.module && row.version === origin.pin.version && row.values.includes(entry.impl.export));
             if (evidence.length !== 1)
@@ -100,7 +100,7 @@ export function resolveSurfaces(input: CompositeEngineInput, profile: CompositeR
             continue;
         }
         const contract = slot.contract;
-        for (const [label, actual, allowed] of [["members", fill.members, contract.members.names], ["states", fill.states.filter(state => state !== "default"), contract.kind === "section" ? contract.states ?? [] : contract.statePorts.map(port => port.id)], ["tokens", fill.reads.tokens, contract.allowedReads.tokens], ["assets", fill.reads.assets, contract.allowedReads.assets], ["composes", fill.composes, contract.kind === "section" ? contract.allowedComposes : contract.composes ?? []], ["parts", fill.parts, contract.kind === "section" ? contract.parts : []]] as const)
+        for (const [label, actual, allowed] of [["members", fill.members, contract.members.names], ["states", fill.states.filter(state => state !== "default"), contract.kind === "section" ? contract.states ?? [] : contract.statePorts.map(port => port.id)], ["tokens", fill.reads.tokens, contract.allowedReads.tokens], ["assets", fill.reads.assets, contract.allowedReads.assets], ["composes", fill.composes, contract.kind === "section" ? [...contract.allowedComposes, ...contract.parts] : contract.composes ?? []], ["parts", fill.parts, contract.kind === "section" ? contract.parts : []]] as const)
             if (actual.some(value => !allowed.some(option => option === value)))
                 add("S5", fill.slot, `unsupported ${label}`);
         const required = contract.kind === "section" ? contract.slots.filter(slot => slot.required).map(slot => slot.name) : contract.slots.filter(slot => slot.required).map(slot => slot.id);
@@ -139,7 +139,10 @@ export function resolveSurfaces(input: CompositeEngineInput, profile: CompositeR
         }
         if (!bound.proof.findings.length) {
             const themeCss = emitValues(profile.values, ["css-brand", "css-scales"], { header: false }).map(file => file.contents).join("\n");
-            const report = buildSurfaceConsumption({ tokens: input.catalog.values.slots.filter(slot => slot.layer === "tokens").map(slot => ({ id: slot.id, contract: { emit: "emit" in slot.contract ? slot.contract.emit : undefined } })), assets: input.catalog.values.slots.filter(slot => slot.layer === "assets"), components: input.catalog.components.slots, sections: slot.layer === "sections" ? [slot] : [], frames: slot.layer === "frames" ? [slot] : [], fills: [{ id: meta.id, slot: fill.slot, source: fill.source }], sourceScans: [{ fill: meta.id, files: owned.filter(file => /\.tsx?$/.test(file.path)), resolvedImports: Object.fromEntries(bound.proof.imports.filter(edge => fill.bindings.some(row => row.file === edge.file && row.local === edge.local)).map(edge => [edge.local, fill.bindings.find(row => row.file === edge.file && row.local === edge.local)!.slot])) }], themeCss });
+            const report = buildSurfaceConsumption({ tokens: input.catalog.values.slots.filter(slot => slot.layer === "tokens").map(slot => ({ id: slot.id, contract: { emit: "emit" in slot.contract ? slot.contract.emit : undefined } })), assets: input.catalog.values.slots.filter(slot => slot.layer === "assets"), components: input.catalog.components.slots, sections: slot.layer === "sections" ? [slot] : [], frames: slot.layer === "frames" ? [slot] : [], fills: [{ id: meta.id, slot: fill.slot, source: fill.source }], sourceScans: [{ fill: meta.id, files: owned.filter(file => /\.tsx?$/.test(file.path)), resolvedImports: Object.fromEntries(bound.proof.imports.filter(edge => fill.bindings.some(row => row.file === edge.file && row.local === edge.local)).map(edge => [`${edge.file}:${edge.module}#${edge.name}`, fill.bindings.find(row => row.file === edge.file && row.local === edge.local)!.slot])) }], themeCss });
+            const actual = report.fills[0]!;
+            for (const message of surfaceConsumptionFindings(slot, fill, { scanStatus: actual.scanStatus as "lower-bound" | "unavailable", sourceFiles: fill.outputSha256.filter(file => actual.sourceFiles.includes(file.path)), scannedReads: actual.scannedReads, scannedComposes: actual.scannedComposes }))
+                add(message.startsWith("S8") ? "S8" : "S5", fill.slot, message.slice(3));
             for (const finding of report.findings)
                 add("S5", fill.slot, stableStringify(finding).trim());
         }

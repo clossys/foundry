@@ -29,7 +29,41 @@
   },
   "sections": {
     "logo-hero": {
+      "composes": [
+        "components.logo"
+      ],
       "configs": {},
+      "consumption": {
+        "scanStatus": "lower-bound",
+        "scannedComposes": [
+          "components.logo"
+        ],
+        "scannedReads": {
+          "assets": [],
+          "components": [
+            "components.logo"
+          ],
+          "tokens": []
+        },
+        "sourceFiles": [
+          {
+            "path": "packages/designer/src/blocks/LogoHero.tsx",
+            "sha256": "c4d81259bccc7648c61e9846b2c5a25f9b03c23d9fd23c7ce5bd5dc07b2f4d4c"
+          },
+          {
+            "path": "packages/designer/src/catalog-core/provenance-attrs.ts",
+            "sha256": "8f2a725224764fc1d7cd7ec94f2f569cad02117251bf6c2a668c8a1b51e7c443"
+          }
+        ],
+        "unresolved": [
+          {
+            "code": "DF5",
+            "evidence": "ambiguous slot ownership ./SectionFrame.js#SectionFrame: sections.band, sections.logo-mark",
+            "file": "packages/designer/src/blocks/LogoHero.tsx",
+            "line": 3
+          }
+        ]
+      },
       "impl": {
         "export": "LogoHero",
         "kind": "package",
@@ -38,7 +72,7 @@
       "license": "MIT",
       "notes": [
         "Logo-only section using the existing mark asset and its accessible name; no additional authored copy.",
-        "Descriptor only; source imports, token reads, shared anatomy, accessibility, contrast and consumer runtime conformance are unmeasured. Content bindings describe host adaptation points, not type-equivalent converters."
+        "Source-only import and token-read measurements are lower bounds; shared anatomy, accessibility, contrast and consumer runtime conformance remain unmeasured. Content bindings describe host adaptation points, not type-equivalent converters."
       ],
       "parts": [],
       "pin": {
@@ -47,6 +81,10 @@
         "version": "0.12.0"
       },
       "propMap": {},
+      "reads": {
+        "assets": [],
+        "tokens": []
+      },
       "slot": "sections.logo-hero",
       "slotMap": {
         "mark": "./blocks#LogoHero.mark",

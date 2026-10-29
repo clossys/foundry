@@ -29,7 +29,69 @@
   },
   "sections": {
     "form": {
+      "composes": [],
       "configs": {},
+      "consumption": {
+        "scanStatus": "lower-bound",
+        "scannedComposes": [],
+        "scannedReads": {
+          "assets": [],
+          "components": [],
+          "tokens": [
+            "tokens.accent-color",
+            "tokens.body-size",
+            "tokens.control-radius",
+            "tokens.focus-shadow",
+            "tokens.heading-size",
+            "tokens.spacing",
+            "tokens.status-color",
+            "tokens.text-color",
+            "tokens.typeface"
+          ]
+        },
+        "sourceFiles": [
+          {
+            "path": "packages/designer/src/blocks/Form.tsx",
+            "sha256": "60c84b8c52867a9f9d27db9994898d594dff790ceae7b21fe90e87d675797983"
+          },
+          {
+            "path": "packages/designer/src/catalog-core/provenance-attrs.ts",
+            "sha256": "8f2a725224764fc1d7cd7ec94f2f569cad02117251bf6c2a668c8a1b51e7c443"
+          },
+          {
+            "path": "packages/designer/src/components/internal/action-row.ts",
+            "sha256": "a6a5d775bce9eabccdae57892d623363f081b31aa44bb64855b6f1844f4b3ea3"
+          },
+          {
+            "path": "packages/designer/src/components/internal/cx.ts",
+            "sha256": "0a7524b0340fec42e1abb216013a353e950aa738d9ba0f2ebdedd5293337bab3"
+          },
+          {
+            "path": "packages/designer/src/components/internal/ui-vars.ts",
+            "sha256": "8455ed770c61ec15597b5ead597563135ed088b609dc11b2cd7ed8b873371701"
+          }
+        ],
+        "unresolved": [
+          {
+            "code": "DF2",
+            "evidence": "unresolved source export ../components/Link.js#Link",
+            "file": "packages/designer/src/blocks/Form.tsx",
+            "line": 11
+          },
+          {
+            "code": "DF2",
+            "evidence": "unresolved injected runtime inventory ../../tokens/tokens.js#TOKENS",
+            "file": "packages/designer/src/components/internal/cx.ts",
+            "line": 2
+          },
+          {
+            "code": "DF2",
+            "evidence": "unresolved dynamic import; runtime source is not inferred",
+            "file": "packages/designer/src/components/internal/cx.ts",
+            "line": 80
+          }
+        ]
+      },
       "impl": {
         "export": "Form",
         "kind": "package",
@@ -38,7 +100,7 @@
       "license": "MIT",
       "notes": [
         "Submit binds to the actions region; the host supplies the submit button. Error-summary content uses the errors and errorSummaryMessage API. Form is a block, not the unavailable components.form leaf.",
-        "Descriptor only; source imports, token reads, shared anatomy, accessibility, contrast and consumer runtime conformance are unmeasured. Content bindings describe host adaptation points, not type-equivalent converters."
+        "Source-only import and token-read measurements are lower bounds; shared anatomy, accessibility, contrast and consumer runtime conformance remain unmeasured. Content bindings describe host adaptation points, not type-equivalent converters."
       ],
       "parts": [],
       "pin": {
@@ -47,6 +109,20 @@
         "version": "0.12.0"
       },
       "propMap": {},
+      "reads": {
+        "assets": [],
+        "tokens": [
+          "tokens.accent-color",
+          "tokens.body-size",
+          "tokens.control-radius",
+          "tokens.focus-shadow",
+          "tokens.heading-size",
+          "tokens.spacing",
+          "tokens.status-color",
+          "tokens.text-color",
+          "tokens.typeface"
+        ]
+      },
       "slot": "sections.form",
       "slotMap": {
         "error-summary": "./blocks#Form.errorSummaryMessage",

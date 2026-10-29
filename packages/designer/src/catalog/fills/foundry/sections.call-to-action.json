@@ -26,7 +26,61 @@
   },
   "sections": {
     "call-to-action": {
+      "composes": [
+        "sections.section-header"
+      ],
       "configs": {},
+      "consumption": {
+        "scanStatus": "lower-bound",
+        "scannedComposes": [
+          "sections.section-header"
+        ],
+        "scannedReads": {
+          "assets": [],
+          "components": [],
+          "tokens": [
+            "tokens.border-color",
+            "tokens.radius",
+            "tokens.spacing",
+            "tokens.status-color",
+            "tokens.surface-color",
+            "tokens.surface-radius",
+            "tokens.text-color"
+          ]
+        },
+        "sourceFiles": [
+          {
+            "path": "packages/designer/src/blocks/CallToAction.tsx",
+            "sha256": "216bdeaba410e1e499f913d3c99d5fee62490d19d29bb6c64b968cfa5845bac3"
+          },
+          {
+            "path": "packages/designer/src/blocks/section-ground.ts",
+            "sha256": "a519649f96cb339f1128fc385e68d67b6af063ed492ac2c285f09c1740c98679"
+          },
+          {
+            "path": "packages/designer/src/catalog-core/provenance-attrs.ts",
+            "sha256": "8f2a725224764fc1d7cd7ec94f2f569cad02117251bf6c2a668c8a1b51e7c443"
+          },
+          {
+            "path": "packages/designer/src/components/internal/cx.ts",
+            "sha256": "0a7524b0340fec42e1abb216013a353e950aa738d9ba0f2ebdedd5293337bab3"
+          }
+        ],
+        "unresolved": [
+          {
+            "code": "DF2",
+            "evidence": "unresolved injected runtime inventory ../../tokens/tokens.js#TOKENS",
+            "file": "packages/designer/src/components/internal/cx.ts",
+            "line": 2
+          },
+          {
+            "code": "DF2",
+            "evidence": "unresolved dynamic import; runtime source is not inferred",
+            "file": "packages/designer/src/components/internal/cx.ts",
+            "line": 80
+          }
+        ]
+      },
       "impl": {
         "export": "CallToAction",
         "kind": "package",
@@ -35,7 +89,7 @@
       "license": "MIT",
       "notes": [
         "Header is the composed SectionHeader (eyebrow, title, description) on a section ground; actions are one primary and at most one secondary host node, so the two-action ceiling is structural.",
-        "Descriptor only; source imports, token reads, shared anatomy, accessibility, contrast and consumer runtime conformance are unmeasured. Content bindings describe host adaptation points, not type-equivalent converters."
+        "Source-only import and token-read measurements are lower bounds; shared anatomy, accessibility, contrast and consumer runtime conformance remain unmeasured. Content bindings describe host adaptation points, not type-equivalent converters."
       ],
       "parts": [],
       "pin": {
@@ -44,6 +98,18 @@
         "version": "0.12.0"
       },
       "propMap": {},
+      "reads": {
+        "assets": [],
+        "tokens": [
+          "tokens.border-color",
+          "tokens.radius",
+          "tokens.spacing",
+          "tokens.status-color",
+          "tokens.surface-color",
+          "tokens.surface-radius",
+          "tokens.text-color"
+        ]
+      },
       "slot": "sections.call-to-action",
       "slotMap": {
         "actions": "./blocks#CallToAction.primaryAction,secondaryAction",

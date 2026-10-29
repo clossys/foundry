@@ -26,7 +26,62 @@
   },
   "sections": {
     "gallery": {
+      "composes": [
+        "components.button",
+        "components.dialog"
+      ],
       "configs": {},
+      "consumption": {
+        "scanStatus": "lower-bound",
+        "scannedComposes": [
+          "components.button",
+          "components.dialog"
+        ],
+        "scannedReads": {
+          "assets": [],
+          "components": [
+            "components.button",
+            "components.dialog"
+          ],
+          "tokens": [
+            "tokens.body-size",
+            "tokens.caption-size",
+            "tokens.radius",
+            "tokens.spacing",
+            "tokens.surface-color",
+            "tokens.surface-radius",
+            "tokens.text-color"
+          ]
+        },
+        "sourceFiles": [
+          {
+            "path": "packages/designer/src/blocks/Gallery.tsx",
+            "sha256": "63f3dabe0d6ef740580671baf2af3ba4103274a77218f268c6a15716f440e071"
+          },
+          {
+            "path": "packages/designer/src/catalog-core/provenance-attrs.ts",
+            "sha256": "8f2a725224764fc1d7cd7ec94f2f569cad02117251bf6c2a668c8a1b51e7c443"
+          },
+          {
+            "path": "packages/designer/src/components/internal/cx.ts",
+            "sha256": "0a7524b0340fec42e1abb216013a353e950aa738d9ba0f2ebdedd5293337bab3"
+          }
+        ],
+        "unresolved": [
+          {
+            "code": "DF2",
+            "evidence": "unresolved injected runtime inventory ../../tokens/tokens.js#TOKENS",
+            "file": "packages/designer/src/components/internal/cx.ts",
+            "line": 2
+          },
+          {
+            "code": "DF2",
+            "evidence": "unresolved dynamic import; runtime source is not inferred",
+            "file": "packages/designer/src/components/internal/cx.ts",
+            "line": 80
+          }
+        ]
+      },
       "impl": {
         "export": "Gallery",
         "kind": "package",
@@ -35,7 +90,7 @@
       "license": "MIT",
       "notes": [
         "Images are host nodes with their own alternative text; the lightbox is the Foundry Dialog opened from a React Aria button per image. The images content carries the gallery's accessible label with the images.",
-        "Descriptor only; source imports, token reads, shared anatomy, accessibility, contrast and consumer runtime conformance are unmeasured. Content bindings describe host adaptation points, not type-equivalent converters."
+        "Source-only import and token-read measurements are lower bounds; shared anatomy, accessibility, contrast and consumer runtime conformance remain unmeasured. Content bindings describe host adaptation points, not type-equivalent converters."
       ],
       "parts": [],
       "pin": {
@@ -46,6 +101,18 @@
       "propMap": {
         "lightbox.disabled": "./blocks#Gallery.lightbox=false",
         "lightbox.enabled": "./blocks#Gallery.lightbox=true"
+      },
+      "reads": {
+        "assets": [],
+        "tokens": [
+          "tokens.body-size",
+          "tokens.caption-size",
+          "tokens.radius",
+          "tokens.spacing",
+          "tokens.surface-color",
+          "tokens.surface-radius",
+          "tokens.text-color"
+        ]
       },
       "slot": "sections.gallery",
       "slotMap": {

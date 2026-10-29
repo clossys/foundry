@@ -224,7 +224,7 @@ const pointers = (value: unknown): void => map(value, entry => string(entry));
 export function assertSurfacePackageEntry(value: unknown, pin: unknown, installed = false): asserts value is SurfacePackageEntry {
     const section = value && typeof value === "object" && typeof (value as Node).slot === "string" && ((value as Node).slot as string).startsWith("sections.");
     const fields = section ? ["slot", "source", "slotMap", "propMap", "configs", "parts", "impl", "license", "pin", "notes"] : ["slot", "members", "propMap", "slots", "statePorts", "impl"];
-    object(value, [...fields, ...(installed ? ["origin"] : [])]);
+    object(value, [...fields, ...(installed ? ["origin"] : [])], ["reads", "composes", "consumption"]);
     if (typeof value.slot !== "string" || !/^(sections|frames)\.[a-z][a-z0-9]*(?:-[a-z0-9]+)*$/.test(value.slot))
         surfaceFault("S1 slot/kind differs");
     object(value.impl, ["kind", "module", "export"]);
@@ -246,6 +246,24 @@ export function assertSurfacePackageEntry(value: unknown, pin: unknown, installe
         strings(value.members);
         pointers(value.slots);
         pointers(value.statePorts);
+    }
+    if (value.reads !== undefined) { object(value.reads, ["tokens", "assets"]); strings(value.reads.tokens); strings(value.reads.assets); }
+    if (value.composes !== undefined) strings(value.composes);
+    if (value.consumption !== undefined) {
+        const measured = value.consumption;
+        object(measured, ["scanStatus", "sourceFiles", "scannedReads", "scannedComposes"], ["unresolved"]);
+        choice(measured.scanStatus, ["lower-bound", "unavailable"]);
+        list(measured.sourceFiles, row => { object(row, ["path", "sha256"]); string(row.path); surfacePath(row.path); hash(row.sha256); });
+        object(measured.scannedReads, ["tokens", "assets", "components"]);
+        strings(measured.scannedReads.tokens); strings(measured.scannedReads.assets); strings(measured.scannedReads.components);
+        strings(measured.scannedComposes);
+        if (measured.unresolved !== undefined) list(measured.unresolved, row => {
+            object(row, ["file", "line", "evidence"], ["code"]);
+            if (typeof row.file !== "string" || !Number.isInteger(row.line) || (row.line as number) < 0) surfaceFault("S1 invalid source finding");
+            if (row.file) surfacePath(row.file as string);
+            string(row.evidence);
+            if (row.code !== undefined) choice(row.code, ["DF1", "DF2", "DF3", "DF4", "DF5", "DF6", "DF7", "DF8"]);
+        });
     }
     assertSurfacePackagePin(value.impl as SurfacePackageEntry["impl"], pin);
 }

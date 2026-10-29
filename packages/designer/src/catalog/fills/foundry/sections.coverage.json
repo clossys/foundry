@@ -6,7 +6,7 @@
       "missingSlots": [],
       "notes": [
         "Permissions are grouped; the host also supplies value, labels and optional onChange. The source owns a native table rather than a component table leaf.",
-        "Descriptor only; source imports, token reads, shared anatomy, accessibility, contrast and consumer runtime conformance are unmeasured. Content bindings describe host adaptation points, not type-equivalent converters."
+        "Source-only import and token-read measurements are lower bounds; shared anatomy, accessibility, contrast and consumer runtime conformance remain unmeasured. Content bindings describe host adaptation points, not type-equivalent converters."
       ],
       "slot": "sections.access-matrix",
       "status": "candidate",
@@ -26,7 +26,7 @@
         "The host owns names, email, field labels/values and optional navigation actions. Optional avatar is a host-provided local or HTTP(S) image source. The renderer supports identity-only content and optional empty row/action lists.",
         "Actions are ordinary navigation links with consumer-provided label and local path, fragment or HTTP(S) href. No callbacks, auth SDK, Clerk UserProfile, session, network, sign-up, invite or reset behavior is implemented.",
         "Requires an external Designer SectionFrame inside an app Frame. Text uses dir=auto and is escaped. The default name-derived Avatar fallback comes from the existing component. No new public block or theme allowlist entry; source checks and consumer qualification remain separate.",
-        "Descriptor only; source imports, token reads, shared anatomy, accessibility, contrast and consumer runtime conformance are unmeasured. Content bindings describe host adaptation points, not type-equivalent converters."
+        "Source-only import and token-read measurements are lower bounds; shared anatomy, accessibility, contrast and consumer runtime conformance remain unmeasured. Content bindings describe host adaptation points, not type-equivalent converters."
       ],
       "slot": "sections.account-summary",
       "status": "candidate",
@@ -45,7 +45,7 @@
       "missingSlots": [],
       "notes": [
         "Each event renders through EventItem; host supplies labels and emptyState. Groups name event ids and every event must sit in exactly one group. Root is section; header and band are external.",
-        "Descriptor only; source imports, token reads, shared anatomy, accessibility, contrast and consumer runtime conformance are unmeasured. Content bindings describe host adaptation points, not type-equivalent converters."
+        "Source-only import and token-read measurements are lower bounds; shared anatomy, accessibility, contrast and consumer runtime conformance remain unmeasured. Content bindings describe host adaptation points, not type-equivalent converters."
       ],
       "slot": "sections.activity-feed",
       "status": "candidate",
@@ -63,7 +63,7 @@
       "missingSlots": [],
       "notes": [
         "Accepts pre-structured React children, not a rich-node parser. The toc region is a host node (the registered TableOfContents) laid beside the body from desktop, outside the body typography. Requires an external SectionFrame.",
-        "Descriptor only; source imports, token reads, shared anatomy, accessibility, contrast and consumer runtime conformance are unmeasured. Content bindings describe host adaptation points, not type-equivalent converters."
+        "Source-only import and token-read measurements are lower bounds; shared anatomy, accessibility, contrast and consumer runtime conformance remain unmeasured. Content bindings describe host adaptation points, not type-equivalent converters."
       ],
       "slot": "sections.article",
       "status": "candidate",
@@ -80,7 +80,7 @@
       "missingSlots": [],
       "notes": [
         "Composes DataTable with fixed time, actor, action and target columns; host supplies labels. Filter and export are host regions in the DataTable toolbar; the block never filters or exports rows itself.",
-        "Descriptor only; source imports, token reads, shared anatomy, accessibility, contrast and consumer runtime conformance are unmeasured. Content bindings describe host adaptation points, not type-equivalent converters."
+        "Source-only import and token-read measurements are lower bounds; shared anatomy, accessibility, contrast and consumer runtime conformance remain unmeasured. Content bindings describe host adaptation points, not type-equivalent converters."
       ],
       "slot": "sections.audit-log",
       "status": "candidate",
@@ -98,7 +98,7 @@
       "missingSlots": [],
       "notes": [
         "SectionFrame alone widens its ground with transparent (no surface, inherited ink); block grounds stay the closed SectionGround. Rhythm is fixed in source, with no specified contract member values.",
-        "Descriptor only; source imports, token reads, shared anatomy, accessibility, contrast and consumer runtime conformance are unmeasured. Content bindings describe host adaptation points, not type-equivalent converters."
+        "Source-only import and token-read measurements are lower bounds; shared anatomy, accessibility, contrast and consumer runtime conformance remain unmeasured. Content bindings describe host adaptation points, not type-equivalent converters."
       ],
       "slot": "sections.band",
       "status": "subset",
@@ -131,7 +131,7 @@
         "The four bounded boundary kinds select host state; sign-out-confirm requires exactly two host-authored controls. No auth, sign-out, navigation, or persistence behavior is implemented.",
         "Shared deterministic preview copy comes from specimenDataset.sections.errorState and uses a navigation link, so preview needs no live host.",
         "Draft descriptor; runtime tests are source declarations, not consumer adoption or release clearance.",
-        "Descriptor only; source imports, token reads, shared anatomy, accessibility, contrast and consumer runtime conformance are unmeasured. Content bindings describe host adaptation points, not type-equivalent converters."
+        "Source-only import and token-read measurements are lower bounds; shared anatomy, accessibility, contrast and consumer runtime conformance remain unmeasured. Content bindings describe host adaptation points, not type-equivalent converters."
       ],
       "slot": "sections.boundary-message",
       "status": "subset",
@@ -156,7 +156,7 @@
       "missingSlots": [],
       "notes": [
         "Header is the composed SectionHeader (eyebrow, title, description) on a section ground; actions are one primary and at most one secondary host node, so the two-action ceiling is structural.",
-        "Descriptor only; source imports, token reads, shared anatomy, accessibility, contrast and consumer runtime conformance are unmeasured. Content bindings describe host adaptation points, not type-equivalent converters."
+        "Source-only import and token-read measurements are lower bounds; shared anatomy, accessibility, contrast and consumer runtime conformance remain unmeasured. Content bindings describe host adaptation points, not type-equivalent converters."
       ],
       "slot": "sections.call-to-action",
       "status": "candidate",
@@ -173,7 +173,7 @@
       "missingSlots": [],
       "notes": [
         "Each record renders a Foundry Card (outline) with the title as its single Link and an optional Badge. Loading, empty and error states stay host-owned around the list.",
-        "Descriptor only; source imports, token reads, shared anatomy, accessibility, contrast and consumer runtime conformance are unmeasured. Content bindings describe host adaptation points, not type-equivalent converters."
+        "Source-only import and token-read measurements are lower bounds; shared anatomy, accessibility, contrast and consumer runtime conformance remain unmeasured. Content bindings describe host adaptation points, not type-equivalent converters."
       ],
       "slot": "sections.cards",
       "status": "candidate",
@@ -196,7 +196,7 @@
       "missingSlots": [],
       "notes": [
         "Messages cover only the message subset of the parts union. Composer is a built-in region (Textarea and Send button) that the host adapts through onSend and composerLabel; it is not replaceable by a host node. Host supplies status. English fallback labels and direct glyph imports remain; no attachment, trace or questionnaire API.",
-        "Descriptor only; source imports, token reads, shared anatomy, accessibility, contrast and consumer runtime conformance are unmeasured. Content bindings describe host adaptation points, not type-equivalent converters."
+        "Source-only import and token-read measurements are lower bounds; shared anatomy, accessibility, contrast and consumer runtime conformance remain unmeasured. Content bindings describe host adaptation points, not type-equivalent converters."
       ],
       "slot": "sections.chat",
       "status": "subset",
@@ -217,7 +217,7 @@
       "missingSlots": [],
       "notes": [
         "Host additionally supplies onMappingChange and labels; source uses Select and native fieldset layout.",
-        "Descriptor only; source imports, token reads, shared anatomy, accessibility, contrast and consumer runtime conformance are unmeasured. Content bindings describe host adaptation points, not type-equivalent converters."
+        "Source-only import and token-read measurements are lower bounds; shared anatomy, accessibility, contrast and consumer runtime conformance remain unmeasured. Content bindings describe host adaptation points, not type-equivalent converters."
       ],
       "slot": "sections.column-mapper",
       "status": "candidate",
@@ -237,7 +237,7 @@
         "The exported Matrix preserves Matrix arrangement=grid for authored comparison cells and arrangement=choices for content-sized native RadioGroup rows. Choices accepts one or more library columns and unbounded leaf rows without an internal scroll region.",
         "The explicit library-board configuration selects LibraryBoardSection typed columns, rows and controls records through LIBRARY_BOARD_CONFIG; its canonical member is arrangement.library-board. Grid remains the existing literal. Selected runtime qualification remains separate.",
         "The choices assembly consumes SectionHeader, RadioGroup, Card, Badge, Tooltip and token-backed table layout; Studio supplies checked token, asset or component previews.",
-        "Descriptor only; source imports, token reads, shared anatomy, accessibility, contrast and consumer runtime conformance are unmeasured. Content bindings describe host adaptation points, not type-equivalent converters."
+        "Source-only import and token-read measurements are lower bounds; shared anatomy, accessibility, contrast and consumer runtime conformance remain unmeasured. Content bindings describe host adaptation points, not type-equivalent converters."
       ],
       "slot": "sections.comparison",
       "status": "candidate",
@@ -258,7 +258,7 @@
       "missingSlots": [],
       "notes": [
         "Accept and reject are two equal-prominence built-in buttons labelled by the host, who also supplies onAccept and onReject. The banner owns no consent state, storage or network call.",
-        "Descriptor only; source imports, token reads, shared anatomy, accessibility, contrast and consumer runtime conformance are unmeasured. Content bindings describe host adaptation points, not type-equivalent converters."
+        "Source-only import and token-read measurements are lower bounds; shared anatomy, accessibility, contrast and consumer runtime conformance remain unmeasured. Content bindings describe host adaptation points, not type-equivalent converters."
       ],
       "slot": "sections.consent",
       "status": "candidate",
@@ -276,7 +276,7 @@
       "missingSlots": [],
       "notes": [
         "Header is spread across heading, eyebrow, description and actions; there is no single section-header region prop. Source uses SectionIntro rather than the frozen section-header fill.",
-        "Descriptor only; source imports, token reads, shared anatomy, accessibility, contrast and consumer runtime conformance are unmeasured. Content bindings describe host adaptation points, not type-equivalent converters."
+        "Source-only import and token-read measurements are lower bounds; shared anatomy, accessibility, contrast and consumer runtime conformance remain unmeasured. Content bindings describe host adaptation points, not type-equivalent converters."
       ],
       "slot": "sections.content",
       "status": "candidate",
@@ -299,7 +299,7 @@
       "missingSlots": [],
       "notes": [
         "Cells are rendered by the column definitions (cell renderers); pinning binds the view model's pinnedColumns, a leading prefix of at most three visible columns. Host supplies rowKey, label and onModelChange.",
-        "Descriptor only; source imports, token reads, shared anatomy, accessibility, contrast and consumer runtime conformance are unmeasured. Content bindings describe host adaptation points, not type-equivalent converters."
+        "Source-only import and token-read measurements are lower bounds; shared anatomy, accessibility, contrast and consumer runtime conformance remain unmeasured. Content bindings describe host adaptation points, not type-equivalent converters."
       ],
       "slot": "sections.data-grid",
       "status": "candidate",
@@ -317,7 +317,7 @@
       "missingSlots": [],
       "notes": [
         "Host supplies rowKey. Grouping uses the typed model API; footer is an arbitrary region, not a pagination controller. FlatGrid and ModelTable own implementation dependencies, including direct RAC imports.",
-        "Descriptor only; source imports, token reads, shared anatomy, accessibility, contrast and consumer runtime conformance are unmeasured. Content bindings describe host adaptation points, not type-equivalent converters."
+        "Source-only import and token-read measurements are lower bounds; shared anatomy, accessibility, contrast and consumer runtime conformance remain unmeasured. Content bindings describe host adaptation points, not type-equivalent converters."
       ],
       "slot": "sections.data-table",
       "status": "candidate",
@@ -345,7 +345,7 @@
       "missingSlots": [],
       "notes": [
         "Host supplies required title. No kind or scope API; source hand-renders its h2 and padding.",
-        "Descriptor only; source imports, token reads, shared anatomy, accessibility, contrast and consumer runtime conformance are unmeasured. Content bindings describe host adaptation points, not type-equivalent converters."
+        "Source-only import and token-read measurements are lower bounds; shared anatomy, accessibility, contrast and consumer runtime conformance remain unmeasured. Content bindings describe host adaptation points, not type-equivalent converters."
       ],
       "slot": "sections.empty-state",
       "status": "subset",
@@ -369,7 +369,7 @@
         "not-found maps to ErrorState kind=not-found; error/global-error map to failure. Global errors are content for a host-owned document/frame, not a document or framework error adapter.",
         "Shared deterministic preview copy comes from specimenDataset.sections.errorState and uses a navigation link, so preview needs no live host.",
         "Draft descriptor; runtime tests are source declarations, not consumer adoption or release clearance.",
-        "Descriptor only; source imports, token reads, shared anatomy, accessibility, contrast and consumer runtime conformance are unmeasured. Content bindings describe host adaptation points, not type-equivalent converters."
+        "Source-only import and token-read measurements are lower bounds; shared anatomy, accessibility, contrast and consumer runtime conformance remain unmeasured. Content bindings describe host adaptation points, not type-equivalent converters."
       ],
       "slot": "sections.error-message",
       "status": "subset",
@@ -393,7 +393,7 @@
       "missingSlots": [],
       "notes": [
         "Kind is host data rendered as data-error-kind; title and description copy stay host-authored. Not a live region: the host moves focus or announces the replacement.",
-        "Descriptor only; source imports, token reads, shared anatomy, accessibility, contrast and consumer runtime conformance are unmeasured. Content bindings describe host adaptation points, not type-equivalent converters."
+        "Source-only import and token-read measurements are lower bounds; shared anatomy, accessibility, contrast and consumer runtime conformance remain unmeasured. Content bindings describe host adaptation points, not type-equivalent converters."
       ],
       "slot": "sections.error-state",
       "status": "candidate",
@@ -416,7 +416,7 @@
       "missingSlots": [],
       "notes": [
         "The tree prop is structured data, not a replaceable tree region. The list region is a host-owned pane laid out beside the tree (named by listLabel); renderDetails is a separate per-node detail callback. Host supplies label. Source implements tree keyboard handling locally.",
-        "Descriptor only; source imports, token reads, shared anatomy, accessibility, contrast and consumer runtime conformance are unmeasured. Content bindings describe host adaptation points, not type-equivalent converters."
+        "Source-only import and token-read measurements are lower bounds; shared anatomy, accessibility, contrast and consumer runtime conformance remain unmeasured. Content bindings describe host adaptation points, not type-equivalent converters."
       ],
       "slot": "sections.explorer",
       "status": "candidate",
@@ -436,7 +436,7 @@
       "missingSlots": [],
       "notes": [
         "The layout prop renders one vertical disclosure list or two lists side by side from tablet, first half first; section headings are hand-rendered.",
-        "Descriptor only; source imports, token reads, shared anatomy, accessibility, contrast and consumer runtime conformance are unmeasured. Content bindings describe host adaptation points, not type-equivalent converters."
+        "Source-only import and token-read measurements are lower bounds; shared anatomy, accessibility, contrast and consumer runtime conformance remain unmeasured. Content bindings describe host adaptation points, not type-equivalent converters."
       ],
       "slot": "sections.faq",
       "status": "subset",
@@ -457,7 +457,7 @@
       "missingSlots": [],
       "notes": [
         "The layout prop selects the column grid, a one-per-row list with the icon beside the copy, or the heading region beside a two-column grid from desktop. Items have icon, heading and description but no per-item link prop.",
-        "Descriptor only; source imports, token reads, shared anatomy, accessibility, contrast and consumer runtime conformance are unmeasured. Content bindings describe host adaptation points, not type-equivalent converters."
+        "Source-only import and token-read measurements are lower bounds; shared anatomy, accessibility, contrast and consumer runtime conformance remain unmeasured. Content bindings describe host adaptation points, not type-equivalent converters."
       ],
       "slot": "sections.features",
       "status": "subset",
@@ -477,7 +477,7 @@
       "missingSlots": [],
       "notes": [
         "Groups are controlled records of field/operator/value conditions with an all/any match; groups combine as all. Host supplies onGroupsChange and labels and evaluates the conditions; no date-picker or tag-group value editor is claimed.",
-        "Descriptor only; source imports, token reads, shared anatomy, accessibility, contrast and consumer runtime conformance are unmeasured. Content bindings describe host adaptation points, not type-equivalent converters."
+        "Source-only import and token-read measurements are lower bounds; shared anatomy, accessibility, contrast and consumer runtime conformance remain unmeasured. Content bindings describe host adaptation points, not type-equivalent converters."
       ],
       "slot": "sections.filter-builder",
       "status": "candidate",
@@ -497,7 +497,7 @@
       "missingSlots": [],
       "notes": [
         "Submit binds to the actions region; the host supplies the submit button. Error-summary content uses the errors and errorSummaryMessage API. Form is a block, not the unavailable components.form leaf.",
-        "Descriptor only; source imports, token reads, shared anatomy, accessibility, contrast and consumer runtime conformance are unmeasured. Content bindings describe host adaptation points, not type-equivalent converters."
+        "Source-only import and token-read measurements are lower bounds; shared anatomy, accessibility, contrast and consumer runtime conformance remain unmeasured. Content bindings describe host adaptation points, not type-equivalent converters."
       ],
       "slot": "sections.form",
       "status": "subset",
@@ -515,7 +515,7 @@
       "missingSlots": [],
       "notes": [
         "Images are host nodes with their own alternative text; the lightbox is the Foundry Dialog opened from a React Aria button per image. The images content carries the gallery's accessible label with the images.",
-        "Descriptor only; source imports, token reads, shared anatomy, accessibility, contrast and consumer runtime conformance are unmeasured. Content bindings describe host adaptation points, not type-equivalent converters."
+        "Source-only import and token-read measurements are lower bounds; shared anatomy, accessibility, contrast and consumer runtime conformance remain unmeasured. Content bindings describe host adaptation points, not type-equivalent converters."
       ],
       "slot": "sections.gallery",
       "status": "candidate",
@@ -537,7 +537,7 @@
       "missingSlots": [],
       "notes": [
         "Header is a built-in SectionIntro region keyed by the required heading, with eyebrow and description as supporting props; it is not a replaceable section-header node. Source composes SectionIntro; headingLevel permits h1.",
-        "Descriptor only; source imports, token reads, shared anatomy, accessibility, contrast and consumer runtime conformance are unmeasured. Content bindings describe host adaptation points, not type-equivalent converters."
+        "Source-only import and token-read measurements are lower bounds; shared anatomy, accessibility, contrast and consumer runtime conformance remain unmeasured. Content bindings describe host adaptation points, not type-equivalent converters."
       ],
       "slot": "sections.hero",
       "status": "subset",
@@ -567,7 +567,7 @@
         "The host owns the legal heading, revision label/value and every policy section. A short placeholder is supported while final Writer-authored policy text remains host-owned. The renderer supplies no policy wording beyond isolated specimen preview content.",
         "Body accepts only paragraph/heading text and lists of text; React escapes text. Unknown node kinds and fields, arbitrary HTML and undeclared inputs are refused. Paragraph/list nodes use dir=auto and body headings render as h3 below the host heading at h2.",
         "Requires an external Designer SectionFrame; the surrounding page must use a Designer Frame. No legal route, data fetching or document ownership is introduced. Source checks and consumer runtime qualification remain separate.",
-        "Descriptor only; source imports, token reads, shared anatomy, accessibility, contrast and consumer runtime conformance are unmeasured. Content bindings describe host adaptation points, not type-equivalent converters."
+        "Source-only import and token-read measurements are lower bounds; shared anatomy, accessibility, contrast and consumer runtime conformance remain unmeasured. Content bindings describe host adaptation points, not type-equivalent converters."
       ],
       "slot": "sections.legal-prose",
       "status": "subset",
@@ -588,7 +588,7 @@
       "missingSlots": [],
       "notes": [
         "CompatNavGrid renders fixed linked/action cards; list and plain-grid modes are absent. No generic Items recipe configuration is invented.",
-        "Descriptor only; source imports, token reads, shared anatomy, accessibility, contrast and consumer runtime conformance are unmeasured. Content bindings describe host adaptation points, not type-equivalent converters."
+        "Source-only import and token-read measurements are lower bounds; shared anatomy, accessibility, contrast and consumer runtime conformance remain unmeasured. Content bindings describe host adaptation points, not type-equivalent converters."
       ],
       "slot": "sections.link-index",
       "status": "subset",
@@ -606,7 +606,7 @@
       "missingSlots": [],
       "notes": [
         "Source checks allowed items.length values and tone; logos are host React nodes. The source root is ul, with no band/header wrapper.",
-        "Descriptor only; source imports, token reads, shared anatomy, accessibility, contrast and consumer runtime conformance are unmeasured. Content bindings describe host adaptation points, not type-equivalent converters."
+        "Source-only import and token-read measurements are lower bounds; shared anatomy, accessibility, contrast and consumer runtime conformance remain unmeasured. Content bindings describe host adaptation points, not type-equivalent converters."
       ],
       "slot": "sections.logo-cloud",
       "status": "candidate",
@@ -632,7 +632,7 @@
       "missingSlots": [],
       "notes": [
         "Logo-only section using the existing mark asset and its accessible name; no additional authored copy.",
-        "Descriptor only; source imports, token reads, shared anatomy, accessibility, contrast and consumer runtime conformance are unmeasured. Content bindings describe host adaptation points, not type-equivalent converters."
+        "Source-only import and token-read measurements are lower bounds; shared anatomy, accessibility, contrast and consumer runtime conformance remain unmeasured. Content bindings describe host adaptation points, not type-equivalent converters."
       ],
       "slot": "sections.logo-hero",
       "status": "subset",
@@ -651,7 +651,7 @@
         "The public SectionFrame export supplies section framing. The private sections.logo-mark runtime adapter resolves the consumer's assets.mark media record to a Logomark child, with no extra public block export.",
         "mark maps to children as a host adaptation point, not a type-equivalent media-record prop. Its record carries slot=assets.mark, a declared member (mono, positive or reversed), src and optional asset name metadata. The runtime port has no asset resolver; the consumer must supply the registered member's resolved artwork and list it in assetClosure.",
         "The section has no copy slots or authored copy fields. Optional asset name metadata labels the image group and is never rendered as visible text. Without metadata the logo remains decorative.",
-        "Descriptor only; source imports, token reads, shared anatomy, accessibility, contrast and consumer runtime conformance are unmeasured. Content bindings describe host adaptation points, not type-equivalent converters."
+        "Source-only import and token-read measurements are lower bounds; shared anatomy, accessibility, contrast and consumer runtime conformance remain unmeasured. Content bindings describe host adaptation points, not type-equivalent converters."
       ],
       "slot": "sections.logo-mark",
       "status": "candidate",
@@ -667,7 +667,7 @@
       "missingSlots": [],
       "notes": [
         "Host supplies the image node and its src/alt/ratio; caption is a separate prop. Does not validate a structured figure record or bind anatomy.",
-        "Descriptor only; source imports, token reads, shared anatomy, accessibility, contrast and consumer runtime conformance are unmeasured. Content bindings describe host adaptation points, not type-equivalent converters."
+        "Source-only import and token-read measurements are lower bounds; shared anatomy, accessibility, contrast and consumer runtime conformance remain unmeasured. Content bindings describe host adaptation points, not type-equivalent converters."
       ],
       "slot": "sections.media",
       "status": "candidate",
@@ -683,7 +683,7 @@
       "missingSlots": [],
       "notes": [
         "Email is a built-in email TextField the host adapts through emailLabel; it is not replaceable by a host node. The submit content carries the built-in action's copy (submitLabel, pendingLabel, sentMessage, failedMessage) and its same-origin form action. Consent text does not prove confirmation behavior.",
-        "Descriptor only; source imports, token reads, shared anatomy, accessibility, contrast and consumer runtime conformance are unmeasured. Content bindings describe host adaptation points, not type-equivalent converters."
+        "Source-only import and token-read measurements are lower bounds; shared anatomy, accessibility, contrast and consumer runtime conformance remain unmeasured. Content bindings describe host adaptation points, not type-equivalent converters."
       ],
       "slot": "sections.newsletter",
       "status": "candidate",
@@ -703,7 +703,7 @@
       "missingSlots": [],
       "notes": [
         "Each notice renders a Foundry Banner whose tone sets its live-region role; the host supplies label and removes a notice on onDismiss. No queue or timer.",
-        "Descriptor only; source imports, token reads, shared anatomy, accessibility, contrast and consumer runtime conformance are unmeasured. Content bindings describe host adaptation points, not type-equivalent converters."
+        "Source-only import and token-read measurements are lower bounds; shared anatomy, accessibility, contrast and consumer runtime conformance remain unmeasured. Content bindings describe host adaptation points, not type-equivalent converters."
       ],
       "slot": "sections.notices",
       "status": "subset",
@@ -725,7 +725,7 @@
       ],
       "notes": [
         "No record/standard config or meta API. Source renders its own h1 rather than shared section-header anatomy.",
-        "Descriptor only; source imports, token reads, shared anatomy, accessibility, contrast and consumer runtime conformance are unmeasured. Content bindings describe host adaptation points, not type-equivalent converters."
+        "Source-only import and token-read measurements are lower bounds; shared anatomy, accessibility, contrast and consumer runtime conformance remain unmeasured. Content bindings describe host adaptation points, not type-equivalent converters."
       ],
       "slot": "sections.page-header",
       "status": "subset",
@@ -747,7 +747,7 @@
       "missingSlots": [],
       "notes": [
         "Host supplies pageCount and onPageChange. Only numbered pages exist; load-more and cursor modes are absent. Default visible messages remain in source.",
-        "Descriptor only; source imports, token reads, shared anatomy, accessibility, contrast and consumer runtime conformance are unmeasured. Content bindings describe host adaptation points, not type-equivalent converters."
+        "Source-only import and token-read measurements are lower bounds; shared anatomy, accessibility, contrast and consumer runtime conformance remain unmeasured. Content bindings describe host adaptation points, not type-equivalent converters."
       ],
       "slot": "sections.pagination",
       "status": "subset",
@@ -766,7 +766,7 @@
       "missingSlots": [],
       "notes": [
         "People have portrait, initials and one href, not an arbitrary links array. Root is ul; header and band are external.",
-        "Descriptor only; source imports, token reads, shared anatomy, accessibility, contrast and consumer runtime conformance are unmeasured. Content bindings describe host adaptation points, not type-equivalent converters."
+        "Source-only import and token-read measurements are lower bounds; shared anatomy, accessibility, contrast and consumer runtime conformance remain unmeasured. Content bindings describe host adaptation points, not type-equivalent converters."
       ],
       "slot": "sections.people",
       "status": "candidate",
@@ -782,7 +782,7 @@
       "missingSlots": [],
       "notes": [
         "Host supplies authored tiers and CTA nodes. Interval is displayed copy; controls is an arbitrary region, not a built-in interval toggle or checkout. Source also composes Matrix for comparison.",
-        "Descriptor only; source imports, token reads, shared anatomy, accessibility, contrast and consumer runtime conformance are unmeasured. Content bindings describe host adaptation points, not type-equivalent converters."
+        "Source-only import and token-read measurements are lower bounds; shared anatomy, accessibility, contrast and consumer runtime conformance remain unmeasured. Content bindings describe host adaptation points, not type-equivalent converters."
       ],
       "slot": "sections.pricing",
       "status": "candidate",
@@ -802,7 +802,7 @@
       ],
       "notes": [
         "Status renders as a Badge the host composes into the title row. No grouped ledger API, so groups stay unmapped; RecordLedger is an independent exported part, not an automatically configured DetailView composition.",
-        "Descriptor only; source imports, token reads, shared anatomy, accessibility, contrast and consumer runtime conformance are unmeasured. Content bindings describe host adaptation points, not type-equivalent converters."
+        "Source-only import and token-read measurements are lower bounds; shared anatomy, accessibility, contrast and consumer runtime conformance remain unmeasured. Content bindings describe host adaptation points, not type-equivalent converters."
       ],
       "slot": "sections.record-detail",
       "status": "subset",
@@ -820,7 +820,7 @@
       "missingSlots": [],
       "notes": [
         "Footer is an arbitrary host region; emptyState is required. Source includes loading, empty and error APIs, but no runtime observations are supplied.",
-        "Descriptor only; source imports, token reads, shared anatomy, accessibility, contrast and consumer runtime conformance are unmeasured. Content bindings describe host adaptation points, not type-equivalent converters."
+        "Source-only import and token-read measurements are lower bounds; shared anatomy, accessibility, contrast and consumer runtime conformance remain unmeasured. Content bindings describe host adaptation points, not type-equivalent converters."
       ],
       "slot": "sections.resource-list",
       "status": "candidate",
@@ -839,7 +839,7 @@
       "missingSlots": [],
       "notes": [
         "Heading level is configurable via level; id is inherited HTML input. align and density map to the block's own props; the block enforces no two-action maximum.",
-        "Descriptor only; source imports, token reads, shared anatomy, accessibility, contrast and consumer runtime conformance are unmeasured. Content bindings describe host adaptation points, not type-equivalent converters."
+        "Source-only import and token-read measurements are lower bounds; shared anatomy, accessibility, contrast and consumer runtime conformance remain unmeasured. Content bindings describe host adaptation points, not type-equivalent converters."
       ],
       "slot": "sections.section-header",
       "status": "candidate",
@@ -865,7 +865,7 @@
       "missingSlots": [],
       "notes": [
         "Each group is a FieldGroup fieldset holding host fields; dirty is a list of group ids marked unsaved. The save bar region renders only while a group is dirty. Persistence and toasts belong to the host; the source renders its own h2 rather than shared section-header anatomy.",
-        "Descriptor only; source imports, token reads, shared anatomy, accessibility, contrast and consumer runtime conformance are unmeasured. Content bindings describe host adaptation points, not type-equivalent converters."
+        "Source-only import and token-read measurements are lower bounds; shared anatomy, accessibility, contrast and consumer runtime conformance remain unmeasured. Content bindings describe host adaptation points, not type-equivalent converters."
       ],
       "slot": "sections.settings",
       "status": "candidate",
@@ -892,7 +892,7 @@
         "Credentials and code are bounded host-selected UI phases only. Provider actions delegate ids; form submission delegates the current phase. No authentication, auth-provider import, redirect, session check, completed state, account creation, invitation, or reset behavior is claimed.",
         "Without a Section host the sample renders disabled controls. Pending blocks repeated submission and value changes. The host performs validation and authenticates; errors remain host-supplied copy.",
         "Descriptor only; package fill coverage does not prove consumer runtime conformance.",
-        "Descriptor only; source imports, token reads, shared anatomy, accessibility, contrast and consumer runtime conformance are unmeasured. Content bindings describe host adaptation points, not type-equivalent converters."
+        "Source-only import and token-read measurements are lower bounds; shared anatomy, accessibility, contrast and consumer runtime conformance remain unmeasured. Content bindings describe host adaptation points, not type-equivalent converters."
       ],
       "slot": "sections.sign-in-form",
       "status": "subset",
@@ -913,7 +913,7 @@
       "missingSlots": [],
       "notes": [
         "Each item renders one Stat (label, value, optional delta/trend and description); no sparkline or meter composition is claimed.",
-        "Descriptor only; source imports, token reads, shared anatomy, accessibility, contrast and consumer runtime conformance are unmeasured. Content bindings describe host adaptation points, not type-equivalent converters."
+        "Source-only import and token-read measurements are lower bounds; shared anatomy, accessibility, contrast and consumer runtime conformance remain unmeasured. Content bindings describe host adaptation points, not type-equivalent converters."
       ],
       "slot": "sections.stats",
       "status": "candidate",
@@ -932,7 +932,7 @@
       "missingSlots": [],
       "notes": [
         "Host supplies labels including disposition labels and legendLabel. Not-offered is a separate disposition, never a fourth readiness state.",
-        "Descriptor only; source imports, token reads, shared anatomy, accessibility, contrast and consumer runtime conformance are unmeasured. Content bindings describe host adaptation points, not type-equivalent converters."
+        "Source-only import and token-read measurements are lower bounds; shared anatomy, accessibility, contrast and consumer runtime conformance remain unmeasured. Content bindings describe host adaptation points, not type-equivalent converters."
       ],
       "slot": "sections.status-list",
       "status": "candidate",
@@ -954,7 +954,7 @@
       "missingSlots": [],
       "notes": [
         "Steps require authored ordinal and heading; no per-step status member. Source owns its heading and layout.",
-        "Descriptor only; source imports, token reads, shared anatomy, accessibility, contrast and consumer runtime conformance are unmeasured. Content bindings describe host adaptation points, not type-equivalent converters."
+        "Source-only import and token-read measurements are lower bounds; shared anatomy, accessibility, contrast and consumer runtime conformance remain unmeasured. Content bindings describe host adaptation points, not type-equivalent converters."
       ],
       "slot": "sections.steps",
       "status": "candidate",
@@ -970,7 +970,7 @@
       "missingSlots": [],
       "notes": [
         "Host supplies label. Items are heading ids/labels; optional scroll tracking is source behavior, not a conformance observation.",
-        "Descriptor only; source imports, token reads, shared anatomy, accessibility, contrast and consumer runtime conformance are unmeasured. Content bindings describe host adaptation points, not type-equivalent converters."
+        "Source-only import and token-read measurements are lower bounds; shared anatomy, accessibility, contrast and consumer runtime conformance remain unmeasured. Content bindings describe host adaptation points, not type-equivalent converters."
       ],
       "slot": "sections.table-of-contents",
       "status": "candidate",
@@ -988,7 +988,7 @@
       "missingSlots": [],
       "notes": [
         "Tasks have status, not a done checkbox, due or assignee API. Host supplies statusLabels, progressText and emptyState. No checkbox/avatar composition is claimed.",
-        "Descriptor only; source imports, token reads, shared anatomy, accessibility, contrast and consumer runtime conformance are unmeasured. Content bindings describe host adaptation points, not type-equivalent converters."
+        "Source-only import and token-read measurements are lower bounds; shared anatomy, accessibility, contrast and consumer runtime conformance remain unmeasured. Content bindings describe host adaptation points, not type-equivalent converters."
       ],
       "slot": "sections.task-list",
       "status": "candidate",
@@ -1004,7 +1004,7 @@
       "missingSlots": [],
       "notes": [
         "Source selects single or grid geometry from enforced item counts; quote attribution uses attributorName/attributorRole/portrait. Root is ul with external anatomy.",
-        "Descriptor only; source imports, token reads, shared anatomy, accessibility, contrast and consumer runtime conformance are unmeasured. Content bindings describe host adaptation points, not type-equivalent converters."
+        "Source-only import and token-read measurements are lower bounds; shared anatomy, accessibility, contrast and consumer runtime conformance remain unmeasured. Content bindings describe host adaptation points, not type-equivalent converters."
       ],
       "slot": "sections.testimonials",
       "status": "candidate",
@@ -1023,7 +1023,7 @@
       "missingSlots": [],
       "notes": [
         "Events carry a machine-readable date, host-formatted dateText, heading and optional description. Root is an ordered list; the marker rail is drawn with line tokens, not a separator component.",
-        "Descriptor only; source imports, token reads, shared anatomy, accessibility, contrast and consumer runtime conformance are unmeasured. Content bindings describe host adaptation points, not type-equivalent converters."
+        "Source-only import and token-read measurements are lower bounds; shared anatomy, accessibility, contrast and consumer runtime conformance remain unmeasured. Content bindings describe host adaptation points, not type-equivalent converters."
       ],
       "slot": "sections.timeline",
       "status": "candidate",
@@ -1039,7 +1039,7 @@
       "missingSlots": [],
       "notes": [
         "Each meter record renders through UsageMeter (host-formatted used, limit and period text, optional thresholds). Root is section; an empty list requires emptyState.",
-        "Descriptor only; source imports, token reads, shared anatomy, accessibility, contrast and consumer runtime conformance are unmeasured. Content bindings describe host adaptation points, not type-equivalent converters."
+        "Source-only import and token-read measurements are lower bounds; shared anatomy, accessibility, contrast and consumer runtime conformance remain unmeasured. Content bindings describe host adaptation points, not type-equivalent converters."
       ],
       "slot": "sections.usage",
       "status": "candidate",
@@ -1055,7 +1055,7 @@
       "missingSlots": [],
       "notes": [
         "Current step is controlled by id; the host supplies onNext/onBack and validation. Progress defaults to a ProgressBar; review shows on the last step only. No band or section-header anatomy.",
-        "Descriptor only; source imports, token reads, shared anatomy, accessibility, contrast and consumer runtime conformance are unmeasured. Content bindings describe host adaptation points, not type-equivalent converters."
+        "Source-only import and token-read measurements are lower bounds; shared anatomy, accessibility, contrast and consumer runtime conformance remain unmeasured. Content bindings describe host adaptation points, not type-equivalent converters."
       ],
       "slot": "sections.wizard",
       "status": "candidate",

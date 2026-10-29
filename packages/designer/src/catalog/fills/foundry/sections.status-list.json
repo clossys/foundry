@@ -26,7 +26,64 @@
   },
   "sections": {
     "status-list": {
+      "composes": [
+        "sections.section-header"
+      ],
       "configs": {},
+      "consumption": {
+        "scanStatus": "lower-bound",
+        "scannedComposes": [
+          "sections.section-header"
+        ],
+        "scannedReads": {
+          "assets": [],
+          "components": [],
+          "tokens": [
+            "tokens.body-size",
+            "tokens.border-color",
+            "tokens.caption-size",
+            "tokens.heading-size",
+            "tokens.radius",
+            "tokens.spacing",
+            "tokens.status-color",
+            "tokens.surface-color",
+            "tokens.text-color",
+            "tokens.typeface"
+          ]
+        },
+        "sourceFiles": [
+          {
+            "path": "packages/designer/src/blocks/section-ground.ts",
+            "sha256": "a519649f96cb339f1128fc385e68d67b6af063ed492ac2c285f09c1740c98679"
+          },
+          {
+            "path": "packages/designer/src/blocks/StatusList.tsx",
+            "sha256": "204e545347bb1c9ff0ee11e24bf4889bb5e9e50f135986d04f9401b1fb67e606"
+          },
+          {
+            "path": "packages/designer/src/catalog-core/provenance-attrs.ts",
+            "sha256": "8f2a725224764fc1d7cd7ec94f2f569cad02117251bf6c2a668c8a1b51e7c443"
+          },
+          {
+            "path": "packages/designer/src/components/internal/cx.ts",
+            "sha256": "0a7524b0340fec42e1abb216013a353e950aa738d9ba0f2ebdedd5293337bab3"
+          }
+        ],
+        "unresolved": [
+          {
+            "code": "DF2",
+            "evidence": "unresolved injected runtime inventory ../../tokens/tokens.js#TOKENS",
+            "file": "packages/designer/src/components/internal/cx.ts",
+            "line": 2
+          },
+          {
+            "code": "DF2",
+            "evidence": "unresolved dynamic import; runtime source is not inferred",
+            "file": "packages/designer/src/components/internal/cx.ts",
+            "line": 80
+          }
+        ]
+      },
       "impl": {
         "export": "StatusList",
         "kind": "package",
@@ -35,7 +92,7 @@
       "license": "MIT",
       "notes": [
         "Host supplies labels including disposition labels and legendLabel. Not-offered is a separate disposition, never a fourth readiness state.",
-        "Descriptor only; source imports, token reads, shared anatomy, accessibility, contrast and consumer runtime conformance are unmeasured. Content bindings describe host adaptation points, not type-equivalent converters."
+        "Source-only import and token-read measurements are lower bounds; shared anatomy, accessibility, contrast and consumer runtime conformance remain unmeasured. Content bindings describe host adaptation points, not type-equivalent converters."
       ],
       "parts": [],
       "pin": {
@@ -48,6 +105,21 @@
         "status.not-offered": "./blocks#StatusList.items[].disposition=not-offered",
         "status.partial": "./blocks#StatusList.items[].state=partial",
         "status.planned": "./blocks#StatusList.items[].state=planned"
+      },
+      "reads": {
+        "assets": [],
+        "tokens": [
+          "tokens.body-size",
+          "tokens.border-color",
+          "tokens.caption-size",
+          "tokens.heading-size",
+          "tokens.radius",
+          "tokens.spacing",
+          "tokens.status-color",
+          "tokens.surface-color",
+          "tokens.text-color",
+          "tokens.typeface"
+        ]
       },
       "slot": "sections.status-list",
       "slotMap": {

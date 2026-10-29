@@ -1,4 +1,5 @@
 import sectionSlots from "../catalog/slots/sections.json" with { type: "json" };
+import { measuredSurfaceConsumption, type FoundrySurfaceConsumption } from "./foundry-surface-consumption.js";
 import type { SectionSlot } from "../catalog-core/sections-contract.js";
 import type { FillMeta } from "../catalog-core/types.js";
 import { stableStringify } from "../catalog-core/stable.js";
@@ -12,7 +13,7 @@ export interface FoundrySectionMapping {
   configs?: Readonly<Record<string, string>>;
   notes?: readonly string[];
 }
-export interface FoundrySectionDescriptor {
+export interface FoundrySectionDescriptor extends FoundrySurfaceConsumption {
   slot: string;
   source: "foundry";
   slotMap: Readonly<Record<string, string>>;
@@ -118,7 +119,7 @@ export const FOUNDRY_SECTION_MAP: Readonly<Record<string, FoundrySectionMapping>
 
 const GAPS: Readonly<Record<string, string>> = {
 };
-const UNMEASURED = "Descriptor only; source imports, token reads, shared anatomy, accessibility, contrast and consumer runtime conformance are unmeasured. Content bindings describe host adaptation points, not type-equivalent converters.";
+const UNMEASURED = "Source-only import and token-read measurements are lower bounds; shared anatomy, accessibility, contrast and consumer runtime conformance remain unmeasured. Content bindings describe host adaptation points, not type-equivalent converters.";
 
 /** Pure generation; does not install a package, copy source or assert conformance. */
 export function importFoundrySections(input: FoundrySectionImportInput = {}): FoundrySectionImport {
@@ -164,6 +165,7 @@ export function importFoundrySections(input: FoundrySectionImportInput = {}): Fo
       slot: slot.id, source: "foundry", slotMap, propMap,
       configs: Object.fromEntries(Object.entries(entry.configs ?? {}).sort(([a], [b]) => compare(a, b))),
       parts: [], impl: { kind: "package", module: `${PACKAGE}/blocks`, export: entry.export }, license: "MIT", pin, notes,
+      ...measuredSurfaceConsumption(slot.id, pin),
     };
     fills.push({ $extensions: { "com.clossys.fill": {
       id: `foundry/${slot.id}`, slot: slot.id, source: "foundry", mode: "implementation", sourceAddress: pin.export,
