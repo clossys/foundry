@@ -57,10 +57,10 @@ describe("sections.logo-mark", () => {
     const slot = loadSectionRegistry().slots.find(row => row.id === leaf)!;
     expect(slot).toMatchObject({ status: "draft", contract: { surface: "site", passageSchema: "passages.logo-mark", slots: [{ name: "mark", type: "media", required: true }], copy: { sourceLocale: "en", fields: [] } } });
     expect(slot.contract.slots).toHaveLength(1);
-    expect(FOUNDRY_SECTION_MAP["logo-mark"]).toMatchObject({ export: "SectionFrame", slotMap: { mark: "./blocks#SectionFrame.children" } });
-    const imported = importFoundrySections({ slots: [slot], mappings: { "logo-mark": FOUNDRY_SECTION_MAP["logo-mark"]! }, exports: ["SectionFrame"] });
+    expect(FOUNDRY_SECTION_MAP["logo-mark"]).toMatchObject({ export: "LogoHero", slotMap: { mark: "./blocks#LogoHero.mark" } });
+    const imported = importFoundrySections({ slots: [slot], mappings: { "logo-mark": FOUNDRY_SECTION_MAP["logo-mark"]! }, exports: ["LogoHero"] });
     expect(imported.coverage[0]).toMatchObject({ slot: leaf, status: "candidate", supportedSlots: ["mark"], missingRequiredSlots: [] });
-    expect(imported.fills[0]?.sections["logo-mark"]).toMatchObject({ impl: { export: "SectionFrame" }, configs: {} });
+    expect(imported.fills[0]?.sections["logo-mark"]).toMatchObject({ impl: { export: "LogoHero" }, configs: { default: "member=brand.mark-only" } });
   });
 
   it("emits the selected logo-mark section and fill provenance", () => {

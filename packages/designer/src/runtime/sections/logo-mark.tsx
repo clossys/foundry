@@ -1,5 +1,4 @@
-import { SectionFrame as DesignerSectionFrame } from "../../blocks/SectionFrame.js";
-import { Logomark } from "../../components/Logomark.js";
+import { LogoHero } from "../../blocks/LogoHero.js";
 import { dsAttrs } from "../../catalog-core/provenance-attrs.js";
 import type { SurfaceRendererEntry } from "../contract.js";
 import { object, optionalText, readSectionContent, required, SectionContentError, text } from "./group-a-content.js";
@@ -30,10 +29,6 @@ export const logoMarkRenderer: SurfaceRendererEntry = {
     if (!["mono", "positive", "reversed"].includes(member)) throw new SectionContentError(content.leaf, `mark.member ${member} is not registered for assets.mark`);
     const src = text(content, mark.src, "mark.src");
     const name = optionalText(content, mark.name, "mark.name");
-    return <DesignerSectionFrame {...dsAttrs("sections", "sections.logo-mark", "foundry/sections.logo-mark")}>
-      <div role={name === undefined ? undefined : "img"} aria-label={name} dir="auto" className="flex min-h-screen items-center justify-center">
-        <Logomark src={src} size="lg" />
-      </div>
-    </DesignerSectionFrame>;
+    return <LogoHero {...dsAttrs("sections", "sections.logo-mark", "foundry/sections.logo-mark")} mark={src} name={name} member="brand.mark-only" />;
   },
 };

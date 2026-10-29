@@ -623,9 +623,7 @@
       "missingRequiredSlots": [],
       "missingSlots": [],
       "notes": [
-        "The public SectionFrame export supplies section framing. The private sections.logo-mark runtime adapter resolves the consumer's assets.mark media record to a Logomark child, with no extra public block export.",
-        "mark maps to children as a host adaptation point, not a type-equivalent media-record prop. Its record carries slot=assets.mark, a declared member (mono, positive or reversed), src and optional asset name metadata. The runtime port has no asset resolver; the consumer must supply the registered member's resolved artwork and list it in assetClosure.",
-        "The section has no copy slots or authored copy fields. Optional asset name metadata labels the image group and is never rendered as visible text. Without metadata the logo remains decorative.",
+        "Permanent logo-mark id uses LogoHero brand.mark-only; the host resolves mark asset metadata to mark and optional name props.",
         "Source-only import and token-read measurements are lower bounds; shared anatomy, accessibility, contrast and consumer runtime conformance remain unmeasured. Content bindings describe host adaptation points, not type-equivalent converters."
       ],
       "slot": "sections.logo-mark",

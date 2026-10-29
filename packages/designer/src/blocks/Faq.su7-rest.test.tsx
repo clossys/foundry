@@ -1,3 +1,6 @@
+import { readFileSync } from "node:fs";
+import { fileURLToPath } from "node:url";
+import { dirname, resolve } from "node:path";
 import { describe, expect, it } from "vitest";
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
@@ -25,4 +28,20 @@ describe("FAQ disclosure group", () => {
     expect(html).toContain("First answer"); expect(html).toContain("Second answer");
     expect(html.match(/<details/g)).toHaveLength(2);
   });
+});
+
+// The same native motion policy serves client panels and server details.
+it.each(["details-motion", "disclosure-panel-motion", "disclosure-icon-motion"])("keeps the reduced-motion branch for %s", name => {
+  const css = readFileSync(resolve(dirname(fileURLToPath(import.meta.url)), "../../styles/theme-keys.css"), "utf8");
+  const start = css.indexOf(`@utility ${name} {`);
+  expect(start).toBeGreaterThan(-1);
+  const end = css.indexOf("@utility ", start + 1);
+  const body = css.slice(start, end < 0 ? undefined : end);
+  expect(body).toMatch(/@media \(prefers-reduced-motion: reduce\)[\s\S]*transition-duration: 0s/);
+});
+
+it("keeps group row ids unique across FAQ instances with the same authored keys", () => {
+  const { container } = render(<><Faq items={items} /><Faq items={items} /></>);
+  const ids = Array.from(container.querySelectorAll("[id]")).map(element => element.id);
+  expect(new Set(ids).size).toBe(ids.length);
 });
