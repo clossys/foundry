@@ -353,6 +353,9 @@
     "!dist/catalog-core/__fixtures__/**"
   ],
   "scripts": {
+    "check": "npm run check:usage-graph",
+    "check:usage-graph": "node scripts/usage-graph.mjs --check",
+    "test:usage-graph": "node --test scripts/usage-graph.test.mjs",
     "build": "tsc -p tsconfig.json",
     "prepublishOnly": "node ../../scripts/check-name-collision.mjs . && npm run build",
     "typecheck": "tsc -p tsconfig.json --noEmit",
