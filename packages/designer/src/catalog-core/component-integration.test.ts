@@ -187,8 +187,10 @@ describe("SYNTHETIC components through the public composite facade", () => {
   });
   it("keeps the public barrel browser safe with only the exact pinned parser dependency graph", async () => {
     await componentBrowserClosure();
-    expect(client.loadCatalog().slots).toHaveLength(98);
-    expect(client.loadBuildCatalog().slots).toHaveLength(210);
+    // The independent rail inventory proof checks the complete new join.
+    const added = new Set(["assets.icon-panel-left", ...["command", "dropdown-menu", "empty", "item", "scroll-area", "sheet", "sidebar"].map(leaf => `components.${leaf}`)]);
+    expect(client.loadCatalog().slots.filter(slot => !added.has(slot.id))).toHaveLength(98);
+    expect(client.loadBuildCatalog().slots.filter(slot => !added.has(slot.id))).toHaveLength(210);
   });
 });
 

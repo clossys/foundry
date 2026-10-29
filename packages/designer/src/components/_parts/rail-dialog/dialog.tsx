@@ -2,7 +2,7 @@
 
 import { Icon as LibraryIcon } from "../../icon/index.js"
 import * as React from "react"
-import { cn } from "../../_parts/rail-utils/index.js"
+import { cn, resolveRailCopy, RAIL_COPY_REFS, type CopyResolver } from "../../_parts/rail-utils/index.js"
 import {
   Dialog as DialogPrimitive,
   DialogTrigger as DialogTriggerPrimitive,
@@ -21,7 +21,9 @@ function DialogTrigger({ ...props }: DialogTriggerPrimitiveProps) {
 
 function DialogClose({
   className,
+  /** @default "outline" */
   variant = "outline",
+  /** @default "default" */
   size = "default",
   ...props
 }: React.ComponentProps<typeof Button>) {
@@ -49,7 +51,7 @@ function DialogOverlay({
     <ModalOverlayPrimitive
       data-slot="dialog-overlay"
       className={cn(
-        "data-entering:library-enter data-exiting:library-exit data-exiting:library-fade data-entering:library-fade bg-(--color-overlay-scrim) duration-(--ui-duration-fast) supports-backdrop-filter:backdrop-blur-xs fixed inset-0 isolate z-(--ui-z-modal)",
+        "data-entering:library-enter data-exiting:library-exit data-exiting:library-fade data-entering:library-fade bg-(--color-overlay-scrim) motion-safe:duration-(--ui-duration-fast) motion-reduce:transition-none motion-reduce:animate-none motion-reduce:duration-0 supports-backdrop-filter:backdrop-blur-xs fixed inset-0 isolate z-(--ui-z-modal)",
         className
       )}
       {...props}
@@ -60,23 +62,26 @@ function DialogOverlay({
 }
 
 function Dialog({
+  copyResolver,
   className,
   children,
+  /** @default true */
   showCloseButton = true,
+  /** @default true */
   isDismissable = true,
   ...props
-}: Omit<ModalOverlayPrimitiveProps, "className" | "children"> &
+}: (Omit<ModalOverlayPrimitiveProps, "className" | "children"> &
   Pick<React.ComponentProps<typeof ModalPrimitive>, "isDismissable"> & {
     className?: string
     children: React.ReactNode
     showCloseButton?: boolean
-  }) {
+  }) & { copyResolver?: CopyResolver }) {
   return (
     <DialogOverlay isDismissable={isDismissable} {...props}>
       <ModalPrimitive
         data-slot="dialog-content"
         className={cn(
-          "bg-(--color-overlay-surface) text-(--color-ink-primary) data-entering:library-enter data-exiting:library-exit data-exiting:library-fade data-entering:library-fade data-exiting:library-zoom data-entering:library-zoom ring-(--color-ink-primary)/10 grid max-w-[calc(100%-var(--spacing-2xl))] gap-(--spacing-lg) rounded-(--radius-control) p-(--spacing-lg) text-(length:--text-sm) ring-(length:--ui-border-hairline) duration-(--ui-duration-fast) sm:max-w-(--ui-width-notice-max) fixed top-1/2 left-1/2 z-(--ui-z-modal) w-full -translate-x-1/2 -translate-y-1/2 focus-visible:outline-solid focus-visible:outline-(length:--ui-border-focus) focus-visible:outline-offset-(--ui-focus-offset) focus-visible:outline-(--color-focus-ring)",
+          "bg-(--color-overlay-surface) text-(--color-ink-primary) data-entering:library-enter data-exiting:library-exit data-exiting:library-fade data-entering:library-fade data-exiting:library-zoom data-entering:library-zoom ring-(--color-ink-primary)/10 grid max-w-[calc(100%-var(--spacing-2xl))] gap-(--spacing-lg) rounded-(--radius-control) p-(--spacing-lg) text-(length:--text-sm) ring-(length:--ui-border-hairline) motion-safe:duration-(--ui-duration-fast) motion-reduce:transition-none motion-reduce:animate-none motion-reduce:duration-0 sm:max-w-(--ui-width-notice-max) fixed top-1/2 start-1/2 z-(--ui-z-modal) w-full ltr:-translate-x-1/2 rtl:translate-x-1/2 -translate-y-1/2 focus-visible:outline-solid focus-visible:outline-(length:--ui-border-focus) focus-visible:outline-offset-(--ui-focus-offset) focus-visible:outline-(--color-focus-ring)",
           className
         )}
       >
@@ -88,11 +93,11 @@ function Dialog({
           {showCloseButton && (
             <DialogClose
               variant="ghost"
-              className="absolute top-(--spacing-sm) right-(--spacing-sm)"
+              className="absolute top-(--spacing-sm) end-(--spacing-sm)"
               size="icon-sm"
             >
               <LibraryIcon asset="assets.icon-close" decorative />
-              <span className="sr-only">Close</span>
+              <span className="sr-only">{resolveRailCopy(copyResolver, RAIL_COPY_REFS["sheet.close"])}</span>
             </DialogClose>
           )}
         </DialogPrimitive>
@@ -112,13 +117,15 @@ function DialogHeader({ className, ...props }: React.ComponentProps<"div">) {
 }
 
 function DialogFooter({
+  copyResolver,
   className,
+  /** @default false */
   showCloseButton = false,
   children,
   ...props
-}: React.ComponentProps<"div"> & {
+}: (React.ComponentProps<"div"> & {
   showCloseButton?: boolean
-}) {
+}) & { copyResolver?: CopyResolver }) {
   return (
     <div
       data-slot="dialog-footer"
@@ -129,7 +136,7 @@ function DialogFooter({
       {...props}
     >
       {children}
-      {showCloseButton && <DialogClose variant="outline">Close</DialogClose>}
+      {showCloseButton && <DialogClose variant="outline">{resolveRailCopy(copyResolver, RAIL_COPY_REFS["sheet.close"])}</DialogClose>}
     </div>
   )
 }

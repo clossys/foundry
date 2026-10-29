@@ -2,8 +2,7 @@
 
 import { Icon as LibraryIcon } from "../icon/index.js"
 import * as React from "react"
-import { cva } from "class-variance-authority"
-import { cn } from "../_parts/rail-utils/index.js"
+import { cn, classNames, type ClassValue, type VariantProps } from "../_parts/rail-utils/index.js"
 import {
   composeRenderProps,
   Header as HeaderPrimitive,
@@ -25,9 +24,13 @@ function DropdownMenuTrigger({
 }
 
 function DropdownMenu({
+  /** @default "dropdown-menu-content" */
   "data-slot": dataSlot = "dropdown-menu-content",
+  /** @default "bottom start" */
   placement = "bottom start",
+  /** @default 4 */
   offset = 4,
+  /** @default 0 */
   crossOffset = 0,
   className,
   children,
@@ -51,7 +54,7 @@ function DropdownMenu({
       offset={offset}
       crossOffset={crossOffset}
       className={cn(
-        "data-entering:library-enter data-exiting:library-exit data-exiting:library-fade data-entering:library-fade data-exiting:library-zoom data-entering:library-zoom data-[placement=bottom]:library-slide-top data-[placement=left]:library-slide-right data-[placement=right]:library-slide-left data-[placement=top]:library-slide-bottom ring-(--color-ink-primary)/10 bg-(--color-overlay-surface) text-(--color-ink-primary) min-w-(--spacing-6xl) rounded-(--radius-control) p-(--spacing-xs) shadow-(--ui-elevation-floating) ring-(length:--ui-border-hairline) duration-(--ui-duration-fast) animate-none! relative bg-(--color-overlay-surface)/70 before:pointer-events-none before:absolute before:inset-0 before:-z-1 before:rounded-[inherit] before:backdrop-blur-2xl before:backdrop-saturate-150 **:data-[slot$=-item]:focus:bg-(--color-ink-primary)/10 **:data-[slot$=-item]:data-highlighted:bg-(--color-ink-primary)/10 **:data-[slot$=-separator]:bg-(--color-ink-primary)/5 **:data-[slot$=-trigger]:focus:bg-(--color-ink-primary)/10 **:data-[slot$=-trigger]:aria-expanded:bg-(--color-ink-primary)/10! **:data-[variant=destructive]:focus:bg-(--color-ink-primary)/10! **:data-[variant=destructive]:text-(--color-ink-primary)! **:data-[variant=destructive]:**:text-(--color-ink-primary)! **:data-[slot$=-item]:data-focused:bg-(--color-ink-primary)/10 z-(--ui-z-modal) w-(--trigger-width) origin-(--trigger-anchor-point) overflow-x-hidden overflow-y-auto focus-visible:outline-solid focus-visible:outline-(length:--ui-border-focus) focus-visible:outline-offset-(--ui-focus-offset) focus-visible:outline-(--color-focus-ring) data-exiting:overflow-hidden",
+        "data-entering:library-enter data-exiting:library-exit data-exiting:library-fade data-entering:library-fade data-exiting:library-zoom data-entering:library-zoom data-[placement=bottom]:library-slide-top data-[placement=left]:library-slide-right data-[placement=right]:library-slide-left data-[placement=top]:library-slide-bottom ring-(--color-ink-primary)/10 bg-(--color-overlay-surface) text-(--color-ink-primary) min-w-(--spacing-6xl) rounded-(--radius-control) p-(--spacing-xs) shadow-(--ui-elevation-floating) ring-(length:--ui-border-hairline) motion-safe:duration-(--ui-duration-fast) motion-reduce:transition-none motion-reduce:animate-none motion-reduce:duration-0 motion-safe:animate-none! relative bg-(--color-overlay-surface)/70 before:pointer-events-none before:absolute before:inset-0 before:-z-1 before:rounded-[inherit] before:backdrop-blur-2xl before:backdrop-saturate-150 **:data-[slot$=-item]:focus:bg-(--color-ink-primary)/10 **:data-[slot$=-item]:data-highlighted:bg-(--color-ink-primary)/10 **:data-[slot$=-separator]:bg-(--color-ink-primary)/5 **:data-[slot$=-trigger]:focus:bg-(--color-ink-primary)/10 **:data-[slot$=-trigger]:aria-expanded:bg-(--color-ink-primary)/10! **:data-[variant=destructive]:focus:bg-(--color-ink-primary)/10! **:data-[variant=destructive]:text-(--color-ink-primary)! **:data-[variant=destructive]:**:text-(--color-ink-primary)! **:data-[slot$=-item]:data-focused:bg-(--color-ink-primary)/10 z-(--ui-z-modal) w-(--trigger-width) origin-(--trigger-anchor-point) overflow-x-hidden overflow-y-auto focus-visible:outline-solid focus-visible:outline-(length:--ui-border-focus) focus-visible:outline-offset-(--ui-focus-offset) focus-visible:outline-(--color-focus-ring) data-exiting:overflow-hidden",
         className
       )}
     >
@@ -84,28 +87,34 @@ function DropdownMenuLabel({
     <HeaderPrimitive
       data-slot="dropdown-menu-label"
       data-inset={inset}
-      className={cn("text-(--color-ink-muted) px-(--spacing-sm) py-(--spacing-xs) text-(length:--text-xs) font-(weight:--font-weight-medium) data-inset:pl-(--spacing-xl)", className)}
+      className={cn("text-(--color-ink-muted) px-(--spacing-sm) py-(--spacing-xs) text-(length:--text-xs) font-(weight:--font-weight-medium) data-inset:ps-(--spacing-xl)", className)}
       {...props}
     />
   )
 }
 
-const dropdownMenuItemVariants = cva(
-  "group/dropdown-menu-item relative flex cursor-default items-center focus-visible:outline-solid focus-visible:outline-(length:--ui-border-focus) focus-visible:outline-offset-(--ui-focus-offset) focus-visible:outline-(--color-focus-ring) select-none data-disabled:pointer-events-none data-disabled:opacity-(--ui-alpha-disabled) [&_svg]:pointer-events-none [&_svg]:shrink-0",
-  {
-    variants: {
-      selectionMode: {
-        none: "focus:bg-(--color-surface-selected) focus:text-(--color-ink-primary) data-[variant=destructive]:text-(--color-status-danger) data-[variant=destructive]:focus:bg-(--color-status-danger)/10 dark:data-[variant=destructive]:focus:bg-(--color-status-danger)/20 data-[variant=destructive]:focus:text-(--color-status-danger) data-[variant=destructive]:*:[svg]:text-(--color-status-danger) not-data-[variant=destructive]:focus:**:text-(--color-ink-primary) gap-(--spacing-sm) rounded-(--radius-control) px-(--spacing-sm) py-(--spacing-xs) text-(length:--text-sm) data-inset:pl-(--spacing-xl) [&_svg:not([class*='size-'])]:size-(--spacing-lg)",
-        single: "focus:bg-(--color-surface-selected) focus:text-(--color-ink-primary) focus:**:text-(--color-ink-primary) gap-(--spacing-sm) rounded-(--radius-control) py-(--spacing-xs) pr-(--spacing-2xl) pl-(--spacing-sm) text-(length:--text-sm) data-inset:pl-(--spacing-xl) [&_svg:not([class*='size-'])]:size-(--spacing-lg)",
-        multiple: "focus:bg-(--color-surface-selected) focus:text-(--color-ink-primary) focus:**:text-(--color-ink-primary) gap-(--spacing-sm) rounded-(--radius-control) py-(--spacing-xs) pr-(--spacing-2xl) pl-(--spacing-sm) text-(length:--text-sm) data-inset:pl-(--spacing-xl) [&_svg:not([class*='size-'])]:size-(--spacing-lg)",
-      },
-    },
-  }
-)
+const dropdownMenuItemVariants_DEFINITION = {"base":"group/dropdown-menu-item relative flex cursor-default items-center focus-visible:outline-solid focus-visible:outline-(length:--ui-border-focus) focus-visible:outline-offset-(--ui-focus-offset) focus-visible:outline-(--color-focus-ring) select-none data-disabled:pointer-events-none data-disabled:opacity-(--ui-alpha-disabled) [&_svg]:pointer-events-none [&_svg]:shrink-0","variants":{"selectionMode":{"none":"focus:bg-(--color-surface-selected) focus:text-(--color-ink-primary) data-[variant=destructive]:text-(--color-status-danger) data-[variant=destructive]:focus:bg-(--color-status-danger)/10 dark:data-[variant=destructive]:focus:bg-(--color-status-danger)/20 data-[variant=destructive]:focus:text-(--color-status-danger) data-[variant=destructive]:*:[svg]:text-(--color-status-danger) not-data-[variant=destructive]:focus:**:text-(--color-ink-primary) gap-(--spacing-sm) rounded-(--radius-control) px-(--spacing-sm) py-(--spacing-xs) text-(length:--text-sm) data-inset:ps-(--spacing-xl) [&_svg:not([class*='size-'])]:size-(--spacing-lg)","single":"focus:bg-(--color-surface-selected) focus:text-(--color-ink-primary) focus:**:text-(--color-ink-primary) gap-(--spacing-sm) rounded-(--radius-control) py-(--spacing-xs) pe-(--spacing-2xl) ps-(--spacing-sm) text-(length:--text-sm) data-inset:ps-(--spacing-xl) [&_svg:not([class*='size-'])]:size-(--spacing-lg)","multiple":"focus:bg-(--color-surface-selected) focus:text-(--color-ink-primary) focus:**:text-(--color-ink-primary) gap-(--spacing-sm) rounded-(--radius-control) py-(--spacing-xs) pe-(--spacing-2xl) ps-(--spacing-sm) text-(length:--text-sm) data-inset:ps-(--spacing-xl) [&_svg:not([class*='size-'])]:size-(--spacing-lg)"}},"defaultVariants":{}}
+function dropdownMenuItemVariants(props: { "selectionMode"?: "none" | "single" | "multiple" | null; class?: ClassValue; className?: ClassValue } = {}) {
+  props ??= {}
+  const definition = dropdownMenuItemVariants_DEFINITION
+  const key = (value: unknown) => typeof value === "boolean" ? String(value) : value === 0 ? "0" : value
+  const supplied = Object.fromEntries(Object.entries(props).filter(([, value]) => value !== undefined))
+  const values: { [axis: string]: unknown } = { ...definition.defaultVariants, ...supplied }
+  const selected = Object.entries(definition.variants).map(([axis, choices]) => {
+    if ((props as { [axis: string]: unknown })[axis] === null) return null
+    const value = key((props as { [axis: string]: unknown })[axis]) || key((definition.defaultVariants as { [axis: string]: unknown })[axis])
+    return (choices as { [value: string]: ClassValue })[String(value)]
+  })
+  const compound = (([]) as { [key: string]: unknown }[]).flatMap(({ class: value, className, ...conditions }) =>
+    Object.entries(conditions).every(([axis, expected]) => Array.isArray(expected) ? expected.includes(values[axis]) : values[axis] === expected)
+      ? [value as ClassValue, className as ClassValue] : [])
+  return classNames(definition.base, selected, compound, props.class, props.className)
+}
 
 function DropdownMenuItem({
   className,
   inset,
+  /** @default "default" */
   variant = "default",
   children,
   ...props
@@ -130,7 +139,7 @@ function DropdownMenuItem({
           <>
             {selectionMode !== "none" ? (
               <span
-                className="absolute right-(--spacing-sm) flex items-center justify-center pointer-events-none"
+                className="absolute end-(--spacing-sm) flex items-center justify-center pointer-events-none"
                 data-slot={
                   selectionMode === "single"
                     ? "dropdown-menu-radio-item-indicator"
@@ -170,7 +179,7 @@ function DropdownMenuSubTrigger({
       data-inset={inset}
       textValue={typeof children === "string" ? children : props.textValue}
       className={cn(
-        "focus:bg-(--color-surface-selected) focus:text-(--color-ink-primary) data-open:bg-(--color-surface-selected) data-open:text-(--color-ink-primary) not-data-[variant=destructive]:focus:**:text-(--color-ink-primary) gap-(--spacing-sm) rounded-(--radius-control) px-(--spacing-sm) py-(--spacing-xs) text-(length:--text-sm) data-inset:pl-(--spacing-xl) [&_svg:not([class*='size-'])]:size-(--spacing-lg) flex cursor-default items-center focus-visible:outline-solid focus-visible:outline-(length:--ui-border-focus) focus-visible:outline-offset-(--ui-focus-offset) focus-visible:outline-(--color-focus-ring) select-none [&_svg]:pointer-events-none [&_svg]:shrink-0",
+        "focus:bg-(--color-surface-selected) focus:text-(--color-ink-primary) data-open:bg-(--color-surface-selected) data-open:text-(--color-ink-primary) not-data-[variant=destructive]:focus:**:text-(--color-ink-primary) gap-(--spacing-sm) rounded-(--radius-control) px-(--spacing-sm) py-(--spacing-xs) text-(length:--text-sm) data-inset:ps-(--spacing-xl) [&_svg:not([class*='size-'])]:size-(--spacing-lg) flex cursor-default items-center focus-visible:outline-solid focus-visible:outline-(length:--ui-border-focus) focus-visible:outline-offset-(--ui-focus-offset) focus-visible:outline-(--color-focus-ring) select-none [&_svg]:pointer-events-none [&_svg]:shrink-0",
         className
       )}
       {...props}
@@ -178,7 +187,7 @@ function DropdownMenuSubTrigger({
       {composeRenderProps(children, (children) => (
         <>
           {children}
-          <LibraryIcon asset="assets.icon-chevron-right" decorative className="ml-auto" />
+          <LibraryIcon asset="assets.icon-chevron-right" mirrorInRtl decorative className="ms-auto"  />
         </>
       ))}
     </MenuItemPrimitive>
@@ -186,8 +195,10 @@ function DropdownMenuSubTrigger({
 }
 
 function DropdownMenuSubContent({
+  /** @default "end top" */
   placement = "end top",
   crossOffset = -3,
+  /** @default 0 */
   offset = 0,
   className,
   ...props
@@ -196,7 +207,7 @@ function DropdownMenuSubContent({
     <DropdownMenu
       data-slot="dropdown-menu-sub-content"
       className={cn(
-        "ring-(--color-ink-primary)/10 bg-(--color-overlay-surface) text-(--color-ink-primary) min-w-(--spacing-6xl) rounded-(--radius-control) p-(--spacing-xs) shadow-(--ui-elevation-floating) ring-(length:--ui-border-hairline) duration-(--ui-duration-fast) animate-none! relative bg-(--color-overlay-surface)/70 before:pointer-events-none before:absolute before:inset-0 before:-z-1 before:rounded-[inherit] before:backdrop-blur-2xl before:backdrop-saturate-150 **:data-[slot$=-item]:focus:bg-(--color-ink-primary)/10 **:data-[slot$=-item]:data-highlighted:bg-(--color-ink-primary)/10 **:data-[slot$=-separator]:bg-(--color-ink-primary)/5 **:data-[slot$=-trigger]:focus:bg-(--color-ink-primary)/10 **:data-[slot$=-trigger]:aria-expanded:bg-(--color-ink-primary)/10! **:data-[variant=destructive]:focus:bg-(--color-ink-primary)/10! **:data-[variant=destructive]:text-(--color-ink-primary)! **:data-[variant=destructive]:**:text-(--color-ink-primary)! w-auto",
+        "ring-(--color-ink-primary)/10 bg-(--color-overlay-surface) text-(--color-ink-primary) min-w-(--spacing-6xl) rounded-(--radius-control) p-(--spacing-xs) shadow-(--ui-elevation-floating) ring-(length:--ui-border-hairline) motion-safe:duration-(--ui-duration-fast) motion-reduce:transition-none motion-reduce:animate-none motion-reduce:duration-0 motion-safe:animate-none! relative bg-(--color-overlay-surface)/70 before:pointer-events-none before:absolute before:inset-0 before:-z-1 before:rounded-[inherit] before:backdrop-blur-2xl before:backdrop-saturate-150 **:data-[slot$=-item]:focus:bg-(--color-ink-primary)/10 **:data-[slot$=-item]:data-highlighted:bg-(--color-ink-primary)/10 **:data-[slot$=-separator]:bg-(--color-ink-primary)/5 **:data-[slot$=-trigger]:focus:bg-(--color-ink-primary)/10 **:data-[slot$=-trigger]:aria-expanded:bg-(--color-ink-primary)/10! **:data-[variant=destructive]:focus:bg-(--color-ink-primary)/10! **:data-[variant=destructive]:text-(--color-ink-primary)! **:data-[variant=destructive]:**:text-(--color-ink-primary)! w-auto",
         className
       )}
       placement={placement}
@@ -227,7 +238,7 @@ function DropdownMenuShortcut({
   return (
     <span
       data-slot="dropdown-menu-shortcut"
-      className={cn("text-(--color-ink-muted) group-focus/dropdown-menu-item:text-(--color-ink-primary) ml-auto text-(length:--text-xs) tracking-(--tracking-label)", className)}
+      className={cn("text-(--color-ink-muted) group-focus/dropdown-menu-item:text-(--color-ink-primary) ms-auto text-(length:--text-xs) tracking-(--tracking-label)", className)}
       {...props}
     />
   )

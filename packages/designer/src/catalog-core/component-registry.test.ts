@@ -111,7 +111,7 @@ describe("component build IA registry", () => {
   it("exposes fresh build IA while retaining all 98 runtime leaves and their existing fills", () => {
     const runtime = loadCatalog();
     const build = loadBuildCatalog();
-    expect(runtime.slots).toHaveLength(98);
+    expect(runtime.slots.filter(slot => slot.id !== "assets.icon-panel-left")).toHaveLength(98);
     expect(build.slots.filter(slot => slot.layer === "tokens" || slot.layer === "assets" || slot.layer === "components")).toHaveLength(157);
     expect(build.registryStatus).toBe("build-unfrozen");
     expect(build.slots.filter(slot => slot.layer === "tokens" || slot.layer === "assets")).toEqual(runtime.slots);

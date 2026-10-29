@@ -2,7 +2,7 @@
 
 import { Icon as LibraryIcon } from "../icon/index.js"
 import * as React from "react"
-import { cn } from "../_parts/rail-utils/index.js"
+import { cn, resolveRailCopy, RAIL_COPY_REFS, type CopyResolver } from "../_parts/rail-utils/index.js"
 import {
   Heading,
   ModalOverlay as ModalOverlayPrimitive,
@@ -21,7 +21,9 @@ function SheetTrigger({ ...props }: SheetTriggerPrimitiveProps) {
 
 function SheetClose({
   className,
+  /** @default "outline" */
   variant = "outline",
+  /** @default "default" */
   size = "default",
   ...props
 }: React.ComponentProps<typeof Button>) {
@@ -50,7 +52,7 @@ function SheetOverlay({
       data-slot="sheet-overlay"
       isDismissable
       className={cn(
-        "bg-(--color-overlay-scrim) supports-backdrop-filter:backdrop-blur-xs fixed inset-0 z-(--ui-z-modal) transition-opacity duration-(--ui-duration-default) ease-(--ease-default) duration-(--ui-duration-fast) data-entering:opacity-0 data-exiting:opacity-0",
+        "bg-(--color-overlay-scrim) supports-backdrop-filter:backdrop-blur-xs fixed inset-0 z-(--ui-z-modal) motion-safe:transition-opacity motion-reduce:transition-none motion-reduce:animate-none motion-reduce:duration-0 motion-safe:duration-(--ui-duration-default) ease-(--ease-default) motion-safe:duration-(--ui-duration-fast) data-entering:opacity-0 data-exiting:opacity-0",
         className
       )}
       {...props}
@@ -61,25 +63,28 @@ function SheetOverlay({
 }
 
 function Sheet({
+  copyResolver,
   className,
   children,
+  /** @default "right" */
   side = "right",
+  /** @default true */
   showCloseButton = true,
   ...props
-}: Omit<ModalOverlayPrimitiveProps, "className" | "children"> &
+}: (Omit<ModalOverlayPrimitiveProps, "className" | "children"> &
   Pick<React.ComponentProps<typeof ModalPrimitive>, "isDismissable"> & {
     className?: string
     children: React.ReactNode
     side?: "top" | "right" | "bottom" | "left"
     showCloseButton?: boolean
-  }) {
+  }) & { copyResolver?: CopyResolver }) {
   return (
     <SheetOverlay {...props}>
       <ModalPrimitive
         data-slot="sheet-content"
         data-side={side}
         className={cn(
-          "bg-(--color-overlay-surface) text-(--color-ink-primary) fixed z-(--ui-z-modal) flex flex-col gap-(--spacing-lg) bg-clip-padding text-(length:--text-sm) shadow-(--ui-elevation-floating) transition duration-(--ui-duration-default) ease-(--ease-default) duration-(--ui-duration-default) ease-(--ease-default) data-[side=bottom]:inset-x-0 data-[side=bottom]:bottom-0 data-[side=bottom]:h-auto data-[side=bottom]:border-t-(length:--ui-border-hairline) data-[side=left]:inset-y-0 data-[side=left]:left-0 data-[side=left]:h-full data-[side=left]:w-3/4 data-[side=left]:border-r-(length:--ui-border-hairline) data-[side=right]:inset-y-0 data-[side=right]:right-0 data-[side=right]:h-full data-[side=right]:w-3/4 data-[side=right]:border-l-(length:--ui-border-hairline) data-[side=top]:inset-x-0 data-[side=top]:top-0 data-[side=top]:h-auto data-[side=top]:border-b-(length:--ui-border-hairline) data-[side=left]:sm:max-w-(--ui-width-notice-max) data-[side=right]:sm:max-w-(--ui-width-notice-max) data-entering:opacity-0 data-exiting:opacity-0 data-[side=bottom]:data-entering:translate-y-(--spacing-2xl) data-[side=bottom]:data-exiting:translate-y-(--spacing-2xl) data-[side=left]:data-entering:-translate-x-(--spacing-2xl) data-[side=left]:data-exiting:-translate-x-(--spacing-2xl) data-[side=right]:data-entering:translate-x-(--spacing-2xl) data-[side=right]:data-exiting:translate-x-(--spacing-2xl) data-[side=top]:data-entering:-translate-y-(--spacing-2xl) data-[side=top]:data-exiting:-translate-y-(--spacing-2xl)",
+          "bg-(--color-overlay-surface) text-(--color-ink-primary) fixed z-(--ui-z-modal) flex flex-col gap-(--spacing-lg) bg-clip-padding text-(length:--text-sm) shadow-(--ui-elevation-floating) motion-safe:transition motion-reduce:transition-none motion-reduce:animate-none motion-reduce:duration-0 motion-safe:duration-(--ui-duration-default) ease-(--ease-default) data-[side=bottom]:inset-x-0 data-[side=bottom]:bottom-0 data-[side=bottom]:h-auto data-[side=bottom]:border-t-(length:--ui-border-hairline) data-[side=left]:inset-y-0 data-[side=left]:start-0 data-[side=left]:h-full data-[side=left]:w-3/4 data-[side=left]:border-e-(length:--ui-border-hairline) data-[side=right]:inset-y-0 data-[side=right]:end-0 data-[side=right]:h-full data-[side=right]:w-3/4 data-[side=right]:border-s-(length:--ui-border-hairline) data-[side=top]:inset-x-0 data-[side=top]:top-0 data-[side=top]:h-auto data-[side=top]:border-b-(length:--ui-border-hairline) data-[side=left]:sm:max-w-(--ui-width-notice-max) data-[side=right]:sm:max-w-(--ui-width-notice-max) data-entering:opacity-0 data-exiting:opacity-0 data-[side=bottom]:data-entering:translate-y-(--spacing-2xl) data-[side=bottom]:data-exiting:translate-y-(--spacing-2xl) data-[side=left]:data-entering:ltr:-translate-x-(--spacing-2xl) data-[side=left]:data-entering:rtl:translate-x-(--spacing-2xl) data-[side=left]:data-exiting:ltr:-translate-x-(--spacing-2xl) data-[side=left]:data-exiting:rtl:translate-x-(--spacing-2xl) data-[side=right]:data-entering:ltr:translate-x-(--spacing-2xl) data-[side=right]:data-entering:rtl:-translate-x-(--spacing-2xl) data-[side=right]:data-exiting:ltr:translate-x-(--spacing-2xl) data-[side=right]:data-exiting:rtl:-translate-x-(--spacing-2xl) data-[side=top]:data-entering:-translate-y-(--spacing-2xl) data-[side=top]:data-exiting:-translate-y-(--spacing-2xl)",
           className
         )}
       >
@@ -91,11 +96,11 @@ function Sheet({
           {showCloseButton && (
             <SheetClose
               variant="ghost"
-              className="absolute top-(--spacing-md) right-(--spacing-md)"
+              className="absolute top-(--spacing-md) end-(--spacing-md)"
               size="icon-sm"
             >
               <LibraryIcon asset="assets.icon-close" decorative />
-              <span className="sr-only">Close</span>
+              <span className="sr-only">{resolveRailCopy(copyResolver, RAIL_COPY_REFS["sheet.close"])}</span>
             </SheetClose>
           )}
         </SheetPrimitive>
@@ -107,7 +112,9 @@ function Sheet({
 function SheetContent({
   className,
   children,
+  /** @default "right" */
   side = "right",
+  /** @default true */
   showCloseButton = true,
   ...props
 }: React.ComponentProps<typeof Sheet> & {

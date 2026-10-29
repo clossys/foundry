@@ -1,5 +1,5 @@
 import { beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
-import { render, screen, fireEvent, waitFor } from "@testing-library/react";
+import { render, screen, fireEvent, waitFor, cleanup } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { Button as AriaButton } from "react-aria-components";
 import { readFileSync } from "node:fs";
@@ -12,14 +12,24 @@ import { planComponentDefaults } from "../catalog-core/component-defaults.js";
 import { applyDecisions } from "../library-cli/apply-decisions.js";
 import { componentOf } from "../catalog-core/resolve-components.js";
 import { importShadcnAriaRail, SHADCN_ARIA_RAIL_ITEMS } from "./shadcn-aria-rail.js";
-import { SidebarProvider, Sidebar, SidebarTrigger } from "../components/sidebar/index.js";
-import { Command, CommandInput, CommandList, CommandItem } from "../components/command/index.js";
+import { SidebarProvider, Sidebar, SidebarTrigger, SidebarRail } from "../components/sidebar/index.js";
+import { Command, CommandDialog, CommandInput, CommandList, CommandItem } from "../components/command/index.js";
 import { SheetTrigger, Sheet, SheetTitle } from "../components/sheet/index.js";
 import { Empty, EmptyTitle, EmptyDescription } from "../components/empty/index.js";
 import { Item, ItemTitle } from "../components/item/index.js";
 import { ScrollArea } from "../components/scroll-area/index.js";
 import { DropdownMenuTrigger, DropdownMenu, DropdownMenuItem } from "../components/dropdown-menu/index.js";
+import { DialogFooter } from "../components/_parts/rail-dialog/dialog.js";
+import adaptations from "./vendor/shadcn-aria-rail.adapters.json" with { type: "json" };
 import { Kbd } from "../components/preview-runtime/components/keyboard/kbd.js";
+const drafts = JSON.parse(readFileSync(pathResolve(import.meta.dirname, "../../../writer/src/catalog/records/admin-studio.r1.en.json"), "utf8"));
+const draftResolver = (ref: { readonly id: string }) => {
+  const record = drafts.records.find((row: { id: string }) => row.id === ref.id);
+  if (!record || record.status !== "draft") throw new Error(`Missing Writer draft ${ref.id}`);
+  return { ref, text: record.text as string };
+};
+const toggleLabel = draftResolver({ id: "st.qbaewx3e0y" }).text;
+
 
 function adoption() {
   const values = loadCatalog(), bundles = loadCatalogBundles(), registry = loadComponentRegistry();
@@ -50,9 +60,9 @@ beforeEach(() => {
 });
 
 const interactions: Record<string, () => Promise<void>> = {
-  sidebar: async () => { const user = userEvent.setup(); const { container } = render(<SidebarProvider><Sidebar collapsible="icon"><SidebarTrigger /></Sidebar></SidebarProvider>); expect(container.querySelector('[data-state="expanded"]')).toBeTruthy(); await user.click(screen.getByRole("button", { name: "Toggle Sidebar" })); expect(container.querySelector('[data-state="collapsed"]')).toBeTruthy(); },
-  command: async () => { const user = userEvent.setup(), action = vi.fn(); render(<Command><CommandInput aria-label="Find command" /><CommandList aria-label="Commands" onAction={action}><CommandItem id="run">Run</CommandItem><CommandItem id="stop">Stop</CommandItem></CommandList></Command>); await user.type(screen.getByRole("searchbox"), "Run"); await user.keyboard("{ArrowDown}{ArrowUp}{Enter}"); expect(action).toHaveBeenCalledWith("run", undefined); action.mockClear(); await user.click(screen.getByRole("menuitem", { name: "Run" })); expect(action).toHaveBeenCalledWith("run", undefined); },
-  sheet: async () => { const user = userEvent.setup(); render(<SheetTrigger><AriaButton>Open panel</AriaButton><Sheet><SheetTitle>Panel</SheetTitle></Sheet></SheetTrigger>); await user.click(screen.getByRole("button", { name: "Open panel" })); expect(screen.getByRole("dialog", { name: "Panel" })).toBeInTheDocument(); await user.click(screen.getByRole("button", { name: "Close" })); await waitFor(() => expect(screen.queryByRole("dialog")).not.toBeInTheDocument()); },
+  sidebar: async () => { const user = userEvent.setup(); const { container } = render(<SidebarProvider><Sidebar collapsible="icon" copyResolver={draftResolver}><SidebarTrigger copyResolver={draftResolver} /></Sidebar></SidebarProvider>); expect(container.querySelector('[data-state="expanded"]')).toBeTruthy(); await user.click(screen.getByRole("button", { name: toggleLabel })); expect(container.querySelector('[data-state="collapsed"]')).toBeTruthy(); },
+  command: async () => { const user = userEvent.setup(), action = vi.fn(); render(<Command><CommandInput aria-label="Find command" copyResolver={draftResolver} /><CommandList aria-label="Commands" onAction={action}><CommandItem id="run">Run</CommandItem><CommandItem id="stop">Stop</CommandItem></CommandList></Command>); await user.type(screen.getByRole("searchbox"), "Run"); await user.keyboard("{ArrowDown}{ArrowUp}{Enter}"); expect(action).toHaveBeenCalledWith("run", undefined); action.mockClear(); await user.click(screen.getByRole("menuitem", { name: "Run" })); expect(action).toHaveBeenCalledWith("run", undefined); },
+  sheet: async () => { const user = userEvent.setup(); render(<SheetTrigger><AriaButton>Open panel</AriaButton><Sheet copyResolver={draftResolver}><SheetTitle>Panel</SheetTitle></Sheet></SheetTrigger>); await user.click(screen.getByRole("button", { name: "Open panel" })); expect(screen.getByRole("dialog", { name: "Panel" })).toBeInTheDocument(); await user.click(screen.getByRole("button", { name: "Close" })); await waitFor(() => expect(screen.queryByRole("dialog")).not.toBeInTheDocument()); },
   empty: async () => { render(<Empty aria-label="Empty inbox"><EmptyTitle>No messages</EmptyTitle><EmptyDescription>Compose a message.</EmptyDescription></Empty>); expect(screen.getByLabelText("Empty inbox")).toHaveTextContent("No messagesCompose a message."); },
   item: async () => { render(<Item href="/details"><ItemTitle>Details</ItemTitle></Item>); expect(screen.getByRole("link", { name: "Details" })).toHaveAttribute("href", "/details"); },
   "scroll-area": async () => { const scroll = vi.fn(); render(<ScrollArea role="region" aria-label="History" tabIndex={0} onScroll={scroll}>Earlier messages</ScrollArea>); const region = screen.getByRole("region", { name: "History" }); region.focus(); expect(region).toHaveFocus(); fireEvent.scroll(region, { target: { scrollTop: 20 } }); expect(scroll).toHaveBeenCalled(); },
@@ -79,4 +89,32 @@ describe("official Aria rail adoption", () => {
     }
     await interactions[item]!();
   });
+});
+
+it("resolves every new component chrome identity through actual Writer-backed copy ports", async () => {
+  const requested = new Set<string>();
+  const resolver = (ref: { readonly id: string }) => { requested.add(ref.id); return draftResolver(ref); };
+  const text = (key: string) => draftResolver(adaptations.copy.find(row => row.key === key)!.ref).text;
+  const user = userEvent.setup();
+  render(<CommandDialog open showCloseButton copyResolver={resolver}><Command><CommandInput copyResolver={resolver} /><CommandList aria-label="Commands"><CommandItem id="run">Run</CommandItem></CommandList></Command><DialogFooter showCloseButton copyResolver={resolver} /></CommandDialog>);
+  expect(await screen.findByRole("dialog", { name: text("command.title") })).toBeInTheDocument();
+  expect(screen.getByRole("searchbox", { name: text("command.search") })).toBeInTheDocument();
+  expect(screen.getAllByRole("button", { name: text("sheet.close") })).toHaveLength(2);
+  cleanup();
+  render(<SheetTrigger><AriaButton>Open panel</AriaButton><Sheet copyResolver={resolver}><SheetTitle>Panel</SheetTitle></Sheet></SheetTrigger>);
+  await user.click(screen.getByRole("button", { name: "Open panel" }));
+  await user.click(screen.getByRole("button", { name: text("sheet.close") }));
+  cleanup();
+  const previousWidth = window.innerWidth;
+  Object.defineProperty(window, "innerWidth", { configurable: true, value: 400 });
+  try {
+  const { container } = render(<SidebarProvider><Sidebar copyResolver={resolver} /><SidebarTrigger copyResolver={resolver} /><SidebarRail copyResolver={resolver} /></SidebarProvider>);
+  await user.click(container.querySelector('[data-slot="sidebar-trigger"]') as HTMLElement);
+  expect(await screen.findByRole("dialog", { name: text("sidebar.title") })).toBeInTheDocument();
+  expect(screen.getByText(text("sidebar.description"))).toBeInTheDocument();
+  expect([...requested].sort()).toEqual(adaptations.copy.map(row => row.ref.id).sort());
+  } finally {
+    cleanup();
+    Object.defineProperty(window, "innerWidth", { configurable: true, value: previousWidth });
+  }
 });

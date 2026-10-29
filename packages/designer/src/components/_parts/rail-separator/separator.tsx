@@ -6,6 +6,7 @@ import { Separator as SeparatorPrimitive } from "react-aria-components"
 
 function Separator({
   className,
+  /** @default "horizontal" */
   orientation = "horizontal",
   ...props
 }: React.ComponentProps<typeof SeparatorPrimitive>) {

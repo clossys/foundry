@@ -175,6 +175,11 @@
       "item": "command",
       "deps": [
         {
+          "name": "@clossys/designer",
+          "version": "0.12.0",
+          "license": "MIT"
+        },
+        {
           "name": "react",
           "version": "19.3.0",
           "license": "MIT"
@@ -183,16 +188,6 @@
           "name": "react-aria-components",
           "version": "1.21.1",
           "license": "Apache-2.0"
-        },
-        {
-          "name": "class-variance-authority",
-          "version": "0.7.1",
-          "license": "Apache-2.0"
-        },
-        {
-          "name": "clsx",
-          "version": "2.1.1",
-          "license": "MIT"
         },
         {
           "name": "tailwind-merge",
@@ -220,7 +215,7 @@
       "outputSha256": [
         {
           "path": "components/_parts/rail-button/button.tsx",
-          "sha256": "8d7b0bef533e698433273b386915ba145dc32c4cbc5e23cab52fc288a893bfc9"
+          "sha256": "599cc0e8705180e233b0816ae371a1cfebb68a21404f613ba2c676e73cac2368"
         },
         {
           "path": "components/_parts/rail-button/index.ts",
@@ -228,7 +223,7 @@
         },
         {
           "path": "components/_parts/rail-dialog/dialog.tsx",
-          "sha256": "e18fe15ce1f1b3b668f7b6277200cf51d372db713e358f45e006787a748869c2"
+          "sha256": "b45b24d6614a08af4e27d1ffb139fb21164cb270efa3a1a2634eac0b5a0bd00a"
         },
         {
           "path": "components/_parts/rail-dialog/index.ts",
@@ -240,7 +235,7 @@
         },
         {
           "path": "components/_parts/rail-input-group/input-group.tsx",
-          "sha256": "5860697caa11724928960921c72e5f9996fa3141d09cc701b19f3be7c16d342b"
+          "sha256": "37e522da86c5927f9c88b66e4d8de9fd567cd356dbc4ae861377adfbbb302a53"
         },
         {
           "path": "components/_parts/rail-input/index.ts",
@@ -248,7 +243,7 @@
         },
         {
           "path": "components/_parts/rail-input/input.tsx",
-          "sha256": "e48c7a21d1b48036733dbb92dc79242de45cf574e1d275875ee2299b7a9fea3a"
+          "sha256": "f8a3ae3c7185e067e7b6745ec15142a77f135602c2d4d7d3db218100464d3aea"
         },
         {
           "path": "components/_parts/rail-textarea/index.ts",
@@ -256,15 +251,23 @@
         },
         {
           "path": "components/_parts/rail-textarea/textarea.tsx",
-          "sha256": "ce4ac649a278e72ce0414675abdbd6bc4ab3ab00c0091e0ef027a50e872d7e87"
+          "sha256": "c05332918881bde77d2e5b65f3cdac02e07c48aa488ce24149c379a864d33499"
+        },
+        {
+          "path": "components/_parts/rail-utils/copy.ts",
+          "sha256": "c9bc1359e38859ac1cf6ebb87bcb01d140bf07e2e95917124f8733ba688463cf"
         },
         {
           "path": "components/_parts/rail-utils/index.ts",
-          "sha256": "d3753f708b15cc1ec47bc3136827134b702e2069eebdb0ddefb1806b95d7c1d9"
+          "sha256": "57e883f2e7b51c430a154a1103873d0296e039c9e7b821cfe5922fe99a41b59d"
+        },
+        {
+          "path": "components/_parts/rail-utils/types.ts",
+          "sha256": "172cf78fbee5b9460adb881ea80fa76a5c7e9b98f168d9db15c001575653f5cb"
         },
         {
           "path": "components/command/command.tsx",
-          "sha256": "87cca9baf632341de02972eb118885cd42b52c29c78f374dd7d40c572bec3881"
+          "sha256": "abefbe8fbd0c0b0958678840b9c6b0e17dc9a90b79774db5e66d23c7d249ccec"
         },
         {
           "path": "notices/SHADCN-ARIA-RAIL.md",

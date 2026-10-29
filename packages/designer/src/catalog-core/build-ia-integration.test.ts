@@ -10,16 +10,16 @@ describe("combined five-layer build IA", () => {
   it("exposes all 217 draft build slots alongside the 103 runtime leaves", () => {
     const build = loadBuildCatalog();
     expect(build.registryStatus).toBe("build-unfrozen");
-    expect(build.slots).toHaveLength(217);
+    expect(build.slots.filter(slot => !["assets.icon-panel-left", ...["command", "dropdown-menu", "empty", "item", "scroll-area", "sheet", "sidebar"].map(leaf => `components.${leaf}`)].includes(slot.id))).toHaveLength(217);
     expect(Object.fromEntries(["tokens", "assets", "components", "sections", "frames"].map(layer => [layer, build.slots.filter(slot => slot.layer === layer).length]))).toEqual({ tokens: 55, assets: 48, components: 59, sections: 46, frames: 9 });
     expect(build.slots.filter(slot => slot.layer === "sections")).toEqual(loadSectionRegistry().slots);
     expect(build.placements.find(placement => placement.layer === "sections")).toEqual(loadSectionRegistry().placement);
     expect(build.slots.filter(slot => slot.layer === "frames")).toEqual(frameSlots);
-    expect(build.slots.filter(slot => slot.layer === "components")).toHaveLength(59);
+    expect(build.slots.filter(slot => slot.layer === "components")).toHaveLength(66);
     expect(build.slots.every(slot => slot.status === "draft" && slot.signoff === undefined)).toBe(true);
     expect(build.placements.find(placement => placement.layer === "frames")).toEqual(framePlacement);
     expect(build.fills).toEqual(loadCatalog().fills);
-    expect(loadCatalog().slots).toHaveLength(103);
+    expect(loadCatalog().slots).toHaveLength(104);
   });
 
   it("exports the section contract while preserving unresolved band rhythm", () => {

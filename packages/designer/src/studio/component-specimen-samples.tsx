@@ -236,7 +236,7 @@ function sourceSample(key: string, exports: Namespace): ComponentSpecimenSample 
       const found = parts("SheetTrigger", "SheetHeader", "SheetTitle", "SheetDescription"); if (!found) return undefined;
       const [Trigger, Header, Title, Description] = found as [Renderable, Renderable, Renderable, Renderable];
       const sample = s[key];
-      return { props: {}, children: <Header><Title>{sample.title}</Title><Description>{sample.body}</Description></Header>,
+      return { props: { showCloseButton: false }, children: <Header><Title>{sample.title}</Title><Description>{sample.body}</Description></Header>,
         host: specimen => <Trigger><Button variant="secondary">{sample.trigger}</Button>{specimen}</Trigger> };
     }
     case "components/sidebar/sidebar.tsx#Sidebar": {

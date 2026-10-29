@@ -2,7 +2,7 @@
 
 import { Icon as LibraryIcon } from "../icon/index.js"
 import * as React from "react"
-import { cn } from "../_parts/rail-utils/index.js"
+import { cn, resolveRailCopy, RAIL_COPY_REFS, type CopyResolver } from "../_parts/rail-utils/index.js"
 import {
   Autocomplete,
   Collection,
@@ -62,15 +62,17 @@ function Command({
 }
 
 function CommandDialog({
-  title = "Command Palette",
-  description = "Search for a command to run...",
+  copyResolver,
+  title,
+  description,
   children,
   open,
   onOpenChange,
   className,
+  /** @default false */
   showCloseButton = false,
   ...props
-}: Omit<
+}: (Omit<
   React.ComponentProps<typeof Dialog>,
   "children" | "className" | "isOpen" | "onOpenChange"
 > & {
@@ -81,9 +83,10 @@ function CommandDialog({
   className?: string
   showCloseButton?: boolean
   children: React.ReactNode
-}) {
+}) & { copyResolver?: CopyResolver }) {
   return (
     <Dialog
+      copyResolver={copyResolver}
       isOpen={open}
       onOpenChange={onOpenChange}
       className={cn(
@@ -95,23 +98,24 @@ function CommandDialog({
       {...props}
     >
       <DialogHeader className="sr-only">
-        <DialogTitle>{title}</DialogTitle>
-        <DialogDescription>{description}</DialogDescription>
+        <DialogTitle>{title ?? resolveRailCopy(copyResolver, RAIL_COPY_REFS["command.title"])}</DialogTitle>
+        <DialogDescription>{description ?? resolveRailCopy(copyResolver, RAIL_COPY_REFS["command.description"])}</DialogDescription>
       </DialogHeader>
       {children}
     </Dialog>
   )
 }
 
-function CommandInput({ className, ...props }: InputProps) {
+function CommandInput({
+  copyResolver, className, ...props }: (InputProps) & { copyResolver?: CopyResolver }) {
   return (
     <SearchField
       autoFocus
-      aria-label={props.placeholder || "Search"}
+      aria-label={props.placeholder || resolveRailCopy(copyResolver, RAIL_COPY_REFS["command.search"])}
       data-slot="command-input-wrapper"
       className="p-(--spacing-xs) pb-0"
     >
-      <InputGroup className="bg-(--color-line-strong)/30 border-(--color-line-strong)/30 h-(--spacing-2xl)! rounded-(--radius-control)! shadow-(--ui-elevation-none)! *:data-[slot=input-group-addon]:pl-(--spacing-sm)!">
+      <InputGroup className="bg-(--color-line-strong)/30 border-(--color-line-strong)/30 h-(--spacing-2xl)! rounded-(--radius-control)! shadow-(--ui-elevation-none)! *:data-[slot=input-group-addon]:ps-(--spacing-sm)!">
         <Input
           {...props}
           data-slot="command-input"
@@ -201,7 +205,7 @@ function CommandItem<T extends object>({
       {composeRenderProps(children, (children) => (
         <>
           {children}
-          <LibraryIcon asset="assets.icon-check" decorative className="ml-auto opacity-0 group-has-data-[slot=command-shortcut]/command-item:hidden group-data-[checked=true]/command-item:opacity-100" />
+          <LibraryIcon asset="assets.icon-check" decorative className="ms-auto opacity-0 group-has-data-[slot=command-shortcut]/command-item:hidden group-data-[checked=true]/command-item:opacity-100" />
         </>
       ))}
     </MenuItem>
@@ -215,7 +219,7 @@ function CommandShortcut({
   return (
     <span
       data-slot="command-shortcut"
-      className={cn("text-(--color-ink-muted) group-data-selected/command-item:text-(--color-ink-primary) ml-auto text-(length:--text-xs) tracking-(--tracking-label) group-data-focused/command-item:text-(--color-ink-primary)", className)}
+      className={cn("text-(--color-ink-muted) group-data-selected/command-item:text-(--color-ink-primary) ms-auto text-(length:--text-xs) tracking-(--tracking-label) group-data-focused/command-item:text-(--color-ink-primary)", className)}
       {...props}
     />
   )

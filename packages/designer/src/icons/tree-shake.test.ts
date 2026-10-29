@@ -76,7 +76,7 @@ async function bundleOutput(code: string): Promise<string> {
 
 describe("tree-shaking (measured against real bundler OUTPUT, not import graph)", () => {
   it("ships exactly the 40 icons this test sweeps over (sanity on the test's own setup)", () => {
-    expect(iconNames).toHaveLength(40);
+    expect(iconNames).toHaveLength(43);
   });
 
   it("markers are unique — no icon name's marker is a substring of another's", () => {

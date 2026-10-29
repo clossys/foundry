@@ -1,0 +1,374 @@
+{
+  "base": "0aa842cfb27009c9413d006339576216f9f788bd",
+  "slots": [
+    {
+      "layer": "tokens",
+      "ids": [
+        "tokens.accent-color",
+        "tokens.action-color",
+        "tokens.animation",
+        "tokens.behavior-timing",
+        "tokens.blur",
+        "tokens.body-size",
+        "tokens.border-color",
+        "tokens.border-width",
+        "tokens.brandmark-size",
+        "tokens.breakpoint",
+        "tokens.caption-size",
+        "tokens.categorical-color",
+        "tokens.chart-color",
+        "tokens.code-size",
+        "tokens.color-ramp",
+        "tokens.container-width",
+        "tokens.content-size",
+        "tokens.control-color",
+        "tokens.control-radius",
+        "tokens.control-size",
+        "tokens.density",
+        "tokens.display-face",
+        "tokens.display-size",
+        "tokens.diverging-color",
+        "tokens.duration",
+        "tokens.easing",
+        "tokens.elevation",
+        "tokens.focus-color",
+        "tokens.focus-outline",
+        "tokens.focus-shadow",
+        "tokens.font-size",
+        "tokens.font-weight",
+        "tokens.gutter",
+        "tokens.heading-size",
+        "tokens.icon-size",
+        "tokens.icon-stroke",
+        "tokens.letter-spacing",
+        "tokens.line-height",
+        "tokens.radius",
+        "tokens.region-width",
+        "tokens.scrim-color",
+        "tokens.sequential-color",
+        "tokens.shadow",
+        "tokens.shift-distance",
+        "tokens.spacing",
+        "tokens.state-opacity",
+        "tokens.status-color",
+        "tokens.surface-color",
+        "tokens.surface-radius",
+        "tokens.text-color",
+        "tokens.touch-target",
+        "tokens.transition-duration",
+        "tokens.transition-easing",
+        "tokens.typeface",
+        "tokens.z-index"
+      ],
+      "rowsSha256": "e8217b07490a48380c130e599ff0834d99fa0fe04c3d49bccf7ce1195629c08a"
+    },
+    {
+      "layer": "assets",
+      "ids": [
+        "assets.lockup",
+        "assets.mark",
+        "assets.favicon",
+        "assets.app-icon",
+        "assets.image-ratio",
+        "assets.image",
+        "assets.video",
+        "assets.pattern",
+        "assets.icon-chevron-down",
+        "assets.icon-chevron-up",
+        "assets.icon-chevron-left",
+        "assets.icon-chevron-right",
+        "assets.icon-arrow-right",
+        "assets.icon-external-link",
+        "assets.icon-home",
+        "assets.icon-search",
+        "assets.icon-close",
+        "assets.icon-check",
+        "assets.icon-settings",
+        "assets.icon-list-view",
+        "assets.icon-grid-view",
+        "assets.icon-theme-light",
+        "assets.icon-theme-dark",
+        "assets.icon-theme-system",
+        "assets.icon-success",
+        "assets.icon-warning",
+        "assets.icon-danger",
+        "assets.icon-info",
+        "assets.icon-user",
+        "assets.icon-team",
+        "assets.icon-organization",
+        "assets.icon-website",
+        "assets.icon-institution",
+        "assets.icon-guide",
+        "assets.icon-document",
+        "assets.icon-document-approved",
+        "assets.icon-folder",
+        "assets.icon-date",
+        "assets.icon-time",
+        "assets.icon-payment",
+        "assets.icon-receipt",
+        "assets.icon-business",
+        "assets.icon-security",
+        "assets.icon-locked",
+        "assets.icon-legal",
+        "assets.icon-package",
+        "assets.icon-layers",
+        "assets.icon-integration"
+      ],
+      "rowsSha256": "09ee4eb890b7cf29c2a0a850141ff181befebcaf8f2523d1e349c0c97eeaa53e"
+    },
+    {
+      "layer": "components",
+      "ids": [
+        "components.avatar",
+        "components.badge",
+        "components.banner",
+        "components.breadcrumbs",
+        "components.button",
+        "components.calendar",
+        "components.card",
+        "components.chart-area",
+        "components.chart-bar",
+        "components.chart-heatmap",
+        "components.chart-line",
+        "components.chart-range",
+        "components.chart-scatter",
+        "components.chart-sparkline",
+        "components.chart-status-strip",
+        "components.chart-waterfall",
+        "components.checkbox",
+        "components.color-picker",
+        "components.combo-box",
+        "components.date-field",
+        "components.date-picker",
+        "components.dialog",
+        "components.disclosure",
+        "components.field",
+        "components.file-trigger",
+        "components.form",
+        "components.grid-list",
+        "components.icon",
+        "components.keyboard",
+        "components.link",
+        "components.logo",
+        "components.menu",
+        "components.meter",
+        "components.native-action",
+        "components.navigation-tree",
+        "components.number-field",
+        "components.popover",
+        "components.progress-bar",
+        "components.radio-group",
+        "components.resize-handle",
+        "components.search-field",
+        "components.select",
+        "components.semantic-content",
+        "components.separator",
+        "components.skeleton",
+        "components.slider",
+        "components.spinner",
+        "components.status-mark",
+        "components.switch",
+        "components.table",
+        "components.tabs",
+        "components.tag-group",
+        "components.text-field",
+        "components.toast",
+        "components.toggle-button",
+        "components.toggle-group",
+        "components.toolbar",
+        "components.tooltip",
+        "components.tree"
+      ],
+      "rowsSha256": "08f79a5e6c7f8dd776630e1b0f6a4af233cbbaebe8d1ef91b0d01f88db88523a"
+    },
+    {
+      "layer": "sections",
+      "ids": [
+        "sections.access-matrix",
+        "sections.account-summary",
+        "sections.activity-feed",
+        "sections.article",
+        "sections.audit-log",
+        "sections.band",
+        "sections.boundary-message",
+        "sections.call-to-action",
+        "sections.cards",
+        "sections.chat",
+        "sections.column-mapper",
+        "sections.comparison",
+        "sections.consent",
+        "sections.content",
+        "sections.data-grid",
+        "sections.data-table",
+        "sections.empty-state",
+        "sections.error-message",
+        "sections.error-state",
+        "sections.explorer",
+        "sections.faq",
+        "sections.features",
+        "sections.filter-builder",
+        "sections.form",
+        "sections.gallery",
+        "sections.hero",
+        "sections.legal-prose",
+        "sections.link-index",
+        "sections.logo-cloud",
+        "sections.logo-hero",
+        "sections.logo-mark",
+        "sections.media",
+        "sections.newsletter",
+        "sections.notices",
+        "sections.page-header",
+        "sections.pagination",
+        "sections.people",
+        "sections.pricing",
+        "sections.record-detail",
+        "sections.resource-list",
+        "sections.section-header",
+        "sections.settings",
+        "sections.sign-in-form",
+        "sections.stats",
+        "sections.status-list",
+        "sections.steps",
+        "sections.table-of-contents",
+        "sections.task-list",
+        "sections.testimonials",
+        "sections.timeline",
+        "sections.usage",
+        "sections.wizard"
+      ],
+      "rowsSha256": "6021e97ea62f5486b44d998c18a24d52100f82e4284cb1bbd5cceec7bfca7435"
+    },
+    {
+      "layer": "frames",
+      "ids": [
+        "frames.document",
+        "frames.site-shell",
+        "frames.app-shell",
+        "frames.auth-shell",
+        "frames.site-header",
+        "frames.app-header",
+        "frames.app-sidebar",
+        "frames.inspector",
+        "frames.site-footer",
+        "frames.sheet",
+        "frames.command"
+      ],
+      "rowsSha256": "67d1306ff9d921f17a4590b55aa7fe2ec19c9981c5b73903c78137de46599531"
+    }
+  ],
+  "descriptors": [
+    {
+      "name": "components.avatar.json",
+      "sha256": "2a8682e8154282422cd376283ed5db58058c896684df4c54534b5d7dec55a6ed"
+    },
+    {
+      "name": "components.badge.json",
+      "sha256": "e626eb00462c0540d46dc866051e3fe34f4db2d04aef88418f121ed527ae9688"
+    },
+    {
+      "name": "components.banner.json",
+      "sha256": "0daa0bcbf8d1391ac5565eb0df48bd5e3d78f164b957aeb40631f078ef52cda2"
+    },
+    {
+      "name": "components.breadcrumbs.json",
+      "sha256": "75dcb4e6308de054fb97b5664b61b92fd54206ddd6853b65b9df4493ea0be55a"
+    },
+    {
+      "name": "components.button.json",
+      "sha256": "5844428e690d19437b7726ca737b28824345d918df2a6e29b5bd18afa044523a"
+    },
+    {
+      "name": "components.calendar.json",
+      "sha256": "91fed28528488984b4f55b7078346ebb5133fc3f827aef7345fe628b4c1f1043"
+    },
+    {
+      "name": "components.card.json",
+      "sha256": "d009f7ec6f8c8054fa938761d53d4510e02fb201b14284ff2e5958e3967557cd"
+    },
+    {
+      "name": "components.checkbox.json",
+      "sha256": "53a0ec6e5cfa43bcc1c9ff53727234318d66933b5a67722e8cd075bb7be2c7c1"
+    },
+    {
+      "name": "components.combo-box.json",
+      "sha256": "80cda8c9ed5e9b27992001016403091a18dbd604003311397b6e2dd33a8228b1"
+    },
+    {
+      "name": "components.coverage.json",
+      "sha256": "2cb89f40f77bad0c80d2524ddce054e65e396f7895dc04f193ad4d5ff79be2ab"
+    },
+    {
+      "name": "components.dialog.json",
+      "sha256": "773304dcfc27d38f13e6172cad484cd748b06500687a36b1ef367abd22b9b228"
+    },
+    {
+      "name": "components.disclosure.json",
+      "sha256": "018a722f834b9ba9bd4d82525aa88e1d4f7a7483192b46e9654c2901dc123693"
+    },
+    {
+      "name": "components.file-trigger.json",
+      "sha256": "7152507a19e623d7969d8ac2aa3eb9eb2efcb76aa9a60071740ca30cd22566bf"
+    },
+    {
+      "name": "components.keyboard.json",
+      "sha256": "b7a2c87713ae3a5dc9c02f41c2c41f40fd838f244ebbea3deb8f416d686d2821"
+    },
+    {
+      "name": "components.menu.json",
+      "sha256": "003e8593db2896bb0941be2cfbcd8068ff849b14410c1f437980fbe4baaefdd5"
+    },
+    {
+      "name": "components.popover.json",
+      "sha256": "9cc7b505debfc5788085ff32a7f837231b2cdfa812586ff8a847f35ab3d70812"
+    },
+    {
+      "name": "components.progress-bar.json",
+      "sha256": "b49124a416332c3cfbddccfbe3913d56e921133db341711d588e2bd94d1d3e30"
+    },
+    {
+      "name": "components.radio-group.json",
+      "sha256": "a363ce61728f70df7c2bcebc826b9d6b612e39f558627272340c571438f8ecbc"
+    },
+    {
+      "name": "components.select.json",
+      "sha256": "102fc5380e80fde22cafdd463d149598694680f728c59d120c973cf83e5d7f34"
+    },
+    {
+      "name": "components.separator.json",
+      "sha256": "414439768698204e4cd752b08021c89f20826dfd03e872e8c5cc77271dec5c97"
+    },
+    {
+      "name": "components.skeleton.json",
+      "sha256": "2840f0a15cbd27f9b2adae250d431fcf4d86b287fb21d6bfae81179072950c1e"
+    },
+    {
+      "name": "components.slider.json",
+      "sha256": "89cd276f3d96bf0abc4b70a3ee15bdc8eebd83b54c0c2aae6f5d4f8e2059696e"
+    },
+    {
+      "name": "components.switch.json",
+      "sha256": "04cd8164f03ca3ad6394feb5fe689cb0abba4bcc74545da38fce5796437af2d6"
+    },
+    {
+      "name": "components.table.json",
+      "sha256": "cdd92af39c70db9a3a90f668ed7d8d5ec5ed037c126e15c241d04920f91e3c10"
+    },
+    {
+      "name": "components.tabs.json",
+      "sha256": "43481a7c5259c30c973871a75c70f6d46c64b423b9f37cfa40dbb60408ff6334"
+    },
+    {
+      "name": "components.toggle-button.json",
+      "sha256": "114b30db25a9001162edfd89a104740282a6a218d442b34550935e54687a5b74"
+    },
+    {
+      "name": "components.toggle-group.json",
+      "sha256": "753e67ca1960b61866e96b77c69d5458e5923386e1e046847528cc1b13ae18b4"
+    },
+    {
+      "name": "components.tooltip.json",
+      "sha256": "da210ae9ddfd6a3e147864c8b980973e9a456d4300569367a49aa621a864bea7"
+    }
+  ]
+}

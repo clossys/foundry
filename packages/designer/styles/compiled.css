@@ -1008,9 +1008,6 @@
   .bottom-md {
     bottom: var(--spacing-md, 12px);
   }
-  .left-1\/2 {
-    left: calc(1 / 2 * 100%);
-  }
   .slider-thumb-vertical {
     left: 50%;
   }
@@ -1261,9 +1258,6 @@
   }
   .mb-sm {
     margin-bottom: var(--spacing-sm, 8px);
-  }
-  .ml-auto {
-    margin-left: auto;
   }
   .box-border {
     box-sizing: border-box;
@@ -2945,9 +2939,6 @@
   .text-end {
     text-align: end;
   }
-  .text-left {
-    text-align: left;
-  }
   .text-start {
     text-align: start;
   }
@@ -3288,11 +3279,6 @@
       transition-duration: 0s;
     }
   }
-  .transition {
-    transition-property: color, background-color, border-color, outline-color, text-decoration-color, fill, stroke, --tw-gradient-from, --tw-gradient-via, --tw-gradient-to, opacity, box-shadow, transform, translate, scale, rotate, filter, -webkit-backdrop-filter, backdrop-filter, display, content-visibility, overlay, pointer-events;
-    transition-timing-function: var(--tw-ease, var(--ease-default, cubic-bezier(.2, 0, 0, 1)));
-    transition-duration: var(--tw-duration, var(--ui-duration-fast, 120ms));
-  }
   .transition-\[color\,box-shadow\] {
     transition-property: color,box-shadow;
     transition-timing-function: var(--tw-ease, var(--ease-default, cubic-bezier(.2, 0, 0, 1)));
@@ -3308,21 +3294,6 @@
     transition-timing-function: var(--tw-ease, var(--ease-default, cubic-bezier(.2, 0, 0, 1)));
     transition-duration: var(--tw-duration, var(--ui-duration-fast, 120ms));
   }
-  .transition-\[left\,right\,width\] {
-    transition-property: left,right,width;
-    transition-timing-function: var(--tw-ease, var(--ease-default, cubic-bezier(.2, 0, 0, 1)));
-    transition-duration: var(--tw-duration, var(--ui-duration-fast, 120ms));
-  }
-  .transition-\[margin\,opacity\] {
-    transition-property: margin,opacity;
-    transition-timing-function: var(--tw-ease, var(--ease-default, cubic-bezier(.2, 0, 0, 1)));
-    transition-duration: var(--tw-duration, var(--ui-duration-fast, 120ms));
-  }
-  .transition-\[width\,height\,padding\] {
-    transition-property: width,height,padding;
-    transition-timing-function: var(--tw-ease, var(--ease-default, cubic-bezier(.2, 0, 0, 1)));
-    transition-duration: var(--tw-duration, var(--ui-duration-fast, 120ms));
-  }
   .transition-\[width\] {
     transition-property: width;
     transition-timing-function: var(--tw-ease, var(--ease-default, cubic-bezier(.2, 0, 0, 1)));
@@ -3335,11 +3306,6 @@
   }
   .transition-colors {
     transition-property: color, background-color, border-color, outline-color, text-decoration-color, fill, stroke, --tw-gradient-from, --tw-gradient-via, --tw-gradient-to;
-    transition-timing-function: var(--tw-ease, var(--ease-default, cubic-bezier(.2, 0, 0, 1)));
-    transition-duration: var(--tw-duration, var(--ui-duration-fast, 120ms));
-  }
-  .transition-opacity {
-    transition-property: opacity;
     transition-timing-function: var(--tw-ease, var(--ease-default, cubic-bezier(.2, 0, 0, 1)));
     transition-duration: var(--tw-duration, var(--ui-duration-fast, 120ms));
   }
@@ -4088,12 +4054,58 @@
       backdrop-filter: var(--tw-backdrop-blur,) var(--tw-backdrop-brightness,) var(--tw-backdrop-contrast,) var(--tw-backdrop-grayscale,) var(--tw-backdrop-hue-rotate,) var(--tw-backdrop-invert,) var(--tw-backdrop-opacity,) var(--tw-backdrop-saturate,) var(--tw-backdrop-sepia,);
     }
   }
+  @media (prefers-reduced-motion: no-preference) {
+    .motion-safe\:transition {
+      transition-property: color, background-color, border-color, outline-color, text-decoration-color, fill, stroke, --tw-gradient-from, --tw-gradient-via, --tw-gradient-to, opacity, box-shadow, transform, translate, scale, rotate, filter, -webkit-backdrop-filter, backdrop-filter, display, content-visibility, overlay, pointer-events;
+      transition-timing-function: var(--tw-ease, var(--ease-default, cubic-bezier(.2, 0, 0, 1)));
+      transition-duration: var(--tw-duration, var(--ui-duration-fast, 120ms));
+    }
+    .motion-safe\:transition-\[margin\,opacity\] {
+      transition-property: margin,opacity;
+      transition-timing-function: var(--tw-ease, var(--ease-default, cubic-bezier(.2, 0, 0, 1)));
+      transition-duration: var(--tw-duration, var(--ui-duration-fast, 120ms));
+    }
+    .motion-safe\:transition-\[width\,height\,padding\] {
+      transition-property: width,height,padding;
+      transition-timing-function: var(--tw-ease, var(--ease-default, cubic-bezier(.2, 0, 0, 1)));
+      transition-duration: var(--tw-duration, var(--ui-duration-fast, 120ms));
+    }
+    .motion-safe\:transition-\[width\] {
+      transition-property: width;
+      transition-timing-function: var(--tw-ease, var(--ease-default, cubic-bezier(.2, 0, 0, 1)));
+      transition-duration: var(--tw-duration, var(--ui-duration-fast, 120ms));
+    }
+    .motion-safe\:transition-all {
+      transition-property: all;
+      transition-timing-function: var(--tw-ease, var(--ease-default, cubic-bezier(.2, 0, 0, 1)));
+      transition-duration: var(--tw-duration, var(--ui-duration-fast, 120ms));
+    }
+    .motion-safe\:transition-colors {
+      transition-property: color, background-color, border-color, outline-color, text-decoration-color, fill, stroke, --tw-gradient-from, --tw-gradient-via, --tw-gradient-to;
+      transition-timing-function: var(--tw-ease, var(--ease-default, cubic-bezier(.2, 0, 0, 1)));
+      transition-duration: var(--tw-duration, var(--ui-duration-fast, 120ms));
+    }
+    .motion-safe\:transition-opacity {
+      transition-property: opacity;
+      transition-timing-function: var(--tw-ease, var(--ease-default, cubic-bezier(.2, 0, 0, 1)));
+      transition-duration: var(--tw-duration, var(--ui-duration-fast, 120ms));
+    }
+    .motion-safe\:transition-transform {
+      transition-property: transform, translate, scale, rotate;
+      transition-timing-function: var(--tw-ease, var(--ease-default, cubic-bezier(.2, 0, 0, 1)));
+      transition-duration: var(--tw-duration, var(--ui-duration-fast, 120ms));
+    }
+  }
   @media (prefers-reduced-motion: reduce) {
     .motion-reduce\:animate-none {
       animation: none;
     }
     .motion-reduce\:transition-none {
       transition-property: none;
+    }
+    .motion-reduce\:duration-0 {
+      --tw-duration: 0ms;
+      transition-duration: 0ms;
     }
   }
   @media (width < 1024px) {
@@ -4869,10 +4881,6 @@
     --tw-translate-x: calc(calc(1 / 2 * 100%) * -1);
     translate: var(--tw-translate-x, 0) var(--tw-translate-y, 0);
   }
-  .rtl\:-translate-x-1\/2:where(:dir(rtl), [dir="rtl"], [dir="rtl"] *) {
-    --tw-translate-x: calc(calc(1 / 2 * 100%) * -1);
-    translate: var(--tw-translate-x, 0) var(--tw-translate-y, 0);
-  }
   .rtl\:translate-x-1\/2:where(:dir(rtl), [dir="rtl"], [dir="rtl"] *) {
     --tw-translate-x: calc(1 / 2 * 100%);
     translate: var(--tw-translate-x, 0) var(--tw-translate-y, 0);
@@ -5267,6 +5275,10 @@
   initial-value: "";
   inherits: false;
 }
+@property --tw-duration {
+  syntax: "*";
+  inherits: false;
+}
 @property --tw-scale-x {
   syntax: "*";
   inherits: false;
@@ -5350,6 +5362,7 @@
       --tw-backdrop-sepia: initial;
       --tw-ease: initial;
       --tw-content: "";
+      --tw-duration: initial;
       --tw-scale-x: 1;
       --tw-scale-y: 1;
       --tw-scale-z: 1;

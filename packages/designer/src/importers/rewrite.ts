@@ -1,3 +1,5 @@
+import { adaptRailClasses } from "./rail-classes.js";
+import railTokenBindings from "./rail-token-bindings.json" with { type: "json" };
 import adapterData from "../catalog/adapters/shadcn@aria.json" with { type: "json" };
 import componentSlots from "../catalog/slots/components.json" with { type: "json" };
 import { sha256 } from "../catalog-core/digest.js";
@@ -931,37 +933,15 @@ function rewriteSource(input: RewriteInput): RewriteResult {
         tokens.add("tokens.focus-outline.width"); tokens.add("tokens.focus-outline.offset"); tokens.add("tokens.focus-color.default");
         return focusOutline("focus-visible:", "--color-focus-ring");
       }
-      const bindings: Record<string, [string, string]> = {
-        "tracking-tight": ["tokens.letter-spacing.meta", "tracking-(--tracking-meta)"],
-        "tracking-widest": ["tokens.letter-spacing.label", "tracking-(--tracking-label)"],
-        "max-w-sm": ["tokens.content-size.notice", "max-w-(--ui-width-notice-max)"],
-        "max-w-xs": ["tokens.content-size.notice", "max-w-(--ui-width-notice-max)"],
-        "max-h-72": ["tokens.content-size.notice", "max-h-(--ui-width-notice-max)"],
-        "leading-normal": ["tokens.line-height.heading", "leading-(--leading-heading)"],
-        "leading-snug": ["tokens.line-height.heading", "leading-(--leading-heading)"],
-        "h-px": ["tokens.border-width.hairline", "h-(--ui-border-hairline)"],
-        "translate-x-px": ["tokens.border-width.hairline", "translate-x-(--ui-border-hairline)"],
-        "-translate-x-px": ["tokens.border-width.hairline", "-translate-x-(--ui-border-hairline)"],
-        "w-[2px]": ["tokens.border-width.rule", "w-(--ui-border-rule)"],
-        "ring-1": ["tokens.border-width.hairline", "ring-(length:--ui-border-hairline)"],
-        "ring-2": ["tokens.border-width.rule", "ring-(length:--ui-border-rule)"],
-        "duration-200": ["tokens.duration.default", "duration-(--ui-duration-default)"],
-        "duration-150": ["tokens.duration.fast", "duration-(--ui-duration-fast)"],
-        "ease-linear": ["tokens.easing.default", "ease-(--ease-default)"],
-        "ease-in-out": ["tokens.easing.default", "ease-(--ease-default)"],
-        "z-10": ["tokens.z-index.sticky", "z-(--ui-z-sticky)"],
-        "z-20": ["tokens.z-index.aside", "z-(--ui-z-aside)"],
-        "z-50": ["tokens.z-index.modal", "z-(--ui-z-modal)"],
-        "bg-black/10": ["tokens.scrim-color.default", "bg-(--color-overlay-scrim)"],
-      };
+
       if (base === "animate-pulse") { notes.push({ file, value, message: "Restyled loading indicator to its static token-bound shape" }); return ""; }
       if (/^rounded-\[calc\(var\(--radius\)-[35]px\)\]$/.test(base)) return bindV2("tokens.radius.default", "rounded-(--radius-default)");
       const inset = /^(m[lr])-\[-0\.(?:3|15)rem\]$/.exec(base);
       if (inset) return bindV2("tokens.spacing.xs", `-${inset[1]}-(--spacing-xs)`);
       if (base === "pl-7") return bindV2("tokens.spacing.xl", "pl-(--spacing-xl)");
       if (base === "min-w-[96px]") return bindV2("tokens.spacing.6xl", "min-w-(--spacing-6xl)");
-      const fixed = bindings[base];
-      if (fixed) return bindV2(...fixed);
+      const fixed = railTokenBindings.utilities.find(row => row.utility === base);
+      if (fixed) return bindV2(fixed.member, fixed.output);
       if (base === "text-sm/relaxed") { tokens.add("tokens.line-height.heading"); return bindV2("tokens.font-size.sm", "text-(length:--text-sm) leading-(--leading-heading)"); }
       const near = /^((?:h|w|min-w|size|mx|top|py|gap|translate-y))-([057]|3\.5|10|0\.5)$/.exec(base);
       if (near) { const member = ({ "0.5": "xs", "3.5": "lg", "5": "xl", "7": "xl", "10": "2xl" } as Record<string,string>)[near[2]!]; if (member) return bindV2(`tokens.spacing.${member}`, `${near[1]}-(${adapter.spacingProperties[member]})`); }
@@ -1427,6 +1407,12 @@ function rewriteSource(input: RewriteInput): RewriteResult {
       expressionTerms = timingTerms(inner.split(/\s+/));
       return quoted[0] + inner.split(/\s+/).map(term => utility(term, file.path)).filter(Boolean).join(" ") + quoted[0];
     });
+    if (input.transformVersion === 2) {
+      for (const row of railTokenBindings.variables) if (content.includes(row.input)) { tokens.add(row.member); content = content.replaceAll(row.input, row.property); }
+      content = adaptRailClasses(content, input.item === "sidebar");
+      content = content.replace(/<LibraryIcon asset="(assets\.icon-(?:chevron-(?:left|right)|arrow-right|panel-left))"([^>]*?)\/>/g,
+        (_match, asset: string, attributes: string) => `<LibraryIcon asset="${asset}" mirrorInRtl${attributes} />`);
+    }
     for (const match of content.matchAll(/(?:from\s*|import\s*\()(["'])([^"']+)\1/g)) if (match[2]!.startsWith("@/") || FOREIGN_ICONS.test(match[2]!)) add("K9", file.path, match[2]!, "Unresolved source import");
     if (/<IconPlaceholder\b|<svg\b|[✓✔✕✖×✗▾▴▸◂▶◀▲▼←→↑↓]/u.test(content)) add("K7", file.path, "glyph", "Unbound icon artwork remains");
     const name = file.path.split("/").at(-1)!;

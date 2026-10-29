@@ -141,6 +141,11 @@
       "item": "dropdown-menu",
       "deps": [
         {
+          "name": "@clossys/designer",
+          "version": "0.12.0",
+          "license": "MIT"
+        },
+        {
           "name": "react",
           "version": "19.3.0",
           "license": "MIT"
@@ -151,16 +156,6 @@
           "license": "Apache-2.0"
         },
         {
-          "name": "class-variance-authority",
-          "version": "0.7.1",
-          "license": "Apache-2.0"
-        },
-        {
-          "name": "clsx",
-          "version": "2.1.1",
-          "license": "MIT"
-        },
-        {
           "name": "tailwind-merge",
           "version": "3.7.0",
           "license": "MIT"
@@ -169,12 +164,20 @@
       "parts": [],
       "outputSha256": [
         {
+          "path": "components/_parts/rail-utils/copy.ts",
+          "sha256": "c9bc1359e38859ac1cf6ebb87bcb01d140bf07e2e95917124f8733ba688463cf"
+        },
+        {
           "path": "components/_parts/rail-utils/index.ts",
-          "sha256": "d3753f708b15cc1ec47bc3136827134b702e2069eebdb0ddefb1806b95d7c1d9"
+          "sha256": "57e883f2e7b51c430a154a1103873d0296e039c9e7b821cfe5922fe99a41b59d"
+        },
+        {
+          "path": "components/_parts/rail-utils/types.ts",
+          "sha256": "172cf78fbee5b9460adb881ea80fa76a5c7e9b98f168d9db15c001575653f5cb"
         },
         {
           "path": "components/dropdown-menu/dropdown-menu.tsx",
-          "sha256": "c49285f31ee71390240116bf572e43fe918849cd6b47ff1b2108635d48e89060"
+          "sha256": "b3cec5d73e72ec7db1573876e7e9fa71eb906cccfd163ca19c46b74de206216f"
         },
         {
           "path": "notices/SHADCN-ARIA-RAIL.md",
