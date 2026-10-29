@@ -177,8 +177,9 @@
           "tokens.touch-target",
           "tokens.typeface"
         ],
-        "assets": [
-          "assets.js"
+        "assets": [],
+        "privateInternal": [
+          "packages/designer/src/frames/site-frame/landing/internal/assets.ts"
         ]
       },
       "composes": [

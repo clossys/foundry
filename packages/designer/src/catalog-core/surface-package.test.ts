@@ -6,15 +6,18 @@ import { describe, expect, it } from "vitest";
 import frameSlots from "../catalog/slots/frames.json" with { type: "json" };
 import { importFoundrySections } from "../importers/foundry-sections.js";
 import { importFoundryFrames } from "../importers/foundry-frames.js";
+import { importFoundryComponents } from "../importers/foundry-components.js";
 import { loadSectionRegistry } from "./sections-contract.js";
 import { loadCatalog } from "./index.js";
 import { loadComponentRegistry } from "./component-registry.js";
 import { applyLibraryChange, libraryHash } from "./api.js";
 import { emitComposite, resolveComposite } from "./library-components.js";
+import { emitSurfaces } from "./surface-emit.js";
 import { sha256 } from "./digest.js";
 import { planSurfaceDefaults, type SurfaceDefaultCandidateDocument } from "./surface-defaults.js";
 import { surfaceEntryOf, surfaceSelection } from "./surface-library.js";
-import type { SurfaceCandidateDocument, SurfacePackageEvidence, SurfaceResolutionOptions } from "./surface-types.js";
+import { selectedPackageClosure, selectedPackageComponentOptions } from "./__fixtures__/surface-engine/selected-package-closure.js";
+import type { SurfaceCandidateDocument, SurfacePackageEvidence } from "./surface-types.js";
 import type { CompositeCatalogData, CompositeLibraryData, FrameSlot } from "./types.js";
 
 const here = dirname(fileURLToPath(import.meta.url));
@@ -30,17 +33,16 @@ const PACKAGES: SurfacePackageEvidence[] = [
   barrel("@clossys/designer/shell/server", "0.12.0", "../shell/server.ts"),
   barrel("@clossys/publisher/web", "0.13.0", "../../../publisher/src/web/index.ts"),
 ];
-const options = (packages: SurfacePackageEvidence[] = PACKAGES): { surfaceOptions: SurfaceResolutionOptions } => ({ surfaceOptions: { packages, measurements: [] } });
+const options = (packages: SurfacePackageEvidence[] = PACKAGES) => ({ componentOptions: selectedPackageComponentOptions(), surfaceOptions: { packages, measurements: [] } });
 
 function setup(edit?: (doc: SurfaceDefaultCandidateDocument) => void) {
   const slots = [...loadSectionRegistry().slots, ...structuredClone(frameSlots) as unknown as FrameSlot[]];
   const fills = structuredClone([...importFoundrySections().fills, ...importFoundryFrames().fills]) as unknown as SurfaceDefaultCandidateDocument[];
-  if (edit) fills.forEach(edit);
   const registry = loadComponentRegistry();
-  const catalog: CompositeCatalogData = { values: loadCatalog(), components: { slots: registry.slots, fills: [] }, surfaces: { slots, fills: fills as unknown as SurfaceCandidateDocument[], transforms: [], rules: [], materializations: [] } };
+  const catalog: CompositeCatalogData = { values: loadCatalog(), components: { slots: registry.slots, fills: importFoundryComponents().fills }, surfaces: { slots, fills: fills as unknown as SurfaceCandidateDocument[], transforms: [], rules: [], materializations: [] } };
+  const { library: empty } = selectedPackageClosure(catalog);
+  if (edit) fills.forEach(edit);
   const plan = planSurfaceDefaults({ catalog: { slots, fills }, slots: slots.map(slot => slot.id), preference: ["foundry"] });
-  const source = { kind: "consumer", author: "consumer", id: "package-consumer" } as CompositeLibraryData["source"];
-  const empty: CompositeLibraryData = { source, adoptedAt: "2026-10-26", values: { fills: [] }, components: { fills: [], files: [] } };
   return { catalog, plan, empty, slots };
 }
 const adopt = (catalog: CompositeCatalogData, library: CompositeLibraryData, slots: readonly { slot: string; source: string }[], opts = options()) =>
@@ -51,7 +53,7 @@ const entry = (library: CompositeLibraryData, slot: string) => {
 };
 /** Check findings, or the structural fault the engine raises (a fault is a refusal, never a pass). */
 const surfaceErrors = (library: CompositeLibraryData, catalog: CompositeCatalogData, packages = PACKAGES): { code: string; subject: string; message: string }[] => {
-  try { return resolveComposite({ catalog, library, surfaceOptions: options(packages).surfaceOptions }).check.findings.filter(row => row.rule === "surfaces" && row.severity === "error"); }
+  try { return resolveComposite({ catalog, library, ...options(packages) }).check.findings.filter(row => row.rule === "surfaces" && row.severity === "error"); }
   catch (error) { return [{ code: "fault", subject: "", message: (error as Error).message }]; }
 };
 
@@ -71,16 +73,26 @@ describe("package-pointer surface origin", () => {
   }, 20000);
 
   // FINDING perf: Real 63-surface adoption exceeds 5s; allow completion before deferred snapshot-copy optimization.
-  it("checks clean against independent package export evidence and emits package re-exports", () => {
+  it("emits all 63 package surfaces with proven private site-shell imports", () => {
     const { catalog, plan, empty } = setup();
-    const library = adopt(catalog, empty, plan.decisions);
-    expect(surfaceErrors(library, catalog)).toEqual([]);
-    const profile = resolveComposite({ catalog, library, surfaceOptions: options().surfaceOptions });
-    expect(Object.keys(profile.surfaces!.fills)).toHaveLength(63);
-    const files = emitComposite(profile, ["surface-index", "surfaces-consumption"]);
+    const all = adopt(catalog, empty, plan.decisions);
+    const allProfile = resolveComposite({ catalog, library: all, ...options() });
+    expect(Object.keys(allProfile.surfaces!.fills)).toHaveLength(63);
+    expect(surfaceErrors(all, catalog)).toEqual([]);
+    expect(allProfile.check.findings.filter(row => row.severity === "error")).toEqual([]);
+    const compositeFiles = emitComposite(allProfile, ["surface-index"]);
+    expect(compositeFiles.find(row => row.path === "frames/site-shell/index.ts")?.contents).toBe('export { SiteFrame as SiteShell } from "@clossys/designer/frames";\n');
+    expect(compositeFiles.find(row => row.path === "surface-index.ts")!.contents.split("\n").filter(Boolean)).toHaveLength(63);
+    const allReport = emitComposite(allProfile, ["surfaces-consumption"]);
+    expect(JSON.parse(allReport.find(row => row.path === "surfaces-consumption.json")!.contents).fills).toHaveLength(63);
+    const profile = allProfile;
+    // This checks the surface emitter against the real resolved surface profile;
+    // component runtime qualification remains a separate set of findings.
+    const files = emitSurfaces(profile.surfaces!, ["surface-index", "surfaces-consumption"]);
     const file = (path: string) => files.find(row => row.path === path)?.contents;
     expect(file("frames/sheet/index.ts")).toBe('export { Drawer as Sheet } from "@clossys/designer/blocks";\n');
     expect(file("frames/site-shell/index.ts")).toBe('export { SiteFrame as SiteShell } from "@clossys/designer/frames";\n');
+    expect(surfaceEntryOf(allProfile.surfaces!.fills["frames.site-shell"]!.document).impl).toEqual({ kind: "package", module: "@clossys/designer/frames", export: "SiteFrame" });
     expect(file("frames/app-sidebar/index.ts")).toBe('export { AppNavigation as AppSidebar } from "@clossys/designer/blocks";\n');
     expect(file("frames/inspector/index.ts")).toBe('export { InspectorFrame as Inspector } from "@clossys/designer/frames";\n');
     expect(file("sections/filter-builder/index.ts")).toBe('export { FilterBuilder } from "@clossys/designer/blocks";\n');
@@ -94,6 +106,19 @@ describe("package-pointer surface origin", () => {
     expect(JSON.parse(file("surfaces-consumption.json")!).fills).toHaveLength(63);
   }, 20000);
 
+  it("emits a satisfiable genuine package selection through the public composite engine", () => {
+    const catalog = { values: loadCatalog(), components: { slots: loadComponentRegistry().slots, fills: importFoundryComponents().fills }, surfaces: {
+      slots: loadSectionRegistry().slots.filter(slot => slot.id === "sections.call-to-action"),
+      fills: importFoundrySections().fills.filter(doc => doc.$extensions["com.clossys.fill"].slot === "sections.call-to-action"),
+      transforms: [], rules: [], materializations: [],
+    } };
+    const { library: empty, componentOptions } = selectedPackageClosure(catalog);
+    const library = adopt(catalog, empty, [{ slot: "sections.call-to-action", source: "foundry" }]);
+    const profile = resolveComposite({ catalog, library, componentOptions, surfaceOptions: options().surfaceOptions });
+    expect(profile.check.findings.filter(row => row.severity === "error")).toEqual([]);
+    expect(emitComposite(profile, ["surface-index"]).find(row => row.path === "sections/call-to-action/index.ts")?.contents).toBe('export { CallToAction } from "@clossys/designer/blocks";\n');
+  });
+
   // FINDING perf: Real 63-surface adoption exceeds 5s; allow completion before deferred snapshot-copy optimization.
   it("refuses a missing or differing package export, version or module in the evidence", () => {
     const { catalog, plan, empty } = setup();
@@ -105,7 +130,7 @@ describe("package-pointer surface origin", () => {
     const noFaq = PACKAGES.map(row => row.module === "@clossys/designer/blocks" ? { ...row, values: row.values.filter(name => name !== "Faq") } : row);
     const errors = surfaceErrors(library, catalog, noFaq);
     expect(errors.map(row => row.subject)).toEqual(["sections.faq"]);
-    expect(() => emitComposite(resolveComposite({ catalog, library, surfaceOptions: options(noFaq).surfaceOptions }), ["surface-index"])).toThrow(/composite: checked observations|S8/);
+    expect(() => emitComposite(resolveComposite({ catalog, library, ...options(noFaq) }), ["surface-index"])).toThrow(/composite: checked observations|S8/);
   }, 20000);
 
   it("refuses an inexact pin or a pin whose export differs from the implementation", () => {

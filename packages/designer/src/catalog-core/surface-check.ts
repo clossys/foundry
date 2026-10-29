@@ -6,7 +6,7 @@ import { buildSurfaceConsumption } from "./surface-consumption.js";
 import { emit as emitValues } from "./emit.js";
 import { stableStringify } from "./stable.js";
 import type { CompositeEngineInput, CompositeResolved } from "./types.js";
-import { contractFindings, surfaceConsumptionFindings } from "./surface-defaults.js";
+import { contractFindings, surfaceConsumptionFindings, type SurfaceDefaultDescriptor } from "./surface-defaults.js";
 import type { SurfaceFinding, SurfaceResolved, SurfaceResolvedFill, SurfaceRuntimeIdentity, SurfaceCandidate, SurfaceResolutionOptions } from "./surface-types.js";
 export function surfaceRuntimeIdentity(row: SurfaceResolvedFill): SurfaceRuntimeIdentity { return { version: 1, descriptorHash: row.descriptorHash, outputHash: row.outputHash, apiHash: row.apiHash, inputsHash: row.inputsHash }; }
 export function surfaceMeasurementFindings(fill: SurfaceCandidate, row: SurfaceResolvedFill, bound: ReturnType<typeof bindSurfaceSource>, options: SurfaceResolutionOptions): string[] {
@@ -28,6 +28,19 @@ export function surfaceMeasurementFindings(fill: SurfaceCandidate, row: SurfaceR
     if (m.runtime && (m.runtime.command.exitCode !== 0 || !command(m.runtime.command) || m.runtime.checks.module !== "pass" || runtimeSourceFindings(m.runtime.renderer).length || stableStringify(m.runtime.renderer.source) !== stableStringify(m.compiled)))
         errors.push("runtime module identity differs");
     return errors;
+}
+/** Package and source surfaces must close over the same selected consumer library. */
+function selectedSurfaceFindings(fill: Pick<SurfaceDefaultDescriptor, "slot" | "composes" | "reads">, profile: CompositeResolved): SurfaceFinding[] {
+    const findings: SurfaceFinding[] = [];
+    if (fill.composes)
+        for (const id of fill.composes)
+            if (id.startsWith("components.") && !profile.components.components[id])
+                findings.push({ code: "S4", rule: "surfaces", severity: "error", subject: fill.slot, message: `selected component missing ${id}` });
+    if (fill.reads)
+        for (const id of [...fill.reads.tokens, ...fill.reads.assets])
+            if (!Object.keys(profile.values.members).some(member => member === id || member.startsWith(id + ".")))
+                findings.push({ code: "S5", rule: "surfaces", severity: "error", subject: fill.slot, message: `consumer read missing ${id}` });
+    return findings;
 }
 export function resolveSurfaces(input: CompositeEngineInput, profile: CompositeResolved, validateDerivations = true): SurfaceResolved | undefined {
     if (input.library.surfaces === undefined)
@@ -67,6 +80,7 @@ export function resolveSurfaces(input: CompositeEngineInput, profile: CompositeR
                 add("S4", entry.slot, "package export evidence missing or differs");
             else
                 add("S8", entry.slot, "package pointer: runtime qualification belongs to the pinned package release", "notice");
+            findings.push(...selectedSurfaceFindings(entry, profile));
             const descriptorHash = origin.descriptorHash, outputHash = surfaceDigest([]);
             fills[entry.slot] = { document: doc, descriptorHash, outputHash, apiHash: surfaceDigest({ module: entry.impl.module, export: entry.impl.export, pin: origin.pin }), inputsHash: surfaceDigest({ pin: origin.pin, descriptorHash, evidence: evidence.map(row => row.artifactSha256) }) };
             continue;
@@ -119,12 +133,7 @@ export function resolveSurfaces(input: CompositeEngineInput, profile: CompositeR
                 if (!profile.values.members[id] || !fill.reads.tokens.some(leaf => id === leaf || id.startsWith(leaf + ".")))
                     add("S5", fill.slot, `frame value unavailable ${id}`);
         }
-        for (const id of fill.composes)
-            if (id.startsWith("components.") && !profile.components.components[id])
-                add("S4", fill.slot, `selected component missing ${id}`);
-        for (const id of [...fill.reads.tokens, ...fill.reads.assets])
-            if (!Object.keys(profile.values.members).some(member => member === id || member.startsWith(id + ".")))
-                add("S5", fill.slot, `consumer read missing ${id}`);
+        findings.push(...selectedSurfaceFindings(fill, profile));
         for (const blocker of fill.blockers)
             add("S5", fill.slot, `${blocker.code}: ${blocker.message}`);
         for (const error of surfaceMeasurementFindings(fill, row, bound, options))
