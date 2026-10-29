@@ -2,10 +2,8 @@ import { resolveDocumentLocale, type DocumentLocaleOptions } from "../render-doc
 import { createElement } from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
 import { resolveSectionedViewDocument, desugarRecipe, SECTIONED_VIEW_ITEM_RECIPES, SECTIONED_VIEW_CONTENT_CONTRACT } from '../../core/index.js';
-import { ServerLandingView as LandingView } from '@clossys/designer/frames';
-import type { LandingViewProps } from '@clossys/designer/frames';
 import { SectionedView } from '../../web/views/SectionedView.server.js';
-import type { ResolvedSectionedViewContentSection, ResolvedSectionedViewDocument } from '../../core/sectioned-view.js';
+import type { ResolvedSectionedViewDocument } from '../../core/sectioned-view.js';
 import type { ContentCatalogStylesheets } from '../render-content-catalog.js';
 import { OTHER_KIND_LINKS, type CatalogFixture } from './index.js';
 import { CATALOG_RECIPE_LINKS } from './contract-reference.js';
@@ -277,37 +275,10 @@ function nav(current?: string): string {
     return `<nav aria-label="Catalog functions"><ul role="list" class="catalog-function-grid">${READER_PAGES.map(p => `<li data-catalog-function="${p.id}"><a href="catalog/${p.id}.html">${p.label}</a><p>${p.purpose}</p>${p.axes.map(axis => `<span class="catalog-chip" data-catalog-axis="${axis.name}">${axis.name.replaceAll('-', ' ')}</span>`).join('')}</li>`).join('')}</ul></nav>`;
 }
 export function buildFunctionalCatalogIndex(sheets: ContentCatalogStylesheets, options: DocumentLocaleOptions = {}): string { return page('Content catalog', `<header class="catalog-nav"><h1>Content catalog</h1><p>What does the reader need to do with this information? Choose its reader job, then a recipe and configuration.</p></header><main id="catalog-page">${nav()}</main>`, sheets, options); }
-function closeProps(section: ResolvedSectionedViewContentSection): NonNullable<LandingViewProps['callToAction']> {
-    const actions = (section.actions ?? []).map(action => {
-        if (action.emphasis === 'tertiary')
-            throw new Error('Closing actions require a supported emphasis.');
-        return { ...action, emphasis: action.emphasis };
-    });
-    return { id: section.id, eyebrow: section.eyebrow, heading: section.heading, description: section.description, actions, footnote: section.footnote === undefined ? undefined : section.footnote.text === undefined ? { text: createElement('a', { href: section.footnote.link.href }, section.footnote.link.label) } : section.footnote };
-}
 export function renderReaderSample(fixture: CatalogFixture): string {
     return renderResolvedReaderSample(fixture, resolveReaderSampleDocument(fixture));
 }
-function renderResolvedReaderSample(fixture: CatalogFixture, resolved: ResolvedSectionedViewDocument): string {
-    const composition = fixture.id === 'recipes-nav-composition';
-
-    if (composition) {
-        const close = resolved.sections.at(-1);
-        if (close?.kind !== 'content-section')
-            throw new Error('A composition requires a closing band.');
-        return renderToStaticMarkup(createElement(LandingView, { document: { ...resolved, sections: resolved.sections.slice(0, -1) }, header: 'reserved', peek: false, landmark: 'none', callToAction: closeProps(close) }));
-    }
-    if (fixture.section.kind === 'hero')
-        return renderToStaticMarkup(createElement(LandingView, { document: resolved, header: 'reserved', peek: false, landmark: 'none' }));
-    if (fixture.id === 'say-close') {
-        const hero = READER_SAMPLES.find(f => f.id === 'say-hero-display');
-        const close = resolved.sections[0];
-        if (!hero || close?.kind !== 'content-section')
-            throw new Error('A close requires its context.');
-        const context = resolveSectionedViewDocument({ id: 'reader-close', sections: [hero.section] }, readerCopyResolver);
-        const html = renderToStaticMarkup(createElement(LandingView, { document: context, header: 'reserved', peek: false, landmark: 'none', callToAction: closeProps(close) }));
-        return html.slice(html.indexOf(`<section id="${close.id}"`), html.lastIndexOf('</div>'));
-    }
+function renderResolvedReaderSample(_fixture: CatalogFixture, resolved: ResolvedSectionedViewDocument): string {
     return renderToStaticMarkup(createElement(SectionedView, { document: resolved, landmark: 'none' }));
 }
 const published: Record<string, ReaderPage> = { hero: 'Introduce', 'feature-grid': 'Explain', faq: 'Index', 'status-list': 'Index', 'ordered-step-sequence': 'Sequence', pricing: 'Compare', 'stat-grid': 'Show', stat: 'Show', testimonial: 'Show' };

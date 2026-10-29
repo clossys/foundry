@@ -14,7 +14,6 @@ import { CollectionView } from "../web/views/CollectionView.js";
 import { IndexView } from "../web/views/IndexView.js";
 import { DetailsView } from "../web/views/DetailsView.js";
 import { DocumentView } from "../web/views/DocumentView.js";
-import { ServerLandingView as LandingView } from "@clossys/designer/frames";
 import { heroCompactCatalogDocument, contentCatalogCopyResolver } from "./fixture-content-catalog.js";
 import { SectionedView } from "../web/views/SectionedView.server.js";
 import { BrandGuideView } from "../web/views/BrandGuideView.js";
@@ -127,7 +126,7 @@ export function renderPreviewGalleryEntries(): PreviewGalleryEntry[] {
   return [
     { view: "MarketingView", markup: marketing },
     { view: "SectionedView", markup: sectioned },
-    { view: "LandingView (hero-compact)", markup: renderToStaticMarkup(createElement(LandingView, { document: resolveSectionedViewDocument(heroCompactCatalogDocument, contentCatalogCopyResolver), header: "reserved", peek: false })) },
+    { view: "SectionedView (hero-compact)", markup: renderToStaticMarkup(createElement(SectionedView, { document: resolveSectionedViewDocument(heroCompactCatalogDocument, contentCatalogCopyResolver) })) },
     { view: "AuthView", markup: auth },
     { view: "ErrorView", markup: error },
     { view: "CaptureView", markup: capture },

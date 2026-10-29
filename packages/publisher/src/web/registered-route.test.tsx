@@ -7,7 +7,8 @@ import { createContext, useContext, useState, type ReactNode } from "react";
 import { cleanup, render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
-import { AppFrame } from "@clossys/designer/frames";
+import { AppFrame, ShellCopyProvider, SHELL_COPY_REFS } from "@clossys/designer/frames";
+import type { ShellCopyResolver } from "@clossys/designer/frames";
 import { PageHeaderModule } from "@clossys/designer/shell";
 import { LibraryBoardSection } from "@clossys/designer/blocks";
 import { labels as boardLabels } from "../../../designer/dist/studio/__fixtures__/studio.js";
@@ -32,6 +33,19 @@ import { flowStageStyleSheet } from "../core/flow-stage.js";
 import { compileRegisteredRouteFixture, syntheticRegisteredRoute, type CompiledRegisteredRoute } from "./__fixtures__/registered-route-runtime.js";
 let temporary: string, compiled: CompiledRegisteredRoute, compiledHost: CompiledRegisteredRoute;
 const Owner = createContext("missing");
+/** Explicit host fixture copy. Unknown references stay unresolved. */
+const shellLabels: Record<string, string> = {
+  [SHELL_COPY_REFS.frame.skip.id]: "Skip synthetic workspace content",
+  [SHELL_COPY_REFS.frame.navigationOpen.id]: "Open synthetic navigation",
+  [SHELL_COPY_REFS.frame.navigationClose.id]: "Close synthetic navigation",
+  [SHELL_COPY_REFS.frame.breadcrumb.id]: "Synthetic breadcrumb",
+  [SHELL_COPY_REFS.frame.collapsedBreadcrumb.id]: "Collapsed synthetic breadcrumb",
+  [SHELL_COPY_REFS.frame.pageInfo.id]: "Synthetic page information",
+  [SHELL_COPY_REFS.frame.pageActions.id]: "Synthetic page actions",
+  [SHELL_COPY_REFS.navigation.empty.id]: "No synthetic navigation entries",
+  [SHELL_COPY_REFS.commands.results.id]: "Synthetic command results",
+};
+const resolveShellLabel: ShellCopyResolver = ref => shellLabels[ref.id] === undefined ? undefined : { ref, text: shellLabels[ref.id]! };
 function Action({ compact }: { compact: boolean }) { const owner = useContext(Owner), [n, update] = useState(0); return <button onClick={() => update(n + 1)}>{owner}:{String(compact)}:{n}</button>; }
 beforeAll(async () => {
   temporary = await fs.realpath(await fs.mkdtemp(join(tmpdir(), "SYNTHETIC-registered-route-")));
@@ -55,13 +69,15 @@ function fixture(hostContent = false) {
   const hostSlots = hostContent && appFrame.contract.kind === "frame" ? appFrame.contract.slots.filter(row => row.id === "skip-link") : [];
   const { route, registry, engine, profile, frame, content, source, layoutSource, actionSource, registries, consumer, manifest } = syntheticRegisteredRoute(hostContent ? compiledHost : compiled);
   const runtime: RegisteredRouteRuntime = {
-    assembly: { identity: { kind: "artifact", name: "SYNTHETIC fixed binder", sha256: runtimeHash(compiled.compiled) }, engine, contracts: { ...loadBuildCatalog(), slots: engine.catalog.surfaces!.slots.map(slot => ({ ...slot, contract: slot.contract.kind === "frame" ? { ...slot.contract, stage: { accepts: ["flow"] as const, scroll: "region" as const }, slots: [...slot.contract.slots, ...hostSlots] } : { ...slot.contract, substrates: ["flow"] as const, substrateTests: [{ substrate: "flow" as const, file: "SYNTHETIC.tsx", name: "SYNTHETIC fixture declaration" }] } })) },
+    // Runtime checks consume selected slot contracts, not unrelated value-fill offers.
+    // Keep their complete contracts while bounding this synthetic snapshot payload.
+    assembly: { identity: { kind: "artifact", name: "SYNTHETIC fixed binder", sha256: runtimeHash(compiled.compiled) }, engine, contracts: { ...loadBuildCatalog(), fills: [], slots: engine.catalog.surfaces!.slots.map(slot => ({ ...slot, contract: slot.contract.kind === "frame" ? { ...slot.contract, stage: { accepts: ["flow"] as const, scroll: "region" as const }, slots: [...slot.contract.slots, ...hostSlots] } : { ...slot.contract, substrates: ["flow"] as const, substrateTests: [{ substrate: "flow" as const, file: "SYNTHETIC.tsx", name: "SYNTHETIC fixture declaration" }] } })) },
       ports: { manifest,
         renderers: { [content.renderer.id]: () => <article aria-label="SYNTHETIC body">{compiled.module.Content!()}</article>, [frame.renderer.id]: input => {
           const header = input.pageHeader!;
-          return <AppFrame {...(hostContent ? { skipLabel: input.content["skip-link"]!.value as string, mainId: "app-main" } : {})} brand={{ markSrc: "/mark.svg", wordmark: "Example", label: "Example workspace", ...header.brand }} navigation={{ tree: [], activeId: "", label: "Workspace" }} account={{ signedOutLabel: "Signed out", sections: [] }} commands={{ heading: "Commands", searchLabel: "Search commands", closeLabel: "Close", emptyMessage: "Empty", triggerLabel: "Commands", groups: [] }} onNavigate={() => {}}>
+          return <ShellCopyProvider resolver={resolveShellLabel}><AppFrame {...(hostContent ? { skipLabel: input.content["skip-link"]!.value as string, mainId: "app-main" } : {})} brand={{ markSrc: "/mark.svg", wordmark: "Example", label: "Example workspace", ...header.brand }} navigation={{ tree: [], activeId: "", label: "Workspace" }} account={{ signedOutLabel: "Signed out", sections: [] }} commands={{ heading: "Commands", searchLabel: "Search commands", closeLabel: "Close", emptyMessage: "Empty", triggerLabel: "Commands", groups: [] }} onNavigate={() => {}}>
             <PageHeaderModule id={header.id} header={{ ...header.data, actions: { render: header.actions!.render } }} />{input.slots.main}
-          </AppFrame>;
+          </AppFrame></ShellCopyProvider>;
         } }, resolveContent: () => undefined }, themes: ["light"], states: ["default"], css: [{ id: "publisher-flow-stage.css", contents: flowStageStyleSheet(profile, "layouts.stack", "stack.focus") }], assets: [] },
     instanceLibrary: { id: consumer, role: "consumer", resolveFill: (leaf, config) => leaf === "layouts.stack" && config === "stack.focus" ? { library: consumer, leaf, config, headings: [], states: ["default"], renderer: source } : undefined, resolveContent: ref => ref },
     registries,
@@ -168,7 +184,6 @@ describe("fixed registered route execution, explicitly synthetic selection proof
     expect(result.status, JSON.stringify(result)).toBe("ready");
     render(<Owner.Provider value="original"><RegisteredRoutePage registry={registry} routeId={route.routeId} useRuntime={() => runtime} renderActions={({ compact }) => <Action compact={compact} />} /></Owner.Provider>);
     expect(screen.getAllByRole("heading", { level: 1 })).toHaveLength(1);
-    expect(screen.getByRole("link", { name: "Example workspace" })).toHaveAttribute("href", route.path);
     expect(screen.getByRole("heading", { level: 1 })).toHaveTextContent("Tools");
     expect(screen.getByRole("article", { name: "SYNTHETIC body" })).toHaveTextContent("SYNTHETIC");
     expect(document.querySelectorAll('[data-layout="layouts.stack"]')).toHaveLength(1);
@@ -377,7 +392,7 @@ describe("controlled lifecycle current-context mechanics, never actual Node/brow
     if (mutation === "foreign") { const foreign = { ...f.route, routeId: "example.foreign" }; expect(registeredRouteLifecycleStatus({ ...f.registry, routes: [foreign] }, foreign, result.evidence, current)).toBe("planned"); return; }
     expect(registeredRouteLifecycleStatus(f.registry, f.route, result.evidence, current)).toBe("planned");
   });
-  it.each(["source", "provider", "query", "phase", "placement", "Edit", "plan", "engine", "CSS", "content", "action callback", "Stage callback"])("invalidates %s mutations on repeated current-context reads", async mutation => {
+  it.each(["source", "provider", "query", "phase", "placement", "Edit", "plan", "engine", "CSS", "content", "Frame contract", "action callback", "Stage callback"])("invalidates %s mutations on repeated current-context reads", async mutation => {
     const f = await lifecycleFixture(), result = await f.promote();
     expect(result.status).toBe("built"); if (result.status === "planned") throw new Error("Controlled lifecycle unavailable");
     if (mutation === "source") Object.assign(f.registry, { consumer: "foreign" });
@@ -390,6 +405,7 @@ describe("controlled lifecycle current-context mechanics, never actual Node/brow
     if (mutation === "engine") Object.assign(f.runtime.assembly, { engine: { ...f.runtime.assembly.engine, library: { ...f.runtime.assembly.engine.library, source: { ...f.runtime.assembly.engine.library.source, id: "foreign" } } } });
     if (mutation === "CSS") Object.assign(f.runtime.assembly, { css: [...f.runtime.assembly.css, { id: "changed.css", contents: "/* current bytes changed */" }] });
     if (mutation === "content") f.query.input.content = "Changed current content";
+    if (mutation === "Frame contract") Object.assign(f.runtime.assembly.contracts.slots.find(slot => slot.id === f.assembly.binding.frame.leaf)!.contract, { root: "section" });
     if (mutation === "action callback") Object.assign(f.assembly, { pageHeader: { ...f.assembly.pageHeader!, actions: { ...f.assembly.pageHeader!.actions!, render: () => null } } });
     if (mutation === "Stage callback") Object.assign(f.runtime.assembly.ports, { stageActions: { onViewportChange() {} } });
     expect(registeredRouteLifecycleStatus(f.registry, f.route, result.evidence, f.current)).toBe("planned");

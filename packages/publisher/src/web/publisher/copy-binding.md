@@ -1,6 +1,6 @@
 # Host Writer bindings
 
-Supply `copyResolver` to `PublisherPage` or `PublisherRoutePage`. Use the host's
+The internal Publisher workspace accepts the host's `copyResolver`. Use its
 configured Writer `createCopyResolver` callback. The callback owns locale,
 formatting and approval policy; the page forwards CopyRefs for its 32 existing
 voice-packet records. Missing, mismatched or blank resolutions fail closed.

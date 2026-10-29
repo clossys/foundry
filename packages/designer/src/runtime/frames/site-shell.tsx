@@ -148,7 +148,7 @@ export function siteShellProps(input: Pick<RuntimeRenderInput<ReactNode>, "conte
     ...(footer ? { footer } : {}), ...(origin ? { origin } : {}),
   };
   const main = input.slots.main ?? [];
-  // One node goes in directly so SiteFrame can still recognise a hero-only LandingView scene.
+  // Preserve a single registered Hero element so SiteFrame can validate its overlay scene identity.
   return { ...(input.locale === undefined ? {} : { locale: input.locale }), shell, presentation, resolveCopy, resolveAsset, children: main.length === 1 ? main[0] : main, ...(input.host?.toasts === undefined ? {} : { toasts: input.host.toasts }) };
 }
 

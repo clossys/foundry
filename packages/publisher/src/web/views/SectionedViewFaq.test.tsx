@@ -8,8 +8,6 @@ import { renderToStaticMarkup } from "react-dom/server";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { resolveSectionedViewDocument, validateSectionedViewDocument, type SectionedViewDocument } from "../../core/sectioned-view.js";
 import { previewCopyResolver, previewSectionedDocument } from "../../preview/fixture-documents.js";
-import { LandingView } from "@clossys/designer/frames";
-import { ServerLandingView as ServerLandingView } from "@clossys/designer/frames";
 import { SectionedView } from "./SectionedView.js";
 import { SectionedView as ServerSectionedView } from "./SectionedView.server.js";
 
@@ -107,36 +105,14 @@ describe("published FAQ uses the Index disclosure recipe", () => {
     expect(screen.getByText(copy["answer-0"])).toBeVisible();
   });
 
-  it("puts a final inverse FAQ on base before an inverse closing action in both landing entries", () => {
-    const faq = resolveSectionedViewDocument(authored(4), resolver);
-    const hero = resolveSectionedViewDocument({ id: "faq-intro", sections: [{ id: "intro", kind: "hero", ground: "base", heading: ref("heading") }] }, resolver);
-    expect(faq.sections[0]!.ground).toBe("inverse");
-    for (const View of [LandingView, ServerLandingView]) {
-      const root = document.createElement("div");
-      root.innerHTML = renderToStaticMarkup(<View document={hero} trailing={[faq]} callToAction={{
-        id: "close", heading: "Closing action", action: <a href="/go">Continue</a>,
-      }} />);
-      expect(root.querySelector("#questions")?.closest("[data-landing-ground]")?.getAttribute("data-landing-ground")).toBe("base");
-      expect(root.querySelector("#close")?.getAttribute("data-landing-ground")).toBe("inverse");
-    }
-  });
-
   it.each(["stacked", "split"] as const)("pins FAQ recipe markup bytes for %s in both views and entries", layout => {
     const resolved = resolveSectionedViewDocument(authored(4, layout), resolver);
     const hero = resolveSectionedViewDocument({ id: "faq-intro", sections: [{ id: "intro", kind: "hero", ground: "base", heading: ref("heading") }] }, resolver);
     const afterSection = { questions: <p>After the questions.</p> };
-    for (const [entry, [Sectioned, Landing]] of ([
-      [SectionedView, LandingView],
-      [ServerSectionedView, ServerLandingView],
-    ] as const).entries()) {
-      const markup = {
-        sectioned: renderToStaticMarkup(<Sectioned document={resolved} />, { identifierPrefix: "faq-proof-" }),
-        landing: renderToStaticMarkup(<Landing document={hero} trailing={[resolved]} afterSection={afterSection} />, { identifierPrefix: "faq-proof-" }),
-      };
-      for (const view of ["sectioned", "landing"] as const) {
-        const hash = createHash("sha256").update(withoutSectionFrameInk(markup[view])).digest("hex");
-        expect.soft(hash, `${view}-${layout} entry ${entry}: ${hash}`).toBe(FAQ_MARKUP_SHA256[`${view}-${layout}`][entry]);
-      }
+    for (const [entry, Sectioned] of [SectionedView, ServerSectionedView].entries()) {
+      const markup = renderToStaticMarkup(<Sectioned document={resolved} />, { identifierPrefix: "faq-proof-" });
+      const hash = createHash("sha256").update(withoutSectionFrameInk(markup)).digest("hex");
+      expect.soft(hash, `sectioned-${layout} entry ${entry}: ${hash}`).toBe(FAQ_MARKUP_SHA256[`sectioned-${layout}`][entry]);
     }
   });
 

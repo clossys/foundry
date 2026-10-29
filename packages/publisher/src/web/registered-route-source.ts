@@ -1,5 +1,6 @@
 import { registeredRouteHeadMetadata } from "./headMetadata.js";
-import { routeProviderMount, routeServerLoader, routeSourcePath, completeRouteKind, isCompleteRouteKind, isLegacyRouteRegistration } from "../core/route-registry.js";
+import { routeProviderMount, routeServerLoader, routeSourcePath, isLegacyRouteRegistration } from "../core/route-registry.js";
+import { isRetiredCompleteRouteRegistration } from "../core/route-identities.js";
 import type { RouteRegistration, RouteRegistry, RouteSourceExport } from "../core/route-registry.js";
 function modulePath(from: string, to: string): string {
   if (!routeSourcePath(from) || !routeSourcePath(to)) throw new Error("Consumer-relative source paths required");
@@ -36,6 +37,7 @@ export function registeredRouteRegistryPlacement(file: unknown, module: unknown)
  * infer optional undefined properties. It imports nothing outside the source tree. The checker requires its exact bytes for the JSON it reads. */
 export function emitRegisteredRouteRegistryModule(registry: RouteRegistry): string {
   if (!registry || registry.version !== 1 || typeof registry.consumer !== "string" || !Array.isArray(registry.routes)) throw new Error("Version 1 route registry required");
+  if (registry.routes.some(isRetiredCompleteRouteRegistration)) throw new TypeError("Complete page registration is retired; use a consumer region page");
   return [
     registry.routes.some(route => !isLegacyRouteRegistration(route)) ? 'import type { RouteRegistry } from "@clossys/publisher/core";' : 'import type { RegisteredRoutePageProps } from "@clossys/publisher/web/registered-route";',
     `const registry: ${registry.routes.some(route => !isLegacyRouteRegistration(route)) ? "RouteRegistry" : 'RegisteredRoutePageProps["registry"]'} = ${JSON.stringify(registry, null, 2)};`,
@@ -46,7 +48,8 @@ export function emitRegisteredRouteRegistryModule(registry: RouteRegistry): stri
  * The page imports only the typed registry module, and every relative import stays in
  * that module's source tree. */
 export function emitRegisteredRoutePage(registryModule: string, route: RouteRegistration): string {
-  if (!isLegacyRouteRegistration(route)) throw new Error("Complete routes emit their registered server entry directly");
+  if (isRetiredCompleteRouteRegistration(route)) throw new TypeError("Complete page emission is retired; supply a consumer page config and registered region source");
+  if (!isLegacyRouteRegistration(route)) throw new TypeError("Registered instance source required");
   if (!typedModule(registryModule) || route.composition.source.export !== "default") throw new Error("Typed registry module and default emitted page export required");
   const file = route.composition.source.file, provider = route.composition.provider;
   if (provider && !routeProviderMount(route)) throw new Error("Registered nonvisual provider mount required");
@@ -81,11 +84,8 @@ function typeOnly(ref: RouteSourceExport, from: string, local: string): string {
  * loader, awaits it with no arguments and passes the checked serializable result as
  * the emitted client page's only prop. No other import, call or fetch is emitted. */
 export function emitRegisteredRouteAdapter(route: RouteRegistration): string {
-  if (!isLegacyRouteRegistration(route)) {
-    const kind = completeRouteKind(route), loader = route.composition.loader;
-    if (!kind || !loader) throw new Error("Complete kind and registered data loader required");
-    return emitCompleteRoutePage({ kind, file: route.entry.file, loader });
-  }
+  if (isRetiredCompleteRouteRegistration(route)) throw new TypeError("Complete page emission is retired; supply a consumer page config and registered region source");
+  if (!isLegacyRouteRegistration(route)) throw new TypeError("Registered instance source required");
   if (route.entry.export !== "default") throw new Error("Next page entries require the default export");
   if (route.entry.file === route.composition.source.file) throw new Error("A direct emitted page needs no adapter");
   const metadata = `const metadata = ${JSON.stringify(registeredRouteHeadMetadata(route.path))};\nexport { metadata };`;
@@ -104,7 +104,7 @@ export function emitRegisteredRouteAdapter(route: RouteRegistration): string {
 }
 
 export interface CompleteRoutePageSource {
-  readonly kind: import("../core/route-registry.js").CompleteRouteKind;
+  readonly kind: "designer" | "writer" | "publisher";
   readonly file: string;
   readonly loader: RouteSourceExport;
 }

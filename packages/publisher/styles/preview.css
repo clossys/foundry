@@ -960,27 +960,6 @@
       }
     }
   }
-  .scroll-cue {
-    position: absolute;
-    top: 0;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    @supports (animation-timeline: scroll()) {
-      position: fixed;
-      top: auto;
-      bottom: calc(env(safe-area-inset-bottom, 0px) + var(--spacing-xl, 24px));
-      transform: translateX(-50%);
-      animation-name: scroll-cue-out;
-      animation-duration: auto;
-      animation-timing-function: linear;
-      animation-fill-mode: both;
-      animation-timeline: scroll(root block);
-      animation-range: 0 calc(var(--ui-layout-tap-target, 44px) * 3);
-      @media (prefers-reduced-motion: reduce) {
-        animation-timing-function: steps(1, jump-end);
-      }
-    }
-  }
   .sr-only {
     position: absolute;
     width: 1px;
@@ -1184,9 +1163,6 @@
   .isolate {
     isolation: isolate;
   }
-  .-z-10 {
-    z-index: calc(10 * -1);
-  }
   .z-\(--plate-z\) {
     z-index: var(--plate-z);
   }
@@ -1207,9 +1183,6 @@
   }
   .z-\[var\(--ui-z-sticky\)\] {
     z-index: var(--ui-z-sticky);
-  }
-  .z-\[var\(--ui-z-sticky\,10\)\] {
-    z-index: var(--ui-z-sticky,10);
   }
   .order-first {
     order: -9999;
@@ -1892,9 +1865,6 @@
   .h-\(--ui-control-h-sm\,calc\(var\(--spacing\)\*7\)\) {
     height: var(--ui-control-h-sm,calc(var(--spacing) * 7));
   }
-  .h-0 {
-    height: 0px;
-  }
   .h-2 {
     height: calc(var(--spacing, 0.25rem) * 2);
   }
@@ -2449,12 +2419,6 @@
   }
   .scroll-my-1 {
     scroll-margin-block: var(--spacing, 0.25rem);
-  }
-  .scroll-mt-0 {
-    scroll-margin-top: 0px;
-  }
-  .scroll-mt-4xl {
-    scroll-margin-top: var(--spacing-4xl, 64px);
   }
   .scroll-py-1 {
     scroll-padding-block: var(--spacing, 0.25rem);
@@ -3647,9 +3611,6 @@
   .py-\(--spacing-xs\) {
     padding-block: var(--spacing-xs);
   }
-  .py-0 {
-    padding-block: 0px;
-  }
   .py-2xl {
     padding-block: var(--spacing-2xl, 32px);
   }
@@ -3661,9 +3622,6 @@
   }
   .py-5xl {
     padding-block: var(--spacing-5xl, 96px);
-  }
-  .py-6xl {
-    padding-block: var(--spacing-6xl, 128px);
   }
   .py-\[var\(--spacing-xs\)\] {
     padding-block: var(--spacing-xs);
@@ -3737,9 +3695,6 @@
   .pt-3xl {
     padding-top: var(--spacing-3xl, 48px);
   }
-  .pt-6xl {
-    padding-top: var(--spacing-6xl, 128px);
-  }
   .pt-lg {
     padding-top: var(--spacing-lg, 16px);
   }
@@ -3763,9 +3718,6 @@
   }
   .pb-2xl {
     padding-bottom: var(--spacing-2xl, 32px);
-  }
-  .pb-3xl {
-    padding-bottom: var(--spacing-3xl, 48px);
   }
   .pb-lg {
     padding-bottom: var(--spacing-lg, 16px);
@@ -6464,6 +6416,9 @@
     .tablet\:px-md {
       padding-inline: var(--spacing-md, 12px);
     }
+    .tablet\:px-xl {
+      padding-inline: var(--spacing-xl, 24px);
+    }
     .tablet\:py-4xl {
       padding-block: var(--spacing-4xl, 64px);
     }
@@ -6667,9 +6622,6 @@
     .tablet-lg\:rotate-0 {
       rotate: 0deg;
     }
-    .tablet-lg\:scroll-mt-5xl {
-      scroll-margin-top: var(--spacing-5xl, 96px);
-    }
     .tablet-lg\:anatomy-columns {
       grid-template-columns: minmax(0, 8fr) minmax(0, 4fr);
     }
@@ -6782,23 +6734,11 @@
     .tablet-lg\:px-md {
       padding-inline: var(--spacing-md, 12px);
     }
-    .tablet-lg\:py-4xl {
-      padding-block: var(--spacing-4xl, 64px);
-    }
-    .tablet-lg\:py-5xl {
-      padding-block: var(--spacing-5xl, 96px);
-    }
-    .tablet-lg\:py-6xl {
-      padding-block: var(--spacing-6xl, 128px);
-    }
     .tablet-lg\:py-lg {
       padding-block: var(--spacing-lg, 16px);
     }
     .tablet-lg\:ps-0 {
       padding-inline-start: 0px;
-    }
-    .tablet-lg\:pb-4xl {
-      padding-bottom: var(--spacing-4xl, 64px);
     }
     .tablet-lg\:text-display-m {
       font-size: var(--text-display-m, 44px);
@@ -7964,11 +7904,6 @@
     [data-slot=sidebar][data-variant=inset] ~ .md\:\[\[data-slot\=sidebar\]\[data-variant\=inset\]\~\&\]\:shadow-\(--ui-elevation-raised\) {
       --tw-shadow: var(--ui-elevation-raised);
       box-shadow: var(--tw-inset-shadow, 0 0 #0000), var(--tw-inset-ring-shadow, 0 0 #0000), var(--tw-ring-offset-shadow, 0 0 #0000), var(--tw-ring-shadow, 0 0 #0000), var(--tw-shadow, 0 0 #0000);
-    }
-  }
-  @media (prefers-reduced-motion: no-preference) {
-    html:has(.motion-safe\:\[html\:has\(\&\)\]\:scroll-smooth) {
-      scroll-behavior: smooth;
     }
   }
 }

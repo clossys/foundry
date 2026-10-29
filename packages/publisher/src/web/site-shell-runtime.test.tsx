@@ -11,8 +11,7 @@ import { packageSurfaceLibrary } from "../../../designer/dist/library-cli/__fixt
 import { packageBarrelExports } from "../../../designer/dist/library-cli/surface-package-evidence.js";
 import { createHash } from "node:crypto";
 import { readFileSync } from "node:fs";
-import { LandingView } from "#publisher-web-views";
-import type { ResolvedSectionedViewDocument } from "../core/sectioned-view.js";
+import { surfaceRuntimeRenderers } from "@clossys/designer/frames";
 import * as webIndex from "./index.js";
 import * as webServer from "./server.js";
 import { SITE_SHELL_RUNTIME_POINTER, siteShellRuntimeCallbacks, siteShellRuntimePointers, siteShellRuntimeRenderers } from "./index.js";
@@ -104,10 +103,14 @@ describe("frames.site-shell Designer runtime renderer", () => {
     expect(swapped).not.toContain(`href="${specimenDataset.navigation.items[1]!.href}"`);
     expect(render(inputFor(base, { members: ["footer-placement.flow"] }))).toBe(flow);
 
-    const welcome = { ref: { id: "hero.heading" }, text: "Welcome", recordId: "hero.heading", revision: "1", locale: "en-US", source: { kind: "consumer" as const, reference: "fixture" }, entryId: "hero.heading" };
-    const hero: ResolvedSectionedViewDocument = { id: "site-home", resolutions: [welcome], sections: [{ id: "hero", kind: "hero", ground: "inverse", heading: "Welcome" }] };
     const overlayContent = { ...base, header: { ...base.header, surface: "glass", tone: "inverse" } };
-    const landing = [<LandingView key="hero" document={hero} header="overlay" fit="frame" landmark="none" />];
+    const heroEntry = surfaceRuntimeRenderers["sections.hero"]!;
+    const heroInput = {
+      ...inputFor({}), fill: { leaf: "sections.hero", slots: ["header"], members: ["size.display"] },
+      selection: { leaf: "sections.hero", members: ["size.display"] },
+      content: contentOf({ header: { heading: "Welcome" } }),
+    } as unknown as RuntimeRenderInput<ReactNode>;
+    const landing = [heroEntry.render(heroInput)];
     const flowHero = render(inputFor(overlayContent, { members: ["footer-placement.flow"], main: landing }));
     const overlay = render(inputFor(overlayContent, { members: ["footer-placement.overlay"], main: landing }));
     expect(flowHero).not.toContain("data-frame-footer-overlay");

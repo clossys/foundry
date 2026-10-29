@@ -18,6 +18,8 @@ All notable changes to this package are documented here. Format follows
 
 ## 0.12.0 - 2026-10-16
 
+- Retire the executable Landing views and their copied rendering graph. SiteFrame overlays accept one direct registered Hero and retain glass-header, heading and layout refusals.
+
 - Add optional inverse brand and navigation ink, muted eyebrows, wide hero copy, display heading scale, and a transparent footer top rule while preserving default rendering.
 - Link Designer setup to the Publisher frame wiring guide for brand, CSS and frame configuration.
 

@@ -9,9 +9,9 @@ import * as webServer from "../server.js";
 import * as frameIndex from "./index.js";
 import { SITE_MAIN_ID, SiteFrame, siteShellFor } from "./index.js";
 import type { SiteFrameConfig, SiteShellInput } from "./index.js";
-import { LandingView } from "@clossys/designer/frames";
-import { ServerLandingView } from "@clossys/designer/frames";
-import type { LandingViewProps } from "../../../../designer/src/frames/site-frame/landing/web/views/LandingViewContent.js";
+import { Hero } from "@clossys/designer/blocks";
+import { Hero as ServerHero, ContentSection } from "@clossys/designer/blocks/server";
+import type { HeroProps } from "@clossys/designer/blocks/server";
 import type { ResolvedSectionedViewDocument } from "../../core/sectioned-view.js";
 
 const COPY: Readonly<Record<string, string>> = {
@@ -160,7 +160,11 @@ describe("SiteFrame footer placement", () => {
   };
   const htmlFor = (placement?: unknown, document = hero, ground?: unknown) => renderToStaticMarkup(
     <SiteFrame shell={{ ...shell, footer: { ...shell.footer!, ...(placement === undefined ? {} : { placement }), ...(ground === undefined ? {} : { ground }) } } as SiteShellInput} resolveCopy={resolveCopy} resolveAsset={resolveAsset}>
-      <LandingView document={document} header="overlay" fit="frame" landmark="none" />
+      {document.sections.length === 1
+        ? <Hero id="hero" ground="inverse" heading="Welcome" />
+        : document.sections.map(section => section.kind === "hero"
+          ? <Hero key={section.id} id={section.id} ground="inverse" heading={section.heading} />
+          : <ContentSection key={section.id} id={section.id} heading={section.heading} />)}
     </SiteFrame>,
   );
 
@@ -181,8 +185,8 @@ describe("SiteFrame footer placement", () => {
     expect(html.match(/<footer\b/g)).toHaveLength(1);
     expect(html).toContain(`<main id="${SITE_MAIN_ID}" tabindex="-1"`);
     expect(html).toMatch(/<header[^>]*data-placement="overlay"/);
-    expect(html).toMatch(/data-landing-view="" class="[^"]*flex-1/);
-    expect(html).toMatch(/data-landing-hero=""[^>]*class="[^"]*flex-1/);
+    expect(html).toMatch(/<main[^>]*><section[^>]*data-ds-leaf="sections.hero"/);
+    expect(html).toMatch(/data-ds-leaf="sections.hero"[^>]*class="[^"]*flex-1/);
     expect(html).toMatch(/<div data-frame-root="" class="flex min-h-dvh flex-col relative"/);
     expect(html).toContain('<div data-frame-footer-overlay="" class="flex flex-col shrink-0 min-w-0 pointer-events-none z-[var(--ui-z-sticky)]"><footer');
     expect(html).toMatch(/<footer[^>]*bg-surface-inverse[^>]*publisher-frame-footer-overlay/);
@@ -216,9 +220,9 @@ describe("SiteFrame footer placement", () => {
     expect(html).not.toContain("data-landing-cue");
   });
 
-  it.each([LandingView, ServerLandingView])("accepts either direct LandingView entry with one growing hero", View => {
+  it.each([Hero, ServerHero])("accepts either registered Hero entry with one growing hero", View => {
     const html = renderToStaticMarkup(<SiteFrame shell={{ ...shell, footer: { ...shell.footer!, placement: "overlay" } }} resolveCopy={resolveCopy} resolveAsset={resolveAsset}>
-      <View document={hero} fit="frame" landmark="none" />
+      <View id="hero" ground="inverse" heading="Welcome" />
     </SiteFrame>);
     expect(html).toContain("data-frame-footer-overlay");
     expect(html).not.toContain("data-landing-cue");
@@ -233,24 +237,26 @@ describe("SiteFrame footer placement", () => {
     { afterSection: { hero: <p>More</p> } },
     { style: { height: "100dvh" } },
     { className: "h-dvh" },
-    { document: { ...hero, sections: [{ ...hero.sections[0]!, size: "compact" }] } },
+    { size: "compact" },
+    { headingLevel: 2 },
+    { children: <p>More</p> },
   ])("refuses unsupported overlay layout props before rendering a scene", extra => {
     expect(() => renderToStaticMarkup(<SiteFrame shell={{ ...shell, footer: { ...shell.footer!, placement: "overlay" } }} resolveCopy={resolveCopy} resolveAsset={resolveAsset}>
-      <LandingView document={hero} fit="frame" landmark="none" {...extra as Partial<LandingViewProps>} />
+      <Hero heading="Welcome" {...extra as Partial<HeroProps>} />
     </SiteFrame>)).toThrow(/shell\.footer\.placement/);
   });
 
-  it("refuses a wrapper that copies LandingView props without invoking it", () => {
+  it("refuses a wrapper that copies registered Hero props without invoking it", () => {
     let called = false;
-    function WrappedLandingView(props: LandingViewProps) { called = true; return <LandingView {...props} />; }
+    function WrappedHero(props: HeroProps) { called = true; return <Hero {...props} />; }
     expect(() => renderToStaticMarkup(<SiteFrame shell={{ ...shell, footer: { ...shell.footer!, placement: "overlay" } }} resolveCopy={resolveCopy} resolveAsset={resolveAsset}>
-      <WrappedLandingView document={hero} fit="frame" landmark="none" />
+      <WrappedHero heading="Welcome" />
     </SiteFrame>)).toThrow(/shell\.footer\.placement/);
     expect(called).toBe(false);
   });
 
   it("refuses fragments and reserved frame headers for overlay scenes", () => {
-    const view = <LandingView document={hero} fit="frame" landmark="none" />;
+    const view = <Hero heading="Welcome" />;
     expect(() => renderToStaticMarkup(<SiteFrame shell={{ ...shell, footer: { ...shell.footer!, placement: "overlay" } }} resolveCopy={resolveCopy} resolveAsset={resolveAsset}><>{view}</></SiteFrame>)).toThrow(/shell\.footer\.placement/);
     expect(() => renderToStaticMarkup(<SiteFrame shell={{ ...shell, header: { surface: "solid" }, footer: { ...shell.footer!, placement: "overlay" } }} resolveCopy={resolveCopy} resolveAsset={resolveAsset}>{view}</SiteFrame>)).toThrow(/shell\.footer\.placement/);
   });

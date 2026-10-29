@@ -35,8 +35,6 @@ export { registeredFlowRuntimeInputs } from "./registered-route-layout.js";
 export type { RegisteredFlowRuntimeInputs } from "./registered-route-layout.js";
 
 
-export { projectRegisteredRouteNavigation, withCompleteRouteNavigation } from "./complete-route-navigation.js";
-export type { CompleteRouteServerData, CompleteRouteNavigation } from "./complete-route-navigation.js";
 export { RegisteredPublicationOutlet } from "./registered-publication-outlet.js";
 export { registeredPublicationSnapshot } from "./registered-route-query.js";
 export { createRegisteredPageSession, createRegisteredPublicationSession } from "./registered-route-query.js";

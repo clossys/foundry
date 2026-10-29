@@ -10,10 +10,8 @@ import type { PublisherChannelId } from "../planning/channel-ids.js";
 import { PUBLISHER_CHANNELS } from "../planning/channel-ids.js";
 import { createPublisherPlanDraft } from "../planning/plan.js";
 import { canonicalPlanJson, sha256 } from "../planning/digest.js";
-import { completeRouteKind, isLegacyRouteRegistration, isRegionPageRouteRegistration, registeredRouteBrandLink, routeSourcePath, normalizeRegionPageRoute } from "./route-identities.js";
-import type { CompleteRouteKind } from "./route-identities.js";
-export { completeRouteKind, isCompleteRouteKind, isLegacyRouteRegistration, isRegionPageRouteRegistration, registeredRouteBrandLink, routeInstanceBinding, routeSourcePath, normalizeRegionPageRoute, routeCompositionDigest, routeRegistryDigest } from "./route-identities.js";
-export type { CompleteRouteKind } from "./route-identities.js";
+import { isRetiredCompleteRouteRegistration, isLegacyRouteRegistration, isRegionPageRouteRegistration, registeredRouteBrandLink, routeSourcePath, normalizeRegionPageRoute } from "./route-identities.js";
+export { isLegacyRouteRegistration, isRegionPageRouteRegistration, registeredRouteBrandLink, routeInstanceBinding, routeSourcePath, normalizeRegionPageRoute, routeCompositionDigest, routeRegistryDigest } from "./route-identities.js";
 
 /** Public source identity. Relative to the adopting consumer, never an executable callback. */
 export interface RouteSourceExport { readonly file: string; readonly export: string }
@@ -47,18 +45,10 @@ export interface LegacyRouteRegistration {
     readonly loader?: RouteSourceExport;
   };
 }
-/** Complete native pages have no fabricated instance binding or runtime hook. */
-export interface CompleteRouteRegistration extends Omit<LegacyRouteRegistration, "composition"> {
-  readonly composition: {
-    readonly complete: { readonly kind: CompleteRouteKind };
-    /** Required only when emitting its executable server page. */
-    readonly loader?: RouteSourceExport;
-  };
-}
 export interface RegionPageRouteRegistration extends Omit<LegacyRouteRegistration, "composition"> {
   readonly composition: Omit<LegacyRouteRegistration["composition"], "binding" | "provider"> & { readonly binding: RegionPageBinding };
 }
-export type RouteRegistration = LegacyRouteRegistration | CompleteRouteRegistration;
+export type RouteRegistration = LegacyRouteRegistration;
 export type AnyRouteRegistration = RouteRegistration | RegionPageRouteRegistration;
 /** Closed set of original providers a registered route may mount. Data only:
  * the checker admits a provider module only as this exact nonvisual mount. */
@@ -154,6 +144,10 @@ export function projectRouteRegistry(registry: RouteRegistry<AnyRouteRegistratio
       const matches = owners.filter(row => row.item.id === route.planItemId);
       if (matches.length !== 1 || matches[0]!.item.appRouteId !== route.routeId || owners.filter(row => row.item.appRouteId === route.routeId).length !== 1) add(route.routeId, "planItemId", "Route must join exactly one unchanged plan item/appRouteId");
       const owner = matches.length === 1 ? matches[0] : undefined;
+      if (isRetiredCompleteRouteRegistration(route)) {
+        add(route.routeId, "composition.complete", "Complete page registration is retired; use a consumer region page");
+        return { registration: route, item: owner?.item, sections: [], status: "planned" as const, pending: ["Consumer region page registration required"], findings: findings.slice(at) };
+      }
       if (isRegionPageRouteRegistration(route)) {
         const lowered = normalizeRegionPageRoute(registry as RegionPageRouteRegistry, route), c = route.composition;
         for (const message of instanceBodyFindings(registeredBindingTemplate(lowered.composition.binding), registries)) add(route.routeId, "composition.binding.body", message);
@@ -161,14 +155,7 @@ export function projectRouteRegistry(registry: RouteRegistry<AnyRouteRegistratio
         return { registration: route, item: owner?.item, owner: owner ? { packId: owner.packId, milestone: owner.milestone, answerIds: owner.item.answerIds } : undefined, sections: [], status: "planned" as const,
           pending: ["Publication frame and consumer region runtime evidence pending"], findings: findings.slice(at) };
       }
-      if (!isLegacyRouteRegistration(route)) {
-        const c = route.composition;
-        if (!only(c, ["complete", "loader"]) || !completeRouteKind(route)) add(route.routeId, "composition.complete", "Known complete route kind required");
-        if (c.loader !== undefined && (!source(c.loader) || c.loader.file === route.entry.file || NEXT_SPECIAL_FILE.test(c.loader.file) || !/\.[jt]sx?$/.test(c.loader.file) || c.loader.file.endsWith(".d.ts"))) add(route.routeId, "composition.loader", "Separate typed complete route data loader required");
-        if (owner?.item.completeRoute && (owner.item.completeRoute.kind !== completeRouteKind(route) || owner.item.completeRoute.path !== route.path || owner.item.completeRoute.title !== route.title || canonicalPlanJson(owner.item.completeRoute.entry) !== canonicalPlanJson(route.entry) || canonicalPlanJson(owner.item.completeRoute.brand) !== canonicalPlanJson(route.brand) || canonicalPlanJson(owner.item.completeRoute.loader) !== canonicalPlanJson(c.loader))) add(route.routeId, "composition.complete", "Complete route differs from its plan item");
-        return { registration: route, item: owner?.item, owner: owner ? { packId: owner.packId, milestone: owner.milestone, answerIds: owner.item.answerIds } : undefined, sections: [], status: "planned" as const,
-          pending: [...(!validPlan ? ["Valid Publisher plan unavailable"] : []), ...(!aligned ? ["Exact plan alignment pending"] : []), ...(owner?.item.openNeeds.map(n => `${n.slot}: ${n.question}`) ?? []), "Complete native page runtime and exact artifact review evidence pending"], findings: findings.slice(at) };
-      }
+      if (!isLegacyRouteRegistration(route)) throw new TypeError("Unsupported route composition");
       const c = route.composition, b = c.binding;
       for (const message of instanceBodyFindings(registeredBindingTemplate(b), registries)) add(route.routeId, "composition.binding.body", message);
       if (!only(c, ["binding", "source", "runtime", "header", "provider", "loader"]) || !source(c.source) || !source(c.runtime)) add(route.routeId, "composition", "Canonical composition source required");
@@ -199,7 +186,7 @@ export function registeredRouteFrameFinding(projection: RouteRegistryProjection 
   if (rows.length !== 1) return "Exact registered route composition is unavailable";
   if (!binding) return "Adopted route binding is unavailable";
   const registered = rows[0]!.registration;
-  if (!isLegacyRouteRegistration(registered)) return "Complete native route has no legacy instance binding";
+  if (!isLegacyRouteRegistration(registered)) return "Region page has no standalone instance binding";
   const expected = registered.composition.binding;
   if (binding.instanceId !== expected.instanceId || binding.path !== expected.path || binding.frame.leaf !== expected.frame.leaf || binding.frame.config !== expected.frame.config) return "Supplied route binding differs from its registered Frame composition";
   if (rows[0]!.findings.length) return "Registered route composition has unresolved findings";

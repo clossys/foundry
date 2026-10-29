@@ -14,8 +14,6 @@ it("emits real private runtime import witnesses and no assets.js consumer read i
   expect(measured.rawScannedReads.assets).toEqual(["assets.js"]);
   expect(measured.privateInternalReads.map((row: any) => [row.file, row.line, row.specifier])).toEqual([
     ["packages/designer/src/frames/site-frame/internal/resolveShell.ts", 3, "../landing/internal/assets.js"],
-    ["packages/designer/src/frames/site-frame/landing/core/content-asset.ts", 1, "../internal/assets.js"],
-    ["packages/designer/src/frames/site-frame/landing/web/views/SectionedViewContent.tsx", 11, "../../internal/assets.js"],
   ]);
   expect(() => surfaceEntryOf(doc)).not.toThrow();
 });

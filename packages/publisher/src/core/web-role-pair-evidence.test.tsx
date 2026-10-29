@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import { resolve } from "node:path";
-import { readFileSync, writeFileSync } from "node:fs";
+import { existsSync, readFileSync, writeFileSync } from "node:fs";
 import { execFileSync } from "node:child_process";
 import { checkImportPurity } from "../../../../scripts/lib/import-purity.mjs";
 import {
@@ -11,7 +11,8 @@ import { createHash } from "node:crypto";
 import { renderToStaticMarkup } from "react-dom/server";
 import type { ReactElement } from "react";
 import { describe, expect, it } from "vitest";
-import { SiteFrame, LandingView, LegalView, CaptureView, SITE_MAIN_ID } from "../web/index.js";
+import { SiteFrame, LegalView, CaptureView, SITE_MAIN_ID } from "../web/index.js";
+import { SectionedView } from "../web/index.js";
 import type { SiteShellInput } from "../web/index.js";
 import { LEGAL_SECTION_IDS } from "../document/legal.js";
 import type { LegalDocument } from "../document/legal.js";
@@ -39,7 +40,9 @@ const fixture = {
 const resolveCopy: CopyResolver = ref => ({ ref, text: fixture.copy + ref.id, recordId: "example", revision: "1", locale: fixture.locale,
   source: { kind: "consumer", reference: "fixture" }, entryId: ref.id });
 function view(name: string, mutant = ""): ReactElement {
-  if (name === "LandingView") return <LandingView document={fixture.landing} landmark={mutant === "landing" ? undefined : "none"} />;
+  // The archived Landing binding has no executable renderer. Observe the supported native body;
+  // its current source closure cannot re-admit the retired binding as measured evidence.
+  if (name === "LandingView") return <SectionedView document={{ ...fixture.landing, resolutions: fixture.landing.resolutions.map(entry => ({ ...entry, servedLocale: entry.locale, chain: [entry.locale] })) }} landmark={mutant === "landing" ? undefined : "none"} />;
   if (name === "LegalView") return <LegalView document={fixture.legal}
     {...(mutant === "legal" ? { brand: "Example" } : { framed: true as const })}
     labels={fixture.labels} locale={fixture.locale} resolveCopyId={resolveCopy} />;
@@ -149,7 +152,7 @@ function fresh(index: number, mutant = "", measuredAt = WEB_ROLE_PAIR_EVIDENCE[i
   const joined = validateBlockRoleBinding(WEB_ROLE_PAIR_BINDINGS[index], WEB_ROLE_PAIR_BINDINGS.flatMap(binding => [binding.frameBlockRef, binding.viewBlockRef]));
   if (!("identity" in joined) || !joined.identity) throw new Error("Missing fresh identity");
   return { ...JSON.parse(JSON.stringify(record)), identity: joined.identity, measuredAt, fixtureDigest: sha(JSON.stringify(fixture)),
-    sourceDigests: Object.fromEntries(SOURCE_FILES.map(path => [path, sha(readFileSync(sourcePath(path)))])),
+    sourceDigests: Object.fromEntries(SOURCE_FILES.filter(path => existsSync(sourcePath(path))).map(path => [path, sha(readFileSync(sourcePath(path)))])),
     checks: Object.fromEntries(Object.entries(observations).map(([key, count]) => [key, {
       count, selector: SELECTORS[key as WebRolePairCheck],
       status: count === expected[key as WebRolePairCheck] ? "measured" : "violated",
@@ -158,6 +161,16 @@ function fresh(index: number, mutant = "", measuredAt = WEB_ROLE_PAIR_EVIDENCE[i
 const validate = validateWebRolePairEvidence;
 const copy = <T,>(value: T): T => JSON.parse(JSON.stringify(value));
 describe("web role-pair evidence", () => {
+  it("rejects missing current source closure while retaining the archived source pins", () => {
+    const missing = SOURCE_FILES.filter(path => !existsSync(sourcePath(path)));
+    expect(missing).toContain("../designer/src/frames/site-frame/landing/web/views/LandingView.tsx");
+    const current = fresh(0);
+    for (const path of missing) {
+      expect(Object.hasOwn(WEB_ROLE_PAIR_EVIDENCE[0]!.sourceDigests, path)).toBe(true);
+      expect(Object.hasOwn(current.sourceDigests, path)).toBe(false);
+    }
+    expect(validate(WEB_ROLE_PAIR_EVIDENCE[0], WEB_ROLE_PAIR_BINDINGS[0], current).status).toBe("violated");
+  });
   it.each([0, 1, 2])("re-measures the independent real pair %i", index => {
     const record = WEB_ROLE_PAIR_EVIDENCE[index]!;
     const measurement = fresh(index);

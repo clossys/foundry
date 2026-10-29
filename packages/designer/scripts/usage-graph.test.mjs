@@ -96,12 +96,12 @@ test("current surface descriptors select all measured surfaces and retain their 
   assert.equal(report.surfaceEvidence.runtime, "unmeasured");
   assert.deepEqual(report.surfaceEvidence.fills, descriptors.map(({ meta, body }) => ({ id: meta.id, slot: meta.slot, pin: meta.pin, ...body.consumption })));
   const unresolved = report.surfaceEvidence.fills.flatMap(fill => fill.unresolved ?? []);
-  assert.equal(unresolved.filter(row => row.code === "DF2").length, 149);
-  assert.equal(unresolved.filter(row => row.code === "DF5").length, 64);
+  assert.equal(unresolved.filter(row => row.code === "DF2").length, 146);
+  assert.equal(unresolved.filter(row => row.code === "DF5").length, 39);
   const site = report.surfaceEvidence.fills.find(fill => fill.slot === "frames.site-shell");
   assert.deepEqual(site.scannedReads.assets, []);
   assert.deepEqual(site.rawScannedReads.assets, ["assets.js"]);
-  assert.equal(site.privateInternalReads.length, 3);
+  assert.equal(site.privateInternalReads.length, 1);
   assert.ok(site.privateInternalReads.every(row => row.target === "packages/designer/src/frames/site-frame/landing/internal/assets.ts" && row.targetSha256.length === 64));
   for (const from of ["sections.activity-feed", "sections.resource-list", "sections.usage"]) {
     assert.ok(report.edges.some(edge => edge.from === from && edge.to === "sections.empty-state" && edge.kind === "composes" && edge.evidence.includes("scanned")), from);

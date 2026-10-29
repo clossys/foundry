@@ -4,30 +4,26 @@ import { canonicalPlanJson, sha256 } from "../planning/digest.js";
 
 /** Finite route identities shared by server validation and browser navigation.
  * This module never imports runtime lifecycle/evidence or Node implementations. */
-/** Legacy plan data can still be read; new pages use consumer configs. */
-export type CompleteRouteKind = "designer" | "writer" | "publisher";
-export function isCompleteRouteKind(value: unknown): value is CompleteRouteKind {
-  return value === "designer" || value === "writer" || value === "publisher";
-}
 const text = (v: unknown): v is string => typeof v === "string" && v.trim().length > 0;
 const only = (v: object, keys: readonly string[]) => Object.keys(v).every(k => keys.includes(k));
 export const routeSourcePath = (v: string): boolean => text(v) && !v.includes("\\") && !v.startsWith("/") && !v.split("/").some(p => !p || p === "." || p === "..");
-export function isLegacyRouteRegistration(route: AnyRouteRegistration): route is LegacyRouteRegistration {
-  return !!route?.composition && !("complete" in route.composition) && !isRegionPageRouteRegistration(route);
+export function isRetiredCompleteRouteRegistration(route: unknown): boolean {
+  return !!route && typeof route === "object" && "composition" in route && !!route.composition && typeof route.composition === "object" && "complete" in route.composition;
 }
-export function isRegionPageRouteRegistration(route: AnyRouteRegistration): route is RegionPageRouteRegistration {
-  return !!route?.composition && "binding" in route.composition && !!route.composition.binding && typeof route.composition.binding === "object" && "publicationId" in route.composition.binding;
+export function isLegacyRouteRegistration(value: unknown): value is LegacyRouteRegistration {
+  const route = value as LegacyRouteRegistration | undefined;
+  return !!route?.composition?.binding && !isRetiredCompleteRouteRegistration(route) && !isRegionPageRouteRegistration(route);
+}
+export function isRegionPageRouteRegistration(value: unknown): value is RegionPageRouteRegistration {
+  const route = value as RegionPageRouteRegistration | undefined;
+  return !isRetiredCompleteRouteRegistration(route) && !!route?.composition && "binding" in route.composition && !!route.composition.binding && typeof route.composition.binding === "object" && "publicationId" in route.composition.binding;
 }
 export function routeInstanceBinding(route: AnyRouteRegistration | undefined): InstanceBinding | undefined {
   return route && isLegacyRouteRegistration(route) ? route.composition.binding : undefined;
 }
-export function completeRouteKind(route: AnyRouteRegistration): CompleteRouteKind | undefined {
-  const c = route?.composition;
-  if (!c || !("complete" in c) || !c.complete || !only(c.complete, ["kind"]) || !isCompleteRouteKind(c.complete.kind)) return;
-  return c.complete.kind;
-}
 /** Reordering rows never changes a declared home destination. */
 export function registeredRouteBrandLink(registry: RouteRegistry<AnyRouteRegistration>, route: AnyRouteRegistration): { readonly href: string; readonly label: string } | undefined {
+  if (isRetiredCompleteRouteRegistration(route)) return undefined;
   const brand = route.brand;
   if (!brand || !only(brand, ["homeRouteId", "label"]) || !text(brand.homeRouteId) || !text(brand.label)) return undefined;
   const home = registry.routes.filter(row => row.routeId === brand.homeRouteId);
@@ -35,7 +31,7 @@ export function registeredRouteBrandLink(registry: RouteRegistry<AnyRouteRegistr
   const target = home[0]!;
   if (!text(target.path) || !/^\/(?:[^/?#\\]+\/?)*$/.test(target.path) || target.path.includes("//") || target.path.includes("%") || target.path.split("/").some(part => part === "." || part === "..") || target.path !== (target.path.replace(/\/$/, "") || "/")
     || (isLegacyRouteRegistration(target) ? target.composition?.binding?.context?.consumer !== registry.consumer || target.composition.binding.path !== target.path
-      : isRegionPageRouteRegistration(target) ? target.composition.binding.publicationId !== registry.publication?.id || registry.publication.context.consumer !== registry.consumer || target.composition.binding.path !== target.path : !completeRouteKind(target))) return undefined;
+      : isRegionPageRouteRegistration(target) ? target.composition.binding.publicationId !== registry.publication?.id || registry.publication.context.consumer !== registry.consumer || target.composition.binding.path !== target.path : true)) return undefined;
   return { href: target.path, label: brand.label };
 }
 

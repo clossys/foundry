@@ -6,7 +6,7 @@ import { checkRegisteredRoutes, parseRegisteredRouteContract, redirectOnlyRoute,
 import { emitRegisteredRouteAdapter, emitRegisteredRoutePage, emitRegisteredRouteRegistryModule } from "./registered-route-source.js";
 import { syntheticPlan, syntheticRoute, SYNTHETIC_ROUTE_REGISTRIES } from "../core/__fixtures__/registered-route.js";
 
-import { parseConsumerDogfoodContract } from "@clossys/designer/catalog/server";
+import { consumerDogfoodSources, parseConsumerDogfoodContract, runConsumerDogfood } from "@clossys/designer/catalog/server";
 let root: string;
 beforeEach(async () => { root = await fs.realpath(await fs.mkdtemp(join(tmpdir(), "SYNTHETIC-route-source-"))); });
 afterEach(async () => { await fs.rm(root, { recursive: true, force: true }); });
@@ -73,13 +73,19 @@ describe("strict registered route source closure (synthetic fixtures; no runtime
     expect(result.dogfood?.findings.some(finding => finding.code === "DF7" && finding.file === "raw.tsx")).toBe(true);
     expect(result.ok).toBe(false);
   });
-  it("follows the actual installed binder without a provenance waiver; fixed Layout source has zero DF2 inline attributes but missing CSS and real header stay pending", async () => {
+  it("follows the actual installed binder without a provenance waiver; its one imported header passes DF8 while missing CSS stays pending", async () => {
     await setup(); const result = await check();
     const findings = result.dogfood?.findings.filter(finding => finding.code === "DF2" && finding.file.endsWith("publisher/src/web/layouts/Stack.tsx") && finding.evidence.includes("inline styles")) ?? [];
     expect(findings).toEqual([]);
     expect(result.dogfood?.findings.some(finding => finding.code === "DF2" && finding.evidence.includes("unresolved class utilities"))).toBe(true);
-    expect(result.dogfood?.findings.some(finding => finding.code === "DF8")).toBe(true);
+    expect(result.dogfood?.findings.filter(finding => finding.code === "DF8")).toEqual([]);
     expect(result.ok).toBe(false); expect(result.sourceEvidence).toEqual([]);
     if (process.env.ROUTE_GATE_DIAGNOSTIC === "1") console.info(JSON.stringify(findings.map(finding => ({ ...finding, file: "packages/publisher/src/web/layouts/Stack.tsx" }))));
+  });
+  it.each(["missing", "duplicate"])("still refuses a deliberately %s header lease", async mode => {
+    const header = 'import { PageHeaderModule } from "@clossys/designer/shell";';
+    await write("page.tsx", mode === "missing" ? 'export default function Page(){return null}' : `${header} export default function Page(){return <><PageHeaderModule id="one" header={{title:"One"}}/><PageHeaderModule id="two" header={{title:"Two"}}/></>}`);
+    const input = await consumerDogfoodSources(["page.tsx"], { version: 1, sources: {}, pages: ["page.tsx"] }, root, root);
+    expect(runConsumerDogfood(input).findings.some(finding => finding.code === "DF8")).toBe(true);
   });
 });

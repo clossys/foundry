@@ -8,8 +8,6 @@ import { afterEach, describe, expect, it } from "vitest";
 import type { CopyResolver } from "@clossys/writer";
 import { resolveSectionedViewDocument, validateSectionedViewDocument } from "../../core/sectioned-view.js";
 import type { ResolvedSectionedViewDocument, SectionedViewDocument, SectionedViewGround } from "../../core/sectioned-view.js";
-import { LandingView } from "@clossys/designer/frames";
-import { ServerLandingView as ServerLandingView } from "@clossys/designer/frames";
 import { SectionedView } from "./SectionedView.js";
 import { SectionedView as ServerSectionedView } from "./SectionedView.server.js";
 
@@ -24,8 +22,6 @@ const FIELDS = ["eyebrowTone", "measure", "headingScale"] as const;
 const DEFAULTS = { eyebrowTone: "accent", measure: "prose", headingScale: "default" } as const;
 const OPTED_IN = { eyebrowTone: "muted", measure: "wide", headingScale: "display" } as const;
 const VIEWS = [
-  { name: "LandingView", View: LandingView },
-  { name: "server LandingView", View: ServerLandingView },
   { name: "SectionedView", View: SectionedView },
   { name: "server SectionedView", View: ServerSectionedView },
 ] as const;
@@ -83,7 +79,7 @@ describe("hero parity authored inputs", () => {
 });
 
 for (const { name, View } of VIEWS) {
-  // Designer's moved LandingView retains its legacy resolution contract; Publisher requires the Writer trace.
+  // Both supported Publisher entries require the Writer locale trace.
   const resolvedForView = (options: Record<string, unknown> = {}): ResolvedSectionedViewDocument => {
     const document = resolved(options);
     return name.includes("SectionedView") ? { ...document, resolutions: document.resolutions.map(entry => ({ ...entry, servedLocale: entry.locale, chain: [entry.locale] })) } : document;

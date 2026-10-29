@@ -5,7 +5,7 @@ function freeze<T>(value: T): T {
   return value;
 }
 const pages = [
-  ["home", "Home", "/", "LandingView", "home"],
+  ["home", "Home", "/", "SectionedView", "home"],
   ["about", "About", "/about", "MarketingView", "about"],
   ["contact", "Contact", "/contact", "ContactView", "contact"],
   ["terms", "Terms", "/terms", "LegalView", "terms"],
