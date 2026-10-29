@@ -35,14 +35,14 @@ Studio is a required Next standalone build under `dist/studio`. Producer first
 reads `manifest.json` schema version 1 and uses its relative `serverEntry`,
 validating that the resolved file remains under that output directory.
 Without a manifest, it tries `dist/studio/server.js`.
-The monorepo standalone layout `dist/studio/packages/producer/studio/server.js`
+The nested Next standalone layout `dist/studio/packages/producer/studio/server.js`
 is also supported. Producer starts it with `HOSTNAME=127.0.0.1`, an allocated
 internal `PORT`, `NODE_ENV=production`, and `CLOSSYS_PRODUCER_ORIGIN` set to
 the public loopback origin. It awaits a real HTTP response before declaring
 readiness, proxies non-API requests, and stops the child on shutdown or signals.
 A missing build or failed child is reported as an error.
 
-### Studio API
+### Studio HTTP endpoints
 
 Every request requires Host `127.0.0.1:<bound-port>` or `localhost:<bound-port>`.
 Origins, when present, must match that exact HTTP origin. Mutating requests
