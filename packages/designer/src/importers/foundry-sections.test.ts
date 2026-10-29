@@ -124,7 +124,7 @@ describe("Foundry section package descriptors", () => {
     expect(rows.get("sections.hero")!.missingRequiredSlots).toEqual([]);
     expect(rows.get("sections.page-header")!.missingMembers).toEqual(["config.record", "config.standard", "contact.header"]);
     expect(rows.get("sections.features")!.missingMembers).toEqual(["about.features"]);
-    expect(rows.get("sections.faq")!.missingMembers).toEqual([]);
+    expect(rows.get("sections.faq")!.missingMembers).toEqual(["about.faq"]);
     expect(rows.get("sections.article")!.missingSlots).toEqual([]);
     expect(rows.get("sections.logo-cloud")!.missingMembers).toEqual([]);
     expect(rows.get("sections.testimonials")!.missingMembers).toEqual([]);
