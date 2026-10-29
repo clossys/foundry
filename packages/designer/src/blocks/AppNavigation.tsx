@@ -210,8 +210,12 @@ export function AppNavigation({ onNavigate, fullViewport = false, retainMounted 
       data-navigation-node-id={node.id}
       data-active-ancestor={node.id === ancestor ? "true" : undefined}
       className={cx("min-w-0 rounded-control data-focus-visible:outline-solid data-focus-visible:outline-2 data-focus-visible:outline-accent data-focus-visible:-outline-offset-2", parentId && "ms-md border-s border-line-base ps-sm")}>
-      <NavigationTreeItemContent>{({ isExpanded }) =>
-        <div className="flex min-w-0 items-center gap-xs rounded-control">
+      <NavigationTreeItemContent>{({ isExpanded, state }) =>
+        <div className="flex min-w-0 items-center gap-xs rounded-control" onFocusCapture={() => {
+          // Native anchor focus (including host restoration) must update the peer's
+          // row key before its collection restores keyboard focus to a stale row.
+          state.selectionManager.setFocusedKey(node.id);
+        }}>
           {(node.href !== undefined || node.onAction) && destination(node, parentId)}
           {children.length > 0 && <Button slot="chevron" variant="ghost"
             className={cx(CONTROL, "shrink-0", node.href || node.onAction ? "icon-control-md justify-center" : "control-h-md flex-1")}
@@ -233,7 +237,7 @@ export function AppNavigation({ onNavigate, fullViewport = false, retainMounted 
     {header !== undefined && header !== null && header !== false && <div data-application-navigation-region="header" className="min-w-0 shrink-0 pb-sm">{header}</div>}
     <div data-application-navigation-region="links" className="min-h-0 flex-1 overflow-auto">
       {!tree.length ? <p className="p-sm text-body text-ink-muted">{emptyMessage}</p> :
-        <NavigationTree aria-label={label}
+        <NavigationTree aria-label={label} selectedRoute={ancestry.at(-1)?.href}
           expandedKeys={expanded} onExpandedChange={keys => setExpanded(new Set([...keys].map(String)))}
           className="flex min-w-0 flex-col gap-xs outline-none">
           {tree.map(node => item(node))}
