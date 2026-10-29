@@ -5,6 +5,7 @@ import type { PlainRegisteredRouteProjection } from "../core/route-projection.js
 import { prepareRegisteredRouteProjection } from "./registered-route-binding.js";
 import type { RegisteredRoutePageProps, RegisteredRouteRuntime, RegisteredRouteRuntimeHook, RegisteredRouteHeaderActions } from "./registered-route-binding.js";
 import type { LegacyRouteRegistration as RouteRegistration } from "../core/route-registry.js";
+import { isRegionPageRouteRegistration } from "../core/route-identities.js";
 export { prepareRegisteredRoute, prepareRegisteredRouteFromNode, prepareRegisteredRouteProjection } from "./registered-route-binding.js";
 export type { PreparedRegisteredRoute, RegisteredRoutePageProps, RegisteredRouteRuntime, RegisteredRouteRuntimeHook, RegisteredRouteHeaderActions, PlainRegisteredRouteProjection } from "./registered-route-binding.js";
 export type { RegisteredRouteSerializable, RegisteredRouteServerData } from "../core/route-server-data.js";
@@ -12,11 +13,11 @@ export { materializeRegisteredRouteSourceEvidence } from "./registered-route-sou
 export type { RegisteredRouteSourceBootstrap } from "../core/route-source-evidence.js";
 export type { RegisteredRouteSourceMaterialization } from "./registered-route-source-bootstrap.js";
 
-export function RegisteredRoutePage({ registry, routeId, useRuntime, renderActions }: RegisteredRoutePageProps) {
+export function RegisteredRoutePage({ registry, routeId, useRuntime, renderActions, publication }: RegisteredRoutePageProps) {
   const route = registry.routes.find(route => route.routeId === routeId);
   if (!route) throw new Error("Registered route identity is unavailable");
-  if (route.composition.binding.body?.source.kind === "derived") return <DesignerRegisteredRoutePage registry={registry} routeId={routeId} useRuntime={useRuntime} renderActions={renderActions} />;
-  return <StaticRegisteredRoutePage registry={registry} routeId={routeId} useRuntime={useRuntime} renderActions={renderActions} />;
+  if (!isRegionPageRouteRegistration(route) && route.composition.binding.body?.source.kind === "derived") return <DesignerRegisteredRoutePage registry={registry} routeId={routeId} useRuntime={useRuntime} renderActions={renderActions} />;
+  return <StaticRegisteredRoutePage registry={registry} routeId={routeId} useRuntime={useRuntime} renderActions={renderActions} publication={publication} />;
 }
 /** The emitted client page for a route with a registered server loader. `data` is the
  * loader's serializable result, received as a prop from the emitted server page; it
@@ -48,3 +49,9 @@ export type { WriterRouteServerData, WriterRoutePageProps } from "./writer/Write
 
 export { projectRegisteredRouteNavigation, withCompleteRouteNavigation } from "./complete-route-navigation.js";
 export type { CompleteRouteServerData, CompleteRouteNavigation } from "./complete-route-navigation.js";
+export { createRegisteredPageSession, createRegisteredPublicationSession } from "./registered-route-query.js";
+export type { RegisteredPageSession, RegisteredPageSessionOptions, RegisteredPageLoaders, RegisteredPageNavigation, RegisteredPageSearchHit, RegisteredPublicationSession, RegisteredPublicationHost, RegisteredPublicationRegions, RegisteredFrameRouteState } from "./registered-route-query.js";
+export type { PublicationBinding, RegionPageBinding } from "../core/instance-binding.js";
+export type { RegionPageRouteRegistration, RegionPageRouteRegistry } from "../core/route-registry.js";
+export { projectPageOutline } from "../content/taxonomy.js";
+export type { RegisteredPageManifest, RegisteredPageOutline, PageOutlineHeading } from "../content/taxonomy.js";
