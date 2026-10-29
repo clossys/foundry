@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { render, screen } from "@testing-library/react";
-import { SectionHeader } from "./SectionHeader.js";
+import { SectionHeader, type SectionHeaderLevel } from "./SectionHeader.js";
 import { withoutDsAttrs } from "../catalog-core/provenance-attrs.js";
 
 describe("SectionHeader", () => {
@@ -82,7 +82,7 @@ describe("SectionHeader", () => {
 
 // S4-1: source capabilities remain independent of document outline.
 describe("S4-1 shared header capabilities", () => {
-  it.each([2, 3, 4, 5, 6] as const)("keeps semantic rank %s at every density", level => {
+  it.each([1, 2, 3, 4, 5, 6] as const satisfies readonly SectionHeaderLevel[])("keeps semantic rank %s at every density", level => {
     for (const density of ["compact", "standard", "display"] as const) {
       const view = render(<SectionHeader title="Heading" level={level} density={density} />);
       expect(view.container.querySelector(`h${level}`)).toHaveTextContent("Heading");

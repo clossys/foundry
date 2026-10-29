@@ -5,7 +5,7 @@ import { dsAttrs } from "../catalog-core/provenance-attrs.js";
 /** Section root provenance (D1): the selected Foundry fill this block is. */
 const SECTION_STAMP = dsAttrs("sections", "sections.section-header", "foundry/sections.section-header");
 
-export type SectionHeaderLevel = 2 | 3 | 4 | 5 | 6;
+export type SectionHeaderLevel = 1 | 2 | 3 | 4 | 5 | 6;
 
 type HeadingTag = `h${SectionHeaderLevel}`;
 
@@ -24,10 +24,11 @@ export interface SectionHeaderProps extends Omit<HTMLAttributes<HTMLDivElement>,
   /** Host-resolved stat badges and status summary. */
   stats?: ReactNode;
   /**
-   * Which heading element `title` renders as (`<h2>` through `<h6>`) — a
+   * Which heading element `title` renders as (`<h1>` through `<h6>`) — a
    * real, settable prop rather than a component always fixed to one level.
-   * A page's document outline has to stay unbroken (no skipped levels) no
-   * matter how deep a `SectionHeader` sits: one directly under a
+   * Use `level={1}` for the page's own title. A page's document outline
+   * has to stay unbroken (no skipped levels), no matter how deep a
+   * `SectionHeader` sits: one directly under a
    * `PageHeader`'s own `<h1>` needs `level={2}` (the default), but a
    * `SectionHeader` for a subsection of THAT section needs `level={3}`, and
    * so on. Getting this wrong — hardcoding one level, or styling a `<div>`

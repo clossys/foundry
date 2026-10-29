@@ -7,6 +7,7 @@ describe("PageHeader", () => {
     render(<PageHeader title="Prompts" />);
     const heading = screen.getByRole("heading", { name: "Prompts" });
     expect(heading.tagName).toBe("H1");
+    expect(heading.parentElement?.closest('[data-ds-leaf="sections.section-header"]')).not.toBeNull();
   });
 
   it("renders a description when given one", () => {
