@@ -43,7 +43,7 @@ export type PreparedRegisteredRoute = RuntimeAssemblyResult<ReactNode> & Prepare
 type PreparedStaticRoute = PreparedRegisteredRoute;
 /** A stream contains independently validated assemblies; it has no fabricated
  * aggregate assembly or aggregate render/source receipt. */
-export type PreparedRegisteredPage = PreparedStaticRoute | ({ readonly status: "stream"; readonly findings: readonly string[]; readonly chunks: readonly { readonly id: string; readonly result: PreparedStaticRoute }[] } & PreparedRouteFields);
+export type PreparedRegisteredPage = PreparedStaticRoute | ({ readonly status: "stream"; readonly findings: readonly string[]; readonly chunks: readonly { readonly id: string; readonly result: PreparedStaticRoute }[]; readonly regionsAssembly?: PreparedStaticRoute } & PreparedRouteFields);
 
 const only = (value: object, keys: readonly string[]) => Object.keys(value).every(key => keys.includes(key));
 /** The closed binder owns page composition. Hosts cannot return a body node,
@@ -70,7 +70,7 @@ const samePlacement = (section: import("../content/taxonomy.js").PageOutlinePlac
   && (section.keys ? runtimeHash(section.keys) === runtimeHash(scope.keys) : section.key === undefined || section.key === scope.key);
 function prepareRegionStream(registry: RegionPageRouteRegistry, route: RouteRegistration, runtime: RegisteredRouteRuntime, renderActions?: RegisteredRouteHeaderActions): PreparedRegisteredPage {
   const page = runtime.page!, slot = registry.publication!.mainSlot, binding = route.composition.binding;
-  const read = (reference: ContentRef) => { const current = page.read(reference); return current.status === "ready" ? current.content : reference.lazy ? undefined : runtime.assembly.ports.resolveContent(staticContentReference(reference)); };
+  const read = (reference: ContentRef) => { const current = page.read(reference); return current.status === "ready" ? current.content : reference.lazy || current.owned ? undefined : runtime.assembly.ports.resolveContent(staticContentReference(reference)); };
   const normalized = normalizeRepeatedSections(binding, read);
   if (normalized.status === "refused") return normalized;
   const targets = Object.values(page.outline.targets), chunks: { id: string; result: PreparedStaticRoute }[] = [];
@@ -118,7 +118,24 @@ function prepareRegionStream(registry: RegionPageRouteRegistry, route: RouteRegi
   }
   const failed = chunks.find(chunk => chunk.result.status === "refused");
   if (failed && "findings" in failed.result) return failed.result;
-  const first = chunks.find(chunk => chunk.result.status === "ready")?.result;
+  let regionsAssembly: PreparedStaticRoute | undefined;
+  if (normalized.status === "ready" && binding.frame.slotFills?.["page-module"]) {
+    // A genuine synchronous L0 header can independently validate frame slots.
+    // This is a selected subset receipt; main chunks keep their own assemblies.
+    const index = normalized.binding.fills[slot]?.findIndex(fill => fill.section === "sections.section-header" && !fill.children && Object.values(fill.content).every(reference => !normalized.lazy[contentReferenceKey(reference)] && read(reference)));
+    if (index !== undefined && index >= 0) {
+      const fill = normalized.binding.fills[slot]![index]!, prefix = `sections.${slot}.${index}`, next = `sections.${slot}.0`;
+      const scopes = Object.fromEntries(Object.entries(normalized.scopes).filter(([path]) => path === prefix || path.startsWith("frameSlots.")).map(([path, scope]) => [path === prefix ? next : path, scope]));
+      const headerBinding: FlowInstanceBinding = { ...normalized.binding, layout: registry.publication!.layout, fills: { [slot]: [fill] }, body: { kind: "flow", source: { kind: "static" }, sections: [{ slot, index: 0 }] } };
+      const headerRoute = { ...route, composition: { ...route.composition, binding: headerBinding } };
+      const routes = registry.routes.map(row => row.routeId === route.routeId ? headerRoute : normalizeRegionPageRoute(registry, row));
+      const references = [...Object.values(headerBinding.frame.content ?? {}), ...Object.values(headerBinding.frame.slotFills ?? {}).flatMap(current => Object.values(current.content))];
+      const lazy = Object.fromEntries(references.flatMap(reference => { const value = normalized.lazy[contentReferenceKey(reference)]; return value ? [[contentReferenceKey(value), value]] : []; }));
+      regionsAssembly = prepareRoute({ ...registry, routes }, route.routeId, runtime, renderActions, undefined, { ...normalized, binding: headerBinding, scopes, keys: {}, lazy });
+      if (regionsAssembly.status === "refused") return regionsAssembly;
+    }
+  }
+  const first = regionsAssembly?.status === "ready" ? regionsAssembly : chunks.find(chunk => chunk.result.status === "ready")?.result;
   const renderRegions = (cell: RuntimeCell): RegisteredRegionUpdate => {
     const selected = first?.renderRegions?.(cell);
     return { routeId: route.routeId, trail: runtimeSnapshot(route.composition.header.data) as unknown as RuntimeJson,
@@ -126,7 +143,7 @@ function prepareRegionStream(registry: RegionPageRouteRegistry, route: RouteRegi
       ...(renderActions ? { headerActions: renderActions({ compact: false }) } : {}),
       ...("regions" in page.options.page && page.options.page.regions.inspector ? { inspectorContext: read(page.options.page.regions.inspector)?.value } : {}) };
   };
-  return { status: "stream", findings: [], chunks, renderRegions, regionHash: runtimeHash({ route: route.routeId, chunks: chunks.map(({ id, result }, index) => [id, descriptors[index]!.status, result.regionHash ?? null]) }),
+  return { status: "stream", findings: [], chunks, ...(regionsAssembly ? { regionsAssembly } : {}), renderRegions, regionHash: runtimeHash({ route: route.routeId, regions: regionsAssembly?.regionHash ?? null, chunks: chunks.map(({ id, result }, index) => [id, descriptors[index]!.status, result.regionHash ?? null]) }),
     ...(page.frameState() ? { routeState: page.frameState() } : {}) };
 }
 const plainDisplay = Symbol("plain display, never authenticated");
@@ -169,7 +186,7 @@ function prepareRoute(registry: RouteRegistry, routeId: string, runtime: Registe
     const read = (reference: ContentRef): RuntimeContent | undefined => {
       const current = page?.read(reference);
       if (current?.status === "ready") return current.content;
-      return reference.lazy ? undefined : originalContent(staticContentReference(reference));
+      return reference.lazy || current?.owned ? undefined : originalContent(staticContentReference(reference));
     };
     const normalized = lowered ?? normalizeRepeatedSections(binding, read);
     if (normalized.status !== "ready") return normalized;

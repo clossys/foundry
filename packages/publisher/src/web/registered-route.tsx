@@ -7,7 +7,7 @@ import type { RegisteredRoutePageProps, RegisteredRouteRuntime, RegisteredRouteR
 import type { LegacyRouteRegistration as RouteRegistration } from "../core/route-registry.js";
 import { isRegionPageRouteRegistration } from "../core/route-identities.js";
 export { prepareRegisteredRoute, prepareRegisteredRouteFromNode, prepareRegisteredRouteProjection } from "./registered-route-binding.js";
-export type { PreparedRegisteredRoute, RegisteredRoutePageProps, RegisteredRouteRuntime, RegisteredRouteRuntimeHook, RegisteredRouteHeaderActions, PlainRegisteredRouteProjection } from "./registered-route-binding.js";
+export type { PreparedRegisteredRoute, PreparedRegisteredPage, RegisteredRoutePageProps, RegisteredRouteRuntime, RegisteredRouteRuntimeHook, RegisteredRouteHeaderActions, PlainRegisteredRouteProjection } from "./registered-route-binding.js";
 export type { RegisteredRouteSerializable, RegisteredRouteServerData } from "../core/route-server-data.js";
 export { materializeRegisteredRouteSourceEvidence } from "./registered-route-source-bootstrap.js";
 export type { RegisteredRouteSourceBootstrap } from "../core/route-source-evidence.js";
@@ -50,8 +50,8 @@ export type { WriterRouteServerData, WriterRoutePageProps } from "./writer/Write
 export { projectRegisteredRouteNavigation, withCompleteRouteNavigation } from "./complete-route-navigation.js";
 export type { CompleteRouteServerData, CompleteRouteNavigation } from "./complete-route-navigation.js";
 export { createRegisteredPageSession, createRegisteredPublicationSession } from "./registered-route-query.js";
-export type { RegisteredPageSession, RegisteredPageSessionOptions, RegisteredPageLoaders, RegisteredPageNavigation, RegisteredPageSearchHit, RegisteredPublicationSession, RegisteredPublicationHost, RegisteredPublicationRegions, RegisteredFrameRouteState } from "./registered-route-query.js";
+export type { RegisteredPageSession, RegisteredPageSessionOptions, RegisteredPageLoaders, RegisteredPageNavigation, RegisteredPageSearchHit, RegisteredPageItem, RegisteredPageChunk, RegisteredPageCommandGroup, RegisteredPublicationFramePorts, RegisteredPublicationSession, RegisteredPublicationHost, RegisteredPublicationRegions, RegisteredRegionUpdate, RegisteredFrameRouteState, RegisteredItemResult } from "./registered-route-query.js";
 export type { PublicationBinding, RegionPageBinding } from "../core/instance-binding.js";
 export type { RegionPageRouteRegistration, RegionPageRouteRegistry } from "../core/route-registry.js";
 export { projectPageOutline } from "../content/taxonomy.js";
-export type { RegisteredPageManifest, RegisteredPageOutline, PageOutlineHeading } from "../content/taxonomy.js";
+export type { RegisteredPageManifest, RegisteredPageOutline, PageOutlineHeading, PageOutlinePlacement, PageOutlineTarget, PageManifestNode, PageManifestL0, PageManifestL1, PageManifestL2 } from "../content/taxonomy.js";

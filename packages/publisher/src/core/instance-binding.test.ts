@@ -39,6 +39,25 @@ const cases: { code: InstanceCheckCode; setup?: () => Fixture; fail: (fixture: F
 ];
 
 describe("InstanceBinding v2 static LK contract", () => {
+  it("checks every authored descendant's exact consumer fill and typed content", () => {
+    const f = instanceFixture(), child = structuredClone(f.binding.fills.body![0]!);
+    f.binding.fills.body![0]!.children = [child];
+    expect(run(f).staticStatus).toBe("valid");
+    child.content.title = { kind: "copy", ref: "missing" };
+    expect(run(f).findings).toContainEqual({ code: "LK10", path: "fills.body.0.children.0.content.title", message: "Content must resolve by typed reference in the consumer registry" });
+    child.section = "sections.notices";
+    expect(run(f).findings.some(finding => finding.path === "fills.body.0.children.0" && finding.code === "LK4")).toBe(true);
+  });
+  it("validates additive repeat/lazy declarations through the authored template and withholds dynamic coverage", () => {
+    const f = instanceFixture();
+    Object.assign(f.binding.fills.body![0]!, { repeat: { over: { kind: "records", ref: "bands" }, key: "id" } });
+    Object.assign(f.binding.fills.body![0]!.content.title!, { lazy: { loader: "chunk", args: { l0: "records" } } });
+    const result = inspectInstanceChecks(f.binding, f.library, f.registries, compiler);
+    expect(result.result.staticStatus).toBe("valid");
+    expect(result.unavailableChecks).toEqual(expect.arrayContaining(["LK5", "LK10"]));
+    Object.assign(f.binding.fills.body![0]!.repeat!, { execute: "host callback" });
+    expect(run(f).staticStatus).toBe("refused");
+  });
   it.each(["non-owner", "invalid receipt", "frame", "layout", "missing grounds"] as const)("preserves the exact public result when %s coverage becomes unavailable", mutation => {
     const f = instanceFixture();
     let path = "fills.body.0";

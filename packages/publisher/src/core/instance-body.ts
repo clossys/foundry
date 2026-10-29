@@ -17,9 +17,16 @@ function closedBodyFindings(binding: InstanceBinding, registries: InstanceRegist
   if (!fields(binding, ["instanceId", "label", "path", "surface", "packIds", "format", "context", "frame", "fills", "states", "layout", "body"]) || !fields(binding.context, ["consumer", "brand", "medium"]) || !fields(binding.frame, ["leaf", "config", "content", "slotFills", "members"]) || binding.layout && !fields(binding.layout, ["leaf", "config", "members"])) findings.push("Instance binding has unknown fields");
   if (binding.frame.content !== undefined && (!binding.frame.content || typeof binding.frame.content !== "object" || Array.isArray(binding.frame.content) || Object.entries(binding.frame.content).some(([name, ref]) =>
     !name || name.trim() !== name || !fields(ref, ["kind", "ref"]) || !["copy", "media", "records", "action", "region"].includes(ref.kind) || typeof ref.ref !== "string" || !ref.ref || ref.ref.trim() !== ref.ref))) findings.push("Frame content must contain only named typed consumer references");
-  for (const fill of [...Object.values(binding.fills).flat(), ...Object.values(binding.frame.slotFills ?? {})]) {
-    if (!fields(fill, ["section", "config", "span", "content"]) || !fill.content || Object.values(fill.content).some(ref => !fields(ref, ["kind", "ref"]))) findings.push("Section fill/content has unknown fields");
-  }
+  const ancestors = new Set<SectionFill>(), descendants: SectionFill[] = [];
+  const section = (fill: SectionFill, depth = 0) => {
+    if (depth > 8 || ancestors.has(fill)) { findings.push("Section nesting must be bounded and acyclic"); return; }
+    if (!fields(fill, ["section", "config", "span", "content", "children"]) || !fields(fill.content, Object.keys(fill.content ?? {})) || Object.values(fill.content).some(ref => !fields(ref, ["kind", "ref"]))) { findings.push("Section fill/content has unknown fields"); return; }
+    if (fill.children !== undefined) {
+      if (body.kind !== "flow" || !Array.isArray(fill.children) || !fill.children.length) { findings.push("Nested Sections require a non-empty authored flow list"); return; }
+      ancestors.add(fill); fill.children.forEach(child => { descendants.push(child); section(child, depth + 1); }); ancestors.delete(fill);
+    }
+  };
+  for (const fill of [...Object.values(binding.fills).flat(), ...Object.values(binding.frame.slotFills ?? {})]) section(fill);
   const keys = body.kind === "flow" ? ["kind", "source", "sections"] : ["kind", "source", "boards", "arrangement", "collapseBelow"];
   if (!fields(body, keys)) return ["Body has unknown fields"];
   const source = body.source;
@@ -49,6 +56,10 @@ function closedBodyFindings(binding: InstanceBinding, registries: InstanceRegist
   if (body.kind === "flow" && !binding.layout) findings.push("Flow body requires its registered page Layout");
   findings.push(...bodySubstrateFindings(body, registries.frames.find(frame => frame.id === binding.frame.leaf)?.contract.stage, reference => {
     const fill = instanceBodyFill(binding, reference), contract = fill && registries.sections.find(section => section.id === fill.section)?.contract;
+    return contract?.substrates ? { substrates: contract.substrates, substrateTests: contract.substrateTests } : undefined;
+  }));
+  if (body.kind === "flow" && descendants.length) findings.push(...bodySubstrateFindings({ ...body, sections: descendants }, registries.frames.find(frame => frame.id === binding.frame.leaf)?.contract.stage, fill => {
+    const contract = registries.sections.find(section => section.id === fill.section)?.contract;
     return contract?.substrates ? { substrates: contract.substrates, substrateTests: contract.substrateTests } : undefined;
   }));
   return findings;
