@@ -100,6 +100,85 @@ function releaseFixture(f = setup()): any {
   const input: any=releaseInput(); input.registry.candidates[0].typeSettings.publication=f.snapshot;
   refreshReleaseInput(input); input.publicationLibrary=f.engine; input.writer={registry:f.writer.registry}; return input;
 }
+function writerPolicyFixture(policy: "custom-manifest" | "fallback") {
+  const f = setup(), writer: any = f.writer;
+  writer.manifest = {
+    defaultLocale: "en",
+    locales: ["fr-CA", "de", "fr", "en"].map(tag => ({ tag, dir: "ltr", state: "active" })),
+    fallback: { "fr-CA": ["de", "fr"], en: ["de", "fr"] },
+  };
+  if (policy === "fallback") {
+    writer.registries = [{ ...structuredClone(writer.registry), id: "publication-de", locale: "de" }];
+    for (const pin of Object.values(f.snapshot.copyPins) as any[]) pin.ref.locale = "fr-CA";
+  }
+  const input = releaseFixture(f);
+  input.writer = { registry: writer.registry, manifest: writer.manifest, ...(writer.registries ? { registries: writer.registries } : {}) };
+  return { input, served: policy === "fallback" ? writer.registries[0] : writer.registry,
+    chain: policy === "fallback" ? ["fr-CA", "de", "fr", "en"] : ["en", "de", "fr"] };
+}
+it.each(["custom-manifest", "fallback"] as const)("appends and reads immutable %s bundles without today's Writer policy", async policy => {
+  const { input, served, chain } = writerPolicyFixture(policy), root = await directory();
+  const first = await writeContentRelease(root, input);
+  expect(first.findings).toEqual([]);
+  expect(first.ok).toBe(true);
+  if (!first.ok) return;
+  const one = first.releases[0]!.manifest, compiled = one.publications![0]!;
+  for (const proof of Object.values(compiled.evidence.copy) as any[]) {
+    expect(proof.resolution).toMatchObject({ recordId: served.id, servedLocale: served.locale, chain });
+    expect(proof.entry.approval).toMatchObject({ approvedBy: "owner", textFingerprint: proof.pin.fingerprint });
+  }
+  const disk = JSON.parse(await fs.readFile(join(root, "_releases", one.targetId, "1.json"), "utf8"));
+  assertCompiledPublication(disk.publications[0]);
+  expect((await selectContentRelease(root, one.targetId, one.digest)).ok).toBe(true);
+  const before = await tree(root);
+  // Append uses a different current policy; the earlier bundle retains its
+  // own historical evidence for reading, selection and rollback.
+  const second = await writeContentRelease(root, releaseFixture());
+  expect(second.ok).toBe(true);
+  if (!second.ok) return;
+  const two = second.releases[0]!.manifest;
+  expect(two.n).toBe(2);
+  expect((await selectContentRelease(root, two.targetId, two.digest)).ok).toBe(true);
+  expect((await rollbackContentRelease(root, one.targetId, one.digest)).ok).toBe(true);
+  const after = await tree(root);
+  for (const [name, bytes] of Object.entries(before)) if (name.startsWith("_releases/")) expect(after[name]).toBe(bytes);
+});
+it.each([
+  ["custom-manifest", false], ["custom-manifest", true],
+  ["fallback", false], ["fallback", true],
+] as const)("refuses unreadable %s evidence before store access (prior history: %s)", async (policy, history) => {
+  const { input, served } = writerPolicyFixture(policy), root = await directory();
+  const first = history ? await writeContentRelease(root, releaseFixture()) : undefined;
+  if (first) expect(first.ok).toBe(true);
+  const one = first?.ok ? first.releases[0]!.manifest : undefined;
+  const before = await tree(root), directories = await fs.readdir(root);
+  // Writer accepts this opaque provenance revision, but the historical
+  // publication schema requires a trimmed identity. Reproduce successful
+  // compilation whose bundle would fail the next append/read.
+  served.revision = " r1 ";
+  const prepared = prepareContentRelease(input);
+  expect(prepared.ok).toBe(true);
+  if (!prepared.ok) return;
+  expect(() => assertCompiledPublication(prepared.releases[0]!.manifest.publications![0])).toThrow(/historical resolution identity/);
+  const reads = vi.spyOn(fs, "lstat"), mkdir = vi.spyOn(fs, "mkdir"), open = vi.spyOn(fs, "open");
+  const pending = writeContentRelease(root, input);
+  const synchronousReads = reads.mock.calls.length;
+  const result = await pending;
+  const access = { synchronousReads, reads: reads.mock.calls.length, mkdir: mkdir.mock.calls.length, open: open.mock.calls.length };
+  vi.restoreAllMocks();
+  expect.soft(result).toMatchObject({ ok: false, releases: [], findings: [{ rule: "release-publication" }] });
+  expect.soft(access).toEqual({ synchronousReads: 0, reads: 0, mkdir: 0, open: 0 });
+  expect.soft(await tree(root)).toEqual(before);
+  expect.soft(await fs.readdir(root)).toEqual(directories);
+  if (one) expect.soft((await selectContentRelease(root, one.targetId, one.digest)).ok).toBe(true);
+  const next = await writeContentRelease(root, releaseFixture());
+  expect.soft(next.ok).toBe(true);
+  if (next.ok) {
+    const manifest = next.releases[0]!.manifest;
+    expect(manifest.n).toBe(history ? 2 : 1);
+    expect((await selectContentRelease(root, manifest.targetId, manifest.digest)).ok).toBe(true);
+  }
+});
 function repin(f: any) {
   const copyPins: any = {}, configs = publicationLibraryPins(f.engine).configs, selected = new Map<string,unknown>();
   const pin = (path: string,id="publication.title",literal?: string) => {

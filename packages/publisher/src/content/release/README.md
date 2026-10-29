@@ -67,18 +67,18 @@ deployed the release.
 Full integration qualification and the two independent landing reviews remain
 separate from local compilation and release preparation.
 
-## Unresolved Writer policy boundary
+## Writer policy boundary
 
 Compilation accepts a Writer manifest, multiple registries and locale fallback.
 Historical validation reconstructs each resolved entry in a single-entry
-registry without retaining that original immutable policy. A custom manifest or
-fallback-dependent compilation is therefore not guaranteed to pass its own
-historical read, even when compilation succeeded. This is a correctness blocker,
-not an approval waiver or a proven supported capability.
+registry without retaining that original immutable policy. Before any filesystem
+access, `writeContentRelease` synchronously checks every new compiled publication
+through `assertCompiledPublication`. If any artifact cannot pass its historical
+read, the entire write refuses without creating directories, acquiring a lock,
+or changing prior bundles. Successful compilation alone does not permit a write.
 
-The next bounded repair must either retain and validate the needed immutable
-Writer policy or synchronously validate the complete compiled artifact through
-`assertCompiledPublication` before any release bundle is written, refusing
-unsupported policy combinations. Add meaningful custom-manifest and locale
-fallback regression cases, including append/read/selection behavior. Existing
-owner approval, fingerprints and strict production refusal remain required.
+Custom manifests and explicit cross-locale fallback have append/read/selection
+and rollback regressions. Newly unreadable evidence is refused on both fresh
+stores and stores with prior history, leaving a valid next append possible.
+Existing owner approval, fingerprints and strict production refusal remain
+required.

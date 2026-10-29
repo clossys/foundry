@@ -193,6 +193,11 @@ async function writeOwned(path: string, value: unknown, owned: OwnedPath[]): Pro
 export async function writeContentRelease(inputRoot: string, input: ReleaseInput): Promise<ReleaseResult> {
   const preflight = prepareContentRelease(input);
   if (!preflight.ok) return preflight;
+  // Refuse the entire operation before any filesystem access if even one
+  // compilation cannot stand alone under the immutable historical reader.
+  try {
+    for (const bundle of preflight.releases) for (const publication of bundle.manifest.publications ?? []) assertCompiledPublication(publication);
+  } catch { return failure("release-publication", "Publication cannot be read as immutable historical evidence"); }
   // Synchronously validated plain artifacts cross the first await. Producer
   // callbacks are not cloneable authority and are never invoked again here.
   const snapshot = structuredClone(preflight);
