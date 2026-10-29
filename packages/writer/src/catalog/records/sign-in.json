@@ -68,14 +68,6 @@
           "text": "Your verification code"
         },
         {
-          "id": "st.f5ce2skzxv",
-          "leaf": "strings.actions",
-          "context": "Generic sign-in copy: actions.submit",
-          "status": "draft",
-          "origin": "foundry-default",
-          "text": "Sign in"
-        },
-        {
           "id": "st.mgd5wr0fbg",
           "leaf": "strings.actions",
           "context": "Generic sign-in copy: actions.verify",
@@ -90,14 +82,6 @@
           "status": "draft",
           "origin": "foundry-default",
           "text": "Please wait"
-        },
-        {
-          "id": "st.an5ekdr18g",
-          "leaf": "strings.actions",
-          "context": "Generic sign-in copy: actions.back",
-          "status": "draft",
-          "origin": "foundry-default",
-          "text": "Back"
         },
         {
           "id": "st.vfnx8ws1ey",
@@ -148,14 +132,6 @@
           "text": "Check your verification code."
         },
         {
-          "id": "st.95zeepaj3s",
-          "leaf": "strings.page-titles",
-          "context": "Generic sign-in copy: header.heading",
-          "status": "draft",
-          "origin": "foundry-default",
-          "text": "Sign in"
-        },
-        {
           "id": "st.ssn178aszz",
           "leaf": "strings.descriptions",
           "context": "Generic sign-in copy: header.description",
@@ -174,7 +150,7 @@
           "fields": {
             "header.heading": {
               "ref": "string",
-              "id": "st.95zeepaj3s"
+              "id": "st.ktgn3jyg1d"
             },
             "header.description": {
               "ref": "string",
@@ -214,7 +190,7 @@
             },
             "actions.submit": {
               "ref": "string",
-              "id": "st.f5ce2skzxv"
+              "id": "st.ktgn3jyg1d"
             },
             "actions.verify": {
               "ref": "string",
@@ -226,7 +202,7 @@
             },
             "actions.back": {
               "ref": "string",
-              "id": "st.an5ekdr18g"
+              "id": "st.hcq4hmxrrk"
             },
             "actions.resend": {
               "ref": "string",
@@ -321,7 +297,7 @@
             },
             "actions.submit": {
               "ref": "string",
-              "id": "st.f5ce2skzxv"
+              "id": "st.ktgn3jyg1d"
             },
             "actions.verify": {
               "ref": "string",
@@ -333,7 +309,7 @@
             },
             "actions.back": {
               "ref": "string",
-              "id": "st.an5ekdr18g"
+              "id": "st.hcq4hmxrrk"
             },
             "actions.resend": {
               "ref": "string",
@@ -428,7 +404,7 @@
             },
             "actions.submit": {
               "ref": "string",
-              "id": "st.f5ce2skzxv"
+              "id": "st.ktgn3jyg1d"
             },
             "actions.verify": {
               "ref": "string",
@@ -440,7 +416,7 @@
             },
             "actions.back": {
               "ref": "string",
-              "id": "st.an5ekdr18g"
+              "id": "st.hcq4hmxrrk"
             },
             "actions.resend": {
               "ref": "string",
@@ -570,7 +546,7 @@
           "passageId": "ps.9t7hjr28jw",
           "fields": {
             "header.heading": {
-              "id": "st.95zeepaj3s"
+              "id": "st.ktgn3jyg1d"
             },
             "header.description": {
               "id": "st.ssn178aszz"
@@ -600,7 +576,7 @@
               "id": "st.bsg41z478g"
             },
             "actions.submit": {
-              "id": "st.f5ce2skzxv"
+              "id": "st.ktgn3jyg1d"
             },
             "actions.verify": {
               "id": "st.mgd5wr0fbg"
@@ -609,7 +585,7 @@
               "id": "st.n7ccqemr5s"
             },
             "actions.back": {
-              "id": "st.an5ekdr18g"
+              "id": "st.hcq4hmxrrk"
             },
             "actions.resend": {
               "id": "st.vfnx8ws1ey"
@@ -665,7 +641,7 @@
               "id": "st.bsg41z478g"
             },
             "actions.submit": {
-              "id": "st.f5ce2skzxv"
+              "id": "st.ktgn3jyg1d"
             },
             "actions.verify": {
               "id": "st.mgd5wr0fbg"
@@ -674,7 +650,7 @@
               "id": "st.n7ccqemr5s"
             },
             "actions.back": {
-              "id": "st.an5ekdr18g"
+              "id": "st.hcq4hmxrrk"
             },
             "actions.resend": {
               "id": "st.vfnx8ws1ey"
@@ -730,7 +706,7 @@
               "id": "st.bsg41z478g"
             },
             "actions.submit": {
-              "id": "st.f5ce2skzxv"
+              "id": "st.ktgn3jyg1d"
             },
             "actions.verify": {
               "id": "st.mgd5wr0fbg"
@@ -739,7 +715,7 @@
               "id": "st.n7ccqemr5s"
             },
             "actions.back": {
-              "id": "st.an5ekdr18g"
+              "id": "st.hcq4hmxrrk"
             },
             "actions.resend": {
               "id": "st.vfnx8ws1ey"
@@ -799,7 +775,19 @@
         "st.auth.error.unavailable": {
           "id": "st.v3508ndjd1"
         }
-      }
+      },
+      "externalRecords": [
+        {
+          "recordId": "st.hcq4hmxrrk",
+          "source": "common-labels.r1.en.json",
+          "sourceContext": "Designer console"
+        },
+        {
+          "recordId": "st.ktgn3jyg1d",
+          "source": "common-labels.r1.en.json",
+          "sourceContext": "admin.writer.chat.account.signIn"
+        }
+      ]
     },
     "ar": {
       "records": [

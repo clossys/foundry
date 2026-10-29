@@ -5,6 +5,7 @@ import inventory from "../__fixtures__/admin-name-inventory.json" with { type: "
 import meta from "./admin-meta.r1.en.json" with { type: "json" };
 import studio from "./admin-studio.r1.en.json" with { type: "json" };
 import voice from "./admin-voice.r1.en.json" with { type: "json" };
+import common from "./common-labels.r1.en.json" with { type: "json" };
 import terminology from "../admin-terminology.json" with { type: "json" };
 import { loadWriterCatalog } from "../ia/index.js";
 import { validateWriterRecord } from "../../model/validate.js";
@@ -20,10 +21,12 @@ import { formatLeaves } from "../../../../publisher/src/formats/slots/formats.js
 
 const unit = "A4-WR-ADMIN-NAMES";
 const files = [meta, studio];
-const all = [...voice.records, ...meta.records, ...studio.records] as StringRecord[];
+const all = [...voice.records, ...meta.records, ...studio.records, ...common.records] as StringRecord[];
 const batches = files.flatMap(file => file.sourceBatches.filter(batch => batch.unit === unit));
 const changedIds = new Set(batches.flatMap(batch => [...batch.recordIds, ...batch.revisions.map(row => row.recordId)]));
-const changed = all.filter(record => changedIds.has(record.id));
+const canonicalId = (id: string) => common.usages.find(usage => usage.legacyRecordId === id)?.recordId ?? id;
+const canonicalChangedIds = new Set([...changedIds].map(canonicalId));
+const changed = all.filter(record => canonicalChangedIds.has(record.id));
 const root = new URL("../../../../../", import.meta.url);
 const read = (path: string) => readFileSync(new URL(path, root), "utf8");
 const normalize = (text: string) => text.normalize("NFKC").toLocaleLowerCase("en").replace(/[^\p{L}\p{N}]+/gu, " ").trim();
@@ -153,6 +156,16 @@ describe("admin display-name drafts", () => {
 
   it("passes actual Writer lint, ICU, length and pseudo expansion for every authored or revised record", () => {
     expect(changed.length).toBeGreaterThan(340);
+    expect(changedIds.size).toBe(364);
+    expect(new Set(changed.map(record => record.id))).toEqual(canonicalChangedIds);
+    for (const id of changedIds) {
+      const record = changed.find(record => record.id === canonicalId(id))!;
+      expect(record, id).toBeDefined();
+      for (const usage of common.usages.filter(usage => usage.legacyRecordId === id)) {
+        expect(record.status).toBe(usage.status);
+        if (usage.limits.maxChars !== undefined) expect(record.limits?.maxChars).toBeLessThanOrEqual(usage.limits.maxChars);
+      }
+    }
     const content = library(changed);
     expect(checkWriterLint(content)).toEqual([]); expect(checkWriterICU(content)).toEqual([]);
     expect(checkWriterLength(content)).toEqual([]); expect(checkWriterExpansion(content)).toEqual([]);

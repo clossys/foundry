@@ -1,53 +1,57 @@
 {
   "version": 1,
-  "ok": true,
+  "ok": false,
   "scope": "Real catalog/records JSON; native locale completeness per bundle. Test fixtures are not translation promises.",
   "approvalEvaluated": false,
   "translationCurrencyEvaluated": false,
   "inputs": [
     {
       "path": "admin-chat.r1.en.json",
-      "sha256": "d588c69266e163fbb5c9a65034526aabe7eac3140fd12cc811e673ef711fffd1"
+      "sha256": "fb172a9bc69fa2a8ca11c215591fe2335f23ec269f6beff8a1adb2c65b780053"
     },
     {
       "path": "admin-meta.r1.en.json",
-      "sha256": "1970bb3327fb1f0a9cc5357ce791102d9094a00a7c85874bb526c3f8aad549d5"
+      "sha256": "bacc17152fac9bdfc0896408e3668905cc2ac74f53aeb7d9f3f3d30c8f9d978c"
     },
     {
       "path": "admin-pages.r1.en.json",
-      "sha256": "1493fce2ff8631a587febe3e558ecf6705dcb79469e41c87a1d2ff822f2774c0"
+      "sha256": "468b482e6e1a6d5f6b30b96596a8f13c35817c6af92a263146b2a478207aee20"
     },
     {
       "path": "admin-studio.r1.en.json",
-      "sha256": "d50111cc044c1c079639ebca099079cbadfb7d52676b45f592886f2602d3c77b"
+      "sha256": "46b2976456150cf4fdbbbfedfbeca206960f4ea34ccc7a3731c535badc776371"
     },
     {
       "path": "admin-voice.r1.en.json",
-      "sha256": "36b3955087f05be4345d6681b4ab969ca102ae15727679865667543a4398ba2c"
+      "sha256": "61b191a5df5fa1aa9c4db8196f82f1406d6b33bd523b3fae0aa2c0804f6c90e5"
     },
     {
       "path": "admin-writer-paging.r1.en.json",
-      "sha256": "f1eb924b8e677e0f81ba817e0360ebcc3323d246124ac77be80b3e3e78bc1b45"
+      "sha256": "f5c3899dae2a8e7ebf1f36d188023109d6934261b8cb59c47128aae2fc477c28"
     },
     {
       "path": "admin-writer.r1.en.json",
-      "sha256": "c5e5b4fff837898528e261e66aed461748a2995f67afd5000fca2c5949a9b9c8"
+      "sha256": "e56ae49597d46c7a7072adcf9059a3f9b50dbef177a393f346ef7b43e9c022f2"
+    },
+    {
+      "path": "common-labels.r1.en.json",
+      "sha256": "654ad36f1cd1c164296e3e988c8123be5a8dbfb5aa184567dd2cb37097ceff26"
     },
     {
       "path": "pending/sections-upgrade.r1.en.json",
-      "sha256": "9d48dee988dc90df91ff3f0ea40e4f85574a411b808de4c1a7049e307c1c5118"
+      "sha256": "767957a12a214f1ec84836fc207bb6f682020bf164ab2d824ebff3ac8b118c54"
     },
     {
       "path": "section-defaults.r1.en.json",
-      "sha256": "fbacf11c6bfc1416aaea273c387e3baecf22bdf840c71fce70626e70cba8000d"
+      "sha256": "048abce8accf7d8989b1fa6ec44b7b508fed13b169856e3124f9e26f73a0cb37"
     },
     {
       "path": "sign-in.json",
-      "sha256": "b2988bc422baed14c3fa8b4c6e7958eb8199f5437799bc905585bf48e526a754"
+      "sha256": "e6a8054a3d7212df877f802a9dbe5f247500a6a153fa436a2656ea085e56eb76"
     },
     {
       "path": "site.en.json",
-      "sha256": "fc2fc7ad073c84a7153d2174de20c89c2e563a369dc82cf58db8daf90b9ca3cd"
+      "sha256": "bb794aaad3c938631e186b21fa64e8d7279b4eca2472be98c14bcfeb37cb9dcf"
     }
   ],
   "bundles": [
@@ -57,7 +61,7 @@
       "declaredLocales": [
         "en"
       ],
-      "records": 136
+      "records": 121
     },
     {
       "path": "admin-meta.r1.en.json",
@@ -65,7 +69,7 @@
       "declaredLocales": [
         "en"
       ],
-      "records": 347
+      "records": 291
     },
     {
       "path": "admin-pages.r1.en.json",
@@ -73,7 +77,7 @@
       "declaredLocales": [
         "en"
       ],
-      "records": 226
+      "records": 124
     },
     {
       "path": "admin-studio.r1.en.json",
@@ -81,7 +85,7 @@
       "declaredLocales": [
         "en"
       ],
-      "records": 504
+      "records": 392
     },
     {
       "path": "admin-voice.r1.en.json",
@@ -89,15 +93,7 @@
       "declaredLocales": [
         "en"
       ],
-      "records": 206
-    },
-    {
-      "path": "admin-writer-paging.r1.en.json",
-      "defaultLocale": "en",
-      "declaredLocales": [
-        "en"
-      ],
-      "records": 4
+      "records": 129
     },
     {
       "path": "admin-writer.r1.en.json",
@@ -105,7 +101,15 @@
       "declaredLocales": [
         "en"
       ],
-      "records": 17
+      "records": 12
+    },
+    {
+      "path": "common-labels.r1.en.json",
+      "defaultLocale": "en",
+      "declaredLocales": [
+        "en"
+      ],
+      "records": 177
     },
     {
       "path": "pending/sections-upgrade.r1.en.json",
@@ -113,7 +117,7 @@
       "declaredLocales": [
         "en"
       ],
-      "records": 10
+      "records": 7
     },
     {
       "path": "section-defaults.r1.en.json",
@@ -121,7 +125,7 @@
       "declaredLocales": [
         "en"
       ],
-      "records": 108
+      "records": 90
     },
     {
       "path": "sign-in.json",
@@ -130,7 +134,7 @@
         "ar",
         "en"
       ],
-      "records": 78
+      "records": 75
     },
     {
       "path": "site.en.json",
@@ -138,13 +142,47 @@
       "declaredLocales": [
         "en"
       ],
-      "records": 99
+      "records": 50
     }
   ],
-  "records": 1735,
+  "records": 1468,
   "locales": [
     "ar",
     "en"
   ],
-  "findings": []
+  "findings": [
+    {
+      "code": "WR10",
+      "severity": "error",
+      "locale": "ar",
+      "path": "ar/sign-in.json",
+      "field": "records",
+      "message": "Orphan record has no counterpart in the default locale.",
+      "recordId": "st.95zeepaj3s"
+    },
+    {
+      "code": "WR10",
+      "severity": "error",
+      "locale": "ar",
+      "path": "ar/sign-in.json",
+      "field": "records",
+      "message": "Orphan record has no counterpart in the default locale.",
+      "recordId": "st.an5ekdr18g"
+    },
+    {
+      "code": "WR10",
+      "severity": "error",
+      "locale": "ar",
+      "path": "ar/sign-in.json",
+      "field": "records",
+      "message": "Orphan record has no counterpart in the default locale.",
+      "recordId": "st.f5ce2skzxv"
+    },
+    {
+      "code": "WX6_LOAD",
+      "severity": "error",
+      "path": "admin-writer-paging.r1.en.json",
+      "message": "admin-writer-paging.r1.en.json: no recognized records"
+    }
+  ]
 }

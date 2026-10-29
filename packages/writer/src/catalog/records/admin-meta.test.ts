@@ -17,6 +17,7 @@ import { checkWriterICU } from "../../checks/icu.js";
 import { checkWriterLength } from "../../checks/length.js";
 import { checkWriterExpansion, writerPseudoLocale } from "../../checks/expansion.js";
 import { resolveCopyRef } from "../../resolve.js";
+import { getAdminCopy } from "../../admin-copy.js";
 
 interface Review {
   recordId: string; cellId: string; before: string; after: string; rationale: string; budget: number;
@@ -102,7 +103,7 @@ for (const file of files) describe(file, () => {
   });
 
   it("hand-rolls its planned fields through a pseudo resolver with zero unwrapped text", () => {
-    const envelope = draft(file), known = new Set([...voice.records, ...files.flatMap(file => draft(file).records)].map(record => record.id));
+    const envelope = draft(file), known = new Set(getAdminCopy().records.map(record => record.id));
     const calls: string[] = [];
     const pseudo = (id: string) => { if (!known.has(id)) throw new Error(`Need: missing Writer record ${id}`); calls.push(id); return `[[${id}]]`; };
     expect(envelope.bindings.length).toBeGreaterThanOrEqual(envelope.records.length);

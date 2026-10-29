@@ -82,17 +82,6 @@
       }
     },
     {
-      "id": "st.pdq1ef8q2d",
-      "leaf": "strings.names",
-      "context": "designer.check.C4",
-      "status": "draft",
-      "origin": "foundry-default",
-      "text": "Coverage",
-      "limits": {
-        "maxChars": 60
-      }
-    },
-    {
       "id": "st.npyc54g5m6",
       "leaf": "strings.names",
       "context": "designer.check.C5",
@@ -148,34 +137,12 @@
       }
     },
     {
-      "id": "st.t317dsw4j4",
-      "leaf": "strings.names",
-      "context": "designer.check.C10",
-      "status": "draft",
-      "origin": "foundry-default",
-      "text": "Source history",
-      "limits": {
-        "maxChars": 60
-      }
-    },
-    {
       "id": "st.bjwkdahzwm",
       "leaf": "strings.field-labels",
       "context": "designer.inspector.fields.itemId",
       "status": "draft",
       "origin": "foundry-default",
       "text": "Item ID",
-      "limits": {
-        "maxChars": 60
-      }
-    },
-    {
-      "id": "st.0t22p7nhjk",
-      "leaf": "strings.field-labels",
-      "context": "designer.inspector.fields.layer",
-      "status": "draft",
-      "origin": "foundry-default",
-      "text": "Layer",
       "limits": {
         "maxChars": 60
       }
@@ -236,45 +203,12 @@
       }
     },
     {
-      "id": "st.k9eny24qbx",
-      "leaf": "strings.field-labels",
-      "context": "designer.inspector.fields.historyCommand",
-      "status": "draft",
-      "origin": "foundry-default",
-      "text": "Command",
-      "limits": {
-        "maxChars": 60
-      }
-    },
-    {
       "id": "st.mybqmnwk5s",
       "leaf": "strings.field-labels",
       "context": "designer.inspector.fields.historyContentHash",
       "status": "draft",
       "origin": "foundry-default",
       "text": "Result hash",
-      "limits": {
-        "maxChars": 60
-      }
-    },
-    {
-      "id": "st.ehnm0c7e08",
-      "leaf": "strings.field-labels",
-      "context": "designer.inspector.fields.historyInputs",
-      "status": "draft",
-      "origin": "foundry-default",
-      "text": "Inputs",
-      "limits": {
-        "maxChars": 60
-      }
-    },
-    {
-      "id": "st.k2hbf8chyb",
-      "leaf": "strings.names",
-      "context": "designer.ia.tokens.color",
-      "status": "draft",
-      "origin": "foundry-default",
-      "text": "Color",
       "limits": {
         "maxChars": 60
       }
@@ -379,17 +313,6 @@
       }
     },
     {
-      "id": "st.qrvmkqp6hq",
-      "leaf": "strings.names",
-      "context": "designer.ia.tokens.type-spacing",
-      "status": "draft",
-      "origin": "foundry-default",
-      "text": "Spacing",
-      "limits": {
-        "maxChars": 60
-      }
-    },
-    {
       "id": "st.5r9jd8zqt1",
       "leaf": "strings.names",
       "context": "designer.ia.tokens.space",
@@ -407,17 +330,6 @@
       "status": "draft",
       "origin": "foundry-default",
       "text": "Layout",
-      "limits": {
-        "maxChars": 60
-      }
-    },
-    {
-      "id": "st.qnqy2cwr23",
-      "leaf": "strings.names",
-      "context": "designer.ia.tokens.space-rhythm",
-      "status": "draft",
-      "origin": "foundry-default",
-      "text": "Rhythm",
       "limits": {
         "maxChars": 60
       }
@@ -561,17 +473,6 @@
       "status": "draft",
       "origin": "foundry-default",
       "text": "Control sizes",
-      "limits": {
-        "maxChars": 60
-      }
-    },
-    {
-      "id": "st.mt3nvmdc3j",
-      "leaf": "strings.names",
-      "context": "designer.ia.tokens.interaction-states",
-      "status": "draft",
-      "origin": "foundry-default",
-      "text": "States",
       "limits": {
         "maxChars": 60
       }
@@ -797,17 +698,6 @@
       }
     },
     {
-      "id": "st.sm9bq8fv8f",
-      "leaf": "strings.names",
-      "context": "designer.item.tokens.density",
-      "status": "draft",
-      "origin": "foundry-default",
-      "text": "Density",
-      "limits": {
-        "maxChars": 60
-      }
-    },
-    {
       "id": "st.67jwyr82sp",
       "leaf": "strings.names",
       "context": "designer.item.tokens.display-face",
@@ -951,17 +841,6 @@
       }
     },
     {
-      "id": "st.kc4qwnns4j",
-      "leaf": "strings.names",
-      "context": "designer.item.tokens.icon-size",
-      "status": "draft",
-      "origin": "foundry-default",
-      "text": "Size",
-      "limits": {
-        "maxChars": 60
-      }
-    },
-    {
       "id": "st.ez00b96cd1",
       "leaf": "strings.names",
       "context": "designer.item.tokens.icon-stroke",
@@ -1056,17 +935,6 @@
       "status": "draft",
       "origin": "foundry-default",
       "text": "Shift distance",
-      "limits": {
-        "maxChars": 60
-      }
-    },
-    {
-      "id": "st.mn2v0dgaj8",
-      "leaf": "strings.names",
-      "context": "designer.item.tokens.spacing",
-      "status": "draft",
-      "origin": "foundry-default",
-      "text": "Spacing",
       "limits": {
         "maxChars": 60
       }
@@ -1182,17 +1050,6 @@
       }
     },
     {
-      "id": "st.5mwpnsqwvz",
-      "leaf": "strings.names",
-      "context": "designer.ia.assets.logo",
-      "status": "draft",
-      "origin": "foundry-default",
-      "text": "Logo",
-      "limits": {
-        "maxChars": 60
-      }
-    },
-    {
       "id": "st.gqzt107c6n",
       "leaf": "strings.names",
       "context": "designer.ia.assets.logo-artwork",
@@ -1226,17 +1083,6 @@
       }
     },
     {
-      "id": "st.v67nyypq4j",
-      "leaf": "strings.names",
-      "context": "designer.ia.assets.app-identity-application",
-      "status": "draft",
-      "origin": "foundry-default",
-      "text": "Application",
-      "limits": {
-        "maxChars": 60
-      }
-    },
-    {
       "id": "st.5h1mxsvx9m",
       "leaf": "strings.names",
       "context": "designer.ia.assets.icons",
@@ -1248,56 +1094,12 @@
       }
     },
     {
-      "id": "st.041fh8t2aw",
-      "leaf": "strings.names",
-      "context": "designer.ia.assets.icons-navigation",
-      "status": "draft",
-      "origin": "foundry-default",
-      "text": "Navigation",
-      "limits": {
-        "maxChars": 60
-      }
-    },
-    {
-      "id": "st.3fyz884ab8",
-      "leaf": "strings.names",
-      "context": "designer.ia.assets.icons-actions",
-      "status": "draft",
-      "origin": "foundry-default",
-      "text": "Actions",
-      "limits": {
-        "maxChars": 60
-      }
-    },
-    {
-      "id": "st.v6ra67gp67",
-      "leaf": "strings.names",
-      "context": "designer.ia.assets.icons-status",
-      "status": "draft",
-      "origin": "foundry-default",
-      "text": "Status",
-      "limits": {
-        "maxChars": 60
-      }
-    },
-    {
       "id": "st.7mg7r7svw4",
       "leaf": "strings.names",
       "context": "designer.ia.assets.icons-objects",
       "status": "draft",
       "origin": "foundry-default",
       "text": "Objects",
-      "limits": {
-        "maxChars": 60
-      }
-    },
-    {
-      "id": "st.2c9722yrzg",
-      "leaf": "strings.names",
-      "context": "designer.ia.assets.imagery",
-      "status": "draft",
-      "origin": "foundry-default",
-      "text": "Media",
       "limits": {
         "maxChars": 60
       }
@@ -1325,45 +1127,12 @@
       }
     },
     {
-      "id": "st.wkfv7m7130",
-      "leaf": "strings.names",
-      "context": "designer.ia.assets.imagery-patterns",
-      "status": "draft",
-      "origin": "foundry-default",
-      "text": "Patterns",
-      "limits": {
-        "maxChars": 60
-      }
-    },
-    {
       "id": "st.0y1nj28v87",
       "leaf": "strings.names",
       "context": "designer.item.assets.lockup",
       "status": "draft",
       "origin": "foundry-default",
       "text": "Logo with name",
-      "limits": {
-        "maxChars": 60
-      }
-    },
-    {
-      "id": "st.mpy5g7tfw7",
-      "leaf": "strings.names",
-      "context": "designer.item.assets.mark",
-      "status": "draft",
-      "origin": "foundry-default",
-      "text": "Logomark",
-      "limits": {
-        "maxChars": 60
-      }
-    },
-    {
-      "id": "st.rdc1xvjq5v",
-      "leaf": "strings.names",
-      "context": "designer.item.assets.favicon",
-      "status": "draft",
-      "origin": "foundry-default",
-      "text": "Browser icon",
       "limits": {
         "maxChars": 60
       }
@@ -1386,28 +1155,6 @@
       "status": "draft",
       "origin": "foundry-default",
       "text": "Image ratio",
-      "limits": {
-        "maxChars": 60
-      }
-    },
-    {
-      "id": "st.zy13qxh36a",
-      "leaf": "strings.names",
-      "context": "designer.item.assets.image",
-      "status": "draft",
-      "origin": "foundry-default",
-      "text": "Image",
-      "limits": {
-        "maxChars": 60
-      }
-    },
-    {
-      "id": "st.m429k7492g",
-      "leaf": "strings.names",
-      "context": "designer.item.assets.video",
-      "status": "draft",
-      "origin": "foundry-default",
-      "text": "Video",
       "limits": {
         "maxChars": 60
       }
@@ -1490,56 +1237,12 @@
       }
     },
     {
-      "id": "st.gdakfdd19f",
-      "leaf": "strings.names",
-      "context": "designer.item.assets.icon-home",
-      "status": "draft",
-      "origin": "foundry-default",
-      "text": "Home",
-      "limits": {
-        "maxChars": 60
-      }
-    },
-    {
-      "id": "st.3avwye9tm9",
-      "leaf": "strings.names",
-      "context": "designer.item.assets.icon-search",
-      "status": "draft",
-      "origin": "foundry-default",
-      "text": "Search",
-      "limits": {
-        "maxChars": 60
-      }
-    },
-    {
-      "id": "st.c2ackxb8x4",
-      "leaf": "strings.names",
-      "context": "designer.item.assets.icon-close",
-      "status": "draft",
-      "origin": "foundry-default",
-      "text": "Close",
-      "limits": {
-        "maxChars": 60
-      }
-    },
-    {
       "id": "st.tjxhn192tb",
       "leaf": "strings.names",
       "context": "designer.item.assets.icon-check",
       "status": "draft",
       "origin": "foundry-default",
       "text": "Check",
-      "limits": {
-        "maxChars": 60
-      }
-    },
-    {
-      "id": "st.41b5rk7wcd",
-      "leaf": "strings.names",
-      "context": "designer.item.assets.icon-settings",
-      "status": "draft",
-      "origin": "foundry-default",
-      "text": "Settings",
       "limits": {
         "maxChars": 60
       }
@@ -1567,56 +1270,12 @@
       }
     },
     {
-      "id": "st.m1mwdqj1mx",
-      "leaf": "strings.names",
-      "context": "designer.item.assets.icon-theme-light",
-      "status": "draft",
-      "origin": "foundry-default",
-      "text": "Light theme",
-      "limits": {
-        "maxChars": 60
-      }
-    },
-    {
-      "id": "st.88zc1dht9h",
-      "leaf": "strings.names",
-      "context": "designer.item.assets.icon-theme-dark",
-      "status": "draft",
-      "origin": "foundry-default",
-      "text": "Dark theme",
-      "limits": {
-        "maxChars": 60
-      }
-    },
-    {
-      "id": "st.f1r0af8z7y",
-      "leaf": "strings.names",
-      "context": "designer.item.assets.icon-theme-system",
-      "status": "draft",
-      "origin": "foundry-default",
-      "text": "System theme",
-      "limits": {
-        "maxChars": 60
-      }
-    },
-    {
       "id": "st.p7g57x7w7d",
       "leaf": "strings.names",
       "context": "designer.item.assets.icon-success",
       "status": "draft",
       "origin": "foundry-default",
       "text": "Success",
-      "limits": {
-        "maxChars": 60
-      }
-    },
-    {
-      "id": "st.cfy1fftfdq",
-      "leaf": "strings.names",
-      "context": "designer.item.assets.icon-warning",
-      "status": "draft",
-      "origin": "foundry-default",
-      "text": "Warning",
       "limits": {
         "maxChars": 60
       }
@@ -1677,17 +1336,6 @@
       }
     },
     {
-      "id": "st.w09np431tq",
-      "leaf": "strings.names",
-      "context": "designer.item.assets.icon-website",
-      "status": "draft",
-      "origin": "foundry-default",
-      "text": "Website",
-      "limits": {
-        "maxChars": 60
-      }
-    },
-    {
       "id": "st.jrpe4bb37t",
       "leaf": "strings.names",
       "context": "designer.item.assets.icon-institution",
@@ -1738,17 +1386,6 @@
       "status": "draft",
       "origin": "foundry-default",
       "text": "Folder",
-      "limits": {
-        "maxChars": 60
-      }
-    },
-    {
-      "id": "st.5jrhbbr5sm",
-      "leaf": "strings.names",
-      "context": "designer.item.assets.icon-date",
-      "status": "draft",
-      "origin": "foundry-default",
-      "text": "Date",
       "limits": {
         "maxChars": 60
       }
@@ -1842,34 +1479,12 @@
       }
     },
     {
-      "id": "st.8rktftq4qz",
-      "leaf": "strings.names",
-      "context": "designer.item.assets.icon-layers",
-      "status": "draft",
-      "origin": "foundry-default",
-      "text": "Layers",
-      "limits": {
-        "maxChars": 60
-      }
-    },
-    {
       "id": "st.ftzpjtkz4v",
       "leaf": "strings.names",
       "context": "designer.item.assets.icon-integration",
       "status": "draft",
       "origin": "foundry-default",
       "text": "Integration",
-      "limits": {
-        "maxChars": 60
-      }
-    },
-    {
-      "id": "st.43j9gcptwk",
-      "leaf": "strings.names",
-      "context": "designer.ia.components.actions",
-      "status": "draft",
-      "origin": "foundry-default",
-      "text": "Actions",
       "limits": {
         "maxChars": 60
       }
@@ -1908,39 +1523,6 @@
       }
     },
     {
-      "id": "st.pda59gg768",
-      "leaf": "strings.names",
-      "context": "designer.ia.components.inputs",
-      "status": "draft",
-      "origin": "foundry-default",
-      "text": "Inputs",
-      "limits": {
-        "maxChars": 60
-      }
-    },
-    {
-      "id": "st.kqjtvamysw",
-      "leaf": "strings.names",
-      "context": "designer.ia.components.inputs-form",
-      "status": "draft",
-      "origin": "foundry-default",
-      "text": "Form",
-      "limits": {
-        "maxChars": 60
-      }
-    },
-    {
-      "id": "st.fg1dznm6qa",
-      "leaf": "strings.names",
-      "context": "designer.ia.components.inputs-text",
-      "status": "draft",
-      "origin": "foundry-default",
-      "text": "Text",
-      "limits": {
-        "maxChars": 60
-      }
-    },
-    {
       "id": "st.y86qzcf965",
       "leaf": "strings.names",
       "context": "designer.ia.components.inputs-choice",
@@ -1969,28 +1551,6 @@
       "status": "draft",
       "origin": "foundry-default",
       "text": "Number",
-      "limits": {
-        "maxChars": 60
-      }
-    },
-    {
-      "id": "st.mp02ad33xd",
-      "leaf": "strings.names",
-      "context": "designer.ia.components.inputs-date",
-      "status": "draft",
-      "origin": "foundry-default",
-      "text": "Date",
-      "limits": {
-        "maxChars": 60
-      }
-    },
-    {
-      "id": "st.th7s612c9v",
-      "leaf": "strings.names",
-      "context": "designer.ia.components.inputs-color",
-      "status": "draft",
-      "origin": "foundry-default",
-      "text": "Color",
       "limits": {
         "maxChars": 60
       }
@@ -2040,28 +1600,6 @@
       }
     },
     {
-      "id": "st.eetqq5y604",
-      "leaf": "strings.names",
-      "context": "designer.ia.components.display-media",
-      "status": "draft",
-      "origin": "foundry-default",
-      "text": "Media",
-      "limits": {
-        "maxChars": 60
-      }
-    },
-    {
-      "id": "st.qxaxqewq3p",
-      "leaf": "strings.names",
-      "context": "designer.ia.components.display-assets",
-      "status": "draft",
-      "origin": "foundry-default",
-      "text": "Assets",
-      "limits": {
-        "maxChars": 60
-      }
-    },
-    {
       "id": "st.b05f34zp0a",
       "leaf": "strings.names",
       "context": "designer.ia.components.charts-core",
@@ -2095,39 +1633,6 @@
       }
     },
     {
-      "id": "st.x95qdk70h6",
-      "leaf": "strings.names",
-      "context": "designer.ia.components.display-content",
-      "status": "draft",
-      "origin": "foundry-default",
-      "text": "Content",
-      "limits": {
-        "maxChars": 60
-      }
-    },
-    {
-      "id": "st.emkzstd78z",
-      "leaf": "strings.names",
-      "context": "designer.ia.components.feedback",
-      "status": "draft",
-      "origin": "foundry-default",
-      "text": "Feedback",
-      "limits": {
-        "maxChars": 60
-      }
-    },
-    {
-      "id": "st.n0wrz941gm",
-      "leaf": "strings.names",
-      "context": "designer.ia.components.feedback-messages",
-      "status": "draft",
-      "origin": "foundry-default",
-      "text": "Messages",
-      "limits": {
-        "maxChars": 60
-      }
-    },
-    {
       "id": "st.f9s12jaads",
       "leaf": "strings.names",
       "context": "designer.ia.components.feedback-indicators",
@@ -2150,39 +1655,6 @@
       }
     },
     {
-      "id": "st.zn3de0gy72",
-      "leaf": "strings.names",
-      "context": "designer.ia.components.navigation",
-      "status": "draft",
-      "origin": "foundry-default",
-      "text": "Navigation",
-      "limits": {
-        "maxChars": 60
-      }
-    },
-    {
-      "id": "st.qpwzxv0zxj",
-      "leaf": "strings.names",
-      "context": "designer.ia.components.navigation-links",
-      "status": "draft",
-      "origin": "foundry-default",
-      "text": "Links",
-      "limits": {
-        "maxChars": 60
-      }
-    },
-    {
-      "id": "st.7ywhhgzjnq",
-      "leaf": "strings.names",
-      "context": "designer.ia.components.navigation-panels",
-      "status": "draft",
-      "origin": "foundry-default",
-      "text": "Panels",
-      "limits": {
-        "maxChars": 60
-      }
-    },
-    {
       "id": "st.1e15003kax",
       "leaf": "strings.names",
       "context": "designer.ia.components.navigation-trees",
@@ -2200,17 +1672,6 @@
       "status": "draft",
       "origin": "foundry-default",
       "text": "Containment",
-      "limits": {
-        "maxChars": 60
-      }
-    },
-    {
-      "id": "st.j4376qs2d9",
-      "leaf": "strings.names",
-      "context": "designer.ia.components.containment-structure",
-      "status": "draft",
-      "origin": "foundry-default",
-      "text": "Structure",
       "limits": {
         "maxChars": 60
       }
@@ -2502,17 +1963,6 @@
       }
     },
     {
-      "id": "st.54fde15cnn",
-      "leaf": "strings.names",
-      "context": "designer.item.components.form",
-      "status": "draft",
-      "origin": "foundry-default",
-      "text": "Form",
-      "limits": {
-        "maxChars": 60
-      }
-    },
-    {
       "id": "st.ek1zch4bmx",
       "leaf": "strings.names",
       "context": "designer.item.components.grid-list",
@@ -2552,28 +2002,6 @@
       "status": "draft",
       "origin": "foundry-default",
       "text": "Link",
-      "limits": {
-        "maxChars": 60
-      }
-    },
-    {
-      "id": "st.7tz1hpw0gg",
-      "leaf": "strings.names",
-      "context": "designer.item.components.logo",
-      "status": "draft",
-      "origin": "foundry-default",
-      "text": "Logo",
-      "limits": {
-        "maxChars": 60
-      }
-    },
-    {
-      "id": "st.zc2c0w4qx4",
-      "leaf": "strings.names",
-      "context": "designer.item.components.menu",
-      "status": "draft",
-      "origin": "foundry-default",
-      "text": "Menu",
       "limits": {
         "maxChars": 60
       }
@@ -2876,325 +2304,6 @@
       }
     },
     {
-      "id": "st.etn3efp58r",
-      "leaf": "strings.names",
-      "context": "designer.ia.sections.parts",
-      "status": "draft",
-      "origin": "foundry-default",
-      "text": "Parts",
-      "limits": {
-        "maxChars": 60
-      }
-    },
-    {
-      "id": "st.1f0sc4veew",
-      "leaf": "strings.names",
-      "context": "designer.ia.sections.parts-structure",
-      "status": "draft",
-      "origin": "foundry-default",
-      "text": "Structure",
-      "limits": {
-        "maxChars": 60
-      }
-    },
-    {
-      "id": "st.srpwh5w0mq",
-      "leaf": "strings.names",
-      "context": "designer.ia.sections.parts-navigation",
-      "status": "draft",
-      "origin": "foundry-default",
-      "text": "Navigation",
-      "limits": {
-        "maxChars": 60
-      }
-    },
-    {
-      "id": "st.9sjbpt05v6",
-      "leaf": "strings.names",
-      "context": "designer.ia.sections.explain",
-      "status": "draft",
-      "origin": "foundry-default",
-      "text": "Explain",
-      "limits": {
-        "maxChars": 60
-      }
-    },
-    {
-      "id": "st.bqdskzn5py",
-      "leaf": "strings.names",
-      "context": "designer.ia.sections.explain-introductions",
-      "status": "draft",
-      "origin": "foundry-default",
-      "text": "Introductions",
-      "limits": {
-        "maxChars": 60
-      }
-    },
-    {
-      "id": "st.m3ms0vxwzm",
-      "leaf": "strings.names",
-      "context": "designer.ia.sections.explain-reading",
-      "status": "draft",
-      "origin": "foundry-default",
-      "text": "Reading",
-      "limits": {
-        "maxChars": 60
-      }
-    },
-    {
-      "id": "st.snmj61r83s",
-      "leaf": "strings.names",
-      "context": "designer.ia.sections.explain-promotion",
-      "status": "draft",
-      "origin": "foundry-default",
-      "text": "Promotion",
-      "limits": {
-        "maxChars": 60
-      }
-    },
-    {
-      "id": "st.m2r7rb9mhm",
-      "leaf": "strings.names",
-      "context": "designer.ia.sections.explain-social-proof",
-      "status": "draft",
-      "origin": "foundry-default",
-      "text": "Social proof",
-      "limits": {
-        "maxChars": 60
-      }
-    },
-    {
-      "id": "st.gbd1aggpfy",
-      "leaf": "strings.names",
-      "context": "designer.ia.sections.explain-media",
-      "status": "draft",
-      "origin": "foundry-default",
-      "text": "Media",
-      "limits": {
-        "maxChars": 60
-      }
-    },
-    {
-      "id": "st.gm2gyz20jx",
-      "leaf": "strings.names",
-      "context": "designer.ia.sections.explain-guidance",
-      "status": "draft",
-      "origin": "foundry-default",
-      "text": "Guidance",
-      "limits": {
-        "maxChars": 60
-      }
-    },
-    {
-      "id": "st.dqwhabg950",
-      "leaf": "strings.names",
-      "context": "designer.ia.sections.organize",
-      "status": "draft",
-      "origin": "foundry-default",
-      "text": "Organize",
-      "limits": {
-        "maxChars": 60
-      }
-    },
-    {
-      "id": "st.dx8799w49f",
-      "leaf": "strings.names",
-      "context": "designer.ia.sections.organize-collections",
-      "status": "draft",
-      "origin": "foundry-default",
-      "text": "Collections",
-      "limits": {
-        "maxChars": 60
-      }
-    },
-    {
-      "id": "st.47t4a0v4s2",
-      "leaf": "strings.names",
-      "context": "designer.ia.sections.organize-comparison",
-      "status": "draft",
-      "origin": "foundry-default",
-      "text": "Comparison",
-      "limits": {
-        "maxChars": 60
-      }
-    },
-    {
-      "id": "st.8x1r0ft6rc",
-      "leaf": "strings.names",
-      "context": "designer.ia.sections.organize-summaries",
-      "status": "draft",
-      "origin": "foundry-default",
-      "text": "Summaries",
-      "limits": {
-        "maxChars": 60
-      }
-    },
-    {
-      "id": "st.q484s9bz3w",
-      "leaf": "strings.names",
-      "context": "designer.ia.sections.organize-records",
-      "status": "draft",
-      "origin": "foundry-default",
-      "text": "Records",
-      "limits": {
-        "maxChars": 60
-      }
-    },
-    {
-      "id": "st.ctrfprmksn",
-      "leaf": "strings.names",
-      "context": "designer.ia.sections.organize-history",
-      "status": "draft",
-      "origin": "foundry-default",
-      "text": "History",
-      "limits": {
-        "maxChars": 60
-      }
-    },
-    {
-      "id": "st.xz62vvkvj3",
-      "leaf": "strings.names",
-      "context": "designer.ia.sections.collect",
-      "status": "draft",
-      "origin": "foundry-default",
-      "text": "Collect",
-      "limits": {
-        "maxChars": 60
-      }
-    },
-    {
-      "id": "st.8phn9m6kk3",
-      "leaf": "strings.names",
-      "context": "designer.ia.sections.collect-forms",
-      "status": "draft",
-      "origin": "foundry-default",
-      "text": "Forms",
-      "limits": {
-        "maxChars": 60
-      }
-    },
-    {
-      "id": "st.b28mjpaq29",
-      "leaf": "strings.names",
-      "context": "designer.ia.sections.collect-workflows",
-      "status": "draft",
-      "origin": "foundry-default",
-      "text": "Workflows",
-      "limits": {
-        "maxChars": 60
-      }
-    },
-    {
-      "id": "st.jns9tmxsdf",
-      "leaf": "strings.names",
-      "context": "designer.ia.sections.collect-preferences",
-      "status": "draft",
-      "origin": "foundry-default",
-      "text": "Preferences",
-      "limits": {
-        "maxChars": 60
-      }
-    },
-    {
-      "id": "st.dcx4bn55xt",
-      "leaf": "strings.names",
-      "context": "designer.ia.sections.collect-configuration",
-      "status": "draft",
-      "origin": "foundry-default",
-      "text": "Configuration",
-      "limits": {
-        "maxChars": 60
-      }
-    },
-    {
-      "id": "st.91bq2h08er",
-      "leaf": "strings.names",
-      "context": "designer.ia.sections.collect-conversation",
-      "status": "draft",
-      "origin": "foundry-default",
-      "text": "Conversation",
-      "limits": {
-        "maxChars": 60
-      }
-    },
-    {
-      "id": "st.end2wnfhnd",
-      "leaf": "strings.names",
-      "context": "designer.ia.sections.collect-inputs",
-      "status": "draft",
-      "origin": "foundry-default",
-      "text": "Inputs",
-      "limits": {
-        "maxChars": 60
-      }
-    },
-    {
-      "id": "st.2rrmfet0fn",
-      "leaf": "strings.names",
-      "context": "designer.ia.sections.navigate",
-      "status": "draft",
-      "origin": "foundry-default",
-      "text": "Navigate",
-      "limits": {
-        "maxChars": 60
-      }
-    },
-    {
-      "id": "st.tb7mk984x7",
-      "leaf": "strings.names",
-      "context": "designer.ia.sections.navigate-indexes",
-      "status": "draft",
-      "origin": "foundry-default",
-      "text": "Indexes",
-      "limits": {
-        "maxChars": 60
-      }
-    },
-    {
-      "id": "st.5syp7271te",
-      "leaf": "strings.names",
-      "context": "designer.ia.sections.navigate-discovery",
-      "status": "draft",
-      "origin": "foundry-default",
-      "text": "Discovery",
-      "limits": {
-        "maxChars": 60
-      }
-    },
-    {
-      "id": "st.m7gtk6hcw8",
-      "leaf": "strings.names",
-      "context": "designer.ia.sections.respond",
-      "status": "draft",
-      "origin": "foundry-default",
-      "text": "Respond",
-      "limits": {
-        "maxChars": 60
-      }
-    },
-    {
-      "id": "st.31tdz2e8k4",
-      "leaf": "strings.names",
-      "context": "designer.ia.sections.respond-states",
-      "status": "draft",
-      "origin": "foundry-default",
-      "text": "States",
-      "limits": {
-        "maxChars": 60
-      }
-    },
-    {
-      "id": "st.s2d41mwbnv",
-      "leaf": "strings.names",
-      "context": "designer.ia.sections.respond-messages",
-      "status": "draft",
-      "origin": "foundry-default",
-      "text": "Messages",
-      "limits": {
-        "maxChars": 60
-      }
-    },
-    {
       "id": "st.vhmvb8qqvy",
       "leaf": "strings.names",
       "context": "designer.item.sections.access-matrix",
@@ -3294,56 +2403,12 @@
       }
     },
     {
-      "id": "st.zxh419w2k5",
-      "leaf": "strings.names",
-      "context": "designer.item.sections.chat",
-      "status": "draft",
-      "origin": "foundry-default",
-      "text": "Chat",
-      "limits": {
-        "maxChars": 60
-      }
-    },
-    {
       "id": "st.5wz4xstmsp",
       "leaf": "strings.names",
       "context": "designer.item.sections.column-mapper",
       "status": "draft",
       "origin": "foundry-default",
       "text": "Column mapper",
-      "limits": {
-        "maxChars": 60
-      }
-    },
-    {
-      "id": "st.e2jkz58xgf",
-      "leaf": "strings.names",
-      "context": "designer.item.sections.comparison",
-      "status": "draft",
-      "origin": "foundry-default",
-      "text": "Comparison",
-      "limits": {
-        "maxChars": 60
-      }
-    },
-    {
-      "id": "st.dntgjthd24",
-      "leaf": "strings.names",
-      "context": "designer.item.sections.consent",
-      "status": "draft",
-      "origin": "foundry-default",
-      "text": "Consent",
-      "limits": {
-        "maxChars": 60
-      }
-    },
-    {
-      "id": "st.ne29tsc3gn",
-      "leaf": "strings.names",
-      "context": "designer.item.sections.content",
-      "status": "draft",
-      "origin": "foundry-default",
-      "text": "Content",
       "limits": {
         "maxChars": 60
       }
@@ -3448,34 +2513,12 @@
       }
     },
     {
-      "id": "st.17r7xa6wg9",
-      "leaf": "strings.names",
-      "context": "designer.item.sections.form",
-      "status": "draft",
-      "origin": "foundry-default",
-      "text": "Form",
-      "limits": {
-        "maxChars": 60
-      }
-    },
-    {
       "id": "st.09gymh1t8a",
       "leaf": "strings.names",
       "context": "designer.item.sections.gallery",
       "status": "draft",
       "origin": "foundry-default",
       "text": "Gallery",
-      "limits": {
-        "maxChars": 60
-      }
-    },
-    {
-      "id": "st.q1bz2hx0az",
-      "leaf": "strings.names",
-      "context": "designer.item.sections.hero",
-      "status": "draft",
-      "origin": "foundry-default",
-      "text": "Introduction",
       "limits": {
         "maxChars": 60
       }
@@ -3525,28 +2568,6 @@
       }
     },
     {
-      "id": "st.cm83f2fvc6",
-      "leaf": "strings.names",
-      "context": "designer.item.sections.logo-mark",
-      "status": "draft",
-      "origin": "foundry-default",
-      "text": "Logomark",
-      "limits": {
-        "maxChars": 60
-      }
-    },
-    {
-      "id": "st.x9yhz66awt",
-      "leaf": "strings.names",
-      "context": "designer.item.sections.media",
-      "status": "draft",
-      "origin": "foundry-default",
-      "text": "Media",
-      "limits": {
-        "maxChars": 60
-      }
-    },
-    {
       "id": "st.wg4nvk9amp",
       "leaf": "strings.names",
       "context": "designer.item.sections.newsletter",
@@ -3580,17 +2601,6 @@
       }
     },
     {
-      "id": "st.s13b3hwkta",
-      "leaf": "strings.names",
-      "context": "designer.item.sections.pagination",
-      "status": "draft",
-      "origin": "foundry-default",
-      "text": "Pagination",
-      "limits": {
-        "maxChars": 60
-      }
-    },
-    {
       "id": "st.s04f8bgg3x",
       "leaf": "strings.names",
       "context": "designer.item.sections.people",
@@ -3613,17 +2623,6 @@
       }
     },
     {
-      "id": "st.jsam2zzqwr",
-      "leaf": "strings.names",
-      "context": "designer.item.sections.record-detail",
-      "status": "draft",
-      "origin": "foundry-default",
-      "text": "Record details",
-      "limits": {
-        "maxChars": 60
-      }
-    },
-    {
       "id": "st.j6vhnaqcrf",
       "leaf": "strings.names",
       "context": "designer.item.sections.resource-list",
@@ -3641,17 +2640,6 @@
       "status": "draft",
       "origin": "foundry-default",
       "text": "Section header",
-      "limits": {
-        "maxChars": 60
-      }
-    },
-    {
-      "id": "st.qygg02nsps",
-      "leaf": "strings.names",
-      "context": "designer.item.sections.settings",
-      "status": "draft",
-      "origin": "foundry-default",
-      "text": "Settings",
       "limits": {
         "maxChars": 60
       }
@@ -3745,17 +2733,6 @@
       }
     },
     {
-      "id": "st.nbe9kckxef",
-      "leaf": "strings.names",
-      "context": "designer.item.sections.usage",
-      "status": "draft",
-      "origin": "foundry-default",
-      "text": "Usage",
-      "limits": {
-        "maxChars": 60
-      }
-    },
-    {
       "id": "st.mhgz3a460z",
       "leaf": "strings.names",
       "context": "designer.item.sections.wizard",
@@ -3773,17 +2750,6 @@
       "status": "draft",
       "origin": "foundry-default",
       "text": "Page shells",
-      "limits": {
-        "maxChars": 60
-      }
-    },
-    {
-      "id": "st.51jajdr2tv",
-      "leaf": "strings.names",
-      "context": "designer.ia.frames.page-shells-documents",
-      "status": "draft",
-      "origin": "foundry-default",
-      "text": "Documents",
       "limits": {
         "maxChars": 60
       }
@@ -3828,17 +2794,6 @@
       "status": "draft",
       "origin": "foundry-default",
       "text": "Headers",
-      "limits": {
-        "maxChars": 60
-      }
-    },
-    {
-      "id": "st.xdqbf8hxsv",
-      "leaf": "strings.names",
-      "context": "designer.ia.frames.navigation",
-      "status": "draft",
-      "origin": "foundry-default",
-      "text": "Navigation",
       "limits": {
         "maxChars": 60
       }
@@ -3932,17 +2887,6 @@
       }
     },
     {
-      "id": "st.v3ycrdrpmn",
-      "leaf": "strings.names",
-      "context": "designer.item.frames.auth-shell",
-      "status": "draft",
-      "origin": "foundry-default",
-      "text": "Sign-in page",
-      "limits": {
-        "maxChars": 60
-      }
-    },
-    {
       "id": "st.4wj43903kc",
       "leaf": "strings.names",
       "context": "designer.item.frames.site-header",
@@ -3993,17 +2937,6 @@
       "status": "draft",
       "origin": "foundry-default",
       "text": "Website footer",
-      "limits": {
-        "maxChars": 60
-      }
-    },
-    {
-      "id": "st.xe1vmezaw2",
-      "leaf": "strings.names",
-      "context": "designer.item.frames.sheet",
-      "status": "draft",
-      "origin": "foundry-default",
-      "text": "Overlay panel",
       "limits": {
         "maxChars": 60
       }
@@ -4374,23 +3307,6 @@
       "args": [
         {
           "name": "item",
-          "type": "string"
-        }
-      ],
-      "limits": {
-        "maxChars": 160
-      }
-    },
-    {
-      "id": "st.r39xxtj0m7",
-      "leaf": "strings.errors",
-      "context": "designer.finding.C6.19",
-      "status": "draft",
-      "origin": "foundry-default",
-      "text": "External source {source} has no source version. Ask an agent to record one.",
-      "args": [
-        {
-          "name": "source",
           "type": "string"
         }
       ],
@@ -5001,23 +3917,6 @@
       }
     },
     {
-      "id": "st.t578r688wz",
-      "leaf": "strings.errors",
-      "context": "designer.finding.C6.50",
-      "status": "draft",
-      "origin": "foundry-default",
-      "text": "External source {source} has no source version. Ask an agent to record one.",
-      "args": [
-        {
-          "name": "source",
-          "type": "string"
-        }
-      ],
-      "limits": {
-        "maxChars": 160
-      }
-    },
-    {
       "id": "st.yzfg6d7a3p",
       "leaf": "strings.errors",
       "context": "designer.finding.C5.51",
@@ -5079,54 +3978,12 @@
       }
     },
     {
-      "id": "st.q4a4j5xq1e",
-      "leaf": "strings.errors",
-      "context": "designer.finding.C2.54",
-      "status": "draft",
-      "origin": "foundry-default",
-      "text": "{option} uses {target} from a higher layer. Ask an agent to check the reference.",
-      "args": [
-        {
-          "name": "option",
-          "type": "string"
-        },
-        {
-          "name": "target",
-          "type": "string"
-        }
-      ],
-      "limits": {
-        "maxChars": 160
-      }
-    },
-    {
       "id": "st.b1hx0wf7y4",
       "leaf": "strings.errors",
       "context": "designer.finding.C2.55",
       "status": "draft",
       "origin": "foundry-default",
       "text": "{option} uses unresolved reference {target}. Ask an agent to check its value.",
-      "args": [
-        {
-          "name": "option",
-          "type": "string"
-        },
-        {
-          "name": "target",
-          "type": "string"
-        }
-      ],
-      "limits": {
-        "maxChars": 160
-      }
-    },
-    {
-      "id": "st.jt3xndjtmr",
-      "leaf": "strings.errors",
-      "context": "designer.finding.C2.56",
-      "status": "draft",
-      "origin": "foundry-default",
-      "text": "{option} uses {target} from a higher layer. Ask an agent to check the reference.",
       "args": [
         {
           "name": "option",
@@ -5393,39 +4250,6 @@
       }
     },
     {
-      "id": "st.2a77nn406k",
-      "leaf": "strings.names",
-      "context": "designer.frameOption.frames.app-shell.theme.system",
-      "status": "draft",
-      "origin": "foundry-default",
-      "text": "System theme",
-      "limits": {
-        "maxChars": 40
-      }
-    },
-    {
-      "id": "st.96npq8j00n",
-      "leaf": "strings.names",
-      "context": "designer.frameOption.frames.app-shell.theme.light",
-      "status": "draft",
-      "origin": "foundry-default",
-      "text": "Light theme",
-      "limits": {
-        "maxChars": 40
-      }
-    },
-    {
-      "id": "st.476jt5vjet",
-      "leaf": "strings.names",
-      "context": "designer.frameOption.frames.app-shell.theme.dark",
-      "status": "draft",
-      "origin": "foundry-default",
-      "text": "Dark theme",
-      "limits": {
-        "maxChars": 40
-      }
-    },
-    {
       "id": "st.rfdpnk1f7n",
       "leaf": "strings.names",
       "context": "designer.frameOption.frames.site-header.surface.solid",
@@ -5553,17 +4377,6 @@
       "status": "draft",
       "origin": "foundry-default",
       "text": "Collapsed panel",
-      "limits": {
-        "maxChars": 40
-      }
-    },
-    {
-      "id": "st.njcj3qqb0e",
-      "leaf": "strings.names",
-      "context": "designer.frameOption.frames.app-sidebar.presentation.overlay",
-      "status": "draft",
-      "origin": "foundry-default",
-      "text": "Overlay panel",
       "limits": {
         "maxChars": 40
       }
@@ -5987,45 +4800,12 @@
       }
     },
     {
-      "id": "st.mghmpmb8mp",
-      "leaf": "strings.names",
-      "context": "designer.item.components.command",
-      "status": "draft",
-      "origin": "authored",
-      "text": "Command",
-      "limits": {
-        "maxChars": 60
-      }
-    },
-    {
       "id": "st.2236py9b7a",
       "leaf": "strings.names",
       "context": "designer.item.components.dropdown-menu",
       "status": "draft",
       "origin": "authored",
       "text": "Dropdown menu",
-      "limits": {
-        "maxChars": 60
-      }
-    },
-    {
-      "id": "st.832cm61fb6",
-      "leaf": "strings.names",
-      "context": "designer.item.components.empty",
-      "status": "draft",
-      "origin": "authored",
-      "text": "Empty",
-      "limits": {
-        "maxChars": 60
-      }
-    },
-    {
-      "id": "st.v1cbgc4kr2",
-      "leaf": "strings.names",
-      "context": "designer.item.components.item",
-      "status": "draft",
-      "origin": "authored",
-      "text": "Item",
       "limits": {
         "maxChars": 60
       }
@@ -6048,17 +4828,6 @@
       "status": "draft",
       "origin": "authored",
       "text": "Sheet",
-      "limits": {
-        "maxChars": 60
-      }
-    },
-    {
-      "id": "st.x309rathmp",
-      "leaf": "strings.names",
-      "context": "designer.item.components.sidebar",
-      "status": "draft",
-      "origin": "authored",
-      "text": "Sidebar",
       "limits": {
         "maxChars": 60
       }
@@ -6092,39 +4861,6 @@
       "status": "draft",
       "origin": "authored",
       "text": "Search for a command to run...",
-      "limits": {
-        "maxChars": 120
-      }
-    },
-    {
-      "id": "st.er3g6ph4h3",
-      "leaf": "strings.field-labels",
-      "context": "designer.component.command.search",
-      "status": "draft",
-      "origin": "authored",
-      "text": "Search",
-      "limits": {
-        "maxChars": 120
-      }
-    },
-    {
-      "id": "st.9ehasbmw8z",
-      "leaf": "strings.actions",
-      "context": "designer.component.sheet.close",
-      "status": "draft",
-      "origin": "authored",
-      "text": "Close",
-      "limits": {
-        "maxChars": 120
-      }
-    },
-    {
-      "id": "st.50we5a15ty",
-      "leaf": "strings.field-labels",
-      "context": "designer.component.sidebar.title",
-      "status": "draft",
-      "origin": "authored",
-      "text": "Sidebar",
       "limits": {
         "maxChars": 120
       }
@@ -15650,19 +14386,19 @@
     },
     {
       "cellId": "designer.inspector.fields.status",
-      "recordId": "st.ajk345sfde",
+      "recordId": "st.v6ra67gp67",
       "target": "packages/designer/src/studio/system-canvas/inspector/Inspector.tsx",
       "kind": "label"
     },
     {
       "cellId": "designer.inspector.fields.options",
-      "recordId": "st.pazx9fx0vg",
+      "recordId": "st.p24ypyt9sb",
       "target": "packages/designer/src/studio/system-canvas/inspector/Inspector.tsx",
       "kind": "label"
     },
     {
       "cellId": "designer.inspector.fields.issues",
-      "recordId": "st.82h5wzt7c3",
+      "recordId": "st.6nrp8gmqv3",
       "target": "packages/designer/src/studio/system-canvas/inspector/Inspector.tsx",
       "kind": "label"
     },
@@ -15728,7 +14464,7 @@
     },
     {
       "cellId": "designer.ia.tokens.type-spacing",
-      "recordId": "st.qrvmkqp6hq",
+      "recordId": "st.mn2v0dgaj8",
       "target": "packages/designer/src/catalog/ia/tokens.json",
       "kind": "ia-name"
     },
@@ -15830,7 +14566,7 @@
     },
     {
       "cellId": "designer.ia.tokens.interaction-states",
-      "recordId": "st.mt3nvmdc3j",
+      "recordId": "st.31tdz2e8k4",
       "target": "packages/designer/src/catalog/ia/tokens.json",
       "kind": "ia-name"
     },
@@ -16046,7 +14782,7 @@
     },
     {
       "cellId": "designer.item.tokens.icon-size",
-      "recordId": "st.kc4qwnns4j",
+      "recordId": "st.aa0s69mdxk",
       "target": "packages/designer/src/catalog/slots/tokens.json",
       "kind": "item-name"
     },
@@ -16172,13 +14908,13 @@
     },
     {
       "cellId": "designer.ia.layer.tokens",
-      "recordId": "st.tk773axxm2",
+      "recordId": "st.c331pzvwey",
       "target": "packages/designer/src/studio/system-canvas/DesignerPage.tsx",
       "kind": "label"
     },
     {
       "cellId": "designer.ia.assets.logo",
-      "recordId": "st.5mwpnsqwvz",
+      "recordId": "st.dgdbty02r2",
       "target": "packages/designer/src/catalog/ia/assets.json",
       "kind": "ia-name"
     },
@@ -16202,7 +14938,7 @@
     },
     {
       "cellId": "designer.ia.assets.app-identity-application",
-      "recordId": "st.v67nyypq4j",
+      "recordId": "st.gj32snjd4m",
       "target": "packages/designer/src/catalog/ia/assets.json",
       "kind": "ia-name"
     },
@@ -16268,13 +15004,13 @@
     },
     {
       "cellId": "designer.item.assets.mark",
-      "recordId": "st.mpy5g7tfw7",
+      "recordId": "st.cm83f2fvc6",
       "target": "packages/designer/src/catalog/slots/assets.json",
       "kind": "item-name"
     },
     {
       "cellId": "designer.item.assets.favicon",
-      "recordId": "st.rdc1xvjq5v",
+      "recordId": "st.a7d1spjaqx",
       "target": "packages/designer/src/catalog/slots/assets.json",
       "kind": "item-name"
     },
@@ -16292,13 +15028,13 @@
     },
     {
       "cellId": "designer.item.assets.image",
-      "recordId": "st.zy13qxh36a",
+      "recordId": "st.wx6z3yc2r4",
       "target": "packages/designer/src/catalog/slots/assets.json",
       "kind": "item-name"
     },
     {
       "cellId": "designer.item.assets.video",
-      "recordId": "st.m429k7492g",
+      "recordId": "st.rjydrbvwgq",
       "target": "packages/designer/src/catalog/slots/assets.json",
       "kind": "item-name"
     },
@@ -16346,7 +15082,7 @@
     },
     {
       "cellId": "designer.item.assets.icon-home",
-      "recordId": "st.gdakfdd19f",
+      "recordId": "st.9pds3yfrp5",
       "target": "packages/designer/src/catalog/slots/assets.json",
       "kind": "item-name"
     },
@@ -16358,7 +15094,7 @@
     },
     {
       "cellId": "designer.item.assets.icon-close",
-      "recordId": "st.c2ackxb8x4",
+      "recordId": "st.9ehasbmw8z",
       "target": "packages/designer/src/catalog/slots/assets.json",
       "kind": "item-name"
     },
@@ -16388,19 +15124,19 @@
     },
     {
       "cellId": "designer.item.assets.icon-theme-light",
-      "recordId": "st.m1mwdqj1mx",
+      "recordId": "st.96npq8j00n",
       "target": "packages/designer/src/catalog/slots/assets.json",
       "kind": "item-name"
     },
     {
       "cellId": "designer.item.assets.icon-theme-dark",
-      "recordId": "st.88zc1dht9h",
+      "recordId": "st.476jt5vjet",
       "target": "packages/designer/src/catalog/slots/assets.json",
       "kind": "item-name"
     },
     {
       "cellId": "designer.item.assets.icon-theme-system",
-      "recordId": "st.f1r0af8z7y",
+      "recordId": "st.2a77nn406k",
       "target": "packages/designer/src/catalog/slots/assets.json",
       "kind": "item-name"
     },
@@ -16412,7 +15148,7 @@
     },
     {
       "cellId": "designer.item.assets.icon-warning",
-      "recordId": "st.cfy1fftfdq",
+      "recordId": "st.y4xznsjmw8",
       "target": "packages/designer/src/catalog/slots/assets.json",
       "kind": "item-name"
     },
@@ -16448,7 +15184,7 @@
     },
     {
       "cellId": "designer.item.assets.icon-website",
-      "recordId": "st.w09np431tq",
+      "recordId": "st.dr57tvsfc6",
       "target": "packages/designer/src/catalog/slots/assets.json",
       "kind": "item-name"
     },
@@ -16550,13 +15286,13 @@
     },
     {
       "cellId": "designer.ia.layer.assets",
-      "recordId": "st.x7gywrs0qp",
+      "recordId": "st.qxaxqewq3p",
       "target": "packages/designer/src/studio/system-canvas/DesignerPage.tsx",
       "kind": "label"
     },
     {
       "cellId": "designer.ia.components.actions",
-      "recordId": "st.43j9gcptwk",
+      "recordId": "st.3fyz884ab8",
       "target": "packages/designer/src/catalog/ia/components.json",
       "kind": "ia-name"
     },
@@ -16580,13 +15316,13 @@
     },
     {
       "cellId": "designer.ia.components.inputs",
-      "recordId": "st.pda59gg768",
+      "recordId": "st.ehnm0c7e08",
       "target": "packages/designer/src/catalog/ia/components.json",
       "kind": "ia-name"
     },
     {
       "cellId": "designer.ia.components.inputs-form",
-      "recordId": "st.kqjtvamysw",
+      "recordId": "st.17r7xa6wg9",
       "target": "packages/designer/src/catalog/ia/components.json",
       "kind": "ia-name"
     },
@@ -16616,13 +15352,13 @@
     },
     {
       "cellId": "designer.ia.components.inputs-date",
-      "recordId": "st.mp02ad33xd",
+      "recordId": "st.5jrhbbr5sm",
       "target": "packages/designer/src/catalog/ia/components.json",
       "kind": "ia-name"
     },
     {
       "cellId": "designer.ia.components.inputs-color",
-      "recordId": "st.th7s612c9v",
+      "recordId": "st.k2hbf8chyb",
       "target": "packages/designer/src/catalog/ia/components.json",
       "kind": "ia-name"
     },
@@ -16652,7 +15388,7 @@
     },
     {
       "cellId": "designer.ia.components.display-media",
-      "recordId": "st.eetqq5y604",
+      "recordId": "st.2c9722yrzg",
       "target": "packages/designer/src/catalog/ia/components.json",
       "kind": "ia-name"
     },
@@ -16682,7 +15418,7 @@
     },
     {
       "cellId": "designer.ia.components.display-content",
-      "recordId": "st.x95qdk70h6",
+      "recordId": "st.ne29tsc3gn",
       "target": "packages/designer/src/catalog/ia/components.json",
       "kind": "ia-name"
     },
@@ -16694,7 +15430,7 @@
     },
     {
       "cellId": "designer.ia.components.feedback-messages",
-      "recordId": "st.n0wrz941gm",
+      "recordId": "st.ceegez6aff",
       "target": "packages/designer/src/catalog/ia/components.json",
       "kind": "ia-name"
     },
@@ -16712,7 +15448,7 @@
     },
     {
       "cellId": "designer.ia.components.navigation",
-      "recordId": "st.zn3de0gy72",
+      "recordId": "st.041fh8t2aw",
       "target": "packages/designer/src/catalog/ia/components.json",
       "kind": "ia-name"
     },
@@ -16724,7 +15460,7 @@
     },
     {
       "cellId": "designer.ia.components.navigation-panels",
-      "recordId": "st.7ywhhgzjnq",
+      "recordId": "st.kqevjtbwt9",
       "target": "packages/designer/src/catalog/ia/components.json",
       "kind": "ia-name"
     },
@@ -16742,7 +15478,7 @@
     },
     {
       "cellId": "designer.ia.components.containment-structure",
-      "recordId": "st.j4376qs2d9",
+      "recordId": "st.1f0sc4veew",
       "target": "packages/designer/src/catalog/ia/components.json",
       "kind": "ia-name"
     },
@@ -16904,7 +15640,7 @@
     },
     {
       "cellId": "designer.item.components.form",
-      "recordId": "st.54fde15cnn",
+      "recordId": "st.17r7xa6wg9",
       "target": "packages/designer/src/catalog/slots/components.json",
       "kind": "item-name"
     },
@@ -16934,7 +15670,7 @@
     },
     {
       "cellId": "designer.item.components.logo",
-      "recordId": "st.7tz1hpw0gg",
+      "recordId": "st.dgdbty02r2",
       "target": "packages/designer/src/catalog/slots/components.json",
       "kind": "item-name"
     },
@@ -17108,7 +15844,7 @@
     },
     {
       "cellId": "designer.ia.layer.components",
-      "recordId": "st.paa7qey2jr",
+      "recordId": "st.jht60wz8e1",
       "target": "packages/designer/src/studio/system-canvas/DesignerPage.tsx",
       "kind": "label"
     },
@@ -17126,7 +15862,7 @@
     },
     {
       "cellId": "designer.ia.sections.parts-navigation",
-      "recordId": "st.srpwh5w0mq",
+      "recordId": "st.041fh8t2aw",
       "target": "packages/designer/src/catalog/ia/sections.json",
       "kind": "ia-name"
     },
@@ -17162,7 +15898,7 @@
     },
     {
       "cellId": "designer.ia.sections.explain-media",
-      "recordId": "st.gbd1aggpfy",
+      "recordId": "st.2c9722yrzg",
       "target": "packages/designer/src/catalog/ia/sections.json",
       "kind": "ia-name"
     },
@@ -17246,7 +15982,7 @@
     },
     {
       "cellId": "designer.ia.sections.collect-inputs",
-      "recordId": "st.end2wnfhnd",
+      "recordId": "st.ehnm0c7e08",
       "target": "packages/designer/src/catalog/ia/sections.json",
       "kind": "ia-name"
     },
@@ -17282,7 +16018,7 @@
     },
     {
       "cellId": "designer.ia.sections.respond-messages",
-      "recordId": "st.s2d41mwbnv",
+      "recordId": "st.ceegez6aff",
       "target": "packages/designer/src/catalog/ia/sections.json",
       "kind": "ia-name"
     },
@@ -17354,7 +16090,7 @@
     },
     {
       "cellId": "designer.item.sections.comparison",
-      "recordId": "st.e2jkz58xgf",
+      "recordId": "st.47t4a0v4s2",
       "target": "packages/designer/src/catalog/slots/sections.json",
       "kind": "item-name"
     },
@@ -17438,7 +16174,7 @@
     },
     {
       "cellId": "designer.item.sections.hero",
-      "recordId": "st.q1bz2hx0az",
+      "recordId": "st.13d97mrmzy",
       "target": "packages/designer/src/catalog/slots/sections.json",
       "kind": "item-name"
     },
@@ -17474,7 +16210,7 @@
     },
     {
       "cellId": "designer.item.sections.media",
-      "recordId": "st.x9yhz66awt",
+      "recordId": "st.2c9722yrzg",
       "target": "packages/designer/src/catalog/slots/sections.json",
       "kind": "item-name"
     },
@@ -17516,7 +16252,7 @@
     },
     {
       "cellId": "designer.item.sections.record-detail",
-      "recordId": "st.jsam2zzqwr",
+      "recordId": "st.g385gwchf1",
       "target": "packages/designer/src/catalog/slots/sections.json",
       "kind": "item-name"
     },
@@ -17534,7 +16270,7 @@
     },
     {
       "cellId": "designer.item.sections.settings",
-      "recordId": "st.qygg02nsps",
+      "recordId": "st.41b5rk7wcd",
       "target": "packages/designer/src/catalog/slots/sections.json",
       "kind": "item-name"
     },
@@ -17612,7 +16348,7 @@
     },
     {
       "cellId": "designer.ia.frames.page-shells-documents",
-      "recordId": "st.51jajdr2tv",
+      "recordId": "st.2091r9z4bq",
       "target": "packages/designer/src/catalog/ia/frames.json",
       "kind": "ia-name"
     },
@@ -17642,7 +16378,7 @@
     },
     {
       "cellId": "designer.ia.frames.navigation",
-      "recordId": "st.xdqbf8hxsv",
+      "recordId": "st.041fh8t2aw",
       "target": "packages/designer/src/catalog/ia/frames.json",
       "kind": "ia-name"
     },
@@ -17696,7 +16432,7 @@
     },
     {
       "cellId": "designer.item.frames.auth-shell",
-      "recordId": "st.v3ycrdrpmn",
+      "recordId": "st.0szhqxn9xp",
       "target": "packages/designer/src/catalog/slots/frames.json",
       "kind": "item-name"
     },
@@ -17732,7 +16468,7 @@
     },
     {
       "cellId": "designer.item.frames.sheet",
-      "recordId": "st.xe1vmezaw2",
+      "recordId": "st.njcj3qqb0e",
       "target": "packages/designer/src/catalog/slots/frames.json",
       "kind": "item-name"
     },
@@ -17744,7 +16480,7 @@
     },
     {
       "cellId": "designer.ia.layer.frames",
-      "recordId": "st.82cxvbv76e",
+      "recordId": "st.7rv315vzjm",
       "target": "packages/designer/src/studio/system-canvas/DesignerPage.tsx",
       "kind": "label"
     },
@@ -18044,7 +16780,7 @@
     },
     {
       "cellId": "designer.finding.C6.50",
-      "recordId": "st.t578r688wz",
+      "recordId": "st.r39xxtj0m7",
       "target": "packages/designer/src/catalog-core/check.ts",
       "kind": "finding"
     },
@@ -18068,7 +16804,7 @@
     },
     {
       "cellId": "designer.finding.C2.54",
-      "recordId": "st.q4a4j5xq1e",
+      "recordId": "st.jt3xndjtmr",
       "target": "packages/designer/src/catalog-core/check.ts",
       "kind": "finding"
     },
@@ -18692,7 +17428,7 @@
     },
     {
       "cellId": "designer.item.components.command",
-      "recordId": "st.mghmpmb8mp",
+      "recordId": "st.k9eny24qbx",
       "target": "packages/designer/src/catalog/slots/components.json",
       "kind": "item-name"
     },
@@ -18728,7 +17464,7 @@
     },
     {
       "cellId": "designer.item.components.sidebar",
-      "recordId": "st.x309rathmp",
+      "recordId": "st.50we5a15ty",
       "target": "packages/designer/src/catalog/slots/components.json",
       "kind": "item-name"
     },
@@ -18752,7 +17488,7 @@
     },
     {
       "cellId": "designer.component.command.search",
-      "recordId": "st.er3g6ph4h3",
+      "recordId": "st.3avwye9tm9",
       "target": "packages/designer/src/components/command/command.tsx",
       "kind": "CopyRef"
     },
@@ -22576,6 +21312,443 @@
         "packages/designer/src/components/sidebar/sidebar.tsx": "7ec2e98ce85ea6bfd30386f7f115fb8bd6bf30b82b954a2ead2642c2ff624682"
       },
       "revisions": []
+    }
+  ],
+  "externalRecords": [
+    {
+      "recordId": "st.041fh8t2aw",
+      "source": "common-labels.r1.en.json",
+      "sourceContext": "designer.ia.assets.icons-navigation"
+    },
+    {
+      "recordId": "st.0szhqxn9xp",
+      "source": "common-labels.r1.en.json",
+      "sourceContext": "publisher.frameConfig.frames.site-shell.front-door"
+    },
+    {
+      "recordId": "st.0t22p7nhjk",
+      "source": "common-labels.r1.en.json",
+      "sourceContext": "designer.inspector.fields.layer"
+    },
+    {
+      "recordId": "st.13d97mrmzy",
+      "source": "common-labels.r1.en.json",
+      "sourceContext": "publisher.contentKey.lead"
+    },
+    {
+      "recordId": "st.17r7xa6wg9",
+      "source": "common-labels.r1.en.json",
+      "sourceContext": "designer.item.sections.form"
+    },
+    {
+      "recordId": "st.1f0sc4veew",
+      "source": "common-labels.r1.en.json",
+      "sourceContext": "designer.ia.sections.parts-structure"
+    },
+    {
+      "recordId": "st.2091r9z4bq",
+      "source": "common-labels.r1.en.json",
+      "sourceContext": "publisher.medium.document"
+    },
+    {
+      "recordId": "st.2a77nn406k",
+      "source": "common-labels.r1.en.json",
+      "sourceContext": "designer.frameOption.frames.app-shell.theme.system"
+    },
+    {
+      "recordId": "st.2c9722yrzg",
+      "source": "common-labels.r1.en.json",
+      "sourceContext": "designer.ia.assets.imagery"
+    },
+    {
+      "recordId": "st.2rrmfet0fn",
+      "source": "common-labels.r1.en.json",
+      "sourceContext": "designer.ia.sections.navigate"
+    },
+    {
+      "recordId": "st.31tdz2e8k4",
+      "source": "common-labels.r1.en.json",
+      "sourceContext": "designer.ia.sections.respond-states"
+    },
+    {
+      "recordId": "st.3avwye9tm9",
+      "source": "common-labels.r1.en.json",
+      "sourceContext": "designer.item.assets.icon-search"
+    },
+    {
+      "recordId": "st.3fyz884ab8",
+      "source": "common-labels.r1.en.json",
+      "sourceContext": "designer.ia.assets.icons-actions"
+    },
+    {
+      "recordId": "st.41b5rk7wcd",
+      "source": "common-labels.r1.en.json",
+      "sourceContext": "designer.item.assets.icon-settings"
+    },
+    {
+      "recordId": "st.476jt5vjet",
+      "source": "common-labels.r1.en.json",
+      "sourceContext": "designer.frameOption.frames.app-shell.theme.dark"
+    },
+    {
+      "recordId": "st.47t4a0v4s2",
+      "source": "common-labels.r1.en.json",
+      "sourceContext": "designer.ia.sections.organize-comparison"
+    },
+    {
+      "recordId": "st.50we5a15ty",
+      "source": "common-labels.r1.en.json",
+      "sourceContext": "designer.component.sidebar.title"
+    },
+    {
+      "recordId": "st.5jrhbbr5sm",
+      "source": "common-labels.r1.en.json",
+      "sourceContext": "designer.item.assets.icon-date"
+    },
+    {
+      "recordId": "st.5syp7271te",
+      "source": "common-labels.r1.en.json",
+      "sourceContext": "designer.ia.sections.navigate-discovery"
+    },
+    {
+      "recordId": "st.6nrp8gmqv3",
+      "source": "common-labels.r1.en.json",
+      "sourceContext": "Designer console"
+    },
+    {
+      "recordId": "st.7rv315vzjm",
+      "source": "common-labels.r1.en.json",
+      "sourceContext": "Designer console"
+    },
+    {
+      "recordId": "st.832cm61fb6",
+      "source": "common-labels.r1.en.json",
+      "sourceContext": "designer.item.components.empty"
+    },
+    {
+      "recordId": "st.8phn9m6kk3",
+      "source": "common-labels.r1.en.json",
+      "sourceContext": "designer.ia.sections.collect-forms"
+    },
+    {
+      "recordId": "st.8rktftq4qz",
+      "source": "common-labels.r1.en.json",
+      "sourceContext": "designer.item.assets.icon-layers"
+    },
+    {
+      "recordId": "st.8x1r0ft6rc",
+      "source": "common-labels.r1.en.json",
+      "sourceContext": "designer.ia.sections.organize-summaries"
+    },
+    {
+      "recordId": "st.91bq2h08er",
+      "source": "common-labels.r1.en.json",
+      "sourceContext": "designer.ia.sections.collect-conversation"
+    },
+    {
+      "recordId": "st.96npq8j00n",
+      "source": "common-labels.r1.en.json",
+      "sourceContext": "designer.frameOption.frames.app-shell.theme.light"
+    },
+    {
+      "recordId": "st.9ehasbmw8z",
+      "source": "common-labels.r1.en.json",
+      "sourceContext": "designer.component.sheet.close"
+    },
+    {
+      "recordId": "st.9pds3yfrp5",
+      "source": "common-labels.r1.en.json",
+      "sourceContext": "publisher.menuItem.website.home"
+    },
+    {
+      "recordId": "st.9sjbpt05v6",
+      "source": "common-labels.r1.en.json",
+      "sourceContext": "designer.ia.sections.explain"
+    },
+    {
+      "recordId": "st.a7d1spjaqx",
+      "source": "common-labels.r1.en.json",
+      "sourceContext": "publisher.contentKey.favicon"
+    },
+    {
+      "recordId": "st.aa0s69mdxk",
+      "source": "common-labels.r1.en.json",
+      "sourceContext": "publisher.contentKey.size"
+    },
+    {
+      "recordId": "st.ata62btvcq",
+      "source": "common-labels.r1.en.json",
+      "sourceContext": "Designer console"
+    },
+    {
+      "recordId": "st.b28mjpaq29",
+      "source": "common-labels.r1.en.json",
+      "sourceContext": "designer.ia.sections.collect-workflows"
+    },
+    {
+      "recordId": "st.bqdskzn5py",
+      "source": "common-labels.r1.en.json",
+      "sourceContext": "designer.ia.sections.explain-introductions"
+    },
+    {
+      "recordId": "st.c331pzvwey",
+      "source": "common-labels.r1.en.json",
+      "sourceContext": "Designer console"
+    },
+    {
+      "recordId": "st.ceegez6aff",
+      "source": "common-labels.r1.en.json",
+      "sourceContext": "publisher.channel.messages"
+    },
+    {
+      "recordId": "st.cm83f2fvc6",
+      "source": "common-labels.r1.en.json",
+      "sourceContext": "designer.item.sections.logo-mark"
+    },
+    {
+      "recordId": "st.ctrfprmksn",
+      "source": "common-labels.r1.en.json",
+      "sourceContext": "designer.ia.sections.organize-history"
+    },
+    {
+      "recordId": "st.dcx4bn55xt",
+      "source": "common-labels.r1.en.json",
+      "sourceContext": "designer.ia.sections.collect-configuration"
+    },
+    {
+      "recordId": "st.dgdbty02r2",
+      "source": "common-labels.r1.en.json",
+      "sourceContext": "publisher.contentKey.logo"
+    },
+    {
+      "recordId": "st.dntgjthd24",
+      "source": "common-labels.r1.en.json",
+      "sourceContext": "designer.item.sections.consent"
+    },
+    {
+      "recordId": "st.dqwhabg950",
+      "source": "common-labels.r1.en.json",
+      "sourceContext": "designer.ia.sections.organize"
+    },
+    {
+      "recordId": "st.dr57tvsfc6",
+      "source": "common-labels.r1.en.json",
+      "sourceContext": "publisher.channel.site"
+    },
+    {
+      "recordId": "st.dx8799w49f",
+      "source": "common-labels.r1.en.json",
+      "sourceContext": "designer.ia.sections.organize-collections"
+    },
+    {
+      "recordId": "st.ehnm0c7e08",
+      "source": "common-labels.r1.en.json",
+      "sourceContext": "designer.inspector.fields.historyInputs"
+    },
+    {
+      "recordId": "st.emkzstd78z",
+      "source": "common-labels.r1.en.json",
+      "sourceContext": "designer.ia.components.feedback"
+    },
+    {
+      "recordId": "st.etn3efp58r",
+      "source": "common-labels.r1.en.json",
+      "sourceContext": "designer.ia.sections.parts"
+    },
+    {
+      "recordId": "st.fg1dznm6qa",
+      "source": "common-labels.r1.en.json",
+      "sourceContext": "designer.ia.components.inputs-text"
+    },
+    {
+      "recordId": "st.g385gwchf1",
+      "source": "common-labels.r1.en.json",
+      "sourceContext": "publisher.layoutConfig.layouts.sidebar-content.sidebar-content.record"
+    },
+    {
+      "recordId": "st.gj32snjd4m",
+      "source": "common-labels.r1.en.json",
+      "sourceContext": "publisher.channel.app"
+    },
+    {
+      "recordId": "st.gm2gyz20jx",
+      "source": "common-labels.r1.en.json",
+      "sourceContext": "designer.ia.sections.explain-guidance"
+    },
+    {
+      "recordId": "st.jht60wz8e1",
+      "source": "common-labels.r1.en.json",
+      "sourceContext": "Designer console"
+    },
+    {
+      "recordId": "st.jns9tmxsdf",
+      "source": "common-labels.r1.en.json",
+      "sourceContext": "designer.ia.sections.collect-preferences"
+    },
+    {
+      "recordId": "st.jt3xndjtmr",
+      "source": "common-labels.r1.en.json",
+      "sourceContext": "designer.finding.C2.56"
+    },
+    {
+      "recordId": "st.k2hbf8chyb",
+      "source": "common-labels.r1.en.json",
+      "sourceContext": "designer.ia.tokens.color"
+    },
+    {
+      "recordId": "st.k9eny24qbx",
+      "source": "common-labels.r1.en.json",
+      "sourceContext": "designer.inspector.fields.historyCommand"
+    },
+    {
+      "recordId": "st.kqevjtbwt9",
+      "source": "common-labels.r1.en.json",
+      "sourceContext": "publisher.arrangement.panes"
+    },
+    {
+      "recordId": "st.m2r7rb9mhm",
+      "source": "common-labels.r1.en.json",
+      "sourceContext": "designer.ia.sections.explain-social-proof"
+    },
+    {
+      "recordId": "st.m3ms0vxwzm",
+      "source": "common-labels.r1.en.json",
+      "sourceContext": "designer.ia.sections.explain-reading"
+    },
+    {
+      "recordId": "st.m7gtk6hcw8",
+      "source": "common-labels.r1.en.json",
+      "sourceContext": "designer.ia.sections.respond"
+    },
+    {
+      "recordId": "st.mn2v0dgaj8",
+      "source": "common-labels.r1.en.json",
+      "sourceContext": "designer.item.tokens.spacing"
+    },
+    {
+      "recordId": "st.nbe9kckxef",
+      "source": "common-labels.r1.en.json",
+      "sourceContext": "designer.item.sections.usage"
+    },
+    {
+      "recordId": "st.ne29tsc3gn",
+      "source": "common-labels.r1.en.json",
+      "sourceContext": "designer.item.sections.content"
+    },
+    {
+      "recordId": "st.njcj3qqb0e",
+      "source": "common-labels.r1.en.json",
+      "sourceContext": "designer.frameOption.frames.app-sidebar.presentation.overlay"
+    },
+    {
+      "recordId": "st.p24ypyt9sb",
+      "source": "common-labels.r1.en.json",
+      "sourceContext": "Designer console"
+    },
+    {
+      "recordId": "st.pdq1ef8q2d",
+      "source": "common-labels.r1.en.json",
+      "sourceContext": "designer.check.C4"
+    },
+    {
+      "recordId": "st.q484s9bz3w",
+      "source": "common-labels.r1.en.json",
+      "sourceContext": "designer.ia.sections.organize-records"
+    },
+    {
+      "recordId": "st.qcqdptzn0r",
+      "source": "common-labels.r1.en.json",
+      "sourceContext": "Designer console"
+    },
+    {
+      "recordId": "st.qnqy2cwr23",
+      "source": "common-labels.r1.en.json",
+      "sourceContext": "designer.ia.tokens.space-rhythm"
+    },
+    {
+      "recordId": "st.qpwzxv0zxj",
+      "source": "common-labels.r1.en.json",
+      "sourceContext": "designer.ia.components.navigation-links"
+    },
+    {
+      "recordId": "st.qxaxqewq3p",
+      "source": "common-labels.r1.en.json",
+      "sourceContext": "designer.ia.components.display-assets"
+    },
+    {
+      "recordId": "st.r39xxtj0m7",
+      "source": "common-labels.r1.en.json",
+      "sourceContext": "designer.finding.C6.19"
+    },
+    {
+      "recordId": "st.rjydrbvwgq",
+      "source": "common-labels.r1.en.json",
+      "sourceContext": "publisher.mediaValue.mp4"
+    },
+    {
+      "recordId": "st.s13b3hwkta",
+      "source": "common-labels.r1.en.json",
+      "sourceContext": "designer.item.sections.pagination"
+    },
+    {
+      "recordId": "st.sm9bq8fv8f",
+      "source": "common-labels.r1.en.json",
+      "sourceContext": "designer.item.tokens.density"
+    },
+    {
+      "recordId": "st.snmj61r83s",
+      "source": "common-labels.r1.en.json",
+      "sourceContext": "designer.ia.sections.explain-promotion"
+    },
+    {
+      "recordId": "st.t317dsw4j4",
+      "source": "common-labels.r1.en.json",
+      "sourceContext": "designer.check.C10"
+    },
+    {
+      "recordId": "st.tb7mk984x7",
+      "source": "common-labels.r1.en.json",
+      "sourceContext": "designer.ia.sections.navigate-indexes"
+    },
+    {
+      "recordId": "st.v1cbgc4kr2",
+      "source": "common-labels.r1.en.json",
+      "sourceContext": "designer.item.components.item"
+    },
+    {
+      "recordId": "st.v6ra67gp67",
+      "source": "common-labels.r1.en.json",
+      "sourceContext": "designer.ia.assets.icons-status"
+    },
+    {
+      "recordId": "st.wkfv7m7130",
+      "source": "common-labels.r1.en.json",
+      "sourceContext": "designer.ia.assets.imagery-patterns"
+    },
+    {
+      "recordId": "st.wx6z3yc2r4",
+      "source": "common-labels.r1.en.json",
+      "sourceContext": "publisher.mediaValue.png"
+    },
+    {
+      "recordId": "st.xz62vvkvj3",
+      "source": "common-labels.r1.en.json",
+      "sourceContext": "designer.ia.sections.collect"
+    },
+    {
+      "recordId": "st.y4xznsjmw8",
+      "source": "common-labels.r1.en.json",
+      "sourceContext": "admin.enum.warning"
+    },
+    {
+      "recordId": "st.zc2c0w4qx4",
+      "source": "common-labels.r1.en.json",
+      "sourceContext": "designer.item.components.menu"
+    },
+    {
+      "recordId": "st.zxh419w2k5",
+      "source": "common-labels.r1.en.json",
+      "sourceContext": "designer.item.sections.chat"
     }
   ]
 }

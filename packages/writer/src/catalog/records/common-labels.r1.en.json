@@ -1,0 +1,6860 @@
+{
+  "version": 1,
+  "revision": 1,
+  "state": "draft",
+  "locale": "en",
+  "activation": "none",
+  "scope": "Shared source records for existing catalog copy; aliases remain compatibility data, never approval.",
+  "records": [
+    {
+      "id": "st.0000000001",
+      "leaf": "strings.common",
+      "context": "Generic draft site starter",
+      "status": "draft",
+      "origin": "authored",
+      "text": "Welcome"
+    },
+    {
+      "id": "st.0000000002",
+      "leaf": "strings.common",
+      "context": "Generic draft site starter",
+      "status": "draft",
+      "origin": "authored",
+      "text": "Overview"
+    },
+    {
+      "id": "st.0000000003",
+      "leaf": "strings.common",
+      "context": "Generic draft site starter",
+      "status": "draft",
+      "origin": "authored",
+      "text": "Read more about this example."
+    },
+    {
+      "id": "st.0000000005",
+      "leaf": "strings.common",
+      "context": "Generic draft site starter",
+      "status": "draft",
+      "origin": "authored",
+      "text": "Contact us"
+    },
+    {
+      "id": "st.000000000y",
+      "leaf": "strings.common",
+      "context": "Generic draft site starter",
+      "status": "draft",
+      "origin": "authored",
+      "text": "Enter a message."
+    },
+    {
+      "id": "st.000000001a",
+      "leaf": "strings.common",
+      "context": "Generic draft site starter",
+      "status": "draft",
+      "origin": "authored",
+      "text": "Return home"
+    },
+    {
+      "id": "st.000000001f",
+      "leaf": "strings.common",
+      "context": "Generic draft site starter",
+      "status": "draft",
+      "origin": "authored",
+      "text": "Revision"
+    },
+    {
+      "id": "st.000000001g",
+      "leaf": "strings.common",
+      "context": "Generic draft site starter",
+      "status": "draft",
+      "origin": "authored",
+      "text": "Draft for review"
+    },
+    {
+      "id": "st.000000001h",
+      "leaf": "strings.common",
+      "context": "Generic draft site starter",
+      "status": "draft",
+      "origin": "authored",
+      "text": "This is a draft for review. It does not describe a live service or provide legal advice."
+    },
+    {
+      "id": "st.0000000024",
+      "leaf": "strings.common",
+      "context": "Generic draft site starter",
+      "status": "draft",
+      "origin": "authored",
+      "text": "Contact the site owner if you need help."
+    },
+    {
+      "id": "st.0000000028",
+      "leaf": "strings.common",
+      "context": "Generic draft site starter",
+      "status": "draft",
+      "origin": "authored",
+      "text": "Please try again later."
+    },
+    {
+      "id": "st.000000002z",
+      "leaf": "strings.common",
+      "context": "Generic draft site starter",
+      "status": "draft",
+      "origin": "authored",
+      "text": "{date, date, long}",
+      "args": [
+        {
+          "name": "date",
+          "type": "date"
+        }
+      ]
+    },
+    {
+      "id": "st.02nqj35esc",
+      "leaf": "strings.common",
+      "context": "Designer console",
+      "status": "draft",
+      "origin": "foundry-default",
+      "text": "Library canvas",
+      "limits": {
+        "maxChars": 40
+      }
+    },
+    {
+      "id": "st.041fh8t2aw",
+      "leaf": "strings.common",
+      "context": "designer.ia.assets.icons-navigation",
+      "status": "draft",
+      "origin": "foundry-default",
+      "text": "Navigation",
+      "limits": {
+        "maxChars": 40
+      }
+    },
+    {
+      "id": "st.0mvj7s905h",
+      "leaf": "strings.common",
+      "context": "Workspace shell",
+      "status": "draft",
+      "origin": "foundry-default",
+      "text": "System",
+      "limits": {
+        "maxChars": 40
+      }
+    },
+    {
+      "id": "st.0rj8qzqqr1",
+      "leaf": "strings.common",
+      "context": "publisher.layoutOption.layouts.bento.density.dense",
+      "status": "draft",
+      "origin": "foundry-default",
+      "text": "Compact",
+      "limits": {
+        "maxChars": 40
+      }
+    },
+    {
+      "id": "st.0szhqxn9xp",
+      "leaf": "strings.common",
+      "context": "publisher.frameConfig.frames.site-shell.front-door",
+      "status": "draft",
+      "origin": "foundry-default",
+      "text": "Sign-in page",
+      "limits": {
+        "maxChars": 40
+      }
+    },
+    {
+      "id": "st.0t22p7nhjk",
+      "leaf": "strings.common",
+      "context": "designer.inspector.fields.layer",
+      "status": "draft",
+      "origin": "foundry-default",
+      "text": "Layer",
+      "limits": {
+        "maxChars": 40
+      }
+    },
+    {
+      "id": "st.0xns3ts510",
+      "leaf": "strings.common",
+      "context": "Designer console",
+      "status": "draft",
+      "origin": "foundry-default",
+      "text": "{errors, plural, one {# error} other {# errors}}, {notices, plural, one {# notice} other {# notices}}",
+      "args": [
+        {
+          "name": "errors",
+          "type": "plural"
+        },
+        {
+          "name": "notices",
+          "type": "plural"
+        }
+      ],
+      "limits": {
+        "maxChars": 60
+      }
+    },
+    {
+      "id": "st.13d97mrmzy",
+      "leaf": "strings.common",
+      "context": "publisher.contentKey.lead",
+      "status": "draft",
+      "origin": "foundry-default",
+      "text": "Introduction",
+      "limits": {
+        "maxChars": 40
+      }
+    },
+    {
+      "id": "st.17r7xa6wg9",
+      "leaf": "strings.common",
+      "context": "designer.item.sections.form",
+      "status": "draft",
+      "origin": "foundry-default",
+      "text": "Form",
+      "limits": {
+        "maxChars": 60
+      }
+    },
+    {
+      "id": "st.1f0sc4veew",
+      "leaf": "strings.common",
+      "context": "designer.ia.sections.parts-structure",
+      "status": "draft",
+      "origin": "foundry-default",
+      "text": "Structure",
+      "limits": {
+        "maxChars": 60
+      }
+    },
+    {
+      "id": "st.1re7rsx0et",
+      "leaf": "strings.common",
+      "context": "admin.enum.approved",
+      "status": "draft",
+      "origin": "foundry-default",
+      "text": "Approved",
+      "limits": {
+        "maxChars": 40
+      }
+    },
+    {
+      "id": "st.1vc3bb7pw7",
+      "leaf": "strings.common",
+      "context": "Designer console",
+      "status": "draft",
+      "origin": "foundry-default",
+      "text": "Details",
+      "limits": {
+        "maxChars": 60
+      }
+    },
+    {
+      "id": "st.2091r9z4bq",
+      "leaf": "strings.common",
+      "context": "publisher.medium.document",
+      "status": "draft",
+      "origin": "foundry-default",
+      "text": "Documents",
+      "limits": {
+        "maxChars": 40
+      }
+    },
+    {
+      "id": "st.2a77nn406k",
+      "leaf": "strings.common",
+      "context": "designer.frameOption.frames.app-shell.theme.system",
+      "status": "draft",
+      "origin": "foundry-default",
+      "text": "System theme",
+      "limits": {
+        "maxChars": 40
+      }
+    },
+    {
+      "id": "st.2c9722yrzg",
+      "leaf": "strings.common",
+      "context": "designer.ia.assets.imagery",
+      "status": "draft",
+      "origin": "foundry-default",
+      "text": "Media",
+      "limits": {
+        "maxChars": 60
+      }
+    },
+    {
+      "id": "st.2rrmfet0fn",
+      "leaf": "strings.common",
+      "context": "designer.ia.sections.navigate",
+      "status": "draft",
+      "origin": "foundry-default",
+      "text": "Navigate",
+      "limits": {
+        "maxChars": 60
+      }
+    },
+    {
+      "id": "st.2tw3ay17tc",
+      "leaf": "strings.common",
+      "context": "admin.publisher.description",
+      "status": "draft",
+      "origin": "foundry-default",
+      "text": "Review the admin pages and their publishing checks.",
+      "limits": {
+        "maxChars": 160
+      }
+    },
+    {
+      "id": "st.2zj7yrtkfr",
+      "leaf": "strings.common",
+      "context": "admin.designer.navLabel",
+      "status": "draft",
+      "origin": "foundry-default",
+      "text": "Designer",
+      "limits": {
+        "maxChars": 40
+      }
+    },
+    {
+      "id": "st.31tdz2e8k4",
+      "leaf": "strings.common",
+      "context": "designer.ia.sections.respond-states",
+      "status": "draft",
+      "origin": "foundry-default",
+      "text": "States",
+      "limits": {
+        "maxChars": 60
+      }
+    },
+    {
+      "id": "st.33cy9hjh1q",
+      "leaf": "strings.common",
+      "context": "publisher.medium.deck",
+      "status": "draft",
+      "origin": "foundry-default",
+      "text": "Presentations",
+      "limits": {
+        "maxChars": 40
+      }
+    },
+    {
+      "id": "st.33rp5w6vzk",
+      "leaf": "strings.common",
+      "context": "publisher.mediaValue.slides",
+      "status": "draft",
+      "origin": "foundry-default",
+      "text": "Slides",
+      "limits": {
+        "maxChars": 40
+      }
+    },
+    {
+      "id": "st.37fjmkt06h",
+      "leaf": "strings.common",
+      "context": "Designer console",
+      "status": "draft",
+      "origin": "foundry-default",
+      "text": "Uses",
+      "limits": {
+        "maxChars": 32
+      }
+    },
+    {
+      "id": "st.3avwye9tm9",
+      "leaf": "strings.common",
+      "context": "designer.item.assets.icon-search",
+      "status": "draft",
+      "origin": "foundry-default",
+      "text": "Search",
+      "limits": {
+        "maxChars": 60
+      }
+    },
+    {
+      "id": "st.3fyz884ab8",
+      "leaf": "strings.common",
+      "context": "designer.ia.assets.icons-actions",
+      "status": "draft",
+      "origin": "foundry-default",
+      "text": "Actions",
+      "limits": {
+        "maxChars": 60
+      }
+    },
+    {
+      "id": "st.3gsnmmts41",
+      "leaf": "strings.common",
+      "context": "Workspace shell",
+      "status": "draft",
+      "origin": "foundry-default",
+      "text": "Light",
+      "limits": {
+        "maxChars": 40
+      }
+    },
+    {
+      "id": "st.41b5rk7wcd",
+      "leaf": "strings.common",
+      "context": "designer.item.assets.icon-settings",
+      "status": "draft",
+      "origin": "foundry-default",
+      "text": "Settings",
+      "limits": {
+        "maxChars": 60
+      }
+    },
+    {
+      "id": "st.43k2vndngq",
+      "leaf": "strings.common",
+      "context": "Designer console",
+      "status": "draft",
+      "origin": "foundry-default",
+      "text": "Contains",
+      "limits": {
+        "maxChars": 32
+      }
+    },
+    {
+      "id": "st.476jt5vjet",
+      "leaf": "strings.common",
+      "context": "designer.frameOption.frames.app-shell.theme.dark",
+      "status": "draft",
+      "origin": "foundry-default",
+      "text": "Dark theme",
+      "limits": {
+        "maxChars": 40
+      }
+    },
+    {
+      "id": "st.47t4a0v4s2",
+      "leaf": "strings.common",
+      "context": "designer.ia.sections.organize-comparison",
+      "status": "draft",
+      "origin": "foundry-default",
+      "text": "Comparison",
+      "limits": {
+        "maxChars": 60
+      }
+    },
+    {
+      "id": "st.50we5a15ty",
+      "leaf": "strings.common",
+      "context": "designer.component.sidebar.title",
+      "status": "draft",
+      "origin": "authored",
+      "text": "Sidebar",
+      "limits": {
+        "maxChars": 60
+      }
+    },
+    {
+      "id": "st.5bvvjt22m9",
+      "leaf": "strings.common",
+      "context": "publisher.format.email.html",
+      "status": "draft",
+      "origin": "foundry-default",
+      "text": "Email",
+      "limits": {
+        "maxChars": 40
+      }
+    },
+    {
+      "id": "st.5frtfacf9x",
+      "leaf": "strings.common",
+      "context": "strings.admin.ia.writer.patterns.identity",
+      "status": "draft",
+      "origin": "authored",
+      "text": "Identity"
+    },
+    {
+      "id": "st.5jrhbbr5sm",
+      "leaf": "strings.common",
+      "context": "designer.item.assets.icon-date",
+      "status": "draft",
+      "origin": "foundry-default",
+      "text": "Date",
+      "limits": {
+        "maxChars": 60
+      }
+    },
+    {
+      "id": "st.5nfgjmm0xx",
+      "leaf": "strings.common",
+      "context": "admin.account.label",
+      "status": "draft",
+      "origin": "foundry-default",
+      "text": "Account",
+      "limits": {
+        "maxChars": 40
+      }
+    },
+    {
+      "id": "st.5syp7271te",
+      "leaf": "strings.common",
+      "context": "designer.ia.sections.navigate-discovery",
+      "status": "draft",
+      "origin": "foundry-default",
+      "text": "Discovery",
+      "limits": {
+        "maxChars": 60
+      }
+    },
+    {
+      "id": "st.5v29qje8fy",
+      "leaf": "strings.common",
+      "context": "publisher.contentKey.title",
+      "status": "draft",
+      "origin": "foundry-default",
+      "text": "Title",
+      "limits": {
+        "maxChars": 40
+      }
+    },
+    {
+      "id": "st.6ffbzs93mg",
+      "leaf": "strings.common",
+      "context": "admin.writer.chat.panel.open",
+      "status": "draft",
+      "origin": "authored",
+      "text": "Open chat"
+    },
+    {
+      "id": "st.6nrp8gmqv3",
+      "leaf": "strings.common",
+      "context": "Designer console",
+      "status": "draft",
+      "origin": "foundry-default",
+      "text": "Issues",
+      "limits": {
+        "maxChars": 40
+      }
+    },
+    {
+      "id": "st.6pe6jzsykm",
+      "leaf": "strings.common",
+      "context": "admin.writer.chat.message.copyUnavailable",
+      "status": "draft",
+      "origin": "authored",
+      "text": "Copy unavailable"
+    },
+    {
+      "id": "st.6zznbwptfh",
+      "leaf": "strings.common",
+      "context": "admin.writer.shareDescription",
+      "status": "draft",
+      "origin": "foundry-default",
+      "text": "Review copy, its source history and the checks it needs.",
+      "limits": {
+        "maxChars": 160
+      }
+    },
+    {
+      "id": "st.74p81v194s",
+      "leaf": "strings.common",
+      "context": "Publisher console",
+      "status": "draft",
+      "origin": "foundry-default",
+      "text": "Waiting",
+      "limits": {
+        "maxChars": 40
+      }
+    },
+    {
+      "id": "st.7fvy4xm2pe",
+      "leaf": "strings.common",
+      "context": "strings.admin.ia.writer.narratives.documents-docs",
+      "status": "draft",
+      "origin": "authored",
+      "text": "Docs"
+    },
+    {
+      "id": "st.7pxepx20q1",
+      "leaf": "strings.common",
+      "context": "Designer console",
+      "status": "draft",
+      "origin": "foundry-default",
+      "text": "Used by",
+      "limits": {
+        "maxChars": 32
+      }
+    },
+    {
+      "id": "st.7raxswq7j0",
+      "leaf": "strings.common",
+      "context": "admin.writer.chat.composer.send",
+      "status": "draft",
+      "origin": "authored",
+      "text": "Send message"
+    },
+    {
+      "id": "st.7rv315vzjm",
+      "leaf": "strings.common",
+      "context": "Designer console",
+      "status": "draft",
+      "origin": "foundry-default",
+      "text": "Frames",
+      "limits": {
+        "maxChars": 32
+      }
+    },
+    {
+      "id": "st.832cm61fb6",
+      "leaf": "strings.common",
+      "context": "designer.item.components.empty",
+      "status": "draft",
+      "origin": "authored",
+      "text": "Empty",
+      "limits": {
+        "maxChars": 60
+      }
+    },
+    {
+      "id": "st.88wbh5rn5a",
+      "leaf": "strings.common",
+      "context": "strings.admin.pagination.page",
+      "status": "draft",
+      "origin": "authored",
+      "text": "Page {page, number, integer} of {pages, number, integer}",
+      "args": [
+        {
+          "name": "page",
+          "type": "number"
+        },
+        {
+          "name": "pages",
+          "type": "number"
+        }
+      ]
+    },
+    {
+      "id": "st.8phn9m6kk3",
+      "leaf": "strings.common",
+      "context": "designer.ia.sections.collect-forms",
+      "status": "draft",
+      "origin": "foundry-default",
+      "text": "Forms",
+      "limits": {
+        "maxChars": 60
+      }
+    },
+    {
+      "id": "st.8rktftq4qz",
+      "leaf": "strings.common",
+      "context": "designer.item.assets.icon-layers",
+      "status": "draft",
+      "origin": "foundry-default",
+      "text": "Layers",
+      "limits": {
+        "maxChars": 40
+      }
+    },
+    {
+      "id": "st.8x1r0ft6rc",
+      "leaf": "strings.common",
+      "context": "designer.ia.sections.organize-summaries",
+      "status": "draft",
+      "origin": "foundry-default",
+      "text": "Summaries",
+      "limits": {
+        "maxChars": 60
+      }
+    },
+    {
+      "id": "st.8z45ewb90z",
+      "leaf": "strings.common",
+      "context": "Designer console",
+      "status": "draft",
+      "origin": "foundry-default",
+      "text": "Dark",
+      "limits": {
+        "maxChars": 40
+      }
+    },
+    {
+      "id": "st.91bq2h08er",
+      "leaf": "strings.common",
+      "context": "designer.ia.sections.collect-conversation",
+      "status": "draft",
+      "origin": "foundry-default",
+      "text": "Conversation",
+      "limits": {
+        "maxChars": 60
+      }
+    },
+    {
+      "id": "st.96npq8j00n",
+      "leaf": "strings.common",
+      "context": "designer.frameOption.frames.app-shell.theme.light",
+      "status": "draft",
+      "origin": "foundry-default",
+      "text": "Light theme",
+      "limits": {
+        "maxChars": 40
+      }
+    },
+    {
+      "id": "st.96qkp2bzpm",
+      "leaf": "strings.common",
+      "context": "admin.writer.sections.pagination.previousPageLabel",
+      "status": "draft",
+      "origin": "authored",
+      "text": "Previous page"
+    },
+    {
+      "id": "st.980dfmqs1t",
+      "leaf": "strings.common",
+      "context": "admin.writer.chat.tool.done",
+      "status": "draft",
+      "origin": "authored",
+      "text": "Done"
+    },
+    {
+      "id": "st.9a3gdn01wa",
+      "leaf": "strings.common",
+      "context": "admin.actions.retry",
+      "status": "draft",
+      "origin": "foundry-default",
+      "text": "Try again",
+      "limits": {
+        "maxChars": 24
+      }
+    },
+    {
+      "id": "st.9ehasbmw8z",
+      "leaf": "strings.common",
+      "context": "designer.component.sheet.close",
+      "status": "draft",
+      "origin": "authored",
+      "text": "Close",
+      "limits": {
+        "maxChars": 24
+      }
+    },
+    {
+      "id": "st.9pds3yfrp5",
+      "leaf": "strings.common",
+      "context": "publisher.menuItem.website.home",
+      "status": "draft",
+      "origin": "foundry-default",
+      "text": "Home",
+      "limits": {
+        "maxChars": 40
+      }
+    },
+    {
+      "id": "st.9sjbpt05v6",
+      "leaf": "strings.common",
+      "context": "designer.ia.sections.explain",
+      "status": "draft",
+      "origin": "foundry-default",
+      "text": "Explain",
+      "limits": {
+        "maxChars": 60
+      }
+    },
+    {
+      "id": "st.a7d1spjaqx",
+      "leaf": "strings.common",
+      "context": "publisher.contentKey.favicon",
+      "status": "draft",
+      "origin": "foundry-default",
+      "text": "Browser icon",
+      "limits": {
+        "maxChars": 40
+      }
+    },
+    {
+      "id": "st.a7tkca4nej",
+      "leaf": "strings.common",
+      "context": "Designer console",
+      "status": "draft",
+      "origin": "foundry-default",
+      "text": "Expand {name}",
+      "args": [
+        {
+          "name": "name",
+          "type": "string"
+        }
+      ],
+      "limits": {
+        "maxChars": 40
+      }
+    },
+    {
+      "id": "st.aa0s69mdxk",
+      "leaf": "strings.common",
+      "context": "publisher.contentKey.size",
+      "status": "draft",
+      "origin": "foundry-default",
+      "text": "Size",
+      "limits": {
+        "maxChars": 40
+      }
+    },
+    {
+      "id": "st.aamt9c6zdr",
+      "leaf": "strings.common",
+      "context": "publisher.planHeader.alignmentFailedLabel",
+      "status": "draft",
+      "origin": "foundry-default",
+      "text": "The plan could not be applied. Try again.",
+      "limits": {
+        "maxChars": 120
+      }
+    },
+    {
+      "id": "st.abbasfn5h4",
+      "leaf": "strings.common",
+      "context": "admin.designer.description",
+      "status": "draft",
+      "origin": "foundry-default",
+      "text": "Explore the design system, inspect items and review their checks.",
+      "limits": {
+        "maxChars": 160
+      }
+    },
+    {
+      "id": "st.aptm2ejxyv",
+      "leaf": "strings.common",
+      "context": "strings.admin.column.releases",
+      "status": "draft",
+      "origin": "authored",
+      "text": "Releases"
+    },
+    {
+      "id": "st.asj8g1mcjn",
+      "leaf": "strings.common",
+      "context": "admin.writer.sections.dataTable.emptyStateTitle",
+      "status": "draft",
+      "origin": "authored",
+      "text": "No results"
+    },
+    {
+      "id": "st.ata62btvcq",
+      "leaf": "strings.common",
+      "context": "Designer console",
+      "status": "draft",
+      "origin": "foundry-default",
+      "text": "Sections",
+      "limits": {
+        "maxChars": 32
+      }
+    },
+    {
+      "id": "st.av63bcybsc",
+      "leaf": "strings.common",
+      "context": "publisher.planHeader.requirementsLabel",
+      "status": "draft",
+      "origin": "foundry-default",
+      "text": "Requirements",
+      "limits": {
+        "maxChars": 40
+      }
+    },
+    {
+      "id": "st.b28mjpaq29",
+      "leaf": "strings.common",
+      "context": "designer.ia.sections.collect-workflows",
+      "status": "draft",
+      "origin": "foundry-default",
+      "text": "Workflows",
+      "limits": {
+        "maxChars": 60
+      }
+    },
+    {
+      "id": "st.bgkzpf1ec0",
+      "leaf": "strings.common",
+      "context": "Designer console",
+      "status": "draft",
+      "origin": "foundry-default",
+      "text": "Pages",
+      "limits": {
+        "maxChars": 32
+      }
+    },
+    {
+      "id": "st.bh10jdg8bx",
+      "leaf": "strings.common",
+      "context": "publisher.stage.Checks",
+      "status": "draft",
+      "origin": "foundry-default",
+      "text": "Checks",
+      "limits": {
+        "maxChars": 40
+      }
+    },
+    {
+      "id": "st.bhhba11w6f",
+      "leaf": "strings.common",
+      "context": "admin.writer.sections.pagination.pageSizeLabel",
+      "status": "draft",
+      "origin": "authored",
+      "text": "Rows per page"
+    },
+    {
+      "id": "st.bqdskzn5py",
+      "leaf": "strings.common",
+      "context": "designer.ia.sections.explain-introductions",
+      "status": "draft",
+      "origin": "foundry-default",
+      "text": "Introductions",
+      "limits": {
+        "maxChars": 60
+      }
+    },
+    {
+      "id": "st.bw0n8vs9db",
+      "leaf": "strings.common",
+      "context": "Designer console",
+      "status": "draft",
+      "origin": "foundry-default",
+      "text": "Pending",
+      "limits": {
+        "maxChars": 40
+      }
+    },
+    {
+      "id": "st.c331pzvwey",
+      "leaf": "strings.common",
+      "context": "Designer console",
+      "status": "draft",
+      "origin": "foundry-default",
+      "text": "Tokens",
+      "limits": {
+        "maxChars": 32
+      }
+    },
+    {
+      "id": "st.ceegez6aff",
+      "leaf": "strings.common",
+      "context": "publisher.channel.messages",
+      "status": "draft",
+      "origin": "foundry-default",
+      "text": "Messages",
+      "limits": {
+        "maxChars": 40
+      }
+    },
+    {
+      "id": "st.cm83f2fvc6",
+      "leaf": "strings.common",
+      "context": "designer.item.sections.logo-mark",
+      "status": "draft",
+      "origin": "foundry-default",
+      "text": "Logomark",
+      "limits": {
+        "maxChars": 60
+      }
+    },
+    {
+      "id": "st.cqt0021fwj",
+      "leaf": "strings.common",
+      "context": "admin.writer.chat.panel.close",
+      "status": "draft",
+      "origin": "authored",
+      "text": "Close chat"
+    },
+    {
+      "id": "st.ctrfprmksn",
+      "leaf": "strings.common",
+      "context": "designer.ia.sections.organize-history",
+      "status": "draft",
+      "origin": "foundry-default",
+      "text": "History",
+      "limits": {
+        "maxChars": 60
+      }
+    },
+    {
+      "id": "st.cw2t0s4dxn",
+      "leaf": "strings.common",
+      "context": "admin.enum.active",
+      "status": "draft",
+      "origin": "foundry-default",
+      "text": "Active",
+      "limits": {
+        "maxChars": 40
+      }
+    },
+    {
+      "id": "st.cy7122qr1d",
+      "leaf": "strings.common",
+      "context": "admin.publisher.shareTitle",
+      "status": "draft",
+      "origin": "foundry-default",
+      "text": "Publisher",
+      "limits": {
+        "maxChars": 40
+      }
+    },
+    {
+      "id": "st.dbra6twj2c",
+      "leaf": "strings.common",
+      "context": "Designer console",
+      "status": "draft",
+      "origin": "foundry-default",
+      "text": "Warnings",
+      "limits": {
+        "maxChars": 40
+      }
+    },
+    {
+      "id": "st.dcx4bn55xt",
+      "leaf": "strings.common",
+      "context": "designer.ia.sections.collect-configuration",
+      "status": "draft",
+      "origin": "foundry-default",
+      "text": "Configuration",
+      "limits": {
+        "maxChars": 60
+      }
+    },
+    {
+      "id": "st.dgdbty02r2",
+      "leaf": "strings.common",
+      "context": "publisher.contentKey.logo",
+      "status": "draft",
+      "origin": "foundry-default",
+      "text": "Logo",
+      "limits": {
+        "maxChars": 40
+      }
+    },
+    {
+      "id": "st.dntgjthd24",
+      "leaf": "strings.common",
+      "context": "designer.item.sections.consent",
+      "status": "draft",
+      "origin": "foundry-default",
+      "text": "Consent",
+      "limits": {
+        "maxChars": 60
+      }
+    },
+    {
+      "id": "st.dqwhabg950",
+      "leaf": "strings.common",
+      "context": "designer.ia.sections.organize",
+      "status": "draft",
+      "origin": "foundry-default",
+      "text": "Organize",
+      "limits": {
+        "maxChars": 60
+      }
+    },
+    {
+      "id": "st.dr57tvsfc6",
+      "leaf": "strings.common",
+      "context": "publisher.channel.site",
+      "status": "draft",
+      "origin": "foundry-default",
+      "text": "Website",
+      "limits": {
+        "maxChars": 40
+      }
+    },
+    {
+      "id": "st.dvdvvejry8",
+      "leaf": "strings.common",
+      "context": "admin.enum.retired",
+      "status": "draft",
+      "origin": "foundry-default",
+      "text": "Retired",
+      "limits": {
+        "maxChars": 40
+      }
+    },
+    {
+      "id": "st.dx8799w49f",
+      "leaf": "strings.common",
+      "context": "designer.ia.sections.organize-collections",
+      "status": "draft",
+      "origin": "foundry-default",
+      "text": "Collections",
+      "limits": {
+        "maxChars": 60
+      }
+    },
+    {
+      "id": "st.e2ptq1jp2a",
+      "leaf": "strings.common",
+      "context": "admin.writer.sections.dataTable.pivotSectionLabel",
+      "status": "draft",
+      "origin": "authored",
+      "text": "Pivot"
+    },
+    {
+      "id": "st.efsb6h9dmb",
+      "leaf": "strings.common",
+      "context": "publisher.lane.Record",
+      "status": "draft",
+      "origin": "foundry-default",
+      "text": "Record pages",
+      "limits": {
+        "maxChars": 40
+      }
+    },
+    {
+      "id": "st.ega0nrxc5v",
+      "leaf": "strings.common",
+      "context": "admin.writer.chat.composer.label",
+      "status": "draft",
+      "origin": "authored",
+      "text": "Message"
+    },
+    {
+      "id": "st.ehnm0c7e08",
+      "leaf": "strings.common",
+      "context": "designer.inspector.fields.historyInputs",
+      "status": "draft",
+      "origin": "foundry-default",
+      "text": "Inputs",
+      "limits": {
+        "maxChars": 60
+      }
+    },
+    {
+      "id": "st.emkzstd78z",
+      "leaf": "strings.common",
+      "context": "designer.ia.components.feedback",
+      "status": "draft",
+      "origin": "foundry-default",
+      "text": "Feedback",
+      "limits": {
+        "maxChars": 60
+      }
+    },
+    {
+      "id": "st.etn3efp58r",
+      "leaf": "strings.common",
+      "context": "designer.ia.sections.parts",
+      "status": "draft",
+      "origin": "foundry-default",
+      "text": "Parts",
+      "limits": {
+        "maxChars": 60
+      }
+    },
+    {
+      "id": "st.ev3xsrhrwe",
+      "leaf": "strings.common",
+      "context": "Workspace shell",
+      "status": "draft",
+      "origin": "foundry-default",
+      "text": "Dismiss notice",
+      "limits": {
+        "maxChars": 24
+      }
+    },
+    {
+      "id": "st.f6e42xqhnn",
+      "leaf": "strings.common",
+      "context": "admin.writer.chat.header.delete",
+      "status": "draft",
+      "origin": "authored",
+      "text": "Delete conversation"
+    },
+    {
+      "id": "st.ffqnafj61v",
+      "leaf": "strings.common",
+      "context": "strings.admin.outline.label",
+      "status": "draft",
+      "origin": "authored",
+      "text": "On this page"
+    },
+    {
+      "id": "st.fg1dznm6qa",
+      "leaf": "strings.common",
+      "context": "designer.ia.components.inputs-text",
+      "status": "draft",
+      "origin": "foundry-default",
+      "text": "Text",
+      "limits": {
+        "maxChars": 60
+      }
+    },
+    {
+      "id": "st.frk6prh48a",
+      "leaf": "strings.common",
+      "context": "Designer console",
+      "status": "draft",
+      "origin": "foundry-default",
+      "text": "Zoom out",
+      "limits": {
+        "maxChars": 24
+      }
+    },
+    {
+      "id": "st.g385gwchf1",
+      "leaf": "strings.common",
+      "context": "publisher.layoutConfig.layouts.sidebar-content.sidebar-content.record",
+      "status": "draft",
+      "origin": "foundry-default",
+      "text": "Record details",
+      "limits": {
+        "maxChars": 40
+      }
+    },
+    {
+      "id": "st.g7hbg5n2bs",
+      "leaf": "strings.common",
+      "context": "Workspace shell",
+      "status": "draft",
+      "origin": "foundry-default",
+      "text": "Collapse {name}",
+      "args": [
+        {
+          "name": "name",
+          "type": "string"
+        }
+      ],
+      "limits": {
+        "maxChars": 40
+      }
+    },
+    {
+      "id": "st.gdzc1rc0sk",
+      "leaf": "strings.common",
+      "context": "admin.writer.sections.merge.error-state.header.heading",
+      "status": "draft",
+      "origin": "authored",
+      "text": "Something went wrong"
+    },
+    {
+      "id": "st.gj32snjd4m",
+      "leaf": "strings.common",
+      "context": "publisher.channel.app",
+      "status": "draft",
+      "origin": "foundry-default",
+      "text": "Application",
+      "limits": {
+        "maxChars": 40
+      }
+    },
+    {
+      "id": "st.gm2gyz20jx",
+      "leaf": "strings.common",
+      "context": "designer.ia.sections.explain-guidance",
+      "status": "draft",
+      "origin": "foundry-default",
+      "text": "Guidance",
+      "limits": {
+        "maxChars": 60
+      }
+    },
+    {
+      "id": "st.gnv660w59z",
+      "leaf": "strings.common",
+      "context": "admin.enum.in-review",
+      "status": "draft",
+      "origin": "foundry-default",
+      "text": "In review",
+      "limits": {
+        "maxChars": 40
+      }
+    },
+    {
+      "id": "st.hcah39v2sh",
+      "leaf": "strings.common",
+      "context": "admin.enum.configured",
+      "status": "draft",
+      "origin": "foundry-default",
+      "text": "Set up",
+      "limits": {
+        "maxChars": 40
+      }
+    },
+    {
+      "id": "st.hcq4hmxrrk",
+      "leaf": "strings.common",
+      "context": "Designer console",
+      "status": "draft",
+      "origin": "foundry-default",
+      "text": "Back",
+      "limits": {
+        "maxChars": 32
+      }
+    },
+    {
+      "id": "st.j7paney0ax",
+      "leaf": "strings.common",
+      "context": "publisher.contentKey.format",
+      "status": "draft",
+      "origin": "foundry-default",
+      "text": "Output format",
+      "limits": {
+        "maxChars": 40
+      }
+    },
+    {
+      "id": "st.jht60wz8e1",
+      "leaf": "strings.common",
+      "context": "Designer console",
+      "status": "draft",
+      "origin": "foundry-default",
+      "text": "Components",
+      "limits": {
+        "maxChars": 32
+      }
+    },
+    {
+      "id": "st.jns9tmxsdf",
+      "leaf": "strings.common",
+      "context": "designer.ia.sections.collect-preferences",
+      "status": "draft",
+      "origin": "foundry-default",
+      "text": "Preferences",
+      "limits": {
+        "maxChars": 60
+      }
+    },
+    {
+      "id": "st.jt3xndjtmr",
+      "leaf": "strings.common",
+      "context": "designer.finding.C2.56",
+      "status": "draft",
+      "origin": "foundry-default",
+      "text": "{option} uses {target} from a higher layer. Ask an agent to check the reference.",
+      "args": [
+        {
+          "name": "option",
+          "type": "string"
+        },
+        {
+          "name": "target",
+          "type": "string"
+        }
+      ],
+      "limits": {
+        "maxChars": 160
+      }
+    },
+    {
+      "id": "st.k2hbf8chyb",
+      "leaf": "strings.common",
+      "context": "designer.ia.tokens.color",
+      "status": "draft",
+      "origin": "foundry-default",
+      "text": "Color",
+      "limits": {
+        "maxChars": 60
+      }
+    },
+    {
+      "id": "st.k9eny24qbx",
+      "leaf": "strings.common",
+      "context": "designer.inspector.fields.historyCommand",
+      "status": "draft",
+      "origin": "foundry-default",
+      "text": "Command",
+      "limits": {
+        "maxChars": 60
+      }
+    },
+    {
+      "id": "st.kb8ve83tjp",
+      "leaf": "strings.common",
+      "context": "admin.writer.sections.pagination.nextPageLabel",
+      "status": "draft",
+      "origin": "authored",
+      "text": "Next page"
+    },
+    {
+      "id": "st.kmz1y1qvg0",
+      "leaf": "strings.common",
+      "context": "admin.enum.not-chosen",
+      "status": "draft",
+      "origin": "foundry-default",
+      "text": "Not selected",
+      "limits": {
+        "maxChars": 40
+      }
+    },
+    {
+      "id": "st.kqevjtbwt9",
+      "leaf": "strings.common",
+      "context": "publisher.arrangement.panes",
+      "status": "draft",
+      "origin": "foundry-default",
+      "text": "Panels",
+      "limits": {
+        "maxChars": 40
+      }
+    },
+    {
+      "id": "st.ktgn3jyg1d",
+      "leaf": "strings.common",
+      "context": "admin.writer.chat.account.signIn",
+      "status": "draft",
+      "origin": "authored",
+      "text": "Sign in"
+    },
+    {
+      "id": "st.m22sa9p9y4",
+      "leaf": "strings.common",
+      "context": "admin.writer.title",
+      "status": "draft",
+      "origin": "foundry-default",
+      "text": "Writer",
+      "limits": {
+        "maxChars": 40
+      }
+    },
+    {
+      "id": "st.m2r7rb9mhm",
+      "leaf": "strings.common",
+      "context": "designer.ia.sections.explain-social-proof",
+      "status": "draft",
+      "origin": "foundry-default",
+      "text": "Social proof",
+      "limits": {
+        "maxChars": 60
+      }
+    },
+    {
+      "id": "st.m3ms0vxwzm",
+      "leaf": "strings.common",
+      "context": "designer.ia.sections.explain-reading",
+      "status": "draft",
+      "origin": "foundry-default",
+      "text": "Reading",
+      "limits": {
+        "maxChars": 60
+      }
+    },
+    {
+      "id": "st.m5cjnqycs1",
+      "leaf": "strings.common",
+      "context": "publisher.actions.openItem",
+      "status": "draft",
+      "origin": "foundry-default",
+      "text": "Open item",
+      "limits": {
+        "maxChars": 24
+      }
+    },
+    {
+      "id": "st.m7gtk6hcw8",
+      "leaf": "strings.common",
+      "context": "designer.ia.sections.respond",
+      "status": "draft",
+      "origin": "foundry-default",
+      "text": "Respond",
+      "limits": {
+        "maxChars": 60
+      }
+    },
+    {
+      "id": "st.mn2v0dgaj8",
+      "leaf": "strings.common",
+      "context": "designer.item.tokens.spacing",
+      "status": "draft",
+      "origin": "foundry-default",
+      "text": "Spacing",
+      "limits": {
+        "maxChars": 60
+      }
+    },
+    {
+      "id": "st.mq7reh5kyq",
+      "leaf": "strings.common",
+      "context": "admin.enum.stable",
+      "status": "draft",
+      "origin": "foundry-default",
+      "text": "Stable",
+      "limits": {
+        "maxChars": 40
+      }
+    },
+    {
+      "id": "st.mzdxkf8h43",
+      "leaf": "strings.common",
+      "context": "Designer console",
+      "status": "draft",
+      "origin": "foundry-default",
+      "text": "Preview",
+      "limits": {
+        "maxChars": 60
+      }
+    },
+    {
+      "id": "st.nbe9kckxef",
+      "leaf": "strings.common",
+      "context": "designer.item.sections.usage",
+      "status": "draft",
+      "origin": "foundry-default",
+      "text": "Usage",
+      "limits": {
+        "maxChars": 48
+      }
+    },
+    {
+      "id": "st.ne29tsc3gn",
+      "leaf": "strings.common",
+      "context": "designer.item.sections.content",
+      "status": "draft",
+      "origin": "foundry-default",
+      "text": "Content",
+      "limits": {
+        "maxChars": 60
+      }
+    },
+    {
+      "id": "st.njcj3qqb0e",
+      "leaf": "strings.common",
+      "context": "designer.frameOption.frames.app-sidebar.presentation.overlay",
+      "status": "draft",
+      "origin": "foundry-default",
+      "text": "Overlay panel",
+      "limits": {
+        "maxChars": 40
+      }
+    },
+    {
+      "id": "st.p24ypyt9sb",
+      "leaf": "strings.common",
+      "context": "Designer console",
+      "status": "draft",
+      "origin": "foundry-default",
+      "text": "Options",
+      "limits": {
+        "maxChars": 32
+      }
+    },
+    {
+      "id": "st.pdq1ef8q2d",
+      "leaf": "strings.common",
+      "context": "designer.check.C4",
+      "status": "draft",
+      "origin": "foundry-default",
+      "text": "Coverage",
+      "limits": {
+        "maxChars": 40
+      }
+    },
+    {
+      "id": "st.q2pdjh83tt",
+      "leaf": "strings.common",
+      "context": "Designer console",
+      "status": "draft",
+      "origin": "foundry-default",
+      "text": "Zoom in",
+      "limits": {
+        "maxChars": 24
+      }
+    },
+    {
+      "id": "st.q484s9bz3w",
+      "leaf": "strings.common",
+      "context": "designer.ia.sections.organize-records",
+      "status": "draft",
+      "origin": "foundry-default",
+      "text": "Records",
+      "limits": {
+        "maxChars": 60
+      }
+    },
+    {
+      "id": "st.qcqdptzn0r",
+      "leaf": "strings.common",
+      "context": "Designer console",
+      "status": "draft",
+      "origin": "foundry-default",
+      "text": "Source",
+      "limits": {
+        "maxChars": 40
+      }
+    },
+    {
+      "id": "st.qcry3z237f",
+      "leaf": "strings.common",
+      "context": "publisher.planHeader.noneLabel",
+      "status": "draft",
+      "origin": "foundry-default",
+      "text": "None",
+      "limits": {
+        "maxChars": 32
+      }
+    },
+    {
+      "id": "st.qnqy2cwr23",
+      "leaf": "strings.common",
+      "context": "designer.ia.tokens.space-rhythm",
+      "status": "draft",
+      "origin": "foundry-default",
+      "text": "Rhythm",
+      "limits": {
+        "maxChars": 60
+      }
+    },
+    {
+      "id": "st.qpwzxv0zxj",
+      "leaf": "strings.common",
+      "context": "designer.ia.components.navigation-links",
+      "status": "draft",
+      "origin": "foundry-default",
+      "text": "Links",
+      "limits": {
+        "maxChars": 60
+      }
+    },
+    {
+      "id": "st.qxaxqewq3p",
+      "leaf": "strings.common",
+      "context": "designer.ia.components.display-assets",
+      "status": "draft",
+      "origin": "foundry-default",
+      "text": "Assets",
+      "limits": {
+        "maxChars": 32
+      }
+    },
+    {
+      "id": "st.r39xxtj0m7",
+      "leaf": "strings.common",
+      "context": "designer.finding.C6.19",
+      "status": "draft",
+      "origin": "foundry-default",
+      "text": "External source {source} has no source version. Ask an agent to record one.",
+      "args": [
+        {
+          "name": "source",
+          "type": "string"
+        }
+      ],
+      "limits": {
+        "maxChars": 160
+      }
+    },
+    {
+      "id": "st.rdsa1ky831",
+      "leaf": "strings.common",
+      "context": "publisher.planHeader.alignLabel",
+      "status": "draft",
+      "origin": "foundry-default",
+      "text": "Apply plan",
+      "limits": {
+        "maxChars": 24
+      }
+    },
+    {
+      "id": "st.rgakrp0zw4",
+      "leaf": "strings.common",
+      "context": "publisher.medium.video",
+      "status": "draft",
+      "origin": "foundry-default",
+      "text": "Videos",
+      "limits": {
+        "maxChars": 40
+      }
+    },
+    {
+      "id": "st.rjydrbvwgq",
+      "leaf": "strings.common",
+      "context": "publisher.mediaValue.mp4",
+      "status": "draft",
+      "origin": "foundry-default",
+      "text": "Video",
+      "limits": {
+        "maxChars": 40
+      }
+    },
+    {
+      "id": "st.s079k1p1qj",
+      "leaf": "strings.common",
+      "context": "Workspace shell",
+      "status": "draft",
+      "origin": "foundry-default",
+      "text": "{count, plural, one {# result} other {# results}}",
+      "args": [
+        {
+          "name": "count",
+          "type": "plural"
+        }
+      ],
+      "limits": {
+        "maxChars": 60
+      }
+    },
+    {
+      "id": "st.s13b3hwkta",
+      "leaf": "strings.common",
+      "context": "designer.item.sections.pagination",
+      "status": "draft",
+      "origin": "foundry-default",
+      "text": "Pagination",
+      "limits": {
+        "maxChars": 60
+      }
+    },
+    {
+      "id": "st.sm9bq8fv8f",
+      "leaf": "strings.common",
+      "context": "designer.item.tokens.density",
+      "status": "draft",
+      "origin": "foundry-default",
+      "text": "Density",
+      "limits": {
+        "maxChars": 60
+      }
+    },
+    {
+      "id": "st.snmj61r83s",
+      "leaf": "strings.common",
+      "context": "designer.ia.sections.explain-promotion",
+      "status": "draft",
+      "origin": "foundry-default",
+      "text": "Promotion",
+      "limits": {
+        "maxChars": 60
+      }
+    },
+    {
+      "id": "st.t029hg04zc",
+      "leaf": "strings.common",
+      "context": "Designer console",
+      "status": "draft",
+      "origin": "foundry-default",
+      "text": "All",
+      "limits": {
+        "maxChars": 40
+      }
+    },
+    {
+      "id": "st.t317dsw4j4",
+      "leaf": "strings.common",
+      "context": "designer.check.C10",
+      "status": "draft",
+      "origin": "foundry-default",
+      "text": "Source history",
+      "limits": {
+        "maxChars": 40
+      }
+    },
+    {
+      "id": "st.tb7mk984x7",
+      "leaf": "strings.common",
+      "context": "designer.ia.sections.navigate-indexes",
+      "status": "draft",
+      "origin": "foundry-default",
+      "text": "Indexes",
+      "limits": {
+        "maxChars": 60
+      }
+    },
+    {
+      "id": "st.td8tdah4rw",
+      "leaf": "strings.common",
+      "context": "admin.enum.draft",
+      "status": "draft",
+      "origin": "foundry-default",
+      "text": "Draft",
+      "limits": {
+        "maxChars": 40
+      }
+    },
+    {
+      "id": "st.tx9f8j9jnf",
+      "leaf": "strings.common",
+      "context": "admin.writer.chat.attachment.name",
+      "status": "draft",
+      "origin": "authored",
+      "text": "{name}",
+      "args": [
+        {
+          "name": "name",
+          "type": "string"
+        }
+      ]
+    },
+    {
+      "id": "st.v1cbgc4kr2",
+      "leaf": "strings.common",
+      "context": "designer.item.components.item",
+      "status": "draft",
+      "origin": "authored",
+      "text": "Item",
+      "limits": {
+        "maxChars": 40
+      }
+    },
+    {
+      "id": "st.v2qavnr3r2",
+      "leaf": "strings.common",
+      "context": "Publisher console",
+      "status": "draft",
+      "origin": "foundry-default",
+      "text": "Needs input",
+      "limits": {
+        "maxChars": 40
+      }
+    },
+    {
+      "id": "st.v6ra67gp67",
+      "leaf": "strings.common",
+      "context": "designer.ia.assets.icons-status",
+      "status": "draft",
+      "origin": "foundry-default",
+      "text": "Status",
+      "limits": {
+        "maxChars": 40
+      }
+    },
+    {
+      "id": "st.vftkg73x02",
+      "leaf": "strings.common",
+      "context": "Workspace shell",
+      "status": "draft",
+      "origin": "foundry-default",
+      "text": "Theme",
+      "limits": {
+        "maxChars": 40
+      }
+    },
+    {
+      "id": "st.wkfv7m7130",
+      "leaf": "strings.common",
+      "context": "designer.ia.assets.imagery-patterns",
+      "status": "draft",
+      "origin": "foundry-default",
+      "text": "Patterns",
+      "limits": {
+        "maxChars": 60
+      }
+    },
+    {
+      "id": "st.wx6z3yc2r4",
+      "leaf": "strings.common",
+      "context": "publisher.mediaValue.png",
+      "status": "draft",
+      "origin": "foundry-default",
+      "text": "Image",
+      "limits": {
+        "maxChars": 40
+      }
+    },
+    {
+      "id": "st.wxwxj7g97v",
+      "leaf": "strings.common",
+      "context": "admin.enum.error",
+      "status": "draft",
+      "origin": "foundry-default",
+      "text": "Error",
+      "limits": {
+        "maxChars": 40
+      }
+    },
+    {
+      "id": "st.xebhn5e4b0",
+      "leaf": "strings.common",
+      "context": "publisher.menuItem.website.not-found",
+      "status": "draft",
+      "origin": "foundry-default",
+      "text": "Page not found",
+      "limits": {
+        "maxChars": 40
+      }
+    },
+    {
+      "id": "st.xfj92exnr7",
+      "leaf": "strings.common",
+      "context": "Publisher console",
+      "status": "draft",
+      "origin": "foundry-default",
+      "text": "Publishing checks",
+      "limits": {
+        "maxChars": 40
+      }
+    },
+    {
+      "id": "st.xz62vvkvj3",
+      "leaf": "strings.common",
+      "context": "designer.ia.sections.collect",
+      "status": "draft",
+      "origin": "foundry-default",
+      "text": "Collect",
+      "limits": {
+        "maxChars": 60
+      }
+    },
+    {
+      "id": "st.y4xznsjmw8",
+      "leaf": "strings.common",
+      "context": "admin.enum.warning",
+      "status": "draft",
+      "origin": "foundry-default",
+      "text": "Warning",
+      "limits": {
+        "maxChars": 40
+      }
+    },
+    {
+      "id": "st.y86a2b0gmd",
+      "leaf": "strings.common",
+      "context": "Workspace shell",
+      "status": "draft",
+      "origin": "foundry-default",
+      "text": "More actions",
+      "limits": {
+        "maxChars": 24
+      }
+    },
+    {
+      "id": "st.zc2c0w4qx4",
+      "leaf": "strings.common",
+      "context": "designer.item.components.menu",
+      "status": "draft",
+      "origin": "foundry-default",
+      "text": "Menu",
+      "limits": {
+        "maxChars": 60
+      }
+    },
+    {
+      "id": "st.zxh419w2k5",
+      "leaf": "strings.common",
+      "context": "designer.item.sections.chat",
+      "status": "draft",
+      "origin": "foundry-default",
+      "text": "Chat",
+      "limits": {
+        "maxChars": 60
+      }
+    }
+  ],
+  "bindings": [],
+  "usages": [
+    {
+      "recordId": "st.91bq2h08er",
+      "legacyRecordId": "st.91bq2h08er",
+      "source": "records/admin-studio.r1.en.json",
+      "context": "designer.ia.sections.collect-conversation",
+      "leaf": "strings.names",
+      "limits": {
+        "maxChars": 60
+      },
+      "origin": "foundry-default",
+      "status": "draft"
+    },
+    {
+      "recordId": "st.91bq2h08er",
+      "legacyRecordId": "st.07sw5kbkv3",
+      "source": "records/admin-chat.r1.en.json",
+      "context": "admin.writer.chat.header.title",
+      "leaf": "strings.field-labels",
+      "limits": {},
+      "origin": "authored",
+      "status": "draft"
+    },
+    {
+      "recordId": "st.91bq2h08er",
+      "legacyRecordId": "st.j91rdzdacv",
+      "source": "records/admin-pages.r1.en.json",
+      "context": "strings.admin.ia.writer.passages.collect-conversation",
+      "leaf": "strings.navigation",
+      "limits": {},
+      "origin": "authored",
+      "status": "draft"
+    },
+    {
+      "recordId": "st.f6e42xqhnn",
+      "legacyRecordId": "st.f6e42xqhnn",
+      "source": "records/admin-chat.r1.en.json",
+      "context": "admin.writer.chat.header.delete",
+      "leaf": "strings.field-labels",
+      "limits": {},
+      "origin": "authored",
+      "status": "draft"
+    },
+    {
+      "recordId": "st.f6e42xqhnn",
+      "legacyRecordId": "st.w2z8cvyyep",
+      "source": "records/admin-chat.r1.en.json",
+      "context": "admin.writer.chat.header.confirmDelete",
+      "leaf": "strings.field-labels",
+      "limits": {},
+      "origin": "authored",
+      "status": "draft"
+    },
+    {
+      "recordId": "st.6pe6jzsykm",
+      "legacyRecordId": "st.6pe6jzsykm",
+      "source": "records/admin-chat.r1.en.json",
+      "context": "admin.writer.chat.message.copyUnavailable",
+      "leaf": "strings.field-labels",
+      "limits": {},
+      "origin": "authored",
+      "status": "draft"
+    },
+    {
+      "recordId": "st.6pe6jzsykm",
+      "legacyRecordId": "st.rrjbhez8qb",
+      "source": "records/admin-chat.r1.en.json",
+      "context": "admin.writer.chat.code.copyUnavailable",
+      "leaf": "strings.field-labels",
+      "limits": {},
+      "origin": "authored",
+      "status": "draft"
+    },
+    {
+      "recordId": "st.980dfmqs1t",
+      "legacyRecordId": "st.980dfmqs1t",
+      "source": "records/admin-chat.r1.en.json",
+      "context": "admin.writer.chat.tool.done",
+      "leaf": "strings.field-labels",
+      "limits": {},
+      "origin": "authored",
+      "status": "draft"
+    },
+    {
+      "recordId": "st.980dfmqs1t",
+      "legacyRecordId": "st.sywts2n14e",
+      "source": "records/admin-pages.r1.en.json",
+      "context": "strings.admin.status.done",
+      "leaf": "strings.statuses",
+      "limits": {},
+      "origin": "authored",
+      "status": "draft"
+    },
+    {
+      "recordId": "st.wxwxj7g97v",
+      "legacyRecordId": "st.wxwxj7g97v",
+      "source": "records/admin-meta.r1.en.json",
+      "context": "admin.enum.error",
+      "leaf": "strings.names",
+      "limits": {
+        "maxChars": 40
+      },
+      "origin": "foundry-default",
+      "status": "draft"
+    },
+    {
+      "recordId": "st.wxwxj7g97v",
+      "legacyRecordId": "st.6bgkmr7khq",
+      "source": "records/admin-chat.r1.en.json",
+      "context": "admin.writer.chat.tool.error",
+      "leaf": "strings.field-labels",
+      "limits": {},
+      "origin": "authored",
+      "status": "draft"
+    },
+    {
+      "recordId": "st.wxwxj7g97v",
+      "legacyRecordId": "st.000000002j",
+      "source": "records/site.en.json",
+      "context": "Generic draft site starter",
+      "leaf": "strings.field-labels",
+      "limits": {},
+      "origin": "authored",
+      "status": "draft"
+    },
+    {
+      "recordId": "st.5v29qje8fy",
+      "legacyRecordId": "st.5v29qje8fy",
+      "source": "records/admin-meta.r1.en.json",
+      "context": "publisher.contentKey.title",
+      "leaf": "strings.field-labels",
+      "limits": {
+        "maxChars": 40
+      },
+      "origin": "foundry-default",
+      "status": "draft"
+    },
+    {
+      "recordId": "st.5v29qje8fy",
+      "legacyRecordId": "st.vpyq72fk89",
+      "source": "records/admin-chat.r1.en.json",
+      "context": "admin.writer.chat.sources.title",
+      "leaf": "strings.field-labels",
+      "limits": {},
+      "origin": "authored",
+      "status": "draft"
+    },
+    {
+      "recordId": "st.ega0nrxc5v",
+      "legacyRecordId": "st.ega0nrxc5v",
+      "source": "records/admin-chat.r1.en.json",
+      "context": "admin.writer.chat.composer.label",
+      "leaf": "strings.field-labels",
+      "limits": {},
+      "origin": "authored",
+      "status": "draft"
+    },
+    {
+      "recordId": "st.ega0nrxc5v",
+      "legacyRecordId": "st.000000000t",
+      "source": "records/site.en.json",
+      "context": "Generic draft site starter",
+      "leaf": "strings.field-labels",
+      "limits": {},
+      "origin": "authored",
+      "status": "draft"
+    },
+    {
+      "recordId": "st.bgkzpf1ec0",
+      "legacyRecordId": "st.bgkzpf1ec0",
+      "source": "records/admin-voice.r1.en.json",
+      "context": "Designer console",
+      "leaf": "strings.field-labels",
+      "limits": {
+        "maxChars": 32
+      },
+      "origin": "foundry-default",
+      "status": "draft"
+    },
+    {
+      "recordId": "st.bgkzpf1ec0",
+      "legacyRecordId": "st.p8rh6sargt",
+      "source": "records/admin-chat.r1.en.json",
+      "context": "admin.writer.chat.composer.pages",
+      "leaf": "strings.field-labels",
+      "limits": {},
+      "origin": "authored",
+      "status": "draft"
+    },
+    {
+      "recordId": "st.7raxswq7j0",
+      "legacyRecordId": "st.7raxswq7j0",
+      "source": "records/admin-chat.r1.en.json",
+      "context": "admin.writer.chat.composer.send",
+      "leaf": "strings.field-labels",
+      "limits": {},
+      "origin": "authored",
+      "status": "draft"
+    },
+    {
+      "recordId": "st.7raxswq7j0",
+      "legacyRecordId": "st.000000000z",
+      "source": "records/site.en.json",
+      "context": "Generic draft site starter",
+      "leaf": "strings.field-labels",
+      "limits": {},
+      "origin": "authored",
+      "status": "draft"
+    },
+    {
+      "recordId": "st.6ffbzs93mg",
+      "legacyRecordId": "st.6ffbzs93mg",
+      "source": "records/admin-chat.r1.en.json",
+      "context": "admin.writer.chat.panel.open",
+      "leaf": "strings.field-labels",
+      "limits": {},
+      "origin": "authored",
+      "status": "draft"
+    },
+    {
+      "recordId": "st.6ffbzs93mg",
+      "legacyRecordId": "st.kvknqkmsbz",
+      "source": "records/admin-pages.r1.en.json",
+      "context": "strings.admin.toggle.openChat",
+      "leaf": "strings.actions",
+      "limits": {},
+      "origin": "authored",
+      "status": "draft"
+    },
+    {
+      "recordId": "st.cqt0021fwj",
+      "legacyRecordId": "st.cqt0021fwj",
+      "source": "records/admin-chat.r1.en.json",
+      "context": "admin.writer.chat.panel.close",
+      "leaf": "strings.field-labels",
+      "limits": {},
+      "origin": "authored",
+      "status": "draft"
+    },
+    {
+      "recordId": "st.cqt0021fwj",
+      "legacyRecordId": "st.5qvxdz61nr",
+      "source": "records/admin-pages.r1.en.json",
+      "context": "strings.admin.toggle.closeChat",
+      "leaf": "strings.actions",
+      "limits": {},
+      "origin": "authored",
+      "status": "draft"
+    },
+    {
+      "recordId": "st.ktgn3jyg1d",
+      "legacyRecordId": "st.ktgn3jyg1d",
+      "source": "records/admin-chat.r1.en.json",
+      "context": "admin.writer.chat.account.signIn",
+      "leaf": "strings.field-labels",
+      "limits": {},
+      "origin": "authored",
+      "status": "draft"
+    },
+    {
+      "recordId": "st.ktgn3jyg1d",
+      "legacyRecordId": "st.95zeepaj3s",
+      "source": "records/sign-in.json",
+      "context": "Generic sign-in copy: header.heading",
+      "leaf": "strings.page-titles",
+      "limits": {},
+      "origin": "foundry-default",
+      "status": "draft"
+    },
+    {
+      "recordId": "st.ktgn3jyg1d",
+      "legacyRecordId": "st.f5ce2skzxv",
+      "source": "records/sign-in.json",
+      "context": "Generic sign-in copy: actions.submit",
+      "leaf": "strings.actions",
+      "limits": {},
+      "origin": "foundry-default",
+      "status": "draft"
+    },
+    {
+      "recordId": "st.tx9f8j9jnf",
+      "legacyRecordId": "st.tx9f8j9jnf",
+      "source": "records/admin-chat.r1.en.json",
+      "context": "admin.writer.chat.attachment.name",
+      "leaf": "strings.field-labels",
+      "limits": {},
+      "origin": "authored",
+      "status": "draft"
+    },
+    {
+      "recordId": "st.tx9f8j9jnf",
+      "legacyRecordId": "st.e44z6d5szx",
+      "source": "records/admin-pages.r1.en.json",
+      "context": "strings.admin.item.heading",
+      "leaf": "strings.page-titles",
+      "limits": {},
+      "origin": "authored",
+      "status": "draft"
+    },
+    {
+      "recordId": "st.2zj7yrtkfr",
+      "legacyRecordId": "st.2zj7yrtkfr",
+      "source": "records/admin-meta.r1.en.json",
+      "context": "admin.designer.navLabel",
+      "leaf": "strings.navigation",
+      "limits": {
+        "maxChars": 40
+      },
+      "origin": "foundry-default",
+      "status": "draft"
+    },
+    {
+      "recordId": "st.2zj7yrtkfr",
+      "legacyRecordId": "st.5yv263ckjd",
+      "source": "records/admin-meta.r1.en.json",
+      "context": "admin.designer.shareTitle",
+      "leaf": "strings.page-titles",
+      "limits": {
+        "maxChars": 60
+      },
+      "origin": "foundry-default",
+      "status": "draft"
+    },
+    {
+      "recordId": "st.2zj7yrtkfr",
+      "legacyRecordId": "st.pb0ynfnh58",
+      "source": "records/admin-meta.r1.en.json",
+      "context": "admin.designer.title",
+      "leaf": "strings.page-titles",
+      "limits": {
+        "maxChars": 60
+      },
+      "origin": "foundry-default",
+      "status": "draft"
+    },
+    {
+      "recordId": "st.2zj7yrtkfr",
+      "legacyRecordId": "st.dx2qfvr17a",
+      "source": "records/admin-pages.r1.en.json",
+      "context": "strings.admin.page.designer",
+      "leaf": "strings.page-titles",
+      "limits": {},
+      "origin": "authored",
+      "status": "draft"
+    },
+    {
+      "recordId": "st.abbasfn5h4",
+      "legacyRecordId": "st.abbasfn5h4",
+      "source": "records/admin-meta.r1.en.json",
+      "context": "admin.designer.description",
+      "leaf": "strings.descriptions",
+      "limits": {
+        "maxChars": 160
+      },
+      "origin": "foundry-default",
+      "status": "draft"
+    },
+    {
+      "recordId": "st.abbasfn5h4",
+      "legacyRecordId": "st.j1mx26pxmq",
+      "source": "records/admin-meta.r1.en.json",
+      "context": "admin.designer.shareDescription",
+      "leaf": "strings.descriptions",
+      "limits": {
+        "maxChars": 160
+      },
+      "origin": "foundry-default",
+      "status": "draft"
+    },
+    {
+      "recordId": "st.m22sa9p9y4",
+      "legacyRecordId": "st.m22sa9p9y4",
+      "source": "records/admin-meta.r1.en.json",
+      "context": "admin.writer.title",
+      "leaf": "strings.page-titles",
+      "limits": {
+        "maxChars": 60
+      },
+      "origin": "foundry-default",
+      "status": "draft"
+    },
+    {
+      "recordId": "st.m22sa9p9y4",
+      "legacyRecordId": "st.phazcjdjs5",
+      "source": "records/admin-meta.r1.en.json",
+      "context": "admin.writer.shareTitle",
+      "leaf": "strings.page-titles",
+      "limits": {
+        "maxChars": 60
+      },
+      "origin": "foundry-default",
+      "status": "draft"
+    },
+    {
+      "recordId": "st.m22sa9p9y4",
+      "legacyRecordId": "st.zz066nxnmh",
+      "source": "records/admin-meta.r1.en.json",
+      "context": "admin.writer.navLabel",
+      "leaf": "strings.navigation",
+      "limits": {
+        "maxChars": 40
+      },
+      "origin": "foundry-default",
+      "status": "draft"
+    },
+    {
+      "recordId": "st.m22sa9p9y4",
+      "legacyRecordId": "st.xt00332n8s",
+      "source": "records/admin-pages.r1.en.json",
+      "context": "strings.admin.page.writer",
+      "leaf": "strings.page-titles",
+      "limits": {},
+      "origin": "authored",
+      "status": "draft"
+    },
+    {
+      "recordId": "st.6zznbwptfh",
+      "legacyRecordId": "st.6zznbwptfh",
+      "source": "records/admin-meta.r1.en.json",
+      "context": "admin.writer.shareDescription",
+      "leaf": "strings.descriptions",
+      "limits": {
+        "maxChars": 160
+      },
+      "origin": "foundry-default",
+      "status": "draft"
+    },
+    {
+      "recordId": "st.6zznbwptfh",
+      "legacyRecordId": "st.t5tp2ba7qy",
+      "source": "records/admin-meta.r1.en.json",
+      "context": "admin.writer.description",
+      "leaf": "strings.descriptions",
+      "limits": {
+        "maxChars": 160
+      },
+      "origin": "foundry-default",
+      "status": "draft"
+    },
+    {
+      "recordId": "st.cy7122qr1d",
+      "legacyRecordId": "st.cy7122qr1d",
+      "source": "records/admin-meta.r1.en.json",
+      "context": "admin.publisher.shareTitle",
+      "leaf": "strings.page-titles",
+      "limits": {
+        "maxChars": 60
+      },
+      "origin": "foundry-default",
+      "status": "draft"
+    },
+    {
+      "recordId": "st.cy7122qr1d",
+      "legacyRecordId": "st.eyyshzcr6r",
+      "source": "records/admin-meta.r1.en.json",
+      "context": "admin.publisher.title",
+      "leaf": "strings.page-titles",
+      "limits": {
+        "maxChars": 60
+      },
+      "origin": "foundry-default",
+      "status": "draft"
+    },
+    {
+      "recordId": "st.cy7122qr1d",
+      "legacyRecordId": "st.yvc0ka3n3h",
+      "source": "records/admin-meta.r1.en.json",
+      "context": "admin.publisher.navLabel",
+      "leaf": "strings.navigation",
+      "limits": {
+        "maxChars": 40
+      },
+      "origin": "foundry-default",
+      "status": "draft"
+    },
+    {
+      "recordId": "st.cy7122qr1d",
+      "legacyRecordId": "st.q5mh8a135f",
+      "source": "records/admin-voice.r1.en.json",
+      "context": "Publisher console",
+      "leaf": "strings.names",
+      "limits": {
+        "maxChars": 40
+      },
+      "origin": "foundry-default",
+      "status": "draft"
+    },
+    {
+      "recordId": "st.cy7122qr1d",
+      "legacyRecordId": "st.pn37v97g0q",
+      "source": "records/admin-pages.r1.en.json",
+      "context": "strings.admin.page.publisher",
+      "leaf": "strings.page-titles",
+      "limits": {},
+      "origin": "authored",
+      "status": "draft"
+    },
+    {
+      "recordId": "st.2tw3ay17tc",
+      "legacyRecordId": "st.2tw3ay17tc",
+      "source": "records/admin-meta.r1.en.json",
+      "context": "admin.publisher.description",
+      "leaf": "strings.descriptions",
+      "limits": {
+        "maxChars": 160
+      },
+      "origin": "foundry-default",
+      "status": "draft"
+    },
+    {
+      "recordId": "st.2tw3ay17tc",
+      "legacyRecordId": "st.q0ettsmqf0",
+      "source": "records/admin-meta.r1.en.json",
+      "context": "admin.publisher.shareDescription",
+      "leaf": "strings.descriptions",
+      "limits": {
+        "maxChars": 160
+      },
+      "origin": "foundry-default",
+      "status": "draft"
+    },
+    {
+      "recordId": "st.9a3gdn01wa",
+      "legacyRecordId": "st.9a3gdn01wa",
+      "source": "records/admin-meta.r1.en.json",
+      "context": "admin.actions.retry",
+      "leaf": "strings.actions",
+      "limits": {
+        "maxChars": 24
+      },
+      "origin": "foundry-default",
+      "status": "draft"
+    },
+    {
+      "recordId": "st.9a3gdn01wa",
+      "legacyRecordId": "st.rx282jkj3q",
+      "source": "records/section-defaults.r1.en.json",
+      "context": "admin.writer.sections.merge.error-state.retry.label",
+      "leaf": "strings.field-labels",
+      "limits": {},
+      "origin": "authored",
+      "status": "draft"
+    },
+    {
+      "recordId": "st.m5cjnqycs1",
+      "legacyRecordId": "st.m5cjnqycs1",
+      "source": "records/admin-meta.r1.en.json",
+      "context": "publisher.actions.openItem",
+      "leaf": "strings.actions",
+      "limits": {
+        "maxChars": 24
+      },
+      "origin": "foundry-default",
+      "status": "draft"
+    },
+    {
+      "recordId": "st.m5cjnqycs1",
+      "legacyRecordId": "st.sjqs1adxf1",
+      "source": "records/admin-pages.r1.en.json",
+      "context": "strings.admin.action.openItem",
+      "leaf": "strings.actions",
+      "limits": {},
+      "origin": "authored",
+      "status": "draft"
+    },
+    {
+      "recordId": "st.5bvvjt22m9",
+      "legacyRecordId": "st.5bvvjt22m9",
+      "source": "records/admin-meta.r1.en.json",
+      "context": "publisher.format.email.html",
+      "leaf": "strings.names",
+      "limits": {
+        "maxChars": 40
+      },
+      "origin": "foundry-default",
+      "status": "draft"
+    },
+    {
+      "recordId": "st.5bvvjt22m9",
+      "legacyRecordId": "st.yvb78meac6",
+      "source": "records/admin-pages.r1.en.json",
+      "context": "strings.admin.ia.publisher.messages.email",
+      "leaf": "strings.navigation",
+      "limits": {},
+      "origin": "authored",
+      "status": "draft"
+    },
+    {
+      "recordId": "st.g385gwchf1",
+      "legacyRecordId": "st.g385gwchf1",
+      "source": "records/admin-meta.r1.en.json",
+      "context": "publisher.layoutConfig.layouts.sidebar-content.sidebar-content.record",
+      "leaf": "strings.names",
+      "limits": {
+        "maxChars": 40
+      },
+      "origin": "foundry-default",
+      "status": "draft"
+    },
+    {
+      "recordId": "st.g385gwchf1",
+      "legacyRecordId": "st.jsam2zzqwr",
+      "source": "records/admin-studio.r1.en.json",
+      "context": "designer.item.sections.record-detail",
+      "leaf": "strings.names",
+      "limits": {
+        "maxChars": 60
+      },
+      "origin": "foundry-default",
+      "status": "draft"
+    },
+    {
+      "recordId": "st.0szhqxn9xp",
+      "legacyRecordId": "st.0szhqxn9xp",
+      "source": "records/admin-meta.r1.en.json",
+      "context": "publisher.frameConfig.frames.site-shell.front-door",
+      "leaf": "strings.names",
+      "limits": {
+        "maxChars": 40
+      },
+      "origin": "foundry-default",
+      "status": "draft"
+    },
+    {
+      "recordId": "st.0szhqxn9xp",
+      "legacyRecordId": "st.v3ycrdrpmn",
+      "source": "records/admin-studio.r1.en.json",
+      "context": "designer.item.frames.auth-shell",
+      "leaf": "strings.names",
+      "limits": {
+        "maxChars": 60
+      },
+      "origin": "foundry-default",
+      "status": "draft"
+    },
+    {
+      "recordId": "st.0rj8qzqqr1",
+      "legacyRecordId": "st.0rj8qzqqr1",
+      "source": "records/admin-meta.r1.en.json",
+      "context": "publisher.layoutOption.layouts.bento.density.dense",
+      "leaf": "strings.names",
+      "limits": {
+        "maxChars": 40
+      },
+      "origin": "foundry-default",
+      "status": "draft"
+    },
+    {
+      "recordId": "st.0rj8qzqqr1",
+      "legacyRecordId": "st.drv8cwaan0",
+      "source": "records/section-defaults.r1.en.json",
+      "context": "admin.writer.sections.dataTable.compactDensityLabel",
+      "leaf": "strings.field-labels",
+      "limits": {},
+      "origin": "authored",
+      "status": "draft"
+    },
+    {
+      "recordId": "st.wx6z3yc2r4",
+      "legacyRecordId": "st.wx6z3yc2r4",
+      "source": "records/admin-meta.r1.en.json",
+      "context": "publisher.mediaValue.png",
+      "leaf": "strings.names",
+      "limits": {
+        "maxChars": 40
+      },
+      "origin": "foundry-default",
+      "status": "draft"
+    },
+    {
+      "recordId": "st.wx6z3yc2r4",
+      "legacyRecordId": "st.zy13qxh36a",
+      "source": "records/admin-studio.r1.en.json",
+      "context": "designer.item.assets.image",
+      "leaf": "strings.names",
+      "limits": {
+        "maxChars": 60
+      },
+      "origin": "foundry-default",
+      "status": "draft"
+    },
+    {
+      "recordId": "st.rjydrbvwgq",
+      "legacyRecordId": "st.rjydrbvwgq",
+      "source": "records/admin-meta.r1.en.json",
+      "context": "publisher.mediaValue.mp4",
+      "leaf": "strings.names",
+      "limits": {
+        "maxChars": 40
+      },
+      "origin": "foundry-default",
+      "status": "draft"
+    },
+    {
+      "recordId": "st.rjydrbvwgq",
+      "legacyRecordId": "st.m429k7492g",
+      "source": "records/admin-studio.r1.en.json",
+      "context": "designer.item.assets.video",
+      "leaf": "strings.names",
+      "limits": {
+        "maxChars": 60
+      },
+      "origin": "foundry-default",
+      "status": "draft"
+    },
+    {
+      "recordId": "st.33rp5w6vzk",
+      "legacyRecordId": "st.33rp5w6vzk",
+      "source": "records/admin-meta.r1.en.json",
+      "context": "publisher.mediaValue.slides",
+      "leaf": "strings.names",
+      "limits": {
+        "maxChars": 40
+      },
+      "origin": "foundry-default",
+      "status": "draft"
+    },
+    {
+      "recordId": "st.33rp5w6vzk",
+      "legacyRecordId": "st.mt671hy07a",
+      "source": "records/admin-pages.r1.en.json",
+      "context": "strings.admin.ia.writer.narratives.documents-slides",
+      "leaf": "strings.navigation",
+      "limits": {},
+      "origin": "authored",
+      "status": "draft"
+    },
+    {
+      "recordId": "st.j7paney0ax",
+      "legacyRecordId": "st.j7paney0ax",
+      "source": "records/admin-meta.r1.en.json",
+      "context": "publisher.contentKey.format",
+      "leaf": "strings.names",
+      "limits": {
+        "maxChars": 40
+      },
+      "origin": "foundry-default",
+      "status": "draft"
+    },
+    {
+      "recordId": "st.j7paney0ax",
+      "legacyRecordId": "st.4b1m5gh2fx",
+      "source": "records/admin-voice.r1.en.json",
+      "context": "Publisher console",
+      "leaf": "strings.field-labels",
+      "limits": {
+        "maxChars": 40
+      },
+      "origin": "foundry-default",
+      "status": "draft"
+    },
+    {
+      "recordId": "st.aa0s69mdxk",
+      "legacyRecordId": "st.aa0s69mdxk",
+      "source": "records/admin-meta.r1.en.json",
+      "context": "publisher.contentKey.size",
+      "leaf": "strings.names",
+      "limits": {
+        "maxChars": 40
+      },
+      "origin": "foundry-default",
+      "status": "draft"
+    },
+    {
+      "recordId": "st.aa0s69mdxk",
+      "legacyRecordId": "st.kc4qwnns4j",
+      "source": "records/admin-studio.r1.en.json",
+      "context": "designer.item.tokens.icon-size",
+      "leaf": "strings.names",
+      "limits": {
+        "maxChars": 60
+      },
+      "origin": "foundry-default",
+      "status": "draft"
+    },
+    {
+      "recordId": "st.13d97mrmzy",
+      "legacyRecordId": "st.13d97mrmzy",
+      "source": "records/admin-meta.r1.en.json",
+      "context": "publisher.contentKey.lead",
+      "leaf": "strings.names",
+      "limits": {
+        "maxChars": 40
+      },
+      "origin": "foundry-default",
+      "status": "draft"
+    },
+    {
+      "recordId": "st.13d97mrmzy",
+      "legacyRecordId": "st.q1bz2hx0az",
+      "source": "records/admin-studio.r1.en.json",
+      "context": "designer.item.sections.hero",
+      "leaf": "strings.names",
+      "limits": {
+        "maxChars": 60
+      },
+      "origin": "foundry-default",
+      "status": "draft"
+    },
+    {
+      "recordId": "st.dgdbty02r2",
+      "legacyRecordId": "st.dgdbty02r2",
+      "source": "records/admin-meta.r1.en.json",
+      "context": "publisher.contentKey.logo",
+      "leaf": "strings.names",
+      "limits": {
+        "maxChars": 40
+      },
+      "origin": "foundry-default",
+      "status": "draft"
+    },
+    {
+      "recordId": "st.dgdbty02r2",
+      "legacyRecordId": "st.5mwpnsqwvz",
+      "source": "records/admin-studio.r1.en.json",
+      "context": "designer.ia.assets.logo",
+      "leaf": "strings.names",
+      "limits": {
+        "maxChars": 60
+      },
+      "origin": "foundry-default",
+      "status": "draft"
+    },
+    {
+      "recordId": "st.dgdbty02r2",
+      "legacyRecordId": "st.7tz1hpw0gg",
+      "source": "records/admin-studio.r1.en.json",
+      "context": "designer.item.components.logo",
+      "leaf": "strings.names",
+      "limits": {
+        "maxChars": 60
+      },
+      "origin": "foundry-default",
+      "status": "draft"
+    },
+    {
+      "recordId": "st.a7d1spjaqx",
+      "legacyRecordId": "st.a7d1spjaqx",
+      "source": "records/admin-meta.r1.en.json",
+      "context": "publisher.contentKey.favicon",
+      "leaf": "strings.names",
+      "limits": {
+        "maxChars": 40
+      },
+      "origin": "foundry-default",
+      "status": "draft"
+    },
+    {
+      "recordId": "st.a7d1spjaqx",
+      "legacyRecordId": "st.rdc1xvjq5v",
+      "source": "records/admin-studio.r1.en.json",
+      "context": "designer.item.assets.favicon",
+      "leaf": "strings.names",
+      "limits": {
+        "maxChars": 60
+      },
+      "origin": "foundry-default",
+      "status": "draft"
+    },
+    {
+      "recordId": "st.9pds3yfrp5",
+      "legacyRecordId": "st.9pds3yfrp5",
+      "source": "records/admin-meta.r1.en.json",
+      "context": "publisher.menuItem.website.home",
+      "leaf": "strings.names",
+      "limits": {
+        "maxChars": 40
+      },
+      "origin": "foundry-default",
+      "status": "draft"
+    },
+    {
+      "recordId": "st.9pds3yfrp5",
+      "legacyRecordId": "st.gdakfdd19f",
+      "source": "records/admin-studio.r1.en.json",
+      "context": "designer.item.assets.icon-home",
+      "leaf": "strings.names",
+      "limits": {
+        "maxChars": 60
+      },
+      "origin": "foundry-default",
+      "status": "draft"
+    },
+    {
+      "recordId": "st.9pds3yfrp5",
+      "legacyRecordId": "st.0000000019",
+      "source": "records/site.en.json",
+      "context": "Generic draft site starter",
+      "leaf": "strings.field-labels",
+      "limits": {},
+      "origin": "authored",
+      "status": "draft"
+    },
+    {
+      "recordId": "st.xebhn5e4b0",
+      "legacyRecordId": "st.xebhn5e4b0",
+      "source": "records/admin-meta.r1.en.json",
+      "context": "publisher.menuItem.website.not-found",
+      "leaf": "strings.names",
+      "limits": {
+        "maxChars": 40
+      },
+      "origin": "foundry-default",
+      "status": "draft"
+    },
+    {
+      "recordId": "st.xebhn5e4b0",
+      "legacyRecordId": "st.0000000021",
+      "source": "records/site.en.json",
+      "context": "Generic draft site starter",
+      "leaf": "strings.field-labels",
+      "limits": {},
+      "origin": "authored",
+      "status": "draft"
+    },
+    {
+      "recordId": "st.rdsa1ky831",
+      "legacyRecordId": "st.rdsa1ky831",
+      "source": "records/admin-meta.r1.en.json",
+      "context": "publisher.planHeader.alignLabel",
+      "leaf": "strings.actions",
+      "limits": {
+        "maxChars": 24
+      },
+      "origin": "foundry-default",
+      "status": "draft"
+    },
+    {
+      "recordId": "st.rdsa1ky831",
+      "legacyRecordId": "st.mw6mn99de1",
+      "source": "records/admin-voice.r1.en.json",
+      "context": "Publisher console",
+      "leaf": "strings.actions",
+      "limits": {
+        "maxChars": 24
+      },
+      "origin": "foundry-default",
+      "status": "draft"
+    },
+    {
+      "recordId": "st.qcry3z237f",
+      "legacyRecordId": "st.qcry3z237f",
+      "source": "records/admin-meta.r1.en.json",
+      "context": "publisher.planHeader.noneLabel",
+      "leaf": "strings.names",
+      "limits": {
+        "maxChars": 40
+      },
+      "origin": "foundry-default",
+      "status": "draft"
+    },
+    {
+      "recordId": "st.qcry3z237f",
+      "legacyRecordId": "st.6vygykgwag",
+      "source": "records/admin-voice.r1.en.json",
+      "context": "Designer console",
+      "leaf": "strings.field-labels",
+      "limits": {
+        "maxChars": 32
+      },
+      "origin": "foundry-default",
+      "status": "draft"
+    },
+    {
+      "recordId": "st.qcry3z237f",
+      "legacyRecordId": "st.7q0kne0f5p",
+      "source": "records/admin-voice.r1.en.json",
+      "context": "Designer console",
+      "leaf": "strings.field-labels",
+      "limits": {
+        "maxChars": 40
+      },
+      "origin": "foundry-default",
+      "status": "draft"
+    },
+    {
+      "recordId": "st.qcry3z237f",
+      "legacyRecordId": "st.3xkvn2erq4",
+      "source": "records/section-defaults.r1.en.json",
+      "context": "admin.writer.sections.dataTable.noTagsLabel",
+      "leaf": "strings.field-labels",
+      "limits": {},
+      "origin": "authored",
+      "status": "draft"
+    },
+    {
+      "recordId": "st.aamt9c6zdr",
+      "legacyRecordId": "st.aamt9c6zdr",
+      "source": "records/admin-meta.r1.en.json",
+      "context": "publisher.planHeader.alignmentFailedLabel",
+      "leaf": "strings.errors",
+      "limits": {
+        "maxChars": 160
+      },
+      "origin": "foundry-default",
+      "status": "draft"
+    },
+    {
+      "recordId": "st.aamt9c6zdr",
+      "legacyRecordId": "st.kxgbwzxkgr",
+      "source": "records/admin-voice.r1.en.json",
+      "context": "Publisher console",
+      "leaf": "strings.errors",
+      "limits": {
+        "maxChars": 120
+      },
+      "origin": "foundry-default",
+      "status": "draft"
+    },
+    {
+      "recordId": "st.av63bcybsc",
+      "legacyRecordId": "st.av63bcybsc",
+      "source": "records/admin-meta.r1.en.json",
+      "context": "publisher.planHeader.requirementsLabel",
+      "leaf": "strings.names",
+      "limits": {
+        "maxChars": 40
+      },
+      "origin": "foundry-default",
+      "status": "draft"
+    },
+    {
+      "recordId": "st.av63bcybsc",
+      "legacyRecordId": "st.eq5v4nyjxt",
+      "source": "records/admin-voice.r1.en.json",
+      "context": "Designer console",
+      "leaf": "strings.field-labels",
+      "limits": {
+        "maxChars": 40
+      },
+      "origin": "foundry-default",
+      "status": "draft"
+    },
+    {
+      "recordId": "st.av63bcybsc",
+      "legacyRecordId": "st.tmczk7n826",
+      "source": "records/admin-voice.r1.en.json",
+      "context": "Designer console",
+      "leaf": "strings.field-labels",
+      "limits": {
+        "maxChars": 40
+      },
+      "origin": "foundry-default",
+      "status": "draft"
+    },
+    {
+      "recordId": "st.td8tdah4rw",
+      "legacyRecordId": "st.td8tdah4rw",
+      "source": "records/admin-meta.r1.en.json",
+      "context": "admin.enum.draft",
+      "leaf": "strings.names",
+      "limits": {
+        "maxChars": 40
+      },
+      "origin": "foundry-default",
+      "status": "draft"
+    },
+    {
+      "recordId": "st.td8tdah4rw",
+      "legacyRecordId": "st.8177dd6868",
+      "source": "records/admin-writer.r1.en.json",
+      "context": "admin.writer.route.draft",
+      "leaf": "strings.statuses",
+      "limits": {},
+      "origin": "authored",
+      "status": "draft"
+    },
+    {
+      "recordId": "st.td8tdah4rw",
+      "legacyRecordId": "st.000000001c",
+      "source": "records/site.en.json",
+      "context": "Generic draft site starter",
+      "leaf": "strings.field-labels",
+      "limits": {},
+      "origin": "authored",
+      "status": "draft"
+    },
+    {
+      "recordId": "st.td8tdah4rw",
+      "legacyRecordId": "st.1hfmkewyh1",
+      "source": "records/admin-pages.r1.en.json",
+      "context": "strings.admin.status.draft",
+      "leaf": "strings.statuses",
+      "limits": {},
+      "origin": "authored",
+      "status": "draft"
+    },
+    {
+      "recordId": "st.gnv660w59z",
+      "legacyRecordId": "st.gnv660w59z",
+      "source": "records/admin-meta.r1.en.json",
+      "context": "admin.enum.in-review",
+      "leaf": "strings.names",
+      "limits": {
+        "maxChars": 40
+      },
+      "origin": "foundry-default",
+      "status": "draft"
+    },
+    {
+      "recordId": "st.gnv660w59z",
+      "legacyRecordId": "st.23ssre580y",
+      "source": "records/admin-pages.r1.en.json",
+      "context": "strings.admin.status.inReview",
+      "leaf": "strings.statuses",
+      "limits": {},
+      "origin": "authored",
+      "status": "draft"
+    },
+    {
+      "recordId": "st.1re7rsx0et",
+      "legacyRecordId": "st.1re7rsx0et",
+      "source": "records/admin-meta.r1.en.json",
+      "context": "admin.enum.approved",
+      "leaf": "strings.names",
+      "limits": {
+        "maxChars": 40
+      },
+      "origin": "foundry-default",
+      "status": "draft"
+    },
+    {
+      "recordId": "st.1re7rsx0et",
+      "legacyRecordId": "st.6006673533",
+      "source": "records/admin-writer.r1.en.json",
+      "context": "admin.writer.route.approved",
+      "leaf": "strings.statuses",
+      "limits": {},
+      "origin": "authored",
+      "status": "draft"
+    },
+    {
+      "recordId": "st.1re7rsx0et",
+      "legacyRecordId": "st.be9vhxtcbp",
+      "source": "records/admin-pages.r1.en.json",
+      "context": "strings.admin.status.approved",
+      "leaf": "strings.statuses",
+      "limits": {},
+      "origin": "authored",
+      "status": "draft"
+    },
+    {
+      "recordId": "st.cw2t0s4dxn",
+      "legacyRecordId": "st.cw2t0s4dxn",
+      "source": "records/admin-meta.r1.en.json",
+      "context": "admin.enum.active",
+      "leaf": "strings.names",
+      "limits": {
+        "maxChars": 40
+      },
+      "origin": "foundry-default",
+      "status": "draft"
+    },
+    {
+      "recordId": "st.cw2t0s4dxn",
+      "legacyRecordId": "st.069fm91g06",
+      "source": "records/admin-pages.r1.en.json",
+      "context": "strings.admin.status.active",
+      "leaf": "strings.statuses",
+      "limits": {},
+      "origin": "authored",
+      "status": "draft"
+    },
+    {
+      "recordId": "st.dvdvvejry8",
+      "legacyRecordId": "st.dvdvvejry8",
+      "source": "records/admin-meta.r1.en.json",
+      "context": "admin.enum.retired",
+      "leaf": "strings.names",
+      "limits": {
+        "maxChars": 40
+      },
+      "origin": "foundry-default",
+      "status": "draft"
+    },
+    {
+      "recordId": "st.dvdvvejry8",
+      "legacyRecordId": "st.4475278462",
+      "source": "records/admin-writer.r1.en.json",
+      "context": "admin.writer.route.retired",
+      "leaf": "strings.statuses",
+      "limits": {},
+      "origin": "authored",
+      "status": "draft"
+    },
+    {
+      "recordId": "st.dvdvvejry8",
+      "legacyRecordId": "st.15d9a6vhv6",
+      "source": "records/admin-pages.r1.en.json",
+      "context": "strings.admin.status.retired",
+      "leaf": "strings.statuses",
+      "limits": {},
+      "origin": "authored",
+      "status": "draft"
+    },
+    {
+      "recordId": "st.hcah39v2sh",
+      "legacyRecordId": "st.hcah39v2sh",
+      "source": "records/admin-meta.r1.en.json",
+      "context": "admin.enum.configured",
+      "leaf": "strings.names",
+      "limits": {
+        "maxChars": 40
+      },
+      "origin": "foundry-default",
+      "status": "draft"
+    },
+    {
+      "recordId": "st.hcah39v2sh",
+      "legacyRecordId": "st.byav18dham",
+      "source": "records/admin-voice.r1.en.json",
+      "context": "Publisher console",
+      "leaf": "strings.names",
+      "limits": {
+        "maxChars": 40
+      },
+      "origin": "foundry-default",
+      "status": "draft"
+    },
+    {
+      "recordId": "st.kmz1y1qvg0",
+      "legacyRecordId": "st.kmz1y1qvg0",
+      "source": "records/admin-meta.r1.en.json",
+      "context": "admin.enum.not-chosen",
+      "leaf": "strings.names",
+      "limits": {
+        "maxChars": 40
+      },
+      "origin": "foundry-default",
+      "status": "draft"
+    },
+    {
+      "recordId": "st.kmz1y1qvg0",
+      "legacyRecordId": "st.6wk74mm8th",
+      "source": "records/admin-voice.r1.en.json",
+      "context": "Designer console",
+      "leaf": "strings.statuses",
+      "limits": {
+        "maxChars": 80
+      },
+      "origin": "foundry-default",
+      "status": "draft"
+    },
+    {
+      "recordId": "st.kmz1y1qvg0",
+      "legacyRecordId": "st.5m0y72hzzj",
+      "source": "records/pending/sections-upgrade.r1.en.json",
+      "context": "admin.writer.sections.new.slot-board.rows.status",
+      "leaf": "strings.field-labels",
+      "limits": {},
+      "origin": "authored",
+      "status": "draft"
+    },
+    {
+      "recordId": "st.y4xznsjmw8",
+      "legacyRecordId": "st.y4xznsjmw8",
+      "source": "records/admin-meta.r1.en.json",
+      "context": "admin.enum.warning",
+      "leaf": "strings.names",
+      "limits": {
+        "maxChars": 40
+      },
+      "origin": "foundry-default",
+      "status": "draft"
+    },
+    {
+      "recordId": "st.y4xznsjmw8",
+      "legacyRecordId": "st.cfy1fftfdq",
+      "source": "records/admin-studio.r1.en.json",
+      "context": "designer.item.assets.icon-warning",
+      "leaf": "strings.names",
+      "limits": {
+        "maxChars": 60
+      },
+      "origin": "foundry-default",
+      "status": "draft"
+    },
+    {
+      "recordId": "st.mq7reh5kyq",
+      "legacyRecordId": "st.mq7reh5kyq",
+      "source": "records/admin-meta.r1.en.json",
+      "context": "admin.enum.stable",
+      "leaf": "strings.names",
+      "limits": {
+        "maxChars": 40
+      },
+      "origin": "foundry-default",
+      "status": "draft"
+    },
+    {
+      "recordId": "st.mq7reh5kyq",
+      "legacyRecordId": "st.fwrx8ws8jq",
+      "source": "records/admin-pages.r1.en.json",
+      "context": "strings.admin.status.stable",
+      "leaf": "strings.statuses",
+      "limits": {},
+      "origin": "authored",
+      "status": "draft"
+    },
+    {
+      "recordId": "st.kqevjtbwt9",
+      "legacyRecordId": "st.kqevjtbwt9",
+      "source": "records/admin-meta.r1.en.json",
+      "context": "publisher.arrangement.panes",
+      "leaf": "strings.names",
+      "limits": {
+        "maxChars": 40
+      },
+      "origin": "foundry-default",
+      "status": "draft"
+    },
+    {
+      "recordId": "st.kqevjtbwt9",
+      "legacyRecordId": "st.7ywhhgzjnq",
+      "source": "records/admin-studio.r1.en.json",
+      "context": "designer.ia.components.navigation-panels",
+      "leaf": "strings.names",
+      "limits": {
+        "maxChars": 60
+      },
+      "origin": "foundry-default",
+      "status": "draft"
+    },
+    {
+      "recordId": "st.2091r9z4bq",
+      "legacyRecordId": "st.2091r9z4bq",
+      "source": "records/admin-meta.r1.en.json",
+      "context": "publisher.medium.document",
+      "leaf": "strings.names",
+      "limits": {
+        "maxChars": 40
+      },
+      "origin": "foundry-default",
+      "status": "draft"
+    },
+    {
+      "recordId": "st.2091r9z4bq",
+      "legacyRecordId": "st.51jajdr2tv",
+      "source": "records/admin-studio.r1.en.json",
+      "context": "designer.ia.frames.page-shells-documents",
+      "leaf": "strings.names",
+      "limits": {
+        "maxChars": 60
+      },
+      "origin": "foundry-default",
+      "status": "draft"
+    },
+    {
+      "recordId": "st.2091r9z4bq",
+      "legacyRecordId": "st.bssmc915mb",
+      "source": "records/admin-pages.r1.en.json",
+      "context": "strings.admin.group.publisher.documents",
+      "leaf": "strings.navigation",
+      "limits": {},
+      "origin": "authored",
+      "status": "draft"
+    },
+    {
+      "recordId": "st.2091r9z4bq",
+      "legacyRecordId": "st.d97pr7tg5f",
+      "source": "records/admin-pages.r1.en.json",
+      "context": "strings.admin.ia.writer.narratives.documents",
+      "leaf": "strings.navigation",
+      "limits": {},
+      "origin": "authored",
+      "status": "draft"
+    },
+    {
+      "recordId": "st.rgakrp0zw4",
+      "legacyRecordId": "st.rgakrp0zw4",
+      "source": "records/admin-meta.r1.en.json",
+      "context": "publisher.medium.video",
+      "leaf": "strings.names",
+      "limits": {
+        "maxChars": 40
+      },
+      "origin": "foundry-default",
+      "status": "draft"
+    },
+    {
+      "recordId": "st.rgakrp0zw4",
+      "legacyRecordId": "st.2mjfp1kwg0",
+      "source": "records/admin-pages.r1.en.json",
+      "context": "strings.admin.ia.writer.narratives.communications-videos",
+      "leaf": "strings.navigation",
+      "limits": {},
+      "origin": "authored",
+      "status": "draft"
+    },
+    {
+      "recordId": "st.rgakrp0zw4",
+      "legacyRecordId": "st.w0ds5aa7mm",
+      "source": "records/admin-pages.r1.en.json",
+      "context": "strings.admin.group.publisher.videos",
+      "leaf": "strings.navigation",
+      "limits": {},
+      "origin": "authored",
+      "status": "draft"
+    },
+    {
+      "recordId": "st.33cy9hjh1q",
+      "legacyRecordId": "st.33cy9hjh1q",
+      "source": "records/admin-meta.r1.en.json",
+      "context": "publisher.medium.deck",
+      "leaf": "strings.names",
+      "limits": {
+        "maxChars": 40
+      },
+      "origin": "foundry-default",
+      "status": "draft"
+    },
+    {
+      "recordId": "st.33cy9hjh1q",
+      "legacyRecordId": "st.qrsdnqwfm8",
+      "source": "records/admin-pages.r1.en.json",
+      "context": "strings.admin.group.publisher.presentations",
+      "leaf": "strings.navigation",
+      "limits": {},
+      "origin": "authored",
+      "status": "draft"
+    },
+    {
+      "recordId": "st.dr57tvsfc6",
+      "legacyRecordId": "st.dr57tvsfc6",
+      "source": "records/admin-meta.r1.en.json",
+      "context": "publisher.channel.site",
+      "leaf": "strings.names",
+      "limits": {
+        "maxChars": 40
+      },
+      "origin": "foundry-default",
+      "status": "draft"
+    },
+    {
+      "recordId": "st.dr57tvsfc6",
+      "legacyRecordId": "st.w09np431tq",
+      "source": "records/admin-studio.r1.en.json",
+      "context": "designer.item.assets.icon-website",
+      "leaf": "strings.names",
+      "limits": {
+        "maxChars": 60
+      },
+      "origin": "foundry-default",
+      "status": "draft"
+    },
+    {
+      "recordId": "st.gj32snjd4m",
+      "legacyRecordId": "st.gj32snjd4m",
+      "source": "records/admin-meta.r1.en.json",
+      "context": "publisher.channel.app",
+      "leaf": "strings.names",
+      "limits": {
+        "maxChars": 40
+      },
+      "origin": "foundry-default",
+      "status": "draft"
+    },
+    {
+      "recordId": "st.gj32snjd4m",
+      "legacyRecordId": "st.v67nyypq4j",
+      "source": "records/admin-studio.r1.en.json",
+      "context": "designer.ia.assets.app-identity-application",
+      "leaf": "strings.names",
+      "limits": {
+        "maxChars": 60
+      },
+      "origin": "foundry-default",
+      "status": "draft"
+    },
+    {
+      "recordId": "st.ceegez6aff",
+      "legacyRecordId": "st.ceegez6aff",
+      "source": "records/admin-meta.r1.en.json",
+      "context": "publisher.channel.messages",
+      "leaf": "strings.names",
+      "limits": {
+        "maxChars": 40
+      },
+      "origin": "foundry-default",
+      "status": "draft"
+    },
+    {
+      "recordId": "st.ceegez6aff",
+      "legacyRecordId": "st.n0wrz941gm",
+      "source": "records/admin-studio.r1.en.json",
+      "context": "designer.ia.components.feedback-messages",
+      "leaf": "strings.names",
+      "limits": {
+        "maxChars": 60
+      },
+      "origin": "foundry-default",
+      "status": "draft"
+    },
+    {
+      "recordId": "st.ceegez6aff",
+      "legacyRecordId": "st.s2d41mwbnv",
+      "source": "records/admin-studio.r1.en.json",
+      "context": "designer.ia.sections.respond-messages",
+      "leaf": "strings.names",
+      "limits": {
+        "maxChars": 60
+      },
+      "origin": "foundry-default",
+      "status": "draft"
+    },
+    {
+      "recordId": "st.ceegez6aff",
+      "legacyRecordId": "st.3p6pmjybxb",
+      "source": "records/admin-pages.r1.en.json",
+      "context": "strings.admin.ia.writer.narratives.communications-messages",
+      "leaf": "strings.navigation",
+      "limits": {},
+      "origin": "authored",
+      "status": "draft"
+    },
+    {
+      "recordId": "st.ceegez6aff",
+      "legacyRecordId": "st.8myj0zrkya",
+      "source": "records/admin-pages.r1.en.json",
+      "context": "strings.admin.group.publisher.messages",
+      "leaf": "strings.navigation",
+      "limits": {},
+      "origin": "authored",
+      "status": "draft"
+    },
+    {
+      "recordId": "st.ceegez6aff",
+      "legacyRecordId": "st.aapst8x4f5",
+      "source": "records/admin-pages.r1.en.json",
+      "context": "strings.admin.ia.writer.patterns.messages",
+      "leaf": "strings.navigation",
+      "limits": {},
+      "origin": "authored",
+      "status": "draft"
+    },
+    {
+      "recordId": "st.ceegez6aff",
+      "legacyRecordId": "st.gnpy9rkdz0",
+      "source": "records/admin-pages.r1.en.json",
+      "context": "strings.admin.ia.writer.passages.respond-messages",
+      "leaf": "strings.navigation",
+      "limits": {},
+      "origin": "authored",
+      "status": "draft"
+    },
+    {
+      "recordId": "st.efsb6h9dmb",
+      "legacyRecordId": "st.efsb6h9dmb",
+      "source": "records/admin-meta.r1.en.json",
+      "context": "publisher.lane.Record",
+      "leaf": "strings.names",
+      "limits": {
+        "maxChars": 40
+      },
+      "origin": "foundry-default",
+      "status": "draft"
+    },
+    {
+      "recordId": "st.efsb6h9dmb",
+      "legacyRecordId": "st.84cb7kqs37",
+      "source": "records/admin-writer-paging.r1.en.json",
+      "context": "admin.writer.route.pagination",
+      "leaf": "strings.field-labels",
+      "limits": {},
+      "origin": "authored",
+      "status": "draft"
+    },
+    {
+      "recordId": "st.bh10jdg8bx",
+      "legacyRecordId": "st.bh10jdg8bx",
+      "source": "records/admin-meta.r1.en.json",
+      "context": "publisher.stage.Checks",
+      "leaf": "strings.names",
+      "limits": {
+        "maxChars": 40
+      },
+      "origin": "foundry-default",
+      "status": "draft"
+    },
+    {
+      "recordId": "st.bh10jdg8bx",
+      "legacyRecordId": "st.840jzn4b7m",
+      "source": "records/admin-voice.r1.en.json",
+      "context": "Designer console",
+      "leaf": "strings.field-labels",
+      "limits": {
+        "maxChars": 40
+      },
+      "origin": "foundry-default",
+      "status": "draft"
+    },
+    {
+      "recordId": "st.bh10jdg8bx",
+      "legacyRecordId": "st.ma5b1ssq0f",
+      "source": "records/admin-voice.r1.en.json",
+      "context": "Designer console",
+      "leaf": "strings.names",
+      "limits": {
+        "maxChars": 60
+      },
+      "origin": "foundry-default",
+      "status": "draft"
+    },
+    {
+      "recordId": "st.5nfgjmm0xx",
+      "legacyRecordId": "st.5nfgjmm0xx",
+      "source": "records/admin-meta.r1.en.json",
+      "context": "admin.account.label",
+      "leaf": "strings.names",
+      "limits": {
+        "maxChars": 40
+      },
+      "origin": "foundry-default",
+      "status": "draft"
+    },
+    {
+      "recordId": "st.5nfgjmm0xx",
+      "legacyRecordId": "st.dvhz031m2x",
+      "source": "records/section-defaults.r1.en.json",
+      "context": "admin.writer.sections.merge.record-detail.header.heading",
+      "leaf": "strings.field-labels",
+      "limits": {},
+      "origin": "authored",
+      "status": "draft"
+    },
+    {
+      "recordId": "st.c331pzvwey",
+      "legacyRecordId": "st.c331pzvwey",
+      "source": "records/admin-voice.r1.en.json",
+      "context": "Designer console",
+      "leaf": "strings.field-labels",
+      "limits": {
+        "maxChars": 32
+      },
+      "origin": "foundry-default",
+      "status": "draft"
+    },
+    {
+      "recordId": "st.c331pzvwey",
+      "legacyRecordId": "st.tk773axxm2",
+      "source": "records/admin-voice.r1.en.json",
+      "context": "Designer console",
+      "leaf": "strings.field-labels",
+      "limits": {
+        "maxChars": 40
+      },
+      "origin": "foundry-default",
+      "status": "draft"
+    },
+    {
+      "recordId": "st.c331pzvwey",
+      "legacyRecordId": "st.xja32c6gn7",
+      "source": "records/admin-pages.r1.en.json",
+      "context": "strings.admin.group.designer.tokens",
+      "leaf": "strings.navigation",
+      "limits": {},
+      "origin": "authored",
+      "status": "draft"
+    },
+    {
+      "recordId": "st.qxaxqewq3p",
+      "legacyRecordId": "st.qxaxqewq3p",
+      "source": "records/admin-studio.r1.en.json",
+      "context": "designer.ia.components.display-assets",
+      "leaf": "strings.names",
+      "limits": {
+        "maxChars": 60
+      },
+      "origin": "foundry-default",
+      "status": "draft"
+    },
+    {
+      "recordId": "st.qxaxqewq3p",
+      "legacyRecordId": "st.7fsbf7m1ak",
+      "source": "records/admin-voice.r1.en.json",
+      "context": "Designer console",
+      "leaf": "strings.field-labels",
+      "limits": {
+        "maxChars": 32
+      },
+      "origin": "foundry-default",
+      "status": "draft"
+    },
+    {
+      "recordId": "st.qxaxqewq3p",
+      "legacyRecordId": "st.x7gywrs0qp",
+      "source": "records/admin-voice.r1.en.json",
+      "context": "Designer console",
+      "leaf": "strings.field-labels",
+      "limits": {
+        "maxChars": 40
+      },
+      "origin": "foundry-default",
+      "status": "draft"
+    },
+    {
+      "recordId": "st.qxaxqewq3p",
+      "legacyRecordId": "st.3690j620r5",
+      "source": "records/admin-pages.r1.en.json",
+      "context": "strings.admin.group.designer.assets",
+      "leaf": "strings.navigation",
+      "limits": {},
+      "origin": "authored",
+      "status": "draft"
+    },
+    {
+      "recordId": "st.jht60wz8e1",
+      "legacyRecordId": "st.jht60wz8e1",
+      "source": "records/admin-voice.r1.en.json",
+      "context": "Designer console",
+      "leaf": "strings.field-labels",
+      "limits": {
+        "maxChars": 32
+      },
+      "origin": "foundry-default",
+      "status": "draft"
+    },
+    {
+      "recordId": "st.jht60wz8e1",
+      "legacyRecordId": "st.paa7qey2jr",
+      "source": "records/admin-voice.r1.en.json",
+      "context": "Designer console",
+      "leaf": "strings.field-labels",
+      "limits": {
+        "maxChars": 40
+      },
+      "origin": "foundry-default",
+      "status": "draft"
+    },
+    {
+      "recordId": "st.jht60wz8e1",
+      "legacyRecordId": "st.ajd8bc65jv",
+      "source": "records/admin-pages.r1.en.json",
+      "context": "strings.admin.group.designer.components",
+      "leaf": "strings.navigation",
+      "limits": {},
+      "origin": "authored",
+      "status": "draft"
+    },
+    {
+      "recordId": "st.ata62btvcq",
+      "legacyRecordId": "st.ata62btvcq",
+      "source": "records/admin-voice.r1.en.json",
+      "context": "Designer console",
+      "leaf": "strings.field-labels",
+      "limits": {
+        "maxChars": 40
+      },
+      "origin": "foundry-default",
+      "status": "draft"
+    },
+    {
+      "recordId": "st.ata62btvcq",
+      "legacyRecordId": "st.pvbdyf5y7k",
+      "source": "records/admin-voice.r1.en.json",
+      "context": "Designer console",
+      "leaf": "strings.field-labels",
+      "limits": {
+        "maxChars": 32
+      },
+      "origin": "foundry-default",
+      "status": "draft"
+    },
+    {
+      "recordId": "st.ata62btvcq",
+      "legacyRecordId": "st.ne53aycmzh",
+      "source": "records/admin-pages.r1.en.json",
+      "context": "strings.admin.item.sections",
+      "leaf": "strings.field-labels",
+      "limits": {},
+      "origin": "authored",
+      "status": "draft"
+    },
+    {
+      "recordId": "st.ata62btvcq",
+      "legacyRecordId": "st.rnhq8akq8m",
+      "source": "records/admin-pages.r1.en.json",
+      "context": "strings.admin.column.sections",
+      "leaf": "strings.field-labels",
+      "limits": {},
+      "origin": "authored",
+      "status": "draft"
+    },
+    {
+      "recordId": "st.ata62btvcq",
+      "legacyRecordId": "st.zt92wd2m2t",
+      "source": "records/admin-pages.r1.en.json",
+      "context": "strings.admin.group.designer.sections",
+      "leaf": "strings.navigation",
+      "limits": {},
+      "origin": "authored",
+      "status": "draft"
+    },
+    {
+      "recordId": "st.7rv315vzjm",
+      "legacyRecordId": "st.7rv315vzjm",
+      "source": "records/admin-voice.r1.en.json",
+      "context": "Designer console",
+      "leaf": "strings.field-labels",
+      "limits": {
+        "maxChars": 32
+      },
+      "origin": "foundry-default",
+      "status": "draft"
+    },
+    {
+      "recordId": "st.7rv315vzjm",
+      "legacyRecordId": "st.82cxvbv76e",
+      "source": "records/admin-voice.r1.en.json",
+      "context": "Designer console",
+      "leaf": "strings.field-labels",
+      "limits": {
+        "maxChars": 40
+      },
+      "origin": "foundry-default",
+      "status": "draft"
+    },
+    {
+      "recordId": "st.7rv315vzjm",
+      "legacyRecordId": "st.gn129089ct",
+      "source": "records/admin-pages.r1.en.json",
+      "context": "strings.admin.group.designer.frames",
+      "leaf": "strings.navigation",
+      "limits": {},
+      "origin": "authored",
+      "status": "draft"
+    },
+    {
+      "recordId": "st.wkfv7m7130",
+      "legacyRecordId": "st.wkfv7m7130",
+      "source": "records/admin-studio.r1.en.json",
+      "context": "designer.ia.assets.imagery-patterns",
+      "leaf": "strings.names",
+      "limits": {
+        "maxChars": 60
+      },
+      "origin": "foundry-default",
+      "status": "draft"
+    },
+    {
+      "recordId": "st.wkfv7m7130",
+      "legacyRecordId": "st.q36jnsvm6h",
+      "source": "records/admin-pages.r1.en.json",
+      "context": "strings.admin.group.writer.patterns",
+      "leaf": "strings.navigation",
+      "limits": {},
+      "origin": "authored",
+      "status": "draft"
+    },
+    {
+      "recordId": "st.mzdxkf8h43",
+      "legacyRecordId": "st.mzdxkf8h43",
+      "source": "records/admin-voice.r1.en.json",
+      "context": "Designer console",
+      "leaf": "strings.names",
+      "limits": {
+        "maxChars": 60
+      },
+      "origin": "foundry-default",
+      "status": "draft"
+    },
+    {
+      "recordId": "st.mzdxkf8h43",
+      "legacyRecordId": "st.csdw9wey6z",
+      "source": "records/admin-pages.r1.en.json",
+      "context": "strings.admin.column.preview",
+      "leaf": "strings.field-labels",
+      "limits": {},
+      "origin": "authored",
+      "status": "draft"
+    },
+    {
+      "recordId": "st.qcqdptzn0r",
+      "legacyRecordId": "st.qcqdptzn0r",
+      "source": "records/admin-voice.r1.en.json",
+      "context": "Designer console",
+      "leaf": "strings.field-labels",
+      "limits": {
+        "maxChars": 40
+      },
+      "origin": "foundry-default",
+      "status": "draft"
+    },
+    {
+      "recordId": "st.qcqdptzn0r",
+      "legacyRecordId": "st.01zhtxk93k",
+      "source": "records/admin-pages.r1.en.json",
+      "context": "strings.admin.item.source",
+      "leaf": "strings.field-labels",
+      "limits": {},
+      "origin": "authored",
+      "status": "draft"
+    },
+    {
+      "recordId": "st.qcqdptzn0r",
+      "legacyRecordId": "st.46c3xdgcqm",
+      "source": "records/admin-pages.r1.en.json",
+      "context": "strings.admin.column.source",
+      "leaf": "strings.field-labels",
+      "limits": {},
+      "origin": "authored",
+      "status": "draft"
+    },
+    {
+      "recordId": "st.v6ra67gp67",
+      "legacyRecordId": "st.v6ra67gp67",
+      "source": "records/admin-studio.r1.en.json",
+      "context": "designer.ia.assets.icons-status",
+      "leaf": "strings.names",
+      "limits": {
+        "maxChars": 60
+      },
+      "origin": "foundry-default",
+      "status": "draft"
+    },
+    {
+      "recordId": "st.v6ra67gp67",
+      "legacyRecordId": "st.ajk345sfde",
+      "source": "records/admin-voice.r1.en.json",
+      "context": "Designer console",
+      "leaf": "strings.field-labels",
+      "limits": {
+        "maxChars": 40
+      },
+      "origin": "foundry-default",
+      "status": "draft"
+    },
+    {
+      "recordId": "st.v6ra67gp67",
+      "legacyRecordId": "st.869b5ff0a5",
+      "source": "records/admin-writer.r1.en.json",
+      "context": "admin.writer.route.status",
+      "leaf": "strings.field-labels",
+      "limits": {},
+      "origin": "authored",
+      "status": "draft"
+    },
+    {
+      "recordId": "st.v6ra67gp67",
+      "legacyRecordId": "st.000000001b",
+      "source": "records/site.en.json",
+      "context": "Generic draft site starter",
+      "leaf": "strings.field-labels",
+      "limits": {},
+      "origin": "authored",
+      "status": "draft"
+    },
+    {
+      "recordId": "st.v6ra67gp67",
+      "legacyRecordId": "st.wkmten72mk",
+      "source": "records/admin-pages.r1.en.json",
+      "context": "strings.admin.column.status",
+      "leaf": "strings.field-labels",
+      "limits": {},
+      "origin": "authored",
+      "status": "draft"
+    },
+    {
+      "recordId": "st.7pxepx20q1",
+      "legacyRecordId": "st.7pxepx20q1",
+      "source": "records/admin-voice.r1.en.json",
+      "context": "Designer console",
+      "leaf": "strings.field-labels",
+      "limits": {
+        "maxChars": 32
+      },
+      "origin": "foundry-default",
+      "status": "draft"
+    },
+    {
+      "recordId": "st.7pxepx20q1",
+      "legacyRecordId": "st.eq96zszzg7",
+      "source": "records/admin-voice.r1.en.json",
+      "context": "Designer console",
+      "leaf": "strings.field-labels",
+      "limits": {
+        "maxChars": 40
+      },
+      "origin": "foundry-default",
+      "status": "draft"
+    },
+    {
+      "recordId": "st.7pxepx20q1",
+      "legacyRecordId": "st.485tnt23jk",
+      "source": "records/admin-pages.r1.en.json",
+      "context": "strings.admin.item.usedBy",
+      "leaf": "strings.field-labels",
+      "limits": {},
+      "origin": "authored",
+      "status": "draft"
+    },
+    {
+      "recordId": "st.7pxepx20q1",
+      "legacyRecordId": "st.9z6aw5kpja",
+      "source": "records/admin-pages.r1.en.json",
+      "context": "strings.admin.column.usedBy",
+      "leaf": "strings.field-labels",
+      "limits": {},
+      "origin": "authored",
+      "status": "draft"
+    },
+    {
+      "recordId": "st.fg1dznm6qa",
+      "legacyRecordId": "st.fg1dznm6qa",
+      "source": "records/admin-studio.r1.en.json",
+      "context": "designer.ia.components.inputs-text",
+      "leaf": "strings.names",
+      "limits": {
+        "maxChars": 60
+      },
+      "origin": "foundry-default",
+      "status": "draft"
+    },
+    {
+      "recordId": "st.fg1dznm6qa",
+      "legacyRecordId": "st.7b2005db95",
+      "source": "records/admin-writer.r1.en.json",
+      "context": "admin.writer.route.text",
+      "leaf": "strings.field-labels",
+      "limits": {},
+      "origin": "authored",
+      "status": "draft"
+    },
+    {
+      "recordId": "st.fg1dznm6qa",
+      "legacyRecordId": "st.0gw138v1dn",
+      "source": "records/admin-pages.r1.en.json",
+      "context": "strings.admin.column.text",
+      "leaf": "strings.field-labels",
+      "limits": {},
+      "origin": "authored",
+      "status": "draft"
+    },
+    {
+      "recordId": "st.v1cbgc4kr2",
+      "legacyRecordId": "st.v1cbgc4kr2",
+      "source": "records/admin-studio.r1.en.json",
+      "context": "designer.item.components.item",
+      "leaf": "strings.names",
+      "limits": {
+        "maxChars": 60
+      },
+      "origin": "authored",
+      "status": "draft"
+    },
+    {
+      "recordId": "st.v1cbgc4kr2",
+      "legacyRecordId": "st.58x0w94bqx",
+      "source": "records/admin-voice.r1.en.json",
+      "context": "Designer console",
+      "leaf": "strings.field-labels",
+      "limits": {
+        "maxChars": 40
+      },
+      "origin": "foundry-default",
+      "status": "draft"
+    },
+    {
+      "recordId": "st.v1cbgc4kr2",
+      "legacyRecordId": "st.v8mkp4103p",
+      "source": "records/admin-voice.r1.en.json",
+      "context": "Designer console",
+      "leaf": "strings.field-labels",
+      "limits": {
+        "maxChars": 40
+      },
+      "origin": "foundry-default",
+      "status": "draft"
+    },
+    {
+      "recordId": "st.v1cbgc4kr2",
+      "legacyRecordId": "st.n84v57p7nm",
+      "source": "records/admin-pages.r1.en.json",
+      "context": "strings.admin.column.item",
+      "leaf": "strings.field-labels",
+      "limits": {},
+      "origin": "authored",
+      "status": "draft"
+    },
+    {
+      "recordId": "st.aptm2ejxyv",
+      "legacyRecordId": "st.aptm2ejxyv",
+      "source": "records/admin-pages.r1.en.json",
+      "context": "strings.admin.column.releases",
+      "leaf": "strings.field-labels",
+      "limits": {},
+      "origin": "authored",
+      "status": "draft"
+    },
+    {
+      "recordId": "st.aptm2ejxyv",
+      "legacyRecordId": "st.dvn7b2t1cp",
+      "source": "records/admin-pages.r1.en.json",
+      "context": "strings.admin.item.releases",
+      "leaf": "strings.field-labels",
+      "limits": {},
+      "origin": "authored",
+      "status": "draft"
+    },
+    {
+      "recordId": "st.v2qavnr3r2",
+      "legacyRecordId": "st.v2qavnr3r2",
+      "source": "records/admin-voice.r1.en.json",
+      "context": "Publisher console",
+      "leaf": "strings.statuses",
+      "limits": {
+        "maxChars": 40
+      },
+      "origin": "foundry-default",
+      "status": "draft"
+    },
+    {
+      "recordId": "st.v2qavnr3r2",
+      "legacyRecordId": "st.xdza0byhk0",
+      "source": "records/admin-pages.r1.en.json",
+      "context": "strings.admin.status.needsInput",
+      "leaf": "strings.statuses",
+      "limits": {},
+      "origin": "authored",
+      "status": "draft"
+    },
+    {
+      "recordId": "st.74p81v194s",
+      "legacyRecordId": "st.74p81v194s",
+      "source": "records/admin-voice.r1.en.json",
+      "context": "Publisher console",
+      "leaf": "strings.statuses",
+      "limits": {
+        "maxChars": 40
+      },
+      "origin": "foundry-default",
+      "status": "draft"
+    },
+    {
+      "recordId": "st.74p81v194s",
+      "legacyRecordId": "st.27kkf1a9n7",
+      "source": "records/admin-pages.r1.en.json",
+      "context": "strings.admin.status.waiting",
+      "leaf": "strings.statuses",
+      "limits": {},
+      "origin": "authored",
+      "status": "draft"
+    },
+    {
+      "recordId": "st.s079k1p1qj",
+      "legacyRecordId": "st.s079k1p1qj",
+      "source": "records/admin-voice.r1.en.json",
+      "context": "Workspace shell",
+      "leaf": "strings.statuses",
+      "limits": {
+        "maxChars": 60
+      },
+      "origin": "foundry-default",
+      "status": "draft"
+    },
+    {
+      "recordId": "st.s079k1p1qj",
+      "legacyRecordId": "st.bxjerdr80v",
+      "source": "records/admin-pages.r1.en.json",
+      "context": "strings.admin.stats.results",
+      "leaf": "strings.counters",
+      "limits": {},
+      "origin": "authored",
+      "status": "draft"
+    },
+    {
+      "recordId": "st.y86a2b0gmd",
+      "legacyRecordId": "st.y86a2b0gmd",
+      "source": "records/admin-voice.r1.en.json",
+      "context": "Workspace shell",
+      "leaf": "strings.actions",
+      "limits": {
+        "maxChars": 24
+      },
+      "origin": "foundry-default",
+      "status": "draft"
+    },
+    {
+      "recordId": "st.y86a2b0gmd",
+      "legacyRecordId": "st.6vw6md8f15",
+      "source": "records/admin-pages.r1.en.json",
+      "context": "strings.admin.action.more",
+      "leaf": "strings.actions",
+      "limits": {},
+      "origin": "authored",
+      "status": "draft"
+    },
+    {
+      "recordId": "st.ffqnafj61v",
+      "legacyRecordId": "st.ffqnafj61v",
+      "source": "records/admin-pages.r1.en.json",
+      "context": "strings.admin.outline.label",
+      "leaf": "strings.navigation",
+      "limits": {},
+      "origin": "authored",
+      "status": "draft"
+    },
+    {
+      "recordId": "st.ffqnafj61v",
+      "legacyRecordId": "st.rnpwrb22ae",
+      "source": "records/admin-pages.r1.en.json",
+      "context": "strings.admin.toggle.outline",
+      "leaf": "strings.actions",
+      "limits": {},
+      "origin": "authored",
+      "status": "draft"
+    },
+    {
+      "recordId": "st.zxh419w2k5",
+      "legacyRecordId": "st.zxh419w2k5",
+      "source": "records/admin-studio.r1.en.json",
+      "context": "designer.item.sections.chat",
+      "leaf": "strings.names",
+      "limits": {
+        "maxChars": 60
+      },
+      "origin": "foundry-default",
+      "status": "draft"
+    },
+    {
+      "recordId": "st.zxh419w2k5",
+      "legacyRecordId": "st.srjsn9avg0",
+      "source": "records/admin-pages.r1.en.json",
+      "context": "strings.admin.toggle.chat",
+      "leaf": "strings.actions",
+      "limits": {},
+      "origin": "authored",
+      "status": "draft"
+    },
+    {
+      "recordId": "st.asj8g1mcjn",
+      "legacyRecordId": "st.asj8g1mcjn",
+      "source": "records/section-defaults.r1.en.json",
+      "context": "admin.writer.sections.dataTable.emptyStateTitle",
+      "leaf": "strings.field-labels",
+      "limits": {},
+      "origin": "authored",
+      "status": "draft"
+    },
+    {
+      "recordId": "st.asj8g1mcjn",
+      "legacyRecordId": "st.axqwnya2y0",
+      "source": "records/section-defaults.r1.en.json",
+      "context": "admin.writer.sections.pagination.noResultsLabel",
+      "leaf": "strings.field-labels",
+      "limits": {},
+      "origin": "authored",
+      "status": "draft"
+    },
+    {
+      "recordId": "st.asj8g1mcjn",
+      "legacyRecordId": "st.e28fseajmw",
+      "source": "records/admin-pages.r1.en.json",
+      "context": "strings.admin.noResults.title",
+      "leaf": "strings.empty",
+      "limits": {},
+      "origin": "authored",
+      "status": "draft"
+    },
+    {
+      "recordId": "st.1vc3bb7pw7",
+      "legacyRecordId": "st.1vc3bb7pw7",
+      "source": "records/admin-voice.r1.en.json",
+      "context": "Designer console",
+      "leaf": "strings.names",
+      "limits": {
+        "maxChars": 60
+      },
+      "origin": "foundry-default",
+      "status": "draft"
+    },
+    {
+      "recordId": "st.1vc3bb7pw7",
+      "legacyRecordId": "st.vqpf292tkd",
+      "source": "records/admin-pages.r1.en.json",
+      "context": "strings.admin.item.details",
+      "leaf": "strings.field-labels",
+      "limits": {},
+      "origin": "authored",
+      "status": "draft"
+    },
+    {
+      "recordId": "st.96qkp2bzpm",
+      "legacyRecordId": "st.96qkp2bzpm",
+      "source": "records/section-defaults.r1.en.json",
+      "context": "admin.writer.sections.pagination.previousPageLabel",
+      "leaf": "strings.field-labels",
+      "limits": {},
+      "origin": "authored",
+      "status": "draft"
+    },
+    {
+      "recordId": "st.96qkp2bzpm",
+      "legacyRecordId": "st.20qddwnvpw",
+      "source": "records/admin-pages.r1.en.json",
+      "context": "strings.admin.pagination.previous",
+      "leaf": "strings.actions",
+      "limits": {},
+      "origin": "authored",
+      "status": "draft"
+    },
+    {
+      "recordId": "st.96qkp2bzpm",
+      "legacyRecordId": "st.3x4jygc06q",
+      "source": "records/admin-writer-paging.r1.en.json",
+      "context": "admin.writer.route.previousPage",
+      "leaf": "strings.actions",
+      "limits": {},
+      "origin": "authored",
+      "status": "draft"
+    },
+    {
+      "recordId": "st.kb8ve83tjp",
+      "legacyRecordId": "st.kb8ve83tjp",
+      "source": "records/section-defaults.r1.en.json",
+      "context": "admin.writer.sections.pagination.nextPageLabel",
+      "leaf": "strings.field-labels",
+      "limits": {},
+      "origin": "authored",
+      "status": "draft"
+    },
+    {
+      "recordId": "st.kb8ve83tjp",
+      "legacyRecordId": "st.frd044f8bf",
+      "source": "records/admin-pages.r1.en.json",
+      "context": "strings.admin.pagination.next",
+      "leaf": "strings.actions",
+      "limits": {},
+      "origin": "authored",
+      "status": "draft"
+    },
+    {
+      "recordId": "st.kb8ve83tjp",
+      "legacyRecordId": "st.8hbhss001b",
+      "source": "records/admin-writer-paging.r1.en.json",
+      "context": "admin.writer.route.nextPage",
+      "leaf": "strings.actions",
+      "limits": {},
+      "origin": "authored",
+      "status": "draft"
+    },
+    {
+      "recordId": "st.bhhba11w6f",
+      "legacyRecordId": "st.bhhba11w6f",
+      "source": "records/section-defaults.r1.en.json",
+      "context": "admin.writer.sections.pagination.pageSizeLabel",
+      "leaf": "strings.field-labels",
+      "limits": {},
+      "origin": "authored",
+      "status": "draft"
+    },
+    {
+      "recordId": "st.bhhba11w6f",
+      "legacyRecordId": "st.qvbets52ne",
+      "source": "records/admin-pages.r1.en.json",
+      "context": "strings.admin.pagination.pageSize",
+      "leaf": "strings.field-labels",
+      "limits": {},
+      "origin": "authored",
+      "status": "draft"
+    },
+    {
+      "recordId": "st.s13b3hwkta",
+      "legacyRecordId": "st.s13b3hwkta",
+      "source": "records/admin-studio.r1.en.json",
+      "context": "designer.item.sections.pagination",
+      "leaf": "strings.names",
+      "limits": {
+        "maxChars": 60
+      },
+      "origin": "foundry-default",
+      "status": "draft"
+    },
+    {
+      "recordId": "st.s13b3hwkta",
+      "legacyRecordId": "st.3hp3yvppbm",
+      "source": "records/section-defaults.r1.en.json",
+      "context": "admin.writer.sections.pagination.ariaLabel",
+      "leaf": "strings.field-labels",
+      "limits": {},
+      "origin": "authored",
+      "status": "draft"
+    },
+    {
+      "recordId": "st.s13b3hwkta",
+      "legacyRecordId": "st.g19spems75",
+      "source": "records/admin-pages.r1.en.json",
+      "context": "strings.admin.pagination.label",
+      "leaf": "strings.navigation",
+      "limits": {},
+      "origin": "authored",
+      "status": "draft"
+    },
+    {
+      "recordId": "st.88wbh5rn5a",
+      "legacyRecordId": "st.88wbh5rn5a",
+      "source": "records/admin-pages.r1.en.json",
+      "context": "strings.admin.pagination.page",
+      "leaf": "strings.counters",
+      "limits": {},
+      "origin": "authored",
+      "status": "draft"
+    },
+    {
+      "recordId": "st.88wbh5rn5a",
+      "legacyRecordId": "st.r05nskpktg",
+      "source": "records/admin-writer-paging.r1.en.json",
+      "context": "admin.writer.route.pageSummary",
+      "leaf": "strings.counters",
+      "limits": {},
+      "origin": "authored",
+      "status": "draft"
+    },
+    {
+      "recordId": "st.000000002z",
+      "legacyRecordId": "st.000000002z",
+      "source": "records/site.en.json",
+      "context": "Generic draft site starter",
+      "leaf": "strings.field-labels",
+      "limits": {},
+      "origin": "authored",
+      "status": "draft"
+    },
+    {
+      "recordId": "st.000000002z",
+      "legacyRecordId": "st.hge0431mt8",
+      "source": "records/admin-pages.r1.en.json",
+      "context": "strings.admin.date.absolute",
+      "leaf": "strings.captions",
+      "limits": {},
+      "origin": "authored",
+      "status": "draft"
+    },
+    {
+      "recordId": "st.qnqy2cwr23",
+      "legacyRecordId": "st.qnqy2cwr23",
+      "source": "records/admin-studio.r1.en.json",
+      "context": "designer.ia.tokens.space-rhythm",
+      "leaf": "strings.names",
+      "limits": {
+        "maxChars": 60
+      },
+      "origin": "foundry-default",
+      "status": "draft"
+    },
+    {
+      "recordId": "st.qnqy2cwr23",
+      "legacyRecordId": "st.d8f4vhdket",
+      "source": "records/admin-pages.r1.en.json",
+      "context": "strings.admin.ia.writer.lexicon.voice-rhythm",
+      "leaf": "strings.navigation",
+      "limits": {},
+      "origin": "authored",
+      "status": "draft"
+    },
+    {
+      "recordId": "st.3fyz884ab8",
+      "legacyRecordId": "st.3fyz884ab8",
+      "source": "records/admin-studio.r1.en.json",
+      "context": "designer.ia.assets.icons-actions",
+      "leaf": "strings.names",
+      "limits": {
+        "maxChars": 60
+      },
+      "origin": "foundry-default",
+      "status": "draft"
+    },
+    {
+      "recordId": "st.3fyz884ab8",
+      "legacyRecordId": "st.43j9gcptwk",
+      "source": "records/admin-studio.r1.en.json",
+      "context": "designer.ia.components.actions",
+      "leaf": "strings.names",
+      "limits": {
+        "maxChars": 60
+      },
+      "origin": "foundry-default",
+      "status": "draft"
+    },
+    {
+      "recordId": "st.3fyz884ab8",
+      "legacyRecordId": "st.40201wv91e",
+      "source": "records/admin-pages.r1.en.json",
+      "context": "strings.admin.ia.writer.strings.interface-actions",
+      "leaf": "strings.navigation",
+      "limits": {},
+      "origin": "authored",
+      "status": "draft"
+    },
+    {
+      "recordId": "st.3fyz884ab8",
+      "legacyRecordId": "st.rwhzwt4b7p",
+      "source": "records/admin-pages.r1.en.json",
+      "context": "strings.admin.ia.writer.patterns.actions",
+      "leaf": "strings.navigation",
+      "limits": {},
+      "origin": "authored",
+      "status": "draft"
+    },
+    {
+      "recordId": "st.041fh8t2aw",
+      "legacyRecordId": "st.041fh8t2aw",
+      "source": "records/admin-studio.r1.en.json",
+      "context": "designer.ia.assets.icons-navigation",
+      "leaf": "strings.names",
+      "limits": {
+        "maxChars": 60
+      },
+      "origin": "foundry-default",
+      "status": "draft"
+    },
+    {
+      "recordId": "st.041fh8t2aw",
+      "legacyRecordId": "st.srpwh5w0mq",
+      "source": "records/admin-studio.r1.en.json",
+      "context": "designer.ia.sections.parts-navigation",
+      "leaf": "strings.names",
+      "limits": {
+        "maxChars": 60
+      },
+      "origin": "foundry-default",
+      "status": "draft"
+    },
+    {
+      "recordId": "st.041fh8t2aw",
+      "legacyRecordId": "st.xdqbf8hxsv",
+      "source": "records/admin-studio.r1.en.json",
+      "context": "designer.ia.frames.navigation",
+      "leaf": "strings.names",
+      "limits": {
+        "maxChars": 60
+      },
+      "origin": "foundry-default",
+      "status": "draft"
+    },
+    {
+      "recordId": "st.041fh8t2aw",
+      "legacyRecordId": "st.zn3de0gy72",
+      "source": "records/admin-studio.r1.en.json",
+      "context": "designer.ia.components.navigation",
+      "leaf": "strings.names",
+      "limits": {
+        "maxChars": 60
+      },
+      "origin": "foundry-default",
+      "status": "draft"
+    },
+    {
+      "recordId": "st.041fh8t2aw",
+      "legacyRecordId": "st.jecfnpr6a1",
+      "source": "records/admin-voice.r1.en.json",
+      "context": "Workspace shell",
+      "leaf": "strings.field-labels",
+      "limits": {
+        "maxChars": 40
+      },
+      "origin": "foundry-default",
+      "status": "draft"
+    },
+    {
+      "recordId": "st.041fh8t2aw",
+      "legacyRecordId": "st.0000000018",
+      "source": "records/site.en.json",
+      "context": "Generic draft site starter",
+      "leaf": "strings.field-labels",
+      "limits": {},
+      "origin": "authored",
+      "status": "draft"
+    },
+    {
+      "recordId": "st.041fh8t2aw",
+      "legacyRecordId": "st.51pmgg10qb",
+      "source": "records/admin-pages.r1.en.json",
+      "context": "strings.admin.ia.writer.strings.interface-navigation",
+      "leaf": "strings.navigation",
+      "limits": {},
+      "origin": "authored",
+      "status": "draft"
+    },
+    {
+      "recordId": "st.041fh8t2aw",
+      "legacyRecordId": "st.p61mapavzm",
+      "source": "records/admin-pages.r1.en.json",
+      "context": "strings.admin.ia.writer.passages.parts-navigation",
+      "leaf": "strings.navigation",
+      "limits": {},
+      "origin": "authored",
+      "status": "draft"
+    },
+    {
+      "recordId": "st.emkzstd78z",
+      "legacyRecordId": "st.emkzstd78z",
+      "source": "records/admin-studio.r1.en.json",
+      "context": "designer.ia.components.feedback",
+      "leaf": "strings.names",
+      "limits": {
+        "maxChars": 60
+      },
+      "origin": "foundry-default",
+      "status": "draft"
+    },
+    {
+      "recordId": "st.emkzstd78z",
+      "legacyRecordId": "st.5kpfw6a6nv",
+      "source": "records/admin-pages.r1.en.json",
+      "context": "strings.admin.ia.writer.strings.feedback",
+      "leaf": "strings.navigation",
+      "limits": {},
+      "origin": "authored",
+      "status": "draft"
+    },
+    {
+      "recordId": "st.dbra6twj2c",
+      "legacyRecordId": "st.dbra6twj2c",
+      "source": "records/admin-voice.r1.en.json",
+      "context": "Designer console",
+      "leaf": "strings.field-labels",
+      "limits": {
+        "maxChars": 40
+      },
+      "origin": "foundry-default",
+      "status": "draft"
+    },
+    {
+      "recordId": "st.dbra6twj2c",
+      "legacyRecordId": "st.4bng8styjb",
+      "source": "records/admin-pages.r1.en.json",
+      "context": "strings.admin.ia.writer.strings.feedback-warnings",
+      "leaf": "strings.navigation",
+      "limits": {},
+      "origin": "authored",
+      "status": "draft"
+    },
+    {
+      "recordId": "st.832cm61fb6",
+      "legacyRecordId": "st.832cm61fb6",
+      "source": "records/admin-studio.r1.en.json",
+      "context": "designer.item.components.empty",
+      "leaf": "strings.names",
+      "limits": {
+        "maxChars": 60
+      },
+      "origin": "authored",
+      "status": "draft"
+    },
+    {
+      "recordId": "st.832cm61fb6",
+      "legacyRecordId": "st.xcv2y9sqx8",
+      "source": "records/admin-pages.r1.en.json",
+      "context": "strings.admin.ia.writer.strings.feedback-empty",
+      "leaf": "strings.navigation",
+      "limits": {},
+      "origin": "authored",
+      "status": "draft"
+    },
+    {
+      "recordId": "st.5frtfacf9x",
+      "legacyRecordId": "st.5frtfacf9x",
+      "source": "records/admin-pages.r1.en.json",
+      "context": "strings.admin.ia.writer.patterns.identity",
+      "leaf": "strings.navigation",
+      "limits": {},
+      "origin": "authored",
+      "status": "draft"
+    },
+    {
+      "recordId": "st.5frtfacf9x",
+      "legacyRecordId": "st.bvd7hyte6a",
+      "source": "records/admin-pages.r1.en.json",
+      "context": "strings.admin.ia.writer.strings.identity",
+      "leaf": "strings.navigation",
+      "limits": {},
+      "origin": "authored",
+      "status": "draft"
+    },
+    {
+      "recordId": "st.qpwzxv0zxj",
+      "legacyRecordId": "st.qpwzxv0zxj",
+      "source": "records/admin-studio.r1.en.json",
+      "context": "designer.ia.components.navigation-links",
+      "leaf": "strings.names",
+      "limits": {
+        "maxChars": 60
+      },
+      "origin": "foundry-default",
+      "status": "draft"
+    },
+    {
+      "recordId": "st.qpwzxv0zxj",
+      "legacyRecordId": "st.ze89efcpxj",
+      "source": "records/admin-pages.r1.en.json",
+      "context": "strings.admin.ia.writer.patterns.actions-links",
+      "leaf": "strings.navigation",
+      "limits": {},
+      "origin": "authored",
+      "status": "draft"
+    },
+    {
+      "recordId": "st.31tdz2e8k4",
+      "legacyRecordId": "st.31tdz2e8k4",
+      "source": "records/admin-studio.r1.en.json",
+      "context": "designer.ia.sections.respond-states",
+      "leaf": "strings.names",
+      "limits": {
+        "maxChars": 60
+      },
+      "origin": "foundry-default",
+      "status": "draft"
+    },
+    {
+      "recordId": "st.31tdz2e8k4",
+      "legacyRecordId": "st.mt3nvmdc3j",
+      "source": "records/admin-studio.r1.en.json",
+      "context": "designer.ia.tokens.interaction-states",
+      "leaf": "strings.names",
+      "limits": {
+        "maxChars": 60
+      },
+      "origin": "foundry-default",
+      "status": "draft"
+    },
+    {
+      "recordId": "st.31tdz2e8k4",
+      "legacyRecordId": "st.n2e1k51zyq",
+      "source": "records/admin-pages.r1.en.json",
+      "context": "strings.admin.ia.writer.passages.respond-states",
+      "leaf": "strings.navigation",
+      "limits": {},
+      "origin": "authored",
+      "status": "draft"
+    },
+    {
+      "recordId": "st.31tdz2e8k4",
+      "legacyRecordId": "st.phbdz0vmbr",
+      "source": "records/admin-pages.r1.en.json",
+      "context": "strings.admin.ia.writer.patterns.messages-states",
+      "leaf": "strings.navigation",
+      "limits": {},
+      "origin": "authored",
+      "status": "draft"
+    },
+    {
+      "recordId": "st.8phn9m6kk3",
+      "legacyRecordId": "st.8phn9m6kk3",
+      "source": "records/admin-studio.r1.en.json",
+      "context": "designer.ia.sections.collect-forms",
+      "leaf": "strings.names",
+      "limits": {
+        "maxChars": 60
+      },
+      "origin": "foundry-default",
+      "status": "draft"
+    },
+    {
+      "recordId": "st.8phn9m6kk3",
+      "legacyRecordId": "st.b2cg9wq6eq",
+      "source": "records/admin-pages.r1.en.json",
+      "context": "strings.admin.ia.writer.passages.collect-forms",
+      "leaf": "strings.navigation",
+      "limits": {},
+      "origin": "authored",
+      "status": "draft"
+    },
+    {
+      "recordId": "st.8phn9m6kk3",
+      "legacyRecordId": "st.hspm0ep0sn",
+      "source": "records/admin-pages.r1.en.json",
+      "context": "strings.admin.ia.writer.patterns.forms",
+      "leaf": "strings.navigation",
+      "limits": {},
+      "origin": "authored",
+      "status": "draft"
+    },
+    {
+      "recordId": "st.dntgjthd24",
+      "legacyRecordId": "st.dntgjthd24",
+      "source": "records/admin-studio.r1.en.json",
+      "context": "designer.item.sections.consent",
+      "leaf": "strings.names",
+      "limits": {
+        "maxChars": 60
+      },
+      "origin": "foundry-default",
+      "status": "draft"
+    },
+    {
+      "recordId": "st.dntgjthd24",
+      "legacyRecordId": "st.mwvdsmc98v",
+      "source": "records/admin-pages.r1.en.json",
+      "context": "strings.admin.ia.writer.patterns.forms-consent",
+      "leaf": "strings.navigation",
+      "limits": {},
+      "origin": "authored",
+      "status": "draft"
+    },
+    {
+      "recordId": "st.etn3efp58r",
+      "legacyRecordId": "st.etn3efp58r",
+      "source": "records/admin-studio.r1.en.json",
+      "context": "designer.ia.sections.parts",
+      "leaf": "strings.names",
+      "limits": {
+        "maxChars": 60
+      },
+      "origin": "foundry-default",
+      "status": "draft"
+    },
+    {
+      "recordId": "st.etn3efp58r",
+      "legacyRecordId": "st.n80rfn0mbj",
+      "source": "records/admin-pages.r1.en.json",
+      "context": "strings.admin.ia.writer.passages.parts",
+      "leaf": "strings.navigation",
+      "limits": {},
+      "origin": "authored",
+      "status": "draft"
+    },
+    {
+      "recordId": "st.1f0sc4veew",
+      "legacyRecordId": "st.1f0sc4veew",
+      "source": "records/admin-studio.r1.en.json",
+      "context": "designer.ia.sections.parts-structure",
+      "leaf": "strings.names",
+      "limits": {
+        "maxChars": 60
+      },
+      "origin": "foundry-default",
+      "status": "draft"
+    },
+    {
+      "recordId": "st.1f0sc4veew",
+      "legacyRecordId": "st.j4376qs2d9",
+      "source": "records/admin-studio.r1.en.json",
+      "context": "designer.ia.components.containment-structure",
+      "leaf": "strings.names",
+      "limits": {
+        "maxChars": 60
+      },
+      "origin": "foundry-default",
+      "status": "draft"
+    },
+    {
+      "recordId": "st.1f0sc4veew",
+      "legacyRecordId": "st.5dfntz4y3t",
+      "source": "records/admin-pages.r1.en.json",
+      "context": "strings.admin.ia.writer.passages.parts-structure",
+      "leaf": "strings.navigation",
+      "limits": {},
+      "origin": "authored",
+      "status": "draft"
+    },
+    {
+      "recordId": "st.9sjbpt05v6",
+      "legacyRecordId": "st.9sjbpt05v6",
+      "source": "records/admin-studio.r1.en.json",
+      "context": "designer.ia.sections.explain",
+      "leaf": "strings.names",
+      "limits": {
+        "maxChars": 60
+      },
+      "origin": "foundry-default",
+      "status": "draft"
+    },
+    {
+      "recordId": "st.9sjbpt05v6",
+      "legacyRecordId": "st.njxsqjy4t3",
+      "source": "records/admin-pages.r1.en.json",
+      "context": "strings.admin.ia.writer.passages.explain",
+      "leaf": "strings.navigation",
+      "limits": {},
+      "origin": "authored",
+      "status": "draft"
+    },
+    {
+      "recordId": "st.bqdskzn5py",
+      "legacyRecordId": "st.bqdskzn5py",
+      "source": "records/admin-studio.r1.en.json",
+      "context": "designer.ia.sections.explain-introductions",
+      "leaf": "strings.names",
+      "limits": {
+        "maxChars": 60
+      },
+      "origin": "foundry-default",
+      "status": "draft"
+    },
+    {
+      "recordId": "st.bqdskzn5py",
+      "legacyRecordId": "st.3wb22637n8",
+      "source": "records/admin-pages.r1.en.json",
+      "context": "strings.admin.ia.writer.passages.explain-introductions",
+      "leaf": "strings.navigation",
+      "limits": {},
+      "origin": "authored",
+      "status": "draft"
+    },
+    {
+      "recordId": "st.m3ms0vxwzm",
+      "legacyRecordId": "st.m3ms0vxwzm",
+      "source": "records/admin-studio.r1.en.json",
+      "context": "designer.ia.sections.explain-reading",
+      "leaf": "strings.names",
+      "limits": {
+        "maxChars": 60
+      },
+      "origin": "foundry-default",
+      "status": "draft"
+    },
+    {
+      "recordId": "st.m3ms0vxwzm",
+      "legacyRecordId": "st.rehe1hkmzq",
+      "source": "records/admin-pages.r1.en.json",
+      "context": "strings.admin.ia.writer.passages.explain-reading",
+      "leaf": "strings.navigation",
+      "limits": {},
+      "origin": "authored",
+      "status": "draft"
+    },
+    {
+      "recordId": "st.snmj61r83s",
+      "legacyRecordId": "st.snmj61r83s",
+      "source": "records/admin-studio.r1.en.json",
+      "context": "designer.ia.sections.explain-promotion",
+      "leaf": "strings.names",
+      "limits": {
+        "maxChars": 60
+      },
+      "origin": "foundry-default",
+      "status": "draft"
+    },
+    {
+      "recordId": "st.snmj61r83s",
+      "legacyRecordId": "st.209xgwhe99",
+      "source": "records/admin-pages.r1.en.json",
+      "context": "strings.admin.ia.writer.passages.explain-promotion",
+      "leaf": "strings.navigation",
+      "limits": {},
+      "origin": "authored",
+      "status": "draft"
+    },
+    {
+      "recordId": "st.m2r7rb9mhm",
+      "legacyRecordId": "st.m2r7rb9mhm",
+      "source": "records/admin-studio.r1.en.json",
+      "context": "designer.ia.sections.explain-social-proof",
+      "leaf": "strings.names",
+      "limits": {
+        "maxChars": 60
+      },
+      "origin": "foundry-default",
+      "status": "draft"
+    },
+    {
+      "recordId": "st.m2r7rb9mhm",
+      "legacyRecordId": "st.2rwsgtys4e",
+      "source": "records/admin-pages.r1.en.json",
+      "context": "strings.admin.ia.writer.passages.explain-social-proof",
+      "leaf": "strings.navigation",
+      "limits": {},
+      "origin": "authored",
+      "status": "draft"
+    },
+    {
+      "recordId": "st.2c9722yrzg",
+      "legacyRecordId": "st.2c9722yrzg",
+      "source": "records/admin-studio.r1.en.json",
+      "context": "designer.ia.assets.imagery",
+      "leaf": "strings.names",
+      "limits": {
+        "maxChars": 60
+      },
+      "origin": "foundry-default",
+      "status": "draft"
+    },
+    {
+      "recordId": "st.2c9722yrzg",
+      "legacyRecordId": "st.eetqq5y604",
+      "source": "records/admin-studio.r1.en.json",
+      "context": "designer.ia.components.display-media",
+      "leaf": "strings.names",
+      "limits": {
+        "maxChars": 60
+      },
+      "origin": "foundry-default",
+      "status": "draft"
+    },
+    {
+      "recordId": "st.2c9722yrzg",
+      "legacyRecordId": "st.gbd1aggpfy",
+      "source": "records/admin-studio.r1.en.json",
+      "context": "designer.ia.sections.explain-media",
+      "leaf": "strings.names",
+      "limits": {
+        "maxChars": 60
+      },
+      "origin": "foundry-default",
+      "status": "draft"
+    },
+    {
+      "recordId": "st.2c9722yrzg",
+      "legacyRecordId": "st.x9yhz66awt",
+      "source": "records/admin-studio.r1.en.json",
+      "context": "designer.item.sections.media",
+      "leaf": "strings.names",
+      "limits": {
+        "maxChars": 60
+      },
+      "origin": "foundry-default",
+      "status": "draft"
+    },
+    {
+      "recordId": "st.2c9722yrzg",
+      "legacyRecordId": "st.m5q64dkf2q",
+      "source": "records/admin-pages.r1.en.json",
+      "context": "strings.admin.ia.writer.passages.explain-media",
+      "leaf": "strings.navigation",
+      "limits": {},
+      "origin": "authored",
+      "status": "draft"
+    },
+    {
+      "recordId": "st.gm2gyz20jx",
+      "legacyRecordId": "st.gm2gyz20jx",
+      "source": "records/admin-studio.r1.en.json",
+      "context": "designer.ia.sections.explain-guidance",
+      "leaf": "strings.names",
+      "limits": {
+        "maxChars": 60
+      },
+      "origin": "foundry-default",
+      "status": "draft"
+    },
+    {
+      "recordId": "st.gm2gyz20jx",
+      "legacyRecordId": "st.dpbz3e3vmc",
+      "source": "records/admin-pages.r1.en.json",
+      "context": "strings.admin.ia.writer.passages.explain-guidance",
+      "leaf": "strings.navigation",
+      "limits": {},
+      "origin": "authored",
+      "status": "draft"
+    },
+    {
+      "recordId": "st.dqwhabg950",
+      "legacyRecordId": "st.dqwhabg950",
+      "source": "records/admin-studio.r1.en.json",
+      "context": "designer.ia.sections.organize",
+      "leaf": "strings.names",
+      "limits": {
+        "maxChars": 60
+      },
+      "origin": "foundry-default",
+      "status": "draft"
+    },
+    {
+      "recordId": "st.dqwhabg950",
+      "legacyRecordId": "st.ttsd82k2er",
+      "source": "records/admin-pages.r1.en.json",
+      "context": "strings.admin.ia.writer.passages.organize",
+      "leaf": "strings.navigation",
+      "limits": {},
+      "origin": "authored",
+      "status": "draft"
+    },
+    {
+      "recordId": "st.dx8799w49f",
+      "legacyRecordId": "st.dx8799w49f",
+      "source": "records/admin-studio.r1.en.json",
+      "context": "designer.ia.sections.organize-collections",
+      "leaf": "strings.names",
+      "limits": {
+        "maxChars": 60
+      },
+      "origin": "foundry-default",
+      "status": "draft"
+    },
+    {
+      "recordId": "st.dx8799w49f",
+      "legacyRecordId": "st.ppj6rj3paa",
+      "source": "records/admin-pages.r1.en.json",
+      "context": "strings.admin.ia.writer.passages.organize-collections",
+      "leaf": "strings.navigation",
+      "limits": {},
+      "origin": "authored",
+      "status": "draft"
+    },
+    {
+      "recordId": "st.47t4a0v4s2",
+      "legacyRecordId": "st.47t4a0v4s2",
+      "source": "records/admin-studio.r1.en.json",
+      "context": "designer.ia.sections.organize-comparison",
+      "leaf": "strings.names",
+      "limits": {
+        "maxChars": 60
+      },
+      "origin": "foundry-default",
+      "status": "draft"
+    },
+    {
+      "recordId": "st.47t4a0v4s2",
+      "legacyRecordId": "st.e2jkz58xgf",
+      "source": "records/admin-studio.r1.en.json",
+      "context": "designer.item.sections.comparison",
+      "leaf": "strings.names",
+      "limits": {
+        "maxChars": 60
+      },
+      "origin": "foundry-default",
+      "status": "draft"
+    },
+    {
+      "recordId": "st.47t4a0v4s2",
+      "legacyRecordId": "st.re9ykhdwk0",
+      "source": "records/admin-pages.r1.en.json",
+      "context": "strings.admin.ia.writer.passages.organize-comparison",
+      "leaf": "strings.navigation",
+      "limits": {},
+      "origin": "authored",
+      "status": "draft"
+    },
+    {
+      "recordId": "st.8x1r0ft6rc",
+      "legacyRecordId": "st.8x1r0ft6rc",
+      "source": "records/admin-studio.r1.en.json",
+      "context": "designer.ia.sections.organize-summaries",
+      "leaf": "strings.names",
+      "limits": {
+        "maxChars": 60
+      },
+      "origin": "foundry-default",
+      "status": "draft"
+    },
+    {
+      "recordId": "st.8x1r0ft6rc",
+      "legacyRecordId": "st.3m9db8p082",
+      "source": "records/admin-pages.r1.en.json",
+      "context": "strings.admin.ia.writer.passages.organize-summaries",
+      "leaf": "strings.navigation",
+      "limits": {},
+      "origin": "authored",
+      "status": "draft"
+    },
+    {
+      "recordId": "st.q484s9bz3w",
+      "legacyRecordId": "st.q484s9bz3w",
+      "source": "records/admin-studio.r1.en.json",
+      "context": "designer.ia.sections.organize-records",
+      "leaf": "strings.names",
+      "limits": {
+        "maxChars": 60
+      },
+      "origin": "foundry-default",
+      "status": "draft"
+    },
+    {
+      "recordId": "st.q484s9bz3w",
+      "legacyRecordId": "st.338b4d8c7d",
+      "source": "records/admin-pages.r1.en.json",
+      "context": "strings.admin.table.label",
+      "leaf": "strings.field-labels",
+      "limits": {},
+      "origin": "authored",
+      "status": "draft"
+    },
+    {
+      "recordId": "st.q484s9bz3w",
+      "legacyRecordId": "st.crq7e3n2zm",
+      "source": "records/admin-pages.r1.en.json",
+      "context": "strings.admin.ia.writer.passages.organize-records",
+      "leaf": "strings.navigation",
+      "limits": {},
+      "origin": "authored",
+      "status": "draft"
+    },
+    {
+      "recordId": "st.ctrfprmksn",
+      "legacyRecordId": "st.ctrfprmksn",
+      "source": "records/admin-studio.r1.en.json",
+      "context": "designer.ia.sections.organize-history",
+      "leaf": "strings.names",
+      "limits": {
+        "maxChars": 60
+      },
+      "origin": "foundry-default",
+      "status": "draft"
+    },
+    {
+      "recordId": "st.ctrfprmksn",
+      "legacyRecordId": "st.r26j8cwren",
+      "source": "records/admin-pages.r1.en.json",
+      "context": "strings.admin.ia.writer.passages.organize-history",
+      "leaf": "strings.navigation",
+      "limits": {},
+      "origin": "authored",
+      "status": "draft"
+    },
+    {
+      "recordId": "st.xz62vvkvj3",
+      "legacyRecordId": "st.xz62vvkvj3",
+      "source": "records/admin-studio.r1.en.json",
+      "context": "designer.ia.sections.collect",
+      "leaf": "strings.names",
+      "limits": {
+        "maxChars": 60
+      },
+      "origin": "foundry-default",
+      "status": "draft"
+    },
+    {
+      "recordId": "st.xz62vvkvj3",
+      "legacyRecordId": "st.e7asvwmbep",
+      "source": "records/admin-pages.r1.en.json",
+      "context": "strings.admin.ia.writer.passages.collect",
+      "leaf": "strings.navigation",
+      "limits": {},
+      "origin": "authored",
+      "status": "draft"
+    },
+    {
+      "recordId": "st.b28mjpaq29",
+      "legacyRecordId": "st.b28mjpaq29",
+      "source": "records/admin-studio.r1.en.json",
+      "context": "designer.ia.sections.collect-workflows",
+      "leaf": "strings.names",
+      "limits": {
+        "maxChars": 60
+      },
+      "origin": "foundry-default",
+      "status": "draft"
+    },
+    {
+      "recordId": "st.b28mjpaq29",
+      "legacyRecordId": "st.xe08xmhhbb",
+      "source": "records/admin-pages.r1.en.json",
+      "context": "strings.admin.ia.writer.passages.collect-workflows",
+      "leaf": "strings.navigation",
+      "limits": {},
+      "origin": "authored",
+      "status": "draft"
+    },
+    {
+      "recordId": "st.jns9tmxsdf",
+      "legacyRecordId": "st.jns9tmxsdf",
+      "source": "records/admin-studio.r1.en.json",
+      "context": "designer.ia.sections.collect-preferences",
+      "leaf": "strings.names",
+      "limits": {
+        "maxChars": 60
+      },
+      "origin": "foundry-default",
+      "status": "draft"
+    },
+    {
+      "recordId": "st.jns9tmxsdf",
+      "legacyRecordId": "st.hke498zyw2",
+      "source": "records/admin-pages.r1.en.json",
+      "context": "strings.admin.ia.writer.passages.collect-preferences",
+      "leaf": "strings.navigation",
+      "limits": {},
+      "origin": "authored",
+      "status": "draft"
+    },
+    {
+      "recordId": "st.dcx4bn55xt",
+      "legacyRecordId": "st.dcx4bn55xt",
+      "source": "records/admin-studio.r1.en.json",
+      "context": "designer.ia.sections.collect-configuration",
+      "leaf": "strings.names",
+      "limits": {
+        "maxChars": 60
+      },
+      "origin": "foundry-default",
+      "status": "draft"
+    },
+    {
+      "recordId": "st.dcx4bn55xt",
+      "legacyRecordId": "st.j6ngc8pzjm",
+      "source": "records/admin-pages.r1.en.json",
+      "context": "strings.admin.ia.writer.passages.collect-configuration",
+      "leaf": "strings.navigation",
+      "limits": {},
+      "origin": "authored",
+      "status": "draft"
+    },
+    {
+      "recordId": "st.ehnm0c7e08",
+      "legacyRecordId": "st.ehnm0c7e08",
+      "source": "records/admin-studio.r1.en.json",
+      "context": "designer.inspector.fields.historyInputs",
+      "leaf": "strings.field-labels",
+      "limits": {
+        "maxChars": 60
+      },
+      "origin": "foundry-default",
+      "status": "draft"
+    },
+    {
+      "recordId": "st.ehnm0c7e08",
+      "legacyRecordId": "st.end2wnfhnd",
+      "source": "records/admin-studio.r1.en.json",
+      "context": "designer.ia.sections.collect-inputs",
+      "leaf": "strings.names",
+      "limits": {
+        "maxChars": 60
+      },
+      "origin": "foundry-default",
+      "status": "draft"
+    },
+    {
+      "recordId": "st.ehnm0c7e08",
+      "legacyRecordId": "st.pda59gg768",
+      "source": "records/admin-studio.r1.en.json",
+      "context": "designer.ia.components.inputs",
+      "leaf": "strings.names",
+      "limits": {
+        "maxChars": 60
+      },
+      "origin": "foundry-default",
+      "status": "draft"
+    },
+    {
+      "recordId": "st.ehnm0c7e08",
+      "legacyRecordId": "st.mxm94xnkrk",
+      "source": "records/admin-pages.r1.en.json",
+      "context": "strings.admin.ia.writer.passages.collect-inputs",
+      "leaf": "strings.navigation",
+      "limits": {},
+      "origin": "authored",
+      "status": "draft"
+    },
+    {
+      "recordId": "st.2rrmfet0fn",
+      "legacyRecordId": "st.2rrmfet0fn",
+      "source": "records/admin-studio.r1.en.json",
+      "context": "designer.ia.sections.navigate",
+      "leaf": "strings.names",
+      "limits": {
+        "maxChars": 60
+      },
+      "origin": "foundry-default",
+      "status": "draft"
+    },
+    {
+      "recordId": "st.2rrmfet0fn",
+      "legacyRecordId": "st.w0q64sxz08",
+      "source": "records/admin-pages.r1.en.json",
+      "context": "strings.admin.ia.writer.passages.navigate",
+      "leaf": "strings.navigation",
+      "limits": {},
+      "origin": "authored",
+      "status": "draft"
+    },
+    {
+      "recordId": "st.tb7mk984x7",
+      "legacyRecordId": "st.tb7mk984x7",
+      "source": "records/admin-studio.r1.en.json",
+      "context": "designer.ia.sections.navigate-indexes",
+      "leaf": "strings.names",
+      "limits": {
+        "maxChars": 60
+      },
+      "origin": "foundry-default",
+      "status": "draft"
+    },
+    {
+      "recordId": "st.tb7mk984x7",
+      "legacyRecordId": "st.8b2zfv6jr5",
+      "source": "records/admin-pages.r1.en.json",
+      "context": "strings.admin.ia.writer.passages.navigate-indexes",
+      "leaf": "strings.navigation",
+      "limits": {},
+      "origin": "authored",
+      "status": "draft"
+    },
+    {
+      "recordId": "st.5syp7271te",
+      "legacyRecordId": "st.5syp7271te",
+      "source": "records/admin-studio.r1.en.json",
+      "context": "designer.ia.sections.navigate-discovery",
+      "leaf": "strings.names",
+      "limits": {
+        "maxChars": 60
+      },
+      "origin": "foundry-default",
+      "status": "draft"
+    },
+    {
+      "recordId": "st.5syp7271te",
+      "legacyRecordId": "st.gxvgmphcca",
+      "source": "records/admin-pages.r1.en.json",
+      "context": "strings.admin.ia.writer.passages.navigate-discovery",
+      "leaf": "strings.navigation",
+      "limits": {},
+      "origin": "authored",
+      "status": "draft"
+    },
+    {
+      "recordId": "st.m7gtk6hcw8",
+      "legacyRecordId": "st.m7gtk6hcw8",
+      "source": "records/admin-studio.r1.en.json",
+      "context": "designer.ia.sections.respond",
+      "leaf": "strings.names",
+      "limits": {
+        "maxChars": 60
+      },
+      "origin": "foundry-default",
+      "status": "draft"
+    },
+    {
+      "recordId": "st.m7gtk6hcw8",
+      "legacyRecordId": "st.3zknse5fm0",
+      "source": "records/admin-pages.r1.en.json",
+      "context": "strings.admin.ia.writer.passages.respond",
+      "leaf": "strings.navigation",
+      "limits": {},
+      "origin": "authored",
+      "status": "draft"
+    },
+    {
+      "recordId": "st.7fvy4xm2pe",
+      "legacyRecordId": "st.7fvy4xm2pe",
+      "source": "records/admin-pages.r1.en.json",
+      "context": "strings.admin.ia.writer.narratives.documents-docs",
+      "leaf": "strings.navigation",
+      "limits": {},
+      "origin": "authored",
+      "status": "draft"
+    },
+    {
+      "recordId": "st.7fvy4xm2pe",
+      "legacyRecordId": "st.p94b9dxe3q",
+      "source": "records/admin-pages.r1.en.json",
+      "context": "strings.admin.ia.publisher.documents.docs",
+      "leaf": "strings.navigation",
+      "limits": {},
+      "origin": "authored",
+      "status": "draft"
+    },
+    {
+      "recordId": "st.pdq1ef8q2d",
+      "legacyRecordId": "st.pdq1ef8q2d",
+      "source": "records/admin-studio.r1.en.json",
+      "context": "designer.check.C4",
+      "leaf": "strings.names",
+      "limits": {
+        "maxChars": 60
+      },
+      "origin": "foundry-default",
+      "status": "draft"
+    },
+    {
+      "recordId": "st.pdq1ef8q2d",
+      "legacyRecordId": "st.mrjspetnty",
+      "source": "records/admin-voice.r1.en.json",
+      "context": "Designer console",
+      "leaf": "strings.field-labels",
+      "limits": {
+        "maxChars": 40
+      },
+      "origin": "foundry-default",
+      "status": "draft"
+    },
+    {
+      "recordId": "st.t317dsw4j4",
+      "legacyRecordId": "st.t317dsw4j4",
+      "source": "records/admin-studio.r1.en.json",
+      "context": "designer.check.C10",
+      "leaf": "strings.names",
+      "limits": {
+        "maxChars": 60
+      },
+      "origin": "foundry-default",
+      "status": "draft"
+    },
+    {
+      "recordId": "st.t317dsw4j4",
+      "legacyRecordId": "st.e18a866a4k",
+      "source": "records/admin-voice.r1.en.json",
+      "context": "Designer console",
+      "leaf": "strings.field-labels",
+      "limits": {
+        "maxChars": 40
+      },
+      "origin": "foundry-default",
+      "status": "draft"
+    },
+    {
+      "recordId": "st.0t22p7nhjk",
+      "legacyRecordId": "st.0t22p7nhjk",
+      "source": "records/admin-studio.r1.en.json",
+      "context": "designer.inspector.fields.layer",
+      "leaf": "strings.field-labels",
+      "limits": {
+        "maxChars": 60
+      },
+      "origin": "foundry-default",
+      "status": "draft"
+    },
+    {
+      "recordId": "st.0t22p7nhjk",
+      "legacyRecordId": "st.mm94prnm0g",
+      "source": "records/admin-voice.r1.en.json",
+      "context": "Designer console",
+      "leaf": "strings.field-labels",
+      "limits": {
+        "maxChars": 40
+      },
+      "origin": "foundry-default",
+      "status": "draft"
+    },
+    {
+      "recordId": "st.k9eny24qbx",
+      "legacyRecordId": "st.k9eny24qbx",
+      "source": "records/admin-studio.r1.en.json",
+      "context": "designer.inspector.fields.historyCommand",
+      "leaf": "strings.field-labels",
+      "limits": {
+        "maxChars": 60
+      },
+      "origin": "foundry-default",
+      "status": "draft"
+    },
+    {
+      "recordId": "st.k9eny24qbx",
+      "legacyRecordId": "st.mghmpmb8mp",
+      "source": "records/admin-studio.r1.en.json",
+      "context": "designer.item.components.command",
+      "leaf": "strings.names",
+      "limits": {
+        "maxChars": 60
+      },
+      "origin": "authored",
+      "status": "draft"
+    },
+    {
+      "recordId": "st.k2hbf8chyb",
+      "legacyRecordId": "st.k2hbf8chyb",
+      "source": "records/admin-studio.r1.en.json",
+      "context": "designer.ia.tokens.color",
+      "leaf": "strings.names",
+      "limits": {
+        "maxChars": 60
+      },
+      "origin": "foundry-default",
+      "status": "draft"
+    },
+    {
+      "recordId": "st.k2hbf8chyb",
+      "legacyRecordId": "st.th7s612c9v",
+      "source": "records/admin-studio.r1.en.json",
+      "context": "designer.ia.components.inputs-color",
+      "leaf": "strings.names",
+      "limits": {
+        "maxChars": 60
+      },
+      "origin": "foundry-default",
+      "status": "draft"
+    },
+    {
+      "recordId": "st.mn2v0dgaj8",
+      "legacyRecordId": "st.mn2v0dgaj8",
+      "source": "records/admin-studio.r1.en.json",
+      "context": "designer.item.tokens.spacing",
+      "leaf": "strings.names",
+      "limits": {
+        "maxChars": 60
+      },
+      "origin": "foundry-default",
+      "status": "draft"
+    },
+    {
+      "recordId": "st.mn2v0dgaj8",
+      "legacyRecordId": "st.qrvmkqp6hq",
+      "source": "records/admin-studio.r1.en.json",
+      "context": "designer.ia.tokens.type-spacing",
+      "leaf": "strings.names",
+      "limits": {
+        "maxChars": 60
+      },
+      "origin": "foundry-default",
+      "status": "draft"
+    },
+    {
+      "recordId": "st.sm9bq8fv8f",
+      "legacyRecordId": "st.sm9bq8fv8f",
+      "source": "records/admin-studio.r1.en.json",
+      "context": "designer.item.tokens.density",
+      "leaf": "strings.names",
+      "limits": {
+        "maxChars": 60
+      },
+      "origin": "foundry-default",
+      "status": "draft"
+    },
+    {
+      "recordId": "st.sm9bq8fv8f",
+      "legacyRecordId": "st.cavrdkkw8y",
+      "source": "records/section-defaults.r1.en.json",
+      "context": "admin.writer.sections.dataTable.densityLabel",
+      "leaf": "strings.field-labels",
+      "limits": {},
+      "origin": "authored",
+      "status": "draft"
+    },
+    {
+      "recordId": "st.cm83f2fvc6",
+      "legacyRecordId": "st.cm83f2fvc6",
+      "source": "records/admin-studio.r1.en.json",
+      "context": "designer.item.sections.logo-mark",
+      "leaf": "strings.names",
+      "limits": {
+        "maxChars": 60
+      },
+      "origin": "foundry-default",
+      "status": "draft"
+    },
+    {
+      "recordId": "st.cm83f2fvc6",
+      "legacyRecordId": "st.mpy5g7tfw7",
+      "source": "records/admin-studio.r1.en.json",
+      "context": "designer.item.assets.mark",
+      "leaf": "strings.names",
+      "limits": {
+        "maxChars": 60
+      },
+      "origin": "foundry-default",
+      "status": "draft"
+    },
+    {
+      "recordId": "st.3avwye9tm9",
+      "legacyRecordId": "st.3avwye9tm9",
+      "source": "records/admin-studio.r1.en.json",
+      "context": "designer.item.assets.icon-search",
+      "leaf": "strings.names",
+      "limits": {
+        "maxChars": 60
+      },
+      "origin": "foundry-default",
+      "status": "draft"
+    },
+    {
+      "recordId": "st.3avwye9tm9",
+      "legacyRecordId": "st.er3g6ph4h3",
+      "source": "records/admin-studio.r1.en.json",
+      "context": "designer.component.command.search",
+      "leaf": "strings.field-labels",
+      "limits": {
+        "maxChars": 120
+      },
+      "origin": "authored",
+      "status": "draft"
+    },
+    {
+      "recordId": "st.9ehasbmw8z",
+      "legacyRecordId": "st.9ehasbmw8z",
+      "source": "records/admin-studio.r1.en.json",
+      "context": "designer.component.sheet.close",
+      "leaf": "strings.actions",
+      "limits": {
+        "maxChars": 120
+      },
+      "origin": "authored",
+      "status": "draft"
+    },
+    {
+      "recordId": "st.9ehasbmw8z",
+      "legacyRecordId": "st.c2ackxb8x4",
+      "source": "records/admin-studio.r1.en.json",
+      "context": "designer.item.assets.icon-close",
+      "leaf": "strings.names",
+      "limits": {
+        "maxChars": 60
+      },
+      "origin": "foundry-default",
+      "status": "draft"
+    },
+    {
+      "recordId": "st.9ehasbmw8z",
+      "legacyRecordId": "st.6m4cvpxtx2",
+      "source": "records/admin-voice.r1.en.json",
+      "context": "Designer console",
+      "leaf": "strings.actions",
+      "limits": {
+        "maxChars": 24
+      },
+      "origin": "foundry-default",
+      "status": "draft"
+    },
+    {
+      "recordId": "st.9ehasbmw8z",
+      "legacyRecordId": "st.jrxtfy1c6j",
+      "source": "records/admin-voice.r1.en.json",
+      "context": "Designer console",
+      "leaf": "strings.actions",
+      "limits": {
+        "maxChars": 24
+      },
+      "origin": "foundry-default",
+      "status": "draft"
+    },
+    {
+      "recordId": "st.9ehasbmw8z",
+      "legacyRecordId": "st.pr813ca841",
+      "source": "records/section-defaults.r1.en.json",
+      "context": "admin.writer.sections.gallery.close",
+      "leaf": "strings.field-labels",
+      "limits": {},
+      "origin": "authored",
+      "status": "draft"
+    },
+    {
+      "recordId": "st.41b5rk7wcd",
+      "legacyRecordId": "st.41b5rk7wcd",
+      "source": "records/admin-studio.r1.en.json",
+      "context": "designer.item.assets.icon-settings",
+      "leaf": "strings.names",
+      "limits": {
+        "maxChars": 60
+      },
+      "origin": "foundry-default",
+      "status": "draft"
+    },
+    {
+      "recordId": "st.41b5rk7wcd",
+      "legacyRecordId": "st.qygg02nsps",
+      "source": "records/admin-studio.r1.en.json",
+      "context": "designer.item.sections.settings",
+      "leaf": "strings.names",
+      "limits": {
+        "maxChars": 60
+      },
+      "origin": "foundry-default",
+      "status": "draft"
+    },
+    {
+      "recordId": "st.96npq8j00n",
+      "legacyRecordId": "st.96npq8j00n",
+      "source": "records/admin-studio.r1.en.json",
+      "context": "designer.frameOption.frames.app-shell.theme.light",
+      "leaf": "strings.names",
+      "limits": {
+        "maxChars": 40
+      },
+      "origin": "foundry-default",
+      "status": "draft"
+    },
+    {
+      "recordId": "st.96npq8j00n",
+      "legacyRecordId": "st.m1mwdqj1mx",
+      "source": "records/admin-studio.r1.en.json",
+      "context": "designer.item.assets.icon-theme-light",
+      "leaf": "strings.names",
+      "limits": {
+        "maxChars": 60
+      },
+      "origin": "foundry-default",
+      "status": "draft"
+    },
+    {
+      "recordId": "st.476jt5vjet",
+      "legacyRecordId": "st.476jt5vjet",
+      "source": "records/admin-studio.r1.en.json",
+      "context": "designer.frameOption.frames.app-shell.theme.dark",
+      "leaf": "strings.names",
+      "limits": {
+        "maxChars": 40
+      },
+      "origin": "foundry-default",
+      "status": "draft"
+    },
+    {
+      "recordId": "st.476jt5vjet",
+      "legacyRecordId": "st.88zc1dht9h",
+      "source": "records/admin-studio.r1.en.json",
+      "context": "designer.item.assets.icon-theme-dark",
+      "leaf": "strings.names",
+      "limits": {
+        "maxChars": 60
+      },
+      "origin": "foundry-default",
+      "status": "draft"
+    },
+    {
+      "recordId": "st.2a77nn406k",
+      "legacyRecordId": "st.2a77nn406k",
+      "source": "records/admin-studio.r1.en.json",
+      "context": "designer.frameOption.frames.app-shell.theme.system",
+      "leaf": "strings.names",
+      "limits": {
+        "maxChars": 40
+      },
+      "origin": "foundry-default",
+      "status": "draft"
+    },
+    {
+      "recordId": "st.2a77nn406k",
+      "legacyRecordId": "st.f1r0af8z7y",
+      "source": "records/admin-studio.r1.en.json",
+      "context": "designer.item.assets.icon-theme-system",
+      "leaf": "strings.names",
+      "limits": {
+        "maxChars": 60
+      },
+      "origin": "foundry-default",
+      "status": "draft"
+    },
+    {
+      "recordId": "st.5jrhbbr5sm",
+      "legacyRecordId": "st.5jrhbbr5sm",
+      "source": "records/admin-studio.r1.en.json",
+      "context": "designer.item.assets.icon-date",
+      "leaf": "strings.names",
+      "limits": {
+        "maxChars": 60
+      },
+      "origin": "foundry-default",
+      "status": "draft"
+    },
+    {
+      "recordId": "st.5jrhbbr5sm",
+      "legacyRecordId": "st.mp02ad33xd",
+      "source": "records/admin-studio.r1.en.json",
+      "context": "designer.ia.components.inputs-date",
+      "leaf": "strings.names",
+      "limits": {
+        "maxChars": 60
+      },
+      "origin": "foundry-default",
+      "status": "draft"
+    },
+    {
+      "recordId": "st.8rktftq4qz",
+      "legacyRecordId": "st.8rktftq4qz",
+      "source": "records/admin-studio.r1.en.json",
+      "context": "designer.item.assets.icon-layers",
+      "leaf": "strings.names",
+      "limits": {
+        "maxChars": 60
+      },
+      "origin": "foundry-default",
+      "status": "draft"
+    },
+    {
+      "recordId": "st.8rktftq4qz",
+      "legacyRecordId": "st.8znckwdpas",
+      "source": "records/admin-voice.r1.en.json",
+      "context": "Designer console",
+      "leaf": "strings.field-labels",
+      "limits": {
+        "maxChars": 40
+      },
+      "origin": "foundry-default",
+      "status": "draft"
+    },
+    {
+      "recordId": "st.17r7xa6wg9",
+      "legacyRecordId": "st.17r7xa6wg9",
+      "source": "records/admin-studio.r1.en.json",
+      "context": "designer.item.sections.form",
+      "leaf": "strings.names",
+      "limits": {
+        "maxChars": 60
+      },
+      "origin": "foundry-default",
+      "status": "draft"
+    },
+    {
+      "recordId": "st.17r7xa6wg9",
+      "legacyRecordId": "st.54fde15cnn",
+      "source": "records/admin-studio.r1.en.json",
+      "context": "designer.item.components.form",
+      "leaf": "strings.names",
+      "limits": {
+        "maxChars": 60
+      },
+      "origin": "foundry-default",
+      "status": "draft"
+    },
+    {
+      "recordId": "st.17r7xa6wg9",
+      "legacyRecordId": "st.kqjtvamysw",
+      "source": "records/admin-studio.r1.en.json",
+      "context": "designer.ia.components.inputs-form",
+      "leaf": "strings.names",
+      "limits": {
+        "maxChars": 60
+      },
+      "origin": "foundry-default",
+      "status": "draft"
+    },
+    {
+      "recordId": "st.ne29tsc3gn",
+      "legacyRecordId": "st.ne29tsc3gn",
+      "source": "records/admin-studio.r1.en.json",
+      "context": "designer.item.sections.content",
+      "leaf": "strings.names",
+      "limits": {
+        "maxChars": 60
+      },
+      "origin": "foundry-default",
+      "status": "draft"
+    },
+    {
+      "recordId": "st.ne29tsc3gn",
+      "legacyRecordId": "st.x95qdk70h6",
+      "source": "records/admin-studio.r1.en.json",
+      "context": "designer.ia.components.display-content",
+      "leaf": "strings.names",
+      "limits": {
+        "maxChars": 60
+      },
+      "origin": "foundry-default",
+      "status": "draft"
+    },
+    {
+      "recordId": "st.zc2c0w4qx4",
+      "legacyRecordId": "st.zc2c0w4qx4",
+      "source": "records/admin-studio.r1.en.json",
+      "context": "designer.item.components.menu",
+      "leaf": "strings.names",
+      "limits": {
+        "maxChars": 60
+      },
+      "origin": "foundry-default",
+      "status": "draft"
+    },
+    {
+      "recordId": "st.zc2c0w4qx4",
+      "legacyRecordId": "st.7hvz5ycgs2",
+      "source": "records/section-defaults.r1.en.json",
+      "context": "admin.writer.sections.navShell.triggerLabel",
+      "leaf": "strings.field-labels",
+      "limits": {},
+      "origin": "authored",
+      "status": "draft"
+    },
+    {
+      "recordId": "st.nbe9kckxef",
+      "legacyRecordId": "st.nbe9kckxef",
+      "source": "records/admin-studio.r1.en.json",
+      "context": "designer.item.sections.usage",
+      "leaf": "strings.names",
+      "limits": {
+        "maxChars": 60
+      },
+      "origin": "foundry-default",
+      "status": "draft"
+    },
+    {
+      "recordId": "st.nbe9kckxef",
+      "legacyRecordId": "st.c4a87fn3bk",
+      "source": "records/admin-voice.r1.en.json",
+      "context": "Designer console",
+      "leaf": "strings.names",
+      "limits": {
+        "maxChars": 48
+      },
+      "origin": "foundry-default",
+      "status": "draft"
+    },
+    {
+      "recordId": "st.njcj3qqb0e",
+      "legacyRecordId": "st.njcj3qqb0e",
+      "source": "records/admin-studio.r1.en.json",
+      "context": "designer.frameOption.frames.app-sidebar.presentation.overlay",
+      "leaf": "strings.names",
+      "limits": {
+        "maxChars": 40
+      },
+      "origin": "foundry-default",
+      "status": "draft"
+    },
+    {
+      "recordId": "st.njcj3qqb0e",
+      "legacyRecordId": "st.xe1vmezaw2",
+      "source": "records/admin-studio.r1.en.json",
+      "context": "designer.item.frames.sheet",
+      "leaf": "strings.names",
+      "limits": {
+        "maxChars": 60
+      },
+      "origin": "foundry-default",
+      "status": "draft"
+    },
+    {
+      "recordId": "st.r39xxtj0m7",
+      "legacyRecordId": "st.r39xxtj0m7",
+      "source": "records/admin-studio.r1.en.json",
+      "context": "designer.finding.C6.19",
+      "leaf": "strings.errors",
+      "limits": {
+        "maxChars": 160
+      },
+      "origin": "foundry-default",
+      "status": "draft"
+    },
+    {
+      "recordId": "st.r39xxtj0m7",
+      "legacyRecordId": "st.t578r688wz",
+      "source": "records/admin-studio.r1.en.json",
+      "context": "designer.finding.C6.50",
+      "leaf": "strings.errors",
+      "limits": {
+        "maxChars": 160
+      },
+      "origin": "foundry-default",
+      "status": "draft"
+    },
+    {
+      "recordId": "st.jt3xndjtmr",
+      "legacyRecordId": "st.jt3xndjtmr",
+      "source": "records/admin-studio.r1.en.json",
+      "context": "designer.finding.C2.56",
+      "leaf": "strings.errors",
+      "limits": {
+        "maxChars": 160
+      },
+      "origin": "foundry-default",
+      "status": "draft"
+    },
+    {
+      "recordId": "st.jt3xndjtmr",
+      "legacyRecordId": "st.q4a4j5xq1e",
+      "source": "records/admin-studio.r1.en.json",
+      "context": "designer.finding.C2.54",
+      "leaf": "strings.errors",
+      "limits": {
+        "maxChars": 160
+      },
+      "origin": "foundry-default",
+      "status": "draft"
+    },
+    {
+      "recordId": "st.50we5a15ty",
+      "legacyRecordId": "st.50we5a15ty",
+      "source": "records/admin-studio.r1.en.json",
+      "context": "designer.component.sidebar.title",
+      "leaf": "strings.field-labels",
+      "limits": {
+        "maxChars": 120
+      },
+      "origin": "authored",
+      "status": "draft"
+    },
+    {
+      "recordId": "st.50we5a15ty",
+      "legacyRecordId": "st.x309rathmp",
+      "source": "records/admin-studio.r1.en.json",
+      "context": "designer.item.components.sidebar",
+      "leaf": "strings.names",
+      "limits": {
+        "maxChars": 60
+      },
+      "origin": "authored",
+      "status": "draft"
+    },
+    {
+      "recordId": "st.0mvj7s905h",
+      "legacyRecordId": "st.0mvj7s905h",
+      "source": "records/admin-voice.r1.en.json",
+      "context": "Workspace shell",
+      "leaf": "strings.field-labels",
+      "limits": {
+        "maxChars": 40
+      },
+      "origin": "foundry-default",
+      "status": "draft"
+    },
+    {
+      "recordId": "st.0mvj7s905h",
+      "legacyRecordId": "st.nbe4p50nrx",
+      "source": "records/admin-voice.r1.en.json",
+      "context": "Designer console",
+      "leaf": "strings.field-labels",
+      "limits": {
+        "maxChars": 40
+      },
+      "origin": "foundry-default",
+      "status": "draft"
+    },
+    {
+      "recordId": "st.02nqj35esc",
+      "legacyRecordId": "st.02nqj35esc",
+      "source": "records/admin-voice.r1.en.json",
+      "context": "Designer console",
+      "leaf": "strings.field-labels",
+      "limits": {
+        "maxChars": 40
+      },
+      "origin": "foundry-default",
+      "status": "draft"
+    },
+    {
+      "recordId": "st.02nqj35esc",
+      "legacyRecordId": "st.3xkbhrd42a",
+      "source": "records/admin-voice.r1.en.json",
+      "context": "Designer console",
+      "leaf": "strings.field-labels",
+      "limits": {
+        "maxChars": 40
+      },
+      "origin": "foundry-default",
+      "status": "draft"
+    },
+    {
+      "recordId": "st.t029hg04zc",
+      "legacyRecordId": "st.t029hg04zc",
+      "source": "records/admin-voice.r1.en.json",
+      "context": "Designer console",
+      "leaf": "strings.field-labels",
+      "limits": {
+        "maxChars": 40
+      },
+      "origin": "foundry-default",
+      "status": "draft"
+    },
+    {
+      "recordId": "st.t029hg04zc",
+      "legacyRecordId": "st.y6hhq23hwz",
+      "source": "records/section-defaults.r1.en.json",
+      "context": "admin.writer.sections.dataTable.allTagsLabel",
+      "leaf": "strings.field-labels",
+      "limits": {},
+      "origin": "authored",
+      "status": "draft"
+    },
+    {
+      "recordId": "st.bw0n8vs9db",
+      "legacyRecordId": "st.bw0n8vs9db",
+      "source": "records/admin-voice.r1.en.json",
+      "context": "Designer console",
+      "leaf": "strings.field-labels",
+      "limits": {
+        "maxChars": 40
+      },
+      "origin": "foundry-default",
+      "status": "draft"
+    },
+    {
+      "recordId": "st.bw0n8vs9db",
+      "legacyRecordId": "st.p9j9cmb766",
+      "source": "records/admin-voice.r1.en.json",
+      "context": "Designer console",
+      "leaf": "strings.field-labels",
+      "limits": {
+        "maxChars": 40
+      },
+      "origin": "foundry-default",
+      "status": "draft"
+    },
+    {
+      "recordId": "st.q2pdjh83tt",
+      "legacyRecordId": "st.q2pdjh83tt",
+      "source": "records/admin-voice.r1.en.json",
+      "context": "Designer console",
+      "leaf": "strings.actions",
+      "limits": {
+        "maxChars": 24
+      },
+      "origin": "foundry-default",
+      "status": "draft"
+    },
+    {
+      "recordId": "st.q2pdjh83tt",
+      "legacyRecordId": "st.g04a9dxcyp",
+      "source": "records/pending/sections-upgrade.r1.en.json",
+      "context": "admin.writer.sections.new.canvas-controls.labels.zoomIn",
+      "leaf": "strings.field-labels",
+      "limits": {},
+      "origin": "authored",
+      "status": "draft"
+    },
+    {
+      "recordId": "st.frk6prh48a",
+      "legacyRecordId": "st.frk6prh48a",
+      "source": "records/admin-voice.r1.en.json",
+      "context": "Designer console",
+      "leaf": "strings.actions",
+      "limits": {
+        "maxChars": 24
+      },
+      "origin": "foundry-default",
+      "status": "draft"
+    },
+    {
+      "recordId": "st.frk6prh48a",
+      "legacyRecordId": "st.qf4zddcgnz",
+      "source": "records/pending/sections-upgrade.r1.en.json",
+      "context": "admin.writer.sections.new.canvas-controls.labels.zoomOut",
+      "leaf": "strings.field-labels",
+      "limits": {},
+      "origin": "authored",
+      "status": "draft"
+    },
+    {
+      "recordId": "st.6nrp8gmqv3",
+      "legacyRecordId": "st.6nrp8gmqv3",
+      "source": "records/admin-voice.r1.en.json",
+      "context": "Designer console",
+      "leaf": "strings.field-labels",
+      "limits": {
+        "maxChars": 40
+      },
+      "origin": "foundry-default",
+      "status": "draft"
+    },
+    {
+      "recordId": "st.6nrp8gmqv3",
+      "legacyRecordId": "st.82h5wzt7c3",
+      "source": "records/admin-voice.r1.en.json",
+      "context": "Designer console",
+      "leaf": "strings.field-labels",
+      "limits": {
+        "maxChars": 40
+      },
+      "origin": "foundry-default",
+      "status": "draft"
+    },
+    {
+      "recordId": "st.0xns3ts510",
+      "legacyRecordId": "st.0xns3ts510",
+      "source": "records/admin-voice.r1.en.json",
+      "context": "Designer console",
+      "leaf": "strings.counters",
+      "limits": {
+        "maxChars": 60
+      },
+      "origin": "foundry-default",
+      "status": "draft"
+    },
+    {
+      "recordId": "st.0xns3ts510",
+      "legacyRecordId": "st.pxhmnm5fsp",
+      "source": "records/admin-voice.r1.en.json",
+      "context": "Designer console",
+      "leaf": "strings.counters",
+      "limits": {
+        "maxChars": 60
+      },
+      "origin": "foundry-default",
+      "status": "draft"
+    },
+    {
+      "recordId": "st.a7tkca4nej",
+      "legacyRecordId": "st.a7tkca4nej",
+      "source": "records/admin-voice.r1.en.json",
+      "context": "Designer console",
+      "leaf": "strings.field-labels",
+      "limits": {
+        "maxChars": 40
+      },
+      "origin": "foundry-default",
+      "status": "draft"
+    },
+    {
+      "recordId": "st.a7tkca4nej",
+      "legacyRecordId": "st.e85mfcrpb6",
+      "source": "records/admin-voice.r1.en.json",
+      "context": "Workspace shell",
+      "leaf": "strings.field-labels",
+      "limits": {
+        "maxChars": 40
+      },
+      "origin": "foundry-default",
+      "status": "draft"
+    },
+    {
+      "recordId": "st.g7hbg5n2bs",
+      "legacyRecordId": "st.g7hbg5n2bs",
+      "source": "records/admin-voice.r1.en.json",
+      "context": "Workspace shell",
+      "leaf": "strings.field-labels",
+      "limits": {
+        "maxChars": 40
+      },
+      "origin": "foundry-default",
+      "status": "draft"
+    },
+    {
+      "recordId": "st.g7hbg5n2bs",
+      "legacyRecordId": "st.wm5dgfj32e",
+      "source": "records/admin-voice.r1.en.json",
+      "context": "Designer console",
+      "leaf": "strings.field-labels",
+      "limits": {
+        "maxChars": 40
+      },
+      "origin": "foundry-default",
+      "status": "draft"
+    },
+    {
+      "recordId": "st.p24ypyt9sb",
+      "legacyRecordId": "st.p24ypyt9sb",
+      "source": "records/admin-voice.r1.en.json",
+      "context": "Designer console",
+      "leaf": "strings.field-labels",
+      "limits": {
+        "maxChars": 32
+      },
+      "origin": "foundry-default",
+      "status": "draft"
+    },
+    {
+      "recordId": "st.p24ypyt9sb",
+      "legacyRecordId": "st.pazx9fx0vg",
+      "source": "records/admin-voice.r1.en.json",
+      "context": "Designer console",
+      "leaf": "strings.field-labels",
+      "limits": {
+        "maxChars": 40
+      },
+      "origin": "foundry-default",
+      "status": "draft"
+    },
+    {
+      "recordId": "st.3gsnmmts41",
+      "legacyRecordId": "st.3gsnmmts41",
+      "source": "records/admin-voice.r1.en.json",
+      "context": "Workspace shell",
+      "leaf": "strings.field-labels",
+      "limits": {
+        "maxChars": 40
+      },
+      "origin": "foundry-default",
+      "status": "draft"
+    },
+    {
+      "recordId": "st.3gsnmmts41",
+      "legacyRecordId": "st.gn3j25m31k",
+      "source": "records/admin-voice.r1.en.json",
+      "context": "Designer console",
+      "leaf": "strings.field-labels",
+      "limits": {
+        "maxChars": 40
+      },
+      "origin": "foundry-default",
+      "status": "draft"
+    },
+    {
+      "recordId": "st.8z45ewb90z",
+      "legacyRecordId": "st.8z45ewb90z",
+      "source": "records/admin-voice.r1.en.json",
+      "context": "Designer console",
+      "leaf": "strings.field-labels",
+      "limits": {
+        "maxChars": 40
+      },
+      "origin": "foundry-default",
+      "status": "draft"
+    },
+    {
+      "recordId": "st.8z45ewb90z",
+      "legacyRecordId": "st.mft1aas6kv",
+      "source": "records/admin-voice.r1.en.json",
+      "context": "Workspace shell",
+      "leaf": "strings.field-labels",
+      "limits": {
+        "maxChars": 40
+      },
+      "origin": "foundry-default",
+      "status": "draft"
+    },
+    {
+      "recordId": "st.vftkg73x02",
+      "legacyRecordId": "st.vftkg73x02",
+      "source": "records/admin-voice.r1.en.json",
+      "context": "Workspace shell",
+      "leaf": "strings.field-labels",
+      "limits": {
+        "maxChars": 40
+      },
+      "origin": "foundry-default",
+      "status": "draft"
+    },
+    {
+      "recordId": "st.vftkg73x02",
+      "legacyRecordId": "st.zets8phbsa",
+      "source": "records/admin-voice.r1.en.json",
+      "context": "Workspace shell",
+      "leaf": "strings.field-labels",
+      "limits": {
+        "maxChars": 40
+      },
+      "origin": "foundry-default",
+      "status": "draft"
+    },
+    {
+      "recordId": "st.ev3xsrhrwe",
+      "legacyRecordId": "st.ev3xsrhrwe",
+      "source": "records/admin-voice.r1.en.json",
+      "context": "Workspace shell",
+      "leaf": "strings.actions",
+      "limits": {
+        "maxChars": 24
+      },
+      "origin": "foundry-default",
+      "status": "draft"
+    },
+    {
+      "recordId": "st.ev3xsrhrwe",
+      "legacyRecordId": "st.000000001y",
+      "source": "records/site.en.json",
+      "context": "Generic draft site starter",
+      "leaf": "strings.field-labels",
+      "limits": {},
+      "origin": "authored",
+      "status": "draft"
+    },
+    {
+      "recordId": "st.37fjmkt06h",
+      "legacyRecordId": "st.37fjmkt06h",
+      "source": "records/admin-voice.r1.en.json",
+      "context": "Designer console",
+      "leaf": "strings.field-labels",
+      "limits": {
+        "maxChars": 32
+      },
+      "origin": "foundry-default",
+      "status": "draft"
+    },
+    {
+      "recordId": "st.37fjmkt06h",
+      "legacyRecordId": "st.5wb5mte3br",
+      "source": "records/admin-voice.r1.en.json",
+      "context": "Designer console",
+      "leaf": "strings.field-labels",
+      "limits": {
+        "maxChars": 32
+      },
+      "origin": "foundry-default",
+      "status": "draft"
+    },
+    {
+      "recordId": "st.43k2vndngq",
+      "legacyRecordId": "st.43k2vndngq",
+      "source": "records/admin-voice.r1.en.json",
+      "context": "Designer console",
+      "leaf": "strings.field-labels",
+      "limits": {
+        "maxChars": 32
+      },
+      "origin": "foundry-default",
+      "status": "draft"
+    },
+    {
+      "recordId": "st.43k2vndngq",
+      "legacyRecordId": "st.5bmmq4jy68",
+      "source": "records/admin-voice.r1.en.json",
+      "context": "Designer console",
+      "leaf": "strings.field-labels",
+      "limits": {
+        "maxChars": 32
+      },
+      "origin": "foundry-default",
+      "status": "draft"
+    },
+    {
+      "recordId": "st.43k2vndngq",
+      "legacyRecordId": "st.66j86dac8m",
+      "source": "records/section-defaults.r1.en.json",
+      "context": "admin.writer.sections.dataTable.containsLabel",
+      "leaf": "strings.field-labels",
+      "limits": {},
+      "origin": "authored",
+      "status": "draft"
+    },
+    {
+      "recordId": "st.hcq4hmxrrk",
+      "legacyRecordId": "st.hcq4hmxrrk",
+      "source": "records/admin-voice.r1.en.json",
+      "context": "Designer console",
+      "leaf": "strings.field-labels",
+      "limits": {
+        "maxChars": 32
+      },
+      "origin": "foundry-default",
+      "status": "draft"
+    },
+    {
+      "recordId": "st.hcq4hmxrrk",
+      "legacyRecordId": "st.an5ekdr18g",
+      "source": "records/sign-in.json",
+      "context": "Generic sign-in copy: actions.back",
+      "leaf": "strings.actions",
+      "limits": {},
+      "origin": "foundry-default",
+      "status": "draft"
+    },
+    {
+      "recordId": "st.xfj92exnr7",
+      "legacyRecordId": "st.xfj92exnr7",
+      "source": "records/admin-voice.r1.en.json",
+      "context": "Publisher console",
+      "leaf": "strings.names",
+      "limits": {
+        "maxChars": 40
+      },
+      "origin": "foundry-default",
+      "status": "draft"
+    },
+    {
+      "recordId": "st.xfj92exnr7",
+      "legacyRecordId": "st.z9zp4r228j",
+      "source": "records/admin-voice.r1.en.json",
+      "context": "Publisher console",
+      "leaf": "strings.alt-text",
+      "limits": {
+        "maxChars": 60
+      },
+      "origin": "foundry-default",
+      "status": "draft"
+    },
+    {
+      "recordId": "st.e2ptq1jp2a",
+      "legacyRecordId": "st.e2ptq1jp2a",
+      "source": "records/section-defaults.r1.en.json",
+      "context": "admin.writer.sections.dataTable.pivotSectionLabel",
+      "leaf": "strings.field-labels",
+      "limits": {},
+      "origin": "authored",
+      "status": "draft"
+    },
+    {
+      "recordId": "st.e2ptq1jp2a",
+      "legacyRecordId": "st.zg44pbkg7t",
+      "source": "records/section-defaults.r1.en.json",
+      "context": "admin.writer.sections.dataTable.pivotModeLabel",
+      "leaf": "strings.field-labels",
+      "limits": {},
+      "origin": "authored",
+      "status": "draft"
+    },
+    {
+      "recordId": "st.gdzc1rc0sk",
+      "legacyRecordId": "st.gdzc1rc0sk",
+      "source": "records/section-defaults.r1.en.json",
+      "context": "admin.writer.sections.merge.error-state.header.heading",
+      "leaf": "strings.field-labels",
+      "limits": {},
+      "origin": "authored",
+      "status": "draft"
+    },
+    {
+      "recordId": "st.gdzc1rc0sk",
+      "legacyRecordId": "st.000000002k",
+      "source": "records/site.en.json",
+      "context": "Generic draft site starter",
+      "leaf": "strings.field-labels",
+      "limits": {},
+      "origin": "authored",
+      "status": "draft"
+    },
+    {
+      "recordId": "st.0000000001",
+      "legacyRecordId": "st.0000000001",
+      "source": "records/site.en.json",
+      "context": "Generic draft site starter",
+      "leaf": "strings.field-labels",
+      "limits": {},
+      "origin": "authored",
+      "status": "draft"
+    },
+    {
+      "recordId": "st.0000000001",
+      "legacyRecordId": "st.0000000014",
+      "source": "records/site.en.json",
+      "context": "Generic draft site starter",
+      "leaf": "strings.field-labels",
+      "limits": {},
+      "origin": "authored",
+      "status": "draft"
+    },
+    {
+      "recordId": "st.0000000001",
+      "legacyRecordId": "st.000000001s",
+      "source": "records/site.en.json",
+      "context": "Generic draft site starter",
+      "leaf": "strings.field-labels",
+      "limits": {},
+      "origin": "authored",
+      "status": "draft"
+    },
+    {
+      "recordId": "st.0000000002",
+      "legacyRecordId": "st.0000000002",
+      "source": "records/site.en.json",
+      "context": "Generic draft site starter",
+      "leaf": "strings.field-labels",
+      "limits": {},
+      "origin": "authored",
+      "status": "draft"
+    },
+    {
+      "recordId": "st.0000000002",
+      "legacyRecordId": "st.0000000007",
+      "source": "records/site.en.json",
+      "context": "Generic draft site starter",
+      "leaf": "strings.field-labels",
+      "limits": {},
+      "origin": "authored",
+      "status": "draft"
+    },
+    {
+      "recordId": "st.0000000002",
+      "legacyRecordId": "st.000000000b",
+      "source": "records/site.en.json",
+      "context": "Generic draft site starter",
+      "leaf": "strings.field-labels",
+      "limits": {},
+      "origin": "authored",
+      "status": "draft"
+    },
+    {
+      "recordId": "st.0000000002",
+      "legacyRecordId": "st.000000000h",
+      "source": "records/site.en.json",
+      "context": "Generic draft site starter",
+      "leaf": "strings.field-labels",
+      "limits": {},
+      "origin": "authored",
+      "status": "draft"
+    },
+    {
+      "recordId": "st.0000000002",
+      "legacyRecordId": "st.000000000q",
+      "source": "records/site.en.json",
+      "context": "Generic draft site starter",
+      "leaf": "strings.field-labels",
+      "limits": {},
+      "origin": "authored",
+      "status": "draft"
+    },
+    {
+      "recordId": "st.0000000002",
+      "legacyRecordId": "st.0000000013",
+      "source": "records/site.en.json",
+      "context": "Generic draft site starter",
+      "leaf": "strings.field-labels",
+      "limits": {},
+      "origin": "authored",
+      "status": "draft"
+    },
+    {
+      "recordId": "st.0000000002",
+      "legacyRecordId": "st.000000001r",
+      "source": "records/site.en.json",
+      "context": "Generic draft site starter",
+      "leaf": "strings.field-labels",
+      "limits": {},
+      "origin": "authored",
+      "status": "draft"
+    },
+    {
+      "recordId": "st.0000000003",
+      "legacyRecordId": "st.0000000003",
+      "source": "records/site.en.json",
+      "context": "Generic draft site starter",
+      "leaf": "strings.field-labels",
+      "limits": {},
+      "origin": "authored",
+      "status": "draft"
+    },
+    {
+      "recordId": "st.0000000003",
+      "legacyRecordId": "st.000000000d",
+      "source": "records/site.en.json",
+      "context": "Generic draft site starter",
+      "leaf": "strings.field-labels",
+      "limits": {},
+      "origin": "authored",
+      "status": "draft"
+    },
+    {
+      "recordId": "st.0000000003",
+      "legacyRecordId": "st.000000000k",
+      "source": "records/site.en.json",
+      "context": "Generic draft site starter",
+      "leaf": "strings.field-labels",
+      "limits": {},
+      "origin": "authored",
+      "status": "draft"
+    },
+    {
+      "recordId": "st.0000000003",
+      "legacyRecordId": "st.000000000s",
+      "source": "records/site.en.json",
+      "context": "Generic draft site starter",
+      "leaf": "strings.field-labels",
+      "limits": {},
+      "origin": "authored",
+      "status": "draft"
+    },
+    {
+      "recordId": "st.0000000003",
+      "legacyRecordId": "st.0000000015",
+      "source": "records/site.en.json",
+      "context": "Generic draft site starter",
+      "leaf": "strings.field-labels",
+      "limits": {},
+      "origin": "authored",
+      "status": "draft"
+    },
+    {
+      "recordId": "st.0000000003",
+      "legacyRecordId": "st.000000001t",
+      "source": "records/site.en.json",
+      "context": "Generic draft site starter",
+      "leaf": "strings.field-labels",
+      "limits": {},
+      "origin": "authored",
+      "status": "draft"
+    },
+    {
+      "recordId": "st.0000000005",
+      "legacyRecordId": "st.0000000005",
+      "source": "records/site.en.json",
+      "context": "Generic draft site starter",
+      "leaf": "strings.field-labels",
+      "limits": {},
+      "origin": "authored",
+      "status": "draft"
+    },
+    {
+      "recordId": "st.0000000005",
+      "legacyRecordId": "st.000000000r",
+      "source": "records/site.en.json",
+      "context": "Generic draft site starter",
+      "leaf": "strings.field-labels",
+      "limits": {},
+      "origin": "authored",
+      "status": "draft"
+    },
+    {
+      "recordId": "st.000000000y",
+      "legacyRecordId": "st.000000000y",
+      "source": "records/site.en.json",
+      "context": "Generic draft site starter",
+      "leaf": "strings.field-labels",
+      "limits": {},
+      "origin": "authored",
+      "status": "draft"
+    },
+    {
+      "recordId": "st.000000000y",
+      "legacyRecordId": "st.0000000011",
+      "source": "records/site.en.json",
+      "context": "Generic draft site starter",
+      "leaf": "strings.field-labels",
+      "limits": {},
+      "origin": "authored",
+      "status": "draft"
+    },
+    {
+      "recordId": "st.000000000y",
+      "legacyRecordId": "st.000000002w",
+      "source": "records/site.en.json",
+      "context": "Generic draft site starter",
+      "leaf": "strings.field-labels",
+      "limits": {},
+      "origin": "authored",
+      "status": "draft"
+    },
+    {
+      "recordId": "st.000000001a",
+      "legacyRecordId": "st.000000001a",
+      "source": "records/site.en.json",
+      "context": "Generic draft site starter",
+      "leaf": "strings.field-labels",
+      "limits": {},
+      "origin": "authored",
+      "status": "draft"
+    },
+    {
+      "recordId": "st.000000001a",
+      "legacyRecordId": "st.0000000023",
+      "source": "records/site.en.json",
+      "context": "Generic draft site starter",
+      "leaf": "strings.field-labels",
+      "limits": {},
+      "origin": "authored",
+      "status": "draft"
+    },
+    {
+      "recordId": "st.000000001a",
+      "legacyRecordId": "st.0000000029",
+      "source": "records/site.en.json",
+      "context": "Generic draft site starter",
+      "leaf": "strings.field-labels",
+      "limits": {},
+      "origin": "authored",
+      "status": "draft"
+    },
+    {
+      "recordId": "st.000000001a",
+      "legacyRecordId": "st.000000002f",
+      "source": "records/site.en.json",
+      "context": "Generic draft site starter",
+      "leaf": "strings.field-labels",
+      "limits": {},
+      "origin": "authored",
+      "status": "draft"
+    },
+    {
+      "recordId": "st.000000001a",
+      "legacyRecordId": "st.000000002n",
+      "source": "records/site.en.json",
+      "context": "Generic draft site starter",
+      "leaf": "strings.field-labels",
+      "limits": {},
+      "origin": "authored",
+      "status": "draft"
+    },
+    {
+      "recordId": "st.000000001f",
+      "legacyRecordId": "st.000000001f",
+      "source": "records/site.en.json",
+      "context": "Generic draft site starter",
+      "leaf": "strings.field-labels",
+      "limits": {},
+      "origin": "authored",
+      "status": "draft"
+    },
+    {
+      "recordId": "st.000000001f",
+      "legacyRecordId": "st.000000001m",
+      "source": "records/site.en.json",
+      "context": "Generic draft site starter",
+      "leaf": "strings.field-labels",
+      "limits": {},
+      "origin": "authored",
+      "status": "draft"
+    },
+    {
+      "recordId": "st.000000001g",
+      "legacyRecordId": "st.000000001g",
+      "source": "records/site.en.json",
+      "context": "Generic draft site starter",
+      "leaf": "strings.field-labels",
+      "limits": {},
+      "origin": "authored",
+      "status": "draft"
+    },
+    {
+      "recordId": "st.000000001g",
+      "legacyRecordId": "st.000000001n",
+      "source": "records/site.en.json",
+      "context": "Generic draft site starter",
+      "leaf": "strings.field-labels",
+      "limits": {},
+      "origin": "authored",
+      "status": "draft"
+    },
+    {
+      "recordId": "st.000000001g",
+      "legacyRecordId": "st.000000001v",
+      "source": "records/site.en.json",
+      "context": "Generic draft site starter",
+      "leaf": "strings.field-labels",
+      "limits": {},
+      "origin": "authored",
+      "status": "draft"
+    },
+    {
+      "recordId": "st.000000001h",
+      "legacyRecordId": "st.000000001h",
+      "source": "records/site.en.json",
+      "context": "Generic draft site starter",
+      "leaf": "strings.descriptions",
+      "limits": {},
+      "origin": "authored",
+      "status": "draft"
+    },
+    {
+      "recordId": "st.000000001h",
+      "legacyRecordId": "st.000000001p",
+      "source": "records/site.en.json",
+      "context": "Generic draft site starter",
+      "leaf": "strings.descriptions",
+      "limits": {},
+      "origin": "authored",
+      "status": "draft"
+    },
+    {
+      "recordId": "st.0000000024",
+      "legacyRecordId": "st.0000000024",
+      "source": "records/site.en.json",
+      "context": "Generic draft site starter",
+      "leaf": "strings.field-labels",
+      "limits": {},
+      "origin": "authored",
+      "status": "draft"
+    },
+    {
+      "recordId": "st.0000000024",
+      "legacyRecordId": "st.000000002a",
+      "source": "records/site.en.json",
+      "context": "Generic draft site starter",
+      "leaf": "strings.field-labels",
+      "limits": {},
+      "origin": "authored",
+      "status": "draft"
+    },
+    {
+      "recordId": "st.0000000024",
+      "legacyRecordId": "st.000000002g",
+      "source": "records/site.en.json",
+      "context": "Generic draft site starter",
+      "leaf": "strings.field-labels",
+      "limits": {},
+      "origin": "authored",
+      "status": "draft"
+    },
+    {
+      "recordId": "st.0000000028",
+      "legacyRecordId": "st.0000000028",
+      "source": "records/site.en.json",
+      "context": "Generic draft site starter",
+      "leaf": "strings.field-labels",
+      "limits": {},
+      "origin": "authored",
+      "status": "draft"
+    },
+    {
+      "recordId": "st.0000000028",
+      "legacyRecordId": "st.000000002m",
+      "source": "records/site.en.json",
+      "context": "Generic draft site starter",
+      "leaf": "strings.field-labels",
+      "limits": {},
+      "origin": "authored",
+      "status": "draft"
+    }
+  ]
+}

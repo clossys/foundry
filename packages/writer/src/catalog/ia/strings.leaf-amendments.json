@@ -1,0 +1,10 @@
+[
+  {
+    "schemaVersion": 1,
+    "layer": "strings",
+    "baseSignedHead": "0b06a262bc9447787b9e79393125f1369bfb3470",
+    "status": "owner-signed",
+    "ownerSignoffComment": "clossys/workspace#45 comment 6487701448 (A171 WX-2)",
+    "addedLeafIds": ["strings.common"]
+  }
+]

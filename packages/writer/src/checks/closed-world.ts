@@ -3,6 +3,7 @@ import { loadWriterCatalog, type WriterSlot } from "../catalog/ia/index.js";
 import { canonicalWriterJSON } from "../digest/index.js";
 import type { Block, PassageRef, PatternInstance, StringRecord, WriterLibrary, WriterRecord } from "../model/types.js";
 import type { WriterCheckFinding, WriterCheckOptions, WriterDesignerEvidence } from "./freeze.js";
+import { checkStringDuplicates } from "../catalog/dedupe.js";
 
 const RECORD_ID = /^(lx|st|pt|ps|nr)\.[0123456789abcdefghjkmnpqrstvwxyz]{10}$/;
 const isString = (record: WriterRecord): record is StringRecord => "text" in record;
@@ -37,6 +38,10 @@ export function checkWriterClosedWorld(library: WriterLibrary, options: WriterCh
   const designerLibraries = options.designerLibraries ?? [];
 
   for (const [locale, content] of Object.entries(library.locales)) {
+    for (const duplicate of checkStringDuplicates(content.records.filter(isString), options.stringSplits)) findings.push({
+      code: "WR3", severity: "error", locale, path: `${locale}/records`, field: "text",
+      message: `Duplicate text in ${duplicate.leaf}: ${duplicate.recordIds.join(", ")}. Share one record or declare a semantic split reason.`,
+    });
     const records = new Map<string, WriterRecord[]>();
     for (const record of content.records) records.set(record.id, [...(records.get(record.id) ?? []), record]);
     for (const record of content.records) {

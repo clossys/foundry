@@ -7,65 +7,65 @@
   "sourceCommit": "6cd604a55f42096658e2ae51fa02db88af49d0b6",
   "scope": "SCROLL-1 rev 5 consumed admin page copy; proposed binding data, not rendered coverage",
   "aliases": {
-    "strings.admin.page.designer": "st.dx2qfvr17a",
-    "strings.admin.page.writer": "st.xt00332n8s",
-    "strings.admin.page.publisher": "st.pn37v97g0q",
-    "strings.admin.group.designer.tokens": "st.xja32c6gn7",
-    "strings.admin.group.designer.assets": "st.3690j620r5",
-    "strings.admin.group.designer.components": "st.ajd8bc65jv",
-    "strings.admin.group.designer.sections": "st.zt92wd2m2t",
-    "strings.admin.group.designer.frames": "st.gn129089ct",
+    "strings.admin.page.designer": "st.2zj7yrtkfr",
+    "strings.admin.page.writer": "st.m22sa9p9y4",
+    "strings.admin.page.publisher": "st.cy7122qr1d",
+    "strings.admin.group.designer.tokens": "st.c331pzvwey",
+    "strings.admin.group.designer.assets": "st.qxaxqewq3p",
+    "strings.admin.group.designer.components": "st.jht60wz8e1",
+    "strings.admin.group.designer.sections": "st.ata62btvcq",
+    "strings.admin.group.designer.frames": "st.7rv315vzjm",
     "strings.admin.group.writer.lexicon": "st.gg07zmhj67",
     "strings.admin.group.writer.strings": "st.jz1z2hpqc5",
-    "strings.admin.group.writer.patterns": "st.q36jnsvm6h",
+    "strings.admin.group.writer.patterns": "st.wkfv7m7130",
     "strings.admin.group.writer.passages": "st.62cj4sfxwy",
     "strings.admin.group.writer.narratives": "st.xykg63zk1r",
     "strings.admin.group.publisher.websites": "st.z8wm28sybp",
-    "strings.admin.group.publisher.documents": "st.bssmc915mb",
-    "strings.admin.group.publisher.presentations": "st.qrsdnqwfm8",
-    "strings.admin.group.publisher.videos": "st.w0ds5aa7mm",
-    "strings.admin.group.publisher.messages": "st.8myj0zrkya",
+    "strings.admin.group.publisher.documents": "st.2091r9z4bq",
+    "strings.admin.group.publisher.presentations": "st.33cy9hjh1q",
+    "strings.admin.group.publisher.videos": "st.rgakrp0zw4",
+    "strings.admin.group.publisher.messages": "st.ceegez6aff",
     "strings.admin.group.publisher.social": "st.9scvyavt6d",
     "strings.admin.group.other": "st.vw6bd7d2ss",
-    "strings.admin.column.preview": "st.csdw9wey6z",
+    "strings.admin.column.preview": "st.mzdxkf8h43",
     "strings.admin.column.name": "st.d0n2nss87p",
     "strings.admin.column.id": "st.wq9ezdmv6s",
-    "strings.admin.column.source": "st.46c3xdgcqm",
-    "strings.admin.column.status": "st.wkmten72mk",
-    "strings.admin.column.usedBy": "st.9z6aw5kpja",
+    "strings.admin.column.source": "st.qcqdptzn0r",
+    "strings.admin.column.status": "st.v6ra67gp67",
+    "strings.admin.column.usedBy": "st.7pxepx20q1",
     "strings.admin.column.key": "st.ek01gh837s",
-    "strings.admin.column.text": "st.0gw138v1dn",
+    "strings.admin.column.text": "st.fg1dznm6qa",
     "strings.admin.column.localeCoverage": "st.jfczqkbnt9",
     "strings.admin.column.usedIn": "st.d8jqdk1dky",
-    "strings.admin.column.item": "st.n84v57p7nm",
+    "strings.admin.column.item": "st.v1cbgc4kr2",
     "strings.admin.column.contentSource": "st.75jqvdcce0",
     "strings.admin.column.positionRoute": "st.4wn5yk9rea",
     "strings.admin.column.lastPublished": "st.0xfypm5yt1",
     "strings.admin.column.locale": "st.66eck1x4fv",
     "strings.admin.column.direction": "st.7k6mnd8p5a",
-    "strings.admin.column.sections": "st.rnhq8akq8m",
+    "strings.admin.column.sections": "st.ata62btvcq",
     "strings.admin.column.releases": "st.aptm2ejxyv",
-    "strings.admin.status.draft": "st.1hfmkewyh1",
-    "strings.admin.status.stable": "st.fwrx8ws8jq",
+    "strings.admin.status.draft": "st.td8tdah4rw",
+    "strings.admin.status.stable": "st.mq7reh5kyq",
     "strings.admin.status.held": "st.sp1y1xry8m",
     "strings.admin.status.deprecated": "st.e15mnr3r71",
-    "strings.admin.status.approved": "st.be9vhxtcbp",
-    "strings.admin.status.retired": "st.15d9a6vhv6",
-    "strings.admin.status.inReview": "st.23ssre580y",
-    "strings.admin.status.active": "st.069fm91g06",
+    "strings.admin.status.approved": "st.1re7rsx0et",
+    "strings.admin.status.retired": "st.dvdvvejry8",
+    "strings.admin.status.inReview": "st.gnv660w59z",
+    "strings.admin.status.active": "st.cw2t0s4dxn",
     "strings.admin.status.failing": "st.715kwckmxs",
-    "strings.admin.status.needsInput": "st.xdza0byhk0",
-    "strings.admin.status.waiting": "st.27kkf1a9n7",
-    "strings.admin.status.done": "st.sywts2n14e",
+    "strings.admin.status.needsInput": "st.v2qavnr3r2",
+    "strings.admin.status.waiting": "st.74p81v194s",
+    "strings.admin.status.done": "st.980dfmqs1t",
     "strings.admin.status.notApplicable": "st.0kxbzn2kpp",
     "strings.admin.stats.total": "st.w1j6h2gw3q",
     "strings.admin.stats.status": "st.nt6zgmm8zx",
-    "strings.admin.stats.results": "st.bxjerdr80v",
+    "strings.admin.stats.results": "st.s079k1p1qj",
     "strings.admin.stats.locales": "st.kh6eqvydzq",
     "strings.admin.action.showAll": "st.aegf3kwazy",
     "strings.admin.action.pinToChat": "st.x8330sp494",
-    "strings.admin.action.openItem": "st.sjqs1adxf1",
-    "strings.admin.action.more": "st.6vw6md8f15",
+    "strings.admin.action.openItem": "st.m5cjnqycs1",
+    "strings.admin.action.more": "st.y86a2b0gmd",
     "strings.admin.action.copyLink": "st.p5hwkjac96",
     "strings.admin.action.backToPage": "st.n2yncehfyq",
     "strings.admin.action.clearSearch": "st.vq7gqj3nq4",
@@ -73,36 +73,36 @@
     "strings.admin.search.placeholder": "st.6sm9gf45g4",
     "strings.admin.search.label": "st.qnhg468tfw",
     "strings.admin.search.groupHeading": "st.18ffwvqgvn",
-    "strings.admin.toggle.outline": "st.rnpwrb22ae",
-    "strings.admin.toggle.chat": "st.srjsn9avg0",
+    "strings.admin.toggle.outline": "st.ffqnafj61v",
+    "strings.admin.toggle.chat": "st.zxh419w2k5",
     "strings.admin.toggle.openOutline": "st.7s4a5sw7kz",
     "strings.admin.toggle.closeOutline": "st.3zzb70486s",
-    "strings.admin.toggle.openChat": "st.kvknqkmsbz",
-    "strings.admin.toggle.closeChat": "st.5qvxdz61nr",
+    "strings.admin.toggle.openChat": "st.6ffbzs93mg",
+    "strings.admin.toggle.closeChat": "st.cqt0021fwj",
     "strings.admin.outline.label": "st.ffqnafj61v",
     "strings.admin.outline.expand": "st.y71f1qgzbg",
     "strings.admin.outline.collapse": "st.k3cn4n0736",
     "strings.admin.empty.title": "st.7hj4vvr1f6",
     "strings.admin.empty.description": "st.qy5mcp3qxv",
-    "strings.admin.noResults.title": "st.e28fseajmw",
+    "strings.admin.noResults.title": "st.asj8g1mcjn",
     "strings.admin.noResults.description": "st.qctsaqpgr7",
     "strings.admin.loading.records": "st.c9399szsjn",
     "strings.admin.loading.chunk": "st.z96vq8gqm8",
-    "strings.admin.item.heading": "st.e44z6d5szx",
+    "strings.admin.item.heading": "st.tx9f8j9jnf",
     "strings.admin.item.notFound": "st.18b6pct3am",
     "strings.admin.item.notFoundDescription": "st.x5kdh458a0",
-    "strings.admin.item.details": "st.vqpf292tkd",
+    "strings.admin.item.details": "st.1vc3bb7pw7",
     "strings.admin.item.locales": "st.8g9tch05w2",
-    "strings.admin.item.sections": "st.ne53aycmzh",
-    "strings.admin.item.releases": "st.dvn7b2t1cp",
-    "strings.admin.item.source": "st.01zhtxk93k",
+    "strings.admin.item.sections": "st.ata62btvcq",
+    "strings.admin.item.releases": "st.aptm2ejxyv",
+    "strings.admin.item.source": "st.qcqdptzn0r",
     "strings.admin.item.contract": "st.k31tyhmpf8",
     "strings.admin.item.members": "st.5gst4ht50q",
-    "strings.admin.item.usedBy": "st.485tnt23jk",
-    "strings.admin.pagination.previous": "st.20qddwnvpw",
-    "strings.admin.pagination.next": "st.frd044f8bf",
-    "strings.admin.pagination.pageSize": "st.qvbets52ne",
-    "strings.admin.pagination.label": "st.g19spems75",
+    "strings.admin.item.usedBy": "st.7pxepx20q1",
+    "strings.admin.pagination.previous": "st.96qkp2bzpm",
+    "strings.admin.pagination.next": "st.kb8ve83tjp",
+    "strings.admin.pagination.pageSize": "st.bhhba11w6f",
+    "strings.admin.pagination.label": "st.s13b3hwkta",
     "strings.admin.pagination.page": "st.88wbh5rn5a",
     "strings.admin.pagination.range": "st.9njpzn8mym",
     "strings.admin.pagination.noRecords": "st.5z0ckwq42j",
@@ -113,11 +113,11 @@
     "strings.admin.locale.coverage": "st.kmgyzpa50x",
     "strings.admin.source.none": "st.ebdhf0cn7w",
     "strings.admin.release.never": "st.9wq8d5qvz2",
-    "strings.admin.date.absolute": "st.hge0431mt8",
+    "strings.admin.date.absolute": "st.000000002z",
     "strings.admin.ia.writer.lexicon.voice": "st.frjh2m66m5",
     "strings.admin.ia.writer.lexicon.voice-tone": "st.kqy5rqkwsp",
     "strings.admin.ia.writer.lexicon.voice-person-and-mood": "st.xj91dyg4sx",
-    "strings.admin.ia.writer.lexicon.voice-rhythm": "st.d8f4vhdket",
+    "strings.admin.ia.writer.lexicon.voice-rhythm": "st.qnqy2cwr23",
     "strings.admin.ia.writer.lexicon.terminology": "st.b0d38ct0jx",
     "strings.admin.ia.writer.lexicon.terminology-brand-names": "st.2vewjh5s5k",
     "strings.admin.ia.writer.lexicon.terminology-glossary": "st.h13m794ny5",
@@ -136,18 +136,18 @@
     "strings.admin.ia.writer.lexicon.formats-punctuation-and-capitalization": "st.rwx7vpwzj0",
     "strings.admin.ia.writer.lexicon.formats-direction-and-expansion": "st.8phdpy9y9j",
     "strings.admin.ia.writer.strings.interface": "st.b727y0amr9",
-    "strings.admin.ia.writer.strings.interface-actions": "st.40201wv91e",
-    "strings.admin.ia.writer.strings.interface-navigation": "st.51pmgg10qb",
+    "strings.admin.ia.writer.strings.interface-actions": "st.3fyz884ab8",
+    "strings.admin.ia.writer.strings.interface-navigation": "st.041fh8t2aw",
     "strings.admin.ia.writer.strings.interface-field-labels": "st.p2d26dqqmz",
     "strings.admin.ia.writer.strings.interface-statuses": "st.he6fba24a1",
     "strings.admin.ia.writer.strings.interface-counters": "st.6wrxtqw8am",
-    "strings.admin.ia.writer.strings.feedback": "st.5kpfw6a6nv",
+    "strings.admin.ia.writer.strings.feedback": "st.emkzstd78z",
     "strings.admin.ia.writer.strings.feedback-errors": "st.dje0a0cnq9",
-    "strings.admin.ia.writer.strings.feedback-warnings": "st.4bng8styjb",
+    "strings.admin.ia.writer.strings.feedback-warnings": "st.dbra6twj2c",
     "strings.admin.ia.writer.strings.feedback-confirmations": "st.g4s30egcn5",
-    "strings.admin.ia.writer.strings.feedback-empty": "st.xcv2y9sqx8",
+    "strings.admin.ia.writer.strings.feedback-empty": "st.832cm61fb6",
     "strings.admin.ia.writer.strings.feedback-loading": "st.70t3s09rbj",
-    "strings.admin.ia.writer.strings.identity": "st.bvd7hyte6a",
+    "strings.admin.ia.writer.strings.identity": "st.5frtfacf9x",
     "strings.admin.ia.writer.strings.identity-names": "st.skpvve4fe8",
     "strings.admin.ia.writer.strings.identity-taglines": "st.st1880erb2",
     "strings.admin.ia.writer.strings.identity-legal-lines": "st.8bm301txnd",
@@ -163,17 +163,17 @@
     "strings.admin.ia.writer.patterns.headings": "st.6nqhp5qy93",
     "strings.admin.ia.writer.patterns.headings-headlines": "st.h6mz9r7w7d",
     "strings.admin.ia.writer.patterns.headings-section-titles": "st.5kqz0v48zc",
-    "strings.admin.ia.writer.patterns.actions": "st.rwhzwt4b7p",
+    "strings.admin.ia.writer.patterns.actions": "st.3fyz884ab8",
     "strings.admin.ia.writer.patterns.actions-calls-to-action": "st.6dexa3khgm",
-    "strings.admin.ia.writer.patterns.actions-links": "st.ze89efcpxj",
-    "strings.admin.ia.writer.patterns.messages": "st.aapst8x4f5",
+    "strings.admin.ia.writer.patterns.actions-links": "st.qpwzxv0zxj",
+    "strings.admin.ia.writer.patterns.messages": "st.ceegez6aff",
     "strings.admin.ia.writer.patterns.messages-problems": "st.vx4ywky4f9",
     "strings.admin.ia.writer.patterns.messages-outcomes": "st.c53q2w47bn",
-    "strings.admin.ia.writer.patterns.messages-states": "st.phbdz0vmbr",
+    "strings.admin.ia.writer.patterns.messages-states": "st.31tdz2e8k4",
     "strings.admin.ia.writer.patterns.messages-help": "st.habn9ecpzh",
-    "strings.admin.ia.writer.patterns.forms": "st.hspm0ep0sn",
+    "strings.admin.ia.writer.patterns.forms": "st.8phn9m6kk3",
     "strings.admin.ia.writer.patterns.forms-fields": "st.a7r3ztf4xm",
-    "strings.admin.ia.writer.patterns.forms-consent": "st.mwvdsmc98v",
+    "strings.admin.ia.writer.patterns.forms-consent": "st.dntgjthd24",
     "strings.admin.ia.writer.patterns.data-and-lists": "st.6c6pr8epm2",
     "strings.admin.ia.writer.patterns.data-and-lists-items": "st.ky8z6b2216",
     "strings.admin.ia.writer.patterns.data-and-lists-tables": "st.q8fvpw2scz",
@@ -182,54 +182,54 @@
     "strings.admin.ia.writer.patterns.attribution-figures": "st.1en0bayyjk",
     "strings.admin.ia.writer.patterns.identity": "st.5frtfacf9x",
     "strings.admin.ia.writer.patterns.identity-messaging-kit": "st.gxxhq88fqz",
-    "strings.admin.ia.writer.passages.parts": "st.n80rfn0mbj",
-    "strings.admin.ia.writer.passages.parts-structure": "st.5dfntz4y3t",
-    "strings.admin.ia.writer.passages.parts-navigation": "st.p61mapavzm",
-    "strings.admin.ia.writer.passages.explain": "st.njxsqjy4t3",
-    "strings.admin.ia.writer.passages.explain-introductions": "st.3wb22637n8",
-    "strings.admin.ia.writer.passages.explain-reading": "st.rehe1hkmzq",
-    "strings.admin.ia.writer.passages.explain-promotion": "st.209xgwhe99",
-    "strings.admin.ia.writer.passages.explain-social-proof": "st.2rwsgtys4e",
-    "strings.admin.ia.writer.passages.explain-media": "st.m5q64dkf2q",
-    "strings.admin.ia.writer.passages.explain-guidance": "st.dpbz3e3vmc",
-    "strings.admin.ia.writer.passages.organize": "st.ttsd82k2er",
-    "strings.admin.ia.writer.passages.organize-collections": "st.ppj6rj3paa",
-    "strings.admin.ia.writer.passages.organize-comparison": "st.re9ykhdwk0",
-    "strings.admin.ia.writer.passages.organize-summaries": "st.3m9db8p082",
-    "strings.admin.ia.writer.passages.organize-records": "st.crq7e3n2zm",
-    "strings.admin.ia.writer.passages.organize-history": "st.r26j8cwren",
-    "strings.admin.ia.writer.passages.collect": "st.e7asvwmbep",
-    "strings.admin.ia.writer.passages.collect-forms": "st.b2cg9wq6eq",
-    "strings.admin.ia.writer.passages.collect-workflows": "st.xe08xmhhbb",
-    "strings.admin.ia.writer.passages.collect-preferences": "st.hke498zyw2",
-    "strings.admin.ia.writer.passages.collect-configuration": "st.j6ngc8pzjm",
-    "strings.admin.ia.writer.passages.collect-conversation": "st.j91rdzdacv",
-    "strings.admin.ia.writer.passages.collect-inputs": "st.mxm94xnkrk",
-    "strings.admin.ia.writer.passages.navigate": "st.w0q64sxz08",
-    "strings.admin.ia.writer.passages.navigate-indexes": "st.8b2zfv6jr5",
-    "strings.admin.ia.writer.passages.navigate-discovery": "st.gxvgmphcca",
-    "strings.admin.ia.writer.passages.respond": "st.3zknse5fm0",
-    "strings.admin.ia.writer.passages.respond-states": "st.n2e1k51zyq",
-    "strings.admin.ia.writer.passages.respond-messages": "st.gnpy9rkdz0",
+    "strings.admin.ia.writer.passages.parts": "st.etn3efp58r",
+    "strings.admin.ia.writer.passages.parts-structure": "st.1f0sc4veew",
+    "strings.admin.ia.writer.passages.parts-navigation": "st.041fh8t2aw",
+    "strings.admin.ia.writer.passages.explain": "st.9sjbpt05v6",
+    "strings.admin.ia.writer.passages.explain-introductions": "st.bqdskzn5py",
+    "strings.admin.ia.writer.passages.explain-reading": "st.m3ms0vxwzm",
+    "strings.admin.ia.writer.passages.explain-promotion": "st.snmj61r83s",
+    "strings.admin.ia.writer.passages.explain-social-proof": "st.m2r7rb9mhm",
+    "strings.admin.ia.writer.passages.explain-media": "st.2c9722yrzg",
+    "strings.admin.ia.writer.passages.explain-guidance": "st.gm2gyz20jx",
+    "strings.admin.ia.writer.passages.organize": "st.dqwhabg950",
+    "strings.admin.ia.writer.passages.organize-collections": "st.dx8799w49f",
+    "strings.admin.ia.writer.passages.organize-comparison": "st.47t4a0v4s2",
+    "strings.admin.ia.writer.passages.organize-summaries": "st.8x1r0ft6rc",
+    "strings.admin.ia.writer.passages.organize-records": "st.q484s9bz3w",
+    "strings.admin.ia.writer.passages.organize-history": "st.ctrfprmksn",
+    "strings.admin.ia.writer.passages.collect": "st.xz62vvkvj3",
+    "strings.admin.ia.writer.passages.collect-forms": "st.8phn9m6kk3",
+    "strings.admin.ia.writer.passages.collect-workflows": "st.b28mjpaq29",
+    "strings.admin.ia.writer.passages.collect-preferences": "st.jns9tmxsdf",
+    "strings.admin.ia.writer.passages.collect-configuration": "st.dcx4bn55xt",
+    "strings.admin.ia.writer.passages.collect-conversation": "st.91bq2h08er",
+    "strings.admin.ia.writer.passages.collect-inputs": "st.ehnm0c7e08",
+    "strings.admin.ia.writer.passages.navigate": "st.2rrmfet0fn",
+    "strings.admin.ia.writer.passages.navigate-indexes": "st.tb7mk984x7",
+    "strings.admin.ia.writer.passages.navigate-discovery": "st.5syp7271te",
+    "strings.admin.ia.writer.passages.respond": "st.m7gtk6hcw8",
+    "strings.admin.ia.writer.passages.respond-states": "st.31tdz2e8k4",
+    "strings.admin.ia.writer.passages.respond-messages": "st.ceegez6aff",
     "strings.admin.ia.writer.narratives.web": "st.97hj290sjq",
     "strings.admin.ia.writer.narratives.web-site-and-demo": "st.0ge0cy6ekd",
     "strings.admin.ia.writer.narratives.web-app-and-admin": "st.qasyg0z8yf",
     "strings.admin.ia.writer.narratives.web-chrome": "st.vf2mpsf5jt",
-    "strings.admin.ia.writer.narratives.documents": "st.d97pr7tg5f",
+    "strings.admin.ia.writer.narratives.documents": "st.2091r9z4bq",
     "strings.admin.ia.writer.narratives.documents-docs": "st.7fvy4xm2pe",
-    "strings.admin.ia.writer.narratives.documents-slides": "st.mt671hy07a",
+    "strings.admin.ia.writer.narratives.documents-slides": "st.33rp5w6vzk",
     "strings.admin.ia.writer.narratives.communications": "st.7tfcesvhmb",
-    "strings.admin.ia.writer.narratives.communications-messages": "st.3p6pmjybxb",
-    "strings.admin.ia.writer.narratives.communications-videos": "st.2mjfp1kwg0",
+    "strings.admin.ia.writer.narratives.communications-messages": "st.ceegez6aff",
+    "strings.admin.ia.writer.narratives.communications-videos": "st.rgakrp0zw4",
     "strings.admin.ia.publisher.websites.site": "st.kx1a2bkxzg",
     "strings.admin.ia.publisher.websites.admin": "st.r0x9gr9eea",
     "strings.admin.ia.publisher.websites.auth": "st.qht022jear",
     "strings.admin.ia.publisher.websites.app": "st.t45b74f67z",
     "strings.admin.ia.publisher.websites.demo": "st.wnw31a1vzw",
-    "strings.admin.ia.publisher.documents.docs": "st.p94b9dxe3q",
+    "strings.admin.ia.publisher.documents.docs": "st.7fvy4xm2pe",
     "strings.admin.ia.publisher.presentations.decks": "st.rn3b9zp74a",
     "strings.admin.ia.publisher.videos.clips": "st.zh59g89x8w",
-    "strings.admin.ia.publisher.messages.email": "st.yvb78meac6",
+    "strings.admin.ia.publisher.messages.email": "st.5bvvjt22m9",
     "strings.admin.ia.publisher.social.posts": "st.g3t2t9dxdz",
     "strings.admin.ia.designer.tokens.color": "st.k2hbf8chyb",
     "strings.admin.ia.designer.tokens.color-engine": "st.bw8n6df3hn",
@@ -241,7 +241,7 @@
     "strings.admin.ia.designer.tokens.type": "st.753hsc4ym2",
     "strings.admin.ia.designer.tokens.type-fonts": "st.xx87k8vc06",
     "strings.admin.ia.designer.tokens.type-sizes": "st.0dmzmb7tpe",
-    "strings.admin.ia.designer.tokens.type-spacing": "st.qrvmkqp6hq",
+    "strings.admin.ia.designer.tokens.type-spacing": "st.mn2v0dgaj8",
     "strings.admin.ia.designer.tokens.space": "st.5r9jd8zqt1",
     "strings.admin.ia.designer.tokens.space-layout": "st.ekd4wtwz4t",
     "strings.admin.ia.designer.tokens.space-rhythm": "st.qnqy2cwr23",
@@ -258,12 +258,12 @@
     "strings.admin.ia.designer.tokens.motion-travel": "st.a0cr4wtghk",
     "strings.admin.ia.designer.tokens.interaction": "st.cpkf5zm4zm",
     "strings.admin.ia.designer.tokens.interaction-controls": "st.9wy8met97b",
-    "strings.admin.ia.designer.tokens.interaction-states": "st.mt3nvmdc3j",
-    "strings.admin.ia.designer.assets.logo": "st.5mwpnsqwvz",
+    "strings.admin.ia.designer.tokens.interaction-states": "st.31tdz2e8k4",
+    "strings.admin.ia.designer.assets.logo": "st.dgdbty02r2",
     "strings.admin.ia.designer.assets.logo-artwork": "st.gqzt107c6n",
     "strings.admin.ia.designer.assets.app-identity": "st.ns0mdw4gx1",
     "strings.admin.ia.designer.assets.app-identity-browser": "st.17dygwgjxb",
-    "strings.admin.ia.designer.assets.app-identity-application": "st.v67nyypq4j",
+    "strings.admin.ia.designer.assets.app-identity-application": "st.gj32snjd4m",
     "strings.admin.ia.designer.assets.icons": "st.5h1mxsvx9m",
     "strings.admin.ia.designer.assets.icons-navigation": "st.041fh8t2aw",
     "strings.admin.ia.designer.assets.icons-actions": "st.3fyz884ab8",
@@ -273,48 +273,48 @@
     "strings.admin.ia.designer.assets.imagery-framing": "st.tzgyprch55",
     "strings.admin.ia.designer.assets.imagery-resources": "st.ek767vyey9",
     "strings.admin.ia.designer.assets.imagery-patterns": "st.wkfv7m7130",
-    "strings.admin.ia.designer.components.actions": "st.43j9gcptwk",
+    "strings.admin.ia.designer.components.actions": "st.3fyz884ab8",
     "strings.admin.ia.designer.components.actions-buttons": "st.0ksqg9ytc4",
     "strings.admin.ia.designer.components.actions-menus": "st.hkabprg6q0",
     "strings.admin.ia.designer.components.actions-toolbars": "st.2jypw3nsbk",
-    "strings.admin.ia.designer.components.inputs": "st.pda59gg768",
-    "strings.admin.ia.designer.components.inputs-form": "st.kqjtvamysw",
+    "strings.admin.ia.designer.components.inputs": "st.ehnm0c7e08",
+    "strings.admin.ia.designer.components.inputs-form": "st.17r7xa6wg9",
     "strings.admin.ia.designer.components.inputs-text": "st.fg1dznm6qa",
     "strings.admin.ia.designer.components.inputs-choice": "st.y86qzcf965",
     "strings.admin.ia.designer.components.inputs-tags": "st.bg3ywk0r5m",
     "strings.admin.ia.designer.components.inputs-number": "st.k43ecvym5m",
-    "strings.admin.ia.designer.components.inputs-date": "st.mp02ad33xd",
-    "strings.admin.ia.designer.components.inputs-color": "st.th7s612c9v",
+    "strings.admin.ia.designer.components.inputs-date": "st.5jrhbbr5sm",
+    "strings.admin.ia.designer.components.inputs-color": "st.k2hbf8chyb",
     "strings.admin.ia.designer.components.inputs-files": "st.0d1qng8cf7",
     "strings.admin.ia.designer.components.display": "st.pjwmeq68cy",
     "strings.admin.ia.designer.components.display-data": "st.vyj88q7h7j",
     "strings.admin.ia.designer.components.display-labels": "st.xwf7j0j70c",
-    "strings.admin.ia.designer.components.display-media": "st.eetqq5y604",
+    "strings.admin.ia.designer.components.display-media": "st.2c9722yrzg",
     "strings.admin.ia.designer.components.display-assets": "st.qxaxqewq3p",
     "strings.admin.ia.designer.components.charts-core": "st.b05f34zp0a",
     "strings.admin.ia.designer.components.charts-compact": "st.aazhemgrz0",
     "strings.admin.ia.designer.components.charts-analytic": "st.am45qc5apy",
-    "strings.admin.ia.designer.components.display-content": "st.x95qdk70h6",
+    "strings.admin.ia.designer.components.display-content": "st.ne29tsc3gn",
     "strings.admin.ia.designer.components.feedback": "st.emkzstd78z",
-    "strings.admin.ia.designer.components.feedback-messages": "st.n0wrz941gm",
+    "strings.admin.ia.designer.components.feedback-messages": "st.ceegez6aff",
     "strings.admin.ia.designer.components.feedback-indicators": "st.f9s12jaads",
     "strings.admin.ia.designer.components.feedback-progress": "st.nak3gmqdqf",
-    "strings.admin.ia.designer.components.navigation": "st.zn3de0gy72",
+    "strings.admin.ia.designer.components.navigation": "st.041fh8t2aw",
     "strings.admin.ia.designer.components.navigation-links": "st.qpwzxv0zxj",
-    "strings.admin.ia.designer.components.navigation-panels": "st.7ywhhgzjnq",
+    "strings.admin.ia.designer.components.navigation-panels": "st.kqevjtbwt9",
     "strings.admin.ia.designer.components.navigation-trees": "st.1e15003kax",
     "strings.admin.ia.designer.components.containment": "st.jws3x98be7",
-    "strings.admin.ia.designer.components.containment-structure": "st.j4376qs2d9",
+    "strings.admin.ia.designer.components.containment-structure": "st.1f0sc4veew",
     "strings.admin.ia.designer.components.containment-overlays": "st.j4r15tzjhq",
     "strings.admin.ia.designer.sections.parts": "st.etn3efp58r",
     "strings.admin.ia.designer.sections.parts-structure": "st.1f0sc4veew",
-    "strings.admin.ia.designer.sections.parts-navigation": "st.srpwh5w0mq",
+    "strings.admin.ia.designer.sections.parts-navigation": "st.041fh8t2aw",
     "strings.admin.ia.designer.sections.explain": "st.9sjbpt05v6",
     "strings.admin.ia.designer.sections.explain-introductions": "st.bqdskzn5py",
     "strings.admin.ia.designer.sections.explain-reading": "st.m3ms0vxwzm",
     "strings.admin.ia.designer.sections.explain-promotion": "st.snmj61r83s",
     "strings.admin.ia.designer.sections.explain-social-proof": "st.m2r7rb9mhm",
-    "strings.admin.ia.designer.sections.explain-media": "st.gbd1aggpfy",
+    "strings.admin.ia.designer.sections.explain-media": "st.2c9722yrzg",
     "strings.admin.ia.designer.sections.explain-guidance": "st.gm2gyz20jx",
     "strings.admin.ia.designer.sections.organize": "st.dqwhabg950",
     "strings.admin.ia.designer.sections.organize-collections": "st.dx8799w49f",
@@ -328,28 +328,28 @@
     "strings.admin.ia.designer.sections.collect-preferences": "st.jns9tmxsdf",
     "strings.admin.ia.designer.sections.collect-configuration": "st.dcx4bn55xt",
     "strings.admin.ia.designer.sections.collect-conversation": "st.91bq2h08er",
-    "strings.admin.ia.designer.sections.collect-inputs": "st.end2wnfhnd",
+    "strings.admin.ia.designer.sections.collect-inputs": "st.ehnm0c7e08",
     "strings.admin.ia.designer.sections.navigate": "st.2rrmfet0fn",
     "strings.admin.ia.designer.sections.navigate-indexes": "st.tb7mk984x7",
     "strings.admin.ia.designer.sections.navigate-discovery": "st.5syp7271te",
     "strings.admin.ia.designer.sections.respond": "st.m7gtk6hcw8",
     "strings.admin.ia.designer.sections.respond-states": "st.31tdz2e8k4",
-    "strings.admin.ia.designer.sections.respond-messages": "st.s2d41mwbnv",
+    "strings.admin.ia.designer.sections.respond-messages": "st.ceegez6aff",
     "strings.admin.ia.designer.frames.page-shells": "st.s7hnkgzy0j",
-    "strings.admin.ia.designer.frames.page-shells-documents": "st.51jajdr2tv",
+    "strings.admin.ia.designer.frames.page-shells-documents": "st.2091r9z4bq",
     "strings.admin.ia.designer.frames.page-shells-workspaces": "st.0xfvcbg2f8",
     "strings.admin.ia.designer.frames.page-shells-authentication": "st.16are0ntsw",
     "strings.admin.ia.designer.frames.regions": "st.6sxfy643cm",
     "strings.admin.ia.designer.frames.headers": "st.679ayz28vy",
-    "strings.admin.ia.designer.frames.navigation": "st.xdqbf8hxsv",
+    "strings.admin.ia.designer.frames.navigation": "st.041fh8t2aw",
     "strings.admin.ia.designer.frames.panels": "st.dg3e6jc56v",
     "strings.admin.ia.designer.frames.footers": "st.5s6q38afeg",
     "strings.admin.ia.designer.frames.overlay-shells": "st.qzhekwkxke",
     "strings.admin.ia.designer.frames.overlay-shells-panels": "st.n3jkssxad5",
     "strings.admin.ia.designer.frames.overlay-shells-commands": "st.yq46yb2vxy",
     "strings.admin.item.actionsLabel": "st.619a8b5bc8",
-    "strings.admin.table.label": "st.338b4d8c7d",
-    "strings.admin.chat.label": "st.07sw5kbkv3",
+    "strings.admin.table.label": "st.q484s9bz3w",
+    "strings.admin.chat.label": "st.91bq2h08er",
     "strings.admin.chat.placeholder": "st.fc3agfvrnf",
     "strings.admin.chat.logLabel": "st.3rzjxf85sq",
     "strings.admin.chat.userLabel": "st.xrvgr6p58x",
@@ -369,73 +369,9 @@
     "strings.admin.chat.sendLabel": "st.7raxswq7j0",
     "strings.admin.chat.copyCodeLabel": "st.m3kz564zjf",
     "strings.admin.chat.copiedLabel": "st.eg6faz5z7e",
-    "strings.admin.chat.copyUnavailableLabel": "st.rrjbhez8qb"
+    "strings.admin.chat.copyUnavailableLabel": "st.6pe6jzsykm"
   },
   "records": [
-    {
-      "id": "st.dx2qfvr17a",
-      "leaf": "strings.page-titles",
-      "context": "strings.admin.page.designer",
-      "status": "draft",
-      "origin": "authored",
-      "text": "Designer"
-    },
-    {
-      "id": "st.xt00332n8s",
-      "leaf": "strings.page-titles",
-      "context": "strings.admin.page.writer",
-      "status": "draft",
-      "origin": "authored",
-      "text": "Writer"
-    },
-    {
-      "id": "st.pn37v97g0q",
-      "leaf": "strings.page-titles",
-      "context": "strings.admin.page.publisher",
-      "status": "draft",
-      "origin": "authored",
-      "text": "Publisher"
-    },
-    {
-      "id": "st.xja32c6gn7",
-      "leaf": "strings.navigation",
-      "context": "strings.admin.group.designer.tokens",
-      "status": "draft",
-      "origin": "authored",
-      "text": "Tokens"
-    },
-    {
-      "id": "st.3690j620r5",
-      "leaf": "strings.navigation",
-      "context": "strings.admin.group.designer.assets",
-      "status": "draft",
-      "origin": "authored",
-      "text": "Assets"
-    },
-    {
-      "id": "st.ajd8bc65jv",
-      "leaf": "strings.navigation",
-      "context": "strings.admin.group.designer.components",
-      "status": "draft",
-      "origin": "authored",
-      "text": "Components"
-    },
-    {
-      "id": "st.zt92wd2m2t",
-      "leaf": "strings.navigation",
-      "context": "strings.admin.group.designer.sections",
-      "status": "draft",
-      "origin": "authored",
-      "text": "Sections"
-    },
-    {
-      "id": "st.gn129089ct",
-      "leaf": "strings.navigation",
-      "context": "strings.admin.group.designer.frames",
-      "status": "draft",
-      "origin": "authored",
-      "text": "Frames"
-    },
     {
       "id": "st.gg07zmhj67",
       "leaf": "strings.navigation",
@@ -451,14 +387,6 @@
       "status": "draft",
       "origin": "authored",
       "text": "Strings"
-    },
-    {
-      "id": "st.q36jnsvm6h",
-      "leaf": "strings.navigation",
-      "context": "strings.admin.group.writer.patterns",
-      "status": "draft",
-      "origin": "authored",
-      "text": "Patterns"
     },
     {
       "id": "st.62cj4sfxwy",
@@ -485,38 +413,6 @@
       "text": "Websites"
     },
     {
-      "id": "st.bssmc915mb",
-      "leaf": "strings.navigation",
-      "context": "strings.admin.group.publisher.documents",
-      "status": "draft",
-      "origin": "authored",
-      "text": "Documents"
-    },
-    {
-      "id": "st.qrsdnqwfm8",
-      "leaf": "strings.navigation",
-      "context": "strings.admin.group.publisher.presentations",
-      "status": "draft",
-      "origin": "authored",
-      "text": "Presentations"
-    },
-    {
-      "id": "st.w0ds5aa7mm",
-      "leaf": "strings.navigation",
-      "context": "strings.admin.group.publisher.videos",
-      "status": "draft",
-      "origin": "authored",
-      "text": "Videos"
-    },
-    {
-      "id": "st.8myj0zrkya",
-      "leaf": "strings.navigation",
-      "context": "strings.admin.group.publisher.messages",
-      "status": "draft",
-      "origin": "authored",
-      "text": "Messages"
-    },
-    {
       "id": "st.9scvyavt6d",
       "leaf": "strings.navigation",
       "context": "strings.admin.group.publisher.social",
@@ -531,14 +427,6 @@
       "status": "draft",
       "origin": "authored",
       "text": "Other"
-    },
-    {
-      "id": "st.csdw9wey6z",
-      "leaf": "strings.field-labels",
-      "context": "strings.admin.column.preview",
-      "status": "draft",
-      "origin": "authored",
-      "text": "Preview"
     },
     {
       "id": "st.d0n2nss87p",
@@ -557,44 +445,12 @@
       "text": "ID"
     },
     {
-      "id": "st.46c3xdgcqm",
-      "leaf": "strings.field-labels",
-      "context": "strings.admin.column.source",
-      "status": "draft",
-      "origin": "authored",
-      "text": "Source"
-    },
-    {
-      "id": "st.wkmten72mk",
-      "leaf": "strings.field-labels",
-      "context": "strings.admin.column.status",
-      "status": "draft",
-      "origin": "authored",
-      "text": "Status"
-    },
-    {
-      "id": "st.9z6aw5kpja",
-      "leaf": "strings.field-labels",
-      "context": "strings.admin.column.usedBy",
-      "status": "draft",
-      "origin": "authored",
-      "text": "Used by"
-    },
-    {
       "id": "st.ek01gh837s",
       "leaf": "strings.field-labels",
       "context": "strings.admin.column.key",
       "status": "draft",
       "origin": "authored",
       "text": "Key"
-    },
-    {
-      "id": "st.0gw138v1dn",
-      "leaf": "strings.field-labels",
-      "context": "strings.admin.column.text",
-      "status": "draft",
-      "origin": "authored",
-      "text": "Text"
     },
     {
       "id": "st.jfczqkbnt9",
@@ -611,14 +467,6 @@
       "status": "draft",
       "origin": "authored",
       "text": "Used in"
-    },
-    {
-      "id": "st.n84v57p7nm",
-      "leaf": "strings.field-labels",
-      "context": "strings.admin.column.item",
-      "status": "draft",
-      "origin": "authored",
-      "text": "Item"
     },
     {
       "id": "st.75jqvdcce0",
@@ -661,38 +509,6 @@
       "text": "Direction"
     },
     {
-      "id": "st.rnhq8akq8m",
-      "leaf": "strings.field-labels",
-      "context": "strings.admin.column.sections",
-      "status": "draft",
-      "origin": "authored",
-      "text": "Sections"
-    },
-    {
-      "id": "st.aptm2ejxyv",
-      "leaf": "strings.field-labels",
-      "context": "strings.admin.column.releases",
-      "status": "draft",
-      "origin": "authored",
-      "text": "Releases"
-    },
-    {
-      "id": "st.1hfmkewyh1",
-      "leaf": "strings.statuses",
-      "context": "strings.admin.status.draft",
-      "status": "draft",
-      "origin": "authored",
-      "text": "Draft"
-    },
-    {
-      "id": "st.fwrx8ws8jq",
-      "leaf": "strings.statuses",
-      "context": "strings.admin.status.stable",
-      "status": "draft",
-      "origin": "authored",
-      "text": "Stable"
-    },
-    {
       "id": "st.sp1y1xry8m",
       "leaf": "strings.statuses",
       "context": "strings.admin.status.held",
@@ -709,68 +525,12 @@
       "text": "Deprecated"
     },
     {
-      "id": "st.be9vhxtcbp",
-      "leaf": "strings.statuses",
-      "context": "strings.admin.status.approved",
-      "status": "draft",
-      "origin": "authored",
-      "text": "Approved"
-    },
-    {
-      "id": "st.15d9a6vhv6",
-      "leaf": "strings.statuses",
-      "context": "strings.admin.status.retired",
-      "status": "draft",
-      "origin": "authored",
-      "text": "Retired"
-    },
-    {
-      "id": "st.23ssre580y",
-      "leaf": "strings.statuses",
-      "context": "strings.admin.status.inReview",
-      "status": "draft",
-      "origin": "authored",
-      "text": "In review"
-    },
-    {
-      "id": "st.069fm91g06",
-      "leaf": "strings.statuses",
-      "context": "strings.admin.status.active",
-      "status": "draft",
-      "origin": "authored",
-      "text": "Active"
-    },
-    {
       "id": "st.715kwckmxs",
       "leaf": "strings.statuses",
       "context": "strings.admin.status.failing",
       "status": "draft",
       "origin": "authored",
       "text": "Failing"
-    },
-    {
-      "id": "st.xdza0byhk0",
-      "leaf": "strings.statuses",
-      "context": "strings.admin.status.needsInput",
-      "status": "draft",
-      "origin": "authored",
-      "text": "Needs input"
-    },
-    {
-      "id": "st.27kkf1a9n7",
-      "leaf": "strings.statuses",
-      "context": "strings.admin.status.waiting",
-      "status": "draft",
-      "origin": "authored",
-      "text": "Waiting"
-    },
-    {
-      "id": "st.sywts2n14e",
-      "leaf": "strings.statuses",
-      "context": "strings.admin.status.done",
-      "status": "draft",
-      "origin": "authored",
-      "text": "Done"
     },
     {
       "id": "st.0kxbzn2kpp",
@@ -813,20 +573,6 @@
       ]
     },
     {
-      "id": "st.bxjerdr80v",
-      "leaf": "strings.counters",
-      "context": "strings.admin.stats.results",
-      "status": "draft",
-      "origin": "authored",
-      "text": "{count, plural, one {# result} other {# results}}",
-      "args": [
-        {
-          "name": "count",
-          "type": "plural"
-        }
-      ]
-    },
-    {
       "id": "st.kh6eqvydzq",
       "leaf": "strings.counters",
       "context": "strings.admin.stats.locales",
@@ -861,22 +607,6 @@
       "status": "draft",
       "origin": "authored",
       "text": "Pin to chat"
-    },
-    {
-      "id": "st.sjqs1adxf1",
-      "leaf": "strings.actions",
-      "context": "strings.admin.action.openItem",
-      "status": "draft",
-      "origin": "authored",
-      "text": "Open item"
-    },
-    {
-      "id": "st.6vw6md8f15",
-      "leaf": "strings.actions",
-      "context": "strings.admin.action.more",
-      "status": "draft",
-      "origin": "authored",
-      "text": "More actions"
     },
     {
       "id": "st.p5hwkjac96",
@@ -951,22 +681,6 @@
       ]
     },
     {
-      "id": "st.rnpwrb22ae",
-      "leaf": "strings.actions",
-      "context": "strings.admin.toggle.outline",
-      "status": "draft",
-      "origin": "authored",
-      "text": "On this page"
-    },
-    {
-      "id": "st.srjsn9avg0",
-      "leaf": "strings.actions",
-      "context": "strings.admin.toggle.chat",
-      "status": "draft",
-      "origin": "authored",
-      "text": "Chat"
-    },
-    {
       "id": "st.7s4a5sw7kz",
       "leaf": "strings.actions",
       "context": "strings.admin.toggle.openOutline",
@@ -981,30 +695,6 @@
       "status": "draft",
       "origin": "authored",
       "text": "Close page outline"
-    },
-    {
-      "id": "st.kvknqkmsbz",
-      "leaf": "strings.actions",
-      "context": "strings.admin.toggle.openChat",
-      "status": "draft",
-      "origin": "authored",
-      "text": "Open chat"
-    },
-    {
-      "id": "st.5qvxdz61nr",
-      "leaf": "strings.actions",
-      "context": "strings.admin.toggle.closeChat",
-      "status": "draft",
-      "origin": "authored",
-      "text": "Close chat"
-    },
-    {
-      "id": "st.ffqnafj61v",
-      "leaf": "strings.navigation",
-      "context": "strings.admin.outline.label",
-      "status": "draft",
-      "origin": "authored",
-      "text": "On this page"
     },
     {
       "id": "st.y71f1qgzbg",
@@ -1051,14 +741,6 @@
       "text": "There are no records in this group."
     },
     {
-      "id": "st.e28fseajmw",
-      "leaf": "strings.empty",
-      "context": "strings.admin.noResults.title",
-      "status": "draft",
-      "origin": "authored",
-      "text": "No results"
-    },
-    {
       "id": "st.qctsaqpgr7",
       "leaf": "strings.empty",
       "context": "strings.admin.noResults.description",
@@ -1089,20 +771,6 @@
       ]
     },
     {
-      "id": "st.e44z6d5szx",
-      "leaf": "strings.page-titles",
-      "context": "strings.admin.item.heading",
-      "status": "draft",
-      "origin": "authored",
-      "text": "{name}",
-      "args": [
-        {
-          "name": "name",
-          "type": "string"
-        }
-      ]
-    },
-    {
       "id": "st.18b6pct3am",
       "leaf": "strings.errors",
       "context": "strings.admin.item.notFound",
@@ -1119,44 +787,12 @@
       "text": "This item is not available on this page."
     },
     {
-      "id": "st.vqpf292tkd",
-      "leaf": "strings.field-labels",
-      "context": "strings.admin.item.details",
-      "status": "draft",
-      "origin": "authored",
-      "text": "Details"
-    },
-    {
       "id": "st.8g9tch05w2",
       "leaf": "strings.field-labels",
       "context": "strings.admin.item.locales",
       "status": "draft",
       "origin": "authored",
       "text": "Locales"
-    },
-    {
-      "id": "st.ne53aycmzh",
-      "leaf": "strings.field-labels",
-      "context": "strings.admin.item.sections",
-      "status": "draft",
-      "origin": "authored",
-      "text": "Sections"
-    },
-    {
-      "id": "st.dvn7b2t1cp",
-      "leaf": "strings.field-labels",
-      "context": "strings.admin.item.releases",
-      "status": "draft",
-      "origin": "authored",
-      "text": "Releases"
-    },
-    {
-      "id": "st.01zhtxk93k",
-      "leaf": "strings.field-labels",
-      "context": "strings.admin.item.source",
-      "status": "draft",
-      "origin": "authored",
-      "text": "Source"
     },
     {
       "id": "st.k31tyhmpf8",
@@ -1173,64 +809,6 @@
       "status": "draft",
       "origin": "authored",
       "text": "Members"
-    },
-    {
-      "id": "st.485tnt23jk",
-      "leaf": "strings.field-labels",
-      "context": "strings.admin.item.usedBy",
-      "status": "draft",
-      "origin": "authored",
-      "text": "Used by"
-    },
-    {
-      "id": "st.20qddwnvpw",
-      "leaf": "strings.actions",
-      "context": "strings.admin.pagination.previous",
-      "status": "draft",
-      "origin": "authored",
-      "text": "Previous page"
-    },
-    {
-      "id": "st.frd044f8bf",
-      "leaf": "strings.actions",
-      "context": "strings.admin.pagination.next",
-      "status": "draft",
-      "origin": "authored",
-      "text": "Next page"
-    },
-    {
-      "id": "st.qvbets52ne",
-      "leaf": "strings.field-labels",
-      "context": "strings.admin.pagination.pageSize",
-      "status": "draft",
-      "origin": "authored",
-      "text": "Rows per page"
-    },
-    {
-      "id": "st.g19spems75",
-      "leaf": "strings.navigation",
-      "context": "strings.admin.pagination.label",
-      "status": "draft",
-      "origin": "authored",
-      "text": "Pagination"
-    },
-    {
-      "id": "st.88wbh5rn5a",
-      "leaf": "strings.counters",
-      "context": "strings.admin.pagination.page",
-      "status": "draft",
-      "origin": "authored",
-      "text": "Page {page, number, integer} of {pages, number, integer}",
-      "args": [
-        {
-          "name": "page",
-          "type": "number"
-        },
-        {
-          "name": "pages",
-          "type": "number"
-        }
-      ]
     },
     {
       "id": "st.9njpzn8mym",
@@ -1329,20 +907,6 @@
       "text": "Not published"
     },
     {
-      "id": "st.hge0431mt8",
-      "leaf": "strings.captions",
-      "context": "strings.admin.date.absolute",
-      "status": "draft",
-      "origin": "authored",
-      "text": "{date, date, long}",
-      "args": [
-        {
-          "name": "date",
-          "type": "date"
-        }
-      ]
-    },
-    {
       "id": "st.frjh2m66m5",
       "leaf": "strings.navigation",
       "context": "strings.admin.ia.writer.lexicon.voice",
@@ -1365,14 +929,6 @@
       "status": "draft",
       "origin": "authored",
       "text": "Person and mood"
-    },
-    {
-      "id": "st.d8f4vhdket",
-      "leaf": "strings.navigation",
-      "context": "strings.admin.ia.writer.lexicon.voice-rhythm",
-      "status": "draft",
-      "origin": "authored",
-      "text": "Rhythm"
     },
     {
       "id": "st.b0d38ct0jx",
@@ -1519,22 +1075,6 @@
       "text": "Interface"
     },
     {
-      "id": "st.40201wv91e",
-      "leaf": "strings.navigation",
-      "context": "strings.admin.ia.writer.strings.interface-actions",
-      "status": "draft",
-      "origin": "authored",
-      "text": "Actions"
-    },
-    {
-      "id": "st.51pmgg10qb",
-      "leaf": "strings.navigation",
-      "context": "strings.admin.ia.writer.strings.interface-navigation",
-      "status": "draft",
-      "origin": "authored",
-      "text": "Navigation"
-    },
-    {
       "id": "st.p2d26dqqmz",
       "leaf": "strings.navigation",
       "context": "strings.admin.ia.writer.strings.interface-field-labels",
@@ -1559,28 +1099,12 @@
       "text": "Counters"
     },
     {
-      "id": "st.5kpfw6a6nv",
-      "leaf": "strings.navigation",
-      "context": "strings.admin.ia.writer.strings.feedback",
-      "status": "draft",
-      "origin": "authored",
-      "text": "Feedback"
-    },
-    {
       "id": "st.dje0a0cnq9",
       "leaf": "strings.navigation",
       "context": "strings.admin.ia.writer.strings.feedback-errors",
       "status": "draft",
       "origin": "authored",
       "text": "Errors"
-    },
-    {
-      "id": "st.4bng8styjb",
-      "leaf": "strings.navigation",
-      "context": "strings.admin.ia.writer.strings.feedback-warnings",
-      "status": "draft",
-      "origin": "authored",
-      "text": "Warnings"
     },
     {
       "id": "st.g4s30egcn5",
@@ -1591,28 +1115,12 @@
       "text": "Confirmations"
     },
     {
-      "id": "st.xcv2y9sqx8",
-      "leaf": "strings.navigation",
-      "context": "strings.admin.ia.writer.strings.feedback-empty",
-      "status": "draft",
-      "origin": "authored",
-      "text": "Empty"
-    },
-    {
       "id": "st.70t3s09rbj",
       "leaf": "strings.navigation",
       "context": "strings.admin.ia.writer.strings.feedback-loading",
       "status": "draft",
       "origin": "authored",
       "text": "Loading"
-    },
-    {
-      "id": "st.bvd7hyte6a",
-      "leaf": "strings.navigation",
-      "context": "strings.admin.ia.writer.strings.identity",
-      "status": "draft",
-      "origin": "authored",
-      "text": "Identity"
     },
     {
       "id": "st.skpvve4fe8",
@@ -1735,36 +1243,12 @@
       "text": "Section titles"
     },
     {
-      "id": "st.rwhzwt4b7p",
-      "leaf": "strings.navigation",
-      "context": "strings.admin.ia.writer.patterns.actions",
-      "status": "draft",
-      "origin": "authored",
-      "text": "Actions"
-    },
-    {
       "id": "st.6dexa3khgm",
       "leaf": "strings.navigation",
       "context": "strings.admin.ia.writer.patterns.actions-calls-to-action",
       "status": "draft",
       "origin": "authored",
       "text": "Calls to action"
-    },
-    {
-      "id": "st.ze89efcpxj",
-      "leaf": "strings.navigation",
-      "context": "strings.admin.ia.writer.patterns.actions-links",
-      "status": "draft",
-      "origin": "authored",
-      "text": "Links"
-    },
-    {
-      "id": "st.aapst8x4f5",
-      "leaf": "strings.navigation",
-      "context": "strings.admin.ia.writer.patterns.messages",
-      "status": "draft",
-      "origin": "authored",
-      "text": "Messages"
     },
     {
       "id": "st.vx4ywky4f9",
@@ -1783,14 +1267,6 @@
       "text": "Outcomes"
     },
     {
-      "id": "st.phbdz0vmbr",
-      "leaf": "strings.navigation",
-      "context": "strings.admin.ia.writer.patterns.messages-states",
-      "status": "draft",
-      "origin": "authored",
-      "text": "States"
-    },
-    {
       "id": "st.habn9ecpzh",
       "leaf": "strings.navigation",
       "context": "strings.admin.ia.writer.patterns.messages-help",
@@ -1799,28 +1275,12 @@
       "text": "Help"
     },
     {
-      "id": "st.hspm0ep0sn",
-      "leaf": "strings.navigation",
-      "context": "strings.admin.ia.writer.patterns.forms",
-      "status": "draft",
-      "origin": "authored",
-      "text": "Forms"
-    },
-    {
       "id": "st.a7r3ztf4xm",
       "leaf": "strings.navigation",
       "context": "strings.admin.ia.writer.patterns.forms-fields",
       "status": "draft",
       "origin": "authored",
       "text": "Fields"
-    },
-    {
-      "id": "st.mwvdsmc98v",
-      "leaf": "strings.navigation",
-      "context": "strings.admin.ia.writer.patterns.forms-consent",
-      "status": "draft",
-      "origin": "authored",
-      "text": "Consent"
     },
     {
       "id": "st.6c6pr8epm2",
@@ -1871,252 +1331,12 @@
       "text": "Figures"
     },
     {
-      "id": "st.5frtfacf9x",
-      "leaf": "strings.navigation",
-      "context": "strings.admin.ia.writer.patterns.identity",
-      "status": "draft",
-      "origin": "authored",
-      "text": "Identity"
-    },
-    {
       "id": "st.gxxhq88fqz",
       "leaf": "strings.navigation",
       "context": "strings.admin.ia.writer.patterns.identity-messaging-kit",
       "status": "draft",
       "origin": "authored",
       "text": "Messaging kit"
-    },
-    {
-      "id": "st.n80rfn0mbj",
-      "leaf": "strings.navigation",
-      "context": "strings.admin.ia.writer.passages.parts",
-      "status": "draft",
-      "origin": "authored",
-      "text": "Parts"
-    },
-    {
-      "id": "st.5dfntz4y3t",
-      "leaf": "strings.navigation",
-      "context": "strings.admin.ia.writer.passages.parts-structure",
-      "status": "draft",
-      "origin": "authored",
-      "text": "Structure"
-    },
-    {
-      "id": "st.p61mapavzm",
-      "leaf": "strings.navigation",
-      "context": "strings.admin.ia.writer.passages.parts-navigation",
-      "status": "draft",
-      "origin": "authored",
-      "text": "Navigation"
-    },
-    {
-      "id": "st.njxsqjy4t3",
-      "leaf": "strings.navigation",
-      "context": "strings.admin.ia.writer.passages.explain",
-      "status": "draft",
-      "origin": "authored",
-      "text": "Explain"
-    },
-    {
-      "id": "st.3wb22637n8",
-      "leaf": "strings.navigation",
-      "context": "strings.admin.ia.writer.passages.explain-introductions",
-      "status": "draft",
-      "origin": "authored",
-      "text": "Introductions"
-    },
-    {
-      "id": "st.rehe1hkmzq",
-      "leaf": "strings.navigation",
-      "context": "strings.admin.ia.writer.passages.explain-reading",
-      "status": "draft",
-      "origin": "authored",
-      "text": "Reading"
-    },
-    {
-      "id": "st.209xgwhe99",
-      "leaf": "strings.navigation",
-      "context": "strings.admin.ia.writer.passages.explain-promotion",
-      "status": "draft",
-      "origin": "authored",
-      "text": "Promotion"
-    },
-    {
-      "id": "st.2rwsgtys4e",
-      "leaf": "strings.navigation",
-      "context": "strings.admin.ia.writer.passages.explain-social-proof",
-      "status": "draft",
-      "origin": "authored",
-      "text": "Social proof"
-    },
-    {
-      "id": "st.m5q64dkf2q",
-      "leaf": "strings.navigation",
-      "context": "strings.admin.ia.writer.passages.explain-media",
-      "status": "draft",
-      "origin": "authored",
-      "text": "Media"
-    },
-    {
-      "id": "st.dpbz3e3vmc",
-      "leaf": "strings.navigation",
-      "context": "strings.admin.ia.writer.passages.explain-guidance",
-      "status": "draft",
-      "origin": "authored",
-      "text": "Guidance"
-    },
-    {
-      "id": "st.ttsd82k2er",
-      "leaf": "strings.navigation",
-      "context": "strings.admin.ia.writer.passages.organize",
-      "status": "draft",
-      "origin": "authored",
-      "text": "Organize"
-    },
-    {
-      "id": "st.ppj6rj3paa",
-      "leaf": "strings.navigation",
-      "context": "strings.admin.ia.writer.passages.organize-collections",
-      "status": "draft",
-      "origin": "authored",
-      "text": "Collections"
-    },
-    {
-      "id": "st.re9ykhdwk0",
-      "leaf": "strings.navigation",
-      "context": "strings.admin.ia.writer.passages.organize-comparison",
-      "status": "draft",
-      "origin": "authored",
-      "text": "Comparison"
-    },
-    {
-      "id": "st.3m9db8p082",
-      "leaf": "strings.navigation",
-      "context": "strings.admin.ia.writer.passages.organize-summaries",
-      "status": "draft",
-      "origin": "authored",
-      "text": "Summaries"
-    },
-    {
-      "id": "st.crq7e3n2zm",
-      "leaf": "strings.navigation",
-      "context": "strings.admin.ia.writer.passages.organize-records",
-      "status": "draft",
-      "origin": "authored",
-      "text": "Records"
-    },
-    {
-      "id": "st.r26j8cwren",
-      "leaf": "strings.navigation",
-      "context": "strings.admin.ia.writer.passages.organize-history",
-      "status": "draft",
-      "origin": "authored",
-      "text": "History"
-    },
-    {
-      "id": "st.e7asvwmbep",
-      "leaf": "strings.navigation",
-      "context": "strings.admin.ia.writer.passages.collect",
-      "status": "draft",
-      "origin": "authored",
-      "text": "Collect"
-    },
-    {
-      "id": "st.b2cg9wq6eq",
-      "leaf": "strings.navigation",
-      "context": "strings.admin.ia.writer.passages.collect-forms",
-      "status": "draft",
-      "origin": "authored",
-      "text": "Forms"
-    },
-    {
-      "id": "st.xe08xmhhbb",
-      "leaf": "strings.navigation",
-      "context": "strings.admin.ia.writer.passages.collect-workflows",
-      "status": "draft",
-      "origin": "authored",
-      "text": "Workflows"
-    },
-    {
-      "id": "st.hke498zyw2",
-      "leaf": "strings.navigation",
-      "context": "strings.admin.ia.writer.passages.collect-preferences",
-      "status": "draft",
-      "origin": "authored",
-      "text": "Preferences"
-    },
-    {
-      "id": "st.j6ngc8pzjm",
-      "leaf": "strings.navigation",
-      "context": "strings.admin.ia.writer.passages.collect-configuration",
-      "status": "draft",
-      "origin": "authored",
-      "text": "Configuration"
-    },
-    {
-      "id": "st.j91rdzdacv",
-      "leaf": "strings.navigation",
-      "context": "strings.admin.ia.writer.passages.collect-conversation",
-      "status": "draft",
-      "origin": "authored",
-      "text": "Conversation"
-    },
-    {
-      "id": "st.mxm94xnkrk",
-      "leaf": "strings.navigation",
-      "context": "strings.admin.ia.writer.passages.collect-inputs",
-      "status": "draft",
-      "origin": "authored",
-      "text": "Inputs"
-    },
-    {
-      "id": "st.w0q64sxz08",
-      "leaf": "strings.navigation",
-      "context": "strings.admin.ia.writer.passages.navigate",
-      "status": "draft",
-      "origin": "authored",
-      "text": "Navigate"
-    },
-    {
-      "id": "st.8b2zfv6jr5",
-      "leaf": "strings.navigation",
-      "context": "strings.admin.ia.writer.passages.navigate-indexes",
-      "status": "draft",
-      "origin": "authored",
-      "text": "Indexes"
-    },
-    {
-      "id": "st.gxvgmphcca",
-      "leaf": "strings.navigation",
-      "context": "strings.admin.ia.writer.passages.navigate-discovery",
-      "status": "draft",
-      "origin": "authored",
-      "text": "Discovery"
-    },
-    {
-      "id": "st.3zknse5fm0",
-      "leaf": "strings.navigation",
-      "context": "strings.admin.ia.writer.passages.respond",
-      "status": "draft",
-      "origin": "authored",
-      "text": "Respond"
-    },
-    {
-      "id": "st.n2e1k51zyq",
-      "leaf": "strings.navigation",
-      "context": "strings.admin.ia.writer.passages.respond-states",
-      "status": "draft",
-      "origin": "authored",
-      "text": "States"
-    },
-    {
-      "id": "st.gnpy9rkdz0",
-      "leaf": "strings.navigation",
-      "context": "strings.admin.ia.writer.passages.respond-messages",
-      "status": "draft",
-      "origin": "authored",
-      "text": "Messages"
     },
     {
       "id": "st.97hj290sjq",
@@ -2151,52 +1371,12 @@
       "text": "Chrome"
     },
     {
-      "id": "st.d97pr7tg5f",
-      "leaf": "strings.navigation",
-      "context": "strings.admin.ia.writer.narratives.documents",
-      "status": "draft",
-      "origin": "authored",
-      "text": "Documents"
-    },
-    {
-      "id": "st.7fvy4xm2pe",
-      "leaf": "strings.navigation",
-      "context": "strings.admin.ia.writer.narratives.documents-docs",
-      "status": "draft",
-      "origin": "authored",
-      "text": "Docs"
-    },
-    {
-      "id": "st.mt671hy07a",
-      "leaf": "strings.navigation",
-      "context": "strings.admin.ia.writer.narratives.documents-slides",
-      "status": "draft",
-      "origin": "authored",
-      "text": "Slides"
-    },
-    {
       "id": "st.7tfcesvhmb",
       "leaf": "strings.navigation",
       "context": "strings.admin.ia.writer.narratives.communications",
       "status": "draft",
       "origin": "authored",
       "text": "Communications"
-    },
-    {
-      "id": "st.3p6pmjybxb",
-      "leaf": "strings.navigation",
-      "context": "strings.admin.ia.writer.narratives.communications-messages",
-      "status": "draft",
-      "origin": "authored",
-      "text": "Messages"
-    },
-    {
-      "id": "st.2mjfp1kwg0",
-      "leaf": "strings.navigation",
-      "context": "strings.admin.ia.writer.narratives.communications-videos",
-      "status": "draft",
-      "origin": "authored",
-      "text": "Videos"
     },
     {
       "id": "st.kx1a2bkxzg",
@@ -2239,14 +1419,6 @@
       "text": "Demo"
     },
     {
-      "id": "st.p94b9dxe3q",
-      "leaf": "strings.navigation",
-      "context": "strings.admin.ia.publisher.documents.docs",
-      "status": "draft",
-      "origin": "authored",
-      "text": "Docs"
-    },
-    {
       "id": "st.rn3b9zp74a",
       "leaf": "strings.navigation",
       "context": "strings.admin.ia.publisher.presentations.decks",
@@ -2263,14 +1435,6 @@
       "text": "Clips"
     },
     {
-      "id": "st.yvb78meac6",
-      "leaf": "strings.navigation",
-      "context": "strings.admin.ia.publisher.messages.email",
-      "status": "draft",
-      "origin": "authored",
-      "text": "Email"
-    },
-    {
       "id": "st.g3t2t9dxdz",
       "leaf": "strings.navigation",
       "context": "strings.admin.ia.publisher.social.posts",
@@ -2285,62 +1449,54 @@
       "status": "draft",
       "origin": "authored",
       "text": "Item actions"
-    },
-    {
-      "id": "st.338b4d8c7d",
-      "leaf": "strings.field-labels",
-      "context": "strings.admin.table.label",
-      "status": "draft",
-      "origin": "authored",
-      "text": "Records"
     }
   ],
   "bindings": [
     {
       "cellId": "strings.admin.page.designer",
-      "recordId": "st.dx2qfvr17a",
+      "recordId": "st.2zj7yrtkfr",
       "target": "frames.app-header.trail",
       "kind": "CopyRef"
     },
     {
       "cellId": "strings.admin.page.writer",
-      "recordId": "st.xt00332n8s",
+      "recordId": "st.m22sa9p9y4",
       "target": "frames.app-header.trail",
       "kind": "CopyRef"
     },
     {
       "cellId": "strings.admin.page.publisher",
-      "recordId": "st.pn37v97g0q",
+      "recordId": "st.cy7122qr1d",
       "target": "frames.app-header.trail",
       "kind": "CopyRef"
     },
     {
       "cellId": "strings.admin.group.designer.tokens",
-      "recordId": "st.xja32c6gn7",
+      "recordId": "st.c331pzvwey",
       "target": "sections.section-header.heading",
       "kind": "CopyRef"
     },
     {
       "cellId": "strings.admin.group.designer.assets",
-      "recordId": "st.3690j620r5",
+      "recordId": "st.qxaxqewq3p",
       "target": "sections.section-header.heading",
       "kind": "CopyRef"
     },
     {
       "cellId": "strings.admin.group.designer.components",
-      "recordId": "st.ajd8bc65jv",
+      "recordId": "st.jht60wz8e1",
       "target": "sections.section-header.heading",
       "kind": "CopyRef"
     },
     {
       "cellId": "strings.admin.group.designer.sections",
-      "recordId": "st.zt92wd2m2t",
+      "recordId": "st.ata62btvcq",
       "target": "sections.section-header.heading",
       "kind": "CopyRef"
     },
     {
       "cellId": "strings.admin.group.designer.frames",
-      "recordId": "st.gn129089ct",
+      "recordId": "st.7rv315vzjm",
       "target": "sections.section-header.heading",
       "kind": "CopyRef"
     },
@@ -2358,7 +1514,7 @@
     },
     {
       "cellId": "strings.admin.group.writer.patterns",
-      "recordId": "st.q36jnsvm6h",
+      "recordId": "st.wkfv7m7130",
       "target": "sections.section-header.heading",
       "kind": "CopyRef"
     },
@@ -2382,25 +1538,25 @@
     },
     {
       "cellId": "strings.admin.group.publisher.documents",
-      "recordId": "st.bssmc915mb",
+      "recordId": "st.2091r9z4bq",
       "target": "sections.section-header.heading",
       "kind": "CopyRef"
     },
     {
       "cellId": "strings.admin.group.publisher.presentations",
-      "recordId": "st.qrsdnqwfm8",
+      "recordId": "st.33cy9hjh1q",
       "target": "sections.section-header.heading",
       "kind": "CopyRef"
     },
     {
       "cellId": "strings.admin.group.publisher.videos",
-      "recordId": "st.w0ds5aa7mm",
+      "recordId": "st.rgakrp0zw4",
       "target": "sections.section-header.heading",
       "kind": "CopyRef"
     },
     {
       "cellId": "strings.admin.group.publisher.messages",
-      "recordId": "st.8myj0zrkya",
+      "recordId": "st.ceegez6aff",
       "target": "sections.section-header.heading",
       "kind": "CopyRef"
     },
@@ -2418,7 +1574,7 @@
     },
     {
       "cellId": "strings.admin.column.preview",
-      "recordId": "st.csdw9wey6z",
+      "recordId": "st.mzdxkf8h43",
       "target": "sections.data-table.columns.label",
       "kind": "CopyRef"
     },
@@ -2436,19 +1592,19 @@
     },
     {
       "cellId": "strings.admin.column.source",
-      "recordId": "st.46c3xdgcqm",
+      "recordId": "st.qcqdptzn0r",
       "target": "sections.data-table.columns.label",
       "kind": "CopyRef"
     },
     {
       "cellId": "strings.admin.column.status",
-      "recordId": "st.wkmten72mk",
+      "recordId": "st.v6ra67gp67",
       "target": "sections.data-table.columns.label",
       "kind": "CopyRef"
     },
     {
       "cellId": "strings.admin.column.usedBy",
-      "recordId": "st.9z6aw5kpja",
+      "recordId": "st.7pxepx20q1",
       "target": "sections.data-table.columns.label",
       "kind": "CopyRef"
     },
@@ -2460,7 +1616,7 @@
     },
     {
       "cellId": "strings.admin.column.text",
-      "recordId": "st.0gw138v1dn",
+      "recordId": "st.fg1dznm6qa",
       "target": "sections.data-table.columns.label",
       "kind": "CopyRef"
     },
@@ -2478,7 +1634,7 @@
     },
     {
       "cellId": "strings.admin.column.item",
-      "recordId": "st.n84v57p7nm",
+      "recordId": "st.v1cbgc4kr2",
       "target": "sections.data-table.columns.label",
       "kind": "CopyRef"
     },
@@ -2514,7 +1670,7 @@
     },
     {
       "cellId": "strings.admin.column.sections",
-      "recordId": "st.rnhq8akq8m",
+      "recordId": "st.ata62btvcq",
       "target": "sections.data-table.columns.label",
       "kind": "CopyRef"
     },
@@ -2526,13 +1682,13 @@
     },
     {
       "cellId": "strings.admin.status.draft",
-      "recordId": "st.1hfmkewyh1",
+      "recordId": "st.td8tdah4rw",
       "target": "sections.data-table.rows.status",
       "kind": "CopyRef"
     },
     {
       "cellId": "strings.admin.status.stable",
-      "recordId": "st.fwrx8ws8jq",
+      "recordId": "st.mq7reh5kyq",
       "target": "sections.data-table.rows.status",
       "kind": "CopyRef"
     },
@@ -2550,25 +1706,25 @@
     },
     {
       "cellId": "strings.admin.status.approved",
-      "recordId": "st.be9vhxtcbp",
+      "recordId": "st.1re7rsx0et",
       "target": "sections.data-table.rows.status",
       "kind": "CopyRef"
     },
     {
       "cellId": "strings.admin.status.retired",
-      "recordId": "st.15d9a6vhv6",
+      "recordId": "st.dvdvvejry8",
       "target": "sections.data-table.rows.status",
       "kind": "CopyRef"
     },
     {
       "cellId": "strings.admin.status.inReview",
-      "recordId": "st.23ssre580y",
+      "recordId": "st.gnv660w59z",
       "target": "sections.data-table.rows.status",
       "kind": "CopyRef"
     },
     {
       "cellId": "strings.admin.status.active",
-      "recordId": "st.069fm91g06",
+      "recordId": "st.cw2t0s4dxn",
       "target": "sections.data-table.rows.status",
       "kind": "CopyRef"
     },
@@ -2580,19 +1736,19 @@
     },
     {
       "cellId": "strings.admin.status.needsInput",
-      "recordId": "st.xdza0byhk0",
+      "recordId": "st.v2qavnr3r2",
       "target": "sections.data-table.rows.status",
       "kind": "CopyRef"
     },
     {
       "cellId": "strings.admin.status.waiting",
-      "recordId": "st.27kkf1a9n7",
+      "recordId": "st.74p81v194s",
       "target": "sections.data-table.rows.status",
       "kind": "CopyRef"
     },
     {
       "cellId": "strings.admin.status.done",
-      "recordId": "st.sywts2n14e",
+      "recordId": "st.980dfmqs1t",
       "target": "sections.data-table.rows.status",
       "kind": "CopyRef"
     },
@@ -2616,7 +1772,7 @@
     },
     {
       "cellId": "strings.admin.stats.results",
-      "recordId": "st.bxjerdr80v",
+      "recordId": "st.s079k1p1qj",
       "target": "frames.app-shell.command",
       "kind": "CopyRef"
     },
@@ -2640,13 +1796,13 @@
     },
     {
       "cellId": "strings.admin.action.openItem",
-      "recordId": "st.sjqs1adxf1",
+      "recordId": "st.m5cjnqycs1",
       "target": "sections.data-table.rows",
       "kind": "CopyRef"
     },
     {
       "cellId": "strings.admin.action.more",
-      "recordId": "st.6vw6md8f15",
+      "recordId": "st.y86a2b0gmd",
       "target": "sections.section-header.actions",
       "kind": "CopyRef"
     },
@@ -2694,13 +1850,13 @@
     },
     {
       "cellId": "strings.admin.toggle.outline",
-      "recordId": "st.rnpwrb22ae",
+      "recordId": "st.ffqnafj61v",
       "target": "frames.app-header.actions.page-module",
       "kind": "CopyRef"
     },
     {
       "cellId": "strings.admin.toggle.chat",
-      "recordId": "st.srjsn9avg0",
+      "recordId": "st.zxh419w2k5",
       "target": "frames.app-header.actions.chat",
       "kind": "CopyRef"
     },
@@ -2718,13 +1874,13 @@
     },
     {
       "cellId": "strings.admin.toggle.openChat",
-      "recordId": "st.kvknqkmsbz",
+      "recordId": "st.6ffbzs93mg",
       "target": "frames.app-header.actions.chat",
       "kind": "CopyRef"
     },
     {
       "cellId": "strings.admin.toggle.closeChat",
-      "recordId": "st.5qvxdz61nr",
+      "recordId": "st.cqt0021fwj",
       "target": "frames.app-header.actions.chat",
       "kind": "CopyRef"
     },
@@ -2760,7 +1916,7 @@
     },
     {
       "cellId": "strings.admin.noResults.title",
-      "recordId": "st.e28fseajmw",
+      "recordId": "st.asj8g1mcjn",
       "target": "sections.empty-state.heading",
       "kind": "CopyRef"
     },
@@ -2784,7 +1940,7 @@
     },
     {
       "cellId": "strings.admin.item.heading",
-      "recordId": "st.e44z6d5szx",
+      "recordId": "st.tx9f8j9jnf",
       "target": "sections.section-header.heading",
       "kind": "CopyRef"
     },
@@ -2802,7 +1958,7 @@
     },
     {
       "cellId": "strings.admin.item.details",
-      "recordId": "st.vqpf292tkd",
+      "recordId": "st.1vc3bb7pw7",
       "target": "sections.record-detail.groups",
       "kind": "CopyRef"
     },
@@ -2814,19 +1970,19 @@
     },
     {
       "cellId": "strings.admin.item.sections",
-      "recordId": "st.ne53aycmzh",
+      "recordId": "st.ata62btvcq",
       "target": "sections.data-table.header",
       "kind": "CopyRef"
     },
     {
       "cellId": "strings.admin.item.releases",
-      "recordId": "st.dvn7b2t1cp",
+      "recordId": "st.aptm2ejxyv",
       "target": "sections.data-table.header",
       "kind": "CopyRef"
     },
     {
       "cellId": "strings.admin.item.source",
-      "recordId": "st.01zhtxk93k",
+      "recordId": "st.qcqdptzn0r",
       "target": "sections.record-detail.groups",
       "kind": "CopyRef"
     },
@@ -2844,31 +2000,31 @@
     },
     {
       "cellId": "strings.admin.item.usedBy",
-      "recordId": "st.485tnt23jk",
+      "recordId": "st.7pxepx20q1",
       "target": "sections.record-detail.groups",
       "kind": "CopyRef"
     },
     {
       "cellId": "strings.admin.pagination.previous",
-      "recordId": "st.20qddwnvpw",
+      "recordId": "st.96qkp2bzpm",
       "target": "sections.pagination.page",
       "kind": "CopyRef"
     },
     {
       "cellId": "strings.admin.pagination.next",
-      "recordId": "st.frd044f8bf",
+      "recordId": "st.kb8ve83tjp",
       "target": "sections.pagination.page",
       "kind": "CopyRef"
     },
     {
       "cellId": "strings.admin.pagination.pageSize",
-      "recordId": "st.qvbets52ne",
+      "recordId": "st.bhhba11w6f",
       "target": "sections.pagination.page",
       "kind": "CopyRef"
     },
     {
       "cellId": "strings.admin.pagination.label",
-      "recordId": "st.g19spems75",
+      "recordId": "st.s13b3hwkta",
       "target": "sections.pagination.page",
       "kind": "CopyRef"
     },
@@ -2934,7 +2090,7 @@
     },
     {
       "cellId": "strings.admin.date.absolute",
-      "recordId": "st.hge0431mt8",
+      "recordId": "st.000000002z",
       "target": "sections.data-table.rows.dateTooltip",
       "kind": "CopyRef"
     },
@@ -2958,7 +2114,7 @@
     },
     {
       "cellId": "strings.admin.ia.writer.lexicon.voice-rhythm",
-      "recordId": "st.d8f4vhdket",
+      "recordId": "st.qnqy2cwr23",
       "target": "sections.data-table.header",
       "kind": "CopyRef"
     },
@@ -3072,13 +2228,13 @@
     },
     {
       "cellId": "strings.admin.ia.writer.strings.interface-actions",
-      "recordId": "st.40201wv91e",
+      "recordId": "st.3fyz884ab8",
       "target": "sections.data-table.header",
       "kind": "CopyRef"
     },
     {
       "cellId": "strings.admin.ia.writer.strings.interface-navigation",
-      "recordId": "st.51pmgg10qb",
+      "recordId": "st.041fh8t2aw",
       "target": "sections.data-table.header",
       "kind": "CopyRef"
     },
@@ -3102,7 +2258,7 @@
     },
     {
       "cellId": "strings.admin.ia.writer.strings.feedback",
-      "recordId": "st.5kpfw6a6nv",
+      "recordId": "st.emkzstd78z",
       "target": "sections.section-header.heading",
       "kind": "CopyRef"
     },
@@ -3114,7 +2270,7 @@
     },
     {
       "cellId": "strings.admin.ia.writer.strings.feedback-warnings",
-      "recordId": "st.4bng8styjb",
+      "recordId": "st.dbra6twj2c",
       "target": "sections.data-table.header",
       "kind": "CopyRef"
     },
@@ -3126,7 +2282,7 @@
     },
     {
       "cellId": "strings.admin.ia.writer.strings.feedback-empty",
-      "recordId": "st.xcv2y9sqx8",
+      "recordId": "st.832cm61fb6",
       "target": "sections.data-table.header",
       "kind": "CopyRef"
     },
@@ -3138,7 +2294,7 @@
     },
     {
       "cellId": "strings.admin.ia.writer.strings.identity",
-      "recordId": "st.bvd7hyte6a",
+      "recordId": "st.5frtfacf9x",
       "target": "sections.section-header.heading",
       "kind": "CopyRef"
     },
@@ -3234,7 +2390,7 @@
     },
     {
       "cellId": "strings.admin.ia.writer.patterns.actions",
-      "recordId": "st.rwhzwt4b7p",
+      "recordId": "st.3fyz884ab8",
       "target": "sections.section-header.heading",
       "kind": "CopyRef"
     },
@@ -3246,13 +2402,13 @@
     },
     {
       "cellId": "strings.admin.ia.writer.patterns.actions-links",
-      "recordId": "st.ze89efcpxj",
+      "recordId": "st.qpwzxv0zxj",
       "target": "sections.data-table.header",
       "kind": "CopyRef"
     },
     {
       "cellId": "strings.admin.ia.writer.patterns.messages",
-      "recordId": "st.aapst8x4f5",
+      "recordId": "st.ceegez6aff",
       "target": "sections.section-header.heading",
       "kind": "CopyRef"
     },
@@ -3270,7 +2426,7 @@
     },
     {
       "cellId": "strings.admin.ia.writer.patterns.messages-states",
-      "recordId": "st.phbdz0vmbr",
+      "recordId": "st.31tdz2e8k4",
       "target": "sections.data-table.header",
       "kind": "CopyRef"
     },
@@ -3282,7 +2438,7 @@
     },
     {
       "cellId": "strings.admin.ia.writer.patterns.forms",
-      "recordId": "st.hspm0ep0sn",
+      "recordId": "st.8phn9m6kk3",
       "target": "sections.section-header.heading",
       "kind": "CopyRef"
     },
@@ -3294,7 +2450,7 @@
     },
     {
       "cellId": "strings.admin.ia.writer.patterns.forms-consent",
-      "recordId": "st.mwvdsmc98v",
+      "recordId": "st.dntgjthd24",
       "target": "sections.data-table.header",
       "kind": "CopyRef"
     },
@@ -3348,175 +2504,175 @@
     },
     {
       "cellId": "strings.admin.ia.writer.passages.parts",
-      "recordId": "st.n80rfn0mbj",
+      "recordId": "st.etn3efp58r",
       "target": "sections.section-header.heading",
       "kind": "CopyRef"
     },
     {
       "cellId": "strings.admin.ia.writer.passages.parts-structure",
-      "recordId": "st.5dfntz4y3t",
+      "recordId": "st.1f0sc4veew",
       "target": "sections.data-table.header",
       "kind": "CopyRef"
     },
     {
       "cellId": "strings.admin.ia.writer.passages.parts-navigation",
-      "recordId": "st.p61mapavzm",
+      "recordId": "st.041fh8t2aw",
       "target": "sections.data-table.header",
       "kind": "CopyRef"
     },
     {
       "cellId": "strings.admin.ia.writer.passages.explain",
-      "recordId": "st.njxsqjy4t3",
+      "recordId": "st.9sjbpt05v6",
       "target": "sections.section-header.heading",
       "kind": "CopyRef"
     },
     {
       "cellId": "strings.admin.ia.writer.passages.explain-introductions",
-      "recordId": "st.3wb22637n8",
+      "recordId": "st.bqdskzn5py",
       "target": "sections.data-table.header",
       "kind": "CopyRef"
     },
     {
       "cellId": "strings.admin.ia.writer.passages.explain-reading",
-      "recordId": "st.rehe1hkmzq",
+      "recordId": "st.m3ms0vxwzm",
       "target": "sections.data-table.header",
       "kind": "CopyRef"
     },
     {
       "cellId": "strings.admin.ia.writer.passages.explain-promotion",
-      "recordId": "st.209xgwhe99",
+      "recordId": "st.snmj61r83s",
       "target": "sections.data-table.header",
       "kind": "CopyRef"
     },
     {
       "cellId": "strings.admin.ia.writer.passages.explain-social-proof",
-      "recordId": "st.2rwsgtys4e",
+      "recordId": "st.m2r7rb9mhm",
       "target": "sections.data-table.header",
       "kind": "CopyRef"
     },
     {
       "cellId": "strings.admin.ia.writer.passages.explain-media",
-      "recordId": "st.m5q64dkf2q",
+      "recordId": "st.2c9722yrzg",
       "target": "sections.data-table.header",
       "kind": "CopyRef"
     },
     {
       "cellId": "strings.admin.ia.writer.passages.explain-guidance",
-      "recordId": "st.dpbz3e3vmc",
+      "recordId": "st.gm2gyz20jx",
       "target": "sections.data-table.header",
       "kind": "CopyRef"
     },
     {
       "cellId": "strings.admin.ia.writer.passages.organize",
-      "recordId": "st.ttsd82k2er",
+      "recordId": "st.dqwhabg950",
       "target": "sections.section-header.heading",
       "kind": "CopyRef"
     },
     {
       "cellId": "strings.admin.ia.writer.passages.organize-collections",
-      "recordId": "st.ppj6rj3paa",
+      "recordId": "st.dx8799w49f",
       "target": "sections.data-table.header",
       "kind": "CopyRef"
     },
     {
       "cellId": "strings.admin.ia.writer.passages.organize-comparison",
-      "recordId": "st.re9ykhdwk0",
+      "recordId": "st.47t4a0v4s2",
       "target": "sections.data-table.header",
       "kind": "CopyRef"
     },
     {
       "cellId": "strings.admin.ia.writer.passages.organize-summaries",
-      "recordId": "st.3m9db8p082",
+      "recordId": "st.8x1r0ft6rc",
       "target": "sections.data-table.header",
       "kind": "CopyRef"
     },
     {
       "cellId": "strings.admin.ia.writer.passages.organize-records",
-      "recordId": "st.crq7e3n2zm",
+      "recordId": "st.q484s9bz3w",
       "target": "sections.data-table.header",
       "kind": "CopyRef"
     },
     {
       "cellId": "strings.admin.ia.writer.passages.organize-history",
-      "recordId": "st.r26j8cwren",
+      "recordId": "st.ctrfprmksn",
       "target": "sections.data-table.header",
       "kind": "CopyRef"
     },
     {
       "cellId": "strings.admin.ia.writer.passages.collect",
-      "recordId": "st.e7asvwmbep",
+      "recordId": "st.xz62vvkvj3",
       "target": "sections.section-header.heading",
       "kind": "CopyRef"
     },
     {
       "cellId": "strings.admin.ia.writer.passages.collect-forms",
-      "recordId": "st.b2cg9wq6eq",
+      "recordId": "st.8phn9m6kk3",
       "target": "sections.data-table.header",
       "kind": "CopyRef"
     },
     {
       "cellId": "strings.admin.ia.writer.passages.collect-workflows",
-      "recordId": "st.xe08xmhhbb",
+      "recordId": "st.b28mjpaq29",
       "target": "sections.data-table.header",
       "kind": "CopyRef"
     },
     {
       "cellId": "strings.admin.ia.writer.passages.collect-preferences",
-      "recordId": "st.hke498zyw2",
+      "recordId": "st.jns9tmxsdf",
       "target": "sections.data-table.header",
       "kind": "CopyRef"
     },
     {
       "cellId": "strings.admin.ia.writer.passages.collect-configuration",
-      "recordId": "st.j6ngc8pzjm",
+      "recordId": "st.dcx4bn55xt",
       "target": "sections.data-table.header",
       "kind": "CopyRef"
     },
     {
       "cellId": "strings.admin.ia.writer.passages.collect-conversation",
-      "recordId": "st.j91rdzdacv",
+      "recordId": "st.91bq2h08er",
       "target": "sections.data-table.header",
       "kind": "CopyRef"
     },
     {
       "cellId": "strings.admin.ia.writer.passages.collect-inputs",
-      "recordId": "st.mxm94xnkrk",
+      "recordId": "st.ehnm0c7e08",
       "target": "sections.data-table.header",
       "kind": "CopyRef"
     },
     {
       "cellId": "strings.admin.ia.writer.passages.navigate",
-      "recordId": "st.w0q64sxz08",
+      "recordId": "st.2rrmfet0fn",
       "target": "sections.section-header.heading",
       "kind": "CopyRef"
     },
     {
       "cellId": "strings.admin.ia.writer.passages.navigate-indexes",
-      "recordId": "st.8b2zfv6jr5",
+      "recordId": "st.tb7mk984x7",
       "target": "sections.data-table.header",
       "kind": "CopyRef"
     },
     {
       "cellId": "strings.admin.ia.writer.passages.navigate-discovery",
-      "recordId": "st.gxvgmphcca",
+      "recordId": "st.5syp7271te",
       "target": "sections.data-table.header",
       "kind": "CopyRef"
     },
     {
       "cellId": "strings.admin.ia.writer.passages.respond",
-      "recordId": "st.3zknse5fm0",
+      "recordId": "st.m7gtk6hcw8",
       "target": "sections.section-header.heading",
       "kind": "CopyRef"
     },
     {
       "cellId": "strings.admin.ia.writer.passages.respond-states",
-      "recordId": "st.n2e1k51zyq",
+      "recordId": "st.31tdz2e8k4",
       "target": "sections.data-table.header",
       "kind": "CopyRef"
     },
     {
       "cellId": "strings.admin.ia.writer.passages.respond-messages",
-      "recordId": "st.gnpy9rkdz0",
+      "recordId": "st.ceegez6aff",
       "target": "sections.data-table.header",
       "kind": "CopyRef"
     },
@@ -3546,7 +2702,7 @@
     },
     {
       "cellId": "strings.admin.ia.writer.narratives.documents",
-      "recordId": "st.d97pr7tg5f",
+      "recordId": "st.2091r9z4bq",
       "target": "sections.section-header.heading",
       "kind": "CopyRef"
     },
@@ -3558,7 +2714,7 @@
     },
     {
       "cellId": "strings.admin.ia.writer.narratives.documents-slides",
-      "recordId": "st.mt671hy07a",
+      "recordId": "st.33rp5w6vzk",
       "target": "sections.data-table.header",
       "kind": "CopyRef"
     },
@@ -3570,13 +2726,13 @@
     },
     {
       "cellId": "strings.admin.ia.writer.narratives.communications-messages",
-      "recordId": "st.3p6pmjybxb",
+      "recordId": "st.ceegez6aff",
       "target": "sections.data-table.header",
       "kind": "CopyRef"
     },
     {
       "cellId": "strings.admin.ia.writer.narratives.communications-videos",
-      "recordId": "st.2mjfp1kwg0",
+      "recordId": "st.rgakrp0zw4",
       "target": "sections.data-table.header",
       "kind": "CopyRef"
     },
@@ -3612,7 +2768,7 @@
     },
     {
       "cellId": "strings.admin.ia.publisher.documents.docs",
-      "recordId": "st.p94b9dxe3q",
+      "recordId": "st.7fvy4xm2pe",
       "target": "sections.section-header.heading",
       "kind": "CopyRef"
     },
@@ -3630,7 +2786,7 @@
     },
     {
       "cellId": "strings.admin.ia.publisher.messages.email",
-      "recordId": "st.yvb78meac6",
+      "recordId": "st.5bvvjt22m9",
       "target": "sections.section-header.heading",
       "kind": "CopyRef"
     },
@@ -3702,7 +2858,7 @@
     },
     {
       "cellId": "strings.admin.ia.designer.tokens.type-spacing",
-      "recordId": "st.qrvmkqp6hq",
+      "recordId": "st.mn2v0dgaj8",
       "target": "sections.data-table.header",
       "kind": "CopyRef"
     },
@@ -3804,13 +2960,13 @@
     },
     {
       "cellId": "strings.admin.ia.designer.tokens.interaction-states",
-      "recordId": "st.mt3nvmdc3j",
+      "recordId": "st.31tdz2e8k4",
       "target": "sections.data-table.header",
       "kind": "CopyRef"
     },
     {
       "cellId": "strings.admin.ia.designer.assets.logo",
-      "recordId": "st.5mwpnsqwvz",
+      "recordId": "st.dgdbty02r2",
       "target": "sections.section-header.heading",
       "kind": "CopyRef"
     },
@@ -3834,7 +2990,7 @@
     },
     {
       "cellId": "strings.admin.ia.designer.assets.app-identity-application",
-      "recordId": "st.v67nyypq4j",
+      "recordId": "st.gj32snjd4m",
       "target": "sections.data-table.header",
       "kind": "CopyRef"
     },
@@ -3894,7 +3050,7 @@
     },
     {
       "cellId": "strings.admin.ia.designer.components.actions",
-      "recordId": "st.43j9gcptwk",
+      "recordId": "st.3fyz884ab8",
       "target": "sections.section-header.heading",
       "kind": "CopyRef"
     },
@@ -3918,13 +3074,13 @@
     },
     {
       "cellId": "strings.admin.ia.designer.components.inputs",
-      "recordId": "st.pda59gg768",
+      "recordId": "st.ehnm0c7e08",
       "target": "sections.section-header.heading",
       "kind": "CopyRef"
     },
     {
       "cellId": "strings.admin.ia.designer.components.inputs-form",
-      "recordId": "st.kqjtvamysw",
+      "recordId": "st.17r7xa6wg9",
       "target": "sections.data-table.header",
       "kind": "CopyRef"
     },
@@ -3954,13 +3110,13 @@
     },
     {
       "cellId": "strings.admin.ia.designer.components.inputs-date",
-      "recordId": "st.mp02ad33xd",
+      "recordId": "st.5jrhbbr5sm",
       "target": "sections.data-table.header",
       "kind": "CopyRef"
     },
     {
       "cellId": "strings.admin.ia.designer.components.inputs-color",
-      "recordId": "st.th7s612c9v",
+      "recordId": "st.k2hbf8chyb",
       "target": "sections.data-table.header",
       "kind": "CopyRef"
     },
@@ -3990,7 +3146,7 @@
     },
     {
       "cellId": "strings.admin.ia.designer.components.display-media",
-      "recordId": "st.eetqq5y604",
+      "recordId": "st.2c9722yrzg",
       "target": "sections.data-table.header",
       "kind": "CopyRef"
     },
@@ -4020,7 +3176,7 @@
     },
     {
       "cellId": "strings.admin.ia.designer.components.display-content",
-      "recordId": "st.x95qdk70h6",
+      "recordId": "st.ne29tsc3gn",
       "target": "sections.data-table.header",
       "kind": "CopyRef"
     },
@@ -4032,7 +3188,7 @@
     },
     {
       "cellId": "strings.admin.ia.designer.components.feedback-messages",
-      "recordId": "st.n0wrz941gm",
+      "recordId": "st.ceegez6aff",
       "target": "sections.data-table.header",
       "kind": "CopyRef"
     },
@@ -4050,7 +3206,7 @@
     },
     {
       "cellId": "strings.admin.ia.designer.components.navigation",
-      "recordId": "st.zn3de0gy72",
+      "recordId": "st.041fh8t2aw",
       "target": "sections.section-header.heading",
       "kind": "CopyRef"
     },
@@ -4062,7 +3218,7 @@
     },
     {
       "cellId": "strings.admin.ia.designer.components.navigation-panels",
-      "recordId": "st.7ywhhgzjnq",
+      "recordId": "st.kqevjtbwt9",
       "target": "sections.data-table.header",
       "kind": "CopyRef"
     },
@@ -4080,7 +3236,7 @@
     },
     {
       "cellId": "strings.admin.ia.designer.components.containment-structure",
-      "recordId": "st.j4376qs2d9",
+      "recordId": "st.1f0sc4veew",
       "target": "sections.data-table.header",
       "kind": "CopyRef"
     },
@@ -4104,7 +3260,7 @@
     },
     {
       "cellId": "strings.admin.ia.designer.sections.parts-navigation",
-      "recordId": "st.srpwh5w0mq",
+      "recordId": "st.041fh8t2aw",
       "target": "sections.data-table.header",
       "kind": "CopyRef"
     },
@@ -4140,7 +3296,7 @@
     },
     {
       "cellId": "strings.admin.ia.designer.sections.explain-media",
-      "recordId": "st.gbd1aggpfy",
+      "recordId": "st.2c9722yrzg",
       "target": "sections.data-table.header",
       "kind": "CopyRef"
     },
@@ -4224,7 +3380,7 @@
     },
     {
       "cellId": "strings.admin.ia.designer.sections.collect-inputs",
-      "recordId": "st.end2wnfhnd",
+      "recordId": "st.ehnm0c7e08",
       "target": "sections.data-table.header",
       "kind": "CopyRef"
     },
@@ -4260,7 +3416,7 @@
     },
     {
       "cellId": "strings.admin.ia.designer.sections.respond-messages",
-      "recordId": "st.s2d41mwbnv",
+      "recordId": "st.ceegez6aff",
       "target": "sections.data-table.header",
       "kind": "CopyRef"
     },
@@ -4272,7 +3428,7 @@
     },
     {
       "cellId": "strings.admin.ia.designer.frames.page-shells-documents",
-      "recordId": "st.51jajdr2tv",
+      "recordId": "st.2091r9z4bq",
       "target": "sections.data-table.header",
       "kind": "CopyRef"
     },
@@ -4302,7 +3458,7 @@
     },
     {
       "cellId": "strings.admin.ia.designer.frames.navigation",
-      "recordId": "st.xdqbf8hxsv",
+      "recordId": "st.041fh8t2aw",
       "target": "sections.data-table.header",
       "kind": "CopyRef"
     },
@@ -4344,13 +3500,13 @@
     },
     {
       "cellId": "strings.admin.table.label",
-      "recordId": "st.338b4d8c7d",
+      "recordId": "st.q484s9bz3w",
       "target": "sections.data-table.label",
       "kind": "CopyRef"
     },
     {
       "cellId": "strings.admin.chat.label",
-      "recordId": "st.07sw5kbkv3",
+      "recordId": "st.91bq2h08er",
       "target": "sections.chat.label",
       "kind": "CopyRef"
     },
@@ -4470,7 +3626,7 @@
     },
     {
       "cellId": "strings.admin.chat.copyUnavailableLabel",
-      "recordId": "st.rrjbhez8qb",
+      "recordId": "st.6pe6jzsykm",
       "target": "sections.chat.labels.copyUnavailableLabel",
       "kind": "CopyRef"
     }
@@ -4478,12 +3634,12 @@
   "coverage": {
     "kind": "proposed D1/P1b bindings",
     "productionBound": 0,
-    "proposedBindings": 340
+    "proposedBindings": 363
   },
   "externalRecords": [
     {
       "recordId": "st.k2hbf8chyb",
-      "source": "admin-studio.r1.en.json",
+      "source": "common-labels.r1.en.json",
       "sourceContext": "designer.ia.tokens.color"
     },
     {
@@ -4532,9 +3688,9 @@
       "sourceContext": "designer.ia.tokens.type-sizes"
     },
     {
-      "recordId": "st.qrvmkqp6hq",
-      "source": "admin-studio.r1.en.json",
-      "sourceContext": "designer.ia.tokens.type-spacing"
+      "recordId": "st.mn2v0dgaj8",
+      "source": "common-labels.r1.en.json",
+      "sourceContext": "designer.item.tokens.spacing"
     },
     {
       "recordId": "st.5r9jd8zqt1",
@@ -4548,7 +3704,7 @@
     },
     {
       "recordId": "st.qnqy2cwr23",
-      "source": "admin-studio.r1.en.json",
+      "source": "common-labels.r1.en.json",
       "sourceContext": "designer.ia.tokens.space-rhythm"
     },
     {
@@ -4617,14 +3773,14 @@
       "sourceContext": "designer.ia.tokens.interaction-controls"
     },
     {
-      "recordId": "st.mt3nvmdc3j",
-      "source": "admin-studio.r1.en.json",
-      "sourceContext": "designer.ia.tokens.interaction-states"
+      "recordId": "st.31tdz2e8k4",
+      "source": "common-labels.r1.en.json",
+      "sourceContext": "designer.ia.sections.respond-states"
     },
     {
-      "recordId": "st.5mwpnsqwvz",
-      "source": "admin-studio.r1.en.json",
-      "sourceContext": "designer.ia.assets.logo"
+      "recordId": "st.dgdbty02r2",
+      "source": "common-labels.r1.en.json",
+      "sourceContext": "publisher.contentKey.logo"
     },
     {
       "recordId": "st.gqzt107c6n",
@@ -4642,9 +3798,9 @@
       "sourceContext": "designer.ia.assets.app-identity-browser"
     },
     {
-      "recordId": "st.v67nyypq4j",
-      "source": "admin-studio.r1.en.json",
-      "sourceContext": "designer.ia.assets.app-identity-application"
+      "recordId": "st.gj32snjd4m",
+      "source": "common-labels.r1.en.json",
+      "sourceContext": "publisher.channel.app"
     },
     {
       "recordId": "st.5h1mxsvx9m",
@@ -4653,17 +3809,17 @@
     },
     {
       "recordId": "st.041fh8t2aw",
-      "source": "admin-studio.r1.en.json",
+      "source": "common-labels.r1.en.json",
       "sourceContext": "designer.ia.assets.icons-navigation"
     },
     {
       "recordId": "st.3fyz884ab8",
-      "source": "admin-studio.r1.en.json",
+      "source": "common-labels.r1.en.json",
       "sourceContext": "designer.ia.assets.icons-actions"
     },
     {
       "recordId": "st.v6ra67gp67",
-      "source": "admin-studio.r1.en.json",
+      "source": "common-labels.r1.en.json",
       "sourceContext": "designer.ia.assets.icons-status"
     },
     {
@@ -4673,7 +3829,7 @@
     },
     {
       "recordId": "st.2c9722yrzg",
-      "source": "admin-studio.r1.en.json",
+      "source": "common-labels.r1.en.json",
       "sourceContext": "designer.ia.assets.imagery"
     },
     {
@@ -4688,13 +3844,13 @@
     },
     {
       "recordId": "st.wkfv7m7130",
-      "source": "admin-studio.r1.en.json",
+      "source": "common-labels.r1.en.json",
       "sourceContext": "designer.ia.assets.imagery-patterns"
     },
     {
-      "recordId": "st.43j9gcptwk",
-      "source": "admin-studio.r1.en.json",
-      "sourceContext": "designer.ia.components.actions"
+      "recordId": "st.3fyz884ab8",
+      "source": "common-labels.r1.en.json",
+      "sourceContext": "designer.ia.assets.icons-actions"
     },
     {
       "recordId": "st.0ksqg9ytc4",
@@ -4712,18 +3868,18 @@
       "sourceContext": "designer.ia.components.actions-toolbars"
     },
     {
-      "recordId": "st.pda59gg768",
-      "source": "admin-studio.r1.en.json",
-      "sourceContext": "designer.ia.components.inputs"
+      "recordId": "st.ehnm0c7e08",
+      "source": "common-labels.r1.en.json",
+      "sourceContext": "designer.inspector.fields.historyInputs"
     },
     {
-      "recordId": "st.kqjtvamysw",
-      "source": "admin-studio.r1.en.json",
-      "sourceContext": "designer.ia.components.inputs-form"
+      "recordId": "st.17r7xa6wg9",
+      "source": "common-labels.r1.en.json",
+      "sourceContext": "designer.item.sections.form"
     },
     {
       "recordId": "st.fg1dznm6qa",
-      "source": "admin-studio.r1.en.json",
+      "source": "common-labels.r1.en.json",
       "sourceContext": "designer.ia.components.inputs-text"
     },
     {
@@ -4742,14 +3898,14 @@
       "sourceContext": "designer.ia.components.inputs-number"
     },
     {
-      "recordId": "st.mp02ad33xd",
-      "source": "admin-studio.r1.en.json",
-      "sourceContext": "designer.ia.components.inputs-date"
+      "recordId": "st.5jrhbbr5sm",
+      "source": "common-labels.r1.en.json",
+      "sourceContext": "designer.item.assets.icon-date"
     },
     {
-      "recordId": "st.th7s612c9v",
-      "source": "admin-studio.r1.en.json",
-      "sourceContext": "designer.ia.components.inputs-color"
+      "recordId": "st.k2hbf8chyb",
+      "source": "common-labels.r1.en.json",
+      "sourceContext": "designer.ia.tokens.color"
     },
     {
       "recordId": "st.0d1qng8cf7",
@@ -4772,13 +3928,13 @@
       "sourceContext": "designer.ia.components.display-labels"
     },
     {
-      "recordId": "st.eetqq5y604",
-      "source": "admin-studio.r1.en.json",
-      "sourceContext": "designer.ia.components.display-media"
+      "recordId": "st.2c9722yrzg",
+      "source": "common-labels.r1.en.json",
+      "sourceContext": "designer.ia.assets.imagery"
     },
     {
       "recordId": "st.qxaxqewq3p",
-      "source": "admin-studio.r1.en.json",
+      "source": "common-labels.r1.en.json",
       "sourceContext": "designer.ia.components.display-assets"
     },
     {
@@ -4797,19 +3953,19 @@
       "sourceContext": "designer.ia.components.charts-analytic"
     },
     {
-      "recordId": "st.x95qdk70h6",
-      "source": "admin-studio.r1.en.json",
-      "sourceContext": "designer.ia.components.display-content"
+      "recordId": "st.ne29tsc3gn",
+      "source": "common-labels.r1.en.json",
+      "sourceContext": "designer.item.sections.content"
     },
     {
       "recordId": "st.emkzstd78z",
-      "source": "admin-studio.r1.en.json",
+      "source": "common-labels.r1.en.json",
       "sourceContext": "designer.ia.components.feedback"
     },
     {
-      "recordId": "st.n0wrz941gm",
-      "source": "admin-studio.r1.en.json",
-      "sourceContext": "designer.ia.components.feedback-messages"
+      "recordId": "st.ceegez6aff",
+      "source": "common-labels.r1.en.json",
+      "sourceContext": "publisher.channel.messages"
     },
     {
       "recordId": "st.f9s12jaads",
@@ -4822,19 +3978,19 @@
       "sourceContext": "designer.ia.components.feedback-progress"
     },
     {
-      "recordId": "st.zn3de0gy72",
-      "source": "admin-studio.r1.en.json",
-      "sourceContext": "designer.ia.components.navigation"
+      "recordId": "st.041fh8t2aw",
+      "source": "common-labels.r1.en.json",
+      "sourceContext": "designer.ia.assets.icons-navigation"
     },
     {
       "recordId": "st.qpwzxv0zxj",
-      "source": "admin-studio.r1.en.json",
+      "source": "common-labels.r1.en.json",
       "sourceContext": "designer.ia.components.navigation-links"
     },
     {
-      "recordId": "st.7ywhhgzjnq",
-      "source": "admin-studio.r1.en.json",
-      "sourceContext": "designer.ia.components.navigation-panels"
+      "recordId": "st.kqevjtbwt9",
+      "source": "common-labels.r1.en.json",
+      "sourceContext": "publisher.arrangement.panes"
     },
     {
       "recordId": "st.1e15003kax",
@@ -4847,9 +4003,9 @@
       "sourceContext": "designer.ia.components.containment"
     },
     {
-      "recordId": "st.j4376qs2d9",
-      "source": "admin-studio.r1.en.json",
-      "sourceContext": "designer.ia.components.containment-structure"
+      "recordId": "st.1f0sc4veew",
+      "source": "common-labels.r1.en.json",
+      "sourceContext": "designer.ia.sections.parts-structure"
     },
     {
       "recordId": "st.j4r15tzjhq",
@@ -4858,148 +4014,148 @@
     },
     {
       "recordId": "st.etn3efp58r",
-      "source": "admin-studio.r1.en.json",
+      "source": "common-labels.r1.en.json",
       "sourceContext": "designer.ia.sections.parts"
     },
     {
       "recordId": "st.1f0sc4veew",
-      "source": "admin-studio.r1.en.json",
+      "source": "common-labels.r1.en.json",
       "sourceContext": "designer.ia.sections.parts-structure"
     },
     {
-      "recordId": "st.srpwh5w0mq",
-      "source": "admin-studio.r1.en.json",
-      "sourceContext": "designer.ia.sections.parts-navigation"
+      "recordId": "st.041fh8t2aw",
+      "source": "common-labels.r1.en.json",
+      "sourceContext": "designer.ia.assets.icons-navigation"
     },
     {
       "recordId": "st.9sjbpt05v6",
-      "source": "admin-studio.r1.en.json",
+      "source": "common-labels.r1.en.json",
       "sourceContext": "designer.ia.sections.explain"
     },
     {
       "recordId": "st.bqdskzn5py",
-      "source": "admin-studio.r1.en.json",
+      "source": "common-labels.r1.en.json",
       "sourceContext": "designer.ia.sections.explain-introductions"
     },
     {
       "recordId": "st.m3ms0vxwzm",
-      "source": "admin-studio.r1.en.json",
+      "source": "common-labels.r1.en.json",
       "sourceContext": "designer.ia.sections.explain-reading"
     },
     {
       "recordId": "st.snmj61r83s",
-      "source": "admin-studio.r1.en.json",
+      "source": "common-labels.r1.en.json",
       "sourceContext": "designer.ia.sections.explain-promotion"
     },
     {
       "recordId": "st.m2r7rb9mhm",
-      "source": "admin-studio.r1.en.json",
+      "source": "common-labels.r1.en.json",
       "sourceContext": "designer.ia.sections.explain-social-proof"
     },
     {
-      "recordId": "st.gbd1aggpfy",
-      "source": "admin-studio.r1.en.json",
-      "sourceContext": "designer.ia.sections.explain-media"
+      "recordId": "st.2c9722yrzg",
+      "source": "common-labels.r1.en.json",
+      "sourceContext": "designer.ia.assets.imagery"
     },
     {
       "recordId": "st.gm2gyz20jx",
-      "source": "admin-studio.r1.en.json",
+      "source": "common-labels.r1.en.json",
       "sourceContext": "designer.ia.sections.explain-guidance"
     },
     {
       "recordId": "st.dqwhabg950",
-      "source": "admin-studio.r1.en.json",
+      "source": "common-labels.r1.en.json",
       "sourceContext": "designer.ia.sections.organize"
     },
     {
       "recordId": "st.dx8799w49f",
-      "source": "admin-studio.r1.en.json",
+      "source": "common-labels.r1.en.json",
       "sourceContext": "designer.ia.sections.organize-collections"
     },
     {
       "recordId": "st.47t4a0v4s2",
-      "source": "admin-studio.r1.en.json",
+      "source": "common-labels.r1.en.json",
       "sourceContext": "designer.ia.sections.organize-comparison"
     },
     {
       "recordId": "st.8x1r0ft6rc",
-      "source": "admin-studio.r1.en.json",
+      "source": "common-labels.r1.en.json",
       "sourceContext": "designer.ia.sections.organize-summaries"
     },
     {
       "recordId": "st.q484s9bz3w",
-      "source": "admin-studio.r1.en.json",
+      "source": "common-labels.r1.en.json",
       "sourceContext": "designer.ia.sections.organize-records"
     },
     {
       "recordId": "st.ctrfprmksn",
-      "source": "admin-studio.r1.en.json",
+      "source": "common-labels.r1.en.json",
       "sourceContext": "designer.ia.sections.organize-history"
     },
     {
       "recordId": "st.xz62vvkvj3",
-      "source": "admin-studio.r1.en.json",
+      "source": "common-labels.r1.en.json",
       "sourceContext": "designer.ia.sections.collect"
     },
     {
       "recordId": "st.8phn9m6kk3",
-      "source": "admin-studio.r1.en.json",
+      "source": "common-labels.r1.en.json",
       "sourceContext": "designer.ia.sections.collect-forms"
     },
     {
       "recordId": "st.b28mjpaq29",
-      "source": "admin-studio.r1.en.json",
+      "source": "common-labels.r1.en.json",
       "sourceContext": "designer.ia.sections.collect-workflows"
     },
     {
       "recordId": "st.jns9tmxsdf",
-      "source": "admin-studio.r1.en.json",
+      "source": "common-labels.r1.en.json",
       "sourceContext": "designer.ia.sections.collect-preferences"
     },
     {
       "recordId": "st.dcx4bn55xt",
-      "source": "admin-studio.r1.en.json",
+      "source": "common-labels.r1.en.json",
       "sourceContext": "designer.ia.sections.collect-configuration"
     },
     {
       "recordId": "st.91bq2h08er",
-      "source": "admin-studio.r1.en.json",
+      "source": "common-labels.r1.en.json",
       "sourceContext": "designer.ia.sections.collect-conversation"
     },
     {
-      "recordId": "st.end2wnfhnd",
-      "source": "admin-studio.r1.en.json",
-      "sourceContext": "designer.ia.sections.collect-inputs"
+      "recordId": "st.ehnm0c7e08",
+      "source": "common-labels.r1.en.json",
+      "sourceContext": "designer.inspector.fields.historyInputs"
     },
     {
       "recordId": "st.2rrmfet0fn",
-      "source": "admin-studio.r1.en.json",
+      "source": "common-labels.r1.en.json",
       "sourceContext": "designer.ia.sections.navigate"
     },
     {
       "recordId": "st.tb7mk984x7",
-      "source": "admin-studio.r1.en.json",
+      "source": "common-labels.r1.en.json",
       "sourceContext": "designer.ia.sections.navigate-indexes"
     },
     {
       "recordId": "st.5syp7271te",
-      "source": "admin-studio.r1.en.json",
+      "source": "common-labels.r1.en.json",
       "sourceContext": "designer.ia.sections.navigate-discovery"
     },
     {
       "recordId": "st.m7gtk6hcw8",
-      "source": "admin-studio.r1.en.json",
+      "source": "common-labels.r1.en.json",
       "sourceContext": "designer.ia.sections.respond"
     },
     {
       "recordId": "st.31tdz2e8k4",
-      "source": "admin-studio.r1.en.json",
+      "source": "common-labels.r1.en.json",
       "sourceContext": "designer.ia.sections.respond-states"
     },
     {
-      "recordId": "st.s2d41mwbnv",
-      "source": "admin-studio.r1.en.json",
-      "sourceContext": "designer.ia.sections.respond-messages"
+      "recordId": "st.ceegez6aff",
+      "source": "common-labels.r1.en.json",
+      "sourceContext": "publisher.channel.messages"
     },
     {
       "recordId": "st.s7hnkgzy0j",
@@ -5007,9 +4163,9 @@
       "sourceContext": "designer.ia.frames.page-shells"
     },
     {
-      "recordId": "st.51jajdr2tv",
-      "source": "admin-studio.r1.en.json",
-      "sourceContext": "designer.ia.frames.page-shells-documents"
+      "recordId": "st.2091r9z4bq",
+      "source": "common-labels.r1.en.json",
+      "sourceContext": "publisher.medium.document"
     },
     {
       "recordId": "st.0xfvcbg2f8",
@@ -5032,9 +4188,9 @@
       "sourceContext": "designer.ia.frames.headers"
     },
     {
-      "recordId": "st.xdqbf8hxsv",
-      "source": "admin-studio.r1.en.json",
-      "sourceContext": "designer.ia.frames.navigation"
+      "recordId": "st.041fh8t2aw",
+      "source": "common-labels.r1.en.json",
+      "sourceContext": "designer.ia.assets.icons-navigation"
     },
     {
       "recordId": "st.dg3e6jc56v",
@@ -5062,9 +4218,9 @@
       "sourceContext": "designer.ia.frames.overlay-shells-commands"
     },
     {
-      "recordId": "st.07sw5kbkv3",
-      "source": "admin-chat.r1.en.json",
-      "sourceContext": "admin.writer.chat.header.title"
+      "recordId": "st.91bq2h08er",
+      "source": "common-labels.r1.en.json",
+      "sourceContext": "designer.ia.sections.collect-conversation"
     },
     {
       "recordId": "st.fc3agfvrnf",
@@ -5138,7 +4294,7 @@
     },
     {
       "recordId": "st.ega0nrxc5v",
-      "source": "admin-chat.r1.en.json",
+      "source": "common-labels.r1.en.json",
       "sourceContext": "admin.writer.chat.composer.label"
     },
     {
@@ -5148,7 +4304,7 @@
     },
     {
       "recordId": "st.7raxswq7j0",
-      "source": "admin-chat.r1.en.json",
+      "source": "common-labels.r1.en.json",
       "sourceContext": "admin.writer.chat.composer.send"
     },
     {
@@ -5162,9 +4318,239 @@
       "sourceContext": "admin.writer.chat.code.copied"
     },
     {
-      "recordId": "st.rrjbhez8qb",
-      "source": "admin-chat.r1.en.json",
-      "sourceContext": "admin.writer.chat.code.copyUnavailable"
+      "recordId": "st.6pe6jzsykm",
+      "source": "common-labels.r1.en.json",
+      "sourceContext": "admin.writer.chat.message.copyUnavailable"
+    },
+    {
+      "recordId": "st.000000002z",
+      "source": "common-labels.r1.en.json",
+      "sourceContext": "Generic draft site starter"
+    },
+    {
+      "recordId": "st.1re7rsx0et",
+      "source": "common-labels.r1.en.json",
+      "sourceContext": "admin.enum.approved"
+    },
+    {
+      "recordId": "st.1vc3bb7pw7",
+      "source": "common-labels.r1.en.json",
+      "sourceContext": "Designer console"
+    },
+    {
+      "recordId": "st.2zj7yrtkfr",
+      "source": "common-labels.r1.en.json",
+      "sourceContext": "admin.designer.navLabel"
+    },
+    {
+      "recordId": "st.33cy9hjh1q",
+      "source": "common-labels.r1.en.json",
+      "sourceContext": "publisher.medium.deck"
+    },
+    {
+      "recordId": "st.33rp5w6vzk",
+      "source": "common-labels.r1.en.json",
+      "sourceContext": "publisher.mediaValue.slides"
+    },
+    {
+      "recordId": "st.5bvvjt22m9",
+      "source": "common-labels.r1.en.json",
+      "sourceContext": "publisher.format.email.html"
+    },
+    {
+      "recordId": "st.5frtfacf9x",
+      "source": "common-labels.r1.en.json",
+      "sourceContext": "strings.admin.ia.writer.patterns.identity"
+    },
+    {
+      "recordId": "st.6ffbzs93mg",
+      "source": "common-labels.r1.en.json",
+      "sourceContext": "admin.writer.chat.panel.open"
+    },
+    {
+      "recordId": "st.74p81v194s",
+      "source": "common-labels.r1.en.json",
+      "sourceContext": "Publisher console"
+    },
+    {
+      "recordId": "st.7fvy4xm2pe",
+      "source": "common-labels.r1.en.json",
+      "sourceContext": "strings.admin.ia.writer.narratives.documents-docs"
+    },
+    {
+      "recordId": "st.7pxepx20q1",
+      "source": "common-labels.r1.en.json",
+      "sourceContext": "Designer console"
+    },
+    {
+      "recordId": "st.7rv315vzjm",
+      "source": "common-labels.r1.en.json",
+      "sourceContext": "Designer console"
+    },
+    {
+      "recordId": "st.832cm61fb6",
+      "source": "common-labels.r1.en.json",
+      "sourceContext": "designer.item.components.empty"
+    },
+    {
+      "recordId": "st.88wbh5rn5a",
+      "source": "common-labels.r1.en.json",
+      "sourceContext": "strings.admin.pagination.page"
+    },
+    {
+      "recordId": "st.96qkp2bzpm",
+      "source": "common-labels.r1.en.json",
+      "sourceContext": "admin.writer.sections.pagination.previousPageLabel"
+    },
+    {
+      "recordId": "st.980dfmqs1t",
+      "source": "common-labels.r1.en.json",
+      "sourceContext": "admin.writer.chat.tool.done"
+    },
+    {
+      "recordId": "st.aptm2ejxyv",
+      "source": "common-labels.r1.en.json",
+      "sourceContext": "strings.admin.column.releases"
+    },
+    {
+      "recordId": "st.asj8g1mcjn",
+      "source": "common-labels.r1.en.json",
+      "sourceContext": "admin.writer.sections.dataTable.emptyStateTitle"
+    },
+    {
+      "recordId": "st.ata62btvcq",
+      "source": "common-labels.r1.en.json",
+      "sourceContext": "Designer console"
+    },
+    {
+      "recordId": "st.bhhba11w6f",
+      "source": "common-labels.r1.en.json",
+      "sourceContext": "admin.writer.sections.pagination.pageSizeLabel"
+    },
+    {
+      "recordId": "st.c331pzvwey",
+      "source": "common-labels.r1.en.json",
+      "sourceContext": "Designer console"
+    },
+    {
+      "recordId": "st.cqt0021fwj",
+      "source": "common-labels.r1.en.json",
+      "sourceContext": "admin.writer.chat.panel.close"
+    },
+    {
+      "recordId": "st.cw2t0s4dxn",
+      "source": "common-labels.r1.en.json",
+      "sourceContext": "admin.enum.active"
+    },
+    {
+      "recordId": "st.cy7122qr1d",
+      "source": "common-labels.r1.en.json",
+      "sourceContext": "admin.publisher.shareTitle"
+    },
+    {
+      "recordId": "st.dbra6twj2c",
+      "source": "common-labels.r1.en.json",
+      "sourceContext": "Designer console"
+    },
+    {
+      "recordId": "st.dntgjthd24",
+      "source": "common-labels.r1.en.json",
+      "sourceContext": "designer.item.sections.consent"
+    },
+    {
+      "recordId": "st.dvdvvejry8",
+      "source": "common-labels.r1.en.json",
+      "sourceContext": "admin.enum.retired"
+    },
+    {
+      "recordId": "st.ffqnafj61v",
+      "source": "common-labels.r1.en.json",
+      "sourceContext": "strings.admin.outline.label"
+    },
+    {
+      "recordId": "st.gnv660w59z",
+      "source": "common-labels.r1.en.json",
+      "sourceContext": "admin.enum.in-review"
+    },
+    {
+      "recordId": "st.jht60wz8e1",
+      "source": "common-labels.r1.en.json",
+      "sourceContext": "Designer console"
+    },
+    {
+      "recordId": "st.kb8ve83tjp",
+      "source": "common-labels.r1.en.json",
+      "sourceContext": "admin.writer.sections.pagination.nextPageLabel"
+    },
+    {
+      "recordId": "st.m22sa9p9y4",
+      "source": "common-labels.r1.en.json",
+      "sourceContext": "admin.writer.title"
+    },
+    {
+      "recordId": "st.m5cjnqycs1",
+      "source": "common-labels.r1.en.json",
+      "sourceContext": "publisher.actions.openItem"
+    },
+    {
+      "recordId": "st.mq7reh5kyq",
+      "source": "common-labels.r1.en.json",
+      "sourceContext": "admin.enum.stable"
+    },
+    {
+      "recordId": "st.mzdxkf8h43",
+      "source": "common-labels.r1.en.json",
+      "sourceContext": "Designer console"
+    },
+    {
+      "recordId": "st.qcqdptzn0r",
+      "source": "common-labels.r1.en.json",
+      "sourceContext": "Designer console"
+    },
+    {
+      "recordId": "st.rgakrp0zw4",
+      "source": "common-labels.r1.en.json",
+      "sourceContext": "publisher.medium.video"
+    },
+    {
+      "recordId": "st.s079k1p1qj",
+      "source": "common-labels.r1.en.json",
+      "sourceContext": "Workspace shell"
+    },
+    {
+      "recordId": "st.s13b3hwkta",
+      "source": "common-labels.r1.en.json",
+      "sourceContext": "designer.item.sections.pagination"
+    },
+    {
+      "recordId": "st.td8tdah4rw",
+      "source": "common-labels.r1.en.json",
+      "sourceContext": "admin.enum.draft"
+    },
+    {
+      "recordId": "st.tx9f8j9jnf",
+      "source": "common-labels.r1.en.json",
+      "sourceContext": "admin.writer.chat.attachment.name"
+    },
+    {
+      "recordId": "st.v1cbgc4kr2",
+      "source": "common-labels.r1.en.json",
+      "sourceContext": "designer.item.components.item"
+    },
+    {
+      "recordId": "st.v2qavnr3r2",
+      "source": "common-labels.r1.en.json",
+      "sourceContext": "Publisher console"
+    },
+    {
+      "recordId": "st.y86a2b0gmd",
+      "source": "common-labels.r1.en.json",
+      "sourceContext": "Workspace shell"
+    },
+    {
+      "recordId": "st.zxh419w2k5",
+      "source": "common-labels.r1.en.json",
+      "sourceContext": "designer.item.sections.chat"
     }
   ]
 }

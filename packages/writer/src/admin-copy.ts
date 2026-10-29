@@ -4,13 +4,16 @@ import { ADMIN_VOICE_COPY_EN, type AdminVoiceCopy, type AdminVoiceCopyRecord } f
 import { ADMIN_META_COPY_EN, type AdminMetaCopy, type AdminMetaCopyRecord } from "./admin-meta.js";
 import { ADMIN_WRITER_COPY_EN, type AdminRouteCopy } from "./admin-route-copy.js";
 import { ADMIN_CHAT_COPY_EN } from "./admin-chat.js";
+import common from "./catalog/records/common-labels.r1.en.json" with { type: "json" };
+import { freezeAdminCopy } from "./admin-copy-core.js";
 export { ADMIN_CHAT_COPY_EN } from "./admin-chat.js";
 import { createCopyResolver, type CopyResolveOptions } from "./resolve.js";
 export { ADMIN_WRITER_COPY_EN } from "./admin-route-copy.js";
 export type { AdminRouteCopy } from "./admin-route-copy.js";
 
-export type AdminCopyEnvelope = AdminStudioCopy | AdminVoiceCopy | AdminMetaCopy | AdminRouteCopy;
-export type AdminCopyRecord = AdminStudioCopyRecord | AdminVoiceCopyRecord | AdminMetaCopyRecord | AdminRouteCopy["records"][number];
+export const ADMIN_COMMON_COPY_EN = freezeAdminCopy(common);
+export type AdminCopyEnvelope = AdminStudioCopy | AdminVoiceCopy | AdminMetaCopy | AdminRouteCopy | typeof ADMIN_COMMON_COPY_EN;
+export type AdminCopyRecord = AdminStudioCopyRecord | AdminVoiceCopyRecord | AdminMetaCopyRecord | AdminRouteCopy["records"][number] | typeof ADMIN_COMMON_COPY_EN["records"][number];
 
 /** Original envelopes retain their evidence; records are addressed once per id. */
 export interface AdminCopy {
@@ -41,7 +44,7 @@ export function createAdminCopy(envelopes: readonly AdminCopyEnvelope[]): AdminC
   return Object.freeze({ envelopes: Object.freeze([...envelopes]), records: Object.freeze([...records.values()]) });
 }
 
-export const ADMIN_COPY_EN: AdminCopy = createAdminCopy([ADMIN_STUDIO_COPY_EN, ADMIN_VOICE_COPY_EN, ADMIN_META_COPY_EN, ADMIN_WRITER_COPY_EN, ADMIN_CHAT_COPY_EN]);
+export const ADMIN_COPY_EN: AdminCopy = createAdminCopy([ADMIN_STUDIO_COPY_EN, ADMIN_VOICE_COPY_EN, ADMIN_META_COPY_EN, ADMIN_WRITER_COPY_EN, ADMIN_CHAT_COPY_EN, ADMIN_COMMON_COPY_EN]);
 
 /** Read the complete source without manufacturing approval or activation evidence. */
 export function getAdminCopy(): AdminCopy {

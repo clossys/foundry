@@ -1,12 +1,13 @@
 import { loadWriterCatalog, type WriterCatalog } from "../catalog/ia/index.js";
-import { checkWriterLeafSets, loadWriterLeafFreezeSnapshots, WRITER_LEAF_FREEZE_LAYERS, type WriterLeafFreezeOptions, type WriterLeafFreezeSnapshot } from "../catalog-core/leaf-freeze.js";
+import { checkWriterLeafSets, loadWriterLeafFreezeSnapshots, loadWriterLeafAmendments, WRITER_LEAF_FREEZE_LAYERS, type WriterLeafFreezeOptions, type WriterLeafFreezeSnapshot } from "../catalog-core/leaf-freeze.js";
 import type { WriterLibrary } from "../model/types.js";
+import type { StringSplit } from "../catalog/dedupe.js";
 
 export type WriterRuleCode = "WR2" | "WR3" | "WR4" | "WR5" | "WR7" | "WR8" | "WR9" | "WR10" | "WR11";
 export interface WriterCheckFinding { code: WriterRuleCode; severity: "error" | "warning" | "advisory"; path: string; message: string; locale?: string; recordId?: string; field?: string; incomplete?: boolean }
 /** Caller-supplied evidence from a consumer's versioned Designer library; no inferred external IDs. */
 export interface WriterDesignerEvidence { version: string; assets: readonly string[]; leaves: readonly string[]; configs?: Readonly<Record<string, readonly string[]>>; frames: readonly { id: string; logicalProperties?: boolean; configs?: readonly string[] }[] }
-export interface WriterCheckOptions { catalog?: WriterCatalog; freeze?: WriterLeafFreezeOptions; designerLibraries?: readonly WriterDesignerEvidence[]; pseudoFactor?: number }
+export interface WriterCheckOptions { catalog?: WriterCatalog; freeze?: WriterLeafFreezeOptions; designerLibraries?: readonly WriterDesignerEvidence[]; pseudoFactor?: number; stringSplits?: readonly StringSplit[] }
 
 /** WR2 defaults to the shipped catalog and its versioned membership proposals.
  * Empty manifest heads mean approval is pending; no signature is inferred.
@@ -20,7 +21,7 @@ export function checkWriterFreeze(library: WriterLibrary, options: WriterCheckOp
     const snapshots = options.freeze?.snapshots ?? loadWriterLeafFreezeSnapshots();
     // This API validates injected snapshots and amendments before comparing sets.
     const membership = checkWriterLeafSets(catalog.placements, catalog.slots, WRITER_LEAF_FREEZE_LAYERS, {
-      ...options.freeze, snapshots,
+      ...options.freeze, snapshots, amendments: options.freeze?.amendments ?? (options.freeze?.snapshots ? [] : loadWriterLeafAmendments()),
     });
     const findings: WriterCheckFinding[] = membership.map(finding => ({
       code: "WR2", severity: "error", path: `catalog.${finding.source}.${finding.layer}`,

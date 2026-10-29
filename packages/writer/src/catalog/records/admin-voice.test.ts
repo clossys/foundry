@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import drafts from "./admin-voice.r1.en.json" with { type: "json" };
+import common from "./common-labels.r1.en.json" with { type: "json" };
 import terminology from "../admin-terminology.json" with { type: "json" };
 import { validateWriterRecord } from "../../model/validate.js";
 import type { WriterLibrary, WriterRecord, StringRecord } from "../../model/types.js";
@@ -11,7 +12,10 @@ import { checkWriterLength } from "../../checks/length.js";
 import { parseIcuMessage } from "../../icu/parse.js";
 import { resolveCopyRef } from "../../resolve.js";
 
-const records = drafts.records as StringRecord[];
+const usages = common.usages.filter(usage => usage.source === "records/admin-voice.r1.en.json");
+const canonicalId = (id: string) => usages.find(usage => usage.legacyRecordId === id)?.recordId ?? id;
+const sharedIds = new Set(usages.map(usage => usage.recordId));
+const records = [...drafts.records, ...common.records.filter(record => sharedIds.has(record.id))] as StringRecord[];
 const lexicon = terminology.lexiconRecords as WriterRecord[];
 const library = (copy: WriterRecord[] = records): WriterLibrary => ({
   manifest: {
@@ -29,6 +33,7 @@ describe("admin voice draft revision", () => {
     expect(drafts.state).toBe("draft");
     expect(drafts.activation).toBe("none");
     expect(records.length).toBeGreaterThan(150);
+    expect(drafts.records.length + usages.length).toBe(206);
     const known = new Set(loadWriterCatalog().slots.map(slot => slot.id));
     expect(new Set(records.map(record => record.id)).size).toBe(records.length);
     for (const record of [...lexicon, ...records]) {
@@ -40,11 +45,12 @@ describe("admin voice draft revision", () => {
   });
 
   it("pairs every record with source evidence, before/after wording and a rationale", () => {
-    expect(drafts.reviews).toHaveLength(records.length);
-    expect(new Set(drafts.reviews.map(review => review.cellId)).size).toBe(records.length);
-    for (const record of records) {
-      const review = drafts.reviews.find(row => row.recordId === record.id)!;
-      expect(review).toBeDefined();
+    expect(drafts.reviews).toHaveLength(drafts.records.length + usages.length);
+    expect(new Set(drafts.reviews.map(review => review.cellId)).size).toBe(206);
+    expect(new Set(drafts.reviews.map(review => canonicalId(review.recordId)))).toEqual(new Set(records.map(record => record.id)));
+    for (const review of drafts.reviews) {
+      const record = records.find(record => record.id === canonicalId(review.recordId))!;
+      expect(record, review.cellId).toBeDefined();
       expect(review.after).toBe(record.text);
       expect(review.before.trim().length).toBeGreaterThan(0);
       expect(review.rationale.trim().length).toBeGreaterThan(15);
@@ -53,7 +59,9 @@ describe("admin voice draft revision", () => {
       expect(review.source.line).toBeGreaterThan(0);
       expect(Object.hasOwn(drafts.sourceFiles, review.source.path)).toBe(true);
       expect(review.scope).toBe("draft only");
-      expect(review.budget).toBe(record.limits?.maxChars);
+      const usage = usages.find(usage => usage.legacyRecordId === review.recordId);
+      expect(review.budget).toBe(usage?.limits.maxChars ?? record.limits?.maxChars);
+      expect(record.limits?.maxChars).toBeLessThanOrEqual(review.budget);
     }
   });
 
@@ -100,8 +108,8 @@ describe("admin voice draft revision", () => {
   });
 
   it("reports binding and missing-host-copy Needs without pretending the draft is rendered", () => {
-    for (const record of records) expect(drafts.needs).toContainEqual(expect.objectContaining({
-      recordId: record.id, severity: "P0", status: "Need",
+    for (const review of drafts.reviews) expect(drafts.needs).toContainEqual(expect.objectContaining({
+      recordId: review.recordId, severity: "P0", status: "Need",
     }));
     expect(drafts.coverage.kind).toBe("source audit; not rendered-page coverage");
     expect(drafts.needs.some(need => need.cellId === "document.head-copy")).toBe(true);

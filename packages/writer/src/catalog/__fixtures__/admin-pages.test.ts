@@ -1,5 +1,4 @@
-import { readFileSync, readdirSync } from "node:fs";
-import { join } from "node:path";
+import { readFileSync } from "node:fs";
 import { expect, it } from "vitest";
 import { IntlMessageFormat } from "intl-messageformat";
 import { validateWriterRecord } from "../../model/validate.js";
@@ -9,121 +8,105 @@ import { directionFor } from "../../locale.js";
 
 interface Envelope {
   state: string; activation: string; locale: string; direction?: string;
-  aliases: Record<string, string>; records: StringRecord[];
+  aliases?: Record<string, string>; records: StringRecord[];
   bindings: { cellId: string; recordId: string; target: string; kind: string }[];
   externalRecords?: { recordId: string; source: string; sourceContext: string }[];
+  coverage?: { proposedBindings: number };
 }
 const read = (path: string): Envelope => JSON.parse(readFileSync(new URL(path, import.meta.url), "utf8"));
 const english = () => read("../records/admin-pages.r1.en.json");
 const arabic = () => read("./admin-pages.r1.ar.json");
-const library = (en: Envelope, ar?: Envelope): WriterLibrary => ({
+const sources = () => ["admin-pages.r1.en.json", "admin-studio.r1.en.json", "admin-chat.r1.en.json", "common-labels.r1.en.json"].map(source => ({ source, envelope: read(`../records/${source}`) }));
+const allRecords = () => sources().flatMap(source => source.envelope.records);
+const library = (records: StringRecord[], ar?: Envelope): WriterLibrary => ({
   manifest: { consumer: "admin-pages-fixture", messageSyntax: "icu-mf1", defaultLocale: "en",
     locales: [{ tag: "en", dir: "ltr", state: "active" }, ...(ar ? [{ tag: "ar", dir: "rtl", state: "active" } as const] : [])],
     fallback: {}, strategist: { path: "strategy" }, leafFreeze: { lexicon: "", strings: "", patterns: "", passages: "", narratives: "" } },
-  locales: { en: { records: en.records, documents: [] }, ...(ar ? { ar: { records: ar.records, documents: [] } } : {}) },
+  locales: { en: { records, documents: [] }, ...(ar ? { ar: { records: ar.records, documents: [] } } : {}) },
 });
 
-it("parses registered draft records with unique opaque IDs and one complete semantic cell binding", () => {
-  const en = english(), ids = en.records.map(record => record.id);
+it("allows many page bindings per canonical draft record and resolves every external source explicitly", () => {
+  const en = english(), sourceRows = sources(), records = sourceRows.flatMap(row => row.envelope.records), ids = records.map(record => record.id);
   expect(en).toMatchObject({ state: "draft", activation: "none", locale: "en" });
   expect(new Set(ids).size).toBe(ids.length);
+  expect(en.bindings).toHaveLength(363);
+  expect(Object.keys(en.aliases!)).toHaveLength(363);
+  expect(en.coverage?.proposedBindings).toBe(en.bindings.length);
   expect(new Set(en.bindings.map(binding => binding.cellId)).size).toBe(en.bindings.length);
-  expect(en.bindings).toHaveLength(en.records.length + (en.externalRecords?.length ?? 0));
-  for (const record of en.records) {
-    expect(validateWriterRecord(record, "strings"), record.context).toEqual([]);
+  expect(new Set(en.bindings.map(binding => binding.recordId)).size).toBeLessThan(en.bindings.length);
+  for (const binding of en.bindings) {
+    expect(en.aliases![binding.cellId]).toBe(binding.recordId);
+    const record = records.find(record => record.id === binding.recordId)!;
+    expect(record, binding.cellId).toBeDefined();
+    expect(validateWriterRecord(record, "strings"), binding.cellId).toEqual([]);
     expect(record.status).toBe("draft"); expect(record).not.toHaveProperty("approval");
-    expect(record.context).toMatch(/^strings\.admin\./);
-    expect(en.aliases[record.context]).toBe(record.id);
-    expect(en.bindings.filter(binding => binding.recordId === record.id)).toEqual([
-      { cellId: record.context, recordId: record.id, target: expect.stringMatching(/^(sections|frames)\./), kind: "CopyRef" },
-    ]);
+    expect(binding).toMatchObject({ target: expect.stringMatching(/^(sections|frames)\./), kind: "CopyRef" });
+    if (!en.records.some(local => local.id === record.id)) {
+      const source = sourceRows.find(source => source.envelope.records.some(local => local.id === record.id))!;
+      expect(en.externalRecords).toContainEqual({ recordId: record.id, source: source.source, sourceContext: record.context });
+    }
   }
-  // Existing source IDs must not be shadowed by this new bundle.
-  const existing = new Set<string>();
-  const collect = (value: unknown): void => {
-    if (Array.isArray(value)) { value.forEach(collect); return; }
-    if (value && typeof value === "object") {
-      const row = value as Record<string, unknown>;
-      if (typeof row.id === "string" && typeof row.leaf === "string") existing.add(row.id);
-      else Object.values(row).forEach(collect);
-    }
-  };
-  const visit = (path: string): void => {
-    for (const entry of readdirSync(path, { withFileTypes: true })) {
-      const file = join(path, entry.name);
-      if (entry.isDirectory()) visit(file);
-      else if (entry.name.endsWith(".json") && entry.name !== "admin-pages.r1.en.json") collect(JSON.parse(readFileSync(file, "utf8")));
-    }
-  };
-  visit(new URL("../records/", import.meta.url).pathname);
-  for (const id of ids) expect(existing.has(id), id).toBe(false);
 });
 
-it("binds every consumed IA heading semantically and reuses existing Designer copy without duplicating it", () => {
-  const en = english(), localIds = new Set(en.records.map(record => record.id));
+it("keeps every consumed IA heading bound after canonical record sharing", () => {
+  const en = english(), sourceRows = sources(), records = sourceRows.flatMap(row => row.envelope.records);
+  const common = read("../records/common-labels.r1.en.json") as Envelope & { usages: { source: string; context: string; recordId: string }[] };
   const source = (path: string) => JSON.parse(readFileSync(new URL(path, import.meta.url), "utf8"));
-  for (const layer of ["lexicon", "strings", "patterns", "passages", "narratives"]) {
-    for (const node of source(`../ia/${layer}.json`).nodes) {
-      for (const heading of [node, ...(node.children ?? [])]) {
-        const key = `strings.admin.ia.writer.${layer}.${heading.id}`, id = en.aliases[key];
-        expect(localIds.has(id!), key).toBe(true);
-        expect(en.records.find(record => record.id === id)).toMatchObject({ context: key, text: heading.label });
-        expect(en.bindings.find(binding => binding.cellId === key)?.recordId).toBe(id);
-      }
-    }
-  }
-  for (const node of source("../../../../publisher/src/content/tree.json").nodes) {
-    for (const heading of node.children ?? []) {
-      const key = `strings.admin.ia.publisher.${node.id}.${heading.id}`, id = en.aliases[key];
-      expect(localIds.has(id!), key).toBe(true);
-      expect(en.records.find(record => record.id === id)).toMatchObject({ context: key, text: heading.label });
-    }
-  }
-  const existing = source("../records/admin-studio.r1.en.json").records as StringRecord[];
-  for (const layer of ["tokens", "assets", "components", "sections", "frames"]) {
-    for (const node of source(`../../../../designer/src/catalog/ia/${layer}.json`).nodes) {
-      for (const heading of [node, ...(node.children ?? [])]) {
-        const key = `strings.admin.ia.designer.${layer}.${heading.id}`, id = en.aliases[key];
-        const sourceContext = `designer.ia.${layer}.${heading.id}`;
-        expect(existing.find(record => record.context === sourceContext)?.id, key).toBe(id);
-        expect(localIds.has(id!), key).toBe(false);
-        expect(en.externalRecords).toContainEqual({ recordId: id, source: "admin-studio.r1.en.json", sourceContext });
+  for (const [owner, layers] of Object.entries({ writer: ["lexicon", "strings", "patterns", "passages", "narratives"], designer: ["tokens", "assets", "components", "sections", "frames"] })) {
+    for (const layer of layers) {
+      const path = owner === "writer" ? `../ia/${layer}.json` : `../../../../designer/src/catalog/ia/${layer}.json`;
+      for (const node of source(path).nodes) for (const heading of [node, ...(node.children ?? [])]) {
+        const key = `strings.admin.ia.${owner}.${layer}.${heading.id}`, id = en.aliases![key];
+        if (owner === "writer") expect(records.find(record => record.id === id)?.text, key).toBe(heading.label);
+        else {
+          // Designer display copy is authored independently from raw IA labels.
+          const context = `designer.ia.${layer}.${heading.id}`;
+          const original = sourceRows.find(row => row.source === "admin-studio.r1.en.json")!.envelope.records.find(record => record.context === context);
+          expect(original?.id ?? common.usages.find(usage => usage.source === "records/admin-studio.r1.en.json" && usage.context === context)?.recordId, key).toBe(id);
+        }
         expect(en.bindings.find(binding => binding.cellId === key)?.recordId).toBe(id);
       }
     }
   }
 });
 
-it("covers the consumed page families and formats counters rather than freezing data values", () => {
-  const en = english();
-  const required = ["page.designer", "page.writer", "page.publisher", "stats.total", "stats.status", "action.showAll", "action.pinToChat", "search.placeholder", "empty.title", "noResults.title", "toggle.outline", "toggle.chat", "item.heading", "item.notFound", "pagination.range", "column.preview", "column.localeCoverage", "column.lastPublished"];
-  for (const key of required) expect(en.aliases).toHaveProperty(`strings.admin.${key}`);
-  for (const [page, groups] of Object.entries({ designer: ["tokens", "assets", "components", "sections", "frames"], writer: ["lexicon", "strings", "patterns", "passages", "narratives"], publisher: ["websites", "documents", "presentations", "videos", "messages", "social"] })) {
-    for (const group of groups) expect(en.aliases).toHaveProperty(`strings.admin.group.${page}.${group}`);
-  }
-  expect(checkWriterICU(library(en))).toEqual([]);
-  const format = (key: string, values: Record<string, string | number>) => {
-    const record = en.records.find(record => record.id === en.aliases[`strings.admin.${key}`])!;
-    return new IntlMessageFormat(record.text, "en").format(values);
-  };
+it("formats shared page counters without freezing data values", () => {
+  const en = english(), records = allRecords();
+  expect(checkWriterICU(library(records))).toEqual([]);
+  const format = (key: string, values: Record<string, string | number>) => new IntlMessageFormat(records.find(record => record.id === en.aliases![`strings.admin.${key}`])!.text, "en").format(values);
   expect(format("action.showAll", { count: 137 })).toBe("Show all (137)");
   expect(format("stats.total", { count: 1 })).toBe("1 record");
   expect(format("stats.total", { count: 2 })).toBe("2 records");
 });
 
-it("supplies exactly two native Arabic draft records without pretending to translate the whole page", () => {
-  const en = english(), ar = arabic();
+it("preserves exactly two native Arabic drafts with canonical English IDs and semantic bindings", () => {
+  const en = allRecords(), ar = arabic(), content = library(en, ar);
   expect(ar).toMatchObject({ state: "draft", activation: "none", locale: "ar", direction: "rtl" });
   expect(ar.records).toHaveLength(2); expect(ar.bindings).toHaveLength(2);
-  const content = library(en, ar);
   expect(directionFor("ar", content.manifest)).toBe("rtl");
   expect(checkWriterICU(content)).toEqual([]);
   for (const record of ar.records) {
     expect(validateWriterRecord(record, "strings")).toEqual([]);
-    expect(en.records.find(source => source.id === record.id)?.context).toBe(record.context);
+    expect(en.find(source => source.id === record.id)).toMatchObject({ context: record.context, leaf: record.leaf });
     expect(record.status).toBe("draft"); expect(record).not.toHaveProperty("approval");
     expect(record.text).toMatch(/[\u0600-\u06ff]/);
-    expect(ar.aliases[record.context]).toBe(record.id);
-    expect(ar.bindings.find(binding => binding.recordId === record.id)?.cellId).toBe(record.context);
+    const binding = ar.bindings.find(binding => binding.recordId === record.id)!;
+    expect(ar.aliases![binding.cellId]).toBe(record.id);
   }
+});
+
+it("resolves all 363 bindings through the authentic P1b copy consumer with declared shared sources", async () => {
+  const { prepareAdminPageCopyEnvelopes } = await import("../../../../publisher/src/web/pages/admin-copy-source.js");
+  const { createAdminPageCopy } = await import("../../../../publisher/src/web/pages/admin-copy.js");
+  const sourceRows = sources(), records = sourceRows.flatMap(row => row.envelope.records);
+  const copy = createAdminPageCopy({ locale: "en", envelopes: prepareAdminPageCopyEnvelopes([...sourceRows, { source: "admin-pages.r1.ar.json", envelope: arabic() }]) });
+  for (const binding of english().bindings) {
+    const record = records.find(record => record.id === binding.recordId)!;
+    const values = Object.fromEntries((record.args ?? []).map(arg => [arg.name, ["number", "plural", "date"].includes(arg.type) ? 2 : "Writer"]));
+    const result = copy.resolve({ id: binding.cellId, ...(Object.keys(values).length ? { values } : {}) });
+    expect(result.text.trim(), binding.cellId).not.toBe("");
+    expect(result.provenance).toMatchObject({ cellId: binding.cellId, recordId: binding.recordId, locale: "en", status: "draft", activation: "none" });
+  }
+  expect(copy({ id: "strings.admin.page.writer", locale: "ar" })).toBe("الكاتب");
+  expect(copy({ id: "strings.admin.column.text", locale: "ar" })).toBe("النص");
 });

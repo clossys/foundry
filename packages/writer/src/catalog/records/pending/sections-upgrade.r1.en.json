@@ -81,7 +81,7 @@
           },
           "rows[].status": {
             "ref": "string",
-            "id": "st.5m0y72hzzj"
+            "id": "st.kmz1y1qvg0"
           }
         },
         "proposedRecordId": "ps.vys01a10av"
@@ -108,11 +108,11 @@
           },
           "labels.zoomIn": {
             "ref": "string",
-            "id": "st.g04a9dxcyp"
+            "id": "st.q2pdjh83tt"
           },
           "labels.zoomOut": {
             "ref": "string",
-            "id": "st.qf4zddcgnz"
+            "id": "st.frk6prh48a"
           },
           "labels.fit": {
             "ref": "string",
@@ -162,36 +162,12 @@
       "text": "Slot"
     },
     {
-      "id": "st.5m0y72hzzj",
-      "leaf": "strings.field-labels",
-      "context": "admin.writer.sections.new.slot-board.rows.status",
-      "status": "draft",
-      "origin": "authored",
-      "text": "Not selected"
-    },
-    {
       "id": "st.37v9w4wyr8",
       "leaf": "strings.field-labels",
       "context": "admin.writer.sections.new.canvas-controls.labels.zoom",
       "status": "draft",
       "origin": "authored",
       "text": "Canvas zoom"
-    },
-    {
-      "id": "st.g04a9dxcyp",
-      "leaf": "strings.field-labels",
-      "context": "admin.writer.sections.new.canvas-controls.labels.zoomIn",
-      "status": "draft",
-      "origin": "authored",
-      "text": "Zoom in"
-    },
-    {
-      "id": "st.qf4zddcgnz",
-      "leaf": "strings.field-labels",
-      "context": "admin.writer.sections.new.canvas-controls.labels.zoomOut",
-      "status": "draft",
-      "origin": "authored",
-      "text": "Zoom out"
     },
     {
       "id": "st.ga01fexv2v",
@@ -237,7 +213,7 @@
     },
     {
       "cellId": "admin.writer.sections.new.slot-board.rows.status",
-      "recordId": "st.5m0y72hzzj",
+      "recordId": "st.kmz1y1qvg0",
       "target": "sections.slot-board",
       "kind": "CopyRef"
     },
@@ -249,13 +225,13 @@
     },
     {
       "cellId": "admin.writer.sections.new.canvas-controls.labels.zoomIn",
-      "recordId": "st.g04a9dxcyp",
+      "recordId": "st.q2pdjh83tt",
       "target": "sections.canvas-controls",
       "kind": "CopyRef"
     },
     {
       "cellId": "admin.writer.sections.new.canvas-controls.labels.zoomOut",
-      "recordId": "st.qf4zddcgnz",
+      "recordId": "st.frk6prh48a",
       "target": "sections.canvas-controls",
       "kind": "CopyRef"
     },
@@ -277,11 +253,28 @@
     "new.canvas-lane.header.description": "st.dc395zvmxp",
     "new.slot-board.header.heading": "st.9crtvgwrk3",
     "new.slot-board.rows.label": "st.7xqzxry110",
-    "new.slot-board.rows.status": "st.5m0y72hzzj",
+    "new.slot-board.rows.status": "st.kmz1y1qvg0",
     "new.canvas-controls.labels.zoom": "st.37v9w4wyr8",
-    "new.canvas-controls.labels.zoomIn": "st.g04a9dxcyp",
-    "new.canvas-controls.labels.zoomOut": "st.qf4zddcgnz",
+    "new.canvas-controls.labels.zoomIn": "st.q2pdjh83tt",
+    "new.canvas-controls.labels.zoomOut": "st.frk6prh48a",
     "new.canvas-controls.labels.fit": "st.ga01fexv2v",
     "new.canvas-controls.labels.reset": "st.zxv0n7s7rc"
-  }
+  },
+  "externalRecords": [
+    {
+      "recordId": "st.frk6prh48a",
+      "source": "common-labels.r1.en.json",
+      "sourceContext": "Designer console"
+    },
+    {
+      "recordId": "st.kmz1y1qvg0",
+      "source": "common-labels.r1.en.json",
+      "sourceContext": "admin.enum.not-chosen"
+    },
+    {
+      "recordId": "st.q2pdjh83tt",
+      "source": "common-labels.r1.en.json",
+      "sourceContext": "Designer console"
+    }
+  ]
 }

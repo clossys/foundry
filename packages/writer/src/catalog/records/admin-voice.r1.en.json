@@ -26,17 +26,6 @@
   },
   "records": [
     {
-      "id": "st.1vc3bb7pw7",
-      "leaf": "strings.names",
-      "context": "Designer console",
-      "status": "draft",
-      "origin": "foundry-default",
-      "text": "Details",
-      "limits": {
-        "maxChars": 60
-      }
-    },
-    {
       "id": "st.exz2z4d7nh",
       "leaf": "strings.names",
       "context": "Designer console",
@@ -59,45 +48,12 @@
       }
     },
     {
-      "id": "st.mzdxkf8h43",
-      "leaf": "strings.names",
-      "context": "Designer console",
-      "status": "draft",
-      "origin": "foundry-default",
-      "text": "Preview",
-      "limits": {
-        "maxChars": 60
-      }
-    },
-    {
       "id": "st.1qthzgfes6",
       "leaf": "strings.field-labels",
       "context": "Designer console",
       "status": "draft",
       "origin": "foundry-default",
       "text": "Change history",
-      "limits": {
-        "maxChars": 40
-      }
-    },
-    {
-      "id": "st.nbe4p50nrx",
-      "leaf": "strings.field-labels",
-      "context": "Designer console",
-      "status": "draft",
-      "origin": "foundry-default",
-      "text": "System",
-      "limits": {
-        "maxChars": 40
-      }
-    },
-    {
-      "id": "st.mm94prnm0g",
-      "leaf": "strings.field-labels",
-      "context": "Designer console",
-      "status": "draft",
-      "origin": "foundry-default",
-      "text": "Layer",
       "limits": {
         "maxChars": 40
       }
@@ -133,17 +89,6 @@
       "text": "Ask an agent to make the change.",
       "limits": {
         "maxChars": 160
-      }
-    },
-    {
-      "id": "st.6wk74mm8th",
-      "leaf": "strings.statuses",
-      "context": "Designer console",
-      "status": "draft",
-      "origin": "foundry-default",
-      "text": "Not selected",
-      "limits": {
-        "maxChars": 80
       }
     },
     {
@@ -246,17 +191,6 @@
       }
     },
     {
-      "id": "st.6m4cvpxtx2",
-      "leaf": "strings.actions",
-      "context": "Designer console",
-      "status": "draft",
-      "origin": "foundry-default",
-      "text": "Close",
-      "limits": {
-        "maxChars": 24
-      }
-    },
-    {
       "id": "st.pv1p7w3gfa",
       "leaf": "strings.actions",
       "context": "Designer console",
@@ -334,17 +268,6 @@
       }
     },
     {
-      "id": "st.02nqj35esc",
-      "leaf": "strings.field-labels",
-      "context": "Designer console",
-      "status": "draft",
-      "origin": "foundry-default",
-      "text": "Library canvas",
-      "limits": {
-        "maxChars": 40
-      }
-    },
-    {
       "id": "st.7tbh922ztj",
       "leaf": "strings.descriptions",
       "context": "Designer console",
@@ -411,39 +334,6 @@
       }
     },
     {
-      "id": "st.t029hg04zc",
-      "leaf": "strings.field-labels",
-      "context": "Designer console",
-      "status": "draft",
-      "origin": "foundry-default",
-      "text": "All",
-      "limits": {
-        "maxChars": 40
-      }
-    },
-    {
-      "id": "st.bw0n8vs9db",
-      "leaf": "strings.field-labels",
-      "context": "Designer console",
-      "status": "draft",
-      "origin": "foundry-default",
-      "text": "Pending",
-      "limits": {
-        "maxChars": 40
-      }
-    },
-    {
-      "id": "st.dbra6twj2c",
-      "leaf": "strings.field-labels",
-      "context": "Designer console",
-      "status": "draft",
-      "origin": "foundry-default",
-      "text": "Warnings",
-      "limits": {
-        "maxChars": 40
-      }
-    },
-    {
       "id": "st.kxdsph6sed",
       "leaf": "strings.field-labels",
       "context": "Designer console",
@@ -463,28 +353,6 @@
       "text": "Zoom",
       "limits": {
         "maxChars": 40
-      }
-    },
-    {
-      "id": "st.q2pdjh83tt",
-      "leaf": "strings.actions",
-      "context": "Designer console",
-      "status": "draft",
-      "origin": "foundry-default",
-      "text": "Zoom in",
-      "limits": {
-        "maxChars": 24
-      }
-    },
-    {
-      "id": "st.frk6prh48a",
-      "leaf": "strings.actions",
-      "context": "Designer console",
-      "status": "draft",
-      "origin": "foundry-default",
-      "text": "Zoom out",
-      "limits": {
-        "maxChars": 24
       }
     },
     {
@@ -550,72 +418,6 @@
       }
     },
     {
-      "id": "st.8znckwdpas",
-      "leaf": "strings.field-labels",
-      "context": "Designer console",
-      "status": "draft",
-      "origin": "foundry-default",
-      "text": "Layers",
-      "limits": {
-        "maxChars": 40
-      }
-    },
-    {
-      "id": "st.tk773axxm2",
-      "leaf": "strings.field-labels",
-      "context": "Designer console",
-      "status": "draft",
-      "origin": "foundry-default",
-      "text": "Tokens",
-      "limits": {
-        "maxChars": 40
-      }
-    },
-    {
-      "id": "st.x7gywrs0qp",
-      "leaf": "strings.field-labels",
-      "context": "Designer console",
-      "status": "draft",
-      "origin": "foundry-default",
-      "text": "Assets",
-      "limits": {
-        "maxChars": 40
-      }
-    },
-    {
-      "id": "st.paa7qey2jr",
-      "leaf": "strings.field-labels",
-      "context": "Designer console",
-      "status": "draft",
-      "origin": "foundry-default",
-      "text": "Components",
-      "limits": {
-        "maxChars": 40
-      }
-    },
-    {
-      "id": "st.ata62btvcq",
-      "leaf": "strings.field-labels",
-      "context": "Designer console",
-      "status": "draft",
-      "origin": "foundry-default",
-      "text": "Sections",
-      "limits": {
-        "maxChars": 40
-      }
-    },
-    {
-      "id": "st.82cxvbv76e",
-      "leaf": "strings.field-labels",
-      "context": "Designer console",
-      "status": "draft",
-      "origin": "foundry-default",
-      "text": "Frames",
-      "limits": {
-        "maxChars": 40
-      }
-    },
-    {
       "id": "st.4adqrddw0d",
       "leaf": "strings.errors",
       "context": "Designer console",
@@ -627,56 +429,12 @@
       }
     },
     {
-      "id": "st.ma5b1ssq0f",
-      "leaf": "strings.names",
-      "context": "Designer console",
-      "status": "draft",
-      "origin": "foundry-default",
-      "text": "Checks",
-      "limits": {
-        "maxChars": 60
-      }
-    },
-    {
-      "id": "st.jrxtfy1c6j",
-      "leaf": "strings.actions",
-      "context": "Designer console",
-      "status": "draft",
-      "origin": "foundry-default",
-      "text": "Close",
-      "limits": {
-        "maxChars": 24
-      }
-    },
-    {
       "id": "st.1fgz455vxp",
       "leaf": "strings.field-labels",
       "context": "Designer console",
       "status": "draft",
       "origin": "foundry-default",
       "text": "Resolved",
-      "limits": {
-        "maxChars": 40
-      }
-    },
-    {
-      "id": "st.840jzn4b7m",
-      "leaf": "strings.field-labels",
-      "context": "Designer console",
-      "status": "draft",
-      "origin": "foundry-default",
-      "text": "Checks",
-      "limits": {
-        "maxChars": 40
-      }
-    },
-    {
-      "id": "st.6nrp8gmqv3",
-      "leaf": "strings.field-labels",
-      "context": "Designer console",
-      "status": "draft",
-      "origin": "foundry-default",
-      "text": "Issues",
       "limits": {
         "maxChars": 40
       }
@@ -699,38 +457,6 @@
       "status": "draft",
       "origin": "foundry-default",
       "text": "Target",
-      "limits": {
-        "maxChars": 40
-      }
-    },
-    {
-      "id": "st.0xns3ts510",
-      "leaf": "strings.counters",
-      "context": "Designer console",
-      "status": "draft",
-      "origin": "foundry-default",
-      "text": "{errors, plural, one {# error} other {# errors}}, {notices, plural, one {# notice} other {# notices}}",
-      "args": [
-        {
-          "name": "errors",
-          "type": "plural"
-        },
-        {
-          "name": "notices",
-          "type": "plural"
-        }
-      ],
-      "limits": {
-        "maxChars": 60
-      }
-    },
-    {
-      "id": "st.eq5v4nyjxt",
-      "leaf": "strings.field-labels",
-      "context": "Designer console",
-      "status": "draft",
-      "origin": "foundry-default",
-      "text": "Requirements",
       "limits": {
         "maxChars": 40
       }
@@ -769,45 +495,12 @@
       }
     },
     {
-      "id": "st.e18a866a4k",
-      "leaf": "strings.field-labels",
-      "context": "Designer console",
-      "status": "draft",
-      "origin": "foundry-default",
-      "text": "Source history",
-      "limits": {
-        "maxChars": 40
-      }
-    },
-    {
-      "id": "st.mrjspetnty",
-      "leaf": "strings.field-labels",
-      "context": "Designer console",
-      "status": "draft",
-      "origin": "foundry-default",
-      "text": "Coverage",
-      "limits": {
-        "maxChars": 40
-      }
-    },
-    {
       "id": "st.3v6rrw12tp",
       "leaf": "strings.field-labels",
       "context": "Designer console",
       "status": "draft",
       "origin": "foundry-default",
       "text": "Library boards",
-      "limits": {
-        "maxChars": 40
-      }
-    },
-    {
-      "id": "st.58x0w94bqx",
-      "leaf": "strings.field-labels",
-      "context": "Designer console",
-      "status": "draft",
-      "origin": "foundry-default",
-      "text": "Item",
       "limits": {
         "maxChars": 40
       }
@@ -835,40 +528,6 @@
       }
     },
     {
-      "id": "st.a7tkca4nej",
-      "leaf": "strings.field-labels",
-      "context": "Designer console",
-      "status": "draft",
-      "origin": "foundry-default",
-      "text": "Expand {name}",
-      "args": [
-        {
-          "name": "name",
-          "type": "string"
-        }
-      ],
-      "limits": {
-        "maxChars": 40
-      }
-    },
-    {
-      "id": "st.wm5dgfj32e",
-      "leaf": "strings.field-labels",
-      "context": "Designer console",
-      "status": "draft",
-      "origin": "foundry-default",
-      "text": "Collapse {name}",
-      "args": [
-        {
-          "name": "name",
-          "type": "string"
-        }
-      ],
-      "limits": {
-        "maxChars": 40
-      }
-    },
-    {
       "id": "st.e5v56hva94",
       "leaf": "strings.statuses",
       "context": "Designer console",
@@ -877,17 +536,6 @@
       "text": "Different",
       "limits": {
         "maxChars": 80
-      }
-    },
-    {
-      "id": "st.p9j9cmb766",
-      "leaf": "strings.field-labels",
-      "context": "Designer console",
-      "status": "draft",
-      "origin": "foundry-default",
-      "text": "Pending",
-      "limits": {
-        "maxChars": 40
       }
     },
     {
@@ -946,17 +594,6 @@
       }
     },
     {
-      "id": "st.3xkbhrd42a",
-      "leaf": "strings.field-labels",
-      "context": "Designer console",
-      "status": "draft",
-      "origin": "foundry-default",
-      "text": "Library canvas",
-      "limits": {
-        "maxChars": 40
-      }
-    },
-    {
       "id": "st.jfh2rm8fcc",
       "leaf": "strings.field-labels",
       "context": "Designer console",
@@ -977,27 +614,6 @@
       "args": [
         {
           "name": "count",
-          "type": "plural"
-        }
-      ],
-      "limits": {
-        "maxChars": 60
-      }
-    },
-    {
-      "id": "st.pxhmnm5fsp",
-      "leaf": "strings.counters",
-      "context": "Designer console",
-      "status": "draft",
-      "origin": "foundry-default",
-      "text": "{errors, plural, one {# error} other {# errors}}, {notices, plural, one {# notice} other {# notices}}",
-      "args": [
-        {
-          "name": "errors",
-          "type": "plural"
-        },
-        {
-          "name": "notices",
           "type": "plural"
         }
       ],
@@ -1094,56 +710,12 @@
       }
     },
     {
-      "id": "st.v8mkp4103p",
-      "leaf": "strings.field-labels",
-      "context": "Designer console",
-      "status": "draft",
-      "origin": "foundry-default",
-      "text": "Item",
-      "limits": {
-        "maxChars": 40
-      }
-    },
-    {
       "id": "st.frmsmsxekc",
       "leaf": "strings.field-labels",
       "context": "Designer console",
       "status": "draft",
       "origin": "foundry-default",
       "text": "Source trust",
-      "limits": {
-        "maxChars": 40
-      }
-    },
-    {
-      "id": "st.eq96zszzg7",
-      "leaf": "strings.field-labels",
-      "context": "Designer console",
-      "status": "draft",
-      "origin": "foundry-default",
-      "text": "Used by",
-      "limits": {
-        "maxChars": 40
-      }
-    },
-    {
-      "id": "st.7q0kne0f5p",
-      "leaf": "strings.field-labels",
-      "context": "Designer console",
-      "status": "draft",
-      "origin": "foundry-default",
-      "text": "None",
-      "limits": {
-        "maxChars": 40
-      }
-    },
-    {
-      "id": "st.qcqdptzn0r",
-      "leaf": "strings.field-labels",
-      "context": "Designer console",
-      "status": "draft",
-      "origin": "foundry-default",
-      "text": "Source",
       "limits": {
         "maxChars": 40
       }
@@ -1182,17 +754,6 @@
       }
     },
     {
-      "id": "st.ajk345sfde",
-      "leaf": "strings.field-labels",
-      "context": "Designer console",
-      "status": "draft",
-      "origin": "foundry-default",
-      "text": "Status",
-      "limits": {
-        "maxChars": 40
-      }
-    },
-    {
       "id": "st.q64hpbsvvz",
       "leaf": "strings.field-labels",
       "context": "Designer console",
@@ -1204,56 +765,12 @@
       }
     },
     {
-      "id": "st.pazx9fx0vg",
-      "leaf": "strings.field-labels",
-      "context": "Designer console",
-      "status": "draft",
-      "origin": "foundry-default",
-      "text": "Options",
-      "limits": {
-        "maxChars": 40
-      }
-    },
-    {
-      "id": "st.82h5wzt7c3",
-      "leaf": "strings.field-labels",
-      "context": "Designer console",
-      "status": "draft",
-      "origin": "foundry-default",
-      "text": "Issues",
-      "limits": {
-        "maxChars": 40
-      }
-    },
-    {
       "id": "st.rnrdgg3awa",
       "leaf": "strings.field-labels",
       "context": "Designer console",
       "status": "draft",
       "origin": "foundry-default",
       "text": "Through",
-      "limits": {
-        "maxChars": 40
-      }
-    },
-    {
-      "id": "st.gn3j25m31k",
-      "leaf": "strings.field-labels",
-      "context": "Designer console",
-      "status": "draft",
-      "origin": "foundry-default",
-      "text": "Light",
-      "limits": {
-        "maxChars": 40
-      }
-    },
-    {
-      "id": "st.8z45ewb90z",
-      "leaf": "strings.field-labels",
-      "context": "Designer console",
-      "status": "draft",
-      "origin": "foundry-default",
-      "text": "Dark",
       "limits": {
         "maxChars": 40
       }
@@ -1311,17 +828,6 @@
       "text": "Shows requirements; preview checks are separate.",
       "limits": {
         "maxChars": 160
-      }
-    },
-    {
-      "id": "st.tmczk7n826",
-      "leaf": "strings.field-labels",
-      "context": "Designer console",
-      "status": "draft",
-      "origin": "foundry-default",
-      "text": "Requirements",
-      "limits": {
-        "maxChars": 40
       }
     },
     {
@@ -1501,28 +1007,6 @@
       }
     },
     {
-      "id": "st.y86a2b0gmd",
-      "leaf": "strings.actions",
-      "context": "Workspace shell",
-      "status": "draft",
-      "origin": "foundry-default",
-      "text": "More actions",
-      "limits": {
-        "maxChars": 24
-      }
-    },
-    {
-      "id": "st.jecfnpr6a1",
-      "leaf": "strings.field-labels",
-      "context": "Workspace shell",
-      "status": "draft",
-      "origin": "foundry-default",
-      "text": "Navigation",
-      "limits": {
-        "maxChars": 40
-      }
-    },
-    {
       "id": "st.sqsqn2s9v0",
       "leaf": "strings.empty",
       "context": "Workspace shell",
@@ -1531,112 +1015,6 @@
       "text": "No pages are available. Ask an agent to check your navigation.",
       "limits": {
         "maxChars": 120
-      }
-    },
-    {
-      "id": "st.e85mfcrpb6",
-      "leaf": "strings.field-labels",
-      "context": "Workspace shell",
-      "status": "draft",
-      "origin": "foundry-default",
-      "text": "Expand {name}",
-      "args": [
-        {
-          "name": "name",
-          "type": "string"
-        }
-      ],
-      "limits": {
-        "maxChars": 40
-      }
-    },
-    {
-      "id": "st.g7hbg5n2bs",
-      "leaf": "strings.field-labels",
-      "context": "Workspace shell",
-      "status": "draft",
-      "origin": "foundry-default",
-      "text": "Collapse {name}",
-      "args": [
-        {
-          "name": "name",
-          "type": "string"
-        }
-      ],
-      "limits": {
-        "maxChars": 40
-      }
-    },
-    {
-      "id": "st.s079k1p1qj",
-      "leaf": "strings.statuses",
-      "context": "Workspace shell",
-      "status": "draft",
-      "origin": "foundry-default",
-      "text": "{count, plural, one {# result} other {# results}}",
-      "args": [
-        {
-          "name": "count",
-          "type": "plural"
-        }
-      ],
-      "limits": {
-        "maxChars": 60
-      }
-    },
-    {
-      "id": "st.0mvj7s905h",
-      "leaf": "strings.field-labels",
-      "context": "Workspace shell",
-      "status": "draft",
-      "origin": "foundry-default",
-      "text": "System",
-      "limits": {
-        "maxChars": 40
-      }
-    },
-    {
-      "id": "st.3gsnmmts41",
-      "leaf": "strings.field-labels",
-      "context": "Workspace shell",
-      "status": "draft",
-      "origin": "foundry-default",
-      "text": "Light",
-      "limits": {
-        "maxChars": 40
-      }
-    },
-    {
-      "id": "st.mft1aas6kv",
-      "leaf": "strings.field-labels",
-      "context": "Workspace shell",
-      "status": "draft",
-      "origin": "foundry-default",
-      "text": "Dark",
-      "limits": {
-        "maxChars": 40
-      }
-    },
-    {
-      "id": "st.zets8phbsa",
-      "leaf": "strings.field-labels",
-      "context": "Workspace shell",
-      "status": "draft",
-      "origin": "foundry-default",
-      "text": "Theme",
-      "limits": {
-        "maxChars": 40
-      }
-    },
-    {
-      "id": "st.vftkg73x02",
-      "leaf": "strings.field-labels",
-      "context": "Workspace shell",
-      "status": "draft",
-      "origin": "foundry-default",
-      "text": "Theme",
-      "limits": {
-        "maxChars": 40
       }
     },
     {
@@ -1701,78 +1079,12 @@
       }
     },
     {
-      "id": "st.ev3xsrhrwe",
-      "leaf": "strings.actions",
-      "context": "Workspace shell",
-      "status": "draft",
-      "origin": "foundry-default",
-      "text": "Dismiss notice",
-      "limits": {
-        "maxChars": 24
-      }
-    },
-    {
-      "id": "st.c4a87fn3bk",
-      "leaf": "strings.names",
-      "context": "Designer console",
-      "status": "draft",
-      "origin": "foundry-default",
-      "text": "Usage",
-      "limits": {
-        "maxChars": 48
-      }
-    },
-    {
-      "id": "st.5wb5mte3br",
-      "leaf": "strings.field-labels",
-      "context": "Designer console",
-      "status": "draft",
-      "origin": "foundry-default",
-      "text": "Uses",
-      "limits": {
-        "maxChars": 32
-      }
-    },
-    {
-      "id": "st.7pxepx20q1",
-      "leaf": "strings.field-labels",
-      "context": "Designer console",
-      "status": "draft",
-      "origin": "foundry-default",
-      "text": "Used by",
-      "limits": {
-        "maxChars": 32
-      }
-    },
-    {
       "id": "st.pavb1ytaa6",
       "leaf": "strings.field-labels",
       "context": "Designer console",
       "status": "draft",
       "origin": "foundry-default",
       "text": "Uses tokens",
-      "limits": {
-        "maxChars": 32
-      }
-    },
-    {
-      "id": "st.5bmmq4jy68",
-      "leaf": "strings.field-labels",
-      "context": "Designer console",
-      "status": "draft",
-      "origin": "foundry-default",
-      "text": "Contains",
-      "limits": {
-        "maxChars": 32
-      }
-    },
-    {
-      "id": "st.p24ypyt9sb",
-      "leaf": "strings.field-labels",
-      "context": "Designer console",
-      "status": "draft",
-      "origin": "foundry-default",
-      "text": "Options",
       "limits": {
         "maxChars": 32
       }
@@ -1811,17 +1123,6 @@
       }
     },
     {
-      "id": "st.hcq4hmxrrk",
-      "leaf": "strings.field-labels",
-      "context": "Designer console",
-      "status": "draft",
-      "origin": "foundry-default",
-      "text": "Back",
-      "limits": {
-        "maxChars": 32
-      }
-    },
-    {
       "id": "st.111p0y7vyt",
       "leaf": "strings.empty",
       "context": "Designer console",
@@ -1852,105 +1153,6 @@
       "text": "Loading usage",
       "limits": {
         "maxChars": 80
-      }
-    },
-    {
-      "id": "st.6vygykgwag",
-      "leaf": "strings.field-labels",
-      "context": "Designer console",
-      "status": "draft",
-      "origin": "foundry-default",
-      "text": "None",
-      "limits": {
-        "maxChars": 32
-      }
-    },
-    {
-      "id": "st.c331pzvwey",
-      "leaf": "strings.field-labels",
-      "context": "Designer console",
-      "status": "draft",
-      "origin": "foundry-default",
-      "text": "Tokens",
-      "limits": {
-        "maxChars": 32
-      }
-    },
-    {
-      "id": "st.7fsbf7m1ak",
-      "leaf": "strings.field-labels",
-      "context": "Designer console",
-      "status": "draft",
-      "origin": "foundry-default",
-      "text": "Assets",
-      "limits": {
-        "maxChars": 32
-      }
-    },
-    {
-      "id": "st.jht60wz8e1",
-      "leaf": "strings.field-labels",
-      "context": "Designer console",
-      "status": "draft",
-      "origin": "foundry-default",
-      "text": "Components",
-      "limits": {
-        "maxChars": 32
-      }
-    },
-    {
-      "id": "st.pvbdyf5y7k",
-      "leaf": "strings.field-labels",
-      "context": "Designer console",
-      "status": "draft",
-      "origin": "foundry-default",
-      "text": "Sections",
-      "limits": {
-        "maxChars": 32
-      }
-    },
-    {
-      "id": "st.7rv315vzjm",
-      "leaf": "strings.field-labels",
-      "context": "Designer console",
-      "status": "draft",
-      "origin": "foundry-default",
-      "text": "Frames",
-      "limits": {
-        "maxChars": 32
-      }
-    },
-    {
-      "id": "st.bgkzpf1ec0",
-      "leaf": "strings.field-labels",
-      "context": "Designer console",
-      "status": "draft",
-      "origin": "foundry-default",
-      "text": "Pages",
-      "limits": {
-        "maxChars": 32
-      }
-    },
-    {
-      "id": "st.37fjmkt06h",
-      "leaf": "strings.field-labels",
-      "context": "Designer console",
-      "status": "draft",
-      "origin": "foundry-default",
-      "text": "Uses",
-      "limits": {
-        "maxChars": 32
-      }
-    },
-    {
-      "id": "st.43k2vndngq",
-      "leaf": "strings.field-labels",
-      "context": "Designer console",
-      "status": "draft",
-      "origin": "foundry-default",
-      "text": "Contains",
-      "limits": {
-        "maxChars": 32
       }
     },
     {
@@ -2037,28 +1239,6 @@
       }
     },
     {
-      "id": "st.kxgbwzxkgr",
-      "leaf": "strings.errors",
-      "context": "Publisher console",
-      "status": "draft",
-      "origin": "foundry-default",
-      "text": "The plan could not be applied. Try again.",
-      "limits": {
-        "maxChars": 120
-      }
-    },
-    {
-      "id": "st.q5mh8a135f",
-      "leaf": "strings.names",
-      "context": "Publisher console",
-      "status": "draft",
-      "origin": "foundry-default",
-      "text": "Publisher",
-      "limits": {
-        "maxChars": 40
-      }
-    },
-    {
       "id": "st.2wnzrnm0nf",
       "leaf": "strings.navigation",
       "context": "Publisher console",
@@ -2067,17 +1247,6 @@
       "text": "Publishing channels",
       "limits": {
         "maxChars": 40
-      }
-    },
-    {
-      "id": "st.mw6mn99de1",
-      "leaf": "strings.actions",
-      "context": "Publisher console",
-      "status": "draft",
-      "origin": "foundry-default",
-      "text": "Apply plan",
-      "limits": {
-        "maxChars": 24
       }
     },
     {
@@ -2180,17 +1349,6 @@
       }
     },
     {
-      "id": "st.v2qavnr3r2",
-      "leaf": "strings.statuses",
-      "context": "Publisher console",
-      "status": "draft",
-      "origin": "foundry-default",
-      "text": "Needs input",
-      "limits": {
-        "maxChars": 40
-      }
-    },
-    {
       "id": "st.fck5fxw34e",
       "leaf": "strings.actions",
       "context": "Publisher console",
@@ -2199,17 +1357,6 @@
       "text": "Close details",
       "limits": {
         "maxChars": 24
-      }
-    },
-    {
-      "id": "st.byav18dham",
-      "leaf": "strings.names",
-      "context": "Publisher console",
-      "status": "draft",
-      "origin": "foundry-default",
-      "text": "Set up",
-      "limits": {
-        "maxChars": 40
       }
     },
     {
@@ -2232,17 +1379,6 @@
       "text": "Apply this plan before choosing how to publish.",
       "limits": {
         "maxChars": 120
-      }
-    },
-    {
-      "id": "st.4b1m5gh2fx",
-      "leaf": "strings.field-labels",
-      "context": "Publisher console",
-      "status": "draft",
-      "origin": "foundry-default",
-      "text": "Output format",
-      "limits": {
-        "maxChars": 40
       }
     },
     {
@@ -2290,17 +1426,6 @@
       }
     },
     {
-      "id": "st.xfj92exnr7",
-      "leaf": "strings.names",
-      "context": "Publisher console",
-      "status": "draft",
-      "origin": "foundry-default",
-      "text": "Publishing checks",
-      "limits": {
-        "maxChars": 40
-      }
-    },
-    {
       "id": "st.0jhtb2yw9k",
       "leaf": "strings.alt-text",
       "context": "Publisher console",
@@ -2331,28 +1456,6 @@
       "text": "To do",
       "limits": {
         "maxChars": 40
-      }
-    },
-    {
-      "id": "st.74p81v194s",
-      "leaf": "strings.statuses",
-      "context": "Publisher console",
-      "status": "draft",
-      "origin": "foundry-default",
-      "text": "Waiting",
-      "limits": {
-        "maxChars": 40
-      }
-    },
-    {
-      "id": "st.z9zp4r228j",
-      "leaf": "strings.alt-text",
-      "context": "Publisher console",
-      "status": "draft",
-      "origin": "foundry-default",
-      "text": "Publishing checks",
-      "limits": {
-        "maxChars": 60
       }
     },
     {
@@ -9112,5 +8215,267 @@
     "writerConsole": "No Foundry console source or host registry at this base.",
     "document": "Host-owned head copy; no invented document title.",
     "publisher": "Legacy exported PublisherPage literals reviewed; active-route reachability and v2 host labels remain Needs."
-  }
+  },
+  "externalRecords": [
+    {
+      "recordId": "st.02nqj35esc",
+      "source": "common-labels.r1.en.json",
+      "sourceContext": "Designer console"
+    },
+    {
+      "recordId": "st.041fh8t2aw",
+      "source": "common-labels.r1.en.json",
+      "sourceContext": "designer.ia.assets.icons-navigation"
+    },
+    {
+      "recordId": "st.0mvj7s905h",
+      "source": "common-labels.r1.en.json",
+      "sourceContext": "Workspace shell"
+    },
+    {
+      "recordId": "st.0t22p7nhjk",
+      "source": "common-labels.r1.en.json",
+      "sourceContext": "designer.inspector.fields.layer"
+    },
+    {
+      "recordId": "st.0xns3ts510",
+      "source": "common-labels.r1.en.json",
+      "sourceContext": "Designer console"
+    },
+    {
+      "recordId": "st.1vc3bb7pw7",
+      "source": "common-labels.r1.en.json",
+      "sourceContext": "Designer console"
+    },
+    {
+      "recordId": "st.37fjmkt06h",
+      "source": "common-labels.r1.en.json",
+      "sourceContext": "Designer console"
+    },
+    {
+      "recordId": "st.3gsnmmts41",
+      "source": "common-labels.r1.en.json",
+      "sourceContext": "Workspace shell"
+    },
+    {
+      "recordId": "st.43k2vndngq",
+      "source": "common-labels.r1.en.json",
+      "sourceContext": "Designer console"
+    },
+    {
+      "recordId": "st.6nrp8gmqv3",
+      "source": "common-labels.r1.en.json",
+      "sourceContext": "Designer console"
+    },
+    {
+      "recordId": "st.74p81v194s",
+      "source": "common-labels.r1.en.json",
+      "sourceContext": "Publisher console"
+    },
+    {
+      "recordId": "st.7pxepx20q1",
+      "source": "common-labels.r1.en.json",
+      "sourceContext": "Designer console"
+    },
+    {
+      "recordId": "st.7rv315vzjm",
+      "source": "common-labels.r1.en.json",
+      "sourceContext": "Designer console"
+    },
+    {
+      "recordId": "st.8rktftq4qz",
+      "source": "common-labels.r1.en.json",
+      "sourceContext": "designer.item.assets.icon-layers"
+    },
+    {
+      "recordId": "st.8z45ewb90z",
+      "source": "common-labels.r1.en.json",
+      "sourceContext": "Designer console"
+    },
+    {
+      "recordId": "st.9ehasbmw8z",
+      "source": "common-labels.r1.en.json",
+      "sourceContext": "designer.component.sheet.close"
+    },
+    {
+      "recordId": "st.a7tkca4nej",
+      "source": "common-labels.r1.en.json",
+      "sourceContext": "Designer console"
+    },
+    {
+      "recordId": "st.aamt9c6zdr",
+      "source": "common-labels.r1.en.json",
+      "sourceContext": "publisher.planHeader.alignmentFailedLabel"
+    },
+    {
+      "recordId": "st.ata62btvcq",
+      "source": "common-labels.r1.en.json",
+      "sourceContext": "Designer console"
+    },
+    {
+      "recordId": "st.av63bcybsc",
+      "source": "common-labels.r1.en.json",
+      "sourceContext": "publisher.planHeader.requirementsLabel"
+    },
+    {
+      "recordId": "st.bgkzpf1ec0",
+      "source": "common-labels.r1.en.json",
+      "sourceContext": "Designer console"
+    },
+    {
+      "recordId": "st.bh10jdg8bx",
+      "source": "common-labels.r1.en.json",
+      "sourceContext": "publisher.stage.Checks"
+    },
+    {
+      "recordId": "st.bw0n8vs9db",
+      "source": "common-labels.r1.en.json",
+      "sourceContext": "Designer console"
+    },
+    {
+      "recordId": "st.c331pzvwey",
+      "source": "common-labels.r1.en.json",
+      "sourceContext": "Designer console"
+    },
+    {
+      "recordId": "st.cy7122qr1d",
+      "source": "common-labels.r1.en.json",
+      "sourceContext": "admin.publisher.shareTitle"
+    },
+    {
+      "recordId": "st.dbra6twj2c",
+      "source": "common-labels.r1.en.json",
+      "sourceContext": "Designer console"
+    },
+    {
+      "recordId": "st.ev3xsrhrwe",
+      "source": "common-labels.r1.en.json",
+      "sourceContext": "Workspace shell"
+    },
+    {
+      "recordId": "st.frk6prh48a",
+      "source": "common-labels.r1.en.json",
+      "sourceContext": "Designer console"
+    },
+    {
+      "recordId": "st.g7hbg5n2bs",
+      "source": "common-labels.r1.en.json",
+      "sourceContext": "Workspace shell"
+    },
+    {
+      "recordId": "st.hcah39v2sh",
+      "source": "common-labels.r1.en.json",
+      "sourceContext": "admin.enum.configured"
+    },
+    {
+      "recordId": "st.hcq4hmxrrk",
+      "source": "common-labels.r1.en.json",
+      "sourceContext": "Designer console"
+    },
+    {
+      "recordId": "st.j7paney0ax",
+      "source": "common-labels.r1.en.json",
+      "sourceContext": "publisher.contentKey.format"
+    },
+    {
+      "recordId": "st.jht60wz8e1",
+      "source": "common-labels.r1.en.json",
+      "sourceContext": "Designer console"
+    },
+    {
+      "recordId": "st.kmz1y1qvg0",
+      "source": "common-labels.r1.en.json",
+      "sourceContext": "admin.enum.not-chosen"
+    },
+    {
+      "recordId": "st.mzdxkf8h43",
+      "source": "common-labels.r1.en.json",
+      "sourceContext": "Designer console"
+    },
+    {
+      "recordId": "st.nbe9kckxef",
+      "source": "common-labels.r1.en.json",
+      "sourceContext": "designer.item.sections.usage"
+    },
+    {
+      "recordId": "st.p24ypyt9sb",
+      "source": "common-labels.r1.en.json",
+      "sourceContext": "Designer console"
+    },
+    {
+      "recordId": "st.pdq1ef8q2d",
+      "source": "common-labels.r1.en.json",
+      "sourceContext": "designer.check.C4"
+    },
+    {
+      "recordId": "st.q2pdjh83tt",
+      "source": "common-labels.r1.en.json",
+      "sourceContext": "Designer console"
+    },
+    {
+      "recordId": "st.qcqdptzn0r",
+      "source": "common-labels.r1.en.json",
+      "sourceContext": "Designer console"
+    },
+    {
+      "recordId": "st.qcry3z237f",
+      "source": "common-labels.r1.en.json",
+      "sourceContext": "publisher.planHeader.noneLabel"
+    },
+    {
+      "recordId": "st.qxaxqewq3p",
+      "source": "common-labels.r1.en.json",
+      "sourceContext": "designer.ia.components.display-assets"
+    },
+    {
+      "recordId": "st.rdsa1ky831",
+      "source": "common-labels.r1.en.json",
+      "sourceContext": "publisher.planHeader.alignLabel"
+    },
+    {
+      "recordId": "st.s079k1p1qj",
+      "source": "common-labels.r1.en.json",
+      "sourceContext": "Workspace shell"
+    },
+    {
+      "recordId": "st.t029hg04zc",
+      "source": "common-labels.r1.en.json",
+      "sourceContext": "Designer console"
+    },
+    {
+      "recordId": "st.t317dsw4j4",
+      "source": "common-labels.r1.en.json",
+      "sourceContext": "designer.check.C10"
+    },
+    {
+      "recordId": "st.v1cbgc4kr2",
+      "source": "common-labels.r1.en.json",
+      "sourceContext": "designer.item.components.item"
+    },
+    {
+      "recordId": "st.v2qavnr3r2",
+      "source": "common-labels.r1.en.json",
+      "sourceContext": "Publisher console"
+    },
+    {
+      "recordId": "st.v6ra67gp67",
+      "source": "common-labels.r1.en.json",
+      "sourceContext": "designer.ia.assets.icons-status"
+    },
+    {
+      "recordId": "st.vftkg73x02",
+      "source": "common-labels.r1.en.json",
+      "sourceContext": "Workspace shell"
+    },
+    {
+      "recordId": "st.xfj92exnr7",
+      "source": "common-labels.r1.en.json",
+      "sourceContext": "Publisher console"
+    },
+    {
+      "recordId": "st.y86a2b0gmd",
+      "source": "common-labels.r1.en.json",
+      "sourceContext": "Workspace shell"
+    }
+  ]
 }
