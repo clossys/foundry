@@ -2532,6 +2532,24 @@
               "en": 120
             },
             "dir": "auto"
+          },
+          {
+            "key": "success.message",
+            "kind": "plain",
+            "required": false,
+            "maxLength": {
+              "en": 480
+            },
+            "dir": "auto"
+          },
+          {
+            "key": "error.message",
+            "kind": "plain",
+            "required": false,
+            "maxLength": {
+              "en": 480
+            },
+            "dir": "auto"
           }
         ]
       }
