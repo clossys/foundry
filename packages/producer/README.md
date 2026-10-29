@@ -31,7 +31,10 @@ Compilation writes only `clossys/agents/designer/compiled` and
 `clossys/agents/writer/compiled` beneath the discovered consumer root. It uses
 each agent's shipped compiler and active pointers, leaving drafts uncompiled.
 
-Studio is a required Next standalone build under `dist/studio/server.js`.
+Studio is a required Next standalone build under `dist/studio`. Producer first
+reads `manifest.json` schema version 1 and uses its relative `serverEntry`,
+validating that the resolved file remains under that output directory.
+Without a manifest, it tries `dist/studio/server.js`.
 The monorepo standalone layout `dist/studio/packages/producer/studio/server.js`
 is also supported. Producer starts it with `HOSTNAME=127.0.0.1`, an allocated
 internal `PORT`, `NODE_ENV=production`, and `CLOSSYS_PRODUCER_ORIGIN` set to

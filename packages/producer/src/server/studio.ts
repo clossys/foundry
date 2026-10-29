@@ -1,15 +1,31 @@
 import { spawn, type ChildProcess } from "node:child_process";
 import { once } from "node:events";
-import { access } from "node:fs/promises";
+import { access, readFile, realpath } from "node:fs/promises";
 import { get } from "node:http";
 import { createServer } from "node:net";
-import { dirname, join } from "node:path";
+import { dirname, isAbsolute, join, relative, resolve, sep } from "node:path";
 import { setTimeout as delay } from "node:timers/promises";
 import { fileURLToPath } from "node:url";
 
 export interface StudioChild { port: number; process: ChildProcess; stop: () => Promise<void> }
 export async function studioEntry(explicit?: string): Promise<string> {
   const base = fileURLToPath(new URL("../studio/", import.meta.url));
+  if (!explicit) {
+    let source: string | undefined;
+    try { source = await readFile(join(base, "manifest.json"), "utf8"); }
+    catch (error) { if ((error as NodeJS.ErrnoException).code !== "ENOENT") throw error; }
+    if (source !== undefined) {
+      const manifest = JSON.parse(source);
+      const entry = manifest.serverEntry;
+      if (manifest.schemaVersion !== 1 || typeof entry !== "string" || !entry || isAbsolute(entry) || entry.includes("\\") || entry.split("/").includes("..")) {
+        throw new Error("Studio manifest serverEntry must remain under dist/studio");
+      }
+      const target = await realpath(resolve(base, entry));
+      const rel = relative(await realpath(base), target);
+      if (isAbsolute(rel) || rel === ".." || rel.startsWith(`..${sep}`)) throw new Error("Studio manifest serverEntry must remain under dist/studio");
+      return target;
+    }
+  }
   for (const path of explicit ? [explicit] : [join(base, "server.js"), join(base, "packages/producer/studio/server.js")]) {
     try { await access(path); return path; } catch { /* Try the other standalone layout. */ }
   }

@@ -1,6 +1,6 @@
 import { once } from "node:events";
-import { spawnSync } from "node:child_process";
-import { cp, mkdir, mkdtemp, readFile, rm, symlink, writeFile } from "node:fs/promises";
+import { spawn, spawnSync } from "node:child_process";
+import { cp, mkdir, mkdtemp, readFile, rm, stat, symlink, writeFile } from "node:fs/promises";
 import { request as httpRequest } from "node:http";
 import { tmpdir } from "node:os";
 import { dirname, join, resolve } from "node:path";
@@ -66,6 +66,8 @@ describe("loopback Producer", () => {
     expect(accepted.status).toBe(200); expect(accepted.body.method).toBe("POST"); expect(accepted.body.headers["x-clossys-token"]).toBeUndefined();
     for (const path of ["/api/cells/writer/%2e%2e", "/api/cells/unknown/example.page", "/api/cells/writer/%2fetc", "/%5cexample.test", "/api/cells/writer/example.page?version=0"]) expect((await request(path)).status).toBeOneOf([400, 404]);
     expect((await request(`/studio?token=${token}`)).status).toBe(400);
+    const encodedToken = [...token].map(letter => `%${letter.charCodeAt(0).toString(16)}`).join("");
+    expect((await request(`/studio?token=${encodedToken}`)).status).toBe(400);
   });
 
   it("reverse proxies the real child, strips hop headers and isolates the token per run", async () => {
@@ -104,6 +106,51 @@ describe("loopback Producer", () => {
     await expect(startProducerServer({ root, port: 0, studioEntry: join(root, "missing.js"), handleSignals: false })).rejects.toThrow("Studio build dependency");
     const failed = join(root, "failed.mjs"); await writeFile(failed, "process.exit(1);\n");
     await expect(startProducerServer({ root, port: 0, studioEntry: failed, handleSignals: false })).rejects.toThrow("Studio child failed");
+  });
+
+  it("shuts down the listener and watcher when the real child exits unexpectedly", async () => {
+    await launch();
+    expect((await request("/fixture-exit")).status).toBe(200);
+    await server!.closed;
+    expect(server!.failure).toBe("Studio child stopped unexpectedly");
+    await expect(request("/api/health")).rejects.toThrow();
+    await server!.close();
+  });
+
+  it("runs the installed CLI with initial compile gaps, honors no-open, and stops on SIGTERM", async () => {
+    const runtime = join(root, "runtime");
+    await cp(join(repo, "packages/producer/dist"), join(runtime, "dist"), { recursive: true });
+    await writeFile(join(runtime, "package.json"), '{"type":"module"}\n');
+    await symlink(join(repo, "node_modules"), join(runtime, "node_modules"));
+    await mkdir(join(runtime, "dist/studio/standalone/apps/studio"), { recursive: true });
+    await cp(childEntry, join(runtime, "dist/studio/standalone/apps/studio/server.js"));
+    await writeFile(join(runtime, "dist/studio/manifest.json"), JSON.stringify({ schemaVersion: 1, serverEntry: "standalone/apps/studio/server.js", staticDir: "standalone/apps/studio/.next/static", publicDir: null }));
+    await writeFile(join(root, "clossys/clossys.config.ts"), "export default {};\n");
+    const bin = join(root, "bin"); await mkdir(bin);
+    const opened = join(root, "browser-opened");
+    // A browser launch would invoke this marker program, even without a desktop.
+    await writeFile(join(bin, "xdg-open"), `#!/bin/sh\ntouch '${opened}'\n`, { mode: 0o755 });
+    const cli = spawn(process.execPath, [join(runtime, "dist/cli/index.js"), "produce", "--port", "0", "--no-open"], { cwd: root, env: { ...process.env, PATH: `${bin}:${process.env.PATH}` }, stdio: ["ignore", "pipe", "pipe"] });
+    let stdout = "", stderr = "";
+    cli.stderr.setEncoding("utf8"); cli.stderr.on("data", part => { stderr += part; });
+    try {
+      const url = await new Promise<string>((resolve, reject) => {
+        cli.stdout.setEncoding("utf8"); cli.stdout.on("data", part => { stdout += part; const match = /Producer Studio: (http:\/\/127\.0\.0\.1:\d+)/.exec(stdout); if (match) resolve(match[1]!); });
+        cli.once("error", reject); cli.once("exit", code => reject(new Error(`CLI exited before readiness: ${code}; ${stderr}`)));
+      });
+      const config = await (await fetch(`${url}/api/config`)).json() as any;
+      expect(config.compilation).toEqual([{ agent: "designer", state: "missing" }, { agent: "writer", state: "missing" }]);
+      expect((await (await fetch(`${url}/api/cells`)).json() as any).agents.every((agent: any) => agent.state === "missing")).toBe(true);
+      const exited = once(cli, "exit"); cli.kill("SIGTERM");
+      expect((await exited)[0]).toBe(0); expect(stderr).toBe("");
+      expect(stdout).toContain("Producer stopped; designer: missing, writer: missing");
+      expect(stdout).not.toContain(config.token); expect(stdout).not.toContain("token=");
+      await expect(stat(opened)).rejects.toMatchObject({ code: "ENOENT" });
+      await expect(fetch(`${url}/api/health`)).rejects.toThrow();
+      await writeFile(join(runtime, "dist/studio/manifest.json"), JSON.stringify({ schemaVersion: 1, serverEntry: "../outside.js" }));
+      const invalid = spawnSync(process.execPath, [join(runtime, "dist/cli/index.js"), "produce", "--no-open", "--json"], { cwd: root, encoding: "utf8" });
+      expect(invalid.status).toBe(2); expect(JSON.parse(invalid.stdout).message).toContain("Studio manifest serverEntry must remain under dist/studio");
+    } finally { if (cli.exitCode === null) { const exited = once(cli, "exit"); cli.kill("SIGKILL"); await exited; } }
   });
 });
 

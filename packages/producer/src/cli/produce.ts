@@ -20,5 +20,6 @@ export async function runProduce(args: CliArgs, root: string): Promise<CliResult
   if (!args.json) console.log(`Producer Studio: ${server.url}`);
   if (!args.noOpen) openBrowser(server.url);
   await server.closed;
+  if (server.failure) return { exitCode: 2, verb: "produce", root, message: server.failure };
   return { exitCode: 0, verb: "produce", root, message: `Producer stopped; ${status}` };
 }

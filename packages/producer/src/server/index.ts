@@ -18,6 +18,7 @@ export interface ProducerServerOptions {
 }
 export interface ProducerServer {
   port: number; url: string; closed: Promise<void>; close: () => Promise<void>;
+  readonly failure?: string;
 }
 const HOP = new Set(["connection", "keep-alive", "proxy-authenticate", "proxy-authorization", "te", "trailer", "transfer-encoding", "upgrade"]);
 function json(response: ServerResponse, status: number, body: unknown): void {
@@ -43,6 +44,7 @@ export async function startProducerServer(options: ProducerServerOptions): Promi
   const streams = new Set<ServerResponse>();
   let port = 0, child: StudioChild | undefined, stopWatch: (() => void) | undefined;
   let closing: Promise<void> | undefined;
+  let failure: string | undefined;
   let resolveClosed!: () => void;
   const closed = new Promise<void>(resolve => { resolveClosed = resolve; });
   const server = createServer((request, response) => { void handle(request, response).catch(() => {
@@ -110,7 +112,8 @@ export async function startProducerServer(options: ProducerServerOptions): Promi
     }
     if (!child) { json(response, 503, { error: "Studio child is not ready" }); return; }
     // Run tokens are header-only; do not forward a token accidentally placed in a URL.
-    if (raw.includes(token)) { json(response, 400, { error: "Run tokens must use the request header" }); return; }
+    const decodedQuery = [...new URL(raw, origin).searchParams].flat().join(" ");
+    if (raw.includes(token) || decodedQuery.includes(token)) { json(response, 400, { error: "Run tokens must use the request header" }); return; }
     const headers = cleanHeaders(request.headers); headers.host = `127.0.0.1:${child.port}`;
     const upstream = httpRequest({ hostname: "127.0.0.1", port: child.port, path: raw, method: request.method, headers }, upstreamResponse => {
       response.writeHead(upstreamResponse.statusCode ?? 502, cleanHeaders(upstreamResponse.headers)); upstreamResponse.pipe(response);
@@ -126,7 +129,10 @@ export async function startProducerServer(options: ProducerServerOptions): Promi
     const url = `http://127.0.0.1:${port}`;
     child = await startStudio(entry, url, aborter.signal, options.startupTimeoutMs);
     if (aborter.signal.aborted) throw new Error("Producer startup cancelled");
-    child.process.once("exit", () => { void close(); });
+    child.process.once("exit", () => {
+      if (!aborter.signal.aborted) failure = "Studio child stopped unexpectedly";
+      void close();
+    });
     stopWatch = await watchCells(options.root, event => {
       for (const stream of streams) {
         if (stream.writableLength > 64 * 1024) stream.destroy();
@@ -136,6 +142,6 @@ export async function startProducerServer(options: ProducerServerOptions): Promi
     if (aborter.signal.aborted || child.process.exitCode !== null || child.process.signalCode !== null) {
       stopWatch(); throw new Error("Studio child stopped during startup");
     }
-    return { port, url, closed, close };
+    return { port, url, closed, close, get failure() { return failure; } };
   } catch (error) { await close(); throw error; }
 }
