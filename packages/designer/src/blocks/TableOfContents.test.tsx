@@ -93,7 +93,7 @@ describe("TableOfContents", () => {
     ["an id with a space", { items: [{ id: "a b", label: "One" }, { id: "c", label: "Two" }] }],
     ["an id with a hash", { items: [{ id: "#a", label: "One" }, { id: "c", label: "Two" }] }],
     ["an empty label", { label: " " }],
-    ["a level outside 2, 3 and 4", { items: [{ id: "a", label: "One", level: 5 as 2 }, { id: "c", label: "Two" }] }],
+    ["a level outside 2 and 3", { items: [{ id: "a", label: "One", level: 5 as 2 }, { id: "c", label: "Two" }] }],
     ["a currentId outside the items", { currentId: "z" }],
   ])("throws a prefixed TypeError for %s", (_name, props) => {
     const error = vi.spyOn(console, "error").mockImplementation(() => {});
