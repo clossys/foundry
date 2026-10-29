@@ -19,6 +19,9 @@ import type { RegisteredRouteRuntime } from "./registered-route-binding.js";
 import { render, cleanup, act } from "@testing-library/react";
 import { RegisteredRoutePage } from "./registered-route.js";
 import { renderToString } from "react-dom/server";
+import { hydrateRoot } from "react-dom/client";
+import { Children, useEffect } from "react";
+import type { RegisteredPublicationFrameProps } from "./registered-route-query.js";
 
 let temporary: string, compiled: CompiledRegisteredRoute;
 beforeAll(async () => {
@@ -74,9 +77,12 @@ function liveFixture(table = false) {
   };
   return { ...f, runtime, sectionRenderer, frameRenderer };
 }
-function regionFixture(count = 2) {
+function NativeFrame({ snapshot }: RegisteredPublicationFrameProps) {
+  return <section data-publication-frame=""><main>{Children.toArray(snapshot.regions.main)}</main>{Children.toArray(snapshot.regions.pageModule)}</section>;
+}
+function regionFixture(count = 2, Frame = NativeFrame) {
   const f = liveFixture(true), template = f.route.composition.binding;
-  const host = { bind: vi.fn(), setRegions: vi.fn(), setState: vi.fn(), setCommands: vi.fn(), setChunks: vi.fn() };
+  const host = { Frame, bind: vi.fn(), setRegions: vi.fn(), setState: vi.fn(), setCommands: vi.fn(), setChunks: vi.fn() };
   const publication = createRegisteredPublicationSession({ id: "scroll", mainSlot: "body", frame: template.frame, layout: template.layout!, format: template.format, surface: template.surface, context: template.context, packIds: template.packIds }, host);
   const fills = Array.from({ length: count }, () => structuredClone(template.fills.body![0]!));
   const route: RegionPageRouteRegistration = { ...f.route, composition: { ...f.route.composition, binding: { instanceId: template.instanceId, label: template.label, path: f.route.path, publicationId: "scroll", regions: { main: fills } } } };
@@ -116,6 +122,62 @@ describe("consumed registered scroll-page capabilities", () => {
     expect(f.host.bind).not.toHaveBeenCalled();
     expect(f.host.setRegions).not.toHaveBeenCalled();
     expect(f.host.setChunks).not.toHaveBeenCalled();
+  });
+  it("hydrates native main and navigates through one frame and chat mount with matching server/client snapshots", async () => {
+    const mounts = { frame: 0, chat: 0 }, unmounts = { frame: 0, chat: 0 };
+    function Chat() { useEffect(() => { mounts.chat++; return () => { unmounts.chat++; }; }, []); return <aside data-chat=""><input defaultValue="SYNTHETIC retained chat" /></aside>; }
+    function Frame(props: RegisteredPublicationFrameProps) {
+      useEffect(() => { mounts.frame++; return () => { unmounts.frame++; }; }, []);
+      return <section data-publication-frame="" data-route={props.snapshot.routeId} data-main-state={props.snapshot.state.main}><Chat /><NativeFrame {...props} /></section>;
+    }
+    const f = regionFixture(2, Frame), second = structuredClone(f.route);
+    Object.assign(second, { routeId: "second.page", path: "/agents/second" });
+    Object.assign(second.composition.binding, { instanceId: second.routeId, path: second.path });
+    const registry = { ...f.registry, routes: [f.route, second] };
+    let finishNavigation!: (rows: never[]) => void;
+    const secondPage = createRegisteredPageSession({ ...f.input, page: second.composition.binding, routeId: second.routeId, path: second.path,
+      loaders: { ...f.input.loaders, chunk: vi.fn(() => new Promise<never[]>(resolve => { finishNavigation = resolve; })) } });
+    let refused = false;
+    const useRuntime = (route: { routeId: string }) => ({ ...f.runtime, page: route.routeId === f.route.routeId ? f.page : secondPage, ...(refused ? { itemPath: "/invalid" } : {}) });
+    const element = (routeId: string) => <RegisteredRoutePage registry={registry} routeId={routeId} useRuntime={useRuntime} renderActions={() => null} publication={f.publication} />;
+    const container = document.createElement("div"); document.body.append(container);
+    container.innerHTML = renderToString(element(f.route.routeId));
+    const frame = container.firstElementChild, main = container.querySelector("main"), chat = container.querySelector("[data-chat]");
+    expect(main?.innerHTML).toContain('data-layout-stage="flow"');
+    expect(f.publication.getSnapshot()).toBeUndefined(); expect(f.host.bind).not.toHaveBeenCalled();
+    const recoverable = vi.fn(); let root!: ReturnType<typeof hydrateRoot>;
+    await act(async () => { root = hydrateRoot(container, element(f.route.routeId), { onRecoverableError: recoverable }); });
+    expect(recoverable).not.toHaveBeenCalled(); expect(container.firstElementChild).toBe(frame); expect(container.querySelector("main")).toBe(main);
+    expect(mounts).toEqual({ frame: 1, chat: 1 }); expect(unmounts).toEqual({ frame: 0, chat: 0 });
+    const ports = f.publication.ports;
+    refused = true;
+    await act(async () => { root.render(element(second.routeId)); });
+    expect(frame?.getAttribute("data-main-state")).toBe("error");
+    expect(container.firstElementChild).toBe(frame); expect(container.querySelector("[data-chat]")).toBe(chat);
+    expect(mounts).toEqual({ frame: 1, chat: 1 }); expect(unmounts).toEqual({ frame: 0, chat: 0 });
+    refused = false;
+    await act(async () => { root.render(element(second.routeId)); });
+    expect(frame?.getAttribute("data-main-state")).toBe("ready");
+    expect(secondPage.frameState()).toBeUndefined();
+    expect(container.firstElementChild).toBe(frame); expect(container.querySelector("[data-chat]")).toBe(chat);
+    expect(container.querySelectorAll("[data-chat]")).toHaveLength(1); expect(container.querySelectorAll("main")).toHaveLength(1);
+    expect(frame?.getAttribute("data-route")).toBe(second.routeId); expect(mounts).toEqual({ frame: 1, chat: 1 });
+    expect(f.publication.ports).toBe(ports); expect(f.host.bind).toHaveBeenCalledTimes(1);
+    let navigation!: Promise<void>;
+    await act(async () => { navigation = secondPage.navigate("#second"); });
+    expect(frame?.getAttribute("data-main-state")).toBe("loading");
+    expect(container.firstElementChild).toBe(frame); expect(container.querySelector("main")).toBe(main); expect(container.querySelector("[data-chat]")).toBe(chat);
+    expect(mounts).toEqual({ frame: 1, chat: 1 }); expect(unmounts).toEqual({ frame: 0, chat: 0 });
+    await act(async () => { finishNavigation([]); await navigation; });
+    expect(frame?.getAttribute("data-main-state")).toBe("ready");
+    expect(container.firstElementChild).toBe(frame); expect(container.querySelector("main")).toBe(main); expect(container.querySelector("[data-chat]")).toBe(chat);
+    await act(async () => { f.publication.setState({ main: "error", navigating: false }, f.page); });
+    expect(frame?.getAttribute("data-main-state")).toBe("ready");
+    await act(async () => { f.publication.setState({ main: "forbidden", navigating: false }, secondPage); });
+    expect(frame?.getAttribute("data-main-state")).toBe("forbidden");
+    expect(recoverable).not.toHaveBeenCalled(); expect(unmounts).toEqual({ frame: 0, chat: 0 });
+    await act(async () => { root.unmount(); }); container.remove();
+    expect(unmounts).toEqual({ frame: 1, chat: 1 });
   });
   it("prepares nested authored band Sections and an independent selected TOC before any main chunk request", async () => {
     const f = regionFixture(), heading = (name: string) => ({ kind: "copy" as const, ref: `heading/${name}` }), rows = { kind: "records" as const, ref: "rows/names", lazy: { loader: "chunk" as const, args: { l0: "first", l1: "names" } } };
@@ -375,6 +437,34 @@ describe("consumed registered scroll-page capabilities", () => {
     expect(input.loaders.search).toHaveBeenCalledWith("name");
     expect(session.commandGroups()).toEqual([{ id: "records", label: "Records", count: 1, items: [{ id: "records--names", label: "Names", href: "#records--names" }] }]);
     input.loaders.search.mockResolvedValueOnce([]); await session.search("missing"); expect(session.commandGroups()).toEqual([]);
+  });
+  it("recovers a memoized plain page after not-found and cancels retained or late item data", async () => {
+    const input = options(), rows = { kind: "records" as const, ref: "item-rows" };
+    let finish!: (item: { record: { id: string }; content: ReturnType<typeof content>[] }) => void;
+    const session = createRegisteredPageSession({ ...input, loaders: { ...input.loaders,
+      item: vi.fn(async (_l0: string, id: string) => id === "late" ? new Promise<{ record: { id: string }; content: ReturnType<typeof content>[] }>(resolve => { finish = resolve; }) : { record: { id }, content: [content(rows, [{ id }])] }) } });
+    const initial = session.start(); await initial;
+    expect(session.start()).toBe(initial);
+    await session.loadItem("/invalid"); expect(session.frameState()?.main).toBe("not-found");
+    const recovered = session.start(); await recovered;
+    expect(recovered).not.toBe(initial); expect(session.start()).toBe(recovered);
+    expect(session.frameState()).toBeUndefined();
+    await session.loadItem("/agents/example/records/one"); expect(session.read(rows).status).toBe("ready");
+    const late = session.loadItem("/agents/example/records/late");
+    expect(session.frameState()?.main).toBe("loading");
+    await session.start();
+    expect(session.frameState()).toBeUndefined(); expect(session.read(rows)).toEqual({ status: "pending" });
+    finish({ record: { id: "late" }, content: [content(rows, [{ id: "late" }])] }); await late;
+    expect(session.frameState()).toBeUndefined(); expect(session.read(rows)).toEqual({ status: "pending" });
+  });
+  it("memoizes startup only for the current concrete item location", async () => {
+    const input = options(); let path = "/agents/example/records/one";
+    const item = vi.fn(async (_l0: string, id: string) => ({ record: { id }, content: [] }));
+    const session = createRegisteredPageSession({ ...input, path: "/agents/example/[l0]/[id]", navigation: { ...input.navigation, path: () => path }, loaders: { ...input.loaders, item } });
+    const initial = session.start(); await initial; expect(session.start()).toBe(initial);
+    path = "/invalid"; await session.start(); expect(session.frameState()?.main).toBe("not-found");
+    path = "/agents/example/records/two"; await session.start(); expect(session.frameState()?.main).toBe("ready");
+    expect(item.mock.calls.map(([, id]) => id)).toEqual(["one", "two"]);
   });
   it("passes item route params to the item loader and returns 404 for an unknown id", async () => {
     const input = options(), row = { id: "one", text: "Record" }; input.loaders.item = vi.fn(async (_l0, id) => id === "one" ? { record: row, content: [] } : undefined);

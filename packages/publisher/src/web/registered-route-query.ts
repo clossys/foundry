@@ -6,7 +6,7 @@ import type { ConsumerInstanceLibrary, ContentRef, InstanceBinding, InstanceRegi
 import { contentReferenceKey, isRegisteredContentRef, staticContentReference } from "../core/instance-binding.js";
 import { projectPageOutline } from "../content/taxonomy.js";
 import type { RegisteredPageManifest, RegisteredPageOutline } from "../content/taxonomy.js";
-import type { ReactNode } from "react";
+import type { ComponentType, ReactNode } from "react";
 import { instanceBodyFindings } from "../core/instance-body.js";
 import { recordRouteRuntimeMaterialization } from "../core/route-runtime.js";
 import type { RouteRuntimeMaterialization } from "../core/route-runtime.js";
@@ -49,7 +49,31 @@ export interface RegisteredPublicationFramePorts {
 }
 /** Injected Designer-owned persistent frame. These ports receive only selected
  * Section output; a consumer cannot supply a page body renderer. */
+export interface RegisteredPublicationSnapshot {
+  readonly routeId: string;
+  readonly regions: RegisteredPublicationRegions;
+  readonly state: RegisteredFrameRouteState;
+  readonly commands: readonly RegisteredPageCommandGroup[];
+  readonly chunks: readonly RegisteredPageChunk[];
+}
+export interface RegisteredPublicationFrameProps {
+  readonly publication: PublicationBinding;
+  readonly ports: RegisteredPublicationFramePorts;
+  readonly snapshot: RegisteredPublicationSnapshot;
+}
+/** Pure render input shared by server output and its first client render.
+ * React nodes remain selected Section output, never JSON/source evidence. */
+export function registeredPublicationSnapshot(update: RegisteredRegionUpdate, state: RegisteredFrameRouteState, commands: readonly RegisteredPageCommandGroup[] = []): RegisteredPublicationSnapshot {
+  const chunks = Object.freeze((update.chunks ?? []).map(chunk => Object.freeze({ ...chunk, ...(chunk.content ? { content: Object.freeze([...chunk.content]) } : {}) })));
+  const main = update.chunks ? chunks.flatMap(chunk => chunk.content ?? []) : update.regions.main ?? [];
+  return Object.freeze({ routeId: update.routeId, state: Object.freeze({ ...state }), commands: Object.freeze([...commands]), chunks,
+    regions: Object.freeze({ headerTrail: update.trail, main: Object.freeze([...main]), pageModule: Object.freeze([...(update.regions["page-module"] ?? [])]),
+      ...(update.headerActions === undefined ? {} : { headerActions: update.headerActions }), ...(update.inspectorContext === undefined ? {} : { inspectorContext: update.inspectorContext }) }) });
+}
 export interface RegisteredPublicationHost {
+  /** Stable adapter around the selected Designer frame. Mount this frame only
+   * through the outlet; imperative setters may mirror data, never mount it. */
+  readonly Frame?: ComponentType<RegisteredPublicationFrameProps>;
   bind(publication: PublicationBinding, ports: RegisteredPublicationFramePorts): void;
   setRegions(update: RegisteredPublicationRegions): void;
   setState(state: RegisteredFrameRouteState): void;
@@ -59,6 +83,10 @@ export interface RegisteredPublicationHost {
 export interface RegisteredPublicationSession {
   readonly publication: PublicationBinding;
   readonly host: RegisteredPublicationHost;
+  readonly Frame?: ComponentType<RegisteredPublicationFrameProps>;
+  readonly ports: RegisteredPublicationFramePorts;
+  readonly subscribe: (listener: () => void) => () => void;
+  readonly getSnapshot: () => RegisteredPublicationSnapshot | undefined;
   setPage(update: RegisteredRegionUpdate, source?: RegisteredPageSession): void;
   setState(state: RegisteredFrameRouteState, source?: RegisteredPageSession): void;
   activate(routeId: string): void;
@@ -78,6 +106,9 @@ export function createRegisteredPublicationSession(publication: PublicationBindi
   }
   if (!host || typeof host.bind !== "function" || typeof host.setRegions !== "function" || typeof host.setState !== "function" || typeof host.setCommands !== "function" || typeof host.setChunks !== "function") throw new TypeError("Persistent Designer frame ports required");
   let active: string | undefined, bound = false, activePage: RegisteredPageSession | undefined, unsubscribe: (() => void) | undefined, commandsHash: string | undefined;
+  const listeners = new Set<() => void>();
+  let rendered: RegisteredPublicationSnapshot | undefined;
+  const publish = (next: RegisteredPublicationSnapshot) => { rendered = next; for (const listener of [...listeners]) listener(); };
   const ports: RegisteredPublicationFramePorts = Object.freeze({
     async navigate(href: string) {
       if (!activePage?.isCurrent()) return;
@@ -87,14 +118,15 @@ export function createRegisteredPublicationSession(publication: PublicationBindi
     onCommandQueryChange(query: string) { if (activePage?.isCurrent()) void activePage.search(query).catch(() => {}); },
   });
   const bind = () => { if (!bound) { host.bind(snapshot, ports); bound = true; } };
-  const session: RegisteredPublicationSession = Object.freeze({ publication: snapshot, host,
+  const session: RegisteredPublicationSession = Object.freeze({ publication: snapshot, host, ...(host.Frame ? { Frame: host.Frame } : {}), ports,
+    subscribe: (listener: () => void) => { listeners.add(listener); return () => { listeners.delete(listener); }; }, getSnapshot: () => rendered,
     activate(routeId: string) { if (!routeId.trim()) throw new TypeError("Page route identity required"); bind(); active = routeId; },
     isCurrent(routeId: string, page?: RegisteredPageSession) { return (active === undefined || active === routeId) && (page === undefined || activePage === undefined || activePage === page); },
     attachPage(page: RegisteredPageSession) {
       bind(); active = page.options.routeId ?? page.options.page.instanceId;
       if (activePage === page) return;
       unsubscribe?.(); activePage = page;
-      const update = () => { if (!page.isCurrent()) return; const groups = page.commandGroups(), hash = runtimeHash(groups); if (hash !== commandsHash) { commandsHash = hash; host.setCommands(groups); } };
+      const update = () => { if (!page.isCurrent()) return; const groups = page.commandGroups(), hash = runtimeHash(groups); if (hash !== commandsHash) { commandsHash = hash; host.setCommands(groups); if (rendered) publish(Object.freeze({ ...rendered, commands: Object.freeze([...groups]) })); } };
       unsubscribe = page.subscribe(update); update();
     },
     setPage(update: RegisteredRegionUpdate, source?: RegisteredPageSession) {
@@ -106,11 +138,13 @@ export function createRegisteredPublicationSession(publication: PublicationBindi
       if (!update.chunks) host.setChunks([]);
       host.setRegions({ headerTrail: update.trail, ...(update.chunks ? {} : { main: update.regions.main ?? [] }), pageModule: update.regions["page-module"] ?? [], ...(update.headerActions === undefined ? {} : { headerActions: update.headerActions }), ...(update.inspectorContext === undefined ? {} : { inspectorContext: update.inspectorContext }) });
       if (update.chunks) host.setChunks(update.chunks);
+      publish(registeredPublicationSnapshot(update, rendered?.state ?? { main: "loading", navigating: true }, activePage?.commandGroups()));
     },
     setState(state: RegisteredFrameRouteState, source?: RegisteredPageSession) {
       if (source && !session.isCurrent(source.options.routeId ?? source.options.page.instanceId, source)) return;
       if (Object.keys(state).some(key => !["main", "navigating"].includes(key)) || !["ready", "loading", "error", "not-found", "forbidden"].includes(state.main) || typeof state.navigating !== "boolean") throw new TypeError("Invalid frame route state");
       bind(); host.setState(Object.freeze({ ...state }));
+      if (rendered) publish(Object.freeze({ ...rendered, state: Object.freeze({ ...state }) }));
     },
   });
   publicationHosts.set(host, session); return session;
@@ -174,7 +208,7 @@ export function createRegisteredPageSession(input: RegisteredPageSessionOptions)
   if (input.publication && !input.routeId?.trim()) throw new TypeError("Publication page session requires its registered route identity");
   const options = Object.freeze({ ...input, page, manifest }), contents = new Map<string, RuntimeContent>(), owners = new Map<string, string>(), lazyScopes = new Map<string, string>(), itemReferences = new Set<string>();
   const requests = new Map<string, Promise<void>>(), chunkStates = new Map<string, RegisteredPageChunk["status"]>(), listeners = new Set<() => void>();
-  let revision = 0, sequence = 0, navigationSequence = 0, selectionSequence = 0, active = true, activeAnchor: string | undefined, frameState: RegisteredFrameRouteState | undefined, started: Promise<void> | undefined, groups = outline.groups;
+  let revision = 0, sequence = 0, navigationSequence = 0, selectionSequence = 0, active = true, activeAnchor: string | undefined, frameState: RegisteredFrameRouteState | undefined, started: { readonly location: string; readonly promise: Promise<void> } | undefined, groups = outline.groups;
   const publish = () => { revision++; for (const listener of [...listeners]) listener(); };
   const currentPage = () => active && (options.publication?.isCurrent(options.routeId ?? page.instanceId, session) ?? true);
   const state = (value: RegisteredFrameRouteState) => { if (currentPage() && runtimeHash(frameState ?? null) !== runtimeHash(value)) { frameState = Object.freeze({ ...value }); options.publication?.setState(value, session); publish(); } };
@@ -208,7 +242,7 @@ export function createRegisteredPageSession(input: RegisteredPageSessionOptions)
   const session: RegisteredPageSession = {
     options, outline,
     activate() { active = true; options.publication?.attachPage(session); },
-    deactivate() { active = false; sequence++; navigationSequence++; selectionSequence++; },
+    deactivate() { active = false; sequence++; navigationSequence++; selectionSequence++; started = undefined; },
     isCurrent: currentPage, activeAnchor: () => activeAnchor, frameState: () => frameState,
     subscribe: listener => { listeners.add(listener); return () => { listeners.delete(listener); }; }, revision: () => revision,
     read(reference) {
@@ -240,7 +274,22 @@ export function createRegisteredPageSession(input: RegisteredPageSessionOptions)
     },
     chunkStatus(args) { validArgs(args); return chunkStates.get(JSON.stringify([args.l0, args.l1 ?? null])) ?? "unrequested"; },
     start() {
-      return started ??= (async () => { const hash = options.navigation.hash(); if (hash) await go(hash, false); else if (options.navigation.path && (options.path.endsWith("/[l0]/[id]") || itemParams(options.navigation.path()))) await session.loadItem(options.navigation.path()); })();
+      const hash = options.navigation.hash(), path = options.navigation.path?.(), location = JSON.stringify([hash, path ?? null]);
+      if (started?.location === location) return started.promise;
+      const promise = (async () => {
+        if (hash) await go(hash, false);
+        else if (path !== undefined && (options.path.endsWith("/[l0]/[id]") || itemParams(path))) await session.loadItem(path);
+        else if (currentPage()) {
+          // Returning to this page without an item/hash restores the prepared
+          // route's own ready/pending state and cancels any prior item result.
+          navigationSequence++;
+          let changed = frameState !== undefined || activeAnchor !== undefined || itemReferences.size > 0;
+          for (const [key, owner] of owners) if (owner.startsWith("item:")) { owners.delete(key); contents.delete(key); changed = true; }
+          itemReferences.clear(); activeAnchor = undefined; frameState = undefined;
+          if (changed) publish();
+        }
+      })();
+      started = { location, promise }; return promise;
     },
     navigate: href => go(href, true),
     scrollSpy(anchor) { if (!Object.hasOwn(outline.targets, anchor)) throw new TypeError("Unknown scroll-spy anchor"); if (!currentPage()) return; activeAnchor = anchor; options.navigation.replaceState(`#${anchor}`); publish(); },
@@ -263,6 +312,7 @@ export function createRegisteredPageSession(input: RegisteredPageSessionOptions)
     },
     commandGroups: () => groups,
     async loadItem(path) {
+      started = undefined;
       const request = ++navigationSequence;
       const params = itemParams(path);
       if (!params) { state({ main: "not-found", navigating: false }); return { status: "not-found", code: 404 }; }
@@ -295,6 +345,7 @@ export function createRegisteredPageSession(input: RegisteredPageSessionOptions)
     },
   };
   async function go(href: string, history: boolean): Promise<void> {
+    started = undefined;
     const anchor = href.startsWith("#") ? href.slice(1) : "", target = outline.targets[anchor], request = ++navigationSequence;
     if (!target) throw new TypeError("Hash target is outside the supplied page outline");
     state({ main: "loading", navigating: true });
