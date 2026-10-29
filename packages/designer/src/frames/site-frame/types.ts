@@ -28,6 +28,29 @@ export interface SiteLinkInput {
 
 type PlainSiteLinkInput = Omit<SiteLinkInput, "emphasis" | "icon">;
 
+export interface SiteLocaleInput {
+  readonly label: CopyRef;
+  readonly links: readonly (PlainSiteLinkInput & { readonly locale: string; readonly isCurrent?: boolean })[];
+}
+export interface SiteMegaGroupInput {
+  readonly id: string;
+  readonly label: CopyRef;
+  readonly columns: readonly { readonly heading: CopyRef; readonly links: readonly (PlainSiteLinkInput & { readonly isCurrent?: boolean })[] }[];
+  readonly featured?: PlainSiteLinkInput & { readonly description?: CopyRef };
+}
+export interface SiteNewsletterInput {
+  readonly emailLabel: CopyRef;
+  readonly submitLabel: CopyRef;
+  readonly pendingLabel: CopyRef;
+  readonly sentMessage: CopyRef;
+  readonly failedMessage: CopyRef;
+  readonly privacyNote?: CopyRef;
+  readonly hint?: CopyRef;
+  /** The same-origin native POST binding used by sections.form. */
+  readonly action: string;
+  readonly name?: string;
+}
+
 /** An icon-only link: its copy reference supplies the accessible name. */
 export type SiteIconLinkInput = {
   readonly href: string;
@@ -93,6 +116,8 @@ export type { SiteChromeGround } from "./viewChromeGround.js";
  * Breaches throw a `SiteFooterContractError` (`name` and `code`), never truncate.
  */
 interface SiteFooterFields {
+  readonly locale?: SiteLocaleInput;
+  readonly newsletter?: SiteNewsletterInput;
   /** Show the shell brand in a separate footer band, before the labelled link groups. */
   readonly brandBand?: boolean;
   /** A top hairline on transparent flow footers; other grounds ignore it. @default "none" */
@@ -132,6 +157,7 @@ export interface SiteShellInput {
    * copy references.
    */
   readonly nav?: {
+    readonly mega?: readonly SiteMegaGroupInput[];
     readonly label: CopyRef;
     /** The disclosure toggle copy; defaults to the resolved navigation label. */
     readonly triggerLabel?: CopyRef;
@@ -147,7 +173,8 @@ export interface SiteShellInput {
   /** Existing footer fallback only. Header ink and plate use header.surface/tone. @default "base" */
   readonly ground?: SiteChromeGround;
   /** One header surface and theme-relative ink polarity. Glass follows declared page ground through the existing client island. */
-  readonly header?: { readonly position?: "sticky" | "static"; readonly surface?: "solid" | "transparent" | "glass"; readonly tone?: "base" | "inverse" };
+  readonly header?: { readonly position?: "sticky" | "static"; readonly surface?: "solid" | "transparent" | "glass"; readonly tone?: "base" | "inverse"; readonly locale?: SiteLocaleInput };
+  readonly announcement?: { readonly message: CopyRef; readonly dismissLabel?: CopyRef; readonly dismissed?: boolean };
   readonly footer?: SiteFooterInput;
   /**
    * The canonical public origin (`https://example.com`), for a surface served
@@ -166,6 +193,7 @@ export interface SiteFrameInput {
 }
 
 export interface SiteFrameProps extends SiteFrameInput {
+  readonly onAnnouncementDismiss?: () => void;
   /** Canonical page locale supplied by the host through Writer. */
   locale?: string;
   /** Host-owned toast viewport, mounted after the footer and outside main. */

@@ -116,7 +116,7 @@
           },
           {
             "path": "packages/designer/src/shell/SiteFooter.tsx",
-            "sha256": "6a10abd3dd944517371ea878d0319f1adef150b1c5edee69e8d4a334a3ca1286"
+            "sha256": "09654e2cad668d140dca0ca6a90e2c887c2343fadf9b4e81abcac6d7270bd38b"
           }
         ],
         "unresolved": [
@@ -179,7 +179,9 @@
       },
       "slot": "frames.site-footer",
       "slots": {
-        "columns": "columns"
+        "columns": "columns",
+        "locale": "locale",
+        "newsletter": "newsletter"
       },
       "statePorts": {}
     }

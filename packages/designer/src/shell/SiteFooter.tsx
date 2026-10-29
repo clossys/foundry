@@ -29,6 +29,8 @@ export interface SiteFooterProps extends Omit<HTMLAttributes<HTMLElement>, "chil
    * `brand` or `columns` is present.
    */
   secondary?: ReactNode;
+  locale?: ReactNode;
+  newsletter?: ReactNode;
   /**
    * Legacy ground vocabulary retained for source compatibility and divider
    * policy. Paint is always footer-local dark with paired light semantic
@@ -49,7 +51,7 @@ export interface SiteFooterProps extends Omit<HTMLAttributes<HTMLElement>, "chil
  * automatically at the top level, the same placement rule `Shell.Footer`
  * already carries.
  */
-function SiteFooterRoot({ brand, columns, secondary, ground = "base", rule = "none", className, style, ...rest }: SiteFooterProps) {
+function SiteFooterRoot({ brand, columns, secondary, locale, newsletter, ground = "base", rule = "none", className, style, ...rest }: SiteFooterProps) {
   const colors = SITE_CHROME_GROUND_CLASSES[ground];
   const bordered = siteChromeHasBorder(ground);
   const topRule = ground === "transparent" && rule === "top";
@@ -71,12 +73,14 @@ function SiteFooterRoot({ brand, columns, secondary, ground = "base", rule = "no
         className="mx-auto flex w-full flex-col gap-lg"
         style={{ paddingInline: UI_WIDTH_PAGE_PADDING_X }}
       >
+        {newsletter ? <SemanticContent as="div" data-footer-newsletter="">{newsletter}</SemanticContent> : null}
         {columns ? (
           <SemanticContent as="div" className="site-footer-columns">
             {brand ? <SemanticContent as="div" data-footer-brand="" className="flex min-w-0 items-center">{brand}</SemanticContent> : null}
             {columns}
           </SemanticContent>
         ) : brand ? <SemanticContent as="div" data-footer-brand="" className="flex min-w-0 items-center">{brand}</SemanticContent> : null}
+        {locale ? <SemanticContent as="div" data-footer-locale="">{locale}</SemanticContent> : null}
         {secondary ? (
           <SemanticContent as="div"
             className={cx(

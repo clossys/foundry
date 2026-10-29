@@ -21,6 +21,8 @@ export interface SiteHeaderProps extends Omit<HTMLAttributes<HTMLElement>, "chil
   brand: ReactNode;
   /** Primary navigation, typically a NavDisclosure or a plain navigation landmark. */
   nav?: ReactNode;
+  /** The selected mega disclosure member; navigation content stays in nav. */
+  navMode?: "mega";
   /**
    * One actions slot, in increasing importance. Direct ActionLinks and fragments
    * containing only ActionLinks are ordered ghost, secondary, primary. Unknown
@@ -30,6 +32,8 @@ export interface SiteHeaderProps extends Omit<HTMLAttributes<HTMLElement>, "chil
    * (see `src/ladder.test.ts`).
    */
   actions?: ReactNode;
+  /** Route-alternate links supplied by the frame's checked content map. */
+  locale?: ReactNode;
   /** Where navigation sits on a wide header; the narrow menu/brand/actions layout is shared. @default "centered" */
   navPlacement?: "leading" | "centered";
   /**
@@ -75,10 +79,11 @@ function orderedActions(children: ReactNode): ReactNode[] {
 }
 
 /** Persistent site banner with one responsive row and one surface/ink contract. Server-safe: no hooks. */
-function SiteHeaderRoot({ brand, nav, actions, navPlacement = "centered", surface = "solid", tone = "base", position,
+function SiteHeaderRoot({ brand, nav, navMode, actions, locale, navPlacement = "centered", surface = "solid", tone = "base", position,
   menuOpen = false, className, style, ...rest }: SiteHeaderProps) {
   if (surface !== "solid" && surface !== "transparent" && surface !== "glass")
     throw new TypeError("SiteHeader: surface must be solid, transparent or glass.");
+  if (navMode !== undefined && navMode !== "mega") throw new TypeError("SiteHeader: unsupported navigation mode.");
   const headerPosition = resolveFrameHeaderOptions("frames.site-header", { surface, position }).position;
   const glass = surface === "glass";
   const solid = surface === "solid";
@@ -93,7 +98,7 @@ function SiteHeaderRoot({ brand, nav, actions, navPlacement = "centered", surfac
       } satisfies Partial<BrandmarkProps>)
     : brand;
   return (
-    <header {...FRAME_STAMP} {...rest} data-header-root="" data-surface={surface} data-tone={tone}
+    <header {...FRAME_STAMP} {...rest} data-header-root="" data-surface={surface} data-tone={tone} data-nav-mode={navMode}
       {...(glass ? { "data-placement": "overlay", "data-menu-open": menuOpen ? "" : undefined } : {})}
       className={cx("site-header-contract site-header-ink py-sm", INK_CLASSES[tone],
         glass ? "site-header-overlay" : solid ? cx(colors.surface, "border-b", colors.border) : undefined,
@@ -101,12 +106,12 @@ function SiteHeaderRoot({ brand, nav, actions, navPlacement = "centered", surfac
       style={{ position: headerPosition,
         ...(headerPosition === "sticky" ? { zIndex: "var(--ui-z-sticky, 10)", insetBlockStart: 0 }
           : position === "static" ? {} : { zIndex: UI_Z_SHELL }),
-        ...(glass ? { insetBlockStart: 0, insetInline: 0 } : {}),
+        ...(glass ? { insetBlockStart: "var(--site-announcement-height, 0px)", insetInline: 0 } : {}),
         ...(solid ? { borderBottomWidth: UI_BORDER_HAIRLINE } : {}), ...style }}>
       <div className="site-header-row">
         <div className="site-header-brand">{tonedBrand}</div>
         {nav}
-        <div className="site-header-actions">{orderedActions(actions)}</div>
+        <div className="site-header-actions">{locale}{orderedActions(actions)}</div>
       </div>
     </header>
   );
