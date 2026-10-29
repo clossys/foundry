@@ -2,6 +2,7 @@ import { afterEach, expect, it, vi } from "vitest";
 import { readFileSync } from "node:fs";
 import { cleanup, screen } from "@testing-library/react";
 import { renderToString } from "react-dom/server";
+import { createElement } from "react";
 import { render } from "./__fixtures__/frame.js";
 import * as components from "../components/index.js";
 import * as charts from "../charts/index.js";
@@ -12,6 +13,7 @@ import type { CompositeResolved, ResolvedComponent } from "../catalog-core/index
 import * as content from "./component-specimen-sample-content.js";
 import { COMPONENT_SPECIMEN_PROBE_STATES, componentSpecimenPreview } from "./index.js";
 import { SPECIMEN_ANCHOR_DATE, SPECIMEN_DATASET_SEED, specimenDataset } from "./specimen-dataset.js";
+import { componentSpecimenSample } from "./component-specimen-samples.js";
 
 const hostModules = { "@clossys/designer/components": components, "@clossys/designer/charts": charts, "@clossys/designer/shell": shell };
 const source = (file: string) => readFileSync(new URL(file, import.meta.url), "utf8");
@@ -95,8 +97,8 @@ it("carries every kind of sample the specimens need, in each component's own sha
 });
 
 it("feeds every sample from the dataset: no inline per-specimen arrays or literals", () => {
-  const { componentSpecimenProps, componentSpecimenText, componentSpecimenCollections, componentSpecimenOverlays, componentSpecimenSourceSamples, componentSpecimenTable, componentSpecimenField, componentSpecimenCard, componentSpecimenActions, componentSpecimenColor, componentSpecimenToast } = content;
-  const exportsFed = { componentSpecimenProps, componentSpecimenText, componentSpecimenCollections, componentSpecimenOverlays, componentSpecimenSourceSamples, componentSpecimenTable, componentSpecimenField, componentSpecimenCard, componentSpecimenActions, componentSpecimenColor, componentSpecimenToast };
+  const { componentSpecimenProps, componentSpecimenText, componentSpecimenCollections, componentSpecimenOverlays, componentSpecimenSourceSamples, componentSpecimenTable, componentSpecimenField, componentSpecimenSemanticMedia, componentSpecimenCard, componentSpecimenActions, componentSpecimenColor, componentSpecimenToast } = content;
+  const exportsFed = { componentSpecimenProps, componentSpecimenText, componentSpecimenCollections, componentSpecimenOverlays, componentSpecimenSourceSamples, componentSpecimenTable, componentSpecimenField, componentSpecimenSemanticMedia, componentSpecimenCard, componentSpecimenActions, componentSpecimenColor, componentSpecimenToast };
   expect(Object.entries(exportsFed).flatMap(([name, value]) => unfed(value, name))).toEqual([]);
 });
 
@@ -128,6 +130,50 @@ it("draws every fed Foundry component with dataset content, never its leaf label
   }).map(fill => fill.slot);
   expect(blank).toEqual([]);
   errors.mockRestore();
+});
+
+it("draws every SemanticContent member with tag-appropriate dataset content", () => {
+  const fill = loadCatalogBundles().componentFills.flatMap(doc => Object.values(doc.components))
+    .find(fill => fill.source === "foundry" && fill.slot === "components.semantic-content")!;
+  const preview = componentSpecimenPreview({ modules: hostModules });
+  const html = renderToString(<>{preview.preview(fill.slot, leafProfile(fill))}</>);
+  const document = new DOMParser().parseFromString(html, "text/html");
+  const rows = [...document.querySelectorAll("[data-component-specimen]")];
+  expect(rows.map(row => row.getAttribute("data-component-specimen"))).toEqual([fill.slot, ...fill.members]);
+  expect(document.querySelector("[data-specimen-error], [data-specimen-unavailable]")).toBeNull();
+  const image = document.querySelector('[data-component-specimen="as.img"] img')!;
+  expect(image.getAttribute("src")).toBe(specimenDataset.assets.mark.src);
+  expect(image.getAttribute("alt")).toBe(specimenDataset.assets.mark.name);
+  expect(image.getAttribute("width")).toBe("32");
+  expect(image.getAttribute("height")).toBe("32");
+  expect(image.childNodes).toHaveLength(0);
+  const source = document.querySelector('[data-component-specimen="as.source"] picture > source')!;
+  expect(source.getAttribute("srcset")).toBe(`${specimenDataset.assets.mark.src} 32w`);
+  expect(source.childNodes).toHaveLength(0);
+  expect(source.nextElementSibling?.tagName).toBe("IMG");
+  expect(source.nextElementSibling?.getAttribute("src")).toBe(specimenDataset.assets.mark.src);
+  for (const row of rows.filter(row => !["as.img", "as.source"].includes(row.getAttribute("data-component-specimen")!))) {
+    expect(row.textContent, row.getAttribute("data-component-specimen")!).toBe(specimenDataset.text.paragraph);
+  }
+});
+
+it("adapts the final SemanticContent tag while preserving nonvoid probe content and Field render props", () => {
+  const sample = componentSpecimenSample("./components#SemanticContent", components.SemanticContent, components)!;
+  const draw = (as: "p" | "img" | "source", children = sample.children) => {
+    const node = createElement(components.SemanticContent, { ...sample.props, children, as, id: "effective-probe" } as never);
+    return renderToString(<>{sample.host ? sample.host(node) : node}</>);
+  };
+  expect(draw("p")).toBe(`<p id="effective-probe">${specimenDataset.text.paragraph}</p>`);
+  expect(draw("p", "Probe content")).toBe('<p id="effective-probe">Probe content</p>');
+  const image = new DOMParser().parseFromString(draw("img"), "text/html").querySelector("img")!;
+  expect(image.id).toBe("effective-probe");
+  expect(image.getAttribute("src")).toBe(specimenDataset.assets.mark.src);
+  expect(new DOMParser().parseFromString(draw("source"), "text/html").querySelector("picture > source")?.id).toBe("effective-probe");
+  const field = componentSpecimenSample("./components#Field", components.Field, components)!;
+  expect(typeof field.children).toBe("function");
+  const html = renderToString(createElement(components.Field, { ...field.props, children: field.children } as never));
+  expect(html).toContain("<input");
+  expect(html).toContain(specimenDataset.field.label);
 });
 
 it("draws no raw interactive element in a specimen file without an override reason code", () => {
