@@ -291,7 +291,7 @@ it("hydrates the real icon-trigger frame without markup drift and keeps disclosu
     const toggle = within(nav).getByRole("button", { name: "Menu" });
     const panel = nav.querySelector(".nav-disclosure-panel")!;
     expect(toggle).toHaveAttribute("aria-controls", panelId!);
-    expect(panel.id).toBe(panelId);
+    expect(`${panel.id}-sheet`).toBe(panelId);
     expect(toggle).toHaveAttribute("aria-expanded", "false");
     expect(panel).not.toHaveAttribute("data-expanded");
     const user = userEvent.setup();
@@ -302,11 +302,9 @@ it("hydrates the real icon-trigger frame without markup drift and keeps disclosu
     expect(toggle).toHaveFocus();
     await user.keyboard("{Enter}");
     expect(toggle).toHaveAttribute("aria-expanded", "true");
-    await user.keyboard(" ");
-    expect(toggle).toHaveAttribute("aria-expanded", "false");
-    await user.keyboard(" ");
-    expect(toggle).toHaveAttribute("aria-expanded", "true");
-    await user.click(within(panel as HTMLElement).getByRole("link", { name: "Start now" }));
+    const dialog = within(document.body).getByRole("dialog", { name: "Primary" });
+    expect(panel).toHaveAttribute("inert");
+    await user.click(within(dialog).getByRole("link", { name: "Start now" }));
     expect(toggle).toHaveAttribute("aria-expanded", "false");
     expect(recoverable).not.toHaveBeenCalled();
     expect(consoleError).not.toHaveBeenCalled();

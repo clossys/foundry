@@ -70,21 +70,29 @@ export function SiteFrame({ shell, presentation, resolveCopy, resolveAsset, chil
 
   const footerContent = footer ? (
     <SiteFooter
+      brand={footer.brandBand ? cloneElement(brandmark, { tone: "inverse" }) : undefined}
       ground={footer.ground}
       rule={footer.rule}
       className={footer.placement === "overlay" ? "publisher-frame-footer-overlay pointer-events-auto w-full [margin-block-start:auto] min-w-0 [overflow-wrap:anywhere]" : undefined}
-      columns={footer.columns.length ? <>{footer.columns.map((column, columnIndex) => (
-        <SiteFooter.Column key={columnIndex} heading={column.heading}>
-          {column.links.map((link, linkIndex) => <Link variant="standalone" key={linkIndex} href={link.href} rel={/^https?:\/\//i.test(link.href) ? "noopener noreferrer" : undefined} className="inline-flex min-h-[var(--ui-layout-tap-target)] items-center px-xs text-inherit no-underline hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent">{link.label}</Link>)}
-        </SiteFooter.Column>
-      ))}</> : undefined}
+      columns={footer.columns.length || (footer.brandBand && footer.social?.links.length) ? <>
+        {footer.columns.map((column, columnIndex) => (
+          <SiteFooter.Column key={columnIndex} heading={column.heading}>
+            {column.links.map((link, linkIndex) => <Link variant="standalone" key={linkIndex} href={link.href} rel={/^https?:\/\//i.test(link.href) ? "noopener noreferrer" : undefined} className="inline-flex min-h-[var(--ui-layout-tap-target)] items-center px-xs text-inherit no-underline hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent">{link.label}</Link>)}
+          </SiteFooter.Column>
+        ))}
+        {footer.brandBand && footer.social?.links.length ? <SiteFooter.Column heading={footer.social.label!}>
+          {footer.social.links.map((link, index) => <Link key={index} variant="standalone" href={link.href} className="inline-flex min-h-[var(--ui-layout-tap-target)] items-center gap-sm text-inherit no-underline hover:underline">
+            <Icon glyph={link.icon} decorative />{link.label}
+          </Link>)}
+        </SiteFooter.Column> : null}
+      </> : undefined}
       secondary={<SiteFooter.Legal
         entity={footer.legal.entity}
         links={[...footer.links, ...footer.legal.links]}
         linksLabel={footer.legal.linksLabel}
-        icons={footer.social?.links.map(link => ({ label: link.label, href: link.href, icon: <Icon glyph={link.icon} decorative /> }))}
-        iconsLabel={footer.social?.links.length ? footer.social.label : undefined}
-        home={footer.home}
+        icons={footer.brandBand ? undefined : footer.social?.links.map(link => ({ label: link.label, href: link.href, icon: <Icon glyph={link.icon} decorative /> }))}
+        iconsLabel={!footer.brandBand && footer.social?.links.length ? footer.social.label : undefined}
+        home={footer.brandBand ? undefined : footer.home}
       />}
 
     />
