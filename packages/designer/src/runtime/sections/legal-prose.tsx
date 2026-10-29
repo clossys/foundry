@@ -1,6 +1,4 @@
-import { ArticleBody } from "../../blocks/ArticleBody.js";
-import { ContentSection } from "../../blocks/ContentSection.js";
-import { dsAttrs } from "../../catalog-core/provenance-attrs.js";
+import { LegalProse, type LegalProseRevision } from "../../blocks/LegalProse.js";
 import { SemanticContent } from "../../components/SemanticContent.js";
 import type { SurfaceRendererEntry } from "../contract.js";
 import { list, object, readSectionContent, required, SectionContentError, text, type JsonObject, type SectionContent } from "./group-a-content.js";
@@ -29,7 +27,7 @@ function bodyNodes(content: SectionContent) {
   });
 }
 
-/** Private composition: ContentSection supplies the title, ArticleBody supplies prose typography. */
+/** Bind the legal prose catalog surface to its own public block. */
 export const legalProseRenderer: SurfaceRendererEntry = {
   leaf: LEAF,
   sample: dataset => ({
@@ -40,14 +38,18 @@ export const legalProseRenderer: SurfaceRendererEntry = {
   render(input) {
     const content = readSectionContent(input, LEAF, legalProseInputs);
     const heading = text(content, required(content, "heading"), "heading");
-    let revision;
+    let revision: LegalProseRevision | undefined;
     if (content.values.revision !== undefined) {
       const value = object(content, content.values.revision, "revision");
-      closed(content, value, ["label", "value"], "revision");
-      revision = <><SemanticContent as="span" dir="auto">{text(content, value.label, "revision.label")}</SemanticContent>{" "}<SemanticContent as="span" dir="auto">{text(content, value.value, "revision.value")}</SemanticContent></>;
+      closed(content, value, ["label", "value", "dateTime"], "revision");
+      revision = {
+        label: <SemanticContent as="span" dir="auto">{text(content, value.label, "revision.label")}</SemanticContent>,
+        value: <SemanticContent as="span" dir="auto">{text(content, value.value, "revision.value")}</SemanticContent>,
+        ...(value.dateTime === undefined ? {} : { dateTime: text(content, value.dateTime, "revision.dateTime") }),
+      };
     }
-    return <ContentSection {...dsAttrs("sections", LEAF, `foundry/${LEAF}`)} data-designer-requires-section-frame="" heading={<SemanticContent as="span" dir="auto">{heading}</SemanticContent>} description={revision}>
-      <ArticleBody>{bodyNodes(content)}</ArticleBody>
-    </ContentSection>;
+    return <LegalProse heading={<SemanticContent as="span" dir="auto">{heading}</SemanticContent>} revision={revision}>
+      {bodyNodes(content)}
+    </LegalProse>;
   },
 };

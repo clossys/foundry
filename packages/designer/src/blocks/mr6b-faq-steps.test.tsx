@@ -1,5 +1,6 @@
 import { readFileSync } from "node:fs";
-import { URL } from "node:url";
+import { fileURLToPath } from "node:url";
+import { dirname, resolve } from "node:path";
 import { render } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
 import { Faq as NativeFaq } from "./Faq.server.js";
@@ -7,7 +8,7 @@ import { OrderedStepSequence } from "./OrderedStepSequence.js";
 
 describe("MR6b document FAQ and steps", () => {
   it("keeps steps on Designer content components without raw styled copy or controls", () => {
-    const source = readFileSync(new URL("./OrderedStepSequence.tsx", import.meta.url), "utf8");
+    const source = readFileSync(resolve(dirname(fileURLToPath(import.meta.url)), "OrderedStepSequence.tsx"), "utf8");
     expect(source).toContain('import { SemanticContent } from "../components/SemanticContent.js"');
     expect(source).not.toMatch(/<(?:a|button|input)\b/);
     expect(source).not.toMatch(/<(?:p|span)\b[^>]*className=/);

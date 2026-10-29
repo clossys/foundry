@@ -4293,7 +4293,7 @@
       "root": "div",
       "anatomy": {
         "band": "sections.band",
-        "header": "sections.section-header"
+        "header": null
       },
       "slots": [
         {

@@ -1,7 +1,8 @@
 // @vitest-environment jsdom
 import "@testing-library/jest-dom/vitest";
 import { readFileSync } from "node:fs";
-import { URL } from "node:url";
+import { fileURLToPath } from "node:url";
+import { dirname, resolve } from "node:path";
 import { cleanup, render, screen } from "@testing-library/react";
 import { afterEach, expect, it } from "vitest";
 import * as blocks from "./index.js";
@@ -9,7 +10,7 @@ import * as serverBlocks from "./server.js";
 import { SemanticContent } from "../components/SemanticContent.js";
 
 afterEach(cleanup);
-const fill = () => JSON.parse(readFileSync(new URL("../catalog/fills/foundry/sections.legal-prose.json", import.meta.url), "utf8"));
+const fill = () => JSON.parse(readFileSync(resolve(dirname(fileURLToPath(import.meta.url)), "../catalog/fills/foundry/sections.legal-prose.json"), "utf8"));
 
 it("binds legal-prose to its own public block rather than the general content section", () => {
   const source = fill(), meta = source.$extensions["com.clossys.fill"], legal = source.sections["legal-prose"];
