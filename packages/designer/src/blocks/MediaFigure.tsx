@@ -8,6 +8,8 @@ import { IMAGE_RATIOS } from "../importers/image-ratio.js";
 import { SemanticContent } from "../components/SemanticContent.js";
 import { ChromeSpecimen, type MediaFigureChrome } from "./media/ChromeSpecimen.js";
 import { ChromeCallouts, type ChromeCalloutsProps } from "./media/ChromeCallouts.js";
+import { MediaPlayer, type MediaPlayerProps } from "../components/media-player/index.js";
+import { isVideoResource } from "../catalog-assets/media.js";
 /** Section root provenance (D1): the selected Foundry fill this block is. */
 const SECTION_STAMP = dsAttrs("sections", "sections.media", "foundry/sections.media");
 
@@ -38,6 +40,10 @@ export interface MediaFigureProps extends HTMLAttributes<HTMLElement> {
   children?: ReactNode;
   /** A validated asset resource, rendered with its responsive sources and crop policy. */
   image?: ImageResource;
+  /** Inline assets.video with its resolved components.media-player passage and poster. */
+  video?: MediaPlayerProps;
+  /** Explicit resource kind selected by the page member. Omit for legacy child media. */
+  kind?: "image" | "video";
   /** A canonical image-ratio member. Omit to keep the image's intrinsic ratio. */
   ratio?: keyof typeof IMAGE_RATIOS;
   /** A caption under the media, rendered as the `<figcaption>`. */
@@ -75,6 +81,8 @@ export interface MediaFigureProps extends HTMLAttributes<HTMLElement> {
 export function MediaFigure({
   children,
   image,
+  video,
+  kind,
   ratio,
   caption,
   chrome = "bare",
@@ -89,8 +97,13 @@ export function MediaFigure({
 }: MediaFigureProps) {
   const colors = SECTION_GROUND_CLASSES[ground];
   const contained = measure === "content";
+  if (kind !== undefined && kind !== "image" && kind !== "video") throw new TypeError("Invalid media kind");
   if (image !== undefined && !isImageResource(image)) throw new TypeError("Invalid image resource");
+  if (video !== undefined && (!isVideoResource(video.video) || !isImageResource(video.poster))) throw new TypeError("Invalid video resource or poster");
   if (image !== undefined && children != null) throw new TypeError("MediaFigure accepts image or children");
+  if (Number(image !== undefined) + Number(video !== undefined) + Number(children != null) > 1) throw new TypeError("MediaFigure accepts one image, video or child media");
+  if (kind === "video" && video === undefined || kind === "image" && image === undefined) throw new TypeError("MediaFigure kind requires its matching resource");
+  if (video !== undefined && ratio !== undefined) throw new TypeError("MediaFigure ratio requires an image resource");
   if (ratio !== undefined && !Object.hasOwn(IMAGE_RATIOS, ratio)) throw new TypeError("Invalid image ratio");
   const crop = ratio === undefined ? image : IMAGE_RATIOS[ratio];
   const imageStyle: CSSProperties = {
@@ -98,7 +111,7 @@ export function MediaFigure({
     objectFit: crop ? "cover" : undefined,
     objectPosition: image?.focal ? `${image.focal.x * 100}% ${image.focal.y * 100}%` : undefined,
   };
-  const resource = image === undefined ? children : (
+  const resource = video !== undefined ? <MediaPlayer {...video} /> : image === undefined ? children : (
     <SemanticContent as="picture" style={{ display: "block", width: "100%", height: "100%" }}>
       {pictureSources(image.sources).map((source, index) => <SemanticContent as="source" key={index} srcSet={source.srcSet} width={source.width} height={source.height} media={source.media} sizes={image.sizes} />)}
       <SemanticContent as="img" src={image.src} width={image.width} height={image.height} alt={image.decorative ? "" : image.alt} sizes={image.sizes} style={imageStyle} />

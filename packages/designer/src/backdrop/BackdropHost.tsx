@@ -30,6 +30,7 @@ export function BackdropHost({ resource, modules, scrim = "light" }: BackdropHos
     let visible = false;
     let requested = false;
     let generation = 0;
+    let mountAbort: AbortController | undefined;
     let cancelIdle: (() => void) | undefined;
     const preference = window.matchMedia("(prefers-reduced-motion: reduce)");
     let motionReduced = preference.matches;
@@ -37,6 +38,8 @@ export function BackdropHost({ resource, modules, scrim = "light" }: BackdropHos
 
     const dispose = () => {
       generation++;
+      mountAbort?.abort();
+      mountAbort = undefined;
       cancelIdle?.();
       cancelIdle = undefined;
       try { if (typeof instance?.destroy === "function") instance.destroy(); } catch { /* Retain the static fallback when consumer teardown fails. */ }
@@ -52,11 +55,13 @@ export function BackdropHost({ resource, modules, scrim = "light" }: BackdropHos
       if (!visible || motionReduced || requested || abort.signal.aborted) return;
       requested = true;
       const ticket = ++generation;
+      const currentAbort = new AbortController();
+      mountAbort = currentAbort;
       const load = Object.hasOwn(modules, resource.moduleRef) ? modules[resource.moduleRef] : undefined;
       if (!load) { fail(); return; }
       Promise.resolve().then(load).then(module => {
         if (abort.signal.aborted || motionReduced || ticket !== generation) return undefined;
-        return module.mount(target, { paused: !visible, signal: abort.signal, onError: fail });
+        return module.mount(target, { paused: !visible, signal: currentAbort.signal, onError: fail });
       }).then(created => {
         if (!created) return;
         if (abort.signal.aborted || motionReduced || ticket !== generation) { if (typeof created.destroy === "function") created.destroy(); return; }

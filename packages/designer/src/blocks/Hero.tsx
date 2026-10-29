@@ -45,7 +45,7 @@ export interface HeroProps extends HTMLAttributes<HTMLElement> {
    * Passing `media` does not choose a layout — set `composition` explicitly.
    */
   media?: ReactNode;
-  /** Checked decorative still art behind the message. The same static source serves reduced motion. */
+  /** Checked decorative art behind the message. Moving kinds declare a poster, still and bounded transfer budget. */
   backdrop?: StillBackdropArt | RuntimeBackdropResource | VideoBackdropResource;
   /** Consumer static import registry for runtime artwork. Missing keys keep the poster. */
   backdropModules?: BackdropModuleLoaders;

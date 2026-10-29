@@ -3,6 +3,8 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { Hero } from "../blocks/Hero.js";
 import { checkBackdropElement } from "./contract.js";
 import { checkVideoBackdrop, type VideoBackdropResource } from "./VideoBackdrop.js";
+import { heroInputs, renderHeroSection } from "../runtime/sections/hero.js";
+import type { SectionRenderInput } from "../runtime/sections/group-a-content.js";
 
 const still = { slot: "backdrop", purpose: "decorative", alt: "", width: 1600, height: 900, aspect: "16:9", fit: "cover", loading: "lazy", bytes: 1000, backgroundToken: "--color-surface-base", source: { format: "webp", src: "/media/still.webp" } } as const;
 const resource: VideoBackdropResource = {
@@ -95,5 +97,16 @@ describe("Hero video backdrop", () => {
     expect(checkVideoBackdrop({ ...resource, video: { ...resource.video, src: "https://example.invalid/loop.webm" } })).toBe(false);
     expect(checkVideoBackdrop({ ...resource, labels: { pause: "", resume: "Resume video" } })).toBe(false);
     expect(checkVideoBackdrop({ ...resource, budgetBytes: 3999 })).toBe(false);
+  });
+  it("the registered JSON Hero adapter binds its actual video resource and resolved labels", async () => {
+    const input = {
+      fill: { leaf: "sections.hero", slots: heroInputs.slots, members: heroInputs.members },
+      selection: { leaf: "sections.hero", members: [] },
+      content: { header: { value: { heading: "Example Co." } }, backdrop: { value: resource } },
+    } as unknown as SectionRenderInput;
+    const { container } = render(<>{renderHeroSection(input)}</>);
+    await start();
+    expect(container.querySelector("video")).toHaveAttribute("src", resource.video.src);
+    expect(screen.getByRole("button", { name: resource.labels.pause })).toBeInTheDocument();
   });
 });

@@ -3119,7 +3119,7 @@
       "sourceFiles": [
         {
           "path": "packages/designer/src/backdrop/BackdropHost.tsx",
-          "sha256": "e11adcc513e2e11f0aea2a421c7c33eb5540b4d39cfb158ff097631c83d7cc26"
+          "sha256": "a7fb3fa81326aeee939fc8712faf2ec3d9688cccb1adcbff3d2a434d3a04f647"
         },
         {
           "path": "packages/designer/src/backdrop/consumer-art.ts",
@@ -3139,7 +3139,7 @@
         },
         {
           "path": "packages/designer/src/blocks/Hero.tsx",
-          "sha256": "e78ab409d9d8b77452769d80914e404f2cb64da8956aae184178c1e79c3b3aa4"
+          "sha256": "841b2ae581c9c5fd131384d28e833ab7bcd0b5d1cacc62da67b48cc757136c78"
         },
         {
           "path": "packages/designer/src/blocks/hero/HeroIntro.tsx",
@@ -3582,11 +3582,13 @@
     "consumption": {
       "scanStatus": "lower-bound",
       "scannedComposes": [
+        "components.media-player",
         "components.semantic-content"
       ],
       "scannedReads": {
         "assets": [],
         "components": [
+          "components.media-player",
           "components.semantic-content"
         ],
         "tokens": [
@@ -3627,7 +3629,7 @@
         },
         {
           "path": "packages/designer/src/blocks/MediaFigure.tsx",
-          "sha256": "584bd94f4c9a17a0685ffac72f9f5a614efe30bfcab04dd003f1f375001915eb"
+          "sha256": "cb2161ae1fdea68f61530bb460f548dfc45c389d6ef5ff4efcce01d807e4e9f5"
         },
         {
           "path": "packages/designer/src/blocks/section-ground.ts",

@@ -124,6 +124,21 @@ describe("checked runtime backdrop", () => {
     await act(async () => finish(module));
     expect(module.mount).not.toHaveBeenCalled();
   });
+  it("aborts an asynchronous mount when reduced motion turns on", async () => {
+    let signal!: AbortSignal;
+    let finish!: (instance: { setPaused: typeof pause; destroy: typeof destroy }) => void;
+    const mounting: BackdropModuleLoaders = { [resource.moduleRef]: async () => ({ mount(_element, options) {
+      signal = options.signal;
+      return new Promise(resolve => { finish = resolve; });
+    } }) };
+    render(<BackdropHost resource={resource} modules={mounting} />);
+    visible(true); await flushIdle();
+    expect(signal.aborted).toBe(false);
+    act(() => { reduced = true; onMotion?.(); });
+    expect(signal.aborted).toBe(true);
+    await act(async () => finish({ setPaused: pause, destroy }));
+    expect(destroy).toHaveBeenCalledTimes(1);
+  });
   it("keeps the poster when idle observation is unavailable", async () => {
     vi.stubGlobal("requestIdleCallback", undefined);
     render(<BackdropHost resource={resource} modules={modules} />);

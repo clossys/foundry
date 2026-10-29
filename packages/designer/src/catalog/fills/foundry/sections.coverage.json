@@ -534,7 +534,8 @@
       "missingSlots": [],
       "notes": [
         "Header is a built-in SemanticContent intro keyed by the required heading, with eyebrow and description as supporting props; headingLevel permits h1.",
-        "Backdrop accepts the existing checked decorative lazy ConsumerArtContract, limited to static raster or token-painted SVG. Light and strong treatments render the media-scrim gradient below four or five scalar scrim passes. Static art is unchanged under reduced motion; source bytes remain consumer-declared, not fetched or measured.",
+        "Backdrop accepts checked decorative static art, local assets.video declarations with resolved pause/resume labels, or a draft assets.backdrop runtime module declaration. Runtime art is resolved through the section host's explicit local module loader registry, after visibility and idle; reduced motion keeps the still, offscreen pauses, and load/runtime failure retains the poster. The hidden decorative layer owns no focusable controls; video pause/resume is outside it.",
+        "Light and strong treatments retain the media-scrim gradient and four or five scalar scrim passes. All transfer sizes remain consumer declarations, not fetched or measured; module code, rights and consumer runtime adoption remain unmeasured.",
         "Source-only import and token-read measurements are lower bounds; shared anatomy, accessibility, contrast and consumer runtime conformance remain unmeasured. Content bindings describe host adaptation points, not type-equivalent converters."
       ],
       "slot": "sections.hero",
@@ -671,6 +672,7 @@
       "missingSlots": [],
       "notes": [
         "The figure-to-children pointer is an adaptation point. The private sections.media runtime adapts figure.media={kind:image,resource:ImageResource} to the public image prop, optional figure.ratio to a canonical image-ratio member, figure.caption to caption and figure.chromeLabel to the browser-only chromeLabel. Existing registered chart and mark content remains supported as children.",
+        "kind.video binds assets.video plus an assets.image poster and resolved Writer playback/error passage to the real components.media-player. The existing required figure.media.title is the player title. Image-ratio overrides are refused for video; the player owns inline playback and its accessible controls.",
         "The closed chrome members select browser, device or bare; bare is the default. Chrome is token-drawn around the existing media renderer and does not change its intrinsic image ratio. Optional callouts maps to {label,items:[{id,body}]} with a nonempty host-authored list label and item bodies and unique nonempty item ids.",
         "The host supplies all visible and accessible copy through the Writer passage contract. This package descriptor does not bind shared anatomy or prove consumer runtime conformance.",
         "Source-only import and token-read measurements are lower bounds; shared anatomy, accessibility, contrast and consumer runtime conformance remain unmeasured. Content bindings describe host adaptation points, not type-equivalent converters."
@@ -680,7 +682,8 @@
       "supportedMembers": [
         "chrome.bare",
         "chrome.browser",
-        "chrome.device"
+        "chrome.device",
+        "kind.video"
       ],
       "supportedSlots": [
         "callouts",

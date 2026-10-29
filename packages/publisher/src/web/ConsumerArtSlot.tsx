@@ -1,17 +1,24 @@
 import { checkConsumerArtContract, type ConsumerArtContract } from "@clossys/designer/tokens";
+import { BackdropHost, VideoBackdrop, type BackdropModuleLoaders, type RuntimeBackdropResource, type VideoBackdropResource, type HeroProps } from "@clossys/designer/blocks";
 import { RenderError } from "../internal/errors.js";
 
-/** Checked consumer-owned static art for an existing backdrop or media seam. */
+/** Checked consumer-owned media and decorative backdrop hosts. */
 export interface ConsumerArtSlotProps {
-  contract: ConsumerArtContract;
+  contract: ConsumerArtContract | RuntimeBackdropResource | VideoBackdropResource;
+  modules?: BackdropModuleLoaders;
+  scrim?: HeroProps["backdropScrim"];
 }
 
 /**
- * Checks the Designer contract before constructing inert image/path markup.
+ * Checks static Designer contracts before constructing inert image/path markup;
+ * runtime modules and video delegate to Designer's checked decorative hosts.
  * Inline vector paint follows live brand/theme tokens. Raster pixels remain
  * consumer-owned. The surrounding view or section owns scrim contrast.
  */
-export function ConsumerArtSlot({ contract }: ConsumerArtSlotProps) {
+export function ConsumerArtSlot({ contract, modules = EMPTY_MODULES, scrim }: ConsumerArtSlotProps) {
+  if (contract && typeof contract === "object" && "kind" in contract) return contract.kind === "module"
+    ? <BackdropHost resource={contract} modules={modules} scrim={scrim} />
+    : <VideoBackdrop resource={contract} scrim={scrim} />;
   const report = checkConsumerArtContract(contract);
   if (!report.ok) {
     throw new RenderError("resolution-failed", report.findings.map(finding => `${finding.path}: ${finding.message}`).join("; "));
@@ -68,3 +75,5 @@ export function ConsumerArtSlot({ contract }: ConsumerArtSlotProps) {
     </div>
   );
 }
+
+const EMPTY_MODULES: BackdropModuleLoaders = Object.freeze({});

@@ -2,6 +2,7 @@
 import type { ReactNode } from "react";
 import { checkConsumerArtContract, type StillBackdropArt } from "../../backdrop/consumer-art.js";
 import { checkRuntimeBackdrop, type BackdropModuleLoaders, type RuntimeBackdropResource } from "../../backdrop/runtime-module.js";
+import { checkVideoBackdrop, type VideoBackdropResource } from "../../backdrop/VideoBackdrop.js";
 import { Hero } from "../../blocks/Hero.js";
 import { actionNode, mediaNode, memberValue, object, optionalText, readSectionContent, required, SectionContentError, text, type SectionRenderInput, type SectionRendererInputs } from "./group-a-content.js";
 
@@ -18,7 +19,8 @@ export function renderHeroSection(input: SectionRenderInput): ReactNode {
   if (extra) throw new SectionContentError(content.leaf, `actions.${extra}: one primary and one secondary action`);
   const backdrop = content.values.backdrop;
   const runtimeBackdrop = checkRuntimeBackdrop(backdrop);
-  if (backdrop !== undefined && !runtimeBackdrop && !checkConsumerArtContract(backdrop).ok) throw new SectionContentError(content.leaf, "backdrop must be checked static art or a local runtime declaration");
+  const videoBackdrop = checkVideoBackdrop(backdrop);
+  if (backdrop !== undefined && !runtimeBackdrop && !videoBackdrop && !checkConsumerArtContract(backdrop).ok) throw new SectionContentError(content.leaf, "backdrop must be checked static art, video or a local runtime declaration");
   let backdropModules: BackdropModuleLoaders | undefined;
   if (runtimeBackdrop) {
     const modules = input.sectionHost?.backdropModules;
@@ -38,7 +40,7 @@ export function renderHeroSection(input: SectionRenderInput): ReactNode {
         {actions.secondary === undefined ? null : actionNode(content, actions.secondary, "actions.secondary", "outline")}
       </>}
       media={content.values.media === undefined ? undefined : mediaNode(content, content.values.media, "media")}
-      backdrop={backdrop as StillBackdropArt | RuntimeBackdropResource | undefined}
+      backdrop={backdrop as StillBackdropArt | RuntimeBackdropResource | VideoBackdropResource | undefined}
       backdropModules={backdropModules}
       backdropScrim={memberValue(content, "backdrop.scrim", ["light", "strong"] as const)}
       ground={memberValue(content, "ground", ["base", "inverse"] as const)}

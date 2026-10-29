@@ -998,5 +998,22 @@
     },
     "requires": [],
     "status": "draft"
+  },
+  {
+    "id": "assets.backdrop",
+    "layer": "assets",
+    "contract": {
+      "kind": "asset",
+      "valueKind": "rules",
+      "members": {
+        "mode": "open",
+        "pattern": "^[a-z][a-z0-9]*(?:-[a-z0-9]+)*$"
+      },
+      "modes": [
+        "light"
+      ]
+    },
+    "requires": [],
+    "status": "draft"
   }
 ]

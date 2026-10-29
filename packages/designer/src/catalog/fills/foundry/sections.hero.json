@@ -64,7 +64,7 @@
         "sourceFiles": [
           {
             "path": "packages/designer/src/backdrop/BackdropHost.tsx",
-            "sha256": "e11adcc513e2e11f0aea2a421c7c33eb5540b4d39cfb158ff097631c83d7cc26"
+            "sha256": "a7fb3fa81326aeee939fc8712faf2ec3d9688cccb1adcbff3d2a434d3a04f647"
           },
           {
             "path": "packages/designer/src/backdrop/consumer-art.ts",
@@ -84,7 +84,7 @@
           },
           {
             "path": "packages/designer/src/blocks/Hero.tsx",
-            "sha256": "e78ab409d9d8b77452769d80914e404f2cb64da8956aae184178c1e79c3b3aa4"
+            "sha256": "841b2ae581c9c5fd131384d28e833ab7bcd0b5d1cacc62da67b48cc757136c78"
           },
           {
             "path": "packages/designer/src/blocks/hero/HeroIntro.tsx",
@@ -168,7 +168,8 @@
       "license": "MIT",
       "notes": [
         "Header is a built-in SemanticContent intro keyed by the required heading, with eyebrow and description as supporting props; headingLevel permits h1.",
-        "Backdrop accepts the existing checked decorative lazy ConsumerArtContract, limited to static raster or token-painted SVG. Light and strong treatments render the media-scrim gradient below four or five scalar scrim passes. Static art is unchanged under reduced motion; source bytes remain consumer-declared, not fetched or measured.",
+        "Backdrop accepts checked decorative static art, local assets.video declarations with resolved pause/resume labels, or a draft assets.backdrop runtime module declaration. Runtime art is resolved through the section host's explicit local module loader registry, after visibility and idle; reduced motion keeps the still, offscreen pauses, and load/runtime failure retains the poster. The hidden decorative layer owns no focusable controls; video pause/resume is outside it.",
+        "Light and strong treatments retain the media-scrim gradient and four or five scalar scrim passes. All transfer sizes remain consumer declarations, not fetched or measured; module code, rights and consumer runtime adoption remain unmeasured.",
         "Source-only import and token-read measurements are lower bounds; shared anatomy, accessibility, contrast and consumer runtime conformance remain unmeasured. Content bindings describe host adaptation points, not type-equivalent converters."
       ],
       "parts": [],

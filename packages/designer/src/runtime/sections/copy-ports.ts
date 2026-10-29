@@ -318,6 +318,8 @@ export interface WriterSectionCopyPorts {
     readonly "actions.secondary.label"?: string;
     readonly "media.title"?: string;
     readonly "media.series[].name"?: string;
+    readonly "backdrop.labels.pause"?: string;
+    readonly "backdrop.labels.resume"?: string;
   };
   readonly "sections.legal-prose": {
     readonly "heading": string;
@@ -355,6 +357,13 @@ export interface WriterSectionCopyPorts {
     readonly "figure.chromeLabel"?: string;
     readonly "callouts.label"?: string;
     readonly "callouts.items[].body"?: string;
+    readonly "figure.media.passage.play"?: string;
+    readonly "figure.media.passage.pause"?: string;
+    readonly "figure.media.passage.mute"?: string;
+    readonly "figure.media.passage.seek"?: string;
+    readonly "figure.media.passage.captions"?: string;
+    readonly "figure.media.passage.error.title"?: string;
+    readonly "figure.media.passage.error.description"?: string;
   };
   readonly "sections.newsletter": {
     readonly "header.eyebrow"?: string;
