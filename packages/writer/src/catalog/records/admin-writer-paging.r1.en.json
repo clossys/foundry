@@ -4,7 +4,53 @@
   "state": "draft",
   "locale": "en",
   "activation": "none",
-  "records": [],
+  "records": [
+    {
+      "id": "st.88wbh5rn5a",
+      "leaf": "strings.common",
+      "context": "strings.admin.pagination.page",
+      "status": "draft",
+      "origin": "authored",
+      "text": "Page {page, number, integer} of {pages, number, integer}",
+      "args": [
+        {
+          "name": "page",
+          "type": "number"
+        },
+        {
+          "name": "pages",
+          "type": "number"
+        }
+      ]
+    },
+    {
+      "id": "st.96qkp2bzpm",
+      "leaf": "strings.common",
+      "context": "admin.writer.sections.pagination.previousPageLabel",
+      "status": "draft",
+      "origin": "authored",
+      "text": "Previous page"
+    },
+    {
+      "id": "st.efsb6h9dmb",
+      "leaf": "strings.common",
+      "context": "publisher.lane.Record",
+      "status": "draft",
+      "origin": "foundry-default",
+      "text": "Record pages",
+      "limits": {
+        "maxChars": 40
+      }
+    },
+    {
+      "id": "st.kb8ve83tjp",
+      "leaf": "strings.common",
+      "context": "admin.writer.sections.pagination.nextPageLabel",
+      "status": "draft",
+      "origin": "authored",
+      "text": "Next page"
+    }
+  ],
   "bindings": [
     {
       "cellId": "admin.writer.route.pagination",
@@ -31,26 +77,5 @@
       "kind": "CopyRef"
     }
   ],
-  "externalRecords": [
-    {
-      "recordId": "st.88wbh5rn5a",
-      "source": "common-labels.r1.en.json",
-      "sourceContext": "strings.admin.pagination.page"
-    },
-    {
-      "recordId": "st.96qkp2bzpm",
-      "source": "common-labels.r1.en.json",
-      "sourceContext": "admin.writer.sections.pagination.previousPageLabel"
-    },
-    {
-      "recordId": "st.efsb6h9dmb",
-      "source": "common-labels.r1.en.json",
-      "sourceContext": "publisher.lane.Record"
-    },
-    {
-      "recordId": "st.kb8ve83tjp",
-      "source": "common-labels.r1.en.json",
-      "sourceContext": "admin.writer.sections.pagination.nextPageLabel"
-    }
-  ]
+  "externalRecords": []
 }

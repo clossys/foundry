@@ -610,24 +610,6 @@
       }
     },
     {
-      "id": "st.88wbh5rn5a",
-      "leaf": "strings.common",
-      "context": "strings.admin.pagination.page",
-      "status": "draft",
-      "origin": "authored",
-      "text": "Page {page, number, integer} of {pages, number, integer}",
-      "args": [
-        {
-          "name": "page",
-          "type": "number"
-        },
-        {
-          "name": "pages",
-          "type": "number"
-        }
-      ]
-    },
-    {
       "id": "st.8phn9m6kk3",
       "leaf": "strings.common",
       "context": "designer.ia.sections.collect-forms",
@@ -692,14 +674,6 @@
       "limits": {
         "maxChars": 40
       }
-    },
-    {
-      "id": "st.96qkp2bzpm",
-      "leaf": "strings.common",
-      "context": "admin.writer.sections.pagination.previousPageLabel",
-      "status": "draft",
-      "origin": "authored",
-      "text": "Previous page"
     },
     {
       "id": "st.980dfmqs1t",
@@ -1086,17 +1060,6 @@
       "text": "Pivot"
     },
     {
-      "id": "st.efsb6h9dmb",
-      "leaf": "strings.common",
-      "context": "publisher.lane.Record",
-      "status": "draft",
-      "origin": "foundry-default",
-      "text": "Record pages",
-      "limits": {
-        "maxChars": 40
-      }
-    },
-    {
       "id": "st.ega0nrxc5v",
       "leaf": "strings.common",
       "context": "admin.writer.chat.composer.label",
@@ -1267,17 +1230,6 @@
       }
     },
     {
-      "id": "st.hcq4hmxrrk",
-      "leaf": "strings.common",
-      "context": "Designer console",
-      "status": "draft",
-      "origin": "foundry-default",
-      "text": "Back",
-      "limits": {
-        "maxChars": 32
-      }
-    },
-    {
       "id": "st.j7paney0ax",
       "leaf": "strings.common",
       "context": "publisher.contentKey.format",
@@ -1354,14 +1306,6 @@
       }
     },
     {
-      "id": "st.kb8ve83tjp",
-      "leaf": "strings.common",
-      "context": "admin.writer.sections.pagination.nextPageLabel",
-      "status": "draft",
-      "origin": "authored",
-      "text": "Next page"
-    },
-    {
       "id": "st.kmz1y1qvg0",
       "leaf": "strings.common",
       "context": "admin.enum.not-chosen",
@@ -1382,14 +1326,6 @@
       "limits": {
         "maxChars": 40
       }
-    },
-    {
-      "id": "st.ktgn3jyg1d",
-      "leaf": "strings.common",
-      "context": "admin.writer.chat.account.signIn",
-      "status": "draft",
-      "origin": "authored",
-      "text": "Sign in"
     },
     {
       "id": "st.m22sa9p9y4",
@@ -6855,6 +6791,38 @@
       "limits": {},
       "origin": "authored",
       "status": "draft"
+    }
+  ],
+  "externalRecords": [
+    {
+      "recordId": "st.88wbh5rn5a",
+      "source": "admin-writer-paging.r1.en.json",
+      "sourceContext": "strings.admin.pagination.page"
+    },
+    {
+      "recordId": "st.96qkp2bzpm",
+      "source": "admin-writer-paging.r1.en.json",
+      "sourceContext": "admin.writer.sections.pagination.previousPageLabel"
+    },
+    {
+      "recordId": "st.efsb6h9dmb",
+      "source": "admin-writer-paging.r1.en.json",
+      "sourceContext": "publisher.lane.Record"
+    },
+    {
+      "recordId": "st.hcq4hmxrrk",
+      "source": "sign-in.json",
+      "sourceContext": "Designer console"
+    },
+    {
+      "recordId": "st.kb8ve83tjp",
+      "source": "admin-writer-paging.r1.en.json",
+      "sourceContext": "admin.writer.sections.pagination.nextPageLabel"
+    },
+    {
+      "recordId": "st.ktgn3jyg1d",
+      "source": "sign-in.json",
+      "sourceContext": "admin.writer.chat.account.signIn"
     }
   ]
 }

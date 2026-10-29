@@ -1826,7 +1826,7 @@
     },
     {
       "recordId": "st.96qkp2bzpm",
-      "source": "common-labels.r1.en.json",
+      "source": "admin-writer-paging.r1.en.json",
       "sourceContext": "admin.writer.sections.pagination.previousPageLabel"
     },
     {
@@ -1861,7 +1861,7 @@
     },
     {
       "recordId": "st.kb8ve83tjp",
-      "source": "common-labels.r1.en.json",
+      "source": "admin-writer-paging.r1.en.json",
       "sourceContext": "admin.writer.sections.pagination.nextPageLabel"
     },
     {

@@ -19,7 +19,7 @@ import { ADMIN_PAGES_COPY_EN } from "../../admin-pages.js";
 const readCopy = (path: string) => JSON.parse(readFileSync(new URL(path, import.meta.url), "utf8"));
 const copySources = () => [
   { source: "admin-pages.r1.en.json", envelope: ADMIN_PAGES_COPY_EN },
-  ...["admin-studio.r1.en.json", "admin-chat.r1.en.json"].map(source => ({ source, envelope: readCopy(`../records/${source}`) })),
+  ...["admin-studio.r1.en.json", "admin-chat.r1.en.json", "admin-writer-paging.r1.en.json"].map(source => ({ source, envelope: readCopy(`../records/${source}`) })),
   { source: "common-labels.r1.en.json", envelope: ADMIN_COMMON_COPY_EN },
 ];
 const adminCopyFixture = () => createAdminPageCopy({ locale: "en", envelopes: prepareAdminPageCopyEnvelopes([...copySources(), { source: "admin-pages.r1.ar.json", envelope: readCopy("./admin-pages.r1.ar.json") }]) });

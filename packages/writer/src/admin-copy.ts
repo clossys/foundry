@@ -4,14 +4,13 @@ import { ADMIN_VOICE_COPY_EN, type AdminVoiceCopy, type AdminVoiceCopyRecord } f
 import { ADMIN_META_COPY_EN, type AdminMetaCopy, type AdminMetaCopyRecord } from "./admin-meta.js";
 import { ADMIN_WRITER_COPY_EN, type AdminRouteCopy } from "./admin-route-copy.js";
 import { ADMIN_CHAT_COPY_EN } from "./admin-chat.js";
-import common from "./catalog/records/common-labels.r1.en.json" with { type: "json" };
-import { freezeAdminCopy } from "./admin-copy-core.js";
+import { ADMIN_COMMON_COPY_EN } from "./admin-common.js";
+export { ADMIN_COMMON_COPY_EN } from "./admin-common.js";
 export { ADMIN_CHAT_COPY_EN } from "./admin-chat.js";
 import { createCopyResolver, type CopyResolveOptions } from "./resolve.js";
 export { ADMIN_WRITER_COPY_EN } from "./admin-route-copy.js";
 export type { AdminRouteCopy } from "./admin-route-copy.js";
 
-export const ADMIN_COMMON_COPY_EN = freezeAdminCopy(common);
 export type AdminCopyEnvelope = AdminStudioCopy | AdminVoiceCopy | AdminMetaCopy | AdminRouteCopy | typeof ADMIN_COMMON_COPY_EN;
 export type AdminCopyRecord = AdminStudioCopyRecord | AdminVoiceCopyRecord | AdminMetaCopyRecord | AdminRouteCopy["records"][number] | typeof ADMIN_COMMON_COPY_EN["records"][number];
 

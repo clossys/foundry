@@ -539,6 +539,25 @@
           "status": "draft",
           "origin": "foundry-default",
           "text": "Sign-in is not available right now. Try again in a few minutes."
+        },
+        {
+          "id": "st.hcq4hmxrrk",
+          "leaf": "strings.common",
+          "context": "Designer console",
+          "status": "draft",
+          "origin": "foundry-default",
+          "text": "Back",
+          "limits": {
+            "maxChars": 32
+          }
+        },
+        {
+          "id": "st.ktgn3jyg1d",
+          "leaf": "strings.common",
+          "context": "admin.writer.chat.account.signIn",
+          "status": "draft",
+          "origin": "authored",
+          "text": "Sign in"
         }
       ],
       "bindings": {
@@ -776,18 +795,7 @@
           "id": "st.v3508ndjd1"
         }
       },
-      "externalRecords": [
-        {
-          "recordId": "st.hcq4hmxrrk",
-          "source": "common-labels.r1.en.json",
-          "sourceContext": "Designer console"
-        },
-        {
-          "recordId": "st.ktgn3jyg1d",
-          "source": "common-labels.r1.en.json",
-          "sourceContext": "admin.writer.chat.account.signIn"
-        }
-      ]
+      "externalRecords": []
     },
     "ar": {
       "records": [
@@ -856,9 +864,9 @@
           "text": "رمز التحقق الخاص بك"
         },
         {
-          "id": "st.f5ce2skzxv",
-          "leaf": "strings.actions",
-          "context": "Generic sign-in copy: actions.submit",
+          "id": "st.ktgn3jyg1d",
+          "leaf": "strings.common",
+          "context": "admin.writer.chat.account.signIn",
           "status": "draft",
           "origin": "foundry-default",
           "text": "تسجيل الدخول"
@@ -880,9 +888,9 @@
           "text": "يرجى الانتظار"
         },
         {
-          "id": "st.an5ekdr18g",
-          "leaf": "strings.actions",
-          "context": "Generic sign-in copy: actions.back",
+          "id": "st.hcq4hmxrrk",
+          "leaf": "strings.common",
+          "context": "Designer console",
           "status": "draft",
           "origin": "foundry-default",
           "text": "رجوع"
@@ -936,14 +944,6 @@
           "text": "تحقق من رمز التحقق."
         },
         {
-          "id": "st.95zeepaj3s",
-          "leaf": "strings.page-titles",
-          "context": "Generic sign-in copy: header.heading",
-          "status": "draft",
-          "origin": "foundry-default",
-          "text": "تسجيل الدخول"
-        },
-        {
           "id": "st.ssn178aszz",
           "leaf": "strings.descriptions",
           "context": "Generic sign-in copy: header.description",
@@ -962,7 +962,7 @@
           "fields": {
             "header.heading": {
               "ref": "string",
-              "id": "st.95zeepaj3s"
+              "id": "st.ktgn3jyg1d"
             },
             "header.description": {
               "ref": "string",
@@ -1002,7 +1002,7 @@
             },
             "actions.submit": {
               "ref": "string",
-              "id": "st.f5ce2skzxv"
+              "id": "st.ktgn3jyg1d"
             },
             "actions.verify": {
               "ref": "string",
@@ -1014,7 +1014,7 @@
             },
             "actions.back": {
               "ref": "string",
-              "id": "st.an5ekdr18g"
+              "id": "st.hcq4hmxrrk"
             },
             "actions.resend": {
               "ref": "string",
@@ -1109,7 +1109,7 @@
             },
             "actions.submit": {
               "ref": "string",
-              "id": "st.f5ce2skzxv"
+              "id": "st.ktgn3jyg1d"
             },
             "actions.verify": {
               "ref": "string",
@@ -1121,7 +1121,7 @@
             },
             "actions.back": {
               "ref": "string",
-              "id": "st.an5ekdr18g"
+              "id": "st.hcq4hmxrrk"
             },
             "actions.resend": {
               "ref": "string",
@@ -1216,7 +1216,7 @@
             },
             "actions.submit": {
               "ref": "string",
-              "id": "st.f5ce2skzxv"
+              "id": "st.ktgn3jyg1d"
             },
             "actions.verify": {
               "ref": "string",
@@ -1228,7 +1228,7 @@
             },
             "actions.back": {
               "ref": "string",
-              "id": "st.an5ekdr18g"
+              "id": "st.hcq4hmxrrk"
             },
             "actions.resend": {
               "ref": "string",
@@ -1358,6 +1358,270 @@
           "passageId": "ps.9t7hjr28jw",
           "fields": {
             "header.heading": {
+              "id": "st.ktgn3jyg1d"
+            },
+            "header.description": {
+              "id": "st.ssn178aszz"
+            },
+            "providers[].label": {
+              "id": "st.hwhxwcp8va"
+            },
+            "credentials.identifierLabel": {
+              "id": "st.xdab0zvrxe"
+            },
+            "credentials.identifierPlaceholder": {
+              "id": "st.jkwc3bf7a1"
+            },
+            "credentials.passwordLabel": {
+              "id": "st.5mwk6kw75a"
+            },
+            "credentials.passwordPlaceholder": {
+              "id": "st.r2zee73zbp"
+            },
+            "verification.codeLabel": {
+              "id": "st.5rdfk8ec0a"
+            },
+            "verification.description": {
+              "id": "st.r0hc0s0q2f"
+            },
+            "verification.placeholder": {
+              "id": "st.bsg41z478g"
+            },
+            "actions.submit": {
+              "id": "st.ktgn3jyg1d"
+            },
+            "actions.verify": {
+              "id": "st.mgd5wr0fbg"
+            },
+            "actions.pending": {
+              "id": "st.n7ccqemr5s"
+            },
+            "actions.back": {
+              "id": "st.hcq4hmxrrk"
+            },
+            "actions.resend": {
+              "id": "st.vfnx8ws1ey"
+            },
+            "actions.divider": {
+              "id": "st.68chnvkp9n"
+            },
+            "error.message": {
+              "id": "st.2swwt6xbat"
+            },
+            "error.identifier": {
+              "id": "st.n2hcsyy75c"
+            },
+            "error.password": {
+              "id": "st.jdjpkh8v5c"
+            },
+            "error.code": {
+              "id": "st.fzrwmkdh7t"
+            }
+          }
+        },
+        "ps.sign-in.provider": {
+          "passageId": "ps.y7kr1epj81",
+          "fields": {
+            "header.heading": {
+              "id": "st.v6kx8tqt94"
+            },
+            "header.description": {
+              "id": "st.j0ry9djty1"
+            },
+            "providers[].label": {
+              "id": "st.hwhxwcp8va"
+            },
+            "credentials.identifierLabel": {
+              "id": "st.xdab0zvrxe"
+            },
+            "credentials.identifierPlaceholder": {
+              "id": "st.jkwc3bf7a1"
+            },
+            "credentials.passwordLabel": {
+              "id": "st.5mwk6kw75a"
+            },
+            "credentials.passwordPlaceholder": {
+              "id": "st.r2zee73zbp"
+            },
+            "verification.codeLabel": {
+              "id": "st.5rdfk8ec0a"
+            },
+            "verification.description": {
+              "id": "st.r0hc0s0q2f"
+            },
+            "verification.placeholder": {
+              "id": "st.bsg41z478g"
+            },
+            "actions.submit": {
+              "id": "st.ktgn3jyg1d"
+            },
+            "actions.verify": {
+              "id": "st.mgd5wr0fbg"
+            },
+            "actions.pending": {
+              "id": "st.n7ccqemr5s"
+            },
+            "actions.back": {
+              "id": "st.hcq4hmxrrk"
+            },
+            "actions.resend": {
+              "id": "st.vfnx8ws1ey"
+            },
+            "actions.divider": {
+              "id": "st.68chnvkp9n"
+            },
+            "error.message": {
+              "id": "st.2swwt6xbat"
+            },
+            "error.identifier": {
+              "id": "st.n2hcsyy75c"
+            },
+            "error.password": {
+              "id": "st.jdjpkh8v5c"
+            },
+            "error.code": {
+              "id": "st.fzrwmkdh7t"
+            }
+          }
+        },
+        "ps.sign-in.verify": {
+          "passageId": "ps.f9s1dvfhgq",
+          "fields": {
+            "header.heading": {
+              "id": "st.ad06zwacrc"
+            },
+            "header.description": {
+              "id": "st.zv90y3hjbj"
+            },
+            "providers[].label": {
+              "id": "st.hwhxwcp8va"
+            },
+            "credentials.identifierLabel": {
+              "id": "st.xdab0zvrxe"
+            },
+            "credentials.identifierPlaceholder": {
+              "id": "st.jkwc3bf7a1"
+            },
+            "credentials.passwordLabel": {
+              "id": "st.5mwk6kw75a"
+            },
+            "credentials.passwordPlaceholder": {
+              "id": "st.r2zee73zbp"
+            },
+            "verification.codeLabel": {
+              "id": "st.5rdfk8ec0a"
+            },
+            "verification.description": {
+              "id": "st.r0hc0s0q2f"
+            },
+            "verification.placeholder": {
+              "id": "st.bsg41z478g"
+            },
+            "actions.submit": {
+              "id": "st.ktgn3jyg1d"
+            },
+            "actions.verify": {
+              "id": "st.mgd5wr0fbg"
+            },
+            "actions.pending": {
+              "id": "st.n7ccqemr5s"
+            },
+            "actions.back": {
+              "id": "st.hcq4hmxrrk"
+            },
+            "actions.resend": {
+              "id": "st.vfnx8ws1ey"
+            },
+            "actions.divider": {
+              "id": "st.68chnvkp9n"
+            },
+            "error.message": {
+              "id": "st.2swwt6xbat"
+            },
+            "error.identifier": {
+              "id": "st.n2hcsyy75c"
+            },
+            "error.password": {
+              "id": "st.jdjpkh8v5c"
+            },
+            "error.code": {
+              "id": "st.fzrwmkdh7t"
+            }
+          }
+        }
+      },
+      "skipLink": {
+        "id": "st.adahn5wqfc"
+      },
+      "notices": {
+        "st.auth.error.identifier-required": {
+          "id": "st.k8ex60hhyq"
+        },
+        "st.auth.error.password-required": {
+          "id": "st.gwa2av1dav"
+        },
+        "st.auth.error.code-required": {
+          "id": "st.5309trf5mg"
+        },
+        "st.auth.error.identifier-not-found": {
+          "id": "st.vasejrmzb7"
+        },
+        "st.auth.error.identifier-neutral": {
+          "id": "st.wc5nvwqfa2"
+        },
+        "st.auth.error.password-invalid": {
+          "id": "st.6qagkrjjnm"
+        },
+        "st.auth.error.code-invalid": {
+          "id": "st.ck6fkjvv94"
+        },
+        "st.auth.error.rate-limited": {
+          "id": "st.scr0ajmss1"
+        },
+        "st.auth.error.locked": {
+          "id": "st.y1hckfqphw"
+        },
+        "st.auth.error.network": {
+          "id": "st.zy4zzz8bn9"
+        },
+        "st.auth.error.unavailable": {
+          "id": "st.v3508ndjd1"
+        }
+      },
+      "legacyRecords": [
+        {
+          "legacyRecordId": "st.f5ce2skzxv",
+          "recordId": "st.ktgn3jyg1d",
+          "leaf": "strings.actions",
+          "context": "Generic sign-in copy: actions.submit",
+          "status": "draft",
+          "origin": "foundry-default",
+          "text": "تسجيل الدخول"
+        },
+        {
+          "legacyRecordId": "st.an5ekdr18g",
+          "recordId": "st.hcq4hmxrrk",
+          "leaf": "strings.actions",
+          "context": "Generic sign-in copy: actions.back",
+          "status": "draft",
+          "origin": "foundry-default",
+          "text": "رجوع"
+        },
+        {
+          "legacyRecordId": "st.95zeepaj3s",
+          "recordId": "st.ktgn3jyg1d",
+          "leaf": "strings.page-titles",
+          "context": "Generic sign-in copy: header.heading",
+          "status": "draft",
+          "origin": "foundry-default",
+          "text": "تسجيل الدخول"
+        }
+      ],
+      "legacyBindings": {
+        "ps.sign-in.password": {
+          "passageId": "ps.9t7hjr28jw",
+          "fields": {
+            "header.heading": {
               "id": "st.95zeepaj3s"
             },
             "header.description": {
@@ -1548,44 +1812,6 @@
               "id": "st.fzrwmkdh7t"
             }
           }
-        }
-      },
-      "skipLink": {
-        "id": "st.adahn5wqfc"
-      },
-      "notices": {
-        "st.auth.error.identifier-required": {
-          "id": "st.k8ex60hhyq"
-        },
-        "st.auth.error.password-required": {
-          "id": "st.gwa2av1dav"
-        },
-        "st.auth.error.code-required": {
-          "id": "st.5309trf5mg"
-        },
-        "st.auth.error.identifier-not-found": {
-          "id": "st.vasejrmzb7"
-        },
-        "st.auth.error.identifier-neutral": {
-          "id": "st.wc5nvwqfa2"
-        },
-        "st.auth.error.password-invalid": {
-          "id": "st.6qagkrjjnm"
-        },
-        "st.auth.error.code-invalid": {
-          "id": "st.ck6fkjvv94"
-        },
-        "st.auth.error.rate-limited": {
-          "id": "st.scr0ajmss1"
-        },
-        "st.auth.error.locked": {
-          "id": "st.y1hckfqphw"
-        },
-        "st.auth.error.network": {
-          "id": "st.zy4zzz8bn9"
-        },
-        "st.auth.error.unavailable": {
-          "id": "st.v3508ndjd1"
         }
       }
     }
