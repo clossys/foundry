@@ -1043,6 +1043,12 @@
           "ground.sunken",
           "ground.inverse",
           "ground.transparent",
+          "ground.wash",
+          "texture.grain",
+          "texture.noise",
+          "texture.topo",
+          "reveal.true",
+          "reveal.false",
           "measure.prose",
           "measure.content",
           "measure.wide"
@@ -1052,19 +1058,25 @@
       "parts": [],
       "allowedReads": {
         "tokens": [
+          "tokens.display-size",
+          "tokens.heading-size",
+          "tokens.border-width",
           "tokens.spacing",
           "tokens.gutter",
           "tokens.content-size",
           "tokens.region-width",
           "tokens.breakpoint",
           "tokens.surface-color",
+          "tokens.gradient",
           "tokens.animation",
           "tokens.shift-distance",
           "tokens.border-color",
           "tokens.status-color",
           "tokens.text-color"
         ],
-        "assets": []
+        "assets": [
+          "assets.pattern"
+        ]
       },
       "data": "host-injected",
       "surface": "both",
@@ -1233,11 +1245,20 @@
       ],
       "members": {
         "mode": "closed",
-        "names": []
+        "names": [
+          "ground.base",
+          "ground.sunken",
+          "ground.inverse",
+          "ground.wash",
+          "texture.grain",
+          "texture.noise",
+          "texture.topo"
+        ]
       },
       "allowedComposes": [
         "components.button",
-        "components.link"
+        "components.link",
+        "components.semantic-content"
       ],
       "parts": [
         "sections.band",
@@ -1245,12 +1266,16 @@
       ],
       "allowedReads": {
         "tokens": [
+          "tokens.display-size",
+          "tokens.heading-size",
+          "tokens.border-width",
           "tokens.spacing",
           "tokens.gutter",
           "tokens.content-size",
           "tokens.region-width",
           "tokens.breakpoint",
           "tokens.surface-color",
+          "tokens.gradient",
           "tokens.animation",
           "tokens.shift-distance",
           "tokens.border-color",
@@ -1259,7 +1284,9 @@
           "tokens.surface-radius",
           "tokens.text-color"
         ],
-        "assets": []
+        "assets": [
+          "assets.pattern"
+        ]
       },
       "data": "host-injected",
       "surface": "site",
@@ -3543,7 +3570,8 @@
       "allowedComposes": [
         "components.card",
         "components.icon",
-        "components.link"
+        "components.link",
+        "components.semantic-content"
       ],
       "parts": [
         "sections.band",
@@ -4163,6 +4191,11 @@
           "type": "action",
           "required": false,
           "max": 2
+        },
+        {
+          "name": "backdrop",
+          "type": "media",
+          "required": false
         }
       ],
       "members": {
@@ -4174,12 +4207,16 @@
           "size.compact",
           "size.default",
           "ground.base",
-          "ground.inverse"
+          "ground.inverse",
+          "layout.full-bleed",
+          "backdrop.scrim.light",
+          "backdrop.scrim.strong"
         ]
       },
       "allowedComposes": [
         "components.button",
-        "components.link"
+        "components.link",
+        "components.semantic-content"
       ],
       "parts": [
         "sections.band",
@@ -4187,6 +4224,7 @@
       ],
       "allowedReads": {
         "tokens": [
+          "tokens.border-width",
           "tokens.spacing",
           "tokens.gutter",
           "tokens.content-size",
@@ -4204,7 +4242,10 @@
           "tokens.line-height",
           "tokens.status-color",
           "tokens.text-color",
-          "tokens.typeface"
+          "tokens.typeface",
+          "tokens.gradient",
+          "tokens.color-ramp",
+          "tokens.scrim-color"
         ],
         "assets": [
           "assets.image-ratio"
@@ -4570,7 +4611,8 @@
         ]
       },
       "allowedComposes": [
-        "components.link"
+        "components.link",
+        "components.semantic-content"
       ],
       "parts": [
         "sections.band",
@@ -4794,7 +4836,9 @@
         "mode": "closed",
         "names": []
       },
-      "allowedComposes": [],
+      "allowedComposes": [
+        "components.semantic-content"
+      ],
       "parts": [
         "sections.band",
         "sections.section-header"
@@ -5491,7 +5535,8 @@
         "components.avatar",
         "components.card",
         "components.link",
-        "components.icon"
+        "components.icon",
+        "components.semantic-content"
       ],
       "parts": [
         "sections.band",
@@ -7757,7 +7802,8 @@
       },
       "allowedComposes": [
         "components.avatar",
-        "components.card"
+        "components.card",
+        "components.semantic-content"
       ],
       "parts": [
         "sections.band",

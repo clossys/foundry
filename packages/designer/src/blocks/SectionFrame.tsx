@@ -1,4 +1,7 @@
 import type { CSSProperties, HTMLAttributes, ReactNode } from "react";
+import { TOKENS } from "../tokens/tokens.js";
+import { PATTERN_RECIPES, patternBackground } from "../tokens/pattern.js";
+import { SectionRevealStyle } from "../styles/section-reveal.js";
 import { cx } from "../components/internal/cx.js";
 import {
   SECTION_FRAME_DATA_ATTR,
@@ -20,10 +23,22 @@ export type { SectionMeasure };
  * claims no ground pairing of its own. Blocks keep the closed `SectionGround`
  * set: widening the band's ground does not widen theirs.
  */
-export type SectionFrameGround = SectionGround | "transparent";
+export type SectionFrameGround = SectionGround | "transparent" | "wash";
 
 /** No surface and no ink class: nothing paints, the context shows through. */
 const TRANSPARENT_GROUND = { surface: "", primary: "" } as const;
+
+export type SectionTexture = "grain" | "noise" | "topo";
+/** Shared treatment for band and CTA; pattern paint stays behind the content. */
+export function sectionTreatment(ground: SectionFrameGround, texture?: SectionTexture): CSSProperties {
+  if (texture && ground === "transparent") throw new TypeError("SectionFrame: texture requires a concrete ground");
+  const pattern = texture ? patternBackground(PATTERN_RECIPES[texture]) : undefined;
+  return {
+    ...Object.fromEntries(["--text-display-xl", "--text-display-l", "--text-display-m", "--text-h0", "--text-h1", "--text-h2", "--text-h3"].map(property => { const min = Number.parseFloat(TOKENS[property]!.value); return [property, `clamp(${min}px, ${min / 10}vw, ${(min * 72 / 56).toFixed(3)}px)`]; })),
+    ...(pattern ?? {}),
+    ...(ground === "wash" ? { ...(pattern ? { backgroundSize: [...Array(texture === "grain" ? 3 : texture === "noise" ? 2 : 1).fill(pattern.backgroundSize), "100% 100%"].join(", ") } : {}), backgroundImage: pattern ? `${pattern.backgroundImage}, var(--gradient-wash, linear-gradient(var(--color-surface-base), var(--color-surface-raised)))` : "var(--gradient-wash, linear-gradient(var(--color-surface-base), var(--color-surface-raised)))" } : {}),
+  };
+}
 
 export interface SectionFrameProps extends HTMLAttributes<HTMLElement> {
   /** Semantic section ground; selects the complete matching surface and foreground policy. `transparent` sets neither. @default "base" */
@@ -35,6 +50,10 @@ export interface SectionFrameProps extends HTMLAttributes<HTMLElement> {
    * @default "content"
    */
   measure?: SectionMeasure;
+  /** Decorative registered assets.pattern member. */
+  texture?: SectionTexture;
+  /** Opt in to the shared token-driven reveal; reduced motion stays static. */
+  reveal?: boolean;
   children?: ReactNode;
   className?: string;
   style?: CSSProperties;
@@ -53,24 +72,32 @@ export function SectionFrame({
   ground = "base",
   measure = "content",
   children,
+  texture,
+  reveal = false,
   className,
   style,
   ...rest
 }: SectionFrameProps) {
-  const colors = ground === "transparent" ? TRANSPARENT_GROUND : SECTION_GROUND_CLASSES[ground];
+  const colors = ground === "transparent" ? TRANSPARENT_GROUND : SECTION_GROUND_CLASSES[ground === "wash" ? "base" : ground];
 
   return (
     <section
       {...SECTION_STAMP} {...rest}
       {...{ [SECTION_FRAME_DATA_ATTR]: "" }}
+      data-ground={ground}
+      data-texture={texture}
+      data-designer-texture={texture ? "assets.pattern" : undefined}
+      data-designer-reveal={reveal ? "" : undefined}
       className={cx(colors.surface, colors.primary, "py-lg", className)}
-      style={style}
+      style={{ ...sectionTreatment(ground, texture), ...style }}
     >
+      {reveal ? <SectionRevealStyle /> : null}
       <div
         className="mx-auto flex w-full flex-col gap-lg"
         style={{
           maxWidth: SECTION_MEASURE_MAX[measure],
           paddingInline: UI_WIDTH_PAGE_PADDING_X,
+          ...(texture ? { backgroundColor: ground === "inverse" ? "var(--color-surface-inverse)" : ground === "sunken" ? "var(--color-surface-sunken)" : "var(--color-surface-base)" } : {}),
         }}
       >
         {children}

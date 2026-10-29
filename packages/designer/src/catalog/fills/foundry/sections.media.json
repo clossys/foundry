@@ -26,14 +26,20 @@
   },
   "sections": {
     "media": {
-      "composes": [],
+      "composes": [
+        "components.semantic-content"
+      ],
       "configs": {},
       "consumption": {
         "scanStatus": "lower-bound",
-        "scannedComposes": [],
+        "scannedComposes": [
+          "components.semantic-content"
+        ],
         "scannedReads": {
           "assets": [],
-          "components": [],
+          "components": [
+            "components.semantic-content"
+          ],
           "tokens": [
             "tokens.border-color",
             "tokens.caption-size",
@@ -52,7 +58,7 @@
           },
           {
             "path": "packages/designer/src/blocks/MediaFigure.tsx",
-            "sha256": "0f33416fbba4ecd60dff681d614270d0ef7e81eca4ae56f5a0d0631785c7a359"
+            "sha256": "23f52555879f91097179f36050f1b11492b96c197c82abd6d72dc3d5a8a90e66"
           },
           {
             "path": "packages/designer/src/blocks/section-ground.ts",
