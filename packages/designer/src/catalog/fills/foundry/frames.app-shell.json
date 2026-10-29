@@ -13,15 +13,12 @@
         "package": "@clossys/designer",
         "version": "0.12.0"
       },
-      "relation": "subset",
+      "relation": "same-contract",
       "slot": "frames.app-shell",
       "source": "foundry",
       "sourceAddress": "./frames#AppFrame",
       "status": "draft",
-      "trust": "foundry",
-      "unmapped": [
-        "slot.progress"
-      ]
+      "trust": "foundry"
     }
   },
   "frames": {
@@ -55,12 +52,17 @@
         "header": "context",
         "inspector": "rightPanel",
         "main": "children",
+        "page-module": "pageModule",
+        "progress": "progress",
         "sidebar": "navigation",
         "skip-link": "skipLabel",
+        "state": "stateViews",
         "toasts": "toasts"
       },
       "statePorts": {
         "inspector-collapsed": "rightPanel.collapsed/rightPanel.onCollapsedChange",
+        "main-state": "state.main",
+        "navigating": "state.navigating",
         "sidebar-collapsed": "navigation.collapsed/navigation.onCollapsedChange",
         "theme": "theme.preference/theme.onPreferenceChange",
         "width": "rightPanel.value/rightPanel.onChange"

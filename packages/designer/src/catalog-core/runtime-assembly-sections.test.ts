@@ -98,6 +98,13 @@ describe("Section content channels", () => {
     expect(prepareRuntimeAssembly(assembly({ body: select => [select("sections.band", { children: [] })] }))).toMatchObject({ status: "refused", findings: [expect.stringContaining("children must be a non-empty Section list")] });
   });
 
+  it("admits the native band header followed by its data-table without weakening the child gate", () => {
+    const html = drawn(assembly({ body: select => [select("sections.band", { children: [select("sections.section-header"), select("sections.data-table")] })] }));
+    expect(html).toContain("sections.band[children:sections.section-header,sections.data-table]");
+    const invalid = prepareRuntimeAssembly(assembly({ body: select => [select("sections.data-table", { children: [select("sections.section-header")] })] }));
+    expect(invalid).toMatchObject({ status: "refused", findings: [expect.stringContaining("does not take sections.data-table as its band")] });
+  });
+
   it("delivers a Section host only to Sections of its leaf, never the Frame", () => {
     const seen: RuntimeRenderInput<string>[] = [], host = { previews: { marker: "board" } };
     drawn(assembly({ seen, sectionHosts: { "sections.faq": host }, body: select => [select("sections.faq"), select("sections.empty-state")] }));
