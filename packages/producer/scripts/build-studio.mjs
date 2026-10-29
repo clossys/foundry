@@ -80,6 +80,8 @@ export async function packageStandalone(appDir, destination) {
   await rm(destination, { recursive: true, force: true });
   await cp(standaloneDir, destination, { recursive: true, verbatimSymlinks: true });
   const targetApp = childPath(destination, required.relativeAppDir);
+  // Next emits a CommonJS launcher; isolate it from Producer's ESM scope.
+  await writeFile(join(targetApp, "package.json"), `${JSON.stringify({ private: true, type: "commonjs" }, null, 2)}\n`);
   await cp(join(buildDir, "static"), join(targetApp, ".next", "static"), { recursive: true, verbatimSymlinks: true });
   if (hasPublic) {
     await cp(publicSource, join(targetApp, "public"), { recursive: true, verbatimSymlinks: true });

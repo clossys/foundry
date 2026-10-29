@@ -85,3 +85,14 @@ test("CLI help works from a consumer directory containing spaces", async (t) => 
   const help = execFileSync(process.execPath, [script, "--help"], { cwd: f.app, encoding: "utf8" });
   assert.match(help, /Build the Studio Next app/);
 });
+
+
+test("standalone launcher runs inside an ESM Producer package", async (t) => {
+  const f = await fixture(t);
+  await f.put(join(f.app, "..", "package.json"), JSON.stringify({ type: "module" }));
+  await f.put(join(f.standalone, "packages/producer/studio/server.js"), "console.log(typeof require('node:path').join);\n");
+  const manifest = await packageStandalone(f.app, f.output);
+  const result = execFileSync(process.execPath, [join(f.output, manifest.serverEntry)], { encoding: "utf8" });
+  assert.equal(result.trim(), "function");
+  assert.deepEqual(JSON.parse(await readFile(join(f.output, "packages/producer/studio/package.json"), "utf8")), { private: true, type: "commonjs" });
+});
