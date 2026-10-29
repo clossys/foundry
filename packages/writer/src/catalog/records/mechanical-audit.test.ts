@@ -66,7 +66,7 @@ function libraryFor(subjects: Subject[]): WriterLibrary {
         if (!dir) throw new Error(`No Intl direction for catalog locale ${tag}`);
         return { tag, dir, state: "active" };
       }),
-      fallback: {}, strategist: { path: "synthetic/catalog-test" },
+      fallback: {}, strategy: { root: "synthetic/catalog-test", contract: "writer.messaging" },
       leafFreeze: { lexicon: "", strings: "", patterns: "", passages: "", narratives: "" },
     },
     locales,

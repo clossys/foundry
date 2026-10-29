@@ -2,6 +2,7 @@ import { expect, it } from "vitest";
 import { mkdtempSync, mkdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { tmpdir } from "node:os";
+import { formatRef, openStrategy } from "@clossys/strategist";
 import { fileURLToPath } from "node:url";
 import { spawnSync } from "node:child_process";
 import { checkWriterRecordDrift } from "./record-drift.js";
@@ -102,4 +103,39 @@ it("returns nonzero and persists actionable repository-format reports for each b
     const pkg = JSON.parse(readFileSync(new URL("../../package.json", import.meta.url), "utf8"));
     expect(pkg.scripts.build).toMatch(/tsc -p tsconfig\.json && node scripts\/check-record-drift\.mjs$/);
   } finally { rmSync(root, { recursive: true, force: true }); }
+});
+
+
+it("checks claim refs against actual active pointers, preserving current refs when a newer draft exists", () => {
+  mkdirSync("work", { recursive: true });
+  const root = mkdtempSync(join("work", "writer-strategy-drift-"));
+  const id = "advantage.proposition.proof";
+  const cell = (version: number, status: string) => `---\nid: ${id}\nversion: ${version}\nstatus: ${status}\nupdated: 2026-10-29\ncites: []\nfeeds: []\nfunctions: []\n${status === "active" ? "confirmed: msg:2026-10-29-1#U2\n" : ""}---\n\n## Direction\n- Evidence: Fictional fixture evidence.\n- Never-claim: Unmeasured results.\n\n## Because\n- Interview evidence.\n\n## Watch\n- If requests > 5 each month, then review.\n`;
+  const tree = (version: number) => JSON.stringify({ schemaVersion: 1, catalog: "@clossys/strategist#strategy-v1", archetype: "default", core: "archetype", active: { [id]: version } });
+  const claim = { id: "lx.0000000001", leaf: "lexicon.approved-claims", context: "Strategy drift fixture", kind: "claim", strategy: { cell: id, version: 1 }, phrasings: ["Fixture evidence"], requiresCitation: true, status: "draft", origin: "authored" };
+  const input = source(envelope([claim]));
+  const before = JSON.stringify(input);
+  try {
+    mkdirSync(join(root, "cells", id), { recursive: true });
+    writeFileSync(join(root, "tree.json"), tree(1));
+    writeFileSync(join(root, "cells", id, "v1.md"), cell(1, "active"));
+    writeFileSync(join(root, "cells", id, "v2.md"), cell(2, "draft"));
+    const strategy = openStrategy(root);
+    expect(strategy.getCell(id)?.version).toBe(2);
+    expect(checkWriterRecordDrift(input, { strategy }).ok).toBe(true);
+    writeFileSync(join(root, "tree.json"), tree(2));
+    writeFileSync(join(root, "cells", id, "v1.md"), cell(1, "retired"));
+    writeFileSync(join(root, "cells", id, "v2.md"), cell(2, "active"));
+    const report = checkWriterRecordDrift(input, { strategy: openStrategy(root) });
+    expect(report.ok).toBe(false);
+    expect(report.findings).toContainEqual(expect.objectContaining({ code: "WR_STRATEGY_STALE", recordId: claim.id, field: "strategy", message: expect.stringContaining(formatRef({ kind: "cell", ref: claim.strategy })) }));
+    expect(report.approvalEvaluated).toBe(false);
+    expect(JSON.stringify(input)).toBe(before);
+    expect(checkWriterRecordDrift(source(envelope([{ ...claim, strategy: { cell: id, version: 3 } }])), { strategy: openStrategy(root) }).findings).toContainEqual(expect.objectContaining({ code: "WR_STRATEGY_DANGLING" }));
+  } finally { rmSync(root, { recursive: true, force: true }); }
+});
+
+it("refuses to claim strategy currency without a Strategist snapshot", () => {
+  const claim = { id: "lx.0000000001", leaf: "lexicon.approved-claims", context: "Fixture", kind: "claim", strategy: { cell: "advantage.proposition.proof", version: 1 }, phrasings: ["Evidence"], requiresCitation: true, status: "draft", origin: "authored" };
+  expect(checkWriterRecordDrift(source(envelope([claim]))).findings).toContainEqual(expect.objectContaining({ code: "WR_STRATEGY_MISSING", field: "strategy" }));
 });

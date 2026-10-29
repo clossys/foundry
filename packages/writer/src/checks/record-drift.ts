@@ -1,3 +1,4 @@
+import type { Strategy } from "@clossys/strategist";
 import { createHash } from "node:crypto";
 import { validateWriterRecord } from "../model/validate.js";
 import type { WriterLayer, WriterLibrary, WriterRecord } from "../model/types.js";
@@ -37,13 +38,16 @@ const libraryFor = (subjects: Subject[], defaultLocale: string, declared: string
   return { manifest: {
     consumer: "catalog-record-build", messageSyntax: "icu-mf1", defaultLocale,
     locales: declared.map(tag => ({ tag, dir: intlDirectionFor(tag) ?? "ltr", state: "active" })),
-    fallback: {}, strategist: { path: "not-evaluated" },
+    fallback: {}, strategy: { root: "not-evaluated", contract: "writer.messaging" },
     leafFreeze: { lexicon: "", strings: "", patterns: "", passages: "", narratives: "" },
   }, locales };
 };
 
 /** Build readiness only: native completeness is independent of owner approval and translation currency. */
-export function checkWriterRecordDrift(sources: readonly WriterRecordSource[]) {
+export function checkWriterRecordDrift(sources: readonly WriterRecordSource[], options: {
+  /** Open manifest.strategy.root with Strategist.openStrategy; reopen after activation. Required when sources contain claims. */
+  strategy?: Pick<Strategy, "getCell" | "isStale">;
+} = {}) {
   const findings: WriterRecordDriftFinding[] = [];
   const all: Subject[] = [];
   const bundles: { path: string; defaultLocale: string; declaredLocales: string[]; records: number }[] = [];
@@ -69,6 +73,14 @@ export function checkWriterRecordDrift(sources: readonly WriterRecordSource[]) {
       findings.push(...shape);
       bundles.push({ path: source.path, defaultLocale, declaredLocales: declared, records: subjects.length });
       if (shape.length) continue;
+      for (const { record, path, locale } of subjects) {
+        if (!("kind" in record) || record.kind !== "claim") continue;
+        const ref = record.strategy;
+        const finding = { severity: "error" as const, path, locale, recordId: record.id, field: "strategy" };
+        if (!options.strategy) findings.push({ ...finding, code: "WR_STRATEGY_MISSING", message: "Claim currency requires a Strategist snapshot: pass { strategy: openStrategy(manifest.strategy.root) } to checkWriterRecordDrift." });
+        else if (!options.strategy.getCell(ref.cell, ref.version)) findings.push({ ...finding, code: "WR_STRATEGY_DANGLING", message: `Strategy cell ${ref.cell}@${ref.version} does not resolve; cite an existing confirmed cell version.` });
+        else if (options.strategy.isStale(ref)) findings.push({ ...finding, code: "WR_STRATEGY_STALE", message: `Strategy cell ${ref.cell}@${ref.version} is not active; review this claim against the active cell before updating its reference.` });
+      }
       all.push(...subjects);
       lengthBundles.push({ path: source.path, defaultLocale, subjects });
       const library = libraryFor(subjects, defaultLocale, declared);

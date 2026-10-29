@@ -1,3 +1,4 @@
+import { formatRef, parseRef } from "@clossys/strategist";
 import { isValidWriterLeafId, WRITER_LAYERS, type WriterLayer } from "../catalog-core/ids.js";
 import { loadWriterCatalog } from "../catalog/ia/index.js";
 import { canonicalLocale, intlDirectionFor } from "../locale.js";
@@ -16,7 +17,11 @@ class Shape {
   issue(path: string, message: string): void { this.issues.push({ code: "WR1", path, message }); }
   obj(value: unknown, path: string, fields: Record<string, Check>, optional: readonly string[] = []): value is Obj {
     if (!object(value)) { this.issue(path, "Expected an object"); return false; }
-    for (const key of Object.keys(value)) if (!owns(fields, key)) this.issue(`${path}.${key}`, "Unknown field");
+    for (const key of Object.keys(value)) if (!owns(fields, key)) this.issue(`${path}.${key}`, key === "strategistClaimKey"
+      ? "strategistClaimKey was removed; migrate to strategy: { cell: <cell-id>, version: <positive integer> } using the confirmed strategy cell."
+      : key === "strategist" && owns(fields, "leafFreeze")
+        ? 'strategist.path was removed; migrate to strategy: { root: <strategy directory>, contract: "writer.messaging" }.'
+        : "Unknown field");
     for (const [key, check] of Object.entries(fields)) {
       if (!owns(value, key)) { if (!optional.includes(key)) this.issue(`${path}.${key}`, "Required field"); }
       else check(value[key], `${path}.${key}`);
@@ -38,6 +43,15 @@ class Shape {
       const canonical = canonicalLocale(v);
       if (canonical !== v) this.issue(p, `non-canonical-locale: Expected ${canonical}`);
     } catch { this.issue(p, "locale: Expected a BCP 47 locale tag"); }
+  };
+  strategyRoot: Check = (v, p) => {
+    if (typeof v !== "string" || !v.trim() || v.includes("\0")) this.issue(p, "Expected a nonempty strategy directory path without NUL characters");
+  };
+  cellRef: Check = (v, p) => {
+    this.obj(v, p, {
+      cell: (cell, path) => { if (typeof cell !== "string" || parseRef(formatRef({ kind: "cell", ref: { cell, version: 1 } }))?.kind !== "cell") this.issue(path, "Expected a strategy cell id (l1.l2.l3)"); },
+      version: (version, path) => { if (typeof version !== "number" || !Number.isSafeInteger(version) || version < 1) this.issue(path, "Expected a positive safe integer cell version"); },
+    });
   };
   asset(): Check { return this.fields({ assetId: this.string, libraryVersion: this.string }); }
   common(layer: WriterLayer): Record<string, Check> {
@@ -71,7 +85,7 @@ export function validateWriterManifest(value: unknown, path = "writer.json"): Wr
     consumer: s.string, messageSyntax: s.one("icu-mf1"), defaultLocale: s.locale,
     locales: s.array(s.fields({ tag: s.locale, dir: s.one("ltr", "rtl"), state: s.one("active", "planned", "pseudo") })),
     fallback: (v, p) => { if (!object(v)) { s.issue(p, "Expected a fallback map"); return; } for (const [tag, fallbacks] of Object.entries(v)) { s.locale(tag, `${p}.${tag}`); s.array(s.locale)(fallbacks, `${p}.${tag}`); } },
-    strategist: s.fields({ path: s.string }), leafFreeze: s.fields(Object.fromEntries(WRITER_LAYERS.map(layer => [layer, s.string]))),
+    strategy: s.fields({ root: s.strategyRoot, contract: s.one("writer.messaging") }), leafFreeze: s.fields(Object.fromEntries(WRITER_LAYERS.map(layer => [layer, s.string]))),
   });
   if (object(value) && Array.isArray(value.locales)) {
     const tags = new Set<string>();
@@ -113,7 +127,7 @@ export function validateWriterRecord(value: unknown, layer: WriterLayer, path = 
         case "voice-rule": validate({ kind, rule: s.one("formality", "warmth", "energy", "person", "mood", "sentence-length", "reading-level"), value: (v, p) => { if (typeof v !== "string") s.number(v, p); }, forbidden: s.array(s.string) }, ["forbidden"]); break;
         case "term": validate({ kind, term: s.string, forms: s.array(s.string), casing: s.string, termStatus: s.one("brand", "preferred", "avoid"), alternative: s.string, reason: s.string, pronunciation: s.string, channel: s.string }, ["casing", "alternative", "pronunciation", "channel"]); break;
         case "pattern-rule": validate({ kind, pattern: s.fields({ source: s.string, flags: s.string }, ["flags"]), severity: s.one("error", "warning", "advisory"), reason: s.string, alternative: s.string }, ["alternative"]); break;
-        case "claim": validate({ kind, strategistClaimKey: s.string, phrasings: s.array(s.string), requiresCitation: s.one(true) }); break;
+        case "claim": validate({ kind, strategy: s.cellRef, phrasings: s.array(s.string), requiresCitation: s.one(true) }); break;
         case "format": validate({ kind, format: s.one("number", "plural", "date", "time", "currency", "unit", "capitalization", "punctuation", "direction", "expansion"), value: (v, p) => { if (!object(v)) s.issue(p, "Expected a format configuration object"); else jsonValue(s, v, p); } }); break;
         default: validate({ kind });
       }

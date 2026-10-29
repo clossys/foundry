@@ -13,7 +13,7 @@ const page = (): PageNarrative => ({ ...base("nr.123456789a", "narratives.page")
 const longform = (): LongFormNarrative => ({ ...base("nr.23456789ab", "narratives.article"), title: "st.0123456789", frame: { frameId: "frames.example" }, blocks: [{ type: "paragraph", designer: { id: "components.example", configId: "example" }, text: "Example body", children: [{ type: "quote", designer: { id: "components.example", configId: "example" }, text: "Example quote" }] }] });
 
 function library(records: WriterRecord[]): WriterLibrary {
-  return { manifest: { consumer: "example", messageSyntax: "icu-mf1", defaultLocale: "en", locales: [{ tag: "en", dir: "ltr", state: "active" }], fallback: {}, strategist: { path: "strategy" }, leafFreeze: { lexicon: "a", strings: "b", patterns: "c", passages: "d", narratives: "e" } }, locales: { en: { records, documents: [] } } };
+  return { manifest: { consumer: "example", messageSyntax: "icu-mf1", defaultLocale: "en", locales: [{ tag: "en", dir: "ltr", state: "active" }], fallback: {}, strategy: { root: "strategy", contract: "writer.messaging" }, leafFreeze: { lexicon: "a", strings: "b", patterns: "c", passages: "d", narratives: "e" } }, locales: { en: { records, documents: [] } } };
 }
 function approve(records: WriterRecord[]): WriterRecord[] {
   return records.map(record => ({ ...record, approval: { approvedBy: "owner", approvedAt: "2026-01-01T00:00:00Z", textFingerprint: writerRecordFingerprint(record, records), fingerprintAlgorithm: COPY_FINGERPRINT_ALGORITHM } }));

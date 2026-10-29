@@ -17,7 +17,7 @@ const library = (copy: WriterRecord[] = records): WriterLibrary => ({
   manifest: {
     consumer: "admin-voice-review", messageSyntax: "icu-mf1", defaultLocale: "en",
     locales: [{ tag: "en", dir: "ltr", state: "active" }], fallback: {},
-    strategist: { path: "strategy" },
+    strategy: { root: "strategy", contract: "writer.messaging" },
     leafFreeze: { lexicon: "", strings: "", patterns: "", passages: "", narratives: "" },
   },
   locales: { en: { records: [...lexicon, ...copy], documents: [] } },

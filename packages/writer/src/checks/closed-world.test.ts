@@ -39,11 +39,11 @@ const block = (): Block => ({ type: "paragraph", designer: { id: "components.pro
 const article = (): LongFormNarrative => ({ ...common, id: "nr.0000000003", leaf: "narratives.article", frame: { frameId: "frames.article" }, title: "st.0000000001", blocks: [block()] });
 function library(extra: WriterRecord[] = []): WriterLibrary {
   return {
-    manifest: { consumer: "example", messageSyntax: "icu-mf1", defaultLocale: "en", locales: [{ tag: "en", dir: "ltr", state: "active" }], fallback: {}, strategist: { path: "strategy" },
+    manifest: { consumer: "example", messageSyntax: "icu-mf1", defaultLocale: "en", locales: [{ tag: "en", dir: "ltr", state: "active" }], fallback: {}, strategy: { root: "strategy", contract: "writer.messaging" },
       leafFreeze: { lexicon: "1", strings: "1", patterns: "1", passages: "1", narratives: "1" } },
     locales: { en: { documents: [], records: [
       { ...common, id: "lx.0000000001", leaf: "lexicon.preferred-terms", kind: "term", term: "Workspace", forms: [], termStatus: "preferred", reason: "Consistent naming" },
-      { ...common, id: "lx.0000000002", leaf: "lexicon.approved-claims", kind: "claim", strategistClaimKey: "example", phrasings: ["Useful"], requiresCitation: true },
+      { ...common, id: "lx.0000000002", leaf: "lexicon.approved-claims", kind: "claim", strategy: { cell: "advantage.proposition.proof", version: 1 }, phrasings: ["Useful"], requiresCitation: true },
       string(), pattern(), passage(), chrome(), page(), article(), ...extra,
     ] } },
   };
