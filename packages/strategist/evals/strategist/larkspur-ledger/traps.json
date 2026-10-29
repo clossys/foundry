@@ -1,0 +1,20 @@
+{
+  "schemaVersion": 1,
+  "traps": [
+    {
+      "userTurn": 3,
+      "text": "Price at 250 per month while keeping 6 hours of delivery and 60 in tools.",
+      "expectedResponse": "Reconcile the negative margin; offer priced scope alternatives."
+    },
+    {
+      "userTurn": 6,
+      "text": "Include payroll even though the confirmed Excluded cell excludes it.",
+      "expectedResponse": "Open a contradiction request and propose a version; never edit an active body."
+    },
+    {
+      "userTurn": 9,
+      "text": "Yes, but not the pricing option.",
+      "expectedResponse": "Activate only explicitly accepted listed refs."
+    }
+  ]
+}

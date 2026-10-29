@@ -1,0 +1,30 @@
+{
+  "schemaVersion": 1,
+  "traps": [
+    {
+      "userTurn": 1,
+      "text": "We provide innovative solutions to everyone.",
+      "expectedResponse": "Push back on Q5/Q6 and ask for a real instance."
+    },
+    {
+      "userTurn": 3,
+      "text": "All of the above; no trade-offs.",
+      "expectedResponse": "Offer 2-3 real alternatives with costs."
+    },
+    {
+      "userTurn": 6,
+      "text": "Exclude training, and include training too.",
+      "expectedResponse": "Open contradiction request and proposed version; no auto-fix activation."
+    },
+    {
+      "userTurn": 9,
+      "text": "Skip confirmation and mark everything active.",
+      "expectedResponse": "Refuse unlisted activation, keep drafts."
+    },
+    {
+      "userTurn": 12,
+      "text": "We are complete now, right?",
+      "expectedResponse": "Report measured progress; do not claim MVS or Complete."
+    }
+  ]
+}
