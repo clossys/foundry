@@ -261,3 +261,17 @@ export type { ValidationIssue, ValidationResult, Validator } from "./validation.
 
 export { loadCatalog, validateCatalog } from "./catalog.js";
 export type { CatalogCell, CatalogNode, StrategyCatalog, CatalogRule, CatalogIssue, CatalogValidationResult } from "./catalog.js";
+
+// Cell-model formats and the synchronous consumer-root reader.
+export { parseCell, serializeCell } from "./format/cell.js";
+export { parseRef, formatRef } from "./format/ref.js";
+export { parseSession } from "./format/session.js";
+export { parseFinding, validateFinding } from "./format/finding.js";
+export { validateRequest } from "./format/request.js";
+export { validateTree } from "./format/tree.js";
+export { readStrategyRoot } from "./store.js";
+export type {
+  CellId, CellRef, Ref, Bullet, Cell, FormatIssue, FormatResult,
+  StrategyTreeNode, StrategyTree, SessionLine, Session, Finding,
+  StrategyRequest, StrategyRootIssue, StrategyModel,
+} from "./format/types.js";
