@@ -1,6 +1,7 @@
 import type { CopyRef, CopyResolver } from "../copy-contract.js";
 import type { IconNode } from "@clossys/designer/components/server";
-import { isRenderImageAsset } from "../landing/internal/assets.js";
+import { isImageResource, type ImageResource } from "../../../catalog-assets/media.js";
+import { isAllowedAssetUrl, isRenderImageAsset } from "../landing/internal/assets.js";
 import type { AssetResolver } from "../landing/web/types.js";
 import type { SiteFramePresentationConfig } from "../site-frame-contract.js";
 import { FOOTER_ICON_LIMIT, FOOTER_LINK_LIMIT, HEADER_LINK_LIMIT, HEADER_ACTION_VARIANTS, SITE_FRAME_NAV_DEFAULTS, SiteFooterContractError, normalizeSiteFrameActions, normalizeSiteFrameConfig } from "../site-frame-contract.js";
@@ -13,9 +14,10 @@ export interface ResolvedSiteLink {
   readonly isCurrent?: boolean;
 }
 
-export interface ResolvedSiteIconLink extends ResolvedSiteLink {
-  readonly icon: IconNode;
-}
+export type ResolvedSiteIconLink = ResolvedSiteLink & (
+  | { readonly icon: IconNode; readonly image?: never }
+  | { readonly image: ImageResource; readonly icon?: never }
+);
 
 export interface ResolvedSiteShell {
   readonly brand: {
@@ -68,7 +70,7 @@ const LINK_KEYS = new Set(["href", "label"]);
 const NAV_LINK_KEYS = new Set(["href", "label", "isCurrent"]);
 const ACTION_KEYS = new Set(["href", "label", "emphasis", "icon"]);
 const ENVIRONMENT_KEYS = new Set(["href", "label", "icon", "isCurrent"]);
-const ICON_LINK_KEYS = new Set(["href", "label", "icon"]);
+const ICON_LINK_KEYS = new Set(["href", "label", "icon", "assetId"]);
 const SOCIAL_KEYS = new Set(["label", "links"]);
 const FOOTER_KEYS = new Set(["brandBand", "placement", "ground", "columns", "links", "social", "legal", "rule"]);
 /** The consent reopen fragment; the footer never carries that control, only the policy link. */
@@ -289,11 +291,16 @@ export function resolveShell(input: SiteShellInput, resolveCopy: CopyResolver, r
 
   const iconLink = (value: unknown, path: string): ResolvedSiteIconLink => {
     const fields = record(value, path, ICON_LINK_KEYS);
-    return {
-      href: href(fields.href, `${path}.href`, base),
-      label: copy(fields.label, `${path}.label`, resolveCopy),
-      icon: icon(fields.icon, `${path}.icon`),
-    };
+    const identity = { href: href(fields.href, `${path}.href`, base), label: copy(fields.label, `${path}.label`, resolveCopy) };
+    if (fields.assetId !== undefined) {
+      if (fields.icon !== undefined || typeof fields.assetId !== "string" || !fields.assetId.trim()) fail(`${path} requires one image identity or icon.`);
+      const asset = resolveAsset(fields.assetId as string);
+      const image: ImageResource | undefined = isImageResource(asset) ? asset : isRenderImageAsset(asset)
+        ? { kind: "illustration", src: asset.src, width: asset.width, height: asset.height, decorative: true } : undefined;
+      if (!image || !isAllowedAssetUrl(image.src) || /[\u0000-\u001F\u007F\\]/.test(image.src)) fail(`${path}.assetId did not resolve to an image asset.`);
+      return { ...identity, image: Object.freeze({ ...image }) };
+    }
+    return { ...identity, icon: icon(fields.icon, `${path}.icon`) };
   };
   const iconLinks = (value: unknown, path: string) => list(value, path).map((entry, index) => iconLink(entry, `${path}[${index}]`));
 

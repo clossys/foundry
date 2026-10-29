@@ -78,7 +78,8 @@ export function siteShellProps(input: Pick<RuntimeRenderInput<ReactNode>, "conte
   const mark = keys(record(brandRow.mark, "header.brand.mark"), "header.brand.mark", ["src", "width", "height"]);
   const brandLabel = required(brandRow.label, "header.brand.label");
   const assetId = "runtime-content.brand-mark";
-  const resolveAsset: AssetResolver = id => id === assetId ? { type: "image", src: mark.src, width: mark.width, height: mark.height, alt: brandLabel } : undefined;
+  const socialAssets = new Map<string, unknown>();
+  const resolveAsset: AssetResolver = id => id === assetId ? { type: "image", src: mark.src, width: mark.width, height: mark.height, alt: brandLabel } : socialAssets.get(id);
   const wordmark = text(brandRow.wordmark);
   const plate = choice(brandRow.plate, "header.brand.plate", ["self", "shared"] as const);
   const brandTone = choice(brandRow.tone, "header.brand.tone", ["auto", "inverse"] as const);
@@ -136,9 +137,16 @@ export function siteShellProps(input: Pick<RuntimeRenderInput<ReactNode>, "conte
         return { heading: ref(required(fields.heading, `${at}.heading`)), links: links(fields.links, `${at}.links`) };
       }) }),
       ...(row.links === undefined ? {} : { links: links(row.links, "footer.links") }),
-      ...(social ? { social: { ...(socialLabel ? { label: ref(socialLabel) } : {}), links: list(social.links, "footer.social.links").map((item, index): SiteIconLinkInput => {
-        const at = `footer.social.links[${index}]`, fields = keys(record(item, at), at, ["label", "href", "icon"]);
-        return { ...link({ label: fields.label ?? null, href: fields.href ?? null }, at), icon: iconOf(fields, at) };
+      ...(social ? { social: { ...(socialLabel ? { label: ref(socialLabel) } : {}), links: list(social.links, "footer.social.links").map((item, index): NonNullable<SiteFooterInput["social"]>["links"][number] => {
+        const at = `footer.social.links[${index}]`, fields = keys(record(item, at), at, ["label", "href", "icon", "image"]);
+        const identity = link({ label: fields.label ?? null, href: fields.href ?? null }, at);
+        if (fields.image !== undefined) {
+          if (fields.icon !== undefined) fail(`${at} requires one image or icon`);
+          const id = `runtime-content.social-mark.${index}`;
+          socialAssets.set(id, fields.image);
+          return { ...identity, assetId: id };
+        }
+        return { ...identity, icon: iconOf(fields, at) };
       }) } } : {}),
       legal: { entity: ref(required(legal.entity, "footer.legal.entity")), links: legal.links === undefined ? [] : links(legal.links, "footer.legal.links"), ...(linksLabel ? { linksLabel: ref(linksLabel) } : {}) },
     } as SiteFooterInput;

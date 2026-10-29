@@ -4,7 +4,7 @@ import "@testing-library/jest-dom/vitest";
 import { act } from "react";
 import { hydrateRoot } from "react-dom/client";
 import { renderToString } from "react-dom/server";
-import { within } from "@testing-library/react";
+import { waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, expect, it, vi } from "vitest";
 import type { CopyResolver } from "@clossys/writer";
@@ -278,10 +278,6 @@ it("hydrates the real icon-trigger frame without markup drift and keeps disclosu
   const container = document.createElement("div");
   container.innerHTML = server;
   document.body.append(container);
-  // Keep anchor navigation inside this fixture while exercising real disclosure dismissal.
-  container.addEventListener("click", event => {
-    if (event.target instanceof Element && event.target.closest("a[href]")) event.preventDefault();
-  });
   const panelId = container.querySelector("header button")!.getAttribute("aria-controls");
   const recoverable = vi.fn();
   const consoleError = vi.spyOn(console, "error");
@@ -299,12 +295,15 @@ it("hydrates the real icon-trigger frame without markup drift and keeps disclosu
     expect(toggle).toHaveAttribute("aria-expanded", "true");
     await user.keyboard("{Escape}");
     expect(toggle).toHaveAttribute("aria-expanded", "false");
-    expect(toggle).toHaveFocus();
+    await waitFor(() => expect(toggle).toHaveFocus());
     await user.keyboard("{Enter}");
     expect(toggle).toHaveAttribute("aria-expanded", "true");
     const dialog = within(document.body).getByRole("dialog", { name: "Primary" });
     expect(panel).toHaveAttribute("inert");
-    await user.click(within(dialog).getByRole("link", { name: "Start now" }));
+    const primary = within(dialog).getByRole("link", { name: "Start now" });
+    // The native Sheet portal is outside container; only cancel JSDOM's page load.
+    primary.addEventListener("click", event => event.preventDefault(), { once: true });
+    await user.click(primary);
     expect(toggle).toHaveAttribute("aria-expanded", "false");
     expect(recoverable).not.toHaveBeenCalled();
     expect(consoleError).not.toHaveBeenCalled();

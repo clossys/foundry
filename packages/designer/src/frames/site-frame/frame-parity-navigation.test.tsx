@@ -5,7 +5,7 @@ import { act } from "react";
 import { hydrateRoot } from "react-dom/client";
 import { renderToString } from "react-dom/server";
 import { afterEach, expect, it, vi } from "vitest";
-import { within } from "@testing-library/react";
+import { waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import type { CopyResolver } from "@clossys/writer";
 import { SiteNavDisclosure as ServerNavigation } from "./NavDisclosure.server.js";
@@ -54,7 +54,7 @@ it.each(["base", "inverse"] as const)("hydrates the real frame with %s header to
     expect(within(document.body).getByRole("dialog", { name: "Primary" })).toBeInTheDocument();
     await user.keyboard("{Escape}");
     expect(toggle).toHaveAttribute("aria-expanded", "false");
-    expect(toggle).toHaveFocus();
+    await waitFor(() => expect(toggle).toHaveFocus());
     await user.keyboard("{Enter}");
     expect(toggle).toHaveAttribute("aria-expanded", "true");
     await user.click(within(within(document.body).getByRole("dialog")).getByRole("link", { name: "Help" }));

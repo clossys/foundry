@@ -5,7 +5,7 @@ import { act } from "react";
 import { hydrateRoot } from "react-dom/client";
 import { renderToString } from "react-dom/server";
 import { afterEach, expect, it, vi } from "vitest";
-import { within } from "@testing-library/react";
+import { waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { SiteNavDisclosure as ClientNavigation } from "./NavDisclosure.client.js";
 import { resolveShell } from "./internal/resolveShell.js";
@@ -60,7 +60,7 @@ it("hydrates server navigation through the real default frame boundary with poin
     expect(toggle).toHaveAttribute("aria-expanded", "true");
     await user.keyboard("{Escape}");
     expect(toggle).toHaveAttribute("aria-expanded", "false");
-    expect(toggle).toHaveFocus();
+    await waitFor(() => expect(toggle).toHaveFocus());
     await user.keyboard(" ");
     expect(toggle).toHaveAttribute("aria-expanded", "true");
     await user.click(within(within(document.body).getByRole("dialog")).getByRole("link", { name: "Help" }));

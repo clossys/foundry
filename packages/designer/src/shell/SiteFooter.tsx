@@ -7,6 +7,9 @@ import { dsAttrs } from "../catalog-core/provenance-attrs.js";
 import { SemanticContent } from "../components/SemanticContent.js";
 import { Link } from "../components/Link.server.js";
 import { Logomark } from "../components/Logomark.js";
+import { Icon } from "../components/Icon.js";
+import type { IconNode } from "../icons/types.js";
+import { isImageResource, type ImageResource } from "../catalog-assets/media.js";
 
 /** DOM provenance (WIRE-3 D1): this frame root stamps its leaf and fill. */
 const FRAME_STAMP = dsAttrs("frames", "frames.site-footer", "foundry/frames.site-footer");
@@ -124,6 +127,30 @@ export interface SiteFooterLegalLink {
   label: string;
   /** The link's destination — rendered as a real `<a href>`. */
   href: string;
+}
+
+/** A named profile destination with exactly one consumer image or existing glyph. */
+export type SiteFooterSocialLinkProps = SiteFooterLegalLink & (
+  | { readonly image: ImageResource; readonly icon?: never }
+  | { readonly icon: IconNode; readonly image?: never }
+);
+
+/** Consumer artwork stays decorative; the supplied profile name is also visible. */
+function SiteFooterSocialLink({ label, href, image, icon }: SiteFooterSocialLinkProps) {
+  requireNamedDestination({ label, href });
+  if ((image === undefined) === (icon === undefined)) throw new TypeError("Footer social links need exactly one image or glyph.");
+  if (image !== undefined) {
+    if (!isImageResource(image) || NONCANONICAL_HREF.test(image.src) || /[\\\u0000-\u001F\u007F]/.test(image.src) || image.src.startsWith("//")) {
+      throw new TypeError("Footer social artwork must be an image resource.");
+    }
+    const protocol = new URL(image.src, PARSE_BASES[0]).protocol;
+    if (protocol !== "https:" && protocol !== "http:") throw new TypeError("Footer social image destination is unsafe.");
+  } else if (!Array.isArray(icon)) throw new TypeError("Footer social glyphs must be plain icon data.");
+  return <Link variant="standalone" href={href} aria-label={label} rel={externalRel(href)}
+    className="inline-flex items-center gap-sm text-inherit no-underline hover:underline" style={LEGAL_LINK_STYLE}>
+    {image !== undefined ? <Logomark src={image.src} size="sm" plate="shared" tone="inverse" /> : <Icon glyph={icon!} decorative />}
+    {label}
+  </Link>;
 }
 
 export interface SiteFooterLegalProps {
@@ -292,4 +319,4 @@ function SiteFooterLegal({ entity, links, linksLabel, icons = [], home, iconsLab
   );
 }
 
-export const SiteFooter = Object.assign(SiteFooterRoot, { Column: SiteFooterColumn, Legal: SiteFooterLegal });
+export const SiteFooter = Object.assign(SiteFooterRoot, { Column: SiteFooterColumn, Legal: SiteFooterLegal, SocialLink: SiteFooterSocialLink });

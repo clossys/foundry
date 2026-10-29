@@ -1,4 +1,6 @@
 import { act } from "react";
+import { readFileSync } from "node:fs";
+import { join } from "node:path";
 import { hydrateRoot, type Root } from "react-dom/client";
 import { renderToString } from "react-dom/server";
 import { render, screen, within } from "@testing-library/react";
@@ -82,5 +84,58 @@ describe("MK-3 footer brand band", () => {
     const { container } = render(<SiteFooter brand={brand} secondary={<SiteFooter.Legal entity="Example" links={[]} />} />);
     expect(container.querySelector(".site-footer-columns")).toBeNull();
     expect(screen.getByRole("contentinfo").firstElementChild?.firstElementChild).toHaveAttribute("data-footer-brand", "");
+  });
+});
+
+/** Read balanced CSS blocks so nested container rules stay with their owner. */
+function cssBlock(source: string, opening: string): string {
+  const start = source.indexOf(opening);
+  if (start < 0) throw new Error(`Missing footer rule: ${opening}`);
+  const brace = source.indexOf("{", start);
+  let depth = 0;
+  for (let index = brace; index < source.length; index++) {
+    if (source[index] === "{") depth++;
+    if (source[index] === "}" && --depth === 0) return source.slice(brace + 1, index);
+  }
+  throw new Error("Unterminated footer rule");
+}
+
+/** Evaluate only the grid declarations and matching width conditions in this real rule. */
+function columnsAtWidth(rule: string, width: number): number {
+  let active = "";
+  const declaration = /grid-template-columns\s*:\s*([^;]+);/g;
+  const apply = (source: string) => {
+    for (const match of source.matchAll(declaration)) active = match[1]!.trim();
+  };
+  const container = /@container\s*\(min-width:\s*([\d.]+)px\)\s*\{([^{}]*)\}/g;
+  apply(rule.replace(container, ""));
+  for (const match of rule.matchAll(container)) if (width >= Number(match[1])) apply(match[2]!);
+  if (/^minmax\(0,\s*1fr\)$/.test(active)) return 1;
+  const repeat = /^repeat\((\d+),\s*minmax\(0,\s*1fr\)\)$/.exec(active);
+  if (!repeat) throw new Error(`Unsupported footer grid: ${active}`);
+  return Number(repeat[1]);
+}
+
+describe("MR-9 footer responsive rules", () => {
+  const theme = readFileSync(join(import.meta.dirname, "../../styles/theme-keys.css"), "utf8");
+  const compiled = readFileSync(join(import.meta.dirname, "../../styles/compiled.css"), "utf8");
+  const widths = [1440, 768, 390];
+
+  it("uses the footer width to resolve four, two and one columns in authored and shipped CSS", () => {
+    expect(cssBlock(theme, "@utility site-footer-dark {")).toMatch(/container-type:\s*inline-size\s*;/);
+    for (const [source, opening] of [[theme, "@utility site-footer-columns {"], [compiled, ".site-footer-columns {"]] as const) {
+      const rule = cssBlock(source, opening);
+      expect(rule).toMatch(/display:\s*grid\s*;/);
+      expect(widths.map(width => columnsAtWidth(rule, width))).toEqual([4, 2, 1]);
+      expect([767, 768, 1279, 1280].map(width => columnsAtWidth(rule, width))).toEqual([1, 2, 2, 4]);
+    }
+  });
+
+  it("rejects the specified fixed-four-column mutation", () => {
+    const actual = cssBlock(theme, "@utility site-footer-columns {");
+    const fixed = actual.replace(/@container\s*\([^)]*\)\s*\{[^{}]*\}/g, "")
+      .replace(/grid-template-columns\s*:\s*[^;]+;/, "grid-template-columns: repeat(4, minmax(0, 1fr));");
+    expect(widths.map(width => columnsAtWidth(fixed, width))).toEqual([4, 4, 4]);
+    expect(widths.map(width => columnsAtWidth(fixed, width))).not.toEqual([4, 2, 1]);
   });
 });

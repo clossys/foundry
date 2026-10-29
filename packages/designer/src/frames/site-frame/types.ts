@@ -32,9 +32,17 @@ type PlainSiteLinkInput = Omit<SiteLinkInput, "emphasis" | "icon">;
 export type SiteIconLinkInput = {
   readonly href: string;
   readonly label: CopyRef;
-  /** Plain SVG shape data validated against the same allowlist as environment icons. */
   readonly icon: IconNode;
+  readonly assetId?: never;
 };
+
+/** A consumer assets.image identity resolved through the frame's existing asset port. */
+export interface SiteImageLinkInput {
+  readonly href: string;
+  readonly label: CopyRef;
+  readonly assetId: string;
+  readonly icon?: never;
+}
 
 /**
  * The brand in the banner, as data: an asset id the frame resolves to an image
@@ -91,7 +99,7 @@ interface SiteFooterFields {
   readonly rule?: "none" | "top";
   readonly columns?: readonly { readonly heading: CopyRef; readonly links: readonly PlainSiteLinkInput[] }[];
   readonly links?: readonly PlainSiteLinkInput[];
-  readonly social?: { readonly label?: CopyRef; readonly links: readonly SiteIconLinkInput[] };
+  readonly social?: { readonly label?: CopyRef; readonly links: readonly (SiteIconLinkInput | SiteImageLinkInput)[] };
   readonly legal: {
     readonly entity: CopyRef;
     readonly links: readonly PlainSiteLinkInput[];
