@@ -1,3 +1,4 @@
+import { appLocalSpecifier, type AppLocalRouteSourceOptions } from "../app-local/route-options.js";
 import { registeredRouteHeadMetadata } from "./headMetadata.js";
 import { routeProviderMount, routeServerLoader, routeSourcePath, isLegacyRouteRegistration } from "../core/route-registry.js";
 import { isRetiredCompleteRouteRegistration } from "../core/route-identities.js";
@@ -35,11 +36,11 @@ export function registeredRouteRegistryPlacement(file: unknown, module: unknown)
  * deterministic, self-contained module states the registry as one literal checked
  * with the page prop type annotation (no cast). Heterogeneous fill keys do not
  * infer optional undefined properties. It imports nothing outside the source tree. The checker requires its exact bytes for the JSON it reads. */
-export function emitRegisteredRouteRegistryModule(registry: RouteRegistry): string {
+export function emitRegisteredRouteRegistryModule(registry: RouteRegistry, options?: AppLocalRouteSourceOptions): string {
   if (!registry || registry.version !== 1 || typeof registry.consumer !== "string" || !Array.isArray(registry.routes)) throw new Error("Version 1 route registry required");
   if (registry.routes.some(isRetiredCompleteRouteRegistration)) throw new TypeError("Complete page registration is retired; use a consumer region page");
   return [
-    registry.routes.some(route => !isLegacyRouteRegistration(route)) ? 'import type { RouteRegistry } from "@clossys/publisher/core";' : 'import type { RegisteredRoutePageProps } from "@clossys/publisher/web/registered-route";',
+    registry.routes.some(route => !isLegacyRouteRegistration(route)) ? `import type { RouteRegistry } from ${JSON.stringify(appLocalSpecifier("@clossys/publisher/core", options))};` : `import type { RegisteredRoutePageProps } from ${JSON.stringify(appLocalSpecifier("@clossys/publisher/web/registered-route", options))};`,
     `const registry: ${registry.routes.some(route => !isLegacyRouteRegistration(route)) ? "RouteRegistry" : 'RegisteredRoutePageProps["registry"]'} = ${JSON.stringify(registry, null, 2)};`,
     "export default registry;", "",
   ].join("\n");
@@ -47,7 +48,7 @@ export function emitRegisteredRouteRegistryModule(registry: RouteRegistry): stri
 /** The one checked source shape. No consumer-authored JSX body or wrapper is accepted.
  * The page imports only the typed registry module, and every relative import stays in
  * that module's source tree. */
-export function emitRegisteredRoutePage(registryModule: string, route: RouteRegistration): string {
+export function emitRegisteredRoutePage(registryModule: string, route: RouteRegistration, options?: AppLocalRouteSourceOptions): string {
   if (isRetiredCompleteRouteRegistration(route)) throw new TypeError("Complete page emission is retired; supply a consumer page config and registered region source");
   if (!isLegacyRouteRegistration(route)) throw new TypeError("Registered instance source required");
   if (!typedModule(registryModule) || route.composition.source.export !== "default") throw new Error("Typed registry module and default emitted page export required");
@@ -63,10 +64,10 @@ export function emitRegisteredRoutePage(registryModule: string, route: RouteRegi
     '"use client";',
     `import registry from ${JSON.stringify(modulePath(file, registryModule))};`,
     ...(loader ? [
-      'import { RegisteredServerDataRoutePage } from "@clossys/publisher/web/registered-route";',
-      'import type { RegisteredRouteServerData } from "@clossys/publisher/web/registered-route";',
+      `import { RegisteredServerDataRoutePage } from ${JSON.stringify(appLocalSpecifier("@clossys/publisher/web/registered-route", options))};`,
+      `import type { RegisteredRouteServerData } from ${JSON.stringify(appLocalSpecifier("@clossys/publisher/web/registered-route", options))};`,
       typeOnly(loader, file, "RegisteredLoader"),
-    ] : ['import { RegisteredRoutePage } from "@clossys/publisher/web/registered-route";']),
+    ] : [`import { RegisteredRoutePage } from ${JSON.stringify(appLocalSpecifier("@clossys/publisher/web/registered-route", options))};`]),
     named(route.composition.runtime, file, "useRuntime"),
     ...(route.composition.header.actions ? [named(route.composition.header.actions, file, "renderActions")] : []),
     ...(provider ? [named(provider.source, file, "RegisteredProvider")] : []),
@@ -83,7 +84,7 @@ function typeOnly(ref: RouteSourceExport, from: string, local: string): string {
  * without a loader. With one, it is the one server page: it imports exactly the registered
  * loader, awaits it with no arguments and passes the checked serializable result as
  * the emitted client page's only prop. No other import, call or fetch is emitted. */
-export function emitRegisteredRouteAdapter(route: RouteRegistration): string {
+export function emitRegisteredRouteAdapter(route: RouteRegistration, options?: AppLocalRouteSourceOptions): string {
   if (isRetiredCompleteRouteRegistration(route)) throw new TypeError("Complete page emission is retired; supply a consumer page config and registered region source");
   if (!isLegacyRouteRegistration(route)) throw new TypeError("Registered instance source required");
   if (route.entry.export !== "default") throw new Error("Next page entries require the default export");
@@ -93,7 +94,7 @@ export function emitRegisteredRouteAdapter(route: RouteRegistration): string {
   const loader = routeServerLoader(route);
   if (!loader) throw new Error("Registered server data loader required");
   return [
-    'import { registeredRouteServerData } from "@clossys/publisher/core";',
+    `import { registeredRouteServerData } from ${JSON.stringify(appLocalSpecifier("@clossys/publisher/core", options))};`,
     named(loader, route.entry.file, "registeredLoader"),
     `import RegisteredPage from ${JSON.stringify(modulePath(route.entry.file, route.composition.source.file))};`,
     metadata,
