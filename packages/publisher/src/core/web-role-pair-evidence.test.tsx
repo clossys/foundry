@@ -1,5 +1,6 @@
 // @vitest-environment jsdom
 import { resolve } from "node:path";
+import archivedSourceDigests from "./__fixtures__/web-role-pair-archived-sources.json" with { type: "json" };
 import { existsSync, readFileSync, writeFileSync } from "node:fs";
 import { execFileSync } from "node:child_process";
 import { checkImportPurity } from "../../../../scripts/lib/import-purity.mjs";
@@ -136,6 +137,22 @@ const SOURCE_FILES = [
   "../designer/src/frames/site-frame/viewChromeGround.ts",
 ];
 
+// Exact retired producer paths; other missing sources must still fail measurement.
+const RETIRED_SOURCE_FILES = [
+  "../designer/src/frames/site-frame/landing/web/views/LandingView.tsx",
+  "../designer/src/frames/site-frame/landing/web/views/LandingViewContent.tsx",
+  "../designer/src/frames/site-frame/landing/web/buildAssetElement.tsx",
+  "../designer/src/frames/site-frame/landing/web/views/LandingView.server.tsx",
+  "../designer/src/frames/site-frame/landing/web/views/SectionedViewActions.tsx",
+  "../designer/src/frames/site-frame/landing/web/views/SectionedViewBlocks.server.tsx",
+  "../designer/src/frames/site-frame/landing/web/views/SectionedViewBlocks.tsx",
+  "../designer/src/frames/site-frame/landing/web/views/SectionedViewCanonical.ts",
+  "../designer/src/frames/site-frame/landing/web/views/SectionedViewContent.tsx",
+  "../designer/src/frames/site-frame/landing/web/views/SectionedViewContentSection.tsx",
+  "../designer/src/frames/site-frame/landing/web/views/landingViewGrounds.ts"
+];
+const CURRENT_SOURCE_FILES = SOURCE_FILES.filter(path => !RETIRED_SOURCE_FILES.includes(path));
+
 const SELECTORS: Record<WebRolePairCheck, string> = {
   standaloneMain: "main, [role~='main']", standaloneChrome: "header, footer, [role~='banner'], [role~='contentinfo']",
   composedMain: "main, [role~='main']", frameMain: ":scope > div > main#publisher-main-content",
@@ -152,7 +169,7 @@ function fresh(index: number, mutant = "", measuredAt = WEB_ROLE_PAIR_EVIDENCE[i
   const joined = validateBlockRoleBinding(WEB_ROLE_PAIR_BINDINGS[index], WEB_ROLE_PAIR_BINDINGS.flatMap(binding => [binding.frameBlockRef, binding.viewBlockRef]));
   if (!("identity" in joined) || !joined.identity) throw new Error("Missing fresh identity");
   return { ...JSON.parse(JSON.stringify(record)), identity: joined.identity, measuredAt, fixtureDigest: sha(JSON.stringify(fixture)),
-    sourceDigests: Object.fromEntries(SOURCE_FILES.filter(path => existsSync(sourcePath(path))).map(path => [path, sha(readFileSync(sourcePath(path)))])),
+    sourceDigests: Object.fromEntries(CURRENT_SOURCE_FILES.map(path => [path, sha(readFileSync(sourcePath(path)))])),
     checks: Object.fromEntries(Object.entries(observations).map(([key, count]) => [key, {
       count, selector: SELECTORS[key as WebRolePairCheck],
       status: count === expected[key as WebRolePairCheck] ? "measured" : "violated",
@@ -162,14 +179,21 @@ const validate = validateWebRolePairEvidence;
 const copy = <T,>(value: T): T => JSON.parse(JSON.stringify(value));
 describe("web role-pair evidence", () => {
   it("rejects missing current source closure while retaining the archived source pins", () => {
-    const missing = SOURCE_FILES.filter(path => !existsSync(sourcePath(path)));
-    expect(missing).toContain("../designer/src/frames/site-frame/landing/web/views/LandingView.tsx");
+    expect(Object.keys(archivedSourceDigests)).toEqual(SOURCE_FILES);
+    expect(CURRENT_SOURCE_FILES).toHaveLength(37);
+    expect(RETIRED_SOURCE_FILES).toHaveLength(11);
     const current = fresh(0);
-    for (const path of missing) {
-      expect(Object.hasOwn(WEB_ROLE_PAIR_EVIDENCE[0]!.sourceDigests, path)).toBe(true);
+    const archived = { ...copy(WEB_ROLE_PAIR_EVIDENCE[0]!), sourceDigests: archivedSourceDigests };
+    for (const path of RETIRED_SOURCE_FILES) {
+      expect(existsSync(sourcePath(path))).toBe(false);
+      expect(Object.hasOwn(archived.sourceDigests, path)).toBe(true);
       expect(Object.hasOwn(current.sourceDigests, path)).toBe(false);
     }
-    expect(validate(WEB_ROLE_PAIR_EVIDENCE[0], WEB_ROLE_PAIR_BINDINGS[0], current).status).toBe("violated");
+    expect(validate(archived, WEB_ROLE_PAIR_BINDINGS[0], current).status).toBe("violated");
+    const missingCurrent = copy(current);
+    delete (missingCurrent.sourceDigests as Record<string, string>)[CURRENT_SOURCE_FILES[0]!];
+    expect(validate(WEB_ROLE_PAIR_EVIDENCE[0], WEB_ROLE_PAIR_BINDINGS[0], missingCurrent))
+      .toEqual({ status: "violated", reasons: ["fresh-measurement"] });
   });
   it.each([0, 1, 2])("re-measures the independent real pair %i", index => {
     const record = WEB_ROLE_PAIR_EVIDENCE[index]!;
@@ -185,7 +209,7 @@ describe("web role-pair evidence", () => {
     expect(record.identity.viewBlockRef.adapter.export).toBe(["LandingView", "LegalView", "CaptureView"][index]);
     expect(WEB_ROLE_PAIR_BINDINGS[index]!.viewBlockRef.adapter.config).toEqual([{ landmark: "none" }, { framed: true }, {}][index]);
     expect(WEB_ROLE_PAIR_BINDINGS[index]!.frameBlockRef.adapter.config).toEqual({});
-    expect(Object.keys(record.sourceDigests)).toEqual(SOURCE_FILES);
+    expect(Object.keys(record.sourceDigests)).toEqual(CURRENT_SOURCE_FILES);
     expect(Object.fromEntries(Object.entries(record.checks).map(([key, check]) => [key, check.selector]))).toEqual(SELECTORS);
     for (const [path, digest] of Object.entries(record.sourceDigests)) {
       expect(sha(execFileSync("git", ["show", `${record.sourceRevision}:${gitSourcePath(path)}`]))).toBe(digest);
@@ -281,5 +305,5 @@ it("regenerates retained role-pair measurements on explicit request", () => {
     .replace(/const sources = \{[\s\S]*?\n\} as const;/, `const sources = ${JSON.stringify(records[0]!.sourceDigests, null, 2)} as const;`)
     .replace(/fixtureDigest: "sha256:[a-f0-9]{64}"/, `fixtureDigest: "${records[0]!.fixtureDigest}"`);
   writeFileSync(path, source);
-  console.log(JSON.stringify({ sourceRevision: revision, measuredAt, pairs: records.length, sourceFiles: SOURCE_FILES.length, checks: records.map(record => record.checks) }));
+  console.log(JSON.stringify({ sourceRevision: revision, measuredAt, pairs: records.length, sourceFiles: CURRENT_SOURCE_FILES.length, checks: records.map(record => record.checks) }));
 });
