@@ -1,6 +1,7 @@
 // @vitest-environment jsdom
 import "@testing-library/jest-dom/vitest";
 import { readFileSync } from "node:fs";
+import { URL } from "node:url";
 import { cleanup, render, screen } from "@testing-library/react";
 import { afterEach, expect, it } from "vitest";
 import * as blocks from "./index.js";
@@ -43,4 +44,18 @@ it("requires an actual calendar date without inferring one from display copy", a
   const { container } = render(<LegalProse heading="Sample about">Sample body</LegalProse>);
   expect(container.querySelector("time")).toBeNull();
   expect(container.textContent).toBe("Sample aboutSample body");
+});
+
+it("preserves existing revision copy without inventing a machine date", async () => {
+  const { LegalProse } = await import("./LegalProse.js");
+  const { container } = render(<LegalProse heading="Sample terms" revision={{ label: "Sample revision", value: "Draft" }}>Sample body</LegalProse>);
+  expect(container.querySelector("time")).toBeNull();
+  expect(container.textContent).toContain("Sample revision Draft");
+});
+
+it("accepts leap dates and preserves the requested section heading rank", async () => {
+  const { LegalProse } = await import("./LegalProse.js");
+  const { container } = render(<LegalProse heading="Sample terms" headingLevel={3} revision={{ label: "Revision", value: "Authored date", dateTime: "2024-02-29" }}>Sample body</LegalProse>);
+  expect(screen.getByRole("heading", { level: 3, name: "Sample terms" })).toBeInTheDocument();
+  expect(container.querySelector("time")).toHaveAttribute("dateTime", "2024-02-29");
 });

@@ -4293,7 +4293,7 @@
       "root": "div",
       "anatomy": {
         "band": "sections.band",
-        "header": null
+        "header": "sections.section-header"
       },
       "slots": [
         {
@@ -4321,6 +4321,10 @@
       },
       "allowedComposes": [
         "components.semantic-content"
+      ],
+      "composes": [
+        "sections.article",
+        "sections.section-header"
       ],
       "parts": [
         "sections.band"
@@ -7299,7 +7303,8 @@
         "names": []
       },
       "allowedComposes": [
-        "components.status-mark"
+        "components.status-mark",
+        "components.semantic-content"
       ],
       "parts": [
         "sections.band",
