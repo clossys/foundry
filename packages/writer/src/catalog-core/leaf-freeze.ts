@@ -80,6 +80,11 @@ export function loadWriterLeafFreezeSnapshots(): readonly WriterLeafFreezeSnapsh
   });
 }
 
+/** Explicit owner-authorized additions, separate from the immutable baseline. */
+export function loadWriterLeafAmendments(): readonly WriterLeafAmendment[] {
+  return JSON.parse(readFileSync(new URL("../../src/catalog/ia/strings.leaf-amendments.json", import.meta.url), "utf8")) as WriterLeafAmendment[];
+}
+
 function baselines(options: WriterLeafFreezeOptions): Map<WriterLeafFreezeLayer, { snapshot: WriterLeafFreezeSnapshot; ids: Set<string> }> {
   const result = new Map<WriterLeafFreezeLayer, { snapshot: WriterLeafFreezeSnapshot; ids: Set<string> }>();
   for (const value of options.snapshots ?? loadWriterLeafFreezeSnapshots()) {
@@ -87,7 +92,7 @@ function baselines(options: WriterLeafFreezeOptions): Map<WriterLeafFreezeLayer,
     if (result.has(snapshot.layer)) throw new Error(`LEAF_FREEZE: duplicate Writer ${snapshot.layer} membership snapshot`);
     result.set(snapshot.layer, { snapshot, ids: new Set(snapshot.leafIds) });
   }
-  for (const value of options.amendments ?? []) {
+  for (const value of options.amendments ?? (options.snapshots ? [] : loadWriterLeafAmendments())) {
     if (!isRecord(value) || value.schemaVersion !== 1 || !isFreezeLayer(value.layer) ||
         value.status !== "owner-signed" || !nonempty(value.ownerSignoffComment) ||
         !validHead(value.baseSignedHead) || !leafIdsFor(value.addedLeafIds, value.layer)) {

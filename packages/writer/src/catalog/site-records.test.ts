@@ -6,11 +6,13 @@ import { validateWriterRecord } from "../model/validate.js";
 import { resolveWriterRefText } from "../checks/approval.js";
 import type { WriterRecord } from "../model/types.js";
 
+import { withDeclaredCommonRecords } from "./__fixtures__/shared-records.fixture.js";
+
 const read = (name: string) => JSON.parse(readFileSync(resolve(dirname(fileURLToPath(import.meta.url)), name), "utf8"));
 describe("draft site Writer records", () => {
   it("validates every opaque record, semantic alias and passage reference without inventing approval", () => {
     const data = read("./records/site.en.json");
-    const records = data.records as WriterRecord[];
+    const records = withDeclaredCommonRecords(data);
     const byId = new Map(records.map(record => [record.id, record]));
     expect(byId.size).toBe(records.length);
     for (const record of records) {

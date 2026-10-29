@@ -23,6 +23,7 @@ const root = fileURLToPath(new URL(".", import.meta.url));
 const opaqueId = /^(?:lx|st|pt|ps|nr)\.[0123456789abcdefghjkmnpqrstvwxyz]{10}$/;
 const object = (value: unknown): value is Record<string, unknown> => value !== null && typeof value === "object" && !Array.isArray(value);
 interface Subject { file: string; locale: string; record: WriterRecord }
+interface ExternalRecord { file: string; locale: string; recordId: string; source: string; sourceContext: string }
 interface Finding {
   cell: string; severity: string; code: string; message: string;
   file?: string; locale?: string; recordId?: string; field?: string; path?: string;
@@ -47,6 +48,64 @@ function recordsIn(value: unknown, file: string, locale?: string): Subject[] {
   return Object.entries(value).flatMap(([key, item]) => key === "locales" && object(item)
     ? Object.entries(item).flatMap(([localeTag, content]) => recordsIn(content, file, localeTag))
     : recordsIn(item, file, tag));
+}
+
+/** Shared-only sources still require explicit, resolvable native-locale records. */
+function externalRecordsIn(value: unknown, file: string, locale?: string): ExternalRecord[] {
+  if (Array.isArray(value)) return value.flatMap(item => externalRecordsIn(item, file, locale));
+  if (!object(value)) return [];
+  const tag = typeof value.locale === "string" ? value.locale : locale;
+  const declarations: ExternalRecord[] = [];
+  if (Object.hasOwn(value, "externalRecords")) {
+    if (!tag || !Array.isArray(value.externalRecords)) throw new Error(`${file}: invalid external record envelope`);
+    for (const row of value.externalRecords) {
+      if (!object(row) || typeof row.recordId !== "string" || !opaqueId.test(row.recordId) ||
+          typeof row.source !== "string" || !row.source || typeof row.sourceContext !== "string" || !row.sourceContext) {
+        throw new Error(`${file}: invalid external record declaration`);
+      }
+      declarations.push({ file, locale: tag, recordId: row.recordId, source: row.source, sourceContext: row.sourceContext });
+    }
+  }
+  return [...declarations, ...Object.entries(value).flatMap(([key, item]) => key === "externalRecords" ? []
+    : key === "locales" && object(item)
+      ? Object.entries(item).flatMap(([localeTag, content]) => externalRecordsIn(content, file, localeTag))
+      : externalRecordsIn(item, file, tag))];
+}
+
+function bindingReferencesIn(value: unknown, locale?: string, binding = false): { locale: string; id: string }[] {
+  if (binding && typeof value === "string" && opaqueId.test(value)) {
+    if (!locale) throw new Error(`Binding ${value} has no native locale`);
+    return [{ locale, id: value }];
+  }
+  if (Array.isArray(value)) return value.flatMap(item => bindingReferencesIn(item, locale, binding));
+  if (!object(value)) return [];
+  const tag = typeof value.locale === "string" ? value.locale : locale;
+  return Object.entries(value).flatMap(([key, item]) => key === "locales" && object(item)
+    ? Object.entries(item).flatMap(([localeTag, content]) => bindingReferencesIn(content, localeTag, binding))
+    : bindingReferencesIn(item, tag, binding || key === "bindings"));
+}
+
+function validateSources(sources: Map<string, unknown>): Subject[] {
+  const subjects = [...sources].flatMap(([file, value]) => recordsIn(value, file));
+  for (const [file, value] of sources) {
+    const local = subjects.filter(subject => subject.file === file);
+    const external = externalRecordsIn(value, file);
+    expect(local.length + external.length, `${file} must contain local records or explicit external records`).toBeGreaterThan(0);
+    expect(new Set(external.map(row => `${row.locale}/${row.recordId}`)).size, `${file}: unique external declarations`).toBe(external.length);
+    for (const declaration of external) {
+      expect(sources.has(declaration.source), `${file}: discovered source ${declaration.source}`).toBe(true);
+      expect(local.some(row => row.locale === declaration.locale && row.record.id === declaration.recordId), `${file}: external record must not shadow local record`).toBe(false);
+      const targets = subjects.filter(row => row.file === declaration.source && row.locale === declaration.locale && row.record.id === declaration.recordId);
+      expect(targets, `${file}: ${declaration.locale}/${declaration.recordId} must resolve in ${declaration.source}`).toHaveLength(1);
+      expect(targets[0]!.record.context, `${file}: external source context`).toBe(declaration.sourceContext);
+    }
+    for (const reference of bindingReferencesIn(value)) {
+      expect(local.some(row => row.locale === reference.locale && row.record.id === reference.id) ||
+        external.some(row => row.locale === reference.locale && row.recordId === reference.id),
+      `${file}: binding ${reference.locale}/${reference.id} must be local or explicitly declared`).toBe(true);
+    }
+  }
+  return subjects;
 }
 
 function libraryFor(subjects: Subject[]): WriterLibrary {
@@ -80,6 +139,20 @@ const checks = {
 };
 
 describe("catalog mechanical audit (synthetic approval is never authored approval)", () => {
+  it.each(["empty", "missing-source", "wrong-context", "wrong-locale", "undeclared-binding"])("rejects %s in a shared-only source", fault => {
+    const record = { id: "st.0000000001", leaf: "strings.common", context: "shared.label" };
+    const declaration = { recordId: record.id, source: "common.json", sourceContext: record.context };
+    const shared = { locale: "en", records: [], externalRecords: [declaration], bindings: [{ recordId: record.id }] };
+    if (fault === "empty") { shared.externalRecords = []; shared.bindings = []; }
+    if (fault === "missing-source") declaration.source = "absent.json";
+    if (fault === "wrong-context") declaration.sourceContext = "wrong.context";
+    if (fault === "wrong-locale") shared.locale = "ar";
+    if (fault === "undeclared-binding") shared.bindings[0]!.recordId = "st.0000000002";
+    expect(() => validateSources(new Map<string, unknown>([
+      ["common.json", { locale: "en", records: [record] }], ["shared.json", shared],
+    ]))).toThrow();
+  });
+
   it("preserves the legal revision text when its ICU part becomes a String reference", () => {
     const subjects = recordsIn(JSON.parse(readFileSync(join(root, "site.en.json"), "utf8")), "site.en.json");
     const library = libraryFor(subjects);
@@ -127,11 +200,7 @@ describe("catalog mechanical audit (synthetic approval is never authored approva
   it("discovers every JSON source and compiles every text subject in all three preview locales", () => {
     const files = jsonFiles(root);
     const originals = new Map(files.map(file => [file, readFileSync(file, "utf8")]));
-    const subjects = files.flatMap(file => {
-      const records = recordsIn(JSON.parse(originals.get(file)!), relative(root, file));
-      expect(records.length, `${relative(root, file)} must contain recognized records`).toBeGreaterThan(0);
-      return records;
-    });
+    const subjects = validateSources(new Map(files.map(file => [relative(root, file), JSON.parse(originals.get(file)!)])));
     expect(files.length).toBeGreaterThan(0);
     const library = libraryFor(subjects);
     const adminInventory = JSON.parse(readFileSync(new URL("../__fixtures__/admin-writer-source-inventory.json", import.meta.url), "utf8"));

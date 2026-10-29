@@ -34,7 +34,7 @@ const expected = {
     },
   },
   strings: {
-    interface: { actions: "actions", navigation: "navigation", "field-labels": "field-labels", statuses: "statuses", counters: "counters" },
+    interface: { actions: "actions", navigation: "navigation", "field-labels": "field-labels common", statuses: "statuses", counters: "counters" },
     feedback: { errors: "errors", warnings: "warnings", confirmations: "confirmations", empty: "empty", loading: "loading" },
     identity: { names: "names", taglines: "taglines", "legal-lines": "legal-lines" },
     "media-text": { "alt-text": "alt-text", captions: "captions", transcripts: "transcripts" },
@@ -99,7 +99,7 @@ describe.each(Object.keys(expected) as Layer[])("Writer %s catalog data", (layer
     expect(nodeIds.every((id) => /^[a-z][a-z0-9]*(?:-[a-z0-9]+)*$/.test(id))).toBe(true);
     expect(new Set(nodeIds).size).toBe(nodeIds.length);
     expect(found.sort()).toEqual(expectedIds(layer));
-    expect(found).toHaveLength({ lexicon: 27, strings: 21, patterns: 24, narratives: 12 }[layer]);
+    expect(found).toHaveLength({ lexicon: 27, strings: 22, patterns: 24, narratives: 12 }[layer]);
     expect(new Set(found).size).toBe(found.length);
   });
 
@@ -124,7 +124,7 @@ describe("Writer frozen membership baselines", () => {
   it.each(["lexicon", "strings", "patterns"] as const)("keeps %s owner-signed and membership-only", (layer) => {
     expect(read(`./${layer}.leaf-freeze.json`)).toEqual({
       schemaVersion: 1, layer, scope: "leaf-membership-only", signedHead: "0b06a262bc9447787b9e79393125f1369bfb3470", ownerSignoffComment: "clossys/workspace#45 comment 6460620037",
-      policy: "Proposed membership awaiting owner signature; regrouping not membership", leafIds: expectedIds(layer),
+      policy: "Proposed membership awaiting owner signature; regrouping not membership", leafIds: expectedIds(layer).filter(id => id !== "strings.common"),
     });
   });
   it("does not freeze the still-open narratives layer", () => {

@@ -7,19 +7,19 @@
   "aliases": {
     "pagination.previousPageLabel": "st.96qkp2bzpm",
     "pagination.nextPageLabel": "st.kb8ve83tjp",
-    "pagination.noResultsLabel": "st.axqwnya2y0",
+    "pagination.noResultsLabel": "st.asj8g1mcjn",
     "pagination.pageSizeLabel": "st.bhhba11w6f",
-    "pagination.ariaLabel": "st.3hp3yvppbm",
+    "pagination.ariaLabel": "st.s13b3hwkta",
     "pagination.rangeSummaryMessage": "st.pzmpksy76x",
     "pagination.pageSummaryMessage": "st.vxwx1e3xwq",
-    "gallery.close": "st.pr813ca841",
+    "gallery.close": "st.9ehasbmw8z",
     "gallery.enlarge": "st.68c25e9geb",
-    "navShell.triggerLabel": "st.7hvz5ycgs2",
+    "navShell.triggerLabel": "st.zc2c0w4qx4",
     "navShell.closeLabel": "st.189vppdn78",
     "dataTable.viewOptionsLabel": "st.hx82ezae27",
     "dataTable.closeViewOptionsLabel": "st.n8n5g5eec7",
     "dataTable.viewModeLabel": "st.04cy19mm31",
-    "dataTable.densityLabel": "st.cavrdkkw8y",
+    "dataTable.densityLabel": "st.sm9bq8fv8f",
     "dataTable.groupSectionLabel": "st.458cnrztwt",
     "dataTable.sortSectionLabel": "st.1d29404hzv",
     "dataTable.filterSectionLabel": "st.3dsrke1smz",
@@ -29,19 +29,19 @@
     "dataTable.descendingLabel": "st.deksy8e7g5",
     "dataTable.flatModeLabel": "st.a6y094jqne",
     "dataTable.groupedModeLabel": "st.r2g0nvj41m",
-    "dataTable.pivotModeLabel": "st.zg44pbkg7t",
+    "dataTable.pivotModeLabel": "st.e2ptq1jp2a",
     "dataTable.comfortableDensityLabel": "st.2yrpaf84xw",
-    "dataTable.compactDensityLabel": "st.drv8cwaan0",
+    "dataTable.compactDensityLabel": "st.0rj8qzqqr1",
     "dataTable.pivotMeasuresLabel": "st.e6jenmr7fd",
     "dataTable.activeRulesLabel": "st.p31vnyyb35",
     "dataTable.invalidRangeLabel": "st.vhhj90xz1s",
     "dataTable.dateHintLabel": "st.1btvkkz4hc",
     "dataTable.noFacetValuesLabel": "st.5cdardkjc4",
-    "dataTable.containsLabel": "st.66j86dac8m",
+    "dataTable.containsLabel": "st.43k2vndngq",
     "dataTable.equalsLabel": "st.a8ph330trr",
     "dataTable.anyTagsLabel": "st.22acpftg3n",
-    "dataTable.allTagsLabel": "st.y6hhq23hwz",
-    "dataTable.noTagsLabel": "st.3xkvn2erq4",
+    "dataTable.allTagsLabel": "st.t029hg04zc",
+    "dataTable.noTagsLabel": "st.qcry3z237f",
     "dataTable.pivotEmptyLabel": "st.0nf3j2fk1c",
     "dataTable.pivotRowsHeaderLabel": "st.6zfhwybg0n",
     "dataTable.selectAllLabel": "st.wp1ysvjgbx",
@@ -103,55 +103,15 @@
     "dataTable.filter.range": "st.yn3r8djw5m",
     "dataTable.filter.tags": "st.1ky86469dw",
     "merge.logo-hero.name": "st.dchvjhvyep",
-    "merge.record-detail.header.heading": "st.dvhz031m2x",
+    "merge.record-detail.header.heading": "st.5nfgjmm0xx",
     "merge.record-detail.fields.label": "st.78q8q8f05t",
     "merge.record-detail.fields.value": "st.ttdxhv7jpb",
     "merge.error-state.header.heading": "st.gdzc1rc0sk",
     "merge.error-state.header.description": "st.hd21vyfgk0",
-    "merge.error-state.retry.label": "st.rx282jkj3q",
+    "merge.error-state.retry.label": "st.9a3gdn01wa",
     "merge.error-state.report.label": "st.ye9ybmcxmq"
   },
   "records": [
-    {
-      "id": "st.96qkp2bzpm",
-      "leaf": "strings.field-labels",
-      "context": "admin.writer.sections.pagination.previousPageLabel",
-      "status": "draft",
-      "origin": "authored",
-      "text": "Previous page"
-    },
-    {
-      "id": "st.kb8ve83tjp",
-      "leaf": "strings.field-labels",
-      "context": "admin.writer.sections.pagination.nextPageLabel",
-      "status": "draft",
-      "origin": "authored",
-      "text": "Next page"
-    },
-    {
-      "id": "st.axqwnya2y0",
-      "leaf": "strings.field-labels",
-      "context": "admin.writer.sections.pagination.noResultsLabel",
-      "status": "draft",
-      "origin": "authored",
-      "text": "No results"
-    },
-    {
-      "id": "st.bhhba11w6f",
-      "leaf": "strings.field-labels",
-      "context": "admin.writer.sections.pagination.pageSizeLabel",
-      "status": "draft",
-      "origin": "authored",
-      "text": "Rows per page"
-    },
-    {
-      "id": "st.3hp3yvppbm",
-      "leaf": "strings.field-labels",
-      "context": "admin.writer.sections.pagination.ariaLabel",
-      "status": "draft",
-      "origin": "authored",
-      "text": "Pagination"
-    },
     {
       "id": "st.pzmpksy76x",
       "leaf": "strings.field-labels",
@@ -193,14 +153,6 @@
       ]
     },
     {
-      "id": "st.pr813ca841",
-      "leaf": "strings.field-labels",
-      "context": "admin.writer.sections.gallery.close",
-      "status": "draft",
-      "origin": "authored",
-      "text": "Close"
-    },
-    {
       "id": "st.68c25e9geb",
       "leaf": "strings.field-labels",
       "context": "admin.writer.sections.gallery.enlarge",
@@ -213,14 +165,6 @@
           "type": "string"
         }
       ]
-    },
-    {
-      "id": "st.7hvz5ycgs2",
-      "leaf": "strings.field-labels",
-      "context": "admin.writer.sections.navShell.triggerLabel",
-      "status": "draft",
-      "origin": "authored",
-      "text": "Menu"
     },
     {
       "id": "st.189vppdn78",
@@ -255,14 +199,6 @@
       "text": "View mode"
     },
     {
-      "id": "st.cavrdkkw8y",
-      "leaf": "strings.field-labels",
-      "context": "admin.writer.sections.dataTable.densityLabel",
-      "status": "draft",
-      "origin": "authored",
-      "text": "Density"
-    },
-    {
       "id": "st.458cnrztwt",
       "leaf": "strings.field-labels",
       "context": "admin.writer.sections.dataTable.groupSectionLabel",
@@ -293,14 +229,6 @@
       "status": "draft",
       "origin": "authored",
       "text": "Columns"
-    },
-    {
-      "id": "st.e2ptq1jp2a",
-      "leaf": "strings.field-labels",
-      "context": "admin.writer.sections.dataTable.pivotSectionLabel",
-      "status": "draft",
-      "origin": "authored",
-      "text": "Pivot"
     },
     {
       "id": "st.x67h6m7rpb",
@@ -335,28 +263,12 @@
       "text": "Grouped"
     },
     {
-      "id": "st.zg44pbkg7t",
-      "leaf": "strings.field-labels",
-      "context": "admin.writer.sections.dataTable.pivotModeLabel",
-      "status": "draft",
-      "origin": "authored",
-      "text": "Pivot"
-    },
-    {
       "id": "st.2yrpaf84xw",
       "leaf": "strings.field-labels",
       "context": "admin.writer.sections.dataTable.comfortableDensityLabel",
       "status": "draft",
       "origin": "authored",
       "text": "Comfortable"
-    },
-    {
-      "id": "st.drv8cwaan0",
-      "leaf": "strings.field-labels",
-      "context": "admin.writer.sections.dataTable.compactDensityLabel",
-      "status": "draft",
-      "origin": "authored",
-      "text": "Compact"
     },
     {
       "id": "st.e6jenmr7fd",
@@ -399,14 +311,6 @@
       "text": "No values in the current data."
     },
     {
-      "id": "st.66j86dac8m",
-      "leaf": "strings.field-labels",
-      "context": "admin.writer.sections.dataTable.containsLabel",
-      "status": "draft",
-      "origin": "authored",
-      "text": "Contains"
-    },
-    {
       "id": "st.a8ph330trr",
       "leaf": "strings.field-labels",
       "context": "admin.writer.sections.dataTable.equalsLabel",
@@ -421,22 +325,6 @@
       "status": "draft",
       "origin": "authored",
       "text": "Any"
-    },
-    {
-      "id": "st.y6hhq23hwz",
-      "leaf": "strings.field-labels",
-      "context": "admin.writer.sections.dataTable.allTagsLabel",
-      "status": "draft",
-      "origin": "authored",
-      "text": "All"
-    },
-    {
-      "id": "st.3xkvn2erq4",
-      "leaf": "strings.field-labels",
-      "context": "admin.writer.sections.dataTable.noTagsLabel",
-      "status": "draft",
-      "origin": "authored",
-      "text": "None"
     },
     {
       "id": "st.0nf3j2fk1c",
@@ -959,14 +847,6 @@
       ]
     },
     {
-      "id": "st.asj8g1mcjn",
-      "leaf": "strings.field-labels",
-      "context": "admin.writer.sections.dataTable.emptyStateTitle",
-      "status": "draft",
-      "origin": "authored",
-      "text": "No results"
-    },
-    {
       "id": "st.ss1zqxdm6m",
       "leaf": "strings.field-labels",
       "context": "admin.writer.sections.dataTable.value.empty",
@@ -1199,14 +1079,6 @@
       "text": "Brand mark"
     },
     {
-      "id": "st.dvhz031m2x",
-      "leaf": "strings.field-labels",
-      "context": "admin.writer.sections.merge.record-detail.header.heading",
-      "status": "draft",
-      "origin": "authored",
-      "text": "Account"
-    },
-    {
       "id": "st.78q8q8f05t",
       "leaf": "strings.field-labels",
       "context": "admin.writer.sections.merge.record-detail.fields.label",
@@ -1223,28 +1095,12 @@
       "text": "Example account"
     },
     {
-      "id": "st.gdzc1rc0sk",
-      "leaf": "strings.field-labels",
-      "context": "admin.writer.sections.merge.error-state.header.heading",
-      "status": "draft",
-      "origin": "authored",
-      "text": "Something went wrong"
-    },
-    {
       "id": "st.hd21vyfgk0",
       "leaf": "strings.field-labels",
       "context": "admin.writer.sections.merge.error-state.header.description",
       "status": "draft",
       "origin": "authored",
       "text": "Try again. If the problem continues, contact support."
-    },
-    {
-      "id": "st.rx282jkj3q",
-      "leaf": "strings.field-labels",
-      "context": "admin.writer.sections.merge.error-state.retry.label",
-      "status": "draft",
-      "origin": "authored",
-      "text": "Try again"
     },
     {
       "id": "st.ye9ybmcxmq",
@@ -1280,7 +1136,7 @@
       "fields": {
         "header.heading": {
           "ref": "string",
-          "id": "st.dvhz031m2x"
+          "id": "st.5nfgjmm0xx"
         },
         "fields[].label": {
           "ref": "string",
@@ -1311,7 +1167,7 @@
         },
         "retry.label": {
           "ref": "string",
-          "id": "st.rx282jkj3q"
+          "id": "st.9a3gdn01wa"
         },
         "report.label": {
           "ref": "string",
@@ -1335,7 +1191,7 @@
     },
     {
       "cellId": "admin.writer.sections.pagination.noResultsLabel",
-      "recordId": "st.axqwnya2y0",
+      "recordId": "st.asj8g1mcjn",
       "target": "Pagination",
       "kind": "CopyRef"
     },
@@ -1347,7 +1203,7 @@
     },
     {
       "cellId": "admin.writer.sections.pagination.ariaLabel",
-      "recordId": "st.3hp3yvppbm",
+      "recordId": "st.s13b3hwkta",
       "target": "Pagination",
       "kind": "CopyRef"
     },
@@ -1365,7 +1221,7 @@
     },
     {
       "cellId": "admin.writer.sections.gallery.close",
-      "recordId": "st.pr813ca841",
+      "recordId": "st.9ehasbmw8z",
       "target": "Gallery",
       "kind": "CopyRef"
     },
@@ -1377,7 +1233,7 @@
     },
     {
       "cellId": "admin.writer.sections.navShell.triggerLabel",
-      "recordId": "st.7hvz5ycgs2",
+      "recordId": "st.zc2c0w4qx4",
       "target": "NavShell",
       "kind": "CopyRef"
     },
@@ -1407,7 +1263,7 @@
     },
     {
       "cellId": "admin.writer.sections.dataTable.densityLabel",
-      "recordId": "st.cavrdkkw8y",
+      "recordId": "st.sm9bq8fv8f",
       "target": "DataTable",
       "kind": "CopyRef"
     },
@@ -1467,7 +1323,7 @@
     },
     {
       "cellId": "admin.writer.sections.dataTable.pivotModeLabel",
-      "recordId": "st.zg44pbkg7t",
+      "recordId": "st.e2ptq1jp2a",
       "target": "DataTable",
       "kind": "CopyRef"
     },
@@ -1479,7 +1335,7 @@
     },
     {
       "cellId": "admin.writer.sections.dataTable.compactDensityLabel",
-      "recordId": "st.drv8cwaan0",
+      "recordId": "st.0rj8qzqqr1",
       "target": "DataTable",
       "kind": "CopyRef"
     },
@@ -1515,7 +1371,7 @@
     },
     {
       "cellId": "admin.writer.sections.dataTable.containsLabel",
-      "recordId": "st.66j86dac8m",
+      "recordId": "st.43k2vndngq",
       "target": "DataTable",
       "kind": "CopyRef"
     },
@@ -1533,13 +1389,13 @@
     },
     {
       "cellId": "admin.writer.sections.dataTable.allTagsLabel",
-      "recordId": "st.y6hhq23hwz",
+      "recordId": "st.t029hg04zc",
       "target": "DataTable",
       "kind": "CopyRef"
     },
     {
       "cellId": "admin.writer.sections.dataTable.noTagsLabel",
-      "recordId": "st.3xkvn2erq4",
+      "recordId": "st.qcry3z237f",
       "target": "DataTable",
       "kind": "CopyRef"
     },
@@ -1911,7 +1767,7 @@
     },
     {
       "cellId": "admin.writer.sections.merge.record-detail.header.heading",
-      "recordId": "st.dvhz031m2x",
+      "recordId": "st.5nfgjmm0xx",
       "target": "sections.record-detail",
       "kind": "CopyRef"
     },
@@ -1941,7 +1797,7 @@
     },
     {
       "cellId": "admin.writer.sections.merge.error-state.retry.label",
-      "recordId": "st.rx282jkj3q",
+      "recordId": "st.9a3gdn01wa",
       "target": "sections.error-state",
       "kind": "CopyRef"
     },
@@ -1950,6 +1806,88 @@
       "recordId": "st.ye9ybmcxmq",
       "target": "sections.error-state",
       "kind": "CopyRef"
+    }
+  ],
+  "externalRecords": [
+    {
+      "recordId": "st.0rj8qzqqr1",
+      "source": "common-labels.r1.en.json",
+      "sourceContext": "publisher.layoutOption.layouts.bento.density.dense"
+    },
+    {
+      "recordId": "st.43k2vndngq",
+      "source": "common-labels.r1.en.json",
+      "sourceContext": "Designer console"
+    },
+    {
+      "recordId": "st.5nfgjmm0xx",
+      "source": "common-labels.r1.en.json",
+      "sourceContext": "admin.account.label"
+    },
+    {
+      "recordId": "st.96qkp2bzpm",
+      "source": "common-labels.r1.en.json",
+      "sourceContext": "admin.writer.sections.pagination.previousPageLabel"
+    },
+    {
+      "recordId": "st.9a3gdn01wa",
+      "source": "common-labels.r1.en.json",
+      "sourceContext": "admin.actions.retry"
+    },
+    {
+      "recordId": "st.9ehasbmw8z",
+      "source": "common-labels.r1.en.json",
+      "sourceContext": "designer.component.sheet.close"
+    },
+    {
+      "recordId": "st.asj8g1mcjn",
+      "source": "common-labels.r1.en.json",
+      "sourceContext": "admin.writer.sections.dataTable.emptyStateTitle"
+    },
+    {
+      "recordId": "st.bhhba11w6f",
+      "source": "common-labels.r1.en.json",
+      "sourceContext": "admin.writer.sections.pagination.pageSizeLabel"
+    },
+    {
+      "recordId": "st.e2ptq1jp2a",
+      "source": "common-labels.r1.en.json",
+      "sourceContext": "admin.writer.sections.dataTable.pivotSectionLabel"
+    },
+    {
+      "recordId": "st.gdzc1rc0sk",
+      "source": "common-labels.r1.en.json",
+      "sourceContext": "admin.writer.sections.merge.error-state.header.heading"
+    },
+    {
+      "recordId": "st.kb8ve83tjp",
+      "source": "common-labels.r1.en.json",
+      "sourceContext": "admin.writer.sections.pagination.nextPageLabel"
+    },
+    {
+      "recordId": "st.qcry3z237f",
+      "source": "common-labels.r1.en.json",
+      "sourceContext": "publisher.planHeader.noneLabel"
+    },
+    {
+      "recordId": "st.s13b3hwkta",
+      "source": "common-labels.r1.en.json",
+      "sourceContext": "designer.item.sections.pagination"
+    },
+    {
+      "recordId": "st.sm9bq8fv8f",
+      "source": "common-labels.r1.en.json",
+      "sourceContext": "designer.item.tokens.density"
+    },
+    {
+      "recordId": "st.t029hg04zc",
+      "source": "common-labels.r1.en.json",
+      "sourceContext": "Designer console"
+    },
+    {
+      "recordId": "st.zc2c0w4qx4",
+      "source": "common-labels.r1.en.json",
+      "sourceContext": "designer.item.components.menu"
     }
   ]
 }

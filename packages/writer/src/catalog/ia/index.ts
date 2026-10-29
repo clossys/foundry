@@ -75,11 +75,12 @@ export function writerIAFindings(catalog: WriterCatalog, layers: readonly Writer
 }
 
 export function createWriterIAReport(catalog: WriterCatalog, layers: readonly WriterLayer[] = WRITER_LAYERS,
-  snapshots: readonly WriterLeafFreezeSnapshot[] = loadWriterLeafFreezeSnapshots()): WriterIAReport {
-  const findings: WriterIAFinding[] = [...writerIAFindings(catalog, layers), ...checkWriterLeafSets(catalog.placements, catalog.slots, layers, { snapshots })];
+  snapshots?: readonly WriterLeafFreezeSnapshot[]): WriterIAReport {
+  const findings: WriterIAFinding[] = [...writerIAFindings(catalog, layers), ...checkWriterLeafSets(catalog.placements, catalog.slots, layers, snapshots ? { snapshots } : {})];
+  const baselines = snapshots ?? loadWriterLeafFreezeSnapshots();
   const rows = layers.map(layer => {
     const contracts = catalog.slots.filter(slot => slot.layer === layer);
-    const snapshot = snapshots.find(row => row.layer === layer);
+    const snapshot = baselines.find(row => row.layer === layer);
     return {
       layer, count: contracts.length, tree: catalog.placements.find(placement => placement.layer === layer)?.nodes ?? [], contracts,
       freeze: { status: snapshot ? snapshot.signedHead === null ? "proposed" as const : "owner-signed" as const : "unfrozen" as const,

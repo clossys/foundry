@@ -11,6 +11,8 @@ import type { WriterLibrary, WriterRecord } from "../../model/types.js";
 // @ts-expect-error — the generator deliberately uses dependency-free JavaScript.
 import { derivePassages, run } from "../../../scripts/derive-passages.mjs";
 
+import { withDeclaredCommonRecords } from "../__fixtures__/shared-records.fixture.js";
+
 const fixture = () => ({
   ia: { layer: "sections", nodes: [{ id: "explain", label: "Explain", children: [{ id: "explain-reading", label: "Reading", leaves: ["sections.article", "sections.band"] }] }] },
   slots: [
@@ -116,7 +118,7 @@ describe("SU-9W section copy cascade", () => {
   const copy = read("../records/section-defaults.r1.en.json");
   const cascade = read("../records/pending/sections-upgrade.r1.en.json");
   const source = read("../../../../designer/src/catalog/slots/sections.json");
-  const allRecords = [...copy.records, ...cascade.records];
+  const allRecords = withDeclaredCommonRecords(copy, cascade);
   const aliases = { ...copy.aliases, ...cascade.aliases };
   const strings = allRecords.filter((r: WriterRecord) => r.id.startsWith("st."));
 

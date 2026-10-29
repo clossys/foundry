@@ -16,61 +16,6 @@
   },
   "records": [
     {
-      "id": "st.pb0ynfnh58",
-      "leaf": "strings.page-titles",
-      "context": "admin.designer.title",
-      "status": "draft",
-      "origin": "foundry-default",
-      "text": "Designer",
-      "limits": {
-        "maxChars": 60
-      }
-    },
-    {
-      "id": "st.abbasfn5h4",
-      "leaf": "strings.descriptions",
-      "context": "admin.designer.description",
-      "status": "draft",
-      "origin": "foundry-default",
-      "text": "Explore the design system, inspect items and review their checks.",
-      "limits": {
-        "maxChars": 160
-      }
-    },
-    {
-      "id": "st.5yv263ckjd",
-      "leaf": "strings.page-titles",
-      "context": "admin.designer.shareTitle",
-      "status": "draft",
-      "origin": "foundry-default",
-      "text": "Designer",
-      "limits": {
-        "maxChars": 60
-      }
-    },
-    {
-      "id": "st.j1mx26pxmq",
-      "leaf": "strings.descriptions",
-      "context": "admin.designer.shareDescription",
-      "status": "draft",
-      "origin": "foundry-default",
-      "text": "Explore the design system, inspect items and review their checks.",
-      "limits": {
-        "maxChars": 160
-      }
-    },
-    {
-      "id": "st.2zj7yrtkfr",
-      "leaf": "strings.navigation",
-      "context": "admin.designer.navLabel",
-      "status": "draft",
-      "origin": "foundry-default",
-      "text": "Designer",
-      "limits": {
-        "maxChars": 40
-      }
-    },
-    {
       "id": "st.gektt1cpd5",
       "leaf": "strings.empty",
       "context": "admin.designer.emptyTitle",
@@ -115,61 +60,6 @@
       }
     },
     {
-      "id": "st.m22sa9p9y4",
-      "leaf": "strings.page-titles",
-      "context": "admin.writer.title",
-      "status": "draft",
-      "origin": "foundry-default",
-      "text": "Writer",
-      "limits": {
-        "maxChars": 60
-      }
-    },
-    {
-      "id": "st.t5tp2ba7qy",
-      "leaf": "strings.descriptions",
-      "context": "admin.writer.description",
-      "status": "draft",
-      "origin": "foundry-default",
-      "text": "Review copy, its source history and the checks it needs.",
-      "limits": {
-        "maxChars": 160
-      }
-    },
-    {
-      "id": "st.phazcjdjs5",
-      "leaf": "strings.page-titles",
-      "context": "admin.writer.shareTitle",
-      "status": "draft",
-      "origin": "foundry-default",
-      "text": "Writer",
-      "limits": {
-        "maxChars": 60
-      }
-    },
-    {
-      "id": "st.6zznbwptfh",
-      "leaf": "strings.descriptions",
-      "context": "admin.writer.shareDescription",
-      "status": "draft",
-      "origin": "foundry-default",
-      "text": "Review copy, its source history and the checks it needs.",
-      "limits": {
-        "maxChars": 160
-      }
-    },
-    {
-      "id": "st.zz066nxnmh",
-      "leaf": "strings.navigation",
-      "context": "admin.writer.navLabel",
-      "status": "draft",
-      "origin": "foundry-default",
-      "text": "Writer",
-      "limits": {
-        "maxChars": 40
-      }
-    },
-    {
       "id": "st.r648rbcnbt",
       "leaf": "strings.empty",
       "context": "admin.writer.emptyTitle",
@@ -211,61 +101,6 @@
       "text": "Could not load Writer. Try again.",
       "limits": {
         "maxChars": 160
-      }
-    },
-    {
-      "id": "st.eyyshzcr6r",
-      "leaf": "strings.page-titles",
-      "context": "admin.publisher.title",
-      "status": "draft",
-      "origin": "foundry-default",
-      "text": "Publisher",
-      "limits": {
-        "maxChars": 60
-      }
-    },
-    {
-      "id": "st.2tw3ay17tc",
-      "leaf": "strings.descriptions",
-      "context": "admin.publisher.description",
-      "status": "draft",
-      "origin": "foundry-default",
-      "text": "Review the admin pages and their publishing checks.",
-      "limits": {
-        "maxChars": 160
-      }
-    },
-    {
-      "id": "st.cy7122qr1d",
-      "leaf": "strings.page-titles",
-      "context": "admin.publisher.shareTitle",
-      "status": "draft",
-      "origin": "foundry-default",
-      "text": "Publisher",
-      "limits": {
-        "maxChars": 60
-      }
-    },
-    {
-      "id": "st.q0ettsmqf0",
-      "leaf": "strings.descriptions",
-      "context": "admin.publisher.shareDescription",
-      "status": "draft",
-      "origin": "foundry-default",
-      "text": "Review the admin pages and their publishing checks.",
-      "limits": {
-        "maxChars": 160
-      }
-    },
-    {
-      "id": "st.yvc0ka3n3h",
-      "leaf": "strings.navigation",
-      "context": "admin.publisher.navLabel",
-      "status": "draft",
-      "origin": "foundry-default",
-      "text": "Publisher",
-      "limits": {
-        "maxChars": 40
       }
     },
     {
@@ -368,34 +203,12 @@
       }
     },
     {
-      "id": "st.9a3gdn01wa",
-      "leaf": "strings.actions",
-      "context": "admin.actions.retry",
-      "status": "draft",
-      "origin": "foundry-default",
-      "text": "Try again",
-      "limits": {
-        "maxChars": 24
-      }
-    },
-    {
       "id": "st.nn9hx2k38z",
       "leaf": "strings.actions",
       "context": "admin.actions.reload",
       "status": "draft",
       "origin": "foundry-default",
       "text": "Reload page",
-      "limits": {
-        "maxChars": 24
-      }
-    },
-    {
-      "id": "st.m5cjnqycs1",
-      "leaf": "strings.actions",
-      "context": "publisher.actions.openItem",
-      "status": "draft",
-      "origin": "foundry-default",
-      "text": "Open item",
       "limits": {
         "maxChars": 24
       }
@@ -451,17 +264,6 @@
       "status": "draft",
       "origin": "foundry-default",
       "text": "Responsive page",
-      "limits": {
-        "maxChars": 40
-      }
-    },
-    {
-      "id": "st.5bvvjt22m9",
-      "leaf": "strings.names",
-      "context": "publisher.format.email.html",
-      "status": "draft",
-      "origin": "foundry-default",
-      "text": "Email",
       "limits": {
         "maxChars": 40
       }
@@ -632,17 +434,6 @@
       }
     },
     {
-      "id": "st.g385gwchf1",
-      "leaf": "strings.names",
-      "context": "publisher.layoutConfig.layouts.sidebar-content.sidebar-content.record",
-      "status": "draft",
-      "origin": "foundry-default",
-      "text": "Record details",
-      "limits": {
-        "maxChars": 40
-      }
-    },
-    {
       "id": "st.9axe6qwytm",
       "leaf": "strings.names",
       "context": "publisher.layoutConfig.layouts.sidebar-content.sidebar-content.docs",
@@ -671,17 +462,6 @@
       "status": "draft",
       "origin": "foundry-default",
       "text": "Standard page",
-      "limits": {
-        "maxChars": 40
-      }
-    },
-    {
-      "id": "st.0szhqxn9xp",
-      "leaf": "strings.names",
-      "context": "publisher.frameConfig.frames.site-shell.front-door",
-      "status": "draft",
-      "origin": "foundry-default",
-      "text": "Sign-in page",
       "limits": {
         "maxChars": 40
       }
@@ -984,17 +764,6 @@
       }
     },
     {
-      "id": "st.0rj8qzqqr1",
-      "leaf": "strings.names",
-      "context": "publisher.layoutOption.layouts.bento.density.dense",
-      "status": "draft",
-      "origin": "foundry-default",
-      "text": "Compact",
-      "limits": {
-        "maxChars": 40
-      }
-    },
-    {
       "id": "st.s9f5fst22q",
       "leaf": "strings.names",
       "context": "publisher.layoutOption.layouts.bento.rhythm.uniform",
@@ -1292,56 +1061,12 @@
       }
     },
     {
-      "id": "st.wx6z3yc2r4",
-      "leaf": "strings.names",
-      "context": "publisher.mediaValue.png",
-      "status": "draft",
-      "origin": "foundry-default",
-      "text": "Image",
-      "limits": {
-        "maxChars": 40
-      }
-    },
-    {
       "id": "st.ab6r5kbp6h",
       "leaf": "strings.names",
       "context": "publisher.mediaValue.pdf",
       "status": "draft",
       "origin": "foundry-default",
       "text": "Document file",
-      "limits": {
-        "maxChars": 40
-      }
-    },
-    {
-      "id": "st.rjydrbvwgq",
-      "leaf": "strings.names",
-      "context": "publisher.mediaValue.mp4",
-      "status": "draft",
-      "origin": "foundry-default",
-      "text": "Video",
-      "limits": {
-        "maxChars": 40
-      }
-    },
-    {
-      "id": "st.33rp5w6vzk",
-      "leaf": "strings.names",
-      "context": "publisher.mediaValue.slides",
-      "status": "draft",
-      "origin": "foundry-default",
-      "text": "Slides",
-      "limits": {
-        "maxChars": 40
-      }
-    },
-    {
-      "id": "st.j7paney0ax",
-      "leaf": "strings.names",
-      "context": "publisher.contentKey.format",
-      "status": "draft",
-      "origin": "foundry-default",
-      "text": "Output format",
       "limits": {
         "maxChars": 40
       }
@@ -1408,17 +1133,6 @@
       "status": "draft",
       "origin": "foundry-default",
       "text": "Content type",
-      "limits": {
-        "maxChars": 40
-      }
-    },
-    {
-      "id": "st.aa0s69mdxk",
-      "leaf": "strings.names",
-      "context": "publisher.contentKey.size",
-      "status": "draft",
-      "origin": "foundry-default",
-      "text": "Size",
       "limits": {
         "maxChars": 40
       }
@@ -1512,45 +1226,12 @@
       }
     },
     {
-      "id": "st.13d97mrmzy",
-      "leaf": "strings.names",
-      "context": "publisher.contentKey.lead",
-      "status": "draft",
-      "origin": "foundry-default",
-      "text": "Introduction",
-      "limits": {
-        "maxChars": 40
-      }
-    },
-    {
       "id": "st.s4ye4v70hj",
       "leaf": "strings.names",
       "context": "publisher.contentKey.body",
       "status": "draft",
       "origin": "foundry-default",
       "text": "Page body",
-      "limits": {
-        "maxChars": 40
-      }
-    },
-    {
-      "id": "st.dgdbty02r2",
-      "leaf": "strings.names",
-      "context": "publisher.contentKey.logo",
-      "status": "draft",
-      "origin": "foundry-default",
-      "text": "Logo",
-      "limits": {
-        "maxChars": 40
-      }
-    },
-    {
-      "id": "st.a7d1spjaqx",
-      "leaf": "strings.names",
-      "context": "publisher.contentKey.favicon",
-      "status": "draft",
-      "origin": "foundry-default",
-      "text": "Browser icon",
       "limits": {
         "maxChars": 40
       }
@@ -1699,17 +1380,6 @@
       }
     },
     {
-      "id": "st.9pds3yfrp5",
-      "leaf": "strings.names",
-      "context": "publisher.menuItem.website.home",
-      "status": "draft",
-      "origin": "foundry-default",
-      "text": "Home",
-      "limits": {
-        "maxChars": 40
-      }
-    },
-    {
       "id": "st.371y0j9d03",
       "leaf": "strings.names",
       "context": "publisher.menuItem.website.showcase",
@@ -1760,17 +1430,6 @@
       "status": "draft",
       "origin": "foundry-default",
       "text": "Contact",
-      "limits": {
-        "maxChars": 40
-      }
-    },
-    {
-      "id": "st.xebhn5e4b0",
-      "leaf": "strings.names",
-      "context": "publisher.menuItem.website.not-found",
-      "status": "draft",
-      "origin": "foundry-default",
-      "text": "Page not found",
       "limits": {
         "maxChars": 40
       }
@@ -2150,17 +1809,6 @@
       }
     },
     {
-      "id": "st.rdsa1ky831",
-      "leaf": "strings.actions",
-      "context": "publisher.planHeader.alignLabel",
-      "status": "draft",
-      "origin": "foundry-default",
-      "text": "Apply plan",
-      "limits": {
-        "maxChars": 24
-      }
-    },
-    {
       "id": "st.x3wc4fsbh5",
       "leaf": "strings.descriptions",
       "context": "publisher.planHeader.missingApprovalLabel",
@@ -2227,28 +1875,6 @@
       }
     },
     {
-      "id": "st.qcry3z237f",
-      "leaf": "strings.names",
-      "context": "publisher.planHeader.noneLabel",
-      "status": "draft",
-      "origin": "foundry-default",
-      "text": "None",
-      "limits": {
-        "maxChars": 40
-      }
-    },
-    {
-      "id": "st.aamt9c6zdr",
-      "leaf": "strings.errors",
-      "context": "publisher.planHeader.alignmentFailedLabel",
-      "status": "draft",
-      "origin": "foundry-default",
-      "text": "The plan could not be applied. Try again.",
-      "limits": {
-        "maxChars": 160
-      }
-    },
-    {
       "id": "st.63a9vxm2rv",
       "leaf": "strings.names",
       "context": "publisher.planHeader.configurationLabel",
@@ -2288,17 +1914,6 @@
       "status": "draft",
       "origin": "foundry-default",
       "text": "Changed options",
-      "limits": {
-        "maxChars": 40
-      }
-    },
-    {
-      "id": "st.av63bcybsc",
-      "leaf": "strings.names",
-      "context": "publisher.planHeader.requirementsLabel",
-      "status": "draft",
-      "origin": "foundry-default",
-      "text": "Requirements",
       "limits": {
         "maxChars": 40
       }
@@ -2623,61 +2238,6 @@
       }
     },
     {
-      "id": "st.td8tdah4rw",
-      "leaf": "strings.names",
-      "context": "admin.enum.draft",
-      "status": "draft",
-      "origin": "foundry-default",
-      "text": "Draft",
-      "limits": {
-        "maxChars": 40
-      }
-    },
-    {
-      "id": "st.gnv660w59z",
-      "leaf": "strings.names",
-      "context": "admin.enum.in-review",
-      "status": "draft",
-      "origin": "foundry-default",
-      "text": "In review",
-      "limits": {
-        "maxChars": 40
-      }
-    },
-    {
-      "id": "st.1re7rsx0et",
-      "leaf": "strings.names",
-      "context": "admin.enum.approved",
-      "status": "draft",
-      "origin": "foundry-default",
-      "text": "Approved",
-      "limits": {
-        "maxChars": 40
-      }
-    },
-    {
-      "id": "st.cw2t0s4dxn",
-      "leaf": "strings.names",
-      "context": "admin.enum.active",
-      "status": "draft",
-      "origin": "foundry-default",
-      "text": "Active",
-      "limits": {
-        "maxChars": 40
-      }
-    },
-    {
-      "id": "st.dvdvvejry8",
-      "leaf": "strings.names",
-      "context": "admin.enum.retired",
-      "status": "draft",
-      "origin": "foundry-default",
-      "text": "Retired",
-      "limits": {
-        "maxChars": 40
-      }
-    },
-    {
       "id": "st.cms6t8c04e",
       "leaf": "strings.names",
       "context": "admin.enum.agent-draft",
@@ -2739,17 +2299,6 @@
       "status": "draft",
       "origin": "foundry-default",
       "text": "Proposed",
-      "limits": {
-        "maxChars": 40
-      }
-    },
-    {
-      "id": "st.hcah39v2sh",
-      "leaf": "strings.names",
-      "context": "admin.enum.configured",
-      "status": "draft",
-      "origin": "foundry-default",
-      "text": "Set up",
       "limits": {
         "maxChars": 40
       }
@@ -2909,17 +2458,6 @@
       }
     },
     {
-      "id": "st.kmz1y1qvg0",
-      "leaf": "strings.names",
-      "context": "admin.enum.not-chosen",
-      "status": "draft",
-      "origin": "foundry-default",
-      "text": "Not selected",
-      "limits": {
-        "maxChars": 40
-      }
-    },
-    {
       "id": "st.8w74rd3d19",
       "leaf": "strings.names",
       "context": "admin.enum.missing",
@@ -2953,45 +2491,12 @@
       }
     },
     {
-      "id": "st.wxwxj7g97v",
-      "leaf": "strings.names",
-      "context": "admin.enum.error",
-      "status": "draft",
-      "origin": "foundry-default",
-      "text": "Error",
-      "limits": {
-        "maxChars": 40
-      }
-    },
-    {
-      "id": "st.y4xznsjmw8",
-      "leaf": "strings.names",
-      "context": "admin.enum.warning",
-      "status": "draft",
-      "origin": "foundry-default",
-      "text": "Warning",
-      "limits": {
-        "maxChars": 40
-      }
-    },
-    {
       "id": "st.atpxx5vxnv",
       "leaf": "strings.names",
       "context": "admin.enum.notice",
       "status": "draft",
       "origin": "foundry-default",
       "text": "Notice",
-      "limits": {
-        "maxChars": 40
-      }
-    },
-    {
-      "id": "st.mq7reh5kyq",
-      "leaf": "strings.names",
-      "context": "admin.enum.stable",
-      "status": "draft",
-      "origin": "foundry-default",
-      "text": "Stable",
       "limits": {
         "maxChars": 40
       }
@@ -3146,17 +2651,6 @@
       "status": "draft",
       "origin": "foundry-default",
       "text": "Pages in order",
-      "limits": {
-        "maxChars": 40
-      }
-    },
-    {
-      "id": "st.kqevjtbwt9",
-      "leaf": "strings.names",
-      "context": "publisher.arrangement.panes",
-      "status": "draft",
-      "origin": "foundry-default",
-      "text": "Panels",
       "limits": {
         "maxChars": 40
       }
@@ -3327,61 +2821,6 @@
       }
     },
     {
-      "id": "st.2091r9z4bq",
-      "leaf": "strings.names",
-      "context": "publisher.medium.document",
-      "status": "draft",
-      "origin": "foundry-default",
-      "text": "Documents",
-      "limits": {
-        "maxChars": 40
-      }
-    },
-    {
-      "id": "st.rgakrp0zw4",
-      "leaf": "strings.names",
-      "context": "publisher.medium.video",
-      "status": "draft",
-      "origin": "foundry-default",
-      "text": "Videos",
-      "limits": {
-        "maxChars": 40
-      }
-    },
-    {
-      "id": "st.33cy9hjh1q",
-      "leaf": "strings.names",
-      "context": "publisher.medium.deck",
-      "status": "draft",
-      "origin": "foundry-default",
-      "text": "Presentations",
-      "limits": {
-        "maxChars": 40
-      }
-    },
-    {
-      "id": "st.dr57tvsfc6",
-      "leaf": "strings.names",
-      "context": "publisher.channel.site",
-      "status": "draft",
-      "origin": "foundry-default",
-      "text": "Website",
-      "limits": {
-        "maxChars": 40
-      }
-    },
-    {
-      "id": "st.gj32snjd4m",
-      "leaf": "strings.names",
-      "context": "publisher.channel.app",
-      "status": "draft",
-      "origin": "foundry-default",
-      "text": "Application",
-      "limits": {
-        "maxChars": 40
-      }
-    },
-    {
       "id": "st.174rtkeng6",
       "leaf": "strings.names",
       "context": "publisher.channel.admin",
@@ -3399,17 +2838,6 @@
       "status": "draft",
       "origin": "foundry-default",
       "text": "Content collection",
-      "limits": {
-        "maxChars": 40
-      }
-    },
-    {
-      "id": "st.ceegez6aff",
-      "leaf": "strings.names",
-      "context": "publisher.channel.messages",
-      "status": "draft",
-      "origin": "foundry-default",
-      "text": "Messages",
       "limits": {
         "maxChars": 40
       }
@@ -3547,17 +2975,6 @@
       }
     },
     {
-      "id": "st.efsb6h9dmb",
-      "leaf": "strings.names",
-      "context": "publisher.lane.Record",
-      "status": "draft",
-      "origin": "foundry-default",
-      "text": "Record pages",
-      "limits": {
-        "maxChars": 40
-      }
-    },
-    {
       "id": "st.vd03egk3js",
       "leaf": "strings.names",
       "context": "publisher.lane.Settings",
@@ -3575,17 +2992,6 @@
       "status": "draft",
       "origin": "foundry-default",
       "text": "Studios",
-      "limits": {
-        "maxChars": 40
-      }
-    },
-    {
-      "id": "st.bh10jdg8bx",
-      "leaf": "strings.names",
-      "context": "publisher.stage.Checks",
-      "status": "draft",
-      "origin": "foundry-default",
-      "text": "Checks",
       "limits": {
         "maxChars": 40
       }
@@ -3773,28 +3179,6 @@
       "status": "draft",
       "origin": "foundry-default",
       "text": "Designer page review",
-      "limits": {
-        "maxChars": 40
-      }
-    },
-    {
-      "id": "st.5nfgjmm0xx",
-      "leaf": "strings.names",
-      "context": "admin.account.label",
-      "status": "draft",
-      "origin": "foundry-default",
-      "text": "Account",
-      "limits": {
-        "maxChars": 40
-      }
-    },
-    {
-      "id": "st.5v29qje8fy",
-      "leaf": "strings.field-labels",
-      "context": "publisher.contentKey.title",
-      "status": "draft",
-      "origin": "foundry-default",
-      "text": "Title",
       "limits": {
         "maxChars": 40
       }
@@ -10084,7 +9468,7 @@
   "bindings": [
     {
       "cellId": "admin.designer.title",
-      "recordId": "st.pb0ynfnh58",
+      "recordId": "st.2zj7yrtkfr",
       "target": "/agents/designer",
       "kind": "metadata"
     },
@@ -10096,13 +9480,13 @@
     },
     {
       "cellId": "admin.designer.shareTitle",
-      "recordId": "st.5yv263ckjd",
+      "recordId": "st.2zj7yrtkfr",
       "target": "/agents/designer",
       "kind": "metadata"
     },
     {
       "cellId": "admin.designer.shareDescription",
-      "recordId": "st.j1mx26pxmq",
+      "recordId": "st.abbasfn5h4",
       "target": "/agents/designer",
       "kind": "metadata"
     },
@@ -10144,13 +9528,13 @@
     },
     {
       "cellId": "admin.writer.description",
-      "recordId": "st.t5tp2ba7qy",
+      "recordId": "st.6zznbwptfh",
       "target": "/agents/writer",
       "kind": "metadata"
     },
     {
       "cellId": "admin.writer.shareTitle",
-      "recordId": "st.phazcjdjs5",
+      "recordId": "st.m22sa9p9y4",
       "target": "/agents/writer",
       "kind": "metadata"
     },
@@ -10162,7 +9546,7 @@
     },
     {
       "cellId": "admin.writer.navLabel",
-      "recordId": "st.zz066nxnmh",
+      "recordId": "st.m22sa9p9y4",
       "target": "/agents/writer",
       "kind": "navigation"
     },
@@ -10192,7 +9576,7 @@
     },
     {
       "cellId": "admin.publisher.title",
-      "recordId": "st.eyyshzcr6r",
+      "recordId": "st.cy7122qr1d",
       "target": "/agents/publisher",
       "kind": "metadata"
     },
@@ -10210,13 +9594,13 @@
     },
     {
       "cellId": "admin.publisher.shareDescription",
-      "recordId": "st.q0ettsmqf0",
+      "recordId": "st.2tw3ay17tc",
       "target": "/agents/publisher",
       "kind": "metadata"
     },
     {
       "cellId": "admin.publisher.navLabel",
-      "recordId": "st.yvc0ka3n3h",
+      "recordId": "st.cy7122qr1d",
       "target": "/agents/publisher",
       "kind": "navigation"
     },
@@ -10306,7 +9690,7 @@
     },
     {
       "cellId": "admin.actions.close",
-      "recordId": "st.jrxtfy1c6j",
+      "recordId": "st.9ehasbmw8z",
       "target": "console action binding",
       "kind": "label"
     },
@@ -10432,7 +9816,7 @@
     },
     {
       "cellId": "publisher.frame.frames.auth-shell",
-      "recordId": "st.v3ycrdrpmn",
+      "recordId": "st.0szhqxn9xp",
       "target": "packages/designer/src/catalog/slots/frames.json",
       "kind": "display-name",
       "parent": "publisher.frame",
@@ -10480,7 +9864,7 @@
     },
     {
       "cellId": "publisher.frame.frames.sheet",
-      "recordId": "st.xe1vmezaw2",
+      "recordId": "st.njcj3qqb0e",
       "target": "packages/designer/src/catalog/slots/frames.json",
       "kind": "display-name",
       "parent": "publisher.frame",
@@ -11736,7 +11120,7 @@
     },
     {
       "cellId": "publisher.planPage./agents/designer",
-      "recordId": "st.pb0ynfnh58",
+      "recordId": "st.2zj7yrtkfr",
       "target": "packages/publisher/src/planning/menu.ts",
       "kind": "display-name",
       "parent": "publisher.planPage",
@@ -11760,7 +11144,7 @@
     },
     {
       "cellId": "publisher.planPage./agents/publisher",
-      "recordId": "st.eyyshzcr6r",
+      "recordId": "st.cy7122qr1d",
       "target": "packages/publisher/src/planning/menu.ts",
       "kind": "display-name",
       "parent": "publisher.planPage",
@@ -16108,6 +15492,253 @@
         "Parent-scoped name uniqueness permits intentional CopyRef reuse across parents.",
         "CP capture is not available in this executor; source-name coverage and board disambiguation are checked here, rendered correlation remains a binding/recapture Need."
       ]
+    }
+  ],
+  "externalRecords": [
+    {
+      "recordId": "st.0rj8qzqqr1",
+      "source": "common-labels.r1.en.json",
+      "sourceContext": "publisher.layoutOption.layouts.bento.density.dense"
+    },
+    {
+      "recordId": "st.0szhqxn9xp",
+      "source": "common-labels.r1.en.json",
+      "sourceContext": "publisher.frameConfig.frames.site-shell.front-door"
+    },
+    {
+      "recordId": "st.13d97mrmzy",
+      "source": "common-labels.r1.en.json",
+      "sourceContext": "publisher.contentKey.lead"
+    },
+    {
+      "recordId": "st.1re7rsx0et",
+      "source": "common-labels.r1.en.json",
+      "sourceContext": "admin.enum.approved"
+    },
+    {
+      "recordId": "st.2091r9z4bq",
+      "source": "common-labels.r1.en.json",
+      "sourceContext": "publisher.medium.document"
+    },
+    {
+      "recordId": "st.2tw3ay17tc",
+      "source": "common-labels.r1.en.json",
+      "sourceContext": "admin.publisher.description"
+    },
+    {
+      "recordId": "st.2zj7yrtkfr",
+      "source": "common-labels.r1.en.json",
+      "sourceContext": "admin.designer.navLabel"
+    },
+    {
+      "recordId": "st.33cy9hjh1q",
+      "source": "common-labels.r1.en.json",
+      "sourceContext": "publisher.medium.deck"
+    },
+    {
+      "recordId": "st.33rp5w6vzk",
+      "source": "common-labels.r1.en.json",
+      "sourceContext": "publisher.mediaValue.slides"
+    },
+    {
+      "recordId": "st.5bvvjt22m9",
+      "source": "common-labels.r1.en.json",
+      "sourceContext": "publisher.format.email.html"
+    },
+    {
+      "recordId": "st.5nfgjmm0xx",
+      "source": "common-labels.r1.en.json",
+      "sourceContext": "admin.account.label"
+    },
+    {
+      "recordId": "st.5v29qje8fy",
+      "source": "common-labels.r1.en.json",
+      "sourceContext": "publisher.contentKey.title"
+    },
+    {
+      "recordId": "st.6zznbwptfh",
+      "source": "common-labels.r1.en.json",
+      "sourceContext": "admin.writer.shareDescription"
+    },
+    {
+      "recordId": "st.9a3gdn01wa",
+      "source": "common-labels.r1.en.json",
+      "sourceContext": "admin.actions.retry"
+    },
+    {
+      "recordId": "st.9ehasbmw8z",
+      "source": "common-labels.r1.en.json",
+      "sourceContext": "designer.component.sheet.close"
+    },
+    {
+      "recordId": "st.9pds3yfrp5",
+      "source": "common-labels.r1.en.json",
+      "sourceContext": "publisher.menuItem.website.home"
+    },
+    {
+      "recordId": "st.a7d1spjaqx",
+      "source": "common-labels.r1.en.json",
+      "sourceContext": "publisher.contentKey.favicon"
+    },
+    {
+      "recordId": "st.aa0s69mdxk",
+      "source": "common-labels.r1.en.json",
+      "sourceContext": "publisher.contentKey.size"
+    },
+    {
+      "recordId": "st.aamt9c6zdr",
+      "source": "common-labels.r1.en.json",
+      "sourceContext": "publisher.planHeader.alignmentFailedLabel"
+    },
+    {
+      "recordId": "st.abbasfn5h4",
+      "source": "common-labels.r1.en.json",
+      "sourceContext": "admin.designer.description"
+    },
+    {
+      "recordId": "st.av63bcybsc",
+      "source": "common-labels.r1.en.json",
+      "sourceContext": "publisher.planHeader.requirementsLabel"
+    },
+    {
+      "recordId": "st.bh10jdg8bx",
+      "source": "common-labels.r1.en.json",
+      "sourceContext": "publisher.stage.Checks"
+    },
+    {
+      "recordId": "st.ceegez6aff",
+      "source": "common-labels.r1.en.json",
+      "sourceContext": "publisher.channel.messages"
+    },
+    {
+      "recordId": "st.cw2t0s4dxn",
+      "source": "common-labels.r1.en.json",
+      "sourceContext": "admin.enum.active"
+    },
+    {
+      "recordId": "st.cy7122qr1d",
+      "source": "common-labels.r1.en.json",
+      "sourceContext": "admin.publisher.shareTitle"
+    },
+    {
+      "recordId": "st.dgdbty02r2",
+      "source": "common-labels.r1.en.json",
+      "sourceContext": "publisher.contentKey.logo"
+    },
+    {
+      "recordId": "st.dr57tvsfc6",
+      "source": "common-labels.r1.en.json",
+      "sourceContext": "publisher.channel.site"
+    },
+    {
+      "recordId": "st.dvdvvejry8",
+      "source": "common-labels.r1.en.json",
+      "sourceContext": "admin.enum.retired"
+    },
+    {
+      "recordId": "st.efsb6h9dmb",
+      "source": "common-labels.r1.en.json",
+      "sourceContext": "publisher.lane.Record"
+    },
+    {
+      "recordId": "st.g385gwchf1",
+      "source": "common-labels.r1.en.json",
+      "sourceContext": "publisher.layoutConfig.layouts.sidebar-content.sidebar-content.record"
+    },
+    {
+      "recordId": "st.gj32snjd4m",
+      "source": "common-labels.r1.en.json",
+      "sourceContext": "publisher.channel.app"
+    },
+    {
+      "recordId": "st.gnv660w59z",
+      "source": "common-labels.r1.en.json",
+      "sourceContext": "admin.enum.in-review"
+    },
+    {
+      "recordId": "st.hcah39v2sh",
+      "source": "common-labels.r1.en.json",
+      "sourceContext": "admin.enum.configured"
+    },
+    {
+      "recordId": "st.j7paney0ax",
+      "source": "common-labels.r1.en.json",
+      "sourceContext": "publisher.contentKey.format"
+    },
+    {
+      "recordId": "st.kmz1y1qvg0",
+      "source": "common-labels.r1.en.json",
+      "sourceContext": "admin.enum.not-chosen"
+    },
+    {
+      "recordId": "st.kqevjtbwt9",
+      "source": "common-labels.r1.en.json",
+      "sourceContext": "publisher.arrangement.panes"
+    },
+    {
+      "recordId": "st.m22sa9p9y4",
+      "source": "common-labels.r1.en.json",
+      "sourceContext": "admin.writer.title"
+    },
+    {
+      "recordId": "st.m5cjnqycs1",
+      "source": "common-labels.r1.en.json",
+      "sourceContext": "publisher.actions.openItem"
+    },
+    {
+      "recordId": "st.mq7reh5kyq",
+      "source": "common-labels.r1.en.json",
+      "sourceContext": "admin.enum.stable"
+    },
+    {
+      "recordId": "st.njcj3qqb0e",
+      "source": "common-labels.r1.en.json",
+      "sourceContext": "designer.frameOption.frames.app-sidebar.presentation.overlay"
+    },
+    {
+      "recordId": "st.qcry3z237f",
+      "source": "common-labels.r1.en.json",
+      "sourceContext": "publisher.planHeader.noneLabel"
+    },
+    {
+      "recordId": "st.rdsa1ky831",
+      "source": "common-labels.r1.en.json",
+      "sourceContext": "publisher.planHeader.alignLabel"
+    },
+    {
+      "recordId": "st.rgakrp0zw4",
+      "source": "common-labels.r1.en.json",
+      "sourceContext": "publisher.medium.video"
+    },
+    {
+      "recordId": "st.rjydrbvwgq",
+      "source": "common-labels.r1.en.json",
+      "sourceContext": "publisher.mediaValue.mp4"
+    },
+    {
+      "recordId": "st.td8tdah4rw",
+      "source": "common-labels.r1.en.json",
+      "sourceContext": "admin.enum.draft"
+    },
+    {
+      "recordId": "st.wx6z3yc2r4",
+      "source": "common-labels.r1.en.json",
+      "sourceContext": "publisher.mediaValue.png"
+    },
+    {
+      "recordId": "st.wxwxj7g97v",
+      "source": "common-labels.r1.en.json",
+      "sourceContext": "admin.enum.error"
+    },
+    {
+      "recordId": "st.xebhn5e4b0",
+      "source": "common-labels.r1.en.json",
+      "sourceContext": "publisher.menuItem.website.not-found"
+    },
+    {
+      "recordId": "st.y4xznsjmw8",
+      "source": "common-labels.r1.en.json",
+      "sourceContext": "admin.enum.warning"
     }
   ]
 }

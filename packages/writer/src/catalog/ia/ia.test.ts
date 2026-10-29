@@ -55,7 +55,7 @@ describe("Writer IA structure and reporting", () => {
     const report = createWriterIAReport(catalog);
     expect(report.findings).toEqual([]);
     expect(report.layers.map(row => row.layer)).toEqual(["lexicon", "strings", "patterns", "passages", "narratives"]);
-    expect(report.leafCounts).toMatchObject({ strings: 21, patterns: 24, narratives: 12 });
+    expect(report.leafCounts).toMatchObject({ strings: 22, patterns: 24, narratives: 12 });
     expect(report.leafCounts.passages).toBeGreaterThan(0);
     expect(report.layers.slice(3).map(row => row.freeze.status)).toEqual(["unfrozen", "unfrozen"]);
     expect(JSON.stringify(catalog)).toBe(before);
@@ -98,6 +98,6 @@ describe("writer-check ia", () => {
   it("reaches IA through the shipped writer-check entry point", () => {
     const result = spawnSync(process.execPath, [fileURLToPath(new URL("../../../dist/cli.js", import.meta.url)), "ia", "--layers", "lexicon,strings,patterns", "--format", "json"], { encoding: "utf8" });
     expect(result.status, result.stderr).toBe(0);
-    expect(JSON.parse(result.stdout).leafCounts).toEqual({ lexicon: 27, strings: 21, patterns: 24 });
+    expect(JSON.parse(result.stdout).leafCounts).toEqual({ lexicon: 27, strings: 22, patterns: 24 });
   });
 });

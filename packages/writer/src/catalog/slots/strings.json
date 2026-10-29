@@ -283,5 +283,18 @@
     },
     "requires": [],
     "status": "draft"
+  },
+  {
+    "id": "strings.common",
+    "layer": "strings",
+    "contract": {
+      "kind": "string",
+      "source": "writer",
+      "icu": true,
+      "maxChars": 320,
+      "maxWords": 60
+    },
+    "requires": [],
+    "status": "draft"
   }
 ]

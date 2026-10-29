@@ -23,7 +23,8 @@
           "id": "interface-field-labels",
           "label": "Field labels",
           "leaves": [
-            "strings.field-labels"
+            "strings.field-labels",
+            "strings.common"
           ]
         },
         {

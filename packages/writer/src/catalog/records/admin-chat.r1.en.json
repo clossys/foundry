@@ -6,14 +6,6 @@
   "activation": "none",
   "records": [
     {
-      "id": "st.07sw5kbkv3",
-      "leaf": "strings.field-labels",
-      "context": "admin.writer.chat.header.title",
-      "status": "draft",
-      "origin": "authored",
-      "text": "Conversation"
-    },
-    {
       "id": "st.gh4z1t77jp",
       "leaf": "strings.field-labels",
       "context": "admin.writer.chat.header.agent",
@@ -78,14 +70,6 @@
       "text": "Rename conversation"
     },
     {
-      "id": "st.f6e42xqhnn",
-      "leaf": "strings.field-labels",
-      "context": "admin.writer.chat.header.delete",
-      "status": "draft",
-      "origin": "authored",
-      "text": "Delete conversation"
-    },
-    {
       "id": "st.mdnsjsv7px",
       "leaf": "strings.field-labels",
       "context": "admin.writer.chat.header.export",
@@ -140,14 +124,6 @@
       "status": "draft",
       "origin": "authored",
       "text": "This conversation will be deleted."
-    },
-    {
-      "id": "st.w2z8cvyyep",
-      "leaf": "strings.field-labels",
-      "context": "admin.writer.chat.header.confirmDelete",
-      "status": "draft",
-      "origin": "authored",
-      "text": "Delete conversation"
     },
     {
       "id": "st.enpvfghanr",
@@ -278,14 +254,6 @@
       "text": "Message copied"
     },
     {
-      "id": "st.6pe6jzsykm",
-      "leaf": "strings.field-labels",
-      "context": "admin.writer.chat.message.copyUnavailable",
-      "status": "draft",
-      "origin": "authored",
-      "text": "Copy unavailable"
-    },
-    {
       "id": "st.xjb3p6k1p5",
       "leaf": "strings.field-labels",
       "context": "admin.writer.chat.message.regenerate",
@@ -390,14 +358,6 @@
       "text": "Code copied"
     },
     {
-      "id": "st.rrjbhez8qb",
-      "leaf": "strings.field-labels",
-      "context": "admin.writer.chat.code.copyUnavailable",
-      "status": "draft",
-      "origin": "authored",
-      "text": "Copy unavailable"
-    },
-    {
       "id": "st.dar2mdrrhs",
       "leaf": "strings.field-labels",
       "context": "admin.writer.chat.code.wrap",
@@ -460,22 +420,6 @@
       "status": "draft",
       "origin": "authored",
       "text": "Running"
-    },
-    {
-      "id": "st.980dfmqs1t",
-      "leaf": "strings.field-labels",
-      "context": "admin.writer.chat.tool.done",
-      "status": "draft",
-      "origin": "authored",
-      "text": "Done"
-    },
-    {
-      "id": "st.6bgkmr7khq",
-      "leaf": "strings.field-labels",
-      "context": "admin.writer.chat.tool.error",
-      "status": "draft",
-      "origin": "authored",
-      "text": "Error"
     },
     {
       "id": "st.a12kexzy38",
@@ -548,14 +492,6 @@
       "status": "draft",
       "origin": "authored",
       "text": "Source preview"
-    },
-    {
-      "id": "st.vpyq72fk89",
-      "leaf": "strings.field-labels",
-      "context": "admin.writer.chat.sources.title",
-      "status": "draft",
-      "origin": "authored",
-      "text": "Title"
     },
     {
       "id": "st.g90g9krftc",
@@ -710,14 +646,6 @@
       "text": "Page context"
     },
     {
-      "id": "st.ega0nrxc5v",
-      "leaf": "strings.field-labels",
-      "context": "admin.writer.chat.composer.label",
-      "status": "draft",
-      "origin": "authored",
-      "text": "Message"
-    },
-    {
       "id": "st.fc3agfvrnf",
       "leaf": "strings.field-labels",
       "context": "admin.writer.chat.composer.placeholder",
@@ -750,14 +678,6 @@
       "text": "Find a page or agent"
     },
     {
-      "id": "st.p8rh6sargt",
-      "leaf": "strings.field-labels",
-      "context": "admin.writer.chat.composer.pages",
-      "status": "draft",
-      "origin": "authored",
-      "text": "Pages"
-    },
-    {
       "id": "st.75psc3pavc",
       "leaf": "strings.field-labels",
       "context": "admin.writer.chat.composer.agents",
@@ -772,14 +692,6 @@
       "status": "draft",
       "origin": "authored",
       "text": "No matching pages or agents"
-    },
-    {
-      "id": "st.7raxswq7j0",
-      "leaf": "strings.field-labels",
-      "context": "admin.writer.chat.composer.send",
-      "status": "draft",
-      "origin": "authored",
-      "text": "Send message"
     },
     {
       "id": "st.kwep5pc442",
@@ -870,36 +782,12 @@
       "text": "Conversation could not be exported."
     },
     {
-      "id": "st.6ffbzs93mg",
-      "leaf": "strings.field-labels",
-      "context": "admin.writer.chat.panel.open",
-      "status": "draft",
-      "origin": "authored",
-      "text": "Open chat"
-    },
-    {
-      "id": "st.cqt0021fwj",
-      "leaf": "strings.field-labels",
-      "context": "admin.writer.chat.panel.close",
-      "status": "draft",
-      "origin": "authored",
-      "text": "Close chat"
-    },
-    {
       "id": "st.jdv9rgjw7d",
       "leaf": "strings.field-labels",
       "context": "admin.writer.chat.panel.resize",
       "status": "draft",
       "origin": "authored",
       "text": "Resize chat panel"
-    },
-    {
-      "id": "st.ktgn3jyg1d",
-      "leaf": "strings.field-labels",
-      "context": "admin.writer.chat.account.signIn",
-      "status": "draft",
-      "origin": "authored",
-      "text": "Sign in"
     },
     {
       "id": "st.9tbnpnwhaf",
@@ -1102,20 +990,6 @@
       ]
     },
     {
-      "id": "st.tx9f8j9jnf",
-      "leaf": "strings.field-labels",
-      "context": "admin.writer.chat.attachment.name",
-      "status": "draft",
-      "origin": "authored",
-      "text": "{name}",
-      "args": [
-        {
-          "name": "name",
-          "type": "string"
-        }
-      ]
-    },
-    {
       "id": "st.e355fsx4m3",
       "leaf": "strings.field-labels",
       "context": "admin.writer.chat.attachment.size",
@@ -1253,7 +1127,7 @@
   "bindings": [
     {
       "cellId": "admin.writer.chat.header.title",
-      "recordId": "st.07sw5kbkv3",
+      "recordId": "st.91bq2h08er",
       "target": "Chat",
       "kind": "CopyRef"
     },
@@ -1355,7 +1229,7 @@
     },
     {
       "cellId": "admin.writer.chat.header.confirmDelete",
-      "recordId": "st.w2z8cvyyep",
+      "recordId": "st.f6e42xqhnn",
       "target": "Chat",
       "kind": "CopyRef"
     },
@@ -1541,7 +1415,7 @@
     },
     {
       "cellId": "admin.writer.chat.code.copyUnavailable",
-      "recordId": "st.rrjbhez8qb",
+      "recordId": "st.6pe6jzsykm",
       "target": "Chat",
       "kind": "CopyRef"
     },
@@ -1601,7 +1475,7 @@
     },
     {
       "cellId": "admin.writer.chat.tool.error",
-      "recordId": "st.6bgkmr7khq",
+      "recordId": "st.wxwxj7g97v",
       "target": "Chat",
       "kind": "CopyRef"
     },
@@ -1661,7 +1535,7 @@
     },
     {
       "cellId": "admin.writer.chat.sources.title",
-      "recordId": "st.vpyq72fk89",
+      "recordId": "st.5v29qje8fy",
       "target": "Chat",
       "kind": "CopyRef"
     },
@@ -1811,7 +1685,7 @@
     },
     {
       "cellId": "admin.writer.chat.composer.pages",
-      "recordId": "st.p8rh6sargt",
+      "recordId": "st.bgkzpf1ec0",
       "target": "Chat",
       "kind": "CopyRef"
     },
@@ -2066,6 +1940,73 @@
       "recordId": "st.sxfs9db1fb",
       "target": "Chat",
       "kind": "CopyRef"
+    }
+  ],
+  "externalRecords": [
+    {
+      "recordId": "st.5v29qje8fy",
+      "source": "common-labels.r1.en.json",
+      "sourceContext": "publisher.contentKey.title"
+    },
+    {
+      "recordId": "st.6ffbzs93mg",
+      "source": "common-labels.r1.en.json",
+      "sourceContext": "admin.writer.chat.panel.open"
+    },
+    {
+      "recordId": "st.6pe6jzsykm",
+      "source": "common-labels.r1.en.json",
+      "sourceContext": "admin.writer.chat.message.copyUnavailable"
+    },
+    {
+      "recordId": "st.7raxswq7j0",
+      "source": "common-labels.r1.en.json",
+      "sourceContext": "admin.writer.chat.composer.send"
+    },
+    {
+      "recordId": "st.91bq2h08er",
+      "source": "common-labels.r1.en.json",
+      "sourceContext": "designer.ia.sections.collect-conversation"
+    },
+    {
+      "recordId": "st.980dfmqs1t",
+      "source": "common-labels.r1.en.json",
+      "sourceContext": "admin.writer.chat.tool.done"
+    },
+    {
+      "recordId": "st.bgkzpf1ec0",
+      "source": "common-labels.r1.en.json",
+      "sourceContext": "Designer console"
+    },
+    {
+      "recordId": "st.cqt0021fwj",
+      "source": "common-labels.r1.en.json",
+      "sourceContext": "admin.writer.chat.panel.close"
+    },
+    {
+      "recordId": "st.ega0nrxc5v",
+      "source": "common-labels.r1.en.json",
+      "sourceContext": "admin.writer.chat.composer.label"
+    },
+    {
+      "recordId": "st.f6e42xqhnn",
+      "source": "common-labels.r1.en.json",
+      "sourceContext": "admin.writer.chat.header.delete"
+    },
+    {
+      "recordId": "st.ktgn3jyg1d",
+      "source": "common-labels.r1.en.json",
+      "sourceContext": "admin.writer.chat.account.signIn"
+    },
+    {
+      "recordId": "st.tx9f8j9jnf",
+      "source": "common-labels.r1.en.json",
+      "sourceContext": "admin.writer.chat.attachment.name"
+    },
+    {
+      "recordId": "st.wxwxj7g97v",
+      "source": "common-labels.r1.en.json",
+      "sourceContext": "admin.enum.error"
     }
   ]
 }
