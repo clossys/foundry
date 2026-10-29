@@ -19,6 +19,55 @@ override, and no GitHub credential of any kind. Hub placement across
 repositories is appointed by `@clossys/launcher`; this package declares no
 hub I/O.
 
+## The cell model
+
+The cell model is the strategy conversation format shipped in
+[`skill/SKILL.md`](skill/SKILL.md). It works by hand while the package's
+cell APIs and commands are being introduced; use only commands supported
+by the installed pinned version. The existing record APIs described below
+remain available during this transition.
+
+One strategy is an L0–L3 tree: 7 L1 groups, 28 L2 groups and 57 L3 cells.
+The catalog fixes leaf ids and their questions, must-contain keys, function
+tags and required links. L0, L1 and L2 are rendered views; each L3 cell is
+one versioned Markdown file. The default archetype starts with 24 core
+cells; product-saas, services and marketplace add their own core cells.
+
+The consumer owns the content under its chosen root (default
+`clossys/strategist/`):
+
+```text
+tree.json                    archetype, grouping overrides, active pointers
+cells/<cell-id>/v<N>.md       one file per cell version
+sessions/<date>-<n>.md       append-only U/S conversation bullets
+findings/<id>.md             sourced, dated observations
+requests/REQ-<NNNN>.json     changes requested by any role
+contracts/<id>.json          optional consumer-local brief contracts
+briefs/                     generated briefs and their index
+citations.json              generated citation index
+```
+
+A cell has flat frontmatter and exactly three bullet sections: Direction
+(the choice), Because (resolving evidence refs) and Watch (testable
+tripwires). See the [template and anonymous worked example](skill/templates/cell.md).
+Strategist writes drafts. A user confirms a playback listing the exact
+cell versions; only those versions activate. Active and retired bodies
+are immutable. A new decision is a new draft, and only activation makes
+old downstream citations stale.
+
+The loop is set → cascade → measure → review → steer. Consuming roles
+own brief contracts and receive ready, missing or stale briefs. A missing
+brief blocks the role; a stale brief needs a visible stale flag. Surfaces
+cite `strategy:<cell-id>@<N>` rather than duplicating the decision.
+
+The [seven role prompts](skill/roles/strategist.md) divide conversation,
+research, synthesis, checking, critique, compilation and review with
+explicit write boundaries. No helper confirms for the user. Before MVS,
+run the pre-mortem and confirm resulting changes. MVS is clean completion
+over the archetype's core cells; Complete requires all 57 cells active and
+fresh, all 28 L2 groups coherent and L0 clean. Report only what the files
+and judgments establish; mechanical gate success alone is not keep.
+
 ## Strategy traceability rate
 
 Independent consumer evidence shows the position's owned metric meets its
