@@ -93,7 +93,7 @@
       },
       "license": "MIT",
       "notes": [
-        "Each item renders one Stat (label, value, optional delta/trend and description); no sparkline or meter composition is claimed.",
+        "Each item renders one Stat; count motion is opt-in and runs once on viewport entry for numeric values or an explicit countTo target. The authored final value is server HTML and remains screen-reader content; reduced motion uses the final value. Timing reads tokens.animation.count. Section runtime member adoption is separate.",
         "Source-only import and token-read measurements are lower bounds; shared anatomy, accessibility, contrast and consumer runtime conformance remain unmeasured. Content bindings describe host adaptation points, not type-equivalent converters."
       ],
       "parts": [],
@@ -104,7 +104,9 @@
       },
       "propMap": {
         "layout.grid": "./blocks#StatGroup.layout=grid",
-        "layout.row": "./blocks#StatGroup.layout=row"
+        "layout.row": "./blocks#StatGroup.layout=row",
+        "motion.count": "./blocks#StatGroup.motion=count",
+        "motion.static": "./blocks#StatGroup.motion=static"
       },
       "reads": {
         "assets": [],

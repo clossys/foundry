@@ -1673,6 +1673,9 @@
   .w-10 {
     width: calc(var(--spacing, 0.25rem) * 10);
   }
+  .w-40 {
+    width: calc(var(--spacing, 0.25rem) * 40);
+  }
   .w-auto {
     width: auto;
   }
@@ -1930,6 +1933,15 @@
   .resize-y {
     resize: vertical;
   }
+  .snap-x {
+    scroll-snap-type: x var(--tw-scroll-snap-strictness, proximity);
+  }
+  .snap-mandatory {
+    --tw-scroll-snap-strictness: mandatory;
+  }
+  .snap-start {
+    scroll-snap-align: start;
+  }
   .scroll-my-1 {
     scroll-margin-block: var(--spacing, 0.25rem);
   }
@@ -1944,6 +1956,12 @@
   }
   .list-none {
     list-style-type: none;
+  }
+  .columns-1 {
+    columns: 1;
+  }
+  .break-inside-avoid {
+    break-inside: avoid;
   }
   .ledger-columns-two {
     grid-template-columns: minmax(0, 1fr);
@@ -2918,6 +2936,9 @@
   }
   .pe-sm {
     padding-inline-end: var(--spacing-sm, 8px);
+  }
+  .pe-xl {
+    padding-inline-end: var(--spacing-xl, 24px);
   }
   .pe-xs {
     padding-inline-end: var(--spacing-xs, 4px);
@@ -4226,6 +4247,9 @@
     .tablet\:h-px {
       height: 1px;
     }
+    .tablet\:w-1\/2 {
+      width: calc(1 / 2 * 100%);
+    }
     .tablet\:w-auto {
       width: auto;
     }
@@ -4246,6 +4270,9 @@
     }
     .tablet\:rotate-0 {
       rotate: 0deg;
+    }
+    .tablet\:columns-2 {
+      columns: 2;
     }
     .tablet\:grid-cols-2 {
       grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -4733,8 +4760,14 @@
     .desktop\:max-h-dvh {
       max-height: 100dvh;
     }
+    .desktop\:w-1\/3 {
+      width: calc(1 / 3 * 100%);
+    }
     .desktop\:rotate-0 {
       rotate: 0deg;
+    }
+    .desktop\:columns-3 {
+      columns: 3;
     }
     .desktop\:grid-cols-2 {
       grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -5058,6 +5091,11 @@
   inherits: false;
   initial-value: 0;
 }
+@property --tw-scroll-snap-strictness {
+  syntax: "*";
+  inherits: false;
+  initial-value: proximity;
+}
 @property --tw-space-y-reverse {
   syntax: "*";
   inherits: false;
@@ -5310,6 +5348,7 @@
       --tw-translate-x: 0;
       --tw-translate-y: 0;
       --tw-translate-z: 0;
+      --tw-scroll-snap-strictness: proximity;
       --tw-space-y-reverse: 0;
       --tw-divide-y-reverse: 0;
       --tw-border-style: solid;

@@ -116,7 +116,7 @@
       },
       "license": "MIT",
       "notes": [
-        "Source checks allowed items.length values and tone; logos are host React nodes. The source root is ul, with no band/header wrapper.",
+        "Source checks allowed items.length values and tone; logos are host React nodes. Marquee is opt-in with authored pause/resume labels, an inert aria-hidden duplicate, and a static grid on the server or with reduced motion. Timing reads tokens.animation.marquee. Package-pointer Block adaptation is measured here; Section runtime member adoption is separate.",
         "Source-only import and token-read measurements are lower bounds; shared anatomy, accessibility, contrast and consumer runtime conformance remain unmeasured. Content bindings describe host adaptation points, not type-equivalent converters."
       ],
       "parts": [],
@@ -132,7 +132,9 @@
         "count.6": "./blocks#LogoCloud.items.length=6",
         "count.8": "./blocks#LogoCloud.items.length=8",
         "monochrome.false": "./blocks#LogoCloud.tone=original",
-        "monochrome.true": "./blocks#LogoCloud.tone=monochrome"
+        "monochrome.true": "./blocks#LogoCloud.tone=monochrome",
+        "motion.marquee": "./blocks#LogoCloud.motion=marquee",
+        "motion.static": "./blocks#LogoCloud.motion=static"
       },
       "reads": {
         "assets": [],
@@ -158,6 +160,7 @@
       },
       "slot": "sections.logo-cloud",
       "slotMap": {
+        "controls": "./blocks#LogoCloud.motionLabels",
         "logos": "./blocks#LogoCloud.items"
       },
       "source": "foundry"

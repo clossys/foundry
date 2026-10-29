@@ -96,7 +96,7 @@
       },
       "license": "MIT",
       "notes": [
-        "Source selects single or grid geometry from enforced item counts; quote attribution uses attributorName/attributorRole/portrait. Root is ul with external anatomy.",
+        "Wall uses staggered quote columns. Carousel uses components.scroll-area scroll snap and authored previous/next buttons without autoplay; reduced motion scrolls instantly. Attribution reuses the shared Testimonial figure. Section runtime member adoption is separate.",
         "Source-only import and token-read measurements are lower bounds; shared anatomy, accessibility, contrast and consumer runtime conformance remain unmeasured. Content bindings describe host adaptation points, not type-equivalent converters."
       ],
       "parts": [],
@@ -106,8 +106,10 @@
         "version": "0.12.0"
       },
       "propMap": {
-        "layout.grid": "./blocks#TestimonialSet.items.length[2,3,4,6]",
-        "layout.single": "./blocks#TestimonialSet.items.length=1"
+        "layout.carousel": "./blocks#TestimonialSet.layout=carousel",
+        "layout.grid": "./blocks#TestimonialSet.layout=grid,items.length[2,3,4,6]",
+        "layout.single": "./blocks#TestimonialSet.layout=single,items.length=1",
+        "layout.wall": "./blocks#TestimonialSet.layout=wall"
       },
       "reads": {
         "assets": [],
@@ -125,6 +127,7 @@
       },
       "slot": "sections.testimonials",
       "slotMap": {
+        "controls": "./blocks#TestimonialSet.carouselLabels",
         "quotes": "./blocks#TestimonialSet.items"
       },
       "source": "foundry"

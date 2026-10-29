@@ -4495,6 +4495,11 @@
           "name": "logos",
           "type": "media",
           "required": true
+        },
+        {
+          "name": "controls",
+          "type": "copy",
+          "required": false
         }
       ],
       "members": {
@@ -4506,12 +4511,15 @@
           "count.8",
           "count.12",
           "monochrome.true",
-          "monochrome.false"
+          "monochrome.false",
+          "motion.static",
+          "motion.marquee"
         ]
       },
       "allowedComposes": [
         "components.link",
-        "components.semantic-content"
+        "components.semantic-content",
+        "components.button"
       ],
       "parts": [
         "sections.band",
@@ -4587,6 +4595,24 @@
             "required": true,
             "maxLength": {
               "en": 160
+            },
+            "dir": "auto"
+          },
+          {
+            "key": "controls.pause",
+            "kind": "plain",
+            "required": false,
+            "maxLength": {
+              "en": 80
+            },
+            "dir": "auto"
+          },
+          {
+            "key": "controls.resume",
+            "kind": "plain",
+            "required": false,
+            "maxLength": {
+              "en": 80
             },
             "dir": "auto"
           }
@@ -6887,12 +6913,15 @@
         "mode": "closed",
         "names": [
           "layout.grid",
-          "layout.row"
+          "layout.row",
+          "motion.static",
+          "motion.count"
         ]
       },
       "allowedComposes": [
         "components.chart-sparkline",
-        "components.meter"
+        "components.meter",
+        "components.semantic-content"
       ],
       "parts": [
         "sections.band",
@@ -7772,19 +7801,28 @@
           "name": "quotes",
           "type": "records",
           "required": true
+        },
+        {
+          "name": "controls",
+          "type": "copy",
+          "required": false
         }
       ],
       "members": {
         "mode": "closed",
         "names": [
           "layout.single",
-          "layout.grid"
+          "layout.grid",
+          "layout.wall",
+          "layout.carousel"
         ]
       },
       "allowedComposes": [
         "components.avatar",
         "components.card",
-        "components.semantic-content"
+        "components.semantic-content",
+        "components.scroll-area",
+        "components.button"
       ],
       "parts": [
         "sections.band",
@@ -7869,6 +7907,24 @@
             "required": false,
             "maxLength": {
               "en": 120
+            },
+            "dir": "auto"
+          },
+          {
+            "key": "controls.previous",
+            "kind": "plain",
+            "required": false,
+            "maxLength": {
+              "en": 80
+            },
+            "dir": "auto"
+          },
+          {
+            "key": "controls.next",
+            "kind": "plain",
+            "required": false,
+            "maxLength": {
+              "en": 80
             },
             "dir": "auto"
           }

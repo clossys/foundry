@@ -100,7 +100,11 @@
     "nr.legal.privacy": "nr.0000000031",
     "nr.legal.terms": "nr.0000000032",
     "ps.form.contact.success.message": "st.ed003344a2",
-    "ps.form.contact.error.message": "st.66989bea3f"
+    "ps.form.contact.error.message": "st.66989bea3f",
+    "st.proof.logo-cloud.pause": "st.1j3x9h41a6",
+    "st.proof.logo-cloud.resume": "st.1cvwsa0mga",
+    "st.proof.testimonials.previous": "st.vn3r0qxsm9",
+    "st.proof.testimonials.next": "st.9pyzxqprj7"
   },
   "records": [
     {
@@ -908,6 +912,38 @@
       "status": "draft",
       "origin": "authored",
       "text": "Your message could not be sent. Please try again."
+    },
+    {
+      "id": "st.1j3x9h41a6",
+      "leaf": "strings.field-labels",
+      "context": "Proof section motion controls",
+      "status": "draft",
+      "origin": "authored",
+      "text": "Pause motion"
+    },
+    {
+      "id": "st.1cvwsa0mga",
+      "leaf": "strings.field-labels",
+      "context": "Proof section motion controls",
+      "status": "draft",
+      "origin": "authored",
+      "text": "Resume motion"
+    },
+    {
+      "id": "st.vn3r0qxsm9",
+      "leaf": "strings.field-labels",
+      "context": "Proof section motion controls",
+      "status": "draft",
+      "origin": "authored",
+      "text": "Previous quote"
+    },
+    {
+      "id": "st.9pyzxqprj7",
+      "leaf": "strings.field-labels",
+      "context": "Proof section motion controls",
+      "status": "draft",
+      "origin": "authored",
+      "text": "Next quote"
     }
   ],
   "externalRecords": [
