@@ -1,13 +1,2 @@
 @import '@clossys/designer/tokens.css';
 @import '@clossys/designer/compiled.css';
-
-html, body { margin: 0; min-height: 100%; }
-body { font-family: var(--font-body); color: var(--color-ink-primary); background: var(--color-surface-base); }
-.studio-columns { display: grid; gap: var(--spacing-2xl); grid-template-columns: minmax(0, 1fr); }
-.studio-cell-tree { min-width: 0; }
-.studio-cell-tree ul { list-style: none; margin: 0; padding-inline-start: var(--spacing-lg); }
-.studio-cell-tree > ul { padding-inline-start: 0; }
-.studio-cell-tree a { display: block; padding: var(--spacing-sm); border-radius: var(--ui-radius-control); }
-.studio-cell-tree a[aria-current='true'] { background: var(--color-surface-selected); font-weight: 600; }
-.studio-cell-source { white-space: pre-wrap; overflow-wrap: anywhere; }
-@media (min-width: 64rem) { .studio-columns { grid-template-columns: minmax(12rem, 1fr) minmax(0, 3fr); } }

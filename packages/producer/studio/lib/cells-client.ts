@@ -8,7 +8,7 @@ function object(value: unknown): value is Record<string, unknown> { return typeo
 
 function summary(value: unknown): CellSummary {
   if (!object(value) || typeof value.id !== 'string' || !value.id || !Number.isSafeInteger(value.version) || Number(value.version) < 1 || !['draft', 'active', 'retired'].includes(String(value.status)) || typeof value.path !== 'string' || !object(value.fields)) throw new Error('A cell in the response is invalid.');
-  return { id: value.id, title: typeof value.fields.title === 'string' && value.fields.title ? value.fields.title : value.id, version: Number(value.version), status: value.status as 'draft' | 'active' | 'retired', path: value.path, fields: value.fields };
+  return { id: value.id, title: typeof value.fields.title === 'string' && value.fields.title ? value.fields.title : value.id.split('.').at(-1)!, version: Number(value.version), status: value.status as 'draft' | 'active' | 'retired', path: value.path, fields: value.fields };
 }
 
 

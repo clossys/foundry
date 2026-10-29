@@ -2,26 +2,47 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { ArticleBody, ContentSection, DetailView, EmptyState, SectionFrame } from '@clossys/designer/blocks';
-import { Icon, Link } from '@clossys/designer/components';
-import { FileText, Home } from '@clossys/designer/icons';
+import { ArticleBody, ContentSection, EmptyState, SectionFrame, SectionHeader } from '@clossys/designer/blocks';
+import { Badge, Icon, Link, NavigationTree, NavigationTreeItem, NavigationTreeItemContent } from '@clossys/designer/components';
+import { ChevronDown, ChevronRight, FileText, Home } from '@clossys/designer/icons';
 import { AGENT_LABELS, isAgent, type Agent } from '../lib/agents';
 import { cellHierarchy, loadCell, loadCells, type AgentCells, type CellDetail, type CellNode } from '../lib/cells-client';
 import { StudioFrame } from './StudioFrame';
 
 type Resource<T> = { state: 'loading' } | { state: 'error'; message: string } | { state: 'ready'; value: T };
 
-function CellTree({ nodes, agent, selected }: { nodes: readonly CellNode[]; agent: Agent; selected?: string }) {
-  return <ul>{nodes.map(node => <li key={node.id}>
-    {node.group ? <span>{node.title}</span> : <Link href={`?agent=${encodeURIComponent(agent)}&cell=${encodeURIComponent(node.id)}`} aria-current={selected === node.id ? 'true' : undefined}>{node.title}{node.status || node.version !== undefined ? <span className="text-body-s text-ink-secondary"> · {[node.status, node.version !== undefined ? `v${node.version}` : undefined].filter(Boolean).join(' · ')}</span> : null}</Link>}
-    {node.children.length ? <CellTree nodes={node.children} agent={agent} selected={selected} /> : null}
-  </li>)}</ul>;
+function cellHref(agent: Agent, id: string) {
+  return `?agent=${encodeURIComponent(agent)}&cell=${encodeURIComponent(id)}`;
 }
+
+function firstCell(nodes: readonly CellNode[]): CellNode | undefined {
+  for (const node of nodes) {
+    if (!node.group) return node;
+    const child = firstCell(node.children);
+    if (child) return child;
+  }
+}
+
+function expandedGroups(nodes: readonly CellNode[]): string[] {
+  return nodes.flatMap(node => [...(node.group ? [node.id] : []), ...expandedGroups(node.children)]);
+}
+
+function cellTreeItems(nodes: readonly CellNode[], agent: Agent) {
+  return nodes.map(node => <NavigationTreeItem key={node.id} id={node.id} textValue={node.title} href={node.group ? undefined : cellHref(agent, node.id)}>
+    <NavigationTreeItemContent>{({ isExpanded }) => <>
+      <Link variant="standalone">{node.group ? <Icon glyph={isExpanded ? ChevronDown : ChevronRight} decorative /> : null}{node.title}</Link>
+      {node.status ? <Badge variant={node.status === 'active' ? 'success' : node.status === 'draft' ? 'warning' : 'neutral'}>{node.status}</Badge> : null}
+    </>}</NavigationTreeItemContent>
+    {cellTreeItems(node.children, agent)}
+  </NavigationTreeItem>);
+}
+
 function AgentTree({ index, selected }: { index: AgentCells; selected?: string }) {
   let nodes: CellNode[];
   try { nodes = cellHierarchy(index.cells, index.tree); } catch { return <EmptyState title="Cell tree unavailable" description="Producer returned an invalid cell hierarchy." role="alert" />; }
-  return <ContentSection heading={AGENT_LABELS[index.agent]} headingLevel={2} description={index.state && index.state !== 'ready' ? `Cell index: ${index.state}` : undefined}>
-    {index.error ? <EmptyState title="Cells unavailable" description={index.error} role="alert" /> : index.cells.length ? <nav className="studio-cell-tree" aria-label={`${AGENT_LABELS[index.agent]} cells`}><CellTree nodes={nodes} agent={index.agent} selected={selected} /></nav> : <EmptyState title="No cells yet" description={`No ${AGENT_LABELS[index.agent]} cells were found in this repository.`} />}
+  return <ContentSection>
+    <SectionHeader title={AGENT_LABELS[index.agent]} description={index.state && index.state !== 'ready' ? `Cell index: ${index.state}` : undefined} />
+    {index.error ? <EmptyState title="Cells unavailable" description={index.error} role="alert" /> : index.cells.length ? <NavigationTree aria-label={`${AGENT_LABELS[index.agent]} cells`} selectedRoute={selected ? cellHref(index.agent, selected) : undefined} defaultExpandedKeys={expandedGroups(nodes)}>{cellTreeItems(nodes, index.agent)}</NavigationTree> : <EmptyState title="No cells yet" description={`No ${AGENT_LABELS[index.agent]} cells were found in this repository.`} />}
   </ContentSection>;
 }
 
@@ -50,6 +71,20 @@ export function CellsWorkspace({ agent }: { agent?: Agent }) {
     return () => controller.abort();
   }, [revision]);
   useEffect(() => {
+    if (selectedId || index.state !== 'ready') return;
+    for (const item of index.value) {
+      if (selectedAgent && item.agent !== selectedAgent || item.state !== 'ready') continue;
+      let first: CellNode | undefined;
+      try { first = firstCell(cellHierarchy(item.cells, item.tree)); } catch { continue; }
+      if (!first) continue;
+      const next = new URLSearchParams(params.toString());
+      next.set('agent', item.agent);
+      next.set('cell', first.id);
+      router.replace(`?${next.toString()}`, { scroll: false });
+      break;
+    }
+  }, [index, params, router, selectedAgent, selectedId]);
+  useEffect(() => {
     const controller = new AbortController();
     setDetail({ state: 'loading' });
     if (selectedAgent && selectedId) loadCell(selectedAgent, selectedId, controller.signal).then(value => setDetail({ state: 'ready', value }), error => { if (!controller.signal.aborted) setDetail({ state: 'error', message: error instanceof Error ? error.message : 'The cell could not be loaded.' }); });
@@ -63,16 +98,16 @@ export function CellsWorkspace({ agent }: { agent?: Agent }) {
     ...(agent ? [{ id: 'home', label: 'Open Home', href: '/', icon: <Icon glyph={Home} decorative /> }] : []),
   ] }}>
     <SectionFrame measure="wide">
-      <p className="text-body-s text-ink-secondary" role="status">{live ? 'Changes refresh automatically.' : 'Use Reload cells to check for changes.'}</p>
-      {index.state === 'loading' ? <EmptyState role="status" title="Loading cells…" description="Reading the current cell index from Producer." /> : index.state === 'error' ? <EmptyState role="alert" title="Cells could not be loaded" description={index.message} /> : visible.length === 0 ? <EmptyState title="No cells available" description="Producer has no cell index for this view." /> : <div className="studio-columns">
-        <div>{visible.map(item => <AgentTree key={item.agent} index={item} selected={selectedAgent === item.agent ? selectedId : undefined} />)}</div>
-        <div>
-          {!selectedId ? <EmptyState title="Choose a cell" description="Select a cell from the tree to read its content." /> : !selectedAgent ? <EmptyState role="alert" title="Choose an agent" description="The selected cell needs an agent from this repository." /> : detail.state === 'loading' || detail.state === 'ready' && (detail.value.agent !== selectedAgent || detail.value.id !== selectedId) ? <EmptyState role="status" title="Loading cell…" /> : detail.state === 'error' ? <EmptyState role="alert" title="Cell could not be loaded" description={detail.message} /> : <>
-            <DetailView title={selectedCell?.title ?? selectedId} fields={[{ label: 'Agent', value: AGENT_LABELS[detail.value.agent] }, { label: 'Cell', value: detail.value.id }, ...(detail.value.status ? [{ label: 'Status', value: detail.value.status }] : []), ...(detail.value.version !== undefined ? [{ label: 'Version', value: String(detail.value.version) }] : []), ...(detail.value.path ? [{ label: 'Source', value: detail.value.path }] : [])]} />
-            <ArticleBody aria-label="Cell content"><div className="studio-cell-source">{detail.value.content || 'This cell has no content.'}</div></ArticleBody>
-          </>}
-        </div>
-      </div>}
+      <SectionHeader role="status" description={live ? 'Changes refresh automatically.' : 'Use Reload cells to check for changes.'} />
+      {index.state === 'loading' ? <EmptyState role="status" title="Loading cells…" description="Reading the current cell index from Producer." /> : index.state === 'error' ? <EmptyState role="alert" title="Cells could not be loaded" description={index.message} /> : visible.length === 0 ? <EmptyState title="No cells available" description="Producer has no cell index for this view." /> : <ArticleBody aria-label="Cell workspace" toc={<ContentSection>{visible.map(item => <AgentTree key={item.agent} index={item} selected={selectedAgent === item.agent ? selectedId : undefined} />)}</ContentSection>}>
+        {!selectedId ? <EmptyState title="No cell selected" description="Select an available cell from the tree to read its content." /> : !selectedAgent ? <EmptyState role="alert" title="Choose an agent" description="The selected cell needs an agent from this repository." /> : detail.state === 'loading' || detail.state === 'ready' && (detail.value.agent !== selectedAgent || detail.value.id !== selectedId) ? <EmptyState role="status" title="Loading cell…" /> : detail.state === 'error' ? <EmptyState role="alert" title="Cell could not be loaded" description={detail.message} /> : <>
+          <SectionHeader title={selectedCell?.title ?? detail.value.title} eyebrow={AGENT_LABELS[detail.value.agent]} description={detail.value.id} stats={<>
+            {detail.value.status ? <Badge variant={detail.value.status === 'active' ? 'success' : detail.value.status === 'draft' ? 'warning' : 'neutral'}>{detail.value.status}</Badge> : null}
+            {detail.value.version !== undefined ? <Badge>v{detail.value.version}</Badge> : null}
+          </>} />
+          <pre aria-label="Cell content">{detail.value.content || 'This cell has no content.'}</pre>
+        </>}
+      </ArticleBody>}
     </SectionFrame>
   </StudioFrame>;
 }

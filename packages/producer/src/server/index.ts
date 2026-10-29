@@ -7,6 +7,7 @@ import { AGENT_KINDS, CELL_ID, agentRoot, hasCellTree, inventory, readCells, sum
 import { TOKEN_HEADER } from "./contract.js";
 import { startStudio, studioEntry, type StudioChild } from "./studio.js";
 import { watchCells } from "./watch.js";
+import { studioTheme } from "./theme.js";
 
 export type { AgentCells, CellSummary, CellsResponse, ChangeEvent } from "./contract.js";
 export { TOKEN_HEADER } from "./contract.js";
@@ -86,7 +87,7 @@ export async function startProducerServer(options: ProducerServerOptions): Promi
       if (request.method !== "GET") { json(response, 405, { error: "API is read-only" }); return; }
       if (pathname === "/api/health") { json(response, 200, { ok: !!child, studio: child ? "ready" : "starting" }); return; }
       if (pathname === "/api/config") {
-        json(response, 200, { token, tokenHeader: TOKEN_HEADER, readOnly: true, compilation: options.compilation ?? [], agents: AGENT_KINDS.map(agent => ({ agent, packageName: resolveAgent(agent).packageName })) }); return;
+        json(response, 200, { token, tokenHeader: TOKEN_HEADER, readOnly: true, theme: await studioTheme(options.root), compilation: options.compilation ?? [], agents: AGENT_KINDS.map(agent => ({ agent, packageName: resolveAgent(agent).packageName })) }); return;
       }
       if (pathname === "/api/cells") { json(response, 200, { agents: await Promise.all(AGENT_KINDS.map(agent => inventory(options.root, agent))) }); return; }
       if (pathname === "/api/events") {
