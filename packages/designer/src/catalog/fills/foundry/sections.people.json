@@ -58,7 +58,7 @@
         "sourceFiles": [
           {
             "path": "packages/designer/src/blocks/PeopleGrid.tsx",
-            "sha256": "237b2bb1e2dc637b1ac474cc34a3cfd7bde65bf293b929b70acddf2f7c8b715d"
+            "sha256": "cb44863c7b61ef29d0f592899f7aa88c9dbf7e6601f4c190aa0ce34326e16899"
           },
           {
             "path": "packages/designer/src/blocks/section-ground.ts",

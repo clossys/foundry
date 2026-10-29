@@ -9,6 +9,20 @@ import { TestimonialSet } from "./TestimonialSet.js";
 const source = (name: string) => readFileSync(new URL(name, import.meta.url), "utf8");
 
 describe("MR-7a evidence section composition", () => {
+  it("keeps every evidence copy field equal to its Writer passage contract", () => {
+    type ContractRow = { id: string; contract: { sectionId?: string; passageSchema: string; copy: unknown } };
+    const sections = JSON.parse(source("../catalog/slots/sections.json")) as ContractRow[];
+    const passages = JSON.parse(source("../../../writer/src/catalog/slots/passages.json")) as ContractRow[];
+    for (const name of ["features", "call-to-action", "testimonials", "logo-cloud", "people", "media"]) {
+      const section = sections.find(row => row.id === `sections.${name}`);
+      expect(section, name).toBeDefined();
+      const matches = passages.filter(row => row.id === section!.contract.passageSchema);
+      expect(matches, name).toHaveLength(1);
+      expect(matches[0]!.contract.sectionId, name).toBe(section!.id);
+      expect(matches[0]!.contract.copy, name).toEqual(section!.contract.copy);
+    }
+  });
+
   it("composes supported content elements through the canonical primitive [mutant: restore raw styled attribution]", () => {
     for (const name of ["CallToAction.tsx", "TestimonialSet.tsx", "Testimonial.server.tsx", "MediaFigure.tsx", "items/compat-features.tsx"]) {
       const text = source(name);
@@ -48,5 +62,22 @@ describe("MR-7a evidence section composition", () => {
     host.innerHTML = renderToStaticMarkup(<MediaFigure caption={<em>Caption</em>} framed><img src="/image.png" alt="Example" /></MediaFigure>);
     expect(host.querySelector("figure > figcaption em")?.textContent).toBe("Caption");
     expect(host.querySelector("figure > div > img")?.getAttribute("alt")).toBe("Example");
+  });
+
+  it("preserves rich quote and separate rich attribution on every ground", () => {
+    for (const ground of ["base", "sunken", "inverse"] as const) {
+      const host = document.createElement("div");
+      host.innerHTML = renderToStaticMarkup(<TestimonialSet ground={ground} items={[{
+        id: "rich",
+        quote: <><strong>Clear</strong> and <em>useful</em>.</>,
+        attributorName: <strong>Example</strong>,
+        attributorRole: <em>Reviewer</em>,
+      }]} />);
+      expect(host.querySelector("figure > blockquote strong")?.textContent).toBe("Clear");
+      expect(host.querySelector("figure > blockquote em")?.textContent).toBe("useful");
+      expect(host.querySelector("figcaption > div > span:first-child > strong")?.textContent).toBe("Example");
+      expect(host.querySelector("figcaption > div > span:nth-child(2) > em")?.textContent).toBe("Reviewer");
+      expect(host.querySelector("figcaption [aria-hidden]")).toBeNull();
+    }
   });
 });

@@ -10,7 +10,7 @@ describe("MR-7a people evidence", () => {
   it("composes canonical primitives without raw styled elements [mutant: raw styled role paragraph]", () => {
     const source = readFileSync(join(import.meta.dirname, "PeopleGrid.tsx"), "utf8");
     expect(source).not.toMatch(/<(?:a|button|input)\b/);
-    expect(source).not.toMatch(/<(?:p|span)\b[^>]*(?:className|style)=/);
+    expect(source).not.toMatch(/<[a-z][A-Za-z0-9]*\b[^>]*(?:className|style)=/);
     expect(source).toContain("SemanticContent");
   });
 

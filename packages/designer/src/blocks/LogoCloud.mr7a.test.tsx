@@ -19,7 +19,7 @@ describe("MR-7a logo evidence", () => {
   it("composes canonical primitives without raw styled elements [mutant: raw styled span or anchor]", () => {
     const source = readFileSync(join(import.meta.dirname, "LogoCloud.tsx"), "utf8");
     expect(source).not.toMatch(/<(?:a|button|input)\b/);
-    expect(source).not.toMatch(/<(?:p|span)\b[^>]*(?:className|style)=/);
+    expect(source).not.toMatch(/<[a-z][A-Za-z0-9]*\b[^>]*(?:className|style)=/);
     expect(source).toContain("SemanticContent");
     expect(source).toContain("<Link");
   });

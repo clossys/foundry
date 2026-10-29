@@ -55,7 +55,7 @@
         "sourceFiles": [
           {
             "path": "packages/designer/src/blocks/CallToAction.tsx",
-            "sha256": "7ca312738b792c3a86143b562b5c307a2e67eed7d1a083a7e50badc19687b77f"
+            "sha256": "1f5bf1589a079c5c39e23345d0988d6af53bc6d2ca8fafefccc0cd90a1ba557f"
           },
           {
             "path": "packages/designer/src/blocks/section-ground.ts",
