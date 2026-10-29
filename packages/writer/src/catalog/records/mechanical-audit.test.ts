@@ -221,7 +221,7 @@ describe("catalog mechanical audit (synthetic approval is never authored approva
         `${locale}/${record.id}/${key}`).toBe(count);
       }
     }
-    writeFileSync("/tmp/s-wr-mech-audit-findings.json", JSON.stringify({
+    writeFileSync(fileURLToPath(new URL("../../../reports/mechanical-audit.json", import.meta.url)), JSON.stringify({
       scope: "Discovered JSON catalog records; mechanical harness, not admin coverage or approval",
       coverageScope: "Per JSON file and its native locale envelope; other checks and references use merged same-locale records",
       lexicon: {
