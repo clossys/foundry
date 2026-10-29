@@ -158,6 +158,10 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 
+The `LoaderCircle` glyph uses the exact `loader-circle` path nodes from
+`lucide-react` 1.24.0, under the ISC notice above. It supplies the owner-ratified
+loading asset; its content pin is retained in the Lucide importer roster.
+
 The draft `PanelLeft` glyph also uses the exact `panel-left` path nodes from
 `lucide-react` 1.24.0, under the ISC notice above. Its content pin is retained
 in the Lucide importer roster.

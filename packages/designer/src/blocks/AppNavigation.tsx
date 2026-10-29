@@ -1,4 +1,4 @@
-import { ModalContext, useLocale } from "react-aria-components";
+import { ModalContext, useLocale, NavigationTree, NavigationTreeItem, NavigationTreeItemContent } from "react-aria-components";
 import { cloneElement, isValidElement, useContext, useEffect, useId, useRef, useState, type ReactElement, type ReactNode } from "react";
 import { createPortal } from "react-dom";
 import { Button } from "../components/Button.js";
@@ -6,7 +6,6 @@ import { Icon } from "../components/Icon.js";
 import { Link } from "../components/Link.js";
 import { useShellCopy } from "../components/Banner.copy-context.js";
 import { SHELL_COPY_REFS } from "../components/Banner.copy.js";
-import { NavigationTree, NavigationTreeItem, NavigationTreeItemContent } from "../components/NavigationTree.js";
 import { Tooltip } from "../components/Tooltip.js";
 import { cx } from "../components/internal/cx.js";
 import { FileText } from "../icons/FileText.js";
@@ -233,7 +232,7 @@ export function AppNavigation({ onNavigate, fullViewport = false, retainMounted 
     {header !== undefined && header !== null && header !== false && <div data-application-navigation-region="header" className="min-w-0 shrink-0 pb-sm">{header}</div>}
     <div data-application-navigation-region="links" className="min-h-0 flex-1 overflow-auto">
       {!tree.length ? <p className="p-sm text-body text-ink-muted">{emptyMessage}</p> :
-        <NavigationTree aria-label={label} selectedRoute={ancestry.length ? ancestry.at(-1)?.href : activeHref}
+        <NavigationTree aria-label={label}
           expandedKeys={expanded} onExpandedChange={keys => setExpanded(new Set([...keys].map(String)))}
           className="flex min-w-0 flex-col gap-xs outline-none">
           {tree.map(node => item(node))}

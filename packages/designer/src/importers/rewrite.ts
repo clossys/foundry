@@ -937,7 +937,7 @@ function rewriteSource(input: RewriteInput): RewriteResult {
         "max-w-sm": ["tokens.content-size.notice", "max-w-(--ui-width-notice-max)"],
         "max-w-xs": ["tokens.content-size.notice", "max-w-(--ui-width-notice-max)"],
         "max-h-72": ["tokens.content-size.notice", "max-h-(--ui-width-notice-max)"],
-        "leading-normal": ["tokens.line-height.heading", "leading-(--leading-heading)"],
+        "leading-normal": ["tokens.line-height.normal", "leading-(--leading-normal)"],
         "leading-snug": ["tokens.line-height.heading", "leading-(--leading-heading)"],
         "h-px": ["tokens.border-width.hairline", "h-(--ui-border-hairline)"],
         "translate-x-px": ["tokens.border-width.hairline", "translate-x-(--ui-border-hairline)"],

@@ -1,0 +1,13 @@
+{
+  "schemaVersion": 1,
+  "layer": "components",
+  "baseSignedHead": "581e4fd70589fe072d9ce38fa159306d473c1754",
+  "status": "owner-signed",
+  "ownerSignoffComment": "6483104271",
+  "conversions": [
+    {
+      "id": "components.navigation-tree",
+      "target": "components.sidebar"
+    }
+  ]
+}

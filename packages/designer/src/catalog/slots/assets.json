@@ -977,5 +977,25 @@
     },
     "requires": [],
     "status": "draft"
+  },
+  {
+    "id": "assets.icon-loader",
+    "layer": "assets",
+    "contract": {
+      "kind": "asset",
+      "valueKind": "glyph",
+      "members": {
+        "mode": "closed",
+        "names": [
+          "default"
+        ]
+      },
+      "modes": [
+        "light"
+      ],
+      "grid": 24
+    },
+    "requires": [],
+    "status": "draft"
   }
 ]

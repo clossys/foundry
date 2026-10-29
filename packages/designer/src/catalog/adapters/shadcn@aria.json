@@ -195,7 +195,8 @@
     "UserIcon": "assets.icon-user",
     "XCircleIcon": "assets.icon-danger",
     "XIcon": "assets.icon-close",
-    "PanelLeftIcon": "assets.icon-panel-left"
+    "PanelLeftIcon": "assets.icon-panel-left",
+    "Loader2Icon": "assets.icon-loader"
   },
   "license": "MIT",
   "limitations": [

@@ -62,7 +62,7 @@ export function loadCatalogBundles() {
   }
   return structuredClone({
     package: data.package,
-    valueFills: [...data.valueFiles.map(file => file.document), ...importLucide().filter(doc => doc.$extensions["com.clossys.fill"].slot === "assets.icon-panel-left")] as unknown as FillDoc[],
+    valueFills: [...data.valueFiles.map(file => file.document), ...importLucide().filter(doc => ["assets.icon-panel-left", "assets.icon-loader"].includes(doc.$extensions["com.clossys.fill"].slot))] as unknown as FillDoc[],
     componentFills: [...foundry.fills, ...shadcn.fills, ...starter.fills, ...rail.fills.filter(doc => newRail(doc.$extensions["com.clossys.fill"]))] as readonly ComponentCandidateDocument[],
     foundryCoverage: foundry.coverage,
     sourceCandidates: [...sourceCandidates, ...starter.candidates, ...rail.candidates.filter(newRail)],

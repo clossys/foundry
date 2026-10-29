@@ -232,7 +232,6 @@
           "id": "navigation-trees",
           "label": "Trees",
           "leaves": [
-            "components.navigation-tree",
             "components.sidebar"
           ]
         }

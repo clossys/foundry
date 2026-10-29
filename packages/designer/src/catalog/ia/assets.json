@@ -65,7 +65,8 @@
             "assets.icon-grid-view",
             "assets.icon-theme-light",
             "assets.icon-theme-dark",
-            "assets.icon-theme-system"
+            "assets.icon-theme-system",
+            "assets.icon-loader"
           ]
         },
         {

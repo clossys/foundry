@@ -449,5 +449,16 @@
       "file": "src/icons/PanelLeft.ts",
       "sha256": "dd3c0b171cb38e6c3c773aa6e1d9eb5eaf2d84f7ab983abb6dbef6bfa4d4e512"
     }
+  },
+  {
+    "leaf": "assets.icon-loader",
+    "export": "LoaderCircle",
+    "upstream": "loader-circle",
+    "pin": {
+      "package": "lucide-react",
+      "version": "1.24.0",
+      "file": "src/icons/LoaderCircle.ts",
+      "sha256": "d749afbcc2ebaf1eb3dc84e6f55326d0984902e8e6f617b35ad9dbe8a4eb896a"
+    }
   }
 ]
