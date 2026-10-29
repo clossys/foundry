@@ -11,6 +11,7 @@
     "node": ">=20"
   },
   "scripts": {
+    "rehearse:marketing": "node scripts/marketing-reference-rehearsal.mjs",
     "setup": "npm ci && npm run setup:generated-merge",
     "setup:generated-merge": "node scripts/generated-merge.mjs setup",
     "generate:frame": "node scripts/generated-merge.mjs generate",
