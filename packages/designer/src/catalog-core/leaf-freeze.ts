@@ -42,7 +42,7 @@ if (assetAmendments.schemaVersion !== 1 || assetAmendments.layer !== "assets" ||
 const signedAssetAdditions = assetAmendments.signedAdditions;
 if (!Array.isArray(signedAssetAdditions) || signedAssetAdditions.length !== 1 ||
     signedAssetAdditions[0]?.id !== "assets.icon-loader" ||
-    signedAssetAdditions[0]?.ownerSignoffComment !== "6483104271") {
+    signedAssetAdditions[0]?.ownerSignoffComment !== "6483104271" || signedAssetAdditions[0]?.status !== "owner-ratified") {
   throw new Error("LEAF_FREEZE: invalid signed loading glyph amendment");
 }
 // Draft icon additions do not inherit the separate Media signature.
@@ -71,7 +71,7 @@ function signedAliasConversions(): readonly string[] {
   const conversion = aliasAmendments.conversions;
   if (aliasAmendments.schemaVersion !== 1 || aliasAmendments.layer !== "components" ||
       aliasAmendments.baseSignedHead !== components.signedHead || aliasAmendments.status !== "owner-signed" ||
-      aliasAmendments.ownerSignoffComment !== "6483104271" || conversion.length !== 1 ||
+      aliasAmendments.ownerSignoffComment !== "6483104271" || !Array.isArray(conversion) || conversion.length !== 1 ||
       conversion[0]?.id !== "components.navigation-tree" || conversion[0]?.target !== "components.sidebar" ||
       componentAliases.filter(row => row.id === "components.navigation-tree").length !== 1 ||
       componentAliases.find(row => row.id === "components.navigation-tree")?.target !== "components.sidebar") {

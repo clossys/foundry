@@ -16,7 +16,7 @@ describe("authenticated Adobe starter declarations", () => {
     const result = importRacStarter(input());
     expect(RAC_STARTER_PIN.commit).toBe("4dd44e0f400636a87a9ad4390903e78c5ae6113c");
     expect(result.fills.map(doc => doc.$extensions["com.clossys.fill"].slot)).toEqual([
-      "components.color-picker", "components.form", "components.navigation-tree", "components.number-field",
+      "components.color-picker", "components.form", "components.number-field",
       "components.tag-group", "components.toolbar", "components.tree",
     ]);
     for (const doc of result.fills) {

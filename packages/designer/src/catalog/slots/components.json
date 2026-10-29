@@ -1028,7 +1028,17 @@
           "tokens.state-opacity",
           "tokens.surface-color",
           "tokens.text-color",
-          "tokens.touch-target"
+          "tokens.touch-target",
+          "tokens.action-color",
+          "tokens.border-width",
+          "tokens.control-radius",
+          "tokens.duration",
+          "tokens.easing",
+          "tokens.focus-color",
+          "tokens.focus-outline",
+          "tokens.font-size",
+          "tokens.font-weight",
+          "tokens.line-height"
         ],
         "assets": []
       },
@@ -1790,9 +1800,12 @@
       "props": [],
       "allowedReads": {
         "tokens": [
-          "tokens.text-color"
+          "tokens.text-color",
+          "tokens.animation"
         ],
-        "assets": []
+        "assets": [
+          "assets.icon-loader"
+        ]
       }
     },
     "requires": [],
@@ -1821,7 +1834,19 @@
           "tokens.spacing",
           "tokens.status-color",
           "tokens.text-color",
-          "tokens.typeface"
+          "tokens.typeface",
+          "tokens.accent-color",
+          "tokens.action-color",
+          "tokens.border-color",
+          "tokens.border-width",
+          "tokens.control-color",
+          "tokens.duration",
+          "tokens.easing",
+          "tokens.focus-color",
+          "tokens.focus-outline",
+          "tokens.font-size",
+          "tokens.font-weight",
+          "tokens.surface-color"
         ],
         "assets": [
           "assets.icon-success",
@@ -2060,7 +2085,17 @@
       },
       "props": [],
       "allowedReads": {
-        "tokens": [],
+        "tokens": [
+          "tokens.z-index",
+          "tokens.border-color",
+          "tokens.border-width",
+          "tokens.control-radius",
+          "tokens.font-size",
+          "tokens.spacing",
+          "tokens.surface-color",
+          "tokens.text-color",
+          "tokens.typeface"
+        ],
         "assets": [
           "assets.icon-success",
           "assets.icon-warning",

@@ -1,3 +1,4 @@
+import { importFeedbackRail } from "./feedback-rail.js";
 import data from "./vendor/shadcn-aria-rail.data.json" with { type: "json" };
 import adapter from "../catalog/adapters/shadcn@aria.json" with { type: "json" };
 import slots from "../catalog/slots/components.json" with { type: "json" };
@@ -7,7 +8,7 @@ import type { SourceBundle } from "../catalog-core/changeset-components.js";
 import { rewriteShadcnAria, type SourceFile } from "./rewrite.js";
 
 /** Current official Aria source additions; existing v1 fills keep their authenticated pin. */
-export const SHADCN_ARIA_RAIL_ITEMS = ["sidebar", "command", "sheet", "empty", "item", "scroll-area", "dropdown-menu", "kbd"] as const;
+export const SHADCN_ARIA_RAIL_ITEMS = ["sidebar", "command", "sheet", "empty", "item", "scroll-area", "dropdown-menu", "kbd", "spinner", "sonner"] as const;
 const leafOf = (item: string): string => item === "kbd" ? "keyboard" : item;
 const exportsOf = (code: string): string[] => [...code.matchAll(/export\s*\{([^}]+)\}/g)].flatMap(match => match[1]!.split(",").map(x => x.trim()).filter(x => x && !x.startsWith("type ")));
 const dependencies = (code: string): string[] => [...code.matchAll(/from\s*"@\/registry\/bases\/aria\/ui\/([a-z-]+)"/g)].map(match => match[1]!);
@@ -25,6 +26,7 @@ export function importShadcnAriaRail() {
   const candidates = [];
   const rewrites: Record<string, ReturnType<typeof rewriteShadcnAria>> = {};
   for (const item of SHADCN_ARIA_RAIL_ITEMS) {
+    if (item === "spinner" || item === "sonner") continue;
     const leaf = leafOf(item), slot = `components.${leaf}`, original = byItem.get(item)!;
     const closure = new Set<string>();
     const visit = (name: string): void => {
@@ -89,5 +91,6 @@ export function importShadcnAriaRail() {
     candidates.push({ fill: `${source}/${slot}`, slot, descriptorHash, transform, upstreamFiles, outputFiles: unique, blockers: issues, status: issues.length ? "blocked" as const : "ready" as const });
     rewrites[item] = { transform, files: unique, outputSha256: descriptor.outputSha256, reads: descriptor.reads, parts: descriptor.parts.map(x=>x.item), issues, notes };
   }
-  return { fills, sourceBundles, candidates, rewrites, files: [...allFiles.values()] };
+  const feedback = importFeedbackRail(data);
+  return { fills: [...fills, ...feedback.fills], sourceBundles: [...sourceBundles, ...feedback.sourceBundles], candidates: [...candidates, ...feedback.candidates], rewrites: {...rewrites,...feedback.rewrites}, files: [...allFiles.values(),...feedback.files] };
 }

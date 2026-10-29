@@ -28,7 +28,7 @@ const families: Record<string, readonly string[]> = {
   "feedback-progress": ["progress-bar", "spinner", "skeleton"],
   "navigation-links": ["link", "breadcrumbs"],
   "navigation-panels": ["tabs"],
-  "navigation-trees": ["navigation-tree", "sidebar"],
+  "navigation-trees": ["sidebar"],
   "containment-structure": ["card", "separator", "disclosure", "resize-handle", "scroll-area"],
   "containment-overlays": ["dialog", "popover", "tooltip", "sheet"],
 };
@@ -55,9 +55,9 @@ describe("component build IA registry", () => {
   it("registers the 57 signed ids and two explicit local drafts once as draft contracts without a freeze claim", () => {
     const registry = loadComponentRegistry();
     expect(registry.status).toBe("build-unfrozen");
-    expect(registry.slots).toHaveLength(66);
+    expect(registry.slots).toHaveLength(65);
     expect(registry.slots.map(slot => slot.id)).toEqual([...inventory.filter(id => !addedInventory.includes(id)), ...addedInventory]);
-    expect(new Set(registry.slots.map(slot => slot.id)).size).toBe(66);
+    expect(new Set(registry.slots.map(slot => slot.id)).size).toBe(65);
     expect(registry.slots.every(slot => isValidId("slot", slot.id) && slot.layer === "components" && slot.status === "draft" && slot.signoff === undefined)).toBe(true);
     expect(componentRegistryFindings(registry)).toEqual([]);
   });
@@ -83,7 +83,7 @@ describe("component build IA registry", () => {
       expect(slot.contract.members.mode).toBe("closed");
       expect(slot.contract.props).toEqual(slot.id === "components.semantic-content" ? ["as"] : []);
     }
-    expect(registry.slots.filter(slot => slot.contract.root.startsWith("rac:"))).toHaveLength(42);
+    expect(registry.slots.filter(slot => slot.contract.root.startsWith("rac:"))).toHaveLength(41);
     expect(registry.slots.filter(slot => slot.contract.root === "presentational")).toHaveLength(13);
     expect(registry.slots.filter(slot => slot.contract.root === "engine:none")).toHaveLength(11);
   });

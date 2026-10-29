@@ -1,0 +1,183 @@
+{
+  "$extensions": {
+    "com.clossys.fill": {
+      "id": "shadcn@aria/components.toast",
+      "slot": "components.toast",
+      "source": "shadcn@aria",
+      "mode": "implementation",
+      "sourceAddress": "https://github.com/shadcn-ui/ui/blob/96da9cc7f1aa10580a3741664e2a77c721206c00/apps/v4/registry/bases/aria/ui/sonner.tsx",
+      "relation": "same-contract",
+      "builtOn": [
+        "components.button",
+        "components.icon"
+      ],
+      "conforms": [],
+      "evidence": [],
+      "author": "third-party",
+      "trust": "pinned-upstream",
+      "license": "MIT",
+      "status": "draft",
+      "pin": {
+        "url": "https://github.com/shadcn-ui/ui",
+        "commit": "96da9cc7f1aa10580a3741664e2a77c721206c00",
+        "sha256": "d5178ce4c7834d3f46d261698395b498b8f45fef29975585df7e26cb43aa3cc7"
+      },
+      "unmapped": []
+    }
+  },
+  "components": {
+    "toast": {
+      "slot": "components.toast",
+      "source": "shadcn@aria",
+      "root": "rac:UNSTABLE_Toast",
+      "members": [
+        "tone.success",
+        "tone.warning",
+        "tone.danger",
+        "tone.info",
+        "action",
+        "timeout"
+      ],
+      "props": [],
+      "propMap": {
+        "tone.success": "Toaster",
+        "tone.warning": "Toaster",
+        "tone.danger": "Toaster",
+        "tone.info": "Toaster",
+        "action": "Toaster",
+        "timeout": "Toaster"
+      },
+      "reads": {
+        "tokens": [
+          "tokens.border-color.base",
+          "tokens.border-width.hairline",
+          "tokens.control-radius.default",
+          "tokens.font-size.sm",
+          "tokens.font-size.xs",
+          "tokens.spacing.lg",
+          "tokens.spacing.sm",
+          "tokens.spacing.xs",
+          "tokens.surface-color.overlay",
+          "tokens.text-color.primary",
+          "tokens.typeface.body",
+          "tokens.z-index.toast"
+        ],
+        "assets": [
+          "assets.icon-danger",
+          "assets.icon-info",
+          "assets.icon-success",
+          "assets.icon-warning"
+        ],
+        "components": [
+          "components.button",
+          "components.icon"
+        ]
+      },
+      "composes": [
+        "components.button",
+        "components.icon"
+      ],
+      "impl": {
+        "kind": "source",
+        "entry": "components/toast/sonner.tsx",
+        "export": "Toaster"
+      },
+      "license": "MIT",
+      "pin": {
+        "url": "https://github.com/shadcn-ui/ui",
+        "commit": "96da9cc7f1aa10580a3741664e2a77c721206c00",
+        "files": [
+          {
+            "path": "apps/v4/registry/bases/aria/ui/sonner.tsx",
+            "sha256": "d5178ce4c7834d3f46d261698395b498b8f45fef29975585df7e26cb43aa3cc7"
+          },
+          {
+            "path": "apps/v4/registry/styles/style-nova.css",
+            "sha256": "fd9803ec398290c306b377a46a769cad0c7ff024bf6a626993c113cacc20f16e"
+          },
+          {
+            "path": "LICENSE.md",
+            "sha256": "1564074e13439397221ffd522e2e504d56561994a23d371aa5e3ad43e4f5423f"
+          }
+        ]
+      },
+      "notice": "notices/SHADCN-ARIA-RAIL.md",
+      "transform": "shadcn-aria-rewrite@2",
+      "item": "sonner",
+      "deps": [
+        {
+          "name": "react",
+          "version": "19.3.0",
+          "license": "MIT"
+        },
+        {
+          "name": "react-aria-components",
+          "version": "1.21.1",
+          "license": "Apache-2.0"
+        },
+        {
+          "name": "class-variance-authority",
+          "version": "0.7.1",
+          "license": "Apache-2.0"
+        },
+        {
+          "name": "clsx",
+          "version": "2.1.1",
+          "license": "MIT"
+        },
+        {
+          "name": "tailwind-merge",
+          "version": "3.7.0",
+          "license": "MIT"
+        }
+      ],
+      "parts": [
+        {
+          "item": "rail-feedback-copy"
+        },
+        {
+          "item": "rail-toast-primitives"
+        },
+        {
+          "item": "rail-toast-queue"
+        }
+      ],
+      "outputSha256": [
+        {
+          "path": "components/_parts/rail-feedback-copy/index.tsx",
+          "sha256": "62adb6da8ca1fe1d28f18f1a11edf206cd462497e604711befb87c0a343b55c8"
+        },
+        {
+          "path": "components/_parts/rail-sonner/index.ts",
+          "sha256": "abfc2b2a870f13aed78210ce0ae7376f3f193dc19c5fc7c083270bd8087371ba"
+        },
+        {
+          "path": "components/_parts/rail-toast-primitives/index.tsx",
+          "sha256": "552cfc61354404f95473f6fcd5c88c957e264151a820539d3da045d3a87ce588"
+        },
+        {
+          "path": "components/_parts/rail-toast-queue/index.ts",
+          "sha256": "d5ee39428b3343f9a1f33a566404638ad766bbeb3ee4c0e8f9237de5d787114f"
+        },
+        {
+          "path": "components/_parts/rail-utils/index.ts",
+          "sha256": "d3753f708b15cc1ec47bc3136827134b702e2069eebdb0ddefb1806b95d7c1d9"
+        },
+        {
+          "path": "components/toast/sonner.tsx",
+          "sha256": "d6c30b6b1eb32e8a5ad01c8f24193f5e89a74e4e2d459964740e39ab21da38bd"
+        },
+        {
+          "path": "notices/SHADCN-ARIA-RAIL.md",
+          "sha256": "0622dbb67cbca61b6c160be781485d59b3b51a49cdf5bae0132e17a0ecbfe42c"
+        }
+      ],
+      "blockers": [],
+      "rac": {
+        "instance": "react-aria-components",
+        "range": "^1.21.1",
+        "peer": false
+      }
+    }
+  }
+}

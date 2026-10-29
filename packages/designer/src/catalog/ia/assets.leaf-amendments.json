@@ -13,7 +13,8 @@
   "signedAdditions": [
     {
       "id": "assets.icon-loader",
-      "ownerSignoffComment": "6483104271"
+      "ownerSignoffComment": "6483104271",
+      "status": "owner-ratified"
     }
   ]
 }

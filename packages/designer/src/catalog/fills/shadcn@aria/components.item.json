@@ -47,6 +47,7 @@
           "tokens.font-weight.medium",
           "tokens.font-weight.normal",
           "tokens.line-height.heading",
+          "tokens.line-height.normal",
           "tokens.spacing.2xl",
           "tokens.spacing.lg",
           "tokens.spacing.md",
@@ -176,7 +177,7 @@
         },
         {
           "path": "components/item/item.tsx",
-          "sha256": "2c8376d52356f7afe95f66a4439c8a33f3a356ac3b01483f85125783698e35b1"
+          "sha256": "005afa9b855b8e2e56181663c0e6ef24e44d2429331fa27c6d0bc378beaaff31"
         },
         {
           "path": "notices/SHADCN-ARIA-RAIL.md",

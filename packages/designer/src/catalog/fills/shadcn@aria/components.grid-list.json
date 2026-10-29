@@ -1,0 +1,167 @@
+{
+  "$extensions": {
+    "com.clossys.fill": {
+      "id": "shadcn@aria/components.grid-list",
+      "slot": "components.grid-list",
+      "source": "shadcn@aria",
+      "mode": "implementation",
+      "sourceAddress": "https://github.com/shadcn-ui/ui/blob/96da9cc7f1aa10580a3741664e2a77c721206c00/apps/v4/registry/bases/aria/ui/item.tsx",
+      "relation": "same-contract",
+      "builtOn": [
+        "components.checkbox"
+      ],
+      "conforms": [],
+      "evidence": [],
+      "author": "third-party",
+      "trust": "pinned-upstream",
+      "license": "MIT",
+      "status": "draft",
+      "pin": {
+        "url": "https://github.com/shadcn-ui/ui",
+        "commit": "96da9cc7f1aa10580a3741664e2a77c721206c00",
+        "sha256": "24f60eb69fe9631d8e58fc4eddda0a12b20c20f079f64aae94c92f81085a8302"
+      },
+      "unmapped": []
+    }
+  },
+  "components": {
+    "grid-list": {
+      "slot": "components.grid-list",
+      "source": "shadcn@aria",
+      "root": "rac:GridList",
+      "members": [
+        "layout.list",
+        "layout.grid",
+        "selection"
+      ],
+      "props": [],
+      "propMap": {
+        "layout.list": "GridList.layout=stack",
+        "layout.grid": "GridList.layout=grid",
+        "selection": "GridList"
+      },
+      "reads": {
+        "tokens": [
+          "tokens.action-color.default",
+          "tokens.border-color.base",
+          "tokens.border-width.hairline",
+          "tokens.control-radius.default",
+          "tokens.duration.default",
+          "tokens.duration.fast",
+          "tokens.easing.default",
+          "tokens.focus-color.default",
+          "tokens.focus-outline.offset",
+          "tokens.focus-outline.width",
+          "tokens.font-size.sm",
+          "tokens.font-size.xs",
+          "tokens.font-weight.medium",
+          "tokens.font-weight.normal",
+          "tokens.line-height.heading",
+          "tokens.line-height.normal",
+          "tokens.spacing.2xl",
+          "tokens.spacing.lg",
+          "tokens.spacing.md",
+          "tokens.spacing.sm",
+          "tokens.spacing.xl",
+          "tokens.spacing.xs",
+          "tokens.surface-color.sunken",
+          "tokens.text-color.muted"
+        ],
+        "assets": [],
+        "components": [
+          "components.checkbox"
+        ]
+      },
+      "composes": [
+        "components.checkbox"
+      ],
+      "impl": {
+        "kind": "source",
+        "entry": "components/grid-list/grid-list.tsx",
+        "export": "GridList"
+      },
+      "license": "MIT",
+      "pin": {
+        "url": "https://github.com/shadcn-ui/ui",
+        "commit": "96da9cc7f1aa10580a3741664e2a77c721206c00",
+        "files": [
+          {
+            "path": "apps/v4/registry/bases/aria/ui/item.tsx",
+            "sha256": "24f60eb69fe9631d8e58fc4eddda0a12b20c20f079f64aae94c92f81085a8302"
+          },
+          {
+            "path": "apps/v4/registry/styles/style-nova.css",
+            "sha256": "fd9803ec398290c306b377a46a769cad0c7ff024bf6a626993c113cacc20f16e"
+          },
+          {
+            "path": "LICENSE.md",
+            "sha256": "1564074e13439397221ffd522e2e504d56561994a23d371aa5e3ad43e4f5423f"
+          }
+        ]
+      },
+      "notice": "notices/SHADCN-ARIA-RAIL.md",
+      "transform": "shadcn-aria-rewrite@2",
+      "item": "grid-list",
+      "deps": [
+        {
+          "name": "react",
+          "version": "19.3.0",
+          "license": "MIT"
+        },
+        {
+          "name": "react-aria-components",
+          "version": "1.21.1",
+          "license": "Apache-2.0"
+        },
+        {
+          "name": "class-variance-authority",
+          "version": "0.7.1",
+          "license": "Apache-2.0"
+        },
+        {
+          "name": "clsx",
+          "version": "2.1.1",
+          "license": "MIT"
+        },
+        {
+          "name": "tailwind-merge",
+          "version": "3.7.0",
+          "license": "MIT"
+        }
+      ],
+      "parts": [
+        {
+          "item": "rail-item"
+        }
+      ],
+      "outputSha256": [
+        {
+          "path": "components/_parts/rail-item/index.ts",
+          "sha256": "5d0ce45180d79337bf4553665604729cc4dabe36cc19264bd3b53eef352c49a7"
+        },
+        {
+          "path": "components/_parts/rail-item/item.tsx",
+          "sha256": "dc4254e19b7c1d1ba614219d4d0ab18fda230f2bfb908ff0ff89bd05cb5dd853"
+        },
+        {
+          "path": "components/_parts/rail-utils/index.ts",
+          "sha256": "d3753f708b15cc1ec47bc3136827134b702e2069eebdb0ddefb1806b95d7c1d9"
+        },
+        {
+          "path": "components/grid-list/grid-list.tsx",
+          "sha256": "d0e7d26948ae2ee3dee6f6e4dbbf94e28db4b2209721ec68f4ec0ec035081ff0"
+        },
+        {
+          "path": "notices/SHADCN-ARIA-RAIL.md",
+          "sha256": "0622dbb67cbca61b6c160be781485d59b3b51a49cdf5bae0132e17a0ecbfe42c"
+        }
+      ],
+      "blockers": [],
+      "rac": {
+        "instance": "react-aria-components",
+        "range": "^1.21.1",
+        "peer": false
+      }
+    }
+  }
+}

@@ -7,6 +7,8 @@ import assetSlots from "../catalog/slots/assets.json" with { type: "json" };
 import componentSlots from "../catalog/slots/components.json" with { type: "json" };
 import tokenFreeze from "../catalog/ia/tokens.leaf-freeze.json" with { type: "json" };
 import assetFreeze from "../catalog/ia/assets.leaf-freeze.json" with { type: "json" };
+import aliasAmendments from "../catalog/ia/components.alias-amendments.json" with { type: "json" };
+import componentAliases from "../catalog/aliases/components.json" with { type: "json" };
 import componentAmendments from "../catalog/ia/components.leaf-amendments.json" with { type: "json" };
 import draftAssetAmendments from "../catalog/ia/assets.draft-leaf-amendments.json" with { type: "json" };
 import assetAmendments from "../catalog/ia/assets.leaf-amendments.json" with { type: "json" };
@@ -61,7 +63,7 @@ describe("owner-signed leaf membership", () => {
     });
     it(`${layer}: allows regrouping, reordering, labels and metadata changes`, () => {
       const value = input();
-      const ids = fixture.layer === "components" ? [...fixture.freeze.leafIds, ...componentAmendments.addedLeafIds] : fixture.layer === "assets" ? [...fixture.freeze.leafIds, ...assetAmendments.addedLeafIds, ...draftAssetAmendments.addedLeafIds] : [...fixture.freeze.leafIds, ...tokenAmendments.addedLeaves.map(row => row.id)];
+      const ids = fixture.layer === "components" ? [...fixture.freeze.leafIds, ...componentAmendments.addedLeafIds].filter(id => id !== "components.navigation-tree") : fixture.layer === "assets" ? [...fixture.freeze.leafIds, ...assetAmendments.addedLeafIds, ...assetAmendments.signedAdditions.map(row => row.id), ...draftAssetAmendments.addedLeafIds] : [...fixture.freeze.leafIds, ...tokenAmendments.addedLeaves.map(row => row.id)];
       value.ia.nodes = [{ id: "new-domain", label: "New domain", children: [{ id: "new-family", label: "New family", leaves: [...ids].reverse() }] }];
       value.slots.reverse();
       Object.assign(value.slots[0]!, { description: "Metadata remains separate" });
@@ -99,8 +101,8 @@ describe("owner-signed leaf membership", () => {
 
   it("requires explicitly offered layers even when both inputs omit one entirely", () => {
     expect(checkFrozenLeafSets([], [], ["components"])).toEqual([
-      expect.objectContaining({ layer: "components", source: "slots", missing: [...componentFreeze.leafIds, ...componentAmendments.addedLeafIds].sort() }),
-      expect.objectContaining({ layer: "components", source: "ia", missing: [...componentFreeze.leafIds, ...componentAmendments.addedLeafIds].sort() }),
+      expect.objectContaining({ layer: "components", source: "slots", missing: [...componentFreeze.leafIds, ...componentAmendments.addedLeafIds].filter(id => id !== "components.navigation-tree").sort() }),
+      expect.objectContaining({ layer: "components", source: "ia", missing: [...componentFreeze.leafIds, ...componentAmendments.addedLeafIds].filter(id => id !== "components.navigation-tree").sort() }),
     ]);
   });
   it("keeps Sections/Frames unsigned and build readiness unchanged", () => {
@@ -117,10 +119,10 @@ describe("owner-signed leaf membership", () => {
 describe("owner-signed Media leaf amendment", () => {
   const added = ["assets.image", "assets.pattern", "assets.video"];
   it("adds exactly image, video and pattern to the unchanged 45 signed IDs: 48 leaves, 0 removals", () => {
-    expect(assetAmendments).toEqual({ schemaVersion: 1, layer: "assets", baseSignedHead: assetFreeze.signedHead, status: "owner-signed", ownerSignoffComment: "6408363557", receiptComment: "6404876885", addedLeafIds: added });
+    expect(assetAmendments).toMatchObject({ schemaVersion: 1, layer: "assets", baseSignedHead: assetFreeze.signedHead, status: "owner-signed", ownerSignoffComment: "6408363557", receiptComment: "6404876885", addedLeafIds: added });
     expect(assetFreeze.leafIds).toHaveLength(45);
     expect(sha256([...assetFreeze.leafIds].sort().join("\n"))).toBe("dc3c75b4dee91fb500da9548a147fa0bf530215764b58df7a9ec12b2a966ae54");
-    const ids = assetSlots.map(slot => slot.id).filter(id => !draftAssetAmendments.addedLeafIds.includes(id)).sort();
+    const ids = assetSlots.map(slot => slot.id).filter(id => !draftAssetAmendments.addedLeafIds.includes(id) && !assetAmendments.signedAdditions.some(row => row.id === id)).sort();
     expect(ids).toHaveLength(48);
     expect(sha256(ids.join("\n"))).toBe("413698a4fe2af41b64f02e23353ba29760397c06ed54c94f790a3ce93cf9fdda");
     expect(assetFreeze.leafIds.filter(id => !ids.includes(id))).toEqual([]);
@@ -235,4 +237,36 @@ it("keeps the NativeAction amendment explicit and refuses missing or coordinated
     }
     expect(checkFrozenLeafSets([ia], slots, ["components"]).map(finding => finding.source)).toEqual(["slots", "ia"]);
   }
+});
+
+
+describe("owner-ratified feedback membership", () => {
+  it("keeps the navigation ID as exactly one signed sidebar alias", () => {
+    expect(aliasAmendments).toMatchObject({status:"owner-signed",ownerSignoffComment:"6483104271",conversions:[{id:"components.navigation-tree",target:"components.sidebar"}]});
+    const registry=loadComponentRegistry();
+    expect(registry.slots.some(row=>row.id==="components.navigation-tree")).toBe(false);
+    expect(registry.aliases.filter(row=>row.id==="components.navigation-tree")).toEqual([{id:"components.navigation-tree",target:"components.sidebar"}]);
+    expect(registry.aliases.find(row=>row.id==="components.collapsible")?.target).toBe("components.disclosure");
+  });
+  it("refuses missing and wrong-target alias entries, then restores the exact data", () => {
+    const alias=componentAliases.find(row=>row.id==="components.navigation-tree")!;
+    const before=structuredClone(componentAliases);
+    try {
+      alias.target="components.disclosure";
+      expect(()=>loadComponentRegistry()).toThrow("LEAF_FREEZE");
+      componentAliases.splice(0,componentAliases.length,...before);
+      componentAliases.splice(componentAliases.findIndex(row=>row.id==="components.navigation-tree"),1);
+      expect(()=>loadComponentRegistry()).toThrow("LEAF_FREEZE");
+    } finally {componentAliases.splice(0,componentAliases.length,...before);}
+    expect(loadComponentRegistry().aliases).toEqual(before);
+  });
+  it("does not permit an unsigned migration of another signed leaf", () => {
+    const remaining=componentSlots.filter(row=>row.id!=="components.button");
+    expect(checkFrozenLeafSets([componentIA as Placement],remaining,["components"])).toContainEqual(expect.objectContaining({source:"slots",missing:["components.button"]}));
+  });
+  it("registers only the separately ratified loading asset without ratifying the pending panel icon", () => {
+    expect(assetAmendments.signedAdditions).toEqual([{id:"assets.icon-loader",ownerSignoffComment:"6483104271",status:"owner-ratified"}]);
+    expect(draftAssetAmendments.status).toBe("pending-owner-ratification");
+    expect(assetSlots.find(row=>row.id==="assets.icon-loader")?.status).toBe("draft");
+  });
 });
