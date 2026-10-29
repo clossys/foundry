@@ -7,6 +7,7 @@
  * input or scan coverage was insufficient to run the check.
  */
 
+import { runCitationIndex } from "./citations/cli.js";
 import { existsSync, readdirSync, readFileSync, realpathSync, statSync } from "node:fs";
 import { join, relative, resolve, sep } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -1207,6 +1208,7 @@ function runWontClaim(argv: string[]): number {
  * `process.argv`.
  */
 export function main(argv: string[]): number {
+  if (argv[0] === "index") return runCitationIndex(argv.slice(1));
   if (argv[0] === "brand-coverage") {
     return runBrandCoverage(argv.slice(1));
   }
