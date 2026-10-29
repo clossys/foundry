@@ -27,8 +27,8 @@ Usage: strategist-check status [--scope core|full]
        strategist-check brief <contract> [--write] [--request]
        strategist-check handoff <contract>
 Aliases: cell-quality = check, coherence = cohere, completion = complete.
-Quality, coherence and completion commands save their returned report under <root>/reports/.
-All read commands accept --root <dir> (default <repo root>/clossys/agents/strategist), --json and --help.
+Quality, coherence and completion commands save their returned report under <root>/reports/, except for retired read-only roots.
+All read commands accept --root <dir> (default <repo root>/clossys/agents/director), --json and --help.
 brief --write saves the brief and briefs/index.json; --request opens a missing-input request.
 brief and handoff without these flags do not write.`;
 const part = "[a-z]+(?:-[a-z]+)*";
@@ -39,7 +39,7 @@ const group = new RegExp(`^${part}\\.${part}$`);
 export function parseReadArgs(argv: string[]): ReadArgs {
   const command = ALIASES[argv[0] ?? ""] ?? argv[0] as ReadCommand;
   if (!READ_COMMANDS.includes(command)) throw new Error("Unknown read command");
-  const args: ReadArgs = { command, root: resolveStrategyRoot(), json: false, help: false, targets: [], scope: "core", level: "mvs" };
+  const args: ReadArgs = { command, root: "", json: false, help: false, targets: [], scope: "core", level: "mvs" };
   const seen = new Set<string>();
   for (let i = 1; i < argv.length; i++) {
     const token = argv[i]!;
@@ -84,6 +84,8 @@ export function parseReadArgs(argv: string[]): ReadArgs {
     const expected = leaf.test(id) ? "create" : group.test(id) ? "cohere" : id === "strategy" ? "normalize" : new RegExp(`^${part}$`).test(id) ? "unlock" : undefined;
     if (args.verb !== expected) throw new Error("Cell id level does not match --verb");
   }
+  const selected = resolveStrategyRoot(seen.has("--root") ? args.root : undefined, process.cwd(), args.write || args.request ? "write" : "read");
+  if (!seen.has("--root")) args.root = selected;
   return args;
 }
 

@@ -1,5 +1,5 @@
 import { spawnSync } from "node:child_process";
-import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, mkdtempSync, readFileSync, readdirSync, rmSync, symlinkSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -32,7 +32,7 @@ function project(marker: "directory" | "file" = "directory") {
   else put(repo, ".git", "gitdir: fixture-worktree-metadata\n");
   const nested = join(repo, "apps/admin"); mkdirSync(nested, { recursive: true });
   put(repo, "surfaces/page.md", "We serve 4,200 customers.\n");
-  return { repo, nested, root: join(repo, "clossys/agents/strategist"), old: join(repo, "clossys/strategist") };
+  return { repo, nested, root: join(repo, "clossys/agents/director"), old: join(repo, "clossys/strategist") };
 }
 function run(cwd: string, ...args: string[]) {
   const child = spawnSync(process.execPath, [cli, ...args, "--json"], { cwd, encoding: "utf8" });
@@ -66,15 +66,88 @@ it.each(["directory", "file"] as const)("compiled CLI shares repository-root rea
   expect(existsSync(join(nested, "clossys"))).toBe(false);
 });
 
-it("compiled CLI never selects populated old roots or creates a missing default during reads", () => {
-  const { repo, nested, root, old } = project(); strategy(old); strategy(join(repo, "strategist"));
-  expect(run(nested, "ground", "../../surfaces").code).toBe(2);
-  expect(run(nested, "status").code).toBe(2);
+function snapshot(root: string): Record<string, string> {
+  const bytes: Record<string, string> = {};
+  const walk = (directory: string) => {
+    for (const entry of readdirSync(directory, { withFileTypes: true })) {
+      const path = join(directory, entry.name);
+      if (entry.isDirectory()) { bytes[path] = "directory"; walk(path); }
+      else bytes[path] = readFileSync(path).toString("base64");
+    }
+  };
+  walk(root); return bytes;
+}
+
+const legacyPaths = ["clossys/agents/strategist", "clossys/strategist", "strategy"];
+const writes = [
+  ["propose", "focus.segment.core"], ["activate", "focus.segment.core@1", "--confirm", "msg:2026-10-29-1#U1"],
+  ["brief", "fixture.brief", "--write"], ["brief", "fixture.brief", "--request"],
+  ["request", "new", "--raised-by", "researcher", "--kind", "change", "--cells", id, "--detail", "Review"],
+  ["request", "resolve", "REQ-0001", "--ref", "context.customer.need@1", "--confirm", "msg:2026-10-29-1#U1"],
+  ["review", "--today", "2026-10-29"], ["index"],
+];
+it.each(legacyPaths)("compiled CLI reads %s with notice and preserves all legacy bytes", legacy => {
+  const { repo, nested, root } = project(); const old = join(repo, legacy); strategy(old);
+  const before = snapshot(old);
+  for (const args of [["ground", "../../surfaces"], ["status"], ["cell", id, "--verb", "create"],
+    ["brief", "fixture.brief"], ["handoff", "fixture.brief"], ["check"], ["cohere"], ["complete"],
+    ["wont-claim", "../../surfaces"], ["index", "--check"], ["request", "list"]]) {
+    const result = run(nested, ...args);
+    expect([0, 1], args.join(" ")).toContain(result.code);
+    expect(() => JSON.parse(result.output)).not.toThrow();
+    expect(result.error).toContain("retired");
+    expect(result.error).toContain("read-only");
+    expect(result.error).toContain(root);
+  }
+  expect(snapshot(old)).toEqual(before);
   expect(existsSync(root)).toBe(false);
-  expect(run(nested, "ground", "../../surfaces", "--root", "../../clossys/strategist").code).toBe(0);
-  expect(run(nested, "propose", "focus.segment.core", "--root", "../../clossys/strategist").code).toBe(0);
-  expect(existsSync(join(old, "cells/focus.segment.core/v1.md"))).toBe(true);
-  expect(existsSync(root)).toBe(false);
+  for (const args of writes) {
+    for (const explicit of [[], ["--root", old]]) {
+      const result = run(nested, ...args, ...explicit);
+      expect(result.code, args.join(" ")).toBe(2);
+      expect(result.output).toContain("retired");
+      expect(snapshot(old)).toEqual(before);
+      expect(existsSync(root)).toBe(false);
+    }
+  }
+  expect(run(nested, "ground", "../../surfaces", "--root", old).code).toBe(0);
+  expect(run(nested, old, "../../surfaces").code).toBe(0);
+  expect([0, 1]).toContain(run(nested, "check", "--root", old).code);
+  expect(snapshot(old)).toEqual(before);
+});
+
+const candidates = ["clossys/agents/director", ...legacyPaths];
+const pairs = candidates.flatMap((path, index) => candidates.slice(index + 1).map(other => [path, other]));
+it.each(pairs)("compiled CLI refuses competing defaults %s and %s", (left, right) => {
+  const { repo, nested } = project(); strategy(join(repo, left!)); strategy(join(repo, right!));
+  const before = snapshot(repo);
+  for (const args of [["ground", "../../surfaces"], ["status"], ["check"], ["propose", "focus.segment.core"], ["index"], ["review"]]) {
+    const result = run(nested, ...args);
+    expect(result.code).toBe(2);
+    expect(result.output + result.error).toContain("refusing to silently pick");
+  }
+  expect(snapshot(repo)).toEqual(before);
+});
+
+it("compiled CLI preserves explicit custom roots even when defaults are ambiguous", () => {
+  const { repo, nested, root, old } = project(); strategy(root); strategy(old);
+  const custom = join(nested, "custom-root"); strategy(custom);
+  const before = snapshot(old);
+  expect(run(nested, "ground", "../../surfaces", "--root", "custom-root").code).toBe(0);
+  expect(run(nested, "status", "--root", "custom-root").code).toBe(1);
+  expect(run(nested, "propose", "focus.segment.core", "--root", "custom-root").code).toBe(0);
+  expect(run(nested, "brief", "fixture.brief", "--write", "--root", "custom-root").code).toBe(0);
+  expect(run(nested, "index", "--root", "custom-root").code).toBe(0);
+  expect([0, 1]).toContain(run(nested, "check", "--root", "custom-root").code);
+  expect(existsSync(join(custom, "reports/cell-quality.json"))).toBe(true);
+  expect(snapshot(old)).toEqual(before);
+});
+
+it("help does not resolve ambiguous defaults", () => {
+  const { repo, nested, root, old } = project(); strategy(root); strategy(old);
+  for (const command of ["ground", "status", "propose", "index", "review"]) {
+    expect(run(nested, command, "--help").code).toBe(0);
+  }
 });
 
 it("compiled CLI reports the prescribed empty product-saas interview tree as incomplete", () => {
@@ -87,4 +160,28 @@ it("compiled CLI reports the prescribed empty product-saas interview tree as inc
   expect(JSON.parse(readFileSync(join(root, "tree.json"), "utf8"))).toEqual(tree);
   expect(existsSync(join(root, "cells"))).toBe(false);
   expect(existsSync(join(repo, "clossys/strategist"))).toBe(false);
+});
+
+it.each(legacyPaths)("compiled CLI protects explicit %s selected outside its repository", legacy => {
+  const { repo, root } = project(); const old = join(repo, legacy); strategy(old);
+  const outside = mkdtempSync(join(tmpdir(), "strategist-outside-")); projects.push(outside);
+  mkdirSync(join(outside, ".git"));
+  const alias = join(outside, "selected-root"); symlinkSync(old, alias);
+  const before = snapshot(old);
+  for (const selected of [old, alias]) {
+    expect(run(outside, "ground", join(repo, "surfaces"), "--root", selected).code).toBe(selected === old ? 0 : 2);
+    const status = run(outside, "status", "--root", selected);
+    expect(status.code).toBe(selected === old ? 1 : 2);
+    expect(status.error).toContain(root);
+    expect(selected === old ? [0, 1] : [2]).toContain(run(outside, "check", "--root", selected).code);
+    for (const args of writes) {
+      const result = run(outside, ...args, "--root", selected);
+      expect(result.code, args.join(" ")).toBe(2);
+      expect(result.output).toContain("retired");
+    }
+    expect(snapshot(old)).toEqual(before);
+  }
+  const custom = join(repo, "records/strategy"); strategy(custom);
+  expect(run(outside, "propose", "focus.segment.core", "--root", custom).code).toBe(0);
+  expect(snapshot(old)).toEqual(before);
 });

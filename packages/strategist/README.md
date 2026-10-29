@@ -20,10 +20,10 @@ tags and required links. L0, L1 and L2 are rendered views; each L3 cell is
 one versioned Markdown file. The default archetype starts with 24 core
 cells; product-saas, services and marketplace add their own core cells.
 
-The consumer owns the content under its chosen root (default
-`<repo root>/clossys/agents/strategist/`). Starting an interview creates the
-tree and session log there, including when the working directory is nested
-inside the repository. All writes stay inside the selected strategy root:
+The consumer owns the content under its chosen root. The CLI defaults to
+`<repo root>/clossys/agents/director/`; library callers select their own root.
+The tree and session log live under that selected root. All writes stay
+inside the selected strategy root:
 
 ```text
 tree.json                    archetype, grouping overrides, active pointers
@@ -63,7 +63,7 @@ and judgments establish; mechanical gate success alone is not keep.
 import { openStrategy, formatRef } from "@clossys/strategist";
 
 // Run from the repository root; the API uses the supplied folder.
-const strategy = openStrategy("clossys/agents/strategist");
+const strategy = openStrategy("clossys/agents/director");
 const cell = strategy.getActive("focus.segment.core");
 if (cell) console.log(formatRef({ kind: "cell", ref: { cell: cell.id, version: cell.version } }));
 const brief = strategy.getBrief("writer.messaging");
@@ -77,19 +77,45 @@ if (brief.state === "stale") console.warn(brief.stale);
 
 ```bash
 # Explicit relative roots in these examples are run from the repository root.
-strategist-check status --root clossys/agents/strategist --json
-strategist-check check --root clossys/agents/strategist
-strategist-check cohere --root clossys/agents/strategist
-strategist-check complete --level mvs --root clossys/agents/strategist
-strategist-check handoff writer.messaging --root clossys/agents/strategist
-strategist-check brief writer.messaging --write --request --root clossys/agents/strategist
-strategist-check index --check --root clossys/agents/strategist --scan src
-strategist-check review --root clossys/agents/strategist
-strategist-check ground --root clossys/agents/strategist src --json
-strategist-check wont-claim --root clossys/agents/strategist src --json
+strategist-check status --root clossys/agents/director --json
+strategist-check check --root clossys/agents/director
+strategist-check cohere --root clossys/agents/director
+strategist-check complete --level mvs --root clossys/agents/director
+strategist-check handoff writer.messaging --root clossys/agents/director
+strategist-check brief writer.messaging --write --request --root clossys/agents/director
+strategist-check index --check --root clossys/agents/director --scan src
+strategist-check review --root clossys/agents/director
+strategist-check ground --root clossys/agents/director src --json
+strategist-check wont-claim --root clossys/agents/director src --json
 ```
 
-The default root is `<repo root>/clossys/agents/strategist`, even from a nested working directory. Outside a repository, it is `clossys/agents/strategist` under the working directory. `--root` selects the exact supplied folder; relative explicit roots resolve from the working directory, without appending the default layout. The bare positional form `strategist-check <root> <scan-dir>` is ground mode and also preserves the supplied root. There is no legacy root fallback or automatic migration. Exit codes are 0 clean or ready, 1 findings or not ready, and 2 could not run. The `cell <id> --verb create|cohere|unlock|normalize` command exposes the corresponding quality or completion checks.
+The default root is `<repo root>/clossys/agents/director`, even from a nested
+working directory. Outside a repository it is `clossys/agents/director` under
+`cwd`. Discovery uses the nearest ancestor `.git` directory or file. If only
+one retired root exists (`clossys/agents/strategist`, `clossys/strategist`, or
+`strategy`), read commands use it with a migration notice on stderr. Two or
+more existing candidates fail closed with exit 2, including when their
+contents agree. No root is created or migrated during discovery.
+
+`--root` and the bare ground form `strategist-check <root> <scan-dir>` select
+the supplied folder and bypass default ambiguity; relative paths resolve
+from `cwd`. Recognized retired roots remain read-only when explicitly
+selected, including from another repository or through a filesystem alias.
+Recognition uses the invocation boundary and the selected root's owning
+repository; arbitrary custom roots are not classified by basename alone.
+Existing symlink-root validation still applies to reads. Custom explicit
+roots keep their normal v2 behavior.
+
+Legacy reads do not save quality, coherence, completion or wont-claim reports.
+Write commands (`propose`, `activate`, request new/resolve, brief --write or
+--request, `review`, and `index` without --check) refuse retired roots; move
+the contents to the director root before writing. `request list` and
+`index --check` can read a retired root. The retired brand-facts command and
+its Writer copy-registry default are absent from the v2 CLI.
+
+Exit codes are 0 clean or ready, 1 findings or not ready, and 2 could not run.
+The `cell <id> --verb create|cohere|unlock|normalize` command exposes the
+corresponding quality or completion checks.
 
 `propose <id> [--from N] [--option A]` creates a draft. `activate <cell-ref>[,<cell-ref>...] --confirm <user-message-ref>` requires the exact listed user confirmation. `request new|list|resolve` manages requests. The write API exposes `propose`, `activate`, `createRequest`, `listRequests` and `resolveRequest`. Activation preserves active and retired bodies and checks the entire confirmation batch before mutation. There is no force flag.
 
@@ -114,7 +140,7 @@ console.log(report.findings);
 
 `checkGrounding` reports untraced numeric and closed-list superlative claims, plus unknown `fact:<id>` citations. It preserves token matching, comment ignores, code-fence handling and CSS percentage masking. Bare small numbers and arbitrary named claims are outside its heuristic coverage. A `facts-gate:ignore` comment is recorded in `ignored`. `scanStrategyDirectory` provides the filesystem half. Repeatable `--extensions`, `--skip-dirs` and `--exclude` keep their existing scan meanings. The CLI refuses missing or invalid evidence, empty scans and scans containing only the strategy root.
 
-`checkWontClaimDrift` checks literal quoted phrases from `Never-claim:` bullets in the active Proof and `Never:` bullets in the active Voice. Drafts do not govern surfaces. Matching is case-insensitive with word boundaries; regex punctuation is literal. A comment with `wont-claim:ignore` is recorded. Unquoted bullets are explicitly unchecked. Invalid active sources, zero files and overlong lines are indeterminate, which wins over hits. The CLI excludes strategy evidence from surfaces and saves its report under the root.
+`checkWontClaimDrift` checks literal quoted phrases from `Never-claim:` bullets in the active Proof and `Never:` bullets in the active Voice. Drafts do not govern surfaces. Matching is case-insensitive with word boundaries; regex punctuation is literal. A comment with `wont-claim:ignore` is recorded. Unquoted bullets are explicitly unchecked. Invalid active sources, zero files and overlong lines are indeterminate, which wins over hits. The CLI excludes strategy evidence from surfaces and saves its report under the root, except when reading a retired root.
 
 ## API reference
 

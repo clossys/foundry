@@ -74,7 +74,7 @@ describe("main — argument handling", () => {
     expect(main(["--help"])).toBe(0);
   });
 
-  it("throws CliInputError when the default clossys/agents/strategist directory is missing", () => {
+  it("throws CliInputError when the default clossys/agents/director directory is missing", () => {
     const cwd = mkdtempSync(join(tmpdir(), "strategy-cli-cwd-"));
     const originalCwd = process.cwd();
     process.chdir(cwd);
@@ -96,18 +96,15 @@ describe("main — argument handling", () => {
 });
 
 describe("main — default ground root", () => {
-  it("uses clossys/agents/strategist and does not fall back to old strategy roots", () => {
+  it.each(["clossys/agents/strategist", "clossys/strategist", "strategy"])("reads retired %s with a notice", legacy => {
     const cwd = mkdtempSync(join(tmpdir(), "strategy-cli-cwd-")); const original = process.cwd();
     process.chdir(cwd);
     try {
       writeFileSync(join(cwd, "page.md"), "4,200 customers");
-      mkdirSync(join(cwd, "strategy")); stageFinding(join(cwd, "strategy"));
-      mkdirSync(join(cwd, "clossys/strategist"), { recursive: true }); stageFinding(join(cwd, "clossys/strategist"));
-      expect(() => main([])).toThrow(CliInputError);
-      expect(existsSync(join(cwd, "clossys/agents/strategist"))).toBe(false);
-      mkdirSync(join(cwd, "clossys/agents/strategist"), { recursive: true }); stageFinding(join(cwd, "clossys/agents/strategist"));
-      // Old roots are ordinary scan content; limit the scan to the page.
-      expect(main(["--exclude", "strategy/**", "--exclude", "clossys/strategist/**"])).toBe(0);
+      stageFinding(join(cwd, legacy));
+      expect(main(["ground", ".", "--exclude", `${legacy}/**`])).toBe(0);
+      expect(loggedLines("error").some(line => line.includes("retired") && line.includes("read-only"))).toBe(true);
+      expect(existsSync(join(cwd, "clossys/agents/director"))).toBe(false);
     } finally { process.chdir(original); rmSync(cwd, { recursive: true, force: true }); }
   });
 
@@ -115,7 +112,7 @@ describe("main — default ground root", () => {
     const repo = mkdtempSync(join(tmpdir(), "strategy-cli-repo-"));
     const original = process.cwd();
     const cwd = join(repo, "packages", "app");
-    const root = join(repo, "clossys", "agents", "strategist");
+    const root = join(repo, "clossys", "agents", "director");
     mkdirSync(cwd, { recursive: true });
     if (marker === "directory") mkdirSync(join(repo, ".git"));
     else writeFileSync(join(repo, ".git"), "gitdir: ../metadata/worktrees/app\n");
@@ -152,7 +149,7 @@ describe("main — default ground root", () => {
     const repo = mkdtempSync(join(tmpdir(), "strategy-cli-repo-"));
     const original = process.cwd();
     const cwd = join(repo, "packages", "app");
-    const root = join(repo, "clossys", "agents", "strategist");
+    const root = join(repo, "clossys", "agents", "director");
     mkdirSync(cwd, { recursive: true });
     mkdirSync(join(repo, ".git"));
     mkdirSync(root, { recursive: true });

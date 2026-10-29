@@ -15,13 +15,13 @@ import { executeBriefCommand } from "./cli/brief.js";
 import { executeChecksCommand } from "./cli/checks.js";
 import { isReadCommand, READ_USAGE, runReadCommand } from "./cli/read.js";
 import { persistReport } from "./cli/reports.js";
-import { resolveStrategyRoot } from "./strategy-dir-default.js";
+import { resolveStrategyRoot, StrategyRootError } from "./strategy-dir-default.js";
 
 const USAGE = `Usage: strategist-check ground [<strategy-dir>] <scan-dir> [options]
    or: strategist-check <strategy-dir> <scan-dir> [options]
    or: strategist-check wont-claim <strategy-dir> <scan-dir> [options]
 
-The strategy root defaults to <repo root>/clossys/agents/strategist (cwd outside a repository); --root overrides it.
+The strategy root defaults to <repo root>/clossys/agents/director (cwd outside a repository); --root overrides it. Retired strategy roots are read-only fallbacks with notices; competing defaults are refused.
 --json prints the result as JSON. --help prints usage.
 --extensions <ext>, --skip-dirs <name>, and --exclude <glob> are repeatable scan options.
 Grounding reads findings/*.md. Exit codes: 0 clean, 1 findings, 2 could not run.
@@ -32,7 +32,7 @@ ${REVIEW_USAGE}
 
 const WONT_CLAIM_USAGE = `Usage: strategist-check wont-claim <strategy-dir> <scan-dir> [options]
 
-  strategy-dir   Directory containing tree.json and the active Proof and Voice cells. Defaults to <repo root>/clossys/agents/strategist (cwd outside a repository); --root overrides it.
+  strategy-dir   Directory containing tree.json and the active Proof and Voice cells. Defaults to <repo root>/clossys/agents/director (cwd outside a repository); --root overrides it.
   scan-dir       Directory to scan for surfaces that make a claim the record says must never be made.
 
 Options:
@@ -44,7 +44,7 @@ Options:
 Default extensions are .md, .mdx, .txt, .html, .htm, .json, .yml and .yaml; code files opt in through --extensions. Quoted Never-claim: phrases from active Proof and Never: phrases from active Voice are checked; unquoted labels are listed as unchecked. A comment with wont-claim:ignore is recorded and not checked. --root overrides the strategy directory; --json prints the result as JSON.
 
 Exit codes: 0 = clean, 1 = hit (at least one scanned surface makes a recorded claim), 2 = could not run (tree or active cells missing/unreadable/invalid, no files scanned, an over-long line, an unreadable directory, or bad arguments).
-The returned report is saved to <root>/reports/wont-claim.json.
+The returned report is saved to <root>/reports/wont-claim.json unless the root is retired and read-only.
 
 `;
 
@@ -176,7 +176,7 @@ function parseGroundArgs(argv: string[]): ParsedArgs & { json: boolean } {
   } else if (args.strategyDir !== undefined && args.scanDir === undefined) {
     args.scanDir = args.strategyDir; args.strategyDir = undefined;
   }
-  args.strategyDir ??= resolveStrategyRoot();
+  if (!args.help) args.strategyDir = resolveStrategyRoot(args.strategyDir);
   return { ...args, json };
 }
 
@@ -191,9 +191,6 @@ function requireDirectory(label: string, path: string): void {
   if (!stat.isDirectory()) throw new CliInputError(`${label} "${path}" is not a directory`);
 }
 
-function resolveStrategyDirArgument(explicit: string | undefined): { dir: string } {
-  return { dir: resolveStrategyRoot(explicit) };
-}
 
 function readStrategyFacts(strategyDir: string) {
   const read = readGroundRoot(strategyDir);
@@ -258,8 +255,7 @@ function runWontClaim(argv: string[]): number {
     return 0;
   }
   if (!args.scanDir) throw new CliInputError("scan-dir is required");
-  const strategyDirResolution = resolveStrategyDirArgument(args.strategyDir);
-  const strategyDir = strategyDirResolution.dir;
+  const strategyDir = resolve(args.strategyDir!);
   const scanDir = resolve(args.scanDir);
   requireDirectory("strategy-dir", strategyDir);
   requireDirectory("scan-dir", scanDir);
@@ -301,6 +297,16 @@ function runWontClaim(argv: string[]): number {
  * `process.argv`.
  */
 export function main(argv: string[]): number {
+  try { return execute(argv); }
+  catch (error) {
+    if (!(error instanceof StrategyRootError)) throw error;
+    if (argv.includes("--json")) console.log(JSON.stringify({ command: argv[0] ?? "ground", code: 2, error: error.message }));
+    else console.error(`strategist-check: ${error.message}`);
+    return 2;
+  }
+}
+
+function execute(argv: string[]): number {
   if (argv[0] === "review") return runReviewCli(argv.slice(1));
   const writeResult = runWriteCli(argv);
   if (writeResult !== undefined) return writeResult;
@@ -322,8 +328,7 @@ export function main(argv: string[]): number {
     return 0;
   }
 
-  const strategyDirResolution = resolveStrategyDirArgument(args.strategyDir);
-  const strategyDir = strategyDirResolution.dir;
+  const strategyDir = resolve(args.strategyDir!);
   const scanDir = resolve(args.scanDir ?? process.cwd());
   requireDirectory("strategy-dir", strategyDir);
   requireDirectory("scan-dir", scanDir);
