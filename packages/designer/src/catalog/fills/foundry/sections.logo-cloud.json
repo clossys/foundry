@@ -26,7 +26,10 @@
   },
   "sections": {
     "logo-cloud": {
-      "composes": [],
+      "composes": [
+        "components.link",
+        "components.semantic-content"
+      ],
       "configs": {},
       "consumption": {
         "scanStatus": "lower-bound",
@@ -90,7 +93,8 @@
       "license": "MIT",
       "notes": [
         "Source checks allowed items.length values and tone; logos are host React nodes. The source root is ul, with no band/header wrapper.",
-        "Source-only import and token-read measurements are lower bounds; shared anatomy, accessibility, contrast and consumer runtime conformance remain unmeasured. Content bindings describe host adaptation points, not type-equivalent converters."
+        "Source-only import and token-read measurements are lower bounds; shared anatomy, accessibility, contrast and consumer runtime conformance remain unmeasured. Content bindings describe host adaptation points, not type-equivalent converters.",
+        "Neutral list, item and copy elements compose components.semantic-content; authored content, host attributes and collection geometry are preserved."
       ],
       "parts": [],
       "pin": {

@@ -27,17 +27,21 @@
   "sections": {
     "call-to-action": {
       "composes": [
-        "sections.section-header"
+        "sections.section-header",
+        "components.semantic-content"
       ],
       "configs": {},
       "consumption": {
         "scanStatus": "lower-bound",
         "scannedComposes": [
+          "components.semantic-content",
           "sections.section-header"
         ],
         "scannedReads": {
           "assets": [],
-          "components": [],
+          "components": [
+            "components.semantic-content"
+          ],
           "tokens": [
             "tokens.border-color",
             "tokens.radius",
@@ -51,7 +55,7 @@
         "sourceFiles": [
           {
             "path": "packages/designer/src/blocks/CallToAction.tsx",
-            "sha256": "216bdeaba410e1e499f913d3c99d5fee62490d19d29bb6c64b968cfa5845bac3"
+            "sha256": "7ca312738b792c3a86143b562b5c307a2e67eed7d1a083a7e50badc19687b77f"
           },
           {
             "path": "packages/designer/src/blocks/section-ground.ts",
@@ -60,6 +64,10 @@
           {
             "path": "packages/designer/src/catalog-core/provenance-attrs.ts",
             "sha256": "8f2a725224764fc1d7cd7ec94f2f569cad02117251bf6c2a668c8a1b51e7c443"
+          },
+          {
+            "path": "packages/designer/src/components/SemanticContent.tsx",
+            "sha256": "467894426d4a6b83ed26e34564fd0a4c61aa6a2a58358ebd0226a0312164471b"
           },
           {
             "path": "packages/designer/src/components/internal/cx.ts",

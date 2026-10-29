@@ -27,7 +27,8 @@
   "sections": {
     "people": {
       "composes": [
-        "components.icon"
+        "components.icon",
+        "components.semantic-content"
       ],
       "configs": {},
       "consumption": {
@@ -113,7 +114,8 @@
       "license": "MIT",
       "notes": [
         "People have portrait, initials and one href, not an arbitrary links array. Root is ul; header and band are external.",
-        "Source-only import and token-read measurements are lower bounds; shared anatomy, accessibility, contrast and consumer runtime conformance remain unmeasured. Content bindings describe host adaptation points, not type-equivalent converters."
+        "Source-only import and token-read measurements are lower bounds; shared anatomy, accessibility, contrast and consumer runtime conformance remain unmeasured. Content bindings describe host adaptation points, not type-equivalent converters.",
+        "Neutral list, item and copy elements compose components.semantic-content; authored content, host attributes and collection geometry are preserved."
       ],
       "parts": [],
       "pin": {
