@@ -18,6 +18,7 @@ import { prepareRegisteredRoute } from "./registered-route-binding.js";
 import type { RegisteredRouteRuntime } from "./registered-route-binding.js";
 import { render, cleanup, act } from "@testing-library/react";
 import { RegisteredRoutePage } from "./registered-route.js";
+import { renderToString } from "react-dom/server";
 
 let temporary: string, compiled: CompiledRegisteredRoute;
 beforeAll(async () => {
@@ -102,6 +103,20 @@ function options() {
 }
 
 describe("consumed registered scroll-page capabilities", () => {
+  it("server-renders the initially selected main regions with a supplied persistent publication", () => {
+    const f = regionFixture(), prepared = prepareRegisteredRoute(f.registry, f.route.routeId, f.runtime, () => null);
+    expect(prepared.status).toBe("stream");
+    if (prepared.status !== "stream") return;
+    expect(prepared.chunks.map(chunk => chunk.result.status)).toEqual(["ready", "ready"]);
+    const regions = prepared.renderRegions!(f.runtime.cell);
+    const selectedMain = renderToString(<>{regions.chunks!.flatMap(chunk => chunk.content ?? [])}</>);
+    expect(selectedMain).not.toBe("");
+    const html = renderToString(<RegisteredRoutePage registry={f.registry} routeId={f.route.routeId} useRuntime={() => f.runtime} renderActions={() => null} publication={f.publication} />);
+    expect(html).toContain(selectedMain);
+    expect(f.host.bind).not.toHaveBeenCalled();
+    expect(f.host.setRegions).not.toHaveBeenCalled();
+    expect(f.host.setChunks).not.toHaveBeenCalled();
+  });
   it("prepares nested authored band Sections and an independent selected TOC before any main chunk request", async () => {
     const f = regionFixture(), heading = (name: string) => ({ kind: "copy" as const, ref: `heading/${name}` }), rows = { kind: "records" as const, ref: "rows/names", lazy: { loader: "chunk" as const, args: { l0: "first", l1: "names" } } };
     const raw = f.route.composition.binding;
