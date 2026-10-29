@@ -260,6 +260,12 @@ export type {
 export type { ValidationIssue, ValidationResult, Validator } from "./validation.js";
 
 export { loadCatalog, validateCatalog } from "./catalog.js";
+export { openStrategy } from "./api.js";
+export type { Strategy, StatusReport } from "./api.js";
+export { compileBrief } from "./brief.js";
+export type { Brief, BriefCell } from "./brief.js";
+export { validateBriefContract, discoverBriefContracts } from "./brief-contracts.js";
+export type { BriefContract, BriefContractDiscovery } from "./brief-contracts.js";
 export type { CatalogCell, CatalogNode, StrategyCatalog, CatalogRule, CatalogIssue, CatalogValidationResult } from "./catalog.js";
 
 // Cell-model formats and the synchronous consumer-root reader.
