@@ -99,7 +99,7 @@ export type { CanvasInches } from "./frame.js";
 
 export { getSlotSpec, listSlotKeys, requiredSlotKeys } from "./slots.js";
 
-export { collectCopyProvenance, createOutputManifest, createResolvedOutputManifest } from "./output-manifest.js";
+export { collectCopyProvenance, validateStrategyProvenance, createOutputManifest, createResolvedOutputManifest } from "./output-manifest.js";
 
 export { resolveSurfaceDocument, SurfaceResolutionError } from "./resolve-surface.js";
 export { checkSectionVariety, CONTENT_ICON_NAMES, CONTENT_ITEM_EYEBROW_MAX_CHARACTERS, resolveSectionedViewDocument, SectionedViewResolutionError, validateSectionedViewDocument } from "./sectioned-view.js";

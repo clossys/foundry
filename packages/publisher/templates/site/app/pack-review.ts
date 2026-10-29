@@ -22,10 +22,11 @@
  * `resolvePackReviewSections` builds the strategy brief, the brand kit and
  * the voice and copy the same way: the gate first, then one loader per
  * record, each validated by the package that owns its contract
- * (`validateStrategyContract` and `readEngagementContextFromBriefData` from
+ * (`openStrategy` / `validateBriefContract` and `readEngagementContextFromBriefData` from
  * Strategist, `parseVoiceRecord` from Writer). A record whose loader throws,
- * or that its owner's check refuses, is absent, never a reason to fail the
- * page, and a section with no record is left out for the view's empty label.
+ * or that its owner's check refuses, is absent. The required launch brief
+ * refuses the review page when missing; stale briefs carry a visible flag.
+ * Other absent sections keep the view's empty label.
  *
  * Server-only in practice (the loaders read files), but it imports no `next`
  * module and no record.
@@ -41,7 +42,10 @@ import type {
   PackReviewViewStrategy,
   PackReviewViewVoice,
 } from "@clossys/publisher/web";
-import { ENGAGEMENT_CONTEXT_FIELD_IDS, readEngagementContextFromBriefData, validateStrategyContract } from "@clossys/strategist";
+import { ENGAGEMENT_CONTEXT_FIELD_IDS, readEngagementContextFromBriefData, openStrategy, validateBriefContract } from "@clossys/strategist";
+import type { Brief } from "@clossys/strategist";
+import { resolve } from "node:path";
+import launchContract from "@clossys/publisher/strategy-brief.json" with { type: "json" };
 import {
   MESSAGING_BOILERPLATE_LONG_COPY_ID,
   MESSAGING_BOILERPLATE_MEDIUM_COPY_ID,
@@ -128,8 +132,10 @@ export function resolvePackReviewPage(input: PackReviewPageInput): PackReviewPag
 
 export interface PackReviewSectionsInput {
   env: PackReviewEnv;
-  /** Reads `clossys/strategist/contract.json`. Called only when the gate is open; a throw means it is absent. */
-  loadStrategyContract: () => unknown;
+  /** Reads `clossys/strategist/briefs/publisher.launch.json`. Called only when the gate is open; a throw means it is absent. */
+  loadStrategyBrief: () => unknown;
+  /** Explicit Strategist root; defaults to the repository root used by site-records. */
+  strategyRoot?: string;
   /** Reads `clossys/brief.json`. Called only when the gate is open; a throw means it is absent. */
   loadEngagementBrief: () => unknown;
   /** Reads `clossys/writer/voice.json`. Called only when the gate is open; a throw means it is absent. */
@@ -147,6 +153,8 @@ export interface PackReviewSectionsInput {
 }
 
 export interface PackReviewSections {
+  /** Missing refuses the review page; stale remains visible in the strategy section. */
+  strategyState?: Brief["state"];
   strategy?: PackReviewViewStrategy;
   brandKit?: PackReviewViewBrandKit;
   voice?: PackReviewViewVoice;
@@ -178,28 +186,29 @@ function copyText(resolve: CopyResolver, id: string): string | undefined {
   return present(text) ? text : undefined;
 }
 
-function strategySection(input: PackReviewSectionsInput): PackReviewViewStrategy | undefined {
+/** Compile the Publisher-owned contract against one read-only strategy snapshot. */
+export function publisherLaunchBrief(root = resolve(process.cwd(), "..", "..", "clossys", "strategist")): Brief {
+  const contract = validateBriefContract(launchContract);
+  if (!contract.ok) throw new Error("Invalid publisher.launch brief contract");
+  return openStrategy(root, { contracts: [contract.value] }).getBrief("publisher.launch");
+}
+
+function strategySection(input: PackReviewSectionsInput, brief: Brief | undefined): { strategy: PackReviewViewStrategy; strategyState: "ready" | "stale" } | undefined {
+  if (brief === undefined || brief.state === "missing") return undefined;
+  // Consume only a written brief belonging to this contract. Its content is
+  // compiled afresh above; Strategist marks changed persisted fingerprints stale.
+  const written = attempt(input.loadStrategyBrief);
+  if (typeof written !== "object" || written === null || !("contract" in written) || written.contract !== brief.contract ||
+      !("fingerprint" in written) || typeof written.fingerprint !== "string" || !written.fingerprint.trim()) return undefined;
+  const state = brief.state === "stale" || written.fingerprint !== brief.fingerprint ? "stale" : "ready";
   const { sections } = input.text;
-  const contract = attempt(() => {
-    const result = validateStrategyContract(input.loadStrategyContract());
-    return result.ok ? result.value : undefined;
-  });
   const context = attempt(() => {
     const raw = input.loadEngagementBrief();
     const read = readEngagementContextFromBriefData(raw);
     const carried = typeof raw === "object" && raw !== null && (raw as { context?: unknown }).context !== undefined;
     return read.note === undefined && carried ? read.context : undefined;
   });
-  if (contract === undefined && context === undefined) return undefined;
-
-  const openQuestions: string[] = [];
-  let summary: string | undefined;
-  if (contract !== undefined) {
-    for (const record of contract.records) {
-      if (record.kind === "product" && summary === undefined) summary = record.summary;
-      if (record.kind === "claim" && record.status === "hypothesis") openQuestions.push(`${sections.hypothesis}: ${record.assertion}`);
-    }
-  }
+  const openQuestions: string[] = state === "stale" ? [sections.strategySource.stale] : [];
   const known: PackReviewViewFact[] = [];
   for (const id of ENGAGEMENT_CONTEXT_FIELD_IDS) {
     if (context === undefined) break;
@@ -208,12 +217,8 @@ function strategySection(input: PackReviewSectionsInput): PackReviewViewStrategy
     if (field?.state === "known") known.push({ name: words.label, value: field.value });
     else openQuestions.push(words.question);
   }
-  return {
-    source: contract === undefined ? sections.strategySource.brief : sections.strategySource.contract,
-    ...(present(summary) ? { summary } : {}),
-    context: known,
-    openQuestions,
-  };
+  const summary = brief.cells.find(cell => cell.cell === "focus.offer.included")?.direction.map(bullet => bullet.text).join(" ");
+  return { strategy: { source: sections.strategySource.contract, ...(present(summary) ? { summary } : {}), context: known, openQuestions }, strategyState: state };
 }
 
 function brandKitSection(input: PackReviewSectionsInput): PackReviewViewBrandKit | undefined {
@@ -301,11 +306,12 @@ function voiceSection(input: PackReviewSectionsInput): PackReviewViewVoice | und
  */
 export function resolvePackReviewSections(input: PackReviewSectionsInput): PackReviewSections {
   if (!packReviewGate(input.env)) return {};
-  const strategy = strategySection(input);
+  const brief = attempt(() => publisherLaunchBrief(input.strategyRoot));
+  const strategy = strategySection(input, brief);
   const brandKit = brandKitSection(input);
   const voice = voiceSection(input);
   return {
-    ...(strategy === undefined ? {} : { strategy }),
+    ...(strategy ?? { strategyState: "missing" as const }),
     ...(brandKit === undefined ? {} : { brandKit }),
     ...(voice === undefined ? {} : { voice }),
   };

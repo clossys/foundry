@@ -159,7 +159,8 @@
     "./content/node": {
       "types": "./dist/content/node.d.ts",
       "import": "./dist/content/node.js"
-    }
+    },
+    "./strategy-brief.json": "./strategy-brief.json"
   },
   "imports": {
     "#publisher-web-views": {
@@ -441,7 +442,8 @@
     "skill",
     "styles",
     "templates",
-    "fit-signals.json"
+    "fit-signals.json",
+    "strategy-brief.json"
   ],
   "scripts": {
     "build": "tsc -p tsconfig.json",
