@@ -1,0 +1,45 @@
+{
+  "version": 1,
+  "revision": 1,
+  "state": "draft",
+  "locale": "ar",
+  "direction": "rtl",
+  "activation": "none",
+  "scope": "Two-record RTL fixture only; not full Arabic page coverage or approval",
+  "aliases": {
+    "strings.admin.page.writer": "st.xt00332n8s",
+    "strings.admin.column.text": "st.0gw138v1dn"
+  },
+  "records": [
+    {
+      "id": "st.xt00332n8s",
+      "leaf": "strings.page-titles",
+      "context": "strings.admin.page.writer",
+      "status": "draft",
+      "origin": "authored",
+      "text": "الكاتب"
+    },
+    {
+      "id": "st.0gw138v1dn",
+      "leaf": "strings.field-labels",
+      "context": "strings.admin.column.text",
+      "status": "draft",
+      "origin": "authored",
+      "text": "النص"
+    }
+  ],
+  "bindings": [
+    {
+      "cellId": "strings.admin.page.writer",
+      "recordId": "st.xt00332n8s",
+      "target": "frames.app-header.trail",
+      "kind": "CopyRef"
+    },
+    {
+      "cellId": "strings.admin.column.text",
+      "recordId": "st.0gw138v1dn",
+      "target": "sections.data-table.columns.label",
+      "kind": "CopyRef"
+    }
+  ]
+}
