@@ -78,7 +78,15 @@ export function resolveSelectedRouteRuntimeBinding(binding: InstanceBinding, eng
       if (!members) { refusals.push(`${path}: frame member selection is not one verified descriptor member per axis`); return; }
       return { leaf, fill: id, config: config ?? null, members: [...members], content };
     };
-    const section = (fill: SectionFill, path: string) => pick(fill.section, fill.config, fill.content, path);
+    const ancestors = new Set<SectionFill>();
+    const section = (fill: SectionFill, path: string, depth = 0): RuntimeFillSelection | undefined => {
+      if (depth > 8 || ancestors.has(fill) || fill.children !== undefined && (!Array.isArray(fill.children) || !fill.children.length)) throw new TypeError("Invalid bounded Section nesting");
+      ancestors.add(fill);
+      const selected = pick(fill.section, fill.config, fill.content, path);
+      const children = fill.children?.flatMap((child, index) => { const current = section(child, `${path}.children.${index}`, depth + 1); return current ? [current] : []; });
+      ancestors.delete(fill);
+      return selected ? { ...selected, ...(children ? { children } : {}) } : undefined;
+    };
     const frame = pick(binding.frame.leaf, binding.frame.config, binding.frame.content ?? {}, "frame", binding.frame.members);
     if (refusals.length) return { status: "refused", findings: refusals };
     const sections: Record<string, RuntimeFillSelection[]> = {};
@@ -94,6 +102,7 @@ export function resolveSelectedRouteRuntimeBinding(binding: InstanceBinding, eng
 
 /** Exact current binding closure; unrelated globally selected pages stay outside it. */
 export function selectedRouteRuntimeManifest(binding: RuntimeAssemblyBinding, manifest: ConsumerRuntimeManifest): ConsumerRuntimeManifest {
-  const selections = [binding.frame, ...Object.values(binding.sections).flat(), ...Object.values(binding.frameSlots).flat()];
+  const descendants = (fill: RuntimeFillSelection): RuntimeFillSelection[] => [fill, ...(fill.children ?? []).flatMap(descendants)];
+  const selections = [binding.frame, ...Object.values(binding.sections).flat(), ...Object.values(binding.frameSlots).flat()].flatMap(descendants);
   return { ...manifest, fills: manifest.fills.filter(fill => selections.some(selection => selection.leaf === fill.leaf && selection.fill === fill.fill && selection.config === fill.config)) };
 }

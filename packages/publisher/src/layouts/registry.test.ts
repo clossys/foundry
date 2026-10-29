@@ -53,6 +53,16 @@ describe("page layout registry", () => {
     expect(getEffectiveLayoutContract(original).memberValues).toEqual({});
     expect(getEffectiveLayoutContract(original, "stack.focus").slots.find(slot => slot.id === "body")?.max).toBe(1);
   });
+  it("admits consumed band/header Sections only in the stack body, retaining native registration and part restrictions", () => {
+    const stack = getEffectiveLayoutContract("layouts.stack", "stack.workspace"), body = stack.slots.find(slot => slot.id === "body")!;
+    expect(body.accepts).toEqual(expect.arrayContaining(["sections.band", "sections.section-header"]));
+    expect(body).toMatchObject({ min: 1, max: 24 });
+    expect(issues(copy())).toEqual([]);
+    const rows = copy(), split = rows.findIndex(row => row.id === "layouts.split");
+    rows[split] = { ...rows[split]!, contract: { ...rows[split]!.contract, slots: rows[split]!.contract.slots.map((slot, index) => index ? slot : { ...slot, accepts: ["sections.band", "sections.section-header"] }) } };
+    expect(issues(rows).some(finding => finding.code === "section" && finding.subject.startsWith("layouts.split/"))).toBe(true);
+    expect(checkLayoutRegistry(sectionLeaves.filter(id => id !== "sections.band")).some(finding => finding.code === "section")).toBe(true);
+  });
   it("uses closed permanent layout ids and closed config segments", () => {
     for (const id of LAYOUT_IDS) expect(LAYOUT_ID.test(id)).toBe(true);
     for (const leaf of LAYOUT_LEAVES) for (const config of leaf.contract.configs) expect(LAYOUT_CONFIG_ID.test(config.id)).toBe(true);
@@ -134,7 +144,7 @@ describe("page layout registry", () => {
     expect(stack.slots.map(({ id, min, max, position }) => ({ id, min, max, position }))).toEqual([
       { id: "lead", min: 0, max: 1, position: "first" }, { id: "body", min: 1, max: 24, position: "any" }, { id: "close", min: 0, max: 1, position: "last" },
     ]);
-    expect(stack.slots[1]?.accepts).toHaveLength(40);
+    expect(stack.slots[1]?.accepts).toHaveLength(42);
     expect(stack.slots[1]?.accepts).not.toContain("sections.table-of-contents");
     expect(getLayoutLeaf("layouts.bento")!.contract).toMatchObject({ requiresSection: { container: "adaptive" }, slots: [{ id: "lead" }, { id: "tiles", min: 3, max: 12, tile: { spans: ["1x1", "2x1", "1x2", "2x2"] } }] });
     expect(getLayoutLeaf("layouts.bento")!.contract.reflow.map((step) => step.columns)).toEqual([2, 3, 4]);

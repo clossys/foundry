@@ -44,7 +44,10 @@ export function checkLayoutRegistry(
       if (!["first", "any", "last"].includes(slot.position) || (slot.position === "first" && index !== 0) || (slot.position === "last" && index !== contract.slots.length - 1)) add("contract", subject, "invalid slot reading position");
       if (!["bar", "panel", "rail", "tile"].includes(slot.previewShape)) add("contract", subject, "invalid preview shape");
       if (!slot.accepts.length || !unique(slot.accepts)) add("section", subject, "acceptance must be nonempty and unique");
-      for (const id of slot.accepts) if (!SECTION_ID.test(id) || !sections.has(id) || PARTS.has(id)) add("section", subject, `unregistered section leaf or part: ${id}`);
+      for (const id of slot.accepts) {
+        const streamPart = leaf.id === "layouts.stack" && slot.id === "body" && (id === "sections.band" || id === "sections.section-header");
+        if (!SECTION_ID.test(id) || !sections.has(id) || PARTS.has(id) && !streamPart) add("section", subject, `unregistered section leaf or part: ${id}`);
+      }
       if (slot.tile && (!slot.tile.spans.length || !unique(slot.tile.spans) || slot.tile.spans.some((span) => !SPANS.has(span)))) add("contract", subject, "invalid tile spans");
     }
     for (const [id, values] of Object.entries(contract.members)) {

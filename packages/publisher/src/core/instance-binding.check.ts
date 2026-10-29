@@ -1,5 +1,6 @@
 import { instanceBodyFindings } from "./instance-body.js";
 import type { InstanceBinding as AnyInstanceBinding } from "./instance-binding.js";
+import { registeredBindingTemplate } from "./instance-binding.js";
 import { analyzeLayoutSource } from "./layout-source.js";
 import type { LayoutCompilerPort } from "./layout-source.js";
 import { getEffectiveLayoutContract } from "../layouts/index.js";
@@ -74,6 +75,18 @@ export function inspectInstanceChecks(input: unknown, library: ConsumerInstanceL
       (input.path !== undefined && (!text(input.path) || !input.path.startsWith("/") || input.path.startsWith("//")))) {
       add("LK7", "instance", "Binding must contain only assembly data and consumer references"); return finish();
     }
+    const lazyContent = (value: unknown): boolean => object(value) && Object.values(value).some(reference => object(reference) && "lazy" in reference);
+    const fillPageData = (value: unknown): boolean => object(value) && ("repeat" in value || lazyContent(value.content) || Array.isArray(value.children) && value.children.some(fillPageData));
+    const hasPageData = object(input.fills) && Object.values(input.fills).some(values => Array.isArray(values) && values.some(fillPageData))
+      || object(input.frame) && (lazyContent(input.frame.content) || object(input.frame.slotFills) && Object.values(input.frame.slotFills).some(fillPageData));
+    if (hasPageData) {
+      let template: AnyInstanceBinding;
+      try { template = registeredBindingTemplate(input as unknown as AnyInstanceBinding); }
+      catch { add("LK7", "instance", "Invalid registered repeat/lazy metadata"); return finish(); }
+      // Authored template checks cannot prove dynamic row counts or future data.
+      const checked = inspectInstanceChecks(template, library, registries, compiler);
+      return { ...checked, unavailableChecks: [...new Set<InstanceCheckCode>([...checked.unavailableChecks, "LK5", "LK10"])] };
+    }
     if (!object(input.frame) || !fields(input.frame, ["leaf", "config", "content", "slotFills", "members"]) || !text(input.frame.leaf) ||
       (input.frame.config !== undefined && !text(input.frame.config)) || (input.frame.members !== undefined && !memberSelection(input.frame.members)) ||
       (input.frame.content !== undefined && (!object(input.frame.content) || Object.entries(input.frame.content).some(([name, value]) => !text(name) || !ref(value))))) { add("LK1", "frame", "Invalid frame binding"); return finish(); }
@@ -129,7 +142,8 @@ export function inspectInstanceChecks(input: unknown, library: ConsumerInstanceL
     for (const key of Object.keys(binding.fills)) if (!effective.slots.some(slot => slot.id === key)) add("LK3", `fills.${key}`, "Unknown effective layout slot");
     const ordered: { section: SectionFill; fill?: ConsumerInstanceFill; path: string }[] = [];
     const checkSection = (value: unknown, path: string, accepts?: readonly string[], tile?: { readonly spans: readonly string[] }) => {
-      if (!object(value) || !fields(value, ["section", "config", "span", "content"]) || !text(value.section) || (value.config !== undefined && !text(value.config)) || !object(value.content)) {
+      if (!object(value) || !fields(value, ["section", "config", "span", "content", "children"]) || !text(value.section) || (value.config !== undefined && !text(value.config)) || !object(value.content)
+        || value.children !== undefined && (!Array.isArray(value.children) || !value.children.length || path.split(".children.").length > 8)) {
         add("LK4", path, "Invalid section fill");
         unavailableChecks.add("LK6"); unavailableChecks.add("LK8"); unavailableChecks.add("LK10");
         if (tile) unavailableChecks.add("LK13");
@@ -154,6 +168,7 @@ export function inspectInstanceChecks(input: unknown, library: ConsumerInstanceL
         }
         for (const state of binding.states ?? []) if (!leaf.contract.states?.includes(state)) add("LK14", path, "Section contract does not declare an instance state");
       }
+      fill.children?.forEach((child, index) => checkSection(child, `${path}.children.${index}`));
       return { section: fill, fill: implementation, path };
     };
     for (const [index, slot] of effective.slots.entries()) {
@@ -163,7 +178,7 @@ export function inspectInstanceChecks(input: unknown, library: ConsumerInstanceL
       for (const [i, value] of fills.entries()) { const section = checkSection(value, `fills.${slot.id}.${i}`, slot.accepts, slot.tile); if (section) ordered.push(section); }
     }
     if (binding.frame.slotFills !== undefined) {
-      if (!object(binding.frame.slotFills) || !fields(binding.frame.slotFills, ["consent", "context"])) {
+      if (!object(binding.frame.slotFills) || !fields(binding.frame.slotFills, ["consent", "context", "page-module", "inspector"])) {
         add("LK4", "frame.slotFills", "Unknown frame section slot");
         unavailableChecks.add("LK6"); unavailableChecks.add("LK8"); unavailableChecks.add("LK10");
         if (binding.states?.length) unavailableChecks.add("LK14");

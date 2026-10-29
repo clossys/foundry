@@ -5,7 +5,7 @@ import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { runtimeHash } from "@clossys/designer/catalog";
 import type { ConsumerRuntimeManifest } from "@clossys/designer/catalog";
 import { compileRegisteredRouteFixture, syntheticRegisteredRoute, type CompiledRegisteredRoute } from "../web/__fixtures__/registered-route-runtime.js";
-import { resolveSelectedRouteRuntimeBinding } from "./route-runtime.js";
+import { resolveSelectedRouteRuntimeBinding, selectedRouteRuntimeManifest } from "./route-runtime.js";
 
 /** SYNTHETIC verified-descriptor members, in the order a compiled app-shell fill declares them. */
 const DESCRIPTOR = ["layout.immersive", "layout.standard", "stage.contained", "stage.full", "theme.dark", "theme.light", "theme.system"];
@@ -28,6 +28,18 @@ function project(frame: Record<string, unknown> = {}, descriptor: readonly strin
 }
 
 describe("route runtime frame member selection", () => {
+  it("projects each authored descendant from the exact selected library and retains its descriptor closure", () => {
+    const f = syntheticRegisteredRoute(compiled), parent = f.fills.find(fill => fill.kind === "section" && fill.leaf !== "sections.content")!;
+    Object.assign(f.route.composition.binding, { fills: { body: [{ section: parent.leaf, content: {}, children: [{ section: "sections.content", content: {} }] }] } });
+    const result = resolveSelectedRouteRuntimeBinding(f.route.composition.binding, f.engine, f.manifest);
+    expect(result.status).toBe("resolved"); if (result.status !== "resolved") return;
+    expect(result.binding.sections.body![0]!.children![0]!.leaf).toBe("sections.content");
+    expect(selectedRouteRuntimeManifest(result.binding, f.manifest).fills.map(fill => fill.leaf)).toContain("sections.content");
+    const absent = { ...f.manifest, fills: f.manifest.fills.filter(fill => fill.leaf !== "sections.content") };
+    const missing = resolveSelectedRouteRuntimeBinding(f.route.composition.binding, f.engine, absent);
+    expect(missing.status).toBe("pending");
+    if (missing.status !== "resolved") expect(missing.findings.some(finding => finding.includes("children.0"))).toBe(true);
+  });
   it("projects only the selected members, in verified descriptor order", () => {
     const { result } = project({ members: { theme: "system", layout: "standard", stage: "full" } });
     expect(result.status, JSON.stringify(result)).toBe("resolved");
