@@ -60,7 +60,7 @@ node packages/producer/scripts/pack-five.mjs --out-dir <tarball-directory>
 
 The script clean-builds the mapped agents, their local dependencies, and Producer,
 then runs native `npm pack` for the five packages. It preserves their current
-versions and Producer's private flag. When `studio/package.json` is present, it
+versions and Producer's private flag. When Studio App Router source and a Next config are present, it
 also runs `scripts/build-studio.mjs` and includes the standalone Studio output.
 `--help` describes the interface. Build logs use stderr; stdout and the output
 directory's `summary.json` contain the package names, versions, filenames,

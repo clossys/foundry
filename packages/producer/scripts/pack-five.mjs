@@ -16,7 +16,7 @@ const help = `Usage: node packages/producer/scripts/pack-five.mjs --out-dir <dir
 Clean-build and npm pack the four mapped agents and Producer from this checkout.
 The output directory must be outside the checkout. Existing artifacts are never
 overwritten. Package versions and private flags are preserved; nothing publishes.
-Builds Studio when studio/package.json exists. Otherwise the summary explicitly
+Builds Studio when its App Router source and Next config exist. Otherwise the summary explicitly
 reports studio.status=missing-source and complete=false (scaffold tarballs only).
 Build output goes to stderr; the final JSON summary goes to stdout and summary.json.
 `;
@@ -138,7 +138,10 @@ async function main() {
   }
 
   let studio = { status: "missing-source", reason: "Producer Studio source is absent; these tarballs contain the CLI scaffold only." };
-  if (existsSync(join(producerRoot, "studio/package.json"))) {
+  const studioSource = join(producerRoot, "studio");
+  const hasStudioApp = ["app", "src/app"].some((path) => existsSync(join(studioSource, path)));
+  const hasStudioConfig = ["next.config.js", "next.config.mjs", "next.config.ts"].some((path) => existsSync(join(studioSource, path)));
+  if (hasStudioApp && hasStudioConfig) {
     const script = join(producerRoot, "scripts/build-studio.mjs");
     if (!existsSync(script)) throw new Error("Studio source exists but scripts/build-studio.mjs is missing.");
     process.stderr.write(run(process.execPath, [script]));
