@@ -7,6 +7,7 @@
  * input or scan coverage was insufficient to run the check.
  */
 
+import { runReviewCli, REVIEW_USAGE } from "./cli/review.js";
 import { runCitationIndex } from "./citations/cli.js";
 import { runWriteCli } from "./write/cli.js";
 import { existsSync, readdirSync, readFileSync, realpathSync, statSync } from "node:fs";
@@ -76,6 +77,7 @@ Exit codes: 0 = clean, 1 = at least one finding, 2 = could not run (bad input, m
 Run "strategist-check brand-coverage --help", "strategist-check direction --help", "strategist-check handoff --help", "strategist-check apply --help", "strategist-check brand-facts --help", or "strategist-check wont-claim --help" for those subcommands' own usage.
 
 ${READ_USAGE}
+${REVIEW_USAGE}
 `;
 
 const BRAND_COVERAGE_USAGE = `Usage: strategist-check brand-coverage <derivations-file> [<brandable-slots-file>] [options]
@@ -1222,6 +1224,7 @@ function runWontClaim(argv: string[]): number {
  * `process.argv`.
  */
 export function main(argv: string[]): number {
+  if (argv[0] === "review") return runReviewCli(argv.slice(1));
   const writeResult = runWriteCli(argv);
   if (writeResult !== undefined) return writeResult;
   if (argv[0] === "index") return runCitationIndex(argv.slice(1));
