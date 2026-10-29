@@ -1,5 +1,5 @@
 import { afterEach, expect, it, vi } from "vitest";
-import { existsSync, mkdirSync, mkdtempSync, readFileSync, renameSync, rmSync, symlinkSync, writeFileSync } from "node:fs";
+import { existsSync, linkSync, mkdirSync, mkdtempSync, readFileSync, renameSync, rmSync, symlinkSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
 import { compileBrief } from "../brief.js";
@@ -39,6 +39,25 @@ it("indexes whole strategy markers with physical lines and recursive JSON object
   ]);
   expect(result.stale).toEqual([]); expect(result.dangling).toEqual([]);
   expect(result.fingerprint).toMatch(/^[a-f0-9]{64}$/);
+});
+
+it("indexes compact HTML comment markers while rejecting malformed token boundaries", () => {
+  const { root } = fixture();
+  const valid = [`<!--${marker()}-->`, `<!-- ${marker()}-->`, `<!--${marker()} -->`, `<!-- ${marker()} -->`];
+  const invalid = [`x${marker()}`, `-${marker()}`, `${marker()}-suffix`, `${marker()}x`, `${marker()}@2`, `${marker()}--suffix`];
+  const result = buildCitationIndex(readStrategyRoot(root), { files: [{ path: "copy.md", content: [...valid, ...invalid].join("\n") }] });
+  expect(result.entries).toEqual(valid.map((_, index) => ({ ref, by: { kind: "marker", path: "copy.md", line: index + 1 } })));
+});
+
+it.each(["stale", "dangling"])("index --check detects %s compact HTML comment markers", kind => {
+  const { root, surfaces } = fixture();
+  if (kind === "stale") put(root, `cells/${id}/v2.md`, cell(2, "draft"));
+  const version = kind === "stale" ? 2 : 99;
+  put(surfaces, "copy.md", `<!--${marker(version)}-->\n<!-- ${marker(version)}-->`);
+  vi.spyOn(console, "log").mockImplementation(() => {});
+  expect(invoke(root, "--check", "--scan", surfaces)).toBe(1);
+  expect(output()[kind].map((entry: { by: { line: number } }) => entry.by.line)).toEqual([1, 2]);
+  expect(existsSync(join(root, "citations.json"))).toBe(false);
 });
 
 it("separates unknown versions and cells from known non-active versions", () => {
@@ -109,6 +128,16 @@ it("honors repeated scan directories, extensions, additive skip dirs and exclude
   expect(output().entries).toHaveLength(2);
 });
 
+it.each(["md", ".", ".md/path"])("rejects malformed extension %s instead of reporting an empty clean scan", extension => {
+  const { root, surfaces } = fixture(); put(surfaces, "copy.md", marker(99));
+  vi.spyOn(console, "log").mockImplementation(() => {});
+  for (const args of [["--extensions", extension], [`--extensions=${extension}`]]) {
+    expect(invoke(root, "--check", "--scan", surfaces, ...args)).toBe(2);
+    expect(output().error).toMatch(/leading dot and name only/);
+  }
+  expect(existsSync(join(root, "citations.json"))).toBe(false);
+});
+
 it.each(["root", "scan", "brief-json", "scan-json", "contract", "brief-link"])("exits 2 for unreadable or invalid %s inputs", kind => {
   const { root, surfaces, project } = fixture(); vi.spyOn(console, "error").mockImplementation(() => {}); vi.spyOn(console, "log").mockImplementation(() => {});
   if (kind === "root") rmSync(join(root, "tree.json"));
@@ -136,6 +165,23 @@ it("does not re-index its generated citations file when scanning the root", () =
   expect(invoke(root, "--scan", root)).toBe(0); const first = output();
   expect(invoke(root, "--scan", root)).toBe(0); expect(output().fingerprint).toBe(first.fingerprint);
   expect(output().entries).toEqual(first.entries);
+});
+
+it.each(["directory-link", "file-link", "hard-link"])("does not re-index generated citations through %s aliases", kind => {
+  const { root, project } = fixture(); put(root, "copy.md", marker(1)); put(root, "manifest.json", JSON.stringify({ nested: [ref] }));
+  vi.spyOn(console, "log").mockImplementation(() => {});
+  expect(invoke(root, "--scan", root)).toBe(0);
+  let scan = root;
+  if (kind === "directory-link") { scan = join(project, "root-alias"); symlinkSync(root, scan); }
+  else if (kind === "file-link") symlinkSync(join(root, "citations.json"), join(root, "generated-alias.json"));
+  else linkSync(join(root, "citations.json"), join(root, "generated-alias.json"));
+  expect(invoke(root, "--scan", scan)).toBe(0); const first = output();
+  expect(first.entries).toHaveLength(2);
+  expect(first.entries.map((entry: { by: { kind: string } }) => entry.by.kind).sort()).toEqual(["json", "marker"]);
+  expect(invoke(root, "--scan", scan)).toBe(0); expect(output().entries).toEqual(first.entries); expect(output().fingerprint).toBe(first.fingerprint);
+  const bytes = readFileSync(join(root, "citations.json"), "utf8");
+  expect(invoke(root, "--check", "--scan", scan)).toBe(0); expect(output().fingerprint).toBe(first.fingerprint);
+  expect(readFileSync(join(root, "citations.json"), "utf8")).toBe(bytes);
 });
 
 it.each([["--root"], ["--scan"], ["--unknown"], ["--check", "surprise"], ["--root", "one", "--root", "two"]])("rejects invalid index arguments %j", (...args: string[]) => {

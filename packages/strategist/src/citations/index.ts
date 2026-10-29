@@ -47,9 +47,9 @@ export function buildCitationIndex(model: StrategyModel, scan: ScanInput = {}): 
     walk(brief, (ref, id) => entries.push({ ref, by: { kind: "brief", path, id } }));
   }
   for (const { path, content } of scan.files ?? []) {
-    // A trailing letter/digit is not part of a valid version token. This also
-    // avoids accepting a valid prefix of malformed IDs or unsafe integers.
-    const pattern = /(?<![\w:.-])strategy:([a-z]+(?:-[a-z]+)*\.[a-z]+(?:-[a-z]+)*\.[a-z]+(?:-[a-z]+)*@[1-9]\d*)(?![\w@-])/g;
+    // HTML comment delimiters are boundaries even without surrounding spaces.
+    // Otherwise reject valid prefixes of malformed IDs or version tokens.
+    const pattern = /(?:(?<=<!--)|(?<![\w:.-]))strategy:([a-z]+(?:-[a-z]+)*\.[a-z]+(?:-[a-z]+)*\.[a-z]+(?:-[a-z]+)*@[1-9]\d*)(?=-->|[^\w@-]|$)/g;
     for (const match of content.matchAll(pattern)) {
       const ref = parseRef(match[1]!);
       if (ref?.kind === "cell") entries.push({ ref: ref.ref, by: { kind: "marker", path, line: content.slice(0, match.index).split("\n").length } });

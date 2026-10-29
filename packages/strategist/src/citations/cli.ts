@@ -1,4 +1,4 @@
-import { closeSync, constants, fstatSync, ftruncateSync, lstatSync, openSync, readdirSync, writeFileSync } from "node:fs";
+import { closeSync, constants, fstatSync, ftruncateSync, lstatSync, openSync, readdirSync, statSync, writeFileSync } from "node:fs";
 import { join, relative, resolve, sep } from "node:path";
 import type { Brief } from "../brief.js";
 import { discoverBriefContracts, readBriefRootFile } from "../brief-contracts.js";
@@ -60,7 +60,10 @@ export function runCitationIndex(argv: string[]): number {
       else if (flag === "--scan") {
         dirs.push(resolve(value));
         while (argv[i + 1] && !argv[i + 1]!.startsWith("-")) dirs.push(resolve(argv[++i]!));
-      } else if (flag === "--extensions") extensions.push(value);
+      } else if (flag === "--extensions") {
+        if (!value.startsWith(".") || value.length < 2 || value.includes("/")) throw new Error('each --extensions value must include the leading dot and name only, e.g. --extensions .md (not "md" or ".")');
+        extensions.push(value);
+      }
       else if (flag === "--skip-dirs") skipDirs.push(value);
       else excludeGlobs.push(value);
     }
@@ -73,7 +76,17 @@ export function runCitationIndex(argv: string[]): number {
       extensions: extensions.length ? extensions : [".md", ".mdx", ".ts", ".tsx", ".js", ".jsx", ".json"],
       skipDirs: [...DEFAULT_SKIP_DIRS, ...skipDirs], excludeGlobs,
     };
-    const files = dirs.flatMap(dir => scanStrategyDirectory(dir, options).filter(file => resolve(dir, file.path) !== join(root, "citations.json")).map(file => ({ ...file, path: relative(root, join(dir, file.path)).split(sep).join("/") })));
+    const generated = (() => {
+      try { return statSync(join(root, "citations.json")); }
+      catch (error) { if ((error as NodeJS.ErrnoException).code === "ENOENT") return undefined; throw error; }
+    })();
+    const files = dirs.flatMap(dir => scanStrategyDirectory(dir, options).filter(file => {
+      // The scanner follows links; compare file identity so aliases cannot feed
+      // the generated inventory back into its own entries and fingerprint.
+      if (!generated) return true;
+      const source = statSync(resolve(dir, file.path));
+      return source.dev !== generated.dev || source.ino !== generated.ino;
+    }).map(file => ({ ...file, path: relative(root, join(dir, file.path)).split(sep).join("/") })));
     const inventory = readBriefRootFile(root, "briefs/index.json");
     if (inventory !== undefined) files.push({ path: "briefs/index.json", content: inventory });
     const result = buildCitationIndex(model, { files, briefs, contracts: discovered.contracts });
