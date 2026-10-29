@@ -3,11 +3,12 @@ import { beforeAll, describe, expect, it, vi } from "vitest";
 import { readFileSync } from "node:fs";
 import { resolve as resolvePath } from "node:path";
 import { renderToStaticMarkup } from "react-dom/server";
-import { loadBuildCatalog, planSurfaceRuntime, resolve, runtimeAssemblyCells, runtimeHash } from "@clossys/designer/catalog";
+import { applyLibraryChange, importFoundryComponents, libraryHash, loadBuildCatalog, planSurfaceRuntime, resolve, runtimeAssemblyCells, runtimeHash } from "@clossys/designer/catalog";
 import type { RuntimeContent, RuntimeJson } from "@clossys/designer/catalog";
 import { readSurfacePackageEvidence } from "@clossys/designer/catalog/server";
 import { surfaceRuntimeRenderers } from "@clossys/designer/frames";
 import { packageSurfaceLibrary } from "../../../../designer/dist/library-cli/__fixtures__/package-surface-library.js";
+import { selectedPackageClosure } from "../../../../designer/src/catalog-core/__fixtures__/surface-engine/selected-package-closure.js";
 import { createAdminPageRegistry, adminPageRef, adminPageStaticContent, configs, fixtureSources } from "./__fixtures__/consumer-pages.mjs";
 import { adminPageContent, writerCopy, createConsumerPageRegistry, consumerPageRef, type ConsumerPageConfig, type ConsumerPageSkeleton as AdminPageSkeleton } from "./index.js";
 import { adminCopyFixture } from "./__fixtures__/copy.mjs";
@@ -21,16 +22,27 @@ import { LAYOUT_LEAVES } from "../../layouts/resolve.js";
 import type { InstanceRegistries } from "../../core/instance-binding.js";
 
 let fixture: Awaited<ReturnType<typeof packageSurfaceLibrary>>;
+let componentOptions: ReturnType<typeof selectedPackageClosure>["componentOptions"];
 let packages: Awaited<ReturnType<typeof readSurfacePackageEvidence>>;
 beforeAll(async () => {
   fixture = await packageSurfaceLibrary();
+  // Package surfaces must close over real selected consumer components too.
+  const catalog = { ...fixture.catalog, components: { ...fixture.catalog.components, fills: importFoundryComponents().fills } };
+  const selected = selectedPackageClosure(catalog);
+  componentOptions = selected.componentOptions;
+  const library = applyLibraryChange(catalog, fixture.library, {
+    baseHash: libraryHash(fixture.library),
+    changes: selected.library.components.fills.map(doc => ({ portion: "components", change: { op: "adopt", slot: doc.$extensions["com.clossys.fill"].slot, source: "foundry" } })),
+  }, { componentOptions, surfaceOptions: fixture.options });
+  fixture = { ...fixture, catalog, library };
   packages = await readSurfacePackageEvidence(["@clossys/designer/frames", "@clossys/designer/shell"].map(module => ({ frames: { pointer: { impl: { kind: "package", module } } } })) as Parameters<typeof readSurfacePackageEvidence>[0]);
 }, 120_000);
 const skeleton = { l0: [{ id: "strings", label: {id:"strings.admin.group.writer.strings"}, count: 1, estimate: 300, l1: [] }] };
 const content = (reference: RuntimeContent["reference"], value: RuntimeJson): RuntimeContent => ({ reference, value, hash: runtimeHash(value) });
 function setup(skeleton: AdminPageSkeleton = { l0: [{ id: "strings", label: {id:"strings.admin.group.writer.strings"}, count: 1, estimate: 300, l1: [] }] }, custom?: ConsumerPageConfig) {
-  const engine = { catalog: fixture.catalog, library: fixture.library, surfaceOptions: { ...fixture.options, packages: [...fixture.packages.filter(row => !packages.some(owned => owned.module === row.module)), ...packages] } };
+  const engine = { catalog: fixture.catalog, library: fixture.library, componentOptions, surfaceOptions: { ...fixture.options, packages: [...fixture.packages.filter(row => !packages.some(owned => owned.module === row.module)), ...packages] } };
   const profile = resolve(engine), copy = adminCopyFixture();
+  expect(profile.check.findings.filter(row => row.severity === "error")).toEqual([]);
   const publication = { id: "admin", mainSlot: "body", frame: { leaf: "frames.app-shell" as const, content: { "skip-link": { kind: "copy" as const, ref: "admin.frame/skip-link" } } }, layout: { leaf: "layouts.stack" as const, config: "stack.workspace" }, format: "web.page.responsive" as const, surface: "app" as const, context: { consumer: profile.consumer, medium: "web" as const }, packIds: ["pack.admin"] };
   const { registry, pages, publicationHosts } = custom
     ? createConsumerPageRegistry({ publication, channel: "app", copy, configs: [custom], manifests: { [custom.id]: skeleton }, sources: { [custom.id]: fixtureSources(custom.id) }, map: { version: 1, publicationId: publication.id, format: "web.page.responsive", entries: [{ id: custom.entryId, title: copy(custom.title), path: "/catalog/inventory", kind: "page", order: 0, source: { planItemId: "app.inventory" }, pageConfig: custom.id }] } })
