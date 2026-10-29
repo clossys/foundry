@@ -10,29 +10,6 @@ import { actionsOf, anatomyOf, isObject, recordsOf, refuseUnmapped, requireSlot,
 const LEAF = "sections.form";
 const TEXT_TYPES = ["text", "email", "tel", "url", "password", "search"] as const;
 
-/** Consumer-owned native submission for a capture page; no delivery handler lives here. */
-export interface FormCaptureSectionHost {
-  readonly capture: { readonly handlerUrl: string };
-}
-
-function captureAction(host: Readonly<Record<string, unknown>> | undefined): string | undefined {
-  if (!host || !Object.prototype.hasOwnProperty.call(host, "capture")) return undefined;
-  const capture = host.capture;
-  if (!capture || typeof capture !== "object" || Array.isArray(capture) || Object.keys(capture).some(key => key !== "handlerUrl")) {
-    throw new TypeError(`${LEAF}: capture needs a consumer handlerUrl`);
-  }
-  const handlerUrl = (capture as Partial<FormCaptureSectionHost["capture"]>).handlerUrl;
-  if (typeof handlerUrl !== "string" || !handlerUrl || /[\s\\\u0000-\u001f\u007f]/u.test(handlerUrl)) {
-    throw new TypeError(`${LEAF}: capture handlerUrl must be a root-relative or HTTPS URL`);
-  }
-  if (handlerUrl.startsWith("/") && !handlerUrl.startsWith("//") && !handlerUrl.includes("#")) return handlerUrl;
-  try {
-    const url = new URL(handlerUrl);
-    if (/^https:\/\//i.test(handlerUrl) && url.protocol === "https:" && url.hostname && !url.username && !url.password && !url.hash) return handlerUrl;
-  } catch { /* Refuse malformed consumer URLs below. */ }
-  throw new TypeError(`${LEAF}: capture handlerUrl must be a root-relative or HTTPS URL`);
-}
-
 /**
  * fields -> Form.children (each field a registered TextField, Select, ComboBox or Checkbox); submit -> Form.actions
  * (a submit Button); error-summary -> Form.errors and errorSummaryMessage.
@@ -55,7 +32,6 @@ function fieldOf(row: RuntimeObject, index: number): FieldRow {
 
 export const renderForm: SectionRenderer = input => {
   refuseUnmapped(input, formInputs);
-  const action = captureAction(input.sectionHost);
   const fields = recordsOf(LEAF, "fields", requireSlot(input, LEAF, "fields")).map(fieldOf);
   const [submit] = actionsOf(LEAF, "submit", requireSlot(input, LEAF, "submit"), 1);
   const summary = slotValue(input, "error-summary");
@@ -67,17 +43,14 @@ export const renderForm: SectionRenderer = input => {
   const summaryMessage = stringField(summary, "message");
   const { heading } = anatomyOf(input);
   const children = fields.map(field => {
-    const name = action === undefined ? undefined : field.id;
-    if (field.kind === "select") return <Select key={field.id} id={field.id} name={name} label={field.label} placeholder={field.placeholder} description={field.description} options={field.options} />;
-    if (field.kind === "combo-box") return <ComboBox key={field.id} id={field.id} name={name} label={field.label} placeholder={field.placeholder} description={field.description} options={field.options} />;
-    if (field.kind === "checkbox") return <Checkbox key={field.id} id={field.id} name={name}>{field.label}</Checkbox>;
+    if (field.kind === "select") return <Select key={field.id} id={field.id} label={field.label} placeholder={field.placeholder} description={field.description} options={field.options} />;
+    if (field.kind === "combo-box") return <ComboBox key={field.id} id={field.id} label={field.label} placeholder={field.placeholder} description={field.description} options={field.options} />;
+    if (field.kind === "checkbox") return <Checkbox key={field.id} id={field.id}>{field.label}</Checkbox>;
     if (!(TEXT_TYPES as readonly string[]).includes(field.kind)) throw new TypeError(`${LEAF}: field ${field.id} kind ${field.kind} has no registered component`);
-    return <TextField key={field.id} id={field.id} name={name} type={field.kind} label={field.label} placeholder={field.placeholder} description={field.description} />;
+    return <TextField key={field.id} id={field.id} type={field.kind} label={field.label} placeholder={field.placeholder} description={field.description} />;
   });
   return (
     <Form
-      action={action}
-      method={action === undefined ? undefined : "post"}
       heading={heading}
       errors={errors.length ? errors : undefined}
       errorSummaryMessage={summaryMessage ? () => summaryMessage : undefined}
