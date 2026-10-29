@@ -25,6 +25,20 @@ describe("strict Designer item-name resolution", () => {
       expect(resolveAdminCopyRef({ id: record.id }, copyWith({}, bindings), preview), JSON.stringify(bindings)).toBeUndefined();
     }
   });
+  it("resolves the existing Gradient record only with its authentic token-slot binding on preview", () => {
+    const slots = JSON.parse(readFileSync(new URL("../../designer/src/catalog/slots/tokens.json", import.meta.url), "utf8"));
+    expect(slots.some((row: { id: string }) => row.id === "tokens.gradient")).toBe(true);
+    const gradient = ADMIN_STUDIO_COPY_EN.records.find(row => row.id === "st.tbfa7dx2cf")!;
+    const bindings = ADMIN_STUDIO_COPY_EN.bindings.filter(row => row.recordId === gradient.id);
+    expect(bindings).toEqual([{ cellId: "designer.item.tokens.gradient", recordId: gradient.id, kind: "item-name", target: "packages/designer/src/catalog/slots/tokens.json" }]);
+    const copy = createAdminCopy([ADMIN_STUDIO_COPY_EN]), before = JSON.stringify(copy);
+    expect(resolveAdminCopyRef({ id: gradient.id }, copy, preview)).toMatchObject({ text: "Gradient", servedLocale: "en", status: "draft", activation: "none" });
+    expect(resolveAdminCopyRef({ id: gradient.id }, copy)).toBeUndefined();
+    const missing = createAdminCopy([{ ...ADMIN_STUDIO_COPY_EN, bindings: ADMIN_STUDIO_COPY_EN.bindings.filter(row => row.recordId !== gradient.id) }]);
+    expect(resolveAdminCopyRef({ id: gradient.id }, missing, preview)).toBeUndefined();
+    expect(JSON.stringify(copy)).toBe(before);
+    expect(gradient).not.toHaveProperty("approval");
+  });
   it("refuses unregistered item ids, wrong leaf and wrong item identity", () => {
     for (const patch of [{ id: "st.unknown000" }, { leaf: "strings.labels" }, { context: "designer.item.components.badge" }]) {
       expect(resolveAdminCopyRef({ id: patch.id ?? record.id }, copyWith(patch), preview)).toBeUndefined();

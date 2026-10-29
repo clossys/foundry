@@ -65,7 +65,12 @@ it("resolves every scorecard finding key through both packed public admin export
     const installed = join(root, "node_modules/@clossys/writer");
     mkdirSync(installed, { recursive: true });
     execFileSync("tar", ["-xzf", join(root, packed[0].filename), "-C", installed, "--strip-components=1"]);
-    symlinkSync(resolve(packageRoot, "../../node_modules/intl-messageformat"), join(root, "node_modules/intl-messageformat"), "dir");
+    // Mirror the declared runtime dependencies that an ordinary npm install provides.
+    const { dependencies } = JSON.parse(readFileSync(join(installed, "package.json"), "utf8"));
+    for (const dependency of Object.keys(dependencies)) {
+      mkdirSync(join(root, "node_modules", dependency, ".."), { recursive: true });
+      symlinkSync(resolve(packageRoot, "../../node_modules", dependency), join(root, "node_modules", dependency), "dir");
+    }
     writeFileSync(join(root, "package.json"), JSON.stringify({ private: true, type: "module" }));
     writeFileSync(join(root, "codes.json"), JSON.stringify(CHECK_CODES));
     const probe = join(root, "probe.mjs");

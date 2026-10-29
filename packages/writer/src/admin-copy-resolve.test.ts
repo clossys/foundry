@@ -67,9 +67,15 @@ describe("admin copy target boundary", () => {
 it("allows drafts only on the shared resolver's explicit preview target", () => {
   const registry: CopyRegistry = { id: "fixture", locale: "en", revision: "1", source: { kind: "generated", reference: "fixture/admin-copy" }, entries: [{ id: "fixture.draft", text: "Draft copy", context: "Test fixture", status: "draft" }] };
   const reference = { id: "fixture.draft" };
-  expect(createCopyResolver(registry, preview)(reference)?.text).toBe("Draft copy");
+  expect(createCopyResolver(registry, preview)(reference)).toMatchObject({ text: "Draft copy", status: "draft" });
   expect(createCopyResolver(registry, production)(reference)).toBeUndefined();
   expect(resolveCopyRef(registry, reference).issues[0]?.reason).toBe("copy-not-approved");
   registry.entries[0]!.status = "retired";
   expect(createCopyResolver(registry, preview)(reference)).toBeUndefined();
+  registry.entries[0]!.status = "approved";
+  for (const options of [preview, production]) {
+    const approved = createCopyResolver(registry, options)(reference);
+    expect(approved?.text).toBe("Draft copy");
+    expect(approved).not.toHaveProperty("status");
+  }
 });

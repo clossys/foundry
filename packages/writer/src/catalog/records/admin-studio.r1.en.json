@@ -16027,6 +16027,12 @@
       "kind": "item-name"
     },
     {
+      "cellId": "designer.item.tokens.gradient",
+      "recordId": "st.tbfa7dx2cf",
+      "target": "packages/designer/src/catalog/slots/tokens.json",
+      "kind": "item-name"
+    },
+    {
       "cellId": "designer.item.tokens.gutter",
       "recordId": "st.yqh1dq0chq",
       "target": "packages/designer/src/catalog/slots/tokens.json",
