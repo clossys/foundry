@@ -7,6 +7,7 @@ import { ADMIN_CHAT_COPY_EN } from "./admin-chat.js";
 import { ADMIN_COMMON_COPY_EN } from "./admin-common.js";
 export { ADMIN_COMMON_COPY_EN } from "./admin-common.js";
 export { ADMIN_CHAT_COPY_EN } from "./admin-chat.js";
+export { ADMIN_PAGES_COPY_EN } from "./admin-pages.js";
 import { createCopyResolver, type CopyResolveOptions } from "./resolve.js";
 export { ADMIN_WRITER_COPY_EN } from "./admin-route-copy.js";
 export type { AdminRouteCopy } from "./admin-route-copy.js";
@@ -68,9 +69,10 @@ export interface AdminItemNameBinding {
   readonly kind: "item-name";
 }
 
-const designerItemNames = new Map(ADMIN_STUDIO_COPY_EN.records.filter(record =>
-  record.leaf === "strings.names" && record.context.startsWith("designer.item.")
-).map(record => [record.id, record]));
+const designerItemNames = new Map<string, AdminCopyRecord>([
+  ...ADMIN_STUDIO_COPY_EN.records.filter(record => record.leaf === "strings.names" && record.context.startsWith("designer.item.")),
+  ...ADMIN_COMMON_COPY_EN.records.filter(record => record.leaf === "strings.common" && record.context.startsWith("designer.item.")),
+].map(record => [record.id, record]));
 
 /** Authenticate an item name against the shipped Writer source binding.
  * A context-shaped string alone grants no authority to name a Designer item. */
@@ -78,10 +80,27 @@ export function getAdminItemNameBinding(id: string, copy: AdminCopy = ADMIN_COPY
   const canonicalRecord = designerItemNames.get(id);
   const record = getAdminCopyRecord(id, copy);
   if (!canonicalRecord || !record || record.leaf !== canonicalRecord.leaf || record.context !== canonicalRecord.context) return undefined;
-  const canonicalBindings = ADMIN_STUDIO_COPY_EN.bindings.filter(binding => binding.recordId === id);
+  const commonOwned = canonicalRecord.leaf === "strings.common";
+  const canonicalBindings = ADMIN_STUDIO_COPY_EN.bindings.filter(binding => binding.recordId === id && (!commonOwned || binding.kind === "item-name"));
   const canonicalBinding = canonicalBindings[0];
   if (canonicalBindings.length !== 1 || !canonicalBinding || canonicalBinding.kind !== "item-name" || canonicalBinding.cellId !== canonicalRecord.context) return undefined;
   const envelopes = copy.envelopes.filter(envelope => envelope.records.some(row => row.id === id));
+  if (commonOwned) {
+    const declarations = ADMIN_STUDIO_COPY_EN.externalRecords.filter(row => row.recordId === id);
+    const declaration = declarations[0];
+    if (declarations.length !== 1 || !declaration || declaration.source !== "common-labels.r1.en.json" || declaration.sourceContext !== canonicalRecord.context
+      || !ADMIN_COMMON_COPY_EN.usages.some(row => row.recordId === id && row.context === canonicalRecord.context && row.leaf === "strings.names" && row.source === "records/admin-studio.r1.en.json")) return undefined;
+    // The common owner retains the record; Studio retains its original binding.
+    if (!envelopes.length || envelopes.some(envelope => !("bindings" in envelope) || envelope.bindings.some(binding => binding.recordId === id))) return undefined;
+    const carriers = copy.envelopes.filter(envelope => "bindings" in envelope && envelope.bindings.some(binding => binding.recordId === id && (binding.kind === "item-name" || binding.cellId === canonicalRecord.context)));
+    const carrier = carriers[0];
+    if (carriers.length !== 1 || !carrier || !("bindings" in carrier) || !("externalRecords" in carrier) || !Array.isArray(carrier.externalRecords)) return undefined;
+    const suppliedDeclarations = carrier.externalRecords.filter(row => row.recordId === id);
+    if (suppliedDeclarations.length !== 1 || !suppliedDeclarations.every(row => row.source === declaration.source && row.sourceContext === declaration.sourceContext)) return undefined;
+    const bindings = carrier.bindings.filter(binding => binding.recordId === id && (binding.kind === "item-name" || binding.cellId === canonicalRecord.context));
+    if (bindings.length !== 1 || !bindings.every(binding => binding.kind === canonicalBinding.kind && binding.cellId === canonicalBinding.cellId && binding.target === canonicalBinding.target)) return undefined;
+    return { ...canonicalBinding, kind: "item-name" };
+  }
   if (!envelopes.length || envelopes.some(envelope => {
     if (!("bindings" in envelope)) return true;
     const bindings = envelope.bindings.filter(binding => binding.recordId === id);
