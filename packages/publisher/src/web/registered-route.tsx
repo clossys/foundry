@@ -6,6 +6,8 @@ import { prepareRegisteredRouteProjection } from "./registered-route-binding.js"
 import type { RegisteredRoutePageProps, RegisteredRouteRuntime, RegisteredRouteRuntimeHook, RegisteredRouteHeaderActions } from "./registered-route-binding.js";
 import type { LegacyRouteRegistration as RouteRegistration } from "../core/route-registry.js";
 export { RegisteredRoutePage } from "./registered-route-pages.js";
+export { RegisteredCaptureRoutePage } from "./registered-capture-route.js";
+export type { RegisteredCaptureRoutePageProps } from "./registered-capture-route.js";
 export { prepareRegisteredRoute, prepareRegisteredRouteFromNode, prepareRegisteredRouteProjection } from "./registered-route-binding.js";
 export type { PreparedRegisteredRoute, PreparedRegisteredPage, RegisteredRoutePageProps, RegisteredRouteRuntime, RegisteredRouteRuntimeHook, RegisteredRouteHeaderActions, PlainRegisteredRouteProjection } from "./registered-route-binding.js";
 export type { RegisteredRouteSerializable, RegisteredRouteServerData } from "../core/route-server-data.js";
