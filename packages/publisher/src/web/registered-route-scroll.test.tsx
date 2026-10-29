@@ -1,6 +1,6 @@
 /** @vitest-environment jsdom */
 import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
-import { applyLibraryChange, libraryHash, loadBuildCatalog, resolve, runtimeAssemblyCells, runtimeHash } from "@clossys/designer/catalog";
+import { applyLibraryChange, emit, libraryHash, loadBuildCatalog, resolve, runtimeAssemblyCells, runtimeHash } from "@clossys/designer/catalog";
 import { mkdtemp, realpath, rm } from "node:fs/promises";
 import { join } from "node:path";
 import { tmpdir } from "node:os";
@@ -13,6 +13,7 @@ import { projectPageOutline } from "../content/taxonomy.js";
 import { syntheticRoute } from "../core/__fixtures__/registered-route.js";
 import { compileRegisteredRouteFixture, syntheticRegisteredRoute, type CompiledRegisteredRoute } from "./__fixtures__/registered-route-runtime.js";
 import { syntheticSurface } from "../../../designer/dist/catalog-core/__fixtures__/surface-engine/synthetic.js";
+import { selectedRuntime } from "../../../designer/dist/importers/__fixtures__/selected-runtime.js";
 import { flowStageStyleSheet } from "../core/flow-stage.js";
 import { prepareRegisteredRoute } from "./registered-route-binding.js";
 import type { RegisteredRouteRuntime } from "./registered-route-binding.js";
@@ -63,12 +64,18 @@ function liveFixture(table = false) {
   Object.assign(f.route.composition.binding, { fills: { body: [{ section: section.leaf, content: table ? { rows: { kind: "records", ref: "rows" } } : {} }] }, body });
   if (table) Object.assign(f.route.composition.binding, { layout: { leaf: "layouts.stack", config: "stack.workspace" } });
   const configuration = table ? "stack.workspace" : "stack.focus";
+  const profile = resolve(f.engine);
+  const files = emit(profile, ["component-index", "components-consumption"]);
+  const consumption = JSON.parse(files.find(file => file.path === "components-consumption.json")!.contents);
+  expect(consumption.consumer).toBe(profile.consumer);
+  expect(consumption.selectionHash).toBe(profile.selectionHash);
+  const components = selectedRuntime(files.map(file => ({ path: file.path, content: file.contents }))).load("component-index.ts");
   const sectionRenderer = vi.fn((input: any) => input.slots.children ?? null), frameRenderer = vi.fn((input: any) => input.slots.main);
   const registries = { ...f.registries, sections: [...f.registries.sections, ...f.engine.catalog.surfaces!.slots.filter(slot => slot.layer === "sections" && slot.id !== "sections.content").map(slot => ({ id: slot.id as `sections.${string}`, status: "draft" as const, contract: { surface: "both" as const, configs: [], slots: slot.contract.kind === "section" ? slot.contract.slots : [], substrates: ["flow" as const], substrateTests: [{ substrate: "flow" as const, file: "SYNTHETIC.tsx", name: "SYNTHETIC port delivery" }] } }))] };
   const runtime: RegisteredRouteRuntime = {
     assembly: { identity: { kind: "artifact", name: "SYNTHETIC scroll binding", sha256: runtimeHash(compiled.compiled) }, engine: f.engine,
       contracts: { ...loadBuildCatalog(), slots: f.engine.catalog.surfaces!.slots.map(slot => ({ ...slot, contract: slot.contract.kind === "frame" ? { ...slot.contract, stage: { accepts: ["flow"] as const, scroll: "region" as const } } : { ...slot.contract, ...(["sections.data-table", "sections.section-header"].includes(slot.id) ? { anatomy: { ...slot.contract.anatomy, band: "sections.band" as const } } : {}), substrates: ["flow"] as const, substrateTests: [{ substrate: "flow" as const, file: "SYNTHETIC.tsx", name: "SYNTHETIC port delivery" }] } })) },
-      ports: { manifest: f.manifest, renderers: { ...Object.fromEntries(f.fills.filter(fill => fill.kind === "section").map(fill => [fill.renderer.id, sectionRenderer])), [f.frame.renderer.id]: frameRenderer }, resolveContent: reference => reference.ref === "rows" ? content({ kind: "records", ref: "rows" }, [{ id: "one" }]) : undefined, frameHost: { navigate: vi.fn() } },
+      ports: { components, manifest: f.manifest, renderers: { ...Object.fromEntries(f.fills.filter(fill => fill.kind === "section").map(fill => [fill.renderer.id, sectionRenderer])), [f.frame.renderer.id]: frameRenderer }, resolveContent: reference => reference.ref === "rows" ? content({ kind: "records", ref: "rows" }, [{ id: "one" }]) : undefined, frameHost: { navigate: vi.fn() } },
       themes: ["light"], states: ["default"], css: [{ id: "publisher-flow-stage.css", contents: flowStageStyleSheet(f.profile, "layouts.stack", configuration) }], assets: [],
       stageMeasurements: { renderer: { id: "Stack", source: f.layoutSource, sourceHash: runtimeHash(f.layoutSource) }, environment: { kind: "SYNTHETIC width basis" }, cells: runtimeAssemblyCells(resolve(f.engine), ["light"], ["default"]).map(cell => ({ cell, width: cell.width - 80 })) } },
     instanceLibrary: { id: f.consumer, role: "consumer", resolveFill: (leaf, config) => leaf === "layouts.stack" && config === configuration ? { library: f.consumer, leaf, config, headings: [], states: ["default"], renderer: f.source } : undefined, resolveContent: reference => reference },

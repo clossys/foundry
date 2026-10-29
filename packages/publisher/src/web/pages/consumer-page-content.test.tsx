@@ -82,12 +82,13 @@ it("rechecks caller mutation before handing the selected page to native preparat
 import { readFileSync } from "node:fs";
 import { resolve as resolvePath } from "node:path";
 import { renderToStaticMarkup } from "react-dom/server";
-import { libraryHash, loadBuildCatalog, planSurfaceRuntime, resolve, runtimeAssemblyCells, runtimeHash } from "@clossys/designer/catalog";
+import { emit, libraryHash, loadBuildCatalog, planSurfaceRuntime, resolve, runtimeAssemblyCells, runtimeHash } from "@clossys/designer/catalog";
 import type { RuntimeContent, RuntimeJson } from "@clossys/designer/catalog";
 import { readSurfacePackageEvidence } from "@clossys/designer/catalog/server";
 import { surfaceRuntimeRenderers, ShellCopyProvider } from "@clossys/designer/frames";
 import { resolveAdminCopyRef } from "@clossys/writer/admin-copy";
 import { packageSurfaceLibrary } from "../../../../designer/dist/library-cli/__fixtures__/package-surface-library.js";
+import { selectedRuntime } from "../../../../designer/dist/importers/__fixtures__/selected-runtime.js";
 import { registeredLayoutSourcePin } from "../../core/layout-fill-source.js";
 import { flowStageStyleSheet } from "../../core/flow-stage.js";
 import { FORMAT_LEAVES } from "../../formats/index.js";
@@ -118,6 +119,11 @@ it("refuses stale selected native source evidence after canonical content select
 function nativeFixture(options: {member?:string} = {}) {
   const engine = {catalog:adopted.catalog,library:adopted.library,surfaceOptions:{...adopted.options,packages:[...adopted.packages.filter(row=>!packageEvidence.some(owned=>owned.module===row.module)),...packageEvidence]}};
   const profile = resolve(engine);
+  const files = emit(profile, ["component-index", "components-consumption"]);
+  const consumption = JSON.parse(files.find(file => file.path === "components-consumption.json")!.contents);
+  expect(consumption.consumer).toBe(profile.consumer);
+  expect(consumption.selectionHash).toBe(profile.selectionHash);
+  const components = selectedRuntime(files.map(file => ({ path: file.path, content: file.contents }))).load("component-index.ts");
   const frameContent = {"skip-link":{kind:"copy",ref:"archive.frame/skip"},sidebar:{kind:"region",ref:"archive.frame/sidebar"},command:{kind:"region",ref:"archive.frame/command"}};
   const f = fixture({...options,consumer:profile.consumer,libraryVersion:libraryHash(engine.library),frameContent}), bound = prepareConsumerPageRegistry(f);
   const leaves = ["frames.app-shell","sections.section-header","sections.band","sections.data-table","sections.record-detail","sections.table-of-contents"];
@@ -137,7 +143,7 @@ function nativeFixture(options: {member?:string} = {}) {
   put(frameContent.command as never,{triggerLabel:title,heading:title,searchLabel:title,closeLabel:title,emptyMessage:title,groups:[]});
   const sectionRenderers = Object.fromEntries(manifest.fills.map(fill=>[fill.renderer.id,surfaceRuntimeRenderers[fill.leaf]!.render]));
   const pixels = Object.fromEntries(Object.entries(profile.values.members).filter(([id])=>id.startsWith("tokens.breakpoint.")).map(([id,member])=>{const v=member.value.light as {unit:string;value:number};return [id,v.value*(v.unit==="px"?1:16)];}));
-  const runtime:RegisteredRouteRuntime={assembly:{identity:{kind:"git",head:"a".repeat(40),tree:"b".repeat(40)},engine,contracts:contracts as never,ports:{manifest,renderers:sectionRenderers,resolveContent:reference=>values.get(reference.ref),frameOrder:({layout,slots})=>[...Object.values(slots).flat(),...layout],frameHost:{navigate:vi.fn()}},themes:["light"],states:["default"],breakpointPixels:pixels,breakpointBasis:{renderer:layoutRenderer,environment:{kind:"SYNTHETIC 16px root font"}},css:[{id:"publisher-flow-stage.css",contents:flowStageStyleSheet(profile,"layouts.stack","stack.workspace")}],assets:[],stageMeasurements:{renderer:layoutRenderer,environment:{kind:"SYNTHETIC width basis"},cells:runtimeAssemblyCells(profile,["light"],["default"],[],pixels).map(cell=>({cell,width:cell.width-80}))}},instanceLibrary:{id:profile.consumer,role:"consumer",resolveFill:(leaf,config)=>leaf==="layouts.stack"&&config==="stack.workspace"?{library:profile.consumer,leaf,config,headings:[],states:["default"],renderer:source}:undefined,resolveContent:reference=>reference},registries:registries as never,layoutRenderer,cell:{theme:"light",state:"default",width:320}};
+  const runtime:RegisteredRouteRuntime={assembly:{identity:{kind:"git",head:"a".repeat(40),tree:"b".repeat(40)},engine,contracts:contracts as never,ports:{components,manifest,renderers:sectionRenderers,resolveContent:reference=>values.get(reference.ref),frameOrder:({layout,slots})=>[...Object.values(slots).flat(),...layout],frameHost:{navigate:vi.fn()}},themes:["light"],states:["default"],breakpointPixels:pixels,breakpointBasis:{renderer:layoutRenderer,environment:{kind:"SYNTHETIC 16px root font"}},css:[{id:"publisher-flow-stage.css",contents:flowStageStyleSheet(profile,"layouts.stack","stack.workspace")}],assets:[],stageMeasurements:{renderer:layoutRenderer,environment:{kind:"SYNTHETIC width basis"},cells:runtimeAssemblyCells(profile,["light"],["default"],[],pixels).map(cell=>({cell,width:cell.width-80}))}},instanceLibrary:{id:profile.consumer,role:"consumer",resolveFill:(leaf,config)=>leaf==="layouts.stack"&&config==="stack.workspace"?{library:profile.consumer,leaf,config,headings:[],states:["default"],renderer:source}:undefined,resolveContent:reference=>reference},registries:registries as never,layoutRenderer,cell:{theme:"light",state:"default",width:320}};
   const publication = createRegisteredPublicationSession(bound.registry.publication!,{bind:vi.fn(),setRegions:vi.fn(),setState:vi.fn(),setCommands:vi.fn(),setChunks:vi.fn()});
   const reference=(name:string,kind:RuntimeContent["reference"]["kind"]="records")=>({kind,ref:`consumer.archive/${name}`});
   const itemData = [
