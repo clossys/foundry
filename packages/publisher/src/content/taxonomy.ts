@@ -99,7 +99,7 @@ export function projectPageOutline(page: InstanceBinding | RegionPageBinding, ma
     let fill = fills[value.section.slot]?.[value.section.index], repeats = fill?.repeat ? 1 : 0;
     if (value.section.children !== undefined && (!Array.isArray(value.section.children) || !value.section.children.length || value.section.children.length > 8)) throw new TypeError("Invalid bounded child placement");
     for (const index of value.section.children ?? []) { if (!Number.isSafeInteger(index) || index < 0) throw new TypeError("Invalid child placement"); fill = fill?.children?.[index]; if (fill?.repeat) repeats++; }
-    if (!fill || value.section.key !== undefined && (!text(value.section.key) || !repeats)
+    if (!fill || value.section.key !== undefined && (!text(value.section.key) || repeats !== 1)
       || value.section.keys !== undefined && (!Array.isArray(value.section.keys) || value.section.keys.length !== repeats || value.section.keys.some(key => !text(key)))
       || value.section.key !== undefined && value.section.keys !== undefined) throw new TypeError("Manifest repeat keys must address actual repeated placements");
   };

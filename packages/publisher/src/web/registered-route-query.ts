@@ -181,7 +181,7 @@ export function createRegisteredPageSession(input: RegisteredPageSessionOptions)
   const save = (current: RuntimeContent, owner: string, replaceItem = false) => {
     if (!isRegisteredContentRef(current.reference) || current.reference.lazy || current.hash !== runtimeHash(current.value)) throw new TypeError("Chunk returned stale or invalid content");
     const key = contentReferenceKey(current.reference), previous = contents.get(key);
-    if (owner !== "query" && previous && owners.get(key) !== owner && !(replaceItem && owner.startsWith("item:") && owners.get(key)?.startsWith("item:")) && runtimeHash(previous) !== runtimeHash(current)) throw new TypeError("Chunk content belongs to another scope");
+    if (previous && owners.get(key) !== owner && !(replaceItem && owner.startsWith("item:") && owners.get(key)?.startsWith("item:"))) throw new TypeError("Consumer content belongs to another scope");
     contents.set(key, runtimeSnapshot(current)); owners.set(key, owner);
   };
   const validArgs = (args: { readonly l0: string; readonly l1?: string }) => {

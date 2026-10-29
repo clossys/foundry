@@ -98,10 +98,12 @@ function prepareRegionStream(registry: RegionPageRouteRegistry, route: RouteRegi
       const fills = chosen.map(index => values[index]!);
       const visit = (fill: SectionFill) => { for (const reference of Object.values(fill.content)) { const current = normalized.lazy[contentReferenceKey(reference)]; if (current) lazy[contentReferenceKey(reference)] = current; } fill.children?.forEach(visit); };
       fills.forEach(visit); Object.values(normalized.binding.frame.slotFills ?? {}).forEach(visit);
+      for (const [key, reference] of Object.entries(normalized.lazy)) if (reference.lazy && chunkId(reference.lazy.args.l0, reference.lazy.args.l1) === chunk.id) lazy[key] = reference;
       let missing = Object.values(lazy).some(reference => read(reference) === undefined);
       const authored = (fill: SectionFill) => { for (const reference of [...Object.values(fill.content), ...(fill.repeat ? [fill.repeat.over] : [])]) if (reference.lazy && chunkId(reference.lazy.args.l0, reference.lazy.args.l1) === chunk.id && !read(reference)) missing = true; fill.children?.forEach(authored); };
       Object.values(binding.fills).flat().forEach(authored);
       if (!missing && fills.length) {
+        if (targets.some(target => chunkId(target.l0, target.l1) === chunk.id && !Object.values(scoped).some(scope => samePlacement(target.section, scope, slot)))) return { status: "refused", findings: ["Expanded chunk differs from its declared manifest placements"] };
         const chunkBinding: FlowInstanceBinding = { ...normalized.binding, layout: registry.publication!.layout, fills: { [slot]: fills }, body: { kind: "flow", source: { kind: "static" }, sections: fills.map((_, index) => ({ slot, index })) } };
         const chunkRoute = { ...route, composition: { ...route.composition, binding: chunkBinding } };
         const routes = registry.routes.map(row => row.routeId === route.routeId ? chunkRoute : normalizeRegionPageRoute(registry, row));

@@ -257,6 +257,14 @@ describe("consumed registered scroll-page capabilities", () => {
     expect(normalized.scopes["sections.body.1.children.1"]).toMatchObject({ keys: ["b", "primary"], placement: { slot: "body", index: 0, children: [1] } });
     expect(normalized.binding.fills.body!.every(fill => fill.section === "sections.band" && fill.children![1]!.section === "sections.data-table")).toBe(true);
   });
+  it("retains an unrequested lazy repeat dependency even when it expands to zero children", () => {
+    const page = binding(), over = { kind: "records" as const, ref: "cards", lazy: { loader: "chunk" as const, args: { l0: "records", l1: "names" } } };
+    page.fills = { body: [{ section: "sections.band", content: {}, children: [{ section: "sections.data-table", content: {}, repeat: { over, key: "id" } }] }] };
+    const result = normalizeRepeatedSections(page, () => undefined);
+    expect(result.status).toBe("ready"); if (result.status !== "ready") return;
+    expect(Object.values(result.lazy)).toEqual([over]);
+    expect(result.scopes["sections.body.0.children.0"]).toBeUndefined();
+  });
   it("never resolves a lazy ref until requested, then deduplicates pending requests and becomes ready", async () => {
     const input = options(), reference = { kind: "records" as const, ref: "rows", lazy: { loader: "chunk" as const, args: { l0: "records", l1: "names" } } };
     let finish!: (value: never[]) => void;
@@ -305,6 +313,15 @@ describe("consumed registered scroll-page capabilities", () => {
     expect(input.loaders.item).toHaveBeenCalledWith("records", "one");
     expect(await session.loadItem("/agents/example/records/missing")).toMatchObject({ status: "not-found", code: 404 });
     expect(await session.loadItem("/agents/example/unknown/one")).toMatchObject({ status: "not-found", code: 404 });
+  });
+  it("does not let an item claim chunk content even when its first payload is identical", async () => {
+    const input = options(), rows = content({ kind: "records", ref: "rows" }, [{ id: "one" }]);
+    input.loaders.chunk = vi.fn(async () => [rows]) as never;
+    input.loaders.item = vi.fn(async () => ({ record: { id: "one" }, content: [rows] })) as never;
+    const page = createRegisteredPageSession(input);
+    await page.requestChunk({ l0: "records" });
+    await expect(page.loadItem("/agents/example/records/one")).rejects.toThrow("another scope");
+    expect(page.read(rows.reference)).toMatchObject({ status: "ready", content: rows });
   });
   it("scopes single selection to its repeated table L0 and pins the actual loaded record to chat", async () => {
     const input = options(); input.loaders.item = vi.fn(async (l0, id) => ({ record: { l0, id }, content: [] }));

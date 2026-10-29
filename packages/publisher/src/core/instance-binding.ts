@@ -149,6 +149,11 @@ export function normalizeRepeatedSections(binding: InstanceBinding, resolveConte
       let rows: readonly Record<string, unknown>[] = [{}], over: ContentRef | undefined;
       if (repeat) {
         over = scoped(repeat.over, aliases);
+        if (over.lazy) {
+          const key = contentReferenceKey(over), prior = lazy[key];
+          if (prior && runtimeHash(prior) !== runtimeHash(over)) throw new TypeError("Conflicting lazy repeat reference");
+          lazy[key] = over;
+        }
         const current = resolveContent(over);
         if (!current) {
           if (!over.lazy) throw new PendingRepeat(over.ref);
