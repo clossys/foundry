@@ -12,6 +12,16 @@ import { frameContent, guardedNavigate, type FrameInput, type FrameJson } from "
 
 const read = frameContent("frames.app-header");
 
+export function appHeaderActions(rows: readonly FrameJson[], host: FrameInput["host"]): PageBarAction[] {
+  return rows.map((action, index) => ({
+    id: read.required(action.id, `actions[${index}].id`), label: read.required(action.label, `actions[${index}].label`),
+    ...(action.primary === true ? { primary: true } : {}), ...(action.isDisabled === true ? { isDisabled: true } : {}),
+    ...(read.text(action.icon) && host?.icons?.[read.text(action.icon)!] !== undefined ? { icon: host.icons[read.text(action.icon)!] } : {}),
+    ...(typeof action.selected === "boolean" ? { isSelected: action.selected, onSelectedChange: () => host?.onCommand?.(read.text(action.action) ?? read.required(action.id, "action.id")) } : {}),
+    ...(typeof action.selected === "boolean" && action.href === undefined && action.action === undefined ? { onAction: () => host?.onCommand?.(read.required(action.id, "action.id")) } : read.destination(action, host, `actions[${index}]`)),
+  }) as PageBarAction);
+}
+
 export function appHeaderProps(input: Pick<FrameInput, "content" | "selection" | "host" | "pageHeader">): PageBarProps {
   read.only(input, ["info", "trail", "actions"]);
   const host = input.host, info = read.record(runtimeValue(input, "info")) ?? read.fail("info content is required");
@@ -21,11 +31,7 @@ export function appHeaderProps(input: Pick<FrameInput, "content" | "selection" |
     const href = read.text(crumb.href);
     return { id: read.required(crumb.id, `trail[${index}].id`), label: read.required(crumb.label, `trail[${index}].label`), ...(href ? { href } : {}) };
   });
-  const actions: PageBarAction[] = read.records(runtimeValue(input, "actions")).map((action, index) => ({
-    id: read.required(action.id, `actions[${index}].id`), label: read.required(action.label, `actions[${index}].label`),
-    ...(action.primary === true ? { primary: true } : {}), ...(action.isDisabled === true ? { isDisabled: true } : {}),
-    ...read.destination(action, host, `actions[${index}]`),
-  }) as PageBarAction);
+  const actions = appHeaderActions(read.records(runtimeValue(input, "actions")), host);
   const description = read.text(info.description);
   const members = input.selection.members;
   const position = members.includes("position.static") ? "static" : members.includes("position.sticky") ? "sticky" : undefined;

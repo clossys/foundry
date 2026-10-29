@@ -7,6 +7,10 @@
 import { Children, type ReactNode } from "react";
 import type { AccountMenuSection } from "../../blocks/account-menu-types.js";
 import type { RuntimeRenderInput } from "../../catalog-core/runtime-ports.js";
+import { ProgressBar } from "../../components/ProgressBar.js";
+import { Skeleton } from "../../components/Skeleton.js";
+import { ErrorState } from "../../blocks/ErrorState.js";
+import { appHeaderActions } from "./app-header.js";
 import { AppFrame } from "../../frames/AppFrame.js";
 import type { AppFrameProps } from "../../frames/app-frame-types.js";
 import { PageHeaderModule } from "../../shell/FrameSlots.js";
@@ -33,7 +37,7 @@ function accountSections(rows: readonly Json[], host: Host): AccountMenuSection[
 }
 /** JSON content plus host port to AppFrame props; throws on content a fill cannot honour. */
 export function appShellProps(input: Pick<RuntimeRenderInput<ReactNode>, "content" | "selection" | "slots" | "host" | "locale">): AppFrameProps {
-  only(input, ["skip-link", "sidebar", "command", "inspector"]);
+  only(input, ["skip-link", "sidebar", "command", "inspector", "header", "page-module", "progress", "state"]);
   const host = input.host, sidebar = runtimeRecord(input, "sidebar"), command = runtimeRecord(input, "command"), inspector = runtimeRecord(input, "inspector");
   if (!sidebar) throw new TypeError("frames.app-shell: sidebar content is required");
   if (!command) throw new TypeError("frames.app-shell: command content is required");
@@ -41,7 +45,23 @@ export function appShellProps(input: Pick<RuntimeRenderInput<ReactNode>, "conten
   if (!brand || !account) throw new TypeError("frames.app-shell: sidebar brand and account are required");
   const actor = runtimeRecordOf(account.actor), name = text(brand.name);
   const theme = runtimeMember(input, "theme", "system");
-  const panel = host?.panels?.inspector;
+  const panel = input.slots.inspector?.length ? Children.toArray(input.slots.inspector) : host?.panels?.inspector;
+  const moduleContent = runtimeRecord(input, "page-module");
+  const pageModule = input.slots["page-module"]?.length ? Children.toArray(input.slots["page-module"]) : host?.panels?.["page-module"];
+  const header = runtimeRecord(input, "header");
+  const progressCopy = runtimeRecord(input, "progress");
+  const stateCopy = runtimeRecord(input, "state");
+  const stateViews: NonNullable<AppFrameProps["stateViews"]> = {};
+  const state = host?.state;
+  if (state && state.main !== "ready") {
+    const copy = runtimeRecordOf(stateCopy?.[state.main]);
+    if (!copy) throw new TypeError(`frames.app-shell: state.${state.main} copy is required`);
+    const heading = required(copy.heading, `state.${state.main}.heading`);
+    stateViews[state.main] = state.main === "loading"
+      ? <Skeleton shape="block" aria-label={heading} />
+      : <ErrorState kind={state.main === "error" ? "failure" : state.main} title={heading} description={text(copy.description)} code={text(copy.code)} />;
+  }
+  if (state?.navigating && !progressCopy) throw new TypeError("frames.app-shell: progress copy is required while navigating");
   return {
     ...(input.locale === undefined ? {} : { locale: input.locale }),
     brand: { markSrc: required(brand.markSrc, "sidebar.brand.markSrc"), ...(brand.reversedMarkSrc === undefined ? {} : { reversedMarkSrc: required(brand.reversedMarkSrc, "sidebar.brand.reversedMarkSrc") }), ...(name ? { navigationMark: { label: name } } : {}) },
@@ -52,7 +72,12 @@ export function appShellProps(input: Pick<RuntimeRenderInput<ReactNode>, "conten
       ...(text(account.contextLabel) ? { contextLabel: text(account.contextLabel) } : {}), ...(text(account.triggerLabel) ? { triggerLabel: text(account.triggerLabel) } : {}),
       ...(account.avatar === "mark" || account.avatar === "initials" ? { avatar: account.avatar } : {}),
     },
+    ...(state ? { state, stateViews } : {}),
+    ...(progressCopy ? { progress: <ProgressBar label={null} aria-label={required(progressCopy.label, "progress.label")} isIndeterminate style={{ gap: 0 }} /> } : {}),
+    ...(pageModule !== undefined ? { pageModule, pageModuleLabel: required(moduleContent?.label, "page-module.label") } : {}),
+    ...(header ? { page: { title: required(header.title, "header.title") }, headerTrail: records(header.trail).map(row => ({ id: required(row.id, "header.trail.id"), label: required(row.label, "header.trail.label"), ...(text(row.href) ? { href: text(row.href)! } : {}) })), ...(header.actions !== undefined ? { headerActions: appHeaderActions(records(header.actions), host) } : {}) } : {}),
     commands: {
+      onQueryChange: host?.onCommandQueryChange,
       triggerLabel: required(command.triggerLabel, "command.triggerLabel"), heading: required(command.heading, "command.heading"), searchLabel: required(command.searchLabel, "command.searchLabel"),
       closeLabel: required(command.closeLabel, "command.closeLabel"), emptyMessage: required(command.emptyMessage, "command.emptyMessage"), groups: commandGroups(records(command.groups), host, "command.groups"),
       ...(command.shortcutEnabled === false ? { shortcutEnabled: false } : {}),

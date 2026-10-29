@@ -26,7 +26,13 @@
   },
   "sections": {
     "section-header": {
-      "configs": {},
+      "configs": {
+        "level-2": "level=2",
+        "level-3": "level=3",
+        "level-4": "level=4",
+        "level-5": "level=5",
+        "level-6": "level=6"
+      },
       "impl": {
         "export": "SectionHeader",
         "kind": "package",
@@ -55,7 +61,8 @@
         "actions": "./blocks#SectionHeader.actions",
         "description": "./blocks#SectionHeader.description",
         "eyebrow": "./blocks#SectionHeader.eyebrow",
-        "heading": "./blocks#SectionHeader.title"
+        "heading": "./blocks#SectionHeader.title",
+        "stats": "./blocks#SectionHeader.stats"
       },
       "source": "foundry"
     }

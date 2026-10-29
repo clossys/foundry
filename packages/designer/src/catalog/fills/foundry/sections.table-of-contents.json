@@ -47,7 +47,8 @@
       "slot": "sections.table-of-contents",
       "slotMap": {
         "active-id": "./blocks#TableOfContents.currentId",
-        "headings": "./blocks#TableOfContents.items"
+        "headings": "./blocks#TableOfContents.items",
+        "label": "./blocks#TableOfContents.label"
       },
       "source": "foundry"
     }
