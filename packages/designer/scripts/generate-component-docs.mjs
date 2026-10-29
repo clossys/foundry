@@ -5,7 +5,7 @@ import { resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import ts from "typescript";
 
-const packageRoot = new URL("../packages/designer/", import.meta.url);
+const packageRoot = new URL("../", import.meta.url);
 export const componentDocsPath = new URL("skill/components-guide.md", packageRoot);
 export const componentSkillPath = new URL("skill/SKILL.md", packageRoot);
 const start = "<!-- component-selection:start -->", end = "<!-- component-selection:end -->";

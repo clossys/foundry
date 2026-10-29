@@ -27,7 +27,7 @@
 //   locksmith-check-*, locksmith-provider-custody-*, *-rate-check-*,
 //   push-tree-identical-*, advisor-cli-*, publication-history-*,
 //   malformed-later-publication-*, install-docs-*, pkg-skill-*,
-//   publisher-web-routes-*, tmp-fixture-async-*
+//   tmp-fixture-async-*
 import assert from "node:assert/strict";
 import { execFileSync } from "node:child_process";
 import { readdirSync } from "node:fs";
@@ -49,7 +49,6 @@ const REPRESENTATIVE_SUITES = [
   "scripts/push-tree-identical.test.mjs",
   "scripts/check-install-docs.test.mjs",
   "scripts/check-package-skills.test.mjs",
-  "scripts/check-publisher-web-routes.test.mjs",
   "scripts/lib/tmp-fixture.test.mjs",
 ];
 

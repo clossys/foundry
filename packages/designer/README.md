@@ -87,8 +87,8 @@ The installed guide is at `node_modules/@clossys/designer/skill/components-guide
 the launcher copies the selection essentials from `skill/SKILL.md`, not that
 companion file. Consumers should reference the shared records.
 
-Regenerate with `node scripts/generate-component-docs.mjs` and check with
-`node scripts/check-component-docs.mjs`. These commands are repository tooling and
+Regenerate with `node packages/designer/scripts/generate-component-docs.mjs` and check with
+`node packages/designer/scripts/check-component-docs.mjs`. These commands are repository tooling and
 do not ship in the installed package. The generator reads source, never dist,
 and writes the guide and selection section deterministically.
 
@@ -289,8 +289,8 @@ The additive metadata types are `TokenGuidance`, `TokenApplication`,
 `TokenValueType`, `TokenSpecimen`, `TokenDisplayFamily` and
 `TokenDisplayGroup`. `TokenDefinition` and `TokenFamily` retain their shape.
 See [TOKENS.md](TOKENS.md) for the generated property-by-property reference.
-Regenerate it with `node scripts/generate-token-docs.mjs` and verify it with
-`node scripts/check-token-docs.mjs` from the repository root. These repository
+Regenerate it with `node packages/designer/scripts/generate-token-docs.mjs` and verify it with
+`node packages/designer/scripts/check-token-docs.mjs` from the repository root. These repository
 tools are not shipped in the installed package.
 
 ### Node catalog readers and source scanning

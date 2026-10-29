@@ -40,7 +40,7 @@
 import { existsSync, readdirSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 
-import { injectContract } from "../../scripts/check-conversation-contract.mjs";
+import { injectContract } from "../check-conversation-contract.mjs";
 
 /**
  * Strips the shared "How we work together" / legacy "One question at a

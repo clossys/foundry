@@ -39,7 +39,7 @@ describe("consumer check guidance", () => {
 
   it("generates the checked-in reference deterministically from the exhaustive record", async () => {
     // Repository-only JS tooling is intentionally outside the package's TS build.
-    const script = new URL("scripts/generate-check-docs.mjs", `file://${root}`);
+    const script = new URL("packages/designer/scripts/generate-check-docs.mjs", `file://${root}`);
     const { generateCheckDocs } = await import(/* @vite-ignore */ script.href);
     const expected = readFileSync(new URL("../../skill/check-codes.md", import.meta.url), "utf8");
     expect(await generateCheckDocs()).toBe(expected);

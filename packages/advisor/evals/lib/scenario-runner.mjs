@@ -22,7 +22,7 @@ import { existsSync, readFileSync, readdirSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 
-import { buildCapabilityCatalogue, composeKitFromProblems } from "../../scripts/lib/capability-catalogue.mjs";
+import { buildCapabilityCatalogue, composeKitFromProblems } from "../../../../scripts/lib/capability-catalogue.mjs";
 import { precisionRecall, scoreScenario } from "./accuracy.mjs";
 import { checkRepeatability } from "./repeatability.mjs";
 

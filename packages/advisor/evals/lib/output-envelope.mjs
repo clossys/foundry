@@ -10,7 +10,7 @@
 // PACKAGE under packages/ to adopt (docs/contracts/check-output-envelope.json's
 // own `adoption` rule); evals/ is not a package.
 
-import { validateCheckOutputEnvelope } from "../../scripts/check-package-framework.mjs";
+import { validateCheckOutputEnvelope } from "../../../../scripts/check-package-framework.mjs";
 
 export const EVALS_PACKAGE_NAME = "foundry-evals";
 export const EVALS_PACKAGE_VERSION = "1.0.0";

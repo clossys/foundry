@@ -6,7 +6,7 @@ import { resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import ts from "typescript";
 
-const repository = new URL("../", import.meta.url);
+const repository = new URL("../../../", import.meta.url);
 const packageRoot = new URL("packages/designer/", repository);
 export const tokenDocsPath = new URL("TOKENS.md", packageRoot);
 export const tokenSkillPath = new URL("skill/SKILL.md", packageRoot);

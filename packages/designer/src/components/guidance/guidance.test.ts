@@ -290,7 +290,7 @@ describe("shared component guidance", () => {
   });
 
   it("escapes GFM table pipes while retaining long code fences", () => {
-    const moduleUrl = pathToFileURL(join(root, "../../scripts/generate-component-docs.mjs")).href;
+    const moduleUrl = pathToFileURL(join(root, "scripts/generate-component-docs.mjs")).href;
     const inputs = ["left|right", "return `value|\ntail"];
     const script = 'const { tableCode } = await import(process.argv[1]); const inputs = JSON.parse(process.argv[2]); process.stdout.write(JSON.stringify({ kind: typeof tableCode, values: typeof tableCode === "function" ? inputs.map(tableCode) : [] }));';
     const output = JSON.parse(execFileSync(process.execPath, ["--input-type=module", "--eval", script, moduleUrl, JSON.stringify(inputs)], { encoding: "utf8" }));

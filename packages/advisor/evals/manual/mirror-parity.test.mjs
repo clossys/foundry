@@ -38,16 +38,16 @@
 // break check:evals's own "no build needed" property (see evals/README.md
 // and scripts/check-evals.mjs's own header). That is also why this file
 // lives in evals/manual/ next to model-in-the-loop-eval.mjs, rather than in
-// evals/lib/ where check:evals's `node --test evals/lib/*.test.mjs` would
+// evals/lib/ where check:evals's `node --test packages/advisor/evals/lib/*.test.mjs` would
 // pick it up automatically. Run it by hand, after building Advisor once:
 //
 //   npm run build --workspace=packages/advisor
-//   node --test evals/manual/mirror-parity.test.mjs
+//   node --test packages/advisor/evals/manual/mirror-parity.test.mjs
 //
 // If packages/advisor has not been built, every test below is skipped
 // (not failed) with a message naming the exact command above -- this test
 // file must never force a build as a side effect of an ordinary
-// `node --test evals/lib/*.test.mjs` run, which check:evals does wire in.
+// `node --test packages/advisor/evals/lib/*.test.mjs` run, which check:evals does wire in.
 
 import assert from "node:assert/strict";
 import { existsSync } from "node:fs";
@@ -55,17 +55,17 @@ import { dirname, join } from "node:path";
 import { test } from "node:test";
 import { fileURLToPath } from "node:url";
 
-import { buildCapabilityCatalogue, composeKitFromProblems as mirrorComposeKitFromProblems } from "../../scripts/lib/capability-catalogue.mjs";
+import { buildCapabilityCatalogue, composeKitFromProblems as mirrorComposeKitFromProblems } from "../../../../scripts/lib/capability-catalogue.mjs";
 import { loadScenarios } from "../lib/scenario-runner.mjs";
 
-const repoRoot = join(dirname(fileURLToPath(import.meta.url)), "..", "..");
+const repoRoot = join(dirname(fileURLToPath(import.meta.url)), "..", "..", "..", "..");
 const shippedCompositionPath = join(repoRoot, "packages", "advisor", "dist", "composition.js");
 const shippedBuilt = existsSync(shippedCompositionPath);
 
 if (!shippedBuilt) {
   test(
     "mirror parity (SKIPPED: packages/advisor is not built)",
-    { skip: "run `npm run build --workspace=packages/advisor` first, then re-run node --test evals/lib/mirror-parity.test.mjs" },
+    { skip: "run `npm run build --workspace=packages/advisor` first, then re-run node --test packages/advisor/evals/lib/mirror-parity.test.mjs" },
     () => {},
   );
 } else {

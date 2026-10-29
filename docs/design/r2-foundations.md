@@ -95,7 +95,7 @@ assert every existing Atom's behavior merely because shared CSS exists.
 ```sh
 npm run generate:compiled-css --workspace=packages/designer
 npm run generate:preview-css --workspace=packages/publisher
-node scripts/generate-token-docs.mjs
+node packages/designer/scripts/generate-token-docs.mjs
 ```
 
 These existing generators own compiled.css, utilities.css, Publisher preview.css,
