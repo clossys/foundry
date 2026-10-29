@@ -2024,13 +2024,15 @@
       "scanStatus": "lower-bound",
       "scannedComposes": [
         "components.button",
-        "components.icon"
+        "components.icon",
+        "components.semantic-content"
       ],
       "scannedReads": {
         "assets": [],
         "components": [
           "components.button",
-          "components.icon"
+          "components.icon",
+          "components.semantic-content"
         ],
         "tokens": [
           "tokens.body-size",
@@ -2046,7 +2048,7 @@
       "sourceFiles": [
         {
           "path": "packages/designer/src/blocks/ConsentBanner.tsx",
-          "sha256": "2bf8e7b57aaec2b475cc892b990be2f7ed7b460b3c2c438128530543bd9c72b3"
+          "sha256": "62cadc6eb7498273082a1d73b74ba58349d777a4e305f5b525ede77c67c79232"
         },
         {
           "path": "packages/designer/src/catalog-core/provenance-attrs.ts",
@@ -3239,7 +3241,10 @@
         "components.button",
         "components.card",
         "components.icon",
-        "components.status-mark"
+        "components.link",
+        "components.semantic-content",
+        "components.status-mark",
+        "sections.section-header"
       ],
       "scannedReads": {
         "assets": [],
@@ -3248,6 +3253,8 @@
           "components.button",
           "components.card",
           "components.icon",
+          "components.link",
+          "components.semantic-content",
           "components.status-mark"
         ],
         "tokens": [
@@ -3282,10 +3289,6 @@
           "sha256": "03dfd69bf9c7fa703e2a4232673b23e43826c884ba704b43fc9da2916334febc"
         },
         {
-          "path": "packages/designer/src/blocks/items/compat-nav.tsx",
-          "sha256": "626829d9f89a887ef814d09b75361b617fd73b7879091877fd3ff4759aefbc86"
-        },
-        {
           "path": "packages/designer/src/blocks/items/ItemsStatic.tsx",
           "sha256": "eeda5551dee2886ebba46fd50c15b857b0aa0d127fa04ad43443b696174bb5b6"
         },
@@ -3299,7 +3302,7 @@
         },
         {
           "path": "packages/designer/src/blocks/NavGrid.tsx",
-          "sha256": "92778b22b5145fc6db539e8761df2da02a821eb805fd8558f2cfb1add8dd2944"
+          "sha256": "1a24b1c722d4dc6225cf9c04fe55f94ec4aeef0d7f3bfa28aae63a620f3086ae"
         },
         {
           "path": "packages/designer/src/blocks/section-ground.ts",
@@ -4412,11 +4415,14 @@
     "consumption": {
       "scanStatus": "lower-bound",
       "scannedComposes": [
+        "components.semantic-content",
         "sections.section-header"
       ],
       "scannedReads": {
         "assets": [],
-        "components": [],
+        "components": [
+          "components.semantic-content"
+        ],
         "tokens": [
           "tokens.body-size",
           "tokens.border-color",
@@ -4437,7 +4443,7 @@
         },
         {
           "path": "packages/designer/src/blocks/StatusList.tsx",
-          "sha256": "204e545347bb1c9ff0ee11e24bf4889bb5e9e50f135986d04f9401b1fb67e606"
+          "sha256": "8e4e494b27240033b653ee293fe97dabd53f2c78557973f633da51c613a5693f"
         },
         {
           "path": "packages/designer/src/catalog-core/provenance-attrs.ts",
