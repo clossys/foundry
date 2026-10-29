@@ -23,8 +23,7 @@
         "chrome.full",
         "chrome.minimal",
         "header-placement.overlay",
-        "slot.consent",
-        "slot.progress"
+        "slot.consent"
       ]
     }
   },
@@ -95,6 +94,10 @@
         },
         "sourceFiles": [
           {
+            "path": "packages/designer/src/blocks/ArticleReading.tsx",
+            "sha256": "c952d3ba3e5e53d394a70e07c802032fc1fb4e6093324efd2b5110935db2d11f"
+          },
+          {
             "path": "packages/designer/src/catalog-assets/media.ts",
             "sha256": "fa0ebdba691d8687ad955e9b9fb650b145d988b53edf1c2deb7f2eb261df5bef"
           },
@@ -116,11 +119,11 @@
           },
           {
             "path": "packages/designer/src/frames/site-frame/SiteFrame.tsx",
-            "sha256": "3d67ddfa17aa29c1fcdf01d11b4289448fe3483ba276235a9e9542ce62ff413a"
+            "sha256": "2c3088cbed67cf48cf8cf123f4d9b7019dd73324e297e98209238f2f32ce5768"
           },
           {
             "path": "packages/designer/src/frames/site-frame/types.ts",
-            "sha256": "5082a75480ef118eda6c17d091d966bceb23e0b42555fe20930cd5c24437359b"
+            "sha256": "b2cfc0ee269dc7d9b04814794b1cc01e755b25e42c93cb77adef08d22e41647b"
           },
           {
             "path": "packages/designer/src/frames/site-frame/viewChromeGround.ts",
@@ -138,13 +141,13 @@
             "code": "DF2",
             "evidence": "unresolved source export ./NavDisclosure.boundary.client.js#SiteNavDisclosure",
             "file": "packages/designer/src/frames/site-frame/SiteFrame.tsx",
-            "line": 8
+            "line": 9
           },
           {
             "code": "DF2",
             "evidence": "unresolved source export ./SkipLink.boundary.client.js#SiteSkipLink",
             "file": "packages/designer/src/frames/site-frame/SiteFrame.tsx",
-            "line": 9
+            "line": 10
           }
         ]
       },
@@ -155,11 +158,13 @@
       },
       "members": [
         "footer-placement.flow",
-        "footer-placement.overlay"
+        "footer-placement.overlay",
+        "layout.article"
       ],
       "propMap": {
         "footer-placement.flow": "presentation.footerPlacement=flow",
-        "footer-placement.overlay": "presentation.footerPlacement=overlay"
+        "footer-placement.overlay": "presentation.footerPlacement=overlay",
+        "layout.article": "mainLayout=article"
       },
       "reads": {
         "assets": [],
@@ -177,8 +182,10 @@
         "footer": "shell.footer",
         "header": "shell",
         "main": "children",
+        "progress": "progress",
         "skip-link": "shell.skipLink",
-        "toasts": "toasts"
+        "toasts": "toasts",
+        "toc": "toc"
       },
       "statePorts": {}
     }

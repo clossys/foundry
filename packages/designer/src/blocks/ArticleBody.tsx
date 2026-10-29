@@ -133,9 +133,9 @@ function assertFootnoteId(value: string): void {
   if (typeof value !== "string" || !value || /[\s#]/.test(value)) throw new TypeError("ArticleBody: footnote ids must be nonempty fragment ids.");
 }
 function ArticleFootnotes({ label, items }: { label: string; items: readonly { id: string; referenceId: string; body: ReactNode; backlink: ReactNode }[] }) {
-  if (!label.trim()) throw new TypeError("ArticleBody: footnotes require a host label.");
-  const ids = new Set<string>();
-  for (const item of items) { assertFootnoteId(item.id); assertFootnoteId(item.referenceId); if (ids.has(item.id)) throw new TypeError("ArticleBody: footnote ids must be unique."); ids.add(item.id); }
+  if (typeof label !== "string" || !label.trim()) throw new TypeError("ArticleBody: footnotes require a host label.");
+  const ids = new Set<string>(), references = new Set<string>();
+  for (const item of items) { assertFootnoteId(item.id); assertFootnoteId(item.referenceId); if (item.id === item.referenceId || ids.has(item.id) || references.has(item.referenceId)) throw new TypeError("ArticleBody: footnote ids must be unique."); ids.add(item.id); references.add(item.referenceId); }
   return <section role="doc-endnotes" aria-label={label}><ol className="flex flex-col gap-sm">{items.map(item => <li key={item.id} id={item.id} role="doc-endnote">{item.body}<Link href={"#" + item.referenceId} data-footnote-backlink="">{item.backlink}</Link></li>)}</ol></section>;
 }
 

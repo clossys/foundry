@@ -1,3 +1,5 @@
+import { readFileSync } from "node:fs";
+import { resolve } from "node:path";
 import { render } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
 import type { ReactNode } from "react";
@@ -11,11 +13,14 @@ function props(article = true, toc = true) {
   return siteShellProps({
     content: Object.fromEntries(Object.entries(values).map(([key, value]) => [key, { reference: { kind: "region", ref: key }, value, hash: "sha256:0" }])),
     selection: { leaf: "frames.site-shell", fill: "foundry/frames.site-shell", members: article ? ["layout.article"] : [], config: null, content: {} },
-    slots: { main: [<article key="body"><h1>Example reading</h1></article>], ...(toc ? { toc: [<nav key="toc" aria-label="Contents">Example outline</nav>] } : {}), progress: [<div key="progress">Visual only</div>] },
+    slots: { main: [<article key="body"><h1>Example reading</h1></article>], ...(article && toc ? { toc: [<nav key="toc" aria-label="Contents">Example outline</nav>] } : {}), ...(article ? { progress: [<div key="progress">Visual only</div>] } : {}) },
   } as unknown as RuntimeRenderInput<ReactNode>);
 }
 describe("site article reading layout", () => {
   it("transports the proposed article member into one main, a sticky rail and decorative progress slot", () => {
+    const descriptor = JSON.parse(readFileSync(resolve(import.meta.dirname, "../../catalog/fills/foundry/frames.site-shell.json"), "utf8")).frames["site-shell"];
+    expect(descriptor.propMap["layout.article"]).toBe("mainLayout=article");
+    expect(descriptor.slots).toMatchObject({ toc: "toc", progress: "progress" });
     const input = props(); expect(input.mainLayout).toBe("article");
     const view = render(<SiteFrame {...input} />);
     expect(view.getAllByRole("main")).toHaveLength(1);

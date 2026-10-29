@@ -163,6 +163,7 @@ export function siteShellProps(input: Pick<RuntimeRenderInput<ReactNode>, "conte
   };
   const main = input.slots.main ?? [];
   const node = (name: string) => { const nodes = input.slots[name] ?? []; return nodes.length === 1 ? nodes[0] : nodes.length ? nodes : undefined; };
+  if (mainLayout !== "article" && (node("toc") !== undefined || node("progress") !== undefined)) fail("reading slots require layout.article");
   const reading = mainLayout === "article" ? { mainLayout, toc: node("toc"), progress: node("progress") } : {};
   // Preserve a single registered Hero element so SiteFrame can validate its overlay scene identity.
   return { ...(input.locale === undefined ? {} : { locale: input.locale }), shell, presentation, ...reading, resolveCopy, resolveAsset, children: main.length === 1 ? main[0] : main, ...(input.host?.toasts === undefined ? {} : { toasts: input.host.toasts }) };

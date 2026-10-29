@@ -196,19 +196,20 @@
       ],
       "missingRequiredSlots": [],
       "missingSlots": [
-        "consent",
-        "progress"
+        "consent"
       ],
       "missingStatePorts": [],
       "notes": [
         "No chrome full/minimal configuration, consent or progress slot is exposed.",
+        "The preceding default-layout limitation excludes layout.article: that member adds a host-authored TOC rail and decorative CSS progress; those slots require the article member.",
         "Descriptor only; anatomy, source, accessibility, contrast, layout and rendered conformance are unmeasured."
       ],
       "slot": "frames.site-shell",
       "status": "subset",
       "supported": [
         "footer-placement.flow",
-        "footer-placement.overlay"
+        "footer-placement.overlay",
+        "layout.article"
       ]
     }
   ],

@@ -118,6 +118,11 @@
           "id": "toasts",
           "required": false,
           "accepts": "components.toast"
+        },
+        {
+          "id": "toc",
+          "required": false,
+          "accepts": "sections.table-of-contents"
         }
       ],
       "members": {
@@ -127,7 +132,8 @@
           "chrome.minimal",
           "footer-placement.flow",
           "footer-placement.overlay",
-          "header-placement.overlay"
+          "header-placement.overlay",
+          "layout.article"
         ]
       },
       "statePorts": [],
@@ -203,7 +209,9 @@
         "sections.pricing",
         "sections.section-header",
         "sections.status-list",
-        "sections.steps"
+        "sections.steps",
+        "sections.article",
+        "sections.table-of-contents"
       ],
       "skipTarget": "main-content"
     },

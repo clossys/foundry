@@ -53,6 +53,8 @@ export function SiteFrame({ shell, presentation, resolveCopy, resolveAsset, chil
   const { brand, footer } = resolved;
   if (mainLayout !== "default" && mainLayout !== "article") throw new TypeError("SiteFrame: unsupported main layout");
   if (mainLayout === "article" && footer?.placement === "overlay") throw new TypeError("SiteFrame: article layout requires a flow footer");
+  const supplied = (node: ReactNode) => node !== undefined && node !== null && node !== false;
+  if (mainLayout !== "article" && (supplied(toc) || supplied(progress))) throw new TypeError("SiteFrame: reading slots require article layout");
   const articleRail = mainLayout === "article" && toc !== undefined && toc !== null && toc !== false;
   const main = footer?.placement === "overlay" ? overlayHero(children, resolved.header.surface) : children;
 
@@ -113,7 +115,7 @@ export function SiteFrame({ shell, presentation, resolveCopy, resolveAsset, chil
         navPlacement={resolved.navPlacement}
         actions={actions}
       />
-      {mainLayout === "article" && progress !== undefined && progress !== null ? <ArticleReadingProgress>{progress}</ArticleReadingProgress> : null}
+      {mainLayout === "article" && progress !== undefined && progress !== null && progress !== false ? <ArticleReadingProgress>{progress}</ArticleReadingProgress> : null}
       <SemanticContent as="main" id={SITE_MAIN_ID} tabIndex={-1} data-site-main-layout={mainLayout === "article" ? "article" : undefined} data-article-reading={mainLayout === "article" ? "" : undefined} className={articleRail ? "grid w-full flex-1 grid-cols-1 gap-xl desktop:grid-cols-4" : "flex w-full flex-1 flex-col"}>
         {articleRail ? <><SemanticContent as="aside" data-site-article-toc="" className="min-w-0 desktop:sticky desktop:top-lg desktop:self-start">{toc}</SemanticContent><SemanticContent as="div" data-site-article-body="" className="min-w-0 desktop:col-span-3">{main}</SemanticContent></> : main}
       </SemanticContent>

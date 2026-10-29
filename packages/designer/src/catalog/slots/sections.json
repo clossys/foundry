@@ -659,7 +659,9 @@
       ],
       "members": {
         "mode": "closed",
-        "names": []
+        "names": [
+          "typography.drop-cap"
+        ]
       },
       "allowedComposes": [
         "components.link",
@@ -687,7 +689,9 @@
           "tokens.heading-size",
           "tokens.radius",
           "tokens.text-color",
-          "tokens.typeface"
+          "tokens.typeface",
+          "tokens.caption-size",
+          "tokens.display-size"
         ],
         "assets": []
       },
@@ -7464,11 +7468,14 @@
       ],
       "members": {
         "mode": "closed",
-        "names": []
+        "names": [
+          "tracking.css"
+        ]
       },
       "allowedComposes": [
         "components.link",
-        "components.disclosure"
+        "components.disclosure",
+        "components.semantic-content"
       ],
       "parts": [
         "sections.band"
