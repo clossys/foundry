@@ -167,6 +167,7 @@
     "!src/**/*.test.ts",
     "skill",
     "fit-signals.json",
+    "strategy-brief.json",
     "README.md",
     "LICENSE"
   ],
