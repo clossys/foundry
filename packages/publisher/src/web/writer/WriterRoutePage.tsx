@@ -5,7 +5,7 @@ import { DataTable, DetailView, NoticeList } from "@clossys/designer/blocks";
 import { APP_FRAME_RIGHT_PANEL_CONFIG, ShellCopyProvider, surfaceRuntimeCallbacks, surfaceRendererId } from "@clossys/designer/frames";
 import { SlotModule } from "@clossys/designer/shell";
 import { checkConsumerRuntimePorts, runtimeHash } from "@clossys/designer/catalog";
-import type { RuntimeContentRef, RuntimeRenderInput } from "@clossys/designer/catalog";
+import type { ConsumerRuntimePorts, RuntimeContentRef, RuntimeRenderInput } from "@clossys/designer/catalog";
 import { checkedDesignerRouteData } from "@clossys/designer/studio/route/server";
 import type { DesignerRoutePageProps } from "@clossys/designer/studio/route";
 import { withCompleteRouteNavigation } from "../complete-route-navigation.js";
@@ -18,6 +18,8 @@ export interface WriterRouteServerData extends CompleteRouteServerData {
   readonly writer: { readonly copy: AdminCopy; readonly selectedRecordId?: string };
 }
 export interface WriterRoutePageProps {
+  /** Live exports from this consumer library's emitted component-index; never serialized. */
+  readonly components: ConsumerRuntimePorts<ReactNode>["components"];
   readonly serverData: WriterRouteServerData;
   readonly initialSession: DesignerRoutePageProps["initialSession"];
 }
@@ -34,7 +36,7 @@ function Copy({ copy, reference }: { copy: AdminCopy; reference: AdminCopyRef })
 }
 /** Read-only English record inspection. The host supplies its actual loaded store;
  * shipped defaults are never substituted for absent host records. */
-export function WriterRoutePage({ serverData, initialSession }: WriterRoutePageProps) {
+export function WriterRoutePage({ serverData, initialSession, components }: WriterRoutePageProps) {
   const checked = useMemo(() => {
     if (!initialSession) return undefined;
     try {
@@ -47,9 +49,9 @@ export function WriterRoutePage({ serverData, initialSession }: WriterRoutePageP
   const copy = serverData.writer.copy;
   if (checked === undefined) return <Banner><Copy copy={copy} reference={WRITER_COPY_REFS.loading} /></Banner>;
   if (checked === null) return <Banner variant="danger"><Copy copy={copy} reference={WRITER_COPY_REFS.error} /></Banner>;
-  return <WriterRouteSurface checked={checked} copy={copy} selectedRecordId={serverData.writer.selectedRecordId} />;
+  return <WriterRouteSurface components={components} checked={checked} copy={copy} selectedRecordId={serverData.writer.selectedRecordId} />;
 }
-function WriterRouteSurface({ checked, copy, selectedRecordId }: { checked: ReturnType<typeof checkedDesignerRouteData>; copy: AdminCopy; selectedRecordId?: string }) {
+function WriterRouteSurface({ checked, copy, selectedRecordId, components }: { components: ConsumerRuntimePorts<ReactNode>["components"]; checked: ReturnType<typeof checkedDesignerRouteData>; copy: AdminCopy; selectedRecordId?: string }) {
   const { data, profile, contracts } = checked;
   const [selected, setSelected] = useState(selectedRecordId);
   const shellCopy = useCallback((reference: AdminCopyRef) => {
@@ -60,7 +62,7 @@ function WriterRouteSurface({ checked, copy, selectedRecordId }: { checked: Retu
   const renderers = useMemo(() => surfaceRuntimeCallbacks(data.manifest.fills.map(fill => fill.leaf)), [data.manifest]);
   const resolveCopy = (reference: AdminCopyRef) => requiredCopy(copy, reference);
   const hasSelection = copy.records.some(record => record.id === selected);
-  const ports = { manifest: data.manifest, renderers, resolveContent: (reference: RuntimeContentRef) => contents.get(runtimeHash(reference)), frameHost: { panels: { inspector: hasSelection ? null as ReactNode : undefined }, navigate(href: string) { window.location.assign(new URL(href, window.location.href).href); } } };
+  const ports: ConsumerRuntimePorts<ReactNode> = { components, manifest: data.manifest, renderers, resolveContent: (reference: RuntimeContentRef) => contents.get(runtimeHash(reference)), frameHost: { panels: { inspector: hasSelection ? null as ReactNode : undefined }, navigate(href: string) { window.location.assign(new URL(href, window.location.href).href); } } };
   const frame = data.manifest.fills.find(fill => fill.kind === "frame" && fill.leaf === "frames.app-shell" && fill.leaf === data.frame.leaf && fill.fill === data.frame.fill && fill.config === data.frame.config && fill.library === profile.consumer);
   const selectedFrame = profile.surfaces?.fills[data.frame.leaf];
   const sectionsReady = SECTIONS.every(leaf => {
@@ -84,7 +86,7 @@ function WriterRouteSurface({ checked, copy, selectedRecordId }: { checked: Retu
   }
   const title = resolveCopy(WRITER_COPY_REFS.title);
   const body = <WriterRecords key="writer" copy={copy} selected={selected} onSelect={setSelected} />;
-  const input: RuntimeRenderInput<ReactNode> = { path: "frame", fill: frame, selection: data.frame, content, slots: { main: [body] }, profile, cell: data.cell, host: ports.frameHost, locale: "en",
+  const input: RuntimeRenderInput<ReactNode> = { components: ports.components, path: "frame", fill: frame, selection: data.frame, content, slots: { main: [body] }, profile, cell: data.cell, host: ports.frameHost, locale: "en",
     pageHeader: { id: data.header.id, data: { title: title.text }, module: frame.headerModule } };
   return <ShellCopyProvider resolver={shellCopy}><SemanticContent as="span" hidden data-route-display="writer" data-route-authentication="unverified" data-writer-header-copy-ref={title.ref.id} />{renderers[frame.renderer.id]!(input)}</ShellCopyProvider>;
 }
