@@ -12,6 +12,16 @@ import type { LibraryDecision } from "./library-decisions.js";
 import type { SourceBundle } from "./changeset-components.js";
 import { isSelectableComponentSource, NON_SELECTABLE_SOURCE_REASON } from "./component-sources.js";
 
+/** Canonical selection policy. Callers may supply their own explicit policy to the planner. */
+export const DEFAULT_COMPONENT_PREFERENCE: readonly string[] = ["shadcn@aria", "foundry", "rac-starter"];
+/** The approved shadcn default picks; choices remain exclusive overrides. */
+export const DEFAULT_COMPONENT_PICKS: Readonly<Record<string, string>> = {
+  "components.button": "shadcn@aria", "components.table": "shadcn@aria", "components.tooltip": "shadcn@aria", "components.card": "shadcn@aria",
+};
+/** Whole-component fallbacks stay subject to the normal eligibility checker. */
+export const DEFAULT_COMPONENT_FALLBACK = { source: "foundry", slots: ["checkbox", "dialog", "popover", "tabs", "toggle-button", "disclosure", "select", "chart-sparkline", "color-picker",
+  "number-field", "tag-group", "tree", "calendar", "menu", "table", "card"].map(leaf => `components.${leaf}`) };
+
 export interface ComponentDefaultsInput {
   catalog: ComponentCatalog;
   /** Component leaves to plan, in display order. */

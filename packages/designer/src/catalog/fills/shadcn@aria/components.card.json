@@ -59,7 +59,7 @@
         },
         {
           "path": "components/card/card.tsx",
-          "sha256": "83ee19f2feab6f24d91fb95edf86249d000515419fd8b2e92206ae75ac8c9f4c"
+          "sha256": "94146186de743faaf7e17ecbccd4909d3a3ed6ca36111951a69e052634937c04"
         },
         {
           "path": "notices/THIRD-PARTY.md",
@@ -105,7 +105,7 @@
           "tokens.font-size.base",
           "tokens.font-size.sm",
           "tokens.font-weight.medium",
-          "tokens.line-height.snug",
+          "tokens.line-height.heading",
           "tokens.spacing.lg",
           "tokens.spacing.md",
           "tokens.spacing.xs",

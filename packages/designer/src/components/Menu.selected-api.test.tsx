@@ -11,6 +11,7 @@ import { loadCatalog } from "../catalog-core/index.js";
 import { applyLibraryChange, libraryHash, resolve as resolveValues } from "../catalog-core/api.js";
 import { emittedTokenProperties } from "../catalog-core/emit.js";
 import { loadComponentRegistry } from "../catalog-core/component-registry.js";
+import { DEFAULT_COMPONENT_PICKS } from "../catalog-core/component-defaults.js";
 import { loadComponentCompositionRules } from "../catalog-core/component-compositions.js";
 import { applyComponentLibraryChange } from "../catalog-core/changeset-components.js";
 import { componentDescriptorHash, componentLibraryHash, componentOf, resolveComponents } from "../catalog-core/resolve-components.js";
@@ -33,7 +34,7 @@ import { menuCaller } from "./__fixtures__/selected-module-harness/menu-caller.j
  * claimed here (jsdom only).
  */
 const THREE = [{ name: "MenuGroup", export: "DropdownMenuGroup" }, { name: "MenuItem", export: "DropdownMenuItem" }, { name: "MenuLabel", export: "DropdownMenuLabel" }] as const;
-const COHORT = [["components.button", "foundry"], ["components.icon", "foundry"], ["components.menu", "shadcn@aria"]] as const;
+const COHORT = [["components.button", DEFAULT_COMPONENT_PICKS["components.button"]!], ["components.card", DEFAULT_COMPONENT_PICKS["components.card"]!], ["components.table", DEFAULT_COMPONENT_PICKS["components.table"]!], ["components.icon", "foundry"], ["components.menu", "shadcn@aria"]] as const;
 const packageDirectory = resolve(import.meta.dirname, "../..");
 const repository = resolve(packageDirectory, "../..");
 const packageJson = resolve(packageDirectory, "package.json");
@@ -161,6 +162,7 @@ const reexport = (row: { name: string; export: string }) => `export { ${row.expo
 describe("API-M1 selected Menu presentation and parts through the generated leaf API (real resolver/emitter; jsdom, no browser claim)", () => {
   it("M6/M3 resolves a checked, runtime-pending cohort whose adopted Menu carries exactly the three part approvals and the accepted presentation axis", () => {
     expect(profile.check.ok).toBe(true);
+    for (const leaf of ["button", "table", "card", "menu"]) expect(profile.components[`components.${leaf}`]!.origin, leaf).toMatchObject({ kind: "adopted", source: "shadcn@aria" });
     expect(profile.check.findings.every(isObservationPending)).toBe(true);
     expect(JSON.parse(file(emitted, "components-consumption.json")).status).toBe("runtime-pending");
     const menu = profile.components["components.menu"]!;
@@ -176,7 +178,7 @@ describe("API-M1 selected Menu presentation and parts through the generated leaf
     const leaf = file(emitted, LEAF);
     expect(publicNames(leaf)).toEqual(["Menu", "MenuGroup", "MenuItem", "MenuLabel"]);
     for (const row of THREE) expect(leaf).toContain(reexport(row));
-    expect(publicNames(file(emitted, "component-index.ts"))).toEqual(["Button", "Icon", "LibraryProvider", "Menu"]);
+    expect(publicNames(file(emitted, "component-index.ts"))).toEqual(["Button", "Card", "Icon", "LibraryProvider", "Menu", "Table"]);
   });
   it("M3 each leaf part is the selected entry's own runtime value; unapproved entry values stay unreachable", async () => {
     const identity = await compileHost("harness/identity.ts", identityHost(LEAF, ENTRY));
