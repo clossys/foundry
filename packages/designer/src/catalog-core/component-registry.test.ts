@@ -18,7 +18,7 @@ const families: Record<string, readonly string[]> = {
   "display-data": ["table", "grid-list", "tree", "meter"],
   "display-labels": ["badge", "keyboard"],
   "display-content": ["semantic-content", "item"],
-  "display-media": ["avatar"],
+  "display-media": ["avatar", "media-player"],
   "display-assets": ["icon", "logo"],
   "charts-core": ["chart-bar", "chart-line", "chart-area"],
   "charts-compact": ["chart-sparkline", "chart-status-strip"],
@@ -44,10 +44,10 @@ const roots: Record<string, string> = {
   tabs: "Tabs", "navigation-tree": "NavigationTree", separator: "Separator", disclosure: "Disclosure", dialog: "Dialog",
   popover: "Popover", tooltip: "Tooltip",
 };
-const presentational = ["badge", "avatar", "icon", "logo", "status-mark", "skeleton", "card", "banner", "semantic-content", "sidebar", "empty", "item", "scroll-area"];
+const presentational = ["badge", "avatar", "icon", "logo", "status-mark", "skeleton", "card", "banner", "semantic-content", "sidebar", "empty", "item", "scroll-area", "media-player"];
 const fullId = (leaf: string) => `components.${leaf}`;
 const inventory = Object.values(families).flat().map(fullId).sort();
-const addedInventory = ["sidebar", "command", "sheet", "empty", "item", "scroll-area", "dropdown-menu"].map(fullId);
+const addedInventory = ["sidebar", "command", "sheet", "empty", "item", "scroll-area", "dropdown-menu", "media-player"].map(fullId);
 const leafNodes = (nodes: readonly PlacementNode[]): PlacementNode[] => nodes.flatMap(node => "leaves" in node ? [node] : leafNodes(node.children));
 
 // These prove shape only; component execution belongs to later implementation units.
@@ -55,9 +55,9 @@ describe("component build IA registry", () => {
   it("registers the 57 signed ids and two explicit local drafts once as draft contracts without a freeze claim", () => {
     const registry = loadComponentRegistry();
     expect(registry.status).toBe("build-unfrozen");
-    expect(registry.slots).toHaveLength(66);
+    expect(registry.slots).toHaveLength(67);
     expect(registry.slots.map(slot => slot.id)).toEqual([...inventory.filter(id => !addedInventory.includes(id)), ...addedInventory]);
-    expect(new Set(registry.slots.map(slot => slot.id)).size).toBe(66);
+    expect(new Set(registry.slots.map(slot => slot.id)).size).toBe(67);
     expect(registry.slots.every(slot => isValidId("slot", slot.id) && slot.layer === "components" && slot.status === "draft" && slot.signoff === undefined)).toBe(true);
     expect(componentRegistryFindings(registry)).toEqual([]);
   });
@@ -81,10 +81,10 @@ describe("component build IA registry", () => {
       expect(slot.contract.root, slot.id).toBe(expected);
       expect(slot.contract.kind).toBe("component");
       expect(slot.contract.members.mode).toBe("closed");
-      expect(slot.contract.props).toEqual(slot.id === "components.semantic-content" ? ["as"] : []);
+      expect(slot.contract.props).toEqual(slot.id === "components.semantic-content" ? ["as"] : slot.id === "components.media-player" ? ["video", "poster", "passage", "captions", "muted", "autoplay", "loop", "controls", "className"] : []);
     }
     expect(registry.slots.filter(slot => slot.contract.root.startsWith("rac:"))).toHaveLength(42);
-    expect(registry.slots.filter(slot => slot.contract.root === "presentational")).toHaveLength(13);
+    expect(registry.slots.filter(slot => slot.contract.root === "presentational")).toHaveLength(14);
     expect(registry.slots.filter(slot => slot.contract.root === "engine:none")).toHaveLength(11);
   });
 
