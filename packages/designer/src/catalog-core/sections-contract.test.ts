@@ -40,7 +40,7 @@ const reconciledComposes: Record<string, readonly string[]> = {
   form: ["form", "field", "text-field", "button", "banner", "checkbox", "combo-box", "select"],
   "record-detail": ["card", "tabs", "badge", "skeleton", "button", "link", "disclosure"],
   "data-table": ["table", "toolbar", "checkbox", "menu", "button", "dialog", "icon", "popover", "select", "text-field", "badge", "status-mark", "tooltip", "link", "skeleton"],
-  "link-index": ["link", "card", "icon", "badge", "button", "status-mark"],
+  "link-index": ["link", "card", "icon", "badge", "button", "status-mark", "semantic-content"],
   newsletter: ["text-field", "button", "icon"],
   "table-of-contents": ["link", "disclosure"],
   "task-list": ["checkbox", "avatar", "badge", "icon", "status-mark"],
