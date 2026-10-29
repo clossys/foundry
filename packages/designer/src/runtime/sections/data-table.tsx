@@ -11,10 +11,11 @@ import { entryOf, recordsOf, stateOf, type GroupBSection, type SectionRenderInpu
 import type { TableColumnKind } from "../../blocks/table-model/index.js";
 import { TableFill, type ColumnRecord, type DimensionRecord, type RowRecord, type SortRecord } from "./group-b-table.js";
 import { isObject } from "./group-c-content.js";
-import { tableCopyOf } from "./copy-ports.js";
+import { tableCopyOf, type PaginationSummaryMessage, type WriterCopyFormatter } from "./copy-ports.js";
 
 const RECORDS_PER_PAGE = 100;
 const COLLAPSED_RECORDS = 10;
+const isMessageRecord = (value: unknown): value is Record<string, unknown> => value !== null && typeof value === "object" && !Array.isArray(value);
 
 interface ScrollHeader { readonly heading: string; readonly count?: string | number; readonly level?: SectionHeaderLevel; readonly id?: string }
 interface ScrollPagination extends PaginationRegionContent { readonly showAll?: string; readonly label?: string; readonly previous?: string; readonly next?: string; readonly noResults?: string }
@@ -67,10 +68,16 @@ function ScrollDataTable({ input }: { input: SectionRenderInput }) {
     }
   };
   const rangeSummaryMessage = (start: number, end: number, total: number): string => {
-    const formatter = input.sectionHost?.paginationSummary;
-    if (typeof formatter !== "function") throw new TypeError("sections.data-table: paginationSummary host formatter is required");
-    const result = (formatter as (input: PaginationSummaryInput) => string)({ start, end, total, page: activePage, pageCount: count });
-    if (typeof result !== "string" || !result.trim()) throw new TypeError("sections.data-table: paginationSummary must return resolved text");
+    const message = input.sectionHost?.paginationSummary;
+    if (!isMessageRecord(message) || message.key !== "pagination.totalText" || typeof message.writerId !== "string" || !message.writerId.trim() || typeof message.locale !== "string" || !message.locale.trim() || typeof message.message !== "string" || !message.message.trim() || !isMessageRecord(message.values) || Object.values(message.values).some(value => typeof value !== "string" && (typeof value !== "number" || !Number.isFinite(value)))) throw new TypeError("sections.data-table: paginationSummary requires a Writer ICU message with args");
+    const formatter = input.sectionHost?.formatCopyMessage;
+    if (typeof formatter !== "function") throw new TypeError("sections.data-table: formatCopyMessage Writer formatter is required");
+    // Paging belongs to the section. Consumer-authored values cannot override it.
+    // `pages` is the existing Writer page-message argument; pageCount remains
+    // available for the same typed pagination state used by host navigation.
+    const descriptor: PaginationSummaryMessage = { ...message as unknown as PaginationSummaryMessage, values: { ...message.values as Record<string, string | number>, start, end, total, page: activePage, pageCount: count, pages: count } };
+    const result = (formatter as WriterCopyFormatter)(descriptor);
+    if (typeof result !== "string" || !result.trim()) throw new TypeError("sections.data-table: Writer pagination message must resolve to nonempty text");
     return result;
   };
   const footer = scroll && rows.length > COLLAPSED_RECORDS
