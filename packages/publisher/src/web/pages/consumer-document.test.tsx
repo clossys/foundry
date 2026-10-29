@@ -17,9 +17,12 @@ it("owns a consumer-authored SectionedViewDocument and its Writer resolution/ren
   const document = { id: "consumer-home", sections: [{ id: "intro", kind: "hero" as const, ground: "base" as const, heading: { id: "site.title", locale: "en" }, description: { id: "site.body", locale: "en" } }] };
   expect(validateSectionedViewDocument(document)).toEqual([]);
   const resolved = resolveSectionedViewDocument(document, resolver);
+  expect(resolved.resolutions.map(value => value.status)).toEqual(["draft", "draft"]);
+  const before = JSON.stringify(resolved);
   const html = renderToStaticMarkup(<SectionedView document={resolved} />);
   expect(html).toContain("Consumer-owned publication"); expect(html).toContain("Its composition belongs to the consumer.");
   expect(resolved.resolutions.every(value => value.revision === "1" && value.approval === undefined && value.source.kind === "consumer")).toBe(true);
+  expect(JSON.stringify(resolved)).toBe(before);
   expect(() => resolveSectionedViewDocument(document, () => undefined)).toThrow(/CopyRef|resolve/i);
 });
 it("removes the public three-page authority while keeping the native data route and explicit draft marker", () => {
