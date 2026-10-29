@@ -26,10 +26,27 @@ beforeAll(async () => {
   for (const key of ["slots", "fills", "transforms", "materializations"] as const) engine.catalog.surfaces![key] = [...engine.catalog.surfaces![key], ...table.input.catalog.surfaces![key]] as never;
   engine.library = applyLibraryChange(engine.catalog, engine.library, { baseHash: libraryHash(engine.library), changes: [{ portion: "surfaces", change: { op: "adopt", slot: table.bundle.slot, source: "synthetic" } }], surfaceBundles: [table.bundle] }, { componentOptions: engine.componentOptions, surfaceOptions: engine.surfaceOptions! });
   const { surfaceOf } = createRequire(import.meta.url)("../../../designer/dist/catalog-core/surface-library.js") as typeof import("../../../designer/dist/catalog-core/surface-library.js");
+  for (const leaf of ["band", "section-header", "table-of-contents"]) {
+    const current = syntheticSurface({ leaf });
+    for (const key of ["slots", "fills", "transforms", "materializations"] as const) engine.catalog.surfaces![key] = [...engine.catalog.surfaces![key], ...current.input.catalog.surfaces![key]] as never;
+    engine.library = applyLibraryChange(engine.catalog, engine.library, { baseHash: libraryHash(engine.library), changes: [{ portion: "surfaces", change: { op: "adopt", slot: current.bundle.slot, source: "synthetic" } }], surfaceBundles: [current.bundle] }, { componentOptions: engine.componentOptions, surfaceOptions: engine.surfaceOptions! });
+  }
   const selected = Object.values(resolve(engine).surfaces!.fills).find(row => surfaceOf(row.document).slot === "sections.data-table")!, { origin: _origin, ...fill } = surfaceOf(selected.document);
   const files = engine.library.surfaces!.files.filter(file => fill.outputSha256.some(owned => owned.path === file.path));
   engine.library = applyLibraryChange(engine.catalog, engine.library, { baseHash: libraryHash(engine.library), changes: [{ portion: "surfaces", change: { op: "author", slot: fill.slot, fill: { ...fill, slotMap: { rows: { export: "DataTable", path: ["rows"] } } } as never, files } }] }, { componentOptions: engine.componentOptions, surfaceOptions: engine.surfaceOptions! });
   Object.assign(engine.catalog.surfaces!.slots.find(slot => slot.id === "sections.data-table")!.contract, { slots: [{ name: "rows", type: "records", required: true }] });
+  for (const [leaf, name, type] of [["sections.section-header", "heading", "copy"], ["sections.table-of-contents", "headings", "records"]] as const) {
+    const row = Object.values(resolve(engine).surfaces!.fills).find(row => surfaceOf(row.document).slot === leaf)!, { origin: _origin, ...section } = surfaceOf(row.document);
+    const files = engine.library.surfaces!.files.filter(file => section.outputSha256.some(owned => owned.path === file.path));
+    engine.library = applyLibraryChange(engine.catalog, engine.library, { baseHash: libraryHash(engine.library), changes: [{ portion: "surfaces", change: { op: "author", slot: leaf, fill: { ...section, slotMap: { [name]: { export: section.impl.export, path: [name] } } } as never, files } }] }, { componentOptions: engine.componentOptions, surfaceOptions: engine.surfaceOptions! });
+    Object.assign(engine.catalog.surfaces!.slots.find(slot => slot.id === leaf)!.contract, { slots: [{ name, type, required: true }] });
+  }
+  const frameRow = Object.values(resolve(engine).surfaces!.fills).find(row => surfaceOf(row.document).kind === "frame")!, { origin: _frameOrigin, ...frame } = surfaceOf(frameRow.document);
+  if (frame.kind !== "frame") throw new TypeError("SYNTHETIC frame required");
+  const frameFiles = engine.library.surfaces!.files.filter(file => frame.outputSha256.some(owned => owned.path === file.path));
+  engine.library = applyLibraryChange(engine.catalog, engine.library, { baseHash: libraryHash(engine.library), changes: [{ portion: "surfaces", change: { op: "author", slot: frame.slot, fill: { ...frame, slots: { ...frame.slots, "page-module": { export: frame.impl.export, path: ["pageModule"] } } }, files: frameFiles } }] }, { componentOptions: engine.componentOptions, surfaceOptions: engine.surfaceOptions! });
+  const frameContract = engine.catalog.surfaces!.slots.find(slot => slot.id === frame.slot)!.contract;
+  if (frameContract.kind === "frame") Object.assign(frameContract, { slots: [...frameContract.slots, { id: "page-module", required: false, accepts: "sections.*" }] });
   const { saveSurfaceLibrary, compileSurfaceLibrary } = createRequire(import.meta.url)("../../../designer/dist/library-cli/__fixtures__/surface-library.js") as typeof import("../../../designer/dist/library-cli/__fixtures__/surface-library.js");
   await saveSurfaceLibrary(temporary, engine); compiled = await compileSurfaceLibrary(temporary, engine);
 }, 60_000);
@@ -42,12 +59,12 @@ function liveFixture(table = false) {
   Object.assign(f.route.composition.binding, { fills: { body: [{ section: section.leaf, content: table ? { rows: { kind: "records", ref: "rows" } } : {} }] }, body });
   if (table) Object.assign(f.route.composition.binding, { layout: { leaf: "layouts.stack", config: "stack.workspace" } });
   const configuration = table ? "stack.workspace" : "stack.focus";
-  const sectionRenderer = vi.fn(() => null), frameRenderer = vi.fn((input: any) => input.slots.main);
-  const registries = { ...f.registries, sections: [...f.registries.sections, { id: "sections.data-table" as const, status: "draft" as const, contract: { surface: "both" as const, configs: [], slots: [{ name: "rows", type: "records" as const, required: true }], substrates: ["flow" as const], substrateTests: [{ substrate: "flow" as const, file: "SYNTHETIC.tsx", name: "SYNTHETIC port delivery" }] } }] };
+  const sectionRenderer = vi.fn((input: any) => input.slots.children ?? null), frameRenderer = vi.fn((input: any) => input.slots.main);
+  const registries = { ...f.registries, sections: [...f.registries.sections, ...f.engine.catalog.surfaces!.slots.filter(slot => slot.layer === "sections" && slot.id !== "sections.content").map(slot => ({ id: slot.id as `sections.${string}`, status: "draft" as const, contract: { surface: "both" as const, configs: [], slots: slot.contract.kind === "section" ? slot.contract.slots : [], substrates: ["flow" as const], substrateTests: [{ substrate: "flow" as const, file: "SYNTHETIC.tsx", name: "SYNTHETIC port delivery" }] } }))] };
   const runtime: RegisteredRouteRuntime = {
     assembly: { identity: { kind: "artifact", name: "SYNTHETIC scroll binding", sha256: runtimeHash(compiled.compiled) }, engine: f.engine,
-      contracts: { ...loadBuildCatalog(), slots: f.engine.catalog.surfaces!.slots.map(slot => ({ ...slot, contract: slot.contract.kind === "frame" ? { ...slot.contract, stage: { accepts: ["flow"] as const, scroll: "region" as const } } : { ...slot.contract, substrates: ["flow"] as const, substrateTests: [{ substrate: "flow" as const, file: "SYNTHETIC.tsx", name: "SYNTHETIC port delivery" }] } })) },
-      ports: { manifest: f.manifest, renderers: { [f.content.renderer.id]: sectionRenderer, [section.renderer.id]: sectionRenderer, [f.frame.renderer.id]: frameRenderer }, resolveContent: reference => reference.ref === "rows" ? content({ kind: "records", ref: "rows" }, [{ id: "one" }]) : undefined, frameHost: { navigate: vi.fn() } },
+      contracts: { ...loadBuildCatalog(), slots: f.engine.catalog.surfaces!.slots.map(slot => ({ ...slot, contract: slot.contract.kind === "frame" ? { ...slot.contract, stage: { accepts: ["flow"] as const, scroll: "region" as const } } : { ...slot.contract, ...(["sections.data-table", "sections.section-header"].includes(slot.id) ? { anatomy: { ...slot.contract.anatomy, band: "sections.band" as const } } : {}), substrates: ["flow"] as const, substrateTests: [{ substrate: "flow" as const, file: "SYNTHETIC.tsx", name: "SYNTHETIC port delivery" }] } })) },
+      ports: { manifest: f.manifest, renderers: { ...Object.fromEntries(f.fills.filter(fill => fill.kind === "section").map(fill => [fill.renderer.id, sectionRenderer])), [f.frame.renderer.id]: frameRenderer }, resolveContent: reference => reference.ref === "rows" ? content({ kind: "records", ref: "rows" }, [{ id: "one" }]) : undefined, frameHost: { navigate: vi.fn() } },
       themes: ["light"], states: ["default"], css: [{ id: "publisher-flow-stage.css", contents: flowStageStyleSheet(f.profile, "layouts.stack", configuration) }], assets: [],
       stageMeasurements: { renderer: { id: "Stack", source: f.layoutSource, sourceHash: runtimeHash(f.layoutSource) }, environment: { kind: "SYNTHETIC width basis" }, cells: runtimeAssemblyCells(resolve(f.engine), ["light"], ["default"]).map(cell => ({ cell, width: cell.width - 80 })) } },
     instanceLibrary: { id: f.consumer, role: "consumer", resolveFill: (leaf, config) => leaf === "layouts.stack" && config === configuration ? { library: f.consumer, leaf, config, headings: [], states: ["default"], renderer: f.source } : undefined, resolveContent: reference => reference },
@@ -85,6 +102,32 @@ function options() {
 }
 
 describe("consumed registered scroll-page capabilities", () => {
+  it("prepares nested authored band Sections and an independent selected TOC before any main chunk request", async () => {
+    const f = regionFixture(), heading = (name: string) => ({ kind: "copy" as const, ref: `heading/${name}` }), rows = { kind: "records" as const, ref: "rows/names", lazy: { loader: "chunk" as const, args: { l0: "first", l1: "names" } } };
+    const raw = f.route.composition.binding;
+    Object.assign(raw, { regions: { main: [
+      { section: "sections.section-header", content: { heading: heading("first") } },
+      { section: "sections.band", content: {}, children: [{ section: "sections.section-header", content: { heading: heading("names") } }, { section: "sections.data-table", content: { rows } }] },
+    ], "page-module": [{ section: "sections.table-of-contents", content: { headings: { kind: "records", ref: "outline" } } }] } });
+    f.runtime.assembly.ports.resolveContent = reference => reference.ref.startsWith("heading/") ? { reference, value: reference.ref, hash: runtimeHash(reference.ref) } : undefined;
+    f.runtime.assembly.ports.frameOrder = ({ layout, slots }) => [...(slots["page-module"] ?? []), ...layout];
+    const input = { ...f.input, page: raw, manifest: { l0: [{ id: "first", label: "First", count: 1, estimate: 200, section: { slot: "main", index: 0 }, l1: [{ id: "names", label: "Names", count: 1, estimate: 100, section: { slot: "main", index: 1, children: [0] }, l2: [{ id: "primary", label: "Primary", count: 1, estimate: 80, section: { slot: "main", index: 1, children: [1] } }] }] }] }, loaders: { ...f.input.loaders, chunk: vi.fn(async () => [content({ kind: "records", ref: rows.ref }, [{ id: "one" }])]) } };
+    const page = createRegisteredPageSession(input); f.runtime.page = page;
+    const before = prepareRegisteredRoute(f.registry, f.route.routeId, f.runtime, () => null);
+    expect(before.status, JSON.stringify(before)).toBe("stream"); if (before.status !== "stream") return;
+    expect(before.chunks[0]!.result.status).toBe("pending"); expect(before.regionsAssembly?.status, JSON.stringify(before.regionsAssembly)).toBe("ready");
+    expect(before.renderRegions!(f.runtime.cell).regions["page-module"]).toHaveLength(1);
+    expect(input.loaders.chunk).not.toHaveBeenCalled();
+    const toc = f.sectionRenderer.mock.calls.map(([input]) => input).find(input => input.fill.leaf === "sections.table-of-contents");
+    expect(toc.content.headings.value).toEqual([{ id: "first", label: "First", level: 2 }, { id: "first--names", label: "Names", level: 3 }, { id: "first--names--primary", label: "Primary", level: 4 }]);
+    await page.request(rows);
+    const after = prepareRegisteredRoute(f.registry, f.route.routeId, f.runtime, () => null);
+    expect(after.status).toBe("stream"); if (after.status !== "stream") return;
+    expect(after.chunks[0]!.result.status, JSON.stringify(after.chunks[0]!.result)).toBe("ready");
+    const selected = after.chunks[0]!.result.input!.binding.sections.body![1]!;
+    expect(selected.children!.map(fill => fill.leaf)).toEqual(["sections.section-header", "sections.data-table"]);
+    expect(after.chunks[0]!.result.input!.ports.manifest.fills.map(fill => fill.leaf)).toEqual(expect.arrayContaining(["sections.band", "sections.section-header", "sections.data-table", "sections.table-of-contents"]));
+  });
   it("prepares a >24 Section stream as two independently valid selected Layout assemblies", () => {
     const f = regionFixture(26), result = prepareRegisteredRoute(f.registry, f.route.routeId, f.runtime, () => null);
     expect(result.status, JSON.stringify(result)).toBe("stream"); if (result.status !== "stream") return;
@@ -322,6 +365,16 @@ describe("consumed registered scroll-page capabilities", () => {
     await page.requestChunk({ l0: "records" });
     await expect(page.loadItem("/agents/example/records/one")).rejects.toThrow("another scope");
     expect(page.read(rows.reference)).toMatchObject({ status: "ready", content: rows });
+  });
+  it("replaces item content as a set so an omitted B reference cannot retain A data", async () => {
+    const f = liveFixture(true), input = { ...options(), page: f.route.composition.binding, path: f.route.path };
+    input.loaders.item = vi.fn(async (_l0, id) => ({ record: { id }, content: id === "a" ? [content({ kind: "records", ref: "rows" }, [{ id }])] : [] })) as never;
+    const page = createRegisteredPageSession(input); f.runtime.page = page;
+    await page.loadItem(`${f.route.path}/records/a`);
+    expect(prepareRegisteredRoute(f.registry, f.route.routeId, f.runtime, () => null).status).toBe("ready");
+    await page.loadItem(`${f.route.path}/records/b`);
+    expect(page.read({ kind: "records", ref: "rows" })).toMatchObject({ status: "pending", owned: true });
+    expect(prepareRegisteredRoute(f.registry, f.route.routeId, f.runtime, () => null).status).toBe("pending");
   });
   it("scopes single selection to its repeated table L0 and pins the actual loaded record to chat", async () => {
     const input = options(); input.loaders.item = vi.fn(async (l0, id) => ({ record: { l0, id }, content: [] }));

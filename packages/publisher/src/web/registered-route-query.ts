@@ -103,6 +103,7 @@ export function createRegisteredPublicationSession(publication: PublicationBindi
       if (Object.keys(update.regions).some(key => !["main", "page-module"].includes(key))) throw new TypeError("Page navigation cannot replace persistent frame regions");
       bind();
       active = update.routeId;
+      if (!update.chunks) host.setChunks([]);
       host.setRegions({ headerTrail: update.trail, ...(update.chunks ? {} : { main: update.regions.main ?? [] }), pageModule: update.regions["page-module"] ?? [], ...(update.headerActions === undefined ? {} : { headerActions: update.headerActions }), ...(update.inspectorContext === undefined ? {} : { inspectorContext: update.inspectorContext }) });
       if (update.chunks) host.setChunks(update.chunks);
     },
@@ -153,7 +154,7 @@ export interface RegisteredPageSession {
   deactivate(): void;
   activeAnchor(): string | undefined;
   frameState(): RegisteredFrameRouteState | undefined;
-  read(reference: ContentRef): { readonly status: "pending" } | { readonly status: "ready"; readonly content: RuntimeContent };
+  read(reference: ContentRef): { readonly status: "pending"; readonly owned?: true } | { readonly status: "ready"; readonly content: RuntimeContent };
   request(reference: ContentRef): Promise<void>;
   requestChunk(args: { readonly l0: string; readonly l1?: string }): Promise<void>;
   chunkStatus(args: { readonly l0: string; readonly l1?: string }): RegisteredPageChunk["status"];
@@ -171,17 +172,21 @@ export function createRegisteredPageSession(input: RegisteredPageSessionOptions)
   const page = runtimeSnapshot(input.page), manifest = runtimeSnapshot(input.manifest), outline = projectPageOutline(page, manifest);
   if (!/^\/(?:[^/?#\\]+\/?)*$/.test(input.path) || input.path.includes("//") || input.path.includes("%") || input.path.split("/").some(part => part === "." || part === "..") || !isRegisteredContentRef(input.query) || input.query.kind !== "records" || input.query.lazy) throw new TypeError("Canonical page path and records query reference required");
   if (input.publication && !input.routeId?.trim()) throw new TypeError("Publication page session requires its registered route identity");
-  const options = Object.freeze({ ...input, page, manifest }), contents = new Map<string, RuntimeContent>(), owners = new Map<string, string>(), lazyScopes = new Map<string, string>();
+  const options = Object.freeze({ ...input, page, manifest }), contents = new Map<string, RuntimeContent>(), owners = new Map<string, string>(), lazyScopes = new Map<string, string>(), itemReferences = new Set<string>();
   const requests = new Map<string, Promise<void>>(), chunkStates = new Map<string, RegisteredPageChunk["status"]>(), listeners = new Set<() => void>();
   let revision = 0, sequence = 0, navigationSequence = 0, selectionSequence = 0, active = true, activeAnchor: string | undefined, frameState: RegisteredFrameRouteState | undefined, started: Promise<void> | undefined, groups = outline.groups;
   const publish = () => { revision++; for (const listener of [...listeners]) listener(); };
   const currentPage = () => active && (options.publication?.isCurrent(options.routeId ?? page.instanceId, session) ?? true);
   const state = (value: RegisteredFrameRouteState) => { if (currentPage() && runtimeHash(frameState ?? null) !== runtimeHash(value)) { frameState = Object.freeze({ ...value }); options.publication?.setState(value, session); publish(); } };
   const fail = (error: unknown): never => { state({ main: "error", navigating: false }); throw error; };
-  const save = (current: RuntimeContent, owner: string, replaceItem = false) => {
+  const verifyContent = (current: RuntimeContent, owner: string, replaceItem = false) => {
     if (!isRegisteredContentRef(current.reference) || current.reference.lazy || current.hash !== runtimeHash(current.value)) throw new TypeError("Chunk returned stale or invalid content");
     const key = contentReferenceKey(current.reference), previous = contents.get(key);
     if (previous && owners.get(key) !== owner && !(replaceItem && owner.startsWith("item:") && owners.get(key)?.startsWith("item:"))) throw new TypeError("Consumer content belongs to another scope");
+  };
+  const save = (current: RuntimeContent, owner: string, replaceItem = false) => {
+    verifyContent(current, owner, replaceItem);
+    const key = contentReferenceKey(current.reference);
     contents.set(key, runtimeSnapshot(current)); owners.set(key, owner);
   };
   const validArgs = (args: { readonly l0: string; readonly l1?: string }) => {
@@ -214,7 +219,7 @@ export function createRegisteredPageSession(input: RegisteredPageSessionOptions)
         if (previous !== undefined && previous !== scope || owner !== undefined && owner !== scope) throw new TypeError("Lazy reference belongs to another chunk scope");
         lazyScopes.set(key, scope);
       }
-      const current = contents.get(contentReferenceKey(reference)); return current ? { status: "ready", content: current } : { status: "pending" };
+      const key = contentReferenceKey(reference), current = contents.get(key); return current ? { status: "ready", content: current } : { status: "pending", ...(itemReferences.has(key) ? { owned: true as const } : {}) };
     },
     async request(reference) {
       if (!isRegisteredContentRef(reference) || !reference.lazy) throw new TypeError("Only a declared lazy chunk reference can be requested");
@@ -266,7 +271,13 @@ export function createRegisteredPageSession(input: RegisteredPageSessionOptions)
         if (item === undefined) { if (request === navigationSequence) state({ main: "not-found", navigating: false }); return { status: "not-found", code: 404 }; }
         if (!item || !Array.isArray(item.content) || item.record === undefined) throw new TypeError("Item loader must return its actual record and content bindings");
         const current = runtimeSnapshot(item.record);
-        if (request === navigationSequence && currentPage()) { for (const value of item.content) save(value, `item:${params.l0}/${params.id}`, true); state({ main: "ready", navigating: false }); publish(); }
+        if (request === navigationSequence && currentPage()) {
+          const owner = `item:${params.l0}/${params.id}`, next = new Set<string>();
+          for (const value of item.content) { verifyContent(value, owner, true); const key = contentReferenceKey(value.reference); if (next.has(key)) throw new TypeError("Duplicate item content reference"); next.add(key); }
+          for (const [key, previous] of owners) if (previous.startsWith("item:")) { owners.delete(key); contents.delete(key); }
+          for (const value of item.content) { save(value, owner); itemReferences.add(contentReferenceKey(value.reference)); }
+          state({ main: "ready", navigating: false }); publish();
+        }
         return { status: "ready", code: 200, ...params, record: current };
       } catch (error) { if (request === navigationSequence && currentPage()) return fail(error); throw error; }
     },

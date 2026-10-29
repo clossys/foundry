@@ -228,8 +228,8 @@ export type { PublisherConfiguration, PublisherMediaSettings, PublisherLaneRecom
 export { PUBLISHER_CHANNELS } from "../planning/channel-ids.js";
 export type { PublisherChannelId } from "../planning/channel-ids.js";
 export { COMPLETE_ROUTE_KINDS, completeRouteKind, isCompleteRouteKind, isLegacyRouteRegistration, projectRouteRegistry, routeServerLoader, registeredRoutesForChannel, registeredRouteBrandLink, routeRegistryDigest, routeCompositionDigest, registeredRouteFrameFinding } from "./route-registry.js";
-export type { CompleteRouteKind, CompleteRouteRegistration, LegacyRouteRegistration, LegacyRouteRegistry, RouteSourceExport, RouteRegistration, RouteRegistry, RouteRegistryFinding, RegisteredRouteRow, RouteRegistryProjection } from "./route-registry.js";
-export type { InstanceBinding, FlowInstanceBinding, CanvasInstanceBinding, InstanceBindingBase, InstanceSectionRef, SectionFill, InstanceRegistries, ConsumerInstanceLibrary, ConsumerInstanceFill, LayoutRendererSource } from "./instance-binding.js";
+export type { CompleteRouteKind, CompleteRouteRegistration, LegacyRouteRegistration, LegacyRouteRegistry, RegionPageRouteRegistration, RegionPageRouteRegistry, AnyRouteRegistration, RouteSourceExport, RouteRegistration, RouteRegistry, RouteRegistryFinding, RegisteredRouteRow, RouteRegistryProjection } from "./route-registry.js";
+export type { InstanceBinding, FlowInstanceBinding, CanvasInstanceBinding, InstanceBindingBase, InstanceSectionRef, SectionPlacement, SectionFill, ContentRef, PublicationBinding, RegionPageBinding, InstanceRegistries, ConsumerInstanceLibrary, ConsumerInstanceFill, LayoutRendererSource } from "./instance-binding.js";
 export { instanceBodyFill, instanceBodyFindings } from "./instance-body.js";
 
 export { deriveRouteRuntimeBinding } from "./route-runtime.js";

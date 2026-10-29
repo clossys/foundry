@@ -37,4 +37,16 @@ describe("closed canonical InstanceBinding body schema (synthetic declaration te
     const noTest = { ...registries, sections: registries.sections.map(section => ({ ...section, contract: { ...section.contract, substrateTests: [] } })) };
     expect(instanceBodyFindings(canvas(), noTest).length).toBeGreaterThan(0);
   });
+  it("validates authored flow descendants recursively and refuses child escapes, cycles and canvas nesting", () => {
+    const binding = flow(), child = structuredClone(binding.fills.body![0]!);
+    Object.assign(binding.fills.body![0]!, { children: [child] });
+    expect(instanceBodyFindings(binding, registries)).toEqual([]);
+    Object.assign(child, { render: "host body" });
+    expect(instanceBodyFindings(binding, registries)).toContain("Section fill/content has unknown fields");
+    delete (child as unknown as Record<string, unknown>).render;
+    Object.assign(child, { children: [child] });
+    expect(instanceBodyFindings(binding, registries)).toContain("Section nesting must be bounded and acyclic");
+    const board = canvas(); Object.assign(board.fills.body![0]!, { children: [structuredClone(flow().fills.body![0]!)] });
+    expect(instanceBodyFindings(board, registries)).toContain("Nested Sections require a non-empty authored flow list");
+  });
 });

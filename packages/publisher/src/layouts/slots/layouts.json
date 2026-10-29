@@ -24,6 +24,8 @@
             "sections.hero",
             "sections.page-header",
             "sections.content",
+            "sections.band",
+            "sections.section-header",
             "sections.article",
             "sections.features",
             "sections.testimonials",
@@ -181,6 +183,8 @@
             "body": {
               "accepts": [
                 "sections.comparison",
+                "sections.band",
+                "sections.section-header",
                 "sections.explorer",
                 "sections.data-table",
                 "sections.form",

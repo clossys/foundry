@@ -38,7 +38,7 @@ export interface InstanceBindingBase {
   readonly frame: { readonly leaf: `frames.${string}`; readonly config?: string;
     /** Consumer references for declared host-content slots; values stay in the original runtime. */
     readonly content?: Readonly<Record<string, ContentRef>>;
-    readonly slotFills?: { readonly consent?: SectionFill; readonly context?: SectionFill };
+    readonly slotFills?: { readonly consent?: SectionFill; readonly context?: SectionFill; readonly "page-module"?: SectionFill; readonly inspector?: SectionFill };
     /** One chosen member per axis (`{ layout: "standard" }` selects `layout.standard`). It narrows the
      * verified frame descriptor's members and never adds one; absent, every descriptor member projects. */
     readonly members?: Readonly<Record<string, string>> };
