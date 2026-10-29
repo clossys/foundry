@@ -1112,10 +1112,10 @@
 @source inline("selected: selectedId selectedId: selectedIds selectedKeys selectedLeaf selectedSource");
 @source inline("selectedSources selection selection. selection: selectionBehavior selectionHash: selectionMode");
 @source inline("selections selector. selectors: selects selects. self self-edges self-end self-loop self-start");
-@source inline("self-stretch self-target selfLoop: semantic semantic: semantics semantics. send sensitivity");
-@source inline("sensitivity. sent sentMessage: separate separately. separator separator: sequence sequence.");
-@source inline("sequences series series. series: seriesIndex servedLocale: server server-safe server-view server.");
-@source inline("service services session session. session: sessionId sessionId: set setActions setFieldValue");
+@source inline("self-stretch self-target selfLoop: semantic semantic: semanticMedia: semantics semantics. send");
+@source inline("sensitivity sensitivity. sent sentMessage: separate separately. separator separator: sequence");
+@source inline("sequence. sequences series series. series: seriesIndex servedLocale: server server-safe server-view");
+@source inline("server. service services session session. session: sessionId sessionId: set setActions setFieldValue");
 @source inline("setFieldValue: setItem setPieces setPieces.length setPreference sets settable settings");
 @source inline("settingsSection: settled severity severity: sha256 sha256: shadcn-charts shadcn@aria");
 @source inline("shadcn@aria/components.calendar shadcn@aria/components.popover shadow shadow: shape shape. shape:");
