@@ -1,6 +1,6 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import { readFileSync } from "node:fs";
-import { createAdminPageRegistry, adminPageRef, ADMIN_PAGE_COPY_REFS } from "./index.js";
+import { createAdminPageRegistry, adminPageRef, adminPageStaticContent, ADMIN_PAGE_COPY_REFS } from "./index.js";
 import { createDesignerPageRecords } from "./designer.page.js";
 import { createWriterPageRecords } from "./writer.page.js";
 import { createPublisherPageRecords } from "./publisher.page.js";
@@ -12,6 +12,12 @@ const skeleton = { l0: [{ id: "strings", label: "Strings", count: 2, estimate: 3
 const publication = { id: "admin", mainSlot: "body", frame: { leaf: "frames.app-shell" as const }, layout: { leaf: "layouts.stack" as const, config: "stack.workspace" }, format: "web.page.responsive" as const, surface: "app" as const, context: { consumer: "example", medium: "web" as const }, packIds: ["pack.admin"] };
 
 describe("native scroll admin page records", () => {
+  it("passes count to Writer's ICU formatter and uses its complete stat label", () => {
+    const formatter = vi.fn((alias: string, args?: Readonly<Record<string, string | number>>) => alias === "strings.admin.stats.total" ? `formatted(${args?.count})` : alias);
+    const contents = adminPageStaticContent("writer", skeleton, formatter);
+    expect(formatter).toHaveBeenCalledWith("strings.admin.stats.total", { count: 2 });
+    expect(contents.find(row => row.reference.ref === "admin.writer/strings/stats")?.value).toEqual([{ id: "count", label: "formatted(2)" }]);
+  });
   it("uses the consumer's resolved item name consistently in the trail, record and outline", () => {
     const result = createAdminPageRegistry({ publication, copy, manifests: { designer: skeleton, writer: skeleton, publisher: skeleton }, itemTitles: { writer: "Welcome copy" } });
     const page = result.pages.writer;
@@ -50,7 +56,7 @@ describe("native scroll admin page records", () => {
     expect(ADMIN_PAGE_COPY_REFS.showAll).toEqual({ kind: "copy", ref: "strings.admin.action.showAll" });
     expect(adminPageRef("writer", "columns")).toEqual({ kind: "records", ref: "admin.writer/columns" });
     const records = createWriterPageRecords({ publicationId: "admin", manifest: { l0: [{ id: "lexicon", label: "Lexicon", count: 0, estimate: 80, l1: [] }] }, copy });
-    expect(records.list.composition.binding.regions.main[1]?.section).toBe("sections.empty-state");
+    expect(records.list.composition.binding.regions.main[1]).toMatchObject({ section: "sections.empty-state", members: { kind: "empty", scope: "region" } });
     expect(JSON.stringify(records)).not.toContain("English-store");
   });
   it("has no imports from frozen paths or retired route bodies", () => {

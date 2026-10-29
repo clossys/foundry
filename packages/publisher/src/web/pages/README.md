@@ -12,7 +12,9 @@ Mount its Designer frame once. `pages.designer`, `pages.writer` and
 `query`. The individual factories are `createDesignerPageRecords`,
 `createWriterPageRecords` and `createPublisherPageRecords`.
 
-`copy(alias)` resolves W1's `strings.admin.*` aliases in the consumer locale.
+`copy(alias, args?)` resolves and formats W1's `strings.admin.*` aliases in the
+consumer locale. `args` is a readonly string/number record; the synchronous
+stat helper passes `{count}` to W1's plural message and uses the complete result.
 Each skeleton is `{ l0: [{ id, label, count, estimate, partition?, l1:
 [{ id, label, count, estimate, l2: [{ id, label, count, estimate }] }] }] }`.
 Labels must come from W1; counts, estimates, records and formatted dates belong
@@ -36,6 +38,8 @@ The `chunk({l0,l1?})` loader returns current, hashed `RuntimeContent` rows:
 - A card header carries `{heading, level:4, id:"<l0>--<l1>--<l2>", count}`.
   Pagination carries W1-resolved `showAll`, `label`, `previous`, `next`, `summary`
   and `noResults`. The existing table owns collapse at ten and pages of 100.
+  For example, format Show all with
+  `copy("strings.admin.action.showAll", {count: rows.length})`.
 - An empty L0 requests `<l0>/empty` (copy with W1-resolved heading/description).
   Its frame and L0 heading remain in place.
 

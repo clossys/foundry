@@ -11,7 +11,7 @@ export interface AdminPageRecordOptions {
   readonly publicationId: string;
   readonly manifest: AdminPageSkeleton;
   /** Resolve Writer aliases in the consumer's locale. No English store is imported. */
-  readonly copy: (ref: string) => string;
+  readonly copy: (ref: string, args?: Readonly<Record<string, string | number>>) => string;
   readonly sources?: AdminPageSources;
   readonly homeRouteId?: string;
   /** Concrete item L0 selects the item's outline; the registered path remains parameterized. */
@@ -45,7 +45,7 @@ export function adminPageColumns(kind: AdminPageKind, copy: AdminPageRecordOptio
 export function adminPageStaticContent(kind: AdminPageKind, manifest: AdminPageSkeleton, copy: AdminPageRecordOptions["copy"]): readonly RuntimeContent[] {
   const values: [ContentRef, RuntimeJson][] = [[adminPageRef(kind, "columns"), adminPageColumns(kind, copy)], [ADMIN_PAGE_COPY_REFS.outline, copy(ADMIN_PAGE_COPY_REFS.outline.ref)]];
   for (const row of manifest.l0) {
-    values.push([adminPageRef(kind, `${row.id}/heading`, "copy"), { text: row.label, id: row.id }], [adminPageRef(kind, `${row.id}/stats`), [{ id: "count", label: `${copy("strings.admin.stats.total")} ${row.count}` }]]);
+    values.push([adminPageRef(kind, `${row.id}/heading`, "copy"), { text: row.label, id: row.id }], [adminPageRef(kind, `${row.id}/stats`), [{ id: "count", label: copy("strings.admin.stats.total", { count: row.count }) }]]);
   }
   return values.map(([reference, value]) => ({ reference, value, hash: runtimeHash(value) }));
 }
@@ -56,7 +56,7 @@ export function createAdminPageRecords(kind: AdminPageKind, options: AdminPageRe
   const manifest: RegisteredPageManifest = { l0: options.manifest.l0.map(l0 => {
     const index = main.length;
     main.push({ section: "sections.section-header", config: "level-2", members: { align: "start", density: "compact" }, content: { heading: adminPageRef(kind, `${l0.id}/heading`, "copy"), stats: adminPageRef(kind, `${l0.id}/stats`) } });
-    if (!l0.count) main.push({ section: "sections.empty-state", content: { header: lazy(kind, `${l0.id}/empty`, l0.id, undefined, "copy") } });
+    if (!l0.count) main.push({ section: "sections.empty-state", members: { kind: "empty", scope: "region" }, content: { header: lazy(kind, `${l0.id}/empty`, l0.id, undefined, "copy") } });
     const l1 = l0.l1.map(band => {
       const bandIndex = main.length, partition = l0.partition === "l1" ? band.id : undefined;
       const prefix = `${l0.id}/${band.id}`;
