@@ -3,6 +3,7 @@ import { afterEach, describe, expect, it } from "vitest";
 import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { tmpdir } from "node:os";
+import { formatRef } from "@clossys/strategist";
 import { openStrategy } from "../../../strategist/src/api.js";
 import { loadCatalog } from "../../../strategist/src/catalog.js";
 import { validateBriefContract } from "../../../strategist/src/brief-contracts.js";
@@ -27,10 +28,10 @@ function fixture() {
   const active = Object.fromEntries(ids.map(id => [id, 1]));
   const tree = { schemaVersion: 1, catalog: "@clossys/strategist#strategy-v1", archetype: "default", core: "archetype", active };
   put(root, "tree.json", JSON.stringify(tree));
-  put(root, "sessions/2026-10-29-1.md", `- U1: Choose the bounded fixture approach.\n- S2: Playback for confirm: ${ids.map(id => `${id}@1`).join(", ")}\n- U3: Yes.\n`);
+  put(root, "sessions/2026-10-29-1.md", `- U1: Choose the bounded fixture approach.\n- S2: Playback for confirm: ${ids.map(cell => formatRef({ kind: "cell", ref: { cell, version: 1 } })).join(", ")}\n- U3: Yes.\n`);
   const definitions = loadCatalog();
   function cell(id: string, version: number, status: "active" | "draft" | "retired" = "active") {
-    const links = definitions.coherence.links.filter(link => link.downstream === id).map(link => `${link.upstream}@1`);
+    const links = definitions.coherence.links.filter(link => link.downstream === id).map(link => formatRef({ kind: "cell", ref: { cell: link.upstream, version: 1 } }));
     const refs = ["msg:2026-10-29-1#U1", ...links];
     const keys = definitions.cells.find(cell => cell.id === id)!.mustContain;
     put(root, `cells/${id}/v${version}.md`, `---\nid: ${id}\nversion: ${version}\nstatus: ${status}\nupdated: 2026-10-29\ncites: [${refs.join(", ")}]\nfeeds: [designer.identity]\nfunctions: [brand]\n${status === "active" ? "confirmed: msg:2026-10-29-1#U3\n" : ""}---\n\n## Direction\n${keys.map(key => `- ${key.key}: Choose 1 bounded fixture approach over broader alternatives.`).join("\n")}\n\n## Because\n- The fixture user selected this approach (${refs.join(", ")})\n\n## Watch\n- If requests > 5 each month, then review.\n`);
@@ -107,7 +108,7 @@ describe("Designer selection brief provenance", () => {
     f.tree.active[required[1]!] = 2; put(f.root, "tree.json", JSON.stringify(f.tree));
     f.cell(required[1]!, 1, "retired"); f.cell(required[1]!, 2);
     expect(f.findings()).toEqual(expect.arrayContaining([expect.objectContaining({ severity: "notice", message: expect.stringContaining("stale") })]));
-    expect(f.findings().some(finding => finding.message.includes(`${required[1]}@1`))).toBe(true);
+    expect(f.findings().some(finding => finding.message.includes(formatRef({ kind: "cell", ref: { cell: required[1]!, version: 1 } })))).toBe(true);
   });
   it("reports changed supporting bytes even when all pinned versions remain active", () => {
     const f = fixture(); put(f.root, "sessions/2026-10-29-1.md", readFileSync(join(f.root, "sessions/2026-10-29-1.md"), "utf8") + "- U4: Additional evidence.\n");
