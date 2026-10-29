@@ -166,6 +166,15 @@ export function applyCompositeLibraryChange(catalog: CompositeCatalogData, libra
       if(operation.change.op!=="remove"&&!options)throw new CatalogError("surfaces: S8 explicit resolution options required");
       const {source:_vs,adoptedAt:_vd,...vp}=values;const {source:_cs,adoptedAt:_cd,...cp}=components;
       staged={...staged,values:vp,components:cp};
+      // Only refresh may replace its exact held package pointer before checking current provenance.
+      // The refresh operation validates its old identity and the new upstream join itself.
+      if (operation.change.op === "refresh") {
+        const unsurfaced = { catalog, library: { ...staged, surfaces: undefined }, componentOptions: options?.componentOptions, surfaceOptions: options?.surfaceOptions };
+        const profile = resolveCompositeFrom(unsurfaced, current(unsurfaced));
+        staged = applySurfaceOperation(catalog, staged, operation.change, [], profile, options!.surfaceOptions);
+        resolveSurfaces({ ...unsurfaced, library: staged }, profile, false);
+        continue;
+      }
       const {surfaces:_deferred,...withoutSurfaces}=staged;
       const pending={catalog,library:staged,componentOptions:options?.componentOptions,surfaceOptions:options?.surfaceOptions};
       const unsurfaced={...pending,library:withoutSurfaces};

@@ -217,6 +217,8 @@ export interface SurfacePackageOrigin {
     license: string;
     descriptorHash: string;
     adoptedAt: string;
+    /** Ordered descriptor transitions made by guarded same-source refreshes. */
+    history?: readonly { from: string; to: string }[];
 }
 export type SurfacePackageDocument = {
     $extensions: {
@@ -302,6 +304,10 @@ export interface SurfaceResolved {
     check: SurfaceCheckResult;
 }
 export type SurfaceOperation = {
+    op: "refresh";
+    slot: SurfaceSlot;
+    source: string;
+} | {
     op: "adopt";
     slot: SurfaceSlot;
     source: string;

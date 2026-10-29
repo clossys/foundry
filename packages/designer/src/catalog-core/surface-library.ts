@@ -205,11 +205,17 @@ export function assertSurfacePackagePin(impl: SurfacePackageEntry["impl"], pin: 
         surfaceFault("S2 package export differs from pin");
 }
 function packageOrigin(value: unknown): asserts value is SurfacePackageOrigin {
-    object(value, ["kind", "source", "fill", "pin", "license", "descriptorHash", "adoptedAt"]);
+    object(value, ["kind", "source", "fill", "pin", "license", "descriptorHash", "adoptedAt"], ["history"]);
     choice(value.kind, ["package"]);
     [value.source, value.fill, value.license, value.adoptedAt].forEach(string);
     packagePin(value.pin);
     hash(value.descriptorHash, true);
+    if (value.history !== undefined) {
+        list(value.history, row => { object(row, ["from", "to"]); hash(row.from, true); hash(row.to, true); if (row.from === row.to) surfaceFault("S2 invalid refresh history"); }, true);
+        const history = value.history as { from: string; to: string }[];
+        if (history.some((row, index) => index > 0 && row.from !== history[index - 1]!.to) || history.at(-1)!.to !== value.descriptorHash)
+            surfaceFault("S2 discontinuous refresh history");
+    }
     if (!Number.isFinite(Date.parse(value.adoptedAt as string)))
         surfaceFault("S2 invalid date");
 }
@@ -425,6 +431,27 @@ export function applySurfaceOperation(catalog: CompositeCatalogData, library: Co
         return copy;
     if (!catalog.surfaces?.slots.some(row => row.id === operation.slot))
         surfaceFault("S1 unknown surface contract");
+    if (operation.op === "refresh") {
+        if (!current) surfaceFault("S2 refresh requires held surface");
+        const held = surfaceEntryOf(current), meta = current.$extensions["com.clossys.fill"];
+        if (!isSurfacePackageEntry(held) || !held.origin || held.origin.kind !== "package") surfaceFault("S2 refresh requires package origin");
+        const origin = held.origin;
+        if (origin.source !== operation.source || meta.id !== `${copy.source.id}/${operation.slot}` || meta.source !== copy.source.id || meta.sourceAddress !== `fills/${operation.slot}.json` || meta.author !== "consumer" || meta.trust !== "consumer" || meta.status !== "draft" || meta.conforms.length || meta.evidence.length || stableStringify(meta.originKinds) !== stableStringify(["package"]))
+            surfaceFault("S2 refresh source or consumer identity differs");
+        if (origin.descriptorHash !== surfacePackageDescriptorHash(held)) surfaceFault("S6 descriptor hand edit requires author");
+        const candidates = packageCandidates(catalog, operation.slot, operation.source);
+        if (candidates.length !== 1) surfaceFault("S2 unique refresh upstream required");
+        const candidate = candidates[0]!, upstream = candidate.doc.$extensions["com.clossys.fill"], next = candidate.fill as SurfacePackageEntry;
+        // A refresh may update the descriptor and package version, never switch its upstream identity.
+        if (origin.fill !== upstream.id || upstream.author !== "foundry" || upstream.trust !== "foundry" || origin.pin.package !== upstream.pin!.package || stableStringify(held.impl) !== stableStringify(next.impl))
+            surfaceFault("S2 foreign refresh upstream");
+        const descriptorHash = surfacePackageDescriptorHash(next);
+        const history = descriptorHash === origin.descriptorHash ? origin.history : [...(origin.history ?? []), { from: origin.descriptorHash, to: descriptorHash }];
+        const refreshed = surfacePackageDocument(copy, next, { ...origin, pin: structuredClone(upstream.pin) as SurfacePackagePin, license: upstream.license, descriptorHash, ...(history === undefined ? {} : { history }) });
+        verifySurfacePackageProvenance(catalog, surfaceEntryOf(refreshed) as SurfacePackageEntry & { origin: SurfacePackageOrigin });
+        copy.surfaces = canonicalSurfacePortion({ ...copy.surfaces!, fills: copy.surfaces!.fills.map(doc => surfaceEntryOf(doc).slot === operation.slot ? refreshed as unknown as SurfaceDocument : doc) });
+        return copy;
+    }
     let document: SurfaceDocument | undefined;
     let newFiles: readonly SurfaceFile[] = [];
     const pointer = operation.op === "adopt" && !bundles.some(bundle => bundle.operation === "adopt" && bundle.slot === operation.slot) ? packageCandidates(catalog, operation.slot, operation.source) : [];

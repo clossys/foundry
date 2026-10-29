@@ -11,6 +11,7 @@ import type { CompositeEngineInput } from "../catalog-core/types.js";
 import { loadCatalogBundles } from "../catalog-bundles.js";
 import type { SurfaceResolutionOptions } from "../catalog-core/surface-types.js";
 import { readSurfacePackageEvidence } from "./surface-package-evidence.js";
+import { isSurfacePackageEntry, surfaceEntryOf } from "../catalog-core/surface-library.js";
 import { foundrySurfaceCatalog } from "./surface-catalog.js";
 import { compositeLibraryHash } from "../catalog-core/library-components.js";
 import { choose, type EngineInput } from "../catalog-core/resolve.js";
@@ -26,6 +27,7 @@ import { selectStarter } from "./select.js";
 const USAGE = `Usage: designer-library <command> --root <consumer-library>
 
 Commands:
+  surfaces --refresh <surfaceId> [--observations <file>] [--json]  Refresh one held package surface from its same upstream.
   status [--json]                         Describe consumer-owned fills and baseHash.
   check [--layer tokens|assets|components|sections|frames] [--observations <file>] [--json]
   emit [--check] [--target <target>] [--observations <file>]  Regenerate files, or fail on drift.
@@ -50,14 +52,14 @@ Every write stamps designer-receipt.json with its command, inputs and content ha
 reselect and generate-starter are dry runs unless --write is supplied; apply requires an explicit changeset.
 Exit codes: 0 = success, 1 = failed verdict or conflict, 2 = usage, invalid input or unavailable.
 `;
-type Command = "reselect" | "generate-starter" | "select" | "capture" | "status" | "check" | "emit" | "apply" | "recommend" | "dogfood" | "dogfood-consumer" | "needs" | "graph" | "receipt";
-type Args = { leaf?: string; source?: string; starter?: string; driver?: string; out?: string; base?: string; command: Command; root: string; layer?: string; changeset?: string; json: boolean; drift: boolean; write: boolean; targets?: CompositeEmitTarget[]; paths: string[]; writeNeeds: boolean; status?: string; candidate?: string; closedBy?: string; contract?: string; observations?: string };
+type Command = "surfaces" | "reselect" | "generate-starter" | "select" | "capture" | "status" | "check" | "emit" | "apply" | "recommend" | "dogfood" | "dogfood-consumer" | "needs" | "graph" | "receipt";
+type Args = { refresh?: string; leaf?: string; source?: string; starter?: string; driver?: string; out?: string; base?: string; command: Command; root: string; layer?: string; changeset?: string; json: boolean; drift: boolean; write: boolean; targets?: CompositeEmitTarget[]; paths: string[]; writeNeeds: boolean; status?: string; candidate?: string; closedBy?: string; contract?: string; observations?: string };
 export interface LibraryCliIO { out(text: string): void; error(text: string): void }
 const defaultIO: LibraryCliIO = { out: text => console.log(text), error: text => console.error(text) };
 
 function parseArgs(argv: string[]): Args {
   const [command, ...flags] = argv;
-  if (!["reselect", "generate-starter", "select", "capture", "status", "check", "emit", "apply", "recommend", "dogfood", "dogfood-consumer", "needs", "graph", "receipt"].includes(command ?? "")) throw new LibraryInputError("A known command is required");
+  if (!["surfaces", "reselect", "generate-starter", "select", "capture", "status", "check", "emit", "apply", "recommend", "dogfood", "dogfood-consumer", "needs", "graph", "receipt"].includes(command ?? "")) throw new LibraryInputError("A known command is required");
   const values = new Map<string, string>(), toggles = new Set<string>(), targets: CompositeEmitTarget[] = [], paths: string[] = [];
   for (let i = 0; i < flags.length; i++) {
     const flag = flags[i]!;
@@ -66,7 +68,7 @@ function parseArgs(argv: string[]): Args {
       if (toggles.has(flag)) throw new LibraryInputError(`Duplicate ${flag}`);
       toggles.add(flag); continue;
     }
-    if (!["--root", "--layer", "--changeset", "--target", "--status", "--candidate", "--closed-by", "--contract", "--observations", "--base", "--leaf", "--source", "--starter", "--driver", "--out"].includes(flag)) throw new LibraryInputError(`Unknown option ${flag}`);
+    if (!["--refresh", "--root", "--layer", "--changeset", "--target", "--status", "--candidate", "--closed-by", "--contract", "--observations", "--base", "--leaf", "--source", "--starter", "--driver", "--out"].includes(flag)) throw new LibraryInputError(`Unknown option ${flag}`);
     const value = flags[++i];
     if (!value || value.startsWith("-")) throw new LibraryInputError(`${flag} requires a value`);
     if (flag === "--target") {
@@ -77,6 +79,7 @@ function parseArgs(argv: string[]): Args {
       values.set(flag, value);
     }
   }
+  if ((command === "surfaces") !== values.has("--refresh")) throw new LibraryInputError("surfaces requires --refresh; other commands do not accept it");
   const root = values.get("--root");
   if (!root) throw new LibraryInputError("--root is required");
   const layer = values.get("--layer"), changeset = values.get("--changeset");
@@ -87,7 +90,7 @@ function parseArgs(argv: string[]): Args {
   if (command === "graph" && toggles.has("--check") === toggles.has("--write")) throw new LibraryInputError("graph requires exactly one of --check or --write");
   if (toggles.has("--json") && (["emit", "recommend", "graph", "select", "capture"].includes(command!))) throw new LibraryInputError("--json requires status, check or apply");
   if (toggles.has("--write-needs") && command !== "dogfood") throw new LibraryInputError("--write-needs requires dogfood");
-  if (values.has("--observations") && !["check", "emit", "apply"].includes(command!)) throw new LibraryInputError("--observations requires check, emit or apply");
+  if (values.has("--observations") && !["check", "emit", "apply", "surfaces"].includes(command!)) throw new LibraryInputError("--observations requires check, emit or apply");
   if (values.has("--base") && command !== "receipt") throw new LibraryInputError("--base requires receipt");
   if ((command === "dogfood-consumer") !== values.has("--contract")) throw new LibraryInputError("dogfood-consumer requires --contract; other commands do not accept it");
   if (["dogfood", "dogfood-consumer"].includes(command!) && !paths.length) throw new LibraryInputError("dogfood requires source paths");
@@ -101,7 +104,7 @@ function parseArgs(argv: string[]): Args {
   if (command === "reselect" && !values.has("--source")) throw new LibraryInputError("--source is required");
   if (command === "select" && !["shadcn-base", "custom"].includes(values.get("--starter") ?? "")) throw new LibraryInputError("--starter must be shadcn-base or custom");
   if (command === "capture" && (!values.has("--driver") || !values.has("--out"))) throw new LibraryInputError("capture requires --driver and --out");
-  return { leaf: values.get("--leaf"), source: values.get("--source"), starter: values.get("--starter"), driver: values.get("--driver"), out: values.get("--out"), base: values.get("--base"), paths, contract: values.get("--contract"), observations: values.get("--observations"), writeNeeds: toggles.has("--write-needs"), status: values.get("--status"), candidate: values.get("--candidate"), closedBy: values.get("--closed-by"), command: command as Command, root, layer, changeset, json: toggles.has("--json"), drift: toggles.has("--check"), write: toggles.has("--write"), ...(targets.length ? { targets } : {}) };
+  return { refresh: values.get("--refresh"), leaf: values.get("--leaf"), source: values.get("--source"), starter: values.get("--starter"), driver: values.get("--driver"), out: values.get("--out"), base: values.get("--base"), paths, contract: values.get("--contract"), observations: values.get("--observations"), writeNeeds: toggles.has("--write-needs"), status: values.get("--status"), candidate: values.get("--candidate"), closedBy: values.get("--closed-by"), command: command as Command, root, layer, changeset, json: toggles.has("--json"), drift: toggles.has("--check"), write: toggles.has("--write"), ...(targets.length ? { targets } : {}) };
 }
 
 /** Filter only findings attributable to the other layer; cross-layer findings stay visible. */
@@ -268,6 +271,17 @@ export async function main(argv: string[], io: LibraryCliIO = defaultIO): Promis
     const compositeCatalog = { values: catalog, components: { slots: loadComponentRegistry().slots, fills: bundledComponentFills, rules: loadComponentCompositionRules() }, surfaces: foundrySurfaceCatalog() };
     // Package-pointer leaves are checked against the export inventory of the packages actually installed beside this CLI.
     const surfaceOptions = async (): Promise<SurfaceResolutionOptions> => ({ packages: await readSurfacePackageEvidence(compositeCatalog.surfaces.fills), measurements: [] });
+    if (args.command === "surfaces") {
+      const held = await readLibrary(args.root, compositeCatalog);
+      const doc = held.surfaces?.fills.find(row => row.$extensions["com.clossys.fill"].slot === args.refresh);
+      if (!doc) throw new LibraryInputError("Refresh requires a held surface");
+      const entry = surfaceEntryOf(doc);
+      if (!isSurfacePackageEntry(entry) || !entry.origin) throw new LibraryInputError("Refresh requires a package origin");
+      const library = await writeCompositeLibrary(args.root, compositeCatalog, { baseHash: compositeLibraryHash(held), changes: [{ portion: "surfaces", change: { op: "refresh", slot: entry.slot, source: entry.origin.source } }] }, await readObservations(args.root, args.observations), await surfaceOptions(), { command: "designer-library surfaces --refresh" });
+      const result = { ok: true, baseHash: compositeLibraryHash(library) };
+      io.out(args.json ? JSON.stringify(result) : `Surface refreshed; baseHash ${result.baseHash}`);
+      return 0;
+    }
     if (args.command === "reselect" || args.command === "generate-starter") {
       const input = { root: args.root, catalog: compositeCatalog, leaf: args.leaf!, write: args.write, componentOptions: await readObservations(args.root), surfaceOptions: await surfaceOptions() };
       const result = args.command === "reselect" ? await reselect({ ...input, source: args.source! }) : await generateStarter(input);
