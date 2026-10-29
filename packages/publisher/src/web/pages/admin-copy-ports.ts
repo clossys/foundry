@@ -24,6 +24,12 @@ export function adminPageSectionHosts(input: { readonly copy: AdminPageCopy; rea
   const recordDetail = { title: copy("strings.admin.item.heading", { name: copy(input.title) }), fields: detailFields, actionsLabel: copy("strings.admin.item.actionsLabel") };
   const tableCopy = { label: copy("strings.admin.table.label"), emptyTitle: copy("strings.admin.empty.title"), emptyDescription: copy("strings.admin.empty.description"), paginationLabel: copy("strings.admin.pagination.label") };
   const { chatCopy } = adminPageChatHost(copy);
-  const paginationSummary = ({ start, end, total }: { readonly start: number; readonly end: number; readonly total: number; readonly page: number; readonly pageCount: number }) => copy("strings.admin.pagination.range", { start, end, total });
-  return { ...(input.includeRecordDetail === false ? {} : { "sections.record-detail": { recordDetail } }), "sections.data-table": { tableCopy, paginationSummary }, "sections.chat": { chatCopy } };
+  const { format, ...messageData } = copy.message({ id: "strings.admin.pagination.range" }, { start: 0, end: 0, total: 0, page: 1, pageCount: 1, pages: 1 });
+  const paginationSummary = { key: "pagination.totalText" as const, ...messageData };
+  const formatCopyMessage = (message: typeof paginationSummary) => {
+    if (message.key !== paginationSummary.key || message.writerId !== paginationSummary.writerId || message.locale !== paginationSummary.locale || message.message !== paginationSummary.message)
+      throw new TypeError("Writer pagination message identity differs from its bound source");
+    return format(message.values);
+  };
+  return { ...(input.includeRecordDetail === false ? {} : { "sections.record-detail": { recordDetail } }), "sections.data-table": { tableCopy, paginationSummary, formatCopyMessage }, "sections.chat": { chatCopy } };
 }

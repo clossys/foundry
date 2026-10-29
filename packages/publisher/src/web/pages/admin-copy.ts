@@ -31,6 +31,7 @@ export interface AdminPageCopy {
   readonly locale: string;
   resolve(ref: AdminPageCopyRef): ResolvedAdminPageCopy;
   provenance(): readonly ResolvedAdminPageCopy[];
+  message(ref: AdminPageCopyRef, previewValues: Readonly<Record<string, string | number>>): { readonly writerId: string; readonly locale: string; readonly message: string; readonly values: Readonly<Record<string, string | number>>; format(values: Readonly<Record<string, string | number>>): string };
 }
 const sources = new WeakSet<object>();
 const contentProofs = new WeakMap<object, Map<string, string>>();
@@ -97,8 +98,23 @@ export function createAdminPageCopy(input: { readonly locale: string; readonly e
     const resolved = runtimeSnapshot({ ref, text: result?.text ?? record.text, provenance: { cellId: binding.cellId, recordId: record.id, revision: envelope.revision, locale, status: record.status, activation: "none", mode: result ? "writer-icu-preview" as const : "writer-literal-preview" as const, envelopeHash: envelope.hash, bindingSource: bindingOwner.source, bindingEnvelopeHash: bindingOwner.hash, recordSource: envelope.source } });
     resolutions.push(resolved); return resolved;
   };
+  const message: AdminPageCopy["message"] = (ref, previewValues) => {
+    const locale = ref.locale ?? input.locale, envelopes = all.filter(envelope => envelope.locale === locale), store = stores.get(locale);
+    const aliases = envelopes.filter(envelope => Object.hasOwn(envelope.aliases, ref.id));
+    if (!store || aliases.length > 1) throw new TypeError("Writer message reference is ambiguous or has no locale source");
+    const recordId = aliases[0]?.aliases[ref.id] ?? ref.id, record = getAdminCopyRecord(recordId, store);
+    if (!record || Object.values(ref.values ?? {}).some(value => typeof value !== "string" && typeof value !== "number")) throw new TypeError("Writer message requires its genuine source and serializable ICU values");
+    const runtimeKeys = new Set(Object.keys(previewValues)), argumentsDeclared = new Set("args" in record ? record.args?.map(argument => argument.name) ?? [] : []);
+    // Native paging supplies all of its state fields. Only declared arguments
+    // enter Writer's strict resolver; unrelated authored args remain checked.
+    const valuesForWriter = (values: Readonly<Record<string, string | number>>) => Object.fromEntries(Object.entries(values).filter(([key]) => !runtimeKeys.has(key) || argumentsDeclared.has(key)));
+    const resolved = resolve({ ...ref, values: valuesForWriter({ ...ref.values as Readonly<Record<string, string | number>>, ...previewValues }) });
+    if (resolved.provenance.recordId !== record.id) throw new TypeError("Writer message source differs from its checked binding");
+    return { writerId: record.id, locale: resolved.provenance.locale, message: record.text, values: runtimeSnapshot(ref.values ?? {}) as Readonly<Record<string, string | number>>,
+      format: values => resolve({ ...ref, locale: resolved.provenance.locale, values: valuesForWriter(values) }).text };
+  };
   const copy = Object.assign((ref: string | AdminPageCopyRef, values?: AdminPageCopyRef["values"]) => resolve(typeof ref === "string" ? { id: ref, ...(values ? { values } : {}) } : ref).text,
-    { locale: input.locale, resolve, provenance: () => Object.freeze([...resolutions]) }) as AdminPageCopy;
+    { locale: input.locale, resolve, message, provenance: () => Object.freeze([...resolutions]) }) as AdminPageCopy;
   sources.add(copy); contentProofs.set(copy, new Map()); return Object.freeze(copy);
 }
 export function writerCopy(ref: AdminPageCopyRef): RuntimeJson { return { $copy: { id: ref.id, ...(ref.locale === undefined ? {} : { locale: ref.locale }), ...(ref.values === undefined ? {} : { values: ref.values }) } }; }
