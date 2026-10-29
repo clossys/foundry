@@ -31,7 +31,7 @@ function setup(skeleton: AdminPageSkeleton = { l0: [{ id: "strings", label: {id:
   const engine = { catalog: fixture.catalog, library: fixture.library, surfaceOptions: { ...fixture.options, packages: [...fixture.packages.filter(row => !packages.some(owned => owned.module === row.module)), ...packages] } };
   const profile = resolve(engine), copy = adminCopyFixture();
   const publication = { id: "admin", mainSlot: "body", frame: { leaf: "frames.app-shell" as const, content: { "skip-link": { kind: "copy" as const, ref: "admin.frame/skip-link" } } }, layout: { leaf: "layouts.stack" as const, config: "stack.workspace" }, format: "web.page.responsive" as const, surface: "app" as const, context: { consumer: profile.consumer, medium: "web" as const }, packIds: ["pack.admin"] };
-  const { registry, pages, publicationHosts } = createAdminPageRegistry({ publication, copy, manifests: { designer: skeleton, writer: skeleton, publisher: skeleton }, itemTitles: { designer: {id:"strings.admin.page.writer"}, writer: {id:"strings.admin.page.writer"}, publisher: {id:"strings.admin.page.writer"} } });
+  const { registry, pages, publicationHosts } = createAdminPageRegistry({ publication, copy, manifests: { designer: skeleton, writer: skeleton, publisher: skeleton }, itemTitles: { designer: {id:"strings.admin.page.designer"}, writer: {id:"strings.admin.page.writer"}, publisher: {id:"strings.admin.page.publisher"} } });
   // Real adopted renderer sources; SYNTHETIC flow declarations do not qualify the catalog's substrate coverage.
   const leaves = ["frames.app-shell", "sections.section-header", "sections.band", "sections.data-table", "sections.record-detail", "sections.table-of-contents", "sections.chat"];
   const plan = planSurfaceRuntime({ engine, packages: engine.surfaceOptions.packages, leaves, renderers: Object.fromEntries(leaves.map(leaf => [leaf, { module: "@clossys/designer/frames", export: "surfaceRuntimeRenderers" }])) });
@@ -46,7 +46,7 @@ function setup(skeleton: AdminPageSkeleton = { l0: [{ id: "strings", label: {id:
   const values = new Map<string, RuntimeContent>();
   for (const kind of ["designer", "writer", "publisher"] as const) {
     for (const value of adminPageStaticContent(kind, skeleton, copy)) values.set(value.reference.ref, value);
-    for (const [name, value] of Object.entries({ "item/heading": { text: writerCopy({id:"strings.admin.page.writer"}), id: "strings" }, "item/stats": [{ id: "status", label: writerCopy({id:"strings.admin.status.draft"}) }], "item/fields": [{ label: writerCopy({id:"strings.admin.column.name"}), value: writerCopy({id:"strings.admin.page.writer"}) }], "item/status": writerCopy({id:"strings.admin.status.draft"}), "item/context": { id: "sample" }, context: { kind } })) values.set(adminPageRef(kind, name).ref, adminPageContent(copy, adminPageRef(kind, name, name.endsWith("heading") || name.endsWith("status") ? "copy" : "records"), value));
+    for (const [name, value] of Object.entries({ "item/heading": { text: writerCopy({id:`strings.admin.page.${kind}`}), id: "strings" }, "item/stats": [{ id: "status", label: writerCopy({id:"strings.admin.status.draft"}) }], "item/fields": [{ label: writerCopy({id:"strings.admin.column.name"}), value: writerCopy({id:`strings.admin.page.${kind}`}) }], "item/status": writerCopy({id:"strings.admin.status.draft"}), "item/context": { id: "sample" }, context: { kind } })) values.set(adminPageRef(kind, name).ref, adminPageContent(copy, adminPageRef(kind, name, name.endsWith("heading") || name.endsWith("status") ? "copy" : "records"), value));
     for (const table of ["preview", "locales", "sections", "releases"]) {
       for (const [name, value] of Object.entries({ header: { heading: writerCopy({id:table === "preview" ? "strings.admin.column.preview" : `strings.admin.item.${table}`}) }, columns: [{ key: "name", label: writerCopy({id:"strings.admin.column.name"}), kind: "text" }], rows: [{ id: "sample", name: writerCopy({id:"strings.admin.page.writer"}), href: `/agents/${kind}/strings/sample` }], pagination: {} })) {
         const reference = adminPageRef(kind, `item/${table}/${name}`, name === "header" ? "copy" : name === "pagination" ? "region" : "records"); values.set(reference.ref, adminPageContent(copy, reference, value));
@@ -113,7 +113,7 @@ describe("six native admin records through prepareRegisteredRoute (fixture decla
       expect(result.chunks.map(chunk => chunk.result.status), JSON.stringify(result.chunks)).toEqual(["ready"]);
       const regions = result.renderRegions!(f.runtime.cell);
       const html = renderToStaticMarkup(<>{regions.chunks?.flatMap(chunk => chunk.content ?? [])}</>);
-      expect(html).toContain(item ? "Writer" : "Strings");
+      expect(html).toContain(item ? f.copy(`strings.admin.page.${kind}`) : "Strings");
       expect(html).not.toContain("Order 1042");
       expect(regions.regions["page-module"]?.length).toBeGreaterThan(0);
       f.session.setPage(regions, page);

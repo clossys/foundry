@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { pages as source, studio, chat, adminCopyFixture, copyEnvelopes } from "./__fixtures__/copy.mjs";
-import { createAdminPageCopy, writerCopy, resolveAdminPageValue, bindAdminPageLoaders } from "./admin-copy.js";
+import { createAdminPageCopy, writerCopy, adminTechnicalData, resolveAdminPageValue, bindAdminPageLoaders } from "./admin-copy.js";
 import { runtimeHash } from "@clossys/designer/catalog";
 
 describe("Writer-backed admin page copy", () => {
@@ -17,6 +17,8 @@ describe("Writer-backed admin page copy", () => {
     expect(() => copy({ id: "strings.admin.stats.total" })).toThrow(/Writer/);
     expect(() => copy({ id: "strings.admin.page.writer", locale: "fr" })).toThrow(/locale/);
     expect(() => resolveAdminPageValue(copy, { heading: "Unbound title" }, "copy")).toThrow(/CopyRef/);
+    expect(() => resolveAdminPageValue(copy, { heading: adminTechnicalData("id", "unbound-heading") }, "copy")).toThrow(/cannot replace Writer UI copy/);
+    expect(() => resolveAdminPageValue(copy, { label: adminTechnicalData("message", "unbound label") }, "records")).toThrow(/cannot replace Writer UI copy/);
     expect(resolveAdminPageValue(copy, { heading: writerCopy({ id: "strings.admin.page.writer" }), id: "strings--names", count: 2 }, "copy")).toEqual({ heading: "Writer", id: "strings--names", count: 2 });
   });
   it("resolves external aliases across declared source envelopes and refuses missing sources", () => {

@@ -1,6 +1,6 @@
 /** @vitest-environment jsdom */
 import { expect, it, vi } from "vitest";
-import { render, cleanup } from "@testing-library/react";
+import { render, cleanup, fireEvent } from "@testing-library/react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { surfaceRuntimeRenderers } from "@clossys/designer/frames";
 import type { RuntimeRenderInput } from "@clossys/designer/catalog";
@@ -30,11 +30,15 @@ it("renders Writer-bound item and empty-table copy through the selected native r
   expect(copy.provenance().some(value=>value.provenance.cellId === "strings.admin.item.heading")).toBe(true);
   expect(()=>adminPageSectionHosts({copy,title,item:true})).toThrow(/fields/);
 });
-it("mounts one native shared Chat with real Writer copy on all six route contexts", () => {
+it("mounts one native shared Chat with real Writer copy on all six route contexts", async () => {
   const sources=JSON.parse(JSON.stringify(copyEnvelopes()));
   const codeId=pages.aliases["strings.admin.chat.copyCodeLabel"];
   const codeSource=sources.find(source=>source.envelope.records.some(record=>record.id===codeId));
   codeSource.envelope.records.find(record=>record.id===codeId).text="Writer clipboard sentinel";
+  for (const [key, text] of [["copiedLabel", "Writer copied sentinel"], ["copyUnavailableLabel", "Writer unavailable sentinel"]]) {
+    const id = pages.aliases[`strings.admin.chat.${key}`];
+    sources.find(source => source.envelope.records.some(record => record.id === id)).envelope.records.find(record => record.id === id).text = text;
+  }
   const copy=createAdminPageCopy({locale:"en",envelopes:prepareAdminPageCopyEnvelopes(sources)});
   const skeleton={l0:[{id:"strings",label:{id:"strings.admin.group.writer.strings"},count:0,estimate:100,l1:[]}]};
   const result=createAdminPageRegistry({copy,publication:{id:"admin",mainSlot:"body",frame:{leaf:"frames.app-shell"},layout:{leaf:"layouts.stack",config:"stack.workspace"},format:"web.page.responsive",surface:"app",context:{consumer:"example",medium:"web"},packIds:[]},manifests:{designer:skeleton,writer:skeleton,publisher:skeleton}});
@@ -52,6 +56,18 @@ it("mounts one native shared Chat with real Writer copy on all six route context
     expect(view!.getByRole("button",{name:"Writer clipboard sentinel"})).toBeTruthy();
   }
   expect(host.bind).toHaveBeenCalledTimes(1); expect(host.setRegions).toHaveBeenCalledTimes(6);
+  const previousClipboard = Object.getOwnPropertyDescriptor(navigator, "clipboard");
+  const writeText = vi.fn().mockResolvedValueOnce(undefined).mockRejectedValueOnce(new Error("fixture clipboard unavailable"));
+  Object.defineProperty(navigator, "clipboard", { configurable: true, value: { writeText } });
+  try {
+    fireEvent.click(view!.getByRole("button", { name: "Writer clipboard sentinel" }));
+    expect(await view!.findByText("Writer copied sentinel")).toBeTruthy();
+    fireEvent.click(view!.getByRole("button", { name: "Writer clipboard sentinel" }));
+    expect(await view!.findByText("Writer unavailable sentinel")).toBeTruthy();
+  } finally {
+    if (previousClipboard) Object.defineProperty(navigator, "clipboard", previousClipboard);
+    else Reflect.deleteProperty(navigator, "clipboard");
+  }
   for(const key of ADMIN_CHAT_LABEL_KEYS) expect(copy.provenance().some(value=>value.provenance.cellId===`strings.admin.chat.${key}`)).toBe(true);
   const missing=JSON.parse(JSON.stringify(result.publicationHosts["sections.chat"]));delete missing.chatCopy.labels.copyCodeLabel;
   expect(()=>surfaceRuntimeRenderers["sections.chat"]!.render(input("sections.chat",{parts:[],composer:{}},missing))).toThrow(/copyCodeLabel/);
