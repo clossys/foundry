@@ -3688,7 +3688,7 @@
         },
         {
           "path": "packages/designer/src/blocks/MediaFigure.tsx",
-          "sha256": "a942e15893c0a7a260efd0f96f8291a1918383a40640d6f5c2d4ea7d50499758"
+          "sha256": "584bd94f4c9a17a0685ffac72f9f5a614efe30bfcab04dd003f1f375001915eb"
         },
         {
           "path": "packages/designer/src/blocks/section-ground.ts",

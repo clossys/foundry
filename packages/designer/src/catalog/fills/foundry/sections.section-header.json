@@ -26,7 +26,9 @@
   },
   "sections": {
     "section-header": {
-      "composes": [],
+      "composes": [
+        "components.semantic-content"
+      ],
       "configs": {
         "default": "level=2",
         "level-2": "level=2",
@@ -37,10 +39,14 @@
       },
       "consumption": {
         "scanStatus": "lower-bound",
-        "scannedComposes": [],
+        "scannedComposes": [
+          "components.semantic-content"
+        ],
         "scannedReads": {
           "assets": [],
-          "components": [],
+          "components": [
+            "components.semantic-content"
+          ],
           "tokens": [
             "tokens.accent-color",
             "tokens.body-size",
@@ -64,7 +70,7 @@
           },
           {
             "path": "packages/designer/src/blocks/SectionHeader.tsx",
-            "sha256": "6e842cf369b8cfd6e681d59813a5b9a6acc94fe37dd90d80fbf27736c5e66c96"
+            "sha256": "aaa356d54d15e83bdc4ad4899b321f8bac6ac9d085ee6782cc3e11d6f349190e"
           },
           {
             "path": "packages/designer/src/catalog-core/provenance-attrs.ts",

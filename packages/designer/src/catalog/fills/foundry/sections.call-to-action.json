@@ -27,19 +27,28 @@
   "sections": {
     "call-to-action": {
       "composes": [
+        "components.semantic-content",
         "sections.section-header"
       ],
       "configs": {},
       "consumption": {
         "scanStatus": "lower-bound",
         "scannedComposes": [
+          "components.semantic-content",
           "sections.section-header"
         ],
         "scannedReads": {
-          "assets": [],
-          "components": [],
+          "assets": [
+            "assets.pattern"
+          ],
+          "components": [
+            "components.semantic-content"
+          ],
           "tokens": [
             "tokens.border-color",
+            "tokens.border-width",
+            "tokens.display-size",
+            "tokens.heading-size",
             "tokens.radius",
             "tokens.spacing",
             "tokens.status-color",
@@ -51,11 +60,15 @@
         "sourceFiles": [
           {
             "path": "packages/designer/src/blocks/CallToAction.tsx",
-            "sha256": "216bdeaba410e1e499f913d3c99d5fee62490d19d29bb6c64b968cfa5845bac3"
+            "sha256": "88cfd842c07b89d95d7eedb0359b9260295b4e62c8abfa95ec8170847989b704"
           },
           {
             "path": "packages/designer/src/blocks/section-ground.ts",
             "sha256": "a519649f96cb339f1128fc385e68d67b6af063ed492ac2c285f09c1740c98679"
+          },
+          {
+            "path": "packages/designer/src/blocks/SectionFrame.tsx",
+            "sha256": "0b0b8477099f0ee05bc8655fc92ca86d9ff448d4e480a06e48181a96cdfddc57"
           },
           {
             "path": "packages/designer/src/catalog-core/provenance-attrs.ts",
@@ -64,9 +77,19 @@
           {
             "path": "packages/designer/src/components/internal/cx.ts",
             "sha256": "0a7524b0340fec42e1abb216013a353e950aa738d9ba0f2ebdedd5293337bab3"
+          },
+          {
+            "path": "packages/designer/src/tokens/pattern.ts",
+            "sha256": "086eedb4d51373c9f84ba1e0b5310e0041792aebf14c964300fc669a7b028a38"
           }
         ],
         "unresolved": [
+          {
+            "code": "DF2",
+            "evidence": "unresolved injected runtime inventory ../tokens/tokens.js#TOKENS",
+            "file": "packages/designer/src/blocks/SectionFrame.tsx",
+            "line": 3
+          },
           {
             "code": "DF2",
             "evidence": "unresolved injected runtime inventory ../../tokens/tokens.js#TOKENS",
@@ -112,7 +135,10 @@
         ],
         "tokens": [
           "tokens.border-color",
+          "tokens.border-width",
+          "tokens.display-size",
           "tokens.gradient",
+          "tokens.heading-size",
           "tokens.radius",
           "tokens.spacing",
           "tokens.status-color",

@@ -34,17 +34,21 @@
   "sections": {
     "empty-state": {
       "composes": [
+        "components.semantic-content",
         "sections.section-header"
       ],
       "configs": {},
       "consumption": {
         "scanStatus": "lower-bound",
         "scannedComposes": [
+          "components.semantic-content",
           "sections.section-header"
         ],
         "scannedReads": {
           "assets": [],
-          "components": [],
+          "components": [
+            "components.semantic-content"
+          ],
           "tokens": [
             "tokens.spacing",
             "tokens.text-color"
@@ -53,7 +57,7 @@
         "sourceFiles": [
           {
             "path": "packages/designer/src/blocks/EmptyState.tsx",
-            "sha256": "b3aa11d547e9f389ea3034704b3234a26e1460915c317d5338b791129dcabf4d"
+            "sha256": "179499fbddf4ce79fa0a9888a2faaf4c1afa5795566a3e6ffa5fcfba183a4c0b"
           },
           {
             "path": "packages/designer/src/catalog-core/provenance-attrs.ts",
