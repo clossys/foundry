@@ -5974,6 +5974,106 @@
       "limits": {
         "maxChars": 160
       }
+    },
+    {
+      "id": "st.ccre9500bw",
+      "leaf": "strings.names",
+      "context": "designer.item.assets.icon-loader",
+      "status": "draft",
+      "origin": "authored",
+      "text": "Loader",
+      "limits": {
+        "maxChars": 60
+      }
+    },
+    {
+      "id": "st.kcathn07y7",
+      "leaf": "strings.actions",
+      "context": "designer.component.search-field.clear",
+      "status": "draft",
+      "origin": "authored",
+      "text": "Clear search",
+      "limits": {
+        "maxChars": 120
+      }
+    },
+    {
+      "id": "st.46j4bj35p9",
+      "leaf": "strings.actions",
+      "context": "designer.component.number-field.increment",
+      "status": "draft",
+      "origin": "authored",
+      "text": "Increase {fieldLabel}",
+      "args": [
+        {
+          "name": "fieldLabel",
+          "type": "string"
+        }
+      ],
+      "limits": {
+        "maxChars": 120
+      }
+    },
+    {
+      "id": "st.vc888ap8qn",
+      "leaf": "strings.actions",
+      "context": "designer.component.number-field.decrement",
+      "status": "draft",
+      "origin": "authored",
+      "text": "Decrease {fieldLabel}",
+      "args": [
+        {
+          "name": "fieldLabel",
+          "type": "string"
+        }
+      ],
+      "limits": {
+        "maxChars": 120
+      }
+    },
+    {
+      "id": "st.cxp8286800",
+      "leaf": "strings.actions",
+      "context": "designer.component.tag-group.remove",
+      "status": "draft",
+      "origin": "authored",
+      "text": "Remove",
+      "limits": {
+        "maxChars": 120
+      }
+    },
+    {
+      "id": "st.mek92m1y2n",
+      "leaf": "strings.field-labels",
+      "context": "designer.component.spinner.loading",
+      "status": "draft",
+      "origin": "authored",
+      "text": "Loading",
+      "limits": {
+        "maxChars": 120
+      }
+    },
+    {
+      "id": "st.5t6kmpqx5k",
+      "leaf": "strings.actions",
+      "context": "designer.component.toast.close",
+      "status": "draft",
+      "origin": "authored",
+      "text": "Close",
+      "limits": {
+        "maxChars": 120
+      }
+    },
+    {
+      "id": "st.kq4avsz26w",
+      "leaf": "strings.actions",
+      "context": "designer.component.toast.action",
+      "status": "draft",
+      "origin": "authored",
+      "text": "Action",
+      "limits": {
+        "maxChars": 120
+      }
     }
   ],
   "reviews": [
