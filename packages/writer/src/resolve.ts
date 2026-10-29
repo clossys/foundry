@@ -8,7 +8,8 @@
  * those inputs so `@example/surface` can place them in its output
  * manifest without knowing how a consumer stores copy.
  *
- * Target policy: an owner-approved entry resolves on both `"preview"` and
+ * Target policy: a draft entry resolves only on explicit `"preview"`.
+ * An owner-approved entry resolves on both `"preview"` and
  * `"production"` (the default target). A delegate-approved entry resolves
  * freely on `"preview"`, but on `"production"` is refused
  * (`delegate-approval-refused`) unless the caller opts in with
@@ -255,7 +256,7 @@ export function resolveCopyRef(
     return failure("unknown-copy-id", `CopyRef "${validRef.id}" is absent from the available fallback chain.`, validRef.id);
   }
 
-  if (entry.status !== "approved") {
+  if (entry.status !== "approved" && !(target === "preview" && entry.status === "draft")) {
     return {
       issues: [
         {

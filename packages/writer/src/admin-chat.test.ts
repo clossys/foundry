@@ -31,16 +31,16 @@ it("authors valid unapproved chat records through the draft command and exposes 
 it("resolves chat state, context, limits and all declared arguments without English fallbacks or approval", () => {
   const ref = (key: string) => ({ id: ADMIN_CHAT_COPY_EN.records.find(record => record.context === `admin.writer.chat.${key}`)!.id });
   expect(ADMIN_CHAT_COPY_EN.records.filter(record => record.context.startsWith("admin.writer.chat.starter."))).toHaveLength(4);
-  expect(resolveAdminCopyRef(ref("account.signIn"))).toMatchObject({ text: "Sign in", status: "draft", activation: "none" });
-  expect(resolveAdminCopyRef({ ...ref("context.using"), values: { context: "Writer / selected record" } })?.text).toBe("Using: Writer / selected record");
-  expect(resolveAdminCopyRef({ ...ref("message.branch"), values: { current: 2, total: 3 } })?.text).toBe("2 / 3");
-  expect(resolveAdminCopyRef({ ...ref("reasoning.duration"), values: { seconds: 12 } })?.text).toBe("Thought for 12s");
-  expect(resolveAdminCopyRef({ ...ref("composer.characterLimit"), values: { count: 42, limit: 1000 } })?.text).toBe("Characters: 42 / 1,000");
+  expect(resolveAdminCopyRef(ref("account.signIn"), undefined, { target: "preview" })).toMatchObject({ text: "Sign in", status: "draft", activation: "none" });
+  expect(resolveAdminCopyRef({ ...ref("context.using"), values: { context: "Writer / selected record" } }, undefined, { target: "preview" })?.text).toBe("Using: Writer / selected record");
+  expect(resolveAdminCopyRef({ ...ref("message.branch"), values: { current: 2, total: 3 } }, undefined, { target: "preview" })?.text).toBe("2 / 3");
+  expect(resolveAdminCopyRef({ ...ref("reasoning.duration"), values: { seconds: 12 } }, undefined, { target: "preview" })?.text).toBe("Thought for 12s");
+  expect(resolveAdminCopyRef({ ...ref("composer.characterLimit"), values: { count: 42, limit: 1000 } }, undefined, { target: "preview" })?.text).toBe("Characters: 42 / 1,000");
   for (const record of ADMIN_CHAT_COPY_EN.records) {
     const values = Object.fromEntries((record.args ?? []).map(arg => [arg.name, arg.type === "number" ? 2 : `sample ${arg.name}`]));
-    expect(resolveAdminCopyRef({ id: record.id, values }), record.context).toMatchObject({ status: "draft", servedLocale: "en", activation: "none" });
-    if (record.args?.length) expect(resolveAdminCopyRef({ id: record.id }), record.context).toBeUndefined();
-    expect(resolveAdminCopyRef({ id: record.id, locale: "fr", values })).toBeUndefined();
+    expect(resolveAdminCopyRef({ id: record.id, values }, undefined, { target: "preview" }), record.context).toMatchObject({ status: "draft", servedLocale: "en", activation: "none" });
+    if (record.args?.length) expect(resolveAdminCopyRef({ id: record.id }, undefined, { target: "preview" }), record.context).toBeUndefined();
+    expect(resolveAdminCopyRef({ id: record.id, locale: "fr", values }, undefined, { target: "preview" })).toBeUndefined();
   }
-  expect(resolveAdminCopyRef({ id: "st.0000000000" })).toBeUndefined();
+  expect(resolveAdminCopyRef({ id: "st.0000000000" }, undefined, { target: "preview" })).toBeUndefined();
 });

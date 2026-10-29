@@ -38,8 +38,8 @@ it("exposes unchanged draft records and resolves English display CopyRefs withou
     expect(Object.isFrozen(record)).toBe(true);
   }
   const record = ADMIN_WRITER_COPY_EN.records.find(record => record.context.endsWith("coverageSummary"))!;
-  expect(resolveAdminCopyRef({ id: record.id, locale: "en", values: { records: 7, bindings: 4 } })).toMatchObject({ text: "7 records; 4 proposed bindings.", status: "draft", activation: "none", servedLocale: "en" });
-  expect(resolveAdminCopyRef({ id: record.id })).toBeUndefined();
-  expect(resolveAdminCopyRef({ id: record.id, locale: "fr" })).toBeUndefined();
-  expect(resolveAdminCopyRef({ id: "missing" })).toBeUndefined();
+  expect(resolveAdminCopyRef({ id: record.id, locale: "en", values: { records: 7, bindings: 4 } }, undefined, { target: "preview" })).toMatchObject({ text: "7 records; 4 proposed bindings.", status: "draft", activation: "none", servedLocale: "en" });
+  expect(resolveAdminCopyRef({ id: record.id }, undefined, { target: "preview" })).toBeUndefined();
+  expect(resolveAdminCopyRef({ id: record.id, locale: "fr" }, undefined, { target: "preview" })).toBeUndefined();
+  expect(resolveAdminCopyRef({ id: "missing" }, undefined, { target: "preview" })).toBeUndefined();
 });
