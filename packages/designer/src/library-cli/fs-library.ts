@@ -491,3 +491,16 @@ async function projectionOwnership(root:string,previousFiles:ReadonlyMap<string,
   const present=await evidenceFiles(root);for(const name of next)if(!previousFiles.has(name)){const path=containedPath(root,name);let exists=false;try{await fs.lstat(path);exists=true;}catch(error){if((error as NodeJS.ErrnoException).code!=="ENOENT"&&(error as NodeJS.ErrnoException).code!=="ENOTDIR")throw error;}if(exists||[...present].some(file=>path.startsWith(file+sep)))throw new LibraryInputError("Managed surface output collides with unowned host file");}
   return {previous,next};
 }
+
+/** Compile cells into an isolated projection and reuse the existing drift-checked reader. */
+export function readLibraryFromCells(cellRoot: string, catalog: CatalogData): Promise<LibraryData>;
+export function readLibraryFromCells(cellRoot: string, catalog: CompositeCatalogData): Promise<CompositeLibraryData>;
+export async function readLibraryFromCells(cellRoot: string, catalog: CatalogData | CompositeCatalogData): Promise<LibraryData | CompositeLibraryData> {
+  const { tmpdir } = await import("node:os");
+  const { compileLibraryCells } = await import("./cells.js");
+  const temporary = await fs.mkdtemp(join(tmpdir(), "designer-cell-library-"));
+  try {
+    await compileLibraryCells(cellRoot, temporary, { catalog });
+    return await readLibrary(temporary, catalog as CompositeCatalogData);
+  } finally { await fs.rm(temporary, { recursive: true, force: true }); }
+}

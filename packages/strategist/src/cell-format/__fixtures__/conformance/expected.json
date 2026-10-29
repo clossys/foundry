@@ -1,0 +1,227 @@
+{
+  "flat-values.md": {
+    "ok": true,
+    "value": {
+      "fields": {
+        "id": "tokens.accent-color",
+        "version": 1,
+        "status": "draft",
+        "updated": "2026-10-29",
+        "links": [
+          "strategist:identity.visual.palette@2",
+          "assets.favicon@1"
+        ],
+        "enabled": true,
+        "ratio": -1.5,
+        "title": "A comma, a colon: and \"quote\".",
+        "flags": [
+          true,
+          false,
+          0,
+          -2,
+          1.5,
+          "two, three",
+          "brace { ok }"
+        ],
+        "empty": [],
+        "literal": "false",
+        "nullish": "null"
+      },
+      "fieldLines": {
+        "id": 2,
+        "version": 3,
+        "status": 4,
+        "updated": 5,
+        "links": 6,
+        "enabled": 7,
+        "ratio": 8,
+        "title": 9,
+        "flags": 10,
+        "empty": 11,
+        "literal": 12,
+        "nullish": 13
+      },
+      "body": [
+        {
+          "text": "## Rationale",
+          "line": 15
+        },
+        {
+          "text": "- Tone: Clear (ordinary prose).",
+          "line": 16
+        },
+        {
+          "text": "",
+          "line": 17
+        }
+      ]
+    }
+  },
+  "empty-frontmatter.md": {
+    "ok": true,
+    "value": {
+      "fields": {},
+      "fieldLines": {},
+      "body": []
+    }
+  },
+  "camel-case-crlf.md": {
+    "ok": true,
+    "value": {
+      "fields": {
+        "originKinds": [
+          "adopted",
+          "authored"
+        ],
+        "constructor": "safe"
+      },
+      "fieldLines": {
+        "originKinds": 2,
+        "constructor": 3
+      },
+      "body": [
+        {
+          "text": "## Fill",
+          "line": 5
+        },
+        {
+          "text": "```json",
+          "line": 6
+        },
+        {
+          "text": "{\"ok\": true}",
+          "line": 7
+        },
+        {
+          "text": "```",
+          "line": 8
+        }
+      ]
+    }
+  },
+  "missing-open.md": {
+    "ok": false,
+    "issues": [
+      {
+        "path": "frontmatter",
+        "line": 1,
+        "message": "Expected opening ---"
+      }
+    ]
+  },
+  "missing-close.md": {
+    "ok": false,
+    "issues": [
+      {
+        "path": "frontmatter",
+        "line": 2,
+        "message": "Expected closing ---"
+      }
+    ]
+  },
+  "nested-mapping.md": {
+    "ok": false,
+    "issues": [
+      {
+        "path": "frontmatter",
+        "line": 3,
+        "message": "Expected one-level key: scalar or key: [values]; nesting is unsupported"
+      },
+      {
+        "path": "frontmatter",
+        "line": 4,
+        "message": "Expected one-level key: scalar or key: [values]; nesting is unsupported"
+      }
+    ]
+  },
+  "unsupported-values.md": {
+    "ok": false,
+    "issues": [
+      {
+        "path": "frontmatter",
+        "line": 2,
+        "message": "Unsupported scalar, list or nested YAML syntax"
+      },
+      {
+        "path": "frontmatter",
+        "line": 3,
+        "message": "Unsupported scalar, list or nested YAML syntax"
+      },
+      {
+        "path": "frontmatter",
+        "line": 4,
+        "message": "Unsupported scalar, list or nested YAML syntax"
+      },
+      {
+        "path": "frontmatter",
+        "line": 5,
+        "message": "Unsupported scalar, list or nested YAML syntax"
+      },
+      {
+        "path": "frontmatter",
+        "line": 6,
+        "message": "Unsupported scalar, list or nested YAML syntax"
+      }
+    ]
+  },
+  "duplicate-key.md": {
+    "ok": false,
+    "issues": [
+      {
+        "path": "frontmatter",
+        "line": 3,
+        "message": "Duplicate frontmatter key"
+      }
+    ]
+  },
+  "unsupported-keys.md": {
+    "ok": false,
+    "issues": [
+      {
+        "path": "frontmatter",
+        "line": 2,
+        "message": "Expected one-level key: scalar or key: [values]; nesting is unsupported"
+      },
+      {
+        "path": "frontmatter",
+        "line": 3,
+        "message": "Expected one-level key: scalar or key: [values]; nesting is unsupported"
+      },
+      {
+        "path": "frontmatter",
+        "line": 4,
+        "message": "Expected one-level key: scalar or key: [values]; nesting is unsupported"
+      }
+    ]
+  },
+  "empty-value.md": {
+    "ok": false,
+    "issues": [
+      {
+        "path": "frontmatter",
+        "line": 2,
+        "message": "Expected one-level key: scalar or key: [values]; nesting is unsupported"
+      }
+    ]
+  },
+  "unclosed-list-string.md": {
+    "ok": false,
+    "issues": [
+      {
+        "path": "frontmatter",
+        "line": 2,
+        "message": "Unsupported scalar, list or nested YAML syntax"
+      }
+    ]
+  },
+  "nested-list.md": {
+    "ok": false,
+    "issues": [
+      {
+        "path": "frontmatter",
+        "line": 2,
+        "message": "Unsupported scalar, list or nested YAML syntax"
+      }
+    ]
+  }
+}
