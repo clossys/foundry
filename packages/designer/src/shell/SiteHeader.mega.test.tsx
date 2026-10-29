@@ -38,6 +38,16 @@ it("closes when Tab leaves the navigation", async () => {
   expect(screen.getByRole("button", { name: "Company" })).toHaveAttribute("aria-expanded", "false");
 });
 
+it("closes the open panel when Tab reaches the next disclosure trigger", async () => {
+  const user = userEvent.setup();
+  render(<SiteMegaNavigation groups={groups} />);
+  await user.click(screen.getByRole("button", { name: "Product" }));
+  screen.getByRole("link", { name: "Featured" }).focus();
+  await user.tab();
+  expect(screen.getByRole("button", { name: "Company" })).toHaveFocus();
+  expect(screen.getByRole("button", { name: "Product" })).toHaveAttribute("aria-expanded", "false");
+});
+
 it("folds all columns and featured links into mobile sheet content without a second menu", () => {
   render(<SiteMegaNavigation groups={groups} mobile />);
   expect(screen.queryByRole("button")).not.toBeInTheDocument();
