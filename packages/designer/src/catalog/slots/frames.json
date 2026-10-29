@@ -245,6 +245,16 @@
           "id": "toasts",
           "required": false,
           "accepts": "components.toast"
+        },
+        {
+          "id": "page-module",
+          "required": false,
+          "accepts": "sections.*"
+        },
+        {
+          "id": "state",
+          "required": false,
+          "accepts": "host-node"
         }
       ],
       "members": {
@@ -279,6 +289,21 @@
             "system",
             "light",
             "dark"
+          ]
+        },
+        {
+          "id": "navigating",
+          "type": "boolean"
+        },
+        {
+          "id": "main-state",
+          "type": "string",
+          "values": [
+            "ready",
+            "loading",
+            "error",
+            "not-found",
+            "forbidden"
           ]
         }
       ],
@@ -330,7 +355,9 @@
         "components.icon",
         "components.menu",
         "components.progress-bar",
-        "components.toast"
+        "components.toast",
+        "components.skeleton",
+        "components.toggle-button"
       ],
       "skipTarget": "main-content",
       "stage": {
@@ -522,7 +549,7 @@
         {
           "id": "actions",
           "required": false,
-          "accepts": "components.button"
+          "accepts": "host-node"
         },
         {
           "id": "info",

@@ -31,10 +31,10 @@ function fail(message: string): never {
 export function validateTableOfContents({
   label,
   items,
-  currentId,
-}: Pick<TableOfContentsProps, "label" | "items" | "currentId">): void {
+  currentId, nested,
+}: Pick<TableOfContentsProps, "label" | "items" | "currentId" | "nested">): void {
   if (typeof label !== "string" || label.trim().length === 0) fail("label must be a non-empty string.");
-  if (!Array.isArray(items) || items.length < MIN_ITEMS || items.length > MAX_ITEMS) {
+  if (!Array.isArray(items) || items.length < MIN_ITEMS || (!nested && items.length > MAX_ITEMS)) {
     fail("items must hold " + MIN_ITEMS + " to " + MAX_ITEMS + " entries.");
   }
   const seen = new Set<string>();
@@ -44,13 +44,13 @@ export function validateTableOfContents({
     }
     if (seen.has(item.id)) fail("duplicate item id: " + item.id);
     seen.add(item.id);
-    if (item.level !== undefined && item.level !== 2 && item.level !== 3) fail("item level must be 2 or 3.");
+    if (item.level !== undefined && item.level !== 2 && item.level !== 3 && item.level !== 4) fail("item level must be 2, 3 or 4.");
   }
   if (currentId !== undefined && !seen.has(currentId)) fail("currentId must be one of the item ids.");
 }
 
 /** The ordered list of in-page links; the current item carries the location value of aria-current. */
-export function renderTableOfContentsList(items: readonly TableOfContentsItem[], current: string | undefined): ReactNode {
+export function renderTableOfContentsList(items: readonly TableOfContentsItem[], current: string | undefined, onNavigate?: (id: string) => void): ReactNode {
   return (
     <ol className="flex flex-col">
       {items.map((item) => {
@@ -59,11 +59,12 @@ export function renderTableOfContentsList(items: readonly TableOfContentsItem[],
           <li key={item.id}>
             <a
               href={"#" + item.id}
+              onClick={onNavigate ? event => { event.preventDefault(); onNavigate(item.id); } : undefined}
               aria-current={isCurrent ? "location" : undefined}
               style={{ minBlockSize: UI_LAYOUT_TAP_TARGET }}
               className={cx(
                 "flex items-center border-s-2 pe-sm text-body-s",
-                item.level === 3 ? "ps-xl" : "ps-md",
+                item.level === 4 ? "ps-2xl" : item.level === 3 ? "ps-xl" : "ps-md",
                 isCurrent
                   ? "border-accent font-medium text-ink-primary forced-colors:border-current"
                   : "border-transparent text-ink-secondary hover:text-ink-primary",
@@ -85,7 +86,7 @@ export function renderTableOfContentsList(items: readonly TableOfContentsItem[],
  * of the viewport edge once the capped list scrolls on its own.
  */
 export function renderTableOfContentsSidebar(
-  { label, items, className, style }: Pick<TableOfContentsProps, "label" | "items" | "className" | "style">,
+  { label, items, className, style, onNavigate }: Pick<TableOfContentsProps, "label" | "items" | "className" | "style" | "onNavigate">,
   current: string | undefined,
 ): ReactNode {
   return (
@@ -98,7 +99,7 @@ export function renderTableOfContentsSidebar(
       <p aria-hidden="true" className="pb-sm text-caption text-ink-muted">
         {label}
       </p>
-      {renderTableOfContentsList(items, current)}
+      {renderTableOfContentsList(items, current, onNavigate)}
       <div aria-hidden="true" className="hidden desktop:block" style={{ blockSize: SITE_HEADER_CLEARANCE }} />
     </nav>
   );
@@ -106,10 +107,10 @@ export function renderTableOfContentsSidebar(
 
 /** The inline presentation's navigation, without the sticky caption row. */
 export function renderTableOfContentsInlineNav(
-  { label, items }: Pick<TableOfContentsProps, "label" | "items">,
+  { label, items, onNavigate }: Pick<TableOfContentsProps, "label" | "items" | "onNavigate">,
   current: string | undefined,
 ): ReactNode {
-  return <nav aria-label={label}>{renderTableOfContentsList(items, current)}</nav>;
+  return <nav aria-label={label}>{renderTableOfContentsList(items, current, onNavigate)}</nav>;
 }
 
 /**

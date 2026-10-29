@@ -1,7 +1,7 @@
 /** @vitest-environment node */
 import { describe, expect, it } from "vitest";
 import { standardM1FixtureEngine, standardM1Runtime } from "./__fixtures__/standard-m1-runtime.js";
-import { checkConsumerRuntimePorts, runtimeHash, runtimeSnapshot } from "./runtime-ports.js";
+import { checkConsumerRuntimePorts, runtimeHash, runtimeSnapshot, runtimeFrameHostFindings } from "./runtime-ports.js";
 import { libraryHash } from "./api.js";
 import type { RuntimeFillDescriptor } from "./runtime-ports.js";
 const engine = standardM1FixtureEngine();
@@ -50,4 +50,13 @@ describe("consumer runtime port conformance", () => {
     expect(reads).toBe(0);
     const cycle: { self?: unknown } = {}; cycle.self = cycle; expect(() => runtimeHash(cycle)).toThrow();
   });
+});
+
+it("admits the publication state and actual command-query callback, and rejects foreign state", () => {
+  const host = { navigate() {}, onCommandQueryChange(_query: string) {}, state: { navigating: true, main: "loading" } };
+  expect(runtimeFrameHostFindings(host)).toEqual([]);
+  for (const state of [{ navigating: true, main: "invented" }, { navigating: "yes", main: "ready" }, { navigating: false, main: "ready", body: "foreign" }]) {
+    expect(runtimeFrameHostFindings({ ...host, state })).toContain("frame state port is invalid");
+  }
+  expect(runtimeFrameHostFindings({ ...host, onCommandQueryChange: "not a callback" })).toContain("frame host onCommandQueryChange must be a function");
 });

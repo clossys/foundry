@@ -21,6 +21,8 @@ export interface SectionHeaderProps extends Omit<HTMLAttributes<HTMLDivElement>,
    * components. Rendered at the trailing edge of the title row.
    */
   actions?: ReactNode;
+  /** Host-resolved stat badges and status summary. */
+  stats?: ReactNode;
   /**
    * Which heading element `title` renders as (`<h2>` through `<h6>`) — a
    * real, settable prop rather than a component always fixed to one level.
@@ -49,7 +51,7 @@ export interface SectionHeaderProps extends Omit<HTMLAttributes<HTMLDivElement>,
 /** A repeatable section title region; the div introduces no banner landmark. */
 export function SectionHeader(props: SectionHeaderProps) {
   const {
-    eyebrow, title, description, actions, level = 2, density = "compact",
+    eyebrow, title, description, actions, stats, level = 2, density = "compact",
     align = "start", ground = "base", titleClassName, className, style, ...rest
   } = props;
   const HeadingTag = `h${level}` as HeadingTag;
@@ -83,6 +85,7 @@ export function SectionHeader(props: SectionHeaderProps) {
   return (
     <div {...SECTION_STAMP} {...rest} className={cx(display ? "flex flex-col" : "flex flex-col gap-xs", centered ? "items-center text-center" : undefined, className)} style={style}>
       {eyebrowNode}
+      {stats ? <div className="flex flex-wrap items-center gap-sm">{stats}</div> : null}
       {display || (density === "standard" && (!actions || centered)) ? (
         <>{titleNode}{descriptionNode}{actionsNode}</>
       ) : (

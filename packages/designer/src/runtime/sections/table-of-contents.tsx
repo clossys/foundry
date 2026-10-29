@@ -11,15 +11,15 @@ const LEAF = "sections.table-of-contents";
 const LANDMARK_LABEL = "On this page";
 
 /** headings -> TableOfContents.items (id, label, level 2 or 3); active-id -> currentId. */
-export const tableOfContentsInputs: SectionInputs = { slots: ["headings", "active-id"], members: [] };
+export const tableOfContentsInputs: SectionInputs = { slots: ["headings", "active-id", "label"], members: [] };
 
 export const renderTableOfContents: SectionRenderer = input => {
   refuseUnmapped(input, tableOfContentsInputs);
   const items = recordsOf(LEAF, "headings", requireSlot(input, LEAF, "headings")).map((row, index): TableOfContentsItem => {
     const id = stringField(row, "id"), text = stringField(row, "label") ?? stringField(row, "heading"), level = numberField(row, "level");
     if (!id || !text) throw new TypeError(`${LEAF}: heading ${index} needs an id and a label`);
-    if (level !== undefined && level !== 2 && level !== 3) throw new TypeError(`${LEAF}: heading ${id} level must be 2 or 3`);
-    return level === 2 || level === 3 ? { id, label: text, level } : { id, label: text };
+    if (level !== undefined && level !== 2 && level !== 3 && level !== 4) throw new TypeError(`${LEAF}: heading ${id} level must be 2, 3 or 4`);
+    return level === 2 || level === 3 || level === 4 ? { id, label: text, level } : { id, label: text };
   });
-  return <TableOfContents label={LANDMARK_LABEL} items={items} currentId={textOf(slotValue(input, "active-id"))} trackCurrent={false} />;
+  return <TableOfContents label={textOf(slotValue(input, "label")) ?? LANDMARK_LABEL} items={items} nested={items.some(item => item.level === 4)} currentId={textOf(slotValue(input, "active-id"))} trackCurrent={input.sectionHost?.trackCurrent === true} onCurrentChange={typeof input.sectionHost?.onActiveChange === "function" ? input.sectionHost.onActiveChange as (id: string) => void : undefined} onNavigate={typeof input.sectionHost?.navigate === "function" ? input.sectionHost.navigate as (id: string) => void : undefined} />;
 };

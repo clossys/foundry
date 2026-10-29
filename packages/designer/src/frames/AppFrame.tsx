@@ -3,7 +3,7 @@ import { ShellI18nProvider } from "#designer-frame-i18n";
 
 import { useCallback, useEffect, useId, useLayoutEffect, useRef, useState, type CSSProperties } from "react";
 import { ModalContext, PopoverContext, useLocale } from "react-aria-components";
-import { Button, Icon, Logomark, Menu, Tooltip } from "../components/index.js";
+import { Button, Icon, Logomark, Menu, Tooltip, ToggleButton } from "../components/index.js";
 import { Layers, List, Search } from "../icons/index.js";
 import { AccountMenu, AppNavigation, PageBar, CommandMenu, Drawer, ResizablePane, useCommandMenuShortcut, type DrawerProps } from "../blocks/index.js";
 import { ThemeProvider, useTheme } from "../theme/index.js";
@@ -61,9 +61,12 @@ function SignedOutMenu({ sections, signedOutLabel, onRoute, markSrc, theme, cont
   return <Menu trigger={trigger} popoverClassName="mb-lg" controls={controls} controlsLabel={signedOutLabel}>{content()}</Menu>;
 }
 
-function FrameContent({ brand, navigation, account: { avatar = "initials", ...account }, commands, children, toasts, rightPanel, theme, themeControl, footerLayout = "inline", fill = "host", dir: suppliedDir, onNavigate, layout: shellLayout = "standard", stage: stageInset = "contained", notices, dock, headerPosition, headerSurface, context, root, page, workspaces, breadcrumbLabel, collapsedBreadcrumbLabel, pageInfoLabel, pageActionsLabel,
+function FrameContent({ brand, navigation, account: { avatar = "initials", ...account }, commands, children, main: suppliedMain, pageModule, pageModuleLabel, headerTrail, headerActions, inspectorContext, state, stateViews, progress, toasts, rightPanel: suppliedRightPanel, theme, themeControl, footerLayout = "inline", fill = "host", dir: suppliedDir, onNavigate, layout: shellLayout = "standard", stage: stageInset = "contained", notices, dock, headerPosition, headerSurface, context, root, page, workspaces, breadcrumbLabel, collapsedBreadcrumbLabel, pageInfoLabel, pageActionsLabel,
   /** @default "Skip to content" */
   skipLabel: suppliedSkipLabel, mainId }: AppFrameProps) {
+  const rightPanel = suppliedRightPanel && inspectorContext !== undefined ? { ...suppliedRightPanel, children: inspectorContext } : suppliedRightPanel;
+  const [moduleOpen, setModuleOpen] = useState(true);
+  const main = suppliedMain === undefined ? children : suppliedMain;
   const { resolvedTheme } = useTheme();
   const markSrc = resolvedTheme === "dark" ? brand.reversedMarkSrc ?? brand.markSrc : brand.markSrc;
   const { direction: contextDirection, locale } = useLocale();
@@ -83,8 +86,9 @@ function FrameContent({ brand, navigation, account: { avatar = "initials", ...ac
   const target = appFrameMainId(mainId, generated);
   const [commandOpen, setCommandOpen] = useState(false);
   const [query, setQuery] = useState("");
-  const openCommands = useCallback(() => { setQuery(""); setCommandOpen(true); }, []);
-  const { shortcutEnabled = true, triggerLabel, ...commandProps } = commands;
+  const queryChange = commands.onQueryChange;
+  const openCommands = useCallback(() => { setQuery(""); queryChange?.(""); setCommandOpen(true); }, [queryChange]);
+  const { shortcutEnabled = true, triggerLabel, onQueryChange: _onQueryChange, ...commandProps } = commands;
   useCommandMenuShortcut({ onOpen: openCommands, enabled: shortcutEnabled });
   const [narrow, setNarrow] = useState(false);
   const [available, setAvailable] = useState(Infinity);
@@ -251,14 +255,22 @@ function FrameContent({ brand, navigation, account: { avatar = "initials", ...ac
     <Logomark src={markSrc} size="sm" />{brand.navigationMark && <span className="min-w-0 truncate text-body text-ink-primary">{brand.navigationMark.label}</span>}
   </div>;
   const commandTrigger = <div>{navigationBrand}<Button variant="ghost" className={CONTROL + " w-full justify-start"} onPress={openCommands}><Icon glyph={Search} decorative /><span className="min-w-0 truncate">{triggerLabel}</span></Button></div>;
-  const pageBar = <PageBar position={headerPosition} surface={headerSurface ?? (shellLayout === "immersive" ? "glass" : "solid")} header={resolvedHeader} onNavigate={onNavigate} context={context} root={root} page={page} workspaces={workspaces} narrow={!wide}
+  const moduleToggle = pageModule != null && pageModuleLabel ? <ToggleButton aria-label={pageModuleLabel} shape="icon-only" isSelected={moduleOpen} onChange={setModuleOpen}><Icon glyph={List} decorative /></ToggleButton> : null;
+  const hasRegions = headerTrail !== undefined || headerActions !== undefined;
+  const regionPage = hasRegions ? { ...(page ?? { title: resolvedHeader?.title ?? "" }), breadcrumb: headerTrail ?? page?.breadcrumb, actions: headerActions ?? page?.actions } : page;
+  const leasedActions = hasRegions && headerActions === undefined ? resolvedHeader?.actions?.render({ compact: !wide }) : null;
+  const mainState = state?.main ?? "ready";
+  const displayedMain = mainState === "ready" ? main : stateViews?.[mainState];
+  if (mainState !== "ready" && displayedMain === undefined) throw new TypeError("AppFrame: a resolved view is required for its main state");
+  const pageBar = <PageBar position={headerPosition} surface={headerSurface ?? (shellLayout === "immersive" ? "glass" : "solid")} header={hasRegions ? undefined : resolvedHeader} onNavigate={onNavigate} context={context} root={root} page={regionPage} workspaces={workspaces} narrow={!wide}
     embedded dir={dir}
     start={<span ref={setNavigationControlHost} className="contents">{!navigationControlHost && <Tooltip trigger={navigationTrigger}>{navOpen ? navigationCloseLabel : navigationOpenLabel}</Tooltip>}</span>}
-    end={rightPanel ? <Tooltip trigger={panelTrigger}>{panelOpen || panelDocked ? closeLabel : openLabel}</Tooltip> : <span aria-hidden="true" className="icon-control-md shrink-0" />}
+    end={<>{leasedActions}{moduleToggle}{rightPanel ? <Tooltip trigger={panelTrigger}>{panelOpen || panelDocked ? closeLabel : openLabel}</Tooltip> : <span aria-hidden="true" className="icon-control-md shrink-0" />}</>}
     labels={{ breadcrumb: breadcrumbLabel ?? copy(SHELL_COPY_REFS.frame.breadcrumb), collapsedBreadcrumb: collapsedBreadcrumbLabel ?? copy(SHELL_COPY_REFS.frame.collapsedBreadcrumb), pageInfo: pageInfoLabel ?? copy(SHELL_COPY_REFS.frame.pageInfo),
       pageActions: pageActionsLabel ?? copy(SHELL_COPY_REFS.frame.pageActions) }} />;
   return <ModalContext.Provider value={{ style: { direction: dir } }}><PopoverContext.Provider value={{ style: { direction: dir } }}>
     <div ref={frame} lang={locale} dir={dir} data-application-frame="" data-application-frame-layout={shellLayout} data-application-frame-stage={stageInset} data-application-frame-fill={fill} {...FRAME_STAMP} className={"relative flex min-h-0 min-w-0 flex-col overflow-hidden bg-surface-base text-body text-ink-primary " + ROOT_FILL[fill]}>
+      {state?.navigating && progress ? <div data-application-frame-region="progress" style={{ position: "absolute", insetBlockStart: 0, insetInline: 0, blockSize: "var(--ui-border-hairline)", overflow: "hidden", pointerEvents: "none", zIndex: "var(--ui-z-progress)" }}>{progress}</div> : null}
       <SkipLink targetId={target}>{skipLabel}</SkipLink>
       <span aria-hidden="true" className="absolute size-0 overflow-hidden"><span ref={sidebarProbe} className="block" style={{ inlineSize: APP_FRAME_LAYOUT.sidebar }} /></span>
       <div className="flex min-h-0 min-w-0 flex-1">
@@ -273,8 +285,9 @@ function FrameContent({ brand, navigation, account: { avatar = "initials", ...ac
             {pageBar}
           </div>
           <div ref={stage} data-application-frame-region="stage" data-stage-navigation={layout.navigationOverlay ? "overlay" : "docked"} data-stage-panel={narrow ? "overlay" : "docked"}
-            className={"relative isolate min-h-0 min-w-0 flex-1 overflow-hidden" + (stageInset === "full" ? "" : " " + STAGE_INSET)}>
-            <main id={target} tabIndex={-1} className={MAIN + "focus-ring-inset"}>{children}</main>
+            className={"relative isolate flex min-h-0 min-w-0 flex-1 overflow-hidden" + (stageInset === "full" ? "" : " " + STAGE_INSET)}>
+            <main id={target} tabIndex={-1} className={MAIN + "focus-ring-inset"} aria-busy={mainState === "loading" || undefined} style={{ flex: "1 1 0%", overflowAnchor: "auto" }}>{displayedMain}</main>
+            {pageModule != null && moduleOpen ? <aside data-application-frame-region="page-module" aria-label={pageModuleLabel} className="min-h-0 shrink-0 overflow-auto" style={{ inlineSize: APP_FRAME_LAYOUT.sidebar }}>{pageModule}</aside> : null}
           </div>
           <FrameDock notices={notices} dock={dock} sheet={!wide} />
         </div>
@@ -286,7 +299,7 @@ function FrameContent({ brand, navigation, account: { avatar = "initials", ...ac
             className="h-full min-h-0 shrink-0 rounded-none border-0 border-s border-line-base p-frame-panel"><FrameSlotOutlet slot="right-panel">{rightPanel.children}</FrameSlotOutlet></ResizablePane>}
         </aside>}
       </div>
-      <CommandMenu {...commandProps} dir={dir} isOpen={commandOpen} onOpenChange={setCommandOpen} query={query} onQueryChange={setQuery} />
+      <CommandMenu {...commandProps} dir={dir} isOpen={commandOpen} onOpenChange={setCommandOpen} query={query} onQueryChange={value => { setQuery(value); queryChange?.(value); }} />
       {hasToasts ? <ToasterFrameInsetProvider value={toastInset}>{toasts}</ToasterFrameInsetProvider> : null}
     </div>
   </PopoverContext.Provider></ModalContext.Provider>;

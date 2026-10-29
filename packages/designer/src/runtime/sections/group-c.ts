@@ -125,6 +125,7 @@ export const sectionDatasetC: Readonly<Record<GroupCLeaf, (dataset: SpecimenData
   "section-header": d => ({
     eyebrow: d.sections.sectionHeader.eyebrow,
     heading: d.sections.sectionHeader.title,
+    stats: [{ id: "summary", label: d.card.title }],
     description: d.sections.sectionHeader.description,
     actions: [{ label: d.text.link, href: d.text.linkHref }],
   }),

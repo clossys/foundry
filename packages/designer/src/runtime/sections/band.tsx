@@ -15,6 +15,6 @@ export function renderBandSection(input: SectionRenderInput): ReactNode {
   const content = readSectionContent(input, "sections.band", bandInputs);
   const ground = memberValue(content, "ground", ["base", "sunken", "inverse", "transparent"] as const);
   const measure = memberValue(content, "measure", ["prose", "content", "wide"] as const);
-  const placed = Object.keys(input.slots).sort().flatMap(slot => input.slots[slot]!);
+  const placed = Object.keys(input.slots).sort((a, b) => a === "header" ? -1 : b === "header" ? 1 : a.localeCompare(b)).flatMap(slot => input.slots[slot]!);
   return <SectionFrame ground={ground} measure={measure}>{placed}</SectionFrame>;
 }

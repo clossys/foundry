@@ -3,6 +3,7 @@ import { DataTable, type DataTableColumn, type DataTableProps } from "../../bloc
 import type { DataTableViewModel } from "../../blocks/data-table/view-model.js";
 import type { TableColumnKind } from "../../blocks/table-model/index.js";
 import type { DsAttrs } from "../../catalog-core/provenance-attrs.js";
+import type { RuntimeJson } from "../../catalog-core/runtime-ports.js";
 import { specimenDataset } from "../../studio/specimen-dataset.js";
 
 /**
@@ -11,7 +12,7 @@ import { specimenDataset } from "../../studio/specimen-dataset.js";
  * block's typed view model. It never draws a cell itself: DataTable and its FlatGrid/ModelTable render.
  */
 export interface ColumnRecord { readonly id: string; readonly label: string; readonly kind?: TableColumnKind; readonly allowsSorting?: boolean; readonly isRowHeader?: boolean }
-export type RowRecord = Readonly<Record<string, string | number | boolean | null>> & { readonly id: string };
+export type RowRecord = Readonly<Record<string, RuntimeJson>> & { readonly id: string };
 export interface SortRecord { readonly column: string; readonly direction: "ascending" | "descending" }
 export interface DimensionRecord { readonly column: string; readonly order?: "asc" | "desc" }
 
@@ -27,6 +28,10 @@ export interface TableFillProps {
   readonly toolbar?: ReactNode;
   readonly footer?: ReactNode;
   readonly isLoading: boolean;
+  readonly compact?: boolean;
+  readonly renderCell?: (row: RowRecord, column: ColumnRecord) => ReactNode;
+  readonly singleSelection?: boolean;
+  readonly onSelectionChange?: (ids: readonly string[]) => void;
   /** A leaf that renders through DataTable but is not sections.data-table restamps its own provenance. */
   readonly stamp?: DsAttrs;
 }
@@ -57,11 +62,12 @@ export function TableFill(props: TableFillProps) {
   const [sortDescriptor, setSort] = useState<Sort | undefined>(() => props.sort?.[0]);
   const [selectedKeys, setSelected] = useState<"all" | Iterable<string | number>>(() => props.selected ?? []);
   const columns: DataTableColumn<RowRecord>[] = props.columns.map((column, index) => ({
-    id: column.id, header: column.label, cell: row => cellText(row[column.id]),
+    id: column.id, header: column.label, cell: row => props.renderCell ? props.renderCell(row, column) : cellText(row[column.id]),
     allowsSorting: column.allowsSorting ?? true, isRowHeader: column.isRowHeader ?? index === 0,
   }));
   return <DataTable<RowRecord>
     {...props.stamp}
+    className={props.compact ? "text-sm" : undefined}
     aria-label={props.label}
     columns={columns}
     rows={props.rows}
@@ -71,7 +77,7 @@ export function TableFill(props: TableFillProps) {
     emptyStateDescription={specimenDataset.sections.states.tableEmpty.description}
     toolbar={props.toolbar}
     footer={props.footer}
-    {...(props.selected ? { selectionMode: "multiple" as const, selectedKeys, onSelectionChange: keys => setSelected(keys === "all" ? "all" : [...keys] as (string | number)[]) } : {})}
+    {...(props.selected ? { selectionMode: props.singleSelection ? "single" as const : "multiple" as const, selectedKeys, onSelectionChange: keys => { setSelected(keys === "all" ? "all" : [...keys] as (string | number)[]); props.onSelectionChange?.(keys === "all" ? props.rows.map(row => row.id) : [...keys].map(String)); } } : {})}
     {...(model ? { model, onModelChange: setModel } : { sortDescriptor, onSortChange: setSort })}
   />;
 }

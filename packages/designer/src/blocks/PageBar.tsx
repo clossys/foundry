@@ -3,6 +3,7 @@ import { useLocale } from "react-aria-components";
 
 import { useEffect, useRef, useState, type ComponentPropsWithRef, type ReactNode } from "react";
 import { Button } from "../components/Button.js";
+import { ToggleButton } from "../components/ToggleButton.js";
 import { Icon } from "../components/Icon.js";
 import { Link } from "../components/Link.js";
 import { Menu } from "../components/Menu.js";
@@ -28,7 +29,7 @@ export interface PageBarCrumb {
   /** Alternatives at this level, rendered with the existing Menu component. */
   siblings?: readonly PageBarDestination[];
 }
-export type PageBarAction = { id: string; label: string; primary?: boolean; isDisabled?: boolean } & (
+export type PageBarAction = { id: string; label: string; primary?: boolean; isDisabled?: boolean; icon?: ReactNode; isSelected?: boolean; onSelectedChange?: (selected: boolean) => void } & (
   | { href: string; onAction?: never }
   | { href?: never; onAction: () => void }
 );
@@ -83,7 +84,9 @@ export interface PageBarProps {
   onHeightChange?: (height: number) => void;
 }
 
-function PageAction({ label, href, onAction, isDisabled, primary }: PageBarAction) {
+function PageAction({ label, href, onAction, isDisabled, primary, icon, isSelected, onSelectedChange }: PageBarAction) {
+  if (isSelected !== undefined) return <ToggleButton aria-label={label} shape={icon ? "icon-only" : "text"} isSelected={isSelected} onChange={onSelectedChange ?? (() => onAction?.())} isDisabled={isDisabled}>{icon ?? label}</ToggleButton>;
+  if (icon) return href !== undefined ? <Link href={href} aria-label={label} buttonVariant="ghost" isDisabled={isDisabled}>{icon}</Link> : <Button aria-label={label} className={CONTROL} style={TAP} variant="ghost" onPress={onAction} isDisabled={isDisabled}>{icon}</Button>;
   return href !== undefined
     ? <Link href={href} buttonVariant={primary ? "primary" : "ghost"} isDisabled={isDisabled} className="min-w-0 max-w-full"
         data-application-frame-action={primary ? "primary" : "secondary"}><span className="min-w-0 truncate">{label}</span></Link>
