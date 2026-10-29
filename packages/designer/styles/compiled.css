@@ -1569,6 +1569,9 @@
   .h-xl {
     height: var(--spacing-xl, 24px);
   }
+  .h-xs {
+    height: var(--spacing-xs, 4px);
+  }
   .max-h-6xl {
     max-height: var(--spacing-6xl, 128px);
   }
@@ -1647,6 +1650,9 @@
   }
   .w-sm {
     width: var(--spacing-sm, 8px);
+  }
+  .w-xs {
+    width: var(--spacing-xs, 4px);
   }
   .filter-match-width {
     max-width: var(--ui-layout-aside-w, 320px);
