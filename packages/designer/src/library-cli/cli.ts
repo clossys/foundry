@@ -11,7 +11,7 @@ import type { CompositeEngineInput } from "../catalog-core/types.js";
 import { loadCatalogBundles } from "../catalog-bundles.js";
 import type { SurfaceResolutionOptions } from "../catalog-core/surface-types.js";
 import { readSurfacePackageEvidence } from "./surface-package-evidence.js";
-import { isSurfacePackageEntry, surfaceEntryOf } from "../catalog-core/surface-library.js";
+import { isSurfacePackageEntry, surfaceEntryOf, surfaceContractDiff, resolveSurfacePackageDescriptor } from "../catalog-core/surface-library.js";
 import { foundrySurfaceCatalog } from "./surface-catalog.js";
 import { compositeLibraryHash } from "../catalog-core/library-components.js";
 import { choose, type EngineInput } from "../catalog-core/resolve.js";
@@ -277,9 +277,13 @@ export async function main(argv: string[], io: LibraryCliIO = defaultIO): Promis
       if (!doc) throw new LibraryInputError("Refresh requires a held surface");
       const entry = surfaceEntryOf(doc);
       if (!isSurfacePackageEntry(entry) || !entry.origin) throw new LibraryInputError("Refresh requires a package origin");
+      const beforeContract = resolveSurfacePackageDescriptor(compositeCatalog, entry.slot, entry.origin).contract;
       const library = await writeCompositeLibrary(args.root, compositeCatalog, { baseHash: compositeLibraryHash(held), changes: [{ portion: "surfaces", change: { op: "refresh", slot: entry.slot, source: entry.origin.source } }] }, await readObservations(args.root, args.observations), await surfaceOptions(), { command: "designer-library surfaces --refresh" });
-      const result = { ok: true, baseHash: compositeLibraryHash(library) };
-      io.out(args.json ? JSON.stringify(result) : `Surface refreshed; baseHash ${result.baseHash}`);
+      const refreshed = surfaceEntryOf(library.surfaces!.fills.find(row => row.$extensions["com.clossys.fill"].slot === entry.slot)!);
+      if (!isSurfacePackageEntry(refreshed) || !refreshed.origin) throw new LibraryInputError("Refreshed package surface missing");
+      const afterContract = resolveSurfacePackageDescriptor(compositeCatalog, refreshed.slot, refreshed.origin).contract;
+      const result = { ok: true, baseHash: compositeLibraryHash(library), contractDiff: surfaceContractDiff(entry, refreshed, { before: beforeContract, after: afterContract }) };
+      io.out(args.json ? JSON.stringify(result) : `Surface refreshed; baseHash ${result.baseHash}; contract ${result.contractDiff.breaking ? "breaking" : "compatible"}`);
       return 0;
     }
     if (args.command === "reselect" || args.command === "generate-starter") {

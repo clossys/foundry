@@ -5,7 +5,7 @@
  * `surfaces` portion still read, check and save libraries that adopted Sections or Frames, because the
  * only contracts those fills can name are the ones this package ships.
  */
-import { importFoundryFrames, importFoundrySections, loadBuildCatalog, loadSectionRegistry } from "../catalog-core/index.js";
+import { importFoundryFrames, importFoundrySections, loadBuildCatalog, loadSectionRegistry, loadFoundrySurfaceHistory } from "../catalog-core/index.js";
 import type { SurfaceCandidateDocument, SurfaceCatalog } from "../catalog-core/surface-types.js";
 import type { FrameSlot } from "../catalog-core/types.js";
 
@@ -15,6 +15,7 @@ export function foundrySurfaceCatalog(): SurfaceCatalog {
     slots: [...loadSectionRegistry().slots, ...loadBuildCatalog().slots.filter((slot): slot is FrameSlot => slot.layer === "frames")],
     fills: [...importFoundrySections().fills, ...importFoundryFrames().fills] as unknown as SurfaceCandidateDocument[],
     transforms: [], rules: [], materializations: [],
+    packageHistory: loadFoundrySurfaceHistory(),
   });
   return cached;
 }

@@ -2,7 +2,8 @@
 import { describe, expect, it } from "vitest";
 import { applyCompositeLibraryChange, compositeLibraryHash, resolveComposite } from "./library-components.js";
 import { loadCatalog } from "./index.js";
-import { surfaceEntryOf, surfacePackageDescriptorHash } from "./surface-library.js";
+import { adoptedSurface } from "./__fixtures__/surface-engine/synthetic.js";
+import { surfaceEntryOf, surfacePackageDescriptorHash, resolveSurfacePackageDescriptor } from "./surface-library.js";
 import type { CompositeCatalogData, CompositeLibraryData, CompositeChangeSet, FrameSlot } from "./types.js";
 import type { SurfacePackageDocument, SurfacePackageEntry, SurfacePackageOrigin } from "./surface-types.js";
 
@@ -14,6 +15,8 @@ function fixture() {
   const catalog: CompositeCatalogData = { values: loadCatalog(), components: { slots: [], fills: [] }, surfaces: { slots: [contract], fills: [candidate as never], transforms: [], rules: [], materializations: [] } };
   const empty: CompositeLibraryData = { source: { id: "reader-consumer", kind: "consumer", author: "consumer", license: "MIT" }, adoptedAt: "2026-10-26", values: { fills: [] }, components: { fills: [], files: [] } };
   const library = applyCompositeLibraryChange(catalog, empty, { baseHash: compositeLibraryHash(empty), changes: [{ portion: "surfaces", change: { op: "adopt", slot, source: "foundry" } }] }, options);
+  const hash = surfacePackageDescriptorHash(candidate.frames!.reader!);
+  catalog.surfaces!.packageHistory = { [hash]: [{ document: structuredClone(candidate), contract: structuredClone(contract) }] };
   candidate.frames!.reader!.slots = { main: "content" };
   const apply = (changes: CompositeChangeSet["changes"] = [{ portion: "surfaces", change: { op: "refresh", slot, source: "foundry" } }], baseHash = compositeLibraryHash(library)) => applyCompositeLibraryChange(catalog, library, { baseHash, changes }, options);
   return { catalog, candidate, library, apply };
@@ -23,7 +26,7 @@ const pointer = (library: CompositeLibraryData) => surfaceEntryOf(library.surfac
 describe("guarded held surface refresh", () => {
   it("re-resolves a stale held frame, preserves originals and records an ordered descriptor history", () => {
     const f = fixture(), before = structuredClone(f.library), from = pointer(f.library).origin.descriptorHash;
-    expect(() => resolveComposite({ catalog: f.catalog, library: f.library, ...options })).toThrow(/upstream candidate identity/);
+    expect(resolveComposite({ catalog: f.catalog, library: f.library, ...options }).surfaces!.check.findings).toContainEqual(expect.objectContaining({ code: "S2", severity: "notice", actualHash: from }));
     const next = f.apply(), to = surfacePackageDescriptorHash(f.candidate.frames!.reader!);
     expect(pointer(next).origin).toMatchObject({ source: "foundry", descriptorHash: to, history: [{ from, to }] });
     expect(pointer(next)).toMatchObject({ slots: { main: "content" } });
@@ -31,14 +34,38 @@ describe("guarded held surface refresh", () => {
     expect(resolveComposite({ catalog: f.catalog, library: next, ...options }).surfaces!.check.ok).toBe(true);
     const again = applyCompositeLibraryChange(f.catalog, next, { baseHash: compositeLibraryHash(next), changes: [{ portion: "surfaces", change: { op: "refresh", slot, source: "foundry" } }] }, options);
     expect(compositeLibraryHash(again)).toBe(compositeLibraryHash(next));
+    f.catalog.surfaces!.packageHistory = { ...f.catalog.surfaces!.packageHistory, [to]: [{ document: structuredClone(f.candidate), contract: structuredClone(f.catalog.surfaces!.slots[0]!) }] };
     f.candidate.frames!.reader!.slots = { main: "body" };
     const last = applyCompositeLibraryChange(f.catalog, next, { baseHash: compositeLibraryHash(next), changes: [{ portion: "surfaces", change: { op: "refresh", slot, source: "foundry" } }] }, options);
     expect(pointer(last).origin.history).toEqual([{ from, to }, { from: to, to: pointer(last).origin.descriptorHash }]);
+    expect(surfaceEntryOf(resolveSurfacePackageDescriptor(f.catalog, slot, pointer(f.library).origin).document)).toEqual(f.catalog.surfaces!.packageHistory![from]![0]!.document.frames!.reader);
+    expect(resolveSurfacePackageDescriptor(f.catalog, slot, pointer(next).origin).document.frames!.reader!.slots).toEqual({ main: "content" });
   });
-  it.each(["adopt", "remove"] as const)("keeps the stale provenance guard for %s", op => {
+  it.each(["adopt", "remove"] as const)("allows %s on a registered stale target", op => {
     const f = fixture(), before = structuredClone(f.library);
-    expect(() => f.apply([{ portion: "surfaces", change: op === "adopt" ? { op, slot, source: "foundry" } : { op, slot } }])).toThrow(/upstream candidate identity/);
+    const next = f.apply([{ portion: "surfaces", change: op === "adopt" ? { op, slot, source: "foundry" } : { op, slot } }]);
+    expect(next.surfaces!.fills).toHaveLength(op === "remove" ? 0 : 1);
     expect(f.library).toEqual(before);
+  });
+  it.each(["adopt", "remove"] as const)("refuses %s of an authentic package target with foreign consumer metadata", op => {
+    for (const change of [
+      { id: "foreign/frames.reader" }, { source: "foreign" }, { sourceAddress: "fills/foreign.json" },
+      { author: "foundry" }, { trust: "foundry" }, { status: "stable" }, { conforms: ["foreign"] },
+      { evidence: [{ clause: "foreign", path: "foreign" }] }, { originKinds: ["authored"] },
+    ]) {
+      const f = fixture();
+      Object.assign(f.library.surfaces!.fills[0]!.$extensions["com.clossys.fill"], change);
+      const before = structuredClone(f.library);
+      expect(() => f.apply([{ portion: "surfaces", change: op === "adopt" ? { op, slot, source: "foundry" } : { op, slot } }])).toThrow(/S1 consumer metadata differs/);
+      expect(f.library).toEqual(before);
+    }
+  });
+  it("refuses removing an authentic source target with foreign consumer metadata", () => {
+    const { input } = adoptedSurface();
+    input.library.surfaces!.fills[0]!.$extensions["com.clossys.fill"].id = "foreign/sections.synthetic";
+    const before = structuredClone(input.library);
+    expect(() => applyCompositeLibraryChange(input.catalog, input.library, { baseHash: compositeLibraryHash(input.library), changes: [{ portion: "surfaces", change: { op: "remove", slot: "sections.synthetic" } }] }, { surfaceOptions: input.surfaceOptions })).toThrow(/S1 consumer metadata differs/);
+    expect(input.library).toEqual(before);
   });
   it.each(["missing", "ambiguous", "foreign", "fill", "package", "implementation", "descriptor", "consumer", "history", "source", "unknown", "cas"])("refuses %s without mutation", failure => {
     const f = fixture();
@@ -56,7 +83,7 @@ describe("guarded held surface refresh", () => {
     expect(() => failure === "source" || failure === "unknown" ? f.apply([{ portion: "surfaces", change: { op: "refresh", slot: failure === "unknown" ? "frames.unknown" : slot, source: failure === "source" ? "foreign" : "foundry" } }]) : f.apply(undefined, failure === "cas" ? "sha256:" + "0".repeat(64) : undefined)).toThrow();
     expect(f.library).toEqual(before);
   });
-  it("does not exempt a second stale held surface or commit a successful refresh before a later failure", () => {
+  it("retains a second registered stale hold and refuses a foreign hold without partial results", () => {
     const f = fixture();
     const other = structuredClone(f.candidate);
     other.$extensions["com.clossys.fill"].slot = "frames.other"; other.$extensions["com.clossys.fill"].id = "foundry/frames.other";
@@ -66,7 +93,12 @@ describe("guarded held surface refresh", () => {
     // Stage a valid second held pointer while the first is current, then make both stale.
     const current = f.apply();
     const both = applyCompositeLibraryChange(f.catalog, current, { baseHash: compositeLibraryHash(current), changes: [{ portion: "surfaces", change: { op: "adopt", slot: "frames.other", source: "foundry" } }] }, options);
+    const oldFirst = surfacePackageDescriptorHash(f.candidate.frames!.reader!), oldOther = surfacePackageDescriptorHash(other.frames!.other!);
+    f.catalog.surfaces!.packageHistory = { ...f.catalog.surfaces!.packageHistory, [oldFirst]: [{ document: structuredClone(f.candidate), contract: structuredClone(f.catalog.surfaces!.slots[0]!) }], [oldOther]: [{ document: structuredClone(other), contract: structuredClone(f.catalog.surfaces!.slots[1]!) }] };
     f.candidate.frames!.reader!.slots = { main: "newContent" }; other.frames!.other!.slots = { main: "newContent" };
+    const refreshed = applyCompositeLibraryChange(f.catalog, both, { baseHash: compositeLibraryHash(both), changes: [{ portion: "surfaces", change: { op: "refresh", slot, source: "foundry" } }] }, options);
+    expect(refreshed.surfaces!.fills.find(doc => doc.$extensions["com.clossys.fill"].slot === "frames.other")).toEqual(both.surfaces!.fills.find(doc => doc.$extensions["com.clossys.fill"].slot === "frames.other"));
+    other.$extensions["com.clossys.fill"].id = "foreign/frames.other";
     const before = structuredClone(both);
     expect(() => applyCompositeLibraryChange(f.catalog, both, { baseHash: compositeLibraryHash(both), changes: [{ portion: "surfaces", change: { op: "refresh", slot, source: "foundry" } }, { portion: "surfaces", change: { op: "remove", slot: "frames.other" } }] }, options)).toThrow(/upstream candidate identity/);
     expect(both).toEqual(before);

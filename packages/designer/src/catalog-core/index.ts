@@ -197,11 +197,14 @@ export type { ComponentDefaultsInput, ComponentDefaultsPlan, ComponentDefaultRow
 export { importFoundrySections } from "../importers/foundry-sections.js";
 export type { FoundrySectionImportInput, FoundrySectionImport, FoundrySectionCoverage, FoundrySectionFillDoc, FoundrySectionDescriptor } from "../importers/foundry-sections.js";
 export { importFoundryFrames } from "../importers/foundry-frames.js";
+export { loadFoundrySurfaceHistory } from "../importers/foundry-surface-history.js";
 export type { FoundryFrameInput, FoundryFrameCoverage, FoundryFrameFillDoc, FoundryFrameDescriptor } from "../importers/foundry-frames.js";
 export { planSurfaceDefaults } from "./surface-defaults.js";
 export type { SurfaceDefaultsInput, SurfaceDefaultsPlan, SurfaceDefaultRow, SurfaceDefaultBasis, SurfaceDefaultDecision, SurfaceDefaultDescriptor, SurfaceDefaultCandidateDocument } from "./surface-defaults.js";
 
 export { materializeSurfaceSourceFill } from "./surface-materialize.js";
+export { resolveSurfacePackageDescriptor, surfaceContractDiff } from "./surface-library.js";
+export type { SurfacePackagePin, SurfacePackageOrigin, SurfacePackageEntry, SurfacePackageDocument, SurfacePackageRegistration, SurfaceContractDiff } from "./surface-types.js";
 export type { SurfaceSlot, SurfaceFile, SurfaceFileHash, SurfacePin, SurfaceApi, SurfacePropBinding, SurfaceLiteralBinding, SurfaceConfig, SurfaceComponentBinding, SurfaceDependency, SurfaceBase, SurfaceInputRef, SurfaceInputIdentity, SurfaceRuleIdentity, SurfaceOrigin, SurfaceEntryBase, SurfaceSectionEntry, SurfaceFrameEntry, SurfaceCandidate, SurfaceCandidateDocument, SurfaceDocument, SurfaceLibraryPortion, SurfacePackageEvidence, SurfaceCommandReceipt, SurfaceMeasurement, SurfaceResolutionOptions, SurfaceApplyOptions, SurfaceFinding, SurfaceCheckResult, SurfaceResolvedFill, SurfaceResolved, SurfaceOperation, SurfaceTransformResult, SurfaceTransform, SurfaceRule, SurfaceCatalog, SurfaceFetchPort, SurfaceMaterializationInput, SurfaceSourceBundle, SurfaceSelection, SurfaceEmitTarget, SurfaceRuntimeIdentity, SurfaceMaterializationReceipt } from "./surface-types.js";
 
 export * from "./full-library-runtime.js";

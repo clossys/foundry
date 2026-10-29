@@ -53,8 +53,10 @@ export function resolveSurfaces(input: CompositeEngineInput, profile: CompositeR
             primaryNames.add(primary);
             if (meta.id !== `${input.library.source.id}/${entry.slot}` || meta.source !== input.library.source.id || meta.sourceAddress !== `fills/${entry.slot}.json` || meta.author !== "consumer" || meta.trust !== "consumer" || meta.status !== "draft" || meta.conforms.length || meta.evidence.length || stableStringify(meta.originKinds) !== stableStringify(["package"]))
                 surfaceFault("S1 consumer metadata differs");
-            verifySurfacePackageProvenance(input.catalog, entry);
-            const slot = input.catalog.surfaces?.slots.find(row => row.id === entry.slot);
+            const provenance = verifySurfacePackageProvenance(input.catalog, entry);
+            if (provenance.stale)
+                findings.push({ code: "S2", rule: "surfaces", severity: "notice", subject: entry.slot, message: `Held package surface differs from current upstream; run designer-library surfaces --refresh ${entry.slot}`, expectedHash: provenance.expectedHash, actualHash: provenance.actualHash, expectedPin: provenance.expectedPin, actualPin: provenance.actualPin, nextOperation: { op: "refresh", slot: entry.slot, source: origin.source } });
+            const slot = provenance.registration.contract;
             if (!slot)
                 add("S1", entry.slot, "authored contract missing");
             else

@@ -208,7 +208,7 @@ export interface SurfacePackageFrameEntry {
     impl: { kind: "package"; module: string; export: string };
 }
 export type SurfacePackageEntry = SurfacePackageSectionEntry | SurfacePackageFrameEntry;
-/** Joined to the catalog candidate (descriptorHash, pin) at adopt and at every check; never minted by the library. */
+/** Joined to a current or historical catalog registration; never vouched for by the library. */
 export interface SurfacePackageOrigin {
     kind: "package";
     source: string;
@@ -227,6 +227,18 @@ export type SurfacePackageDocument = {
     sections?: Readonly<Record<string, SurfacePackageEntry & { origin?: SurfacePackageOrigin }>>;
     frames?: Readonly<Record<string, SurfacePackageEntry & { origin?: SurfacePackageOrigin }>>;
 };
+/** Catalog-owned snapshot. Consumer origins and transition histories cannot register descriptors. */
+export interface SurfacePackageRegistration {
+    document: SurfacePackageDocument;
+    contract: SectionSlot | FrameSlot;
+}
+export interface SurfaceContractDiff {
+    fromHash: string;
+    toHash: string;
+    added: { members: readonly string[]; slots: readonly string[]; statePorts: readonly string[] };
+    removed: { members: readonly string[]; slots: readonly string[]; statePorts: readonly string[] };
+    breaking: boolean;
+}
 export type SurfaceAnyDocument = SurfaceCandidateDocument | SurfaceDocument | SurfacePackageDocument;
 export type SurfaceEntry = (SurfaceCandidate & { origin?: SurfaceOrigin }) | (SurfacePackageEntry & { origin?: SurfacePackageOrigin });
 export interface SurfaceLibraryPortion {
@@ -283,6 +295,11 @@ export interface SurfaceFinding {
     severity: "error" | "notice" | "warning";
     subject: string;
     message: string;
+    expectedHash?: string;
+    actualHash?: string;
+    expectedPin?: SurfacePackagePin;
+    actualPin?: SurfacePackagePin;
+    nextOperation?: Extract<SurfaceOperation, { op: "refresh" }>;
 }
 export interface SurfaceCheckResult {
     ok: boolean;
@@ -362,6 +379,8 @@ export interface SurfaceCatalog {
     transforms: readonly SurfaceTransform[];
     rules: readonly SurfaceRule[];
     materializations: readonly SurfaceMaterializationReceipt[];
+    /** Immutable upstream snapshots, bucketed by body hash; exact pin/source/fill/license disambiguate a bucket. */
+    packageHistory?: Readonly<Record<string, readonly SurfacePackageRegistration[]>>;
 }
 export type SurfaceFetchPort = (request: {
     pin: SurfacePin;

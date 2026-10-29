@@ -4,7 +4,7 @@ import { sha256 } from "./digest.js";
 import { stableStringify } from "./stable.js";
 import { runtimeSnapshot } from "./runtime-ports.js";
 import type { CompositeCatalogData, CompositeLibraryData, CompositeResolved } from "./types.js";
-import type { SurfaceAnyDocument, SurfaceEntry, SurfacePackageDocument, SurfacePackageEntry, SurfacePackageOrigin, SurfacePackagePin, SurfaceBase, SurfaceCandidate, SurfaceCandidateDocument, SurfaceDocument, SurfaceFile, SurfaceFileHash, SurfaceInputIdentity, SurfaceInputRef, SurfaceLibraryPortion, SurfaceOperation, SurfaceOrigin, SurfaceRuleIdentity, SurfaceSourceBundle, SurfaceSelection, SurfaceResolutionOptions } from "./surface-types.js";
+import type { SurfaceAnyDocument, SurfaceEntry, SurfacePackageDocument, SurfacePackageEntry, SurfacePackageOrigin, SurfacePackagePin, SurfacePackageRegistration, SurfaceContractDiff, SurfaceBase, SurfaceCandidate, SurfaceCandidateDocument, SurfaceDocument, SurfaceFile, SurfaceFileHash, SurfaceInputIdentity, SurfaceInputRef, SurfaceLibraryPortion, SurfaceOperation, SurfaceOrigin, SurfaceRuleIdentity, SurfaceSourceBundle, SurfaceSelection, SurfaceResolutionOptions } from "./surface-types.js";
 export const surfaceDigest = (value: unknown): string => `sha256:${sha256(stableStringify(value))}`;
 export function surfaceFault(message: string): never { throw new CatalogError(`surfaces: ${message}`); }
 const safeKey = (key: string): boolean => !["__proto__", "constructor", "prototype"].includes(key);
@@ -300,14 +300,112 @@ export function surfaceOf(doc: SurfaceAnyDocument): SurfaceCandidate & {
 export const surfaceOutputs = (fill: SurfaceEntry): readonly SurfaceFileHash[] => isSurfacePackageEntry(fill) ? [] : fill.outputSha256;
 export const surfacePackageDescriptorHash = (fill: SurfacePackageEntry): string => { const { origin: _origin, ...descriptor } = fill as SurfacePackageEntry & { origin?: unknown }; return surfaceDigest(descriptor); };
 const packageCandidates = (catalog: CompositeCatalogData, slot: string, source: string) => (catalog.surfaces?.fills ?? []).filter(doc => { const meta = doc.$extensions["com.clossys.fill"]; return meta.slot === slot && meta.source === source && meta.mode === "implementation"; }).map(doc => ({ doc, fill: surfaceEntryOf(doc) })).filter(row => isSurfacePackageEntry(row.fill));
-/** Catalog join: the installed descriptor and pin equal exactly one catalog package candidate. Nothing the library carries vouches for itself. */
-export function verifySurfacePackageProvenance(catalog: CompositeCatalogData, fill: SurfacePackageEntry & { origin?: SurfacePackageOrigin }): void {
+type PackageIdentity = Pick<SurfacePackageOrigin, "source" | "fill" | "pin" | "license" | "descriptorHash">;
+const packageIdentityMatches = (doc: SurfacePackageDocument, identity: PackageIdentity): boolean => {
+    const meta = doc.$extensions["com.clossys.fill"];
+    return meta.source === identity.source && meta.id === identity.fill && meta.license === identity.license && stableStringify(meta.pin) === stableStringify(identity.pin);
+};
+/** Validate historical contract fields consumed by static checks and contract diffs. */
+function assertPackageContract(value: unknown, slot: string): asserts value is SurfacePackageRegistration["contract"] {
+    if (!value || typeof value !== "object" || Array.isArray(value)) surfaceFault("S2 historical contract required");
+    const row = value as Node, section = slot.startsWith("sections.");
+    if (row.id !== slot || row.layer !== (section ? "sections" : "frames")) surfaceFault("S2 historical contract identity differs");
+    if (!row.contract || typeof row.contract !== "object" || Array.isArray(row.contract)) surfaceFault("S2 historical contract required");
+    const contract = row.contract as Node;
+    if (contract.kind !== (section ? "section" : "frame")) surfaceFault("S2 historical contract kind differs");
+    object(contract.members, ["mode", "names"]); choice(contract.members.mode, ["closed"]); strings(contract.members.names);
+    list(contract.slots, item => {
+        if (!item || typeof item !== "object" || Array.isArray(item)) surfaceFault("S2 historical content slot required");
+        const port = item as Node;
+        string(port[section ? "name" : "id"]);
+        if (typeof port.required !== "boolean") surfaceFault("S2 historical content slot required flag differs");
+        string(port[section ? "type" : "accepts"]);
+    });
+    const contentSlots = (contract.slots as Node[]).map(port => port[section ? "name" : "id"]);
+    if (new Set(contentSlots).size !== contentSlots.length) surfaceFault("S2 duplicate historical content slot");
+    object(contract.allowedReads, ["tokens", "assets"]); strings(contract.allowedReads.tokens); strings(contract.allowedReads.assets);
+    if (section) { strings(contract.allowedComposes); strings(contract.parts); }
+    else {
+        choice(contract.rendering, ["server", "client"]);
+        list(contract.statePorts, port => { object(port, ["id", "type"], ["values"]); string(port.id); choice(port.type, ["boolean", "number", "string"]); if (port.values !== undefined) strings(port.values); });
+        const ports = (contract.statePorts as Node[]).map(port => port.id);
+        if (new Set(ports).size !== ports.length) surfaceFault("S2 duplicate historical state port");
+        if (contract.composes !== undefined) strings(contract.composes);
+    }
+}
+function historicalPackageDescriptors(catalog: CompositeCatalogData, descriptorHash: string): readonly SurfacePackageRegistration[] {
+    const history = catalog.surfaces?.packageHistory;
+    if (!history || !Object.hasOwn(history, descriptorHash)) return [];
+    const rows = history[descriptorHash]!;
+    if (!Array.isArray(rows)) surfaceFault("S2 invalid historical descriptor bucket");
+    return rows.map((row: SurfacePackageRegistration) => {
+        object(row as unknown, ["document", "contract"]);
+        const entry = surfaceEntryOf(row.document);
+        if (!isSurfacePackageEntry(entry) || entry.origin || surfacePackageDescriptorHash(entry) !== descriptorHash)
+            surfaceFault("S2 historical descriptor registration differs");
+        assertPackageContract(row.contract, entry.slot);
+        return row;
+    });
+}
+/** Resolve authentic upstream bytes by hash AND full metadata identity, including version-only pins. */
+export function resolveSurfacePackageDescriptor(catalog: CompositeCatalogData, slot: string, identity: PackageIdentity): SurfacePackageRegistration {
+    const current = packageCandidates(catalog, slot, identity.source).filter(row => surfacePackageDescriptorHash(row.fill as SurfacePackageEntry) === identity.descriptorHash && packageIdentityMatches(row.doc as unknown as SurfacePackageDocument, identity));
+    if (current.length > 1) surfaceFault("S2 ambiguous current package descriptor");
+    if (current.length === 1) {
+        const contract = catalog.surfaces?.slots.find(row => row.id === slot);
+        if (!contract) surfaceFault("S1 authored contract missing");
+        return runtimeSnapshot({ document: current[0]!.doc as unknown as SurfacePackageDocument, contract });
+    }
+    const registered = historicalPackageDescriptors(catalog, identity.descriptorHash).filter(row => row.document.$extensions["com.clossys.fill"].slot === slot && packageIdentityMatches(row.document, identity));
+    if (registered.length !== 1) surfaceFault("S2 unique registered historical upstream required");
+    return runtimeSnapshot(registered[0]!);
+}
+/** Current upstream remains required; only a catalog-registered old identity can become a stale finding. */
+export function verifySurfacePackageProvenance(catalog: CompositeCatalogData, fill: SurfacePackageEntry & { origin?: SurfacePackageOrigin }) {
     const o = fill.origin;
     if (!o || o.descriptorHash !== surfacePackageDescriptorHash(fill))
         surfaceFault("S6 descriptor hand edit requires author");
     const candidates = packageCandidates(catalog, fill.slot, o.source);
-    if (candidates.length !== 1 || surfacePackageDescriptorHash(candidates[0]!.fill as SurfacePackageEntry) !== o.descriptorHash || stableStringify(candidates[0]!.doc.$extensions["com.clossys.fill"].pin) !== stableStringify(o.pin) || candidates[0]!.doc.$extensions["com.clossys.fill"].license !== o.license || candidates[0]!.doc.$extensions["com.clossys.fill"].id !== o.fill)
+    if (candidates.length !== 1) surfaceFault("S2 upstream candidate identity differs: unique current upstream candidate required");
+    const current = candidates[0]!, meta = current.doc.$extensions["com.clossys.fill"];
+    if (meta.id !== o.fill || meta.pin!.package !== o.pin.package || stableStringify(current.fill.impl) !== stableStringify(fill.impl))
+        surfaceFault("S2 foreign upstream candidate identity differs");
+    const registration = resolveSurfacePackageDescriptor(catalog, fill.slot, o);
+    const registered = surfaceEntryOf(registration.document), registeredMeta = registration.document.$extensions["com.clossys.fill"];
+    if (surfacePackageDescriptorHash(registered as SurfacePackageEntry) !== o.descriptorHash || registeredMeta.author !== meta.author || registeredMeta.trust !== meta.trust)
         surfaceFault("S2 upstream candidate identity differs");
+    for (const transition of o.history ?? []) for (const digest of [transition.from, transition.to]) {
+        const known = surfacePackageDescriptorHash(current.fill as SurfacePackageEntry) === digest || historicalPackageDescriptors(catalog, digest).some(row => {
+            const leaf = surfaceEntryOf(row.document), priorMeta = row.document.$extensions["com.clossys.fill"];
+            return priorMeta.source === o.source && priorMeta.id === o.fill && priorMeta.pin!.package === o.pin.package && stableStringify(leaf.impl) === stableStringify(fill.impl);
+        });
+        if (!known) surfaceFault("S2 unregistered refresh history identity");
+    }
+    const expectedHash = surfacePackageDescriptorHash(current.fill as SurfacePackageEntry);
+    return { registration, expectedHash, actualHash: o.descriptorHash, expectedPin: meta.pin as SurfacePackagePin, actualPin: o.pin, stale: expectedHash !== o.descriptorHash || !packageIdentityMatches(current.doc as unknown as SurfacePackageDocument, o) };
+}
+/** Deterministic public refresh diff. Removing any declared member, slot or state port is breaking. */
+export function surfaceContractDiff(before: SurfacePackageEntry, after: SurfacePackageEntry, contracts?: { before: SurfacePackageRegistration["contract"]; after: SurfacePackageRegistration["contract"] }): SurfaceContractDiff {
+    if (before.slot !== after.slot) surfaceFault("S1 contract diff slot differs");
+    const sorted = (values: readonly string[]) => [...new Set(values)].sort();
+    const mapped = (entry: SurfacePackageEntry) => ({
+        members: sorted([...("members" in entry ? entry.members : []), ...Object.keys(entry.propMap)]),
+        slots: Object.keys("slotMap" in entry ? entry.slotMap : entry.slots),
+        statePorts: Object.keys("statePorts" in entry ? entry.statePorts : {}),
+    });
+    const declared = (registered?: SurfacePackageRegistration["contract"]) => {
+        if (!registered) return { members: [], slots: [], statePorts: [] };
+        assertPackageContract(registered, before.slot);
+        const contract = registered.contract;
+        return { members: contract.members.names, slots: contract.kind === "section" ? contract.slots.map(port => port.name) : contract.slots.map(port => port.id), statePorts: contract.kind === "frame" ? contract.statePorts.map(port => port.id) : [] };
+    };
+    const old = mapped(before), next = mapped(after), oldContract = declared(contracts?.before), nextContract = declared(contracts?.after);
+    const difference = (from: typeof old, to: typeof old, fromContract: ReturnType<typeof declared>, toContract: ReturnType<typeof declared>) => {
+        const field = (key: keyof typeof old) => sorted([...to[key].filter(value => !from[key].includes(value)), ...toContract[key].filter(value => !fromContract[key].includes(value))]);
+        return { members: field("members"), slots: field("slots"), statePorts: field("statePorts") };
+    };
+    const added = difference(old, next, oldContract, nextContract), removed = difference(next, old, nextContract, oldContract);
+    return { fromHash: surfacePackageDescriptorHash(before), toHash: surfacePackageDescriptorHash(after), added, removed, breaking: Object.values(removed).some(keys => keys.length > 0) };
 }
 export function surfacePackageDocument(library: CompositeLibraryData, fill: SurfacePackageEntry, origin: SurfacePackageOrigin): SurfacePackageDocument {
     const meta = { id: `${library.source.id}/${fill.slot}`, slot: fill.slot, source: library.source.id, mode: "implementation" as const, sourceAddress: `fills/${fill.slot}.json`, relation: "same-contract" as const, builtOn: [], conforms: [], evidence: [], author: "consumer" as const, trust: "consumer" as const, license: origin.license, status: "draft" as const, originKinds: ["package"] };
@@ -431,14 +529,20 @@ export function applySurfaceOperation(catalog: CompositeCatalogData, library: Co
         return copy;
     if (!catalog.surfaces?.slots.some(row => row.id === operation.slot))
         surfaceFault("S1 unknown surface contract");
+    if (current) {
+        const target = surfaceEntryOf(current), meta = current.$extensions["com.clossys.fill"];
+        if (!target.origin) surfaceFault("S1 consumer origin missing");
+        if (meta.id !== `${copy.source.id}/${target.slot}` || meta.source !== copy.source.id || !isSurfacePackageEntry(target) && target.source !== copy.source.id || meta.sourceAddress !== `fills/${target.slot}.json` || meta.author !== "consumer" || meta.trust !== "consumer" || meta.status !== "draft" || meta.conforms.length || meta.evidence.length || stableStringify(meta.originKinds) !== stableStringify([target.origin.kind]))
+            surfaceFault("S1 consumer metadata differs");
+    }
     if (operation.op === "refresh") {
         if (!current) surfaceFault("S2 refresh requires held surface");
-        const held = surfaceEntryOf(current), meta = current.$extensions["com.clossys.fill"];
+        const held = surfaceEntryOf(current);
         if (!isSurfacePackageEntry(held) || !held.origin || held.origin.kind !== "package") surfaceFault("S2 refresh requires package origin");
         const origin = held.origin;
-        if (origin.source !== operation.source || meta.id !== `${copy.source.id}/${operation.slot}` || meta.source !== copy.source.id || meta.sourceAddress !== `fills/${operation.slot}.json` || meta.author !== "consumer" || meta.trust !== "consumer" || meta.status !== "draft" || meta.conforms.length || meta.evidence.length || stableStringify(meta.originKinds) !== stableStringify(["package"]))
-            surfaceFault("S2 refresh source or consumer identity differs");
-        if (origin.descriptorHash !== surfacePackageDescriptorHash(held)) surfaceFault("S6 descriptor hand edit requires author");
+        if (origin.source !== operation.source)
+            surfaceFault("S2 refresh source differs");
+        verifySurfacePackageProvenance(catalog, held);
         const candidates = packageCandidates(catalog, operation.slot, operation.source);
         if (candidates.length !== 1) surfaceFault("S2 unique refresh upstream required");
         const candidate = candidates[0]!, upstream = candidate.doc.$extensions["com.clossys.fill"], next = candidate.fill as SurfacePackageEntry;
@@ -451,6 +555,11 @@ export function applySurfaceOperation(catalog: CompositeCatalogData, library: Co
         verifySurfacePackageProvenance(catalog, surfaceEntryOf(refreshed) as SurfacePackageEntry & { origin: SurfacePackageOrigin });
         copy.surfaces = canonicalSurfacePortion({ ...copy.surfaces!, fills: copy.surfaces!.fills.map(doc => surfaceEntryOf(doc).slot === operation.slot ? refreshed as unknown as SurfaceDocument : doc) });
         return copy;
+    }
+    if (current) {
+        const target = surfaceEntryOf(current);
+        if (isSurfacePackageEntry(target)) verifySurfacePackageProvenance(catalog, target);
+        else { verifySurfaceFiles(target, copy.surfaces!.files); verifySurfaceProvenance(catalog, copy, target); }
     }
     let document: SurfaceDocument | undefined;
     let newFiles: readonly SurfaceFile[] = [];

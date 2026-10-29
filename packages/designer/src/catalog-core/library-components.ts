@@ -15,7 +15,7 @@ import type { ComponentLibrary } from "./resolve-components.js";
 import type { ComponentEmitTarget } from "./emit-components.js";
 import type { CompositeCatalogData, CompositeChangeSet, CompositeCheckResult, CompositeEmitFile, CompositeEmitTarget, CompositeEngineInput, CompositeLibraryData, CompositeResolved, LibraryData, Resolved } from "./types.js";
 
-import { surfacePortionHash, applySurfaceOperation, surfaceOf } from "./surface-library.js";
+import { surfacePortionHash, applySurfaceOperation, surfaceOf, surfaceEntryOf, surfaceOutputs } from "./surface-library.js";
 import { resolveSurfaces } from "./surface-check.js";
 import { emitSurfaces } from "./surface-emit.js";
 import type { SurfaceApplyOptions } from "./surface-types.js";
@@ -166,17 +166,13 @@ export function applyCompositeLibraryChange(catalog: CompositeCatalogData, libra
       if(operation.change.op!=="remove"&&!options)throw new CatalogError("surfaces: S8 explicit resolution options required");
       const {source:_vs,adoptedAt:_vd,...vp}=values;const {source:_cs,adoptedAt:_cd,...cp}=components;
       staged={...staged,values:vp,components:cp};
-      // Only refresh may replace its exact held package pointer before checking current provenance.
-      // The refresh operation validates its old identity and the new upstream join itself.
-      if (operation.change.op === "refresh") {
-        const unsurfaced = { catalog, library: { ...staged, surfaces: undefined }, componentOptions: options?.componentOptions, surfaceOptions: options?.surfaceOptions };
-        const profile = resolveCompositeFrom(unsurfaced, current(unsurfaced));
-        staged = applySurfaceOperation(catalog, staged, operation.change, [], profile, options!.surfaceOptions);
-        resolveSurfaces({ ...unsurfaced, library: staged }, profile, false);
-        continue;
-      }
       const {surfaces:_deferred,...withoutSurfaces}=staged;
-      const pending={catalog,library:staged,componentOptions:options?.componentOptions,surfaceOptions:options?.surfaceOptions};
+      // The operation validates its target. Retained leaves are checked normally before dispatch,
+      // including shared source files; final resolution validates the complete resulting graph.
+      const retained = staged.surfaces?.fills.filter(doc => surfaceEntryOf(doc).slot !== operation.change.slot);
+      const retainedPaths = new Set(retained?.flatMap(doc => surfaceOutputs(surfaceEntryOf(doc)).map(row => row.path)));
+      const validationLibrary = retained ? { ...staged, surfaces: { ...staged.surfaces!, fills: retained, files: staged.surfaces!.files.filter(file => retainedPaths.has(file.path)) } } : staged;
+      const pending={catalog,library:validationLibrary,componentOptions:options?.componentOptions,surfaceOptions:options?.surfaceOptions};
       const unsurfaced={...pending,library:withoutSurfaces};
       const profile=resolveCompositeFrom(unsurfaced,current(unsurfaced));
       profile.surfaces=resolveSurfaces(pending,profile,false);
