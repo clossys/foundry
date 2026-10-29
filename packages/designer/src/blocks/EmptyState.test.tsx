@@ -1,4 +1,7 @@
 import { renderToStaticMarkup as renderS4Server } from "react-dom/server";
+import { readFileSync } from "node:fs";
+import { join } from "node:path";
+import ts from "typescript";
 import { describe, expect, it } from "vitest";
 import { render, screen } from "@testing-library/react";
 import { EmptyState } from "./EmptyState.js";
@@ -83,4 +86,18 @@ it("S4 server-renders the supplied title through the real shared Header", () => 
   const markup = renderS4Server(<EmptyState title="Title" description="Support" />);
   expect(markup).toContain("<h2");
   expect(markup).toContain("Title</h2>");
+});
+
+it("declares neutral content through SemanticContent while retaining the shared heading part", () => {
+  const source = readFileSync(join(import.meta.dirname, "EmptyState.tsx"), "utf8");
+  expect(source).toContain("<SectionHeader");
+  expect(source).toContain("<SemanticContent");
+  const parsed = ts.createSourceFile("EmptyState.tsx", source, ts.ScriptTarget.Latest, true, ts.ScriptKind.TSX);
+  const nativeTags: string[] = [];
+  function visit(node: ts.Node) {
+    if ((ts.isJsxOpeningElement(node) || ts.isJsxSelfClosingElement(node)) && ts.isIdentifier(node.tagName) && /^[a-z]/.test(node.tagName.text)) nativeTags.push(node.tagName.text);
+    ts.forEachChild(node, visit);
+  }
+  visit(parsed);
+  expect(nativeTags).toEqual([]);
 });
