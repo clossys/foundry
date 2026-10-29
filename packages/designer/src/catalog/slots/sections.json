@@ -5912,7 +5912,7 @@
       "kind": "section",
       "root": "header",
       "anatomy": {
-        "band": null,
+        "band": "sections.band",
         "header": null
       },
       "slots": [

@@ -166,3 +166,12 @@ describe("Foundry frame descriptors", () => {
     expect(mutant.fills.find(doc => doc.$extensions["com.clossys.fill"].slot === "frames.sheet")!.$extensions["com.clossys.fill"].unmapped).toContain("slot.heading");
   });
 });
+
+it("maps scroll page regions, progress and main-state to public AppFrame props", () => {
+  const mapping = FOUNDRY_FRAME_MAP["app-shell"]!;
+  expect(mapping.slots).toMatchObject({ "page-module": "pageModule", progress: "progress", state: "stateViews" });
+  expect(mapping.statePorts).toMatchObject({ navigating: "state.navigating", "main-state": "state.main" });
+  const row = result().coverage.find(row => row.slot === "frames.app-shell")!;
+  expect(row.missingSlots).toEqual([]);
+  expect(row.missingStatePorts).toEqual([]);
+});
