@@ -1,4 +1,4 @@
-import { compilePublication, stampPublication } from "./publication.js";
+import { compilePublication, stampPublication, publicationDigest } from "./publication.js";
 import type { CompiledPublication, PublicationSnapshot } from "./publication.js";
 import { createHash } from "node:crypto";
 import { createCopyResolver } from "@clossys/writer";
@@ -169,6 +169,11 @@ export function prepareContentRelease(input: ReleaseInput, numbers: Readonly<Rec
     groups.set(target, group);
   });
   if (!object(numbers)) add("numbers", "release-number", "Release numbers must be a target-to-positive-integer record");
+  for (const selected of groups.values()) for (const row of selected) if (row.publication) {
+    const owned = selected.map(item => item.slot.route).filter((path): path is string => path !== undefined).sort();
+    const projected = row.publication.products.routes.routes.map(route => route.path).sort();
+    if (publicationDigest(owned) !== publicationDigest(projected)) add("input.selections", "release-publication-closure", "Every projected publication route must be owned by one selected active candidate on this target, with no extra selected routes");
+  }
   for (const [target, selected] of groups) {
     if (new Set(selected.map(row => row.receiver)).size !== 1) add(`targets.${target}`, "release-receiver", `Deploy target ${target} has conflicting handover receivers`);
     const n = object(numbers) && Object.hasOwn(numbers, target) ? numbers[target] : 1;

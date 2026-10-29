@@ -1,4 +1,4 @@
-import { publicationDigest, stampPublication } from "../release/publication.js";
+import { publicationDigest, stampPublication, assertCompiledPublication } from "../release/publication.js";
 import type { CompiledPublication } from "../release/publication.js";
 import { constants } from "node:fs";
 import * as fs from "node:fs/promises";
@@ -7,11 +7,56 @@ import type { ContentFinding } from "../composition.js";
 import { computeReleaseDigest, prepareContentRelease } from "../release/prepare.js";
 import type { ReleaseInput, ReleaseManifest, ReleaseResult } from "../release/types.js";
 import { isContentLocale, isRevisionId, SLOT_KINDS } from "../vocabulary.js";
-import { readStoreJson, storeEntries, storeRoot, storeSegment } from "./files.js";
+import { readStoreJson, optionalStoreJson, writeStoreJson, storeEntries, storeRoot, storeSegment } from "./files.js";
 
 function object(value: unknown): value is Record<string, unknown> {
   return value !== null && typeof value === "object" && !Array.isArray(value);
 }
+
+export interface ContentReleasePointer {
+  readonly targetId: string;
+  readonly current: { readonly n: number; readonly digest: string };
+  /** Only bundles explicitly selected through this local release operation. */
+  readonly released: readonly { readonly n: number; readonly digest: string }[];
+}
+export type ContentReleasePointerResult = { readonly ok: true; readonly pointer: ContentReleasePointer } | { readonly ok: false; readonly findings: readonly ContentFinding[] };
+
+async function changeReleasePointer(inputRoot: string, targetId: string, digest: string, rollback: boolean): Promise<ContentReleasePointerResult> {
+  const refuse = (message: string): ContentReleasePointerResult => ({ ok:false,findings:[{path:"_release-pointers",rule:"release-pointer",message}] });
+  let root: string;
+  try { storeSegment(targetId); if (!hash(digest)) return refuse("An exact stored release digest is required"); root = await checkedRoot(inputRoot); await regularDirectory(join(root,"_releases")); }
+  catch { return refuse("A regular existing release store and safe target are required"); }
+  const lockPath = join(root,"_releases",".lock");
+  let lock: OwnedPath;
+  try { await fs.mkdir(lockPath); const stat = await fs.lstat(lockPath); lock = {path:lockPath,dev:stat.dev,ino:stat.ino}; }
+  catch { return refuse("Release store is busy or invalid"); }
+  try {
+    const numbers = await releaseNumbers(root);
+    const next = numbers[targetId];
+    if (!next) return refuse("Unknown release target");
+    const manifests: ReleaseManifest[] = [];
+    for (let n=1;n<next;n++) manifests.push(await readStoreJson(root,`_releases/${targetId}/${n}.json`) as ReleaseManifest);
+    const selected = manifests.find(manifest => manifest.digest === digest);
+    if (!selected) return refuse("Digest does not identify a complete validated stored bundle");
+    const previous = await optionalStoreJson(root,`_release-pointers/${targetId}.json`);
+    const known = (value: unknown): value is ContentReleasePointer["current"] => object(value) && keys(value,["n","digest"]) && manifests.some(row => row.n === value.n && row.digest === value.digest);
+    if (previous !== undefined && (!object(previous) || !keys(previous,["targetId","current","released"]) || previous.targetId !== targetId || !known(previous.current) || !Array.isArray(previous.released) || !previous.released.length || previous.released.some(value => !known(value)) || new Set(previous.released.map(value => (value as {n:number}).n)).size !== previous.released.length || !previous.released.some(value => publicationDigest(value) === publicationDigest(previous.current)))) return refuse("Stored release pointer is malformed or foreign");
+    const old = previous as ContentReleasePointer | undefined;
+    const current = {n:selected.n,digest:selected.digest};
+    if (rollback) {
+      if (!old || selected.n >= old.current.n || !old.released.some(row => row.digest === digest)) return refuse("Rollback requires a previously selected earlier release digest");
+    } else if (selected.n !== next-1 || old && selected.n <= Math.max(...old.released.map(row => row.n))) return refuse("Release selection requires the newest newly prepared bundle");
+    const pointer: ContentReleasePointer = {targetId,current,released:rollback ? old!.released : [...(old?.released ?? []),current]};
+    await writeStoreJson(root,`_release-pointers/${targetId}.json`,pointer,false);
+    return {ok:true,pointer:structuredClone(pointer)};
+  } catch { return refuse("Stored release validation or atomic pointer update failed"); }
+  finally { await unlinkOwned(lock,true); }
+}
+
+/** Select a prepared local release. This never asserts remote deployment/observation. */
+export function selectContentRelease(root: string, targetId: string, digest: string): Promise<ContentReleasePointerResult> { return changeReleasePointer(root,targetId,digest,false); }
+/** Repoint only to an earlier, already selected immutable release; no reapproval. */
+export function rollbackContentRelease(root: string, targetId: string, digest: string): Promise<ContentReleasePointerResult> { return changeReleasePointer(root,targetId,digest,true); }
 function keys(value: Record<string, unknown>, required: readonly string[], optional: readonly string[] = []): boolean {
   return required.every(key => Object.hasOwn(value, key)) && Object.keys(value).every(key => required.includes(key) || optional.includes(key));
 }
@@ -47,6 +92,14 @@ function validateBundle(manifest: unknown, build: unknown, handover: unknown, ta
   if (Object.hasOwn(manifest, "publications") !== Object.hasOwn(build, "publications")) invalid("Publication products are missing from the bundle");
   if (manifest.publications !== undefined) {
     if (!Array.isArray(manifest.publications) || !manifest.publications.length || !Array.isArray(build.publications)) invalid("Malformed publication bundle");
+    const identities = new Set<string>();
+    for (const publication of manifest.publications) {
+      assertCompiledPublication(publication);
+      if (identities.has(publication.publicationId)) invalid("Duplicate historical publication");
+      identities.add(publication.publicationId);
+      const owned = manifest.entries.map(entry => (entry as Record<string,unknown>).route).filter(value => value !== undefined).sort();
+      if (publicationDigest(owned) !== publicationDigest(publication.products.routes.routes.map(route => route.path).sort())) invalid("Historical publication target route closure differs");
+    }
     const expected = (manifest.publications as CompiledPublication[]).map(value => stampPublication(value, manifest.digest as string));
     if (publicationDigest(expected) !== publicationDigest(build.publications)) invalid("Publication products differ from the release digest");
   }
@@ -140,16 +193,9 @@ async function writeOwned(path: string, value: unknown, owned: OwnedPath[]): Pro
 export async function writeContentRelease(inputRoot: string, input: ReleaseInput): Promise<ReleaseResult> {
   const preflight = prepareContentRelease(input);
   if (!preflight.ok) return preflight;
-  // Snapshot before the first await so caller mutation cannot change an approved write.
-  const { publicationLibrary, ...serializable } = input;
-  // Producer catalog registries contain transform functions. Preserve functions
-  // while copying every data object; no caller mutation can change checked bytes.
-  const copyProducer = <T>(value: T): T => {
-    if (Array.isArray(value)) return value.map(copyProducer) as T;
-    if (value && typeof value === "object") return Object.fromEntries(Object.entries(value).map(([k,v]) => [k,copyProducer(v)])) as T;
-    return value;
-  };
-  const snapshot: ReleaseInput = { ...structuredClone(serializable), ...(publicationLibrary ? { publicationLibrary: copyProducer(publicationLibrary) } : {}) };
+  // Synchronously validated plain artifacts cross the first await. Producer
+  // callbacks are not cloneable authority and are never invoked again here.
+  const snapshot = structuredClone(preflight);
   let root: string;
   let releasesCreated = false;
   try {
@@ -172,8 +218,13 @@ export async function writeContentRelease(inputRoot: string, input: ReleaseInput
   let writing = false;
   try {
     const numbers = await releaseNumbers(root);
-    const prepared = prepareContentRelease(snapshot, numbers);
-    if (!prepared.ok) return prepared;
+    const prepared: ReleaseResult = { ...snapshot, releases: snapshot.releases.map(bundle => {
+      const n = numbers[bundle.manifest.targetId] ?? 1;
+      const { digest: _digest, ...previous } = bundle.manifest;
+      const body = { ...previous,n };
+      const digest = computeReleaseDigest(body);
+      return { manifest: { ...body,digest }, build: { ...bundle.build,releaseN:n,...(body.publications ? { publications:body.publications.map(publication => stampPublication(publication,digest)) } : {}) }, handover:{...bundle.handover,releaseN:n} };
+    }) };
     for (const bundle of prepared.releases) storeSegment(bundle.manifest.targetId);
     writing = true;
     for (const bundle of prepared.releases) {

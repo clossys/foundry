@@ -12,7 +12,8 @@ export type { ContentStoreOptions, LoadedContentStore } from "./store/index.js";
 export { readConsumerLibrarySnapshot } from "./store/library.js";
 export { createContentOwnerApproval } from "./approval.js";
 export { prepareContentRelease, computeReleaseDigest } from "./release/prepare.js";
-export { writeContentRelease } from "./store/release.js";
+export { writeContentRelease, selectContentRelease, rollbackContentRelease } from "./store/release.js";
+export type { ContentReleasePointer, ContentReleasePointerResult } from "./store/release.js";
 export type { ReleaseInput, ReleaseManifest, TargetBuildManifest, HandoverReceipt, ReleaseBundle, ReleaseResult } from "./release/types.js";
 export { mainPublisherContent } from "./cli/index.js";
 export type { PublisherCommand, PublisherCommandInput, PublisherCommandResult } from "./cli/types.js";
@@ -31,5 +32,5 @@ if (isPublisherContentEntry()) {
 export { localePathFor, buildLocaleRoutePlan, buildSitemapAlternates } from "./hreflang.js";
 export type { PublisherLocaleManifest, LocaleRouteOptions, LocaleRouteFinding, HreflangAlternate, LocalePageMetadata, LocaleRoutePlan, SitemapLocaleEntry } from "./hreflang.js";
 
-export { compilePublication, publicationLibraryPins } from "./release/publication.js";
+export { compilePublication, publicationLibraryPins, publicationLayoutPin } from "./release/publication.js";
 export type { PublicationSnapshot, PublicationConfigPin, PublicationCopyPin, PublicationWriter, PublicationProducts, CompiledPublication, ReleasedPublication } from "./release/publication.js";
