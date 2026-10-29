@@ -9,7 +9,7 @@ export const ROUTE_STUDIO_COPY_REFS = Object.freeze({
   "system.stack": Object.freeze({ id: "st.4bjfj15g3m" }),
   "system.specimen": Object.freeze({ id: "st.mzdxkf8h43" }),
   "system.history": Object.freeze({ id: "st.1qthzgfes6" }),
-  "system.stops.system": Object.freeze({ id: "st.nbe4p50nrx" }),
+  "system.stops.system": Object.freeze({ id: "st.0mvj7s905h" }),
   "system.stops.layer": Object.freeze({ id: "st.mm94prnm0g" }),
   "system.stops.board": Object.freeze({ id: "st.357zhfw7k6" }),
   "system.stops.cell": Object.freeze({ id: "st.ka1ak5tj04" }),
