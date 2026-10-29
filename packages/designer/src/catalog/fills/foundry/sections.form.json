@@ -16,21 +16,20 @@
         "package": "@clossys/designer",
         "version": "0.12.0"
       },
-      "relation": "subset",
+      "relation": "same-contract",
       "slot": "sections.form",
       "source": "foundry",
       "sourceAddress": "./blocks#Form",
       "status": "draft",
-      "trust": "foundry",
-      "unmapped": [
-        "form.contact"
-      ]
+      "trust": "foundry"
     }
   },
   "sections": {
     "form": {
       "composes": [],
-      "configs": {},
+      "configs": {
+        "form.contact": "composition=contact"
+      },
       "consumption": {
         "scanStatus": "lower-bound",
         "scannedComposes": [],
@@ -52,7 +51,7 @@
         "sourceFiles": [
           {
             "path": "packages/designer/src/blocks/Form.tsx",
-            "sha256": "60c84b8c52867a9f9d27db9994898d594dff790ceae7b21fe90e87d675797983"
+            "sha256": "1a1017d0bed99a6d22dce148602985fb57923c008937d622cac697451f79b87e"
           },
           {
             "path": "packages/designer/src/catalog-core/provenance-attrs.ts",
@@ -99,7 +98,10 @@
       },
       "license": "MIT",
       "notes": [
-        "Submit binds to the actions region; the host supplies the submit button. Error-summary content uses the errors and errorSummaryMessage API. Form is a block, not the unavailable components.form leaf.",
+        "The form.contact configuration opts into the public Form composition=contact API. Its consumer-owned onSubmit promise controls the send; the package implements no endpoint, transport or persistence.",
+        "Fields compose the native Field, TextField, Textarea and Select components; submit binds to a native Button in the actions region. The error-summary uses errors and errorSummaryMessage, while host-authored success and error regions render through Banner after the submit promise resolves or rejects. Rejected submits retain the field values.",
+        "Honeypot and Turnstile regions pass through consumer-owned host nodes. They do not create anti-abuse services, tokens or verification behavior. The runtime adapter resolves live nodes and the submit callback through sectionHosts[\"sections.form\"].",
+        "Form is the public block anchor, not a claim that the components.form leaf is adopted. Source declarations do not qualify a consumer handler or consent host.",
         "Source-only import and token-read measurements are lower bounds; shared anatomy, accessibility, contrast and consumer runtime conformance remain unmeasured. Content bindings describe host adaptation points, not type-equivalent converters."
       ],
       "parts": [],
@@ -108,7 +110,9 @@
         "package": "@clossys/designer",
         "version": "0.12.0"
       },
-      "propMap": {},
+      "propMap": {
+        "form.contact": "./blocks#Form.composition=contact"
+      },
       "reads": {
         "assets": [],
         "tokens": [
@@ -125,9 +129,13 @@
       },
       "slot": "sections.form",
       "slotMap": {
+        "error": "./blocks#Form.submitError",
         "error-summary": "./blocks#Form.errorSummaryMessage",
         "fields": "./blocks#Form.children",
-        "submit": "./blocks#Form.actions"
+        "honeypot": "./blocks#Form.honeypot",
+        "submit": "./blocks#Form.actions",
+        "success": "./blocks#Form.submitSuccess",
+        "turnstile": "./blocks#Form.turnstile"
       },
       "source": "foundry"
     }
