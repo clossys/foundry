@@ -279,10 +279,11 @@
     "node": ">=20"
   },
   "scripts": {
-    "build": "node scripts/pack-plan-contract.mjs && tsc -p tsconfig.json",
+    "build": "node scripts/pack-plan-contract.mjs && tsc -p tsconfig.json && node scripts/check-record-drift.mjs",
     "prepublishOnly": "node ../../scripts/check-name-collision.mjs . && npm run build",
     "typecheck": "node scripts/pack-plan-contract.mjs && tsc -p tsconfig.json --noEmit",
-    "test": "node scripts/pack-plan-contract.mjs && vitest run"
+    "test": "node scripts/pack-plan-contract.mjs && vitest run",
+    "check:records": "node scripts/check-record-drift.mjs"
   },
   "devDependencies": {
     "@types/node": "^26.6.3",
