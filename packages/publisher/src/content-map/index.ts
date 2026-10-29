@@ -16,3 +16,6 @@ export { projectRobots } from "./robots.js";
 export type { ContentMapRobotsOptions, ContentMapRobots } from "./robots.js";
 export { buildSecurityTxt } from "./security.js";
 export type { SecurityTxtOptions } from "./security.js";
+
+export { createSiteSyncPlan, syncSite } from "../site-sync/index.js";
+export type { SiteSyncHost, SiteSyncOptions, SiteSyncPort, SiteSyncResult } from "../site-sync/index.js";
