@@ -11,7 +11,7 @@ describe("slot leaf membership freeze", () => {
     expect(freeze).toEqual({
       schemaVersion: 1, layer: "slots", scope: "leaf-membership-only",
       policy: "regrouping is not membership", signedHead: null,
-      ownerSignoffComment: "clossys/workspace#45 comment 6460462224",
+      ownerSignoffComment: "owner sign-off 2026-10-28",
       leafIds: slots.map(slot => slot.id).sort(),
     });
     expect(freeze.leafIds).toHaveLength(18);

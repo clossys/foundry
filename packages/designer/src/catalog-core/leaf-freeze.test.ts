@@ -119,7 +119,7 @@ describe("owner-signed Media leaf amendment", () => {
   it("adds exactly image, video and pattern to the unchanged 45 signed IDs: 48 leaves, 0 removals", () => {
     const { pending, ...signedAmendment } = assetAmendments;
     expect(signedAmendment).toEqual({ schemaVersion: 1, layer: "assets", baseSignedHead: assetFreeze.signedHead, status: "owner-signed", ownerSignoffComment: "6408363557", receiptComment: "6404876885", addedLeafIds: added });
-    expect(pending).toEqual({ status: "pending-owner-ratification", source: "workspace#45 A131/A132 AUTO-DECIDED 2026-10-28", memberChanges: [{ id: "assets.pattern", addedMembers: ["grain", "noise", "topo"] }] });
+    expect(pending).toEqual({ status: "pending-owner-ratification", source: "owner-approved amendment 2026-10-28", memberChanges: [{ id: "assets.pattern", addedMembers: ["grain", "noise", "topo"] }] });
     expect(assetFreeze.leafIds).toHaveLength(45);
     expect(sha256([...assetFreeze.leafIds].sort().join("\n"))).toBe("dc3c75b4dee91fb500da9548a147fa0bf530215764b58df7a9ec12b2a966ae54");
     const ids = assetSlots.map(slot => slot.id).filter(id => !draftAssetAmendments.addedLeafIds.includes(id)).sort();

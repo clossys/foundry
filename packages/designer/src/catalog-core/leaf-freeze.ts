@@ -59,7 +59,7 @@ if (tokenAmendments.schemaVersion !== 1 || tokenAmendments.layer !== "tokens" ||
 }
 // Copy signed IDs plus the explicit versioned additions once, never current slots or IA.
 const pending = tokenAmendments.pending;
-if (!pending || pending.status !== "pending-owner-ratification" || pending.source !== "workspace#45 A131/A132 AUTO-DECIDED 2026-10-28" ||
+if (!pending || pending.status !== "pending-owner-ratification" || pending.source !== "owner-approved amendment 2026-10-28" ||
     !Array.isArray(pending.addedLeafIds) || pending.addedLeafIds.length !== 1 || pending.addedLeafIds[0] !== "tokens.gradient") {
   throw new Error("LEAF_FREEZE: invalid pending expressive token amendment");
 }

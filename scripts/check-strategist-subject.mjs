@@ -26,7 +26,6 @@ const otherRootMarkdown = [
   "OPERATING.md",
   "PIPELINE.md",
   "REPOSITORY-REVIEW-FIRST-RUN.md",
-  "SECRETS-ARCHITECTURE.md",
 ];
 
 // docs/changelogs/ holds each package's release notes, moved there from
