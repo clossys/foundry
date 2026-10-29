@@ -142,7 +142,7 @@ export function inspectInstanceChecks(input: unknown, library: ConsumerInstanceL
     for (const key of Object.keys(binding.fills)) if (!effective.slots.some(slot => slot.id === key)) add("LK3", `fills.${key}`, "Unknown effective layout slot");
     const ordered: { section: SectionFill; fill?: ConsumerInstanceFill; path: string }[] = [];
     const checkSection = (value: unknown, path: string, accepts?: readonly string[], tile?: { readonly spans: readonly string[] }) => {
-      if (!object(value) || !fields(value, ["section", "config", "span", "content", "children"]) || !text(value.section) || (value.config !== undefined && !text(value.config)) || !object(value.content)
+      if (!object(value) || !fields(value, ["section", "config", "members", "span", "content", "children"]) || !text(value.section) || (value.config !== undefined && !text(value.config)) || (value.members !== undefined && !memberSelection(value.members)) || !object(value.content)
         || value.children !== undefined && (!Array.isArray(value.children) || !value.children.length || path.split(".children.").length > 8)) {
         add("LK4", path, "Invalid section fill");
         unavailableChecks.add("LK6"); unavailableChecks.add("LK8"); unavailableChecks.add("LK10");
@@ -154,6 +154,7 @@ export function inspectInstanceChecks(input: unknown, library: ConsumerInstanceL
       const fill = value as unknown as SectionFill;
       const leaf = registries.sections.find(entry => entry.id === fill.section);
       if (!active(leaf) || !surface(leaf!.contract.surface, binding.surface) || (accepts && !accepts.includes(fill.section)) || (fill.config !== undefined && !leaf!.contract.configs.includes(fill.config))) add("LK4", path, "Section or config is unregistered, inactive or not accepted");
+      if (fill.members !== undefined && Object.entries(fill.members).some(([axis, member]) => !leaf?.contract.members?.includes(`${axis}.${member}`))) add("LK4", `${path}.members`, "Section members must be declared by its consumer contract");
       if (fill.span !== undefined && (!tile || !tile.spans.includes(fill.span))) add("LK6", `${path}.span`, "Span is only allowed within a tile slot's closed spans");
       if (tile && leaf?.contract.container !== "adaptive") add("LK13", path, "Tile sections must declare adaptive containers");
       const implementation = resolve(fill.section, fill.config, path, fill);

@@ -82,7 +82,7 @@ export function resolveSelectedRouteRuntimeBinding(binding: InstanceBinding, eng
     const section = (fill: SectionFill, path: string, depth = 0): RuntimeFillSelection | undefined => {
       if (depth > 8 || ancestors.has(fill) || fill.children !== undefined && (!Array.isArray(fill.children) || !fill.children.length)) throw new TypeError("Invalid bounded Section nesting");
       ancestors.add(fill);
-      const selected = pick(fill.section, fill.config, fill.content, path);
+      const selected = pick(fill.section, fill.config, fill.content, path, fill.members);
       const children = fill.children?.flatMap((child, index) => { const current = section(child, `${path}.children.${index}`, depth + 1); return current ? [current] : []; });
       ancestors.delete(fill);
       return selected ? { ...selected, ...(children ? { children } : {}) } : undefined;
@@ -91,8 +91,10 @@ export function resolveSelectedRouteRuntimeBinding(binding: InstanceBinding, eng
     if (refusals.length) return { status: "refused", findings: refusals };
     const sections: Record<string, RuntimeFillSelection[]> = {};
     for (const [slot, fills] of Object.entries(binding.fills)) sections[slot] = fills.flatMap((fill, index) => { const selected = section(fill, `fills.${slot}.${index}`); return selected ? [selected] : []; });
+    if (refusals.length) return { status: "refused", findings: refusals };
     const frameSlots: Record<string, RuntimeFillSelection[]> = {};
     for (const [slot, fill] of Object.entries(binding.frame.slotFills ?? {})) { const selected = section(fill, `frame.slotFills.${slot}`); frameSlots[slot] = selected ? [selected] : []; }
+    if (refusals.length) return { status: "refused", findings: refusals };
     if (!Object.values(sections).some(fills => fills.length)) findings.push("Real body Section content is unavailable");
     if (findings.length || !frame) return { status: "pending", findings };
     return runtimeSnapshot({ status: "resolved" as const, instance: binding, binding: { id: binding.instanceId, frame, frameSlots, sections, ...(binding.body ? { body: binding.body } : {}) }, libraryHash: hash, selectionHash: profile.selectionHash,

@@ -15,6 +15,8 @@ export interface ContentRef {
 export interface SectionFill {
   readonly section: SectionLeafId;
   readonly config?: string;
+  /** Select only declared members from the consumer's verified Section fill. */
+  readonly members?: Readonly<Record<string, string>>;
   readonly span?: LayoutSpan;
   readonly content: Readonly<Record<string, ContentRef>>;
   /** Each records row supplies its stable key and optional content-ref overrides.
@@ -109,7 +111,7 @@ export function registeredBindingTemplate(binding: InstanceBinding): InstanceBin
   const seen = new Set<SectionFill>();
   const section = (fill: SectionFill): SectionFill => {
     if (seen.has(fill)) throw new TypeError("Cyclic Section nesting"); seen.add(fill);
-    if (!contentOnly(fill, ["section", "config", "span", "content", "repeat", "children"])) throw new TypeError("Unknown Section fill field");
+    if (!contentOnly(fill, ["section", "config", "members", "span", "content", "repeat", "children"])) throw new TypeError("Unknown Section fill field");
     if (fill.repeat && (!contentOnly(fill.repeat, ["over", "key"]) || !contentText(fill.repeat.key) || !isRegisteredContentRef(fill.repeat.over) || fill.repeat.over.kind !== "records")) throw new TypeError("Invalid Section repeat declaration");
     if (binding.body?.kind === "canvas" && (fill.repeat || fill.children || Object.values(fill.content).some(ref => ref.lazy))) throw new TypeError("Scroll page data is flow-only");
     if (fill.children !== undefined && (!Array.isArray(fill.children) || !fill.children.length)) throw new TypeError("Section children must be a non-empty authored list");
@@ -230,6 +232,7 @@ export interface BindingSectionLeaf {
   readonly contract: {
     readonly surface: "site" | "app" | "both";
     readonly configs: readonly string[];
+    readonly members?: readonly string[];
     readonly slots: readonly { readonly name: string; readonly type: ContentRef["kind"]; readonly required: boolean }[];
     readonly states?: readonly string[];
     readonly container?: "adaptive";

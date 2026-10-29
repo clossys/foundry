@@ -55,3 +55,4 @@ export type { PublicationBinding, RegionPageBinding } from "../core/instance-bin
 export type { RegionPageRouteRegistration, RegionPageRouteRegistry } from "../core/route-registry.js";
 export { projectPageOutline } from "../content/taxonomy.js";
 export type { RegisteredPageManifest, RegisteredPageOutline, PageOutlineHeading, PageOutlinePlacement, PageOutlineTarget, PageManifestNode, PageManifestL0, PageManifestL1, PageManifestL2 } from "../content/taxonomy.js";
+export * from "./pages/index.js";
