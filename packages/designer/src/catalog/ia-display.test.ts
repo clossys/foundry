@@ -1,6 +1,7 @@
 import { readFileSync } from "node:fs";
+import { dirname, join } from "node:path";
 import ts from "typescript";
-import { URL } from "node:url";
+import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
 import componentsIA from "./ia/components.json" with { type: "json" };
 import sectionsIA from "./ia/sections.json" with { type: "json" };
@@ -11,7 +12,7 @@ import * as components from "../components/index.js";
 import * as api from "../catalog-core/index.js";
 describe("one IA display tree", () => {
   it("keeps the foundational components barrel free of catalog references", () => {
-    const source = ts.createSourceFile("index.ts", readFileSync(new URL("../components/index.ts", import.meta.url), "utf8"), ts.ScriptTarget.Latest, true);
+    const source = ts.createSourceFile("index.ts", readFileSync(join(dirname(fileURLToPath(import.meta.url)), "../components/index.ts"), "utf8"), ts.ScriptTarget.Latest, true);
     const refs = source.statements.flatMap(node => (ts.isImportDeclaration(node) || ts.isExportDeclaration(node)) && node.moduleSpecifier && ts.isStringLiteral(node.moduleSpecifier) ? [node.moduleSpecifier.text] : []);
     expect(refs.filter(specifier => specifier.includes("catalog"))).toEqual([]);
   });
