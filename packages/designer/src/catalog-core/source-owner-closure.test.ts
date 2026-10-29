@@ -99,7 +99,7 @@ describe("complete source-owner record association", () => {
     const input = fixture(), first = associated(input);
     input.library = applyLibraryChange(input.catalog, input.library, { baseHash: libraryHash(input.library), changes: [{ portion: "values", change: { op: "author", slot: "tokens.spacing", tokens: { extra: { $type: "dimension", $value: { value: 12, unit: "px" } } } } }] });
     const changed = associated(input); expect(changed.sourceHashes.example).not.toBe(first.sourceHashes.example); expect(changed.selectionHash).not.toBe(first.selectionHash);
-    input.library.values.direction = "rtl";
+    input.library.values.rationale = { "tokens.spacing": "Use the authored spacing choice." };
     pending(input); // A caller cannot silently leave generated selection stale.
     input.library.values.selection = generateSelection({ ...input.library.values, source: input.library.source, adoptedAt: input.library.adoptedAt });
     expect(associated(input).selectionHash).not.toBe(changed.selectionHash);

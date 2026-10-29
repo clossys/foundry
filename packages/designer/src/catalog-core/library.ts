@@ -3,6 +3,7 @@ import { aliasOf, assetReferences, compare, cssText, flatten, interpolateAsset, 
 import { libraryHash, resolve } from "./resolve.js";
 import { sha256 } from "./digest.js";
 import { stableStringify } from "./stable.js";
+import { validateSelectionStrategy } from "./selection-strategy.js";
 import { materializeRule, matchesRuleInputs } from "./rules.js";
 import type { CatalogData, DtcgNode, DtcgToken, DtcgValue, FillDoc, LegacySelection, LibraryData, Mode, Origin, Resolved, Selection } from "./types.js";
 export { libraryHash } from "./resolve.js";
@@ -32,7 +33,9 @@ function writeFill(library: LibraryData, slot: string, values: Readonly<Record<s
   return { $extensions: { "com.clossys.fill": { ...metadata, id: `${library.source.id}/${slot}`, slot, source: library.source.id, mode: "implementation", originKinds } }, [slot.split(".")[0]!]: root } as unknown as FillDoc;
 }
 export function generateSelection(library: LibraryData): Selection {
-  return { version: 2, consumer: library.source.id, rubricVersion: library.rubricVersion ?? "unscored", strategy: library.strategy ?? null, direction: library.direction ?? null,
+  if (Object.hasOwn(library, "direction")) throw new CatalogError("selection: direction was removed; cite the designer.identity brief");
+  if (library.strategy != null && validateSelectionStrategy(library.strategy).state === "invalid") throw new CatalogError("selection: invalid designer.identity brief provenance");
+  return { version: 2, consumer: library.source.id, rubricVersion: library.rubricVersion ?? "unscored", strategy: library.strategy ? structuredClone(library.strategy) : null,
     slots: [...library.fills].sort((a,b) => compare(metaOf(a).slot,metaOf(b).slot)).map(fill => {
       const origins = Object.values(flatten(fill)).map(originOf).filter((origin): origin is Origin => !!origin);
       return { slot: metaOf(fill).slot, originKinds: [...new Set(origins.map(origin => origin.kind))].sort(compare), sources: [...new Set(origins.map(origin => origin.kind === "adopted" ? origin.source : library.source.id))].sort(compare), rationale: library.rationale?.[metaOf(fill).slot] ?? null };
