@@ -9,6 +9,7 @@ import { runtimeHash, runtimeSnapshot, type RuntimeContent, type RuntimeContentR
 import { loadSectionRegistry } from "../../catalog-core/sections-contract.js";
 import type { CompositeResolved } from "../../catalog-core/types.js";
 import { checkWiring } from "../../catalog-core/wiring.js";
+import { copyPortsFor } from "./__fixtures__/copy-ports.js";
 import { GROUP_B_SECTIONS, groupBRenderers } from "./group-b.js";
 import { specimenDataset } from "../../studio/specimen-dataset.js";
 import { groupBDataset } from "./group-b-dataset.js";
@@ -39,7 +40,7 @@ function inputFor(leaf: Leaf, state = "default"): SectionRenderInput {
     kind: "section", library: "foundry", fill, leaf, config: null, slots, members: [], states: contract.states ?? [],
     renderer: { id: `${leaf}#test`, source: { entry: `${leaf}.tsx`, files: {}, dependencies: {} }, sourceHash: runtimeHash(leaf) },
   };
-  return { path: "body/0", fill: descriptor, selection: { leaf, fill, config: null, members: [], content: refs }, cell: { theme: "light", state, width: 1280 }, content, slots: {}, profile: {} as CompositeResolved };
+  return { sectionHost: copyPortsFor(leaf, state), path: "body/0", fill: descriptor, selection: { leaf, fill, config: null, members: [], content: refs }, cell: { theme: "light", state, width: 1280 }, content, slots: {}, profile: {} as CompositeResolved };
 }
 
 function renderLeaf(leaf: Leaf, state = "default") {

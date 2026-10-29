@@ -4,7 +4,7 @@ import type { DataTableViewModel } from "../../blocks/data-table/view-model.js";
 import type { TableColumnKind } from "../../blocks/table-model/index.js";
 import type { DsAttrs } from "../../catalog-core/provenance-attrs.js";
 import type { RuntimeJson } from "../../catalog-core/runtime-ports.js";
-import { specimenDataset } from "../../studio/specimen-dataset.js";
+
 
 /**
  * The DataTable glue shared by sections.data-table and sections.data-grid. Rows and column records are
@@ -18,6 +18,8 @@ export interface DimensionRecord { readonly column: string; readonly order?: "as
 
 export interface TableFillProps {
   readonly label: string;
+  readonly emptyTitle: string;
+  readonly emptyDescription: string;
   readonly columns: readonly ColumnRecord[];
   readonly rows: readonly RowRecord[];
   readonly sort?: readonly SortRecord[];
@@ -73,8 +75,8 @@ export function TableFill(props: TableFillProps) {
     rows={props.rows}
     rowKey={row => row.id}
     isLoading={props.isLoading}
-    emptyStateTitle={specimenDataset.sections.states.tableEmpty.title}
-    emptyStateDescription={specimenDataset.sections.states.tableEmpty.description}
+    emptyStateTitle={props.emptyTitle}
+    emptyStateDescription={props.emptyDescription}
     toolbar={props.toolbar}
     footer={props.footer}
     {...(props.selected ? { selectionMode: props.singleSelection ? "single" as const : "multiple" as const, selectedKeys, onSelectionChange: keys => { setSelected(keys === "all" ? "all" : [...keys] as (string | number)[]); props.onSelectionChange?.(keys === "all" ? props.rows.map(row => row.id) : [...keys].map(String)); } } : {})}

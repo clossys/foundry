@@ -4,6 +4,7 @@ import { createElement as h, type ReactNode } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { cleanup, render, within } from "@testing-library/react";
 import { afterEach, describe, expect, it } from "vitest";
+import { copyPortsFor } from "./__fixtures__/copy-ports.js";
 import * as blocks from "../../blocks/index.js";
 import { dsAttrs } from "../../catalog-core/provenance-attrs.js";
 import { scanProvenance } from "../../catalog-core/provenance-scan.js";
@@ -90,7 +91,7 @@ function inputFor(leaf: GroupCLeaf, content: Readonly<Record<string, RuntimeJson
     return [slot, { reference: { kind, ref: `dataset:${leaf}.${slot}` }, value, hash: runtimeHash(value) } satisfies RuntimeContent];
   }));
   return {
-    path: `routes/preview/sections/${leaf}`, fill, cell: { theme: "light", state: "default", width: 1280 },
+    sectionHost: copyPortsFor(`sections.${leaf}`), path: `routes/preview/sections/${leaf}`, fill, cell: { theme: "light", state: "default", width: 1280 },
     selection: { leaf: fill.leaf, fill: fill.fill, config: null, members, content: Object.fromEntries(Object.entries(rows).map(([slot, row]) => [slot, row.reference])) },
     content: rows, slots: {}, profile: {} as CompositeResolved,
   };

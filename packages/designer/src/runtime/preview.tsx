@@ -28,6 +28,8 @@ export interface SurfaceRuntimePreviewOptions {
   readonly members?: readonly string[];
   /** Board cell state; renderers that support it draw it, the rest draw default. */
   readonly state?: string;
+  /** Explicit host copy for previewing renderers whose selected runtime requires resolved copy. */
+  readonly sectionHost?: RuntimeRenderInput<ReactNode>["sectionHost"];
 }
 
 type SectionRow = { id: string; contract: { slots: readonly { name: string; type: string }[]; anatomy?: { band?: string | null } | null } };
@@ -77,6 +79,7 @@ export function surfaceRuntimePreview(entry: SurfacePreviewEntry, options: Surfa
   const fill = options.fill ?? `preview/${leaf}`, selected = options.members ?? [];
   const descriptor = { kind, library: "preview", fill, leaf, config: null, slots, members, states: ["default"], renderer: { id: surfaceRendererId(leaf) } } as unknown as RuntimeFillDescriptor;
   const input = {
+    sectionHost: options.sectionHost,
     path: kind === "frame" ? "frame" : "sections.preview.0", fill: descriptor, cell: { theme: "light", state: options.state ?? "default", width: 1280 },
     selection: { leaf, fill, config: null, members: selected, content: refs }, content, slots: nested.length ? { children: nested } : frameSlots, profile: {} as CompositeResolved,
     ...(leaf === "frames.app-shell" ? { pageHeader: { id: "specimen.app-shell", data: { title: app.page }, module: { package: "@clossys/designer/shell", export: "PageHeaderModule" } } } : {}),

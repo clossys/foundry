@@ -1,3 +1,4 @@
+import { copyPortsFor } from "./specimen-section-hosts.js";
 /**
  * Preview-only renderers for planned Sections and Frames defaults (planSurfaceDefaults).
  *
@@ -219,7 +220,7 @@ export function packageSurfacePreview(doc: SurfacePointerDocument, samples: Surf
   // A leaf with a package runtime renderer previews through it, from the specimen dataset: the same renderer
   // the consumer runtime draws. Only an export's own non-default state samples still render beside it.
   if (!stated && typeof leaf === "string" && Object.hasOwn(surfaceRuntimeRenderers, leaf)) {
-    const runtime = surfaceRuntimePreview(entries[0] as SurfacePreviewEntry);
+    const runtime = surfaceRuntimePreview(entries[0] as SurfacePreviewEntry, { sectionHost: copyPortsFor(leaf) });
     return "reason" in runtime ? runtime : { pointer, render: runtime.render, state: "default" };
   }
   const sample = Object.hasOwn(SAMPLES, pointer) ? SAMPLES[pointer] : undefined;
