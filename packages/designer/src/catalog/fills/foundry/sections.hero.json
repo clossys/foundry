@@ -60,6 +60,10 @@
         },
         "sourceFiles": [
           {
+            "path": "packages/designer/src/backdrop/BackdropHost.tsx",
+            "sha256": "2d7a389439f15e23a1a72b39fbc73aa662161b6ec1e9da19ad2deb946b57d671"
+          },
+          {
             "path": "packages/designer/src/backdrop/consumer-art.ts",
             "sha256": "b1a1bc6df0176a3b3934065c3080ddf1371914c4dbe39905d0f8adf41c64ee9e"
           },
@@ -68,8 +72,12 @@
             "sha256": "5df9f040446b8136b33ecd52a46c4f92ba857420c15b279e8c71a0e3662f4af8"
           },
           {
+            "path": "packages/designer/src/backdrop/runtime-module.ts",
+            "sha256": "981119aff825c249a5c48a1f34c981f1d86b0145507314b6637b951ebd7f847a"
+          },
+          {
             "path": "packages/designer/src/blocks/Hero.tsx",
-            "sha256": "d00b4b1ef112af1d5c0173d652ea33fdffae29c5eebca91df67840ba562efa04"
+            "sha256": "88ae55b1b9532c52c8a3e43183ebe5c493db43fdf75daaf56ba8d54de095cc52"
           },
           {
             "path": "packages/designer/src/blocks/hero/HeroIntro.tsx",
