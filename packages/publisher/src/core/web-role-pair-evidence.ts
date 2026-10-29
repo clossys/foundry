@@ -26,8 +26,8 @@ function freeze<T>(value: T): T {
   }
   return value;
 }
-const revision = "f364db3c575382e9b7cf84be45bd892fdc40fa52";
-const measuredAt = "2026-10-28";
+const revision = "4fa6ada5d7445fa0ae3150b74b888fc48e3d2e63";
+const measuredAt = "2026-10-29";
 const frame: InstanceBlockBinding["frameBlockRef"] = {
   blockId: "site-frame", role: "frame", medium: "web",
   adapter: { owner: "@clossys/designer", subpath: "frames", export: "SiteFrame", config: {} },
@@ -48,22 +48,20 @@ export const WEB_ROLE_PAIR_BINDINGS: readonly InstanceBlockBinding[] = freeze(ca
 })));
 const known = WEB_ROLE_PAIR_BINDINGS.flatMap(binding => [binding.frameBlockRef, binding.viewBlockRef]);
 const sources = {
-  "src/web/index.ts": "sha256:9336be95512760a2078c2ca23a3f8e8384e08a5225096cb2738463cc1f08156a",
+  "src/web/index.ts": "sha256:5b3dca841a3159b7e8fc065cbc6d1157d8df0a996609980e94d2cc3da89e4d96",
   "src/web/frame/index.ts": "sha256:4c6b4c7e810a1f7d89a8470352d5f70eab7115d201af3038263ad0cf2fcdcfcc",
-  "src/web/server.ts": "sha256:c48c8b0d232006e3004ac98bd2d51bf59dfea80ea079c74498569c78347420b6",
-  "../designer/src/frames/site-frame/site-frame-contract.ts": "sha256:dfa1097d161afadc335f69c1262fcf92b15922ca48b38fedd9fe03d8495f9106",
-  "../designer/src/frames/site-frame/NavLinks.tsx": "sha256:01288ed59dfcd0f0d8abda463dbc6df9c5a60359d3b0fe8f60ba631d70024ca7",
-  "../designer/src/frames/site-frame/NavDisclosure.client.tsx": "sha256:d08037c12988a01a10faff0e81e6120aa6c6b61a911705fe5017642e117770f2",
-  "../designer/src/frames/site-frame/NavDisclosure.server.tsx": "sha256:2b5845bb9358d45682130b9e9b9efdd430722ab9e9d30a7324a636247070c82d",
+  "src/web/server.ts": "sha256:419a869b1982dc125f55f71c1da91d9641efe93ba1e64472df496f33659d1960",
+  "../designer/src/frames/site-frame/site-frame-contract.ts": "sha256:44f7a4f9b6ea8ba04abd355313921a16d2d0c285c0bafc91a10473cec6134416",
+  "../designer/src/frames/site-frame/NavLinks.tsx": "sha256:65a22e0252b60d4386eb05d355230706f136e13f45878e32e32da58064b6f35a",
+  "../designer/src/frames/site-frame/NavDisclosure.client.tsx": "sha256:e24d0f23e5072f993bc3fd51b1c80b00a8186957077602fd21214ac89e3b67d3",
+  "../designer/src/frames/site-frame/NavDisclosure.server.tsx": "sha256:5c8ae791c675672fa6cb97bf0bb34aea0174864a416e98c91713e1b3fcdc207a",
   "../designer/src/frames/site-frame/NavDisclosure.boundary.client.tsx": "sha256:32e1550ce3d62a04d33874e677b5b32e32684d1561ceb994c6020cc57930c05a",
-  "../designer/src/frames/site-frame/SiteFrame.tsx": "sha256:d19f3ac72702c1732a86ac1902ae9d353c826319d25ca115c521ac50fcbe6b32",
-  "../designer/src/frames/site-frame/types.ts": "sha256:e230a63d09b88d8ccd93c0df2e59853098f2c466a64b546b92e380fe238cd25b",
+  "../designer/src/frames/site-frame/SiteFrame.tsx": "sha256:fb31bb6d8725a6173a62cee79357e496732b98936170a612a99d749ffdbb9b85",
+  "../designer/src/frames/site-frame/types.ts": "sha256:5bda43d95ad194dcafaa2e1f3cd2e0ed668357d8c0273d4d0ea32cb500831da4",
   "../designer/src/frames/site-frame/SkipLink.client.tsx": "sha256:4cd4ff41cd290b09f10d6c1079f7fe3ad788c25722c9d023bb740b659148aa01",
-  "../designer/src/frames/site-frame/internal/resolveShell.ts": "sha256:1f61e939392d9682c40b4a1344a2f5fa4cb318d1caf3894fb99a888c7a7212b5",
-  "src/web/views/index.ts": "sha256:83f702042855e989177eadeec5b398f8cddb432dd14a5b8442f76d03bb08045f",
-  "../designer/src/frames/site-frame/landing/web/views/LandingView.tsx": "sha256:ad06fd2fd0e76e087c104a67c45630bcd6c02fa310222fae2c4e6d85c3526de7",
-  "../designer/src/frames/site-frame/landing/web/views/LandingViewContent.tsx": "sha256:0cc04d4a3426801a7234e48a05d177b21720131ace59f2f57f949ec83ec9fc50",
-  "src/web/views/SectionedViewContent.tsx": "sha256:9b175a54cc404d84fb72a1bda58134e3dcba3819439c1deea909cf4ac34158ae",
+  "../designer/src/frames/site-frame/internal/resolveShell.ts": "sha256:963ffbf87dca638e6f39af33c8a0f8aeeb74319aa1083104c87561cdf27c231e",
+  "src/web/views/index.ts": "sha256:48aaf88a5efc78ea7274fe4f309c8cf4f3a6d53a7e68ae9255fe381c96e24aab",
+  "src/web/views/SectionedViewContent.tsx": "sha256:fc040d165b0b5fc6f00d850e554c736152434b94cbfd04649b21b30b615a7dab",
   "src/web/views/SectionedViewBlocks.tsx": "sha256:29e9280b60b2bb082f3a9a0321557ba69b6771da5c4b9be2d4d93edfc1af1282",
   "src/web/views/LegalView.tsx": "sha256:8c1d7ae576511f93a73390bbd3efd2e56bcd3944854d06637e6d299e84bb50ac",
   "src/web/views/CaptureView.tsx": "sha256:c74d71e24f6f7aa985d281524101004f759271a81bb3f123c4667e8cb78ac949",
@@ -71,9 +69,9 @@ const sources = {
   "src/web/internal/PageLayout.tsx": "sha256:a9969b13774fb0227f08c1554c5df86fd15db5e3657a4c52d030075a180784e6",
   "src/document/legal.ts": "sha256:3b9b19cb843964875b1f5fd89be78ea9b851a059d2f8a9d904ca84adf9a74ee3",
   "src/document/render.ts": "sha256:2564a403881a2c43f70e9aaffb679878d2351413a556af4c57e0f433016737e0",
-  "../designer/src/frames/index.ts": "sha256:ffd316efb4debc4c9885cc9ebb8aa78610faf14be7ee1709f1d707b6672413a8",
-  "../designer/src/frames/server.ts": "sha256:fc86b6678c7e70a5bb357aed4dd7cf43df0aebcf243bfddc79931885c2159ad4",
-  "../designer/src/frames/site-frame/copy-contract.ts": "sha256:03c667e8bdbfd33c8650af569c0e8072ce2751ee4ab0c3cef4d7bf61a325bb13",
+  "../designer/src/frames/index.ts": "sha256:9b64226701237b59c28bc01165bd233b68923d7f7ebdf3fdf1845e6b468c1f0f",
+  "../designer/src/frames/server.ts": "sha256:07c7b46ee590a56b8087b8515d9cedec1e5ebca57b45bf7025be59a95cb56883",
+  "../designer/src/frames/site-frame/copy-contract.ts": "sha256:d25eeb44e89f6cd94cca46cf1b5fcaa03ffeee31389b2190f1e44a5099256f75",
   "../designer/src/frames/site-frame/landing/core/content-asset.ts": "sha256:3cac86a74516e1427500dc9bccb85b80b56d213cb6dedd44072e31ef38acb4f3",
   "../designer/src/frames/site-frame/landing/core/content-contract.ts": "sha256:d6c0eb90d4734fcd961fe6438b1114d0686bc42fb7cf4cdbfe87ac625db7b44c",
   "../designer/src/frames/site-frame/landing/core/content-ground.ts": "sha256:188f61cf5c113d5e10131e36d674127ff0890a1a3c5a2240a5b8c294c371b48b",
@@ -85,16 +83,7 @@ const sources = {
   "../designer/src/frames/site-frame/landing/internal/errors.ts": "sha256:19a0d6e258427849321149d4fb3cefe1d4122f8cbb82c224ba3349859783eaa4",
   "../designer/src/frames/site-frame/landing/internal/href.ts": "sha256:36c0690b4f606166f36ae1dd7a042674977126be921223e058d3df7346c096cc",
   "../designer/src/frames/site-frame/landing/internal/prose-text.ts": "sha256:2b608bac5f11fdfdf991ca27f89dc96a57a917066a81248c46d4ae0c98c71d85",
-  "../designer/src/frames/site-frame/landing/web/buildAssetElement.tsx": "sha256:05563ac6324f7b29b7572ed2a8244099917db6ea939882f427a3839518b02619",
   "../designer/src/frames/site-frame/landing/web/types.ts": "sha256:bac4afa406c522c5ea14f663a90471130601006e625cd3479634c459d5f7aa47",
-  "../designer/src/frames/site-frame/landing/web/views/LandingView.server.tsx": "sha256:50823012550d9382b0b65c1c78bafd0ad57e4f36e8fdf7cba37b4e20f2f6aa17",
-  "../designer/src/frames/site-frame/landing/web/views/SectionedViewActions.tsx": "sha256:09dafc673a414176939eda9e0e77cadd0006cac2dd694858d66bccd1ae67b3bb",
-  "../designer/src/frames/site-frame/landing/web/views/SectionedViewBlocks.server.tsx": "sha256:b862815ac38533e786160bc5764db4e4405c1312322d0da680eac7ff14581040",
-  "../designer/src/frames/site-frame/landing/web/views/SectionedViewBlocks.tsx": "sha256:29e9280b60b2bb082f3a9a0321557ba69b6771da5c4b9be2d4d93edfc1af1282",
-  "../designer/src/frames/site-frame/landing/web/views/SectionedViewCanonical.ts": "sha256:a619a40546ff87889d253cafd2a6a08e107c25e472bd0b129bec9244e9050625",
-  "../designer/src/frames/site-frame/landing/web/views/SectionedViewContent.tsx": "sha256:9b175a54cc404d84fb72a1bda58134e3dcba3819439c1deea909cf4ac34158ae",
-  "../designer/src/frames/site-frame/landing/web/views/SectionedViewContentSection.tsx": "sha256:4feddbfeb9c813033488f664e30e79dec5dd8bc61381174c355260913a35f5a2",
-  "../designer/src/frames/site-frame/landing/web/views/landingViewGrounds.ts": "sha256:47a8c7c89733995dde15f1abf2c8113be9908214eccdf53abfeca312e69e6cb7",
   "../designer/src/frames/site-frame/viewChromeGround.ts": "sha256:d5c430d26e272474f954f3fd42ed0f7175e0e483afaeb8352c131d46e6f50aa2"
 } as const;
 const selectors: Record<WebRolePairCheck, string> = {
