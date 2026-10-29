@@ -6,6 +6,7 @@ import meta from "./admin-meta.r1.en.json" with { type: "json" };
 import studio from "./admin-studio.r1.en.json" with { type: "json" };
 import voice from "./admin-voice.r1.en.json" with { type: "json" };
 import common from "./common-labels.r1.en.json" with { type: "json" };
+import { ADMIN_COMMON_COPY_EN } from "../../admin-common.js";
 import terminology from "../admin-terminology.json" with { type: "json" };
 import { loadWriterCatalog } from "../ia/index.js";
 import { validateWriterRecord } from "../../model/validate.js";
@@ -21,7 +22,7 @@ import { formatLeaves } from "../../../../publisher/src/formats/slots/formats.js
 
 const unit = "A4-WR-ADMIN-NAMES";
 const files = [meta, studio];
-const all = [...voice.records, ...meta.records, ...studio.records, ...common.records] as StringRecord[];
+const all = [...voice.records, ...meta.records, ...studio.records, ...ADMIN_COMMON_COPY_EN.records] as StringRecord[];
 const batches = files.flatMap(file => file.sourceBatches.filter(batch => batch.unit === unit));
 const changedIds = new Set(batches.flatMap(batch => [...batch.recordIds, ...batch.revisions.map(row => row.recordId)]));
 const canonicalId = (id: string) => common.usages.find(usage => usage.legacyRecordId === id)?.recordId ?? id;

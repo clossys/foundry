@@ -3,6 +3,7 @@ import { expect, it } from "vitest";
 import { loadWriterCatalog } from "../ia/index.js";
 import { checkWriterLeafSets } from "../../catalog-core/leaf-freeze.js";
 import { createAdminCopy, getAdminCopyRecord } from "../../admin-copy.js";
+import { ADMIN_COMMON_COPY_EN } from "../../admin-common.js";
 
 const read = (path: string) => JSON.parse(readFileSync(new URL(path, import.meta.url), "utf8"));
 
@@ -52,17 +53,19 @@ it("keeps every legacy ID as a direct canonical alias and preserves all original
   const aliases = read("./common-label-aliases.r1.json").aliases as Record<string, string>;
   const common = read("../records/common-labels.r1.en.json");
   expect(Object.keys(aliases)).toHaveLength(267);
-  expect(common.records).toHaveLength(177);
+  expect(common.records).toHaveLength(171);
+  expect(common.externalRecords).toHaveLength(6);
+  expect(ADMIN_COMMON_COPY_EN.records).toHaveLength(177);
   expect(common.usages).toHaveLength(444);
   // Consume the handoff map as evidence, without registering a second runtime
   // alias authority. Every original ID must reach its actual shared record.
-  const store = createAdminCopy([common]);
+  const store = createAdminCopy([ADMIN_COMMON_COPY_EN]);
   expect(aliases).toEqual(Object.fromEntries(common.usages
     .filter((usage: { legacyRecordId: string; recordId: string }) => usage.legacyRecordId !== usage.recordId)
     .map((usage: { legacyRecordId: string; recordId: string }) => [usage.legacyRecordId, usage.recordId])));
   for (const [id, target] of Object.entries(aliases)) {
     expect(aliases).not.toHaveProperty(target);
-    expect(common.records.some((record: { id: string }) => record.id === target), id).toBe(true);
+    expect(ADMIN_COMMON_COPY_EN.records.some(record => record.id === target), id).toBe(true);
   }
   for (const usage of common.usages) {
     const canonical = getAdminCopyRecord(aliases[usage.legacyRecordId] ?? usage.legacyRecordId, store)!;

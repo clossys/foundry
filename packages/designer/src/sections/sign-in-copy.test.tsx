@@ -144,7 +144,7 @@ describe("sign-in copy binding refusals", () => {
   it("preserves Writer refusals for unknown, draft and unresolved optional copy", () => {
     const { resolver, fields } = setup();
     expect(() => bindSignInCopy("sign-in.password", "en", resolver, { ...fields, "header.heading": { id: "st.0000000000" } }, providerIds)).toThrow();
-    const draftResolver = createCopyResolver(registry("en", false), { target: "preview" });
+    const draftResolver = createCopyResolver(registry("en", false), { target: "production" });
     expect(() => bindSignInCopy("sign-in.password", "en", draftResolver, fields, providerIds)).toThrow();
     expect(() => bindSignInCopy("sign-in.password", "en", resolver, { ...fields, "error.message": { id: "st.0000000000" } }, providerIds)).toThrow();
   });

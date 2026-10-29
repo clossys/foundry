@@ -1995,7 +1995,7 @@
     },
     {
       "recordId": "st.ktgn3jyg1d",
-      "source": "common-labels.r1.en.json",
+      "source": "sign-in.json",
       "sourceContext": "admin.writer.chat.account.signIn"
     },
     {

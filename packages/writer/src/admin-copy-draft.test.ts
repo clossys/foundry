@@ -28,18 +28,23 @@ it("creates only validated explicitly English draft envelopes through the instal
   const root = mkdtempSync(join(tmpdir(), "writer-draft-command-"));
   try {
     const input = join(root, "input.json"), output = join(root, "draft.json");
-    writeFileSync(input, JSON.stringify({ locale: "en", records: ADMIN_WRITER_COPY_EN.records }));
+    // Author only this source's records; the read view also composes other owners' copy.
+    writeFileSync(input, JSON.stringify({ locale: "en", records: writerSource.records }));
     const result = spawnSync(process.execPath, [cli.pathname, "admin-copy-draft", input, output], { encoding: "utf8" });
     expect(result.status, result.stderr).toBe(0);
     expect(JSON.parse(readFileSync(output, "utf8"))).toEqual({
       version: 1, revision: 1, state: "draft", locale: "en", activation: "none",
-      records: ADMIN_WRITER_COPY_EN.records,
-      bindings: ADMIN_WRITER_COPY_EN.records.map(record => ({ cellId: record.context, recordId: record.id, target: "WriterRoutePage", kind: "CopyRef" })),
+      records: writerSource.records,
+      bindings: writerSource.records.map(record => ({ cellId: record.context, recordId: record.id, target: "WriterRoutePage", kind: "CopyRef" })),
     });
     const original = readFileSync(output, "utf8");
     const existing = spawnSync(process.execPath, [cli.pathname, "admin-copy-draft", input, output], { encoding: "utf8" });
     expect(existing.status).toBe(2); expect(readFileSync(output, "utf8")).toBe(original);
-    const record = ADMIN_WRITER_COPY_EN.records[0]!;
+    writeFileSync(input, JSON.stringify({ locale: "en", records: ADMIN_WRITER_COPY_EN.records }));
+    const composed = spawnSync(process.execPath, [cli.pathname, "admin-copy-draft", input, join(root, "composed.json")], { encoding: "utf8" });
+    expect(composed.status).toBe(2);
+    expect(composed.stderr).toContain("Distinct unapproved admin.writer draft strings required");
+    const record = writerSource.records[0]!;
     for (const invalid of [
       { locale: "fr", records: [record] }, { records: [record] }, { locale: "en", records: [] },
       { locale: "en", records: [record, record] }, { locale: "en", records: [{ ...record, status: "approved" }] },

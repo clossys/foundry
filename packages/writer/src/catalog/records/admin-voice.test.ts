@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import drafts from "./admin-voice.r1.en.json" with { type: "json" };
 import common from "./common-labels.r1.en.json" with { type: "json" };
+import { withDeclaredCommonRecords } from "../__fixtures__/shared-records.fixture.js";
 import terminology from "../admin-terminology.json" with { type: "json" };
 import { validateWriterRecord } from "../../model/validate.js";
 import type { WriterLibrary, WriterRecord, StringRecord } from "../../model/types.js";
@@ -15,7 +16,7 @@ import { resolveCopyRef } from "../../resolve.js";
 const usages = common.usages.filter(usage => usage.source === "records/admin-voice.r1.en.json");
 const canonicalId = (id: string) => usages.find(usage => usage.legacyRecordId === id)?.recordId ?? id;
 const sharedIds = new Set(usages.map(usage => usage.recordId));
-const records = [...drafts.records, ...common.records.filter(record => sharedIds.has(record.id))] as StringRecord[];
+const records = withDeclaredCommonRecords(drafts) as StringRecord[];
 const lexicon = terminology.lexiconRecords as WriterRecord[];
 const library = (copy: WriterRecord[] = records): WriterLibrary => ({
   manifest: {

@@ -74,15 +74,13 @@ describe("draft generic sign-in catalog records", () => {
     }
   });
 
-  it("shares stable record identities between locales without treating reuse as duplicate copy", () => {
-    // Native Arabic retains its authored IDs and text. English shared identities
-    // are connected by the handoff map; this does not prove a runtime alias reader.
+  it("shares stable record identities between locales while retaining every original Arabic request", () => {
     const remaps = aliasHandoff.aliases as Record<string, string>;
     expect([...new Set(data.locales.ar.records.map(record => remaps[record.id] ?? record.id))].sort())
       .toEqual(sourceFor("en").records.map(record => record.id).sort());
-    expect(data.locales.ar.records).toHaveLength(39);
+    expect(data.locales.ar.records).toHaveLength(38);
     for (const [id, text] of [["st.f5ce2skzxv", "تسجيل الدخول"], ["st.an5ekdr18g", "رجوع"], ["st.95zeepaj3s", "تسجيل الدخول"]])
-      expect(data.locales.ar.records.find(record => record.id === id)).toMatchObject({ text, status: "draft" });
+      expect(data.locales.ar.legacyRecords.find(record => record.legacyRecordId === id)).toMatchObject({ text, status: "draft", recordId: remaps[id!] });
     const en = data.locales.en.bindings;
     expect(en["ps.sign-in.password"].fields["actions.submit"]).toEqual(en["ps.sign-in.provider"].fields["actions.submit"]);
     expect(data.locales.ar.records.filter(record => "text" in record).every(record => /[\u0600-\u06ff]/u.test(record.text!))).toBe(true);

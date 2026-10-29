@@ -16,7 +16,7 @@ interface Envelope {
 const read = (path: string): Envelope => JSON.parse(readFileSync(new URL(path, import.meta.url), "utf8"));
 const english = () => read("../records/admin-pages.r1.en.json");
 const arabic = () => read("./admin-pages.r1.ar.json");
-const sources = () => ["admin-pages.r1.en.json", "admin-studio.r1.en.json", "admin-chat.r1.en.json", "common-labels.r1.en.json"].map(source => ({ source, envelope: read(`../records/${source}`) }));
+const sources = () => ["admin-pages.r1.en.json", "admin-studio.r1.en.json", "admin-chat.r1.en.json", "common-labels.r1.en.json", "admin-writer-paging.r1.en.json"].map(source => ({ source, envelope: read(`../records/${source}`) }));
 const allRecords = () => sources().flatMap(source => source.envelope.records);
 const library = (records: StringRecord[], ar?: Envelope): WriterLibrary => ({
   manifest: { consumer: "admin-pages-fixture", messageSyntax: "icu-mf1", defaultLocale: "en",
