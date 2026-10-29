@@ -15,6 +15,10 @@
     ".": {
       "types": "./dist/index.d.ts",
       "import": "./dist/index.js"
+    },
+    "./cell-format": {
+      "types": "./dist/cell-format/index.d.ts",
+      "import": "./dist/cell-format/index.js"
     }
   },
   "bin": {

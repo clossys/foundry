@@ -1,0 +1,2 @@
+---
+id: tokens.accent-color

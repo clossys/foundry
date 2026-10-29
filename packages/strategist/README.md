@@ -114,6 +114,35 @@ console.log(report.findings);
 
 ## API reference
 
+The independent `@clossys/strategist/cell-format` subpath provides shared cell
+files without loading a strategy catalog. It exports `parseDocument`,
+`readBullet`, `serializeScalar`, `strings`, `CELL_ID_PATTERN`, `parseLinkRef`,
+`formatLinkRef`, `parseConfirmRef`, `cellPath`, `validateGenericTree`,
+`tokenizeBody`, `listCells`, `readActive`, `propose` and `activate`.
+
+`parseDocument` retains the flat scalar/flow-list grammar and one-based source
+lines used by strategy files. `readBullet` retains the existing citation
+grammar. Shared links separately accept `[agent:]cell.id@N` with two or three
+lowercase kebab segments. Confirmations accept `msg:<session>#U<n>` or a valid
+`migration:YYYY-MM-DD`; migration activation is restricted to version 1.
+`cellPath(id, n)` returns `cells/<id>/v<n>.md` and rejects invalid ids or versions.
+
+`tokenizeBody` accepts source lines from `parseDocument` or a body string. It
+returns level 2/3 headings, bullets, parsed fenced JSON and raw lines, including
+blank lines. JSON tokens record both fence lines. Agent profiles own section
+order, allowed frontmatter keys and raw text rules. `validateGenericTree` accepts
+`{cellIds, maxDepth}`; the default depth is two group levels, tree grouping is
+optional, and provided grouping places each supplied cell exactly once. Extra
+agent fields are retained for the caller's profile to validate.
+
+Store functions are asynchronous. `listCells(root)` returns all version records;
+`readActive(root)` follows only `tree.json` pointers, and `readActive(root, id)`
+reads one active record. Records contain `id`, `version`, `status`, root-relative
+`path`, original `source` and parsed `document`. `propose(root, id)` copies the
+active version into a new draft. `activate(root, refs, {confirm, beforeActivate})`
+validates the batch and optional hook before writing. A hook can veto by returning
+`false` or throwing. Callers obtain user confirmation before invoking activation.
+
 The root runtime exports are:
 
 `ENGAGEMENT_CONTEXT_FIELD_IDS`, `audienceContextValue`, `engagementContextFieldById`, `readEngagementContext`, `readEngagementContextFromBriefData`, `assessStrategyTraceabilityRate`, `scanStrategyDirectory`, `buildFactIndex`, `isTracedSurfaceForm`, `readFindings`, `checkGrounding`, `checkWontClaimDrift`, `loadCatalog`, `validateCatalog`, `openStrategy`, `compileBrief`, `validateBriefContract`, `discoverBriefContracts`, `parseCell`, `serializeCell`, `parseRef`, `formatRef`, `parseSession`, `parseFinding`, `validateFinding`, `validateRequest`, `validateTree`, `readStrategyRoot`, `checkCell`, `checkCoherence`, `completion`, `strategyStatus`, `validWatch`, `blocks`, `cellJudgeId`, `buildCitationIndex`, `propose`, `activate`, `createRequest`, `listRequests`, `resolveRequest`, `review`.
