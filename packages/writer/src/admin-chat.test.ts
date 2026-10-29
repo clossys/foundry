@@ -29,7 +29,7 @@ it("authors valid unapproved chat records through the draft command and exposes 
 });
 
 it("resolves chat state, context, limits and all declared arguments without English fallbacks or approval", () => {
-  const ref = (key: string) => ({ id: ADMIN_CHAT_COPY_EN.records.find(record => record.context === `admin.writer.chat.${key}`)!.id });
+  const ref = (key: string) => ({ id: ADMIN_CHAT_COPY_EN.bindings.find(binding => binding.cellId === `admin.writer.chat.${key}`)!.recordId });
   expect(ADMIN_CHAT_COPY_EN.records.filter(record => record.context.startsWith("admin.writer.chat.starter."))).toHaveLength(4);
   expect(resolveAdminCopyRef(ref("account.signIn"))).toMatchObject({ text: "Sign in", status: "draft", activation: "none" });
   expect(resolveAdminCopyRef({ ...ref("context.using"), values: { context: "Writer / selected record" } })?.text).toBe("Using: Writer / selected record");
