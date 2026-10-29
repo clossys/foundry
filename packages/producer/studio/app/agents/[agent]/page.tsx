@@ -1,0 +1,11 @@
+import { Suspense } from 'react';
+import { notFound } from 'next/navigation';
+import { CellsWorkspace } from '../../../components/CellsWorkspace';
+import { isAgent } from '../../../lib/agents';
+
+export function generateStaticParams() { return ['director', 'designer', 'writer', 'publisher'].map(agent => ({ agent })); }
+export default async function AgentPage({ params }: { params: Promise<{ agent: string }> }) {
+  const { agent } = await params;
+  if (!isAgent(agent)) notFound();
+  return <Suspense fallback={<p role="status">Loading Studio…</p>}><CellsWorkspace agent={agent} /></Suspense>;
+}
