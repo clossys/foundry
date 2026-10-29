@@ -12,9 +12,9 @@ npx next build packages/producer/studio
 
 The build emits Next standalone output. Producer owns the public loopback listener and reverse proxy; packaging owns copying standalone output and static assets. Opening Next directly without Producer shows the cell API error state. Routes: `/`, `/agents/director`, `/agents/designer`, `/agents/writer`, `/agents/publisher`, and `/apps`.
 
-The client adapter validates the aggregate index and selected-cell identity. A cell selection is a URL query (`agent` and `cell`), so a selected cell can be bookmarked. Reloading cells fetches the current index and selection. Agent presentation names do not resolve package identities.
+The client adapter validates the aggregate index and selected-cell identity. A cell selection is a URL query (`agent` and `cell`), so a selected cell can be bookmarked. Reloading cells fetches the current index and selection. Read-only change events also refresh both. The selected cell shows its actual status and version, including drafts. Agent presentation names do not resolve package identities.
 
-Existing registered Sections used: content, record-detail, article, empty-state, and band. Nested cell links are composition inside content, not a new registered leaf.
+Existing registered Sections used: content, record-detail, article, empty-state, and band. Nested cell links honor grouping from the returned tree when available; a malformed grouping is an error. They are composition inside content, not a new registered leaf.
 
 ## Gaps
 

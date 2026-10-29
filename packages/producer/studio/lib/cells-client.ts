@@ -1,8 +1,8 @@
 import { isAgent, type Agent } from './agents';
 
-export interface CellSummary { id: string; title: string; parent?: string }
+export interface CellSummary { id: string; title: string; parent?: string; version?: number; status?: string; fields?: Record<string, unknown> }
 export interface AgentCells { agent: Agent; cells: CellSummary[]; tree: unknown; state?: string; error?: string }
-export interface CellDetail { agent: Agent; id: string; content: string }
+export interface CellDetail extends CellSummary { agent: Agent; content: string }
 
 function object(value: unknown): value is Record<string, unknown> { return typeof value === 'object' && value !== null && !Array.isArray(value); }
 
@@ -13,22 +13,28 @@ export function parseCellsResponse(value: unknown): AgentCells[] {
     if (!object(entry) || typeof entry.agent !== 'string' || !isAgent(entry.agent) || !Array.isArray(entry.cells)) throw new Error('The agent cell index is invalid.');
     const cells = entry.cells.map((cell: unknown) => {
       if (!object(cell) || typeof cell.id !== 'string' || !cell.id || cell.parent !== undefined && typeof cell.parent !== 'string') throw new Error('A cell in the index is invalid.');
-      return { id: cell.id, title: typeof cell.title === 'string' && cell.title ? cell.title : cell.id, ...(typeof cell.parent === 'string' ? { parent: cell.parent } : {}) };
+      return { id: cell.id, title: typeof cell.title === 'string' && cell.title ? cell.title : cell.id, ...(typeof cell.parent === 'string' ? { parent: cell.parent } : {}), ...(typeof cell.version === 'number' ? { version: cell.version } : {}), ...(typeof cell.status === 'string' ? { status: cell.status } : {}), ...(object(cell.fields) ? { fields: cell.fields } : {}) };
     });
     if (new Set(cells.map(cell => cell.id)).size !== cells.length) throw new Error('The cell index contains duplicate IDs.');
-    const error = typeof entry.error === 'string' ? entry.error : object(entry.error) && typeof entry.error.message === 'string' ? entry.error.message : undefined;
+    const error = typeof entry.error === 'string' ? entry.error : object(entry.error) && typeof entry.error.message === 'string' ? entry.error.message : entry.state === 'error' && typeof entry.message === 'string' ? entry.message : undefined;
     return { agent: entry.agent, cells, tree: entry.tree, ...(typeof entry.state === 'string' ? { state: entry.state } : {}), ...(error ? { error } : {}) };
   });
 }
 
 export function parseCellResponse(value: unknown, agent: Agent, id: string): CellDetail {
-  if (!object(value) || value.agent !== agent || value.id !== id || typeof value.content !== 'string') throw new Error('The selected cell response is invalid.');
-  return { agent, id, content: value.content };
+  if (!object(value) || value.agent !== agent || value.state !== 'ready' || !object(value.cell)) throw new Error('The selected cell response is invalid.');
+  const cell = value.cell;
+  if (cell.id !== id || typeof cell.source !== 'string') throw new Error('The selected cell response is invalid.');
+  return { agent, id, title: typeof cell.title === 'string' && cell.title ? cell.title : id, content: cell.source,
+    ...(typeof cell.version === 'number' ? { version: cell.version } : {}),
+    ...(typeof cell.status === 'string' ? { status: cell.status } : {}),
+    ...(object(cell.fields) ? { fields: cell.fields } : {}),
+  };
 }
 
 async function request(path: string, signal: AbortSignal): Promise<unknown> {
   const response = await fetch(path, { signal, cache: 'no-store', headers: { Accept: 'application/json' } });
-  if (!response.ok) throw new Error(response.status === 404 ? 'The requested cell is no longer available.' : `Producer could not load cells (${response.status}).`);
+  if (!response.ok) throw new Error(response.status === 404 ? 'Producer could not find the requested cell resource.' : `Producer could not load cells (${response.status}).`);
   return response.json();
 }
 export async function loadCells(signal: AbortSignal): Promise<AgentCells[]> { return parseCellsResponse(await request('/api/cells', signal)); }
