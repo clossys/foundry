@@ -350,6 +350,7 @@
     "skill",
     "THIRD-PARTY-NOTICES.md",
     "fit-signal-declarations.json",
+    "strategy-brief.json",
     "!dist/catalog-core/__fixtures__/**"
   ],
   "scripts": {

@@ -54,7 +54,7 @@ function componentProfile(input: CompositeEngineInput, values: Resolved) {
 export function checkComposite(input: CompositeEngineInput): CompositeCheckResult {
   const owned = portions(input.library);
   const values = resolveValues({catalog:input.catalog.values,library:owned.values});
-  const findings:CompositeCheckResult["findings"][number][]=[...checkValues({catalog:input.catalog.values,library:owned.values,fileExists:input.fileExists}).findings];
+  const findings:CompositeCheckResult["findings"][number][]=[...checkValues({catalog:input.catalog.values,library:owned.values,fileExists:input.fileExists,strategy:input.strategy}).findings];
   let components:ReturnType<typeof componentProfile>|undefined;
   try {components=componentProfile(input,values);findings.push(...components.check.findings);}
   catch(error){if(!(error instanceof CatalogError))throw error;findings.push({code:"R",rule:"components",severity:"error",subject:input.library.source.id,message:error.message});}
@@ -71,7 +71,7 @@ function computePortions(input: CompositeEngineInput): PortionResolution {
   const owned = portions(input.library);
   const values = resolveValues({ catalog: input.catalog.values, library: owned.values });
   const components = componentProfile(input, values);
-  return { values, components, findings: [...checkValues({ catalog: input.catalog.values, library: owned.values, fileExists: input.fileExists }).findings, ...components.check.findings] };
+  return { values, components, findings: [...checkValues({ catalog: input.catalog.values, library: owned.values, fileExists: input.fileExists, strategy: input.strategy }).findings, ...components.check.findings] };
 }
 /**
  * Everything the probe-independent part of a portion resolution reads besides the library: the value and component
@@ -110,7 +110,8 @@ function resolvePortions(input: CompositeEngineInput, digest = compositeLibraryH
     portionCache.set(input.library, [entry, ...entries].slice(0, PORTION_ENTRIES));
   }
   const valueCheck = { catalog: input.catalog.values, library: portions(input.library).values };
-  const valueFindings = input.fileExists ? checkValues({ ...valueCheck, fileExists: input.fileExists }).findings : (entry.unprobed ??= checkValues(valueCheck).findings);
+  // Strategy readers are snapshots reopened after activation; their findings are never cached.
+  const valueFindings = input.fileExists || input.strategy ? checkValues({ ...valueCheck, fileExists: input.fileExists, strategy: input.strategy }).findings : (entry.unprobed ??= checkValues(valueCheck).findings);
   return { values: entry.values, components: entry.components, findings: [...valueFindings, ...entry.components.check.findings] };
 }
 function resolveCompositeFrom(input: CompositeEngineInput, { values, components, findings }: PortionResolution, selectionHash = compositeLibraryHash(input.library)): CompositeResolved {

@@ -102,7 +102,7 @@ export interface Standard { id: string; title: string; version: string; url: str
 export type Pick = { scope: "member" | "slot"; target: string; source: string };
 export interface LegacySelection { version: 1; consumer: string; defaultChain: readonly string[]; picks: readonly Pick[] }
 export interface Selection {
-  version: 2; consumer: string; rubricVersion: string; strategy: DtcgValue; direction: DtcgValue;
+  version: 2; consumer: string; rubricVersion: string; strategy: import("./selection-strategy.js").SelectionStrategy | null;
   slots: readonly { slot: string; originKinds: readonly Origin["kind"][]; sources: readonly string[]; rationale: DtcgValue }[];
 }
 export type ResolvedValue = DtcgValue;
@@ -151,7 +151,7 @@ export interface LibraryData {
   source: Source; fills: readonly FillDoc[]; complete?: boolean;
   baseline?: Readonly<Record<string, { light: string; dark?: string }>>;
   adoptedAt?: string;
-  rubricVersion?: string; strategy?: DtcgValue; direction?: DtcgValue;
+  rubricVersion?: string; strategy?: import("./selection-strategy.js").SelectionStrategy | null;
   rationale?: Readonly<Record<string, DtcgValue>>;
   selection?: Selection;
 }
@@ -199,6 +199,7 @@ export interface CompositeEngineInput {
   componentOptions?: Omit<import("./resolve-components.js").ComponentResolutionInput, "catalog" | "library" | "values">;
   surfaceOptions?: import("./surface-types.js").SurfaceResolutionOptions;
   fileExists?: (path: string) => boolean;
+  strategy?: import("./selection-strategy.js").SelectionStrategyReader;
 }
 export interface CompositeResolved {
   consumer: string;

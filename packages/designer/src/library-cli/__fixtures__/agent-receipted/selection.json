@@ -1,6 +1,5 @@
 {
   "consumer": "example",
-  "direction": null,
   "rubricVersion": "unscored",
   "slots": [
     {

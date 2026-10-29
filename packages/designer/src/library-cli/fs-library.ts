@@ -197,7 +197,7 @@ async function readCompositeUnlocked(root: string, catalog: CompositeCatalogData
   if(record(metadata)&&metadata.surfaces!==undefined&&new TextDecoder("utf-8",{fatal:true}).decode(await regularFile(containedPath(root,"metadata.json")))!==stableStringify(metadata))throw new LibraryInputError("Noncanonical opted-in metadata");
   if (!record(source) || source.kind !== "consumer" || source.author !== "consumer" || typeof source.id !== "string" || typeof source.license !== "string"
     || !record(metadata) || !exactKeys(metadata, ["format", "values", "components", "files"], ["adoptedAt", "surfaces"]) || metadata.format !== "composite-v1"
-    || !record(metadata.values) || !exactKeys(metadata.values, [], ["complete", "baseline", "rubricVersion", "strategy", "direction", "rationale"])
+    || !record(metadata.values) || !exactKeys(metadata.values, [], ["complete", "baseline", "rubricVersion", "strategy", "rationale"])
     || !record(metadata.components) || !exactKeys(metadata.components, [], ["selection"]) || !Array.isArray(metadata.files) || !metadata.files.every(name => typeof name === "string")) throw new LibraryInputError("Invalid composite metadata");
   const valueIds = new Set(catalog.values.slots.map(slot => slot.id)), componentIds = new Set(catalog.components.slots.map(slot => slot.id));
   const fills: LibraryData["fills"][number][] = [], components: ComponentDocument[] = [], surfaces: SurfaceDocument[]=[];
@@ -243,7 +243,7 @@ async function readUnlocked(root: string, catalog: CatalogData): Promise<Library
   await readNeedsUnlocked(root);
   const parse = async (name: string): Promise<unknown> => JSON.parse(new TextDecoder("utf-8", { fatal: true }).decode(await regularFile(containedPath(root, name))));
   const source = await parse("source.json"), metadata = await parse("metadata.json"), selection = await parse("selection.json");
-  if (!record(source) || source.kind !== "consumer" || source.author !== "consumer" || typeof source.id !== "string" || typeof source.license !== "string" || !record(metadata) || !exactKeys(metadata, [], ["complete", "baseline", "adoptedAt", "rubricVersion", "strategy", "direction", "rationale"])) throw new LibraryInputError("Invalid library metadata");
+  if (!record(source) || source.kind !== "consumer" || source.author !== "consumer" || typeof source.id !== "string" || typeof source.license !== "string" || !record(metadata) || !exactKeys(metadata, [], ["complete", "baseline", "adoptedAt", "rubricVersion", "strategy", "rationale"])) throw new LibraryInputError("Invalid library metadata");
   const allowed = new Set(catalog.slots.map(slot => `${slot.id}.json`));
   const entries = await fs.readdir(join(root, "fills"));
   const fills = [];
