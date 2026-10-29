@@ -13,7 +13,7 @@ import type { SourceBundle } from "./changeset-components.js";
 import { isSelectableComponentSource, NON_SELECTABLE_SOURCE_REASON } from "./component-sources.js";
 
 /** Canonical selection policy. Callers may supply their own explicit policy to the planner. */
-export const DEFAULT_COMPONENT_PREFERENCE: readonly string[] = ["shadcn@aria", "shadcn-charts", "foundry", "rac-starter"];
+export const DEFAULT_COMPONENT_PREFERENCE: readonly string[] = ["shadcn@aria", "foundry", "rac-starter"];
 /** The approved shadcn default picks; choices remain exclusive overrides. */
 export const DEFAULT_COMPONENT_PICKS: Readonly<Record<string, string>> = {
   "components.button": "shadcn@aria", "components.table": "shadcn@aria", "components.tooltip": "shadcn@aria", "components.card": "shadcn@aria",

@@ -12,25 +12,8 @@ import starterData from "./rac-starter.data.json" with { type: "json" };
 import { sha256 } from "./catalog-core/digest.js";
 import { componentDescriptorHash } from "./catalog-core/resolve-components.js";
 import { FOUNDRY_COMPONENT_MAP } from "./importers/foundry-components.map.js";
-import { applyDecisions } from "./library-cli/apply-decisions.js";
-import { loadCatalog } from "./catalog-core/index.js";
-import { loadComponentRegistry } from "./catalog-core/component-registry.js";
-import type { CompositeCatalogData, CompositeLibraryData } from "./catalog-core/types.js";
 
 describe("offline catalog candidate bundle", () => {
-  it("adopts shadcn controls and every chart together without conflicting shared source or notice bytes", () => {
-    const bundle = loadCatalogBundles();
-    const charts = bundle.componentFills.filter(doc => doc.$extensions["com.clossys.fill"].source === "shadcn-charts");
-    expect(charts).toHaveLength(7);
-    const controls = bundle.componentFills.filter(doc => ["shadcn@aria/components.button", "shadcn@aria/components.card", "shadcn@aria/components.menu"].includes(doc.$extensions["com.clossys.fill"].id));
-    const catalog = { values: loadCatalog(), components: { slots: loadComponentRegistry().slots, fills: bundle.componentFills } } as CompositeCatalogData;
-    const empty = { source: { id: "chart-consumer", kind: "consumer", author: "consumer" }, adoptedAt: "2026-10-29", values: { fills: [] }, components: { fills: [], files: [] } } as CompositeLibraryData;
-    const decisions = [...controls, ...charts].map(doc => { const meta = doc.$extensions["com.clossys.fill"]; return { slot: meta.slot, kind: "adopt" as const, source: meta.source, fill: meta.id, note: "Selected fixture" }; });
-    const adopted = applyDecisions(catalog, empty, decisions, { bundles: bundle.sourceBundles });
-    expect(adopted.components.fills).toHaveLength(10);
-    for (const path of ["components/chart/chart.tsx", "components/_parts/utils/index.ts", "notices/THIRD-PARTY.md", "notices/SHADCN-CHARTS.md"]) expect(adopted.components.files.filter(file => file.path === path), path).toHaveLength(1);
-    expect(adopted.components.files.find(file => file.path === "notices/SHADCN-CHARTS.md")!.content).toContain("Transform: shadcn-registry-alias@1");
-  });
   it("exposes declared candidates and exact packed-version pointers without qualifying drafts", () => {
     const bundle = loadCatalogBundles();
     const pkg = JSON.parse(readFileSync(resolve(import.meta.dirname, "../package.json"), "utf8"));

@@ -327,14 +327,9 @@
       ],
       "offers": [
         {
-          "source": "shadcn-charts",
-          "leaves": [
-            "components.chart-sparkline"
-          ]
-        },
-        {
           "source": "foundry",
           "leaves": [
+            "components.chart-sparkline",
             "components.chart-status-strip"
           ],
           "reason": "no external covers"
@@ -351,17 +346,12 @@
       ],
       "offers": [
         {
-          "source": "shadcn-charts",
-          "leaves": [
-            "components.chart-scatter",
-            "components.chart-range",
-            "components.chart-waterfall"
-          ]
-        },
-        {
           "source": "foundry",
           "leaves": [
-            "components.chart-heatmap"
+            "components.chart-scatter",
+            "components.chart-heatmap",
+            "components.chart-range",
+            "components.chart-waterfall"
           ],
           "reason": "no external covers"
         }

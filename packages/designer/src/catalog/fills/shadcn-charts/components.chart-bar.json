@@ -61,7 +61,7 @@
         "series",
         "tooltip"
       ],
-      "notice": "notices/SHADCN-CHARTS.md",
+      "notice": "notices/THIRD-PARTY.md",
       "outputSha256": [
         {
           "path": "components/_parts/utils/index.ts",
@@ -69,14 +69,14 @@
         },
         {
           "path": "components/chart-bar/chart-bar.tsx",
-          "sha256": "c933c8a583c40eaad93b65435bdbd713dd3928e364481744c2a9966b82aeb52d"
+          "sha256": "6822f7203397f2380d5570321ebac38c03995409e00bae64b55c6cb562e75f87"
         },
         {
           "path": "components/chart/chart.tsx",
           "sha256": "332cfd34270c6596893e18310f59a3224c27d3a8a79decedd4bd17fa928ecb89"
         },
         {
-          "path": "notices/SHADCN-CHARTS.md",
+          "path": "notices/THIRD-PARTY.md",
           "sha256": "c20e375c7c425002d035b3442714ac64a03c4ff16a46fea7b0af5f524037feed"
         }
       ],
@@ -100,10 +100,10 @@
         "url": "https://github.com/shadcn-ui/ui"
       },
       "propMap": {
-        "axes": "ChartBar.showAxes: Recharts XAxis + CartesianGrid in ChartContainer",
-        "legend": "ChartBar.showLegend: ChartLegend content=ChartLegendContent",
+        "axes": "ChartBar.categoryKey: Recharts XAxis + CartesianGrid in ChartContainer",
+        "legend": "ChartBar: ChartLegend content=ChartLegendContent",
         "series": "ChartBar.series: Recharts Bar per ChartConfig key",
-        "tooltip": "ChartBar.showTooltip: ChartTooltip content=ChartTooltipContent"
+        "tooltip": "ChartBar: ChartTooltip content=ChartTooltipContent"
       },
       "props": [
         "categoryKey",
@@ -111,10 +111,7 @@
         "data",
         "initialDimension",
         "isAnimationActive",
-        "series",
-        "showAxes",
-        "showLegend",
-        "showTooltip"
+        "series"
       ],
       "reads": {
         "assets": [],

@@ -35,11 +35,11 @@ export const componentSpecimenProps: Readonly<Record<string, Readonly<Record<str
   "./charts#BarChart": d.charts.bar,
   "./charts#Heatmap": d.charts.heatmap,
   "./charts#LineChart": d.charts.line,
-  "./charts#RangeChart": { ...d.charts.range, frame: d.charts.rows.frame },
-  "./charts#ScatterChart": { ...d.charts.scatter, frame: d.charts.rows.frame },
-  "./charts#Sparkline": { ...d.charts.sparkline, frame: d.charts.rows.frame },
+  "./charts#RangeChart": d.charts.range,
+  "./charts#ScatterChart": d.charts.scatter,
+  "./charts#Sparkline": d.charts.sparkline,
   "./charts#StatusStrip": d.charts.statusStrip,
-  "./charts#WaterfallChart": { ...d.charts.waterfall, frame: d.charts.rows.frame },
+  "./charts#WaterfallChart": d.charts.waterfall,
 };
 
 /** Text content for components that draw their children. */
@@ -146,10 +146,6 @@ export const componentSpecimenSourceSamples = {
   "components/skeleton/skeleton.tsx#Skeleton": { "aria-label": d.skeleton["aria-label"] },
   "components/toggle-group/toggle-group.tsx#ToggleGroup": d.toggles,
   "components/separator/separator.tsx#Separator": d.separator,
-  "components/chart-scatter/chart-scatter.tsx#ChartScatter": { ...d.charts.scatter, frame: d.charts.rows.frame },
-  "components/chart-range/chart-range.tsx#ChartRange": { ...d.charts.range, frame: d.charts.rows.frame },
-  "components/chart-waterfall/chart-waterfall.tsx#ChartWaterfall": { ...d.charts.waterfall, frame: d.charts.rows.frame },
-  "components/chart-sparkline/chart-sparkline.tsx#ChartSparkline": { ...d.charts.sparkline, frame: d.charts.rows.frame },
   "components/chart-area/chart-area.tsx#ChartArea": { rows: d.charts.rows, categories: d.charts.area.x, series: d.charts.area.series },
   "components/chart-bar/chart-bar.tsx#ChartBar": { rows: d.charts.rows, categories: d.charts.bar.categories, series: d.charts.bar.series },
   "components/chart-line/chart-line.tsx#ChartLine": { rows: d.charts.rows, categories: d.charts.line.x, series: d.charts.line.series },

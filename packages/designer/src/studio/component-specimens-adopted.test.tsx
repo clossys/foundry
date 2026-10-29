@@ -201,12 +201,12 @@ it("fills every shadcn@aria specimen from the dataset, never from its leaf id or
 it("draws every adopted shadcn-charts leaf as a live Recharts chart of the dataset series", async () => {
   const result = importShadcnCharts(pinnedShadcnChartsInput());
   const chartFills = result.fills.map(doc => Object.values(doc.components)[0]! as unknown as ResolvedComponent["descriptor"] & { slot: string; impl: { entry: string; export: string } });
-  expect(chartFills.map(fill => fill.slot).sort()).toEqual(["components.chart-area", "components.chart-bar", "components.chart-line", "components.chart-range", "components.chart-scatter", "components.chart-sparkline", "components.chart-waterfall"]);
+  expect(chartFills.map(fill => fill.slot).sort()).toEqual(["components.chart-area", "components.chart-bar", "components.chart-line"]);
   const modules: Record<string, Record<string, unknown>> = {};
   for (const fill of chartFills) modules[fill.impl.entry] = vendoredModule(materializeShadcnChart(result, fill.slot.slice("components.".length)), fill.impl.entry, () => components);
   const specimens = componentSpecimenPreview({ modules: { ...hostModules, ...modules } });
-  const fed = { "components.chart-area": d.charts.area.series, "components.chart-bar": d.charts.bar.series, "components.chart-line": d.charts.line.series, "components.chart-range": [{ name: "value" }], "components.chart-scatter": [{ name: "value" }], "components.chart-waterfall": [{ name: "value" }], "components.chart-sparkline": [{ name: "value" }] } as const;
-  const marks = { "components.chart-area": ".recharts-area-area", "components.chart-bar": ".recharts-bar-rectangle", "components.chart-line": ".recharts-line-curve", "components.chart-range": ".recharts-area-area", "components.chart-scatter": ".recharts-scatter-symbol", "components.chart-waterfall": ".recharts-bar-rectangle", "components.chart-sparkline": ".recharts-line-curve" } as const;
+  const fed = { "components.chart-area": d.charts.area.series, "components.chart-bar": d.charts.bar.series, "components.chart-line": d.charts.line.series } as const;
+  const marks = { "components.chart-area": ".recharts-area-area", "components.chart-bar": ".recharts-bar-rectangle", "components.chart-line": ".recharts-line-curve" } as const;
   for (const fill of chartFills) {
     const component = { slot: fill.slot, originKind: "adopted", origin: { kind: "adopted", source: "shadcn-charts" }, impl: fill.impl, propMap: fill.propMap, reads: { tokens: {}, assets: [], components: [] }, descriptor: { ...fill, source: "consumer-app" } } as unknown as ResolvedComponent;
     const profile = { selectionHash: `selection-${fill.slot}`, components: { components: { [fill.slot]: component } } } as unknown as CompositeResolved;
