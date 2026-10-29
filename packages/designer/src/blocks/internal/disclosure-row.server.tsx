@@ -1,5 +1,5 @@
-import { Icon } from "../../components/Icon.js";
-import { cx } from "../../components/internal/cx.js";
+import { Icon } from "../../selected-components/Icon.js";
+import { cx } from "../../selected-components/internal/cx.js";
 import { ChevronDown } from "../../icons/ChevronDown.js";
 import type { DisclosureRowOptions } from "./disclosure-row-types.js";
 

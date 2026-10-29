@@ -4,7 +4,7 @@
  * fill maps only `columns`; links, legal and social stay unmapped and are refused, never dropped.
  */
 import type { ReactNode } from "react";
-import { Link } from "../../components/Link.js";
+import { Link } from "../../selected-components/Link.js";
 import type { RuntimeRenderInput } from "../../catalog-core/runtime-ports.js";
 import { SiteFooter, type SiteFooterProps } from "../../shell/SiteFooter.js";
 import { runtimeMember, runtimeValue, type SurfaceRendererEntry } from "../contract.js";

@@ -1,8 +1,8 @@
 import { type DataTableMessages } from "./messages.js";
 import type { CSSProperties } from "react";
 import type { Key } from "react-aria-components";
-import { Table } from "../../components/Table.js";
-import { cx } from "../../components/internal/cx.js";
+import { Table } from "../../selected-components/Table.js";
+import { cx } from "../../selected-components/internal/cx.js";
 import { SectionHeader } from "../SectionHeader.js";
 import type { DataTableProps } from "../DataTable.js";
 import type { DataTableDensity } from "./view-model.js";

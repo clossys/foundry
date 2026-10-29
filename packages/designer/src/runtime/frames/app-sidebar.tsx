@@ -6,8 +6,8 @@
  */
 import { useState, type ReactNode } from "react";
 import { AppNavigation, type AppNavigationProps } from "../../blocks/AppNavigation.js";
-import { Button } from "../../components/Button.js";
-import { Link } from "../../components/Link.js";
+import { Button } from "../../selected-components/Button.js";
+import { Link } from "../../selected-components/Link.js";
 import type { RuntimeRenderInput } from "../../catalog-core/runtime-ports.js";
 import { runtimeMember, runtimeValue, type SurfaceRendererEntry } from "../contract.js";
 import { plainJson } from "../sections/dataset-json.js";

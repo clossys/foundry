@@ -1,7 +1,7 @@
 'use client';
 import { useId, type Key, type ReactNode } from 'react';
-import { Button } from '../../components/Button.js';
-import { Table } from '../../components/Table.js';
+import { Button } from '../../selected-components/Button.js';
+import { Table } from '../../selected-components/Table.js';
 import { BOARD_SURFACE_CLASS, BoardHeader, LeafCell, LeafLabel } from './LeafCell.js';
 import { CandidatePromptDialog } from './CandidatePromptDialog.js';
 import { assertLibraryBoardRecords, assertLibraryPreviewIdentity, type LibraryBoardCommand, type LibraryBoardRecords, type LibraryPreviewIdentity } from './model.js';

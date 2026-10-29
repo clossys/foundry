@@ -1,10 +1,10 @@
 import type { CSSProperties, ReactNode } from "react";
 import { assertNoNestedInteractive } from "../stretched-link.js";
-import { Meter } from "../../components/Meter.server.js";
+import { Meter } from "../../selected-components/Meter.server.js";
 import type { MeterDirection } from "../../components/Meter.js";
-import { StatusMark, type StatusMarkTone } from "../../components/StatusMark.js";
-import { cx } from "../../components/internal/cx.js";
-import { UI_BORDER_HAIRLINE } from "../../components/internal/ui-vars.js";
+import { StatusMark, type StatusMarkTone } from "../../selected-components/StatusMark.js";
+import { cx } from "../../selected-components/internal/cx.js";
+import { UI_BORDER_HAIRLINE } from "../../selected-components/internal/ui-vars.js";
 
 // Class records first: the compiled-CSS scan reads string literals in file
 // order, so every class lives here, above any code.

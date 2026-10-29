@@ -1,6 +1,6 @@
 import { NavGrid } from "../../blocks/NavGrid.js";
 import type { NavGridItem } from "../../blocks/NavGrid.js";
-import { Icon } from "../../components/Icon.js";
+import { Icon } from "../../selected-components/Icon.js";
 import * as icons from "../../icons/index.js";
 import { anatomyOf, noop, recordsOf, refuseUnmapped, requireSlot, stringField, type SectionInputs, type SectionRenderer } from "./group-c-content.js";
 

@@ -1,5 +1,5 @@
-import { cx } from "../components/internal/cx.js";
-import { Logomark, type LogomarkProps } from "../components/Logomark.js";
+import { cx } from "../selected-components/internal/cx.js";
+import { Logomark, type LogomarkProps } from "../selected-components/Logomark.js";
 import { Lockup, internalLockupWithRootClass } from "../blocks/Lockup.js";
 import {
   BADGE_INSET_SHARE,

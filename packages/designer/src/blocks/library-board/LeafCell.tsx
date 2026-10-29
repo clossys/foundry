@@ -1,6 +1,6 @@
 'use client';
 import type { HTMLAttributes, ReactNode } from 'react';
-import { Card, type CardGround } from '../../components/Card.js';
+import { Card, type CardGround } from '../../selected-components/Card.js';
 import { SectionHeader } from '../SectionHeader.js';
 import { CANVAS_COUNTER_SCALED_TITLE } from '../canvas/CanvasLod.js';
 

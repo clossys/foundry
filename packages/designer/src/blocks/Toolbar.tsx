@@ -1,5 +1,5 @@
 import { useId, type CSSProperties, type ReactNode } from "react";
-import { Toolbar as FoundryToolbar, type ToolbarProps as FoundryToolbarProps } from "../components/Toolbar.js";
+import { Toolbar as FoundryToolbar, type ToolbarProps as FoundryToolbarProps } from "../selected-components/Toolbar.js";
 
 export interface ToolbarProps
   extends Omit<FoundryToolbarProps, "children" | "className" | "style" | "variant" | "title"> {

@@ -1,7 +1,7 @@
 import { ShellI18nProvider, ShellLocaleRoot } from "#designer-frame-i18n";
 import { isValidElement, type ReactElement, type ReactNode } from "react";
-import { Link } from "../../components/Link.js";
-import { Icon, SemanticContent } from "@clossys/designer/components/server";
+import { Link } from "../../selected-components/Link.js";
+import { Icon, SemanticContent } from "../../selected-components/server.js";
 import { Brandmark, SiteFooter, SiteHeader } from "@clossys/designer/shell/server";
 import { LandingView as RuntimeLandingView } from "@clossys/designer/frames";
 import { LandingView as ServerLandingView } from "./landing/web/views/LandingView.server.js";

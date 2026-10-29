@@ -3279,6 +3279,11 @@
       transition-duration: 0s;
     }
   }
+  .transition {
+    transition-property: color, background-color, border-color, outline-color, text-decoration-color, fill, stroke, --tw-gradient-from, --tw-gradient-via, --tw-gradient-to, opacity, box-shadow, transform, translate, scale, rotate, filter, -webkit-backdrop-filter, backdrop-filter, display, content-visibility, overlay, pointer-events;
+    transition-timing-function: var(--tw-ease, var(--ease-default, cubic-bezier(.2, 0, 0, 1)));
+    transition-duration: var(--tw-duration, var(--ui-duration-fast, 120ms));
+  }
   .transition-\[color\,box-shadow\] {
     transition-property: color,box-shadow;
     transition-timing-function: var(--tw-ease, var(--ease-default, cubic-bezier(.2, 0, 0, 1)));
@@ -3803,9 +3808,6 @@
   .focus-visible\:outline-accent-on-inverse:focus-visible {
     outline-color: var(--color-accent-on-inverse, oklch(0.7763 0 0));
   }
-  .focus-visible\:outline-focus-ring:focus-visible {
-    outline-color: var(--color-focus-ring, var(--color-accent, oklch(0.4748 0 0)));
-  }
   .focus-visible\:outline-ink-on-inverse:focus-visible {
     outline-color: var(--color-ink-on-inverse, oklch(0.9702 0 0));
   }
@@ -3891,12 +3893,6 @@
   }
   .aria-disabled\:pointer-events-none[aria-disabled="true"] {
     pointer-events: none;
-  }
-  .aria-expanded\:border-surface-inverse[aria-expanded="true"] {
-    border-color: var(--color-surface-inverse, oklch(0.2178 0 0));
-  }
-  .aria-expanded\:border-surface-raised[aria-expanded="true"] {
-    border-color: var(--color-surface-raised, oklch(1 0 0));
   }
   .aria-expanded\:bg-surface-inverse[aria-expanded="true"] {
     background-color: var(--color-surface-inverse, oklch(0.2178 0 0));

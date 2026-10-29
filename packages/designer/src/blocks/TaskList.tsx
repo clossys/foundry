@@ -1,8 +1,8 @@
 import type { HTMLAttributes, ReactNode } from "react";
-import { Meter } from "../components/Meter.server.js";
-import { StatusMark } from "../components/StatusMark.js";
-import { cx } from "../components/internal/cx.js";
-import { UI_BORDER_HAIRLINE, UI_LAYOUT_TAP_TARGET } from "../components/internal/ui-vars.js";
+import { Meter } from "../selected-components/Meter.server.js";
+import { StatusMark } from "../selected-components/StatusMark.js";
+import { cx } from "../selected-components/internal/cx.js";
+import { UI_BORDER_HAIRLINE, UI_LAYOUT_TAP_TARGET } from "../selected-components/internal/ui-vars.js";
 import type { EmptyStateProps } from "./EmptyState.js";
 import { SectionHeader } from "./SectionHeader.js";
 import { assertNoNestedInteractive, CardLinkTitle, cardLinkContainerClassName } from "./stretched-link.js";

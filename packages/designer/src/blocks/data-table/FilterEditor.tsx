@@ -1,9 +1,9 @@
 import { defaultMinimumMessage, defaultMaximumMessage, defaultApplyRangeMessage, defaultComparisonMessage, defaultFilterValueMessage, defaultMatchingMessage, defaultBooleanFilterMessage, defaultFacetValueMessage, type DataTableMessages } from "./messages.js";
 import { useEffect, useState } from "react";
-import { Button } from "../../components/Button.js";
-import { Checkbox } from "../../components/Checkbox.js";
-import { Select } from "../../components/Select.js";
-import { TextField } from "../../components/TextField.js";
+import { Button } from "../../selected-components/Button.js";
+import { Checkbox } from "../../selected-components/Checkbox.js";
+import { Select } from "../../selected-components/Select.js";
+import { TextField } from "../../selected-components/TextField.js";
 import type { TableFacet, TableFilter } from "../table-model/index.js";
 import { dateValue } from "../table-model/model.js";
 

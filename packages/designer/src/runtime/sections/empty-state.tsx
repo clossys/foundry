@@ -1,8 +1,8 @@
 import type { ReactNode } from "react";
 import { EmptyState } from "../../blocks/EmptyState.js";
-import { Button } from "../../components/Button.js";
-import { Icon } from "../../components/Icon.js";
-import { Link } from "../../components/Link.js";
+import { Button } from "../../selected-components/Button.js";
+import { Icon } from "../../selected-components/Icon.js";
+import { Link } from "../../selected-components/Link.js";
 import * as icons from "../../icons/index.js";
 import { actionsOf, anatomyOf, noop, refuseUnmapped, requiredAnatomy, slotValue, stringField, type SectionInputs, type SectionRenderer } from "./group-c-content.js";
 

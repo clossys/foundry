@@ -1,7 +1,7 @@
 import type { HTMLAttributes, ReactNode } from "react";
-import { Button } from "../components/Button.js";
-import { Dialog } from "../components/Dialog.js";
-import { cx } from "../components/internal/cx.js";
+import { Button } from "../selected-components/Button.js";
+import { Dialog } from "../selected-components/Dialog.js";
+import { cx } from "../selected-components/internal/cx.js";
 import { dsAttrs } from "../catalog-core/provenance-attrs.js";
 /** Section root provenance (D1): the selected Foundry fill this block is. */
 const SECTION_STAMP = dsAttrs("sections", "sections.gallery", "foundry/sections.gallery");

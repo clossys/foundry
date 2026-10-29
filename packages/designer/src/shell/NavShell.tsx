@@ -1,8 +1,8 @@
 import type { ReactNode } from "react";
-import { Button } from "../components/Button.js";
-import { Dialog, type DialogProps } from "../components/Dialog.js";
-import { Icon } from "../components/Icon.js";
-import { cx } from "../components/internal/cx.js";
+import { Button } from "../selected-components/Button.js";
+import { Dialog, type DialogProps } from "../selected-components/Dialog.js";
+import { Icon } from "../selected-components/Icon.js";
+import { cx } from "../selected-components/internal/cx.js";
 import { X } from "../icons/index.js";
 import { UI_LAYOUT_DRAWER_W } from "./internal/shell-vars.js";
 

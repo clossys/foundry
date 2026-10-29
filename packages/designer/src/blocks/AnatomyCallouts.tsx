@@ -1,6 +1,6 @@
 import type { CSSProperties, ReactNode } from "react";
-import { cx } from "../components/internal/cx.js";
-import { UI_BORDER_HAIRLINE } from "../components/internal/ui-vars.js";
+import { cx } from "../selected-components/internal/cx.js";
+import { UI_BORDER_HAIRLINE } from "../selected-components/internal/ui-vars.js";
 import { Item } from "./items/Item.js";
 import { SECTION_GROUND_CLASSES, type SectionGround } from "./section-ground.js";
 import { SpecimenPanel, assertSpecimenMarkerTargets, type SpecimenPanelContent } from "./specimen/SpecimenPanel.js";

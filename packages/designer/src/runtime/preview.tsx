@@ -4,8 +4,9 @@
  * content. Preview only: no runtime assembly, manifest, host or adoption evidence. A leaf without a
  * registered renderer, or a sample the fill does not map, yields a reason instead of a stand-in.
  */
+import { standaloneComponents } from "../selected-components/standalone.js";
 import { Fragment, type ReactNode } from "react";
-import { SemanticContent } from "../components/SemanticContent.js";
+import { SemanticContent } from "../selected-components/SemanticContent.js";
 import sectionSlots from "../catalog/slots/sections.json" with { type: "json" };
 import type { CompositeResolved } from "../catalog-core/types.js";
 import { runtimeHash, SECTION_HEADER_CONTENT_KEY, type RuntimeContent, type RuntimeContentRef, type RuntimeFillDescriptor, type RuntimeRenderInput } from "../catalog-core/runtime-ports.js";
@@ -79,7 +80,7 @@ export function surfaceRuntimePreview(entry: SurfacePreviewEntry, options: Surfa
   const fill = options.fill ?? `preview/${leaf}`, selected = options.members ?? [];
   const descriptor = { kind, library: "preview", fill, leaf, config: null, slots, members, states: ["default"], renderer: { id: surfaceRendererId(leaf) } } as unknown as RuntimeFillDescriptor;
   const input = {
-    sectionHost: options.sectionHost,
+    components: standaloneComponents, sectionHost: options.sectionHost,
     path: kind === "frame" ? "frame" : "sections.preview.0", fill: descriptor, cell: { theme: "light", state: options.state ?? "default", width: 1280 },
     selection: { leaf, fill, config: null, members: selected, content: refs }, content, slots: nested.length ? { children: nested } : frameSlots, profile: {} as CompositeResolved,
     ...(leaf === "frames.app-shell" ? { pageHeader: { id: "specimen.app-shell", data: { title: app.page }, module: { package: "@clossys/designer/shell", export: "PageHeaderModule" } } } : {}),

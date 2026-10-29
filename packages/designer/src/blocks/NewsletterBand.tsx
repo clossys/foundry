@@ -2,11 +2,11 @@ import {
   useEffect, useId, useRef,
   type CSSProperties, type FormEvent, type ReactNode,
 } from "react";
-import { Button } from "../components/Button.js";
-import { Icon } from "../components/Icon.js";
-import { TextField } from "../components/TextField.js";
-import { cx } from "../components/internal/cx.js";
-import { UI_LAYOUT_TAP_TARGET } from "../components/internal/ui-vars.js";
+import { Button } from "../selected-components/Button.js";
+import { Icon } from "../selected-components/Icon.js";
+import { TextField } from "../selected-components/TextField.js";
+import { cx } from "../selected-components/internal/cx.js";
+import { UI_LAYOUT_TAP_TARGET } from "../selected-components/internal/ui-vars.js";
 import { XCircle } from "../icons/XCircle.js";
 import { SECTION_GROUND_CLASSES, type SectionGround } from "./section-ground.js";
 import { dsAttrs } from "../catalog-core/provenance-attrs.js";

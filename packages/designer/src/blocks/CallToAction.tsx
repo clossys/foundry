@@ -1,5 +1,5 @@
 import { useId, type HTMLAttributes, type ReactNode } from "react";
-import { cx } from "../components/internal/cx.js";
+import { cx } from "../selected-components/internal/cx.js";
 import { SECTION_GROUND_CLASSES, type SectionGround } from "./section-ground.js";
 import { SectionHeader, type SectionHeaderLevel } from "./SectionHeader.js";
 import { dsAttrs } from "../catalog-core/provenance-attrs.js";

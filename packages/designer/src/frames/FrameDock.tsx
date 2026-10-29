@@ -1,11 +1,11 @@
 "use client";
-import { useShellCopy } from "../components/Banner.copy-context.js";
-import { SHELL_COPY_REFS } from "../components/Banner.copy.js";
+import { useShellCopy } from "../selected-components/Banner.copy-context.js";
+import { SHELL_COPY_REFS } from "../selected-components/Banner.copy.js";
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
-import { Banner, Button, Icon, Tabs } from "../components/index.js";
+import { Banner, Button, Icon, Tabs } from "../selected-components/index.js";
 import { ChevronDown } from "../icons/index.js";
 import { Drawer, ResizablePane } from "../blocks/index.js";
-import { cx } from "../components/internal/cx.js";
+import { cx } from "../selected-components/internal/cx.js";
 import { FrameModuleOutlet, FrameSlotOutlet, useFrameSlotModules } from "../shell/index.js";
 import { useFrameNoticeLeases, visibleFrameNotices, type AppFrameNotice } from "./frame-notices.js";
 import { frameDockGeometry, FRAME_DOCK_DEFAULTS, FRAME_NOTICE_COMPACT_BLOCK, type FrameDockBounds } from "./frame-dock-layout.js";

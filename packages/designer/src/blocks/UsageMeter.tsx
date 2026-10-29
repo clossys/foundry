@@ -1,7 +1,7 @@
 import type { HTMLAttributes, ReactNode } from "react";
-import { Meter } from "../components/Meter.js";
-import { StatusMark } from "../components/StatusMark.js";
-import { cx } from "../components/internal/cx.js";
+import { Meter } from "../selected-components/Meter.js";
+import { StatusMark } from "../selected-components/StatusMark.js";
+import { cx } from "../selected-components/internal/cx.js";
 
 export interface UsageMeterThreshold {
   /** Fraction of the limit; finite, positive and strictly ascending. */

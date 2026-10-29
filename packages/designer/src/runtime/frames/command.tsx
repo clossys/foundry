@@ -6,7 +6,7 @@
 import { useState, type ReactNode } from "react";
 import { CommandMenu } from "../../blocks/CommandMenu.js";
 import type { CommandMenuProps } from "../../blocks/command-menu-types.js";
-import { Button } from "../../components/Button.js";
+import { Button } from "../../selected-components/Button.js";
 import type { RuntimeRenderInput } from "../../catalog-core/runtime-ports.js";
 import { runtimeText, runtimeValue, type SurfaceRendererEntry } from "../contract.js";
 import { plainJson } from "../sections/dataset-json.js";

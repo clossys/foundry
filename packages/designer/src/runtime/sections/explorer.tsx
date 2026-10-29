@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Explorer } from "../../blocks/Explorer.js";
-import { GridList } from "../../components/GridList.js";
+import { GridList } from "../../selected-components/GridList.js";
 import { entryOf, recordsOf, type GroupBSection, type SectionRenderInput, type SelectionRecord } from "./group-b-support.js";
 
 /** One tree node record: an id, a label and, for a folder, its children. */

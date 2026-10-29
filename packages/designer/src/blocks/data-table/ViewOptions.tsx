@@ -1,11 +1,11 @@
 import { defaultGroupByMessage, defaultGroupOrderMessage, defaultMoveGroupMessage, defaultSortDirectionMessage, defaultMoveSortMessage, defaultRemoveSortMessage, defaultAddSortMessage, defaultRemoveFilterMessage, defaultAddFilterMessage, defaultShowColumnMessage, defaultMoveColumnMessage, defaultPivotDimensionMessage, defaultPivotOrderMessage, defaultMovePivotMessage, defaultRemoveGroupMessage, defaultGroupChipMessage, defaultSortChipMessage, defaultFilterChipMessage, type DataTableMessages } from "./messages.js";
 import { useState, useSyncExternalStore, type ReactNode } from "react";
-import { Button } from "../../components/Button.js";
-import { Checkbox } from "../../components/Checkbox.js";
-import { Chip } from "../../components/Chip.js";
-import { Dialog } from "../../components/Dialog.js";
-import { Popover } from "../../components/Popover.js";
-import { Select } from "../../components/Select.js";
+import { Button } from "../../selected-components/Button.js";
+import { Checkbox } from "../../selected-components/Checkbox.js";
+import { Chip } from "../../selected-components/Chip.js";
+import { Dialog } from "../../selected-components/Dialog.js";
+import { Popover } from "../../selected-components/Popover.js";
+import { Select } from "../../selected-components/Select.js";
 import type { TableColumn, TableDimension, TableFilter, TableFilterNode, TableFilterResult, TableModel } from "../table-model/index.js";
 import { FilterEditor } from "./FilterEditor.js";
 import { editView, type DataTableViewModel } from "./view-model.js";

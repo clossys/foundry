@@ -1,5 +1,5 @@
 import type { HTMLAttributes, ReactNode } from "react";
-import { cx } from "../components/internal/cx.js";
+import { cx } from "../selected-components/internal/cx.js";
 import { EmptyState, type EmptyStateProps } from "./EmptyState.js";
 import { EventItem, type EventLabels, type EventRecord } from "./EventItem.js";
 import { dsAttrs } from "../catalog-core/provenance-attrs.js";

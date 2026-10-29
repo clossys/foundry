@@ -5,7 +5,7 @@
  */
 import type { ReactNode } from "react";
 import { Drawer, type DrawerProps } from "../../blocks/Drawer.js";
-import { Button } from "../../components/Button.js";
+import { Button } from "../../selected-components/Button.js";
 import type { RuntimeRenderInput } from "../../catalog-core/runtime-ports.js";
 import { runtimeValue, type SurfaceRendererEntry } from "../contract.js";
 import { frameContent, type FrameInput, type FrameJson } from "./frame-content.js";

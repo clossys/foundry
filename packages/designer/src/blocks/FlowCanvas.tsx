@@ -1,7 +1,7 @@
 import { useId, useMemo, useRef, useState, type KeyboardEvent, type ReactNode } from "react";
-import { StatusMark } from "../components/StatusMark.js";
-import { cx } from "../components/internal/cx.js";
-import { UI_BORDER_HAIRLINE, UI_BORDER_RULE } from "../components/internal/ui-vars.js";
+import { StatusMark } from "../selected-components/StatusMark.js";
+import { cx } from "../selected-components/internal/cx.js";
+import { UI_BORDER_HAIRLINE, UI_BORDER_RULE } from "../selected-components/internal/ui-vars.js";
 import { layoutFlowCanvas, type FlowCanvasEdge, type FlowCanvasNode, type FlowCanvasOrientation } from "./flow-canvas-layout.js";
 
 export interface FlowCanvasProps {

@@ -1,7 +1,7 @@
 /** sections.logo-cloud: LogoCloud marks drawn by Logomark. The count member must match the logos supplied. */
 import type { ReactNode } from "react";
 import { LogoCloud } from "../../blocks/LogoCloud.js";
-import { Logomark } from "../../components/Logomark.js";
+import { Logomark } from "../../selected-components/Logomark.js";
 import { list, memberValue, object, optionalText, readSectionContent, required, SectionContentError, text, type SectionRenderInput, type SectionRendererInputs } from "./group-a-content.js";
 
 export const logoCloudInputs: SectionRendererInputs = {
