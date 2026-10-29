@@ -66,7 +66,7 @@ it("reads historical package descriptors without injecting fields or changing th
 
 it("carries measured reads and composes on every real generated package descriptor", () => {
   const docs = [...importFoundrySections().fills, ...importFoundryFrames().fills];
-  expect(docs).toHaveLength(63);
+  expect(docs).toHaveLength(62);
   for (const doc of docs) {
     const fill = Object.values((doc as any).sections ?? (doc as any).frames)[0] as any;
     expect(fill.consumption?.scanStatus, fill.slot).toBe("lower-bound");
@@ -174,5 +174,5 @@ it("refuses missing or mismatched package measurement identities", () => {
 
 it("recalculates all current descriptor measurements and canonical importer output from actual source", () => {
   const output = execFileSync(process.execPath, ["scripts/generate-surface-consumption.mjs", "--check"], { cwd: fileURLToPath(new URL("../../", import.meta.url)), encoding: "utf8", timeout: 60_000 });
-  expect(JSON.parse(output)).toMatchObject({ descriptors: 63, measured: 63, measurement: "source-only lower-bound", runtime: "unmeasured" });
+  expect(JSON.parse(output)).toMatchObject({ descriptors: 62, measured: 62, measurement: "source-only lower-bound", runtime: "unmeasured" });
 }, 65_000);

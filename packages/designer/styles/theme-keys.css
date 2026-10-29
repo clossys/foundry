@@ -843,6 +843,7 @@
     & .nav-disclosure-toggle { display: inline-flex; }
     & .nav-disclosure-panel { --site-header-action-hover: var(--color-surface-raised, oklch(1 0 0)); --site-header-focus: var(--color-ink-primary, oklch(0.2178 0 0)); display: none; position: absolute; inset-block-start: 100%; inset-inline: 0; max-block-size: calc(100dvb - var(--site-header-clearance, calc(max(var(--ui-layout-tap-target, 44px), var(--ui-brandmark-height-lg, 48px)) + 2 * var(--spacing-sm, 8px) + var(--ui-border-hairline, 1px) + env(safe-area-inset-top, 0px))) - env(safe-area-inset-bottom, 0px)); overflow-y: auto; overscroll-behavior: contain; padding-block: var(--spacing-md, 12px) max(var(--spacing-md, 12px), env(safe-area-inset-bottom, 0px)); padding-inline: max(var(--ui-width-page-padding-x, clamp(16px, 4vw, 48px)), env(safe-area-inset-left, 0px), env(safe-area-inset-right, 0px)); background-color: var(--color-overlay-surface, oklch(1 0 0)); color: var(--color-ink-primary, oklch(0.2178 0 0)); border-block-end: var(--ui-border-hairline, 1px) solid var(--color-overlay-border, oklch(0.8761 0 0)); }
     & .nav-disclosure-panel[data-expanded], & .nav-disclosure-panel[data-present] { display: flex; flex-direction: column; }
+    & .site-header-nav-inline { display: none !important; }
     & .site-header-nav-links, & .site-header-desktop-actions { flex-direction: column; align-items: stretch; white-space: normal; overflow-wrap: anywhere; }
 }
 @utility site-header-contract {
@@ -868,13 +869,45 @@
   }
   /* While NavDisclosure measures, each region takes its natural one-line
      width, so many links, many actions or long labels are counted unwrapped. */
+  &[data-measuring] .site-header-nav-inline { display: contents !important; }
   &[data-measuring] .site-header-brand, &[data-measuring] .site-header-nav-links, &[data-measuring] .site-header-desktop-actions, &[data-measuring] .site-header-actions { inline-size: max-content; max-inline-size: none; flex-shrink: 0; flex-wrap: nowrap; white-space: nowrap; }
   &[data-measuring] .site-header-nav-links > li, &[data-measuring] .site-header-desktop-actions > li, &[data-measuring] .site-header-brand > a, &[data-measuring] .site-header-nav-links a, &[data-measuring] .site-header-desktop-actions a, &[data-measuring] .site-header-actions > * { inline-size: max-content; max-inline-size: none; flex-shrink: 0; white-space: nowrap; }
   @media (scripting: none) {
     &:has(.nav-disclosure-panel) .site-header-row { display: flex; flex-wrap: wrap; }
     &:has(.nav-disclosure-panel) nav { inline-size: 100%; }
     &:has(.nav-disclosure-panel) .nav-disclosure-toggle[aria-expanded] { display: none; }
-    &:has(.nav-disclosure-panel) .nav-disclosure-panel { display: flex; position: static; max-block-size: none; }
+    &:has(.nav-disclosure-panel) .nav-disclosure-panel { display: flex !important; position: static; max-block-size: none; }
+  }
+}
+
+/* The registered Sheet is portalled outside the header; carry its token-based layout explicitly. */
+@utility site-header-nav-sheet {
+  &[data-slot="sheet-content"] {
+    inline-size: min(100%, var(--ui-layout-drawer-w, 20rem));
+    max-inline-size: 100%;
+    max-block-size: 100dvb;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+  }
+  & .site-header-nav-sheet-content {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-lg, 16px);
+    padding-block: max(var(--spacing-md, 12px), env(safe-area-inset-top, 0px)) max(var(--spacing-md, 12px), env(safe-area-inset-bottom, 0px));
+    padding-inline: max(var(--spacing-lg, 16px), env(safe-area-inset-left, 0px), env(safe-area-inset-right, 0px));
+  }
+  & .site-header-nav-sheet-close { align-self: flex-end; }
+  & nav, & .site-header-nav-links, & .site-header-desktop-actions {
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    gap: var(--spacing-sm, 8px);
+    white-space: normal;
+    overflow-wrap: anywhere;
+  }
+  & a { min-block-size: var(--ui-layout-tap-target, 44px); }
+  @media (prefers-reduced-motion: reduce) {
+    &, & [data-slot="sheet-content"] { animation: none; transition: none; }
   }
 }
 

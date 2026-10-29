@@ -663,6 +663,10 @@ export const specimenDataset = {
   skeleton: { shape: "text", "aria-label": "Loading order" } satisfies SkeletonProps,
   separator: { orientation: "horizontal" as const },
   semantic: { as: "p" as const },
+  semanticMedia: {
+    image: { src: `data:image/svg+xml,${encodeURIComponent(brandMark)}`, alt: brandName, width: 32, height: 32 },
+    source: { srcSet: `data:image/svg+xml,${encodeURIComponent(brandMark)} 32w`, type: "image/svg+xml" },
+  },
   nativeAction: { type: "button" as const },
   color: { label: "Chart color", defaultValue: chartSwatches[0]!, swatches: chartSwatches },
   charts: {

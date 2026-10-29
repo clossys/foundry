@@ -1,5 +1,6 @@
 import { useId, type HTMLAttributes, type ReactNode } from "react";
 import { cx } from "../components/internal/cx.js";
+import { SemanticContent } from "../components/SemanticContent.js";
 import { SectionHeader, type SectionHeaderLevel } from "./SectionHeader.js";
 import { dsAttrs } from "../catalog-core/provenance-attrs.js";
 /** Section root provenance (D1): the selected Foundry fill this block is. */
@@ -38,7 +39,7 @@ export function ErrorState({ kind, title, description, code, retry, report, head
   const titleId = useId();
   const actions = retry || report ? <>{retry}{report}</> : undefined;
   return (
-    <section
+    <SemanticContent as="section"
       {...SECTION_STAMP} {...rest}
       aria-labelledby={titleId}
       data-error-kind={kind}
@@ -49,10 +50,10 @@ export function ErrorState({ kind, title, description, code, retry, report, head
         align="center"
         level={headingLevel}
         eyebrow={code}
-        title={<span id={titleId}>{title}</span>}
+        title={<SemanticContent as="span" id={titleId}>{title}</SemanticContent>}
         description={description}
         actions={actions}
       />
-    </section>
+    </SemanticContent>
   );
 }
