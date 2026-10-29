@@ -210,3 +210,9 @@ export type { SurfaceSlot, SurfaceFile, SurfaceFileHash, SurfacePin, SurfaceApi,
 export * from "./full-library-runtime.js";
 
 export * from "./body-substrate.js";
+
+/** IA navigation and guidance selection belong to the public catalog API. */
+export { COMPONENT_DISPLAY_TREE } from "../catalog/display.js";
+export type { ComponentDisplayTree } from "../catalog/display.js";
+export { resolveComponentId } from "../catalog/component-aliases.js";
+export { componentSelection } from "../catalog/component-selection.js";
