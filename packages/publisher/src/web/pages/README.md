@@ -4,7 +4,7 @@ Import the builders from `@clossys/publisher/web/registered-route`. The six
 canonical routes use `composition.binding`; existing complete-route exports
 remain compatibility APIs. New routes never import the retired bodies.
 
-`createAdminPageRegistry({ publication, copy, manifests, sources?, itemL0? })`
+`createAdminPageRegistry({ publication, copy, manifests, sources?, itemL0?, itemTitles? })`
 returns `{ registry, pages, manifests }`. `publication` is the consumer's selected
 `PublicationBinding`, including `context.consumer`, frame, layout and mainSlot.
 Mount its Designer frame once. `pages.designer`, `pages.writer` and
@@ -47,7 +47,11 @@ the page session's chat port; search uses `query` and the persistent frame's
 command dispatcher.
 
 For `/agents/<kind>/[l0]/[id]`, set `itemL0[kind]` to the concrete parameter when
-building records and use `pages[kind].itemManifest`. The `item(l0,id)` loader
+building records and use `pages[kind].itemManifest`. For real adoption also
+supply the resolved item name as `itemTitles[kind]` (or `itemTitle` to an
+individual factory). It ends the frame trail, names the
+record, and labels the selected outline entry. Omitting it preserves the page
+title for compatibility. The `item(l0,id)` loader
 returns `{record,content}` or `undefined` for the frame's not-found state. Its
 content supplies `item/heading` (copy `{text,id}`), `item/stats`, `item/fields`,
 `item/status` (copy), and `item/context`; each table (`preview`, `locales`,

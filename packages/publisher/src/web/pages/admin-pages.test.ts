@@ -12,6 +12,16 @@ const skeleton = { l0: [{ id: "strings", label: "Strings", count: 2, estimate: 3
 const publication = { id: "admin", mainSlot: "body", frame: { leaf: "frames.app-shell" as const }, layout: { leaf: "layouts.stack" as const, config: "stack.workspace" }, format: "web.page.responsive" as const, surface: "app" as const, context: { consumer: "example", medium: "web" as const }, packIds: ["pack.admin"] };
 
 describe("native scroll admin page records", () => {
+  it("uses the consumer's resolved item name consistently in the trail, record and outline", () => {
+    const result = createAdminPageRegistry({ publication, copy, manifests: { designer: skeleton, writer: skeleton, publisher: skeleton }, itemTitles: { writer: "Welcome copy" } });
+    const page = result.pages.writer;
+    expect(page.item.title).toBe("Welcome copy");
+    expect(page.item.composition.header.data.title).toBe("Welcome copy");
+    expect(page.item.composition.binding.label).toBe("Welcome copy");
+    expect(page.itemManifest.l0[0]?.label).toBe("Welcome copy");
+    expect(page.list.title).toBe("strings.admin.page.writer");
+    expect(() => createWriterPageRecords({ publicationId: "admin", manifest: skeleton, copy, itemTitle: " " })).toThrow(/Item title/);
+  });
   it("wires exactly six region pages to one publication, without complete bodies", () => {
     const result = createAdminPageRegistry({ publication, copy, manifests: { designer: skeleton, writer: skeleton, publisher: skeleton } });
     expect(result.registry.routes.map(route => route.path)).toEqual(["/agents/designer", "/agents/designer/[l0]/[id]", "/agents/writer", "/agents/writer/[l0]/[id]", "/agents/publisher", "/agents/publisher/[l0]/[id]"]);

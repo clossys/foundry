@@ -16,6 +16,8 @@ export interface AdminPageRecordOptions {
   readonly homeRouteId?: string;
   /** Concrete item L0 selects the item's outline; the registered path remains parameterized. */
   readonly itemL0?: string;
+  /** Consumer-owned item name, already resolved through Writer in its locale. */
+  readonly itemTitle?: string;
 }
 const copyRef = (ref: string): ContentRef => ({ kind: "copy", ref: `strings.admin.${ref}` });
 export const ADMIN_PAGE_COPY_REFS = {
@@ -48,6 +50,7 @@ export function adminPageStaticContent(kind: AdminPageKind, manifest: AdminPageS
   return values.map(([reference, value]) => ({ reference, value, hash: runtimeHash(value) }));
 }
 export function createAdminPageRecords(kind: AdminPageKind, options: AdminPageRecordOptions) {
+  if (options.itemTitle !== undefined && !options.itemTitle.trim()) throw new TypeError("Item title must be resolved non-empty copy");
   const main: SectionFill[] = [], title = options.copy(`strings.admin.page.${kind}`);
   const module: SectionFill = { section: "sections.table-of-contents", content: { headings: adminPageRef(kind, "outline"), "active-id": adminPageRef(kind, "active-id"), label: ADMIN_PAGE_COPY_REFS.outline } };
   const manifest: RegisteredPageManifest = { l0: options.manifest.l0.map(l0 => {
@@ -81,17 +84,17 @@ export function createAdminPageRecords(kind: AdminPageKind, options: AdminPageRe
     pagination: adminPageRef(kind, `item/${table}/pagination`, "region"),
   } });
   const selected = options.manifest.l0.find(row => row.id === itemL0)!;
-  const itemManifest: RegisteredPageManifest = { l0: [{ id: selected.id, label: selected.label, count: 1, estimate: selected.estimate, section: { slot: "main", index: 0 }, l1: [
+  const itemManifest: RegisteredPageManifest = { l0: [{ id: selected.id, label: options.itemTitle ?? selected.label, count: 1, estimate: selected.estimate, section: { slot: "main", index: 0 }, l1: [
     { id: "details", label: options.copy("strings.admin.item.details"), count: 1, estimate: 200, section: { slot: "main", index: 1 }, l2: [] },
     ...tables.map((table, index) => ({ id: table, label: options.copy(`strings.admin.${table === "preview" ? "column.preview" : `item.${table}`}`), count: 0, estimate: 200, section: { slot: "main", index: index + 2 }, l2: [] })),
   ] }] };
   const route = (item: boolean): RegionPageRouteRegistration => {
-    const routeId = `admin.${kind}${item ? ".item" : ""}`, path = `/agents/${kind}${item ? "/[l0]/[id]" : ""}`, sources = options.sources?.[item ? "item" : "list"];
-    return { routeId, path, title, channel: "admin", brand: { homeRouteId: options.homeRouteId ?? "admin.designer", label: options.copy("strings.admin.page.designer") }, planItemId: `app.${routeId}`,
+    const routeId = `admin.${kind}${item ? ".item" : ""}`, path = `/agents/${kind}${item ? "/[l0]/[id]" : ""}`, sources = options.sources?.[item ? "item" : "list"], routeTitle = item ? options.itemTitle ?? title : title;
+    return { routeId, path, title: routeTitle, channel: "admin", brand: { homeRouteId: options.homeRouteId ?? "admin.designer", label: options.copy("strings.admin.page.designer") }, planItemId: `app.${routeId}`,
       entry: sources?.entry ?? { file: `app/agents/${kind}/${item ? "[l0]/[id]/" : ""}page.tsx`, export: "default" },
       composition: { source: sources?.source ?? { file: `src/generated/${routeId}.tsx`, export: "default" }, runtime: options.sources?.runtime ?? { file: "src/admin/runtime.ts", export: "useAdminPageRuntime" },
-        header: { id: `header.${routeId}`, data: { title } },
-        binding: { instanceId: routeId, label: title, path, publicationId: options.publicationId, regions: { main: item ? itemMain : main, "page-module": [module], inspector: adminPageRef(kind, item ? "item/context" : "context") } },
+        header: { id: `header.${routeId}`, data: { title: routeTitle } },
+        binding: { instanceId: routeId, label: routeTitle, path, publicationId: options.publicationId, regions: { main: item ? itemMain : main, "page-module": [module], inspector: adminPageRef(kind, item ? "item/context" : "context") } },
       } };
   };
   return { list: route(false), item: route(true), manifest, itemManifest, query: adminPageRef(kind, "search") as ContentRef & { kind: "records" } };
@@ -102,12 +105,13 @@ export interface AdminPageRegistryOptions {
   readonly manifests: Readonly<Record<AdminPageKind, AdminPageSkeleton>>;
   readonly sources?: Readonly<Partial<Record<AdminPageKind, AdminPageSources>>>;
   readonly itemL0?: Readonly<Partial<Record<AdminPageKind, string>>>;
+  readonly itemTitles?: Readonly<Partial<Record<AdminPageKind, string>>>;
 }
 export function createAdminPageRegistry(options: AdminPageRegistryOptions) {
   const consumer = options.publication.context.consumer;
   if (!consumer) throw new TypeError("Admin page publication requires its selected consumer");
   const publication: PublicationBinding = { ...options.publication, inspector: options.publication.inspector ?? { section: "sections.chat", content: { parts: { kind: "records", ref: "admin.chat/parts" }, composer: { kind: "region", ref: "admin.chat/composer" } } } };
-  const pages = Object.fromEntries((["designer", "writer", "publisher"] as const).map(kind => [kind, createAdminPageRecords(kind, { publicationId: publication.id, manifest: options.manifests[kind], copy: options.copy, sources: options.sources?.[kind], itemL0: options.itemL0?.[kind] })])) as Record<AdminPageKind, ReturnType<typeof createAdminPageRecords>>;
+  const pages = Object.fromEntries((["designer", "writer", "publisher"] as const).map(kind => [kind, createAdminPageRecords(kind, { publicationId: publication.id, manifest: options.manifests[kind], copy: options.copy, sources: options.sources?.[kind], itemL0: options.itemL0?.[kind], itemTitle: options.itemTitles?.[kind] })])) as Record<AdminPageKind, ReturnType<typeof createAdminPageRecords>>;
   const registry: RegionPageRouteRegistry = { version: 1, consumer, publication, routes: Object.values(pages).flatMap(page => [page.list, page.item]) };
   return { registry, pages, manifests: Object.fromEntries(Object.entries(pages).map(([kind, page]) => [kind, page.manifest])) as Record<AdminPageKind, RegisteredPageManifest> };
 }

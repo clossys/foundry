@@ -30,7 +30,7 @@ function setup(skeleton: AdminPageSkeleton = { l0: [{ id: "strings", label: "Str
   const engine = { catalog: fixture.catalog, library: fixture.library, surfaceOptions: { ...fixture.options, packages: [...fixture.packages.filter(row => !packages.some(owned => owned.module === row.module)), ...packages] } };
   const profile = resolve(engine), copy = (id: string) => id.split(".").at(-1)!;
   const publication = { id: "admin", mainSlot: "body", frame: { leaf: "frames.app-shell" as const, content: { "skip-link": { kind: "copy" as const, ref: "admin.frame/skip-link" } } }, layout: { leaf: "layouts.stack" as const, config: "stack.workspace" }, format: "web.page.responsive" as const, surface: "app" as const, context: { consumer: profile.consumer, medium: "web" as const }, packIds: ["pack.admin"] };
-  const { registry, pages } = createAdminPageRegistry({ publication, copy, manifests: { designer: skeleton, writer: skeleton, publisher: skeleton } });
+  const { registry, pages } = createAdminPageRegistry({ publication, copy, manifests: { designer: skeleton, writer: skeleton, publisher: skeleton }, itemTitles: { designer: "Selected item", writer: "Selected item", publisher: "Selected item" } });
   // Real adopted renderer sources; SYNTHETIC flow declarations do not qualify the catalog's substrate coverage.
   const leaves = ["frames.app-shell", "sections.section-header", "sections.band", "sections.data-table", "sections.record-detail", "sections.table-of-contents", "sections.chat"];
   const plan = planSurfaceRuntime({ engine, packages: engine.surfaceOptions.packages, leaves, renderers: Object.fromEntries(leaves.map(leaf => [leaf, { module: "@clossys/designer/frames", export: "surfaceRuntimeRenderers" }])) });
@@ -102,8 +102,12 @@ describe("six native admin records through prepareRegisteredRoute (fixture decla
     const f = setup();
     for (const kind of ["designer", "writer", "publisher"] as const) for (const item of [false, true]) {
       const pair = f.pages[kind], route = item ? pair.item : pair.list;
-      const page = createRegisteredPageSession({ routeId: route.routeId, page: route.composition.binding, path: route.path, manifest: item ? pair.itemManifest : pair.manifest, query: pair.query, publication: f.session, loaders: { chunk: async () => [], search: async () => [], item: async () => ({ record: { id: "sample" }, content: [] }) }, navigation: { hash: () => "", scroll: vi.fn(), focus: vi.fn(), replaceState: vi.fn() } });
+      const page = createRegisteredPageSession({ routeId: route.routeId, page: route.composition.binding, path: route.path, manifest: item ? pair.itemManifest : pair.manifest, query: pair.query, publication: f.session, loaders: { chunk: async () => [], search: async () => [], item: async (_l0, id) => id === "sample" ? { record: { id }, content: [] } : undefined }, navigation: { hash: () => "", scroll: vi.fn(), focus: vi.fn(), replaceState: vi.fn() } });
       page.activate();
+      if (item) {
+        expect(await page.loadItem(`/agents/${kind}/strings/unknown`)).toMatchObject({ status: "not-found", code: 404 });
+        expect(await page.loadItem(`/agents/${kind}/strings/sample`)).toMatchObject({ status: "ready", code: 200 });
+      }
       const result = prepareRegisteredRoute(f.registry, route.routeId, { ...f.runtime, page });
       expect(result.status, `${route.routeId}: ${JSON.stringify(result)}`).toBe("stream"); if (result.status !== "stream") continue;
       expect(result.chunks.map(chunk => chunk.result.status), JSON.stringify(result.chunks)).toEqual(["ready"]);
