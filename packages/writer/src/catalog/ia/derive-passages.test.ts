@@ -161,7 +161,7 @@ describe("SU-9W section copy cascade", () => {
     }
     for (const binding of [...copy.bindings, ...cascade.bindings]) expect(ids).toContain(binding.recordId);
     const library: WriterLibrary = {
-      manifest: { consumer: "section-defaults", messageSyntax: "icu-mf1", defaultLocale: "en", locales: [{ tag: "en", dir: "ltr", state: "active" }], fallback: {}, strategist: { path: "strategy" }, leafFreeze: { lexicon: "", strings: "", patterns: "", passages: "", narratives: "" } },
+      manifest: { consumer: "section-defaults", messageSyntax: "icu-mf1", defaultLocale: "en", locales: [{ tag: "en", dir: "ltr", state: "active" }], fallback: {}, strategy: { root: "strategy", contract: "writer.messaging" }, leafFreeze: { lexicon: "", strings: "", patterns: "", passages: "", narratives: "" } },
       locales: { en: { records: strings, documents: [] } },
     };
     expect(checkWriterICU(library)).toEqual([]);

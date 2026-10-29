@@ -19,7 +19,7 @@ const arabic = () => read("./admin-pages.r1.ar.json");
 const library = (en: Envelope, ar?: Envelope): WriterLibrary => ({
   manifest: { consumer: "admin-pages-fixture", messageSyntax: "icu-mf1", defaultLocale: "en",
     locales: [{ tag: "en", dir: "ltr", state: "active" }, ...(ar ? [{ tag: "ar", dir: "rtl", state: "active" } as const] : [])],
-    fallback: {}, strategist: { path: "strategy" }, leafFreeze: { lexicon: "", strings: "", patterns: "", passages: "", narratives: "" } },
+    fallback: {}, strategy: { root: "strategy", contract: "writer.messaging" }, leafFreeze: { lexicon: "", strings: "", patterns: "", passages: "", narratives: "" } },
   locales: { en: { records: en.records, documents: [] }, ...(ar ? { ar: { records: ar.records, documents: [] } } : {}) },
 });
 

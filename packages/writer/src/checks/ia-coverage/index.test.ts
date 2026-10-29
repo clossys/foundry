@@ -68,7 +68,7 @@ describe("bottom-up Writer IA coverage", () => {
   it("derives checked/approved only from valid records and fresh owner fingerprints; mixed locales use the weakest state", () => {
     const input = { ...fixture() };
     const record: StringRecord = { id: "st.0000000001", leaf: "strings.labels", context: "Example", status: "draft", origin: "authored", text: "Example" };
-    const library: WriterLibrary = { manifest: { consumer: "example", messageSyntax: "icu-mf1", defaultLocale: "en", locales: [{ tag: "en", dir: "ltr", state: "active" }], fallback: {}, strategist: { path: "strategy" }, leafFreeze: { lexicon: "", strings: "", patterns: "", passages: "", narratives: "" } }, locales: { en: { records: [record], documents: [] } } };
+    const library: WriterLibrary = { manifest: { consumer: "example", messageSyntax: "icu-mf1", defaultLocale: "en", locales: [{ tag: "en", dir: "ltr", state: "active" }], fallback: {}, strategy: { root: "strategy", contract: "writer.messaging" }, leafFreeze: { lexicon: "", strings: "", patterns: "", passages: "", narratives: "" } }, locales: { en: { records: [record], documents: [] } } };
     const row = () => checkIACoverage({ ...input, library }).leaves[0]!;
     expect(row().state).toBe("checked");
     record.status = "approved";

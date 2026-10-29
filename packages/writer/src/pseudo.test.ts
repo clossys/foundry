@@ -6,7 +6,7 @@ import type { WriterLibrary } from "./model/types.js";
 import { writerPseudoLocale } from "./checks/expansion.js";
 
 const library = (): WriterLibrary => ({
-  manifest: { consumer: "example", messageSyntax: "icu-mf1", defaultLocale: "en", locales: [{ tag: "en", dir: "ltr", state: "active" }], fallback: {}, strategist: { path: "strategy" }, leafFreeze: { lexicon: "", strings: "", patterns: "", passages: "", narratives: "" } },
+  manifest: { consumer: "example", messageSyntax: "icu-mf1", defaultLocale: "en", locales: [{ tag: "en", dir: "ltr", state: "active" }], fallback: {}, strategy: { root: "strategy", contract: "writer.messaging" }, leafFreeze: { lexicon: "", strings: "", patterns: "", passages: "", narratives: "" } },
   locales: { en: { records: [
     { id: "st.0000000001", leaf: "strings.actions", context: "Example", status: "draft", origin: "authored", text: "Welcome {name}" },
     { id: "ps.0000000001", leaf: "passages.access-matrix", schema: "passages.access-matrix", schemaDigest: "example", context: "Example", status: "draft", origin: "authored", fields: { heading: { ref: "string", id: "st.0000000001" } } },
