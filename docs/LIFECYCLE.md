@@ -376,6 +376,7 @@ fails when the committed copy drifts from the derived one — #493.
 | `@clossys/locksmith` | staged | yes | not yet | unknown — #484 | not yet |
 | `@clossys/messenger` | staged | yes | not yet | unknown — #484 | not yet |
 | `@clossys/observer` | staged | yes | not yet | unknown — #484 | not yet |
+| `@clossys/producer` | implemented | not yet | N/A — executable tooling | N/A — executable tooling | N/A — executable tooling |
 | `@clossys/publisher` | staged | yes | not yet | unknown — #484 | not yet |
 | `@clossys/starter` | implemented | not yet | N/A — executable tooling | N/A — executable tooling | N/A — executable tooling |
 | `@clossys/strategist` | staged | yes | not yet | unknown — #484 | not yet |

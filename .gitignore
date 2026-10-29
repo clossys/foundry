@@ -51,3 +51,8 @@ packages/starter/src/generated/
 # Generated plan contract with its checker
 # (packages/writer/scripts/pack-plan-contract.mjs, issue #1586).
 packages/writer/src/generated/
+
+# Producer build and Studio staging outputs.
+packages/producer/studio/.next/
+packages/producer/.studio-stage/
+packages/producer/dist/
