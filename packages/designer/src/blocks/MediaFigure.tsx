@@ -1,3 +1,4 @@
+import { SemanticContent } from "../components/SemanticContent.js";
 import type { CSSProperties, HTMLAttributes, ReactNode } from "react";
 import { cx } from "../components/internal/cx.js";
 import { SECTION_MEASURE_MAX } from "./internal/block-vars.js";

@@ -33,8 +33,7 @@
       "composes": [
         "components.button",
         "components.icon",
-        "components.select",
-        "components.semantic-content"
+        "components.select"
       ],
       "configs": {},
       "consumption": {
@@ -42,8 +41,7 @@
         "scannedComposes": [
           "components.button",
           "components.icon",
-          "components.select",
-          "components.semantic-content"
+          "components.select"
         ],
         "scannedReads": {
           "assets": [
@@ -53,8 +51,7 @@
           "components": [
             "components.button",
             "components.icon",
-            "components.select",
-            "components.semantic-content"
+            "components.select"
           ],
           "tokens": [
             "tokens.body-size",
@@ -65,19 +62,11 @@
         "sourceFiles": [
           {
             "path": "packages/designer/src/blocks/Pagination.tsx",
-            "sha256": "1dc4425f71a5c15f0595ef4ec97d9590a7a07aec8f480eb98d53063f2b99dca7"
+            "sha256": "88dbddf4a5168b8fdd40288d8df72187a334110d16b3c4434e1ded6881e2a6fe"
           },
           {
             "path": "packages/designer/src/catalog-core/provenance-attrs.ts",
             "sha256": "8f2a725224764fc1d7cd7ec94f2f569cad02117251bf6c2a668c8a1b51e7c443"
-          },
-          {
-            "path": "packages/designer/src/components/Banner.copy-context.tsx",
-            "sha256": "fa058a7f7655c4968b4930010d57be56f1136b4c5eda4c6544dca26088edc55a"
-          },
-          {
-            "path": "packages/designer/src/components/Banner.copy.ts",
-            "sha256": "9a37518f0d4ab5d04c55cfd4706daaecaad2a490b9a36d83db9108215d48e658"
           },
           {
             "path": "packages/designer/src/components/internal/cx.ts",
@@ -89,7 +78,7 @@
             "code": "DF2",
             "evidence": "unresolved injected runtime inventory ../components/glyph-context.js#useGlyph",
             "file": "packages/designer/src/blocks/Pagination.tsx",
-            "line": 8
+            "line": 5
           },
           {
             "code": "DF2",
