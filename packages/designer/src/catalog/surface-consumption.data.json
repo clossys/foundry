@@ -1001,6 +1001,84 @@
   },
   "frames.site-shell": {
     "consumption": {
+      "privateInternalReads": [
+        {
+          "file": "packages/designer/src/frames/site-frame/internal/resolveShell.ts",
+          "line": 3,
+          "rawAssets": [
+            "assets.js"
+          ],
+          "sourceSha256": "963ffbf87dca638e6f39af33c8a0f8aeeb74319aa1083104c87561cdf27c231e",
+          "specifier": "../landing/internal/assets.js",
+          "target": "packages/designer/src/frames/site-frame/landing/internal/assets.ts",
+          "targetSha256": "54cc0184672dfc74981225929705b024611926fd305a88374c1040605cffa3f8"
+        },
+        {
+          "file": "packages/designer/src/frames/site-frame/landing/core/content-asset.ts",
+          "line": 1,
+          "rawAssets": [
+            "assets.js"
+          ],
+          "sourceSha256": "3cac86a74516e1427500dc9bccb85b80b56d213cb6dedd44072e31ef38acb4f3",
+          "specifier": "../internal/assets.js",
+          "target": "packages/designer/src/frames/site-frame/landing/internal/assets.ts",
+          "targetSha256": "54cc0184672dfc74981225929705b024611926fd305a88374c1040605cffa3f8"
+        },
+        {
+          "file": "packages/designer/src/frames/site-frame/landing/web/views/SectionedViewContent.tsx",
+          "line": 11,
+          "rawAssets": [
+            "assets.js"
+          ],
+          "sourceSha256": "9b175a54cc404d84fb72a1bda58134e3dcba3819439c1deea909cf4ac34158ae",
+          "specifier": "../../internal/assets.js",
+          "target": "packages/designer/src/frames/site-frame/landing/internal/assets.ts",
+          "targetSha256": "54cc0184672dfc74981225929705b024611926fd305a88374c1040605cffa3f8"
+        }
+      ],
+      "rawScannedReads": {
+        "assets": [
+          "assets.js"
+        ],
+        "components": [
+          "components.avatar",
+          "components.badge",
+          "components.card",
+          "components.disclosure",
+          "components.icon",
+          "components.logo",
+          "components.semantic-content",
+          "components.status-mark"
+        ],
+        "tokens": [
+          "tokens.accent-color",
+          "tokens.action-color",
+          "tokens.body-size",
+          "tokens.border-color",
+          "tokens.border-width",
+          "tokens.caption-size",
+          "tokens.content-size",
+          "tokens.control-color",
+          "tokens.control-radius",
+          "tokens.duration",
+          "tokens.easing",
+          "tokens.elevation",
+          "tokens.focus-color",
+          "tokens.heading-size",
+          "tokens.icon-size",
+          "tokens.letter-spacing",
+          "tokens.line-height",
+          "tokens.radius",
+          "tokens.spacing",
+          "tokens.status-color",
+          "tokens.surface-color",
+          "tokens.surface-radius",
+          "tokens.text-color",
+          "tokens.touch-target",
+          "tokens.typeface",
+          "tokens.z-index"
+        ]
+      },
       "scanStatus": "lower-bound",
       "scannedComposes": [
         "components.avatar",
@@ -1022,9 +1100,7 @@
         "sections.steps"
       ],
       "scannedReads": {
-        "assets": [
-          "assets.js"
-        ],
+        "assets": [],
         "components": [
           "components.avatar",
           "components.badge",
@@ -1755,7 +1831,8 @@
     "consumption": {
       "scanStatus": "lower-bound",
       "scannedComposes": [
-        "components.icon"
+        "components.icon",
+        "sections.empty-state"
       ],
       "scannedReads": {
         "assets": [],
@@ -1805,12 +1882,6 @@
         }
       ],
       "unresolved": [
-        {
-          "code": "DF5",
-          "evidence": "ambiguous slot ownership ./EmptyState.js#EmptyState: sections.boundary-message, sections.empty-state",
-          "file": "packages/designer/src/blocks/ActivityFeed.tsx",
-          "line": 3
-        },
         {
           "code": "DF5",
           "evidence": "unregistered asset import ../icons/ArrowRight.js#ArrowRight",
@@ -4586,7 +4657,8 @@
         "components.button",
         "components.grid-list",
         "components.menu",
-        "components.skeleton"
+        "components.skeleton",
+        "sections.empty-state"
       ],
       "scannedReads": {
         "assets": [],
@@ -4636,12 +4708,6 @@
           "evidence": "unregistered asset import ../icons/ChevronDown.js#ChevronDown",
           "file": "packages/designer/src/blocks/ResourceList.tsx",
           "line": 12
-        },
-        {
-          "code": "DF5",
-          "evidence": "ambiguous slot ownership ./EmptyState.js#EmptyState: sections.boundary-message, sections.empty-state",
-          "file": "packages/designer/src/blocks/ResourceList.tsx",
-          "line": 13
         },
         {
           "code": "DF2",
@@ -5331,7 +5397,8 @@
       "scanStatus": "lower-bound",
       "scannedComposes": [
         "components.meter",
-        "components.status-mark"
+        "components.status-mark",
+        "sections.empty-state"
       ],
       "scannedReads": {
         "assets": [],
@@ -5365,12 +5432,6 @@
         }
       ],
       "unresolved": [
-        {
-          "code": "DF5",
-          "evidence": "ambiguous slot ownership ./EmptyState.js#EmptyState: sections.boundary-message, sections.empty-state",
-          "file": "packages/designer/src/blocks/UsageSummary.tsx",
-          "line": 3
-        },
         {
           "code": "DF2",
           "evidence": "unresolved injected runtime inventory ../../tokens/tokens.js#TOKENS",

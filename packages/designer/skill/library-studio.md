@@ -5,8 +5,14 @@ the designer CLI and skill. The page never calls an adapter save, presents an
 editor, applies a choice, or generates a starter. Copying the displayed change
 command is a handoff to the agent, not execution of that command.
 
-`Studio` and `DesignerRoutePage` mount one `DesignerPage`: a `SystemCanvas` and a
-page-owned right rail, inside the host's app shell. There are no layer page tabs,
+Hosts use `Studio` from `@clossys/designer/studio`, or `DesignerRoutePage` from
+`@clossys/designer/studio/route` with checked consumer data. The complete-page
+`DesignerPage` constructor and `SystemCanvas` are private implementation details;
+neither is exported from the Studio entry. `DesignerPageProps` remains available
+as a data contract for host adapters.
+
+`Studio` and `DesignerRoutePage` mount one canvas and a page-owned right rail,
+inside the host's app shell. There are no layer page tabs,
 legacy canvases, dock modules, or Designer registrations in the frame's right
 panel. The rail contains Explorer, Inspector, Canvas map, Zoom, and Checks;
 Checks starts collapsed. Narrow viewports use the existing modal sheet lifecycle.

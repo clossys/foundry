@@ -384,6 +384,9 @@
         "components.link",
         "components.icon"
       ],
+      "composes": [
+        "sections.empty-state"
+      ],
       "parts": [
         "sections.band",
         "sections.section-header"
@@ -6041,6 +6044,9 @@
         "components.button",
         "components.skeleton"
       ],
+      "composes": [
+        "sections.empty-state"
+      ],
       "parts": [
         "sections.band",
         "sections.section-header",
@@ -7982,6 +7988,9 @@
         "components.meter",
         "components.progress-bar",
         "components.status-mark"
+      ],
+      "composes": [
+        "sections.empty-state"
       ],
       "parts": [
         "sections.band",

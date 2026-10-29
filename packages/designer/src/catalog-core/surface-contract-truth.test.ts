@@ -6,11 +6,14 @@ import { expect, it } from "vitest";
 import frameSlots from "../catalog/slots/frames.json" with { type: "json" };
 import { importFoundryFrames } from "../importers/foundry-frames.js";
 import { importFoundrySections } from "../importers/foundry-sections.js";
+import { importFoundryComponents } from "../importers/foundry-components.js";
+import { readSurfacePackageEvidence } from "../library-cli/surface-package-evidence.js";
+import { loadCatalog, loadComponentRegistry } from "./index.js";
+import { selectedPackageClosure } from "./__fixtures__/surface-engine/selected-package-closure.js";
 import { contractFindings, type SurfaceDefaultDescriptor } from "./surface-defaults.js";
 import { buildSurfaceConsumption } from "./surface-consumption.js";
 import { applyLibraryChange, libraryHash, resolve } from "./api.js";
 import { adoptedSurface } from "./__fixtures__/surface-engine/synthetic.js";
-import { componentIntegration } from "./__fixtures__/component-integration.js";
 import { surfaceDescriptorHash, surfaceDocument, surfaceEntryOf, surfaceManifest, surfaceOf, surfacePackageDescriptorHash } from "./surface-library.js";
 import type { FrameSlot } from "./types.js";
 import { measuredSurfaceConsumption } from "../importers/foundry-surface-consumption.js";
@@ -118,38 +121,38 @@ it("source resolution refuses undeclared actual composition through the selected
   expect(resolve(input).surfaces!.check.findings.some(row => row.code === "S5" && /unsupported|underreported/.test(row.message))).toBe(false);
 });
 
-function packageInput(underreport: boolean | "measurement" = false) {
-  const input = componentIntegration();
+async function packageInput(underreport: boolean | "measurement" = false) {
   const slot = app();
   const doc = structuredClone(importFoundryFrames().fills.find(doc => doc.$extensions["com.clossys.fill"].slot === slot.id)!);
-  const fill = doc.frames["app-shell"] as any;
+  const catalog = { values: loadCatalog(), components: { slots: loadComponentRegistry().slots, fills: importFoundryComponents().fills }, surfaces: { slots: [slot], fills: [doc], transforms: [], rules: [], materializations: [] } };
+  const { library, componentOptions } = selectedPackageClosure(catalog);
+  const input = { catalog, library, componentOptions, surfaceOptions: { packages: await readSurfacePackageEvidence([doc]), measurements: [] } };
+  const fill = doc.frames["app-shell"]!;
   if (underreport) {
     fill.reads = { tokens: [], assets: [] };
     fill.composes = [];
     if (underreport === "measurement") fill.consumption = { ...fill.consumption, scannedReads: { tokens: [], assets: [], components: [] }, scannedComposes: [] };
     else slot.contract.composes = [];
   }
-  input.catalog.surfaces = { slots: [slot], fills: [doc as any], transforms: [], rules: [], materializations: [] };
-  input.surfaceOptions = { packages: [{ module: fill.impl.module, version: doc.$extensions["com.clossys.fill"].pin!.version, artifactSha256: "c".repeat(64), values: [fill.impl.export], types: [] }], measurements: [] };
   input.library = applyLibraryChange(input.catalog, input.library, { baseHash: libraryHash(input.library), changes: [{ portion: "surfaces", change: { op: "adopt", slot: "frames.app-shell", source: "foundry" } }] }, { componentOptions: input.componentOptions, surfaceOptions: input.surfaceOptions });
   return input;
 }
 
-it("package resolution enforces measured actual use through the public engine", () => {
-  const findings = resolve(packageInput(true)).surfaces!.check.findings;
+it("package resolution enforces measured actual use through the public engine", async () => {
+  const findings = resolve(await packageInput(true)).surfaces!.check.findings;
   expect(findings.some(row => row.code === "S5" && row.message.startsWith("unsupported composes:") && row.message.includes("components.avatar"))).toBe(true);
   expect(findings.some(row => row.code === "S5" && row.message.startsWith("underreported composes:"))).toBe(true);
 });
 
-it("the public package engine accepts the measured app-shell with its declared contract", () => {
-  const result = resolve(packageInput()).surfaces!;
+it("the public package engine accepts the measured app-shell with its declared contract", async () => {
+  const result = resolve(await packageInput()).surfaces!;
   expect(result.check.ok).toBe(true);
   expect(result.check.findings.filter(row => row.severity === "error")).toEqual([]);
   expect(result.files).toEqual([]);
 });
 
-it("refuses a forged empty package snapshot even when its caller-controlled catalog descriptor agrees", () => {
-  const result = resolve(packageInput("measurement")).surfaces!;
+it("refuses a forged empty package snapshot even when its caller-controlled catalog descriptor agrees", async () => {
+  const result = resolve(await packageInput("measurement")).surfaces!;
   expect(result.check.ok).toBe(false);
   expect(result.check.findings.some(row => row.code === "S8" && row.message === "package consumption snapshot differs from canonical measurement")).toBe(true);
   expect(result.check.findings.some(row => row.code === "S5" && row.message.startsWith("underreported composes:") && row.message.includes("components.avatar"))).toBe(true);

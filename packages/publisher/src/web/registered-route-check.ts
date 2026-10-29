@@ -474,3 +474,5 @@ export { registeredFlowLayoutSource } from "./registered-route-flow-source.js";
 
 export type { CompleteRoutePageSource } from "./registered-route-source.js";
 export { prepareAdminPageCopyEnvelopes } from "./pages/admin-copy-source.js";
+export { consumerPageContentSelection, prepareConsumerPageRegistry, prepareConsumerPageRoute } from "./pages/consumer-page-content.js";
+export type { ConsumerPageCompositionSnapshot, ConsumerPageContentIdentity, ConsumerPageContentInput, PreparedConsumerPageRegistry } from "./pages/consumer-page-content.js";

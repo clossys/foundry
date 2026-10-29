@@ -30,7 +30,8 @@
         "components.button",
         "components.grid-list",
         "components.menu",
-        "components.skeleton"
+        "components.skeleton",
+        "sections.empty-state"
       ],
       "configs": {},
       "consumption": {
@@ -39,7 +40,8 @@
           "components.button",
           "components.grid-list",
           "components.menu",
-          "components.skeleton"
+          "components.skeleton",
+          "sections.empty-state"
         ],
         "scannedReads": {
           "assets": [],
@@ -89,12 +91,6 @@
             "evidence": "unregistered asset import ../icons/ChevronDown.js#ChevronDown",
             "file": "packages/designer/src/blocks/ResourceList.tsx",
             "line": 12
-          },
-          {
-            "code": "DF5",
-            "evidence": "ambiguous slot ownership ./EmptyState.js#EmptyState: sections.boundary-message, sections.empty-state",
-            "file": "packages/designer/src/blocks/ResourceList.tsx",
-            "line": 13
           },
           {
             "code": "DF2",

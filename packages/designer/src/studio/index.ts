@@ -51,7 +51,7 @@ export type { ComponentSpecimenBinding, ComponentSpecimenComponent, ComponentSpe
 export { COMPONENT_SPECIMEN_PROBE_STATES } from "./component-specimen-samples.js";
 export type { ComponentSpecimenProbeState } from "./component-specimen-samples.js";
 
-export { DesignerPage } from "./system-canvas/DesignerPage.js";
+// The complete-page constructor is private; hosts compose Studio through their route.
 export type { DesignerPageProps } from "./system-canvas/DesignerPage.js";
 export type { DesignerHistoryRow } from "./system-canvas/inspector/types.js";
 export { createRouteStudioLabels } from "./route-labels.js";

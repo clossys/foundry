@@ -91,7 +91,7 @@ export function surfaceConsumptionFindings(slot: SectionSlot | FrameSlot, fill: 
   if (!actual || actual.scanStatus !== "lower-bound" || !actual.sourceFiles.length)
     return ["S8 surface consumption measurement unavailable"];
   const contract = slot.contract;
-  const allowedComposes = contract.kind === "section" ? [...contract.allowedComposes, ...contract.parts] : contract.composes ?? [];
+  const allowedComposes = contract.kind === "section" ? [...contract.allowedComposes, ...contract.composes ?? [], ...contract.parts] : contract.composes ?? [];
   for (const [label, observed, declared, allowed] of [
     ["tokens", actual.scannedReads.tokens, fill.reads?.tokens ?? [], contract.allowedReads.tokens],
     ["assets", actual.scannedReads.assets, fill.reads?.assets ?? [], contract.allowedReads.assets],
