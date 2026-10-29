@@ -8,6 +8,7 @@
  */
 
 import { runCitationIndex } from "./citations/cli.js";
+import { runWriteCli } from "./write/cli.js";
 import { existsSync, readdirSync, readFileSync, realpathSync, statSync } from "node:fs";
 import { join, relative, resolve, sep } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -1221,6 +1222,8 @@ function runWontClaim(argv: string[]): number {
  * `process.argv`.
  */
 export function main(argv: string[]): number {
+  const writeResult = runWriteCli(argv);
+  if (writeResult !== undefined) return writeResult;
   if (argv[0] === "index") return runCitationIndex(argv.slice(1));
   if (isReadCommand(argv)) {
     return runReadCommand(argv, { execute: args => args.command === "brief" || args.command === "handoff" ? executeBriefCommand(args) : executeChecksCommand(args) });
