@@ -100,7 +100,7 @@ export function resolveSurfaces(input: CompositeEngineInput, profile: CompositeR
             continue;
         }
         const contract = slot.contract;
-        for (const [label, actual, allowed] of [["members", fill.members, contract.members.names], ["states", fill.states.filter(state => state !== "default"), contract.kind === "section" ? contract.states ?? [] : contract.statePorts.map(port => port.id)], ["tokens", fill.reads.tokens, contract.allowedReads.tokens], ["assets", fill.reads.assets, contract.allowedReads.assets], ["composes", fill.composes, contract.kind === "section" ? [...contract.allowedComposes, ...contract.parts] : contract.composes ?? []], ["parts", fill.parts, contract.kind === "section" ? contract.parts : []]] as const)
+        for (const [label, actual, allowed] of [["members", fill.members, contract.members.names], ["states", fill.states.filter(state => state !== "default"), contract.kind === "section" ? contract.states ?? [] : contract.statePorts.map(port => port.id)], ["tokens", fill.reads.tokens, contract.allowedReads.tokens], ["assets", fill.reads.assets, contract.allowedReads.assets], ["composes", fill.composes, contract.kind === "section" ? [...contract.allowedComposes, ...contract.composes ?? [], ...contract.parts] : contract.composes ?? []], ["parts", fill.parts, contract.kind === "section" ? contract.parts : []]] as const)
             if (actual.some(value => !allowed.some(option => option === value)))
                 add("S5", fill.slot, `unsupported ${label}`);
         const required = contract.kind === "section" ? contract.slots.filter(slot => slot.required).map(slot => slot.name) : contract.slots.filter(slot => slot.required).map(slot => slot.id);
