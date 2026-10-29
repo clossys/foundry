@@ -74,7 +74,7 @@
         "inputs": [
           {
             "producerRole": "@clossys/strategist",
-            "artifact": "brand-derivation"
+            "artifact": "strategy-brief"
           }
         ],
         "outputs": [
@@ -123,7 +123,7 @@
         "inputs": [
           {
             "producerRole": "@clossys/strategist",
-            "artifact": "claims"
+            "artifact": "strategy-brief"
           }
         ],
         "outputs": [
@@ -198,7 +198,7 @@
         "inputs": [
           {
             "producerRole": "@clossys/strategist",
-            "artifact": "positioning"
+            "artifact": "strategy-brief"
           }
         ],
         "outputs": [
@@ -236,11 +236,7 @@
     "needs": [
       {
         "producerRole": "@clossys/strategist",
-        "artifact": "brand-derivation"
-      },
-      {
-        "producerRole": "@clossys/strategist",
-        "artifact": "claims"
+        "artifact": "strategy-brief"
       }
     ],
     "solves": [

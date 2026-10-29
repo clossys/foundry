@@ -41,7 +41,7 @@
     "needs": [
       {
         "producerRole": "@clossys/strategist",
-        "artifact": "audience-understanding"
+        "artifact": "strategy-brief"
       },
       {
         "producerRole": "@clossys/publisher",
@@ -66,7 +66,7 @@
         "inputs": [
           {
             "producerRole": "@clossys/strategist",
-            "artifact": "audience-understanding"
+            "artifact": "strategy-brief"
           },
           {
             "producerRole": "@clossys/publisher",
