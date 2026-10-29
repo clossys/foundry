@@ -3845,6 +3845,26 @@
           "name": "error-summary",
           "type": "region",
           "required": false
+        },
+        {
+          "name": "success",
+          "type": "region",
+          "required": false
+        },
+        {
+          "name": "error",
+          "type": "region",
+          "required": false
+        },
+        {
+          "name": "honeypot",
+          "type": "region",
+          "required": false
+        },
+        {
+          "name": "turnstile",
+          "type": "region",
+          "required": false
         }
       ],
       "members": {
@@ -4000,6 +4020,24 @@
             "required": false,
             "maxLength": {
               "en": 120
+            },
+            "dir": "auto"
+          },
+          {
+            "key": "success.message",
+            "kind": "plain",
+            "required": false,
+            "maxLength": {
+              "en": 480
+            },
+            "dir": "auto"
+          },
+          {
+            "key": "error.message",
+            "kind": "plain",
+            "required": false,
+            "maxLength": {
+              "en": 480
             },
             "dir": "auto"
           }

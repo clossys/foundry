@@ -2,6 +2,8 @@ import {
   useEffect, useId, useRef,
   type CSSProperties, type FormEvent, type ReactNode,
 } from "react";
+import { Form } from "../components/Form.js";
+import { SemanticContent } from "../components/SemanticContent.js";
 import { Button } from "../components/Button.js";
 import { Icon } from "../components/Icon.js";
 import { TextField } from "../components/TextField.js";
@@ -86,12 +88,12 @@ export function NewsletterBand({
   }
 
   const form = (
-    <form
+    <Form
       {...(ground === "inverse" ? {} : SECTION_STAMP)}
       ref={formRef}
       method={method}
       action={action}
-      noValidate={false}
+      validationBehavior="native"
       aria-labelledby={labelledBy}
       aria-label={label}
       onSubmit={handle}
@@ -99,7 +101,7 @@ export function NewsletterBand({
       style={style}
     >
       {status !== "sent" ? (
-        <div className={layout === "stacked"
+        <SemanticContent as="div" className={layout === "stacked"
           ? "flex flex-col gap-sm max-w-[28rem]"
           : "grid grid-cols-1 gap-sm tablet:grid-cols-[1fr_auto] tablet:items-end max-w-[32rem]"}>
           <TextField
@@ -116,27 +118,27 @@ export function NewsletterBand({
           <Button type="submit" size="md" isPending={status === "pending"} className="w-full tablet:w-auto" style={{ minBlockSize: UI_LAYOUT_TAP_TARGET }}>
             {status === "pending" ? pendingLabel : submitLabel}
           </Button>
-        </div>
+        </SemanticContent>
       ) : null}
-      <div role="status" aria-live="polite" aria-atomic="true">
-        {status === "pending" ? <span className="sr-only">{pendingLabel}</span> : null}
-        {status === "sent" ? <div ref={sentRef} tabIndex={-1} className={cx("text-body", inks.primary)}>{sentMessage}</div> : null}
-      </div>
+      <SemanticContent as="div" role="status" aria-live="polite" aria-atomic="true">
+        {status === "pending" ? <SemanticContent as="span" className="sr-only">{pendingLabel}</SemanticContent> : null}
+        {status === "sent" ? <SemanticContent as="div" ref={sentRef} tabIndex={-1} className={cx("text-body", inks.primary)}>{sentMessage}</SemanticContent> : null}
+      </SemanticContent>
       {status !== "sent" ? <>
-        {hasHint ? <p id={hintId} className={cx("text-caption", inks.secondary)}>{hint}</p> : null}
+        {hasHint ? <SemanticContent as="p" id={hintId} className={cx("text-caption", inks.secondary)}>{hint}</SemanticContent> : null}
         {status === "failed" ? (
-          <p id={failedId} className="flex items-start gap-xs text-caption text-status-danger-text">
+          <SemanticContent as="p" id={failedId} className="flex items-start gap-xs text-caption text-status-danger-text">
             <Icon glyph={XCircle} decorative size="sm" />{failedMessage}
-          </p>
+          </SemanticContent>
         ) : null}
         {privacyNote !== undefined && privacyNote !== null && privacyNote !== false
-          ? <p className={cx("text-body-s", inks.secondary)}>{privacyNote}</p> : null}
+          ? <SemanticContent as="p" className={cx("text-body-s", inks.secondary)}>{privacyNote}</SemanticContent> : null}
       </> : null}
-    </form>
+    </Form>
   );
   return ground === "inverse" ? (
-    <div {...SECTION_STAMP} className={SECTION_GROUND_CLASSES.inverse.surface}>
-      <div className="rounded-panel bg-surface-raised p-lg text-ink-primary">{form}</div>
-    </div>
+    <SemanticContent as="div" {...SECTION_STAMP} className={SECTION_GROUND_CLASSES.inverse.surface}>
+      <SemanticContent as="div" className="rounded-panel bg-surface-raised p-lg text-ink-primary">{form}</SemanticContent>
+    </SemanticContent>
   ) : form;
 }
