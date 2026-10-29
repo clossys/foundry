@@ -4163,6 +4163,11 @@
           "type": "action",
           "required": false,
           "max": 2
+        },
+        {
+          "name": "backdrop",
+          "type": "media",
+          "required": false
         }
       ],
       "members": {
@@ -4174,12 +4179,16 @@
           "size.compact",
           "size.default",
           "ground.base",
-          "ground.inverse"
+          "ground.inverse",
+          "layout.full-bleed",
+          "backdrop.scrim.light",
+          "backdrop.scrim.strong"
         ]
       },
       "allowedComposes": [
         "components.button",
-        "components.link"
+        "components.link",
+        "components.semantic-content"
       ],
       "parts": [
         "sections.band",
@@ -4204,7 +4213,10 @@
           "tokens.line-height",
           "tokens.status-color",
           "tokens.text-color",
-          "tokens.typeface"
+          "tokens.typeface",
+          "tokens.gradient",
+          "tokens.color-ramp",
+          "tokens.scrim-color"
         ],
         "assets": [
           "assets.image-ratio"
