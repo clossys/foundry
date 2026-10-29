@@ -185,7 +185,7 @@ describe("owner-signed token leaf amendment", () => {
 describe("explicit local component amendment", () => {
   const amendedId = "components.semantic-content";
   it("records an explicit versioned proposal against the unchanged signed baseline", () => {
-    expect(componentAmendments).toEqual({ schemaVersion: 1, layer: "components", baseSignedHead: componentFreeze.signedHead, status: "pending-owner-ratification", addedLeafIds: ["components.native-action", amendedId, "components.sidebar", "components.command", "components.sheet", "components.empty", "components.item", "components.scroll-area", "components.dropdown-menu"] });
+    expect(componentAmendments).toEqual({ schemaVersion: 1, layer: "components", baseSignedHead: componentFreeze.signedHead, status: "pending-owner-ratification", addedLeafIds: ["components.native-action", amendedId, "components.sidebar", "components.command", "components.sheet", "components.empty", "components.item", "components.scroll-area", "components.dropdown-menu", "components.media-player"] });
   });
   const inputs = () => ({ ia: structuredClone(componentIA) as Placement, slots: structuredClone(componentSlots) });
   it("accepts only the exact amended leaf alongside the unchanged signed IDs", () => {
