@@ -1,6 +1,15 @@
-import { describe, expect, it, vi } from "vitest";
-import { resolve } from "node:path";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { join } from "node:path";
+import { mkdtempSync, rmSync } from "node:fs";
+import { tmpdir } from "node:os";
 import { parseReadArgs, runReadCommand, READ_COMMANDS, isReadCommand, type ReadServices } from "./read.js";
+
+let cwd: string;
+beforeEach(() => {
+  cwd = mkdtempSync(join(tmpdir(), "strategy-read-args-"));
+  vi.spyOn(process, "cwd").mockReturnValue(cwd);
+});
+afterEach(() => { vi.restoreAllMocks(); rmSync(cwd, { recursive: true, force: true }); });
 
 const progress = "MVS 9/24 · L1 unlocked 1/7 (Context) · L2 coherent 0/28 · active 9/57 · requests 1 open · next: Channel (unlocks Focus; Publisher waiting)";
 function services(code: 0 | 1 | 2 = 0): ReadServices {
@@ -44,7 +53,7 @@ describe("read-only cell CLI", () => {
     const output = vi.fn();
     expect(runReadCommand(["status"], services(), output)).toBe(0);
     expect(output).toHaveBeenCalledWith(progress);
-    expect(parseReadArgs(["status"]).root).toBe(resolve("../..", "clossys/agents/strategist"));
+    expect(parseReadArgs(["status"]).root).toBe(join(cwd, "clossys/agents/director"));
   });
   it.each(["--write", "--request"])("passes explicit brief %s to services", flag => {
     const backend = services();

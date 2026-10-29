@@ -16,7 +16,7 @@ export function runReviewCli(argv: string[]): number {
       if (!value || value.startsWith('--')) throw new Error(`Missing value for ${flag}`);
       flags.set(flag,value);
     }
-    const result=review(resolveStrategyRoot(flags.get('--root')),{today:flags.get('--today')});
+    const result=review(resolveStrategyRoot(flags.get('--root'), process.cwd(), 'write'),{today:flags.get('--today')});
     console.log(JSON.stringify(result,null,json ? undefined : 2));
     return result.issues.length ? 2 : result.created.length ? 1 : 0;
   } catch (error) {

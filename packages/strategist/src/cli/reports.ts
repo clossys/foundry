@@ -1,4 +1,5 @@
 import { constants, closeSync, fstatSync, ftruncateSync, lstatSync, mkdirSync, openSync, realpathSync, writeFileSync } from "node:fs";
+import { isRetiredStrategyRoot } from "../strategy-dir-default.js";
 import { join } from "node:path";
 
 export const REPORT_CAPABILITIES = ["cell-quality", "coherence", "completion", "wont-claim"] as const;
@@ -7,6 +8,7 @@ export type ReportCapability = typeof REPORT_CAPABILITIES[number];
 /** CLI-only persistence. Pure checks return the same object saved here. */
 export function persistReport(root: string, capability: ReportCapability, report: unknown): void {
   if (!REPORT_CAPABILITIES.includes(capability)) throw new Error("Unknown report capability");
+  if (isRetiredStrategyRoot(root)) return;
   const serialized = `${JSON.stringify(report, null, 2)}\n`;
   if (lstatSync(root).isSymbolicLink()) throw new Error("Symlink strategy root is not allowed");
   const strategyRoot = realpathSync(root);
