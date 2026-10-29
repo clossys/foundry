@@ -1,6 +1,6 @@
 import type { CSSProperties, ReactNode } from "react";
-import { cx } from "../../components/internal/cx.js";
-import { StatusMark } from "../../components/StatusMark.js";
+import { cx } from "../../selected-components/internal/cx.js";
+import { StatusMark } from "../../selected-components/StatusMark.js";
 import { layoutScene, sceneRelationText } from "./geometry.js";
 import type { SceneInput, SceneLayout, SceneRow, SceneStatus, ScenePerson, ScenePart, SceneFormat } from "./types.js";
 

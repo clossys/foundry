@@ -1,5 +1,5 @@
 import { useId, type ReactNode } from "react";
-import { buttonLinkClassName, mergeUiClasses, NativeAction, SemanticContent } from "@clossys/designer/components/server";
+import { buttonLinkClassName, mergeUiClasses, NativeAction, SemanticContent } from "../../selected-components/server.js";
 import type { ResolvedSiteShell } from "./internal/resolveShell.js";
 import { FrameRegion } from "./FrameRegion.js";
 import { NavLinks } from "./NavLinks.js";

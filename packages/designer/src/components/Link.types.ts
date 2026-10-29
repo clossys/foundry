@@ -1,5 +1,6 @@
 import type { LinkProps as AriaLinkProps } from "react-aria-components";
-import type { ButtonSize, ButtonVariant } from "./Button.js";
+import type { ButtonSize } from "./Button.js";
+import type { ControlAppearanceVariant } from "./button-classes.js";
 import type { ControlGround } from "./button-classes.js";
 
 export type LinkVariant = "default" | "muted" | "standalone";
@@ -24,7 +25,7 @@ export interface LinkProps extends AriaLinkProps {
    * with neither set the link is unchanged.
    * @default "primary" (once button mode is on)
    */
-  buttonVariant?: ButtonVariant;
+  buttonVariant?: ControlAppearanceVariant;
   /**
    * Size of the button look, as for `Button`'s `size`. Setting either this
    * or `buttonVariant` turns button mode on.

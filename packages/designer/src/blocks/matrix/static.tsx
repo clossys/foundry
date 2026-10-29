@@ -1,9 +1,9 @@
 import type { ReactNode } from "react";
 import type { MatrixQuadrantProps, MatrixSide, MatrixHeadingLevel } from "../Matrix.js";
-import { Card } from "../../components/Card.js";
-import { Icon } from "../../components/Icon.js";
-import { cx } from "../../components/internal/cx.js";
-import { UI_BORDER_HAIRLINE } from "../../components/internal/ui-vars.js";
+import { Card } from "../../selected-components/Card.js";
+import { Icon } from "../../selected-components/Icon.js";
+import { cx } from "../../selected-components/internal/cx.js";
+import { UI_BORDER_HAIRLINE } from "../../selected-components/internal/ui-vars.js";
 import { Check } from "../../icons/Check.js";
 import { hasContent } from "../items/policies.js";
 import { SECTION_GROUND_CLASSES, type SectionGround } from "../section-ground.js";

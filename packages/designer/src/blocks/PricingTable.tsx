@@ -1,8 +1,8 @@
 import { SectionHeader } from "./SectionHeader.js";
 import type { CSSProperties, HTMLAttributes, ReactNode } from "react";
-import { Badge } from "../components/Badge.js";
-import { Card } from "../components/Card.js";
-import { cx } from "../components/internal/cx.js";
+import { Badge } from "../selected-components/Badge.js";
+import { Card } from "../selected-components/Card.js";
+import { cx } from "../selected-components/internal/cx.js";
 import { Matrix } from "./Matrix.server.js";
 import type { MatrixCellData, MatrixGridProps } from "./Matrix.js";
 import { SECTION_GROUND_CLASSES, type SectionGround } from "./section-ground.js";

@@ -1,7 +1,7 @@
 import type { HTMLAttributes, ReactNode } from "react";
-import { Avatar } from "../components/Avatar.server.js";
-import { Icon } from "../components/Icon.js";
-import { cx } from "../components/internal/cx.js";
+import { Avatar } from "../selected-components/Avatar.server.js";
+import { Icon } from "../selected-components/Icon.js";
+import { cx } from "../selected-components/internal/cx.js";
 import { ArrowRight } from "../icons/ArrowRight.js";
 import { Settings } from "../icons/Settings.js";
 

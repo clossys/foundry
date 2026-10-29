@@ -3,8 +3,8 @@ import {
   ToggleButton as AriaToggleButton,
   type ToggleButtonProps as AriaToggleButtonProps,
 } from "react-aria-components";
-import type { ButtonSize, ButtonVariant } from "./Button.js";
-import { buttonClassName, iconButtonClassName, controlSizeStyle, controlStateStyle, type ControlGround } from "./button-classes.js";
+import type { ButtonSize } from "./Button.js";
+import { buttonLookClassName, iconButtonClassName, controlSizeStyle, controlStateStyle, type ControlGround, type ControlAppearanceVariant } from "./button-classes.js";
 import { cx } from "./internal/cx.js";
 
 export type ToggleButtonShape = "text" | "icon-only";
@@ -17,7 +17,7 @@ export interface ToggleButtonProps extends AriaToggleButtonProps {
    * own ink marks it).
    * @default "secondary"
    */
-  variant?: ButtonVariant;
+  variant?: ControlAppearanceVariant;
   /** @default "md" */
   size?: ButtonSize;
   /** The ground the toggle sits on; selected on `inverse` takes the inverse action fill. @default "base" */
@@ -43,7 +43,7 @@ const SELECTED: Record<"base" | "inverse", string> = {
   inverse: "bg-action-on-inverse text-ink-primary border-transparent hover:bg-action-on-inverse-hover",
 };
 
-function selectedClassName(variant: ButtonVariant, ground: ControlGround): string {
+function selectedClassName(variant: ControlAppearanceVariant, ground: ControlGround): string {
   if (variant === "quiet") return "underline";
   if (variant === "primary") return "ring-2 ring-inset ring-current";
   return SELECTED[ground === "inverse" ? "inverse" : "base"];
@@ -84,7 +84,7 @@ export function ToggleButton({
 }: ToggleButtonProps) {
   const [uncontrolled, setUncontrolled] = useState(defaultSelected);
   const controlled = isSelected !== undefined;
-  const look = shape === "icon-only" ? iconToggleClassName(size, ground) : buttonClassName(variant, size, ground);
+  const look = shape === "icon-only" ? iconToggleClassName(size, ground) : buttonLookClassName(variant, size, ground);
   return (
     <AriaToggleButton
       {...rest}

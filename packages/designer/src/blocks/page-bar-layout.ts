@@ -1,5 +1,5 @@
 import { TOKENS } from "../tokens/tokens.js";
-import { UI_LAYOUT_TAP_TARGET } from "../components/internal/ui-vars.js";
+import { UI_LAYOUT_TAP_TARGET } from "../selected-components/internal/ui-vars.js";
 
 /** Existing registered layout values, matching AppFrame's resolved strings. */
 export const PAGE_BAR_LAYOUT = {

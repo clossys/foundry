@@ -1,5 +1,5 @@
 import type { HTMLAttributes, ReactNode } from "react";
-import { cx } from "../components/internal/cx.js";
+import { cx } from "../selected-components/internal/cx.js";
 import { MAIN_CONTENT_ID } from "./internal/main-content-id.js";
 import { SkipLink } from "./SkipLink.js";
 import { SHELL_GROUND_CLASSES, type ShellGround } from "./internal/shell-ground.js";

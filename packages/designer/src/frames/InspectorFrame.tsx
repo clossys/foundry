@@ -1,9 +1,9 @@
 import { useState, useSyncExternalStore, type ReactNode } from "react";
 import { INSPECTOR_DOCK_QUERY } from "./right-panel-config.js";
-import { cx } from "../components/internal/cx.js";
+import { cx } from "../selected-components/internal/cx.js";
 import { Drawer } from "../blocks/Drawer.js";
 import { ResizablePane } from "../blocks/ResizablePane.js";
-import { Button } from "../components/Button.js";
+import { Button } from "../selected-components/Button.js";
 import { dsAttrs } from "../catalog-core/provenance-attrs.js";
 
 /** DOM provenance (WIRE-3 D1): this frame root stamps its leaf and fill. */

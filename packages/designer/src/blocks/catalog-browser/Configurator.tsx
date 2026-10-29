@@ -1,7 +1,7 @@
-import { Button } from "../../components/Button.js";
-import { Select } from "../../components/Select.js";
-import { Switch } from "../../components/Switch.js";
-import { TextField } from "../../components/TextField.js";
+import { Button } from "../../selected-components/Button.js";
+import { Select } from "../../selected-components/Select.js";
+import { Switch } from "../../selected-components/Switch.js";
+import { TextField } from "../../selected-components/TextField.js";
 import type { CatalogBrowserConfig, CatalogBrowserControl } from "./types.js";
 
 /** One labelled component per control; every change reports the whole resolved configuration. */
@@ -27,7 +27,7 @@ export function Configurator({ controls, config, onChange, noControls, resetLabe
         value={typeof value === "string" ? value : control.defaultValue} onChange={text => set(control.id, text)} />;
     })}
     <div>
-      <Button variant="quiet" size="sm" trailingIcon={null}
+      <Button variant="ghost" size="sm"
         onPress={() => onChange(Object.fromEntries(controls.map(control => [control.id, control.defaultValue])))}>{resetLabel}</Button>
     </div>
   </div>;

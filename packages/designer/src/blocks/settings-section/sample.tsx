@@ -1,6 +1,6 @@
-import { Button } from "../../components/Button.js";
-import { Switch } from "../../components/Switch.js";
-import { TextField } from "../../components/TextField.js";
+import { Button } from "../../selected-components/Button.js";
+import { Switch } from "../../selected-components/Switch.js";
+import { TextField } from "../../selected-components/TextField.js";
 import type { SettingsSectionProps } from "../SettingsSection.js";
 
 export const settingsSectionSample: SettingsSectionProps = {

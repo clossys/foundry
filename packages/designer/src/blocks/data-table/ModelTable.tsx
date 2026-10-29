@@ -1,10 +1,10 @@
 import { defaultGroupToggleMessage, defaultGroupPathMessage, defaultAggregateMessage, type DataTableMessages } from "./messages.js";
 import type { Key } from "react-aria-components";
 import { TOKENS } from "../../tokens/tokens.js";
-import { Button } from "../../components/Button.js";
-import { Icon } from "../../components/Icon.js";
-import { useGlyph } from "../../components/glyph-context.js";
-import { cx } from "../../components/internal/cx.js";
+import { Button } from "../../selected-components/Button.js";
+import { Icon } from "../../selected-components/Icon.js";
+import { useGlyph } from "../../selected-components/glyph-context.js";
+import { cx } from "../../selected-components/internal/cx.js";
 import type { DataTableColumn, DataTableProps } from "../DataTable.js";
 import { filterRows, groupRows, type TableGroup } from "../table-model/index.js";
 import { FlatGrid } from "./FlatGrid.js";

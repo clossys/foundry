@@ -1,4 +1,4 @@
-import { TextField } from "../../components/TextField.js";
+import { TextField } from "../../selected-components/TextField.js";
 import type { FormWizardProps } from "../FormWizard.js";
 
 export const formWizardSample: FormWizardProps = {

@@ -1,7 +1,7 @@
 import type { HTMLAttributes, ReactNode } from "react";
-import { Banner, type BannerVariant } from "../components/Banner.js";
+import { Banner, type BannerVariant } from "../selected-components/Banner.js";
 import { SECTION_CONTENT_STYLE } from "./internal/section-content-gutter.js";
-import { cx } from "../components/internal/cx.js";
+import { cx } from "../selected-components/internal/cx.js";
 import { dsAttrs } from "../catalog-core/provenance-attrs.js";
 /** Section root provenance (D1): the selected Foundry fill this block is. */
 const SECTION_STAMP = dsAttrs("sections", "sections.notices", "foundry/sections.notices");

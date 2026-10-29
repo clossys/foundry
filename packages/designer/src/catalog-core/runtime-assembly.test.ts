@@ -225,11 +225,15 @@ it("binds synthetic consumer glyph payload changes and component descriptors", a
     const member = profile.members[id]!;
     return [id, { property: output.property, light: member.alias.light ? cssText(member.$type, member.value.light) : member.css.light, ...(member.value.dark === undefined ? {} : { dark: member.alias.dark ? cssText(member.$type, member.value.dark) : member.css.dark! }) }];
   }));
+  // Resolver options are immutable inputs; replacing evidence invalidates its identity cache.
+  const replaceEvidence = () => { component.componentOptions = { ...component.componentOptions, evidence: { ...component.componentOptions!.evidence, observations: { ...component.componentOptions!.evidence!.observations } } }; };
   const incomplete = Object.fromEntries(Object.entries(observations).filter(([id]) => id !== "tokens.breakpoint.sm"));
   component.componentOptions!.evidence!.observations["components.button"]!.tokensHash = componentTokensHash(incomplete);
+  replaceEvidence();
   const stale = resolve(component).check.findings.filter(finding => finding.severity === "error");
   expect(stale).toEqual(expect.arrayContaining([expect.objectContaining({ code: "K5" }), expect.objectContaining({ code: "K6" })]));
   component.componentOptions!.evidence!.observations["components.button"]!.tokensHash = componentTokensHash(observations);
+  replaceEvidence();
   const configure = () => {
     const runtime = standardM1Runtime({ engine: component, identity: input.identity, source: input.layout.descriptor.renderer.source, css: input.css });
     return { ...runtime, ports: { ...runtime.ports, manifest: { ...runtime.ports.manifest, assetClosure: { complete: true, ids: ["assets.icon-close"] } } } };
@@ -239,11 +243,44 @@ it("binds synthetic consumer glyph payload changes and component descriptors", a
   const componentEvidence: Record<string, unknown> = component.componentOptions!.evidence!.observations;
   const observed = componentEvidence["components.button"];
   delete componentEvidence["components.button"];
+  replaceEvidence();
   expect(resolve(component).check.ok).toBe(true);
   expect(prepareRuntimeAssembly(configure())).toEqual({ status: "pending", findings: ["component runtime observations required: components.button"] });
-  componentEvidence["components.button"] = observed;
+  (component.componentOptions!.evidence!.observations as Record<string, unknown>)["components.button"] = observed;
+  replaceEvidence();
   component.library.components.fills[0]!.components.button!.license = "ISC";
   const after = prepareRuntimeAssembly(configure());
   expect(after.status).not.toBe("pending");
   if (after.status === "ready" && before.status === "ready") expect(after.assembly.snapshot.hash).not.toBe(before.assembly.snapshot.hash);
+});
+
+
+describe("consumer component index runtime port", () => {
+  it("delivers one captured executable index to every Section and Frame without snapshotting it", () => {
+    const input = fixture();
+    const Button = () => null;
+    const runtimeOnlyPort = "runtime-index-port-must-not-be-serialized";
+    const components = { Button, runtimeOnlyPort };
+    const seen: unknown[] = [];
+    const renderers = Object.fromEntries(Object.entries(input.ports.renderers).map(([id, render]) => [id, (value: Parameters<typeof render>[0]) => { seen.push(value.components); return render(value); }]));
+    const result = prepareRuntimeAssembly({ ...input, ports: { ...input.ports, components, renderers } });
+    expect(result.status, JSON.stringify(result)).toBe("ready");
+    if (result.status !== "ready") return;
+    components.Button = () => null;
+    result.assembly.render(result.assembly.snapshot.cells[0]!);
+    expect(seen).toHaveLength(3);
+    for (const index of seen) {
+      expect(index).toEqual({ Button, runtimeOnlyPort });
+      expect(Object.isFrozen(index)).toBe(true);
+    }
+    // library.components is legitimate descriptor metadata; the executable port is not snapshot data.
+    expect(JSON.stringify(result.assembly.snapshot)).not.toContain(runtimeOnlyPort);
+    const values = (value: unknown): unknown[] => [value, ...(value && typeof value === "object" ? Object.values(value).flatMap(values) : [])];
+    expect(values(result.assembly.snapshot).some(value => typeof value === "function" || value === components || value === seen[0])).toBe(false);
+    expect(result.assembly.snapshot.data).toMatchObject({ library: { components: input.engine.library.components } });
+    const other = prepareRuntimeAssembly({ ...input, ports: { ...input.ports, components: { Button: () => "another executable" } } });
+    expect(other.status).toBe("ready");
+    if (other.status === "ready") expect(other.assembly.snapshot).toEqual(result.assembly.snapshot);
+    expect(prepareRuntimeAssembly({ ...input, ports: { ...input.ports, components: undefined } } as never).status).toBe("refused");
+  });
 });

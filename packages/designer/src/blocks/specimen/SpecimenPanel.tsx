@@ -1,10 +1,10 @@
 import type { CSSProperties, HTMLAttributes, ReactNode } from "react";
-import { Badge, type BadgeVariant } from "../../components/Badge.js";
+import { Badge, type BadgeVariant } from "../../selected-components/Badge.js";
 import { hasContent } from "../items/policies.js";
-import { Card } from "../../components/Card.js";
-import { StatusMark } from "../../components/StatusMark.js";
-import { cx } from "../../components/internal/cx.js";
-import { UI_BORDER_HAIRLINE, UI_ELEVATION_PANEL } from "../../components/internal/ui-vars.js";
+import { Card } from "../../selected-components/Card.js";
+import { StatusMark } from "../../selected-components/StatusMark.js";
+import { cx } from "../../selected-components/internal/cx.js";
+import { UI_BORDER_HAIRLINE, UI_ELEVATION_PANEL } from "../../selected-components/internal/ui-vars.js";
 import { AnatomyMarker, SpecimenPartView, type SpecimenPart, type SpecimenStatus } from "./parts.js";
 
 /**

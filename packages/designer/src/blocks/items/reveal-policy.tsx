@@ -1,6 +1,6 @@
-import { UI_BORDER_HAIRLINE } from "../../components/internal/ui-vars.js";
-import { Badge } from "../../components/Badge.js";
-import { cx } from "../../components/internal/cx.js";
+import { UI_BORDER_HAIRLINE } from "../../selected-components/internal/ui-vars.js";
+import { Badge } from "../../selected-components/Badge.js";
+import { cx } from "../../selected-components/internal/cx.js";
 import { FAQ_ANSWER_STYLE, FAQ_ROW_CLASSES } from "../Faq.server.js";
 import type { DisclosureRowOptions } from "../internal/disclosure-row-types.js";
 import { SECTION_GROUND_CLASSES } from "../section-ground.js";

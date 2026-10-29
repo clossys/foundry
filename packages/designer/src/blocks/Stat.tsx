@@ -1,5 +1,5 @@
 import type { CSSProperties, HTMLAttributes, ReactNode } from "react";
-import { cx } from "../components/internal/cx.js";
+import { cx } from "../selected-components/internal/cx.js";
 import { TREND_TEXT_CLASSES } from "./internal/trend.js";
 
 export type StatTrend = "up" | "down" | "neutral";

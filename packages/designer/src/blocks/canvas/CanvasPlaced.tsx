@@ -1,7 +1,7 @@
 "use client";
 import type { HTMLAttributes, ReactNode } from "react";
-import { cx } from "../../components/internal/cx.js";
-import { UI_ALPHA_DISABLED, UI_RING_FOCUS } from "../../components/internal/ui-vars.js";
+import { cx } from "../../selected-components/internal/cx.js";
+import { UI_ALPHA_DISABLED, UI_RING_FOCUS } from "../../selected-components/internal/ui-vars.js";
 import type { CanvasRect } from "./models.js";
 
 export interface CanvasPlacedProps extends Omit<HTMLAttributes<HTMLDivElement>, "style" | "children"> {

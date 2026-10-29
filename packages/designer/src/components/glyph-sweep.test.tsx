@@ -38,17 +38,17 @@ describe("control glyph bindings", () => {
   it("replaces each interactive affordance through asset bindings", async () => {
     const user = userEvent.setup();
     const { container } = render(<GlyphProvider glyphs={bindings} indeterminateGlyph={replacement}>
-      <Button variant="quiet">Continue</Button>
+      <Button variant="ghost">Continue</Button>
       <Checkbox defaultSelected>Selected</Checkbox>
       <Checkbox isIndeterminate>Mixed</Checkbox>
       <Disclosure title="Details">Content</Disclosure>
-      <Banner onDismiss={() => {}}>Message</Banner>
+      <Banner dismissLabel="Dismiss notice" onDismiss={() => {}}>Message</Banner>
       <Chip onRemove={() => {}} removeLabel="Remove tag">Tag</Chip>
       <SearchField label="Query" defaultValue="Find" />
       <Select label="Choice" options={[{ id: "a", label: "Alpha" }]} defaultSelectedKey="a" />
       <ComboBox label="Suggestion" options={[{ id: "a", label: "Alpha" }]} defaultSelectedKey="a" />
     </GlyphProvider>);
-    expect(container.querySelectorAll('[data-test-glyph="consumer"]')).toHaveLength(9);
+    expect(container.querySelectorAll('[data-test-glyph="consumer"]')).toHaveLength(8);
     await user.click(screen.getByRole("button", { name: /Choice/ }));
     expect(screen.getByRole("option", { name: "Alpha" }).querySelector('[data-test-glyph="consumer"]')).not.toBeNull();
     await user.keyboard("{Escape}");
@@ -56,13 +56,13 @@ describe("control glyph bindings", () => {
     expect(screen.getByRole("option", { name: "Alpha" }).querySelector('[data-test-glyph="consumer"]')).not.toBeNull();
     for (const svg of document.querySelectorAll("svg")) expect(svg).toHaveAttribute("aria-hidden", "true");
   });
-  it("inherits nested bindings, preserves explicit quiet-button overrides and null", () => {
+  it("inherits nested glyph bindings while plain actions require no implicit glyph", () => {
     const explicit: IconNode = [["path", { d: "M9 9h1", "data-test-glyph": "explicit" }]];
     const { container } = render(<GlyphProvider glyphs={{ "assets.icon-chevron-right": replacement }}>
       <GlyphProvider glyphs={{ "assets.icon-close": explicit }}>
-        <Button variant="quiet">Inherited</Button>
-        <Button variant="quiet" trailingIcon={explicit}>Explicit</Button>
-        <Button variant="quiet" trailingIcon={null}>None</Button>
+        <Disclosure title="Inherited">Content</Disclosure>
+        <Banner dismissLabel="Dismiss notice" onDismiss={() => {}}>Explicit</Banner>
+        <Button variant="ghost">None</Button>
       </GlyphProvider>
     </GlyphProvider>);
     expect(container.querySelectorAll('[data-test-glyph="consumer"]')).toHaveLength(1);

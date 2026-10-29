@@ -1,6 +1,6 @@
 import type { ReactNode } from "react";
-import { Button } from "../components/Button.js";
-import { Dialog, type DialogProps } from "../components/Dialog.js";
+import { Button } from "../selected-components/Button.js";
+import { Dialog, type DialogProps } from "../selected-components/Dialog.js";
 
 export type ConfirmDialogTone = "neutral" | "destructive";
 

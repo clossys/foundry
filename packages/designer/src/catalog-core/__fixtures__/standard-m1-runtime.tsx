@@ -32,7 +32,7 @@ export function standardM1Runtime(options: {
   const select = (fill: RuntimeFillDescriptor, slots: Record<string, string>) => ({ leaf: fill.leaf, fill: fill.fill, config: null, members: [], content: Object.fromEntries(Object.entries(slots).map(([slot, name]) => [slot, ref(name)])) });
   return {
     identity: options.identity, engine, contracts: loadBuildCatalog(), themes: ["light", "dark"], states: ["default"], css: options.css, assets: options.assets ?? [],
-    ports: { manifest, resolveContent: reference => {
+    ports: { components: {}, manifest, resolveContent: reference => {
       const value = content[reference.ref.slice("standard-m1.".length)];
       return value === undefined ? undefined : { reference, value, hash: runtimeHash(value) } satisfies RuntimeContent;
     }, renderers: {

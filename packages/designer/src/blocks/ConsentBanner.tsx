@@ -1,8 +1,8 @@
 import { useId, type CSSProperties, type ReactNode } from "react";
-import { Icon } from "../components/Icon.js";
+import { Icon } from "../selected-components/Icon.js";
 import { Check } from "../icons/Check.js";
-import { Button } from "../components/Button.js";
-import { cx } from "../components/internal/cx.js";
+import { Button } from "../selected-components/Button.js";
+import { cx } from "../selected-components/internal/cx.js";
 import { dsAttrs } from "../catalog-core/provenance-attrs.js";
 /** Section root provenance (D1): the selected Foundry fill this block is. */
 const SECTION_STAMP = dsAttrs("sections", "sections.consent", "foundry/sections.consent");

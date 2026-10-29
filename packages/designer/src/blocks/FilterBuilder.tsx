@@ -1,7 +1,7 @@
-import { Button } from "../components/Button.js";
-import { Select } from "../components/Select.js";
-import { TextField } from "../components/TextField.js";
-import { cx } from "../components/internal/cx.js";
+import { Button } from "../selected-components/Button.js";
+import { Select } from "../selected-components/Select.js";
+import { TextField } from "../selected-components/TextField.js";
+import { cx } from "../selected-components/internal/cx.js";
 import { dsAttrs } from "../catalog-core/provenance-attrs.js";
 /** Section root provenance (D1): the selected Foundry fill this block is. */
 const SECTION_STAMP = dsAttrs("sections", "sections.filter-builder", "foundry/sections.filter-builder");
@@ -75,7 +75,7 @@ export function FilterBuilder({ fields, operators, groups, onGroupsChange, label
             <Select label={labels.operator} size="sm" selectedKey={condition.operator} options={operatorOptions}
               onSelectionChange={key => { if (typeof key === "string") update(group.id, condition.id, { operator: key }); }} />
             {takesValue ? <TextField label={labels.value} size="sm" value={condition.value} onChange={value => update(group.id, condition.id, { value })} /> : <span aria-hidden="true" />}
-            <Button variant="quiet" size="sm" onPress={() => replace(group.id, current => ({ ...current, conditions: current.conditions.filter(row => row.id !== condition.id) }))}>
+            <Button variant="ghost" size="sm" onPress={() => replace(group.id, current => ({ ...current, conditions: current.conditions.filter(row => row.id !== condition.id) }))}>
               {labels.removeCondition(conditionIndex + 1)}
             </Button>
           </li>;

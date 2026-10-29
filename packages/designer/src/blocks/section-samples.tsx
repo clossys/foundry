@@ -4,8 +4,8 @@
  * no claim about any consumer's content.
  */
 import type { ReactNode } from "react";
-import { Button } from "../components/Button.js";
-import { Link } from "../components/Link.js";
+import { Button } from "../selected-components/Button.js";
+import { Link } from "../selected-components/Link.js";
 import { CallToAction } from "./CallToAction.js";
 import { RecordCards } from "./RecordCards.js";
 import { ConsentBanner } from "./ConsentBanner.js";

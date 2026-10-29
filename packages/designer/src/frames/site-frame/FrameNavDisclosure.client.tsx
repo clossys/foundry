@@ -1,11 +1,11 @@
 "use client";
 
 import { useEffect, useId, useLayoutEffect, useRef, useState, type ReactNode } from "react";
-import { NativeAction, SemanticContent } from "@clossys/designer/components/server";
+import { NativeAction, SemanticContent } from "../../selected-components/server.js";
 import { FrameRegion } from "./FrameRegion.js";
 import { TOKENS } from "../../tokens/tokens.js";
-import { buttonLinkClassName } from "../../components/button-classes.js";
-import { cx } from "../../components/internal/cx.js";
+import { buttonLinkClassName } from "../../selected-components/button-classes.js";
+import { cx } from "../../selected-components/internal/cx.js";
 import { UI_LAYOUT_TAP_TARGET } from "../../shell/internal/shell-vars.js";
 
 export interface NavDisclosureProps {

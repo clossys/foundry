@@ -1,5 +1,5 @@
 import { ErrorState } from "../../blocks/ErrorState.js";
-import { SemanticContent } from "../../components/SemanticContent.js";
+import { SemanticContent } from "../../selected-components/SemanticContent.js";
 import { dsAttrs } from "../../catalog-core/provenance-attrs.js";
 import type { SurfaceRendererEntry } from "../contract.js";
 import { memberValue, optionalText, readSectionContent, required, text } from "./group-a-content.js";

@@ -1,6 +1,6 @@
 import type { ReactNode } from "react";
-import { UI_LAYOUT_TAP_TARGET } from "../components/internal/ui-vars.js";
-import { cx } from "../components/internal/cx.js";
+import { UI_LAYOUT_TAP_TARGET } from "../selected-components/internal/ui-vars.js";
+import { cx } from "../selected-components/internal/cx.js";
 import { UI_BRANDMARK_HEIGHT_LG } from "../internal/brandmark.js";
 import type { TableOfContentsItem, TableOfContentsProps } from "./TableOfContents.js";
 import { dsAttrs } from "../catalog-core/provenance-attrs.js";

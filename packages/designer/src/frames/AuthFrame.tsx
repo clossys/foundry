@@ -1,8 +1,8 @@
 import type { ReactNode } from "react";
 import { ShellI18nProvider, ShellLocaleRoot } from "#designer-frame-i18n";
-import { cx } from "../components/internal/cx.js";
+import { cx } from "../selected-components/internal/cx.js";
 import { dsAttrs } from "../catalog-core/provenance-attrs.js";
-import { SemanticContent } from "../components/SemanticContent.js";
+import { SemanticContent } from "../selected-components/SemanticContent.js";
 import { SkipLink } from "../shell/SkipLink.js";
 
 const FRAME_STAMP = dsAttrs("frames", "frames.auth-shell", "foundry/frames.auth-shell");

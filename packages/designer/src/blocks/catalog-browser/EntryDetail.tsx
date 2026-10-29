@@ -1,6 +1,6 @@
 import { useId, type ReactNode } from "react";
-import { Badge, type BadgeVariant } from "../../components/Badge.js";
-import { Button } from "../../components/Button.js";
+import { Badge, type BadgeVariant } from "../../selected-components/Badge.js";
+import { Button } from "../../selected-components/Button.js";
 import { DetailView } from "../DetailView.js";
 import { EmptyState } from "../EmptyState.js";
 import { SectionHeader } from "../SectionHeader.js";
@@ -33,7 +33,7 @@ function References({ title, references, catalogs, onSelect }: {
         const target = catalogs.find(catalog => catalog.kind === reference.catalog)?.entries.find(entry => entry.id === reference.entryId);
         const name = reference.label ?? target?.label ?? reference.entryId;
         return <li key={`${reference.catalog}\u0000${reference.entryId}`}>
-          {target ? <Button variant="quiet" size="sm" trailingIcon={null} onPress={() => onSelect(reference)}>{name}</Button> :
+          {target ? <Button variant="ghost" size="sm" onPress={() => onSelect(reference)}>{name}</Button> :
             <span className="text-body-s text-ink-secondary">{name}</span>}
         </li>;
       })}

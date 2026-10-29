@@ -1,11 +1,11 @@
 import { useEffect, useReducer, useRef, useState, type ReactNode } from "react";
-import { Badge } from "../components/Badge.js";
-import { SearchField } from "../components/SearchField.js";
-import { Select } from "../components/Select.js";
-import { Skeleton } from "../components/Skeleton.js";
-import { Switch } from "../components/Switch.js";
-import { Tabs } from "../components/Tabs.js";
-import { cx } from "../components/internal/cx.js";
+import { Badge } from "../selected-components/Badge.js";
+import { SearchField } from "../selected-components/SearchField.js";
+import { Select } from "../selected-components/Select.js";
+import { Skeleton } from "../selected-components/Skeleton.js";
+import { Switch } from "../selected-components/Switch.js";
+import { Tabs } from "../selected-components/Tabs.js";
+import { cx } from "../selected-components/internal/cx.js";
 import { CatalogWorkspace } from "./CatalogWorkspace.js";
 import { EmptyState } from "./EmptyState.js";
 import { Toolbar } from "./Toolbar.js";

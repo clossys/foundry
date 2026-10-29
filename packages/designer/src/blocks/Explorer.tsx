@@ -1,8 +1,8 @@
 import { useId, useLayoutEffect, useRef, useState, type KeyboardEvent, type ReactElement, type ReactNode, type Ref } from "react";
-import { Button } from "../components/Button.js";
-import { Icon } from "../components/Icon.js";
-import { Link } from "../components/Link.js";
-import { cx } from "../components/internal/cx.js";
+import { Button } from "../selected-components/Button.js";
+import { Icon } from "../selected-components/Icon.js";
+import { Link } from "../selected-components/Link.js";
+import { cx } from "../selected-components/internal/cx.js";
 import { ChevronRight } from "../icons/ChevronRight.js";
 import { FileText } from "../icons/FileText.js";
 import { Folder } from "../icons/Folder.js";

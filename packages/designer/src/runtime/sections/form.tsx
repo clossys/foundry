@@ -1,10 +1,10 @@
 import { Form } from "../../blocks/Form.js";
 import type { FormError } from "../../blocks/Form.js";
-import { Button } from "../../components/Button.js";
-import { Checkbox } from "../../components/Checkbox.js";
-import { ComboBox } from "../../components/ComboBox.js";
-import { Select } from "../../components/Select.js";
-import { TextField } from "../../components/TextField.js";
+import { Button } from "../../selected-components/Button.js";
+import { Checkbox } from "../../selected-components/Checkbox.js";
+import { ComboBox } from "../../selected-components/ComboBox.js";
+import { Select } from "../../selected-components/Select.js";
+import { TextField } from "../../selected-components/TextField.js";
 import { actionsOf, anatomyOf, isObject, recordsOf, refuseUnmapped, requireSlot, slotValue, stringField, type RuntimeObject, type SectionInputs, type SectionRenderer } from "./group-c-content.js";
 
 const LEAF = "sections.form";

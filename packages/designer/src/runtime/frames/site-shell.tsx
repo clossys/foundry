@@ -7,6 +7,8 @@
  * reference resolved by this renderer, and the brand mark an image asset, so `SiteFrame` keeps all
  * its own checks (links, footer rules, overlay scene). Anything unmapped is refused, never dropped.
  */
+import { renderWithSelectedComponents } from "#designer-component-selection";
+import { requireComponentIndex } from "../../selected-components/validate.js";
 import type { ReactNode } from "react";
 import type { CopyRef, CopyResolution, CopyResolver } from "../../frames/site-frame/copy-contract.js";
 import type { RuntimeJson, RuntimeRenderInput } from "@clossys/designer/catalog";
@@ -184,5 +186,8 @@ export function siteShellRuntimePointers(): Readonly<Record<string, typeof SITE_
 }
 /** `ConsumerRuntimePorts.renderers` entries, keyed by the descriptor id (`package:<leaf>`). */
 export function siteShellRuntimeCallbacks(): Readonly<Record<string, SurfaceRendererEntry["render"]>> {
-  return Object.freeze({ [`package:${LEAF}`]: renderSiteShell });
+  return Object.freeze({ [`package:${LEAF}`]: input => {
+    requireComponentIndex(input.components);
+    return renderWithSelectedComponents(LEAF, input, renderSiteShell);
+  } });
 }

@@ -1,9 +1,9 @@
 "use client";
 import { useEffect, useState, type ReactNode } from "react";
-import { Button } from "../../components/Button.js";
-import { Menu } from "../../components/Menu.js";
-import { Tooltip } from "../../components/Tooltip.js";
-import { Icon } from "../../components/Icon.js";
+import { Button } from "../../selected-components/Button.js";
+import { Menu } from "../../selected-components/Menu.js";
+import { Tooltip } from "../../selected-components/Tooltip.js";
+import { Icon } from "../../selected-components/Icon.js";
 import { ChevronDown } from "../../icons/ChevronDown.js";
 import { ExternalLink } from "../../icons/ExternalLink.js";
 import { type StudioOpenContext } from "./open-context.js";

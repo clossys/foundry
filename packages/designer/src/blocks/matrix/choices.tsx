@@ -1,6 +1,6 @@
 "use client";
 import type { ReactNode, Ref } from "react";
-import { RadioGroup } from "../../components/RadioGroup.js";
+import { RadioGroup } from "../../selected-components/RadioGroup.js";
 import { dsPassThrough } from "../../catalog-core/provenance-attrs.js";
 
 export interface MatrixChoicesProps {

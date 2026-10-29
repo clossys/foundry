@@ -115,7 +115,11 @@ export interface RuntimeContent {
   readonly hash: RuntimeDigest;
 }
 export interface RuntimeCell { readonly theme: string; readonly state: string; readonly width: number }
+/** Public exports of the consumer's emitted component-index module. */
+export type RuntimeComponentIndex = Readonly<Record<string, unknown>>;
 export interface RuntimeRenderInput<Node> {
+  /** Selected component exports; supplied by runtime assembly, never snapshotted. */
+  readonly components?: RuntimeComponentIndex;
   /** Canonical page locale supplied by the host through Writer. */
   readonly locale?: string;
   readonly path: string;
@@ -221,6 +225,7 @@ export function runtimeSectionHostFindings(hosts: unknown): string[] {
   ]);
 }
 export interface ConsumerRuntimePorts<Node> {
+  readonly components: RuntimeComponentIndex;
   readonly manifest: ConsumerRuntimeManifest;
   readonly renderers: Readonly<Record<string, (input: RuntimeRenderInput<Node>) => Node>>;
   /** Behaviour for the selected Frame only (navigation guard, actions, icons, theme, panels). */
@@ -332,6 +337,7 @@ export function checkConsumerRuntimePorts<Node>(ports: ConsumerRuntimePorts<Node
   const findings = [...checkConsumerRuntimeManifest(ports?.manifest, catalog, expected).findings];
   try {
     for (const [index, fill] of ports.manifest.fills.entries()) if (typeof ports.renderers[fill.renderer.id] !== "function") findings.push({ path: `fills.${index}.renderer`, message: "runtime callback missing" });
+    if (!ports.components || typeof ports.components !== "object" || Array.isArray(ports.components)) findings.push({ path: "components", message: "consumer component index is required" });
     for (const message of runtimeFrameHostFindings(ports.frameHost)) findings.push({ path: "frameHost", message });
     for (const message of runtimeSectionHostFindings(ports.sectionHosts)) findings.push({ path: "sectionHosts", message });
   }

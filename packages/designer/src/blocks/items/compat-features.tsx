@@ -1,7 +1,7 @@
 import { SectionHeader } from "../SectionHeader.js";
 import { ItemHeading, ItemIcon, ItemDescription } from "./anatomy.js";
 import type { FeatureGridLayout, FeatureGridProps } from "../FeatureGrid.js";
-import { cx } from "../../components/internal/cx.js";
+import { cx } from "../../selected-components/internal/cx.js";
 import { SECTION_GROUND_CLASSES, type SectionGround } from "../section-ground.js";
 
 /**

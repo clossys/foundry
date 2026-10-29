@@ -1,11 +1,11 @@
 import { useState } from "react";
 import { Pagination } from "../../blocks/Pagination.js";
-import { Button } from "../../components/Button.js";
-import { Checkbox } from "../../components/Checkbox.js";
-import { Link } from "../../components/Link.js";
-import { SearchField } from "../../components/SearchField.js";
-import { TextField } from "../../components/TextField.js";
-import { Toolbar } from "../../components/Toolbar.js";
+import { Button } from "../../selected-components/Button.js";
+import { Checkbox } from "../../selected-components/Checkbox.js";
+import { Link } from "../../selected-components/Link.js";
+import { SearchField } from "../../selected-components/SearchField.js";
+import { TextField } from "../../selected-components/TextField.js";
+import { Toolbar } from "../../selected-components/Toolbar.js";
 
 /**
  * The region and action content shared by the group-b renderers, each rendered through a component the

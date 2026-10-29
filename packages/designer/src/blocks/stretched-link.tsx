@@ -1,6 +1,6 @@
 import { Children, isValidElement, type ReactNode } from "react";
-import { Icon, type IconSize } from "../components/Icon.js";
-import { cx } from "../components/internal/cx.js";
+import { Icon, type IconSize } from "../selected-components/Icon.js";
+import { cx } from "../selected-components/internal/cx.js";
 import { ChevronRight } from "../icons/ChevronRight.js";
 import { SECTION_GROUND_CLASSES, type SectionGround } from "./section-ground.js";
 

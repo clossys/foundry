@@ -23,16 +23,16 @@ describe("surface runtime registry", () => {
     for (const [leaf, row] of Object.entries(surfaceRuntimeRenderers)) {
       expect(row.leaf).toBe(leaf);
       expect(surfaceRuntimePointers()[leaf]).toEqual(SURFACE_RUNTIME_POINTER);
-      expect(surfaceRuntimeCallbacks([leaf])[surfaceRendererId(leaf)]).toBe(row.render);
+      expect(() => surfaceRuntimeCallbacks([leaf])[surfaceRendererId(leaf)]!({} as never)).toThrow(/consumer component index/);
     }
     expect(() => surfaceRuntimeCallbacks(["sections.not-a-leaf"])).toThrow(/no package renderer/);
   });
   it("covers every Sections leaf and every Designer-owned Frames leaf", () => {
     const ids = (rows: readonly { id: string }[]) => rows.map(row => row.id).sort();
     expect(Object.keys(sectionRenderers).sort()).toEqual(ids(sectionSlots as readonly { id: string }[]));
-    expect(Object.keys(sectionRenderers)).toHaveLength(46);
+    expect(Object.keys(sectionRenderers)).toHaveLength(sectionSlots.length);
     expect(Object.keys(frameRenderers).sort()).toEqual(ids(frameSlots as readonly { id: string }[]));
-    expect(Object.keys(frameRenderers)).toHaveLength(8);
+    expect(Object.keys(frameRenderers)).toHaveLength(frameSlots.length);
   });
   it("ships the registry by name from the frames barrel the pointer names", () => {
     expect(SURFACE_RUNTIME_POINTER).toEqual({ module: "@clossys/designer/frames", export: "surfaceRuntimeRenderers" });

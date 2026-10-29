@@ -3,7 +3,7 @@ import { ShellI18nProvider } from "#designer-frame-i18n";
 
 import { useCallback, useEffect, useId, useLayoutEffect, useRef, useState, type CSSProperties } from "react";
 import { ModalContext, PopoverContext, useLocale } from "react-aria-components";
-import { Button, Icon, Logomark, Menu, Tooltip, ToggleButton } from "../components/index.js";
+import { Button, Icon, Logomark, Menu, Tooltip, ToggleButton } from "../selected-components/index.js";
 import { Layers, List, Search } from "../icons/index.js";
 import { AccountMenu, AppNavigation, PageBar, CommandMenu, Drawer, ResizablePane, useCommandMenuShortcut, type DrawerProps } from "../blocks/index.js";
 import { ThemeProvider, useTheme } from "../theme/index.js";
@@ -17,8 +17,8 @@ import { ToasterFrameInsetProvider, type ToasterFrameInset } from "../shell/Toas
 import { FrameNoticeProvider } from "./frame-notices.js";
 import { APP_FRAME_ALWAYS_NARROW, APP_FRAME_ALWAYS_WIDE, APP_FRAME_LAYOUT, APP_FRAME_NAVIGATION_SIZE, APP_FRAME_PANEL_SIZE, APP_FRAME_PANEL_WIDTH_VAR, APP_FRAME_WIDE_QUERY, appFrameMainId, appFramePanels, appFrameCorner } from "./app-frame-layout.js";
 import type { AppFrameAccount, AppFrameProps } from "./app-frame-types.js";
-import { ShellCopyProvider, useShellCopy } from "../components/Banner.copy-context.js";
-import { SHELL_COPY_REFS } from "../components/Banner.copy.js";
+import { ShellCopyProvider, useShellCopy } from "../selected-components/Banner.copy-context.js";
+import { SHELL_COPY_REFS } from "../selected-components/Banner.copy.js";
 import { dsAttrs } from "../catalog-core/provenance-attrs.js";
 
 /** DOM provenance (WIRE-3 D1): this frame root stamps its leaf and fill. */

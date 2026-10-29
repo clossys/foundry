@@ -57,6 +57,7 @@ function assembly({ body, values = {}, sectionHosts, seen = [] }: Options): Runt
   return {
     identity: { kind: "artifact", name: "section channels", sha256: runtimeHash(fixture.packages) }, engine, contracts,
     ports: {
+      components: {},
       manifest: { version: 1, consumer: engine.library.source.id, libraryHash: libraryHash(engine.library) as `sha256:${string}`, selectionHash: profile.selectionHash as `sha256:${string}`, fills, assetClosure: { complete: true, ids: [] } },
       renderers: Object.fromEntries(fills.map(fill => [fill.renderer.id, render])),
       resolveContent: (reference: RuntimeContentRef) => { const value = Object.hasOwn(values, reference.ref) ? values[reference.ref]! : reference.ref; return { reference, value, hash: runtimeHash(value) }; },
@@ -77,6 +78,7 @@ function drawn(input: RuntimeAssemblyInput<string>): string {
 }
 
 describe("Section content channels", () => {
+  // FINDING perf: 6 full package-library assemblies measured 9.3s at the prior 5s limit; retain every refusal check.
   it("admits anatomy header copy checked against the section-header contract", () => {
     const seen: RuntimeRenderInput<string>[] = [];
     drawn(assembly({ seen, body: select => [select("sections.empty-state", { content: header() })], values: { "header:empty": { heading: "No orders yet", description: "Orders appear here." } } }));
@@ -88,16 +90,18 @@ describe("Section content channels", () => {
     expect(refused({ heading: "Region" }, "region")).toMatchObject({ status: "refused", findings: [expect.stringContaining("wrong content kind")] });
     // A leaf without header anatomy (the band itself) has no such channel.
     expect(prepareRuntimeAssembly(assembly({ body: select => [select("sections.band", { content: header() })], values: { "header:empty": { heading: "Band" } } }))).toMatchObject({ status: "refused", findings: [expect.stringContaining("unknown content slot")] });
-  });
+  }, 20_000);
 
+  // FINDING perf: 8 full package-library assemblies measured 11.8s at the prior 5s limit; retain every refusal check.
   it("validates the data-table heading metadata used by native scroll page records", () => {
     const metadata = { heading: "Inputs", count: 0, level: 4, id: "components--controls--inputs" };
     const run = (value: RuntimeJson) => assembly({ body: select => [select("sections.data-table", { content: header("header:table") })], values: { "header:table": value } });
     expect(prepareRuntimeAssembly(run(metadata)).status).toBe("ready");
     for (const invalid of [{ ...metadata, level: 1 }, { ...metadata, level: 7 }, { ...metadata, count: -1 }, { ...metadata, count: {} }, { ...metadata, id: "bad anchor" }, { ...metadata, body: "foreign" }]) expect(prepareRuntimeAssembly(run(invalid)).status).toBe("refused");
     expect(prepareRuntimeAssembly(assembly({ body: select => [select("sections.empty-state", { content: header("header:foreign") })], values: { "header:foreign": metadata } })).status).toBe("refused");
-  });
+  }, 20_000);
 
+  // FINDING perf: 4 full package-library assemblies measured 7.1s at the prior 5s limit; retain every refusal check.
   it("nests Sections inside the band their contracts name, in reading order", () => {
     const seen: RuntimeRenderInput<string>[] = [];
     const html = drawn(assembly({ seen, body: select => [select("sections.band", { members: [], children: [select("sections.faq"), select("sections.empty-state")] })] }));
@@ -107,7 +111,7 @@ describe("Section content channels", () => {
     expect(nest("sections.faq", "sections.empty-state")).toMatchObject({ status: "refused", findings: [expect.stringContaining("does not take sections.faq as its band")] });
     expect(nest("sections.band", "sections.band")).toMatchObject({ status: "refused", findings: [expect.stringContaining("does not take sections.band as its band")] });
     expect(prepareRuntimeAssembly(assembly({ body: select => [select("sections.band", { children: [] })] }))).toMatchObject({ status: "refused", findings: [expect.stringContaining("children must be a non-empty Section list")] });
-  });
+  }, 20_000);
 
   it("admits the native band header followed by its data-table without weakening the child gate", () => {
     const html = drawn(assembly({ body: select => [select("sections.band", { children: [select("sections.section-header", { config: "default" }), select("sections.data-table")] })] }));

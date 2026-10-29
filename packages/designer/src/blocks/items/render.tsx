@@ -1,8 +1,8 @@
 import type { ReactNode } from "react";
-import { Badge } from "../../components/Badge.js";
-import { StatusMark } from "../../components/StatusMark.js";
-import { cx } from "../../components/internal/cx.js";
-import { UI_BORDER_HAIRLINE, UI_LAYOUT_TAP_TARGET } from "../../components/internal/ui-vars.js";
+import { Badge } from "../../selected-components/Badge.js";
+import { StatusMark } from "../../selected-components/StatusMark.js";
+import { cx } from "../../selected-components/internal/cx.js";
+import { UI_BORDER_HAIRLINE, UI_LAYOUT_TAP_TARGET } from "../../selected-components/internal/ui-vars.js";
 import { SECTION_GROUND_CLASSES, type SectionGround } from "../section-ground.js";
 import { cardLinkContainerClassName } from "../stretched-link.js";
 import { TREND_TEXT_CLASSES } from "../internal/trend.js";
