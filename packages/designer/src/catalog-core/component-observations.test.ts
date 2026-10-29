@@ -9,7 +9,7 @@ import { applyLibraryChange, libraryHash, resolve } from "./api.js";
 import { emittedTokenProperties } from "./emit.js";
 import { loadComponentRegistry } from "./component-registry.js";
 import { loadComponentCompositionRules } from "./component-compositions.js";
-import { planComponentDefaults } from "./component-defaults.js";
+import { planComponentDefaults, DEFAULT_COMPONENT_PREFERENCE, DEFAULT_COMPONENT_PICKS, DEFAULT_COMPONENT_FALLBACK } from "./component-defaults.js";
 import { applyDecisions } from "../library-cli/apply-decisions.js";
 import { componentOf, resolveComponents, type ComponentCandidate } from "./resolve-components.js";
 import { componentSourceHash, OBSERVATIONS_UNAVAILABLE, type ComponentSourceFile } from "./check-components.js";
@@ -18,10 +18,9 @@ import { stableStringify } from "./stable.js";
 import type { CompositeCatalogData, CompositeLibraryData, LibraryData } from "./types.js";
 
 const src = join(dirname(fileURLToPath(import.meta.url)), "..");
-const PREFERENCE = ["shadcn@aria", "foundry"];
-const PICKS = { "components.button": "foundry", "components.table": "foundry", "components.tooltip": "shadcn@aria", "components.card": "shadcn@aria" };
-const FALLBACK = { source: "foundry", slots: ["checkbox", "dialog", "popover", "tabs", "toggle-button", "disclosure", "select", "chart-sparkline", "color-picker",
-  "number-field", "tag-group", "tree", "calendar", "menu", "table", "card"].map(leaf => `components.${leaf}`) };
+const PREFERENCE = DEFAULT_COMPONENT_PREFERENCE;
+const PICKS = DEFAULT_COMPONENT_PICKS;
+const FALLBACK = DEFAULT_COMPONENT_FALLBACK;
 /** The 17 slots whose product status carried K2/K4/K5/K6/K7/K10/K12 "Source and runtime observations are unavailable". */
 const AFFECTED = ["badge", "banner", "date-field", "field", "file-trigger", "icon", "link", "logo", "meter", "progress-bar", "radio-group", "resize-handle",
   "search-field", "skeleton", "spinner", "status-mark", "text-field"].map(leaf => `components.${leaf}`);
@@ -60,7 +59,7 @@ function packageSource(module: string, name: string): ComponentSourceFile[] | un
 }
 
 let cached: ReturnType<typeof build> | undefined;
-function build(picks: Record<string, string> = PICKS) {
+function build(picks: Readonly<Record<string, string>> = PICKS) {
   const bundles = loadCatalogBundles();
   const registry = loadComponentRegistry();
   const { values, tokens, assets } = consumer();
@@ -194,7 +193,8 @@ describe("observeComponentSources claims nothing it did not observe", () => {
     const fill = fills.find(fill => fill.slot === "components.button")!;
     const observed = observeComponentSources(input).evidence.observations[fill.slot]!;
     expect(observed.root).toBe("rac:Button");
-    const stripped = observeComponentSources({ ...input, packageSource: (module, name) => input.packageSource!(module, name)?.map(file => ({ ...file, content: file.content.replace(/<\w*Button\b/g, "<Other") })) }).evidence.observations[fill.slot]!;
+    const withoutButtonRoot = (file: ComponentSourceFile) => ({ ...file, content: file.content.replace(/(<\/?)(?:ButtonPrimitive|\w*Button)\b/g, "$1Other") });
+    const stripped = observeComponentSources({ ...input, files: input.files.map(withoutButtonRoot), packageSource: (module, name) => input.packageSource!(module, name)?.map(withoutButtonRoot) }).evidence.observations[fill.slot]!;
     expect(stripped.root).toBe("engine:none");
     // A module that re-exports the RAC root unchanged is that root.
     expect(observeComponentSources(input).evidence.observations["components.form"]?.root).toBe("rac:Form");
