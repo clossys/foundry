@@ -35,7 +35,10 @@ type ProbeResult = { ok: true } | { ok: false; message: string };
 
 it("resolves canonical Frames from its real compiled public entry and refuses the server condition", () => {
   expect(RENDER_ENVIRONMENT["./frames"]).toBe("client-only");
-  expect(importKeysNormally("frames/index.js")).toEqual(expect.arrayContaining(["AppFrame", "AppFrameSpecimen", "APP_FRAME_CONTRACT"]));
+  expect(importKeysNormally("frames/index.js")).toEqual(expect.arrayContaining(["AppFrame", "APP_FRAME_CONTRACT"]));
+  expect(importKeysNormally("frames/index.js")).not.toContain("AppFrameSpecimen");
+  expect(importKeysNormally("index.js")).not.toContain("AppFrameSpecimen");
+  expect(importKeysNormally("studio/index.js")).toContain("AppFrameSpecimen");
   expect(probeUnderReactServer("frames/index.js").ok).toBe(false);
 });
 

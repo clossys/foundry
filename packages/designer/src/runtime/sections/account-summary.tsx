@@ -1,9 +1,10 @@
+import type { SurfaceRendererEntry } from "../../studio/surface-renderer-contract.js";
 import { DetailView, type DetailViewField } from "../../blocks/DetailView.js";
 import { dsAttrs } from "../../catalog-core/provenance-attrs.js";
 import { Avatar } from "../../components/Avatar.js";
 import { Link } from "../../components/Link.js";
 import { SemanticContent } from "../../components/SemanticContent.js";
-import type { SurfaceRendererEntry } from "../contract.js";
+
 import { object, optionalText, readSectionContent, required, SectionContentError, text, type JsonObject, type SectionContent } from "./group-a-content.js";
 
 const LEAF = "sections.account-summary";

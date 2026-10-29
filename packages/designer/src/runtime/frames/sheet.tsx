@@ -1,3 +1,4 @@
+import type { SurfaceRendererEntry } from "../../studio/surface-renderer-contract.js";
 /**
  * frames.sheet runtime renderer: the real Drawer edge sheet from JSON `heading` (text,
  * close and trigger labels), `body` and `footer` content and the selected placement/wide
@@ -7,7 +8,7 @@ import type { ReactNode } from "react";
 import { Drawer, type DrawerProps } from "../../blocks/Drawer.js";
 import { Button } from "../../components/Button.js";
 import type { RuntimeRenderInput } from "../../catalog-core/runtime-ports.js";
-import { runtimeValue, type SurfaceRendererEntry } from "../contract.js";
+import { runtimeValue } from "../contract.js";
 import { frameContent, type FrameInput, type FrameJson } from "./frame-content.js";
 
 const read = frameContent("frames.sheet");

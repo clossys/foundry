@@ -1,4 +1,5 @@
 #!/usr/bin/env node
+import { cliRemedy, cliErrorDetail } from "../cli-remedies.js";
 /**
  * `designer-contrast-check` — the CLI for `checkTokenContrast`, mirroring
  * `designer-token-check`'s shape (`../cli.ts`) as closely as this gate's own
@@ -121,7 +122,7 @@ function requireFile(label: string, path: string): void {
   try {
     stat = statSync(path);
   } catch (error) {
-    throw new CliInputError(`cannot read ${label} "${path}": ${error instanceof Error ? error.message : String(error)}`);
+    throw new CliInputError(`cannot read ${label} "${path}": ${cliErrorDetail(error)}`);
   }
   if (!stat.isFile()) throw new CliInputError(`${label} "${path}" is not a file`);
 }
@@ -195,7 +196,7 @@ function classify(result: ContrastGateResult): ThemeVerdict {
  * Takes `argv` as a parameter rather than reading `process.argv` itself —
  * `run()` below is the only caller that reads the real `process.argv`.
  */
-export function main(argv: string[]): number {
+function runMain(argv: string[]): number {
   const args = parseArgs(argv);
   if (args.help) {
     console.log(USAGE);
@@ -209,7 +210,7 @@ export function main(argv: string[]): number {
   try {
     css = readFileSync(cssPath, "utf8");
   } catch (error) {
-    throw new CliInputError(`cannot read tokens-css-file "${cssPath}": ${error instanceof Error ? error.message : String(error)}`);
+    throw new CliInputError(`cannot read tokens-css-file "${cssPath}": ${cliErrorDetail(error)}`);
   }
 
   console.log(`Tokens CSS file: ${cssPath}`);
@@ -219,7 +220,7 @@ export function main(argv: string[]): number {
   try {
     lightDeclarations = parseRootDeclarations(css);
   } catch (error) {
-    console.error(`\nCould not parse a top-level ":root { ... }" block from "${cssPath}": ${error instanceof Error ? error.message : String(error)}`);
+    console.error(`\nCould not parse a top-level ":root { ... }" block from "${cssPath}": ${cliErrorDetail(error)}`);
     console.error("Refusing to report a pass with no trustworthy token registry to check.");
     return 2;
   }
@@ -246,7 +247,7 @@ export function main(argv: string[]): number {
     });
     printThemeReport("dark", darkResult);
   } catch (error) {
-    const message = error instanceof Error ? error.message : String(error);
+    const message = cliErrorDetail(error);
     if (message.includes("not found in CSS")) {
       // A real, accepted variant, not a decline: not every tokens.css ships
       // a dark block (a consumer's own may not, yet). Stated plainly, not
@@ -276,7 +277,7 @@ function run(): void {
       console.error(`\n${USAGE}`);
       process.exitCode = 2;
     } else {
-      console.error(`designer-contrast-check: unexpected error: ${error instanceof Error ? (error.stack ?? error.message) : String(error)}`);
+      console.error(`designer-contrast-check: unexpected error: ${cliErrorDetail(error)}`);
       process.exitCode = 2;
     }
   }
@@ -302,4 +303,11 @@ function detectMainModule(): boolean {
 
 if (detectMainModule()) {
   run();
+}
+
+/** Preserve verdicts and thrown input refusals while giving every failed run a next step. */
+export function main(argv: string[]): number {
+  let code: number | undefined;
+  try { code = runMain(argv); return code; }
+  finally { if (code !== 0) console.error(cliRemedy("designer-contrast-check")); }
 }

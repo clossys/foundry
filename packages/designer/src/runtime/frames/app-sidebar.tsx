@@ -1,3 +1,4 @@
+import type { SurfaceRendererEntry } from "../../studio/surface-renderer-contract.js";
 /**
  * frames.app-sidebar runtime renderer: the real AppNavigation from JSON `tree` and
  * `header` content and the selected presentation member (docked, collapsed or the overlay
@@ -9,7 +10,7 @@ import { AppNavigation, type AppNavigationProps } from "../../blocks/AppNavigati
 import { Button } from "../../components/Button.js";
 import { Link } from "../../components/Link.js";
 import type { RuntimeRenderInput } from "../../catalog-core/runtime-ports.js";
-import { runtimeMember, runtimeValue, type SurfaceRendererEntry } from "../contract.js";
+import { runtimeMember, runtimeValue } from "../contract.js";
 import { plainJson } from "../sections/dataset-json.js";
 import { frameContent, guardedNavigate, type FrameInput, type FrameJson } from "./frame-content.js";
 

@@ -1,3 +1,4 @@
+import type { SurfaceRendererGroup as StudioSurfaceRendererGroup } from "../studio/surface-renderer-contract.js";
 /**
  * The one public surface runtime registry, shipped through `@clossys/designer/frames`
  * (SURFACE_RUNTIME_POINTER). Hosts build ConsumerRuntimePorts.renderers from it; the
@@ -5,11 +6,11 @@
  */
 import type { ReactNode } from "react";
 import type { RuntimeRenderInput } from "../catalog-core/runtime-ports.js";
-import { mergeRendererGroups, surfaceRendererId, SURFACE_RUNTIME_POINTER, type SurfaceRendererGroup } from "./contract.js";
+import { mergeRendererGroups, surfaceRendererId, SURFACE_RUNTIME_POINTER } from "./contract.js";
 import { frameRenderers } from "./frames/index.js";
 import { sectionRenderers } from "./sections/index.js";
 
-export const surfaceRuntimeRenderers: SurfaceRendererGroup = mergeRendererGroups(frameRenderers, sectionRenderers);
+export const surfaceRuntimeRenderers: StudioSurfaceRendererGroup = mergeRendererGroups(frameRenderers, sectionRenderers);
 
 /** Leaf → registry pointer, the input planSurfaceRuntime takes. */
 export function surfaceRuntimePointers(): Readonly<Record<string, typeof SURFACE_RUNTIME_POINTER>> {

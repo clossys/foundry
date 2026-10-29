@@ -1,7 +1,8 @@
+import type { SurfaceRendererEntry } from "../../studio/surface-renderer-contract.js";
 import { SectionFrame as DesignerSectionFrame } from "../../blocks/SectionFrame.js";
 import { Logomark } from "../../components/Logomark.js";
 import { dsAttrs } from "../../catalog-core/provenance-attrs.js";
-import type { SurfaceRendererEntry } from "../contract.js";
+
 import { object, optionalText, readSectionContent, required, SectionContentError, text } from "./group-a-content.js";
 
 /**

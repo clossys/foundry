@@ -1,3 +1,4 @@
+import type { SurfaceRendererEntry } from "../../studio/surface-renderer-contract.js";
 /** Private sign-in composition. The Section host owns every value, phase and action. */
 import { useId } from "react";
 import type { ReactNode } from "react";
@@ -7,7 +8,7 @@ import { Button } from "../../components/Button.js";
 import { TextField } from "../../components/TextField.js";
 import { dsAttrs } from "../../catalog-core/provenance-attrs.js";
 import type { RuntimeRenderInput } from "../../catalog-core/runtime-ports.js";
-import type { SurfaceRendererEntry } from "../contract.js";
+
 import { object, optionalText, readSectionContent, required, SectionContentError, text, type JsonObject, type SectionContent } from "./group-a-content.js";
 
 const LEAF = "sections.sign-in-form";

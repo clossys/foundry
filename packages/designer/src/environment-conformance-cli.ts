@@ -1,4 +1,5 @@
 #!/usr/bin/env node
+import { cliRemedy, cliErrorDetail } from "./cli-remedies.js";
 /**
  * `designer-environment-check` — the CLI for `checkEnvironmentConformance`,
  * mirroring `designer-token-check`/`designer-contrast-check`'s shape
@@ -125,7 +126,7 @@ function requireDirectory(label: string, path: string): void {
   try {
     stat = statSync(path);
   } catch (error) {
-    throw new CliInputError(`cannot read ${label} "${path}": ${error instanceof Error ? error.message : String(error)}`);
+    throw new CliInputError(`cannot read ${label} "${path}": ${cliErrorDetail(error)}`);
   }
   if (!stat.isDirectory()) throw new CliInputError(`${label} "${path}" is not a directory`);
 }
@@ -164,7 +165,7 @@ function printReport(packageDir: string, result: ConformanceResult): void {
  * reading `process.argv` itself — `run()` below is the only caller that
  * reads the real `process.argv`.
  */
-export async function main(argv: string[]): Promise<number> {
+async function runMain(argv: string[]): Promise<number> {
   const args = parseArgs(argv);
   if (args.help) {
     console.log(USAGE);
@@ -211,7 +212,7 @@ async function run(): Promise<void> {
       console.error(`\n${USAGE}`);
       process.exitCode = 2;
     } else {
-      console.error(`designer-environment-check: unexpected error: ${error instanceof Error ? (error.stack ?? error.message) : String(error)}`);
+      console.error(`designer-environment-check: unexpected error: ${cliErrorDetail(error)}`);
       process.exitCode = 2;
     }
   }
@@ -237,4 +238,11 @@ function detectMainModule(): boolean {
 
 if (detectMainModule()) {
   void run();
+}
+
+/** Preserve verdicts and thrown input refusals while giving every failed run a next step. */
+export async function main(argv: string[]): Promise<number> {
+  let code: number | undefined;
+  try { code = await runMain(argv); return code; }
+  finally { if (code !== 0) console.error(cliRemedy("designer-environment-check")); }
 }

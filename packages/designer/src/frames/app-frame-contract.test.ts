@@ -7,6 +7,7 @@ import * as blocks from "../blocks/index.js";
 import * as shell from "../shell/index.js";
 import * as theme from "../theme/index.js";
 import * as client from "./index.js";
+import { AppFrameSpecimen } from "../studio/index.js";
 import { APP_FRAME_CONTRACT, APP_FRAME_CONFIG_SCHEMA } from "./app-frame-contract.js";
 import { APP_FRAME_WIDE_QUERY } from "./app-frame-layout.js";
 
@@ -109,8 +110,8 @@ describe("data-readable AppFrame contract", () => {
     expect(APP_FRAME_CONTRACT.required).toEqual(expect.arrayContaining([
       "sole-main", "skip-target", "bottom-account-menu", "signed-out-without-actor", "host-command-index", "command-shortcut", "persisted-three-state-theme", "mobile-navigation-drawer", "resizable-right-panel", "collapsible-right-panel", "narrow-right-panel-drawer", "rtl", "forced-colors", "profile-avatar-mark", "host-rooted-breadcrumb", "page-owned-heading", "positioned-isolated-stage", "page-header-slots",
     ]));
-    expect(APP_FRAME_CONTRACT.specimen).toEqual({ owner: "@clossys/designer", subpath: "frames", export: "AppFrameSpecimen", source: "src/frames/AppFrame.specimen.tsx" });
-    expect(client.AppFrameSpecimen).toBeTypeOf("function");
+    expect(APP_FRAME_CONTRACT.specimen).toEqual({ owner: "@clossys/designer", subpath: "studio", export: "AppFrameSpecimen", source: "src/frames/AppFrame.specimen.tsx" });
+    expect(AppFrameSpecimen).toBeTypeOf("function");
     const specimenSource = readFileSync(resolve(import.meta.dirname, "./AppFrame.specimen.tsx"), "utf8");
     expect(specimenSource).toMatch(/export function AppFrameSpecimen/);
     expect(specimenSource).toMatch(/<AppFrame\b/);

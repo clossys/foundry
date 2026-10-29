@@ -1,3 +1,4 @@
+import type { SurfaceRendererEntry } from "../../studio/surface-renderer-contract.js";
 /**
  * frames.site-footer runtime renderer: the real SiteFooter with SiteFooter.Column groups
  * of package Links, from JSON `columns` content and the selected ground/rule members. The
@@ -7,7 +8,7 @@ import type { ReactNode } from "react";
 import { Link } from "../../components/Link.js";
 import type { RuntimeRenderInput } from "../../catalog-core/runtime-ports.js";
 import { SiteFooter, type SiteFooterProps } from "../../shell/SiteFooter.js";
-import { runtimeMember, runtimeValue, type SurfaceRendererEntry } from "../contract.js";
+import { runtimeMember, runtimeValue } from "../contract.js";
 import { frameContent, type FrameInput, type FrameJson } from "./frame-content.js";
 
 const read = frameContent("frames.site-footer");

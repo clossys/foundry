@@ -1,4 +1,5 @@
 #!/usr/bin/env node
+import { cliRemedy, cliErrorDetail } from "../cli-remedies.js";
 /**
  * `designer-hero-css-check` — fails when a built stylesheet is missing the
  * utility rules `Hero` and primary `Button` need. Same three-state exit
@@ -51,12 +52,12 @@ function requireFile(label: string, path: string): void {
   try {
     stat = statSync(path);
   } catch (error) {
-    throw new CliInputError(`cannot read ${label} "${path}": ${error instanceof Error ? error.message : String(error)}`);
+    throw new CliInputError(`cannot read ${label} "${path}": ${cliErrorDetail(error)}`);
   }
   if (!stat.isFile()) throw new CliInputError(`${label} "${path}" is not a file`);
 }
 
-export function main(argv: string[]): number {
+function runMain(argv: string[]): number {
   const args = parseArgs(argv);
   if (args.help) {
     console.log(USAGE);
@@ -71,7 +72,7 @@ export function main(argv: string[]): number {
   try {
     css = readFileSync(path, "utf8");
   } catch (error) {
-    console.error(`Could not read "${path}": ${error instanceof Error ? error.message : String(error)}`);
+    console.error(`Could not read "${path}": ${cliErrorDetail(error)}`);
     return 2;
   }
 
@@ -99,7 +100,7 @@ function run(): void {
       process.exitCode = 2;
     } else {
       console.error(
-        `designer-hero-css-check: unexpected error: ${error instanceof Error ? (error.stack ?? error.message) : String(error)}`,
+        `designer-hero-css-check: unexpected error: ${cliErrorDetail(error)}`,
       );
       process.exitCode = 2;
     }
@@ -119,4 +120,11 @@ function detectMainModule(): boolean {
 
 if (detectMainModule()) {
   run();
+}
+
+/** Preserve verdicts and thrown input refusals while giving every failed run a next step. */
+export function main(argv: string[]): number {
+  let code: number | undefined;
+  try { code = runMain(argv); return code; }
+  finally { if (code !== 0) console.error(cliRemedy("designer-hero-css-check")); }
 }

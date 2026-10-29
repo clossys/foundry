@@ -1,8 +1,9 @@
+import type { SurfaceRendererEntry } from "../../studio/surface-renderer-contract.js";
 import type { ReactElement, ReactNode } from "react";
 import type { RuntimeJson, RuntimeRenderInput } from "../../catalog-core/runtime-ports.js";
 import { dsAttrs } from "../../catalog-core/provenance-attrs.js";
 import { SITE_MAIN_ID } from "../../frames/site-frame/types.js";
-import { runtimeValue, type SurfaceRendererEntry } from "../contract.js";
+import { runtimeValue } from "../contract.js";
 
 export interface DocumentFrameProps {
   /** Already resolved by the host's Writer locale authority; Designer never infers direction. */

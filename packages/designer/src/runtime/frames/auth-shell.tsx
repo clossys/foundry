@@ -1,6 +1,7 @@
+import type { SurfaceRendererEntry } from "../../studio/surface-renderer-contract.js";
 import { Children, type ReactNode } from "react";
 import { AuthFrame } from "../../frames/AuthFrame.js";
-import { runtimeValue, type SurfaceRendererEntry } from "../contract.js";
+import { runtimeValue } from "../contract.js";
 import { frameContent } from "./frame-content.js";
 
 const LEAF = "frames.auth-shell";

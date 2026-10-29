@@ -1,3 +1,4 @@
+import type { SurfaceRendererEntry } from "../../studio/surface-renderer-contract.js";
 /**
  * frames.app-shell runtime renderer. Renders the real AppFrame from the selected fill:
  * JSON content per host-node contract slot (skip-link, sidebar, command, inspector), the
@@ -14,7 +15,7 @@ import { appHeaderActions } from "./app-header.js";
 import { AppFrame } from "../../frames/AppFrame.js";
 import type { AppFrameProps } from "../../frames/app-frame-types.js";
 import { PageHeaderModule } from "../../shell/FrameSlots.js";
-import { runtimeMember, runtimeRecord, runtimeText, type SurfaceRendererEntry } from "../contract.js";
+import { runtimeMember, runtimeRecord, runtimeText } from "../contract.js";
 import { plainJson } from "../sections/dataset-json.js";
 import { frameContent, guardedNavigate, type FrameHost as Host, type FrameJson as Json } from "./frame-content.js";
 

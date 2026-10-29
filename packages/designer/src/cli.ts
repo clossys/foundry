@@ -1,4 +1,5 @@
 #!/usr/bin/env node
+import { cliRemedy, cliErrorDetail } from "./cli-remedies.js";
 /**
  * `designer-token-check` — the CLI for `checkTokenPurity`, mirroring
  * `@example/copy`'s `copy-check` shape as closely as this
@@ -130,7 +131,7 @@ function loadTokensFile(path: string): Readonly<Record<string, TokenDefinition>>
   try {
     stat = statSync(resolved);
   } catch (error) {
-    throw new CliInputError(`cannot read --tokens file "${path}": ${error instanceof Error ? error.message : String(error)}`);
+    throw new CliInputError(`cannot read --tokens file "${path}": ${cliErrorDetail(error)}`);
   }
   if (!stat.isFile()) throw new CliInputError(`--tokens file "${path}" is not a file`);
 
@@ -138,14 +139,14 @@ function loadTokensFile(path: string): Readonly<Record<string, TokenDefinition>>
   try {
     raw = readFileSync(resolved, "utf8");
   } catch (error) {
-    throw new CliInputError(`cannot read --tokens file "${path}": ${error instanceof Error ? error.message : String(error)}`);
+    throw new CliInputError(`cannot read --tokens file "${path}": ${cliErrorDetail(error)}`);
   }
 
   let parsed: unknown;
   try {
     parsed = JSON.parse(raw);
   } catch (error) {
-    throw new CliInputError(`--tokens file "${path}" is not valid JSON: ${error instanceof Error ? error.message : String(error)}`);
+    throw new CliInputError(`--tokens file "${path}" is not valid JSON: ${cliErrorDetail(error)}`);
   }
 
   if (typeof parsed !== "object" || parsed === null || Array.isArray(parsed)) {
@@ -173,7 +174,7 @@ function requireDirectory(label: string, path: string): void {
   try {
     stat = statSync(path);
   } catch (error) {
-    throw new CliInputError(`cannot read ${label} "${path}": ${error instanceof Error ? error.message : String(error)}`);
+    throw new CliInputError(`cannot read ${label} "${path}": ${cliErrorDetail(error)}`);
   }
   if (!stat.isDirectory()) throw new CliInputError(`${label} "${path}" is not a directory`);
 }
@@ -250,7 +251,7 @@ function printGateReport(result: TokenGateResult): void {
  * as a parameter rather than reading `process.argv` itself — `run()` below
  * is the only caller that reads the real `process.argv`.
  */
-export function main(argv: string[]): number {
+function runMain(argv: string[]): number {
   const args = parseArgs(argv);
   if (args.help) {
     console.log(USAGE);
@@ -302,7 +303,7 @@ function run(): void {
       console.error(`\n${USAGE}`);
       process.exitCode = 2;
     } else {
-      console.error(`designer-token-check: unexpected error: ${error instanceof Error ? (error.stack ?? error.message) : String(error)}`);
+      console.error(`designer-token-check: unexpected error: ${cliErrorDetail(error)}`);
       process.exitCode = 2;
     }
   }
@@ -328,4 +329,11 @@ function detectMainModule(): boolean {
 
 if (detectMainModule()) {
   run();
+}
+
+/** Preserve verdicts and thrown input refusals while giving every failed run a next step. */
+export function main(argv: string[]): number {
+  let code: number | undefined;
+  try { code = runMain(argv); return code; }
+  finally { if (code !== 0) console.error(cliRemedy("designer-token-check")); }
 }

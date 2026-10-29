@@ -1,4 +1,5 @@
 #!/usr/bin/env node
+import { cliRemedy, cliErrorDetail } from "../cli-remedies.js";
 import * as fs from "node:fs/promises";
 import { constants, realpathSync } from "node:fs";
 import { resolve as pathResolve, dirname, relative, join } from "node:path";
@@ -233,7 +234,7 @@ async function libraryUsageGraphInputs(root: string, catalog: ReturnType<typeof 
 }
 
 /** Testable CLI entry point; importing this module never writes to a consumer library. */
-export async function main(argv: string[], io: LibraryCliIO = defaultIO): Promise<number> {
+async function runMain(argv: string[], io: LibraryCliIO): Promise<number> {
   if (argv[0] === "ia-coverage") return (await import("../catalog/ia/check-coverage/cli.js")).main(argv.slice(1), io);
   if (argv.length === 1 && ["--help", "-h"].includes(argv[0]!)) { io.out(USAGE); return 0; }
   try {
@@ -366,11 +367,22 @@ export async function main(argv: string[], io: LibraryCliIO = defaultIO): Promis
     return 0;
   } catch (error) {
     if (error instanceof LibraryCheckError) {
-      io.error(JSON.stringify({ ok: false, findings: error.result.findings })); return 1;
+      io.error(JSON.stringify({ ok: false, findings: error.result.findings, remedy: cliRemedy("designer-library") })); return 1;
     }
-    io.error(`designer-library: ${error instanceof Error ? error.message : String(error)}`);
+    io.error(`designer-library: ${cliErrorDetail(error)}\n${cliRemedy("designer-library")}`);
     return error instanceof LibraryConflictError ? 1 : 2;
   }
+}
+
+/** Keep JSON reports intact; verdict refusals without an error still receive a next step on stderr. */
+export async function main(argv: string[], io: LibraryCliIO = defaultIO): Promise<number> {
+  let errorReported = false;
+  const code = await runMain(argv, { out: text => io.out(text), error: text => {
+    errorReported = true;
+    io.error(text.includes("Remedy:") ? text : `${text}\n${cliRemedy("designer-library")}`);
+  } });
+  if (code !== 0 && !errorReported) io.error(cliRemedy("designer-library"));
+  return code;
 }
 
 const argvPath = process.argv[1];

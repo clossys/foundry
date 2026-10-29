@@ -1,7 +1,8 @@
+import type { SurfaceRendererEntry } from "../../studio/surface-renderer-contract.js";
 import { ErrorState } from "../../blocks/ErrorState.js";
 import { SemanticContent } from "../../components/SemanticContent.js";
 import { dsAttrs } from "../../catalog-core/provenance-attrs.js";
-import type { SurfaceRendererEntry } from "../contract.js";
+
 import { memberValue, optionalText, readSectionContent, required, text } from "./group-a-content.js";
 import { messageActions, messageHost } from "./boundary-message-content.js";
 

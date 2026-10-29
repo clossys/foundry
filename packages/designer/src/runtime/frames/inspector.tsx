@@ -1,3 +1,4 @@
+import type { SurfaceRendererEntry } from "../../studio/surface-renderer-contract.js";
 /**
  * frames.inspector runtime renderer: the real InspectorFrame from JSON `content` (labels,
  * width bounds, optional body text) and the selected presentation member. The panel body is the
@@ -6,7 +7,7 @@
 import type { ReactNode } from "react";
 import type { RuntimeRenderInput } from "../../catalog-core/runtime-ports.js";
 import { InspectorFrame, type InspectorFrameProps } from "../../frames/InspectorFrame.js";
-import { runtimeMember, runtimeValue, type SurfaceRendererEntry } from "../contract.js";
+import { runtimeMember, runtimeValue } from "../contract.js";
 import { frameContent, type FrameInput, type FrameJson } from "./frame-content.js";
 
 const read = frameContent("frames.inspector");

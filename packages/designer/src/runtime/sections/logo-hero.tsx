@@ -1,5 +1,6 @@
+import type { SurfaceRendererEntry } from "../../studio/surface-renderer-contract.js";
 import { LogoHero } from "../../blocks/LogoHero.js";
-import type { SurfaceRendererEntry } from "../contract.js";
+
 import { readSectionContent, required, text } from "./group-a-content.js";
 
 export const logoHeroRenderer: SurfaceRendererEntry = {

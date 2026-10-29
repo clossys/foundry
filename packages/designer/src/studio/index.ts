@@ -60,3 +60,9 @@ export { StudioCopyNeedsError, readStudioCopy, readStudioMessage } from "./copy-
 export type { StudioCopyBinding, StudioCopyRef, StudioCopyResolver } from "./copy-binding.js";
 export { StudioCopyProvider } from "./copy-context.js";
 export { StudioDataValue } from "./data-value.js";
+
+/** Interactive application frame specimen, available only in Studio. */
+export { AppFrameSpecimen } from "../frames/AppFrame.specimen.js";
+export type { AppFrameSpecimenProps } from "../frames/AppFrame.specimen.js";
+export type { SurfaceRendererEntry, SurfaceRendererGroup } from "./surface-renderer-contract.js";
+export type { SpecimenDataset } from "./specimen-dataset.js";

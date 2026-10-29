@@ -1,3 +1,4 @@
+import type { SurfaceRendererEntry, SurfaceRendererGroup } from "../../studio/surface-renderer-contract.js";
 /**
  * The `frames.site-shell` surface runtime renderer. Its library fill points at Designer's
  * `SiteFrame`; the same owning registry supplies the renderer to planSurfaceRuntime.
@@ -10,7 +11,7 @@
 import type { ReactNode } from "react";
 import type { CopyRef, CopyResolution, CopyResolver } from "../../frames/site-frame/copy-contract.js";
 import type { RuntimeJson, RuntimeRenderInput } from "@clossys/designer/catalog";
-import type { SurfaceRendererEntry, SurfaceRendererGroup } from "../contract.js";
+
 import type { AssetResolver } from "../../frames/site-frame/landing/web/types.js";
 import type { SiteFramePresentationConfig } from "../../frames/site-frame/site-frame-contract.js";
 import { SiteFrame } from "../../frames/site-frame/SiteFrame.js";

@@ -1,3 +1,4 @@
+import type { SurfaceRendererEntry } from "../../studio/surface-renderer-contract.js";
 /**
  * frames.site-header runtime renderer: the real SiteHeader, Brandmark and NavDisclosure
  * from JSON content (brand, nav, actions) and the selected surface/tone/nav-placement/position
@@ -8,7 +9,7 @@ import type { RuntimeRenderInput } from "../../catalog-core/runtime-ports.js";
 import { Brandmark, type BrandmarkSize } from "../../shell/Brandmark.js";
 import { NavDisclosure } from "../../shell/NavDisclosure.js";
 import { SiteHeader, type SiteHeaderActionLinkVariant, type SiteHeaderProps } from "../../shell/SiteHeader.js";
-import { runtimeMember, runtimeValue, type SurfaceRendererEntry } from "../contract.js";
+import { runtimeMember, runtimeValue } from "../contract.js";
 import { frameContent, type FrameInput, type FrameJson } from "./frame-content.js";
 
 const read = frameContent("frames.site-header");

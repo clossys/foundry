@@ -1,3 +1,4 @@
+import type { SurfaceRendererEntry } from "../../studio/surface-renderer-contract.js";
 /**
  * frames.command runtime renderer: the real CommandMenu from JSON `search` (search,
  * heading, close and trigger labels), `groups` and `empty` content. Open and query state are
@@ -8,7 +9,7 @@ import { CommandMenu } from "../../blocks/CommandMenu.js";
 import type { CommandMenuProps } from "../../blocks/command-menu-types.js";
 import { Button } from "../../components/Button.js";
 import type { RuntimeRenderInput } from "../../catalog-core/runtime-ports.js";
-import { runtimeText, runtimeValue, type SurfaceRendererEntry } from "../contract.js";
+import { runtimeText, runtimeValue } from "../contract.js";
 import { plainJson } from "../sections/dataset-json.js";
 import { frameContent, type FrameInput, type FrameJson } from "./frame-content.js";
 

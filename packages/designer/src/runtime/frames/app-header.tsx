@@ -1,3 +1,4 @@
+import type { SurfaceRendererEntry } from "../../studio/surface-renderer-contract.js";
 /**
  * frames.app-header runtime renderer: the real PageBar from JSON `info` (title and
  * labels), `trail` (breadcrumb) and `actions` content, the selected position/surface members,
@@ -7,7 +8,7 @@
 import type { ReactNode } from "react";
 import { PageBar, type PageBarAction, type PageBarCrumb, type PageBarProps } from "../../blocks/PageBar.js";
 import type { RuntimeRenderInput } from "../../catalog-core/runtime-ports.js";
-import { runtimeValue, type SurfaceRendererEntry } from "../contract.js";
+import { runtimeValue } from "../contract.js";
 import { frameContent, guardedNavigate, type FrameInput, type FrameJson } from "./frame-content.js";
 
 const read = frameContent("frames.app-header");

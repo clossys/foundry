@@ -1,8 +1,9 @@
+import type { SurfaceRendererEntry } from "../../studio/surface-renderer-contract.js";
 import { ArticleBody } from "../../blocks/ArticleBody.js";
 import { ContentSection } from "../../blocks/ContentSection.js";
 import { dsAttrs } from "../../catalog-core/provenance-attrs.js";
 import { SemanticContent } from "../../components/SemanticContent.js";
-import type { SurfaceRendererEntry } from "../contract.js";
+
 import { list, object, readSectionContent, required, SectionContentError, text, type JsonObject, type SectionContent } from "./group-a-content.js";
 
 const LEAF = "sections.legal-prose";

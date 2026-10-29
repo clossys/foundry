@@ -6,18 +6,17 @@
  */
 import type { ReactNode } from "react";
 import type { RuntimeJson, RuntimeRenderInput } from "../catalog-core/runtime-ports.js";
-import type { SpecimenDataset } from "../studio/specimen-dataset.js";
 
 export type SurfaceRuntimeLeaf = `frames.${string}` | `sections.${string}`;
 export type SurfaceRuntimeRenderer = (input: RuntimeRenderInput<ReactNode>) => ReactNode;
-export interface SurfaceRendererEntry {
+export interface SurfaceRendererEntry<Dataset = never> {
   readonly leaf: SurfaceRuntimeLeaf;
   readonly render: SurfaceRuntimeRenderer;
   /** JSON content per contract slot drawn from the shared synthetic dataset (Designer preview). */
-  readonly sample: (dataset: SpecimenDataset) => Readonly<Record<string, RuntimeJson>>;
+  readonly sample: (dataset: Dataset) => Readonly<Record<string, RuntimeJson>>;
 }
 /** One group's renderers, keyed by leaf. Section groups A/B/C each own one of these. */
-export type SurfaceRendererGroup = Readonly<Record<string, SurfaceRendererEntry>>;
+export type SurfaceRendererGroup<Dataset = never> = Readonly<Record<string, SurfaceRendererEntry<Dataset>>>;
 
 /** Every renderer ships from this one public registry export; the manifest producer names it. */
 export const SURFACE_RUNTIME_POINTER = Object.freeze({ module: "@clossys/designer/frames", export: "surfaceRuntimeRenderers" } as const);
@@ -25,8 +24,8 @@ export const SURFACE_RUNTIME_POINTER = Object.freeze({ module: "@clossys/designe
 export function surfaceRendererId(leaf: string): `package:${string}` { return `package:${leaf}`; }
 
 /** Merge renderer groups, refusing a leaf claimed twice or filed under the wrong key. */
-export function mergeRendererGroups(...groups: readonly SurfaceRendererGroup[]): SurfaceRendererGroup {
-  const merged: Record<string, SurfaceRendererEntry> = {};
+export function mergeRendererGroups<Dataset>(...groups: readonly SurfaceRendererGroup<Dataset>[]): SurfaceRendererGroup<Dataset> {
+  const merged: Record<string, SurfaceRendererEntry<Dataset>> = {};
   for (const group of groups) for (const [leaf, entry] of Object.entries(group)) {
     if (entry.leaf !== leaf) throw new TypeError(`surface runtime: ${leaf} is registered under the wrong key`);
     if (Object.hasOwn(merged, leaf)) throw new TypeError(`surface runtime: ${leaf} has two renderers`);

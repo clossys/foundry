@@ -1,4 +1,5 @@
 #!/usr/bin/env node
+import { cliRemedy, cliErrorDetail } from "../cli-remedies.js";
 /**
  * `designer-fold-check` — fails when a fold measurement JSON violates the
  * pre-auth fold contract. Same three-state exit contract as
@@ -67,7 +68,7 @@ function requireFile(label: string, path: string): void {
   try {
     stat = statSync(path);
   } catch (error) {
-    throw new CliInputError(`cannot read ${label} "${path}": ${error instanceof Error ? error.message : String(error)}`);
+    throw new CliInputError(`cannot read ${label} "${path}": ${cliErrorDetail(error)}`);
   }
   if (!stat.isFile()) throw new CliInputError(`${label} "${path}" is not a file`);
 }
@@ -90,7 +91,7 @@ function runFile(path: string): FileRunResult {
   try {
     text = readFileSync(resolved, "utf8");
   } catch (error) {
-    console.error(`Could not read "${resolved}": ${error instanceof Error ? error.message : String(error)}`);
+    console.error(`Could not read "${resolved}": ${cliErrorDetail(error)}`);
     return { path: resolved, exitCode: 2 };
   }
 
@@ -98,7 +99,7 @@ function runFile(path: string): FileRunResult {
   try {
     parsed = JSON.parse(text);
   } catch (error) {
-    console.error(`Could not parse JSON in "${resolved}": ${error instanceof Error ? error.message : String(error)}`);
+    console.error(`Could not parse JSON in "${resolved}": ${cliErrorDetail(error)}`);
     return { path: resolved, exitCode: 2 };
   }
 
@@ -115,7 +116,7 @@ function runFile(path: string): FileRunResult {
   return { path: resolved, findings };
 }
 
-export function main(argv: string[]): number {
+function runMain(argv: string[]): number {
   const args = parseArgs(argv);
   if (args.help) {
     console.log(USAGE);
@@ -166,7 +167,7 @@ function run(): void {
       process.exitCode = 2;
     } else {
       console.error(
-        `designer-fold-check: unexpected error: ${error instanceof Error ? (error.stack ?? error.message) : String(error)}`,
+        `designer-fold-check: unexpected error: ${cliErrorDetail(error)}`,
       );
       process.exitCode = 2;
     }
@@ -186,4 +187,11 @@ function detectMainModule(): boolean {
 
 if (detectMainModule()) {
   run();
+}
+
+/** Preserve verdicts and thrown input refusals while giving every failed run a next step. */
+export function main(argv: string[]): number {
+  let code: number | undefined;
+  try { code = runMain(argv); return code; }
+  finally { if (code !== 0) console.error(cliRemedy("designer-fold-check")); }
 }

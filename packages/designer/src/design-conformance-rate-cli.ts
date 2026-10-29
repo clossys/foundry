@@ -1,4 +1,5 @@
 #!/usr/bin/env node
+import { cliRemedy, cliErrorDetail } from "./cli-remedies.js";
 import { existsSync, readFileSync, realpathSync, statSync } from "node:fs";
 import { resolve } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -17,12 +18,12 @@ export function readDesignerAssessmentJson(path: string): unknown {
     return JSON.parse(readFileSync(resolved, "utf8"));
   } catch (cause) {
     if (cause instanceof DesignerRateCliInputError) throw cause;
-    throw new DesignerRateCliInputError(`assessment file "${path}" is unreadable JSON: ${cause instanceof Error ? cause.message : String(cause)}`);
+    throw new DesignerRateCliInputError(`assessment file "${path}" is unreadable JSON: ${cliErrorDetail(cause)}`);
   }
 }
 
 /** Testable CLI dispatcher. Invalid arguments throw; the executable maps them to exit 2. */
-export function main(argv: readonly string[]): number {
+function runMain(argv: readonly string[]): number {
   if (argv.length === 1 && (argv[0] === "--help" || argv[0] === "-h")) {
     console.log(USAGE);
     return 0;
@@ -37,7 +38,7 @@ function run(): void {
   try {
     process.exitCode = main(process.argv.slice(2));
   } catch (cause) {
-    console.error(`designer-rate-check: ${cause instanceof Error ? cause.message : String(cause)}`);
+    console.error(`designer-rate-check: ${cliErrorDetail(cause)}`);
     process.exitCode = 2;
   }
 }
@@ -53,3 +54,10 @@ export function isDirectInvocation(moduleUrl: string, argvPath: string | undefin
 }
 
 if (isDirectInvocation(import.meta.url, process.argv[1])) run();
+
+/** Preserve verdicts and thrown input refusals while giving every failed run a next step. */
+export function main(argv: readonly string[]): number {
+  let code: number | undefined;
+  try { code = runMain(argv); return code; }
+  finally { if (code !== 0) console.error(cliRemedy("designer-rate-check")); }
+}

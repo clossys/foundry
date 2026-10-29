@@ -1,5 +1,6 @@
+import type { SurfaceRendererGroup } from "../../studio/surface-renderer-contract.js";
 /** Frame renderer registry: one package-owned runtime renderer per designer Frames leaf. */
-import { mergeRendererGroups, type SurfaceRendererGroup } from "../contract.js";
+import { mergeRendererGroups } from "../contract.js";
 import { authShellRenderer } from "./auth-shell.js";
 import { appHeaderRenderer } from "./app-header.js";
 import { appShellRenderer } from "./app-shell.js";

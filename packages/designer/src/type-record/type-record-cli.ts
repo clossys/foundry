@@ -1,4 +1,5 @@
 #!/usr/bin/env node
+import { cliRemedy, cliErrorDetail } from "../cli-remedies.js";
 /**
  * `designer-type-check` — fails when a brand-type JSON record violates the
  * pre-auth type brief. Same three-state exit contract as
@@ -72,7 +73,7 @@ function requireFile(label: string, path: string): void {
   try {
     stat = statSync(path);
   } catch (error) {
-    throw new CliInputError(`cannot read ${label} "${path}": ${error instanceof Error ? error.message : String(error)}`);
+    throw new CliInputError(`cannot read ${label} "${path}": ${cliErrorDetail(error)}`);
   }
   if (!stat.isFile()) throw new CliInputError(`${label} "${path}" is not a file`);
 }
@@ -82,7 +83,7 @@ function printFindings(path: string, findings: TypeRecordFinding[]): void {
   for (const f of findings) console.log(`  [${f.rule}] ${f.message}`);
 }
 
-export function main(argv: string[]): number {
+function runMain(argv: string[]): number {
   const args = parseArgs(argv);
   if (args.help) {
     console.log(USAGE);
@@ -99,7 +100,7 @@ export function main(argv: string[]): number {
   try {
     text = readFileSync(recordPath, "utf8");
   } catch (error) {
-    console.error(`Could not read "${recordPath}": ${error instanceof Error ? error.message : String(error)}`);
+    console.error(`Could not read "${recordPath}": ${cliErrorDetail(error)}`);
     return 2;
   }
 
@@ -107,7 +108,7 @@ export function main(argv: string[]): number {
   try {
     parsed = JSON.parse(text);
   } catch (error) {
-    console.error(`Could not parse JSON in "${recordPath}": ${error instanceof Error ? error.message : String(error)}`);
+    console.error(`Could not parse JSON in "${recordPath}": ${cliErrorDetail(error)}`);
     return 2;
   }
 
@@ -159,7 +160,7 @@ function run(): void {
       process.exitCode = 2;
     } else {
       console.error(
-        `designer-type-check: unexpected error: ${error instanceof Error ? (error.stack ?? error.message) : String(error)}`,
+        `designer-type-check: unexpected error: ${cliErrorDetail(error)}`,
       );
       process.exitCode = 2;
     }
@@ -179,4 +180,11 @@ function detectMainModule(): boolean {
 
 if (detectMainModule()) {
   run();
+}
+
+/** Preserve verdicts and thrown input refusals while giving every failed run a next step. */
+export function main(argv: string[]): number {
+  let code: number | undefined;
+  try { code = runMain(argv); return code; }
+  finally { if (code !== 0) console.error(cliRemedy("designer-type-check")); }
 }

@@ -75,7 +75,7 @@ beforeAll(() => {
   mkdirSync(dotBin, { recursive: true });
   const installedDistDir = join(workDir, "dist");
   mkdirSync(installedDistDir, { recursive: true });
-  for (const file of ["design-conformance-rate-cli.js", "design-conformance-rate.js"]) {
+  for (const file of ["design-conformance-rate-cli.js", "design-conformance-rate.js", "cli-remedies.js"]) {
     cpSync(join(packageRoot, "dist", file), join(installedDistDir, file));
   }
   const installedCliPath = join(installedDistDir, "design-conformance-rate-cli.js");
