@@ -261,7 +261,7 @@ export type { ValidationIssue, ValidationResult, Validator } from "./validation.
 
 export { loadCatalog, validateCatalog } from "./catalog.js";
 export { openStrategy } from "./api.js";
-export type { Strategy, StatusReport } from "./api.js";
+export type { Strategy, StrategyInventoryReport } from "./api.js";
 export { compileBrief } from "./brief.js";
 export type { Brief, BriefCell } from "./brief.js";
 export { validateBriefContract, discoverBriefContracts } from "./brief-contracts.js";
@@ -281,3 +281,5 @@ export type {
   StrategyTreeNode, StrategyTree, SessionLine, Session, Finding,
   StrategyRequest, StrategyRootIssue, StrategyModel,
 } from "./format/types.js";
+export { checkCell, checkCoherence, completion, strategyStatus, validWatch, blocks, cellJudgeId } from "./checks/index.js";
+export type { Scope, JudgeVerdict, CheckOptions, CheckContext, CheckFinding, CellFinding, CoherenceFinding, CellCompletion, StorylineReport, StatusReport, CompletionReport } from "./checks/index.js";

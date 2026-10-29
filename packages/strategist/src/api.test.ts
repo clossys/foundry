@@ -3,6 +3,8 @@ import { mkdtempSync, mkdirSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
 import { openStrategy } from "./api.js";
+import { loadCatalog } from "./catalog.js";
+import { readStrategyRoot } from "./store.js";
 
 const roots: string[] = [];
 const id = "focus.segment.core";
@@ -42,12 +44,21 @@ describe("synchronous strategy read API", () => {
     expect(activated.isStale({ cell: id, version: 2 })).toBe(false);
     expect(activated.isStale({ cell: "unknown.cell.id", version: 1 })).toBe(true);
   });
-  it("uses the selected archetype core and does not claim completion", () => {
+  it("uses the selected archetype core with canonical quality and completion levels", () => {
     const strategy = openStrategy(fixture(), { archetype: "product-saas" });
-    expect(strategy.status().cells).toBe(27);
-    expect(strategy.status().active).toEqual([{ cell: id, version: 1 }]);
-    expect(strategy.status({ scope: "full" }).cells).toBe(57);
+    expect(strategy.status().counts.total).toBe(27);
+    expect(strategy.status().cells.find(cell => cell.id === id)?.active).toBe(false);
+    expect(strategy.status().cells.find(cell => cell.id === id)?.findings.some(f => f.rule === "Q7")).toBe(true);
+    expect(strategy.status().l0Clean).toBe(false);
+    expect(strategy.status({ scope: "full" }).counts.total).toBe(57);
     expect(() => openStrategy(fixture(), { archetype: "unknown" })).toThrow(/archetype/i);
+  });
+  it("keeps persisted custom core selection when an archetype is overridden", () => {
+    const root = fixture();
+    const core = [...loadCatalog().archetypes.default, "context.market.size"];
+    put(root, "tree.json", JSON.stringify({ schemaVersion: 1, catalog: "@clossys/strategist#strategy-v1", archetype: "default", core, active: { [id]: 1 } }));
+    expect(readStrategyRoot(root).issues).toEqual([]);
+    expect(openStrategy(root, { archetype: "product-saas" }).status().cells.map(cell => cell.id)).toEqual(core);
   });
   it("does not silently accept invalid or conflicting explicit contracts", () => {
     const root = fixture();
