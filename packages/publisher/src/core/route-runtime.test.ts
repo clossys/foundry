@@ -28,6 +28,22 @@ function project(frame: Record<string, unknown> = {}, descriptor: readonly strin
 }
 
 describe("route runtime frame member selection", () => {
+  it("narrows nested Section members in descriptor order and refuses an unverified choice", () => {
+    const f = syntheticRegisteredRoute(compiled);
+    const fill = { section: "sections.content" as const, content: {}, members: { ground: "sunken" } };
+    Object.assign(f.route.composition.binding, { fills: { body: [{ ...fill, children: [fill] }] } });
+    const verified = { ...f.manifest, fills: f.manifest.fills.map(row => row.leaf === "sections.content" ? { ...row, members: ["ground.base", "ground.sunken", "measure.content"] } : row) };
+    const before = runtimeHash(verified);
+    const result = resolveSelectedRouteRuntimeBinding(f.route.composition.binding, f.engine, verified);
+    expect(result.status).toBe("resolved");
+    if (result.status === "resolved") {
+      expect(result.binding.sections.body![0]!.members).toEqual(["ground.sunken", "measure.content"]);
+      expect(result.binding.sections.body![0]!.children![0]!.members).toEqual(["ground.sunken", "measure.content"]);
+    }
+    expect(runtimeHash(verified)).toBe(before);
+    Object.assign(fill, { members: { ground: "unregistered" } });
+    expect(resolveSelectedRouteRuntimeBinding(f.route.composition.binding, f.engine, verified).status).toBe("refused");
+  });
   it("projects each authored descendant from the exact selected library and retains its descriptor closure", () => {
     const f = syntheticRegisteredRoute(compiled), parent = f.fills.find(fill => fill.kind === "section" && fill.leaf !== "sections.content")!;
     Object.assign(f.route.composition.binding, { fills: { body: [{ section: parent.leaf, content: {}, children: [{ section: "sections.content", content: {} }] }] } });

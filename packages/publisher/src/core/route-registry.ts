@@ -84,7 +84,9 @@ export function normalizeRegionPageRoute(registry: RegionPageRouteRegistry, rout
     || !text(page.instanceId) || !text(page.label) || page.path !== route.path || !page.regions || !only(page.regions, ["main", "page-module", "inspector"]) || !Array.isArray(page.regions.main)
     || page.regions["page-module"] !== undefined && (!Array.isArray(page.regions["page-module"]) || page.regions["page-module"].length > 1)) throw new TypeError("Region page requires its publication's selected frame and arrangement");
   const module = page.regions["page-module"]?.[0];
-  const frame = { ...publication.frame, slotFills: { ...publication.frame.slotFills, ...(module ? { "page-module": module } : {}), ...(publication.inspector ? { inspector: publication.inspector } : {}) } };
+  // The persistent host mounts publication.inspector once. A page supplies only
+  // its context; reinserting chat here would remount it on every navigation.
+  const frame = { ...publication.frame, slotFills: { ...publication.frame.slotFills, ...(module ? { "page-module": module } : {}) } };
   const binding: InstanceBinding = { instanceId: page.instanceId, label: page.label, path: page.path, format: publication.format, surface: publication.surface, context: publication.context,
     packIds: publication.packIds, frame, layout: publication.layout, fills: { [publication.mainSlot]: page.regions.main }, body: { kind: "flow", source: { kind: "static" }, sections: page.regions.main.map((_, index) => ({ slot: publication.mainSlot, index })) } };
   return { ...route, composition: { ...route.composition, binding } };

@@ -20,7 +20,7 @@ function closedBodyFindings(binding: InstanceBinding, registries: InstanceRegist
   const ancestors = new Set<SectionFill>(), descendants: SectionFill[] = [];
   const section = (fill: SectionFill, depth = 0) => {
     if (depth > 8 || ancestors.has(fill)) { findings.push("Section nesting must be bounded and acyclic"); return; }
-    if (!fields(fill, ["section", "config", "span", "content", "children"]) || !fields(fill.content, Object.keys(fill.content ?? {})) || Object.values(fill.content).some(ref => !fields(ref, ["kind", "ref"]))) { findings.push("Section fill/content has unknown fields"); return; }
+    if (!fields(fill, ["section", "config", "members", "span", "content", "children"]) || !fields(fill.content, Object.keys(fill.content ?? {})) || Object.values(fill.content).some(ref => !fields(ref, ["kind", "ref"]))) { findings.push("Section fill/content has unknown fields"); return; }
     if (fill.children !== undefined) {
       if (body.kind !== "flow" || !Array.isArray(fill.children) || !fill.children.length) { findings.push("Nested Sections require a non-empty authored flow list"); return; }
       ancestors.add(fill); fill.children.forEach(child => { descendants.push(child); section(child, depth + 1); }); ancestors.delete(fill);
