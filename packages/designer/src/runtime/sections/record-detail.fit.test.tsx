@@ -5,7 +5,7 @@ import { renderRecordDetail } from "./record-detail.js";
 import type { SectionRenderInput } from "./group-b-support.js";
 
 it("keeps both authored record actions in the compact existing Menu", async () => {
-  const input = { content: {
+  const input = { sectionHost: { recordDetail: { title: "Publication", fields: [{ label: "Name", value: "Publication" }], actionsLabel: "Actions" } }, content: {
     actions: { value: [{ id: "edit", label: "Edit" }, { id: "duplicate", label: "Duplicate" }] },
     fields: { value: [{ label: "Name", value: "Publication" }] },
   }, cell: { state: "default" } } as unknown as SectionRenderInput;

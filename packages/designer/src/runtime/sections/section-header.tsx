@@ -26,7 +26,7 @@ export const renderSectionHeader: SectionRenderer = input => {
   if (align !== undefined && !(ALIGNS as readonly string[]).includes(align)) throw new TypeError(`${LEAF}: align.${align} is not a SectionHeader alignment`);
   if (density !== undefined && !(DENSITIES as readonly string[]).includes(density)) throw new TypeError(`${LEAF}: density.${density} is not a SectionHeader density`);
   const selectedLevel = input.selection.config;
-  const level = selectedLevel === null ? 2 : /^level-[2-6]$/.test(selectedLevel) ? Number(selectedLevel.slice(-1)) as 2 | 3 | 4 | 5 | 6 : (() => { throw new TypeError(`${LEAF}: unsupported level configuration ${selectedLevel}`); })();
+  const level = selectedLevel === null || selectedLevel === "default" ? 2 : /^level-[2-6]$/.test(selectedLevel) ? Number(selectedLevel.slice(-1)) as 2 | 3 | 4 | 5 | 6 : (() => { throw new TypeError(`${LEAF}: unsupported level configuration ${selectedLevel}`); })();
   const stats = recordsOf(LEAF, "stats", slotValue(input, "stats")).map((row, index) => {
     const label = stringField(row, "label");
     if (!label) throw new TypeError(`${LEAF}: stat ${index} needs a resolved label`);

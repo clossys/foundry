@@ -11,13 +11,16 @@ import { specimenDataset } from "../studio/specimen-dataset.js";
 import { ShellCopyProvider } from "../components/Banner.copy-context.js";
 import { shellCopyFixtureResolver } from "../frames/__fixtures__/shell-copy.js";
 import { surfaceRuntimeRenderers } from "./index.js";
-import { surfaceRuntimePreview, type SurfacePreviewEntry } from "./preview.js";
+import { copyPortsFor } from "./sections/__fixtures__/copy-ports.js";
+import { surfaceRuntimePreview as previewWithoutHost, type SurfacePreviewEntry } from "./preview.js";
 
 beforeEach(() => {
   vi.stubGlobal("matchMedia", (media: string) => ({ media, matches: media.includes("min-width") || media === "all", addEventListener() {}, removeEventListener() {}, addListener() {}, removeListener() {} }));
   vi.stubGlobal("ResizeObserver", class { observe() {} unobserve() {} disconnect() {} });
 });
 afterEach(() => { cleanup(); vi.unstubAllGlobals(); });
+
+const surfaceRuntimePreview = (entry: SurfacePreviewEntry) => previewWithoutHost(entry, { sectionHost: copyPortsFor(String(entry.slot)) });
 
 const fills = resolve(dirname(fileURLToPath(import.meta.url)), "../catalog/fills/foundry");
 const entryOf = (leaf: string): SurfacePreviewEntry => {

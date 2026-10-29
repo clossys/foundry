@@ -1,7 +1,7 @@
 import { dsAttrs } from "../../catalog-core/provenance-attrs.js";
 import { recordsOf, stateOf, type GroupBSection, type SectionRenderInput } from "./group-b-support.js";
 import { TableFill, type ColumnRecord, type RowRecord } from "./group-b-table.js";
-import { specimenDataset } from "../../studio/specimen-dataset.js";
+import { tableCopyOf } from "./copy-ports.js";
 
 /** One pinning record: a column kept at the leading edge (the first three pins are honoured). */
 export interface PinRecord { readonly column: string }
@@ -15,9 +15,10 @@ export interface PinRecord { readonly column: string }
 const STAMP = dsAttrs("sections", "sections.data-grid", "foundry/sections.data-grid");
 
 export function renderDataGrid(input: SectionRenderInput) {
+  const copy = tableCopyOf(input);
   return <TableFill
     stamp={STAMP}
-    label={specimenDataset.sections.dataGrid.label}
+    label={copy.label} emptyTitle={copy.emptyTitle} emptyDescription={copy.emptyDescription}
     columns={recordsOf<ColumnRecord>(input, "cells")}
     rows={recordsOf<RowRecord>(input, "rows")}
     pinned={recordsOf<PinRecord>(input, "pinning").map(pin => pin.column)}

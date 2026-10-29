@@ -4,19 +4,21 @@ import { cleanup, fireEvent, render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import type { RuntimeRenderInput } from "../../catalog-core/runtime-ports.js";
+import { copyPortsFor } from "./__fixtures__/copy-ports.js";
 import { renderSectionHeader } from "./section-header.js";
 import { renderBandSection } from "./band.js";
 import { renderDataTable } from "./data-table.js";
 import { renderTableOfContents } from "./table-of-contents.js";
 
 function input(leaf: string, values: Record<string, unknown>, config: string | null = null): RuntimeRenderInput<ReactNode> {
-  return { fill: { leaf, config, slots: Object.keys(values), members: ["ground.sunken"] }, selection: { leaf, members: [], config }, cell: { state: "default" }, content: Object.fromEntries(Object.entries(values).map(([key, value]) => [key, { value }])), slots: {}, profile: {} } as unknown as RuntimeRenderInput<ReactNode>;
+  return { sectionHost: copyPortsFor(leaf), fill: { leaf, config, slots: Object.keys(values), members: ["ground.sunken"] }, selection: { leaf, members: [], config }, cell: { state: "default" }, content: Object.fromEntries(Object.entries(values).map(([key, value]) => [key, { value }])), slots: {}, profile: {} } as unknown as RuntimeRenderInput<ReactNode>;
 }
 afterEach(() => { cleanup(); vi.unstubAllGlobals(); });
 describe("scroll section kit", () => {
   it("renders the section-header sample with a bounded heading level and stats", () => {
     const html = renderToStaticMarkup(renderSectionHeader(input("sections.section-header", { heading: "Components", stats: [{ id: "count", label: "59 records" }, { id: "status", label: "Draft", tone: "info" }] }, "level-3")));
     expect(html).toContain("<h3");
+    expect(renderToStaticMarkup(renderSectionHeader(input("sections.section-header", { heading: "Default" }, "default")))).toContain("<h2");
     expect(html).toContain("59 records");
     expect(html).toContain("Draft");
     expect(() => renderSectionHeader(input("sections.section-header", { heading: "Invalid" }, "level-1"))).toThrow(/level/);
@@ -33,7 +35,7 @@ describe("scroll section kit", () => {
     const pin = vi.fn();
     const format = vi.fn(({ page }: { page: number }) => page === 1 ? "Writer first range" : "Writer second range");
     const value = input("sections.data-table", { header: { heading: "Inputs", level: 4 }, columns: [{ id: "name", label: "Name", kind: "text" }], rows: Array.from({ length: 205 }, (_, n) => ({ id: String(n), name: `Row ${n}` })), selection: [], pagination: { showAll: "Show all (205)", label: "Rows", previous: "Previous", next: "Next", summary: "Page" } });
-    Object.assign(value, { sectionHost: { onSelectionChange: pin, paginationSummary: format } });
+    Object.assign(value, { sectionHost: { ...copyPortsFor("sections.data-table"), onSelectionChange: pin, paginationSummary: format } });
     render(renderDataTable(value));
     expect(screen.queryByText("Row 10")).toBeNull();
     fireEvent.click(screen.getByRole("button", { name: "Show all (205)" }));
@@ -50,7 +52,7 @@ describe("scroll section kit", () => {
   });
   it("renders a preview only through the supplied runtime port", () => {
     const value = input("sections.data-table", { columns: [{ id: "preview", label: "Preview", kind: "preview" }, { id: "name", label: "Name", kind: "text" }], rows: [{ id: "components.button", preview: "components.button", name: "Button", href: "/agents/designer/components/button" }] });
-    Object.assign(value, { sectionHost: { renderPreview: (id: string) => createElement("span", null, `Preview ${id}`) } });
+    Object.assign(value, { sectionHost: { ...copyPortsFor("sections.data-table"), renderPreview: (id: string) => createElement("span", null, `Preview ${id}`) } });
     const html = renderToStaticMarkup(renderDataTable(value));
     expect(html).toContain("Preview components.button");
     expect(html).toContain('href="/agents/designer/components/button"');
