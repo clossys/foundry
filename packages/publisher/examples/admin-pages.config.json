@@ -1,0 +1,771 @@
+[
+  {
+    "version": 1,
+    "id": "designer",
+    "entryId": "admin.designer",
+    "namespace": "admin.designer",
+    "title": {
+      "id": "strings.admin.page.designer"
+    },
+    "levels": {
+      "l0": {
+        "verb": "normalize",
+        "header": {
+          "section": "sections.section-header",
+          "config": "level-2",
+          "members": {
+            "align": "start",
+            "density": "compact"
+          }
+        },
+        "empty": {
+          "section": "sections.empty-state",
+          "members": {
+            "kind": "empty",
+            "scope": "region"
+          }
+        }
+      },
+      "l1": {
+        "verb": "unlock",
+        "band": {
+          "section": "sections.band",
+          "members": {
+            "ground": "sunken",
+            "measure": "wide"
+          }
+        },
+        "header": {
+          "section": "sections.section-header",
+          "config": "level-3",
+          "members": {
+            "align": "start",
+            "density": "compact"
+          }
+        },
+        "key": "id"
+      },
+      "l2": {
+        "verb": "cohere",
+        "table": {
+          "section": "sections.data-table"
+        },
+        "key": "id"
+      },
+      "l3": {
+        "verb": "create",
+        "key": "id"
+      }
+    },
+    "columns": [
+      {
+        "key": "preview",
+        "kind": "preview",
+        "label": {
+          "id": "strings.admin.column.preview"
+        }
+      },
+      {
+        "key": "name",
+        "kind": "text",
+        "label": {
+          "id": "strings.admin.column.name"
+        }
+      },
+      {
+        "key": "source",
+        "kind": "text",
+        "label": {
+          "id": "strings.admin.column.source"
+        }
+      },
+      {
+        "key": "status",
+        "kind": "status",
+        "label": {
+          "id": "strings.admin.column.status"
+        }
+      },
+      {
+        "key": "usedBy",
+        "kind": "list",
+        "label": {
+          "id": "strings.admin.column.usedBy"
+        }
+      }
+    ],
+    "copy": {
+      "outline": {
+        "id": "strings.admin.outline.label"
+      },
+      "count": {
+        "id": "strings.admin.stats.total"
+      },
+      "itemHeading": {
+        "id": "strings.admin.item.heading"
+      },
+      "itemActionsLabel": {
+        "id": "strings.admin.item.actionsLabel"
+      },
+      "table": {
+        "label": {
+          "id": "strings.admin.table.label"
+        },
+        "emptyTitle": {
+          "id": "strings.admin.empty.title"
+        },
+        "emptyDescription": {
+          "id": "strings.admin.empty.description"
+        },
+        "paginationLabel": {
+          "id": "strings.admin.pagination.label"
+        },
+        "summary": {
+          "id": "strings.admin.pagination.range"
+        }
+      },
+      "chat": {
+        "label": {
+          "id": "strings.admin.chat.label"
+        },
+        "placeholder": {
+          "id": "strings.admin.chat.placeholder"
+        },
+        "labels": {
+          "logLabel": {
+            "id": "strings.admin.chat.logLabel"
+          },
+          "userLabel": {
+            "id": "strings.admin.chat.userLabel"
+          },
+          "assistantLabel": {
+            "id": "strings.admin.chat.assistantLabel"
+          },
+          "actionGroupLabel": {
+            "id": "strings.admin.chat.actionGroupLabel"
+          },
+          "copyMessageLabel": {
+            "id": "strings.admin.chat.copyMessageLabel"
+          },
+          "regenerateLabel": {
+            "id": "strings.admin.chat.regenerateLabel"
+          },
+          "helpfulLabel": {
+            "id": "strings.admin.chat.helpfulLabel"
+          },
+          "unhelpfulLabel": {
+            "id": "strings.admin.chat.unhelpfulLabel"
+          },
+          "emptyLabel": {
+            "id": "strings.admin.chat.emptyLabel"
+          },
+          "jumpLabel": {
+            "id": "strings.admin.chat.jumpLabel"
+          },
+          "streamingLabel": {
+            "id": "strings.admin.chat.streamingLabel"
+          },
+          "errorLabel": {
+            "id": "strings.admin.chat.errorLabel"
+          },
+          "retryLabel": {
+            "id": "strings.admin.chat.retryLabel"
+          },
+          "composerLabel": {
+            "id": "strings.admin.chat.composerLabel"
+          },
+          "stopLabel": {
+            "id": "strings.admin.chat.stopLabel"
+          },
+          "sendLabel": {
+            "id": "strings.admin.chat.sendLabel"
+          },
+          "copyCodeLabel": {
+            "id": "strings.admin.chat.copyCodeLabel"
+          },
+          "copiedLabel": {
+            "id": "strings.admin.chat.copiedLabel"
+          },
+          "copyUnavailableLabel": {
+            "id": "strings.admin.chat.copyUnavailableLabel"
+          }
+        }
+      }
+    },
+    "item": {
+      "entryId": "admin.designer.item",
+      "sections": [
+        {
+          "id": "details",
+          "label": {
+            "id": "strings.admin.item.details"
+          },
+          "estimate": 200,
+          "fill": {
+            "section": "sections.record-detail",
+            "content": {
+              "fields": {
+                "kind": "records",
+                "ref": "admin.designer/item/fields"
+              },
+              "status": {
+                "kind": "copy",
+                "ref": "admin.designer/item/status"
+              }
+            }
+          }
+        },
+        {
+          "id": "preview",
+          "label": {
+            "id": "strings.admin.column.preview"
+          },
+          "estimate": 200,
+          "fill": {
+            "section": "sections.data-table",
+            "content": {
+              "header": {
+                "kind": "copy",
+                "ref": "admin.designer/item/preview/header"
+              },
+              "columns": {
+                "kind": "records",
+                "ref": "admin.designer/item/preview/columns"
+              },
+              "rows": {
+                "kind": "records",
+                "ref": "admin.designer/item/preview/rows"
+              },
+              "pagination": {
+                "kind": "region",
+                "ref": "admin.designer/item/preview/pagination"
+              }
+            }
+          }
+        }
+      ]
+    }
+  },
+  {
+    "version": 1,
+    "id": "writer",
+    "entryId": "admin.writer",
+    "namespace": "admin.writer",
+    "title": {
+      "id": "strings.admin.page.writer"
+    },
+    "levels": {
+      "l0": {
+        "verb": "normalize",
+        "header": {
+          "section": "sections.section-header",
+          "config": "level-2",
+          "members": {
+            "align": "start",
+            "density": "compact"
+          }
+        },
+        "empty": {
+          "section": "sections.empty-state",
+          "members": {
+            "kind": "empty",
+            "scope": "region"
+          }
+        }
+      },
+      "l1": {
+        "verb": "unlock",
+        "band": {
+          "section": "sections.band",
+          "members": {
+            "ground": "sunken",
+            "measure": "wide"
+          }
+        },
+        "header": {
+          "section": "sections.section-header",
+          "config": "level-3",
+          "members": {
+            "align": "start",
+            "density": "compact"
+          }
+        },
+        "key": "id"
+      },
+      "l2": {
+        "verb": "cohere",
+        "table": {
+          "section": "sections.data-table"
+        },
+        "key": "id"
+      },
+      "l3": {
+        "verb": "create",
+        "key": "id"
+      }
+    },
+    "columns": [
+      {
+        "key": "key",
+        "kind": "text",
+        "label": {
+          "id": "strings.admin.column.key"
+        }
+      },
+      {
+        "key": "text",
+        "kind": "text",
+        "label": {
+          "id": "strings.admin.column.text"
+        }
+      },
+      {
+        "key": "localeCoverage",
+        "kind": "list",
+        "label": {
+          "id": "strings.admin.column.localeCoverage"
+        }
+      },
+      {
+        "key": "status",
+        "kind": "status",
+        "label": {
+          "id": "strings.admin.column.status"
+        }
+      },
+      {
+        "key": "usedIn",
+        "kind": "list",
+        "label": {
+          "id": "strings.admin.column.usedIn"
+        }
+      }
+    ],
+    "copy": {
+      "outline": {
+        "id": "strings.admin.outline.label"
+      },
+      "count": {
+        "id": "strings.admin.stats.total"
+      },
+      "itemHeading": {
+        "id": "strings.admin.item.heading"
+      },
+      "itemActionsLabel": {
+        "id": "strings.admin.item.actionsLabel"
+      },
+      "table": {
+        "label": {
+          "id": "strings.admin.table.label"
+        },
+        "emptyTitle": {
+          "id": "strings.admin.empty.title"
+        },
+        "emptyDescription": {
+          "id": "strings.admin.empty.description"
+        },
+        "paginationLabel": {
+          "id": "strings.admin.pagination.label"
+        },
+        "summary": {
+          "id": "strings.admin.pagination.range"
+        }
+      },
+      "chat": {
+        "label": {
+          "id": "strings.admin.chat.label"
+        },
+        "placeholder": {
+          "id": "strings.admin.chat.placeholder"
+        },
+        "labels": {
+          "logLabel": {
+            "id": "strings.admin.chat.logLabel"
+          },
+          "userLabel": {
+            "id": "strings.admin.chat.userLabel"
+          },
+          "assistantLabel": {
+            "id": "strings.admin.chat.assistantLabel"
+          },
+          "actionGroupLabel": {
+            "id": "strings.admin.chat.actionGroupLabel"
+          },
+          "copyMessageLabel": {
+            "id": "strings.admin.chat.copyMessageLabel"
+          },
+          "regenerateLabel": {
+            "id": "strings.admin.chat.regenerateLabel"
+          },
+          "helpfulLabel": {
+            "id": "strings.admin.chat.helpfulLabel"
+          },
+          "unhelpfulLabel": {
+            "id": "strings.admin.chat.unhelpfulLabel"
+          },
+          "emptyLabel": {
+            "id": "strings.admin.chat.emptyLabel"
+          },
+          "jumpLabel": {
+            "id": "strings.admin.chat.jumpLabel"
+          },
+          "streamingLabel": {
+            "id": "strings.admin.chat.streamingLabel"
+          },
+          "errorLabel": {
+            "id": "strings.admin.chat.errorLabel"
+          },
+          "retryLabel": {
+            "id": "strings.admin.chat.retryLabel"
+          },
+          "composerLabel": {
+            "id": "strings.admin.chat.composerLabel"
+          },
+          "stopLabel": {
+            "id": "strings.admin.chat.stopLabel"
+          },
+          "sendLabel": {
+            "id": "strings.admin.chat.sendLabel"
+          },
+          "copyCodeLabel": {
+            "id": "strings.admin.chat.copyCodeLabel"
+          },
+          "copiedLabel": {
+            "id": "strings.admin.chat.copiedLabel"
+          },
+          "copyUnavailableLabel": {
+            "id": "strings.admin.chat.copyUnavailableLabel"
+          }
+        }
+      }
+    },
+    "item": {
+      "entryId": "admin.writer.item",
+      "sections": [
+        {
+          "id": "details",
+          "label": {
+            "id": "strings.admin.item.details"
+          },
+          "estimate": 200,
+          "fill": {
+            "section": "sections.record-detail",
+            "content": {
+              "fields": {
+                "kind": "records",
+                "ref": "admin.writer/item/fields"
+              },
+              "status": {
+                "kind": "copy",
+                "ref": "admin.writer/item/status"
+              }
+            }
+          }
+        },
+        {
+          "id": "locales",
+          "label": {
+            "id": "strings.admin.item.locales"
+          },
+          "estimate": 200,
+          "fill": {
+            "section": "sections.data-table",
+            "content": {
+              "header": {
+                "kind": "copy",
+                "ref": "admin.writer/item/locales/header"
+              },
+              "columns": {
+                "kind": "records",
+                "ref": "admin.writer/item/locales/columns"
+              },
+              "rows": {
+                "kind": "records",
+                "ref": "admin.writer/item/locales/rows"
+              },
+              "pagination": {
+                "kind": "region",
+                "ref": "admin.writer/item/locales/pagination"
+              }
+            }
+          }
+        }
+      ]
+    }
+  },
+  {
+    "version": 1,
+    "id": "publisher",
+    "entryId": "admin.publisher",
+    "namespace": "admin.publisher",
+    "title": {
+      "id": "strings.admin.page.publisher"
+    },
+    "levels": {
+      "l0": {
+        "verb": "normalize",
+        "header": {
+          "section": "sections.section-header",
+          "config": "level-2",
+          "members": {
+            "align": "start",
+            "density": "compact"
+          }
+        },
+        "empty": {
+          "section": "sections.empty-state",
+          "members": {
+            "kind": "empty",
+            "scope": "region"
+          }
+        }
+      },
+      "l1": {
+        "verb": "unlock",
+        "band": {
+          "section": "sections.band",
+          "members": {
+            "ground": "sunken",
+            "measure": "wide"
+          }
+        },
+        "header": {
+          "section": "sections.section-header",
+          "config": "level-3",
+          "members": {
+            "align": "start",
+            "density": "compact"
+          }
+        },
+        "key": "id"
+      },
+      "l2": {
+        "verb": "cohere",
+        "table": {
+          "section": "sections.data-table"
+        },
+        "key": "id"
+      },
+      "l3": {
+        "verb": "create",
+        "key": "id"
+      }
+    },
+    "columns": [
+      {
+        "key": "item",
+        "kind": "text",
+        "label": {
+          "id": "strings.admin.column.item"
+        }
+      },
+      {
+        "key": "contentSource",
+        "kind": "list",
+        "label": {
+          "id": "strings.admin.column.contentSource"
+        }
+      },
+      {
+        "key": "positionRoute",
+        "kind": "text",
+        "label": {
+          "id": "strings.admin.column.positionRoute"
+        }
+      },
+      {
+        "key": "status",
+        "kind": "status",
+        "label": {
+          "id": "strings.admin.column.status"
+        }
+      },
+      {
+        "key": "lastPublished",
+        "kind": "date",
+        "label": {
+          "id": "strings.admin.column.lastPublished"
+        }
+      }
+    ],
+    "copy": {
+      "outline": {
+        "id": "strings.admin.outline.label"
+      },
+      "count": {
+        "id": "strings.admin.stats.total"
+      },
+      "itemHeading": {
+        "id": "strings.admin.item.heading"
+      },
+      "itemActionsLabel": {
+        "id": "strings.admin.item.actionsLabel"
+      },
+      "table": {
+        "label": {
+          "id": "strings.admin.table.label"
+        },
+        "emptyTitle": {
+          "id": "strings.admin.empty.title"
+        },
+        "emptyDescription": {
+          "id": "strings.admin.empty.description"
+        },
+        "paginationLabel": {
+          "id": "strings.admin.pagination.label"
+        },
+        "summary": {
+          "id": "strings.admin.pagination.range"
+        }
+      },
+      "chat": {
+        "label": {
+          "id": "strings.admin.chat.label"
+        },
+        "placeholder": {
+          "id": "strings.admin.chat.placeholder"
+        },
+        "labels": {
+          "logLabel": {
+            "id": "strings.admin.chat.logLabel"
+          },
+          "userLabel": {
+            "id": "strings.admin.chat.userLabel"
+          },
+          "assistantLabel": {
+            "id": "strings.admin.chat.assistantLabel"
+          },
+          "actionGroupLabel": {
+            "id": "strings.admin.chat.actionGroupLabel"
+          },
+          "copyMessageLabel": {
+            "id": "strings.admin.chat.copyMessageLabel"
+          },
+          "regenerateLabel": {
+            "id": "strings.admin.chat.regenerateLabel"
+          },
+          "helpfulLabel": {
+            "id": "strings.admin.chat.helpfulLabel"
+          },
+          "unhelpfulLabel": {
+            "id": "strings.admin.chat.unhelpfulLabel"
+          },
+          "emptyLabel": {
+            "id": "strings.admin.chat.emptyLabel"
+          },
+          "jumpLabel": {
+            "id": "strings.admin.chat.jumpLabel"
+          },
+          "streamingLabel": {
+            "id": "strings.admin.chat.streamingLabel"
+          },
+          "errorLabel": {
+            "id": "strings.admin.chat.errorLabel"
+          },
+          "retryLabel": {
+            "id": "strings.admin.chat.retryLabel"
+          },
+          "composerLabel": {
+            "id": "strings.admin.chat.composerLabel"
+          },
+          "stopLabel": {
+            "id": "strings.admin.chat.stopLabel"
+          },
+          "sendLabel": {
+            "id": "strings.admin.chat.sendLabel"
+          },
+          "copyCodeLabel": {
+            "id": "strings.admin.chat.copyCodeLabel"
+          },
+          "copiedLabel": {
+            "id": "strings.admin.chat.copiedLabel"
+          },
+          "copyUnavailableLabel": {
+            "id": "strings.admin.chat.copyUnavailableLabel"
+          }
+        }
+      }
+    },
+    "item": {
+      "entryId": "admin.publisher.item",
+      "sections": [
+        {
+          "id": "details",
+          "label": {
+            "id": "strings.admin.item.details"
+          },
+          "estimate": 200,
+          "fill": {
+            "section": "sections.record-detail",
+            "content": {
+              "fields": {
+                "kind": "records",
+                "ref": "admin.publisher/item/fields"
+              },
+              "status": {
+                "kind": "copy",
+                "ref": "admin.publisher/item/status"
+              }
+            }
+          }
+        },
+        {
+          "id": "sections",
+          "label": {
+            "id": "strings.admin.item.sections"
+          },
+          "estimate": 200,
+          "fill": {
+            "section": "sections.data-table",
+            "content": {
+              "header": {
+                "kind": "copy",
+                "ref": "admin.publisher/item/sections/header"
+              },
+              "columns": {
+                "kind": "records",
+                "ref": "admin.publisher/item/sections/columns"
+              },
+              "rows": {
+                "kind": "records",
+                "ref": "admin.publisher/item/sections/rows"
+              },
+              "pagination": {
+                "kind": "region",
+                "ref": "admin.publisher/item/sections/pagination"
+              }
+            }
+          }
+        },
+        {
+          "id": "releases",
+          "label": {
+            "id": "strings.admin.item.releases"
+          },
+          "estimate": 200,
+          "fill": {
+            "section": "sections.data-table",
+            "content": {
+              "header": {
+                "kind": "copy",
+                "ref": "admin.publisher/item/releases/header"
+              },
+              "columns": {
+                "kind": "records",
+                "ref": "admin.publisher/item/releases/columns"
+              },
+              "rows": {
+                "kind": "records",
+                "ref": "admin.publisher/item/releases/rows"
+              },
+              "pagination": {
+                "kind": "region",
+                "ref": "admin.publisher/item/releases/pagination"
+              }
+            }
+          }
+        }
+      ]
+    }
+  }
+]

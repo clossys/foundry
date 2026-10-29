@@ -9,7 +9,7 @@ import { adminCopyFixture, copyEnvelopes, pages } from "./__fixtures__/copy.mjs"
 import { prepareAdminPageCopyEnvelopes } from "./admin-copy-source.js";
 import { adminPageContent, createAdminPageCopy, writerCopy } from "./admin-copy.js";
 import { adminPageSectionHosts, ADMIN_CHAT_LABEL_KEYS } from "./admin-copy-ports.js";
-import { createAdminPageRegistry } from "./admin-page.js";
+import { createAdminPageRegistry } from "./__fixtures__/consumer-pages.mjs";
 import { createRegisteredPublicationSession } from "../registered-route-query.js";
 
 function input(leaf: string, values: Record<string, unknown>, sectionHost?: Record<string, unknown>): RuntimeRenderInput<ReactNode> {
@@ -26,7 +26,9 @@ it("renders Writer-bound item and empty-table copy through the selected native r
   expect(detail).not.toMatch(/Order #?1042/);
   expect(empty).toContain(copy("strings.admin.empty.title")); expect(empty).toContain(copy("strings.admin.empty.description"));
   expect(empty).not.toMatch(/No orders yet|customer checks out/);
-  expect(hosts["sections.data-table"].paginationSummary({start:101,end:200,total:250,page:2,pageCount:3})).toBe(copy("strings.admin.pagination.range",{start:101,end:200,total:250}));
+  const tableHost = hosts["sections.data-table"];
+  expect(tableHost.paginationSummary).toMatchObject({ key: "pagination.totalText", writerId: pages.aliases["strings.admin.pagination.range"], locale: "en" });
+  expect(tableHost.formatCopyMessage({ ...tableHost.paginationSummary, values: {start:101,end:200,total:250,page:2,pageCount:3} })).toBe(copy("strings.admin.pagination.range",{start:101,end:200,total:250}));
   expect(copy.provenance().some(value=>value.provenance.cellId === "strings.admin.item.heading")).toBe(true);
   expect(()=>adminPageSectionHosts({copy,title,item:true})).toThrow(/fields/);
 });

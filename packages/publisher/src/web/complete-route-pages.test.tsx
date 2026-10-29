@@ -6,7 +6,9 @@ import { afterEach, beforeAll, expect, it, vi } from "vitest";
 import { readFile } from "node:fs/promises";
 import { publisherCopyFixtureResolver } from "./publisher/__fixtures__/writer-copy.js";
 import userEvent from "@testing-library/user-event";
-import { DesignerRoutePage, PublisherRoutePage, WriterRoutePage, type WriterRouteServerData } from "@clossys/publisher/web/registered-route";
+import { DesignerRoutePage } from "./DesignerRoutePage.js";
+import { PublisherRoutePage } from "./publisher/PublisherRoutePage.js";
+import { WriterRoutePage, type WriterRouteServerData } from "./writer/WriterRoutePage.js";
 import { ShellCopyProvider, SHELL_COPY_REFS } from "@clossys/designer/frames";
 import { getAdminCopy, resolveAdminCopyRef, type AdminCopy } from "@clossys/writer/admin-copy";
 import { WRITER_COPY_REFS } from "./writer/copy.js";
@@ -14,7 +16,7 @@ import { emitCompleteRoutePage } from "./registered-route-source.js";
 import { createWholeStudioInitialSession } from "@clossys/designer/studio/queries";
 import { designerRouteServerData, routeBreakpointPixels } from "@clossys/designer/studio/route/server";
 import type { DesignerRoutePageProps, DesignerRouteServerData } from "@clossys/designer/studio/route";
-import type { PublisherRoutePageProps, PublisherRouteServerData } from "@clossys/publisher/web/registered-route";
+import type { PublisherRoutePageProps, PublisherRouteServerData } from "./publisher/PublisherRoutePage.js";
 import { loadBuildCatalog, planSurfaceRuntime, resolve, runtimeHash } from "@clossys/designer/catalog";
 import type { RuntimeContent, RuntimeJson, SurfacePackageEvidence } from "@clossys/designer/catalog";
 import { readSurfacePackageEvidence } from "@clossys/designer/catalog/server";
@@ -129,25 +131,10 @@ it("changes the active original Designer layer after mount without replacing its
   expect(errors.mock.calls).toEqual([]);
 }, 30000);
 
-it("emits only a server loader and the two complete component props", () => {
+it("refuses retired complete-page emission instead of naming deleted public bodies", () => {
   for (const kind of ["designer", "publisher", "writer"] as const) {
-    const component = kind === "designer" ? "DesignerRoutePage" : kind === "writer" ? "WriterRoutePage" : "PublisherRoutePage";
-    const source = emitCompleteRoutePage({ kind, file: "src/app/page.tsx", loader: { file: "src/data.ts", export: "loadData" } });
-    expect(source).toBe([
-      `import { ${component} } from "@clossys/publisher/web/registered-route";`,
-      'import { loadData as loadRouteData } from "../data.ts";',
-      'const metadata = {"robots":"noindex, nofollow","twitter":{"card":"summary"}};',
-      "export { metadata };",
-      "export default async function CompletePage() {",
-      "  const data = await loadRouteData();",
-      `  return <${component} serverData={data.serverData} initialSession={data.initialSession} />;`,
-      "}", "",
-    ].join("\n"));
-    expect(source).not.toMatch(/useRuntime|Provider|controller|registry=/);
+    expect(() => emitCompleteRoutePage({ kind, file: "src/app/page.tsx", loader: { file: "src/data.ts", export: "loadData" } })).toThrow(/consumer page config/);
   }
-  expect(() => emitCompleteRoutePage({ kind: "other", file: "page.tsx", loader: { file: "data.ts", export: "load" } } as never)).toThrow();
-  expect(() => emitCompleteRoutePage({ kind: "designer", file: "../page.tsx", loader: { file: "data.ts", export: "load" } })).toThrow();
-  expect(() => emitCompleteRoutePage({ kind: "designer", file: "page.tsx", loader: { file: "data.ts", export: "bad-export" } })).toThrow();
 });
 it("converts rem only from a selected declared root token or actual measurements", () => {
   const profile = { values: { members: {

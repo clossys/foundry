@@ -430,6 +430,7 @@
     ]
   },
   "files": [
+    "examples",
     "dist",
     "src",
     "!src/**/*.test.ts",
