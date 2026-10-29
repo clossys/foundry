@@ -105,9 +105,9 @@ describe("draft frame registry", () => {
   it("preserves the original nine frame rows exactly and registers the standalone auth shell", () => {
     const original = slots.filter(slot => slot.id !== "frames.auth-shell" && slot.id !== "frames.document");
     expect(original).toHaveLength(9);
-    // JSON.stringify hash measured from the full rows at da8a1f97; no Git dependency during tests.
+    // SCROLL-1 A158/A159: exact app-shell page-module/state/progress ports and app-header actions changed; unrelated rows remain pinned.
     expect(createHash("sha256").update(JSON.stringify(original)).digest("hex"))
-      .toBe("08eff315bf6551ba06bc9536068cfa9690c12bd975d5e323038d9d18f50e9afa");
+      .toBe("6a93677b1f84f5d1068ac4a72893a53f9a9c3551c54a3ba6fe9a0bebfff8600c");
     expect(slots.find(slot => slot.id === "frames.auth-shell")).toEqual({
       id: "frames.auth-shell", layer: "frames", requires: [], status: "draft",
       contract: {
@@ -123,6 +123,12 @@ describe("draft frame registry", () => {
     expect(placementData.nodes[0]?.children?.find(node => node.id === "page-shells-authentication")).toEqual({
       id: "page-shells-authentication", label: "Authentication", leaves: ["frames.auth-shell"],
     });
+  });
+
+  it("pins the scroll frame regions and bounded navigation state", () => {
+    expect(byId("app-shell").slots.filter(slot => ["page-module", "state"].includes(slot.id))).toEqual([{ id: "page-module", required: false, accepts: "sections.*" }, { id: "state", required: false, accepts: "host-node" }]);
+    expect(byId("app-shell").statePorts.filter(port => ["navigating", "main-state"].includes(port.id))).toEqual([{ id: "navigating", type: "boolean" }, { id: "main-state", type: "string", values: ["ready", "loading", "error", "not-found", "forbidden"] }]);
+    expect(byId("app-header").slots.find(slot => slot.id === "actions")?.accepts).toBe("host-node");
   });
 
   it("detects a duplicate placement even when every leaf is still present", () => {

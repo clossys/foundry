@@ -4,7 +4,7 @@ import { StatusMark, type StatusMarkTone } from "../../components/StatusMark.js"
 import { Menu } from "../../components/Menu.js";
 import { Button } from "../../components/Button.js";
 import { Link } from "../../components/Link.js";
-import { actionsOf, memberOf, noop, refuseUnmapped, requiredText, recordsOf, stringField, slotValue, textOf, type SectionInputs, type SectionRenderer } from "./group-c-content.js";
+import { actionsOf, memberOf, noop, refuseUnmapped, requiredText, recordsOf, stringField, isObject, slotValue, textOf, type SectionInputs, type SectionRenderer } from "./group-c-content.js";
 
 const LEAF = "sections.section-header";
 const ALIGNS = ["start", "center"] as const;
@@ -34,13 +34,16 @@ export const renderSectionHeader: SectionRenderer = input => {
     if (tone && !["neutral", "info", "success", "warning", "danger"].includes(tone)) throw new TypeError(`${LEAF}: invalid stat tone`);
     return <Badge key={stringField(row, "id") ?? index}>{tone ? <StatusMark tone={tone as StatusMarkTone}>{label}</StatusMark> : label}</Badge>;
   });
-  const allActions = actionsOf(LEAF, "actions", slotValue(input, "actions"));
-  const overflow = allActions.slice(2);
-  const overflowLabel = input.sectionHost?.overflowLabel;
-  if (overflow.length && typeof overflowLabel !== "string") throw new TypeError(`${LEAF}: overflowLabel is required for more than two actions`);
-  const actions = allActions.slice(0, 2).map((action, index) => action.href
-    ? <Link key={action.id} href={action.href} variant="standalone">{action.label}</Link>
-    : <Button key={action.id} variant={index === 0 ? "primary" : "secondary"} onPress={() => { const handler = input.sectionHost?.onAction; if (typeof handler === "function") handler(action.id); else noop(); }}>{action.label}</Button>);
+  const actionValue = slotValue(input, "actions");
+  const rawActions = Array.isArray(actionValue) ? actionValue : actionValue === undefined ? [] : [actionValue];
+  const actions = actionsOf(LEAF, "actions", actionValue, 2).map((action, index) => {
+    const raw = rawActions[index];
+    const items = isObject(raw) ? raw.items : undefined;
+    if (items !== undefined) return <Menu key={action.id} trigger={<Button variant="secondary">{action.label}</Button>}>{actionsOf(LEAF, "actions.items", items).map(item => <Menu.Item key={item.id} id={item.id} href={item.href} onAction={() => { const handler = input.sectionHost?.onAction; if (typeof handler === "function") handler(item.id); }}>{item.label}</Menu.Item>)}</Menu>;
+    return action.href
+      ? <Link key={action.id} href={action.href} variant="standalone">{action.label}</Link>
+      : <Button key={action.id} variant={index === 0 ? "primary" : "secondary"} onPress={() => { const handler = input.sectionHost?.onAction; if (typeof handler === "function") handler(action.id); else noop(); }}>{action.label}</Button>;
+  });
   return (
     <SectionHeader
       level={level}
@@ -49,7 +52,7 @@ export const renderSectionHeader: SectionRenderer = input => {
       eyebrow={textOf(slotValue(input, "eyebrow"))}
       title={title}
       description={textOf(slotValue(input, "description"))}
-      actions={actions.length ? <>{actions}{overflow.length ? <Menu trigger={<Button variant="secondary">{overflowLabel as string}</Button>}>{overflow.map(action => <Menu.Item key={action.id} id={action.id} href={action.href} onAction={() => { const handler = input.sectionHost?.onAction; if (typeof handler === "function") handler(action.id); }}>{action.label}</Menu.Item>)}</Menu> : null}</> : undefined}
+      actions={actions.length ? actions : undefined}
       align={align as (typeof ALIGNS)[number] | undefined}
       density={density as (typeof DENSITIES)[number] | undefined}
     />

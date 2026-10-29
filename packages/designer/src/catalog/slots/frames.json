@@ -242,11 +242,6 @@
           "accepts": "host-node"
         },
         {
-          "id": "toasts",
-          "required": false,
-          "accepts": "components.toast"
-        },
-        {
           "id": "page-module",
           "required": false,
           "accepts": "sections.*"
@@ -255,6 +250,11 @@
           "id": "state",
           "required": false,
           "accepts": "host-node"
+        },
+        {
+          "id": "toasts",
+          "required": false,
+          "accepts": "components.toast"
         }
       ],
       "members": {
