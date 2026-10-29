@@ -7,11 +7,17 @@ import { prepareRegisteredRoute } from "./registered-route-binding.js";
 import type { PreparedRegisteredPage, RegisteredRoutePageProps } from "./registered-route-binding.js";
 import { liveDesignerQueries } from "./registered-route-provider-context.js";
 import { isRegionPageRouteRegistration } from "../core/route-identities.js";
-import { normalizeRegionPageRoute } from "../core/route-registry.js";
+import { normalizeRegionPageRoute } from "../core/route-identities.js";
 import type { RegionPageRouteRegistry } from "../core/route-registry.js";
 import type { RegisteredRouteRuntime } from "./registered-route-binding.js";
 const noSubscribe = () => () => {};
 const zeroRevision = () => 0;
+export function RegisteredRoutePage({ registry, routeId, useRuntime, renderActions, publication }: RegisteredRoutePageProps) {
+  const route = registry.routes.find(route => route.routeId === routeId);
+  if (!route) throw new Error("Registered route identity is unavailable");
+  if (!isRegionPageRouteRegistration(route) && route.composition.binding.body?.source.kind === "derived") return <DesignerRegisteredRoutePage registry={registry} routeId={routeId} useRuntime={useRuntime} renderActions={renderActions} />;
+  return <StaticRegisteredRoutePage registry={registry} routeId={routeId} useRuntime={useRuntime} renderActions={renderActions} publication={publication} />;
+}
 export function StaticRegisteredRoutePage({ registry, routeId, useRuntime, renderActions, publication: suppliedPublication }: RegisteredRoutePageProps) {
   const source = registry.routes.find(route => route.routeId === routeId)!;
   const route = source && isRegionPageRouteRegistration(source) ? normalizeRegionPageRoute(registry as RegionPageRouteRegistry, source) : source;

@@ -7,7 +7,7 @@ import type { ConsumerInstanceLibrary, ContentRef, FlowInstanceBinding, Instance
 import { contentReferenceKey, normalizeRepeatedSections, staticContentReference } from "../core/instance-binding.js";
 import { instanceBodyFindings } from "../core/instance-body.js";
 import { flowStageStyleSheet } from "../core/flow-stage.js";
-import { registeredRouteBrandLink, normalizeRegionPageRoute } from "../core/route-registry.js";
+import { registeredRouteBrandLink, normalizeRegionPageRoute } from "../core/route-identities.js";
 import { isRegionPageRouteRegistration } from "../core/route-identities.js";
 import type { LegacyRouteRegistration as RouteRegistration, LegacyRouteRegistry as RouteRegistry, RegionPageRouteRegistry } from "../core/route-registry.js";
 import { currentRouteRuntimeMaterialization, deriveRouteRuntimeBinding, resolveSelectedRouteRuntimeBinding, selectedRouteRuntimeManifest } from "../core/route-runtime.js";

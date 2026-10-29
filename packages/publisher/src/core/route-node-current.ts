@@ -1,7 +1,7 @@
 import { prepareRuntimeAssembly, resolve, runtimeHash } from "@clossys/designer/catalog";
 import type { RuntimeAssemblyBase, RuntimeAssemblyInput, RuntimeRendererDescriptor } from "@clossys/designer/catalog";
 import type { PublisherPlanVersion } from "../planning/change-set.js";
-import { routeCompositionDigest, routeRegistryDigest } from "./route-registry.js";
+import { routeCompositionDigest, routeRegistryDigest } from "./route-identities.js";
 import type { LegacyRouteRegistration as RouteRegistration, RouteRegistry } from "./route-registry.js";
 import { currentRouteRuntimeMaterialization } from "./route-runtime.js";
 import type { RouteRuntimeMaterialization } from "./route-runtime.js";

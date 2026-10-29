@@ -10,9 +10,9 @@ import type { PublisherChannelId } from "../planning/channel-ids.js";
 import { PUBLISHER_CHANNELS } from "../planning/channel-ids.js";
 import { createPublisherPlanDraft } from "../planning/plan.js";
 import { canonicalPlanJson, sha256 } from "../planning/digest.js";
-import { completeRouteKind, isLegacyRouteRegistration, isRegionPageRouteRegistration, registeredRouteBrandLink, routeSourcePath } from "./route-identities.js";
+import { completeRouteKind, isLegacyRouteRegistration, isRegionPageRouteRegistration, registeredRouteBrandLink, routeSourcePath, normalizeRegionPageRoute } from "./route-identities.js";
 import type { CompleteRouteKind } from "./route-identities.js";
-export { COMPLETE_ROUTE_KINDS, completeRouteKind, isCompleteRouteKind, isLegacyRouteRegistration, isRegionPageRouteRegistration, registeredRouteBrandLink, routeInstanceBinding, routeSourcePath } from "./route-identities.js";
+export { COMPLETE_ROUTE_KINDS, completeRouteKind, isCompleteRouteKind, isLegacyRouteRegistration, isRegionPageRouteRegistration, registeredRouteBrandLink, routeInstanceBinding, routeSourcePath, normalizeRegionPageRoute, routeCompositionDigest, routeRegistryDigest } from "./route-identities.js";
 export type { CompleteRouteKind } from "./route-identities.js";
 
 /** Public source identity. Relative to the adopting consumer, never an executable callback. */
@@ -75,22 +75,6 @@ export interface RouteProviderMount { readonly id: RouteProviderId; readonly sou
 export interface RouteRegistry<R extends AnyRouteRegistration = RouteRegistration> { readonly version: 1; readonly consumer: string; readonly routes: readonly R[]; readonly publication?: PublicationBinding }
 export type LegacyRouteRegistry = RouteRegistry<LegacyRouteRegistration>;
 export type RegionPageRouteRegistry = RouteRegistry<RegionPageRouteRegistration>;
-/** The publication supplies the frame/arrangement; a region page cannot replace
- * either. Lower only at the runtime boundary, without mutating its registration. */
-export function normalizeRegionPageRoute(registry: RegionPageRouteRegistry, route: RegionPageRouteRegistration): LegacyRouteRegistration {
-  const page = route.composition.binding, publication = registry.publication;
-  if (!publication || !text(publication.id) || !text(publication.mainSlot) || !only(publication, ["id", "frame", "layout", "mainSlot", "format", "surface", "context", "packIds", "inspector"]) || publication.context.consumer !== registry.consumer
-    || !publication.frame || !publication.layout || page.publicationId !== publication.id || !only(page, ["instanceId", "label", "path", "publicationId", "regions"])
-    || !text(page.instanceId) || !text(page.label) || page.path !== route.path || !page.regions || !only(page.regions, ["main", "page-module", "inspector"]) || !Array.isArray(page.regions.main)
-    || page.regions["page-module"] !== undefined && (!Array.isArray(page.regions["page-module"]) || page.regions["page-module"].length > 1)) throw new TypeError("Region page requires its publication's selected frame and arrangement");
-  const module = page.regions["page-module"]?.[0];
-  // The persistent host mounts publication.inspector once. A page supplies only
-  // its context; reinserting chat here would remount it on every navigation.
-  const frame = { ...publication.frame, slotFills: { ...publication.frame.slotFills, ...(module ? { "page-module": module } : {}) } };
-  const binding: InstanceBinding = { instanceId: page.instanceId, label: page.label, path: page.path, format: publication.format, surface: publication.surface, context: publication.context,
-    packIds: publication.packIds, frame, layout: publication.layout, fills: { [publication.mainSlot]: page.regions.main }, body: { kind: "flow", source: { kind: "static" }, sections: page.regions.main.map((_, index) => ({ slot: publication.mainSlot, index })) } };
-  return { ...route, composition: { ...route.composition, binding } };
-}
 export interface RouteRegistryFinding { readonly routeId: string; readonly path: string; readonly message: string }
 export interface RegisteredRouteRow {
   readonly registration: AnyRouteRegistration;
@@ -136,9 +120,6 @@ export function routeServerLoader(route: LegacyRouteRegistration): RouteSourceEx
   if (route.entry?.export !== "default" || typeof route.entry.file !== "string" || !/\.[jt]sx$/.test(route.entry.file) || route.entry.file === c.source?.file) return undefined;
   if ([route.entry.file, c.source?.file, c.runtime?.file, c.header?.actions?.file, c.provider?.source?.file].includes(ref.file)) return undefined;
   return ref;
-}
-export function routeCompositionDigest(registration: AnyRouteRegistration): `sha256:${string}` {
-  return `sha256:${sha256(canonicalPlanJson(registration))}`;
 }
 /** Every displayed identity is joined from the plan, never copied into a route-owned status record.
  * Static registration establishes no runtime, generated-artifact or review clearance. */
@@ -224,5 +205,3 @@ export function registeredRouteFrameFinding(projection: RouteRegistryProjection 
   if (rows[0]!.findings.length) return "Registered route composition has unresolved findings";
   return undefined;
 }
-
-export function routeRegistryDigest(registry: RouteRegistry): `sha256:${string}` { return `sha256:${sha256(canonicalPlanJson(registry))}`; }

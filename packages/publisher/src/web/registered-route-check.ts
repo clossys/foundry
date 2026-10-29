@@ -473,3 +473,4 @@ export async function prepareRegisteredNodeRoute(input: RegisteredRouteCheckInpu
 export { registeredFlowLayoutSource } from "./registered-route-flow-source.js";
 
 export type { CompleteRoutePageSource } from "./registered-route-source.js";
+export { prepareAdminPageCopyEnvelopes } from "./pages/admin-copy-source.js";
