@@ -238,7 +238,7 @@
         "sections.usage",
         "sections.wizard"
       ],
-      "rowsSha256": "ddcee55b59d59342feb252eb5d0a5d57e200b2666ea941b727cf61f5fdc8801a"
+      "rowsSha256": "99714a8513afdcd305dee8562b4796e3232c5923ea2b89a5a3419c2f801c0377"
     },
     {
       "layer": "frames",
@@ -255,7 +255,7 @@
         "frames.sheet",
         "frames.command"
       ],
-      "rowsSha256": "67d1306ff9d921f17a4590b55aa7fe2ec19c9981c5b73903c78137de46599531"
+      "rowsSha256": "e2cf41c246a6b0bf8e837636b0927fbe1bac5459ec24f310e356378a5f7d3c1a"
     }
   ],
   "descriptors": [
@@ -371,5 +371,13 @@
       "name": "components.tooltip.json",
       "sha256": "da210ae9ddfd6a3e147864c8b980973e9a456d4300569367a49aa621a864bea7"
     }
-  ]
+  ],
+  "amendment": {
+    "source": "d523717cf23354abb9ed285c8a53cecd3234cb36",
+    "integration": "b49c060c751c7bdd0d1272a30435a7bd31dd8f81",
+    "layers": [
+      "sections",
+      "frames"
+    ]
+  }
 }

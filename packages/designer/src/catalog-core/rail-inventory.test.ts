@@ -13,7 +13,7 @@ const addedComponents = ["command", "dropdown-menu", "empty", "item", "scroll-ar
 const addedIds = ["assets.icon-panel-left", ...addedComponents.map(leaf => `components.${leaf}`)];
 const directory = join(import.meta.dirname, "../catalog/fills/shadcn@aria");
 
-it("joins exactly eight rail registrations to the byte-equivalent ordered original slot rows", () => {
+it("joins exactly eight rail registrations to ordered original slots with approved frame and section contracts", () => {
   const current = loadBuildCatalog().slots;
   expect(current.filter(slot => addedIds.includes(slot.id)).map(slot => slot.id).sort()).toEqual([...addedIds].sort());
   for (const row of legacy.slots) {
