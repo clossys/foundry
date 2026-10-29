@@ -1,4 +1,6 @@
 import type { CSSProperties, HTMLAttributes, ReactNode } from "react";
+import { ArticleReadingProgress } from "./ArticleReading.js";
+import { Link } from "../components/Link.js";
 import { cx } from "../components/internal/cx.js";
 import { dsAttrs } from "../catalog-core/provenance-attrs.js";
 /** Section root provenance (D1): the selected Foundry fill this block is. */
@@ -18,6 +20,8 @@ export interface ArticleBodyProps extends HTMLAttributes<HTMLElement> {
    * article renders exactly as before.
    */
   toc?: ReactNode;
+  /** First paragraph uses a token-backed initial; opt-in only. */
+  dropCap?: boolean;
   className?: string;
   style?: CSSProperties;
 }
@@ -91,19 +95,20 @@ const ARTICLE_TOC_CLASSES = {
  * wrapper only applies typography; the frame owns padding, ground, and
  * `--ui-width-prose-max`.
  */
-export function ArticleBody({ children, toc, className, style, ...rest }: ArticleBodyProps) {
+function ArticleBodyRoot({ children, toc, dropCap = false, className, style, ...rest }: ArticleBodyProps) {
+  const initial = dropCap ? "[&>p:first-of-type::first-letter]:float-start [&>p:first-of-type::first-letter]:font-display [&>p:first-of-type::first-letter]:text-display [&>p:first-of-type::first-letter]:pe-xs" : undefined;
   if (toc !== undefined && toc !== null && toc !== false) {
     return (
-      <article {...SECTION_STAMP} {...rest} className={cx(ARTICLE_TOC_CLASSES.root, className)} data-designer-requires-section-frame="" style={style}>
+      <article {...SECTION_STAMP} {...rest} data-article-reading="" className={cx(ARTICLE_TOC_CLASSES.root, className)} data-designer-requires-section-frame="" style={style}>
         <div data-article-toc="" className={ARTICLE_TOC_CLASSES.region}>{toc}</div>
-        <div data-article-body="" className={cx(...ARTICLE_TYPOGRAPHY, ARTICLE_TOC_CLASSES.body)}>{children}</div>
+        <div data-article-body="" className={cx(...ARTICLE_TYPOGRAPHY, ARTICLE_TOC_CLASSES.body, initial)}>{children}</div>
       </article>
     );
   }
   return (
     <article
       {...SECTION_STAMP} {...rest}
-      className={cx(...ARTICLE_TYPOGRAPHY, className)}
+      className={cx(...ARTICLE_TYPOGRAPHY, initial, className)}
       data-designer-requires-section-frame=""
       style={style}
     >
@@ -111,3 +116,27 @@ export function ArticleBody({ children, toc, className, style, ...rest }: Articl
     </article>
   );
 }
+
+
+/** Editorial parts keep copy in caller-owned nodes and never parse a document. */
+function ArticlePullQuote({ children, attribution }: { children: ReactNode; attribution?: ReactNode }) {
+  return <blockquote data-article-pull-quote="" className="border-s border-line-base ps-lg text-blockquote font-display text-ink-secondary">{children}{attribution ? <footer className="mt-sm text-body-s font-body text-ink-muted">{attribution}</footer> : null}</blockquote>;
+}
+function ArticleFigureCaption({ children }: { children: ReactNode }) {
+  return <figcaption data-article-figure-caption="" className="mt-sm text-caption text-ink-muted">{children}</figcaption>;
+}
+function ArticleFootnoteReference({ id, noteId, children }: { id: string; noteId: string; children: ReactNode }) {
+  assertFootnoteId(id); assertFootnoteId(noteId);
+  return <sup><Link id={id} href={"#" + noteId} data-footnote-reference="">{children}</Link></sup>;
+}
+function assertFootnoteId(value: string): void {
+  if (typeof value !== "string" || !value || /[\s#]/.test(value)) throw new TypeError("ArticleBody: footnote ids must be nonempty fragment ids.");
+}
+function ArticleFootnotes({ label, items }: { label: string; items: readonly { id: string; referenceId: string; body: ReactNode; backlink: ReactNode }[] }) {
+  if (!label.trim()) throw new TypeError("ArticleBody: footnotes require a host label.");
+  const ids = new Set<string>();
+  for (const item of items) { assertFootnoteId(item.id); assertFootnoteId(item.referenceId); if (ids.has(item.id)) throw new TypeError("ArticleBody: footnote ids must be unique."); ids.add(item.id); }
+  return <section role="doc-endnotes" aria-label={label}><ol className="flex flex-col gap-sm">{items.map(item => <li key={item.id} id={item.id} role="doc-endnote">{item.body}<Link href={"#" + item.referenceId} data-footnote-backlink="">{item.backlink}</Link></li>)}</ol></section>;
+}
+
+export const ArticleBody = Object.assign(ArticleBodyRoot, { PullQuote: ArticlePullQuote, FigureCaption: ArticleFigureCaption, FootnoteReference: ArticleFootnoteReference, Footnotes: ArticleFootnotes, Progress: ArticleReadingProgress });

@@ -1,3 +1,5 @@
+import { Link } from "../components/Link.js";
+import { articleTocCss, readingTarget } from "./ArticleReading.js";
 import { useHeadingScrollSpy } from "./TableOfContents.scroll-spy.js";
 import type { CSSProperties, ReactNode } from "react";
 import { Disclosure } from "../components/Disclosure.js";
@@ -29,8 +31,8 @@ export interface TableOfContentsProps {
   presentation?: "sidebar" | "inline";
   /** Controlled current item. Must be one of the item ids, else a `TypeError`. */
   currentId?: string;
-  /** Track the current heading with an `IntersectionObserver`. Default true; ignored when `currentId` is given and by the server variant. */
-  trackCurrent?: boolean;
+  /** Track the current heading with an `IntersectionObserver`. Default true; `"css"` selects declarative target timelines with a static fallback. */
+  trackCurrent?: boolean | "css";
   onCurrentChange?: (id: string) => void;
   onNavigate?: (id: string) => void;
   /** Three-level expandable page outline, using the registered Disclosure. */
@@ -57,7 +59,7 @@ const BOX_CLASSES = "rounded-panel border border-line-base p-md";
 export function TableOfContents(props: TableOfContentsProps) {
   validateTableOfContents(props);
   const { label, items, presentation = "sidebar", currentId, trackCurrent, className, style } = props;
-  const tracking = currentId === undefined && trackCurrent !== false;
+  const tracking = currentId === undefined && trackCurrent !== false && trackCurrent !== "css";
   const observed = useHeadingScrollSpy(items.map(item => item.id), { enabled: tracking, onChange: props.onCurrentChange });
 
   const current = currentId ?? observed;
@@ -68,11 +70,11 @@ export function TableOfContents(props: TableOfContentsProps) {
       if (at > from && level > (items[from]?.level ?? 2)) return null;
       let end = at + 1;
       while (end < until && (items[end]!.level ?? 2) > level) end++;
-      const link = <a href={"#" + item.id} aria-current={item.id === current ? "location" : undefined}
-        onClick={event => { if (props.onNavigate) { event.preventDefault(); props.onNavigate(item.id); } }}>{item.label}</a>;
+      const link = <Link href={"#" + item.id} data-reading-target={trackCurrent === "css" ? readingTarget(item.id).name : undefined} aria-current={item.id === current ? "location" : undefined}
+        onClick={event => { if (props.onNavigate) { event.preventDefault(); props.onNavigate(item.id); } }}>{item.label}</Link>;
       return <li key={item.id}>{link}{end > at + 1 ? <Disclosure title={item.label} defaultExpanded>{branch(at + 1, end)}</Disclosure> : null}</li>;
     })}</ol>;
-    return <nav {...SECTION_STAMP} aria-label={label} className={className} style={style}>{branch(0, items.length)}</nav>;
+    return <nav {...SECTION_STAMP} aria-label={label} className={className} style={style}>{trackCurrent === "css" ? <style>{articleTocCss(items)}</style> : null}{branch(0, items.length)}</nav>;
   }
   if (presentation === "inline") {
     return (
@@ -83,10 +85,10 @@ export function TableOfContents(props: TableOfContentsProps) {
           triggerClassName="text-ink-primary focus-visible:outline-solid focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
           panelClassName="ps-0"
         >
-          {renderTableOfContentsInlineNav({ label, items, onNavigate: props.onNavigate }, current)}
+          {renderTableOfContentsInlineNav({ label, items, onNavigate: props.onNavigate, trackCurrent }, current, props.onNavigate ? Link : undefined)}
         </Disclosure>
       </div>
     );
   }
-  return renderTableOfContentsSidebar({ label, items, className, style, onNavigate: props.onNavigate }, current);
+  return renderTableOfContentsSidebar({ label, items, className, style, onNavigate: props.onNavigate, trackCurrent }, current, props.onNavigate ? Link : undefined);
 }

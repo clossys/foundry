@@ -3,6 +3,7 @@ import { cloneElement, isValidElement, type ReactElement, type ReactNode } from 
 import { Link } from "../../components/Link.js";
 import { Icon, Logomark, SemanticContent } from "@clossys/designer/components/server";
 import { Brandmark, SiteFooter, SiteHeader } from "@clossys/designer/shell/server";
+import { ArticleReadingProgress } from "../../blocks/ArticleReading.js";
 import { Hero, type HeroProps } from "../../blocks/Hero.js";
 import { RenderError } from "./landing/internal/errors.js";
 import { SiteNavDisclosure } from "./NavDisclosure.boundary.client.js";
@@ -47,9 +48,12 @@ function overlayHero(children: ReactNode, headerSurface: "solid" | "transparent"
  * Server-safe: no hooks. Skip-link focus, header-ground observation and
  * navigation disclosure use the existing client islands and resolved data.
  */
-export function SiteFrame({ shell, presentation, resolveCopy, resolveAsset, children, toasts, locale }: SiteFrameProps): ReactElement {
+export function SiteFrame({ shell, presentation, resolveCopy, resolveAsset, children, toasts, locale, mainLayout = "default", toc, progress }: SiteFrameProps): ReactElement {
   const resolved = resolveShell(shell, resolveCopy, resolveAsset, presentation);
   const { brand, footer } = resolved;
+  if (mainLayout !== "default" && mainLayout !== "article") throw new TypeError("SiteFrame: unsupported main layout");
+  if (mainLayout === "article" && footer?.placement === "overlay") throw new TypeError("SiteFrame: article layout requires a flow footer");
+  const articleRail = mainLayout === "article" && toc !== undefined && toc !== null && toc !== false;
   const main = footer?.placement === "overlay" ? overlayHero(children, resolved.header.surface) : children;
 
   const brandmark =
@@ -109,8 +113,9 @@ export function SiteFrame({ shell, presentation, resolveCopy, resolveAsset, chil
         navPlacement={resolved.navPlacement}
         actions={actions}
       />
-      <SemanticContent as="main" id={SITE_MAIN_ID} tabIndex={-1} className="flex w-full flex-1 flex-col">
-        {main}
+      {mainLayout === "article" && progress !== undefined && progress !== null ? <ArticleReadingProgress>{progress}</ArticleReadingProgress> : null}
+      <SemanticContent as="main" id={SITE_MAIN_ID} tabIndex={-1} data-site-main-layout={mainLayout === "article" ? "article" : undefined} data-article-reading={mainLayout === "article" ? "" : undefined} className={articleRail ? "grid w-full flex-1 grid-cols-1 gap-xl desktop:grid-cols-4" : "flex w-full flex-1 flex-col"}>
+        {articleRail ? <><SemanticContent as="aside" data-site-article-toc="" className="min-w-0 desktop:sticky desktop:top-lg desktop:self-start">{toc}</SemanticContent><SemanticContent as="div" data-site-article-body="" className="min-w-0 desktop:col-span-3">{main}</SemanticContent></> : main}
       </SemanticContent>
       {footer?.placement === "overlay" ? (
         // Intrinsic footer height is reserved within the same growing hero scene.

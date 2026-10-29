@@ -166,6 +166,11 @@ export interface SiteFrameInput {
 }
 
 export interface SiteFrameProps extends SiteFrameInput {
+  /** Article layout keeps an optional TOC rail beside the sole main content. */
+  readonly mainLayout?: "default" | "article";
+  readonly toc?: ReactNode;
+  /** Host-supplied decorative reading-progress component; CSS only. */
+  readonly progress?: ReactNode;
   /** Canonical page locale supplied by the host through Writer. */
   locale?: string;
   /** Host-owned toast viewport, mounted after the footer and outside main. */

@@ -4694,6 +4694,9 @@
     .desktop\:sticky {
       position: sticky;
     }
+    .desktop\:top-lg {
+      top: var(--spacing-lg, 16px);
+    }
     .desktop\:col-span-1 {
       grid-column: span 1 / span 1;
     }
@@ -4747,6 +4750,9 @@
     }
     .desktop\:gap-2xl {
       gap: var(--spacing-2xl, 32px);
+    }
+    .desktop\:self-start {
+      align-self: flex-start;
     }
     .desktop\:overflow-y-auto {
       overflow-y: auto;
