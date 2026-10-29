@@ -3,13 +3,16 @@
 import * as React from "react";
 import { NativeAction } from "../../components/NativeAction.js";
 import { SemanticContent } from "../../components/SemanticContent.js";
+import { cx } from "../../components/internal/cx.js";
 import { proofAnimationTiming, useReducedProofMotion } from "./motion.js";
 
 export interface LogoCloudMotionLabels { pause: string; resume: string }
 
 /** A static grid is the complete reduced-motion and server-rendered presentation. */
-export function LogoCloudMarquee({ grid, track, duplicate, labels }: {
+export function LogoCloudMarquee({ grid, track, duplicate, labels, className, style, rootProps }: {
   grid: React.ReactNode; track: React.ReactNode; duplicate: React.ReactNode; labels: LogoCloudMotionLabels;
+  className?: string; style?: React.CSSProperties;
+  rootProps?: React.HTMLAttributes<HTMLElement>;
 }) {
   const reduced = useReducedProofMotion();
   const moving = React.useRef<HTMLDivElement>(null);
@@ -29,9 +32,9 @@ export function LogoCloudMarquee({ grid, track, duplicate, labels }: {
     else animation.current?.play();
   }, [paused, hovered, focused, reduced]);
   if (reduced) return <>{grid}</>;
-  return <SemanticContent as="div" data-logo-cloud-motion="marquee" className="flex flex-col gap-md"
-    onMouseEnter={() => setHovered(true)} onMouseLeave={() => setHovered(false)}
-    onFocusCapture={() => setFocused(true)} onBlurCapture={event => { if (!event.currentTarget.contains(event.relatedTarget as Node | null)) setFocused(false); }}>
+  return <SemanticContent as="div" {...rootProps} data-logo-cloud-motion="marquee" className={cx("flex flex-col gap-md", className)} style={style}
+    onMouseEnter={event => { rootProps?.onMouseEnter?.(event); setHovered(true); }} onMouseLeave={event => { rootProps?.onMouseLeave?.(event); setHovered(false); }}
+    onFocusCapture={event => { rootProps?.onFocusCapture?.(event); setFocused(true); }} onBlurCapture={event => { rootProps?.onBlurCapture?.(event); if (!event.currentTarget.contains(event.relatedTarget as Node | null)) setFocused(false); }}>
     <SemanticContent as="div" className="overflow-hidden">
       <SemanticContent as="div" ref={moving} data-logo-cloud-track="" className="flex w-max">{track}{duplicate}</SemanticContent>
     </SemanticContent>

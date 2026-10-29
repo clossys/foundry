@@ -490,7 +490,7 @@
       "missingRequiredSlots": [],
       "missingSlots": [],
       "notes": [
-        "Images are host nodes with their own alternative text; the lightbox is the Foundry Dialog opened from a React Aria button per image. The images content carries the gallery's accessible label with the images.",
+        "Images are host nodes with their own alternative text. Shared tile and caption parts compose components.dialog with an authored enlarge action and close action. The lightbox requires labels from the controls passage fields; no chrome copy defaults are embedded in the Block. The images content carries the gallery's accessible label with the images.",
         "Source-only import and token-read measurements are lower bounds; shared anatomy, accessibility, contrast and consumer runtime conformance remain unmeasured. Content bindings describe host adaptation points, not type-equivalent converters."
       ],
       "slot": "sections.gallery",
@@ -500,6 +500,7 @@
         "lightbox.enabled"
       ],
       "supportedSlots": [
+        "controls",
         "images"
       ],
       "unresolvedMemberAxes": []
@@ -585,7 +586,7 @@
       "missingRequiredSlots": [],
       "missingSlots": [],
       "notes": [
-        "Source checks allowed items.length values and tone; logos are host React nodes. Marquee is opt-in with authored pause/resume labels, an inert aria-hidden duplicate, and a static grid on the server or with reduced motion. Timing reads tokens.animation.marquee. Package-pointer Block adaptation is measured here; Section runtime member adoption is separate.",
+        "Source checks allowed items.length values and tone; logos are host React nodes. Marquee is opt-in with authored pause/resume labels, an inert aria-hidden duplicate, and a static grid on the server or with reduced motion. Timing reads tokens.animation.marquee. The native Section adapter maps the motion member and authored controls; the outer rendered root retains section provenance.",
         "Source-only import and token-read measurements are lower bounds; shared anatomy, accessibility, contrast and consumer runtime conformance remain unmeasured. Content bindings describe host adaptation points, not type-equivalent converters."
       ],
       "slot": "sections.logo-cloud",
@@ -902,7 +903,7 @@
       "missingRequiredSlots": [],
       "missingSlots": [],
       "notes": [
-        "Each item renders one Stat; count motion is opt-in and runs once on viewport entry for numeric values or an explicit countTo target. The authored final value is server HTML and remains screen-reader content; reduced motion uses the final value. Timing reads tokens.animation.count. Section runtime member adoption is separate.",
+        "Each item renders one Stat; count motion is opt-in and runs once on viewport entry for numeric values or an explicit countTo target. The authored final value is server HTML and remains screen-reader content; reduced motion uses the final value. Timing reads tokens.animation.count. The native Section adapter maps the selected motion member without replacing the authored final value.",
         "Source-only import and token-read measurements are lower bounds; shared anatomy, accessibility, contrast and consumer runtime conformance remain unmeasured. Content bindings describe host adaptation points, not type-equivalent converters."
       ],
       "slot": "sections.stats",
@@ -995,7 +996,7 @@
       "missingRequiredSlots": [],
       "missingSlots": [],
       "notes": [
-        "Wall uses staggered quote columns. Carousel uses components.scroll-area scroll snap and authored previous/next buttons without autoplay; reduced motion scrolls instantly. Attribution reuses the shared Testimonial figure. Section runtime member adoption is separate.",
+        "Wall uses staggered quote columns. Carousel uses components.scroll-area scroll snap and authored previous/next buttons without autoplay; reduced motion scrolls instantly. Attribution reuses the shared Testimonial figure. The native Section adapter maps both new layouts and authored controls, with section provenance on the outer root.",
         "Source-only import and token-read measurements are lower bounds; shared anatomy, accessibility, contrast and consumer runtime conformance remain unmeasured. Content bindings describe host adaptation points, not type-equivalent converters."
       ],
       "slot": "sections.testimonials",

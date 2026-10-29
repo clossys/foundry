@@ -2568,6 +2568,24 @@
               "en": 160
             },
             "dir": "auto"
+          },
+          {
+            "key": "controls.close",
+            "kind": "plain",
+            "required": false,
+            "maxLength": {
+              "en": 80
+            },
+            "dir": "auto"
+          },
+          {
+            "key": "controls.enlarge",
+            "kind": "plain",
+            "required": false,
+            "maxLength": {
+              "en": 80
+            },
+            "dir": "auto"
           }
         ]
       }

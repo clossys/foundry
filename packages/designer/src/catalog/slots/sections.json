@@ -3946,6 +3946,11 @@
           "name": "images",
           "type": "media",
           "required": true
+        },
+        {
+          "name": "controls",
+          "type": "copy",
+          "required": false
         }
       ],
       "members": {
@@ -3958,7 +3963,8 @@
       "allowedComposes": [
         "components.dialog",
         "components.grid-list",
-        "components.button"
+        "components.button",
+        "components.semantic-content"
       ],
       "parts": [
         "sections.band",
@@ -4050,6 +4056,24 @@
             "required": false,
             "maxLength": {
               "en": 160
+            },
+            "dir": "auto"
+          },
+          {
+            "key": "controls.close",
+            "kind": "plain",
+            "required": false,
+            "maxLength": {
+              "en": 80
+            },
+            "dir": "auto"
+          },
+          {
+            "key": "controls.enlarge",
+            "kind": "plain",
+            "required": false,
+            "maxLength": {
+              "en": 80
             },
             "dir": "auto"
           }
@@ -4519,7 +4543,7 @@
       "allowedComposes": [
         "components.link",
         "components.semantic-content",
-        "components.button"
+        "components.native-action"
       ],
       "parts": [
         "sections.band",
@@ -7822,7 +7846,7 @@
         "components.card",
         "components.semantic-content",
         "components.scroll-area",
-        "components.button"
+        "components.native-action"
       ],
       "parts": [
         "sections.band",
@@ -7844,7 +7868,10 @@
           "tokens.status-color",
           "tokens.surface-radius",
           "tokens.text-color",
-          "tokens.typeface"
+          "tokens.typeface",
+          "tokens.accent-color",
+          "tokens.focus-color",
+          "tokens.focus-outline"
         ],
         "assets": [
           "assets.image"

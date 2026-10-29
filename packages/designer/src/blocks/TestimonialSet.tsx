@@ -59,7 +59,7 @@ export function TestimonialSet({ items, ground = "base", layout, carouselLabels,
   if (layout === "carousel" && (!carouselLabels?.previous?.trim() || !carouselLabels.next?.trim())) throw new TypeError("TestimonialSet: carousel requires authored control labels.");
   const geometry = layout === "wall" ? "columns-1 gap-lg tablet:columns-2 desktop:columns-3" : layout === "carousel" ? "flex gap-lg" : COUNT_CLASSES[items.length];
   const list = (
-    <SemanticContent as="ul" {...SECTION_STAMP} {...rest} role="list" data-layout={layout} className={cx("m-0 list-none p-0", geometry, SECTION_GROUND_CLASSES[ground].primary, className)} style={style}>
+    <SemanticContent as="ul" {...(layout === "carousel" ? {} : SECTION_STAMP)} {...(layout === "carousel" ? {} : rest)} role="list" data-layout={layout === "carousel" ? undefined : layout} className={cx("m-0 list-none p-0", geometry, SECTION_GROUND_CLASSES[ground].primary, layout !== "carousel" && className)} style={layout === "carousel" ? undefined : style}>
       {items.map((item, index) => {
         const span = layout !== "wall" && layout !== "carousel" && items.length === 3 && index === 2 ? "tablet:col-span-2 desktop:col-span-1" : undefined;
         return <SemanticContent as="li" key={item.id} className={cx("min-w-0 rounded-panel p-lg text-body-l", PLATE_CLASSES[ground], span,
@@ -70,5 +70,5 @@ export function TestimonialSet({ items, ground = "base", layout, carouselLabels,
       })}
     </SemanticContent>
   );
-  return layout === "carousel" ? <TestimonialCarousel labels={carouselLabels!}>{list}</TestimonialCarousel> : list;
+  return layout === "carousel" ? <TestimonialCarousel labels={carouselLabels!} rootProps={{ ...SECTION_STAMP, ...rest }} className={className} style={style}>{list}</TestimonialCarousel> : list;
 }

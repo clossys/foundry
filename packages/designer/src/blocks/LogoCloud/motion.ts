@@ -17,7 +17,8 @@ export function useReducedProofMotion() {
 
 /** Motion timing comes from the selected animation token, with the Foundry fill as its default. */
 export function proofAnimationTiming(node: Element, member: "marquee" | "count") {
-  const value = getComputedStyle(node).getPropertyValue(`--animate-${member}`).trim() || animationFill.tokens.animation[member].$value;
+  const properties = { marquee: "--animate-marquee", count: "--animate-count" } as const;
+  const value = getComputedStyle(node).getPropertyValue(properties[member]).trim() || animationFill.tokens.animation[member].$value;
   const time = /(?:^|\s)(\d+(?:\.\d+)?)(ms|s)(?:\s|$)/.exec(value);
   if (!time) throw new TypeError("Proof animation requires a duration token");
   return { duration: Number(time[1]) * (time[2] === "s" ? 1000 : 1), easing: /cubic-bezier\([^)]*\)|linear|ease(?:-in-out|-in|-out)?/.exec(value)?.[0] ?? "linear" };

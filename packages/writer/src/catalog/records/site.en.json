@@ -116,7 +116,14 @@
     "st.proof.stats.value": "st.ad8ejnc3gw",
     "ps.proof.logo-cloud": "ps.j06e4me8kd",
     "ps.proof.testimonials": "ps.yjw7rk384e",
-    "ps.proof.stats": "ps.0wqmevrv7f"
+    "ps.proof.stats": "ps.0wqmevrv7f",
+    "st.proof.gallery.heading": "st.rxmj7j525f",
+    "st.proof.gallery.label": "st.sswfyqdfvv",
+    "st.proof.gallery.image": "st.c5fjv5rqn8",
+    "st.proof.gallery.caption": "st.y09jw87mvc",
+    "st.proof.gallery.close": "st.0ren98fr4r",
+    "st.proof.gallery.enlarge": "st.j1427ds7ba",
+    "ps.proof.gallery": "ps.ndrf3rsmnr"
   },
   "records": [
     {
@@ -1142,6 +1149,93 @@
             "id": "st.ad8ejnc3gw"
           }
         ]
+      }
+    },
+    {
+      "id": "st.rxmj7j525f",
+      "leaf": "strings.page-titles",
+      "context": "Generic proof-section preview fixture",
+      "status": "draft",
+      "origin": "authored",
+      "text": "Gallery"
+    },
+    {
+      "id": "st.sswfyqdfvv",
+      "leaf": "strings.field-labels",
+      "context": "Generic proof-section preview fixture",
+      "status": "draft",
+      "origin": "authored",
+      "text": "Image gallery"
+    },
+    {
+      "id": "st.c5fjv5rqn8",
+      "leaf": "strings.alt-text",
+      "context": "Generic proof-section preview fixture",
+      "status": "draft",
+      "origin": "authored",
+      "text": "Example image"
+    },
+    {
+      "id": "st.y09jw87mvc",
+      "leaf": "strings.captions",
+      "context": "Generic proof-section preview fixture",
+      "status": "draft",
+      "origin": "authored",
+      "text": "A shared image fixture."
+    },
+    {
+      "id": "st.0ren98fr4r",
+      "leaf": "strings.actions",
+      "context": "Generic proof-section preview fixture",
+      "status": "draft",
+      "origin": "authored",
+      "text": "Close image"
+    },
+    {
+      "id": "st.j1427ds7ba",
+      "leaf": "strings.actions",
+      "context": "Generic proof-section preview fixture",
+      "status": "draft",
+      "origin": "authored",
+      "text": "Enlarge image"
+    },
+    {
+      "id": "ps.ndrf3rsmnr",
+      "leaf": "passages.gallery",
+      "context": "Generic proof-section preview fixture",
+      "status": "draft",
+      "origin": "authored",
+      "schema": "passages.gallery",
+      "schemaDigest": "67795dde9c08f9051cb4c0aac54a469f50d9eebbc054808cc3529b5f3aa7e9d4",
+      "fields": {
+        "header.heading": {
+          "ref": "string",
+          "id": "st.rxmj7j525f"
+        },
+        "images.label": {
+          "ref": "string",
+          "id": "st.sswfyqdfvv"
+        },
+        "images.items[].label": [
+          {
+            "ref": "string",
+            "id": "st.c5fjv5rqn8"
+          }
+        ],
+        "images.items[].caption": [
+          {
+            "ref": "string",
+            "id": "st.y09jw87mvc"
+          }
+        ],
+        "controls.close": {
+          "ref": "string",
+          "id": "st.0ren98fr4r"
+        },
+        "controls.enlarge": {
+          "ref": "string",
+          "id": "st.j1427ds7ba"
+        }
       }
     }
   ],

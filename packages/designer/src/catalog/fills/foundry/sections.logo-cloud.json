@@ -27,17 +27,20 @@
   "sections": {
     "logo-cloud": {
       "composes": [
+        "components.native-action",
         "components.semantic-content"
       ],
       "configs": {},
       "consumption": {
         "scanStatus": "lower-bound",
         "scannedComposes": [
+          "components.native-action",
           "components.semantic-content"
         ],
         "scannedReads": {
           "assets": [],
           "components": [
+            "components.native-action",
             "components.semantic-content"
           ],
           "tokens": [
@@ -63,7 +66,15 @@
         "sourceFiles": [
           {
             "path": "packages/designer/src/blocks/LogoCloud.tsx",
-            "sha256": "ca9b368353e8f3008fd5e663b582be16d0c97345322713614fb817b152f0d891"
+            "sha256": "5a37106bfce75bdd465b774b3c484068ba64b1116a54a871c8f354395cc55bfe"
+          },
+          {
+            "path": "packages/designer/src/blocks/LogoCloud/Marquee.tsx",
+            "sha256": "d14cfa5304354db0c362dcdebf374cc65d141160f31b847430402b67aec39548"
+          },
+          {
+            "path": "packages/designer/src/blocks/LogoCloud/motion.ts",
+            "sha256": "967bef0e3de8f0a38d5ceb970b988689eb48fd1b876cd07d133fbc6d63868f34"
           },
           {
             "path": "packages/designer/src/blocks/section-ground.ts",
@@ -116,7 +127,7 @@
       },
       "license": "MIT",
       "notes": [
-        "Source checks allowed items.length values and tone; logos are host React nodes. Marquee is opt-in with authored pause/resume labels, an inert aria-hidden duplicate, and a static grid on the server or with reduced motion. Timing reads tokens.animation.marquee. Package-pointer Block adaptation is measured here; Section runtime member adoption is separate.",
+        "Source checks allowed items.length values and tone; logos are host React nodes. Marquee is opt-in with authored pause/resume labels, an inert aria-hidden duplicate, and a static grid on the server or with reduced motion. Timing reads tokens.animation.marquee. The native Section adapter maps the motion member and authored controls; the outer rendered root retains section provenance.",
         "Source-only import and token-read measurements are lower bounds; shared anatomy, accessibility, contrast and consumer runtime conformance remain unmeasured. Content bindings describe host adaptation points, not type-equivalent converters."
       ],
       "parts": [],

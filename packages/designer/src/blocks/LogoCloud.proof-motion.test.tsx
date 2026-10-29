@@ -1,5 +1,6 @@
 import { fireEvent, render, screen } from "@testing-library/react";
 import { renderToStaticMarkup } from "react-dom/server";
+import type { CSSProperties } from "react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { LogoCloud } from "./LogoCloud.js";
 
@@ -13,7 +14,7 @@ beforeEach(() => {
   vi.stubGlobal("matchMedia", vi.fn(() => ({ matches: reduced, addEventListener: vi.fn(), removeEventListener: vi.fn() })));
   Element.prototype.animate = animate as unknown as typeof Element.prototype.animate;
 });
-afterEach(() => { vi.unstubAllGlobals(); vi.clearAllMocks(); });
+afterEach(() => { vi.unstubAllGlobals(); vi.restoreAllMocks(); vi.clearAllMocks(); });
 
 describe("LogoCloud proof motion", () => {
   it("renders a final static grid on the server", () => {
@@ -22,11 +23,13 @@ describe("LogoCloud proof motion", () => {
     expect(html).not.toContain("data-logo-cloud-track");
   });
   it("duplicates an inert hidden track and pauses on request and hover", () => {
-    const { container } = render(<LogoCloud items={items} motion="marquee" motionLabels={labels} />);
+    const { container } = render(<LogoCloud items={items} id="proof-cloud" motion="marquee" motionLabels={labels} />);
     const duplicate = container.querySelector("[data-logo-cloud-duplicate]")!;
     expect(duplicate).toHaveAttribute("aria-hidden", "true");
     expect(duplicate).toHaveAttribute("inert");
     expect(duplicate.querySelector("a")).toBeNull();
+    expect(container.firstElementChild).toHaveAttribute("id", "proof-cloud");
+    expect(container.querySelectorAll("#proof-cloud")).toHaveLength(1);
     expect(screen.getAllByRole("link")).toHaveLength(3);
     expect(animate).toHaveBeenCalledWith(expect.any(Array), expect.objectContaining({ duration: 20000, iterations: Infinity }));
     fireEvent.click(screen.getByRole("button", { name: labels.pause }));
@@ -45,5 +48,14 @@ describe("LogoCloud proof motion", () => {
     expect(container.querySelector("ul")).toHaveClass("grid");
     expect(screen.queryByRole("button")).toBeNull();
     expect(animate).not.toHaveBeenCalled();
+  });
+  it("uses the selected marquee animation token and keeps host styles on the motion root", () => {
+    const property = vi.fn(() => "marquee 31000ms linear infinite");
+    vi.spyOn(window, "getComputedStyle").mockReturnValue({ getPropertyValue: property } as unknown as CSSStyleDeclaration);
+    const { container } = render(<LogoCloud items={items} motion="marquee" motionLabels={labels} className="host-cloud" style={{ "--animate-marquee": "marquee 31000ms linear infinite" } as CSSProperties} />);
+    expect(property).toHaveBeenCalledWith("--animate-marquee");
+    expect(animate).toHaveBeenCalledWith(expect.any(Array), expect.objectContaining({ duration: 31000 }));
+    expect(container.querySelector("[data-logo-cloud-motion]")).toHaveClass("host-cloud");
+    expect(container.querySelector("[data-logo-cloud-motion]")).toHaveStyle({ "--animate-marquee": "marquee 31000ms linear infinite" });
   });
 });

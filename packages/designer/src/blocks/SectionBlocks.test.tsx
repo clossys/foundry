@@ -124,7 +124,7 @@ describe("Gallery", () => {
   ];
   it("opens an image in a modal lightbox named by its label and closes it again", async () => {
     const user = userEvent.setup();
-    render(<Gallery label="Screens" images={images} />);
+    render(<Gallery label="Screens" images={images} labels={{ close: "Close", enlarge: label => `Enlarge ${label}` }} />);
     const region = screen.getByRole("region", { name: "Screens" });
     expect(region).toHaveAttribute("data-lightbox", "enabled");
     await user.click(within(region).getByRole("button", { name: "Enlarge First screen" }));

@@ -3050,13 +3050,15 @@
       "scanStatus": "lower-bound",
       "scannedComposes": [
         "components.button",
-        "components.dialog"
+        "components.dialog",
+        "components.semantic-content"
       ],
       "scannedReads": {
         "assets": [],
         "components": [
           "components.button",
-          "components.dialog"
+          "components.dialog",
+          "components.semantic-content"
         ],
         "tokens": [
           "tokens.body-size",
@@ -3071,7 +3073,11 @@
       "sourceFiles": [
         {
           "path": "packages/designer/src/blocks/Gallery.tsx",
-          "sha256": "63f3dabe0d6ef740580671baf2af3ba4103274a77218f268c6a15716f440e071"
+          "sha256": "758e9777f14db9d668f7d84b641d29c18a56f4d4ab26f4fd3ebaeb29655985b2"
+        },
+        {
+          "path": "packages/designer/src/blocks/Gallery/parts.tsx",
+          "sha256": "79f79689aa91988ad2dff5d205379ab3c373fd86310d51930b3394bf4ae9b753"
         },
         {
           "path": "packages/designer/src/catalog-core/provenance-attrs.ts",
@@ -3433,15 +3439,15 @@
       "sourceFiles": [
         {
           "path": "packages/designer/src/blocks/LogoCloud.tsx",
-          "sha256": "5a37106bfce75bdd465b774b3c484068ba64b1116a54a871c8f354395cc55bfe"
+          "sha256": "765b69165bf58392ed358d2dd8d046de49939dc082061452c4de2582f62d40fd"
         },
         {
           "path": "packages/designer/src/blocks/LogoCloud/Marquee.tsx",
-          "sha256": "d14cfa5304354db0c362dcdebf374cc65d141160f31b847430402b67aec39548"
+          "sha256": "468e6da8f67683a6026e718966f7be1779fc853efe239944149397bb1147844f"
         },
         {
           "path": "packages/designer/src/blocks/LogoCloud/motion.ts",
-          "sha256": "967bef0e3de8f0a38d5ceb970b988689eb48fd1b876cd07d133fbc6d63868f34"
+          "sha256": "3461f076aeba952439b5531550d4beb305aba9b575da23d71a2998e0ebd12334"
         },
         {
           "path": "packages/designer/src/blocks/section-ground.ts",
@@ -4508,7 +4514,7 @@
         },
         {
           "path": "packages/designer/src/blocks/LogoCloud/motion.ts",
-          "sha256": "967bef0e3de8f0a38d5ceb970b988689eb48fd1b876cd07d133fbc6d63868f34"
+          "sha256": "3461f076aeba952439b5531550d4beb305aba9b575da23d71a2998e0ebd12334"
         },
         {
           "path": "packages/designer/src/blocks/Stat.tsx",
@@ -4882,7 +4888,7 @@
       "sourceFiles": [
         {
           "path": "packages/designer/src/blocks/LogoCloud/motion.ts",
-          "sha256": "967bef0e3de8f0a38d5ceb970b988689eb48fd1b876cd07d133fbc6d63868f34"
+          "sha256": "3461f076aeba952439b5531550d4beb305aba9b575da23d71a2998e0ebd12334"
         },
         {
           "path": "packages/designer/src/blocks/section-ground.ts",
@@ -4894,11 +4900,11 @@
         },
         {
           "path": "packages/designer/src/blocks/Testimonial/Carousel.tsx",
-          "sha256": "221b64aa1537a4dce7af1f9f5fee8ee90ee0cea0c85f24c05cb92224d92c0a5f"
+          "sha256": "b864073bd118dc818f3b9184d93c393173d02b0562162ac2d512eca6e926d776"
         },
         {
           "path": "packages/designer/src/blocks/TestimonialSet.tsx",
-          "sha256": "b885efa64a6ca8b7679cc9468e490f6ab516b6206e1282cd5c700df76584967f"
+          "sha256": "dde5a0d3b48a2991fa070d3b0d990c3fc813913c47f83bfb9e04ec41cc8ff3d7"
         },
         {
           "path": "packages/designer/src/catalog-core/provenance-attrs.ts",

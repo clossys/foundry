@@ -55,8 +55,8 @@ export function LogoCloud({ items, tone = "monochrome", ground = "base", motion 
   const monochromeClasses = monochrome ? "grayscale" : undefined;
   const anchorToneClasses = monochrome ? "grayscale hover:grayscale-0 focus-visible:grayscale-0" : undefined;
   const list = (moving = false, duplicate = false) => (
-    <SemanticContent as="ul" {...SECTION_STAMP} {...rest} role="list" aria-hidden={duplicate || undefined} inert={duplicate || undefined} data-logo-cloud-duplicate={duplicate ? "" : undefined}
-      className={cx(moving ? "m-0 flex shrink-0 list-none gap-xl p-0 pe-xl" : "m-0 grid list-none gap-x-xl gap-y-lg p-0", !moving && COLUMN_CLASSES[items.length], SECTION_GROUND_CLASSES[ground].primary, className)} style={style}>
+    <SemanticContent as="ul" {...(!moving ? SECTION_STAMP : {})} {...(!moving ? rest : {})} role="list" aria-hidden={duplicate || undefined} inert={duplicate || undefined} data-logo-cloud-duplicate={duplicate ? "" : undefined}
+      className={cx(moving ? "m-0 flex shrink-0 list-none gap-xl p-0 pe-xl" : "m-0 grid list-none gap-x-xl gap-y-lg p-0", !moving && COLUMN_CLASSES[items.length], SECTION_GROUND_CLASSES[ground].primary, !moving && className)} style={moving ? undefined : style}>
       {items.map(item => {
         const markToneClasses = item.href === undefined ? monochromeClasses : undefined;
         const mark = <><SemanticContent as="span" aria-hidden="true" className={cx("inline-flex h-8 w-full max-w-40 overflow-hidden tablet:h-10", markToneClasses)}>{item.logo}</SemanticContent><SemanticContent as="span" className="sr-only">{item.name}</SemanticContent></>;
@@ -66,5 +66,5 @@ export function LogoCloud({ items, tone = "monochrome", ground = "base", motion 
       })}
     </SemanticContent>
   );
-  return motion === "marquee" ? <LogoCloudMarquee grid={list()} track={list(true)} duplicate={list(true, true)} labels={motionLabels!} /> : list();
+  return motion === "marquee" ? <LogoCloudMarquee grid={list()} track={list(true)} duplicate={list(true, true)} labels={motionLabels!} className={className} style={style} rootProps={{ ...SECTION_STAMP, ...rest }} /> : list();
 }

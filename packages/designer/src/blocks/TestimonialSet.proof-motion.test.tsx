@@ -24,10 +24,12 @@ describe("TestimonialSet proof layouts", () => {
     const { container } = render(<TestimonialSet items={items} layout="carousel" carouselLabels={labels} />);
     expect(container.querySelector('[data-slot="scroll-area"]')).toHaveClass("snap-x", "snap-mandatory");
     expect(container.querySelector("li")).toHaveClass("snap-start");
+    Object.defineProperty(container.querySelector("[data-testimonial-track]"), "clientWidth", { value: 480 });
     expect(scrollBy).not.toHaveBeenCalled();
     fireEvent.click(screen.getByRole("button", { name: labels.next }));
-    expect(scrollBy).toHaveBeenLastCalledWith(expect.objectContaining({ behavior: "smooth" }));
+    expect(scrollBy).toHaveBeenLastCalledWith({ left: 480, behavior: "smooth" });
     fireEvent.click(screen.getByRole("button", { name: labels.previous }));
+    expect(scrollBy).toHaveBeenLastCalledWith({ left: -480, behavior: "smooth" });
     expect(scrollBy).toHaveBeenCalledTimes(2);
   });
   it("reduced motion scrolls instantly on an explicit control only", () => {
