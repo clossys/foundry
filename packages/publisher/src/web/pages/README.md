@@ -327,3 +327,39 @@ combined in one assembly by duplicating that identity. Consumer choices remain
 subject to this native gate. The acceptance fixture deliberately selects one
 registered header configuration for both taxonomy levels; it does not qualify
 the existing Admin combination of several header configs.
+
+## Render the persistent publication during SSR
+
+An imperative `setRegions` host cannot insert server-rendered nodes into a frame
+mounted elsewhere. For SSR, give `createRegisteredPublicationSession` a stable
+`host.Frame` adapter around the selected Designer frame. Its
+`RegisteredPublicationFrameProps` contain the selected `publication`, stable
+navigation/search `ports`, and an immutable `snapshot`: `regions`, `state`,
+`commands`, and `chunks`. Forward those props into the selected frame. Render
+`snapshot.regions.main` once; for a stream it contains all currently ready native
+chunks. An adapter that renders chunks individually uses `snapshot.chunks` in
+place of that main array, retaining the supplied order and load/status metadata.
+
+`RegisteredRoutePage` renders `RegisteredPublicationOutlet` for this adapter,
+including on the server. It prepares the initial snapshot without activating a
+session, calling host setters, or requesting lazy content. Hydration reads that
+same initial snapshot, then subscribes to the publication's stable
+`getSnapshot`/`subscribe` store. Page and state updates change frame props; they
+do not key or replace the frame or its shared chat. A pending or refused page
+retains the shell and its previously selected regions while displaying the frame
+route state. Keep the session, host and Frame component stable across route
+changes, and create sessions per publication/request rather than sharing server
+request state globally.
+
+Page startup is memoized for the current hash and concrete path. An explicit
+item load invalidates that memo. Returning to the plain page clears item-owned
+content and route state, cancels late item results, and lets normal preparation
+derive the page's ready or pending state.
+
+Mount the adapter only through this outlet. Remove the old external frame mount;
+`bind` and the imperative setters may mirror data but must not create another
+frame or chat. Setter-only hosts keep their existing client publication behavior
+and do not provide SSR. Consumer adoption must supply the real selected Designer
+frame and installed runtime inputs; the lifecycle fixture in Publisher proves
+native selected main SSR/hydration and frame/chat identity using a synthetic host,
+not an installed consumer frame or live-route qualification.
