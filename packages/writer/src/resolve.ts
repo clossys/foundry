@@ -34,7 +34,7 @@ import { canonicalLocale, fallbackChain } from "./locale.js";
 import { parseIcuMessage } from "./icu/parse.js";
 import type { IcuParseResult } from "./icu/parse.js";
 import type { WriterManifest } from "./model/types.js";
-import { isApprovalExpired, isApprovalStale, isEntryInDelegateScope } from "./approval.js";
+import { isApprovalExpired, isApprovalStale, isEntryInDelegateScope } from "./approval-policy.js";
 import { isPlanBytes, planDelegateCopyAuthority } from "./plan-authority.js";
 import type { PlanDelegateCopyRefusal } from "./plan-authority.js";
 

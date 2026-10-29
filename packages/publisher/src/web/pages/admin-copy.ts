@@ -1,4 +1,4 @@
-import { createAdminCopy, getAdminCopyRecord, resolveAdminCopyRef } from "@clossys/writer/admin-copy";
+import { createAdminCopy, getAdminCopyRecord, getAdminItemNameBinding, resolveAdminCopyRef } from "@clossys/writer/admin-copy";
 import type { AdminCopyRef, AdminRouteCopy } from "@clossys/writer/admin-copy";
 import type { StringRecord } from "@clossys/writer";
 import { runtimeHash, runtimeSnapshot } from "@clossys/designer/catalog";
@@ -76,17 +76,22 @@ export function createAdminPageCopy(input: { readonly locale: string; readonly e
     if (aliases.length > 1) throw new TypeError("Writer alias is declared more than once");
     const aliasOwner = aliases[0], recordId = aliasOwner?.aliases[reference.id] ?? reference.id;
     const declarations = aliasOwner?.externalRecords.filter(row => row.recordId === recordId) ?? [];
+    const canonicalItemBinding = getAdminItemNameBinding(recordId);
+    const itemBinding = !aliasOwner && canonicalItemBinding ? getAdminItemNameBinding(recordId, store) : undefined;
     const matches = envelopes.flatMap(envelope => {
       const record = envelope.records.find(row => row.id === recordId);
       if (!record || aliasOwner && aliasOwner !== envelope && !declarations.some(row => row.source === envelope.source && row.sourceContext === record.context)) return [];
       const bindingOwner = aliasOwner ?? envelope;
-      const binding = bindingOwner.bindings.find(row => row.recordId === recordId && row.kind === "CopyRef" && row.cellId === (aliasOwner ? reference.id : record.context));
+      const binding = bindingOwner.bindings.find(row => row.recordId === recordId && (
+        !canonicalItemBinding && !record.context.startsWith("designer.item.") && row.kind === "CopyRef" && row.cellId === (aliasOwner ? reference.id : record.context)
+        || itemBinding && row.kind === itemBinding.kind && row.cellId === itemBinding.cellId && row.target === itemBinding.target
+      ));
       return binding ? [{ envelope, record, binding, bindingOwner }] : [];
     });
     if (matches.length !== 1) throw new TypeError(`Writer CopyRef requires one bound record: ${reference.id}`);
     const { envelope, record, binding, bindingOwner } = matches[0]!;
     const ref = { ...reference, id: record.id, locale };
-    const result = resolveAdminCopyRef(ref, store);
+    const result = resolveAdminCopyRef(ref, store, { target: "preview" });
     const literal = !result && locale !== "en" && Object.keys(ref.values ?? {}).length === 0 && !record.args?.length && !/[{}]/.test(record.text) ? getAdminCopyRecord(record.id, store) : undefined;
     if (record.status === "retired" || result && result.servedLocale !== locale || !result && !literal) throw new TypeError(`Writer refused CopyRef or ICU arguments: ${reference.id}`);
     const resolved = runtimeSnapshot({ ref, text: result?.text ?? record.text, provenance: { cellId: binding.cellId, recordId: record.id, revision: envelope.revision, locale, status: record.status, activation: "none", mode: result ? "writer-icu-preview" as const : "writer-literal-preview" as const, envelopeHash: envelope.hash, bindingSource: bindingOwner.source, bindingEnvelopeHash: bindingOwner.hash, recordSource: envelope.source } });

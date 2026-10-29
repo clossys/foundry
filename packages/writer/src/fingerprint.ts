@@ -30,14 +30,11 @@
  * fingerprint IS the source text, deterministically restated, rather than
  * someone's claim about the source text.
  *
- * Uses `node:crypto`, a Node.js built-in — not a runtime dependency. This
- * follows the exact precedent `registry.ts` already set for `node:fs`: see
- * this package's README, "The single most important constraint", and
- * `types.ts`'s own doc comment on this package's zero-runtime-dependency
- * discipline.
+ * Uses the shared synchronous, platform-neutral SHA-256 implementation so
+ * strict browser resolution and server approval checks hash identical UTF-8 bytes.
  */
 
-import { createHash } from "node:crypto";
+import { sha256 } from "./sha256.js";
 
 /**
  * The digest algorithm `computeCopyFingerprint` uses, and the value every
@@ -62,5 +59,5 @@ export const COPY_FINGERPRINT_ALGORITHM = "sha256";
  * `text`, to decide whether that recorded fingerprint still matches.
  */
 export function computeCopyFingerprint(text: string): string {
-  return createHash(COPY_FINGERPRINT_ALGORITHM).update(text, "utf8").digest("hex");
+  return sha256(text);
 }

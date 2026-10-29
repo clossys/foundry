@@ -35,7 +35,7 @@ import type {
   CopySource,
 } from "./types.js";
 import { COPY_FINGERPRINT_ALGORITHM } from "./fingerprint.js";
-import { isDelegateScopeItem, isEntryInDelegateScope } from "./approval.js";
+import { isDelegateScopeItem, isEntryInDelegateScope } from "./approval-policy.js";
 
 function isPlainObject(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null && !Array.isArray(value);
