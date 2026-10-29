@@ -4,11 +4,19 @@ import { SITE_CHROME_GROUND_CLASSES, siteChromeHasBorder, type SiteChromeGround 
 import { BADGE_INSET_SHARE, BADGE_RADIUS_SHARE } from "./badge-plate.js";
 import { UI_BORDER_HAIRLINE, UI_BRANDMARK_HEIGHT_SM, UI_LAYOUT_TAP_TARGET, UI_WIDTH_PAGE_PADDING_X, UI_Z_SHELL } from "./internal/shell-vars.js";
 import { dsAttrs } from "../catalog-core/provenance-attrs.js";
+import { SemanticContent } from "../components/SemanticContent.js";
+import { Link } from "../components/Link.server.js";
+import { Logomark } from "../components/Logomark.js";
+import { Icon } from "../components/Icon.js";
+import type { IconNode } from "../icons/types.js";
+import { isImageResource, type ImageResource } from "../catalog-assets/media.js";
 
 /** DOM provenance (WIRE-3 D1): this frame root stamps its leaf and fill. */
 const FRAME_STAMP = dsAttrs("frames", "frames.site-footer", "foundry/frames.site-footer");
 
 export interface SiteFooterProps extends Omit<HTMLAttributes<HTMLElement>, "children"> {
+  /** Identity band, normally the frame's resolved `Brandmark`; first grid cell when columns are present. */
+  brand?: ReactNode;
   /**
    * The grouped link columns — typically one or more `SiteFooter.Column`s
    * laid out in a responsive grid this component owns. Optional: a short
@@ -18,7 +26,7 @@ export interface SiteFooterProps extends Omit<HTMLAttributes<HTMLElement>, "chil
   /**
    * The secondary/legal row below the columns — a copyright line, legal
    * links, a locale switcher. Rendered under a hairline divider once
-   * `columns` is present.
+   * `brand` or `columns` is present.
    */
   secondary?: ReactNode;
   /**
@@ -41,7 +49,7 @@ export interface SiteFooterProps extends Omit<HTMLAttributes<HTMLElement>, "chil
  * automatically at the top level, the same placement rule `Shell.Footer`
  * already carries.
  */
-function SiteFooterRoot({ columns, secondary, ground = "base", rule = "none", className, style, ...rest }: SiteFooterProps) {
+function SiteFooterRoot({ brand, columns, secondary, ground = "base", rule = "none", className, style, ...rest }: SiteFooterProps) {
   const colors = SITE_CHROME_GROUND_CLASSES[ground];
   const bordered = siteChromeHasBorder(ground);
   const topRule = ground === "transparent" && rule === "top";
@@ -59,26 +67,29 @@ function SiteFooterRoot({ columns, secondary, ground = "base", rule = "none", cl
         ...style,
       }}
     >
-      <div
+      <SemanticContent as="div"
         className="mx-auto flex w-full flex-col gap-lg"
         style={{ paddingInline: UI_WIDTH_PAGE_PADDING_X }}
       >
         {columns ? (
-          <div className="site-footer-columns">{columns}</div>
-        ) : null}
+          <SemanticContent as="div" className="site-footer-columns">
+            {brand ? <SemanticContent as="div" data-footer-brand="" className="flex min-w-0 items-center">{brand}</SemanticContent> : null}
+            {columns}
+          </SemanticContent>
+        ) : brand ? <SemanticContent as="div" data-footer-brand="" className="flex min-w-0 items-center">{brand}</SemanticContent> : null}
         {secondary ? (
-          <div
+          <SemanticContent as="div"
             className={cx(
               "flex flex-col gap-sm text-body-s",
               colors.secondary,
               "tablet:flex-row tablet:items-center tablet:justify-between",
-              columns && bordered ? cx("border-t pt-lg", colors.border) : "",
+              (brand || columns) && bordered ? cx("border-t pt-lg", colors.border) : "",
             )}
           >
             {secondary}
-          </div>
+          </SemanticContent>
         ) : null}
-      </div>
+      </SemanticContent>
     </footer>
   );
 }
@@ -104,10 +115,10 @@ export interface SiteFooterColumnProps {
  */
 function SiteFooterColumn({ heading, children, className }: SiteFooterColumnProps) {
   return (
-    <div className={cx("flex flex-col gap-sm", className)}>
-      <h2 className="m-0 text-body-s font-body font-medium">{heading}</h2>
-      <div className="flex flex-col gap-xs">{safeColumnLinks(children)}</div>
-    </div>
+    <SemanticContent as="div" className={cx("flex flex-col gap-sm", className)}>
+      <SemanticContent as="h2" className="m-0 text-body-s font-body font-medium">{heading}</SemanticContent>
+      <SemanticContent as="div" className="flex flex-col gap-xs">{safeColumnLinks(children)}</SemanticContent>
+    </SemanticContent>
   );
 }
 
@@ -116,6 +127,30 @@ export interface SiteFooterLegalLink {
   label: string;
   /** The link's destination — rendered as a real `<a href>`. */
   href: string;
+}
+
+/** A named profile destination with exactly one consumer image or existing glyph. */
+export type SiteFooterSocialLinkProps = SiteFooterLegalLink & (
+  | { readonly image: ImageResource; readonly icon?: never }
+  | { readonly icon: IconNode; readonly image?: never }
+);
+
+/** Consumer artwork stays decorative; the supplied profile name is also visible. */
+function SiteFooterSocialLink({ label, href, image, icon }: SiteFooterSocialLinkProps) {
+  requireNamedDestination({ label, href });
+  if ((image === undefined) === (icon === undefined)) throw new TypeError("Footer social links need exactly one image or glyph.");
+  if (image !== undefined) {
+    if (!isImageResource(image) || NONCANONICAL_HREF.test(image.src) || /[\\\u0000-\u001F\u007F]/.test(image.src) || image.src.startsWith("//")) {
+      throw new TypeError("Footer social artwork must be an image resource.");
+    }
+    const protocol = new URL(image.src, PARSE_BASES[0]).protocol;
+    if (protocol !== "https:" && protocol !== "http:") throw new TypeError("Footer social image destination is unsafe.");
+  } else if (!Array.isArray(icon)) throw new TypeError("Footer social glyphs must be plain icon data.");
+  return <Link variant="standalone" href={href} aria-label={label} rel={externalRel(href)}
+    className="inline-flex items-center gap-sm text-inherit no-underline hover:underline" style={LEGAL_LINK_STYLE}>
+    {image !== undefined ? <Logomark src={image.src} size="sm" plate="shared" tone="inverse" /> : <Icon glyph={icon!} decorative />}
+    {label}
+  </Link>;
 }
 
 export interface SiteFooterLegalProps {
@@ -171,7 +206,7 @@ export class SiteFooterContractError extends TypeError {
 
 const LEGAL_LINK_CLASSES = cx(
   "inline-flex items-center justify-center px-xs",
-  "text-inherit no-underline",
+  "text-body-s text-inherit no-underline",
   "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink-on-inverse",
 );
 
@@ -251,37 +286,37 @@ function SiteFooterLegal({ entity, links, linksLabel, icons = [], home, iconsLab
   if (home && [...links, ...icons].some(link => link.href === home.href)) {
     throw new SiteFooterContractError("footer-duplicate-link", "Footer links and icons must not repeat the home destination.");
   }
-  const IconGroup = iconsLabel ? "nav" : "div";
   const year = new Date().getFullYear();
   const list = (
-    <ul role="list" className="m-0 flex list-none flex-wrap items-center justify-center gap-x-sm p-0">
+    <SemanticContent as="ul" role="list" className="m-0 flex list-none flex-wrap items-center justify-center gap-x-sm p-0">
       {links.map((link, index) => (
-        <li key={index}>
-          <a href={link.href} rel={externalRel(link.href)} className={LEGAL_LINK_CLASSES} style={LEGAL_LINK_STYLE}>
+        <SemanticContent as="li" key={index}>
+          <Link variant="standalone" href={link.href} rel={externalRel(link.href)} className={LEGAL_LINK_CLASSES} style={LEGAL_LINK_STYLE}>
             {link.label}
-          </a>
-        </li>
+          </Link>
+        </SemanticContent>
       ))}
-    </ul>
+    </SemanticContent>
+  );
+  const iconList = (
+    <SemanticContent as="ul" role="list" className="m-0 flex list-none flex-wrap items-center justify-center gap-x-sm p-0">
+      {icons.map((link, index) => <SemanticContent as="li" key={index}>
+        <Link variant="standalone" href={link.href} aria-label={link.label} rel={externalRel(link.href)} className={LEGAL_LINK_CLASSES} style={LEGAL_LINK_STYLE}>{link.icon}</Link>
+      </SemanticContent>)}
+      {home ? <SemanticContent as="li"><Link variant="standalone" href={home.href} aria-label={home.label} rel={externalRel(home.href)} className={LEGAL_LINK_CLASSES} style={LEGAL_LINK_STYLE}>
+        <SemanticContent as="span" data-footer-home-plate="" aria-hidden="true" className="inline-flex items-center justify-center bg-surface-base" style={HOME_PLATE_STYLE}>
+          <Logomark src={home.markSrc} size="sm" />
+        </SemanticContent>
+      </Link></SemanticContent> : null}
+    </SemanticContent>
   );
   return (
-    <div data-footer-composition="" className="site-footer-composition">
-      {linksLabel ? <nav data-footer-region="links" aria-label={linksLabel}>{list}</nav> : <div data-footer-region="links">{list}</div>}
-      <IconGroup data-footer-region="icons" aria-label={iconsLabel}>
-        <ul role="list" className="m-0 flex list-none flex-wrap items-center justify-center gap-x-sm p-0">
-          {icons.map((link, index) => <li key={index}>
-            <a href={link.href} aria-label={link.label} rel={externalRel(link.href)} className={LEGAL_LINK_CLASSES} style={LEGAL_LINK_STYLE}>{link.icon}</a>
-          </li>)}
-          {home ? <li><a href={home.href} aria-label={home.label} rel={externalRel(home.href)} className={LEGAL_LINK_CLASSES} style={LEGAL_LINK_STYLE}>
-            <span data-footer-home-plate="" aria-hidden="true" className="inline-flex items-center justify-center bg-surface-base" style={HOME_PLATE_STYLE}>
-              <img src={home.markSrc} alt="" style={{ height: UI_BRANDMARK_HEIGHT_SM, width: "auto" }} />
-            </span>
-          </a></li> : null}
-        </ul>
-      </IconGroup>
-      <p data-footer-region="copyright" className="m-0">{`© ${year} ${entity}`}</p>
-    </div>
+    <SemanticContent as="div" data-footer-composition="" className="site-footer-composition">
+      {linksLabel ? <nav data-footer-region="links" aria-label={linksLabel}>{list}</nav> : <SemanticContent as="div" data-footer-region="links">{list}</SemanticContent>}
+      {iconsLabel ? <nav data-footer-region="icons" aria-label={iconsLabel}>{iconList}</nav> : <SemanticContent as="div" data-footer-region="icons">{iconList}</SemanticContent>}
+      <SemanticContent as="p" data-footer-region="copyright" className="m-0">{`© ${year} ${entity}`}</SemanticContent>
+    </SemanticContent>
   );
 }
 
-export const SiteFooter = Object.assign(SiteFooterRoot, { Column: SiteFooterColumn, Legal: SiteFooterLegal });
+export const SiteFooter = Object.assign(SiteFooterRoot, { Column: SiteFooterColumn, Legal: SiteFooterLegal, SocialLink: SiteFooterSocialLink });
