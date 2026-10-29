@@ -60,6 +60,7 @@
  * "indeterminate" check maps to `2`, never `0`; see `runWontClaim` below.
  */
 
+import { runCitationIndex } from "./citations/cli.js";
 import { existsSync, readdirSync, readFileSync, realpathSync, statSync } from "node:fs";
 import { join, relative, resolve, sep } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -1240,6 +1241,7 @@ function runWontClaim(argv: string[]): number {
  * `process.argv`.
  */
 export function main(argv: string[]): number {
+  if (argv[0] === "index") return runCitationIndex(argv.slice(1));
   // Subcommand dispatch: only `argv[0] === "brand-coverage"` or
   // `argv[0] === "direction"` exactly diverts to the second/third
   // subcommand — see this file's top-of-file doc comment. Every other
