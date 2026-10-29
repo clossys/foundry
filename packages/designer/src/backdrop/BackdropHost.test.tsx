@@ -2,6 +2,8 @@ import { act, cleanup, render, waitFor } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { BackdropHost } from "./BackdropHost.js";
 import { Hero } from "../blocks/Hero.js";
+import { heroInputs, renderHeroSection } from "../runtime/sections/hero.js";
+import type { SectionRenderInput } from "../runtime/sections/group-a-content.js";
 import { checkBackdropElement, BACKDROP_BUDGET_CEILING_BYTES } from "./contract.js";
 import { checkRuntimeBackdrop, type BackdropModuleLoaders, type RuntimeBackdropResource } from "./runtime-module.js";
 
@@ -135,5 +137,18 @@ describe("checked runtime backdrop", () => {
     expect(container.querySelector("canvas")).not.toBeNull();
     expect(container.querySelector("h1")).toHaveTextContent("Example Co.");
     expect(checkBackdropElement(container.querySelector("[data-backdrop-host]")!)).toMatchObject({ ok: true });
+  });
+  it("the registered JSON Hero adapter reads its actual section host loader registry", async () => {
+    const input = {
+      fill: { leaf: "sections.hero", slots: heroInputs.slots, members: heroInputs.members },
+      selection: { leaf: "sections.hero", members: [] },
+      content: { header: { value: { heading: "Example Co." } }, backdrop: { value: resource } },
+      sectionHost: { backdropModules: modules },
+    } as unknown as SectionRenderInput;
+    const { container } = render(<>{renderHeroSection(input)}</>);
+    visible(true); await flushIdle();
+    expect(container.querySelector("canvas")).not.toBeNull();
+    expect(load).toHaveBeenCalledTimes(1);
+    expect(() => renderHeroSection({ ...input, sectionHost: undefined })).toThrow(/local module loader/);
   });
 });

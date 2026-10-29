@@ -1,6 +1,7 @@
 /** sections.hero: Hero with its intro header, chart or mark media and up to two Link actions. */
 import type { ReactNode } from "react";
 import { checkConsumerArtContract, type StillBackdropArt } from "../../backdrop/consumer-art.js";
+import { checkRuntimeBackdrop, type BackdropModuleLoaders, type RuntimeBackdropResource } from "../../backdrop/runtime-module.js";
 import { Hero } from "../../blocks/Hero.js";
 import { actionNode, mediaNode, memberValue, object, optionalText, readSectionContent, required, SectionContentError, text, type SectionRenderInput, type SectionRendererInputs } from "./group-a-content.js";
 
@@ -16,7 +17,17 @@ export function renderHeroSection(input: SectionRenderInput): ReactNode {
   const extra = actions && Object.keys(actions).find(key => key !== "primary" && key !== "secondary");
   if (extra) throw new SectionContentError(content.leaf, `actions.${extra}: one primary and one secondary action`);
   const backdrop = content.values.backdrop;
-  if (backdrop !== undefined && !checkConsumerArtContract(backdrop).ok) throw new SectionContentError(content.leaf, "backdrop must be checked static art");
+  const runtimeBackdrop = checkRuntimeBackdrop(backdrop);
+  if (backdrop !== undefined && !runtimeBackdrop && !checkConsumerArtContract(backdrop).ok) throw new SectionContentError(content.leaf, "backdrop must be checked static art or a local runtime declaration");
+  let backdropModules: BackdropModuleLoaders | undefined;
+  if (runtimeBackdrop) {
+    const modules = input.sectionHost?.backdropModules;
+    if (!modules || typeof modules !== "object" || Array.isArray(modules)
+      || !Object.hasOwn(modules, backdrop.moduleRef) || typeof (modules as Record<string, unknown>)[backdrop.moduleRef] !== "function") {
+      throw new SectionContentError(content.leaf, "runtime backdrop requires its local module loader on the section host");
+    }
+    backdropModules = modules as BackdropModuleLoaders;
+  }
   return (
     <Hero
       eyebrow={optionalText(content, header.eyebrow, "header.eyebrow")}
@@ -27,7 +38,8 @@ export function renderHeroSection(input: SectionRenderInput): ReactNode {
         {actions.secondary === undefined ? null : actionNode(content, actions.secondary, "actions.secondary", "outline")}
       </>}
       media={content.values.media === undefined ? undefined : mediaNode(content, content.values.media, "media")}
-      backdrop={backdrop as StillBackdropArt | undefined}
+      backdrop={backdrop as StillBackdropArt | RuntimeBackdropResource | undefined}
+      backdropModules={backdropModules}
       backdropScrim={memberValue(content, "backdrop.scrim", ["light", "strong"] as const)}
       ground={memberValue(content, "ground", ["base", "inverse"] as const)}
       composition={memberValue(content, "layout", ["editorial", "split", "full-bleed"] as const)}
