@@ -130,7 +130,8 @@
           "id": "display-media",
           "label": "Media",
           "leaves": [
-            "components.avatar"
+            "components.avatar",
+            "components.media-player"
           ]
         },
         {
