@@ -275,3 +275,5 @@ export type {
   StrategyTreeNode, StrategyTree, SessionLine, Session, Finding,
   StrategyRequest, StrategyRootIssue, StrategyModel,
 } from "./format/types.js";
+export { checkCell, checkCoherence, completion, strategyStatus, validWatch, blocks, cellJudgeId } from "./checks/index.js";
+export type { Scope, JudgeVerdict, CheckOptions, CheckContext, CheckFinding, CellFinding, CoherenceFinding, CellCompletion, StorylineReport, StatusReport, CompletionReport } from "./checks/index.js";
