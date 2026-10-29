@@ -2,7 +2,7 @@
 import { cloneElement, useId, useRef, useState, type ComponentType, type ContextType, type FormEvent, type ReactElement, type ReactNode } from "react";
 import { TooltipTriggerStateContext } from "react-aria-components";
 import { Button } from "../components/Button.js";
-import { componentSpecimenActions, componentSpecimenCard, componentSpecimenCollections, componentSpecimenColor, componentSpecimenField, componentSpecimenOverlays, componentSpecimenProps, componentSpecimenSourceSamples, componentSpecimenTable, componentSpecimenText, componentSpecimenToast, componentSpecimenUnavailable } from "./component-specimen-sample-content.js";
+import { componentSpecimenActions, componentSpecimenCard, componentSpecimenCollections, componentSpecimenColor, componentSpecimenField, componentSpecimenOverlays, componentSpecimenProps, componentSpecimenSemanticMedia, componentSpecimenSourceSamples, componentSpecimenTable, componentSpecimenText, componentSpecimenToast, componentSpecimenUnavailable } from "./component-specimen-sample-content.js";
 import type { SpecimenUnavailableReason } from "./preview-outcome.js";
 import { containedDialog, containedToaster } from "./component-specimen-contained.js";
 
@@ -380,6 +380,20 @@ export function componentSpecimenSample(key: string, Component: unknown, exports
   // a host-owned native control, so its specimen is that native control.
   if (key === "./components#Field") return { props: { ...componentSpecimenField }, children: (field: Record<string, unknown>) => <input {...field} /> };
   if (key === "./components#ColorPicker") return colorPicker(Component);
+  if (key === "./components#SemanticContent") {
+    const Content = Component as Renderable;
+    return {
+      props: componentSpecimenProps[key]!,
+      children: <>{componentSpecimenText[key]}</>,
+      // The host sees the final member/probe props. Only void-tag samples replace paragraph content.
+      host: specimen => {
+        const node = specimen as ReactElement<Record<string, unknown>>;
+        if (node.props.as === "img") return cloneElement(node, { ...componentSpecimenSemanticMedia.image, ...node.props, children: undefined });
+        if (node.props.as === "source") return <Content as="picture">{cloneElement(node, { ...componentSpecimenSemanticMedia.source, ...node.props, children: undefined })}<Content as="img" {...componentSpecimenSemanticMedia.image} /></Content>;
+        return specimen;
+      },
+    };
+  }
   if (key === "./shell#Toaster") return { props: { "aria-label": componentSpecimenToast.label }, host: containedToaster(componentSpecimenToast) };
   const built = collection(key, Component, exports) ?? overlay(key, Component, exports) ?? composed(key, exports);
   const props = Object.hasOwn(componentSpecimenProps, key) ? componentSpecimenProps[key] : undefined;
