@@ -16,7 +16,7 @@ import { specimenDataset } from "../../studio/specimen-dataset.js";
 const RECORDS_PER_PAGE = 100;
 const COLLAPSED_RECORDS = 10;
 
-interface ScrollHeader { readonly heading: string; readonly count?: string; readonly level?: SectionHeaderLevel; readonly id?: string }
+interface ScrollHeader { readonly heading: string; readonly count?: string | number; readonly level?: SectionHeaderLevel; readonly id?: string }
 interface ScrollPagination extends PaginationRegionContent { readonly showAll?: string; readonly label?: string; readonly previous?: string; readonly next?: string; readonly summary?: string; readonly noResults?: string }
 interface ScrollColumn extends Omit<ColumnRecord, "kind"> { readonly key?: string; readonly kind?: TableColumnKind | "badge" | "status" | "preview" | "list" }
 
@@ -77,7 +77,7 @@ function ScrollDataTable({ input }: { input: SectionRenderInput }) {
     singleSelection={scroll} onSelectionChange={typeof input.sectionHost?.onSelectionChange === "function" ? input.sectionHost.onSelectionChange as (ids: readonly string[]) => void : undefined}
     grouping={recordsOf<DimensionRecord>(input, "grouping")}
     renderCell={renderCell}
-    toolbar={<>{header ? <SectionHeader id={header.id} title={header.heading} level={header.level ?? 4} stats={header.count ? <Badge>{header.count}</Badge> : undefined} /> : null}{toolbar ? <FieldRegion content={toolbar} field="text" /> : null}</>}
+    toolbar={<>{header ? <SectionHeader id={header.id} title={header.heading} level={header.level ?? 4} stats={header.count !== undefined ? <Badge>{header.count}</Badge> : undefined} /> : null}{toolbar ? <FieldRegion content={toolbar} field="text" /> : null}</>}
     compact={scroll} footer={footer} isLoading={stateOf(input) === "loading"} />;
 }
 /** The existing section owns bounded presentation state; rows and every displayed label remain host data. */

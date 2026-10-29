@@ -116,11 +116,17 @@ export type RuntimeAssemblyResult<Node> = { readonly status: "ready"; readonly a
 class AssemblyFault extends Error { constructor(readonly status: "pending" | "refused", message: string) { super(message); } }
 function fail(status: "pending" | "refused", message: string): never { throw new AssemblyFault(status, message); }
 /** Anatomy header copy against the header contract's slots: known keys only, required present, copy as text, bounded actions. */
-function sectionHeaderFinding(value: RuntimeJson, slots: readonly { readonly name: string; readonly type: string; readonly required?: boolean; readonly max?: number }[]): string | undefined {
+function sectionHeaderFinding(value: RuntimeJson, slots: readonly { readonly name: string; readonly type: string; readonly required?: boolean; readonly max?: number }[], tableMetadata = false): string | undefined {
   if (!value || typeof value !== "object" || Array.isArray(value)) return "header anatomy copy must be one object";
   const record = value as Readonly<Record<string, RuntimeJson>>;
-  const unknown = Object.keys(record).filter(key => !slots.some(slot => slot.name === key));
+  const metadata = tableMetadata ? ["count", "level", "id"] : [];
+  const unknown = Object.keys(record).filter(key => !slots.some(slot => slot.name === key) && !metadata.includes(key));
   if (unknown.length) return `header anatomy has no ${unknown.sort().join(", ")} slot`;
+  if (tableMetadata) {
+    if (record.count !== undefined && !(typeof record.count === "string" && record.count.trim() || typeof record.count === "number" && Number.isInteger(record.count) && record.count >= 0)) return "header anatomy count must be nonnegative integer or resolved text";
+    if (record.level !== undefined && !(typeof record.level === "number" && Number.isInteger(record.level) && record.level >= 2 && record.level <= 6)) return "header anatomy level must be an integer from 2 to 6";
+    if (record.id !== undefined && !(typeof record.id === "string" && record.id.length > 0 && !/[\s#]/.test(record.id))) return "header anatomy id must be an anchor without whitespace or hash";
+  }
   for (const slot of slots) {
     const field = record[slot.name];
     if (field === undefined) { if (slot.required) return `header anatomy ${slot.name} is required`; continue; }
@@ -273,7 +279,7 @@ export function prepareRuntimeAssembly<Node>(input: RuntimeAssemblyInput<Node>):
         if (runtimeHash(current.reference) !== runtimeHash(reference) || current.hash !== runtimeHash(current.value)) fail("refused", `${path}.${name}: stale or foreign content binding`);
         if (current.value === null || current.value === "" || Array.isArray(current.value) && current.value.length === 0) fail("pending", `${path}.${name}: empty required content`);
         if (isHeader(name) && headerContract?.kind === "section") {
-          const finding = sectionHeaderFinding(current.value, headerContract.slots);
+          const finding = sectionHeaderFinding(current.value, headerContract.slots, selected.leaf === "sections.data-table");
           if (finding) fail("refused", `${path}.${name}: ${finding}`);
         }
         content[name] = current;
