@@ -9,7 +9,7 @@
 // JSON.stringify, whose output for well-formed text is exactly the escaping
 // RFC 8785 requires, with a lone surrogate refused before it.
 
-import { createHash } from "node:crypto";
+import { sha256 } from "./sha256.js";
 import { planViolations } from "./plan-contract.js";
 
 /** The top-level plan members the digest leaves out: when the file was written, and the decisions an approval is recorded in. */
@@ -67,7 +67,7 @@ export function canonicalJson(value: unknown): string {
 export function digestOfValidPlan(plan: Readonly<Record<string, unknown>>): string {
   const subject: Record<string, unknown> = {};
   for (const key of Object.keys(plan)) if (!PLAN_DIGEST_EXCLUDED_FIELDS.includes(key)) subject[key] = plan[key];
-  return `sha256:${createHash("sha256").update(canonicalJson(subject), "utf8").digest("hex")}`;
+  return `sha256:${sha256(canonicalJson(subject))}`;
 }
 
 /**

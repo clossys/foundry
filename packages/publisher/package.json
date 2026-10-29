@@ -144,6 +144,10 @@
       "browser": "./dist/web/refuse-registered-route-browser.js",
       "import": "./dist/web/registered-route-wiring.js"
     },
+    "./web/admin-pages": {
+      "types": "./dist/web/admin-pages.d.ts",
+      "import": "./dist/web/admin-pages.js"
+    },
     "./web/registered-route": {
       "types": "./dist/web/registered-route.d.ts",
       "import": "./dist/web/registered-route.js"
