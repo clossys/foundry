@@ -5,7 +5,7 @@ import { TextDecoder as NodeTextDecoder, TextEncoder as NodeTextEncoder } from "
 import { screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import ts from "typescript";
-import { afterAll, beforeAll, describe, expect, it, onTestFinished } from "vitest";
+import { afterAll, beforeAll, describe, expect, it, onTestFinished, vi } from "vitest";
 import { loadCatalogBundles } from "../catalog-bundles.js";
 import { loadCatalog } from "../catalog-core/index.js";
 import { applyLibraryChange, libraryHash, resolve as resolveValues } from "../catalog-core/api.js";
@@ -100,6 +100,27 @@ async function compileHost(path: string, content: string) {
 }
 let callerBuild: ReturnType<typeof compileHost> | undefined;
 const compileCaller = () => callerBuild ??= compileHost("harness/calendar-caller.tsx", calendarCaller);
+/** Hold real animation frames across close so DOM removal cannot accidentally stand in for focus return. */
+function holdCloseAnimationFrames() {
+  const requestFrame = globalThis.requestAnimationFrame.bind(globalThis);
+  const pending: FrameRequestCallback[] = [];
+  let held = true;
+  const spy = vi.spyOn(globalThis, "requestAnimationFrame").mockImplementation(callback => requestFrame(time => {
+    if (held) pending.push(callback);
+    else callback(time);
+  }));
+  onTestFinished(() => spy.mockRestore());
+  return async () => {
+    await waitFor(() => {
+      expect(screen.queryByRole("listbox")).not.toBeInTheDocument();
+      expect(pending.length).toBeGreaterThan(0);
+    });
+    expect(document.activeElement).toBe(document.body);
+    held = false;
+    spy.mockRestore();
+    for (const callback of pending) requestFrame(callback);
+  };
+}
 /** Exports the selected leaf and entry namespaces from one bundle, so identity is judged inside one module graph. */
 const identityHost = (leaf: string, entry: string) => `import * as leaf from "../${leaf.replace(/\.tsx?$/, ".js")}";\nimport * as entry from "../${entry.replace(/\.tsx?$/, ".js")}";\nexport { entry, leaf };\n`;
 
@@ -238,17 +259,22 @@ describe("API-S1 selected Select parts through the generated leaf API (real reso
     // The disabled March option is skipped, so focus stays on February and nothing is selected.
     expect(document.activeElement).toBe(within(group).getByRole("option", { name: "February" }));
     expect(events.filter(event => event.event === "selection")).toEqual([]);
+    const releaseEnterFrames = holdCloseAnimationFrames();
     await user.keyboard("{Enter}");
     await waitFor(() => expect(screen.queryByRole("listbox")).not.toBeInTheDocument());
+    await releaseEnterFrames();
     expect(events.filter(event => event.event === "selection")).toEqual([{ event: "selection", key: "2", keyType: "string" }]);
     const updated = screen.getByRole("button", { name: /February/ });
     expect(updated).toBe(trigger);
-    expect(document.activeElement).toBe(trigger);
+    // RAC restores focus in an animation frame after unmount; this bundle's React is outside act().
+    await waitFor(() => expect(document.activeElement).toBe(trigger));
     await user.keyboard("{ArrowDown}");
     await screen.findByRole("listbox");
+    const releaseEscapeFrames = holdCloseAnimationFrames();
     await user.keyboard("{Escape}");
     await waitFor(() => expect(screen.queryByRole("listbox")).not.toBeInTheDocument());
-    expect(document.activeElement).toBe(trigger);
+    await releaseEscapeFrames();
+    await waitFor(() => expect(document.activeElement).toBe(trigger));
     expect(events.filter(event => event.event === "selection")).toHaveLength(1);
     await user.keyboard("{ArrowDown}");
     await screen.findByRole("listbox");
@@ -257,6 +283,7 @@ describe("API-S1 selected Select parts through the generated leaf API (real reso
     await waitFor(() => expect(screen.queryByRole("listbox")).not.toBeInTheDocument());
     expect(events.filter(event => event.event === "selection").at(-1)).toEqual({ event: "selection", key: 1, keyType: "number" });
     expect(screen.getByRole("button", { name: /January/ })).toBe(trigger);
+    await waitFor(() => expect(document.activeElement).toBe(trigger));
     expect(events.filter(event => event.event === "open").map(event => event.open)).toEqual([true, false, true, false, true, false]);
   }, 30_000);
   it("S1-4 keeps adoption, output and check refusals; no observations are fabricated", () => {
