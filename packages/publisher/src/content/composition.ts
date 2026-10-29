@@ -186,6 +186,8 @@ export interface ContentWriterContext {
 }
 export interface ResolveCopyOptions {
   readonly resolver?: CopyResolver;
+  /** Admin route adapters require Writer references even for historical inline fields. */
+  readonly requireWriterCopy?: boolean;
   /** Page rendering requires a native title; projection of body copy alone does not. */
   readonly requirePageMeta?: boolean;
 }
@@ -222,6 +224,10 @@ export function resolveCopy(
       if (field.locale !== locale) return;
       const fieldPath = `${path}[${index}]`;
       if (field.ref === undefined) {
+        if (options.requireWriterCopy) {
+          issue(fieldPath, "legacy-inline-copy", "error", "Admin routes require a Writer CopyRef.");
+          return;
+        }
         pairs.push([field.key, field.value]);
         issue(fieldPath, "legacy-inline-copy", "warning", "Migrate inline copy to a Writer CopyRef.");
         return;

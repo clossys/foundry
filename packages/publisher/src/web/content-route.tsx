@@ -1,5 +1,5 @@
 import { ADMIN_ROBOTS, isAdminConsoleRoute } from "./headMetadata.js";
-import { ADMIN_PAGE_COPY_REFS, adminPageForRoute, adminNavigationCopy } from "../content/admin-copy.js";
+import { ADMIN_PAGE_COPY_REFS, adminPageForRoute, adminNavigationCopy, isAdminContentRoute } from "../content/admin-copy.js";
 import { createContentPreviewProvenance } from "./preview/provenance.js";
 import { bindContentAppFrame, ContentCopyBindingError } from "./content-route-copy.js";
 import { renderContentSection } from "./content-route-runtime.js";
@@ -51,6 +51,7 @@ export function prepareContentRoute(input: ContentRouteInput): PreparedContentRo
   const selection = selectContentRoute(input.registry, input.slotId, input.locale);
   const { slot, candidate, locale } = selection;
   const composition = candidate.composition!;
+  const requireWriterCopy = isAdminContentRoute(slot, input.registry.workspace);
   if (typeof input.raisedAt !== "string" || !input.raisedAt.trim() || !Number.isFinite(Date.parse(input.raisedAt))) throw new TypeError("Content route requires a caller-supplied raisedAt instant");
   const needs: ContentRouteNeed[] = [];
   const add = (kind: ContentRouteNeed["kind"], target: ContentRouteNeed["target"], ref: string, detail: string) => {
@@ -60,25 +61,29 @@ export function prepareContentRoute(input: ContentRouteInput): PreparedContentRo
 
   const copyFindings: CopyFinding[] = [];
   const copyReports: { binding: string; report: CopyResolutionReport }[] = [];
-  const recordCopy = (report: CopyResolutionReport, binding: string): CopyResolutionReport["copy"] => {
-    copyReports.push({ binding, report });
+  const validateCopy = (report: CopyResolutionReport): CopyResolutionReport["copy"] => {
     copyFindings.push(...report.findings);
-    for (const finding of report.findings) if (finding.severity === "error") {
+    // Refuse legacy reports independently of their historical warning/complete flags.
+    for (const finding of report.findings) if (finding.severity === "error" || requireWriterCopy && finding.rule === "legacy-inline-copy") {
       add("copy", "writer", finding.path, `Writer copy is required: ${finding.path} (${finding.rule})`);
     }
     return report.copy;
+  };
+  const recordCopy = (report: CopyResolutionReport, binding: string): CopyResolutionReport["copy"] => {
+    copyReports.push({ binding, report });
+    return validateCopy(report);
   };
   const writer = input.writer;
   const writerValid = writer === undefined || isContentJson(writer) && writer !== null && typeof writer === "object" && !Array.isArray(writer)
     && Object.keys(writer).every(key => ["registry", "registries", "manifest", "timeZone"].includes(key)) && Object.hasOwn(writer, "registry");
   if (!writerValid) add("copy", "writer", "writer", "Writer context requires finite registry, registries, manifest, and timeZone values");
-  const copyOptions: ResolveCopyOptions = input.resolveCopy ? { resolver: input.resolveCopy } : writerValid && writer !== undefined ? {
+  const copyOptions: ResolveCopyOptions = { requireWriterCopy, ...(input.resolveCopy ? { resolver: input.resolveCopy } : writerValid && writer !== undefined ? {
     resolver: createCopyResolver(writer.registry, {
       ...(writer.registries === undefined ? {} : { registries: writer.registries }),
       ...(writer.manifest === undefined ? {} : { manifest: writer.manifest }),
       timeZone: writer.timeZone ?? "UTC", now: new Date(input.raisedAt),
     }),
-  } : {};
+  } : {}) };
   const pageCopy = recordCopy(resolveCopy({ pageMeta: candidate.pageMeta }, locale, { ...copyOptions, requirePageMeta: true }), "pageMeta")[PAGE_META_KEY] ?? {};
   const canonicalPolicy = slot.meta?.canonical;
   const canonical = typeof canonicalPolicy === "string"
@@ -101,8 +106,9 @@ export function prepareContentRoute(input: ContentRouteInput): PreparedContentRo
     } else {
       let nativeMetadataComplete = true;
       for (const publishedLocale of slot.locales) {
+        // Validate all served locales; provenance describes only this route's projections.
         const nativeCopy = publishedLocale === locale ? pageCopy
-          : recordCopy(resolveCopy({ pageMeta: candidate.pageMeta }, publishedLocale, { ...copyOptions, requirePageMeta: true }), `pageMeta.${publishedLocale}`)[PAGE_META_KEY] ?? {};
+          : validateCopy(resolveCopy({ pageMeta: candidate.pageMeta }, publishedLocale, { ...copyOptions, requirePageMeta: true }))[PAGE_META_KEY] ?? {};
         for (const key of ["title", "description"] as const) if (!nativeCopy[key]?.trim()) {
           nativeMetadataComplete = false;
           add("copy", "writer", `pageMeta.${publishedLocale}.${key}`, `Publishing requires native Writer ${key} for every served locale: ${publishedLocale}`);
@@ -274,6 +280,7 @@ export function ContentRoutePage({ input }: { readonly input: ContentRouteInput 
   const writer = input.writer;
   const pageCopy = resolveCopy({ pageMeta: candidate.pageMeta }, locale, {
     requirePageMeta: true,
+    requireWriterCopy: isAdminContentRoute(prepared.slot, input.registry.workspace),
     ...(input.resolveCopy ? { resolver: input.resolveCopy } : writer === undefined ? {} : { resolver: createCopyResolver(writer.registry, {
       ...(writer.registries === undefined ? {} : { registries: writer.registries }),
       ...(writer.manifest === undefined ? {} : { manifest: writer.manifest }),

@@ -10,7 +10,7 @@ import { bindContentAppFrame } from "./content-route-copy.js";
 import { resolveContentRouteRequest } from "./content-route-request.js";
 import { emitCompleteRoutePage, emitRegisteredRouteAdapter } from "./registered-route-source.js";
 import { syntheticRoute } from "../core/__fixtures__/registered-route.js";
-import { contentRouteContent, contentRouteFixture } from "./__fixtures__/content-route.js";
+import { contentRouteContent, contentRouteFixture, withApprovedRouteCopy } from "./__fixtures__/content-route.js";
 import type { CopyResolver } from "@clossys/writer";
 
 const paths = ["/agents/designer", "/agents/writer", "/agents/publisher"] as const;
@@ -20,7 +20,7 @@ const registrations = paths.map(path => {
     composition: { ...route.composition, binding: { ...route.composition.binding, path } } };
 });
 function inputFor(path: string) {
-  const input = contentRouteFixture();
+  const input = withApprovedRouteCopy(contentRouteFixture());
   return { ...input, registry: { ...input.registry, slots: input.registry.slots.map(slot => ({ ...slot, aliases: [], l2: "admin", route: path, meta: { robots: "index" as const } })) } };
 }
 function metadataFrom(source: string) {
@@ -110,7 +110,7 @@ describe("admin route head and registered navigation conformance", () => {
 
   it("the serving AppFrame boundary drops invalid destinations and exposes nonblocking diagnostics", () => {
     const content = contentRouteContent();
-    const base = contentRouteFixture({ composition: { ...content.composition!, frame: { frameId: "frames.app-shell", configId: "default" } } });
+    const base = withApprovedRouteCopy(contentRouteFixture({ composition: { ...content.composition!, frame: { frameId: "frames.app-shell", configId: "default" } } }));
     const input = { ...base, appFrame: shell(), resolveCopy: resolver,
       registry: { ...base.registry, slots: base.registry.slots.map(slot => ({ ...slot, aliases: [], l2: "admin", route: "/agents/publisher" })) },
       libraries: base.libraries.map(library => ({ ...library, frames: [{ id: "frames.app-shell", configIds: ["default"] }] })),
