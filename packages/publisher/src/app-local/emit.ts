@@ -6,10 +6,9 @@ import { emit, resolve as resolveValues, loadCatalog, loadComponentRegistry, loa
 import type { CompositeCatalogData, CompositeLibraryData, FrameSlot } from "@clossys/designer/catalog";
 import { loadCatalogBundles } from "@clossys/designer/catalog-bundles";
 import type { SourceModule } from "@clossys/designer/components/source-closure";
-import { contentMapFromCells } from "../content-map/cells.js";
 import { projectNavigation } from "../content-map/projections.js";
 import { emitContentRoutePage } from "../web/content-route-source.js";
-import type { ContentRouteManifest } from "../web/content-route-types.js";
+import { readServingPublication } from "./cell-routes.js";
 import { appLocalHash, generatedText } from "./format.js";
 import { containedAppLocalPath, noAppLocalSymlink, safeAppLocalPath } from "./files.js";
 import { analyzeAppLocalSource, appLocalSourceResolver, printAppLocalSource } from "./source.js";
@@ -18,8 +17,6 @@ export interface AppLocalTarget {
   readonly app: string;
   readonly format: "web.page.responsive";
   readonly publication: string;
-  /** Serving entries use already checked registrations; no page composition is fabricated. */
-  readonly routes?: ContentRouteManifest;
 }
 export interface EmitAppLocalOptions {
   readonly root: string;
@@ -60,7 +57,7 @@ export async function emitAppLocal(options: EmitAppLocalOptions): Promise<AppLoc
   const catalog = options.catalog ?? defaultCatalog();
   const library = await readActiveSourceLibrary(join(root, "clossys/agents/designer"), catalog) as CompositeLibraryData;
   if (!("components" in library)) throw new Error("App-local source emission requires a selected composite Designer library");
-  const map = await contentMapFromCells(join(root, "clossys/agents/publisher"), target.publication);
+  const { map, manifest } = await readServingPublication(join(root, "clossys/agents/publisher"), target.publication, library.source.id);
   if (map.format !== target.format) throw new Error("Publication and target formats differ");
   const writer = await writerProjection(join(root, "clossys/agents/writer"));
   const app = JSON.parse(await readFile(join(appDir, "package.json"), "utf8"));
@@ -81,18 +78,20 @@ export async function emitAppLocal(options: EmitAppLocalOptions): Promise<AppLoc
   }
   if (!locales.size) throw new Error("Active Writer library has no locale records");
   for (const [locale, records] of locales) additionalEntries.push({ path: `copy/${locale}.ts`, content: `export const records = ${literal(records)} as const;\nexport default records;\n` });
-  if (target.routes) {
-    if (target.routes.version !== 2) throw new Error("Checked content route manifest version 2 is required");
-    for (const route of target.routes.routes) {
-      if (!map.entries.some(entry => entry.kind === "page" && (entry.path ?? `/${entry.slug}`) === route.path)) throw new Error("Serving route is outside the selected publication");
-      safeAppLocalPath(route.source.file);
-      additionalEntries.push({ path: route.source.file, content: emitContentRoutePage(route) });
-    }
+  for (const route of manifest.routes) {
+    safeAppLocalPath(route.source.file);
+    additionalEntries.push({ path: route.source.file, content: emitContentRoutePage(route) });
   }
   const valueLibrary = { source: library.source, ...library.values };
   const styles = emit(resolveValues({ catalog: catalog.values, library: valueLibrary }), ["css-brand", "css-scales", "css-fonts"]);
   additionalEntries.push({ path: "theme.css", content: styles.map(file => file.contents).join("\n") });
-  const closure = collectSourceClosure({ library, additionalEntries, analyze: analyzeAppLocalSource, resolve: appLocalSourceResolver(library, appDir, { ...appRanges, ...ranges }), transformSource: printAppLocalSource });
+  const sourceResolver = appLocalSourceResolver(library, appDir, { ...appRanges, ...ranges });
+  const selected = new Set(library.components.fills.flatMap(document => Object.values(document.components).map(fill => fill.slot)));
+  const closure = collectSourceClosure({ library, additionalEntries, analyze: analyzeAppLocalSource, resolve: request => {
+    const result = sourceResolver(request);
+    if (result.kind === "source" && result.module.ownerSlot !== undefined && !selected.has(result.module.ownerSlot)) throw new Error(`Source component is outside selected library: ${result.module.ownerSlot} (${result.module.path})`);
+    return result;
+  }, transformSource: printAppLocalSource });
   const files: Record<string, string> = {};
   for (const file of closure.files) files[file.path] = generatedText(file.content);
   files["dependencies.json"] = generatedText(`${JSON.stringify(closure.dependencies, null, 2)}\n`);

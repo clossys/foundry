@@ -3,6 +3,7 @@ import { constants } from "node:fs";
 import { dirname, isAbsolute, join, relative, resolve, sep } from "node:path";
 import { appLocalHash, parseAppLocalJson, parseGeneratedText } from "./format.js";
 import type { AppLocalEmission } from "./emit.js";
+import { firstPartyAppImports } from "./source.js";
 
 export type AppLocalFindingKind = "missing" | "stale" | "hand-edit" | "extra" | "clossys-import";
 export interface AppLocalFinding { readonly kind: AppLocalFindingKind; readonly path: string; readonly message: string }
@@ -29,7 +30,7 @@ async function regularText(path: string): Promise<string> {
   try { if (!(await file.stat()).isFile()) throw new Error("Expected a regular file"); return await file.readFile("utf8"); }
   finally { await file.close(); }
 }
-async function inventory(root: string, prefix = ""): Promise<string[]> {
+async function inventory(root: string, prefix = "", excluded: ReadonlySet<string> = new Set()): Promise<string[]> {
   const result: string[] = [];
   let entries;
   try { entries = await readdir(join(root, prefix), { withFileTypes: true }); }
@@ -37,7 +38,7 @@ async function inventory(root: string, prefix = ""): Promise<string[]> {
   for (const entry of entries.sort((a, b) => a.name.localeCompare(b.name))) {
     const path = prefix ? `${prefix}/${entry.name}` : entry.name;
     safeAppLocalPath(path);
-    if (entry.isDirectory()) result.push(...await inventory(root, path)); else result.push(path);
+    if (entry.isDirectory()) { if (!excluded.has(entry.name)) result.push(...await inventory(root, path, excluded)); } else result.push(path);
   }
   return result;
 }
@@ -94,12 +95,16 @@ export async function verifyAppLocal(directory: string, expected: AppLocalEmissi
       if (Object.keys(dependencies).some(name => name.startsWith("@clossys/"))) add("clossys-import", "package.json", "Application depends on a first-party package");
       for (const name of Object.keys(expected.dependencies)) if (typeof dependencies[name] !== "string") add("missing", "package.json", `Application dependency is missing: ${name}`);
     } catch (cause) { if ((cause as NodeJS.ErrnoException).code === "ENOENT") add("missing", "package.json", "Application package manifest is missing"); else throw cause; }
-    for (const path of await inventory(join(expected.appDir, "src"))) {
-      if (!/\.[cm]?[jt]sx?$/.test(path)) continue;
-      const absolute = join(expected.appDir, "src", path);
-      if (relative(resolve(directory), absolute).split(sep)[0] !== "..") continue;
-      const source = await regularText(absolute);
-      if (/\b(?:from\s*|import\s*\(?\s*|require\s*\(\s*)["']@clossys\//.test(source)) add("clossys-import", `src/${path}`, "Application source imports a first-party package");
+    // Dependency installs, build products and repository/state inventories are not application-authored source.
+    const excluded = new Set(["node_modules", ".next", "dist", "build", "out", "coverage", ".git", ".state"]);
+    for (const path of await inventory(expected.appDir, "", excluded)) {
+      const absolute = join(expected.appDir, path), generated = relative(resolve(directory), absolute);
+      if (generated !== ".." && !generated.startsWith(`..${sep}`) && !isAbsolute(generated)) continue;
+      try {
+        const metadata = await lstat(absolute);
+        if (metadata.isSymbolicLink()) { add("hand-edit", path, "Application source alias cannot be verified"); continue; }
+        if (/\.[cm]?[jt]sx?$/.test(path) && firstPartyAppImports({ path, content: await regularText(absolute) }).length) add("clossys-import", path, "Application source imports a first-party package");
+      } catch { add("hand-edit", path, "Application source cannot be verified as a regular file"); }
     }
   }
   return findings;
