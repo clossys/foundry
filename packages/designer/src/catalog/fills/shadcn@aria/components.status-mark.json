@@ -1,0 +1,174 @@
+{
+  "$extensions": {
+    "com.clossys.fill": {
+      "id": "shadcn@aria/components.status-mark",
+      "slot": "components.status-mark",
+      "source": "shadcn@aria",
+      "mode": "implementation",
+      "sourceAddress": "https://github.com/shadcn-ui/ui/blob/96da9cc7f1aa10580a3741664e2a77c721206c00/apps/v4/registry/bases/aria/ui/badge.tsx",
+      "relation": "same-contract",
+      "builtOn": [
+        "components.icon"
+      ],
+      "conforms": [],
+      "evidence": [],
+      "author": "third-party",
+      "trust": "pinned-upstream",
+      "license": "MIT",
+      "status": "draft",
+      "pin": {
+        "url": "https://github.com/shadcn-ui/ui",
+        "commit": "96da9cc7f1aa10580a3741664e2a77c721206c00",
+        "sha256": "7771524b64abcdf8dd0d1a0dad02ae5dd78b6865ec69be6d19ff204e73302c64"
+      },
+      "unmapped": []
+    }
+  },
+  "components": {
+    "status-mark": {
+      "slot": "components.status-mark",
+      "source": "shadcn@aria",
+      "root": "presentational",
+      "members": [
+        "tone.success",
+        "tone.warning",
+        "tone.danger",
+        "tone.info",
+        "tone.neutral"
+      ],
+      "props": [],
+      "propMap": {
+        "tone.success": "StatusMark.tone=success",
+        "tone.warning": "StatusMark.tone=warning",
+        "tone.danger": "StatusMark.tone=danger",
+        "tone.info": "StatusMark.tone=info",
+        "tone.neutral": "StatusMark.tone=neutral"
+      },
+      "reads": {
+        "tokens": [
+          "tokens.accent-color.text",
+          "tokens.action-color.default",
+          "tokens.border-color.base",
+          "tokens.border-width.hairline",
+          "tokens.control-color.tonal",
+          "tokens.duration.default",
+          "tokens.easing.default",
+          "tokens.focus-color.default",
+          "tokens.focus-outline.offset",
+          "tokens.focus-outline.width",
+          "tokens.font-size.xs",
+          "tokens.font-weight.medium",
+          "tokens.spacing.lg",
+          "tokens.spacing.md",
+          "tokens.spacing.sm",
+          "tokens.spacing.xl",
+          "tokens.spacing.xs",
+          "tokens.status-color.danger",
+          "tokens.surface-color.sunken",
+          "tokens.text-color.muted",
+          "tokens.text-color.on-action",
+          "tokens.text-color.primary"
+        ],
+        "assets": [
+          "assets.icon-danger",
+          "assets.icon-info",
+          "assets.icon-success",
+          "assets.icon-warning"
+        ],
+        "components": [
+          "components.icon"
+        ]
+      },
+      "composes": [
+        "components.icon"
+      ],
+      "impl": {
+        "kind": "source",
+        "entry": "components/status-mark/status-mark.tsx",
+        "export": "StatusMark"
+      },
+      "license": "MIT",
+      "pin": {
+        "url": "https://github.com/shadcn-ui/ui",
+        "commit": "96da9cc7f1aa10580a3741664e2a77c721206c00",
+        "files": [
+          {
+            "path": "apps/v4/registry/bases/aria/ui/badge.tsx",
+            "sha256": "7771524b64abcdf8dd0d1a0dad02ae5dd78b6865ec69be6d19ff204e73302c64"
+          },
+          {
+            "path": "apps/v4/registry/styles/style-nova.css",
+            "sha256": "fd9803ec398290c306b377a46a769cad0c7ff024bf6a626993c113cacc20f16e"
+          },
+          {
+            "path": "LICENSE.md",
+            "sha256": "1564074e13439397221ffd522e2e504d56561994a23d371aa5e3ad43e4f5423f"
+          }
+        ]
+      },
+      "notice": "notices/SHADCN-ARIA-RAIL.md",
+      "transform": "shadcn-aria-rewrite@2",
+      "item": "status-mark",
+      "deps": [
+        {
+          "name": "react",
+          "version": "19.3.0",
+          "license": "MIT"
+        },
+        {
+          "name": "react-aria-components",
+          "version": "1.21.1",
+          "license": "Apache-2.0"
+        },
+        {
+          "name": "class-variance-authority",
+          "version": "0.7.1",
+          "license": "Apache-2.0"
+        },
+        {
+          "name": "clsx",
+          "version": "2.1.1",
+          "license": "MIT"
+        },
+        {
+          "name": "tailwind-merge",
+          "version": "3.7.0",
+          "license": "MIT"
+        }
+      ],
+      "parts": [
+        {
+          "item": "rail-badge"
+        }
+      ],
+      "outputSha256": [
+        {
+          "path": "components/_parts/rail-badge/badge.tsx",
+          "sha256": "f5504b6c279ed932433eac6dd156d56a2f8e33aa906d3f190f6b0c124b40ca05"
+        },
+        {
+          "path": "components/_parts/rail-badge/index.ts",
+          "sha256": "15de3a844a14e5ad7f8742a7a018306017fa7c0dc6b21b45c27ea83f02d1681e"
+        },
+        {
+          "path": "components/_parts/rail-utils/index.ts",
+          "sha256": "d3753f708b15cc1ec47bc3136827134b702e2069eebdb0ddefb1806b95d7c1d9"
+        },
+        {
+          "path": "components/status-mark/status-mark.tsx",
+          "sha256": "c988752abb1f70815c13087dc7e57053a6feb47dde1631bee34f1728c84fb39f"
+        },
+        {
+          "path": "notices/SHADCN-ARIA-RAIL.md",
+          "sha256": "0622dbb67cbca61b6c160be781485d59b3b51a49cdf5bae0132e17a0ecbfe42c"
+        }
+      ],
+      "blockers": [],
+      "rac": {
+        "instance": "react-aria-components",
+        "range": "^1.21.1",
+        "peer": false
+      }
+    }
+  }
+}

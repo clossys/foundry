@@ -90,6 +90,7 @@ export function importRacStarter(input: RacStarterInput) {
   const fills: ComponentCandidateDocument[] = [], candidates: CandidateBytes[] = [], sourceBundles: SourceBundle[] = [];
   const outputBySlot = new Map<string, ComponentFile[]>();
   for (const leaf of Object.keys(input.entries).sort()) {
+    if (leaf === "navigation-tree") continue; // This permanent ID is the owner-ratified sidebar alias.
     const name = input.entries[leaf]!, slot = `components.${leaf}`;
     const contract = slots.find(value => value.id === slot)?.contract;
     if (!contract || !input.closures[leaf]?.includes(`${root}${name}.tsx`)) throw new Error("rac-starter: unknown or incomplete source entry");

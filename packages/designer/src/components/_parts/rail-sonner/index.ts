@@ -1,0 +1,1 @@
+export const toastClasses = "rounded-(--radius-control) bg-(--color-overlay-surface) text-(--color-ink-primary) border-(length:--ui-border-hairline) border-(--color-line-base) flex items-start gap-(--spacing-sm) p-(--spacing-lg)";

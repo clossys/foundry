@@ -938,6 +938,7 @@ function rewriteSource(input: RewriteInput): RewriteResult {
       if (input.item === "label" && base === "leading-none") return bindV2("tokens.line-height.heading", "leading-(--leading-heading)");
       if (input.item === "button-group" && /^border-[lst]-0$/.test(base)) return value;
 
+
       if (base === "animate-pulse") { notes.push({ file, value, message: "Restyled loading indicator to its static token-bound shape" }); return ""; }
       if (/^rounded-\[calc\(var\(--radius\)-[35]px\)\]$/.test(base)) return bindV2("tokens.radius.default", "rounded-(--radius-default)");
       const inset = /^(m[lr])-\[-0\.(?:3|15)rem\]$/.exec(base);

@@ -7,6 +7,8 @@ import assetSlots from "../catalog/slots/assets.json" with { type: "json" };
 import componentSlots from "../catalog/slots/components.json" with { type: "json" };
 import tokenFreeze from "../catalog/ia/tokens.leaf-freeze.json" with { type: "json" };
 import assetFreeze from "../catalog/ia/assets.leaf-freeze.json" with { type: "json" };
+import aliasAmendments from "../catalog/ia/components.alias-amendments.json" with { type: "json" };
+import componentAliases from "../catalog/aliases/components.json" with { type: "json" };
 import componentAmendments from "../catalog/ia/components.leaf-amendments.json" with { type: "json" };
 import draftAssetAmendments from "../catalog/ia/assets.draft-leaf-amendments.json" with { type: "json" };
 import assetAmendments from "../catalog/ia/assets.leaf-amendments.json" with { type: "json" };
@@ -61,7 +63,7 @@ describe("owner-signed leaf membership", () => {
     });
     it(`${layer}: allows regrouping, reordering, labels and metadata changes`, () => {
       const value = input();
-      const ids = fixture.layer === "components" ? [...fixture.freeze.leafIds, ...componentAmendments.addedLeafIds] : fixture.layer === "assets" ? [...fixture.freeze.leafIds, ...assetAmendments.addedLeafIds, ...draftAssetAmendments.addedLeafIds] : [...fixture.freeze.leafIds, ...tokenAmendments.addedLeaves.map(row => row.id)];
+      const ids = fixture.layer === "components" ? [...fixture.freeze.leafIds, ...componentAmendments.addedLeafIds].filter(id => id !== "components.navigation-tree") : fixture.layer === "assets" ? [...fixture.freeze.leafIds, ...assetAmendments.addedLeafIds, ...draftAssetAmendments.addedLeafIds] : [...fixture.freeze.leafIds, ...tokenAmendments.addedLeaves.map(row => row.id)];
       value.ia.nodes = [{ id: "new-domain", label: "New domain", children: [{ id: "new-family", label: "New family", leaves: [...ids].reverse() }] }];
       value.slots.reverse();
       Object.assign(value.slots[0]!, { description: "Metadata remains separate" });
@@ -99,8 +101,8 @@ describe("owner-signed leaf membership", () => {
 
   it("requires explicitly offered layers even when both inputs omit one entirely", () => {
     expect(checkFrozenLeafSets([], [], ["components"])).toEqual([
-      expect.objectContaining({ layer: "components", source: "slots", missing: [...componentFreeze.leafIds, ...componentAmendments.addedLeafIds].sort() }),
-      expect.objectContaining({ layer: "components", source: "ia", missing: [...componentFreeze.leafIds, ...componentAmendments.addedLeafIds].sort() }),
+      expect.objectContaining({ layer: "components", source: "slots", missing: [...componentFreeze.leafIds, ...componentAmendments.addedLeafIds].filter(id => id !== "components.navigation-tree").sort() }),
+      expect.objectContaining({ layer: "components", source: "ia", missing: [...componentFreeze.leafIds, ...componentAmendments.addedLeafIds].filter(id => id !== "components.navigation-tree").sort() }),
     ]);
   });
   it("keeps Sections/Frames unsigned and build readiness unchanged", () => {
@@ -235,4 +237,31 @@ it("keeps the NativeAction amendment explicit and refuses missing or coordinated
     }
     expect(checkFrozenLeafSets([ia], slots, ["components"]).map(finding => finding.source)).toEqual(["slots", "ia"]);
   }
+});
+
+
+describe("owner-ratified feedback membership", () => {
+  it("keeps the navigation ID as exactly one signed sidebar alias", () => {
+    expect(aliasAmendments).toMatchObject({status:"owner-signed",ownerSignoffComment:"6483104271",conversions:[{id:"components.navigation-tree",target:"components.sidebar"}]});
+    const registry=loadComponentRegistry();
+    expect(registry.slots.some(row=>row.id==="components.navigation-tree")).toBe(false);
+    expect(registry.aliases.filter(row=>row.id==="components.navigation-tree")).toEqual([{id:"components.navigation-tree",target:"components.sidebar"}]);
+  });
+  it("refuses missing and wrong-target alias entries, then restores the exact data", () => {
+    const alias=componentAliases.find(row=>row.id==="components.navigation-tree")!;
+    const before=structuredClone(componentAliases);
+    try {
+      alias.target="components.disclosure";
+      expect(()=>loadComponentRegistry()).toThrow("LEAF_FREEZE");
+      componentAliases.splice(0,componentAliases.length,...before);
+      componentAliases.splice(componentAliases.findIndex(row=>row.id==="components.navigation-tree"),1);
+      expect(()=>loadComponentRegistry()).toThrow("LEAF_FREEZE");
+    } finally {componentAliases.splice(0,componentAliases.length,...before);}
+    expect(loadComponentRegistry().aliases).toEqual(before);
+  });
+  it("does not permit an unsigned migration of another signed leaf", () => {
+    const remaining=componentSlots.filter(row=>row.id!=="components.button");
+    expect(checkFrozenLeafSets([componentIA as Placement],remaining,["components"])).toContainEqual(expect.objectContaining({source:"slots",missing:["components.button"]}));
+  });
+
 });

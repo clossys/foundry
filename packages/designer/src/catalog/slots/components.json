@@ -1062,7 +1062,17 @@
           "tokens.state-opacity",
           "tokens.surface-color",
           "tokens.text-color",
-          "tokens.touch-target"
+          "tokens.touch-target",
+          "tokens.action-color",
+          "tokens.border-width",
+          "tokens.control-radius",
+          "tokens.duration",
+          "tokens.easing",
+          "tokens.focus-color",
+          "tokens.focus-outline",
+          "tokens.font-size",
+          "tokens.font-weight",
+          "tokens.line-height"
         ],
         "assets": []
       },
@@ -1397,41 +1407,6 @@
         "assets": []
       },
       "apg": "button"
-    },
-    "requires": [],
-    "status": "draft"
-  },
-  {
-    "id": "components.navigation-tree",
-    "layer": "components",
-    "contract": {
-      "kind": "component",
-      "root": "rac:NavigationTree",
-      "members": {
-        "mode": "closed",
-        "names": [
-          "expand",
-          "current"
-        ]
-      },
-      "props": [],
-      "allowedReads": {
-        "tokens": [
-          "tokens.accent-color",
-          "tokens.body-size",
-          "tokens.border-color",
-          "tokens.focus-shadow",
-          "tokens.spacing",
-          "tokens.state-opacity",
-          "tokens.surface-color",
-          "tokens.text-color",
-          "tokens.touch-target"
-        ],
-        "assets": [
-          "assets.icon-chevron-right"
-        ]
-      },
-      "apg": "treeview"
     },
     "requires": [],
     "status": "draft"
@@ -1928,7 +1903,19 @@
           "tokens.spacing",
           "tokens.status-color",
           "tokens.text-color",
-          "tokens.typeface"
+          "tokens.typeface",
+          "tokens.accent-color",
+          "tokens.action-color",
+          "tokens.border-color",
+          "tokens.border-width",
+          "tokens.control-color",
+          "tokens.duration",
+          "tokens.easing",
+          "tokens.focus-color",
+          "tokens.focus-outline",
+          "tokens.font-size",
+          "tokens.font-weight",
+          "tokens.surface-color"
         ],
         "assets": [
           "assets.icon-success",
@@ -2183,7 +2170,17 @@
       },
       "props": [],
       "allowedReads": {
-        "tokens": [],
+        "tokens": [
+          "tokens.z-index",
+          "tokens.border-color",
+          "tokens.border-width",
+          "tokens.control-radius",
+          "tokens.font-size",
+          "tokens.spacing",
+          "tokens.surface-color",
+          "tokens.text-color",
+          "tokens.typeface"
+        ],
         "assets": [
           "assets.icon-success",
           "assets.icon-warning",

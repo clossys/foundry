@@ -5,6 +5,8 @@ import componentAmendments from "../catalog/ia/components.leaf-amendments.json" 
 import draftAssetAmendments from "../catalog/ia/assets.draft-leaf-amendments.json" with { type: "json" };
 import assetAmendments from "../catalog/ia/assets.leaf-amendments.json" with { type: "json" };
 import tokenAmendments from "../catalog/ia/tokens.leaf-amendments.json" with { type: "json" };
+import aliasAmendments from "../catalog/ia/components.alias-amendments.json" with { type: "json" };
+import componentAliases from "../catalog/aliases/components.json" with { type: "json" };
 import type { Placement, PlacementNode } from "./types.js";
 
 export type FrozenLeafLayer = "tokens" | "assets" | "components";
@@ -57,6 +59,19 @@ if (tokenAmendments.schemaVersion !== 1 || tokenAmendments.layer !== "tokens" ||
     tokenAmendments.recorded.some(row => !tokens.leafIds.includes(row.id))) {
   throw new Error("LEAF_FREEZE: invalid explicit token amendment");
 }
+// The signed navigation ID remains permanent as an alias; no other signed leaf may migrate.
+function signedAliasConversions(): readonly string[] {
+  const conversion = aliasAmendments.conversions;
+  if (aliasAmendments.schemaVersion !== 1 || aliasAmendments.layer !== "components" ||
+      aliasAmendments.baseSignedHead !== components.signedHead || aliasAmendments.status !== "owner-signed" ||
+      aliasAmendments.ownerSignoffComment !== "6483104271" || !Array.isArray(conversion) || conversion.length !== 1 ||
+      conversion[0]?.id !== "components.navigation-tree" || conversion[0]?.target !== "components.sidebar" ||
+      componentAliases.filter(row => row.id === "components.navigation-tree").length !== 1 ||
+      componentAliases.find(row => row.id === "components.navigation-tree")?.target !== "components.sidebar") {
+    throw new Error("LEAF_FREEZE: invalid signed component alias conversion");
+  }
+  return conversion.map(row => row.id);
+}
 // Copy signed IDs plus the explicit versioned additions once, never current slots or IA.
 const baseline: Readonly<Record<FrozenLeafLayer, ReadonlySet<string>>> = {
   tokens: new Set([...tokens.leafIds, ...tokenAddedIds]),
@@ -74,9 +89,10 @@ export function checkFrozenLeafSets(
   slots: readonly { id: string; layer: string }[],
   layers: readonly FrozenLeafLayer[],
 ): LeafFreezeFinding[] {
+  const converted = new Set(signedAliasConversions());
   const findings: LeafFreezeFinding[] = [];
   for (const layer of layers) {
-    const expected = baseline[layer];
+    const expected = layer === "components" ? new Set([...baseline[layer]].filter(id => !converted.has(id))) : baseline[layer];
     const actual = {
       slots: new Set(slots.filter(slot => slot.layer === layer).map(slot => slot.id)),
       ia: new Set(placements.filter(placement => placement.layer === layer).flatMap(placement => leaves(placement.nodes))),

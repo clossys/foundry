@@ -27,5 +27,9 @@
     "memberMap": {
       "scope": "scope.group"
     }
+  },
+  {
+    "id": "components.navigation-tree",
+    "target": "components.sidebar"
   }
 ]
