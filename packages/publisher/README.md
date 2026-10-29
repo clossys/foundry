@@ -1405,236 +1405,20 @@ to action that carries its own fill, such as a `primary` Designer `Button` or
 `Link`; a bare link inherits the on-inverse ink. Keep focusable content out of
 `backdrop`.
 
-### `LandingView`
+### Retired `LandingView` value
 
-The core hero contract uses `size: "compact"` for section-scale copy and
-`size: "display"` for its default. Compact hero media is refused, and
-`checkSectionVariety` warns for a lone compact hero unless known trailing
-content is supplied. The web views and gallery fixtures use the canonical size field.
+The executable `LandingView` alias is no longer exported from Publisher's web
+entries. Render checked `SectionedViewDocument` data with `SectionedView`;
+its `react-server` entry selects native server blocks. Closing content belongs
+in the document as a content section with CopyRefs for its text and actions.
 
-`LandingView`, exported from `@clossys/publisher/web`, is a sectioned landing
-page. The entry's `react-server` condition selects the server implementation.
-The page has a hero block that fills the first screen, the document's other sections as full-bleed
-bands, and an optional closing call to action. Every band's content, the hero
-copy and the call to action sit in one centred column (Designer
-`SectionFrame`'s `measure`, default `"wide"`); grounds run the full width. It
-is server-safe and ships no visible wording of its own: every visible word
-comes from the resolved documents or a prop. The only built-in string is the
-scroll cue's accessible name, which `cueLabel` replaces.
+The historical catalog now renders all 27 sections through that data renderer.
+Its four historical closing strings are draft preview Writer records, with their
+provenance retained. Captions are preview chrome between native section nodes.
 
-```tsx
-import { resolveSectionedViewDocument, type ResolvedSectionedViewDocument } from "@clossys/publisher/core";
-import { LandingView } from "@clossys/publisher/web";
-
-declare const page: ResolvedSectionedViewDocument; // from resolveSectionedViewDocument; its first section is a hero
-declare const faq: ResolvedSectionedViewDocument; // a shared FAQ document
-declare const screenshot: React.ReactNode; // for example a Designer `MediaFigure`
-declare const resolveCopy: Parameters<typeof resolveSectionedViewDocument>[1];
-
-// One content-section band: topics beside a one-panel specimen.
-const records = resolveSectionedViewDocument({
-  id: "records",
-  sectionGroundRhythm: "view",
-  sections: [{
-    id: "records",
-    kind: "content-section",
-    heading: { id: "records.heading" },
-    layout: "split-end",
-    block: { type: "items", recipe: "topics", items: [
-      { id: "kept", icon: "folder", heading: { id: "records.kept" } },
-      { id: "shared", icon: "users", heading: { id: "records.shared" } },
-    ] },
-    media: { type: "specimen", label: { id: "records.label" }, panel: {
-      id: "record",
-      title: { id: "records.panel" },
-      parts: [{ id: "fields", type: "fields", items: [
-        { id: "owner", label: { id: "records.owner" }, value: { id: "records.owner.value" } },
-      ] }],
-    } },
-  }],
-}, resolveCopy);
-
-export function ProductPage() {
-  return (
-    <LandingView
-      document={page}
-      trailing={[records, faq]}
-      afterSection={{ features: screenshot }}
-      callToAction={{ copy: "hero", action: <a href="/start">Start</a> }}
-    />
-  );
-}
-```
-
-Props, in addition to the standard `<main>` attributes (minus `children`),
-`className` and `style`:
-
-- `document`: the page's resolved document. Its first section must be a
-  `hero`; it renders as the hero block and the page's only `<h1>`.
-- `trailing` (optional): further resolved documents rendered as more bands
-  after `document`, for example a shared FAQ.
-- `afterSection` (optional): content placed in a section's content slot,
-  after its own content, keyed by section id. An id that names no rendered
-  section is refused with a `RenderError`, not dropped. This node seam is
-  separate from the checked, data-only `asset` media slot.
-- `callToAction` (optional): the closing band: `id`, `eyebrow`, `heading`
-  (an `<h2>`), `description`, and one required `action` slot (pass a
-  button-styled link; it is not restyled). Add `copy: "hero"` to reuse the
-  first main hero's heading and description; heading can then be omitted.
-  Own copy values win, including `null` and `false`; only `undefined` falls
-  back. The close retains its own eyebrow and action. A trailing hero is
-  not a copy source. A valid nonempty main document without an opening hero
-  is refused with `RenderError` reason `missing-hero-copy`; malformed input
-  and unknown copy options use `resolution-failed`. Omitting `copy` retains
-  the close's authored copy. The exported `LandingViewCallToAction` interface
-  retains its required heading and action for existing consumers. As an
-  alternative to the `action` slot, pass `actions` containing one or two
-  resolved `{ id, label, href, emphasis? }` records with the hero emphasis
-  subset and effective-primary rules. The two props are mutually exclusive.
-  `footnote` takes resolved `{ text, link?: { label, href } }` copy. Labels and
-  note copy accept visible composed ReactNodes, including nested arrays; empty
-  collections and unresolved copy references are refused. Hero and
-  closing groups use one size for every emphasis: `lg` for a display hero or
-  close, and `md` for a compact hero. Pairs put the primary first in DOM order;
-  their primary and
-  secondary buttons stack full width below the tablet breakpoint, while quiet
-  actions keep automatic width.
-- `backdrop` (optional): decoration behind the hero block, `aria-hidden` and
-  inert to the pointer, over the hero section's own ground.
-- `header` (`LandingViewHeader`: `"overlay"` or `"reserved"`, default
-  `"overlay"`): whether the site header floats over the hero block or sits
-  in flow above the view.
-- `fit` (`"viewport"` or `"frame"`, default `"viewport"`): when an overlay
-  header accompanies a non-compact hero alone, `"frame"` gives the view root
-  and hero `flex-1` and leaves the hero's `minHeight` unset. Use it with
-  `landmark="none"` inside `SiteFrame` to fill the frame's remaining space.
-  With content after the hero, the existing peek height and scroll cue apply.
-  Reserved headers and compact heroes ignore `fit`.
-- `peek` (default `true`): with an overlay header and content after the hero,
-  the hero block stops short of the fold so the next band shows, and a
-  scroll cue links to that band (see **Scroll cue**).
-- `cueLabel` (default `"Scroll to next section"`): the scroll cue's
-  accessible name. Pass translated copy; a blank label is refused with a
-  `RenderError`.
-- `align` (Designer `HeroAlign`, default `"center"`) and `measure` (Designer
-  `SectionMeasure`, default `"wide"`).
-- `landmark` (`"main"` or `"none"`, default `"main"`), `resolveAssetId` and
-  `prefersReducedMotion`, as for `SectionedView`.
-
-**Scroll cue.** When the hero peeks, the view renders a real link,
-`href="#<first band's section id>"`, styled as a circular Designer icon button
-(`iconButtonLinkClassName`). If no band follows the hero, it links to the
-`callToAction`'s `id` instead. With neither, no cue renders. The cue is fixed to
-the bottom of the browser window, centred and clear of the safe-area inset, so
-it does not slide with the page; it sits over the peeking band, whose ground it
-takes: the inverse treatment on an `inverse` band, otherwise the base
-treatment. It carries `data-landing-cue`.
-
-Clicking the cue uses native fragment scrolling, with no client script.
-Scrolling is smooth only under `prefers-reduced-motion: no-preference`. Each
-band section has a scroll margin equal to its own top padding (`scroll-mt-4xl`,
-or `scroll-mt-5xl` from `tablet-lg`). Combined with the `scroll-padding-top`
-that a sticky or fixed site header sets on the root, this lands the band's top
-edge flush under the header. The view does not set `scroll-padding-top`
-itself. The cue fades out over the first 132px of page scroll (three tap
-targets; the fade follows the scroll position, not the clock) and is then
-hidden, so it leaves the tab order and ignores the pointer (Designer
-`scroll-cue`). Under reduced motion it hides in one step rather than fading.
-Browsers without scroll-driven animations (`animation-timeline`) instead
-centre the cue on the hero's bottom edge, in a zero-height rail between the
-hero and the next band at `--ui-z-sticky` (below a site header at
-`--ui-z-shell`), where it scrolls away with the page; it is never fixed
-without the fade.
-
-**Section anatomy.** Every band with a feature grid, ordered steps, a status
-list, an FAQ, a hero or a `content-section` is one Designer `ContentSection`: the section's
-eyebrow, heading and description as the header group (held to the prose
-measure), then the content as a block rendered without its own
-heading region, then the `afterSection` content. A hero in a later band is a
-header group (an `<h2>`, never a second display heading) with its actions,
-and its media as the block. Other section kinds keep their block's own
-header region inside the same slot.
-
-**Canonical content-section rendering (bounded integration).** The web views
-render canonical `items` with `order: "none"` and `reveal: "all"` through
-Designer `Items`, preserving icons, eyebrow, meta, badge, links, spans,
-group membership and static specimen visuals. The frame forwards its
-resolved `standard` or `display` size and `stacked`,
-`split-start` or `split-end` layout. Item headings remain one level below the
-section heading. Frame size controls rhythm without a statement heuristic.
-Actions use the shared emphasis ladder at one `md` group size; a footnote
-supports text, one link, or both.
-
-Single-panel specimen media, its optional anatomy key, record groups and the
-three scene templates forward their resolved visible copy to the available
-Designer blocks. Matrix forwards optional labels, headings, lead descriptions,
-points, specimen visuals and the featured side. Its presentation IDs encode
-the section and each original side ID injectively, preserving authored identities and the featured relation.
-Panel badges remain independent of metadata and status; status-row mobile
-limits retain all authored rows, and Meter previous values keep their visible
-text and marker. Numbered, connected and disclosed Items use the collection
-renderer. Ordinary disclosure uses React Aria controls; the server entry uses
-native details. A supplied continuing end label stays visible; an omitted
-label retains the consumer-resolved continuation copy as hidden text.
-The published `faq` section renders the Index function’s Items-based `faq`
-recipe through the canonical content-section path: one column of rows with
-`reveal: "disclose"`. Its authored `{ id, question, answer }` items and copy
-provenance are retained, with the recipe’s four-to-six-row budget checked at
-authoring and rendering. Omitted or `stacked` layout selects a stacked band;
-`split` selects `split-end`. SectionedView and LandingView use React Aria
-controls in the ordinary entry and native disclosure in the server entry. Scene text limits stay local to media; inverse Scene media gets an opaque base plate and base ink. Record, Scene and anatomy identities are namespaced by section instance without changing authored copy or provenance. Canonical Landing fragments align with the unpadded band edge; published bands retain their padding offsets.
-
-The resolved boundary requires explicit canonical axes and closed plain data
-before reading discriminators. It checks the structural contract and text
-budgets without calling a consumer resolver or changing caller provenance.
-`afterSection` content follows the block. The content preview uses canonical
-collection and media data, including connected and disclosed examples.
-Standalone preview pages select the native server entry so disclosures work
-without hydration.
-Single-panel recomposition retains sample copy and state while changing the
-former multi-panel anatomy.
-
-**Measure and rhythm.** Centred copy, in the hero block and the call to
-action, is held to the prose measure (`--ui-width-prose-max`) inside the
-column, so its lines wrap sooner than the column. Body bands take `py-4xl`
-(`py-5xl` from `tablet-lg`); the call to action stands one step above them
-at every width, `py-5xl` (`py-6xl` from `tablet-lg`); the hero block takes
-`py-5xl` under an overlay header. Both copy blocks are Designer
-`SectionIntro`: the hero at the `display` emphasis (the page's one `<h1>`),
-the call to action at the `section` emphasis like every band heading. A
-hero section's document actions render through the primary, outline and
-quiet ladder;
-omit a hero's `actions` for a message-only opening.
-The view paints the base surface on its root, so a band on the `base`
-ground shows the base surface whatever the page behind it is.
-
-**Grounds.** The view plans automatic canonical bands and legacy bands
-under the `"view"` rhythm across the page:
-
-- the hero keeps its own ground;
-- the last automatic body band defaults to `base`; with a `callToAction`,
-  a final legacy band is forced to `base` (`LANDING_VIEW_CLOSING_GROUND`),
-  while an explicit canonical `inverse` remains its anchor;
-- the call to action is on `inverse` (`LANDING_VIEW_CALL_TO_ACTION_GROUND`);
-- canonical omitted grounds and legacy omissions under `sectionGroundRhythm: "view"`
-  resolve with `viewGrounds`; counting upward, an automatic band above `base`
-  takes `sunken`, and one above `sunken` or `inverse` takes `base`;
-- explicit grounds win except for the final legacy band before a call to action.
-
-The view draws no rule at either edge of the call to action: the ground
-change from the band above is its top seam, and the site footer's own top
-hairline (Designer `SiteFooter`) is its foot, so the seam is drawn once.
-
-`planLandingViewGrounds(document, trailing, { callToAction })` returns the
-same plan as a `LandingViewGroundPlan`: each band's `id`, `role`
-(`LandingViewBandRole`), `ground` and whether the view `assigned` it, plus
-`repeats`, the neighbouring bands left on the same ground (only possible
-through explicit grounds). A consumer can assert `repeats` is empty in its
-own tests.
-
-What it does not do: check the contrast of the hero copy over your
-backdrop, restyle the action you pass, or decide the grounds of a site
-header or footer around it.
+Retained landing prop types and ground-planning data describe historical
+contracts. Other LandingView examples in this document are historical; they do
+not restore an executable Publisher alias or establish native site overlay support.
 
 ### `ContactView`
 
@@ -5028,7 +4812,7 @@ and the catalog copy registries in `src/preview/catalog/` (never hardcoded in a 
 
 - **Web views** (`gallery.html`) — every shipped view: `MarketingView`,
   `SectionedView`, `AuthView`, `ErrorView`, `CaptureView`, `DocumentView`,
-  `CollectionView`, and `LandingView (hero-compact)`.
+  `CollectionView`, and `SectionedView (hero-compact)`.
 - **Content catalog** (`content-catalog.html`): choose Introduce, Show,
   Explain, Index, Sequence or Compare, then use a recipe and configuration
   reference. Overview shows a six-band page. Frame covers shared layout,

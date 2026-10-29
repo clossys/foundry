@@ -5,7 +5,7 @@ import type { SectionedViewContentSection, SectionedViewDocument, SectionedViewH
 /**
  * The content catalog's fixture: one `SectionedViewDocument` that shows canonical
  * content-section blocks and specimen parts, rendered by
- * `render-content-catalog.ts` through `LandingView`. All copy is sample copy
+ * `render-content-catalog.ts` through `SectionedView`. All copy is sample copy
  * for an invented facilities-maintenance product; every name and figure is
  * made up. Each band is written either at a realistic length (`typical`) or
  * at the longest the copy cookbook allows (`max`), so a reviewer sees both.
@@ -989,7 +989,7 @@ export const contentCatalogDocument: SectionedViewDocument = {
   ],
 };
 
-/** The closing call-to-action band's id and copy (LandingView renders it from props, not the document). */
+/** Historical closing copy, retained verbatim and registered separately as draft preview copy. */
 export const CONTENT_CATALOG_CALL_TO_ACTION = {
   id: "catalog-close",
   eyebrow: "Next step",
@@ -998,6 +998,26 @@ export const CONTENT_CATALOG_CALL_TO_ACTION = {
   actionLabel: "Book a walkthrough",
   actionHref: "#catalog-hero",
 } as const;
+
+const closingCopy = (field: "eyebrow" | "heading" | "description" | "actionLabel"): CopyRef => ({ id: `catalog.preview.close.${field}` });
+const closingCopyResolver = createCopyResolver({
+  id: "publisher-content-catalog-preview-close", locale: "en", revision: "1",
+  source: { kind: "consumer", reference: "packages/publisher/src/preview/fixture-content-catalog.ts" },
+  entries: (["eyebrow", "heading", "description", "actionLabel"] as const).map(field => ({
+    id: closingCopy(field).id, text: CONTENT_CATALOG_CALL_TO_ACTION[field],
+    context: "Historical catalog preview closing copy", status: "draft" as const,
+  })),
+}, { target: "preview" });
+
+/** The complete checked preview: every original section and its authored close. */
+export const contentCatalogPreviewDocument: SectionedViewDocument = {
+  ...contentCatalogDocument,
+  sections: [...contentCatalogDocument.sections, {
+    id: CONTENT_CATALOG_CALL_TO_ACTION.id, kind: "content-section", ground: "inverse", size: "display",
+    eyebrow: closingCopy("eyebrow"), heading: closingCopy("heading"), description: closingCopy("description"),
+    actions: [{ id: "walkthrough", label: closingCopy("actionLabel"), href: CONTENT_CATALOG_CALL_TO_ACTION.actionHref, emphasis: "primary" }],
+  }],
+};
 
 /** One caption per band, in page order: the hero, every document band, then the call to action. */
 export const CONTENT_CATALOG_CAPTIONS: readonly ContentCatalogCaption[] = [
@@ -1027,7 +1047,7 @@ export const CONTENT_CATALOG_CAPTIONS: readonly ContentCatalogCaption[] = [
   { sectionId: "catalog-steps-lanes-plain", title: "Items, connected, plain lanes", detail: "sunken · five steps, two actors, continuing arrow and visible end label", budget: "typical" },
   { sectionId: "catalog-steps-visual", title: "Items, connected, 3 steps, visuals and actor labels", detail: "sunken · one labelled specimen part per step", budget: "typical" },
   { sectionId: "catalog-faq", title: "Items, disclosed split band", detail: "base, the closing band · 6 rows beside a top-aligned header", budget: "max" },
-  { sectionId: CONTENT_CATALOG_CALL_TO_ACTION.id, title: "Close band", detail: "inverse, fixed by the view · one primary action", budget: "max" },
+  { sectionId: CONTENT_CATALOG_CALL_TO_ACTION.id, title: "Close band", detail: "inverse · one primary action · draft preview copy", budget: "max" },
 ];
 
 /** Resolves every `CopyRef` in `contentCatalogDocument`. */
@@ -1038,3 +1058,7 @@ export const contentCatalogCopyResolver = createCopyResolver({
   source: { kind: "consumer", reference: "packages/publisher/src/preview/fixture-content-catalog.ts" },
   entries: [...CATALOG_COPY].map(([id, text]) => ({ id, text, context: "content catalog sample copy", status: "approved" as const })),
 });
+
+/** Draft closing records stay distinct from the existing sample registry. */
+export const contentCatalogPreviewCopyResolver: typeof contentCatalogCopyResolver = ref =>
+  ref.id.startsWith("catalog.preview.close.") ? closingCopyResolver(ref) : contentCatalogCopyResolver(ref);

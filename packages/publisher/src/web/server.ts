@@ -127,7 +127,7 @@ export type {
   StubContactDelivery,
 } from "./contact/index.js";
 
-export { HeroView, LandingView } from "#publisher-web-views";
+export { HeroView } from "#publisher-web-views";
 export type { HeroViewFooter, HeroViewGround, HeroViewProps, LandingViewAction, LandingViewCallToAction, LandingViewHeader, LandingViewProps } from "#publisher-web-views";
 export { LANDING_VIEW_CALL_TO_ACTION_GROUND, LANDING_VIEW_CLOSING_GROUND, planLandingViewGrounds } from "#publisher-web-views";
 export type { LandingViewBandGround, LandingViewBandRole, LandingViewGroundPlan, LandingViewGroundRepeat } from "#publisher-web-views";

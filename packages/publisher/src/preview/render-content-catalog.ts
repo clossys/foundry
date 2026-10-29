@@ -1,13 +1,13 @@
 import { resolveDocumentLocale, type DocumentLocaleOptions } from "./render-document-locale.js";
 import { buildFunctionalCatalogIndex } from "./catalog/reader-renderer.js";
 export { buildCatalogFunctionPages } from "./catalog/reader-renderer.js";
-import { buttonLinkClassName } from "@clossys/designer/components/server";
-import { createElement } from "react";
+import { Children, cloneElement, createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { resolveSectionedViewDocument } from "../core/sectioned-view.js";
-import { ServerLandingView as LandingView } from "@clossys/designer/frames";
+import { SectionedView } from "../web/views/SectionedView.server.js";
+import type { ResolvedSectionedViewDocument } from "../core/sectioned-view.js";
 import { PREVIEW_UTILITIES_BASENAME } from "./preview-stylesheet.js";
-import { CONTENT_CATALOG_CALL_TO_ACTION, CONTENT_CATALOG_CAPTIONS, contentCatalogCopyResolver, contentCatalogDocument, type ContentCatalogCaption } from "./fixture-content-catalog.js";
+import { CONTENT_CATALOG_CAPTIONS, contentCatalogPreviewCopyResolver, contentCatalogPreviewDocument, type ContentCatalogCaption } from "./fixture-content-catalog.js";
 
 /**
  * Historical band composition retained for compatibility checks. The public
@@ -39,91 +39,37 @@ export interface ContentCatalogBand {
 }
 
 export interface ContentCatalogRender {
-  /** LandingView's root open tag, for example `<main data-landing-view="" ...>`. */
-  rootOpen: string;
-  rootClose: string;
+  /** Complete resolved preview data, including honest draft closing provenance. */
+  document: ResolvedSectionedViewDocument;
   bands: ContentCatalogBand[];
 }
 
-/** Renders the catalog through native `LandingView` for use without hydration. */
+/** Resolve and validate the complete document before adding any preview chrome. */
+function nativeContentCatalog() {
+  const document = resolveSectionedViewDocument(contentCatalogPreviewDocument, contentCatalogPreviewCopyResolver);
+  // SectionedView is the existing hook-free data renderer. Its validated native
+  // children, rather than serialized HTML fragments, define these preview bands.
+  const element = SectionedView({ document });
+  const nodes = Children.toArray(element.props.children);
+  if (nodes.length !== CONTENT_CATALOG_CAPTIONS.length || document.sections.length !== nodes.length) {
+    throw new Error("content catalog: native section count does not match its captions");
+  }
+  const bands = nodes.map((node, index) => {
+    const caption = CONTENT_CATALOG_CAPTIONS[index]!;
+    if (document.sections[index]!.id !== caption.sectionId) throw new Error("content catalog: native section order does not match its captions");
+    return { caption, markup: renderToStaticMarkup(node) };
+  });
+  return { document, element, nodes, bands };
+}
+
+/** The existing native data renderer, with every checked section intact. */
 export function renderContentCatalogMarkup(): string {
-  const cta = CONTENT_CATALOG_CALL_TO_ACTION;
-  return renderToStaticMarkup(
-    createElement(LandingView, {
-      document: resolveSectionedViewDocument(contentCatalogDocument, contentCatalogCopyResolver),
-      header: "reserved",
-      peek: false,
-      callToAction: {
-        id: cta.id,
-        eyebrow: cta.eyebrow,
-        heading: cta.heading,
-        description: cta.description,
-        action: createElement("a", { href: cta.actionHref, className: buttonLinkClassName("primary", "lg") }, cta.actionLabel),
-      },
-    }),
-  );
+  return renderToStaticMarkup(nativeContentCatalog().element);
 }
 
-const SECTION_TAG = /<section[\s>]|<\/section>/g;
-
-/**
- * Splits LandingView's markup into its root tag and its top-level bands (each
- * one Designer `SectionFrame`, a `<section>`). Static markup escapes `<` in
- * text and attribute values, so every `<section` token in it is a real tag.
- * Throws when the markup is not a root holding only `<section>` children.
- */
-export function splitLandingViewBands(markup: string): { rootOpen: string; rootClose: string; bands: string[] } {
-  const openEnd = markup.indexOf(">");
-  const closeStart = markup.lastIndexOf("</");
-  if (!markup.startsWith("<main") || openEnd < 0 || closeStart <= openEnd || markup.slice(closeStart) !== "</main>") {
-    throw new Error("content catalog: LandingView markup is not one <main> root");
-  }
-  const rootOpen = markup.slice(0, openEnd + 1);
-  const body = markup.slice(openEnd + 1, closeStart);
-  const bands: string[] = [];
-  let depth = 0;
-  let start = 0;
-  for (const match of body.matchAll(SECTION_TAG)) {
-    const index = match.index ?? 0;
-    if (match[0] === "</section>") {
-      depth -= 1;
-      if (depth < 0) throw new Error("content catalog: unbalanced </section> in LandingView markup");
-      if (depth === 0) {
-        const end = index + match[0].length;
-        bands.push(body.slice(start, end));
-        start = end;
-      }
-    } else {
-      if (depth === 0 && body.slice(start, index).trim() !== "") throw new Error("content catalog: LandingView root holds content outside its bands");
-      if (depth === 0) start = index;
-      depth += 1;
-    }
-  }
-  if (depth !== 0 || body.slice(start).trim() !== "") throw new Error("content catalog: LandingView markup ends inside a band");
-  return { rootOpen, rootClose: "</main>", bands };
-}
-
-/**
- * Renders the catalog and pairs each band with its caption. Throws when the
- * band count or order no longer matches the captions, so the chrome can
- * never label the wrong band.
- */
 export function renderContentCatalog(): ContentCatalogRender {
-  const { rootOpen, rootClose, bands } = splitLandingViewBands(renderContentCatalogMarkup());
-  if (bands.length !== CONTENT_CATALOG_CAPTIONS.length) {
-    throw new Error(`content catalog: LandingView rendered ${bands.length} bands for ${CONTENT_CATALOG_CAPTIONS.length} captions`);
-  }
-  return {
-    rootOpen,
-    rootClose,
-    bands: bands.map((markup, index) => {
-      const caption = CONTENT_CATALOG_CAPTIONS[index] as ContentCatalogCaption;
-      if (!markup.includes(`id="${caption.sectionId}"`)) {
-        throw new Error(`content catalog: band ${index + 1} does not hold section ${caption.sectionId}`);
-      }
-      return { caption, markup };
-    }),
-  };
+  const { document, bands } = nativeContentCatalog();
+  return { document, bands };
 }
 
 function escapeHtml(text: string): string {
@@ -136,14 +82,12 @@ function captionNumber(index: number): string {
   return String(index + 1).padStart(2, "0");
 }
 
-function captionHtml(caption: ContentCatalogCaption, index: number): string {
-  return (
-    `<div class="catalog-caption" data-catalog-chrome="caption" data-catalog-budget="${caption.budget}" id="caption-${escapeHtml(caption.sectionId)}">` +
-    `<span class="catalog-caption-number">${captionNumber(index)}</span>` +
-    `<span class="catalog-caption-title">${escapeHtml(caption.title)}</span>` +
-    `<span class="catalog-caption-detail">${escapeHtml(caption.detail)}</span>` +
-    `<span class="catalog-caption-budget">${BUDGET_TEXT[caption.budget]}</span>` +
-    `</div>`
+function captionElement(caption: ContentCatalogCaption, index: number) {
+  return createElement("div", { className: "catalog-caption", "data-catalog-chrome": "caption", "data-catalog-budget": caption.budget, id: `caption-${caption.sectionId}`, key: `caption-${caption.sectionId}` },
+    createElement("span", { className: "catalog-caption-number" }, captionNumber(index)),
+    createElement("span", { className: "catalog-caption-title" }, caption.title),
+    createElement("span", { className: "catalog-caption-detail" }, caption.detail),
+    createElement("span", { className: "catalog-caption-budget" }, BUDGET_TEXT[caption.budget]),
   );
 }
 
@@ -175,15 +119,15 @@ const CHROME_STYLE = `
 /**
  * The catalog page: the stylesheets (Designer tokens, the preview utility
  * stylesheet, then the brand file when given), the chrome header, and the
- * LandingView root with one chrome caption before each band.
+ * SectionedView root with one chrome caption before each native section.
  */
 export function buildHistoricalContentCatalogHtml(stylesheets: ContentCatalogStylesheets = DEFAULT_CONTENT_CATALOG_STYLESHEETS, options: DocumentLocaleOptions = {}): string {
   const { locale, dir } = resolveDocumentLocale(options);
-  const render = renderContentCatalog();
+  const render = nativeContentCatalog();
   const links = [stylesheets.designerTokens, stylesheets.utilities, ...(stylesheets.brand === null ? [] : [stylesheets.brand])]
     .map((href) => `  <link rel="stylesheet" href="${escapeHtml(href)}" />`)
     .join("\n");
-  const bands = render.bands.map((band, index) => `${captionHtml(band.caption, index)}\n${band.markup}`).join("\n");
+  const markup = renderToStaticMarkup(cloneElement(render.element, { children: render.nodes.flatMap((node, index) => [captionElement(render.bands[index]!.caption, index), node]) }));
   const captions = render.bands.map((band) => band.caption);
 
   return `<!DOCTYPE html>
@@ -200,13 +144,11 @@ ${links}
 <header class="catalog-chrome-header" data-catalog-chrome="header">
   <div>
     <h1>Content catalog</h1>
-    <p>Every content-section block, specimen arrangement and ground, rendered by Publisher's LandingView with ${stylesheets.brand === null ? "Designer's default tokens" : "the linked brand stylesheet"}. Sample copy for an invented company; every name and figure is made up. Grey captions are preview chrome, not part of the page; each names the collection or media shape and its variant. Collection blocks use <code>items</code> or <code>matrix</code>; recipes select presentation defaults. Bands marked max budget use the longest copy the content cookbook (Designer CONTENT.md) allows. The page shows every block, so it breaks the page-variety rules on purpose.</p>
+    <p>Every content-section block, specimen arrangement and ground, rendered by Publisher's SectionedView with ${stylesheets.brand === null ? "Designer's default tokens" : "the linked brand stylesheet"}. Sample copy for an invented company; every name and figure is made up. Grey captions are preview chrome, not part of the page; each names the collection or media shape and its variant. Collection blocks use <code>items</code> or <code>matrix</code>; recipes select presentation defaults. Bands marked max budget use the longest copy the content cookbook (Designer CONTENT.md) allows. The page shows every block, so it breaks the page-variety rules on purpose.</p>
     ${contentsHtml(captions)}
   </div>
 </header>
-${render.rootOpen}
-${bands}
-${render.rootClose}
+${markup}
 </body>
 </html>
 `;

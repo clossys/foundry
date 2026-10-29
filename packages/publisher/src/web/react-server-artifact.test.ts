@@ -86,13 +86,13 @@ function runProbe(reactServer: boolean) {
     const ref = key => ({id:"landing."+key});
     const resolver = createCopyResolver({id:"landing",locale:"en",revision:"1",source:{kind:"consumer",reference:"packed-proof"},entries:Object.entries(copy).map(([key,text])=>({id:ref(key).id,text,context:"Packed proof",status:"approved"}))});
     const landingDocument = resolveSectionedViewDocument({id:"landing",sections:[{id:"landing-hero",kind:"hero",ground:"inverse",heading:ref("heading")},{id:"landing-content",kind:"content-section",heading:ref("heading"),block:{type:"items",recipe:"faq",items:["one","two","three","four"].map(id=>({id,heading:ref("question"),description:ref("answer")}))}},{id:"landing-legacy",kind:"faq",ground:"sunken",layout:"split",heading:ref("legacy"),items:["one","two","three","four"].map(id=>({id,question:ref("question"),answer:ref("answer")}))}]},resolver);
-    const landing = web.LandingView({document:landingDocument,header:"reserved",peek:false});
+    const landing = web.SectionedView({document:landingDocument});
     const landingCase = (kind, layout) => {
       const sections = landingDocument.sections
         .filter(section => section.kind === "hero" || section.kind === kind)
         .map(section => section.kind === "faq" ? { ...section, layout } : section);
       const ids = new Set(sections.map(section => section.id));
-      return web.LandingView({
+      return web.SectionedView({
         document: {
           ...landingDocument,
           sections,
@@ -100,8 +100,6 @@ function runProbe(reactServer: boolean) {
             viewGrounds: landingDocument.viewGrounds.filter(id => ids.has(id)),
           }),
         },
-        header: "reserved",
-        peek: false,
       });
     };
     const landingCases = {
@@ -206,11 +204,14 @@ function runProbe(reactServer: boolean) {
         footer: { ground: "inverse", legal: { entity: frameRef("legal"), links: [] } },
       };
       const heroDocument = resolveSectionedViewDocument({ id: "packed-frame", sections: [{ id: "packed-frame-hero", kind: "hero", ground: "inverse", heading: ref("heading") }] }, resolver);
+      // This historical frame pair uses Designer's own currently published renderer.
+      // Publisher no longer re-exports its executable landing value.
+      const { LandingView: DesignerLanding } = await import("@clossys/designer/frames");
       const framed = fit => createElement(web.SiteFrame, {
         shell: frameShell,
         resolveCopy: frameResolver,
         resolveAsset: () => ({ type: "image", src: "/mark.svg", width: 48, height: 48, alt: "Packed mark" }),
-      }, createElement(web.LandingView, { document: heroDocument, header: "overlay", fit, peek: false, landmark: "none" }));
+      }, createElement(DesignerLanding, { document: heroDocument, header: "overlay", fit, peek: false, landmark: "none" }));
       result.frameHtml = renderToStaticMarkup(framed("frame"));
       result.viewportHtml = renderToStaticMarkup(framed("viewport"));
       result.html = renderToStaticMarkup([element, sectioned]);
@@ -337,6 +338,7 @@ describe("packed Publisher web React-server boundary", () => {
 
   it("exports the exact same runtime names from the ordinary and react-server targets", () => {
     expect(server.keys).toEqual(normal.keys);
+    expect(server.keys).not.toContain("LandingView");
     expect(server.keys).toEqual(expect.arrayContaining(["CaptureView", "CollectionView", "ContactView", "DocumentView", "SectionedView", "IndexView", "DetailsView"]));
   });
 
@@ -380,13 +382,13 @@ describe("packed Publisher web React-server boundary", () => {
     expect(server.contract!.text).toEqual(expect.arrayContaining(["Share", "Check", "Review", "Return", "Optional supporting lead."]));
   });
 
-  it("renders packed canonical and published Landing FAQs through entry-specific Items", () => {
+  it("renders packed checked canonical and published FAQs through entry-specific Items", () => {
     expect(normal.landingHtml?.match(/<button /g)).toHaveLength(8);expect(normal.landingHtml).not.toContain("<summary");expect(normal.landingHtml).toContain("data-rac");
     expect(server.landingTags?.filter(tag=>tag==="summary")).toHaveLength(8);expect(server.landingTags).not.toContain("button");
     expect(server.landingText).toEqual(expect.arrayContaining(["Packed landing page","Packed question?","Packed answer.","Published questions"]));
   });
 
-  it("renders canonical packed Landing disclosures through each entry", () => {
+  it("renders canonical packed sectioned disclosures through each entry", () => {
     const ordinary = normal.landingCases!.canonical;
     const native = server.landingCases!.canonical;
     expect(ordinary.html?.match(/<button /g)).toHaveLength(4);

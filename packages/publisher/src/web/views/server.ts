@@ -69,4 +69,4 @@ export type { IndexViewCollection, IndexViewProps, IndexViewRowRoute, IndexViewT
 export { DetailsView } from "./DetailsView.server.js";
 export type { DetailsViewBlock, DetailsViewLayout, DetailsViewProps, DetailsViewRegion, DetailsViewSection, DetailsViewSectionState, DetailsViewTab } from "./DetailsView.js";
 
-export { ServerLandingView as LandingView, type LandingViewCallToAction, type LandingViewHeader, type LandingViewProps } from "@clossys/designer/frames"; // removed by CX-2
+export type { LandingViewCallToAction, LandingViewHeader, LandingViewProps } from "@clossys/designer/frames";

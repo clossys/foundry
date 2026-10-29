@@ -7,12 +7,11 @@ import { ServerLandingView as LandingView } from "@clossys/designer/frames";
 import { SectionedView } from "../web/views/SectionedView.server.js";
 import { previewSectionedDocument, previewCopyResolver } from "./fixture-documents.js";
 import { renderPreviewGalleryEntries } from "./render-preview-gallery.js";
-import { buttonLinkClassName } from "@clossys/designer/components/server";
 import { describe, expect, it } from "vitest";
 import { checkSectionVariety, resolveSectionedViewDocument, validateSectionedViewDocument } from "../core/sectioned-view.js";
 import type { ResolvedSectionedViewContentSection, ResolvedSectionedViewSpecimenPanel, ResolvedSectionedViewSpecimenPart, SectionedViewContentSection } from "../core/sectioned-view.js";
-import { CONTENT_CATALOG_CALL_TO_ACTION, CONTENT_CATALOG_CAPTIONS, contentCatalogCopyResolver, contentCatalogDocument } from "./fixture-content-catalog.js";
-import { buildHistoricalContentCatalogHtml as buildContentCatalogHtml, renderContentCatalog, renderContentCatalogMarkup, splitLandingViewBands } from "./render-content-catalog.js";
+import { CONTENT_CATALOG_CALL_TO_ACTION, CONTENT_CATALOG_CAPTIONS, contentCatalogCopyResolver, contentCatalogDocument, contentCatalogPreviewCopyResolver, contentCatalogPreviewDocument } from "./fixture-content-catalog.js";
+import { buildHistoricalContentCatalogHtml as buildContentCatalogHtml, renderContentCatalog, renderContentCatalogMarkup } from "./render-content-catalog.js";
 
 const contentSections = contentCatalogDocument.sections.filter((section): section is SectionedViewContentSection => section.kind === "content-section");
 const resolved = resolveSectionedViewDocument(contentCatalogDocument, contentCatalogCopyResolver);
@@ -67,7 +66,7 @@ describe("content catalog fixture", () => {
     const planned = planContentGrounds([resolved], { callToAction: true });
     expect(new Set(planned.bands.map(band => band.ground))).toEqual(new Set(["base", "sunken", "inverse"]));
     const rendered = new JSDOM(renderContentCatalogMarkup()).window.document;
-    expect(new Set([...rendered.querySelectorAll("[data-landing-ground]")].map(band => band.getAttribute("data-landing-ground")))).toEqual(new Set(["base", "sunken", "inverse"]));
+    expect(new Set([...rendered.querySelectorAll("[data-ground]")].map(band => band.getAttribute("data-ground")))).toEqual(new Set(["base", "sunken", "inverse"]));
   });
 
   it("keeps actions where they belong: header-only bands and split text columns, never a stacked band with a block or media, and nothing after them", () => {
@@ -225,31 +224,22 @@ describe("content catalog fixture", () => {
 });
 
 describe("content catalog page", () => {
-  it("renders one LandingView band per caption, in caption order", () => {
+  it("renders one checked native section per caption, in caption order", () => {
     const render = renderContentCatalog();
     expect(render.bands.map((band) => band.caption.sectionId)).toEqual(CONTENT_CATALOG_CAPTIONS.map((caption) => caption.sectionId));
     expect(CONTENT_CATALOG_CAPTIONS).toHaveLength(contentCatalogDocument.sections.length + 1);
-    expect(render.bands.at(-1)?.markup).toContain('data-landing-call-to-action=""');
+    expect(render.bands.at(-1)?.markup).toContain('id="catalog-close"');
   });
 
-  it("is LandingView's markup unchanged, with chrome captions only between its bands", () => {
+  it("keeps native SectionedView markup unchanged while captions use structured children", () => {
     const html = buildContentCatalogHtml();
     const markup = renderContentCatalogMarkup();
-    const start = html.indexOf("<main");
-    const end = html.lastIndexOf("</main>") + "</main>".length;
-    const page = html.slice(start, end).replace(/<div class="catalog-caption"[^]*?<\/div>\n/g, "").replaceAll("\n", "");
-    expect(page).toBe(markup);
-    const cta = CONTENT_CATALOG_CALL_TO_ACTION;
-    expect(markup).toBe(renderToStaticMarkup(createElement(LandingView, {
-      document: resolved,
-      header: "reserved",
-      peek: false,
-      callToAction: { id: cta.id, eyebrow: cta.eyebrow, heading: cta.heading, description: cta.description,
-        action: createElement("a", { href: cta.actionHref, className: buttonLinkClassName("primary", "lg") }, cta.actionLabel) },
-    })));
-
-    const { bands } = splitLandingViewBands(markup);
-    for (const band of bands) expect(band).not.toContain("data-catalog-chrome");
+    const native = resolveSectionedViewDocument(contentCatalogPreviewDocument, contentCatalogPreviewCopyResolver);
+    expect(markup).toBe(renderToStaticMarkup(createElement(SectionedView, { document: native })));
+    const dom = new JSDOM(html).window.document;
+    for (const caption of dom.querySelectorAll("[data-catalog-chrome=caption]")) caption.remove();
+    expect(dom.querySelector("main")?.outerHTML).toBe(new JSDOM(markup).window.document.querySelector("main")?.outerHTML);
+    for (const band of renderContentCatalog().bands) expect(band.markup).not.toContain("data-catalog-chrome");
   });
 
   it("keeps standalone gallery disclosures native and usable without hydration", () => {
@@ -286,11 +276,11 @@ describe("content catalog page", () => {
 
   it("captions every band in the chrome, outside the product markup", () => {
     const dom = new JSDOM(buildContentCatalogHtml()).window.document;
-    const main = dom.querySelector("main[data-landing-view]");
+    const main = dom.querySelector(`main[aria-label="${contentCatalogPreviewDocument.id}"]`);
     expect(main).not.toBeNull();
     const children = [...(main?.children ?? [])];
     const captions = children.filter((child) => child.hasAttribute("data-catalog-chrome"));
-    const bands = children.filter((child) => child.tagName === "SECTION");
+    const bands = children.filter((child) => !child.hasAttribute("data-catalog-chrome"));
     expect(captions).toHaveLength(CONTENT_CATALOG_CAPTIONS.length);
     expect(bands).toHaveLength(CONTENT_CATALOG_CAPTIONS.length);
     children.forEach((child, index) => expect(child.hasAttribute("data-catalog-chrome")).toBe(index % 2 === 0));
@@ -316,19 +306,5 @@ describe("content catalog page", () => {
 
   it("is byte-identical across renders", () => {
     expect(buildContentCatalogHtml()).toBe(buildContentCatalogHtml());
-  });
-});
-
-describe("splitLandingViewBands", () => {
-  it("splits nested sections at the root only", () => {
-    const split = splitLandingViewBands('<main data-x=""><section a><section b>x</section></section><section c>y</section></main>');
-    expect(split.bands).toEqual(["<section a><section b>x</section></section>", "<section c>y</section>"]);
-    expect(split.rootOpen).toBe('<main data-x="">');
-  });
-
-  it("refuses content outside the bands and unbalanced markup", () => {
-    expect(() => splitLandingViewBands("<main><div>x</div><section>y</section></main>")).toThrow(/outside its bands/);
-    expect(() => splitLandingViewBands("<main><section>y</main>")).toThrow(/ends inside a band/);
-    expect(() => splitLandingViewBands("<div><section>y</section></div>")).toThrow(/one <main> root/);
   });
 });

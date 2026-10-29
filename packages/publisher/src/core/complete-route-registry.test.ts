@@ -4,6 +4,7 @@ import { projectRouteRegistry, registeredRouteBrandLink } from "./route-registry
 import { completeRoutes } from "./__fixtures__/complete-routes.js";
 import { syntheticPlan, syntheticRoute, SYNTHETIC_ROUTE_REGISTRIES } from "./__fixtures__/registered-route.js";
 import { PublisherPlanStore } from "../planning/change-set.js";
+import { validatePublisherPlan } from "../planning/plan.js";
 import { emitCompleteRoutePage, emitRegisteredRouteAdapter, emitRegisteredRoutePage, emitRegisteredRouteRegistryModule } from "../web/registered-route-source.js";
 import { projectRoutes } from "../content-map/projections.js";
 
@@ -21,7 +22,8 @@ it("refuses retired completeRoute through new plan commands", () => {
     kind: route.composition.complete.kind, path: route.path, title: route.title,
     brand: route.brand, entry: route.entry, loader: route.composition.loader,
   } });
-  expect(() => new PublisherPlanStore(SYNTHETIC_ROUTE_REGISTRIES).propose(plan)).toThrow(/retired/i);
+  expect(validatePublisherPlan(plan, SYNTHETIC_ROUTE_REGISTRIES)).toContainEqual(expect.objectContaining({ message: expect.stringMatching(/retired/i) }));
+  expect(() => new PublisherPlanStore(SYNTHETIC_ROUTE_REGISTRIES).propose(plan)).toThrow("Publisher plan refused");
 });
 const metadataCases = ["completeRoutes", "planItems", "registrations"].flatMap(source =>
   ["branding", "checker", "module", "adapter", "page"].map(boundary => ({ source, boundary })));

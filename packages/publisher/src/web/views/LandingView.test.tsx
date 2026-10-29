@@ -47,9 +47,9 @@ function dom(props: LandingViewProps): HTMLElement {
 }
 
 describe("LandingView", () => {
-  it("is exported from both web entries, distinct from HeroView", () => {
-    expect(webEntry.LandingView).toBe(LandingView);
-    expect(webServerEntry.LandingView).toBeTypeOf("function");
+  it("retires the legacy landing value from both public web entries", () => {
+    expect(webEntry).not.toHaveProperty("LandingView");
+    expect(webServerEntry).not.toHaveProperty("LandingView");
     expect(webEntry.HeroView).toBeDefined();
     expect(webEntry.HeroView).not.toBe(LandingView);
   });
