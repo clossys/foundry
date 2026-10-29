@@ -5,7 +5,7 @@ import { ADMIN_META_COPY_EN, type AdminMetaCopy, type AdminMetaCopyRecord } from
 import { ADMIN_WRITER_COPY_EN, type AdminRouteCopy } from "./admin-route-copy.js";
 import { ADMIN_CHAT_COPY_EN } from "./admin-chat.js";
 export { ADMIN_CHAT_COPY_EN } from "./admin-chat.js";
-import { IntlMessageFormat } from "intl-messageformat";
+import { createCopyResolver, type CopyResolveOptions } from "./resolve.js";
 export { ADMIN_WRITER_COPY_EN } from "./admin-route-copy.js";
 export type { AdminRouteCopy } from "./admin-route-copy.js";
 
@@ -58,15 +58,24 @@ export interface AdminCopyRef {
   readonly locale?: string;
   readonly values?: Readonly<Record<string, string | number | boolean>>;
 }
-/** Explicit draft-review display, separate from approved production resolution.
- * Missing records, unsupported locales and invalid ICU arguments remain Needs. */
-export function resolveAdminCopyRef(ref: AdminCopyRef, copy: AdminCopy = ADMIN_COPY_EN) {
+/** Admin resolution shares the production approval policy; drafts require explicit preview. */
+export type AdminCopyResolveOptions = Pick<CopyResolveOptions, "target" | "now" | "timeZone" | "approvalPlan" | "acceptDelegateInProduction">;
+
+/** Missing records, unsupported locales and invalid ICU arguments remain Needs.
+ * Omitted options retain the shared resolver's safe production default. */
+export function resolveAdminCopyRef(ref: AdminCopyRef, copy: AdminCopy = ADMIN_COPY_EN, options: AdminCopyResolveOptions = {}) {
   if (ref.locale !== undefined && ref.locale !== "en") return undefined;
   const record = getAdminCopyRecord(ref.id, copy);
-  if (!record || record.status === "retired") return undefined;
-  try {
-    const formatted = new IntlMessageFormat(record.text, "en").format(ref.values);
-    if (typeof formatted !== "string" || !formatted.trim()) return undefined;
-    return { ref: { ...ref, locale: "en" }, text: formatted, servedLocale: "en" as const, status: record.status, activation: "none" as const };
-  } catch { return undefined; }
+  const envelope = copy.envelopes.find(envelope => envelope.records.some(row => row.id === ref.id));
+  if (!record || !envelope || envelope.locale !== "en") return undefined;
+  const resolve = createCopyResolver({
+    id: "admin-copy",
+    locale: envelope.locale,
+    revision: String(envelope.revision),
+    source: { kind: "generated", reference: "writer/admin-copy" },
+    entries: [{ ...record, placeholders: "args" in record ? record.args?.map(arg => arg.name) : undefined }],
+  }, { ...options, target: options.target ?? "production" });
+  const resolution = resolve({ ...ref, locale: "en" });
+  if (!resolution || !resolution.text.trim()) return undefined;
+  return { ...resolution, servedLocale: "en" as const, status: record.status, activation: "none" as const };
 }
