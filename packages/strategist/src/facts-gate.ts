@@ -36,8 +36,7 @@
  */
 
 import { blankCssDeclPercents } from "./css-decl-percent.js";
-import { buildFactIndex, isTracedSurfaceForm, type FactIndex } from "./fact-index.js";
-import type { Fact } from "./schema.js";
+import { buildFactIndex, isTracedSurfaceForm, type FactIndex, type GroundEvidence } from "./fact-index.js";
 
 export interface ScannedFile {
   /** A stable label for this file in reported findings — typically a repo-relative path. Never interpreted as a real filesystem path by this function. */
@@ -131,7 +130,7 @@ const SUPERLATIVE_RE =
 // line comment — deliberately loose about the closing delimiter (only the
 // opener plus "fact:<key>" is required) so a stray missing `-->` doesn't
 // silently defeat the citation.
-const FACT_CITATION_RE = /(?:<!--|\/\*|\{\/\*|\/\/)\s*fact:([a-zA-Z][a-zA-Z0-9-]*)/g;
+const FACT_CITATION_RE = /(?:<!--|\/\*|\{\/\*|\/\/)\s*(?:fact|finding):([a-zA-Z][a-zA-Z0-9-]*)/g;
 const IGNORE_MARKER_RE = /(?:<!--|\/\*|\{\/\*|\/\/)\s*facts-gate:ignore\b/i;
 
 const FENCE_RE = /^\s*(```|~~~)/;
@@ -194,11 +193,11 @@ function blankStyleLiteralRegions(text: string): string {
  */
 export function checkFactsTraceability(
   files: ScannedFile[],
-  facts: Fact[],
+  facts: readonly GroundEvidence[],
   options: FactsGateOptions = {},
 ): FactsGateResult {
   const scanStyleLiterals = options.scanStyleLiterals === true;
-  const index: FactIndex = buildFactIndex(facts);
+  const index: FactIndex<GroundEvidence> = buildFactIndex(facts);
   const findings: FactsGateFinding[] = [];
   const ignored: FactsGateIgnored[] = [];
   let claimsScanned = 0;
@@ -220,7 +219,7 @@ export function checkFactsTraceability(
             severity: "error",
             file: file.path,
             line: i + 1,
-            message: `cites fact "${key}", which does not exist in facts.json — a citation to a rotted or misspelled key silently defeats this gate`,
+            message: `cites fact "${key}", which does not exist in the supplied evidence — a citation to a rotted or misspelled key silently defeats this gate`,
             snippet: snippetOf(line),
           });
         }
@@ -268,8 +267,8 @@ export function checkFactsTraceability(
           line: i + 1,
           message:
             rule === "untraced-numeric-claim"
-              ? `"${text.trim()}" does not match any fact's value or alias in facts.json, and the line carries no valid "fact:<key>" citation`
-              : `"${text.trim()}" is an absolute/superlative claim with no valid "fact:<key>" citation on the same line`,
+              ? `"${text.trim()}" does not match any finding's value, unit form or alias, and the line carries no valid "finding:<id>" citation`
+              : `"${text.trim()}" is an absolute/superlative claim with no valid "finding:<id>" citation on the same line`,
           snippet: snippetOf(rawLine),
         });
       }
