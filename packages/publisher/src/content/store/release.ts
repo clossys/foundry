@@ -1,3 +1,5 @@
+import { publicationDigest, stampPublication } from "../release/publication.js";
+import type { CompiledPublication } from "../release/publication.js";
 import { constants } from "node:fs";
 import * as fs from "node:fs/promises";
 import { dirname, join, resolve } from "node:path";
@@ -23,7 +25,7 @@ function failure(rule: string, message: string): ReleaseResult {
 
 /** Historical bundles stand alone: current mutable registry state is not their authority. */
 function validateBundle(manifest: unknown, build: unknown, handover: unknown, targetId: string, n: number): void {
-  if (!object(manifest) || !keys(manifest, ["targetId", "n", "at", "entries", "approvedBy", "digest"]) ||
+  if (!object(manifest) || !keys(manifest, ["targetId", "n", "at", "entries", "approvedBy", "digest"], ["publications"]) ||
     manifest.targetId !== targetId || manifest.n !== n || !text(manifest.at) || !Number.isFinite(Date.parse(manifest.at)) ||
     !text(manifest.approvedBy) || !hash(manifest.digest) || !Array.isArray(manifest.entries) || !manifest.entries.length) {
     invalid("Stored release manifest is malformed");
@@ -40,8 +42,14 @@ function validateBundle(manifest: unknown, build: unknown, handover: unknown, ta
   }
   const { digest, ...payload } = manifest;
   if (computeReleaseDigest(payload as unknown as Omit<ReleaseManifest, "digest">) !== digest) invalid("Stored release manifest digest does not match its content");
-  if (!object(build) || !keys(build, ["targetId", "releaseN", "routes"]) || build.targetId !== targetId || build.releaseN !== n ||
+  if (!object(build) || !keys(build, ["targetId", "releaseN", "routes"], ["publications"]) || build.targetId !== targetId || build.releaseN !== n ||
     !Array.isArray(build.routes) || build.routes.length !== manifest.entries.length) invalid("Stored build manifest does not match its release");
+  if (Object.hasOwn(manifest, "publications") !== Object.hasOwn(build, "publications")) invalid("Publication products are missing from the bundle");
+  if (manifest.publications !== undefined) {
+    if (!Array.isArray(manifest.publications) || !manifest.publications.length || !Array.isArray(build.publications)) invalid("Malformed publication bundle");
+    const expected = (manifest.publications as CompiledPublication[]).map(value => stampPublication(value, manifest.digest as string));
+    if (publicationDigest(expected) !== publicationDigest(build.publications)) invalid("Publication products differ from the release digest");
+  }
   const routes = new Set<string>();
   for (const route of build.routes) {
     if (!object(route) || !keys(route, ["slotId", "kind", "locales", "revision", "digest"], ["path"]) ||
@@ -133,7 +141,15 @@ export async function writeContentRelease(inputRoot: string, input: ReleaseInput
   const preflight = prepareContentRelease(input);
   if (!preflight.ok) return preflight;
   // Snapshot before the first await so caller mutation cannot change an approved write.
-  const snapshot = structuredClone(input);
+  const { publicationLibrary, ...serializable } = input;
+  // Producer catalog registries contain transform functions. Preserve functions
+  // while copying every data object; no caller mutation can change checked bytes.
+  const copyProducer = <T>(value: T): T => {
+    if (Array.isArray(value)) return value.map(copyProducer) as T;
+    if (value && typeof value === "object") return Object.fromEntries(Object.entries(value).map(([k,v]) => [k,copyProducer(v)])) as T;
+    return value;
+  };
+  const snapshot: ReleaseInput = { ...structuredClone(serializable), ...(publicationLibrary ? { publicationLibrary: copyProducer(publicationLibrary) } : {}) };
   let root: string;
   let releasesCreated = false;
   try {

@@ -1,3 +1,5 @@
+import { compilePublication, stampPublication } from "./publication.js";
+import type { CompiledPublication, PublicationSnapshot } from "./publication.js";
 import { createHash } from "node:crypto";
 import { createCopyResolver } from "@clossys/writer";
 import { checkContentActivation, checkContentApproval } from "../approval.js";
@@ -15,8 +17,8 @@ const sameLocales = (value: unknown, locales: readonly string[]): boolean => Arr
 
 /** Canonical JSON preserves array order and sorts object keys recursively. */
 export function computeReleaseDigest(manifest: Omit<ReleaseManifest, "digest">): string {
-  const { targetId, n, at, entries, approvedBy } = manifest;
-  const body = { targetId, n, at, entries, approvedBy };
+  const { targetId, n, at, entries, approvedBy, publications } = manifest;
+  const body = { targetId, n, at, entries, approvedBy, ...(publications === undefined ? {} : { publications }) };
   if (!isContentJson(body)) throw new TypeError("Release manifests require finite, acyclic JSON");
   function canonical(value: unknown): string {
     if (Array.isArray(value)) return `[${value.map(canonical).join(",")}]`;
@@ -111,7 +113,7 @@ export function prepareContentRelease(input: ReleaseInput, numbers: Readonly<Rec
     }),
   };
   const seen = new Set<string>();
-  type Selected = { candidate: ContentCandidate; slot: ContentSlot; digest: string; receiver: HandoverReceipt["receiver"] };
+  type Selected = { candidate: ContentCandidate; slot: ContentSlot; digest: string; publication?: CompiledPublication; receiver: HandoverReceipt["receiver"] };
   const groups = new Map<string, Selected[]>();
   Array.from(input.selections).forEach((selection, index) => {
     const path = `input.selections[${index}]`;
@@ -141,6 +143,16 @@ export function prepareContentRelease(input: ReleaseInput, numbers: Readonly<Rec
     const copyReport = checkCopyLocales(registry, candidate, slot, `${path}.candidate`, copyOptions);
     findings.push(...copyReport.findings);
     copyFindings.push(...copyReport.copyFindings);
+    let publication: CompiledPublication | undefined;
+    if (Object.hasOwn(candidate.typeSettings, "publication")) {
+      try {
+        if (!input.publicationLibrary || !writer) throw new TypeError("Current Designer library and Writer context required");
+        publication = compilePublication(candidate.typeSettings.publication as unknown as PublicationSnapshot, input.publicationLibrary, { ...writer, at: input.at });
+        if (!publication.products.routes.routes.some(route => route.path === slot.route)) throw new TypeError("Publication does not include the selected slot route");
+        // One revision owns the whole publication. Split release snapshots refuse.
+        if ([...groups.values()].flat().some(row => row.publication?.publicationId === publication!.publicationId)) throw new TypeError("Publication must have one revision owner per release");
+      } catch (error) { add(`${path}.publication`, "release-publication", (error as Error).message); }
+    }
     const target = slot.deployTarget;
     if (!target || !/^[a-zA-Z0-9_-]+$/.test(target) || registry.workspace.deployTargets.filter(row => row.id === target).length !== 1) {
       add(path, "release-target", `Slot ${slot.id} requires one declared deploy target with a safe target id`);
@@ -153,7 +165,7 @@ export function prepareContentRelease(input: ReleaseInput, numbers: Readonly<Rec
       receiver = destinations[0]!.kind;
     }
     const group = groups.get(target) ?? [];
-    group.push({ candidate, slot, digest, receiver });
+    group.push({ candidate, slot, digest, receiver, ...(publication ? { publication } : {}) });
     groups.set(target, group);
   });
   if (!object(numbers)) add("numbers", "release-number", "Release numbers must be a target-to-positive-integer record");
@@ -168,11 +180,13 @@ export function prepareContentRelease(input: ReleaseInput, numbers: Readonly<Rec
     const n = Object.hasOwn(numbers, targetId) ? numbers[targetId]! : 1;
     const body: Omit<ReleaseManifest, "digest"> = {
       targetId, n, at: input.at, approvedBy: input.approvedBy,
+      ...(selected.some(row => row.publication) ? { publications: selected.flatMap(row => row.publication ? [row.publication] : []) } : {}),
       entries: selected.map(({ candidate, slot, digest }) => ({ slotId: slot.id, candidateId: candidate.id, revision: candidate.revision, digest, ...(slot.route === undefined ? {} : { route: slot.route }) })),
     };
+    const releaseDigest = computeReleaseDigest(body);
     return {
-      manifest: { ...body, digest: computeReleaseDigest(body) },
-      build: { targetId, releaseN: n, routes: selected.map(({ candidate, slot, digest }) => ({ slotId: slot.id, ...(slot.route === undefined ? {} : { path: slot.route }), kind: slot.kind, locales: [...slot.locales], revision: candidate.revision, digest })) },
+      manifest: { ...body, digest: releaseDigest },
+      build: { targetId, releaseN: n, ...(body.publications ? { publications: body.publications.map(value => stampPublication(value, releaseDigest)) } : {}), routes: selected.map(({ candidate, slot, digest }) => ({ slotId: slot.id, ...(slot.route === undefined ? {} : { path: slot.route }), kind: slot.kind, locales: [...slot.locales], revision: candidate.revision, digest })) },
       handover: { targetId, releaseN: n, receiver: selected[0]!.receiver, matches: false, status: "pending", observedAt: null },
     };
   });

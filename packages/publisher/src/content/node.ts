@@ -30,3 +30,6 @@ if (isPublisherContentEntry()) {
 }
 export { localePathFor, buildLocaleRoutePlan, buildSitemapAlternates } from "./hreflang.js";
 export type { PublisherLocaleManifest, LocaleRouteOptions, LocaleRouteFinding, HreflangAlternate, LocalePageMetadata, LocaleRoutePlan, SitemapLocaleEntry } from "./hreflang.js";
+
+export { compilePublication, publicationLibraryPins } from "./release/publication.js";
+export type { PublicationSnapshot, PublicationConfigPin, PublicationCopyPin, PublicationWriter, PublicationProducts, CompiledPublication, ReleasedPublication } from "./release/publication.js";

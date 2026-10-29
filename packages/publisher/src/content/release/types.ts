@@ -1,3 +1,5 @@
+import type { CompositeEngineInput } from "@clossys/designer/catalog";
+import type { CompiledPublication, ReleasedPublication } from "./publication.js";
 import type { ContentFinding, CopyFinding, ContentWriterContext } from "../composition.js";
 import type { ContentRegistry, ContentSlot } from "../model.js";
 import type { ReviewReport } from "../review/types.js";
@@ -11,6 +13,8 @@ export interface ReleaseInput {
   /** Finite Writer registries and locale policy; approval time is at. */
   readonly writer?: ContentWriterContext;
   readonly at: string;
+  /** Current producer context, revalidated against each reserved publication snapshot. */
+  readonly publicationLibrary?: CompositeEngineInput;
 }
 export interface ReleaseManifest {
   readonly targetId: string;
@@ -20,10 +24,12 @@ export interface ReleaseManifest {
   readonly approvedBy: string;
   /** SHA256 of canonical JSON of every other manifest field. */
   readonly digest: string;
+  readonly publications?: readonly CompiledPublication[];
 }
 export interface TargetBuildManifest {
   readonly targetId: string;
   readonly releaseN: number;
+  readonly publications?: readonly ReleasedPublication[];
   readonly routes: readonly {
     readonly slotId: string;
     /** Undefined for framework-boundary slots, never an invented public URL. */
