@@ -532,6 +532,37 @@ Legacy copy still says 500 integrations. <!-- facts-gate:ignore -->
 
 ### The `strategist-check` CLI
 
+The cell model adds these read commands alongside the 0.6 modes:
+
+| Command | Read view |
+| --- | --- |
+| `status [--scope core\|full]` | Progress, levels and next unlock |
+| `cell <id> --verb create\|cohere\|unlock\|normalize` | L3 quality, L2 coherence, L1 unlock or L0 normalization |
+| `check [<id>[@N]…]` | Cell quality findings |
+| `cohere [<l2-id>…]` | Coherence findings |
+| `complete [--level mvs\|l0\|full]` | Completion report |
+| `brief <contract>` | Compile a brief in memory |
+| `handoff <contract>` | Brief readiness, with missing or stale cells listed |
+
+Each accepts `--root <dir>` (default `clossys/strategist`), `--json` and
+`--help`. Exit codes are `0` for clean or ready, `1` for findings or not
+ready, and `2` when the command cannot run. JSON reports carry `command`,
+`code` and `result`; input or execution failures carry `error` instead of
+`result`. Quality (`check` or `cell-quality`), coherence (`cohere` or
+`coherence`) and completion (`complete` or `completion`) save the returned
+report as `reports/cell-quality.json`, `reports/coherence.json` and
+`reports/completion.json` under the selected root. `wont-claim` saves
+`reports/wont-claim.json`; it also accepts `wont-claim <scan-dir> --root <dir> --json`.
+Pending judge findings remain visible as `not judged`; completion stays not ready until
+the canonical checks have the required judgements. These reports do not change cell or tree files.
+`status`, `cell`, `brief` and `handoff` do not save files. The read-only brief command
+rejects `--write` and `--request` until the write path is installed.
+
+Use an L3 id with `create`, an L2 id with `cohere`, an L1 id with `unlock`,
+and `strategy` with `normalize`. These verbs check the corresponding view.
+For compatibility, a directory argument to the legacy `handoff` mode
+continues to check the 0.6 directory records.
+
 ```bash
 npx strategist-check ./clossys/strategist ./docs
 ```

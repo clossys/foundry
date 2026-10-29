@@ -43,6 +43,10 @@ import {
   resolveDefaultStrategyDirectory,
 } from "./strategy-dir-default.js";
 import { checkWontClaimDrift, type WontClaimResult } from "./wont-claim-drift.js";
+import { executeBriefCommand } from "./cli/brief.js";
+import { executeChecksCommand } from "./cli/checks.js";
+import { isReadCommand, READ_USAGE, runReadCommand } from "./cli/read.js";
+import { persistReport } from "./cli/reports.js";
 
 const USAGE = `Usage: strategist-check ground [<strategy-dir>] <scan-dir> [options]
    or: strategist-check <strategy-dir> <scan-dir> [options]
@@ -69,6 +73,8 @@ Options:
 Exit codes: 0 = clean, 1 = at least one finding, 2 = could not run (bad input, missing/invalid findings, nothing matched to scan, or an unreadable directory).
 
 Run "strategist-check brand-coverage --help", "strategist-check direction --help", "strategist-check handoff --help", "strategist-check apply --help", "strategist-check brand-facts --help", or "strategist-check wont-claim --help" for those subcommands' own usage.
+
+${READ_USAGE}
 `;
 
 const BRAND_COVERAGE_USAGE = `Usage: strategist-check brand-coverage <derivations-file> [<brandable-slots-file>] [options]
@@ -156,6 +162,8 @@ Options:
 Default extensions are .md, .mdx, .txt, .html, .htm, .json, .yml and .yaml; code files opt in through --extensions. Quoted Never-claim: phrases from active Proof and Never: phrases from active Voice are checked; unquoted labels are listed as unchecked. A comment with wont-claim:ignore is recorded and not checked. --root overrides the strategy directory; --json prints the result as JSON.
 
 Exit codes: 0 = clean, 1 = hit (at least one scanned surface makes a recorded claim), 2 = could not run (tree or active cells missing/unreadable/invalid, no files scanned, an over-long line, an unreadable directory, or bad arguments).
+The returned report is saved to <root>/reports/wont-claim.json.
+
 `;
 
 /** Exported for `cli.test.ts` — anything wrong with the arguments themselves always maps to exit code 2, never 1. */
@@ -1164,7 +1172,7 @@ function printWontClaimReport(result: WontClaimResult): void {
 function runWontClaim(argv: string[]): number {
   const args = parseGroundArgs(argv);
   if (args.help) {
-    console.log(WONT_CLAIM_USAGE);
+    console.log(args.json ? JSON.stringify({ command: "wont-claim", code: 0, help: WONT_CLAIM_USAGE }) : WONT_CLAIM_USAGE);
     return 0;
   }
   if (args.factsDir !== undefined) throw new CliInputError('unknown flag "--facts-dir" for wont-claim');
@@ -1190,8 +1198,13 @@ function runWontClaim(argv: string[]): number {
 
   const surfaces = files.filter(file => !isWithinRoot(resolve(scanDir, file.path), strategyDir));
   const result = checkWontClaimDrift(surfaces, model);
-  if (args.json) console.log(JSON.stringify(result));
-  else printWontClaimReport(result);
+  persistReport(strategyDir, "wont-claim", result);
+  const code = result.state === "indeterminate" ? 2 : result.state === "hit" ? 1 : 0;
+  if (args.json) {
+    console.log(JSON.stringify({ command: "wont-claim", code, result }));
+    return code;
+  }
+  printWontClaimReport(result);
   if (result.state === "indeterminate") {
     console.error("Refusing to report a pass for a check that could not run in full.");
     return 2;
@@ -1209,6 +1222,9 @@ function runWontClaim(argv: string[]): number {
  */
 export function main(argv: string[]): number {
   if (argv[0] === "index") return runCitationIndex(argv.slice(1));
+  if (isReadCommand(argv)) {
+    return runReadCommand(argv, { execute: args => args.command === "brief" || args.command === "handoff" ? executeBriefCommand(args) : executeChecksCommand(args) });
+  }
   if (argv[0] === "brand-coverage") {
     return runBrandCoverage(argv.slice(1));
   }
@@ -1225,7 +1241,11 @@ export function main(argv: string[]): number {
     return runBrandFacts(argv.slice(1));
   }
   if (argv[0] === "wont-claim") {
-    return runWontClaim(argv.slice(1));
+    try { return runWontClaim(argv.slice(1)); } catch (error) {
+      if (!argv.includes("--json")) throw error;
+      console.log(JSON.stringify({ command: "wont-claim", code: 2, error: error instanceof Error ? error.message : String(error) }));
+      return 2;
+    }
   }
 
   const args = parseGroundArgs(argv[0] === "ground" ? argv.slice(1) : argv);
