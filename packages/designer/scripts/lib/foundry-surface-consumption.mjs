@@ -1,8 +1,9 @@
 // Descriptor measurements are separate from the frozen historical report gate.
 import { createHash } from "node:crypto";
-import { existsSync, lstatSync, readFileSync, readdirSync } from "node:fs";
+import { existsSync, lstatSync, readFileSync, readdirSync, realpathSync } from "node:fs";
 import { resolve } from "node:path";
 import ts from "typescript";
+import { classifyPrivateInternalReads } from "./private-internal-reads.mjs";
 import { createSurfaceSourceScanner } from "./surface-source-scan.mjs";
 
 // Boundary-message uses this public export as an adaptation anchor. Its private
@@ -52,7 +53,7 @@ export function measureFoundrySurfaces(root, buildSurfaceConsumption) {
     if (cache.has(path)) return cache.get(path);
     const absolute = resolve(repo, path);
     if (!existsSync(absolute)) return undefined;
-    if (!lstatSync(absolute).isFile() || lstatSync(absolute).isSymbolicLink()) throw new Error("Surface source must be a regular repository file");
+    if (realpathSync(absolute) !== absolute || !lstatSync(absolute).isFile() || lstatSync(absolute).isSymbolicLink()) throw new Error("Surface source must be a regular repository file");
     const content = readFileSync(absolute, "utf8"); cache.set(path, content); return content;
   };
   const graph = createSurfaceSourceScanner({ read: sourceRead, packages });
@@ -76,11 +77,28 @@ export function measureFoundrySurfaces(root, buildSurfaceConsumption) {
   if (new Set(fills.map(row => row.slot)).size !== fills.length) throw new Error("Duplicate surface measurement");
   const sourceScans = fills.map(fill => graph.scan({ fill: fill.id, packageName: fill.pin?.package, pointer: fill.pin?.export }));
   const input = { ...inventory, fills, sourceScans, themeCss: read("styles/theme.css") + "\n" + read("styles/theme-keys.css") };
-  const report = buildSurfaceConsumption(input);
+  // Observe the unchanged raw scan before consulting permission metadata.
+  const rawReport = buildSurfaceConsumption(input);
+  const annotations = fills.map(fill => {
+    const slot = inventory.frames.find(slot => slot.id === fill.slot);
+    const scan = sourceScans.find(scan => scan.fill === fill.id);
+    const packageRoot = packages[fill.pin?.package];
+    if (!slot?.contract.allowedReads.privateInternal) return { scan, witnesses: [] };
+    return classifyPrivateInternalReads({ scan, declarations: slot.contract.allowedReads.privateInternal, packageRoot, read: sourceRead,
+      scanAssets: (file, content) => buildSurfaceConsumption({ ...input, fills: [fill], sourceScans: [{ fill: fill.id, files: [{ path: file, content }] }] }).fills[0].scannedReads.assets });
+  });
+  const report = annotations.some(row => row.witnesses.length) ? buildSurfaceConsumption({ ...input, sourceScans: annotations.map(row => row.scan) }) : rawReport;
+  for (const row of report.fills) {
+    const annotation = annotations[fills.findIndex(fill => fill.id === row.id)];
+    if (annotation.witnesses.length) {
+      row.rawScannedReads = rawReport.fills.find(raw => raw.id === row.id).scannedReads;
+      row.privateInternalReads = annotation.witnesses;
+    }
+  }
   const measurements = Object.fromEntries(report.fills.map(row => {
     if (row.scanStatus !== "lower-bound" || !row.sourceFiles.length) throw new Error(`Surface source measurement unavailable: ${row.slot}`);
     const scan = sourceScans.find(scan => scan.fill === row.id);
-    return [row.slot, { pin: row.pin, consumption: { scanStatus: row.scanStatus, sourceFiles: scan.files.map(file => ({ path: file.path, sha256: createHash("sha256").update(sourceRead(file.path)).digest("hex") })), scannedReads: row.scannedReads, scannedComposes: row.scannedComposes, unresolved: row.unresolved } }];
+    return [row.slot, { pin: row.pin, consumption: { scanStatus: row.scanStatus, sourceFiles: scan.files.map(file => ({ path: file.path, sha256: createHash("sha256").update(sourceRead(file.path)).digest("hex") })), scannedReads: row.scannedReads, scannedComposes: row.scannedComposes, ...(row.privateInternalReads ? { rawScannedReads: row.rawScannedReads, privateInternalReads: row.privateInternalReads } : {}), unresolved: row.unresolved } }];
   }));
   return { measurements, report, input };
 }

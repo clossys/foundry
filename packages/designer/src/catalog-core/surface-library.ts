@@ -251,11 +251,31 @@ export function assertSurfacePackageEntry(value: unknown, pin: unknown, installe
     if (value.composes !== undefined) strings(value.composes);
     if (value.consumption !== undefined) {
         const measured = value.consumption;
-        object(measured, ["scanStatus", "sourceFiles", "scannedReads", "scannedComposes"], ["unresolved"]);
+        object(measured, ["scanStatus", "sourceFiles", "scannedReads", "scannedComposes"], ["unresolved", "rawScannedReads", "privateInternalReads"]);
         choice(measured.scanStatus, ["lower-bound", "unavailable"]);
         list(measured.sourceFiles, row => { object(row, ["path", "sha256"]); string(row.path); surfacePath(row.path); hash(row.sha256); });
         object(measured.scannedReads, ["tokens", "assets", "components"]);
         strings(measured.scannedReads.tokens); strings(measured.scannedReads.assets); strings(measured.scannedReads.components);
+        if (measured.privateInternalReads !== undefined || measured.rawScannedReads !== undefined) {
+            object(measured.rawScannedReads, ["tokens", "assets", "components"]);
+            strings(measured.rawScannedReads.tokens); strings(measured.rawScannedReads.assets); strings(measured.rawScannedReads.components);
+            list(measured.privateInternalReads, row => {
+                object(row, ["target", "targetSha256", "file", "sourceSha256", "specifier", "line", "rawAssets"]);
+                string(row.target); surfacePath(row.target); hash(row.targetSha256);
+                string(row.file); surfacePath(row.file); hash(row.sourceSha256); string(row.specifier);
+                if (!Number.isInteger(row.line) || (row.line as number) < 1 || !(row.specifier as string).match(/^\.\.?\//) || !(row.target as string).includes("/internal/")) surfaceFault("S1 private internal import required");
+                const files = measured.sourceFiles as { path: string; sha256: string }[];
+                if (!files.some(file => file.path === row.file && file.sha256 === row.sourceSha256) || !files.some(file => file.path === row.target && file.sha256 === row.targetSha256)) surfaceFault("S2 private internal source evidence differs");
+                const parts = (row.file as string).split("/"); parts.pop();
+                for (const part of (row.specifier as string).split("/")) { if (part === "..") parts.pop(); else if (part !== ".") parts.push(part); }
+                const base = parts.join("/").replace(/\.[cm]?jsx?$/, "");
+                if (![base + ".ts", base + ".tsx", base + "/index.ts", base + "/index.tsx"].includes(row.target as string) || (row.file as string).split("/").slice(0, 3).join("/") !== (row.target as string).split("/").slice(0, 3).join("/")) surfaceFault("S2 private internal target differs");
+                strings(row.rawAssets);
+                if (!(row.rawAssets as string[]).length || (row.rawAssets as string[]).some(id => !/^assets\.[a-z][a-z0-9-]*$/.test(id) || !(row.specifier as string).includes(id) || !(measured.rawScannedReads as Node).assets || !((measured.rawScannedReads as Node).assets as string[]).includes(id))) surfaceFault("S2 private internal raw reads differ");
+            }, true);
+            const raw = measured.rawScannedReads, observed = measured.scannedReads;
+            if (["tokens", "components"].some(layer => stableStringify(raw[layer]) !== stableStringify(observed[layer])) || (observed.assets as string[]).some(id => !(raw.assets as string[]).includes(id)) || (raw.assets as string[]).some(id => !(observed.assets as string[]).includes(id) && !(measured.privateInternalReads as Node[]).some(row => (row.rawAssets as string[]).includes(id)))) surfaceFault("S2 private internal read partition differs");
+        }
         strings(measured.scannedComposes);
         if (measured.unresolved !== undefined) list(measured.unresolved, row => {
             object(row, ["file", "line", "evidence"], ["code"]);
@@ -341,7 +361,11 @@ function assertPackageContract(value: unknown, slot: string): asserts value is S
     });
     const contentSlots = (contract.slots as Node[]).map(port => port[section ? "name" : "id"]);
     if (new Set(contentSlots).size !== contentSlots.length) surfaceFault("S2 duplicate historical content slot");
-    object(contract.allowedReads, ["tokens", "assets"]); strings(contract.allowedReads.tokens); strings(contract.allowedReads.assets);
+    object(contract.allowedReads, ["tokens", "assets"], section ? [] : ["privateInternal"]); strings(contract.allowedReads.tokens); strings(contract.allowedReads.assets);
+    if (contract.allowedReads.privateInternal !== undefined) {
+        strings(contract.allowedReads.privateInternal);
+        for (const target of contract.allowedReads.privateInternal as string[]) { surfacePath(target); if (!/^packages\/[A-Za-z0-9_-]+\/src\/.+\/internal\/.+\.[cm]?tsx?$/.test(target)) surfaceFault("S1 private internal module path required"); }
+    }
     if (section) { strings(contract.allowedComposes); strings(contract.parts); if (contract.composes !== undefined) strings(contract.composes); }
     else {
         choice(contract.rendering, ["server", "client"]);
