@@ -189,3 +189,5 @@ export type { CreateContentRouteManifestInput } from "./content-route-manifest.j
 export type * from "./content-route-types.js";
 
 export { SiteFrame, siteShellFor, SITE_SURFACE_KINDS, SITE_PAGE_LAYERS, SITE_MAIN_ID, SITE_FRAME_CONTRACT, SITE_FRAME_CONFIG_SCHEMA, normalizeSiteFrameConfig, normalizeSiteFrameActions, type SiteBrandInput, type SiteChromeGround, type SiteEnvironmentLinkInput, type SiteFooterInput, type SiteFrameConfig, type SiteFrameInput, type SiteFrameProps, type SiteIconLinkInput, type SiteLinkInput, type SitePageLayer, type SiteShellInput, type SiteSurfaceKind, type SiteFramePresentationConfig } from "@clossys/designer/frames"; // removed by CX-2
+
+export { projectSiteShellNavigation, type SiteShellNavigationOptions, type SiteShellNavigationProjection } from "./frame/registered-navigation.js";

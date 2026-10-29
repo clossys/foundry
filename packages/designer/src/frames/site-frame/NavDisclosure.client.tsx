@@ -7,7 +7,7 @@ import type { ResolvedSiteShell } from "./internal/resolveShell.js";
 /** The frame resolves copy and links on the server; Designer owns disclosure interaction. */
 export function SiteNavDisclosure({ nav, actions }: { readonly nav: NonNullable<ResolvedSiteShell["nav"]>; readonly actions?: ResolvedSiteShell["actions"] }) {
   return (
-    <FrameNavDisclosure aria-label={nav.label} triggerLabel={nav.triggerLabel} trigger="icon">
+    <FrameNavDisclosure aria-label={nav.label} triggerLabel={nav.triggerLabel} closeLabel={nav.closeLabel} trigger="icon">
       <NavLinks links={nav.links} actions={actions} />
     </FrameNavDisclosure>
   );
