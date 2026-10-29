@@ -1,4 +1,5 @@
 import { afterEach, expect, it } from "vitest";
+import { spawnSync } from "node:child_process";
 import { createHash } from "node:crypto";
 import { cp, mkdir, mkdtemp, readFile, readdir, rm, stat, writeFile } from "node:fs/promises";
 import { dirname, join } from "node:path";
@@ -79,17 +80,47 @@ export default defineConfig({id:"example",archetype:"product",locales:{default:"
 `);
   const before = await snapshot(options.root);
   const result = await publishTarget({ root: options.root, target: "site" });
-  expect(result.exitCode).toBe(0);
+  expect(result.exitCode).toBe(1);
+  expect(result.findings).toEqual(expect.arrayContaining([expect.objectContaining({kind:"missing",path:"package.json"})]));
   const after = await snapshot(options.root);
   for (const [path, metadata] of Object.entries(before)) expect(after[path], path).toEqual(metadata);
   for (const path of Object.keys(after).filter(path => !Object.hasOwn(before, path))) expect(path).toMatch(/^apps\/web\/src\/clossys\//);
   const dependencies = parseAppLocalJson(await readFile(join(result.output, "dependencies.json"), "utf8"));
   await put(options.root, "apps/web/package.json", JSON.stringify({private:true,dependencies}));
   const settled = await snapshot(options.root);
+  const cli = spawnSync(process.execPath, [fileURLToPath(new URL("../dist/cli/index.js", import.meta.url)), "publish", "--target", "site", "--check", "--json"], {cwd:options.root,encoding:"utf8"});
+  expect(cli.error).toBeUndefined(); expect(cli.status,cli.stderr||cli.stdout).toBe(0);
+  expect(JSON.parse(cli.stdout)).toMatchObject({exitCode:0,target:"site",check:true});
   expect(await publishTarget({ root: options.root, target: "site", check: true })).toMatchObject({exitCode:0,findings:[]});
   expect(await snapshot(options.root)).toEqual(settled);
   await writeFile(join(result.output,"nav.ts"), "// manual edit\n");
   const edited = await snapshot(options.root);
   expect(await publishTarget({ root: options.root, target: "site", check: true })).toMatchObject({exitCode:1,findings:expect.arrayContaining([expect.objectContaining({kind:"hand-edit",path:"nav.ts"})])});
   expect(await snapshot(options.root)).toEqual(edited);
+  const treePath = join(options.root,"clossys/agents/publisher/tree.json");
+  const tree = JSON.parse(await readFile(treePath,"utf8")); tree.meta.publications[0].routePack.version = 1;
+  await writeFile(treePath,JSON.stringify(tree));
+  const refusedBefore = await snapshot(options.root);
+  const refused = spawnSync(process.execPath,[fileURLToPath(new URL("../dist/cli/index.js",import.meta.url)),"publish","--target","site","--check","--json"],{cwd:options.root,encoding:"utf8"});
+  expect(refused.status,refused.stderr||refused.stdout).toBe(1);
+  expect(JSON.parse(refused.stdout).message).toMatch(/native content route manifest version 2/);
+  expect(await snapshot(options.root)).toEqual(refusedBefore);
 }, 120_000);
+
+it("supports only the exact internal Studio target without widening arbitrary package outputs", async () => {
+  const options = await fixture();
+  await mkdir(join(options.root,"packages/producer"),{recursive:true});
+  await cp(join(options.root,"apps/web"),join(options.root,"packages/producer/studio"),{recursive:true});
+  const target = {...options.target,app:"packages/producer/studio"};
+  await put(options.root,"clossys/clossys.config.ts", `export default {id:"example",archetype:"product",locales:{default:"en",supported:["en"]},targets:{studio:${JSON.stringify(target)}}};`);
+  const before = await snapshot(options.root);
+  const result = await publishTarget({root:options.root,target:"studio"});
+  expect(result.output).toBe(join(options.root,"packages/producer/studio/src/clossys"));
+  expect(result.exitCode).toBe(1); // The fixture intentionally lacks some emitted third-party dependencies.
+  const after = await snapshot(options.root);
+  for (const [path,metadata] of Object.entries(before)) expect(after[path],path).toEqual(metadata);
+  for (const path of Object.keys(after).filter(path => !Object.hasOwn(before,path))) expect(path).toMatch(/^packages\/producer\/studio\/src\/clossys\//);
+  for (const app of ["packages/producer", "packages/other/studio", "packages/producer/studio-extra"]) {
+    await expect(emitAppLocal({...options,target:{...target,app}})).rejects.toThrow(/web application target/);
+  }
+},120_000);

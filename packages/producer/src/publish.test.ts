@@ -22,7 +22,7 @@ describe("publish dispatch with an explicit mock app-local protocol", () => {
     expect(result.exitCode).toBe(0);
     expect(f.emitter.emitAppLocal).toHaveBeenCalledExactlyOnceWith({ root: "/example", target: config.targets.site, outDir: "/example/apps/site/src/clossys" });
     expect(f.emitter.writeAppLocal).toHaveBeenCalledExactlyOnceWith("/example/apps/site/src/clossys", f.expected);
-    expect(f.emitter.verifyAppLocal).not.toHaveBeenCalled();
+    expect(f.emitter.verifyAppLocal).toHaveBeenCalledExactlyOnceWith("/example/apps/site/src/clossys", f.expected);
   });
   it("checks in memory and never calls the writer", async () => {
     const f = fixture();
@@ -42,9 +42,21 @@ describe("publish dispatch with an explicit mock app-local protocol", () => {
     await expect(publishTarget({ root: "/example", target: "other" }, { ...f.dependencies, emitter: resolveEmitter })).rejects.toThrow("Unknown publish target");
     expect(resolveEmitter).not.toHaveBeenCalled();
   });
+  it("does not report successful publication when app dependencies or source still fail verification", async () => {
+    const finding = { kind: "missing", path: "package.json", message: "Application dependency is missing" };
+    const f = fixture([finding]);
+    expect(await publishTarget({ root: "/example", target: "site" }, f.dependencies)).toMatchObject({ exitCode: 1, findings: [finding] });
+    expect(f.emitter.writeAppLocal).toHaveBeenCalledOnce();
+  });
   it("does not report successful checks from a malformed emitter protocol", async () => {
     const f = fixture();
     f.emitter.verifyAppLocal = vi.fn(async () => undefined as never);
     await expect(publishTarget({ root: "/example", target: "site", check: true }, f.dependencies)).rejects.toThrow("did not return findings");
+  });
+  it("classifies active-cell or emission refusals as verdict failures", async () => {
+    const f = fixture();
+    f.emitter.emitAppLocal = vi.fn(async () => { throw new Error("Invalid active serving cells"); });
+    await expect(publishTarget({ root: "/example", target: "site" }, f.dependencies)).rejects.toMatchObject({exitCode:1,message:"Invalid active serving cells"});
+    expect(f.emitter.writeAppLocal).not.toHaveBeenCalled();
   });
 });

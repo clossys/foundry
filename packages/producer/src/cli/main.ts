@@ -36,6 +36,7 @@ export async function runCli(argv: readonly string[], cwd = process.cwd()): Prom
     return { exitCode: 2, message: `${verb}: not implemented in this build`, verb, root, check: args.check };
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
-    return { exitCode: 2, message: error instanceof CliUsageError ? `${message}\n${USAGE}` : message };
+    const exitCode = error && typeof error === "object" && "exitCode" in error && error.exitCode === 1 ? 1 : 2;
+    return { exitCode, message: error instanceof CliUsageError ? `${message}\n${USAGE}` : message };
   }
 }
