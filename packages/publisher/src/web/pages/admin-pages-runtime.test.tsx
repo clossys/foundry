@@ -30,9 +30,25 @@ beforeAll(async () => {
   const catalog = { ...fixture.catalog, components: { ...fixture.catalog.components, fills: importFoundryComponents().fills } };
   const selected = selectedPackageClosure(catalog);
   componentOptions = selected.componentOptions;
+  // Adoption checks each operation, while library snapshots are canonically sorted.
+  const candidates = new Map(catalog.components.fills.map(doc => [doc.$extensions["com.clossys.fill"].slot, doc]));
+  const adopted = new Set<string>(), visiting = new Set<string>(), ordered: string[] = [];
+  const visit = (slot: string) => {
+    if (!slot.startsWith("components.") || adopted.has(slot)) return;
+    if (visiting.has(slot)) throw new Error(`Fixture component dependency cycle: ${slot}`);
+    const candidate = candidates.get(slot);
+    if (!candidate) throw new Error(`Fixture component candidate missing: ${slot}`);
+    visiting.add(slot);
+    const component = Object.values(candidate.components)[0]!;
+    for (const dependency of [...component.reads.components, ...component.composes]) visit(dependency);
+    visiting.delete(slot);
+    adopted.add(slot);
+    ordered.push(slot);
+  };
+  for (const doc of selected.library.components.fills) visit(doc.$extensions["com.clossys.fill"].slot);
   const library = applyLibraryChange(catalog, fixture.library, {
     baseHash: libraryHash(fixture.library),
-    changes: selected.library.components.fills.map(doc => ({ portion: "components", change: { op: "adopt", slot: doc.$extensions["com.clossys.fill"].slot, source: "foundry" } })),
+    changes: ordered.map(slot => ({ portion: "components", change: { op: "adopt", slot, source: "foundry" } })),
   }, { componentOptions, surfaceOptions: fixture.options });
   fixture = { ...fixture, catalog, library };
   packages = await readSurfacePackageEvidence(["@clossys/designer/frames", "@clossys/designer/shell"].map(module => ({ frames: { pointer: { impl: { kind: "package", module } } } })) as Parameters<typeof readSurfacePackageEvidence>[0]);
