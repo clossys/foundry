@@ -4,7 +4,8 @@ import { ADMIN_VOICE_COPY_EN, type AdminVoiceCopy, type AdminVoiceCopyRecord } f
 import { ADMIN_META_COPY_EN, type AdminMetaCopy, type AdminMetaCopyRecord } from "./admin-meta.js";
 import { ADMIN_WRITER_COPY_EN, type AdminRouteCopy } from "./admin-route-copy.js";
 import { ADMIN_CHAT_COPY_EN } from "./admin-chat.js";
-import { ADMIN_COMMON_COPY_EN } from "./admin-common.js";
+import { ADMIN_COMMON_COPY_EN, COMMON_STUDIO_ITEM_NAMES } from "./admin-common.js";
+import pageSource from "./catalog/records/admin-pages.r1.en.json" with { type: "json" };
 export { ADMIN_COMMON_COPY_EN } from "./admin-common.js";
 export { ADMIN_CHAT_COPY_EN } from "./admin-chat.js";
 import { createCopyResolver, type CopyResolveOptions } from "./resolve.js";
@@ -68,26 +69,41 @@ export interface AdminItemNameBinding {
   readonly kind: "item-name";
 }
 
-const designerItemNames = new Map(ADMIN_STUDIO_COPY_EN.records.filter(record =>
+const designerItemNames = new Map<string, { readonly id: string; readonly leaf: string; readonly context: string; readonly text: string }>([...ADMIN_STUDIO_COPY_EN.records.filter(record =>
   record.leaf === "strings.names" && record.context.startsWith("designer.item.")
-).map(record => [record.id, record]));
+), ...COMMON_STUDIO_ITEM_NAMES.map(({ record }) => record)].map(record => [record.id, record]));
 
 /** Authenticate an item name against the shipped Writer source binding.
  * A context-shaped string alone grants no authority to name a Designer item. */
 export function getAdminItemNameBinding(id: string, copy: AdminCopy = ADMIN_COPY_EN): AdminItemNameBinding | undefined {
   const canonicalRecord = designerItemNames.get(id);
   const record = getAdminCopyRecord(id, copy);
-  if (!canonicalRecord || !record || record.leaf !== canonicalRecord.leaf || record.context !== canonicalRecord.context) return undefined;
+  if (!canonicalRecord || !record || record.leaf !== canonicalRecord.leaf || record.context !== canonicalRecord.context || record.text !== canonicalRecord.text) return undefined;
   const canonicalBindings = ADMIN_STUDIO_COPY_EN.bindings.filter(binding => binding.recordId === id);
   const canonicalBinding = canonicalBindings[0];
   if (canonicalBindings.length !== 1 || !canonicalBinding || canonicalBinding.kind !== "item-name" || canonicalBinding.cellId !== canonicalRecord.context) return undefined;
   const envelopes = copy.envelopes.filter(envelope => envelope.records.some(row => row.id === id));
   if (!envelopes.length || envelopes.some(envelope => {
-    if (!("bindings" in envelope)) return true;
+    if (envelope.locale !== ADMIN_STUDIO_COPY_EN.locale || !("bindings" in envelope)) return true;
     const bindings = envelope.bindings.filter(binding => binding.recordId === id);
     return bindings.length !== 1 || !bindings.every(binding => binding.kind === canonicalBinding.kind && binding.cellId === canonicalBinding.cellId && binding.target === canonicalBinding.target);
   })) return undefined;
   return { ...canonicalBinding, kind: "item-name" };
+}
+
+/** Existing page cells may use an item name only through their shipped CopyRef
+ * and external owner declaration. This creates no aliases or item identities. */
+export function getAdminItemNameCopyRefBinding(id: string, cellId: string) {
+  const canonicalRecord = designerItemNames.get(id);
+  if (!canonicalRecord || !getAdminItemNameBinding(id)
+    || (pageSource.aliases as Readonly<Record<string, string>>)[cellId] !== id) return undefined;
+  const declarations = pageSource.externalRecords.filter(row => row.recordId === id);
+  const declaration = declarations[0];
+  const bindings = pageSource.bindings.filter(row => row.recordId === id && row.cellId === cellId);
+  const binding = bindings[0];
+  if (declarations.length !== 1 || !declaration || declaration.source !== "common-labels.r1.en.json"
+    || declaration.sourceContext !== canonicalRecord.context || bindings.length !== 1 || !binding || binding.kind !== "CopyRef") return undefined;
+  return { ...binding, kind: "CopyRef" as const, source: "admin-pages.r1.en.json", recordSource: declaration.source, sourceContext: declaration.sourceContext };
 }
 /** Admin resolution shares the production approval policy; drafts require explicit preview. */
 export type AdminCopyResolveOptions = Pick<CopyResolveOptions, "target" | "now" | "timeZone" | "approvalPlan" | "acceptDelegateInProduction">;

@@ -3,6 +3,7 @@ import { ADMIN_STUDIO_COPY_EN } from "@clossys/writer/admin-studio";
 import { ADMIN_WRITER_COPY_EN } from "@clossys/writer/admin-copy";
 import { prepareAdminPageCopyEnvelopes } from "./admin-copy-source.js";
 import { createAdminPageCopy } from "./admin-copy.js";
+import { adminCopyFixture, copyEnvelopes } from "./__fixtures__/copy.mjs";
 
 const record = ADMIN_STUDIO_COPY_EN.records.find(row => row.id === "st.7zkxq40fwy")!;
 const binding = ADMIN_STUDIO_COPY_EN.bindings.find(row => row.recordId === record.id)!;
@@ -47,4 +48,57 @@ describe("native Designer item-name CopyRef boundary", () => {
     const copy = createAdminPageCopy({ locale: "en", envelopes: prepareAdminPageCopyEnvelopes([input]) });
     expect(() => copy({ id: ordinary.id })).toThrow(/one bound record/);
   });
+});
+
+describe("shared Studio item names used by existing page cells", () => {
+  for (const [id, cellId, context, text] of [
+    ["st.v1cbgc4kr2", "strings.admin.column.item", "designer.item.components.item", "Item"],
+    ["st.s13b3hwkta", "strings.admin.pagination.label", "designer.item.sections.pagination", "Pagination"],
+  ] as const) {
+    it(`preserves the original ${cellId} proof and direct canonical item proof`, () => {
+      const copy = adminCopyFixture();
+      const semantic = copy.resolve({ id: cellId });
+      const direct = copy.resolve({ id });
+      expect(semantic).toMatchObject({ text, ref: { id, locale: "en" }, provenance: {
+        cellId, recordId: id, bindingSource: "admin-pages.r1.en.json", recordSource: "common-labels.r1.en.json", status: "draft", activation: "none",
+      } });
+      expect(direct).toMatchObject({ text, provenance: { cellId: context, recordId: id, bindingSource: "common-labels.r1.en.json", recordSource: "common-labels.r1.en.json" } });
+      expect(semantic.provenance.bindingEnvelopeHash).not.toBe(direct.provenance.bindingEnvelopeHash);
+      expect(semantic.provenance.envelopeHash).toBe(direct.provenance.envelopeHash);
+      expect(copy.previewState()).toEqual({ target: "preview", draft: true });
+    });
+    it(`refuses forged aliases, sources, targets and incomplete canonical proof for ${text}`, () => {
+      const attempts = ["item-missing", "item-target", "item-cell", "item-kind", "item-duplicate", "copy-missing", "copy-target", "copy-duplicate", "declaration-missing", "declaration-context", "declaration-duplicate", "foreign-source", "record-text", "record-context", "record-leaf", "foreign-locale", "forged-alias", "missing-owner"];
+      for (const attempt of attempts) {
+        const inputs = structuredClone(copyEnvelopes());
+        const page = inputs.find(row => row.source === "admin-pages.r1.en.json")!;
+        const owner = inputs.find(row => row.source === "common-labels.r1.en.json")!;
+        const item = owner.envelope.bindings.find(row => row.recordId === id)!;
+        const cell = page.envelope.bindings.find(row => row.cellId === cellId)!;
+        const declaration = page.envelope.externalRecords!.find(row => row.recordId === id)!;
+        const record = owner.envelope.records.find(row => row.id === id)!;
+        let requested: string = cellId;
+        if (attempt === "item-missing") owner.envelope.bindings = owner.envelope.bindings.filter(row => row.recordId !== id);
+        if (attempt === "item-target") item.target = "packages/designer/src/catalog/slots/unknown.json";
+        if (attempt === "item-cell") item.cellId = "designer.item.components.button";
+        if (attempt === "item-kind") item.kind = "CopyRef";
+        if (attempt === "item-duplicate") owner.envelope.bindings.push({ ...item });
+        if (attempt === "copy-missing") page.envelope.bindings = page.envelope.bindings.filter(row => row.cellId !== cellId);
+        if (attempt === "copy-target") cell.target = "sections.forged.label";
+        if (attempt === "copy-duplicate") page.envelope.bindings.push({ ...cell });
+        if (attempt === "declaration-missing") page.envelope.externalRecords = page.envelope.externalRecords!.filter(row => row.recordId !== id);
+        if (attempt === "declaration-context") declaration.sourceContext = "designer.item.components.button";
+        if (attempt === "declaration-duplicate") page.envelope.externalRecords!.push({ ...declaration });
+        if (attempt === "foreign-source") { owner.source = "foreign.json"; declaration.source = "foreign.json"; }
+        if (attempt === "record-text") record.text = "Forged name";
+        if (attempt === "record-context") record.context = "designer.item.components.button";
+        if (attempt === "record-leaf") record.leaf = "strings.names";
+        if (attempt === "foreign-locale") owner.envelope.locale = "ar";
+        if (attempt === "forged-alias") { requested = "strings.admin.forged.item"; page.envelope.aliases![requested] = id; page.envelope.bindings.push({ ...cell, cellId: requested }); }
+        if (attempt === "missing-owner") inputs.splice(inputs.indexOf(owner), 1);
+        const copy = createAdminPageCopy({ locale: "en", envelopes: inputs });
+        expect(() => copy({ id: requested }), attempt).toThrow(/Writer/);
+      }
+    });
+  }
 });

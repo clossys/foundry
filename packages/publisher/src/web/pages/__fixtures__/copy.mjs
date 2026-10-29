@@ -7,6 +7,7 @@ import signIn from "../../../../../writer/src/catalog/records/sign-in.json" with
 import arabic from "../../../../../writer/src/catalog/__fixtures__/admin-pages.r1.ar.json" with { type: "json" };
 import { prepareAdminPageCopyEnvelopes } from "../admin-copy-source.js";
 import { createAdminPageCopy } from "../admin-copy.js";
+import { ADMIN_COMMON_COPY_EN } from "@clossys/writer/admin-copy";
 
 // The nested sign-in catalog has no route envelope. This fixture projection
 // uses its version and the declaring common source's draft-preview metadata;
@@ -22,7 +23,9 @@ const sourceEnvelopes = [
   { source: "admin-studio.r1.en.json", envelope: studio },
   { source: "admin-chat.r1.en.json", envelope: chatSource },
   { source: "admin-pages.r1.ar.json", envelope: arabic },
-  { source: "common-labels.r1.en.json", envelope: common },
+  // The Writer facade projects only genuine retained Studio item-name bindings.
+  // Raw common records and their sole source owner remain unchanged.
+  { source: "common-labels.r1.en.json", envelope: { ...common, bindings: ADMIN_COMMON_COPY_EN.bindings } },
   { source: "admin-writer-paging.r1.en.json", envelope: paging },
   { source: "sign-in.json", envelope: signInShared },
 ];

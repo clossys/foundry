@@ -1,7 +1,7 @@
 import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 import { ADMIN_STUDIO_COPY_EN } from "./admin-studio.js";
-import { createAdminCopy, resolveAdminCopyRef, type AdminCopyEnvelope } from "./admin-copy.js";
+import { ADMIN_COMMON_COPY_EN, createAdminCopy, getAdminItemNameBinding, getAdminItemNameCopyRefBinding, resolveAdminCopyRef, type AdminCopyEnvelope } from "./admin-copy.js";
 
 const record = ADMIN_STUDIO_COPY_EN.records.find(row => row.id === "st.7zkxq40fwy")!;
 const binding = ADMIN_STUDIO_COPY_EN.bindings.find(row => row.recordId === record.id)!;
@@ -53,4 +53,47 @@ describe("strict Designer item-name resolution", () => {
     expect(resolveAdminCopyRef({ id: record.id, values: { unexpected: 1 } }, copy, preview)).toBeUndefined();
     expect(resolveAdminCopyRef({ id: record.id }, copyWith({ status: "retired" }), preview)).toBeUndefined();
   });
+});
+
+describe("shared names retain canonical Studio authority", () => {
+  for (const [id, cellId, text] of [
+    ["st.v1cbgc4kr2", "strings.admin.column.item", "Item"],
+    ["st.s13b3hwkta", "strings.admin.pagination.label", "Pagination"],
+  ] as const) {
+    it(`resolves ${text} through the unchanged current owner and original page cell`, () => {
+      const row = ADMIN_COMMON_COPY_EN.records.find(record => record.id === id)!;
+      const item = getAdminItemNameBinding(id)!;
+      expect(row).toMatchObject({ leaf: "strings.common", text, context: item.cellId, status: "draft" });
+      expect(ADMIN_STUDIO_COPY_EN.records.some(record => record.id === id)).toBe(false);
+      expect(ADMIN_STUDIO_COPY_EN.bindings.filter(binding => binding.recordId === id)).toEqual([item]);
+      expect(getAdminItemNameCopyRefBinding(id, cellId)).toMatchObject({ cellId, recordId: id, kind: "CopyRef", source: "admin-pages.r1.en.json", recordSource: "common-labels.r1.en.json", sourceContext: row.context });
+      expect(getAdminItemNameCopyRefBinding(id, "strings.admin.forged.item")).toBeUndefined();
+      expect(resolveAdminCopyRef({ id }, undefined, preview)).toMatchObject({ text, status: "draft", activation: "none", servedLocale: "en" });
+      expect(resolveAdminCopyRef({ id })).toBeUndefined();
+      expect(resolveAdminCopyRef({ id }, undefined, { target: "production" })).toBeUndefined();
+      expect(resolveAdminCopyRef({ id, locale: "fr" }, undefined, preview)).toBeUndefined();
+      expect(row).not.toHaveProperty("approval");
+    });
+    it(`refuses forged or incomplete shared ${text} authority in every containing envelope`, () => {
+      const row = ADMIN_COMMON_COPY_EN.records.find(record => record.id === id)!;
+      const item = getAdminItemNameBinding(id)!;
+      const envelope = { ...ADMIN_COMMON_COPY_EN, records: [row], bindings: [item] };
+      const variants = [
+        { ...envelope, bindings: [] },
+        { ...envelope, bindings: [item, item] },
+        { ...envelope, bindings: [{ ...item, kind: "CopyRef" }] },
+        { ...envelope, bindings: [{ ...item, cellId: "designer.item.components.button" }] },
+        { ...envelope, bindings: [{ ...item, target: "packages/designer/src/catalog/slots/unknown.json" }] },
+        { ...envelope, locale: "ar" },
+        ...[{ leaf: "strings.names" }, { context: "designer.item.components.button" }, { text: "Forged name" }, { id: "st.unknown000" }].map(patch => ({ ...envelope, records: [{ ...row, ...patch }] })),
+      ];
+      for (const invalid of variants) {
+        const copy = createAdminCopy([invalid as AdminCopyEnvelope]);
+        expect(getAdminItemNameBinding(invalid.records[0]!.id, copy)).toBeUndefined();
+        expect(resolveAdminCopyRef({ id: invalid.records[0]!.id }, copy, preview)).toBeUndefined();
+      }
+      const duplicate = createAdminCopy([envelope as AdminCopyEnvelope, { ...envelope, bindings: [] } as AdminCopyEnvelope]);
+      expect(resolveAdminCopyRef({ id }, duplicate, preview)).toBeUndefined();
+    });
+  }
 });

@@ -1,4 +1,4 @@
-import { createAdminCopy, getAdminCopyRecord, getAdminItemNameBinding, resolveAdminCopyRef } from "@clossys/writer/admin-copy";
+import { createAdminCopy, getAdminCopyRecord, getAdminItemNameBinding, getAdminItemNameCopyRefBinding, resolveAdminCopyRef } from "@clossys/writer/admin-copy";
 import type { AdminCopyRef, AdminRouteCopy } from "@clossys/writer/admin-copy";
 import type { StringRecord } from "@clossys/writer";
 import { runtimeHash, runtimeSnapshot } from "@clossys/designer/catalog";
@@ -80,15 +80,23 @@ export function createAdminPageCopy(input: { readonly locale: string; readonly e
     const aliasOwner = aliases[0], recordId = aliasOwner?.aliases[reference.id] ?? reference.id;
     const declarations = aliasOwner?.externalRecords.filter(row => row.recordId === recordId) ?? [];
     const canonicalItemBinding = getAdminItemNameBinding(recordId);
-    const itemBinding = !aliasOwner && canonicalItemBinding ? getAdminItemNameBinding(recordId, store) : undefined;
+    const itemBinding = canonicalItemBinding ? getAdminItemNameBinding(recordId, store) : undefined;
+    const itemCopyRef = aliasOwner && itemBinding ? getAdminItemNameCopyRefBinding(recordId, reference.id) : undefined;
     const matches = envelopes.flatMap(envelope => {
       const record = envelope.records.find(row => row.id === recordId);
       if (!record || aliasOwner && aliasOwner !== envelope && !declarations.some(row => row.source === envelope.source && row.sourceContext === record.context)) return [];
       const bindingOwner = aliasOwner ?? envelope;
-      const binding = bindingOwner.bindings.find(row => row.recordId === recordId && (
+      const bindings = bindingOwner.bindings.filter(row => row.recordId === recordId && (
         !canonicalItemBinding && !record.context.startsWith("designer.item.") && row.kind === "CopyRef" && row.cellId === (aliasOwner ? reference.id : record.context)
-        || itemBinding && row.kind === itemBinding.kind && row.cellId === itemBinding.cellId && row.target === itemBinding.target
+        // Existing semantic references require both their original page cell
+        // and the canonical Studio item-name proof in the record owner's store.
+        || itemBinding && (aliasOwner
+          ? itemCopyRef && aliasOwner.source === itemCopyRef.source && declarations.length === 1
+            && declarations[0]!.source === itemCopyRef.recordSource && declarations[0]!.sourceContext === itemCopyRef.sourceContext
+            && row.kind === itemCopyRef.kind && row.cellId === itemCopyRef.cellId && row.target === itemCopyRef.target
+          : row.kind === itemBinding.kind && row.cellId === itemBinding.cellId && row.target === itemBinding.target)
       ));
+      const binding = bindings.length === 1 ? bindings[0] : undefined;
       return binding ? [{ envelope, record, binding, bindingOwner }] : [];
     });
     if (matches.length !== 1) throw new TypeError(`Writer CopyRef requires one bound record: ${reference.id}`);
