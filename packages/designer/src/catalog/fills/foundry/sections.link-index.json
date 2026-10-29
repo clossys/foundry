@@ -37,8 +37,7 @@
         "components.icon",
         "components.link",
         "components.semantic-content",
-        "components.status-mark",
-        "sections.section-header"
+        "components.status-mark"
       ],
       "configs": {},
       "consumption": {
@@ -50,8 +49,7 @@
           "components.icon",
           "components.link",
           "components.semantic-content",
-          "components.status-mark",
-          "sections.section-header"
+          "components.status-mark"
         ],
         "scannedReads": {
           "assets": [],
@@ -109,7 +107,7 @@
           },
           {
             "path": "packages/designer/src/blocks/NavGrid.tsx",
-            "sha256": "1a24b1c722d4dc6225cf9c04fe55f94ec4aeef0d7f3bfa28aae63a620f3086ae"
+            "sha256": "5f5f826e5a87ac928605bae0a3f04b4ae91a1063478dc742c632332939afdeef"
           },
           {
             "path": "packages/designer/src/blocks/section-ground.ts",
@@ -164,7 +162,7 @@
       },
       "license": "MIT",
       "notes": [
-        "NavGrid composes SemanticContent, SectionHeader and shared item anatomy for linked/action cards. Eligible linked collections use the existing linked-item treatment; list and plain-grid configuration modes are absent.",
+        "NavGrid composes SemanticContent and shared item anatomy for linked/action cards, preserving its published heading markup. Eligible linked collections use the existing linked-item treatment; list and plain-grid configuration modes are absent.",
         "Source-only import and token-read measurements are lower bounds; shared anatomy, accessibility, contrast and consumer runtime conformance remain unmeasured. Content bindings describe host adaptation points, not type-equivalent converters."
       ],
       "parts": [],

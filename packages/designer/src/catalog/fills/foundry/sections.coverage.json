@@ -587,7 +587,7 @@
       "missingRequiredSlots": [],
       "missingSlots": [],
       "notes": [
-        "NavGrid composes SemanticContent, SectionHeader and shared item anatomy for linked/action cards. Eligible linked collections use the existing linked-item treatment; list and plain-grid configuration modes are absent.",
+        "NavGrid composes SemanticContent and shared item anatomy for linked/action cards, preserving its published heading markup. Eligible linked collections use the existing linked-item treatment; list and plain-grid configuration modes are absent.",
         "Source-only import and token-read measurements are lower bounds; shared anatomy, accessibility, contrast and consumer runtime conformance remain unmeasured. Content bindings describe host adaptation points, not type-equivalent converters."
       ],
       "slot": "sections.link-index",
