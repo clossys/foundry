@@ -31,15 +31,20 @@ describe("scroll section kit", () => {
   });
   it("collapses at ten rows then pages at 100 and sends selection through the host", () => {
     const pin = vi.fn();
+    const format = vi.fn(({ page }: { page: number }) => page === 1 ? "Writer first range" : "Writer second range");
     const value = input("sections.data-table", { header: { heading: "Inputs", level: 4 }, columns: [{ id: "name", label: "Name", kind: "text" }], rows: Array.from({ length: 205 }, (_, n) => ({ id: String(n), name: `Row ${n}` })), selection: [], pagination: { showAll: "Show all (205)", label: "Rows", previous: "Previous", next: "Next", summary: "Page" } });
-    Object.assign(value, { sectionHost: { onSelectionChange: pin } });
+    Object.assign(value, { sectionHost: { onSelectionChange: pin, paginationSummary: format } });
     render(renderDataTable(value));
     expect(screen.queryByText("Row 10")).toBeNull();
     fireEvent.click(screen.getByRole("button", { name: "Show all (205)" }));
     expect(screen.getByText("Row 99")).toBeTruthy();
+    expect(screen.getByText("Writer first range")).toBeTruthy();
+    expect(format).toHaveBeenLastCalledWith({ start: 1, end: 100, total: 205, page: 1, pageCount: 3 });
     expect(screen.queryByText("Row 100")).toBeNull();
     fireEvent.click(screen.getByRole("button", { name: "Next" }));
     expect(screen.getByText("Row 100")).toBeTruthy();
+    expect(screen.getByText("Writer second range")).toBeTruthy();
+    expect(format).toHaveBeenLastCalledWith({ start: 101, end: 200, total: 205, page: 2, pageCount: 3 });
     fireEvent.click(screen.getByText("Row 100").closest("tr")!);
     expect(pin).toHaveBeenCalledWith(["100"]);
   });

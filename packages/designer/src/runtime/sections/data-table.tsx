@@ -17,7 +17,8 @@ const RECORDS_PER_PAGE = 100;
 const COLLAPSED_RECORDS = 10;
 
 interface ScrollHeader { readonly heading: string; readonly count?: string | number; readonly level?: SectionHeaderLevel; readonly id?: string }
-interface ScrollPagination extends PaginationRegionContent { readonly showAll?: string; readonly label?: string; readonly previous?: string; readonly next?: string; readonly summary?: string; readonly noResults?: string }
+interface ScrollPagination extends PaginationRegionContent { readonly showAll?: string; readonly label?: string; readonly previous?: string; readonly next?: string; readonly noResults?: string }
+export interface PaginationSummaryInput { readonly start: number; readonly end: number; readonly total: number; readonly page: number; readonly pageCount: number }
 interface ScrollColumn extends Omit<ColumnRecord, "kind"> { readonly key?: string; readonly kind?: TableColumnKind | "badge" | "status" | "preview" | "list" }
 
 function ScrollDataTable({ input }: { input: SectionRenderInput }) {
@@ -64,13 +65,20 @@ function ScrollDataTable({ input }: { input: SectionRenderInput }) {
       default: return column.id === primaryColumnId && typeof row.href === "string" ? <Link href={row.href}>{text}</Link> : text;
     }
   };
+  const rangeSummaryMessage = (start: number, end: number, total: number): string => {
+    const formatter = input.sectionHost?.paginationSummary;
+    if (typeof formatter !== "function") throw new TypeError("sections.data-table: paginationSummary host formatter is required");
+    const result = (formatter as (input: PaginationSummaryInput) => string)({ start, end, total, page: activePage, pageCount: count });
+    if (typeof result !== "string" || !result.trim()) throw new TypeError("sections.data-table: paginationSummary must return resolved text");
+    return result;
+  };
   const footer = scroll && rows.length > COLLAPSED_RECORDS
     ? !expanded
       ? pagination?.showAll ? <Button variant="secondary" onPress={() => setExpanded(true)}>{pagination.showAll}</Button> : undefined
-      : pagination?.label && pagination.previous && pagination.next && pagination.summary
+      : pagination?.label && pagination.previous && pagination.next
         ? <Pagination aria-label={pagination.label} page={activePage} pageCount={count} totalItems={rows.length} pageSize={RECORDS_PER_PAGE}
             previousPageLabel={pagination.previous} nextPageLabel={pagination.next} noResultsLabel={pagination.noResults}
-            rangeSummaryMessage={() => `${pagination.summary} ${activePage}/${count}`} onPageChange={setPage} /> : undefined
+            rangeSummaryMessage={rangeSummaryMessage} onPageChange={setPage} /> : undefined
     : pagination && !scroll ? <PaginationRegion content={pagination} label={specimenDataset.sections.dataTable.paginationLabel} /> : undefined;
   return <TableFill label={header?.heading ?? specimenDataset.sections.dataTable.label} columns={columns} rows={visible}
     sort={recordsOf<SortRecord>(input, "sort")} selected={selection ? selection.map(row => row.id) : undefined}
