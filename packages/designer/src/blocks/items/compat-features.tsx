@@ -1,7 +1,7 @@
 import { SemanticContent } from "../../components/SemanticContent.js";
 import { SectionHeader } from "../SectionHeader.js";
 import { ItemHeading, ItemIcon, ItemDescription } from "./anatomy.js";
-import type { FeatureGridLayout, FeatureGridProps } from "../FeatureGrid.js";
+import type { FeatureGridLegacyLayout, FeatureGridProps } from "../FeatureGrid.js";
 import { cx } from "../../components/internal/cx.js";
 import { SECTION_GROUND_CLASSES, type SectionGround } from "../section-ground.js";
 
@@ -14,10 +14,10 @@ const FEATURE_LAYOUT_CLASSES = {
   grid: { split: "", items: "grid grid-cols-1 gap-lg tablet:grid-cols-2 desktop:grid-cols-3" },
   list: { split: "", items: "grid grid-cols-1 gap-lg" },
   split: { split: "desktop:grid desktop:grid-cols-2 desktop:items-start desktop:gap-2xl", items: "grid grid-cols-1 gap-lg tablet:grid-cols-2" },
-} as const satisfies Readonly<Record<FeatureGridLayout, { split: string; items: string }>>;
+} as const satisfies Readonly<Record<FeatureGridLegacyLayout, { split: string; items: string }>>;
 
 /** The published feature shell preserves its historical presence and truthiness. */
-export function CompatFeatureGrid({ eyebrow, heading, description, items, headingLevel = 2, ground, layout = "grid", className, style, ...rest }: FeatureGridProps & { ground: SectionGround }) {
+export function CompatFeatureGrid({ eyebrow, heading, description, items, headingLevel = 2, ground, layout = "grid", className, style, ...rest }: Omit<FeatureGridProps, "layout"> & { layout?: FeatureGridLegacyLayout; ground: SectionGround }) {
   const colors = SECTION_GROUND_CLASSES[ground];
   const hasHeadingRegion = eyebrow !== undefined || heading !== undefined || description !== undefined;
   const policy = FEATURE_LAYOUT_CLASSES[layout];

@@ -439,17 +439,22 @@
       "missingRequiredSlots": [],
       "missingSlots": [],
       "notes": [
-        "The layout prop selects the column grid, a one-per-row list with the icon beside the copy, or the heading region beside a two-column grid from desktop. Items have icon, heading and description but no per-item link prop.",
+        "The layout prop selects grid, list, split, bento, tabs, alternating or scroll. Bento delegates ordered 12-unit spans and the 2-6 item bound to the existing Items engine. Tabs delegates keyboard and panel semantics to components.tabs without autoplay; its authored header heading names the list. Alternating media uses logical grid columns and stacks below tablet. Scroll enhances a complete static list only when JavaScript, scroll-driven animation support and no reduced-motion preference are present; token animation timings, the shared section reveal and local sticky keyframes drive sticky media and stepped copy. Optional item.figure uses an existing image resource through sections.media; copy is supplied through the existing Writer header and item fields.",
         "Source-only import and token-read measurements are lower bounds; shared anatomy, accessibility, contrast and consumer runtime conformance remain unmeasured. Content bindings describe host adaptation points, not type-equivalent converters."
       ],
       "slot": "sections.features",
       "status": "subset",
       "supportedMembers": [
+        "layout.alternating",
+        "layout.bento",
         "layout.grid",
         "layout.list",
-        "layout.split"
+        "layout.scroll",
+        "layout.split",
+        "layout.tabs"
       ],
       "supportedSlots": [
+        "header",
         "items"
       ],
       "unresolvedMemberAxes": []
