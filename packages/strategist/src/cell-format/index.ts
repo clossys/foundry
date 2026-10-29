@@ -6,3 +6,5 @@ export { tokenizeBody } from "./tokenizer.js";
 export type { BodyLine, BodyToken } from "./tokenizer.js";
 export { listCells, readActive, propose, activate } from "./store.js";
 export type { StoredCell, ActivationContext, ActivateOptions } from "./store.js";
+export { resolveCellRoot } from "./root.js";
+export type { CellAgent, ResolveCellRootOptions } from "./root.js";

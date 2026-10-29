@@ -118,7 +118,37 @@ The independent `@clossys/strategist/cell-format` subpath provides shared cell
 files without loading a strategy catalog. It exports `parseDocument`,
 `readBullet`, `serializeScalar`, `strings`, `CELL_ID_PATTERN`, `parseLinkRef`,
 `formatLinkRef`, `parseConfirmRef`, `cellPath`, `validateGenericTree`,
-`tokenizeBody`, `listCells`, `readActive`, `propose` and `activate`.
+`tokenizeBody`, `resolveCellRoot`, `listCells`, `readActive`, `propose` and `activate`.
+
+`resolveCellRoot(agent, {root?, repoRoot?, cwd?})` synchronously returns an absolute
+cell root. The `CellAgent` type accepts `designer`, `writer`, `publisher` and
+`strategist`; unsupported agents are also rejected at runtime. The default is
+`<repo root>/clossys/agents/<agent>`, with `tree.json` and `cells/<id>/v<N>.md`
+under that directory. Discovery starts at `cwd` (default `process.cwd()`) and
+uses the nearest ancestor containing a `.git` directory or file, including
+worktrees. It does not run Git or read the marker's contents. Without a marker,
+`cwd` is used as the repository root; pass `repoRoot` when invoking from a nested
+directory in a source archive. Relative `repoRoot` values resolve against `cwd`.
+There is no search for older cell layouts or package-local roots.
+
+Pass an existing CLI's explicit `--root` value as `root`. Relative overrides
+resolve against `cwd`; absolute overrides keep their location. They are not
+prefixed with `clossys/agents/<agent>` or resolved against `repoRoot`. The
+`ResolveCellRootOptions` type describes these options. Empty, whitespace-only,
+non-string and NUL-containing paths are rejected. Resolution does not require
+the target cell directory to exist and creates no files.
+
+```ts
+import { resolveCellRoot, readActive } from "@clossys/strategist/cell-format";
+
+const root = resolveCellRoot("writer");
+const active = await readActive(root);
+console.log(active.length);
+```
+
+Callers pass the resolved root to the store functions below. Profile owners
+supply their migration and compilation commands; this shared API resolves paths
+and reads or writes the shared store format.
 
 `parseDocument` retains the flat scalar/flow-list grammar and one-based source
 lines used by strategy files. `readBullet` retains the existing citation
