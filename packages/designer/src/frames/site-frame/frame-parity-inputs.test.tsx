@@ -6,8 +6,7 @@ import { renderToString } from "react-dom/server";
 import { cleanup, render } from "@testing-library/react";
 import { afterEach, expect, it } from "vitest";
 import type { CopyResolver } from "@clossys/writer";
-import type { ResolvedSectionedViewDocument } from "./landing/core/sectioned-view.js";
-import { LandingView } from "@clossys/designer/frames";
+import { Hero, type HeroProps } from "../../blocks/Hero.js";
 import { SiteFrame } from "./SiteFrame.js";
 import type { SiteShellInput } from "./types.js";
 import { resolveShell } from "./internal/resolveShell.js";
@@ -20,11 +19,8 @@ const brand = { assetId: "mark", label: ref("Example home"), size: "md", variant
 const legal = { entity: ref("Example"), links: [{ href: "/privacy", label: ref("Privacy") }, { href: "/terms", label: ref("Terms") }] };
 const base: SiteShellInput = { brand, skipLink: ref("Skip to content"), actions: [{ href: "/start", label: ref("Start") }], footer: { ground: "transparent", legal } };
 const nav = { label: ref("Primary"), triggerLabel: ref("Menu"), links: [{ href: "#help", label: ref("Help") }] };
-function page(options: Record<string, unknown> = {}): ResolvedSectionedViewDocument {
-  return { id: "home", resolutions: [resolveCopy(ref("Welcome"))!], sections: [{ id: "hero", kind: "hero", ground: "inverse", eyebrow: "Eyebrow", heading: "Welcome", description: "Supporting words.", ...options }] } as ResolvedSectionedViewDocument;
-}
-function frame(shell: SiteShellInput = base, options: Record<string, unknown> = {}): ReactElement {
-  return <SiteFrame shell={shell} resolveCopy={resolveCopy} resolveAsset={resolveAsset}><LandingView document={page(options)} landmark="none" header="overlay" fit="frame" /></SiteFrame>;
+function frame(shell: SiteShellInput = base, options: Partial<HeroProps> = {}): ReactElement {
+  return <SiteFrame shell={shell} resolveCopy={resolveCopy} resolveAsset={resolveAsset}><Hero id="hero" ground="inverse" eyebrow="Eyebrow" heading="Welcome" description="Supporting words." {...options} /></SiteFrame>;
 }
 function output(element: ReactElement, mode: "server" | "client"): HTMLElement {
   if (mode === "client") return render(element).container;

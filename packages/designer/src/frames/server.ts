@@ -2,8 +2,6 @@
 export { SiteFrame, siteShellFor, SITE_SURFACE_KINDS, SITE_PAGE_LAYERS, SITE_MAIN_ID, SITE_FRAME_CONTRACT, SITE_FRAME_CONFIG_SCHEMA, normalizeSiteFrameConfig, normalizeSiteFrameActions, type SiteBrandInput, type SiteChromeGround, type SiteEnvironmentLinkInput, type SiteFooterInput, type SiteFrameConfig, type SiteFrameInput, type SiteFrameProps, type SiteIconLinkInput, type SiteLinkInput, type SitePageLayer, type SiteShellInput, type SiteSurfaceKind, type SiteFramePresentationConfig } from "./site-frame/index.js";
 export { SITE_CHROME_GROUNDS } from "./site-frame/types.js";
 export { resolveShell as resolveSiteShell } from "./site-frame/internal/resolveShell.js";
-export { LandingView, LandingView as ServerLandingView } from "./site-frame/landing/web/views/LandingView.server.js";
-export type { LandingViewProps, LandingViewHeader, LandingViewCallToAction } from "./site-frame/landing/web/views/LandingViewContent.js";
 export { RenderError, type RenderErrorReason } from "./site-frame/landing/internal/errors.js";
 export { AuthFrame } from "./AuthFrame.js";
 export type { AuthFrameProps } from "./AuthFrame.js";

@@ -1416,9 +1416,11 @@ The historical catalog now renders all 27 sections through that data renderer.
 Its four historical closing strings are draft preview Writer records, with their
 provenance retained. Captions are preview chrome between native section nodes.
 
-Retained landing prop types and ground-planning data describe historical
-contracts. Other LandingView examples in this document are historical; they do
-not restore an executable Publisher alias or establish native site overlay support.
+Designer also retires the executable `LandingView` and `ServerLandingView`
+exports and their prop types. Ground-planning data and role-pair evidence retain
+their historical contracts; neither admits the retired renderer. Other LandingView
+examples in this document are historical. Native overlay composition uses the
+registered Designer `SiteFrame` and one direct `Hero` from `@clossys/designer/blocks/server`.
 
 ### `ContactView`
 
@@ -2833,14 +2835,14 @@ export function SignInPage() {
   viewport when enlarged copy or footer links need more room. The footer
   scrolls with that scene instead of covering the hero's action or its focus.
   Use `header: { surface: "glass", tone: "inverse" }` with a hero-only
-  `<LandingView header="overlay" fit="frame" landmark="none" />` for a
+  `<Hero heading="Welcome" />` from `@clossys/designer/blocks/server` for a
   one-viewport composition, and `footer: { placement: "overlay", legal }`.
   Mount the frame as the page's scene; the anchor is this frame, rather than
   a viewport-height box measured from content elsewhere on the page. The
-  child must be a direct ordinary or server `LandingView`, with one
-  noncompact hero. Wrappers, fragments, additional bands, trailing documents,
-  a closing call to action, `afterSection` content and view layout overrides
-  are refused. Use flow placement for those compositions; overlay mode does
+  child must be one direct registered Designer `Hero`, with a nonblank text
+  heading at level 1 and display or default size. The frame owns its growing
+  layout. Wrappers, fragments, multiple nodes, extra children, compact size,
+  a closing call to action, `afterSection` content and layout overrides are refused. Use flow placement for those compositions; overlay mode does
   not render a next-band peek or scroll cue.
   Overlay defaults to an opaque inverse ground; explicit `"base"` or
   `"inverse"` grounds work too. `"transparent"` is refused in overlay mode so
@@ -6208,7 +6210,7 @@ and verifies membership in both directions between `packIds` and `instanceIds`.
 Refusals expose a stable reason and field path without echoing host values.
 
 `STANDARD_WEBSITE_INSTANCES` and `STANDARD_WEBSITE_PACK` provide the deeply frozen
-`pack.standard-website`: home (LandingView), about (MarketingView), contact
+`pack.standard-website`: home (SectionedView under the registered Designer SiteFrame), about (MarketingView), contact
 (ContactView), terms and privacy (LegalView), sign-in (AuthView), and not-found
 and error (StatusView). Sign-in declares default, submit-error and
 provider-unavailable View states and uses the front-door frame; the other pages

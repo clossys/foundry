@@ -75,5 +75,3 @@ export { IndexView } from "./IndexView.js";
 export type { IndexViewCollection, IndexViewProps, IndexViewRowRoute, IndexViewTable } from "./IndexView.js";
 export { DetailsView } from "./DetailsView.js";
 export type { DetailsViewBlock, DetailsViewLayout, DetailsViewProps, DetailsViewRegion, DetailsViewSection, DetailsViewSectionState, DetailsViewTab } from "./DetailsView.js";
-
-export type { LandingViewCallToAction, LandingViewHeader, LandingViewProps } from "@clossys/designer/frames";

@@ -204,14 +204,12 @@ function runProbe(reactServer: boolean) {
         footer: { ground: "inverse", legal: { entity: frameRef("legal"), links: [] } },
       };
       const heroDocument = resolveSectionedViewDocument({ id: "packed-frame", sections: [{ id: "packed-frame-hero", kind: "hero", ground: "inverse", heading: ref("heading") }] }, resolver);
-      // This historical frame pair uses Designer's own currently published renderer.
-      // Publisher no longer re-exports its executable landing value.
-      const { LandingView: DesignerLanding } = await import("@clossys/designer/frames");
+      const { Hero } = await import("@clossys/designer/blocks/server");
       const framed = fit => createElement(web.SiteFrame, {
         shell: frameShell,
         resolveCopy: frameResolver,
         resolveAsset: () => ({ type: "image", src: "/mark.svg", width: 48, height: 48, alt: "Packed mark" }),
-      }, createElement(DesignerLanding, { document: heroDocument, header: "overlay", fit, peek: false, landmark: "none" }));
+      }, createElement(Hero, { id: "packed-frame-hero", heading: heroDocument.sections[0].heading, ground: "inverse", className: fit === "viewport" ? "min-h-dvh" : "flex-1" }));
       result.frameHtml = renderToStaticMarkup(framed("frame"));
       result.viewportHtml = renderToStaticMarkup(framed("viewport"));
       result.html = renderToStaticMarkup([element, sectioned]);
@@ -301,9 +299,9 @@ describe("packed frame release", () => {
     expect(menuIcon).toContain(' aria-hidden="true"');
     expect(menuButton).not.toMatch(/>\s*[^<\s]/);
     expect(html).toContain('class="flex min-h-dvh flex-col"');
-    expect(html).toMatch(/data-landing-hero=""[^>]*class="[^"]*flex-1/);
+    expect(html).toMatch(/data-ds-leaf="sections.hero"[^>]*class="[^"]*flex-1/);
     expect(html).not.toContain("min-height:100dvh");
-    expect(normal.viewportHtml).toContain("min-height:100dvh");
+    expect(normal.viewportHtml).toContain("min-h-dvh");
   });
 });
 

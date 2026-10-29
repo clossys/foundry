@@ -1,11 +1,9 @@
 import { ShellI18nProvider, ShellLocaleRoot } from "#designer-frame-i18n";
-import { isValidElement, type ReactElement, type ReactNode } from "react";
+import { cloneElement, isValidElement, type ReactElement, type ReactNode } from "react";
 import { Link } from "../../components/Link.js";
 import { Icon, SemanticContent } from "@clossys/designer/components/server";
 import { Brandmark, SiteFooter, SiteHeader } from "@clossys/designer/shell/server";
-import { LandingView as RuntimeLandingView } from "@clossys/designer/frames";
-import { LandingView as ServerLandingView } from "./landing/web/views/LandingView.server.js";
-import type { LandingViewProps } from "./landing/web/views/LandingViewContent.js";
+import { Hero, type HeroProps } from "../../blocks/Hero.js";
 import { RenderError } from "./landing/internal/errors.js";
 import { SiteNavDisclosure } from "./NavDisclosure.boundary.client.js";
 import { SiteSkipLink } from "./SkipLink.boundary.client.js";
@@ -21,23 +19,18 @@ const FRAME_STAMP = { "data-ds-layer": "frames", "data-ds-leaf": "frames.site-sh
 const MOBILE_ACTION_INVERSE = "text-ink-on-inverse hover:text-ink-on-inverse focus-visible:text-ink-on-inverse hover:bg-control-tonal-inverse-hover focus-visible:outline-ink-on-inverse";
 const ENVIRONMENT_GHOST_CLASS = "site-header-environment-ghost";
 
-function assertOverlayScene(children: ReactNode, headerSurface: "solid" | "transparent" | "glass"): void {
-  // Read these live bindings only at render time: the views barrel also exports
-  // GlobalErrorDocument, which composes SiteFrame.
-  const directLanding = isValidElement<LandingViewProps>(children)
-    && (children.type === RuntimeLandingView || children.type === ServerLandingView);
-  if (directLanding) {
+/** Overlay is a frame composition of the registered sections.hero block, never a markup stamp. */
+function overlayHero(children: ReactNode, headerSurface: "solid" | "transparent" | "glass"): ReactElement<HeroProps> {
+  if (headerSurface === "glass" && isValidElement<HeroProps>(children) && children.type === Hero) {
     const props = children.props;
-    const sections = props.document?.sections;
-    if (headerSurface === "glass" && props.fit === "frame" && props.landmark === "none"
-      && (props.header === undefined || props.header === "overlay")
-      && Array.isArray(sections) && sections.length === 1 && sections[0]?.kind === "hero" && sections[0].size !== "compact"
-      && (props.trailing === undefined || (Array.isArray(props.trailing) && props.trailing.length === 0))
-      && props.callToAction === undefined
-      && (props.afterSection === undefined || Object.keys(props.afterSection).length === 0)
-      && props.style === undefined && props.className === undefined) return;
+    const allowed = ["id", "eyebrow", "eyebrowTone", "measure", "headingScale", "heading", "description", "actions", "media", "composition", "headingLevel", "size", "ground", "align"];
+    if (Object.keys(props).every(key => allowed.includes(key)) && (props.size === undefined || props.size === "default" || props.size === "display")
+      && (props.headingLevel === undefined || props.headingLevel === 1) && typeof props.heading === "string" && props.heading.trim()) {
+      // The frame owns scene geometry. The block keeps its registered anatomy and ground.
+      return cloneElement(children, { className: "flex-1 justify-center px-md py-3xl tablet:px-xl" });
+    }
   }
-  throw new RenderError("resolution-failed", "shell.footer.placement overlay requires a direct hero-only LandingView with frame fit, no landmark and an overlay header; trailing content, closing content and layout overrides are unsupported.");
+  throw new RenderError("resolution-failed", "shell.footer.placement overlay requires one direct registered Hero with a display h1 and a glass header; children, wrappers and layout overrides are unsupported.");
 }
 
 /**
@@ -57,7 +50,7 @@ function assertOverlayScene(children: ReactNode, headerSurface: "solid" | "trans
 export function SiteFrame({ shell, presentation, resolveCopy, resolveAsset, children, toasts, locale }: SiteFrameProps): ReactElement {
   const resolved = resolveShell(shell, resolveCopy, resolveAsset, presentation);
   const { brand, footer } = resolved;
-  if (footer?.placement === "overlay") assertOverlayScene(children, resolved.header.surface);
+  const main = footer?.placement === "overlay" ? overlayHero(children, resolved.header.surface) : children;
 
   const brandmark =
     brand.wordmark === undefined ? (
@@ -111,7 +104,7 @@ export function SiteFrame({ shell, presentation, resolveCopy, resolveAsset, chil
         actions={actions}
       />
       <SemanticContent as="main" id={SITE_MAIN_ID} tabIndex={-1} className="flex w-full flex-1 flex-col">
-        {children}
+        {main}
       </SemanticContent>
       {footer?.placement === "overlay" ? (
         // Intrinsic footer height is reserved within the same growing hero scene.

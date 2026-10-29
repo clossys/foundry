@@ -1,12 +1,15 @@
 import { describe, expect, it } from "vitest";
 import * as core from "./index.js";
 import * as web from "../web/index.js";
-import { SITE_SURFACE_KINDS } from "@clossys/designer/frames";
+import { SiteFrame, SITE_SURFACE_KINDS, surfaceRuntimeRenderers } from "@clossys/designer/frames";
 
 describe("Standard website Pack", () => {
   it("validates all eight explicit bindings and checks real exports for the Pack's used Frames and Views", () => {
     expect(core.validateInstanceRecords(core.STANDARD_WEBSITE_INSTANCES, [core.STANDARD_WEBSITE_PACK])).toEqual({ status: "valid" });
     expect(core.STANDARD_WEBSITE_INSTANCES).toHaveLength(8);
+    expect(web.SiteFrame).toBe(SiteFrame);
+    expect(surfaceRuntimeRenderers["frames.site-shell"]?.leaf).toBe("frames.site-shell");
+    expect(core.STANDARD_WEBSITE_INSTANCES.some(record => record.viewBlockRef.blockId === "LandingView")).toBe(false);
     expect(core.STANDARD_WEBSITE_PACK).toEqual({ packId: "pack.standard-website", label: "Standard website", instanceIds: [
       "standard.home", "standard.about", "standard.contact", "standard.terms", "standard.privacy", "standard.sign-in", "standard.not-found", "standard.error",
     ] });
@@ -20,7 +23,7 @@ describe("Standard website Pack", () => {
   });
   it("pins the authored page bindings, Auth states and pathless error Instances", () => {
     expect(core.STANDARD_WEBSITE_INSTANCES.map(record => [record.instanceId, record.path, record.frameBlockRef.configId, record.viewBlockRef.blockId, record.viewBlockRef.configId])).toEqual([
-      ["standard.home", "/", "site", "LandingView", "home"], ["standard.about", "/about", "site", "MarketingView", "about"],
+      ["standard.home", "/", "site", "SectionedView", "home"], ["standard.about", "/about", "site", "MarketingView", "about"],
       ["standard.contact", "/contact", "site", "ContactView", "contact"], ["standard.terms", "/terms", "site", "LegalView", "terms"],
       ["standard.privacy", "/privacy", "site", "LegalView", "privacy"], ["standard.sign-in", "/sign-in", "front-door", "AuthView", "sign-in"],
       ["standard.not-found", undefined, "site", "StatusView", "not-found"], ["standard.error", undefined, "site", "StatusView", "server-error"],

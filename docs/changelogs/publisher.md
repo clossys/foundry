@@ -5,6 +5,8 @@ All notable changes to this package are documented here. Format follows
 
 ## 0.13.0 - 2026-10-16
 
+- Use SectionedView for the Standard website home under Designer SiteFrame. Retire Landing executable callers and prop exports; native overlay scenes compose the registered Designer Hero.
+
 - Regenerate the shipped preview stylesheet for Designer frame controls.
 - Fill canonical content media with consumer-owned images or captioned videos through asset ids, with checked dimensions, aspect ratios, MIME formats and accessibility intent, plus declared loading applied by the shared renderer.
 - SiteFrame can place its footer over a hero that fits one viewport, with an opaque backing and the existing legal links. The default flow placement keeps its rendered markup.

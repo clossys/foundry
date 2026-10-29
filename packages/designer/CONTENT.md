@@ -2,8 +2,7 @@
 
 How to write a marketing band for Designer's content blocks: which block to
 pick, what each slot holds and how long it may be. Publisher's
-`content-section` contract carries these blocks (`SectionedView`,
-`LandingView`). Its validator enforces counts and shapes, and its
+`content-section` contract carries these blocks through `SectionedView`. Its validator enforces counts and shapes, and its
 `checkSectionVariety` lint warns about page rhythm. Nothing checks the
 budgets below, so the writer owns them.
 
@@ -302,14 +301,10 @@ ceiling still renders as authored and receives an advisory `action-weight` warni
 
 ## Closing copy
 
-A Publisher `LandingView` close can opt into the opening hero's heading and
-description with `callToAction: { copy: "hero", action }`. Own heading and
-description values take precedence, including `null` and `false`; only
-`undefined` falls back. The close retains its own eyebrow and action. Copy
-comes from the first section of the main document, which must be a hero.
-A valid nonempty document opening on another kind is refused with
-`missing-hero-copy`; malformed resolved documents retain `resolution-failed`.
-Omitting `copy` keeps the close's authored copy.
+Author closing content as a `content-section` with its own CopyRefs for the
+heading, description and actions. `SectionedView` renders that checked document
+through the registered Designer blocks. The executable Landing view and its
+hero-copy reuse props are retired.
 
 **Compact hero.** Use `Hero size="compact"` when a form, status or utility
 content is the page's main job. Keep the heading short and place that content

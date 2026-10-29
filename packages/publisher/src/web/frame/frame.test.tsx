@@ -20,7 +20,7 @@ import { CaptureView } from "../views/CaptureView.js";
 import { DocumentView } from "../views/DocumentView.js";
 import { ErrorView } from "../views/ErrorView.js";
 import { StatusView } from "../views/StatusView.js";
-import { LandingView } from "@clossys/designer/frames";
+import { Hero } from "@clossys/designer/blocks/server";
 import { SITE_MAIN_ID, SITE_SURFACE_KINDS, SiteFrame, siteShellFor } from "./index.js";
 import type { SiteFrameConfig, SiteShellInput } from "./index.js";
 import { resolveShell } from "../../../../designer/dist/frames/site-frame/internal/resolveShell.js";
@@ -1074,7 +1074,7 @@ describe("SiteFrame chrome parity", () => {
 
 
 function overlayHero() {
-  return <LandingView document={{ id: "home", resolutions: [resolveCopy(ref("brand.label"))!], sections: [{ id: "hero", kind: "hero", ground: "inverse", heading: "Welcome" }] }} fit="frame" landmark="none" />;
+  return <Hero id="hero" ground="inverse" heading="Welcome" />;
 }
 
 it("keeps overlay legal links keyboard reachable and pointer operable", async () => {
