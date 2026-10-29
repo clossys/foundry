@@ -85,7 +85,7 @@ function setup(skeleton: AdminPageSkeleton = { l0: [{ id: "strings", label: {id:
   return { registry, pages, runtime, session, host, values, copy, publicationHosts };
 }
 describe("WX-2 shared copy on six native routes through prepareRegisteredRoute (fixture declarations)", () => {
-  it("renders every one of the 363 page binding cells on the real Writer route plus both Arabic records", async () => {
+  it("resolves all 363 page binding cells in prepared route data and renders the collapsed table plus both Arabic records", async () => {
     const f = setup({ l0: [{ id: "strings", label: {id:"strings.admin.group.writer.strings"}, count: 4, estimate: 80, partition: "l1", l1: [{ id: "names", label: {id:"strings.admin.ia.writer.strings.identity-names"}, count: 4, estimate: 400, l2: ["primary", "secondary"].map(id => ({ id, label: {id:id === "primary" ? "strings.admin.column.key" : "strings.admin.column.text"}, count: 2, estimate: 200 })) }] }] });
     const pair = f.pages.writer, route = pair.list;
     const ref = (name: string, kind: RuntimeContent["reference"]["kind"] = "records") => ({ kind, ref: `fixture.writer/${name}` });
@@ -117,18 +117,59 @@ describe("WX-2 shared copy on six native routes through prepareRegisteredRoute (
     expect(after.status, JSON.stringify(after)).toBe("stream"); if (after.status !== "stream") return;
     expect(after.chunks.map(chunk => chunk.result.status), JSON.stringify(after.chunks)).toEqual(["ready", "ready"]);
     expect(loader).toHaveBeenCalledExactlyOnceWith({ l0: "strings", l1: "names" });
+    // Coverage is measured in the real loader's Writer-resolved cache, before
+    // the existing table renderer applies its collapsed/paginated presentation.
+    const cells = everyPageCell(), bindings = ADMIN_PAGES_COPY_EN.bindings;
+    const prepared = bundle.resolveContent(ref("primary/rows"))!;
+    expect(prepared.hash).toBe(runtimeHash(prepared.value));
+    const preparedRows = prepared.value as readonly { id: string; key: string; text: string }[];
+    const bindingRows = preparedRows.filter(row => row.id.startsWith("binding-"));
+    expect(bindings).toHaveLength(363);
+    expect(cells).toHaveLength(363);
+    expect(bindingRows).toHaveLength(363);
+    expect(new Set(bindingRows.map(row => row.id)).size).toBe(363);
+    expect(new Set(bindingRows.map(row => row.key)).size).toBe(363);
+    expect(bindingRows.map(row => row.id)).toEqual(cells.map(cell => cell.id));
+    expect(bindingRows.map(row => row.key)).toEqual(bindings.map(binding => binding.cellId));
+    expect(Object.keys(ADMIN_PAGES_COPY_EN.aliases).sort()).toEqual(bindingRows.map(row => row.key).sort());
+    // The public server boundary projects binding metadata before hashing it.
+    // Compare against that authentic prepared source, retaining its raw records.
+    const rawSources = copySources(), sources = prepareAdminPageCopyEnvelopes(rawSources), proofs = bundle.copyProvenance();
+    for (const [index, binding] of bindings.entries()) {
+      const row = bindingRows[index]!;
+      const owners = sources.filter(source => source.envelope.records.some((record: { id: string }) => record.id === binding.recordId));
+      expect(owners, binding.cellId).toHaveLength(1);
+      const owner = owners[0]!, record = owner.envelope.records.find((record: { id: string }) => record.id === binding.recordId)!;
+      expect(ADMIN_PAGES_COPY_EN.aliases[binding.cellId as keyof typeof ADMIN_PAGES_COPY_EN.aliases]).toBe(record.id);
+      if (owner.source !== "admin-pages.r1.en.json") expect(ADMIN_PAGES_COPY_EN.externalRecords).toContainEqual({ recordId: record.id, source: owner.source, sourceContext: record.context });
+      const marker = cells[index]!.text as { $copy: { values?: Record<string, string | number> } };
+      const proof = proofs.find(proof => proof.provenance.cellId === binding.cellId && proof.provenance.locale === "en"
+        && runtimeHash(proof.ref.values ?? {}) === runtimeHash(marker.$copy.values ?? {}));
+      expect(proof, binding.cellId).toBeDefined();
+      expect(proof!.text, binding.cellId).toBe(row.text);
+      expect(row.text.trim(), binding.cellId).not.toBe("");
+      expect(proof!.ref).toMatchObject({ id: record.id, locale: "en" });
+      expect(record).toEqual(rawSources.find(source => source.source === owner.source)!.envelope.records.find((record: { id: string }) => record.id === binding.recordId));
+      expect(proof!.provenance).toMatchObject({ cellId: binding.cellId, recordId: record.id, locale: "en", status: "draft", activation: "none", bindingSource: "admin-pages.r1.en.json", recordSource: owner.source, envelopeHash: runtimeHash(owner.envelope), bindingEnvelopeHash: runtimeHash(sources[0]!.envelope) });
+    }
+    const arabic = readCopy("./admin-pages.r1.ar.json");
+    expect(arabic.records).toHaveLength(2);
+    for (const binding of arabic.bindings) {
+      const record = arabic.records.find((record: { id: string }) => record.id === binding.recordId)!;
+      expect(preparedRows.find(row => row.key === `primary-${binding.cellId === "strings.admin.page.writer" ? 1 : 2}`)?.text).toBe(record.text);
+      expect(proofs).toContainEqual(expect.objectContaining({ text: record.text, provenance: expect.objectContaining({ cellId: binding.cellId, recordId: record.id, locale: "ar", recordSource: "admin-pages.r1.ar.json", envelopeHash: runtimeHash(arabic), status: "draft", activation: "none" }) }));
+    }
     const html = renderToStaticMarkup(createElement(Fragment, null, after.renderRegions!(runtime.cell).chunks?.flatMap(chunk => chunk.content ?? [])));
     expect(html).toMatch(/<h2[^>]*[^]*Strings[^]*<h3[^>]*[^]*Names[^]*<h4[^>]*[^]*Key[^]*<h4[^>]*[^]*Text/);
     expect(html).toContain("الكاتب");
     expect(html).toContain("النص");
     const root = document.createElement("div"); root.innerHTML = html;
     const rows = root.querySelectorAll("tbody tr");
-    expect(rows.length).toBeGreaterThanOrEqual(363);
-    for (const cell of everyPageCell()) {
-      const row = [...rows].find(row => row.textContent?.includes(cell.key));
-      expect(row, cell.key).toBeDefined();
-      const marker = cell.text as { $copy: { id: string; values?: Record<string, string | number> } };
-      expect(row!.textContent, cell.key).toContain(f.copy(marker.$copy));
+    expect(rows).toHaveLength(12); // Ten collapsed primary rows, two secondary Arabic rows.
+    for (const [index, row] of [...rows].entries()) {
+      const expected = index < 10 ? bindingRows[index]! : { key: `secondary-${index - 9}`, text: arabic.records[index - 10]!.text };
+      expect(row.textContent).toContain(expected.key);
+      expect(row.textContent).toContain(expected.text);
     }
   }, 120_000);
   it("prepares and renders every list and item through the selected existing Section renderers", async () => {
