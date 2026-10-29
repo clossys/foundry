@@ -4,7 +4,7 @@ import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
 import { ContentRouteNeedsError, ContentRoutePage, prepareContentRoute, requireContentRoutePublishing } from "./content-route.js";
 import type { ContentRouteInput } from "./content-route-types.js";
-import { contentRouteContent, contentRouteFixture, withRouteContent, writerField } from "./__fixtures__/content-route.js";
+import { contentRouteContent, contentRouteFixture, withRouteContent, writerField, withApprovedRouteCopy } from "./__fixtures__/content-route.js";
 
 const locales = ["en", "fr", "ar"] as const;
 const copy = {
@@ -22,7 +22,7 @@ function publishingFixture(locale: typeof locales[number] = "en"): ContentRouteI
     pageMeta: locales.flatMap(tag => [writerField("title", copy[tag].title, tag), writerField("description", copy[tag].description, tag)]),
     composition: { ...content.composition!, sections: [{ ...content.composition!.sections[0]!, fields: locales.map(tag => writerField("title", copy[tag].body, tag)) }] },
   });
-  return {
+  return withApprovedRouteCopy({
     ...input, locale,
     registry: {
       ...input.registry,
@@ -36,7 +36,7 @@ function publishingFixture(locale: typeof locales[number] = "en"): ContentRouteI
       bodyServedLocales: { en: ["en"], fr: ["fr"], ar: ["ar"] },
       existingUrls: urls,
     },
-  };
+  });
 }
 const render = (input: ContentRouteInput) => renderToStaticMarkup(<ContentRoutePage input={requireContentRoutePublishing(input)} />);
 
@@ -71,7 +71,7 @@ describe("content route publishing document", () => {
   it("uses native Writer sharing copy when supplied", () => {
     const input = publishingFixture("fr");
     const content = input.registry.candidates[0]!.history.at(-1)!.content;
-    const shared = withRouteContent(input, { ...content, pageMeta: [...content.pageMeta!, writerField("share-title", "Espace partagé", "fr"), writerField("share-text", "Description de partage.", "fr")] });
+    const shared = withApprovedRouteCopy(withRouteContent(input, { ...content, pageMeta: [...content.pageMeta!, writerField("share-title", "Espace partagé", "fr"), writerField("share-text", "Description de partage.", "fr")] }));
     const html = render(shared);
     expect(html).toContain('property="og:title" content="Espace partagé"');
     expect(html).toContain('property="og:description" content="Description de partage."');
