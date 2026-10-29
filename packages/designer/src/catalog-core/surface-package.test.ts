@@ -73,26 +73,25 @@ describe("package-pointer surface origin", () => {
   }, 20000);
 
   // FINDING perf: Real 63-surface adoption exceeds 5s; allow completion before deferred snapshot-copy optimization.
-  it("refuses the unresolved site-shell read and emits the satisfiable package surface subset", () => {
+  it("emits all 63 package surfaces with proven private site-shell imports", () => {
     const { catalog, plan, empty } = setup();
     const all = adopt(catalog, empty, plan.decisions);
     const allProfile = resolveComposite({ catalog, library: all, ...options() });
     expect(Object.keys(allProfile.surfaces!.fills)).toHaveLength(63);
-    expect(surfaceErrors(all, catalog)).toEqual([{ code: "S5", rule: "surfaces", severity: "error", subject: "frames.site-shell", message: "consumer read missing assets.js" }]);
-    expect(() => emitComposite(allProfile, ["surface-index"])).toThrow(/checked observations|S8/);
-    expect(() => emitSurfaces(allProfile.surfaces!, ["surface-index"])).toThrow(/S8 source emission requires current complete evidence/);
+    expect(surfaceErrors(all, catalog)).toEqual([]);
+    expect(allProfile.check.findings.filter(row => row.severity === "error")).toEqual([]);
+    const compositeFiles = emitComposite(allProfile, ["surface-index"]);
+    expect(compositeFiles.find(row => row.path === "frames/site-shell/index.ts")?.contents).toBe('export { SiteFrame as SiteShell } from "@clossys/designer/frames";\n');
+    expect(compositeFiles.find(row => row.path === "surface-index.ts")!.contents.split("\n").filter(Boolean)).toHaveLength(63);
     const allReport = emitComposite(allProfile, ["surfaces-consumption"]);
     expect(JSON.parse(allReport.find(row => row.path === "surfaces-consumption.json")!.contents).fills).toHaveLength(63);
-    const library = adopt(catalog, empty, plan.decisions.filter(row => row.slot !== "frames.site-shell"));
-    expect(surfaceErrors(library, catalog)).toEqual([]);
-    const profile = resolveComposite({ catalog, library, ...options() });
-    expect(Object.keys(profile.surfaces!.fills)).toHaveLength(62);
+    const profile = allProfile;
     // This checks the surface emitter against the real resolved surface profile;
     // component runtime qualification remains a separate set of findings.
     const files = emitSurfaces(profile.surfaces!, ["surface-index", "surfaces-consumption"]);
     const file = (path: string) => files.find(row => row.path === path)?.contents;
     expect(file("frames/sheet/index.ts")).toBe('export { Drawer as Sheet } from "@clossys/designer/blocks";\n');
-    expect(file("frames/site-shell/index.ts")).toBeUndefined();
+    expect(file("frames/site-shell/index.ts")).toBe('export { SiteFrame as SiteShell } from "@clossys/designer/frames";\n');
     expect(surfaceEntryOf(allProfile.surfaces!.fills["frames.site-shell"]!.document).impl).toEqual({ kind: "package", module: "@clossys/designer/frames", export: "SiteFrame" });
     expect(file("frames/app-sidebar/index.ts")).toBe('export { AppNavigation as AppSidebar } from "@clossys/designer/blocks";\n');
     expect(file("frames/inspector/index.ts")).toBe('export { InspectorFrame as Inspector } from "@clossys/designer/frames";\n');
@@ -103,8 +102,8 @@ describe("package-pointer surface origin", () => {
     expect(file("sections/stats/index.ts")).toBe('export { StatGroup as Stats } from "@clossys/designer/blocks";\n');
     expect(file("sections/consent/index.ts")).toBe('export { ConsentBanner as Consent } from "@clossys/designer/blocks";\n');
     expect(file("surface-index.ts")).toContain('export { Faq } from "./sections/faq/index.js";\n');
-    expect(file("surface-index.ts")!.split("\n").filter(Boolean)).toHaveLength(62);
-    expect(JSON.parse(file("surfaces-consumption.json")!).fills).toHaveLength(62);
+    expect(file("surface-index.ts")!.split("\n").filter(Boolean)).toHaveLength(63);
+    expect(JSON.parse(file("surfaces-consumption.json")!).fills).toHaveLength(63);
   }, 20000);
 
   it("emits a satisfiable genuine package selection through the public composite engine", () => {
@@ -130,8 +129,7 @@ describe("package-pointer surface origin", () => {
     expect(surfaceErrors(library, catalog, wrongVersion).find(row => row.subject === "frames.sheet")?.message).toBe("package export evidence missing or differs");
     const noFaq = PACKAGES.map(row => row.module === "@clossys/designer/blocks" ? { ...row, values: row.values.filter(name => name !== "Faq") } : row);
     const errors = surfaceErrors(library, catalog, noFaq);
-    expect(errors.map(row => row.subject)).toEqual(["frames.site-shell", "sections.faq"]);
-    expect(errors.find(row => row.subject === "frames.site-shell")).toEqual({ code: "S5", rule: "surfaces", severity: "error", subject: "frames.site-shell", message: "consumer read missing assets.js" });
+    expect(errors.map(row => row.subject)).toEqual(["sections.faq"]);
     expect(() => emitComposite(resolveComposite({ catalog, library, ...options(noFaq) }), ["surface-index"])).toThrow(/composite: checked observations|S8/);
   }, 20000);
 

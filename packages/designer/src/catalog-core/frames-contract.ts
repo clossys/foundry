@@ -36,6 +36,8 @@ export interface FrameContract {
   allowedReads: {
     tokens: readonly `tokens.${string}`[];
     assets: readonly `assets.${string}`[];
+    /** Canonical repository source paths of permitted package-private modules; never consumer assets. */
+    privateInternal?: readonly string[];
   };
   composes?: readonly (`components.${string}` | `frames.${string}`)[];
   /** The main landmark id targeted by the shell's first, focus-visible link. */

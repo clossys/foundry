@@ -1,6 +1,6 @@
 /** @vitest-environment node */
 import { createHash } from "node:crypto";
-import { mkdtempSync, mkdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { realpathSync, mkdtempSync, mkdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -95,7 +95,7 @@ it("validates composed-section references without adding parts or accepting self
 
 /** SYNTHETIC collision corpus; the real ResourceList proof above uses repository source. */
 function collisionFixture() {
-  const repo = mkdtempSync(join(tmpdir(), "native-section-owner-")), root = join(repo, "packages/designer");
+  const repo = realpathSync(mkdtempSync(join(tmpdir(), "native-section-owner-"))), root = join(repo, "packages/designer");
   const write = (path: string, text: string) => { const file = join(root, path); mkdirSync(dirname(file), { recursive: true }); writeFileSync(file, text); };
   const json = (path: string, value: unknown) => write(path, JSON.stringify(value));
   json("package.json", { name: "@example/designer" });

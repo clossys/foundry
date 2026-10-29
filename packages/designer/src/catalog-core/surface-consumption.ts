@@ -19,11 +19,19 @@ export interface SurfaceConsumptionInput {
 }
 export interface SurfaceConsumptionFinding { code: DogfoodCode; fill: string; file: string; line: number; evidence: string }
 /** Portable source-only lower bound, independent of a descriptor's declared fields. */
+export interface PrivateInternalReadWitness {
+  target: string; targetSha256: string;
+  file: string; sourceSha256: string; specifier: string; line: number;
+  rawAssets: readonly string[];
+}
 export interface SurfaceConsumptionMeasurement {
   scanStatus: "lower-bound" | "unavailable";
   /** Original source file byte hashes, before reachable-declaration selection. */
   sourceFiles: readonly { path: string; sha256: string }[];
   scannedReads: ConsumptionReads;
+  /** Original lexical observations and proven runtime import evidence, supplied only by the Node producer. */
+  rawScannedReads?: ConsumptionReads;
+  privateInternalReads?: readonly PrivateInternalReadWitness[];
   scannedComposes: readonly string[];
   /** Retained unknown source edges; a lower bound does not qualify runtime behavior. */
   unresolved?: readonly { file: string; line: number; evidence: string; code?: DogfoodCode }[];
