@@ -100,7 +100,7 @@ export function writerCopy(ref: AdminPageCopyRef): RuntimeJson { return { $copy:
 /** Technical data is explicit and validated; it cannot replace a UI label. */
 export function adminTechnicalData(kind: "id" | "href" | "locale" | "date" | "message", value: string): RuntimeJson { return { $data: { kind, value } }; }
 const technicalKeys = new Set(["id", "key", "href", "anchor", "kind", "type", "tone", "role", "dir", "locale", "icon", "leafId", "sourceId", "state", "align", "ref", "action", "intent"]);
-const labelKeys = new Set(["label", "heading", "description", "title", "placeholder", "emptyTitle", "emptyDescription", "showAll", "previous", "next", "summary", "noResults"]);
+const labelKeys = new Set(["label", "text", "heading", "description", "title", "placeholder", "emptyTitle", "emptyDescription", "showAll", "previous", "next", "summary", "noResults"]);
 export function resolveAdminPageValue(copy: AdminPageCopy, value: RuntimeJson, mode: ContentRef["kind"], path = "value"): RuntimeJson {
   assertAdminPageCopy(copy);
   const walk = (value: RuntimeJson, key: string, path: string): RuntimeJson => {
@@ -117,7 +117,7 @@ export function resolveAdminPageValue(copy: AdminPageCopy, value: RuntimeJson, m
     }
     if (Object.hasOwn(value, "$data")) {
       const data = object.$data as { kind?: string; value?: string };
-      if (Object.keys(value).length !== 1 || !data || typeof data.value !== "string" || labelKeys.has(key)) throw new TypeError("Technical data cannot replace Writer UI copy");
+      if (Object.keys(value).length !== 1 || !data || typeof data.value !== "string" || labelKeys.has(key) || mode === "copy" && !technicalKeys.has(key)) throw new TypeError("Technical data cannot replace Writer UI copy");
       const valid = data.kind === "id" ? /^[\w.:-]+$/.test(data.value) : data.kind === "href" ? /^(?:\/|#|https?:\/\/)/.test(data.value)
         : data.kind === "locale" ? /^[a-zA-Z]{2,8}(?:-[a-zA-Z0-9]{2,8})*$/.test(data.value) : data.kind === "date" ? Number.isFinite(Date.parse(data.value)) : data.kind === "message" && key === "content";
       if (!valid) throw new TypeError(`Invalid technical data at ${path}`); return data.value;

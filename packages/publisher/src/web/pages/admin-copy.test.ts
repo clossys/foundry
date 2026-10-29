@@ -31,6 +31,31 @@ describe("Writer-backed admin page copy", () => {
     expect(()=>missing({id:alias})).toThrow(/Writer/);
     expect(()=>resolveAdminPageValue(copy,{kind:"copy",ref:"address",heading:"smuggled"},"records")).toThrow(/unbound/);
   });
+  it("refuses technical markers in copy values and displayed text before loader caching", async () => {
+    const copy = adminCopyFixture(), unbound = adminTechnicalData("id", "Unbound");
+    for (const value of [unbound, { text: unbound, id: "heading" }, { value: unbound }, [unbound]]) {
+      expect(() => resolveAdminPageValue(copy, value, "copy")).toThrow(/cannot replace Writer UI copy/);
+    }
+    expect(() => resolveAdminPageValue(copy, { header: { text: unbound } }, "records")).toThrow(/cannot replace Writer UI copy/);
+    const reference = { kind: "copy" as const, ref: "card.header" }, value = { text: unbound, id: "heading" };
+    const loaders = bindAdminPageLoaders(copy, { chunk: async () => [{ reference, value, hash: runtimeHash(value) }], search: async () => [], item: async () => undefined });
+    await expect(loaders.chunk({ l0: "strings" })).rejects.toThrow(/cannot replace Writer UI copy/);
+  });
+  it("retains structural technical values, item values and chat content beside Writer labels", () => {
+    const copy = adminCopyFixture();
+    expect(resolveAdminPageValue(copy, {
+      text: writerCopy({ id: "strings.admin.page.writer" }), id: adminTechnicalData("id", "strings--names"),
+      href: adminTechnicalData("href", "/agents/writer"), locale: adminTechnicalData("locale", "ar"), count: 2,
+    }, "copy")).toEqual({ text: "Writer", id: "strings--names", href: "/agents/writer", locale: "ar", count: 2 });
+    expect(resolveAdminPageValue(copy, {
+      fields: [{ label: writerCopy({ id: "strings.admin.column.id" }), value: adminTechnicalData("id", "item-1") },
+        { label: writerCopy({ id: "strings.admin.column.lastPublished" }), value: adminTechnicalData("date", "2026-10-29T00:00:00Z") }],
+      parts: [{ id: "message-1", role: "user", content: adminTechnicalData("message", "A user message") }],
+      enabled: true, missing: null,
+    }, "records")).toEqual({ fields: [{ label: copy("strings.admin.column.id"), value: "item-1" },
+      { label: copy("strings.admin.column.lastPublished"), value: "2026-10-29T00:00:00Z" }],
+      parts: [{ id: "message-1", role: "user", content: "A user message" }], enabled: true, missing: null });
+  });
   it("serves both genuine Arabic fixture records inside an English UI without fallback", () => {
     const copy = adminCopyFixture();
     expect(copy.resolve({id:"strings.admin.page.writer",locale:"ar"})).toMatchObject({text:"الكاتب",provenance:{locale:"ar",mode:"writer-literal-preview"}});
