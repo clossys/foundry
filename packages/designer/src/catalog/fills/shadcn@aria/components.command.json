@@ -1,0 +1,285 @@
+{
+  "$extensions": {
+    "com.clossys.fill": {
+      "id": "shadcn@aria/components.command",
+      "slot": "components.command",
+      "source": "shadcn@aria",
+      "mode": "implementation",
+      "sourceAddress": "https://github.com/shadcn-ui/ui/blob/96da9cc7f1aa10580a3741664e2a77c721206c00/apps/v4/registry/bases/aria/ui/command.tsx",
+      "relation": "same-contract",
+      "builtOn": [
+        "components.icon"
+      ],
+      "conforms": [],
+      "evidence": [],
+      "author": "third-party",
+      "trust": "pinned-upstream",
+      "license": "MIT",
+      "status": "draft",
+      "pin": {
+        "url": "https://github.com/shadcn-ui/ui",
+        "commit": "96da9cc7f1aa10580a3741664e2a77c721206c00",
+        "sha256": "911e2d5972ca64ec2565b2c18281f0d9c0cb4d5caffa139dcd4eea2c853add11"
+      },
+      "unmapped": []
+    }
+  },
+  "components": {
+    "command": {
+      "slot": "components.command",
+      "source": "shadcn@aria",
+      "root": "rac:Autocomplete",
+      "members": [],
+      "props": [],
+      "propMap": {},
+      "reads": {
+        "tokens": [
+          "tokens.accent-color.text",
+          "tokens.action-color.default",
+          "tokens.border-color.base",
+          "tokens.border-color.strong",
+          "tokens.border-width.hairline",
+          "tokens.caption-size.default",
+          "tokens.content-size.notice",
+          "tokens.control-color.tonal",
+          "tokens.control-radius.default",
+          "tokens.control-size.h-lg",
+          "tokens.control-size.h-md",
+          "tokens.control-size.h-sm",
+          "tokens.duration.default",
+          "tokens.duration.fast",
+          "tokens.easing.default",
+          "tokens.elevation.none",
+          "tokens.focus-color.default",
+          "tokens.focus-outline.offset",
+          "tokens.focus-outline.width",
+          "tokens.font-size.base",
+          "tokens.font-size.sm",
+          "tokens.font-size.xs",
+          "tokens.font-weight.medium",
+          "tokens.letter-spacing.label",
+          "tokens.line-height.heading",
+          "tokens.radius.default",
+          "tokens.scrim-color.default",
+          "tokens.spacing.2xl",
+          "tokens.spacing.4xl",
+          "tokens.spacing.lg",
+          "tokens.spacing.md",
+          "tokens.spacing.sm",
+          "tokens.spacing.xl",
+          "tokens.spacing.xs",
+          "tokens.state-opacity.disabled",
+          "tokens.status-color.danger",
+          "tokens.surface-color.base",
+          "tokens.surface-color.overlay",
+          "tokens.surface-color.sunken",
+          "tokens.text-color.muted",
+          "tokens.text-color.on-action",
+          "tokens.text-color.primary",
+          "tokens.transition-easing.enter",
+          "tokens.transition-easing.exit",
+          "tokens.z-index.modal"
+        ],
+        "assets": [
+          "assets.icon-check",
+          "assets.icon-close",
+          "assets.icon-search"
+        ],
+        "components": [
+          "components.icon"
+        ]
+      },
+      "composes": [
+        "components.icon"
+      ],
+      "impl": {
+        "kind": "source",
+        "entry": "components/command/command.tsx",
+        "export": "Command"
+      },
+      "secondaryExports": [
+        {
+          "name": "CommandDialog",
+          "export": "CommandDialog"
+        },
+        {
+          "name": "CommandInput",
+          "export": "CommandInput"
+        },
+        {
+          "name": "CommandList",
+          "export": "CommandList"
+        },
+        {
+          "name": "CommandEmpty",
+          "export": "CommandEmpty"
+        },
+        {
+          "name": "CommandGroup",
+          "export": "CommandGroup"
+        },
+        {
+          "name": "CommandItem",
+          "export": "CommandItem"
+        },
+        {
+          "name": "CommandShortcut",
+          "export": "CommandShortcut"
+        },
+        {
+          "name": "CommandSeparator",
+          "export": "CommandSeparator"
+        }
+      ],
+      "license": "MIT",
+      "pin": {
+        "url": "https://github.com/shadcn-ui/ui",
+        "commit": "96da9cc7f1aa10580a3741664e2a77c721206c00",
+        "files": [
+          {
+            "path": "apps/v4/registry/bases/aria/ui/button.tsx",
+            "sha256": "8bcff6f70522e6e6cb0ff67f050830ea1a93596403d2d9b035f3b543c7a42e2c"
+          },
+          {
+            "path": "apps/v4/registry/bases/aria/ui/command.tsx",
+            "sha256": "911e2d5972ca64ec2565b2c18281f0d9c0cb4d5caffa139dcd4eea2c853add11"
+          },
+          {
+            "path": "apps/v4/registry/bases/aria/ui/dialog.tsx",
+            "sha256": "ff8a8e6b372e7eb06c931975d8ac1ea59d9271051ac178a62c95f6acae20bb35"
+          },
+          {
+            "path": "apps/v4/registry/bases/aria/ui/input-group.tsx",
+            "sha256": "f560ff23727006fc7790bef0f9dee2960e8eb00843f8644e9707f0c65582c9d6"
+          },
+          {
+            "path": "apps/v4/registry/bases/aria/ui/input.tsx",
+            "sha256": "b9596748b7238b5605f558474e9d50afc1535c5832c57134055e4bbde5fa804f"
+          },
+          {
+            "path": "apps/v4/registry/bases/aria/ui/textarea.tsx",
+            "sha256": "522eb7b565500e9a38ada957dc86ef0a4b2273dca9af2cb92af45332e614a334"
+          },
+          {
+            "path": "apps/v4/registry/styles/style-nova.css",
+            "sha256": "fd9803ec398290c306b377a46a769cad0c7ff024bf6a626993c113cacc20f16e"
+          },
+          {
+            "path": "LICENSE.md",
+            "sha256": "1564074e13439397221ffd522e2e504d56561994a23d371aa5e3ad43e4f5423f"
+          }
+        ]
+      },
+      "notice": "notices/SHADCN-ARIA-RAIL.md",
+      "transform": "shadcn-aria-rewrite@2",
+      "item": "command",
+      "deps": [
+        {
+          "name": "@clossys/designer",
+          "version": "0.12.0",
+          "license": "MIT"
+        },
+        {
+          "name": "react",
+          "version": "19.3.0",
+          "license": "MIT"
+        },
+        {
+          "name": "react-aria-components",
+          "version": "1.21.1",
+          "license": "Apache-2.0"
+        },
+        {
+          "name": "tailwind-merge",
+          "version": "3.7.0",
+          "license": "MIT"
+        }
+      ],
+      "parts": [
+        {
+          "item": "rail-dialog"
+        },
+        {
+          "item": "rail-button"
+        },
+        {
+          "item": "rail-input-group"
+        },
+        {
+          "item": "rail-input"
+        },
+        {
+          "item": "rail-textarea"
+        }
+      ],
+      "outputSha256": [
+        {
+          "path": "components/_parts/rail-button/button.tsx",
+          "sha256": "599cc0e8705180e233b0816ae371a1cfebb68a21404f613ba2c676e73cac2368"
+        },
+        {
+          "path": "components/_parts/rail-button/index.ts",
+          "sha256": "7a049afa00ae6977d11e5ee582dc12eecaec524cd1fcc955bc48602161a5a46d"
+        },
+        {
+          "path": "components/_parts/rail-dialog/dialog.tsx",
+          "sha256": "b45b24d6614a08af4e27d1ffb139fb21164cb270efa3a1a2634eac0b5a0bd00a"
+        },
+        {
+          "path": "components/_parts/rail-dialog/index.ts",
+          "sha256": "e130a378a2e3bc7bade91d9f9c9dfa7c8f322a6a1b59a81b50aaf3fe3411a6d0"
+        },
+        {
+          "path": "components/_parts/rail-input-group/index.ts",
+          "sha256": "e5bca651902e4a5faee9fe86daadcfae89612a40f334fda38cb117a577897f9b"
+        },
+        {
+          "path": "components/_parts/rail-input-group/input-group.tsx",
+          "sha256": "37e522da86c5927f9c88b66e4d8de9fd567cd356dbc4ae861377adfbbb302a53"
+        },
+        {
+          "path": "components/_parts/rail-input/index.ts",
+          "sha256": "f43bbc7f4172399d0c843befa47c94b3180c6c23c907fe3b244840945e1c22d9"
+        },
+        {
+          "path": "components/_parts/rail-input/input.tsx",
+          "sha256": "f8a3ae3c7185e067e7b6745ec15142a77f135602c2d4d7d3db218100464d3aea"
+        },
+        {
+          "path": "components/_parts/rail-textarea/index.ts",
+          "sha256": "ce4a259a3f7091619d1e18b16e31e959e41d7753bb344f33c157b80ddec07566"
+        },
+        {
+          "path": "components/_parts/rail-textarea/textarea.tsx",
+          "sha256": "c05332918881bde77d2e5b65f3cdac02e07c48aa488ce24149c379a864d33499"
+        },
+        {
+          "path": "components/_parts/rail-utils/copy.ts",
+          "sha256": "c9bc1359e38859ac1cf6ebb87bcb01d140bf07e2e95917124f8733ba688463cf"
+        },
+        {
+          "path": "components/_parts/rail-utils/index.ts",
+          "sha256": "57e883f2e7b51c430a154a1103873d0296e039c9e7b821cfe5922fe99a41b59d"
+        },
+        {
+          "path": "components/_parts/rail-utils/types.ts",
+          "sha256": "172cf78fbee5b9460adb881ea80fa76a5c7e9b98f168d9db15c001575653f5cb"
+        },
+        {
+          "path": "components/command/command.tsx",
+          "sha256": "abefbe8fbd0c0b0958678840b9c6b0e17dc9a90b79774db5e66d23c7d249ccec"
+        },
+        {
+          "path": "notices/SHADCN-ARIA-RAIL.md",
+          "sha256": "0622dbb67cbca61b6c160be781485d59b3b51a49cdf5bae0132e17a0ecbfe42c"
+        }
+      ],
+      "blockers": [],
+      "rac": {
+        "instance": "react-aria-components",
+        "range": "^1.21.1",
+        "peer": false
+      }
+    }
+  }
+}

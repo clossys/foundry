@@ -6,7 +6,7 @@ separate package", for the tree-shaking and upstream-churn/rename
 reasoning (this glyph set previously shipped as this scope's own standalone
 `icons` package; this notice, and the data it covers, moved into this
 package's own `./icons` subpath along with it — see this package's changelog).
-The 40 glyphs at `@clossys/designer/icons` are, however, **visually
+The 41 glyphs at `@clossys/designer/icons` are, however, **visually
 derived from [Lucide](https://lucide.dev)**: their SVG path data was
 copied from `lucide-react`'s published source (version 1.23.0 for the
 original 32; version 1.24.0 for `arrow-right`, `briefcase`, `file-check`,
@@ -112,6 +112,16 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 
 
+## shadcn/ui theme registry
+
+SPDX-License-Identifier: MIT
+
+The seven base-color preset values and the vendored registry snapshots
+`src/importers/vendor/shadcn-themes.ts.txt` and
+`src/importers/vendor/shadcn-base-colors.ts.txt` derive from shadcn/ui commit
+`96da9cc7f1aa10580a3741664e2a77c721206c00`. The MIT license and shadcn
+copyright notice reproduced below also apply to these registry files and values.
+
 ## shadcn/ui Toggle and ToggleGroup
 
 SPDX-License-Identifier: MIT
@@ -147,3 +157,12 @@ AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
 LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
+
+The draft `PanelLeft` glyph also uses the exact `panel-left` path nodes from
+`lucide-react` 1.24.0, under the ISC notice above. Its content pin is retained
+in the Lucide importer roster.
+
+The draft Aria rail additions use the official Aria source at commit
+`96da9cc7f1aa10580a3741664e2a77c721206c00`, under the shadcn MIT notice
+above. Individual fill descriptors retain the upstream addresses, file hashes,
+and the generated source license notice.

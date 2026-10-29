@@ -8,6 +8,7 @@ import componentSlots from "../catalog/slots/components.json" with { type: "json
 import tokenFreeze from "../catalog/ia/tokens.leaf-freeze.json" with { type: "json" };
 import assetFreeze from "../catalog/ia/assets.leaf-freeze.json" with { type: "json" };
 import componentAmendments from "../catalog/ia/components.leaf-amendments.json" with { type: "json" };
+import draftAssetAmendments from "../catalog/ia/assets.draft-leaf-amendments.json" with { type: "json" };
 import assetAmendments from "../catalog/ia/assets.leaf-amendments.json" with { type: "json" };
 import tokenAmendments from "../catalog/ia/tokens.leaf-amendments.json" with { type: "json" };
 import componentFreeze from "../catalog/ia/components.leaf-freeze.json" with { type: "json" };
@@ -60,7 +61,7 @@ describe("owner-signed leaf membership", () => {
     });
     it(`${layer}: allows regrouping, reordering, labels and metadata changes`, () => {
       const value = input();
-      const ids = fixture.layer === "components" ? [...fixture.freeze.leafIds, "components.semantic-content", "components.native-action"] : fixture.layer === "assets" ? [...fixture.freeze.leafIds, ...assetAmendments.addedLeafIds] : [...fixture.freeze.leafIds, ...tokenAmendments.addedLeaves.map(row => row.id), ...tokenAmendments.pending.addedLeafIds];
+      const ids = fixture.layer === "components" ? [...fixture.freeze.leafIds, ...componentAmendments.addedLeafIds] : fixture.layer === "assets" ? [...fixture.freeze.leafIds, ...assetAmendments.addedLeafIds, ...draftAssetAmendments.addedLeafIds] : [...fixture.freeze.leafIds, ...tokenAmendments.addedLeaves.map(row => row.id), ...tokenAmendments.pending.addedLeafIds];
       value.ia.nodes = [{ id: "new-domain", label: "New domain", children: [{ id: "new-family", label: "New family", leaves: [...ids].reverse() }] }];
       value.slots.reverse();
       Object.assign(value.slots[0]!, { description: "Metadata remains separate" });
@@ -92,14 +93,14 @@ describe("owner-signed leaf membership", () => {
       }
       expect(fixture.slots).toEqual(beforeSlots);
       expect(fixture.ia).toEqual(beforeIA);
-      expect(loadBuildCatalog().slots).toHaveLength(226);
+      expect(loadBuildCatalog().slots).toHaveLength(234);
     });
   }
 
   it("requires explicitly offered layers even when both inputs omit one entirely", () => {
     expect(checkFrozenLeafSets([], [], ["components"])).toEqual([
-      expect.objectContaining({ layer: "components", source: "slots", missing: [...componentFreeze.leafIds, "components.semantic-content", "components.native-action"].sort() }),
-      expect.objectContaining({ layer: "components", source: "ia", missing: [...componentFreeze.leafIds, "components.semantic-content", "components.native-action"].sort() }),
+      expect.objectContaining({ layer: "components", source: "slots", missing: [...componentFreeze.leafIds, ...componentAmendments.addedLeafIds].sort() }),
+      expect.objectContaining({ layer: "components", source: "ia", missing: [...componentFreeze.leafIds, ...componentAmendments.addedLeafIds].sort() }),
     ]);
   });
   it("keeps Sections/Frames unsigned and build readiness unchanged", () => {
@@ -121,7 +122,7 @@ describe("owner-signed Media leaf amendment", () => {
     expect(pending).toEqual({ status: "pending-owner-ratification", source: "workspace#45 A131/A132 AUTO-DECIDED 2026-10-28", memberChanges: [{ id: "assets.pattern", addedMembers: ["grain", "noise", "topo"] }] });
     expect(assetFreeze.leafIds).toHaveLength(45);
     expect(sha256([...assetFreeze.leafIds].sort().join("\n"))).toBe("dc3c75b4dee91fb500da9548a147fa0bf530215764b58df7a9ec12b2a966ae54");
-    const ids = assetSlots.map(slot => slot.id).sort();
+    const ids = assetSlots.map(slot => slot.id).filter(id => !draftAssetAmendments.addedLeafIds.includes(id)).sort();
     expect(ids).toHaveLength(48);
     expect(sha256(ids.join("\n"))).toBe("413698a4fe2af41b64f02e23353ba29760397c06ed54c94f790a3ce93cf9fdda");
     expect(assetFreeze.leafIds.filter(id => !ids.includes(id))).toEqual([]);
@@ -184,7 +185,7 @@ describe("owner-signed token leaf amendment", () => {
 describe("explicit local component amendment", () => {
   const amendedId = "components.semantic-content";
   it("records an explicit versioned proposal against the unchanged signed baseline", () => {
-    expect(componentAmendments).toEqual({ schemaVersion: 1, layer: "components", baseSignedHead: componentFreeze.signedHead, status: "pending-owner-ratification", addedLeafIds: ["components.native-action", amendedId] });
+    expect(componentAmendments).toEqual({ schemaVersion: 1, layer: "components", baseSignedHead: componentFreeze.signedHead, status: "pending-owner-ratification", addedLeafIds: ["components.native-action", amendedId, "components.sidebar", "components.command", "components.sheet", "components.empty", "components.item", "components.scroll-area", "components.dropdown-menu"] });
   });
   const inputs = () => ({ ia: structuredClone(componentIA) as Placement, slots: structuredClone(componentSlots) });
   it("accepts only the exact amended leaf alongside the unchanged signed IDs", () => {

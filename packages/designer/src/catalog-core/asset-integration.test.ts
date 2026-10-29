@@ -39,11 +39,11 @@ function assetLibrary(): { catalog: client.CatalogData; library: LibraryData } {
 }
 
 describe("asset integration through the public catalog", () => {
-  it("loads 56 token leaves and 48 asset leaves as fresh owned data", () => {
+  it("loads 56 token leaves and 49 asset leaves as fresh owned data", () => {
     const catalog = client.loadCatalog();
     expect(catalog.slots.filter(slot => slot.layer === "tokens")).toHaveLength(56);
-    expect(catalog.slots.filter(slot => slot.layer === "assets")).toHaveLength(48);
-    expect(catalog.fills.filter(fill => !!fill.assets)).toHaveLength(88);
+    expect(catalog.slots.filter(slot => slot.layer === "assets")).toHaveLength(49);
+    expect(catalog.fills.filter(fill => !!fill.assets)).toHaveLength(89);
     expect(catalog.fills.filter(fill => !!fill.assets && metaOf(fill).source === "phosphor")).toHaveLength(40);
     expect(catalog.fills.filter(fill => !!fill.assets && metaOf(fill).source === "open-props")).toHaveLength(1);
     metaOf(catalog.fills.find(fill => !!fill.assets)!).license = "changed";

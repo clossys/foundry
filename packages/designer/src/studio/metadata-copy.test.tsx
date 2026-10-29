@@ -23,3 +23,18 @@ it("keeps unknown records and unstructured diagnostic producers as named Needs",
   expect(() => readStudioFinding(copy, {}, "studio.inspector.finding.A5")).toThrow("studio.inspector.finding.A5");
   expect(() => readStudioMessage(copy, "studio.inspector.reason.components.button")).toThrow("studio.inspector.reason.components.button");
 });
+
+it("registers the new rail and icon labels plus component CopyRef identities against Writer drafts", () => {
+  const cells = ["command", "dropdown-menu", "empty", "item", "scroll-area", "sheet", "sidebar"].map(leaf => `designer.item.components.${leaf}`)
+    .concat(["designer.item.assets.icon-panel-left"], ["command.title", "command.description", "command.search", "sheet.close", "sidebar.title", "sidebar.description", "sidebar.toggle"].map(key => `designer.component.${key}`));
+  const bindings = draftEnvelopes.flatMap(envelope => envelope.bindings ?? []);
+  const records = draftEnvelopes.flatMap(envelope => envelope.records);
+  const { copy } = pseudoStudioCopy();
+  for (const cell of cells) {
+    const rows = bindings.filter(binding => binding.cellId === cell);
+    expect(rows, cell).toHaveLength(1);
+    expect(STUDIO_MESSAGE_REFS[cell], cell).toEqual({ id: rows[0]!.recordId });
+    expect(records.find(record => record.id === rows[0]!.recordId)?.status, cell).toBe("draft");
+    expect(readStudioMessage(copy, cell)).toBe(`[[${rows[0]!.recordId}]]`);
+  }
+});

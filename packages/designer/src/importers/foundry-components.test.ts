@@ -36,7 +36,7 @@ describe("Foundry component package descriptors", () => {
     expect(committed).toEqual([...Object.keys(files), ...loadComponentCompositionRules().filter(rule => rule.template.source === "foundry").map(rule => `${rule.slot}.json`), "components.native-action.json", "components.semantic-content.json"].sort());
     for (const [name, bytes] of Object.entries(files)) expect(readFileSync(resolve(fillsDirectory, name), "utf8"), name).toBe(bytes);
     expect(imported().coverage.map(row => row.slot)).toEqual(slots.map(slot => slot.id).sort());
-    expect(imported().coverage).toHaveLength(59);
+    expect(imported().coverage).toHaveLength(66);
     expect(signedSlots).toHaveLength(57);
     expect(importFoundryComponents({ exports, mappings: storedMappings, slots: signedSlots }).fills).toHaveLength(55);
     expect(imported().fills).toHaveLength(57);
@@ -53,7 +53,10 @@ describe("Foundry component package descriptors", () => {
     }
     const storedCoverage = importFoundryComponents({ exports, mappings: storedMappings, slots: signedSlots }).coverage;
     const baselineRows = (rows: typeof storedCoverage) => rows.filter(row => !["components.semantic-content", "components.native-action"].includes(row.slot) && !dynamicBlockedLeaves.some(leaf => row.slot === `components.${leaf}`));
-    expect(baselineRows(imported().coverage)).toEqual(baselineRows(storedCoverage));
+    const newSourceSlots = ["command", "dropdown-menu", "empty", "item", "scroll-area", "sheet", "sidebar"].map(leaf => `components.${leaf}`);
+    expect(baselineRows(imported().coverage)).toEqual([...baselineRows(storedCoverage), ...newSourceSlots.map(slot => ({
+      slot, status: "unavailable", supported: [], missing: [], notes: ["No package implementation is available."],
+    }))].sort((a, b) => a.slot.localeCompare(b.slot)));
     expect(loadComponentCompositionRules().map(rule => rule.slot)).toEqual(["components.date-picker", "components.file-trigger"]);
   });
 

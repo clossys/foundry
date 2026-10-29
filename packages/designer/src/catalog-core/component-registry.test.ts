@@ -5,7 +5,7 @@ import { componentRegistryFindings, loadBuildCatalog, loadCatalog, loadComponent
 // Independent audit inventory: permanent ids are separate from the editable IA view.
 const families: Record<string, readonly string[]> = {
   "actions-buttons": ["button", "native-action", "toggle-button"],
-  "actions-menus": ["menu"],
+  "actions-menus": ["menu", "command", "dropdown-menu"],
   "actions-toolbars": ["toolbar"],
   "inputs-form": ["field", "form"],
   "inputs-text": ["text-field", "search-field"],
@@ -17,22 +17,23 @@ const families: Record<string, readonly string[]> = {
   "inputs-files": ["file-trigger"],
   "display-data": ["table", "grid-list", "tree", "meter"],
   "display-labels": ["badge", "keyboard"],
-  "display-content": ["semantic-content"],
+  "display-content": ["semantic-content", "item"],
   "display-media": ["avatar"],
   "display-assets": ["icon", "logo"],
   "charts-core": ["chart-bar", "chart-line", "chart-area"],
   "charts-compact": ["chart-sparkline", "chart-status-strip"],
   "charts-analytic": ["chart-scatter", "chart-heatmap", "chart-range", "chart-waterfall"],
-  "feedback-messages": ["banner", "toast"],
+  "feedback-messages": ["banner", "toast", "empty"],
   "feedback-indicators": ["status-mark"],
   "feedback-progress": ["progress-bar", "spinner", "skeleton"],
   "navigation-links": ["link", "breadcrumbs"],
   "navigation-panels": ["tabs"],
-  "navigation-trees": ["navigation-tree"],
-  "containment-structure": ["card", "separator", "disclosure", "resize-handle"],
-  "containment-overlays": ["dialog", "popover", "tooltip"],
+  "navigation-trees": ["navigation-tree", "sidebar"],
+  "containment-structure": ["card", "separator", "disclosure", "resize-handle", "scroll-area"],
+  "containment-overlays": ["dialog", "popover", "tooltip", "sheet"],
 };
 const roots: Record<string, string> = {
+  command: "Autocomplete", sheet: "Dialog+Modal+ModalOverlay", "dropdown-menu": "Menu",
   button: "Button", "toggle-button": "ToggleButton", menu: "Menu", toolbar: "Toolbar",
   field: "Label+Text+FieldError", form: "Form", "text-field": "TextField", "search-field": "SearchField",
   checkbox: "Checkbox", "radio-group": "RadioGroup", switch: "Switch", select: "Select", "combo-box": "ComboBox",
@@ -43,9 +44,10 @@ const roots: Record<string, string> = {
   tabs: "Tabs", "navigation-tree": "NavigationTree", separator: "Separator", disclosure: "Disclosure", dialog: "Dialog",
   popover: "Popover", tooltip: "Tooltip",
 };
-const presentational = ["badge", "avatar", "icon", "logo", "status-mark", "skeleton", "card", "banner", "semantic-content"];
+const presentational = ["badge", "avatar", "icon", "logo", "status-mark", "skeleton", "card", "banner", "semantic-content", "sidebar", "empty", "item", "scroll-area"];
 const fullId = (leaf: string) => `components.${leaf}`;
 const inventory = Object.values(families).flat().map(fullId).sort();
+const addedInventory = ["sidebar", "command", "sheet", "empty", "item", "scroll-area", "dropdown-menu"].map(fullId);
 const leafNodes = (nodes: readonly PlacementNode[]): PlacementNode[] => nodes.flatMap(node => "leaves" in node ? [node] : leafNodes(node.children));
 
 // These prove shape only; component execution belongs to later implementation units.
@@ -53,9 +55,9 @@ describe("component build IA registry", () => {
   it("registers the 57 signed ids and two explicit local drafts once as draft contracts without a freeze claim", () => {
     const registry = loadComponentRegistry();
     expect(registry.status).toBe("build-unfrozen");
-    expect(registry.slots).toHaveLength(59);
-    expect(registry.slots.map(slot => slot.id)).toEqual(inventory);
-    expect(new Set(registry.slots.map(slot => slot.id)).size).toBe(59);
+    expect(registry.slots).toHaveLength(66);
+    expect(registry.slots.map(slot => slot.id)).toEqual([...inventory.filter(id => !addedInventory.includes(id)), ...addedInventory]);
+    expect(new Set(registry.slots.map(slot => slot.id)).size).toBe(66);
     expect(registry.slots.every(slot => isValidId("slot", slot.id) && slot.layer === "components" && slot.status === "draft" && slot.signoff === undefined)).toBe(true);
     expect(componentRegistryFindings(registry)).toEqual([]);
   });
@@ -81,8 +83,8 @@ describe("component build IA registry", () => {
       expect(slot.contract.members.mode).toBe("closed");
       expect(slot.contract.props).toEqual(slot.id === "components.semantic-content" ? ["as"] : []);
     }
-    expect(registry.slots.filter(slot => slot.contract.root.startsWith("rac:"))).toHaveLength(39);
-    expect(registry.slots.filter(slot => slot.contract.root === "presentational")).toHaveLength(9);
+    expect(registry.slots.filter(slot => slot.contract.root.startsWith("rac:"))).toHaveLength(42);
+    expect(registry.slots.filter(slot => slot.contract.root === "presentational")).toHaveLength(13);
     expect(registry.slots.filter(slot => slot.contract.root === "engine:none")).toHaveLength(11);
   });
 
@@ -109,7 +111,7 @@ describe("component build IA registry", () => {
   it("exposes fresh build IA while retaining all 98 runtime leaves and their existing fills", () => {
     const runtime = loadCatalog();
     const build = loadBuildCatalog();
-    expect(runtime.slots).toHaveLength(98);
+    expect(runtime.slots.filter(slot => slot.id !== "assets.icon-panel-left")).toHaveLength(98);
     expect(build.slots.filter(slot => slot.layer === "tokens" || slot.layer === "assets" || slot.layer === "components")).toHaveLength(157);
     expect(build.registryStatus).toBe("build-unfrozen");
     expect(build.slots.filter(slot => slot.layer === "tokens" || slot.layer === "assets")).toEqual(runtime.slots);

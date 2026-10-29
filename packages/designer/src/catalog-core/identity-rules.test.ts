@@ -35,7 +35,7 @@ describe('builtin identity rules through ordinary library changes',()=>{
     expect(stableStringify(seed)).toBe(original);
     expect(stableStringify(raw(catalog,seed))).toBe(stableStringify(result));
     expect(resolve({catalog,library:result})).toEqual(resolve({catalog,library:complete}));
-    expect(result.fills).toHaveLength(98); expect(errors(catalog,result)).toEqual([]);
+    expect(result.fills).toHaveLength(104); expect(errors(catalog,result)).toEqual([]);
     for(const fill of result.fills) for(const token of Object.values(flatten(fill))) {
       const origin=token.$extensions?.['com.clossys.origin'];
       if(origin?.kind==='derived'&&origin.rule.startsWith('identity-')) {

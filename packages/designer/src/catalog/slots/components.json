@@ -2309,5 +2309,310 @@
     },
     "requires": [],
     "status": "draft"
+  },
+  {
+    "id": "components.sidebar",
+    "layer": "components",
+    "contract": {
+      "kind": "component",
+      "root": "presentational",
+      "members": {
+        "mode": "closed",
+        "names": []
+      },
+      "props": [],
+      "allowedReads": {
+        "tokens": [
+          "tokens.accent-color",
+          "tokens.action-color",
+          "tokens.border-color",
+          "tokens.border-width",
+          "tokens.breakpoint",
+          "tokens.caption-size",
+          "tokens.content-size",
+          "tokens.control-color",
+          "tokens.control-radius",
+          "tokens.control-size",
+          "tokens.duration",
+          "tokens.easing",
+          "tokens.elevation",
+          "tokens.focus-color",
+          "tokens.focus-outline",
+          "tokens.font-size",
+          "tokens.font-weight",
+          "tokens.radius",
+          "tokens.region-width",
+          "tokens.shift-distance",
+          "tokens.spacing",
+          "tokens.state-opacity",
+          "tokens.status-color",
+          "tokens.surface-color",
+          "tokens.text-color",
+          "tokens.transition-easing",
+          "tokens.z-index"
+        ],
+        "assets": [
+          "assets.icon-panel-left"
+        ],
+        "components": [
+          "components.icon",
+          "components.sheet"
+        ]
+      },
+      "composes": [
+        "components.icon",
+        "components.sheet"
+      ]
+    },
+    "requires": [],
+    "status": "draft"
+  },
+  {
+    "id": "components.command",
+    "layer": "components",
+    "contract": {
+      "kind": "component",
+      "root": "rac:Autocomplete",
+      "members": {
+        "mode": "closed",
+        "names": []
+      },
+      "props": [],
+      "allowedReads": {
+        "tokens": [
+          "tokens.accent-color",
+          "tokens.action-color",
+          "tokens.border-color",
+          "tokens.border-width",
+          "tokens.caption-size",
+          "tokens.content-size",
+          "tokens.control-color",
+          "tokens.control-radius",
+          "tokens.control-size",
+          "tokens.duration",
+          "tokens.easing",
+          "tokens.elevation",
+          "tokens.focus-color",
+          "tokens.focus-outline",
+          "tokens.font-size",
+          "tokens.font-weight",
+          "tokens.letter-spacing",
+          "tokens.line-height",
+          "tokens.radius",
+          "tokens.scrim-color",
+          "tokens.spacing",
+          "tokens.state-opacity",
+          "tokens.status-color",
+          "tokens.surface-color",
+          "tokens.text-color",
+          "tokens.transition-easing",
+          "tokens.z-index"
+        ],
+        "assets": [
+          "assets.icon-check",
+          "assets.icon-close",
+          "assets.icon-search"
+        ],
+        "components": [
+          "components.icon"
+        ]
+      },
+      "composes": [
+        "components.icon"
+      ]
+    },
+    "requires": [],
+    "status": "draft"
+  },
+  {
+    "id": "components.sheet",
+    "layer": "components",
+    "contract": {
+      "kind": "component",
+      "root": "rac:Dialog+Modal+ModalOverlay",
+      "members": {
+        "mode": "closed",
+        "names": []
+      },
+      "props": [],
+      "allowedReads": {
+        "tokens": [
+          "tokens.accent-color",
+          "tokens.action-color",
+          "tokens.border-color",
+          "tokens.border-width",
+          "tokens.caption-size",
+          "tokens.content-size",
+          "tokens.control-color",
+          "tokens.control-radius",
+          "tokens.control-size",
+          "tokens.duration",
+          "tokens.easing",
+          "tokens.elevation",
+          "tokens.focus-color",
+          "tokens.focus-outline",
+          "tokens.font-size",
+          "tokens.font-weight",
+          "tokens.scrim-color",
+          "tokens.spacing",
+          "tokens.state-opacity",
+          "tokens.status-color",
+          "tokens.surface-color",
+          "tokens.text-color",
+          "tokens.z-index"
+        ],
+        "assets": [
+          "assets.icon-close"
+        ],
+        "components": [
+          "components.icon"
+        ]
+      },
+      "composes": [
+        "components.icon"
+      ]
+    },
+    "requires": [],
+    "status": "draft"
+  },
+  {
+    "id": "components.empty",
+    "layer": "components",
+    "contract": {
+      "kind": "component",
+      "root": "presentational",
+      "members": {
+        "mode": "closed",
+        "names": []
+      },
+      "props": [],
+      "allowedReads": {
+        "tokens": [
+          "tokens.action-color",
+          "tokens.content-size",
+          "tokens.control-radius",
+          "tokens.font-size",
+          "tokens.font-weight",
+          "tokens.letter-spacing",
+          "tokens.line-height",
+          "tokens.spacing",
+          "tokens.surface-color",
+          "tokens.text-color"
+        ],
+        "assets": [],
+        "components": []
+      },
+      "composes": []
+    },
+    "requires": [],
+    "status": "draft"
+  },
+  {
+    "id": "components.item",
+    "layer": "components",
+    "contract": {
+      "kind": "component",
+      "root": "presentational",
+      "members": {
+        "mode": "closed",
+        "names": []
+      },
+      "props": [],
+      "allowedReads": {
+        "tokens": [
+          "tokens.action-color",
+          "tokens.border-color",
+          "tokens.border-width",
+          "tokens.control-radius",
+          "tokens.duration",
+          "tokens.easing",
+          "tokens.focus-color",
+          "tokens.focus-outline",
+          "tokens.font-size",
+          "tokens.font-weight",
+          "tokens.line-height",
+          "tokens.spacing",
+          "tokens.surface-color",
+          "tokens.text-color"
+        ],
+        "assets": [],
+        "components": []
+      },
+      "composes": []
+    },
+    "requires": [],
+    "status": "draft"
+  },
+  {
+    "id": "components.scroll-area",
+    "layer": "components",
+    "contract": {
+      "kind": "component",
+      "root": "presentational",
+      "members": {
+        "mode": "closed",
+        "names": []
+      },
+      "props": [],
+      "allowedReads": {
+        "tokens": [
+          "tokens.border-color",
+          "tokens.focus-color",
+          "tokens.focus-outline"
+        ],
+        "assets": [],
+        "components": []
+      },
+      "composes": []
+    },
+    "requires": [],
+    "status": "draft"
+  },
+  {
+    "id": "components.dropdown-menu",
+    "layer": "components",
+    "contract": {
+      "kind": "component",
+      "root": "rac:Menu",
+      "members": {
+        "mode": "closed",
+        "names": []
+      },
+      "props": [],
+      "allowedReads": {
+        "tokens": [
+          "tokens.border-color",
+          "tokens.border-width",
+          "tokens.control-radius",
+          "tokens.duration",
+          "tokens.elevation",
+          "tokens.focus-color",
+          "tokens.focus-outline",
+          "tokens.font-size",
+          "tokens.font-weight",
+          "tokens.letter-spacing",
+          "tokens.shift-distance",
+          "tokens.spacing",
+          "tokens.state-opacity",
+          "tokens.status-color",
+          "tokens.surface-color",
+          "tokens.text-color",
+          "tokens.transition-easing",
+          "tokens.z-index"
+        ],
+        "assets": [
+          "assets.icon-check",
+          "assets.icon-chevron-right"
+        ],
+        "components": [
+          "components.icon"
+        ]
+      },
+      "composes": [
+        "components.icon"
+      ]
+    },
+    "requires": [],
+    "status": "draft"
   }
 ]

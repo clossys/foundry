@@ -18,7 +18,9 @@
           "id": "actions-menus",
           "label": "Menus",
           "leaves": [
-            "components.menu"
+            "components.menu",
+            "components.command",
+            "components.dropdown-menu"
           ]
         },
         {
@@ -170,7 +172,8 @@
           "id": "display-content",
           "label": "Content",
           "leaves": [
-            "components.semantic-content"
+            "components.semantic-content",
+            "components.item"
           ]
         }
       ]
@@ -184,7 +187,8 @@
           "label": "Messages",
           "leaves": [
             "components.banner",
-            "components.toast"
+            "components.toast",
+            "components.empty"
           ]
         },
         {
@@ -228,7 +232,8 @@
           "id": "navigation-trees",
           "label": "Trees",
           "leaves": [
-            "components.navigation-tree"
+            "components.navigation-tree",
+            "components.sidebar"
           ]
         }
       ]
@@ -244,7 +249,8 @@
             "components.card",
             "components.separator",
             "components.disclosure",
-            "components.resize-handle"
+            "components.resize-handle",
+            "components.scroll-area"
           ]
         },
         {
@@ -253,7 +259,8 @@
           "leaves": [
             "components.dialog",
             "components.popover",
-            "components.tooltip"
+            "components.tooltip",
+            "components.sheet"
           ]
         }
       ]

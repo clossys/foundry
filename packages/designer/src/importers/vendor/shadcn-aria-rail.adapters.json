@@ -1,0 +1,766 @@
+{
+  "version": 1,
+  "upstreamCommit": "96da9cc7f1aa10580a3741664e2a77c721206c00",
+  "upstreamDataSha256": "0d0ed34d0397bab7fdb57676a355fddc35da1b12bc5cd0c0f110e33d2a21d85c",
+  "registeredSlots": [
+    "components.command",
+    "components.dropdown-menu",
+    "components.empty",
+    "components.item",
+    "components.scroll-area",
+    "components.sheet",
+    "components.sidebar"
+  ],
+  "copy": [
+    {
+      "key": "command.title",
+      "ref": {
+        "id": "st.vhdw8gz59s"
+      }
+    },
+    {
+      "key": "command.description",
+      "ref": {
+        "id": "st.tqaf5rvggj"
+      }
+    },
+    {
+      "key": "command.search",
+      "ref": {
+        "id": "st.er3g6ph4h3"
+      }
+    },
+    {
+      "key": "sheet.close",
+      "ref": {
+        "id": "st.9ehasbmw8z"
+      }
+    },
+    {
+      "key": "sidebar.title",
+      "ref": {
+        "id": "st.50we5a15ty"
+      }
+    },
+    {
+      "key": "sidebar.description",
+      "ref": {
+        "id": "st.etz9tsny9q"
+      }
+    },
+    {
+      "key": "sidebar.toggle",
+      "ref": {
+        "id": "st.qbaewx3e0y"
+      }
+    }
+  ],
+  "files": [
+    {
+      "item": "button",
+      "path": "apps/v4/registry/bases/aria/ui/button.tsx",
+      "inputSha256": "8bcff6f70522e6e6cb0ff67f050830ea1a93596403d2d9b035f3b543c7a42e2c",
+      "content": "\"use client\"\n\nimport type * as React from \"react\"\nimport { cn, classNames, type ClassValue, type VariantProps } from \"cn\"\nimport {\n  Button as ButtonPrimitive,\n  Link as LinkPrimitive,\n  type ButtonProps as ButtonPrimitiveProps,\n  type LinkProps as LinkPrimitiveProps,\n} from \"react-aria-components\"\n\nconst buttonVariants_DEFINITION = {\"base\":\"cn-button group/button inline-flex shrink-0 items-center justify-center whitespace-nowrap transition-all outline-none select-none disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:shrink-0\",\"variants\":{\"variant\":{\"default\":\"cn-button-variant-default\",\"outline\":\"cn-button-variant-outline\",\"secondary\":\"cn-button-variant-secondary\",\"ghost\":\"cn-button-variant-ghost\",\"destructive\":\"cn-button-variant-destructive\",\"link\":\"cn-button-variant-link\"},\"size\":{\"default\":\"cn-button-size-default\",\"xs\":\"cn-button-size-xs\",\"sm\":\"cn-button-size-sm\",\"lg\":\"cn-button-size-lg\",\"icon\":\"cn-button-size-icon\",\"icon-xs\":\"cn-button-size-icon-xs\",\"icon-sm\":\"cn-button-size-icon-sm\",\"icon-lg\":\"cn-button-size-icon-lg\"}},\"defaultVariants\":{\"variant\":\"default\",\"size\":\"default\"}}\nfunction buttonVariants(props: { \"variant\"?: \"default\" | \"outline\" | \"secondary\" | \"ghost\" | \"destructive\" | \"link\" | null; \"size\"?: \"default\" | \"xs\" | \"sm\" | \"lg\" | \"icon\" | \"icon-xs\" | \"icon-sm\" | \"icon-lg\" | null; class?: ClassValue; className?: ClassValue } = {}) {\n  props ??= {}\n  const definition = buttonVariants_DEFINITION\n  const key = (value: unknown) => typeof value === \"boolean\" ? String(value) : value === 0 ? \"0\" : value\n  const supplied = Object.fromEntries(Object.entries(props).filter(([, value]) => value !== undefined))\n  const values: { [axis: string]: unknown } = { ...definition.defaultVariants, ...supplied }\n  const selected = Object.entries(definition.variants).map(([axis, choices]) => {\n    if ((props as { [axis: string]: unknown })[axis] === null) return null\n    const value = key((props as { [axis: string]: unknown })[axis]) || key((definition.defaultVariants as { [axis: string]: unknown })[axis])\n    return (choices as { [value: string]: ClassValue })[String(value)]\n  })\n  const compound = (([]) as { [key: string]: unknown }[]).flatMap(({ class: value, className, ...conditions }) =>\n    Object.entries(conditions).every(([axis, expected]) => Array.isArray(expected) ? expected.includes(values[axis]) : values[axis] === expected)\n      ? [value as ClassValue, className as ClassValue] : [])\n  return classNames(definition.base, selected, compound, props.class, props.className)\n}\n\nfunction Button({\n  className,\n  /** @default \"default\" */\n  variant = \"default\",\n  /** @default \"default\" */\n  size = \"default\",\n  ...props\n}: Omit<ButtonPrimitiveProps, \"className\"> &\n  React.RefAttributes<HTMLButtonElement> &\n  VariantProps<typeof buttonVariants> & {\n    className?: string\n  }) {\n  return (\n    <ButtonPrimitive\n      data-slot=\"button\"\n      data-variant={variant}\n      data-size={size}\n      className={cn(buttonVariants({ variant, size, className }))}\n      {...props}\n    />\n  )\n}\n\nfunction LinkButton({\n  className,\n  /** @default \"default\" */\n  variant = \"default\",\n  /** @default \"default\" */\n  size = \"default\",\n  ...props\n}: Omit<LinkPrimitiveProps, \"className\"> &\n  VariantProps<typeof buttonVariants> & {\n    className?: string\n  }) {\n  return (\n    <LinkPrimitive\n      data-slot=\"button\"\n      data-variant={variant}\n      data-size={size}\n      className={cn(buttonVariants({ variant, size, className }))}\n      {...props}\n    />\n  )\n}\n\nexport { Button, LinkButton, buttonVariants }\n",
+      "defaults": [
+        {
+          "function": "Button",
+          "prop": "variant",
+          "value": "default",
+          "slots": [
+            "components.command",
+            "components.sheet",
+            "components.sidebar"
+          ]
+        },
+        {
+          "function": "Button",
+          "prop": "size",
+          "value": "default",
+          "slots": [
+            "components.command",
+            "components.sheet",
+            "components.sidebar"
+          ]
+        },
+        {
+          "function": "LinkButton",
+          "prop": "variant",
+          "value": "default",
+          "slots": [
+            "components.command",
+            "components.sheet",
+            "components.sidebar"
+          ]
+        },
+        {
+          "function": "LinkButton",
+          "prop": "size",
+          "value": "default",
+          "slots": [
+            "components.command",
+            "components.sheet",
+            "components.sidebar"
+          ]
+        }
+      ],
+      "variants": [
+        {
+          "item": "button",
+          "name": "buttonVariants",
+          "base": "cn-button group/button inline-flex shrink-0 items-center justify-center whitespace-nowrap transition-all outline-none select-none disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:shrink-0",
+          "config": {
+            "variants": {
+              "variant": {
+                "default": "cn-button-variant-default",
+                "outline": "cn-button-variant-outline",
+                "secondary": "cn-button-variant-secondary",
+                "ghost": "cn-button-variant-ghost",
+                "destructive": "cn-button-variant-destructive",
+                "link": "cn-button-variant-link"
+              },
+              "size": {
+                "default": "cn-button-size-default",
+                "xs": "cn-button-size-xs",
+                "sm": "cn-button-size-sm",
+                "lg": "cn-button-size-lg",
+                "icon": "cn-button-size-icon",
+                "icon-xs": "cn-button-size-icon-xs",
+                "icon-sm": "cn-button-size-icon-sm",
+                "icon-lg": "cn-button-size-icon-lg"
+              }
+            },
+            "defaultVariants": {
+              "variant": "default",
+              "size": "default"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "item": "command",
+      "path": "apps/v4/registry/bases/aria/ui/command.tsx",
+      "inputSha256": "911e2d5972ca64ec2565b2c18281f0d9c0cb4d5caffa139dcd4eea2c853add11",
+      "content": "\"use client\"\n\nimport * as React from \"react\"\nimport { cn, resolveRailCopy, RAIL_COPY_REFS, type CopyResolver } from \"cn\"\nimport {\n  Autocomplete,\n  Collection,\n  composeRenderProps,\n  Header,\n  Input,\n  Menu,\n  MenuItem,\n  MenuSection,\n  SearchField,\n  Separator,\n  useFilter,\n  type AutocompleteProps,\n  type InputProps,\n  type MenuItemProps,\n  type MenuProps,\n  type MenuSectionProps,\n  type SeparatorProps,\n} from \"react-aria-components\"\n\nimport {\n  Dialog,\n  DialogDescription,\n  DialogHeader,\n  DialogTitle,\n} from \"@/registry/bases/aria/ui/dialog\"\nimport {\n  InputGroup,\n  InputGroupAddon,\n} from \"@/registry/bases/aria/ui/input-group\"\nimport { IconPlaceholder } from \"@/app/(create)/components/icon-placeholder\"\n\nfunction Command({\n  className,\n  dir,\n  style,\n  ...props\n}: Omit<AutocompleteProps, \"className\" | \"style\"> & {\n  className?: string\n  dir?: React.HTMLAttributes<HTMLDivElement>[\"dir\"]\n  style?: React.CSSProperties\n}) {\n  const { contains } = useFilter({ sensitivity: \"base\" })\n  return (\n    <div\n      data-slot=\"command\"\n      dir={dir}\n      className={cn(\n        \"cn-command flex size-full flex-col overflow-hidden\",\n        className\n      )}\n      style={style}\n    >\n      <Autocomplete {...props} filter={props.filter || contains}>\n        {props.children}\n      </Autocomplete>\n    </div>\n  )\n}\n\nfunction CommandDialog({\n  copyResolver,\n  title,\n  description,\n  children,\n  open,\n  onOpenChange,\n  className,\n  /** @default false */\n  showCloseButton = false,\n  ...props\n}: (Omit<\n  React.ComponentProps<typeof Dialog>,\n  \"children\" | \"className\" | \"isOpen\" | \"onOpenChange\"\n> & {\n  title?: string\n  description?: string\n  open?: boolean\n  onOpenChange?: (isOpen: boolean) => void\n  className?: string\n  showCloseButton?: boolean\n  children: React.ReactNode\n}) & { copyResolver?: CopyResolver }) {\n  return (\n    <Dialog\n      copyResolver={copyResolver}\n      isOpen={open}\n      onOpenChange={onOpenChange}\n      className={cn(\n        \"cn-command-dialog top-1/3 translate-y-0 overflow-hidden p-0\",\n        className\n      )}\n      showCloseButton={showCloseButton}\n      isDismissable\n      {...props}\n    >\n      <DialogHeader className=\"sr-only\">\n        <DialogTitle>{title ?? resolveRailCopy(copyResolver, RAIL_COPY_REFS[\"command.title\"])}</DialogTitle>\n        <DialogDescription>{description ?? resolveRailCopy(copyResolver, RAIL_COPY_REFS[\"command.description\"])}</DialogDescription>\n      </DialogHeader>\n      {children}\n    </Dialog>\n  )\n}\n\nfunction CommandInput({\n  copyResolver, className, ...props }: (InputProps) & { copyResolver?: CopyResolver }) {\n  return (\n    <SearchField\n      autoFocus\n      aria-label={props.placeholder || resolveRailCopy(copyResolver, RAIL_COPY_REFS[\"command.search\"])}\n      data-slot=\"command-input-wrapper\"\n      className=\"cn-command-input-wrapper\"\n    >\n      <InputGroup className=\"cn-command-input-group\">\n        <Input\n          {...props}\n          data-slot=\"command-input\"\n          className={cn(\n            \"cn-command-input outline-hidden disabled:cursor-not-allowed disabled:opacity-50 [&::-webkit-search-cancel-button]:hidden\",\n            className\n          )}\n        />\n        <InputGroupAddon>\n          <IconPlaceholder\n            lucide=\"SearchIcon\"\n            tabler=\"IconSearch\"\n            hugeicons=\"SearchIcon\"\n            phosphor=\"MagnifyingGlassIcon\"\n            remixicon=\"RiSearchLine\"\n            className=\"cn-command-input-icon\"\n          />\n        </InputGroupAddon>\n      </InputGroup>\n    </SearchField>\n  )\n}\n\nfunction CommandList<T extends object>({ className, ...props }: MenuProps<T>) {\n  return (\n    <Menu\n      {...props}\n      data-slot=\"command-list\"\n      className={cn(\n        \"cn-command-list overflow-x-hidden overflow-y-auto\",\n        className\n      )}\n    />\n  )\n}\n\nfunction CommandEmpty({ className, ...props }: React.ComponentProps<\"div\">) {\n  return (\n    <div\n      data-slot=\"command-empty\"\n      className={cn(\"cn-command-empty\", className)}\n      {...props}\n    />\n  )\n}\n\nfunction CommandGroup<T extends object>({\n  className,\n  children,\n  items,\n  heading,\n  ...props\n}: MenuSectionProps<T> & { heading?: string }) {\n  return (\n    <MenuSection\n      data-slot=\"command-group\"\n      className={cn(\"cn-command-group\", className)}\n      {...props}\n    >\n      {heading && <Header cmdk-group-heading=\"\">{heading}</Header>}\n      <Collection items={items}>{children}</Collection>\n    </MenuSection>\n  )\n}\n\nfunction CommandSeparator({ className, ...props }: SeparatorProps) {\n  return (\n    <Separator\n      data-slot=\"command-separator\"\n      className={cn(\"cn-command-separator\", className)}\n      {...props}\n    />\n  )\n}\n\nfunction CommandItem<T extends object>({\n  className,\n  children,\n  textValue,\n  ...props\n}: MenuItemProps<T>) {\n  return (\n    <MenuItem\n      {...props}\n      data-slot=\"command-item\"\n      className={cn(\n        \"cn-command-item cn-command-item-aria group/command-item data-[disabled=true]:pointer-events-none data-[disabled=true]:opacity-50 [&_svg]:pointer-events-none [&_svg]:shrink-0\",\n        className\n      )}\n      textValue={\n        textValue || (typeof children === \"string\" ? children : undefined)\n      }\n    >\n      {composeRenderProps(children, (children) => (\n        <>\n          {children}\n          <IconPlaceholder\n            lucide=\"CheckIcon\"\n            tabler=\"IconCheck\"\n            hugeicons=\"Tick02Icon\"\n            phosphor=\"CheckIcon\"\n            remixicon=\"RiCheckLine\"\n            className=\"cn-command-item-indicator ml-auto opacity-0 group-has-data-[slot=command-shortcut]/command-item:hidden group-data-[checked=true]/command-item:opacity-100\"\n          />\n        </>\n      ))}\n    </MenuItem>\n  )\n}\n\nfunction CommandShortcut({\n  className,\n  ...props\n}: React.ComponentProps<\"span\">) {\n  return (\n    <span\n      data-slot=\"command-shortcut\"\n      className={cn(\"cn-command-shortcut cn-command-shortcut-aria\", className)}\n      {...props}\n    />\n  )\n}\n\nexport {\n  Command,\n  CommandDialog,\n  CommandInput,\n  CommandList,\n  CommandEmpty,\n  CommandGroup,\n  CommandItem,\n  CommandShortcut,\n  CommandSeparator,\n}\n",
+      "defaults": [
+        {
+          "function": "CommandDialog",
+          "prop": "showCloseButton",
+          "value": false,
+          "slots": [
+            "components.command"
+          ]
+        }
+      ],
+      "variants": []
+    },
+    {
+      "item": "dialog",
+      "path": "apps/v4/registry/bases/aria/ui/dialog.tsx",
+      "inputSha256": "ff8a8e6b372e7eb06c931975d8ac1ea59d9271051ac178a62c95f6acae20bb35",
+      "content": "\"use client\"\n\nimport * as React from \"react\"\nimport { cn, resolveRailCopy, RAIL_COPY_REFS, type CopyResolver } from \"cn\"\nimport {\n  Dialog as DialogPrimitive,\n  DialogTrigger as DialogTriggerPrimitive,\n  Heading,\n  ModalOverlay as ModalOverlayPrimitive,\n  Modal as ModalPrimitive,\n  type DialogProps as DialogPrimitiveProps,\n  type DialogTriggerProps as DialogTriggerPrimitiveProps,\n  type ModalOverlayProps as ModalOverlayPrimitiveProps,\n} from \"react-aria-components\"\n\nimport { Button } from \"@/registry/bases/aria/ui/button\"\nimport { IconPlaceholder } from \"@/app/(create)/components/icon-placeholder\"\n\nfunction DialogTrigger({ ...props }: DialogTriggerPrimitiveProps) {\n  return <DialogTriggerPrimitive data-slot=\"dialog-trigger\" {...props} />\n}\n\nfunction DialogClose({\n  className,\n  /** @default \"outline\" */\n  variant = \"outline\",\n  /** @default \"default\" */\n  size = \"default\",\n  ...props\n}: React.ComponentProps<typeof Button>) {\n  return (\n    <Button\n      slot=\"close\"\n      data-slot=\"dialog-close\"\n      variant={variant}\n      size={size}\n      className={cn(className)}\n      {...props}\n    />\n  )\n}\n\nfunction DialogOverlay({\n  className,\n  children,\n  ...props\n}: Omit<ModalOverlayPrimitiveProps, \"className\" | \"children\"> & {\n  className?: string\n  children: React.ReactNode\n}) {\n  return (\n    <ModalOverlayPrimitive\n      data-slot=\"dialog-overlay\"\n      className={cn(\n        \"cn-dialog-overlay-aria fixed inset-0 isolate z-50\",\n        className\n      )}\n      {...props}\n    >\n      {children}\n    </ModalOverlayPrimitive>\n  )\n}\n\nfunction Dialog({\n  copyResolver,\n  className,\n  children,\n  /** @default true */\n  showCloseButton = true,\n  /** @default true */\n  isDismissable = true,\n  ...props\n}: (Omit<ModalOverlayPrimitiveProps, \"className\" | \"children\"> &\n  Pick<React.ComponentProps<typeof ModalPrimitive>, \"isDismissable\"> & {\n    className?: string\n    children: React.ReactNode\n    showCloseButton?: boolean\n  }) & { copyResolver?: CopyResolver }) {\n  return (\n    <DialogOverlay isDismissable={isDismissable} {...props}>\n      <ModalPrimitive\n        data-slot=\"dialog-content\"\n        className={cn(\n          \"cn-dialog-content-aria fixed top-1/2 left-1/2 z-50 w-full -translate-x-1/2 -translate-y-1/2 outline-none\",\n          className\n        )}\n      >\n        <DialogPrimitive\n          data-slot=\"dialog\"\n          className=\"[display:inherit] [gap:inherit] outline-none\"\n        >\n          {children}\n          {showCloseButton && (\n            <DialogClose\n              variant=\"ghost\"\n              className=\"cn-dialog-close\"\n              size=\"icon-sm\"\n            >\n              <IconPlaceholder\n                lucide=\"XIcon\"\n                tabler=\"IconX\"\n                hugeicons=\"Cancel01Icon\"\n                phosphor=\"XIcon\"\n                remixicon=\"RiCloseLine\"\n              />\n              <span className=\"sr-only\">{resolveRailCopy(copyResolver, RAIL_COPY_REFS[\"sheet.close\"])}</span>\n            </DialogClose>\n          )}\n        </DialogPrimitive>\n      </ModalPrimitive>\n    </DialogOverlay>\n  )\n}\n\nfunction DialogHeader({ className, ...props }: React.ComponentProps<\"div\">) {\n  return (\n    <div\n      data-slot=\"dialog-header\"\n      className={cn(\"cn-dialog-header flex flex-col\", className)}\n      {...props}\n    />\n  )\n}\n\nfunction DialogFooter({\n  copyResolver,\n  className,\n  /** @default false */\n  showCloseButton = false,\n  children,\n  ...props\n}: (React.ComponentProps<\"div\"> & {\n  showCloseButton?: boolean\n}) & { copyResolver?: CopyResolver }) {\n  return (\n    <div\n      data-slot=\"dialog-footer\"\n      className={cn(\n        \"cn-dialog-footer flex flex-col-reverse gap-2 sm:flex-row sm:justify-end\",\n        className\n      )}\n      {...props}\n    >\n      {children}\n      {showCloseButton && <DialogClose variant=\"outline\">{resolveRailCopy(copyResolver, RAIL_COPY_REFS[\"sheet.close\"])}</DialogClose>}\n    </div>\n  )\n}\n\nfunction DialogTitle({\n  className,\n  ...props\n}: Omit<React.ComponentProps<typeof Heading>, \"slot\">) {\n  return (\n    <Heading\n      slot=\"title\"\n      data-slot=\"dialog-title\"\n      className={cn(\"cn-dialog-title cn-font-heading\", className)}\n      {...props}\n    />\n  )\n}\n\nfunction DialogDescription({\n  className,\n  ...props\n}: Omit<React.ComponentProps<\"div\">, \"slot\">) {\n  return (\n    <div\n      data-slot=\"dialog-description\"\n      className={cn(\"cn-dialog-description\", className)}\n      {...props}\n    />\n  )\n}\n\nexport {\n  type DialogPrimitiveProps,\n  type DialogTriggerPrimitiveProps,\n  Dialog,\n  DialogClose,\n  DialogDescription,\n  DialogFooter,\n  DialogHeader,\n  DialogOverlay,\n  DialogTitle,\n  DialogTrigger,\n}\n",
+      "defaults": [
+        {
+          "function": "DialogClose",
+          "prop": "variant",
+          "value": "outline",
+          "slots": [
+            "components.command"
+          ]
+        },
+        {
+          "function": "DialogClose",
+          "prop": "size",
+          "value": "default",
+          "slots": [
+            "components.command"
+          ]
+        },
+        {
+          "function": "Dialog",
+          "prop": "showCloseButton",
+          "value": true,
+          "slots": [
+            "components.command"
+          ]
+        },
+        {
+          "function": "Dialog",
+          "prop": "isDismissable",
+          "value": true,
+          "slots": [
+            "components.command"
+          ]
+        },
+        {
+          "function": "DialogFooter",
+          "prop": "showCloseButton",
+          "value": false,
+          "slots": [
+            "components.command"
+          ]
+        }
+      ],
+      "variants": []
+    },
+    {
+      "item": "dropdown-menu",
+      "path": "apps/v4/registry/bases/aria/ui/dropdown-menu.tsx",
+      "inputSha256": "50a583093755eb29800812b189860b10f3aac3f7d48a3be23abe59c73dbb551d",
+      "content": "\"use client\"\n\nimport * as React from \"react\"\nimport { cn, classNames, type ClassValue, type VariantProps } from \"cn\"\nimport {\n  composeRenderProps,\n  Header as HeaderPrimitive,\n  MenuItem as MenuItemPrimitive,\n  Menu as MenuPrimitive,\n  MenuSection as MenuSectionPrimitive,\n  MenuTrigger as MenuTriggerPrimitive,\n  Popover as PopoverPrimitive,\n  Separator as SeparatorPrimitive,\n  SubmenuTrigger as SubmenuTriggerPrimitive,\n  type MenuItemProps as MenuItemPrimitiveProps,\n  type MenuSectionProps as MenuSectionPrimitiveProps,\n} from \"react-aria-components\"\n\nimport { IconPlaceholder } from \"@/app/(create)/components/icon-placeholder\"\n\nfunction DropdownMenuTrigger({\n  ...props\n}: React.ComponentProps<typeof MenuTriggerPrimitive>) {\n  return <MenuTriggerPrimitive data-slot=\"dropdown-menu-trigger\" {...props} />\n}\n\nfunction DropdownMenu({\n  /** @default \"dropdown-menu-content\" */\n  \"data-slot\": dataSlot = \"dropdown-menu-content\",\n  /** @default \"bottom start\" */\n  placement = \"bottom start\",\n  /** @default 4 */\n  offset = 4,\n  /** @default 0 */\n  crossOffset = 0,\n  className,\n  children,\n  ...props\n}: Omit<\n  React.ComponentProps<typeof MenuPrimitive<object>>,\n  \"children\" | \"className\"\n> &\n  Pick<\n    React.ComponentProps<typeof PopoverPrimitive>,\n    \"placement\" | \"offset\" | \"crossOffset\"\n  > & {\n    \"data-slot\"?: string\n    className?: string\n    children?: React.ReactNode\n  }) {\n  return (\n    <PopoverPrimitive\n      data-slot={dataSlot}\n      placement={placement}\n      offset={offset}\n      crossOffset={crossOffset}\n      className={cn(\n        \"cn-dropdown-menu-content-aria cn-menu-target cn-menu-translucent cn-menu-translucent-aria z-50 w-(--trigger-width) origin-(--trigger-anchor-point) overflow-x-hidden overflow-y-auto outline-none data-exiting:overflow-hidden\",\n        className\n      )}\n    >\n      <MenuPrimitive\n        className=\"max-h-[inherit] overflow-x-hidden overflow-y-auto outline-hidden\"\n        {...props}\n      >\n        {children}\n      </MenuPrimitive>\n    </PopoverPrimitive>\n  )\n}\n\nfunction DropdownMenuGroup({\n  ...props\n}: Omit<MenuSectionPrimitiveProps<object>, \"children\"> & {\n  children?: React.ReactNode\n}) {\n  return <MenuSectionPrimitive data-slot=\"dropdown-menu-group\" {...props} />\n}\n\nfunction DropdownMenuLabel({\n  className,\n  inset,\n  ...props\n}: React.ComponentProps<typeof HeaderPrimitive> & {\n  inset?: boolean\n}) {\n  return (\n    <HeaderPrimitive\n      data-slot=\"dropdown-menu-label\"\n      data-inset={inset}\n      className={cn(\"cn-dropdown-menu-label\", className)}\n      {...props}\n    />\n  )\n}\n\nconst dropdownMenuItemVariants_DEFINITION = {\"base\":\"group/dropdown-menu-item relative flex cursor-default items-center outline-hidden select-none data-disabled:pointer-events-none data-disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:shrink-0\",\"variants\":{\"selectionMode\":{\"none\":\"cn-dropdown-menu-item\",\"single\":\"cn-dropdown-menu-radio-item\",\"multiple\":\"cn-dropdown-menu-checkbox-item\"}},\"defaultVariants\":{}}\nfunction dropdownMenuItemVariants(props: { \"selectionMode\"?: \"none\" | \"single\" | \"multiple\" | null; class?: ClassValue; className?: ClassValue } = {}) {\n  props ??= {}\n  const definition = dropdownMenuItemVariants_DEFINITION\n  const key = (value: unknown) => typeof value === \"boolean\" ? String(value) : value === 0 ? \"0\" : value\n  const supplied = Object.fromEntries(Object.entries(props).filter(([, value]) => value !== undefined))\n  const values: { [axis: string]: unknown } = { ...definition.defaultVariants, ...supplied }\n  const selected = Object.entries(definition.variants).map(([axis, choices]) => {\n    if ((props as { [axis: string]: unknown })[axis] === null) return null\n    const value = key((props as { [axis: string]: unknown })[axis]) || key((definition.defaultVariants as { [axis: string]: unknown })[axis])\n    return (choices as { [value: string]: ClassValue })[String(value)]\n  })\n  const compound = (([]) as { [key: string]: unknown }[]).flatMap(({ class: value, className, ...conditions }) =>\n    Object.entries(conditions).every(([axis, expected]) => Array.isArray(expected) ? expected.includes(values[axis]) : values[axis] === expected)\n      ? [value as ClassValue, className as ClassValue] : [])\n  return classNames(definition.base, selected, compound, props.class, props.className)\n}\n\nfunction DropdownMenuItem({\n  className,\n  inset,\n  /** @default \"default\" */\n  variant = \"default\",\n  children,\n  ...props\n}: MenuItemPrimitiveProps<object> & {\n  inset?: boolean\n  variant?: \"default\" | \"destructive\"\n}) {\n  return (\n    <MenuItemPrimitive\n      data-slot=\"dropdown-menu-item\"\n      data-inset={inset}\n      data-variant={variant}\n      textValue={typeof children === \"string\" ? children : props.textValue}\n      className={composeRenderProps(className, (className, { selectionMode }) =>\n        cn(dropdownMenuItemVariants({ selectionMode }), className)\n      )}\n      {...props}\n    >\n      {composeRenderProps(\n        children,\n        (children, { isSelected, selectionMode }) => (\n          <>\n            {selectionMode !== \"none\" ? (\n              <span\n                className=\"cn-dropdown-menu-item-indicator pointer-events-none\"\n                data-slot={\n                  selectionMode === \"single\"\n                    ? \"dropdown-menu-radio-item-indicator\"\n                    : \"dropdown-menu-checkbox-item-indicator\"\n                }\n              >\n                {isSelected ? (\n                  <IconPlaceholder\n                    lucide=\"CheckIcon\"\n                    tabler=\"IconCheck\"\n                    hugeicons=\"Tick02Icon\"\n                    phosphor=\"CheckIcon\"\n                    remixicon=\"RiCheckLine\"\n                  />\n                ) : null}\n              </span>\n            ) : null}\n            {children}\n          </>\n        )\n      )}\n    </MenuItemPrimitive>\n  )\n}\n\nfunction DropdownMenuSub({\n  ...props\n}: React.ComponentProps<typeof SubmenuTriggerPrimitive>) {\n  return <SubmenuTriggerPrimitive data-slot=\"dropdown-menu-sub\" {...props} />\n}\n\nfunction DropdownMenuSubTrigger({\n  className,\n  inset,\n  children,\n  ...props\n}: MenuItemPrimitiveProps<object> & {\n  inset?: boolean\n}) {\n  return (\n    <MenuItemPrimitive\n      data-slot=\"dropdown-menu-sub-trigger\"\n      data-inset={inset}\n      textValue={typeof children === \"string\" ? children : props.textValue}\n      className={cn(\n        \"cn-dropdown-menu-sub-trigger flex cursor-default items-center outline-hidden select-none [&_svg]:pointer-events-none [&_svg]:shrink-0\",\n        className\n      )}\n      {...props}\n    >\n      {composeRenderProps(children, (children) => (\n        <>\n          {children}\n          <IconPlaceholder\n            lucide=\"ChevronRightIcon\"\n            tabler=\"IconChevronRight\"\n            hugeicons=\"ArrowRight01Icon\"\n            phosphor=\"CaretRightIcon\"\n            remixicon=\"RiArrowRightSLine\"\n            className=\"cn-rtl-flip ml-auto\"\n          />\n        </>\n      ))}\n    </MenuItemPrimitive>\n  )\n}\n\nfunction DropdownMenuSubContent({\n  /** @default \"end top\" */\n  placement = \"end top\",\n  crossOffset = -3,\n  /** @default 0 */\n  offset = 0,\n  className,\n  ...props\n}: React.ComponentProps<typeof DropdownMenu>) {\n  return (\n    <DropdownMenu\n      data-slot=\"dropdown-menu-sub-content\"\n      className={cn(\n        \"cn-dropdown-menu-sub-content-aria cn-menu-target cn-menu-translucent w-auto\",\n        className\n      )}\n      placement={placement}\n      crossOffset={crossOffset}\n      offset={offset}\n      {...props}\n    />\n  )\n}\n\nfunction DropdownMenuSeparator({\n  className,\n  ...props\n}: React.ComponentProps<typeof SeparatorPrimitive>) {\n  return (\n    <SeparatorPrimitive\n      data-slot=\"dropdown-menu-separator\"\n      className={cn(\"cn-dropdown-menu-separator\", className)}\n      {...props}\n    />\n  )\n}\n\nfunction DropdownMenuShortcut({\n  className,\n  ...props\n}: React.ComponentProps<\"span\">) {\n  return (\n    <span\n      data-slot=\"dropdown-menu-shortcut\"\n      className={cn(\"cn-dropdown-menu-shortcut\", className)}\n      {...props}\n    />\n  )\n}\n\nexport {\n  DropdownMenuTrigger,\n  DropdownMenu,\n  DropdownMenuGroup,\n  DropdownMenuLabel,\n  DropdownMenuItem,\n  DropdownMenuSeparator,\n  DropdownMenuShortcut,\n  DropdownMenuSub,\n  DropdownMenuSubTrigger,\n  DropdownMenuSubContent,\n}\n",
+      "defaults": [
+        {
+          "function": "DropdownMenu",
+          "prop": "dataSlot",
+          "value": "dropdown-menu-content",
+          "slots": [
+            "components.dropdown-menu"
+          ]
+        },
+        {
+          "function": "DropdownMenu",
+          "prop": "placement",
+          "value": "bottom start",
+          "slots": [
+            "components.dropdown-menu"
+          ]
+        },
+        {
+          "function": "DropdownMenu",
+          "prop": "offset",
+          "value": 4,
+          "slots": [
+            "components.dropdown-menu"
+          ]
+        },
+        {
+          "function": "DropdownMenu",
+          "prop": "crossOffset",
+          "value": 0,
+          "slots": [
+            "components.dropdown-menu"
+          ]
+        },
+        {
+          "function": "DropdownMenuItem",
+          "prop": "variant",
+          "value": "default",
+          "slots": [
+            "components.dropdown-menu"
+          ]
+        },
+        {
+          "function": "DropdownMenuSubContent",
+          "prop": "placement",
+          "value": "end top",
+          "slots": [
+            "components.dropdown-menu"
+          ]
+        },
+        {
+          "function": "DropdownMenuSubContent",
+          "prop": "offset",
+          "value": 0,
+          "slots": [
+            "components.dropdown-menu"
+          ]
+        }
+      ],
+      "variants": [
+        {
+          "item": "dropdown-menu",
+          "name": "dropdownMenuItemVariants",
+          "base": "group/dropdown-menu-item relative flex cursor-default items-center outline-hidden select-none data-disabled:pointer-events-none data-disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:shrink-0",
+          "config": {
+            "variants": {
+              "selectionMode": {
+                "none": "cn-dropdown-menu-item",
+                "single": "cn-dropdown-menu-radio-item",
+                "multiple": "cn-dropdown-menu-checkbox-item"
+              }
+            }
+          }
+        }
+      ]
+    },
+    {
+      "item": "empty",
+      "path": "apps/v4/registry/bases/aria/ui/empty.tsx",
+      "inputSha256": "05c419160ac0226973f6f00d7d8865dc46645a75ea0697138992cdbc736efec4",
+      "content": "import { cn, classNames, type ClassValue, type VariantProps } from \"cn\"\n\nfunction Empty({ className, ...props }: React.ComponentProps<\"div\">) {\n  return (\n    <div\n      data-slot=\"empty\"\n      className={cn(\n        \"cn-empty flex w-full min-w-0 flex-1 flex-col items-center justify-center text-center text-balance\",\n        className\n      )}\n      {...props}\n    />\n  )\n}\n\nfunction EmptyHeader({ className, ...props }: React.ComponentProps<\"div\">) {\n  return (\n    <div\n      data-slot=\"empty-header\"\n      className={cn(\n        \"cn-empty-header flex max-w-sm flex-col items-center\",\n        className\n      )}\n      {...props}\n    />\n  )\n}\n\nconst emptyMediaVariants_DEFINITION = {\"base\":\"cn-empty-media flex shrink-0 items-center justify-center [&_svg]:pointer-events-none [&_svg]:shrink-0\",\"variants\":{\"variant\":{\"default\":\"cn-empty-media-default\",\"icon\":\"cn-empty-media-icon\"}},\"defaultVariants\":{\"variant\":\"default\"}}\nfunction emptyMediaVariants(props: { \"variant\"?: \"default\" | \"icon\" | null; class?: ClassValue; className?: ClassValue } = {}) {\n  props ??= {}\n  const definition = emptyMediaVariants_DEFINITION\n  const key = (value: unknown) => typeof value === \"boolean\" ? String(value) : value === 0 ? \"0\" : value\n  const supplied = Object.fromEntries(Object.entries(props).filter(([, value]) => value !== undefined))\n  const values: { [axis: string]: unknown } = { ...definition.defaultVariants, ...supplied }\n  const selected = Object.entries(definition.variants).map(([axis, choices]) => {\n    if ((props as { [axis: string]: unknown })[axis] === null) return null\n    const value = key((props as { [axis: string]: unknown })[axis]) || key((definition.defaultVariants as { [axis: string]: unknown })[axis])\n    return (choices as { [value: string]: ClassValue })[String(value)]\n  })\n  const compound = (([]) as { [key: string]: unknown }[]).flatMap(({ class: value, className, ...conditions }) =>\n    Object.entries(conditions).every(([axis, expected]) => Array.isArray(expected) ? expected.includes(values[axis]) : values[axis] === expected)\n      ? [value as ClassValue, className as ClassValue] : [])\n  return classNames(definition.base, selected, compound, props.class, props.className)\n}\n\nfunction EmptyMedia({\n  className,\n  /** @default \"default\" */\n  variant = \"default\",\n  ...props\n}: React.ComponentProps<\"div\"> & VariantProps<typeof emptyMediaVariants>) {\n  return (\n    <div\n      data-slot=\"empty-icon\"\n      data-variant={variant}\n      className={cn(emptyMediaVariants({ variant, className }))}\n      {...props}\n    />\n  )\n}\n\nfunction EmptyTitle({ className, ...props }: React.ComponentProps<\"div\">) {\n  return (\n    <div\n      data-slot=\"empty-title\"\n      className={cn(\"cn-empty-title cn-font-heading\", className)}\n      {...props}\n    />\n  )\n}\n\nfunction EmptyDescription({ className, ...props }: React.ComponentProps<\"p\">) {\n  return (\n    <div\n      data-slot=\"empty-description\"\n      className={cn(\n        \"cn-empty-description text-muted-foreground [&>a]:underline [&>a]:underline-offset-4 [&>a:hover]:text-primary\",\n        className\n      )}\n      {...props}\n    />\n  )\n}\n\nfunction EmptyContent({ className, ...props }: React.ComponentProps<\"div\">) {\n  return (\n    <div\n      data-slot=\"empty-content\"\n      className={cn(\n        \"cn-empty-content flex w-full max-w-sm min-w-0 flex-col items-center text-balance\",\n        className\n      )}\n      {...props}\n    />\n  )\n}\n\nexport {\n  Empty,\n  EmptyHeader,\n  EmptyTitle,\n  EmptyDescription,\n  EmptyContent,\n  EmptyMedia,\n}\n",
+      "defaults": [
+        {
+          "function": "EmptyMedia",
+          "prop": "variant",
+          "value": "default",
+          "slots": [
+            "components.empty"
+          ]
+        }
+      ],
+      "variants": [
+        {
+          "item": "empty",
+          "name": "emptyMediaVariants",
+          "base": "cn-empty-media flex shrink-0 items-center justify-center [&_svg]:pointer-events-none [&_svg]:shrink-0",
+          "config": {
+            "variants": {
+              "variant": {
+                "default": "cn-empty-media-default",
+                "icon": "cn-empty-media-icon"
+              }
+            },
+            "defaultVariants": {
+              "variant": "default"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "item": "input",
+      "path": "apps/v4/registry/bases/aria/ui/input.tsx",
+      "inputSha256": "b9596748b7238b5605f558474e9d50afc1535c5832c57134055e4bbde5fa804f",
+      "content": "\"use client\"\n\nimport * as React from \"react\"\nimport { cn } from \"cn\"\nimport {\n  composeRenderProps,\n  Input as InputPrimitive,\n} from \"react-aria-components\"\n\nfunction Input({\n  className,\n  type,\n  ...props\n}: React.ComponentProps<typeof InputPrimitive>) {\n  return (\n    <InputPrimitive\n      type={type}\n      data-slot=\"input\"\n      className={composeRenderProps(className, (className) =>\n        cn(\n          \"cn-input w-full min-w-0 outline-none file:inline-flex file:border-0 file:bg-transparent file:text-foreground placeholder:text-muted-foreground disabled:pointer-events-none disabled:cursor-not-allowed disabled:opacity-50\",\n          className\n        )\n      )}\n      {...props}\n    />\n  )\n}\n\nexport { Input }\n",
+      "defaults": [],
+      "variants": []
+    },
+    {
+      "item": "input-group",
+      "path": "apps/v4/registry/bases/aria/ui/input-group.tsx",
+      "inputSha256": "f560ff23727006fc7790bef0f9dee2960e8eb00843f8644e9707f0c65582c9d6",
+      "content": "\"use client\"\n\nimport * as React from \"react\"\nimport { cn, classNames, type ClassValue, type VariantProps } from \"cn\"\nimport { Group, type GroupProps } from \"react-aria-components\"\n\nimport { Button } from \"@/registry/bases/aria/ui/button\"\nimport { Input } from \"@/registry/bases/aria/ui/input\"\nimport { Textarea } from \"@/registry/bases/aria/ui/textarea\"\n\nfunction InputGroup({ className, ...props }: GroupProps) {\n  return (\n    <Group\n      data-slot=\"input-group\"\n      className={cn(\n        \"group/input-group cn-input-group relative flex w-full min-w-0 items-center outline-none has-[>textarea]:h-auto\",\n        className\n      )}\n      {...props}\n    />\n  )\n}\n\nconst inputGroupAddonVariants_DEFINITION = {\"base\":\"cn-input-group-addon flex cursor-text items-center justify-center select-none\",\"variants\":{\"align\":{\"inline-start\":\"cn-input-group-addon-align-inline-start order-first\",\"inline-end\":\"cn-input-group-addon-align-inline-end order-last\",\"block-start\":\"cn-input-group-addon-align-block-start order-first w-full justify-start\",\"block-end\":\"cn-input-group-addon-align-block-end order-last w-full justify-start\"}},\"defaultVariants\":{\"align\":\"inline-start\"}}\nfunction inputGroupAddonVariants(props: { \"align\"?: \"inline-start\" | \"inline-end\" | \"block-start\" | \"block-end\" | null; class?: ClassValue; className?: ClassValue } = {}) {\n  props ??= {}\n  const definition = inputGroupAddonVariants_DEFINITION\n  const key = (value: unknown) => typeof value === \"boolean\" ? String(value) : value === 0 ? \"0\" : value\n  const supplied = Object.fromEntries(Object.entries(props).filter(([, value]) => value !== undefined))\n  const values: { [axis: string]: unknown } = { ...definition.defaultVariants, ...supplied }\n  const selected = Object.entries(definition.variants).map(([axis, choices]) => {\n    if ((props as { [axis: string]: unknown })[axis] === null) return null\n    const value = key((props as { [axis: string]: unknown })[axis]) || key((definition.defaultVariants as { [axis: string]: unknown })[axis])\n    return (choices as { [value: string]: ClassValue })[String(value)]\n  })\n  const compound = (([]) as { [key: string]: unknown }[]).flatMap(({ class: value, className, ...conditions }) =>\n    Object.entries(conditions).every(([axis, expected]) => Array.isArray(expected) ? expected.includes(values[axis]) : values[axis] === expected)\n      ? [value as ClassValue, className as ClassValue] : [])\n  return classNames(definition.base, selected, compound, props.class, props.className)\n}\n\nfunction InputGroupAddon({\n  className,\n  /** @default \"inline-start\" */\n  align = \"inline-start\",\n  ...props\n}: React.ComponentProps<\"div\"> & VariantProps<typeof inputGroupAddonVariants>) {\n  return (\n    <div\n      role=\"group\"\n      data-slot=\"input-group-addon\"\n      data-align={align}\n      className={cn(inputGroupAddonVariants({ align }), className)}\n      onClick={(e) => {\n        if ((e.target as HTMLElement).closest(\"button\")) {\n          return\n        }\n        e.currentTarget.parentElement?.querySelector(\"input\")?.focus()\n      }}\n      {...props}\n    />\n  )\n}\n\nconst inputGroupButtonVariants_DEFINITION = {\"base\":\"cn-input-group-button flex items-center shadow-none\",\"variants\":{\"size\":{\"xs\":\"cn-input-group-button-size-xs\",\"sm\":\"cn-input-group-button-size-sm\",\"icon-xs\":\"cn-input-group-button-size-icon-xs\",\"icon-sm\":\"cn-input-group-button-size-icon-sm\"}},\"defaultVariants\":{\"size\":\"xs\"}}\nfunction inputGroupButtonVariants(props: { \"size\"?: \"xs\" | \"sm\" | \"icon-xs\" | \"icon-sm\" | null; class?: ClassValue; className?: ClassValue } = {}) {\n  props ??= {}\n  const definition = inputGroupButtonVariants_DEFINITION\n  const key = (value: unknown) => typeof value === \"boolean\" ? String(value) : value === 0 ? \"0\" : value\n  const supplied = Object.fromEntries(Object.entries(props).filter(([, value]) => value !== undefined))\n  const values: { [axis: string]: unknown } = { ...definition.defaultVariants, ...supplied }\n  const selected = Object.entries(definition.variants).map(([axis, choices]) => {\n    if ((props as { [axis: string]: unknown })[axis] === null) return null\n    const value = key((props as { [axis: string]: unknown })[axis]) || key((definition.defaultVariants as { [axis: string]: unknown })[axis])\n    return (choices as { [value: string]: ClassValue })[String(value)]\n  })\n  const compound = (([]) as { [key: string]: unknown }[]).flatMap(({ class: value, className, ...conditions }) =>\n    Object.entries(conditions).every(([axis, expected]) => Array.isArray(expected) ? expected.includes(values[axis]) : values[axis] === expected)\n      ? [value as ClassValue, className as ClassValue] : [])\n  return classNames(definition.base, selected, compound, props.class, props.className)\n}\n\nfunction InputGroupButton({\n  className,\n  /** @default \"button\" */\n  type = \"button\",\n  /** @default \"ghost\" */\n  variant = \"ghost\",\n  /** @default \"xs\" */\n  size = \"xs\",\n  ...props\n}: Omit<React.ComponentProps<typeof Button>, \"size\" | \"type\"> &\n  VariantProps<typeof inputGroupButtonVariants> & {\n    type?: \"button\" | \"submit\" | \"reset\"\n  }) {\n  return (\n    <Button\n      type={type}\n      data-size={size}\n      variant={variant}\n      className={cn(inputGroupButtonVariants({ size }), className)}\n      {...props}\n    />\n  )\n}\n\nfunction InputGroupText({ className, ...props }: React.ComponentProps<\"span\">) {\n  return (\n    <span\n      className={cn(\n        \"cn-input-group-text flex items-center [&_svg]:pointer-events-none\",\n        className\n      )}\n      {...props}\n    />\n  )\n}\n\nfunction InputGroupInput({\n  className,\n  ...props\n}: React.ComponentProps<\"input\">) {\n  return (\n    <Input\n      data-slot=\"input-group-control\"\n      className={cn(\"cn-input-group-input flex-1\", className)}\n      {...props}\n    />\n  )\n}\n\nfunction InputGroupTextarea({\n  className,\n  ...props\n}: React.ComponentProps<\"textarea\">) {\n  return (\n    <Textarea\n      data-slot=\"input-group-control\"\n      className={cn(\"cn-input-group-textarea flex-1 resize-none\", className)}\n      {...props}\n    />\n  )\n}\n\nexport {\n  InputGroup,\n  InputGroupAddon,\n  InputGroupButton,\n  InputGroupText,\n  InputGroupInput,\n  InputGroupTextarea,\n}\n",
+      "defaults": [
+        {
+          "function": "InputGroupAddon",
+          "prop": "align",
+          "value": "inline-start",
+          "slots": [
+            "components.command"
+          ]
+        },
+        {
+          "function": "InputGroupButton",
+          "prop": "type",
+          "value": "button",
+          "slots": [
+            "components.command"
+          ]
+        },
+        {
+          "function": "InputGroupButton",
+          "prop": "variant",
+          "value": "ghost",
+          "slots": [
+            "components.command"
+          ]
+        },
+        {
+          "function": "InputGroupButton",
+          "prop": "size",
+          "value": "xs",
+          "slots": [
+            "components.command"
+          ]
+        }
+      ],
+      "variants": [
+        {
+          "item": "input-group",
+          "name": "inputGroupAddonVariants",
+          "base": "cn-input-group-addon flex cursor-text items-center justify-center select-none",
+          "config": {
+            "variants": {
+              "align": {
+                "inline-start": "cn-input-group-addon-align-inline-start order-first",
+                "inline-end": "cn-input-group-addon-align-inline-end order-last",
+                "block-start": "cn-input-group-addon-align-block-start order-first w-full justify-start",
+                "block-end": "cn-input-group-addon-align-block-end order-last w-full justify-start"
+              }
+            },
+            "defaultVariants": {
+              "align": "inline-start"
+            }
+          }
+        },
+        {
+          "item": "input-group",
+          "name": "inputGroupButtonVariants",
+          "base": "cn-input-group-button flex items-center shadow-none",
+          "config": {
+            "variants": {
+              "size": {
+                "xs": "cn-input-group-button-size-xs",
+                "sm": "cn-input-group-button-size-sm",
+                "icon-xs": "cn-input-group-button-size-icon-xs",
+                "icon-sm": "cn-input-group-button-size-icon-sm"
+              }
+            },
+            "defaultVariants": {
+              "size": "xs"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "item": "item",
+      "path": "apps/v4/registry/bases/aria/ui/item.tsx",
+      "inputSha256": "24f60eb69fe9631d8e58fc4eddda0a12b20c20f079f64aae94c92f81085a8302",
+      "content": "\"use client\"\n\nimport * as React from \"react\"\nimport { cn, classNames, type ClassValue, type VariantProps } from \"cn\"\nimport { Link as LinkPrimitive, type LinkProps } from \"react-aria-components\"\n\nimport { Separator } from \"@/registry/bases/aria/ui/separator\"\n\nfunction ItemGroup({ className, ...props }: React.ComponentProps<\"div\">) {\n  return (\n    <div\n      role=\"list\"\n      data-slot=\"item-group\"\n      className={cn(\n        \"cn-item-group group/item-group flex w-full flex-col\",\n        className\n      )}\n      {...props}\n    />\n  )\n}\n\nfunction ItemSeparator({\n  className,\n  ...props\n}: React.ComponentProps<typeof Separator>) {\n  return (\n    <Separator\n      data-slot=\"item-separator\"\n      orientation=\"horizontal\"\n      className={cn(\"cn-item-separator\", className)}\n      {...props}\n    />\n  )\n}\n\nconst itemVariants_DEFINITION = {\"base\":\"cn-item group/item flex w-full flex-wrap items-center transition-colors duration-100 outline-none focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 [a]:transition-colors\",\"variants\":{\"variant\":{\"default\":\"cn-item-variant-default\",\"outline\":\"cn-item-variant-outline\",\"muted\":\"cn-item-variant-muted\"},\"size\":{\"default\":\"cn-item-size-default\",\"sm\":\"cn-item-size-sm\",\"xs\":\"cn-item-size-xs\"}},\"defaultVariants\":{\"variant\":\"default\",\"size\":\"default\"}}\nfunction itemVariants(props: { \"variant\"?: \"default\" | \"outline\" | \"muted\" | null; \"size\"?: \"default\" | \"sm\" | \"xs\" | null; class?: ClassValue; className?: ClassValue } = {}) {\n  props ??= {}\n  const definition = itemVariants_DEFINITION\n  const key = (value: unknown) => typeof value === \"boolean\" ? String(value) : value === 0 ? \"0\" : value\n  const supplied = Object.fromEntries(Object.entries(props).filter(([, value]) => value !== undefined))\n  const values: { [axis: string]: unknown } = { ...definition.defaultVariants, ...supplied }\n  const selected = Object.entries(definition.variants).map(([axis, choices]) => {\n    if ((props as { [axis: string]: unknown })[axis] === null) return null\n    const value = key((props as { [axis: string]: unknown })[axis]) || key((definition.defaultVariants as { [axis: string]: unknown })[axis])\n    return (choices as { [value: string]: ClassValue })[String(value)]\n  })\n  const compound = (([]) as { [key: string]: unknown }[]).flatMap(({ class: value, className, ...conditions }) =>\n    Object.entries(conditions).every(([axis, expected]) => Array.isArray(expected) ? expected.includes(values[axis]) : values[axis] === expected)\n      ? [value as ClassValue, className as ClassValue] : [])\n  return classNames(definition.base, selected, compound, props.class, props.className)\n}\n\nfunction Item({\n  className,\n  /** @default \"default\" */\n  variant = \"default\",\n  /** @default \"default\" */\n  size = \"default\",\n  ...props\n}: Omit<LinkProps, \"children\"> &\n  React.HTMLAttributes<HTMLElement> &\n  VariantProps<typeof itemVariants>) {\n  const Element = \"href\" in props ? LinkPrimitive : \"div\"\n  return (\n    <Element\n      data-slot=\"item\"\n      data-variant={variant}\n      data-size={size}\n      className={cn(itemVariants({ variant, size, className }))}\n      {...props}\n    />\n  )\n}\n\nconst itemMediaVariants_DEFINITION = {\"base\":\"cn-item-media flex shrink-0 items-center justify-center [&_svg]:pointer-events-none\",\"variants\":{\"variant\":{\"default\":\"cn-item-media-variant-default\",\"icon\":\"cn-item-media-variant-icon\",\"image\":\"cn-item-media-variant-image\"}},\"defaultVariants\":{\"variant\":\"default\"}}\nfunction itemMediaVariants(props: { \"variant\"?: \"default\" | \"icon\" | \"image\" | null; class?: ClassValue; className?: ClassValue } = {}) {\n  props ??= {}\n  const definition = itemMediaVariants_DEFINITION\n  const key = (value: unknown) => typeof value === \"boolean\" ? String(value) : value === 0 ? \"0\" : value\n  const supplied = Object.fromEntries(Object.entries(props).filter(([, value]) => value !== undefined))\n  const values: { [axis: string]: unknown } = { ...definition.defaultVariants, ...supplied }\n  const selected = Object.entries(definition.variants).map(([axis, choices]) => {\n    if ((props as { [axis: string]: unknown })[axis] === null) return null\n    const value = key((props as { [axis: string]: unknown })[axis]) || key((definition.defaultVariants as { [axis: string]: unknown })[axis])\n    return (choices as { [value: string]: ClassValue })[String(value)]\n  })\n  const compound = (([]) as { [key: string]: unknown }[]).flatMap(({ class: value, className, ...conditions }) =>\n    Object.entries(conditions).every(([axis, expected]) => Array.isArray(expected) ? expected.includes(values[axis]) : values[axis] === expected)\n      ? [value as ClassValue, className as ClassValue] : [])\n  return classNames(definition.base, selected, compound, props.class, props.className)\n}\n\nfunction ItemMedia({\n  className,\n  /** @default \"default\" */\n  variant = \"default\",\n  ...props\n}: React.ComponentProps<\"div\"> & VariantProps<typeof itemMediaVariants>) {\n  return (\n    <div\n      data-slot=\"item-media\"\n      data-variant={variant}\n      className={cn(itemMediaVariants({ variant, className }))}\n      {...props}\n    />\n  )\n}\n\nfunction ItemContent({ className, ...props }: React.ComponentProps<\"div\">) {\n  return (\n    <div\n      data-slot=\"item-content\"\n      className={cn(\n        \"cn-item-content flex flex-1 flex-col [&+[data-slot=item-content]]:flex-none\",\n        className\n      )}\n      {...props}\n    />\n  )\n}\n\nfunction ItemTitle({ className, ...props }: React.ComponentProps<\"div\">) {\n  return (\n    <div\n      data-slot=\"item-title\"\n      className={cn(\n        \"cn-item-title line-clamp-1 flex w-fit items-center\",\n        className\n      )}\n      {...props}\n    />\n  )\n}\n\nfunction ItemDescription({ className, ...props }: React.ComponentProps<\"p\">) {\n  return (\n    <p\n      data-slot=\"item-description\"\n      className={cn(\n        \"cn-item-description line-clamp-2 font-normal [&>a]:underline [&>a]:underline-offset-4 [&>a:hover]:text-primary\",\n        className\n      )}\n      {...props}\n    />\n  )\n}\n\nfunction ItemActions({ className, ...props }: React.ComponentProps<\"div\">) {\n  return (\n    <div\n      data-slot=\"item-actions\"\n      className={cn(\"cn-item-actions flex items-center\", className)}\n      {...props}\n    />\n  )\n}\n\nfunction ItemHeader({ className, ...props }: React.ComponentProps<\"div\">) {\n  return (\n    <div\n      data-slot=\"item-header\"\n      className={cn(\n        \"cn-item-header flex basis-full items-center justify-between\",\n        className\n      )}\n      {...props}\n    />\n  )\n}\n\nfunction ItemFooter({ className, ...props }: React.ComponentProps<\"div\">) {\n  return (\n    <div\n      data-slot=\"item-footer\"\n      className={cn(\n        \"cn-item-footer flex basis-full items-center justify-between\",\n        className\n      )}\n      {...props}\n    />\n  )\n}\n\nexport {\n  Item,\n  ItemMedia,\n  ItemContent,\n  ItemActions,\n  ItemGroup,\n  ItemSeparator,\n  ItemTitle,\n  ItemDescription,\n  ItemHeader,\n  ItemFooter,\n}\n",
+      "defaults": [
+        {
+          "function": "Item",
+          "prop": "variant",
+          "value": "default",
+          "slots": [
+            "components.item"
+          ]
+        },
+        {
+          "function": "Item",
+          "prop": "size",
+          "value": "default",
+          "slots": [
+            "components.item"
+          ]
+        },
+        {
+          "function": "ItemMedia",
+          "prop": "variant",
+          "value": "default",
+          "slots": [
+            "components.item"
+          ]
+        }
+      ],
+      "variants": [
+        {
+          "item": "item",
+          "name": "itemVariants",
+          "base": "cn-item group/item flex w-full flex-wrap items-center transition-colors duration-100 outline-none focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 [a]:transition-colors",
+          "config": {
+            "variants": {
+              "variant": {
+                "default": "cn-item-variant-default",
+                "outline": "cn-item-variant-outline",
+                "muted": "cn-item-variant-muted"
+              },
+              "size": {
+                "default": "cn-item-size-default",
+                "sm": "cn-item-size-sm",
+                "xs": "cn-item-size-xs"
+              }
+            },
+            "defaultVariants": {
+              "variant": "default",
+              "size": "default"
+            }
+          }
+        },
+        {
+          "item": "item",
+          "name": "itemMediaVariants",
+          "base": "cn-item-media flex shrink-0 items-center justify-center [&_svg]:pointer-events-none",
+          "config": {
+            "variants": {
+              "variant": {
+                "default": "cn-item-media-variant-default",
+                "icon": "cn-item-media-variant-icon",
+                "image": "cn-item-media-variant-image"
+              }
+            },
+            "defaultVariants": {
+              "variant": "default"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "item": "scroll-area",
+      "path": "apps/v4/registry/bases/aria/ui/scroll-area.tsx",
+      "inputSha256": "aa831d9737a1e1bd49749f02a85a8e21e97e31974d4412e93445dd9b9d9e3ddd",
+      "content": "\"use client\"\n\nimport * as React from \"react\"\nimport { cn } from \"cn\"\n\nfunction ScrollArea({\n  className,\n  children,\n  ...props\n}: React.ComponentProps<\"div\">) {\n  // Use native scrollbar-width and scrollbar-color to customize the scrollbar.\n  return (\n    <div\n      data-slot=\"scroll-area\"\n      className={cn(\n        \"cn-scroll-area relative [scrollbar-width:thin] [scrollbar-color:var(--color-border)_transparent] overflow-auto outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50 focus-visible:outline-1\",\n        className\n      )}\n      {...props}\n    >\n      {children}\n    </div>\n  )\n}\n\nexport { ScrollArea }\n",
+      "defaults": [],
+      "variants": []
+    },
+    {
+      "item": "separator",
+      "path": "apps/v4/registry/bases/aria/ui/separator.tsx",
+      "inputSha256": "482ee8e50eaf1095fb6874ac18d430704820d2444a3944e1f93f7ab99e39a793",
+      "content": "\"use client\"\n\nimport { cn } from \"cn\"\nimport { Separator as SeparatorPrimitive } from \"react-aria-components\"\n\nfunction Separator({\n  className,\n  /** @default \"horizontal\" */\n  orientation = \"horizontal\",\n  ...props\n}: React.ComponentProps<typeof SeparatorPrimitive>) {\n  return (\n    <SeparatorPrimitive\n      data-slot=\"separator\"\n      orientation={orientation}\n      className={cn(\n        \"block shrink-0 border-0 bg-border aria-[orientation=horizontal]:h-px aria-[orientation=horizontal]:w-full aria-[orientation=vertical]:w-px aria-[orientation=vertical]:self-stretch [:is(hr)]:h-px [:is(hr)]:w-full\",\n        className\n      )}\n      {...props}\n    />\n  )\n}\n\nexport { Separator }\n",
+      "defaults": [
+        {
+          "function": "Separator",
+          "prop": "orientation",
+          "value": "horizontal",
+          "slots": [
+            "components.item",
+            "components.sidebar"
+          ]
+        }
+      ],
+      "variants": []
+    },
+    {
+      "item": "sheet",
+      "path": "apps/v4/registry/bases/aria/ui/sheet.tsx",
+      "inputSha256": "9120f139e46df8242946239a00ddb3de21638ddfc68bbfafce933b66807ec230",
+      "content": "\"use client\"\n\nimport * as React from \"react\"\nimport { cn, resolveRailCopy, RAIL_COPY_REFS, type CopyResolver } from \"cn\"\nimport {\n  Heading,\n  ModalOverlay as ModalOverlayPrimitive,\n  Modal as ModalPrimitive,\n  Dialog as SheetPrimitive,\n  DialogTrigger as SheetTriggerPrimitive,\n  type ModalOverlayProps as ModalOverlayPrimitiveProps,\n  type DialogProps as SheetPrimitiveProps,\n  type DialogTriggerProps as SheetTriggerPrimitiveProps,\n} from \"react-aria-components\"\n\nimport { Button } from \"@/registry/bases/aria/ui/button\"\nimport { IconPlaceholder } from \"@/app/(create)/components/icon-placeholder\"\n\nfunction SheetTrigger({ ...props }: SheetTriggerPrimitiveProps) {\n  return <SheetTriggerPrimitive data-slot=\"sheet-trigger\" {...props} />\n}\n\nfunction SheetClose({\n  className,\n  /** @default \"outline\" */\n  variant = \"outline\",\n  /** @default \"default\" */\n  size = \"default\",\n  ...props\n}: React.ComponentProps<typeof Button>) {\n  return (\n    <Button\n      slot=\"close\"\n      data-slot=\"sheet-close\"\n      variant={variant}\n      size={size}\n      className={cn(className)}\n      {...props}\n    />\n  )\n}\n\nfunction SheetOverlay({\n  className,\n  children,\n  ...props\n}: Omit<ModalOverlayPrimitiveProps, \"className\" | \"children\"> & {\n  className?: string\n  children: React.ReactNode\n}) {\n  return (\n    <ModalOverlayPrimitive\n      data-slot=\"sheet-overlay\"\n      isDismissable\n      className={cn(\n        \"cn-sheet-overlay fixed inset-0 z-50 transition-opacity duration-150 data-entering:opacity-0 data-exiting:opacity-0\",\n        className\n      )}\n      {...props}\n    >\n      {children}\n    </ModalOverlayPrimitive>\n  )\n}\n\nfunction Sheet({\n  copyResolver,\n  className,\n  children,\n  /** @default \"right\" */\n  side = \"right\",\n  /** @default true */\n  showCloseButton = true,\n  ...props\n}: (Omit<ModalOverlayPrimitiveProps, \"className\" | \"children\"> &\n  Pick<React.ComponentProps<typeof ModalPrimitive>, \"isDismissable\"> & {\n    className?: string\n    children: React.ReactNode\n    side?: \"top\" | \"right\" | \"bottom\" | \"left\"\n    showCloseButton?: boolean\n  }) & { copyResolver?: CopyResolver }) {\n  return (\n    <SheetOverlay {...props}>\n      <ModalPrimitive\n        data-slot=\"sheet-content\"\n        data-side={side}\n        className={cn(\n          \"cn-sheet-content data-entering:opacity-0 data-exiting:opacity-0 data-[side=bottom]:data-entering:translate-y-[2.5rem] data-[side=bottom]:data-exiting:translate-y-[2.5rem] data-[side=left]:data-entering:translate-x-[-2.5rem] data-[side=left]:data-exiting:translate-x-[-2.5rem] data-[side=right]:data-entering:translate-x-[2.5rem] data-[side=right]:data-exiting:translate-x-[2.5rem] data-[side=top]:data-entering:translate-y-[-2.5rem] data-[side=top]:data-exiting:translate-y-[-2.5rem]\",\n          className\n        )}\n      >\n        <SheetPrimitive\n          data-slot=\"sheet\"\n          className=\"[display:inherit] h-full max-h-[inherit] [flex-direction:inherit] [gap:inherit] outline-none\"\n        >\n          {children}\n          {showCloseButton && (\n            <SheetClose\n              variant=\"ghost\"\n              className=\"cn-sheet-close\"\n              size=\"icon-sm\"\n            >\n              <IconPlaceholder\n                lucide=\"XIcon\"\n                tabler=\"IconX\"\n                hugeicons=\"Cancel01Icon\"\n                phosphor=\"XIcon\"\n                remixicon=\"RiCloseLine\"\n              />\n              <span className=\"sr-only\">{resolveRailCopy(copyResolver, RAIL_COPY_REFS[\"sheet.close\"])}</span>\n            </SheetClose>\n          )}\n        </SheetPrimitive>\n      </ModalPrimitive>\n    </SheetOverlay>\n  )\n}\n\nfunction SheetContent({\n  className,\n  children,\n  /** @default \"right\" */\n  side = \"right\",\n  /** @default true */\n  showCloseButton = true,\n  ...props\n}: React.ComponentProps<typeof Sheet> & {\n  side?: \"top\" | \"right\" | \"bottom\" | \"left\"\n  showCloseButton?: boolean\n}) {\n  return (\n    <Sheet\n      className={className}\n      side={side}\n      showCloseButton={showCloseButton}\n      {...props}\n    >\n      {children}\n    </Sheet>\n  )\n}\n\nfunction SheetHeader({ className, ...props }: React.ComponentProps<\"div\">) {\n  return (\n    <div\n      data-slot=\"sheet-header\"\n      className={cn(\"cn-sheet-header flex flex-col\", className)}\n      {...props}\n    />\n  )\n}\n\nfunction SheetFooter({ className, ...props }: React.ComponentProps<\"div\">) {\n  return (\n    <div\n      data-slot=\"sheet-footer\"\n      className={cn(\"cn-sheet-footer mt-auto flex flex-col\", className)}\n      {...props}\n    />\n  )\n}\n\nfunction SheetTitle({\n  className,\n  ...props\n}: Omit<React.ComponentProps<typeof Heading>, \"slot\">) {\n  return (\n    <Heading\n      slot=\"title\"\n      data-slot=\"sheet-title\"\n      className={cn(\"cn-sheet-title cn-font-heading\", className)}\n      {...props}\n    />\n  )\n}\n\nfunction SheetDescription({\n  className,\n  ...props\n}: Omit<React.ComponentProps<\"div\">, \"slot\">) {\n  return (\n    <div\n      data-slot=\"sheet-description\"\n      className={cn(\"cn-sheet-description\", className)}\n      {...props}\n    />\n  )\n}\n\nexport {\n  type SheetPrimitiveProps,\n  type SheetTriggerPrimitiveProps,\n  Sheet,\n  SheetTrigger,\n  SheetClose,\n  SheetContent,\n  SheetHeader,\n  SheetFooter,\n  SheetTitle,\n  SheetDescription,\n}\n",
+      "defaults": [
+        {
+          "function": "SheetClose",
+          "prop": "variant",
+          "value": "outline",
+          "slots": [
+            "components.sheet"
+          ]
+        },
+        {
+          "function": "SheetClose",
+          "prop": "size",
+          "value": "default",
+          "slots": [
+            "components.sheet"
+          ]
+        },
+        {
+          "function": "Sheet",
+          "prop": "side",
+          "value": "right",
+          "slots": [
+            "components.sheet"
+          ]
+        },
+        {
+          "function": "Sheet",
+          "prop": "showCloseButton",
+          "value": true,
+          "slots": [
+            "components.sheet"
+          ]
+        },
+        {
+          "function": "SheetContent",
+          "prop": "side",
+          "value": "right",
+          "slots": [
+            "components.sheet"
+          ]
+        },
+        {
+          "function": "SheetContent",
+          "prop": "showCloseButton",
+          "value": true,
+          "slots": [
+            "components.sheet"
+          ]
+        }
+      ],
+      "variants": []
+    },
+    {
+      "item": "sidebar",
+      "path": "apps/v4/registry/bases/aria/ui/sidebar.tsx",
+      "inputSha256": "183522be3bb9b5c96123461df155e3c5df08e63cf9ac00c9e81a5748d857165f",
+      "content": "\"use client\"\n\nimport * as React from \"react\"\nimport { cn, classNames, type ClassValue, type VariantProps, resolveRailCopy, RAIL_COPY_REFS, type CopyResolver } from \"cn\"\nimport {\n  Button as ButtonPrimitive,\n  Link as LinkPrimitive,\n  type ButtonProps,\n  type LinkProps,\n} from \"react-aria-components\"\n\nimport { useIsMobile } from \"@/registry/bases/aria/hooks/use-mobile\"\nimport { Button } from \"@/registry/bases/aria/ui/button\"\nimport { Input } from \"@/registry/bases/aria/ui/input\"\nimport { Separator } from \"@/registry/bases/aria/ui/separator\"\nimport {\n  Sheet,\n  SheetDescription,\n  SheetHeader,\n  SheetTitle,\n} from \"@/registry/bases/aria/ui/sheet\"\nimport { Skeleton } from \"@/registry/bases/aria/ui/skeleton\"\nimport { Tooltip, TooltipTrigger } from \"@/registry/bases/aria/ui/tooltip\"\nimport { IconPlaceholder } from \"@/app/(create)/components/icon-placeholder\"\n\nconst SIDEBAR_COOKIE_NAME = \"sidebar_state\"\nconst SIDEBAR_COOKIE_MAX_AGE = 60 * 60 * 24 * 7\nconst SIDEBAR_WIDTH = \"16rem\"\nconst SIDEBAR_WIDTH_MOBILE = \"18rem\"\nconst SIDEBAR_WIDTH_ICON = \"3rem\"\nconst SIDEBAR_KEYBOARD_SHORTCUT = \"b\"\n\ntype SidebarContextProps = {\n  state: \"expanded\" | \"collapsed\"\n  open: boolean\n  setOpen: (open: boolean) => void\n  openMobile: boolean\n  setOpenMobile: (open: boolean) => void\n  isMobile: boolean\n  toggleSidebar: () => void\n}\n\ntype SidebarButtonProps =\n  | (LinkProps & { href: string })\n  | (ButtonProps & { href?: never })\n\nconst SidebarContext = React.createContext<SidebarContextProps | null>(null)\n\nfunction useSidebar() {\n  const context = React.useContext(SidebarContext)\n  if (!context) {\n    throw new Error(\"useSidebar must be used within a SidebarProvider.\")\n  }\n\n  return context\n}\n\nfunction SidebarProvider({\n  /** @default true */\n  defaultOpen = true,\n  open: openProp,\n  onOpenChange: setOpenProp,\n  className,\n  style,\n  children,\n  ...props\n}: React.ComponentProps<\"div\"> & {\n  defaultOpen?: boolean\n  open?: boolean\n  onOpenChange?: (open: boolean) => void\n}) {\n  const isMobile = useIsMobile()\n  const [openMobile, setOpenMobile] = React.useState(false)\n\n  // This is the internal state of the sidebar.\n  // We use openProp and setOpenProp for control from outside the component.\n  const [_open, _setOpen] = React.useState(defaultOpen)\n  const open = openProp ?? _open\n  const setOpen = React.useCallback(\n    (value: boolean | ((value: boolean) => boolean)) => {\n      const openState = typeof value === \"function\" ? value(open) : value\n      if (setOpenProp) {\n        setOpenProp(openState)\n      } else {\n        _setOpen(openState)\n      }\n\n      // This sets the cookie to keep the sidebar state.\n      document.cookie = `${SIDEBAR_COOKIE_NAME}=${openState}; path=/; max-age=${SIDEBAR_COOKIE_MAX_AGE}`\n    },\n    [setOpenProp, open]\n  )\n\n  // Helper to toggle the sidebar.\n  const toggleSidebar = React.useCallback(() => {\n    return isMobile ? setOpenMobile((open) => !open) : setOpen((open) => !open)\n  }, [isMobile, setOpen, setOpenMobile])\n\n  // Adds a keyboard shortcut to toggle the sidebar.\n  React.useEffect(() => {\n    const handleKeyDown = (event: KeyboardEvent) => {\n      if (\n        event.key === SIDEBAR_KEYBOARD_SHORTCUT &&\n        (event.metaKey || event.ctrlKey)\n      ) {\n        event.preventDefault()\n        toggleSidebar()\n      }\n    }\n\n    window.addEventListener(\"keydown\", handleKeyDown)\n    return () => window.removeEventListener(\"keydown\", handleKeyDown)\n  }, [toggleSidebar])\n\n  // We add a state so that we can do data-state=\"expanded\" or \"collapsed\".\n  // This makes it easier to style the sidebar with Tailwind classes.\n  const state = open ? \"expanded\" : \"collapsed\"\n\n  const contextValue = React.useMemo<SidebarContextProps>(\n    () => ({\n      state,\n      open,\n      setOpen,\n      isMobile,\n      openMobile,\n      setOpenMobile,\n      toggleSidebar,\n    }),\n    [state, open, setOpen, isMobile, openMobile, setOpenMobile, toggleSidebar]\n  )\n\n  return (\n    <SidebarContext.Provider value={contextValue}>\n      <div\n        data-slot=\"sidebar-wrapper\"\n        style={\n          {\n            \"--sidebar-width\": SIDEBAR_WIDTH,\n            \"--sidebar-width-icon\": SIDEBAR_WIDTH_ICON,\n            ...style,\n          } as React.CSSProperties\n        }\n        className={cn(\n          \"group/sidebar-wrapper flex min-h-svh w-full has-data-[variant=inset]:bg-sidebar\",\n          className\n        )}\n        {...props}\n      >\n        {children}\n      </div>\n    </SidebarContext.Provider>\n  )\n}\n\nfunction Sidebar({\n  copyResolver,\n  /** @default \"left\" */\n  side = \"left\",\n  /** @default \"sidebar\" */\n  variant = \"sidebar\",\n  /** @default \"offcanvas\" */\n  collapsible = \"offcanvas\",\n  className,\n  children,\n  dir,\n  ...props\n}: (React.ComponentProps<\"div\"> & {\n  side?: \"left\" | \"right\"\n  variant?: \"sidebar\" | \"floating\" | \"inset\"\n  collapsible?: \"offcanvas\" | \"icon\" | \"none\"\n}) & { copyResolver?: CopyResolver }) {\n  const { isMobile, state, openMobile, setOpenMobile } = useSidebar()\n\n  if (collapsible === \"none\") {\n    return (\n      <div\n        data-slot=\"sidebar\"\n        className={cn(\n          \"flex h-full w-(--sidebar-width) flex-col bg-sidebar text-sidebar-foreground\",\n          className\n        )}\n        {...props}\n      >\n        {children}\n      </div>\n    )\n  }\n\n  if (isMobile) {\n    return (\n      <Sheet\n        copyResolver={copyResolver}\n        isOpen={openMobile}\n        onOpenChange={setOpenMobile}\n        dir={dir}\n        data-sidebar=\"sidebar\"\n        data-slot=\"sidebar\"\n        data-mobile=\"true\"\n        className=\"w-(--sidebar-width) bg-sidebar p-0 text-sidebar-foreground [&>button]:hidden\"\n        style={\n          {\n            \"--sidebar-width\": SIDEBAR_WIDTH_MOBILE,\n          } as React.CSSProperties\n        }\n        side={side}\n        {...props}\n      >\n        <SheetHeader className=\"sr-only\">\n          <SheetTitle>{resolveRailCopy(copyResolver, RAIL_COPY_REFS[\"sidebar.title\"])}</SheetTitle>\n          <SheetDescription>{resolveRailCopy(copyResolver, RAIL_COPY_REFS[\"sidebar.description\"])}</SheetDescription>\n        </SheetHeader>\n        <div className=\"flex h-full w-full flex-col\">{children}</div>\n      </Sheet>\n    )\n  }\n\n  return (\n    <div\n      className=\"group peer hidden text-sidebar-foreground md:block\"\n      data-state={state}\n      data-collapsible={state === \"collapsed\" ? collapsible : \"\"}\n      data-variant={variant}\n      data-side={side}\n      data-slot=\"sidebar\"\n    >\n      {/* This is what handles the sidebar gap on desktop */}\n      <div\n        data-slot=\"sidebar-gap\"\n        className={cn(\n          \"cn-sidebar-gap relative w-(--sidebar-width) bg-transparent\",\n          \"group-data-[collapsible=offcanvas]:w-0\",\n          \"group-data-[side=right]:rotate-180\",\n          variant === \"floating\" || variant === \"inset\"\n            ? \"group-data-[collapsible=icon]:w-[calc(var(--sidebar-width-icon)+(--spacing(4)))]\"\n            : \"group-data-[collapsible=icon]:w-(--sidebar-width-icon)\"\n        )}\n      />\n      <div\n        data-slot=\"sidebar-container\"\n        data-side={side}\n        className={cn(\n          \"fixed inset-y-0 z-10 hidden h-svh w-(--sidebar-width) transition-[left,right,width] duration-200 ease-linear data-[side=left]:left-0 data-[side=left]:group-data-[collapsible=offcanvas]:left-[calc(var(--sidebar-width)*-1)] data-[side=right]:right-0 data-[side=right]:group-data-[collapsible=offcanvas]:right-[calc(var(--sidebar-width)*-1)] md:flex\",\n          // Adjust the padding for floating and inset variants.\n          variant === \"floating\" || variant === \"inset\"\n            ? \"p-2 group-data-[collapsible=icon]:w-[calc(var(--sidebar-width-icon)+(--spacing(4))+2px)]\"\n            : \"group-data-[collapsible=icon]:w-(--sidebar-width-icon) group-data-[side=left]:border-r group-data-[side=right]:border-l\",\n          className\n        )}\n        {...props}\n      >\n        <div\n          data-sidebar=\"sidebar\"\n          data-slot=\"sidebar-inner\"\n          className=\"cn-sidebar-inner flex size-full flex-col\"\n        >\n          {children}\n        </div>\n      </div>\n    </div>\n  )\n}\n\nfunction SidebarTrigger({\n  copyResolver,\n  className,\n  onPress,\n  ...props\n}: (React.ComponentProps<typeof Button>) & { copyResolver?: CopyResolver }) {\n  const { toggleSidebar } = useSidebar()\n\n  return (\n    <Button\n      data-sidebar=\"trigger\"\n      data-slot=\"sidebar-trigger\"\n      variant=\"ghost\"\n      size=\"icon-sm\"\n      className={cn(\"cn-sidebar-trigger\", className)}\n      onPress={(event) => {\n        onPress?.(event)\n        toggleSidebar()\n      }}\n      {...props}\n    >\n      <IconPlaceholder\n        lucide=\"PanelLeftIcon\"\n        tabler=\"IconLayoutSidebar\"\n        hugeicons=\"SidebarLeftIcon\"\n        phosphor=\"SidebarIcon\"\n        remixicon=\"RiSideBarLine\"\n        className=\"cn-rtl-flip\"\n      />\n      <span className=\"sr-only\">{resolveRailCopy(copyResolver, RAIL_COPY_REFS[\"sidebar.toggle\"])}</span>\n    </Button>\n  )\n}\n\nfunction SidebarRail({\n  copyResolver, className, ...props }: (React.ComponentProps<\"button\">) & { copyResolver?: CopyResolver }) {\n  const { toggleSidebar } = useSidebar()\n\n  return (\n    <button\n      data-sidebar=\"rail\"\n      data-slot=\"sidebar-rail\"\n      aria-label={resolveRailCopy(copyResolver, RAIL_COPY_REFS[\"sidebar.toggle\"])}\n      tabIndex={-1}\n      onClick={toggleSidebar}\n      title={resolveRailCopy(copyResolver, RAIL_COPY_REFS[\"sidebar.toggle\"])}\n      className={cn(\n        \"cn-sidebar-rail absolute inset-y-0 z-20 hidden w-4 transition-all ease-linear group-data-[side=left]:-right-4 group-data-[side=right]:left-0 after:absolute after:inset-y-0 after:start-1/2 after:w-[2px] sm:flex ltr:-translate-x-1/2 rtl:-translate-x-1/2\",\n        \"in-data-[side=left]:cursor-w-resize in-data-[side=right]:cursor-e-resize\",\n        \"[[data-side=left][data-state=collapsed]_&]:cursor-e-resize [[data-side=right][data-state=collapsed]_&]:cursor-w-resize\",\n        \"group-data-[collapsible=offcanvas]:translate-x-0 group-data-[collapsible=offcanvas]:after:left-full hover:group-data-[collapsible=offcanvas]:bg-sidebar\",\n        \"[[data-side=left][data-collapsible=offcanvas]_&]:-right-2\",\n        \"[[data-side=right][data-collapsible=offcanvas]_&]:-left-2\",\n        className\n      )}\n      {...props}\n    />\n  )\n}\n\nfunction SidebarInset({ className, ...props }: React.ComponentProps<\"main\">) {\n  return (\n    <main\n      data-slot=\"sidebar-inset\"\n      className={cn(\n        \"cn-sidebar-inset relative flex w-full flex-1 flex-col\",\n        className\n      )}\n      {...props}\n    />\n  )\n}\n\nfunction SidebarInput({\n  className,\n  ...props\n}: React.ComponentProps<typeof Input>) {\n  return (\n    <Input\n      data-slot=\"sidebar-input\"\n      data-sidebar=\"input\"\n      className={cn(\"cn-sidebar-input\", className)}\n      {...props}\n    />\n  )\n}\n\nfunction SidebarHeader({ className, ...props }: React.ComponentProps<\"div\">) {\n  return (\n    <div\n      data-slot=\"sidebar-header\"\n      data-sidebar=\"header\"\n      className={cn(\"cn-sidebar-header flex flex-col\", className)}\n      {...props}\n    />\n  )\n}\n\nfunction SidebarFooter({ className, ...props }: React.ComponentProps<\"div\">) {\n  return (\n    <div\n      data-slot=\"sidebar-footer\"\n      data-sidebar=\"footer\"\n      className={cn(\"cn-sidebar-footer flex flex-col\", className)}\n      {...props}\n    />\n  )\n}\n\nfunction SidebarSeparator({\n  className,\n  ...props\n}: React.ComponentProps<typeof Separator>) {\n  return (\n    <Separator\n      data-slot=\"sidebar-separator\"\n      data-sidebar=\"separator\"\n      className={cn(\"cn-sidebar-separator w-auto\", className)}\n      {...props}\n    />\n  )\n}\n\nfunction SidebarContent({ className, ...props }: React.ComponentProps<\"div\">) {\n  return (\n    <div\n      data-slot=\"sidebar-content\"\n      data-sidebar=\"content\"\n      className={cn(\n        \"cn-sidebar-content flex min-h-0 flex-1 flex-col overflow-auto group-data-[collapsible=icon]:overflow-hidden\",\n        className\n      )}\n      {...props}\n    />\n  )\n}\n\nfunction SidebarGroup({ className, ...props }: React.ComponentProps<\"div\">) {\n  return (\n    <div\n      data-slot=\"sidebar-group\"\n      data-sidebar=\"group\"\n      className={cn(\n        \"cn-sidebar-group relative flex w-full min-w-0 flex-col\",\n        className\n      )}\n      {...props}\n    />\n  )\n}\n\nfunction SidebarGroupLabel({\n  className,\n  /** @default \"div\" */\n  elementType: Element = \"div\",\n  ...props\n}: React.HTMLAttributes<HTMLElement> & { elementType?: React.ElementType }) {\n  return (\n    <Element\n      data-slot=\"sidebar-group-label\"\n      data-sidebar=\"group-label\"\n      className={cn(\n        \"cn-sidebar-group-label flex shrink-0 items-center outline-hidden [&>svg]:shrink-0\",\n        className\n      )}\n      {...props}\n    />\n  )\n}\n\nfunction SidebarGroupAction({\n  className,\n  ...props\n}: React.ComponentProps<\"button\">) {\n  return (\n    <button\n      data-slot=\"sidebar-group-action\"\n      data-sidebar=\"group-action\"\n      className={cn(\n        \"cn-sidebar-group-action flex aspect-square items-center justify-center outline-hidden transition-transform group-data-[collapsible=icon]:hidden after:absolute after:-inset-2 md:after:hidden [&>svg]:shrink-0\",\n        className\n      )}\n      {...props}\n    />\n  )\n}\n\nfunction SidebarGroupContent({\n  className,\n  ...props\n}: React.ComponentProps<\"div\">) {\n  return (\n    <div\n      data-slot=\"sidebar-group-content\"\n      data-sidebar=\"group-content\"\n      className={cn(\"cn-sidebar-group-content w-full\", className)}\n      {...props}\n    />\n  )\n}\n\nfunction SidebarMenu({ className, ...props }: React.ComponentProps<\"div\">) {\n  return (\n    <div\n      data-slot=\"sidebar-menu\"\n      data-sidebar=\"menu\"\n      className={cn(\"cn-sidebar-menu flex w-full min-w-0 flex-col\", className)}\n      {...props}\n    />\n  )\n}\n\nfunction SidebarMenuItem({ className, ...props }: React.ComponentProps<\"div\">) {\n  return (\n    <div\n      data-slot=\"sidebar-menu-item\"\n      data-sidebar=\"menu-item\"\n      className={cn(\"group/menu-item relative\", className)}\n      {...props}\n    />\n  )\n}\n\nconst sidebarMenuButtonVariants_DEFINITION = {\"base\":\"cn-sidebar-menu-button cn-sidebar-menu-button-aria peer/menu-button group/menu-button flex w-full items-center overflow-hidden outline-hidden disabled:pointer-events-none disabled:opacity-50 aria-disabled:pointer-events-none aria-disabled:opacity-50 [&_svg]:size-4 [&_svg]:shrink-0 [&>span:last-child]:truncate\",\"variants\":{\"variant\":{\"default\":\"cn-sidebar-menu-button-variant-default\",\"outline\":\"cn-sidebar-menu-button-variant-outline\"},\"size\":{\"default\":\"cn-sidebar-menu-button-size-default\",\"sm\":\"cn-sidebar-menu-button-size-sm\",\"lg\":\"cn-sidebar-menu-button-size-lg\"}},\"defaultVariants\":{\"variant\":\"default\",\"size\":\"default\"}}\nfunction sidebarMenuButtonVariants(props: { \"variant\"?: \"default\" | \"outline\" | null; \"size\"?: \"default\" | \"sm\" | \"lg\" | null; class?: ClassValue; className?: ClassValue } = {}) {\n  props ??= {}\n  const definition = sidebarMenuButtonVariants_DEFINITION\n  const key = (value: unknown) => typeof value === \"boolean\" ? String(value) : value === 0 ? \"0\" : value\n  const supplied = Object.fromEntries(Object.entries(props).filter(([, value]) => value !== undefined))\n  const values: { [axis: string]: unknown } = { ...definition.defaultVariants, ...supplied }\n  const selected = Object.entries(definition.variants).map(([axis, choices]) => {\n    if ((props as { [axis: string]: unknown })[axis] === null) return null\n    const value = key((props as { [axis: string]: unknown })[axis]) || key((definition.defaultVariants as { [axis: string]: unknown })[axis])\n    return (choices as { [value: string]: ClassValue })[String(value)]\n  })\n  const compound = (([]) as { [key: string]: unknown }[]).flatMap(({ class: value, className, ...conditions }) =>\n    Object.entries(conditions).every(([axis, expected]) => Array.isArray(expected) ? expected.includes(values[axis]) : values[axis] === expected)\n      ? [value as ClassValue, className as ClassValue] : [])\n  return classNames(definition.base, selected, compound, props.class, props.className)\n}\n\nfunction SidebarMenuButton({\n  /** @default false */\n  isActive = false,\n  /** @default \"default\" */\n  variant = \"default\",\n  /** @default \"default\" */\n  size = \"default\",\n  tooltip,\n  className,\n  ...props\n}: SidebarButtonProps & {\n  isActive?: boolean\n  tooltip?: string | React.ComponentProps<typeof Tooltip>\n} & VariantProps<typeof sidebarMenuButtonVariants>) {\n  const { isMobile, state } = useSidebar()\n  const comp =\n    props.href !== undefined ? (\n      <LinkPrimitive\n        data-slot=\"sidebar-menu-button\"\n        data-sidebar=\"menu-button\"\n        data-size={size}\n        data-active={isActive}\n        className={cn(sidebarMenuButtonVariants({ variant, size }), className)}\n        {...props}\n      />\n    ) : (\n      <ButtonPrimitive\n        data-slot=\"sidebar-menu-button\"\n        data-sidebar=\"menu-button\"\n        data-size={size}\n        data-active={isActive}\n        className={cn(sidebarMenuButtonVariants({ variant, size }), className)}\n        {...props}\n      />\n    )\n\n  if (!tooltip) {\n    return comp\n  }\n\n  if (typeof tooltip === \"string\") {\n    tooltip = {\n      children: tooltip,\n    }\n  }\n\n  return (\n    <TooltipTrigger isDisabled={state !== \"collapsed\" || isMobile}>\n      {comp}\n      <Tooltip placement=\"right\" {...tooltip} />\n    </TooltipTrigger>\n  )\n}\n\nfunction SidebarMenuAction({\n  className,\n  /** @default false */\n  showOnHover = false,\n  ...props\n}: ButtonProps & {\n  showOnHover?: boolean\n}) {\n  return (\n    <ButtonPrimitive\n      data-slot=\"sidebar-menu-action\"\n      data-sidebar=\"menu-action\"\n      className={cn(\n        \"cn-sidebar-menu-action flex items-center justify-center outline-hidden transition-transform group-data-[collapsible=icon]:hidden after:absolute after:-inset-2 md:after:hidden [&>svg]:shrink-0\",\n        showOnHover &&\n          \"group-focus-within/menu-item:opacity-100 group-hover/menu-item:opacity-100 peer-data-active/menu-button:text-sidebar-accent-foreground aria-expanded:opacity-100 md:opacity-0\",\n        className\n      )}\n      {...props}\n    />\n  )\n}\n\nfunction SidebarMenuBadge({\n  className,\n  ...props\n}: React.ComponentProps<\"div\">) {\n  return (\n    <div\n      data-slot=\"sidebar-menu-badge\"\n      data-sidebar=\"menu-badge\"\n      className={cn(\n        \"cn-sidebar-menu-badge flex items-center justify-center tabular-nums select-none group-data-[collapsible=icon]:hidden\",\n        className\n      )}\n      {...props}\n    />\n  )\n}\n\nfunction SidebarMenuSkeleton({\n  className,\n  /** @default false */\n  showIcon = false,\n  ...props\n}: React.ComponentProps<\"div\"> & {\n  showIcon?: boolean\n}) {\n  // Random width between 50 to 90%.\n  const [width] = React.useState(() => {\n    return `${Math.floor(Math.random() * 40) + 50}%`\n  })\n\n  return (\n    <div\n      data-slot=\"sidebar-menu-skeleton\"\n      data-sidebar=\"menu-skeleton\"\n      className={cn(\"cn-sidebar-menu-skeleton flex items-center\", className)}\n      {...props}\n    >\n      {showIcon && (\n        <Skeleton\n          className=\"cn-sidebar-menu-skeleton-icon\"\n          data-sidebar=\"menu-skeleton-icon\"\n        />\n      )}\n      <Skeleton\n        className=\"cn-sidebar-menu-skeleton-text max-w-(--skeleton-width) flex-1\"\n        data-sidebar=\"menu-skeleton-text\"\n        style={\n          {\n            \"--skeleton-width\": width,\n          } as React.CSSProperties\n        }\n      />\n    </div>\n  )\n}\n\nfunction SidebarMenuSub({ className, ...props }: React.ComponentProps<\"ul\">) {\n  return (\n    <ul\n      data-slot=\"sidebar-menu-sub\"\n      data-sidebar=\"menu-sub\"\n      className={cn(\"cn-sidebar-menu-sub flex min-w-0 flex-col\", className)}\n      {...props}\n    />\n  )\n}\n\nfunction SidebarMenuSubItem({\n  className,\n  ...props\n}: React.ComponentProps<\"li\">) {\n  return (\n    <li\n      data-slot=\"sidebar-menu-sub-item\"\n      data-sidebar=\"menu-sub-item\"\n      className={cn(\"group/menu-sub-item relative\", className)}\n      {...props}\n    />\n  )\n}\n\nfunction SidebarMenuSubButton({\n  /** @default \"md\" */\n  size = \"md\",\n  /** @default false */\n  isActive = false,\n  className,\n  ...props\n}: SidebarButtonProps & {\n  size?: \"sm\" | \"md\"\n  isActive?: boolean\n}) {\n  return props.href !== undefined ? (\n    <LinkPrimitive\n      data-slot=\"sidebar-menu-sub-button\"\n      data-sidebar=\"menu-sub-button\"\n      data-size={size}\n      data-active={isActive}\n      className={cn(\n        \"cn-sidebar-menu-sub-button flex min-w-0 -translate-x-px items-center overflow-hidden outline-hidden group-data-[collapsible=icon]:hidden disabled:pointer-events-none disabled:opacity-50 aria-disabled:pointer-events-none aria-disabled:opacity-50 [&>span:last-child]:truncate [&>svg]:shrink-0\",\n        className\n      )}\n      {...props}\n    />\n  ) : (\n    <ButtonPrimitive\n      data-slot=\"sidebar-menu-sub-button\"\n      data-sidebar=\"menu-sub-button\"\n      data-size={size}\n      data-active={isActive}\n      className={cn(\n        \"cn-sidebar-menu-sub-button flex min-w-0 -translate-x-px items-center overflow-hidden outline-hidden group-data-[collapsible=icon]:hidden disabled:pointer-events-none disabled:opacity-50 aria-disabled:pointer-events-none aria-disabled:opacity-50 [&>span:last-child]:truncate [&>svg]:shrink-0\",\n        className\n      )}\n      {...props}\n    />\n  )\n}\n\nexport {\n  Sidebar,\n  SidebarContent,\n  SidebarFooter,\n  SidebarGroup,\n  SidebarGroupAction,\n  SidebarGroupContent,\n  SidebarGroupLabel,\n  SidebarHeader,\n  SidebarInput,\n  SidebarInset,\n  SidebarMenu,\n  SidebarMenuAction,\n  SidebarMenuBadge,\n  SidebarMenuButton,\n  SidebarMenuItem,\n  SidebarMenuSkeleton,\n  SidebarMenuSub,\n  SidebarMenuSubButton,\n  SidebarMenuSubItem,\n  SidebarProvider,\n  SidebarRail,\n  SidebarSeparator,\n  SidebarTrigger,\n  useSidebar,\n}\n",
+      "defaults": [
+        {
+          "function": "SidebarProvider",
+          "prop": "defaultOpen",
+          "value": true,
+          "slots": [
+            "components.sidebar"
+          ]
+        },
+        {
+          "function": "Sidebar",
+          "prop": "side",
+          "value": "left",
+          "slots": [
+            "components.sidebar"
+          ]
+        },
+        {
+          "function": "Sidebar",
+          "prop": "variant",
+          "value": "sidebar",
+          "slots": [
+            "components.sidebar"
+          ]
+        },
+        {
+          "function": "Sidebar",
+          "prop": "collapsible",
+          "value": "offcanvas",
+          "slots": [
+            "components.sidebar"
+          ]
+        },
+        {
+          "function": "SidebarGroupLabel",
+          "prop": "Element",
+          "value": "div",
+          "slots": [
+            "components.sidebar"
+          ]
+        },
+        {
+          "function": "SidebarMenuButton",
+          "prop": "isActive",
+          "value": false,
+          "slots": [
+            "components.sidebar"
+          ]
+        },
+        {
+          "function": "SidebarMenuButton",
+          "prop": "variant",
+          "value": "default",
+          "slots": [
+            "components.sidebar"
+          ]
+        },
+        {
+          "function": "SidebarMenuButton",
+          "prop": "size",
+          "value": "default",
+          "slots": [
+            "components.sidebar"
+          ]
+        },
+        {
+          "function": "SidebarMenuAction",
+          "prop": "showOnHover",
+          "value": false,
+          "slots": [
+            "components.sidebar"
+          ]
+        },
+        {
+          "function": "SidebarMenuSkeleton",
+          "prop": "showIcon",
+          "value": false,
+          "slots": [
+            "components.sidebar"
+          ]
+        },
+        {
+          "function": "SidebarMenuSubButton",
+          "prop": "size",
+          "value": "md",
+          "slots": [
+            "components.sidebar"
+          ]
+        },
+        {
+          "function": "SidebarMenuSubButton",
+          "prop": "isActive",
+          "value": false,
+          "slots": [
+            "components.sidebar"
+          ]
+        }
+      ],
+      "variants": [
+        {
+          "item": "sidebar",
+          "name": "sidebarMenuButtonVariants",
+          "base": "cn-sidebar-menu-button cn-sidebar-menu-button-aria peer/menu-button group/menu-button flex w-full items-center overflow-hidden outline-hidden disabled:pointer-events-none disabled:opacity-50 aria-disabled:pointer-events-none aria-disabled:opacity-50 [&_svg]:size-4 [&_svg]:shrink-0 [&>span:last-child]:truncate",
+          "config": {
+            "variants": {
+              "variant": {
+                "default": "cn-sidebar-menu-button-variant-default",
+                "outline": "cn-sidebar-menu-button-variant-outline"
+              },
+              "size": {
+                "default": "cn-sidebar-menu-button-size-default",
+                "sm": "cn-sidebar-menu-button-size-sm",
+                "lg": "cn-sidebar-menu-button-size-lg"
+              }
+            },
+            "defaultVariants": {
+              "variant": "default",
+              "size": "default"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "item": "skeleton",
+      "path": "apps/v4/registry/bases/aria/ui/skeleton.tsx",
+      "inputSha256": "8fcbad84e494a75484a0975221fb40f54c4a7d68f79cfc305cb158d1feb1badf",
+      "content": "import { cn } from \"cn\"\n\nfunction Skeleton({ className, ...props }: React.ComponentProps<\"div\">) {\n  return (\n    <div\n      data-slot=\"skeleton\"\n      className={cn(\"cn-skeleton animate-pulse\", className)}\n      {...props}\n    />\n  )\n}\n\nexport { Skeleton }\n",
+      "defaults": [],
+      "variants": []
+    },
+    {
+      "item": "textarea",
+      "path": "apps/v4/registry/bases/aria/ui/textarea.tsx",
+      "inputSha256": "522eb7b565500e9a38ada957dc86ef0a4b2273dca9af2cb92af45332e614a334",
+      "content": "\"use client\"\n\nimport * as React from \"react\"\nimport { cn } from \"cn\"\nimport {\n  composeRenderProps,\n  TextArea as TextareaPrimitive,\n} from \"react-aria-components\"\n\nfunction Textarea({\n  className,\n  ...props\n}: React.ComponentProps<typeof TextareaPrimitive>) {\n  return (\n    <TextareaPrimitive\n      data-slot=\"textarea\"\n      className={composeRenderProps(className, (className) =>\n        cn(\n          \"cn-textarea flex field-sizing-content min-h-16 w-full outline-none placeholder:text-muted-foreground disabled:cursor-not-allowed disabled:opacity-50\",\n          className\n        )\n      )}\n      {...props}\n    />\n  )\n}\n\nexport { Textarea }\n",
+      "defaults": [],
+      "variants": []
+    },
+    {
+      "item": "tooltip",
+      "path": "apps/v4/registry/bases/aria/ui/tooltip.tsx",
+      "inputSha256": "4cc80f882fec4abad1512f0d35d330603d653169ac210b27c12de10a09458d64",
+      "content": "\"use client\"\n\nimport * as React from \"react\"\nimport { cn } from \"cn\"\nimport {\n  Focusable,\n  OverlayArrow,\n  Tooltip as TooltipPrimitive,\n  TooltipTrigger as TooltipTriggerPrimitive,\n} from \"react-aria-components\"\n\nfunction TooltipTrigger({\n  /** @default 0 */\n  delay = 0,\n  children,\n  ...props\n}: React.ComponentProps<typeof TooltipTriggerPrimitive>) {\n  const [trigger, tooltip] = React.Children.toArray(children)\n\n  return (\n    <TooltipTriggerPrimitive\n      data-slot=\"tooltip-trigger\"\n      delay={delay}\n      {...props}\n    >\n      <Focusable>\n        {trigger as React.ComponentProps<typeof Focusable>[\"children\"]}\n      </Focusable>\n      {tooltip}\n    </TooltipTriggerPrimitive>\n  )\n}\n\nfunction Tooltip({\n  className,\n  /** @default \"top\" */\n  placement = \"top\",\n  /** @default 4 */\n  offset = 4,\n  /** @default 0 */\n  crossOffset = 0,\n  children,\n  ...props\n}: Omit<\n  React.ComponentProps<typeof TooltipPrimitive>,\n  \"children\" | \"className\"\n> & {\n  className?: string\n  children?: React.ReactNode\n}) {\n  return (\n    <TooltipPrimitive\n      data-slot=\"tooltip-content\"\n      placement={placement}\n      offset={offset}\n      crossOffset={crossOffset}\n      className={cn(\n        \"cn-tooltip-content-aria z-50 w-fit max-w-xs origin-(--trigger-anchor-point) bg-foreground text-background\",\n        className\n      )}\n      {...props}\n    >\n      {children}\n      <OverlayArrow\n        className=\"cn-tooltip-arrow z-50 bg-foreground fill-foreground\"\n        style={({ placement, defaultStyle }) => ({\n          ...defaultStyle,\n          rotate: \"0deg\",\n          translate: \"0 0\",\n          transform:\n            placement === \"bottom\"\n              ? \"translate(-50%, calc(50% + 2px)) rotate(45deg)\"\n              : placement === \"top\"\n                ? \"translate(-50%, calc(-50% - 2px)) rotate(45deg)\"\n                : placement === \"left\"\n                  ? \"translate(calc(-50% - 2px), -50%) rotate(45deg)\"\n                  : \"translate(calc(50% + 2px), -50%) rotate(45deg)\",\n        })}\n      />\n    </TooltipPrimitive>\n  )\n}\n\nexport { Tooltip, TooltipTrigger }\n",
+      "defaults": [
+        {
+          "function": "TooltipTrigger",
+          "prop": "delay",
+          "value": 0,
+          "slots": [
+            "components.sidebar"
+          ]
+        },
+        {
+          "function": "Tooltip",
+          "prop": "placement",
+          "value": "top",
+          "slots": [
+            "components.sidebar"
+          ]
+        },
+        {
+          "function": "Tooltip",
+          "prop": "offset",
+          "value": 4,
+          "slots": [
+            "components.sidebar"
+          ]
+        },
+        {
+          "function": "Tooltip",
+          "prop": "crossOffset",
+          "value": 0,
+          "slots": [
+            "components.sidebar"
+          ]
+        }
+      ],
+      "variants": []
+    }
+  ],
+  "host": [
+    {
+      "file": "components/_parts/rail-utils/index.ts",
+      "consumerImport": "import { mergeUiClasses as cx } from \"@clossys/designer/components\"",
+      "packageImport": "import { cx } from \"../../internal/cx\"",
+      "source": "components/internal/cx.ts",
+      "sourceSha256": "0a7524b0340fec42e1abb216013a353e950aa738d9ba0f2ebdedd5293337bab3",
+      "dependency": {
+        "name": "@clossys/designer",
+        "version": "0.12.0",
+        "license": "MIT"
+      }
+    }
+  ],
+  "utility": "import { mergeUiClasses as cx } from \"@clossys/designer/components\"\nimport type { ClassValue, CopyResolver, CopyRef } from \"./types\"\nexport { type ClassValue, type VariantProps, type CopyResolver } from \"./types\"\nexport { RAIL_COPY_REFS } from \"./copy\"\nfunction flatten(value: ClassValue): string {\n  if (typeof value === \"string\" || typeof value === \"number\") return String(value)\n  if (Array.isArray(value)) return value.filter(Boolean).map(flatten).filter(Boolean).join(\" \")\n  if (value && typeof value === \"object\") {\n    const keys: string[] = []\n    for (const key in value) if ((value as { [key: string]: unknown })[key]) keys.push(key)\n    return keys.join(\" \")\n  }\n  return \"\"\n}\nexport function classNames(...values: ClassValue[]): string { return values.filter(Boolean).map(flatten).filter(Boolean).join(\" \") }\nexport function cn(...values: ClassValue[]): string { return cx(classNames(...values)) }\nexport function resolveRailCopy(resolver: CopyResolver | undefined, ref: CopyRef): string {\n  if (!resolver) throw new TypeError(\"Designer component copy requires a host resolver\")\n  const result = resolver(ref)\n  if (!result || result.ref.id !== ref.id || result.ref.locale !== ref.locale || typeof result.text !== \"string\" || !result.text.trim()) throw new TypeError(`Designer component copy unresolved: ${ref.id}`)\n  return result.text\n}\n",
+  "copySource": "export const RAIL_COPY_REFS = {\n  \"command.title\": {\n    \"id\": \"st.vhdw8gz59s\"\n  },\n  \"command.description\": {\n    \"id\": \"st.tqaf5rvggj\"\n  },\n  \"command.search\": {\n    \"id\": \"st.er3g6ph4h3\"\n  },\n  \"sheet.close\": {\n    \"id\": \"st.9ehasbmw8z\"\n  },\n  \"sidebar.title\": {\n    \"id\": \"st.50we5a15ty\"\n  },\n  \"sidebar.description\": {\n    \"id\": \"st.etz9tsny9q\"\n  },\n  \"sidebar.toggle\": {\n    \"id\": \"st.qbaewx3e0y\"\n  }\n} as const\n",
+  "utilityTypes": "interface CopyRef { readonly id: string; readonly locale?: string; readonly values?: Readonly<Record<string, string | number | boolean>> }\ntype CopyResolver = (ref: CopyRef) => { readonly ref: CopyRef; readonly text: string } | undefined\ntype ClassValue = string | number | boolean | null | undefined | object | ClassValue[]\ntype VariantProps<T extends (...args: any[]) => unknown> = Omit<NonNullable<Parameters<T>[0]>, \"class\" | \"className\">\nexport { type CopyRef, type CopyResolver, type ClassValue, type VariantProps }\n"
+}

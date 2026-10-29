@@ -1,0 +1,2105 @@
+{
+  "schemaVersion": 1,
+  "sources": {
+    "shadcn": {
+      "url": "https://github.com/shadcn-ui/ui",
+      "commit": "96da9cc7f1aa10580a3741664e2a77c721206c00",
+      "license": "MIT"
+    },
+    "ai-elements": {
+      "url": "https://github.com/vercel/ai-elements",
+      "commit": "ca8be600bfd01b3131f9bf6134b51602a71f4374",
+      "license": "Apache-2.0",
+      "adoption": "inspected-only"
+    }
+  },
+  "themeVariables": {
+    "source": "apps/v4/registry/themes.ts",
+    "count": 32,
+    "covered": [
+      "--accent",
+      "--accent-foreground",
+      "--background",
+      "--border",
+      "--card",
+      "--card-foreground",
+      "--chart-1",
+      "--chart-2",
+      "--chart-3",
+      "--chart-4",
+      "--chart-5",
+      "--destructive",
+      "--foreground",
+      "--input",
+      "--muted",
+      "--muted-foreground",
+      "--popover",
+      "--popover-foreground",
+      "--primary",
+      "--primary-foreground",
+      "--radius",
+      "--ring",
+      "--secondary",
+      "--secondary-foreground",
+      "--sidebar",
+      "--sidebar-accent",
+      "--sidebar-accent-foreground",
+      "--sidebar-border",
+      "--sidebar-foreground",
+      "--sidebar-primary",
+      "--sidebar-primary-foreground",
+      "--sidebar-ring"
+    ],
+    "needs": []
+  },
+  "presets": [
+    {
+      "id": "shadcn-neutral",
+      "commit": "96da9cc7f1aa10580a3741664e2a77c721206c00"
+    },
+    {
+      "id": "shadcn-zinc",
+      "commit": "96da9cc7f1aa10580a3741664e2a77c721206c00"
+    },
+    {
+      "id": "shadcn-stone",
+      "commit": "96da9cc7f1aa10580a3741664e2a77c721206c00"
+    },
+    {
+      "id": "shadcn-mauve",
+      "commit": "96da9cc7f1aa10580a3741664e2a77c721206c00"
+    },
+    {
+      "id": "shadcn-olive",
+      "commit": "96da9cc7f1aa10580a3741664e2a77c721206c00"
+    },
+    {
+      "id": "shadcn-mist",
+      "commit": "96da9cc7f1aa10580a3741664e2a77c721206c00"
+    },
+    {
+      "id": "shadcn-taupe",
+      "commit": "96da9cc7f1aa10580a3741664e2a77c721206c00"
+    }
+  ],
+  "icons": [
+    {
+      "icon": "AlertTriangleIcon",
+      "status": "existing-lucide-fill",
+      "leaf": "assets.icon-warning",
+      "member": "default",
+      "pin": {
+        "package": "lucide-react",
+        "version": "1.23.0",
+        "file": "src/icons/AlertTriangle.ts",
+        "sha256": "5df01838b615e03b2e1d30618a1e3180cbbb82294bb2b32ec544e2bb3c127653"
+      },
+      "sourceAddress": "lucide-react@1.23.0/dist/esm/icons/triangle-alert.js",
+      "uses": [
+        "ai-elements/packages/elements/src/stack-trace.tsx"
+      ]
+    },
+    {
+      "icon": "ArrowDownIcon",
+      "status": "NEED",
+      "reason": "No matching existing icon leaf; all icon leaves have a closed default member. Preserve this glyph identity until the asset contract permits it.",
+      "uses": [
+        "ai-elements/packages/elements/src/conversation.tsx",
+        "shadcn/apps/v4/registry/bases/aria/ui/message-scroller.tsx"
+      ]
+    },
+    {
+      "icon": "ArrowLeft",
+      "status": "NEED",
+      "reason": "No matching existing icon leaf; all icon leaves have a closed default member. Preserve this glyph identity until the asset contract permits it.",
+      "uses": [
+        "ai-elements/packages/shadcn-ui/components/ui/carousel.tsx"
+      ]
+    },
+    {
+      "icon": "ArrowLeftIcon",
+      "status": "NEED",
+      "reason": "No matching existing icon leaf; all icon leaves have a closed default member. Preserve this glyph identity until the asset contract permits it.",
+      "uses": [
+        "ai-elements/packages/elements/src/inline-citation.tsx"
+      ]
+    },
+    {
+      "icon": "ArrowRight",
+      "status": "existing-lucide-fill",
+      "leaf": "assets.icon-arrow-right",
+      "member": "default",
+      "pin": {
+        "package": "lucide-react",
+        "version": "1.24.0",
+        "file": "src/icons/ArrowRight.ts",
+        "sha256": "bb43905ab80409bed61222fce503e06df8489bafe2c4c2dff98a0f625e4c6d31"
+      },
+      "sourceAddress": "lucide-react@1.24.0/dist/esm/icons/arrow-right.js",
+      "uses": [
+        "ai-elements/packages/shadcn-ui/components/ui/carousel.tsx"
+      ]
+    },
+    {
+      "icon": "ArrowRightIcon",
+      "status": "existing-lucide-fill",
+      "leaf": "assets.icon-arrow-right",
+      "member": "default",
+      "pin": {
+        "package": "lucide-react",
+        "version": "1.24.0",
+        "file": "src/icons/ArrowRight.ts",
+        "sha256": "bb43905ab80409bed61222fce503e06df8489bafe2c4c2dff98a0f625e4c6d31"
+      },
+      "sourceAddress": "lucide-react@1.24.0/dist/esm/icons/arrow-right.js",
+      "uses": [
+        "ai-elements/packages/elements/src/inline-citation.tsx"
+      ]
+    },
+    {
+      "icon": "BookIcon",
+      "status": "NEED",
+      "reason": "No matching existing icon leaf; all icon leaves have a closed default member. Preserve this glyph identity until the asset contract permits it.",
+      "uses": [
+        "ai-elements/packages/elements/src/sources.tsx"
+      ]
+    },
+    {
+      "icon": "BookmarkIcon",
+      "status": "NEED",
+      "reason": "No matching existing icon leaf; all icon leaves have a closed default member. Preserve this glyph identity until the asset contract permits it.",
+      "uses": [
+        "ai-elements/packages/elements/src/checkpoint.tsx"
+      ]
+    },
+    {
+      "icon": "BotIcon",
+      "status": "NEED",
+      "reason": "No matching existing icon leaf; all icon leaves have a closed default member. Preserve this glyph identity until the asset contract permits it.",
+      "uses": [
+        "ai-elements/packages/elements/src/agent.tsx"
+      ]
+    },
+    {
+      "icon": "BrainIcon",
+      "status": "NEED",
+      "reason": "No matching existing icon leaf; all icon leaves have a closed default member. Preserve this glyph identity until the asset contract permits it.",
+      "uses": [
+        "ai-elements/packages/elements/src/chain-of-thought.tsx",
+        "ai-elements/packages/elements/src/reasoning.tsx"
+      ]
+    },
+    {
+      "icon": "CheckCircle2Icon",
+      "status": "NEED",
+      "reason": "No matching existing icon leaf; all icon leaves have a closed default member. Preserve this glyph identity until the asset contract permits it.",
+      "uses": [
+        "ai-elements/packages/elements/src/test-results.tsx"
+      ]
+    },
+    {
+      "icon": "CheckCircleIcon",
+      "status": "existing-lucide-fill",
+      "leaf": "assets.icon-success",
+      "member": "default",
+      "pin": {
+        "package": "lucide-react",
+        "version": "1.23.0",
+        "file": "src/icons/CheckCircle.ts",
+        "sha256": "e42486366da8ecf567b7550bb88078661910f893c0237d96b5812fb9dbb6060a"
+      },
+      "sourceAddress": "lucide-react@1.23.0/dist/esm/icons/circle-check-big.js",
+      "uses": [
+        "ai-elements/packages/elements/src/tool.tsx"
+      ]
+    },
+    {
+      "icon": "CheckIcon",
+      "status": "existing-lucide-fill",
+      "leaf": "assets.icon-check",
+      "member": "default",
+      "pin": {
+        "package": "lucide-react",
+        "version": "1.23.0",
+        "file": "src/icons/Check.ts",
+        "sha256": "df7a0d203c39a358aba4b6cf7a9380e34352d38efe0947c0d30c0485ad509159"
+      },
+      "sourceAddress": "lucide-react@1.23.0/dist/esm/icons/check.js",
+      "uses": [
+        "ai-elements/packages/elements/src/code-block.tsx",
+        "ai-elements/packages/elements/src/stack-trace.tsx",
+        "ai-elements/packages/elements/src/terminal.tsx",
+        "ai-elements/packages/shadcn-ui/components/ui/dropdown-menu.tsx",
+        "ai-elements/packages/shadcn-ui/components/ui/select.tsx",
+        "shadcn/apps/v4/registry/bases/aria/ui/code-block.tsx",
+        "shadcn/apps/v4/registry/bases/aria/ui/command.tsx",
+        "shadcn/apps/v4/registry/bases/aria/ui/context-menu.tsx",
+        "shadcn/apps/v4/registry/bases/aria/ui/dropdown-menu.tsx",
+        "shadcn/apps/v4/registry/bases/aria/ui/questionnaire.tsx"
+      ]
+    },
+    {
+      "icon": "ChevronDownIcon",
+      "status": "existing-lucide-fill",
+      "leaf": "assets.icon-chevron-down",
+      "member": "default",
+      "pin": {
+        "package": "lucide-react",
+        "version": "1.23.0",
+        "file": "src/icons/ChevronDown.ts",
+        "sha256": "a0d467a8eb0067662f31c16000987a0dfbc2d2b71fbe5b99d0dd5586dd823294"
+      },
+      "sourceAddress": "lucide-react@1.23.0/dist/esm/icons/chevron-down.js",
+      "uses": [
+        "ai-elements/packages/elements/src/chain-of-thought.tsx",
+        "ai-elements/packages/elements/src/queue.tsx",
+        "ai-elements/packages/elements/src/reasoning.tsx",
+        "ai-elements/packages/elements/src/sources.tsx",
+        "ai-elements/packages/elements/src/stack-trace.tsx",
+        "ai-elements/packages/elements/src/task.tsx",
+        "ai-elements/packages/elements/src/tool.tsx",
+        "ai-elements/packages/shadcn-ui/components/ui/accordion.tsx",
+        "ai-elements/packages/shadcn-ui/components/ui/select.tsx",
+        "shadcn/apps/v4/registry/bases/aria/ui/accordion.tsx",
+        "shadcn/apps/v4/registry/bases/aria/ui/native-select.tsx"
+      ]
+    },
+    {
+      "icon": "ChevronLeftIcon",
+      "status": "existing-lucide-fill",
+      "leaf": "assets.icon-chevron-left",
+      "member": "default",
+      "pin": {
+        "package": "lucide-react",
+        "version": "1.23.0",
+        "file": "src/icons/ChevronLeft.ts",
+        "sha256": "3674c3670e0c34bdb78c075730560e17b6f6b698194010fd42efa76533415e4a"
+      },
+      "sourceAddress": "lucide-react@1.23.0/dist/esm/icons/chevron-left.js",
+      "uses": [
+        "shadcn/apps/v4/registry/bases/aria/ui/carousel.tsx",
+        "shadcn/apps/v4/registry/bases/aria/ui/pagination.tsx"
+      ]
+    },
+    {
+      "icon": "ChevronRightIcon",
+      "status": "existing-lucide-fill",
+      "leaf": "assets.icon-chevron-right",
+      "member": "default",
+      "pin": {
+        "package": "lucide-react",
+        "version": "1.23.0",
+        "file": "src/icons/ChevronRight.ts",
+        "sha256": "99e246ee2ef8a9b85999607d97a1152fbe6bf374f68c29c19ffa46ad7a502fb6"
+      },
+      "sourceAddress": "lucide-react@1.23.0/dist/esm/icons/chevron-right.js",
+      "uses": [
+        "ai-elements/packages/elements/src/file-tree.tsx",
+        "ai-elements/packages/elements/src/test-results.tsx",
+        "ai-elements/packages/shadcn-ui/components/ui/dropdown-menu.tsx",
+        "shadcn/apps/v4/registry/bases/aria/ui/carousel.tsx",
+        "shadcn/apps/v4/registry/bases/aria/ui/context-menu.tsx",
+        "shadcn/apps/v4/registry/bases/aria/ui/dropdown-menu.tsx",
+        "shadcn/apps/v4/registry/bases/aria/ui/pagination.tsx",
+        "shadcn/apps/v4/registry/bases/aria/ui/trace.tsx"
+      ]
+    },
+    {
+      "icon": "ChevronsUpDownIcon",
+      "status": "NEED",
+      "reason": "No matching existing icon leaf; all icon leaves have a closed default member. Preserve this glyph identity until the asset contract permits it.",
+      "uses": [
+        "ai-elements/packages/elements/src/plan.tsx"
+      ]
+    },
+    {
+      "icon": "ChevronUpIcon",
+      "status": "existing-lucide-fill",
+      "leaf": "assets.icon-chevron-up",
+      "member": "default",
+      "pin": {
+        "package": "lucide-react",
+        "version": "1.23.0",
+        "file": "src/icons/ChevronUp.ts",
+        "sha256": "c36ddd23fcd3e3fa1a9d33723e69dafab41f96ed318c591daf1767534d973d55"
+      },
+      "sourceAddress": "lucide-react@1.23.0/dist/esm/icons/chevron-up.js",
+      "uses": [
+        "ai-elements/packages/shadcn-ui/components/ui/select.tsx",
+        "shadcn/apps/v4/registry/bases/aria/ui/accordion.tsx"
+      ]
+    },
+    {
+      "icon": "CircleDotIcon",
+      "status": "NEED",
+      "reason": "No matching existing icon leaf; all icon leaves have a closed default member. Preserve this glyph identity until the asset contract permits it.",
+      "uses": [
+        "ai-elements/packages/elements/src/test-results.tsx"
+      ]
+    },
+    {
+      "icon": "CircleIcon",
+      "status": "NEED",
+      "reason": "No matching existing icon leaf; all icon leaves have a closed default member. Preserve this glyph identity until the asset contract permits it.",
+      "uses": [
+        "ai-elements/packages/elements/src/test-results.tsx",
+        "ai-elements/packages/elements/src/tool.tsx",
+        "ai-elements/packages/shadcn-ui/components/ui/dropdown-menu.tsx"
+      ]
+    },
+    {
+      "icon": "ClockIcon",
+      "status": "existing-lucide-fill",
+      "leaf": "assets.icon-time",
+      "member": "default",
+      "pin": {
+        "package": "lucide-react",
+        "version": "1.23.0",
+        "file": "src/icons/Clock.ts",
+        "sha256": "1c2f0abc0105b9902bfe89c3d79b7493f80b0d9aa2674a44b55909ae56306bfd"
+      },
+      "sourceAddress": "lucide-react@1.23.0/dist/esm/icons/clock.js",
+      "uses": [
+        "ai-elements/packages/elements/src/tool.tsx"
+      ]
+    },
+    {
+      "icon": "CopyIcon",
+      "status": "NEED",
+      "reason": "No matching existing icon leaf; all icon leaves have a closed default member. Preserve this glyph identity until the asset contract permits it.",
+      "uses": [
+        "ai-elements/packages/elements/src/code-block.tsx",
+        "ai-elements/packages/elements/src/stack-trace.tsx",
+        "ai-elements/packages/elements/src/terminal.tsx",
+        "shadcn/apps/v4/registry/bases/aria/ui/code-block.tsx"
+      ]
+    },
+    {
+      "icon": "CornerDownLeftIcon",
+      "status": "NEED",
+      "reason": "No matching existing icon leaf; all icon leaves have a closed default member. Preserve this glyph identity until the asset contract permits it.",
+      "uses": [
+        "ai-elements/packages/elements/src/prompt-input.tsx"
+      ]
+    },
+    {
+      "icon": "DotIcon",
+      "status": "NEED",
+      "reason": "No matching existing icon leaf; all icon leaves have a closed default member. Preserve this glyph identity until the asset contract permits it.",
+      "uses": [
+        "ai-elements/packages/elements/src/chain-of-thought.tsx"
+      ]
+    },
+    {
+      "icon": "DownloadIcon",
+      "status": "NEED",
+      "reason": "No matching existing icon leaf; all icon leaves have a closed default member. Preserve this glyph identity until the asset contract permits it.",
+      "uses": [
+        "ai-elements/packages/elements/src/conversation.tsx"
+      ]
+    },
+    {
+      "icon": "FileIcon",
+      "status": "NEED",
+      "reason": "No matching existing icon leaf; all icon leaves have a closed default member. Preserve this glyph identity until the asset contract permits it.",
+      "uses": [
+        "ai-elements/packages/elements/src/file-tree.tsx"
+      ]
+    },
+    {
+      "icon": "FolderIcon",
+      "status": "existing-lucide-fill",
+      "leaf": "assets.icon-folder",
+      "member": "default",
+      "pin": {
+        "package": "lucide-react",
+        "version": "1.23.0",
+        "file": "src/icons/Folder.ts",
+        "sha256": "5f10987d0993f001109aaf7d553706b504ee8b92adaaabdf430a3be6f6617902"
+      },
+      "sourceAddress": "lucide-react@1.23.0/dist/esm/icons/folder.js",
+      "uses": [
+        "ai-elements/packages/elements/src/file-tree.tsx"
+      ]
+    },
+    {
+      "icon": "FolderOpenIcon",
+      "status": "NEED",
+      "reason": "No matching existing icon leaf; all icon leaves have a closed default member. Preserve this glyph identity until the asset contract permits it.",
+      "uses": [
+        "ai-elements/packages/elements/src/file-tree.tsx"
+      ]
+    },
+    {
+      "icon": "ImageIcon",
+      "status": "NEED",
+      "reason": "No matching existing icon leaf; all icon leaves have a closed default member. Preserve this glyph identity until the asset contract permits it.",
+      "uses": [
+        "ai-elements/packages/elements/src/prompt-input.tsx"
+      ]
+    },
+    {
+      "icon": "Loader2Icon",
+      "status": "NEED",
+      "reason": "No matching existing icon leaf; all icon leaves have a closed default member. Preserve this glyph identity until the asset contract permits it.",
+      "uses": [
+        "ai-elements/packages/shadcn-ui/components/ui/spinner.tsx"
+      ]
+    },
+    {
+      "icon": "MinusIcon",
+      "status": "NEED",
+      "reason": "No matching existing icon leaf; all icon leaves have a closed default member. Preserve this glyph identity until the asset contract permits it.",
+      "uses": [
+        "shadcn/apps/v4/registry/bases/aria/ui/input-otp.tsx"
+      ]
+    },
+    {
+      "icon": "Monitor",
+      "status": "existing-lucide-fill",
+      "leaf": "assets.icon-theme-system",
+      "member": "default",
+      "pin": {
+        "package": "lucide-react",
+        "version": "1.23.0",
+        "file": "src/icons/Monitor.ts",
+        "sha256": "1018ced79e3d8f50a4a74607ffc22ad99c7744c29c248824b8437fba65185148"
+      },
+      "sourceAddress": "lucide-react@1.23.0/dist/esm/icons/monitor.js",
+      "uses": [
+        "ai-elements/packages/elements/src/prompt-input.tsx"
+      ]
+    },
+    {
+      "icon": "MoreHorizontalIcon",
+      "status": "NEED",
+      "reason": "No matching existing icon leaf; all icon leaves have a closed default member. Preserve this glyph identity until the asset contract permits it.",
+      "uses": [
+        "shadcn/apps/v4/registry/bases/aria/ui/pagination.tsx"
+      ]
+    },
+    {
+      "icon": "PanelLeftIcon",
+      "status": "NEED",
+      "reason": "No matching existing icon leaf; all icon leaves have a closed default member. Preserve this glyph identity until the asset contract permits it.",
+      "uses": [
+        "shadcn/apps/v4/registry/bases/aria/ui/sidebar.tsx"
+      ]
+    },
+    {
+      "icon": "PanelRightIcon",
+      "status": "NEED",
+      "reason": "No matching existing icon leaf; all icon leaves have a closed default member. Preserve this glyph identity until the asset contract permits it.",
+      "uses": [
+        "sidebar counterpart requirement"
+      ]
+    },
+    {
+      "icon": "PaperclipIcon",
+      "status": "NEED",
+      "reason": "No matching existing icon leaf; all icon leaves have a closed default member. Preserve this glyph identity until the asset contract permits it.",
+      "uses": [
+        "ai-elements/packages/elements/src/queue.tsx"
+      ]
+    },
+    {
+      "icon": "PlusIcon",
+      "status": "NEED",
+      "reason": "No matching existing icon leaf; all icon leaves have a closed default member. Preserve this glyph identity until the asset contract permits it.",
+      "uses": [
+        "ai-elements/packages/elements/src/prompt-input.tsx"
+      ]
+    },
+    {
+      "icon": "SearchIcon",
+      "status": "existing-lucide-fill",
+      "leaf": "assets.icon-search",
+      "member": "default",
+      "pin": {
+        "package": "lucide-react",
+        "version": "1.23.0",
+        "file": "src/icons/Search.ts",
+        "sha256": "85a680f4b9b2a41659159f5c3a825fec027443760fc8527ca570c3ec646fa6a3"
+      },
+      "sourceAddress": "lucide-react@1.23.0/dist/esm/icons/search.js",
+      "uses": [
+        "ai-elements/packages/elements/src/task.tsx",
+        "ai-elements/packages/shadcn-ui/components/ui/command.tsx",
+        "shadcn/apps/v4/registry/bases/aria/ui/command.tsx"
+      ]
+    },
+    {
+      "icon": "SquareIcon",
+      "status": "NEED",
+      "reason": "No matching existing icon leaf; all icon leaves have a closed default member. Preserve this glyph identity until the asset contract permits it.",
+      "uses": [
+        "ai-elements/packages/elements/src/prompt-input.tsx"
+      ]
+    },
+    {
+      "icon": "TerminalIcon",
+      "status": "NEED",
+      "reason": "No matching existing icon leaf; all icon leaves have a closed default member. Preserve this glyph identity until the asset contract permits it.",
+      "uses": [
+        "ai-elements/packages/elements/src/terminal.tsx"
+      ]
+    },
+    {
+      "icon": "Trash2Icon",
+      "status": "NEED",
+      "reason": "No matching existing icon leaf; all icon leaves have a closed default member. Preserve this glyph identity until the asset contract permits it.",
+      "uses": [
+        "ai-elements/packages/elements/src/terminal.tsx"
+      ]
+    },
+    {
+      "icon": "WrenchIcon",
+      "status": "NEED",
+      "reason": "No matching existing icon leaf; all icon leaves have a closed default member. Preserve this glyph identity until the asset contract permits it.",
+      "uses": [
+        "ai-elements/packages/elements/src/tool.tsx"
+      ]
+    },
+    {
+      "icon": "XCircleIcon",
+      "status": "existing-lucide-fill",
+      "leaf": "assets.icon-danger",
+      "member": "default",
+      "pin": {
+        "package": "lucide-react",
+        "version": "1.23.0",
+        "file": "src/icons/XCircle.ts",
+        "sha256": "3bd98a7d6021773683520cc577f0ee156d7d0bfd81527597cd77f7b1eb7ac263"
+      },
+      "sourceAddress": "lucide-react@1.23.0/dist/esm/icons/circle-x.js",
+      "uses": [
+        "ai-elements/packages/elements/src/test-results.tsx",
+        "ai-elements/packages/elements/src/tool.tsx"
+      ]
+    },
+    {
+      "icon": "XIcon",
+      "status": "existing-lucide-fill",
+      "leaf": "assets.icon-close",
+      "member": "default",
+      "pin": {
+        "package": "lucide-react",
+        "version": "1.23.0",
+        "file": "src/icons/X.ts",
+        "sha256": "8f72143caaadd154476c699ee02546dd60ca49217afc4215220b8fbe9867f29e"
+      },
+      "sourceAddress": "lucide-react@1.23.0/dist/esm/icons/x.js",
+      "uses": [
+        "ai-elements/packages/elements/src/prompt-input.tsx",
+        "ai-elements/packages/shadcn-ui/components/ui/dialog.tsx",
+        "shadcn/apps/v4/registry/bases/aria/ui/dialog.tsx",
+        "shadcn/apps/v4/registry/bases/aria/ui/sheet.tsx"
+      ]
+    }
+  ],
+  "inspectedFiles": [
+    {
+      "source": "ai-elements",
+      "path": "packages/elements/src/agent.tsx",
+      "sha256": "7d96005ace889eaa790b293ae75883d62546b6c7983aec3e7e6784c0392e30c7"
+    },
+    {
+      "source": "ai-elements",
+      "path": "packages/elements/src/chain-of-thought.tsx",
+      "sha256": "ddc63b036299d636483b2041599248226e05ef01afd9c5e32724e3a849def8c4"
+    },
+    {
+      "source": "ai-elements",
+      "path": "packages/elements/src/checkpoint.tsx",
+      "sha256": "8649b28c7969c6c58bd9a8643279810c13da332198a4fcbc5b8a75000673eb5b"
+    },
+    {
+      "source": "ai-elements",
+      "path": "packages/elements/src/code-block.tsx",
+      "sha256": "5c7285171c5aa741749a1642a85f492a9b5e80dc4ccb704b5c3f58c45efebd04"
+    },
+    {
+      "source": "ai-elements",
+      "path": "packages/elements/src/confirmation.tsx",
+      "sha256": "7cc0befed99499ed9010643e7a90ec619180a3f6e79cba5668cfc84126b96a10"
+    },
+    {
+      "source": "ai-elements",
+      "path": "packages/elements/src/context.tsx",
+      "sha256": "e511015bd0d58d4dcc179d672fe2de980ff923654a53541d4396f209bf02c243"
+    },
+    {
+      "source": "ai-elements",
+      "path": "packages/elements/src/conversation.tsx",
+      "sha256": "d7ac46f1e7bc8e46bc49f67c768fc93aebdf17d816397cb35a40deff7173e875"
+    },
+    {
+      "source": "ai-elements",
+      "path": "packages/elements/src/file-tree.tsx",
+      "sha256": "9b6946171369d224d5d10df686c3c18ce7608aa4a4792744fc5c313499cec0cb"
+    },
+    {
+      "source": "ai-elements",
+      "path": "packages/elements/src/inline-citation.tsx",
+      "sha256": "c7dc2a67386bc06d23fa42344f48f3b45e51f1f91b22e44801a2902acdf64018"
+    },
+    {
+      "source": "ai-elements",
+      "path": "packages/elements/src/model-selector.tsx",
+      "sha256": "a4d51f76ddf5197cb86b7f70ba62bd62327468a9acae1351a0b1adcb3710ec0a"
+    },
+    {
+      "source": "ai-elements",
+      "path": "packages/elements/src/plan.tsx",
+      "sha256": "bfa20e90199fa40e5f714be131798406dc07b23051f8c48c590e91c65ade99d8"
+    },
+    {
+      "source": "ai-elements",
+      "path": "packages/elements/src/prompt-input.tsx",
+      "sha256": "cf43baf5baa444b4ae06d250643b3fb2efd329c85f9b31a43e3aaf481dd27305"
+    },
+    {
+      "source": "ai-elements",
+      "path": "packages/elements/src/queue.tsx",
+      "sha256": "c823f565e0430749ba0b09db33e76eeb675eea4838bed10245bca392bffd6cfa"
+    },
+    {
+      "source": "ai-elements",
+      "path": "packages/elements/src/reasoning.tsx",
+      "sha256": "f138cddde35854f73632ff51d48230f8d6e16e0a49a74b44a93b51993a65550e"
+    },
+    {
+      "source": "ai-elements",
+      "path": "packages/elements/src/shimmer.tsx",
+      "sha256": "89d2284ee165aa57fec960e17c6c71078d22ad3fb3798ca683d7e3d850919a46"
+    },
+    {
+      "source": "ai-elements",
+      "path": "packages/elements/src/sources.tsx",
+      "sha256": "1454af3ac2c58766a155a881d119d1f9321632a4922d3f74581ba37f52b4707a"
+    },
+    {
+      "source": "ai-elements",
+      "path": "packages/elements/src/stack-trace.tsx",
+      "sha256": "a2d31824b2b09df91fc6fc5921f2a7610abe2c839655d51770d9c3072db7e546"
+    },
+    {
+      "source": "ai-elements",
+      "path": "packages/elements/src/suggestion.tsx",
+      "sha256": "0703d777b4153ae20e93514acb9e8327eb03dd2ed2fd0230e03cf22271c7a249"
+    },
+    {
+      "source": "ai-elements",
+      "path": "packages/elements/src/task.tsx",
+      "sha256": "cc9fb7138ded75f17c37c28a2b23425c98f4d06bead436531ad6e65ae553507e"
+    },
+    {
+      "source": "ai-elements",
+      "path": "packages/elements/src/terminal.tsx",
+      "sha256": "04b9b534925054cfe67fdc3bc212eb7261b4912e6e970c4844a195907d3a9a93"
+    },
+    {
+      "source": "ai-elements",
+      "path": "packages/elements/src/test-results.tsx",
+      "sha256": "71fb2b77cfa34e6d7d3b1cc06a765622f755bcec193d3d539f4bead0e937f346"
+    },
+    {
+      "source": "ai-elements",
+      "path": "packages/elements/src/tool.tsx",
+      "sha256": "5b520e0c33792cba0ceb04e1cb18c69b212cffacdb52d7297e292c7af568dda4"
+    },
+    {
+      "source": "ai-elements",
+      "path": "packages/shadcn-ui/components/ui/accordion.tsx",
+      "sha256": "5868c50faad843d18f8805b9173ce7a90e15eb4da711d2ee47b36edc5b307fe8"
+    },
+    {
+      "source": "ai-elements",
+      "path": "packages/shadcn-ui/components/ui/alert.tsx",
+      "sha256": "3d1ebed4f4685ee7689db9f05c48389df00ec54b28061b7cea2795cf5189199f"
+    },
+    {
+      "source": "ai-elements",
+      "path": "packages/shadcn-ui/components/ui/badge.tsx",
+      "sha256": "145cf69448e20e027dd99e8e013507279aaa0922c30f63dabb54b75ab15222aa"
+    },
+    {
+      "source": "ai-elements",
+      "path": "packages/shadcn-ui/components/ui/button.tsx",
+      "sha256": "208d8cf515ccd73c1ca0030a11de1ba460a9fcd6c83faafeadc000833790d22e"
+    },
+    {
+      "source": "ai-elements",
+      "path": "packages/shadcn-ui/components/ui/card.tsx",
+      "sha256": "1c0537a8fa6adb76a9a275b8c569a744b92fa70fd1edbdca05d3b7234923be1a"
+    },
+    {
+      "source": "ai-elements",
+      "path": "packages/shadcn-ui/components/ui/carousel.tsx",
+      "sha256": "200433be223d6fa69378ff6f0babb69e52fa04595394aadf0d3f4004938ec45b"
+    },
+    {
+      "source": "ai-elements",
+      "path": "packages/shadcn-ui/components/ui/collapsible.tsx",
+      "sha256": "c6598e5584f4258b5d9fefadbc5ad6a66888ad58729f4b634a0bb2d9c513188b"
+    },
+    {
+      "source": "ai-elements",
+      "path": "packages/shadcn-ui/components/ui/command.tsx",
+      "sha256": "53be7fe88f0ddbb2f6d97c64c07c1b4816050494880a582c92c0c3c62117b03c"
+    },
+    {
+      "source": "ai-elements",
+      "path": "packages/shadcn-ui/components/ui/dialog.tsx",
+      "sha256": "c7d128632214c9c78706a91a0616659ecf3be5119492b2ca66607bd83901b802"
+    },
+    {
+      "source": "ai-elements",
+      "path": "packages/shadcn-ui/components/ui/dropdown-menu.tsx",
+      "sha256": "9384b044d08c59be883888a3dd66c3816156316f8debbcf107ef90b1e383d022"
+    },
+    {
+      "source": "ai-elements",
+      "path": "packages/shadcn-ui/components/ui/hover-card.tsx",
+      "sha256": "cf19544ba82d332ce2f882f9ae64d9e848c475f13e79fa0353492f2ce7afe1ef"
+    },
+    {
+      "source": "ai-elements",
+      "path": "packages/shadcn-ui/components/ui/input-group.tsx",
+      "sha256": "d347e89600f0750a438f31559c85bb91833eeef51a56e70c2af5ef5d8d2acdd2"
+    },
+    {
+      "source": "ai-elements",
+      "path": "packages/shadcn-ui/components/ui/input.tsx",
+      "sha256": "96207e020d2624fba7241b91a1f2e5a971510003b9c0becc9d0c02a535b15067"
+    },
+    {
+      "source": "ai-elements",
+      "path": "packages/shadcn-ui/components/ui/progress.tsx",
+      "sha256": "fc7e2a5570f711d99ac0b5df15b0d1e65b4f18cf6fe4b5ea016f1b781f2db284"
+    },
+    {
+      "source": "ai-elements",
+      "path": "packages/shadcn-ui/components/ui/scroll-area.tsx",
+      "sha256": "e7d38bb90960e5cd95069bb0ced0177d4284a7d029a65171ac5772b6ab42ff46"
+    },
+    {
+      "source": "ai-elements",
+      "path": "packages/shadcn-ui/components/ui/select.tsx",
+      "sha256": "a0eefd67e05688a6318a3a86080a6951723c6b5d323e1fa92b9d1b7fee777995"
+    },
+    {
+      "source": "ai-elements",
+      "path": "packages/shadcn-ui/components/ui/separator.tsx",
+      "sha256": "47885bfbdf6468a740999cf934b5cb563ecddb709502c2c501cea524f78d5ce3"
+    },
+    {
+      "source": "ai-elements",
+      "path": "packages/shadcn-ui/components/ui/spinner.tsx",
+      "sha256": "acf4f2aeb7fc29bd8aa22a6501b85dd4462d196e831dc5424be93ffdb49e21b4"
+    },
+    {
+      "source": "ai-elements",
+      "path": "packages/shadcn-ui/components/ui/textarea.tsx",
+      "sha256": "0b7fc00f5a0fa6ace377c5f61ef14a30b3d190bc2761c2728ec6886809a1a0c8"
+    },
+    {
+      "source": "ai-elements",
+      "path": "packages/shadcn-ui/components/ui/tooltip.tsx",
+      "sha256": "f459111a16d346aaa64d1bb6557cca986f7332b150ad3a29001e8fef3aea973a"
+    },
+    {
+      "source": "ai-elements",
+      "path": "packages/shadcn-ui/lib/utils.ts",
+      "sha256": "7c8c3dfc0cdd370d44932828eb067ef771c8fe7996693221d5d4b90af6d54f2d"
+    },
+    {
+      "source": "shadcn",
+      "path": "apps/v4/registry/bases/aria/hooks/use-mobile.ts",
+      "sha256": "ad0936f84f1df79d3697bfbff9c18f8ad58431c1cbaf2359c6a853b0fcc9f28b"
+    },
+    {
+      "source": "shadcn",
+      "path": "apps/v4/registry/bases/aria/ui/accordion.tsx",
+      "sha256": "1fe5c781263e046e1c897eb6a32a6f9f188963d53b1bef2ea23b8686597949ed"
+    },
+    {
+      "source": "shadcn",
+      "path": "apps/v4/registry/bases/aria/ui/alert-dialog.tsx",
+      "sha256": "e4c943f27064ffb492cda2b281ef3e2f31c8f50188778206234928bf78b01887"
+    },
+    {
+      "source": "shadcn",
+      "path": "apps/v4/registry/bases/aria/ui/aspect-ratio.tsx",
+      "sha256": "6df19df6b983c450361081b695dbf3541a6fe4a9d2ec148766991e4eb0bf6473"
+    },
+    {
+      "source": "shadcn",
+      "path": "apps/v4/registry/bases/aria/ui/attachment.tsx",
+      "sha256": "fdc021345128ce331e430bfa59ed0a608ff101101b57db468d3b182166b4c30f"
+    },
+    {
+      "source": "shadcn",
+      "path": "apps/v4/registry/bases/aria/ui/bubble.tsx",
+      "sha256": "d49c912240c4b5e6b18f2c352e8121c30fa9a54c3a58209ec0fe6eaaff873826"
+    },
+    {
+      "source": "shadcn",
+      "path": "apps/v4/registry/bases/aria/ui/button-group.tsx",
+      "sha256": "0eea05ae4be99ebf25b026b41a09490cd00947b12b74f00147fa9a13d52f39b6"
+    },
+    {
+      "source": "shadcn",
+      "path": "apps/v4/registry/bases/aria/ui/button.tsx",
+      "sha256": "8bcff6f70522e6e6cb0ff67f050830ea1a93596403d2d9b035f3b543c7a42e2c"
+    },
+    {
+      "source": "shadcn",
+      "path": "apps/v4/registry/bases/aria/ui/carousel.tsx",
+      "sha256": "23d1233c9e5593227af08c9b7dde89c2274b591859184290137f87e25019b774"
+    },
+    {
+      "source": "shadcn",
+      "path": "apps/v4/registry/bases/aria/ui/code-block.tsx",
+      "sha256": "672dda0606156f3107f50dd9f6f02b1e825c975bd8b54b7ed630232cfd099538"
+    },
+    {
+      "source": "shadcn",
+      "path": "apps/v4/registry/bases/aria/ui/collapsible.tsx",
+      "sha256": "45c7e65d7960b07e99cbacec399945ad2f8a1f484096e7b80c0199a776c699a1"
+    },
+    {
+      "source": "shadcn",
+      "path": "apps/v4/registry/bases/aria/ui/command.tsx",
+      "sha256": "911e2d5972ca64ec2565b2c18281f0d9c0cb4d5caffa139dcd4eea2c853add11"
+    },
+    {
+      "source": "shadcn",
+      "path": "apps/v4/registry/bases/aria/ui/context-menu.tsx",
+      "sha256": "e38986646bb2a666d68d8cfc737d9da172ff0e550463b1998d9080c2d7a3ce79"
+    },
+    {
+      "source": "shadcn",
+      "path": "apps/v4/registry/bases/aria/ui/dialog.tsx",
+      "sha256": "ff8a8e6b372e7eb06c931975d8ac1ea59d9271051ac178a62c95f6acae20bb35"
+    },
+    {
+      "source": "shadcn",
+      "path": "apps/v4/registry/bases/aria/ui/direction.tsx",
+      "sha256": "47b9219078865931ccf75c27bffd2ee6daaf13b177dd600ac73e2e1599aa0dc0"
+    },
+    {
+      "source": "shadcn",
+      "path": "apps/v4/registry/bases/aria/ui/drawer.tsx",
+      "sha256": "7180299dff3cc1659ab75130f0521ba485e18b38625b904e1da4049f23479060"
+    },
+    {
+      "source": "shadcn",
+      "path": "apps/v4/registry/bases/aria/ui/dropdown-menu.tsx",
+      "sha256": "50a583093755eb29800812b189860b10f3aac3f7d48a3be23abe59c73dbb551d"
+    },
+    {
+      "source": "shadcn",
+      "path": "apps/v4/registry/bases/aria/ui/empty.tsx",
+      "sha256": "05c419160ac0226973f6f00d7d8865dc46645a75ea0697138992cdbc736efec4"
+    },
+    {
+      "source": "shadcn",
+      "path": "apps/v4/registry/bases/aria/ui/hover-card.tsx",
+      "sha256": "0eb2672b0ac67f4a5f4f99d410f96a371745c8e7680f9d0192efae7b6d138ce0"
+    },
+    {
+      "source": "shadcn",
+      "path": "apps/v4/registry/bases/aria/ui/input-group.tsx",
+      "sha256": "f560ff23727006fc7790bef0f9dee2960e8eb00843f8644e9707f0c65582c9d6"
+    },
+    {
+      "source": "shadcn",
+      "path": "apps/v4/registry/bases/aria/ui/input-otp.tsx",
+      "sha256": "8f540b9de861859602b3fbfffa5af76045877498aad5401aa4d1e8d94e1f8922"
+    },
+    {
+      "source": "shadcn",
+      "path": "apps/v4/registry/bases/aria/ui/input.tsx",
+      "sha256": "b9596748b7238b5605f558474e9d50afc1535c5832c57134055e4bbde5fa804f"
+    },
+    {
+      "source": "shadcn",
+      "path": "apps/v4/registry/bases/aria/ui/item.tsx",
+      "sha256": "24f60eb69fe9631d8e58fc4eddda0a12b20c20f079f64aae94c92f81085a8302"
+    },
+    {
+      "source": "shadcn",
+      "path": "apps/v4/registry/bases/aria/ui/kbd.tsx",
+      "sha256": "38452bf969618854c72821a8684100aa441653fc15cb2703a2f6e2299f829e27"
+    },
+    {
+      "source": "shadcn",
+      "path": "apps/v4/registry/bases/aria/ui/label.tsx",
+      "sha256": "165c4ae2584ec47e5d64107cc8fd6d20d707ed4e24098d0dae67bfd43f6cd5aa"
+    },
+    {
+      "source": "shadcn",
+      "path": "apps/v4/registry/bases/aria/ui/marker.tsx",
+      "sha256": "b4589d9ad78ea0be2a7cec10c3388c6def24cb457b04f40d05ed6ce5f9bb6bac"
+    },
+    {
+      "source": "shadcn",
+      "path": "apps/v4/registry/bases/aria/ui/message-scroller.tsx",
+      "sha256": "0b4faf50ad3ce635880353047abb3f0e8e01f9072d12c937336910cccce18ee6"
+    },
+    {
+      "source": "shadcn",
+      "path": "apps/v4/registry/bases/aria/ui/message.tsx",
+      "sha256": "b57f3c9921ceb0695cb8164c7be8ce229519f2b485b95923bb980a5e39e11c72"
+    },
+    {
+      "source": "shadcn",
+      "path": "apps/v4/registry/bases/aria/ui/native-select.tsx",
+      "sha256": "a96068a0bf403eac169f8b1e605f314dd268dde7ee2841ed72ff2b41cd944875"
+    },
+    {
+      "source": "shadcn",
+      "path": "apps/v4/registry/bases/aria/ui/pagination.tsx",
+      "sha256": "87df2725f9dfdd90935191a2bb2050187f1b6e498655fc7c5ffef35353e7775a"
+    },
+    {
+      "source": "shadcn",
+      "path": "apps/v4/registry/bases/aria/ui/questionnaire.tsx",
+      "sha256": "eb61ad3da3312bd1f2730a335a2a57f5c0b15b9c1304519f9a7900b60adf159d"
+    },
+    {
+      "source": "shadcn",
+      "path": "apps/v4/registry/bases/aria/ui/scroll-area.tsx",
+      "sha256": "aa831d9737a1e1bd49749f02a85a8e21e97e31974d4412e93445dd9b9d9e3ddd"
+    },
+    {
+      "source": "shadcn",
+      "path": "apps/v4/registry/bases/aria/ui/separator.tsx",
+      "sha256": "482ee8e50eaf1095fb6874ac18d430704820d2444a3944e1f93f7ab99e39a793"
+    },
+    {
+      "source": "shadcn",
+      "path": "apps/v4/registry/bases/aria/ui/sheet.tsx",
+      "sha256": "9120f139e46df8242946239a00ddb3de21638ddfc68bbfafce933b66807ec230"
+    },
+    {
+      "source": "shadcn",
+      "path": "apps/v4/registry/bases/aria/ui/sidebar.tsx",
+      "sha256": "183522be3bb9b5c96123461df155e3c5df08e63cf9ac00c9e81a5748d857165f"
+    },
+    {
+      "source": "shadcn",
+      "path": "apps/v4/registry/bases/aria/ui/skeleton.tsx",
+      "sha256": "8fcbad84e494a75484a0975221fb40f54c4a7d68f79cfc305cb158d1feb1badf"
+    },
+    {
+      "source": "shadcn",
+      "path": "apps/v4/registry/bases/aria/ui/textarea.tsx",
+      "sha256": "522eb7b565500e9a38ada957dc86ef0a4b2273dca9af2cb92af45332e614a334"
+    },
+    {
+      "source": "shadcn",
+      "path": "apps/v4/registry/bases/aria/ui/tooltip.tsx",
+      "sha256": "4cc80f882fec4abad1512f0d35d330603d653169ac210b27c12de10a09458d64"
+    },
+    {
+      "source": "shadcn",
+      "path": "apps/v4/registry/bases/aria/ui/trace.tsx",
+      "sha256": "4a66026355b76fa9aefeabb49fa6bf4a815481dadfd01c70da12108b945ba4bb"
+    }
+  ],
+  "componentAdoption": {
+    "status": "blocked",
+    "registeredComponentLeaves": [],
+    "componentAdapterPin": "daaf156ee00ed91cc7e6bdd937c1b4973152d141",
+    "inspectedShadcnPin": "96da9cc7f1aa10580a3741664e2a77c721206c00",
+    "transform": "shadcn-aria-rewrite@1",
+    "probeScope": "Each exact upstream source was rewritten as one entry with current nova CSS. Sibling dependency closures were not materialized. Some K9 diagnostics can depend on that limit; retained direct Base UI/Radix imports and intrinsic JSX do not.",
+    "styleSource": {
+      "path": "apps/v4/registry/styles/style-nova.css",
+      "sha256": "fd9803ec398290c306b377a46a769cad0c7ff024bf6a626993c113cacc20f16e"
+    },
+    "summary": {
+      "requestedEntries": 54,
+      "rejected": 46,
+      "candidates": 3,
+      "missingAtExactPath": 5,
+      "rewriteDiagnostics": 353,
+      "entriesWithIntrinsicJsx": 44
+    },
+    "blockers": [
+      {
+        "item": "shadcn@aria/drawer",
+        "sourcePath": "apps/v4/registry/bases/aria/ui/drawer.tsx",
+        "retainedRuntimeImport": "@base-ui/react/drawer",
+        "issue": {
+          "code": "K4",
+          "file": "apps/v4/registry/bases/aria/ui/drawer.tsx",
+          "value": "--bleed",
+          "message": "Private CSS variable needs an independently bound consumer token"
+        },
+        "reason": "Root snapPoints/swipeDirection, Viewport/Popup/Content, and swipe/nested-drawer geometry depend on the Base UI behavior engine. An import alias alone cannot reproduce them through React Aria."
+      },
+      {
+        "item": "ai-elements/reasoning",
+        "sourcePath": "packages/elements/src/reasoning.tsx",
+        "retainedRuntimeImport": "@radix-ui/react-use-controllable-state",
+        "retainedSourceAlias": "@repo/shadcn-ui/components/ui/collapsible",
+        "reason": "The existing transform preserves both imports. The referenced Collapsible source also imports radix-ui."
+      },
+      {
+        "item": "shadcn@aria/sidebar",
+        "sourcePath": "apps/v4/registry/bases/aria/ui/sidebar.tsx",
+        "intrinsicJsxTags": 22,
+        "reason": "Output preserves intrinsic elements, nested SidebarMenuSub markup, and unbound width variables."
+      }
+    ],
+    "items": [
+      {
+        "source": "shadcn@aria",
+        "item": "sidebar",
+        "sourcePath": "apps/v4/registry/bases/aria/ui/sidebar.tsx",
+        "inputSha256": "183522be3bb9b5c96123461df155e3c5df08e63cf9ac00c9e81a5748d857165f",
+        "status": "rejected-under-requested-gates",
+        "issueCount": 33,
+        "sourceAliases": [
+          "@/registry/bases/aria/hooks/use-mobile"
+        ],
+        "foreignImports": [],
+        "intrinsicJsxTags": 22,
+        "outputSha256": [
+          {
+            "path": "components/navigation-tree/sidebar.tsx",
+            "sha256": "30b066c3a06f9d64d673d2ba5f97c8d1b3ee7fa1e196c41d3c18fec36cc9cac3"
+          }
+        ],
+        "transformedOutputLeaf": "navigation-tree"
+      },
+      {
+        "source": "shadcn@aria",
+        "item": "command",
+        "sourcePath": "apps/v4/registry/bases/aria/ui/command.tsx",
+        "inputSha256": "911e2d5972ca64ec2565b2c18281f0d9c0cb4d5caffa139dcd4eea2c853add11",
+        "status": "rejected-under-requested-gates",
+        "issueCount": 7,
+        "sourceAliases": [],
+        "foreignImports": [],
+        "intrinsicJsxTags": 3,
+        "outputSha256": [
+          {
+            "path": "components/command/command.tsx",
+            "sha256": "838d0aec13ee7027a280678231e1dd3930661b2f5d5ea1618e2351ded3ad6626"
+          }
+        ],
+        "transformedOutputLeaf": "command"
+      },
+      {
+        "source": "shadcn@aria",
+        "item": "kbd",
+        "sourcePath": "apps/v4/registry/bases/aria/ui/kbd.tsx",
+        "inputSha256": "38452bf969618854c72821a8684100aa441653fc15cb2703a2f6e2299f829e27",
+        "status": "candidate-needs-contract-and-build",
+        "issueCount": 0,
+        "sourceAliases": [],
+        "foreignImports": [],
+        "intrinsicJsxTags": 0,
+        "outputSha256": [
+          {
+            "path": "components/keyboard/kbd.tsx",
+            "sha256": "a9d626e3a0f391a471abe9584e035f506e184a23a6f5e8ccaf4088efc4b7a530"
+          }
+        ],
+        "transformedOutputLeaf": "keyboard"
+      },
+      {
+        "source": "shadcn@aria",
+        "item": "item",
+        "sourcePath": "apps/v4/registry/bases/aria/ui/item.tsx",
+        "inputSha256": "24f60eb69fe9631d8e58fc4eddda0a12b20c20f079f64aae94c92f81085a8302",
+        "status": "rejected-under-requested-gates",
+        "issueCount": 5,
+        "sourceAliases": [],
+        "foreignImports": [],
+        "intrinsicJsxTags": 8,
+        "outputSha256": [
+          {
+            "path": "components/item/item.tsx",
+            "sha256": "c0e40f6dba582add17e0738b27a10bb12ea54998c76f30437f481ca7b33465e4"
+          }
+        ],
+        "transformedOutputLeaf": "item"
+      },
+      {
+        "source": "shadcn@aria",
+        "item": "empty",
+        "sourcePath": "apps/v4/registry/bases/aria/ui/empty.tsx",
+        "inputSha256": "05c419160ac0226973f6f00d7d8865dc46645a75ea0697138992cdbc736efec4",
+        "status": "rejected-under-requested-gates",
+        "issueCount": 2,
+        "sourceAliases": [],
+        "foreignImports": [],
+        "intrinsicJsxTags": 6,
+        "outputSha256": [
+          {
+            "path": "components/empty/empty.tsx",
+            "sha256": "33b79c27182742fb63496f562fb68b27323657ca5b7f46dd90a3f65afecb0b25"
+          }
+        ],
+        "transformedOutputLeaf": "empty"
+      },
+      {
+        "source": "shadcn@aria",
+        "item": "scroll-area",
+        "sourcePath": "apps/v4/registry/bases/aria/ui/scroll-area.tsx",
+        "inputSha256": "aa831d9737a1e1bd49749f02a85a8e21e97e31974d4412e93445dd9b9d9e3ddd",
+        "status": "rejected-under-requested-gates",
+        "issueCount": 1,
+        "sourceAliases": [],
+        "foreignImports": [],
+        "intrinsicJsxTags": 1,
+        "outputSha256": [
+          {
+            "path": "components/scroll-area/scroll-area.tsx",
+            "sha256": "5d8f5ed9e62317ab5407f3bcc8ff931f6f09c7120db55d9e240702dd8a6b10f2"
+          }
+        ],
+        "transformedOutputLeaf": "scroll-area"
+      },
+      {
+        "source": "shadcn@aria",
+        "item": "sheet",
+        "sourcePath": "apps/v4/registry/bases/aria/ui/sheet.tsx",
+        "inputSha256": "9120f139e46df8242946239a00ddb3de21638ddfc68bbfafce933b66807ec230",
+        "status": "rejected-under-requested-gates",
+        "issueCount": 17,
+        "sourceAliases": [],
+        "foreignImports": [],
+        "intrinsicJsxTags": 4,
+        "outputSha256": [
+          {
+            "path": "components/sheet/sheet.tsx",
+            "sha256": "e93589d8cfa6c0004b2d86fabad12bfbfc390649907ec8d655ada9fafe5d4b7d"
+          }
+        ],
+        "transformedOutputLeaf": "sheet"
+      },
+      {
+        "source": "shadcn@aria",
+        "item": "drawer",
+        "sourcePath": "apps/v4/registry/bases/aria/ui/drawer.tsx",
+        "inputSha256": "7180299dff3cc1659ab75130f0521ba485e18b38625b904e1da4049f23479060",
+        "status": "rejected-under-requested-gates",
+        "issueCount": 51,
+        "sourceAliases": [],
+        "foreignImports": [
+          "@base-ui/react/drawer"
+        ],
+        "intrinsicJsxTags": 3,
+        "outputSha256": [
+          {
+            "path": "components/drawer/drawer.tsx",
+            "sha256": "33e97d38d44bba6d0a451e9c1534e6aa26af84e7e1760e763e0cffd7487da997"
+          }
+        ],
+        "transformedOutputLeaf": "drawer"
+      },
+      {
+        "source": "shadcn@aria",
+        "item": "dropdown-menu",
+        "sourcePath": "apps/v4/registry/bases/aria/ui/dropdown-menu.tsx",
+        "inputSha256": "50a583093755eb29800812b189860b10f3aac3f7d48a3be23abe59c73dbb551d",
+        "status": "rejected-under-requested-gates",
+        "issueCount": 0,
+        "sourceAliases": [],
+        "foreignImports": [],
+        "intrinsicJsxTags": 2,
+        "outputSha256": [
+          {
+            "path": "components/menu/dropdown-menu.tsx",
+            "sha256": "2eb5df981b0b521aa77d91426abc5622cf732be972b43b6b42b3543b1814bd77"
+          }
+        ],
+        "transformedOutputLeaf": "menu"
+      },
+      {
+        "source": "shadcn@aria",
+        "item": "context-menu",
+        "sourcePath": "apps/v4/registry/bases/aria/ui/context-menu.tsx",
+        "inputSha256": "e38986646bb2a666d68d8cfc737d9da172ff0e550463b1998d9080c2d7a3ce79",
+        "status": "rejected-under-requested-gates",
+        "issueCount": 3,
+        "sourceAliases": [],
+        "foreignImports": [],
+        "intrinsicJsxTags": 2,
+        "outputSha256": [
+          {
+            "path": "components/menu/context-menu.tsx",
+            "sha256": "094bc0929cefac5ad36b87cd23259085db6001e83ca4e4c6fa16464d8ab3cdc7"
+          }
+        ],
+        "transformedOutputLeaf": "menu"
+      },
+      {
+        "source": "shadcn@aria",
+        "item": "hover-card",
+        "sourcePath": "apps/v4/registry/bases/aria/ui/hover-card.tsx",
+        "inputSha256": "0eb2672b0ac67f4a5f4f99d410f96a371745c8e7680f9d0192efae7b6d138ce0",
+        "status": "rejected-under-requested-gates",
+        "issueCount": 2,
+        "sourceAliases": [],
+        "foreignImports": [],
+        "intrinsicJsxTags": 0,
+        "outputSha256": [
+          {
+            "path": "components/popover/hover-card.tsx",
+            "sha256": "7065161c4e03bee2174ee647e5aeba239199d718337b71c55d4a5890345fac13"
+          }
+        ],
+        "transformedOutputLeaf": "popover"
+      },
+      {
+        "source": "shadcn@aria",
+        "item": "collapsible",
+        "sourcePath": "apps/v4/registry/bases/aria/ui/collapsible.tsx",
+        "inputSha256": "45c7e65d7960b07e99cbacec399945ad2f8a1f484096e7b80c0199a776c699a1",
+        "status": "candidate-needs-contract-and-build",
+        "issueCount": 0,
+        "sourceAliases": [],
+        "foreignImports": [],
+        "intrinsicJsxTags": 0,
+        "outputSha256": [
+          {
+            "path": "components/disclosure/collapsible.tsx",
+            "sha256": "45c7e65d7960b07e99cbacec399945ad2f8a1f484096e7b80c0199a776c699a1"
+          }
+        ],
+        "transformedOutputLeaf": "disclosure"
+      },
+      {
+        "source": "shadcn@aria",
+        "item": "accordion",
+        "sourcePath": "apps/v4/registry/bases/aria/ui/accordion.tsx",
+        "inputSha256": "1fe5c781263e046e1c897eb6a32a6f9f188963d53b1bef2ea23b8686597949ed",
+        "status": "rejected-under-requested-gates",
+        "issueCount": 0,
+        "sourceAliases": [],
+        "foreignImports": [],
+        "intrinsicJsxTags": 1,
+        "outputSha256": [
+          {
+            "path": "components/disclosure/accordion.tsx",
+            "sha256": "3bcee4d26ed735c6a3c79ff95e550d96b9a3b9efe3fb37764c543efedb37f8a6"
+          }
+        ],
+        "transformedOutputLeaf": "disclosure"
+      },
+      {
+        "source": "shadcn@aria",
+        "item": "alert-dialog",
+        "sourcePath": "apps/v4/registry/bases/aria/ui/alert-dialog.tsx",
+        "inputSha256": "e4c943f27064ffb492cda2b281ef3e2f31c8f50188778206234928bf78b01887",
+        "status": "rejected-under-requested-gates",
+        "issueCount": 2,
+        "sourceAliases": [],
+        "foreignImports": [],
+        "intrinsicJsxTags": 4,
+        "outputSha256": [
+          {
+            "path": "components/dialog/alert-dialog.tsx",
+            "sha256": "191b04c8b9ec6d97513086cbfd64159f1444e2dfab550e7907c8ae689565cb4d"
+          }
+        ],
+        "transformedOutputLeaf": "dialog"
+      },
+      {
+        "source": "shadcn@aria",
+        "item": "aspect-ratio",
+        "sourcePath": "apps/v4/registry/bases/aria/ui/aspect-ratio.tsx",
+        "inputSha256": "6df19df6b983c450361081b695dbf3541a6fe4a9d2ec148766991e4eb0bf6473",
+        "status": "rejected-under-requested-gates",
+        "issueCount": 0,
+        "sourceAliases": [],
+        "foreignImports": [],
+        "intrinsicJsxTags": 1,
+        "outputSha256": [
+          {
+            "path": "components/aspect-ratio/aspect-ratio.tsx",
+            "sha256": "6f45b629f6a1ec3b0fc6b696f246137acc651645651126b6f22cc10c3c2d8936"
+          }
+        ],
+        "transformedOutputLeaf": "aspect-ratio"
+      },
+      {
+        "source": "shadcn@aria",
+        "item": "button-group",
+        "sourcePath": "apps/v4/registry/bases/aria/ui/button-group.tsx",
+        "inputSha256": "0eea05ae4be99ebf25b026b41a09490cd00947b12b74f00147fa9a13d52f39b6",
+        "status": "rejected-under-requested-gates",
+        "issueCount": 5,
+        "sourceAliases": [],
+        "foreignImports": [],
+        "intrinsicJsxTags": 2,
+        "outputSha256": [
+          {
+            "path": "components/button-group/button-group.tsx",
+            "sha256": "3d379f58c430a0a3ce4922353b68cf09f85390f8ce2f58990a9b5e21e8a02ef0"
+          }
+        ],
+        "transformedOutputLeaf": "button-group"
+      },
+      {
+        "source": "shadcn@aria",
+        "item": "input-group",
+        "sourcePath": "apps/v4/registry/bases/aria/ui/input-group.tsx",
+        "inputSha256": "f560ff23727006fc7790bef0f9dee2960e8eb00843f8644e9707f0c65582c9d6",
+        "status": "rejected-under-requested-gates",
+        "issueCount": 12,
+        "sourceAliases": [],
+        "foreignImports": [],
+        "intrinsicJsxTags": 2,
+        "outputSha256": [
+          {
+            "path": "components/input-group/input-group.tsx",
+            "sha256": "3dc13c1e93a336ffb2b0578b79d349f05b07cbb14e2626d7df974bd1367550dc"
+          }
+        ],
+        "transformedOutputLeaf": "input-group"
+      },
+      {
+        "source": "shadcn@aria",
+        "item": "input-otp",
+        "sourcePath": "apps/v4/registry/bases/aria/ui/input-otp.tsx",
+        "inputSha256": "8f540b9de861859602b3fbfffa5af76045877498aad5401aa4d1e8d94e1f8922",
+        "status": "rejected-under-requested-gates",
+        "issueCount": 9,
+        "sourceAliases": [],
+        "foreignImports": [
+          "input-otp"
+        ],
+        "intrinsicJsxTags": 5,
+        "outputSha256": [
+          {
+            "path": "components/input-otp/input-otp.tsx",
+            "sha256": "7135ef90af774ee73ae9f693e3e18b7f493be8d4ec8181925dca2e1d22dcc447"
+          }
+        ],
+        "transformedOutputLeaf": "input-otp"
+      },
+      {
+        "source": "shadcn@aria",
+        "item": "label",
+        "sourcePath": "apps/v4/registry/bases/aria/ui/label.tsx",
+        "inputSha256": "165c4ae2584ec47e5d64107cc8fd6d20d707ed4e24098d0dae67bfd43f6cd5aa",
+        "status": "rejected-under-requested-gates",
+        "issueCount": 1,
+        "sourceAliases": [],
+        "foreignImports": [],
+        "intrinsicJsxTags": 0,
+        "outputSha256": [
+          {
+            "path": "components/field/label.tsx",
+            "sha256": "2cdffc9f1ea62e852fa0dd90eaeef2a25d38977cfd046c24b521265ab3c00b63"
+          }
+        ],
+        "transformedOutputLeaf": "field"
+      },
+      {
+        "source": "shadcn@aria",
+        "item": "menubar",
+        "sourcePath": "apps/v4/registry/bases/aria/ui/menubar.tsx",
+        "status": "missing-at-exact-source-path"
+      },
+      {
+        "source": "shadcn@aria",
+        "item": "navigation-menu",
+        "sourcePath": "apps/v4/registry/bases/aria/ui/navigation-menu.tsx",
+        "status": "missing-at-exact-source-path"
+      },
+      {
+        "source": "shadcn@aria",
+        "item": "native-select",
+        "sourcePath": "apps/v4/registry/bases/aria/ui/native-select.tsx",
+        "inputSha256": "a96068a0bf403eac169f8b1e605f314dd268dde7ee2841ed72ff2b41cd944875",
+        "status": "rejected-under-requested-gates",
+        "issueCount": 5,
+        "sourceAliases": [],
+        "foreignImports": [],
+        "intrinsicJsxTags": 4,
+        "outputSha256": [
+          {
+            "path": "components/native-select/native-select.tsx",
+            "sha256": "5459196a13a546aaf3e4f917e88375739ea665240aeaa6b5e0e0c5182b8f7e10"
+          }
+        ],
+        "transformedOutputLeaf": "native-select"
+      },
+      {
+        "source": "shadcn@aria",
+        "item": "pagination",
+        "sourcePath": "apps/v4/registry/bases/aria/ui/pagination.tsx",
+        "inputSha256": "87df2725f9dfdd90935191a2bb2050187f1b6e498655fc7c5ffef35353e7775a",
+        "status": "rejected-under-requested-gates",
+        "issueCount": 3,
+        "sourceAliases": [],
+        "foreignImports": [],
+        "intrinsicJsxTags": 7,
+        "outputSha256": [
+          {
+            "path": "components/pagination/pagination.tsx",
+            "sha256": "fcd030f5b771ce6e43df4b8939759bedf075c1ece8159f3df52e9f0d017537c4"
+          }
+        ],
+        "transformedOutputLeaf": "pagination"
+      },
+      {
+        "source": "shadcn@aria",
+        "item": "carousel",
+        "sourcePath": "apps/v4/registry/bases/aria/ui/carousel.tsx",
+        "inputSha256": "23d1233c9e5593227af08c9b7dde89c2274b591859184290137f87e25019b774",
+        "status": "rejected-under-requested-gates",
+        "issueCount": 2,
+        "sourceAliases": [],
+        "foreignImports": [
+          "embla-carousel-react"
+        ],
+        "intrinsicJsxTags": 6,
+        "outputSha256": [
+          {
+            "path": "components/carousel/carousel.tsx",
+            "sha256": "5d22ef211a38e1bd544731a77fde767d0d055e6b834efdad36c54582fa5b738c"
+          }
+        ],
+        "transformedOutputLeaf": "carousel"
+      },
+      {
+        "source": "shadcn@aria",
+        "item": "typography",
+        "sourcePath": "apps/v4/registry/bases/aria/ui/typography.tsx",
+        "status": "missing-at-exact-source-path"
+      },
+      {
+        "source": "shadcn@aria",
+        "item": "direction",
+        "sourcePath": "apps/v4/registry/bases/aria/ui/direction.tsx",
+        "inputSha256": "47b9219078865931ccf75c27bffd2ee6daaf13b177dd600ac73e2e1599aa0dc0",
+        "status": "candidate-needs-contract-and-build",
+        "issueCount": 0,
+        "sourceAliases": [],
+        "foreignImports": [],
+        "intrinsicJsxTags": 0,
+        "outputSha256": [
+          {
+            "path": "components/direction/direction.tsx",
+            "sha256": "47b9219078865931ccf75c27bffd2ee6daaf13b177dd600ac73e2e1599aa0dc0"
+          }
+        ],
+        "transformedOutputLeaf": "direction"
+      },
+      {
+        "source": "shadcn@aria",
+        "item": "marker",
+        "sourcePath": "apps/v4/registry/bases/aria/ui/marker.tsx",
+        "inputSha256": "b4589d9ad78ea0be2a7cec10c3388c6def24cb457b04f40d05ed6ce5f9bb6bac",
+        "status": "rejected-under-requested-gates",
+        "issueCount": 2,
+        "sourceAliases": [],
+        "foreignImports": [],
+        "intrinsicJsxTags": 3,
+        "outputSha256": [
+          {
+            "path": "components/marker/marker.tsx",
+            "sha256": "40b6f9b04f3b18ec8c774d24e65abef6e2d301e90db3187f73bde29793943310"
+          }
+        ],
+        "transformedOutputLeaf": "marker"
+      },
+      {
+        "source": "shadcn@aria",
+        "item": "message",
+        "sourcePath": "apps/v4/registry/bases/aria/ui/message.tsx",
+        "inputSha256": "b57f3c9921ceb0695cb8164c7be8ce229519f2b485b95923bb980a5e39e11c72",
+        "status": "rejected-under-requested-gates",
+        "issueCount": 0,
+        "sourceAliases": [],
+        "foreignImports": [],
+        "intrinsicJsxTags": 6,
+        "outputSha256": [
+          {
+            "path": "components/message/message.tsx",
+            "sha256": "1276421c6c9e13476e519401a95c1da54c88a0f758af8ceb3519446c4f7ac582"
+          }
+        ],
+        "transformedOutputLeaf": "message"
+      },
+      {
+        "source": "shadcn@aria",
+        "item": "message-scroller",
+        "sourcePath": "apps/v4/registry/bases/aria/ui/message-scroller.tsx",
+        "inputSha256": "0b4faf50ad3ce635880353047abb3f0e8e01f9072d12c937336910cccce18ee6",
+        "status": "rejected-under-requested-gates",
+        "issueCount": 8,
+        "sourceAliases": [],
+        "foreignImports": [],
+        "intrinsicJsxTags": 1,
+        "outputSha256": [
+          {
+            "path": "components/message-scroller/message-scroller.tsx",
+            "sha256": "0276e42fa226b7161b993cdad19019ba5fc8eb1f36aebed747ba34a907d4c0a1"
+          }
+        ],
+        "transformedOutputLeaf": "message-scroller"
+      },
+      {
+        "source": "shadcn@aria",
+        "item": "bubble",
+        "sourcePath": "apps/v4/registry/bases/aria/ui/bubble.tsx",
+        "inputSha256": "d49c912240c4b5e6b18f2c352e8121c30fa9a54c3a58209ec0fe6eaaff873826",
+        "status": "rejected-under-requested-gates",
+        "issueCount": 6,
+        "sourceAliases": [],
+        "foreignImports": [],
+        "intrinsicJsxTags": 4,
+        "outputSha256": [
+          {
+            "path": "components/bubble/bubble.tsx",
+            "sha256": "9777aff8a7174ca54823d65b906307506e8d25f06ef6bc1673431b16ea035d41"
+          }
+        ],
+        "transformedOutputLeaf": "bubble"
+      },
+      {
+        "source": "shadcn@aria",
+        "item": "attachment",
+        "sourcePath": "apps/v4/registry/bases/aria/ui/attachment.tsx",
+        "inputSha256": "fdc021345128ce331e430bfa59ed0a608ff101101b57db468d3b182166b4c30f",
+        "status": "rejected-under-requested-gates",
+        "issueCount": 15,
+        "sourceAliases": [],
+        "foreignImports": [],
+        "intrinsicJsxTags": 8,
+        "outputSha256": [
+          {
+            "path": "components/attachment/attachment.tsx",
+            "sha256": "ae57e818ed4063caa9b4e893037ba1fd833e7a3bf5cbc79d5b57913e2484f285"
+          }
+        ],
+        "transformedOutputLeaf": "attachment"
+      },
+      {
+        "source": "shadcn@aria",
+        "item": "code-block",
+        "sourcePath": "apps/v4/registry/bases/aria/ui/code-block.tsx",
+        "inputSha256": "672dda0606156f3107f50dd9f6f02b1e825c975bd8b54b7ed630232cfd099538",
+        "status": "rejected-under-requested-gates",
+        "issueCount": 13,
+        "sourceAliases": [],
+        "foreignImports": [],
+        "intrinsicJsxTags": 10,
+        "outputSha256": [
+          {
+            "path": "components/code-block/code-block.tsx",
+            "sha256": "05dc0475afce17d867aaa45e84f29d4c67602c398c7770fcb034d63f87c3f9ca"
+          }
+        ],
+        "transformedOutputLeaf": "code-block"
+      },
+      {
+        "source": "shadcn@aria",
+        "item": "questionnaire",
+        "sourcePath": "apps/v4/registry/bases/aria/ui/questionnaire.tsx",
+        "inputSha256": "eb61ad3da3312bd1f2730a335a2a57f5c0b15b9c1304519f9a7900b60adf159d",
+        "status": "rejected-under-requested-gates",
+        "issueCount": 16,
+        "sourceAliases": [],
+        "foreignImports": [],
+        "intrinsicJsxTags": 5,
+        "outputSha256": [
+          {
+            "path": "components/questionnaire/questionnaire.tsx",
+            "sha256": "5e9b088c63d1d1b7c85ea1bbb9aa272b78e35e4f438a8d295fc233589c0e57ac"
+          }
+        ],
+        "transformedOutputLeaf": "questionnaire"
+      },
+      {
+        "source": "shadcn@aria",
+        "item": "trace",
+        "sourcePath": "apps/v4/registry/bases/aria/ui/trace.tsx",
+        "inputSha256": "4a66026355b76fa9aefeabb49fa6bf4a815481dadfd01c70da12108b945ba4bb",
+        "status": "rejected-under-requested-gates",
+        "issueCount": 8,
+        "sourceAliases": [],
+        "foreignImports": [],
+        "intrinsicJsxTags": 6,
+        "outputSha256": [
+          {
+            "path": "components/trace/trace.tsx",
+            "sha256": "78a7ace76079c47ef2156571f6d982221a38f4cc48a22308d9d1fe14502bb65d"
+          }
+        ],
+        "transformedOutputLeaf": "trace"
+      },
+      {
+        "source": "ai-elements",
+        "item": "chat",
+        "sourcePath": "packages/elements/src/chat.tsx",
+        "status": "missing-at-exact-source-path"
+      },
+      {
+        "source": "ai-elements",
+        "item": "prompt-input",
+        "sourcePath": "packages/elements/src/prompt-input.tsx",
+        "inputSha256": "cf43baf5baa444b4ae06d250643b3fb2efd329c85f9b31a43e3aaf481dd27305",
+        "status": "rejected-under-requested-gates",
+        "issueCount": 7,
+        "sourceAliases": [
+          "@repo/shadcn-ui/components/ui/command",
+          "@repo/shadcn-ui/components/ui/dropdown-menu",
+          "@repo/shadcn-ui/components/ui/hover-card",
+          "@repo/shadcn-ui/components/ui/input-group",
+          "@repo/shadcn-ui/components/ui/select",
+          "@repo/shadcn-ui/components/ui/spinner",
+          "@repo/shadcn-ui/components/ui/tooltip",
+          "@repo/shadcn-ui/lib/utils"
+        ],
+        "foreignImports": [],
+        "intrinsicJsxTags": 10,
+        "outputSha256": [
+          {
+            "path": "components/prompt-input/prompt-input.tsx",
+            "sha256": "268028de5e296863976df69263d044ef3c99c2ae5f0b21d60683e63fd465d43c"
+          }
+        ],
+        "transformedOutputLeaf": "prompt-input"
+      },
+      {
+        "source": "ai-elements",
+        "item": "reasoning",
+        "sourcePath": "packages/elements/src/reasoning.tsx",
+        "inputSha256": "f138cddde35854f73632ff51d48230f8d6e16e0a49a74b44a93b51993a65550e",
+        "status": "rejected-under-requested-gates",
+        "issueCount": 4,
+        "sourceAliases": [
+          "@repo/shadcn-ui/components/ui/collapsible",
+          "@repo/shadcn-ui/lib/utils"
+        ],
+        "foreignImports": [
+          "@radix-ui/react-use-controllable-state"
+        ],
+        "intrinsicJsxTags": 2,
+        "outputSha256": [
+          {
+            "path": "components/reasoning/reasoning.tsx",
+            "sha256": "b34671f883be4a5359892c4e0dc717d30e4237999eb475bd03ee137ba815c7f1"
+          }
+        ],
+        "transformedOutputLeaf": "reasoning"
+      },
+      {
+        "source": "ai-elements",
+        "item": "chain-of-thought",
+        "sourcePath": "packages/elements/src/chain-of-thought.tsx",
+        "inputSha256": "ddc63b036299d636483b2041599248226e05ef01afd9c5e32724e3a849def8c4",
+        "status": "rejected-under-requested-gates",
+        "issueCount": 11,
+        "sourceAliases": [
+          "@repo/shadcn-ui/components/ui/badge",
+          "@repo/shadcn-ui/components/ui/collapsible",
+          "@repo/shadcn-ui/lib/utils"
+        ],
+        "foreignImports": [
+          "@radix-ui/react-use-controllable-state"
+        ],
+        "intrinsicJsxTags": 12,
+        "outputSha256": [
+          {
+            "path": "components/chain-of-thought/chain-of-thought.tsx",
+            "sha256": "078d7b59767d8e6ff9783ac98ad4280b907c42ba733be5e07397c3dd5065b66b"
+          }
+        ],
+        "transformedOutputLeaf": "chain-of-thought"
+      },
+      {
+        "source": "ai-elements",
+        "item": "tool",
+        "sourcePath": "packages/elements/src/tool.tsx",
+        "inputSha256": "5b520e0c33792cba0ceb04e1cb18c69b212cffacdb52d7297e292c7af568dda4",
+        "status": "rejected-under-requested-gates",
+        "issueCount": 12,
+        "sourceAliases": [
+          "@repo/shadcn-ui/components/ui/badge",
+          "@repo/shadcn-ui/components/ui/collapsible",
+          "@repo/shadcn-ui/lib/utils"
+        ],
+        "foreignImports": [],
+        "intrinsicJsxTags": 10,
+        "outputSha256": [
+          {
+            "path": "components/tool/tool.tsx",
+            "sha256": "1f02be26d289fc16b402c298e8f3057eac1e2ca7cb5f99c0a43cc6f01fee4e18"
+          }
+        ],
+        "transformedOutputLeaf": "tool"
+      },
+      {
+        "source": "ai-elements",
+        "item": "sources",
+        "sourcePath": "packages/elements/src/sources.tsx",
+        "inputSha256": "1454af3ac2c58766a155a881d119d1f9321632a4922d3f74581ba37f52b4707a",
+        "status": "rejected-under-requested-gates",
+        "issueCount": 4,
+        "sourceAliases": [
+          "@repo/shadcn-ui/components/ui/collapsible",
+          "@repo/shadcn-ui/lib/utils"
+        ],
+        "foreignImports": [],
+        "intrinsicJsxTags": 3,
+        "outputSha256": [
+          {
+            "path": "components/sources/sources.tsx",
+            "sha256": "5d8dfe210e191226d9fe7878441d06ebd80c1fb6e65cb1f6fefb45a79b78e035"
+          }
+        ],
+        "transformedOutputLeaf": "sources"
+      },
+      {
+        "source": "ai-elements",
+        "item": "inline-citation",
+        "sourcePath": "packages/elements/src/inline-citation.tsx",
+        "inputSha256": "c7dc2a67386bc06d23fa42344f48f3b45e51f1f91b22e44801a2902acdf64018",
+        "status": "rejected-under-requested-gates",
+        "issueCount": 6,
+        "sourceAliases": [
+          "@repo/shadcn-ui/components/ui/badge",
+          "@repo/shadcn-ui/components/ui/carousel",
+          "@repo/shadcn-ui/components/ui/carousel",
+          "@repo/shadcn-ui/components/ui/hover-card",
+          "@repo/shadcn-ui/lib/utils"
+        ],
+        "foreignImports": [],
+        "intrinsicJsxTags": 11,
+        "outputSha256": [
+          {
+            "path": "components/inline-citation/inline-citation.tsx",
+            "sha256": "9fce8b0be98d78667a25a10dad87f766607d5640e55409b52abe59d3d959b475"
+          }
+        ],
+        "transformedOutputLeaf": "inline-citation"
+      },
+      {
+        "source": "ai-elements",
+        "item": "model-selector",
+        "sourcePath": "packages/elements/src/model-selector.tsx",
+        "inputSha256": "a4d51f76ddf5197cb86b7f70ba62bd62327468a9acae1351a0b1adcb3710ec0a",
+        "status": "rejected-under-requested-gates",
+        "issueCount": 5,
+        "sourceAliases": [
+          "@repo/shadcn-ui/components/ui/command",
+          "@repo/shadcn-ui/components/ui/dialog",
+          "@repo/shadcn-ui/lib/utils"
+        ],
+        "foreignImports": [],
+        "intrinsicJsxTags": 3,
+        "outputSha256": [
+          {
+            "path": "components/model-selector/model-selector.tsx",
+            "sha256": "996067cdfe27f8382f722df9c88cb1adf460d22e13328113d5cb3fe97394a425"
+          }
+        ],
+        "transformedOutputLeaf": "model-selector"
+      },
+      {
+        "source": "ai-elements",
+        "item": "suggestion",
+        "sourcePath": "packages/elements/src/suggestion.tsx",
+        "inputSha256": "0703d777b4153ae20e93514acb9e8327eb03dd2ed2fd0230e03cf22271c7a249",
+        "status": "rejected-under-requested-gates",
+        "issueCount": 0,
+        "sourceAliases": [
+          "@repo/shadcn-ui/components/ui/button",
+          "@repo/shadcn-ui/components/ui/scroll-area",
+          "@repo/shadcn-ui/lib/utils"
+        ],
+        "foreignImports": [],
+        "intrinsicJsxTags": 1,
+        "outputSha256": [
+          {
+            "path": "components/suggestion/suggestion.tsx",
+            "sha256": "f862c67ec5ff4e024ce1929ac5e59c29a348b3e90e73636b5d335193ef252d53"
+          }
+        ],
+        "transformedOutputLeaf": "suggestion"
+      },
+      {
+        "source": "ai-elements",
+        "item": "context",
+        "sourcePath": "packages/elements/src/context.tsx",
+        "inputSha256": "e511015bd0d58d4dcc179d672fe2de980ff923654a53541d4396f209bf02c243",
+        "status": "rejected-under-requested-gates",
+        "issueCount": 3,
+        "sourceAliases": [
+          "@repo/shadcn-ui/components/ui/button",
+          "@repo/shadcn-ui/components/ui/hover-card",
+          "@repo/shadcn-ui/components/ui/progress",
+          "@repo/shadcn-ui/lib/utils"
+        ],
+        "foreignImports": [],
+        "intrinsicJsxTags": 23,
+        "outputSha256": [
+          {
+            "path": "components/context/context.tsx",
+            "sha256": "831d109dedad3ef5064fe717d93303f9cba940113d997404d550b6944b63622f"
+          }
+        ],
+        "transformedOutputLeaf": "context"
+      },
+      {
+        "source": "ai-elements",
+        "item": "task",
+        "sourcePath": "packages/elements/src/task.tsx",
+        "inputSha256": "cc9fb7138ded75f17c37c28a2b23425c98f4d06bead436531ad6e65ae553507e",
+        "status": "rejected-under-requested-gates",
+        "issueCount": 4,
+        "sourceAliases": [
+          "@repo/shadcn-ui/components/ui/collapsible",
+          "@repo/shadcn-ui/lib/utils"
+        ],
+        "foreignImports": [],
+        "intrinsicJsxTags": 5,
+        "outputSha256": [
+          {
+            "path": "components/task/task.tsx",
+            "sha256": "1a1e9a2052e7e498d9579db8d78d261e6f22c624debc65217f58afb89712429a"
+          }
+        ],
+        "transformedOutputLeaf": "task"
+      },
+      {
+        "source": "ai-elements",
+        "item": "plan",
+        "sourcePath": "packages/elements/src/plan.tsx",
+        "inputSha256": "bfa20e90199fa40e5f714be131798406dc07b23051f8c48c590e91c65ade99d8",
+        "status": "rejected-under-requested-gates",
+        "issueCount": 2,
+        "sourceAliases": [
+          "@repo/shadcn-ui/components/ui/button",
+          "@repo/shadcn-ui/components/ui/card",
+          "@repo/shadcn-ui/components/ui/collapsible",
+          "@repo/shadcn-ui/lib/utils"
+        ],
+        "foreignImports": [],
+        "intrinsicJsxTags": 1,
+        "outputSha256": [
+          {
+            "path": "components/plan/plan.tsx",
+            "sha256": "d27439dddd440400c6acb4ff4bf70ad5750bba4771478b39f71123ccb7e7ab5a"
+          }
+        ],
+        "transformedOutputLeaf": "plan"
+      },
+      {
+        "source": "ai-elements",
+        "item": "queue",
+        "sourcePath": "packages/elements/src/queue.tsx",
+        "inputSha256": "c823f565e0430749ba0b09db33e76eeb675eea4838bed10245bca392bffd6cfa",
+        "status": "rejected-under-requested-gates",
+        "issueCount": 7,
+        "sourceAliases": [
+          "@repo/shadcn-ui/components/ui/button",
+          "@repo/shadcn-ui/components/ui/collapsible",
+          "@repo/shadcn-ui/components/ui/scroll-area",
+          "@repo/shadcn-ui/lib/utils"
+        ],
+        "foreignImports": [],
+        "intrinsicJsxTags": 15,
+        "outputSha256": [
+          {
+            "path": "components/queue/queue.tsx",
+            "sha256": "e0310fb2ce93b5162adbb33c0023be952c074154becf2278d4405b560298db53"
+          }
+        ],
+        "transformedOutputLeaf": "queue"
+      },
+      {
+        "source": "ai-elements",
+        "item": "confirmation",
+        "sourcePath": "packages/elements/src/confirmation.tsx",
+        "inputSha256": "7cc0befed99499ed9010643e7a90ec619180a3f6e79cba5668cfc84126b96a10",
+        "status": "rejected-under-requested-gates",
+        "issueCount": 0,
+        "sourceAliases": [
+          "@repo/shadcn-ui/components/ui/alert",
+          "@repo/shadcn-ui/components/ui/button",
+          "@repo/shadcn-ui/lib/utils"
+        ],
+        "foreignImports": [],
+        "intrinsicJsxTags": 1,
+        "outputSha256": [
+          {
+            "path": "components/confirmation/confirmation.tsx",
+            "sha256": "520321ab4c343846513cc1f091552ada58ccbe478dfb6715bcf5085b951776ff"
+          }
+        ],
+        "transformedOutputLeaf": "confirmation"
+      },
+      {
+        "source": "ai-elements",
+        "item": "checkpoint",
+        "sourcePath": "packages/elements/src/checkpoint.tsx",
+        "inputSha256": "8649b28c7969c6c58bd9a8643279810c13da332198a4fcbc5b8a75000673eb5b",
+        "status": "rejected-under-requested-gates",
+        "issueCount": 3,
+        "sourceAliases": [
+          "@repo/shadcn-ui/components/ui/button",
+          "@repo/shadcn-ui/components/ui/separator",
+          "@repo/shadcn-ui/components/ui/tooltip",
+          "@repo/shadcn-ui/lib/utils"
+        ],
+        "foreignImports": [],
+        "intrinsicJsxTags": 1,
+        "outputSha256": [
+          {
+            "path": "components/checkpoint/checkpoint.tsx",
+            "sha256": "fae49312a045a206df5425d7caa2562b7d70e11e3f333f2b8f607408c1140f9b"
+          }
+        ],
+        "transformedOutputLeaf": "checkpoint"
+      },
+      {
+        "source": "ai-elements",
+        "item": "file-tree",
+        "sourcePath": "packages/elements/src/file-tree.tsx",
+        "inputSha256": "9b6946171369d224d5d10df686c3c18ce7608aa4a4792744fc5c313499cec0cb",
+        "status": "rejected-under-requested-gates",
+        "issueCount": 6,
+        "sourceAliases": [
+          "@repo/shadcn-ui/components/ui/collapsible",
+          "@repo/shadcn-ui/lib/utils"
+        ],
+        "foreignImports": [],
+        "intrinsicJsxTags": 12,
+        "outputSha256": [
+          {
+            "path": "components/file-tree/file-tree.tsx",
+            "sha256": "7a85ec8b54bc5db3c9b6ef9c20746962548443e8c42f8143a718283feda612f8"
+          }
+        ],
+        "transformedOutputLeaf": "file-tree"
+      },
+      {
+        "source": "ai-elements",
+        "item": "terminal",
+        "sourcePath": "packages/elements/src/terminal.tsx",
+        "inputSha256": "04b9b534925054cfe67fdc3bc212eb7261b4912e6e970c4844a195907d3a9a93",
+        "status": "rejected-under-requested-gates",
+        "issueCount": 19,
+        "sourceAliases": [
+          "@repo/shadcn-ui/components/ui/button",
+          "@repo/shadcn-ui/lib/utils"
+        ],
+        "foreignImports": [],
+        "intrinsicJsxTags": 9,
+        "outputSha256": [
+          {
+            "path": "components/terminal/terminal.tsx",
+            "sha256": "8a9db7a8c98547de2a08441407566fb4b03e7de39aac8a3ec490d57fd2496401"
+          }
+        ],
+        "transformedOutputLeaf": "terminal"
+      },
+      {
+        "source": "ai-elements",
+        "item": "stack-trace",
+        "sourcePath": "packages/elements/src/stack-trace.tsx",
+        "inputSha256": "a2d31824b2b09df91fc6fc5921f2a7610abe2c839655d51770d9c3072db7e546",
+        "status": "rejected-under-requested-gates",
+        "issueCount": 5,
+        "sourceAliases": [
+          "@repo/shadcn-ui/components/ui/button",
+          "@repo/shadcn-ui/components/ui/collapsible",
+          "@repo/shadcn-ui/lib/utils"
+        ],
+        "foreignImports": [
+          "@radix-ui/react-use-controllable-state"
+        ],
+        "intrinsicJsxTags": 16,
+        "outputSha256": [
+          {
+            "path": "components/stack-trace/stack-trace.tsx",
+            "sha256": "f3677ef23468697ac19acbc34e4a53b43c97ecabf63fa6b7a24e443a3a7acd82"
+          }
+        ],
+        "transformedOutputLeaf": "stack-trace"
+      },
+      {
+        "source": "ai-elements",
+        "item": "test-results",
+        "sourcePath": "packages/elements/src/test-results.tsx",
+        "inputSha256": "71fb2b77cfa34e6d7d3b1cc06a765622f755bcec193d3d539f4bead0e937f346",
+        "status": "rejected-under-requested-gates",
+        "issueCount": 27,
+        "sourceAliases": [
+          "@repo/shadcn-ui/components/ui/badge",
+          "@repo/shadcn-ui/components/ui/collapsible",
+          "@repo/shadcn-ui/lib/utils"
+        ],
+        "foreignImports": [],
+        "intrinsicJsxTags": 26,
+        "outputSha256": [
+          {
+            "path": "components/test-results/test-results.tsx",
+            "sha256": "c6a807ac0c1df7c06003ccb7d244d86e1e3d43a5801e5f07c441d3bda47cfda8"
+          }
+        ],
+        "transformedOutputLeaf": "test-results"
+      },
+      {
+        "source": "ai-elements",
+        "item": "subagent",
+        "sourcePath": "packages/elements/src/subagent.tsx",
+        "status": "missing-at-exact-source-path"
+      }
+    ],
+    "sourceAlternatives": [
+      {
+        "requested": "ai-elements/chat",
+        "sourcePath": "packages/elements/src/conversation.tsx",
+        "rewriteDiagnostics": 3,
+        "contractEquivalence": "not-established",
+        "adopted": false
+      },
+      {
+        "requested": "ai-elements/subagent",
+        "sourcePath": "packages/elements/src/agent.tsx",
+        "rewriteDiagnostics": 4,
+        "contractEquivalence": "not-established",
+        "adopted": false
+      },
+      {
+        "requested": "shadcn@aria/menubar",
+        "sourcePath": "apps/v4/registry/bases/base/ui/menubar.tsx",
+        "rewriteDiagnostics": 11,
+        "contractEquivalence": "not-established",
+        "adopted": false
+      },
+      {
+        "requested": "shadcn@aria/navigation-menu",
+        "sourcePath": "apps/v4/registry/bases/base/ui/navigation-menu.tsx",
+        "rewriteDiagnostics": 33,
+        "contractEquivalence": "not-established",
+        "adopted": false
+      },
+      {
+        "requested": "shadcn@aria/typography",
+        "sourcePath": "apps/v4/registry/bases/aria/blocks/preview/cards/typography-specimen.tsx",
+        "rewriteDiagnostics": 4,
+        "contractEquivalence": "not-established",
+        "adopted": false
+      }
+    ],
+    "repairBoundary": "Some output alias/token bindings are possible within existing output paths. Completing the required Drawer engine replacement and all raw-element/runtime gates requires behavior adaptation or further authenticated transform work; neither was represented as adopted output.",
+    "entrypoint": "packages/designer/src/importers/rewrite.ts#rewriteShadcnAria",
+    "adapterSha256": "0db0052a5441ff2fc91d6e56009cd857fb5a499e62e40d5e0eb060c36ca89b3a"
+  }
+}

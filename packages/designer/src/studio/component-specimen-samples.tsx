@@ -206,6 +206,46 @@ function sourceSample(key: string, exports: Namespace): ComponentSpecimenSample 
   const parts = (...names: string[]) => { const found = names.map(name => part(exports, name)); return found.every(Boolean) ? found as Renderable[] : undefined; };
   const s = componentSpecimenSourceSamples;
   switch (key) {
+    case "components/command/command.tsx#Command": {
+      const found = parts("CommandInput", "CommandList", "CommandGroup", "CommandItem"); if (!found) return undefined;
+      const [Input, List, Group, Item] = found as [Renderable, Renderable, Renderable, Renderable];
+      const sample = s[key];
+      return { props: {}, children: [<Input key="input" aria-label={sample.searchLabel} placeholder={sample.searchLabel} />,
+        <List key="list" aria-label={sample.heading}>{sample.groups.map(group => <Group key={group.id} heading={group.label}>{group.items.map(item => <Item key={item.id} id={item.id} textValue={item.label}>{item.label}</Item>)}</Group>)}</List>] };
+    }
+    case "components/dropdown-menu/dropdown-menu.tsx#DropdownMenu": {
+      const found = parts("DropdownMenuTrigger", "DropdownMenuItem"); if (!found) return undefined;
+      const [Trigger, Item] = found as [Renderable, Renderable];
+      const sample = s[key];
+      return { props: { "aria-label": sample.label }, children: sample.items.map(item => <Item key={item.id} id={item.id}>{item.label}</Item>),
+        host: specimen => <Trigger><Button variant="secondary">{sample.trigger}</Button>{specimen}</Trigger> };
+    }
+    case "components/empty/empty.tsx#Empty": {
+      const found = parts("EmptyHeader", "EmptyTitle", "EmptyDescription"); if (!found) return undefined;
+      const [Header, Title, Description] = found as [Renderable, Renderable, Renderable];
+      return { props: {}, children: <Header><Title>{s[key].title}</Title><Description>{s[key].description}</Description></Header> };
+    }
+    case "components/item/item.tsx#Item": {
+      const found = parts("ItemContent", "ItemTitle", "ItemDescription"); if (!found) return undefined;
+      const [Content, Title, Description] = found as [Renderable, Renderable, Renderable];
+      return { props: {}, children: <Content><Title>{s[key].title}</Title><Description>{s[key].content}</Description></Content> };
+    }
+    case "components/scroll-area/scroll-area.tsx#ScrollArea":
+      return { props: { role: "region", "aria-label": s[key].label, tabIndex: 0 }, children: s[key].text };
+    case "components/sheet/sheet.tsx#Sheet": {
+      const found = parts("SheetTrigger", "SheetHeader", "SheetTitle", "SheetDescription"); if (!found) return undefined;
+      const [Trigger, Header, Title, Description] = found as [Renderable, Renderable, Renderable, Renderable];
+      const sample = s[key];
+      return { props: { showCloseButton: false }, children: <Header><Title>{sample.title}</Title><Description>{sample.body}</Description></Header>,
+        host: specimen => <Trigger><Button variant="secondary">{sample.trigger}</Button>{specimen}</Trigger> };
+    }
+    case "components/sidebar/sidebar.tsx#Sidebar": {
+      const found = parts("SidebarProvider", "SidebarContent", "SidebarMenu", "SidebarMenuItem", "SidebarMenuButton"); if (!found) return undefined;
+      const [Provider, Content, Menu, Item, Link] = found as [Renderable, Renderable, Renderable, Renderable, Renderable];
+      return { props: { collapsible: "none", "aria-label": s[key].label },
+        children: <Content><Menu>{s[key].items.map(item => <Item key={item.id}><Link href={item.href}>{item.label}</Link></Item>)}</Menu></Content>,
+        host: specimen => <Provider className="min-h-0">{specimen}</Provider> };
+    }
     case "components/breadcrumbs/breadcrumb.tsx#Breadcrumb": {
       const found = parts("BreadcrumbList", "BreadcrumbItem", "BreadcrumbLink"); if (!found) return undefined;
       const [List, Item, Link] = found as [Renderable, Renderable, Renderable];

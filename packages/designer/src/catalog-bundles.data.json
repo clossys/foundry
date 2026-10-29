@@ -6840,7 +6840,7 @@
     },
     {
       "path": "catalog/fills/lucide/tokens.icon-stroke.json",
-      "sha256": "f5fceda700770dbdf96ca22799a962f6fc1b79d989e39f1b40f8a344fb9fcb51",
+      "sha256": "2067ae7a0ef16f718a2505848016575e3ee98fd2867434c1c9b7155208fda2d0",
       "document": {
         "$extensions": {
           "com.clossys.fill": {
@@ -6866,7 +6866,7 @@
             "pin": {
               "file": "lucide-pin.json",
               "package": "lucide-react",
-              "sha256": "a7b8abcfd784c21f2d409026413e8552bdc0c8c75cad344afcff515ce3429598"
+              "sha256": "f3231b3ab02590141fd04ccad77aeae9e5944449bf2c8e85762d03974534582e"
             },
             "relation": "subset",
             "slot": "tokens.icon-stroke",

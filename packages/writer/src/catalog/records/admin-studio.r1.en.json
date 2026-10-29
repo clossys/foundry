@@ -5985,6 +5985,171 @@
       "limits": {
         "maxChars": 60
       }
+    },
+    {
+      "id": "st.mghmpmb8mp",
+      "leaf": "strings.names",
+      "context": "designer.item.components.command",
+      "status": "draft",
+      "origin": "authored",
+      "text": "Command",
+      "limits": {
+        "maxChars": 60
+      }
+    },
+    {
+      "id": "st.2236py9b7a",
+      "leaf": "strings.names",
+      "context": "designer.item.components.dropdown-menu",
+      "status": "draft",
+      "origin": "authored",
+      "text": "Dropdown menu",
+      "limits": {
+        "maxChars": 60
+      }
+    },
+    {
+      "id": "st.832cm61fb6",
+      "leaf": "strings.names",
+      "context": "designer.item.components.empty",
+      "status": "draft",
+      "origin": "authored",
+      "text": "Empty",
+      "limits": {
+        "maxChars": 60
+      }
+    },
+    {
+      "id": "st.v1cbgc4kr2",
+      "leaf": "strings.names",
+      "context": "designer.item.components.item",
+      "status": "draft",
+      "origin": "authored",
+      "text": "Item",
+      "limits": {
+        "maxChars": 60
+      }
+    },
+    {
+      "id": "st.qkq4pja77x",
+      "leaf": "strings.names",
+      "context": "designer.item.components.scroll-area",
+      "status": "draft",
+      "origin": "authored",
+      "text": "Scroll area",
+      "limits": {
+        "maxChars": 60
+      }
+    },
+    {
+      "id": "st.p31pjx6gs8",
+      "leaf": "strings.names",
+      "context": "designer.item.components.sheet",
+      "status": "draft",
+      "origin": "authored",
+      "text": "Sheet",
+      "limits": {
+        "maxChars": 60
+      }
+    },
+    {
+      "id": "st.x309rathmp",
+      "leaf": "strings.names",
+      "context": "designer.item.components.sidebar",
+      "status": "draft",
+      "origin": "authored",
+      "text": "Sidebar",
+      "limits": {
+        "maxChars": 60
+      }
+    },
+    {
+      "id": "st.tn27znhvg9",
+      "leaf": "strings.names",
+      "context": "designer.item.assets.icon-panel-left",
+      "status": "draft",
+      "origin": "authored",
+      "text": "Panel left",
+      "limits": {
+        "maxChars": 60
+      }
+    },
+    {
+      "id": "st.vhdw8gz59s",
+      "leaf": "strings.field-labels",
+      "context": "designer.component.command.title",
+      "status": "draft",
+      "origin": "authored",
+      "text": "Command Palette",
+      "limits": {
+        "maxChars": 120
+      }
+    },
+    {
+      "id": "st.tqaf5rvggj",
+      "leaf": "strings.descriptions",
+      "context": "designer.component.command.description",
+      "status": "draft",
+      "origin": "authored",
+      "text": "Search for a command to run...",
+      "limits": {
+        "maxChars": 120
+      }
+    },
+    {
+      "id": "st.er3g6ph4h3",
+      "leaf": "strings.field-labels",
+      "context": "designer.component.command.search",
+      "status": "draft",
+      "origin": "authored",
+      "text": "Search",
+      "limits": {
+        "maxChars": 120
+      }
+    },
+    {
+      "id": "st.9ehasbmw8z",
+      "leaf": "strings.actions",
+      "context": "designer.component.sheet.close",
+      "status": "draft",
+      "origin": "authored",
+      "text": "Close",
+      "limits": {
+        "maxChars": 120
+      }
+    },
+    {
+      "id": "st.50we5a15ty",
+      "leaf": "strings.field-labels",
+      "context": "designer.component.sidebar.title",
+      "status": "draft",
+      "origin": "authored",
+      "text": "Sidebar",
+      "limits": {
+        "maxChars": 120
+      }
+    },
+    {
+      "id": "st.etz9tsny9q",
+      "leaf": "strings.descriptions",
+      "context": "designer.component.sidebar.description",
+      "status": "draft",
+      "origin": "authored",
+      "text": "Displays the mobile sidebar.",
+      "limits": {
+        "maxChars": 120
+      }
+    },
+    {
+      "id": "st.qbaewx3e0y",
+      "leaf": "strings.actions",
+      "context": "designer.component.sidebar.toggle",
+      "status": "draft",
+      "origin": "authored",
+      "text": "Toggle Sidebar",
+      "limits": {
+        "maxChars": 120
+      }
     }
   ],
   "reviews": [
@@ -15072,6 +15237,276 @@
       "rationale": "Summarize the declared check in plain language for a scorecard finding without inventing subject details, severity, approval or a successful result.",
       "role": "finding",
       "budget": 160
+    },
+    {
+      "recordId": "st.mghmpmb8mp",
+      "cellId": "designer.item.components.command",
+      "severity": "P1",
+      "status": "fixed",
+      "scope": "draft only",
+      "source": {
+        "commit": "7bf002f72c12386ee5d1c02eead662ad71d23b49",
+        "path": "packages/designer/src/catalog/slots/components.json",
+        "line": 2371,
+        "key": "designer.item.components.command"
+      },
+      "before": "\"id\": \"components.command\"",
+      "after": "Command",
+      "rationale": "Author a Writer-owned draft for the adopted rail component cascade; the proposed binding neither mounts a consumer nor grants approval.",
+      "role": "label",
+      "budget": 60
+    },
+    {
+      "recordId": "st.2236py9b7a",
+      "cellId": "designer.item.components.dropdown-menu",
+      "severity": "P1",
+      "status": "fixed",
+      "scope": "draft only",
+      "source": {
+        "commit": "7bf002f72c12386ee5d1c02eead662ad71d23b49",
+        "path": "packages/designer/src/catalog/slots/components.json",
+        "line": 2572,
+        "key": "designer.item.components.dropdown-menu"
+      },
+      "before": "\"id\": \"components.dropdown-menu\"",
+      "after": "Dropdown menu",
+      "rationale": "Author a Writer-owned draft for the adopted rail component cascade; the proposed binding neither mounts a consumer nor grants approval.",
+      "role": "label",
+      "budget": 60
+    },
+    {
+      "recordId": "st.832cm61fb6",
+      "cellId": "designer.item.components.empty",
+      "severity": "P1",
+      "status": "fixed",
+      "scope": "draft only",
+      "source": {
+        "commit": "7bf002f72c12386ee5d1c02eead662ad71d23b49",
+        "path": "packages/designer/src/catalog/slots/components.json",
+        "line": 2479,
+        "key": "designer.item.components.empty"
+      },
+      "before": "\"id\": \"components.empty\"",
+      "after": "Empty",
+      "rationale": "Author a Writer-owned draft for the adopted rail component cascade; the proposed binding neither mounts a consumer nor grants approval.",
+      "role": "label",
+      "budget": 60
+    },
+    {
+      "recordId": "st.v1cbgc4kr2",
+      "cellId": "designer.item.components.item",
+      "severity": "P1",
+      "status": "fixed",
+      "scope": "draft only",
+      "source": {
+        "commit": "7bf002f72c12386ee5d1c02eead662ad71d23b49",
+        "path": "packages/designer/src/catalog/slots/components.json",
+        "line": 2511,
+        "key": "designer.item.components.item"
+      },
+      "before": "\"id\": \"components.item\"",
+      "after": "Item",
+      "rationale": "Author a Writer-owned draft for the adopted rail component cascade; the proposed binding neither mounts a consumer nor grants approval.",
+      "role": "label",
+      "budget": 60
+    },
+    {
+      "recordId": "st.qkq4pja77x",
+      "cellId": "designer.item.components.scroll-area",
+      "severity": "P1",
+      "status": "fixed",
+      "scope": "draft only",
+      "source": {
+        "commit": "7bf002f72c12386ee5d1c02eead662ad71d23b49",
+        "path": "packages/designer/src/catalog/slots/components.json",
+        "line": 2547,
+        "key": "designer.item.components.scroll-area"
+      },
+      "before": "\"id\": \"components.scroll-area\"",
+      "after": "Scroll area",
+      "rationale": "Author a Writer-owned draft for the adopted rail component cascade; the proposed binding neither mounts a consumer nor grants approval.",
+      "role": "label",
+      "budget": 60
+    },
+    {
+      "recordId": "st.p31pjx6gs8",
+      "cellId": "designer.item.components.sheet",
+      "severity": "P1",
+      "status": "fixed",
+      "scope": "draft only",
+      "source": {
+        "commit": "7bf002f72c12386ee5d1c02eead662ad71d23b49",
+        "path": "packages/designer/src/catalog/slots/components.json",
+        "line": 2428,
+        "key": "designer.item.components.sheet"
+      },
+      "before": "\"id\": \"components.sheet\"",
+      "after": "Sheet",
+      "rationale": "Author a Writer-owned draft for the adopted rail component cascade; the proposed binding neither mounts a consumer nor grants approval.",
+      "role": "label",
+      "budget": 60
+    },
+    {
+      "recordId": "st.x309rathmp",
+      "cellId": "designer.item.components.sidebar",
+      "severity": "P1",
+      "status": "fixed",
+      "scope": "draft only",
+      "source": {
+        "commit": "7bf002f72c12386ee5d1c02eead662ad71d23b49",
+        "path": "packages/designer/src/catalog/slots/components.json",
+        "line": 2314,
+        "key": "designer.item.components.sidebar"
+      },
+      "before": "\"id\": \"components.sidebar\"",
+      "after": "Sidebar",
+      "rationale": "Author a Writer-owned draft for the adopted rail component cascade; the proposed binding neither mounts a consumer nor grants approval.",
+      "role": "label",
+      "budget": 60
+    },
+    {
+      "recordId": "st.tn27znhvg9",
+      "cellId": "designer.item.assets.icon-panel-left",
+      "severity": "P1",
+      "status": "fixed",
+      "scope": "draft only",
+      "source": {
+        "commit": "7bf002f72c12386ee5d1c02eead662ad71d23b49",
+        "path": "packages/designer/src/catalog/slots/assets.json",
+        "line": 962,
+        "key": "designer.item.assets.icon-panel-left"
+      },
+      "before": "\"id\": \"assets.icon-panel-left\"",
+      "after": "Panel left",
+      "rationale": "Author a Writer-owned draft for the adopted rail component cascade; the proposed binding neither mounts a consumer nor grants approval.",
+      "role": "label",
+      "budget": 60
+    },
+    {
+      "recordId": "st.vhdw8gz59s",
+      "cellId": "designer.component.command.title",
+      "severity": "P1",
+      "status": "fixed",
+      "scope": "draft only",
+      "source": {
+        "commit": "7bf002f72c12386ee5d1c02eead662ad71d23b49",
+        "path": "packages/designer/src/components/command/command.tsx",
+        "line": 65,
+        "key": "designer.component.command.title"
+      },
+      "before": "title = \"Command Palette\"",
+      "after": "Command Palette",
+      "rationale": "Author a Writer-owned draft for the adopted rail component cascade; the proposed binding neither mounts a consumer nor grants approval.",
+      "role": "interface copy",
+      "budget": 120
+    },
+    {
+      "recordId": "st.tqaf5rvggj",
+      "cellId": "designer.component.command.description",
+      "severity": "P1",
+      "status": "fixed",
+      "scope": "draft only",
+      "source": {
+        "commit": "7bf002f72c12386ee5d1c02eead662ad71d23b49",
+        "path": "packages/designer/src/components/command/command.tsx",
+        "line": 66,
+        "key": "designer.component.command.description"
+      },
+      "before": "description = \"Search for a command to run...\"",
+      "after": "Search for a command to run...",
+      "rationale": "Author a Writer-owned draft for the adopted rail component cascade; the proposed binding neither mounts a consumer nor grants approval.",
+      "role": "interface copy",
+      "budget": 120
+    },
+    {
+      "recordId": "st.er3g6ph4h3",
+      "cellId": "designer.component.command.search",
+      "severity": "P1",
+      "status": "fixed",
+      "scope": "draft only",
+      "source": {
+        "commit": "7bf002f72c12386ee5d1c02eead662ad71d23b49",
+        "path": "packages/designer/src/components/command/command.tsx",
+        "line": 110,
+        "key": "designer.component.command.search"
+      },
+      "before": "aria-label={props.placeholder",
+      "after": "Search",
+      "rationale": "Author a Writer-owned draft for the adopted rail component cascade; the proposed binding neither mounts a consumer nor grants approval.",
+      "role": "interface copy",
+      "budget": 120
+    },
+    {
+      "recordId": "st.9ehasbmw8z",
+      "cellId": "designer.component.sheet.close",
+      "severity": "P1",
+      "status": "fixed",
+      "scope": "draft only",
+      "source": {
+        "commit": "7bf002f72c12386ee5d1c02eead662ad71d23b49",
+        "path": "packages/designer/src/components/sheet/sheet.tsx",
+        "line": 98,
+        "key": "designer.component.sheet.close"
+      },
+      "before": "<span className=\"sr-only\">Close</span>",
+      "after": "Close",
+      "rationale": "Author a Writer-owned draft for the adopted rail component cascade; the proposed binding neither mounts a consumer nor grants approval.",
+      "role": "interface copy",
+      "budget": 120
+    },
+    {
+      "recordId": "st.50we5a15ty",
+      "cellId": "designer.component.sidebar.title",
+      "severity": "P1",
+      "status": "fixed",
+      "scope": "draft only",
+      "source": {
+        "commit": "7bf002f72c12386ee5d1c02eead662ad71d23b49",
+        "path": "packages/designer/src/components/sidebar/sidebar.tsx",
+        "line": 197,
+        "key": "designer.component.sidebar.title"
+      },
+      "before": "<SheetTitle>Sidebar</SheetTitle>",
+      "after": "Sidebar",
+      "rationale": "Author a Writer-owned draft for the adopted rail component cascade; the proposed binding neither mounts a consumer nor grants approval.",
+      "role": "interface copy",
+      "budget": 120
+    },
+    {
+      "recordId": "st.etz9tsny9q",
+      "cellId": "designer.component.sidebar.description",
+      "severity": "P1",
+      "status": "fixed",
+      "scope": "draft only",
+      "source": {
+        "commit": "7bf002f72c12386ee5d1c02eead662ad71d23b49",
+        "path": "packages/designer/src/components/sidebar/sidebar.tsx",
+        "line": 198,
+        "key": "designer.component.sidebar.description"
+      },
+      "before": "<SheetDescription>Displays the mobile sidebar.</SheetDescription>",
+      "after": "Displays the mobile sidebar.",
+      "rationale": "Author a Writer-owned draft for the adopted rail component cascade; the proposed binding neither mounts a consumer nor grants approval.",
+      "role": "interface copy",
+      "budget": 120
+    },
+    {
+      "recordId": "st.qbaewx3e0y",
+      "cellId": "designer.component.sidebar.toggle",
+      "severity": "P1",
+      "status": "fixed",
+      "scope": "draft only",
+      "source": {
+        "commit": "7bf002f72c12386ee5d1c02eead662ad71d23b49",
+        "path": "packages/designer/src/components/sidebar/sidebar.tsx",
+        "line": 272,
+        "key": "designer.component.sidebar.toggle"
+      },
+      "before": "<span className=\"sr-only\">Toggle Sidebar</span>",
+      "after": "Toggle Sidebar",
+      "rationale": "Author a Writer-owned draft for the adopted rail component cascade; the proposed binding neither mounts a consumer nor grants approval.",
+      "role": "interface copy",
+      "budget": 120
     }
   ],
   "bindings": [
@@ -18248,6 +18683,96 @@
       "recordId": "st.kd7qz25rm7",
       "target": "packages/designer/src/studio/Scorecard.tsx",
       "kind": "finding-summary"
+    },
+    {
+      "cellId": "designer.item.components.command",
+      "recordId": "st.mghmpmb8mp",
+      "target": "packages/designer/src/catalog/slots/components.json",
+      "kind": "item-name"
+    },
+    {
+      "cellId": "designer.item.components.dropdown-menu",
+      "recordId": "st.2236py9b7a",
+      "target": "packages/designer/src/catalog/slots/components.json",
+      "kind": "item-name"
+    },
+    {
+      "cellId": "designer.item.components.empty",
+      "recordId": "st.832cm61fb6",
+      "target": "packages/designer/src/catalog/slots/components.json",
+      "kind": "item-name"
+    },
+    {
+      "cellId": "designer.item.components.item",
+      "recordId": "st.v1cbgc4kr2",
+      "target": "packages/designer/src/catalog/slots/components.json",
+      "kind": "item-name"
+    },
+    {
+      "cellId": "designer.item.components.scroll-area",
+      "recordId": "st.qkq4pja77x",
+      "target": "packages/designer/src/catalog/slots/components.json",
+      "kind": "item-name"
+    },
+    {
+      "cellId": "designer.item.components.sheet",
+      "recordId": "st.p31pjx6gs8",
+      "target": "packages/designer/src/catalog/slots/components.json",
+      "kind": "item-name"
+    },
+    {
+      "cellId": "designer.item.components.sidebar",
+      "recordId": "st.x309rathmp",
+      "target": "packages/designer/src/catalog/slots/components.json",
+      "kind": "item-name"
+    },
+    {
+      "cellId": "designer.item.assets.icon-panel-left",
+      "recordId": "st.tn27znhvg9",
+      "target": "packages/designer/src/catalog/slots/assets.json",
+      "kind": "item-name"
+    },
+    {
+      "cellId": "designer.component.command.title",
+      "recordId": "st.vhdw8gz59s",
+      "target": "packages/designer/src/components/command/command.tsx",
+      "kind": "CopyRef"
+    },
+    {
+      "cellId": "designer.component.command.description",
+      "recordId": "st.tqaf5rvggj",
+      "target": "packages/designer/src/components/command/command.tsx",
+      "kind": "CopyRef"
+    },
+    {
+      "cellId": "designer.component.command.search",
+      "recordId": "st.er3g6ph4h3",
+      "target": "packages/designer/src/components/command/command.tsx",
+      "kind": "CopyRef"
+    },
+    {
+      "cellId": "designer.component.sheet.close",
+      "recordId": "st.9ehasbmw8z",
+      "target": "packages/designer/src/components/sheet/sheet.tsx",
+      "kind": "CopyRef"
+    },
+    {
+      "cellId": "designer.component.sidebar.title",
+      "recordId": "st.50we5a15ty",
+      "target": "packages/designer/src/components/sidebar/sidebar.tsx",
+      "kind": "CopyRef"
+    },
+    {
+      "cellId": "designer.component.sidebar.description",
+      "recordId": "st.etz9tsny9q",
+      "target": "packages/designer/src/components/sidebar/sidebar.tsx",
+      "kind": "CopyRef"
+    },
+    {
+      "cellId": "designer.component.sidebar.toggle",
+      "recordId": "st.qbaewx3e0y",
+      "target": "packages/designer/src/components/sidebar/sidebar.tsx",
+      "kind": "CopyRef"
     }
   ],
   "needs": [
@@ -21690,13 +22215,118 @@
       "severity": "P1",
       "status": "Need",
       "message": "Draft finding summary only. Bind this CopyRef for the scorecard message; review and activation remain owner work."
+    },
+    {
+      "recordId": "st.mghmpmb8mp",
+      "cellId": "designer.item.components.command",
+      "severity": "P1",
+      "status": "Need",
+      "message": "Bind through the Designer copy resolver and obtain owner approval before production use."
+    },
+    {
+      "recordId": "st.2236py9b7a",
+      "cellId": "designer.item.components.dropdown-menu",
+      "severity": "P1",
+      "status": "Need",
+      "message": "Bind through the Designer copy resolver and obtain owner approval before production use."
+    },
+    {
+      "recordId": "st.832cm61fb6",
+      "cellId": "designer.item.components.empty",
+      "severity": "P1",
+      "status": "Need",
+      "message": "Bind through the Designer copy resolver and obtain owner approval before production use."
+    },
+    {
+      "recordId": "st.v1cbgc4kr2",
+      "cellId": "designer.item.components.item",
+      "severity": "P1",
+      "status": "Need",
+      "message": "Bind through the Designer copy resolver and obtain owner approval before production use."
+    },
+    {
+      "recordId": "st.qkq4pja77x",
+      "cellId": "designer.item.components.scroll-area",
+      "severity": "P1",
+      "status": "Need",
+      "message": "Bind through the Designer copy resolver and obtain owner approval before production use."
+    },
+    {
+      "recordId": "st.p31pjx6gs8",
+      "cellId": "designer.item.components.sheet",
+      "severity": "P1",
+      "status": "Need",
+      "message": "Bind through the Designer copy resolver and obtain owner approval before production use."
+    },
+    {
+      "recordId": "st.x309rathmp",
+      "cellId": "designer.item.components.sidebar",
+      "severity": "P1",
+      "status": "Need",
+      "message": "Bind through the Designer copy resolver and obtain owner approval before production use."
+    },
+    {
+      "recordId": "st.tn27znhvg9",
+      "cellId": "designer.item.assets.icon-panel-left",
+      "severity": "P1",
+      "status": "Need",
+      "message": "Bind through the Designer copy resolver and obtain owner approval before production use."
+    },
+    {
+      "recordId": "st.vhdw8gz59s",
+      "cellId": "designer.component.command.title",
+      "severity": "P1",
+      "status": "Need",
+      "message": "Bind through the Designer copy resolver and obtain owner approval before production use."
+    },
+    {
+      "recordId": "st.tqaf5rvggj",
+      "cellId": "designer.component.command.description",
+      "severity": "P1",
+      "status": "Need",
+      "message": "Bind through the Designer copy resolver and obtain owner approval before production use."
+    },
+    {
+      "recordId": "st.er3g6ph4h3",
+      "cellId": "designer.component.command.search",
+      "severity": "P1",
+      "status": "Need",
+      "message": "Bind through the Designer copy resolver and obtain owner approval before production use."
+    },
+    {
+      "recordId": "st.9ehasbmw8z",
+      "cellId": "designer.component.sheet.close",
+      "severity": "P1",
+      "status": "Need",
+      "message": "Bind through the Designer copy resolver and obtain owner approval before production use."
+    },
+    {
+      "recordId": "st.50we5a15ty",
+      "cellId": "designer.component.sidebar.title",
+      "severity": "P1",
+      "status": "Need",
+      "message": "Bind through the Designer copy resolver and obtain owner approval before production use."
+    },
+    {
+      "recordId": "st.etz9tsny9q",
+      "cellId": "designer.component.sidebar.description",
+      "severity": "P1",
+      "status": "Need",
+      "message": "Bind through the Designer copy resolver and obtain owner approval before production use."
+    },
+    {
+      "recordId": "st.qbaewx3e0y",
+      "cellId": "designer.component.sidebar.toggle",
+      "severity": "P1",
+      "status": "Need",
+      "message": "Bind through the Designer copy resolver and obtain owner approval before production use."
     }
   ],
   "coverage": {
     "kind": "planned binding fixture; not rendered-page coverage",
     "productionBound": 0,
-    "proposedBindings": 511,
-    "draftRecords": 488,
+    "proposedBindings": 526,
+    "draftRecords": 504,
     "reusedExistingRecords": 10
   },
   "defaults": [
@@ -21911,6 +22541,35 @@
         "One draft summary per declared Finding code, including the reserved R code; no approval or activation.",
         "Use existing strings.errors leaves and opaque record IDs. Existing diagnostic variants remain unchanged."
       ]
+    },
+    {
+      "unit": "SHADCN-ADOPT-A2-COPY",
+      "sourceCommit": "7bf002f72c12386ee5d1c02eead662ad71d23b49",
+      "recordIds": [
+        "st.mghmpmb8mp",
+        "st.2236py9b7a",
+        "st.832cm61fb6",
+        "st.v1cbgc4kr2",
+        "st.qkq4pja77x",
+        "st.p31pjx6gs8",
+        "st.x309rathmp",
+        "st.tn27znhvg9",
+        "st.vhdw8gz59s",
+        "st.tqaf5rvggj",
+        "st.er3g6ph4h3",
+        "st.9ehasbmw8z",
+        "st.50we5a15ty",
+        "st.etz9tsny9q",
+        "st.qbaewx3e0y"
+      ],
+      "sourceFiles": {
+        "packages/designer/src/catalog/slots/assets.json": "13482fe3b7171ac44fd1e1fd7ca764fba67561ae8acdfcbc52ed33283c43be9e",
+        "packages/designer/src/catalog/slots/components.json": "78e6330b156e9a3f2c60549f3247d8e85d00a563e62e06a5825a3074bde4d13a",
+        "packages/designer/src/components/command/command.tsx": "20741da3036eecc09284d23c41e4682219d132a625ed9914abfd4f10e801a533",
+        "packages/designer/src/components/sheet/sheet.tsx": "4e5d2c0dd27e78cb3c5701ee9709887ebc3a1250aa2de17302a6e7e7073ffd4b",
+        "packages/designer/src/components/sidebar/sidebar.tsx": "7ec2e98ce85ea6bfd30386f7f115fb8bd6bf30b82b954a2ead2642c2ff624682"
+      },
+      "revisions": []
     }
   ]
 }

@@ -23,7 +23,7 @@
       "pin": {
         "file": "lucide-pin.json",
         "package": "lucide-react",
-        "sha256": "a7b8abcfd784c21f2d409026413e8552bdc0c8c75cad344afcff515ce3429598"
+        "sha256": "f3231b3ab02590141fd04ccad77aeae9e5944449bf2c8e85762d03974534582e"
       },
       "relation": "subset",
       "slot": "tokens.icon-stroke",

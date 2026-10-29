@@ -102,7 +102,7 @@ it("feeds every sample from the dataset: no inline per-specimen arrays or litera
 
 it("feeds all 59 registered component slots from the dataset", () => {
   const slots = loadBuildCatalog().slots.filter(slot => slot.id.startsWith("components.")).map(slot => slot.id);
-  expect(slots).toHaveLength(59);
+  expect(slots).toHaveLength(66);
   // The date picker has no registered implementation fill; its composition rule's template is what draws.
   const fills = [...loadCatalogBundles().componentFills.flatMap(doc => Object.values(doc.components)), ...loadComponentCompositionRules().map(rule => rule.template)];
   const keys = fedKeys();
@@ -110,7 +110,7 @@ it("feeds all 59 registered component slots from the dataset", () => {
   const exceptions = Object.fromEntries(slots.filter(slot => !fed.includes(slot)).map(slot => [slot, fills.filter(fill => fill.slot === slot).map(keyOf)]));
   expect(exceptions).toEqual({});
   console.info(`specimen dataset: slots fed ${fed.length}/${slots.length}`);
-  expect(fed).toHaveLength(59);
+  expect(fed).toHaveLength(66);
 });
 
 it("draws every fed Foundry component with dataset content, never its leaf label", () => {

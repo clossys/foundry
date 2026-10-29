@@ -91,10 +91,10 @@ describe('optional Open Props image ratios', () => {
 
   it('keeps leaf identities and existing authoring semantics', () => {
     const catalog = loadCatalog();
-    expect(catalog.slots.filter(slot => slot.layer === 'assets')).toHaveLength(48);
-    for (const [source, count] of [['foundry', 7], ['lucide', 40], ['phosphor', 40], ['open-props', 1]] as const)
+    expect(catalog.slots.filter(slot => slot.layer === 'assets')).toHaveLength(49);
+    for (const [source, count] of [['foundry', 7], ['lucide', 41], ['phosphor', 40], ['open-props', 1]] as const)
       expect(catalog.fills.filter(fill => fill.assets && metaOf(fill).source === source)).toHaveLength(count);
-    expect(catalog.fills.filter(fill => fill.assets)).toHaveLength(88);
+    expect(catalog.fills.filter(fill => fill.assets)).toHaveLength(89);
     expect(catalog.fills.some(fill => metaOf(fill).id === 'foundry/assets.image-ratio')).toBe(false);
   });
 

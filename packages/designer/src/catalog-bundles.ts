@@ -6,6 +6,8 @@ import type { FillDoc } from "./catalog-core/types.js";
 import type { ComponentCandidateDocument, ComponentFile } from "./catalog-core/resolve-components.js";
 import { componentDescriptorHash } from "./catalog-core/resolve-components.js";
 import type { SourceBundle } from "./catalog-core/changeset-components.js";
+import { importShadcnAriaRail } from "./importers/shadcn-aria-rail.js";
+import { importLucide } from "./importers/lucide.js";
 import { importFoundryComponents } from "./importers/foundry-components.js";
 import { importShadcnAriaComponents, materializeShadcnComponent, type ShadcnComponentInput } from "./importers/shadcn-aria-components.js";
 import { importRacStarter, type RacStarterInput } from "./importers/rac-starter.js";
@@ -29,6 +31,9 @@ export function loadCatalogBundles() {
   const input = structuredClone(data.shadcn) as unknown as ShadcnComponentInput;
   const shadcn = importShadcnAriaComponents(input);
   const foundry = importFoundryComponents();
+  const rail = importShadcnAriaRail();
+  // Kbd has byte-identical upstream source and reuses the existing keyboard adoption.
+  const newRail = (row: { slot: string }) => row.slot !== "components.keyboard";
   const starter = importRacStarter(structuredClone(starterData) as RacStarterInput);
   const upstream = new Map([...input.items.flatMap(item => item.files), input.styles, input.notice].map(file => [file.path, file]));
   const sourceCandidates: SourceCandidateBytes[] = [];
@@ -57,11 +62,11 @@ export function loadCatalogBundles() {
   }
   return structuredClone({
     package: data.package,
-    valueFills: data.valueFiles.map(file => file.document) as unknown as FillDoc[],
-    componentFills: [...foundry.fills, ...shadcn.fills, ...starter.fills] as readonly ComponentCandidateDocument[],
+    valueFills: [...data.valueFiles.map(file => file.document), ...importLucide().filter(doc => doc.$extensions["com.clossys.fill"].slot === "assets.icon-panel-left")] as unknown as FillDoc[],
+    componentFills: [...foundry.fills, ...shadcn.fills, ...starter.fills, ...rail.fills.filter(doc => newRail(doc.$extensions["com.clossys.fill"]))] as readonly ComponentCandidateDocument[],
     foundryCoverage: foundry.coverage,
-    sourceCandidates: [...sourceCandidates, ...starter.candidates],
-    sourceBundles: [...sourceBundles, ...starter.sourceBundles],
+    sourceCandidates: [...sourceCandidates, ...starter.candidates, ...rail.candidates.filter(newRail)],
+    sourceBundles: [...sourceBundles, ...starter.sourceBundles, ...rail.sourceBundles.filter(newRail)],
     notices: data.notices,
   });
 }

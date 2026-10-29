@@ -4,10 +4,21 @@
  * glyph, component and block this package declares or exports has exactly one
  * home. Changing a frozen list is a deliberate, reviewed edit.
  */
-import { existsSync } from "node:fs";
+import { existsSync, readFileSync } from "node:fs";
+import ts from "typescript";
+import { importShadcnAriaRail } from "../importers/shadcn-aria-rail.js";
+import { componentOf } from "../catalog-core/resolve-components.js";
+import { componentSecondaryExports } from "../catalog-core/component-secondary-exports.js";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
+import * as RAIL_SIDEBAR from "../components/sidebar/sidebar.js";
+import * as RAIL_COMMAND from "../components/command/command.js";
+import * as RAIL_SHEET from "../components/sheet/sheet.js";
+import * as RAIL_EMPTY from "../components/empty/empty.js";
+import * as RAIL_ITEM from "../components/item/item.js";
+import * as RAIL_SCROLL_AREA from "../components/scroll-area/scroll-area.js";
+import * as RAIL_DROPDOWN_MENU from "../components/dropdown-menu/dropdown-menu.js";
 import * as COMPONENT_EXPORTS from "../components/index.js";
 import * as BLOCK_EXPORTS from "../blocks/index.js";
 import * as CHART_EXPORTS from "../charts/index.js";
@@ -94,7 +105,7 @@ const FROZEN_ICON_IDS: readonly string[] = [
   "Calendar", "Clock",
   "CreditCard", "Receipt", "Briefcase",
   "ShieldCheck", "Lock", "Scale",
-  "Box", "Layers", "Plug",
+  "Box", "Layers", "Plug", "PanelLeft",
 ];
 
 /** Frozen component leaf ids, 79. */
@@ -297,8 +308,8 @@ describe("icon catalog coverage", () => {
 
   it("matches the frozen id list exactly, 40 glyphs", () => {
     expect(duplicates(ids)).toEqual([]);
-    expect(FROZEN_ICON_IDS).toHaveLength(40);
-    expect(ids).toHaveLength(40);
+    expect(FROZEN_ICON_IDS).toHaveLength(41);
+    expect(ids).toHaveLength(41);
     expect([...ids].sort()).toEqual([...FROZEN_ICON_IDS].sort());
   });
 
@@ -346,6 +357,20 @@ describe("asset catalog coverage", () => {
   });
 });
 
+const rail = importShadcnAriaRail();
+const railModules: Readonly<Record<string, Readonly<Record<string, unknown>>>> = {
+  sidebar: RAIL_SIDEBAR, command: RAIL_COMMAND, sheet: RAIL_SHEET, empty: RAIL_EMPTY,
+  item: RAIL_ITEM, "scroll-area": RAIL_SCROLL_AREA, "dropdown-menu": RAIL_DROPDOWN_MENU,
+};
+const railPublic = Object.entries(railModules).flatMap(([leaf, module]) => {
+  const fill = componentOf(rail.fills.find(doc => componentOf(doc).slot === `components.${leaf}`)!);
+  if (fill.impl.kind !== "source") throw new Error("Expected authenticated source implementation");
+  const anatomy = componentSecondaryExports(fill, rail.files).map(row => row.name);
+  // This exported hook is parent support API, never component anatomy or an independent leaf.
+  const support = leaf === "sidebar" ? ["useSidebar"] : [];
+  return [fill.impl.export, ...anatomy, ...support].map(name => ({ name, leaf: fill.slot, module }));
+});
+
 describe("component catalog coverage", () => {
   const ids = COMPONENT_ENTRIES.map((entry) => entry.id);
   const leafExports = COMPONENT_ENTRIES.flatMap((entry) => (entry.export === null ? [] : [entry.export]));
@@ -358,8 +383,39 @@ describe("component catalog coverage", () => {
     expect([...ids].sort()).toEqual([...FROZEN_COMPONENT_IDS].sort());
   });
 
+  it("places every new rail root, anatomy value and support API at its exact source parent", () => {
+    expect([...new Set(railPublic.map(row => row.leaf))].sort()).toEqual([
+      "components.command", "components.dropdown-menu", "components.empty", "components.item",
+      "components.scroll-area", "components.sheet", "components.sidebar",
+    ]);
+    expect(duplicates(railPublic.map(row => row.name))).toEqual([]);
+    for (const [leaf, module] of Object.entries(railModules)) {
+      const fill = componentOf(rail.fills.find(doc => componentOf(doc).slot === `components.${leaf}`)!);
+      if (fill.impl.kind !== "source") throw new Error("Expected source implementation");
+      const file = rail.files.find(file => file.path === fill.impl.entry)!;
+      expect(readFileSync(join(packageRoot, "src", file.path), "utf8")).toBe(file.content.replace(
+        /((?:from\s*|import\s*)["'])(\.[^"']+)(["'])/g,
+        (_match, before, specifier, after) => before + specifier + (/\.(js|json)$/.test(specifier) ? "" : ".js") + after));
+      const ast = ts.createSourceFile(file.path, file.content, ts.ScriptTarget.Latest, true, ts.ScriptKind.TSX);
+      const functions = new Set(ast.statements.filter(ts.isFunctionDeclaration).filter(node => node.body).map(node => node.name!.text));
+      const declared = ast.statements.filter(ts.isExportDeclaration).flatMap(node => {
+        if (!node.exportClause || !ts.isNamedExports(node.exportClause) || node.moduleSpecifier) throw new Error("Expected local named source exports");
+        return node.exportClause.elements.filter(binding => !node.isTypeOnly && !binding.isTypeOnly).map(binding => binding.name.text);
+      }).sort();
+      expect(Object.keys(module).sort(), leaf).toEqual(declared);
+      expect(railPublic.filter(row => row.leaf === fill.slot).map(row => row.name).sort(), leaf).toEqual(declared);
+      for (const name of declared) {
+        expect(functions.has(name), `${leaf}#${name}`).toBe(true);
+        expect((COMPONENT_EXPORTS as Record<string, unknown>)[name], name).toBe(module[name]);
+      }
+      if (leaf === "sidebar") expect(componentSecondaryExports(fill, rail.files).map(row => row.name)).not.toContain("useSidebar");
+    }
+  });
+
   it("places every component and chart export exactly once: as a leaf or an exclusion", () => {
-    const exported = [...Object.keys(COMPONENT_EXPORTS), ...Object.keys(CHART_EXPORTS)];
+    // Source-adoption additions have the independent parent proof above; retain every earlier catalog omission.
+    const additions = new Set(railPublic.map(row => row.name));
+    const exported = [...Object.keys(COMPONENT_EXPORTS).filter(name => !additions.has(name)), ...Object.keys(CHART_EXPORTS)];
     expect(duplicates(exported)).toEqual([]);
     const accounted = [...leafExports.filter((name) => name !== "Toaster"), ...Object.keys(COMPONENT_EXPORT_EXCLUSIONS)];
     expect(duplicates(accounted)).toEqual([]);

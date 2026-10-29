@@ -124,6 +124,10 @@ export const ROOT_PROTOCOL: Readonly<Record<string, { roles: readonly string[]; 
   Checkbox: { roles: ["checkbox"], keys: ["Space"] }, CheckboxGroup: { roles: ["group", "checkbox"], keys: ["Space"] },
   Switch: { roles: ["switch"], keys: ["Space"] }, RadioGroup: { roles: ["radiogroup", "radio"], keys: ["ArrowDown", "ArrowUp"] },
   Menu: { roles: ["menu", "menuitem"], keys: ["ArrowDown", "ArrowUp", "Escape"] },
+  // Autocomplete delegates virtual-focus navigation to its input and collection; it renders no role itself.
+  Autocomplete: { roles: [], keys: ["ArrowDown", "ArrowUp", "Enter", "Escape"] },
+  // ModalOverlay renders the underlay; its modal context owns Escape dismissal and focus containment.
+  ModalOverlay: { roles: [], keys: ["Escape", "Tab"] },
   Toolbar: { roles: ["toolbar"], keys: ["ArrowLeft", "ArrowRight"] },
   TextField: { roles: ["textbox"], keys: [] }, SearchField: { roles: ["searchbox"], keys: ["Escape"] },
   Slider: { roles: ["slider"], keys: ["ArrowLeft", "ArrowRight", "Home", "End"] },

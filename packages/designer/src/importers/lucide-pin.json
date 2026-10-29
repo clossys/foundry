@@ -438,5 +438,16 @@
       "file": "src/icons/Plug.ts",
       "sha256": "7a8b54b6476e72844d33fcbb3753367f392b68600ef45406223142f65e5805bc"
     }
+  },
+  {
+    "leaf": "assets.icon-panel-left",
+    "export": "PanelLeft",
+    "upstream": "panel-left",
+    "pin": {
+      "package": "lucide-react",
+      "version": "1.24.0",
+      "file": "src/icons/PanelLeft.ts",
+      "sha256": "dd3c0b171cb38e6c3c773aa6e1d9eb5eaf2d84f7ab983abb6dbef6bfa4d4e512"
+    }
   }
 ]

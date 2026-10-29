@@ -1,5 +1,5 @@
 {
-  "assetLeaves": 48,
+  "assetLeaves": 49,
   "boundProperties": 230,
   "complete": true,
   "consumer": "example-complete-catalog",
@@ -313,6 +313,17 @@
       ],
       "rules": [],
       "slot": "assets.icon-package",
+      "sources": [
+        "lucide"
+      ]
+    },
+    {
+      "members": 1,
+      "originKinds": [
+        "adopted"
+      ],
+      "rules": [],
+      "slot": "assets.icon-panel-left",
       "sources": [
         "lucide"
       ]
@@ -1170,7 +1181,7 @@
       ]
     }
   ],
-  "served": 104,
-  "slots": 104,
+  "served": 105,
+  "slots": 105,
   "tokenLeaves": 56
 }

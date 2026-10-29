@@ -316,7 +316,7 @@ describe("real source materialization requires an authenticated bundle", () => {
     const input = synthetic();
     const report = componentMaterializationReport({ ...input.catalog, fills });
     expect(stableStringify(report)).toBe(golden("real-blocked.json", stableStringify(report)));
-    expect(report.blockedCount).toBe(0); expect(report.descriptorCount).toBe(27);
+    expect(report.blockedCount).toBe(0); expect(report.descriptorCount).toBe(34);
     expect(report.runtimeConformance).toBe("unassessed");
     const adopt = (slot: string) => {
       const catalog = { ...input.catalog, slots: [{ ...input.catalog.slots[0]!, id: slot }], fills };
