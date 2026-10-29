@@ -27,13 +27,15 @@
   "sections": {
     "activity-feed": {
       "composes": [
-        "components.icon"
+        "components.icon",
+        "sections.empty-state"
       ],
       "configs": {},
       "consumption": {
         "scanStatus": "lower-bound",
         "scannedComposes": [
-          "components.icon"
+          "components.icon",
+          "sections.empty-state"
         ],
         "scannedReads": {
           "assets": [],
@@ -83,12 +85,6 @@
           }
         ],
         "unresolved": [
-          {
-            "code": "DF5",
-            "evidence": "ambiguous slot ownership ./EmptyState.js#EmptyState: sections.boundary-message, sections.empty-state",
-            "file": "packages/designer/src/blocks/ActivityFeed.tsx",
-            "line": 3
-          },
           {
             "code": "DF5",
             "evidence": "unregistered asset import ../icons/ArrowRight.js#ArrowRight",

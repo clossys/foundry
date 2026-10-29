@@ -25,6 +25,8 @@ export interface SectionContract {
   /** Axes whose values still need specification; never treated as covered members. */
   unresolvedMemberAxes?: readonly string[];
   allowedComposes: readonly `components.${string}`[];
+  /** Registered sections composed by this implementation, separate from shared parts. */
+  composes?: readonly `sections.${string}`[];
   parts: readonly ("sections.band" | "sections.section-header" | "sections.pagination")[];
   allowedReads: { tokens: readonly `tokens.${string}`[]; assets: readonly `assets.${string}`[] };
   data: "host-injected";
@@ -58,6 +60,19 @@ export function sectionRegistryFindings(registry: SectionRegistry): string[] {
     if (ids.has(slot.id)) findings.push(`id: duplicate section slot ${slot.id}`);
     ids.add(slot.id);
     findings.push(...sectionCopySchemaFindings(slot));
+  }
+  for (const slot of registry.slots) {
+    const composes = slot.contract.composes;
+    if (composes === undefined) continue;
+    if (!Array.isArray(composes) || composes.some(target => typeof target !== "string")) {
+      findings.push(`composition: ${slot.id} requires section ids`);
+      continue;
+    }
+    if (new Set(composes).size !== composes.length) findings.push(`composition: ${slot.id} has duplicate sections`);
+    for (const target of composes) {
+      if (!ids.has(target)) findings.push(`composition: ${slot.id} has unknown section ${target}`);
+      if (target === slot.id) findings.push(`composition: ${slot.id} composes itself`);
+    }
   }
   if (registry.placement.layer !== "sections") findings.push("placement: expected sections layer");
   const counts = new Map<string, number>();

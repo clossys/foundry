@@ -28,14 +28,16 @@
     "usage": {
       "composes": [
         "components.meter",
-        "components.status-mark"
+        "components.status-mark",
+        "sections.empty-state"
       ],
       "configs": {},
       "consumption": {
         "scanStatus": "lower-bound",
         "scannedComposes": [
           "components.meter",
-          "components.status-mark"
+          "components.status-mark",
+          "sections.empty-state"
         ],
         "scannedReads": {
           "assets": [],
@@ -69,12 +71,6 @@
           }
         ],
         "unresolved": [
-          {
-            "code": "DF5",
-            "evidence": "ambiguous slot ownership ./EmptyState.js#EmptyState: sections.boundary-message, sections.empty-state",
-            "file": "packages/designer/src/blocks/UsageSummary.tsx",
-            "line": 3
-          },
           {
             "code": "DF2",
             "evidence": "unresolved injected runtime inventory ../../tokens/tokens.js#TOKENS",

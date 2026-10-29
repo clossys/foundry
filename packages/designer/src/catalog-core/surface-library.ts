@@ -342,7 +342,7 @@ function assertPackageContract(value: unknown, slot: string): asserts value is S
     const contentSlots = (contract.slots as Node[]).map(port => port[section ? "name" : "id"]);
     if (new Set(contentSlots).size !== contentSlots.length) surfaceFault("S2 duplicate historical content slot");
     object(contract.allowedReads, ["tokens", "assets"]); strings(contract.allowedReads.tokens); strings(contract.allowedReads.assets);
-    if (section) { strings(contract.allowedComposes); strings(contract.parts); }
+    if (section) { strings(contract.allowedComposes); strings(contract.parts); if (contract.composes !== undefined) strings(contract.composes); }
     else {
         choice(contract.rendering, ["server", "client"]);
         list(contract.statePorts, port => { object(port, ["id", "type"], ["values"]); string(port.id); choice(port.type, ["boolean", "number", "string"]); if (port.values !== undefined) strings(port.values); });
