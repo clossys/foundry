@@ -3541,7 +3541,7 @@
         },
         {
           "path": "packages/designer/src/blocks/media/ChromeBare.tsx",
-          "sha256": "c9651f6147711c00009bb0208d81315177cdf0edc6a6dda2a169c341d1f29794"
+          "sha256": "6a055e21cb54722f912738f98ba4c4048a9f516741e3b4a678fdfad643849018"
         },
         {
           "path": "packages/designer/src/blocks/media/ChromeBrowser.tsx",
@@ -3561,7 +3561,7 @@
         },
         {
           "path": "packages/designer/src/blocks/MediaFigure.tsx",
-          "sha256": "4d9bd04e778d8bfd06b45614e6d91e1bc32474bd01a1534f4140d4d16ccd4448"
+          "sha256": "584bd94f4c9a17a0685ffac72f9f5a614efe30bfcab04dd003f1f375001915eb"
         },
         {
           "path": "packages/designer/src/blocks/section-ground.ts",

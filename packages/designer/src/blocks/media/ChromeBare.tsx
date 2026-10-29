@@ -1,7 +1,6 @@
 import type { ReactNode } from "react";
-import { SemanticContent } from "../../components/SemanticContent.js";
 
-/** An unadorned media region with no imposed crop or height. */
+/** Bare media keeps the caller's existing box and its intrinsic geometry. */
 export function ChromeBare({ children }: { children: ReactNode }) {
-  return <SemanticContent as="div" data-screenshot-chrome="bare" className="min-w-0 w-full">{children}</SemanticContent>;
+  return children;
 }

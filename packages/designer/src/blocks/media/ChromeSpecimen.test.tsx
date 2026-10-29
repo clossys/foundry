@@ -55,9 +55,20 @@ describe("MediaFigure specimen chrome", () => {
     const { container } = render(<MediaFigure><span>Caller media</span></MediaFigure>);
     const frame = container.querySelector('[data-screenshot-chrome="bare"]')!;
     expect(frame).toBeTruthy();
+    expect(frame).toBe(container.querySelector("[data-media-figure]")!.firstElementChild);
+    expect(frame.className).toBe("w-full");
     expect(frame.className).not.toMatch(/border|rounded|bg-/);
     expect(container.querySelector('[data-screenshot-chrome-bar],[data-device-detail]')).toBeNull();
     expect(container.textContent).toBe("Caller media");
+  });
+
+  it("keeps the framed bare resource box as the figure's first child", () => {
+    const { container } = render(<MediaFigure image={image} chrome="bare" framed ground="sunken" />);
+    const frame = container.querySelector("[data-media-figure]")!.firstElementChild as HTMLElement;
+    expect(frame).toHaveAttribute("data-screenshot-chrome", "bare");
+    expect(frame).toHaveClass("rounded-control", "border", "border-line-base");
+    expect(frame.style.aspectRatio).toBe("1440 / 900");
+    expect(frame.querySelector("picture")!.parentElement).toBe(frame);
   });
 
   it("keeps callouts as one named list beside the media and caption", () => {

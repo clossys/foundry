@@ -112,7 +112,8 @@ export function MediaFigure({
       style={contained ? { maxWidth: SECTION_MEASURE_MAX.content, ...style } : style}
     >
       <ChromeSpecimen chrome={chrome} label={chromeLabel} ground={ground}>
-        <SemanticContent as="div" className={framed ? cx("w-full overflow-hidden rounded-control border", colors.border) : image === undefined ? "w-full" : "w-full overflow-hidden"}
+        <SemanticContent as="div" data-screenshot-chrome={chrome === "bare" ? "bare" : undefined}
+          className={framed ? cx("w-full overflow-hidden rounded-control border", colors.border) : image === undefined ? "w-full" : "w-full overflow-hidden"}
           style={{ aspectRatio: crop ? `${crop.width} / ${crop.height}` : undefined,
             backgroundColor: image?.placeholder?.kind === "color" ? image.placeholder.value : undefined,
             backgroundImage: image?.placeholder?.kind === "blur" ? `url(${JSON.stringify(image.placeholder.value)})` : undefined,
