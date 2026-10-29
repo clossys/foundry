@@ -47,6 +47,12 @@ describe("content route publishing document", () => {
     const prepared = prepareContentRoute(input);
     expect(prepared.status).toBe("ready");
     expect(prepared.needs).toEqual([]);
+    expect(prepared.provenance).toMatchObject({ requestedLocale: locale, inline: [] });
+    expect(prepared.provenance!.copy).toHaveLength(4);
+    expect(prepared.provenance!.copy.map(entry => entry.binding)).toEqual(["pageMeta", "pageMeta", "frameCopy", "sections.message"]);
+    for (const entry of prepared.provenance!.copy) {
+      expect(entry).toMatchObject({ requestedLocale: locale, servedLocale: locale, chain: locale === "en" ? ["en"] : [locale, "en"] });
+    }
     const html = render(input);
     const title = `${copy[locale].title} · ${copy[locale].brand}`;
     expect(html).toContain('data-ds-leaf="frames.document"');
@@ -118,6 +124,22 @@ describe("content route publishing document", () => {
     expect(prepared.needs).toContainEqual(expect.objectContaining({ target: "writer", ref: "pageMeta.fr.description" }));
     expect(prepared.metadata.alternates).toEqual([]);
     expect(() => render(missingFrench)).toThrow(ContentRouteNeedsError);
+  });
+
+  it("retains Writer errors in unselected locale metadata even when its required title and description resolve", () => {
+    const input = publishingFixture("en");
+    const content = input.registry.candidates[0]!.history.at(-1)!.content;
+    const invalidFrench = withRouteContent(input, { ...content, pageMeta: [...content.pageMeta!, {
+      key: "share-title", locale: "fr", source: "writer", ref: { id: "missing.french.share-title" },
+    }] });
+    const prepared = prepareContentRoute(invalidFrench);
+    expect(prepared.status).toBe("needs-input");
+    expect(prepared.node).toBeUndefined();
+    expect(prepared.provenance).toBeUndefined();
+    expect(prepared.copyFindings).toContainEqual(expect.objectContaining({ rule: "unresolved-copy", severity: "error", locale: "fr" }));
+    expect(prepared.needs).toContainEqual(expect.objectContaining({ kind: "copy", target: "writer", ref: `pageMeta[${content.pageMeta!.length}]`, detail: expect.stringContaining("unresolved-copy") }));
+    expect(prepared.needs.some(need => need.ref === "pageMeta.fr.title" || need.ref === "pageMeta.fr.description")).toBe(false);
+    expect(() => render(invalidFrench)).toThrow(ContentRouteNeedsError);
   });
 
   it.each([null, "invalid", [], {}, { manifest: null }, { manifest: { locales: null } }])("returns named Needs for malformed publishing context %j", publishing => {

@@ -61,14 +61,17 @@ export function prepareContentRoute(input: ContentRouteInput): PreparedContentRo
 
   const copyFindings: CopyFinding[] = [];
   const copyReports: { binding: string; report: CopyResolutionReport }[] = [];
-  const recordCopy = (report: CopyResolutionReport, binding: string): CopyResolutionReport["copy"] => {
-    copyReports.push({ binding, report });
+  const validateCopy = (report: CopyResolutionReport): CopyResolutionReport["copy"] => {
     copyFindings.push(...report.findings);
     // Refuse legacy reports independently of their historical warning/complete flags.
     for (const finding of report.findings) if (finding.severity === "error" || requireWriterCopy && finding.rule === "legacy-inline-copy") {
       add("copy", "writer", finding.path, `Writer copy is required: ${finding.path} (${finding.rule})`);
     }
     return report.copy;
+  };
+  const recordCopy = (report: CopyResolutionReport, binding: string): CopyResolutionReport["copy"] => {
+    copyReports.push({ binding, report });
+    return validateCopy(report);
   };
   const writer = input.writer;
   const writerValid = writer === undefined || isContentJson(writer) && writer !== null && typeof writer === "object" && !Array.isArray(writer)
@@ -103,8 +106,9 @@ export function prepareContentRoute(input: ContentRouteInput): PreparedContentRo
     } else {
       let nativeMetadataComplete = true;
       for (const publishedLocale of slot.locales) {
+        // Validate all served locales; provenance describes only this route's projections.
         const nativeCopy = publishedLocale === locale ? pageCopy
-          : recordCopy(resolveCopy({ pageMeta: candidate.pageMeta }, publishedLocale, { ...copyOptions, requirePageMeta: true }), `pageMeta.${publishedLocale}`)[PAGE_META_KEY] ?? {};
+          : validateCopy(resolveCopy({ pageMeta: candidate.pageMeta }, publishedLocale, { ...copyOptions, requirePageMeta: true }))[PAGE_META_KEY] ?? {};
         for (const key of ["title", "description"] as const) if (!nativeCopy[key]?.trim()) {
           nativeMetadataComplete = false;
           add("copy", "writer", `pageMeta.${publishedLocale}.${key}`, `Publishing requires native Writer ${key} for every served locale: ${publishedLocale}`);
