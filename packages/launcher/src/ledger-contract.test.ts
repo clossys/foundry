@@ -414,3 +414,14 @@ describe("historical existing-declaration consent", () => {
     });
   }
 });
+
+
+describe("root Clossys install site", () => {
+  it("records dependency ownership at the dedicated Clossys manifest", () => {
+    const source = CORPUS.ledgers.find(row => row.valid && row.ledger.keys.length > 0)!;
+    expect(validateInstalledLedger(source.ledger).valid).toBe(true);
+    const value = loose(source.ledger);
+    for (const key of value.keys) key.file = "clossys/package.json";
+    expect(installedLedgerViolations(value).filter(row => row.rule === "schema")).toEqual([]);
+  });
+});

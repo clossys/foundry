@@ -1024,3 +1024,26 @@ describe("pnpm lockfile invariants", () => {
     expect(result.verdict === "indeterminate" && result.side).toBe("base");
   });
 });
+
+
+describe("root Clossys install site", () => {
+  it("resolves the Clossys workspace importer while leaving the root importer empty", () => {
+    const pkg = { ...INPUT_PACKAGE, placement: "devDependencies" as const };
+    const base = "lockfileVersion: '9.0'\nimporters:\n  .: {}\n  clossys: {}\npackages: {}\nsnapshots: {}\n";
+    const regenerated = `lockfileVersion: '9.0'
+importers:
+  .: {}
+  clossys:
+    devDependencies:
+      '${pkg.name}':
+        specifier: ${pkg.version}
+        version: ${pkg.version}
+packages:
+  '${pkg.name}@${pkg.version}':
+    resolution: {integrity: ${pkg.integrity}}
+snapshots:
+  '${pkg.name}@${pkg.version}': {}
+`;
+    expect(checkLockfileInvariants({ format: "pnpm", base, regenerated, packages: [pkg] }).verdict).toBe("satisfied");
+  });
+});

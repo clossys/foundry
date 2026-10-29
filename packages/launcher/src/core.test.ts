@@ -1958,6 +1958,43 @@ describe("preserved composed skills in the health report (#1473)", () => {
 });
 
 describe("generated clossys/README.md", () => {
+  it("lists nested agents deterministically while preserving their cells and machine ledger", () => {
+    const directory = tempDir();
+    writeInventory(directory);
+    const cell = join(directory, "clossys", "agents", "designer", "cells", "tokens.example", "v1.md");
+    const ledger = join(directory, "clossys", ".state", "ledger");
+    mkdirSync(dirname(cell), { recursive: true });
+    mkdirSync(join(directory, "clossys", "agents", "writer"), { recursive: true });
+    mkdirSync(join(directory, "clossys", "advisor"), { recursive: true });
+    const cellBytes = Buffer.from("existing cell\n");
+    const ledgerBytes = Buffer.from("existing ledger\n");
+    writeFileSync(cell, cellBytes);
+    writeFileSync(ledger, ledgerBytes);
+    const applyOpts = composeApplyOptions(seedSkillCatalogue(["advisor"]));
+    applyWorkspacePlan(
+      { ...host(directory), now: () => "2026-09-18T00:00:00.000Z" },
+      { action: "adopt", owner: "acme", repository: "hub", directory, advisorVersion: "0.1.5", integratorVersion: "0.8.2" },
+      skeletonRoot,
+      applyOpts,
+    );
+    const first = readFileSync(join(directory, "clossys", "README.md"), "utf8");
+    applyWorkspacePlan(
+      { ...host(directory), now: () => "2026-09-19T00:00:00.000Z" },
+      { action: "resume", owner: "acme", repository: "hub", directory, clone: false },
+      skeletonRoot,
+      applyOpts,
+    );
+    expect(readFileSync(join(directory, "clossys", "README.md"), "utf8")).toBe(first);
+    expect(first).toContain("- `clossys/agents/designer/` — @clossys-designer");
+    expect(first).toContain("- `clossys/agents/writer/` — @clossys-writer");
+    expect(first.indexOf("clossys/agents/designer/")).toBeLessThan(first.indexOf("clossys/agents/writer/"));
+    expect(first).toContain("- `clossys/advisor/` — @clossys-advisor");
+    expect(first).not.toContain("- `clossys/agents/` —");
+    expect(first).not.toContain("Last generated:");
+    expect(readFileSync(cell)).toEqual(cellBytes);
+    expect(readFileSync(ledger)).toEqual(ledgerBytes);
+  });
+
   it("notes there is no engagement brief yet, then reflects clossys/brief.json once it exists", () => {
     const directory = tempDir();
     writeInventory(directory);
