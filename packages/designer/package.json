@@ -434,6 +434,11 @@
       "types": "./dist/frames/site-frame/SkipLink.client.d.ts",
       "react-server": "./dist/frames/site-frame/SkipLink.server.js",
       "default": "./dist/frames/site-frame/SkipLink.client.js"
+    },
+    "#designer-link": {
+      "types": "./dist/components/Link.client.d.ts",
+      "react-server": "./dist/components/Link.server.js",
+      "default": "./dist/components/Link.client.js"
     }
   }
 }

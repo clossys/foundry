@@ -104,3 +104,7 @@ export type { SemanticContentTag, SemanticContentProps } from "./SemanticContent
 
 export { NativeAction } from "./NativeAction.js";
 export type { NativeActionProps } from "./NativeAction.js";
+
+/** Static entry of the same Link component, without evaluating client interaction hooks. */
+export { Link } from "./Link.server.js";
+export type { LinkProps, LinkVariant } from "./Link.types.js";

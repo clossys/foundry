@@ -68,7 +68,7 @@ export interface SiteEnvironmentLinkInput {
   readonly label: CopyRef;
   /** Plain SVG shape data (`path`, `circle`, `rect`, ...). Event-handler and link attributes are refused. */
   readonly icon: IconNode;
-  /** Marks the environment the page belongs to (`aria-current="true"`). */
+  /** Marks the environment the page belongs to (`aria-current="page"`). */
   readonly isCurrent?: boolean;
 }
 
@@ -135,7 +135,7 @@ export interface SiteShellInput {
   /** Existing footer fallback only. Header ink and plate use header.surface/tone. @default "base" */
   readonly ground?: SiteChromeGround;
   /** One header surface and theme-relative ink polarity. Glass follows declared page ground through the existing client island. */
-  readonly header?: { readonly surface?: "solid" | "transparent" | "glass"; readonly tone?: "base" | "inverse" };
+  readonly header?: { readonly position?: "sticky" | "static"; readonly surface?: "solid" | "transparent" | "glass"; readonly tone?: "base" | "inverse" };
   readonly footer?: SiteFooterInput;
   /**
    * The canonical public origin (`https://example.com`), for a surface served

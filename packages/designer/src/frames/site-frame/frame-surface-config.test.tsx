@@ -27,7 +27,7 @@ const actions = [
 ] satisfies NonNullable<SiteShellInput["actions"]>;
 
 describe("the single Publisher header surface contract", () => {
-  it("defaults to solid and exposes only surface/tone presentation axes for the header", () => {
+  it("defaults to solid and leaves header position omitted while defaulting surface and tone", () => {
     const resolved = resolveShell(base, copy, asset);
     expect(resolved.header).toEqual({ surface: "solid", tone: "base" });
     expect(normalizeSiteFrameConfig()).toEqual({ footerGround: "base", footerPlacement: "flow",

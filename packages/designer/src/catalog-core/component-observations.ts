@@ -113,10 +113,12 @@ const posixJoin = (from: string, relative: string): string => {
  * An `export function|const|class name`, a local `export { name }` list or an
  * `export { name } from "react-aria-components"` passthrough defines it; a relative
  * `export { name } from "./x.js"` re-export is followed, through renames (`a as name`) and
- * chained re-exports, to the file that declares it, never to the shim. Unresolvable, missing
+ * chained re-exports, to the file that declares it, never to the shim. Package import
+ * aliases follow only the explicitly supplied source target for the active runtime condition;
+ * targets from mutually exclusive conditions are never combined. Unresolvable, missing
  * or cyclic re-exports give `undefined`, so the slot stays unobserved.
  */
-export function exportSource(read: (path: string) => string | undefined, paths: readonly string[], name: string, seen: ReadonlySet<string> = new Set()): ComponentSourceFile[] | undefined {
+export function exportSource(read: (path: string) => string | undefined, paths: readonly string[], name: string, seen: ReadonlySet<string> = new Set(), packageImports: Readonly<Record<string, string>> = {}): ComponentSourceFile[] | undefined {
   for (const path of paths) {
     if (seen.has(path)) continue;
     const content = read(path);
@@ -128,9 +130,13 @@ export function exportSource(read: (path: string) => string | undefined, paths: 
         if (exported !== name || !imported) continue;
         const specifier = match[2];
         if (specifier === undefined || specifier === "react-aria-components") return [{ path, content }];
-        if (!specifier.startsWith(".")) continue;
-        const stem = posixJoin(path, specifier).replace(/\.[jt]sx?$/, "");
-        const found = exportSource(read, [`${stem}.tsx`, `${stem}.ts`], imported, new Set([...seen, path]));
+        const alias = specifier.startsWith("#") ? packageImports[specifier] : undefined;
+        // A package import must resolve to a local source path, never a foreign
+        // module, absolute path or traversal supplied as purported evidence.
+        if (alias !== undefined && (!/^[\w@.-]+(?:\/[\w@.-]+)*\.[jt]sx?$/.test(alias) || alias.split("/").some(part => part === "." || part === ".."))) continue;
+        if (!specifier.startsWith(".") && alias === undefined) continue;
+        const stem = (alias ?? posixJoin(path, specifier)).replace(/\.[jt]sx?$/, "");
+        const found = exportSource(read, [`${stem}.tsx`, `${stem}.ts`], imported, new Set([...seen, path]), packageImports);
         if (found) return found;
       }
     }

@@ -129,10 +129,9 @@ export interface SiteHeaderActionLinkProps
   icon?: IconNode;
   /**
    * Marks this link as the current item of its set, for example the
-   * environment the page belongs to. Renders `aria-current="true"` and an
+   * environment the page belongs to. Renders `aria-current="page"` and an
    * inset bar along the bottom edge, visible in the icon-only layout too.
-   * The value is `true` rather than `page` because the link points to the
-   * set member's home, which is not necessarily the page being shown.
+   * Set this only when the destination is the current page.
    */
   isCurrent?: boolean;
   /**
@@ -176,7 +175,7 @@ function SiteHeaderActionLink({
     <a
       {...rest}
       href={href}
-      aria-current={isCurrent ? "true" : undefined}
+      aria-current={isCurrent ? "page" : undefined}
       data-header-action-ghost={variant === "ghost" ? "" : undefined}
       className={cx(look, className)}
       style={{

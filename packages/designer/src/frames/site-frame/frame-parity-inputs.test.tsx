@@ -58,9 +58,9 @@ for (const mode of ["server", "client"] as const) {
   it(`forwards primary action emphasis: ${mode}`, () => {
     const shell = { ...base, actions: [{ ...base.actions![0], emphasis: "primary", icon: [["path", { d: "M4 12h16" }]] }] } as SiteShellInput;
     const action = output(frame(shell), mode).querySelector('header a[href="/start"]');
-    expect(action).toHaveClass("bg-accent");
+    expect(action).toHaveClass("bg-action");
     const secondary = output(frame({ ...base, actions: [{ ...base.actions![0], emphasis: "secondary" }] } as SiteShellInput), mode);
-    expect(secondary.querySelector('header a[href="/start"]')).not.toHaveClass("bg-accent");
+    expect(secondary.querySelector('header a[href="/start"]')).not.toHaveClass("bg-action");
   });
 
   it(`forwards authored brand tone and preserves inverse inheritance: ${mode}`, () => {
@@ -114,7 +114,7 @@ for (const mode of ["server", "client"] as const) {
     expect(root.querySelector('header a[aria-label="Example home"]')).toHaveTextContent("Example");
     const actions = root.querySelectorAll('header a[href="/start"]');
     expect(actions).toHaveLength(2);
-    expect(actions[0]).toHaveClass("bg-accent");
+    expect(actions[0]).toHaveClass("bg-action");
     expect(root.querySelector("h1")).toHaveClass("tablet-lg:text-display-xl");
     expect(root.querySelector("h1")!.parentElement).toHaveStyle({ maxWidth: "none" });
     const eyebrow = [...root.querySelectorAll("p")].find(p => p.textContent === "Eyebrow")!;

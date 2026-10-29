@@ -32,6 +32,7 @@ export const SITE_FRAME_CONFIG_SCHEMA = Object.freeze({
   footerPlacement: Object.freeze({ values: Object.freeze(["flow", "overlay"] as const), default: "flow" as const }),
   footerRule: Object.freeze({ values: Object.freeze(["none", "top"] as const), default: "none" as const }),
   headerSurface: Object.freeze({ values: Object.freeze(["solid", "transparent", "glass"] as const), default: "solid" as const }),
+  headerPosition: Object.freeze({ values: Object.freeze(["sticky", "static"] as const), default: undefined }),
   headerTone: Object.freeze({ values: Object.freeze(["base", "inverse"] as const), default: "base" as const }),
 });
 export interface SiteFramePresentationConfig {
@@ -39,10 +40,13 @@ export interface SiteFramePresentationConfig {
   readonly footerPlacement?: typeof SITE_FRAME_CONFIG_SCHEMA.footerPlacement.values[number];
   readonly footerRule?: typeof SITE_FRAME_CONFIG_SCHEMA.footerRule.values[number];
   readonly headerSurface?: typeof SITE_FRAME_CONFIG_SCHEMA.headerSurface.values[number];
+  readonly headerPosition?: typeof SITE_FRAME_CONFIG_SCHEMA.headerPosition.values[number];
   readonly headerTone?: typeof SITE_FRAME_CONFIG_SCHEMA.headerTone.values[number];
 }
+type NormalizedSiteFrameConfig = Required<Omit<SiteFramePresentationConfig, "headerPosition">> & Pick<SiteFramePresentationConfig, "headerPosition">;
+
 /** Reject unknown fields and incompatible dependent inputs; output keys remain flat primitive values. */
-export function normalizeSiteFrameConfig(input: unknown = {}, inherited?: SiteFramePresentationConfig): Required<SiteFramePresentationConfig> {
+export function normalizeSiteFrameConfig(input: unknown = {}, inherited?: SiteFramePresentationConfig): NormalizedSiteFrameConfig {
   const fail = (): never => { throw new Error("SiteFrame: invalid presentation config or dependent field."); };
   try {
   if (!input || typeof input !== "object" || Array.isArray(input) || Object.getPrototypeOf(input) !== Object.prototype) fail();
@@ -56,9 +60,10 @@ export function normalizeSiteFrameConfig(input: unknown = {}, inherited?: SiteFr
     if (typeof descriptor.value !== "string" || !values.includes(descriptor.value)) fail();
     fields[key] = descriptor.value;
   }
-  // Explicit header inputs retain their independent defaults; footer-only inputs inherit the shell header.
-  const explicitHeader = Object.keys(fields).some(key => key.startsWith("header"));
-  const result = Object.fromEntries(Object.entries(SITE_FRAME_CONFIG_SCHEMA).map(([key, field]) => [key, fields[key] ?? (explicitHeader && key.startsWith("header") ? undefined : defaults?.[key as keyof SiteFramePresentationConfig]) ?? field.default])) as Required<SiteFramePresentationConfig>;
+  // Surface/tone inputs retain their established defaults; position inherits independently.
+  const explicitHeader = fields.headerSurface !== undefined || fields.headerTone !== undefined;
+  const result = Object.fromEntries(Object.entries(SITE_FRAME_CONFIG_SCHEMA).map(([key, field]) => [key, fields[key] ?? (explicitHeader && key.startsWith("header") && key !== "headerPosition" ? undefined : defaults?.[key as keyof SiteFramePresentationConfig]) ?? field.default]).filter(([, value]) => value !== undefined)) as NormalizedSiteFrameConfig;
+  if (result.headerSurface === "glass" && result.headerPosition === "static") fail();
   if (result.footerPlacement === "overlay" && result.footerGround === "transparent") fail();
   return Object.freeze(result);
   } catch { return fail(); }
@@ -92,9 +97,9 @@ export const SITE_FRAME_CONTRACT = freeze({
   normalization: "normalizeSiteFrameConfig",
   actionsNormalization: "normalizeSiteFrameActions",
   defaults: SITE_FRAME_NAV_DEFAULTS,
-  required: ["sticky-header", "dark-footer", "accessible-navigation", "document-scroll", "sole-main"],
+  required: ["dark-footer", "accessible-navigation", "document-scroll", "sole-main"],
   constituents: {
-    Header: { owner: "@clossys/designer", subpath: "shell/server", export: "SiteHeader", config: ["headerSurface", "headerTone"] },
+    Header: { owner: "@clossys/designer", subpath: "shell/server", export: "SiteHeader", config: ["headerSurface", "headerTone", "headerPosition"] },
     Footer: { owner: "@clossys/designer", subpath: "shell/server", export: "SiteFooter", config: ["footerGround", "footerPlacement", "footerRule"], content: ["columns", "links", "social", "legal"], required: ["dark-in-both-themes", "centered-links", "home-inline-end", "mobile-links-icons-copyright", "named-icons", "external-rel", "safe-area", "44px-targets", "privacy-link-only"], constraints: { links: FOOTER_LINK_LIMIT, linksLayout: "one flat row of shell.footer.links then shell.footer.legal.links", grouping: "shell.footer.columns: labelled columns for links beyond the flat row", icons: FOOTER_ICON_LIMIT, brandMark: "shell.brand, always the last icon slot", excludes: ["home", "header-navigation", "privacy-choices"], error: "SiteFooterContractError", accessibility: "mandatory" } },
   },
 } as const);

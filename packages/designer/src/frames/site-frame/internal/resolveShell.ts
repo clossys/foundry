@@ -34,7 +34,7 @@ export interface ResolvedSiteShell {
   readonly environments: readonly (ResolvedSiteLink & { readonly icon: IconNode; readonly isCurrent: boolean })[];
   readonly navPlacement: "leading" | "centered";
   readonly ground: SiteChromeGround;
-  readonly header: { readonly surface: "solid" | "transparent" | "glass"; readonly tone: "base" | "inverse" };
+  readonly header: { readonly position?: "sticky" | "static"; readonly surface: "solid" | "transparent" | "glass"; readonly tone: "base" | "inverse" };
   readonly footer?: {
     /** The brand's own mark, as resolved for `shell.brand`, linking home in the last icon slot. */
     readonly home: { readonly label: string; readonly href: string; readonly markSrc: string };
@@ -60,7 +60,7 @@ const SHELL_KEYS = new Set([
   "footer",
   "origin",
 ]);
-const HEADER_KEYS = new Set(["surface", "tone"]);
+const HEADER_KEYS = new Set(["surface", "tone", "position"]);
 const BRAND_KEYS = new Set(["assetId", "label", "size", "plate", "variant", "wordmark", "tone", "markInk"]);
 const NAV_KEYS = new Set(["label", "triggerLabel", "links"]);
 const LINK_KEYS = new Set(["href", "label"]);
@@ -393,6 +393,7 @@ export function resolveShell(input: SiteShellInput, resolveCopy: CopyResolver, r
   if (shell.header !== undefined) {
     const fields = record(shell.header, "shell.header", HEADER_KEYS);
     header = {
+      ...(fields.position === undefined ? {} : { position: oneOf(fields.position, "shell.header.position", ["sticky", "static"] as const) }),
       surface: fields.surface === undefined ? "solid" : oneOf(fields.surface, "shell.header.surface", ["solid", "transparent", "glass"] as const),
       tone: fields.tone === undefined ? "base" : oneOf(fields.tone, "shell.header.tone", ["base", "inverse"] as const),
     };
@@ -430,10 +431,12 @@ export function resolveShell(input: SiteShellInput, resolveCopy: CopyResolver, r
   // Renderer and data contract normalize the same dependent presentation inputs.
   const normalized = normalizeSiteFrameConfig(presentation ?? {}, {
     headerSurface: header.surface, headerTone: header.tone,
+    ...(header.position === undefined ? {} : { headerPosition: header.position }),
     ...(footer ? { footerGround: footer.ground, footerPlacement: footer.placement, footerRule: footer.rule ?? "none" } : {}),
   });
   if (footer) footer = { ...footer, ground: normalized.footerGround, placement: normalized.footerPlacement, rule: normalized.footerRule };
-  header = { surface: normalized.headerSurface, tone: normalized.headerTone };
+  header = { surface: normalized.headerSurface, tone: normalized.headerTone,
+    ...(normalized.headerPosition === undefined ? {} : { position: normalized.headerPosition }) };
 
   return {
     brand,
