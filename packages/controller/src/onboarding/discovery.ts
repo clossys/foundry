@@ -19,6 +19,7 @@
  */
 import { readFileSync, statSync } from "node:fs";
 import { isAbsolute, join, resolve } from "node:path";
+import { roleFolderPrefix } from "../loop/artifacts.js";
 import { ASSESSMENT_INVOCATION_KINDS } from "./types.js";
 import { SOLVES_EVIDENCE_LEVELS } from "./types.js";
 import type {
@@ -122,8 +123,6 @@ function isSafeRelativePath(value: unknown): value is string {
   return text(value) && !isAbsolute(value) && !value.startsWith("\\") && !/^[A-Za-z]:/.test(value) && !value.split(/[\\/]/).includes("..");
 }
 
-const roleShortName = (role: string): string => role.split("/").pop() as string;
-
 /** The manifest key a role uses to declare its own shipped intake-question-cards file. */
 export const INTAKE_DECLARATION_PATH = "foundry.intake";
 
@@ -206,7 +205,8 @@ export const OUTPUTS_DECLARATION_PATH = "foundry.outputs";
 
 /**
  * Resolves one role's declared output paths from its installed manifest.
- * Every path must fall under this role's own `clossys/<role>/` folder
+ * Every path must fall under this role's own folder (`clossys/agents/<agent>/` for the four agents,
+ * `clossys/<role>/` for other roles)
  * (the repository contract docs/contracts/consumer-layout.json, which does not ship
  * with this package; issue #1171); a path outside it is
  * reported as `output-path-outside-role-folder` rather than silently kept.
@@ -222,7 +222,7 @@ export function discoverRoleOutputsDeclaration(installRoot: string, role: string
     return { role, declaration: null, absence: "invalid-outputs-declaration" };
   }
   const paths = declared as readonly string[];
-  const expectedPrefix = `clossys/${roleShortName(role)}/`;
+  const expectedPrefix = roleFolderPrefix(role);
   if (!paths.every((path) => isSafeRelativePath(path) && path.startsWith(expectedPrefix))) {
     return { role, declaration: null, absence: "output-path-outside-role-folder" };
   }
@@ -302,7 +302,8 @@ export const FEEDS_DECLARATION_PATH = "foundry.feeds";
 
 /**
  * Resolves one role's `feeds` declaration from its installed manifest. Every
- * path must fall under this role's own `clossys/<role>/` folder, the same
+ * path must fall under this role's own folder (`clossys/agents/<agent>/` for the four agents,
+ * `clossys/<role>/` for other roles), the same
  * rule `outputs` already applies.
  */
 export function discoverRoleFeedsDeclaration(installRoot: string, role: string): FeedsDeclarationDiscovery {
@@ -316,7 +317,7 @@ export function discoverRoleFeedsDeclaration(installRoot: string, role: string):
     return { role, declaration: null, absence: "invalid-feeds-declaration" };
   }
   const entries = declared as readonly FeedsEntry[];
-  const expectedPrefix = `clossys/${roleShortName(role)}/`;
+  const expectedPrefix = roleFolderPrefix(role);
   if (!entries.every((item) => isSafeRelativePath(item.path) && item.path.startsWith(expectedPrefix))) {
     return { role, declaration: null, absence: "feeds-path-outside-role-folder" };
   }
