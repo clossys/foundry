@@ -48,7 +48,8 @@
   },
   "bin": {
     "writer-check": "dist/cli.js",
-    "writer-rate-check": "dist/approved-copy-coverage-rate-cli.js"
+    "writer-rate-check": "dist/approved-copy-coverage-rate-cli.js",
+    "writer-cells": "dist/cells/bin.js"
   },
   "files": [
     "dist",
@@ -89,7 +90,7 @@
       {
         "id": "copy-registry",
         "subQuestion": "Is every registry entry itself schema-valid, unique, and free of unfilled placeholders?",
-        "worldClass": "Every registry entry is schema-valid, has a unique id, and every declared placeholder is present in its own text — registry validity only; whether a component actually USES the registry by id is addressability's own question.",
+        "worldClass": "Every registry entry is schema-valid, has a unique id, and every declared placeholder is present in its own text — registry validity only; whether a component actually USES the registry by id is addressability's own question. writer-cells migrates, compiles, checks, proposes and activates consumer-owned copy cells; check compares generated records without repairing drift.",
         "inputs": [],
         "outputs": [
           "clossys/writer/copy-registry.json"
