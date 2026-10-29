@@ -1,7 +1,7 @@
 import { ShellI18nProvider, ShellLocaleRoot } from "#designer-frame-i18n";
 import { cloneElement, isValidElement, type ReactElement, type ReactNode } from "react";
 import { Link } from "../../components/Link.js";
-import { Icon, SemanticContent } from "@clossys/designer/components/server";
+import { Icon, Logomark, SemanticContent } from "@clossys/designer/components/server";
 import { Brandmark, SiteFooter, SiteHeader } from "@clossys/designer/shell/server";
 import { Hero, type HeroProps } from "../../blocks/Hero.js";
 import { RenderError } from "./landing/internal/errors.js";
@@ -65,26 +65,32 @@ export function SiteFrame({ shell, presentation, resolveCopy, resolveAsset, chil
   const inverseHeader = resolved.header.tone === "inverse";
   // Environment-only headers keep direct ghost icons; menu headers retain their mobile primary affordance.
   const actions = !navigation && resolved.environments.length > 0
-    ? resolved.environments.map((environment, index) => <SiteHeader.ActionLink key={index} href={environment.href} label={environment.label} icon={environment.icon} isCurrent={environment.isCurrent} variant="ghost" className={inverseHeader ? `${ENVIRONMENT_GHOST_CLASS} ${MOBILE_ACTION_INVERSE}` : ENVIRONMENT_GHOST_CLASS} />)
-    : primary ? <SiteHeader.ActionLink data-header-primary="" href={primary.href} label={primary.label} icon={primary.icon} isCurrent={primary.isCurrent} variant="ghost" className={inverseHeader ? MOBILE_ACTION_INVERSE : undefined} /> : undefined;
+    ? resolved.environments.map((environment, index) => <SiteHeader.ActionLink key={index} href={environment.href} rel={/^https?:\/\//i.test(environment.href) ? "noopener noreferrer" : undefined} label={environment.label} icon={environment.icon} isCurrent={environment.isCurrent} variant="ghost" className={inverseHeader ? `${ENVIRONMENT_GHOST_CLASS} ${MOBILE_ACTION_INVERSE}` : ENVIRONMENT_GHOST_CLASS} />)
+    : primary ? <SiteHeader.ActionLink data-header-primary="" href={primary.href} rel={/^https?:\/\//i.test(primary.href) ? "noopener noreferrer" : undefined} label={primary.label} icon={primary.icon} isCurrent={primary.isCurrent} variant="ghost" className={inverseHeader ? MOBILE_ACTION_INVERSE : undefined} /> : undefined;
 
   const footerContent = footer ? (
     <SiteFooter
+      brand={footer.brandBand ? cloneElement(brandmark, { tone: "inverse" }) : undefined}
       ground={footer.ground}
       rule={footer.rule}
       className={footer.placement === "overlay" ? "publisher-frame-footer-overlay pointer-events-auto w-full [margin-block-start:auto] min-w-0 [overflow-wrap:anywhere]" : undefined}
-      columns={footer.columns.length ? <>{footer.columns.map((column, columnIndex) => (
-        <SiteFooter.Column key={columnIndex} heading={column.heading}>
-          {column.links.map((link, linkIndex) => <Link variant="standalone" key={linkIndex} href={link.href} rel={/^https?:\/\//i.test(link.href) ? "noopener noreferrer" : undefined} className="inline-flex min-h-[var(--ui-layout-tap-target)] items-center px-xs text-inherit no-underline hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent">{link.label}</Link>)}
-        </SiteFooter.Column>
-      ))}</> : undefined}
+      columns={footer.columns.length || (footer.brandBand && footer.social?.links.length) ? <>
+        {footer.columns.map((column, columnIndex) => (
+          <SiteFooter.Column key={columnIndex} heading={column.heading}>
+            {column.links.map((link, linkIndex) => <Link variant="standalone" key={linkIndex} href={link.href} rel={/^https?:\/\//i.test(link.href) ? "noopener noreferrer" : undefined} className="inline-flex min-h-[var(--ui-layout-tap-target)] items-center px-xs text-inherit no-underline hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent">{link.label}</Link>)}
+          </SiteFooter.Column>
+        ))}
+        {footer.brandBand && footer.social?.links.length ? <SiteFooter.Column heading={footer.social.label!}>
+          {footer.social.links.map((link, index) => <SiteFooter.SocialLink key={index} href={link.href} label={link.label} {...(link.image ? { image: link.image } : { icon: link.icon })} />)}
+        </SiteFooter.Column> : null}
+      </> : undefined}
       secondary={<SiteFooter.Legal
         entity={footer.legal.entity}
         links={[...footer.links, ...footer.legal.links]}
         linksLabel={footer.legal.linksLabel}
-        icons={footer.social?.links.map(link => ({ label: link.label, href: link.href, icon: <Icon glyph={link.icon} decorative /> }))}
-        iconsLabel={footer.social?.links.length ? footer.social.label : undefined}
-        home={footer.home}
+        icons={footer.brandBand ? undefined : footer.social?.links.map(link => ({ label: link.label, href: link.href, icon: link.image ? <Logomark src={link.image.src} size="sm" /> : <Icon glyph={link.icon} decorative /> }))}
+        iconsLabel={!footer.brandBand && footer.social?.links.length ? footer.social.label : undefined}
+        home={footer.brandBand ? undefined : footer.home}
       />}
 
     />

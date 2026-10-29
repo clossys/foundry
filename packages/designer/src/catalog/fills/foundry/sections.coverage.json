@@ -490,22 +490,29 @@
       "unresolvedMemberAxes": []
     },
     {
-      "missingMembers": [
-        "form.contact"
-      ],
+      "missingMembers": [],
       "missingRequiredSlots": [],
       "missingSlots": [],
       "notes": [
-        "Submit binds to the actions region; the host supplies the submit button. Error-summary content uses the errors and errorSummaryMessage API. Form is a block, not the unavailable components.form leaf.",
+        "The form.contact configuration opts into the public Form composition=contact API. Its consumer-owned onSubmit promise controls the send; the package implements no endpoint, transport or persistence.",
+        "Fields compose the native Field, TextField, Textarea and Select components; submit binds to a native Button in the actions region. The error-summary uses errors and errorSummaryMessage, while host-authored success and error regions render through Banner after the submit promise resolves or rejects. Rejected submits retain the field values.",
+        "Honeypot and Turnstile regions pass through consumer-owned host nodes. They do not create anti-abuse services, tokens or verification behavior. The runtime adapter resolves live nodes and the submit callback through sectionHosts[\"sections.form\"].",
+        "Form is the public block anchor, not a claim that the components.form leaf is adopted. Source declarations do not qualify a consumer handler or consent host.",
         "Source-only import and token-read measurements are lower bounds; shared anatomy, accessibility, contrast and consumer runtime conformance remain unmeasured. Content bindings describe host adaptation points, not type-equivalent converters."
       ],
       "slot": "sections.form",
-      "status": "subset",
-      "supportedMembers": [],
+      "status": "candidate",
+      "supportedMembers": [
+        "form.contact"
+      ],
       "supportedSlots": [
+        "error",
         "error-summary",
         "fields",
-        "submit"
+        "honeypot",
+        "submit",
+        "success",
+        "turnstile"
       ],
       "unresolvedMemberAxes": []
     },

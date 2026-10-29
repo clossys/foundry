@@ -30,20 +30,42 @@
   },
   "frames": {
     "site-footer": {
-      "composes": [],
+      "composes": [
+        "components.icon",
+        "components.logo",
+        "components.semantic-content"
+      ],
       "consumption": {
         "scanStatus": "lower-bound",
-        "scannedComposes": [],
+        "scannedComposes": [
+          "components.icon",
+          "components.logo",
+          "components.semantic-content"
+        ],
         "scannedReads": {
           "assets": [],
-          "components": [],
+          "components": [
+            "components.icon",
+            "components.logo",
+            "components.semantic-content"
+          ],
           "tokens": [
+            "tokens.accent-color",
+            "tokens.action-color",
             "tokens.body-size",
             "tokens.border-color",
             "tokens.border-width",
             "tokens.brandmark-size",
+            "tokens.control-color",
+            "tokens.control-radius",
+            "tokens.duration",
+            "tokens.easing",
+            "tokens.focus-color",
+            "tokens.focus-outline",
             "tokens.gutter",
             "tokens.spacing",
+            "tokens.state-opacity",
+            "tokens.status-color",
             "tokens.surface-color",
             "tokens.text-color",
             "tokens.touch-target",
@@ -53,12 +75,32 @@
         },
         "sourceFiles": [
           {
+            "path": "packages/designer/src/catalog-assets/media.ts",
+            "sha256": "fa0ebdba691d8687ad955e9b9fb650b145d988b53edf1c2deb7f2eb261df5bef"
+          },
+          {
             "path": "packages/designer/src/catalog-core/provenance-attrs.ts",
             "sha256": "8f2a725224764fc1d7cd7ec94f2f569cad02117251bf6c2a668c8a1b51e7c443"
           },
           {
+            "path": "packages/designer/src/components/button-classes.ts",
+            "sha256": "b8ebd6d815a52769cd0e02ca091f4c81d81e31f9558e1df767bfcf07dcc5f2a6"
+          },
+          {
             "path": "packages/designer/src/components/internal/cx.ts",
             "sha256": "0a7524b0340fec42e1abb216013a353e950aa738d9ba0f2ebdedd5293337bab3"
+          },
+          {
+            "path": "packages/designer/src/components/internal/ui-vars.ts",
+            "sha256": "8455ed770c61ec15597b5ead597563135ed088b609dc11b2cd7ed8b873371701"
+          },
+          {
+            "path": "packages/designer/src/components/Link.server.tsx",
+            "sha256": "716f8c4a4057c2d78fe87465080a8c874c83c7788e4d7da8fd26692146d0ad7b"
+          },
+          {
+            "path": "packages/designer/src/components/Link.styles.ts",
+            "sha256": "d8467b36dc0716227896837f1aecf9f3e44c0fdb42c63ba359f3420249f77328"
           },
           {
             "path": "packages/designer/src/internal/brandmark.ts",
@@ -74,7 +116,7 @@
           },
           {
             "path": "packages/designer/src/shell/SiteFooter.tsx",
-            "sha256": "4a0cd1894d7f3c1c1e894f082f61776b0647dcf02457ee642346adb70b01ae06"
+            "sha256": "6a10abd3dd944517371ea878d0319f1adef150b1c5edee69e8d4a334a3ca1286"
           }
         ],
         "unresolved": [
@@ -112,12 +154,22 @@
       "reads": {
         "assets": [],
         "tokens": [
+          "tokens.accent-color",
+          "tokens.action-color",
           "tokens.body-size",
           "tokens.border-color",
           "tokens.border-width",
           "tokens.brandmark-size",
+          "tokens.control-color",
+          "tokens.control-radius",
+          "tokens.duration",
+          "tokens.easing",
+          "tokens.focus-color",
+          "tokens.focus-outline",
           "tokens.gutter",
           "tokens.spacing",
+          "tokens.state-opacity",
+          "tokens.status-color",
           "tokens.surface-color",
           "tokens.text-color",
           "tokens.touch-target",

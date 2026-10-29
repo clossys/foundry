@@ -36,6 +36,10 @@
     "node": ">=20"
   },
   "exports": {
+    "./app-local": {
+      "types": "./dist/app-local/index.d.ts",
+      "node": "./dist/app-local/index.js"
+    },
     "./content-map": {
       "types": "./dist/content-map/index.d.ts",
       "import": "./dist/content-map/index.js"
@@ -164,7 +168,11 @@
       "types": "./dist/content/node.d.ts",
       "import": "./dist/content/node.js"
     },
-    "./strategy-brief.json": "./strategy-brief.json"
+    "./strategy-brief.json": "./strategy-brief.json",
+    "./site-sync": {
+      "types": "./dist/site-sync/index.d.ts",
+      "import": "./dist/site-sync/index.js"
+    }
   },
   "imports": {
     "#publisher-web-views": {
@@ -182,7 +190,9 @@
     "publisher-seal": "dist/pack/seal-cli.js",
     "publisher-head-lint": "dist/pack/head-lint-cli.js",
     "publisher-site-instantiate": "dist/site-template/instantiate-cli.js",
-    "publisher-registered-route-check": "dist/web/registered-route-cli.js"
+    "publisher-registered-route-check": "dist/web/registered-route-cli.js",
+    "publisher-site-sync": "dist/site-sync/cli.js",
+    "publisher-cells": "dist/content-map/cells-cli.js"
   },
   "foundry": {
     "assessment": {
@@ -258,7 +268,7 @@
       {
         "id": "surface-documents",
         "subQuestion": "Is every audience-facing surface declared once as a validated document, with its template and locations resolved?",
-        "worldClass": "Every published surface is one validated SurfaceDocument resolving to a registered template and a real channel location \u2014 never a page composed ad hoc outside the document. Today: `validateSurfaceDocument` and `resolveSurfaceDocument` (`src/core/`) validate and resolve one document as library functions, and the shipped site template (`templates/site/app/*/page.tsx`) reads `clossys/publisher/surfaces/*.json` at build time, but no bin yet validates a consumer's own surface documents. No qualification case exercises this capability yet, so it is `planned` with no `proofCase` (#1272).",
+        "worldClass": "Every published surface is one validated SurfaceDocument resolving to a registered template and a real channel location \u2014 never a page composed ad hoc outside the document. Today: `validateSurfaceDocument` and `resolveSurfaceDocument` (`src/core/`) validate and resolve one document as library functions, and the shipped site template (`templates/site/app/*/page.tsx`) reads `clossys/publisher/surfaces/*.json` at build time, but no bin yet validates a consumer's own surface documents. No qualification case exercises this capability yet, so it is `planned` with no `proofCase` (#1272). publisher-cells compiles and checks consumer-owned page cells into ContentMaps, reports unresolved links and compares generated outputs without repairing drift.",
         "inputs": [
           {
             "producerRole": "@clossys/writer",
