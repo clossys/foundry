@@ -30,6 +30,7 @@ export function SiteMegaNavigation({ groups, mobile = false }: { readonly groups
       const panelId = `${prefix}-${index}`;
       const expanded = mobile || open === group.id;
       return <SemanticContent as="div" key={group.id} className="relative"
+        onBlur={event => { if (!event.currentTarget.contains(event.relatedTarget)) setOpen(current => current === group.id ? undefined : current); }}
         onKeyDown={event => {
           if (event.key === "Escape" && open === group.id) {
             event.preventDefault(); event.stopPropagation(); setOpen(undefined); triggers.current.get(group.id)?.focus();
@@ -47,7 +48,7 @@ export function SiteMegaNavigation({ groups, mobile = false }: { readonly groups
               {column.links.map(link => <Link key={link.href} variant="standalone" href={link.href}
                 aria-current={link.isCurrent ? "page" : undefined} onPress={() => setOpen(undefined)}>{link.label}</Link>)}
             </SemanticContent>)}
-            {group.featured ? <SemanticContent as="aside" className="rounded-panel bg-surface-sunken p-md">
+            {group.featured ? <SemanticContent as="div" className="rounded-panel bg-surface-sunken p-md">
               <Link variant="standalone" href={group.featured.href} onPress={() => setOpen(undefined)}>{group.featured.label}</Link>
               {group.featured.description ? <SemanticContent as="p" className="text-body-s text-ink-secondary">{group.featured.description}</SemanticContent> : null}
             </SemanticContent> : null}

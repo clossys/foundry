@@ -2,15 +2,17 @@ import { Link } from "../../components/Link.js";
 import { SemanticContent } from "../../components/SemanticContent.js";
 import { SiteHeader } from "@clossys/designer/shell/server";
 import type { ResolvedSiteLink, ResolvedSiteShell } from "./internal/resolveShell.js";
+import { SiteMegaNavigation, type SiteMegaGroup } from "../../shell/SiteHeader.mega.client.js";
 
 /**
  * The same full-label links serve the desktop row and the mobile panel. Actions
  * keep the resolver's increasing-importance order, including on a narrow menu.
  * The frame also renders the primary icon in the narrow header bar.
  */
-export function NavLinks({ links, actions }: { readonly links: readonly ResolvedSiteLink[]; readonly actions?: ResolvedSiteShell["actions"] }) {
+export function NavLinks({ links, actions, mega, mobile }: { readonly links: readonly ResolvedSiteLink[]; readonly actions?: ResolvedSiteShell["actions"]; readonly mega?: readonly SiteMegaGroup[]; readonly mobile?: boolean }) {
   return (
     <>
+      {mega?.length ? <SiteMegaNavigation groups={mega} mobile={mobile} /> : null}
       {links.length ? <SemanticContent as="ul" role="list" className="site-header-nav-links m-0 flex list-none flex-wrap items-center gap-sm p-0">
         {links.map((link, index) => (
           <SemanticContent as="li" key={index}>

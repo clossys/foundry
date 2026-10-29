@@ -45,9 +45,10 @@ export function projectNavigation(map: ContentMap, activeId: string): ContentMap
     if (!entry.pin) return [];
     const children = visit(entry.id);
     if (entry.kind === "group" && !children.length) return [];
-    return [{ ...presentation(entry), ...(entry.kind === "external" ? { href: entry.href, external: true as const } : navigable(entry) ? { href: contentMapPath(entry) } : {}), ...(children.length ? { children } : {}) }];
+    return [{ ...presentation(entry), ...(entry.kind === "external" ? { href: entry.href, external: true as const } : navigable(entry) ? { href: contentMapPath(entry) } : {}), ...(children.length ? { children } : {}),
+      ...(entry.group === undefined ? {} : { group: entry.group }), ...(entry.featured === undefined ? {} : { featured: entry.featured }), ...(entry.description === undefined ? {} : { description: entry.description }) }];
   });
-  return { tree: visit(), activeId };
+  return { tree: visit(), activeId, ...(active.alternates === undefined ? {} : { alternates: active.alternates.map(alternate => ({ locale: alternate.locale, label: alternate.label, href: contentMapPath(map.entries.find(entry => entry.id === alternate.entryId)!), isCurrent: alternate.entryId === active.id })) }) };
 }
 /** Every page/section is discoverable, including unpinned destinations. Groups
  * use their top-level map identity; root pages use the publication identity.

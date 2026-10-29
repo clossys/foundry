@@ -37,7 +37,7 @@ function ServerNavDisclosure({ label, triggerLabel, children }: { readonly label
 export function SiteNavDisclosure({ nav, actions }: { readonly nav: NonNullable<ResolvedSiteShell["nav"]>; readonly actions?: ResolvedSiteShell["actions"] }) {
   return (
     <ServerNavDisclosure label={nav.label} triggerLabel={nav.triggerLabel}>
-      <NavLinks links={nav.links} actions={actions} />
+      <NavLinks links={nav.links} actions={actions} mega={nav.mega} />
     </ServerNavDisclosure>
   );
 }
