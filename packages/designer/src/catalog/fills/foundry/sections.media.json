@@ -26,7 +26,62 @@
   },
   "sections": {
     "media": {
+      "composes": [],
       "configs": {},
+      "consumption": {
+        "scanStatus": "lower-bound",
+        "scannedComposes": [],
+        "scannedReads": {
+          "assets": [],
+          "components": [],
+          "tokens": [
+            "tokens.border-color",
+            "tokens.caption-size",
+            "tokens.content-size",
+            "tokens.control-radius",
+            "tokens.spacing",
+            "tokens.status-color",
+            "tokens.surface-color",
+            "tokens.text-color"
+          ]
+        },
+        "sourceFiles": [
+          {
+            "path": "packages/designer/src/blocks/internal/block-vars.ts",
+            "sha256": "33e9c7bd8700ff201b8ba138ca4f10dd7de910a23d260019e676470b918cceb5"
+          },
+          {
+            "path": "packages/designer/src/blocks/MediaFigure.tsx",
+            "sha256": "0f33416fbba4ecd60dff681d614270d0ef7e81eca4ae56f5a0d0631785c7a359"
+          },
+          {
+            "path": "packages/designer/src/blocks/section-ground.ts",
+            "sha256": "a519649f96cb339f1128fc385e68d67b6af063ed492ac2c285f09c1740c98679"
+          },
+          {
+            "path": "packages/designer/src/catalog-core/provenance-attrs.ts",
+            "sha256": "8f2a725224764fc1d7cd7ec94f2f569cad02117251bf6c2a668c8a1b51e7c443"
+          },
+          {
+            "path": "packages/designer/src/components/internal/cx.ts",
+            "sha256": "0a7524b0340fec42e1abb216013a353e950aa738d9ba0f2ebdedd5293337bab3"
+          }
+        ],
+        "unresolved": [
+          {
+            "code": "DF2",
+            "evidence": "unresolved injected runtime inventory ../../tokens/tokens.js#TOKENS",
+            "file": "packages/designer/src/components/internal/cx.ts",
+            "line": 2
+          },
+          {
+            "code": "DF2",
+            "evidence": "unresolved dynamic import; runtime source is not inferred",
+            "file": "packages/designer/src/components/internal/cx.ts",
+            "line": 80
+          }
+        ]
+      },
       "impl": {
         "export": "MediaFigure",
         "kind": "package",
@@ -35,7 +90,7 @@
       "license": "MIT",
       "notes": [
         "Host supplies the image node and its src/alt/ratio; caption is a separate prop. Does not validate a structured figure record or bind anatomy.",
-        "Descriptor only; source imports, token reads, shared anatomy, accessibility, contrast and consumer runtime conformance are unmeasured. Content bindings describe host adaptation points, not type-equivalent converters."
+        "Source-only import and token-read measurements are lower bounds; shared anatomy, accessibility, contrast and consumer runtime conformance remain unmeasured. Content bindings describe host adaptation points, not type-equivalent converters."
       ],
       "parts": [],
       "pin": {
@@ -44,6 +99,19 @@
         "version": "0.12.0"
       },
       "propMap": {},
+      "reads": {
+        "assets": [],
+        "tokens": [
+          "tokens.border-color",
+          "tokens.caption-size",
+          "tokens.content-size",
+          "tokens.control-radius",
+          "tokens.spacing",
+          "tokens.status-color",
+          "tokens.surface-color",
+          "tokens.text-color"
+        ]
+      },
       "slot": "sections.media",
       "slotMap": {
         "figure": "./blocks#MediaFigure.children"

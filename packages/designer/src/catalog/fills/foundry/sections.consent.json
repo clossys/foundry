@@ -26,7 +26,73 @@
   },
   "sections": {
     "consent": {
+      "composes": [
+        "components.button",
+        "components.icon"
+      ],
       "configs": {},
+      "consumption": {
+        "scanStatus": "lower-bound",
+        "scannedComposes": [
+          "components.button",
+          "components.icon"
+        ],
+        "scannedReads": {
+          "assets": [],
+          "components": [
+            "components.button",
+            "components.icon"
+          ],
+          "tokens": [
+            "tokens.body-size",
+            "tokens.border-color",
+            "tokens.control-radius",
+            "tokens.heading-size",
+            "tokens.spacing",
+            "tokens.surface-color",
+            "tokens.text-color",
+            "tokens.typeface"
+          ]
+        },
+        "sourceFiles": [
+          {
+            "path": "packages/designer/src/blocks/ConsentBanner.tsx",
+            "sha256": "2bf8e7b57aaec2b475cc892b990be2f7ed7b460b3c2c438128530543bd9c72b3"
+          },
+          {
+            "path": "packages/designer/src/catalog-core/provenance-attrs.ts",
+            "sha256": "8f2a725224764fc1d7cd7ec94f2f569cad02117251bf6c2a668c8a1b51e7c443"
+          },
+          {
+            "path": "packages/designer/src/components/internal/cx.ts",
+            "sha256": "0a7524b0340fec42e1abb216013a353e950aa738d9ba0f2ebdedd5293337bab3"
+          },
+          {
+            "path": "packages/designer/src/icons/Check.ts",
+            "sha256": "df7a0d203c39a358aba4b6cf7a9380e34352d38efe0947c0d30c0485ad509159"
+          }
+        ],
+        "unresolved": [
+          {
+            "code": "DF5",
+            "evidence": "unregistered asset import ../icons/Check.js#Check",
+            "file": "packages/designer/src/blocks/ConsentBanner.tsx",
+            "line": 3
+          },
+          {
+            "code": "DF2",
+            "evidence": "unresolved injected runtime inventory ../../tokens/tokens.js#TOKENS",
+            "file": "packages/designer/src/components/internal/cx.ts",
+            "line": 2
+          },
+          {
+            "code": "DF2",
+            "evidence": "unresolved dynamic import; runtime source is not inferred",
+            "file": "packages/designer/src/components/internal/cx.ts",
+            "line": 80
+          }
+        ]
+      },
       "impl": {
         "export": "ConsentBanner",
         "kind": "package",
@@ -35,7 +101,7 @@
       "license": "MIT",
       "notes": [
         "Accept and reject are two equal-prominence built-in buttons labelled by the host, who also supplies onAccept and onReject. The banner owns no consent state, storage or network call.",
-        "Descriptor only; source imports, token reads, shared anatomy, accessibility, contrast and consumer runtime conformance are unmeasured. Content bindings describe host adaptation points, not type-equivalent converters."
+        "Source-only import and token-read measurements are lower bounds; shared anatomy, accessibility, contrast and consumer runtime conformance remain unmeasured. Content bindings describe host adaptation points, not type-equivalent converters."
       ],
       "parts": [],
       "pin": {
@@ -44,6 +110,19 @@
         "version": "0.12.0"
       },
       "propMap": {},
+      "reads": {
+        "assets": [],
+        "tokens": [
+          "tokens.body-size",
+          "tokens.border-color",
+          "tokens.control-radius",
+          "tokens.heading-size",
+          "tokens.spacing",
+          "tokens.surface-color",
+          "tokens.text-color",
+          "tokens.typeface"
+        ]
+      },
       "slot": "sections.consent",
       "slotMap": {
         "actions": "./blocks#ConsentBanner.acceptLabel,rejectLabel",

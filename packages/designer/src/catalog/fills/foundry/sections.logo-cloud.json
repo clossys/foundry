@@ -26,7 +26,62 @@
   },
   "sections": {
     "logo-cloud": {
+      "composes": [],
       "configs": {},
+      "consumption": {
+        "scanStatus": "lower-bound",
+        "scannedComposes": [],
+        "scannedReads": {
+          "assets": [],
+          "components": [],
+          "tokens": [
+            "tokens.accent-color",
+            "tokens.border-color",
+            "tokens.control-radius",
+            "tokens.spacing",
+            "tokens.status-color",
+            "tokens.surface-color",
+            "tokens.text-color",
+            "tokens.touch-target"
+          ]
+        },
+        "sourceFiles": [
+          {
+            "path": "packages/designer/src/blocks/LogoCloud.tsx",
+            "sha256": "dc85d047a012928f5aaca0ca9ad6e6b84f1f46da5522b559c6ca1b16dcd3f63e"
+          },
+          {
+            "path": "packages/designer/src/blocks/section-ground.ts",
+            "sha256": "a519649f96cb339f1128fc385e68d67b6af063ed492ac2c285f09c1740c98679"
+          },
+          {
+            "path": "packages/designer/src/catalog-core/provenance-attrs.ts",
+            "sha256": "8f2a725224764fc1d7cd7ec94f2f569cad02117251bf6c2a668c8a1b51e7c443"
+          },
+          {
+            "path": "packages/designer/src/components/internal/cx.ts",
+            "sha256": "0a7524b0340fec42e1abb216013a353e950aa738d9ba0f2ebdedd5293337bab3"
+          },
+          {
+            "path": "packages/designer/src/components/internal/ui-vars.ts",
+            "sha256": "8455ed770c61ec15597b5ead597563135ed088b609dc11b2cd7ed8b873371701"
+          }
+        ],
+        "unresolved": [
+          {
+            "code": "DF2",
+            "evidence": "unresolved injected runtime inventory ../../tokens/tokens.js#TOKENS",
+            "file": "packages/designer/src/components/internal/cx.ts",
+            "line": 2
+          },
+          {
+            "code": "DF2",
+            "evidence": "unresolved dynamic import; runtime source is not inferred",
+            "file": "packages/designer/src/components/internal/cx.ts",
+            "line": 80
+          }
+        ]
+      },
       "impl": {
         "export": "LogoCloud",
         "kind": "package",
@@ -35,7 +90,7 @@
       "license": "MIT",
       "notes": [
         "Source checks allowed items.length values and tone; logos are host React nodes. The source root is ul, with no band/header wrapper.",
-        "Descriptor only; source imports, token reads, shared anatomy, accessibility, contrast and consumer runtime conformance are unmeasured. Content bindings describe host adaptation points, not type-equivalent converters."
+        "Source-only import and token-read measurements are lower bounds; shared anatomy, accessibility, contrast and consumer runtime conformance remain unmeasured. Content bindings describe host adaptation points, not type-equivalent converters."
       ],
       "parts": [],
       "pin": {
@@ -51,6 +106,19 @@
         "count.8": "./blocks#LogoCloud.items.length=8",
         "monochrome.false": "./blocks#LogoCloud.tone=original",
         "monochrome.true": "./blocks#LogoCloud.tone=monochrome"
+      },
+      "reads": {
+        "assets": [],
+        "tokens": [
+          "tokens.accent-color",
+          "tokens.border-color",
+          "tokens.control-radius",
+          "tokens.spacing",
+          "tokens.status-color",
+          "tokens.surface-color",
+          "tokens.text-color",
+          "tokens.touch-target"
+        ]
       },
       "slot": "sections.logo-cloud",
       "slotMap": {

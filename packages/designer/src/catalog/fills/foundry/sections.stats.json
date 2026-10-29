@@ -26,7 +26,66 @@
   },
   "sections": {
     "stats": {
+      "composes": [],
       "configs": {},
+      "consumption": {
+        "scanStatus": "lower-bound",
+        "scannedComposes": [],
+        "scannedReads": {
+          "assets": [],
+          "components": [],
+          "tokens": [
+            "tokens.body-size",
+            "tokens.border-color",
+            "tokens.caption-size",
+            "tokens.heading-size",
+            "tokens.spacing",
+            "tokens.status-color",
+            "tokens.text-color",
+            "tokens.typeface"
+          ]
+        },
+        "sourceFiles": [
+          {
+            "path": "packages/designer/src/blocks/internal/section-content-gutter.ts",
+            "sha256": "330c44a01a51488d6781d166ea8f2ca1a6d5e4ad4f39c2a68b73b9a2cd1337e2"
+          },
+          {
+            "path": "packages/designer/src/blocks/internal/trend.ts",
+            "sha256": "4aa7cce812d8e68674aca3ccfe5580fa421661d7652e2c2d1eabfd69d1c1b466"
+          },
+          {
+            "path": "packages/designer/src/blocks/Stat.tsx",
+            "sha256": "956a151aab78433f31d79bef837000f1b797cd4be3defc456ccd1d8100f36e86"
+          },
+          {
+            "path": "packages/designer/src/blocks/StatGroup.tsx",
+            "sha256": "e32a9a69dfda580ae90ccfff1e25d051a0b551b8ba21dd8fe45ba1b3d999e729"
+          },
+          {
+            "path": "packages/designer/src/catalog-core/provenance-attrs.ts",
+            "sha256": "8f2a725224764fc1d7cd7ec94f2f569cad02117251bf6c2a668c8a1b51e7c443"
+          },
+          {
+            "path": "packages/designer/src/components/internal/cx.ts",
+            "sha256": "0a7524b0340fec42e1abb216013a353e950aa738d9ba0f2ebdedd5293337bab3"
+          }
+        ],
+        "unresolved": [
+          {
+            "code": "DF2",
+            "evidence": "unresolved injected runtime inventory ../../tokens/tokens.js#TOKENS",
+            "file": "packages/designer/src/components/internal/cx.ts",
+            "line": 2
+          },
+          {
+            "code": "DF2",
+            "evidence": "unresolved dynamic import; runtime source is not inferred",
+            "file": "packages/designer/src/components/internal/cx.ts",
+            "line": 80
+          }
+        ]
+      },
       "impl": {
         "export": "StatGroup",
         "kind": "package",
@@ -35,7 +94,7 @@
       "license": "MIT",
       "notes": [
         "Each item renders one Stat (label, value, optional delta/trend and description); no sparkline or meter composition is claimed.",
-        "Descriptor only; source imports, token reads, shared anatomy, accessibility, contrast and consumer runtime conformance are unmeasured. Content bindings describe host adaptation points, not type-equivalent converters."
+        "Source-only import and token-read measurements are lower bounds; shared anatomy, accessibility, contrast and consumer runtime conformance remain unmeasured. Content bindings describe host adaptation points, not type-equivalent converters."
       ],
       "parts": [],
       "pin": {
@@ -46,6 +105,19 @@
       "propMap": {
         "layout.grid": "./blocks#StatGroup.layout=grid",
         "layout.row": "./blocks#StatGroup.layout=row"
+      },
+      "reads": {
+        "assets": [],
+        "tokens": [
+          "tokens.body-size",
+          "tokens.border-color",
+          "tokens.caption-size",
+          "tokens.heading-size",
+          "tokens.spacing",
+          "tokens.status-color",
+          "tokens.text-color",
+          "tokens.typeface"
+        ]
       },
       "slot": "sections.stats",
       "slotMap": {

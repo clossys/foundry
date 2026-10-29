@@ -2,7 +2,8 @@ import frameSlots from "../catalog/slots/frames.json" with { type: "json" };
 import type { FillMeta, FrameSlot } from "../catalog-core/types.js";
 import { stableStringify } from "../catalog-core/stable.js";
 import { FOUNDRY_FRAME_GAPS, FOUNDRY_FRAME_MAP, type FoundryFrameMapping } from "./foundry-frames.map.js";
-export interface FoundryFrameDescriptor {
+import { measuredSurfaceConsumption, type FoundrySurfaceConsumption } from "./foundry-surface-consumption.js";
+export interface FoundryFrameDescriptor extends FoundrySurfaceConsumption {
   slot: string;
   members: readonly string[];
   propMap: Readonly<Record<string, string>>;
@@ -59,7 +60,7 @@ export function importFoundryFrames(input: FoundryFrameInput = {}): { fills: rea
     const module = `${mapping.package}/${mapping.subpath}`;
     if (!/^[A-Z][A-Za-z0-9]*$/.test(mapping.export) || (input.exports && !input.exports[module]?.includes(mapping.export))) throw new Error(`foundry-frames: unavailable package export ${module}#${mapping.export}`);
     const pin = { package: mapping.package, version: mapping.version, export: `./${mapping.subpath}#${mapping.export}` };
-    fills.push({ $extensions: { "com.clossys.fill": { id: `foundry/${slot.id}`, slot: slot.id, source: "foundry", mode: "implementation", sourceAddress: pin.export, relation: incomplete ? "subset" : "same-contract", builtOn: [], conforms: [], evidence: [], author: "foundry", trust: "foundry", license: "MIT", pin, status: "draft", ...(incomplete ? { unmapped: sorted([...missing, ...missingSlots.map(id => `slot.${id}`), ...missingStatePorts.map(id => `state.${id}`)]) } : {}) } }, frames: { [leaf]: { slot: slot.id, members: supported, propMap: members, slots: slotMap, statePorts, impl: { kind: "package", module, export: mapping.export } } } });
+    fills.push({ $extensions: { "com.clossys.fill": { id: `foundry/${slot.id}`, slot: slot.id, source: "foundry", mode: "implementation", sourceAddress: pin.export, relation: incomplete ? "subset" : "same-contract", builtOn: [], conforms: [], evidence: [], author: "foundry", trust: "foundry", license: "MIT", pin, status: "draft", ...(incomplete ? { unmapped: sorted([...missing, ...missingSlots.map(id => `slot.${id}`), ...missingStatePorts.map(id => `state.${id}`)]) } : {}) } }, frames: { [leaf]: { slot: slot.id, members: supported, propMap: members, slots: slotMap, statePorts, impl: { kind: "package", module, export: mapping.export }, ...measuredSurfaceConsumption(slot.id, pin) } } });
   }
   for (const leaf of Object.keys(mappings)) if (!seen.has(`frames.${leaf}`)) throw new Error(`foundry-frames: mapping has no contract frames.${leaf}`);
   return { fills, coverage };

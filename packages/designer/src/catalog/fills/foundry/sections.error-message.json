@@ -29,7 +29,51 @@
   },
   "sections": {
     "error-message": {
+      "composes": [
+        "sections.section-header"
+      ],
       "configs": {},
+      "consumption": {
+        "scanStatus": "lower-bound",
+        "scannedComposes": [
+          "sections.section-header"
+        ],
+        "scannedReads": {
+          "assets": [],
+          "components": [],
+          "tokens": [
+            "tokens.spacing"
+          ]
+        },
+        "sourceFiles": [
+          {
+            "path": "packages/designer/src/blocks/ErrorState.tsx",
+            "sha256": "b3f578db6333c8ded31184f56a86c64236aa103343c44f39f6a6491987a8470a"
+          },
+          {
+            "path": "packages/designer/src/catalog-core/provenance-attrs.ts",
+            "sha256": "8f2a725224764fc1d7cd7ec94f2f569cad02117251bf6c2a668c8a1b51e7c443"
+          },
+          {
+            "path": "packages/designer/src/components/internal/cx.ts",
+            "sha256": "0a7524b0340fec42e1abb216013a353e950aa738d9ba0f2ebdedd5293337bab3"
+          }
+        ],
+        "unresolved": [
+          {
+            "code": "DF2",
+            "evidence": "unresolved injected runtime inventory ../../tokens/tokens.js#TOKENS",
+            "file": "packages/designer/src/components/internal/cx.ts",
+            "line": 2
+          },
+          {
+            "code": "DF2",
+            "evidence": "unresolved dynamic import; runtime source is not inferred",
+            "file": "packages/designer/src/components/internal/cx.ts",
+            "line": 80
+          }
+        ]
+      },
       "impl": {
         "export": "ErrorState",
         "kind": "package",
@@ -43,7 +87,7 @@
         "not-found maps to ErrorState kind=not-found; error/global-error map to failure. Global errors are content for a host-owned document/frame, not a document or framework error adapter.",
         "Shared deterministic preview copy comes from specimenDataset.sections.errorState and uses a navigation link, so preview needs no live host.",
         "Draft descriptor; runtime tests are source declarations, not consumer adoption or release clearance.",
-        "Descriptor only; source imports, token reads, shared anatomy, accessibility, contrast and consumer runtime conformance are unmeasured. Content bindings describe host adaptation points, not type-equivalent converters."
+        "Source-only import and token-read measurements are lower bounds; shared anatomy, accessibility, contrast and consumer runtime conformance remain unmeasured. Content bindings describe host adaptation points, not type-equivalent converters."
       ],
       "parts": [],
       "pin": {
@@ -55,6 +99,12 @@
         "kind.error": "./blocks#ErrorState.kind=failure",
         "kind.global-error": "./blocks#ErrorState.kind=failure",
         "kind.not-found": "./blocks#ErrorState.kind=not-found"
+      },
+      "reads": {
+        "assets": [],
+        "tokens": [
+          "tokens.spacing"
+        ]
       },
       "slot": "sections.error-message",
       "slotMap": {

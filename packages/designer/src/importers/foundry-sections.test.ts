@@ -41,7 +41,9 @@ describe("Foundry section package descriptors", () => {
       expect(meta.evidence).toEqual([]);
       expect(descriptor).not.toHaveProperty("observations");
       expect(descriptor).not.toHaveProperty("measurements");
-      expect(descriptor).not.toHaveProperty("reads");
+      expect(descriptor.reads).toEqual({ tokens: descriptor.consumption.scannedReads.tokens, assets: descriptor.consumption.scannedReads.assets });
+      expect(descriptor.composes).toEqual(descriptor.consumption.scannedComposes);
+      expect(descriptor.consumption.scanStatus).toBe("lower-bound");
       expect(descriptor).not.toHaveProperty("files");
       expect(descriptor.notes.join(" ")).toContain("unmeasured");
     }
@@ -95,7 +97,8 @@ describe("Foundry section package descriptors", () => {
       consent: "ConsentBanner", "error-state": "ErrorState", stats: "StatGroup", "data-grid": "DataTable", cards: "RecordCards", "call-to-action": "CallToAction", notices: "NoticeList", gallery: "Gallery",
     });
     for (const leaf of ["consent", "error-state", "stats", "data-grid", "cards", "call-to-action", "notices", "gallery"]) expect(rows.get(`sections.${leaf}`)!.missingRequiredSlots, leaf).toEqual([]);
-    for (const leaf of ["consent", "error-state", "stats", "cards", "call-to-action", "notices", "gallery"]) expect(rows.get(`sections.${leaf}`)!.status, leaf).toBe("candidate");
+    for (const leaf of ["consent", "error-state", "stats", "cards", "call-to-action", "gallery"]) expect(rows.get(`sections.${leaf}`)!.status, leaf).toBe("candidate");
+    expect(rows.get("sections.notices")).toMatchObject({ status: "subset", missingMembers: ["legal.draft"] });
     expect(rows.get("sections.data-grid")!.missingSlots).toEqual([]);
     expect(FOUNDRY_SECTION_MAP["data-grid"]!.slotMap.pinning).toBe("./blocks#DataTable.model.pinnedColumns");
   });
@@ -119,9 +122,9 @@ describe("Foundry section package descriptors", () => {
     expect(rows.get("sections.pagination")!.missingMembers).toEqual(["mode.cursor", "mode.load-more"]);
     expect(rows.get("sections.section-header")!.supportedMembers).toEqual(["align.center", "align.start", "density.compact", "density.display", "density.standard"]);
     expect(rows.get("sections.hero")!.missingRequiredSlots).toEqual([]);
-    expect(rows.get("sections.page-header")!.missingMembers).toEqual(["config.record", "config.standard"]);
-    expect(rows.get("sections.features")!.missingMembers).toEqual([]);
-    expect(rows.get("sections.faq")!.missingMembers).toEqual([]);
+    expect(rows.get("sections.page-header")!.missingMembers).toEqual(["config.record", "config.standard", "contact.header"]);
+    expect(rows.get("sections.features")!.missingMembers).toEqual(["about.features"]);
+    expect(rows.get("sections.faq")!.missingMembers).toEqual(["about.faq"]);
     expect(rows.get("sections.article")!.missingSlots).toEqual([]);
     expect(rows.get("sections.logo-cloud")!.missingMembers).toEqual([]);
     expect(rows.get("sections.testimonials")!.missingMembers).toEqual([]);

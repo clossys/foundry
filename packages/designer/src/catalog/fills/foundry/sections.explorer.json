@@ -26,7 +26,105 @@
   },
   "sections": {
     "explorer": {
+      "composes": [
+        "components.button",
+        "components.icon"
+      ],
       "configs": {},
+      "consumption": {
+        "scanStatus": "lower-bound",
+        "scannedComposes": [
+          "components.button",
+          "components.icon"
+        ],
+        "scannedReads": {
+          "assets": [],
+          "components": [
+            "components.button",
+            "components.icon"
+          ],
+          "tokens": [
+            "tokens.border-color",
+            "tokens.caption-size",
+            "tokens.spacing",
+            "tokens.text-color"
+          ]
+        },
+        "sourceFiles": [
+          {
+            "path": "packages/designer/src/blocks/Explorer.tsx",
+            "sha256": "9ef161b46c7d77a52b56d6257430351e51ca86cc3efc966756b1ee68bc3a2714"
+          },
+          {
+            "path": "packages/designer/src/blocks/tree-model.ts",
+            "sha256": "fc9061aa49bfd02431c16ebda6a119cbc395ebe793ec1a2ebece5ee34e7c3f8d"
+          },
+          {
+            "path": "packages/designer/src/catalog-core/provenance-attrs.ts",
+            "sha256": "8f2a725224764fc1d7cd7ec94f2f569cad02117251bf6c2a668c8a1b51e7c443"
+          },
+          {
+            "path": "packages/designer/src/components/internal/cx.ts",
+            "sha256": "0a7524b0340fec42e1abb216013a353e950aa738d9ba0f2ebdedd5293337bab3"
+          },
+          {
+            "path": "packages/designer/src/icons/ChevronRight.ts",
+            "sha256": "99e246ee2ef8a9b85999607d97a1152fbe6bf374f68c29c19ffa46ad7a502fb6"
+          },
+          {
+            "path": "packages/designer/src/icons/FileText.ts",
+            "sha256": "64a84d19799a4300dafca2175cc2ef9da054708f92a2fa18e7c95a40b39ab59f"
+          },
+          {
+            "path": "packages/designer/src/icons/Folder.ts",
+            "sha256": "5f10987d0993f001109aaf7d553706b504ee8b92adaaabdf430a3be6f6617902"
+          }
+        ],
+        "unresolved": [
+          {
+            "code": "DF2",
+            "evidence": "unresolved source export ../components/Link.js#Link",
+            "file": "packages/designer/src/blocks/Explorer.tsx",
+            "line": 4
+          },
+          {
+            "code": "DF5",
+            "evidence": "unregistered asset import ../icons/ChevronRight.js#ChevronRight",
+            "file": "packages/designer/src/blocks/Explorer.tsx",
+            "line": 6
+          },
+          {
+            "code": "DF5",
+            "evidence": "unregistered asset import ../icons/FileText.js#FileText",
+            "file": "packages/designer/src/blocks/Explorer.tsx",
+            "line": 7
+          },
+          {
+            "code": "DF5",
+            "evidence": "unregistered asset import ../icons/Folder.js#Folder",
+            "file": "packages/designer/src/blocks/Explorer.tsx",
+            "line": 8
+          },
+          {
+            "code": "DF2",
+            "evidence": "unresolved injected runtime inventory ../tokens/tokens.js#TOKENS",
+            "file": "packages/designer/src/blocks/Explorer.tsx",
+            "line": 9
+          },
+          {
+            "code": "DF2",
+            "evidence": "unresolved injected runtime inventory ../../tokens/tokens.js#TOKENS",
+            "file": "packages/designer/src/components/internal/cx.ts",
+            "line": 2
+          },
+          {
+            "code": "DF2",
+            "evidence": "unresolved dynamic import; runtime source is not inferred",
+            "file": "packages/designer/src/components/internal/cx.ts",
+            "line": 80
+          }
+        ]
+      },
       "impl": {
         "export": "Explorer",
         "kind": "package",
@@ -35,7 +133,7 @@
       "license": "MIT",
       "notes": [
         "The tree prop is structured data, not a replaceable tree region. The list region is a host-owned pane laid out beside the tree (named by listLabel); renderDetails is a separate per-node detail callback. Host supplies label. Source implements tree keyboard handling locally.",
-        "Descriptor only; source imports, token reads, shared anatomy, accessibility, contrast and consumer runtime conformance are unmeasured. Content bindings describe host adaptation points, not type-equivalent converters."
+        "Source-only import and token-read measurements are lower bounds; shared anatomy, accessibility, contrast and consumer runtime conformance remain unmeasured. Content bindings describe host adaptation points, not type-equivalent converters."
       ],
       "parts": [],
       "pin": {
@@ -44,6 +142,15 @@
         "version": "0.12.0"
       },
       "propMap": {},
+      "reads": {
+        "assets": [],
+        "tokens": [
+          "tokens.border-color",
+          "tokens.caption-size",
+          "tokens.spacing",
+          "tokens.text-color"
+        ]
+      },
       "slot": "sections.explorer",
       "slotMap": {
         "list": "./blocks#Explorer.list",

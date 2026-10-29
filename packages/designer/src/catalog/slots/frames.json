@@ -35,7 +35,9 @@
       "breakpoints": [],
       "layers": [],
       "allowedReads": {
-        "tokens": [],
+        "tokens": [
+          "tokens.accent-color"
+        ],
         "assets": []
       },
       "composes": [
@@ -150,15 +152,55 @@
           "tokens.gutter",
           "tokens.z-index",
           "tokens.surface-color",
-          "tokens.text-color"
+          "tokens.text-color",
+          "tokens.accent-color",
+          "tokens.action-color",
+          "tokens.body-size",
+          "tokens.border-color",
+          "tokens.border-width",
+          "tokens.caption-size",
+          "tokens.content-size",
+          "tokens.control-color",
+          "tokens.control-radius",
+          "tokens.duration",
+          "tokens.easing",
+          "tokens.elevation",
+          "tokens.focus-color",
+          "tokens.heading-size",
+          "tokens.icon-size",
+          "tokens.letter-spacing",
+          "tokens.line-height",
+          "tokens.radius",
+          "tokens.spacing",
+          "tokens.status-color",
+          "tokens.surface-radius",
+          "tokens.touch-target",
+          "tokens.typeface"
         ],
-        "assets": []
+        "assets": [
+          "assets.js"
+        ]
       },
       "composes": [
         "frames.site-header",
         "frames.site-footer",
         "components.progress-bar",
-        "components.toast"
+        "components.toast",
+        "components.avatar",
+        "components.badge",
+        "components.card",
+        "components.disclosure",
+        "components.icon",
+        "components.logo",
+        "components.semantic-content",
+        "components.status-mark",
+        "sections.features",
+        "sections.hero",
+        "sections.media",
+        "sections.pricing",
+        "sections.section-header",
+        "sections.status-list",
+        "sections.steps"
       ],
       "skipTarget": "main-content"
     },
@@ -337,7 +379,15 @@
           "tokens.surface-color",
           "tokens.text-color",
           "tokens.focus-color",
-          "tokens.focus-outline"
+          "tokens.focus-outline",
+          "tokens.accent-color",
+          "tokens.blur",
+          "tokens.body-size",
+          "tokens.border-color",
+          "tokens.border-width",
+          "tokens.caption-size",
+          "tokens.control-radius",
+          "tokens.spacing"
         ],
         "assets": [
           "assets.icon-layers",
@@ -357,7 +407,14 @@
         "components.progress-bar",
         "components.toast",
         "components.skeleton",
-        "components.toggle-button"
+        "components.toggle-button",
+        "components.avatar",
+        "components.banner",
+        "components.card",
+        "components.logo",
+        "components.resize-handle",
+        "components.tabs",
+        "components.tooltip"
       ],
       "skipTarget": "main-content",
       "stage": {
@@ -422,11 +479,17 @@
           "tokens.container-width",
           "tokens.surface-color",
           "tokens.text-color",
-          "tokens.z-index"
+          "tokens.z-index",
+          "tokens.accent-color",
+          "tokens.body-size",
+          "tokens.content-size",
+          "tokens.control-radius"
         ],
         "assets": []
       },
-      "composes": [],
+      "composes": [
+        "components.semantic-content"
+      ],
       "skipTarget": "main-content"
     },
     "requires": [],
@@ -507,7 +570,19 @@
           "tokens.touch-target",
           "tokens.breakpoint",
           "tokens.transition-duration",
-          "tokens.transition-easing"
+          "tokens.transition-easing",
+          "tokens.accent-color",
+          "tokens.action-color",
+          "tokens.body-size",
+          "tokens.border-width",
+          "tokens.control-color",
+          "tokens.control-radius",
+          "tokens.duration",
+          "tokens.easing",
+          "tokens.focus-color",
+          "tokens.spacing",
+          "tokens.status-color",
+          "tokens.typeface"
         ],
         "assets": [
           "assets.lockup",
@@ -581,7 +656,11 @@
           "tokens.heading-size",
           "tokens.spacing",
           "tokens.text-color",
-          "tokens.touch-target"
+          "tokens.touch-target",
+          "tokens.accent-color",
+          "tokens.body-size",
+          "tokens.border-width",
+          "tokens.control-radius"
         ],
         "assets": [
           "assets.icon-chevron-down",
@@ -595,7 +674,9 @@
         "components.button",
         "components.link",
         "components.toggle-button",
-        "components.status-mark"
+        "components.status-mark",
+        "components.icon",
+        "components.tooltip"
       ]
     },
     "requires": [],
@@ -675,7 +756,16 @@
           "tokens.focus-outline",
           "tokens.focus-shadow",
           "tokens.touch-target",
-          "tokens.z-index"
+          "tokens.z-index",
+          "tokens.accent-color",
+          "tokens.body-size",
+          "tokens.border-color",
+          "tokens.border-width",
+          "tokens.control-color",
+          "tokens.control-radius",
+          "tokens.duration",
+          "tokens.easing",
+          "tokens.icon-size"
         ],
         "assets": [
           "assets.icon-chevron-down",
@@ -694,7 +784,9 @@
         "components.tooltip",
         "components.menu",
         "components.avatar",
-        "frames.sheet"
+        "frames.sheet",
+        "components.card",
+        "components.icon"
       ]
     },
     "requires": [],
@@ -770,7 +862,9 @@
           "tokens.region-width",
           "tokens.surface-color",
           "tokens.border-color",
-          "tokens.z-index"
+          "tokens.z-index",
+          "tokens.accent-color",
+          "tokens.spacing"
         ],
         "assets": [
           "assets.icon-layers"
@@ -779,7 +873,8 @@
       "composes": [
         "components.resize-handle",
         "components.button",
-        "frames.sheet"
+        "frames.sheet",
+        "components.card"
       ]
     },
     "requires": [],
@@ -854,7 +949,11 @@
           "tokens.content-size",
           "tokens.caption-size",
           "tokens.typeface",
-          "tokens.breakpoint"
+          "tokens.breakpoint",
+          "tokens.body-size",
+          "tokens.brandmark-size",
+          "tokens.touch-target",
+          "tokens.z-index"
         ],
         "assets": [
           "assets.mark"
@@ -934,7 +1033,8 @@
           "tokens.spacing",
           "tokens.duration",
           "tokens.easing",
-          "tokens.shift-distance"
+          "tokens.shift-distance",
+          "tokens.accent-color"
         ],
         "assets": [
           "assets.icon-close"
@@ -942,7 +1042,9 @@
       },
       "composes": [
         "components.dialog",
-        "components.button"
+        "components.button",
+        "components.card",
+        "components.icon"
       ]
     },
     "requires": [],
@@ -1004,7 +1106,14 @@
           "tokens.text-color",
           "tokens.focus-color",
           "tokens.focus-outline",
-          "tokens.focus-shadow"
+          "tokens.focus-shadow",
+          "tokens.accent-color",
+          "tokens.body-size",
+          "tokens.border-color",
+          "tokens.caption-size",
+          "tokens.control-color",
+          "tokens.control-radius",
+          "tokens.state-opacity"
         ],
         "assets": [
           "assets.icon-search",
@@ -1016,7 +1125,8 @@
         "components.search-field",
         "components.keyboard",
         "components.tooltip",
-        "components.button"
+        "components.button",
+        "components.icon"
       ]
     },
     "requires": [],

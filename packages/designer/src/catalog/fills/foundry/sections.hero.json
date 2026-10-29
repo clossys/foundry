@@ -30,7 +30,71 @@
   },
   "sections": {
     "hero": {
+      "composes": [],
       "configs": {},
+      "consumption": {
+        "scanStatus": "lower-bound",
+        "scannedComposes": [],
+        "scannedReads": {
+          "assets": [],
+          "components": [],
+          "tokens": [
+            "tokens.accent-color",
+            "tokens.body-size",
+            "tokens.border-color",
+            "tokens.content-size",
+            "tokens.display-size",
+            "tokens.heading-size",
+            "tokens.letter-spacing",
+            "tokens.line-height",
+            "tokens.spacing",
+            "tokens.status-color",
+            "tokens.surface-color",
+            "tokens.text-color",
+            "tokens.typeface"
+          ]
+        },
+        "sourceFiles": [
+          {
+            "path": "packages/designer/src/blocks/Hero.tsx",
+            "sha256": "53f2cbc645cbd5ccaf856c1ca50edb3c27a616cf53cdbd6648b95fc021e82c24"
+          },
+          {
+            "path": "packages/designer/src/blocks/internal/block-vars.ts",
+            "sha256": "33e9c7bd8700ff201b8ba138ca4f10dd7de910a23d260019e676470b918cceb5"
+          },
+          {
+            "path": "packages/designer/src/blocks/section-ground.ts",
+            "sha256": "a519649f96cb339f1128fc385e68d67b6af063ed492ac2c285f09c1740c98679"
+          },
+          {
+            "path": "packages/designer/src/blocks/SectionIntro.tsx",
+            "sha256": "3a0884248430fe5bd0317576e09067c45d01fc75472e966050b01a694f77f54d"
+          },
+          {
+            "path": "packages/designer/src/catalog-core/provenance-attrs.ts",
+            "sha256": "8f2a725224764fc1d7cd7ec94f2f569cad02117251bf6c2a668c8a1b51e7c443"
+          },
+          {
+            "path": "packages/designer/src/components/internal/cx.ts",
+            "sha256": "0a7524b0340fec42e1abb216013a353e950aa738d9ba0f2ebdedd5293337bab3"
+          }
+        ],
+        "unresolved": [
+          {
+            "code": "DF2",
+            "evidence": "unresolved injected runtime inventory ../../tokens/tokens.js#TOKENS",
+            "file": "packages/designer/src/components/internal/cx.ts",
+            "line": 2
+          },
+          {
+            "code": "DF2",
+            "evidence": "unresolved dynamic import; runtime source is not inferred",
+            "file": "packages/designer/src/components/internal/cx.ts",
+            "line": 80
+          }
+        ]
+      },
       "impl": {
         "export": "Hero",
         "kind": "package",
@@ -39,7 +103,7 @@
       "license": "MIT",
       "notes": [
         "Header is a built-in SectionIntro region keyed by the required heading, with eyebrow and description as supporting props; it is not a replaceable section-header node. Source composes SectionIntro; headingLevel permits h1.",
-        "Descriptor only; source imports, token reads, shared anatomy, accessibility, contrast and consumer runtime conformance are unmeasured. Content bindings describe host adaptation points, not type-equivalent converters."
+        "Source-only import and token-read measurements are lower bounds; shared anatomy, accessibility, contrast and consumer runtime conformance remain unmeasured. Content bindings describe host adaptation points, not type-equivalent converters."
       ],
       "parts": [],
       "pin": {
@@ -53,6 +117,24 @@
         "size.compact": "./blocks#Hero.size=compact",
         "size.default": "./blocks#Hero.size=default",
         "size.display": "./blocks#Hero.size=display"
+      },
+      "reads": {
+        "assets": [],
+        "tokens": [
+          "tokens.accent-color",
+          "tokens.body-size",
+          "tokens.border-color",
+          "tokens.content-size",
+          "tokens.display-size",
+          "tokens.heading-size",
+          "tokens.letter-spacing",
+          "tokens.line-height",
+          "tokens.spacing",
+          "tokens.status-color",
+          "tokens.surface-color",
+          "tokens.text-color",
+          "tokens.typeface"
+        ]
       },
       "slot": "sections.hero",
       "slotMap": {

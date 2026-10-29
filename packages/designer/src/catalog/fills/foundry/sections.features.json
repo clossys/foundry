@@ -29,7 +29,91 @@
   },
   "sections": {
     "features": {
+      "composes": [
+        "components.icon",
+        "sections.section-header"
+      ],
       "configs": {},
+      "consumption": {
+        "scanStatus": "lower-bound",
+        "scannedComposes": [
+          "components.icon",
+          "sections.section-header"
+        ],
+        "scannedReads": {
+          "assets": [],
+          "components": [
+            "components.icon"
+          ],
+          "tokens": [
+            "tokens.accent-color",
+            "tokens.body-size",
+            "tokens.border-color",
+            "tokens.control-radius",
+            "tokens.radius",
+            "tokens.spacing",
+            "tokens.status-color",
+            "tokens.surface-color",
+            "tokens.surface-radius",
+            "tokens.text-color",
+            "tokens.typeface"
+          ]
+        },
+        "sourceFiles": [
+          {
+            "path": "packages/designer/src/blocks/FeatureGrid.tsx",
+            "sha256": "e2daab7579d736a098de6debdf81983718ccde3b8fb0f61d6025bc1d630e729c"
+          },
+          {
+            "path": "packages/designer/src/blocks/items/anatomy.tsx",
+            "sha256": "03dfd69bf9c7fa703e2a4232673b23e43826c884ba704b43fc9da2916334febc"
+          },
+          {
+            "path": "packages/designer/src/blocks/items/compat-features.tsx",
+            "sha256": "b255890cd5e475b51eef47b4e403e9148dd2b3f622fda67f4a814adaa0d831b3"
+          },
+          {
+            "path": "packages/designer/src/blocks/section-ground.ts",
+            "sha256": "a519649f96cb339f1128fc385e68d67b6af063ed492ac2c285f09c1740c98679"
+          },
+          {
+            "path": "packages/designer/src/blocks/stretched-link.tsx",
+            "sha256": "07229f9258b648250b757c748604848b4b869e285da70eb28f9cf472e93688c4"
+          },
+          {
+            "path": "packages/designer/src/catalog-core/provenance-attrs.ts",
+            "sha256": "8f2a725224764fc1d7cd7ec94f2f569cad02117251bf6c2a668c8a1b51e7c443"
+          },
+          {
+            "path": "packages/designer/src/components/internal/cx.ts",
+            "sha256": "0a7524b0340fec42e1abb216013a353e950aa738d9ba0f2ebdedd5293337bab3"
+          },
+          {
+            "path": "packages/designer/src/icons/ChevronRight.ts",
+            "sha256": "99e246ee2ef8a9b85999607d97a1152fbe6bf374f68c29c19ffa46ad7a502fb6"
+          }
+        ],
+        "unresolved": [
+          {
+            "code": "DF5",
+            "evidence": "unregistered asset import ../icons/ChevronRight.js#ChevronRight",
+            "file": "packages/designer/src/blocks/stretched-link.tsx",
+            "line": 4
+          },
+          {
+            "code": "DF2",
+            "evidence": "unresolved injected runtime inventory ../../tokens/tokens.js#TOKENS",
+            "file": "packages/designer/src/components/internal/cx.ts",
+            "line": 2
+          },
+          {
+            "code": "DF2",
+            "evidence": "unresolved dynamic import; runtime source is not inferred",
+            "file": "packages/designer/src/components/internal/cx.ts",
+            "line": 80
+          }
+        ]
+      },
       "impl": {
         "export": "FeatureGrid",
         "kind": "package",
@@ -38,7 +122,7 @@
       "license": "MIT",
       "notes": [
         "The layout prop selects the column grid, a one-per-row list with the icon beside the copy, or the heading region beside a two-column grid from desktop. Items have icon, heading and description but no per-item link prop.",
-        "Descriptor only; source imports, token reads, shared anatomy, accessibility, contrast and consumer runtime conformance are unmeasured. Content bindings describe host adaptation points, not type-equivalent converters."
+        "Source-only import and token-read measurements are lower bounds; shared anatomy, accessibility, contrast and consumer runtime conformance remain unmeasured. Content bindings describe host adaptation points, not type-equivalent converters."
       ],
       "parts": [],
       "pin": {
@@ -50,6 +134,22 @@
         "layout.grid": "./blocks#FeatureGrid.layout=grid",
         "layout.list": "./blocks#FeatureGrid.layout=list",
         "layout.split": "./blocks#FeatureGrid.layout=split"
+      },
+      "reads": {
+        "assets": [],
+        "tokens": [
+          "tokens.accent-color",
+          "tokens.body-size",
+          "tokens.border-color",
+          "tokens.control-radius",
+          "tokens.radius",
+          "tokens.spacing",
+          "tokens.status-color",
+          "tokens.surface-color",
+          "tokens.surface-radius",
+          "tokens.text-color",
+          "tokens.typeface"
+        ]
       },
       "slot": "sections.features",
       "slotMap": {

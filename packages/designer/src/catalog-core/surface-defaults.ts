@@ -7,20 +7,29 @@
  * content slot, member or state port outside the contract, every frame state
  * port owned, a declared rendering that matches, and no retained blocker. The
  * importer's coverage records the same mapping facts. Source bytes, provenance,
- * dependency artifacts, token reads and runtime measurements are not gathered
- * here, so a default is statically eligible against its declared mapping, not
- * materialized or runtime-qualified, and adopting it through the source path
- * still needs a verified surface source bundle.
+ * dependency artifacts and runtime measurements are not gathered here. Package
+ * pointers additionally check independent canonical source-consumption facts;
+ * descriptor snapshots never supply their own actual reads or composition.
+ * Defaults remain static, not materialized or runtime-qualified, and adopting
+ * through the source path still needs a verified surface source bundle.
  */
 import { isSelectableComponentSource, NON_SELECTABLE_SOURCE_REASON } from "./component-sources.js";
 import { surfacePrimary } from "./surface-library.js";
 import type { SectionSlot } from "./sections-contract.js";
 import type { SurfaceFinding, SurfaceSlot } from "./surface-types.js";
 import type { FillMeta, FrameSlot } from "./types.js";
+import type { SurfaceConsumptionMeasurement } from "./surface-consumption.js";
+import { canonicalSurfaceConsumption } from "../importers/foundry-surface-consumption.js";
+import { stableStringify } from "./stable.js";
 
 /** The mapping fields both package-pointer descriptors and source candidates declare. */
 export interface SurfaceDefaultDescriptor {
   slot: string;
+  impl?: { kind: string; module?: string; export?: string };
+  reads?: { tokens: readonly string[]; assets: readonly string[] };
+  composes?: readonly string[];
+  parts?: readonly string[];
+  consumption?: SurfaceConsumptionMeasurement;
   /** Section content slots. */
   slotMap?: Readonly<Record<string, unknown>>;
   /** Frame content slots. */
@@ -76,8 +85,29 @@ export interface SurfaceDefaultsPlan {
 
 const unique = (values: readonly string[]): string[] => [...new Set(values)];
 
-/** The static S5 mapping rule of resolveSurfaces, over one declared descriptor. */
-export function contractFindings(slot: SectionSlot | FrameSlot, fill: SurfaceDefaultDescriptor): string[] {
+/** Both origin families use actual source observations, never allowedReads as observations. */
+export function surfaceConsumptionFindings(slot: SectionSlot | FrameSlot, fill: SurfaceDefaultDescriptor, actual = fill.consumption): string[] {
+  const findings: string[] = [];
+  if (!actual || actual.scanStatus !== "lower-bound" || !actual.sourceFiles.length)
+    return ["S8 surface consumption measurement unavailable"];
+  const contract = slot.contract;
+  const allowedComposes = contract.kind === "section" ? [...contract.allowedComposes, ...contract.parts] : contract.composes ?? [];
+  for (const [label, observed, declared, allowed] of [
+    ["tokens", actual.scannedReads.tokens, fill.reads?.tokens ?? [], contract.allowedReads.tokens],
+    ["assets", actual.scannedReads.assets, fill.reads?.assets ?? [], contract.allowedReads.assets],
+    ["composes", unique([...actual.scannedComposes, ...actual.scannedReads.components]), [...fill.composes ?? [], ...fill.parts ?? []], allowedComposes],
+  ] as const) {
+    const allowedIds = new Set<string>(allowed), declaredIds = new Set<string>(declared);
+    const unsupported = unique([...declared, ...observed]).filter(id => !allowedIds.has(id)).sort();
+    const underreported = observed.filter(id => !declaredIds.has(id)).sort();
+    if (unsupported.length) findings.push(`S5 unsupported ${label}: ${unsupported.join(", ")}`);
+    if (underreported.length) findings.push(`S5 underreported ${label}: ${underreported.join(", ")}`);
+  }
+  return findings;
+}
+
+/** Shared mapping eligibility and package source-consumption truth. */
+export function contractFindings(slot: SectionSlot | FrameSlot, fill: SurfaceDefaultDescriptor, packagePin?: unknown): string[] {
   const contract = slot.contract;
   const mapping: string[] = [], frame: string[] = [], other: string[] = [];
   if (fill.slot !== slot.id) other.push(`S1 descriptor slot ${fill.slot} differs`);
@@ -99,6 +129,14 @@ export function contractFindings(slot: SectionSlot | FrameSlot, fill: SurfaceDef
     for (const port of owned) if (!contract.statePorts.some(row => row.id === port)) frame.push(`state port ${port} is outside the contract`);
   }
   for (const blocker of fill.blockers ?? []) other.push(`S5 ${blocker.code}: ${blocker.message}`);
+  if (fill.impl?.kind === "package") {
+    const actual = canonicalSurfaceConsumption(fill.slot, fill.impl, packagePin);
+    if (!fill.consumption || !actual) other.push("S8 surface consumption measurement unavailable");
+    if (actual) {
+      if (fill.consumption && stableStringify(fill.consumption) !== stableStringify(actual)) other.push("S8 package consumption snapshot differs from canonical measurement");
+      other.push(...surfaceConsumptionFindings(slot, fill, actual));
+    }
+  }
   return [
     ...(mapping.length ? [`S5 content/member mapping differs: ${mapping.join(", ")}`] : []),
     ...(frame.length ? [`S5 frame rendering/state ownership differs: ${frame.join(", ")}`] : []),
@@ -120,7 +158,7 @@ export function planSurfaceDefaults(input: SurfaceDefaultsInput): SurfaceDefault
       if (!doc) { if (basis !== "preference") why.push(`${source}: no implementation candidate`); continue; }
       if (!isSelectableComponentSource(source)) { why.push(`${source}: ${NON_SELECTABLE_SOURCE_REASON}`); continue; }
       const entries = Object.values((contract.layer === "sections" ? doc.sections : doc.frames) ?? {});
-      const own = entries.length === 1 ? contractFindings(contract, entries[0]!) : [`S1 expected one ${contract.layer} descriptor`];
+      const own = entries.length === 1 ? contractFindings(contract, entries[0]!, doc.$extensions["com.clossys.fill"].pin) : [`S1 expected one ${contract.layer} descriptor`];
       if (own.length) { why.push(`${source}: ${own.join("; ")}`); continue; }
       const meta = doc.$extensions["com.clossys.fill"];
       return { slot, status: basis === "choose" ? "chosen" : "default", basis, source, fill: meta.id, ...(meta.unmapped?.length ? { unmapped: [...meta.unmapped] } : {}), reasons: [] };

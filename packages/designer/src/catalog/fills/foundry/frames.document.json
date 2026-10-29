@@ -23,6 +23,33 @@
   },
   "frames": {
     "document": {
+      "composes": [],
+      "consumption": {
+        "scanStatus": "lower-bound",
+        "scannedComposes": [],
+        "scannedReads": {
+          "assets": [],
+          "components": [],
+          "tokens": [
+            "tokens.accent-color"
+          ]
+        },
+        "sourceFiles": [
+          {
+            "path": "packages/designer/src/catalog-core/provenance-attrs.ts",
+            "sha256": "8f2a725224764fc1d7cd7ec94f2f569cad02117251bf6c2a668c8a1b51e7c443"
+          },
+          {
+            "path": "packages/designer/src/frames/site-frame/types.ts",
+            "sha256": "5bda43d95ad194dcafaa2e1f3cd2e0ed668357d8c0273d4d0ea32cb500831da4"
+          },
+          {
+            "path": "packages/designer/src/runtime/frames/document.tsx",
+            "sha256": "57ae877432f27fd700501aeb4930e4220dec33a30090f1a4fd5409acc74f016a"
+          }
+        ],
+        "unresolved": []
+      },
       "impl": {
         "export": "DocumentFrame",
         "kind": "package",
@@ -35,6 +62,12 @@
       "propMap": {
         "variant.page": "variant=page",
         "variant.status": "variant=status"
+      },
+      "reads": {
+        "assets": [],
+        "tokens": [
+          "tokens.accent-color"
+        ]
       },
       "slot": "frames.document",
       "slots": {

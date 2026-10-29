@@ -30,6 +30,68 @@
   },
   "frames": {
     "site-footer": {
+      "composes": [],
+      "consumption": {
+        "scanStatus": "lower-bound",
+        "scannedComposes": [],
+        "scannedReads": {
+          "assets": [],
+          "components": [],
+          "tokens": [
+            "tokens.body-size",
+            "tokens.border-color",
+            "tokens.border-width",
+            "tokens.brandmark-size",
+            "tokens.gutter",
+            "tokens.spacing",
+            "tokens.surface-color",
+            "tokens.text-color",
+            "tokens.touch-target",
+            "tokens.typeface",
+            "tokens.z-index"
+          ]
+        },
+        "sourceFiles": [
+          {
+            "path": "packages/designer/src/catalog-core/provenance-attrs.ts",
+            "sha256": "8f2a725224764fc1d7cd7ec94f2f569cad02117251bf6c2a668c8a1b51e7c443"
+          },
+          {
+            "path": "packages/designer/src/components/internal/cx.ts",
+            "sha256": "0a7524b0340fec42e1abb216013a353e950aa738d9ba0f2ebdedd5293337bab3"
+          },
+          {
+            "path": "packages/designer/src/internal/brandmark.ts",
+            "sha256": "8373e807f383bdf12d9f325223df75316b99ea60fa3d2e020991b283eb24c16a"
+          },
+          {
+            "path": "packages/designer/src/shell/internal/shell-ground.ts",
+            "sha256": "e04a3d0244d866b417cf3feebe8cc8a7d2815f54652f0feeacab07b9b4762be2"
+          },
+          {
+            "path": "packages/designer/src/shell/internal/shell-vars.ts",
+            "sha256": "662ffc7e288f722504186d2fcb01fc4c20f3a4e4186971c29f3901be84b4513b"
+          },
+          {
+            "path": "packages/designer/src/shell/SiteFooter.tsx",
+            "sha256": "4a0cd1894d7f3c1c1e894f082f61776b0647dcf02457ee642346adb70b01ae06"
+          }
+        ],
+        "unresolved": [
+          {
+            "code": "DF2",
+            "evidence": "unresolved injected runtime inventory ../../tokens/tokens.js#TOKENS",
+            "file": "packages/designer/src/components/internal/cx.ts",
+            "line": 2
+          },
+          {
+            "code": "DF2",
+            "evidence": "unresolved dynamic import; runtime source is not inferred",
+            "file": "packages/designer/src/components/internal/cx.ts",
+            "line": 80
+          }
+        ]
+      },
       "impl": {
         "export": "SiteFooter",
         "kind": "package",
@@ -46,6 +108,22 @@
         "ground.inverse": "ground=inverse",
         "rule.off": "rule=none",
         "rule.on": "rule=top"
+      },
+      "reads": {
+        "assets": [],
+        "tokens": [
+          "tokens.body-size",
+          "tokens.border-color",
+          "tokens.border-width",
+          "tokens.brandmark-size",
+          "tokens.gutter",
+          "tokens.spacing",
+          "tokens.surface-color",
+          "tokens.text-color",
+          "tokens.touch-target",
+          "tokens.typeface",
+          "tokens.z-index"
+        ]
       },
       "slot": "frames.site-footer",
       "slots": {

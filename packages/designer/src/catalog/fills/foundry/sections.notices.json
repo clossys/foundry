@@ -29,7 +29,57 @@
   },
   "sections": {
     "notices": {
+      "composes": [
+        "components.banner"
+      ],
       "configs": {},
+      "consumption": {
+        "scanStatus": "lower-bound",
+        "scannedComposes": [
+          "components.banner"
+        ],
+        "scannedReads": {
+          "assets": [],
+          "components": [
+            "components.banner"
+          ],
+          "tokens": [
+            "tokens.spacing"
+          ]
+        },
+        "sourceFiles": [
+          {
+            "path": "packages/designer/src/blocks/internal/section-content-gutter.ts",
+            "sha256": "330c44a01a51488d6781d166ea8f2ca1a6d5e4ad4f39c2a68b73b9a2cd1337e2"
+          },
+          {
+            "path": "packages/designer/src/blocks/NoticeList.tsx",
+            "sha256": "fd916e20e9648ebe6d80cedd42b5e824df7c458da667c42fb973c1d204fa618a"
+          },
+          {
+            "path": "packages/designer/src/catalog-core/provenance-attrs.ts",
+            "sha256": "8f2a725224764fc1d7cd7ec94f2f569cad02117251bf6c2a668c8a1b51e7c443"
+          },
+          {
+            "path": "packages/designer/src/components/internal/cx.ts",
+            "sha256": "0a7524b0340fec42e1abb216013a353e950aa738d9ba0f2ebdedd5293337bab3"
+          }
+        ],
+        "unresolved": [
+          {
+            "code": "DF2",
+            "evidence": "unresolved injected runtime inventory ../../tokens/tokens.js#TOKENS",
+            "file": "packages/designer/src/components/internal/cx.ts",
+            "line": 2
+          },
+          {
+            "code": "DF2",
+            "evidence": "unresolved dynamic import; runtime source is not inferred",
+            "file": "packages/designer/src/components/internal/cx.ts",
+            "line": 80
+          }
+        ]
+      },
       "impl": {
         "export": "NoticeList",
         "kind": "package",
@@ -38,7 +88,7 @@
       "license": "MIT",
       "notes": [
         "Each notice renders a Foundry Banner whose tone sets its live-region role; the host supplies label and removes a notice on onDismiss. No queue or timer.",
-        "Descriptor only; source imports, token reads, shared anatomy, accessibility, contrast and consumer runtime conformance are unmeasured. Content bindings describe host adaptation points, not type-equivalent converters."
+        "Source-only import and token-read measurements are lower bounds; shared anatomy, accessibility, contrast and consumer runtime conformance remain unmeasured. Content bindings describe host adaptation points, not type-equivalent converters."
       ],
       "parts": [],
       "pin": {
@@ -47,6 +97,12 @@
         "version": "0.12.0"
       },
       "propMap": {},
+      "reads": {
+        "assets": [],
+        "tokens": [
+          "tokens.spacing"
+        ]
+      },
       "slot": "sections.notices",
       "slotMap": {
         "notices": "./blocks#NoticeList.notices"
