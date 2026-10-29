@@ -99,8 +99,8 @@ export const GATED_SCRIPT_PROSE_INPUTS = {
   "node:scripts/check-package-skills.mjs": { prose: false, reason: "reads packages/*/skill/SKILL.md only -- packed-prose, not prose" },
   "node:scripts/check-pre-auth-taste-contract.mjs": { prose: false, reason: "reads a manifest and designer-owned prose fixture under packages/, not docs/ or .changesets/" },
   "node:scripts/check-conversation-contract.mjs": { prose: false, reason: "reads docs/contracts/conversation-contract.md (under docs/contracts/**) and packages/*/skill/SKILL.md (packed-prose)" },
-  "node:evals/lib/*.test.mjs": { prose: false, reason: "evals fixtures under evals/, not docs/ or .changesets/" },
-  "node:scripts/check-evals.mjs": { prose: false, reason: "reads evals/scenarios/*.json and packages/*/skill/SKILL.md (packed-prose), not docs/ or .changesets/" },
+  "node:packages/advisor/evals/lib/*.test.mjs": { prose: false, reason: "evals fixtures under packages/advisor/evals/, not docs/ or .changesets/" },
+  "node:scripts/check-evals.mjs": { prose: false, reason: "reads packages/advisor/evals/scenarios/*.json and packages/*/skill/SKILL.md (packed-prose), not docs/ or .changesets/" },
 
   // ---- Dependency-free structural/governance gates: NOT prose ------------
   "node:scripts/check-package-identity-transition.mjs": { prose: false, reason: "reads governance/package-identity-transition.json and package manifests only" },

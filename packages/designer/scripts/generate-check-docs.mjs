@@ -5,7 +5,7 @@ import { resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import ts from "typescript";
 
-const packageRoot = new URL("../packages/designer/", import.meta.url);
+const packageRoot = new URL("../", import.meta.url);
 export const checkDocsPath = new URL("skill/check-codes.md", packageRoot);
 
 export async function checkData() {

@@ -11,7 +11,7 @@ addition: kit composition scenarios", 2026-09-22).
 ## What runs in CI (deterministic, no model calls)
 
 ```bash
-node --test evals/lib/*.test.mjs scripts/check-evals.test.mjs   # unit tests for the harness itself
+node --test packages/advisor/evals/lib/*.test.mjs scripts/check-evals.test.mjs   # unit tests for the harness itself
 node scripts/check-evals.mjs                                     # the gate
 ```
 
@@ -95,7 +95,7 @@ rest of this harness it needs `packages/advisor` built first (gitignored
 
 ```bash
 npm run build --workspace=packages/advisor
-node --test evals/manual/mirror-parity.test.mjs
+node --test packages/advisor/evals/manual/mirror-parity.test.mjs
 ```
 
 Run without that build, every test in the file reports skipped, not failed,

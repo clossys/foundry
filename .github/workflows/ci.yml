@@ -1001,7 +1001,7 @@ jobs:
       # above.
       - run: node scripts/check-conversation-contract.mjs
       # Issue #1185's deterministic regression gate: composition accuracy
-      # and repeatability over evals/scenarios/*.json, scored against the
+      # and repeatability over packages/advisor/evals/scenarios/*.json, scored against the
       # real, generated capability catalogue via
       # scripts/lib/capability-catalogue.mjs (this repository's own
       # dependency-free mirror of packages/advisor/src/composition.ts,
@@ -1009,7 +1009,7 @@ jobs:
       # plus static conversation-contract checks over every
       # packages/*/skill/SKILL.md's own role content. Composition scenario
       # findings always fail this step; conversation-contract static
-      # findings are report-mode only (see evals/README.md) unless
+      # findings are report-mode only (see packages/advisor/evals/README.md) unless
       # --enforce-contract-statics is passed, which this step does not do.
       # Same dependency-free, manifest/contract/source-read-only class as
       # every step in this job. Its own unit tests run first, same

@@ -1,10 +1,10 @@
 #!/usr/bin/env node
 // check-evals — issue #1185's deterministic regression gate: composition
-// accuracy and repeatability over evals/scenarios/*.json (scored against
+// accuracy and repeatability over packages/advisor/evals/scenarios/*.json (scored against
 // the real, generated capability catalogue -- see
-// evals/lib/scenario-runner.mjs's own header), plus static
+// packages/advisor/evals/lib/scenario-runner.mjs's own header), plus static
 // conversation-contract checks over every packages/*/skill/SKILL.md's own
-// role content (evals/lib/conversation-contract-checks.mjs).
+// role content (scripts/lib/conversation-contract-checks.mjs).
 //
 //   node scripts/check-evals.mjs [--json] [--enforce-contract-statics] [<repoRoot>]
 //
@@ -13,21 +13,21 @@
 // scripts/check-conversation-contract.mjs, both of which this script
 // reuses rather than reimplements (see each module's own header for why).
 // The separate, human-run, model-in-the-loop half of #1185 lives in
-// evals/manual/ and is never invoked from here or from CI.
+// packages/advisor/evals/manual/ and is never invoked from here or from CI.
 //
 // Composition scenario findings (accuracy and repeatability) always fail
 // this gate: they are load-bearing regression coverage over real,
 // deterministic engine behavior, not a heuristic. Conversation-contract
 // static findings are report-mode only by default -- printed and counted,
 // never failing the gate -- because they are a heuristic text scan over
-// prose (see evals/lib/conversation-contract-checks.mjs's own header for
+// prose (see scripts/lib/conversation-contract-checks.mjs's own header for
 // why); pass --enforce-contract-statics to promote them to blocking once
 // their false-positive rate has been proven low over time, mirroring
 // scripts/check-package-framework.mjs's own --enforce convention.
 //
 // Every `--json` body, on every path below, is exactly
 // docs/contracts/check-output-envelope.json's shape -- validated by
-// `buildEnvelope` (evals/lib/output-envelope.mjs) before it is ever
+// `buildEnvelope` (packages/advisor/evals/lib/output-envelope.mjs) before it is ever
 // printed, and never widened with extra fields afterward (review #1413,
 // B3): the mean precision/recall and whether --enforce-contract-statics
 // was passed are still shown, but only in the human-readable (non --json)
@@ -38,7 +38,7 @@
 // Exit 1 = a composition scenario regressed, or (with
 //   --enforce-contract-statics) a contract-statics finding fired.
 // Exit 2 = the tree could not be read (including zero loaded scenarios --
-//   see evals/lib/scenario-runner.mjs#loadScenarios), or this gate's own
+//   see packages/advisor/evals/lib/scenario-runner.mjs#loadScenarios), or this gate's own
 //   report failed docs/contracts/check-output-envelope.json's shape check.
 //   This is a real, reachable exit path for every envelope this script
 //   builds: every `buildEnvelope` call here is inside a `try`, so a bug in
@@ -48,9 +48,9 @@
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
-import { checkConversationContractStatics } from "../evals/lib/conversation-contract-checks.mjs";
-import { buildEnvelope, EVALS_PACKAGE_NAME, EVALS_PACKAGE_VERSION } from "../evals/lib/output-envelope.mjs";
-import { runCompositionScenarios } from "../evals/lib/scenario-runner.mjs";
+import { checkConversationContractStatics } from "./lib/conversation-contract-checks.mjs";
+import { buildEnvelope, EVALS_PACKAGE_NAME, EVALS_PACKAGE_VERSION } from "../packages/advisor/evals/lib/output-envelope.mjs";
+import { runCompositionScenarios } from "../packages/advisor/evals/lib/scenario-runner.mjs";
 
 const scriptDir = dirname(fileURLToPath(import.meta.url));
 
