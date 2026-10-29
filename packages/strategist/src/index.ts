@@ -258,3 +258,6 @@ export type {
 } from "./contract.js";
 
 export type { ValidationIssue, ValidationResult, Validator } from "./validation.js";
+
+export { loadCatalog, validateCatalog } from "./catalog.js";
+export type { CatalogCell, CatalogNode, StrategyCatalog, CatalogRule, CatalogIssue, CatalogValidationResult } from "./catalog.js";
