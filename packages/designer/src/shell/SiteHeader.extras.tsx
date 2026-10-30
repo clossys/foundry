@@ -1,3 +1,6 @@
+"use client";
+
+import { useEffect, useRef } from "react";
 import { Banner, type BannerProps } from "../components/Banner.js";
 import { Link } from "../components/Link.js";
 import { SemanticContent } from "../components/SemanticContent.js";
@@ -33,5 +36,16 @@ export interface SiteAnnouncementProps extends Pick<BannerProps, "children" | "o
 
 /** Visibility is controlled by the host. The frame never stores dismissal. */
 export function SiteAnnouncement({ dismissed, children, ...props }: SiteAnnouncementProps) {
-  return dismissed ? null : <SemanticContent as="div" data-site-announcement=""><Banner {...props}>{children}</Banner></SemanticContent>;
+  const root = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    const element = root.current, frame = element?.parentElement;
+    if (!element || !frame) return;
+    const previous = frame.style.getPropertyValue("--site-announcement-height");
+    const update = () => frame.style.setProperty("--site-announcement-height", `${element.getBoundingClientRect().height}px`);
+    update();
+    const observer = typeof ResizeObserver === "undefined" ? undefined : new ResizeObserver(update);
+    observer?.observe(element);
+    return () => { observer?.disconnect(); if (previous) frame.style.setProperty("--site-announcement-height", previous); else frame.style.removeProperty("--site-announcement-height"); };
+  }, [dismissed]);
+  return dismissed ? null : <SemanticContent as="div" ref={root} data-site-announcement=""><Banner {...props}>{children}</Banner></SemanticContent>;
 }

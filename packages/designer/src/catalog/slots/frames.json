@@ -123,6 +123,11 @@
           "id": "toc",
           "required": false,
           "accepts": "sections.table-of-contents"
+        },
+        {
+          "id": "announcement",
+          "required": false,
+          "accepts": "components.banner"
         }
       ],
       "members": {
@@ -211,7 +216,9 @@
         "sections.status-list",
         "sections.steps",
         "sections.article",
-        "sections.table-of-contents"
+        "sections.table-of-contents",
+        "components.banner",
+        "sections.newsletter"
       ],
       "skipTarget": "main-content"
     },
@@ -541,6 +548,11 @@
           "id": "actions",
           "required": false,
           "accepts": "components.button"
+        },
+        {
+          "id": "locale",
+          "required": false,
+          "accepts": "components.link"
         }
       ],
       "members": {
@@ -554,7 +566,8 @@
           "nav-placement.leading",
           "nav-placement.centered",
           "position.sticky",
-          "position.static"
+          "position.static",
+          "nav.mega"
         ]
       },
       "statePorts": [],
@@ -925,6 +938,16 @@
           "id": "social",
           "required": false,
           "accepts": "components.icon"
+        },
+        {
+          "id": "locale",
+          "required": false,
+          "accepts": "components.link"
+        },
+        {
+          "id": "newsletter",
+          "required": false,
+          "accepts": "sections.newsletter"
         }
       ],
       "members": {
@@ -964,7 +987,17 @@
           "tokens.body-size",
           "tokens.brandmark-size",
           "tokens.touch-target",
-          "tokens.z-index"
+          "tokens.z-index",
+          "tokens.accent-color",
+          "tokens.action-color",
+          "tokens.control-color",
+          "tokens.control-radius",
+          "tokens.duration",
+          "tokens.easing",
+          "tokens.focus-color",
+          "tokens.focus-outline",
+          "tokens.state-opacity",
+          "tokens.status-color"
         ],
         "assets": [
           "assets.mark",
@@ -975,7 +1008,9 @@
         "components.link",
         "components.icon",
         "components.logo",
-        "components.separator"
+        "components.separator",
+        "sections.newsletter",
+        "components.semantic-content"
       ]
     },
     "requires": [],

@@ -683,7 +683,7 @@
         },
         {
           "path": "packages/designer/src/frames/site-frame/types.ts",
-          "sha256": "b2cfc0ee269dc7d9b04814794b1cc01e755b25e42c93cb77adef08d22e41647b"
+          "sha256": "67c15f5ed1c20d43467560c2fd89e8e5dbb28dd658a65c3c283b341e4ceb5395"
         },
         {
           "path": "packages/designer/src/runtime/frames/document.tsx",
@@ -931,7 +931,7 @@
         },
         {
           "path": "packages/designer/src/shell/SiteFooter.tsx",
-          "sha256": "6a10abd3dd944517371ea878d0319f1adef150b1c5edee69e8d4a334a3ca1286"
+          "sha256": "09654e2cad668d140dca0ca6a90e2c887c2343fadf9b4e81abcac6d7270bd38b"
         }
       ],
       "unresolved": [
@@ -1013,7 +1013,7 @@
         },
         {
           "path": "packages/designer/src/shell/SiteHeader.tsx",
-          "sha256": "008e593324d160e9a41abd6623a3aa8104ca3fe219a1a3eae129dae3a8843c55"
+          "sha256": "6a4228ce211629e5a252a09f3b29403e6b3570750f19027cd4578b9ab1ac9f7a"
         }
       ],
       "unresolved": [
@@ -1046,7 +1046,7 @@
           "rawAssets": [
             "assets.js"
           ],
-          "sourceSha256": "3ede6936935916b747b8cf8e1271e11a1f36caa94360a57f98064c924bdcdd29",
+          "sourceSha256": "ee047cd4a7f365dc42cbd20dbb0b6f8f0120a23869d2a8d079999a6264c3f3d5",
           "specifier": "../landing/internal/assets.js",
           "target": "packages/designer/src/frames/site-frame/landing/internal/assets.ts",
           "targetSha256": "54cc0184672dfc74981225929705b024611926fd305a88374c1040605cffa3f8"
@@ -1057,6 +1057,7 @@
           "assets.js"
         ],
         "components": [
+          "components.banner",
           "components.icon",
           "components.logo",
           "components.semantic-content"
@@ -1072,15 +1073,18 @@
       },
       "scanStatus": "lower-bound",
       "scannedComposes": [
+        "components.banner",
         "components.icon",
         "components.logo",
         "components.semantic-content",
         "frames.site-footer",
-        "frames.site-header"
+        "frames.site-header",
+        "sections.newsletter"
       ],
       "scannedReads": {
         "assets": [],
         "components": [
+          "components.banner",
           "components.icon",
           "components.logo",
           "components.semantic-content"
@@ -1104,8 +1108,12 @@
           "sha256": "fa0ebdba691d8687ad955e9b9fb650b145d988b53edf1c2deb7f2eb261df5bef"
         },
         {
+          "path": "packages/designer/src/frames/site-frame/FrameRegion.tsx",
+          "sha256": "b481f82663de9508b23a9795853746b77c38baa609a5a89415b59f90a81a59e6"
+        },
+        {
           "path": "packages/designer/src/frames/site-frame/internal/resolveShell.ts",
-          "sha256": "3ede6936935916b747b8cf8e1271e11a1f36caa94360a57f98064c924bdcdd29"
+          "sha256": "ee047cd4a7f365dc42cbd20dbb0b6f8f0120a23869d2a8d079999a6264c3f3d5"
         },
         {
           "path": "packages/designer/src/frames/site-frame/landing/internal/assets.ts",
@@ -1121,15 +1129,19 @@
         },
         {
           "path": "packages/designer/src/frames/site-frame/SiteFrame.tsx",
-          "sha256": "2c3088cbed67cf48cf8cf123f4d9b7019dd73324e297e98209238f2f32ce5768"
+          "sha256": "4d49cb29350582f8c33a9aac1fee934c384ddc610cb4e9f417d74a36aa76d70d"
         },
         {
           "path": "packages/designer/src/frames/site-frame/types.ts",
-          "sha256": "b2cfc0ee269dc7d9b04814794b1cc01e755b25e42c93cb77adef08d22e41647b"
+          "sha256": "67c15f5ed1c20d43467560c2fd89e8e5dbb28dd658a65c3c283b341e4ceb5395"
         },
         {
           "path": "packages/designer/src/frames/site-frame/viewChromeGround.ts",
           "sha256": "d5c430d26e272474f954f3fd42ed0f7175e0e483afaeb8352c131d46e6f50aa2"
+        },
+        {
+          "path": "packages/designer/src/shell/SiteHeader.extras.tsx",
+          "sha256": "3dd9f99cecf4e12f994f99498d54dc60f2b1d21447366a35aec09ebf0efdf517"
         }
       ],
       "unresolved": [
@@ -1150,6 +1162,12 @@
           "evidence": "unresolved source export ./SkipLink.boundary.client.js#SiteSkipLink",
           "file": "packages/designer/src/frames/site-frame/SiteFrame.tsx",
           "line": 10
+        },
+        {
+          "code": "DF2",
+          "evidence": "unresolved source export ../components/Link.js#Link",
+          "file": "packages/designer/src/shell/SiteHeader.extras.tsx",
+          "line": 5
         }
       ]
     },

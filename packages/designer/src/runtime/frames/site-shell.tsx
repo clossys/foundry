@@ -15,7 +15,7 @@ import type { AssetResolver } from "../../frames/site-frame/landing/web/types.js
 import type { SiteFramePresentationConfig } from "../../frames/site-frame/site-frame-contract.js";
 import { SiteFrame } from "../../frames/site-frame/SiteFrame.js";
 import { SITE_CHROME_GROUNDS } from "../../frames/site-frame/types.js";
-import type { SiteBrandInput, SiteEnvironmentLinkInput, SiteFooterInput, SiteFrameProps, SiteIconLinkInput, SiteLinkInput, SiteShellInput } from "../../frames/site-frame/types.js";
+import type { SiteBrandInput, SiteEnvironmentLinkInput, SiteFooterInput, SiteFrameProps, SiteIconLinkInput, SiteLinkInput, SiteShellInput, SiteLocaleInput, SiteMegaGroupInput, SiteNewsletterInput } from "../../frames/site-frame/types.js";
 
 const LEAF = "frames.site-shell";
 type Json = Readonly<Record<string, RuntimeJson>>;
@@ -38,7 +38,7 @@ function choice<T extends string>(value: RuntimeJson | undefined, at: string, va
   return values.find(item => item === value) ?? fail(`${at} must be one of ${values.join(", ")}`);
 }
 
-const CONTENT = ["skip-link", "header", "footer"] as const;
+const CONTENT = ["skip-link", "header", "footer", "announcement"] as const;
 const MEMBERS: Readonly<Record<string, SiteFramePresentationConfig>> = Object.freeze({
   "footer-placement.flow": Object.freeze({ footerPlacement: "flow" }),
   "footer-placement.overlay": Object.freeze({ footerPlacement: "overlay" }),
@@ -75,8 +75,16 @@ export function siteShellProps(input: Pick<RuntimeRenderInput<ReactNode>, "conte
   };
   const links = (rows: RuntimeJson | undefined, at: string) => list(rows, at).map((row, index) => link(row, `${at}[${index}]`));
   const iconOf = (row: Json, at: string) => list(row.icon, `${at}.icon`) as unknown as SiteIconLinkInput["icon"];
+  const localeInput = (value: RuntimeJson, at: string): SiteLocaleInput => {
+    const row = keys(record(value, at), at, ["label", "links"]);
+    return { label: ref(required(row.label, `${at}.label`)), links: list(row.links, `${at}.links`).map((value, index) => {
+      const path = `${at}.links[${index}]`, fields = keys(record(value, path), path, ["href", "label", "locale", "isCurrent"]);
+      if (fields.isCurrent !== undefined && typeof fields.isCurrent !== "boolean") fail(`${path}.isCurrent must be a boolean`);
+      return { href: required(fields.href, `${path}.href`), label: ref(required(fields.label, `${path}.label`)), locale: required(fields.locale, `${path}.locale`), ...(fields.isCurrent === true ? { isCurrent: true } : {}) };
+    }) };
+  };
 
-  const header = keys(record(value("header"), "header"), "header", ["brand", "nav", "actions", "environments", "navPlacement", "surface", "tone", "origin"]);
+  const header = keys(record(value("header"), "header"), "header", ["brand", "nav", "actions", "environments", "navPlacement", "surface", "tone", "origin", "locale"]);
   const brandRow = keys(record(header.brand, "header.brand"), "header.brand", ["label", "mark", "wordmark", "size", "plate", "tone", "markInk"]);
   const mark = keys(record(brandRow.mark, "header.brand.mark"), "header.brand.mark", ["src", "width", "height"]);
   const brandLabel = required(brandRow.label, "header.brand.label");
@@ -95,7 +103,7 @@ export function siteShellProps(input: Pick<RuntimeRenderInput<ReactNode>, "conte
 
   let nav: SiteShellInput["nav"];
   if (header.nav !== undefined) {
-    const row = keys(record(header.nav, "header.nav"), "header.nav", ["label", "triggerLabel", "closeLabel", "links"]);
+    const row = keys(record(header.nav, "header.nav"), "header.nav", ["label", "triggerLabel", "closeLabel", "links", "mega"]);
     const trigger = text(row.triggerLabel);
     const close = row.closeLabel === undefined ? undefined : required(row.closeLabel, "header.nav.closeLabel");
     nav = {
@@ -104,6 +112,16 @@ export function siteShellProps(input: Pick<RuntimeRenderInput<ReactNode>, "conte
         const at = `header.nav.links[${index}]`, fields = keys(record(item, at), at, ["label", "href", "isCurrent"]);
         return { ...link({ label: fields.label ?? null, href: fields.href ?? null }, at), ...(fields.isCurrent === true ? { isCurrent: true } : {}) };
       }),
+      ...(row.mega === undefined ? {} : { mega: list(row.mega, "header.nav.mega").map((value, index): SiteMegaGroupInput => {
+        const at = `header.nav.mega[${index}]`, fields = keys(record(value, at), at, ["id", "label", "columns", "featured"]);
+        const columns = list(fields.columns, `${at}.columns`).map((value, position) => {
+          const path = `${at}.columns[${position}]`, column = keys(record(value, path), path, ["heading", "links"]);
+          return { heading: ref(required(column.heading, `${path}.heading`)), links: links(column.links, `${path}.links`) };
+        });
+        const featured = fields.featured === undefined ? undefined : keys(record(fields.featured, `${at}.featured`), `${at}.featured`, ["label", "href", "description"]);
+        return { id: required(fields.id, `${at}.id`), label: ref(required(fields.label, `${at}.label`)), columns,
+          ...(featured ? { featured: { ...link({ label: featured.label ?? null, href: featured.href ?? null }, `${at}.featured`), ...(featured.description === undefined ? {} : { description: ref(required(featured.description, `${at}.featured.description`)) }) } } : {}) };
+      }) }),
     };
   }
   const actions = header.actions === undefined ? undefined : list(header.actions, "header.actions").map((item, index): SiteLinkInput => {
@@ -124,7 +142,7 @@ export function siteShellProps(input: Pick<RuntimeRenderInput<ReactNode>, "conte
 
   let footer: SiteFooterInput | undefined;
   if (value("footer") !== undefined) {
-    const row = keys(record(value("footer"), "footer"), "footer", ["brandBand", "rule", "ground", "columns", "links", "social", "legal"]);
+    const row = keys(record(value("footer"), "footer"), "footer", ["brandBand", "rule", "ground", "columns", "links", "social", "legal", "locale", "newsletter"]);
     if (row.brandBand !== undefined && typeof row.brandBand !== "boolean") fail("footer.brandBand must be a boolean");
     const legal = keys(record(row.legal, "footer.legal"), "footer.legal", ["entity", "links", "linksLabel"]);
     const linksLabel = text(legal.linksLabel);
@@ -132,6 +150,14 @@ export function siteShellProps(input: Pick<RuntimeRenderInput<ReactNode>, "conte
     const social = row.social === undefined ? undefined : keys(record(row.social, "footer.social"), "footer.social", ["label", "links"]);
     const socialLabel = social && text(social.label);
     footer = {
+      ...(row.locale === undefined ? {} : { locale: localeInput(row.locale, "footer.locale") }),
+      ...(row.newsletter === undefined ? {} : { newsletter: (() => {
+        const path = "footer.newsletter", fields = keys(record(row.newsletter, path), path, ["emailLabel", "submitLabel", "pendingLabel", "sentMessage", "failedMessage", "privacyNote", "hint", "action", "name"]);
+        return { action: required(fields.action, `${path}.action`), ...(fields.name === undefined ? {} : { name: required(fields.name, `${path}.name`) }),
+          emailLabel: ref(required(fields.emailLabel, `${path}.emailLabel`)), submitLabel: ref(required(fields.submitLabel, `${path}.submitLabel`)), pendingLabel: ref(required(fields.pendingLabel, `${path}.pendingLabel`)),
+          sentMessage: ref(required(fields.sentMessage, `${path}.sentMessage`)), failedMessage: ref(required(fields.failedMessage, `${path}.failedMessage`)),
+          ...(fields.privacyNote === undefined ? {} : { privacyNote: ref(required(fields.privacyNote, `${path}.privacyNote`)) }), ...(fields.hint === undefined ? {} : { hint: ref(required(fields.hint, `${path}.hint`)) }) } satisfies SiteNewsletterInput;
+      })() }),
       ...(row.brandBand === undefined ? {} : { brandBand: row.brandBand as boolean }),
       ...(rule ? { rule } : {}),
       ...(row.ground === undefined ? {} : { ground: choice(row.ground, "footer.ground", SITE_CHROME_GROUNDS) }),
@@ -158,15 +184,23 @@ export function siteShellProps(input: Pick<RuntimeRenderInput<ReactNode>, "conte
   const shell: SiteShellInput = {
     brand, skipLink: ref(required(value("skip-link"), "skip-link")),
     ...(nav ? { nav } : {}), ...(actions ? { actions } : {}), ...(environments ? { environments } : {}),
-    ...(navPlacement ? { navPlacement } : {}), ...(surface || tone ? { header: { ...(surface ? { surface } : {}), ...(tone ? { tone } : {}) } } : {}),
+    ...(navPlacement ? { navPlacement } : {}), ...(surface || tone || header.locale !== undefined ? { header: { ...(surface ? { surface } : {}), ...(tone ? { tone } : {}), ...(header.locale === undefined ? {} : { locale: localeInput(header.locale, "header.locale") }) } } : {}),
     ...(footer ? { footer } : {}), ...(origin ? { origin } : {}),
+    ...(value("announcement") === undefined ? {} : { announcement: (() => {
+      const row = keys(record(value("announcement"), "announcement"), "announcement", ["message", "dismissLabel", "dismissed", "dismissAction"]);
+      if (row.dismissed !== undefined && typeof row.dismissed !== "boolean") fail("announcement.dismissed must be a boolean");
+      return { message: ref(required(row.message, "announcement.message")), ...(row.dismissLabel === undefined ? {} : { dismissLabel: ref(required(row.dismissLabel, "announcement.dismissLabel")) }), ...(row.dismissed === undefined ? {} : { dismissed: row.dismissed as boolean }) };
+    })() }),
   };
+  const announcement = value("announcement") === undefined ? undefined : record(value("announcement"), "announcement");
+  const dismissAction = announcement?.dismissAction === undefined ? undefined : required(announcement.dismissAction, "announcement.dismissAction");
+  if (dismissAction && (!input.host?.onCommand || !shell.announcement?.dismissLabel)) fail("announcement dismissal requires host onCommand and dismissLabel");
   const main = input.slots.main ?? [];
   const node = (name: string) => { const nodes = input.slots[name] ?? []; return nodes.length === 1 ? nodes[0] : nodes.length ? nodes : undefined; };
   if (mainLayout !== "article" && (node("toc") !== undefined || node("progress") !== undefined)) fail("reading slots require layout.article");
   const reading = mainLayout === "article" ? { mainLayout, toc: node("toc"), progress: node("progress") } : {};
   // Preserve a single registered Hero element so SiteFrame can validate its overlay scene identity.
-  return { ...(input.locale === undefined ? {} : { locale: input.locale }), shell, presentation, ...reading, resolveCopy, resolveAsset, children: main.length === 1 ? main[0] : main, ...(input.host?.toasts === undefined ? {} : { toasts: input.host.toasts }) };
+  return { ...(input.locale === undefined ? {} : { locale: input.locale }), shell, presentation, ...reading, resolveCopy, resolveAsset, children: main.length === 1 ? main[0] : main, ...(input.host?.toasts === undefined ? {} : { toasts: input.host.toasts }), ...(dismissAction ? { onAnnouncementDismiss: () => input.host!.onCommand!(dismissAction) } : {}) };
 }
 
 export function renderSiteShell(input: RuntimeRenderInput<ReactNode>): ReactNode {

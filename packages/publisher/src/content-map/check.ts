@@ -90,7 +90,7 @@ export function checkContentMap(input: unknown): readonly ContentMapFinding[] {
     const planSource = record(source) && fields(source, ["planItemId"]) && text(source.planItemId);
     const frameSource = record(source) && fields(source, ["frameId", "sectionIds"]) && text(source.frameId) && Array.isArray(source.sectionIds) && source.sectionIds.every(text) && new Set(source.sectionIds).size === source.sectionIds.length;
     const external = entry.kind === "external";
-    if (!fields(entry, ["id", "parentId", "order", "title", "path", "slug", "kind", "pin", "source", "icon", "description", "keywords", "manifest", "constructs", "pageConfig", "href", "indexing", "lastModified"]) || !text(entry.id) || !text(entry.title) || !Number.isSafeInteger(entry.order) || entry.order < 0
+    if (!fields(entry, ["id", "parentId", "order", "title", "path", "slug", "kind", "pin", "source", "icon", "description", "keywords", "manifest", "constructs", "pageConfig", "href", "indexing", "lastModified", "group", "featured", "alternates"]) || !text(entry.id) || !text(entry.title) || !Number.isSafeInteger(entry.order) || entry.order < 0
       || !["page", "slide", "section", "group", "external"].includes(entry.kind) || (entry.parentId !== undefined && !text(entry.parentId)) || (!external && !planSource && !frameSource)
       || (external ? entry.source !== undefined || !text(entry.path) || !isContentMapExternalHref(entry.href) || entry.manifest !== undefined || entry.constructs !== undefined : Object.hasOwn(entry, "href"))
       || (entry.path === undefined) === (entry.slug === undefined) || !(text(entry.path) || text(entry.slug))
@@ -100,6 +100,14 @@ export function checkContentMap(input: unknown): readonly ContentMapFinding[] {
       try { if (typeof entry.lastModified !== "string") throw new TypeError(); contentMapLastModified(entry.lastModified); }
       catch { add("contract", `${at}.lastModified`, "A valid ISO lastModified date or zoned timestamp is required", entry.id); }
     }
+    if (entry.group !== undefined && !text(entry.group)) add("contract", `${at}.group`, "A navigation column requires an existing group identity", entry.id);
+    if (entry.featured !== undefined && typeof entry.featured !== "boolean") add("contract", `${at}.featured`, "Featured navigation state must be boolean", entry.id);
+    if (entry.alternates !== undefined && (entry.kind !== "page" || !Array.isArray(entry.alternates)
+      || !entry.alternates.every(value => record(value) && fields(value, ["locale", "entryId", "label"]) && text(value.locale)
+        && /^[A-Za-z]{2,8}(?:-[A-Za-z0-9]{1,8})*$/.test(value.locale) && text(value.entryId) && text(value.label))
+      || new Set(entry.alternates.map(value => value?.locale?.toLowerCase())).size !== entry.alternates.length
+      || new Set(entry.alternates.map(value => value?.entryId)).size !== entry.alternates.length
+      || entry.alternates.length > 0 && entry.alternates.filter(value => value?.entryId === entry.id).length !== 1)) add("contract", `${at}.alternates`, "Page alternatives require unique locales and mapped identities, including the current page", entry.id);
     if (ids.has(entry.id)) add("duplicate-id", at, "Duplicate entry identity", entry.id); ids.add(entry.id);
     if (text(entry.id) && !byId.has(entry.id)) byId.set(entry.id, entry);
     const path = entry.path ?? (text(entry.slug) ? `/${entry.slug}` : undefined);
@@ -126,6 +134,8 @@ export function checkContentMap(input: unknown): readonly ContentMapFinding[] {
     ? CONTENT_MAP_MAX_DEPTH[input.format as keyof typeof CONTENT_MAP_MAX_DEPTH] : undefined;
   for (const entry of entries) {
     if (!record(entry) || !text(entry.id)) continue;
+    if (entry.group !== undefined && byId.get(entry.group)?.kind !== "group") add("contract", `entries.${entry.id}.group`, "Navigation column group is missing", entry.id);
+    if (Array.isArray(entry.alternates) && entry.alternates.some(value => !record(value) || byId.get(value.entryId as string)?.kind !== "page")) add("contract", `entries.${entry.id}.alternates`, "Alternative routes must reference existing pages", entry.id);
     if (entry.parentId !== undefined && !byId.has(entry.parentId)) add("missing-parent", `entries.${entry.id}.parentId`, "Parent entry is missing", entry.id);
     const chain: ContentMapNode[] = [], seen = new Set<string>(); let current: ContentMapNode | undefined = entry;
     let cyclic = false, reachesRoot = false;
