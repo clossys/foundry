@@ -296,9 +296,6 @@
     "tokens.z-index"
   ],
   "semantic-content": [],
-  "separator": [
-    "tokens.border-color"
-  ],
   "skeleton": [
     "tokens.control-radius",
     "tokens.radius",
