@@ -164,7 +164,11 @@
       "types": "./dist/content/node.d.ts",
       "import": "./dist/content/node.js"
     },
-    "./strategy-brief.json": "./strategy-brief.json"
+    "./strategy-brief.json": "./strategy-brief.json",
+    "./site-sync": {
+      "types": "./dist/site-sync/index.d.ts",
+      "node": "./dist/site-sync/index.js"
+    }
   },
   "imports": {
     "#publisher-web-views": {
@@ -182,7 +186,8 @@
     "publisher-seal": "dist/pack/seal-cli.js",
     "publisher-head-lint": "dist/pack/head-lint-cli.js",
     "publisher-site-instantiate": "dist/site-template/instantiate-cli.js",
-    "publisher-registered-route-check": "dist/web/registered-route-cli.js"
+    "publisher-registered-route-check": "dist/web/registered-route-cli.js",
+    "publisher-site-sync": "dist/site-sync/cli.js"
   },
   "foundry": {
     "assessment": {
