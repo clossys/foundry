@@ -5,12 +5,12 @@ import { materializeSurfaceSourceFill } from "../catalog-core/surface-materializ
 import { surfaceDescriptorHash, surfaceDerivationHash, surfaceEntryOf, isSurfacePackageEntry, surfaceManifest } from "../catalog-core/surface-library.js";
 import { SPECIMEN_SECTION_EXPORTS, specimenSectionSourceCatalog } from "../importers/specimen-sections.js";
 import type { CompositeEngineInput } from "../catalog-core/types.js";
-import type { SurfaceBase, SurfaceMaterializationReceipt, SurfaceSlot, SurfaceSourceBundle } from "../catalog-core/surface-types.js";
+import type { SurfaceBase, SurfaceMaterializationReceipt, SurfaceSlot, SurfaceSourceBundle, SurfaceDependency } from "../catalog-core/surface-types.js";
 
 /** Replays the registered recipe against retained exact bytes through the existing native materializer. */
-export async function prepareSpecimenSurfaceSources(input: CompositeEngineInput, leaves: readonly SurfaceSlot[] = SPECIMEN_SECTION_EXPORTS.map(row => row.id)): Promise<{ readonly input: CompositeEngineInput; readonly bundles: readonly SurfaceSourceBundle[] }> {
+export async function prepareSpecimenSurfaceSources(input: CompositeEngineInput, leaves: readonly SurfaceSlot[] = SPECIMEN_SECTION_EXPORTS.map(row => row.id), selectedDependencies: readonly SurfaceDependency[] = []): Promise<{ readonly input: CompositeEngineInput; readonly bundles: readonly SurfaceSourceBundle[] }> {
   if (!input.catalog.surfaces || !input.library.adoptedAt) throw new Error("Native specimen source preparation requires a surface catalog and adoption date.");
-  const registry = specimenSectionSourceCatalog(input.surfaceOptions?.packages);
+  const registry = specimenSectionSourceCatalog(input.surfaceOptions?.packages, selectedDependencies);
   const wanted = new Set(leaves);
   const fills = registry.fills.filter(doc => wanted.has(doc.$extensions["com.clossys.fill"].slot as SurfaceSlot));
   if (fills.length !== wanted.size) throw new Error("A requested specimen leaf is not registered.");

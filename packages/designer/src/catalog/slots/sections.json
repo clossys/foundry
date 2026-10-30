@@ -36,7 +36,7 @@
         "names": []
       },
       "allowedComposes": [
-        "components.semantic-content"
+        "components.semantic-content", "components.grid-list", "components.disclosure"
       ],
       "parts": [],
       "allowedReads": {
