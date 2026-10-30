@@ -86,6 +86,8 @@ export interface AppFrameProps {
   /** AppNavigation owns its single responsive navigation drawer. */
   navigation: Omit<AppNavigationProps, "header" | "footer" | "trigger" | "dismissAt">;
   account: AppFrameAccount;
+  /** Hide the account footer for hosts without an account surface. @default true */
+  showAccount?: boolean;
   commands: Omit<CommandMenuProps, "isOpen" | "onOpenChange" | "query" | "onQueryChange" | "dir"> & {
     triggerLabel: string;
     onQueryChange?: (query: string) => void;
