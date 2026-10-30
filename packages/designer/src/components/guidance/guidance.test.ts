@@ -493,9 +493,8 @@ const comparisonGolden: Record<string, {
   },
   "group.separator": {
     columns: {"option": "orientation", "values": ["horizontal", "vertical"]},
-    rows: {"option": "decorative", "values": [false, true]},
-    maxCells: 4,
-    retainedCells: 4,
+    maxCells: 2,
+    retainedCells: 2,
   },
   "depict.avatar": {
     columns: {"option": "size", "values": ["sm", "md", "lg"]},
