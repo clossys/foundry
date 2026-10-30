@@ -48,7 +48,7 @@ export function PublisherFormatsView({ formats, ia = FORMAT_IA, instances, libra
   const members = selected ? instances.filter(instance => instance.format === selected.id) : [];
   const usedBy = [...new Set([...(selected?.usedByPacks ?? []), ...members.flatMap(instance => instance.packIds)])];
   return <section aria-labelledby={`${id}-title`} className="grid min-w-0 gap-lg text-ink-primary">
-    <SectionHeader id={`${id}-title`} title="Formats" actions={fixtureLibrary ? <Badge variant="warning">fixture library</Badge> : undefined}
+    <SectionHeader id={`${id}-title`} title="Formats" actions={fixtureLibrary ? <Badge variant="secondary">fixture library</Badge> : undefined}
       description="Generation configuration · medium, family, format. Layouts are the allowed compositions within a format." />
     <div className="grid min-w-0 gap-lg desktop:grid-cols-[var(--ui-layout-sidebar-w)_minmax(0,1fr)]">
       <Card variant="outline"><nav aria-label="Formats by medium and family">

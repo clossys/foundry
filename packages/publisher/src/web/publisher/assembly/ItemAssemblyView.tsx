@@ -20,7 +20,7 @@ export interface ItemAssemblyViewProps {
 }
 const card = "grid min-w-0 content-start gap-sm break-words";
 function StatusChip({ status }: { status: PublishStageStatus }) {
-  return <Badge variant={status === "passed" ? "success" : status === "failed" ? "danger" : "warning"}>{status}</Badge>;
+  return <Badge variant={status === "passed" ? "default" : status === "failed" ? "destructive" : "secondary"}>{status}</Badge>;
 }
 
 /** Fixed owner lanes fan into the instance; edges express supplied assembly inputs only. */
