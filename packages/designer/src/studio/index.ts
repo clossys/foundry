@@ -57,6 +57,12 @@ export { contentSpecimenLeaves, SpecimenRichPassage, SpecimenCopyInContext, Spec
 export type { RichPassageValue, CopyInContextValue, PageViewportValue } from "./specimen-content.js";
 export type { SpecimenPagePreviewPort, SpecimenPublishedPage } from "./specimen-content-ports.js";
 export type { EmittedDesignerSpecimenRuntime } from "./emitted-specimens.js";
+export { bindNativeSpecimenContext } from "./emitted-specimens.js";
+export { SpecimenLayoutSection, specimenLayoutNeeds } from "./specimen-layouts.js";
+export type { SpecimenLayout, SpecimenLeafId, SpecimenAxisValue, SpecimenAxis, SpecimenItem, SpecimenLabels, SpecimenLeafProps, SpecimenLeafDefinition, SpecimenSection } from "./specimen-layouts.js";
+export { SpecimenVariantMatrix, SpecimenSectionViewports, SpecimenFrameViewports, designerViewportSpecimenLeaves, componentSpecimenItems, surfaceSpecimenItems } from "./specimen-viewports.js";
+export type { ComponentVariantItem, SurfaceViewportItem, SpecimenItemSet } from "./specimen-viewports.js";
+export { SpecimenSwatch, SpecimenColorRamp, SpecimenTypeLadder, SpecimenSpacingLadder, SpecimenRadiusLadder, SpecimenMotionPlayer, SpecimenAssetGrid, SpecimenIconGrid, tokenAssetSpecimenLeaves, tokenSpecimenItems, assetSpecimenItems, colorRampSpecimenItems } from "./specimen-token-assets.js";
 
 // The complete-page constructor is private; hosts compose Studio through their route.
 export type { DesignerPageProps } from "./system-canvas/DesignerPage.js";
