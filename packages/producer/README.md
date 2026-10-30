@@ -18,8 +18,9 @@ clossys <verb> [--check] [--root <dir>] [--json]
 | `publish` | Publisher |
 | `produce` | The four agents in sequence |
 
-`direct`, `design`, `write`, and `publish` are dispatch stubs in this build.
-They exit `2` with `not implemented in this build`. Help exits `0`.
+`publish --target <id>` validates the selected target and delegates emission to
+Publisher's app-local API. The direct, design and write verbs remain dispatch
+stubs and exit `2` with `not implemented in this build`. Help exits `0`.
 
 `clossys produce [--port 4300] [--no-open]` compiles Designer and Writer cells,
 then serves the read-only Studio on `127.0.0.1`. The browser opens by default.
@@ -79,7 +80,8 @@ layout is an integration dependency until those packages export dedicated APIs.
 
 `--root <dir>` starts discovery at a directory relative to the current working
 directory. Discovery selects the nearest ancestor containing
-`clossys/clossys.config.ts`. The scaffold locates that file without evaluating it.
+`clossys/clossys.config.ts`. Publish reads literal configuration data without
+executing configuration code.
 `--check` preserves files, hashes, and modification times. `--json` emits one
 result object (on shutdown for a serving command). `produce` accepts `--once`, `--port <0..65535>`, and
 `--no-open`; `publish` accepts `--target <id>`.
@@ -87,7 +89,7 @@ result object (on shutdown for a serving command). `produce` accepts `--once`, `
 | Exit | Contract |
 | --- | --- |
 | `0` | Successful result, including help |
-| `1` | Reserved for a verdict failure when verb behavior is implemented |
+| `1` | Publish verification reports drift or other findings |
 | `2` | Usage error, missing root, unresolved agent, or current stub refusal |
 
 ## Publication previews
@@ -112,6 +114,45 @@ descriptor is shown as not provided, including indexing, sitemap membership,
 publication time and social images. Raw cell source stays in the closed Source
 disclosure. The preview emitter is supplied by Publisher's preview-destination
 integration; Producer never substitutes application source for its snapshot.
+## Publish targets
+
+Create the target app directory, then declare the repository-root configuration:
+
+```ts
+import { defineConfig } from "@clossys/producer/config";
+
+export default defineConfig({
+  id: "example",
+  archetype: "product",
+  locales: { default: "en", supported: ["en"] },
+  targets: {
+    site: { app: "apps/site", format: "web.page.responsive", publication: "site" },
+  },
+});
+```
+
+```sh
+clossys publish --target site
+clossys publish --target site --check --json
+```
+
+The generated destination is `apps/site/src/clossys/`. The command does not
+install dependencies, publish a package, deploy, or edit the app manifest.
+Check mode computes expected outputs in memory and does not call the writer.
+The installed Publisher must expose its app-local emitter; its absence is an
+explicit error, rather than a fallback emitter. Dynamic configuration expressions
+and imports other than the configuration helper are unsupported.
+
+### Publication preview
+
+`clossys publish --target preview` emits a read-only snapshot for Producer Studio.
+An explicit `preview` web target takes priority; otherwise exactly one configured
+web target (excluding Studio) is required. Multiple publications require an explicit
+preview target. The original app supplies source and dependencies. Generated files
+go only to `clossys/.producer/preview/<publication>/src/clossys`, including
+`preview.json` with route entry files and the content map. The app stays unchanged.
+`--check` verifies the snapshot without writing. Producer serves the rendered
+snapshot; emitted TSX files are source modules rather than directly served HTML.
 
 ## Agent mapping API
 

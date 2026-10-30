@@ -8,6 +8,7 @@ import { afterEach, beforeEach, describe, expect, it } from "vitest";
 
 const entry = resolve(dirname(fileURLToPath(import.meta.url)), "../../dist/cli/index.js");
 const verbs = ["direct", "design", "write", "publish", "produce"] as const;
+const stubVerbs = verbs.filter(verb => verb !== "publish" && verb !== "produce");
 let fixture: string;
 beforeEach(() => {
   fixture = mkdtempSync(join(tmpdir(), "producer-cli-"));
@@ -48,7 +49,7 @@ describe("clossys bin", () => {
     expect(result.stderr).toBe("");
   });
 
-  it.each(verbs.filter(verb => verb !== "produce"))("recognizes %s with a stub refusal", (verb) => {
+  it.each(stubVerbs)("recognizes %s with a stub refusal", (verb) => {
     const result = run([verb]);
     expect(result.status).toBe(2);
     expect(result.stderr).toContain(`${verb}: not implemented in this build`);
@@ -79,12 +80,25 @@ describe("clossys bin", () => {
   });
 
   it.each([
-    ["publish", "--target", "example"],
     ["write", "--check", "--root", "."],
   ])("parses supported flags without implementing behavior: %j", (...args) => {
     const result = run(args);
     expect(result.status).toBe(2);
     expect(result.stderr).toContain("not implemented in this build");
+  });
+
+  it("requires a publish target rather than reporting a scaffold stub", () => {
+    const result = run(["publish", "--json"]);
+    expect(result.status).toBe(2);
+    expect(JSON.parse(result.stdout).message).toContain("publish requires --target");
+    expect(result.stdout).not.toContain("not implemented in this build");
+  });
+
+  it("validates publish configuration before invoking the emitter", () => {
+    const result = run(["publish", "--target", "example", "--json"]);
+    expect(result.status).toBe(2);
+    expect(result.stdout).not.toContain("not implemented in this build");
+    expect(JSON.parse(result.stdout).message).toMatch(/config|id/i);
   });
 
   it.each([
@@ -117,7 +131,7 @@ describe("clossys bin", () => {
 
   it("--check leaves file lists, hashes and mtimes unchanged for every stub", () => {
     const before = snapshot(fixture);
-    for (const verb of verbs) {
+    for (const verb of stubVerbs) {
       const result = run([verb, "--check"]);
       expect(result.status).toBe(2);
       expect(result.stderr).toContain(verb === "produce" ? "missing" : "not implemented in this build");
