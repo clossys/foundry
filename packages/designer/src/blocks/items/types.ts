@@ -1,12 +1,11 @@
 import type { AriaAttributes, ReactNode } from "react";
-import type { BadgeVariant } from "../../components/Badge.js";
 import type { StatusMarkTone } from "../../components/StatusMark.js";
 import type { SectionGround } from "../section-ground.js";
 
 export type ItemSize = "standard" | "display";
 export type ItemTreatment = "plain" | "rule" | "plate";
 export type ItemSpan = "third" | "half" | "two-thirds" | "full";
-export interface ItemBadge { label: ReactNode; tone?: BadgeVariant }
+export interface ItemBadge { label: ReactNode; tone?: StatusMarkTone }
 /** A focal measurement with authored delta copy and an optional direction. */
 export type ItemFigureData = { value: ReactNode; delta?: ReactNode; trend?: "up" | "down" | "neutral" };
 /** A shaped status mark with its visible state label. */

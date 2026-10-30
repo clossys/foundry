@@ -1,6 +1,6 @@
 "use client";
 import type { ReactElement, ReactNode } from "react";
-import { Card } from "../components/Card.js";
+import { Card, CardContent } from "../components/preview-runtime/components/card/card.js";
 import { Icon, type IconNode, type IconSize } from "../components/Icon.js";
 import { Logomark } from "../components/Logomark.js";
 import { SemanticContent } from "../components/SemanticContent.js";
@@ -82,7 +82,7 @@ export function IconSpecimen({ glyph, name }: { glyph: IconNode; name: string })
 /** An image ratio as the crop it makes of one generated fixture image, with the ratio as its label. */
 export function RatioSpecimen({ width, height }: { width: number; height: number }): ReactElement {
   return <div data-layer="assets" data-asset-specimen="ratio" className="flex w-max flex-col items-start gap-xs" {...specimenOverride("asset-under-review", { "--studio-specimen-value": `${width} / ${height}` })}>
-    <Card variant="outline" aria-hidden data-ratio-frame="" className="h-3xl aspect-(--studio-specimen-value) overflow-hidden p-0"><RatioFixture /></Card>
+    <Card aria-hidden data-ratio-frame="" className="h-3xl aspect-(--studio-specimen-value) overflow-hidden p-0"><CardContent><RatioFixture /></CardContent></Card>
     <SemanticContent as="span" className={CAPTION}>{width}:{height}</SemanticContent>
   </div>;
 }

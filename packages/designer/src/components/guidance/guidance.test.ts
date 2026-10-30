@@ -441,9 +441,9 @@ const comparisonGolden: Record<string, {
     retainedCells: 4,
   },
   "inform.badge": {
-    columns: {"option": "variant", "values": ["neutral", "success", "warning", "danger", "info"]},
-    maxCells: 5,
-    retainedCells: 5,
+    columns: {"option": "variant", "values": ["default", "secondary", "destructive", "outline", "ghost", "link"]},
+    maxCells: 6,
+    retainedCells: 6,
   },
   "inform.banner": {
     columns: {"option": "variant", "values": ["info", "success", "warning", "danger"]},
@@ -476,11 +476,6 @@ const comparisonGolden: Record<string, {
     maxCells: 3,
     retainedCells: 3,
   },
-  "inform.skeleton": {
-    columns: {"option": "shape", "values": ["text", "block", "circle"]},
-    maxCells: 3,
-    retainedCells: 3,
-  },
   "group.card": {
     columns: {"option": "variant", "values": ["raised", "plate", "outline"]},
     maxCells: 3,
@@ -493,9 +488,8 @@ const comparisonGolden: Record<string, {
   },
   "group.separator": {
     columns: {"option": "orientation", "values": ["horizontal", "vertical"]},
-    rows: {"option": "decorative", "values": [false, true]},
-    maxCells: 4,
-    retainedCells: 4,
+    maxCells: 2,
+    retainedCells: 2,
   },
   "depict.avatar": {
     columns: {"option": "size", "values": ["sm", "md", "lg"]},

@@ -4,11 +4,14 @@ import { createHash } from "node:crypto";
 import { mkdirSync, mkdtempSync, readFileSync, writeFileSync } from "node:fs";
 import { dirname, relative, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
+import { createRequire } from "node:module";
 import test from "node:test";
-import { cssClassRules, htmlClasses, sourceClasses, checkClasses } from "./check-rendered-class-rules.mjs";
+import { cssClassRules, htmlClasses, sourceClasses, checkClasses, main } from "./check-rendered-class-rules.mjs";
+import { upstreamMarkers, upstreamStyleRules } from "./proc3-upstream-markers.mjs";
+import postcss from "postcss";
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), "../../..");
-const scratch = resolve(root, "coverage/tmp/a290-proc3");
+const scratch = resolve(root, "coverage/tmp/proc3-upstream-markers");
 mkdirSync(scratch, { recursive: true });
 // Leave mutation evidence under ignored tmp. Tests never clean other work.
 const fixture = () => mkdtempSync(resolve(scratch, "case-"));
@@ -71,7 +74,78 @@ test("valid support queries and bare nesting preserve evidence; malformed or ine
   for (const invalid of [".x{display:}", ".x{display:bogus-value}", ".x{nonsense:foo}", ".x{color red;}", ".x{.child{color red;}}", ".x{display:block; broken}", ".x{display:block", ".x{content:\"unclosed}", "/* unclosed", "@example {.x{display:block}}"] ) {
     assert.throws(() => cssClassRules(invalid), undefined, invalid);
   }
-  assert(!rules.has("group/absent"), "marker classes receive no exemption");
+  assert(!rules.has("group/absent"), "structural classification does not invent candidate CSS rules");
+});
+
+test("pinned classification distinguishes structural markers from @apply styling and common global rules", () => {
+  const classification = upstreamMarkers(sourceClasses);
+  for (const token of ["cn-card-action", "cn-breadcrumb"]) assert.equal(classification.classify(token)?.kind, "upstream-hook");
+  for (const token of ["group", "group/badge", "group/new-valid-name", "group/_slot", "group/--slot"]) assert.equal(classification.classify(token)?.kind, "structural-group");
+  for (const token of ["cn-badge", "cn-badge-variant-default", "cn-font-heading", "cn-unknown-typo", "group-typo", "group-hover/card:flex", "group/card:flex", "group/4bad", "group/", "group/-"]) assert.equal(classification.classify(token), undefined, token);
+  assert(classification.styling.get("cn-badge").some(row => row.kind === "apply"));
+  assert(classification.styling.get("cn-font-heading").some(row => row.file === "apps/v4/app/globals.css"));
+  const rules = upstreamStyleRules('.outer { .styled { @apply flex; } .empty {} .positive:not(.negative) { color:red } } /* .comment { @apply flex; } */', "reference.css");
+  for (const token of ["outer", "styled", "positive"]) assert(rules.has(token), token);
+  for (const token of ["empty", "negative", "comment"]) assert(!rules.has(token), token);
+  assert.throws(() => upstreamStyleRules(".broken { @apply flex;", "broken.css"));
+});
+
+test("locked framework group variants use structural ancestors and generate no standalone group rule", async () => {
+  const { compile } = createRequire(import.meta.url)("tailwindcss");
+  const compiler = await compile("@tailwind utilities;");
+  assert.equal(cssClassRules(compiler.build(["group", "group/new-valid-name"])).size, 0);
+  const rules = cssClassRules(compiler.build(["group-hover/new-valid-name:flex"]));
+  assert(rules.has("group-hover/new-valid-name:flex"));
+  assert(rules.get("group/new-valid-name").some(row => row.selector.includes(":where(.group\\/new-valid-name)")));
+});
+
+test("pinned reference byte drift fails closed with CLI exit 2", () => {
+  const dir = fixture(), source = resolve(dir, "source.tsx"), css = resolve(dir, "classes.css"), changed = resolve(dir, "tampered-reference.css");
+  const reference = resolve(root, "packages/designer/scripts/__fixtures__/proc3-upstream/globals.css");
+  writeFileSync(source, 'export const X = () => <div className="flex" />;');
+  writeFileSync(css, ".flex{display:flex}");
+  writeFileSync(changed, readFileSync(reference, "utf8") + "\n.cn-card-action { color:red }\n");
+  const read = file => readFileSync(file === reference ? changed : file);
+  assert.throws(() => upstreamMarkers(sourceClasses, read), /reference hash mismatch/);
+  const log = console.log, error = console.error, output = [];
+  let status;
+  try {
+    console.log = value => output.push(value); console.error = () => {};
+    status = main(["--source", source, "--css", css], read);
+  } finally { console.log = log; console.error = error; }
+  assert.equal(status, 2);
+  const report = JSON.parse(output.at(-1));
+  assert.equal(report.ok, false); assert.equal(report.status, "invalid-input");
+  assert.match(report.violations[0].reason, /reference hash mismatch/);
+  writeFileSync(resolve(dir, "reference-tamper-report.json"), output.at(-1));
+});
+
+test("legitimate markers pass while removing a shipped cn styling rule and adding novel hooks fail", t => {
+  const dir = fixture(), html = resolve(dir, "markers.html"), unknown = resolve(dir, "unknown.html"), removed = resolve(dir, "removed-cn-badge.css");
+  const shipped = resolve(root, "packages/designer/styles/compiled.css"), before = readFileSync(shipped, "utf8");
+  const tree = postcss.parse(before), selected = [];
+  tree.walkRules(node => { if (node.selector === ".style-nova .cn-badge") selected.push(node); });
+  assert(selected.length > 0, "mutation must remove actual shipped cn-badge styling");
+  selected.forEach(node => node.remove());
+  writeFileSync(removed, tree.toString());
+  const tokens = "flex cn-badge group group/badge group/new-valid-name cn-card-action cn-breadcrumb";
+  writeFileSync(html, `<div class="${tokens}"></div>`);
+  writeFileSync(unknown, `<div class="${tokens} cn-unknown-typo group-typo group-hover/new:never-shipped"></div>`);
+  const clean = run(renderedArgs(html, shipped)), missing = run(renderedArgs(html, removed)), novel = run(renderedArgs(unknown, shipped));
+  assert.equal(clean.status, 0, clean.stderr); assert.equal(missing.status, 1, missing.stderr); assert.equal(novel.status, 1, novel.stderr);
+  const cleanReport = JSON.parse(clean.stdout), missingReport = JSON.parse(missing.stdout), novelReport = JSON.parse(novel.stdout);
+  assert.equal(cleanReport.markerCount, 5); assert.equal(cleanReport.counts.markers, 5);
+  assert.deepEqual(missingReport.missing.map(row => row.class), ["cn-badge"]);
+  for (const token of ["cn-unknown-typo", "group-typo", "group-hover/new:never-shipped"]) assert(novelReport.missing.some(row => row.class === token), token);
+  const fontHtml = resolve(dir, "common-font.html"), fontCss = resolve(dir, "without-common-font.css");
+  writeFileSync(fontHtml, '<div class="flex cn-font-heading"></div>'); writeFileSync(fontCss, ".flex{display:flex}");
+  const font = run(renderedArgs(fontHtml, fontCss));
+  assert.equal(font.status, 1, font.stderr); assert.deepEqual(JSON.parse(font.stdout).missing.map(row => row.class), ["cn-font-heading"]);
+  assert.equal(readFileSync(shipped, "utf8"), before, "product CSS remains byte-identical");
+  for (const [name, result] of [["markers", clean], ["removed-styling", missing], ["novel-hooks", novel]]) writeFileSync(resolve(dir, `${name}-report.json`), result.stdout);
+  const receipt = { sourceHead: cleanReport.sourceHead, baselineExit: clean.status, removedStylingExit: missing.status, novelHookExit: novel.status, markerCount: cleanReport.markerCount, productCssUnchanged: true, shippedCssSha256: createHash("sha256").update(before).digest("hex"), evidenceDirectory: dir };
+  writeFileSync(resolve(scratch, "latest-upstream-mutation-receipt.json"), JSON.stringify(receipt, null, 2) + "\n");
+  t.diagnostic(JSON.stringify(receipt));
 });
 
 test("HTML parser measures real attributes, entities, SVG, and template content without reading prose", () => {

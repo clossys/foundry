@@ -62,8 +62,8 @@ assertPeerVersion({ peer: "react", declaredRange: REACT_DECLARED_RANGE, foundVer
 export { Avatar } from "./Avatar.server.js";
 export type { AvatarProps, AvatarSize } from "./Avatar.js";
 
-export { Badge } from "./Badge.js";
-export type { BadgeProps, BadgeVariant } from "./Badge.js";
+export { Badge, badgeVariants } from "./preview-runtime/components/badge/badge.js";
+export type { BadgeProps, BadgeVariant } from "./Badge.types.js";
 
 export { Banner } from "./Banner.server.js";
 export type { BannerProps, BannerVariant } from "./Banner.js";
@@ -80,8 +80,8 @@ export type { IconProps, IconSize, IconAccessibilityProps, IconNode } from "./Ic
 export { Meter } from "./Meter.server.js";
 export type { MeterProps, MeterTone, MeterDirection, MeterEmphasis } from "./Meter.js";
 
-export { Skeleton } from "./Skeleton.js";
-export type { SkeletonProps, SkeletonShape } from "./Skeleton.js";
+export { Skeleton } from "./preview-runtime/components/skeleton/skeleton.js";
+export type { SkeletonProps } from "./Skeleton.types.js";
 
 export { Spinner } from "./Spinner.server.js";
 export type { SpinnerProps, SpinnerSize } from "./Spinner.js";

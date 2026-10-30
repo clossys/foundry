@@ -5,7 +5,7 @@ import type { StatusMarkTone } from "../../components/StatusMark.js";
 import { actionsOf, memberOf, noop, refuseUnmapped, requiredText, recordsOf, stringField, isObject, slotValue, textOf, type SectionInputs, type SectionRenderer } from "./group-c-content.js";
 import { componentLeaf } from "../component-leaf.js";
 
-const Badge = componentLeaf<typeof import("../../components/Badge.js").Badge>("components.badge");
+const Badge = componentLeaf<typeof import("../../components/preview-runtime/components/badge/badge.js").Badge>("components.badge");
 const StatusMark = componentLeaf<typeof import("../../components/StatusMark.js").StatusMark>("components.status-mark");
 const Menu = componentLeaf<typeof import("../../components/Menu.js").Menu>("components.menu");
 const Button = componentLeaf<typeof import("../../components/Button.js").Button>("components.button");

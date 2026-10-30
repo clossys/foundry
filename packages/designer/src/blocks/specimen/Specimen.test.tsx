@@ -208,13 +208,16 @@ describe("Specimen", () => {
 });
 
 describe("SpecimenPanel", () => {
-  it("is a lifted outline card: raised fill, one panel edge, rounded-panel, the panel elevation, padding by its own width", () => {
+  it("uses native Card anatomy with the panel's existing elevation and responsive layout", () => {
     const { container } = render(<SpecimenPanel parts={[FIELDS]} title="Order" />);
     const panel = container.querySelector<HTMLElement>("[data-specimen-panel]");
-    expect(panel).toHaveAttribute("data-variant", "outline");
-    expect(panel).toHaveClass("bg-surface-raised", "border-line-panel", "rounded-panel", "@container", "p-0");
+    expect(panel).toHaveAttribute("data-slot", "card");
+    expect(panel).toHaveAttribute("data-size", "default");
+    expect(panel).not.toHaveAttribute("data-variant");
+    expect(panel).toHaveClass("cn-card", "@container", "p-0");
     expect(panel?.style.boxShadow).toBe("var(--ui-elevation-panel, var(--ui-elevation-floating, 0 8px 24px rgba(0, 0, 0, 0.10)))");
     const body = panel?.querySelector(":scope > [data-specimen-panel-body]");
+    expect(body).toHaveAttribute("data-slot", "card-content");
     expect(body).toHaveClass("flex", "flex-col", "gap-lg", "p-lg", "@md:p-xl");
   });
 

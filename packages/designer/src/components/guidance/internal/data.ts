@@ -1204,24 +1204,28 @@ export const COMPONENT_GUIDANCE: Readonly<Record<string, ComponentGuidance>> = {
       "purpose": "Label tone selects the existing Badge variant behavior.",
       "values": [
         {
-          "value": "neutral",
+          "value": "default",
+          "purpose": "Label tone selects the existing Badge variant behavior."
+        },
+        {
+          "value": "secondary",
           "purpose": "Neutral category."
         },
         {
-          "value": "success",
-          "purpose": "Success label."
-        },
-        {
-          "value": "warning",
-          "purpose": "Warning label."
-        },
-        {
-          "value": "danger",
+          "value": "destructive",
           "purpose": "Danger label."
         },
         {
-          "value": "info",
-          "purpose": "Information label."
+          "value": "outline",
+          "purpose": "Label tone selects the existing Badge variant behavior."
+        },
+        {
+          "value": "ghost",
+          "purpose": "Label tone selects the existing Badge variant behavior."
+        },
+        {
+          "value": "link",
+          "purpose": "Label tone selects the existing Badge variant behavior."
         }
       ],
       "applicability": "Effective for this component when supplied.",
@@ -1232,7 +1236,7 @@ export const COMPONENT_GUIDANCE: Readonly<Record<string, ComponentGuidance>> = {
     }
   ],
   "constraints": []
-}, "src/components/Badge.tsx"),
+}, "src/components/preview-runtime/components/badge/badge.tsx"),
   "inform.banner": entry(
 {
   "purpose": "Deliver a persistent inline message with a meaningful severity.",
@@ -1640,34 +1644,9 @@ export const COMPONENT_GUIDANCE: Readonly<Record<string, ComponentGuidance>> = {
   "exportName": "Skeleton",
   "entrypoint": "components",
   "notes": "Represented scalar options are a bounded selection; consult the real prop type for content, data, state, callbacks and compound parts. No Cartesian combination support is implied.",
-  "options": [
-    {
-      "prop": "shape",
-      "label": "Placeholder shape",
-      "purpose": "Placeholder shape selects the existing Skeleton shape behavior.",
-      "values": [
-        {
-          "value": "text",
-          "purpose": "One text-height line."
-        },
-        {
-          "value": "block",
-          "purpose": "Block filling its authored container."
-        },
-        {
-          "value": "circle",
-          "purpose": "Circular placeholder requiring authored size."
-        }
-      ],
-      "applicability": "Effective for this component when supplied.",
-      "support": {
-        "state": "implemented",
-        "reason": "The component consumes or forwards this existing prop in the cited source."
-      }
-    }
-  ],
+  "options": [],
   "constraints": []
-}, "src/components/Skeleton.tsx"),
+}, "src/components/preview-runtime/components/skeleton/skeleton.tsx"),
   "group.card": entry(
 {
   "purpose": "Give a small unit of related content a coherent surface.",
@@ -1849,30 +1828,10 @@ export const COMPONENT_GUIDANCE: Readonly<Record<string, ComponentGuidance>> = {
         "state": "implemented",
         "reason": "The component consumes or forwards this existing prop in the cited source."
       }
-    },
-    {
-      "prop": "decorative",
-      "label": "Boundary semantics",
-      "purpose": "Boundary semantics selects the existing Separator decorative behavior.",
-      "values": [
-        {
-          "value": false,
-          "purpose": "Semantic content boundary."
-        },
-        {
-          "value": true,
-          "purpose": "Purely visual boundary hidden from assistive technology."
-        }
-      ],
-      "applicability": "Effective for this component when supplied.",
-      "support": {
-        "state": "implemented",
-        "reason": "The component consumes or forwards this existing prop in the cited source."
-      }
     }
   ],
   "constraints": []
-}, "src/components/Separator.tsx"),
+}, "src/components/preview-runtime/components/separator/separator.tsx"),
   "depict.logomark": entry({
     purpose: "Represent a brand with one decorative glyph and an optional shared plate.",
     useWhen: "A surrounding identity link or adjacent text already names the brand.",
@@ -3601,26 +3560,27 @@ export const COMPONENT_API_FACTS: Readonly<Record<string, ComponentApiFacts>> = 
   },
   "inform.badge": {
     "exportName": "Badge",
-    "source": "src/components/Badge.tsx",
+    "source": "src/components/Badge.types.ts",
     "options": [
       {
         "prop": "variant",
         "values": [
-          "neutral",
-          "success",
-          "warning",
-          "danger",
-          "info"
+          "default",
+          "secondary",
+          "destructive",
+          "outline",
+          "ghost",
+          "link"
         ],
         "default": {
           "kind": "value",
-          "value": "neutral",
-          "source": "src/components/Badge.tsx",
-          "evidence": "variant = \"neutral\""
+          "value": "default",
+          "source": "src/components/preview-runtime/components/badge/badge.tsx",
+          "evidence": "variant = \"default\""
         },
         "forwarding": {
-          "source": "src/components/Badge.tsx",
-          "evidence": "VARIANT_CLASSES[variant]"
+          "source": "src/components/preview-runtime/components/badge/badge.tsx",
+          "evidence": "badgeVariants({ variant })"
         }
       }
     ],
@@ -3629,14 +3589,14 @@ export const COMPONENT_API_FACTS: Readonly<Record<string, ComponentApiFacts>> = 
       "reason": "Representative consumed dependencies only; this is not an exhaustive token or generated utility inventory.",
       "dependencies": [
         {
-          "property": "--color-surface-sunken",
+          "property": "--color-action",
           "kind": "transitive",
-          "source": "styles/theme-keys.css",
-          "evidence": "--color-surface-sunken:",
+          "source": "styles/shadcn-native.css",
+          "evidence": "--primary: var(--color-action)",
           "via": [
             {
-              "source": "src/components/Badge.tsx",
-              "evidence": "bg-surface-sunken"
+              "source": "src/components/preview-runtime/components/badge/badge.tsx",
+              "evidence": "default: \"cn-badge-variant-default\""
             }
           ]
         }
@@ -3929,40 +3889,25 @@ export const COMPONENT_API_FACTS: Readonly<Record<string, ComponentApiFacts>> = 
   },
   "inform.skeleton": {
     "exportName": "Skeleton",
-    "source": "src/components/Skeleton.tsx",
-    "options": [
-      {
-        "prop": "shape",
-        "values": [
-          "text",
-          "block",
-          "circle"
-        ],
-        "default": {
-          "kind": "value",
-          "value": "text",
-          "source": "src/components/Skeleton.tsx",
-          "evidence": "shape = \"text\""
-        },
-        "forwarding": {
-          "source": "src/components/Skeleton.tsx",
-          "evidence": "SHAPE_CLASSES[shape]"
-        }
-      }
-    ],
+    "source": "src/components/Skeleton.types.ts",
+    "options": [],
     "tokens": {
       "coverage": "partial",
       "reason": "Representative consumed dependencies only; this is not an exhaustive token or generated utility inventory.",
       "dependencies": [
         {
-          "property": "--color-skeleton-fill",
+          "property": "--color-surface-sunken",
           "kind": "transitive",
-          "source": "styles/theme-keys.css",
-          "evidence": "--color-skeleton-fill:",
+          "source": "styles/shadcn-native.css",
+          "evidence": "--muted: var(--color-surface-sunken)",
           "via": [
             {
-              "source": "src/components/Skeleton.tsx",
-              "evidence": "bg-skeleton-fill"
+              "source": "styles/shadcn-native.css",
+              "evidence": "@apply bg-muted rounded-md;"
+            },
+            {
+              "source": "src/components/preview-runtime/components/skeleton/skeleton.tsx",
+              "evidence": "cn-skeleton animate-pulse"
             }
           ]
         }
@@ -4081,7 +4026,7 @@ export const COMPONENT_API_FACTS: Readonly<Record<string, ComponentApiFacts>> = 
   },
   "group.separator": {
     "exportName": "Separator",
-    "source": "src/components/Separator.tsx",
+    "source": "src/components/Separator.types.ts",
     "options": [
       {
         "prop": "orientation",
@@ -4092,29 +4037,12 @@ export const COMPONENT_API_FACTS: Readonly<Record<string, ComponentApiFacts>> = 
         "default": {
           "kind": "value",
           "value": "horizontal",
-          "source": "src/components/Separator.tsx",
+          "source": "src/components/preview-runtime/components/separator/separator.tsx",
           "evidence": "orientation = \"horizontal\""
         },
         "forwarding": {
-          "source": "src/components/Separator.tsx",
+          "source": "src/components/preview-runtime/components/separator/separator.tsx",
           "evidence": "orientation={orientation}"
-        }
-      },
-      {
-        "prop": "decorative",
-        "values": [
-          false,
-          true
-        ],
-        "default": {
-          "kind": "value",
-          "value": false,
-          "source": "src/components/Separator.tsx",
-          "evidence": "decorative = false"
-        },
-        "forwarding": {
-          "source": "src/components/Separator.tsx",
-          "evidence": "decorative\n          ?"
         }
       }
     ],
@@ -4125,12 +4053,12 @@ export const COMPONENT_API_FACTS: Readonly<Record<string, ComponentApiFacts>> = 
         {
           "property": "--color-line-base",
           "kind": "transitive",
-          "source": "styles/theme-keys.css",
-          "evidence": "--color-line-base:",
+          "source": "styles/shadcn-native.css",
+          "evidence": "--border: var(--color-line-base)",
           "via": [
             {
-              "source": "src/components/Separator.tsx",
-              "evidence": "bg-line-base"
+              "source": "src/components/preview-runtime/components/separator/separator.tsx",
+              "evidence": "bg-border"
             }
           ]
         }
@@ -4851,10 +4779,9 @@ export const COMPONENT_COMPARISON = Object.freeze({
   "inform.meter": comparison("inform.meter", "tone", "emphasis"),
   "inform.progress-bar": comparison("inform.progress-bar", "isIndeterminate"),
   "inform.spinner": comparison("inform.spinner", "size"),
-  "inform.skeleton": comparison("inform.skeleton", "shape"),
   "group.card": comparison("group.card", "variant"),
   "group.table": comparison("group.table", "selectionMode"),
-  "group.separator": comparison("group.separator", "orientation", "decorative"),
+  "group.separator": comparison("group.separator", "orientation"),
   "depict.avatar": comparison("depict.avatar", "size"),
   "depict.icon": comparison("depict.icon", "size"),
   "depict.logomark": comparison("depict.logomark", "plate", "size"),

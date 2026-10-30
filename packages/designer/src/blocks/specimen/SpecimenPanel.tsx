@@ -1,8 +1,8 @@
 import type { CSSProperties, HTMLAttributes, ReactNode } from "react";
-import { Badge, type BadgeVariant } from "../../components/Badge.js";
+import { Badge } from "../../components/preview-runtime/components/badge/badge.js";
 import { hasContent } from "../items/policies.js";
-import { Card } from "../../components/Card.js";
-import { StatusMark } from "../../components/StatusMark.js";
+import { Card, CardContent, CardHeader, CardFooter } from "../../components/preview-runtime/components/card/card.js";
+import { StatusMark, type StatusMarkTone } from "../../components/StatusMark.js";
 import { cx } from "../../components/internal/cx.js";
 import { UI_BORDER_HAIRLINE, UI_ELEVATION_PANEL } from "../../components/internal/ui-vars.js";
 import { AnatomyMarker, SpecimenPartView, type SpecimenPart, type SpecimenStatus } from "./parts.js";
@@ -12,7 +12,7 @@ import { AnatomyMarker, SpecimenPartView, type SpecimenPart, type SpecimenStatus
  * field columns follow the panel's own width, so the same panel reads at a
  * third of a row, half a row, or the full width of a phone.
  */
-const PANEL_CLASSES = "@container h-full min-w-0 p-0";
+const PANEL_CLASSES = "style-nova @container h-full min-w-0 p-0";
 const PANEL_BODY_CLASSES = "flex h-full min-w-0 flex-col gap-lg p-lg font-body @md:p-xl";
 const SECTION_DIVIDER = "border-t border-line-base pt-md";
 const HEADER_CLASSES = "flex flex-wrap items-start justify-between gap-x-md gap-y-xs";
@@ -53,7 +53,7 @@ export interface SpecimenPanelContent {
   /** The record's state, beside the title. */
   status?: SpecimenStatus;
   /** A separate record label using the existing Badge tones. */
-  badge?: { label: ReactNode; tone?: BadgeVariant };
+  badge?: { label: ReactNode; tone?: StatusMarkTone };
   /** 1 to 3 parts, separated by hairlines. */
   parts: readonly SpecimenPart[];
   footer?: SpecimenFooter;
@@ -128,17 +128,17 @@ export function SpecimenPanel({ title, meta, status, badge, parts, footer, marke
   const headerMarker = markerAt("header");
   const footerMarker = markerAt("footer");
   const hasHeader = present(title) || present(meta) || status !== undefined || badge !== undefined;
-  const badgeElement = badge !== undefined ? <Badge variant={badge.tone}>{badge.label}</Badge> : null;
+  const badgeElement = badge !== undefined ? <Badge variant={badge.tone === "danger" ? "destructive" : "secondary"}>{badge.label}</Badge> : null;
   // Status tint/text pairs are qualified over base, as in Item.
   const statusBadge = badge?.tone !== undefined && badge.tone !== "neutral";
   const assignee = footer?.assignee;
   const hasFooter = assignee !== undefined || present(footer?.note);
 
   return (
-    <Card {...rest} variant="outline" ground="base" data-specimen-panel="" className={cx(PANEL_CLASSES, className)} style={{ ...LIFTED, ...style }}>
-      <div data-specimen-panel-body="" className={PANEL_BODY_CLASSES}>
+    <Card {...rest} data-specimen-panel="" className={cx(PANEL_CLASSES, className)} style={{ ...LIFTED, ...style }}>
+      <CardContent data-specimen-panel-body="" className={PANEL_BODY_CLASSES}>
         {hasHeader ? (
-          <div data-specimen-panel-header="" className={HEADER_CLASSES}>
+          <CardHeader data-specimen-panel-header="" className={HEADER_CLASSES}>
             <div className="flex min-w-0 flex-col gap-xs">
               {present(title) ? <p className={cx(TITLE_CLASSES, headerMarker !== undefined ? "flex items-center gap-sm" : undefined)}><AnatomyMarker number={headerMarker} />{title}</p> : null}
               {present(meta) ? <p className={META_CLASSES}>{meta}</p> : null}
@@ -147,7 +147,7 @@ export function SpecimenPanel({ title, meta, status, badge, parts, footer, marke
               {statusBadge ? <span className="inline-flex rounded-pill bg-surface-base">{badgeElement}</span> : badgeElement}
               {status ? <StatusMark tone={status.tone}>{status.label}</StatusMark> : null}
             </div> : null}
-          </div>
+          </CardHeader>
         ) : null}
         {parts.map((part, index) => (
           <div
@@ -159,7 +159,7 @@ export function SpecimenPanel({ title, meta, status, badge, parts, footer, marke
           </div>
         ))}
         {hasFooter ? (
-          <div data-specimen-panel-footer="" className={cx(SECTION_DIVIDER, "flex flex-col gap-xs text-body-s")} style={HAIRLINE_BLOCK_START}>
+          <CardFooter data-specimen-panel-footer="" className={cx(SECTION_DIVIDER, "flex flex-col gap-xs text-body-s")} style={HAIRLINE_BLOCK_START}>
             {assignee ? (
               <div className={cx("flex flex-wrap items-center gap-x-sm gap-y-xs", footerMarker !== undefined ? "gap-sm" : undefined)}>
                 <AnatomyMarker number={footerMarker} />
@@ -171,9 +171,9 @@ export function SpecimenPanel({ title, meta, status, badge, parts, footer, marke
               </div>
             ) : null}
             {present(footer?.note) ? <p className={cx("m-0 text-ink-secondary text-pretty", !assignee && footerMarker !== undefined ? "flex items-center gap-sm" : undefined)}>{!assignee ? <AnatomyMarker number={footerMarker} /> : null}{footer?.note}</p> : null}
-          </div>
+          </CardFooter>
         ) : null}
-      </div>
+      </CardContent>
     </Card>
   );
 }

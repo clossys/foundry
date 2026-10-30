@@ -112,7 +112,6 @@ export type {
   FieldProps,
   FieldRenderProps,
   SkeletonProps,
-  SkeletonShape,
   TooltipProps,
   BannerProps,
   BannerVariant,

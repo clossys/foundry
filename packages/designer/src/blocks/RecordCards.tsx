@@ -1,5 +1,5 @@
 import type { ComponentType, HTMLAttributes, ReactNode } from "react";
-import type { BadgeVariant } from "../components/Badge.js";
+import type { StatusMarkTone } from "../components/StatusMark.js";
 import type { Link as LinkType } from "../components/Link.js";
 import type { SemanticContent as SemanticContentType } from "../components/SemanticContent.js";
 import { componentLeaf } from "../runtime/component-leaf.js";
@@ -13,7 +13,7 @@ const Card = componentLeaf<ComponentType<HTMLAttributes<HTMLDivElement>>>("compo
 const CardHeader = componentLeaf<ComponentType<HTMLAttributes<HTMLDivElement>>>("components.card", "CardHeader");
 const CardTitle = componentLeaf<ComponentType<HTMLAttributes<HTMLDivElement>>>("components.card", "CardTitle");
 const CardContent = componentLeaf<ComponentType<HTMLAttributes<HTMLDivElement>>>("components.card", "CardContent");
-const Badge = componentLeaf<ComponentType<{ children?: ReactNode; tone?: BadgeVariant; variant?: BadgeVariant }>>("components.badge");
+const Badge = componentLeaf<typeof import("../components/preview-runtime/components/badge/badge.js").Badge>("components.badge");
 const Link = componentLeaf<typeof LinkType>("components.link");
 const SECTION_STAMP = dsAttrs("sections", "sections.cards", "foundry/sections.cards");
 
@@ -24,7 +24,7 @@ export interface RecordCardsRecord {
   title: ReactNode;
   description?: ReactNode;
   href?: string;
-  badge?: { label: ReactNode; variant?: BadgeVariant };
+  badge?: { label: ReactNode; variant?: StatusMarkTone };
   meta?: ReactNode;
   /** Resolved consumer asset; no image URL or copy is invented by this section. */
   image?: ImageResource;
@@ -47,7 +47,7 @@ export function RecordCards({ records, config, locale, layout = "grid", headingL
   const heading = headingLevel === 2 ? "h2" : headingLevel === 4 ? "h4" : "h3";
   for (const record of records) if (record.image !== undefined && !isImageResource(record.image)) throw new TypeError("RecordCards requires a valid image resource");
   return <SemanticContent as="ul" {...SECTION_STAMP} {...rest} role="list" data-card-config={config} data-layout={layout}
-    className={cx(config === "post-featured" ? LAYOUT_CLASSES.list : LAYOUT_CLASSES[layout], className)}>
+    className={cx("style-nova", config === "post-featured" ? LAYOUT_CLASSES.list : LAYOUT_CLASSES[layout], className)}>
     {records.map(record => <SemanticContent as="li" key={record.id} className="flex min-w-0">
       <Card className="flex w-full flex-col gap-sm">
         {record.image ? <SemanticContent as="picture" data-asset-slot="assets.image" className="block w-full overflow-hidden">
@@ -59,9 +59,7 @@ export function RecordCards({ records, config, locale, layout = "grid", headingL
           <CardTitle><SemanticContent as={heading} className="m-0 text-body-l font-medium text-ink-primary">
             {record.href ? <Link href={record.href} variant="standalone">{record.title}</Link> : record.title}
           </SemanticContent></CardTitle>
-          {record.badge ? record.badge.variant && record.badge.variant !== "neutral" && record.badge.variant !== "danger"
-            ? <Badge variant={record.badge.variant}>{record.badge.label}</Badge>
-            : <Badge tone={record.badge.variant ?? "neutral"}>{record.badge.label}</Badge> : null}
+          {record.badge ? <Badge variant={record.badge.variant === "danger" ? "destructive" : "secondary"}>{record.badge.label}</Badge> : null}
         </CardHeader>
         <CardContent className="flex flex-col gap-sm">
           {record.description ? <SemanticContent as="p" dir="auto" className="m-0 text-body-s text-ink-secondary">{record.description}</SemanticContent> : null}

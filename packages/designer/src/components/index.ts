@@ -74,8 +74,8 @@ export type { IconProps, IconSize, IconAccessibilityProps, IconNode } from "./Ic
 export { TextField } from "./TextField.js";
 export type { TextFieldProps } from "./TextField.js";
 
-export { Badge } from "./Badge.js";
-export type { BadgeProps, BadgeVariant } from "./Badge.js";
+export { Badge, badgeVariants } from "./preview-runtime/components/badge/badge.js";
+export type { BadgeProps, BadgeVariant } from "./Badge.types.js";
 
 export { Card } from "./Card.js";
 export type { CardProps, CardVariant, CardGround } from "./Card.js";
@@ -133,8 +133,8 @@ export type {
 export { Field } from "./Field.js";
 export type { FieldProps, FieldRenderProps } from "./Field.js";
 
-export { Skeleton } from "./Skeleton.js";
-export type { SkeletonProps, SkeletonShape } from "./Skeleton.js";
+export { Skeleton } from "./preview-runtime/components/skeleton/skeleton.js";
+export type { SkeletonProps } from "./Skeleton.types.js";
 
 export { Tooltip } from "./Tooltip.js";
 export type { TooltipProps } from "./Tooltip.js";
@@ -168,8 +168,8 @@ export type { DisclosureProps, DisclosureGroupProps } from "./Disclosure.js";
 export { ProgressBar } from "./ProgressBar.js";
 export type { ProgressBarProps } from "./ProgressBar.js";
 
-export { Separator } from "./Separator.js";
-export type { SeparatorProps } from "./Separator.js";
+export { Separator } from "./preview-runtime/components/separator/separator.js";
+export type { SeparatorProps } from "./Separator.types.js";
 
 export { Chip } from "./Chip.js";
 export type { ChipProps } from "./Chip.js";

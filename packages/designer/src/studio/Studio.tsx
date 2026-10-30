@@ -8,7 +8,7 @@ import { StudioCopyProvider } from "./copy-context.js";
 
 /** The canvas and its right rail. There are no layer tabs: the rail's Explorer card switches layers. */
 function StudioSurface(props: StudioCanvasProps) {
-  const surface = <div className="isolate flex h-full w-full min-h-0 min-w-0 flex-col">
+  const surface = <div className="style-nova isolate flex h-full w-full min-h-0 min-w-0 flex-col">
     <DesignerPage copy={props.copy} className={props.className} changeCommandFor={props.changeCommandFor} writeHistory={props.writeHistory} decisions={props.decisions} renderStaticThumbnail={props.renderStaticThumbnail} />
   </div>;
   return <StudioCopyProvider binding={props.copy}>{surface}</StudioCopyProvider>;

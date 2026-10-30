@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { render, screen } from "@testing-library/react";
-import { Separator } from "./Separator.js";
+import { Separator } from "./preview-runtime/components/separator/separator.js";
 
 describe("Separator", () => {
   it("renders as a real <hr> with an implicit separator role by default (horizontal)", () => {
@@ -22,14 +22,7 @@ describe("Separator", () => {
     expect((container.querySelector("hr") as HTMLElement).className).toContain("w-full");
 
     rerender(<Separator orientation="vertical" />);
-    expect(screen.getByRole("separator").className).toContain("h-full");
-  });
-
-  it("decorative: is hidden from assistive tech via aria-hidden, regardless of role", () => {
-    render(<Separator decorative data-testid="deco" />);
-    const el = screen.getByTestId("deco");
-    expect(el).toHaveAttribute("aria-hidden", "true");
-    expect(screen.queryByRole("separator")).not.toBeInTheDocument();
+    expect(screen.getByRole("separator").className).toContain("aria-[orientation=vertical]:self-stretch");
   });
 
   it("is not aria-hidden by default", () => {
@@ -41,7 +34,7 @@ describe("Separator", () => {
     render(<Separator data-testid="sep" className="bg-status-danger" />);
     const el = screen.getByTestId("sep");
     expect(el.className).toContain("bg-status-danger");
-    expect(el.className).not.toContain("bg-line-base");
+    expect(el.className).not.toContain("bg-border");
   });
 
   it("forwards a consumer style prop, merged rather than dropped", () => {

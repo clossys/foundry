@@ -33,7 +33,7 @@ function StageStrip({ stages, configured, toDoLabel = "to do", waitingLabel = "w
   return <ol aria-label="Full App publish stages" className="flex flex-wrap gap-xs">{stages.map(stage => {
     /** @default The derived stage status, or "to do"/"waiting" before configuration. */
     const statusLabel = !configured ? stage.name === "Configure" ? toDoLabel : waitingLabel : stage.status;
-    return <li key={stage.name}><Badge variant={stage.status === "failed" ? "danger" : stage.status === "passed" ? "success" : "warning"} title={stage.reasons.join(" · ")}>{stage.name}: {statusLabel}</Badge></li>;
+    return <li key={stage.name}><Badge variant={stage.status === "failed" ? "destructive" : stage.status === "passed" ? "default" : "secondary"} title={stage.reasons.join(" · ")}>{stage.name}: {statusLabel}</Badge></li>;
   })}</ol>;
 }
 interface PlanningDescriptionProps {

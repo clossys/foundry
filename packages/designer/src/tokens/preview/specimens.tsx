@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, type CSSProperties, type ReactElement, type ReactNode } from "react";
-import { Card } from "../../components/Card.js";
+import { Card, CardContent } from "../../components/preview-runtime/components/card/card.js";
 import { Icon, type IconSize } from "../../components/Icon.js";
 import { SemanticContent } from "../../components/SemanticContent.js";
 import { Toggle } from "../../components/toggle-button/index.js";
@@ -175,7 +175,7 @@ function MotionSpecimen({ css, role, linear, curve, playLabel }: { css: string; 
     className={join("m-0 grid justify-items-start gap-xs overflow-hidden", TOKEN_SPECIMEN_WIDTHS.motion.className)}>
     {/* The member's own keyframes run on the sample only while playing; reduced motion keeps it still. */}
     <span aria-hidden="true" data-motion-target="" className={join("block size-xl rounded-control bg-accent", playing && "animate-(--studio-specimen-value) motion-reduce:animate-none")} />
-    <Toggle size="sm" variant="outline" isSelected={playing} onChange={setPlaying}>{playLabel}</Toggle>
+    <Toggle size="sm" isSelected={playing} onChange={setPlaying}>{playLabel}</Toggle>
   </figure>;
   const timing = role === "duration"
     ? join("duration-(--studio-specimen-value)", linear ? "ease-linear" : "ease-(--ease-default)")
@@ -202,7 +202,7 @@ function MotionSpecimen({ css, role, linear, curve, playLabel }: { css: string; 
         </span>
       </span>
     </div>
-    <Toggle size="sm" variant="outline" isSelected={playing} onChange={setPlaying}>{playLabel}</Toggle>
+    <Toggle size="sm" isSelected={playing} onChange={setPlaying}>{playLabel}</Toggle>
   </figure>;
 }
 
@@ -286,14 +286,14 @@ export function TokenLeafSpecimen({ id, member, sampleText = SAMPLES.sampleText,
     case "ruler": return <RulerSpecimen css={css} leaf={member.slot} />;
     case "layer-fan": return <LayerFanSpecimen css={css} property={member.emit} />;
     case "radius": return frame(kind, css, <span aria-hidden="true" data-specimen-target="" className="block size-3xl border-2 border-line-strong bg-surface-sunken rounded-(--studio-specimen-value)" />);
-    case "shadow": return frame(kind, css, <Card variant="plate" className="flex p-lg">
+    case "shadow": return frame(kind, css, <Card className="flex p-lg"><CardContent>
       <span aria-hidden="true" data-specimen-target="" className="block h-2xl w-3xl rounded-control bg-surface-raised shadow-(--studio-specimen-value)" />
-    </Card>);
-    case "blur": return frame(kind, css, <Card variant="plate" className="relative flex items-center gap-xs p-md">
+    </CardContent></Card>);
+    case "blur": return frame(kind, css, <Card className="relative flex items-center gap-xs p-md"><CardContent>
       <span aria-hidden="true" className="block size-lg shrink-0 rounded-pill bg-accent" />
       <SemanticContent as="span" aria-hidden="true" className="text-body-l font-semibold text-ink-primary">{SAMPLES.glyphs}</SemanticContent>
       <span aria-hidden="true" data-specimen-target="" className="absolute inset-y-0 end-0 block w-1/2 border-s border-line-base bg-surface-glass backdrop-blur-(--studio-specimen-value)" />
-    </Card>);
+    </CardContent></Card>);
     case "text-metric": {
       if (member.slot === "tokens.display-face" && key === "optical-size") return frame(kind, css, <TokenValuePreview id={id} member={member} sampleText={sampleText} lightLabel="" darkLabel="" />);
       // No utility reads a font-style value, so the style member picks the keyword's own utility.
@@ -309,10 +309,10 @@ export function TokenLeafSpecimen({ id, member, sampleText = SAMPLES.sampleText,
         <Icon decorative glyph={specimenDataset.icon.glyph} size={step} />
       </span>, "p-sm", target ? { [target]: css } : undefined);
     }
-    case "opacity": return frame(kind, css, <Card variant="plate" className="flex items-center gap-xs p-md">
+    case "opacity": return frame(kind, css, <Card className="flex items-center gap-xs p-md"><CardContent>
       <span aria-hidden="true" className="block size-lg rounded-control bg-accent" />
       <span aria-hidden="true" data-specimen-target="" className="block size-lg rounded-control bg-accent opacity-(--studio-specimen-value)" />
-    </Card>);
+    </CardContent></Card>);
     case "density": {
       // One sample row; the member applies to its own role: the gap, the padding or the row height.
       const role = key === "gap" ? "gap-(--studio-specimen-value) p-xs" : key === "pad" ? "gap-xs p-(--studio-specimen-value)" : "gap-xs px-xs h-(--studio-specimen-value)";

@@ -3,12 +3,12 @@ import { render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, expect, it, vi } from "vitest";
 import { RouterProvider } from "react-aria-components";
-import { Badge } from "../components/Badge.js";
+import { Badge } from "../components/preview-runtime/components/badge/badge.js";
 import { ResourceList, type ResourceListItem } from "./ResourceList.js";
 
 const items: ResourceListItem[] = [
-  { id: "r1", textValue: "Quarterly planning notes", title: "Quarterly planning notes", description: "Shared with the leadership group.", meta: "Edited 2 days ago", status: <Badge variant="info">Draft</Badge>, href: "#planning-note", actions: [{ id: "dup", label: "Duplicate", onAction: () => {} }, { id: "del", label: "Delete note", onAction: () => {}, isDestructive: true }] },
-  { id: "r2", textValue: "Vendor onboarding checklist", title: "Vendor onboarding checklist", meta: "Edited last week", status: <Badge variant="success">Published</Badge> },
+  { id: "r1", textValue: "Quarterly planning notes", title: "Quarterly planning notes", description: "Shared with the leadership group.", meta: "Edited 2 days ago", status: <Badge variant="secondary">Draft</Badge>, href: "#planning-note", actions: [{ id: "dup", label: "Duplicate", onAction: () => {} }, { id: "del", label: "Delete note", onAction: () => {}, isDestructive: true }] },
+  { id: "r2", textValue: "Vendor onboarding checklist", title: "Vendor onboarding checklist", meta: "Edited last week", status: <Badge variant="default">Published</Badge> },
   { id: "r3", textValue: "Archived roadmap", title: "Archived roadmap", isDisabled: true, meta: "Read only" },
 ];
 const emptyState = { title: "No notes yet", description: "Add a note to begin." };

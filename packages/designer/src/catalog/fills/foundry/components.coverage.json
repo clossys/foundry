@@ -16,16 +16,16 @@
       ]
     },
     {
-      "missing": [],
-      "notes": [
-        "Descriptor only; source, accessibility, contrast and consumer runtime conformance are unmeasured."
-      ],
-      "slot": "components.badge",
-      "status": "candidate",
-      "supported": [
+      "missing": [
         "tone.danger",
         "tone.neutral"
-      ]
+      ],
+      "notes": [
+        "No package implementation is available."
+      ],
+      "slot": "components.badge",
+      "status": "unavailable",
+      "supported": []
     },
     {
       "missing": [],
@@ -705,16 +705,16 @@
       ]
     },
     {
-      "missing": [],
-      "notes": [
-        "Descriptor only; source, accessibility, contrast and consumer runtime conformance are unmeasured."
-      ],
-      "slot": "components.separator",
-      "status": "candidate",
-      "supported": [
+      "missing": [
         "orientation.horizontal",
         "orientation.vertical"
-      ]
+      ],
+      "notes": [
+        "No package implementation is available."
+      ],
+      "slot": "components.separator",
+      "status": "unavailable",
+      "supported": []
     },
     {
       "missing": [],
@@ -735,15 +735,15 @@
       "supported": []
     },
     {
-      "missing": [],
+      "missing": [
+        "shape.block"
+      ],
       "notes": [
-        "Descriptor only; source, accessibility, contrast and consumer runtime conformance are unmeasured."
+        "No package implementation is available."
       ],
       "slot": "components.skeleton",
-      "status": "candidate",
-      "supported": [
-        "shape.block"
-      ]
+      "status": "unavailable",
+      "supported": []
     },
     {
       "missing": [],

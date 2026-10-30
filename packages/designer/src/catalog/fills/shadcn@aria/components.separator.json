@@ -67,7 +67,7 @@
         },
         {
           "path": "components/separator/separator.tsx",
-          "sha256": "db0123389adeba234db9a72013083b54821b6d9adab4d112c014b1dee9daada2"
+          "sha256": "18d901a42e5c4ba462d68a036cdb5ee06d355c8d6fbac6205e1413fbf497398c"
         },
         {
           "path": "notices/THIRD-PARTY.md",
@@ -111,8 +111,7 @@
         "assets": [],
         "components": [],
         "tokens": [
-          "tokens.border-color.base",
-          "tokens.border-width.hairline"
+          "tokens.border-color.base"
         ]
       },
       "root": "rac:Separator",

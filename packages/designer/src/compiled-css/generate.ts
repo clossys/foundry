@@ -121,6 +121,7 @@ import { dirname, resolve as resolvePath } from "node:path";
 import { assertPeerVersion } from "../internal/peer-version.js";
 import { resolveInstalledPeerVersion } from "../internal/resolve-installed-peer-version.js";
 import { TAILWINDCSS_DECLARED_RANGE } from "../internal/declared-peer-ranges.js";
+import { generateNativeShadcnCss } from "./shadcn-native.js";
 
 export interface GenerateCompiledCssOptions {
   /** This package's own `styles/` directory (holds `theme.css`, which this module reads and re-derives from — never hand-copied). */
@@ -386,7 +387,8 @@ export async function generateCompiledCss(options: GenerateCompiledCssOptions): 
   const rawCss = compiled.build(options.candidates);
   const stripped = stripThemeReflectionBlock(rawCss);
   const withFallbacks = addExplicitFallbacksForInternalProperties(stripped);
-  const finalCss = GENERATED_FILE_HEADER + BASE_LAYER_CSS + withFallbacks.trimStart();
+  const nativeCss = await generateNativeShadcnCss(options.stylesDir);
+  const finalCss = GENERATED_FILE_HEADER + BASE_LAYER_CSS + withFallbacks.trimStart() + "\n" + nativeCss;
 
   // Count distinct utility CLASS selectors actually emitted (not every
   // candidate — see `GenerateCompiledCssResult.classCount`'s own doc

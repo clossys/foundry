@@ -427,7 +427,7 @@ export const COMPONENT_ENTRIES: readonly ComponentEntry[] = [
   }),
 
   // Content / Data display
-  onMain("Badge", ["src/components/Badge.tsx"], {
+  onMain("Badge", ["src/components/preview-runtime/components/badge/badge.tsx"], {
     id: "inform.badge",
     label: "Badge",
     racBase: none("presentational"),
@@ -605,7 +605,7 @@ export const COMPONENT_ENTRIES: readonly ComponentEntry[] = [
     disposition: "map-to-rac",
     notes: ["Maps to an indeterminate react-aria-components ProgressBar."],
   }),
-  onMain("Skeleton", ["src/components/Skeleton.tsx"], {
+  onMain("Skeleton", ["src/components/preview-runtime/components/skeleton/skeleton.tsx"], {
     id: "inform.skeleton",
     label: "Skeleton",
     racBase: none("presentational"),
@@ -621,7 +621,7 @@ export const COMPONENT_ENTRIES: readonly ComponentEntry[] = [
     disposition: "presentational-exception",
     notes: [PRESENTATIONAL, "Used by 6 block files. Interactive cards use a stretched react-aria-components Link."],
   }),
-  onMain("Separator", ["src/components/Separator.tsx"], {
+  onMain("Separator", ["src/components/preview-runtime/components/separator/separator.tsx"], {
     id: "group.separator",
     label: "Separator",
     racBase: rac("Separator"),
