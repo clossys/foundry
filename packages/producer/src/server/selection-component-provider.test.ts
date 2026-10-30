@@ -17,11 +17,12 @@ import { beforeAll, expect, it } from 'vitest';
 import { agentModule, agentRoot } from './cells.js';
 import { studioComponentProviderSource } from './selection-component-provider.js';
 import { compileSelection, selectionRuntime } from './selection.js';
+import { emittedDesignerSpecimenContext, renderSpecimenSwatchHostPart, renderSpecimenContrastHostPart, STUDIO_SPECIMEN_HOST_PARTS, type EmittedDesignerSpecimenRuntime } from '@clossys/designer/studio';
 
 let input: CompositeEngineInput;
 let executable: { ComponentProvider: any; Content: any };
 let nativeHtml: string;
-let production: { ComponentProvider: any; surfaces: { Content: any }; components: { SemanticContent: unknown } };
+let production: EmittedDesignerSpecimenRuntime & { ComponentProvider: any; surfaces: { Content: any }; components: { SemanticContent: unknown } };
 
 beforeAll(async () => {
   const directory = await mkdtemp(join(tmpdir(), 'producer-native-component-provider-'));
@@ -78,6 +79,25 @@ it('the actual compiled provider supplies the selected semantic leaf to a native
   expect(nativeHtml).toContain('Native provider content');
   expect(nativeHtml).toContain('data-ds-leaf="sections.content"');
   expect(() => renderToStaticMarkup(createElement(executable.Content, null, 'Missing provider'))).toThrow(/NEED component selection/);
+});
+
+it('registered token host parts render current member references through the actual selected production binding', async () => {
+  const profile = resolve(input), context = emittedDesignerSpecimenContext(profile, production);
+  expect(STUDIO_SPECIMEN_HOST_PARTS['studio.specimen-swatch'].export).toBe('renderSpecimenSwatchHostPart');
+  expect(STUDIO_SPECIMEN_HOST_PARTS['studio.specimen-contrast'].export).toBe('renderSpecimenContrastHostPart');
+  const parts = (['light', 'dark'] as const).flatMap(mode => [
+    renderSpecimenSwatchHostPart(context, { memberId: 'tokens.surface-color.base', mode }),
+    renderSpecimenContrastHostPart(context, { backgroundMemberId: 'tokens.surface-color.base', colorMemberId: 'tokens.text-color.primary', pairMemberId: 'tokens.text-color.primary', mode, children: 'Native provider content' }),
+  ]);
+  const stream = await renderToReadableStream(createElement(production.ComponentProvider, { profile }, parts));
+  await stream.allReady;
+  const html = await new Response(stream).text();
+  expect(html.match(/background:var\(--color-surface-base\)/g)).toHaveLength(4);
+  expect(html.match(/color:var\(--color-ink-primary\)/g)).toHaveLength(2);
+  expect(() => renderSpecimenSwatchHostPart(context, { memberId: '#ffffff', mode: 'light' })).toThrow(/no matching registered color reference/);
+  const changed = structuredClone(profile);
+  changed.values.members['tokens.surface-color.base']!.emit = '--unregistered';
+  expect(() => renderSpecimenSwatchHostPart({ ...context, profile: changed }, { memberId: 'tokens.surface-color.base', mode: 'light' })).toThrow(/no matching registered color reference/);
 });
 
 it('the actual provider rejects a different index revision and a changed selected descriptor', () => {

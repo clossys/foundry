@@ -45,7 +45,31 @@ export function NativeSpecimenStateClone({ Content, state, children, unavailable
   const [result, setResult] = useState<"capturing" | "ready" | string>("capturing");
   useEffect(() => {
     let alive = true;
-    const timer = setTimeout(() => {
+    let cancelCommit: (() => void) | undefined;
+    const committed = (root: HTMLElement, ready: () => boolean) => new Promise<void>(done => {
+      const view = root.ownerDocument.defaultView!;
+      let settled = false, cancelFrame: (() => void) | undefined;
+      const observer = new view.MutationObserver(() => { if (ready()) finish(); });
+      const finish = () => {
+        if (settled) return;
+        settled = true; observer.disconnect(); cancelFrame?.(); cancelCommit = undefined; done();
+      };
+      cancelCommit = finish;
+      if (!alive || ready()) { finish(); return; }
+      observer.observe(root, { subtree: true, childList: true, attributes: true });
+      if (typeof view.requestAnimationFrame === "function") {
+        const frame = view.requestAnimationFrame(finish);
+        cancelFrame = () => view.cancelAnimationFrame(frame);
+      } else {
+        const pending = view.setTimeout(finish, 0);
+        cancelFrame = () => view.clearTimeout(pending);
+      }
+    });
+    setResult("capturing");
+    const timer = setTimeout(async () => {
+      const region = output.current?.parentElement;
+      if (region && !source.current) await committed(region, () => source.current !== null);
+      if (!alive) return;
       const staging = source.current, destination = output.current;
       if (!staging || !destination) return;
       const target = staging.querySelector<HTMLElement>('button,input,select,textarea,a[href],[role="button"],[role="checkbox"],[role="switch"],[role="textbox"],[tabindex]');
@@ -65,6 +89,10 @@ export function NativeSpecimenStateClone({ Content, state, children, unavailable
             target.dispatchEvent(over);
           }
         });
+        // Continuous native events may commit after flushSync returns. Observe
+        // the peer's own state update before inspecting or cloning its DOM.
+        await committed(staging, () => staging.querySelector(`[${attribute[state]}]`) !== null);
+        if (!alive || source.current !== staging || output.current !== destination) return;
         if (!staging.querySelector(`[${attribute[state]}]`)) throw new Error(`The selected fixture did not enter its native ${state} state.`);
         const copy = staging.cloneNode(true) as HTMLElement;
         copy.removeAttribute("aria-hidden"); copy.removeAttribute("class"); copy.removeAttribute("style");
@@ -75,10 +103,10 @@ export function NativeSpecimenStateClone({ Content, state, children, unavailable
         if (alive) setResult("ready");
       } catch (error) { if (alive) setResult(error instanceof Error ? error.message : "Native state capture failed."); }
       finally {
-        if (state === "focus-visible" && previous instanceof view.HTMLElement) previous.focus({ preventScroll: true });
+        if (state === "focus-visible" && previous instanceof view.HTMLElement && document.activeElement === target) previous.focus({ preventScroll: true });
       }
     }, 0);
-    return () => { alive = false; clearTimeout(timer); output.current?.replaceChildren(); };
+    return () => { alive = false; clearTimeout(timer); cancelCommit?.(); output.current?.replaceChildren(); };
   }, [Content, state, children, cloneId]);
   return <Content as="div" data-specimen-forced-state={state} data-ds-specimen-capture={result === "ready" ? "ready" : "unavailable"}>
     <Content as="div" ref={output} />

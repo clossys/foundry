@@ -5,17 +5,17 @@ import { createPortal } from 'react-dom';
 import { componentSpecimenPreview, NativeSpecimenStateClone, PreviewOutcomeContext, type PreviewFailureReason, type SpecimenComponentStateRequest, type SpecimenNativeViewportRequest } from '@clossys/designer/studio';
 
 /** Studio chrome for live selected fixtures; the specimen section supplies its declared render part. */
-export function NativeSpecimenViewport({ Content, leaf, width, expanded, need, children }: SpecimenNativeViewportRequest): ReactNode {
+export function NativeSpecimenViewport({ Content, leaf, width, expanded, need, children, documentMode }: Omit<SpecimenNativeViewportRequest, 'width'> & { readonly width?: SpecimenNativeViewportRequest['width']; readonly documentMode?: 'light' | 'dark' }): ReactNode {
   const container = useRef<HTMLDivElement>(null), probe = useRef<HTMLDivElement>(null), iframe = useRef<HTMLIFrameElement>(null);
   const [body, setBody] = useState<HTMLElement>();
   const [metrics, setMetrics] = useState({ width: 0, scale: 0, height: 0 });
 
   useEffect(() => {
     const region = container.current, measure = probe.current;
-    if (!region || !measure) return;
+    if (!region || width !== undefined && !measure) return;
     const update = () => {
-      const measuredWidth = Number.parseFloat(measure.ownerDocument.defaultView!.getComputedStyle(measure).inlineSize);
       const containerWidth = region.clientWidth;
+      const measuredWidth = width === undefined ? containerWidth : Number.parseFloat(measure!.ownerDocument.defaultView!.getComputedStyle(measure!).inlineSize);
       if (!Number.isFinite(measuredWidth) || measuredWidth <= 0 || containerWidth <= 0) return;
       const scale = containerWidth / measuredWidth;
       setMetrics(previous => previous.width === measuredWidth && previous.scale === scale ? previous : { ...previous, width: measuredWidth, scale });
@@ -23,7 +23,7 @@ export function NativeSpecimenViewport({ Content, leaf, width, expanded, need, c
     update();
     const Observer = region.ownerDocument.defaultView?.ResizeObserver;
     const observer = Observer ? new Observer(update) : undefined;
-    observer?.observe(region); observer?.observe(measure);
+    observer?.observe(region); if (measure) observer?.observe(measure);
     region.ownerDocument.defaultView?.addEventListener('resize', update);
     return () => { observer?.disconnect(); region.ownerDocument.defaultView?.removeEventListener('resize', update); };
   }, [width, expanded]);
@@ -83,6 +83,7 @@ export function NativeSpecimenViewport({ Content, leaf, width, expanded, need, c
       document.head.replaceChildren(...Array.from(owner.querySelectorAll('style,link[rel="stylesheet"]'), node => node.cloneNode(true)));
       for (const attribute of Array.from(document.documentElement.attributes)) if (!owner.documentElement.hasAttribute(attribute.name)) document.documentElement.removeAttribute(attribute.name);
       for (const attribute of Array.from(owner.documentElement.attributes)) document.documentElement.setAttribute(attribute.name, attribute.value);
+      if (documentMode) document.documentElement.setAttribute('data-theme', documentMode);
       body.className = owner.body.className; body.style.margin = '0';
     };
     synchronize();
@@ -91,18 +92,19 @@ export function NativeSpecimenViewport({ Content, leaf, width, expanded, need, c
     attributes.observe(owner.documentElement, { attributes: true }); attributes.observe(owner.body, { attributes: true, attributeFilter: ['class'] });
     styles.observe(owner.head, { subtree: true, childList: true, attributes: true, characterData: true });
     return () => { attributes.disconnect(); styles.disconnect(); };
-  }, [body]);
+  }, [body, documentMode]);
 
   const load = (frame: HTMLIFrameElement) => {
     if (frame !== iframe.current || !frame.isConnected) return;
     const document = frame.contentDocument; if (!document) return;
     document.head.replaceChildren(...Array.from(frame.ownerDocument.querySelectorAll('style,link[rel="stylesheet"]'), node => node.cloneNode(true)));
     for (const attribute of Array.from(frame.ownerDocument.documentElement.attributes)) document.documentElement.setAttribute(attribute.name, attribute.value);
+    if (documentMode) document.documentElement.setAttribute('data-theme', documentMode);
     document.body.className = frame.ownerDocument.body.className; document.body.style.margin = '0';
     setBody(document.body);
   };
   return <Content as="div" ref={container} data-specimen-viewport={metrics.width || undefined} className={leaf.startsWith('frames.') ? 'max-w-full overflow-auto' : 'max-w-full overflow-hidden'}>
-    <Content as="div" ref={probe} aria-hidden="true" inert style={{ inlineSize: width, position: 'absolute', visibility: 'hidden', blockSize: 0, overflow: 'hidden' }} />
+    {width === undefined ? null : <Content as="div" ref={probe} aria-hidden="true" inert style={{ inlineSize: width, position: 'absolute', visibility: 'hidden', blockSize: 0, overflow: 'hidden' }} />}
     {!body || !metrics.height ? <Content as="div" data-ds-specimen-need="true">{need({ leaf, reason: 'The selected viewport has not mounted its live fixture.' })}</Content> : null}
     {metrics.width > 0 ? <Content as="div" style={{ inlineSize: metrics.width, zoom: metrics.scale }}>
       <iframe key={leaf} ref={iframe} title={`${leaf} ${metrics.width}px specimen`} width={metrics.width} height={metrics.height} sandbox="allow-same-origin" tabIndex={-1} srcDoc="<!doctype html><html><head></head><body></body></html>" onLoad={event => load(event.currentTarget)} style={{ border: 0, display: 'block', pointerEvents: 'none' }} />
@@ -130,6 +132,11 @@ export function NativeSpecimenComponentState({ Content, context, leaf, members, 
   const node = componentSpecimenPreview({ ...context.componentOptions, restOnly: true, modules: context.modules, probes: { [leaf]: { props } } }).preview(leaf, context.profile);
   let content: ReactNode;
   if (intrinsic) {
+    const forced = context.componentStates?.[leaf];
+    if (forced) {
+      if (forced.descriptor !== context.profile.components.components[leaf]) return unavailable('The selected component-state renderer does not match this emitted descriptor.');
+      return forced.render({ members, state: intrinsic.member, props, interactive: false });
+    }
     const interaction = intrinsic.member.startsWith('state.') ? intrinsic.member.slice('state.'.length) : intrinsic.member;
     if (interaction !== 'hover' && interaction !== 'focus-visible' && interaction !== 'pressed') return unavailable(`No native interaction capture for ${intrinsic.member}.`);
     content = <NativeSpecimenStateClone Content={Content} state={interaction} unavailable={unavailable}>{node}</NativeSpecimenStateClone>;
