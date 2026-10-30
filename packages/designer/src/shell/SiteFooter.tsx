@@ -271,7 +271,8 @@ const HOME_PLATE_STYLE = {
  * From the `desktop` breakpoint of the footer's own width, copyright sits at
  * the inline start, links in the centre and icons at the inline end, in the
  * document's direction; narrower footers stack in reading order.
- * No consent controls or arbitrary children are accepted in this row.
+ * No consent state, callbacks or arbitrary children are accepted in this row.
+ * SiteFrame may supply its explicit fixed-destination privacy choices link.
  */
 function SiteFooterLegal({ entity, links, linksLabel, icons = [], home, iconsLabel }: SiteFooterLegalProps) {
   for (const link of links) requireNamedDestination(link);

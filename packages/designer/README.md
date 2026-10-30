@@ -5176,6 +5176,12 @@ each centered. `home` takes the page's own mark, shown on a plate of the
 page's base ground; optional named `icons` take decorative artwork and
 `iconsLabel` preserves a social navigation name. Links use 44px targets,
 external rel safety and inverse focus rings. Privacy remains an ordinary link.
+When using `SiteFrame`, `shell.footer.privacyChoices: { label: CopyRef }`
+adds a fixed same-document `#privacy-choices` link after the legal links.
+The host retains consent state and handles that fragment; the frame does not
+open a dialog or persist a choice. This explicit control counts toward the
+five-link flat-row limit. Generic footer links still reject that fragment,
+including encoded and absolute URL forms.
 Legacy `ground` controls divider policy without switching the page theme.
 
 ```tsx

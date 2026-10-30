@@ -46,6 +46,7 @@ export interface ResolvedSiteShell {
     readonly ground: SiteChromeGround;
     readonly columns: readonly { readonly heading: string; readonly links: readonly ResolvedSiteLink[] }[];
     readonly links: readonly ResolvedSiteLink[];
+    readonly privacyChoices?: { readonly href: "#privacy-choices"; readonly label: string };
     readonly social?: { readonly label?: string; readonly links: readonly ResolvedSiteIconLink[] };
     readonly legal: { readonly entity: string; readonly links: readonly ResolvedSiteLink[]; readonly linksLabel?: string };
   };
@@ -72,9 +73,10 @@ const ACTION_KEYS = new Set(["href", "label", "emphasis", "icon"]);
 const ENVIRONMENT_KEYS = new Set(["href", "label", "icon", "isCurrent"]);
 const ICON_LINK_KEYS = new Set(["href", "label", "icon", "assetId"]);
 const SOCIAL_KEYS = new Set(["label", "links"]);
-const FOOTER_KEYS = new Set(["brandBand", "placement", "ground", "columns", "links", "social", "legal", "rule"]);
-/** The consent reopen fragment; the footer never carries that control, only the policy link. */
+const FOOTER_KEYS = new Set(["brandBand", "placement", "ground", "columns", "links", "social", "legal", "rule", "privacyChoices"]);
+/** Generic links cannot impersonate the dedicated consent reopen control. */
 const PRIVACY_CHOICES_FRAGMENT = "privacy-choices";
+const PRIVACY_CHOICES_KEYS = new Set(["label"]);
 const COLUMN_KEYS = new Set(["heading", "links"]);
 const LEGAL_KEYS = new Set(["entity", "links", "linksLabel"]);
 
@@ -250,13 +252,15 @@ function icon(value: unknown, path: string): IconNode {
 /**
  * The footer configuration contract: one flat row of at most five links,
  * labelled columns beyond it, at most four icons before the brand mark, and
- * no home, header navigation or privacy-choices destination. Refuses rather
+ * no home, header navigation or generic privacy-choices destination. The
+ * explicit privacyChoices control counts as one flat link. Refuses rather
  * than truncates, naming the field path and never the value.
  */
 function assertFooterContract(footer: NonNullable<ResolvedSiteShell["footer"]>, navLinks: readonly ResolvedSiteLink[]): void {
-  if (footer.links.length + footer.legal.links.length > FOOTER_LINK_LIMIT) throw new SiteFooterContractError("footer-link-limit", "shell.footer.links");
+  if (footer.links.length + footer.legal.links.length + (footer.privacyChoices ? 1 : 0) > FOOTER_LINK_LIMIT) throw new SiteFooterContractError("footer-link-limit", "shell.footer.links");
   if ((footer.social?.links.length ?? 0) + 1 > FOOTER_ICON_LIMIT) throw new SiteFooterContractError("footer-icon-limit", "shell.footer.social.links");
   const reserved = new Set([footer.home.href, ...navLinks.map(link => link.href)]);
+  if (footer.privacyChoices && reserved.has(footer.privacyChoices.href)) throw new SiteFooterContractError("footer-duplicate-link", "shell.footer.privacyChoices");
   const slots: readonly (readonly [string, readonly { readonly href: string }[]])[] = [
     ["shell.footer.links", footer.links],
     ...footer.columns.map((column, index) => [`shell.footer.columns[${index}].links`, column.links] as const),
@@ -365,6 +369,10 @@ export function resolveShell(input: SiteShellInput, resolveCopy: CopyResolver, r
     const footerGround = footerFields.ground === undefined ? (placement === "overlay" ? "inverse" : ground) : oneOf(footerFields.ground, "shell.footer.ground", SITE_CHROME_GROUNDS);
     if (placement === "overlay" && footerGround === "transparent") fail("shell.footer.ground must be opaque for overlay placement.");
     const legalFields = record(footerFields.legal, "shell.footer.legal", LEGAL_KEYS);
+    const privacyChoices = footerFields.privacyChoices === undefined ? undefined : {
+      href: "#privacy-choices" as const,
+      label: copy(record(footerFields.privacyChoices, "shell.footer.privacyChoices", PRIVACY_CHOICES_KEYS).label, "shell.footer.privacyChoices.label", resolveCopy),
+    };
     let social: NonNullable<ResolvedSiteShell["footer"]>["social"];
     if (footerFields.social !== undefined) {
       const fields = record(footerFields.social, "shell.footer.social", SOCIAL_KEYS);
@@ -383,6 +391,7 @@ export function resolveShell(input: SiteShellInput, resolveCopy: CopyResolver, r
       ground: footerGround,
       ...(footerFields.rule === undefined ? {} : { rule: oneOf(footerFields.rule, "shell.footer.rule", ["none", "top"] as const) }),
       links: footerFields.links === undefined ? [] : links(footerFields.links, "shell.footer.links"),
+      ...(privacyChoices === undefined ? {} : { privacyChoices }),
       ...(social === undefined ? {} : { social }),
       columns:
         footerFields.columns === undefined

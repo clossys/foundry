@@ -42,15 +42,17 @@ describe("data-readable SiteFrame contract", () => {
       expect(() => normalizeSiteFrameConfig(input)).toThrow("SiteFrame:");
     }
     expect(reads).toBe(0);
-    expect(SITE_FRAME_CONTRACT.required).toEqual(expect.arrayContaining(["sticky-header", "dark-footer", "accessible-navigation", "document-scroll", "sole-main"]));
+    expect(SITE_FRAME_CONTRACT.required).toEqual(expect.arrayContaining(["dark-footer", "accessible-navigation", "document-scroll", "sole-main"]));
+    expect(SITE_FRAME_CONTRACT.required).not.toContain("sticky-header");
+    expect(SITE_FRAME_CONTRACT.constituents.Header.config).toContain("headerPosition");
     expect(SITE_FRAME_CONFIG_SCHEMA).not.toHaveProperty("sticky");
     expect(SITE_FRAME_CONFIG_SCHEMA).not.toHaveProperty("footerDark");
   });
 });
 
 it("publishes navigation defaults as copy references, not audience text", () => {
-  // Revision 4 replaces header placement/ground and nested navigation presentation with one surface contract.
-  expect(SITE_FRAME_CONTRACT.revision).toBe(4);
+  // Revision 5 adds the explicit fixed-destination privacy choices control.
+  expect(SITE_FRAME_CONTRACT.revision).toBe(5);
   expect(SITE_FRAME_CONTRACT.defaults).toEqual({
     label: { id: "site-frame.nav.label" },
     triggerLabel: { id: "site-frame.nav.trigger-label" },
@@ -81,7 +83,7 @@ it("normalizes footer configuration without losing inherited header presentation
   let reads = 0;
   expect(() => normalizeSiteFrameConfig({ get footerRule() { reads++; return "top"; } })).toThrow(/SiteFrame/);
   expect(reads).toBe(0);
-  expect(SITE_FRAME_CONTRACT.constituents.Footer.required).toEqual(expect.arrayContaining(["home-inline-end", "named-icons", "external-rel", "privacy-link-only"]));
+  expect(SITE_FRAME_CONTRACT.constituents.Footer.required).toEqual(expect.arrayContaining(["home-inline-end", "named-icons", "external-rel", "explicit-privacy-choices-control"]));
 });
 
 it("preserves independent explicit header overrides while inheriting footer-only settings", () => {
@@ -93,14 +95,15 @@ it("FOOTER-2 publishes the footer caps, brand-last slot, grouping and exclusions
   expect(FOOTER_LINK_LIMIT).toBe(5);
   expect(FOOTER_ICON_LIMIT).toBe(5);
   const footer = SITE_FRAME_CONTRACT.constituents.Footer;
-  expect(footer.content).toEqual(["columns", "links", "social", "legal"]);
+  expect(footer.content).toEqual(["columns", "links", "social", "legal", "privacyChoices"]);
   expect(footer.constraints).toEqual({
     links: FOOTER_LINK_LIMIT,
-    linksLayout: "one flat row of shell.footer.links then shell.footer.legal.links",
+    linksLayout: "one flat row of shell.footer.links, shell.footer.legal.links, then the optional privacyChoices control",
     grouping: "shell.footer.columns: labelled columns for links beyond the flat row",
     icons: FOOTER_ICON_LIMIT,
     brandMark: "shell.brand, always the last icon slot",
     excludes: ["home", "header-navigation", "privacy-choices"],
+    privacyChoices: "explicit label CopyRef; fixed same-document #privacy-choices destination; host owns consent behavior",
     error: "SiteFooterContractError",
     accessibility: "mandatory",
   });
