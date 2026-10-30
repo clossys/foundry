@@ -103,7 +103,7 @@
         "sourceFiles": [
           {
             "path": "packages/designer/src/catalog-assets/media.ts",
-            "sha256": "fa0ebdba691d8687ad955e9b9fb650b145d988b53edf1c2deb7f2eb261df5bef"
+            "sha256": "518af66b317c4dcca79c99e33098a942430522f024c2c6416cb9ca817aa49313"
           },
           {
             "path": "packages/designer/src/frames/site-frame/FrameRegion.tsx",

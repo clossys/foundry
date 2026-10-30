@@ -213,8 +213,7 @@
           "leaves": [
             "sections.empty-state",
             "sections.error-state",
-            "sections.boundary-message",
-            "sections.error-message"
+            "sections.boundary-message"
           ]
         },
         {

@@ -8,6 +8,7 @@ import { FrameNavDisclosure } from "./FrameNavDisclosure.client.js";
 import { SiteNavDisclosure as ClientNavigation } from "./NavDisclosure.client.js";
 import { SiteNavDisclosure as ServerNavigation } from "./NavDisclosure.server.js";
 import { NavLinks } from "./NavLinks.js";
+import { SECTION_REVEAL_ATTRIBUTE, SECTION_REVEAL_CSS } from "../../styles/section-reveal.js";
 
 afterEach(() => { vi.restoreAllMocks(); vi.unstubAllGlobals(); });
 
@@ -102,6 +103,10 @@ it("keeps native keyboard dismissal and focus restoration when reduced motion is
   expect(surface.matches('.site-header-nav-sheet[data-slot="sheet-content"]')).toBe(true);
   expect(surface).toHaveClass("motion-reduce:transition-none", "motion-reduce:animate-none", "motion-reduce:duration-0");
   expect(dialog.closest('[data-slot="sheet-overlay"]')).toHaveClass("motion-reduce:transition-none", "motion-reduce:animate-none", "motion-reduce:duration-0");
+  expect(dialog.querySelector(`[${SECTION_REVEAL_ATTRIBUTE}]`)).toBeVisible();
+  expect(dialog.querySelector("style")?.textContent).toBe(SECTION_REVEAL_CSS);
+  expect(SECTION_REVEAL_CSS).toMatch(/@media \(prefers-reduced-motion: reduce\)\s*\{[\s\S]*animation: none; transform: none; opacity: 1;/);
+  await waitFor(() => expect(dialog).toContainElement(document.activeElement as HTMLElement));
   await user.tab();
   expect(dialog).toContainElement(document.activeElement as HTMLElement);
   await user.keyboard("{Escape}");

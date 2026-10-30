@@ -31,6 +31,7 @@
     "features": {
       "composes": [
         "components.icon",
+        "components.semantic-content",
         "sections.section-header"
       ],
       "configs": {},
@@ -38,12 +39,14 @@
         "scanStatus": "lower-bound",
         "scannedComposes": [
           "components.icon",
+          "components.semantic-content",
           "sections.section-header"
         ],
         "scannedReads": {
           "assets": [],
           "components": [
-            "components.icon"
+            "components.icon",
+            "components.semantic-content"
           ],
           "tokens": [
             "tokens.accent-color",
@@ -70,7 +73,7 @@
           },
           {
             "path": "packages/designer/src/blocks/items/compat-features.tsx",
-            "sha256": "b255890cd5e475b51eef47b4e403e9148dd2b3f622fda67f4a814adaa0d831b3"
+            "sha256": "c89160205a2e2db71824a6f13c11e27882b7c34cad00516619f9ff8e86e6848e"
           },
           {
             "path": "packages/designer/src/blocks/section-ground.ts",

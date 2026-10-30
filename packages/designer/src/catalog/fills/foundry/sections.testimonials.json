@@ -26,14 +26,20 @@
   },
   "sections": {
     "testimonials": {
-      "composes": [],
+      "composes": [
+        "components.semantic-content"
+      ],
       "configs": {},
       "consumption": {
         "scanStatus": "lower-bound",
-        "scannedComposes": [],
+        "scannedComposes": [
+          "components.semantic-content"
+        ],
         "scannedReads": {
           "assets": [],
-          "components": [],
+          "components": [
+            "components.semantic-content"
+          ],
           "tokens": [
             "tokens.body-size",
             "tokens.border-color",
@@ -53,11 +59,11 @@
           },
           {
             "path": "packages/designer/src/blocks/Testimonial.server.tsx",
-            "sha256": "6292e5bd5541f5a9481bc1ed7d6352dd12010390dee3ba41a7a937d03c18d9d9"
+            "sha256": "b781ec297f690e3d0cfc482d0815bdd6bd248800ce3bfc740669cbaf619e0d07"
           },
           {
             "path": "packages/designer/src/blocks/TestimonialSet.tsx",
-            "sha256": "e520778f2585d645265cef6864b62a025e9612875ff26aa10d47f74c04577f65"
+            "sha256": "949fd4c6e6eda5a1e8210148c998be83254ff59a56292b1b3ad398d0adfcc5f9"
           },
           {
             "path": "packages/designer/src/catalog-core/provenance-attrs.ts",

@@ -42,19 +42,19 @@ const unmapped = [
 ];
 
 describe("legacy block section homes", () => {
-  it("maps 57 legacy addresses and the new logo block to 43 of the 52 section leaves", () => {
+  it("maps 57 legacy addresses and the new logo block to 43 of the 51 section leaves", () => {
     expect(mapping).toEqual({ ...expected, "say.logo-hero": "sections.logo-hero" });
     expect(Object.keys(mapping)).toHaveLength(58);
     expect(new Set(Object.values(mapping)).size).toBe(43);
     const targets = new Set(slots.map(slot => slot.id));
-    // The six registered wave-one Sections extend the old 46-leaf inventory without adding legacy aliases.
-    expect(targets.size).toBe(52);
+    // Five live wave-one Sections extend the old 46-leaf inventory without adding legacy aliases.
+    expect(targets.size).toBe(51);
     for (const target of Object.values(mapping)) expect(targets.has(target), target).toBe(true);
-    expect([...targets].filter(target => !Object.values(mapping).includes(target)).sort()).toEqual(["sections.account-summary", "sections.band", "sections.boundary-message", "sections.call-to-action", "sections.consent", "sections.error-message", "sections.legal-prose", "sections.logo-mark", "sections.sign-in-form"]);
+    expect([...targets].filter(target => !Object.values(mapping).includes(target)).sort()).toEqual(["sections.account-summary", "sections.band", "sections.boundary-message", "sections.call-to-action", "sections.consent", "sections.legal-prose", "sections.logo-mark", "sections.sign-in-form"]);
   });
 
   it("agrees with existing retirement aliases without replacing legacy IDs", () => {
-    expect(mapping).toEqual({ ...Object.fromEntries(retired.map(row => [row.id, row.replacedBy])), "say.logo-hero": "sections.logo-hero" });
+    expect(mapping).toEqual({ ...Object.fromEntries(retired.filter(row => row.id !== "sections.error-message").map(row => [row.id, row.replacedBy])), "say.logo-hero": "sections.logo-hero" });
     expect(BLOCK_ENTRIES).toHaveLength(91);
     expect(BLOCK_ENTRIES.map(block => block.id).sort()).toEqual([...Object.keys(expected), "say.logo-hero", ...unmapped].sort());
   });
