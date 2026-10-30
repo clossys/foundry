@@ -3,6 +3,7 @@
 import { useEffect, useState, type ReactNode } from "react";
 import type { DesignerSpecimenContext, DesignerSpecimenNeed } from "./DesignerSpecimen.js";
 import type { SpecimenPublishedPage } from "./specimen-content-ports.js";
+import type { SpecimenTokenHostParts } from "./specimen-token-host-part-types.js";
 import { componentSpecimenPreview, type ComponentSpecimenBinding, type ComponentSpecimenComponent } from "./component-specimens.js";
 import { componentLeaf, type GridListLeaf } from "../runtime/component-leaf.js";
 
@@ -83,7 +84,7 @@ export interface SpecimenNativeViewportParts {
   readonly renderViewport?: (input: SpecimenNativeViewportRequest) => ReactNode;
 }
 /** Hosts bind these named parts to the corresponding registered specimen section. */
-export interface SpecimenRenderParts {
+export interface SpecimenRenderParts extends SpecimenTokenHostParts {
   readonly "sections.specimen-variant-matrix"?: { readonly renderComponentState?: (input: SpecimenComponentStateRequest) => ReactNode };
   readonly "sections.specimen-section-viewports"?: SpecimenNativeViewportParts;
   readonly "sections.specimen-frame-viewports"?: SpecimenNativeViewportParts;

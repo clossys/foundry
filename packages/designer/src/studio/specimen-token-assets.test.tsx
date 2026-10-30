@@ -22,6 +22,9 @@ import componentData from "./__fixtures__/default-component-preview-profile.json
 import type { DesignerSpecimenContext } from "./DesignerSpecimen.js";
 import type { SpecimenItem, SpecimenLeafProps } from "./specimen-layouts.js";
 import { assetSpecimenItems, colorRampSpecimenItems, tokenAssetSpecimenLeaves, tokenSpecimenItems } from "./specimen-token-assets.js";
+import { renderSpecimenContrastHostPart, renderSpecimenSwatchHostPart } from "./specimen-token-host-parts.js";
+import type { SpecimenTokenHostParts } from "./specimen-token-host-part-types.js";
+import { specimenDataset } from "./specimen-dataset.js";
 
 const catalog = loadCatalog();
 const valueLibrary = completedCatalogLibrary(catalog, { id: "specimen-test-consumer", kind: "consumer", author: "consumer", license: "MIT" }, "2026-10-29");
@@ -50,6 +53,12 @@ async function renderSelected(node: ReactNode, selected: DesignerSpecimenContext
 }
 const need: SpecimenLeafProps["need"] = ({ leaf, reason }) => <components.SemanticContent as="p" role="status" data-ds-specimen-need="true">NEED {leaf}: {reason}</components.SemanticContent>;
 const labels = { showAllVariants: (count: number) => `Show all ${count}` };
+function tokenParts(selected: DesignerSpecimenContext): SpecimenTokenHostParts {
+  return {
+    "studio.specimen-swatch": input => renderSpecimenSwatchHostPart(selected, input),
+    "studio.specimen-contrast": input => renderSpecimenContrastHostPart(selected, input),
+  };
+}
 const leaves = ["tokens.accent-color", "tokens.accent-color", "tokens.heading-size", "tokens.spacing", "tokens.radius", "tokens.duration", "assets.favicon", "assets.icon-close"];
 function itemsFor(index: number, selected: DesignerSpecimenContext): readonly SpecimenItem[] {
   const leaf = leaves[index]!;
@@ -62,7 +71,7 @@ it.each(tokenAssetSpecimenLeaves.map((leaf, index) => ({ leaf, index })))("$leaf
   const selected = context(), native = itemsFor(index, selected);
   expect(native.length).toBeGreaterThan(0);
   for (const count of [1, 3, 15]) {
-    const props = { items: repeated(native, count), context: selected, need, labels };
+    const props = { items: repeated(native, count), context: selected, need, labels, renderParts: tokenParts(selected) };
     expect(leaf.validate(props)).toEqual([]);
     const view = await renderSelected(leaf.render(props), selected);
     expect(view.container.querySelector("[data-ds-specimen-need]")).toBeNull();
@@ -91,7 +100,7 @@ it.each(tokenAssetSpecimenLeaves.map((leaf, index) => ({ leaf, index })))("$leaf
 
 it.each(tokenAssetSpecimenLeaves)("$id rejects zero items and invalid member identities", async leaf => {
   const selected = context();
-  const props = { context: selected, need, labels, items: [] };
+  const props = { context: selected, need, labels, renderParts: tokenParts(selected), items: [] };
   expect(leaf.validate(props)).toEqual([expect.objectContaining({ reason: expect.stringContaining("zero-items") })]);
   const empty = await renderSelected(leaf.render(props), selected);
   expect(screen.getByRole("status")).toHaveTextContent("zero-items");
@@ -104,12 +113,12 @@ it("applies actual native color, typography, spacing and radius values without m
   const selected = context(), before = JSON.stringify(selected.profile.values);
   for (const index of [0, 2, 3, 4]) {
     const item = itemsFor(index, selected)[0]!;
-    const view = await renderSelected(tokenAssetSpecimenLeaves[index]!.render({ items: [item], context: selected, need, labels }), selected);
+    const view = await renderSelected(tokenAssetSpecimenLeaves[index]!.render({ items: [item], context: selected, need, labels, renderParts: tokenParts(selected) }), selected);
     const id = typeof item.value === "object" && item.value && "memberId" in item.value && typeof item.value.memberId === "string" ? item.value.memberId : "";
     const value = selected.profile.values.members[id]!.css.light;
     const target = view.container.querySelector<HTMLElement>(index === 2 ? "[data-type-sample]" : "[role='img']")!;
     if (index === 0) {
-      expect(target).toHaveStyle({ background: value });
+      expect(target.style.background).toBe(`var(${selected.profile.values.members[id]!.emit})`);
       expect(view.container.querySelector("[data-contrast-pair]")).toBeTruthy();
       for (const [property, token] of [["inlineSize", "tokens.spacing.5xl"], ["blockSize", "tokens.spacing.4xl"]] as const) {
         const size = selected.profile.values.members[token]!;
@@ -125,10 +134,55 @@ it("applies actual native color, typography, spacing and radius values without m
   expect(JSON.stringify(selected.profile.values)).toBe(before);
 });
 
+it.each([0, 1])("routes selected ink and surface member identities and modes to both registered parts for leaf %i", async index => {
+  const selected = context(), before = JSON.stringify(selected.profile.values);
+  const ids = ["tokens.surface-color.base", "tokens.text-color.primary"];
+  const swatch = vi.fn(tokenParts(selected)["studio.specimen-swatch"]!);
+  const contrast = vi.fn(tokenParts(selected)["studio.specimen-contrast"]!);
+  const items = index === 0 ? ids.map(id => ({ id, label: id, value: { memberId: id } })) : [{ id: "ramp", label: "Ramp", value: { memberIds: ids } }];
+  const props = { items, context: selected, need, labels, renderParts: { "studio.specimen-swatch": swatch, "studio.specimen-contrast": contrast } };
+  const leaf = tokenAssetSpecimenLeaves[index]!;
+  expect(leaf.validate(props)).toEqual([]);
+  const view = await renderSelected(leaf.render(props), selected);
+  for (const id of ids) for (const mode of ["light", "dark"] as const) {
+    expect(swatch).toHaveBeenCalledWith({ memberId: id, mode });
+    expect(contrast).toHaveBeenCalledWith({ backgroundMemberId: ids[0], colorMemberId: ids[1], pairMemberId: id === ids[0] ? ids[1] : ids[0], mode, children: specimenDataset.tokens.sampleText });
+  }
+  for (const input of swatch.mock.calls.map(([input]) => input)) expect(Object.keys(input).sort()).toEqual(["memberId", "mode"]);
+  for (const mode of ["light", "dark"]) {
+    const samples = [...view.container.querySelectorAll<HTMLElement>(`[data-specimen-mode='${mode}'] [role='img']`)];
+    expect(samples.map(sample => sample.style.background)).toEqual(ids.map(id => `var(${selected.profile.values.members[id]!.emit})`));
+    for (const sample of samples) {
+      expect(sample.style.inlineSize).toBe("var(--spacing-5xl)");
+      expect(sample.style.blockSize).toBe("var(--spacing-4xl)");
+    }
+    for (const sample of view.container.querySelectorAll<HTMLElement>(`[data-specimen-mode='${mode}'] [data-contrast-pair]`)) {
+      expect(sample.style.background).toBe("var(--color-surface-base)");
+      expect(sample.style.color).toBe("var(--color-ink-primary)");
+      expect(sample.textContent).toBe(specimenDataset.tokens.sampleText);
+    }
+  }
+  expect(JSON.stringify(selected.profile.values)).toBe(before);
+});
+
+it.each([0, 1])("refuses missing registered swatch and contrast parts before rendering leaf %i", async index => {
+  const selected = context(), leaf = tokenAssetSpecimenLeaves[index]!;
+  for (const part of ["studio.specimen-swatch", "studio.specimen-contrast"] as const) {
+    const renderParts = tokenParts(selected);
+    delete (renderParts as { [key in keyof SpecimenTokenHostParts]?: SpecimenTokenHostParts[key] })[part];
+    const props = { items: itemsFor(index, selected).slice(0, 1), context: selected, need, labels, renderParts };
+    expect(leaf.validate(props)).toEqual([expect.objectContaining({ reason: `The registered ${part} part is not wired.` })]);
+    const view = await renderSelected(leaf.render(props), selected);
+    expect(view.container.textContent).toContain(`The registered ${part} part is not wired.`);
+    expect(view.container.querySelector("[data-ds-specimen-item],[role='img'],[data-contrast-pair]")).toBeNull();
+    view.unmount();
+  }
+});
+
 it("uses actual selected SVG logos and selected icon glyphs on both grounds", async () => {
   const selected = context();
   for (const index of [6, 7]) {
-    const view = await renderSelected(tokenAssetSpecimenLeaves[index]!.render({ items: itemsFor(index, selected).slice(0, 1), context: selected, need, labels }), selected);
+    const view = await renderSelected(tokenAssetSpecimenLeaves[index]!.render({ items: itemsFor(index, selected).slice(0, 1), context: selected, need, labels, renderParts: tokenParts(selected) }), selected);
     const grounds = [...view.container.querySelectorAll<HTMLElement>("[data-asset-ground]")];
     expect(grounds).toHaveLength(2);
     for (const [ground, surface, ink] of [[grounds[0]!, "tokens.surface-color.raised", "tokens.text-color.primary"], [grounds[1]!, "tokens.surface-color.inverse", "tokens.text-color.on-inverse"]] as const) {
@@ -157,7 +211,7 @@ it.each([
     if (fault === "missing") delete members[token];
     else members[token] = fault === "type" ? { ...member, $type: "duration" } : { ...member, emit: "--spacing-xs" };
     const invalid = { ...selected, profile: { ...selected.profile, values: { ...selected.profile.values, members } } };
-    const leaf = tokenAssetSpecimenLeaves[index]!, props = { items, context: invalid, need, labels };
+    const leaf = tokenAssetSpecimenLeaves[index]!, props = { items, context: invalid, need, labels, renderParts: tokenParts(invalid) };
     expect(leaf.validate(props)).toContainEqual(expect.objectContaining({ reason: expect.stringContaining(`required-token: ${token}`) }));
     const view = await renderSelected(leaf.render(props), invalid);
     expect(view.container.textContent).toContain(`required-token: ${token}`);
@@ -170,7 +224,7 @@ it("refuses an unavailable native image capability and a missing selected compon
   const selected = context();
   const images = assetSpecimenItems(selected, "assets.image");
   expect(images.length).toBeGreaterThan(0);
-  expect(tokenAssetSpecimenLeaves[6]!.validate({ items: images, context: selected, need, labels }).some(fault => fault.reason.includes("native image"))).toBe(true);
+  expect(tokenAssetSpecimenLeaves[6]!.validate({ items: images, context: selected, need, labels, renderParts: tokenParts(selected) }).some(fault => fault.reason.includes("native image"))).toBe(true);
   const noPorts = { ...selected, modules: {} };
   expect(tokenAssetSpecimenLeaves[0]!.validate({ items: itemsFor(0, selected), context: noPorts, need, labels }).some(fault => fault.reason.includes("module-unavailable"))).toBe(true);
 });
@@ -218,13 +272,13 @@ it("executes the exact consumer source override and refuses to borrow a missing 
     modules: { ...selected.modules, [entry]: { SemanticContent: ConsumerContent } },
   };
   const items = itemsFor(0, native).slice(0, 1), leaf = tokenAssetSpecimenLeaves[0]!;
-  const view = await renderSelected(leaf.render({ items, context: native, need, labels }), native);
+  const view = await renderSelected(leaf.render({ items, context: native, need, labels, renderParts: tokenParts(native) }), native);
   expect(executed).toHaveBeenCalled();
   expect(view.container.querySelector("section[data-specimen-mode='light'] span[role='img']")).toBeTruthy();
-  expect(view.container.querySelector("[role='img']")).toHaveStyle({ background: native.profile.values.members["tokens.accent-color.default"]!.css.light });
+  expect(view.container.querySelector<HTMLElement>("[role='img']")!.style.background).toBe(`var(${native.profile.values.members["tokens.accent-color.default"]!.emit})`);
   view.unmount();
   const absent = { ...native, modules: selected.modules };
-  expect(leaf.validate({ items, context: absent, need, labels })).toEqual([expect.objectContaining({ reason: `module-unavailable: ${entry}` })]);
+  expect(leaf.validate({ items, context: absent, need, labels, renderParts: tokenParts(absent) })).toEqual([expect.objectContaining({ reason: `module-unavailable: ${entry}` })]);
 });
 
 it("plays selected duration/easing and holds a static final state for reduced motion", async () => {
@@ -235,7 +289,7 @@ it("plays selected duration/easing and holds a static final state for reduced mo
   const cancel = vi.fn(), animate = vi.fn(() => ({ cancel }));
   Object.defineProperty(HTMLElement.prototype, "animate", { value: animate, configurable: true });
   const item = itemsFor(5, selected)[0]!;
-  const view = await renderSelected(tokenAssetSpecimenLeaves[5]!.render({ items: [item], context: selected, need, labels }), selected);
+  const view = await renderSelected(tokenAssetSpecimenLeaves[5]!.render({ items: [item], context: selected, need, labels, renderParts: tokenParts(selected) }), selected);
   fireEvent.click(screen.getByRole("button", { name: "Play motion" }));
   const duration = selected.profile.values.members["tokens.duration.default"]!;
   const easing = Object.values(selected.profile.values.members).find(member => member.$type === "cubicBezier")!;

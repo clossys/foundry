@@ -127,21 +127,24 @@ function validate(mode: Mode, props: SpecimenLeafProps, layout: SpecimenLayout):
   const leaf: SpecimenLeafId = `sections.specimen-${mode}`;
   if (!props.items.length) return [{ leaf, reason: "zero-items: a specimen leaf requires at least one item" }];
   const needs: DesignerSpecimenNeed[] = [...specimenLayoutNeeds({ ...props, id: leaf, layout })];
+  if (mode === "swatch" || mode === "color-ramp") for (const part of ["studio.specimen-swatch", "studio.specimen-contrast"] as const) {
+    if (!props.renderParts?.[part]) needs.push({ leaf, reason: `The registered ${part} part is not wired.` });
+  }
   for (const reason of chromeNeeds(mode, props.context)) needs.push({ leaf, reason });
   for (const required of requirements(mode).filter(leaf => leaf !== "components.semantic-content")) { const bound = selected(props.context, required); if (isNeed(bound)) needs.push(bound); }
   for (const item of props.items) { const reason = valueNeed(mode, item, props.context); if (reason) needs.push({ leaf, reason: `${item.id}: ${reason}` }); }
   return needs;
 }
-function Swatch({ id, member, context }: { id: string; member: ResolvedMember; context: DesignerSpecimenContext }): ReactNode {
+function Swatch({ id, member, context, renderParts }: { id: string; member: ResolvedMember; context: DesignerSpecimenContext; renderParts: NonNullable<SpecimenLeafProps["renderParts"]> }): ReactNode {
   const pair = pairOf(context, member);
   if (!pair) return null; // The leaf validates every item before rendering any layout.
-  return <>{(["light", ...(member.css.dark === undefined ? [] : ["dark"])] as const).map(mode => {
+  const modes: readonly ("light" | "dark")[] = member.css.dark === undefined ? ["light"] : ["light", "dark"];
+  return <>{modes.map(mode => {
     const color = mode === "dark" ? member.css.dark ?? member.css.light : member.css.light;
-    const pairColor = mode === "dark" ? pair[1].css.dark ?? pair[1].css.light : pair[1].css.light;
     return <Content as="section" key={mode} data-specimen-mode={mode}>
-      <Content as="span" role="img" aria-label={`${id} ${mode}`} style={{ display: "inline-block", inlineSize: "var(--spacing-5xl)", blockSize: "var(--spacing-4xl)", background: color }} />
+      {renderParts["studio.specimen-swatch"]!({ memberId: id, mode })}
       <Content as="span">{id}</Content><Content as="span">{color}</Content>
-      <Content as="p" data-contrast-pair={pair[0]} style={{ background: member.emit?.includes("ink") ? pairColor : color, color: member.emit?.includes("ink") ? color : pairColor }}>{specimenDataset.tokens.sampleText}</Content>
+      {renderParts["studio.specimen-contrast"]!({ backgroundMemberId: member.emit?.includes("ink") ? pair[0] : id, colorMemberId: member.emit?.includes("ink") ? id : pair[0], pairMemberId: pair[0], mode, children: specimenDataset.tokens.sampleText })}
     </Content>;
   })}</>;
 }
@@ -173,11 +176,11 @@ function renderItem(mode: Mode, item: SpecimenItem, props: SpecimenLeafProps): R
   if (isNeed(semantic)) return props.need(semantic);
   if (mode === "color-ramp") return <>{memberIds(item.value)?.map(id => {
     const member = props.context.profile.values.members[id];
-    return member ? <Swatch key={id} id={id} member={member} context={props.context} /> : null;
+    return member ? <Swatch key={id} id={id} member={member} context={props.context} renderParts={props.renderParts!} /> : null;
   })}</>;
   const member = memberOf(props.context, item.value), id = memberId(item.value);
   if (!member || !id) return props.need({ leaf: item.id, reason: "No selected specimen value." });
-  if (mode === "swatch") return <Swatch id={id} member={member} context={props.context} />;
+  if (mode === "swatch") return <Swatch id={id} member={member} context={props.context} renderParts={props.renderParts!} />;
   if (mode === "type-ladder") return <Content as="p" data-type-sample={id} style={typeStyle(member)}>{specimenDataset.tokens.sampleText}</Content>;
   if (mode === "spacing-ladder") return <Content as="div" role="img" aria-label={id} className="h-sm max-w-full bg-accent border-s border-e border-line-strong" style={{ inlineSize: member.css.light }} />;
   if (mode === "radius-ladder") return <Content as="div" role="img" aria-label={id} className="size-3xl border border-line-strong bg-surface-raised" style={{ borderRadius: member.css.light }} />;
