@@ -417,7 +417,10 @@
         "components.logo",
         "components.resize-handle",
         "components.tabs",
-        "components.tooltip"
+        "components.tooltip",
+        "components.sidebar",
+        "components.semantic-content",
+        "components.sheet"
       ],
       "skipTarget": "main-content",
       "stage": {

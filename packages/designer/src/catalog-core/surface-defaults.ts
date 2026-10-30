@@ -22,6 +22,9 @@ import type { SurfaceConsumptionMeasurement } from "./surface-consumption.js";
 import { canonicalSurfaceConsumption } from "../importers/foundry-surface-consumption.js";
 import { stableStringify } from "./stable.js";
 
+/** The shared styled-source order also applies to Sections and Frames. */
+export const DEFAULT_SURFACE_PREFERENCE: readonly string[] = ["shadcn@aria", "foundry", "rac-starter"];
+
 /** The mapping fields both package-pointer descriptors and source candidates declare. */
 export interface SurfaceDefaultDescriptor {
   slot: string;
@@ -51,7 +54,7 @@ export interface SurfaceDefaultsInput {
   /** Section and frame leaves to plan, in display order. */
   slots: readonly string[];
   /** Source order for slots without an owner pick or a choice. Unlisted sources are never defaulted. */
-  preference: readonly string[];
+  preference?: readonly string[];
   /** Owner decisions: exclusive; an ineligible pick stays unchosen rather than falling back. */
   picks?: Readonly<Record<string, string>>;
   /** Choose: overrides picks and preference, and is equally exclusive. */
@@ -151,7 +154,7 @@ export function planSurfaceDefaults(input: SurfaceDefaultsInput): SurfaceDefault
     const docs = input.catalog.fills.filter(doc => doc.$extensions["com.clossys.fill"].slot === slot && doc.$extensions["com.clossys.fill"].mode === "implementation");
     const choice = input.choices?.[slot], pick = input.picks?.[slot];
     const basis: SurfaceDefaultBasis = choice ? "choose" : pick ? "owner-pick" : "preference";
-    const order = choice ? [choice] : pick ? [pick] : input.preference;
+    const order = choice ? [choice] : pick ? [pick] : input.preference ?? DEFAULT_SURFACE_PREFERENCE;
     const why: string[] = [];
     for (const source of order) {
       const doc = docs.find(candidate => candidate.$extensions["com.clossys.fill"].source === source);
