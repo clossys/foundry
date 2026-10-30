@@ -544,7 +544,9 @@
       "status": "candidate",
       "supported": [
         "current",
-        "expand"
+        "expand",
+        "part.item",
+        "part.item-content"
       ]
     },
     {
