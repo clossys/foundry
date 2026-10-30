@@ -76,6 +76,9 @@ export const componentSpecimenTable = d.table;
 /** A labelled field around one native input. */
 export const componentSpecimenField = d.field;
 
+/** Native media attributes for the SemanticContent void-tag samples. */
+export const componentSpecimenSemanticMedia = d.semanticMedia;
+
 /** A card's heading and body. */
 export const componentSpecimenCard = d.card;
 

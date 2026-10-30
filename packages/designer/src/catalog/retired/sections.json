@@ -283,5 +283,10 @@
     "id": "say.testimonial-set",
     "retiredAt": "2026-10-23",
     "replacedBy": "sections.testimonials"
+  },
+  {
+    "id": "sections.error-message",
+    "retiredAt": "2026-10-29",
+    "replacedBy": "sections.error-state"
   }
 ]

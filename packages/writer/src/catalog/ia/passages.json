@@ -213,8 +213,7 @@
           "leaves": [
             "passages.empty-state",
             "passages.error-state",
-            "passages.boundary-message",
-            "passages.error-message"
+            "passages.boundary-message"
           ]
         },
         {

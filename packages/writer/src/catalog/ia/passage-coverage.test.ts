@@ -5,9 +5,10 @@ import { loadWriterCatalog, writerIAFindings, type WriterCatalog, type WriterNod
 import { checkWriterClosedWorld } from "../../checks/closed-world.js";
 import { checkIACoverage } from "../../checks/ia-coverage/index.js";
 import { loadBuildCatalog } from "../../../../designer/src/catalog-core/index.js";
+import { loadSectionRegistry } from "../../../../designer/src/catalog-core/sections-contract.js";
 import type { WriterLibrary, WriterRecord } from "../../model/types.js";
 
-const additions = ["account-summary", "boundary-message", "error-message", "legal-prose", "logo-mark", "sign-in-form"] as const;
+const additions = ["account-summary", "boundary-message", "error-state", "legal-prose", "logo-mark", "sign-in-form"] as const;
 const read = <T>(path: string): T => JSON.parse(readFileSync(new URL(path, import.meta.url), "utf8")) as T;
 type Section = { id: string; contract: { passageSchema: string; copy: unknown } };
 type Subject = { file: string; locale: string; record: WriterRecord };
@@ -89,11 +90,20 @@ function coverageReport(catalog: WriterCatalog) {
 }
 
 describe("Designer to Writer passage catalog coverage", () => {
-  it("reports zero schema-pair, record-leaf and dangling findings across all 52 pairs and actual records", () => {
+  it("keeps error-message as a retired alias of the live error-state section", () => {
+    const registry = loadSectionRegistry();
+    expect(registry.slots.some(slot => slot.id === "sections.error-message")).toBe(false);
+    expect(registry.slots.filter(slot => slot.id === "sections.error-state")).toHaveLength(1);
+    expect(registry.aliases).toContainEqual({ id: "sections.error-message", target: "sections.error-state" });
+    expect(subjects.some(subject => subject.record.leaf === "passages.error-message")).toBe(false);
+    expect(subjects.some(subject => subject.record.id === "ps.000000002q" && subject.record.leaf === "passages.error-state")).toBe(true);
+  });
+
+  it("reports zero schema-pair, record-leaf and dangling findings across all 51 pairs and actual records", () => {
     const catalog = loadWriterCatalog();
-    expect(sections).toHaveLength(52);
-    expect(new Set(sections.map(section => section.contract.passageSchema)).size).toBe(52);
-    expect(catalog.slots.filter(slot => slot.layer === "passages")).toHaveLength(52);
+    expect(sections).toHaveLength(51);
+    expect(new Set(sections.map(section => section.contract.passageSchema)).size).toBe(51);
+    expect(catalog.slots.filter(slot => slot.layer === "passages")).toHaveLength(51);
     expect(recordFiles).toEqual(expect.arrayContaining(["site.en.json", "sign-in.json", "admin-meta.r1.en.json", "admin-studio.r1.en.json", "admin-voice.r1.en.json"]));
     for (const file of recordFiles) expect(subjects.some(subject => subject.file === file), file).toBe(true);
     const report = coverageReport(catalog);

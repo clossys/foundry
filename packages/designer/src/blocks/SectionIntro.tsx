@@ -1,4 +1,5 @@
 import type { CSSProperties, HTMLAttributes, ReactNode } from "react";
+import { SemanticContent } from "../components/SemanticContent.js";
 import { cx } from "../components/internal/cx.js";
 import { SECTION_MEASURE_MAX, UI_WIDTH_HERO_WIDE } from "./internal/block-vars.js";
 import { SECTION_GROUND_CLASSES, type SectionGround } from "./section-ground.js";
@@ -122,7 +123,7 @@ export function SectionIntro({
   style,
   ...rest
 }: SectionIntroProps) {
-  const HeadingTag = `h${headingLevel}` as `h${SectionIntroHeadingLevel}`;
+  const headingTag: `h${SectionIntroHeadingLevel}` = `h${headingLevel}`;
   const colors = SECTION_GROUND_CLASSES[ground];
   const centred = align === "center";
   const rhythm = RHYTHM_CLASSES[emphasis];
@@ -132,19 +133,19 @@ export function SectionIntro({
   const hasDescription = Boolean(description);
 
   return (
-    <div
+    <SemanticContent as="div"
       {...rest}
       data-section-intro={emphasis}
       className={cx("flex w-full flex-col", centred ? "mx-auto items-center text-center" : "items-start", className)}
       style={{ maxWidth: measure === "wide" ? "none" : SECTION_MEASURE_MAX.prose, ...style }}
     >
       {hasEyebrow ? (
-        <p className={eyebrowTone === "muted" ? cx("text-body-s font-medium uppercase tracking-label", colors.secondary) : EYEBROW_CLASSES[ground]}>
+        <SemanticContent as="p" className={eyebrowTone === "muted" ? cx("text-body-s font-medium uppercase tracking-label", colors.secondary) : EYEBROW_CLASSES[ground]}>
           {eyebrow}
-        </p>
+        </SemanticContent>
       ) : null}
       {hasHeading ? (
-        <HeadingTag
+        <SemanticContent as={headingTag}
           id={headingId}
           className={cx(
             displayHeading
@@ -155,18 +156,18 @@ export function SectionIntro({
           )}
         >
           {heading}
-        </HeadingTag>
+        </SemanticContent>
       ) : null}
       {hasDescription ? (
-        <p
+        <SemanticContent as="p"
           className={cx("text-body-l text-pretty", colors.secondary, hasEyebrow || hasHeading ? rhythm.description : undefined)}
           style={measure === "wide" ? { maxWidth: UI_WIDTH_HERO_WIDE } : undefined}
         >
           {description}
-        </p>
+        </SemanticContent>
       ) : null}
       {actions ? (
-        <div
+        <SemanticContent as="div"
           data-section-intro-actions=""
           className={cx(
             "flex flex-wrap items-center gap-x-lg gap-y-sm",
@@ -176,8 +177,8 @@ export function SectionIntro({
           )}
         >
           {actions}
-        </div>
+        </SemanticContent>
       ) : null}
-    </div>
+    </SemanticContent>
   );
 }

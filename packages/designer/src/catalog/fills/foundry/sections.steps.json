@@ -27,17 +27,21 @@
   "sections": {
     "steps": {
       "composes": [
+        "components.semantic-content",
         "sections.section-header"
       ],
       "configs": {},
       "consumption": {
         "scanStatus": "lower-bound",
         "scannedComposes": [
+          "components.semantic-content",
           "sections.section-header"
         ],
         "scannedReads": {
           "assets": [],
-          "components": [],
+          "components": [
+            "components.semantic-content"
+          ],
           "tokens": [
             "tokens.accent-color",
             "tokens.body-size",
@@ -54,7 +58,7 @@
         "sourceFiles": [
           {
             "path": "packages/designer/src/blocks/OrderedStepSequence.tsx",
-            "sha256": "ae4278b3bffeca61badf0cd72340595a13565e4f1443d212d1dd4dd9692113e7"
+            "sha256": "938aa49497a81d308afe81cab3af970f47ab4f0359af7433a5299dd837931ddd"
           },
           {
             "path": "packages/designer/src/blocks/section-ground.ts",
