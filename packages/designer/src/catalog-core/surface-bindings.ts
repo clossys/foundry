@@ -55,7 +55,7 @@ export function bindSurfaceSource(fill: SurfaceCandidate, files: readonly Surfac
                 add(`unproven selected dependency ${module}`);
                 continue;
             }
-            for (const value of edge[2]!.split(",")) {
+            for (const value of edge[2]!.replace(/,\s*$/, "").split(",")) {
                 const binding = value.trim(), erased = !!edge[1] || binding.startsWith("type "), name = binding.replace(/^type\s+/, "").split(/\s+as\s+/)[0]!;
                 if (!(erased ? evidence[0]!.types : evidence[0]!.values).includes(name))
                     add(`unproven selected dependency export ${module}#${name}`);

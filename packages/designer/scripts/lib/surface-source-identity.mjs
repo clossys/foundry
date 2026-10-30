@@ -26,10 +26,7 @@ export function sourceModule(file, cache = new Map()) {
     compilerOptions: { target: ts.ScriptTarget.ES2022, module: ts.ModuleKind.CommonJS, esModuleInterop: true, jsx: ts.JsxEmit.ReactJSX },
     transformers: { before: [context => {
       const visit = node => ts.isMetaProperty(node) && node.keywordToken === ts.SyntaxKind.ImportKeyword
-        ? context.factory.createObjectLiteralExpression([
-          context.factory.createPropertyAssignment("url", context.factory.createStringLiteral(pathToFileURL(file).href)),
-          context.factory.createPropertyAssignment("dirname", context.factory.createStringLiteral(path.dirname(file))),
-        ]) : ts.visitEachChild(node, visit, context);
+        ? context.factory.createIdentifier("__nativeMeta") : ts.visitEachChild(node, visit, context);
       return node => ts.visitNode(node, visit);
     }] },
   }).outputText;
@@ -50,7 +47,7 @@ export function sourceModule(file, cache = new Map()) {
     if (!source) throw new Error(`Native source dependency missing: ${specifier}`);
     return sourceModule(source, cache);
   };
-  runInThisContext(`(function(exports,require,module){${output}\n})`, { filename: file })(module.exports, localRequire, module);
+  runInThisContext(`(function(exports,require,module,__nativeMeta){${output}\n})`, { filename: file })(module.exports, localRequire, module, { url: pathToFileURL(file).href, dirname: path.dirname(file), resolve: specifier => import.meta.resolve(specifier) });
   return module.exports;
 }
 
@@ -90,6 +87,17 @@ export async function checkPreparedDefaultAdoptions(repository, supplied) {
   }
   if (!rows.length || rows.length !== prepared.plan.rows.filter(row => row.status !== "not-chosen").length) findings.push({ code: "default-adoption-inventory", detail: "Every planned default seat must have an adoption" });
   return { findings, rows };
+}
+
+/** Production preparation must reach emission with every current native measurement present. */
+export function checkPreparedSurfaceEmission(repository, prepared) {
+  const root = path.resolve(repository), cache = new Map();
+  const api = sourceModule(path.join(root, "packages/designer/src/catalog-core/index.ts"), cache);
+  const { emitSurfaces } = sourceModule(path.join(root, "packages/designer/src/catalog-core/surface-emit.ts"), cache);
+  const profile = api.resolve(prepared.input), findings = [];
+  try { emitSurfaces(profile.surfaces, ["surface-index"]); }
+  catch (error) { findings.push({ code: "shipping-default-emission", detail: error.message, findings: profile.surfaces.check.findings.filter(row => row.severity === "error") }); }
+  return { findings, nativeMeasurements: prepared.input.surfaceOptions.measurements.filter(row => row.slot.startsWith("sections.specimen-") && row.scope === "real").length };
 }
 
 /** Interpret the registry's data flow, retaining every entry before JS could overwrite it.
@@ -543,7 +551,9 @@ export async function checkSurfaceSourceIdentity(repository) {
     // reader and component/default dependency closure, against current source modules.
     const shipping = await sourceModule(path.join(root, "packages/producer/src/server/selection-defaults.ts")).prepareStudioSelection();
     const adopted = shipping.input.library.surfaces.fills.filter(doc => doc.$extensions["com.clossys.fill"].slot.startsWith("sections.specimen-"));
-    shippingDefaults = { sourceBundles: shipping.surfaceBundles.length, nativeAdopted: adopted.length, surfacesAdopted: shipping.input.library.surfaces.fills.length };
+    const emission = checkPreparedSurfaceEmission(root, shipping);
+    findings.push(...emission.findings);
+    shippingDefaults = { sourceBundles: shipping.surfaceBundles.length, nativeAdopted: adopted.length, surfacesAdopted: shipping.input.library.surfaces.fills.length, nativeMeasurements: emission.nativeMeasurements };
     const planner = sourceModule(path.join(root, "packages/designer/src/catalog-core/index.ts"));
     const replay = await checkPreparedDefaultAdoptions(root, { ...shipping, plan: planner.planSurfaceDefaults({ catalog: shipping.input.catalog.surfaces, slots: adopted.map(doc => doc.$extensions["com.clossys.fill"].slot), preference: planner.DEFAULT_COMPONENT_PREFERENCE }) });
     findings.push(...replay.findings.map(finding => ({ ...finding, caller: "Producer.prepareStudioSelection" })));
