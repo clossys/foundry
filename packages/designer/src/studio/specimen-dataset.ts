@@ -6,7 +6,7 @@ import type { LogomarkProps } from "../components/Logomark.js";
 import type { MeterProps } from "../components/Meter.js";
 import type { ProgressBarProps } from "../components/ProgressBar.js";
 import type { SelectOption } from "../components/Select.js";
-import type { SkeletonProps } from "../components/Skeleton.js";
+import type { SkeletonProps } from "../components/Skeleton.types.js";
 import type { SpinnerProps } from "../components/Spinner.js";
 import type { StatusMarkTone } from "../components/StatusMark.js";
 import type { IconNode } from "../icons/types.js";
@@ -660,7 +660,7 @@ export const specimenDataset = {
   meter: { label: "Storage used", value: 3, scaleMax: 5, valueText: "3 of 5 GB", tone: "info" } satisfies Partial<MeterProps>,
   resize: { label: "Resize panel", min: 160, max: 480, value: 280, resetValue: 280 },
   spinner: { label: "Loading orders" } satisfies SpinnerProps,
-  skeleton: { shape: "text", "aria-label": "Loading order" } satisfies SkeletonProps,
+  skeleton: { role: "status", "aria-busy": true, "aria-label": "Loading order" } satisfies SkeletonProps,
   separator: { orientation: "horizontal" as const },
   semantic: { as: "p" as const },
   semanticMedia: {

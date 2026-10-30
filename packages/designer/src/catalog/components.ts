@@ -605,7 +605,7 @@ export const COMPONENT_ENTRIES: readonly ComponentEntry[] = [
     disposition: "map-to-rac",
     notes: ["Maps to an indeterminate react-aria-components ProgressBar."],
   }),
-  onMain("Skeleton", ["src/components/Skeleton.tsx"], {
+  onMain("Skeleton", ["src/components/preview-runtime/components/skeleton/skeleton.tsx"], {
     id: "inform.skeleton",
     label: "Skeleton",
     racBase: none("presentational"),

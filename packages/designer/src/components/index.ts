@@ -133,8 +133,8 @@ export type {
 export { Field } from "./Field.js";
 export type { FieldProps, FieldRenderProps } from "./Field.js";
 
-export { Skeleton } from "./Skeleton.js";
-export type { SkeletonProps, SkeletonShape } from "./Skeleton.js";
+export { Skeleton } from "./preview-runtime/components/skeleton/skeleton.js";
+export type { SkeletonProps } from "./Skeleton.types.js";
 
 export { Tooltip } from "./Tooltip.js";
 export type { TooltipProps } from "./Tooltip.js";

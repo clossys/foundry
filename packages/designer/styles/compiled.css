@@ -2559,9 +2559,6 @@
   .bg-overlay-surface {
     background-color: var(--color-overlay-surface, oklch(1 0 0));
   }
-  .bg-skeleton-fill {
-    background-color: var(--color-skeleton-fill, oklch(0.9401 0 0));
-  }
   .bg-status-danger {
     background-color: var(--color-status-danger, oklch(0.285 0 0));
   }

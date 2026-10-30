@@ -2,7 +2,7 @@ import { useEffect, useReducer, useRef, useState, type ReactNode } from "react";
 import { Badge } from "../components/preview-runtime/components/badge/badge.js";
 import { SearchField } from "../components/SearchField.js";
 import { Select } from "../components/Select.js";
-import { Skeleton } from "../components/Skeleton.js";
+import { Skeleton } from "../components/preview-runtime/components/skeleton/skeleton.js";
 import { Switch } from "../components/Switch.js";
 import { Tabs } from "../components/Tabs.js";
 import { cx } from "../components/internal/cx.js";
@@ -68,7 +68,7 @@ export function CatalogBrowser<C extends CatalogBrowserCatalog>(props: CatalogBr
       {failed ? error : <>
         <span role="status" className="sr-only">{labels.loading}</span>
         <div aria-hidden="true" className="flex flex-col gap-sm">
-          {Array.from({ length: 4 }, (_, index) => <Skeleton key={index} />)}
+          {Array.from({ length: 4 }, (_, index) => <Skeleton aria-hidden="true" key={index} />)}
         </div>
       </>}
     </section>;

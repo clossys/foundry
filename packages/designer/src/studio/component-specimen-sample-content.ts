@@ -146,7 +146,7 @@ export const componentSpecimenSourceSamples = {
   "components/calendar/calendar.tsx#Calendar": d.dates.calendar,
   "components/combo-box/combobox.tsx#Combobox": d.combobox,
   "components/select/select.tsx#Select": d.select,
-  "components/skeleton/skeleton.tsx#Skeleton": { "aria-label": d.skeleton["aria-label"] },
+  "components/skeleton/skeleton.tsx#Skeleton": { ...d.skeleton },
   "components/toggle-group/toggle-group.tsx#ToggleGroup": d.toggles,
   "components/separator/separator.tsx#Separator": d.separator,
   "components/chart-area/chart-area.tsx#ChartArea": { rows: d.charts.rows, categories: d.charts.area.x, series: d.charts.area.series },

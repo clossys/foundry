@@ -11,7 +11,7 @@ import { Badge } from "../../components/preview-runtime/components/badge/badge.j
 import { Breadcrumb } from "../../components/Breadcrumb.js";
 import { Button } from "../../components/Button.js";
 import { cx } from "../../components/internal/cx.js";
-import { Skeleton } from "../../components/Skeleton.js";
+import { Skeleton } from "../../components/preview-runtime/components/skeleton/skeleton.js";
 import { TOKENS } from "../../tokens/tokens.js";
 import type { Candidate } from "../model.js";
 import { CompactPreview } from "../previews.js";
@@ -222,7 +222,7 @@ export function SystemCanvas({ copy, data, labels, edges = [], selectedLeaf, onS
       if (thumbnail != null) return <div inert data-system-rest-preview="" className="min-h-0 flex-1 overflow-hidden">{thumbnail}</div>;
     }
     // No implementation or capture: retain the explicit pending skeleton.
-    return <Skeleton shape="block" data-system-thumbnail="pending" className="min-h-0 flex-1" />;
+    return <Skeleton aria-hidden="true" data-system-thumbnail="pending" className="min-h-0 flex-1" />;
   };
 
   const board = (entry: SystemBoard) => {

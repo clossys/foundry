@@ -87,7 +87,7 @@ function sectionContent(section: DetailsViewSection) {
     <section key={section.id} data-details-section={section.id} className="flex min-w-0 flex-col gap-md">
       <SectionHeader title={section.title} />
       {state === undefined ? sectionBlock(section.block)
-        : state.kind === "loading" ? <Skeleton aria-label={state.label} />
+        : state.kind === "loading" ? <Skeleton role="status" aria-busy="true" aria-label={state.label} />
         : state.kind === "empty" ? <EmptyState {...state.props} />
         : <Banner {...state.props} variant="danger" />}
     </section>

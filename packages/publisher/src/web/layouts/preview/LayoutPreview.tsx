@@ -27,7 +27,7 @@ export function LayoutPreview(props: LayoutPreviewProps) {
   const contract = getEffectiveLayoutContract(props.leaf, props.config, props.members);
   const slots: Record<string, readonly ReactNode[]> = Object.fromEntries(contract.slots.map(slot => [slot.id,
     Array.from({ length: Math.min(slot.max, Math.max(1, slot.min)) }, (_, index) => <div key={index} className="min-w-0 grid" data-preview-shape={slot.previewShape}>
-      <Skeleton shape="block" className={SHAPES[slot.previewShape]} />
+      <Skeleton aria-hidden="true" className={SHAPES[slot.previewShape]} />
       <span>{slot.id}</span>
     </div>),
   ]));

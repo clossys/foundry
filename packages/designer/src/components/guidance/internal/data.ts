@@ -1644,34 +1644,9 @@ export const COMPONENT_GUIDANCE: Readonly<Record<string, ComponentGuidance>> = {
   "exportName": "Skeleton",
   "entrypoint": "components",
   "notes": "Represented scalar options are a bounded selection; consult the real prop type for content, data, state, callbacks and compound parts. No Cartesian combination support is implied.",
-  "options": [
-    {
-      "prop": "shape",
-      "label": "Placeholder shape",
-      "purpose": "Placeholder shape selects the existing Skeleton shape behavior.",
-      "values": [
-        {
-          "value": "text",
-          "purpose": "One text-height line."
-        },
-        {
-          "value": "block",
-          "purpose": "Block filling its authored container."
-        },
-        {
-          "value": "circle",
-          "purpose": "Circular placeholder requiring authored size."
-        }
-      ],
-      "applicability": "Effective for this component when supplied.",
-      "support": {
-        "state": "implemented",
-        "reason": "The component consumes or forwards this existing prop in the cited source."
-      }
-    }
-  ],
+  "options": [],
   "constraints": []
-}, "src/components/Skeleton.tsx"),
+}, "src/components/preview-runtime/components/skeleton/skeleton.tsx"),
   "group.card": entry(
 {
   "purpose": "Give a small unit of related content a coherent surface.",
@@ -3914,40 +3889,25 @@ export const COMPONENT_API_FACTS: Readonly<Record<string, ComponentApiFacts>> = 
   },
   "inform.skeleton": {
     "exportName": "Skeleton",
-    "source": "src/components/Skeleton.tsx",
-    "options": [
-      {
-        "prop": "shape",
-        "values": [
-          "text",
-          "block",
-          "circle"
-        ],
-        "default": {
-          "kind": "value",
-          "value": "text",
-          "source": "src/components/Skeleton.tsx",
-          "evidence": "shape = \"text\""
-        },
-        "forwarding": {
-          "source": "src/components/Skeleton.tsx",
-          "evidence": "SHAPE_CLASSES[shape]"
-        }
-      }
-    ],
+    "source": "src/components/Skeleton.types.ts",
+    "options": [],
     "tokens": {
       "coverage": "partial",
       "reason": "Representative consumed dependencies only; this is not an exhaustive token or generated utility inventory.",
       "dependencies": [
         {
-          "property": "--color-skeleton-fill",
+          "property": "--color-surface-sunken",
           "kind": "transitive",
-          "source": "styles/theme-keys.css",
-          "evidence": "--color-skeleton-fill:",
+          "source": "styles/shadcn-native.css",
+          "evidence": "--muted: var(--color-surface-sunken)",
           "via": [
             {
-              "source": "src/components/Skeleton.tsx",
-              "evidence": "bg-skeleton-fill"
+              "source": "styles/shadcn-native.css",
+              "evidence": "@apply bg-muted rounded-md;"
+            },
+            {
+              "source": "src/components/preview-runtime/components/skeleton/skeleton.tsx",
+              "evidence": "cn-skeleton animate-pulse"
             }
           ]
         }
@@ -4819,7 +4779,6 @@ export const COMPONENT_COMPARISON = Object.freeze({
   "inform.meter": comparison("inform.meter", "tone", "emphasis"),
   "inform.progress-bar": comparison("inform.progress-bar", "isIndeterminate"),
   "inform.spinner": comparison("inform.spinner", "size"),
-  "inform.skeleton": comparison("inform.skeleton", "shape"),
   "group.card": comparison("group.card", "variant"),
   "group.table": comparison("group.table", "selectionMode"),
   "group.separator": comparison("group.separator", "orientation"),

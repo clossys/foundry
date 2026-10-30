@@ -296,11 +296,6 @@
     "tokens.z-index"
   ],
   "semantic-content": [],
-  "skeleton": [
-    "tokens.control-radius",
-    "tokens.radius",
-    "tokens.surface-color"
-  ],
   "slider": [
     "tokens.action-color",
     "tokens.body-size",

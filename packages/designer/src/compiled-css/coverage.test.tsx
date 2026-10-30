@@ -51,7 +51,7 @@ import { GroupedTable } from "../blocks/GroupedTable.js";
 import { AppNavigation } from "../blocks/AppNavigation.js";
 import { RelationGraph } from "../blocks/RelationGraph.js";
 import { FlowCanvas } from "../blocks/FlowCanvas.js";
-import { Skeleton } from "../components/Skeleton.js";
+import { Skeleton } from "../components/preview-runtime/components/skeleton/skeleton.js";
 import { Spinner } from "../components/Spinner.js";
 import { StatusMark } from "../components/StatusMark.js";
 import { Switch } from "../components/Switch.js";
@@ -471,7 +471,7 @@ describe("coverage: real rendered classes are all present in compiled.css", () =
     trees.push(["Link standalone", render(<Link href="/x" variant="standalone">Go</Link>)]);
     trees.push(["Chip", render(<Chip onRemove={() => {}} removeLabel="Remove">Tag</Chip>)]);
     trees.push(["Separator", render(<Separator />)]);
-    trees.push(["Skeleton", render(<Skeleton style={{ width: 100, height: 20 }} />)]);
+    trees.push(["Skeleton", render(<Skeleton aria-hidden="true" style={{ width: 100, height: 20 }} />)]);
     trees.push(["Banner info", render(<Banner variant="info">Heads up</Banner>)]);
     trees.push(["Banner danger", render(<Banner variant="danger">Careful</Banner>)]);
 

@@ -735,15 +735,15 @@
       "supported": []
     },
     {
-      "missing": [],
+      "missing": [
+        "shape.block"
+      ],
       "notes": [
-        "Descriptor only; source, accessibility, contrast and consumer runtime conformance are unmeasured."
+        "No package implementation is available."
       ],
       "slot": "components.skeleton",
-      "status": "candidate",
-      "supported": [
-        "shape.block"
-      ]
+      "status": "unavailable",
+      "supported": []
     },
     {
       "missing": [],

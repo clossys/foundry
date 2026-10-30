@@ -80,8 +80,8 @@ export type { IconProps, IconSize, IconAccessibilityProps, IconNode } from "./Ic
 export { Meter } from "./Meter.server.js";
 export type { MeterProps, MeterTone, MeterDirection, MeterEmphasis } from "./Meter.js";
 
-export { Skeleton } from "./Skeleton.js";
-export type { SkeletonProps, SkeletonShape } from "./Skeleton.js";
+export { Skeleton } from "./preview-runtime/components/skeleton/skeleton.js";
+export type { SkeletonProps } from "./Skeleton.types.js";
 
 export { Spinner } from "./Spinner.server.js";
 export type { SpinnerProps, SpinnerSize } from "./Spinner.js";

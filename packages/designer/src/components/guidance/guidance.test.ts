@@ -476,11 +476,6 @@ const comparisonGolden: Record<string, {
     maxCells: 3,
     retainedCells: 3,
   },
-  "inform.skeleton": {
-    columns: {"option": "shape", "values": ["text", "block", "circle"]},
-    maxCells: 3,
-    retainedCells: 3,
-  },
   "group.card": {
     columns: {"option": "variant", "values": ["raised", "plate", "outline"]},
     maxCells: 3,

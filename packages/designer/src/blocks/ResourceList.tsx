@@ -14,7 +14,7 @@ const Button = componentLeaf<typeof import("../components/Button.js").Button>("c
 const GridList = componentLeaf<typeof import("../components/GridList.js").GridList>("components.grid-list");
 const IconButton = componentLeaf<typeof import("../components/IconButton.js").IconButton>("components.button", "IconButton");
 const Menu = componentLeaf<typeof import("../components/Menu.js").Menu>("components.menu");
-const Skeleton = componentLeaf<typeof import("../components/Skeleton.js").Skeleton>("components.skeleton");
+const Skeleton = componentLeaf<typeof import("../components/preview-runtime/components/skeleton/skeleton.js").Skeleton>("components.skeleton");
 const SemanticContent = componentLeaf<typeof import("../components/SemanticContent.js").SemanticContent>("components.semantic-content");
 
 /** Section root provenance (D1): the selected Foundry fill this block is. */
@@ -122,7 +122,7 @@ export function ResourceList({
     {error != null && error !== false ? error : isLoading ? <SemanticContent as="div">
       <SemanticContent as="span" role="status" className="sr-only">{loadingLabel}</SemanticContent>
       <SemanticContent as="div" aria-hidden="true">
-        {Array.from({ length: loadingRowCount }, (_, index) => <SemanticContent as="div" key={index} className="flex items-center px-0 py-sm" style={{ minBlockSize: UI_LAYOUT_TAP_TARGET }}><Skeleton /></SemanticContent>)}
+        {Array.from({ length: loadingRowCount }, (_, index) => <SemanticContent as="div" key={index} className="flex items-center px-0 py-sm" style={{ minBlockSize: UI_LAYOUT_TAP_TARGET }}><Skeleton aria-hidden="true" /></SemanticContent>)}
       </SemanticContent>
     </SemanticContent> : items.length === 0 ? <EmptyState {...emptyState} /> : <GridList aria-label={ariaLabel} items={items} selectionMode={selectionMode}
       selectedKeys={selection === "all" ? "all" : new Set(selection)}
