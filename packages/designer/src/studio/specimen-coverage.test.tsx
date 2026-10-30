@@ -139,7 +139,7 @@ it("collects actual native Designer selection DOM and rejects a nested runtime N
   expect(check(actual, [failed], singleCell, { items: single }).agents.find(summary => summary.agent === "designer")?.pass).toBe(false);
 });
 
-it("takes four agent inputs and refuses blank Publisher iframe metadata as live proof", () => {
+it("takes four agent inputs, rejects wrong-agent leaves and refuses blank Publisher metadata as live proof", () => {
   const pageItems = [{ id: "page", label: "Page", value: { route: "/" } }];
   const publisher = { ...cell, agent: "publisher" as const, kind: "page", layer: "publication", items: pageItems, axes: undefined };
   const pageLeaf: SpecimenLeafDefinition = { id: "sections.specimen-page-viewports", layout: "matrix", compatible: [{ kind: "page" }], render: () => <components.SemanticContent as="div" data-ds-leaf="components.semantic-content" data-ds-specimen-region="" data-ds-specimen-section="sections.specimen-page-viewports" data-ds-specimen-item="page"><iframe title="Page" src="about:blank" sandbox="" /></components.SemanticContent> };
@@ -149,7 +149,8 @@ it("takes four agent inputs and refuses blank Publisher iframe metadata as live 
   const cells: SpecimenCoverageCell[] = ["director", "writer", "designer"].map(agent => ({ ...cell, agent: agent as SpecimenCoverageCell["agent"] }));
   cells.push(publisher);
   const report = validateSpecimenCoverage({ cells, registry: [leaf, pageLeaf], registeredCases: entry => entry.agent === "publisher" ? { items: pageItems } : source, evidence: [proof] });
-  expect(report.agents.map(summary => [summary.agent, summary.expectedCases, summary.registeredCases, summary.renderedCases])).toEqual([["director", 4, 4, 0], ["writer", 4, 4, 0], ["designer", 4, 4, 0], ["publisher", 1, 1, 0]]);
+  expect(report.agents.map(summary => [summary.agent, summary.expectedCases, summary.registeredCases, summary.renderedCases])).toEqual([["director", 4, 0, 0], ["writer", 4, 0, 0], ["designer", 4, 4, 0], ["publisher", 1, 1, 0]]);
+  expect(report.findings.filter(finding => finding.code === "agent-specimen-mismatch")).toHaveLength(2);
   expect(report.findings.map(finding => finding.code)).toContain("missing-live-emitted-page");
   expect(report.exitCode).toBe(1);
 });
