@@ -91,6 +91,32 @@ function setup(skeleton: AdminPageSkeleton = { l0: [{ id: "strings", label: {id:
   return { registry, pages, runtime, session, host, values, copy, publicationHosts };
 }
 describe("six native admin records through prepareRegisteredRoute (fixture declarations)", () => {
+  it.each([
+    "strings.admin.ia.designer.tokens.type-spacing",
+    "st.mn2v0dgaj8",
+  ])("prepares authentic common-owned Spacing %s through the checked registered route", reference => {
+    const f = setup({ l0: [{ id: "strings", label: { id: reference }, count: 1, estimate: 300, l1: [] }] });
+    const pair = f.pages.designer, route = pair.list;
+    const bundle = pair.createSession({ publication: f.session,
+      loaders: { chunk: async () => [], search: async () => [], item: async () => undefined },
+      navigation: { hash: () => "", scroll: vi.fn(), focus: vi.fn(), replaceState: vi.fn() },
+    });
+    bundle.page.activate();
+    const runtime = { ...f.runtime, page: bundle.page, assembly: { ...f.runtime.assembly, ports: { ...f.runtime.assembly.ports,
+      resolveContent: reference => bundle.resolveContent(reference) ?? f.values.get(reference.ref), sectionHosts: bundle.sectionHosts(),
+    } } };
+    const result = prepareRegisteredRoute(f.registry, route.routeId, runtime);
+    expect(result.status, JSON.stringify(result)).toBe("stream");
+    if (result.status !== "stream") return;
+    expect(result.chunks.map(chunk => chunk.result.status), JSON.stringify(result.chunks)).toEqual(["ready"]);
+    const heading = bundle.resolveContent(adminPageRef("designer", "strings/heading", "copy"))!;
+    expect(heading.value).toEqual({ text: "Spacing", id: "strings" });
+    expect(heading.hash).toBe(runtimeHash(heading.value));
+    expect(bundle.copyProvenance()).toContainEqual(expect.objectContaining({ text: "Spacing", ref: { id: "st.mn2v0dgaj8", locale: "en" }, provenance: expect.objectContaining({
+      recordId: "st.mn2v0dgaj8", recordSource: "common-labels.r1.en.json", status: "draft", activation: "none",
+      bindingSource: reference === "st.mn2v0dgaj8" ? "admin-studio.r1.en.json" : "admin-pages.r1.en.json",
+    }) }));
+  }, 120_000);
   it("refuses a consumer config member absent from the selected native header", () => {
     const config = structuredClone(configs[1]); delete config.item;
     Object.assign(config, { id: "inventory", entryId: "catalog.inventory", namespace: "inventory.records" });

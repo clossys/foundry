@@ -1,4 +1,4 @@
-import { createAdminCopy, getAdminCopyRecord, getAdminItemNameBinding, resolveAdminCopyRef } from "@clossys/writer/admin-copy";
+import { ADMIN_PAGES_COPY_EN, createAdminCopy, getAdminCopyRecord, getAdminItemNameBinding, resolveAdminCopyRef } from "@clossys/writer/admin-copy";
 import type { AdminCopyRef, AdminRouteCopy } from "@clossys/writer/admin-copy";
 import type { StringRecord } from "@clossys/writer";
 import { runtimeHash, runtimeSnapshot } from "@clossys/designer/catalog";
@@ -80,16 +80,26 @@ export function createAdminPageCopy(input: { readonly locale: string; readonly e
     const aliasOwner = aliases[0], recordId = aliasOwner?.aliases[reference.id] ?? reference.id;
     const declarations = aliasOwner?.externalRecords.filter(row => row.recordId === recordId) ?? [];
     const canonicalItemBinding = getAdminItemNameBinding(recordId);
-    const itemBinding = !aliasOwner && canonicalItemBinding ? getAdminItemNameBinding(recordId, store) : undefined;
+    const itemBinding = canonicalItemBinding ? getAdminItemNameBinding(recordId, store) : undefined;
+    const itemAliasBinding = aliasOwner && itemBinding && Object.entries(ADMIN_PAGES_COPY_EN.aliases).some(([alias, id]) => alias === reference.id && id === recordId)
+      ? ADMIN_PAGES_COPY_EN.bindings.find(row => row.cellId === reference.id && row.recordId === recordId && row.kind === "CopyRef") : undefined;
     const matches = envelopes.flatMap(envelope => {
       const record = envelope.records.find(row => row.id === recordId);
       if (!record || aliasOwner && aliasOwner !== envelope && !declarations.some(row => row.source === envelope.source && row.sourceContext === record.context)) return [];
-      const bindingOwner = aliasOwner ?? envelope;
-      const binding = bindingOwner.bindings.find(row => row.recordId === recordId && (
-        !canonicalItemBinding && !record.context.startsWith("designer.item.") && row.kind === "CopyRef" && row.cellId === (aliasOwner ? reference.id : record.context)
-        || itemBinding && row.kind === itemBinding.kind && row.cellId === itemBinding.cellId && row.target === itemBinding.target
-      ));
-      return binding ? [{ envelope, record, binding, bindingOwner }] : [];
+      // Moved item names retain their original binding carrier. Only a carrier
+      // declaring this record's genuine owner and context can bind its title.
+      const bindingOwners = aliasOwner ? [aliasOwner] : itemBinding ? envelopes.filter(owner => owner === envelope
+        || owner.externalRecords.some(row => row.recordId === recordId && row.source === envelope.source && row.sourceContext === record.context)) : [envelope];
+      return bindingOwners.flatMap(bindingOwner => {
+        const bindings = bindingOwner.bindings.filter(row => row.recordId === recordId && (
+          !canonicalItemBinding && !record.context.startsWith("designer.item.") && row.kind === "CopyRef" && row.cellId === (aliasOwner ? reference.id : record.context)
+          || itemBinding && (aliasOwner
+            ? itemAliasBinding && row.kind === itemAliasBinding.kind && row.cellId === itemAliasBinding.cellId && row.target === itemAliasBinding.target
+            : row.kind === itemBinding.kind && row.cellId === itemBinding.cellId && row.target === itemBinding.target)
+        ));
+        const binding = bindings[0];
+        return binding && (!canonicalItemBinding || bindings.length === 1) ? [{ envelope, record, binding, bindingOwner }] : [];
+      });
     });
     if (matches.length !== 1) throw new TypeError(`Writer CopyRef requires one bound record: ${reference.id}`);
     const { envelope, record, binding, bindingOwner } = matches[0]!;

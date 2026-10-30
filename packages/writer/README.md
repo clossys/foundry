@@ -660,6 +660,12 @@ English draft-review text from that supplied store and returns `undefined` for
 missing records, unsupported locales or invalid message arguments. It is separate
 from the approved production resolver.
 
+The same subpath exports `ADMIN_PAGES_COPY_EN` as a separate envelope; it is not
+added to the default `getAdminCopy()` store. `getAdminItemNameBinding` also
+authenticates common-owned Designer item names through their shipped usage,
+owner declaration and original Studio item binding. Missing or altered authority
+is refused; draft preview grants no approval or activation.
+
 ### `writer-check approve` — write or revoke a record
 
 ```bash
