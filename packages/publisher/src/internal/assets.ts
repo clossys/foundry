@@ -116,7 +116,7 @@
  * whole asset `invalid`, exactly like a missing `alt`.
  */
 
-import { resolveAssets } from "../core/index.js";
+import { resolveAssets } from "../core/resolve-assets.js";
 import type { AssetLookup, ResolveResult, SurfaceSlotSpec } from "../core/index.js";
 
 // ─────────────────────────────────────────────────────────────────────────
