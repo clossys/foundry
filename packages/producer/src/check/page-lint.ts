@@ -162,7 +162,11 @@ export async function lintPages(targets: PageTarget[], options: PageLintOptions)
           const rendered = (element: Element): boolean => {
             for (let current: Element | null = element; current; current = current.parentElement) {
               const style = getComputedStyle(current);
-              if (current.hasAttribute("hidden") || current.getAttribute("aria-hidden") === "true" || style.display === "none" || style.visibility === "hidden" || style.visibility === "collapse" || style.contentVisibility === "hidden" || Number(style.opacity) === 0) return false;
+              if (current.hasAttribute("hidden") || style.display === "none" || style.visibility === "hidden" || style.visibility === "collapse" || style.contentVisibility === "hidden" || Number(style.opacity) === 0) return false;
+              if (current instanceof HTMLDetailsElement && !current.open) {
+                const summary = Array.from(current.children).find(child => child.tagName === "SUMMARY");
+                if (!summary?.contains(element)) return false;
+              }
             }
             return true;
           };
@@ -228,7 +232,7 @@ export async function lintPages(targets: PageTarget[], options: PageLintOptions)
               texts.add(text);
             }
             for (const element of all) {
-              if ((/^(H[1-6])$/.test(element.tagName) || element.getAttribute("role") === "heading") && rendered(element)) {
+              if ((/^(H[1-6])$/.test(element.tagName) || element.getAttribute("role") === "heading") && rendered(element) && !element.closest('[aria-hidden="true"]')) {
                 // An empty heading can have zero height; its box is not proof
                 // that the semantic heading is hidden.
                 headings.add(accessibleLabel(element) || normalized([visibleText(element), ...Array.from(element.querySelectorAll("img[alt]")).filter(rendered).map(accessibleLabel)].join(" ")));

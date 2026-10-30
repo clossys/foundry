@@ -154,6 +154,7 @@ describe("PROC-5 real browser through the built CLI", () => {
     html = document(`${baselineBody}
       <section data-cell-id="tokens.color.accent"><p>Explore the examples.</p></section>
       <details><summary>Source disclosure</summary><pre>NEED: registered specimen tokens.color.accent [fact: pending] TODO-OWNER</pre></details>
+      <details><summary>Source structure</summary><h2> </h2></details>
       <div hidden><h2>NEED: hidden engine heading</h2><p>tokens.color.accent [fact: pending] TODO-OWNER</p></div>
       <div style="display:none"><h2> </h2><p>NEED: hidden engine details</p></div>
       <h2 aria-hidden="true"> </h2>`);
@@ -171,11 +172,13 @@ describe("PROC-5 real browser through the built CLI", () => {
 
   const mutations: { name: string; rule: string; body?: string; script?: string; status?: number }[] = [
     { name: "need-specimen", rule: "PAGE_NEED_MARKER", body: "<p>NEED: registered specimen</p>" },
+    { name: "visually-present-aria-hidden-need", rule: "PAGE_NEED_MARKER", body: '<p aria-hidden="true">NEED: registered specimen</p>' },
     { name: "raw-technical-id", rule: "PAGE_TECHNICAL_ID", body: "<p>tokens.color.accent</p>" },
     { name: "fact-marker", rule: "PAGE_FACT_MARKER", body: "<p>[fact: pending]</p>" },
     { name: "owner-marker", rule: "PAGE_TODO_OWNER", body: "<p>TODO-OWNER</p>" },
     { name: "empty-heading", rule: "PAGE_EMPTY_HEADING", body: "<h2> \n\t </h2>" },
     { name: "broken-image", rule: "PAGE_BROKEN_IMAGE", body: '<img src="/missing.svg" alt="Example illustration">' },
+    { name: "nested-panel-lazy-image", rule: "PAGE_BROKEN_IMAGE", body: '<section style="height:160px;overflow:auto"><div style="height:5000px">Example panel</div><img loading="lazy" width="200" height="80" src="/missing.svg" alt="Example illustration"></section>' },
     { name: "document-http-404", rule: "PAGE_HTTP_ERROR", status: 404 },
     { name: "console-error", rule: "PAGE_CONSOLE_ERROR", script: 'console.error("Fixture console failure")' },
     { name: "runtime-throw", rule: "PAGE_RUNTIME_ERROR", script: 'throw new Error("Fixture runtime failure")' },
