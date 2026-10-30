@@ -169,3 +169,26 @@ const iconSet = {
   assets: { "icon-set": { glyph: Object.fromEntries(featureEntries.map(([name, node]) => [name.slice(8), { $type: "glyph", $value: node }])) } }
 };
 writeFileSync(join(root, "src/catalog/fills/lucide/assets.icon-set.json"), JSON.stringify(iconSet, null, 2) + "\n");
+
+// Semantic seats can share an existing, pinned glyph without duplicating its source.
+const rosterPath = join(root, "src/importers/lucide-pin.json");
+const roster = JSON.parse(readFileSync(rosterPath, "utf8"));
+const byExport = Object.fromEntries(Object.entries(NAME_MAP).map(([name, exported]) => [exported, data[name]]));
+for (const row of roster) {
+  const node = byExport[row.export];
+  if (!node) throw new Error(`Unknown pinned icon export ${row.export}`);
+  const fill = {
+    $extensions: { "com.clossys.fill": {
+      id: `lucide/${row.leaf}`, slot: row.leaf, source: "lucide", mode: "implementation",
+      sourceAddress: `lucide-react@${row.pin.version}/dist/esm/icons/${row.upstream}.js`,
+      relation: "same-contract", builtOn: [], conforms: [], evidence: [], author: "third-party",
+      trust: "pinned-upstream", license: "ISC", pin: row.pin, status: "draft", reads: { tokens: [], assets: [] },
+    } },
+    assets: { [row.leaf.slice(7)]: { default: { $type: "glyph", $value: node } } },
+  };
+  writeFileSync(join(root, `src/catalog/fills/lucide/${row.leaf}.json`), JSON.stringify(fill, null, 2) + "\n");
+}
+const sourcePath = join(root, "src/catalog/sources/lucide.json");
+const source = JSON.parse(readFileSync(sourcePath, "utf8"));
+source.pin.sha256 = createHash("sha256").update(readFileSync(rosterPath)).digest("hex");
+writeFileSync(sourcePath, JSON.stringify(source, null, 2) + "\n");

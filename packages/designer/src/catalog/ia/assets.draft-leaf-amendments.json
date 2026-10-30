@@ -5,6 +5,11 @@
   "status": "pending-owner-ratification",
   "addedLeafIds": [
     "assets.icon-panel-left",
-    "assets.icon-set"
+    "assets.icon-set",
+    "assets.icon-explorer",
+    "assets.icon-inspector",
+    "assets.icon-source",
+    "assets.icon-checks",
+    "assets.icon-needs"
   ]
 }

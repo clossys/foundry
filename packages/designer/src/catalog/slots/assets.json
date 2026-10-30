@@ -998,5 +998,105 @@
     },
     "requires": [],
     "status": "draft"
+  },
+  {
+    "id": "assets.icon-explorer",
+    "layer": "assets",
+    "contract": {
+      "kind": "asset",
+      "valueKind": "glyph",
+      "members": {
+        "mode": "closed",
+        "names": [
+          "default"
+        ]
+      },
+      "modes": [
+        "light"
+      ],
+      "grid": 24
+    },
+    "requires": [],
+    "status": "draft"
+  },
+  {
+    "id": "assets.icon-inspector",
+    "layer": "assets",
+    "contract": {
+      "kind": "asset",
+      "valueKind": "glyph",
+      "members": {
+        "mode": "closed",
+        "names": [
+          "default"
+        ]
+      },
+      "modes": [
+        "light"
+      ],
+      "grid": 24
+    },
+    "requires": [],
+    "status": "draft"
+  },
+  {
+    "id": "assets.icon-source",
+    "layer": "assets",
+    "contract": {
+      "kind": "asset",
+      "valueKind": "glyph",
+      "members": {
+        "mode": "closed",
+        "names": [
+          "default"
+        ]
+      },
+      "modes": [
+        "light"
+      ],
+      "grid": 24
+    },
+    "requires": [],
+    "status": "draft"
+  },
+  {
+    "id": "assets.icon-checks",
+    "layer": "assets",
+    "contract": {
+      "kind": "asset",
+      "valueKind": "glyph",
+      "members": {
+        "mode": "closed",
+        "names": [
+          "default"
+        ]
+      },
+      "modes": [
+        "light"
+      ],
+      "grid": 24
+    },
+    "requires": [],
+    "status": "draft"
+  },
+  {
+    "id": "assets.icon-needs",
+    "layer": "assets",
+    "contract": {
+      "kind": "asset",
+      "valueKind": "glyph",
+      "members": {
+        "mode": "closed",
+        "names": [
+          "default"
+        ]
+      },
+      "modes": [
+        "light"
+      ],
+      "grid": 24
+    },
+    "requires": [],
+    "status": "draft"
   }
 ]
