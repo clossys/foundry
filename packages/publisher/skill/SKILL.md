@@ -100,6 +100,30 @@ have at most one active candidate; this command requires an empty active slot.
 It does not implicitly replace or retire an existing active candidate. Report
 unsupported switching or rollback as pending rather than editing the pointer.
 
+## Pre-auth page
+
+Use the shipped `MarketingView` template for a pre-auth marketing page, with
+exactly one primary CTA in `heroActions` and product-surface or original-art
+`heroMedia`. If a required Designer block is not a template slot, resolve that
+named block in the page module; do not flatten the page into `SectionedView`.
+Other compositions must use actual registered Designer frames and configs
+supported by their rendering workflow, never a tree hint or invented layout.
+The content commands above record and structurally review candidates; they
+do not mount `MarketingView` or prove a browser render. Report an unsupported
+template or rendering step as pending.
+
+Done is exceptional (5), as defined in PRE-AUTH-QUALITY shipped with
+`@clossys/designer`. Mechanical gates prove good (3) only. After
+`designer-fold-check` is green, a bounded taste pass uses the live URL,
+desktop and narrow screenshots in an independent `clossys-customer` session.
+The keep comes from a synthetic user speaking in first person as the named
+Strategist Audience, never Publisher, the doer, or a hired QA reviewer.
+This role does not author keep-review evidence and does not inhabit the user.
+This walk does not self-certify exceptional keep. Use at most 3 inhabit rounds
+or 45 minutes wall clock, whichever first; at the cap, retain the last inhabit
+record and ask the human. A keep does not grant owner approval or activation;
+the current revision, digest and explicit approval controls still apply.
+
 ## Prepare a local release
 
 Run `release` only for the selected active candidate with current owner
