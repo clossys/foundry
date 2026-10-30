@@ -244,6 +244,24 @@ export function checkSurfaceSourceIdentity(repository) {
   // Registered component leaves are terminal boundaries. No component internals are
   // scanned or judged by this gate; their independent gate owns those implementations.
   const componentFile = path.join(root, "packages/designer/src/runtime/component-leaf.tsx");
+  const componentBoundaries = new Set(), checker = program.getTypeChecker();
+  for (const file of fs.readdirSync(path.join(root, "packages/designer/src/catalog/fills"), { recursive: true }).filter(file => file.endsWith(".json"))) {
+    const meta = json(`packages/designer/src/catalog/fills/${file}`).$extensions?.["com.clossys.fill"];
+    if (!meta?.slot?.startsWith("components.") || !meta.pin?.package || !meta.pin.export) continue;
+    for (const owner of ["designer", "publisher"]) {
+      const directory = path.join(root, "packages", owner), manifest = json(`packages/${owner}/package.json`);
+      if (manifest.name !== meta.pin.package) continue;
+      const [subpath, name] = meta.pin.export.split("#"), target = manifest.exports?.[subpath];
+      const output = typeof target === "string" ? target : target?.import ?? target?.default;
+      if (typeof output !== "string") continue;
+      let sourcePath = path.resolve(directory, output).replace(/\/dist\//, "/src/").replace(/\.[cm]?js$/, ".ts");
+      if (!fs.existsSync(sourcePath)) sourcePath = sourcePath.replace(/\.ts$/, ".tsx");
+      const source = program.getSourceFile(sourcePath), module = source && checker.getSymbolAtLocation(source);
+      let symbol = module && checker.getExportsOfModule(module).find(symbol => symbol.name === name);
+      if (symbol?.flags & ts.SymbolFlags.Alias) symbol = checker.getAliasedSymbol(symbol);
+      for (const declaration of symbol?.declarations ?? []) componentBoundaries.add(key(declaration));
+    }
+  }
   function reaches(render, canonical) {
     const seen = new Set();
     const surfaceBoundaries = new Set(fills.flatMap(fill => fill.packageRoots.map(key)));
@@ -266,6 +284,7 @@ export function checkSurfaceSourceIdentity(repository) {
       }
       if (ts.isArrowFunction(expression) || ts.isFunctionExpression(expression)) return [fn(expression, env)];
       return resolver.declarations(ts.isPropertyAccessExpression(expression) ? expression.name : expression).flatMap(declaration => {
+        if (componentBoundaries.has(key(declaration))) return [];
         if (!declaration.getSourceFile().fileName.startsWith(root + path.sep) || declaration.getSourceFile().fileName.includes("/node_modules/")) return [];
         if (ts.isFunctionDeclaration(declaration) && declaration.body) return [fn(declaration, env)];
         if (ts.isVariableDeclaration(declaration) && declaration.initializer) return callable(declaration.initializer, env, aliases);
@@ -285,9 +304,10 @@ export function checkSurfaceSourceIdentity(repository) {
       if (owned.has(node)) continue;
       owned.add(node);
       for (const expression of bodyReturns(ts.isVariableDeclaration(node) ? unwrap(node.initializer) : node)) walk(expression, child => {
-        if (!ts.isJsxElement(child) && !ts.isJsxSelfClosingElement(child)) return;
-        const tag = ts.isJsxElement(child) ? child.openingElement.tagName : child.tagName;
+        const tag = ts.isJsxElement(child) ? child.openingElement.tagName : ts.isJsxSelfClosingElement(child) ? child.tagName : child === unwrap(expression) && ts.isCallExpression(child) ? child.expression : undefined;
+        if (!tag) return;
         for (const declaration of resolver.declarations(tag)) {
+          if (componentBoundaries.has(key(declaration))) continue;
           if (surfaceBoundaries.has(key(declaration)) && !canonical.has(key(declaration))) continue;
           if (ts.isVariableDeclaration(declaration) && declaration.initializer && ts.isCallExpression(unwrap(declaration.initializer)) && resolver.declarations(unwrap(declaration.initializer).expression).some(node => node.getSourceFile().fileName === componentFile)) continue;
           if (!declaration.getSourceFile().fileName.startsWith(root + path.sep) || declaration.getSourceFile().fileName.includes("/node_modules/")) continue;
@@ -343,7 +363,7 @@ export function checkSurfaceSourceIdentity(repository) {
       return !targets.length || !targets.every(target => target.node.body && ts.isBlock(target.node.body) && target.node.body.statements.length === 1 && ts.isThrowStatement(target.node.body.statements[0]));
     });
     const branches = expressions.map(expression => { seen.clear(); return inspect(expression, render.env); });
-    return { delegation: branches.length && branches.every(Boolean) ? [key(render.node), ...new Set(branches.flat())] : undefined, unproven: expressions.filter((_, index) => !branches[index]) };
+    return { delegation: branches.length && branches.every(Boolean) ? [key(render.node), ...new Set(branches.flat())] : undefined, canonicalGraph: [...owned].map(key), unproven: expressions.filter((_, index) => !branches[index]) };
   }
   const native = new Map(), nativeOutputs = [];
   try {
@@ -365,9 +385,23 @@ export function checkSurfaceSourceIdentity(repository) {
       // Inspect the actual emitted import/return chain rather than guessing from a name table.
       const ast = ts.createSourceFile(implementation.entry, emitted[0].content, ts.ScriptTarget.Latest, true, ts.ScriptKind.TSX);
       const exported = ast.statements.find(node => ts.isFunctionDeclaration(node) && node.name?.text === implementation.export && node.modifiers?.some(modifier => modifier.kind === ts.SyntaxKind.ExportKeyword));
-      const returns = exported?.body?.statements.filter(ts.isReturnStatement) ?? [];
-      if (returns.length !== 1 || !ts.isJsxSelfClosingElement(returns[0].expression)) resolver.fail(registryNode, `Native importer has independent/unknown render path for ${meta.slot}`, "competing-implementation");
-      const tag = returns[0].expression.tagName.getText();
+      const returns = [];
+      if (exported?.body) walk(exported.body, node => {
+        if (node !== exported.body && ts.isFunctionLike(node)) return false;
+        if (ts.isReturnStatement(node)) returns.push(node);
+      });
+      const drawing = returns.filter(node => node.parent === exported.body);
+      const props = exported?.parameters[0]?.name;
+      // The emitted adapter's reason/context NEED path is a refused binding.
+      // Every other return must be the one canonical JSX implementation.
+      const refusedBinding = node => {
+        const call = unwrap(node.expression), parent = node.parent;
+        if (!call || !props) return false;
+        return ts.isCallExpression(call) && ts.isPropertyAccessExpression(call.expression) && ts.isIdentifier(props) && call.expression.expression.getText() === props.text && call.expression.name.text === "need" && call.arguments.length === 1 && ts.isIfStatement(parent) && ts.isBinaryExpression(parent.expression) && parent.expression.operatorToken.kind === ts.SyntaxKind.InKeyword && ts.isStringLiteral(parent.expression.left) && parent.expression.left.text === "reason" && parent.expression.right.getText() === call.arguments[0].getText();
+      };
+      if (drawing.length !== 1 || !ts.isJsxSelfClosingElement(drawing[0].expression) || returns.some(node => node !== drawing[0] && !refusedBinding(node))) resolver.fail(registryNode, `Native importer has independent/unknown render path for ${meta.slot}`, "competing-implementation");
+      const rootReturn = drawing[0];
+      const tag = rootReturn.expression.tagName.getText();
       const imports = ast.statements.filter(ts.isImportDeclaration).flatMap(statement => statement.moduleSpecifier.text === "@clossys/designer/studio" && statement.importClause?.namedBindings && ts.isNamedImports(statement.importClause.namedBindings) ? statement.importClause.namedBindings.elements.filter(item => item.name.text === tag).map(item => (item.propertyName ?? item.name).text) : []);
       if (imports.length !== 1) resolver.fail(registryNode, `Native importer render identity unknown for ${meta.slot}`);
       const publicSymbol = studioExports.find(symbol => symbol.name === imports[0]);
@@ -401,7 +435,7 @@ export function checkSurfaceSourceIdentity(repository) {
       if (routeLeaf !== leaf || render?.kind !== "function") resolver.fail(route.node, "Route leaf/render source is unresolved", "unresolved-source");
       const proof = reaches(render, new Set(canonical.map(key))), delegation = proof.delegation;
       if (!delegation) for (const branch of proof.unproven.length ? proof.unproven : [render.node]) add("competing-implementation", leaf, branch, `Runtime return does not delegate to canonical ${key(canonical[0])}: ${branch.getText().slice(0, 240)}`);
-      inventory.push({ leaf, fill: fill.id, descriptor: fill.descriptor, canonical: key(canonical[0]), runtime: key(render.node), delegation, route: resolver.location(route.node) });
+      inventory.push({ leaf, fill: fill.id, descriptor: fill.descriptor, canonical: key(canonical[0]), canonicalGraph: proof.canonicalGraph, runtime: key(render.node), delegation, route: resolver.location(route.node) });
     } catch (error) { findings.push({ leaf, ...(error.finding ?? { code: "unresolved-source", detail: error.message }) }); }
   }
   for (const fill of fills) if (!registered.has(fill.leaf)) findings.push({ code: "unregistered-descriptor", leaf: fill.leaf, detail: fill.descriptor });

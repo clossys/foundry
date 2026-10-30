@@ -2,8 +2,7 @@
 import type { ReactNode } from "react";
 import type { Card } from "../../components/Card.js";
 import { componentLeaf } from "../component-leaf.js";
-import { FeatureGrid } from "../../blocks/FeatureGrid.js";
-import { FeatureLayouts } from "../../blocks/features/FeatureLayouts.js";
+import { FeatureSurface } from "../../blocks/features/FeatureSurface.js";
 import { dsAttrs } from "../../catalog-core/provenance-attrs.js";
 import { MediaFigure } from "../../blocks/MediaFigure.js";
 import type { ItemSpan } from "../../blocks/items/types.js";
@@ -32,8 +31,5 @@ export function renderFeaturesSection(input: SectionRenderInput): ReactNode {
     return { id: text(content, item.id, `${path}.id`), heading: text(content, item.heading, `${path}.heading`), description: optionalText(content, item.description, `${path}.description`), span: span as ItemSpan | undefined, visual };
   });
   const props = { items, eyebrow: header ? optionalText(content, header.eyebrow, "header.eyebrow") : undefined, heading: header ? optionalText(content, header.heading, "header.heading") : undefined, description: header ? optionalText(content, header.description, "header.description") : undefined };
-  if (layout === "bento" || layout === "tabs" || layout === "alternating" || layout === "scroll") {
-    return <FeatureCard data-features-component="components.card"><FeatureLayouts {...dsAttrs("sections", "sections.features", "foundry/sections.features")} {...props} layout={layout} ground="base" /></FeatureCard>;
-  }
-  return <FeatureCard data-features-component="components.card"><FeatureGrid {...props} {...(layout ? { layout } : {})} /></FeatureCard>;
+  return <FeatureCard data-features-component="components.card"><FeatureSurface mode="runtime" props={{ ...dsAttrs("sections", "sections.features", "foundry/sections.features"), ...props, ...(layout ? { layout } : {}), ground: "base" }} /></FeatureCard>;
 }
