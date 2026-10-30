@@ -1,0 +1,146 @@
+{
+  "$extensions": {
+    "com.clossys.fill": {
+      "id": "shadcn@aria/components.rich-text",
+      "slot": "components.rich-text",
+      "source": "shadcn@aria",
+      "mode": "implementation",
+      "sourceAddress": "./components#RichText",
+      "relation": "same-contract",
+      "builtOn": [
+        "components.badge",
+        "components.link",
+        "components.semantic-content",
+        "components.table"
+      ],
+      "conforms": [],
+      "evidence": [],
+      "author": "foundry",
+      "trust": "foundry",
+      "license": "MIT",
+      "pin": {
+        "package": "@clossys/designer",
+        "version": "0.12.0",
+        "export": "./components#RichText"
+      },
+      "status": "draft"
+    },
+    "com.clossys.engine-exception": {
+      "component": "components.rich-text",
+      "engine": "Tiptap 3 / ProseMirror",
+      "reason": "React Aria has no rich-text editor. MIT open-source packages only; no Pro or Cloud."
+    },
+    "com.clossys.typography": {
+      "source": "shadcn/ui typography",
+      "mapping": "Consumer typeface, body/code/heading sizes, spacing, surface, text and border tokens; no fixed prose values."
+    }
+  },
+  "components": {
+    "rich-text": {
+      "slot": "components.rich-text",
+      "source": "shadcn@aria",
+      "root": "presentational",
+      "members": [
+        "value.markdown",
+        "value.json",
+        "state.read-only",
+        "state.editable"
+      ],
+      "props": [
+        "value",
+        "readOnly",
+        "onChange",
+        "className",
+        "id",
+        "dir",
+        "aria-label",
+        "aria-labelledby"
+      ],
+      "propMap": {
+        "value.markdown": "./components#RichText",
+        "value.json": "./components#RichText",
+        "state.read-only": "./components#RichText.readOnly=true",
+        "state.editable": "./components#RichText.readOnly=false"
+      },
+      "reads": {
+        "tokens": [
+          "tokens.typeface",
+          "tokens.body-size",
+          "tokens.code-size",
+          "tokens.heading-size",
+          "tokens.font-size",
+          "tokens.font-weight",
+          "tokens.line-height",
+          "tokens.spacing",
+          "tokens.radius",
+          "tokens.control-radius",
+          "tokens.border-width",
+          "tokens.border-color",
+          "tokens.surface-color",
+          "tokens.text-color"
+        ],
+        "assets": [],
+        "components": [
+          "components.badge",
+          "components.link",
+          "components.semantic-content",
+          "components.table"
+        ]
+      },
+      "composes": [
+        "components.badge",
+        "components.link",
+        "components.semantic-content",
+        "components.table"
+      ],
+      "impl": {
+        "kind": "package",
+        "module": "@clossys/designer/components",
+        "export": "RichText"
+      },
+      "license": "MIT",
+      "pin": {
+        "package": "@clossys/designer",
+        "version": "0.12.0",
+        "export": "./components#RichText"
+      },
+      "deps": [
+        {
+          "name": "react",
+          "version": ">=18",
+          "license": "MIT"
+        },
+        {
+          "name": "react-aria-components",
+          "version": "^1.19.0",
+          "license": "Apache-2.0"
+        },
+        {
+          "name": "@tiptap/extension-table",
+          "version": "^3.32.1",
+          "license": "MIT"
+        },
+        {
+          "name": "@tiptap/markdown",
+          "version": "^3.32.1",
+          "license": "MIT"
+        },
+        {
+          "name": "@tiptap/react",
+          "version": "^3.32.1",
+          "license": "MIT"
+        },
+        {
+          "name": "@tiptap/starter-kit",
+          "version": "^3.32.1",
+          "license": "MIT"
+        }
+      ],
+      "rac": {
+        "instance": "react-aria-components",
+        "peer": true,
+        "range": "^1.19.0"
+      }
+    }
+  }
+}
