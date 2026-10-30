@@ -1,13 +1,9 @@
-/**
- * Keep Controller's public role charter in its README derived from the one
- * schema-v5 role contract it ships. A role's job, metric, loop, boundary, and
- * close condition are operational claims; prose that merely resembles the
- * contract is not a safe second source of truth.
- */
+/** Validate Controller's shipped schema-v5 role contract and README pointer. */
 
-import { readFileSync } from "node:fs";
+import { existsSync, readFileSync } from "node:fs";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
+import { evaluatePackageReadme } from "./check-readme-parity.mjs";
 
 const START = "<!-- controller-role-contract:start -->";
 const END = "<!-- controller-role-contract:end -->";
@@ -74,23 +70,19 @@ setpoint and review cadence; Controller supplies neither.
 ${END}`;
 }
 
-export function checkControllerRoleReadme({ contract, readme }) {
-  let expected;
+export function checkControllerRoleReadme({ contract, readme, manifest, licenseExists, noticesExist = false }) {
   try {
-    expected = renderControllerRoleBlock(contract);
+    // Preserve the full canonical schema validation; the README no longer
+    // duplicates this charter, so valid changes require no mirrored prose.
+    renderControllerRoleBlock(contract);
   } catch (error) {
     return { ok: false, reason: `canonical role contract is unreadable: ${error instanceof Error ? error.message : String(error)}` };
   }
-  const start = readme.indexOf(START);
-  const end = readme.indexOf(END);
-  if (start < 0 || end < start) return { ok: false, reason: `README must contain one ${START} … ${END} block` };
-  if (readme.indexOf(START, start + START.length) >= 0 || readme.indexOf(END, end + END.length) >= 0) {
-    return { ok: false, reason: "README must contain exactly one Controller role-contract block" };
-  }
-  const actual = readme.slice(start, end + END.length);
-  return actual === expected
+  if (manifest?.name !== ROLE) return { ok: false, reason: "manifest must identify the canonical Controller role" };
+  const findings = evaluatePackageReadme({ manifest, packageDir: "controller", readme, licenseExists, noticesExist });
+  return findings.length === 0
     ? { ok: true }
-    : { ok: false, reason: "README Controller role-contract block differs from docs/contracts/role-loop-archetypes.json" };
+    : { ok: false, reason: `README documentation pointer is invalid: ${findings.map((finding) => finding.rule).join(", ")}` };
 }
 
 function main() {
@@ -98,13 +90,19 @@ function main() {
   try {
     const contract = JSON.parse(readFileSync(join(repoRoot, "docs/contracts/role-loop-archetypes.json"), "utf8"));
     const readme = readFileSync(join(repoRoot, "packages/controller/README.md"), "utf8");
-    const result = checkControllerRoleReadme({ contract, readme });
+    const packageDir = join(repoRoot, "packages/controller");
+    const manifest = JSON.parse(readFileSync(join(packageDir, "package.json"), "utf8"));
+    const result = checkControllerRoleReadme({
+      contract, readme, manifest,
+      licenseExists: existsSync(join(packageDir, "LICENSE")),
+      noticesExist: existsSync(join(packageDir, "THIRD-PARTY-NOTICES.md")),
+    });
     if (!result.ok) {
       console.error(`CONTROLLER README ROLE PARITY FAIL — ${result.reason}`);
       process.exitCode = 1;
       return;
     }
-    console.log("CONTROLLER README ROLE PARITY OK — job, metric, primary and secondary modes, stages, boundary, and independent close condition match schema v5.");
+    console.log("CONTROLLER README ROLE PARITY OK — canonical schema-v5 role validates and the five-line README links its documentation, changelog, and license.");
   } catch (error) {
     console.error(`CONTROLLER README ROLE PARITY INDETERMINATE — ${error instanceof Error ? error.message : String(error)}`);
     process.exitCode = 2;

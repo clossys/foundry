@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import { readFileSync, readdirSync } from "node:fs";
+import { existsSync, readFileSync, readdirSync } from "node:fs";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import test from "node:test";
@@ -250,23 +250,12 @@ test("candidate-qualification-shard's matrix count is the single CANDIDATE_QUALI
   assert.match(stepBody, /exit 1/);
 });
 
-// #<CI throughput issue>: `build and test` used to run "Candidate
-// qualification records", "README code examples typecheck against shipped
-// declarations" and "Packed consumer readiness" as three serial steps of
-// its own -- 2185s of a 2571s run, none of the three depending on either of
-// the others. Splitting them into their own parallel jobs only cuts wall
-// time honestly if the required context named `build and test` still fails
-// whenever any of them does. GitHub's own default undermines that: a job
-// that `needs` other jobs is skipped -- not failed -- the moment one of
-// them fails, and a SKIPPED required context reports as passing. This test
-// proves the fan-in closes that gap structurally: `always()` so the job
-// cannot be silently skipped, every split job named in `needs`, and a step
-// that treats anything other than a clean 'success' as this job's own
-// failure.
+// Every remaining independent job remains binding on the required fan-in,
+// including failure, skip, and cancellation outcomes.
 test("the build-and-test fan-in genuinely fails when any split job does not succeed", () => {
   const workflow = readFileSync(join(workflowsDir, "ci.yml"), "utf8");
   const build = workflowJob(workflow, "build");
-  const splitJobs = ["candidate-qualification", "readme-examples-typecheck", "packed-consumer-readiness", "root-tests"];
+  const splitJobs = ["candidate-qualification", "packed-consumer-readiness", "root-tests"];
 
   const jobIf = build.match(/^ {4}if: (.+)$/m);
   assert.ok(jobIf, "build and test must declare a job-level if:");
@@ -335,7 +324,7 @@ test("root tests start independently of README and packed consumers with the sam
   assert.match(worker, /^    needs: \[push-tree, classify\]$/m);
   assert.deepEqual(
     build.match(/^    needs: \[(.+)\]$/m)?.[1].split(", "),
-    ["push-tree", "candidate-qualification", "readme-examples-typecheck", "packed-consumer-readiness", "classify", "root-tests"],
+    ["push-tree", "candidate-qualification", "packed-consumer-readiness", "classify", "root-tests"],
   );
   assert.equal(worker.match(/^    if: (.+)$/m)?.[1], build.match(/^    if: (.+)$/m)?.[1]);
   assert.match(worker, /fetch-depth: 0/);
@@ -499,7 +488,7 @@ test("real candidate framework acceptance runs only after install and build in r
 });
 
 // issue #1324 item 2: the three independent `workspace-build-cache` steps
-// (readme-examples-typecheck, packed-consumer-readiness, build) each key
+// (packed-consumer-readiness, build) each key
 // their cache on the files a `run: npm run build` invocation can read --
 // but two packages' `build` scripts run a pre-tsc generation step BEFORE
 // compiling (packages/launcher/scripts/pack-skills.mjs,
@@ -533,7 +522,7 @@ test("every workspace-build-cache step's key covers every input npm run build ca
     "scripts/lib/**",
     "docs/contracts/**",
   ];
-  const jobsWithTheCache = ["readme-examples-typecheck", "packed-consumer-readiness", "build", "root-tests"];
+  const jobsWithTheCache = ["packed-consumer-readiness", "build", "root-tests"];
   const keyLines = [];
   for (const jobName of jobsWithTheCache) {
     const job = workflowJob(workflow, jobName);
@@ -647,7 +636,7 @@ test("issue #1420: every heavy job depends on the classifier and fails OPEN (run
   // 'success' -- exactly the failure this same fan-in step exists to
   // detect. All seven gate on `tier != 'prose'` (never `== 'full'`): they
   // run for BOTH 'full' and 'packed-prose', and skip only for pure 'prose'.
-  const packedFileGates = ["readme-examples-typecheck", "artifact", "role-loop-archetypes", "build", "root-tests", "candidate-qualification-shard", "candidate-qualification", "packed-consumer-readiness"];
+  const packedFileGates = ["artifact", "role-loop-archetypes", "build", "root-tests", "candidate-qualification-shard", "candidate-qualification", "packed-consumer-readiness"];
   for (const jobName of packedFileGates) {
     const job = workflowJob(workflow, jobName);
     const needsLine = job.match(/^ {4}needs: \[(.+)\]$/m);
@@ -809,7 +798,6 @@ test("issue #1420: a failed, cancelled, or skipped classify job runs every gated
     "qualification-record-required",
     "contrast",
     "designer-contrast",
-    "readme-examples-typecheck",
     "artifact",
     "role-loop-archetypes",
     "build",
@@ -1082,4 +1070,17 @@ test("issue #1420 (N1): mutation proofs -- each of these must make the coverage 
     resultC.uncovered.includes("node:scripts/check-changelog-location.mjs"),
     `mutation (c) (an uncommented offending step, with the always-run copy also removed) must surface check-changelog-location.mjs as uncovered (got uncovered: ${JSON.stringify(resultC.uncovered)})`,
   );
+});
+
+
+test("the retired README example gate leaves no executable or waiver wiring", () => {
+  const workflow = readFileSync(join(workflowsDir, "ci.yml"), "utf8");
+  const scripts = JSON.parse(readFileSync(join(repoRoot, "package.json"), "utf8")).scripts;
+  assert.doesNotMatch(workflow, /readme-examples-typecheck|check:readme-examples|check-readme-examples/);
+  assert.equal(scripts["check:readme-examples"], undefined);
+  assert.doesNotMatch(scripts.check, /check:readme-examples/);
+  assert.equal(GATED_SCRIPT_PROSE_INPUTS["node:scripts/check-readme-examples.mjs"], undefined);
+  for (const path of ["scripts/check-readme-examples.mjs", "scripts/check-readme-examples.test.mjs", "governance/known-readme-example-failures.json"]) {
+    assert.equal(existsSync(join(repoRoot, path)), false, `${path} must be retired`);
+  }
 });

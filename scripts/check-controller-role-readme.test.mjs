@@ -3,57 +3,68 @@ import { readFileSync } from "node:fs";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import test from "node:test";
-
 import { checkControllerRoleReadme, renderControllerRoleBlock } from "./check-controller-role-readme.mjs";
 
 const repoRoot = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const contract = JSON.parse(readFileSync(join(repoRoot, "docs/contracts/role-loop-archetypes.json"), "utf8"));
+const manifest = JSON.parse(readFileSync(join(repoRoot, "packages/controller/package.json"), "utf8"));
 const readme = readFileSync(join(repoRoot, "packages/controller/README.md"), "utf8");
+const input = { contract, manifest, readme, licenseExists: true };
 
-test("Controller README role charter exactly matches the canonical schema-v5 role", () => {
-  assert.deepEqual(checkControllerRoleReadme({ contract, readme }), { ok: true });
+test("Controller validates its canonical schema-v5 role alongside a strict README pointer", () => {
+  assert.deepEqual(checkControllerRoleReadme(input), { ok: true });
 });
 
-test("only schema version 5 may render the Controller role block", () => {
+test("only schema version 5 may validate the canonical Controller role", () => {
   for (const schemaVersion of [3, 4, undefined, 5.5, "5"]) {
-    const incompatible = structuredClone(contract);
-    if (schemaVersion === undefined) delete incompatible.schemaVersion;
-    else incompatible.schemaVersion = schemaVersion;
-    assert.throws(() => renderControllerRoleBlock(incompatible), /schemaVersion must be exactly 5/);
-    assert.equal(checkControllerRoleReadme({ contract: incompatible, readme }).ok, false);
+    const changed = structuredClone(contract);
+    if (schemaVersion === undefined) delete changed.schemaVersion;
+    else changed.schemaVersion = schemaVersion;
+    assert.throws(() => renderControllerRoleBlock(changed), /schemaVersion must be exactly 5/);
+    assert.equal(checkControllerRoleReadme({ ...input, contract: changed }).ok, false);
   }
 });
 
-test("SEPARATING FIXTURE: a plausible README block with stale loop stages is rejected", () => {
-  const stale = renderControllerRoleBlock(contract).replace("`learn`", "`learnOrEscalate`");
-  assert.deepEqual(checkControllerRoleReadme({ contract, readme: stale }), {
-    ok: false,
-    reason: "README Controller role-contract block differs from docs/contracts/role-loop-archetypes.json",
-  });
+test("Controller refuses stale canonical stages and missing client-owned cadence", () => {
+  const stages = structuredClone(contract);
+  stages.universalStages[4] = "learnOrEscalate";
+  assert.equal(checkControllerRoleReadme({ ...input, contract: stages }).ok, false);
+  const bindings = structuredClone(contract);
+  bindings.consumerBindings = bindings.consumerBindings.filter((binding) => binding !== "cadence");
+  assert.equal(checkControllerRoleReadme({ ...input, contract: bindings }).ok, false);
 });
 
-test("REVIEWER PROOF: an added canonical secondary mode cannot pass against a README that declares none", () => {
-  const withSecondaryMode = structuredClone(contract);
-  withSecondaryMode.roles["@clossys/controller"].secondaryModes = ["assure"];
-  assert.deepEqual(checkControllerRoleReadme({ contract: withSecondaryMode, readme }), {
-    ok: false,
-    reason: "README Controller role-contract block differs from docs/contracts/role-loop-archetypes.json",
+for (const path of [
+  ["jobQuestion"], ["metric", "name"], ["metric", "formula"], ["metric", "unit"],
+  ["metric", "direction"], ["primaryMode"], ["secondaryModes"],
+  ["boundary", "owns"], ["boundary", "excludes"], ["closeCondition"],
+]) {
+  test(`Controller refuses a malformed canonical ${path.join(".")}`, () => {
+    const changed = structuredClone(contract);
+    let parent = changed.roles[manifest.name];
+    for (const key of path.slice(0, -1)) parent = parent[key];
+    delete parent[path.at(-1)];
+    const result = checkControllerRoleReadme({ ...input, contract: changed });
+    assert.equal(result.ok, false);
+    assert.match(result.reason, /canonical role contract is unreadable/);
   });
+}
+
+test("valid canonical secondary modes need no duplicate role prose in the README", () => {
+  const changed = structuredClone(contract);
+  changed.roles[manifest.name].secondaryModes = ["assure", "steward"];
+  assert.deepEqual(checkControllerRoleReadme({ ...input, contract: changed }), { ok: true });
+  assert.match(renderControllerRoleBlock(changed), /`assure`, `steward`/);
 });
 
-test("secondary modes preserve the contract's declared order", () => {
-  const withSecondaryModes = structuredClone(contract);
-  withSecondaryModes.roles["@clossys/controller"].secondaryModes = ["assure", "steward"];
-  const canonicalReadme = renderControllerRoleBlock(withSecondaryModes);
-  assert.deepEqual(checkControllerRoleReadme({ contract: withSecondaryModes, readme: canonicalReadme }), { ok: true });
-  assert.deepEqual(checkControllerRoleReadme({ contract: withSecondaryModes, readme: canonicalReadme.replace("`assure`, `steward`", "`steward`, `assure`") }), {
-    ok: false,
-    reason: "README Controller role-contract block differs from docs/contracts/role-loop-archetypes.json",
-  });
-});
-
-test("a missing client-owned setpoint or cadence is not rendered from an unreadable contract", () => {
-  const withoutCadence = structuredClone(contract);
-  withoutCadence.consumerBindings = withoutCadence.consumerBindings.filter((binding) => binding !== "cadence");
-  assert.throws(() => renderControllerRoleBlock(withoutCadence), /setpoint and cadence/);
+test("Controller refuses stale identity, install, docs, and license pointers", () => {
+  for (const changed of [
+    readme.replace(`# ${manifest.name}`, "# wrong-package"),
+    readme.replace(`npm install ${manifest.name}`, "npm install wrong-package"),
+    readme.replace("https://clossys.com/docs/controller", "https://clossys.com/docs/other"),
+    readme.replace(" · [License](./LICENSE)", ""),
+    renderControllerRoleBlock(contract),
+  ]) assert.equal(checkControllerRoleReadme({ ...input, readme: changed }).ok, false);
+  assert.equal(checkControllerRoleReadme({ ...input, licenseExists: false }).ok, false);
+  assert.equal(checkControllerRoleReadme({ ...input, manifest: { ...manifest, name: "@gate-fixture/other" } }).ok, false);
 });
