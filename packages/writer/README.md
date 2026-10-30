@@ -118,6 +118,67 @@ ship actual product language, except for the 72 English front-door defaults in
 "Front-door copy" below. Those decisions remain with the consumer and the
 product's facts system.
 
+## Deriving native Writer cells from Director
+
+Creative derivation runs in the consumer's subscription session: a fresh
+high-capability Writer subagent follows [the package skill](skill/SKILL.md),
+reads Director and drafts the voice rules and requested `site.*` copy. The
+Producer CLI stays deterministic, with no model calls, API keys or network:
+
+| Command | Result |
+| --- | --- |
+| `clossys write --brief` | Prints a structured brief of active Director brand essence, personality, visual direction, voice, audience, position and wont-claim, with ids, versions, source obligations and Writer leaves to fill. Writes nothing. |
+| `clossys write --check` | Checks current Director links, voice/trait coverage, wont-claim bans and locale coverage. Reads the latest non-retired Writer version per cell, including newer drafts. Writes nothing. |
+| `clossys write` | Compiles the active Writer versions selected by `tree.json` into `clossys/agents/writer/compiled`, using `compile.json`. Creates no drafts and requires no derivation check. |
+
+`--brief` and `--check` cannot be combined. `--json` places the brief or
+check report in the result's `brief` or `checks` field. Checks exit `0` when
+clean, `1` for findings and `2` when they cannot run; brief and compilation
+exit `0` on success or `2` on failure.
+
+The session interprets the direction into audience-facing language and gives
+its rationale. It uses exactly the consumer's configured locales, preserves
+interpolation and translation provenance, and leaves unresolved claims,
+contact details and legal facts as `TODO-OWNER` placeholders. Wont-claim
+becomes an actual native ban, such as a `lexicon.avoid-terms` term with
+`termStatus: "avoid"`, a voice-rule `forbidden` list, or a safe
+`lexicon.avoid-patterns` rule. Recording a prohibition only in prose does
+not enforce it. The derivation check matches quoted Director Never/Never-claim
+phrases against copy; unquoted prohibitions report `wont-claim:unchecked`.
+It does not interpret the authored avoid records, whose existing native lint
+gates still apply. Semantic or unsupported-language limits remain visible.
+
+Native cells retain their existing format. Rationale uses the optional
+frontmatter `note` string; `links` contains versioned source refs such as
+`director:identity.verbal.voice@1`. Record-level `directorSources` maps a
+realisation to the brief's source obligation, for example
+`[{"ref":"director:identity.verbal.voice@1","line":15}]`. Copy the actual
+`ref` and `line` from the brief and include each ref in the cell's `links`.
+For text records this belongs in the one-line JSON metadata; for textless
+records it belongs in the fenced JSON record. Do not add unsupported
+frontmatter keys or a second cell format.
+
+Use the installed native cell CLI for the existing draft lifecycle:
+
+```bash
+node node_modules/@clossys/writer/dist/cells/cli.js propose <cell.id>
+# Edit the returned native draft; do not edit active bodies or tree pointers.
+clossys write --check
+node node_modules/@clossys/writer/dist/cells/cli.js activate <cell.id>@<N> --out clossys/agents/writer/compiled --confirm 'msg:<session>#U<n>'
+clossys write --check
+clossys write
+```
+
+These placeholders identify the actual draft and genuine owner confirmation;
+they are not confirmation evidence. `propose` copies an existing active cell
+to an unused draft version. Initial cells use the established migration/setup
+flow with a compile output mapping. Activation validates the Writer profile;
+native cell activation does not replace copy-record approval. Re-read the
+brief after Director activation and fix stale citations before proceeding.
+The existing strategy handoff, approval and pre-auth keep requirements still
+apply. A deterministic pass proves traceability, not taste: the planner judges
+Studio specimens against Director, then the owner confirms the result.
+
 ## Resolving copy for a surface
 
 `CopyRecord` is the minimal schema used by source scanning and voice checking.

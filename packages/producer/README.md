@@ -18,8 +18,23 @@ clossys <verb> [--check] [--root <dir>] [--json]
 | `publish` | Publisher |
 | `produce` | The four agents in sequence |
 
-`direct`, `design`, `write`, and `publish` are dispatch stubs in this build.
+`direct`, `design`, and `publish` are dispatch stubs in this build.
 They exit `2` with `not implemented in this build`. Help exits `0`.
+
+`clossys write --brief` assembles a structured, read-only brief from the active
+Director cells, including their ids and versions and the Writer leaves to fill.
+It prints the brief; `--json` puts it in the result's `brief` field.
+`clossys write --check` checks Director links, version freshness, voice derivation,
+banned claims and locale coverage using Writer's native checks. Findings appear
+in the message and the JSON result's `checks` field. Both commands preserve cell
+files and outputs. `--brief` and `--check` cannot be combined.
+
+Plain `clossys write` compiles active Writer cells to
+`clossys/agents/writer/compiled` using the existing compile manifest. It does not
+require a clean traceability check or an active Director. Draft cells remain
+outside the compiled copy. These commands make no model or network calls and
+create no drafts; creative derivation follows the Writer package skill in the
+consumer session, followed by the existing cell check and activation flow.
 
 `clossys produce [--port 4300] [--no-open]` compiles Designer and Writer cells,
 then serves the read-only Studio on `127.0.0.1`. The browser opens by default.
@@ -87,7 +102,7 @@ result object (on shutdown for a serving command). `produce` accepts `--once`, `
 | Exit | Contract |
 | --- | --- |
 | `0` | Successful result, including help |
-| `1` | Reserved for a verdict failure when verb behavior is implemented |
+| `1` | Writer traceability or coverage findings |
 | `2` | Usage error, missing root, unresolved agent, or current stub refusal |
 
 ## Agent mapping API

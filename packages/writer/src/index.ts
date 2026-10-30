@@ -290,3 +290,6 @@ export { canonicalLocale, fallbackChain, directionFor } from "./locale.js";
 
 export { checkWriterRecordDrift } from "./checks/record-drift.js";
 export type { WriterRecordSource, WriterRecordDriftFinding } from "./checks/record-drift.js";
+export { assembleWriterBrief, checkWriterDerivation } from './cells/derivation.js';
+export type { WriterBrief, DirectorObligation, WriterDerivationFinding, WriterDerivationCheck } from './cells/derivation.js';
+export { compileWriterCells } from './cells/compile.js';

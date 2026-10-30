@@ -48,7 +48,7 @@ describe("clossys bin", () => {
     expect(result.stderr).toBe("");
   });
 
-  it.each(verbs.filter(verb => verb !== "produce"))("recognizes %s with a stub refusal", (verb) => {
+  it.each(verbs.filter(verb => verb !== "produce" && verb !== "write"))("recognizes %s with a stub refusal", (verb) => {
     const result = run([verb]);
     expect(result.status).toBe(2);
     expect(result.stderr).toContain(`${verb}: not implemented in this build`);
@@ -80,7 +80,6 @@ describe("clossys bin", () => {
 
   it.each([
     ["publish", "--target", "example"],
-    ["write", "--check", "--root", "."],
   ])("parses supported flags without implementing behavior: %j", (...args) => {
     const result = run(args);
     expect(result.status).toBe(2);
@@ -120,7 +119,8 @@ describe("clossys bin", () => {
     for (const verb of verbs) {
       const result = run([verb, "--check"]);
       expect(result.status).toBe(2);
-      expect(result.stderr).toContain(verb === "produce" ? "missing" : "not implemented in this build");
+      if (verb === "write") expect(result.stderr).not.toContain("not implemented in this build");
+      else expect(result.stderr).toContain(verb === "produce" ? "missing" : "not implemented in this build");
     }
     expect(snapshot(fixture)).toEqual(before);
   });
