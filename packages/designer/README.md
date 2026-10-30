@@ -10659,3 +10659,28 @@ import { LogoHero } from "@clossys/designer/blocks/server";
 
 <LogoHero mark="/brand/mark.svg" name="Example" />;
 ```
+
+### Rich text
+
+`RichText` from `@clossys/designer/components` renders Markdown or a Tiptap
+JSON document. It is registered as `components.rich-text` with a `shadcn@aria`
+fill, so consumer surfaces resolve it through the normal selection pipeline.
+
+```tsx
+<RichText value={markdownOrJson} readOnly aria-label="Strategy passage" />
+```
+
+Read-only is the default: document content renders during SSR with no editor
+controls or contenteditable element. Studio always passes `readOnly`. Outside
+Studio, `readOnly={false}` enables the Tiptap editor; `onChange` receives its
+JSON document. Controlled value changes synchronize without firing `onChange`.
+Headings, lists and marks use the consumer's prose scale; links, badges and
+tables compose Designer components, and code/callout are document parts of
+this leaf. JSON supports the standard StarterKit/table schema plus `callout`
+nodes and `badge` marks. Table cells currently render a rectangular grid;
+merged-cell presentation is not supported.
+
+React Aria has no rich-text editor. The leaf records that specific engine gap
+and uses only the four MIT Tiptap 3 direct packages listed in
+THIRD-PARTY-NOTICES.md, with ProseMirror supplied transitively. No Pro or Cloud
+package, hosted editor service or model call is involved.
