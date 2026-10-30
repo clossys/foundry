@@ -7,7 +7,7 @@ import type { AgentCells, CellSummary } from "./contract.js";
 
 export const AGENT_KINDS = Object.keys(AGENT_PACKAGES) as AgentKind[];
 export const CELL_ID = /^[a-z][a-z0-9-]*(\.[a-z][a-z0-9-]*){1,2}$(?![\s\S])/;
-interface StoredCell extends Omit<CellSummary, "fields"> { source: string; document: { fields: Record<string, unknown> } }
+export interface StoredCell extends Omit<CellSummary, "fields"> { source: string; document: { fields: Record<string, unknown>; body: { text: string }[] } }
 const modules = new Map<string, Promise<any>>();
 /** Resolve through the scaffold mapping, then load the package's shipped Node API. */
 export function agentModule(agent: AgentKind, relativeFile: string): Promise<any> {
@@ -40,10 +40,21 @@ export async function readCells(root: string, agent: AgentKind, activeOnly = fal
   // Agent-specific parsers own the profile's content rather than Producer.
   if (agent === "designer") {
     const profile = await agentModule(agent, "library-cli/cells.js");
-    for (const cell of cells) profile.parseLibraryCell(cell.source, cell.path);
+    const catalog = (await agentModule(agent, "catalog-core/index.js")).loadBuildCatalog();
+    for (const cell of cells) {
+      const parsed = profile.parseLibraryCell(cell.source, cell.path);
+      const slot = catalog.slots.find((entry: { id: string }) => entry.id === cell.id);
+      if (!slot) throw new Error("The Designer source slot has no native contract");
+      const { layer, contract } = slot;
+      const valueKind = contract.kind === "token" ? contract.$type : contract.kind === "asset" ? contract.valueKind : undefined;
+      cell.native = { agent: "designer", kind: contract.kind, layer, ...(typeof valueKind === "string" ? { valueKind } : {}), fill: parsed.fill, rationale: parsed.rationale, originKinds: parsed.originKinds, sources: parsed.sources };
+    }
   } else if (agent === "writer") {
     const profile = await agentModule(agent, "cells/parse.js");
-    for (const cell of cells) profile.parseWriterCell(cell.source, cell.path);
+    for (const cell of cells) {
+      const parsed = profile.parseWriterCell(cell.source, cell.path);
+      cell.native = { agent: "writer", kind: "writer", locales: parsed.locales, records: parsed.records };
+    }
   } else if (agent === "publisher") {
     // Publisher's projection API checks generated outputs and cross-agent links.
     // Its underlying shared store is the read API for drafts as well as actives.
@@ -53,13 +64,19 @@ export async function readCells(root: string, agent: AgentKind, activeOnly = fal
     for (const cell of cells) {
       const parsed = profile.parseCell(cell.source, cell.path);
       if (!parsed.ok) throw new Error("Invalid Director cell profile");
+      const bullet = (entry: { key?: string; text: string }) => `- ${entry.key ? `${entry.key}: ` : ""}${entry.text}`;
+      cell.native = { agent: "director", kind: "director", sections: [
+        { title: "Direction", value: parsed.value.direction.map(bullet).join("\n") },
+        { title: "Because", value: parsed.value.because.map(bullet).join("\n") },
+        { title: "Watch", value: parsed.value.watch.map(bullet).join("\n") },
+      ] };
     }
   }
   return cells;
 }
 
 export function summary(cell: StoredCell): CellSummary {
-  return { id: cell.id, version: cell.version, status: cell.status, path: cell.path, fields: cell.document.fields };
+  return { id: cell.id, version: cell.version, status: cell.status, path: cell.path, fields: cell.document.fields, ...(cell.native ? { native: cell.native } : {}) };
 }
 export async function inventory(root: string, agent: AgentKind): Promise<AgentCells> {
   let packageName: string = AGENT_PACKAGES[agent][0];
@@ -67,6 +84,7 @@ export async function inventory(root: string, agent: AgentKind): Promise<AgentCe
     packageName = resolveAgent(agent).packageName;
     if (!await hasCellTree(agentRoot(root, agent))) return { agent, packageName, state: "missing", cells: [], message: "Agent cells are not initialized" };
     const all = await readCells(root, agent);
+    await readCells(root, agent, true);
     const latest = new Map<string, StoredCell>();
     for (const cell of all) if ((latest.get(cell.id)?.version ?? 0) < cell.version) latest.set(cell.id, cell);
     const handle = await open(join(agentRoot(root, agent), "tree.json"), constants.O_RDONLY | constants.O_NOFOLLOW);

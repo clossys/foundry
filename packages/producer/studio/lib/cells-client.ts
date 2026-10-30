@@ -1,15 +1,26 @@
+import type { NativeCellData } from "../../src/server/contract";
 import { isAgent, type Agent } from './agents';
 
-export interface CellSummary { id: string; title: string; parent?: string; version?: number; status?: 'draft' | 'active' | 'retired'; path?: string; fields?: Record<string, unknown> }
+export interface CellSummary { native?: NativeCellData; id: string; title: string; parent?: string; version?: number; status?: 'draft' | 'active' | 'retired'; path?: string; fields?: Record<string, unknown> }
 export type CellContentScope = { kind: 'cell'; cellId: string } | { kind: 'version'; cellId: string; version: number };
 export interface AgentCells { contentScope?: CellContentScope; agent: Agent; cells: CellSummary[]; tree?: Record<string, unknown>; state: 'ready' | 'missing' | 'error'; error?: string }
 export interface CellDetail extends CellSummary { agent: Agent; content: string }
 
 function object(value: unknown): value is Record<string, unknown> { return typeof value === 'object' && value !== null && !Array.isArray(value); }
 
-function summary(value: unknown): CellSummary {
+function nativeData(value: unknown, agent: Agent): NativeCellData | undefined {
+  if (value === undefined) return undefined;
+  if (!object(value) || value.agent !== agent) throw new Error('The native cell projection belongs to another agent.');
+  const strings = (value: unknown) => Array.isArray(value) && value.every(entry => typeof entry === 'string');
+  const valid = agent === 'director' ? value.kind === 'director' && Array.isArray(value.sections) && value.sections.every(entry => object(entry) && typeof entry.title === 'string' && typeof entry.value === 'string')
+    : agent === 'writer' ? value.kind === 'writer' && strings(value.locales) && Array.isArray(value.records) && value.records.every(entry => object(entry) && typeof entry.locale === 'string' && object(entry.record) && Array.isArray(entry.bindings) && entry.bindings.every(object))
+    : agent === 'designer' && ['token', 'asset', 'component', 'section', 'frame'].includes(String(value.kind)) && typeof value.layer === 'string' && (value.valueKind === undefined || typeof value.valueKind === 'string') && object(value.fill) && (value.rationale === null || typeof value.rationale === 'string') && strings(value.originKinds) && strings(value.sources);
+  if (!valid) throw new Error('The native cell projection is invalid.');
+  return value as unknown as NativeCellData;
+}
+function summary(value: unknown, agent: Agent): CellSummary {
   if (!object(value) || typeof value.id !== 'string' || !value.id || !Number.isSafeInteger(value.version) || Number(value.version) < 1 || !['draft', 'active', 'retired'].includes(String(value.status)) || typeof value.path !== 'string' || !object(value.fields)) throw new Error('A cell in the response is invalid.');
-  return { id: value.id, title: typeof value.fields.title === 'string' && value.fields.title ? value.fields.title : value.id.split('.').at(-1)!, version: Number(value.version), status: value.status as 'draft' | 'active' | 'retired', path: value.path, fields: value.fields };
+  return { id: value.id, title: typeof value.fields.title === 'string' && value.fields.title ? value.fields.title : value.id.split('.').at(-1)!, version: Number(value.version), status: value.status as 'draft' | 'active' | 'retired', path: value.path, fields: value.fields, ...(value.native === undefined ? {} : { native: nativeData(value.native, agent) }) };
 }
 
 
@@ -18,7 +29,8 @@ export function parseCellsResponse(value: unknown): AgentCells[] {
   if (!object(value) || !Array.isArray(value.agents)) throw new Error('The cell index response is invalid.');
   return value.agents.map((entry: unknown) => {
     if (!object(entry) || typeof entry.agent !== 'string' || !isAgent(entry.agent) || !['ready', 'missing', 'error'].includes(String(entry.state)) || !Array.isArray(entry.cells) || entry.tree !== undefined && !object(entry.tree)) throw new Error('The agent cell index is invalid.');
-    const cells = entry.cells.map(summary);
+    const agent = entry.agent as Agent;
+    const cells = entry.cells.map(cell => summary(cell, agent));
     if (new Set(cells.map(cell => cell.id)).size !== cells.length) throw new Error('The cell index contains duplicate IDs.');
     const error = entry.state === 'error' ? typeof entry.message === 'string' ? entry.message : 'Producer could not read this agent’s cells.' : undefined;
     return { agent: entry.agent, cells, tree: entry.tree as Record<string, unknown> | undefined, state: entry.state as AgentCells['state'], ...(error ? { error } : {}) };
@@ -29,7 +41,7 @@ export function parseCellResponse(value: unknown, agent: Agent, id: string): Cel
   if (!object(value) || value.agent !== agent || value.state !== 'ready' || !object(value.cell)) throw new Error('The selected cell response is invalid.');
   const cell = value.cell;
   if (cell.id !== id || typeof cell.source !== 'string') throw new Error('The selected cell response is invalid.');
-  return { ...summary(cell), agent, content: cell.source };
+  return { ...summary(cell, agent), agent, content: cell.source };
 }
 
 async function request(path: string, signal: AbortSignal): Promise<unknown> {

@@ -41,6 +41,12 @@ export function writerProjection(cell: CellDetail): WriterProjection {
       if (object(content) && Array.isArray(content.records)) for (const record of content.records) add(record, tag);
     }
   };
+  if (cell.native?.agent === 'writer') {
+    projection.locales = [...cell.native.locales];
+    for (const entry of cell.native.records) add(entry.record, entry.locale);
+    projection.tone = [...new Set(projection.tone)]; projection.banned = [...new Set(projection.banned)];
+    return projection;
+  }
   const body = cell.content.replace(/^\uFEFF/, '').replace(/^---\r?\n[\s\S]*?\r?\n---(?:\r?\n|$)/, '');
   // Canonical profile: locale heading, context heading, metadata, then produced text.
   const lines = body.split(/\r?\n/);

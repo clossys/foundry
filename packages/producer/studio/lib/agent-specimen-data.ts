@@ -24,7 +24,7 @@ export function agentSpecimenPlan(index: AgentCells, cell: CellDetail, publicati
   }
   if (index.state !== 'ready') plan.issues.push(index.error ?? 'The agent cell index is unavailable.');
   if (cell.agent === 'director') {
-    const sections = directorSections(cell.content);
+    const sections = cell.native?.agent === 'director' ? cell.native.sections.filter(section => section.value.trim()) : directorSections(cell.content);
     plan.items = sections.map((section, position) => ({ id: `${cell.id}:${section.title.toLowerCase()}:${position + 1}`, kind: 'director', title: section.title, value: section.value }));
     plan.expectedVariantIds = plan.items.map(item => String(item.id));
     // An empty declared passage must not disappear into a passing nonempty inventory.
@@ -35,7 +35,7 @@ export function agentSpecimenPlan(index: AgentCells, cell: CellDetail, publicati
       if (/^\s*```/.test(line)) { fenced = !fenced; continue; }
       if (!fenced && /^#{1,6}\s+(?:Direction|Because|Watch)\s*$/.test(line)) declared++;
     }
-    if (declared > sections.length) plan.issues.push('A declared Director passage has no supported semantic content.');
+    if (cell.native?.agent === 'director' ? cell.native.sections.length > sections.length : declared > sections.length) plan.issues.push('A declared Director passage has no supported semantic content.');
     if (!plan.items.length) plan.issues.push('No Director semantic passages are available.');
     return plan;
   }
