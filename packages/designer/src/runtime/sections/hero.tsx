@@ -7,7 +7,7 @@ import type { LineChart as LineChartComponent } from "../../charts/LineChart.js"
 import type { Logomark as LogoComponent } from "../../components/Logomark.js";
 import { componentLeaf } from "../component-leaf.js";
 import { heroCopyOf } from "./hero-copy.js";
-import { checkConsumerArtContract, type StillBackdropArt } from "../../backdrop/consumer-art.js";
+import { resolveHeroBackdrop, type HeroBackdrop } from "../../blocks/hero/hero-backdrop.js";
 import { Hero } from "../../blocks/Hero.js";
 import { list, memberValue, numbers, object, readSectionContent, required, SectionContentError, text, texts, type SectionRenderInput, type SectionRendererInputs } from "./group-a-content.js";
 
@@ -31,11 +31,7 @@ export function renderHeroSection(input: SectionRenderInput): ReactNode {
   const extra = actions && Object.keys(actions).find(key => key !== "primary" && key !== "secondary");
   if (extra) throw new SectionContentError(content.leaf, `actions.${extra}: one primary and one secondary action`);
   const backdrop = content.values.backdrop;
-  if (backdrop !== undefined) {
-    if (!checkConsumerArtContract(backdrop).ok) throw new SectionContentError(content.leaf, "backdrop must be checked static art");
-    const declaration = object(content, backdrop, "backdrop");
-    if (declaration.slot !== "backdrop" || declaration.loading !== "lazy") throw new SectionContentError(content.leaf, "backdrop must be checked static art");
-  }
+  resolveHeroBackdrop(backdrop);
   const action = (value: RuntimeJson | undefined, path: "primary" | "secondary", fallback: "default" | "outline") => {
     const record = object(content, value, `actions.${path}`);
     const label = copy[`actions.${path}.label`];
@@ -70,7 +66,7 @@ export function renderHeroSection(input: SectionRenderInput): ReactNode {
         {actions.secondary === undefined ? null : action(actions.secondary, "secondary", "outline")}
       </>}
       media={renderedMedia}
-      backdrop={backdrop as StillBackdropArt | undefined}
+      backdrop={backdrop as HeroBackdrop | undefined}
       backdropScrim={memberValue(content, "backdrop.scrim", ["light", "strong"] as const)}
       ground={memberValue(content, "ground", ["base", "inverse"] as const)}
       composition={memberValue(content, "layout", ["editorial", "split", "full-bleed"] as const)}

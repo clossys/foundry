@@ -5,6 +5,8 @@ import { runtimeHash, type RuntimeContent, type RuntimeJson, type RuntimeRenderI
 import type { SpecimenDataset } from "./specimen-dataset.js";
 import type { CompositeResolved } from "../catalog-core/types.js";
 import { renderHeroSection } from "../runtime/sections/hero.js";
+import { plainJson } from "../runtime/sections/dataset-json.js";
+import type { HeroBackdrop } from "../blocks/hero/hero-backdrop.js";
 import type { HeroCopy } from "../runtime/sections/hero-copy.js";
 
 export const HERO_SPECIMEN_COPY = {
@@ -33,6 +35,14 @@ export const HERO_SPECIMEN_BACKDROP = {
   backgroundToken: "--color-surface-base",
   source: { format: "svg", paths: [{ d: "M0 0H1600V900H0Z", fillToken: "--color-accent" }] },
 } as const satisfies StillBackdropArt;
+/** Four explicit owner-data choices. Unsupported live bindings remain visible NEEDs. */
+export const HERO_BACKDROP_SPECIMENS = [
+  { kind: "none", backdrop: { kind: "none" } },
+  { kind: "image", backdrop: { kind: "image", image: HERO_SPECIMEN_BACKDROP } },
+  { kind: "video", backdrop: { kind: "video", video: { src: "/specimens/example-hero.webm", poster: "/specimens/example-hero-poster.webp", mediaType: "video/webm", width: 1600, height: 900, reducedMotion: "poster" }, poster: HERO_SPECIMEN_BACKDROP, muted: true, autoplay: true, loop: true, playsInline: true } },
+  { kind: "graphic", backdrop: { kind: "graphic", asset: "asset.backdrop.graphic" } },
+] as const satisfies readonly { readonly kind: string; readonly backdrop: HeroBackdrop }[];
+
 const mark = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Cpath d='M10 10H90V90H10Z' fill='currentColor'/%3E%3C/svg%3E";
 export const HERO_SPECIMEN_CONTENT = {
   header: {},
@@ -56,12 +66,13 @@ export const HERO_MEMBER_SPECIMENS = [
 ] as const;
 export const HERO_PREVIEW_MEMBERS = ["layout.split", "ground.base", "size.display", "backdrop.scrim.light"] as const;
 
-export function heroSpecimenInput(members: readonly string[] = HERO_PREVIEW_MEMBERS): RuntimeRenderInput<ReactNode> {
+export function heroSpecimenInput(members: readonly string[] = HERO_PREVIEW_MEMBERS, backdrop: HeroBackdrop = HERO_SPECIMEN_BACKDROP): RuntimeRenderInput<ReactNode> {
   const source = { entry: "index.ts", files: { "index.ts": 'export { GROUP_A_SECTION_RENDERERS } from "@clossys/designer/runtime/sections/group-a";\n' }, dependencies: {} };
-  const content: Record<string, RuntimeContent> = Object.fromEntries(Object.entries(HERO_SPECIMEN_CONTENT).map(([slot, value]) => {
+  const content: Record<string, RuntimeContent> = Object.fromEntries(Object.entries({ ...HERO_SPECIMEN_CONTENT, backdrop }).map(([slot, value]) => {
     const kinds = { header: "region", actions: "action", media: "media", backdrop: "media" } as const;
     const reference = { kind: kinds[slot as keyof typeof kinds], ref: `specimen:example/hero.${slot}` };
-    return [slot, { reference, value, hash: runtimeHash(value) }];
+    const json = plainJson(value, `hero.${slot}`);
+    return [slot, { reference, value: json, hash: runtimeHash(json) }];
   }));
   return {
     path: "sections.hero-specimen.0",
@@ -74,6 +85,6 @@ export function heroSpecimenInput(members: readonly string[] = HERO_PREVIEW_MEMB
 }
 
 /** Mount inside the consumer's actual ComponentProvider and Suspense boundary. */
-export function HeroSpecimen({ members = HERO_PREVIEW_MEMBERS }: { readonly members?: readonly string[] }) {
-  return renderHeroSection(heroSpecimenInput(members));
+export function HeroSpecimen({ members = HERO_PREVIEW_MEMBERS, backdrop = HERO_SPECIMEN_BACKDROP }: { readonly members?: readonly string[]; readonly backdrop?: HeroBackdrop }) {
+  return renderHeroSection(heroSpecimenInput(members, backdrop));
 }

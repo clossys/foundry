@@ -5,7 +5,8 @@ import { cx } from "../components/internal/cx.js";
 import type { SectionIntroProps } from "./SectionIntro.js";
 import { HeroIntro } from "./hero/HeroIntro.js";
 import { StillBackdrop, type HeroBackdropScrim } from "./hero/StillBackdrop.js";
-import type { StillBackdropArt } from "../backdrop/consumer-art.js";
+import { resolveHeroBackdrop, type HeroBackdrop } from "./hero/hero-backdrop.js";
+export type { HeroBackdrop, HeroBackdropKind, HeroImageBackdrop, HeroVideoBackdrop, HeroGraphicBackdrop } from "./hero/hero-backdrop.js";
 export type { HeroBackdropScrim } from "./hero/StillBackdrop.js";
 import { SECTION_GROUND_CLASSES, type SectionGround } from "./section-ground.js";
 import { dsAttrs } from "../catalog-core/provenance-attrs.js";
@@ -46,8 +47,8 @@ export interface HeroProps extends HTMLAttributes<HTMLElement> {
    * Passing `media` does not choose a layout — set `composition` explicitly.
    */
   media?: ReactNode;
-  /** Checked decorative still art behind the message. The same static source serves reduced motion. */
-  backdrop?: StillBackdropArt;
+  /** Declared none, image, video or Assets graphic; existing checked still art stays valid. */
+  backdrop?: HeroBackdrop;
   /** Scalar protection over the media-scrim gradient. @default "light" */
   backdropScrim?: HeroBackdropScrim;
   /**
@@ -116,13 +117,15 @@ export function Hero({
   style,
   ...rest
 }: HeroProps) {
+  const resolvedBackdrop = resolveHeroBackdrop(backdrop);
+  const hasBackdropArt = Boolean(resolvedBackdrop.art);
   const colors = SECTION_GROUND_CLASSES[ground];
   const splitLayout = Boolean(media) && composition === "split";
   const centred = align === "center";
 
   const content = (
     <HeroIntro
-      backdropInk={Boolean(backdrop)}
+      backdropInk={hasBackdropArt}
       emphasis={size === "compact" ? "section" : "display"}
       headingLevel={headingLevel}
       align={align}
@@ -142,7 +145,7 @@ export function Hero({
       {...SECTION_STAMP} {...rest}
       className={cx(
         colors.surface,
-        backdrop ? "relative isolate overflow-hidden" : undefined,
+        hasBackdropArt ? "relative isolate overflow-hidden" : undefined,
         composition === "full-bleed" ? "w-full" : undefined,
         splitLayout
           ? "grid grid-cols-1 items-center gap-xl tablet:grid-cols-2"
@@ -150,10 +153,12 @@ export function Hero({
         className,
       )}
       style={style}
+      data-hero-backdrop-kind={resolvedBackdrop.kind}
     >
-      {backdrop ? <StillBackdrop art={backdrop} scrim={backdropScrim} /> : null}
-      {backdrop ? <SemanticContent as="div" className="relative">{content}</SemanticContent> : content}
-      {media ? <SemanticContent as="div" className={cx("w-full", backdrop ? "relative" : "", splitLayout ? "" : "max-w-display", centred && !splitLayout ? "mx-auto" : "")}>{media}</SemanticContent> : null}
+      {resolvedBackdrop.art ? <StillBackdrop art={resolvedBackdrop.art} scrim={backdropScrim} /> : null}
+      {resolvedBackdrop.need ? <SemanticContent as="aside" role="status" className="relative" style={hasBackdropArt ? { color: "var(--color-neutral-50)" } : undefined}>{resolvedBackdrop.need}</SemanticContent> : null}
+      {hasBackdropArt ? <SemanticContent as="div" className="relative">{content}</SemanticContent> : content}
+      {media ? <SemanticContent as="div" className={cx("w-full", hasBackdropArt ? "relative" : "", splitLayout ? "" : "max-w-display", centred && !splitLayout ? "mx-auto" : "")}>{media}</SemanticContent> : null}
     </SemanticContent>
   );
 }
