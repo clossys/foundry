@@ -2,14 +2,13 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { ArticleBody, ContentSection, EmptyState, SectionFrame, SectionHeader } from '@clossys/designer/blocks';
-import { Badge, Icon, Link, NavigationTree, NavigationTreeItem, NavigationTreeItemContent } from '@clossys/designer/components';
-import { ChevronDown, ChevronRight, FileText, Home } from '@clossys/designer/icons';
+import { useStudioSelection, useStudioUI } from './StudioSelection';
 import { AGENT_LABELS, isAgent, type Agent } from '../lib/agents';
 import { cellHierarchy, loadCell, loadCells, type AgentCells, type CellDetail, type CellNode } from '../lib/cells-client';
 import { StudioFrame } from './StudioFrame';
 import { DirectorSpecimen } from './DirectorSpecimen';
 import { WriterSpecimen } from './WriterSpecimen';
+import { SourceDisclosure } from './SourceDisclosure';
 
 type Resource<T> = { state: 'loading' } | { state: 'error'; message: string } | { state: 'ready'; value: T };
 
@@ -29,26 +28,38 @@ function expandedGroups(nodes: readonly CellNode[]): string[] {
   return nodes.flatMap(node => [...(node.group ? [node.id] : []), ...expandedGroups(node.children)]);
 }
 
-function cellTreeItems(nodes: readonly CellNode[], agent: Agent) {
+function cellTreeItems(nodes: readonly CellNode[], agent: Agent, ui: ReturnType<typeof useStudioUI>) {
+  const { NavigationTreeItem, NavigationTreeItemContent, Link, Icon, Badge } = ui;
   return nodes.map(node => <NavigationTreeItem key={node.id} id={node.id} textValue={node.title} href={node.group ? undefined : cellHref(agent, node.id)}>
     <NavigationTreeItemContent>{({ isExpanded }) => <>
-      <Link variant="standalone">{node.group ? <Icon glyph={isExpanded ? ChevronDown : ChevronRight} decorative /> : null}{node.title}</Link>
+      <Link variant="standalone">{node.group ? <Icon asset={isExpanded ? 'assets.icon-chevron-down' : 'assets.icon-chevron-right'} decorative /> : null}{node.title}</Link>
       {node.status ? <Badge variant={node.status === 'active' ? 'success' : node.status === 'draft' ? 'warning' : 'neutral'}>{node.status}</Badge> : null}
     </>}</NavigationTreeItemContent>
-    {cellTreeItems(node.children, agent)}
+    {cellTreeItems(node.children, agent, ui)}
   </NavigationTreeItem>);
 }
 
 function AgentTree({ index, selected }: { index: AgentCells; selected?: string }) {
+  const ui = useStudioUI();
+  const { EmptyState, ContentSection, SectionHeader, NavigationTree } = ui;
   let nodes: CellNode[];
   try { nodes = cellHierarchy(index.cells, index.tree); } catch { return <EmptyState title="Cell tree unavailable" description="Producer returned an invalid cell hierarchy." role="alert" />; }
   return <ContentSection>
     <SectionHeader title={AGENT_LABELS[index.agent]} description={index.state && index.state !== 'ready' ? `Cell index: ${index.state}` : undefined} />
-    {index.error ? <EmptyState title="Cells unavailable" description={index.error} role="alert" /> : index.cells.length ? <NavigationTree aria-label={`${AGENT_LABELS[index.agent]} cells`} selectedRoute={selected ? cellHref(index.agent, selected) : undefined} defaultExpandedKeys={expandedGroups(nodes)}>{cellTreeItems(nodes, index.agent)}</NavigationTree> : <EmptyState title="No cells yet" description={`No ${AGENT_LABELS[index.agent]} cells were found in this repository.`} />}
+    {index.error ? <EmptyState title="Cells unavailable" description={index.error} role="alert" /> : index.cells.length ? <NavigationTree aria-label={`${AGENT_LABELS[index.agent]} cells`} selectedRoute={selected ? cellHref(index.agent, selected) : undefined} defaultExpandedKeys={expandedGroups(nodes)}>{cellTreeItems(nodes, index.agent, ui)}</NavigationTree> : <EmptyState title="No cells yet" description={`No ${AGENT_LABELS[index.agent]} cells were found in this repository.`} />}
   </ContentSection>;
 }
 
+function DesignerSelectionNeeds() {
+  const { selection } = useStudioSelection();
+  const { ContentSection, SectionHeader } = useStudioUI();
+  const missing = selection.leaves.filter(leaf => leaf.source !== 'consumer');
+  if (!missing.length) return null;
+  return <ContentSection><SectionHeader title="Designer selection gaps" description={missing.map(leaf => `NEED: ${leaf.leaf} → ${leaf.fill ?? 'unavailable'}`).join('; ')} /></ContentSection>;
+}
+
 export function CellsWorkspace({ agent }: { agent?: Agent }) {
+  const { ArticleBody, ContentSection, EmptyState, SectionFrame, SectionHeader, Badge, Icon } = useStudioUI();
   const params = useSearchParams();
   const router = useRouter();
   const selectedId = params.get('cell') ?? undefined;
@@ -97,19 +108,21 @@ export function CellsWorkspace({ agent }: { agent?: Agent }) {
   const selectedIndex = visible.find(item => item.agent === selectedAgent);
   const selectedCell = selectedIndex?.cells.find(cell => cell.id === selectedId);
   return <StudioFrame page={{ title, breadcrumb: agent ? [{ id: 'agents', label: 'Agents' }] : undefined, description: 'Read-only agent cells', actions: [
-    { id: 'refresh', label: 'Reload cells', icon: <Icon glyph={FileText} decorative />, onAction: () => { setRevision(value => value + 1); router.refresh(); } },
-    ...(agent ? [{ id: 'home', label: 'Open Home', href: '/', icon: <Icon glyph={Home} decorative /> }] : []),
+    { id: 'refresh', label: 'Reload cells', icon: <Icon asset="assets.icon-document" decorative />, onAction: () => { setRevision(value => value + 1); router.refresh(); } },
+    ...(agent ? [{ id: 'home', label: 'Open Home', href: '/', icon: <Icon asset="assets.icon-home" decorative /> }] : []),
   ] }}>
     <SectionFrame measure="wide">
       <SectionHeader role="status" description={live ? 'Changes refresh automatically.' : 'Use Reload cells to check for changes.'} />
+      {agent === 'designer' ? <DesignerSelectionNeeds /> : null}
       {index.state === 'loading' ? <EmptyState role="status" title="Loading cells…" description="Reading the current cell index from Producer." /> : index.state === 'error' ? <EmptyState role="alert" title="Cells could not be loaded" description={index.message} /> : visible.length === 0 ? <EmptyState title="No cells available" description="Producer has no cell index for this view." /> : <ArticleBody aria-label="Cell workspace" toc={<ContentSection>{visible.map(item => <AgentTree key={item.agent} index={item} selected={selectedAgent === item.agent ? selectedId : undefined} />)}</ContentSection>}>
         {!selectedId ? <EmptyState title="No cell selected" description="Select an available cell from the tree to read its content." /> : !selectedAgent ? <EmptyState role="alert" title="Choose an agent" description="The selected cell needs an agent from this repository." /> : selectedIndex && selectedAgent === 'director' ? <DirectorSpecimen index={selectedIndex} selectedId={selectedId} /> : selectedIndex && selectedAgent === 'writer' ? <WriterSpecimen index={selectedIndex} selectedId={selectedId} /> : detail.state === 'loading' || detail.state === 'ready' && (detail.value.agent !== selectedAgent || detail.value.id !== selectedId) ? <EmptyState role="status" title="Loading cell…" /> : detail.state === 'error' ? <EmptyState role="alert" title="Cell could not be loaded" description={detail.message} /> : <>
           <SectionHeader title={selectedCell?.title ?? detail.value.title} eyebrow={AGENT_LABELS[detail.value.agent]} description={detail.value.id} stats={<>
             {detail.value.status ? <Badge variant={detail.value.status === 'active' ? 'success' : detail.value.status === 'draft' ? 'warning' : 'neutral'}>{detail.value.status}</Badge> : null}
             {detail.value.version !== undefined ? <Badge>v{detail.value.version}</Badge> : null}
           </>} />
-          <pre aria-label="Cell content">{detail.value.content || 'This cell has no content.'}</pre>
+          <SourceDisclosure key={`${detail.value.agent}:${detail.value.id}`} source={detail.value.content} />
         </>}
+        {selectedIndex && (selectedAgent === 'director' || selectedAgent === 'writer') && detail.state === 'ready' && detail.value.agent === selectedAgent && detail.value.id === selectedId ? <SourceDisclosure key={`${detail.value.agent}:${detail.value.id}`} source={detail.value.content} /> : null}
       </ArticleBody>}
     </SectionFrame>
   </StudioFrame>;
