@@ -8,7 +8,7 @@ const entries = { "section-header": "SectionHeader", content: "Content", "empty-
 const ports = Object.fromEntries(await Promise.all(Object.entries(entries).map(async ([leaf, primary]) => {
   const text = await readFile(resolve(root, `src/sections/shadcn-aria/${primary}.tsx`), "utf8");
   const content = text
-    .replace('"../../components/SemanticContent.js"', '"@clossys/designer/components"')
+    .replace('"../../components/SemanticContent.js"', '"../../components/semantic-content/index.js"')
     .replace('import { cx } from "../../components/internal/cx.js";', 'import { mergeUiClasses as cx } from "@clossys/designer/components";')
     .replace(/"\.\.\/\.\.\/blocks\/(?:ContentSection|EmptyState)\.js"/g, '"@clossys/designer/blocks"')
     .replace('"./SectionHeader.js"', '"../section-header/index.js"');

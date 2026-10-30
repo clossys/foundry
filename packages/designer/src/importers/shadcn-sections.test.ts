@@ -37,6 +37,7 @@ describe("pinned shadcn section candidates", () => {
       expect(row.pin).toMatchObject({ kind: "git", commit: SHADCN_SECTIONS_PIN.commit });
       expect(row.pin.files).toHaveLength(2);
       expect(row.composes).toEqual(["components.semantic-content"]);
+      expect(row.bindings).toEqual([{ file: row.impl.entry, module: "../../components/semantic-content/index.js", name: "SemanticContent", local: "SemanticContent", slot: "components.semantic-content" }]);
       expect(doc.$extensions["com.clossys.fill"].status).toBe("draft");
       expect(doc.$extensions["com.clossys.fill"].sourceAddress).toContain(row.slot === "sections.empty-state" ? "empty.tsx" : "card.tsx");
     }
@@ -61,7 +62,9 @@ describe("pinned shadcn section candidates", () => {
       expect(entry.impl.kind).toBe("source");
       expect(bundle.base.source).toBe("shadcn@aria");
       expect(bundle.files.some(file => file.path.startsWith("surfaces/receipts/"))).toBe(true);
-      expect(bundle.files.find(file => file.path.endsWith(".tsx"))!.content).toContain('from "@clossys/designer/components"');
+      const emitted = bundle.files.find(file => file.path.endsWith(".tsx"))!.content;
+      expect(emitted).toContain('import { SemanticContent } from "../../components/semantic-content/index.js"');
+      expect(emitted).not.toContain('import { SemanticContent } from "@clossys/designer/components"');
       verifySurfaceFiles(entry as Parameters<typeof verifySurfaceFiles>[0], bundle.files);
     }
   });
