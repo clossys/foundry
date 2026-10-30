@@ -3,7 +3,7 @@
 Tier: high. Run the conversation using `../SKILL.md`; use `../templates/cell.md` for file syntax. Use the operator's selected consumer root, or resolve the default `<repo root>/clossys/agents/strategist/` as described in the skill before kickoff. A nested working directory keeps the same repository root; an explicit user-selected folder keeps its exact location. Work only inside the selected root, without legacy fallback or automatic migration.
 
 ## Read
-- The catalog, tree, last session closing lines, open requests and relevant active cells.
+- The catalog, tree, last session closing lines, relevant U/S history, findings, pending drafts and active/cited cell versions. Include prior resolved and declined requests when diagnosing a new trigger.
 - Existing consumer evidence as seed material; legacy records are hypotheses until the user confirms cells.
 
 ## Work
@@ -15,6 +15,7 @@ Tier: high. Run the conversation using `../SKILL.md`; use `../templates/cell.md`
 - Activate only the confirmed refs, using the installed activation command when supported. Set the pointer and confirmed ref; retire prior versions and sibling options by status line only. Resolve only the requests the confirmed change answers.
 - A change to an active cell is a new draft. Drafts cause no downstream staleness; activation can.
 - Run the critic before MVS and on a new Bet; hand off through ready briefs.
+- For a new trigger, follow the living-loop procedure in §13: diagnose before drafting, research only uncertainty that could change the choice, and record an unchanged decision when the evidence supports it. Reopening needs new evidence and a new request, preserving the earlier outcome.
 
 ## Write and report
 - May append sessions, write drafts and manage requests. Confirmed activation is the only authority to change active pointers or status lines; active and retired bodies remain immutable.
