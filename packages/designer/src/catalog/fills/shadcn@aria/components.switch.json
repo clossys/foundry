@@ -68,7 +68,7 @@
         },
         {
           "path": "components/switch/switch.tsx",
-          "sha256": "3fd09f5b623aa1e03cb48f3e9d9dc0f0f024ff2cbb63e5f880182a449330dcb3"
+          "sha256": "32e1c7b86536dcfd5a88ff0bf485e3b8853d8ce56c5cf145015eba8038957ba5"
         },
         {
           "path": "notices/THIRD-PARTY.md",
@@ -115,19 +115,7 @@
         "tokens": [
           "tokens.action-color.default",
           "tokens.border-color.strong",
-          "tokens.border-width.hairline",
-          "tokens.border-width.rule",
-          "tokens.control-size.switch-thumb",
-          "tokens.duration.default",
-          "tokens.easing.default",
           "tokens.focus-color.default",
-          "tokens.focus-outline.offset",
-          "tokens.focus-outline.width",
-          "tokens.spacing.2xl",
-          "tokens.spacing.lg",
-          "tokens.spacing.md",
-          "tokens.spacing.xl",
-          "tokens.state-opacity.disabled",
           "tokens.status-color.danger",
           "tokens.surface-color.base",
           "tokens.text-color.on-action",

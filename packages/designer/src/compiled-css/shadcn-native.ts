@@ -8,7 +8,7 @@ import { resolvePinnedAnimationCss } from "./pinned-animation-css.js";
 /** Compile the native source against its own standard shadcn contract. */
 export async function generateNativeShadcnCss(stylesDir: string): Promise<string> {
   const require = createRequire(import.meta.url);
-  const sources = ["badge", "separator", "skeleton", "card", "radio-group"].map(item => ({
+  const sources = ["badge", "separator", "skeleton", "card", "radio-group", "switch"].map(item => ({
     content: readFileSync(resolve(stylesDir, `../src/components/preview-runtime/components/${item}/${item}.tsx`), "utf8"),
     extension: "tsx",
   }));

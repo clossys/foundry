@@ -19,6 +19,20 @@ export function pinnedInput(): ShadcnComponentInput {
 }
 
 describe("pinned shadcn aria component import", () => {
+  it("materializes native Switch without changing its source or adding secondary exports", () => {
+    const input = pinnedInput(), imported = importShadcnAriaComponents(input);
+    const original = input.items.find(item => item.name === "switch")!.files[0]!;
+    const files = materializeShadcnComponent(imported, "switch");
+    const native = files.find(file => file.path === "components/switch/switch.tsx")!;
+    const fill = imported.fills.find(fill => fill.components.switch)!.components.switch!;
+    expect(native.content).toBe(original.content.replace('from "cn"', 'from "../_parts/utils/index.js"'));
+    expect(componentSecondaryExports(fill, files)).toEqual([]);
+    expect(fill.reads.assets).toEqual([]);
+    expect(fill.reads.components).toEqual([]);
+    native.content += " ";
+    expect(() => materializeShadcnComponent(imported, "switch")).toThrow(/output hash differs/);
+  });
+
   it("materializes native RadioGroup with its actual item export and unchanged pinned body", () => {
     const input = pinnedInput(), imported = importShadcnAriaComponents(input);
     const original = input.items.find(item => item.name === "radio-group")!.files[0]!;

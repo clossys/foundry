@@ -440,58 +440,6 @@
     {
       "issues": [],
       "item": "switch",
-      "notes": [
-        {
-          "file": "apps/v4/registry/bases/aria/ui/switch.tsx",
-          "message": "Removed suppression beside the same expanded literal's token-bound focus owner",
-          "value": "border-transparent"
-        },
-        {
-          "file": "apps/v4/registry/bases/aria/ui/switch.tsx",
-          "message": "Restyled source: Use actual existing switch-thumb role 14px instead of source 18.4px.",
-          "value": "data-[size=default]:h-[18.4px]"
-        },
-        {
-          "file": "apps/v4/registry/bases/aria/ui/switch.tsx",
-          "message": "Restyled source: Retain percentage travel and exact 2px endpoint edge inset using the existing rule width; explicit edge-geometry read.",
-          "value": "group-data-[size=default]/switch:data-checked:translate-x-[calc(100%-2px)]"
-        },
-        {
-          "file": "apps/v4/registry/bases/aria/ui/switch.tsx",
-          "message": "Restyled source: Retain percentage travel and exact 2px endpoint edge inset using the existing rule width; explicit edge-geometry read.",
-          "value": "group-data-[size=default]/switch:data-selected:translate-x-[calc(100%-2px)]"
-        },
-        {
-          "file": "apps/v4/registry/bases/aria/ui/switch.tsx",
-          "message": "Restyled source: Retain percentage travel and exact 2px endpoint edge inset using the existing rule width; explicit edge-geometry read.",
-          "value": "group-data-[size=sm]/switch:data-checked:translate-x-[calc(100%-2px)]"
-        },
-        {
-          "file": "apps/v4/registry/bases/aria/ui/switch.tsx",
-          "message": "Restyled source: Retain percentage travel and exact 2px endpoint edge inset using the existing rule width; explicit edge-geometry read.",
-          "value": "group-data-[size=sm]/switch:data-selected:translate-x-[calc(100%-2px)]"
-        },
-        {
-          "file": "apps/v4/registry/bases/aria/ui/switch.tsx",
-          "message": "Removed suppression beside the same expanded literal's token-bound focus owner",
-          "value": "group-has-[:focus-visible]/field-label:border-transparent"
-        },
-        {
-          "file": "apps/v4/registry/bases/aria/ui/switch.tsx",
-          "message": "Removed suppression beside the same expanded literal's token-bound focus owner",
-          "value": "group-has-[:focus-visible]/field-label:ring-0"
-        },
-        {
-          "file": "apps/v4/registry/bases/aria/ui/switch.tsx",
-          "message": "Removed suppression beside the same expanded literal's token-bound focus owner",
-          "value": "outline-none"
-        },
-        {
-          "file": "apps/v4/registry/bases/aria/ui/switch.tsx",
-          "message": "Preserved authenticated decorative/control reset under its actual parent token-bound focus owner; not a focus conformance claim",
-          "value": "ring-0"
-        }
-      ],
       "reason": "Pinned root import verified; token, glyph, dependency and runtime checks remain required",
       "runtime": "U-V",
       "slot": "components.switch",
