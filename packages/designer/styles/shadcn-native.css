@@ -97,4 +97,17 @@
     @apply text-primary underline-offset-4 hover:underline;
   }
 
+  /* MARK: Separator */
+  .cn-separator {
+    @apply bg-border shrink-0;
+  }
+
+  .cn-separator-horizontal {
+    @apply h-px w-full;
+  }
+
+  .cn-separator-vertical {
+    @apply h-full w-px;
+  }
+
 }

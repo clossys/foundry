@@ -5433,6 +5433,9 @@
   --default-transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
 }
 @layer foundry-ui-compiled {
+  .block {
+    display: block;
+  }
   .inline-flex {
     display: inline-flex;
   }
@@ -5450,6 +5453,13 @@
   }
   .overflow-hidden {
     overflow: hidden;
+  }
+  .border-0 {
+    border-style: var(--tw-border-style);
+    border-width: 0px;
+  }
+  .bg-border {
+    background-color: var(--border);
   }
   .whitespace-nowrap {
     white-space: nowrap;
@@ -5480,11 +5490,29 @@
       --tw-ring-color: color-mix(in oklab, var(--destructive) 20%, transparent);
     }
   }
+  .aria-\[orientation\=horizontal\]\:h-px[aria-orientation="horizontal"] {
+    height: 1px;
+  }
+  .aria-\[orientation\=horizontal\]\:w-full[aria-orientation="horizontal"] {
+    width: 100%;
+  }
+  .aria-\[orientation\=vertical\]\:w-px[aria-orientation="vertical"] {
+    width: 1px;
+  }
+  .aria-\[orientation\=vertical\]\:self-stretch[aria-orientation="vertical"] {
+    align-self: stretch;
+  }
   .dark\:aria-invalid\:ring-destructive\/40:is(.dark *)[aria-invalid="true"] {
     --tw-ring-color: var(--destructive);
     @supports (color: color-mix(in lab, red, red)) {
       --tw-ring-color: color-mix(in oklab, var(--destructive) 40%, transparent);
     }
+  }
+  .\[\:is\(hr\)\]\:h-px:is(:is(hr)) {
+    height: 1px;
+  }
+  .\[\:is\(hr\)\]\:w-full:is(:is(hr)) {
+    width: 100%;
   }
   .\[\&\>svg\]\:pointer-events-none > svg {
     pointer-events: none;
@@ -5644,6 +5672,23 @@
     }
   }
 }
+.style-nova .cn-separator {
+  flex-shrink: 0;
+  background-color: var(--border);
+}
+.style-nova .cn-separator-horizontal {
+  height: 1px;
+  width: 100%;
+}
+.style-nova .cn-separator-vertical {
+  height: 100%;
+  width: 1px;
+}
+@property --tw-border-style {
+  syntax: "*";
+  inherits: false;
+  initial-value: solid;
+}
 @property --tw-outline-style {
   syntax: "*";
   inherits: false;
@@ -5714,11 +5759,6 @@
   inherits: false;
   initial-value: 0 0 #0000;
 }
-@property --tw-border-style {
-  syntax: "*";
-  inherits: false;
-  initial-value: solid;
-}
 @property --tw-font-weight {
   syntax: "*";
   inherits: false;
@@ -5726,6 +5766,7 @@
 @layer properties {
   @supports ((-webkit-hyphens: none) and (not (margin-trim: inline))) or ((-moz-orient: inline) and (not (color:rgb(from red r g b)))) {
     *, ::before, ::after, ::backdrop {
+      --tw-border-style: solid;
       --tw-outline-style: solid;
       --tw-shadow: 0 0 #0000;
       --tw-shadow-color: initial;
@@ -5741,7 +5782,6 @@
       --tw-ring-offset-width: 0px;
       --tw-ring-offset-color: #fff;
       --tw-ring-offset-shadow: 0 0 #0000;
-      --tw-border-style: solid;
       --tw-font-weight: initial;
     }
   }

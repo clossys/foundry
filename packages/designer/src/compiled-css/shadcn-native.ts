@@ -7,9 +7,12 @@ import { compile } from "tailwindcss";
 /** Compile the native source against its own standard shadcn contract. */
 export async function generateNativeShadcnCss(stylesDir: string): Promise<string> {
   const require = createRequire(import.meta.url);
-  const source = readFileSync(resolve(stylesDir, "../src/components/preview-runtime/components/badge/badge.tsx"), "utf8");
+  const sources = ["badge", "separator"].map(item => ({
+    content: readFileSync(resolve(stylesDir, `../src/components/preview-runtime/components/${item}/${item}.tsx`), "utf8"),
+    extension: "tsx",
+  }));
   const scanner = new Scanner({});
-  const candidates = scanner.scanFiles([{ content: source, extension: "tsx" }]);
+  const candidates = scanner.scanFiles(sources);
   const entry = '@import "tailwindcss/theme";\n'
     + '@import "tailwindcss/utilities" layer(foundry-ui-compiled);\n'
     + readFileSync(resolve(stylesDir, "shadcn-native.css"), "utf8");

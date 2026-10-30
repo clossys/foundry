@@ -1102,33 +1102,6 @@
     {
       "issues": [],
       "item": "badge",
-      "notes": [
-        {
-          "file": "apps/v4/registry/bases/aria/ui/badge.tsx",
-          "message": "Removed suppression beside the same expanded literal's token-bound focus owner",
-          "value": "border-transparent"
-        },
-        {
-          "file": "apps/v4/registry/bases/aria/ui/badge.tsx",
-          "message": "Restyled source: Restyle 20.0px to 24px using the existing spacing scale; variants and branch ownership remain exact.",
-          "value": "h-5"
-        },
-        {
-          "file": "apps/v4/registry/bases/aria/ui/badge.tsx",
-          "message": "Restyled source: 6px to spacing.sm 8px",
-          "value": "has-data-[icon=inline-end]:pr-1.5"
-        },
-        {
-          "file": "apps/v4/registry/bases/aria/ui/badge.tsx",
-          "message": "Restyled source: 6px to spacing.sm 8px",
-          "value": "has-data-[icon=inline-start]:pl-1.5"
-        },
-        {
-          "file": "apps/v4/registry/bases/aria/ui/badge.tsx",
-          "message": "Restyled source: Restyle 2.0px to 4px using the existing spacing scale; variants and branch ownership remain exact.",
-          "value": "py-0.5"
-        }
-      ],
       "reason": "Pinned source has no foreign headless engine; token, glyph, dependency and runtime checks remain required",
       "runtime": "U-V",
       "slot": "components.badge",
@@ -1265,28 +1238,6 @@
     {
       "issues": [],
       "item": "separator",
-      "notes": [
-        {
-          "file": "apps/v4/registry/bases/aria/ui/separator.tsx",
-          "message": "Restyled source: Exact separator rule thickness 1px; permission explicitly recorded.",
-          "value": "[:is(hr)]:h-px"
-        },
-        {
-          "file": "apps/v4/registry/bases/aria/ui/separator.tsx",
-          "message": "Restyled source: Exact separator rule thickness 1px; permission explicitly recorded.",
-          "value": "aria-[orientation=horizontal]:h-px"
-        },
-        {
-          "file": "apps/v4/registry/bases/aria/ui/separator.tsx",
-          "message": "Restyled source: Exact separator rule thickness 1px; permission explicitly recorded.",
-          "value": "aria-[orientation=vertical]:w-px"
-        },
-        {
-          "file": "apps/v4/registry/bases/aria/ui/separator.tsx",
-          "message": "Preserved structural zero border at the selected adjacent or separator edge; positive widths remain token bound",
-          "value": "border-0"
-        }
-      ],
       "reason": "Pinned root import verified; token, glyph, dependency and runtime checks remain required",
       "runtime": "U-V",
       "slot": "components.separator",

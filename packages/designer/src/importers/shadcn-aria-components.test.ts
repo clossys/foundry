@@ -30,6 +30,17 @@ describe("pinned shadcn aria component import", () => {
     expect(fill.reads.tokens).not.toContain("tokens.spacing.xl");
   });
 
+  it("materializes native Separator without rewriting its pinned classes", () => {
+    const input = pinnedInput(), imported = importShadcnAriaComponents(input);
+    const original = input.items.find(item => item.name === "separator")!.files[0]!;
+    const native = materializeShadcnComponent(imported, "separator").find(file => file.path === "components/separator/separator.tsx")!;
+    expect(native.content).toBe(original.content.replace('from "cn"', 'from "../_parts/utils/index.js"'));
+    const fill = imported.fills.find(fill => fill.components.separator)!.components.separator!;
+    expect(fill.outputSha256).toContainEqual({ path: native.path, sha256: sha256(native.content) });
+    expect(fill.reads.tokens).toEqual(["tokens.border-color.base"]);
+    expect(fill.blockers).toEqual([]);
+  });
+
   it("does not rehash shared upstream pin bytes for every produced fill", () => {
     const input = pinnedInput();
     const upstream = new Map([...input.items.flatMap(item => item.files), input.styles, input.notice].map(file => [file.path, file.content]));
