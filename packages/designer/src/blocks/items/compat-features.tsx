@@ -1,3 +1,4 @@
+import { SemanticContent } from "../../components/SemanticContent.js";
 import { SectionHeader } from "../SectionHeader.js";
 import { ItemHeading, ItemIcon, ItemDescription } from "./anatomy.js";
 import type { FeatureGridLayout, FeatureGridProps } from "../FeatureGrid.js";
@@ -21,21 +22,21 @@ export function CompatFeatureGrid({ eyebrow, heading, description, items, headin
   const hasHeadingRegion = eyebrow !== undefined || heading !== undefined || description !== undefined;
   const policy = FEATURE_LAYOUT_CLASSES[layout];
   return (
-    <div {...rest} className={cx("flex flex-col gap-lg", hasHeadingRegion ? policy.split : undefined, colors.surface, className)} style={style}>
+    <SemanticContent as="div" {...rest} className={cx("flex flex-col gap-lg", hasHeadingRegion ? policy.split : undefined, colors.surface, className)} style={style}>
       {hasHeadingRegion ? (
         <SectionHeader density="standard" level={headingLevel} ground={ground} eyebrow={eyebrow} description={description} {...(heading ? { title: heading } : {})} />
       ) : null}
-      <div className={policy.items}>
+      <SemanticContent as="div" className={policy.items}>
         {items.map(item => {
           const icon = item.icon ? <ItemIcon className={colors.muted}>{item.icon}</ItemIcon> : null;
           const title = <ItemHeading as="p" heading={item.heading} variant="plain" ground={ground} className={cx("text-body font-body font-medium", colors.primary)} />;
           const body = item.description ? <ItemDescription className={cx("text-body-s", colors.secondary)}>{item.description}</ItemDescription> : null;
           // A list row sets the icon beside the copy; grid and split cells keep the published three child slots.
           return layout === "list"
-            ? <div key={item.id} className="flex items-start gap-md">{icon}<div className="flex min-w-0 flex-col gap-sm">{title}{body}</div></div>
-            : <div key={item.id} className="flex flex-col items-start gap-sm">{icon}{title}{body}</div>;
+            ? <SemanticContent as="div" key={item.id} className="flex items-start gap-md">{icon}<SemanticContent as="div" className="flex min-w-0 flex-col gap-sm">{title}{body}</SemanticContent></SemanticContent>
+            : <SemanticContent as="div" key={item.id} className="flex flex-col items-start gap-sm">{icon}{title}{body}</SemanticContent>;
         })}
-      </div>
-    </div>
+      </SemanticContent>
+    </SemanticContent>
   );
 }

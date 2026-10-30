@@ -1,5 +1,5 @@
 import { Pagination } from "../../blocks/Pagination.js";
-import { memberOf, noop, numberField, refuseUnmapped, requireSlot, slotValue, type SectionInputs, type SectionRenderer } from "./group-c-content.js";
+import { memberOf, noop, numberField, refuseUnmapped, requireSlot, slotValue, stringField, type SectionInputs, type SectionRenderer } from "./group-c-content.js";
 
 const LEAF = "sections.pagination";
 
@@ -18,5 +18,12 @@ export const renderPagination: SectionRenderer = input => {
   const total = slotValue(input, "total");
   const totalItems = total === undefined ? undefined : typeof total === "number" ? total : numberField(total, "total");
   if (total !== undefined && totalItems === undefined) throw new TypeError(`${LEAF}: total needs a number`);
-  return <Pagination page={current} pageCount={pageCount} pageSize={numberField(page, "pageSize")} totalItems={totalItems} onPageChange={noop} />;
+  const pageText = stringField(page, "pageText"), rangeText = stringField(total, "rangeText");
+  return <Pagination
+    page={current} pageCount={pageCount} pageSize={numberField(page, "pageSize")} totalItems={totalItems} onPageChange={noop}
+    aria-label={stringField(page, "label")} previousPageLabel={stringField(page, "previousLabel")} nextPageLabel={stringField(page, "nextLabel")}
+    noResultsLabel={stringField(page, "noResultsLabel")} pageSizeLabel={stringField(page, "pageSizeLabel")}
+    pageSummaryMessage={pageText === undefined ? undefined : () => pageText}
+    rangeSummaryMessage={rangeText === undefined ? undefined : () => rangeText}
+  />;
 };

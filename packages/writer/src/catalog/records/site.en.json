@@ -98,7 +98,9 @@
     "st.legal.revision.date": "st.000000002z",
     "pt.legal.revision": "pt.0000000030",
     "nr.legal.privacy": "nr.0000000031",
-    "nr.legal.terms": "nr.0000000032"
+    "nr.legal.terms": "nr.0000000032",
+    "ps.form.contact.success.message": "st.ed003344a2",
+    "ps.form.contact.error.message": "st.66989bea3f"
   },
   "records": [
     {
@@ -342,7 +344,7 @@
       "status": "draft",
       "origin": "authored",
       "schema": "passages.form",
-      "schemaDigest": "356dab55a2539c62e3d89765e0bd0a2737271b2d448746687c43dcd419ab74d1",
+      "schemaDigest": "4c892335d3ad00e11ee23b61924ab21e1e16495626df6dcba59f318ff65edf67",
       "fields": {
         "header.eyebrow": {
           "ref": "string",
@@ -387,6 +389,14 @@
         "error-summary.items[].message": {
           "ref": "string",
           "id": "st.000000000y"
+        },
+        "success.message": {
+          "ref": "string",
+          "id": "st.ed003344a2"
+        },
+        "error.message": {
+          "ref": "string",
+          "id": "st.66989bea3f"
         }
       }
     },
@@ -741,30 +751,30 @@
     },
     {
       "id": "ps.000000002q",
-      "leaf": "passages.error-message",
+      "leaf": "passages.error-state",
       "context": "Generic draft site starter",
       "status": "draft",
       "origin": "authored",
-      "schema": "passages.error-message",
-      "schemaDigest": "1ca926cc90f6bc267a731c5f06683129c4a762ed9bc9a4cfeb2fa9d7394fc446",
+      "schema": "passages.error-state",
+      "schemaDigest": "5a1153ac50a43d8fb11e8a8baf922f5bff73d3c15769a28a1c0e067d38b29db3",
       "fields": {
-        "status": {
+        "code": {
           "ref": "string",
           "id": "st.wxwxj7g97v"
         },
-        "title": {
+        "header.heading": {
           "ref": "string",
           "id": "st.gdzc1rc0sk"
         },
-        "description": {
+        "header.description": {
           "ref": "string",
           "id": "st.0000000028"
         },
-        "actions[].label": {
+        "retry.label": {
           "ref": "string",
           "id": "st.000000001a"
         },
-        "reference": {
+        "report.label": {
           "ref": "string",
           "id": "st.000000002p"
         }
@@ -882,6 +892,22 @@
           "text": "This is a draft for review. It does not describe a live service or provide legal advice."
         }
       ]
+    },
+    {
+      "id": "st.ed003344a2",
+      "leaf": "strings.statuses",
+      "context": "site.form.success.message",
+      "status": "draft",
+      "origin": "authored",
+      "text": "Your message was received."
+    },
+    {
+      "id": "st.66989bea3f",
+      "leaf": "strings.errors",
+      "context": "site.form.error.message",
+      "status": "draft",
+      "origin": "authored",
+      "text": "Your message could not be sent. Please try again."
     }
   ],
   "externalRecords": [

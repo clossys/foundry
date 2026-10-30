@@ -1,4 +1,7 @@
 import { fileURLToPath } from 'node:url';
+import { generateStudioMap } from '../scripts/generate-studio-map.mjs';
+
+await generateStudioMap();
 
 /** @type {import('next').NextConfig} */
 const config = {

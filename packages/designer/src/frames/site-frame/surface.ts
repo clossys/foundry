@@ -37,6 +37,7 @@ export function siteShellFor(config: SiteFrameConfig, kind: SiteSurfaceKind): Si
       ...(site.actions === undefined ? {} : { actions: site.actions }),
       ...(site.navPlacement === undefined ? {} : { navPlacement: site.navPlacement }),
       footer: {
+        ...(site.footerBrandBand === undefined ? {} : { brandBand: site.footerBrandBand }),
         ...(site.columns === undefined ? {} : { columns: site.columns }),
         ...(site.footerLinks === undefined ? {} : { links: site.footerLinks }),
         ...(site.social === undefined ? {} : { social: site.social }),

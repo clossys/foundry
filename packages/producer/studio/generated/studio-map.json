@@ -1,0 +1,540 @@
+{
+  "publicationId": "studio",
+  "map": {
+    "version": 1,
+    "publicationId": "studio",
+    "format": "web.page.responsive",
+    "entries": [
+      {
+        "id": "home",
+        "order": 0,
+        "title": "Home",
+        "kind": "page",
+        "path": "/",
+        "source": {
+          "planItemId": "studio.home"
+        },
+        "pin": {
+          "nav": true
+        },
+        "icon": "assets.icon-home"
+      },
+      {
+        "path": "/agents",
+        "kind": "group",
+        "source": {
+          "planItemId": "studio.agents"
+        },
+        "pin": {
+          "nav": true
+        },
+        "icon": "assets.icon-team",
+        "id": "agents",
+        "title": "Agents",
+        "order": 1
+      },
+      {
+        "id": "director",
+        "parentId": "agents",
+        "order": 0,
+        "title": "Director",
+        "kind": "page",
+        "path": "/agents/director",
+        "source": {
+          "planItemId": "studio.director"
+        },
+        "pin": {
+          "nav": true,
+          "group": "agents"
+        }
+      },
+      {
+        "id": "designer",
+        "parentId": "agents",
+        "order": 1,
+        "title": "Designer",
+        "kind": "page",
+        "path": "/agents/designer",
+        "source": {
+          "planItemId": "studio.designer"
+        },
+        "pin": {
+          "nav": true,
+          "group": "agents"
+        }
+      },
+      {
+        "id": "writer",
+        "parentId": "agents",
+        "order": 2,
+        "title": "Writer",
+        "kind": "page",
+        "path": "/agents/writer",
+        "source": {
+          "planItemId": "studio.writer"
+        },
+        "pin": {
+          "nav": true,
+          "group": "agents"
+        }
+      },
+      {
+        "id": "publisher",
+        "parentId": "agents",
+        "order": 3,
+        "title": "Publisher",
+        "kind": "page",
+        "path": "/agents/publisher",
+        "source": {
+          "planItemId": "studio.publisher"
+        },
+        "pin": {
+          "nav": true,
+          "group": "agents"
+        }
+      },
+      {
+        "id": "apps",
+        "order": 1,
+        "title": "Apps",
+        "kind": "page",
+        "path": "/apps",
+        "source": {
+          "planItemId": "studio.apps"
+        },
+        "pin": {
+          "nav": true
+        },
+        "icon": "assets.icon-grid-view"
+      }
+    ]
+  },
+  "routes": [
+    {
+      "entry": {
+        "file": "studio/views/HomeView.tsx",
+        "export": "default"
+      },
+      "instanceId": "home",
+      "path": "/",
+      "label": "Home"
+    },
+    {
+      "entry": {
+        "file": "studio/views/DirectorView.tsx",
+        "export": "default"
+      },
+      "instanceId": "director",
+      "path": "/agents/director",
+      "label": "Director"
+    },
+    {
+      "entry": {
+        "file": "studio/views/DesignerView.tsx",
+        "export": "default"
+      },
+      "instanceId": "designer",
+      "path": "/agents/designer",
+      "label": "Designer"
+    },
+    {
+      "entry": {
+        "file": "studio/views/WriterView.tsx",
+        "export": "default"
+      },
+      "instanceId": "writer",
+      "path": "/agents/writer",
+      "label": "Writer"
+    },
+    {
+      "entry": {
+        "file": "studio/views/PublisherView.tsx",
+        "export": "default"
+      },
+      "instanceId": "publisher",
+      "path": "/agents/publisher",
+      "label": "Publisher"
+    },
+    {
+      "entry": {
+        "file": "studio/views/AppsView.tsx",
+        "export": "default"
+      },
+      "instanceId": "apps",
+      "path": "/apps",
+      "label": "Apps"
+    }
+  ],
+  "navigation": {
+    "home": {
+      "tree": [
+        {
+          "id": "home",
+          "label": "Home",
+          "icon": "assets.icon-home",
+          "href": "/"
+        },
+        {
+          "id": "agents",
+          "label": "Agents",
+          "icon": "assets.icon-team",
+          "children": [
+            {
+              "id": "director",
+              "label": "Director",
+              "href": "/agents/director"
+            },
+            {
+              "id": "designer",
+              "label": "Designer",
+              "href": "/agents/designer"
+            },
+            {
+              "id": "writer",
+              "label": "Writer",
+              "href": "/agents/writer"
+            },
+            {
+              "id": "publisher",
+              "label": "Publisher",
+              "href": "/agents/publisher"
+            }
+          ]
+        },
+        {
+          "id": "apps",
+          "label": "Apps",
+          "icon": "assets.icon-grid-view",
+          "href": "/apps"
+        }
+      ],
+      "activeId": "home"
+    },
+    "director": {
+      "tree": [
+        {
+          "id": "home",
+          "label": "Home",
+          "icon": "assets.icon-home",
+          "href": "/"
+        },
+        {
+          "id": "agents",
+          "label": "Agents",
+          "icon": "assets.icon-team",
+          "children": [
+            {
+              "id": "director",
+              "label": "Director",
+              "href": "/agents/director"
+            },
+            {
+              "id": "designer",
+              "label": "Designer",
+              "href": "/agents/designer"
+            },
+            {
+              "id": "writer",
+              "label": "Writer",
+              "href": "/agents/writer"
+            },
+            {
+              "id": "publisher",
+              "label": "Publisher",
+              "href": "/agents/publisher"
+            }
+          ]
+        },
+        {
+          "id": "apps",
+          "label": "Apps",
+          "icon": "assets.icon-grid-view",
+          "href": "/apps"
+        }
+      ],
+      "activeId": "director"
+    },
+    "designer": {
+      "tree": [
+        {
+          "id": "home",
+          "label": "Home",
+          "icon": "assets.icon-home",
+          "href": "/"
+        },
+        {
+          "id": "agents",
+          "label": "Agents",
+          "icon": "assets.icon-team",
+          "children": [
+            {
+              "id": "director",
+              "label": "Director",
+              "href": "/agents/director"
+            },
+            {
+              "id": "designer",
+              "label": "Designer",
+              "href": "/agents/designer"
+            },
+            {
+              "id": "writer",
+              "label": "Writer",
+              "href": "/agents/writer"
+            },
+            {
+              "id": "publisher",
+              "label": "Publisher",
+              "href": "/agents/publisher"
+            }
+          ]
+        },
+        {
+          "id": "apps",
+          "label": "Apps",
+          "icon": "assets.icon-grid-view",
+          "href": "/apps"
+        }
+      ],
+      "activeId": "designer"
+    },
+    "writer": {
+      "tree": [
+        {
+          "id": "home",
+          "label": "Home",
+          "icon": "assets.icon-home",
+          "href": "/"
+        },
+        {
+          "id": "agents",
+          "label": "Agents",
+          "icon": "assets.icon-team",
+          "children": [
+            {
+              "id": "director",
+              "label": "Director",
+              "href": "/agents/director"
+            },
+            {
+              "id": "designer",
+              "label": "Designer",
+              "href": "/agents/designer"
+            },
+            {
+              "id": "writer",
+              "label": "Writer",
+              "href": "/agents/writer"
+            },
+            {
+              "id": "publisher",
+              "label": "Publisher",
+              "href": "/agents/publisher"
+            }
+          ]
+        },
+        {
+          "id": "apps",
+          "label": "Apps",
+          "icon": "assets.icon-grid-view",
+          "href": "/apps"
+        }
+      ],
+      "activeId": "writer"
+    },
+    "publisher": {
+      "tree": [
+        {
+          "id": "home",
+          "label": "Home",
+          "icon": "assets.icon-home",
+          "href": "/"
+        },
+        {
+          "id": "agents",
+          "label": "Agents",
+          "icon": "assets.icon-team",
+          "children": [
+            {
+              "id": "director",
+              "label": "Director",
+              "href": "/agents/director"
+            },
+            {
+              "id": "designer",
+              "label": "Designer",
+              "href": "/agents/designer"
+            },
+            {
+              "id": "writer",
+              "label": "Writer",
+              "href": "/agents/writer"
+            },
+            {
+              "id": "publisher",
+              "label": "Publisher",
+              "href": "/agents/publisher"
+            }
+          ]
+        },
+        {
+          "id": "apps",
+          "label": "Apps",
+          "icon": "assets.icon-grid-view",
+          "href": "/apps"
+        }
+      ],
+      "activeId": "publisher"
+    },
+    "apps": {
+      "tree": [
+        {
+          "id": "home",
+          "label": "Home",
+          "icon": "assets.icon-home",
+          "href": "/"
+        },
+        {
+          "id": "agents",
+          "label": "Agents",
+          "icon": "assets.icon-team",
+          "children": [
+            {
+              "id": "director",
+              "label": "Director",
+              "href": "/agents/director"
+            },
+            {
+              "id": "designer",
+              "label": "Designer",
+              "href": "/agents/designer"
+            },
+            {
+              "id": "writer",
+              "label": "Writer",
+              "href": "/agents/writer"
+            },
+            {
+              "id": "publisher",
+              "label": "Publisher",
+              "href": "/agents/publisher"
+            }
+          ]
+        },
+        {
+          "id": "apps",
+          "label": "Apps",
+          "icon": "assets.icon-grid-view",
+          "href": "/apps"
+        }
+      ],
+      "activeId": "apps"
+    }
+  },
+  "commands": [
+    {
+      "id": "studio",
+      "label": "studio",
+      "items": [
+        {
+          "id": "home",
+          "label": "Home",
+          "icon": "assets.icon-home",
+          "href": "/"
+        },
+        {
+          "id": "apps",
+          "label": "Apps",
+          "icon": "assets.icon-grid-view",
+          "href": "/apps"
+        }
+      ]
+    },
+    {
+      "id": "agents",
+      "label": "Agents",
+      "items": [
+        {
+          "id": "director",
+          "label": "Director",
+          "href": "/agents/director"
+        },
+        {
+          "id": "designer",
+          "label": "Designer",
+          "href": "/agents/designer"
+        },
+        {
+          "id": "writer",
+          "label": "Writer",
+          "href": "/agents/writer"
+        },
+        {
+          "id": "publisher",
+          "label": "Publisher",
+          "href": "/agents/publisher"
+        }
+      ]
+    }
+  ],
+  "breadcrumbs": {
+    "home": [
+      {
+        "id": "home",
+        "label": "Home",
+        "href": "/"
+      }
+    ],
+    "director": [
+      {
+        "id": "agents",
+        "label": "Agents"
+      },
+      {
+        "id": "director",
+        "label": "Director",
+        "href": "/agents/director"
+      }
+    ],
+    "designer": [
+      {
+        "id": "agents",
+        "label": "Agents"
+      },
+      {
+        "id": "designer",
+        "label": "Designer",
+        "href": "/agents/designer"
+      }
+    ],
+    "writer": [
+      {
+        "id": "agents",
+        "label": "Agents"
+      },
+      {
+        "id": "writer",
+        "label": "Writer",
+        "href": "/agents/writer"
+      }
+    ],
+    "publisher": [
+      {
+        "id": "agents",
+        "label": "Agents"
+      },
+      {
+        "id": "publisher",
+        "label": "Publisher",
+        "href": "/agents/publisher"
+      }
+    ],
+    "apps": [
+      {
+        "id": "apps",
+        "label": "Apps",
+        "href": "/apps"
+      }
+    ]
+  }
+}

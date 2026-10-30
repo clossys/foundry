@@ -58,12 +58,12 @@ const surfaceErrors = (library: CompositeLibraryData, catalog: CompositeCatalogD
 };
 
 describe("package-pointer surface origin", () => {
-  // FINDING perf: Real 63-surface adoption exceeds 5s; allow completion before deferred snapshot-copy optimization.
+  // FINDING perf: Real 62-surface adoption exceeds 5s; allow completion before deferred snapshot-copy optimization.
   it("adopts every planned Section and Frame default without a bundle, from the real catalog", () => {
     const { catalog, plan, empty } = setup();
-    expect(plan.decisions).toHaveLength(63);
+    expect(plan.decisions).toHaveLength(62);
     const library = adopt(catalog, empty, plan.decisions);
-    expect(library.surfaces!.fills).toHaveLength(63);
+    expect(library.surfaces!.fills).toHaveLength(62);
     expect(library.surfaces!.files).toEqual([]);
     const selection = surfaceSelection(library);
     expect(selection.slots.map(row => row.slot)).toEqual(plan.decisions.map(row => row.slot).sort());
@@ -72,19 +72,19 @@ describe("package-pointer surface origin", () => {
     expect(faq.origin).toMatchObject({ kind: "package", source: "foundry", fill: "foundry/sections.faq", pin: { package: "@clossys/designer", version: "0.12.0", export: "./blocks#Faq" }, license: "MIT", adoptedAt: "2026-10-26" });
   }, 20000);
 
-  // FINDING perf: Real 63-surface adoption exceeds 5s; allow completion before deferred snapshot-copy optimization.
-  it("emits all 63 package surfaces with proven private site-shell imports", () => {
+  // FINDING perf: Real 62-surface adoption exceeds 5s; allow completion before deferred snapshot-copy optimization.
+  it("emits all 62 package surfaces with proven private site-shell imports", () => {
     const { catalog, plan, empty } = setup();
     const all = adopt(catalog, empty, plan.decisions);
     const allProfile = resolveComposite({ catalog, library: all, ...options() });
-    expect(Object.keys(allProfile.surfaces!.fills)).toHaveLength(63);
+    expect(Object.keys(allProfile.surfaces!.fills)).toHaveLength(62);
     expect(surfaceErrors(all, catalog)).toEqual([]);
     expect(allProfile.check.findings.filter(row => row.severity === "error")).toEqual([]);
     const compositeFiles = emitComposite(allProfile, ["surface-index"]);
     expect(compositeFiles.find(row => row.path === "frames/site-shell/index.ts")?.contents).toBe('export { SiteFrame as SiteShell } from "@clossys/designer/frames";\n');
-    expect(compositeFiles.find(row => row.path === "surface-index.ts")!.contents.split("\n").filter(Boolean)).toHaveLength(63);
+    expect(compositeFiles.find(row => row.path === "surface-index.ts")!.contents.split("\n").filter(Boolean)).toHaveLength(62);
     const allReport = emitComposite(allProfile, ["surfaces-consumption"]);
-    expect(JSON.parse(allReport.find(row => row.path === "surfaces-consumption.json")!.contents).fills).toHaveLength(63);
+    expect(JSON.parse(allReport.find(row => row.path === "surfaces-consumption.json")!.contents).fills).toHaveLength(62);
     const profile = allProfile;
     // This checks the surface emitter against the real resolved surface profile;
     // component runtime qualification remains a separate set of findings.
@@ -102,8 +102,8 @@ describe("package-pointer surface origin", () => {
     expect(file("sections/stats/index.ts")).toBe('export { StatGroup as Stats } from "@clossys/designer/blocks";\n');
     expect(file("sections/consent/index.ts")).toBe('export { ConsentBanner as Consent } from "@clossys/designer/blocks";\n');
     expect(file("surface-index.ts")).toContain('export { Faq } from "./sections/faq/index.js";\n');
-    expect(file("surface-index.ts")!.split("\n").filter(Boolean)).toHaveLength(63);
-    expect(JSON.parse(file("surfaces-consumption.json")!).fills).toHaveLength(63);
+    expect(file("surface-index.ts")!.split("\n").filter(Boolean)).toHaveLength(62);
+    expect(JSON.parse(file("surfaces-consumption.json")!).fills).toHaveLength(62);
   }, 20000);
 
   it("emits a satisfiable genuine package selection through the public composite engine", () => {
@@ -119,7 +119,7 @@ describe("package-pointer surface origin", () => {
     expect(emitComposite(profile, ["surface-index"]).find(row => row.path === "sections/call-to-action/index.ts")?.contents).toBe('export { CallToAction } from "@clossys/designer/blocks";\n');
   });
 
-  // FINDING perf: Real 63-surface adoption exceeds 5s; allow completion before deferred snapshot-copy optimization.
+  // FINDING perf: Real 62-surface adoption exceeds 5s; allow completion before deferred snapshot-copy optimization.
   it("refuses a missing or differing package export, version or module in the evidence", () => {
     const { catalog, plan, empty } = setup();
     const library = adopt(catalog, empty, plan.decisions);

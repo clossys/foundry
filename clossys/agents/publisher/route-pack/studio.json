@@ -1,0 +1,60 @@
+{
+  "packId": "studio",
+  "homeRouteId": "home",
+  "routes": [
+    {
+      "entry": {
+        "file": "studio/views/HomeView.tsx",
+        "export": "default"
+      },
+      "instanceId": "home",
+      "path": "/",
+      "label": "Home"
+    },
+    {
+      "entry": {
+        "file": "studio/views/DirectorView.tsx",
+        "export": "default"
+      },
+      "instanceId": "director",
+      "path": "/agents/director",
+      "label": "Director"
+    },
+    {
+      "entry": {
+        "file": "studio/views/DesignerView.tsx",
+        "export": "default"
+      },
+      "instanceId": "designer",
+      "path": "/agents/designer",
+      "label": "Designer"
+    },
+    {
+      "entry": {
+        "file": "studio/views/WriterView.tsx",
+        "export": "default"
+      },
+      "instanceId": "writer",
+      "path": "/agents/writer",
+      "label": "Writer"
+    },
+    {
+      "entry": {
+        "file": "studio/views/PublisherView.tsx",
+        "export": "default"
+      },
+      "instanceId": "publisher",
+      "path": "/agents/publisher",
+      "label": "Publisher"
+    },
+    {
+      "entry": {
+        "file": "studio/views/AppsView.tsx",
+        "export": "default"
+      },
+      "instanceId": "apps",
+      "path": "/apps",
+      "label": "Apps"
+    }
+  ]
+}
