@@ -76,5 +76,5 @@ export type { BrandmarkProps, BrandmarkVariant, BrandmarkSize } from "./Brandmar
 export type { BrandmarkPlate } from "./Brandmark.js";
 export { BADGE_INSET_SHARE, BADGE_RADIUS_SHARE, badgePlatePath } from "./badge-plate.js";
 
-export { FRAME_SLOT_IDS, PageHeaderModule, useFramePageHeader, FrameSlotProvider, FrameModuleOutlet, FrameSlotOutlet, SlotModule, useSlotLease, useFrameSlotModules } from "./FrameSlots.js";
+export { FRAME_SLOT_IDS, PageHeaderModule, useFramePageHeader, FrameSlotProvider, FrameModuleOutlet, FrameSlotOutlet, SlotModule, useSlotLease, useFrameSlotModules, framePageHeaderDeclaration } from "./FrameSlots.js";
 export type { FramePageHeader, FramePageHeaderNav, FramePageHeaderActions, FramePageHeaderDestination, FrameSlotId, FrameSlotModule } from "./FrameSlots.js";

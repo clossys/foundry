@@ -27,7 +27,7 @@ function accountSections(rows: readonly Json[], host: Host): AccountMenuSection[
     const entries = records(section.entries).map((entry, at) => {
       const entryId = required(entry.id, `account.sections[${index}].entries[${at}].id`), entryLabel = required(entry.label, `account.sections[${index}].entries[${at}].label`);
       const common = { id: entryId, label: entryLabel, ...(entry.isDisabled === true ? { isDisabled: true } : {}) };
-      if (entry.kind === "link") return { ...common, kind: "link" as const, href: required(entry.href, `account entry ${entryId} href`) };
+      if (entry.kind === "link") return { ...common, kind: "link" as const, href: required(entry.href, `account entry ${entryId} href`), ...(entry.target === "_blank" ? { target: "_blank" as const } : {}) };
       if (entry.kind === "preference") return { ...common, kind: "preference" as const, checked: entry.checked === true, onCheckedChange: (checked: boolean) => host?.onAccountPreference?.(entryId, checked) };
       if (entry.kind === "action" || entry.kind === "destructive") return { ...common, kind: entry.kind, onAction: () => host?.onAccountAction?.(entryId) };
       throw new TypeError(`frames.app-shell: account entry ${entryId} has an unknown kind`);

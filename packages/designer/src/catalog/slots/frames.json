@@ -390,12 +390,16 @@
           "tokens.border-width",
           "tokens.caption-size",
           "tokens.control-radius",
-          "tokens.spacing"
+          "tokens.spacing",
+          "tokens.animation"
         ],
         "assets": [
           "assets.icon-layers",
           "assets.icon-list-view",
-          "assets.icon-search"
+          "assets.icon-search",
+          "assets.icon-panel-left",
+          "assets.icon-theme-light",
+          "assets.icon-theme-dark"
         ]
       },
       "composes": [
@@ -417,7 +421,12 @@
         "components.logo",
         "components.resize-handle",
         "components.tabs",
-        "components.tooltip"
+        "components.tooltip",
+        "components.sidebar",
+        "components.semantic-content",
+        "components.sheet",
+        "components.breadcrumbs",
+        "components.disclosure"
       ],
       "skipTarget": "main-content",
       "stage": {

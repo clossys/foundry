@@ -17,6 +17,8 @@ interface Entry {
 export interface AccountMenuLink extends Entry {
   kind: "link";
   href: string;
+  /** Opens a host-configured external destination in a protected tab. */
+  target?: "_blank";
 }
 
 export interface AccountMenuAction extends Entry {

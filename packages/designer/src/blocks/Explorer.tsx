@@ -2,6 +2,7 @@ import { useId, useLayoutEffect, useRef, useState, type KeyboardEvent, type Reac
 import { Button } from "../components/Button.js";
 import { Icon } from "../components/Icon.js";
 import { Link } from "../components/Link.js";
+import { SemanticContent } from "../components/SemanticContent.js";
 import { cx } from "../components/internal/cx.js";
 import { ChevronRight } from "../icons/ChevronRight.js";
 import { FileText } from "../icons/FileText.js";
@@ -26,6 +27,14 @@ const CLOSED_ICON = "rtl:rotate-180";
 const SPACING_SM = `var(--spacing-sm, ${TOKENS["--spacing-sm"]!.value})`;
 const SPACING_MD = `var(--spacing-md, ${TOKENS["--spacing-md"]!.value})`;
 
+export interface ExplorerExternalAction {
+  href: string;
+  /** Host-localized accessible name, including the new-tab destination context. */
+  label: string;
+  /** Host-resolved selected icon; Explorer never chooses a replacement. */
+  icon: ReactNode;
+}
+
 export interface ExplorerProps<T extends TreeNode & { children?: readonly T[] } = TreeNode> {
   tree: readonly T[];
   label: string;
@@ -35,6 +44,8 @@ export interface ExplorerProps<T extends TreeNode & { children?: readonly T[] } 
   defaultExpandedIds?: readonly string[];
   /** Optional descriptive metadata, separate from each node's accessible name. */
   renderDetails?: (node: T) => ReactNode;
+  /** A link-out beside the treeitem, outside its selection/disclosure control. */
+  externalAction?: (node: T) => ExplorerExternalAction | null | undefined;
   /**
    * Optional host-owned list pane (the sections.explorer `list` region): the
    * contents of the selected folder. When supplied, the tree and the list sit
@@ -53,15 +64,17 @@ interface RowProps<T extends TreeNode & { children?: readonly T[] }> {
   keyboard: (event: KeyboardEvent, node: T) => void;
   register: (id: string, element: HTMLElement | null) => void;
   renderDetails?: (node: T) => ReactNode;
+  externalAction?: ExplorerProps<T>["externalAction"];
 }
 
 /** A group is owned by its folder treeitem; Button and Link retain native press semantics. */
 function Row<T extends TreeNode & { children?: readonly T[] }>(props: RowProps<T>) {
-  const { node, level, position, count, expanded, active, selectedId, activate, focus, keyboard, register, renderDetails } = props;
+  const { node, level, position, count, expanded, active, selectedId, activate, focus, keyboard, register, renderDetails, externalAction } = props;
   const rowId = useId(); const groupId = useId(); const descriptionId = useId();
   const folder = node.children !== undefined;
   const open = folder && expanded.has(node.id);
   const details = renderDetails?.(node);
+  const action = externalAction?.(node);
   // Depth is semantic and unlimited; only visual indentation stops growing after six steps.
   const style = { paddingInlineStart: `calc(${SPACING_SM} + ${SPACING_MD} * ${Math.min(level - 1, 6)})` };
   const semantics = {
@@ -71,17 +84,17 @@ function Row<T extends TreeNode & { children?: readonly T[] }>(props: RowProps<T
     "aria-owns": folder ? groupId : undefined,
   } as const;
   const content = <>
-    {Array.from({ length: level - 1 }, (_, index) => <span key={index} data-explorer-guide="" aria-hidden="true"
+    {Array.from({ length: level - 1 }, (_, index) => <SemanticContent as="span" key={index} data-explorer-guide="" aria-hidden="true"
       className={cx(GUIDE, index === level - 2 && GUIDE_BRANCH)}
       style={{ insetInlineStart: `calc(${SPACING_MD} * ${Math.min(index, 5)})`, insetBlockStart: 0,
         insetBlockEnd: index === level - 2 ? "50%" : 0, inlineSize: index === level - 2 ? SPACING_MD : 0 }} />)}
     {folder ? <Icon glyph={ChevronRight} decorative size="sm" className={open ? OPEN_ICON : CLOSED_ICON} /> : null}
     {node.icon ?? <Icon glyph={folder ? Folder : FileText} data-explorer-icon="" decorative size="sm" />}
-    <span className={LABEL}>{node.label}</span>
-    {details !== undefined && details !== null ? <span id={descriptionId} className={DETAILS}>{details}</span> : null}
+    <SemanticContent as="span" className={LABEL}>{node.label}</SemanticContent>
+    {details !== undefined && details !== null ? <SemanticContent as="span" id={descriptionId} className={DETAILS}>{details}</SemanticContent> : null}
   </>;
-  return <div role="none">
-    <div role="none" ref={element => register(node.id, element?.querySelector<HTMLElement>("button, a") ?? null)}>
+  return <SemanticContent as="div" role="none">
+    <SemanticContent as="div" role="none" data-explorer-row="" className="flex min-w-0 items-center gap-xs" ref={element => register(node.id, element?.querySelector<HTMLElement>('[role="treeitem"]') ?? null)}>
       {node.href !== undefined ? <Link id={rowId} href={node.href} buttonVariant={selectedId === node.id ? "secondary" : "ghost"}
         className={ROW} style={style} aria-label={node.label} aria-describedby={details == null ? undefined : descriptionId}
         render={domProps => <a {...domProps} {...semantics} ref={domProps.ref as Ref<HTMLAnchorElement>} />}
@@ -90,17 +103,22 @@ function Row<T extends TreeNode & { children?: readonly T[] }>(props: RowProps<T
           className={ROW} style={style} aria-label={node.label} aria-describedby={details == null ? undefined : descriptionId}
           render={domProps => <button {...domProps} {...semantics} />}
           onFocus={() => focus(node.id)} onKeyDown={event => keyboard(event, node)} onPress={() => activate(node)}>{content}</Button>}
-    </div>
-    {folder ? <div id={groupId} role="group" aria-labelledby={rowId} hidden={!open}>
+      {action && <Link href={action.href} target="_blank" rel="noopener noreferrer" aria-label={action.label}
+        buttonVariant="ghost" className="aspect-square shrink-0 p-0"
+        data-explorer-external-action={node.id}>
+        <SemanticContent as="span" aria-hidden="true" className="inline-flex items-center justify-center">{action.icon}</SemanticContent>
+      </Link>}
+    </SemanticContent>
+    {folder ? <SemanticContent as="div" id={groupId} role="group" aria-labelledby={rowId} hidden={!open}>
       {open ? (node.children as readonly T[]).map((child, index) => <Row {...props} key={child.id} node={child} level={level + 1} position={index + 1} count={node.children!.length} />) : null}
-    </div> : null}
-  </div>;
+    </SemanticContent> : null}
+  </SemanticContent>;
 }
 
 /** Single-select files and folders, with unrestricted semantic depth and independent disclosure. */
 export function Explorer<T extends TreeNode & { children?: readonly T[] }>(props: ExplorerProps<T>): ReactElement;
 export function Explorer(props: ExplorerProps): ReactElement;
-export function Explorer<T extends TreeNode & { children?: readonly T[] }>({ tree, label, selectedId, onSelect, defaultExpandedIds = [], renderDetails, list, listLabel = "Contents", className }: ExplorerProps<T>) {
+export function Explorer<T extends TreeNode & { children?: readonly T[] }>({ tree, label, selectedId, onSelect, defaultExpandedIds = [], renderDetails, externalAction, list, listLabel = "Contents", className }: ExplorerProps<T>) {
   const index = indexTree(tree);
   const [expanded, setExpanded] = useState<ReadonlySet<string>>(() => new Set(defaultExpandedIds));
   const [focused, setFocused] = useState<string>();
@@ -139,14 +157,14 @@ export function Explorer<T extends TreeNode & { children?: readonly T[] }>({ tre
   useLayoutEffect(() => { if (ownsFocus.current && active !== undefined) controls.current.get(active)?.focus(); }, [active]);
   const register = (id: string, element: HTMLElement | null) => { if (element) controls.current.set(id, element); else controls.current.delete(id); };
   const panes = list !== undefined && list !== null && list !== false;
-  const treeElement = <div {...(panes ? {} : SECTION_STAMP)} role="tree" aria-label={label} aria-multiselectable={false} data-explorer="" className={cx(TREE, panes ? TREE_PANE : className)}
+  const treeElement = <SemanticContent as="div" {...(panes ? {} : SECTION_STAMP)} role="tree" aria-label={label} aria-multiselectable={false} data-explorer="" className={cx(TREE, panes ? TREE_PANE : className)}
     onFocusCapture={() => { ownsFocus.current = true; }} onBlurCapture={event => { if (!event.currentTarget.contains(event.relatedTarget as Node | null)) ownsFocus.current = false; }}>
     {tree.map((node, position) => <Row key={node.id} node={node} level={1} position={position + 1} count={tree.length}
-      expanded={expanded} active={active} selectedId={selectedId} activate={activate} focus={setFocused} keyboard={keyboard} register={register} renderDetails={renderDetails} />)}
-  </div>;
+      expanded={expanded} active={active} selectedId={selectedId} activate={activate} focus={setFocused} keyboard={keyboard} register={register} renderDetails={renderDetails} externalAction={externalAction} />)}
+  </SemanticContent>;
   if (!panes) return treeElement;
-  return <div {...SECTION_STAMP} data-explorer-layout="panes" className={cx(PANES, className)}>
+  return <SemanticContent as="div" {...SECTION_STAMP} data-explorer-layout="panes" className={cx(PANES, className)}>
     {treeElement}
-    <section aria-label={listLabel} data-explorer-region="list" className={LIST_PANE}>{list}</section>
-  </div>;
+    <SemanticContent as="section" aria-label={listLabel} data-explorer-region="list" className={LIST_PANE}>{list}</SemanticContent>
+  </SemanticContent>;
 }

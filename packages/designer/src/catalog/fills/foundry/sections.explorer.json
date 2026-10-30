@@ -28,20 +28,23 @@
     "explorer": {
       "composes": [
         "components.button",
-        "components.icon"
+        "components.icon",
+        "components.semantic-content"
       ],
       "configs": {},
       "consumption": {
         "scanStatus": "lower-bound",
         "scannedComposes": [
           "components.button",
-          "components.icon"
+          "components.icon",
+          "components.semantic-content"
         ],
         "scannedReads": {
           "assets": [],
           "components": [
             "components.button",
-            "components.icon"
+            "components.icon",
+            "components.semantic-content"
           ],
           "tokens": [
             "tokens.border-color",
@@ -53,7 +56,7 @@
         "sourceFiles": [
           {
             "path": "packages/designer/src/blocks/Explorer.tsx",
-            "sha256": "9ef161b46c7d77a52b56d6257430351e51ca86cc3efc966756b1ee68bc3a2714"
+            "sha256": "26454b8c889545bef03d3791e4024e15c9d23d83fc1a4bc21a30ba7500bcf4a4"
           },
           {
             "path": "packages/designer/src/blocks/tree-model.ts",
@@ -91,25 +94,25 @@
             "code": "DF5",
             "evidence": "unregistered asset import ../icons/ChevronRight.js#ChevronRight",
             "file": "packages/designer/src/blocks/Explorer.tsx",
-            "line": 6
+            "line": 7
           },
           {
             "code": "DF5",
             "evidence": "unregistered asset import ../icons/FileText.js#FileText",
             "file": "packages/designer/src/blocks/Explorer.tsx",
-            "line": 7
+            "line": 8
           },
           {
             "code": "DF5",
             "evidence": "unregistered asset import ../icons/Folder.js#Folder",
             "file": "packages/designer/src/blocks/Explorer.tsx",
-            "line": 8
+            "line": 9
           },
           {
             "code": "DF2",
             "evidence": "unresolved injected runtime inventory ../tokens/tokens.js#TOKENS",
             "file": "packages/designer/src/blocks/Explorer.tsx",
-            "line": 9
+            "line": 10
           },
           {
             "code": "DF2",

@@ -26,7 +26,7 @@ const props: Omit<AppFrameProps, "children"> = {
   dock: { label: "Page modules", handleLabel: "Resize page modules" },
   rightPanel: { children: <p>Inspector body</p>, label: "Inspector", handleLabel: "Resize inspector", min: 200, max: 500, defaultValue: 300, step: 10 },
 };
-const bar = () => document.querySelector<HTMLElement>('[data-application-frame-region="bar"]')!;
+const bar = () => document.querySelector<HTMLElement>('[data-page-frame-header]')!;
 
 it("draws the frame header unboxed and flush on the raised surface, not the inset glass box", () => {
   render(<AppFrame {...props}><p>Page</p></AppFrame>);
@@ -57,7 +57,7 @@ it("binds every chrome control to the md control height, with the hit area from 
   ];
   for (const control of controls) {
     expect(control).toHaveClass("control-h-md");
-    expect(control.style.minBlockSize).toBe("");
+    expect(control.style.minBlockSize).toBe(control.hasAttribute("data-application-frame-navigation") || control.hasAttribute("data-application-frame-panel") ? "var(--ui-layout-tap-target)" : "");
   }
 });
 
@@ -71,14 +71,14 @@ it("turns the dock chevron on the named fast chrome motion, with no arbitrary du
 it("binds frame controls and main to the one focus-ring token, never the raw accent", () => {
   render(<AppFrame {...props}><p>Page</p></AppFrame>);
   for (const element of [screen.getByRole("button", { name: "Find commands" }), screen.getByRole("main")]) {
-    expect(element).toHaveClass("focus-visible:outline-focus-ring");
+    expect(element).toHaveClass(element.tagName === "MAIN" ? "focus-ring-inset" : "focus-ring");
     expect(element).not.toHaveClass("focus-visible:outline-accent");
   }
 });
 
 it("sizes the header row from its own content, with no inline measured block size", () => {
   render(<AppFrame {...props}><p>Page</p></AppFrame>);
-  expect(document.querySelector<HTMLElement>('[data-application-frame-region="header"]')!.style.minBlockSize).toBe("");
+  expect(document.querySelector<HTMLElement>('[data-page-frame-header]')!.style.minBlockSize).toBe("");
 });
 
 it("stacks main content children on the lg spacing token so a banner never touches the content below it", () => {

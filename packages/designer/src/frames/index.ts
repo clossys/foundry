@@ -3,6 +3,10 @@ export { SHELL_COPY_REFS } from "../components/Banner.copy.js";
 export { ShellCopyProvider } from "../components/Banner.copy-context.js";
 export type { ShellCopyRef, ShellCopyResolver } from "../components/Banner.copy.js";
 export { AppFrame } from "./AppFrame.js";
+export { ShadcnAppShell } from "./shadcn-aria/AppShell.js";
+export type { ShadcnAppShellProps } from "./shadcn-aria/AppShell.js";
+export { renderShadcnAppShell, shadcnAppShellRenderer } from "../runtime/frames/shadcn-app-shell.js";
+export { useShellCopy } from "../components/Banner.copy-context.js";
 export type { AppFrameProps, AppFrameBrand, AppFrameBrandNavigationMark, AppFrameAccount, AppFrameAccountAvatar, AppFrameFooterLayout, AppFrameRightPanel, AppFrameLayout, AppFrameStage, AppFrameNotice, AppFrameDock } from "./app-frame-types.js";
 export { APP_FRAME_CONTRACT, APP_FRAME_CONFIG_SCHEMA } from "./app-frame-contract.js";
 export { APP_FRAME_RIGHT_PANEL_CONFIG } from "./right-panel-config.js";
@@ -32,3 +36,8 @@ export { RenderError, type RenderErrorReason } from "./site-frame/landing/intern
 export { siteShellProps, renderSiteShell, siteShellRuntimeRenderer, siteShellRuntimeRenderers, siteShellRuntimePointers, siteShellRuntimeCallbacks, SITE_SHELL_RUNTIME_POINTER } from "../runtime/frames/site-shell.js";
 export { DocumentFrame, documentRenderer, renderDocument, FRAME_CRITICAL_STYLE_ATTRIBUTE } from "../runtime/frames/document.js";
 export type { DocumentFrameProps } from "../runtime/frames/document.js";
+
+export { PageFrame } from "./PageFrame.js";
+export type { PageFrameProps, PageFrameManifest, PageFrameAction, PageFrameBreadcrumb } from "./PageFrame.js";
+export { ModuleFrame } from "./ModuleFrame.js";
+export type { ModuleFrameProps } from "./ModuleFrame.js";

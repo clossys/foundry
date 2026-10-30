@@ -26,16 +26,17 @@
       "composes": [
         "components.avatar",
         "components.banner",
+        "components.breadcrumbs",
         "components.button",
         "components.card",
+        "components.disclosure",
         "components.icon",
         "components.logo",
         "components.menu",
         "components.resize-handle",
+        "components.semantic-content",
         "components.tabs",
-        "components.toggle-button",
         "components.tooltip",
-        "frames.app-header",
         "frames.app-sidebar",
         "frames.command",
         "frames.sheet"
@@ -45,16 +46,17 @@
         "scannedComposes": [
           "components.avatar",
           "components.banner",
+          "components.breadcrumbs",
           "components.button",
           "components.card",
+          "components.disclosure",
           "components.icon",
           "components.logo",
           "components.menu",
           "components.resize-handle",
+          "components.semantic-content",
           "components.tabs",
-          "components.toggle-button",
           "components.tooltip",
-          "frames.app-header",
           "frames.app-sidebar",
           "frames.command",
           "frames.sheet"
@@ -64,14 +66,16 @@
           "components": [
             "components.avatar",
             "components.banner",
+            "components.breadcrumbs",
             "components.button",
             "components.card",
+            "components.disclosure",
             "components.icon",
             "components.logo",
             "components.menu",
             "components.resize-handle",
+            "components.semantic-content",
             "components.tabs",
-            "components.toggle-button",
             "components.tooltip"
           ],
           "tokens": [
@@ -95,7 +99,7 @@
         "sourceFiles": [
           {
             "path": "packages/designer/src/blocks/AccountMenu.tsx",
-            "sha256": "929f0396b0cb3433a4092ed6c55d70372866b3812ff79a9b5f2924805c203936"
+            "sha256": "34d3c1c5217bf19c00a3b2a16ea6c98e17aec5dc272c101524565ce8ff966ff0"
           },
           {
             "path": "packages/designer/src/blocks/canvas/models.ts",
@@ -139,15 +143,11 @@
           },
           {
             "path": "packages/designer/src/frames/AppFrame.tsx",
-            "sha256": "e96ec4fb21566aaad06715b668271b7b8b95181aaddd344257f749b874a1b63f"
+            "sha256": "e2a4aa3d3edd4c71b3569e59d4cd69a845c9d2c1d3288db0492744f554bc3488"
           },
           {
             "path": "packages/designer/src/frames/AppFrameBrand.tsx",
             "sha256": "aebc205da11a48ffce8f765e20bf62ae607d7df5f486a169c3b8d7f656f0c206"
-          },
-          {
-            "path": "packages/designer/src/frames/AppFrameBrandTheme.tsx",
-            "sha256": "bd6a6a972c41308d44396a619ecd991c381defd6f7e55271b6c89e8e9264821a"
           },
           {
             "path": "packages/designer/src/frames/frame-dock-layout.ts",
@@ -166,6 +166,18 @@
             "sha256": "9d1c352e83c87277f867cb8fb661be32dcfe5e8e6de918cd00877c8d4ac3c213"
           },
           {
+            "path": "packages/designer/src/frames/ModuleFrame.tsx",
+            "sha256": "822b5934fba7e4ad31a37f437bf2b564ad6bcc757b0ac684dd6cc5e367903022"
+          },
+          {
+            "path": "packages/designer/src/frames/PageFrame.tsx",
+            "sha256": "2ca85ffe5518eb8b187824f4b2c8ecfd8a0c3b3894c608e937df2c5642eb5a82"
+          },
+          {
+            "path": "packages/designer/src/frames/shadcn-aria/chrome.tsx",
+            "sha256": "cd4dbcae6261b8b129b532ab8a4328d5af008ec039d542f6410a73dc646d27f3"
+          },
+          {
             "path": "packages/designer/src/icons/ChevronDown.ts",
             "sha256": "a0d467a8eb0067662f31c16000987a0dfbc2d2b71fbe5b99d0dd5586dd823294"
           },
@@ -176,10 +188,6 @@
           {
             "path": "packages/designer/src/icons/List.ts",
             "sha256": "41a9f16bbf2cea86eb4a8d2039efce4cf87fb58c6ef7a23d120dea45985bd4c2"
-          },
-          {
-            "path": "packages/designer/src/icons/Monitor.ts",
-            "sha256": "1018ced79e3d8f50a4a74607ffc22ad99c7744c29c248824b8437fba65185148"
           },
           {
             "path": "packages/designer/src/icons/Moon.ts",
@@ -247,27 +255,21 @@
           },
           {
             "code": "DF5",
+            "evidence": "unregistered asset import ../icons/index.js#Moon",
+            "file": "packages/designer/src/frames/AppFrame.tsx",
+            "line": 7
+          },
+          {
+            "code": "DF5",
             "evidence": "unregistered asset import ../icons/index.js#Search",
             "file": "packages/designer/src/frames/AppFrame.tsx",
             "line": 7
           },
           {
             "code": "DF5",
-            "evidence": "unregistered asset import ../icons/Monitor.js#Monitor",
-            "file": "packages/designer/src/frames/AppFrameBrandTheme.tsx",
-            "line": 8
-          },
-          {
-            "code": "DF5",
-            "evidence": "unregistered asset import ../icons/Moon.js#Moon",
-            "file": "packages/designer/src/frames/AppFrameBrandTheme.tsx",
-            "line": 9
-          },
-          {
-            "code": "DF5",
-            "evidence": "unregistered asset import ../icons/Sun.js#Sun",
-            "file": "packages/designer/src/frames/AppFrameBrandTheme.tsx",
-            "line": 10
+            "evidence": "unregistered asset import ../icons/index.js#Sun",
+            "file": "packages/designer/src/frames/AppFrame.tsx",
+            "line": 7
           },
           {
             "code": "DF2",
