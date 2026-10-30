@@ -1,5 +1,6 @@
 import type { CellContentScope } from './cells-client';
 import type { AgentSpecimenPlan } from './agent-specimen-data';
+import type { RegisteredRenderMeasurement } from './registered-specimen-coverage';
 
 export type SpecimenCardSpan = 'full' | 'half' | 'third';
 
@@ -12,6 +13,7 @@ export interface ResolvedSpecimenEvidence {
   variantIds: readonly string[];
 }
 export interface AgentSpecimenCoverage {
+  rendered?: RegisteredRenderMeasurement;
   cellId: string; ready: boolean; inventoryComplete: boolean; boundSectionId?: string; registered: boolean; itemCount: number;
   span?: SpecimenCardSpan;
   scope?: CellContentScope;

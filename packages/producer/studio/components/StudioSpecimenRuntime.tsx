@@ -2,7 +2,8 @@
 
 import { createContext, useCallback, useContext, useMemo, type ReactNode } from 'react';
 import * as DesignerStudio from '@clossys/designer/studio';
-import { nativeSpecimenSDK, nativeSpecimenContext, bindNativeAgentSpecimen, bindNativeDesignerSpecimen, type NativeSpecimenContext } from '../lib/native-specimen-runtime';
+import { nativeSpecimenSDK, nativeSpecimenContext, nativeSpecimenRegistered, bindNativeAgentSpecimen, bindNativeDesignerSpecimen, type NativeSpecimenContext } from '../lib/native-specimen-runtime';
+import { measureRegisteredSpecimen } from '../lib/registered-specimen-coverage';
 import { producerPagePreview } from '../lib/producer-page-preview';
 import { SpecimenLeafProvider, type ResolveSpecimenLeaf } from './AgentL3Specimen';
 import { useStudioSelection, useStudioUI } from './StudioSelection';
@@ -23,7 +24,9 @@ export function StudioSpecimenRuntimeProvider({ children }: { children: ReactNod
     const context = native.context && pagePreview ? { ...native.context, pagePreview } : native.context;
     const common = { sdk, context, expanded, need, labels: { showAllVariants: (count: number) => `Show all ${count} variants` } };
     const result = index.agent === 'designer' ? bindNativeDesignerSpecimen({ ...common, cell }) : bindNativeAgentSpecimen({ ...common, agent: index.agent, plan, ...(typeof cell.fields?.specimen === 'string' ? { specimen: cell.fields.specimen } : {}) });
-    return { sourcePlan: result.sourcePlan, Component: result.Component, props: result.props, evidence: { sectionId: result.sectionId ?? '', registered: result.registered, span: result.span, items: result.items, variantIds: result.variantIds, issues: [...native.issues, ...result.issues] } };
+    return { sourcePlan: result.sourcePlan, Component: result.Component, props: result.props,
+      measure: (root, surface) => measureRegisteredSpecimen({ sdk, binding: result, agent: index.agent, cellId: cell.id, root, surface, nativeRegistered: id => !!context && nativeSpecimenRegistered(context, id) }),
+      evidence: { sectionId: result.sectionId ?? '', registered: result.registered, span: result.span, items: result.items, variantIds: result.variantIds, issues: [...native.issues, ...result.issues] } };
   }, [sdk, native, need]);
   return <NativeRuntimeContext.Provider value={native}><SpecimenLeafProvider resolve={resolve}>{children}</SpecimenLeafProvider></NativeRuntimeContext.Provider>;
 }

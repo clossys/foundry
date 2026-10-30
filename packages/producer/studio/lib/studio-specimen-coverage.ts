@@ -2,7 +2,7 @@ import type { AgentSpecimenCoverage } from './agent-specimen-coverage';
 import type { AgentCells, CellContentScope } from './cells-client';
 import { projectStudioAgentIA } from './studio-agent-ia';
 
-/** Evidence supplied by the same registered renderer model that paints the row. */
+/** Inventory/binding evidence plus a separate mounted registered-renderer measurement. */
 export type StudioCoverageEvidence = AgentSpecimenCoverage;
 export interface StudioCoverageResult { state: 'pass' | 'fail' | 'empty'; cells: { covered: number; total: number }; variants: { covered: number; total: number; completeScope: boolean }; issues: { cellId?: string; code: string }[]; scope?: CellContentScope; sources: { cellId: string; inventoryComplete: boolean; scope?: CellContentScope }[] }
 
@@ -37,10 +37,14 @@ export function checkStudioSpecimenCoverage(index: AgentCells, evidence: readonl
     totalVariants += ids.length;
     if (new Set(record.variants.map(variant => variant.id)).size !== record.variants.length) fail('duplicate-variant');
     const modelValid = before === issues.length;
+    const proof = record.rendered;
+    const proofValid = proof?.measured === true && proof.agent === index.agent && proof.cellId === cell.id && proof.sectionId === record.boundSectionId && proof.issues.every(code => code === 'missing-rendered-case' || code === 'missing-live-emitted-page') && new Set(proof.variantIds).size === proof.variantIds.length && proof.variantIds.every(id => ids.includes(id));
+    if (!proofValid) fail('missing-or-invalid-rendered-evidence');
     let rendered = 0;
     for (const id of ids) {
       const variant = record.variants.find(variant => variant.id === id);
       if (!variant?.renderable) fail('missing-or-unrenderable-variant');
+      else if (!proofValid || !proof!.variantIds.includes(id)) fail('missing-rendered-variant');
       else if (modelValid) rendered++;
     }
     if (record.variants.some(variant => !ids.includes(variant.id))) fail('variant-outside-inventory');
@@ -48,5 +52,6 @@ export function checkStudioSpecimenCoverage(index: AgentCells, evidence: readonl
     if (before === issues.length) coveredCells++;
   }
   if (evidence.some(record => !cells.some(cell => cell.id === record.cellId))) issues.push({ code: 'evidence-outside-ia' });
-  return { state: issues.length ? 'fail' : cells.length ? 'pass' : 'empty', ...(scope ? { scope } : {}), sources, cells: { covered: coveredCells, total: cells.length }, variants: { covered: coveredVariants, total: totalVariants, completeScope }, issues };
+  if (!cells.length) { issues.push({ code: 'missing-native-inventory' }); completeScope = false; }
+  return { state: issues.length ? 'fail' : 'pass', ...(scope ? { scope } : {}), sources, cells: { covered: coveredCells, total: cells.length }, variants: { covered: coveredVariants, total: totalVariants, completeScope }, issues };
 }

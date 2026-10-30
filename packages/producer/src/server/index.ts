@@ -1,4 +1,5 @@
 import { studioChecks } from './studio-checks.js';
+import { specimenCoverage } from './specimen-coverage.js';
 import { randomBytes, timingSafeEqual } from "node:crypto";
 import { once } from "node:events";
 import { createServer, request as httpRequest, type IncomingMessage, type ServerResponse } from "node:http";
@@ -108,6 +109,11 @@ export async function startProducerServer(options: ProducerServerOptions): Promi
         json(response, 200, profile); return;
       }
       if (pathname === "/api/cells") { json(response, 200, { agents: await Promise.all(AGENT_KINDS.map(agent => inventory(options.root, agent))) }); return; }
+      if (pathname === "/api/specimen-coverage") {
+        const requested = new URL(raw, origin).searchParams.get("agent");
+        if (requested !== null && !AGENT_KINDS.includes(requested as AgentKind)) { json(response, 400, { error: "Unknown specimen agent" }); return; }
+        json(response, 200, await specimenCoverage(options.root, requested === null ? undefined : requested as AgentKind)); return;
+      }
       if (pathname === "/api/publication") { json(response, 200, await publication(options.root, new URL(raw, origin).searchParams.get("publication") ?? undefined)); return; }
       if (pathname === "/api/apps") { json(response, 200, await consumerApps(options.root)); return; }
       if (pathname === "/api/checks") {

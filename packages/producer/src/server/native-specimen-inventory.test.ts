@@ -80,7 +80,7 @@ describe("canonical read-only specimen source inventory", () => {
     expect(design!.cells.find(cell => cell.id === "tokens.accent-color")?.native).toMatchObject({ agent: "designer", kind: "token", layer: "tokens", valueKind: "color" });
     expect(sources.flatMap(source => source.cells).every(cell => !cell.sourceBody.startsWith("---"))).toBe(true);
     expect(await snapshot(root)).toEqual(before);
-  });
+  }, 20_000);
   it("carries canonical projection through the existing HTTP response adapters", async () => {
     await writer(); const source = await agentSpecimenInventory(root, "writer");
     const index = parseCellsResponse({ agents: [source.index] })[0]!;

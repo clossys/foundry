@@ -7,7 +7,7 @@ function fixture(agent: AgentCells['agent'] = 'director'): AgentCells {
   return { agent, state: 'ready', cells: ['second', 'first'].map((name, i) => ({ id: `focus.segment.${name}`, title: name, version: i + 1, status: 'draft' })), tree: { tree: [{ id: 'focus', name: 'Focus', children: [{ id: 'segment', name: 'Segment', cells: ['focus.segment.first', 'focus.segment.second'] }] }] } };
 }
 function evidence(index: AgentCells): StudioCoverageEvidence[] {
-  return index.cells.map(cell => ({ cellId: cell.id, ready: true, inventoryComplete: true, boundSectionId: 'sections.specimen-rich-passage', registered: true, span: 'full', itemCount: 2, expectedVariantIds: ['visible', 'hidden'], variants: [{ id: 'visible', renderable: true }, { id: 'hidden', renderable: true }], issues: [] }));
+  return index.cells.map(cell => ({ cellId: cell.id, ready: true, inventoryComplete: true, boundSectionId: 'sections.specimen-rich-passage', registered: true, span: 'full', itemCount: 2, expectedVariantIds: ['visible', 'hidden'], variants: [{ id: 'visible', renderable: true }, { id: 'hidden', renderable: true }], issues: [], rendered: { agent: index.agent, cellId: cell.id, sectionId: 'sections.specimen-rich-passage', surface: 'row', measured: true, variantIds: ['visible', 'hidden'], issues: [] } }));
 }
 describe('shared authored IA and strict specimen coverage', () => {
   it('keeps tree order and gives all four levels hash breadcrumbs', () => {
@@ -24,7 +24,7 @@ describe('shared authored IA and strict specimen coverage', () => {
     const index = fixture(agent);
     expect(checkStudioSpecimenCoverage(index, evidence(index))).toMatchObject({ state: 'pass', cells: { covered: 2, total: 2 }, variants: { covered: 4, total: 4, completeScope: true } });
   });
-  it.each(['unregistered', 'zero-items', 'missing-hidden-variant', 'unbound', 'pending', 'missing-span', 'invalid-span'] as const)('fails the %s negative control', fault => {
+  it.each(['unregistered', 'zero-items', 'missing-hidden-variant', 'unbound', 'pending', 'missing-span', 'invalid-span', 'unmeasured', 'wrong-agent', 'opaque-frame', 'missing-rendered-variant'] as const)('fails the %s negative control', fault => {
     const index = fixture(); const records = evidence(index); const row = records[0]!;
     if (fault === 'unregistered') row.registered = false;
     if (fault === 'zero-items') row.itemCount = 0;
@@ -33,6 +33,10 @@ describe('shared authored IA and strict specimen coverage', () => {
     if (fault === 'pending') row.ready = false;
     if (fault === 'missing-span') delete row.span;
     if (fault === 'invalid-span') Object.assign(row, { span: 'quarter' });
+    if (fault === 'unmeasured') delete row.rendered;
+    if (fault === 'wrong-agent') row.rendered!.agent = 'writer';
+    if (fault === 'opaque-frame') row.rendered!.issues = ['unverified-specimen-viewport'];
+    if (fault === 'missing-rendered-variant') row.rendered!.variantIds.pop();
     const result = checkStudioSpecimenCoverage(index, records);
     expect(result.state).toBe('fail'); expect(result.cells.covered).toBe(1); expect(result.variants.total).toBe(4);
   });
@@ -62,5 +66,12 @@ describe('shared authored IA and strict specimen coverage', () => {
     const index = fixture(); const records = evidence(index); records[0]!.expectedVariantIds = [];
     expect(checkStudioSpecimenCoverage(index, records)).toMatchObject({ state: 'fail', variants: { completeScope: false } });
     expect(checkStudioSpecimenCoverage({ ...index, tree: undefined }, [])).toMatchObject({ state: 'fail', variants: { completeScope: false } });
+  });
+  it('preserves measured partial rendering without shrinking the native denominator', () => {
+    const index = fixture(); const records = evidence(index);
+    records[0]!.rendered!.variantIds = ['visible'];
+    records[0]!.rendered!.issues = ['missing-rendered-case'];
+    expect(checkStudioSpecimenCoverage(index, records)).toMatchObject({ state: 'fail', cells: { covered: 1, total: 2 }, variants: { covered: 3, total: 4, completeScope: true } });
+    expect(checkStudioSpecimenCoverage({ ...index, cells: [], tree: { tree: [] } }, [])).toMatchObject({ state: 'fail', cells: { covered: 0, total: 0 }, variants: { completeScope: false } });
   });
 });

@@ -4,6 +4,7 @@ import type { StudioRuntimeModule } from './selection-runtime';
 import type { CellDetail } from './cells-client';
 import type { AgentSpecimenPlan } from './agent-specimen-data';
 import type { SpecimenCardSpan } from './agent-specimen-coverage';
+import type { NativeCoverageCell, RegisteredCoverageSDK } from './registered-specimen-coverage';
 
 export interface NativeSurfaceBinding { descriptorHash: string; renderContent?: (props: Record<string, unknown>) => ReactNode }
 export interface NativeSpecimenContext {
@@ -13,11 +14,11 @@ export interface NativeSpecimenContext {
   [key: string]: unknown;
 }
 export interface NativeSpecimenDefinition { id: string; span?: SpecimenCardSpan; validate?(props: Record<string, unknown>): readonly { leaf: string; reason: string }[] }
-export interface NativeSpecimenSDK {
+export interface NativeSpecimenSDK extends Partial<RegisteredCoverageSDK> {
   emittedDesignerSpecimenContext(profile: CompositeResolved, runtime: StudioRuntimeModule): NativeSpecimenContext;
   bindNativeSpecimenContext(context: NativeSpecimenContext, ports: Record<string, unknown>): NativeSpecimenContext | { leaf: string; reason: string };
   projectAgentSpecimenPlan(input: Record<string, unknown>): unknown;
-  bindAgentSpecimenPlan(input: Record<string, unknown>): { sectionId?: string; registered: boolean; items: unknown[]; variantIds: string[]; cell?: { axes?: unknown[] }; issues: string[] };
+  bindAgentSpecimenPlan(input: Record<string, unknown>): { sectionId?: string; registered: boolean; items: unknown[]; variantIds: string[]; cell?: NativeCoverageCell; issues: string[] };
   studioSpecimenLeaves: readonly NativeSpecimenDefinition[];
   SPECIMEN_KIND_MAP?: readonly { kind: string; layer?: string; specimen: string }[];
   resolveSpecimenLeafBinding?(cell: Record<string, unknown>, registry: readonly NativeSpecimenDefinition[]): { leaf: NativeSpecimenDefinition } | { error: string };
@@ -47,6 +48,7 @@ export function nativeSpecimenContext(sdk: NativeSpecimenSDK | undefined, profil
 }
 export interface NativeLeafResolution {
   sourcePlan?: AgentSpecimenPlan;
+  coverageCell?: NativeCoverageCell;
   Component?: ComponentType<Record<string, unknown>>;
   sectionId?: string; registered: boolean; span?: SpecimenCardSpan;
   items: unknown[]; variantIds: string[]; props: Record<string, unknown> & { items: unknown[] }; issues: string[];
@@ -68,7 +70,7 @@ export function bindNativeAgentSpecimen(input: {
     if (!native?.renderContent) issues.push('The bound leaf has no descriptor-matched selected native content renderer.');
     const definitions = id ? sdk.studioSpecimenLeaves.filter(leaf => leaf.id === id) : [];
     const span = definitions.length === 1 ? definitions[0]?.span : undefined;
-    return { ...(native?.renderContent ? { Component: native.renderContent as ComponentType<Record<string, unknown>> } : {}), sectionId: id, registered: bound.registered && !!native?.renderContent && issues.length === 0, ...(span ? { span } : {}), items: bound.items, variantIds: bound.variantIds, props: { ...props, items: bound.items, ...(bound.cell?.axes ? { axes: bound.cell.axes } : {}) }, issues };
+    return { coverageCell: bound.cell, ...(native?.renderContent ? { Component: native.renderContent as ComponentType<Record<string, unknown>> } : {}), sectionId: id, registered: bound.registered && !!native?.renderContent && issues.length === 0, ...(span ? { span } : {}), items: bound.items, variantIds: bound.variantIds, props: { ...props, items: bound.items, ...(bound.cell?.axes ? { axes: bound.cell.axes } : {}) }, issues };
   } catch (error) { return unavailable([error instanceof Error ? error.message : 'The native specimen plan could not be bound.']); }
 }
 
@@ -84,7 +86,10 @@ export function bindNativeDesignerSpecimen(input: {
   const sourceSelected = Object.hasOwn(context.profile.components.components, sourceLeaf) || Object.hasOwn(context.profile.surfaces?.fills ?? {}, sourceLeaf) || Object.values(context.profile.values.members).some(member => member.slot === sourceLeaf);
   if (cell.agent !== 'designer' || !sourceSelected) return unavailable(['The Designer source cell has no matching selected native leaf.']);
   const layer = sourceLeaf.split('.')[0]!;
-  const declaredKind = typeof cell.fields?.kind === 'string' ? cell.fields.kind : undefined;
+  const metadata = (cell as CellDetail & { native?: { agent?: string; kind?: string; layer?: string; valueKind?: string } }).native;
+  if (metadata && (metadata.agent !== 'designer' || metadata.layer !== layer)) return unavailable(['The native Designer metadata does not match this source cell.']);
+  // Canonical token is a storage kind; its parser-produced valueKind selects the semantic specimen.
+  const declaredKind = metadata ? metadata.kind === 'token' ? metadata.valueKind : metadata.kind : typeof cell.fields?.kind === 'string' ? cell.fields.kind : undefined;
   const kinds = [...new Set(sdk.SPECIMEN_KIND_MAP.filter(entry => entry.layer === layer).map(entry => entry.kind))];
   const kind = declaredKind ?? (kinds.length === 1 ? kinds[0] : undefined);
   if (!kind) return unavailable(['The selected Designer source has no unambiguous declared semantic kind.']);
@@ -100,6 +105,7 @@ export function bindNativeDesignerSpecimen(input: {
     if (!native?.renderContent) issues.push('The bound Designer leaf has no descriptor-matched selected native renderer.');
     const expectedVariantIds = cases.items.map(item => String(item.id));
     const sourcePlan: AgentSpecimenPlan = { cellId: cell.id, items: cases.items, expectedVariantIds, issues: [] };
-    return { sourcePlan, ...(native?.renderContent ? { Component: native.renderContent as ComponentType<Record<string, unknown>> } : {}), sectionId: definition.id, registered: !!native?.renderContent && issues.length === 0, span: definition.span, items: cases.items, variantIds: issues.length ? [] : [...expectedVariantIds], props, issues };
+    const coverageCell: NativeCoverageCell = { agent: 'designer', id: cell.id, kind, layer, specimen: definition.id, items: cases.items, ...(cases.axes ? { axes: cases.axes } : {}) };
+    return { sourcePlan, coverageCell, ...(native?.renderContent ? { Component: native.renderContent as ComponentType<Record<string, unknown>> } : {}), sectionId: definition.id, registered: !!native?.renderContent && issues.length === 0, span: definition.span, items: cases.items, variantIds: issues.length ? [] : [...expectedVariantIds], props, issues };
   } catch (error) { return unavailable([error instanceof Error ? error.message : 'The native Designer source could not be enumerated.']); }
 }

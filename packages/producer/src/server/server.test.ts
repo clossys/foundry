@@ -47,7 +47,7 @@ describe("loopback Producer", () => {
 
   it("guards every local route, mutations, ambiguous headers and traversal before proxying", async () => {
     await launch();
-    for (const path of ["/api/health", "/api/config", "/api/events", "/studio"]) {
+    for (const path of ["/api/health", "/api/config", "/api/events", "/api/specimen-coverage", "/studio"]) {
       for (const host of ["example.test", "localhost", `127.0.0.1:${server!.port + 1}`, `LOCALHOST:${server!.port}`]) expect((await request(path, { headers: { Host: host } })).status).toBe(403);
     }
     expect((await request("/api/config", { headers: { Origin: "https://example.test" } })).status).toBe(403);
@@ -69,6 +69,21 @@ describe("loopback Producer", () => {
     const encodedToken = [...token].map(letter => `%${letter.charCodeAt(0).toString(16)}`).join("");
     expect((await request(`/studio?token=${encodedToken}`)).status).toBe(400);
   }, 20_000);
+
+  it('reports caller-root native inventory separately from unmeasured registration and rendering', async () => {
+    await directorDraft(); await launch();
+    const result = await request('/api/specimen-coverage');
+    expect(result.status).toBe(200);
+    expect(result.body).toMatchObject({ state: 'incomplete', pass: false });
+    expect(result.body.agents).toHaveLength(4);
+    expect(result.body.agents[0]).toMatchObject({ agent: 'director', pass: false, nativeInventory: { state: 'ready', completeScope: true, cells: { available: 1, total: 1 }, storedVersions: 1 }, bindings: { state: 'unmeasured', cells: { covered: null, total: 1 } }, variants: { covered: null, total: null }, rendered: { state: 'unmeasured' } });
+    expect(result.body.agents.slice(1).every((entry: any) => entry.nativeInventory.state === 'missing' && entry.nativeInventory.completeScope === false && entry.nativeInventory.cells.available === 0 && entry.nativeInventory.cells.total === null)).toBe(true);
+    expect(JSON.stringify(result.body)).not.toMatch(/sourceBody|A useful direction|sourceDirectory|sourcePath/);
+    expect((await request('/api/specimen-coverage?agent=director')).body.agents).toHaveLength(1);
+    expect((await request('/api/specimen-coverage?agent=unknown')).status).toBe(400);
+    expect((await request('/api/specimen-coverage', { headers: { Origin: 'https://example.test' } })).status).toBe(403);
+    expect((await request('/api/specimen-coverage', { method: 'POST' })).status).toBe(403);
+  });
 
   it("reverse proxies the real child, strips hop headers and isolates the token per run", async () => {
     await launch();

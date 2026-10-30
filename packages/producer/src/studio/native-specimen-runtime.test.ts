@@ -14,7 +14,7 @@ function fixture() {
   const items = [{ id: 'actual-1', label: 'One', value: { passage: 'Complete passage' } }];
   const sdk: NativeSpecimenSDK = {
     emittedDesignerSpecimenContext: vi.fn(() => context), bindNativeSpecimenContext: vi.fn(value => value), projectAgentSpecimenPlan: vi.fn(),
-    bindAgentSpecimenPlan: vi.fn(() => ({ sectionId: leaf, registered: true, items, variantIds: ['actual-1'], cell: { axes: [{ id: 'source-axis' }] }, issues: [] })),
+    bindAgentSpecimenPlan: vi.fn(() => ({ sectionId: leaf, registered: true, items, variantIds: ['actual-1'], cell: { agent: 'director', id: 'sample.page', kind: 'passage', layer: 'director', items, axes: [{ id: 'source-axis' }] }, issues: [] })),
     studioSpecimenLeaves: [{ id: leaf, span: 'full' }], SPECIMEN_KIND_MAP: [{ kind: 'component', layer: 'components', specimen: leaf }, { kind: 'color', layer: 'tokens', specimen: leaf }, { kind: 'spacing', layer: 'tokens', specimen: leaf }],
     resolveSpecimenLeafBinding: vi.fn(() => ({ leaf: { id: leaf, span: 'third' } })), enumerateRegisteredDesignerSpecimenCases: vi.fn(() => ({ items })),
   };
@@ -71,5 +71,13 @@ describe('published native specimen runtime boundary', () => {
     expect(bindNativeDesignerSpecimen({ ...props, cell: { ...cell, agent: 'writer' } }).registered).toBe(false);
     const sdk = { ...props.sdk, resolveSpecimenLeafBinding: () => ({ error: 'unbound-specimen' }) };
     expect(bindNativeDesignerSpecimen({ ...props, sdk, cell: { ...cell, fields: { kind: 'unknown' } } }).issues).toContain('unbound-specimen');
+  });
+  it('uses the canonical parsed Designer semantic metadata and refuses mismatched provenance', () => {
+    const { props, context, sdk } = fixture();
+    (context.profile.values.members as Record<string, unknown>)['tokens.example.member'] = { slot: 'tokens.example' };
+    const cell = { agent: 'designer', id: 'tokens.example', fields: { kind: 'token' }, content: '', native: { agent: 'designer', kind: 'token', layer: 'tokens', valueKind: 'color' } } as CellDetail;
+    expect(bindNativeDesignerSpecimen({ ...props, cell }).registered).toBe(true);
+    expect(sdk.resolveSpecimenLeafBinding).toHaveBeenCalledWith({ kind: 'color', layer: 'tokens' }, sdk.studioSpecimenLeaves);
+    expect(bindNativeDesignerSpecimen({ ...props, cell: { ...cell, native: { agent: 'writer', kind: 'token', layer: 'tokens' } } as CellDetail }).registered).toBe(false);
   });
 });
