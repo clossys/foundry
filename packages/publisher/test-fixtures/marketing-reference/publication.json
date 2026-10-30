@@ -1,0 +1,13 @@
+{
+  "version": 1,
+  "publicationId": "example.marketing",
+  "format": "web.page.responsive",
+  "entries": [
+    { "id": "home", "kind": "page", "path": "/", "order": 0, "title": "Example Co.", "source": { "planItemId": "home" }, "pin": { "nav": true } },
+    { "id": "about", "kind": "page", "path": "/about", "order": 1, "title": "About Example Co.", "source": { "planItemId": "about" }, "pin": { "nav": true } },
+    { "id": "contact", "kind": "page", "path": "/contact", "order": 2, "title": "Contact Example Co.", "source": { "planItemId": "contact" }, "pin": { "nav": true } },
+    { "id": "privacy", "kind": "page", "path": "/privacy", "order": 3, "title": "Privacy", "source": { "planItemId": "privacy" } },
+    { "id": "terms", "kind": "page", "path": "/terms", "order": 4, "title": "Terms", "source": { "planItemId": "terms" } }
+  ],
+  "redirects": [{ "from": "/welcome", "to": "/", "permanent": true }]
+}
