@@ -351,7 +351,8 @@
     "THIRD-PARTY-NOTICES.md",
     "fit-signal-declarations.json",
     "strategy-brief.json",
-    "!dist/catalog-core/__fixtures__/**"
+    "!dist/catalog-core/__fixtures__/**",
+    "!dist/**/__fixtures__/**"
   ],
   "scripts": {
     "check": "npm run check:usage-graph",
