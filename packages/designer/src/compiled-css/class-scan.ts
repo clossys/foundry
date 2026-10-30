@@ -87,17 +87,18 @@ export interface ClassScanResult {
  * token, or at least is harmless to hand to Tailwind's own compiler and let
  * it decide" — see this file's header for why over-inclusion is fine and
  * under-inclusion is the only real risk. Rejects tokens that start with a
- * digit or punctuation (never a valid utility name), tokens containing
- * characters no real Tailwind candidate uses (spaces are already split out
- * by the caller; this additionally rejects quotes, parens, commas — the
- * shape of a `var(...)` read or a sentence fragment, not a class), and
- * anything absurdly long (a prose sentence with no spaces, e.g. a URL,
+ * digit or unsupported punctuation, and tokens containing
+ * characters outside a utility shape (spaces are already split out by the
+ * caller). Tailwind v4 custom-property utilities such as `p-(--spacing-lg)`
+ * and `-mb-(--spacing-lg)` retain their parentheses and optional opacity
+ * suffix; standalone `var(...)` reads stay out. Reject anything absurdly
+ * long (a prose sentence with no spaces, e.g. a URL,
  * would never legitimately be a class). One leading `@` is allowed, and `@`
  * inside a variant, for Tailwind's container-query utilities: the
  * `@container` marker and variants such as `@md:flex-row` that size a block by its
  * own container rather than the viewport (Specimen panels use them).
  */
-const CANDIDATE_SHAPE_RE = /^@?[a-zA-Z][a-zA-Z0-9_:/.@-]*(\[[^\]\s()]*\])?$/;
+const CANDIDATE_SHAPE_RE = /^-?@?[a-zA-Z][a-zA-Z0-9_:/.@-]*(\[[^\]\s()]*\]|(?<=-)\([^)\s]*\))?(\/[0-9]+)?$/;
 const MAX_CANDIDATE_LENGTH = 60;
 
 /**

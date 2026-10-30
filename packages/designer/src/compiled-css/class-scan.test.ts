@@ -3,6 +3,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { scanClassCandidates } from "./class-scan.js";
+import { generateCompiledCss } from "./generate.js";
 
 let dir: string;
 
@@ -34,6 +35,17 @@ describe("scanClassCandidates", () => {
     const result = scanClassCandidates(dir);
     expect(result.candidates).toEqual(expect.arrayContaining(["@container", "@md:p-xl", "@md:table-cell", "@lg:grid-cols-4"]));
     expect(result.candidates).not.toContain("@");
+  });
+
+  it("keeps negative and custom-property Tailwind v4 utilities for the real compiler", async () => {
+    const classes = ["-mb-(--spacing-lg)", "-mx-(--spacing-lg)", "p-(--spacing-lg)", "bg-(--color-surface-sunken)/50", "border-t-(length:--ui-border-hairline)"];
+    writeFileSync(join(dir, "Footer.tsx"), `const classes = "${classes.join(" ")} not-a-real-utility-(--spacing-lg) -mb-(--spacing-lg";`);
+    const candidates = scanClassCandidates(dir).candidates;
+    expect(candidates).toEqual(expect.arrayContaining(classes));
+    expect(candidates).not.toContain("-mb-(--spacing-lg");
+    const generated = await generateCompiledCss({ stylesDir: join(import.meta.dirname, "..", "..", "styles"), candidates });
+    expect(generated.css).toContain("margin-bottom: calc(var(--spacing-lg) * -1)");
+    expect(generated.css).not.toContain(".not-a-real-utility-");
   });
 
   it("returns a sorted, deduplicated list", () => {

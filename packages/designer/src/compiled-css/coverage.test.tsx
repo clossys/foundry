@@ -73,6 +73,13 @@ import { SpecimenPanel } from "../blocks/specimen/SpecimenPanel.js";
 import type { SpecimenPanelItem } from "../blocks/specimen/SpecimenPanel.js";
 import { scanCompiledCssSources } from "./scan-sources.js";
 import { generateCompiledCss } from "./generate.js";
+import { DialogFooter } from "../components/preview-runtime/components/dialog/dialog.js";
+import { loadCatalog } from "../catalog-core/index.js";
+import { completedTokenLibrary } from "../importers/__fixtures__/completed-token-library.js";
+import { resolve as resolveTokens } from "../catalog-core/resolve.js";
+import { emit } from "../catalog-core/emit.js";
+import { parseTokenCss } from "../catalog-core/token-css-syntax.js";
+import { walk } from "css-tree";
 
 const packageRoot = resolve(import.meta.dirname, "..", "..");
 
@@ -108,6 +115,21 @@ function toSelectorText(className: string): string {
 }
 
 describe("coverage: real rendered classes are all present in compiled.css", () => {
+  it("emits every token family and compiled rule referenced by the rendered native footer", async () => {
+    const view = render(<DialogFooter>Footer</DialogFooter>);
+    const classes = [...collectClassNames(view.container)];
+    expect(classes).toContain("-mb-(--spacing-lg)");
+    const generated = await generateCompiledCss({ stylesDir: resolve(packageRoot, "styles"), candidates: scanCompiledCssSources(packageRoot).candidates });
+    const catalog = loadCatalog();
+    const library = completedTokenLibrary(catalog, { id: "footer-consumer", kind: "consumer", author: "consumer", license: "MIT" }, "2026-10-30");
+    const definitions = new Set<string>();
+    for (const file of emit(resolveTokens({catalog, library}), ["css-brand", "css-scales"], {header:false})) walk(parseTokenCss(file.contents), {visit:"Declaration", enter(node) { definitions.add(node.property); }});
+    const referenced = new Set(classes.flatMap(name => name.match(/--[A-Za-z0-9-]+/g) ?? []));
+    expect(referenced).toContain("--spacing-lg");
+    for (const property of referenced) expect(definitions.has(property), `selected declaration ${property}`).toBe(true);
+    for (const name of classes) expect(generated.css, `native footer rule ${name}`).toContain(toSelectorText(name));
+    view.unmount();
+  });
   it("covers RelationGraph nodes, drawing and refusals in fresh and shipped CSS", async () => {
     const view = render(<RelationGraph kinds={["unit"]} label="Relationships" selectedId="a"
       nodes={[{ id: "a", label: "Alpha", kind: "unit", href: "/alpha" }, { id: "b", label: "Beta", kind: "unit", href: "javascript:void(0)" }]}

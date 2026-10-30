@@ -86,6 +86,14 @@ function materialize(resolved: Resolved, targets: readonly EmitTarget[], options
       const row = (property: string, value: string, theme: "light" | "dark"): TokenRow => ({ id: owners.get(property)!, property, value, theme, target });
       const light = chosen.map(token => row(token.property, byCss.get(token.property)!.css.light, "light"));
       const dark = chosen.filter(token => options.full || token.themeDependent || (byCss.get(token.property)!.css.dark ?? byCss.get(token.property)!.css.light) !== byCss.get(token.property)!.css.light).map(token => { const member = byCss.get(token.property)!; return row(token.property, member.css.dark ?? member.css.light, "dark"); });
+      if (target === "css-scales") for (const [id, output] of properties) {
+        const member = resolved.members[id]!;
+        if (member.emit) continue;
+        light.push({ id, property: output.property, value: member.css.light, theme: "light", target });
+        if (options.full || (member.css.dark ?? member.css.light) !== member.css.light) {
+          dark.push({ id, property: output.property, value: member.css.dark ?? member.css.light, theme: "dark", target });
+        }
+      }
       if (options.extraVars) Object.keys(resolved.members).sort(compare).forEach((id, index) => {
         const member = resolved.members[id]!; if (member.emit || !id.startsWith("tokens.")) return;
         light.push({ id, property: `--studio-m-${index}`, value: member.css.light, theme: "light", target });
