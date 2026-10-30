@@ -498,7 +498,9 @@ export function readLibraryFromCells(cellRoot: string, catalog: CompositeCatalog
 export async function readLibraryFromCells(cellRoot: string, catalog: CatalogData | CompositeCatalogData): Promise<LibraryData | CompositeLibraryData> {
   const { tmpdir } = await import("node:os");
   const { compileLibraryCells } = await import("./cells.js");
-  const temporary = await fs.mkdtemp(join(tmpdir(), "designer-cell-library-"));
+  // OS temp roots can be aliases. Canonicalize our own scratch parent, while
+  // keeping the consumer cell paths subject to the existing symlink checks.
+  const temporary = await fs.mkdtemp(join(await fs.realpath(tmpdir()), "designer-cell-library-"));
   try {
     await compileLibraryCells(cellRoot, temporary, { catalog });
     return await readLibrary(temporary, catalog as CompositeCatalogData);
