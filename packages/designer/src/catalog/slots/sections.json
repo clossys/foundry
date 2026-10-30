@@ -3411,6 +3411,11 @@
           "name": "items",
           "type": "records",
           "required": true
+        },
+        {
+          "name": "header",
+          "type": "records",
+          "required": false
         }
       ],
       "members": {
@@ -3419,6 +3424,10 @@
           "layout.grid",
           "layout.list",
           "layout.split",
+          "layout.bento",
+          "layout.tabs",
+          "layout.alternating",
+          "layout.scroll",
           "about.features"
         ]
       },
@@ -3426,7 +3435,10 @@
         "components.card",
         "components.icon",
         "components.link",
-        "components.semantic-content"
+        "components.item",
+        "components.tabs",
+        "components.semantic-content",
+        "sections.media"
       ],
       "parts": [
         "sections.band",
@@ -4510,7 +4522,9 @@
         ]
       },
       "allowedComposes": [
+        "components.item",
         "components.link",
+        "components.logo",
         "components.semantic-content"
       ],
       "parts": [
@@ -5645,7 +5659,10 @@
         "components.card",
         "components.badge",
         "components.icon",
-        "components.status-mark"
+        "components.status-mark",
+        "components.semantic-content",
+        "components.table",
+        "components.link"
       ],
       "parts": [
         "sections.band",

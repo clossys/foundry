@@ -412,6 +412,10 @@
       animation: none;
     }
   }
+  .\@container\/card-header {
+    container-type: inline-size;
+    container-name: card-header;
+  }
   .\@container {
     container-type: inline-size;
   }
@@ -1056,6 +1060,12 @@
       }
     }
   }
+  .col-start-2 {
+    grid-column-start: 2;
+  }
+  .row-span-2 {
+    grid-row: span 2 / span 2;
+  }
   .row-start-1 {
     grid-row-start: 1;
   }
@@ -1639,9 +1649,6 @@
   .min-h-0 {
     min-height: 0px;
   }
-  .min-h-\[3rem\] {
-    min-height: 3rem;
-  }
   .min-h-dvh {
     min-height: 100dvh;
   }
@@ -1732,6 +1739,9 @@
   }
   .max-w-none {
     max-width: none;
+  }
+  .max-w-prose {
+    max-width: 65ch;
   }
   .candidate-variant-min-inline {
     min-width: var(--ui-control-h-lg);
@@ -1947,6 +1957,9 @@
   }
   .list-none {
     list-style-type: none;
+  }
+  .auto-rows-min {
+    grid-auto-rows: min-content;
   }
   .ledger-columns-two {
     grid-template-columns: minmax(0, 1fr);
@@ -4157,6 +4170,9 @@
     .tablet\:start-0 {
       inset-inline-start: calc(var(--spacing, 0.25rem) * 0);
     }
+    .tablet\:top-lg {
+      top: var(--spacing-lg, 16px);
+    }
     .tablet\:col-span-2 {
       grid-column: span 2 / span 2;
     }
@@ -4169,6 +4185,12 @@
     .tablet\:col-span-12 {
       grid-column: span 12 / span 12;
     }
+    .tablet\:col-start-1 {
+      grid-column-start: 1;
+    }
+    .tablet\:col-start-2 {
+      grid-column-start: 2;
+    }
     .tablet\:row-span-1 {
       grid-row: span 1 / span 1;
     }
@@ -4180,6 +4202,9 @@
     }
     .tablet\:row-span-4 {
       grid-row: span 4 / span 4;
+    }
+    .tablet\:row-start-1 {
+      grid-row-start: 1;
     }
     .tablet\:my-0 {
       margin-block: 0px;
@@ -4286,6 +4311,9 @@
     .tablet\:items-end {
       align-items: flex-end;
     }
+    .tablet\:items-start {
+      align-items: flex-start;
+    }
     .tablet\:justify-between {
       justify-content: space-between;
     }
@@ -4306,6 +4334,9 @@
     }
     .tablet\:gap-x-xl {
       column-gap: var(--spacing-xl, 24px);
+    }
+    .tablet\:self-start {
+      align-self: flex-start;
     }
     .tablet\:rounded-none {
       border-radius: 0;
@@ -4429,6 +4460,9 @@
     }
     .tablet-lg\:col-span-1 {
       grid-column: span 1 / span 1;
+    }
+    .tablet-lg\:col-span-2 {
+      grid-column: span 2 / span 2;
     }
     .tablet-lg\:col-span-4 {
       grid-column: span 4 / span 4;

@@ -423,17 +423,23 @@
         "about.features"
       ],
       "missingRequiredSlots": [],
-      "missingSlots": [],
+      "missingSlots": [
+        "header"
+      ],
       "notes": [
-        "The layout prop selects the column grid, a one-per-row list with the icon beside the copy, or the heading region beside a two-column grid from desktop. Items have icon, heading and description but no per-item link prop.",
+        "Grid, list and split retain the public FeatureGrid.layout API. Bento, tabs, alternate and scroll are private registered renderFeaturesSection compositions of the mapped items, implemented by FeatureLayouts; they do not extend the public layout prop.",
         "Source-only import and token-read measurements are lower bounds; shared anatomy, accessibility, contrast and consumer runtime conformance remain unmeasured. Content bindings describe host adaptation points, not type-equivalent converters."
       ],
       "slot": "sections.features",
       "status": "subset",
       "supportedMembers": [
+        "layout.alternating",
+        "layout.bento",
         "layout.grid",
         "layout.list",
-        "layout.split"
+        "layout.scroll",
+        "layout.split",
+        "layout.tabs"
       ],
       "supportedSlots": [
         "items"

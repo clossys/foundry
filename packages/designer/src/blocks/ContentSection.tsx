@@ -4,7 +4,12 @@ import { UI_BORDER_HAIRLINE } from "../components/internal/ui-vars.js";
 import { SECTION_MEASURE_MAX } from "./internal/block-vars.js";
 import { SECTION_GROUND_CLASSES, type SectionGround } from "./section-ground.js";
 import { SectionIntro, type SectionIntroEmphasis } from "./SectionIntro.js";
+import { componentLeaf } from "../runtime/component-leaf.js";
 import { dsAttrs } from "../catalog-core/provenance-attrs.js";
+
+const SemanticContent = componentLeaf<typeof import("../components/SemanticContent.js").SemanticContent>("components.semantic-content");
+const Card = componentLeaf<import("react").ComponentType<HTMLAttributes<HTMLDivElement>>>("components.card");
+const CardContent = componentLeaf<import("react").ComponentType<HTMLAttributes<HTMLDivElement>>>("components.card", "CardContent");
 /** Section root provenance (D1): the selected Foundry fill this block is. */
 const SECTION_STAMP = dsAttrs("sections", "sections.content", "foundry/sections.content");
 
@@ -69,6 +74,8 @@ interface ContentSectionBaseProps extends Omit<HTMLAttributes<HTMLDivElement>, "
   footnote?: ReactNode;
   /** Optional conclusion after the body, spanning the band with an accent start rule. */
   takeaway?: ReactNode;
+  /** Optional host-authored summary pairs; omission leaves no companion column. */
+  aside?: readonly { id: string; label: ReactNode; value: ReactNode }[];
   /** Optional authored attribution after the footnote, in the same column. */
   source?: ReactNode;
   /** Which heading element `heading` renders as. @default 2 */
@@ -167,7 +174,7 @@ function hasContent(node: ReactNode): boolean {
  * Unlike `SectionHeader` (settings scale, `text-h3`, a title row with
  * trailing actions) this is marketing scale (the section-title step); unlike
  * `MarketingChapter` it paints no band of its own, takes an eyebrow and
- * actions, and holds any number of modules. Renders a plain `<div>`; the
+ * actions, and holds any number of modules. Renders a plain `<SemanticContent as="div">`; the
  * section's landmark, if any, is the caller's.
  *
  * `stacked` (the default) runs header group, text module and
@@ -186,7 +193,7 @@ function hasContent(node: ReactNode): boolean {
  * `footnote` and `source` follow in the footnote column. Without either new
  * slot, the footnote keeps its existing placement and markup.
  */
-export function ContentSection({
+function contentSectionBody({
   eyebrow,
   heading,
   headingId,
@@ -207,7 +214,7 @@ export function ContentSection({
   className,
   style,
   ...rest
-}: ContentSectionProps) {
+}: ContentSectionProps, stamp: Partial<ReturnType<typeof dsAttrs>>) {
   const hasHeader = eyebrow !== undefined || heading !== undefined || description !== undefined || actions !== undefined;
   const hasModules = Children.toArray(children).length > 0;
   const hasMedia = media !== undefined && media !== null && media !== false;
@@ -215,13 +222,13 @@ export function ContentSection({
   const footnoteCentred = align === "center";
   const footnoteNode =
     footnote === undefined || footnote === null || footnote === false ? null : (
-      <p
+      <SemanticContent as="p"
         data-content-section-footnote=""
         className={cx("text-body-s text-pretty", SECTION_GROUND_CLASSES[ground].secondary, footnoteCentred ? "text-center" : undefined)}
         style={{ maxWidth: SECTION_MEASURE_MAX.prose }}
       >
         {footnote}
-      </p>
+      </SemanticContent>
     );
 
   const hasTakeaway = hasContent(takeaway);
@@ -229,35 +236,35 @@ export function ContentSection({
   const hasClosing = hasTakeaway || hasSource;
   const inlineFootnoteNode = hasClosing ? null : footnoteNode;
   const takeawayNode = hasTakeaway ? (
-    <div
+    <SemanticContent as="div"
       data-content-section-takeaway=""
       className={cx("w-full min-w-0 wrap-anywhere border-s ps-lg text-body-l font-semibold", SECTION_GROUND_CLASSES[ground].primary, TAKEAWAY_RULE_CLASSES[ground])}
       style={{ borderInlineStartWidth: UI_BORDER_HAIRLINE }}
     >
       {takeaway}
-    </div>
+    </SemanticContent>
   ) : null;
   const sourceNode = hasSource ? (
-    <div
+    <SemanticContent as="div"
       data-content-section-source=""
       className={cx("text-caption wrap-anywhere", SECTION_GROUND_CLASSES[ground].secondary, footnoteCentred ? "text-center" : undefined)}
       style={{ maxWidth: SECTION_MEASURE_MAX.prose }}
     >
       {source}
-    </div>
+    </SemanticContent>
   ) : null;
   const closingNode = (notesColumn?: string) => {
     const notes = footnoteNode || sourceNode ? (
-      <div data-content-section-notes="" className={cx("flex min-w-0 flex-col gap-sm", notesColumn, footnoteCentred ? "items-center" : undefined)}>
+      <SemanticContent as="div" data-content-section-notes="" className={cx("flex min-w-0 flex-col gap-sm", notesColumn, footnoteCentred ? "items-center" : undefined)}>
         {footnoteNode}
         {sourceNode}
-      </div>
+      </SemanticContent>
     ) : null;
     return (
-      <div data-content-section-closing="" className={cx("flex w-full min-w-0 flex-col", MODULE_GAP, notesColumn ? "tablet-lg:col-span-12" : undefined)}>
+      <SemanticContent as="div" data-content-section-closing="" className={cx("flex w-full min-w-0 flex-col", MODULE_GAP, notesColumn ? "tablet-lg:col-span-12" : undefined)}>
         {takeawayNode}
-        {notes ? notesColumn ? <div className="grid w-full min-w-0 grid-cols-1 tablet-lg:grid-cols-12 tablet-lg:gap-x-4xl">{notes}</div> : notes : null}
-      </div>
+        {notes ? notesColumn ? <SemanticContent as="div" className="grid w-full min-w-0 grid-cols-1 tablet-lg:grid-cols-12 tablet-lg:gap-x-4xl">{notes}</SemanticContent> : notes : null}
+      </SemanticContent>
     );
   };
 
@@ -268,14 +275,14 @@ export function ContentSection({
       const hasSupportIntro = hasContent(description) || hasContent(actions);
       const hasCompanion = !headerSplit || hasSupportIntro || (!hasClosing && hasContent(footnote));
       return (
-        <div
-          {...SECTION_STAMP} {...rest}
+        <SemanticContent as="div"
+          {...stamp} {...rest}
           data-content-section=""
           data-layout={layout}
           className={cx("grid w-full grid-cols-1 gap-y-2xl tablet-lg:grid-cols-12 tablet-lg:items-start tablet-lg:gap-x-4xl", hasClosing ? "tablet-lg:gap-y-3xl" : "tablet-lg:gap-y-0", padding, className)}
           style={style}
         >
-          <div
+          <SemanticContent as="div"
             data-content-section-text=""
             className={cx("flex min-w-0 flex-col items-start tablet-lg:col-span-5", MODULE_GAP, atStart ? "tablet-lg:col-start-8 tablet-lg:row-start-1" : undefined)}
           >
@@ -293,8 +300,8 @@ export function ContentSection({
               />
             ) : null}
             {headerSplit ? null : inlineFootnoteNode}
-          </div>
-          {hasCompanion ? <div
+          </SemanticContent>
+          {hasCompanion ? <SemanticContent as="div"
             {...(headerSplit ? { "data-content-section-support": "" } : { "data-content-section-modules": "" })}
             className={cx("flex min-w-0 flex-col tablet-lg:col-span-7", headerSplit ? "items-start" : "items-stretch", MODULE_GAP, atStart ? "tablet-lg:col-start-1 tablet-lg:row-start-1" : undefined)}
           >
@@ -312,11 +319,11 @@ export function ContentSection({
                 {inlineFootnoteNode}
               </>
             ) : children}
-          </div> : null}
+          </SemanticContent> : null}
           {hasClosing ? closingNode(cx(headerSplit
             ? atStart ? "tablet-lg:col-span-7 tablet-lg:col-start-1" : "tablet-lg:col-span-7 tablet-lg:col-start-6"
             : atStart ? "tablet-lg:col-span-5 tablet-lg:col-start-8" : "tablet-lg:col-span-5 tablet-lg:col-start-1")) : null}
-        </div>
+        </SemanticContent>
       );
     }
   }
@@ -327,8 +334,8 @@ export function ContentSection({
     }
     const atStart = layout === "split-start" || layout === "split" && mediaSide === "start";
     return (
-      <div
-        {...SECTION_STAMP} {...rest}
+      <SemanticContent as="div"
+        {...stamp} {...rest}
         data-content-section=""
         data-layout={layout === "split-start" ? "split-start" : layout === "split-end" ? "split-end" : "split"}
         data-media-side={layout === "split" ? atStart ? "start" : "end" : undefined}
@@ -340,7 +347,7 @@ export function ContentSection({
         )}
         style={style}
       >
-        <div
+        <SemanticContent as="div"
           data-content-section-text=""
           className={cx(
             "flex min-w-0 flex-col items-start tablet-lg:col-span-5",
@@ -363,13 +370,13 @@ export function ContentSection({
             />
           ) : null}
           {hasModules ? (
-            <div data-content-section-modules="" className={cx("flex w-full flex-col", MODULE_GAP)}>
+            <SemanticContent as="div" data-content-section-modules="" className={cx("flex w-full flex-col", MODULE_GAP)}>
               {children}
-            </div>
+            </SemanticContent>
           ) : null}
           {inlineFootnoteNode}
-        </div>
-        <div
+        </SemanticContent>
+        <SemanticContent as="div"
           data-content-section-media=""
           className={cx(
             "min-w-0 tablet-lg:col-span-7",
@@ -377,17 +384,17 @@ export function ContentSection({
           )}
         >
           {media}
-        </div>
+        </SemanticContent>
         {hasClosing ? closingNode(cx(atStart ? "tablet-lg:col-span-5 tablet-lg:col-start-8" : "tablet-lg:col-span-5 tablet-lg:col-start-1")) : null}
-      </div>
+      </SemanticContent>
     );
   }
 
   const centred = align === "center";
 
   return (
-    <div
-      {...SECTION_STAMP} {...rest}
+    <SemanticContent as="div"
+      {...stamp} {...rest}
       data-content-section=""
       className={cx("flex w-full flex-col", MODULE_GAP, centred ? "items-center" : "items-start", padding, className)}
       style={style}
@@ -407,16 +414,34 @@ export function ContentSection({
         />
       ) : null}
       {hasModules || hasMedia ? (
-        <div data-content-section-modules="" className={cx("flex w-full flex-col", MODULE_GAP)}>
+        <SemanticContent as="div" data-content-section-modules="" className={cx("flex w-full flex-col", MODULE_GAP)}>
           {children}
           {hasMedia ? (
-            <div data-content-section-media="" className="w-full min-w-0">
+            <SemanticContent as="div" data-content-section-media="" className="w-full min-w-0">
               {media}
-            </div>
+            </SemanticContent>
           ) : null}
-        </div>
+        </SemanticContent>
       ) : null}
       {hasClosing ? closingNode() : footnoteNode}
-    </div>
+    </SemanticContent>
   );
+}
+
+/** Summary pairs share the semantic content primitive and never create an empty rail. */
+export function ContentSection({ aside, ...props }: ContentSectionProps) {
+  if (!aside?.length) return contentSectionBody(props, SECTION_STAMP);
+  return <SemanticContent as="div" {...SECTION_STAMP} data-content-aside-layout="" className="grid w-full min-w-0 grid-cols-1 gap-2xl tablet-lg:grid-cols-3">
+    <SemanticContent as="div" className="min-w-0 tablet-lg:col-span-2">{contentSectionBody(props, {})}</SemanticContent>
+    <SemanticContent as="aside" data-content-aside="" className="min-w-0">
+      <Card><CardContent>
+      <SemanticContent as="dl" className="m-0 flex flex-col gap-lg">
+        {aside.map(pair => <SemanticContent as="div" key={pair.id} className="flex flex-col gap-xs">
+          <SemanticContent as="dt" className="text-caption text-ink-secondary">{pair.label}</SemanticContent>
+          <SemanticContent as="dd" className="m-0 text-body text-ink-primary">{pair.value}</SemanticContent>
+        </SemanticContent>)}
+      </SemanticContent>
+      </CardContent></Card>
+    </SemanticContent>
+  </SemanticContent>;
 }

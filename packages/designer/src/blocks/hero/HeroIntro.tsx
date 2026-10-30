@@ -1,8 +1,11 @@
 import type { CSSProperties, HTMLAttributes, ReactNode } from "react";
-import { SemanticContent } from "../../components/SemanticContent.js";
+import type { SemanticContent as SemanticContentComponent } from "../../components/SemanticContent.js";
+import { componentLeaf } from "../../runtime/component-leaf.js";
 import { cx } from "../../components/internal/cx.js";
 import { SECTION_MEASURE_MAX, UI_WIDTH_HERO_WIDE } from "../internal/block-vars.js";
 import { SECTION_GROUND_CLASSES, type SectionGround } from "../section-ground.js";
+
+const SemanticContent = componentLeaf<typeof SemanticContentComponent>("components.semantic-content");
 
 export type SectionIntroHeadingLevel = 1 | 2 | 3 | 4 | 5 | 6;
 
@@ -134,7 +137,7 @@ export function HeroIntro({
   const hasDescription = Boolean(description);
 
   return (
-    <div
+    <SemanticContent as="div"
       {...rest}
       data-section-intro={emphasis}
       className={cx("flex w-full flex-col", centred ? "mx-auto items-center text-center" : "items-start", className)}
@@ -169,7 +172,7 @@ export function HeroIntro({
         </SemanticContent>
       ) : null}
       {actions ? (
-        <div
+        <SemanticContent as="div"
           data-section-intro-actions=""
           style={backdropInk ? { color: "var(--color-neutral-50)" } : undefined}
           className={cx(
@@ -180,8 +183,8 @@ export function HeroIntro({
           )}
         >
           {actions}
-        </div>
+        </SemanticContent>
       ) : null}
-    </div>
+    </SemanticContent>
   );
 }

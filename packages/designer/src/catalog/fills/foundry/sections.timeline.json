@@ -36,19 +36,17 @@
           "components": [],
           "tokens": [
             "tokens.accent-color",
-            "tokens.body-size",
             "tokens.border-color",
             "tokens.caption-size",
             "tokens.radius",
             "tokens.spacing",
-            "tokens.text-color",
-            "tokens.typeface"
+            "tokens.text-color"
           ]
         },
         "sourceFiles": [
           {
             "path": "packages/designer/src/blocks/Timeline.tsx",
-            "sha256": "47fb177ea19c99d18868fa749d48e82a06fc42a895174250e59b5de62bc9e7fc"
+            "sha256": "25bb2fa38b17b8f40076bd1a39eaec804734757187c0f24551956bf6b83ba117"
           },
           {
             "path": "packages/designer/src/catalog-core/provenance-attrs.ts",
@@ -57,6 +55,10 @@
           {
             "path": "packages/designer/src/components/internal/cx.ts",
             "sha256": "0a7524b0340fec42e1abb216013a353e950aa738d9ba0f2ebdedd5293337bab3"
+          },
+          {
+            "path": "packages/designer/src/runtime/component-leaf.tsx",
+            "sha256": "fca8ba996274d48c81c28f1dbba8020e34a1333fa92283ac7f316b8bba319782"
           }
         ],
         "unresolved": [
@@ -71,6 +73,12 @@
             "evidence": "unresolved dynamic import; runtime source is not inferred",
             "file": "packages/designer/src/components/internal/cx.ts",
             "line": 80
+          },
+          {
+            "code": "DF2",
+            "evidence": "unresolved dynamic import; runtime source is not inferred",
+            "file": "packages/designer/src/runtime/component-leaf.tsx",
+            "line": 2
           }
         ]
       },
@@ -95,13 +103,11 @@
         "assets": [],
         "tokens": [
           "tokens.accent-color",
-          "tokens.body-size",
           "tokens.border-color",
           "tokens.caption-size",
           "tokens.radius",
           "tokens.spacing",
-          "tokens.text-color",
-          "tokens.typeface"
+          "tokens.text-color"
         ]
       },
       "slot": "sections.timeline",

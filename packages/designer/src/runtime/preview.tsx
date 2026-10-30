@@ -10,6 +10,7 @@ import sectionSlots from "../catalog/slots/sections.json" with { type: "json" };
 import type { CompositeResolved } from "../catalog-core/types.js";
 import { runtimeHash, SECTION_HEADER_CONTENT_KEY, type RuntimeContent, type RuntimeContentRef, type RuntimeFillDescriptor, type RuntimeRenderInput } from "../catalog-core/runtime-ports.js";
 import { specimenDataset } from "../studio/specimen-dataset.js";
+import { MarketingComponentProvider } from "../studio/marketing-component-selection.js";
 import { surfaceRendererId } from "./contract.js";
 import { surfaceRuntimeRenderers } from "./index.js";
 
@@ -87,5 +88,5 @@ export function surfaceRuntimePreview(entry: SurfacePreviewEntry, options: Surfa
   // The renderer's own content checks run here, so a refused sample is a reason, never a broken board cell.
   let node: ReactNode;
   try { node = runtime.render(input); } catch (error) { return { reason: error instanceof Error ? error.message : `${leaf} preview refused` }; }
-  return { leaf, render: () => node };
+  return { leaf, render: () => <MarketingComponentProvider>{node}</MarketingComponentProvider> };
 }

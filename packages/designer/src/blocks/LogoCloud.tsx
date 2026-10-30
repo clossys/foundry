@@ -1,5 +1,4 @@
-import { Link } from "../components/Link.server.js";
-import { SemanticContent } from "../components/SemanticContent.js";
+import { componentLeaf } from "../runtime/component-leaf.js";
 import type { HTMLAttributes, ReactNode } from "react";
 import { cx } from "../components/internal/cx.js";
 import { UI_LAYOUT_TAP_TARGET } from "../components/internal/ui-vars.js";
@@ -7,6 +6,10 @@ import { SECTION_GROUND_CLASSES, type SectionGround } from "./section-ground.js"
 import { dsAttrs } from "../catalog-core/provenance-attrs.js";
 /** Section root provenance (D1): the selected Foundry fill this block is. */
 const SECTION_STAMP = dsAttrs("sections", "sections.logo-cloud", "foundry/sections.logo-cloud");
+const Link = componentLeaf<typeof import("../components/Link.server.js").Link>("components.link");
+const SemanticContent = componentLeaf<typeof import("../components/SemanticContent.js").SemanticContent>("components.semantic-content");
+const ItemMedia = componentLeaf<typeof import("../components/item/item.js").ItemMedia>("components.item", "ItemMedia");
+const ItemTitle = componentLeaf<typeof import("../components/item/item.js").ItemTitle>("components.item", "ItemTitle");
 
 export interface LogoCloudItem {
   id: string;
@@ -51,8 +54,8 @@ export function LogoCloud({ items, tone = "monochrome", ground = "base", classNa
     <SemanticContent as="ul" {...SECTION_STAMP} {...rest} role="list" className={cx("m-0 grid list-none gap-x-xl gap-y-lg p-0", COLUMN_CLASSES[items.length], SECTION_GROUND_CLASSES[ground].primary, className)} style={style}>
       {items.map(item => {
         const markToneClasses = item.href === undefined ? monochromeClasses : undefined;
-        const mark = <><SemanticContent as="span" aria-hidden="true" className={cx("inline-flex h-8 w-full max-w-40 overflow-hidden tablet:h-10", markToneClasses)}>{item.logo}</SemanticContent><SemanticContent as="span" className="sr-only">{item.name}</SemanticContent></>;
-        return <SemanticContent as="li" key={item.id} className="flex min-h-[3rem] min-w-0 items-center justify-center">
+        const mark = <><ItemMedia aria-hidden="true" className={cx("inline-flex h-8 w-full max-w-40 overflow-hidden tablet:h-10", markToneClasses)}>{item.logo}</ItemMedia><ItemTitle className="sr-only">{item.name}</ItemTitle></>;
+        return <SemanticContent as="li" key={item.id} className="flex min-w-0 items-center justify-center" style={{ minBlockSize: UI_LAYOUT_TAP_TARGET }}>
           {item.href === undefined ? mark : <Link variant="standalone" href={item.href} className={cx("inline-flex w-full max-w-40 items-center rounded-control", FOCUS_CLASSES[ground], anchorToneClasses)} style={{ minBlockSize: UI_LAYOUT_TAP_TARGET }}>{mark}</Link>}
         </SemanticContent>;
       })}

@@ -26,20 +26,14 @@
   },
   "sections": {
     "hero": {
-      "composes": [
-        "components.semantic-content"
-      ],
+      "composes": [],
       "configs": {},
       "consumption": {
         "scanStatus": "lower-bound",
-        "scannedComposes": [
-          "components.semantic-content"
-        ],
+        "scannedComposes": [],
         "scannedReads": {
           "assets": [],
-          "components": [
-            "components.semantic-content"
-          ],
+          "components": [],
           "tokens": [
             "tokens.accent-color",
             "tokens.body-size",
@@ -69,15 +63,15 @@
           },
           {
             "path": "packages/designer/src/blocks/Hero.tsx",
-            "sha256": "d00b4b1ef112af1d5c0173d652ea33fdffae29c5eebca91df67840ba562efa04"
+            "sha256": "9d1883fb63d055e782faf623f7a227008c1601fb00dd5f88044c2ff961f8aa74"
           },
           {
             "path": "packages/designer/src/blocks/hero/HeroIntro.tsx",
-            "sha256": "a2e8b283a568e57dca59e4d65b5a300f6e862c23497ed86e5bff83fc1090a90f"
+            "sha256": "168d2703d891a585b18bce6d9eeb388bd50398cf24aa315c13bc425307c208b4"
           },
           {
             "path": "packages/designer/src/blocks/hero/StillBackdrop.tsx",
-            "sha256": "3cd095c351a42d82be72414039dc617dea447a316a20acf40c33706334e90685"
+            "sha256": "ca6fc0ee3edcb7fbc9615286417376878885ce413fa314bb6f6c6fb789ea3e0a"
           },
           {
             "path": "packages/designer/src/blocks/internal/block-vars.ts",
@@ -94,6 +88,10 @@
           {
             "path": "packages/designer/src/components/internal/cx.ts",
             "sha256": "0a7524b0340fec42e1abb216013a353e950aa738d9ba0f2ebdedd5293337bab3"
+          },
+          {
+            "path": "packages/designer/src/runtime/component-leaf.tsx",
+            "sha256": "fca8ba996274d48c81c28f1dbba8020e34a1333fa92283ac7f316b8bba319782"
           },
           {
             "path": "packages/designer/src/tokens/color.ts",
@@ -125,7 +123,7 @@
             "code": "DF2",
             "evidence": "unresolved injected runtime inventory ../../tokens/tokens.js#TOKENS",
             "file": "packages/designer/src/blocks/hero/StillBackdrop.tsx",
-            "line": 4
+            "line": 6
           },
           {
             "code": "DF2",
@@ -138,6 +136,12 @@
             "evidence": "unresolved dynamic import; runtime source is not inferred",
             "file": "packages/designer/src/components/internal/cx.ts",
             "line": 80
+          },
+          {
+            "code": "DF2",
+            "evidence": "unresolved dynamic import; runtime source is not inferred",
+            "file": "packages/designer/src/runtime/component-leaf.tsx",
+            "line": 2
           }
         ]
       },
