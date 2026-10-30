@@ -27,24 +27,26 @@
   "sections": {
     "hero": {
       "composes": [
+        "components.button",
         "components.semantic-content"
       ],
       "configs": {},
       "consumption": {
         "scanStatus": "lower-bound",
         "scannedComposes": [
+          "components.button",
           "components.semantic-content"
         ],
         "scannedReads": {
           "assets": [],
           "components": [
+            "components.button",
             "components.semantic-content"
           ],
           "tokens": [
             "tokens.accent-color",
             "tokens.body-size",
             "tokens.border-color",
-            "tokens.border-width",
             "tokens.color-ramp",
             "tokens.content-size",
             "tokens.display-size",
@@ -61,6 +63,10 @@
         },
         "sourceFiles": [
           {
+            "path": "packages/designer/src/backdrop/BackdropHost.tsx",
+            "sha256": "a7fb3fa81326aeee939fc8712faf2ec3d9688cccb1adcbff3d2a434d3a04f647"
+          },
+          {
             "path": "packages/designer/src/backdrop/consumer-art.ts",
             "sha256": "b1a1bc6df0176a3b3934065c3080ddf1371914c4dbe39905d0f8adf41c64ee9e"
           },
@@ -69,8 +75,16 @@
             "sha256": "5df9f040446b8136b33ecd52a46c4f92ba857420c15b279e8c71a0e3662f4af8"
           },
           {
+            "path": "packages/designer/src/backdrop/runtime-module.ts",
+            "sha256": "e81815ee82187dd887b5a323c2f3b9f796b8803d6d50afaffe467ca64dd5000b"
+          },
+          {
+            "path": "packages/designer/src/backdrop/VideoBackdrop.tsx",
+            "sha256": "e481860584a01206d71324a3ab90100638b5bfe301ab3cebc2c71598865083e1"
+          },
+          {
             "path": "packages/designer/src/blocks/Hero.tsx",
-            "sha256": "8938676029424ac4c56014e9bf2be2a8a185afd7f1f08798fc29033ef9f5da97"
+            "sha256": "841b2ae581c9c5fd131384d28e833ab7bcd0b5d1cacc62da67b48cc757136c78"
           },
           {
             "path": "packages/designer/src/blocks/hero/HeroIntro.tsx",
@@ -89,8 +103,8 @@
             "sha256": "a519649f96cb339f1128fc385e68d67b6af063ed492ac2c285f09c1740c98679"
           },
           {
-            "path": "packages/designer/src/blocks/SectionFrame.tsx",
-            "sha256": "0b0b8477099f0ee05bc8655fc92ca86d9ff448d4e480a06e48181a96cdfddc57"
+            "path": "packages/designer/src/catalog-assets/media.ts",
+            "sha256": "518af66b317c4dcca79c99e33098a942430522f024c2c6416cb9ca817aa49313"
           },
           {
             "path": "packages/designer/src/catalog-core/provenance-attrs.ts",
@@ -111,10 +125,6 @@
           {
             "path": "packages/designer/src/tokens/internal/resolve-token-value.ts",
             "sha256": "dfb52251355c0efcbb3c9211f2277b9d430654528479ee1dc457c1b4d2df71b1"
-          },
-          {
-            "path": "packages/designer/src/tokens/pattern.ts",
-            "sha256": "086eedb4d51373c9f84ba1e0b5310e0041792aebf14c964300fc669a7b028a38"
           }
         ],
         "unresolved": [
@@ -138,12 +148,6 @@
           },
           {
             "code": "DF2",
-            "evidence": "unresolved injected runtime inventory ../tokens/tokens.js#TOKENS",
-            "file": "packages/designer/src/blocks/SectionFrame.tsx",
-            "line": 3
-          },
-          {
-            "code": "DF2",
             "evidence": "unresolved injected runtime inventory ../../tokens/tokens.js#TOKENS",
             "file": "packages/designer/src/components/internal/cx.ts",
             "line": 2
@@ -164,7 +168,8 @@
       "license": "MIT",
       "notes": [
         "Header is a built-in SemanticContent intro keyed by the required heading, with eyebrow and description as supporting props; headingLevel permits h1.",
-        "Backdrop accepts the existing checked decorative lazy ConsumerArtContract, limited to static raster or token-painted SVG. Light and strong treatments render the media-scrim gradient below four or five scalar scrim passes. Static art is unchanged under reduced motion; source bytes remain consumer-declared, not fetched or measured.",
+        "Backdrop accepts checked decorative static art, local assets.video declarations with resolved pause/resume labels, or a draft assets.backdrop runtime module declaration. Runtime art is resolved through the section host's explicit local module loader registry, after visibility and idle; reduced motion keeps the still, offscreen pauses, and load/runtime failure retains the poster. The hidden decorative layer owns no focusable controls; video pause/resume is outside it.",
+        "Light and strong treatments retain the media-scrim gradient and four or five scalar scrim passes. All transfer sizes remain consumer declarations, not fetched or measured; module code, rights and consumer runtime adoption remain unmeasured.",
         "Source-only import and token-read measurements are lower bounds; shared anatomy, accessibility, contrast and consumer runtime conformance remain unmeasured. Content bindings describe host adaptation points, not type-equivalent converters."
       ],
       "parts": [],
@@ -191,7 +196,6 @@
           "tokens.accent-color",
           "tokens.body-size",
           "tokens.border-color",
-          "tokens.border-width",
           "tokens.color-ramp",
           "tokens.content-size",
           "tokens.display-size",

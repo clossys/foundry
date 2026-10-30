@@ -29,7 +29,6 @@
       "composes": [
         "components.button",
         "components.icon",
-        "components.semantic-content",
         "components.text-field"
       ],
       "configs": {},
@@ -38,7 +37,6 @@
         "scannedComposes": [
           "components.button",
           "components.icon",
-          "components.semantic-content",
           "components.text-field"
         ],
         "scannedReads": {
@@ -46,7 +44,6 @@
           "components": [
             "components.button",
             "components.icon",
-            "components.semantic-content",
             "components.text-field"
           ],
           "tokens": [
@@ -65,7 +62,7 @@
         "sourceFiles": [
           {
             "path": "packages/designer/src/blocks/NewsletterBand.tsx",
-            "sha256": "2a534f3a55f9e82dc2ad8376ded32303cd22b0391de5c266439a28b8e4ad4e0d"
+            "sha256": "672c1b903e4a17916744eed14850dc525eb5132d96420073fd2f35763db571b3"
           },
           {
             "path": "packages/designer/src/blocks/section-ground.ts",
@@ -90,16 +87,10 @@
         ],
         "unresolved": [
           {
-            "code": "DF2",
-            "evidence": "unresolved source export ../components/Form.js#Form",
-            "file": "packages/designer/src/blocks/NewsletterBand.tsx",
-            "line": 5
-          },
-          {
             "code": "DF5",
             "evidence": "unregistered asset import ../icons/XCircle.js#XCircle",
             "file": "packages/designer/src/blocks/NewsletterBand.tsx",
-            "line": 12
+            "line": 10
           },
           {
             "code": "DF2",

@@ -101,11 +101,22 @@
         "package": "@clossys/designer",
         "version": "0.12.0"
       },
-      "propMap": {},
+      "propMap": {
+        "ground.base": "./blocks#CallToAction.ground=base",
+        "ground.inverse": "./blocks#CallToAction.ground=inverse",
+        "ground.sunken": "./blocks#CallToAction.ground=sunken",
+        "ground.wash": "./blocks#CallToAction.ground=wash",
+        "texture.grain": "./blocks#CallToAction.texture=grain",
+        "texture.noise": "./blocks#CallToAction.texture=noise",
+        "texture.topo": "./blocks#CallToAction.texture=topo"
+      },
       "reads": {
-        "assets": [],
+        "assets": [
+          "assets.pattern"
+        ],
         "tokens": [
           "tokens.border-color",
+          "tokens.gradient",
           "tokens.radius",
           "tokens.spacing",
           "tokens.status-color",

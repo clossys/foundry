@@ -683,7 +683,7 @@
         },
         {
           "path": "packages/designer/src/frames/site-frame/types.ts",
-          "sha256": "b2cfc0ee269dc7d9b04814794b1cc01e755b25e42c93cb77adef08d22e41647b"
+          "sha256": "f54fe01ab5b5623cac23450314cc2b7d4efc02f6fdeb19d775164a5e7fda082d"
         },
         {
           "path": "packages/designer/src/runtime/frames/document.tsx",
@@ -931,7 +931,7 @@
         },
         {
           "path": "packages/designer/src/shell/SiteFooter.tsx",
-          "sha256": "6a10abd3dd944517371ea878d0319f1adef150b1c5edee69e8d4a334a3ca1286"
+          "sha256": "09654e2cad668d140dca0ca6a90e2c887c2343fadf9b4e81abcac6d7270bd38b"
         }
       ],
       "unresolved": [
@@ -1013,7 +1013,7 @@
         },
         {
           "path": "packages/designer/src/shell/SiteHeader.tsx",
-          "sha256": "008e593324d160e9a41abd6623a3aa8104ca3fe219a1a3eae129dae3a8843c55"
+          "sha256": "6a4228ce211629e5a252a09f3b29403e6b3570750f19027cd4578b9ab1ac9f7a"
         }
       ],
       "unresolved": [
@@ -1046,7 +1046,7 @@
           "rawAssets": [
             "assets.js"
           ],
-          "sourceSha256": "3ede6936935916b747b8cf8e1271e11a1f36caa94360a57f98064c924bdcdd29",
+          "sourceSha256": "ee047cd4a7f365dc42cbd20dbb0b6f8f0120a23869d2a8d079999a6264c3f3d5",
           "specifier": "../landing/internal/assets.js",
           "target": "packages/designer/src/frames/site-frame/landing/internal/assets.ts",
           "targetSha256": "54cc0184672dfc74981225929705b024611926fd305a88374c1040605cffa3f8"
@@ -1057,6 +1057,7 @@
           "assets.js"
         ],
         "components": [
+          "components.banner",
           "components.icon",
           "components.logo",
           "components.semantic-content"
@@ -1072,15 +1073,18 @@
       },
       "scanStatus": "lower-bound",
       "scannedComposes": [
+        "components.banner",
         "components.icon",
         "components.logo",
         "components.semantic-content",
         "frames.site-footer",
-        "frames.site-header"
+        "frames.site-header",
+        "sections.newsletter"
       ],
       "scannedReads": {
         "assets": [],
         "components": [
+          "components.banner",
           "components.icon",
           "components.logo",
           "components.semantic-content"
@@ -1104,8 +1108,12 @@
           "sha256": "518af66b317c4dcca79c99e33098a942430522f024c2c6416cb9ca817aa49313"
         },
         {
+          "path": "packages/designer/src/frames/site-frame/FrameRegion.tsx",
+          "sha256": "b481f82663de9508b23a9795853746b77c38baa609a5a89415b59f90a81a59e6"
+        },
+        {
           "path": "packages/designer/src/frames/site-frame/internal/resolveShell.ts",
-          "sha256": "3ede6936935916b747b8cf8e1271e11a1f36caa94360a57f98064c924bdcdd29"
+          "sha256": "ee047cd4a7f365dc42cbd20dbb0b6f8f0120a23869d2a8d079999a6264c3f3d5"
         },
         {
           "path": "packages/designer/src/frames/site-frame/landing/internal/assets.ts",
@@ -1121,15 +1129,19 @@
         },
         {
           "path": "packages/designer/src/frames/site-frame/SiteFrame.tsx",
-          "sha256": "2c3088cbed67cf48cf8cf123f4d9b7019dd73324e297e98209238f2f32ce5768"
+          "sha256": "850f82ce118f625abac6330f5c234127bbdeb82068b81b76208c91a4b4da6057"
         },
         {
           "path": "packages/designer/src/frames/site-frame/types.ts",
-          "sha256": "b2cfc0ee269dc7d9b04814794b1cc01e755b25e42c93cb77adef08d22e41647b"
+          "sha256": "f54fe01ab5b5623cac23450314cc2b7d4efc02f6fdeb19d775164a5e7fda082d"
         },
         {
           "path": "packages/designer/src/frames/site-frame/viewChromeGround.ts",
           "sha256": "d5c430d26e272474f954f3fd42ed0f7175e0e483afaeb8352c131d46e6f50aa2"
+        },
+        {
+          "path": "packages/designer/src/shell/SiteHeader.extras.tsx",
+          "sha256": "3dd9f99cecf4e12f994f99498d54dc60f2b1d21447366a35aec09ebf0efdf517"
         }
       ],
       "unresolved": [
@@ -1150,6 +1162,12 @@
           "evidence": "unresolved source export ./SkipLink.boundary.client.js#SiteSkipLink",
           "file": "packages/designer/src/frames/site-frame/SiteFrame.tsx",
           "line": 10
+        },
+        {
+          "code": "DF2",
+          "evidence": "unresolved source export ../components/Link.js#Link",
+          "file": "packages/designer/src/shell/SiteHeader.extras.tsx",
+          "line": 5
         }
       ]
     },
@@ -1509,14 +1527,19 @@
         "components.semantic-content"
       ],
       "scannedReads": {
-        "assets": [],
+        "assets": [
+          "assets.pattern"
+        ],
         "components": [
           "components.semantic-content"
         ],
         "tokens": [
           "tokens.border-color",
+          "tokens.border-width",
           "tokens.content-size",
+          "tokens.display-size",
           "tokens.gutter",
+          "tokens.heading-size",
           "tokens.spacing",
           "tokens.status-color",
           "tokens.surface-color",
@@ -1534,7 +1557,7 @@
         },
         {
           "path": "packages/designer/src/blocks/SectionFrame.tsx",
-          "sha256": "a6d8d6398d38d5e4df2b81cccd01f4236d04dd24c8dd76c59921a631c427d25b"
+          "sha256": "0b0b8477099f0ee05bc8655fc92ca86d9ff448d4e480a06e48181a96cdfddc57"
         },
         {
           "path": "packages/designer/src/catalog-core/provenance-attrs.ts",
@@ -1543,9 +1566,23 @@
         {
           "path": "packages/designer/src/components/internal/cx.ts",
           "sha256": "0a7524b0340fec42e1abb216013a353e950aa738d9ba0f2ebdedd5293337bab3"
+        },
+        {
+          "path": "packages/designer/src/styles/section-reveal.tsx",
+          "sha256": "4a6f7b05d5a83e6e8a369fecc3378e7bb563446c24860bbfe049a1fc6c41401b"
+        },
+        {
+          "path": "packages/designer/src/tokens/pattern.ts",
+          "sha256": "086eedb4d51373c9f84ba1e0b5310e0041792aebf14c964300fc669a7b028a38"
         }
       ],
       "unresolved": [
+        {
+          "code": "DF2",
+          "evidence": "unresolved injected runtime inventory ../tokens/tokens.js#TOKENS",
+          "file": "packages/designer/src/blocks/SectionFrame.tsx",
+          "line": 3
+        },
         {
           "code": "DF2",
           "evidence": "unresolved injected runtime inventory ../../tokens/tokens.js#TOKENS",
@@ -1626,12 +1663,17 @@
         "sections.section-header"
       ],
       "scannedReads": {
-        "assets": [],
+        "assets": [
+          "assets.pattern"
+        ],
         "components": [
           "components.semantic-content"
         ],
         "tokens": [
           "tokens.border-color",
+          "tokens.border-width",
+          "tokens.display-size",
+          "tokens.heading-size",
           "tokens.radius",
           "tokens.spacing",
           "tokens.status-color",
@@ -1643,11 +1685,15 @@
       "sourceFiles": [
         {
           "path": "packages/designer/src/blocks/CallToAction.tsx",
-          "sha256": "1f5bf1589a079c5c39e23345d0988d6af53bc6d2ca8fafefccc0cd90a1ba557f"
+          "sha256": "88cfd842c07b89d95d7eedb0359b9260295b4e62c8abfa95ec8170847989b704"
         },
         {
           "path": "packages/designer/src/blocks/section-ground.ts",
           "sha256": "a519649f96cb339f1128fc385e68d67b6af063ed492ac2c285f09c1740c98679"
+        },
+        {
+          "path": "packages/designer/src/blocks/SectionFrame.tsx",
+          "sha256": "0b0b8477099f0ee05bc8655fc92ca86d9ff448d4e480a06e48181a96cdfddc57"
         },
         {
           "path": "packages/designer/src/catalog-core/provenance-attrs.ts",
@@ -1656,9 +1702,19 @@
         {
           "path": "packages/designer/src/components/internal/cx.ts",
           "sha256": "0a7524b0340fec42e1abb216013a353e950aa738d9ba0f2ebdedd5293337bab3"
+        },
+        {
+          "path": "packages/designer/src/tokens/pattern.ts",
+          "sha256": "086eedb4d51373c9f84ba1e0b5310e0041792aebf14c964300fc669a7b028a38"
         }
       ],
       "unresolved": [
+        {
+          "code": "DF2",
+          "evidence": "unresolved injected runtime inventory ../tokens/tokens.js#TOKENS",
+          "file": "packages/designer/src/blocks/SectionFrame.tsx",
+          "line": 3
+        },
         {
           "code": "DF2",
           "evidence": "unresolved injected runtime inventory ../../tokens/tokens.js#TOKENS",
@@ -1684,25 +1740,35 @@
       "scanStatus": "lower-bound",
       "scannedComposes": [
         "components.badge",
-        "components.card"
+        "components.card",
+        "components.semantic-content",
+        "sections.media"
       ],
       "scannedReads": {
-        "assets": [],
+        "assets": [
+          "assets.image"
+        ],
         "components": [
           "components.badge",
-          "components.card"
+          "components.card",
+          "components.semantic-content"
         ],
         "tokens": [
           "tokens.body-size",
           "tokens.caption-size",
+          "tokens.heading-size",
           "tokens.spacing",
           "tokens.text-color"
         ]
       },
       "sourceFiles": [
         {
+          "path": "packages/designer/src/blocks/PageHeaderMetadata.tsx",
+          "sha256": "ac1814117a6c72746aa942c0a91565cf33c794dd55a80feb24649b01608d9138"
+        },
+        {
           "path": "packages/designer/src/blocks/RecordCards.tsx",
-          "sha256": "59e8212000d2b2e1ac6a62a5d1f0b237e3e4540fb625a519c99456069ff46567"
+          "sha256": "d13da3dfd3cd69fe68ecb6842faa48161697c1d3fad81375b18d2a7b39014b1d"
         },
         {
           "path": "packages/designer/src/catalog-core/provenance-attrs.ts",
@@ -1714,6 +1780,12 @@
         }
       ],
       "unresolved": [
+        {
+          "code": "DF2",
+          "evidence": "unresolved source export ../components/Link.js#Link",
+          "file": "packages/designer/src/blocks/PageHeaderMetadata.tsx",
+          "line": 4
+        },
         {
           "code": "DF2",
           "evidence": "unresolved source export ../components/Link.js#Link",
@@ -2847,34 +2919,76 @@
     "consumption": {
       "scanStatus": "lower-bound",
       "scannedComposes": [
+        "components.badge",
+        "components.card",
+        "components.disclosure",
         "components.icon",
         "components.semantic-content",
+        "components.status-mark",
+        "components.tabs",
         "sections.section-header"
       ],
       "scannedReads": {
         "assets": [],
         "components": [
+          "components.badge",
+          "components.card",
+          "components.disclosure",
           "components.icon",
-          "components.semantic-content"
+          "components.semantic-content",
+          "components.status-mark",
+          "components.tabs"
         ],
         "tokens": [
           "tokens.accent-color",
           "tokens.body-size",
           "tokens.border-color",
+          "tokens.border-width",
+          "tokens.caption-size",
+          "tokens.content-size",
           "tokens.control-radius",
+          "tokens.heading-size",
+          "tokens.icon-size",
+          "tokens.letter-spacing",
+          "tokens.line-height",
           "tokens.radius",
           "tokens.spacing",
           "tokens.status-color",
           "tokens.surface-color",
           "tokens.surface-radius",
           "tokens.text-color",
+          "tokens.touch-target",
           "tokens.typeface"
         ]
       },
       "sourceFiles": [
         {
+          "path": "packages/designer/src/blocks/Faq.server.tsx",
+          "sha256": "20bc7f2013c873fa29a9613bc658be32f9acfb5883c8e63fb7d2fa5726f79438"
+        },
+        {
           "path": "packages/designer/src/blocks/FeatureGrid.tsx",
-          "sha256": "e2daab7579d736a098de6debdf81983718ccde3b8fb0f61d6025bc1d630e729c"
+          "sha256": "3d6e2ddb3d63d82b91c7e46e6e69e86e59ac1223820f9ff71255944384103195"
+        },
+        {
+          "path": "packages/designer/src/blocks/features/FeatureLayouts.tsx",
+          "sha256": "5ece96c169c85a2d250235889406ee72de9227aa25d3338e77b796ae679f8937"
+        },
+        {
+          "path": "packages/designer/src/blocks/features/parts.tsx",
+          "sha256": "245ebabf9eabc74bc94ac32db854f252c482253dc7247c8d58bd7897a57fdbd1"
+        },
+        {
+          "path": "packages/designer/src/blocks/internal/block-vars.ts",
+          "sha256": "33e9c7bd8700ff201b8ba138ca4f10dd7de910a23d260019e676470b918cceb5"
+        },
+        {
+          "path": "packages/designer/src/blocks/internal/disclosure-row.tsx",
+          "sha256": "a2d07321a203feabe31c06f4573c6745ab900a8a2ff4ba836b973fed38109799"
+        },
+        {
+          "path": "packages/designer/src/blocks/internal/trend.ts",
+          "sha256": "4aa7cce812d8e68674aca3ccfe5580fa421661d7652e2c2d1eabfd69d1c1b466"
         },
         {
           "path": "packages/designer/src/blocks/items/anatomy.tsx",
@@ -2882,7 +2996,43 @@
         },
         {
           "path": "packages/designer/src/blocks/items/compat-features.tsx",
-          "sha256": "c89160205a2e2db71824a6f13c11e27882b7c34cad00516619f9ff8e86e6848e"
+          "sha256": "3cd9cb3aa3341676ef231ff8f8f25eeac19ebaf0c587f055218d2d9c46e53bc7"
+        },
+        {
+          "path": "packages/designer/src/blocks/items/Item.tsx",
+          "sha256": "905e6b261973fd09a04d03dbf13142da2f001bb662807081475cfbd830c2bc74"
+        },
+        {
+          "path": "packages/designer/src/blocks/items/Items.tsx",
+          "sha256": "d8fa5e1146c7200797cee5a14970c8a87133ba77e15402fd864218fe245fc683"
+        },
+        {
+          "path": "packages/designer/src/blocks/items/ItemsStatic.tsx",
+          "sha256": "eeda5551dee2886ebba46fd50c15b857b0aa0d127fa04ad43443b696174bb5b6"
+        },
+        {
+          "path": "packages/designer/src/blocks/items/order-classes.ts",
+          "sha256": "ad18d9bf94966b8576a616848b72b49f754359a270ea16ed3813feab05f4a395"
+        },
+        {
+          "path": "packages/designer/src/blocks/items/order.tsx",
+          "sha256": "71620d6b6192f2264f0ddafe9140970a498775864bd46fe05ba55c7ca5c2b179"
+        },
+        {
+          "path": "packages/designer/src/blocks/items/policies.ts",
+          "sha256": "64cb8c3d85df5e6d1cc846d6bdb36755dbb26b935be7e4964d8e636a3f78631a"
+        },
+        {
+          "path": "packages/designer/src/blocks/items/render.tsx",
+          "sha256": "57ff8f65a9ca4ca2ff934a386eef47559f71372800f76cb85615eec8e0a1c612"
+        },
+        {
+          "path": "packages/designer/src/blocks/items/reveal-policy.tsx",
+          "sha256": "5d5402274b543321f6a932fbd4bc9a6139178c8882e9f7f40bb443a2fa67aafb"
+        },
+        {
+          "path": "packages/designer/src/blocks/items/reveal.tsx",
+          "sha256": "b0fc30cd5a5132feda5e41fa028025f3616c47b9ec57d627cc315d5a435f940d"
         },
         {
           "path": "packages/designer/src/blocks/section-ground.ts",
@@ -2901,11 +3051,35 @@
           "sha256": "0a7524b0340fec42e1abb216013a353e950aa738d9ba0f2ebdedd5293337bab3"
         },
         {
+          "path": "packages/designer/src/components/internal/ui-vars.ts",
+          "sha256": "8455ed770c61ec15597b5ead597563135ed088b609dc11b2cd7ed8b873371701"
+        },
+        {
+          "path": "packages/designer/src/icons/ArrowRight.ts",
+          "sha256": "bb43905ab80409bed61222fce503e06df8489bafe2c4c2dff98a0f625e4c6d31"
+        },
+        {
           "path": "packages/designer/src/icons/ChevronRight.ts",
           "sha256": "99e246ee2ef8a9b85999607d97a1152fbe6bf374f68c29c19ffa46ad7a502fb6"
+        },
+        {
+          "path": "packages/designer/src/styles/section-reveal.tsx",
+          "sha256": "4a6f7b05d5a83e6e8a369fecc3378e7bb563446c24860bbfe049a1fc6c41401b"
         }
       ],
       "unresolved": [
+        {
+          "code": "DF5",
+          "evidence": "unregistered asset import ../../icons/ArrowRight.js#ArrowRight",
+          "file": "packages/designer/src/blocks/items/order.tsx",
+          "line": 5
+        },
+        {
+          "code": "DF2",
+          "evidence": "unresolved injected runtime inventory ../../tokens/tokens.js#TOKENS",
+          "file": "packages/designer/src/blocks/items/order.tsx",
+          "line": 71
+        },
         {
           "code": "DF5",
           "evidence": "unregistered asset import ../icons/ChevronRight.js#ChevronRight",
@@ -3135,6 +3309,7 @@
           "tokens.accent-color",
           "tokens.body-size",
           "tokens.border-color",
+          "tokens.border-width",
           "tokens.color-ramp",
           "tokens.content-size",
           "tokens.display-size",
@@ -3172,7 +3347,7 @@
         },
         {
           "path": "packages/designer/src/blocks/Hero.tsx",
-          "sha256": "841b2ae581c9c5fd131384d28e833ab7bcd0b5d1cacc62da67b48cc757136c78"
+          "sha256": "f2b9515ebfa6108056bb9b36a0877480b8d2023b63593e523b7afa8ee5d215b1"
         },
         {
           "path": "packages/designer/src/blocks/hero/HeroIntro.tsx",
@@ -3189,6 +3364,10 @@
         {
           "path": "packages/designer/src/blocks/section-ground.ts",
           "sha256": "a519649f96cb339f1128fc385e68d67b6af063ed492ac2c285f09c1740c98679"
+        },
+        {
+          "path": "packages/designer/src/blocks/SectionFrame.tsx",
+          "sha256": "0b0b8477099f0ee05bc8655fc92ca86d9ff448d4e480a06e48181a96cdfddc57"
         },
         {
           "path": "packages/designer/src/catalog-assets/media.ts",
@@ -3213,6 +3392,10 @@
         {
           "path": "packages/designer/src/tokens/internal/resolve-token-value.ts",
           "sha256": "dfb52251355c0efcbb3c9211f2277b9d430654528479ee1dc457c1b4d2df71b1"
+        },
+        {
+          "path": "packages/designer/src/tokens/pattern.ts",
+          "sha256": "086eedb4d51373c9f84ba1e0b5310e0041792aebf14c964300fc669a7b028a38"
         }
       ],
       "unresolved": [
@@ -3233,6 +3416,12 @@
           "evidence": "unresolved injected runtime inventory ../../tokens/tokens.js#TOKENS",
           "file": "packages/designer/src/blocks/hero/StillBackdrop.tsx",
           "line": 4
+        },
+        {
+          "code": "DF2",
+          "evidence": "unresolved injected runtime inventory ../tokens/tokens.js#TOKENS",
+          "file": "packages/designer/src/blocks/SectionFrame.tsx",
+          "line": 3
         },
         {
           "code": "DF2",
@@ -3318,7 +3507,8 @@
         "components.icon",
         "components.link",
         "components.semantic-content",
-        "components.status-mark"
+        "components.status-mark",
+        "sections.section-header"
       ],
       "scannedReads": {
         "assets": [],
@@ -3376,7 +3566,7 @@
         },
         {
           "path": "packages/designer/src/blocks/NavGrid.tsx",
-          "sha256": "5f5f826e5a87ac928605bae0a3f04b4ae91a1063478dc742c632332939afdeef"
+          "sha256": "e41a44b73bcb676a90852a00d3b4d0ccf30dd45a861c6b24c827b6d45c75ecbc"
         },
         {
           "path": "packages/designer/src/blocks/section-ground.ts",
@@ -3681,6 +3871,7 @@
       "scannedComposes": [
         "components.button",
         "components.icon",
+        "components.semantic-content",
         "components.text-field"
       ],
       "scannedReads": {
@@ -3688,6 +3879,7 @@
         "components": [
           "components.button",
           "components.icon",
+          "components.semantic-content",
           "components.text-field"
         ],
         "tokens": [
@@ -3706,7 +3898,7 @@
       "sourceFiles": [
         {
           "path": "packages/designer/src/blocks/NewsletterBand.tsx",
-          "sha256": "672c1b903e4a17916744eed14850dc525eb5132d96420073fd2f35763db571b3"
+          "sha256": "2a534f3a55f9e82dc2ad8376ded32303cd22b0391de5c266439a28b8e4ad4e0d"
         },
         {
           "path": "packages/designer/src/blocks/section-ground.ts",
@@ -3731,10 +3923,16 @@
       ],
       "unresolved": [
         {
+          "code": "DF2",
+          "evidence": "unresolved source export ../components/Form.js#Form",
+          "file": "packages/designer/src/blocks/NewsletterBand.tsx",
+          "line": 5
+        },
+        {
           "code": "DF5",
           "evidence": "unregistered asset import ../icons/XCircle.js#XCircle",
           "file": "packages/designer/src/blocks/NewsletterBand.tsx",
-          "line": 10
+          "line": 12
         },
         {
           "code": "DF2",
@@ -3816,20 +4014,32 @@
     "consumption": {
       "scanStatus": "lower-bound",
       "scannedComposes": [
+        "components.badge",
+        "components.semantic-content",
         "sections.section-header"
       ],
       "scannedReads": {
         "assets": [],
-        "components": [],
+        "components": [
+          "components.badge",
+          "components.semantic-content"
+        ],
         "tokens": [
+          "tokens.body-size",
+          "tokens.caption-size",
           "tokens.heading-size",
-          "tokens.spacing"
+          "tokens.spacing",
+          "tokens.text-color"
         ]
       },
       "sourceFiles": [
         {
           "path": "packages/designer/src/blocks/PageHeader.tsx",
-          "sha256": "d5a151e863db5c1295a23f52fad2065693cdca675789b539302790c13d423358"
+          "sha256": "fa45b7ba156dd40c49ecc8c425d27b39ec1722f398454f23ecb6be0e9fb033e4"
+        },
+        {
+          "path": "packages/designer/src/blocks/PageHeaderMetadata.tsx",
+          "sha256": "ac1814117a6c72746aa942c0a91565cf33c794dd55a80feb24649b01608d9138"
         },
         {
           "path": "packages/designer/src/catalog-core/provenance-attrs.ts",
@@ -3841,6 +4051,12 @@
         }
       ],
       "unresolved": [
+        {
+          "code": "DF2",
+          "evidence": "unresolved source export ../components/Link.js#Link",
+          "file": "packages/designer/src/blocks/PageHeaderMetadata.tsx",
+          "line": 4
+        },
         {
           "code": "DF2",
           "evidence": "unresolved injected runtime inventory ../../tokens/tokens.js#TOKENS",

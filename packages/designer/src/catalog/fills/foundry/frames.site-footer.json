@@ -24,6 +24,8 @@
         "overlay.on",
         "slot.legal",
         "slot.links",
+        "slot.locale",
+        "slot.newsletter",
         "slot.social"
       ]
     }

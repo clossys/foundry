@@ -39,7 +39,9 @@
         "components.semantic-content",
         "components.status-mark"
       ],
-      "configs": {},
+      "configs": {
+        "roles": "config=roles"
+      },
       "consumption": {
         "scanStatus": "lower-bound",
         "scannedComposes": [
@@ -162,7 +164,7 @@
       },
       "license": "MIT",
       "notes": [
-        "NavGrid composes SemanticContent and shared item anatomy for linked/action cards, preserving its published heading markup. Eligible linked collections use the existing linked-item treatment; list and plain-grid configuration modes are absent.",
+        "Roles renders a list of destination links with Writer-owned titles, descriptions and labelled details. The default remains linked/action cards; generic list and grid members remain unmapped.",
         "Source-only import and token-read measurements are lower bounds; shared anatomy, accessibility, contrast and consumer runtime conformance remain unmeasured. Content bindings describe host adaptation points, not type-equivalent converters."
       ],
       "parts": [],

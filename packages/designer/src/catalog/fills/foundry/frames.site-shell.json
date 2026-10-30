@@ -23,6 +23,7 @@
         "chrome.full",
         "chrome.minimal",
         "header-placement.overlay",
+        "slot.announcement",
         "slot.consent"
       ]
     }
