@@ -14,11 +14,17 @@ export function createStudioShellCopyResolver(writer?: StudioWriterCopyPort): Sh
   };
 }
 
+/** Existing explicit shell props use the same Writer port, including native ICU arguments. */
+export function studioShellText(resolve: ShellCopyResolver, reference: ShellCopyRef, values?: ShellCopyRef['values']): string {
+  const request = values === undefined ? reference : { ...reference, values };
+  return resolve(request)?.text ?? STUDIO_SHELL_FALLBACK.label;
+}
+
 /** AppFrame computes these eagerly, including when themeControl is explicitly null. */
 export function studioShellThemeLabels(resolve: ShellCopyResolver) {
   return {
-    system: resolve(SHELL_COPY_REFS.theme.system)?.text ?? STUDIO_SHELL_FALLBACK.label,
-    light: resolve(SHELL_COPY_REFS.theme.light)?.text ?? STUDIO_SHELL_FALLBACK.label,
-    dark: resolve(SHELL_COPY_REFS.theme.dark)?.text ?? STUDIO_SHELL_FALLBACK.label,
+    system: studioShellText(resolve, SHELL_COPY_REFS.theme.system),
+    light: studioShellText(resolve, SHELL_COPY_REFS.theme.light),
+    dark: studioShellText(resolve, SHELL_COPY_REFS.theme.dark),
   };
 }
