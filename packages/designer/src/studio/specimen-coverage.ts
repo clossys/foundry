@@ -1,5 +1,5 @@
 import { specimenLayoutNeeds, type SpecimenAxis, type SpecimenItem, type SpecimenLeafDefinition, type SpecimenLeafProps } from "./specimen-layouts.js";
-import { resolveSpecimenLeafBinding, type SpecimenCellKind } from "./specimen-kind-map.js";
+import { SPECIMEN_KIND_MAP, resolveSpecimenLeafBinding, type SpecimenCellKind } from "./specimen-kind-map.js";
 
 export type SpecimenAgent = "director" | "writer" | "designer" | "publisher";
 export interface SpecimenCoverageCell extends SpecimenCellKind {
@@ -111,7 +111,10 @@ export function validateSpecimenCoverage(input: {
       const binding = resolveSpecimenLeafBinding(cell, input.registry);
       if ("error" in binding) { add(cell, binding.error); expectedCases = null; continue; }
       const leaf = binding.leaf;
+      const nativeKind = SPECIMEN_KIND_MAP.find(entry => entry.kind === cell.kind && (entry.layer === undefined || entry.layer === cell.layer));
+      if (!nativeKind || agent !== nativeKind.agent) add(cell, "agent-specimen-mismatch");
       if (!["single", "ladder", "grid", "matrix"].includes(leaf.layout)) add(cell, "missing-or-invalid-layout");
+      if (!["full", "half", "third"].includes(leaf.span)) add(cell, "missing-or-invalid-span");
       if (typeof leaf.render !== "function") add(cell, "unrenderable-specimen-leaf");
       if (!Array.isArray(cell.items) || !cell.items.length) add(cell, "empty-specimen-items");
       if (leaf.validate || leaf.requirements?.length) {
@@ -220,8 +223,10 @@ function livePage(region: Element): boolean {
     try {
       const url = new URL(frame.src, frame.ownerDocument.URL);
       const doc = frame.contentDocument;
+      const inert = frame.closest("[inert]") !== null;
       return url.protocol === "http:" && url.hostname === "127.0.0.1" && frame.hasAttribute("sandbox")
         && !frame.getAttribute("sandbox")?.split(/\s+/).some(value => value === "allow-forms" || value === "allow-top-navigation")
+        && (inert || frame.tabIndex === -1 && frame.ownerDocument.defaultView?.getComputedStyle(frame).pointerEvents === "none")
         && displayed(frame) && doc?.readyState === "complete" && doc.URL !== "about:blank" && doc.URL === url.href
         && Boolean(doc.body?.textContent?.trim()) && !sourceLeak(doc.body?.textContent ?? "")
         && !/\bNEED\b/.test(regionText(doc.body)) && !/not published yet|(?:^|\n)\s*pending\s*(?:\n|$)|\bplaceholder\b/i.test(regionText(doc.body));

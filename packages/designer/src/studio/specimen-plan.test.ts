@@ -1,5 +1,13 @@
 import { expect, it } from "vitest";
-import { projectAgentSpecimenPlan, type NativeAgentSpecimenPlan } from "./specimen-plan.js";
+import { bindAgentSpecimenPlan, projectAgentSpecimenPlan, type NativeAgentSpecimenPlan } from "./specimen-plan.js";
+import * as components from "../components/index.js";
+import { defaultSourceModules } from "../components/preview-runtime/modules.js";
+import { loadCatalog, resolve } from "../catalog-core/index.js";
+import type { CompositeResolved } from "../catalog-core/types.js";
+import { completedCatalogLibrary } from "../catalog-core/__fixtures__/completed-catalog-library.js";
+import componentData from "./__fixtures__/default-component-preview-profile.json" with { type: "json" };
+import type { DesignerSpecimenContext } from "./DesignerSpecimen.js";
+import { contentSpecimenNeeds } from "./specimen-content.js";
 
 // Structural fixtures use the published native host source-plan shape, with no Producer import.
 function plan(items: NativeAgentSpecimenPlan["items"]): NativeAgentSpecimenPlan {
@@ -33,4 +41,19 @@ it("preserves missing source and omitted variant failures without inventing Desi
   expect(missing.cell.items).toEqual([]);
   const partial = projectAgentSpecimenPlan({ agent: "director", plan: { ...plan([{ id: "first", kind: "director", title: "First", value: "Passage" }]), expectedVariantIds: ["first", "missing"] } });
   expect(partial.issues).toContain("One or more native source variants have no specimen item.");
+});
+
+it("requires explicit native registration even when static source and component capabilities are available", () => {
+  const catalog = loadCatalog();
+  const values = resolve({ catalog, library: completedCatalogLibrary(catalog, { id: "binding-fixture", kind: "consumer", author: "consumer", license: "MIT" }, "2026-10-29") });
+  // UNIT port metadata is eligible for dispatch only; this fixture supplies no loaded page or DOM proof.
+  const context: DesignerSpecimenContext = { profile: { consumer: values.consumer, selectionHash: values.selectionHash, values, components: structuredClone(componentData) } as CompositeResolved, modules: { "@clossys/designer/components": components, ...defaultSourceModules }, pagePreview: { engine: "producer-emitted-page@1", origin: "http://127.0.0.1:4300", pages: [{ id: "page", route: "/", previewUrl: "/preview/site/pages/home.html", emitted: true, stage: "preview" }], renderViewport: () => null } };
+  const nativePlan = plan([{ id: "cell:desktop", kind: "publisher", page: { id: "page" }, viewport: { id: "desktop", width: 1440, height: 900 } }]);
+  const props = { context, need: () => null, labels: { showAllVariants: (count: number) => String(count) } };
+  const projection = projectAgentSpecimenPlan({ agent: "publisher", plan: nativePlan });
+  expect(contentSpecimenNeeds("sections.specimen-page-viewports", { ...props, items: projection.cell.items, axes: projection.cell.axes })).toEqual([]);
+  const result = bindAgentSpecimenPlan({ agent: "publisher", plan: nativePlan, props, nativeRegistered: () => false });
+  expect(result.registered).toBe(false);
+  expect(result.variantIds).toEqual([]);
+  expect(result.issues).toEqual(["The bound leaf has no selected native registration."]);
 });
