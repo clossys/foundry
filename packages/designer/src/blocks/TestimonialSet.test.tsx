@@ -5,6 +5,7 @@ import { describe, expect, it } from "vitest";
 import { Testimonial } from "./Testimonial.js";
 import { renderTestimonial } from "./Testimonial.server.js";
 import { TestimonialSet, type TestimonialSetItem } from "./TestimonialSet.js";
+import { UI_WIDTH_PROSE_MAX } from "./internal/block-vars.js";
 
 const item = { id: "first", quote: <>A <em>clear</em> account.</>, attributorName: "Alex Example", attributorRole: "Reviewer" };
 const items = (count: number): TestimonialSetItem[] => Array.from({ length: count }, (_, index) => ({ ...item, id: String(index) }));
@@ -25,7 +26,8 @@ describe("TestimonialSet", () => {
   it("centres one item without grid classes [mutant: always grid]", () => {
     render(<TestimonialSet items={[item]} />);
     const list = screen.getByRole("list");
-    expect(list).toHaveClass("mx-auto", "max-w-[42rem]");
+    expect(list).toHaveClass("mx-auto");
+    expect(list.style.maxInlineSize).toBe(UI_WIDTH_PROSE_MAX);
     expect(list.className).not.toMatch(/(?:^|\s)(?:\S*:)?grid(?:-|\s|$)/);
   });
 

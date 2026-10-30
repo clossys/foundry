@@ -20,9 +20,9 @@ export function renderTestimonial(
 ) {
   const colors = SECTION_GROUND_CLASSES[ground];
   return (
-    <figure {...rest} className={cx("flex flex-col gap-md", className)} style={style}>
+    <SemanticContent as="figure" {...rest} className={cx("flex flex-col gap-md", className)} style={style}>
       <blockquote className={cx("text-blockquote font-display", colors.primary)}>{quote}</blockquote>
-      <figcaption className="flex items-center gap-sm">
+      <SemanticContent as="figcaption" className="flex items-center gap-sm">
         {avatar}
         <SemanticContent as="div" className="flex flex-col">
           <SemanticContent as="span" className={cx("text-body font-body font-medium", colors.primary)}>{attributorName}</SemanticContent>
@@ -30,8 +30,8 @@ export function renderTestimonial(
             <SemanticContent as="span" className={cx("text-body-s", colors.secondary)}>{attributorRole}</SemanticContent>
           ) : null}
         </SemanticContent>
-      </figcaption>
-    </figure>
+      </SemanticContent>
+    </SemanticContent>
   );
 }
 

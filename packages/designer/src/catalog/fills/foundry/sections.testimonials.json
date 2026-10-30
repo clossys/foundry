@@ -47,6 +47,7 @@
             "tokens.accent-color",
             "tokens.body-size",
             "tokens.border-color",
+            "tokens.content-size",
             "tokens.focus-color",
             "tokens.focus-outline",
             "tokens.radius",
@@ -60,8 +61,12 @@
         },
         "sourceFiles": [
           {
+            "path": "packages/designer/src/blocks/internal/block-vars.ts",
+            "sha256": "33e9c7bd8700ff201b8ba138ca4f10dd7de910a23d260019e676470b918cceb5"
+          },
+          {
             "path": "packages/designer/src/blocks/LogoCloud/motion.ts",
-            "sha256": "967bef0e3de8f0a38d5ceb970b988689eb48fd1b876cd07d133fbc6d63868f34"
+            "sha256": "3461f076aeba952439b5531550d4beb305aba9b575da23d71a2998e0ebd12334"
           },
           {
             "path": "packages/designer/src/blocks/section-ground.ts",
@@ -69,15 +74,15 @@
           },
           {
             "path": "packages/designer/src/blocks/Testimonial.server.tsx",
-            "sha256": "b781ec297f690e3d0cfc482d0815bdd6bd248800ce3bfc740669cbaf619e0d07"
+            "sha256": "f61ba17864ae325340484de7c3d2fefade5cc389f81a1dd12bf15bbef721c507"
           },
           {
             "path": "packages/designer/src/blocks/Testimonial/Carousel.tsx",
-            "sha256": "221b64aa1537a4dce7af1f9f5fee8ee90ee0cea0c85f24c05cb92224d92c0a5f"
+            "sha256": "b864073bd118dc818f3b9184d93c393173d02b0562162ac2d512eca6e926d776"
           },
           {
             "path": "packages/designer/src/blocks/TestimonialSet.tsx",
-            "sha256": "b885efa64a6ca8b7679cc9468e490f6ab516b6206e1282cd5c700df76584967f"
+            "sha256": "71b06f041681dade00177a27f2e88ec09abbf9a1afcb3d4b8e209aa3fa0bbe52"
           },
           {
             "path": "packages/designer/src/catalog-core/provenance-attrs.ts",
@@ -139,6 +144,7 @@
           "tokens.accent-color",
           "tokens.body-size",
           "tokens.border-color",
+          "tokens.content-size",
           "tokens.focus-color",
           "tokens.focus-outline",
           "tokens.radius",

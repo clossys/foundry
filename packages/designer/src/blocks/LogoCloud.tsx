@@ -60,7 +60,7 @@ export function LogoCloud({ items, tone = "monochrome", ground = "base", motion 
       {items.map(item => {
         const markToneClasses = item.href === undefined ? monochromeClasses : undefined;
         const mark = <><SemanticContent as="span" aria-hidden="true" className={cx("inline-flex h-8 w-full max-w-40 overflow-hidden tablet:h-10", markToneClasses)}>{item.logo}</SemanticContent><SemanticContent as="span" className="sr-only">{item.name}</SemanticContent></>;
-        return <SemanticContent as="li" key={item.id} className={cx("flex min-h-[3rem] min-w-0 items-center justify-center", moving && "w-40 shrink-0")}>
+        return <SemanticContent as="li" key={item.id} className={cx("flex min-w-0 items-center justify-center", moving && "w-40 shrink-0")} style={{ minBlockSize: UI_LAYOUT_TAP_TARGET }}>
           {item.href === undefined || duplicate ? mark : <Link variant="standalone" href={item.href} className={cx("inline-flex w-full max-w-40 items-center rounded-control", FOCUS_CLASSES[ground], anchorToneClasses)} style={{ minBlockSize: UI_LAYOUT_TAP_TARGET }}>{mark}</Link>}
         </SemanticContent>;
       })}

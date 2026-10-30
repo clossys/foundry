@@ -4,6 +4,7 @@ import { cx } from "../components/internal/cx.js";
 import { Stat, type StatProps } from "./Stat.js";
 import { dsAttrs } from "../catalog-core/provenance-attrs.js";
 import { StatsCount } from "./Stats/parts.js";
+import { SemanticContent } from "../components/SemanticContent.js";
 /** Section root provenance (D1): the selected Foundry fill this block is. */
 const SECTION_STAMP = dsAttrs("sections", "sections.stats", "foundry/sections.stats");
 
@@ -42,12 +43,12 @@ const LAYOUT_CLASSES: Record<StatGroupLayout, string> = {
 export function StatGroup({ items, layout = "grid", motion = "static", className, style, ...rest }: StatGroupProps) {
   if (motion !== "static" && motion !== "count") throw new TypeError("StatGroup: unknown motion.");
   return (
-    <ul {...SECTION_STAMP} {...rest} role="list" data-layout={layout} data-motion={motion} className={cx("min-w-0 list-none", LAYOUT_CLASSES[layout], className)} style={{ ...SECTION_CONTENT_STYLE, ...style }}>
+    <SemanticContent as="ul" {...SECTION_STAMP} {...rest} role="list" data-layout={layout} data-motion={motion} className={cx("min-w-0 list-none", LAYOUT_CLASSES[layout], className)} style={{ ...SECTION_CONTENT_STYLE, ...style }}>
       {items.map(({ id, countTo, formatCount, ...stat }) => (
-        <li key={id} className="min-w-0 border-b border-line-base py-sm">
+        <SemanticContent as="li" key={id} className="min-w-0 border-b border-line-base py-sm">
           <Stat {...stat} value={motion === "count" ? <StatsCount finalValue={stat.value} to={countTo ?? (typeof stat.value === "number" ? stat.value : undefined)} format={formatCount} /> : stat.value} />
-        </li>
+        </SemanticContent>
       ))}
-    </ul>
+    </SemanticContent>
   );
 }

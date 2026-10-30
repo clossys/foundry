@@ -5,6 +5,7 @@ import { renderTestimonial } from "./Testimonial.server.js";
 import { SECTION_GROUND_CLASSES, type SectionGround } from "./section-ground.js";
 import { dsAttrs } from "../catalog-core/provenance-attrs.js";
 import { TestimonialCarousel, type TestimonialCarouselLabels } from "./Testimonial/Carousel.js";
+import { UI_WIDTH_PROSE_MAX } from "./internal/block-vars.js";
 /** Section root provenance (D1): the selected Foundry fill this block is. */
 const SECTION_STAMP = dsAttrs("sections", "sections.testimonials", "foundry/sections.testimonials");
 
@@ -30,7 +31,7 @@ export interface TestimonialSetProps extends Omit<HTMLAttributes<HTMLUListElemen
 }
 
 const COUNT_CLASSES: Readonly<Record<number, string>> = {
-  1: "mx-auto max-w-[42rem]",
+  1: "mx-auto",
   2: "grid grid-cols-1 gap-lg tablet:grid-cols-2 desktop:grid-cols-2",
   3: "grid grid-cols-1 gap-lg tablet:grid-cols-2 desktop:grid-cols-3",
   4: "grid grid-cols-1 gap-lg tablet:grid-cols-2 desktop:grid-cols-2",
@@ -59,7 +60,7 @@ export function TestimonialSet({ items, ground = "base", layout, carouselLabels,
   if (layout === "carousel" && (!carouselLabels?.previous?.trim() || !carouselLabels.next?.trim())) throw new TypeError("TestimonialSet: carousel requires authored control labels.");
   const geometry = layout === "wall" ? "columns-1 gap-lg tablet:columns-2 desktop:columns-3" : layout === "carousel" ? "flex gap-lg" : COUNT_CLASSES[items.length];
   const list = (
-    <SemanticContent as="ul" {...(layout === "carousel" ? {} : SECTION_STAMP)} {...(layout === "carousel" ? {} : rest)} role="list" data-layout={layout === "carousel" ? undefined : layout} className={cx("m-0 list-none p-0", geometry, SECTION_GROUND_CLASSES[ground].primary, layout !== "carousel" && className)} style={layout === "carousel" ? undefined : style}>
+    <SemanticContent as="ul" {...(layout === "carousel" ? {} : SECTION_STAMP)} {...(layout === "carousel" ? {} : rest)} role="list" data-layout={layout === "carousel" ? undefined : layout} className={cx("m-0 list-none p-0", geometry, SECTION_GROUND_CLASSES[ground].primary, layout !== "carousel" && className)} style={{ ...(items.length === 1 && layout !== "wall" && layout !== "carousel" ? { maxInlineSize: UI_WIDTH_PROSE_MAX } : {}), ...(layout === "carousel" ? {} : style) }}>
       {items.map((item, index) => {
         const span = layout !== "wall" && layout !== "carousel" && items.length === 3 && index === 2 ? "tablet:col-span-2 desktop:col-span-1" : undefined;
         return <SemanticContent as="li" key={item.id} className={cx("min-w-0 rounded-panel p-lg text-body-l", PLATE_CLASSES[ground], span,

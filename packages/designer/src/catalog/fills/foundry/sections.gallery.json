@@ -28,20 +28,23 @@
     "gallery": {
       "composes": [
         "components.button",
-        "components.dialog"
+        "components.dialog",
+        "components.semantic-content"
       ],
       "configs": {},
       "consumption": {
         "scanStatus": "lower-bound",
         "scannedComposes": [
           "components.button",
-          "components.dialog"
+          "components.dialog",
+          "components.semantic-content"
         ],
         "scannedReads": {
           "assets": [],
           "components": [
             "components.button",
-            "components.dialog"
+            "components.dialog",
+            "components.semantic-content"
           ],
           "tokens": [
             "tokens.body-size",
@@ -56,7 +59,11 @@
         "sourceFiles": [
           {
             "path": "packages/designer/src/blocks/Gallery.tsx",
-            "sha256": "63f3dabe0d6ef740580671baf2af3ba4103274a77218f268c6a15716f440e071"
+            "sha256": "758e9777f14db9d668f7d84b641d29c18a56f4d4ab26f4fd3ebaeb29655985b2"
+          },
+          {
+            "path": "packages/designer/src/blocks/Gallery/parts.tsx",
+            "sha256": "79f79689aa91988ad2dff5d205379ab3c373fd86310d51930b3394bf4ae9b753"
           },
           {
             "path": "packages/designer/src/catalog-core/provenance-attrs.ts",
