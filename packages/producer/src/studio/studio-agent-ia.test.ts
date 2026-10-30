@@ -7,7 +7,7 @@ function fixture(agent: AgentCells['agent'] = 'director'): AgentCells {
   return { agent, state: 'ready', cells: ['second', 'first'].map((name, i) => ({ id: `focus.segment.${name}`, title: name, version: i + 1, status: 'draft' })), tree: { tree: [{ id: 'focus', name: 'Focus', children: [{ id: 'segment', name: 'Segment', cells: ['focus.segment.first', 'focus.segment.second'] }] }] } };
 }
 function evidence(index: AgentCells): StudioCoverageEvidence[] {
-  return index.cells.map(cell => ({ cellId: cell.id, ready: true, boundSectionId: 'sections.specimen-rich-passage', registered: true, itemCount: 2, expectedVariantIds: ['visible', 'hidden'], variants: [{ id: 'visible', renderable: true }, { id: 'hidden', renderable: true }], issues: [] }));
+  return index.cells.map(cell => ({ cellId: cell.id, ready: true, boundSectionId: 'sections.specimen-rich-passage', registered: true, span: 'full', itemCount: 2, expectedVariantIds: ['visible', 'hidden'], variants: [{ id: 'visible', renderable: true }, { id: 'hidden', renderable: true }], issues: [] }));
 }
 describe('shared authored IA and strict specimen coverage', () => {
   it('keeps tree order and gives all four levels hash breadcrumbs', () => {
@@ -24,15 +24,24 @@ describe('shared authored IA and strict specimen coverage', () => {
     const index = fixture(agent);
     expect(checkStudioSpecimenCoverage(index, evidence(index))).toMatchObject({ state: 'pass', cells: { covered: 2, total: 2 }, variants: { covered: 4, total: 4, completeScope: true } });
   });
-  it.each(['unregistered', 'zero-items', 'missing-hidden-variant', 'unbound', 'pending'] as const)('fails the %s negative control', fault => {
+  it.each(['unregistered', 'zero-items', 'missing-hidden-variant', 'unbound', 'pending', 'missing-span', 'invalid-span'] as const)('fails the %s negative control', fault => {
     const index = fixture(); const records = evidence(index); const row = records[0]!;
     if (fault === 'unregistered') row.registered = false;
     if (fault === 'zero-items') row.itemCount = 0;
     if (fault === 'missing-hidden-variant') row.variants.pop();
     if (fault === 'unbound') delete row.boundSectionId;
     if (fault === 'pending') row.ready = false;
+    if (fault === 'missing-span') delete row.span;
+    if (fault === 'invalid-span') Object.assign(row, { span: 'quarter' });
     const result = checkStudioSpecimenCoverage(index, records);
     expect(result.state).toBe('fail'); expect(result.cells.covered).toBe(1); expect(result.variants.total).toBe(4);
+  });
+  it.each(['full', 'half', 'third'] as const)('accepts only the declared %s specimen-leaf span without agent inference', span => {
+    for (const agent of ['director', 'designer', 'writer', 'publisher'] as const) {
+      const index = fixture(agent); const records = evidence(index);
+      for (const record of records) record.span = span;
+      expect(checkStudioSpecimenCoverage(index, records).state).toBe('pass');
+    }
   });
   it('fails unknown variant inventory and missing IA instead of reporting 0/0 pass', () => {
     const index = fixture(); const records = evidence(index); records[0]!.expectedVariantIds = [];

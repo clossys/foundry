@@ -6,7 +6,7 @@ import { projectStudioAgentIA } from './studio-agent-ia';
 export type StudioCoverageEvidence = AgentSpecimenCoverage;
 export interface StudioCoverageResult { state: 'pass' | 'fail' | 'empty'; cells: { covered: number; total: number }; variants: { covered: number; total: number; completeScope: boolean }; issues: { cellId?: string; code: string }[] }
 
-/** Strict evidence accounting: a fallback, unknown scope, unregistered binding or missing variant is never 100%. */
+/** Strict evidence accounting: a fallback, unknown scope, unregistered binding, undeclared leaf span or missing variant is never 100%. */
 export function checkStudioSpecimenCoverage(index: AgentCells, evidence: readonly StudioCoverageEvidence[]): StudioCoverageResult {
   const ia = projectStudioAgentIA(index);
   const cells = ia.groups.flatMap(group => group.collections.flatMap(collection => collection.cells));
@@ -21,6 +21,7 @@ export function checkStudioSpecimenCoverage(index: AgentCells, evidence: readonl
     const before = issues.length;
     if (!record.ready) fail('renderer-not-ready');
     if (!record.registered || !/^sections\.specimen-[a-z][a-z0-9]*(?:-[a-z0-9]+)*$/.test(record.boundSectionId ?? '')) fail('missing-registered-specimen-binding');
+    if (!['full', 'half', 'third'].includes(record.span ?? '')) fail('missing-or-invalid-leaf-span');
     if (!Number.isInteger(record.itemCount) || record.itemCount < 1) fail('empty-specimen-items');
     if (record.issues.length) fail('renderer-model-issues');
     const expected = record.expectedVariantIds;

@@ -8,6 +8,7 @@ describe("Studio missing selection defaults", () => {
     const profile = resolve(input);
     const badge = Object.values(input.library.components.fills.find(fill => fill.$extensions["com.clossys.fill"].slot === "components.badge")!.components)[0]!;
     expect(badge.origin).toMatchObject({ kind: "adopted", source: "shadcn@aria" });
+    expect(leaves.find(leaf => leaf.leaf === "sections.cards")).toMatchObject({ source: "fallback", fill: "foundry/sections.cards" });
     expect(leaves.find(leaf => leaf.leaf === "components.badge")).toMatchObject({ source: "fallback", fill: "shadcn@aria/components.badge" });
     expect(leaves.every(leaf => (leaf.source === "fallback" || leaf.source === "unavailable") && leaf.message?.startsWith("NEED:"))).toBe(true);
     expect(Object.keys(profile.components.components).length).toBeLessThan(input.catalog.components.slots.length);

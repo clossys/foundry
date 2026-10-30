@@ -49,7 +49,7 @@ export function CellsWorkspace({ agent }: { agent?: Agent }) {
     if (index.state === 'loading') stage = <EmptyState role="status" title="Loading cells…" />;
     else if (index.state === 'error') stage = <EmptyState role="alert" title="Cells could not be loaded" description={index.message} />;
     else if (!selectedIndex || selectedIndex.state !== 'ready') stage = <EmptyState title="Cells are unavailable" description={selectedIndex?.error} />;
-    else stage = <EmptyState title="NEED: manifest-bound IA body" description="The native body/container projection and registered specimen, card-body and module-frame APIs require the integration composition." />;
+    else stage = <EmptyState title="NEED: manifest-bound IA body" description="The native IA body projection, declared specimen spans, card-grid bodies and module-frame APIs require the integration composition." />;
   }
   return <RoleToolsProvider index={selectedIndex} selectedId={selectedId}><StudioCommonModules pageId={agent ?? studioHome.id} indexes={indexes} agent={agent} selectedId={selectedId} detail={selectedDetail} revision={revision}>
     <StudioFrame page={{ title }}>{stage}</StudioFrame>
