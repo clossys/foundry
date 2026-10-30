@@ -419,7 +419,8 @@
         "components.tabs",
         "components.tooltip",
         "components.sidebar",
-        "components.semantic-content"
+        "components.semantic-content",
+        "components.sheet"
       ],
       "skipTarget": "main-content",
       "stage": {

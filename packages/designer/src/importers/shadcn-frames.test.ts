@@ -37,4 +37,13 @@ describe("shadcn Aria application frame candidate", () => {
     expect(() => result.transforms[0]!.run({ candidate, upstream: changed })).toThrow("immutable source mismatch");
     expect(result.transforms[0]!.run({ candidate, upstream: result.upstream }).files).toEqual(result.files);
   });
+
+  it("binds every emitted UI component to the consumer leaf without a private sidebar context hook", () => {
+    const { fills, files } = importShadcnFrames(), frame = Object.values(fills[0]!.frames!)[0]!;
+    const code = files.find(file => file.path === frame.impl.entry)!.content;
+    expect(code).not.toContain('from "@clossys/designer/components"');
+    expect(code).not.toContain("useSidebar");
+    expect(new Set(frame.bindings.map(binding => binding.slot))).toEqual(new Set(["components.sidebar", "components.sheet", "components.semantic-content", "components.button", "components.logo", "components.menu"]));
+    for (const binding of frame.bindings) expect(code).toContain(JSON.stringify(binding.module));
+  });
 });

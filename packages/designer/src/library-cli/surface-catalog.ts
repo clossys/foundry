@@ -9,13 +9,14 @@ import { importFoundryFrames, importFoundrySections, loadBuildCatalog, loadSecti
 import type { SurfaceCandidateDocument, SurfaceCatalog } from "../catalog-core/surface-types.js";
 import type { FrameSlot } from "../catalog-core/types.js";
 import { importShadcnFrames } from "../importers/shadcn-frames.js";
+import { importShadcnSections } from "../importers/shadcn-sections.js";
 
 let cached: SurfaceCatalog | undefined;
 export function foundrySurfaceCatalog(): SurfaceCatalog {
   cached ??= Object.freeze({
     slots: [...loadSectionRegistry().slots, ...loadBuildCatalog().slots.filter((slot): slot is FrameSlot => slot.layer === "frames")],
-    fills: [...importFoundrySections().fills, ...importFoundryFrames().fills, ...importShadcnFrames().fills] as unknown as SurfaceCandidateDocument[],
-    transforms: [...importShadcnFrames().transforms], rules: [], materializations: [],
+    fills: [...importFoundrySections().fills, ...importFoundryFrames().fills, ...importShadcnFrames().fills, ...importShadcnSections().fills] as unknown as SurfaceCandidateDocument[],
+    transforms: [...importShadcnFrames().transforms, ...importShadcnSections().transforms], rules: [], materializations: [],
     packageHistory: loadFoundrySurfaceHistory(),
   });
   return cached;

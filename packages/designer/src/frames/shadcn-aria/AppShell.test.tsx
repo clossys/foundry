@@ -10,7 +10,7 @@ beforeEach(() => {
   localStorage.clear();
   document.documentElement.style.setProperty("--breakpoint-mobile-lg", "768px");
   Object.defineProperty(window, "innerWidth", { value: 1280, configurable: true });
-  vi.stubGlobal("matchMedia", vi.fn((media: string) => ({ media, matches: false, addEventListener() {}, removeEventListener() {}, addListener() {}, removeListener() {} })));
+  vi.stubGlobal("matchMedia", vi.fn((media: string) => ({ media, matches: media === "(min-width: 768px)", addEventListener() {}, removeEventListener() {}, addListener() {}, removeListener() {} })));
 });
 afterEach(() => { cleanup(); vi.unstubAllGlobals(); document.documentElement.style.removeProperty("--breakpoint-mobile-lg"); });
 
@@ -63,4 +63,16 @@ it("keeps loading content in the main region while navigation stays mounted", ()
   expect(screen.queryByText("Workspace content")).not.toBeInTheDocument();
   expect(screen.getByRole("navigation", { name: "Workspace" })).toBeInTheDocument();
   expect(screen.getByText("Progress view")).toBeInTheDocument();
+});
+
+it("opens the selected narrow sheet and closes it after a navigation action", () => {
+  Object.defineProperty(window, "innerWidth", { value: 375, configurable: true });
+  vi.stubGlobal("matchMedia", vi.fn((media: string) => ({ media, matches: false, addEventListener() {}, removeEventListener() {}, addListener() {}, removeListener() {} })));
+  const props = fixture(), drawer = vi.fn(); props.navigation.onDrawerOpenChange = drawer;
+  render(<ShadcnAppShell {...props} />);
+  fireEvent.click(screen.getByRole("button", { name: "Open navigation" }));
+  expect(screen.getByRole("dialog")).toBeInTheDocument();
+  expect(drawer).toHaveBeenCalledWith(true);
+  fireEvent.click(screen.getByRole("button", { name: "Draft" }));
+  expect(drawer).toHaveBeenLastCalledWith(false);
 });

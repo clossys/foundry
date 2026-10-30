@@ -1,7 +1,7 @@
 "use client";
 
-import { useEffect, useId, useState } from "react";
-import { Sidebar, SidebarProvider, SidebarHeader, SidebarContent, SidebarFooter, SidebarMenu, SidebarMenuItem, SidebarMenuButton, SidebarMenuSub, SidebarMenuSubItem, SidebarMenuSubButton, useSidebar, SemanticContent, Button, Logomark, Menu } from "../../components/index.js";
+import { useEffect, useId, useRef, useState } from "react";
+import { Sidebar, SidebarProvider, SidebarHeader, SidebarContent, SidebarFooter, SidebarMenu, SidebarMenuItem, SidebarMenuButton, SidebarMenuSub, SidebarMenuSubItem, SidebarMenuSubButton, Sheet, SheetHeader, SheetTitle, SemanticContent, Button, Logomark, Menu } from "../../components/index.js";
 import { AccountMenu, CommandMenu, PageBar, useCommandMenuShortcut, validateAppNavigationTree, type AppNavigationNode } from "../../blocks/index.js";
 import { ThemeProvider, useTheme } from "../../theme/index.js";
 import { FrameSlotProvider, FrameSlotOutlet, useFramePageHeader } from "../../shell/FrameSlots.js";
@@ -15,11 +15,11 @@ import type { AppFrameProps } from "../app-frame-types.js";
 
 const FRAME = { "data-ds-leaf": "frames.app-shell", "data-ds-fill": "shadcn@aria/frames.app-shell", "data-ds-layer": "frames" } as const;
 const SIDEBAR = { "data-ds-leaf": "components.sidebar", "data-ds-fill": "shadcn@aria/components.sidebar", "data-ds-layer": "components" } as const;
+const MenuSection = Menu.Section, MenuItem = Menu.Item;
 
 /** Sidebar anatomy follows the pinned official Aria sidebar, with host-owned navigation and copy. */
 function Navigation({ tree, activeId, close }: { tree: readonly AppNavigationNode[]; activeId?: string; close: () => void }) {
-  const { setOpenMobile } = useSidebar();
-  const finish = () => { setOpenMobile(false); close(); };
+  const finish = close;
   return <SidebarMenu>{tree.map(node => <SidebarMenuItem key={node.id}>
     {node.href ? <SidebarMenuButton href={node.href} isActive={node.id === activeId} aria-current={node.id === activeId ? "page" : undefined} onPress={finish}>{node.icon}{node.label}</SidebarMenuButton>
       : node.onAction ? <SidebarMenuButton isActive={node.id === activeId} onPress={() => { node.onAction?.(); finish(); }}>{node.icon}{node.label}</SidebarMenuButton>
@@ -31,23 +31,13 @@ function Navigation({ tree, activeId, close }: { tree: readonly AppNavigationNod
   </SidebarMenuItem>)}</SidebarMenu>;
 }
 
-function NavigationToggle({ navigation, openLabel, closeLabel }: { navigation: AppFrameProps["navigation"]; openLabel: string; closeLabel: string }) {
-  const { open, isMobile, openMobile, setOpenMobile, toggleSidebar } = useSidebar();
-  useEffect(() => { if (navigation.drawerOpen !== undefined) setOpenMobile(navigation.drawerOpen); }, [navigation.drawerOpen, setOpenMobile]);
-  useEffect(() => { setOpenMobile(false); }, [navigation.navigationKey, setOpenMobile]);
-  const expanded = isMobile ? openMobile : open;
-  return <Button variant="ghost" aria-label={expanded ? closeLabel : openLabel} aria-expanded={expanded} onPress={() => {
-    toggleSidebar(); if (isMobile) navigation.onDrawerOpenChange?.(!openMobile);
-  }}>{expanded ? closeLabel : openLabel}</Button>;
-}
-
 function Account({ account, mark }: { account: AppFrameProps["account"]; mark: string }) {
   if (account.actor) return <AccountMenu {...account} actor={{ ...account.actor, ...(account.avatar === "mark" ? { image: mark } : {}) }} />;
   return <Menu trigger={<Button variant="ghost" className="w-full justify-start"><Logomark src={mark} size="sm" />{account.signedOutLabel}</Button>}>
-    {account.sections.map(section => <Menu.Section key={section.id} heading={section.label} aria-label={section.label ?? account.signedOutLabel}>
-      {section.entries.map(entry => <Menu.Item key={entry.id} id={entry.id} isDisabled={entry.isDisabled} href={entry.kind === "link" ? entry.href : undefined}
-        onAction={() => { if (entry.kind === "link") account.onRoute?.(entry); else if (entry.kind === "preference") entry.onCheckedChange(!entry.checked); else entry.onAction(); }}>{entry.label}</Menu.Item>)}
-    </Menu.Section>)}
+    {account.sections.map(section => <MenuSection key={section.id} heading={section.label} aria-label={section.label ?? account.signedOutLabel}>
+      {section.entries.map(entry => <MenuItem key={entry.id} id={entry.id} isDisabled={entry.isDisabled} href={entry.kind === "link" ? entry.href : undefined}
+        onAction={() => { if (entry.kind === "link") account.onRoute?.(entry); else if (entry.kind === "preference") entry.onCheckedChange(!entry.checked); else entry.onAction(); }}>{entry.label}</MenuItem>)}
+    </MenuSection>)}
   </Menu>;
 }
 
@@ -55,6 +45,17 @@ function Content(props: AppFrameProps) {
   const { navigation, brand, commands, account, rightPanel, state, stateViews, page, children } = props;
   const copy = useShellCopy(), theme = useTheme(), header = useFramePageHeader(), id = useId();
   const [collapsed, setCollapsed] = useState(navigation.defaultCollapsed ?? props.layout === "immersive");
+  const [narrow, setNarrow] = useState(false), [ownDrawer, setOwnDrawer] = useState(false);
+  const drawerOpen = navigation.drawerOpen ?? ownDrawer;
+  const changeDrawer = (next: boolean) => { if (navigation.drawerOpen === undefined) setOwnDrawer(next); navigation.onDrawerOpenChange?.(next); };
+  const route = useRef(navigation.navigationKey);
+  useEffect(() => {
+    const breakpoint = getComputedStyle(document.documentElement).getPropertyValue("--breakpoint-mobile-lg").trim();
+    if (!breakpoint) throw new TypeError("AppShell requires the selected mobile breakpoint token");
+    const media = window.matchMedia(`(min-width: ${breakpoint})`), sync = () => setNarrow(!media.matches);
+    sync(); media.addEventListener("change", sync); return () => media.removeEventListener("change", sync);
+  }, []);
+  useEffect(() => { if (route.current !== navigation.navigationKey) { route.current = navigation.navigationKey; changeDrawer(false); } }, [navigation.navigationKey]);
   const [commandOpen, setCommandOpen] = useState(false), [query, setQuery] = useState("");
   const isCollapsed = navigation.collapsed ?? collapsed;
   const changeCollapsed = (next: boolean) => { if (navigation.collapsed === undefined) setCollapsed(next); navigation.onCollapsedChange?.(next); };
@@ -69,27 +70,33 @@ function Content(props: AppFrameProps) {
   const ready = state?.main === undefined || state.main === "ready";
   const main = ready ? props.main ?? children : stateViews?.[state.main];
   const railCopy = (ref: { id: string }) => ({ ref, text: copy(ref) });
+  const sidebar = <>
+    <SidebarHeader>
+      <SemanticContent as="div" className="flex min-w-0 items-center gap-sm p-sm"><Logomark src={mark} size="sm" />{brand.navigationMark && <SemanticContent as="span" className="truncate text-body font-medium">{brand.navigationMark.label}</SemanticContent>}</SemanticContent>
+      <Button variant="ghost" onPress={openCommands} className="w-full justify-start">{triggerLabel}</Button>
+    </SidebarHeader>
+    <SidebarContent><Navigation tree={navigation.tree} activeId={navigation.activeId} close={() => changeDrawer(false)} /><FrameSlotOutlet slot="left-sidebar" /></SidebarContent>
+    <SidebarFooter><Account account={account} mark={mark} />{props.themeControl}</SidebarFooter>
+  </>;
   return <SidebarProvider {...FRAME} dir={props.dir} open={!isCollapsed} onOpenChange={open => changeCollapsed(!open)}
     className={props.fill === "viewport" ? "h-dvh min-h-0 overflow-hidden bg-surface-raised" : "h-full min-h-0 overflow-hidden bg-surface-raised"}>
     <SkipLink targetId={mainId}>{props.skipLabel ?? copy(SHELL_COPY_REFS.frame.skip)}</SkipLink>
-    <Sidebar {...SIDEBAR} variant="inset" collapsible="icon" copyResolver={railCopy} aria-label={navigation.label ?? openNavigation} role="navigation" onClick={event => {
+    {narrow ? <Sheet {...SIDEBAR} side={props.dir === "rtl" ? "right" : "left"} isOpen={drawerOpen} onOpenChange={changeDrawer} copyResolver={railCopy}>
+      <SheetHeader><SheetTitle>{navigation.label ?? openNavigation}</SheetTitle></SheetHeader>
+      <SemanticContent as="div" role="navigation" aria-label={navigation.label ?? openNavigation}>{sidebar}</SemanticContent>
+    </Sheet> : <Sidebar {...SIDEBAR} variant="inset" collapsible="icon" copyResolver={railCopy} aria-label={navigation.label ?? openNavigation} role="navigation" onClick={event => {
       if (!props.onNavigate || event.defaultPrevented || event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
       const anchor = (event.target as Element).closest<HTMLAnchorElement>("a[href]");
       if (!anchor || anchor.hasAttribute("download") || anchor.target && anchor.target !== "_self") return;
       const href = anchor.getAttribute("href"); if (!href) return;
       event.preventDefault(); void Promise.resolve().then(() => props.onNavigate?.(href)).catch(() => {});
     }}>
-      <SidebarHeader>
-        <SemanticContent as="div" className="flex min-w-0 items-center gap-sm p-sm"><Logomark src={mark} size="sm" />{brand.navigationMark && <SemanticContent as="span" className="truncate text-body font-medium">{brand.navigationMark.label}</SemanticContent>}</SemanticContent>
-        <Button variant="ghost" onPress={openCommands} className="w-full justify-start">{triggerLabel}</Button>
-      </SidebarHeader>
-      <SidebarContent><Navigation tree={navigation.tree} activeId={navigation.activeId} close={() => { navigation.onDrawerOpenChange?.(false); }} /><FrameSlotOutlet slot="left-sidebar" /></SidebarContent>
-      <SidebarFooter><Account account={account} mark={mark} />{props.themeControl}</SidebarFooter>
-    </Sidebar>
+      {sidebar}
+    </Sidebar>}
     <SemanticContent as="div" className="flex min-h-0 min-w-0 flex-1 gap-sm p-sm">
       <SemanticContent as="div" data-slot="sidebar-inset" className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden rounded-control border border-line-base bg-surface-base shadow-sm">
         <SemanticContent as="div" className="sticky top-0 z-sticky flex min-w-0 items-center gap-sm border-b border-line-base bg-surface-base px-md py-sm">
-          <NavigationToggle navigation={navigation} openLabel={openNavigation} closeLabel={closeNavigation} />
+          <Button variant="ghost" aria-label={(narrow ? drawerOpen : !isCollapsed) ? closeNavigation : openNavigation} aria-expanded={narrow ? drawerOpen : !isCollapsed} onPress={() => narrow ? changeDrawer(!drawerOpen) : changeCollapsed(!isCollapsed)}>{(narrow ? drawerOpen : !isCollapsed) ? closeNavigation : openNavigation}</Button>
           <PageBar embedded header={header ?? undefined} page={page} context={props.context} root={props.root} workspaces={props.workspaces} onNavigate={props.onNavigate}
             labels={{ breadcrumb: props.breadcrumbLabel ?? copy(SHELL_COPY_REFS.frame.breadcrumb), collapsedBreadcrumb: props.collapsedBreadcrumbLabel ?? copy(SHELL_COPY_REFS.frame.collapsedBreadcrumb), pageInfo: props.pageInfoLabel ?? copy(SHELL_COPY_REFS.frame.pageInfo), pageActions: props.pageActionsLabel ?? copy(SHELL_COPY_REFS.frame.pageActions) }} />
         </SemanticContent>

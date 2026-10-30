@@ -21,9 +21,9 @@ export function importShadcnFrames() {
     kind: "frame", slot, source, impl: { kind: "source", entry: data.output.path, export: name }, rendering: "client", members: Object.keys(propMap), states: ["default"],
     slots, propMap, statePorts,
     reads: { tokens: ["tokens.body-size", "tokens.border-color", "tokens.control-radius", "tokens.spacing", "tokens.surface-color", "tokens.text-color"], assets: [] },
-    composes: ["components.button", "components.logo", "components.menu", "components.semantic-content", "components.sidebar", "frames.app-header", "frames.command", "frames.inspector"], parts: [],
-    api: { version: 1, exports: [{ name: "AppShell", export: name }] }, bindings: [],
-    dependencies: [{ module: "react", version: "19.3.0", license: "MIT" }, { module: "react-aria-components", version: "1.21.1", license: "Apache-2.0" }, ...["components", "blocks", "frames", "shell", "theme"].map(path => ({ module: `@clossys/designer/${path}`, version: "0.12.0", license: "MIT" }))],
+    composes: ["components.button", "components.logo", "components.menu", "components.semantic-content", "components.sheet", "components.sidebar", "frames.app-header", "frames.command", "frames.inspector"], parts: [],
+    api: { version: 1, exports: [{ name: "AppShell", export: name }] }, bindings: data.bindings as SurfaceFrameEntry["bindings"],
+    dependencies: [{ module: "react", version: "19.3.0", license: "MIT" }, { module: "react-aria-components", version: "1.21.1", license: "Apache-2.0" }, ...["blocks", "frames", "shell", "theme"].map(path => ({ module: `@clossys/designer/${path}`, version: "0.12.0", license: "MIT" }))],
     license: "MIT", pin: { kind: "git", url: adapter.pin.url, commit: data.commit, files: surfaceManifest(upstream) }, notice: notice.path, outputSha256: surfaceManifest(files), blockers: [],
   };
   const recipe = [{ path: "rules/shadcn-aria-app-shell-v1.json", content: stableStringify({ port: data.port, output: data.output, operation: "official-sidebar-token-frame-port" }) }];
