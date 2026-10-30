@@ -585,17 +585,17 @@
       ]
     },
     {
-      "missing": [],
-      "notes": [
-        "Descriptor only; source, accessibility, contrast and consumer runtime conformance are unmeasured."
-      ],
-      "slot": "components.radio-group",
-      "status": "candidate",
-      "supported": [
+      "missing": [
         "orientation.horizontal",
         "orientation.vertical",
         "state.invalid"
-      ]
+      ],
+      "notes": [
+        "No package implementation is available."
+      ],
+      "slot": "components.radio-group",
+      "status": "unavailable",
+      "supported": []
     },
     {
       "missing": [],

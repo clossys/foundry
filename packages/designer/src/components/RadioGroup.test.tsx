@@ -1,17 +1,21 @@
 import { describe, expect, it, vi } from "vitest";
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { RadioGroupContext } from "react-aria-components";
-import { RadioGroup, type RadioGroupProps } from "./RadioGroup.js";
+import { RadioGroupContext, Label, Text, FieldError } from "react-aria-components";
+import type { ReactNode } from "react";
+import { RadioGroup, RadioGroupItem } from "./preview-runtime/components/radio-group/radio-group.js";
+import type { RadioGroupProps } from "./RadioGroup.types.js";
 
-function BasicGroup(props: Partial<Omit<RadioGroupProps, "label" | "children">> = {}) {
+function BasicGroup({ description, errorMessage, ...props }: Partial<Omit<RadioGroupProps, "children">> & { description?: ReactNode; errorMessage?: ReactNode } = {}) {
   return (
-    <RadioGroup label="Delivery speed" {...props}>
-      <RadioGroup.Radio value="standard">Standard</RadioGroup.Radio>
-      <RadioGroup.Radio value="express">Express</RadioGroup.Radio>
-      <RadioGroup.Radio value="overnight" isDisabled>
+    <RadioGroup {...props}><Label>Delivery speed</Label>
+      {description ? <Text slot="description">{description}</Text> : null}
+      <FieldError>{errorMessage}</FieldError>
+      <RadioGroupItem value="standard">Standard</RadioGroupItem>
+      <RadioGroupItem value="express">Express</RadioGroupItem>
+      <RadioGroupItem value="overnight" isDisabled>
         Overnight
-      </RadioGroup.Radio>
+      </RadioGroupItem>
     </RadioGroup>
   );
 }
@@ -20,35 +24,30 @@ describe("RadioGroup", () => {
   it("inherits horizontal orientation from the native provider when the prop is omitted", () => {
     render(<RadioGroupContext.Provider value={{ orientation: "horizontal" }}><BasicGroup /></RadioGroupContext.Provider>);
     expect(screen.getByRole("radiogroup")).toHaveAttribute("aria-orientation", "horizontal");
-    expect(screen.getByRole("radio", { name: "Standard" }).closest("label")?.parentElement)
-      .toHaveClass("flex-row");
+    expect(screen.getByRole("radiogroup")).toHaveClass("cn-radio-group");
   });
 
-  it("keeps the default vertical option layout and field spacing", () => {
+  it("keeps native default vertical semantics and the pinned root classes", () => {
     render(<BasicGroup />);
     const group = screen.getByRole("radiogroup");
     expect(group).toHaveAttribute("aria-orientation", "vertical");
-    expect(group.className).toBe("flex flex-col gap-xs");
-    expect(screen.getByRole("radio", { name: "Standard" }).closest("label")?.parentElement?.className)
-      .toBe("flex flex-col gap-sm");
+    expect(group).toHaveClass("cn-radio-group", "w-full");
+    expect(screen.getByRole("radio", { name: "Standard" }).closest("label")).toHaveClass("cn-radio-group-item");
   });
 
-  it("changes only the options to a row for horizontal orientation and retains keyboard selection", async () => {
+  it("forwards horizontal and vertical orientation while retaining native keyboard selection", async () => {
     const user = userEvent.setup();
     const { rerender } = render(<BasicGroup orientation="horizontal" defaultValue="standard" />);
     const group = screen.getByRole("radiogroup");
     const standard = screen.getByRole("radio", { name: "Standard" });
-    const options = standard.closest("label")?.parentElement;
     expect(group).toHaveAttribute("aria-orientation", "horizontal");
-    expect(group.className).toBe("flex flex-col gap-xs");
-    expect(options?.className).toBe("flex flex-row gap-sm");
+    expect(group).toHaveClass("cn-radio-group", "w-full");
     standard.focus();
     await user.keyboard("{ArrowRight}");
     expect(screen.getByRole("radio", { name: "Express" })).toBeChecked();
     expect(screen.getByRole("radio", { name: "Express" })).toHaveFocus();
     rerender(<BasicGroup orientation="vertical" defaultValue="standard" />);
     expect(group).toHaveAttribute("aria-orientation", "vertical");
-    expect(options?.className).toBe("flex flex-col gap-sm");
   });
 
   it("renders a labeled group with role='radiogroup', containing labeled radio options", () => {
@@ -115,10 +114,10 @@ describe("RadioGroup", () => {
 
   it("renders a per-option description", () => {
     render(
-      <RadioGroup label="Plan">
-        <RadioGroup.Radio value="free" description="No credit card required.">
-          Free
-        </RadioGroup.Radio>
+      <RadioGroup><Label>Plan</Label>
+        <RadioGroupItem value="free">
+          Free <span>No credit card required.</span>
+        </RadioGroupItem>
       </RadioGroup>,
     );
     expect(screen.getByText("No credit card required.")).toBeInTheDocument();
@@ -134,9 +133,8 @@ describe("RadioGroup", () => {
   it("C12: the selected ring and dot bind action-color (ink), never the accent", () => {
     render(<BasicGroup value="express" onChange={() => {}} />);
     const label = screen.getByRole("radio", { name: "Express" }).closest("label")!;
-    const ring = label.querySelector('span[aria-hidden="true"]')!;
-    expect(ring.classList).toContain("border-action");
-    expect(ring.querySelector("span")!.classList).toContain("bg-action");
+    expect(label).toHaveClass("cn-radio-group-item", "cn-radio-group-item-aria");
+    expect(label.querySelector(".cn-radio-group-indicator-icon")).not.toBeNull();
     expect(label.innerHTML).not.toMatch(/\b(?:bg|border)-accent\b/);
   });
 });

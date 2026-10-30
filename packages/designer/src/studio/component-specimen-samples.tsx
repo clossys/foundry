@@ -1,6 +1,6 @@
 "use client";
 import { cloneElement, useId, useRef, useState, type ComponentType, type ContextType, type FormEvent, type ReactElement, type ReactNode } from "react";
-import { TooltipTriggerStateContext } from "react-aria-components";
+import { Label, TooltipTriggerStateContext } from "react-aria-components";
 import { Button } from "../components/Button.js";
 import { componentSpecimenActions, componentSpecimenCard, componentSpecimenCollections, componentSpecimenColor, componentSpecimenField, componentSpecimenOverlays, componentSpecimenProps, componentSpecimenSemanticMedia, componentSpecimenSourceSamples, componentSpecimenTable, componentSpecimenText, componentSpecimenToast, componentSpecimenUnavailable } from "./component-specimen-sample-content.js";
 import type { SpecimenUnavailableReason } from "./preview-outcome.js";
@@ -106,8 +106,8 @@ function collection(key: string, Component: unknown, exports: Namespace): Compon
       return Item && Content && Link && { props: { "aria-label": c[key].label }, children: c[key].items.map(item => <Item key={item.id} id={item.id} textValue={item.label} href={item.href}><Content><Link>{item.label}</Link></Content></Item>) };
     }
     case "./components#RadioGroup": {
-      const Radio = part(Component, "Radio");
-      return Radio && { props: { label: c[key].label, defaultValue: c[key].defaultValue }, children: c[key].items.map(item => <Radio key={item.id} value={item.id}>{item.label}</Radio>) };
+      const Item = part(exports, "RadioGroupItem");
+      return Item && { props: { defaultValue: c[key].defaultValue }, children: [<Label key="label">{c[key].label}</Label>, ...c[key].items.map(item => <Item key={item.id} value={item.id}>{item.label}</Item>)] };
     }
     case "./components#Tabs": {
       const List = part(Component, "List"), Tab = part(Component, "Tab"), Panel = part(Component, "Panel");
@@ -259,7 +259,7 @@ function sourceSample(key: string, exports: Namespace): ComponentSpecimenSample 
     case "components/radio-group/radio-group.tsx#RadioGroup": {
       const found = parts("RadioGroupItem"); if (!found) return undefined;
       const [Item] = found as [Renderable];
-      return { props: { "aria-label": s[key].label, defaultValue: s[key].defaultValue }, children: s[key].items.map(item => <Item key={item.id} value={item.id}>{item.label}</Item>) };
+      return { props: { defaultValue: s[key].defaultValue }, children: [<Label key="label">{s[key].label}</Label>, ...s[key].items.map(item => <Item key={item.id} value={item.id}>{item.label}</Item>)] };
     }
     case "components/disclosure/accordion.tsx#Accordion": {
       const found = parts("AccordionItem", "AccordionTrigger", "AccordionContent"); if (!found) return undefined;

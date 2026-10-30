@@ -993,13 +993,13 @@ export const COMPONENT_GUIDANCE: Readonly<Record<string, ComponentGuidance>> = {
   "alternatives": "Use Select for compact choice; Checkbox for independent options.",
   "content": "Name the group and each choice; optional per-choice descriptions explain differences.",
   "anatomy": "One group label and repeated mutually exclusive labelled choices.",
-  "composition": "In a consumer-owned preference-selection block, render at least two RadioGroup.Radio choices.",
+  "composition": "In a consumer-owned preference-selection block, render at least two RadioGroupItem choices.",
   "accessibility": "Use the group’s label and roving keyboard selection; orientation aligns option layout and keyboard navigation."
 },
 {
   "exportName": "RadioGroup",
   "entrypoint": "components",
-  "notes": "Represented scalar options are a bounded selection; consult the real prop type for content, data, state, callbacks and compound parts. No Cartesian combination support is implied. Orientation sets the options to a row or column and forwards matching semantics to AriaRadioGroup. A single-option specimen cannot prove selection differences.",
+  "notes": "Represented scalar options are a bounded selection; consult the real prop type for content, data, state, callbacks and compound parts. No Cartesian combination support is implied. Orientation forwards ARIA and keyboard semantics to the native React Aria root. A single-option specimen cannot prove selection differences.",
   "options": [
     {
       "prop": "isDisabled",
@@ -1044,26 +1044,26 @@ export const COMPONENT_GUIDANCE: Readonly<Record<string, ComponentGuidance>> = {
     {
       "prop": "orientation",
       "label": "ARIA orientation",
-      "purpose": "Orientation aligns the options layout with keyboard semantics.",
+      "purpose": "Orientation selects ARIA and keyboard semantics.",
       "values": [
         {
           "value": "horizontal",
-          "purpose": "Horizontal option layout and keyboard semantics."
+          "purpose": "Horizontal keyboard semantics."
         },
         {
           "value": "vertical",
-          "purpose": "Vertical option layout and keyboard semantics."
+          "purpose": "Vertical keyboard semantics."
         }
       ],
-      "applicability": "Layout and keyboard semantics follow the supplied orientation.",
+      "applicability": "ARIA and keyboard semantics follow the supplied orientation.",
       "support": {
         "state": "implemented",
-        "reason": "The component uses orientation for layout and forwards it to the ARIA primitive."
+        "reason": "The component forwards orientation to its native ARIA primitive."
       }
     }
   ],
   "constraints": []
-}, "src/components/RadioGroup.tsx"),
+}, "src/components/preview-runtime/components/radio-group/radio-group.tsx"),
   "enter.file-trigger": entry(
 {
   "purpose": "Start device file selection from an authored trigger.",
@@ -3343,7 +3343,7 @@ export const COMPONENT_API_FACTS: Readonly<Record<string, ComponentApiFacts>> = 
   },
   "enter.radio-group": {
     "exportName": "RadioGroup",
-    "source": "src/components/RadioGroup.tsx",
+    "source": "src/components/RadioGroup.types.ts",
     "options": [
       {
         "prop": "isDisabled",
@@ -3356,8 +3356,8 @@ export const COMPONENT_API_FACTS: Readonly<Record<string, ComponentApiFacts>> = 
           "reason": "No local initializer; any inherited default belongs to the installed peer."
         },
         "forwarding": {
-          "source": "src/components/RadioGroup.tsx",
-          "evidence": "AriaRadioGroup"
+          "source": "src/components/preview-runtime/components/radio-group/radio-group.tsx",
+          "evidence": "<RadioGroupPrimitive"
         }
       },
       {
@@ -3371,8 +3371,8 @@ export const COMPONENT_API_FACTS: Readonly<Record<string, ComponentApiFacts>> = 
           "reason": "No local initializer; any inherited default belongs to the installed peer."
         },
         "forwarding": {
-          "source": "src/components/RadioGroup.tsx",
-          "evidence": "<AriaRadioGroup {...rest}"
+          "source": "src/components/preview-runtime/components/radio-group/radio-group.tsx",
+          "evidence": "<RadioGroupPrimitive"
         }
       },
       {
@@ -3386,8 +3386,8 @@ export const COMPONENT_API_FACTS: Readonly<Record<string, ComponentApiFacts>> = 
           "reason": "No local initializer; any inherited default belongs to the installed peer."
         },
         "forwarding": {
-          "source": "src/components/RadioGroup.tsx",
-          "evidence": "<AriaRadioGroup {...rest}"
+          "source": "src/components/preview-runtime/components/radio-group/radio-group.tsx",
+          "evidence": "<RadioGroupPrimitive"
         }
       }
     ],
@@ -3396,14 +3396,14 @@ export const COMPONENT_API_FACTS: Readonly<Record<string, ComponentApiFacts>> = 
       "reason": "Representative consumed dependencies only; this is not an exhaustive token or generated utility inventory.",
       "dependencies": [
         {
-          "property": "--ui-ring-focus",
+          "property": "--color-focus-ring",
           "kind": "transitive",
-          "source": "src/components/internal/ui-vars.ts",
-          "evidence": "var(--ui-ring-focus,",
+          "source": "styles/shadcn-native.css",
+          "evidence": "--ring: var(--color-focus-ring)",
           "via": [
             {
-              "source": "src/components/RadioGroup.tsx",
-              "evidence": "boxShadow: renderProps.isFocusVisible ? UI_RING_FOCUS : undefined"
+              "source": "src/components/preview-runtime/components/radio-group/radio-group.tsx",
+              "evidence": "cn-radio-group-item cn-radio-group-item-aria"
             }
           ]
         }

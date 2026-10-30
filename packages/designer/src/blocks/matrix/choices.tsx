@@ -1,10 +1,11 @@
 "use client";
 import type { ReactNode, Ref } from "react";
+import { Label } from "react-aria-components";
 
 import { dsPassThrough } from "../../catalog-core/provenance-attrs.js";
 import { componentLeaf } from "../../runtime/component-leaf.js";
 
-const RadioGroup = componentLeaf<typeof import("../../components/RadioGroup.js").RadioGroup>("components.radio-group");
+const RadioGroup = componentLeaf<typeof import("../../components/preview-runtime/components/radio-group/radio-group.js").RadioGroup>("components.radio-group");
 const SemanticContent = componentLeaf<typeof import("../../components/SemanticContent.js").SemanticContent>("components.semantic-content");
 
 export interface MatrixChoicesProps {
@@ -23,7 +24,8 @@ export function MatrixChoices({ columns, rows, onChange, onFocusCell, "aria-labe
     <tbody>{rows.map(row => <tr key={row.id} ref={row.ref} data-studio-row={row.id} data-scope="slot" data-emphasized={row.emphasized ? "" : undefined} tabIndex={-1}>
       <th scope="row" className="p-sm text-start align-top">{row.label}</th>
       <td colSpan={Math.max(1, columns.length)} className="p-0 align-top">
-        <RadioGroup label={<SemanticContent as="span" className="sr-only">{row.name}</SemanticContent>} orientation="horizontal" validationBehavior="aria" value={row.selected} onChange={source => onChange(row.id, source)}>
+        <RadioGroup orientation="horizontal" validationBehavior="aria" value={row.selected} onChange={source => onChange(row.id, source)}>
+          <Label><SemanticContent as="span" className="sr-only">{row.name}</SemanticContent></Label>
           <table aria-label={label} className="w-full table-fixed"><tbody><tr>{columns.map(column => <td key={column.id} data-studio-card={column.id} data-selected={row.selected === column.id ? "" : undefined} className="w-[var(--ui-layout-sidebar-w)] min-w-[var(--ui-layout-sidebar-w)] p-sm align-top" onFocus={() => onFocusCell?.(row.id, column.id)} onPointerDown={() => onFocusCell?.(row.id, column.id)}>{row.cells[column.id]}</td>)}</tr></tbody></table>
         </RadioGroup>
       </td>

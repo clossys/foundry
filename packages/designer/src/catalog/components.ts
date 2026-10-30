@@ -249,10 +249,10 @@ export const COMPONENT_ENTRIES: readonly ComponentEntry[] = [
     racBase: rac("Switch"),
     disposition: "keep",
   }),
-  onMain("RadioGroup", ["src/components/RadioGroup.tsx"], {
+  onMain("RadioGroup", ["src/components/preview-runtime/components/radio-group/radio-group.tsx"], {
     id: "enter.radio-group",
     label: "Radio group",
-    racBase: rac("RadioGroup", "Radio", "Label", "Text", "FieldError"),
+    racBase: rac("RadioGroup", "Radio"),
     disposition: "keep",
   }),
   building(issue(2351), {

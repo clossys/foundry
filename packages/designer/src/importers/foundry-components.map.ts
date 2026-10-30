@@ -62,7 +62,6 @@ export const FOUNDRY_COMPONENT_MAP: Readonly<Record<string, FoundryComponentMapp
   meter: component("Meter", { tone: "", emphasis: "" }, ["value", "scaleMax", "tone", "valueText", "label", "emphasis", "className"]),
   popover: component("Popover", { placement: "" }, ["trigger", "children", "placement", "offset", "anchorRef", "aria-label", "arrow", "className"], { notes: ["The arrow is opt-in (arrow=false by default) and decorative; it follows the resolved placement."] }),
   "progress-bar": component("ProgressBar", { "progress.determinate": ".value", "progress.indeterminate": ".isIndeterminate" }, ["label", "value", "isIndeterminate", "className"]),
-  "radio-group": component("RadioGroup", { ...orientations, "state.invalid": ".isInvalid" }, ["label", "children", "orientation", "isInvalid", "description", "errorMessage", "className"]),
   "resize-handle": component("ResizeHandle", orientations, ["orientation", "value", "min", "max", "resetValue", "label", "onChange", "className"]),
   "search-field": component("SearchField", { "part.clear": "", "part.submit": "", "state.empty": "", "state.filled": "" }, ["label", "value", "onChange", "onSubmit", "description", "errorMessage", "className"]),
   select: component("Select", { "selection.single": ".selectedKey", "state.invalid": ".isInvalid", ...sizes }, ["label", "options", "selectedKey", "onSelectionChange", "isInvalid", "size", "width", "description", "errorMessage", "className", "aria-label", "aria-labelledby"]),

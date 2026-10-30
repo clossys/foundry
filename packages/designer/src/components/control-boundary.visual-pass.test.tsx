@@ -1,13 +1,13 @@
 import { render, screen } from "@testing-library/react";
 import { CalendarDate } from "@internationalized/date";
-import { DatePicker, Group } from "react-aria-components";
+import { DatePicker, Group, Label } from "react-aria-components";
 import { describe, expect, it } from "vitest";
 import { buttonClassName } from "./button-classes.js";
 import { Checkbox } from "./Checkbox.js";
 import { ComboBox } from "./ComboBox.js";
 import { DateField } from "./DateField.js";
 import { NumberField } from "./NumberField.js";
-import { RadioGroup } from "./RadioGroup.js";
+import { RadioGroup, RadioGroupItem } from "./preview-runtime/components/radio-group/radio-group.js";
 import { SearchField } from "./SearchField.js";
 import { Select } from "./Select.js";
 import { Switch } from "./Switch.js";
@@ -71,15 +71,14 @@ describe("control boundary line (VF-8)", () => {
     expect(classes(mark())).not.toContain("border-line-control");
   });
 
-  it("Radio: unselected dot rests on the control line; selected keeps the action edge; invalid keeps danger", () => {
-    const { rerender } = render(<RadioGroup label="Speed" defaultValue="a"><RadioGroup.Radio value="a">A</RadioGroup.Radio><RadioGroup.Radio value="b">B</RadioGroup.Radio></RadioGroup>);
-    const dot = (name: string) => screen.getByRole("radio", { name }).closest("label")?.querySelector('span[aria-hidden="true"]');
-    expectControlLine(dot("B"));
-    expect(classes(dot("A"))).toContain("border-action");
-    expect(classes(dot("A"))).not.toContain("border-line-control");
-    rerender(<RadioGroup label="Speed" isInvalid><RadioGroup.Radio value="a">A</RadioGroup.Radio></RadioGroup>);
-    expect(classes(dot("A"))).toContain("border-status-danger");
-    expect(classes(dot("A"))).not.toContain("border-line-control");
+  it("Radio retains pinned native state hooks and caller-owned naming", () => {
+    const { rerender } = render(<RadioGroup defaultValue="a"><Label>Speed</Label><RadioGroupItem value="a">A</RadioGroupItem><RadioGroupItem value="b">B</RadioGroupItem></RadioGroup>);
+    const option = (name: string) => screen.getByRole("radio", { name }).closest("label");
+    expect(option("A")).toHaveClass("cn-radio-group-item", "cn-radio-group-item-aria");
+    expect(option("A")).toHaveAttribute("data-selected");
+    expect(option("B")).not.toHaveAttribute("data-selected");
+    rerender(<RadioGroup isInvalid><Label>Speed</Label><RadioGroupItem value="a">A</RadioGroupItem></RadioGroup>);
+    expect(screen.getByRole("radiogroup", { name: "Speed" })).toHaveAttribute("aria-invalid", "true");
   });
 
   it("Switch: off track rests on the control line; on keeps the action edge", () => {

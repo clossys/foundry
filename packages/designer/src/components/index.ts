@@ -142,8 +142,8 @@ export type { TooltipProps } from "./Tooltip.js";
 export { Banner } from "./Banner.js";
 export type { BannerProps, BannerVariant } from "./Banner.js";
 
-export { RadioGroup } from "./RadioGroup.js";
-export type { RadioGroupProps, RadioGroupRadioProps } from "./RadioGroup.js";
+export { RadioGroup, RadioGroupItem } from "./preview-runtime/components/radio-group/radio-group.js";
+export type { RadioGroupProps, RadioGroupItemProps } from "./RadioGroup.types.js";
 
 export { Popover } from "./Popover.js";
 export type { PopoverProps } from "./Popover.js";
