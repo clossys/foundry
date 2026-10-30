@@ -1,6 +1,13 @@
 /** The navigation tree owns route matching and hierarchical keyboard navigation. */
+import { NavigationTree as NavigationTreeRoot, NavigationTreeItem, NavigationTreeItemContent } from "react-aria-components";
+
+/** The registered tree exposes its native collection parts on the same peer root. */
+export const NavigationTree = Object.assign(NavigationTreeRoot, {
+  Item: NavigationTreeItem,
+  ItemContent: NavigationTreeItemContent,
+});
+
 export {
-  NavigationTree,
   NavigationTreeItem,
   NavigationTreeItemContent,
   NavigationTreeSection,

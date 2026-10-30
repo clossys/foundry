@@ -1,5 +1,6 @@
 import { expect, it } from "vitest";
-import { render } from "@testing-library/react";
+import { render, waitFor } from "@testing-library/react";
+import { Suspense } from "react";
 import * as components from "../components/index.js";
 import { defaultSourceModules } from "../components/preview-runtime/modules.js";
 import { loadCatalog, resolve } from "../catalog-core/index.js";
@@ -10,6 +11,8 @@ import type { DesignerSpecimenContext } from "./DesignerSpecimen.js";
 import { SPECIMEN_KIND_MAP, resolveSpecimenLeafBinding } from "./specimen-kind-map.js";
 import { studioSpecimenLeaves, enumerateRegisteredDesignerSpecimenCases } from "./specimen-registry.js";
 import { collectSpecimenDomEvidence, validateSpecimenCoverage, type SpecimenCoverageCell } from "./specimen-coverage.js";
+import { ConsumerComponentProvider } from "../runtime/component-leaf.client.js";
+import { componentDescriptorHash } from "../catalog-core/resolve-components.js";
 
 function nativeContext(): DesignerSpecimenContext {
   const catalog = loadCatalog();
@@ -30,14 +33,16 @@ it("declares a valid card span on every actual leaf with full content and third-
   const thirds = ["sections.specimen-swatch", "sections.specimen-asset-grid", "sections.specimen-icon-grid"];
   for (const leaf of studioSpecimenLeaves) expect(leaf.span, leaf.id).toBe(thirds.includes(leaf.id) ? "third" : "full");
 });
-it("measures the complete actual native spacing registry and its expanded leaf DOM as fixture coverage", () => {
+it("measures the complete actual native spacing registry and its expanded leaf DOM as fixture coverage", async () => {
   const context = nativeContext();
   const leaf = studioSpecimenLeaves.find(leaf => leaf.id === "sections.specimen-spacing-ladder")!;
   const expected = enumerateRegisteredDesignerSpecimenCases({ context, specimen: leaf.id, sourceLeaf: "tokens.spacing" })!;
   expect(expected.items.length).toBeGreaterThan(1);
   const cell: SpecimenCoverageCell = { agent: "designer", id: "tokens.spacing", kind: "spacing", layer: "tokens", ...expected };
   const props = { ...expected, context, expanded: true, need: ({ reason }: { reason: string }) => <components.SemanticContent as="p">NEED {reason}</components.SemanticContent>, labels: { showAllVariants: (count: number) => `Show all ${count}` } };
-  const view = render(leaf.render(props));
+  const selection = { profile: context.profile, selectionHash: context.profile.components.selectionHash, modules: context.modules, descriptors: Object.fromEntries(Object.entries(context.profile.components.components).map(([id, chosen]) => [id, componentDescriptorHash(chosen.descriptor)])) };
+  const view = render(<ConsumerComponentProvider value={selection}><Suspense>{leaf.render(props)}</Suspense></ConsumerComponentProvider>);
+  await waitFor(() => expect(view.container.querySelectorAll("[data-ds-specimen-item]")).toHaveLength(expected.items.length));
   const evidence = collectSpecimenDomEvidence({ cell, root: view.container, surface: "linkout" });
   const report = validateSpecimenCoverage({ cells: [cell], registry: studioSpecimenLeaves, registeredCases: () => expected, leafProps: () => props, evidence: [evidence] });
   const designer = report.agents.find(agent => agent.agent === "designer")!;

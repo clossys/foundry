@@ -2,7 +2,30 @@
 
 import { useEffect, useState, type ReactNode } from "react";
 import type { DesignerSpecimenContext, DesignerSpecimenNeed } from "./DesignerSpecimen.js";
+import type { SpecimenPublishedPage } from "./specimen-content-ports.js";
 import { componentSpecimenPreview, type ComponentSpecimenBinding, type ComponentSpecimenComponent } from "./component-specimens.js";
+import { componentLeaf, type GridListLeaf } from "../runtime/component-leaf.js";
+
+const Content = componentLeaf<typeof import("../components/SemanticContent.js").SemanticContent>("components.semantic-content");
+const List = componentLeaf<GridListLeaf>("components.grid-list");
+const ListItem = componentLeaf<typeof import("../components/GridList.js").GridList.Item>("components.grid-list", "Item");
+const GridListItem = componentLeaf<ComponentSpecimenComponent>("components.grid-list", "GridListItem");
+const Table = componentLeaf<typeof import("../components/Table.js").Table>("components.table");
+const NativeTableHeader = componentLeaf<typeof import("../components/Table.js").Table.Header>("components.table", "Header");
+const NativeTableColumn = componentLeaf<typeof import("../components/Table.js").Table.Column>("components.table", "Column");
+const NativeTableBody = componentLeaf<typeof import("../components/Table.js").Table.Body>("components.table", "Body");
+const NativeTableRow = componentLeaf<typeof import("../components/Table.js").Table.Row>("components.table", "Row");
+const NativeTableCell = componentLeaf<typeof import("../components/Table.js").Table.Cell>("components.table", "Cell");
+const TableHeader = componentLeaf<ComponentSpecimenComponent>("components.table", "TableHeader");
+const TableHead = componentLeaf<ComponentSpecimenComponent>("components.table", "TableHead");
+const TableBody = componentLeaf<ComponentSpecimenComponent>("components.table", "TableBody");
+const TableRow = componentLeaf<ComponentSpecimenComponent>("components.table", "TableRow");
+const TableCell = componentLeaf<ComponentSpecimenComponent>("components.table", "TableCell");
+const FoundryDisclosure = componentLeaf<typeof import("../components/Disclosure.js").Disclosure>("components.disclosure");
+const Accordion = componentLeaf<typeof import("../components/preview-runtime/components/disclosure/accordion.js").Accordion>("components.disclosure");
+const AccordionItem = componentLeaf<typeof import("../components/preview-runtime/components/disclosure/accordion.js").AccordionItem>("components.disclosure", "AccordionItem");
+const AccordionTrigger = componentLeaf<typeof import("../components/preview-runtime/components/disclosure/accordion.js").AccordionTrigger>("components.disclosure", "AccordionTrigger");
+const AccordionContent = componentLeaf<typeof import("../components/preview-runtime/components/disclosure/accordion.js").AccordionContent>("components.disclosure", "AccordionContent");
 
 /** Layout is an intrinsic property of a registered specimen leaf. */
 export type SpecimenLayout = "single" | "ladder" | "grid" | "matrix";
@@ -18,12 +41,62 @@ export interface SpecimenItem<Value = unknown> {
   readonly value: Value;
   readonly coordinates?: Readonly<Record<string, string>>;
 }
+export interface SpecimenSurfaceRenderRequest {
+  readonly leaf: string;
+  readonly width: number;
+  readonly state: string;
+}
+export interface SpecimenComponentStateRequest {
+  readonly Content: typeof import("../components/SemanticContent.js").SemanticContent;
+  readonly context: DesignerSpecimenContext;
+  readonly leaf: string;
+  readonly members: readonly string[];
+  readonly state: string;
+  readonly props: Readonly<Record<string, unknown>>;
+  readonly interactive: boolean;
+  readonly unavailable: (reason: string) => ReactNode;
+}
+export interface SpecimenContentRenderRequest {
+  readonly leaf: "sections.section-header" | "sections.empty-state";
+  readonly title: string;
+  readonly level?: 3;
+  readonly role?: "alert";
+}
+export type SpecimenBreakpointReference = "var(--breakpoint-mobile)" | "var(--breakpoint-desktop)";
+export interface SpecimenNativeViewportRequest {
+  readonly Content: typeof import("../components/SemanticContent.js").SemanticContent;
+  readonly leaf: string;
+  readonly width: number | SpecimenBreakpointReference;
+  readonly expanded?: boolean;
+  readonly need: (need: DesignerSpecimenNeed) => ReactNode;
+  /** Applies the measured width to the section's declared renderSurface part. */
+  readonly children: (width: number) => ReactNode;
+}
+export interface SpecimenPageViewportRequest {
+  readonly page: SpecimenPublishedPage;
+  readonly viewport: { readonly id: string; readonly label: string; readonly width: number; readonly height: number };
+  readonly interactive: false;
+  readonly fullSize: boolean;
+}
+export interface SpecimenNativeViewportParts {
+  readonly renderSurface?: (input: SpecimenSurfaceRenderRequest) => ReactNode;
+  readonly renderViewport?: (input: SpecimenNativeViewportRequest) => ReactNode;
+}
+/** Hosts bind these named parts to the corresponding registered specimen section. */
+export interface SpecimenRenderParts {
+  readonly "sections.specimen-variant-matrix"?: { readonly renderComponentState?: (input: SpecimenComponentStateRequest) => ReactNode };
+  readonly "sections.specimen-section-viewports"?: SpecimenNativeViewportParts;
+  readonly "sections.specimen-frame-viewports"?: SpecimenNativeViewportParts;
+  readonly "sections.specimen-copy-in-context"?: { readonly renderContent?: (input: SpecimenContentRenderRequest) => ReactNode };
+  readonly "sections.specimen-page-viewports"?: { readonly renderViewport?: (input: SpecimenPageViewportRequest) => ReactNode };
+}
 export interface SpecimenLabels { readonly showAllVariants: (count: number) => ReactNode }
 export interface SpecimenLeafProps<Value = unknown> {
   readonly items: readonly SpecimenItem<Value>[];
   readonly axes?: readonly SpecimenAxis[];
   readonly context: DesignerSpecimenContext;
   readonly need: (need: DesignerSpecimenNeed) => ReactNode;
+  readonly renderParts?: SpecimenRenderParts;
   /** Link-out hosts pass true: all items render expanded at full size. */
   readonly expanded?: boolean;
   readonly labels: SpecimenLabels;
@@ -110,7 +183,6 @@ export function SpecimenLayoutSection(props: LayoutProps): ReactNode {
   const mobile = useMobile(context);
   const semantic = specimenComponent(context, "components.semantic-content");
   if ("reason" in semantic) return need(semantic);
-  const Content = semantic.Component;
   const fail = (reason: string) => <Content as="div" data-ds-leaf={id} data-ds-specimen-need="true">{need({ leaf: id, reason })}</Content>;
   if (!items.length) return fail("A specimen requires at least one cell-authored item.");
   if (new Set(items.map(item => item.id)).size !== items.length) return fail("Specimen item ids must be unique.");
@@ -121,10 +193,12 @@ export function SpecimenLayoutSection(props: LayoutProps): ReactNode {
   if (layout === "single") return fail("A single-layout specimen cannot accept multiple items.");
   const list = specimenComponent(context, "components.grid-list");
   if ("reason" in list) return fail(list.reason);
-  const List = list.Component, Item = specimenPart(list, "Item", "GridListItem");
-  if (!Item) return fail("The selected grid-list has no native item part.");
-  const listOf = (entries: readonly SpecimenItem[], grid = false) => <List data-ds-leaf="components.grid-list" aria-label={label} layout={grid ? "grid" : "stack"} selectionMode="none">
-    {entries.map(item => <Item key={item.id} id={item.id} textValue={item.label} className="min-w-0 flex-col items-start"><Content as="h4">{item.label}</Content>{itemNode(item)}</Item>)}
+  if (!specimenPart(list, "Item", "GridListItem")) return fail("The selected grid-list has no native item part.");
+  const listItem = (item: Pick<SpecimenItem, "id" | "label">, children: ReactNode) => list.source === "shadcn@aria"
+    ? <GridListItem key={item.id} id={item.id} textValue={item.label} className="min-w-0 flex-col items-start">{children}</GridListItem>
+    : <ListItem key={item.id} id={item.id} textValue={item.label} className="min-w-0 flex-col items-start">{children}</ListItem>;
+  const listOf = (entries: readonly SpecimenItem[], grid = false) => <List data-ds-leaf="components.grid-list" aria-label={label} layout={grid ? "grid" : "list"} selectionMode="none">
+    {entries.map(item => listItem(item, <><Content as="h4">{item.label}</Content>{itemNode(item)}</>))}
   </List>;
   const axes = props.axes ?? [];
   let first: readonly SpecimenItem[] = items.slice(0, 12), rest: readonly SpecimenItem[] = items.slice(12);
@@ -139,9 +213,7 @@ export function SpecimenLayoutSection(props: LayoutProps): ReactNode {
     const initial = new Set(first); rest = items.filter(item => !initial.has(item));
     const table = specimenComponent(context, "components.table");
     if ("reason" in table) return fail(table.reason);
-    const Table = table.Component;
-    const Header = specimenPart(table, "Header", "TableHeader"), Column = specimenPart(table, "Column", "TableHead"), Body = specimenPart(table, "Body", "TableBody"), Row = specimenPart(table, "Row", "TableRow"), Cell = specimenPart(table, "Cell", "TableCell");
-    if (!Header || !Column || !Body || !Row || !Cell) return fail("The selected table has no complete native header, row and cell API.");
+    if (![["Header", "TableHeader"], ["Column", "TableHead"], ["Body", "TableBody"], ["Row", "TableRow"], ["Cell", "TableCell"]].every(([foundry, shadcn]) => specimenPart(table, foundry!, shadcn!))) return fail("The selected table has no complete native header, row and cell API.");
     draw = entries => {
       const groups = [...new Set(entries.map(groupKey))];
       return groups.map(group => {
@@ -149,14 +221,14 @@ export function SpecimenLayoutSection(props: LayoutProps): ReactNode {
         const rows = row.values.filter(value => grouped.some(item => item.coordinates![row.id] === value.id));
         const groupLabel = stack.map(axis => `${axis.label}: ${axis.values.find(value => value.id === grouped[0]!.coordinates![axis.id])!.label}`).join(" · ");
         const lookup = (rowId: string, colId: string) => grouped.find(item => item.coordinates![row.id] === rowId && item.coordinates![column.id] === colId);
-        const body = mobile ? <List data-ds-leaf="components.grid-list" aria-label={groupLabel || label} layout="stack" selectionMode="none">{rows.map(value => <Item id={value.id} key={value.id} textValue={value.label} className="min-w-0 flex-col items-start">
+        const body = mobile ? <List data-ds-leaf="components.grid-list" aria-label={groupLabel || label} layout="list" selectionMode="none">{rows.map(value => listItem(value, <>
           <Content as="h4">{row.label}: {value.label}</Content>{column.values.map(col => { const item = lookup(value.id, col.id); return item ? <Content as="section" key={col.id} className="flex min-w-0 flex-col gap-sm"><Content as="h5">{column.label}: {col.label}</Content>{itemNode(item)}</Content> : null; })}
-        </Item>)}</List> : table.source === "shadcn@aria" ? <Table data-ds-leaf="components.table" aria-label={groupLabel || label}>
-          <Header><Row><Column scope="col">{row.label}</Column>{column.values.map(col => <Column key={col.id} scope="col">{col.label}</Column>)}</Row></Header>
-          <Body>{rows.map(value => <Row key={value.id}><Column scope="row">{value.label}</Column>{column.values.map(col => { const item = lookup(value.id, col.id); return <Cell key={col.id}>{item ? itemNode(item) : null}</Cell>; })}</Row>)}</Body>
+        </>))}</List> : table.source === "shadcn@aria" ? <Table data-ds-leaf="components.table" aria-label={groupLabel || label}>
+          <TableHeader><TableRow><TableHead scope="col">{row.label}</TableHead>{column.values.map(col => <TableHead key={col.id} scope="col">{col.label}</TableHead>)}</TableRow></TableHeader>
+          <TableBody>{rows.map(value => <TableRow key={value.id}><TableHead scope="row">{value.label}</TableHead>{column.values.map(col => { const item = lookup(value.id, col.id); return <TableCell key={col.id}>{item ? itemNode(item) : null}</TableCell>; })}</TableRow>)}</TableBody>
         </Table> : <Table data-ds-leaf="components.table" aria-label={groupLabel || label}>
-          <Header><Column isRowHeader>{row.label}</Column>{column.values.map(col => <Column key={col.id}>{col.label}</Column>)}</Header>
-          <Body>{rows.map(value => <Row id={value.id} key={value.id}><Cell textValue={value.label}>{value.label}</Cell>{column.values.map(col => { const item = lookup(value.id, col.id); return <Cell key={col.id} textValue={item?.label ?? col.label}>{item ? itemNode(item) : null}</Cell>; })}</Row>)}</Body>
+          <NativeTableHeader><NativeTableColumn isRowHeader>{row.label}</NativeTableColumn>{column.values.map(col => <NativeTableColumn key={col.id}>{col.label}</NativeTableColumn>)}</NativeTableHeader>
+          <NativeTableBody>{rows.map(value => <NativeTableRow id={value.id} key={value.id}><NativeTableCell textValue={value.label}>{value.label}</NativeTableCell>{column.values.map(col => { const item = lookup(value.id, col.id); return <NativeTableCell key={col.id} textValue={item?.label ?? col.label}>{item ? itemNode(item) : null}</NativeTableCell>; })}</NativeTableRow>)}</NativeTableBody>
         </Table>;
         return <Content as="section" key={group} data-specimen-matrix-group={group} data-specimen-matrix-mobile={mobile ? "true" : "false"} className="min-w-0 max-w-full">{groupLabel ? <Content as="h3">{groupLabel}</Content> : null}{body}</Content>;
       });
@@ -165,11 +237,10 @@ export function SpecimenLayoutSection(props: LayoutProps): ReactNode {
   if (expanded || !rest.length) return region(draw(items));
   const disclosure = specimenComponent(context, "components.disclosure");
   if ("reason" in disclosure) return fail(disclosure.reason);
-  const Disclosure = disclosure.Component;
   if (disclosure.source === "shadcn@aria") {
     const Item = disclosure.exports.AccordionItem, Trigger = disclosure.exports.AccordionTrigger, Panel = disclosure.exports.AccordionContent;
     if (!component(Item) || !component(Trigger) || !component(Panel)) return fail("The selected accordion has no native item, trigger and content API.");
-    return region(<>{draw(first)}<Disclosure data-ds-leaf="components.disclosure"><Item id={`${id}-all`}><Trigger>{labels.showAllVariants(items.length)}</Trigger><Panel>{draw(rest)}</Panel></Item></Disclosure></>);
+    return region(<>{draw(first)}<Accordion data-ds-leaf="components.disclosure"><AccordionItem id={`${id}-all`}><AccordionTrigger>{labels.showAllVariants(items.length)}</AccordionTrigger><AccordionContent>{draw(rest)}</AccordionContent></AccordionItem></Accordion></>);
   }
-  return region(<>{draw(first)}<Disclosure data-ds-leaf="components.disclosure" title={labels.showAllVariants(items.length)}>{draw(rest)}</Disclosure></>);
+  return region(<>{draw(first)}<FoundryDisclosure data-ds-leaf="components.disclosure" title={labels.showAllVariants(items.length)}>{draw(rest)}</FoundryDisclosure></>);
 }
