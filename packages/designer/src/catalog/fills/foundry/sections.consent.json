@@ -28,20 +28,23 @@
     "consent": {
       "composes": [
         "components.button",
-        "components.icon"
+        "components.icon",
+        "components.semantic-content"
       ],
       "configs": {},
       "consumption": {
         "scanStatus": "lower-bound",
         "scannedComposes": [
           "components.button",
-          "components.icon"
+          "components.icon",
+          "components.semantic-content"
         ],
         "scannedReads": {
           "assets": [],
           "components": [
             "components.button",
-            "components.icon"
+            "components.icon",
+            "components.semantic-content"
           ],
           "tokens": [
             "tokens.body-size",
@@ -57,7 +60,7 @@
         "sourceFiles": [
           {
             "path": "packages/designer/src/blocks/ConsentBanner.tsx",
-            "sha256": "2bf8e7b57aaec2b475cc892b990be2f7ed7b460b3c2c438128530543bd9c72b3"
+            "sha256": "62cadc6eb7498273082a1d73b74ba58349d777a4e305f5b525ede77c67c79232"
           },
           {
             "path": "packages/designer/src/catalog-core/provenance-attrs.ts",

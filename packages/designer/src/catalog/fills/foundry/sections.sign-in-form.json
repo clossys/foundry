@@ -54,7 +54,7 @@
         "sourceFiles": [
           {
             "path": "packages/designer/src/blocks/Form.tsx",
-            "sha256": "60c84b8c52867a9f9d27db9994898d594dff790ceae7b21fe90e87d675797983"
+            "sha256": "1a1017d0bed99a6d22dce148602985fb57923c008937d622cac697451f79b87e"
           },
           {
             "path": "packages/designer/src/catalog-core/provenance-attrs.ts",

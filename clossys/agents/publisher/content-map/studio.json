@@ -1,0 +1,109 @@
+{
+  "version": 1,
+  "publicationId": "studio",
+  "format": "web.page.responsive",
+  "entries": [
+    {
+      "id": "home",
+      "order": 0,
+      "title": "Home",
+      "kind": "page",
+      "path": "/",
+      "source": {
+        "planItemId": "studio.home"
+      },
+      "pin": {
+        "nav": true
+      },
+      "icon": "assets.icon-home"
+    },
+    {
+      "path": "/agents",
+      "kind": "group",
+      "source": {
+        "planItemId": "studio.agents"
+      },
+      "pin": {
+        "nav": true
+      },
+      "icon": "assets.icon-team",
+      "id": "agents",
+      "title": "Agents",
+      "order": 1
+    },
+    {
+      "id": "director",
+      "parentId": "agents",
+      "order": 0,
+      "title": "Director",
+      "kind": "page",
+      "path": "/agents/director",
+      "source": {
+        "planItemId": "studio.director"
+      },
+      "pin": {
+        "nav": true,
+        "group": "agents"
+      }
+    },
+    {
+      "id": "designer",
+      "parentId": "agents",
+      "order": 1,
+      "title": "Designer",
+      "kind": "page",
+      "path": "/agents/designer",
+      "source": {
+        "planItemId": "studio.designer"
+      },
+      "pin": {
+        "nav": true,
+        "group": "agents"
+      }
+    },
+    {
+      "id": "writer",
+      "parentId": "agents",
+      "order": 2,
+      "title": "Writer",
+      "kind": "page",
+      "path": "/agents/writer",
+      "source": {
+        "planItemId": "studio.writer"
+      },
+      "pin": {
+        "nav": true,
+        "group": "agents"
+      }
+    },
+    {
+      "id": "publisher",
+      "parentId": "agents",
+      "order": 3,
+      "title": "Publisher",
+      "kind": "page",
+      "path": "/agents/publisher",
+      "source": {
+        "planItemId": "studio.publisher"
+      },
+      "pin": {
+        "nav": true,
+        "group": "agents"
+      }
+    },
+    {
+      "id": "apps",
+      "order": 1,
+      "title": "Apps",
+      "kind": "page",
+      "path": "/apps",
+      "source": {
+        "planItemId": "studio.apps"
+      },
+      "pin": {
+        "nav": true
+      },
+      "icon": "assets.icon-grid-view"
+    }
+  ]
+}

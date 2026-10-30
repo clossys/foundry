@@ -1,3 +1,4 @@
+import { SemanticContent } from "../components/SemanticContent.js";
 import { useId, type HTMLAttributes, type ReactNode } from "react";
 import { cx } from "../components/internal/cx.js";
 import { SECTION_GROUND_CLASSES, type SectionGround } from "./section-ground.js";
@@ -33,7 +34,7 @@ export interface CallToActionProps extends Omit<HTMLAttributes<HTMLElement>, "ti
 export function CallToAction({ title, eyebrow, description, primaryAction, secondaryAction, ground = "sunken", headingLevel = 2, className, ...rest }: CallToActionProps) {
   const titleId = useId();
   return (
-    <section
+    <SemanticContent as="section"
       {...SECTION_STAMP} {...rest}
       aria-labelledby={titleId}
       data-ground={ground}
@@ -45,13 +46,13 @@ export function CallToAction({ title, eyebrow, description, primaryAction, secon
         ground={ground}
         level={headingLevel}
         eyebrow={eyebrow}
-        title={<span id={titleId}>{title}</span>}
+        title={<SemanticContent as="span" id={titleId}>{title}</SemanticContent>}
         description={description}
       />
-      <div className="flex flex-wrap items-center justify-center gap-sm">
+      <SemanticContent as="div" className="flex flex-wrap items-center justify-center gap-sm">
         {primaryAction}
         {secondaryAction}
-      </div>
-    </section>
+      </SemanticContent>
+    </SemanticContent>
   );
 }

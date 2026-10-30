@@ -1,20 +1,26 @@
 "use client";
 
 import { useEffect, useId, useLayoutEffect, useRef, useState, type ReactNode } from "react";
-import { NativeAction, SemanticContent } from "@clossys/designer/components/server";
+import { NativeAction, SemanticContent, Icon } from "@clossys/designer/components/server";
+import { DialogContext, ModalContext, useLocale } from "react-aria-components";
+import { Sheet, SheetClose, SheetTitle } from "../../components/sheet/index.js";
+import { X } from "../../icons/index.js";
 import { FrameRegion } from "./FrameRegion.js";
 import { TOKENS } from "../../tokens/tokens.js";
 import { buttonLinkClassName } from "../../components/button-classes.js";
 import { cx } from "../../components/internal/cx.js";
 import { UI_LAYOUT_TAP_TARGET } from "../../shell/internal/shell-vars.js";
+import { SECTION_REVEAL_ATTRIBUTE, SectionRevealStyle } from "../../styles/section-reveal.js";
 
 export interface NavDisclosureProps {
-  /** Navigation links, rendered once in the responsive panel. */
+  /** Navigation links, inline on desktop and inside the mobile Sheet. */
   children: ReactNode;
-  /** The navigation landmark's name. @default "Primary" */
-  "aria-label"?: string;
-  /** The toggle's accessible name; also visible with the label trigger. @default "Menu" */
-  triggerLabel?: string;
+  /** The Writer-resolved navigation landmark name. */
+  "aria-label": string;
+  /** Writer-resolved toggle name; also visible with the label trigger. */
+  triggerLabel: string;
+  /** Writer-resolved close-control name; omitted reuses the toggle name. */
+  closeLabel?: string;
   /** Toggle content; the icon keeps triggerLabel as its accessible name. @default "label" */
   trigger?: "label" | "icon";
   /** Trigger ink; omitted follows an inverse overlay header. @default "auto" */
@@ -36,43 +42,29 @@ const HYSTERESIS = parseFloat(TOKENS["--spacing-sm"]!.value);
 // Panel motion must land before paint, but a server render has no layout.
 const useBeforePaint = typeof window === "undefined" ? useEffect : useLayoutEffect;
 
-/** A CSS time such as `240ms` or `.24s`, in milliseconds; 0 when absent or unparseable. */
-function milliseconds(time: string): number {
-  const value = parseFloat(time);
-  if (!Number.isFinite(value) || value <= 0) return 0;
-  return time.trim().endsWith("ms") ? value : value * 1000;
-}
-
 /**
- * Frame-local composition of the existing shell NavDisclosure behavior with
- * Designer native/semantic primitives; measurement, focus and motion retain
- * that established contract.
- *
- * SiteHeader navigation that becomes a sheet below tablet and an inline row
- * above it. CSS keeps the same links inline when scripting is unavailable.
- * Unlike NavShell, this is a disclosure, without a modal drawer or focus trap.
+ * Intrinsically measured header navigation with the registered Sheet on mobile.
+ * Sheet owns focus containment, dismissal, restoration and background exclusion.
+ * The inline tree remains available to server rendering and no-script layouts.
  */
-export function FrameNavDisclosure({ children, "aria-label": ariaLabel = "Primary", triggerLabel = "Menu", trigger = "label", tone, className }: NavDisclosureProps) {
+export function FrameNavDisclosure({ children, "aria-label": ariaLabel, triggerLabel, closeLabel, trigger = "label", tone, className }: NavDisclosureProps) {
   // Select a complete look before cx: tailwind-merge is an optional peer.
   const inverse = tone === "inverse";
   const look = inverse
     ? TOGGLE_CLASSES.split(" ").filter(token => !["text-ink-primary", "hover:bg-surface-sunken", "focus-visible:outline-accent"].includes(token)).join(" ")
     : TOGGLE_CLASSES;
+  const { locale, direction } = useLocale();
   const panelId = useId();
+  const sheetId = `${panelId}-sheet`;
   const toggle = useRef<HTMLButtonElement>(null);
   const [expanded, setExpanded] = useState(false);
   const nav = useRef<HTMLElement>(null);
   const panel = useRef<HTMLDivElement>(null);
   const [mobile, setMobile] = useState(true);
+  const desktopFocus = useRef<HTMLElement | null>(null);
   const open = useRef(false);
   open.current = expanded;
-  const close = (restore = true) => {
-    if (!open.current) return;
-    if (restore) toggle.current?.focus();
-    // Inert at once, while a closing panel may still be painted.
-    if (nav.current?.closest("header")) panel.current?.setAttribute("inert", "");
-    setExpanded(false);
-  };
+  const close = () => setExpanded(false);
   useEffect(() => {
     const media = window.matchMedia?.(`(min-width: ${TOKENS["--breakpoint-tablet"]!.value})`);
     const header = nav.current?.closest<HTMLElement>("[data-header-root]");
@@ -118,10 +110,10 @@ export function FrameNavDisclosure({ children, "aria-label": ariaLabel = "Primar
       const activeActions = active?.closest(".site-header-actions");
       if (!narrow) {
         panel.current?.removeAttribute("inert");
-        if (active === toggle.current || (activeActions && getComputedStyle(activeActions).display === "none")) {
+        if (open.current || active === toggle.current || (activeActions && getComputedStyle(activeActions).display === "none")) {
           const anchors = [...(nav.current?.querySelectorAll<HTMLAnchorElement>("a[href]") ?? [])];
           const target = anchors.find(link => active instanceof HTMLAnchorElement && link.href === active.href) ?? anchors[0] ?? header?.querySelector<HTMLElement>(".site-header-brand a");
-          target?.focus();
+          desktopFocus.current = target ?? null;
         }
         setExpanded(false);
       } else if (!wasMobile && active instanceof Node && panel.current?.contains(active)) {
@@ -170,72 +162,26 @@ export function FrameNavDisclosure({ children, "aria-label": ariaLabel = "Primar
       if (priorClearance) frame?.style.setProperty("--site-header-clearance", priorClearance); else frame?.style.removeProperty("--site-header-clearance");
     };
   }, []);
-  // Imperative boolean attributes support React 18 as well as React 19, with
-  // no inert server markup to break the no-scripting fallback.
-  const motion = useRef<Animation | null>(null);
-  const shown = useRef(false);
+  // Keep the hidden desktop duplicate outside the mobile keyboard order.
+  // Imperative inert supports React 18 and preserves the no-script SSR tree.
   useBeforePaint(() => {
-    const element = panel.current;
-    if (!element) return;
-    element.toggleAttribute("inert", mobile && !expanded && Boolean(nav.current?.closest("header")));
-    const running = motion.current;
-    const changed = shown.current !== expanded;
-    shown.current = expanded;
-    if (!changed && (mobile || !running)) return;
-    motion.current = null;
-    // The sheet slides from just under the header and fades, on the panel's
-    // motion tokens. data-present keeps a closing sheet painted (but inert)
-    // until it has left; reduced motion, a zero duration, an inline desktop
-    // row or an engine without element.animate switch at once.
-    const style = getComputedStyle(element);
-    const duration = milliseconds(style.getPropertyValue("--site-header-panel-duration"));
-    const shift = style.getPropertyValue("--site-header-panel-shift").trim();
-    const easing = style.getPropertyValue("--site-header-panel-ease").trim();
-    const still = window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
-    if (!changed || !mobile || still || !duration || !shift || typeof element.animate !== "function") {
-      running?.cancel();
-      element.removeAttribute("data-present");
-      return;
-    }
-    const away = { opacity: "0", transform: `translateY(${shift})` };
-    const here = { opacity: "1", transform: "none" };
-    // Reverse from where an interrupted animation had reached.
-    const from = running ? { opacity: style.opacity, transform: style.transform } : expanded ? away : here;
-    running?.cancel();
-    element.setAttribute("data-present", "");
-    const animation = element.animate([from, expanded ? here : away], { duration, easing: easing || undefined, fill: "both" });
-    motion.current = animation;
-    const settle = () => {
-      if (motion.current !== animation) return;
-      motion.current = null;
-      element.removeAttribute("data-present");
-      animation.cancel();
-    };
-    animation.finished.then(settle, settle);
+    panel.current?.toggleAttribute("inert", mobile);
+  }, [mobile]);
+  useEffect(() => {
+    const target = desktopFocus.current;
+    if (mobile || expanded || !target) return;
+    desktopFocus.current = null;
+    // Run after Sheet's own restoration when its trigger becomes hidden.
+    const pending = window.requestAnimationFrame(() => target.focus());
+    return () => window.cancelAnimationFrame(pending);
   }, [mobile, expanded]);
   useEffect(() => {
-    const reduced = window.matchMedia?.("(prefers-reduced-motion: reduce)");
-    const stop = () => {
-      const animation = motion.current;
-      motion.current = null;
-      animation?.cancel();
-      panel.current?.removeAttribute("data-present");
+    window.addEventListener("popstate", close);
+    window.addEventListener("hashchange", close);
+    return () => {
+      window.removeEventListener("popstate", close);
+      window.removeEventListener("hashchange", close);
     };
-    const change = () => { if (reduced?.matches) stop(); };
-    reduced?.addEventListener?.("change", change);
-    return () => { reduced?.removeEventListener?.("change", change); stop(); };
-  }, []);
-  useEffect(() => {
-    const reset = () => close();
-    const leave = (event: FocusEvent) => {
-      // A host notice may have captured this menu item as its return target.
-      // Keep that target live until the notice has returned focus.
-      if (document.querySelector("[data-consent-banner]")) return;
-      if (event.target instanceof Node && !(nav.current?.closest("header") ?? nav.current)?.contains(event.target)) close(false);
-    };
-    window.addEventListener("popstate", reset); window.addEventListener("hashchange", reset);
-    document.addEventListener("focusin", leave);
-    return () => { window.removeEventListener("popstate", reset); window.removeEventListener("hashchange", reset); document.removeEventListener("focusin", leave); };
   }, []);
 
 
@@ -244,11 +190,6 @@ export function FrameNavDisclosure({ children, "aria-label": ariaLabel = "Primar
       ref={nav}
       aria-label={ariaLabel}
       className={className}
-      onKeyDown={event => {
-        if (event.key !== "Escape" || !expanded) return;
-        event.preventDefault();
-        close();
-      }}
     >
       {trigger === "icon" ? (
         <NativeAction
@@ -256,7 +197,8 @@ export function FrameNavDisclosure({ children, "aria-label": ariaLabel = "Primar
           type="button"
           aria-label={triggerLabel}
           aria-expanded={expanded}
-          aria-controls={panelId}
+          aria-controls={sheetId}
+          aria-haspopup="dialog"
           data-tone={tone}
           className={cx(look, "nav-disclosure-toggle", inverse ? "text-ink-on-inverse hover:text-ink-on-inverse aria-expanded:text-ink-on-inverse focus-visible:text-ink-on-inverse hover:bg-control-tonal-inverse-hover focus-visible:outline-ink-on-inverse" : undefined)}
           style={{ minHeight: UI_LAYOUT_TAP_TARGET, minWidth: UI_LAYOUT_TAP_TARGET }}
@@ -269,7 +211,8 @@ export function FrameNavDisclosure({ children, "aria-label": ariaLabel = "Primar
           ref={toggle}
           type="button"
           aria-expanded={expanded}
-          aria-controls={panelId}
+          aria-controls={sheetId}
+          aria-haspopup="dialog"
           data-tone={tone}
           className={cx(look, "nav-disclosure-toggle", inverse ? "text-ink-on-inverse hover:text-ink-on-inverse aria-expanded:text-ink-on-inverse focus-visible:text-ink-on-inverse hover:bg-control-tonal-inverse-hover focus-visible:outline-ink-on-inverse" : undefined)}
           style={{ minHeight: UI_LAYOUT_TAP_TARGET, minWidth: UI_LAYOUT_TAP_TARGET }}
@@ -281,16 +224,37 @@ export function FrameNavDisclosure({ children, "aria-label": ariaLabel = "Primar
       <SemanticContent as="div"
         ref={panel}
         id={panelId}
-        className="nav-disclosure-panel"
-        data-expanded={expanded ? "" : undefined}
+        className="nav-disclosure-panel site-header-nav-inline"
         onClickCapture={event => {
-          // Following a link moves on from the menu; focus stays with the
-          // destination rather than returning to the toggle.
-          if (event.target instanceof Element && event.target.closest("a[href]")) close(false);
+          if (event.target instanceof Element && event.target.closest("a[href]")) close();
         }}
       >
         {children}
       </SemanticContent>
+      <ModalContext.Provider value={{ dir: direction, lang: locale }}>
+      <DialogContext.Provider value={{ id: sheetId }}>
+      <Sheet
+        isOpen={mobile && expanded}
+        onOpenChange={setExpanded}
+        showCloseButton={false}
+        side="right"
+        className="site-header-nav-sheet motion-reduce:transition-none motion-reduce:animate-none motion-reduce:duration-0"
+      >
+        <SemanticContent as="div" {...{ [SECTION_REVEAL_ATTRIBUTE]: "" }} className="site-header-nav-sheet-content">
+          <SectionRevealStyle />
+          <SheetTitle className="sr-only">{ariaLabel}</SheetTitle>
+          <SheetClose variant="ghost" size="icon" aria-label={closeLabel ?? triggerLabel} className="site-header-nav-sheet-close">
+            <Icon glyph={X} decorative />
+          </SheetClose>
+          <FrameRegion aria-label={ariaLabel} onClickCapture={event => {
+            if (event.target instanceof Element && event.target.closest("a[href]")) close();
+          }}>
+            {children}
+          </FrameRegion>
+        </SemanticContent>
+      </Sheet>
+      </DialogContext.Provider>
+      </ModalContext.Provider>
     </FrameRegion>
   );
 }

@@ -19,13 +19,14 @@ function ServerNavDisclosure({ label, triggerLabel, children }: { readonly label
         type="button"
         aria-label={triggerLabel}
         aria-expanded={false}
-        aria-controls={panelId}
+        aria-controls={`${panelId}-sheet`}
+        aria-haspopup="dialog"
         className={mergeUiClasses(TOGGLE_CLASSES, "nav-disclosure-toggle")}
         style={{ minHeight: TAP_TARGET, minWidth: TAP_TARGET }}
       >
         <><SemanticContent as="span" className="nav-disclosure-icon" aria-hidden="true"><SemanticContent as="span" /><SemanticContent as="span" /></SemanticContent></>
       </NativeAction>
-      <SemanticContent as="div" id={panelId} className="nav-disclosure-panel">
+      <SemanticContent as="div" id={panelId} className="nav-disclosure-panel site-header-nav-inline">
         {children}
       </SemanticContent>
     </FrameRegion>

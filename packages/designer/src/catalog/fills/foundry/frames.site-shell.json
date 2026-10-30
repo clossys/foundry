@@ -41,11 +41,11 @@
         "privateInternalReads": [
           {
             "file": "packages/designer/src/frames/site-frame/internal/resolveShell.ts",
-            "line": 3,
+            "line": 4,
             "rawAssets": [
               "assets.js"
             ],
-            "sourceSha256": "963ffbf87dca638e6f39af33c8a0f8aeeb74319aa1083104c87561cdf27c231e",
+            "sourceSha256": "3ede6936935916b747b8cf8e1271e11a1f36caa94360a57f98064c924bdcdd29",
             "specifier": "../landing/internal/assets.js",
             "target": "packages/designer/src/frames/site-frame/landing/internal/assets.ts",
             "targetSha256": "54cc0184672dfc74981225929705b024611926fd305a88374c1040605cffa3f8"
@@ -95,8 +95,12 @@
         },
         "sourceFiles": [
           {
+            "path": "packages/designer/src/catalog-assets/media.ts",
+            "sha256": "518af66b317c4dcca79c99e33098a942430522f024c2c6416cb9ca817aa49313"
+          },
+          {
             "path": "packages/designer/src/frames/site-frame/internal/resolveShell.ts",
-            "sha256": "963ffbf87dca638e6f39af33c8a0f8aeeb74319aa1083104c87561cdf27c231e"
+            "sha256": "3ede6936935916b747b8cf8e1271e11a1f36caa94360a57f98064c924bdcdd29"
           },
           {
             "path": "packages/designer/src/frames/site-frame/landing/internal/assets.ts",
@@ -112,11 +116,11 @@
           },
           {
             "path": "packages/designer/src/frames/site-frame/SiteFrame.tsx",
-            "sha256": "fb31bb6d8725a6173a62cee79357e496732b98936170a612a99d749ffdbb9b85"
+            "sha256": "3d67ddfa17aa29c1fcdf01d11b4289448fe3483ba276235a9e9542ce62ff413a"
           },
           {
             "path": "packages/designer/src/frames/site-frame/types.ts",
-            "sha256": "5bda43d95ad194dcafaa2e1f3cd2e0ed668357d8c0273d4d0ea32cb500831da4"
+            "sha256": "5082a75480ef118eda6c17d091d966bceb23e0b42555fe20930cd5c24437359b"
           },
           {
             "path": "packages/designer/src/frames/site-frame/viewChromeGround.ts",

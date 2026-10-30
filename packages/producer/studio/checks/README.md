@@ -1,4 +1,42 @@
-# Studio no-handrolling check
+# Studio focused checks
+
+## Publisher Studio map
+
+```sh
+node packages/producer/scripts/generate-studio-map.mjs --check
+node --test packages/producer/studio/checks/check-studio-map.test.cjs
+node packages/producer/studio/checks/check-studio-map.cjs
+```
+
+The map check reads the ordinary Foundry Publisher cells under
+`clossys/agents/publisher`, verifies their normal compiled content-map and route
+pack, and regenerates the Studio projection in memory to compare exact output
+bytes. Editing a page cell without regenerating fails. Navigation, command
+search, breadcrumbs and routes are projections of that one publication map;
+Studio's `AppFrame` must obtain both navigation and commands from its generated
+exports. Adding a hand-authored map node alongside those exports also fails.
+
+The source rule parses TypeScript/JavaScript ASTs throughout production Studio
+source, including view modules. Executable root route strings, template route
+prefixes and literal navigation destinations fail outside Publisher's exact
+`generated/studio-map.ts` and `generated/view-bindings.ts` outputs. An unused
+duplicate route array still fails. Internal `/api/` data paths, asset URLs,
+path-delimiter operations and query/fragment cell or Source state are distinct
+from Studio page routes. An API or asset literal used as a navigation
+destination still fails. Comments, prose strings containing route examples and
+regular expressions are parsed according to their AST role, rather than scanned
+for route words.
+
+This production source check excludes `checks/`, test/spec files, static public
+assets, dependencies and Next output. Browser fixture route lists in the existing
+focused checks are synthetic test inputs, outside this production navigation
+contract. The direct tests prove the real checked-in projection passes, an
+inserted redundant StudioFrame route list fails, replacing either generated
+frame input fails, and changing an ordinary page cell without regenerating
+produces projection drift. The check is scoped to Studio's publication seam;
+it does not modify or replace repository-wide scanners.
+
+## Designer composition
 
 Run against a production Studio server after building Designer and Studio:
 
