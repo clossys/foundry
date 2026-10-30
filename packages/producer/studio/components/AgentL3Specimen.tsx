@@ -2,6 +2,7 @@
 
 import { createContext, useContext, type ComponentType, type ReactNode } from 'react';
 import type { AgentCells, CellDetail, CellSummary } from '../lib/cells-client';
+import { directorNativePlan } from '../lib/director-native-inventory';
 import { agentSpecimenPlan, type AgentSpecimenPlan } from '../lib/agent-specimen-data';
 import { agentSpecimenCoverage, type AgentSpecimenCoverage, type ResolvedSpecimenEvidence } from '../lib/agent-specimen-coverage';
 import { selectedPublicationId, type PublicationResponse } from '../lib/publisher-preview';
@@ -29,7 +30,7 @@ function useBoundSpecimen(index: AgentCells, selectedId: string | undefined, exp
   const publicationId = selectedPublicationId(index, selectedId);
   const publicationResource = publicationId ? resource?.publications?.[publicationId] : resource?.publication;
   const publication = publicationResource?.state === 'ready' ? publicationResource.value : undefined;
-  const plan = cell ? agentSpecimenPlan(index, cell, publication) : { cellId: selectedId ?? '', items: [], expectedVariantIds: [], issues: [resource?.cells.state === 'error' ? resource.cells.message : 'The specimen source has not loaded.'] };
+  const plan = cell ? index.agent === 'director' && resource?.cells.state === 'ready' ? directorNativePlan(index, resource.cells.cells, cell.id) : { ...agentSpecimenPlan(index, cell, publication), ...(index.contentScope ? { scope: index.contentScope } : {}) } : { cellId: selectedId ?? '', items: [], expectedVariantIds: [], issues: [resource?.cells.state === 'error' ? resource.cells.message : 'The specimen source has not loaded.'] };
   const binding = cell ? resolve?.({ index, cell, plan, publication, expanded }) : undefined;
   // Cardinality evidence is measured from the props actually passed to the bound leaf.
   const evidence = binding ? { ...binding.evidence, registered: binding.evidence.registered && !!binding.Component, items: binding.props.items } : undefined;

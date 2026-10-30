@@ -24,6 +24,11 @@ describe('bound specimen consumer contract', () => {
       expect(result.variants.every(variant => !variant.renderable)).toBe(true);
     }
   });
+  it('distinguishes unknown source inventory from a known inventory with no registered renderer', () => {
+    expect(agentSpecimenCoverage(plan).inventoryComplete).toBe(true);
+    expect(agentSpecimenCoverage({ ...plan, issues: ['An active source version has not loaded.'] }, binding).inventoryComplete).toBe(false);
+    expect(agentSpecimenCoverage({ ...plan, expectedVariantIds: [] }, binding).inventoryComplete).toBe(false);
+  });
   it('fails zero items even when the adapter declares every expected variant', () => {
     expect(agentSpecimenCoverage(plan, { ...binding, items: [] })).toMatchObject({ ready: false, itemCount: 0 });
     expect(agentSpecimenCoverage(plan, { ...binding, items: undefined as unknown as [] }).ready).toBe(false);

@@ -5,6 +5,11 @@ import { loadCell, type AgentCells, type CellDetail } from './cells-client';
 export type SpecimenResource = { state: 'loading' } | { state: 'error'; message: string } | { state: 'ready'; cells: CellDetail[] };
 /** Latest cells and independently pointed active Director versions are distinct requests. */
 export function specimenCellRequests(index: AgentCells): { id: string; version?: number }[] {
+  const scope = index.contentScope;
+  if (scope?.kind === 'version') {
+    if (!Number.isSafeInteger(scope.version) || scope.version < 1 || !index.cells.some(cell => cell.id === scope.cellId && cell.version === scope.version)) throw new Error('The exact content-version scope is invalid.');
+    return [{ id: scope.cellId, version: scope.version }];
+  }
   const requests = index.cells.filter(cell => cell.status !== 'retired').map(cell => ({ id: cell.id, version: cell.version }));
   const active = index.agent === 'director' ? index.tree?.active : undefined;
   if (active && typeof active === 'object' && !Array.isArray(active)) {
