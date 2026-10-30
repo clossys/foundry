@@ -1,4 +1,4 @@
-import { generateIdentityDirections, recolorSvg, composeLockup, identityPlateSvg, identityStarterSeeds, isIdentityStarterSlot, type IdentityTokenInput, type LockupFontLicence } from '../tokens/identity-kit.js';
+import { generateIdentityDirections, adoptSuppliedMark, recolorSvg, composeLockup, identityPlateSvg, identityStarterSeeds, isIdentityStarterSlot, type IdentityTokenInput, type LockupFontLicence } from '../tokens/identity-kit.js';
 import { resolve, libraryHash } from '../catalog-core/resolve.js';
 import { applyLibraryChange, createDerivationInputsHasher } from '../catalog-core/library.js';
 import { cssText, flatten } from '../catalog-core/model.js';
@@ -7,9 +7,10 @@ import type { CatalogData, CatalogRule, DtcgToken, LibraryData, Resolved } from 
 import { AssetValidationError, escapeXml, inspectSvg, safeColor, svgBody, svgViewBox } from './svg.js';
 export const IDENTITY_RULES = ['identity-lockup@1','identity-mark@1','identity-favicon@1','identity-app-icon@1'] as const;
 export type IdentityRuleId = typeof IDENTITY_RULES[number];
+const ADOPT_INPUTS = ['tokens.text-color.primary','tokens.text-color.on-inverse','tokens.surface-color.base','tokens.surface-color.inverse','tokens.accent-color.default','tokens.text-color.on-accent','tokens.typeface.display'] as const;
 const INPUTS: Record<IdentityRuleId,readonly string[]> = {
- 'identity-lockup@1':['assets.lockup.positive','tokens.text-color.on-inverse'],
- 'identity-mark@1':['assets.mark.positive','tokens.text-color.on-inverse'],
+ 'identity-lockup@1':['assets.lockup.positive',...ADOPT_INPUTS],
+ 'identity-mark@1':['assets.mark.positive',...ADOPT_INPUTS],
  'identity-favicon@1':['assets.mark.positive','tokens.text-color.primary','tokens.text-color.on-inverse'],
  'identity-app-icon@1':['assets.mark.positive','tokens.text-color.primary','tokens.text-color.on-inverse'],
 };
@@ -115,6 +116,12 @@ function badge(mark: string, background: string, foreground: string, maskable: b
  // A square of side 280 lies wholly inside the mandated 409.6px safe circle (diagonal 396px).
  return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">${shape}<svg x="116" y="116" width="280" height="280" viewBox="${svgViewBox(mark)}" color="${foreground}" fill="${background}">${svgBody(identityPlateSvg(mark,background,foreground))}</svg></svg>`;
 }
+/** Native adoption keeps the existing consumer name and positive SVG as its only artwork input. */
+function adopted(seed: string, profile: Resolved) {
+ const name=inspectSvg(seed)[0]!.attrs['aria-label'];
+ if(!name?.trim()) throw new AssetValidationError('consumer positive identity must carry its public name');
+ return adoptSuppliedMark({brand:{name},suppliedSvg:seed,tokens:tokens(profile)});
+}
 /** Pure builtin rules are instantiated from the consumer profile, then materialized by the generic engine. */
 export function instantiateIdentityRule(catalog: CatalogData, library: LibraryData, id: IdentityRuleId): { rule: CatalogRule; inputs: readonly string[] } {
  if(!IDENTITY_RULES.includes(id)) throw new AssetValidationError('unknown identity rule');
@@ -125,10 +132,10 @@ export function instantiateIdentityRuleFromResolved(profile: Resolved, id: Ident
  if(!IDENTITY_RULES.includes(id)) throw new AssetValidationError('unknown identity rule');
  const inputs=INPUTS[id]; for(const member of inputs) if(!profile.members[member]) throw new AssetValidationError(`missing consumer input ${member}`);
  const values: Record<string,DtcgToken>={}; const put=(member:string,svg:string):void=>{inspectSvg(svg,{favicon:id==='identity-favicon@1'});values[member]={$type:'svg',$value:svg};};
- if(id==='identity-lockup@1') { const seed=string(profile,'assets.lockup.positive'); inspectSvg(seed); put('reversed',reversedLockup(seed,ink(profile,'tokens.text-color.on-inverse'))); }
+ if(id==='identity-lockup@1') { const seed=string(profile,'assets.lockup.positive'); put('reversed',adopted(seed,profile).variants.dark); }
  else {
   const seed=string(profile,'assets.mark.positive'); inspectSvg(seed);
-  if(id==='identity-mark@1') { put('reversed',reversedMark(seed,ink(profile,'tokens.text-color.on-inverse'))); put('mono',monoGlyph(seed)); }
+  if(id==='identity-mark@1') { const variants=adopted(seed,profile).variants; put('reversed',variants.dark); put('mono',variants.mono); }
   if(id==='identity-favicon@1') put('vector',identityPlateSvg(seed,ink(profile,'tokens.text-color.primary'),ink(profile,'tokens.text-color.on-inverse'),true));
   if(id==='identity-app-icon@1') { const bg=ink(profile,'tokens.text-color.primary'),fg=ink(profile,'tokens.text-color.on-inverse'); put('standard',badge(seed,bg,fg,false));put('maskable',badge(seed,bg,fg,true)); }
  }

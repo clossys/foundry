@@ -126,7 +126,7 @@ it("applies all twelve H3 asset policies without adopting missing candidates or 
     expect(fill.$extensions["com.clossys.fill"].mode).toBe("derived");
     expect(result.report.missing.find(row => row.slot === slot)?.source).toBe("foundry");
   }
-  expect(result.report.missing.find(row => row.slot === "assets.video")).toMatchObject({ source: "foundry", reasons: expect.arrayContaining([expect.stringContaining("A1:")]) });
+  expect(result.report.missing.find(row => row.slot === "assets.video")).toBeUndefined();
   expect(JSON.stringify(input.catalog.values.fills)).toBe(before);
 });
 
