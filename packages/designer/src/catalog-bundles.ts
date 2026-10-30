@@ -94,11 +94,11 @@ export function prepareSourceOwnerClosure(input: CompositeEngineInput) {
 /** Prepare the real native sources selected by the surface planner, retaining its catalog receipts.
  * Package candidates need no source bundle. This supplies bytes, never runtime qualification.
  */
-export async function prepareCatalogSurfaceDefaults(input: CompositeEngineInput, options: Omit<SurfaceDefaultsInput, "catalog">) {
+export async function prepareCatalogSurfaceDefaults(input: CompositeEngineInput, options: Omit<SurfaceDefaultsInput, "catalog">, dependencies: readonly import("./catalog-core/surface-types.js").SurfaceDependency[] = []) {
   if (!input.catalog.surfaces) throw new Error("catalog-bundles: surface catalog required");
   const plan = planSurfaceDefaults({ ...options, catalog: input.catalog.surfaces });
   const native = new Set<string>(SPECIMEN_SECTION_EXPORTS.map(row => row.id));
   const leaves = plan.decisions.filter(row => row.source === "foundry" && native.has(row.slot)).map(row => row.slot);
-  const prepared = leaves.length ? await prepareSpecimenSurfaceSources(input, leaves) : { input, bundles: [] };
+  const prepared = leaves.length ? await prepareSpecimenSurfaceSources(input, leaves, dependencies) : { input, bundles: [] };
   return { input: prepared.input, surfaceBundles: prepared.bundles, plan };
 }

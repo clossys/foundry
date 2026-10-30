@@ -11,9 +11,10 @@ import pattern from '../catalog/fills/foundry/assets.pattern.json' with {type:'j
 import { importLucide, LUCIDE_SOURCE } from '../importers/lucide.js';
 import { importPhosphor, PHOSPHOR_SOURCE } from '../importers/phosphor.js';
 import { importOpenPropsImageRatio, OPEN_PROPS_SOURCE } from '../importers/open-props-image-ratio.js';
+import { importImageRatios } from '../importers/image-ratio.js';
 import { IDENTITY_RULES, identityRuleDefinition } from './identity.js';
 /** Extend the token catalog without changing its loader or the public entrypoint. */
 export function withAssetCatalog(catalog:CatalogData):CatalogData {
  const assetFills=[lockup,mark,favicon,app,pattern,image,video] as unknown as FillDoc[];
- return {...catalog,slots:[...catalog.slots.filter(slot=>slot.layer!=='assets'),...slots as unknown as Slot[]],placements:[...catalog.placements.filter(row=>row.layer!=='assets'),placement as Placement],sources:[...catalog.sources.filter(source=>!['lucide','phosphor','open-props'].includes(source.id)),LUCIDE_SOURCE,PHOSPHOR_SOURCE,OPEN_PROPS_SOURCE],fills:[...catalog.fills.filter(fill=>!fill.assets),...assetFills,...importLucide(),...importPhosphor(),...importOpenPropsImageRatio()],rules:[...(catalog.rules??[]).filter(rule=>!IDENTITY_RULES.includes(rule.id as typeof IDENTITY_RULES[number])),...IDENTITY_RULES.map(id=>identityRuleDefinition(id)!)]};
+ return {...catalog,slots:[...catalog.slots.filter(slot=>slot.layer!=='assets'),...slots as unknown as Slot[]],placements:[...catalog.placements.filter(row=>row.layer!=='assets'),placement as Placement],sources:[...catalog.sources.filter(source=>!['lucide','phosphor','open-props'].includes(source.id)),LUCIDE_SOURCE,PHOSPHOR_SOURCE,OPEN_PROPS_SOURCE],fills:[...catalog.fills.filter(fill=>!fill.assets),...assetFills,...importImageRatios(),...importLucide(),...importPhosphor(),...importOpenPropsImageRatio()],rules:[...(catalog.rules??[]).filter(rule=>!IDENTITY_RULES.includes(rule.id as typeof IDENTITY_RULES[number])),...IDENTITY_RULES.map(id=>identityRuleDefinition(id)!)]};
 }

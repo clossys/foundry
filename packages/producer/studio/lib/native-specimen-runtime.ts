@@ -4,6 +4,7 @@ import type { StudioRuntimeModule } from './selection-runtime';
 import type { CellDetail } from './cells-client';
 import type { AgentSpecimenPlan } from './agent-specimen-data';
 import type { SpecimenCardSpan } from './agent-specimen-coverage';
+import type { SpecimenRenderParts } from '@clossys/designer/studio';
 
 export interface NativeSurfaceBinding { descriptorHash: string; renderContent?: (props: Record<string, unknown>) => ReactNode }
 export interface NativeSpecimenContext {
@@ -54,13 +55,14 @@ export interface NativeLeafResolution {
 export function bindNativeAgentSpecimen(input: {
   sdk?: NativeSpecimenSDK; context?: NativeSpecimenContext; agent: string; plan: AgentSpecimenPlan;
   specimen?: string; expanded: boolean; need: (need: { leaf: string; reason: string }) => ReactNode;
+  renderParts?: SpecimenRenderParts;
   labels: { showAllVariants(count: number): ReactNode };
 }): NativeLeafResolution {
   const { sdk, context, plan } = input;
   const unavailable = (issues: string[]): NativeLeafResolution => ({ registered: false, items: [], variantIds: [], props: { items: [] }, issues });
   if (!sdk || !context) return unavailable(['The selected native specimen context is unavailable.']);
   try {
-    const props = { context, need: input.need, expanded: input.expanded, labels: input.labels };
+    const props = { context, need: input.need, expanded: input.expanded, labels: input.labels, renderParts: input.renderParts };
     const bound = sdk.bindAgentSpecimenPlan({ agent: input.agent, plan, ...(input.specimen ? { specimen: input.specimen } : {}), ...('axes' in plan ? { axes: plan.axes } : {}), props, nativeRegistered: (id: string) => nativeSpecimenRegistered(context, id) });
     const issues = [...bound.issues];
     const id = bound.sectionId;
@@ -76,6 +78,7 @@ export function bindNativeAgentSpecimen(input: {
 export function bindNativeDesignerSpecimen(input: {
   sdk?: NativeSpecimenSDK; context?: NativeSpecimenContext; cell: CellDetail; expanded: boolean;
   need: (need: { leaf: string; reason: string }) => ReactNode; labels: { showAllVariants(count: number): ReactNode };
+  renderParts?: SpecimenRenderParts;
 }): NativeLeafResolution {
   const { sdk, context, cell } = input;
   const unavailable = (issues: string[]): NativeLeafResolution => ({ registered: false, items: [], variantIds: [], props: { items: [] }, issues });
@@ -94,7 +97,7 @@ export function bindNativeDesignerSpecimen(input: {
     const definition = binding.leaf;
     const cases = sdk.enumerateRegisteredDesignerSpecimenCases({ context, specimen: definition.id, sourceLeaf });
     if (!cases?.items.length) return unavailable(['The native Designer registry has no complete source cases.']);
-    const props = { context, items: cases.items, ...(cases.axes ? { axes: cases.axes } : {}), expanded: input.expanded, need: input.need, labels: input.labels };
+    const props = { context, items: cases.items, ...(cases.axes ? { axes: cases.axes } : {}), expanded: input.expanded, need: input.need, labels: input.labels, renderParts: input.renderParts };
     const issues = (definition.validate?.(props) ?? []).map(need => `${need.leaf}: ${need.reason}`);
     const native = nativeSpecimenRegistered(context, definition.id) ? context.surfaces?.[definition.id] : undefined;
     if (!native?.renderContent) issues.push('The bound Designer leaf has no descriptor-matched selected native renderer.');

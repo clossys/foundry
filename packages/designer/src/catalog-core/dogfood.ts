@@ -10,6 +10,7 @@ import components from "../catalog/slots/components.json" with { type: "json" };
 import aliases from "../catalog/aliases/components.json" with { type: "json" };
 import buttonFill from "../catalog/fills/foundry/components.button.json" with { type: "json" };
 import appFrameFill from "../catalog/fills/foundry/frames.app-shell.json" with { type: "json" };
+import { STUDIO_SPECIMEN_HOST_PARTS } from './studio-host-parts.js';
 
 export type DogfoodCode = "DF1" | "DF2" | "DF3" | "DF4" | "DF5" | "DF6" | "DF7" | "DF8";
 /** Runtime-owned code vocabulary also supplies the generated skill reference. */
@@ -445,6 +446,26 @@ function staticAttribute(attribute: Attribute): boolean {
 const layoutClass = /^(?:flex|inline-flex|grid|block|inline-block|inline|hidden|contents|relative|absolute|fixed|sticky|static|grow|shrink|truncate|isolate|antialiased|(?:items|justify|content|self|place-items|place-content|flex|grid|col|row|overflow|whitespace|break|object|pointer-events|select|cursor)-[\w-]+)$/;
 const visualClass = /^(?:bg|text|font|shadow|rounded|border|ring|outline|w|h|min-w|max-w|min-h|max-h|size)-/;
 
+/** The existing JSX parser supplies the complete attribute and enclosing export.
+ * Only the real dependency-bound fixed constructor of these registered parts
+ * can supply dynamic styling. Its opaque references are checked at every use. */
+function registeredStudioTokenStyle(file: string, node: Element, attribute: Attribute, parsed: Parsed, input: DogfoodInput): boolean {
+  if (input.consumerBoundary || attribute.name !== 'style') return false;
+  const owner = parsed.definitions.filter(definition => definition.exported && definition.start <= node.start && definition.end >= node.end
+    && Object.values(STUDIO_SPECIMEN_HOST_PARTS).some(part => part.export === definition.name));
+  if (owner.length !== 1) return false;
+  const entry = Object.entries(STUDIO_SPECIMEN_HOST_PARTS).find(([, part]) => part.export === owner[0]!.name)!;
+  const [id, part] = entry;
+  if (!input.contracts?.[file]?.allowedComposes?.includes(id)) return false;
+  const refs = id === 'studio.specimen-swatch' ? 'member\\s*:\\s*[A-Za-z_$][\\w$]*' : 'background\\s*:\\s*[A-Za-z_$][\\w$]*\\s*,\\s*color\\s*:\\s*[A-Za-z_$][\\w$]*\\s*,\\s*pair\\s*:\\s*[A-Za-z_$][\\w$]*';
+  const call = new RegExp(`^\\{\\s*([A-Za-z_$][\\w$]*)\\s*\\(\\s*(['"])${id.replaceAll('.', '\\.')}\\2\\s*,\\s*[A-Za-z_$][\\w$]*\\.profile\\.values\\s*,\\s*[A-Za-z_$][\\w$]*\\s*,\\s*\\{\\s*${refs}\\s*\\}\\s*\\)\\s*\\}$`).exec(attribute.value);
+  if (!call) return false;
+  const imported = parsed.imports.get(call[1]!);
+  if (!imported || imported.module !== part.styleConstructor.module || imported.symbol !== part.styleConstructor.export
+    || parsed.importBindings.filter(binding => binding.binding === call[1]).length !== 1 || parsed.definitions.some(definition => definition.name === call[1])) return false;
+  return input.resolvedImports?.[`${file}:${imported.module}#${imported.symbol}`] === `${part.styleConstructor.module}#${part.styleConstructor.export}`;
+}
+
 export function runDogfood(input: DogfoodInput) {
   const findings: DogfoodFinding[] = [], structural: Record<string, number> = {}, ignored: { file: string; line: number; evidence: string }[] = [];
   const exceptions = (input.consumerBoundary ? [] : input.exceptions ?? []).map(row => ({ ...row, status: "missing" }));
@@ -541,7 +562,10 @@ export function runDogfood(input: DogfoodInput) {
         if (!["style", "className", "class", "..."].includes(attribute.name)) continue;
         const text = attribute.value;
         if (consumer && attribute.name === "style") add("DF2", node, "Consumer inline styles bypass library surfaces and tokens.");
-        const isStatic = staticAttribute(attribute);
+        const tokenPart = registeredStudioTokenStyle(file.file, node, attribute, parsed, input);
+        if (attribute.name === 'style' && !tokenPart && parsed.definitions.some(definition => definition.exported && definition.start <= node.start && definition.end >= node.end
+          && Object.values(STUDIO_SPECIMEN_HOST_PARTS).some(part => part.export === definition.name))) add('DF2', node, 'Registered Studio token host parts require their authenticated fixed style constructor.');
+        const isStatic = staticAttribute(attribute) || tokenPart;
         if (attribute.name === "..." || !isStatic) add("DF2", node, `unresolved ${attribute.name}: dynamic source cannot establish token-only styling.`);
         const candidates = extractStyleCandidates(text, file.file).candidates;
         const marked = !consumer && parsed.comments.some(comment => lineAt(comment.start) === lineAt(attribute.start) && /^(?:\/\/|\/\*)\s*token-gate:ignore\b/.test(file.content.slice(comment.start, comment.end)));
@@ -555,7 +579,7 @@ export function runDogfood(input: DogfoodInput) {
           const unknown = value.split(/\s+/).filter(Boolean).filter(value => { const base = value.split(":").at(-1)!.replace(/^!|!$/g, ""); return !layoutClass.test(base) && !observed.utilities.includes(base) && !base.includes("["); });
           if (unknown.length) add("DF2", node, `unresolved class utilities: ${unknown.join(", ")}`);
         }
-        if (attribute.name === "style" && isStatic && !candidates.length && !observed.properties.length && text.replace(/\s/g, "") !== "{{}}" && !marked) add("DF2", node, "unresolved inline styling: no token read establishes these values.");
+        if (attribute.name === "style" && isStatic && !tokenPart && !candidates.length && !observed.properties.length && text.replace(/\s/g, "") !== "{{}}" && !marked) add("DF2", node, "unresolved inline styling: no token read establishes these values.");
         const contract = input.contracts?.[file.file] ?? { id: `${file.file}#surface`, allowedReads: {} };
         for (const finding of scanSurfaceReads([{ path: file.file, content: text }], contract, input.tokens ?? [], input.themeCss ?? "")[0]!.findings) add("DF4", node, `${finding.code}: ${finding.reads.join(", ")}`, contract.id);
       }

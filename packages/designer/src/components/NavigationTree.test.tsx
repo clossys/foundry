@@ -9,11 +9,13 @@ describe("selected NavigationTree primitive", () => {
   it("retains exact peer roots and route identity without substituting Tree", () => {
     expect(NavigationTree).toBe(PeerNavigationTree);
     expect(NavigationTreeItem).toBe(PeerItem);
+    expect(NavigationTree.Item).toBe(NavigationTreeItem);
+    expect(NavigationTree.ItemContent).toBe(NavigationTreeItemContent);
     const ref=createRef<HTMLDivElement>();
     render(<NavigationTree ref={ref} aria-label="Documents" selectedRoute="/notes" defaultExpandedKeys={["folder"]}>
-      <NavigationTreeItem id="folder" textValue="Folder"><NavigationTreeItemContent><Link>Folder</Link></NavigationTreeItemContent>
-        <NavigationTreeItem id="notes" textValue="Notes" href="/notes"><NavigationTreeItemContent>{({isCurrent})=><Link className={isCurrent?"current":"other"}>Notes</Link>}</NavigationTreeItemContent></NavigationTreeItem>
-      </NavigationTreeItem>
+      <NavigationTree.Item id="folder" textValue="Folder"><NavigationTree.ItemContent><Link>Folder</Link></NavigationTree.ItemContent>
+        <NavigationTree.Item id="notes" textValue="Notes" href="/notes"><NavigationTree.ItemContent>{({isCurrent})=><Link className={isCurrent?"current":"other"}>Notes</Link>}</NavigationTree.ItemContent></NavigationTree.Item>
+      </NavigationTree.Item>
     </NavigationTree>);
     expect(ref.current).toBe(screen.getByRole("treegrid",{name:"Documents"}));
     const notes=screen.getByRole("link",{name:"Notes"});

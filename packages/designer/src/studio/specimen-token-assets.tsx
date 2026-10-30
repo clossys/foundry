@@ -1,6 +1,8 @@
 "use client";
 
 import { useEffect, useRef, useState, type CSSProperties, type ReactNode } from "react";
+import { componentLeaf } from "../runtime/component-leaf.js";
+import type { IconNode } from "../components/Icon.js";
 import type { ResolvedMember } from "../catalog-core/types.js";
 import { malformed, unsafeText } from "../catalog-core/model.js";
 import { inspectGlyph, inspectSvg } from "../catalog-assets/svg.js";
@@ -10,6 +12,11 @@ import { specimenDataset } from "./specimen-dataset.js";
 import { componentSpecimenPreview, type ComponentSpecimenBinding } from "./component-specimens.js";
 import type { DesignerSpecimenContext, DesignerSpecimenNeed } from "./DesignerSpecimen.js";
 import { SpecimenLayoutSection, specimenLayoutNeeds, type SpecimenItem, type SpecimenLeafDefinition, type SpecimenLeafId, type SpecimenLeafProps, type SpecimenLayout, type SpecimenSpan } from "./specimen-layouts.js";
+
+const Content = componentLeaf<typeof import("../components/SemanticContent.js").SemanticContent>("components.semantic-content");
+const Button = componentLeaf<typeof import("../components/Button.js").Button>("components.button");
+const Icon = componentLeaf<typeof import("../components/Icon.js").Icon>("components.icon");
+const Logomark = componentLeaf<typeof import("../components/Logomark.js").Logomark>("components.logo");
 
 /** The cell carries native member identities. Values always come from the current consumer resolution. */
 export interface TokenAssetSpecimenValue { readonly memberId: string }
@@ -49,7 +56,7 @@ function typeStyle(member: ResolvedMember): CSSProperties | undefined {
   if (member.$type === "fontWeight") return { fontWeight: css };
   if (member.slot === "tokens.line-height") return { lineHeight: css };
   if (member.slot === "tokens.letter-spacing") return { letterSpacing: css };
-  if (member.$type === "dimension" && /(?:font|body|heading|display|caption)-size$/.test(member.slot)) return { fontSize: css };
+  if (member.$type === "dimension" && (member.slot.endsWith("font-size") || member.slot.endsWith("body-size") || member.slot.endsWith("heading-size") || member.slot.endsWith("display-size") || member.slot.endsWith("caption-size"))) return { fontSize: css };
   return undefined;
 }
 const entries = (context: DesignerSpecimenContext, leaf: string) => Object.entries(context.profile.values.members).filter(([, member]) => member.slot === leaf);
@@ -63,6 +70,20 @@ export function colorRampSpecimenItems(context: DesignerSpecimenContext, leaf: s
 }
 
 type Mode = "swatch" | "color-ramp" | "type-ladder" | "spacing-ladder" | "radius-ladder" | "motion-player" | "asset-grid" | "icon-grid";
+function chromeNeeds(mode: Mode, context: DesignerSpecimenContext): readonly string[] {
+  const dimensions = mode === "swatch" || mode === "color-ramp"
+    ? [["tokens.spacing.5xl", "--spacing-5xl"], ["tokens.spacing.4xl", "--spacing-4xl"]] as const
+    : mode === "motion-player" ? [["tokens.spacing.4xl", "--spacing-4xl"]] as const : [];
+  const colors = mode === "asset-grid" || mode === "icon-grid" ? [
+    ["tokens.surface-color.raised", "--color-surface-raised"], ["tokens.surface-color.inverse", "--color-surface-inverse"],
+    ["tokens.text-color.primary", "--color-ink-primary"], ["tokens.text-color.on-inverse", "--color-ink-on-inverse"],
+  ] as const : [];
+  return [...dimensions.map(([id, emit]) => ({ id, emit, type: "dimension" })), ...colors.map(([id, emit]) => ({ id, emit, type: "color" }))].flatMap(({ id, emit, type }) => {
+    const member = context.profile.values.members[id];
+    return member && member.slot === id.slice(0, id.lastIndexOf(".")) && member.$type === type && member.emit === emit && valid(member)
+      ? [] : [`required-token: ${id} requires a valid selected ${type} mapped to ${emit}.`];
+  });
+}
 const baseLeaves = ["components.semantic-content"] as const;
 function requirements(mode: Mode): readonly string[] {
   return [...baseLeaves, ...(mode === "motion-player" ? ["components.button"] : mode === "asset-grid" ? ["components.logo"] : mode === "icon-grid" ? ["components.icon"] : [])];
@@ -106,28 +127,30 @@ function validate(mode: Mode, props: SpecimenLeafProps, layout: SpecimenLayout):
   const leaf: SpecimenLeafId = `sections.specimen-${mode}`;
   if (!props.items.length) return [{ leaf, reason: "zero-items: a specimen leaf requires at least one item" }];
   const needs: DesignerSpecimenNeed[] = [...specimenLayoutNeeds({ ...props, id: leaf, layout })];
+  if (mode === "swatch" || mode === "color-ramp") for (const part of ["studio.specimen-swatch", "studio.specimen-contrast"] as const) {
+    if (!props.renderParts?.[part]) needs.push({ leaf, reason: `The registered ${part} part is not wired.` });
+  }
+  for (const reason of chromeNeeds(mode, props.context)) needs.push({ leaf, reason });
   for (const required of requirements(mode).filter(leaf => leaf !== "components.semantic-content")) { const bound = selected(props.context, required); if (isNeed(bound)) needs.push(bound); }
   for (const item of props.items) { const reason = valueNeed(mode, item, props.context); if (reason) needs.push({ leaf, reason: `${item.id}: ${reason}` }); }
   return needs;
 }
-function Swatch({ id, member, context, semantic }: { id: string; member: ResolvedMember; context: DesignerSpecimenContext; semantic: ComponentSpecimenBinding }): ReactNode {
-  const Content = semantic.Component;
+function Swatch({ id, member, context, renderParts }: { id: string; member: ResolvedMember; context: DesignerSpecimenContext; renderParts: NonNullable<SpecimenLeafProps["renderParts"]> }): ReactNode {
   const pair = pairOf(context, member);
   if (!pair) return null; // The leaf validates every item before rendering any layout.
-  return <>{(["light", ...(member.css.dark === undefined ? [] : ["dark"])] as const).map(mode => {
+  const modes: readonly ("light" | "dark")[] = member.css.dark === undefined ? ["light"] : ["light", "dark"];
+  return <>{modes.map(mode => {
     const color = mode === "dark" ? member.css.dark ?? member.css.light : member.css.light;
-    const pairColor = mode === "dark" ? pair[1].css.dark ?? pair[1].css.light : pair[1].css.light;
     return <Content as="section" key={mode} data-specimen-mode={mode}>
-      <Content as="span" role="img" aria-label={`${id} ${mode}`} style={{ display: "inline-block", inlineSize: "6rem", blockSize: "4rem", background: color }} />
+      {renderParts["studio.specimen-swatch"]!({ memberId: id, mode })}
       <Content as="span">{id}</Content><Content as="span">{color}</Content>
-      <Content as="p" data-contrast-pair={pair[0]} style={{ background: member.emit?.includes("ink") ? pairColor : color, color: member.emit?.includes("ink") ? color : pairColor }}>{specimenDataset.tokens.sampleText}</Content>
+      {renderParts["studio.specimen-contrast"]!({ backgroundMemberId: member.emit?.includes("ink") ? pair[0] : id, colorMemberId: member.emit?.includes("ink") ? id : pair[0], pairMemberId: pair[0], mode, children: specimenDataset.tokens.sampleText })}
     </Content>;
   })}</>;
 }
 /** Animation state is local to the specimen; the cell and consumer values stay read-only. */
-function MotionPlayer({ id, semantic, button, duration, easing }: { id: string; semantic: ComponentSpecimenBinding; button: ComponentSpecimenBinding; duration: string; easing: string }): ReactNode {
-  const Content = semantic.Component, Button = button.Component;
-  const target = useRef<HTMLElement | null>(null), running = useRef<Animation | undefined>(undefined);
+function MotionPlayer({ id, duration, easing }: { id: string; duration: string; easing: string }): ReactNode {
+  const target = useRef<HTMLDivElement | null>(null), running = useRef<Animation | undefined>(undefined);
   const [reduced, setReduced] = useState(false);
   useEffect(() => {
     const media = typeof matchMedia === "function" ? matchMedia("(prefers-reduced-motion: reduce)") : undefined;
@@ -140,10 +163,10 @@ function MotionPlayer({ id, semantic, button, duration, easing }: { id: string; 
     const reduce = typeof matchMedia === "function" && matchMedia("(prefers-reduced-motion: reduce)").matches;
     setReduced(reduce);
     if (reduce) return;
-    running.current = target.current?.animate?.([{ transform: "translateX(0)" }, { transform: "translateX(4rem)" }], { duration: Number.parseFloat(duration) * (duration.endsWith("ms") ? 1 : 1000), easing, fill: "forwards" });
+    running.current = target.current?.animate?.([{ transform: "translateX(0)" }, { transform: "translateX(var(--spacing-4xl))" }], { duration: Number.parseFloat(duration) * (duration.endsWith("ms") ? 1 : 1000), easing, fill: "forwards" });
   };
   return <Content as="section" data-motion-specimen={id}>
-    <Content as="div" ref={target} role="img" aria-label={id} className="size-lg bg-accent" style={{ transform: reduced ? "translateX(4rem)" : undefined }} data-reduced-motion={reduced ? "static-final" : undefined} />
+    <Content as="div" ref={target} role="img" aria-label={id} className="size-lg bg-accent" style={{ transform: reduced ? "translateX(var(--spacing-4xl))" : undefined }} data-reduced-motion={reduced ? "static-final" : undefined} />
     <Button onPress={play}>Play motion</Button>
     {reduced ? <Content as="p" role="status">Reduced motion is enabled.</Content> : null}
   </Content>;
@@ -151,26 +174,24 @@ function MotionPlayer({ id, semantic, button, duration, easing }: { id: string; 
 function renderItem(mode: Mode, item: SpecimenItem, props: SpecimenLeafProps): ReactNode {
   const semantic = selected(props.context, "components.semantic-content");
   if (isNeed(semantic)) return props.need(semantic);
-  const Content = semantic.Component;
   if (mode === "color-ramp") return <>{memberIds(item.value)?.map(id => {
     const member = props.context.profile.values.members[id];
-    return member ? <Swatch key={id} id={id} member={member} context={props.context} semantic={semantic} /> : null;
+    return member ? <Swatch key={id} id={id} member={member} context={props.context} renderParts={props.renderParts!} /> : null;
   })}</>;
   const member = memberOf(props.context, item.value), id = memberId(item.value);
   if (!member || !id) return props.need({ leaf: item.id, reason: "No selected specimen value." });
-  if (mode === "swatch") return <Swatch id={id} member={member} context={props.context} semantic={semantic} />;
+  if (mode === "swatch") return <Swatch id={id} member={member} context={props.context} renderParts={props.renderParts!} />;
   if (mode === "type-ladder") return <Content as="p" data-type-sample={id} style={typeStyle(member)}>{specimenDataset.tokens.sampleText}</Content>;
   if (mode === "spacing-ladder") return <Content as="div" role="img" aria-label={id} className="h-sm max-w-full bg-accent border-s border-e border-line-strong" style={{ inlineSize: member.css.light }} />;
   if (mode === "radius-ladder") return <Content as="div" role="img" aria-label={id} className="size-3xl border border-line-strong bg-surface-raised" style={{ borderRadius: member.css.light }} />;
   if (mode === "motion-player") {
     const button = selected(props.context, "components.button"), motion = motionValues(props.context, member);
-    return isNeed(button) ? props.need(button) : motion ? <MotionPlayer id={id} semantic={semantic} button={button} {...motion} /> : props.need({ leaf: id, reason: "Selected motion values are unavailable." });
+    return isNeed(button) ? props.need(button) : motion ? <MotionPlayer id={id} {...motion} /> : props.need({ leaf: id, reason: "Selected motion values are unavailable." });
   }
   const artwork = selected(props.context, mode === "icon-grid" ? "components.icon" : "components.logo");
   if (isNeed(artwork)) return props.need(artwork);
-  const Artwork = artwork.Component;
-  return <>{(["light", "dark"] as const).map(ground => <Content as="div" key={ground} data-asset-ground={ground} style={{ background: ground === "light" ? "white" : "black", color: ground === "light" ? "black" : "white" }}>
-    {mode === "icon-grid" ? <Artwork glyph={member.value.light} decorative={false} label={`${id} ${ground}`} /> : typeof member.value.light === "string" ? <Artwork src={`data:image/svg+xml,${encodeURIComponent(member.value.light)}`} size="lg" title={id} /> : null}
+  return <>{(["light", "dark"] as const).map(ground => <Content as="div" key={ground} data-asset-ground={ground} style={{ background: ground === "light" ? "var(--color-surface-raised)" : "var(--color-surface-inverse)", color: ground === "light" ? "var(--color-ink-primary)" : "var(--color-ink-on-inverse)" }}>
+    {mode === "icon-grid" ? <Icon glyph={member.value.light as IconNode} decorative={false} label={`${id} ${ground}`} /> : typeof member.value.light === "string" ? <Logomark src={`data:image/svg+xml,${encodeURIComponent(member.value.light)}`} size="lg" title={id} /> : null}
   </Content>)}</>;
 }
 function definition(mode: Mode, kind: string, layout: SpecimenLayout, layer: "tokens" | "assets", span: SpecimenSpan): TokenAssetSpecimenDefinition {

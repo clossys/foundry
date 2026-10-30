@@ -1,15 +1,16 @@
 "use client";
 
-import { useState, type ReactNode } from "react";
-import { createPortal } from "react-dom";
+import type { ReactNode } from "react";
+import { componentLeaf } from "../runtime/component-leaf.js";
 import { componentSpecimenPreview, type ComponentSpecimenMember } from "./component-specimens.js";
-import { PreviewOutcomeContext, type PreviewFailureReason } from "./preview-outcome.js";
-import { SpecimenLayoutSection, specimenComponent, type SpecimenAxis, type SpecimenItem, type SpecimenLeafDefinition, type SpecimenLeafProps } from "./specimen-layouts.js";
-import type { DesignerSpecimenContext, DesignerSpecimenNeed } from "./DesignerSpecimen.js";
-import { NativeSpecimenStateClone, type SpecimenInteraction } from "./specimen-state-clone.js";
+import { SpecimenLayoutSection, specimenComponent, type SpecimenAxis, type SpecimenBreakpointReference, type SpecimenItem, type SpecimenLeafDefinition, type SpecimenLeafProps } from "./specimen-layouts.js";
+import type { DesignerSpecimenContext } from "./DesignerSpecimen.js";
+
+const Badge = componentLeaf<typeof import("../components/Badge.js").Badge>("components.badge");
+const Content = componentLeaf<typeof import("../components/SemanticContent.js").SemanticContent>("components.semantic-content");
 
 export interface ComponentVariantItem { readonly leaf: string; readonly members: readonly string[]; readonly state: string }
-export interface SurfaceViewportItem { readonly leaf: string; readonly width: number; readonly state: string }
+export interface SurfaceViewportItem { readonly leaf: string; readonly width: number | SpecimenBreakpointReference; readonly state: string }
 export interface SpecimenItemSet<Value = unknown> { readonly items: readonly SpecimenItem<Value>[]; readonly axes: readonly SpecimenAxis[] }
 
 /** The exact resolved descriptor supplies every variant and state. Labels are never invented specimen rows. */
@@ -44,18 +45,19 @@ export function surfaceSpecimenItems(context: DesignerSpecimenContext, leaf: str
   const selected = context.profile.surfaces?.fills[leaf as `sections.${string}` | `frames.${string}`];
   if (!selected) return { items: [], axes: [] };
   const states = context.surfaces?.[leaf]?.states ?? ["default"];
+  const mobileEmit = context.profile.values.members["tokens.breakpoint.mobile"]?.emit, desktopEmit = context.profile.values.members["tokens.breakpoint.desktop"]?.emit;
+  if (mobileEmit !== "--breakpoint-mobile" || desktopEmit !== "--breakpoint-desktop") return { items: [], axes: [] };
   const axes: SpecimenAxis[] = [
     { id: "surface", label: "Surface", values: [{ id: leaf, label: leaf }] },
     { id: leaf.startsWith("frames.") ? "state" : "width", label: leaf.startsWith("frames.") ? "Panel state" : "Viewport", values: leaf.startsWith("frames.") ? states.map(id => ({ id, label: id })) : [{ id: "1280", label: "Desktop" }, { id: "375", label: "Mobile" }] },
   ];
   return { axes, items: axes[1]!.values.map(axis => {
-    const width = leaf.startsWith("frames.") ? 1280 : Number(axis.id), state = leaf.startsWith("frames.") ? axis.id : "default";
+    const width: SpecimenBreakpointReference = `var(${leaf.startsWith("frames.") || axis.id === "1280" ? desktopEmit : mobileEmit})`, state = leaf.startsWith("frames.") ? axis.id : "default";
     return { id: `${leaf}/${axis.id}`, label: `${leaf} ${axis.label}`, coordinates: { surface: leaf, [axes[1]!.id]: axis.id }, value: { leaf, width, state } };
   }) };
 }
 
-function ComponentItem({ item, context, need }: { item: SpecimenItem; context: DesignerSpecimenContext; need: SpecimenLeafProps["need"] }): ReactNode {
-  const [failed, report] = useState<PreviewFailureReason>();
+function ComponentItem({ item, context, need, renderParts }: { item: SpecimenItem; context: DesignerSpecimenContext; need: SpecimenLeafProps["need"]; renderParts: SpecimenLeafProps["renderParts"] }): ReactNode {
   const value = item.value as ComponentVariantItem;
   if (!value || typeof value.leaf !== "string" || !Array.isArray(value.members) || typeof value.state !== "string") return need({ leaf: "sections.specimen-variant-matrix", reason: "Invalid component specimen data." });
   const preview = componentSpecimenPreview({ ...context.componentOptions, modules: context.modules });
@@ -68,63 +70,34 @@ function ComponentItem({ item, context, need }: { item: SpecimenItem; context: D
     if (!member || !member.interaction && !Object.keys(member.props).length) return need({ leaf: value.leaf, reason: `No executable registered member binding: ${id}` });
     selectedMembers.push(member);
   }
-  const intrinsic = selectedMembers.find(member => member.interaction);
   const props = Object.assign({}, ...selectedMembers.filter(member => !member.interaction).map(member => member.props));
   const source = specimenComponent(context, "components.badge");
   if ("reason" in source) return need(source);
-  const Badge = source.Component;
-  if (intrinsic) {
-    const forced = context.componentStates?.[value.leaf];
-    const descriptor = context.profile.components.components[value.leaf]!;
-    if (forced?.descriptor === descriptor) return <><Badge data-ds-leaf="components.badge">{bound.source}</Badge>{forced.render({ members: value.members, state: intrinsic.member, props, interactive: false })}</>;
-    const state = intrinsic.member.slice("state.".length);
-    if (!["hover", "focus-visible", "pressed"].includes(state)) return need({ leaf: value.leaf, reason: `No native interaction capture for ${intrinsic.member}.` });
-    const semantic = specimenComponent(context, "components.semantic-content");
-    if ("reason" in semantic) return need(semantic);
-    const node = componentSpecimenPreview({ ...context.componentOptions, restOnly: true, modules: context.modules, probes: { [value.leaf]: { props } } }).preview(value.leaf, context.profile);
-    return <><Badge data-ds-leaf="components.badge">{bound.source}</Badge><NativeSpecimenStateClone Content={semantic.Component} state={state as SpecimenInteraction} unavailable={reason => need({ leaf: value.leaf, reason })}>{node}</NativeSpecimenStateClone></>;
-  }
-  const node = componentSpecimenPreview({ ...context.componentOptions, restOnly: true, modules: context.modules, probes: { [value.leaf]: { props } } }).preview(value.leaf, context.profile);
   const semantic = specimenComponent(context, "components.semantic-content");
   if ("reason" in semantic) return need(semantic);
-  const Content = semantic.Component;
-  return <PreviewOutcomeContext.Provider value={report}><Badge data-ds-leaf="components.badge">{bound.source}</Badge>{failed ? <Content as="div" data-ds-specimen-need="true">{need({ leaf: value.leaf, reason: failed })}</Content> : null}<Content as="div" data-specimen-state={value.state} inert={value.state === "default" ? undefined : true}>{node}</Content></PreviewOutcomeContext.Provider>;
+  const renderComponentState = renderParts?.["sections.specimen-variant-matrix"]?.renderComponentState;
+  if (!renderComponentState) return need({ leaf: value.leaf, reason: "The selected specimen section has no declared component-state render part." });
+  return <><Badge data-ds-leaf="components.badge">{bound.source}</Badge>{renderComponentState({ Content, context, leaf: value.leaf, members: value.members, state: value.state, props, interactive: value.state === "default", unavailable: reason => need({ leaf: value.leaf, reason }) })}</>;
+
 }
 
-function SurfaceItem({ item, context, need, expanded }: { item: SpecimenItem; context: DesignerSpecimenContext; need: SpecimenLeafProps["need"]; expanded?: boolean }): ReactNode {
+function SurfaceItem({ item, context, need, expanded, renderParts }: { item: SpecimenItem; context: DesignerSpecimenContext; need: SpecimenLeafProps["need"]; expanded?: boolean; renderParts: SpecimenLeafProps["renderParts"] }): ReactNode {
   const value = item.value as SurfaceViewportItem;
-  if (!value || typeof value.leaf !== "string" || !Number.isFinite(value.width) || value.width < 1 || typeof value.state !== "string") return need({ leaf: "sections.specimen-section-viewports", reason: "Invalid surface viewport data." });
+  const tokenWidths = new Set(Object.values(context.profile.values.members).filter(member => member.slot === "tokens.breakpoint" && member.emit).map(member => `var(${member.emit})`));
+  const validWidth = typeof value?.width === "number" ? Number.isFinite(value.width) && value.width > 0 : typeof value?.width === "string" && tokenWidths.has(value.width);
+  if (!value || typeof value.leaf !== "string" || !validWidth || typeof value.state !== "string") return need({ leaf: "sections.specimen-section-viewports", reason: "Invalid surface viewport data." });
   const selected = context.profile.surfaces?.fills[value.leaf as `sections.${string}` | `frames.${string}`], surface = context.surfaces?.[value.leaf];
   if (!selected || !surface || surface.descriptorHash !== selected.descriptorHash) return need({ leaf: value.leaf, reason: "The selected surface has no matching executable fixture binding." });
   if (value.state !== "default" && !surface.states?.includes(value.state)) return need({ leaf: value.leaf, reason: `No registered fixture for panel state ${value.state}.` });
-  return <NativeSpecimenViewport context={context} leaf={value.leaf} width={value.width} expanded={expanded} need={need}>{surface.render({ width: value.width, state: value.state })}</NativeSpecimenViewport>;
+  const section = value.leaf.startsWith("frames.") ? "sections.specimen-frame-viewports" : "sections.specimen-section-viewports";
+  const parts = renderParts?.[section];
+  if (!parts?.renderSurface || !parts.renderViewport) return need({ leaf: value.leaf, reason: "The selected specimen section has no declared surface and viewport render parts." });
+  return parts.renderViewport({ Content, leaf: value.leaf, width: value.width, expanded, need, children: width => parts.renderSurface!({ leaf: value.leaf, width, state: value.state }) });
 }
 
-/** An isolated responsive viewport. Frame scaling is the one permitted horizontal-scroll exception. */
-export function NativeSpecimenViewport({ context, leaf, width, expanded, need, children }: { context: DesignerSpecimenContext; leaf: string; width: number; expanded?: boolean; need: SpecimenLeafProps["need"]; children: ReactNode }): ReactNode {
-  const [body, setBody] = useState<HTMLElement>();
-  const semantic = specimenComponent(context, "components.semantic-content");
-  if ("reason" in semantic) return need(semantic);
-  const Content = semantic.Component;
-  const load = (frame: HTMLIFrameElement) => {
-    const document = frame.contentDocument; if (!document) return;
-    document.head.replaceChildren(...Array.from(frame.ownerDocument.querySelectorAll('style,link[rel="stylesheet"]'), node => node.cloneNode(true)));
-    for (const attr of Array.from(frame.ownerDocument.documentElement.attributes)) document.documentElement.setAttribute(attr.name, attr.value);
-    document.body.className = frame.ownerDocument.body.className; document.body.style.margin = "0";
-    setBody(document.body);
-  };
-  return <Content as="div" data-specimen-viewport={width} className={leaf.startsWith("frames.") ? "max-w-full overflow-auto" : "max-w-full overflow-hidden"}>
-    {!body ? <Content as="div" data-ds-specimen-need="true">{need({ leaf, reason: "The selected viewport has not mounted its live fixture." })}</Content> : null}
-    <Content as="div" style={{ inlineSize: width, zoom: expanded ? 1 : width > 375 ? 0.25 : 0.5 }}>
-      <iframe title={`${leaf} ${width}px specimen`} width={width} height={720} sandbox="allow-same-origin" tabIndex={-1} srcDoc="<!doctype html><html><head></head><body></body></html>" onLoad={event => load(event.currentTarget)} style={{ border: 0, display: "block", pointerEvents: "none" }} />
-      {body ? createPortal(<Content as="div" inert data-ds-leaf="components.semantic-content" data-designer-specimen-frame={leaf}>{children}</Content>, body) : null}
-    </Content>
-  </Content>;
-}
-
-export function SpecimenVariantMatrix(props: SpecimenLeafProps): ReactNode { return <SpecimenLayoutSection {...props} id="sections.specimen-variant-matrix" label="Component variants and states" layout="matrix" renderItem={item => <ComponentItem item={item} context={props.context} need={props.need} />} />; }
-export function SpecimenSectionViewports(props: SpecimenLeafProps): ReactNode { return <SpecimenLayoutSection {...props} id="sections.specimen-section-viewports" label="Section viewports" layout="matrix" renderItem={item => <SurfaceItem item={item} context={props.context} need={props.need} expanded={props.expanded} />} />; }
-export function SpecimenFrameViewports(props: SpecimenLeafProps): ReactNode { return <SpecimenLayoutSection {...props} id="sections.specimen-frame-viewports" label="Frame panel states" layout="matrix" renderItem={item => <SurfaceItem item={item} context={props.context} need={props.need} expanded={props.expanded} />} />; }
+export function SpecimenVariantMatrix(props: SpecimenLeafProps): ReactNode { return <SpecimenLayoutSection {...props} id="sections.specimen-variant-matrix" label="Component variants and states" layout="matrix" renderItem={item => <ComponentItem item={item} context={props.context} need={props.need} renderParts={props.renderParts} />} />; }
+export function SpecimenSectionViewports(props: SpecimenLeafProps): ReactNode { return <SpecimenLayoutSection {...props} id="sections.specimen-section-viewports" label="Section viewports" layout="matrix" renderItem={item => <SurfaceItem item={item} context={props.context} need={props.need} expanded={props.expanded} renderParts={props.renderParts} />} />; }
+export function SpecimenFrameViewports(props: SpecimenLeafProps): ReactNode { return <SpecimenLayoutSection {...props} id="sections.specimen-frame-viewports" label="Frame panel states" layout="matrix" renderItem={item => <SurfaceItem item={item} context={props.context} need={props.need} expanded={props.expanded} renderParts={props.renderParts} />} />; }
 
 export const designerViewportSpecimenLeaves: readonly SpecimenLeafDefinition[] = [
   { id: "sections.specimen-variant-matrix", layout: "matrix", span: "full", compatible: [{ kind: "component", layer: "components" }], requirements: ["components.semantic-content", "components.badge", "components.grid-list", "components.table", "components.disclosure"], render: SpecimenVariantMatrix },

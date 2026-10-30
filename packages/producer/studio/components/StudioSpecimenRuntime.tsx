@@ -4,6 +4,7 @@ import { createContext, useCallback, useContext, useMemo, type ReactNode } from 
 import * as DesignerStudio from '@clossys/designer/studio';
 import { nativeSpecimenSDK, nativeSpecimenContext, bindNativeAgentSpecimen, bindNativeDesignerSpecimen, type NativeSpecimenContext } from '../lib/native-specimen-runtime';
 import { producerPagePreview } from '../lib/producer-page-preview';
+import { producerSpecimenRenderParts } from '../lib/producer-specimen-render-parts';
 import { SpecimenLeafProvider, type ResolveSpecimenLeaf } from './AgentL3Specimen';
 import { useStudioSelection, useStudioUI } from './StudioSelection';
 
@@ -21,7 +22,8 @@ export function StudioSpecimenRuntimeProvider({ children }: { children: ReactNod
   const resolve = useCallback<ResolveSpecimenLeaf>(({ index, cell, plan, publication, expanded }) => {
     const pagePreview = publication && typeof window !== 'undefined' ? producerPagePreview(publication, window.location.origin) : undefined;
     const context = native.context && pagePreview ? { ...native.context, pagePreview } : native.context;
-    const common = { sdk, context, expanded, need, labels: { showAllVariants: (count: number) => `Show all ${count} variants` } };
+    const renderParts = context ? producerSpecimenRenderParts(context as unknown as DesignerStudio.DesignerSpecimenContext) : undefined;
+    const common = { sdk, context, renderParts, expanded, need, labels: { showAllVariants: (count: number) => `Show all ${count} variants` } };
     const result = index.agent === 'designer' ? bindNativeDesignerSpecimen({ ...common, cell }) : bindNativeAgentSpecimen({ ...common, agent: index.agent, plan, ...(typeof cell.fields?.specimen === 'string' ? { specimen: cell.fields.specimen } : {}) });
     return { sourcePlan: result.sourcePlan, Component: result.Component, props: result.props, evidence: { sectionId: result.sectionId ?? '', registered: result.registered, span: result.span, items: result.items, variantIds: result.variantIds, issues: [...native.issues, ...result.issues] } };
   }, [sdk, native, need]);

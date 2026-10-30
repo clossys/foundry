@@ -42,7 +42,7 @@ describe("selected emitted token bindings (SYNTHETIC component, real value catal
     expect(outputs.get("tokens.animation.spin")).toEqual({ property: "--animate-spin", theme: "--animate-spin" });
   });
   it("checks the public full value catalog with an empty consumer without C4 errors", () => {
-    expect(Object.keys(TOKENS)).toHaveLength(230);
+    expect(Object.keys(TOKENS)).toHaveLength(232);
     expect(client.check({ catalog: client.loadCatalog(), library: empty() }).findings.filter(f => f.code === "C4" && f.severity === "error")).toEqual([]);
   });
   it("shares actual selected theme outputs with component resolution, preserving 1.375 and 0.1em", () => {

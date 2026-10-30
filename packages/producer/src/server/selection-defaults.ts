@@ -1,4 +1,5 @@
 import { studioModuleRequirements } from './studio-module-manifest.js';
+import type { SurfaceDependency } from "@clossys/designer/catalog";
 import { applyLibraryChange, emittedTokenProperties, libraryHash, loadCatalog, loadComponentCompositionRules, loadComponentRegistry, planComponentDefaults, planSurfaceDefaults, resolve, DEFAULT_COMPONENT_PREFERENCE, DEFAULT_COMPONENT_PICKS, DEFAULT_COMPONENT_FALLBACK, type CompositeCatalogData, type CompositeEngineInput, type CompositeLibraryData, type LibraryData, type SurfaceSourceBundle } from "@clossys/designer/catalog";
 import { installedHeadlessLibrary, loadCatalogBundles, prepareCatalogSurfaceDefaults } from "@clossys/designer/catalog-bundles";
 import { agentModule } from "./cells.js";
@@ -10,10 +11,17 @@ const REQUIRED = ["frames.app-shell", "sections.band", "sections.section-header"
 const meta = (fill: any) => fill.$extensions["com.clossys.fill"];
 
 /** Preserve authored selections; fill missing seats through Designer's default planners. */
-export async function prepareStudioSelection(stored?: StudioDesignerLibrary): Promise<{ input: CompositeEngineInput; leaves: StudioSelectionLeaf[]; surfaceBundles: readonly SurfaceSourceBundle[] }> {
+interface SurfaceEvidenceProducer {
+  specimenSurfaceEnvironment(input: CompositeEngineInput): Promise<{ input: CompositeEngineInput; dependencies: readonly SurfaceDependency[] }>;
+  qualifySpecimenSurfaces(input: CompositeEngineInput): Promise<CompositeEngineInput>;
+}
+export async function prepareStudioSelection(stored?: StudioDesignerLibrary, sourceEvidence?: SurfaceEvidenceProducer): Promise<{ input: CompositeEngineInput; leaves: StudioSelectionLeaf[]; surfaceBundles: readonly SurfaceSourceBundle[] }> {
   const bundles = loadCatalogBundles();
   const surfaceApi = await agentModule("designer", "library-cli/surface-catalog.js");
   const evidenceApi = await agentModule("designer", "library-cli/surface-package-evidence.js");
+  // Source evidence generation uses the real independent compiler through this port.
+  // The production default consumes only authenticated source-built certificates.
+  const nativeEvidence = sourceEvidence ?? await agentModule("designer", "library-cli/qualify-specimen-surfaces.js");
   const decisionsApi = await agentModule("designer", "library-cli/apply-decisions.js");
   const composite = stored && "values" in stored.library;
   const original = stored?.library;
@@ -61,12 +69,13 @@ export async function prepareStudioSelection(stored?: StudioDesignerLibrary): Pr
   const surfaceOptions = { packages: await evidenceApi.readSurfacePackageEvidence(surfaceCatalog.fills), measurements: [] };
   const componentDecisions = componentPlan.decisions.filter(row => needed.has(row.slot) && !own.has(row.slot));
   if (componentDecisions.length) library = applyLibraryChange(catalog, library, decisionsApi.decisionChangeSet(catalog, library, componentDecisions, bundles.sourceBundles), { surfaceOptions });
-  const preparedSurfaces = await prepareCatalogSurfaceDefaults({ catalog, library, componentOptions: stored?.componentOptions, surfaceOptions }, {
+  const environment = await nativeEvidence.specimenSurfaceEnvironment({ catalog, library, componentOptions: stored?.componentOptions, surfaceOptions });
+  const preparedSurfaces = await prepareCatalogSurfaceDefaults(environment.input, {
     slots: surfaceCatalog.slots.filter(slot => needed.has(slot.id) && !own.has(slot.id)).map(slot => slot.id), preference: DEFAULT_COMPONENT_PREFERENCE,
-  });
+  }, environment.dependencies);
   const preparedCatalog = preparedSurfaces.input.catalog;
   const surfaceChanges = preparedSurfaces.plan.decisions.map(row => ({ portion: "surfaces" as const, change: { op: "adopt" as const, slot: row.slot, source: row.source } }));
-  if (surfaceChanges.length) library = applyLibraryChange(preparedCatalog, library, { baseHash: libraryHash(library), changes: surfaceChanges, surfaceBundles: preparedSurfaces.surfaceBundles }, { surfaceOptions });
+  if (surfaceChanges.length) library = applyLibraryChange(preparedCatalog, library, { baseHash: libraryHash(library), changes: surfaceChanges, surfaceBundles: preparedSurfaces.surfaceBundles }, { componentOptions: environment.input.componentOptions, surfaceOptions: environment.input.surfaceOptions });
   const effective = new Map<string, any>([...library.values.fills, ...library.components.fills, ...library.surfaces!.fills].map(fill => [meta(fill).slot, fill]));
   const leaves: StudioSelectionLeaf[] = [...needed].sort().map(leaf => {
     const fill = effective.get(leaf);
@@ -74,5 +83,6 @@ export async function prepareStudioSelection(stored?: StudioDesignerLibrary): Pr
     const selectedFill = descriptor?.origin?.fill ?? descriptor?.origin?.base?.fill ?? (fill ? meta(fill).id : undefined);
     return { leaf, source: own.has(leaf) ? "consumer" : fill ? "fallback" : "unavailable", ...(fill ? { fill: selectedFill } : {}), ...(!own.has(leaf) ? { message: fill ? "NEED: not selected by this consumer; using a planned default fill" : "NEED: no eligible default fill" } : {}) };
   });
-  return { input: { catalog: preparedCatalog, library, componentOptions: stored?.componentOptions, surfaceOptions }, leaves, surfaceBundles: preparedSurfaces.surfaceBundles };
+  const qualified = await nativeEvidence.qualifySpecimenSurfaces({ ...preparedSurfaces.input, library });
+  return { input: qualified, leaves, surfaceBundles: preparedSurfaces.surfaceBundles };
 }

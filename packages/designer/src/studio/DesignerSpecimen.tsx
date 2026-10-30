@@ -29,6 +29,8 @@ export interface DesignerSpecimenContext {
   /** Exact module addresses from that resolution, including consumer source entries. */
   readonly modules: ComponentSpecimenOptions["modules"];
   readonly componentOptions?: Pick<ComponentSpecimenOptions, "specimens" | "provider">;
+  /** A host source binding that cannot authenticate its preview remains an explicit NEED. */
+  readonly componentPreviewNeeds?: Readonly<Record<string, string>>;
   readonly surfaces?: Readonly<Record<string, DesignerSurfaceSpecimen>>;
   /** Emitted hosts must supply an executable selected port; package samples cannot become render fallbacks. */
   readonly surfaceBindingsOnly?: boolean;
@@ -135,6 +137,7 @@ function SpecimenViewport({ semantic, leaf, width, children }: { semantic: Compo
 
 function ComponentProbe({ leaf, context, need, state }: { leaf: string; context: DesignerSpecimenContext; need: DesignerSpecimenProps["need"]; state: "default" | "hover" | "focus" | "disabled" | "invalid" }): ReactNode {
   const [reason, report] = useState<PreviewFailureReason>();
+  if (context.componentPreviewNeeds?.[leaf]) return need({ leaf, reason: context.componentPreviewNeeds[leaf]! });
   const preview = componentSpecimenPreview({ ...context.componentOptions, modules: context.modules, probes: { [leaf]: { states: state === "default" ? [] : [state === "focus" ? "focus-visible" : state] } } }).preview(leaf, context.profile);
   return <PreviewOutcomeContext.Provider value={report}>{reason ? need({ leaf, reason }) : null}{preview}</PreviewOutcomeContext.Provider>;
 }
