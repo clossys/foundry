@@ -1,3 +1,4 @@
+import "@testing-library/jest-dom/vitest";
 import { createRequire } from "node:module";
 import { readFileSync, readdirSync } from "node:fs";
 import { posix, resolve } from "node:path";
